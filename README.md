@@ -72,13 +72,19 @@ pnpm install
 
 ### Configure Environment Variables
 
+This section assumes that you have deployed AppFlowy Cloud, and is accessible via the domain `your-domain`.
 Create a `.env` file in the root of the project and add the following environment variables:
 
 ```bash
-AF_BASE_URL=http://localhost:8080
-AF_GOTRUE_URL=http://localhost:9999
-AF_WS_URL=ws://localhost:8080/ws/v1
+AF_BASE_URL=http://your-domain
+AF_GOTRUE_URL=http://your-domain/gotrue
+AF_WS_URL=ws://your-domain/ws/v1
+# If you are using HTTPS, use wss instead of ws.
+# AF_WS_URL=wss://your-domain/ws/v1
 ```
+
+Make sure that AppFlowy Cloud deployment has been configured to allow CORS requests from the domain
+where the web app is hosted. By defaut, if you run AppFlowy Web locally, that would be http://localhost:3000.
 
 ### Start the Development Server
 
@@ -141,22 +147,30 @@ pnpm run lint
 
 ## 🚀 Production Deployment
 
-Our production deployment process is automated using GitHub Actions. The process involves:
+You can run the production build via `pnpm`, as described above. Alternatively, you can also
+deploy AppFlowy Web via the following ways:
 
-1. **Setting up an AWS EC2 instance**: We use an EC2 instance to host the application.
-2. **Installing Docker and Docker Compose**: Docker is installed on the AWS instance.
-3. **Configuring SSH Access**: SSH access is set up with a user and password.
-4. **Preparing Project Configuration**: We configure `Dockerfile`, `nginx.conf`, and `server.cjs` in the web project.
-5. **Using GitHub Actions**: We use the easingthemes/ssh-deploy@main action to deploy the project to the remote server.
+### Vercel
+This is only possible if your AppFlowy Cloud endpoints are accessible publicly. First, fork
+this repository, then import the forked repository into Vercel. You can then configure the
+environment variables during the setup.
 
-The deployment steps include building the Docker image and running the Docker container with the necessary port
-mappings:
+Once AppFlowy Web has been deployed via Vercel, make sure that the AppFlowy Cloud deployment
+has been updated to allow CORS requests from the domain (eg. yourpoject.vercel.app).
+
+### Docker
+If you prefer to deploy the application using Docker, you can build the Docker image via
+`make image`. The API endpoints are baked into the image during the build process, so make
+sure that the .env file has been configured correctly before building the image.
+
+You can modify the image name by editing `IMAGE_NAME` in Makefile.
+
+Then, you can run the Docker container via
 
 ```bash
-docker build -t appflowy-web-app .
 docker rm -f appflowy-web-app || true
 docker run -d -p 80:80 -p 443:443 --name appflowy-web-app appflowy-web-app
 ```
 
-The Web server runs on Bun. For more details about Bun, please refer to the [Bun documentation](https://bun.sh/).
-
+If you are running this on the same machine that is already running AppFlowy Cloud,
+make sure to change the port mappings to avoid conflicts.
