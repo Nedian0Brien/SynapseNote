@@ -50,7 +50,7 @@ Q1 2025:
 Sign up for a free account on <a href="https://appflowy.com">appflowy.com</a>—it's the fastest way to get started with AppFlowy without hassles
 
 ### Self-hosted: host AppFlowy on your own server
-Take charge of your data; no vendor lock-in. Follow our deployment guide (WIP) to get started.
+Take charge of your data; no vendor lock-in. Follow our <a href="https://appflowy.com/docs/self-host-appflowy-overview">deployment guide</a> to get started.
 Join our <a href="https://discord.gg/FFmDE99bgA">Discord</a> server to get help!
 
 ## Built with 🛠️
