@@ -533,7 +533,7 @@ export async function getPublishView (publishNamespace: string, publishName: str
 }
 
 export async function getPublishInfoWithViewId (viewId: string) {
-  const url = `/api/workspace/published-info/${viewId}`;
+  const url = `/api/workspace/v1/published-info/${viewId}`;
   const response = await axiosInstance?.get<{
     code: number;
     data?: {
