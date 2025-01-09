@@ -40,8 +40,9 @@ Bring projects, wikis, and teams together with AI
 >Features listed below are available in AppFlowy desktop and mobile applications (<a href="https://appflowy.io/download">Download</a>).
 
 Q1 2025:
-- Search, publish pages, templates
-- Favorte pages
+- Templates
+- Favorite pages
+- Import and export markdown files
 - More document features incl. simple table and column layout
 - AI Chat and AI Writer
 
