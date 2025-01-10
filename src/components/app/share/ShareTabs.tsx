@@ -1,13 +1,14 @@
 import { useAppView } from '@/components/app/app.hooks';
-import PublishPanel from '@/components/app/share/PublishPanel';
+// import PublishPanel from '@/components/app/share/PublishPanel';
 import TemplatePanel from '@/components/app/share/TemplatePanel';
 import SharePanel from '@/components/app/share/SharePanel';
 import { useCurrentUser } from '@/components/main/app.hooks';
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ViewTabs, ViewTab, TabPanel } from 'src/components/_shared/tabs/ViewTabs';
 import { ReactComponent as Templates } from '@/assets/template.svg';
-import { ReactComponent as PublishedWithChanges } from '@/assets/published_with_changes.svg';
+
+// import { ReactComponent as PublishedWithChanges } from '@/assets/published_with_changes.svg';
 
 enum TabKey {
   SHARE = 'share',
@@ -26,21 +27,23 @@ function ShareTabs ({ opened, viewId, onClose }: { opened: boolean, viewId: stri
       value: TabKey.SHARE,
       label: t('shareAction.shareTab'),
       Panel: SharePanel,
-    }, {
-      value: TabKey.PUBLISH,
-      label: t('shareAction.publish'),
-      icon: view?.is_published ? <PublishedWithChanges className={'w-4 h-4 text-function-success mb-0'} /> : undefined,
-      Panel: PublishPanel,
-    }, currentUser?.email?.endsWith('appflowy.io') && view?.is_published && {
-      value: TabKey.TEMPLATE,
-      label: t('template.asTemplate'),
-      icon: <Templates className={'w-4 h-4 mb-0'} />,
-      Panel: TemplatePanel,
-    }].filter(Boolean) as {
+    },
+      //   {
+      //   value: TabKey.PUBLISH,
+      //   label: t('shareAction.publish'),
+      //   icon: view?.is_published ? <PublishedWithChanges className={'w-4 h-4 text-function-success mb-0'} /> : undefined,
+      //   Panel: PublishPanel,
+      // },
+      currentUser?.email?.endsWith('appflowy.io') && view?.is_published && {
+        value: TabKey.TEMPLATE,
+        label: t('template.asTemplate'),
+        icon: <Templates className={'w-4 h-4 mb-0'} />,
+        Panel: TemplatePanel,
+      }].filter(Boolean) as {
       value: TabKey;
       label: string;
       icon?: React.JSX.Element;
-      Panel: React.FC<{ viewId: string; onClose: () => void }>
+      Panel: React.FC<{ viewId: string; onClose: () => void; opened: boolean }>
     }[];
 
   }, [currentUser?.email, t, view?.is_published]);
@@ -48,6 +51,12 @@ function ShareTabs ({ opened, viewId, onClose }: { opened: boolean, viewId: stri
   const onChange = useCallback((_event: React.SyntheticEvent, newValue: TabKey) => {
     setValue(newValue);
   }, []);
+
+  useEffect(() => {
+    if (opened) {
+      setValue(TabKey.SHARE);
+    }
+  }, [opened]);
 
   return (
     <>
@@ -69,7 +78,7 @@ function ShareTabs ({ opened, viewId, onClose }: { opened: boolean, viewId: stri
       <div className={'p-2'}>
         {options.map((option) => (
           <TabPanel
-            className={'min-w-[460px] max-sm:min-w-[80vw]'}
+            className={'min-w-[500px] w-[500px] max-w-full max-sm:min-w-[80vw]'}
             key={option.value}
             index={option.value}
             value={value}
@@ -77,6 +86,7 @@ function ShareTabs ({ opened, viewId, onClose }: { opened: boolean, viewId: stri
             <option.Panel
               viewId={viewId}
               onClose={onClose}
+              opened={opened}
             />
           </TabPanel>
         ))}

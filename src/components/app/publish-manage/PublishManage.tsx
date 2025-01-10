@@ -64,7 +64,7 @@ export function PublishManage ({
     setLoading(true);
     try {
       const outline = await service.getPublishOutline(namespace);
-
+      
       setPublishViews(flattenViews(outline).filter(item => item.is_published));
       // eslint-disable-next-line
     } catch (e: any) {
@@ -241,7 +241,7 @@ export function PublishManage ({
             onUpdateHomePage={handleUpdateHomePage}
           />
           <Tooltip
-            title={isOwner ? (activeSubscription === SubscriptionPlan.Free ? t('settings.sites.error.onlyProCanSetHomepage') : undefined)
+            title={isOwner ? (activeSubscription === SubscriptionPlan.Free ? t('settings.sites.error.onlyProCanUpdateNamespace') : undefined)
               : t('settings.sites.error.onlyWorkspaceOwnerCanUpdateNamespace')}
           >
             <IconButton

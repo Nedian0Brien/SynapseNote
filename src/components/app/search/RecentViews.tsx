@@ -1,31 +1,27 @@
-import { useAppRecent } from '@/components/app/app.hooks';
+import { View } from '@/application/types';
 import ViewList from '@/components/app/search/ViewList';
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 function RecentViews ({
-  onClose
+  onClose,
+  loading,
+  recentViews,
 }: {
   onClose: () => void;
+  loading: boolean;
+  recentViews?: View[];
 }) {
-  const {
-    recentViews,
-    loadRecentViews
-  } = useAppRecent();
-  const { t } = useTranslation();
-  const [loading, setLoading] = React.useState<boolean>(false);
 
-  useEffect(() => {
-    void (async () => {
-      setLoading(true);
-      await loadRecentViews?.();
-      setLoading(false);
-    })();
-  }, [loadRecentViews]);
-  
+  const { t } = useTranslation();
 
   return (
-    <ViewList views={recentViews} title={t('commandPalette.recentHistory')} onClose={onClose} loading={loading} />
+    <ViewList
+      loading={loading}
+      views={recentViews}
+      title={t('recentPages')}
+      onClose={onClose}
+    />
   );
 }
 

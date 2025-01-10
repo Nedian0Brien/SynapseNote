@@ -15,7 +15,6 @@ import {
   YjsEditorKey,
   YSharedRoot,
 } from '@/application/types';
-import { notify } from '@/components/_shared/notify';
 import { findAncestors, findView, findViewByLayout } from '@/components/_shared/outline/utils';
 import RequestAccess from '@/components/app/landing-pages/RequestAccess';
 import { AFConfigContext, useService } from '@/components/main/app.hooks';
@@ -404,12 +403,14 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
       const views = uniqBy(res, 'view_id');
 
-      setRecentViews(views);
+      setRecentViews(views.filter(item => {
+        return !item.extra?.is_space && findView(outline || [], item.view_id);
+      }));
       return views;
     } catch (e) {
       console.error('Recent views not found');
     }
-  }, [currentWorkspaceId, service]);
+  }, [currentWorkspaceId, service, outline]);
 
   const loadTrash = useCallback(async (currentWorkspaceId: string) => {
 
@@ -648,18 +649,20 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     if (!service || !currentWorkspaceId) return;
     const isDatabase = [ViewLayout.Board, ViewLayout.Grid, ViewLayout.Calendar].includes(view.layout);
     const viewId = view.view_id;
+    const children = view.children || [];
+    const visibleViewIds = [view.view_id, ...(children.map((v) => v.view_id))];
 
     await service.publishView(currentWorkspaceId, viewId, {
       publish_name: publishName,
-      visible_database_view_ids: isDatabase ? view.children?.map((v) => v.view_id) : undefined,
+      visible_database_view_ids: isDatabase ? visibleViewIds : undefined,
     });
-    void loadOutline(currentWorkspaceId, false);
+    await loadOutline(currentWorkspaceId, false);
   }, [currentWorkspaceId, loadOutline, service]);
 
   const unpublish = useCallback(async (viewId: string) => {
     if (!service || !currentWorkspaceId) return;
     await service.unpublishView(currentWorkspaceId, viewId);
-    void loadOutline(currentWorkspaceId, false);
+    await loadOutline(currentWorkspaceId, false);
   }, [currentWorkspaceId, loadOutline, service]);
 
   return <AppContext.Provider
