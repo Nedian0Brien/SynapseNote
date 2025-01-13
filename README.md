@@ -61,12 +61,15 @@ Join our <a href="https://discord.gg/FFmDE99bgA">Discord</a> server to get help!
 ![Nginx](https://img.shields.io/badge/Nginx-009639?style=for-the-badge&logo=nginx&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 
-## Translations 🌎🗺
-[![translation badge](https://inlang.com/badge?url=github.com/AppFlowy-IO/AppFlowy)](https://inlang.com/editor/github.com/AppFlowy-IO/AppFlowy?ref=badge)
+## Development
+```
+# npm install pnpm@8.5.0
+pnpm install
 
-To add translations, you can manually edit the JSON translation files in `/frontend/resources/translations`, use
-the [inlang online editor](https://inlang.com/editor/github.com/AppFlowy-IO/AppFlowy), or
-run `npx inlang machine translate` to add missing translations.
+pnpm run dev
+```
+
+Open your browser to visit localhost:3000
 
 ## License
 Distributed under the AGPLv3 License. See [`LICENSE.md`](https://github.com/AppFlowy-IO/AppFlowy-Web/blob/main/LICENSE) for
