@@ -1,6 +1,6 @@
 name: Feature Request
 description: Suggest a new feature or enhancement for the AppFlowy Web 
-title: "[Feature Request] "
+title: "[FR] "
 body:
   - type: textarea
     id: feature_description
