@@ -6,7 +6,7 @@
 
 
 <p align="center">
-Bring projects, wikis, and teams together with AI 
+Bring projects, wikis, and teams together with AI
 </p>
 <p align="center">
     <a href="http://www.appflowy.com"><b>Web</b></a> •
@@ -29,7 +29,7 @@ Bring projects, wikis, and teams together with AI
 - Create and publish documentation for your customers and audience
 - Write, publish, and manage content with AI
 - Manage tasks and projects for yourself and your team
-  
+
 ## Features
 - Write beautiful documents with rich content types
 - Add a Quick Note to jot down lists, ideas, or to-dos
@@ -62,6 +62,19 @@ Join our <a href="https://discord.gg/FFmDE99bgA">Discord</a> server to get help!
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 
 ## Development
+### Pre-requisite
+AppFlowy Cloud must be running and accessible by AppFlowy Web. If you alredy have AppFlowy Cloud running, you can skip this step.
+
+For local development, please follow the steps below:
+1. Install [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/)
+2. Clone the AppFlowy Cloud repository.
+3. Copy deploy.env to .env, then run `docker-compose up -d`.
+4. The AppFlowy Cloud API should be running on localhost:80, and allow CORS from localhost:3000 by default.
+5. Setup at least one sign in method: SMTP for magic link, or using an OAuth provider. Refer to AppFlowy Cloud repository for more details.
+
+### Running AppFlowy Web Locally
+1. Copy .development.env to .env. The default value assumes that AppFlowy Cloud is deployed on localhost. If not, please update the value of the API endpoints.
+2. Make sure `npm` has been installed on your dev environment, then run the following:
 ```
 # npm install pnpm@8.5.0
 pnpm install
