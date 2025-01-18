@@ -84,6 +84,10 @@ pnpm run dev
 
 Open your browser to visit localhost:3000
 
+## Deployment
+Once AppFlowy Cloud has been setup, you can follow the [deployment guide](https://appflowy.com/docs/self-host-appflowy-run-appflowy-web)
+to deploy AppFlowy Web.
+
 ## License
 Distributed under the AGPLv3 License. See [`LICENSE.md`](https://github.com/AppFlowy-IO/AppFlowy-Web/blob/main/LICENSE) for
 more information.
