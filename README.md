@@ -9,8 +9,8 @@
 Bring projects, wikis, and teams together with AI
 </p>
 <p align="center">
-    <a href="http://www.appflowy.com"><b>Web</b></a> •
-    <a href="https://appflowy.io/download">Apps</a> •
+    <a href="http://appflowy.com"><b>Web</b></a> •
+    <a href="https://appflowy.com/download">Apps</a> •
     <a href="https://discord.gg/9Q2xaN37tV"><b>Discord</b></a> •
     <a href="https://twitter.com/appflowy"><b>Twitter</b></a> •
     <a href="https://www.reddit.com/r/appflowy/"><b>Reddit</b></a> •
