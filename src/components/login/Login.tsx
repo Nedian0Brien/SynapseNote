@@ -4,13 +4,19 @@ import { Divider } from '@mui/material';
 import React from 'react';
 import { ReactComponent as Logo } from '@/assets/logo.svg';
 import { useTranslation } from 'react-i18next';
+import { ReactComponent as ArrowRight } from '@/assets/right.svg';
 
-export function Login ({ redirectTo }: { redirectTo: string }) {
+export function Login({ redirectTo }: { redirectTo: string }) {
   const { t } = useTranslation();
 
   return (
     <div className={'my-10 flex flex-col items-center justify-center gap-[24px] px-4'}>
-      <div className={'flex w-full flex-col items-center justify-center gap-[14px]'}>
+      <div
+        onClick={() => {
+          window.location.href = '/';
+        }}
+        className={'flex w-full cursor-pointer flex-col items-center justify-center gap-[14px]'}
+      >
         <Logo className={'h-10 w-10'} />
         <div className={'text-[24px] font-semibold max-sm:text-[20px]'}>{t('welcomeTo')} AppFlowy</div>
       </div>
@@ -43,6 +49,11 @@ export function Login ({ redirectTo }: { redirectTo: string }) {
           {t('web.privacyPolicy')}
         </a>
         .
+      </div>
+      <Divider className={'w-[300px] max-w-full border-line-divider'} />
+      <div className={'text-text-title text-xs font-medium cursor-pointer opacity-60 hover:opacity-100 w-full gap-2 flex items-center justify-center'}>
+        <span>{t('web.visitOurWebsite')}</span>
+        <ArrowRight className={'w-4 h-4'} />
       </div>
     </div>
   );

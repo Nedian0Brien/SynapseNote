@@ -1,6 +1,6 @@
 import { notify } from '@/components/_shared/notify';
 import { AFConfigContext } from '@/components/main/app.hooks';
-import { Button, Collapse, Divider } from '@mui/material';
+import { Button, Collapse } from '@mui/material';
 import React, { useCallback, useContext, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ReactComponent as GoogleSvg } from '@/assets/login/google.svg';
@@ -8,7 +8,7 @@ import { ReactComponent as GithubSvg } from '@/assets/login/github.svg';
 import { ReactComponent as DiscordSvg } from '@/assets/login/discord.svg';
 import { ReactComponent as AppleSvg } from '@/assets/login/apple.svg';
 
-function LoginProvider ({ redirectTo }: { redirectTo: string }) {
+function LoginProvider({ redirectTo }: { redirectTo: string }) {
   const { t } = useTranslation();
   const [expand, setExpand] = React.useState(false);
   const options = useMemo(
@@ -38,9 +38,9 @@ function LoginProvider ({ redirectTo }: { redirectTo: string }) {
   );
   const service = useContext(AFConfigContext)?.service;
 
-  const handleClick = useCallback(async (option: string) => {
+  const handleClick = useCallback(async(option: string) => {
     try {
-      switch (option) {
+      switch(option) {
         case 'google':
           await service?.signInGoogle({ redirectTo });
           break;
@@ -54,7 +54,7 @@ function LoginProvider ({ redirectTo }: { redirectTo: string }) {
           await service?.signInDiscord({ redirectTo });
           break;
       }
-    } catch (e) {
+    } catch(e) {
       notify.error(t('web.signInError'));
     }
   }, [service, t, redirectTo]);
@@ -83,14 +83,15 @@ function LoginProvider ({ redirectTo }: { redirectTo: string }) {
         color={'inherit'}
         size={'small'}
         onClick={() => setExpand(!expand)}
-        className={'text-sm w-full flex gap-2 items-center hover:bg-transparent hover:text-text-title font-medium text-text-caption'}
+        className={'text-sm w-full flex gap-2 items-center hover:bg-transparent font-medium text-fill-default'}
       >
-        <Divider className={'flex-1'} />
         {t('web.moreOptions')}
-        <Divider className={'flex-1'} />
       </Button>}
 
-      <Collapse className={'w-full'} in={expand}>
+      <Collapse
+        className={'w-full'}
+        in={expand}
+      >
         <div className={'gap-[10px] w-full flex-col flex'}>{options.slice(2).map(renderOption)}</div>
       </Collapse>
     </div>
