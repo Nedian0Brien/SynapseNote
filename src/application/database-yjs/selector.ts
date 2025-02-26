@@ -54,7 +54,7 @@ export function useDatabaseViewsSelector (_iidIndex: string, visibleViewIds?: st
       const viewsObj = views.toJSON() as Record<
         string,
         {
-          created_at: number;
+          created_at: string;
         }
       >;
 
@@ -62,7 +62,7 @@ export function useDatabaseViewsSelector (_iidIndex: string, visibleViewIds?: st
         const [, viewA] = a;
         const [, viewB] = b;
 
-        return Number(viewB.created_at) - Number(viewA.created_at);
+        return Date.parse(viewB.created_at) - Date.parse(viewA.created_at);
       });
 
       setViewIds(
