@@ -5,6 +5,7 @@ import {
   LoadView,
   LoadViewMeta, UIVariant, View, CreatePagePayload, TextCount,
 } from '@/application/types';
+import { AxiosInstance } from 'axios';
 import { createContext, useCallback, useContext, useState } from 'react';
 import { BaseRange, Range } from 'slate';
 
@@ -26,6 +27,7 @@ export interface Decorate {
 }
 
 export interface EditorContextState {
+  workspaceId: string;
   viewId: string;
   readOnly: boolean;
   layoutStyle?: EditorLayoutStyle;
@@ -43,7 +45,6 @@ export interface EditorContextState {
   decorateState?: Record<string, Decorate>;
   addDecorate?: (range: BaseRange, class_name: string, type: string) => void;
   removeDecorate?: (type: string) => void;
-
   selectedBlockIds?: string[];
   setSelectedBlockIds?: React.Dispatch<React.SetStateAction<string[]>>;
   addPage?: (parentId: string, payload: CreatePagePayload) => Promise<string>;
@@ -52,6 +53,7 @@ export interface EditorContextState {
   loadViews?: (variant?: UIVariant) => Promise<View[] | undefined>;
   onWordCountChange?: (viewId: string, props: TextCount) => void;
   uploadFile?: (file: File) => Promise<string>;
+  requestInstance?: AxiosInstance | null;
 }
 
 export const EditorContext = createContext<EditorContextState>({
@@ -59,6 +61,7 @@ export const EditorContext = createContext<EditorContextState>({
   layoutStyle: defaultLayoutStyle,
   codeGrammars: {},
   viewId: '',
+  workspaceId: '',
 });
 
 export const EditorContextProvider = ({ children, ...props }: EditorContextState & { children: React.ReactNode }) => {
@@ -69,7 +72,7 @@ export const EditorContextProvider = ({ children, ...props }: EditorContextState
     setDecorateState((prev) => {
       const oldValue = prev[type];
 
-      if (oldValue && Range.equals(oldValue.range, range) && oldValue.class_name === class_name) {
+      if(oldValue && Range.equals(oldValue.range, range) && oldValue.class_name === class_name) {
         return prev;
       }
 
@@ -85,7 +88,7 @@ export const EditorContextProvider = ({ children, ...props }: EditorContextState
 
   const removeDecorate = useCallback((type: string) => {
     setDecorateState((prev) => {
-      if (prev[type] === undefined) {
+      if(prev[type] === undefined) {
         return prev;
       }
 

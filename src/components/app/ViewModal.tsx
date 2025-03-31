@@ -6,12 +6,13 @@ import {
 } from '@/application/types';
 import SpaceIcon from '@/components/_shared/view-icon/SpaceIcon';
 import { findAncestors, findView } from '@/components/_shared/outline/utils';
-import { useAppHandlers, useAppOutline } from '@/components/app/app.hooks';
+import { useAppHandlers, useAppOutline, useCurrentWorkspaceId } from '@/components/app/app.hooks';
 import DatabaseView from '@/components/app/DatabaseView';
 import MoreActions from '@/components/app/header/MoreActions';
 import MovePagePopover from '@/components/app/view-actions/MovePagePopover';
 import { Document } from '@/components/document';
 import RecordNotFound from '@/components/error/RecordNotFound';
+import { useService } from '@/components/main/app.hooks';
 import { Button, Dialog, Divider, IconButton, Tooltip, Zoom } from '@mui/material';
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -43,6 +44,8 @@ function ViewModal({
   open: boolean;
   onClose: () => void;
 }) {
+  const workspaceId = useCurrentWorkspaceId();
+
   const { t } = useTranslation();
   const {
     toView,
@@ -63,6 +66,8 @@ function ViewModal({
     doc: YDoc;
   } | undefined>(undefined);
   const [notFound, setNotFound] = React.useState(false);
+  const service = useService();
+  const requestInstance = service?.getAxiosInstance();
   const loadPageDoc = useCallback(async(id: string) => {
 
     setNotFound(false);
@@ -104,8 +109,9 @@ function ViewModal({
       visibleViewIds: [],
       viewId: view.view_id,
       extra: view.extra,
+      workspaceId,
     } : null;
-  }, [view]);
+  }, [view, workspaceId]);
   const handleUploadFile = useCallback((file: File) => {
     if(view && uploadFile) {
       return uploadFile(view.view_id, file);
@@ -200,6 +206,8 @@ function ViewModal({
   const viewDom = useMemo(() => {
     if(!doc || !viewMeta || doc.id !== viewMeta.viewId) return null;
     return <View
+      requestInstance={requestInstance}
+      workspaceId={workspaceId || ''}
       doc={doc.doc}
       readOnly={false}
       viewMeta={viewMeta}
@@ -216,7 +224,7 @@ function ViewModal({
       uploadFile={handleUploadFile}
       variant={UIVariant.App}
     />;
-  }, [openPageModal, handleUploadFile, setWordCount, loadViews, doc, viewMeta, View, toView, loadViewMeta, createRowDoc, loadView, updatePage, addPage, deletePage]);
+  }, [requestInstance, openPageModal, workspaceId, handleUploadFile, setWordCount, loadViews, doc, viewMeta, View, toView, loadViewMeta, createRowDoc, loadView, updatePage, addPage, deletePage]);
 
   return (
     <Dialog
@@ -229,7 +237,7 @@ function ViewModal({
       disableRestoreFocus={true}
       TransitionComponent={Transition}
       PaperProps={{
-        className: `max-w-[70vw] w-[1188px] flex flex-col h-[80vh] appflowy-scroller`,
+        className: `max-w-[70vw] appflowy-scroll-container transform relative w-[1188px] flex flex-col h-[80vh] appflowy-scroller`,
       }}
     >
       {modalTitle}

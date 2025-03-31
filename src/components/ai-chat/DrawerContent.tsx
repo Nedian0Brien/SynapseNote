@@ -2,9 +2,10 @@ import { YjsEditor } from '@/application/slate-yjs';
 import { UIVariant, ViewMetaProps, YDoc } from '@/application/types';
 import { useAIChatContext } from '@/components/ai-chat/AIChatProvider';
 import { insertDataToDoc } from '@/components/ai-chat/utils';
-import { useAppHandlers, useAppView } from '@/components/app/app.hooks';
+import { useAppHandlers, useAppView, useCurrentWorkspaceId } from '@/components/app/app.hooks';
 import { Document } from '@/components/document';
 import RecordNotFound from '@/components/error/RecordNotFound';
+import { useService } from '@/components/main/app.hooks';
 import { debounce } from 'lodash-es';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import smoothScrollIntoViewIfNeeded from 'smooth-scroll-into-view-if-needed';
@@ -37,7 +38,8 @@ function DrawerContent({
     id: string;
     doc: YDoc;
   } | undefined>(undefined);
-
+  const service = useService();
+  const requestInstance = service?.getAxiosInstance();
   const initialScrolling = React.useRef(false);
   const [notFound, setNotFound] = React.useState(false);
   const [editor, setEditor] = useState<YjsEditor | undefined>(undefined);
@@ -141,6 +143,7 @@ function DrawerContent({
     };
   }, []);
 
+  const workspaceId = useCurrentWorkspaceId();
   const viewMeta: ViewMetaProps | null = useMemo(() => {
     return view ? {
       name: view.name,
@@ -150,8 +153,9 @@ function DrawerContent({
       visibleViewIds: [],
       viewId: view.view_id,
       extra: view.extra,
+      workspaceId,
     } : null;
-  }, [view]);
+  }, [view, workspaceId]);
 
   const handleUploadFile = useCallback((file: File) => {
     if(view && uploadFile) {
@@ -172,6 +176,8 @@ function DrawerContent({
       {
         doc && viewMeta && (
           <Document
+            requestInstance={requestInstance}
+            workspaceId={workspaceId || ''}
             doc={doc.doc}
             readOnly={false}
             viewMeta={viewMeta}

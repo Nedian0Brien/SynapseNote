@@ -45,6 +45,21 @@ import {
 } from '@/application/slate-yjs/utils/yjs';
 
 export const CustomEditor = {
+  getEditorContent(editor: YjsEditor) {
+    const allNodes = editor.children ?? [];
+
+    return allNodes.map((node) => {
+      return CustomEditor.getBlockTextContent(node);
+    }).join('\n');
+  },
+
+  getSelectionContent(editor: YjsEditor, range?: Range) {
+    const at = range || editor.selection;
+
+    if(!at) return '';
+
+    return editor.string(at);
+  },
   // Get the text content of a block node, including the text content of its children and formula nodes
   getBlockTextContent(node: Node, depth: number = Infinity): string {
     if(Text.isText(node)) {
@@ -78,7 +93,7 @@ export const CustomEditor = {
   },
 
   setBlockData<T = BlockData>(editor: YjsEditor, blockId: string, updateData: T, select?: boolean) {
-    
+
     const block = getBlock(blockId, editor.sharedRoot);
     const oldData = dataStringTOJson(block.get(YjsEditorKey.block_data));
     const newData = {
