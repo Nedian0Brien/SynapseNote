@@ -29,10 +29,9 @@ import { EditorElementProps, TextNode } from '@/components/editor/editor.type';
 import { useEditorContext } from '@/components/editor/EditorContext';
 import { ElementFallbackRender } from '@/components/error/ElementFallbackRender';
 import { renderColor } from '@/utils/color';
-import React, { FC, useEffect, useMemo } from 'react';
+import React, { FC, useCallback, useEffect, useLayoutEffect, useMemo } from 'react';
 import { ErrorBoundary, FallbackProps } from 'react-error-boundary';
 import { ReactEditor, RenderElementProps, useSelected, useSlateStatic } from 'slate-react';
-import smoothScrollIntoViewIfNeeded from 'smooth-scroll-into-view-if-needed';
 import SubPage from 'src/components/editor/components/blocks/sub-page/SubPage';
 import { TodoList } from 'src/components/editor/components/blocks/todo-list';
 import { ToggleList } from 'src/components/editor/components/blocks/toggle-list';
@@ -53,54 +52,59 @@ export const Element = ({
   const { blockId, type } = node;
   const isSelected = useSelected();
   const selected = useMemo(() => {
-    if(blockId && selectedBlockIds?.includes(blockId)) return true;
-    if([
+    if (blockId && selectedBlockIds?.includes(blockId)) {
+      return true;
+    }
+
+    if ([
       ...CONTAINER_BLOCK_TYPES,
       ...SOFT_BREAK_TYPES,
       BlockType.HeadingBlock,
       BlockType.TableBlock,
       BlockType.TableCell,
       BlockType.SimpleTableBlock,
-    ].includes(type as BlockType)) return false;
+    ].includes(type as BlockType)) {
+      return false;
+    }
+
     return isSelected;
   }, [blockId, selectedBlockIds, type, isSelected]);
 
   const editor = useSlateStatic();
   const highlightTimeoutRef = React.useRef<NodeJS.Timeout>();
 
-  useEffect(() => {
-    if(!jumpBlockId) return;
+  const scrollAndHighlight = useCallback(async (element: HTMLElement) => {
+    element.scrollIntoView({ block: 'start' });
+    element.className += ' highlight-block';
+    highlightTimeoutRef.current = setTimeout(() => {
+      element.className = element.className.replace('highlight-block', '');
+    }, 5000);
+    onJumpedBlockId?.();
+  }, [onJumpedBlockId]);
 
-    if(node.blockId !== jumpBlockId) {
+  useLayoutEffect(() => {
+    if (!jumpBlockId || node.blockId !== jumpBlockId) {
       return;
     }
 
     const element = ReactEditor.toDOMNode(editor, node);
 
-    void (async() => {
-      await smoothScrollIntoViewIfNeeded(element, {
-        behavior: 'smooth',
-        scrollMode: 'if-needed',
-      });
-      element.className += ' highlight-block';
-      highlightTimeoutRef.current = setTimeout(() => {
-        element.className = element.className.replace('highlight-block', '');
-      }, 5000);
+    const delayTimer = setTimeout(() => {
+      void scrollAndHighlight(element);
+    }, 1000);
 
-      onJumpedBlockId?.();
-    })();
-
-  }, [editor, jumpBlockId, node, onJumpedBlockId]);
+    return () => clearTimeout(delayTimer);
+  }, [editor, jumpBlockId, node, onJumpedBlockId, scrollAndHighlight]);
 
   useEffect(() => {
     return () => {
-      if(highlightTimeoutRef.current) {
+      if (highlightTimeoutRef.current) {
         clearTimeout(highlightTimeoutRef.current);
       }
     };
   }, []);
   const Component = useMemo(() => {
-    switch(type) {
+    switch (type) {
       case BlockType.HeadingBlock:
         return Heading;
       case BlockType.TodoListBlock:
@@ -166,9 +170,11 @@ export const Element = ({
 
   const blockStyle = useMemo(() => {
     const type = node.type as BlockType;
-    const style = {};
+    const style = {
+      scrollMarginTop: '100px',
+    };
 
-    if(type === BlockType.ColumnBlock) {
+    if (type === BlockType.ColumnBlock) {
       const ratio = (node.data as ColumnNodeData)?.ratio;
 
       Object.assign(style, {
@@ -186,11 +192,11 @@ export const Element = ({
     const align = data.align;
     const classList = ['block-element flex-col relative flex rounded-[4px]'];
 
-    if(selected) {
+    if (selected) {
       classList.push('selected');
     }
 
-    if(align) {
+    if (align) {
       classList.push(`block-align-${align}`);
     }
 
@@ -206,7 +212,7 @@ export const Element = ({
 
     const type = node.type as BlockType;
 
-    if(type === BlockType.ColumnsBlock) {
+    if (type === BlockType.ColumnsBlock) {
       Object.assign(properties, {
         display: 'flex',
         width: '100%',
@@ -224,7 +230,7 @@ export const Element = ({
     };
   }, [node]);
 
-  if(type === YjsEditorKey.text) {
+  if (type === YjsEditorKey.text) {
     return (
       <Text {...attributes} node={node as TextNode}>
         {children}
@@ -232,7 +238,7 @@ export const Element = ({
     );
   }
 
-  if([BlockType.SimpleTableRowBlock, BlockType.SimpleTableCellBlock].includes(node.type as BlockType)) {
+  if ([BlockType.SimpleTableRowBlock, BlockType.SimpleTableCellBlock].includes(node.type as BlockType)) {
     return (
       <Component
         node={node}
