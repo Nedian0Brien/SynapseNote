@@ -4,11 +4,11 @@ import { Button, OutlinedInput } from '@mui/material';
 
 import Tooltip from '@mui/material/Tooltip';
 import { randomEmoji } from '@/utils/emoji';
-import { ReactComponent as ShuffleIcon } from '@/assets/shuffle.svg';
+import { ReactComponent as ShuffleIcon } from '@/assets/icons/shuffle.svg';
 import Popover from '@mui/material/Popover';
 import { useTranslation } from 'react-i18next';
-import { ReactComponent as DeleteOutlineRounded } from '@/assets/trash.svg';
-import { ReactComponent as SearchOutlined } from '@/assets/search.svg';
+import { ReactComponent as DeleteIcon } from '@/assets/icons/delete.svg';
+import { ReactComponent as SearchIcon } from '@/assets/icons/search.svg';
 
 const skinTones = [
   {
@@ -46,7 +46,7 @@ interface Props {
   hideRemove?: boolean;
 }
 
-function EmojiPickerHeader ({ hideRemove, onEmojiSelect, onSkinSelect, searchValue, onSearchChange, skin }: Props) {
+function EmojiPickerHeader({ hideRemove, onEmojiSelect, onSkinSelect, searchValue, onSearchChange, skin }: Props) {
   const { onOpen, ...popoverProps } = useSelectSkinPopoverProps();
   const { t } = useTranslation();
 
@@ -77,14 +77,14 @@ function EmojiPickerHeader ({ hideRemove, onEmojiSelect, onSkinSelect, searchVal
         </Tooltip>
       );
     },
-    [],
+    []
   );
 
   return (
     <div className={'px-0.5 py-2'}>
       <div className={'search-input flex items-end justify-between gap-2'}>
         <OutlinedInput
-          startAdornment={<SearchOutlined className={'h-5 w-5'} />}
+          startAdornment={<SearchIcon className={'h-5 w-5'} />}
           value={searchValue}
           onChange={(e) => {
             onSearchChange(e.target.value);
@@ -122,21 +122,18 @@ function EmojiPickerHeader ({ hideRemove, onEmojiSelect, onSkinSelect, searchVal
           {hideRemove
             ? null
             : renderButton({
-              onClick: () => {
-                onEmojiSelect('');
-              },
-              tooltip: t('emoji.remove'),
-              children: <DeleteOutlineRounded className={'h-5 w-5'} />,
-            })}
+                onClick: () => {
+                  onEmojiSelect('');
+                },
+                tooltip: t('emoji.remove'),
+                children: <DeleteIcon className={'h-5 w-5'} />,
+              })}
         </div>
       </div>
       <Popover {...popoverProps}>
         <div className={'flex items-center p-2'}>
           {skinTones.map((skinTone) => (
-            <div
-              className={'mx-0.5'}
-              key={skinTone.value}
-            >
+            <div className={'mx-0.5'} key={skinTone.value}>
               <Button
                 style={{
                   backgroundColor: skinTone.value === skin ? 'var(--fill-list-hover)' : undefined,

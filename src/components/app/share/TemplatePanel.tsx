@@ -9,8 +9,8 @@ import { useService } from '@/components/main/app.hooks';
 import { Button, Skeleton } from '@mui/material';
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ReactComponent as DeleteIcon } from '@/assets/trash.svg';
-import { ReactComponent as EditIcon } from '@/assets/edit.svg';
+import { ReactComponent as DeleteIcon } from '@/assets/icons/delete.svg';
+import { ReactComponent as EditIcon } from '@/assets/icons/edit.svg';
 
 function TemplatePanel({ viewId }: { viewId: string }) {
   const view = useAppView(viewId);

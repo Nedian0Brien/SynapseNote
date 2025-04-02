@@ -11,13 +11,13 @@ import { useCurrentUser } from '@/components/main/app.hooks';
 import { openUrl } from '@/utils/url';
 import { Button, Divider, IconButton, Tooltip } from '@mui/material';
 import React, { useCallback, useEffect } from 'react';
-import { ReactComponent as ArrowRightSvg } from '@/assets/arrow_right.svg';
-import { ReactComponent as ImportIcon } from '@/assets/import.svg';
-import { ReactComponent as TipIcon } from '@/assets/warning.svg';
+import { ReactComponent as ArrowDown } from '@/assets/icons/alt_arrow_down.svg';
+import { ReactComponent as ImportIcon } from '@/assets/icons/save_as.svg';
+import { ReactComponent as TipIcon } from '@/assets/icons/help.svg';
 import { useTranslation } from 'react-i18next';
-import { ReactComponent as SignOutIcon } from '@/assets/sign_out.svg';
-import { ReactComponent as UpgradeIcon } from '@/assets/icon_upgrade.svg';
-import { ReactComponent as UpgradeAIMaxIcon } from '@/assets/upgrade_ai_max.svg';
+import { ReactComponent as LogoutIcon } from '@/assets/icons/logout.svg';
+import { ReactComponent as UpgradeIcon } from '@/assets/icons/upgrade.svg';
+import { ReactComponent as UpgradeAIMaxIcon } from '@/assets/icons/ai.svg';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import InviteMember from '@/components/app/workspaces/InviteMember';
 import UpgradePlan from '@/components/billing/UpgradePlan';
@@ -40,9 +40,7 @@ export function Workspaces() {
     navigate('/login?redirectTo=' + encodeURIComponent(window.location.href));
   }, [navigate]);
 
-  const {
-    onChangeWorkspace: handleSelectedWorkspace,
-  } = useAppHandlers();
+  const { onChangeWorkspace: handleSelectedWorkspace } = useAppHandlers();
   const [currentWorkspace, setCurrentWorkspace] = React.useState<Workspace | undefined>(undefined);
 
   const isOwner = currentWorkspace?.owner?.uid.toString() === currentUser?.uid.toString();
@@ -61,11 +59,13 @@ export function Workspaces() {
     }
 
     setChangeLoading(null);
-  }, [handleSelectedWorkspace]);
+    },
+    [handleSelectedWorkspace]
+  );
   const [, setSearchParams] = useSearchParams();
 
   const handleOpenImport = useCallback(() => {
-    setSearchParams(prev => {
+    setSearchParams((prev) => {
       prev.set('action', 'import');
       prev.set('source', 'notion');
       return prev;
@@ -73,25 +73,25 @@ export function Workspaces() {
   }, [setSearchParams]);
 
   return <>
-    <Button
-      ref={ref}
-      onMouseLeave={() => setHoveredHeader(false)}
-      onMouseEnter={() => setHoveredHeader(true)}
-      onClick={() => setOpen(true)}
-      className={'flex px-1 w-full cursor-pointer justify-start py-1 items-center gap-1 mx-2 text-text-title'}
-    >
-      <div className={'flex items-center gap-1.5 text-[15px] text-text-title overflow-hidden'}>
-        <CurrentWorkspace
-          userWorkspaceInfo={userWorkspaceInfo}
-          selectedWorkspace={currentWorkspace}
-          onChangeWorkspace={handleChange}
-          avatarSize={24}
-        />
+      <Button
+        ref={ref}
+        onMouseLeave={() => setHoveredHeader(false)}
+        onMouseEnter={() => setHoveredHeader(true)}
+        onClick={() => setOpen(true)}
+        className={'mx-2 flex w-full cursor-pointer items-center justify-start gap-1 px-1 py-1 text-text-title'}
+      >
+        <div className={'flex items-center gap-1.5 overflow-hidden text-[15px] text-text-title'}>
+          <CurrentWorkspace
+            userWorkspaceInfo={userWorkspaceInfo}
+            selectedWorkspace={currentWorkspace}
+            onChangeWorkspace={handleChange}
+            avatarSize={24}
+          />
 
-        {hoveredHeader && <ArrowRightSvg className={'w-4 h-4 transform rotate-90'} />}
-      </div>
-    </Button>
-    <Popover
+          {hoveredHeader && <ArrowDown className={'h-5 w-5'} />}
+        </div>
+      </Button>
+      <Popover
       open={open}
       keepMounted={true}
       anchorEl={ref.current}
@@ -150,7 +150,7 @@ export function Workspaces() {
               size={'small'}
               className={'mx-2'}
             >
-              <TipIcon className={'w-4 h-4 text-text-placeholder'} />
+              <TipIcon />
             </IconButton>
           </Tooltip>
         </Button>
@@ -160,7 +160,7 @@ export function Workspaces() {
           className={'justify-start px-2'}
           color={'inherit'}
           onClick={handleSignOut}
-          startIcon={<SignOutIcon />}
+          startIcon={<LogoutIcon />}
         >{t('button.logout')}</Button>
 
 

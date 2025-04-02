@@ -1,8 +1,8 @@
 import { View } from '@/application/types';
 import { CircularProgress, IconButton, Tooltip } from '@mui/material';
 import React from 'react';
-import { ReactComponent as MoreIcon } from '@/assets/more.svg';
-import { ReactComponent as AddIcon } from '@/assets/add.svg';
+import { ReactComponent as MoreIcon } from '@/assets/icons/more.svg';
+import { ReactComponent as PlusIcon } from '@/assets/icons/plus.svg';
 import { useTranslation } from 'react-i18next';
 
 function SpaceActions({
@@ -37,7 +37,7 @@ function SpaceActions({
           <MoreIcon/>
         </IconButton>
       </Tooltip>
-      {loading ? <CircularProgress size={16}/> : <Tooltip
+      {loading ? <CircularProgress size={20}/> : <Tooltip
         disableInteractive={true}
         disableFocusListener
         title={t('sideBar.addAPage')}
@@ -54,7 +54,7 @@ function SpaceActions({
           }}
           size={'small'}
         >
-          <AddIcon/>
+          <PlusIcon/>
         </IconButton>
 
       </Tooltip>

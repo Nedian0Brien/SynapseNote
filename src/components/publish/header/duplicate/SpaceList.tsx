@@ -1,10 +1,10 @@
 import { SpaceView } from '@/application/types';
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ReactComponent as CheckIcon } from '@/assets/selected.svg';
+import { ReactComponent as CheckIcon } from '@/assets/icons/tick.svg';
 import SpaceIcon from '@/components/_shared/view-icon/SpaceIcon';
 import { Button, CircularProgress, Tooltip } from '@mui/material';
-import { ReactComponent as LockSvg } from '@/assets/lock.svg';
+import { ReactComponent as LockSvg } from '@/assets/icons/lock.svg';
 
 export interface SpaceListProps {
   value: string;
@@ -45,7 +45,7 @@ function SpaceList({ loading, spaceList, value, onChange, title }: SpaceListProp
           />
           <div className={'flex flex-1 items-center gap-2 truncate'}>
             {space.name}
-            {space.isPrivate && <LockSvg className={'h-3.5 w-3.5 text-icon-primary'}/>}
+            {space.isPrivate && <LockSvg className={'text-icon-primary'}/>}
           </div>
         </div>
       );
@@ -82,8 +82,8 @@ function SpaceList({ loading, spaceList, value, onChange, title }: SpaceListProp
                   }}
                 >
                   <div className={'flex-1 overflow-hidden text-left'}>{renderSpace(space)}</div>
-                  <div className={'h-6 w-6'}>
-                    {isSelected && <CheckIcon className={'h-6 w-6 text-content-blue-400'}/>}
+                  <div className={'h-5 w-5'}>
+                    {isSelected && <CheckIcon className={'h-5 w-5 text-content-blue-400'}/>}
                   </div>
                 </Button>
               </Tooltip>

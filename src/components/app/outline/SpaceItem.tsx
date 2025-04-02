@@ -3,7 +3,7 @@ import ViewItem from '@/components/app/outline/ViewItem';
 import { Tooltip } from '@mui/material';
 import React, { useMemo } from 'react';
 import { View } from '@/application/types';
-import { ReactComponent as PrivateIcon } from '@/assets/lock.svg';
+import { ReactComponent as PrivateIcon } from '@/assets/icons/lock.svg';
 
 function SpaceItem({
   view,
@@ -48,11 +48,11 @@ function SpaceItem({
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         className={
-          'flex items-center select-none px-1 truncate cursor-pointer min-h-[34px] w-full gap-0.5 rounded-[8px] py-1.5  text-sm hover:bg-fill-list-hover focus:bg-content-blue-50 focus:outline-none'
+          'flex items-center select-none px-1 truncate cursor-pointer min-h-[30px] w-full gap-0.5 rounded-[8px] py-0.5  text-sm hover:bg-fill-list-hover focus:bg-content-blue-50 focus:outline-none'
         }
       >
         <SpaceIcon
-          className={'icon !rounded-[8px] !h-[22px] mr-1.5 !w-[22px] p-[0.15em]'}
+          className={'icon !h-5 mr-1.5 !w-5 !min-w-5'}
           bgColor={extra?.space_icon_color}
           value={extra?.space_icon || ''}
           char={extra?.space_icon ? undefined : name.slice(0, 1)}
@@ -61,18 +61,19 @@ function SpaceItem({
           title={name}
           disableInteractive={true}
         >
-          <div className={'items-center gap-1 text-sm flex-1 justify-start flex overflow-hidden'}>
-            <div className={'truncate w-auto font-medium'}>{name}</div>
+          <div className={'gap-1 text-sm justify-start flex flex-1 items-center overflow-hidden'}>
+            <div className={'truncate font-medium'}>{name}</div>
 
             {isPrivate &&
-              <div className={'h-4 w-4 text-base min-w-4 text-text-title opacity-80'}>
-                <PrivateIcon/>
+              <div className={'min-w-5 min-h-5 text-base text-text-title opacity-80'}>
+                <PrivateIcon className='h-5 w-5'/>
               </div>
             }
           </div>
         </Tooltip>
         {
-          renderExtra && renderExtra({ hovered, view })}
+          renderExtra && renderExtra({ hovered, view })
+        }
       </div>
     );
   }, [hovered, isExpanded, isPrivate, onClickSpace, renderExtra, toggleExpand, view, width]);
