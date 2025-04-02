@@ -1,11 +1,9 @@
-
-/**
-* Do not edit directly
-* Generated on Thu, 27 Mar 2025 11:44:33 GMT
-* Generated from $pnpm css:variables 
-*/
-
-
 module.exports = {
-  "md": "var(--shadow)"
+  'md': 'var(--shadow)',
+  'popover': 'var(--custom-shadow-sm)',
+  'menu': 'var(--custom-shadow-sm)',
+  'toolbar': 'var(--custom-shadow-sm)',
+  'dialog': 'var(--custom-shadow-md)',
+  'toast': 'var(--custom-shadow-md)',
+  'tooltip': 'var(--custom-shadow-md)',
 };
