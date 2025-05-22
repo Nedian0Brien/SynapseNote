@@ -1,13 +1,12 @@
 import { YjsEditor } from '@/application/slate-yjs';
 import { BlockJson } from '@/application/slate-yjs/types';
 import { blockToSlateNode, deltaInsertToSlateNode } from '@/application/slate-yjs/utils/convert';
+import { findSlateEntryByBlockId } from '@/application/slate-yjs/utils/editor';
+import { dataStringTOJson, getBlock, getChildrenArray, getPageId, getText } from '@/application/slate-yjs/utils/yjs';
 import { YBlock, YjsEditorKey } from '@/application/types';
 import isEqual from 'lodash-es/isEqual';
-import { Editor, Element, NodeEntry } from 'slate';
-import { YEvent, YMapEvent, YTextEvent } from 'yjs';
-import * as Y from 'yjs';
-import { dataStringTOJson, getBlock, getChildrenArray, getPageId, getText } from '@/application/slate-yjs/utils/yjs';
-import { findSlateEntryByBlockId } from '@/application/slate-yjs/utils/editor';
+import { Editor, Element } from 'slate';
+import { YEvent, YMapEvent, Text as YText, YTextEvent } from 'yjs';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type BlockMapEvent = YMapEvent<any>
@@ -47,7 +46,7 @@ function applyUpdateBlockYEvent(editor: YjsEditor, blockId: string, event: YMapE
     return [];
   }
 
-  const [node, path] = entry as NodeEntry<Element>;
+  const [node, path] = entry;
   const oldData = node.data as Record<string, unknown>;
 
   editor.apply({
@@ -65,7 +64,7 @@ function applyUpdateBlockYEvent(editor: YjsEditor, blockId: string, event: YMapE
 function applyTextYEvent(editor: YjsEditor, textId: string, event: YTextEvent) {
   const { target } = event;
 
-  const yText = target as Y.Text;
+  const yText = target as YText;
   const delta = yText.toDelta();
   const slateDelta = delta.flatMap(deltaInsertToSlateNode);
   const [entry] = editor.nodes({
