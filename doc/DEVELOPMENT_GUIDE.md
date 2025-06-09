@@ -21,13 +21,15 @@ Before you begin, ensure you have:
 
 #### 1. Set Up AppFlowy Cloud (Development)
 
+> 💡 **Tip**: The `generate_env.sh` script creates a proper `.env` file with all necessary configurations. Check the [AppFlowy Cloud README](https://github.com/AppFlowy-IO/AppFlowy-Cloud/blob/main/README.md) for more details.
 ```bash
 # Clone AppFlowy Cloud repository
 git clone https://github.com/AppFlowy-IO/AppFlowy-Cloud.git
 cd AppFlowy-Cloud
 
 # Use development configuration
-cp dev.env .env
+# The `generate_env.sh` script creates a proper `.env` file with all necessary configurations. 
+./script/generate_env.sh 
 
 # Start development server
 ./script/run_local_server.sh
@@ -38,8 +40,6 @@ cp dev.env .env
 ```bash
 # In a new terminal, navigate to your AppFlowy Web directory
 cd /path/to/appflowy-web
-
-# Use matching development configuration
 cp dev.env .env
 
 # Install dependencies and start
@@ -62,7 +62,8 @@ git clone https://github.com/AppFlowy-IO/AppFlowy-Cloud.git
 cd AppFlowy-Cloud
 
 # Use production configuration
-cp deploy.env .env
+# The `generate_env.sh` script creates a proper `.env` file with all necessary configurations. 
+./script/generate_env.sh 
 
 # Start with Docker Compose
 docker compose up -d
