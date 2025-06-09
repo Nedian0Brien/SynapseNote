@@ -21,9 +21,7 @@ Before you begin, ensure you have:
 
 #### 1. Set Up AppFlowy Cloud (Development)
 
-
 > 💡 **Tip**: The `generate_env.sh` script creates a proper `.env` file with all necessary configurations. Check the [AppFlowy Cloud README](https://github.com/AppFlowy-IO/AppFlowy-Cloud/blob/main/README.md) for more details.
-
 ```bash
 # Clone AppFlowy Cloud repository
 git clone https://github.com/AppFlowy-IO/AppFlowy-Cloud.git
