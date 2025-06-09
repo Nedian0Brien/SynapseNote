@@ -32,6 +32,10 @@ cd AppFlowy-Cloud
 ./script/generate_env.sh 
 
 # Start development server
+# For new setup - RECOMMENDED FOR FIRST TIME
+./script/run_local_server.sh --reset
+
+# Or run (interactive prompts for container management)
 ./script/run_local_server.sh
 ```
 
