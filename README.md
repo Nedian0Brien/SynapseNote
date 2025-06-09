@@ -24,6 +24,17 @@ Bring projects, wikis, and teams together with AI
 ![appflowy_web_quick_note_large](https://github.com/user-attachments/assets/5c633e60-6f34-454c-91db-236a1b78966a)
 ![appflowy_web_share](https://github.com/user-attachments/assets/64b9955d-b11f-4aa1-b32b-ea79ea7f3566)
 
+## Table of Contents
+
+- [Use Cases](#use-cases)
+- [Features](#features) 
+- [AppFlowy Web Roadmap](#appflowy-web-roadmap)
+- [Installation](#installation)
+- [Development](#development)
+- [Deployment](#deployment)
+- [Documentation](#documentation)
+- [License](#license)
+
 ## Use cases
 - Build and maintain a knowledge base for your team
 - Create and publish documentation for your customers and audience
@@ -36,15 +47,6 @@ Bring projects, wikis, and teams together with AI
 - Invite members to your workspace for seamless collaboration
 - Create multiple public and private spaces to better organize your content
 
-## AppFlowy Web roadmap
->Features listed below are available in AppFlowy desktop and mobile applications (<a href="https://appflowy.io/download">Download</a>).
-
-Q1 2025:
-- Templates
-- Favorite pages
-- Import and export markdown files
-- More document features incl. simple table and column layout
-- AI Chat and AI Writer
 
 ## Installation
 ### Cloud: we host AppFlowy for you
@@ -62,31 +64,18 @@ Join our <a href="https://discord.gg/FFmDE99bgA">Discord</a> server to get help!
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 
 ## Development
-### Pre-requisite
-AppFlowy Cloud must be running and accessible by AppFlowy Web. If you alredy have AppFlowy Cloud running, you can skip this step.
 
-For local development, please follow the steps below:
-1. Install [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/)
-2. Clone the AppFlowy Cloud repository.
-3. Copy deploy.env to .env, then run `docker-compose up -d`.
-4. The AppFlowy Cloud API should be running on localhost:80, and allow CORS from localhost:3000 by default.
-5. Setup at least one sign in method: SMTP for magic link, or using an OAuth provider. Refer to AppFlowy Cloud repository for more details.
-
-### Running AppFlowy Web Locally
-1. Copy .development.env to .env. The default value assumes that AppFlowy Cloud is deployed on localhost. If not, please update the value of the API endpoints.
-2. Make sure `npm` has been installed on your dev environment, then run the following:
-```
-corepack enable
-pnpm install
-
-pnpm run dev
-```
-
-Open your browser to visit localhost:3000
+Check out the [development guide](./doc/DEVELOPMENT_GUIDE.md) for more details
 
 ## Deployment
 Once AppFlowy Cloud has been setup, you can follow the [deployment guide](https://appflowy.com/docs/self-host-appflowy-run-appflowy-web)
 to deploy AppFlowy Web.
+
+## Documentation
+
+- **[Deployment Guide](doc/DEPLOYMENT.md)** - Detailed environment configuration, architecture diagrams, and troubleshooting
+- **[AppFlowy Cloud Repository](https://github.com/AppFlowy-IO/AppFlowy-Cloud)** - Backend setup and configuration
+- **[Official Documentation](https://appflowy.com/docs)** - Complete AppFlowy documentation
 
 ## License
 Distributed under the AGPLv3 License. See [`LICENSE.md`](https://github.com/AppFlowy-IO/AppFlowy-Web/blob/main/LICENSE) for
