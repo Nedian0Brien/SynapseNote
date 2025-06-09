@@ -31,8 +31,6 @@ Bring projects, wikis, and teams together with AI
 - [AppFlowy Web Roadmap](#appflowy-web-roadmap)
 - [Installation](#installation)
 - [Development](#development)
-  - [Environment Configuration](#environment-configuration)
-  - [Running AppFlowy Web Locally](#running-appflowy-web-locally)
 - [Deployment](#deployment)
 - [Documentation](#documentation)
 - [License](#license)
@@ -48,9 +46,6 @@ Bring projects, wikis, and teams together with AI
 - Add a Quick Note to jot down lists, ideas, or to-dos
 - Invite members to your workspace for seamless collaboration
 - Create multiple public and private spaces to better organize your content
-
-## AppFlowy Web roadmap
->Features listed below are available in AppFlowy desktop and mobile applications (<a href="https://appflowy.io/download">Download</a>).
 
 
 ## Installation
@@ -70,59 +65,7 @@ Join our <a href="https://discord.gg/FFmDE99bgA">Discord</a> server to get help!
 
 ## Development
 
-### Prerequisites
-
-**AppFlowy Cloud Setup:**
-AppFlowy Cloud must be running and accessible by AppFlowy Web. If you already have AppFlowy Cloud running, you can skip to the [Environment Configuration](#environment-configuration) section.
-
-**System Requirements:**
-- Node.js ≥18.0.0
-- pnpm ≥10.9.0
-- Docker and Docker Compose (for AppFlowy Cloud)
-
-**For new AppFlowy Cloud setup:**
-1. Install [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/)
-2. Clone the AppFlowy Cloud repository
-3. **Choose the same configuration pattern for both repositories:**
-   - **Standard deployment:** `cp deploy.env .env` (both AppFlowy Cloud and AppFlowy Web)
-   - **Development setup:** `cp dev.env .env` (both AppFlowy Cloud and AppFlowy Web)
-4. **Run the appropriate Docker Compose command in AppFlowy Cloud repository:**
-   - **For deploy.env:** `docker compose up -d`
-   - **For dev.env:** `docker compose --file ./docker-compose-dev.yml up -d`
-5. Set up at least one sign-in method: SMTP for magic link, or using an OAuth provider
-
-> **📖 For detailed AppFlowy Cloud setup instructions, refer to the [AppFlowy Cloud repository](https://github.com/AppFlowy-IO/AppFlowy-Cloud).**
-
-### Environment Configuration
-
-Both AppFlowy Cloud and AppFlowy Web have corresponding environment configurations that must be aligned:
-
-#### Option 1: Production/Nginx Setup (`deploy.env`)
-```bash
-cp deploy.env .env
-```
-- Use when AppFlowy Cloud is deployed **with nginx** as reverse proxy
-- All services accessed through nginx on port 80
-
-#### Option 2: Development/Direct Access (`dev.env`)  
-```bash
-cp dev.env .env
-```
-- Use when running AppFlowy Cloud services **without nginx** on custom ports
-- Direct connections to each service
-
-> **📖 For detailed configuration information, architecture diagrams, and troubleshooting, see [Deployment Guide](doc/DEPLOYMENT.md)**
-
-### Running AppFlowy Web Locally
-1. **Choose and copy your environment configuration** (see options above)
-2. **Install dependencies and start the development server:**
-   ```bash
-   corepack enable
-   pnpm install
-   pnpm run dev
-   ```
-
-3. **Open your browser** and visit http://localhost:3000
+Check out the [development guide](./doc/DEVELOPMENT_GUIDE.md) for more details
 
 ## Deployment
 Once AppFlowy Cloud has been setup, you can follow the [deployment guide](https://appflowy.com/docs/self-host-appflowy-run-appflowy-web)
