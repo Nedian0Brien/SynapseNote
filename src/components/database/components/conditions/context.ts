@@ -3,6 +3,8 @@ import { createContext, useContext } from 'react';
 interface DatabaseConditionsContextType {
   expanded: boolean;
   toggleExpanded: () => void;
+  openFilterId?: string;
+  setOpenFilterId?: (id?: string) => void;
 }
 
 export function useConditionsContext() {

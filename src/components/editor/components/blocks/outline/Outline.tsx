@@ -1,6 +1,6 @@
 import { extractHeadings, nestHeadings } from '@/components/editor/components/blocks/outline/utils';
 import { EditorElementProps, HeadingNode, OutlineNode } from '@/components/editor/editor.type';
-import React, { forwardRef, memo, useCallback, useEffect, useState } from 'react';
+import { forwardRef, memo, useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useReadOnly, useSlate } from 'slate-react';
 import { Element } from 'slate';

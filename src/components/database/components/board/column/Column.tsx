@@ -1,146 +1,91 @@
-import { Row, useDatabaseContext } from '@/application/database-yjs';
-import { AFScroller } from '@/components/_shared/scroller';
-import ListItem from '@/components/database/components/board/column/ListItem';
-import { useRenderColumn } from '@/components/database/components/board/column/useRenderColumn';
-import { useMeasureHeight } from '@/components/database/components/cell/useMeasure';
-import React, { memo, useCallback, useEffect, useMemo, useRef } from 'react';
-import AutoSizer from 'react-virtualized-auto-sizer';
-import { VariableSizeList } from 'react-window';
-import { debounce } from 'lodash-es';
+import React, { memo, useCallback, useMemo } from 'react';
+
+import { Row, useReadOnly } from '@/application/database-yjs';
+import CardList, { CardType, RenderCard } from '@/components/database/components/board/column/CardList';
+import ColumnHeaderPrimitive from '@/components/database/components/board/column/ColumnHeaderPrimitive';
+import { useCardsDrag } from '@/components/database/components/board/column/useCardsDrag';
+import { StateType, useColumnHeaderDrag } from '@/components/database/components/board/column/useColumnHeaderDrag';
+import { DropColumnIndicator } from '@/components/database/components/board/drag-and-drop/DropColumnIndicator';
+
+import { ColumnDragContext } from '../drag-and-drop/column-context';
 
 export interface ColumnProps {
   id: string;
-  rows?: Row[];
+  rows: Row[];
   fieldId: string;
-  onRendered?: (height: number) => void;
+  addCardBefore: (id: string) => void;
+  groupId: string;
 }
 
 export const Column = memo(
-  ({ id, rows, fieldId, onRendered }: ColumnProps) => {
-    const { header } = useRenderColumn(id, fieldId);
-    const ref = React.useRef<VariableSizeList | null>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
-    const forceUpdate = useCallback((index: number) => {
-      ref.current?.resetAfterIndex(index, true);
-    }, []);
-    const context = useDatabaseContext();
-    const isDocumentBlock = context.isDocumentBlock;
+  ({ id, rows, fieldId, addCardBefore, groupId }: ColumnProps) => {
+    const readOnly = useReadOnly();
 
-    useEffect(() => {
-      forceUpdate(0);
-    }, [rows, forceUpdate]);
+    const data: RenderCard[] = useMemo(() => {
+      const cards = rows.map((row) => ({
+        type: CardType.CARD,
+        id: row.id,
+      }));
 
-    const measureRows = useMemo(
-      () =>
-        rows?.map((row) => {
-          return {
-            rowId: row.id,
-          };
-        }) || [],
-      [rows],
-    );
-    const { rowHeight, onResize } = useMeasureHeight({ forceUpdate, rows: measureRows });
-    const rowCount = rows?.length || 0;
-
-    const calculateHeight = useMemo(() => debounce(() => {
-      const el = containerRef.current;
-
-      if (!el) return;
-
-      if (rowCount === 0 || !isDocumentBlock) {
-        onRendered?.(100);
-        return;
+      if (!readOnly) {
+        cards.push({
+          type: CardType.NEW_CARD,
+          id: 'new_card',
+        });
       }
 
-      const rows = el.querySelectorAll('.list-item');
+      return cards;
+    }, [rows, readOnly]);
 
-      const maxBottom = Math.max(...Array.from(rows).map((row) => row.getBoundingClientRect().bottom));
-      const height = maxBottom - el.getBoundingClientRect().top;
+    const { columnRef, headerRef, state, isDragging } = useColumnHeaderDrag(id);
+    const [scrollerContainer, setScrollerContainer] = React.useState<HTMLDivElement | null>(null);
+    const { contextValue, columnInnerRef } = useCardsDrag(id, rows, scrollerContainer);
 
-      onRendered?.(height + 100);
-    }, 500), [onRendered, rowCount, isDocumentBlock]);
-
-    useEffect(() => {
-
-      calculateHeight();
-
-      return () => {
-        calculateHeight.cancel();
-      };
-    }, [calculateHeight]);
-
-    const Row = useCallback(
-      ({ index, style, data }: { index: number; style: React.CSSProperties; data: Row[] }) => {
-        const item = data[index];
-
-        // We are rendering an extra item for the placeholder
-        if (!item) {
-          return null;
-        }
-
-        const onResizeCallback = (height: number) => {
-          onResize(index, 0, {
-            width: 0,
-            height: height + 8,
-          });
-        };
-
-        return <ListItem
-          fieldId={fieldId}
-          onResize={onResizeCallback}
-          item={item}
-          style={style}
-        />;
+    const getCards = useCallback(
+      (_columnId: string): Row[] => {
+        return rows;
       },
-      [fieldId, onResize],
-    );
-
-    const getItemSize = useCallback(
-      (index: number) => {
-        if (!rows || index >= rows.length) return 0;
-        const row = rows[index];
-
-        if (!row) return 0;
-        return rowHeight(index);
-      },
-      [rowHeight, rows],
+      [rows]
     );
 
     return (
-      <div
-        ref={containerRef}
-        key={id}
-        className="column rounded-[8px] flex w-[230px] flex-col gap-[10px]"
-      >
-        <div
-          className="column-header flex overflow-hidden items-center gap-2 text-sm font-medium whitespace-nowrap"
-        >
-          <div className={'max-w-[180px] w-auto overflow-hidden'}>{header}</div>
-          <span className={'text-text-caption font-medium'}>{rowCount}</span>
-        </div>
-
-        <div className={'w-full flex-1 overflow-hidden'}>
-          <AutoSizer>
-            {({ height, width }: { height: number; width: number }) => {
-
-              return (
-                <VariableSizeList
-                  ref={ref}
-                  height={height}
-                  itemCount={rowCount}
-                  itemSize={getItemSize}
-                  width={width}
-                  outerElementType={AFScroller}
-                  itemData={rows}
-                >
-                  {Row}
-                </VariableSizeList>
-              );
+      <ColumnDragContext.Provider value={contextValue}>
+        <div data-column-id={id} className={'relative h-full w-[256px]'} ref={columnInnerRef}>
+          <div
+            style={{
+              opacity: isDragging ? 0.4 : 1,
+              pointerEvents: isDragging ? 'none' : undefined,
             }}
-          </AutoSizer>
+            ref={columnRef}
+            className={'flex w-[256px] min-w-[256px] flex-col items-center pt-2'}
+          >
+            <ColumnHeaderPrimitive
+              rowCount={rows.length}
+              id={id}
+              fieldId={fieldId}
+              ref={headerRef}
+              style={{
+                cursor: readOnly ? 'default' : isDragging ? 'grabbing' : 'grab',
+              }}
+              addCardBefore={addCardBefore}
+              getCards={getCards}
+              groupId={groupId}
+            />
+
+            <CardList
+              columnId={id}
+              data={data}
+              fieldId={fieldId}
+              setScrollElement={setScrollerContainer}
+            
+            />
+          </div>
+          {state.type === StateType.IS_COLUMN_OVER && state.closestEdge && (
+            <DropColumnIndicator edge={state.closestEdge} />
+          )}
         </div>
-      </div>
+      </ColumnDragContext.Provider>
     );
   },
-  (prev, next) => JSON.stringify(prev) === JSON.stringify(next),
+  (prev, next) => JSON.stringify(prev) === JSON.stringify(next)
 );

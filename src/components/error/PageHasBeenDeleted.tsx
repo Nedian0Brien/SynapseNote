@@ -1,16 +1,14 @@
-import React from 'react';
 import { ReactComponent as TrashIcon } from '@/assets/icons/delete.svg';
 import emptyImageSrc from '@/assets/images/empty.png';
 
 const DeletedPageComponent = () => {
-
   return (
     <div className={'flex h-full w-full flex-col items-center justify-center'}>
-      <div className={'text-2xl font-bold text-function-error  flex items-center gap-4'}>
-        <TrashIcon className={'w-12 h-12 opacity-70'} />
+      <div className={'flex items-center gap-4  text-2xl font-bold text-function-error'}>
+        <TrashIcon className={'h-12 w-12 opacity-70'} />
         Page Deleted
       </div>
-      <div className={'text-base text-center text-text-title opacity-80 mt-4 whitespace-pre'}>
+      <div className={'mt-4 whitespace-pre text-center text-base text-text-primary opacity-80'}>
         You can restore it from the trash or create a new page
       </div>
       <div className={'mt-6 flex gap-4'}>

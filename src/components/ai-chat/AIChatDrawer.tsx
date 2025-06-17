@@ -1,38 +1,28 @@
+import { useAIChatContext } from '@/components/ai-chat/AIChatProvider';
 import DrawerContent from '@/components/ai-chat/DrawerContent';
 import DrawerHeader from '@/components/ai-chat/DrawerHeader';
 import Pinned from '@/components/ai-chat/Pinned';
 import Resizer from './Resizer';
-import { useAIChatContext } from '@/components/ai-chat/AIChatProvider';
-import React from 'react';
 
 function AIChatDrawer() {
-  const {
-    drawerOpen,
-    openViewId,
-    drawerWidth,
-    onSetDrawerWidth,
-  } = useAIChatContext();
+  const { drawerOpen, openViewId, drawerWidth, onSetDrawerWidth } = useAIChatContext();
 
   return (
-    <div
-      className={'fixed top-0 bg-bg-body transform right-0 transition-transform  h-screen'}
-    >
+    <div className={'fixed right-0 top-0 h-screen transform bg-background-primary  transition-transform'}>
       <div
         style={{
           width: drawerOpen ? drawerWidth : 0,
         }}
-        className={'border-l overflow-hidden border-line-border  h-full'}
+        className={'h-full overflow-hidden border-l  border-line-border'}
       >
-        {openViewId &&
-          <div className={'flex flex-col h-full overflow-x-hidden appflowy-scroller overflow-auto'}>
+        {openViewId && (
+          <div className={'appflowy-scroller flex h-full flex-col overflow-auto overflow-x-hidden'}>
             <DrawerHeader />
             <DrawerContent openViewId={openViewId} />
-          </div>}
+          </div>
+        )}
 
-        <Resizer
-          drawerWidth={drawerWidth}
-          onResize={onSetDrawerWidth}
-        />
+        <Resizer drawerWidth={drawerWidth} onResize={onSetDrawerWidth} />
       </div>
 
       {!drawerOpen && openViewId && <Pinned />}

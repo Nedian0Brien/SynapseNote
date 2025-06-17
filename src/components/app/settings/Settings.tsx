@@ -6,7 +6,7 @@ import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 
-export function Settings () {
+export function Settings() {
   const { t } = useTranslation();
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = useSearchParams();
@@ -19,7 +19,7 @@ export function Settings () {
     if (item) {
       setOpen(true);
       setSelectedItem(item);
-      setSearch(prev => {
+      setSearch((prev) => {
         prev.delete('setting');
         return prev;
       });
@@ -36,19 +36,17 @@ export function Settings () {
           setOpen(true);
         }}
         startIcon={<SettingsIcon />}
-      >{t('settings.title')}
+      >
+        {t('settings.title')}
       </Button>
       <Dialog
         classes={{
-          paper: 'w-[700px] flex bg-bg-body max-w-[90vw] max-h-[90vh] h-[600px] overflow-y-auto',
+          paper: 'w-[700px] flex bg-background-primary max-w-[90vw] max-h-[90vh] h-[600px] overflow-y-auto',
         }}
         open={open}
         onClose={() => setOpen(false)}
       >
-        <SettingMenu
-          onSelectItem={setSelectedItem}
-          selectedItem={selectedItem}
-        />
+        <SettingMenu onSelectItem={setSelectedItem} selectedItem={selectedItem} />
       </Dialog>
     </>
   );

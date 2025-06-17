@@ -1,6 +1,6 @@
-import NotFound from '@/components/error/NotFound';
-import React from 'react';
 import { useParams } from 'react-router-dom';
+
+import NotFound from '@/components/error/NotFound';
 import { PublishView } from '@/components/publish';
 
 function PublishPage() {

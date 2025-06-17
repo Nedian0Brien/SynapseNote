@@ -2,18 +2,18 @@ import { Mention } from '@/application/types';
 import FormulaLeaf from '@/components/editor/components/leaf/formula/FormulaLeaf';
 import { Href } from '@/components/editor/components/leaf/href';
 import MentionLeaf from '@/components/editor/components/leaf/mention/MentionLeaf';
-import { getFontFamily } from '@/utils/font';
-import React, { CSSProperties } from 'react';
-import { RenderLeafProps } from 'slate-react';
 import { renderColor } from '@/utils/color';
+import { getFontFamily } from '@/utils/font';
+import { CSSProperties } from 'react';
+import { RenderLeafProps } from 'slate-react';
 
-export function Leaf ({ attributes, children, leaf, text }: RenderLeafProps) {
+export function Leaf({ attributes, children, leaf, text }: RenderLeafProps) {
   let newChildren = children;
 
   const classList = [leaf.prism_token, leaf.prism_token && 'token', leaf.class_name].filter(Boolean);
 
   if (leaf.code && !(leaf.formula || leaf.mention)) {
-    newChildren = <span className={'bg-line-divider font-medium text-[#EB5757]'}>{newChildren}</span>;
+    newChildren = <span className={'bg-border-primary font-medium text-[#EB5757]'}>{newChildren}</span>;
   }
 
   if (leaf.underline) {
@@ -45,10 +45,11 @@ export function Leaf ({ attributes, children, leaf, text }: RenderLeafProps) {
   }
 
   if (leaf.href) {
-    newChildren = <Href
-      text={text}
-      leaf={leaf}
-    >{newChildren}</Href>;
+    newChildren = (
+      <Href text={text} leaf={leaf}>
+        {newChildren}
+      </Href>
+    );
   }
 
   if (leaf.font_family) {
@@ -61,24 +62,21 @@ export function Leaf ({ attributes, children, leaf, text }: RenderLeafProps) {
       style['display'] = 'inline-block';
     }
 
-    const node = leaf.mention ? <MentionLeaf
-      text={text}
-      mention={leaf.mention as Mention}
-    >
-      {newChildren}
-    </MentionLeaf> : leaf.formula ? <FormulaLeaf
-      formula={leaf.formula}
-      text={text}
-    >{newChildren}</FormulaLeaf> : null;
+    const node = leaf.mention ? (
+      <MentionLeaf text={text} mention={leaf.mention as Mention}>
+        {newChildren}
+      </MentionLeaf>
+    ) : leaf.formula ? (
+      <FormulaLeaf formula={leaf.formula} text={text}>
+        {newChildren}
+      </FormulaLeaf>
+    ) : null;
 
     newChildren = node;
   }
 
   return (
-    <span
-      {...attributes} style={style}
-      className={`${classList.join(' ')}`}
-    >
+    <span {...attributes} style={style} className={`${classList.join(' ')}`}>
       {newChildren}
     </span>
   );

@@ -1,10 +1,10 @@
+import { ReactComponent as MoreIcon } from '@/assets/icons/more.svg';
 import MoreActionsContent from '@/components/_shared/more-actions/MoreActionsContent';
 import { Popover } from '@/components/_shared/popover';
 import { IconButton } from '@mui/material';
 import React from 'react';
-import { ReactComponent as MoreIcon } from '@/assets/icons/more.svg';
 
-function MoreActions () {
+function MoreActions() {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
@@ -19,7 +19,7 @@ function MoreActions () {
   return (
     <>
       <IconButton onClick={handleClick}>
-        <MoreIcon className={'text-text-caption'} />
+        <MoreIcon className={'text-text-secondary'} />
       </IconButton>
       {open && (
         <Popover
@@ -36,7 +36,6 @@ function MoreActions () {
           onClose={handleClose}
           slotProps={{ root: { className: 'text-sm' } }}
         >
-
           <MoreActionsContent
             itemClicked={() => {
               handleClose();

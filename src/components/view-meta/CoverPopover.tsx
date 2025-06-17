@@ -1,35 +1,20 @@
 import { CoverType, ViewMetaCover } from '@/application/types';
 import { useAppHandlers, useAppViewId, useOpenModalViewId } from '@/components/app/app.hooks';
 import React, { useMemo } from 'react';
-import { PopoverOrigin, PopoverProps } from '@mui/material/Popover';
-import { EmbedLink, Unsplash, UploadTabs, TabOption, TAB_KEY, UploadImage } from '@/components/_shared/image-upload';
+import { EmbedLink, Unsplash, UploadPopover, TabOption, TAB_KEY, UploadImage } from '@/components/_shared/image-upload';
 import { useTranslation } from 'react-i18next';
 import Colors from './CoverColors';
 
-const initialOrigin: {
-  anchorOrigin: PopoverOrigin;
-  transformOrigin: PopoverOrigin;
-} = {
-  anchorOrigin: {
-    vertical: 'bottom',
-    horizontal: 'center',
-  },
-  transformOrigin: {
-    vertical: -20,
-    horizontal: 'center',
-  },
-};
-
 function CoverPopover ({
-  anchorPosition,
   open,
-  onClose,
+  onOpenChange,
   onUpdateCover,
+  children,
 }: {
-  anchorPosition?: PopoverProps['anchorPosition'];
   open: boolean;
-  onClose: () => void;
+  onOpenChange: (open: boolean) => void;
   onUpdateCover?: (cover: ViewMetaCover) => void;
+  children: React.ReactNode;
 }) {
   const { t } = useTranslation();
   const {
@@ -65,7 +50,7 @@ function CoverPopover ({
             type: CoverType.CustomImage,
             value,
           });
-          onClose();
+          onOpenChange(false);
         },
       },
       {
@@ -77,7 +62,7 @@ function CoverPopover ({
             type: CoverType.CustomImage,
             value,
           });
-          onClose();
+          onOpenChange(false);
         },
       },
       {
@@ -92,25 +77,14 @@ function CoverPopover ({
         },
       },
     ];
-  }, [onClose, onUpdateCover, t, uploadFile, viewId]);
+  }, [onOpenChange, onUpdateCover, t, uploadFile, viewId]);
 
   return (
-    <UploadTabs
-      popoverProps={{
-        anchorPosition,
-        open,
-        onClose,
-        ...initialOrigin,
-        anchorReference: 'anchorPosition',
-        sx: {
-          '& .MuiPaper-root': {
-            margin: '10px 0',
-          },
-        },
-      }}
-      containerStyle={{ width: 433, maxHeight: 500 }}
+    <UploadPopover
+      open={open}
+      onOpenChange={onOpenChange}
       tabOptions={tabOptions}
-    />
+    >{children}</UploadPopover>
   );
 }
 

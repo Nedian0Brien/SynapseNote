@@ -9,8 +9,7 @@ import './calendar.scss';
 
 export function Calendar() {
   const { dayPropGetter, localizer, formats, events, emptyEvents } = useCalendarSetup();
-  const scrollLeft = useDatabaseContext().scrollLeft;
-  const isDocumentBlock = useDatabaseContext().isDocumentBlock;
+  const { paddingStart, paddingEnd, isDocumentBlock } = useDatabaseContext();
   const ref = useRef<HTMLDivElement>(null);
   const onRendered = useDatabaseContext().onRendered;
   const conditionsContext = useConditionsContext();
@@ -22,10 +21,8 @@ export function Calendar() {
     if (!el) return;
 
     const onResize = debounce(() => {
-      const conditionHeight = expanded ? el.closest('.appflowy-database')?.querySelector('.database-conditions')?.clientHeight || 0 : 0;
-      const offset = conditionHeight + 60;
 
-      onRendered?.(el.scrollHeight + offset);
+      onRendered?.();
     }, 200);
 
     onResize();
@@ -42,7 +39,8 @@ export function Calendar() {
     <div
       ref={ref}
       style={{
-        marginInline: scrollLeft === undefined ? undefined : scrollLeft,
+        marginLeft: paddingStart === undefined ? undefined : paddingStart,
+        marginRight: paddingEnd === undefined ? undefined : paddingEnd,
         marginBottom: isDocumentBlock ? 0 : 156,
       }}
       className={`database-calendar z-[1] h-fit mx-24 max-sm:!mx-6 pt-4 text-sm`}

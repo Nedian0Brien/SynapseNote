@@ -1,7 +1,6 @@
 import LoginProvider from '@/components/login/LoginProvider';
 import MagicLink from '@/components/login/MagicLink';
 import { Separator } from '@/components/ui/separator';
-import React from 'react';
 import { ReactComponent as Logo } from '@/assets/icons/logo.svg';
 import { useTranslation } from 'react-i18next';
 import { ReactComponent as ArrowRight } from '@/assets/icons/arrow_right.svg';
@@ -37,7 +36,7 @@ export function Login ({ redirectTo }: { redirectTo: string }) {
           <a
             href={'https://appflowy.com/terms'}
             target={'_blank'}
-            className={'text-text-secondary underline'}
+            className={'text-text-secondary underline'} rel="noreferrer"
           >
             {t('web.termOfUse')}
           </a>{' '}
@@ -45,7 +44,7 @@ export function Login ({ redirectTo }: { redirectTo: string }) {
           <a
             href={'https://appflowy.com/privacy'}
             target={'_blank'}
-            className={'text-text-secondary underline'}
+            className={'text-text-secondary underline'} rel="noreferrer"
           >
             {t('web.privacyPolicy')}
           </a>

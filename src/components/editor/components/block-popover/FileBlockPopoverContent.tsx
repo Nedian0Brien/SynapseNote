@@ -1,15 +1,15 @@
 import { YjsEditor } from '@/application/slate-yjs';
 import { CustomEditor } from '@/application/slate-yjs/command';
+import { findSlateEntryByBlockId } from '@/application/slate-yjs/utils/editor';
 import { BlockType, FieldURLType, FileBlockData } from '@/application/types';
+import { useEditorContext } from '@/components/editor/EditorContext';
 import FileDropzone from '@/components/_shared/file-dropzone/FileDropzone';
 import { TabPanel, ViewTab, ViewTabs } from '@/components/_shared/tabs/ViewTabs';
-import { useEditorContext } from '@/components/editor/EditorContext';
+import { FileHandler } from '@/utils/file';
 import React, { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSlateStatic } from 'slate-react';
 import EmbedLink from 'src/components/_shared/image-upload/EmbedLink';
-import { FileHandler } from '@/utils/file';
-import { findSlateEntryByBlockId } from '@/application/slate-yjs/utils/editor';
 
 export function getFileName(url: string) {
   const urlObj = new URL(url);
@@ -18,14 +18,7 @@ export function getFileName(url: string) {
   return name;
 }
 
-function FileBlockPopoverContent({
-  blockId,
-  onClose,
-}: {
-  blockId: string;
-  onClose: () => void;
-}) {
-
+function FileBlockPopoverContent({ blockId, onClose }: { blockId: string; onClose: () => void }) {
   const editor = useSlateStatic() as YjsEditor;
   const { uploadFile } = useEditorContext();
   const entry = useMemo(() => {
@@ -44,26 +37,32 @@ function FileBlockPopoverContent({
     setTabValue(newValue);
   }, []);
 
-  const handleInsertEmbedLink = useCallback((url: string) => {
-    CustomEditor.setBlockData(editor, blockId, {
-      url,
-      name: getFileName(url),
-      uploaded_at: Date.now(),
-      url_type: FieldURLType.Link,
-    } as FileBlockData);
-    onClose();
-  }, [blockId, editor, onClose]);
+  const handleInsertEmbedLink = useCallback(
+    (url: string) => {
+      CustomEditor.setBlockData(editor, blockId, {
+        url,
+        name: getFileName(url),
+        uploaded_at: Date.now(),
+        url_type: FieldURLType.Link,
+      } as FileBlockData);
+      onClose();
+    },
+    [blockId, editor, onClose]
+  );
 
-  const uploadFileRemote = useCallback(async (file: File) => {
-    try {
-      if (uploadFile) {
-        return await uploadFile(file);
+  const uploadFileRemote = useCallback(
+    async (file: File) => {
+      try {
+        if (uploadFile) {
+          return await uploadFile(file);
+        }
+        // eslint-disable-next-line
+      } catch (e: any) {
+        return;
       }
-      // eslint-disable-next-line
-    } catch (e: any) {
-      return;
-    }
-  }, [uploadFile]);
+    },
+    [uploadFile]
+  );
 
   const getData = useCallback(async (file: File, remoteUrl?: string) => {
     const data = {
@@ -83,51 +82,63 @@ function FileBlockPopoverContent({
     return data;
   }, []);
 
-  const insertFileBlock = useCallback(async (file: File) => {
-    const url = await uploadFileRemote(file);
-    const data = await getData(file, url);
+  const insertFileBlock = useCallback(
+    async (file: File) => {
+      const url = await uploadFileRemote(file);
+      const data = await getData(file, url);
 
-    CustomEditor.addBelowBlock(editor, blockId, BlockType.FileBlock, data);
-  }, [blockId, editor, getData, uploadFileRemote]);
+      CustomEditor.addBelowBlock(editor, blockId, BlockType.FileBlock, data);
+    },
+    [blockId, editor, getData, uploadFileRemote]
+  );
 
-  const handleChangeUploadFiles = useCallback(async (files: File[]) => {
-    if (!files.length) return;
+  const handleChangeUploadFiles = useCallback(
+    async (files: File[]) => {
+      if (!files.length) return;
 
-    const [file, ...otherFiles] = files;
-    const url = await uploadFileRemote(file);
-    const data = await getData(file, url);
+      const [file, ...otherFiles] = files;
+      const url = await uploadFileRemote(file);
+      const data = await getData(file, url);
 
-    CustomEditor.setBlockData(editor, blockId, data);
+      CustomEditor.setBlockData(editor, blockId, data);
 
-    for (const file of otherFiles.reverse()) {
-      await insertFileBlock(file);
-    }
+      for (const file of otherFiles.reverse()) {
+        await insertFileBlock(file);
+      }
 
-    onClose();
-  }, [blockId, editor, getData, insertFileBlock, onClose, uploadFileRemote]);
+      onClose();
+    },
+    [blockId, editor, getData, insertFileBlock, onClose, uploadFileRemote]
+  );
 
   const tabOptions = useMemo(() => {
     return [
       {
         key: 'upload',
         label: t('button.upload'),
-        panel: <FileDropzone
-          multiple={true}
-          placeholder={<span>
-            {t('document.plugins.file.fileUploadHint')}
-            <span className={'text-fill-default'}>{t('document.plugins.photoGallery.browserLayout')}</span>
-          </span>}
-          onChange={handleChangeUploadFiles}
-        />,
+        panel: (
+          <FileDropzone
+            multiple={true}
+            placeholder={
+              <span>
+                {t('document.plugins.file.fileUploadHint')}
+                <span className={'text-fill-default'}>{t('document.plugins.photoGallery.browserLayout')}</span>
+              </span>
+            }
+            onChange={handleChangeUploadFiles}
+          />
+        ),
       },
       {
         key: 'embed',
         label: t('document.plugins.file.networkTab'),
-        panel: <EmbedLink
-          onDone={handleInsertEmbedLink}
-          defaultLink={(entry?.[0].data as FileBlockData).url}
-          placeholder={t('document.plugins.file.networkHint')}
-        />,
+        panel: (
+          <EmbedLink
+            onDone={handleInsertEmbedLink}
+            defaultLink={(entry?.[0].data as FileBlockData).url}
+            placeholder={t('document.plugins.file.networkHint')}
+          />
+        ),
       },
     ];
   }, [entry, handleChangeUploadFiles, handleInsertEmbedLink, t]);
@@ -135,38 +146,29 @@ function FileBlockPopoverContent({
   const selectedIndex = tabOptions.findIndex((tab) => tab.key === tabValue);
 
   return (
-    <div className={'flex flex-col p-2 gap-2'}>
+    <div className={'flex flex-col gap-2 p-2'}>
       <ViewTabs
         value={tabValue}
         onChange={handleTabChange}
-        className={'min-h-[38px] px-2 border-b border-line-divider w-[560px] max-w-[964px]'}
+        className={'min-h-[38px] w-[560px] max-w-[964px] border-b border-border-primary px-2'}
       >
         {tabOptions.map((tab) => {
           const { key, label } = tab;
 
-          return <ViewTab
-            key={key}
-            iconPosition="start"
-            color="inherit"
-            label={label}
-            value={key}
-          />;
+          return <ViewTab key={key} iconPosition='start' color='inherit' label={label} value={key} />;
         })}
       </ViewTabs>
-      {tabOptions.map((tab, index) => {
-        const { key, panel } = tab;
+      <div className={'appflowy-scroller max-h-[400px] overflow-y-auto p-2'}>
+        {tabOptions.map((tab, index) => {
+          const { key, panel } = tab;
 
-        return (
-          <TabPanel
-            className={'flex h-full w-full flex-col'}
-            key={key}
-            index={index}
-            value={selectedIndex}
-          >
-            {panel}
-          </TabPanel>
-        );
-      })}
+          return (
+            <TabPanel className={'flex h-full w-full flex-col'} key={key} index={index} value={selectedIndex}>
+              {panel}
+            </TabPanel>
+          );
+        })}
+      </div>
     </div>
   );
 }

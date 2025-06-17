@@ -2,7 +2,7 @@ import { TemplateCategoryFormValues } from '@/application/template.type';
 import BgColorPicker from '@/components/as-template/category/BgColorPicker';
 import IconPicker from '@/components/as-template/category/IconPicker';
 import { FormControl, FormControlLabel, FormLabel, Radio, RadioGroup, TextField } from '@mui/material';
-import React, { forwardRef } from 'react';
+import { forwardRef } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 

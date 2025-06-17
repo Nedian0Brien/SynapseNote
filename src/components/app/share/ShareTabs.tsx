@@ -1,12 +1,12 @@
+import { ReactComponent as Templates } from '@/assets/icons/template.svg';
 import { useAppView } from '@/components/app/app.hooks';
 import PublishPanel from '@/components/app/share/PublishPanel';
-import TemplatePanel from '@/components/app/share/TemplatePanel';
 import SharePanel from '@/components/app/share/SharePanel';
+import TemplatePanel from '@/components/app/share/TemplatePanel';
 import { useCurrentUser } from '@/components/main/app.hooks';
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ViewTabs, ViewTab, TabPanel } from 'src/components/_shared/tabs/ViewTabs';
-import { ReactComponent as Templates } from '@/assets/icons/template.svg';
+import { TabPanel, ViewTab, ViewTabs } from 'src/components/_shared/tabs/ViewTabs';
 
 import { ReactComponent as SuccessIcon } from '@/assets/icons/success.svg';
 
@@ -62,7 +62,7 @@ function ShareTabs({ opened, viewId, onClose }: { opened: boolean; viewId: strin
 
   return (
     <>
-      <ViewTabs className={'border-b border-line-divider'} onChange={onChange} value={value}>
+      <ViewTabs className={'border-b border-border-primary'} onChange={onChange} value={value}>
         {opened &&
           options.map((option) => (
             <ViewTab

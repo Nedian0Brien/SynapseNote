@@ -1,5 +1,5 @@
 import { renderDate } from '@/utils/time';
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { ReactComponent as DateSvg } from '@/assets/icons/date.svg';
 import { ReactComponent as ReminderSvg } from '@/assets/icons/reminder_clock.svg';
 

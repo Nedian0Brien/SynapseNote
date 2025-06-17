@@ -1,11 +1,12 @@
+import React, { useCallback } from 'react';
+import { Element } from 'slate';
+import { useReadOnly, useSlateStatic } from 'slate-react';
+
 import { YjsEditor } from '@/application/slate-yjs';
 import { CustomEditor } from '@/application/slate-yjs/command';
-import { TodoListNode } from '@/components/editor/editor.type';
-import React, { useCallback } from 'react';
 import { ReactComponent as CheckboxCheckSvg } from '@/assets/icons/check_filled.svg';
 import { ReactComponent as CheckboxUncheckSvg } from '@/assets/icons/uncheck.svg';
-import { useReadOnly, useSlateStatic } from 'slate-react';
-import { Element } from 'slate';
+import { TodoListNode } from '@/components/editor/editor.type';
 
 function CheckboxIcon({ block, className }: { block: TodoListNode; className: string }) {
   const { checked } = block.data;
@@ -40,7 +41,11 @@ function CheckboxIcon({ block, className }: { block: TodoListNode; className: st
       }}
       className={`${className} ${readOnly ? '' : 'cursor-pointer hover:text-fill-default'} pr-1 text-xl`}
     >
-      {checked ? <CheckboxCheckSvg /> : <CheckboxUncheckSvg />}
+      {checked ? (
+        <CheckboxCheckSvg />
+      ) : (
+        <CheckboxUncheckSvg className={'text-border-primary hover:text-border-primary-hover'} />
+      )}
     </span>
   );
 }

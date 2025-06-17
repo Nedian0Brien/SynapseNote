@@ -1,6 +1,6 @@
 import { EditorElementProps, TableCellNode } from '@/components/editor/editor.type';
 import { renderColor } from '@/utils/color';
-import React, { forwardRef, memo } from 'react';
+import { forwardRef, memo } from 'react';
 
 const TableCell = memo(
   forwardRef<HTMLDivElement, EditorElementProps<TableCellNode>>(({ node, children, className, ...attributes }, ref) => {

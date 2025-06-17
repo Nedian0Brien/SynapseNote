@@ -2,7 +2,6 @@ import { useFieldsSelector, usePrimaryFieldId } from '@/application/database-yjs
 import EventPaperTitle from '@/components/database/components/calendar/event/EventPaperTitle';
 import OpenAction from '@/components/database/components/database-row/OpenAction';
 import { Property } from '@/components/database/components/property';
-import React from 'react';
 
 function EventPaper ({ rowId }: { rowId: string }) {
   const primaryFieldId = usePrimaryFieldId();

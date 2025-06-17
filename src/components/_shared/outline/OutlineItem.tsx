@@ -5,12 +5,19 @@ import OutlineItemContent from '@/components/_shared/outline/OutlineItemContent'
 import { getOutlineExpands, setOutlineExpands } from '@/components/_shared/outline/utils';
 import React, { useCallback, useEffect, useMemo } from 'react';
 
-function OutlineItem({ view, level = 0, width, navigateToView, selectedViewId, variant }: {
+function OutlineItem({
+  view,
+  level = 0,
+  width,
+  navigateToView,
+  selectedViewId,
+  variant,
+}: {
   view: View;
   width?: number;
   level?: number;
   selectedViewId?: string;
-  navigateToView?: (viewId: string) => Promise<void>
+  navigateToView?: (viewId: string) => Promise<void>;
   variant?: UIVariant;
 }) {
   const selected = selectedViewId === view.view_id;
@@ -23,54 +30,59 @@ function OutlineItem({ view, level = 0, width, navigateToView, selectedViewId, v
   }, [isExpanded, view.view_id]);
 
   const getIcon = useCallback(() => {
-    return <span className={'text-sm mt-1'}><OutlineIcon
-      level={level}
-      isExpanded={isExpanded}
-      setIsExpanded={setIsExpanded}
-    /></span>;
+    return (
+      <span className={'mt-1 text-sm'}>
+        <OutlineIcon level={level} isExpanded={isExpanded} setIsExpanded={setIsExpanded} />
+      </span>
+    );
   }, [isExpanded, level]);
 
-  const renderItem = useCallback((item: View) => {
-    return (
-      <div
-        className={`flex ${variant === UIVariant.App ? 'folder-view-item' : ''} h-fit my-0.5 w-full justify-between`}
-      >
+  const renderItem = useCallback(
+    (item: View) => {
+      return (
         <div
-          style={{
-            width,
-            backgroundColor: selected ? 'var(--fill-list-hover)' : undefined,
-          }}
-          id={`${variant}-view-${item.view_id}`}
-          className={
-            'flex items-center min-h-[30px] w-full gap-0.5 rounded-[8px] text-sm hover:bg-content-blue-50 focus:bg-content-blue-50 focus:outline-none'
-          }
+          className={`flex ${
+            variant === UIVariant.App ? 'folder-view-item' : ''
+          } my-0.5 h-fit w-full cursor-pointer justify-between`}
         >
-          {item.children?.length ? getIcon() : null}
+          <div
+            style={{
+              width,
+              backgroundColor: selected ? 'var(--fill-content-hover)' : undefined,
+            }}
+            id={`${variant}-view-${item.view_id}`}
+            className={
+              'flex min-h-[30px] w-full items-center gap-0.5 rounded-[8px] text-sm hover:bg-content-blue-50 focus:bg-content-blue-50 focus:outline-none'
+            }
+          >
+            {item.children?.length ? getIcon() : null}
 
-          <OutlineItemContent
-            variant={variant}
-            item={item}
-            navigateToView={navigateToView}
-            level={level}
-            setIsExpanded={setIsExpanded}
-          />
-          {item.is_private && <PrivateIcon className={'h-5 w-5 text-text-caption'} />}
+            <OutlineItemContent
+              variant={variant}
+              item={item}
+              navigateToView={navigateToView}
+              level={level}
+              setIsExpanded={setIsExpanded}
+            />
+            {item.is_private && <PrivateIcon className={'h-5 w-5 text-text-secondary'} />}
+          </div>
         </div>
-      </div>
-    );
-  }, [variant, width, selected, getIcon, navigateToView, level]);
+      );
+    },
+    [variant, width, selected, getIcon, navigateToView, level]
+  );
 
   const children = useMemo(() => view.children || [], [view.children]);
 
   const renderChildren = useMemo(() => {
-    return <div
-      className={'flex transform flex-col transition-all'}
-      style={{
-        display: isExpanded ? 'block' : 'none',
-      }}
-    >
-      {children
-        .map((item, index) => (
+    return (
+      <div
+        className={'flex transform flex-col transition-all'}
+        style={{
+          display: isExpanded ? 'block' : 'none',
+        }}
+      >
+        {children.map((item, index) => (
           <OutlineItem
             selectedViewId={selectedViewId}
             navigateToView={navigateToView}
@@ -81,7 +93,8 @@ function OutlineItem({ view, level = 0, width, navigateToView, selectedViewId, v
             variant={variant}
           />
         ))}
-    </div>;
+      </div>
+    );
   }, [children, isExpanded, level, navigateToView, selectedViewId, width, variant]);
 
   return (

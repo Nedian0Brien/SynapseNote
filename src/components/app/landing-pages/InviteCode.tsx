@@ -1,7 +1,7 @@
 import LandingFooter from '@/components/app/landing-pages/LandingFooter';
 import { AFConfigContext, useCurrentUser, useService } from '@/components/main/app.hooks';
 import { Button } from '@/components/ui/button';
-import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';

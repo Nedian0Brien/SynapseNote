@@ -1,8 +1,8 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { checkImage } from '@/utils/image';
-import LoadingDots from '@/components/_shared/LoadingDots';
-import { useTranslation } from 'react-i18next';
 import { ReactComponent as ErrorOutline } from '@/assets/icons/error.svg';
+import LoadingDots from '@/components/_shared/LoadingDots';
+import { checkImage } from '@/utils/image';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 function Img({
   onLoad,
@@ -112,7 +112,7 @@ function Img({
         className={'h-full bg-cover bg-center object-cover'}
       />
       {loading ? (
-        <div className={'absolute inset-0 flex h-full w-full items-center justify-center bg-bg-body'}>
+        <div className={'absolute inset-0 flex h-full w-full items-center justify-center bg-background-primary'}>
           <LoadingDots />
         </div>
       ) : imgError ? (

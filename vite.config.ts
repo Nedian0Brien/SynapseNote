@@ -1,12 +1,12 @@
-import { defineConfig, Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
-import svgr from 'vite-plugin-svgr';
-import { visualizer } from 'rollup-plugin-visualizer';
-import { totalBundleSize } from 'vite-plugin-total-bundle-size';
 import path from 'path';
-import istanbul from 'vite-plugin-istanbul';
-import { createHtmlPlugin } from 'vite-plugin-html';
+import { visualizer } from 'rollup-plugin-visualizer';
+import { defineConfig } from 'vite';
 import { viteExternalsPlugin } from 'vite-plugin-externals';
+import { createHtmlPlugin } from 'vite-plugin-html';
+import istanbul from 'vite-plugin-istanbul';
+import svgr from 'vite-plugin-svgr';
+import { totalBundleSize } from 'vite-plugin-total-bundle-size';
 
 const resourcesPath = path.resolve(__dirname, '../resources');
 const isDev = process.env.NODE_ENV === 'development';
@@ -21,20 +21,24 @@ export default defineConfig({
       inject: {
         data: {
           injectCdn: isProd,
-          cdnLinks: isProd ? `
+          cdnLinks: isProd
+            ? `
               <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
               <link rel="preconnect" href="//cdn.jsdelivr.net">
               
               <script crossorigin src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
               <script crossorigin src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
-            ` : '',
+            `
+            : '',
         },
       },
     }),
-    isProd ? viteExternalsPlugin({
-      react: 'React',
-      'react-dom': 'ReactDOM',
-    }) : undefined,
+    isProd
+      ? viteExternalsPlugin({
+          react: 'React',
+          'react-dom': 'ReactDOM',
+        })
+      : undefined,
     svgr({
       svgrOptions: {
         prettier: false,
@@ -67,31 +71,29 @@ export default defineConfig({
         },
         replaceAttrValues: {
           '#333': 'currentColor',
-          'black': 'currentColor',
+          black: 'currentColor',
         },
       },
     }),
     // Enable istanbul for code coverage (active if isTest is true)
-    isTest ? istanbul({
-      cypress: true,
-      requireEnv: false,
-      include: ['src/**/*'],
-      exclude: [
-        '**/__tests__/**/*',
-        'cypress/**/*',
-        'node_modules/**/*',
-      ],
-    }) : undefined,
+    isTest
+      ? istanbul({
+          cypress: true,
+          requireEnv: false,
+          include: ['src/**/*'],
+          exclude: ['**/__tests__/**/*', 'cypress/**/*', 'node_modules/**/*'],
+        })
+      : undefined,
     process.env.ANALYZE_MODE
       ? visualizer({
-        emitFile: true,
-      })
+          emitFile: true,
+        })
       : undefined,
     process.env.ANALYZE_MODE
       ? totalBundleSize({
-        fileNameRegex: /\.(js|css)$/,
-        calculateGzip: false,
-      })
+          fileNameRegex: /\.(js|css)$/,
+          calculateGzip: false,
+        })
       : undefined,
   ],
   // prevent vite from obscuring rust errors
@@ -99,7 +101,6 @@ export default defineConfig({
   server: {
     port: process.env.PORT ? parseInt(process.env.PORT) : 3000,
     strictPort: true,
-    host: '0.0.0.0',
     watch: {
       ignored: ['node_modules'],
     },
@@ -112,42 +113,41 @@ export default defineConfig({
     sourcesContent: true,
     sourcemap: true,
     minifyIdentifiers: false, // Disable identifier minification in development
-    minifySyntax: false,      // Disable syntax minification in development
-    pure: !isDev ? ['console.log', 'console.debug', 'console.info', 'console.trace'] : [],
+    minifySyntax: false, // Disable syntax minification in development
+    pure: !isDev ? ['console.log', 'console.debug', 'console.info', 'console.trace', 'console.warn'] : [],
   },
   build: {
     target: `esnext`,
     reportCompressedSize: true,
     rollupOptions: isProd
       ? {
-
-        output: {
-          chunkFileNames: 'static/js/[name]-[hash].js',
-          entryFileNames: 'static/js/[name]-[hash].js',
-          assetFileNames: 'static/[ext]/[name]-[hash].[ext]',
-          manualChunks(id) {
-            if (
-              // id.includes('/react@') ||
-              // id.includes('/react-dom@') ||
-              id.includes('/react-is@') ||
-              id.includes('/yjs@') ||
-              id.includes('/y-indexeddb@') ||
-              id.includes('/dexie') ||
-              id.includes('/redux') ||
-              id.includes('/react-custom-scrollbars') ||
-              id.includes('/dayjs') ||
-              id.includes('/smooth-scroll-into-view-if-needed') ||
-              id.includes('/react-virtualized-auto-sizer') ||
-              id.includes('/react-window')
-              || id.includes('/@popperjs')
-              || id.includes('/@mui/material/Dialog') ||
-              id.includes('/quill-delta')
-            ) {
-              return 'common';
-            }
+          output: {
+            chunkFileNames: 'static/js/[name]-[hash].js',
+            entryFileNames: 'static/js/[name]-[hash].js',
+            assetFileNames: 'static/[ext]/[name]-[hash].[ext]',
+            manualChunks(id) {
+              if (
+                // id.includes('/react@') ||
+                // id.includes('/react-dom@') ||
+                id.includes('/react-is@') ||
+                id.includes('/yjs@') ||
+                id.includes('/y-indexeddb@') ||
+                id.includes('/dexie') ||
+                id.includes('/redux') ||
+                id.includes('/react-custom-scrollbars') ||
+                id.includes('/dayjs') ||
+                id.includes('/smooth-scroll-into-view-if-needed') ||
+                id.includes('/react-virtualized-auto-sizer') ||
+                id.includes('/react-window') ||
+                id.includes('/@popperjs') ||
+                id.includes('/@mui/material/Dialog') ||
+                id.includes('/quill-delta')
+              ) {
+                return 'common';
+              }
+            },
           },
-        },
-      }
+        }
       : {},
   },
   resolve: {

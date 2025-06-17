@@ -1,16 +1,16 @@
 import { ViewLayout } from '@/application/types';
-import { notify } from '@/components/_shared/notify';
-import PageIcon from '@/components/_shared/view-icon/PageIcon';
+import { ReactComponent as CheckboxCheckSvg } from '@/assets/icons/check_filled.svg';
+import { ReactComponent as PublishIcon } from '@/assets/icons/earth.svg';
+import { ReactComponent as CheckboxUncheckSvg } from '@/assets/icons/uncheck.svg';
 import { useAppHandlers } from '@/components/app/app.hooks';
 import { useLoadPublishInfo } from '@/components/app/share/publish.hooks';
 import PublishLinkPreview from '@/components/app/share/PublishLinkPreview';
+import { notify } from '@/components/_shared/notify';
+import { Switch } from '@/components/_shared/switch';
+import PageIcon from '@/components/_shared/view-icon/PageIcon';
 import { Button, CircularProgress, Divider, Typography } from '@mui/material';
 import React, { useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ReactComponent as PublishIcon } from '@/assets/icons/earth.svg';
-import { ReactComponent as CheckboxCheckSvg } from '@/assets/icons/check_filled.svg';
-import { ReactComponent as CheckboxUncheckSvg } from '@/assets/icons/uncheck.svg';
-import { Switch } from '@/components/_shared/switch';
 
 function PublishPanel({ viewId, opened, onClose }: { viewId: string; onClose: () => void; opened: boolean }) {
   const { t } = useTranslation();
@@ -178,8 +178,8 @@ function PublishPanel({ viewId, opened, onClose }: { viewId: string; onClose: ()
     return (
       <div className={'flex w-full flex-col gap-4'}>
         {isDatabase && (
-          <div className={'mt-2 flex flex-col gap-3 rounded-[16px] border border-line-divider py-3 px-4 text-sm'}>
-            <div className={'text-text-caption'}>
+          <div className={'mt-2 flex flex-col gap-3 rounded-[16px] border border-border-primary px-4 py-3 text-sm'}>
+            <div className={'text-text-secondary'}>
               {t('publishSelectedViews', {
                 count: visibleViewId?.length || 0,
               })}
@@ -209,7 +209,13 @@ function PublishPanel({ viewId, opened, onClose }: { viewId: string; onClose: ()
                     key={id}
                     className={'flex items-center justify-start'}
                     size={'small'}
-                    startIcon={selected ? <CheckboxCheckSvg /> : <CheckboxUncheckSvg />}
+                    startIcon={
+                      selected ? (
+                        <CheckboxCheckSvg />
+                      ) : (
+                        <CheckboxUncheckSvg className={'text-border-primary hover:text-border-primary-hover'} />
+                      )
+                    }
                     color={'inherit'}
                   >
                     <div className={'flex items-center gap-2'}>
@@ -243,7 +249,7 @@ function PublishPanel({ viewId, opened, onClose }: { viewId: string; onClose: ()
         <PublishIcon className={'h-5 w-5'} />
         {t('shareAction.publishToTheWeb')}
       </Typography>
-      <Typography className={'text-text-caption'} variant={'caption'}>
+      <Typography className={'text-text-secondary'} variant={'caption'}>
         {t('shareAction.publishToTheWebHint')}
       </Typography>
       {loading && (

@@ -1,6 +1,6 @@
 import { NumberedListNode } from '@/components/editor/editor.type';
 import { getListLevel, letterize, romanize } from '@/components/editor/utils/list';
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { ReactEditor, useSlate } from 'slate-react';
 import { Element, Path } from 'slate';
 

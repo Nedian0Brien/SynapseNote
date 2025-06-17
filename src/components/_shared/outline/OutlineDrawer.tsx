@@ -1,14 +1,16 @@
+import { Drawer, IconButton, Tooltip } from '@mui/material';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
+
+import { UIVariant } from '@/application/types';
 import { ReactComponent as AppFlowyLogo } from '@/assets/icons/appflowy.svg';
 import { ReactComponent as DoubleArrowLeft } from '@/assets/icons/double_arrow_left.svg';
 import Resizer from '@/components/_shared/outline/Resizer';
-import { useNavigate } from 'react-router-dom';
-import AppFlowyPower from '../appflowy-power/AppFlowyPower';
-import { createHotKeyLabel, HOT_KEY_NAME } from '@/utils/hotkeys';
-import { Drawer, IconButton, Tooltip } from '@mui/material';
-import { useTranslation } from 'react-i18next';
-import { UIVariant } from '@/application/types';
-import { useState } from 'react';
 import { AFScroller } from '@/components/_shared/scroller';
+import { createHotKeyLabel, HOT_KEY_NAME } from '@/utils/hotkeys';
+
+import AppFlowyPower from '../appflowy-power/AppFlowyPower';
 
 export function OutlineDrawer({
   onScroll,
@@ -43,8 +45,9 @@ export function OutlineDrawer({
         '& .MuiDrawer-paper': {
           width,
           boxSizing: 'border-box',
-          borderColor: 'var(--line-divider)',
+          borderColor: 'var(--border-primary)',
           boxShadow: 'none',
+          zIndex: 50,
         },
       }}
       variant='persistent'
@@ -55,7 +58,7 @@ export function OutlineDrawer({
       PaperProps={{
         sx: {
           borderRadius: 0,
-          background: variant === 'publish' ? 'var(--bg-body)' : 'var(--bg-base)',
+          background: variant === 'publish' ? 'var(--bg-body)' : 'var(--surface-container-layer-00)',
         },
       }}
     >
@@ -71,7 +74,7 @@ export function OutlineDrawer({
           onMouseLeave={() => setHovered(false)}
           style={{
             backdropFilter: variant === UIVariant.Publish ? 'blur(4px)' : undefined,
-            backgroundColor: variant === UIVariant.App ? 'var(--bg-base)' : undefined,
+            backgroundColor: variant === UIVariant.App ? 'var(--surface-container-layer-00)' : undefined,
           }}
           className={'sticky top-0 z-10 flex h-[48px] min-h-[48px] transform-gpu items-center justify-between'}
         >
@@ -79,7 +82,7 @@ export function OutlineDrawer({
             header
           ) : (
             <div
-              className={'flex cursor-pointer items-center gap-1 p-4 text-text-title'}
+              className={'flex cursor-pointer items-center gap-1 p-4 text-text-primary'}
               onClick={() => {
                 navigate('/app');
               }}
@@ -93,12 +96,12 @@ export function OutlineDrawer({
               title={
                 <div className={'flex flex-col'}>
                   <span>{t('sideBar.closeSidebar')}</span>
-                  <span className={'text-xs text-text-caption'}>{createHotKeyLabel(HOT_KEY_NAME.TOGGLE_SIDEBAR)}</span>
+                  <span className={'text-xs text-text-secondary'}>{createHotKeyLabel(HOT_KEY_NAME.TOGGLE_SIDEBAR)}</span>
                 </div>
               }
             >
               <IconButton onClick={onClose} className={'m-4'} size={'small'}>
-                <DoubleArrowLeft className={'text-text-caption'} />
+                <DoubleArrowLeft className={'text-text-secondary'} />
               </IconButton>
             </Tooltip>
           )}

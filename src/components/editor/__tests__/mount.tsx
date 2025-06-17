@@ -1,5 +1,4 @@
 import { DocumentTest, FromBlockJSON } from 'cypress/support/document';
-import React from 'react';
 
 import Editor, { EditorProps } from '@/components/editor/Editor';
 import withAppWrapper from '@/components/main/withAppWrapper';
@@ -7,7 +6,7 @@ import withAppWrapper from '@/components/main/withAppWrapper';
 export function mountEditor(props: EditorProps) {
   const AppWrapper = withAppWrapper(() => {
     return (
-      <div className={'h-screen w-screen flex flex-col items-center py-20 overflow-y-auto border border-line-divider'}>
+      <div className={'flex h-screen w-screen flex-col items-center overflow-y-auto border border-border-primary py-20'}>
         <Editor {...props} />
       </div>
     );
@@ -21,13 +20,18 @@ export const moveToEnd = () => {
 
   cy.get(selector).as('editor');
   cy.get('@editor').focus();
-  cy.get('@editor').realMouseWheel({
-    deltaX: 0,
-    deltaY: 1000,
-  }).wait(200);
-  cy.get('@editor').invoke('on', 'click', (e: MouseEvent) => {
-    e.stopPropagation();
-  }).type('{movetoend}').wait(50);
+  cy.get('@editor')
+    .realMouseWheel({
+      deltaX: 0,
+      deltaY: 1000,
+    })
+    .wait(200);
+  cy.get('@editor')
+    .invoke('on', 'click', (e: MouseEvent) => {
+      e.stopPropagation();
+    })
+    .type('{movetoend}')
+    .wait(50);
 };
 
 export const moveToLineStart = (lineIndex: number) => {
@@ -35,14 +39,20 @@ export const moveToLineStart = (lineIndex: number) => {
 
   cy.get(selector).as('targetBlock');
 
-  if(lineIndex === 0) {
-    cy.get('@targetBlock').invoke('on', 'click', (e: MouseEvent) => {
-      e.stopPropagation();
-    }).type('{movetostart}').wait(50);
+  if (lineIndex === 0) {
+    cy.get('@targetBlock')
+      .invoke('on', 'click', (e: MouseEvent) => {
+        e.stopPropagation();
+      })
+      .type('{movetostart}')
+      .wait(50);
   } else {
-    cy.get('@targetBlock').invoke('on', 'click', (e: MouseEvent) => {
-      e.stopPropagation();
-    }).type('{movetostart}').type('{downarrow}'.repeat(lineIndex))
+    cy.get('@targetBlock')
+      .invoke('on', 'click', (e: MouseEvent) => {
+        e.stopPropagation();
+      })
+      .type('{movetostart}')
+      .type('{downarrow}'.repeat(lineIndex))
       .wait(50);
   }
 };
@@ -54,12 +64,13 @@ export const moveCursor = (lineIndex: number, charIndex: number) => {
   const batchSize = 1;
   const batches = Math.ceil(charIndex / batchSize);
 
-  for(let i = 0; i < batches; i++) {
+  for (let i = 0; i < batches; i++) {
     const remainingMoves = Math.min(batchSize, charIndex - i * batchSize);
 
-    cy.get('@targetBlock').invoke('on', 'click', (e: MouseEvent) => {
-      e.stopPropagation();
-    })
+    cy.get('@targetBlock')
+      .invoke('on', 'click', (e: MouseEvent) => {
+        e.stopPropagation();
+      })
       .type('{rightarrow}'.repeat(remainingMoves))
       .wait(20);
   }
@@ -100,11 +111,10 @@ export const initialEditorTest = () => {
     assertJSON,
     getFinalJSON,
   };
-
 };
 
 export const getModKey = () => {
-  if(Cypress.platform === 'darwin') {
+  if (Cypress.platform === 'darwin') {
     return 'Meta';
   } else {
     return 'Control';

@@ -1,8 +1,8 @@
 import Import from '@/components/_shared/more-actions/importer/Import';
 
+import { ReactComponent as AppflowyLogo } from '@/assets/icons/appflowy.svg';
 import Typography from '@mui/material/Typography';
 import React from 'react';
-import { ReactComponent as AppflowyLogo } from '@/assets/icons/appflowy.svg';
 import { useSearchParams } from 'react-router-dom';
 
 function ImportPage() {
@@ -16,8 +16,8 @@ function ImportPage() {
 
   return (
     <div className={'flex h-screen w-screen flex-col bg-[#EEEEFD]'}>
-      <div className={'h-[64px] w-full py-4 px-6'}>
-        <Typography variant='h3' className={'mb-[27px] flex items-center gap-4 text-text-title'} gutterBottom>
+      <div className={'h-[64px] w-full px-6 py-4'}>
+        <Typography variant='h3' className={'mb-[27px] flex items-center gap-4 text-text-primary'} gutterBottom>
           <>
             <AppflowyLogo className={'w-32'} />
           </>

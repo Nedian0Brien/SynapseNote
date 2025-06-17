@@ -1,7 +1,6 @@
 import { YDoc } from '@/application/types';
 import { DocumentTest } from 'cypress/support/document';
 import { applyYDoc } from '@/application/ydoc/apply';
-import React from 'react';
 import * as Y from 'yjs';
 import { Editor } from './Editor';
 import withAppWrapper from '@/components/main/withAppWrapper';

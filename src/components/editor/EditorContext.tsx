@@ -27,6 +27,7 @@ export interface Decorate {
 }
 
 export interface EditorContextState {
+  fullWidth?: boolean;
   workspaceId: string;
   viewId: string;
   readOnly: boolean;

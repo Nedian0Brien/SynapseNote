@@ -1,24 +1,34 @@
-import { View, YDatabase, YDoc, YjsEditorKey } from '@/application/types';
+import React, { useCallback, useEffect, useState } from 'react';
+import * as Y from 'yjs';
+
 import {
   DatabaseContextState,
   getPrimaryFieldId,
-  parseRelationTypeOption, useDatabaseContext,
+  parseRelationTypeOption,
+  useDatabaseContext,
   useFieldSelector,
 } from '@/application/database-yjs';
 import { RelationCell, RelationCellData } from '@/application/database-yjs/cell.type';
-import { notify } from '@/components/_shared/notify';
+import { View, YDatabase, YDoc, YjsEditorKey } from '@/application/types';
 import { RelationPrimaryValue } from '@/components/database/components/cell/relation/RelationPrimaryValue';
-import React, { useCallback, useEffect, useState } from 'react';
+import { notify } from '@/components/_shared/notify';
+import { cn } from '@/lib/utils';
 
-function RelationItems ({ style, cell, fieldId }: {
+function RelationItems({
+  style,
+  cell,
+  fieldId,
+  wrap,
+}: {
   cell: RelationCell;
   fieldId: string;
-  style?: React.CSSProperties
+  style?: React.CSSProperties;
+  wrap: boolean;
 }) {
   const context = useDatabaseContext();
   const viewId = context.iidIndex;
   const { field } = useFieldSelector(fieldId);
-  const relatedDatabaseId = field ? parseRelationTypeOption(field).database_id : null;
+  const relatedDatabaseId = field ? parseRelationTypeOption(field)?.database_id : null;
 
   const createRowDoc = context.createRowDoc;
   const loadViewMeta = context.loadViewMeta;
@@ -51,14 +61,18 @@ function RelationItems ({ style, cell, fieldId }: {
     }
   }, [loadViewMeta, viewId]);
 
-  const handleUpdateRowIds = useCallback(
-    () => {
-      const ids = (cell.data?.toJSON() as RelationCellData) ?? [];
+  const handleUpdateRowIds = useCallback(() => {
+    const data = cell?.data;
 
-      setRowIds(ids);
-    },
-    [cell.data],
-  );
+    if (!data || !(data instanceof Y.Array<string>)) {
+      setRowIds([]);
+      return;
+    }
+
+    const ids = (data.toJSON() as RelationCellData) ?? [];
+
+    setRowIds(ids);
+  }, [cell.data]);
 
   useEffect(() => {
     if (!relatedViewId || !createRowDoc || !docGuid) return;
@@ -110,10 +124,13 @@ function RelationItems ({ style, cell, fieldId }: {
   return (
     <div
       style={style}
-      className={'relation-cell flex w-full items-center gap-2'}
+      className={cn(
+        'relation-cell flex w-full gap-2 overflow-hidden',
+        wrap ? 'flex-wrap whitespace-pre-wrap break-words' : 'flex-nowrap'
+      )}
     >
       {noAccess ? (
-        <div className={'text-text-caption'}>No access</div>
+        <div className={'text-text-secondary'}>No access</div>
       ) : (
         rowIds.map((rowId) => {
           const rowDoc = rows?.[rowId];
@@ -128,12 +145,7 @@ function RelationItems ({ style, cell, fieldId }: {
 
                 try {
                   if (navigateToRow) {
-                    if (relatedViewId !== viewId) {
-                      await navigateToView?.(relatedViewId);
-                      return;
-                    }
-
-                    navigateToRow(rowId);
+                    navigateToRow(rowId, relatedViewId !== viewId ? relatedViewId : undefined);
                     return;
                   }
 
@@ -143,13 +155,11 @@ function RelationItems ({ style, cell, fieldId }: {
                   notify.error(e.message);
                 }
               }}
-              className={`underline ${relatedViewId ? 'cursor-pointer hover:text-content-blue-400' : ''}`}
-
+              className={`min-w-fit overflow-hidden text-text-primary underline ${
+                relatedViewId ? 'cursor-pointer hover:text-text-action' : ''
+              }`}
             >
-              <RelationPrimaryValue
-                fieldId={relatedFieldId}
-                rowDoc={rowDoc}
-              />
+              <RelationPrimaryValue fieldId={relatedFieldId} rowDoc={rowDoc} />
             </div>
           );
         })

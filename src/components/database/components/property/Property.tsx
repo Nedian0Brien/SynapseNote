@@ -9,11 +9,10 @@ import { NumberCell } from '@/components/database/components/cell/number';
 import { RelationCell } from '@/components/database/components/cell/relation';
 import { SelectOptionCell } from '@/components/database/components/cell/select-option';
 import { TextCell } from '@/components/database/components/cell/text';
-import { UrlCell } from '@/components/database/components/cell/url';
 import PropertyWrapper from '@/components/database/components/property/PropertyWrapper';
 import { TextProperty } from '@/components/database/components/property/text';
 
-import React, { FC, useMemo } from 'react';
+import { FC, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChecklistProperty } from 'src/components/database/components/property/cheklist';
 
@@ -29,8 +28,6 @@ export function Property ({ fieldId, rowId }: { fieldId: string; rowId: string }
   const { t } = useTranslation();
   const Component = useMemo(() => {
     switch (fieldType) {
-      case FieldType.URL:
-        return UrlCell;
       case FieldType.Number:
         return NumberCell;
       case FieldType.Checkbox:
@@ -44,6 +41,7 @@ export function Property ({ fieldId, rowId }: { fieldId: string; rowId: string }
         return ChecklistProperty;
       case FieldType.Relation:
         return RelationCell;
+      case FieldType.URL:
       case FieldType.RichText:
       case FieldType.AISummaries:
       case FieldType.AITranslations:
@@ -55,19 +53,17 @@ export function Property ({ fieldId, rowId }: { fieldId: string; rowId: string }
     }
   }, [fieldType]) as FC<CellProps<CellType>>;
 
-  const style = useMemo(
-    () => ({
-      fontSize: '12px',
-    }),
-    [],
-  );
-
   if (fieldType === FieldType.CreatedTime || fieldType === FieldType.LastEditedTime) {
     const attrName = fieldType === FieldType.CreatedTime ? YjsDatabaseKey.created_at : YjsDatabaseKey.last_modified;
 
     return (
       <PropertyWrapper fieldId={fieldId}>
-        <RowCreateModifiedTime style={style} rowId={rowId} fieldId={fieldId} attrName={attrName} />
+        <RowCreateModifiedTime
+          wrap
+          rowId={rowId}
+          fieldId={fieldId}
+          attrName={attrName}
+        />
       </PropertyWrapper>
     );
   }
@@ -75,7 +71,11 @@ export function Property ({ fieldId, rowId }: { fieldId: string; rowId: string }
   return (
     <PropertyWrapper fieldId={fieldId}>
       <Component
-        cell={cell} style={style} placeholder={t('grid.row.textPlaceholder')} fieldId={fieldId} rowId={rowId}
+        wrap
+        cell={cell}
+        placeholder={t('grid.row.textPlaceholder')}
+        fieldId={fieldId}
+        rowId={rowId}
       />
     </PropertyWrapper>
   );

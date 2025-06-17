@@ -5,13 +5,13 @@ import { MentionType, UIVariant, View, ViewLayout, YjsEditorKey, YSharedRoot } f
 import { ReactComponent as LinkArrowOverlay } from '@/assets/icons/link_arrow.svg';
 import { ReactComponent as ParagraphIcon } from '@/assets/icons/paragraph.svg';
 
-import { useEditorContext } from '@/components/editor/EditorContext';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { ReactEditor, useReadOnly, useSlate } from 'slate-react';
-import { Element, Text } from 'slate';
-import PageIcon from '@/components/_shared/view-icon/PageIcon';
 import { findSlateEntryByBlockId } from '@/application/slate-yjs/utils/editor';
+import { useEditorContext } from '@/components/editor/EditorContext';
+import PageIcon from '@/components/_shared/view-icon/PageIcon';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Element, Text } from 'slate';
+import { ReactEditor, useReadOnly, useSlate } from 'slate-react';
 import smoothScrollIntoViewIfNeeded from 'smooth-scroll-into-view-if-needed';
 
 import './style.css';
@@ -123,11 +123,11 @@ function MentionPage({
             icon: icon,
             layout: meta?.layout || ViewLayout.Document,
           }}
-          className={'ml-0.5 flex h-[1em] w-[1em] items-center text-text-title'}
+          className={'ml-0.5 flex h-[1em] w-[1em] items-center text-text-primary'}
         />
 
         {type === MentionType.PageRef && (
-          <span className={`absolute top-0 left-0 ml-0.5`}>
+          <span className={`absolute left-0 top-0 ml-0.5`}>
             <LinkArrowOverlay className={'link-arrow-overlay'} />
           </span>
         )}
@@ -182,7 +182,7 @@ function MentionPage({
       data-mention-id={pageId}
     >
       {noAccess ? (
-        <span className={'mention-unpublished font-semibold text-text-caption'}>
+        <span className={'mention-unpublished font-semibold text-text-secondary'}>
           {variant === UIVariant.App ? `${content}${t('document.mention.trashHint')}` : t('document.mention.noAccess')}
         </span>
       ) : (

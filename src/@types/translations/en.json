@@ -310,7 +310,21 @@
     "viewDataBase": "View database",
     "referencePage": "This {{name}} is referenced",
     "addBlockBelow": "Add a block below",
-    "aiGenerate": "Generate"
+    "aiGenerate": "Generate",
+    "textField": "Add text that will be used to generate the content",
+    "numberField": "Accepts numbers. These can be formatted as currency, percentages, or decimals",
+    "dateField": "Accepts a date or a date range(time optional). Useful for deadlines, events, and scheduling",
+    "singleSelectField": "Select one option from a list of tags. Useful for categorizing",
+    "multiSelectField": "Select one or more options from a list of tags. Useful for tagging items across multiple categories",
+    "checkboxField": "Use a checkbox to indicate yes/no. Useful for tracking tasks",
+    "checklistField": "Add a checklist for to-do items. Useful for tracking tasks and progress",
+    "urlField": "Accepts a URL. Useful for linking to external resources",
+    "updatedAtField": "Records the timestamp of the last update. Useful for tracking changes",
+    "createdAtField": "Records the timestamp of when the item was created. Useful for tracking history",
+    "relationField": "Relate to another database. Useful for linking items across databases",
+    "AISummaryField": "Summarize the content of the record. Useful for getting a quick overview",
+    "AITranslateField": "Translate the content of the record. Useful for multilingual support",
+    "mediaField": "Add images, videos, or other media. Useful for rich content"
   },
   "sideBar": {
     "closeSidebar": "Close sidebar",
@@ -438,7 +452,9 @@
     "retry": "Retry",
     "uploadFailed": "Upload failed.",
     "copyLinkOriginal": "Copy link to original",
-    "search": "Search"
+    "search": "Search",
+    "checked": "Checked",
+    "unchecked": "Unchecked"
   },
   "label": {
     "welcome": "Welcome!",
@@ -1501,21 +1517,20 @@
       "newColumn": "New column",
       "format": "Format",
       "reminderOnDateTooltip": "This cell has a scheduled reminder",
-      "optionAlreadyExist": "Option already exists"
+      "optionAlreadyExist": "Option already exists",
+      "copiedCreatedAt": "Created at copied to clipboard",
+      "copiedUpdatedAt": "Last modified copied to clipboard",
+      "copiedDate": "Date copied to clipboard"
     },
     "rowPage": {
       "newField": "Add a new field",
       "fieldDragElementTooltip": "Click to open menu",
-      "showHiddenFields": {
-        "one": "Show {{count}} hidden field",
-        "many": "Show {{count}} hidden fields",
-        "other": "Show {{count}} hidden fields"
-      },
-      "hideHiddenFields": {
-        "one": "Hide {{count}} hidden field",
-        "many": "Hide {{count}} hidden fields",
-        "other": "Hide {{count}} hidden fields"
-      },
+      "showHiddenFields_one": "Show {{count}} hidden field",
+      "showHiddenFields_many": "Show {{count}} hidden fields",
+      "showHiddenFields_other": "Show {{count}} hidden fields",
+      "hideHiddenFields_one": "Hide {{count}} hidden field",
+      "hideHiddenFields_many": "Hide {{count}} hidden fields",
+      "hideHiddenFields_other": "Hide {{count}} hidden fields",
       "openAsFullPage": "Open as full page",
       "moreRowActions": "More row actions"
     },
@@ -1544,7 +1559,7 @@
       "action": "Action",
       "add": "Click add to below",
       "drag": "Drag to move",
-      "deleteRowPrompt": "Are you sure you want to delete this row? This action cannot be undone.",
+      "deleteRowPrompt": "Are you sure you want to delete {{count}} rows? This action cannot be undone.",
       "deleteCardPrompt": "Are you sure you want to delete this card? This action cannot be undone.",
       "dragAndClick": "Drag to move, click to open menu",
       "insertRecordAbove": "Insert record above",
@@ -1596,7 +1611,9 @@
       "noDatabaseSelected": "No database selected, please select one first from the list below:",
       "emptySearchResult": "No records found",
       "linkedRowListLabel": "{{count}} linked rows",
-      "unlinkedRowListLabel": "Link another row"
+      "unlinkedRowListLabel": "Link another row",
+      "removeRelation": "Remove relation",
+      "addRelation": "Add relation"
     },
     "menuName": "Grid",
     "referencedGridPrefix": "View of",
@@ -1612,25 +1629,40 @@
       "countEmpty": "Count empty",
       "countEmptyShort": "EMPTY",
       "countNonEmpty": "Count not empty",
-      "countNonEmptyShort": "FILLED"
+      "countNonEmptyShort": "FILLED",
+      "countChecked": "Count checked",
+      "countCheckedShort": "CHECKED",
+      "countUnchecked": "Count unchecked",
+      "countUncheckedShort": "UNCHECKED",
+      "countUncompleted": "Count uncompleted",
+      "countUncompletedShort": "UNCOMPLETED",
+      "countCompleted": "Count completed",
+      "countCompletedShort": "COMPLETED"
     },
     "media": {
-      "rename": "Rename",
+      "rename": "Rename file",
       "download": "Download",
       "expand": "Expand",
-      "delete": "Delete",
+      "delete": "Delete file",
       "moreFilesHint": "+{}",
       "addFileOrImage": "Add file or link",
       "attachmentsHint": "{}",
+      "renameHint": "Enter the new for this file",
       "addFileMobile": "Add file",
       "extraCount": "+{}",
-      "deleteFileDescription": "Are you sure you want to delete this file? This action is irreversible.",
+      "deleteFileDescription": "Delete {{name}}? This action cannot be undone.",
       "showFileNames": "Show file name",
       "downloadSuccess": "File downloaded",
       "downloadFailedToken": "Failed to download file, user token unavailable",
       "setAsCover": "Set as cover",
       "openInBrowser": "Open in browser",
-      "embedLink": "Embed file link"
+      "embedLink": "Embed link",
+      "upload": "Upload",
+      "dragAndDropFiles": "Drag and drop a file or ",
+      "browse": "Browse",
+      "networkHint": "Paste a link to embed",
+      "uploadError": "Upload failed, please try again",
+      "addFileOrMedia": "Add file or media"
     }
   },
   "document": {
@@ -2067,6 +2099,8 @@
       "hideColumn": "Hide",
       "newGroup": "New group",
       "deleteColumn": "Delete",
+      "deleteCards": "This will delete all the cards in this group. Are you sure you want to continue?",
+      "deleteOptionAndCards": "This will delete this option and all the cards in it. Are you sure you want to continue?",
       "deleteColumnConfirmation": "This will delete this group and all the cards in it. Are you sure you want to continue?"
     },
     "hiddenGroupSection": {

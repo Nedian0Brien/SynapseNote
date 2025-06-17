@@ -2,7 +2,6 @@ import MoreActions from './MoreActions';
 import { useAppViewId } from '@/components/app/app.hooks';
 import { openOrDownload } from '@/utils/open_schema';
 import { Divider, Tooltip } from '@mui/material';
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 import ShareButton from 'src/components/app/share/ShareButton';
 import { ReactComponent as Logo } from '@/assets/icons/logo.svg';

@@ -1,30 +1,32 @@
-import { YjsDatabaseKey } from '@/application/types';
+import { FC, useMemo } from 'react';
+
+import { Cell as CellType, CellProps } from '@/application/database-yjs/cell.type';
 import { FieldType } from '@/application/database-yjs/database.type';
-import { useFieldSelector } from '@/application/database-yjs/selector';
-import { RowCreateModifiedTime } from '@/components/database/components/cell/created-modified';
-import React, { FC, useMemo } from 'react';
-import { TextCell } from '@/components/database/components/cell/text';
-import { UrlCell } from '@/components/database/components/cell/url';
-import { NumberCell } from '@/components/database/components/cell/number';
+import { useCellSelector, useFieldSelector } from '@/application/database-yjs/selector';
+import { YjsDatabaseKey } from '@/application/types';
+import { AITextCell } from '@/components/database/components/cell/ai-text/AITextCell';
 import { CheckboxCell } from '@/components/database/components/cell/checkbox';
-import { SelectOptionCell } from '@/components/database/components/cell/select-option';
-import { DateTimeCell } from '@/components/database/components/cell/date';
 import { ChecklistCell } from '@/components/database/components/cell/checklist';
-import { CellProps, Cell as CellType } from '@/application/database-yjs/cell.type';
+import { RowCreateModifiedTime } from '@/components/database/components/cell/created-modified';
+import { DateTimeCell } from '@/components/database/components/cell/date';
+import { NumberCell } from '@/components/database/components/cell/number';
 import { RelationCell } from '@/components/database/components/cell/relation';
+import { SelectOptionCell } from '@/components/database/components/cell/select-option';
+import { TextCell } from '@/components/database/components/cell/text';
+
 import { FileMediaCell } from 'src/components/database/components/cell/file-media';
 
-export function Cell (props: CellProps<CellType>) {
-  const { cell, rowId, fieldId, style } = props;
+export function Cell(props: CellProps<CellType>) {
+  const { rowId, fieldId, style, wrap, isHovering } = props;
   const { field } = useFieldSelector(fieldId);
   const fieldType = Number(field?.get(YjsDatabaseKey.type)) as FieldType;
+  const cell = useCellSelector({ rowId, fieldId });
 
   const Component = useMemo(() => {
     switch (fieldType) {
       case FieldType.RichText:
-        return TextCell;
       case FieldType.URL:
-        return UrlCell;
+        return TextCell;
       case FieldType.Number:
         return NumberCell;
       case FieldType.Checkbox:
@@ -40,6 +42,9 @@ export function Cell (props: CellProps<CellType>) {
         return RelationCell;
       case FieldType.FileMedia:
         return FileMediaCell;
+      case FieldType.AISummaries:
+      case FieldType.AITranslations:
+        return AITextCell;
       default:
         return TextCell;
     }
@@ -48,7 +53,16 @@ export function Cell (props: CellProps<CellType>) {
   if (fieldType === FieldType.CreatedTime || fieldType === FieldType.LastEditedTime) {
     const attrName = fieldType === FieldType.CreatedTime ? YjsDatabaseKey.created_at : YjsDatabaseKey.last_modified;
 
-    return <RowCreateModifiedTime style={style} rowId={rowId} fieldId={fieldId} attrName={attrName} />;
+    return (
+      <RowCreateModifiedTime
+        style={style}
+        rowId={rowId}
+        fieldId={fieldId}
+        attrName={attrName}
+        wrap={wrap}
+        isHovering={isHovering}
+      />
+    );
   }
 
   if (cell && cell.fieldType !== fieldType) {

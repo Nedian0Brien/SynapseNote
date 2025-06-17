@@ -10,7 +10,6 @@ interface Props {
   PaperProps?: {
     className?: string;
   };
-
 }
 
 export const RichTooltip = ({ placement = 'top', open, onClose, content, children, PaperProps }: Props) => {
@@ -53,7 +52,9 @@ export const RichTooltip = ({ placement = 'top', open, onClose, content, childre
             <Paper className={'bg-transparent shadow-none'}>
               <ClickAwayListener onClickAway={onClose}>
                 <Paper
-                  className={'m-2 rounded-md border border-line-divider bg-bg-body overflow-hidden'}  {...PaperProps}>
+                  className={'m-2 overflow-hidden rounded-md border border-border-primary bg-background-primary'}
+                  {...PaperProps}
+                >
                   <Box>{content}</Box>
                 </Paper>
               </ClickAwayListener>

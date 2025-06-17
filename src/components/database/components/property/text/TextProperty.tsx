@@ -1,6 +1,5 @@
 import { CellProps, TextCell } from '@/application/database-yjs/cell.type';
 import { TextField } from '@mui/material';
-import React from 'react';
 
 export function TextProperty({ cell }: CellProps<TextCell>) {
   return (

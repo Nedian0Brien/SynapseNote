@@ -1,9 +1,9 @@
-import { OutlineDrawer } from '@/components/_shared/outline';
-import NewPage from '@/components/app/view-actions/NewPage';
-import React, { lazy } from 'react';
-import { Workspaces } from '@/components/app/workspaces';
-import Outline from 'src/components/app/outline/Outline';
 import { UIVariant } from '@/application/types';
+import NewPage from '@/components/app/view-actions/NewPage';
+import { Workspaces } from '@/components/app/workspaces';
+import { OutlineDrawer } from '@/components/_shared/outline';
+import React, { lazy } from 'react';
+import Outline from 'src/components/app/outline/Outline';
 import { Search } from 'src/components/app/search';
 
 const SideBarBottom = lazy(() => import('@/components/app/SideBarBottom'));
@@ -15,13 +15,7 @@ interface SideBarProps {
   onResizeDrawerWidth: (width: number) => void;
 }
 
-function SideBar ({
-  drawerWidth,
-  drawerOpened,
-  toggleOpenDrawer,
-  onResizeDrawerWidth,
-}: SideBarProps) {
-
+function SideBar({ drawerWidth, drawerOpened, toggleOpenDrawer, onResizeDrawerWidth }: SideBarProps) {
   const [scrollTop, setScrollTop] = React.useState<number>(0);
 
   const handleOnScroll = React.useCallback((scrollTop: number) => {
@@ -38,27 +32,20 @@ function SideBar ({
       header={<Workspaces />}
       onScroll={handleOnScroll}
     >
-      <div
-        className={'flex w-full gap-1 flex-1 flex-col'}
-      >
-        <div
-          className={'px-[10px] bg-bg-base z-[1] flex-col gap-2 justify-around items-center sticky top-12'}
-        >
+      <div className={'flex w-full flex-1 flex-col gap-1'}>
+        <div className={'sticky top-12 z-[1] flex-col items-center justify-around gap-2 px-[10px]'}>
           <Search />
           <div
             style={{
-              borderColor: scrollTop > 10 ? 'var(--line-divider)' : undefined,
+              borderColor: scrollTop > 10 ? 'var(--border-primary)' : undefined,
             }}
-            className={'flex border-b pb-3 w-full border-transparent'}
+            className={'flex w-full border-b border-transparent pb-3'}
           >
             <NewPage />
           </div>
-
         </div>
 
-        <Outline
-          width={drawerWidth}
-        />
+        <Outline width={drawerWidth} />
 
         <SideBarBottom />
       </div>

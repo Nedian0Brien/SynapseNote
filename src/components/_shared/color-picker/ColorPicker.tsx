@@ -1,11 +1,11 @@
 import { EditorMarkFormat } from '@/application/slate-yjs/types';
 import KeyboardNavigation from '@/components/_shared/keyboard_navigation/KeyboardNavigation';
 import { ColorEnum, renderColor } from '@/utils/color';
-import React, { useCallback, useRef, useMemo } from 'react';
 import Typography from '@mui/material/Typography';
+import { useCallback, useMemo, useRef } from 'react';
 
-import { useTranslation } from 'react-i18next';
 import TitleOutlined from '@mui/icons-material/TitleOutlined';
+import { useTranslation } from 'react-i18next';
 
 export interface ColorPickerProps {
   onChange?: (format: EditorMarkFormat.FontColor | EditorMarkFormat.BgColor, color: string) => void;
@@ -13,7 +13,7 @@ export interface ColorPickerProps {
   disableFocus?: boolean;
 }
 
-export function ColorPicker ({ onEscape, onChange, disableFocus }: ColorPickerProps) {
+export function ColorPicker({ onEscape, onChange, disableFocus }: ColorPickerProps) {
   const { t } = useTranslation();
 
   const ref = useRef<HTMLDivElement>(null);
@@ -25,7 +25,7 @@ export function ColorPicker ({ onEscape, onChange, disableFocus }: ColorPickerPr
 
       onChange?.(formatKey, color);
     },
-    [onChange],
+    [onChange]
   );
 
   const renderColorItem = useCallback(
@@ -43,15 +43,15 @@ export function ColorPicker ({ onEscape, onChange, disableFocus }: ColorPickerPr
               backgroundColor: backgroundColor ? renderColor(backgroundColor) : 'transparent',
               color: color === '' ? 'var(--text-title)' : renderColor(color),
             }}
-            className={'flex h-5 w-5 items-center justify-center rounded border border-line-divider'}
+            className={'flex h-5 w-5 items-center justify-center rounded border border-border-primary'}
           >
             <TitleOutlined className={'h-4 w-4'} />
           </div>
-          <div className={'flex-1 text-xs text-text-title'}>{name}</div>
+          <div className={'flex-1 text-xs text-text-primary'}>{name}</div>
         </div>
       );
     },
-    [handleColorChange],
+    [handleColorChange]
   );
 
   const colors = useMemo(() => {
@@ -59,10 +59,7 @@ export function ColorPicker ({ onEscape, onChange, disableFocus }: ColorPickerPr
       {
         key: 'font_color',
         content: (
-          <Typography
-            className={'px-3 pb-1 pt-3 text-text-caption'}
-            variant="subtitle2"
-          >
+          <Typography className={'px-3 pb-1 pt-3 text-text-secondary'} variant='subtitle2'>
             {t('editor.textColor')}
           </Typography>
         ),
@@ -112,10 +109,7 @@ export function ColorPicker ({ onEscape, onChange, disableFocus }: ColorPickerPr
       {
         key: 'bg_color',
         content: (
-          <Typography
-            className={'px-3 pb-1 pt-3 text-text-caption'}
-            variant="subtitle2"
-          >
+          <Typography className={'px-3 pb-1 pt-3 text-text-secondary'} variant='subtitle2'>
             {t('editor.backgroundColor')}
           </Typography>
         ),
@@ -166,10 +160,7 @@ export function ColorPicker ({ onEscape, onChange, disableFocus }: ColorPickerPr
   }, [renderColorItem, t]);
 
   return (
-    <div
-      ref={ref}
-      className={'flex h-full max-h-[420px] appflowy-scroller w-full flex-col overflow-y-auto'}
-    >
+    <div ref={ref} className={'appflowy-scroller flex h-full max-h-[420px] w-full flex-col overflow-y-auto'}>
       <KeyboardNavigation
         disableFocus={disableFocus}
         onPressLeft={onEscape}

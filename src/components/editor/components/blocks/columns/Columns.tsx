@@ -1,5 +1,5 @@
 import { ColumnsNode, EditorElementProps } from '@/components/editor/editor.type';
-import React, { forwardRef, memo } from 'react';
+import { forwardRef, memo } from 'react';
 
 export const Columns = memo(
   forwardRef<HTMLDivElement, EditorElementProps<ColumnsNode>>(({ node: _node, children, ...attributes }, ref) => {

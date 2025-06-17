@@ -2,7 +2,7 @@ import MobileOutlineWithCover from '@/components/_shared/mobile-outline/MobileOu
 import { useAppHandlers } from '@/components/app/app.hooks';
 import { useRecent } from '@/components/app/recent/useRecent';
 import orderBy from 'lodash-es/orderBy';
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 function MobileRecent ({

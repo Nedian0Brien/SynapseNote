@@ -1,11 +1,10 @@
-import React from 'react';
-import { ReactComponent as ShareIcon } from '@/assets/icons/users.svg';
 import { ReactComponent as LinkIcon } from '@/assets/icons/link.svg';
+import { ReactComponent as ShareIcon } from '@/assets/icons/users.svg';
 
-import { useTranslation } from 'react-i18next';
-import { Button, OutlinedInput } from '@mui/material';
-import { copyTextToClipboard } from '@/utils/copy';
 import { notify } from '@/components/_shared/notify';
+import { copyTextToClipboard } from '@/utils/copy';
+import { Button, OutlinedInput } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 
 function SharePanel() {
   const { t } = useTranslation();
@@ -16,28 +15,32 @@ function SharePanel() {
   };
 
   return (
-    <div className={'flex flex-col w-full pb-2 px-1'}>
-      <div className={'text-sm flex w-full items-center gap-2'}>
-        <ShareIcon className={'w-5 h-5'} />
+    <div className={'flex w-full flex-col px-1 pb-2'}>
+      <div className={'flex w-full items-center gap-2 text-sm'}>
+        <ShareIcon className={'h-5 w-5'} />
         <span>{t('shareAction.shareTabTitle')}</span>
       </div>
-      <div className={'text-sm w-full text-text-caption flex items-center gap-2'}>
+      <div className={'flex w-full items-center gap-2 text-sm text-text-secondary'}>
         {t('shareAction.shareTabDescription')}
       </div>
-      <div className={'text-sm mt-4 w-full flex items-center gap-2'}>
+      <div className={'mt-4 flex w-full items-center gap-2 text-sm'}>
         <OutlinedInput
-          onClick={e => {
+          onClick={(e) => {
             if (e.detail > 2) {
               e.preventDefault();
               e.stopPropagation();
               handleCopy();
             }
           }}
-          size={'small'} className={'flex-1'} readOnly={true} value={window.location.href}/>
+          size={'small'}
+          className={'flex-1'}
+          readOnly={true}
+          value={window.location.href}
+        />
         <Button
           variant={'contained'}
           color={'primary'}
-          className={'flex-nowrap h-[40px] rounded-[12px]'}
+          className={'h-[40px] flex-nowrap rounded-[12px]'}
           onClick={handleCopy}
           startIcon={<LinkIcon />}
         >

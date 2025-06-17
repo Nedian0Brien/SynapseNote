@@ -2,7 +2,7 @@ import { useAppView } from '@/components/app/app.hooks';
 import { useLoadPublishInfo } from '@/components/app/share/publish.hooks';
 import { useCurrentUser } from '@/components/main/app.hooks';
 import { Button } from '@mui/material';
-import React, { useCallback } from 'react';
+import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ReactComponent as TemplateIcon } from '@/assets/icons/template.svg';
 

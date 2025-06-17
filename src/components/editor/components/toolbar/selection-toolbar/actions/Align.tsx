@@ -8,7 +8,7 @@ import { ReactComponent as AlignRightSvg } from '@/assets/icons/align_right.svg'
 import { Popover } from '@/components/_shared/popover';
 import { useSelectionToolbarContext } from '@/components/editor/components/toolbar/selection-toolbar/SelectionToolbar.hooks';
 import { PopoverProps } from '@mui/material/Popover';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSlateStatic } from 'slate-react';
 import { Element } from 'slate';

@@ -1,10 +1,10 @@
 import { SpaceView } from '@/application/types';
-import React, { useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
+import { ReactComponent as LockSvg } from '@/assets/icons/lock.svg';
 import { ReactComponent as CheckIcon } from '@/assets/icons/tick.svg';
 import SpaceIcon from '@/components/_shared/view-icon/SpaceIcon';
 import { Button, CircularProgress, Tooltip } from '@mui/material';
-import { ReactComponent as LockSvg } from '@/assets/icons/lock.svg';
+import React, { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface SpaceListProps {
   value: string;
@@ -21,10 +21,10 @@ function SpaceList({ loading, spaceList, value, onChange, title }: SpaceListProp
     try {
       return extra
         ? (JSON.parse(extra) as {
-          is_space?: boolean;
-          space_icon?: string;
-          space_icon_color?: string;
-        })
+            is_space?: boolean;
+            space_icon?: string;
+            space_icon_color?: string;
+          })
         : {};
     } catch (e) {
       return {};
@@ -45,20 +45,20 @@ function SpaceList({ loading, spaceList, value, onChange, title }: SpaceListProp
           />
           <div className={'flex flex-1 items-center gap-2 truncate'}>
             {space.name}
-            {space.isPrivate && <LockSvg className={'text-icon-primary'}/>}
+            {space.isPrivate && <LockSvg className={'text-icon-primary'} />}
           </div>
         </div>
       );
     },
-    [getExtraObj],
+    [getExtraObj]
   );
 
   return (
     <div className={'flex max-h-[280px] w-[360px] flex-col gap-2 overflow-hidden max-sm:w-full'}>
-      {title || <div className={'text-sm text-text-caption'}>{t('publish.addTo')}</div>}
+      {title || <div className={'text-sm text-text-secondary'}>{t('publish.addTo')}</div>}
       {loading ? (
         <div className={'flex w-full items-center justify-center'}>
-          <CircularProgress size={24}/>
+          <CircularProgress size={24} />
         </div>
       ) : (
         <div className={'appflowy-scroller flex w-full flex-1 flex-col gap-1 overflow-y-auto overflow-x-hidden'}>
@@ -66,13 +66,7 @@ function SpaceList({ loading, spaceList, value, onChange, title }: SpaceListProp
             const isSelected = value === space.id;
 
             return (
-              <Tooltip
-                title={space.name}
-                key={space.id}
-                placement={'bottom'}
-                enterDelay={1000}
-                enterNextDelay={1000}
-              >
+              <Tooltip title={space.name} key={space.id} placement={'bottom'} enterDelay={1000} enterNextDelay={1000}>
                 <Button
                   variant={'text'}
                   color={'inherit'}
@@ -83,7 +77,7 @@ function SpaceList({ loading, spaceList, value, onChange, title }: SpaceListProp
                 >
                   <div className={'flex-1 overflow-hidden text-left'}>{renderSpace(space)}</div>
                   <div className={'h-5 w-5'}>
-                    {isSelected && <CheckIcon className={'h-5 w-5 text-content-blue-400'}/>}
+                    {isSelected && <CheckIcon className={'h-5 w-5 text-content-blue-400'} />}
                   </div>
                 </Button>
               </Tooltip>

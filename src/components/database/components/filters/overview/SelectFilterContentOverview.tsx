@@ -1,10 +1,10 @@
-import { YDatabaseField } from '@/application/types';
 import {
   parseSelectOptionTypeOptions,
   SelectOptionFilter,
   SelectOptionFilterCondition,
 } from '@/application/database-yjs';
-import React, { useMemo } from 'react';
+import { YDatabaseField } from '@/application/types';
+import { useMemo } from 'react';
 
 import { useTranslation } from 'react-i18next';
 
@@ -20,17 +20,21 @@ function SelectFilterContentOverview({ filter, field }: { filter: SelectOptionFi
 
         return option?.name;
       })
+      .filter(Boolean)
       .join(', ');
 
     switch (filter.condition) {
-      case SelectOptionFilterCondition.OptionIs:
-        return `: ${options}`;
       case SelectOptionFilterCondition.OptionIsNot:
+      case SelectOptionFilterCondition.OptionDoesNotContain:
         return `: ${t('grid.textFilter.choicechipPrefix.isNot')} ${options}`;
       case SelectOptionFilterCondition.OptionIsEmpty:
         return `: ${t('grid.textFilter.choicechipPrefix.isEmpty')}`;
       case SelectOptionFilterCondition.OptionIsNotEmpty:
         return `: ${t('grid.textFilter.choicechipPrefix.isNotEmpty')}`;
+      case SelectOptionFilterCondition.OptionContains:
+      case SelectOptionFilterCondition.OptionIs:
+        return `: ${options}`;
+
       default:
         return '';
     }

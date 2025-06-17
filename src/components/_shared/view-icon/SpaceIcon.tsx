@@ -1,7 +1,7 @@
 import { ThemeModeContext } from '@/components/main/useAppThemeMode';
 import { renderColor } from '@/utils/color';
 import { getIcon } from '@/utils/emoji';
-import React, { useContext, useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 import { ReactComponent as SpaceIcon1 } from '@/assets/space_icon/space_icon_1.svg';
 import { ReactComponent as SpaceIcon2 } from '@/assets/space_icon/space_icon_2.svg';
 import { ReactComponent as SpaceIcon3 } from '@/assets/space_icon/space_icon_3.svg';

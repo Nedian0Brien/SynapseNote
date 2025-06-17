@@ -1,6 +1,5 @@
 import { UIVariant, View } from '@/application/types';
 import OutlineItem from './OutlineItem';
-import React from 'react';
 
 export function MobileOutline ({
   outline,

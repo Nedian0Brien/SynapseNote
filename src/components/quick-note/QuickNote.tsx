@@ -1,32 +1,29 @@
-import CircularProgress from '@mui/material/CircularProgress';
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
-import { IconButton, Tooltip, Zoom, Snackbar, Portal } from '@mui/material';
-import { ReactComponent as EditIcon } from '@/assets/icons/edit.svg';
-import { useTranslation } from 'react-i18next';
-import { createHotkey, createHotKeyLabel, HOT_KEY_NAME } from '@/utils/hotkeys';
-import Popover from '@mui/material/Popover';
-import NoteHeader from '@/components/quick-note/NoteHeader';
-import NoteListHeader from '@/components/quick-note/NoteListHeader';
-import { TransitionProps } from '@mui/material/transitions';
-import { LISI_LIMIT, ToastContext } from './QuickNote.hooks';
-import { useService } from '@/components/main/app.hooks';
-import { useCurrentWorkspaceId } from '@/components/app/app.hooks';
 import { QuickNote as QuickNoteType, QuickNoteEditorData } from '@/application/types';
-import NoteList from '@/components/quick-note/NoteList';
-import { getPopoverPosition, setPopoverPosition } from '@/components/quick-note/utils';
+import { ReactComponent as EditIcon } from '@/assets/icons/edit.svg';
+import { useCurrentWorkspaceId } from '@/components/app/app.hooks';
+import { useService } from '@/components/main/app.hooks';
 import Note from '@/components/quick-note/Note';
+import NoteHeader from '@/components/quick-note/NoteHeader';
+import NoteList from '@/components/quick-note/NoteList';
+import NoteListHeader from '@/components/quick-note/NoteListHeader';
+import { getPopoverPosition, setPopoverPosition } from '@/components/quick-note/utils';
+import { createHotkey, createHotKeyLabel, HOT_KEY_NAME } from '@/utils/hotkeys';
+import { IconButton, Portal, Snackbar, Tooltip, Zoom } from '@mui/material';
+import CircularProgress from '@mui/material/CircularProgress';
+import Popover from '@mui/material/Popover';
+import { TransitionProps } from '@mui/material/transitions';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
+import { LISI_LIMIT, ToastContext } from './QuickNote.hooks';
 
 const PAPER_SIZE = [480, 396];
-const Transition = React.forwardRef(function Transition (
+const Transition = React.forwardRef(function Transition(
   props: TransitionProps & {
     children: React.ReactElement;
   },
-  ref: React.Ref<unknown>,
+  ref: React.Ref<unknown>
 ) {
-  return <Zoom
-    ref={ref}
-    {...props}
-  />;
+  return <Zoom ref={ref} {...props} />;
 });
 
 enum QuickNoteRoute {
@@ -34,11 +31,11 @@ enum QuickNoteRoute {
   LIST = 'list',
 }
 
-export function QuickNote () {
+export function QuickNote() {
   const { t } = useTranslation();
   const modifier = useMemo(() => createHotKeyLabel(HOT_KEY_NAME.QUICK_NOTE), []);
   const [open, setOpen] = React.useState(false);
-  const [position, setPosition] = React.useState<{ x: number, y: number } | undefined>(undefined);
+  const [position, setPosition] = React.useState<{ x: number; y: number } | undefined>(undefined);
   const [isDragging, setIsDragging] = React.useState(false);
   const dragStartPos = useRef({ x: 0, y: 0 });
   const [route, setRoute] = React.useState<QuickNoteRoute>(QuickNoteRoute.LIST);
@@ -73,13 +70,15 @@ export function QuickNote () {
   const handleAdd = useCallback(async () => {
     if (!service || !currentWorkspaceId) return;
     try {
-      const note = await service.createQuickNote(currentWorkspaceId, [{
-        type: 'paragraph',
-        delta: [{ insert: '' }],
-        children: [],
-      }]);
+      const note = await service.createQuickNote(currentWorkspaceId, [
+        {
+          type: 'paragraph',
+          delta: [{ insert: '' }],
+          children: [],
+        },
+      ]);
 
-      setNoteList(prev => [note, ...prev]);
+      setNoteList((prev) => [note, ...prev]);
 
       handleEnterNote(note);
       // eslint-disable-next-line
@@ -89,22 +88,21 @@ export function QuickNote () {
     }
   }, [service, currentWorkspaceId, handleEnterNote, handleOpenToast]);
 
-  const loadNoteList = useCallback(async (newParams: {
-    offset: number;
-    limit: number;
-    searchTerm: string;
-  }) => {
-    if (!service || !currentWorkspaceId) return;
-    try {
-      const notes = await service.getQuickNoteList(currentWorkspaceId, newParams);
+  const loadNoteList = useCallback(
+    async (newParams: { offset: number; limit: number; searchTerm: string }) => {
+      if (!service || !currentWorkspaceId) return;
+      try {
+        const notes = await service.getQuickNoteList(currentWorkspaceId, newParams);
 
-      return notes;
-      // eslint-disable-next-line
-    } catch (e: any) {
-      console.error(e);
-      handleOpenToast(e.message);
-    }
-  }, [service, currentWorkspaceId, handleOpenToast]);
+        return notes;
+        // eslint-disable-next-line
+      } catch (e: any) {
+        console.error(e);
+        handleOpenToast(e.message);
+      }
+    },
+    [service, currentWorkspaceId, handleOpenToast]
+  );
 
   const initNoteList = useCallback(async () => {
     const params = {
@@ -136,27 +134,30 @@ export function QuickNote () {
     const notes = await loadNoteList(params);
 
     if (notes) {
-      setNoteList(prev => [...prev, ...notes.data]);
+      setNoteList((prev) => [...prev, ...notes.data]);
       hasMoreRef.current = notes.has_more;
     }
   }, [loadNoteList, noteList]);
 
-  const handleSearch = useCallback(async (searchTerm: string) => {
-    const newParams = {
-      limit: LISI_LIMIT,
-      offset: 0,
-      searchTerm,
-    };
+  const handleSearch = useCallback(
+    async (searchTerm: string) => {
+      const newParams = {
+        limit: LISI_LIMIT,
+        offset: 0,
+        searchTerm,
+      };
 
-    listParamsRef.current = newParams;
+      listParamsRef.current = newParams;
 
-    const notes = await loadNoteList(newParams);
+      const notes = await loadNoteList(newParams);
 
-    if (notes) {
-      setNoteList(notes.data);
-      hasMoreRef.current = notes.has_more;
-    }
-  }, [loadNoteList]);
+      if (notes) {
+        setNoteList(notes.data);
+        hasMoreRef.current = notes.has_more;
+      }
+    },
+    [loadNoteList]
+  );
 
   const handleClose = () => {
     setOpen(false);
@@ -181,7 +182,6 @@ export function QuickNote () {
           y: window.innerHeight / 2,
         });
       }
-
     } else {
       pageSizeRef.current = PAPER_SIZE;
       const rect = main.getBoundingClientRect();
@@ -201,32 +201,38 @@ export function QuickNote () {
   const [loading, setLoading] = React.useState(false);
 
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const handleOpen = useCallback(async (forceCreate?: boolean) => {
+  const handleOpen = useCallback(
+    async (forceCreate?: boolean) => {
+      const el = buttonRef.current;
 
-    const el = buttonRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
 
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
+      const localPosition = getPopoverPosition()[expand ? 'expand' : 'normal'];
 
-    const localPosition = getPopoverPosition()[expand ? 'expand' : 'normal'];
+      if (localPosition) {
+        setPosition(localPosition);
+      } else {
+        setPosition((prev) =>
+          !prev
+            ? {
+                x: rect.right + PAPER_SIZE[0] / 2,
+                y: rect.bottom - PAPER_SIZE[1] / 2,
+              }
+            : prev
+        );
+      }
 
-    if (localPosition) {
-      setPosition(localPosition);
-    } else {
-      setPosition(prev => !prev ? {
-        x: rect.right + PAPER_SIZE[0] / 2,
-        y: rect.bottom - PAPER_SIZE[1] / 2,
-      } : prev);
-    }
+      void initNoteList();
 
-    void initNoteList();
+      if (route === QuickNoteRoute.LIST || forceCreate) {
+        await handleAdd();
+      }
 
-    if (route === QuickNoteRoute.LIST || forceCreate) {
-      await handleAdd();
-    }
-
-    setOpen(true);
-  }, [expand, initNoteList, route, handleAdd]);
+      setOpen(true);
+    },
+    [expand, initNoteList, route, handleAdd]
+  );
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -271,19 +277,12 @@ export function QuickNote () {
   useEffect(() => {
     const handleMouseMove = (event: MouseEvent) => {
       if (isDragging) {
-
         const x = event.clientX - dragStartPos.current.x;
         const y = event.clientY - dragStartPos.current.y;
 
         const newPos = {
-          x: Math.min(
-            Math.max(x, pageSizeRef.current[0] / 2),
-            window.innerWidth - pageSizeRef.current[0] / 2,
-          ),
-          y: Math.min(
-            Math.max(y, pageSizeRef.current[1] / 2),
-            window.innerHeight - pageSizeRef.current[1] / 2,
-          ),
+          x: Math.min(Math.max(x, pageSizeRef.current[0] / 2), window.innerWidth - pageSizeRef.current[0] / 2),
+          y: Math.min(Math.max(y, pageSizeRef.current[1] / 2), window.innerHeight - pageSizeRef.current[1] / 2),
         };
 
         setPosition(newPos);
@@ -305,74 +304,78 @@ export function QuickNote () {
     return () => {
       document.removeEventListener('mousemove', handleMouseMove, true);
       document.removeEventListener('mouseup', handleMouseUp);
-
     };
   }, [isDragging, expand]);
 
-  const handleUpdateNodeData = useCallback((id: string, data: QuickNoteEditorData[]) => {
-    setNoteList(prev => {
-      return prev.map(note => {
-        if (note.id === id) {
-          return {
-            ...note,
-            data,
-            last_updated_at: new Date().toISOString(),
-          };
-        }
+  const handleUpdateNodeData = useCallback(
+    (id: string, data: QuickNoteEditorData[]) => {
+      setNoteList((prev) => {
+        return prev
+          .map((note) => {
+            if (note.id === id) {
+              return {
+                ...note,
+                data,
+                last_updated_at: new Date().toISOString(),
+              };
+            }
 
-        return note;
-      }).sort((a, b) => {
-        return new Date(b.last_updated_at).getTime() - new Date(a.last_updated_at).getTime();
+            return note;
+          })
+          .sort((a, b) => {
+            return new Date(b.last_updated_at).getTime() - new Date(a.last_updated_at).getTime();
+          });
       });
-    });
-    if (id === currentNote?.id) {
-      setCurrentNote(prev => {
-        if (prev) {
-          return {
-            ...prev,
-            data,
-            last_updated_at: new Date().toISOString(),
-          };
-        }
+      if (id === currentNote?.id) {
+        setCurrentNote((prev) => {
+          if (prev) {
+            return {
+              ...prev,
+              data,
+              last_updated_at: new Date().toISOString(),
+            };
+          }
 
-        return prev;
-      });
-    }
-  }, [currentNote?.id]);
+          return prev;
+        });
+      }
+    },
+    [currentNote?.id]
+  );
 
   const handleToggleExpand = useCallback(() => {
     setOpen(false);
     setTimeout(() => {
       setOpen(true);
-      setExpand(prev => !prev);
+      setExpand((prev) => !prev);
     }, 200);
-
   }, []);
 
-  const handleDeleteNotes = useCallback((notes: QuickNoteType[]) => {
-    if (!service || !currentWorkspaceId) return;
-    notes.forEach(note => {
-      void (async () => {
-        try {
-          await service.deleteQuickNote?.(currentWorkspaceId, note.id);
-          setNoteList(prev => prev.filter(n => n.id !== note.id));
-          // eslint-disable-next-line
-        } catch (e: any) {
-          console.error(e);
-          handleOpenToast(e.message);
-        }
-      })();
-    });
-  }, [currentWorkspaceId, handleOpenToast, service]);
+  const handleDeleteNotes = useCallback(
+    (notes: QuickNoteType[]) => {
+      if (!service || !currentWorkspaceId) return;
+      notes.forEach((note) => {
+        void (async () => {
+          try {
+            await service.deleteQuickNote?.(currentWorkspaceId, note.id);
+            setNoteList((prev) => prev.filter((n) => n.id !== note.id));
+            // eslint-disable-next-line
+          } catch (e: any) {
+            console.error(e);
+            handleOpenToast(e.message);
+          }
+        })();
+      });
+    },
+    [currentWorkspaceId, handleOpenToast, service]
+  );
 
   const clearEmptyNotes = useCallback(() => {
-
     if (!currentNote) return;
 
     if (currentNote.last_updated_at === currentNote.created_at) {
       handleDeleteNotes([currentNote]);
     }
-
   }, [handleDeleteNotes, currentNote]);
 
   const handleBackList = useCallback(() => {
@@ -404,28 +407,33 @@ export function QuickNote () {
       );
     }
 
-    return <NoteListHeader
-      onSearch={handleSearch}
-      onClose={handleClose}
-      expand={expand}
-      onToggleExpand={handleToggleExpand}
-    />;
+    return (
+      <NoteListHeader
+        onSearch={handleSearch}
+        onClose={handleClose}
+        expand={expand}
+        onToggleExpand={handleToggleExpand}
+      />
+    );
   };
 
-  const handleScrollList = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    const target = e.target as HTMLDivElement;
+  const handleScrollList = useCallback(
+    (e: React.UIEvent<HTMLDivElement>) => {
+      const target = e.target as HTMLDivElement;
 
-    const hasMore = hasMoreRef.current;
+      const hasMore = hasMoreRef.current;
 
-    if (!hasMore) return;
+      if (!hasMore) return;
 
-    if (target.scrollHeight - target.scrollTop === target.clientHeight && hasMoreRef.current) {
-      void handleLoadMore();
-    }
-  }, [handleLoadMore]);
+      if (target.scrollHeight - target.scrollTop === target.clientHeight && hasMoreRef.current) {
+        void handleLoadMore();
+      }
+    },
+    [handleLoadMore]
+  );
 
   const handleAddedNote = useCallback((note: QuickNoteType) => {
-    setNoteList(prev => [note, ...prev]);
+    setNoteList((prev) => [note, ...prev]);
   }, []);
 
   return (
@@ -434,7 +442,7 @@ export function QuickNote () {
         title={
           <>
             <div>{t('quickNote.label')}</div>
-            <div className={'text-xs text-text-caption'}>{modifier}</div>
+            <div className={'text-xs text-text-secondary'}>{modifier}</div>
           </>
         }
       >
@@ -458,12 +466,10 @@ export function QuickNote () {
             }
 
             setLoading(false);
-
           }}
           disabled={loading}
         >
-          {loading ? <CircularProgress size={16} /> :
-            <EditIcon />}
+          {loading ? <CircularProgress size={16} /> : <EditIcon />}
         </IconButton>
       </Tooltip>
       <Popover
@@ -471,7 +477,6 @@ export function QuickNote () {
         disableEnforceFocus={true}
         disableRestoreFocus={true}
         TransitionComponent={Transition}
-
         slotProps={{
           root: {
             style: {
@@ -491,10 +496,14 @@ export function QuickNote () {
         }}
         open={open && Boolean(position)}
         anchorReference={'anchorPosition'}
-        anchorPosition={position ? {
-          top: position.y,
-          left: position.x,
-        } : undefined}
+        anchorPosition={
+          position
+            ? {
+                top: position.y,
+                left: position.x,
+              }
+            : undefined
+        }
         transformOrigin={{
           vertical: 'center',
           horizontal: 'center',
@@ -517,35 +526,33 @@ export function QuickNote () {
             style={{
               cursor: isDragging ? 'grabbing' : 'grab',
             }}
-
-            className={'bg-note-header py-2 px-5 flex items-center justify-between gap-5 h-[44px] w-full'}
+            className={'flex h-[44px] w-full items-center justify-between gap-5 bg-note-header px-5 py-2'}
           >
-            <div className={'flex-1 overflow-hidden w-full'}>{renderHeader()}</div>
+            <div className={'w-full flex-1 overflow-hidden'}>{renderHeader()}</div>
           </div>
-          <div
-            className={'flex-1 flex-col overflow-hidden relative flex'}
-          >
-            {
-              route === QuickNoteRoute.NOTE && currentNote ?
-                <>
-                  <Note
-                    onAdd={handleAddedNote}
-                    onEnterNote={handleEnterNote}
-                    note={currentNote}
-                    onUpdateData={(data) => {
-                      handleUpdateNodeData(currentNote.id, data);
-                    }}
-                  />
-                </> : <NoteList
+          <div className={'relative flex flex-1 flex-col overflow-hidden'}>
+            {route === QuickNoteRoute.NOTE && currentNote ? (
+              <>
+                <Note
                   onAdd={handleAddedNote}
-                  onScroll={handleScrollList}
-                  onEnterNode={handleEnterNote}
-                  list={noteList}
-                  onDelete={(id) => {
-                    setNoteList(prev => prev.filter(note => note.id !== id));
+                  onEnterNote={handleEnterNote}
+                  note={currentNote}
+                  onUpdateData={(data) => {
+                    handleUpdateNodeData(currentNote.id, data);
                   }}
                 />
-            }
+              </>
+            ) : (
+              <NoteList
+                onAdd={handleAddedNote}
+                onScroll={handleScrollList}
+                onEnterNode={handleEnterNote}
+                list={noteList}
+                onDelete={(id) => {
+                  setNoteList((prev) => prev.filter((note) => note.id !== id));
+                }}
+              />
+            )}
           </div>
           <Portal container={paper.current}>
             <Snackbar

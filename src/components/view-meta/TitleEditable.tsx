@@ -1,5 +1,5 @@
 import { debounce } from 'lodash-es';
-import React, { memo, useEffect, useMemo, useRef } from 'react';
+import { memo, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const isCursorAtEnd = (el: HTMLDivElement) => {
@@ -93,7 +93,9 @@ function TitleEditable({
       style={{
         wordBreak: 'break-word',
       }}
-      className={'relative flex-1 custom-caret break-words whitespace-pre-wrap cursor-text focus:outline-none empty:before:content-[attr(data-placeholder)] empty:before:text-text-placeholder'}
+      className={
+        'custom-caret relative flex-1 cursor-text whitespace-pre-wrap break-words empty:before:text-text-tertiary empty:before:content-[attr(data-placeholder)] focus:outline-none'
+      }
       data-placeholder={t('menuAppHeader.defaultNewPageName')}
       contentEditable={true}
       aria-readonly={false}
@@ -125,7 +127,6 @@ function TitleEditable({
             setTimeout(() => {
               focusedTextbox();
             }, 0);
-
           } else {
             onUpdateName(contentRef.current.textContent || '');
           }
@@ -135,7 +136,6 @@ function TitleEditable({
         }
       }}
     />
-
   );
 }
 

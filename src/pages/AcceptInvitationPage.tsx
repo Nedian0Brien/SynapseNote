@@ -1,12 +1,12 @@
 import { Invitation } from '@/application/types';
 import { ReactComponent as AppflowyLogo } from '@/assets/icons/appflowy.svg';
+import { AFConfigContext, useCurrentUser, useService } from '@/components/main/app.hooks';
 import ChangeAccount from '@/components/_shared/modal/ChangeAccount';
 import { notify } from '@/components/_shared/notify';
 import { getAvatar } from '@/components/_shared/view-icon/utils';
-import { AFConfigContext, useCurrentUser, useService } from '@/components/main/app.hooks';
 import EmailOutlined from '@mui/icons-material/EmailOutlined';
 import { Avatar, Button, Divider } from '@mui/material';
-import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
@@ -75,7 +75,7 @@ function AcceptInvitationPage() {
   return (
     <div
       className={
-        'appflowy-scroller flex h-screen w-screen flex-col items-center gap-12 overflow-y-auto overflow-x-hidden bg-bg-base px-6 text-text-title max-md:gap-4'
+        'appflowy-scroller flex h-screen w-screen flex-col items-center gap-12 overflow-y-auto overflow-x-hidden bg-bg-base px-6 text-text-primary max-md:gap-4'
       }
     >
       <div
@@ -103,24 +103,24 @@ function AcceptInvitationPage() {
         <Divider className={'w-[400px] max-w-full'} />
         <div className={'flex items-center justify-center gap-4 py-1'}>
           <Avatar
-            className={'h-20 w-20 border border-line-divider text-[40px]'}
+            className={'h-20 w-20 border border-border-primary text-[40px]'}
             {...inviterIconProps}
             variant='circular'
           />
           <div className={'flex flex-col items-start gap-1'}>
-            <div className={'text-text-title'}>{t('invitation.invitedBy')}</div>
-            <div className={'font-semibold text-text-title'}>{invitation?.inviter_name}</div>
-            <div className={'text-sm text-text-caption'}>
+            <div className={'text-text-primary'}>{t('invitation.invitedBy')}</div>
+            <div className={'font-semibold text-text-primary'}>{invitation?.inviter_name}</div>
+            <div className={'text-sm text-text-secondary'}>
               {t('invitation.membersCount', {
                 count: invitation?.member_count || 0,
               })}
             </div>
           </div>
         </div>
-        <div className={'w-[400px] max-w-full text-sm text-text-title'}>{t('invitation.tip')}</div>
+        <div className={'w-[400px] max-w-full text-sm text-text-primary'}>{t('invitation.tip')}</div>
         <div
           className={
-            'flex w-[400px] max-w-full items-center gap-2 border-b border-line-border bg-bg-body py-2 px-4 max-sm:rounded-[8px] max-sm:border'
+            'flex w-[400px] max-w-full items-center gap-2 border-b border-line-border bg-background-primary px-4 py-2 max-sm:rounded-[8px] max-sm:border'
           }
         >
           <EmailOutlined />
@@ -131,7 +131,7 @@ function AcceptInvitationPage() {
           variant={'contained'}
           color={'primary'}
           size={'large'}
-          className={'w-[400px] max-w-full rounded-[16px] py-5 px-10 text-[24px]'}
+          className={'w-[400px] max-w-full rounded-[16px] px-10 py-5 text-[24px]'}
           onClick={async () => {
             if (!invitationId) return;
             if (invitation?.status === 'Accepted') {

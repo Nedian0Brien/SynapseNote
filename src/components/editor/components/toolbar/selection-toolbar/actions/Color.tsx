@@ -1,16 +1,16 @@
 import { YjsEditor } from '@/application/slate-yjs';
 import { CustomEditor } from '@/application/slate-yjs/command';
 import { EditorMarkFormat } from '@/application/slate-yjs/types';
-import { Popover } from '@/components/_shared/popover';
+import { ReactComponent as TextSvg } from '@/assets/icons/format_text.svg';
+import { ReactComponent as ColorSvg } from '@/assets/icons/text_color.svg';
 import { useSelectionToolbarContext } from '@/components/editor/components/toolbar/selection-toolbar/SelectionToolbar.hooks';
+import { Popover } from '@/components/_shared/popover';
 import { ColorEnum, renderColor } from '@/utils/color';
 import { Tooltip } from '@mui/material';
 import React, { useCallback, useEffect, useMemo } from 'react';
-import ActionButton from './ActionButton';
 import { useTranslation } from 'react-i18next';
 import { useSlateStatic } from 'slate-react';
-import { ReactComponent as ColorSvg } from '@/assets/icons/text_color.svg';
-import { ReactComponent as TextSvg } from '@/assets/icons/format_text.svg';
+import ActionButton from './ActionButton';
 
 function Color() {
   const { t } = useTranslation();
@@ -150,7 +150,7 @@ function Color() {
     return (
       <div className={'flex w-[200px] flex-col gap-3 p-3'}>
         <div className={'flex flex-col gap-2'}>
-          <div className={'text-xs text-text-caption'}>{t('editor.textColor')}</div>
+          <div className={'text-xs text-text-secondary'}>{t('editor.textColor')}</div>
           <div className={'flex flex-wrap gap-1.5'}>
             {editorTextColors.map((color, index) => {
               return (
@@ -163,7 +163,7 @@ function Color() {
                     }}
                   >
                     <div
-                      className={`absolute top-0 left-0 h-full w-full cursor-pointer rounded-[6px] border-2 opacity-50 hover:opacity-100`}
+                      className={`absolute left-0 top-0 h-full w-full cursor-pointer rounded-[6px] border-2 opacity-50 hover:opacity-100`}
                       style={{
                         borderColor: activeFontColor === color.color ? 'var(--fill-default)' : undefined,
                         color: renderColor(color.color) || 'var(--text-title)',
@@ -178,7 +178,7 @@ function Color() {
           </div>
         </div>
         <div className={'flex flex-col gap-2'}>
-          <div className={'text-xs text-text-caption'}>{t('editor.backgroundColor')}</div>
+          <div className={'text-xs text-text-secondary'}>{t('editor.backgroundColor')}</div>
           <div className={'flex flex-wrap gap-1.5'}>
             {editorBgColors.map((color, index) => {
               return (
@@ -191,7 +191,7 @@ function Color() {
                     onClick={() => handlePickedColor(EditorMarkFormat.BgColor, color.color)}
                   >
                     <div
-                      className={`absolute top-0 left-0 h-full w-full rounded-[6px] border-2`}
+                      className={`absolute left-0 top-0 h-full w-full rounded-[6px] border-2`}
                       style={{
                         borderColor: activeBgColor === color.color ? 'var(--fill-default)' : undefined,
                       }}

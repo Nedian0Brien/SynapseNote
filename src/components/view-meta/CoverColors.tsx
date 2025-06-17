@@ -1,5 +1,4 @@
 import { IconButton } from '@mui/material';
-import React from 'react';
 import { colorMap } from '@/utils/color';
 
 const colors = Object.entries(colorMap);

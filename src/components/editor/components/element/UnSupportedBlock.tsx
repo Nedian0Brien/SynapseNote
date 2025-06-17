@@ -1,5 +1,5 @@
 import { EditorElementProps } from '@/components/editor/editor.type';
-import React, { forwardRef } from 'react';
+import { forwardRef } from 'react';
 import { Alert } from '@mui/material';
 
 export const UnSupportedBlock = forwardRef<HTMLDivElement, EditorElementProps>(({ node, children }, ref) => {

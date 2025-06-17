@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+
 import { ReactComponent as ImageIcon } from '@/assets/icons/image.svg';
 
 interface FileDropzoneProps {
@@ -64,22 +65,22 @@ function FileDropzone ({ onChange, accept, multiple, disabled, placeholder }: Fi
   return (
     <div
       className={
-        'flex h-full min-h-[160px] w-full cursor-pointer flex-col justify-center rounded-xl border border-dashed border-line-border bg-bg-base px-4 hover:border-fill-active hover:bg-bg-body'
+        'flex h-full min-h-[160px] w-full cursor-pointer flex-col justify-center rounded-xl border-2 border-dashed border-border-primary bg-surface-primary px-4 hover:bg-surface-primary-hover'
       }
       onDrop={handleDrop}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onClick={handleClick}
       style={{
-        borderColor: dragging ? 'var(--fill-active)' : undefined,
-        backgroundColor: dragging ? 'var(--fill-active)' : undefined,
+        borderColor: dragging ? 'var(--border-theme-thick)' : undefined,
+        backgroundColor: dragging ? 'var(--fill-info-light)' : undefined,
         pointerEvents: disabled ? 'none' : undefined,
         cursor: disabled ? 'not-allowed' : undefined,
       }}
     >
       <div className={'flex h-full w-full flex-col items-center justify-center gap-4 overflow-hidden'}>
-        <ImageIcon className={'h-12 w-12 text-fill-tertiary'} />
-        <div className={'whitespace-pre-wrap break-words text-center text-base text-text-secondary'}>
+        <ImageIcon className={'h-12 w-12 text-text-secondary'} />
+        <div className={'whitespace-pre-wrap break-words text-center text-text-secondary'}>
           {placeholder || t('fileDropzone.dropFile')}
         </div>
       </div>

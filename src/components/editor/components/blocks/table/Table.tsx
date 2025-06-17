@@ -1,7 +1,7 @@
 import TableContainer from '@/components/editor/components/table-container/TableContainer';
 import { EditorElementProps, TableCellNode, TableNode } from '@/components/editor/editor.type';
 import { useEditorContext } from '@/components/editor/EditorContext';
-import React, { forwardRef, memo, useMemo } from 'react';
+import { forwardRef, memo, useMemo } from 'react';
 import { Grid } from '@atlaskit/primitives';
 import './table.scss';
 import isEqual from 'lodash-es/isEqual';

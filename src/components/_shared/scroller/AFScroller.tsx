@@ -1,17 +1,30 @@
-import { Scrollbars } from 'react-custom-scrollbars-2';
 import React from 'react';
+import { Scrollbars } from 'react-custom-scrollbars-2';
 
-export interface AFScrollerProps {
+import { cn } from '@/lib/utils';
+
+export interface AFScrollerProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
   overflowXHidden?: boolean;
   overflowYHidden?: boolean;
   className?: string;
   style?: React.CSSProperties;
   onScroll?: (e: React.UIEvent<unknown>) => void;
+  setScrollableContainer?: (el: HTMLDivElement | null) => void;
+  hideScrollbars?: boolean;
 }
 
 export const AFScroller = React.forwardRef(
-  ({ onScroll, style, children, overflowXHidden, overflowYHidden, className }: AFScrollerProps, ref) => {
+  ({
+    setScrollableContainer,
+    onScroll,
+    style,
+    children,
+    overflowXHidden,
+    overflowYHidden,
+    hideScrollbars,
+    className,
+  }: AFScrollerProps, ref) => {
     return (
       <Scrollbars
         onScroll={onScroll}
@@ -23,14 +36,26 @@ export const AFScroller = React.forwardRef(
           const scrollEl = el.container?.firstChild as HTMLElement;
 
           if (!scrollEl) return;
+          setScrollableContainer?.(scrollEl as HTMLDivElement);
+
           if (typeof ref === 'function') {
             ref(scrollEl);
           } else if (ref) {
             ref.current = scrollEl;
           }
         }}
-        renderThumbHorizontal={(props) => <div {...props} className='appflowy-scrollbar-thumb-horizontal' />}
-        renderThumbVertical={(props) => <div {...props} className='appflowy-scrollbar-thumb-vertical' />}
+        renderThumbHorizontal={(props) =>
+          <div {...props} style={{
+            display: hideScrollbars ? 'none' : undefined,
+          }}
+               className={cn('appflowy-scrollbar-thumb-horizontal')}
+          />}
+        renderThumbVertical={(props) =>
+          <div {...props} style={{
+            display: hideScrollbars ? 'none' : undefined,
+          }}
+               className="appflowy-scrollbar-thumb-vertical"
+          />}
         {...(overflowXHidden && {
           renderTrackHorizontal: (props) => (
             <div
@@ -62,12 +87,12 @@ export const AFScroller = React.forwardRef(
               marginRight: 0,
               marginBottom: 0,
             }}
-            className={`${className} appflowy-custom-scroller`}
+            className={cn(hideScrollbars ? 'appflowy-hidden-scroller' : 'appflowy-custom-scroller', className)}
           />
         )}
       >
         {children}
       </Scrollbars>
     );
-  }
+  },
 );

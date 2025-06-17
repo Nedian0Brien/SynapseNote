@@ -1,14 +1,14 @@
 import { YjsEditor } from '@/application/slate-yjs';
 import { CustomEditor } from '@/application/slate-yjs/command';
 import { ViewIconType } from '@/application/types';
-import ChangeIconPopover from '@/components/_shared/view-icon/ChangeIconPopover';
 import { CalloutNode } from '@/components/editor/editor.type';
+import { CustomIconPopover } from '@/components/_shared/cutsom-icon';
 import { renderColor } from '@/utils/color';
 import { getIcon, isFlagEmoji } from '@/utils/emoji';
 import DOMPurify from 'dompurify';
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
-import { useReadOnly, useSlateStatic } from 'slate-react';
 import { Element } from 'slate';
+import { useReadOnly, useSlateStatic } from 'slate-react';
 
 function CalloutIcon({ block: node }: { block: CalloutNode; className: string }) {
   const ref = useRef<HTMLButtonElement>(null);
@@ -16,32 +16,27 @@ function CalloutIcon({ block: node }: { block: CalloutNode; className: string })
   const readOnly = useReadOnly() || editor.isElementReadOnly(node as unknown as Element);
   const blockId = node.blockId;
   const [iconContent, setIconContent] = React.useState<string | undefined>(undefined);
-
   const [open, setOpen] = React.useState(false);
-  const handleChangeIcon = useCallback((icon: {
-    ty: ViewIconType,
-    value: string,
-    color?: string,
-    content?: string
-  }) => {
-    setOpen(false);
+  const handleChangeIcon = useCallback(
+    (icon: { ty: ViewIconType; value: string; color?: string; content?: string }) => {
+      setOpen(false);
+      const iconType = icon.ty === ViewIconType.Icon ? 'icon' : 'emoji';
+      let value;
 
-    const iconType = icon.ty === ViewIconType.Icon ? 'icon' : 'emoji';
-    let value;
+      if (icon.ty === ViewIconType.Icon) {
+        value = JSON.stringify({
+          color: icon.color,
+          groupName: icon.value.split('/')[0],
+          iconName: icon.value.split('/')[1],
+        });
+      } else {
+        value = icon.value;
+      }
 
-    if(icon.ty === ViewIconType.Icon) {
-      value = JSON.stringify({
-        color: icon.color,
-        groupName: icon.value.split('/')[0],
-        iconName: icon.value.split('/')[1],
-      });
-
-    } else {
-      value = icon.value;
-    }
-
-    CustomEditor.setBlockData(editor as YjsEditor, blockId, { icon: value, icon_type: iconType });
-  }, [editor, blockId]);
+      CustomEditor.setBlockData(editor as YjsEditor, blockId, { icon: value, icon_type: iconType });
+    },
+    [editor, blockId]
+  );
 
   const handleRemoveIcon = useCallback(() => {
     setOpen(false);
@@ -51,7 +46,7 @@ function CalloutIcon({ block: node }: { block: CalloutNode; className: string })
   const data = node.data;
 
   const emoji = useMemo(() => {
-    if(data.icon && data.icon_type !== 'icon') {
+    if (data.icon && data.icon_type !== 'icon') {
       return data.icon;
     }
 
@@ -63,15 +58,17 @@ function CalloutIcon({ block: node }: { block: CalloutNode; className: string })
   }, [emoji]);
 
   useEffect(() => {
-    if(data.icon && data.icon_type === 'icon') {
+    if (data.icon && data.icon_type === 'icon') {
       try {
         const json = JSON.parse(data.icon);
         const id = `${json.groupName}/${json.iconName}`;
 
         void getIcon(id).then((item) => {
-          setIconContent(item?.content.replaceAll('black', renderColor(json.color)).replace('<svg', '<svg width="100%" height="100%"'));
+          setIconContent(
+            item?.content.replaceAll('black', renderColor(json.color)).replace('<svg', '<svg width="100%" height="100%"')
+          );
         });
-      } catch(e) {
+      } catch (e) {
         console.error(e, data.icon);
       }
     } else {
@@ -79,34 +76,39 @@ function CalloutIcon({ block: node }: { block: CalloutNode; className: string })
     }
   }, [data.icon, data.icon_type]);
   const icon = useMemo(() => {
-    if(iconContent) {
+    if (iconContent) {
       const cleanSvg = DOMPurify.sanitize(iconContent, {
         USE_PROFILES: { svg: true, svgFilters: true },
       });
 
-      return <span
-        style={{
-          width: 18,
-          height: 18,
-        }}
-        dangerouslySetInnerHTML={{
-          __html: cleanSvg,
-        }}
-      />;
-
+      return (
+        <span
+          style={{
+            width: 18,
+            height: 18,
+          }}
+          dangerouslySetInnerHTML={{
+            __html: cleanSvg,
+          }}
+        />
+      );
     }
 
     return null;
   }, [iconContent]);
 
   return (
-    <>
+    <CustomIconPopover
+      open={open}
+      onOpenChange={setOpen}
+      onSelectIcon={handleChangeIcon}
+      removeIcon={handleRemoveIcon}
+      defaultActiveTab={'emoji'}
+      tabs={['emoji']}
+      enable={!readOnly}
+    >
       <span
-        onClick={() => {
-          if(readOnly) return;
-          setOpen(true);
-        }}
-        data-testid="callout-icon-button"
+        data-testid='callout-icon-button'
         contentEditable={false}
         ref={ref}
         className={`${readOnly ? '' : 'cursor-pointer'} relative flex items-start justify-center`}
@@ -116,32 +118,14 @@ function CalloutIcon({ block: node }: { block: CalloutNode; className: string })
         }}
       >
         <span
-          className={`w-8 ${isFlag ? 'icon' : ''} h-8 absolute -top-[4px] flex text-[18px] items-center justify-center ${readOnly ? '' : 'hover:bg-fill-list-hover rounded-[6px]'}`}
-        >{
-          icon || emoji
-        }</span>
-
+          className={`w-8 ${isFlag ? 'icon' : ''} absolute -top-[4px] flex h-8 items-center justify-center text-[18px] ${
+            readOnly ? '' : 'rounded-[6px] hover:bg-fill-content-hover'
+          }`}
+        >
+          {icon || emoji}
+        </span>
       </span>
-      {open && <ChangeIconPopover
-        open={open}
-        anchorEl={ref.current}
-        onClose={() => {
-          setOpen(false);
-        }}
-        defaultType={'emoji'}
-        iconEnabled={true}
-        onSelectIcon={handleChangeIcon}
-        removeIcon={handleRemoveIcon}
-        popoverProps={{
-          sx: {
-            '& .MuiPopover-paper': {
-              margin: '16px 0',
-            },
-          },
-        }}
-      />}
-
-    </>
+    </CustomIconPopover>
   );
 }
 

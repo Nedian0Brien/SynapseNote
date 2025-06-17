@@ -1,14 +1,14 @@
-import { DatabaseViewLayout, UIVariant, View, YDoc, YjsDatabaseKey, YjsEditorKey } from '@/application/types';
+import CircularProgress from '@mui/material/CircularProgress';
+import { forwardRef, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Element } from 'slate';
+import { ReactEditor, useReadOnly, useSlateStatic } from 'slate-react';
+
+import { UIVariant, View, YDoc, YjsDatabaseKey, YjsEditorKey } from '@/application/types';
 import { Database } from '@/components/database';
-import TableContainer from '@/components/editor/components/table-container/TableContainer';
 import { DatabaseNode, EditorElementProps } from '@/components/editor/editor.type';
 import { useEditorContext } from '@/components/editor/EditorContext';
 import { getScrollParent } from '@/components/global-comment/utils';
-import CircularProgress from '@mui/material/CircularProgress';
-import React, { forwardRef, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { ReactEditor, useReadOnly, useSlateStatic } from 'slate-react';
-import { Element } from 'slate';
 
 export const DatabaseBlock = memo(
   forwardRef<HTMLDivElement, EditorElementProps<DatabaseNode>>(({ node, children, ...attributes }, ref) => {
@@ -19,8 +19,6 @@ export const DatabaseBlock = memo(
     const navigateToView = context?.navigateToView;
     const loadView = context?.loadView;
     const createRowDoc = context?.createRowDoc;
-    const loadViewMeta = context?.loadViewMeta;
-    const readSummary = context.readSummary;
     const variant = context.variant;
 
     const [notFound, setNotFound] = useState(false);
@@ -28,17 +26,17 @@ export const DatabaseBlock = memo(
     const [doc, setDoc] = useState<YDoc | null>(null);
 
     useEffect(() => {
-      if(!viewId) return;
-      void (async() => {
+      if (!viewId) return;
+      void (async () => {
         try {
           const view = await loadView?.(viewId);
 
-          if(!view) {
+          if (!view) {
             throw new Error('View not found');
           }
 
           setDoc(view);
-        } catch(e) {
+        } catch (e) {
           setNotFound(true);
         }
       })();
@@ -48,45 +46,75 @@ export const DatabaseBlock = memo(
     const [visibleViewIds, setVisibleViewIds] = useState<string[]>([]);
     const [iidName, setIidName] = useState<string>('');
 
+    const viewIdsRef = useRef<string[]>([]);
+
     useEffect(() => {
-      const updateVisibleViewIds = async(meta: View | null) => {
-        if(!meta) {
-          return;
+      viewIdsRef.current = visibleViewIds;
+    }, [visibleViewIds]);
+
+    const updateVisibleViewIds = useCallback(async (meta: View | null) => {
+      if (!meta) {
+        return;
+      }
+
+      const viewIds = meta.children.map((v) => v.view_id) || [];
+
+      viewIds.unshift(meta.view_id);
+
+      setIidName(meta.name);
+      setVisibleViewIds(viewIds);
+    }, []);
+
+    const loadViewMeta = useCallback(
+      async (id: string, callback?: (meta: View | null) => void) => {
+        if (id === viewId) {
+          try {
+            const meta = await context?.loadViewMeta?.(viewId, updateVisibleViewIds);
+
+            if (meta) {
+              await updateVisibleViewIds(meta);
+              return meta;
+            }
+          } catch (e) {
+            setNotFound(true);
+          }
+
+          return Promise.reject(new Error('View not found'));
+        } else {
+          const meta = await context?.loadViewMeta?.(id, callback);
+
+          if (meta) {
+            return meta;
+          }
+
+          return Promise.reject(new Error('View not found'));
         }
+      },
+      [context, updateVisibleViewIds, viewId]
+    );
 
-        const viewIds = meta.children.map((v) => v.view_id) || [];
-
-        viewIds.unshift(meta.view_id);
-
-        if(!viewIds.includes(viewId)) {
-          setSelectedViewId(viewIds[0]);
+    useLayoutEffect(() => {
+      void loadViewMeta(viewId).then(() => {
+        if (!viewIdsRef.current.includes(viewId)) {
+          setSelectedViewId(viewIdsRef.current[0]);
         } else {
           setSelectedViewId(viewId);
         }
+      });
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
-        setIidName(meta.name);
-        setVisibleViewIds(viewIds);
-      };
-
-      void (async() => {
-        try {
-          const meta = await loadViewMeta?.(viewId, updateVisibleViewIds);
-
-          if(meta) {
-            await updateVisibleViewIds(meta);
-          }
-        } catch(e) {
-          setNotFound(true);
-        }
-      })();
-    }, [loadViewMeta, viewId]);
+    const onChangeView = useCallback((viewId: string) => {
+      console.log('onChangeView', viewId);
+      setSelectedViewId(viewId);
+    }, []);
 
     const handleNavigateToRow = useCallback(
-      async(rowId: string) => {
-        if(!viewId) return;
+      async (rowId: string) => {
+        if (!viewId) return;
         await navigateToView?.(viewId, rowId);
       },
-      [navigateToView, viewId],
+      [navigateToView, viewId]
     );
     const editor = useSlateStatic();
     const readOnly = useReadOnly() || editor.isElementReadOnly(node as unknown as Element);
@@ -97,37 +125,28 @@ export const DatabaseBlock = memo(
 
       return database?.get(YjsDatabaseKey.views)?.get(selectedViewId);
     }, [doc, selectedViewId]);
-    const handleRendered = useCallback(async(height: number) => {
-      const container = containerRef.current;
 
-      if(!container) return;
-      if(height > 0) {
-        container.style.height = `${height}px`;
-      }
-
-      const layout = Number(selectedView?.get(YjsDatabaseKey.layout));
-
-      if(layout !== DatabaseViewLayout.Calendar) {
-        container.style.maxHeight = '550px';
-      }
-
-    }, [selectedView]);
-
-    const [scrollLeft, setScrollLeft] = useState(0);
+    const [paddingStart, setPaddingStart] = useState(0);
+    const [paddingEnd, setPaddingEnd] = useState(0);
+    const [width, setWidth] = useState(0);
 
     useEffect(() => {
+      const dom = ReactEditor.toDOMNode(editor, node);
 
-      const layout = Number(selectedView?.get(YjsDatabaseKey.layout));
-      const editorDom = ReactEditor.toDOMNode(editor, editor);
-      const scrollContainer = getScrollParent(editorDom) as HTMLElement;
+      const scrollContainer = dom.closest('.appflowy-scroll-container') || (getScrollParent(dom) as HTMLElement);
 
-      if(!editorDom || !scrollContainer) return;
+      if (!dom || !scrollContainer) return;
 
       const onResize = () => {
+        const rect = scrollContainer.getBoundingClientRect();
+        const blockRect = dom.getBoundingClientRect();
 
-        const scrollRect = scrollContainer.getBoundingClientRect();
+        const offsetLeft = blockRect.left - rect.left;
+        const offsetRight = rect.right - blockRect.right;
 
-        setScrollLeft(Math.max(editorDom.getBoundingClientRect().left - scrollRect.left, layout === DatabaseViewLayout.Grid ? 64 : 0));
+        setWidth(rect.width);
+        setPaddingStart(offsetLeft);
+        setPaddingEnd(offsetRight);
       };
 
       onResize();
@@ -138,7 +157,7 @@ export const DatabaseBlock = memo(
       return () => {
         resizeObserver.disconnect();
       };
-    }, [editor, selectedView]);
+    }, [editor, selectedView, node]);
 
     return (
       <>
@@ -147,8 +166,7 @@ export const DatabaseBlock = memo(
           contentEditable={readOnly ? false : undefined}
           className={`relative w-full cursor-pointer`}
           onMouseEnter={() => {
-            if(variant === UIVariant.App) {
-
+            if (variant === UIVariant.App && !readOnly) {
               setShowActions(true);
             }
           }}
@@ -156,67 +174,64 @@ export const DatabaseBlock = memo(
             setShowActions(false);
           }}
         >
-          <div
-            ref={ref}
-            className={'absolute left-0 top-0 h-full w-full caret-transparent'}
-          >
+          <div ref={ref} className={'absolute left-0 top-0 h-full w-full caret-transparent'}>
             {children}
           </div>
 
-          <TableContainer
-            paddingLeft={scrollLeft}
-            blockId={node.blockId}
-            readSummary={readSummary}
+          <div
+            contentEditable={false}
+            ref={containerRef}
+            className={`container-bg relative my-1 flex w-full select-none flex-col`}
           >
-            <div
-              contentEditable={false}
-              ref={containerRef}
-              className={`container-bg select-none h-[550px] min-h-[270px] my-1 appflowy-scroller overflow-y-auto overflow-x-hidden relative flex w-full flex-col`}
-            >
-              {selectedViewId && doc ? (
-                <>
-                  <Database
-                    workspaceId={workspaceId}
-                    doc={doc}
-                    iidIndex={viewId}
-                    viewId={selectedViewId}
-                    createRowDoc={createRowDoc}
-                    loadView={loadView}
-                    navigateToView={navigateToView}
-                    onOpenRow={handleNavigateToRow}
-                    loadViewMeta={loadViewMeta}
-                    iidName={iidName}
-                    visibleViewIds={visibleViewIds}
-                    onChangeView={setSelectedViewId}
-                    showActions={showActions}
-                    onRendered={handleRendered}
-                    scrollLeft={scrollLeft}
-                    isDocumentBlock={true}
-                  />
-                </>
-              ) : (
-                <div
-                  className={
-                    'flex h-full w-full flex-col items-center justify-center gap-2 rounded border border-line-divider bg-fill-list-active px-16 text-text-caption max-md:px-4'
-                  }
-                >
-                  {notFound ? (
-                    <>
-                      <div className={'text-base font-medium'}>{t('publish.hasNotBeenPublished')}</div>
-                    </>
-                  ) : (
-                    <CircularProgress />
-                  )}
-                </div>
-              )}
-            </div>
-          </TableContainer>
-
+            {selectedViewId && doc ? (
+              <div
+                className={'relative'}
+                style={{
+                  left: `-${paddingStart}px`,
+                  width,
+                }}
+              >
+                <Database
+                  {...context}
+                  workspaceId={workspaceId}
+                  doc={doc}
+                  iidIndex={viewId}
+                  viewId={selectedViewId}
+                  createRowDoc={createRowDoc}
+                  loadView={loadView}
+                  navigateToView={navigateToView}
+                  onOpenRowPage={handleNavigateToRow}
+                  loadViewMeta={loadViewMeta}
+                  iidName={iidName}
+                  visibleViewIds={visibleViewIds}
+                  onChangeView={onChangeView}
+                  showActions={showActions}
+                  paddingStart={paddingStart}
+                  paddingEnd={paddingEnd}
+                  isDocumentBlock={true}
+                />
+              </div>
+            ) : (
+              <div
+                className={
+                  'flex h-full w-full flex-col items-center justify-center gap-2 rounded bg-background-primary px-16 py-10 text-text-secondary max-md:px-4'
+                }
+              >
+                {notFound ? (
+                  <>
+                    <div className={'text-base font-medium'}>{t('publish.hasNotBeenPublished')}</div>
+                  </>
+                ) : (
+                  <CircularProgress size={20} />
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </>
     );
   }),
-  (prevProps, nextProps) => prevProps.node.data.view_id === nextProps.node.data.view_id,
+  (prevProps, nextProps) => prevProps.node.data.view_id === nextProps.node.data.view_id
 );
 
 export default DatabaseBlock;

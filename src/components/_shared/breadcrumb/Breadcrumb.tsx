@@ -1,11 +1,11 @@
 import { UIVariant, View } from '@/application/types';
+import { ReactComponent as RightIcon } from '@/assets/icons/alt_arrow_right.svg';
+import { ReactComponent as MoreIcon } from '@/assets/icons/more.svg';
 import BreadcrumbItem from '@/components/_shared/breadcrumb/BreadcrumbItem';
 import BreadcrumbMoreModal from '@/components/_shared/breadcrumb/BreadcrumbMoreModal';
 import { getPlatform } from '@/utils/platform';
 import { IconButton } from '@mui/material';
 import React, { memo, useMemo } from 'react';
-import { ReactComponent as RightIcon } from '@/assets/icons/alt_arrow_right.svg';
-import { ReactComponent as MoreIcon } from '@/assets/icons/more.svg';
 
 export interface BreadcrumbProps {
   crumbs: View[];
@@ -24,11 +24,11 @@ export function Breadcrumb({ crumbs, toView, variant }: BreadcrumbProps) {
 
       return (
         <>
-          <div className={'flex min-w-0 max-w-[160px] items-center gap-2 truncate text-text-title'}>
+          <div className={'flex min-w-0 max-w-[160px] items-center gap-2 truncate text-text-primary'}>
             <BreadcrumbItem variant={variant} toView={toView} crumb={firstCrumb} disableClick={true} />
             <RightIcon className={'h-5 w-5 shrink-0'} />
           </div>
-          <div className={'flex min-w-0 max-w-[160px] shrink-0 items-center gap-2 truncate text-text-title'}>
+          <div className={'flex min-w-0 max-w-[160px] shrink-0 items-center gap-2 truncate text-text-primary'}>
             <IconButton
               onClick={() => {
                 setOpenMore(true);
@@ -43,7 +43,7 @@ export function Breadcrumb({ crumbs, toView, variant }: BreadcrumbProps) {
             const key = `${crumb.view_id}-${index}`;
 
             return (
-              <div className={'flex min-w-0 max-w-[160px] items-center gap-2 truncate text-text-title'} key={key}>
+              <div className={'flex min-w-0 max-w-[160px] items-center gap-2 truncate text-text-primary'} key={key}>
                 <BreadcrumbItem
                   variant={variant}
                   toView={toView}
@@ -65,7 +65,7 @@ export function Breadcrumb({ crumbs, toView, variant }: BreadcrumbProps) {
       return (
         <div
           className={`${
-            isLast ? 'text-text-title' : 'text-text-caption'
+            isLast ? 'text-text-primary' : 'text-text-secondary'
           } flex min-w-0 max-w-[160px] items-center gap-2 truncate`}
           key={key}
         >

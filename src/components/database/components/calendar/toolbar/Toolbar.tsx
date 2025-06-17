@@ -15,11 +15,7 @@ interface ExtendedToolbarProps extends ToolbarProps<CalendarEvent, object> {
   emptyEvents: CalendarEvent[];
 }
 
-export function Toolbar({
-  onNavigate,
-  date,
-  emptyEvents,
-}: ExtendedToolbarProps) {
+export function Toolbar({ onNavigate, date, emptyEvents }: ExtendedToolbarProps) {
   const dateStr = useMemo(() => dayjs(date).format('MMM YYYY'), [date]);
   const { t } = useTranslation();
 
@@ -46,10 +42,10 @@ export function Toolbar({
           size={'small'}
           variant={'outlined'}
           disabled
-          className={'rounded-md border-line-divider'}
+          className={'rounded-md border-border-primary'}
           color={'inherit'}
           onClick={() => onNavigate('TODAY')}
-          endIcon={<DownArrow className={'h-3 w-3 text-text-caption'} />}
+          endIcon={<DownArrow className={'h-3 w-3 text-text-secondary'} />}
         >
           {t('calendar.navigation.views.month')}
         </Button>

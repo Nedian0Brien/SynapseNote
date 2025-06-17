@@ -1,14 +1,19 @@
 import { View, ViewLayout } from '@/application/types';
-import { ViewIcon } from '@/components/_shared/view-icon';
 import MobileRecentViewCover from '@/components/app/recent/MobileRecentViewCover';
 import { ThemeModeContext } from '@/components/main/useAppThemeMode';
+import { ViewIcon } from '@/components/_shared/view-icon';
+import PageIcon from '@/components/_shared/view-icon/PageIcon';
 import { Divider } from '@mui/material';
 import dayjs from 'dayjs';
-import React, { useCallback, useContext, useMemo } from 'react';
+import { useCallback, useContext, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import PageIcon from '@/components/_shared/view-icon/PageIcon';
 
-function MobileOutlineWithCover ({ view, navigateToView, timePrefix, time }: {
+function MobileOutlineWithCover({
+  view,
+  navigateToView,
+  timePrefix,
+  time,
+}: {
   view: View;
   navigateToView: (viewId: string) => void;
   timePrefix?: string;
@@ -17,25 +22,28 @@ function MobileOutlineWithCover ({ view, navigateToView, timePrefix, time }: {
   const { t } = useTranslation();
   const isDark = useContext(ThemeModeContext)?.isDark;
 
-  const getRelativeTime = useCallback((time: string) => {
-    const justNow = dayjs().diff(dayjs(time), 'minute') < 1;
-    const isToday = dayjs().isSame(dayjs(time), 'day');
-    const isYesterday = dayjs().isSame(dayjs(time), 'day');
+  const getRelativeTime = useCallback(
+    (time: string) => {
+      const justNow = dayjs().diff(dayjs(time), 'minute') < 1;
+      const isToday = dayjs().isSame(dayjs(time), 'day');
+      const isYesterday = dayjs().isSame(dayjs(time), 'day');
 
-    if (justNow) {
-      return t('time.justNow');
-    }
+      if (justNow) {
+        return t('time.justNow');
+      }
 
-    if (isToday) {
-      return dayjs(time).format('HH:mm');
-    }
+      if (isToday) {
+        return dayjs(time).format('HH:mm');
+      }
 
-    if (isYesterday) {
-      return t('time.yesterday');
-    }
+      if (isYesterday) {
+        return t('time.yesterday');
+      }
 
-    return dayjs(time).format('MMM d, YYYY');
-  }, [t]);
+      return dayjs(time).format('MMM d, YYYY');
+    },
+    [t]
+  );
 
   const viewIconProps = useMemo(() => {
     switch (view.layout) {
@@ -69,7 +77,6 @@ function MobileOutlineWithCover ({ view, navigateToView, timePrefix, time }: {
           iconClassName: 'text-[#00C2FF]',
           bgColor: isDark ? '#658B9033' : '#EDFBFFCC',
         };
-
     }
   }, [view.layout, isDark]);
 
@@ -77,38 +84,43 @@ function MobileOutlineWithCover ({ view, navigateToView, timePrefix, time }: {
     <>
       <div
         key={view.view_id}
-        className={'flex items-center gap-2 justify-between px-3'}
+        className={'flex items-center justify-between gap-2 px-3'}
         onClick={() => {
           void navigateToView(view.view_id);
         }}
       >
-        <div className={'flex flex-col flex-1 gap-4'}>
-          <div className={'flex gap-2 text-base items-center'}>
-            {view.icon && <PageIcon view={view} className={'!w-5 !h-5 flex items-center justify-center'} iconSize={20} />}
-            <div className={'font-medium'}>
-              {view.name}
-            </div>
+        <div className={'flex flex-1 flex-col gap-4'}>
+          <div className={'flex items-center gap-2 text-base'}>
+            {view.icon && (
+              <PageIcon view={view} className={'flex !h-5 !w-5 items-center justify-center'} iconSize={20} />
+            )}
+            <div className={'font-medium'}>{view.name}</div>
           </div>
-          {view.last_edited_time && <div className={'text-text-caption font-normal text-sm'}>
-            {timePrefix || ''}
-            {getRelativeTime(time || view.last_edited_time)}
-          </div>}
-
+          {view.last_edited_time && (
+            <div className={'text-sm font-normal text-text-secondary'}>
+              {timePrefix || ''}
+              {getRelativeTime(time || view.last_edited_time)}
+            </div>
+          )}
         </div>
-        {view.extra?.cover && view.extra?.cover.type !== 'none' ? <MobileRecentViewCover
-          cover={view.extra.cover}
-        /> : <div
-          style={{
-            backgroundColor: viewIconProps.bgColor,
-          }}
-          className={'w-[78px] border border-fill-list-hover flex items-center justify-center rounded-[8px] overflow-hidden h-[54px]'}
-        >
-          <ViewIcon
-            className={`${viewIconProps.iconClassName} text-2xl`}
-            layout={view.layout || ViewLayout.Document}
-            size={'unset'}
-          />
-        </div>}
+        {view.extra?.cover && view.extra?.cover.type !== 'none' ? (
+          <MobileRecentViewCover cover={view.extra.cover} />
+        ) : (
+          <div
+            style={{
+              backgroundColor: viewIconProps.bgColor,
+            }}
+            className={
+              'flex h-[54px] w-[78px] items-center justify-center overflow-hidden rounded-[8px] border border-fill-content-hover'
+            }
+          >
+            <ViewIcon
+              className={`${viewIconProps.iconClassName} text-2xl`}
+              layout={view.layout || ViewLayout.Document}
+              size={'unset'}
+            />
+          </div>
+        )}
       </div>
       <Divider className={'w-full opacity-50'} />
     </>

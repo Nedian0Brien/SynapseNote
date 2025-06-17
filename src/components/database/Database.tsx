@@ -1,19 +1,25 @@
+import { useLiveQuery } from 'dexie-react-hooks';
+import { debounce } from 'lodash-es';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+
 import { db } from '@/application/db';
 import {
   AppendBreadcrumb,
+  CreateFolderViewPayload,
   CreateRowDoc,
   LoadView,
-  LoadViewMeta, RowId, UIVariant,
+  LoadViewMeta,
+  RowId,
+  UIVariant,
   YDatabase,
   YDoc,
   YjsDatabaseKey,
   YjsEditorKey,
 } from '@/application/types';
-import DatabaseRow from '@/components/database/DatabaseRow';
+import { DatabaseRow } from '@/components/database/DatabaseRow';
+import DatabaseRowModal from '@/components/database/DatabaseRowModal';
 import DatabaseViews from '@/components/database/DatabaseViews';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { debounce } from 'lodash-es';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+
 import { DatabaseContextProvider } from './DatabaseContext';
 
 export interface Database2Props {
@@ -29,57 +35,54 @@ export interface Database2Props {
   rowId?: string;
   appendBreadcrumb?: AppendBreadcrumb;
   onChangeView: (viewId: string) => void;
-  onOpenRow?: (rowId: string) => void;
+  onOpenRowPage?: (rowId: string) => void;
   visibleViewIds: string[];
   iidIndex: string;
   variant?: UIVariant;
-  onRendered?: (height: number) => void;
+  onRendered?: () => void;
   isDocumentBlock?: boolean;
-  scrollLeft?: number;
+  paddingStart?: number;
+  paddingEnd?: number;
   showActions?: boolean;
+  createFolderView?: (payload: CreateFolderViewPayload) => Promise<string>;
 }
 
-function Database({
-  workspaceId,
-  doc,
-  createRowDoc,
-  navigateToView,
-  loadViewMeta,
-  loadView,
-  viewId,
-  iidIndex,
-  iidName,
-  visibleViewIds,
-  rowId,
-  onChangeView,
-  onOpenRow,
-  appendBreadcrumb,
-  onRendered,
-  readOnly = true,
-  variant = UIVariant.App,
-  scrollLeft,
-  isDocumentBlock,
-  showActions,
-}: Database2Props) {
+function Database(props: Database2Props) {
+  const {
+    doc,
+    createRowDoc,
+    viewId,
+    iidIndex,
+    iidName,
+    visibleViewIds,
+    rowId,
+    onChangeView,
+    onOpenRowPage,
+    appendBreadcrumb,
+    readOnly = true,
+    variant = UIVariant.App,
+    loadView,
+    navigateToView,
+  } = props;
   const database = doc.getMap(YjsEditorKey.data_section)?.get(YjsEditorKey.database) as YDatabase;
   const view = database.get(YjsDatabaseKey.views).get(iidIndex);
 
   const rowOrders = view?.get(YjsDatabaseKey.row_orders);
   const [rowIds, setRowIds] = useState<RowId[]>([]);
   const [rowDocMap, setRowDocMap] = useState<Record<RowId, YDoc> | null>(null);
-  const dbRows = useLiveQuery(async() => {
-    const rows = await db.rows.bulkGet(rowIds.map(id => `${doc.guid}_rows_${id}`));
+  const dbRows = useLiveQuery(async () => {
+    const rows = await db.rows.bulkGet(rowIds.map((id) => `${doc.guid}_rows_${id}`));
 
     return rows;
   }, [rowIds, variant]);
 
-  const updateRowMap = useCallback(async() => {
+  const updateRowMap = useCallback(async () => {
     const newRowMap: Record<RowId, YDoc> = {};
 
-    if(!dbRows || !createRowDoc) return;
+    if (!dbRows || !createRowDoc) return;
 
-    for(const row of dbRows) {
-      if(!row) {
+    for (const row of dbRows) {
+      if (!row) {
         continue;
       }
 
@@ -102,7 +105,28 @@ function Database({
     console.log('Database.tsx: rowDocMap', rowDocMap);
   }, [rowDocMap, database]);
 
-  const handleUpdateRowDocMap = useCallback(async() => {
+  const createNewRowDoc = useCallback(
+    async (rowKey: string) => {
+      if (!createRowDoc) {
+        throw new Error('createRowDoc function is not provided');
+      }
+
+      const rowId = rowKey.split('_rows_')[1];
+
+      const rowDoc = await createRowDoc(rowKey);
+
+      await db.rows.put({
+        row_id: rowId,
+        version: 1,
+        row_key: rowKey,
+      });
+
+      return rowDoc;
+    },
+    [createRowDoc]
+  );
+
+  const handleUpdateRowDocMap = useCallback(async () => {
     setRowIds(rowOrders?.toJSON().map(({ id }: { id: string }) => id) || []);
   }, [rowOrders]);
 
@@ -115,37 +139,81 @@ function Database({
     };
   }, [handleUpdateRowDocMap, rowOrders]);
 
-  if(!rowDocMap || !viewId) {
+  const [openModalRowId, setOpenModalRowId] = useState<string | null>(null);
+  const [openModalViewId, setOpenModalViewId] = useState<string | null>(null);
+  const [openModalRowDatabaseDoc, setOpenModalRowDatabaseDoc] = useState<YDoc | null>(null);
+  const [openModalRowDocMap, setOpenModalRowDocMap] = useState<Record<RowId, YDoc> | null>(null);
+
+  const handleOpenRow = useCallback(
+    async (rowId: string, viewId?: string) => {
+      if (readOnly) {
+        if (viewId) {
+          void navigateToView?.(viewId, rowId);
+          return;
+        }
+
+        onOpenRowPage?.(rowId);
+        return;
+      }
+
+      if (viewId) {
+        try {
+          const viewDoc = await loadView?.(viewId);
+
+          if (!viewDoc) {
+            void navigateToView?.(viewId);
+            return;
+          }
+
+          setOpenModalViewId(viewId);
+          setOpenModalRowDatabaseDoc(viewDoc);
+          const database = viewDoc.getMap(YjsEditorKey.data_section)?.get(YjsEditorKey.database) as YDatabase;
+
+          console.log('======', database.toJSON());
+
+          const rowDoc = await createRowDoc?.(`${viewDoc.guid}_rows_${rowId}`);
+
+          if (!rowDoc) {
+            throw new Error('Row document not found');
+          }
+
+          setOpenModalRowDocMap({ [rowId]: rowDoc });
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      setOpenModalRowId(rowId);
+    },
+    [createRowDoc, loadView, navigateToView, onOpenRowPage, readOnly]
+  );
+
+  const handleCloseRowModal = useCallback(() => {
+    setOpenModalRowId(null);
+    setOpenModalRowDocMap(null);
+    setOpenModalRowDatabaseDoc(null);
+    setOpenModalViewId(null);
+  }, []);
+
+  if (!rowDocMap || !viewId) {
     return null;
   }
 
   return (
     <div className={'flex w-full flex-1 justify-center'}>
       <DatabaseContextProvider
-        workspaceId={workspaceId}
+        {...props}
         isDatabaseRowPage={!!rowId}
-        navigateToRow={onOpenRow}
-        iidIndex={iidIndex}
-        viewId={viewId}
+        navigateToRow={handleOpenRow}
         databaseDoc={doc}
         rowDocMap={rowDocMap}
         readOnly={readOnly}
-        loadView={loadView}
-        navigateToView={navigateToView}
-        loadViewMeta={loadViewMeta}
-        createRowDoc={createRowDoc}
-        scrollLeft={scrollLeft}
-        isDocumentBlock={isDocumentBlock}
-        onRendered={onRendered}
-        showActions={showActions}
+        createRowDoc={createNewRowDoc}
       >
         {rowId ? (
-          <DatabaseRow
-            appendBreadcrumb={appendBreadcrumb}
-            rowId={rowId}
-          />
+          <DatabaseRow appendBreadcrumb={appendBreadcrumb} rowId={rowId} />
         ) : (
-          <div className="appflowy-database relative flex w-full flex-1 select-text flex-col overflow-y-hidden">
+          <div className='appflowy-database relative flex w-full flex-1 select-text flex-col overflow-y-hidden'>
             <DatabaseViews
               visibleViewIds={visibleViewIds}
               iidIndex={iidIndex}
@@ -156,6 +224,32 @@ function Database({
           </div>
         )}
       </DatabaseContextProvider>
+      {openModalRowId && (
+        <DatabaseContextProvider
+          {...props}
+          viewId={openModalViewId || viewId}
+          iidIndex={openModalViewId || iidIndex}
+          databaseDoc={openModalRowDatabaseDoc || doc}
+          rowDocMap={openModalRowDocMap || rowDocMap}
+          isDatabaseRowPage={false}
+          navigateToRow={handleOpenRow}
+          readOnly={readOnly}
+          createRowDoc={createNewRowDoc}
+        >
+          <DatabaseRowModal
+            rowId={openModalRowId}
+            open={Boolean(openModalRowId)}
+            openPage={onOpenRowPage}
+            onOpenChange={(status) => {
+              if (!status) {
+                handleCloseRowModal();
+              } else {
+                setOpenModalRowId(openModalRowId);
+              }
+            }}
+          />
+        </DatabaseContextProvider>
+      )}
     </div>
   );
 }

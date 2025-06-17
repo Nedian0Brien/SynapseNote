@@ -1,5 +1,5 @@
 import { EditorElementProps, DividerNode as DividerBlock } from '@/components/editor/editor.type';
-import React, { forwardRef, memo, useMemo } from 'react';
+import { forwardRef, memo, useMemo } from 'react';
 import { useReadOnly, useSlateStatic } from 'slate-react';
 import { Element } from 'slate';
 

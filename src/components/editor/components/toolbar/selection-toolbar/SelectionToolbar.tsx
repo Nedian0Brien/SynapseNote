@@ -1,6 +1,6 @@
 import ToolbarActions from '@/components/editor/components/toolbar/selection-toolbar/ToolbarActions';
 import { SelectionToolbarContext, useToolbarPosition, useVisible } from './SelectionToolbar.hooks';
-import React, { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 export function SelectionToolbar() {
   const { visible, forceShow, getDecorateState } = useVisible();

@@ -4,7 +4,7 @@ import EditCategory from '@/components/as-template/category/EditCategory';
 import { CategoryIcon } from '@/components/as-template/icons';
 import { Chip, IconButton, Tooltip } from '@mui/material';
 import MenuItem from '@mui/material/MenuItem';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ReactComponent as CheckIcon } from '@/assets/icons/tick.svg';
 import { ReactComponent as EditIcon } from '@/assets/icons/edit.svg';
 import { ReactComponent as DeleteIcon } from '@/assets/icons/delete.svg';

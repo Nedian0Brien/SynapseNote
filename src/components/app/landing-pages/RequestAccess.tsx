@@ -1,15 +1,15 @@
-import { NormalModal } from '@/components/_shared/modal';
-import { notify } from '@/components/_shared/notify';
 import { useAppViewId, useCurrentWorkspaceId } from '@/components/app/app.hooks';
 import { AFConfigContext, useCurrentUser, useService } from '@/components/main/app.hooks';
+import { NormalModal } from '@/components/_shared/modal';
+import { notify } from '@/components/_shared/notify';
 
+import { ReactComponent as AppflowyLogo } from '@/assets/icons/appflowy.svg';
 import TaskAltRounded from '@mui/icons-material/TaskAltRounded';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
 import React, { useContext } from 'react';
-import { useTranslation, Trans } from 'react-i18next';
-import { ReactComponent as AppflowyLogo } from '@/assets/icons/appflowy.svg';
+import { Trans, useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
 const REPEAT_REQUEST_CODE = 1043;
@@ -42,17 +42,17 @@ function RequestAccess() {
   };
 
   return (
-    <div className={'m-0 flex h-screen w-screen items-center justify-center bg-bg-body p-0'}>
+    <div className={'m-0 flex h-screen w-screen items-center justify-center bg-background-primary p-0'}>
       <div className={'mb-10 flex max-w-[660px] flex-col items-center gap-3 px-6 text-center'}>
-        <Typography variant='h3' className={'mb-[27px] flex items-center gap-4 text-text-title'} gutterBottom>
+        <Typography variant='h3' className={'mb-[27px] flex items-center gap-4 text-text-primary'} gutterBottom>
           <>
             <AppflowyLogo className={'w-48'} />
           </>
         </Typography>
-        <div className={'mb-[16px] text-[52px]  font-semibold leading-[128%] text-text-title max-md:text-[24px]'}>
+        <div className={'mb-[16px] text-[52px]  font-semibold leading-[128%] text-text-primary max-md:text-[24px]'}>
           {t('requestAccess.title')}
         </div>
-        <div className={'text-[20px] leading-[152%]  text-text-caption max-md:text-[16px]'}>
+        <div className={'text-[20px] leading-[152%]  text-text-secondary max-md:text-[16px]'}>
           <div>{t('requestAccess.subtitle')}</div>
         </div>
         <div className={'mt-4 flex w-full items-center justify-between gap-4'}>
@@ -63,7 +63,7 @@ function RequestAccess() {
             }}
             disabled={clicked}
             className={
-              'flex-1 rounded-[8px] py-2 px-4 text-[20px] font-medium max-md:py-2 max-md:text-base max-sm:text-[14px]'
+              'flex-1 rounded-[8px] px-4 py-2 text-[20px] font-medium max-md:py-2 max-md:text-base max-sm:text-[14px]'
             }
             variant={'contained'}
             color={'primary'}
@@ -75,7 +75,7 @@ function RequestAccess() {
               navigate('/');
             }}
             className={
-              'flex-1 rounded-[8px] py-2 px-4 text-[20px] font-medium max-md:py-2 max-md:text-base max-sm:text-[14px]'
+              'flex-1 rounded-[8px] px-4 py-2 text-[20px] font-medium max-md:py-2 max-md:text-base max-sm:text-[14px]'
             }
             variant={'outlined'}
             color={'inherit'}
@@ -84,7 +84,7 @@ function RequestAccess() {
           </Button>
         </div>
         <Divider className={'mb-3 mt-4 w-full'} />
-        <div className={'flex max-w-[400px] flex-col text-text-caption'}>
+        <div className={'flex max-w-[400px] flex-col text-text-secondary'}>
           <span>
             <Trans
               i18nKey='requestAccess.tip'

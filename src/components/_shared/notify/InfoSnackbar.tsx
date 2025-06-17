@@ -1,5 +1,5 @@
 import { notify } from '@/components/_shared/notify/index';
-import React, { forwardRef } from 'react';
+import { forwardRef } from 'react';
 import { Button, IconButton, Paper } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { ReactComponent as CloseIcon } from '@/assets/icons/close.svg';

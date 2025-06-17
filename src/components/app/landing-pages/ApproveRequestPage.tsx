@@ -6,11 +6,11 @@ import {
 } from '@/application/types';
 import { ReactComponent as AppflowyLogo } from '@/assets/icons/appflowy.svg';
 import { ReactComponent as WarningIcon } from '@/assets/icons/warning.svg';
+import { AFConfigContext, useService } from '@/components/main/app.hooks';
 import { NormalModal } from '@/components/_shared/modal';
 import ChangeAccount from '@/components/_shared/modal/ChangeAccount';
 import { notify } from '@/components/_shared/notify';
 import { getAvatar } from '@/components/_shared/view-icon/utils';
-import { AFConfigContext, useService } from '@/components/main/app.hooks';
 
 import { Avatar, Button } from '@mui/material';
 import React, { useCallback, useContext, useEffect, useMemo } from 'react';
@@ -123,7 +123,7 @@ function ApproveRequestPage() {
   return (
     <div
       className={
-        'appflowy-scroller flex h-screen w-screen flex-col items-center gap-12 overflow-y-auto overflow-x-hidden bg-bg-body px-6 text-text-title max-md:gap-4'
+        'appflowy-scroller flex h-screen w-screen flex-col items-center gap-12 overflow-y-auto overflow-x-hidden bg-background-primary px-6 text-text-primary max-md:gap-4'
       }
     >
       <div
@@ -158,7 +158,7 @@ function ApproveRequestPage() {
             }}
             disabled={clicked || !requestInfo}
             className={
-              'flex-1 rounded-[8px] py-2 px-4 text-[20px] font-medium max-md:py-2 max-md:text-base max-sm:text-[14px]'
+              'flex-1 rounded-[8px] px-4 py-2 text-[20px] font-medium max-md:py-2 max-md:text-base max-sm:text-[14px]'
             }
             variant={'contained'}
             color={'primary'}
@@ -170,7 +170,7 @@ function ApproveRequestPage() {
               navigate('/');
             }}
             className={
-              'flex-1 rounded-[8px] py-2 px-4 text-[20px] font-medium max-md:py-2 max-md:text-base max-sm:text-[14px]'
+              'flex-1 rounded-[8px] px-4 py-2 text-[20px] font-medium max-md:py-2 max-md:text-base max-sm:text-[14px]'
             }
             variant={'outlined'}
             color={'inherit'}
@@ -189,7 +189,7 @@ function ApproveRequestPage() {
         onOk={handleUpgrade}
       >
         <div className='py-3'>
-          <p className='text-base text-text-caption'>
+          <p className='text-base text-text-secondary'>
             {t('upgradePlanModal.message', {
               name: requestInfo?.workspace.name,
             })}

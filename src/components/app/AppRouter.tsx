@@ -4,7 +4,6 @@ import InviteCode from '@/components/app/landing-pages/InviteCode';
 import RecordNotFound from '@/components/error/RecordNotFound';
 import AppPage from '@/pages/AppPage';
 import TrashPage from '@/pages/TrashPage';
-import React from 'react';
 import { Route, Routes } from 'react-router-dom';
 
 function AppRouter () {

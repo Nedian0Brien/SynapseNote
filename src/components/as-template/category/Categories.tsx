@@ -1,12 +1,12 @@
-import { Popover } from '@/components/_shared/popover';
+import { ReactComponent as ArrowRight } from '@/assets/icons/alt_arrow_right.svg';
 import AddCategory from '@/components/as-template/category/AddCategory';
 import CategoryItem from '@/components/as-template/category/CategoryItem';
 import { useLoadCategories } from '@/components/as-template/hooks';
 import { CategoryIcon } from '@/components/as-template/icons';
+import { Popover } from '@/components/_shared/popover';
 import { Chip, CircularProgress, OutlinedInput, Typography } from '@mui/material';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ReactComponent as ArrowRight } from '@/assets/icons/alt_arrow_right.svg';
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -52,7 +52,7 @@ function Categories({ value, onChange }: { value: string[]; onChange: React.Disp
 
   return (
     <div className={'flex flex-col gap-4'}>
-      <Typography variant={'h6'} className={'text-text-caption'}>
+      <Typography variant={'h6'} className={'text-text-secondary'}>
         {t('template.categories')}
       </Typography>
       <div className={'flex items-center gap-2'}>
@@ -64,14 +64,14 @@ function Categories({ value, onChange }: { value: string[]; onChange: React.Disp
             loading ? (
               <CircularProgress size={'small'} />
             ) : (
-              <ArrowRight className={`h-5 w-5 ${open ? '-rotate-90' : 'rotate-90'} text-text-caption`} />
+              <ArrowRight className={`h-5 w-5 ${open ? '-rotate-90' : 'rotate-90'} text-text-secondary`} />
             )
           }
           size={'small'}
           onClick={async () => {
             setOpen(true);
           }}
-          className={'flex-1 bg-bg-body'}
+          className={'flex-1 bg-background-primary'}
           ref={ref}
         />
         <Popover {...MenuProps} open={open} anchorEl={ref.current} onClose={() => setOpen(false)}>

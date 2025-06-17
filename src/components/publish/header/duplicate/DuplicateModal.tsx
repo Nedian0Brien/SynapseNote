@@ -1,16 +1,16 @@
-import { AFConfigContext } from '@/components/main/app.hooks';
-import React, { useCallback, useContext, useEffect } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
-import { NormalModal } from '@/components/_shared/modal';
-import SelectWorkspace from '@/components/publish/header/duplicate/SelectWorkspace';
-import { useLoadWorkspaces } from '@/components/publish/header/duplicate/useDuplicate';
-import SpaceList from '@/components/publish/header/duplicate/SpaceList';
-import { downloadPage, openAppFlowySchema } from '@/utils/url';
 import { PublishContext } from '@/application/publish';
 import { Types, ViewLayout } from '@/application/types';
+import { AFConfigContext } from '@/components/main/app.hooks';
+import SelectWorkspace from '@/components/publish/header/duplicate/SelectWorkspace';
+import SpaceList from '@/components/publish/header/duplicate/SpaceList';
+import { useLoadWorkspaces } from '@/components/publish/header/duplicate/useDuplicate';
+import { NormalModal } from '@/components/_shared/modal';
 import { notify } from '@/components/_shared/notify';
+import { downloadPage, openAppFlowySchema } from '@/utils/url';
+import React, { useCallback, useContext, useEffect } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 
-function getCollabTypeFromViewLayout (layout: ViewLayout) {
+function getCollabTypeFromViewLayout(layout: ViewLayout) {
   switch (layout) {
     case ViewLayout.Document:
       return Types.Document;
@@ -23,7 +23,7 @@ function getCollabTypeFromViewLayout (layout: ViewLayout) {
   }
 }
 
-function DuplicateModal ({ open, onClose }: { open: boolean; onClose: () => void }) {
+function DuplicateModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useTranslation();
   const service = useContext(AFConfigContext)?.service;
   const viewMeta = useContext(PublishContext)?.viewMeta;
@@ -130,22 +130,22 @@ function DuplicateModal ({ open, onClose }: { open: boolean; onClose: () => void
         }}
         onClose={() => setSuccessModalOpen(false)}
         open={successModalOpen}
-        title={
-          <div className={'text-left'}>
-            {t('addToWorkspace')}
-          </div>
-        }
+        title={<div className={'text-left'}>{t('addToWorkspace')}</div>}
       >
-        <div className={'w-full whitespace-pre-wrap break-words pb-1 text-text-caption'}>
+        <div className={'w-full whitespace-pre-wrap break-words pb-1 text-text-secondary'}>
           <Trans
-            i18nKey="downloadTip"
+            i18nKey='downloadTip'
             components={{
-              link: <span
-                onClick={() => {
-                  window.open(downloadPage, '_blank');
-                }}
-                className={'hover:underline cursor-pointer text-fill-default'}
-              >{t('here')}</span>,
+              link: (
+                <span
+                  onClick={() => {
+                    window.open(downloadPage, '_blank');
+                  }}
+                  className={'cursor-pointer text-fill-default hover:underline'}
+                >
+                  {t('here')}
+                </span>
+              ),
             }}
           />
         </div>

@@ -1,9 +1,9 @@
 import AppFlowyPower from '@/components/_shared/appflowy-power/AppFlowyPower';
+import { RichTooltip } from '@/components/_shared/popover';
 import { PopperPlacementType } from '@mui/material';
 import React, { ReactElement, useMemo } from 'react';
-import { RichTooltip } from '@/components/_shared/popover';
 
-export function OutlinePopover ({
+export function OutlinePopover({
   children,
   open,
   onClose,
@@ -28,11 +28,10 @@ export function OutlinePopover ({
       <div
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
-        className={'flex h-fit max-h-[590px] w-[268px] flex-col overflow-y-auto overflow-x-hidden appflowy-scroller'}
+        className={'appflowy-scroller flex h-fit max-h-[590px] w-[268px] flex-col overflow-y-auto overflow-x-hidden'}
       >
         {content}
         {variant === 'publish' && <AppFlowyPower />}
-
       </div>
     );
   }, [variant, onMouseEnter, onMouseLeave, content]);
@@ -40,7 +39,7 @@ export function OutlinePopover ({
   return (
     <RichTooltip
       PaperProps={{
-        className: 'rounded-[14px] border border-tint-purple bg-bg-body m-2 overflow-hidden',
+        className: 'rounded-[14px] border border-tint-purple bg-background-primary m-2 overflow-hidden',
       }}
       open={open}
       onClose={onClose}

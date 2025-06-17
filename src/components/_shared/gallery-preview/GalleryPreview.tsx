@@ -1,16 +1,17 @@
-import { notify } from '@/components/_shared/notify';
-import { copyTextToClipboard } from '@/utils/copy';
 import { IconButton, Portal, Tooltip } from '@mui/material';
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { TransformWrapper, TransformComponent, ReactZoomPanPinchContentRef } from 'react-zoom-pan-pinch';
+import { ReactZoomPanPinchContentRef, TransformComponent, TransformWrapper } from 'react-zoom-pan-pinch';
+
 import { ReactComponent as RightIcon } from '@/assets/icons/alt_arrow_right.svg';
-import { ReactComponent as ReloadIcon } from '@/assets/icons/reset.svg';
-import { ReactComponent as AddIcon } from '@/assets/icons/plus.svg';
-import { ReactComponent as MinusIcon } from '@/assets/icons/minus.svg';
-import { ReactComponent as LinkIcon } from '@/assets/icons/link.svg';
-import { ReactComponent as DownloadIcon } from '@/assets/icons/save_as.svg';
 import { ReactComponent as CloseIcon } from '@/assets/icons/close.svg';
+import { ReactComponent as LinkIcon } from '@/assets/icons/link.svg';
+import { ReactComponent as MinusIcon } from '@/assets/icons/minus.svg';
+import { ReactComponent as AddIcon } from '@/assets/icons/plus.svg';
+import { ReactComponent as ReloadIcon } from '@/assets/icons/reset.svg';
+import { ReactComponent as DownloadIcon } from '@/assets/icons/save_as.svg';
+import { notify } from '@/components/_shared/notify';
+import { copyTextToClipboard } from '@/utils/copy';
 
 export interface GalleryImage {
   src: string;
@@ -96,8 +97,14 @@ function GalleryPreview({ images, open, onClose, previewIndex }: GalleryPreviewP
   }
 
   return (
-    <Portal container={document.getElementById('root')}>
-      <div className={'fixed inset-0 z-[1400] bg-black bg-opacity-80'} onClick={onClose}>
+    <Portal>
+      <div
+        className={'fixed inset-0 z-[1400] bg-black bg-opacity-80'}
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose?.();
+        }}
+      >
         <TransformWrapper
           ref={transformComponentRef}
           initialScale={1}
@@ -118,7 +125,7 @@ function GalleryPreview({ images, open, onClose, previewIndex }: GalleryPreviewP
                         <RightIcon className={'rotate-180 transform'} />
                       </IconButton>
                     </Tooltip>
-                    <span className={'text-text-caption'}>
+                    <span className={'text-text-secondary'}>
                       {index + 1}/{images.length}
                     </span>
                     <Tooltip title={t('gallery.next')}>

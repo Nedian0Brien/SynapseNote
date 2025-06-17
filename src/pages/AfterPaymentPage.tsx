@@ -1,6 +1,6 @@
-import { Button, Typography } from '@mui/material';
-import React, { useCallback, useEffect } from 'react';
 import { ReactComponent as AppflowyLogo } from '@/assets/icons/appflowy.svg';
+import { Button, Typography } from '@mui/material';
+import { useCallback, useEffect } from 'react';
 
 function AfterPaymentPage() {
   const openAppFlowy = useCallback(() => {
@@ -11,14 +11,14 @@ function AfterPaymentPage() {
     openAppFlowy();
   }, [openAppFlowy]);
   return (
-    <div className={'m-0 flex h-screen w-screen items-center justify-center bg-bg-body p-6'}>
+    <div className={'m-0 flex h-screen w-screen items-center justify-center bg-background-primary p-6'}>
       <div className={'flex max-w-[560px] flex-col items-center gap-1 text-center'}>
-        <Typography variant='h3' className={'mb-[27px] flex items-center gap-4 text-text-title'} gutterBottom>
+        <Typography variant='h3' className={'mb-[27px] flex items-center gap-4 text-text-primary'} gutterBottom>
           <>
             <AppflowyLogo className={'w-32'} />
           </>
         </Typography>
-        <div className={'mb-[16px] text-[52px] font-semibold leading-[128%] text-text-title'}>
+        <div className={'mb-[16px] text-[52px] font-semibold leading-[128%] text-text-primary'}>
           Explore features in your new plan
         </div>
         <div className={'flex flex-col items-center  justify-center  text-[20px] leading-[152%]'}>
@@ -32,7 +32,7 @@ function AfterPaymentPage() {
           variant='contained'
           color='primary'
           className={
-            'mt-[32px] mb-[48px] h-[68px] rounded-[20px] px-[44px] py-[18px] text-[20px] font-medium leading-[120%] text-content-on-fill'
+            'mb-[48px] mt-[32px] h-[68px] rounded-[20px] px-[44px] py-[18px] text-[20px] font-medium leading-[120%] text-content-on-fill'
           }
         >
           Back to AppFlowy

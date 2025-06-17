@@ -1,8 +1,9 @@
 import { IconButton, Tooltip } from '@mui/material';
 import { useTranslation } from 'react-i18next';
-import { ReactComponent as TemplateIcon } from '@/assets/icons/template.svg';
 import { useNavigate } from 'react-router-dom';
+
 import { ReactComponent as TrashIcon } from '@/assets/icons/delete.svg';
+import { ReactComponent as TemplateIcon } from '@/assets/icons/template.svg';
 import { QuickNote } from '@/components/quick-note';
 
 function SideBarBottom() {
@@ -10,13 +11,8 @@ function SideBarBottom() {
   const navigate = useNavigate();
 
   return (
-    <div
-      className={'px-4 sticky bottom-0 bg-bg-base'}
-    >
-      <div
-        className={'flex py-4  border-t border-line-divider gap-1 justify-around items-center'}
-
-      >
+    <div className={'sticky bottom-0 bg-surface-container-layer-00 px-4'}>
+      <div className={'flex items-center  justify-around gap-1 border-t border-border-primary py-4'}>
         <Tooltip title={t('template.label')}>
           <IconButton
             size={'small'}
@@ -41,7 +37,6 @@ function SideBarBottom() {
 
         <QuickNote />
       </div>
-
     </div>
   );
 }

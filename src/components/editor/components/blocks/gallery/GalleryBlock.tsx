@@ -1,11 +1,11 @@
-import { ReactComponent as GalleryIcon } from '@/assets/icons/gallery.svg';
 import { GalleryLayout } from '@/application/types';
-import { GalleryPreview } from '@/components/_shared/gallery-preview';
-import { notify } from '@/components/_shared/notify';
+import { ReactComponent as GalleryIcon } from '@/assets/icons/gallery.svg';
 import Carousel from '@/components/editor/components/blocks/gallery/Carousel';
 import GalleryToolbar from '@/components/editor/components/blocks/gallery/GalleryToolbar';
 import ImageGallery from '@/components/editor/components/blocks/gallery/ImageGallery';
 import { EditorElementProps, GalleryBlockNode } from '@/components/editor/editor.type';
+import { GalleryPreview } from '@/components/_shared/gallery-preview';
+import { notify } from '@/components/_shared/notify';
 import { copyTextToClipboard } from '@/utils/copy';
 import React, { forwardRef, memo, Suspense, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -100,7 +100,7 @@ const GalleryBlock = memo(
               />
             )
           ) : (
-            <div className={'flex w-full select-none items-center gap-4 text-text-caption'}>
+            <div className={'flex w-full select-none items-center gap-4 text-text-secondary'}>
               <GalleryIcon />
               {t('document.plugins.image.addAnImageMobile')}
             </div>

@@ -1,5 +1,4 @@
 import CircularProgress from '@mui/material/CircularProgress';
-import React from 'react';
 
 function ComponentLoading() {
   return (

@@ -1,5 +1,5 @@
 import { FileMediaCellDataItem } from '@/application/database-yjs/cell.type';
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 
 function PreviewImage({ file, onClick }: { file: FileMediaCellDataItem; onClick: () => void }) {
   const thumb = useMemo(() => {
@@ -12,11 +12,19 @@ function PreviewImage({ file, onClick }: { file: FileMediaCellDataItem; onClick:
   }, [file.url]);
 
   return (
-    <div onClick={onClick} className={'transform cursor-pointer transition-all duration-200 hover:scale-110'}>
+    <div
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+      className={'cursor-zoom-in'}
+    >
       <img
         src={thumb}
         alt={file.name}
-        className={'aspect-square w-[60px] overflow-hidden rounded-[8px] border border-line-divider object-cover'}
+        className={
+          'aspect-square h-[28px] w-[28px] min-w-[28px] overflow-hidden rounded-[4px] border border-border-primary object-cover'
+        }
       />
     </div>
   );

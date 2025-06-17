@@ -1,4 +1,4 @@
-import { FieldId } from '@/application/types';
+import { FieldId, RowCoverType } from '@/application/types';
 
 export enum FieldVisibility {
   AlwaysShown = 0,
@@ -72,4 +72,34 @@ export enum RowMetaKey {
   IconId = 'icon_id',
   CoverId = 'cover_id',
   IsDocumentEmpty = 'is_document_empty',
+}
+
+export interface RowMeta {
+  documentId: string;
+  cover: {
+    data: string,
+    cover_type: RowCoverType,
+  } | null;
+  icon: string;
+  isEmptyDocument: boolean;
+}
+
+export enum AITranslateLanguage {
+  Traditional_Chinese,
+  English,
+  French,
+  German,
+  Hindi,
+  Spanish,
+  Portuguese,
+  Standard_Arabic,
+  Simplified_Chinese
+}
+
+export enum DateGroupCondition {
+  Relative = 0,
+  Day = 1,
+  Week = 2,
+  Month = 3,
+  Year = 4
 }

@@ -5,7 +5,7 @@ import ImageToolbar from '@/components/editor/components/blocks/image/ImageToolb
 import Img from '@/components/editor/components/blocks/image/Img';
 import { ImageBlockNode } from '@/components/editor/editor.type';
 import { debounce } from 'lodash-es';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useReadOnly, useSlateStatic } from 'slate-react';
 import { Element } from 'slate';
 

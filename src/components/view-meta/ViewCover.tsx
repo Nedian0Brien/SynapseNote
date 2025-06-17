@@ -1,16 +1,25 @@
-import { ViewMetaCover } from '@/application/types';
+import { lazy, Suspense, useCallback, useRef, useState } from 'react';
+
+import { ViewLayout, ViewMetaCover } from '@/application/types';
 import ImageRender from '@/components/_shared/image-render/ImageRender';
 import { renderColor } from '@/utils/color';
-import React, { lazy, useCallback, useRef, useState, Suspense } from 'react';
 
 const ViewCoverActions = lazy(() => import('@/components/view-meta/ViewCoverActions'));
 
-function ViewCover({ coverValue, coverType, onUpdateCover, onRemoveCover, readOnly = true }: {
+function ViewCover({
+  coverValue,
+  coverType,
+  onUpdateCover,
+  onRemoveCover,
+  readOnly = true,
+  layout,
+}: {
   coverValue?: string;
   coverType?: string;
   onUpdateCover: (cover: ViewMetaCover) => void;
   onRemoveCover: () => void;
-  readOnly?: boolean
+  readOnly?: boolean;
+  layout?: ViewLayout;
 }) {
   const renderCoverColor = useCallback((color: string) => {
     return (
@@ -26,12 +35,7 @@ function ViewCover({ coverValue, coverType, onUpdateCover, onRemoveCover, readOn
   const renderCoverImage = useCallback((url: string) => {
     return (
       <>
-        <ImageRender
-          draggable={false}
-          src={url}
-          alt={''}
-          className={'h-full w-full object-cover'}
-        />
+        <ImageRender draggable={false} src={url} alt={''} className={'h-full w-full object-cover'} />
       </>
     );
   }, []);
@@ -54,26 +58,26 @@ function ViewCover({ coverValue, coverType, onUpdateCover, onRemoveCover, readOn
         setShowAction(false);
       }}
       style={{
-        height: '40vh',
+        height: layout === ViewLayout.Document ? '40vh' : '25vh',
+        maxHeight: layout === ViewLayout.Document ? '288px' : '200px',
       }}
-      className={'relative flex max-h-[288px] min-h-[130px] w-full max-sm:h-[180px]'}
+      className={'relative flex min-h-[130px] w-full max-sm:h-[180px]'}
     >
       {coverType === 'color' && renderCoverColor(coverValue)}
       {(coverType === 'custom' || coverType === 'built_in') && renderCoverImage(coverValue)}
-      {!readOnly && <Suspense>
-        <ViewCoverActions
-          show={showAction}
-          ref={actionRef}
-          onClose={() => setShowAction(false)}
-          onUpdateCover={onUpdateCover}
-          onRemove={onRemoveCover}
-        />
-      </Suspense>
-      }
-
+      {!readOnly && (
+        <Suspense>
+          <ViewCoverActions
+            show={showAction}
+            ref={actionRef}
+            fullWidth={layout !== ViewLayout.Document}
+            onUpdateCover={onUpdateCover}
+            onRemove={onRemoveCover}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }
 
 export default ViewCover;
-

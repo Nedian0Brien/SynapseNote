@@ -1,16 +1,17 @@
+import { useLiveQuery } from 'dexie-react-hooks';
+import { useSnackbar } from 'notistack';
+import React, { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+
 import { clearData, db } from '@/application/db';
 import { getService } from '@/application/services';
 import { AFServiceConfig } from '@/application/services/services.type';
 import { EventType, on } from '@/application/session';
 import { getTokenParsed, isTokenValid } from '@/application/session/token';
 import { InfoSnackbarProps } from '@/components/_shared/notify';
+import { LoginModal } from '@/components/login';
 import { AFConfigContext, defaultConfig } from '@/components/main/app.hooks';
 import { useAppLanguage } from '@/components/main/useAppLanguage';
-import { LoginModal } from '@/components/login';
 import { createHotkey, HOT_KEY_NAME } from '@/utils/hotkeys';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { useSnackbar } from 'notistack';
-import React, { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 
 function AppConfig({ children }: { children: React.ReactNode }) {
   const [appConfig] = useState<AFServiceConfig>(defaultConfig);
@@ -22,12 +23,10 @@ function AppConfig({ children }: { children: React.ReactNode }) {
     return getTokenParsed()?.user?.id;
   }, [isAuthenticated]);
 
-  const currentUser = useLiveQuery(
-    async () => {
-      if (!userId) return;
-      return db.users.get(userId);
-    }, [userId],
-  );
+  const currentUser = useLiveQuery(async () => {
+    if (!userId) return;
+    return db.users.get(userId);
+  }, [userId]);
   const [loginOpen, setLoginOpen] = React.useState(false);
   const [loginCompletedRedirectTo, setLoginCompletedRedirectTo] = React.useState<string>('');
 
@@ -52,7 +51,6 @@ function AppConfig({ children }: { children: React.ReactNode }) {
       if (!service) return;
       try {
         await service.getCurrentUser();
-
       } catch (e) {
         console.error(e);
       }
@@ -117,7 +115,6 @@ function AppConfig({ children }: { children: React.ReactNode }) {
         default:
           break;
       }
-
     };
 
     window.addEventListener('keydown', handleClearData);
@@ -133,7 +130,6 @@ function AppConfig({ children }: { children: React.ReactNode }) {
         isAuthenticated,
         currentUser,
         openLoginModal,
-
       }}
     >
       {children}
@@ -147,7 +143,6 @@ function AppConfig({ children }: { children: React.ReactNode }) {
             }}
           />
         </Suspense>
-
       )}
     </AFConfigContext.Provider>
   );

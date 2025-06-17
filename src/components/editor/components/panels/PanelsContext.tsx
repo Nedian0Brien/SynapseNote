@@ -1,8 +1,9 @@
-import { getRangeRect } from '@/components/editor/components/toolbar/selection-toolbar/utils';
-import React, { createContext, useState, useCallback, useEffect, useRef } from 'react';
+import React, { createContext, useCallback, useEffect, useRef, useState } from 'react';
 import { BaseRange, Point } from 'slate';
 import { ReactEditor } from 'slate-react';
 import { TextInsertTextOptions } from 'slate/dist/interfaces/transforms/text';
+
+import { getRangeRect } from '@/components/editor/components/toolbar/selection-toolbar/utils';
 
 export enum PanelType {
   Slash = 'slash',
@@ -45,6 +46,11 @@ export const PanelProvider = ({ children, editor }: { children: React.ReactNode;
   const startSelection = useRef<BaseRange | null>(null);
   const endSelection = useRef<BaseRange | null>(null);
   const [searchText, setSearchText] = useState('');
+  const openRef = useRef(false);
+
+  useEffect(() => {
+    openRef.current = activePanel !== undefined;
+  }, [activePanel]);
 
   const closePanel = useCallback(() => {
     setActivePanel(undefined);
@@ -70,23 +76,28 @@ export const PanelProvider = ({ children, editor }: { children: React.ReactNode;
         anchor: start,
         focus: end,
       },
-
     });
   }, [editor]);
 
-  const openPanel = useCallback((panel: PanelType, position: { top: number; left: number }) => {
-    setActivePanel(panel);
-    setPanelPosition(position);
-    const { selection } = editor;
+  const openPanel = useCallback(
+    (panel: PanelType, position: { top: number; left: number }) => {
+      setActivePanel(panel);
+      setPanelPosition(position);
+      const { selection } = editor;
 
-    if (!selection) return;
-    startSelection.current = editor.selection;
-    endSelection.current = editor.selection;
-  }, [editor]);
+      if (!selection) return;
+      startSelection.current = editor.selection;
+      endSelection.current = editor.selection;
+    },
+    [editor]
+  );
 
-  const isPanelOpen = useCallback((panel: PanelType) => {
-    return activePanel === panel;
-  }, [activePanel]);
+  const isPanelOpen = useCallback(
+    (panel: PanelType) => {
+      return activePanel === panel;
+    },
+    [activePanel]
+  );
 
   useEffect(() => {
     const { insertText } = editor;
@@ -96,7 +107,7 @@ export const PanelProvider = ({ children, editor }: { children: React.ReactNode;
       const { selection } = editor;
 
       if (!selection) return;
-      if (activePanel !== undefined) return;
+      if (openRef.current) return;
 
       if (panelTypeChars.includes(text)) {
         const position = getRangeRect();
@@ -148,15 +159,14 @@ export const PanelProvider = ({ children, editor }: { children: React.ReactNode;
     return () => {
       editor.insertText = insertText;
     };
-  }, [activePanel, editor, openPanel]);
+  }, [editor, openPanel]);
 
   useEffect(() => {
     const { onChange } = editor;
 
-    if (!activePanel) return;
-
     editor.onChange = () => {
       onChange();
+      if (!openRef.current) return;
       const { selection } = editor;
       let start = startSelection.current?.focus;
 
@@ -179,20 +189,17 @@ export const PanelProvider = ({ children, editor }: { children: React.ReactNode;
 
       endSelection.current = selection;
 
-      setSearchText(text);
+      setSearchText(text.trim());
     };
 
     return () => {
       editor.onChange = onChange;
     };
-
-  }, [editor, activePanel, closePanel]);
-
-  const open = activePanel !== undefined;
+  }, [editor, closePanel]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!open) return;
+      if (!openRef.current) return;
       const { key } = e;
 
       switch (key) {
@@ -225,7 +232,6 @@ export const PanelProvider = ({ children, editor }: { children: React.ReactNode;
         default:
           break;
       }
-
     };
 
     const slateDom = ReactEditor.toDOMNode(editor, editor);
@@ -235,7 +241,7 @@ export const PanelProvider = ({ children, editor }: { children: React.ReactNode;
     return () => {
       slateDom.removeEventListener('keydown', handleKeyDown);
     };
-  }, [closePanel, editor, open]);
+  }, [closePanel, editor]);
 
   return (
     <PanelContext.Provider
@@ -254,4 +260,3 @@ export const PanelProvider = ({ children, editor }: { children: React.ReactNode;
     </PanelContext.Provider>
   );
 };
-

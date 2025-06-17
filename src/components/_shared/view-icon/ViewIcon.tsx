@@ -1,5 +1,5 @@
 import { ViewLayout } from '@/application/types';
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { ReactComponent as BoardSvg } from '@/assets/icons/board.svg';
 import { ReactComponent as CalendarSvg } from '@/assets/icons/calendar.svg';
 import { ReactComponent as DocumentSvg } from '@/assets/icons/page.svg';

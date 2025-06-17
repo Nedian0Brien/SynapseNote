@@ -1,7 +1,7 @@
 import { AFConfigContext, useCurrentUser } from '@/components/main/app.hooks';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import React, { useContext, useMemo } from 'react';
+import { useContext, useMemo } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
 function LandingFooter () {

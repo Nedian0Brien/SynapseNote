@@ -1,10 +1,10 @@
 import { ViewLayout } from '@/application/types';
 import { ReactComponent as Add } from '@/assets/icons/add_new_page.svg';
-import { NormalModal } from '@/components/_shared/modal';
-import { notify } from '@/components/_shared/notify';
 import { useAppHandlers, useAppOutline } from '@/components/app/app.hooks';
 import CreateSpaceModal from '@/components/app/view-actions/CreateSpaceModal';
 import SpaceList from '@/components/publish/header/duplicate/SpaceList';
+import { NormalModal } from '@/components/_shared/modal';
+import { notify } from '@/components/_shared/notify';
 import { Button } from '@mui/material';
 import React, { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -63,7 +63,7 @@ function NewPage() {
         onClick={() => setOpen(true)}
         startIcon={<Add className={'mr-[1px]'} />}
         size={'small'}
-        className={'w-full justify-start  py-1.5 text-sm font-normal hover:bg-fill-list-hover'}
+        className={'w-full justify-start  py-1.5 text-sm font-normal hover:bg-fill-content-hover'}
         color={'inherit'}
       >
         {t('newPageText')}
@@ -88,7 +88,7 @@ function NewPage() {
           value={selectedSpaceId}
           onChange={setSelectedSpaceId}
           title={
-            <div className={'flex items-center text-sm text-text-caption'}>
+            <div className={'flex items-center text-sm text-text-secondary'}>
               {t('publish.addTo')}
               {` ${t('web.or')} `}
               <Button

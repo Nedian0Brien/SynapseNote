@@ -1,6 +1,6 @@
 import { ViewIcon, ViewIconType } from '@/application/types';
 import { getIconBase64 } from '@/utils/emoji';
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 
 function ViewHelmet ({

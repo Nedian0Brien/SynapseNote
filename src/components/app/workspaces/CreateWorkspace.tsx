@@ -1,11 +1,11 @@
-import { NormalModal } from '@/components/_shared/modal';
-import { notify } from '@/components/_shared/notify';
+import { ReactComponent as AddIcon } from '@/assets/icons/plus.svg';
 import { useAppHandlers } from '@/components/app/app.hooks';
 import { useService } from '@/components/main/app.hooks';
+import { NormalModal } from '@/components/_shared/modal';
+import { notify } from '@/components/_shared/notify';
 import { Button, OutlinedInput } from '@mui/material';
 import React, { useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ReactComponent as AddIcon } from '@/assets/icons/plus.svg';
 
 function CreateWorkspace() {
   const { t } = useTranslation();
@@ -48,7 +48,9 @@ function CreateWorkspace() {
         className={'w-full justify-start gap-0.5 px-3'}
         onClick={() => setOpen(true)}
         startIcon={
-          <div className={'flex h-[33px] w-[33px] items-center justify-center rounded-[8px] border border-line-divider'}>
+          <div
+            className={'flex h-[33px] w-[33px] items-center justify-center rounded-[8px] border border-border-primary'}
+          >
             <AddIcon className={'h-5 w-5'} />
           </div>
         }

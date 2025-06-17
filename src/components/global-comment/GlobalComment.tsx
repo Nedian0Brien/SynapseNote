@@ -3,10 +3,9 @@ import CommentList from '@/components/global-comment/CommentList';
 import { useGlobalCommentContext } from '@/components/global-comment/GlobalComment.hooks';
 import { Divider } from '@mui/material';
 import CircularProgress from '@mui/material/CircularProgress';
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 
-function GlobalComment () {
+function GlobalComment() {
   const { t } = useTranslation();
   const { loading, comments } = useGlobalCommentContext();
 
@@ -14,7 +13,7 @@ function GlobalComment () {
     <div className={'mb-[480px] mt-16 flex h-fit w-full justify-center max-md:mb-[100px]'}>
       <div
         className={
-          'flex w-[988px] min-w-0 max-w-full transform flex-col gap-2 transition-all duration-300 ease-in-out max-sm:px-6 px-24'
+          'flex w-[952px] min-w-0 max-w-full transform flex-col gap-2 px-24 transition-all duration-300 ease-in-out max-sm:px-6'
         }
       >
         <div className={'text-[24px]'}>{t('globalComment.comments')}</div>

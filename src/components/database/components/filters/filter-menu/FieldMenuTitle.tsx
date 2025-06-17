@@ -1,24 +1,51 @@
-import { ReactComponent as ArrowDownSvg } from '@/assets/icons/alt_arrow_left.svg';
-import { FieldDisplay } from '@/components/database/components/field';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
-function FieldMenuTitle({ fieldId, selectedConditionText }: { fieldId: string; selectedConditionText: string }) {
+import { useRemoveFilter } from '@/application/database-yjs/dispatch';
+import { ReactComponent as DeleteIcon } from '@/assets/icons/delete.svg';
+import { FieldDisplay } from '@/components/database/components/field';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+
+
+function FieldMenuTitle ({ filterId, fieldId, renderConditionSelect }: {
+  filterId: string;
+  fieldId: string;
+  renderConditionSelect: React.ReactNode;
+}) {
+  const deleteFilter = useRemoveFilter();
+
+  const { t } = useTranslation();
+
   return (
-    <div className={'flex items-center justify-between gap-2'}>
-      <div className={'w-[80px] max-w-[180px] overflow-hidden'}>
-        <FieldDisplay fieldId={fieldId} />
+    <div className={'flex text-text-primary text-sm items-center justify-between gap-2'}>
+      <div className={'max-w-[100px] overflow-hidden'}>
+        <FieldDisplay
+          className={'truncate w-full'}
+          fieldId={fieldId}
+        />
       </div>
       <div className={'flex flex-1 items-center justify-end'}>
-        <div className={'flex items-center gap-1'}>
-          <div
-            data-testid={'filter-condition-type'}
-            className={'overflow max-w-[100px] truncate whitespace-nowrap text-xs font-normal'}
-          >
-            {selectedConditionText}
-          </div>
-          <ArrowDownSvg />
-        </div>
+        {renderConditionSelect}
       </div>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            size={'icon-sm'}
+            onClick={(e) => {
+              e.stopPropagation();
+              deleteFilter(filterId);
+            }}
+            variant={'ghost'}
+            danger
+          >
+            <DeleteIcon className={'w-5 h-5'} />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          {t('grid.settings.deleteFilter')}
+        </TooltipContent>
+      </Tooltip>
     </div>
   );
 }

@@ -1,14 +1,18 @@
 import { SpacePermission } from '@/application/types';
-import { NormalModal } from '@/components/_shared/modal';
-import { notify } from '@/components/_shared/notify';
 import { useAppHandlers } from '@/components/app/app.hooks';
 import SpaceIconButton from '@/components/app/view-actions/SpaceIconButton';
 import SpacePermissionButton from '@/components/app/view-actions/SpacePermissionButton';
+import { NormalModal } from '@/components/_shared/modal';
+import { notify } from '@/components/_shared/notify';
 import { OutlinedInput } from '@mui/material';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
-function CreateSpaceModal ({ open, onClose, onCreated }: {
+function CreateSpaceModal({
+  open,
+  onClose,
+  onCreated,
+}: {
   open: boolean;
   onClose: () => void;
   onCreated?: (spaceId: string) => void;
@@ -42,6 +46,8 @@ function CreateSpaceModal ({ open, onClose, onCreated }: {
     }
   };
 
+  const [container, setContainer] = React.useState<HTMLDivElement | null>(null);
+
   return (
     <NormalModal
       keepMounted={false}
@@ -49,31 +55,36 @@ function CreateSpaceModal ({ open, onClose, onCreated }: {
       cancelText={t('button.cancel')}
       open={open}
       onClose={onClose}
-      title={
-        t('space.createNewSpace')
-      }
+      title={t('space.createNewSpace')}
       classes={{ container: 'items-start max-md:mt-auto max-md:items-center mt-[10%] ' }}
-
       okLoading={loading}
       onOk={handleOk}
       PaperProps={{
         className: 'w-[600px] max-w-[70vw]',
       }}
     >
-      <div className={'flex flex-col gap-4'}>
-        <div className={'flex flex-col justify-center items-center gap-3'}>
-          <div className={'text-text-caption text-center font-normal'}>{t('space.createSpaceDescription')}</div>
-          <SpaceIconButton
-            spaceIcon={spaceIcon}
-            spaceIconColor={spaceIconColor}
-            spaceName={spaceName}
-            size={60}
-            onSelectSpaceIcon={setSpaceIcon}
-            onSelectSpaceIconColor={setSpaceIconColor}
-          />
+      <div
+        ref={(el) => {
+          setContainer(el);
+        }}
+        className={'flex flex-col gap-4'}
+      >
+        <div className={'flex flex-col items-center justify-center gap-3'}>
+          <div className={'text-center font-normal text-text-secondary'}>{t('space.createSpaceDescription')}</div>
+          {container && (
+            <SpaceIconButton
+              container={container}
+              spaceIcon={spaceIcon}
+              spaceIconColor={spaceIconColor}
+              spaceName={spaceName}
+              size={60}
+              onSelectSpaceIcon={setSpaceIcon}
+              onSelectSpaceIconColor={setSpaceIconColor}
+            />
+          )}
         </div>
         <div className={'flex flex-col gap-2'}>
-          <div className={'text-text-caption'}>{t('space.spaceName')}</div>
+          <div className={'text-text-secondary'}>{t('space.spaceName')}</div>
           <OutlinedInput
             value={spaceName}
             fullWidth={true}
@@ -83,14 +94,10 @@ function CreateSpaceModal ({ open, onClose, onCreated }: {
           />
         </div>
         <div className={'flex flex-col gap-2'}>
-          <div className={'text-text-caption'}>{t('space.permission')}</div>
-          <SpacePermissionButton
-            onSelected={setSpacePermission}
-            value={spacePermission}
-          />
+          <div className={'text-text-secondary'}>{t('space.permission')}</div>
+          <SpacePermissionButton onSelected={setSpacePermission} value={spacePermission} />
         </div>
       </div>
-
     </NormalModal>
   );
 }

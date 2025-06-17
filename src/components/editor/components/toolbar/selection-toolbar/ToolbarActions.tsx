@@ -21,7 +21,7 @@ import {
 import { Divider } from '@mui/material';
 import { Editor, Element, Path } from 'slate';
 import Paragraph from './actions/Paragraph';
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { useSlate } from 'slate-react';
 
 function ToolbarActions() {

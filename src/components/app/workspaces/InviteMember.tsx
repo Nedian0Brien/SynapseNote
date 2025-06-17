@@ -1,13 +1,13 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
-import { Button, OutlinedInput } from '@mui/material';
+import { SubscriptionPlan, Workspace, WorkspaceMember } from '@/application/types';
 import { ReactComponent as AddUserIcon } from '@/assets/icons/invite_user.svg';
-import { useTranslation } from 'react-i18next';
+import { ReactComponent as TipIcon } from '@/assets/icons/warning.svg';
+import { useAppHandlers } from '@/components/app/app.hooks';
+import { useCurrentUser, useService } from '@/components/main/app.hooks';
 import { NormalModal } from '@/components/_shared/modal';
 import { notify } from '@/components/_shared/notify';
-import { useCurrentUser, useService } from '@/components/main/app.hooks';
-import { SubscriptionPlan, Workspace, WorkspaceMember } from '@/application/types';
-import { useAppHandlers } from '@/components/app/app.hooks';
-import { ReactComponent as TipIcon } from '@/assets/icons/warning.svg';
+import { Button, OutlinedInput } from '@mui/material';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 
 function InviteMember({ workspace, onClick }: { workspace: Workspace; onClick?: () => void }) {
@@ -145,7 +145,7 @@ function InviteMember({ workspace, onClick }: { workspace: Workspace; onClick?: 
           style={{
             display: isExceed ? 'flex' : 'none',
           }}
-          className={'mb-8 flex w-full flex-wrap items-center gap-1 overflow-hidden text-text-caption'}
+          className={'mb-8 flex w-full flex-wrap items-center gap-1 overflow-hidden text-text-secondary'}
         >
           <TipIcon className={'h-4 w-4 text-function-warning'} />
           {t('inviteMember.inviteFailedMemberLimit')}
@@ -153,7 +153,7 @@ function InviteMember({ workspace, onClick }: { workspace: Workspace; onClick?: 
             {t('inviteMember.upgrade')}
           </span>
         </div>
-        <div className={'mb-1 text-xs text-text-caption'}>{t('inviteMember.emails')}</div>
+        <div className={'mb-1 text-xs text-text-secondary'}>{t('inviteMember.emails')}</div>
         <OutlinedInput
           readOnly={isExceed}
           fullWidth={true}

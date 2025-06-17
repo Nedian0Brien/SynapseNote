@@ -1,7 +1,6 @@
 import { usePublishContext } from '@/application/publish';
-import { AFScroller } from '@/components/_shared/scroller';
-import React from 'react';
 import { ReactComponent as AppFlowyLogo } from '@/assets/icons/appflowy.svg';
+import { AFScroller } from '@/components/_shared/scroller';
 import { useNavigate } from 'react-router-dom';
 import MobileOutline from 'src/components/_shared/mobile-outline/MobileOutline';
 
@@ -17,7 +16,7 @@ function PublishMobileFolder({ onClose }: { onClose: () => void }) {
         onClick={() => {
           navigate('/');
         }}
-        className={'sticky top-0 z-[10] w-full bg-bg-body py-2 pb-0'}
+        className={'sticky top-0 z-[10] w-full bg-background-primary py-2 pb-0'}
       >
         <AppFlowyLogo className={'h-[48px] w-[100px]'} />
       </div>

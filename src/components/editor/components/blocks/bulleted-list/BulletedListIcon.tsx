@@ -1,6 +1,6 @@
 import { BulletedListNode } from '@/components/editor/editor.type';
 import { getListLevel } from '@/components/editor/utils/list';
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { ReactEditor, useSlate } from 'slate-react';
 import { ReactComponent as DiscIcon } from '@/assets/icons/bulleted_1.svg';
 import { ReactComponent as CircleIcon } from '@/assets/icons/bulleted_2.svg';

@@ -1,9 +1,9 @@
-import { ReactComponent as ExpandMoreIcon } from '@/assets/icons/expand.svg';
-
 import { useTranslation } from 'react-i18next';
+
 import { useNavigateToRow } from '@/application/database-yjs';
-import { Tooltip } from '@mui/material';
-import React from 'react';
+import { ReactComponent as ExpandMoreIcon } from '@/assets/icons/expand.svg';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 function OpenAction({ rowId }: { rowId: string }) {
   const navigateToRow = useNavigateToRow();
@@ -11,16 +11,21 @@ function OpenAction({ rowId }: { rowId: string }) {
   const { t } = useTranslation();
 
   return (
-    <Tooltip placement={'bottom'} title={t('tooltip.openAsPage')}>
-      <button
-        color={'primary'}
-        className={'rounded border border-line-divider bg-bg-body p-1 hover:bg-fill-list-hover'}
-        onClick={() => {
-          navigateToRow?.(rowId);
-        }}
-      >
-        <ExpandMoreIcon />
-      </button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          size={'icon-sm'}
+          variant={'outline'}
+          className={'bg-surface-primary text-icon-secondary hover:bg-surface-primary-hover'}
+          onClick={(e) => {
+            e.stopPropagation();
+            navigateToRow?.(rowId);
+          }}
+        >
+          <ExpandMoreIcon className={'h-5 w-5'} />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side={'right'}>{t('tooltip.openAsPage')}</TooltipContent>
     </Tooltip>
   );
 }

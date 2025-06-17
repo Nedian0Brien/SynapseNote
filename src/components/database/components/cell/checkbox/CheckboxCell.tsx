@@ -1,16 +1,51 @@
+import { useEffect, useRef } from 'react';
+
+import { CellProps, CheckboxCell as CheckboxCellType } from '@/application/database-yjs/cell.type';
+import { useUpdateCellDispatch } from '@/application/database-yjs/dispatch';
+import { getChecked } from '@/application/database-yjs/fields/checkbox/utils';
 import { ReactComponent as CheckboxCheckSvg } from '@/assets/icons/check_filled.svg';
 import { ReactComponent as CheckboxUncheckSvg } from '@/assets/icons/uncheck.svg';
-import { FieldType } from '@/application/database-yjs';
-import { CellProps, CheckboxCell as CheckboxCellType } from '@/application/database-yjs/cell.type';
+import { cn } from '@/lib/utils';
 
-export function CheckboxCell({ cell, style }: CellProps<CheckboxCellType>) {
-  const checked = cell?.data;
+export function CheckboxCell({
+  cell,
+  style,
+  fieldId,
+  rowId,
+  readOnly,
+  editing,
+  setEditing,
+}: CellProps<CheckboxCellType>) {
+  const onUpdateCell = useUpdateCellDispatch(rowId, fieldId);
 
-  if (cell && cell?.fieldType !== FieldType.Checkbox) return null;
+  const checkedRef = useRef<boolean>(getChecked(cell?.data));
 
+  useEffect(() => {
+    checkedRef.current = getChecked(cell?.data);
+  }, [cell?.data]);
+
+  useEffect(() => {
+    if (readOnly) return;
+    if (editing) {
+      if (checkedRef.current) {
+        onUpdateCell('No');
+      } else {
+        onUpdateCell('Yes');
+      }
+
+      setEditing?.(false);
+    }
+  }, [editing, onUpdateCell, setEditing, readOnly]);
   return (
-    <div style={style} className='relative flex w-full items-center text-lg text-fill-default'>
-      {checked ? <CheckboxCheckSvg className={'h-5 w-5'} /> : <CheckboxUncheckSvg className={'h-5 w-5'} />}
+    <div
+      style={style}
+      className={cn('relative flex h-full w-full text-lg text-fill-default', readOnly ? '' : 'cursor-pointer')}
+    >
+      {checkedRef.current ? (
+        <CheckboxCheckSvg className={'h-5 w-5'} />
+      ) : (
+        <CheckboxUncheckSvg className={'h-5 w-5 text-border-primary hover:text-border-primary-hover'} />
+      )}
     </div>
   );
 }

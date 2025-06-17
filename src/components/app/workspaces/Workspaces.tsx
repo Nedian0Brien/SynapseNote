@@ -1,27 +1,27 @@
 import { invalidToken } from '@/application/session/token';
 import { Workspace } from '@/application/types';
-import Import from '@/components/_shared/more-actions/importer/Import';
-import { notify } from '@/components/_shared/notify';
-import { Popover } from '@/components/_shared/popover';
+import { ReactComponent as UpgradeAIMaxIcon } from '@/assets/icons/ai.svg';
+import { ReactComponent as ArrowDown } from '@/assets/icons/alt_arrow_down.svg';
+import { ReactComponent as TipIcon } from '@/assets/icons/help.svg';
+import { ReactComponent as LogoutIcon } from '@/assets/icons/logout.svg';
+import { ReactComponent as ImportIcon } from '@/assets/icons/save_as.svg';
+import { ReactComponent as UpgradeIcon } from '@/assets/icons/upgrade.svg';
 import { useAppHandlers, useCurrentWorkspaceId, useUserWorkspaceInfo } from '@/components/app/app.hooks';
 import CreateWorkspace from '@/components/app/workspaces/CreateWorkspace';
 import CurrentWorkspace from '@/components/app/workspaces/CurrentWorkspace';
+import InviteMember from '@/components/app/workspaces/InviteMember';
 import WorkspaceList from '@/components/app/workspaces/WorkspaceList';
+import UpgradeAIMax from '@/components/billing/UpgradeAIMax';
+import UpgradePlan from '@/components/billing/UpgradePlan';
 import { useCurrentUser } from '@/components/main/app.hooks';
+import Import from '@/components/_shared/more-actions/importer/Import';
+import { notify } from '@/components/_shared/notify';
+import { Popover } from '@/components/_shared/popover';
 import { openUrl } from '@/utils/url';
 import { Button, Divider, IconButton, Tooltip } from '@mui/material';
 import React, { useCallback, useEffect } from 'react';
-import { ReactComponent as ArrowDown } from '@/assets/icons/alt_arrow_down.svg';
-import { ReactComponent as ImportIcon } from '@/assets/icons/save_as.svg';
-import { ReactComponent as TipIcon } from '@/assets/icons/help.svg';
 import { useTranslation } from 'react-i18next';
-import { ReactComponent as LogoutIcon } from '@/assets/icons/logout.svg';
-import { ReactComponent as UpgradeIcon } from '@/assets/icons/upgrade.svg';
-import { ReactComponent as UpgradeAIMaxIcon } from '@/assets/icons/ai.svg';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import InviteMember from '@/components/app/workspaces/InviteMember';
-import UpgradePlan from '@/components/billing/UpgradePlan';
-import UpgradeAIMax from '@/components/billing/UpgradeAIMax';
 
 export function Workspaces() {
   const { t } = useTranslation();
@@ -49,16 +49,17 @@ export function Workspaces() {
     setCurrentWorkspace(userWorkspaceInfo?.workspaces.find((workspace) => workspace.id === currentWorkspaceId));
   }, [currentWorkspaceId, userWorkspaceInfo]);
 
-  const handleChange = useCallback(async(selectedId: string) => {
-    setChangeLoading(selectedId);
-    try {
-      await handleSelectedWorkspace?.(selectedId);
-      setOpen(false);
-    } catch(e) {
-      notify.error('Failed to change workspace');
-    }
+  const handleChange = useCallback(
+    async (selectedId: string) => {
+      setChangeLoading(selectedId);
+      try {
+        await handleSelectedWorkspace?.(selectedId);
+        setOpen(false);
+      } catch (e) {
+        notify.error('Failed to change workspace');
+      }
 
-    setChangeLoading(null);
+      setChangeLoading(null);
     },
     [handleSelectedWorkspace]
   );
@@ -72,15 +73,16 @@ export function Workspaces() {
     });
   }, [setSearchParams]);
 
-  return <>
+  return (
+    <>
       <Button
         ref={ref}
         onMouseLeave={() => setHoveredHeader(false)}
         onMouseEnter={() => setHoveredHeader(true)}
         onClick={() => setOpen(true)}
-        className={'mx-2 flex w-full cursor-pointer items-center justify-start gap-1 px-1 py-1 text-text-title'}
+        className={'mx-2 flex w-full cursor-pointer items-center justify-start gap-1 px-1 py-1 text-text-primary'}
       >
-        <div className={'flex items-center gap-1.5 overflow-hidden text-[15px] text-text-title'}>
+        <div className={'flex items-center gap-1.5 overflow-hidden text-[15px] text-text-primary'}>
           <CurrentWorkspace
             userWorkspaceInfo={userWorkspaceInfo}
             selectedWorkspace={currentWorkspace}
@@ -91,135 +93,126 @@ export function Workspaces() {
           {hoveredHeader && <ArrowDown className={'h-5 w-5'} />}
         </div>
       </Button>
-      <Popover
-      open={open}
-      keepMounted={true}
-      anchorEl={ref.current}
-      onClose={() => setOpen(false)}
-    >
-      <div
-        className={'flex text-[14px] w-[288px] flex-col gap-2 p-2 min-h-[303px] overflow-hidden'}
-      >
-        <div className={'flex p-2 text-text-caption items-center justify-between'}>
-          <span className={'font-medium flex-1 text-sm'}>{currentUser?.email}</span>
-        </div>
-        <div className={'flex max-h-[236px] flex-1 flex-col gap-1 overflow-y-auto appflowy-scroller'}>
-          {open && <WorkspaceList
-            defaultWorkspaces={userWorkspaceInfo?.workspaces}
-            currentWorkspaceId={currentWorkspaceId}
-            onChange={handleChange}
-            changeLoading={changeLoading || undefined}
-            onUpdateCurrentWorkspace={(name) => {
-              setCurrentWorkspace(prev => {
-                if(!prev) return prev;
-                return {
-                  ...prev,
-                  name,
-                };
-              });
-            }}
-          />}
-        </div>
-        <CreateWorkspace />
-        <Divider className={'w-full mt-1'} />
-        {currentWorkspace && <InviteMember
-          onClick={() => {
-            setOpen(false);
-          }}
-          workspace={currentWorkspace}
-        />}
-        <Button
-          size={'small'}
-          component={'div'}
-          startIcon={<ImportIcon />}
-          color={'inherit'}
-          className={'justify-start px-2'}
-          onClick={handleOpenImport}
-        >
-          <div className={'flex-1 text-left'}>{t('web.importNotion')}</div>
-          <Tooltip
-            title={t('workspace.learnMore')}
-            enterDelay={1000}
-            enterNextDelay={1000}
-          >
-            <IconButton
-              onClick={(e) => {
-                e.stopPropagation();
-                void openUrl('https://docs.appflowy.io/docs/guides/import-from-notion', '_blank');
+      <Popover open={open} keepMounted={true} anchorEl={ref.current} onClose={() => setOpen(false)}>
+        <div className={'flex min-h-[303px] w-[288px] flex-col gap-2 overflow-hidden p-2 text-[14px]'}>
+          <div className={'flex items-center justify-between p-2 text-text-secondary'}>
+            <span className={'flex-1 text-sm font-medium'}>{currentUser?.email}</span>
+          </div>
+          <div className={'appflowy-scroller flex max-h-[236px] flex-1 flex-col gap-1 overflow-y-auto'}>
+            {open && (
+              <WorkspaceList
+                defaultWorkspaces={userWorkspaceInfo?.workspaces}
+                currentWorkspaceId={currentWorkspaceId}
+                onChange={handleChange}
+                changeLoading={changeLoading || undefined}
+                onUpdateCurrentWorkspace={(name) => {
+                  setCurrentWorkspace((prev) => {
+                    if (!prev) return prev;
+                    return {
+                      ...prev,
+                      name,
+                    };
+                  });
+                }}
+              />
+            )}
+          </div>
+          <CreateWorkspace />
+          <Divider className={'mt-1 w-full'} />
+          {currentWorkspace && (
+            <InviteMember
+              onClick={() => {
+                setOpen(false);
               }}
-              size={'small'}
-              className={'mx-2'}
-            >
-              <TipIcon />
-            </IconButton>
-          </Tooltip>
-        </Button>
-        <Divider className={'w-full'} />
-        <Button
-          size={'small'}
-          className={'justify-start px-2'}
-          color={'inherit'}
-          onClick={handleSignOut}
-          startIcon={<LogoutIcon />}
-        >{t('button.logout')}</Button>
-
-
-        {isOwner && <>
+              workspace={currentWorkspace}
+            />
+          )}
+          <Button
+            size={'small'}
+            component={'div'}
+            startIcon={<ImportIcon />}
+            color={'inherit'}
+            className={'justify-start px-2'}
+            onClick={handleOpenImport}
+          >
+            <div className={'flex-1 text-left'}>{t('web.importNotion')}</div>
+            <Tooltip title={t('workspace.learnMore')} enterDelay={1000} enterNextDelay={1000}>
+              <IconButton
+                onClick={(e) => {
+                  e.stopPropagation();
+                  void openUrl('https://docs.appflowy.io/docs/guides/import-from-notion', '_blank');
+                }}
+                size={'small'}
+                className={'mx-2'}
+              >
+                <TipIcon />
+              </IconButton>
+            </Tooltip>
+          </Button>
           <Divider className={'w-full'} />
           <Button
             size={'small'}
-            startIcon={<UpgradeIcon />}
-            color={'inherit'}
-            onClick={() => {
-              setOpenUpgradePlan(true);
-              setOpen(false);
-            }}
             className={'justify-start px-2'}
-          >
-            {t('subscribe.changePlan')}
-          </Button>
-          <Button
-            size={'small'}
-            startIcon={<UpgradeAIMaxIcon />}
             color={'inherit'}
-            onClick={() => {
-              setOpenUpgradeAIMax(true);
-              setOpen(false);
-            }}
-            className={'justify-start px-2'}
+            onClick={handleSignOut}
+            startIcon={<LogoutIcon />}
           >
-            {t('subscribe.getAIMax')}
+            {t('button.logout')}
           </Button>
-        </>}
-      </div>
 
-    </Popover>
-    {isOwner &&
-      <>
-        <UpgradePlan
-          onOpen={
-            () => {
+          {isOwner && (
+            <>
+              <Divider className={'w-full'} />
+              <Button
+                size={'small'}
+                startIcon={<UpgradeIcon />}
+                color={'inherit'}
+                onClick={() => {
+                  setOpenUpgradePlan(true);
+                  setOpen(false);
+                }}
+                className={'justify-start px-2'}
+              >
+                {t('subscribe.changePlan')}
+              </Button>
+              <Button
+                size={'small'}
+                startIcon={<UpgradeAIMaxIcon />}
+                color={'inherit'}
+                onClick={() => {
+                  setOpenUpgradeAIMax(true);
+                  setOpen(false);
+                }}
+                className={'justify-start px-2'}
+              >
+                {t('subscribe.getAIMax')}
+              </Button>
+            </>
+          )}
+        </div>
+      </Popover>
+      {isOwner && (
+        <>
+          <UpgradePlan
+            onOpen={() => {
               setOpenUpgradePlan(true);
-            }
-          }
-          open={openUpgradePlan}
-          onClose={() => setOpenUpgradePlan(false)}
-        />
-        <UpgradeAIMax
-          onOpen={
-            () => {
+            }}
+            open={openUpgradePlan}
+            onClose={() => setOpenUpgradePlan(false)}
+          />
+          <UpgradeAIMax
+            onOpen={() => {
               setOpenUpgradeAIMax(true);
-            }
-          }
-          open={openUpgradeAIMax}
-          onClose={() => setOpenUpgradeAIMax(false)}
-        />
-      </>
+            }}
+            open={openUpgradeAIMax}
+            onClose={() => setOpenUpgradeAIMax(false)}
+          />
+        </>
+      )}
 
-    }
-
-    <Import />
-  </>;
+      <Import />
+    </>
+  );
 }
 
 export default Workspaces;

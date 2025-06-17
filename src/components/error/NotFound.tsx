@@ -1,9 +1,9 @@
+import { ReactComponent as AppflowyLogo } from '@/assets/icons/appflowy.svg';
 import { AFConfigContext, useCurrentUser } from '@/components/main/app.hooks';
-import React, { useContext } from 'react';
-import { Typography, Button } from '@mui/material';
+import { Button, Typography } from '@mui/material';
+import { useContext } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
-import { ReactComponent as AppflowyLogo } from '@/assets/icons/appflowy.svg';
 
 const NotFound = () => {
   const { t } = useTranslation();
@@ -13,12 +13,12 @@ const NotFound = () => {
   const email = currentUser?.email || '';
 
   return (
-    <div className={'m-0 flex h-screen w-screen items-center justify-center bg-bg-body p-0'}>
+    <div className={'m-0 flex h-screen w-screen items-center justify-center bg-background-primary p-0'}>
       <div className={'flex flex-col items-center gap-1 text-center'}>
-        <Typography variant='h3' className={'mb-[27px] flex items-center gap-4 text-text-title'} gutterBottom>
+        <Typography variant='h3' className={'mb-[27px] flex items-center gap-4 text-text-primary'} gutterBottom>
           <AppflowyLogo className={'w-32'} />
         </Typography>
-        <div className={'mb-[16px] text-[52px] font-semibold leading-[128%] text-text-title max-sm:text-[24px]'}>
+        <div className={'mb-[16px] text-[52px] font-semibold leading-[128%] text-text-primary max-sm:text-[24px]'}>
           {t('publish.noAccessToVisit')}
         </div>
         <div className={'text-[20px] leading-[152%]'}>
@@ -34,7 +34,7 @@ const NotFound = () => {
             to='https://appflowy.com/download'
             variant='contained'
             color='primary'
-            className={'flex-1 rounded-[8px] py-3 px-4 text-[20px] font-medium max-md:text-base max-sm:w-full'}
+            className={'flex-1 rounded-[8px] px-4 py-3 text-[20px] font-medium max-md:text-base max-sm:w-full'}
           >
             {t('publish.downloadApp')}
           </Button>
@@ -42,7 +42,7 @@ const NotFound = () => {
             onClick={() => {
               navigate('/');
             }}
-            className={'flex-1 rounded-[8px] py-3 px-4 text-[20px] font-medium max-md:text-base max-sm:w-full'}
+            className={'flex-1 rounded-[8px] px-4 py-3 text-[20px] font-medium max-md:text-base max-sm:w-full'}
             variant={'outlined'}
             color={'inherit'}
           >
@@ -50,7 +50,7 @@ const NotFound = () => {
           </Button>
         </div>
         {currentUser ? (
-          <div className={'mt-10 flex max-w-[400px] flex-col text-text-caption'}>
+          <div className={'mt-10 flex max-w-[400px] flex-col text-text-secondary'}>
             <span>
               <Trans
                 i18nKey='requestAccess.tip'
@@ -71,7 +71,7 @@ const NotFound = () => {
             </span>
           </div>
         ) : (
-          <div className={'mt-10 flex max-w-[400px] flex-col gap-1 text-text-caption'}>
+          <div className={'mt-10 flex max-w-[400px] flex-col gap-1 text-text-secondary'}>
             You are currently not logged in.
             <div>
               Click

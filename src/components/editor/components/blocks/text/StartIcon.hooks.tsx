@@ -4,7 +4,7 @@ import CalloutIcon from '@/components/editor/components/blocks/callout/CalloutIc
 import { NumberListIcon } from '@/components/editor/components/blocks/numbered-list';
 import ToggleIcon from '@/components/editor/components/blocks/toggle-list/ToggleIcon';
 import { TextNode } from '@/components/editor/editor.type';
-import React, { FC, useCallback, useMemo } from 'react';
+import { FC, useCallback, useMemo } from 'react';
 import { ReactEditor, useSlate } from 'slate-react';
 import { Editor, Element } from 'slate';
 import CheckboxIcon from '@/components/editor/components/blocks/todo-list/CheckboxIcon';

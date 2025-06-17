@@ -1,6 +1,5 @@
 import ImporterDialogContent from '@/components/_shared/more-actions/importer/ImporterDialogContent';
 
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { NormalModal } from '@/components/_shared/modal';
 import { ReactComponent as ImportIcon } from '@/assets/icons/save_as.svg';

@@ -1,7 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MenuItem, Typography } from '@mui/material';
-import { scrollIntoView } from './utils';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { scrollIntoView } from './utils';
 
 /**
  * The option of the keyboard navigation
@@ -53,7 +53,7 @@ export interface KeyboardNavigationProps<T> {
   renderNoResult?: () => React.ReactNode;
 }
 
-function KeyboardNavigation<T> ({
+function KeyboardNavigation<T>({
   defaultFocusedKey,
   onPressRight,
   onPressLeft,
@@ -198,7 +198,7 @@ function KeyboardNavigation<T> ({
           break;
       }
     },
-    [flattenOptions, focusedKey, onConfirm, onEscape, onPressLeft, onPressRight, onPropsKeyDown],
+    [flattenOptions, focusedKey, onConfirm, onEscape, onPressLeft, onPressRight, onPropsKeyDown]
   );
 
   const renderOption = useCallback(
@@ -208,13 +208,10 @@ function KeyboardNavigation<T> ({
       const isFocused = focusedKey === option.key;
 
       return (
-        <div
-          className={'flex flex-col gap-1'}
-          key={option.key as string}
-        >
+        <div className={'flex flex-col gap-1'} key={option.key as string}>
           {hasChildren ? (
             // render the group name
-            option.content && <div className={'text-text-caption'}>{option.content}</div>
+            option.content && <div className={'text-text-secondary'}>{option.content}</div>
           ) : (
             // render the option
             <MenuItem
@@ -254,7 +251,7 @@ function KeyboardNavigation<T> ({
         </div>
       );
     },
-    [itemClassName, focusedKey, onConfirm, onFocus, itemStyle],
+    [itemClassName, focusedKey, onConfirm, onFocus, itemStyle]
   );
 
   useEffect(() => {
@@ -309,10 +306,7 @@ function KeyboardNavigation<T> ({
       ) : renderNoResult ? (
         renderNoResult()
       ) : (
-        <Typography
-          variant="body1"
-          className={'p-3 text-xs text-text-caption'}
-        >
+        <Typography variant='body1' className={'p-3 text-xs text-text-secondary'}>
           {t('findAndReplace.noResult')}
         </Typography>
       )}

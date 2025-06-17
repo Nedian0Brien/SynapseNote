@@ -1,10 +1,10 @@
 import { YjsEditor } from '@/application/slate-yjs';
 import { CustomEditor } from '@/application/slate-yjs/command';
-import { Origins, Popover } from '@/components/_shared/popover';
+import { ReactComponent as HashtagIcon } from '@/assets/icons/hashtag.svg';
 import { OutlineNode } from '@/components/editor/editor.type';
+import { Origins, Popover } from '@/components/_shared/popover';
 import { Button, Divider, IconButton } from '@mui/material';
 import React, { useCallback, useRef } from 'react';
-import { ReactComponent as HashtagIcon } from '@/assets/icons/hashtag.svg';
 import { useTranslation } from 'react-i18next';
 import { useSlateStatic } from 'slate-react';
 
@@ -61,7 +61,7 @@ function Depth({ node }: { node: OutlineNode }) {
                 key={depth}
                 className={`${
                   originalDepth === Number(depth[1]) ? '!text-fill-default' : ''
-                } p-1 px-2 text-sm text-text-title`}
+                } p-1 px-2 text-sm text-text-primary`}
                 onClick={() => {
                   handleDepthChange(Number(depth[1]));
                   setOpen(false);

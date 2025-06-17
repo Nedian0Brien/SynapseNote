@@ -2,12 +2,14 @@ import { BlockType } from '@/application/types';
 import { initialEditorTest } from '@/components/editor/__tests__/mount';
 import { FromBlockJSON } from 'cypress/support/document';
 
-const initialData: FromBlockJSON[] = [{
-  type: BlockType.CalloutBlock,
-  data: {},
-  text: [{ insert: 'Hello Callout' }],
-  children: [],
-}];
+const initialData: FromBlockJSON[] = [
+  {
+    type: BlockType.CalloutBlock,
+    data: {},
+    text: [{ insert: 'Hello Callout' }],
+    children: [],
+  },
+];
 
 const { assertJSON, initializeEditor } = initialEditorTest();
 
@@ -23,12 +25,6 @@ describe('CalloutBlock', () => {
     cy.wait(1000);
 
     cy.get(selector).focus();
-  });
-
-  it('should show callout icon popover when clicking icon button', () => {
-    cy.get('@editor').get('[data-block-type="callout"]').as('callout');
-    cy.get('@callout').find('[data-testid="callout-icon-button"]').click();
-    cy.get('[data-testid="change-icon-popover"]').should('exist');
   });
 
   it('should display `📌` emoji as default icon', () => {
@@ -47,12 +43,14 @@ describe('CalloutBlock', () => {
       {
         type: BlockType.CalloutBlock,
         data: {},
-        children: [{
-          type: BlockType.Paragraph,
-          data: {},
-          children: [],
-          text: [{ insert: 'Hello World' }],
-        }],
+        children: [
+          {
+            type: BlockType.Paragraph,
+            data: {},
+            children: [],
+            text: [{ insert: 'Hello World' }],
+          },
+        ],
         text: [{ insert: 'Hello Callout' }],
       },
     ]);

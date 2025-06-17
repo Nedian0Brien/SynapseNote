@@ -2,7 +2,6 @@ import { usePublishContext } from '@/application/publish';
 import { UIVariant } from '@/application/types';
 import { OutlineDrawer } from '@/components/_shared/outline';
 import Outline from '@/components/_shared/outline/Outline';
-import React from 'react';
 
 interface SideBarProps {
   drawerWidth: number;

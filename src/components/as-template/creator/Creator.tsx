@@ -1,13 +1,13 @@
-import { Popover } from '@/components/_shared/popover';
+import { ReactComponent as ArrowRight } from '@/assets/icons/alt_arrow_right.svg';
 import AddCreator from '@/components/as-template/creator/AddCreator';
 import CreatorAvatar from '@/components/as-template/creator/CreatorAvatar';
 import CreatorItem from '@/components/as-template/creator/CreatorItem';
 import { useLoadCreators } from '@/components/as-template/hooks';
 import { accountLinkIcon } from '@/components/as-template/icons';
-import { CircularProgress, OutlinedInput, Tooltip, Typography, Button } from '@mui/material';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Popover } from '@/components/_shared/popover';
+import { Button, CircularProgress, OutlinedInput, Tooltip, Typography } from '@mui/material';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ReactComponent as ArrowRight } from '@/assets/icons/alt_arrow_right.svg';
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -52,7 +52,7 @@ function Creator({ value, onChange }: { value?: string; onChange: (value: string
 
   return (
     <div className={'flex flex-col gap-4'}>
-      <Typography variant={'h6'} className={'text-text-caption'}>
+      <Typography variant={'h6'} className={'text-text-secondary'}>
         {t('template.creator.label')}
       </Typography>
       <div className={'flex flex-col gap-4'}>
@@ -67,7 +67,7 @@ function Creator({ value, onChange }: { value?: string; onChange: (value: string
         >
           <CreatorAvatar size={40} src={selectedCreator?.avatar_url || ''} name={selectedCreator?.name || ''} />
           <div className={'flex-1 text-left'}>{selectedCreator?.name}</div>
-          <ArrowRight className={'h-5 w-5 rotate-90 text-text-caption'} />
+          <ArrowRight className={'h-5 w-5 rotate-90 text-text-secondary'} />
         </Button>
 
         <div className={'flex flex-wrap gap-2'}>
@@ -81,6 +81,7 @@ function Creator({ value, onChange }: { value?: string; onChange: (value: string
                   className={
                     'flex h-10 w-10 items-center justify-between rounded-full border border-line-border p-3 hover:border-content-blue-400 hover:text-content-blue-400'
                   }
+                  rel='noreferrer'
                 >
                   {accountLinkIcon(link.link_type)}
                 </a>
@@ -101,7 +102,7 @@ function Creator({ value, onChange }: { value?: string; onChange: (value: string
               onChange={(e) => setSearchText(e.target.value)}
               endAdornment={loading ? <CircularProgress size={'small'} /> : null}
               size={'small'}
-              className={'flex-1 bg-bg-body'}
+              className={'flex-1 bg-background-primary'}
               placeholder={t('template.creator.typeToSearch')}
             />
             <AddCreator searchText={searchText} onCreated={loadCreators} />

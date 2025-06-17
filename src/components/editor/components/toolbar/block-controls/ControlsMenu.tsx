@@ -12,7 +12,7 @@ import { useEditorContext } from '@/components/editor/EditorContext';
 import { copyTextToClipboard } from '@/utils/copy';
 import { Button } from '@mui/material';
 import { PopoverProps } from '@mui/material/Popover';
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ReactEditor, useSlateStatic } from 'slate-react';
 import { findSlateEntryByBlockId } from '@/application/slate-yjs/utils/editor';

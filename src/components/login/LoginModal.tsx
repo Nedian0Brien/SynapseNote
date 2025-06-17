@@ -1,4 +1,3 @@
-import React from 'react';
 import { Dialog, IconButton } from '@mui/material';
 import { Login } from './Login';
 import { ReactComponent as CloseIcon } from '@/assets/icons/close.svg';

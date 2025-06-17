@@ -1,17 +1,17 @@
 import { CalendarEvent } from '@/application/database-yjs';
-import { RichTooltip } from '@/components/_shared/popover';
 import NoDateRow from '@/components/database/components/calendar/toolbar/NoDateRow';
+import { RichTooltip } from '@/components/_shared/popover';
 import { Button } from '@mui/material';
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-function NoDate ({ emptyEvents }: { emptyEvents: CalendarEvent[] }) {
+function NoDate({ emptyEvents }: { emptyEvents: CalendarEvent[] }) {
   const [open, setOpen] = React.useState(false);
   const { t } = useTranslation();
   const content = useMemo(() => {
     return (
-      <div className={'flex w-[260px] flex-col gap-3 max-sm:gap-1 p-2 text-xs font-medium'}>
-        {/*<div className={'text-text-caption'}>{t('calendar.settings.clickToOpen')}</div>*/}
+      <div className={'flex w-[260px] flex-col gap-3 p-2 text-xs font-medium max-sm:gap-1'}>
+        {/*<div className={'text-text-secondary'}>{t('calendar.settings.clickToOpen')}</div>*/}
         {emptyEvents.map((event) => {
           const rowId = event.id.split(':')[0];
 
@@ -34,7 +34,7 @@ function NoDate ({ emptyEvents }: { emptyEvents: CalendarEvent[] }) {
         size={'small'}
         variant={'outlined'}
         disabled
-        className={'rounded-md border-line-divider whitespace-nowrap overflow-hidden'}
+        className={'overflow-hidden whitespace-nowrap rounded-md border-border-primary'}
         color={'inherit'}
         // onClick={() => setOpen(true)}
       >

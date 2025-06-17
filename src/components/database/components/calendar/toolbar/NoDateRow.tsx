@@ -1,6 +1,5 @@
 import { useCellSelector, usePrimaryFieldId } from '@/application/database-yjs';
 import { Cell } from '@/components/database/components/cell';
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 function NoDateRow({ rowId }: { rowId: string }) {
@@ -13,7 +12,7 @@ function NoDateRow({ rowId }: { rowId: string }) {
   const { t } = useTranslation();
 
   if (!primaryFieldId || !cell?.data) {
-    return <div className={'text-xs text-text-caption'}>{t('grid.row.titlePlaceholder')}</div>;
+    return <div className={'text-xs text-text-secondary'}>{t('grid.row.titlePlaceholder')}</div>;
   }
 
   return (
@@ -23,15 +22,7 @@ function NoDateRow({ rowId }: { rowId: string }) {
       // }}
       className={'w-full hover:text-fill-default'}
     >
-      <Cell
-        // style={{
-        //   cursor: 'pointer',
-        // }}
-        readOnly
-        cell={cell}
-        rowId={rowId}
-        fieldId={primaryFieldId}
-      />
+      <Cell wrap readOnly cell={cell} rowId={rowId} fieldId={primaryFieldId} />
     </div>
   );
 }

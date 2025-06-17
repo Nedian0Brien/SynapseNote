@@ -1,6 +1,5 @@
-import { Divider } from '@mui/material';
-import React from 'react';
 import { ReactComponent as AppFlowyLogo } from '@/assets/icons/appflowy.svg';
+import { Divider } from '@mui/material';
 
 function AppFlowyPower({ divider, width }: { divider?: boolean; width?: number }) {
   return (
@@ -9,7 +8,7 @@ function AppFlowyPower({ divider, width }: { divider?: boolean; width?: number }
         width,
       }}
       className={
-        'sticky bottom-[-0.5px] flex w-full transform-gpu flex-col items-center justify-center rounded-[16px] bg-bg-body'
+        'sticky bottom-[-0.5px] flex w-full transform-gpu flex-col items-center justify-center rounded-[16px] bg-background-primary'
       }
     >
       {divider && <Divider className={'my-0 w-full'} />}
@@ -22,7 +21,7 @@ function AppFlowyPower({ divider, width }: { divider?: boolean; width?: number }
           width,
         }}
         className={
-          'flex  w-full cursor-pointer items-center justify-center gap-2 py-4 text-sm text-text-title opacity-50'
+          'flex  w-full cursor-pointer items-center justify-center gap-2 py-4 text-sm text-text-primary opacity-50'
         }
       >
         Powered by

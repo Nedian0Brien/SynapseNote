@@ -354,6 +354,9 @@ export enum YjsDatabaseKey {
   show_weekends = 'show_weekends',
   layout_ty = 'layout_ty',
   icon = 'icon',
+  is_inline = 'is_inline',
+  auto_fill = 'auto_fill',
+  language = 'language',
 }
 
 export interface YDoc extends Y.Doc {
@@ -364,7 +367,7 @@ export interface YDoc extends Y.Doc {
 export interface YDatabaseRow extends Y.Map<unknown> {
   get (key: YjsDatabaseKey.id): RowId;
 
-  get (key: YjsDatabaseKey.height): string;
+  get (key: YjsDatabaseKey.database_id | YjsDatabaseKey.height): string;
 
   get (key: YjsDatabaseKey.visibility): boolean;
 
@@ -390,7 +393,7 @@ export interface YDatabaseCell extends Y.Map<unknown> {
 
   get (key: YjsDatabaseKey.field_type): string;
 
-  get (key: YjsDatabaseKey.data): object | string | boolean | number;
+  get (key: YjsDatabaseKey.data): string | boolean | number | null | Y.Array<string> | object;
 
   get (key: YjsDatabaseKey.end_timestamp): EndTimestamp;
 
@@ -410,6 +413,8 @@ export interface YSharedRoot extends Y.Map<unknown> {
   get (key: YjsEditorKey.database): YDatabase;
 
   get (key: YjsEditorKey.database_row): YDatabaseRow;
+
+  get (key: YjsEditorKey.meta): Y.Map<unknown>;
 }
 
 export interface YFolder extends Y.Map<unknown> {
@@ -545,11 +550,13 @@ export interface YDatabaseView extends Y.Map<unknown> {
   get (key: YjsDatabaseKey.row_orders): YDatabaseRowOrders;
 
   get (key: YjsDatabaseKey.calculations): YDatabaseCalculations;
+
+  get (key: YjsDatabaseKey.is_inline): boolean;
 }
 
-export type YDatabaseFieldOrders = Y.Array<unknown>; // [ { id: FieldId } ]
+export type YDatabaseFieldOrders = Y.Array<{ id: FieldId }>; // [ { id: FieldId } ]
 
-export type YDatabaseRowOrders = Y.Array<YDatabaseRowOrder>; // [ { id: RowId, height: number } ]
+export type YDatabaseRowOrders = Y.Array<{ id: RowId, height: number }>; // [ { id: RowId, height: number } ]
 
 export type YDatabaseGroups = Y.Array<YDatabaseGroup>;
 
@@ -587,23 +594,17 @@ export interface YDatabaseGroup extends Y.Map<unknown> {
   get (key: YjsDatabaseKey.field_id): FieldId;
 
   // eslint-disable-next-line @typescript-eslint/unified-signatures
-  get (key: YjsDatabaseKey.content): string;
+  get (key: YjsDatabaseKey.content): string; // "{"hide_empty":false,"condition":2}"
 
   get (key: YjsDatabaseKey.groups): YDatabaseGroupColumns;
 }
 
-export type YDatabaseGroupColumns = Y.Array<YDatabaseGroupColumn>;
+export type YDatabaseGroupColumns = Y.Array<{ id: string, visible: boolean }>;
 
 export interface YDatabaseGroupColumn extends Y.Map<unknown> {
   get (key: YjsDatabaseKey.id): string;
 
   get (key: YjsDatabaseKey.visible): boolean;
-}
-
-export interface YDatabaseRowOrder extends Y.Map<unknown> {
-  get (key: YjsDatabaseKey.id): SortId;
-
-  get (key: YjsDatabaseKey.height): number;
 }
 
 export interface YDatabaseSort extends Y.Map<unknown> {
@@ -675,21 +676,32 @@ export interface YDatabaseFieldTypeOption extends Y.Map<unknown> {
 }
 
 export interface YMapFieldTypeOption extends Y.Map<unknown> {
+  // single select, Multi select, File media
   get (key: YjsDatabaseKey.content): string;
 
-  // eslint-disable-next-line @typescript-eslint/unified-signatures
-  get (key: YjsDatabaseKey.data): string;
-
+  // CreatedTime, LastEditedTime, DateTime
   // eslint-disable-next-line @typescript-eslint/unified-signatures
   get (key: YjsDatabaseKey.time_format): string;
 
+  // CreatedTime, LastEditedTime, DateTime
   // eslint-disable-next-line @typescript-eslint/unified-signatures
   get (key: YjsDatabaseKey.date_format): string;
 
+  // Relation
   get (key: YjsDatabaseKey.database_id): DatabaseId;
 
+  // Number
   // eslint-disable-next-line @typescript-eslint/unified-signatures
   get (key: YjsDatabaseKey.format): string;
+
+  // LastModified and CreatedTime
+  get (key: YjsDatabaseKey.include_time): boolean;
+
+  // AI Translate
+  // eslint-disable-next-line @typescript-eslint/unified-signatures
+  get (key: YjsDatabaseKey.auto_fill): boolean;
+
+  get (key: YjsDatabaseKey.language): bigint;
 }
 
 export enum Types {
@@ -876,6 +888,7 @@ export interface View {
   publisher_email?: string;
   publish_name?: string;
   publish_timestamp?: string;
+  parent_view_id?: string;
 }
 
 export interface UpdatePublishConfigPayload {
@@ -1033,11 +1046,22 @@ export interface ViewComponentProps {
   onWordCountChange?: (viewId: string, props: TextCount) => void;
   uploadFile?: (file: File) => Promise<string>;
   requestInstance?: AxiosInstance | null;
+  createFolderView?: (payload: CreateFolderViewPayload) => Promise<string>;
+  generateAISummaryForRow?: (payload: GenerateAISummaryRowPayload) => Promise<string>;
+  generateAITranslateForRow?: (payload: GenerateAITranslateRowPayload) => Promise<string>;
 }
 
 export interface CreatePagePayload {
   layout: ViewLayout;
   name?: string;
+}
+
+export interface CreateFolderViewPayload {
+  parentViewId: string,
+  layout: ViewLayout,
+  name?: string,
+  viewId?: string,
+  databaseId?: string,
 }
 
 export interface CreateSpacePayload {
@@ -1080,3 +1104,22 @@ export enum SettingMenuItem {
   MEMBERS = 'MEMBERS',
   SITES = 'SITES',
 }
+
+export interface GenerateAISummaryRowPayload {
+  Content: {
+    // key = field name, value = cell data
+    [key: string]: string;
+  };
+}
+
+export interface GenerateAITranslateRowPayload {
+  cells: {
+    // field name
+    title: string;
+    // cell data
+    content: string;
+  }[],
+  language: string,
+  include_header?: boolean
+}
+

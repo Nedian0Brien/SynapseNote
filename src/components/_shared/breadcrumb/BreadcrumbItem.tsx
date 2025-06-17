@@ -1,17 +1,22 @@
 import { UIVariant, View } from '@/application/types';
-import PublishIcon from '@/components/_shared/view-icon/PublishIcon';
 import { notify } from '@/components/_shared/notify';
+import PageIcon from '@/components/_shared/view-icon/PageIcon';
+import PublishIcon from '@/components/_shared/view-icon/PublishIcon';
 import SpaceIcon from '@/components/_shared/view-icon/SpaceIcon';
 import { Tooltip } from '@mui/material';
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import PageIcon from '@/components/_shared/view-icon/PageIcon';
 
-function BreadcrumbItem({ crumb, disableClick = false, toView, variant }: {
+function BreadcrumbItem({
+  crumb,
+  disableClick = false,
+  toView,
+  variant,
+}: {
   crumb: View;
   disableClick?: boolean;
   toView?: (viewId: string) => Promise<void>;
-  variant?: UIVariant
+  variant?: UIVariant;
 }) {
   const { view_id, name, extra, is_published } = crumb;
 
@@ -20,9 +25,9 @@ function BreadcrumbItem({ crumb, disableClick = false, toView, variant }: {
   const className = useMemo(() => {
     const classList = ['flex', 'items-center', 'gap-1.5', 'text-sm', 'overflow-hidden', 'max-sm:text-base'];
 
-    if(!disableClick && !extra?.is_space) {
-      if((is_published && variant === 'publish') || variant === 'app') {
-        classList.push('cursor-pointer hover:text-text-title hover:underline');
+    if (!disableClick && !extra?.is_space) {
+      if ((is_published && variant === 'publish') || variant === 'app') {
+        classList.push('cursor-pointer hover:text-text-primary hover:underline');
       } else {
         classList.push('flex-1');
       }
@@ -34,12 +39,12 @@ function BreadcrumbItem({ crumb, disableClick = false, toView, variant }: {
   return (
     <div
       className={className}
-      onClick={async() => {
-        if(disableClick || extra?.is_space || (!is_published && variant === 'publish')) return;
+      onClick={async () => {
+        if (disableClick || extra?.is_space || (!is_published && variant === 'publish')) return;
         try {
           await toView?.(view_id);
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch(e: any) {
+        } catch (e: any) {
           notify.error(e.message);
         }
       }}
@@ -52,20 +57,14 @@ function BreadcrumbItem({ crumb, disableClick = false, toView, variant }: {
           char={extra.space_icon ? undefined : name.slice(0, 1)}
         />
       ) : (
-        <PageIcon
-          view={crumb}
-          className={'min-w-5 flex h-5 w-5 items-center justify-center !max-md:text-[20px]'}
-        />
+        <PageIcon view={crumb} className={'!max-md:text-[20px] flex h-5 w-5 min-w-5 items-center justify-center'} />
       )}
       <Tooltip title={name} placement={'bottom'} enterDelay={1000} enterNextDelay={1000}>
         <span className={'min-w-[2.5rem] max-w-[250px] flex-1 overflow-hidden truncate '}>
           {name || t('menuAppHeader.defaultNewPageName')}
         </span>
       </Tooltip>
-      <PublishIcon
-        variant={variant}
-        view={crumb}
-      />
+      <PublishIcon variant={variant} view={crumb} />
     </div>
   );
 }

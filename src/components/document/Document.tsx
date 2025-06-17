@@ -1,14 +1,12 @@
-import { YjsEditor } from '@/application/slate-yjs';
-import {
-  ViewComponentProps,
-  YjsEditorKey, YSharedRoot,
-} from '@/application/types';
-import EditorSkeleton from '@/components/_shared/skeleton/EditorSkeleton';
-import { Editor } from '@/components/editor';
-import React, { Suspense, useCallback, useRef } from 'react';
-import ViewMetaPreview from '@/components/view-meta/ViewMetaPreview';
+import { Suspense, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
+
+import { YjsEditor } from '@/application/slate-yjs';
 import { appendFirstEmptyParagraph } from '@/application/slate-yjs/utils/yjs';
+import { ViewComponentProps, YjsEditorKey, YSharedRoot } from '@/application/types';
+import { Editor } from '@/components/editor';
+import ViewMetaPreview from '@/components/view-meta/ViewMetaPreview';
+import EditorSkeleton from '@/components/_shared/skeleton/EditorSkeleton';
 
 export type DocumentProps = ViewComponentProps & {
   onEditorConnected?: (editor: YjsEditor) => void;
@@ -16,16 +14,7 @@ export type DocumentProps = ViewComponentProps & {
 
 export const Document = (props: DocumentProps) => {
   const [search] = useSearchParams();
-  const {
-    doc,
-    readOnly,
-    viewMeta,
-    isTemplateThumb,
-    updatePage,
-    onRendered,
-    onEditorConnected,
-    uploadFile,
-  } = props;
+  const { doc, readOnly, viewMeta, isTemplateThumb, updatePage, onRendered, onEditorConnected, uploadFile } = props;
   const blockId = search.get('blockId') || undefined;
 
   const onJumpedBlockId = useCallback(() => {
@@ -33,12 +22,15 @@ export const Document = (props: DocumentProps) => {
   }, []);
   const document = doc?.getMap(YjsEditorKey.data_section)?.get(YjsEditorKey.document);
 
-  const handleEnter = useCallback((text: string) => {
-    if (!doc) return;
-    const sharedRoot = doc.getMap(YjsEditorKey.data_section) as YSharedRoot;
+  const handleEnter = useCallback(
+    (text: string) => {
+      if (!doc) return;
+      const sharedRoot = doc.getMap(YjsEditorKey.data_section) as YSharedRoot;
 
-    appendFirstEmptyParagraph(sharedRoot, text);
-  }, [doc]);
+      appendFirstEmptyParagraph(sharedRoot, text);
+    },
+    [doc]
+  );
 
   const ref = useRef<HTMLDivElement>(null);
 
@@ -64,21 +56,17 @@ export const Document = (props: DocumentProps) => {
   if (!document || !viewMeta.viewId) return null;
 
   return (
-
-    <div
-      ref={ref}
-      className={'flex h-full w-full flex-col items-center'}
-    >
+    <div ref={ref} className={'flex h-full w-full flex-col items-center'}>
       <ViewMetaPreview
         {...viewMeta}
         readOnly={readOnly}
         updatePage={updatePage}
         onEnter={readOnly ? undefined : handleEnter}
-        maxWidth={988}
+        maxWidth={952}
         uploadFile={uploadFile}
       />
       <Suspense fallback={<EditorSkeleton />}>
-        <div className={'flex justify-center w-full'}>
+        <div className={'flex w-full justify-center'}>
           <Editor
             viewId={viewMeta.viewId}
             readSummary={isTemplateThumb}
@@ -90,7 +78,6 @@ export const Document = (props: DocumentProps) => {
           />
         </div>
       </Suspense>
-
     </div>
   );
 };

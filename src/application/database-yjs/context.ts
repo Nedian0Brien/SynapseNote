@@ -1,14 +1,24 @@
+import { AxiosInstance } from 'axios';
+import { createContext, useContext } from 'react';
+
 import {
+  CreateFolderViewPayload,
   CreateRowDoc,
+  DatabaseRelations,
+  GenerateAISummaryRowPayload,
+  GenerateAITranslateRowPayload,
   LoadView,
-  LoadViewMeta, RowId,
+  LoadViewMeta,
+  RowId,
+  UpdatePagePayload,
+  View,
   YDatabase,
   YDatabaseRow,
   YDoc,
   YjsDatabaseKey,
   YjsEditorKey,
+  YSharedRoot,
 } from '@/application/types';
-import { createContext, useContext } from 'react';
 
 export interface DatabaseContextState {
   readOnly: boolean;
@@ -17,16 +27,28 @@ export interface DatabaseContextState {
   viewId: string;
   rowDocMap: Record<RowId, YDoc> | null;
   isDatabaseRowPage?: boolean;
-  scrollLeft?: number;
+  paddingStart?: number;
+  paddingEnd?: number;
   isDocumentBlock?: boolean;
-  navigateToRow?: (rowId: string) => void;
+  // use different view id to navigate to row
+  navigateToRow?: (rowId: string, viewId?: string) => void;
   loadView?: LoadView;
   createRowDoc?: CreateRowDoc;
   loadViewMeta?: LoadViewMeta;
   navigateToView?: (viewId: string, blockId?: string) => Promise<void>;
-  onRendered?: (height: number) => void;
+  onRendered?: () => void;
   showActions?: boolean;
   workspaceId: string;
+  createFolderView?: (payload: CreateFolderViewPayload) => Promise<string>;
+  updatePage?: (viewId: string, payload: UpdatePagePayload) => Promise<void>;
+  deletePage?: (viewId: string) => Promise<void>;
+  generateAISummaryForRow?: (payload: GenerateAISummaryRowPayload) => Promise<string>;
+  generateAITranslateForRow?: (payload: GenerateAITranslateRowPayload) => Promise<string>;
+  loadDatabaseRelations?: () => Promise<DatabaseRelations | undefined>;
+  loadViews?: () => Promise<View[]>;
+  uploadFile?: (file: File) => Promise<string>;
+  createOrphanedView?: (payload: { document_id: string }) => Promise<void>;
+  requestInstance?: AxiosInstance | null;
 }
 
 export const DatabaseContext = createContext<DatabaseContextState | null>(null);
@@ -34,11 +56,25 @@ export const DatabaseContext = createContext<DatabaseContextState | null>(null);
 export const useDatabaseContext = () => {
   const context = useContext(DatabaseContext);
 
-  if(!context) {
+  if (!context) {
     throw new Error('DatabaseContext is not provided');
   }
 
   return context;
+};
+
+export const useDocGuid = () => {
+  return useDatabaseContext().databaseDoc.guid;
+};
+
+export const useSharedRoot = () => {
+  return useDatabaseContext().databaseDoc?.getMap(YjsEditorKey.data_section) as YSharedRoot;
+};
+
+export const useCreateRow = () => {
+  const context = useDatabaseContext();
+
+  return context.createRowDoc;
 };
 
 export const useDatabase = () => {
@@ -80,7 +116,7 @@ export const useDatabaseViewId = () => {
 export const useReadOnly = () => {
   const context = useDatabaseContext();
 
-  return context?.readOnly || true;
+  return context?.readOnly === undefined ? true : context?.readOnly;
 };
 
 export const useDatabaseView = () => {

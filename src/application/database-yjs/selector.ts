@@ -1,34 +1,52 @@
-import {
-  FieldId, RowCoverType,
-  SortId,
-  YDatabase,
-  YDatabaseField, YDatabaseMetas, YDatabaseRow,
-  YjsDatabaseKey,
-  YjsEditorKey,
-} from '@/application/types';
-import { getCell, metaIdFromRowId, MIN_COLUMN_WIDTH } from '@/application/database-yjs/const';
+import dayjs from 'dayjs';
+import { debounce } from 'lodash-es';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+import { parseYDatabaseCellToCell } from '@/application/database-yjs/cell.parse';
+import { DateTimeCell } from '@/application/database-yjs/cell.type';
+import { getCell, MIN_COLUMN_WIDTH } from '@/application/database-yjs/const';
 import {
   useDatabase,
   useDatabaseFields,
   useDatabaseView,
-  useRowDocMap,
   useDatabaseViewId,
+  useRowDocMap,
 } from '@/application/database-yjs/context';
+import {
+  DateFormat,
+  getDateCellStr,
+  getDateFormat,
+  getTimeFormat,
+  getTypeOptions,
+  parseSelectOptionTypeOptions,
+  SelectOption,
+  TimeFormat,
+} from '@/application/database-yjs/fields';
 import { filterBy, parseFilter } from '@/application/database-yjs/filter';
 import { groupByField } from '@/application/database-yjs/group';
+import { getMetaJSON } from '@/application/database-yjs/row_meta';
 import { sortBy } from '@/application/database-yjs/sort';
-import { parseYDatabaseCellToCell } from '@/application/database-yjs/cell.parse';
-import { DateTimeCell } from '@/application/database-yjs/cell.type';
-import dayjs from 'dayjs';
-import { debounce } from 'lodash-es';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { CalendarLayoutSetting, FieldType, FieldVisibility, Filter, RowMetaKey, SortCondition } from './database.type';
+import {
+  DatabaseViewLayout,
+  FieldId,
+  SortId,
+  YDatabase,
+  YDatabaseMetas,
+  YDatabaseRow,
+  YDoc,
+  YjsDatabaseKey,
+  YjsEditorKey,
+} from '@/application/types';
+import { renderDate } from '@/utils/time';
+
+import { CalendarLayoutSetting, FieldType, FieldVisibility, Filter, RowMeta, SortCondition } from './database.type';
 
 export interface Column {
   fieldId: string;
   width: number;
   visibility: FieldVisibility;
   wrap?: boolean;
+  isPrimary: boolean;
 }
 
 export interface Row {
@@ -38,7 +56,7 @@ export interface Row {
 
 const defaultVisible = [FieldVisibility.AlwaysShown, FieldVisibility.HideWhenEmpty];
 
-export function useDatabaseViewsSelector (_iidIndex: string, visibleViewIds?: string[]) {
+export function useDatabaseViewsSelector(_iidIndex: string, visibleViewIds?: string[]) {
   const database = useDatabase();
 
   const views = database?.get(YjsDatabaseKey.views);
@@ -58,19 +76,21 @@ export function useDatabaseViewsSelector (_iidIndex: string, visibleViewIds?: st
         }
       >;
 
-      const viewsSorted = Object.entries(viewsObj).sort((a, b) => {
-        const [, viewA] = a;
-        const [, viewB] = b;
+      const viewsSorted =
+        visibleViewIds ??
+        Object.entries(viewsObj)
+          .sort((a, b) => {
+            const [, viewA] = a;
+            const [, viewB] = b;
 
-        return Date.parse(viewB.created_at) - Date.parse(viewA.created_at);
-      });
+            return Date.parse(viewB.created_at) - Date.parse(viewA.created_at);
+          })
+          .map(([key]) => key);
 
       setViewIds(
-        viewsSorted
-          .map(([key]) => key)
-          .filter((id) => {
-            return !visibleViewIds || visibleViewIds.includes(id);
-          }),
+        viewsSorted.filter((id) => {
+          return !visibleViewIds || visibleViewIds.includes(id);
+        })
       );
     };
 
@@ -88,33 +108,62 @@ export function useDatabaseViewsSelector (_iidIndex: string, visibleViewIds?: st
   };
 }
 
-export function useFieldsSelector (visibilitys: FieldVisibility[] = defaultVisible) {
-  const viewId = useDatabaseViewId();
+export function useDatabaseViewLayout() {
+  const view = useDatabaseView();
+
+  const [layout, setLayout] = useState<DatabaseViewLayout | null>(null);
+
+  useEffect(() => {
+    const observerEvent = () => {
+      const layoutValue = view?.get(YjsDatabaseKey.layout);
+
+      if (layoutValue !== undefined) {
+        setLayout(Number(layoutValue) as DatabaseViewLayout);
+      } else {
+        setLayout(null);
+      }
+    };
+
+    observerEvent();
+
+    view?.observe(observerEvent);
+    return () => {
+      view?.unobserve(observerEvent);
+    };
+  }, [view]);
+
+  return layout;
+}
+
+export function useFieldsSelector(visibilitys: FieldVisibility[] = defaultVisible) {
+  const view = useDatabaseView();
   const database = useDatabase();
   const [columns, setColumns] = useState<Column[]>([]);
 
   useEffect(() => {
-    if (!viewId) return;
-    const view = database?.get(YjsDatabaseKey.views)?.get(viewId);
+    if (!view) return;
     const fields = database?.get(YjsDatabaseKey.fields);
     const fieldsOrder = view?.get(YjsDatabaseKey.field_orders);
     const fieldSettings = view?.get(YjsDatabaseKey.field_settings);
     const getColumns = () => {
-      if (!fields || !fieldsOrder || !fieldSettings) return [];
+      if (!fields || !fieldsOrder) return [];
 
       const fieldIds = (fieldsOrder.toJSON() as { id: string }[]).map((item) => item.id);
 
       return fieldIds
         .map((fieldId) => {
-          const setting = fieldSettings.get(fieldId);
+          const setting = fieldSettings?.get(fieldId);
+          const field = fields.get(fieldId);
 
           return {
             fieldId,
+            isPrimary: field?.get(YjsDatabaseKey.is_primary),
             width: parseInt(setting?.get(YjsDatabaseKey.width)) || MIN_COLUMN_WIDTH,
             visibility: Number(
-              setting?.get(YjsDatabaseKey.visibility) || FieldVisibility.AlwaysShown,
+              setting?.get(YjsDatabaseKey.visibility) || FieldVisibility.AlwaysShown
             ) as FieldVisibility,
             wrap: setting?.get(YjsDatabaseKey.wrap) ?? true,
+            fieldType: Number(field?.get(YjsDatabaseKey.type)) as FieldType,
           };
         })
         .filter((column) => {
@@ -126,37 +175,114 @@ export function useFieldsSelector (visibilitys: FieldVisibility[] = defaultVisib
 
     setColumns(getColumns());
 
-    fieldsOrder?.observe(observerEvent);
-    fieldSettings?.observe(observerEvent);
+    fieldsOrder?.observeDeep(observerEvent);
+    fieldSettings?.observeDeep(observerEvent);
+    fields?.observe(observerEvent);
 
     return () => {
-      fieldsOrder?.unobserve(observerEvent);
-      fieldSettings?.unobserve(observerEvent);
+      fieldsOrder?.unobserveDeep(observerEvent);
+      fieldSettings?.unobserveDeep(observerEvent);
+      fields?.unobserve(observerEvent);
     };
-  }, [database, viewId, visibilitys]);
+  }, [database, view, visibilitys]);
 
   return columns;
 }
 
-export function useFieldSelector (fieldId: string) {
+export function useFieldType(fieldId: string) {
   const database = useDatabase();
-  const [field, setField] = useState<YDatabaseField | null>(null);
+  const field = database?.get(YjsDatabaseKey.fields)?.get(fieldId);
+  const [fieldType, setFieldType] = useState<FieldType>(FieldType.RichText);
+
+  useEffect(() => {
+    if (!field) return;
+
+    const observerEvent = () => {
+      setFieldType(Number(field.get(YjsDatabaseKey.type)) as FieldType);
+    };
+
+    observerEvent();
+
+    field.observe(observerEvent);
+
+    return () => {
+      field.unobserve(observerEvent);
+    };
+  }, [database, field]);
+
+  return fieldType;
+}
+
+export function useFieldVisibility(fieldId: string) {
+  const view = useDatabaseView();
+  const fieldSettings = view?.get(YjsDatabaseKey.field_settings);
+  const fieldSetting = fieldSettings?.get(fieldId);
+
+  const [visibility, setVisibility] = useState<FieldVisibility>(
+    Number(fieldSetting?.get(YjsDatabaseKey.visibility)) ?? FieldVisibility.AlwaysShown
+  );
+
+  useEffect(() => {
+    if (!view) return;
+
+    const observerEvent = () => {
+      setVisibility(Number(fieldSetting?.get(YjsDatabaseKey.visibility)) ?? FieldVisibility.AlwaysShown);
+    };
+
+    observerEvent();
+
+    fieldSettings?.observeDeep(observerEvent);
+
+    return () => {
+      fieldSettings?.unobserveDeep(observerEvent);
+    };
+  }, [view, fieldId, fieldSettings, fieldSetting]);
+
+  return visibility;
+}
+
+export function useFieldWrap(fieldId: string) {
+  const view = useDatabaseView();
+  const database = useDatabase();
+  const fieldSettings = view?.get(YjsDatabaseKey.field_settings);
+  const fieldSetting = fieldSettings?.get(fieldId);
+
+  const [wrap, setWrap] = useState(fieldSetting?.get(YjsDatabaseKey.wrap) ?? true);
+
+  useEffect(() => {
+    if (!view) return;
+
+    const observerEvent = () => {
+      setWrap(fieldSetting?.get(YjsDatabaseKey.wrap) ?? true);
+    };
+
+    observerEvent();
+
+    fieldSettings?.observeDeep(observerEvent);
+
+    return () => {
+      fieldSettings?.unobserveDeep(observerEvent);
+    };
+  }, [database, view, fieldId, fieldSettings, fieldSetting]);
+
+  return wrap;
+}
+
+export function useFieldSelector(fieldId: string) {
+  const database = useDatabase();
   const [clock, setClock] = useState<number>(0);
+  const field = database.get(YjsDatabaseKey.fields)?.get(fieldId);
 
   useEffect(() => {
     if (!database) return;
-
-    const field = database.get(YjsDatabaseKey.fields)?.get(fieldId);
-
-    setField(field || null);
     const observerEvent = () => setClock((prev) => prev + 1);
 
-    field?.observe(observerEvent);
+    field?.observeDeep(observerEvent);
 
     return () => {
-      field?.unobserve(observerEvent);
+      field?.unobserveDeep(observerEvent);
     };
-  }, [database, fieldId]);
+  }, [database, field, fieldId]);
 
   return {
     field,
@@ -164,10 +290,10 @@ export function useFieldSelector (fieldId: string) {
   };
 }
 
-export function useFiltersSelector () {
+export function useFiltersSelector() {
   const database = useDatabase();
   const viewId = useDatabaseViewId();
-  const [filters, setFilters] = useState<string[]>([]);
+  const [filters, setFilters] = useState<{ id: string; fieldId: string }[]>([]);
 
   useEffect(() => {
     if (!viewId) return;
@@ -177,12 +303,19 @@ export function useFiltersSelector () {
     if (!filterOrders) return;
 
     const getFilters = () => {
-      return (filterOrders.toJSON() as { id: string }[]).map((item) => item.id);
+      return (filterOrders.toJSON() as { id: string; field_id: string }[]).map((item) => {
+        return {
+          id: item.id,
+          fieldId: item.field_id,
+        };
+      });
     };
 
-    const observerEvent = () => setFilters(getFilters());
+    const observerEvent = () => {
+      setFilters(getFilters());
+    };
 
-    setFilters(getFilters());
+    observerEvent();
 
     filterOrders.observe(observerEvent);
 
@@ -194,7 +327,7 @@ export function useFiltersSelector () {
   return filters;
 }
 
-export function useFilterSelector (filterId: string) {
+export function useFilterSelector(filterId: string) {
   const database = useDatabase();
   const viewId = useDatabaseViewId();
   const fields = database?.get(YjsDatabaseKey.fields);
@@ -227,10 +360,10 @@ export function useFilterSelector (filterId: string) {
   return filterValue;
 }
 
-export function useSortsSelector () {
+export function useSortsSelector() {
   const database = useDatabase();
   const viewId = useDatabaseViewId();
-  const [sorts, setSorts] = useState<string[]>([]);
+  const [sorts, setSorts] = useState<{ id: string; fieldId: string }[]>([]);
 
   useEffect(() => {
     if (!viewId) return;
@@ -240,7 +373,12 @@ export function useSortsSelector () {
     if (!sortOrders) return;
 
     const getSorts = () => {
-      return (sortOrders.toJSON() as { id: string }[]).map((item) => item.id);
+      return (sortOrders.toJSON() as { id: string; field_id: string }[]).map((item) => {
+        return {
+          id: item.id,
+          fieldId: item.field_id,
+        };
+      });
     };
 
     const observerEvent = () => setSorts(getSorts());
@@ -263,7 +401,7 @@ export interface Sort {
   id: SortId;
 }
 
-export function useSortSelector (sortId: SortId) {
+export function useSortSelector(sortId: SortId) {
   const database = useDatabase();
   const viewId = useDatabaseViewId();
   const [sortValue, setSortValue] = useState<Sort | null>(null);
@@ -296,7 +434,7 @@ export function useSortSelector (sortId: SortId) {
   return sortValue;
 }
 
-export function useGroupsSelector () {
+export function useGroupsSelector() {
   const database = useDatabase();
   const viewId = useDatabaseViewId();
   const [groups, setGroups] = useState<string[]>([]);
@@ -310,17 +448,17 @@ export function useGroupsSelector () {
     if (!groupOrders) return;
 
     const getGroups = () => {
-      return (groupOrders.toJSON() as { id: string }[]).map((item) => item.id);
+      return groupOrders.toArray().map((item) => item.get(YjsDatabaseKey.id));
     };
 
     const observerEvent = () => setGroups(getGroups());
 
     setGroups(getGroups());
 
-    groupOrders.observe(observerEvent);
+    groupOrders.observeDeep(observerEvent);
 
     return () => {
-      groupOrders.unobserve(observerEvent);
+      groupOrders.unobserveDeep(observerEvent);
     };
   }, [database, viewId]);
 
@@ -332,7 +470,7 @@ export interface GroupColumn {
   visible: boolean;
 }
 
-export function useGroup (groupId: string) {
+export function useGroup(groupId: string) {
   const database = useDatabase();
   const viewId = useDatabaseViewId();
   const view = database?.get(YjsDatabaseKey.views)?.get(viewId);
@@ -340,33 +478,29 @@ export function useGroup (groupId: string) {
     ?.get(YjsDatabaseKey.groups)
     ?.toArray()
     .find((group) => group.get(YjsDatabaseKey.id) === groupId);
-  const groupColumns = group?.get(YjsDatabaseKey.groups);
   const [fieldId, setFieldId] = useState<string | null>(null);
   const [columns, setColumns] = useState<GroupColumn[]>([]);
 
   useEffect(() => {
-    if (!viewId) return;
+    if (!viewId || !group) return;
 
     const observerEvent = () => {
-      setFieldId(group?.get(YjsDatabaseKey.field_id) as string);
+      const groupFieldId = group.get(YjsDatabaseKey.field_id);
+
+      setFieldId(groupFieldId);
+      const groupColumnsVisible = group.get(YjsDatabaseKey.groups);
+      const visibleArray = groupColumnsVisible?.toArray() || [];
+
+      setColumns(visibleArray);
     };
 
     observerEvent();
-    group?.observe(observerEvent);
-
-    const observerColumns = () => {
-      if (!groupColumns) return;
-      setColumns(groupColumns.toJSON());
-    };
-
-    observerColumns();
-    groupColumns?.observe(observerColumns);
+    group?.observeDeep(observerEvent);
 
     return () => {
-      group?.unobserve(observerEvent);
-      groupColumns?.unobserve(observerColumns);
+      group?.unobserveDeep(observerEvent);
     };
-  }, [database, viewId, groupId, group, groupColumns]);
+  }, [database, viewId, groupId, group]);
 
   return {
     columns,
@@ -374,10 +508,83 @@ export function useGroup (groupId: string) {
   };
 }
 
-export function useRowsByGroup (groupId: string) {
+export function useBoardLayoutSettings() {
+  const view = useDatabaseView();
+  const layoutSetting = view?.get(YjsDatabaseKey.layout_settings)?.get('1');
+  const [isCollapsed, setIsCollapsed] = useState(true);
+  const [hideUnGroup, setHideUnGroup] = useState(true);
+  const groups = view?.get(YjsDatabaseKey.groups);
+  const [fieldId, setFieldId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!layoutSetting) return;
+
+    const observerEvent = () => {
+      setIsCollapsed(Boolean(layoutSetting?.get(YjsDatabaseKey.collapse_hidden_groups)));
+      setHideUnGroup(Boolean(layoutSetting?.get(YjsDatabaseKey.hide_ungrouped_column)));
+    };
+
+    observerEvent();
+    layoutSetting.observe(observerEvent);
+
+    return () => {
+      layoutSetting.unobserve(observerEvent);
+    };
+  }, [view, layoutSetting]);
+
+  useEffect(() => {
+    const observerEvent = () => {
+      const group = groups?.toArray()?.[0];
+
+      if (!group) return;
+
+      const groupFieldId = group.get(YjsDatabaseKey.field_id);
+
+      setFieldId(groupFieldId);
+    };
+
+    observerEvent();
+    groups?.observeDeep(observerEvent);
+
+    return () => {
+      groups?.unobserveDeep(observerEvent);
+    };
+  }, [groups]);
+
+  return {
+    isCollapsed,
+    hideUnGroup,
+    fieldId,
+  };
+}
+
+export function useGetBoardHiddenGroup(groupId: string) {
+  const { columns, fieldId } = useGroup(groupId);
+  const [hiddenColumns, setHiddenColumns] = useState<GroupColumn[]>([]);
+  const { hideUnGroup } = useBoardLayoutSettings();
+
+  useEffect(() => {
+    if (!columns) return;
+
+    const hiddenColumns = columns.filter((column) => {
+      if (column.id === fieldId) return hideUnGroup;
+
+      return !column.visible;
+    });
+
+    setHiddenColumns(hiddenColumns);
+  }, [columns, fieldId, hideUnGroup]);
+
+  return {
+    hiddenColumns,
+  };
+}
+
+export function useRowsByGroup(groupId: string) {
   const { columns, fieldId } = useGroup(groupId);
   const rows = useRowDocMap();
   const rowOrders = useRowOrdersSelector();
+  const [visibleColumns, setVisibleColumns] = useState<GroupColumn[]>([]);
 
   const fields = useDatabaseFields();
   const [notFound, setNotFound] = useState(false);
@@ -394,6 +601,14 @@ export function useRowsByGroup (groupId: string) {
       const field = fields.get(fieldId);
 
       if (!field) {
+        setNotFound(true);
+        setGroupResult(newResult);
+        return;
+      }
+
+      const fieldType = Number(field.get(YjsDatabaseKey.type)) as FieldType;
+
+      if (![FieldType.SingleSelect, FieldType.MultiSelect, FieldType.Checkbox].includes(fieldType)) {
         setNotFound(true);
         setGroupResult(newResult);
         return;
@@ -417,10 +632,24 @@ export function useRowsByGroup (groupId: string) {
     };
   }, [fieldId, fields, rowOrders, rows]);
 
-  const visibleColumns = columns.filter((column) => {
-    if (column.id === fieldId) return !layoutSetting?.get(YjsDatabaseKey.hide_ungrouped_column);
-    return column.visible;
-  });
+  useEffect(() => {
+    const observeEvent = () => {
+      const newVisibleColumns = columns.filter((column) => {
+        if (column.id === fieldId) return !layoutSetting?.get(YjsDatabaseKey.hide_ungrouped_column);
+        return column.visible;
+      });
+
+      setVisibleColumns(newVisibleColumns);
+    };
+
+    observeEvent();
+
+    layoutSetting?.observe(observeEvent);
+
+    return () => {
+      layoutSetting?.unobserve(observeEvent);
+    };
+  }, [layoutSetting, columns, fieldId]);
 
   return {
     fieldId,
@@ -430,7 +659,7 @@ export function useRowsByGroup (groupId: string) {
   };
 }
 
-export function useRowOrdersSelector () {
+export function useRowOrdersSelector() {
   const rows = useRowDocMap();
   const [rowOrders, setRowOrders] = useState<Row[]>();
   const view = useDatabaseView();
@@ -451,6 +680,7 @@ export function useRowOrdersSelector () {
 
     if (sorts?.length) {
       rowOrders = sortBy(originalRowOrders, sorts, fields, rows);
+  
     }
 
     if (filters?.length) {
@@ -475,53 +705,92 @@ export function useRowOrdersSelector () {
     sorts?.observeDeep(throttleChange);
     filters?.observeDeep(throttleChange);
     fields?.observeDeep(throttleChange);
+    Object.values(rows || {}).forEach((rowDoc) => {
+      const rowSharedRoot = rowDoc.getMap(YjsEditorKey.data_section);
+      const databaseRow = rowSharedRoot.get(YjsEditorKey.database_row) as YDatabaseRow;
+
+      databaseRow?.get(YjsDatabaseKey.cells)?.observeDeep(throttleChange);
+    });
 
     return () => {
       view?.get(YjsDatabaseKey.row_orders)?.unobserveDeep(throttleChange);
       sorts?.unobserveDeep(throttleChange);
       filters?.unobserveDeep(throttleChange);
       fields?.unobserveDeep(throttleChange);
+
+      Object.values(rows || {}).forEach((rowDoc) => {
+        const rowSharedRoot = rowDoc.getMap(YjsEditorKey.data_section);
+        const databaseRow = rowSharedRoot.get(YjsEditorKey.database_row) as YDatabaseRow;
+
+        databaseRow?.get(YjsDatabaseKey.cells)?.unobserveDeep(throttleChange);
+      });
     };
-  }, [onConditionsChange, view, fields, filters, sorts]);
+  }, [onConditionsChange, view, fields, filters, sorts, rows]);
 
   return rowOrders;
 }
 
-export function useRowDataSelector (rowId: string) {
+export function useRowDataSelector(rowId: string) {
   const rowMap = useRowDocMap();
-  const [row, setRow] = useState<YDatabaseRow | null>(null);
+  const rowDoc = rowMap?.[rowId];
 
-  useEffect(() => {
-    const rowDoc = rowMap?.[rowId];
+  const rowSharedRoot = rowDoc?.getMap(YjsEditorKey.data_section);
 
-    if (!rowDoc || !rowDoc.share.has(YjsEditorKey.data_section)) return;
-    const rowSharedRoot = rowDoc?.getMap(YjsEditorKey.data_section);
-    const row = rowSharedRoot?.get(YjsEditorKey.database_row);
+  const row = rowSharedRoot?.get(YjsEditorKey.database_row);
 
-    setRow(row);
-  }, [rowId, rowMap]);
   return {
     row,
   };
 }
 
-export function useCellSelector ({ rowId, fieldId }: { rowId: string; fieldId: string }) {
+export function useCellSelector({ rowId, fieldId }: { rowId: string; fieldId: string }) {
   const { row } = useRowDataSelector(rowId);
-  const cell = row?.get(YjsDatabaseKey.cells)?.get(fieldId);
+  const cells = row?.get(YjsDatabaseKey.cells);
 
-  const [cellValue, setCellValue] = useState(() => (cell ? parseYDatabaseCellToCell(cell) : undefined));
+  const cell = cells?.get(fieldId);
+  const [, setClock] = useState<number>(0);
+  const [cellValue, setCellValue] = useState(() => {
+    return cell ? parseYDatabaseCellToCell(cell) : undefined;
+  });
 
   useEffect(() => {
-    if (!cell) return;
-    setCellValue(parseYDatabaseCellToCell(cell));
-    const observerEvent = () => setCellValue(parseYDatabaseCellToCell(cell));
+    const observerEvent = () => {
+      setClock((prev) => prev + 1);
+      setCellValue(cell ? parseYDatabaseCellToCell(cell) : undefined);
+    };
 
-    cell.observeDeep(observerEvent);
+    observerEvent();
+    cell?.observeDeep(observerEvent);
 
     return () => {
-      cell.unobserveDeep(observerEvent);
+      cell?.unobserveDeep(observerEvent);
     };
   }, [cell]);
+
+  useEffect(() => {
+    if (!cells) return;
+
+    const observerEvent = () => {
+      const cell = cells.get(fieldId);
+
+      if (!cell) {
+        setCellValue(undefined);
+        return;
+      } else {
+        const cellValue = parseYDatabaseCellToCell(cell);
+
+        setCellValue(cellValue);
+      }
+    };
+
+    observerEvent();
+
+    cells.observe(observerEvent);
+
+    return () => {
+      cells.unobserve(observerEvent);
+    };
+  }, [cells, fieldId]);
 
   return cellValue;
 }
@@ -532,7 +801,7 @@ export interface CalendarEvent {
   id: string;
 }
 
-export function useCalendarEventsSelector () {
+export function useCalendarEventsSelector() {
   const setting = useCalendarLayoutSetting();
   const filedId = setting.fieldId;
   const { field } = useFieldSelector(filedId);
@@ -588,7 +857,7 @@ export function useCalendarEventsSelector () {
   return { events, emptyEvents };
 }
 
-export function useCalendarLayoutSetting () {
+export function useCalendarLayoutSetting() {
   const view = useDatabaseView();
   const layoutSetting = view?.get(YjsDatabaseKey.layout_settings)?.get('2');
   const [setting, setSetting] = useState<CalendarLayoutSetting>({
@@ -620,7 +889,7 @@ export function useCalendarLayoutSetting () {
   return setting;
 }
 
-export function getPrimaryFieldId (database: YDatabase) {
+export function getPrimaryFieldId(database: YDatabase) {
   const fields = database?.get(YjsDatabaseKey.fields);
 
   return Array.from(fields?.keys() || []).find((fieldId) => {
@@ -628,7 +897,7 @@ export function getPrimaryFieldId (database: YDatabase) {
   });
 }
 
-export function usePrimaryFieldId () {
+export function usePrimaryFieldId() {
   const database = useDatabase();
   const [primaryFieldId, setPrimaryFieldId] = useState<string | null>(null);
 
@@ -639,42 +908,11 @@ export function usePrimaryFieldId () {
   return primaryFieldId;
 }
 
-export interface RowMeta {
-  documentId: string;
-  cover: {
-    data: string,
-    cover_type: RowCoverType,
-  } | null;
-  icon: string;
-  isEmptyDocument: boolean;
-}
-
-const metaIdMapFromRowIdMap = new Map<string, Map<RowMetaKey, string>>();
-
-function getMetaIdMap (rowId: string) {
-  const hasMetaIdMap = metaIdMapFromRowIdMap.has(rowId);
-
-  if (!hasMetaIdMap) {
-    const parser = metaIdFromRowId(rowId);
-    const map = new Map<RowMetaKey, string>();
-
-    map.set(RowMetaKey.IconId, parser(RowMetaKey.IconId));
-    map.set(RowMetaKey.CoverId, parser(RowMetaKey.CoverId));
-    map.set(RowMetaKey.DocumentId, parser(RowMetaKey.DocumentId));
-    map.set(RowMetaKey.IsDocumentEmpty, parser(RowMetaKey.IsDocumentEmpty));
-    metaIdMapFromRowIdMap.set(rowId, map);
-    return map;
-  }
-
-  return metaIdMapFromRowIdMap.get(rowId) as Map<RowMetaKey, string>;
-}
-
 export const useRowMetaSelector = (rowId: string) => {
   const [meta, setMeta] = useState<RowMeta | null>();
   const rowMap = useRowDocMap();
 
   const updateMeta = useCallback(() => {
-
     const row = rowMap?.[rowId];
 
     if (!row || !row.share.has(YjsEditorKey.data_section)) return;
@@ -685,31 +923,9 @@ export const useRowMetaSelector = (rowId: string) => {
 
     if (!yMeta) return;
 
-    const metaKeyMap = getMetaIdMap(rowId);
+    const meta = getMetaJSON(rowId, yMeta);
 
-    const iconKey = metaKeyMap.get(RowMetaKey.IconId) ?? '';
-    const coverKey = metaKeyMap.get(RowMetaKey.CoverId) ?? '';
-    const documentId = metaKeyMap.get(RowMetaKey.DocumentId) ?? '';
-    const isEmptyDocumentKey = metaKeyMap.get(RowMetaKey.IsDocumentEmpty) ?? '';
-    const metaJson = yMeta.toJSON();
-
-    const icon = metaJson[iconKey];
-    let cover = null;
-
-    try {
-      cover = metaJson[coverKey] ? JSON.parse(metaJson[coverKey]) : null;
-    } catch (e) {
-      // do nothing
-    }
-
-    const isEmptyDocument = metaJson[isEmptyDocumentKey];
-
-    setMeta({
-      icon,
-      cover,
-      documentId,
-      isEmptyDocument,
-    });
+    setMeta(meta);
   }, [rowId, rowMap]);
 
   useEffect(() => {
@@ -731,3 +947,271 @@ export const useRowMetaSelector = (rowId: string) => {
 
   return meta;
 };
+
+export const useFieldCellsSelector = (fieldId: string) => {
+  const rows = useRowOrdersSelector();
+  const [cells, setCells] = useState<Map<string, unknown> | null>(null);
+  const rowMap = useRowDocMap();
+  const cellObserverEventsRef = useRef<(() => void)[]>([]);
+
+  useEffect(() => {
+    if (!rows || !rowMap) return;
+
+    setCells(null);
+
+    rows.forEach((row) => {
+      const rowDoc = rowMap?.[row.id];
+      const rowSharedRoot = rowDoc?.getMap(YjsEditorKey.data_section);
+
+      const databaseRow = rowSharedRoot?.get(YjsEditorKey.database_row) as YDatabaseRow;
+
+      if (!databaseRow) return;
+
+      const cells = databaseRow.get(YjsDatabaseKey.cells);
+
+      const observerEvent = () => {
+        const cell = databaseRow.get(YjsDatabaseKey.cells)?.get(fieldId);
+
+        if (!cell) {
+          setCells((prev) => {
+            const newMap = new Map(prev);
+
+            newMap.set(row.id, '');
+
+            return newMap;
+          });
+          return;
+        }
+
+        const cellData = cell.get(YjsDatabaseKey.data);
+
+        setCells((prev) => {
+          const newMap = new Map(prev);
+
+          newMap.set(row.id, cellData);
+
+          return newMap;
+        });
+      };
+
+      observerEvent();
+      cells?.observeDeep(observerEvent);
+
+      cellObserverEventsRef.current.push(() => {
+        cells?.unobserveDeep(observerEvent);
+      });
+    });
+
+    return () => {
+      cellObserverEventsRef.current.forEach((unobserverEvent) => {
+        unobserverEvent();
+      });
+      cellObserverEventsRef.current = [];
+    };
+  }, [rows, rowMap, fieldId]);
+
+  return {
+    cells,
+  };
+};
+
+export const usePropertiesSelector = (isFilterHidden?: boolean) => {
+  const database = useDatabase();
+  const view = useDatabaseView();
+
+  const fieldSettings = view?.get(YjsDatabaseKey.field_settings);
+  const fieldOrders = view?.get(YjsDatabaseKey.field_orders);
+  const fields = database?.get(YjsDatabaseKey.fields);
+  const [hiddenProperties, setHiddenProperties] = useState<
+    {
+      id: string;
+      visible: boolean;
+      name: string;
+      type: FieldType;
+    }[]
+  >([]);
+  const [properties, setProperties] = useState<{ id: string; visible: boolean; name: string; type: FieldType }[]>([]);
+
+  useEffect(() => {
+    if (!fieldOrders) return;
+
+    const observeEvent = () => {
+      const newProperties: {
+        id: string;
+        visible: boolean;
+        name: string;
+        type: FieldType;
+      }[] = [];
+      const hiddenProperties: {
+        id: string;
+        visible: boolean;
+        name: string;
+        type: FieldType;
+      }[] = [];
+
+      fieldOrders.toArray().forEach((item) => {
+        const fieldSetting = fieldSettings?.get(item.id);
+        const visible = fieldSetting
+          ? Number(fieldSetting.get(YjsDatabaseKey.visibility)) !== FieldVisibility.AlwaysHidden
+          : true;
+        const field = fields?.get(item.id);
+
+        if (!visible) {
+          hiddenProperties.push({
+            id: item.id,
+            name: field?.get(YjsDatabaseKey.name) || '',
+            visible,
+            type: Number(field?.get(YjsDatabaseKey.type)) as FieldType,
+          });
+        }
+
+        if (isFilterHidden && !visible) {
+          return;
+        } else {
+          newProperties.push({
+            id: item.id,
+            name: field?.get(YjsDatabaseKey.name) || '',
+            visible,
+            type: Number(field?.get(YjsDatabaseKey.type)) as FieldType,
+          });
+        }
+      });
+
+      setProperties(newProperties);
+      setHiddenProperties(hiddenProperties);
+    };
+
+    observeEvent();
+
+    fields.observeDeep(observeEvent);
+    fieldOrders.observeDeep(observeEvent);
+    fieldSettings?.observeDeep(observeEvent);
+
+    return () => {
+      fields.unobserveDeep(observeEvent);
+      fieldOrders.unobserveDeep(observeEvent);
+      fieldSettings?.unobserveDeep(observeEvent);
+    };
+  }, [fieldOrders, fieldSettings, fields, isFilterHidden]);
+
+  return {
+    properties,
+    hiddenProperties,
+  };
+};
+
+export const useDateTimeCellString = (cell: DateTimeCell | undefined, fieldId: string) => {
+  const { field, clock } = useFieldSelector(fieldId);
+
+  return useMemo(() => {
+    if (!cell) return null;
+    return getDateCellStr({ cell, field });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cell, field, clock]);
+};
+
+export const useRowTimeString = (rowId: string, fieldId: string, attrName: string) => {
+  const { field, clock } = useFieldSelector(fieldId);
+
+  const typeOptionValue = useMemo(() => {
+    const typeOption = getTypeOptions(field);
+
+    return {
+      timeFormat: parseInt(typeOption.get(YjsDatabaseKey.time_format)) as TimeFormat,
+      dateFormat: parseInt(typeOption.get(YjsDatabaseKey.date_format)) as DateFormat,
+      includeTime: typeOption.get(YjsDatabaseKey.include_time),
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [field, clock]);
+
+  const getDateTimeStr = useCallback(
+    (timeStamp: string, includeTime?: boolean) => {
+      if (!typeOptionValue || !timeStamp) return null;
+      const timeFormat = getTimeFormat(typeOptionValue.timeFormat);
+      const dateFormat = getDateFormat(typeOptionValue.dateFormat);
+      const format = [dateFormat];
+
+      if (includeTime || typeOptionValue.includeTime) {
+        format.push(timeFormat);
+      }
+
+      return renderDate(timeStamp, format.join(' '), true);
+    },
+    [typeOptionValue]
+  );
+
+  const { row: rowData } = useRowDataSelector(rowId);
+  const [value, setValue] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!rowData) return;
+    const observeHandler = () => {
+      setValue(rowData.get(attrName));
+    };
+
+    observeHandler();
+
+    rowData.observe(observeHandler);
+    return () => {
+      rowData.unobserve(observeHandler);
+    };
+  }, [rowData, attrName]);
+
+  const time = useMemo(() => {
+    if (!value) return null;
+    return getDateTimeStr(value);
+  }, [value, getDateTimeStr]);
+
+  return time;
+};
+
+export const useSelectFieldOptions = (fieldId: string, searchValue?: string) => {
+  const { field, clock } = useFieldSelector(fieldId);
+
+  return useMemo(() => {
+    const typeOption = field ? parseSelectOptionTypeOptions(field) : null;
+
+    if (!typeOption) return [] as SelectOption[];
+
+    return typeOption.options.filter((option) => {
+      if (!searchValue) return true;
+      return option.name.toLowerCase().includes(searchValue.toLowerCase());
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [field, searchValue, clock]);
+};
+
+export function useRowPrimaryContentSelector(rowDoc: YDoc | null, primaryFieldId: string) {
+  const [primaryContent, setPrimaryContent] = useState<string | null>(null);
+
+  const rowSharedRoot = rowDoc?.getMap(YjsEditorKey.data_section);
+  const row = rowSharedRoot?.get(YjsEditorKey.database_row) as YDatabaseRow;
+
+  useEffect(() => {
+    const observerEvent = () => {
+      if (!row) return;
+
+      const cell = row.get(YjsDatabaseKey.cells)?.get(primaryFieldId);
+
+      if (!cell) return;
+
+      const cellValue = parseYDatabaseCellToCell(cell);
+
+      if (cellValue) {
+        setPrimaryContent(cellValue.data as string);
+      } else {
+        setPrimaryContent(null);
+      }
+    };
+
+    observerEvent();
+
+    row?.observeDeep(observerEvent);
+
+    return () => {
+      row?.unobserveDeep(observerEvent);
+    };
+  }, [primaryFieldId, row, rowDoc]);
+
+  return primaryContent;
+}
