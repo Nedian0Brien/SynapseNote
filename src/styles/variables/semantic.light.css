@@ -3,7 +3,7 @@
  * AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY
  * 
  * Generated from: semantic.light.json
- * Generated time: 2025-06-10T08:51:13.561Z
+ * Generated time: 2025-06-17T06:26:25.620Z
  * 
  * To modify these values, edit the source JSON files and run the token conversion script:
  * node scripts/system-token/convert-tokens.cjs
@@ -19,14 +19,19 @@
   --text-action-hover: #0078c0;
   --text-info: #0092d6;
   --text-info-hover: #0078c0;
+  --text-info-on-fill: #0078c0;
   --text-success: #248569;
   --text-success-hover: #29725d;
+  --text-success-on-fill: #29725d;
   --text-warning: #db7e21;
   --text-warning-hover: #b75f17;
+  --text-warning-on-fill: #b75f17;
   --text-error: #e71d32;
   --text-error-hover: #ad1625;
+  --text-error-on-fill: #ad1625;
   --text-featured: #9327ff;
   --text-featured-hover: #7a1dcc;
+  --text-featured-on-fill: #9327ff;
   --icon-primary: #21232a;
   --icon-secondary: #6f748c;
   --icon-tertiary: #b5bbd3;
@@ -42,7 +47,7 @@
   --icon-featured-thick: #9327ff;
   --icon-featured-thick-hover: #7a1dcc;
   --icon-on-fill: #ffffff;
-  --border-primary: #e4e8f5;
+  --border-primary: #dde2f1;
   --border-primary-hover: #ced3e6;
   --border-secondary: #3d404f;
   --border-secondary-hover: #54596e;
@@ -86,7 +91,7 @@
   --fill-success-thick-hover: #248569;
   --fill-warning-light: #fff3d5;
   --fill-warning-light-hover: #ffe4ab;
-  --fill-error-light: #ffd2dd;
+  --fill-error-light: #ffe6ec;
   --fill-error-light-hover: #ffa5b4;
   --fill-error-thick: #e71d32;
   --fill-error-thick-hover: #ad1625;
@@ -108,6 +113,7 @@
   --surface-inverse: #21232a;
   --surface-secondary: #21232a;
   --surface-overlay: #00000099;
+  --surface-container-layer-00: #f8faff;
   --surface-container-layer-01: #f8faff;
   --surface-container-layer-02: #e4e8f5;
   --surface-container-layer-03: #ced3e6;
@@ -242,6 +248,7 @@
   --brand-amber: #ffbd00;
   --brand-lemon: #ffce00;
   --other-colors-text-highlight: #a9e2ff;
+  --other-colors-icon-shared: #3267d1;
   --spacing-spacing-0: 0px;
   --spacing-spacing-xs: 4px;
   --spacing-spacing-s: 6px;

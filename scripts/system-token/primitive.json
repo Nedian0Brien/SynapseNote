@@ -8,6 +8,10 @@
       "$type": "color",
       "$value": "#e4e8f5"
     },
+    "250": {
+      "$type": "color",
+      "$value": "#dde2f1"
+    },
     "300": {
       "$type": "color",
       "$value": "#ced3e6"
@@ -15,6 +19,10 @@
     "400": {
       "$type": "color",
       "$value": "#b5bbd3"
+    },
+    "450": {
+      "$type": "color",
+      "$value": "#a7adc5"
     },
     "500": {
       "$type": "color",
@@ -269,7 +277,7 @@
   "Red": {
     "100": {
       "$type": "color",
-      "$value": "#ffd2dd"
+      "$value": "#ffe6ec"
     },
     "200": {
       "$type": "color",

@@ -3,7 +3,7 @@
  * AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY
  * 
  * Generated from: semantic.dark.json
- * Generated time: 2025-06-10T08:51:13.564Z
+ * Generated time: 2025-06-17T06:26:25.623Z
  * 
  * To modify these values, edit the source JSON files and run the token conversion script:
  * node scripts/system-token/convert-tokens.cjs
@@ -19,14 +19,19 @@
   --text-action-hover: #4ec1ff;
   --text-info: #00b5ff;
   --text-info-hover: #4ec1ff;
-  --text-success: #248569;
-  --text-success-hover: #48a982;
+  --text-info-on-fill: #a9e2ff;
+  --text-success: #48a982;
+  --text-success-hover: #71bd9f;
+  --text-success-on-fill: #c3e5d8;
   --text-warning: #db7e21;
   --text-warning-hover: #ffa02e;
-  --text-error: #f33641;
-  --text-error-hover: #ff5050;
-  --text-featured: #ffffff;
-  --text-featured-hover: #e1b3ff;
+  --text-warning-on-fill: #ffe4ab;
+  --text-error: #ff5050;
+  --text-error-hover: #ff7d87;
+  --text-error-on-fill: #ffa5b4;
+  --text-featured: #e1b3ff;
+  --text-featured-hover: #d185ff;
+  --text-featured-on-fill: #e1b3ff;
   --icon-primary: #e4e8f5;
   --icon-secondary: #b5bbd3;
   --icon-tertiary: #6f748c;
@@ -76,18 +81,18 @@
   --fill-theme-thick-hover: #0092d6;
   --fill-theme-select: #00b5ff26;
   --fill-text-select: #00b5ff33;
-  --fill-info-light: #a9e2ff;
-  --fill-info-light-hover: #e3f6ff;
+  --fill-info-light: #00508f;
+  --fill-info-light-hover: #0065a9;
   --fill-info-thick: #00b5ff;
   --fill-info-thick-hover: #4ec1ff;
-  --fill-success-light: #c3e5d8;
-  --fill-success-light-hover: #ecf9f5;
+  --fill-success-light: #305548;
+  --fill-success-light-hover: #2e6050;
   --fill-success-thick: #48a982;
   --fill-success-thick-hover: #248569;
-  --fill-warning-light: #ffe4ab;
-  --fill-warning-light-hover: #fff3d5;
-  --fill-error-light: #ffa5b4;
-  --fill-error-light-hover: #ffd2dd;
+  --fill-warning-light: #7a3108;
+  --fill-warning-light-hover: #93450e;
+  --fill-error-light: #6e0a1e;
+  --fill-error-light-hover: #8c101c;
   --fill-error-thick: #f33641;
   --fill-error-thick-hover: #ff5050;
   --fill-error-select: #f336411a;
@@ -108,6 +113,7 @@
   --surface-inverse: #3d404f;
   --surface-secondary: #3d404f;
   --surface-overlay: #00000099;
+  --surface-container-layer-00: #272930;
   --surface-container-layer-01: #32343f;
   --surface-container-layer-02: #3d404f;
   --surface-container-layer-03: #54596e;
@@ -242,6 +248,7 @@
   --brand-amber: #ffbd00;
   --brand-lemon: #ffce00;
   --other-colors-text-highlight: #a9e2ff;
+  --other-colors-icon-shared: #9ab6ed;
   --spacing-spacing-0: 0px;
   --spacing-spacing-xs: 4px;
   --spacing-spacing-s: 6px;

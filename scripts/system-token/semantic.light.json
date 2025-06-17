@@ -36,11 +36,19 @@
       "$type": "color",
       "$value": "{Blue.700}"
     },
+    "info-on-fill": {
+      "$type": "color",
+      "$value": "{Blue.700}"
+    },
     "success": {
       "$type": "color",
       "$value": "{Green.600}"
     },
     "success-hover": {
+      "$type": "color",
+      "$value": "{Green.700}"
+    },
+    "success-on-fill": {
       "$type": "color",
       "$value": "{Green.700}"
     },
@@ -52,11 +60,19 @@
       "$type": "color",
       "$value": "{Orange.700}"
     },
+    "warning-on-fill": {
+      "$type": "color",
+      "$value": "{Orange.700}"
+    },
     "error": {
       "$type": "color",
       "$value": "{Red.600}"
     },
     "error-hover": {
+      "$type": "color",
+      "$value": "{Red.700}"
+    },
+    "error-on-fill": {
       "$type": "color",
       "$value": "{Red.700}"
     },
@@ -67,6 +83,10 @@
     "featured-hover": {
       "$type": "color",
       "$value": "{Purple.600}"
+    },
+    "featured-on-fill": {
+      "$type": "color",
+      "$value": "{Purple.500}"
     }
   },
   "Icon": {
@@ -134,7 +154,7 @@
   "Border": {
     "primary": {
       "$type": "color",
-      "$value": "{Neutral.200}"
+      "$value": "{Neutral.250}"
     },
     "primary-hover": {
       "$type": "color",
@@ -416,6 +436,11 @@
     }
   },
   "Surface_Container": {
+    "layer-00": {
+      "$type": "color",
+      "$value": "{Neutral.100}",
+      "$description": "Settings Side Panel"
+    },
     "layer-01": {
       "$type": "color",
       "$value": "{Neutral.100}",
@@ -1000,6 +1025,11 @@
     "text-highlight": {
       "$type": "color",
       "$value": "{Blue.200}"
+    },
+    "icon-shared": {
+      "$type": "color",
+      "$value": "{Subtle_Color.Denim.500}",
+      "$description": "Sidebar Shared Category"
     }
   },
   "Spacing": {

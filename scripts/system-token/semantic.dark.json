@@ -36,13 +36,21 @@
       "$type": "color",
       "$value": "{Blue.400}"
     },
+    "info-on-fill": {
+      "$type": "color",
+      "$value": "{Blue.200}"
+    },
     "success": {
       "$type": "color",
-      "$value": "{Green.600}"
+      "$value": "{Green.500}"
     },
     "success-hover": {
       "$type": "color",
-      "$value": "{Green.500}"
+      "$value": "{Green.400}"
+    },
+    "success-on-fill": {
+      "$type": "color",
+      "$value": "{Green.200}"
     },
     "warning": {
       "$type": "color",
@@ -52,19 +60,31 @@
       "$type": "color",
       "$value": "{Orange.500}"
     },
-    "error": {
+    "warning-on-fill": {
       "$type": "color",
-      "$value": "{Red.500}"
+      "$value": "{Orange.200}"
     },
-    "error-hover": {
+    "error": {
       "$type": "color",
       "$value": "{Red.400}"
     },
+    "error-hover": {
+      "$type": "color",
+      "$value": "{Red.300}"
+    },
+    "error-on-fill": {
+      "$type": "color",
+      "$value": "{Red.200}"
+    },
     "featured": {
       "$type": "color",
-      "$value": "{Neutral.white}"
+      "$value": "{Purple.200}"
     },
     "featured-hover": {
+      "$type": "color",
+      "$value": "{Purple.300}"
+    },
+    "featured-on-fill": {
       "$type": "color",
       "$value": "{Purple.200}"
     }
@@ -282,11 +302,11 @@
     },
     "info-light": {
       "$type": "color",
-      "$value": "{Blue.200}"
+      "$value": "{Blue.900}"
     },
     "info-light-hover": {
       "$type": "color",
-      "$value": "{Blue.100}"
+      "$value": "{Blue.800}"
     },
     "info-thick": {
       "$type": "color",
@@ -298,11 +318,11 @@
     },
     "success-light": {
       "$type": "color",
-      "$value": "{Green.200}"
+      "$value": "{Green.900}"
     },
     "success-light-hover": {
       "$type": "color",
-      "$value": "{Green.100}"
+      "$value": "{Green.800}"
     },
     "success-thick": {
       "$type": "color",
@@ -314,19 +334,19 @@
     },
     "warning-light": {
       "$type": "color",
-      "$value": "{Orange.200}"
+      "$value": "{Orange.900}"
     },
     "warning-light-hover": {
       "$type": "color",
-      "$value": "{Orange.100}"
+      "$value": "{Orange.800}"
     },
     "error-light": {
       "$type": "color",
-      "$value": "{Red.200}"
+      "$value": "{Red.900}"
     },
     "error-light-hover": {
       "$type": "color",
-      "$value": "{Red.100}"
+      "$value": "{Red.800}"
     },
     "error-thick": {
       "$type": "color",
@@ -416,6 +436,11 @@
     }
   },
   "Surface_Container": {
+    "layer-00": {
+      "$type": "color",
+      "$value": "{Neutral.900}",
+      "$description": "Settings Side Panel"
+    },
     "layer-01": {
       "$type": "color",
       "$value": "{Neutral.850}",
@@ -1000,6 +1025,11 @@
     "text-highlight": {
       "$type": "color",
       "$value": "{Blue.200}"
+    },
+    "icon-shared": {
+      "$type": "color",
+      "$value": "{Subtle_Color.Denim.400}",
+      "$description": "Sidebar Shared Category"
     }
   },
   "Spacing": {
