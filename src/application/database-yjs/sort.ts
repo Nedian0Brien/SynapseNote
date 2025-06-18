@@ -2,6 +2,7 @@ import * as Y from 'yjs';
 
 import { FieldType, SortCondition } from '@/application/database-yjs/database.type';
 import { parseChecklistData, parseSelectOptionCellData } from '@/application/database-yjs/fields';
+import { getChecked } from '@/application/database-yjs/fields/checkbox/utils';
 import { Row } from '@/application/database-yjs/selector';
 import {
   RowId,
@@ -13,7 +14,6 @@ import {
   YjsDatabaseKey,
   YjsEditorKey,
 } from '@/application/types';
-import { getChecked } from '@/application/database-yjs/fields/checkbox/utils';
 
 type SortableValue = string | number | object | boolean | undefined;
 
@@ -24,8 +24,8 @@ export function sortBy(rows: Row[], sorts: YDatabaseSorts, fields: YDatabaseFiel
 
   // Define collator for Unicode string comparison
   // Can adjust parameters based on application needs, such as locale, sensitivity, etc.
-  const collator = new Intl.Collator(undefined, {
-    sensitivity: 'base', // Do not distinguish between uppercase and lowercase letters and accents
+  const collator = new Intl.Collator('en', {
+    sensitivity: 'variant',
     numeric: true, // Use numeric sorting, such as "2" before "10"
     usage: 'sort', // Used specifically for sorting
   });

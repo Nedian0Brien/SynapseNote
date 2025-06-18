@@ -41,7 +41,7 @@ export function ColorPicker({ onEscape, onChange, disableFocus }: ColorPickerPro
           <div
             style={{
               backgroundColor: backgroundColor ? renderColor(backgroundColor) : 'transparent',
-              color: color === '' ? 'var(--text-title)' : renderColor(color),
+              color: color === '' ? 'var(--text-primary)' : renderColor(color),
             }}
             className={'flex h-5 w-5 items-center justify-center rounded border border-border-primary'}
           >

@@ -94,7 +94,6 @@ function AITextCellActions({
 
       const fieldName = field.get(YjsDatabaseKey.name) || '';
 
-      console.log('fieldName', fieldName);
       if (fieldName) {
         Object.assign(data, {
           [fieldName]: getCellData(cell, field),

@@ -1,14 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import {
-  useBoardLayoutSettings,
-  useDatabaseViewLayout,
-  useFiltersSelector,
-  useReadOnly,
-} from '@/application/database-yjs';
+import { useFiltersSelector, useReadOnly } from '@/application/database-yjs';
 import { useAddFilter } from '@/application/database-yjs/dispatch';
-import { DatabaseViewLayout } from '@/application/types';
 import { ReactComponent as FilterIcon } from '@/assets/icons/filter.svg';
 import PropertiesMenu from '@/components/database/components/conditions/PropertiesMenu';
 import { Button } from '@/components/ui/button';
@@ -23,16 +17,6 @@ function FiltersButton({ toggleExpanded, expanded }: { toggleExpanded?: () => vo
   const [open, setOpen] = useState(false);
   const addFilter = useAddFilter();
   const setOpenFilterId = useConditionsContext()?.setOpenFilterId;
-  const layout = useDatabaseViewLayout();
-  const { fieldId } = useBoardLayoutSettings();
-
-  const filteredOut = useMemo(() => {
-    if (layout === DatabaseViewLayout.Board && fieldId) {
-      return [fieldId];
-    }
-
-    return;
-  }, [fieldId, layout]);
 
   return (
     <PropertiesMenu
@@ -48,7 +32,6 @@ function FiltersButton({ toggleExpanded, expanded }: { toggleExpanded?: () => vo
         }
       }}
       asChild
-      filteredOut={filteredOut}
     >
       <div>
         <Tooltip>

@@ -11,15 +11,12 @@ import { cn } from '@/lib/utils';
 import { isFlagEmoji } from '@/utils/emoji';
 import { getPlatform } from '@/utils/platform';
 
-export function PrimaryCell(
-  props: CellProps<CellType> & {
-    showDocumentIcon?: boolean;
-  }
-) {
-  const { rowId, showDocumentIcon, readOnly } = props;
+export function PrimaryCell(props: CellProps<CellType>) {
+  const { rowId, readOnly } = props;
   const ref = useRef<HTMLDivElement>(null);
   const meta = useRowMetaSelector(rowId);
   const navigateToRow = useDatabaseContext().navigateToRow;
+
   const hasDocument = meta?.isEmptyDocument === false;
   const icon = meta?.icon;
 
@@ -28,7 +25,7 @@ export function PrimaryCell(
   }, []);
   const onUpdateMeta = useUpdateRowMetaDispatch(rowId);
 
-  const showIcon = icon || (hasDocument && showDocumentIcon);
+  const showIcon = icon || hasDocument;
 
   const isFlag = useMemo(() => {
     if (!icon) return false;
@@ -54,7 +51,7 @@ export function PrimaryCell(
         removeIcon={() => {
           onUpdateMeta(RowMetaKey.IconId, undefined);
         }}
-        enable={Boolean(!readOnly && icon)}
+        enable={Boolean(!readOnly && showIcon)}
       >
         {showIcon ? (
           <Button className={'h-5 w-5 rounded-100 p-0 disabled:text-icon-primary'} variant={'ghost'} disabled={readOnly}>

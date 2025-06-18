@@ -1,11 +1,12 @@
+import React, { useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
+
 import { View, ViewIconType } from '@/application/types';
 import { useAppHandlers, useAppViewId } from '@/components/app/app.hooks';
 import { CustomIconPopover } from '@/components/_shared/cutsom-icon';
 import OutlineIcon from '@/components/_shared/outline/OutlineIcon';
 import PageIcon from '@/components/_shared/view-icon/PageIcon';
-import React, { useCallback, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
 
 function ViewItem({
   view,
@@ -127,7 +128,7 @@ function ViewItem({
           >
             <PageIcon
               view={view}
-              className={'mr-1 flex h-5 w-5 items-center justify-center text-text-secondary max-md:text-[20px]'}
+              className={'mr-1 flex h-5 w-5 items-center justify-center text-lg text-text-secondary'}
             />
           </div>
         </CustomIconPopover>

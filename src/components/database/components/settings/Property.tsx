@@ -1,21 +1,22 @@
+import { attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
+import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import { useEffect, useRef, useState } from 'react';
+
 import { useFieldSelector, useReadOnly } from '@/application/database-yjs';
 import { useHidePropertyDispatch, useShowPropertyDispatch } from '@/application/database-yjs/dispatch';
 import { YjsDatabaseKey } from '@/application/types';
+import { ReactComponent as DragIcon } from '@/assets/icons/drag.svg';
+import { ReactComponent as HideIcon } from '@/assets/icons/hide.svg';
+import { ReactComponent as ShowIcon } from '@/assets/icons/show.svg';
 import { DropRowIndicator } from '@/components/database/components/drag-and-drop/DropRowIndicator';
 import { usePropertyDragContext } from '@/components/database/components/settings/usePropertyDragContext';
 import { Button } from '@/components/ui/button';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
-import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
-import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { ReactComponent as HideIcon } from '@/assets/icons/hide.svg';
-import { ReactComponent as ShowIcon } from '@/assets/icons/show.svg';
 
-import { useEffect, useRef, useState } from 'react';
 import FieldDisplay from 'src/components/database/components/field/FieldDisplay';
-import { ReactComponent as DragIcon } from '@/assets/icons/drag.svg';
 
 export enum DragState {
   IDLE = 'idle',
@@ -33,16 +34,15 @@ export type ItemState =
 const idleState: ItemState = { type: DragState.IDLE };
 const draggingState: ItemState = { type: DragState.DRAGGING };
 
-function Property ({ property }: {
+function Property({
+  property,
+}: {
   property: {
     id: string;
-    visible: boolean
+    visible: boolean;
   };
 }) {
-  const {
-    registerProperty,
-    instanceId,
-  } = usePropertyDragContext();
+  const { registerProperty, instanceId } = usePropertyDragContext();
   const { field } = useFieldSelector(property.id);
   const name = field?.get(YjsDatabaseKey.name);
   const onHideProperty = useHidePropertyDispatch();
@@ -71,31 +71,28 @@ function Property ({ property }: {
         element,
         dragHandle,
         getInitialData: () => data,
-        onGenerateDragPreview () {
+        onGenerateDragPreview() {
           setState({ type: DragState.PREVIEW });
         },
-        onDragStart () {
+        onDragStart() {
           setState(draggingState);
         },
-        onDrop () {
+        onDrop() {
           setState(idleState);
         },
       }),
       dropTargetForElements({
         element,
-        canDrop: ({ source }) =>
-          source.data &&
-          source.data.instanceId === instanceId &&
-          source.data.id !== id,
+        canDrop: ({ source }) => source.data && source.data.instanceId === instanceId && source.data.id !== id,
         getIsSticky: () => true,
-        getData ({ input }) {
+        getData({ input }) {
           return attachClosestEdge(data, {
             element,
             input,
             allowedEdges: ['top', 'bottom'],
           });
         },
-        onDrag ({ self }) {
+        onDrag({ self }) {
           const closestEdge = extractClosestEdge(self.data);
 
           setState((current) => {
@@ -106,20 +103,20 @@ function Property ({ property }: {
             return { type: DragState.IS_OVER, closestEdge };
           });
         },
-        onDragLeave () {
+        onDragLeave() {
           setState(idleState);
         },
-        onDrop () {
+        onDrop() {
           setState(idleState);
         },
-      }),
+      })
     );
   }, [readOnly, instanceId, registerProperty, id]);
 
   return (
     <DropdownMenuItem
       ref={innerRef}
-      onSelect={e => {
+      onSelect={(e) => {
         e.preventDefault();
         if (visible) {
           onHideProperty(id);
@@ -129,21 +126,13 @@ function Property ({ property }: {
       }}
       className={cn('relative', state.type === DragState.DRAGGING && 'opacity-40')}
     >
-      <div
-        ref={dragHandleRef}
-        className={'w-full overflow-hidden flex gap-[10px] items-center'}
-      >
+      <div ref={dragHandleRef} className={'flex w-full items-center gap-[10px] overflow-hidden'}>
         <DragIcon className={'!text-icon-secondary'} />
         <Tooltip delayDuration={1000}>
-          <TooltipTrigger className={'w-full text-left overflow-hidden'}>
-            <FieldDisplay
-              className={'gap-[10px] truncate [&_svg]:text-icon-secondary [&_.custom-icon_svg]:w-4 [&_.custom-icon_svg]:h-4  flex-1'}
-              fieldId={property.id}
-            />
+          <TooltipTrigger className={'w-full overflow-hidden text-left'}>
+            <FieldDisplay className={'flex-1 gap-[10px]  truncate'} fieldId={property.id} />
           </TooltipTrigger>
-          <TooltipContent side={'right'}>
-            {name}
-          </TooltipContent>
+          <TooltipContent side={'right'}>{name}</TooltipContent>
         </Tooltip>
 
         <Button
@@ -161,13 +150,8 @@ function Property ({ property }: {
           {visible ? <ShowIcon /> : <HideIcon />}
         </Button>
 
-        {state.type === DragState.IS_OVER && state.closestEdge && (
-          <DropRowIndicator
-            edge={state.closestEdge}
-          />
-        )}
+        {state.type === DragState.IS_OVER && state.closestEdge && <DropRowIndicator edge={state.closestEdge} />}
       </div>
-
     </DropdownMenuItem>
   );
 }

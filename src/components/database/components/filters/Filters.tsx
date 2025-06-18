@@ -1,16 +1,10 @@
-import {
-  useBoardLayoutSettings,
-  useDatabaseViewLayout,
-  useFiltersSelector,
-  useReadOnly,
-} from '@/application/database-yjs';
+import { useFiltersSelector, useReadOnly } from '@/application/database-yjs';
 import { useAddFilter } from '@/application/database-yjs/dispatch';
-import { DatabaseViewLayout } from '@/application/types';
 import { ReactComponent as AddFilterSvg } from '@/assets/icons/plus.svg';
 import PropertiesMenu from '@/components/database/components/conditions/PropertiesMenu';
 import Filter from '@/components/database/components/filters/Filter';
 import { Button } from '@/components/ui/button';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useConditionsContext } from '../conditions/context';
 
@@ -21,19 +15,8 @@ export function Filters() {
   const [openPropertiesMenu, setOpenPropertiesMenu] = useState(false);
 
   const addFilter = useAddFilter();
-  const layout = useDatabaseViewLayout();
-  const { fieldId } = useBoardLayoutSettings();
-
-  const filteredOut = useMemo(() => {
-    if (layout === DatabaseViewLayout.Board && fieldId) {
-      return [fieldId];
-    }
-
-    return;
-  }, [fieldId, layout]);
 
   const setOpenFilterId = useConditionsContext()?.setOpenFilterId;
-
 
   return (
     <>
@@ -54,7 +37,6 @@ export function Filters() {
           }}
           open={openPropertiesMenu}
           onOpenChange={setOpenPropertiesMenu}
-          filteredOut={filteredOut}
         >
           <Button variant='ghost' className={'mx-1 whitespace-nowrap'} size='sm'>
             <AddFilterSvg className={'h-5 w-5'} />

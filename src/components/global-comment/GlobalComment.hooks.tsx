@@ -32,11 +32,11 @@ export const GlobalCommentContext = React.createContext<{
   highLightCommentId: null,
 });
 
-export function useGlobalCommentContext () {
+export function useGlobalCommentContext() {
   return useContext(GlobalCommentContext);
 }
 
-export function useLoadReactions () {
+export function useLoadReactions() {
   const viewId = useContext(PublishContext)?.viewMeta?.view_id;
   const service = useContext(AFConfigContext)?.service;
   const currentUser = useContext(AFConfigContext)?.currentUser;
@@ -135,13 +135,13 @@ export function useLoadReactions () {
         console.error(e);
       }
     },
-    [currentUser, service, viewId],
+    [currentUser, service, viewId]
   );
 
   return { reactions, toggleReaction };
 }
 
-export function useLoadComments () {
+export function useLoadComments() {
   const viewId = useContext(PublishContext)?.viewMeta?.view_id;
   const service = useContext(AFConfigContext)?.service;
 
@@ -170,7 +170,7 @@ export function useLoadComments () {
   return { comments, loading, reload: fetchComments };
 }
 
-export function getAvatar (comment: GlobalComment) {
+export function getAvatar(comment: GlobalComment) {
   if (comment.user?.avatarUrl) {
     const isFlag = isFlagEmoji(comment.user.avatarUrl);
 
@@ -178,7 +178,7 @@ export function getAvatar (comment: GlobalComment) {
       children: <span className={isFlag ? 'icon' : ''}>{comment.user.avatarUrl}</span>,
       sx: {
         bgcolor: 'transparent',
-        color: 'var(--text-title)',
+        color: 'var(--text-primary)',
       },
     };
   }
@@ -186,7 +186,7 @@ export function getAvatar (comment: GlobalComment) {
   return stringAvatar(comment.user?.name || '');
 }
 
-export function useCommentRender (comment: GlobalComment) {
+export function useCommentRender(comment: GlobalComment) {
   const { t } = useTranslation();
   const avatar = useMemo(() => {
     return getAvatar(comment);

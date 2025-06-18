@@ -159,14 +159,14 @@ function Color() {
                     className={'relative flex h-6 w-6 items-center justify-center'}
                     onClick={() => handlePickedColor(EditorMarkFormat.FontColor, color.color)}
                     style={{
-                      color: color.color || 'var(--text-title)',
+                      color: color.color || 'var(--text-primary)',
                     }}
                   >
                     <div
                       className={`absolute left-0 top-0 h-full w-full cursor-pointer rounded-[6px] border-2 opacity-50 hover:opacity-100`}
                       style={{
                         borderColor: activeFontColor === color.color ? 'var(--fill-default)' : undefined,
-                        color: renderColor(color.color) || 'var(--text-title)',
+                        color: renderColor(color.color) || 'var(--text-primary)',
                         opacity: color.color ? undefined : 1,
                       }}
                     />

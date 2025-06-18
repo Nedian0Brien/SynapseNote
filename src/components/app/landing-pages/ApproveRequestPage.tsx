@@ -138,7 +138,7 @@ function ApproveRequestPage() {
       </div>
       <div className={'flex w-full max-w-[560px] flex-1 flex-col items-center justify-center gap-6 text-center'}>
         <Avatar
-          className={'h-20 w-20 rounded-[16px] border border-text-title text-[40px]'}
+          className={'h-20 w-20 rounded-[16px] border border-text-primary text-[40px]'}
           {...requesterAvatar}
           variant='rounded'
         />

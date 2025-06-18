@@ -1,26 +1,36 @@
-import { RowId, YDatabaseField, YDoc, YjsDatabaseKey } from '@/application/types';
 import { getCellData } from '@/application/database-yjs/const';
 import { FieldType } from '@/application/database-yjs/database.type';
-import { parseSelectOptionTypeOptions } from '@/application/database-yjs/fields';
-import { Row } from '@/application/database-yjs/selector';
+import {
+  CheckboxFilterCondition,
+  parseSelectOptionTypeOptions,
+  SelectOptionFilterCondition,
+} from '@/application/database-yjs/fields';
 import { getChecked } from '@/application/database-yjs/fields/checkbox/utils';
+import { checkboxFilterCheck, selectOptionFilterCheck } from '@/application/database-yjs/filter';
+import { Row } from '@/application/database-yjs/selector';
+import { RowId, YDatabaseField, YDatabaseFilter, YDoc, YjsDatabaseKey } from '@/application/types';
 
-export function groupByField (rows: Row[], rowMetas: Record<RowId, YDoc>, field: YDatabaseField) {
+export function groupByField(
+  rows: Row[],
+  rowMetas: Record<RowId, YDoc>,
+  field: YDatabaseField,
+  filter?: YDatabaseFilter
+) {
   const fieldType = Number(field.get(YjsDatabaseKey.type));
   const isSelectOptionField = [FieldType.SingleSelect, FieldType.MultiSelect].includes(fieldType);
 
   if (isSelectOptionField) {
-    return groupBySelectOption(rows, rowMetas, field);
+    return groupBySelectOption(rows, rowMetas, field, filter);
   }
 
   if (fieldType === FieldType.Checkbox) {
-    return groupByCheckbox(rows, rowMetas, field);
+    return groupByCheckbox(rows, rowMetas, field, filter);
   }
 
   return;
 }
 
-export function getGroupColumns (field: YDatabaseField) {
+export function getGroupColumns(field: YDatabaseField) {
   const fieldType = Number(field.get(YjsDatabaseKey.type));
   const isSelectOptionField = [FieldType.SingleSelect, FieldType.MultiSelect].includes(fieldType);
 
@@ -35,19 +45,20 @@ export function getGroupColumns (field: YDatabaseField) {
       id: option.id,
     }));
 
-    return [
-      { id: field.get(YjsDatabaseKey.id) },
-      ...options,
-    ];
+    return [{ id: field.get(YjsDatabaseKey.id) }, ...options];
   }
 
   if (fieldType === FieldType.Checkbox) {
     return [{ id: 'Yes' }, { id: 'No' }];
   }
-
 }
 
-export function groupByCheckbox (rows: Row[], rowMetas: Record<RowId, YDoc>, field: YDatabaseField) {
+export function groupByCheckbox(
+  rows: Row[],
+  rowMetas: Record<RowId, YDoc>,
+  field: YDatabaseField,
+  filter?: YDatabaseFilter
+) {
   const fieldId = field.get(YjsDatabaseKey.id);
   const result = new Map<string, Row[]>();
 
@@ -59,7 +70,19 @@ export function groupByCheckbox (rows: Row[], rowMetas: Record<RowId, YDoc>, fie
 
     const cellData = getCellData(row.id, fieldId, rowMetas);
 
-    const groupName = getChecked(cellData as string) ? 'Yes' : 'No';
+    const checked = getChecked(cellData as string);
+    const groupName = checked ? 'Yes' : 'No';
+
+    if (filter) {
+      if (filter) {
+        const condition = Number(filter?.get(YjsDatabaseKey.condition)) as CheckboxFilterCondition;
+
+        if (!checkboxFilterCheck(groupName, condition)) {
+          return;
+        }
+      }
+    }
+
     const group = result.get(groupName) ?? [];
 
     group.push(row);
@@ -68,16 +91,17 @@ export function groupByCheckbox (rows: Row[], rowMetas: Record<RowId, YDoc>, fie
   return result;
 }
 
-export function groupBySelectOption (rows: Row[], rowMetas: Record<RowId, YDoc>, field: YDatabaseField) {
+export function groupBySelectOption(
+  rows: Row[],
+  rowMetas: Record<RowId, YDoc>,
+  field: YDatabaseField,
+  filter?: YDatabaseFilter
+) {
   const fieldId = field.get(YjsDatabaseKey.id);
   const result = new Map<string, Row[]>();
   const typeOption = parseSelectOptionTypeOptions(field);
 
-  if (!typeOption) {
-    return;
-  }
-
-  if (typeOption.options.length === 0) {
+  if (!typeOption || typeOption.options.length === 0) {
     result.set(fieldId, rows);
     return result;
   }
@@ -91,6 +115,19 @@ export function groupBySelectOption (rows: Row[], rowMetas: Record<RowId, YDoc>,
     const cellData = getCellData(row.id, fieldId, rowMetas);
 
     const selectedIds = (cellData as string)?.split(',') ?? [];
+
+    if (typeof cellData !== 'string') {
+      return;
+    }
+
+    if (filter) {
+      const condition = Number(filter?.get(YjsDatabaseKey.condition)) as SelectOptionFilterCondition;
+      const content = filter?.get(YjsDatabaseKey.content);
+
+      if (!selectOptionFilterCheck(cellData, content, condition)) {
+        return;
+      }
+    }
 
     if (selectedIds.length === 0) {
       const group = result.get(fieldId) ?? [];

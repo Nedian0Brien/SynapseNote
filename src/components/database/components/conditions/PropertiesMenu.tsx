@@ -110,12 +110,7 @@ function PropertiesMenu({
               >
                 <Tooltip delayDuration={1000}>
                   <TooltipTrigger>
-                    <FieldDisplay
-                      className={
-                        'max-w-[180px] flex-1 gap-[10px] truncate [&_.custom-icon_svg]:h-4 [&_.custom-icon_svg]:w-4  [&_svg]:text-icon-secondary'
-                      }
-                      fieldId={property.id}
-                    />
+                    <FieldDisplay className={'max-w-[180px] flex-1 gap-[10px] truncate'} fieldId={property.id} />
                   </TooltipTrigger>
                   <TooltipContent side={'right'}>{property.name}</TooltipContent>
                 </Tooltip>

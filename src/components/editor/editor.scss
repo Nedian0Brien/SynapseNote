@@ -165,15 +165,15 @@
 
 .block-element[data-block-type="todo_list"] .checked > .text-element .text-content {
   text-decoration: line-through;
-  color: var(--text-caption);
+  color: var(--text-secondary);
 
   .mention-content {
-    color: var(--text-caption);
+    color: var(--text-secondary);
     text-decoration: line-through;
   }
 
   .text-color span {
-    color: var(--text-caption) !important;
+    color: var(--text-secondary) !important;
   }
 }
 

@@ -1,12 +1,13 @@
+import { Avatar, Tooltip } from '@mui/material';
+import CircularProgress from '@mui/material/CircularProgress';
+import React, { useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import { Workspace } from '@/application/types';
 import { ReactComponent as SelectedSvg } from '@/assets/icons/tick.svg';
 import MoreActions from '@/components/app/workspaces/MoreActions';
 import { getAvatarProps } from '@/components/app/workspaces/utils';
 import { useService } from '@/components/main/app.hooks';
-import { Avatar, Tooltip } from '@mui/material';
-import CircularProgress from '@mui/material/CircularProgress';
-import React, { useCallback, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 
 function WorkspaceList({
   defaultWorkspaces,
@@ -105,7 +106,9 @@ function WorkspaceList({
             />
             <div className={'flex flex-1 flex-col items-start overflow-hidden'}>
               <Tooltip title={workspace.name} enterDelay={1000} enterNextDelay={1000}>
-                <div className={'flex-1 truncate text-left font-medium text-text-primary'}>{workspace.name}</div>
+                <div className={'w-full overflow-hidden truncate text-left font-medium text-text-primary'}>
+                  {workspace.name}
+                </div>
               </Tooltip>
               <div className={'text-[0.85em] text-text-secondary'}>
                 {t('invitation.membersCount', { count: workspace.memberCount || 0 })}

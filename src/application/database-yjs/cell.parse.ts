@@ -1,16 +1,12 @@
 import * as Y from 'yjs';
 
 import { FieldType } from '@/application/database-yjs/database.type';
-import {
-  getDateCellStr,
-  parseChecklistData,
-  parseSelectOptionTypeOptions,
-} from '@/application/database-yjs/fields';
+import { getDateCellStr, parseChecklistData, parseSelectOptionTypeOptions } from '@/application/database-yjs/fields';
 import { YDatabaseCell, YDatabaseField, YjsDatabaseKey } from '@/application/types';
 
 import { Cell, DateTimeCell, FileMediaCell, FileMediaCellData } from './cell.type';
 
-export function parseYDatabaseCommonCellToCell (cell: YDatabaseCell): Cell {
+export function parseYDatabaseCommonCellToCell(cell: YDatabaseCell): Cell {
   return {
     createdAt: Number(cell.get(YjsDatabaseKey.created_at)),
     lastModified: Number(cell.get(YjsDatabaseKey.last_modified)),
@@ -19,7 +15,7 @@ export function parseYDatabaseCommonCellToCell (cell: YDatabaseCell): Cell {
   };
 }
 
-export function parseYDatabaseCellToCell (cell: YDatabaseCell): Cell {
+export function parseYDatabaseCellToCell(cell: YDatabaseCell): Cell {
   const cellType = parseInt(cell.get(YjsDatabaseKey.field_type));
 
   let value = parseYDatabaseCommonCellToCell(cell);
@@ -39,7 +35,7 @@ export function parseYDatabaseCellToCell (cell: YDatabaseCell): Cell {
   return value;
 }
 
-export function parseYDatabaseDateTimeCellToCell (cell: YDatabaseCell): DateTimeCell {
+export function parseYDatabaseDateTimeCellToCell(cell: YDatabaseCell): DateTimeCell {
   let data = cell.get(YjsDatabaseKey.data);
 
   if (typeof data !== 'string' && typeof data !== 'number') {
@@ -59,7 +55,7 @@ export function parseYDatabaseDateTimeCellToCell (cell: YDatabaseCell): DateTime
   };
 }
 
-export function parseYDatabaseFileMediaCellToCell (cell: YDatabaseCell): FileMediaCell {
+export function parseYDatabaseFileMediaCellToCell(cell: YDatabaseCell): FileMediaCell {
   const data = cell.get(YjsDatabaseKey.data) as Y.Array<string>;
 
   if (!data || !(data instanceof Y.Array<string>)) {
@@ -80,7 +76,7 @@ export function parseYDatabaseFileMediaCellToCell (cell: YDatabaseCell): FileMed
   };
 }
 
-export function parseYDatabaseRelationCellToCell (cell: YDatabaseCell): Cell {
+export function parseYDatabaseRelationCellToCell(cell: YDatabaseCell): Cell {
   const data = cell.get(YjsDatabaseKey.data) as Y.Array<string>;
 
   if (!data || !(data instanceof Y.Array<string>)) {
@@ -98,7 +94,7 @@ export function parseYDatabaseRelationCellToCell (cell: YDatabaseCell): Cell {
   };
 }
 
-export function getCellDataText (cell: YDatabaseCell, field: YDatabaseField): string {
+export function getCellDataText(cell: YDatabaseCell, field: YDatabaseField): string {
   const type = parseInt(field.get(YjsDatabaseKey.type));
 
   switch (type) {
@@ -108,9 +104,15 @@ export function getCellDataText (cell: YDatabaseCell, field: YDatabaseField): st
       const options = parseSelectOptionTypeOptions(field)?.options || [];
 
       if (typeof data === 'string') {
-        return data.split(',').map((item) => {
-          return options?.find((option) => option.id === item)?.name;
-        }).filter(item => item).join(',') || '';
+        return (
+          data
+            .split(',')
+            .map((item) => {
+              return options?.find((option) => option.id === item)?.name;
+            })
+            .filter((item) => item)
+            .join(',') || ''
+        );
       }
 
       return '';
@@ -120,34 +122,33 @@ export function getCellDataText (cell: YDatabaseCell, field: YDatabaseField): st
       const cellData = cell.get(YjsDatabaseKey.data);
 
       if (typeof cellData === 'string') {
-        const {
-          options = [],
-          selectedOptionIds = [],
-        } = parseChecklistData(cellData) || {};
+        const { options = [], selectedOptionIds = [] } = parseChecklistData(cellData) || {};
 
-        const completed = options
-          .filter((option) => selectedOptionIds.includes(option.id))
-          .map((option, index) => `${index + 1}. ${option.name}`)
-          .join(',') || '';
-        const incomplete = options.filter((option) => !selectedOptionIds.includes(option.id)).map((option, index) => `${index + 1}. ${option.name}`)
-          .join(',') || '';
-
-        return `Completed:${completed};Incomplete:${incomplete}`;
+        return JSON.stringify({
+          tasks: options.map((option) => ({
+            id: option.id,
+            name: option.name,
+            checked: selectedOptionIds.includes(option.id),
+          })),
+          progress: {
+            completed: selectedOptionIds.length,
+            total: options.length,
+          },
+        });
       }
 
       return '';
     }
 
-    case FieldType.DateTime:
-      {const dateCell = parseYDatabaseDateTimeCellToCell(cell);
+    case FieldType.DateTime: {
+      const dateCell = parseYDatabaseDateTimeCellToCell(cell);
 
-      return getDateCellStr({ cell: dateCell, field });}
+      return getDateCellStr({ cell: dateCell, field });
+    }
 
     case FieldType.CreatedTime:
     case FieldType.LastEditedTime:
     case FieldType.Relation:
-    case FieldType.AITranslations:
-    case FieldType.AISummaries:
       return '';
 
     default: {

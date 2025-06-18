@@ -591,6 +591,7 @@ export function useRowsByGroup(groupId: string) {
   const [groupResult, setGroupResult] = useState<Map<string, Row[]>>(new Map());
   const view = useDatabaseView();
   const layoutSetting = view?.get(YjsDatabaseKey.layout_settings)?.get('1');
+  const filters = view?.get(YjsDatabaseKey.filters);
 
   useEffect(() => {
     if (!fieldId || !rowOrders || !rows) return;
@@ -606,6 +607,7 @@ export function useRowsByGroup(groupId: string) {
         return;
       }
 
+
       const fieldType = Number(field.get(YjsDatabaseKey.type)) as FieldType;
 
       if (![FieldType.SingleSelect, FieldType.MultiSelect, FieldType.Checkbox].includes(fieldType)) {
@@ -613,8 +615,10 @@ export function useRowsByGroup(groupId: string) {
         setGroupResult(newResult);
         return;
       }
+      
+      const filter = filters?.toArray().find((filter) => filter.get(YjsDatabaseKey.field_id) === fieldId);
 
-      const groupResult = groupByField(rowOrders, rows, field);
+      const groupResult = groupByField(rowOrders, rows, field, filter);
 
       if (!groupResult) {
         setGroupResult(newResult);
@@ -627,10 +631,12 @@ export function useRowsByGroup(groupId: string) {
     onConditionsChange();
 
     fields.observeDeep(onConditionsChange);
+    filters?.observeDeep(onConditionsChange);
     return () => {
       fields.unobserveDeep(onConditionsChange);
+      filters?.unobserveDeep(onConditionsChange);
     };
-  }, [fieldId, fields, rowOrders, rows]);
+  }, [fieldId, fields, rowOrders, rows, filters]);
 
   useEffect(() => {
     const observeEvent = () => {
@@ -680,7 +686,6 @@ export function useRowOrdersSelector() {
 
     if (sorts?.length) {
       rowOrders = sortBy(originalRowOrders, sorts, fields, rows);
-  
     }
 
     if (filters?.length) {

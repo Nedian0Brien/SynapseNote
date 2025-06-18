@@ -1,15 +1,17 @@
+import DOMPurify from 'dompurify';
 import React, { useEffect, useMemo } from 'react';
+
 import { ViewIcon, ViewIconType, ViewLayout } from '@/application/types';
+import { ReactComponent as ChatSvg } from '@/assets/icons/ai_chat.svg';
 import { ReactComponent as BoardSvg } from '@/assets/icons/board.svg';
 import { ReactComponent as CalendarSvg } from '@/assets/icons/calendar.svg';
-import { ReactComponent as DocumentSvg } from '@/assets/icons/page.svg';
 import { ReactComponent as GridSvg } from '@/assets/icons/grid.svg';
-import { ReactComponent as ChatSvg } from '@/assets/icons/ai_chat.svg';
-import { getIcon, isFlagEmoji } from '@/utils/emoji';
-import DOMPurify from 'dompurify';
+import { ReactComponent as DocumentSvg } from '@/assets/icons/page.svg';
+import { cn } from '@/lib/utils';
 import { renderColor } from '@/utils/color';
+import { getIcon, isFlagEmoji } from '@/utils/emoji';
 
-function PageIcon ({
+function PageIcon({
   view,
   className,
   iconSize,
@@ -33,11 +35,7 @@ function PageIcon ({
 
   const img = useMemo(() => {
     if (view.icon && view.icon.ty === ViewIconType.URL && view.icon.value) {
-      return <img
-        className={className}
-        src={view.icon.value}
-        alt="icon"
-      />;
+      return <img className={cn(className, 'p-0.5')} src={view.icon.value} alt='icon' />;
     }
 
     return null;
@@ -54,7 +52,11 @@ function PageIcon ({
         const id = `${json.groupName}/${json.iconName}`;
 
         void getIcon(id).then((item) => {
-          setIconContent(item?.content.replaceAll('black', json.color ? renderColor(json.color) : 'currentColor').replace('<svg', '<svg width="100%" height="100%"'));
+          setIconContent(
+            item?.content
+              .replaceAll('black', json.color ? renderColor(json.color) : 'currentColor')
+              .replace('<svg', '<svg width="100%" height="100%"')
+          );
         });
       } catch (e) {
         console.error(e, view.icon);
@@ -70,23 +72,27 @@ function PageIcon ({
         USE_PROFILES: { svg: true, svgFilters: true },
       });
 
-      return <span
-        style={{
-          width: iconSize,
-          height: iconSize,
-        }}
-        className={`${className ? className : 'w-full h-full'} p-0.5`}
-        dangerouslySetInnerHTML={{
-          __html: cleanSvg,
-        }}
-      />;
+      return (
+        <span
+          style={{
+            width: iconSize,
+            height: iconSize,
+          }}
+          className={`${className ? className : 'h-full w-full'} p-0.5`}
+          dangerouslySetInnerHTML={{
+            __html: cleanSvg,
+          }}
+        />
+      );
     }
   }, [iconContent, iconSize, className]);
 
   if (emoji) {
-    return <>
-      <span className={`${isFlag ? 'icon' : ''} ${className || ''}`}>{emoji}</span>
-    </>;
+    return (
+      <>
+        <span className={`${isFlag ? 'icon' : ''} ${className || ''}`}>{emoji}</span>
+      </>
+    );
   }
 
   if (img) {

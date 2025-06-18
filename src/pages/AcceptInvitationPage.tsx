@@ -90,7 +90,7 @@ function AcceptInvitationPage() {
       </div>
       <div className={'flex w-full max-w-[560px] flex-col items-center gap-6 text-center'}>
         <Avatar
-          className={'h-20 w-20 rounded-[16px] border border-text-title text-[40px]'}
+          className={'h-20 w-20 rounded-[16px] border border-text-primary text-[40px]'}
           {...workspaceIconProps}
           variant='rounded'
         />

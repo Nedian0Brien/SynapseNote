@@ -5,7 +5,7 @@ export const TextButton = styled((props: ButtonProps) => (
     {...props}
     sx={{
       '&.MuiButton-colorInherit': {
-        color: 'var(--text-caption)',
+        color: 'var(--text-secondary)',
       },
     }}
   />

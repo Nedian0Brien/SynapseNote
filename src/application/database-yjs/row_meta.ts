@@ -1,9 +1,10 @@
 import { metaIdFromRowId } from '@/application/database-yjs/const';
 import { RowMetaKey } from '@/application/database-yjs/database.type';
 import { RowCoverType } from '@/application/types';
+
 import type Y from 'yjs';
 
-export function generateRowMeta (rowId: string, data: Record<string, string | boolean | null>) {
+export function generateRowMeta(rowId: string, data: Record<string, string | boolean | null>) {
   const map = getMetaIdMap(rowId);
 
   const iconKey = map.get(RowMetaKey.IconId) ?? '';
@@ -17,7 +18,7 @@ export function generateRowMeta (rowId: string, data: Record<string, string | bo
   } = {};
 
   if (isEmptyDocument) {
-    Object.assign(result, { [isEmptyDocumentKey]: true });
+    Object.assign(result, { [isEmptyDocumentKey]: isEmptyDocument });
   }
 
   if (cover) {
@@ -33,7 +34,7 @@ export function generateRowMeta (rowId: string, data: Record<string, string | bo
 
 export const metaIdMapFromRowIdMap = new Map<string, Map<RowMetaKey, string>>();
 
-export function getMetaIdMap (rowId: string) {
+export function getMetaIdMap(rowId: string) {
   const hasMetaIdMap = metaIdMapFromRowIdMap.has(rowId);
 
   if (!hasMetaIdMap) {
@@ -51,7 +52,7 @@ export function getMetaIdMap (rowId: string) {
   return metaIdMapFromRowIdMap.get(rowId) as Map<RowMetaKey, string>;
 }
 
-export function getMetaJSON (rowId: string, meta: Y.Map<unknown>) {
+export function getMetaJSON(rowId: string, meta: Y.Map<unknown>) {
   const metaKeyMap = getMetaIdMap(rowId);
 
   const iconKey = metaKeyMap.get(RowMetaKey.IconId) ?? '';
@@ -64,10 +65,12 @@ export function getMetaJSON (rowId: string, meta: Y.Map<unknown>) {
   let cover = null;
 
   try {
-    cover = metaJson[coverKey] ? (JSON.parse(metaJson[coverKey]) as {
-      data: string,
-      cover_type: RowCoverType,
-    }) : null;
+    cover = metaJson[coverKey]
+      ? (JSON.parse(metaJson[coverKey]) as {
+          data: string;
+          cover_type: RowCoverType;
+        })
+      : null;
   } catch (e) {
     // do nothing
   }

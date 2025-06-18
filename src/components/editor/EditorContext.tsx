@@ -55,6 +55,7 @@ export interface EditorContextState {
   onWordCountChange?: (viewId: string, props: TextCount) => void;
   uploadFile?: (file: File) => Promise<string>;
   requestInstance?: AxiosInstance | null;
+  getMoreAIContext?: () => string;
 }
 
 export const EditorContext = createContext<EditorContextState>({

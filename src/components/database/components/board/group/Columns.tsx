@@ -12,7 +12,6 @@ const Columns = forwardRef<
     groupResult: Map<string, Row[]>;
     columns: GroupColumn[];
     addCardBefore: (id: string) => void;
-
     groupId: string;
   }
 >(({ columns, groupResult, fieldId, ...props }, ref) => {
@@ -28,14 +27,31 @@ const Columns = forwardRef<
     [groupResult]
   );
 
+  const columnsWithRows = useMemo(() => {
+    if (!groupResult) return [];
+
+    return columns
+      .map((data) => {
+        if (!groupResult.has(data.id)) {
+          return null;
+        }
+
+        return {
+          ...data,
+          rows: groupResult.get(data.id) || [],
+        };
+      })
+      .filter(Boolean) as (GroupColumn & { rows: Row[] })[];
+  }, [columns, groupResult]);
+
   const readOnly = useReadOnly();
 
   return (
     <div ref={ref} className={'columns flex w-fit min-w-full flex-1 gap-2'}>
       {!readOnly && <HiddenGroupColumn fieldId={fieldId} groupId={props.groupId} getRows={getRows} />}
 
-      {columns.map((data) => (
-        <Column key={data.id} id={data.id} fieldId={fieldId} rows={groupResult.get(data.id) || []} {...props} />
+      {columnsWithRows.map((data) => (
+        <Column key={data.id} id={data.id} fieldId={fieldId} rows={data.rows} {...props} />
       ))}
       {isSelectField && !readOnly && <AddGroupColumn groupId={props.groupId} fieldId={fieldId} />}
     </div>

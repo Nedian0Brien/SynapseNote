@@ -4,12 +4,12 @@ import { useTranslation } from 'react-i18next';
 import { FieldType, useCellSelector, useFieldSelector, useReadOnly } from '@/application/database-yjs';
 import { FileMediaCellData, TextCell } from '@/application/database-yjs/cell.type';
 import { useUpdateCellDispatch } from '@/application/database-yjs/dispatch';
+import { getChecked } from '@/application/database-yjs/fields/checkbox/utils';
 import { YjsDatabaseKey } from '@/application/types';
 import { ReactComponent as FileMediaSvg } from '@/assets/icons/attachment.svg';
 import { Cell } from '@/components/database/components/cell/Cell';
 import { PrimaryCell } from '@/components/database/components/cell/primary';
 import { cn } from '@/lib/utils';
-import { getChecked } from '@/application/database-yjs/fields/checkbox/utils';
 
 export function CardField({
   rowId,
@@ -57,15 +57,12 @@ export function CardField({
     return styleProperties;
   }, [isPrimary, readOnly]);
 
-
-
   if (isPrimary) {
     return (
       <PrimaryCell
         placeholder={t('grid.row.titlePlaceholder')}
         editing={editing}
         setEditing={setEditing}
-        showDocumentIcon
         readOnly
         cell={cell as TextCell}
         rowId={rowId}

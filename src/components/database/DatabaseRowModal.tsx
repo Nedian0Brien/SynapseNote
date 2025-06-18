@@ -54,7 +54,7 @@ function DatabaseRowModal({
       }}
     >
       <DialogContent className={'flex h-full w-full flex-col px-0 py-0'}>
-        <DialogTitle className={'flex max-h-[48px] flex-1 items-center justify-end gap-2 bg-surface-primary px-2'}>
+        <DialogTitle className={'flex max-h-[48px] flex-1 items-center justify-end gap-2 px-2'}>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button

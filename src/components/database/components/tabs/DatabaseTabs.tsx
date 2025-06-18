@@ -128,6 +128,14 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
       return meta?.children.find((v) => v.view_id === menuViewId);
     }, [iidIndex, menuViewId, meta]);
 
+    const visibleViewIds = useMemo(() => {
+      return viewIds.filter((viewId) => {
+        const databaseView = views?.get(viewId) as YDatabaseView | null;
+
+        return !!databaseView;
+      });
+    }, [viewIds, views]);
+
     const handleAddView = useCallback(
       async (layout: DatabaseViewLayout) => {
         setAddLoading(true);
@@ -360,7 +368,7 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
                                   onOpenRenameModal={(viewId: string) => {
                                     setRenameViewId(viewId);
                                   }}
-                                  deleteDisabled={viewId === iidIndex}
+                                  deleteDisabled={viewId === iidIndex && visibleViewIds.length > 1}
                                   view={menuView}
                                   onUpdatedIcon={reloadView}
                                 />

@@ -130,7 +130,7 @@ export function Search() {
               setSearchTypeAnchorEl(e.currentTarget);
             }}
             className={
-              'flex cursor-pointer items-center gap-2 overflow-hidden rounded-[8px] border border-border-primary p-2 text-sm hover:border-text-title'
+              'flex cursor-pointer items-center gap-2 overflow-hidden rounded-[8px] border border-border-primary p-2 text-sm hover:border-text-primary'
             }
           >
             <span className={' max-w-[100px] truncate'}>

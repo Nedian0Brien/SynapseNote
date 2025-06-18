@@ -1,9 +1,19 @@
-import { memo, useCallback, useEffect, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
-import { RowMetaKey, useDatabaseContext, useReadOnly, useRowMetaSelector } from '@/application/database-yjs';
+import {
+  FieldType,
+  getRowTimeString,
+  RowMetaKey,
+  useDatabase,
+  useDatabaseContext,
+  useReadOnly,
+  useRowData,
+  useRowMetaSelector,
+} from '@/application/database-yjs';
+import { getCellDataText } from '@/application/database-yjs/cell.parse';
 import { useUpdateRowMetaDispatch } from '@/application/database-yjs/dispatch';
-import { YDoc } from '@/application/types';
+import { YDatabaseCell, YDatabaseField, YDoc, YjsDatabaseKey } from '@/application/types';
 import { Editor } from '@/components/editor';
 import { EditorSkeleton } from '@/components/_shared/skeleton/EditorSkeleton';
 
@@ -14,6 +24,51 @@ export const DatabaseRowSubDocument = memo(({ rowId }: { rowId: string }) => {
   const readOnly = useReadOnly();
   const documentId = meta?.documentId;
   const context = useDatabaseContext();
+  const database = useDatabase();
+  const row = useRowData(rowId);
+  const getCellData = useCallback(
+    (cell: YDatabaseCell, field: YDatabaseField) => {
+      const type = Number(field?.get(YjsDatabaseKey.type));
+
+      if (type === FieldType.CreatedTime) {
+        return getRowTimeString(field, row.get(YjsDatabaseKey.created_at)) || '';
+      } else if (type === FieldType.LastEditedTime) {
+        return getRowTimeString(field, row.get(YjsDatabaseKey.last_modified)) || '';
+      } else if (cell) {
+        try {
+          return getCellDataText(cell, field);
+        } catch (e) {
+          console.error(e);
+          return '';
+        }
+      }
+
+      return '';
+    },
+    [row]
+  );
+
+  const properties = useMemo(() => {
+    const obj = {};
+
+    const cells = row.get(YjsDatabaseKey.cells);
+    const fields = database.get(YjsDatabaseKey.fields);
+    const fieldIds = Array.from(fields.keys());
+
+    fieldIds.forEach((fieldId) => {
+      const cell = cells.get(fieldId);
+      const field = fields.get(fieldId);
+      const name = field?.get(YjsDatabaseKey.name);
+
+      if (name) {
+        Object.assign(obj, {
+          [name]: getCellData(cell, field),
+        });
+      }
+    });
+
+    return obj;
+  }, [database, getCellData, row]);
 
   const { createOrphanedView, loadView } = context;
   const updateRowMeta = useUpdateRowMetaDispatch(rowId);
@@ -71,6 +126,10 @@ export const DatabaseRowSubDocument = memo(({ rowId }: { rowId: string }) => {
     void handleOpenDocument(documentId);
   }, [handleOpenDocument, documentId]);
 
+  const getMoreAIContext = useCallback(() => {
+    return JSON.stringify(properties);
+  }, [properties]);
+
   if (loading) {
     return <EditorSkeleton />;
   }
@@ -83,6 +142,7 @@ export const DatabaseRowSubDocument = memo(({ rowId }: { rowId: string }) => {
       viewId={documentId}
       doc={doc}
       readOnly={readOnly}
+      getMoreAIContext={getMoreAIContext}
       onWordCountChange={(_, { characters }) => {
         updateRowMeta(RowMetaKey.IsDocumentEmpty, characters <= 0);
       }}

@@ -36,10 +36,10 @@
 
   .lg-next, .lg-prev {
     background: transparent;
-    color: var(--text-caption);
+    color: var(--text-secondary);
     @apply max-md:hidden;
     &:hover:not(.disabled) {
-      color: var(--text-title);
+      color: var(--text-primary);
     }
   }
 }
