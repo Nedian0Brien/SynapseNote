@@ -35,7 +35,11 @@ function PageIcon({
 
   const img = useMemo(() => {
     if (view.icon && view.icon.ty === ViewIconType.URL && view.icon.value) {
-      return <img className={cn(className, 'p-0.5')} src={view.icon.value} alt='icon' />;
+      return (
+        <span className={cn('h-full w-full p-[2px]', className)}>
+          <img className={'h-full w-full'} src={view.icon.value} alt='icon' />
+        </span>
+      );
     }
 
     return null;
@@ -78,7 +82,7 @@ function PageIcon({
             width: iconSize,
             height: iconSize,
           }}
-          className={`${className ? className : 'h-full w-full'} p-0.5`}
+          className={cn('h-full w-full p-[2px]', className)}
           dangerouslySetInnerHTML={{
             __html: cleanSvg,
           }}

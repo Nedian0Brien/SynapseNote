@@ -54,7 +54,11 @@ export function PrimaryCell(props: CellProps<CellType>) {
         enable={Boolean(!readOnly && showIcon)}
       >
         {showIcon ? (
-          <Button className={'h-5 w-5 rounded-100 p-0 disabled:text-icon-primary'} variant={'ghost'} disabled={readOnly}>
+          <Button
+            className={'custom-icon h-5 w-5 !rounded-100 p-0 disabled:text-icon-primary'}
+            variant={'ghost'}
+            disabled={readOnly}
+          >
             {icon ? (
               <div className={cn('flex h-5 w-5 items-center justify-center', isFlag && 'icon')}>{icon}</div>
             ) : (

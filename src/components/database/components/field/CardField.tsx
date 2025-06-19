@@ -63,7 +63,7 @@ export function CardField({
         placeholder={t('grid.row.titlePlaceholder')}
         editing={editing}
         setEditing={setEditing}
-        readOnly
+        readOnly={readOnly}
         cell={cell as TextCell}
         rowId={rowId}
         fieldId={fieldId}

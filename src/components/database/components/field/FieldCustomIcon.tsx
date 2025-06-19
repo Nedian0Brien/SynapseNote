@@ -1,12 +1,13 @@
+import DOMPurify from 'dompurify';
+import React, { useEffect, useMemo, useState } from 'react';
+
 import { FieldType, useFieldSelector } from '@/application/database-yjs';
 import { YjsDatabaseKey } from '@/application/types';
 import { FieldTypeIcon } from '@/components/database/components/field/FieldTypeIcon';
 import { cn } from '@/lib/utils';
 import { getIcon } from '@/utils/emoji';
-import DOMPurify from 'dompurify';
-import React, { useEffect, useMemo, useState } from 'react';
 
-function FieldCustomIcon ({
+function FieldCustomIcon({
   fieldId,
   className,
   ...props
@@ -34,23 +35,25 @@ function FieldCustomIcon ({
 
   const icon = useMemo(() => {
     if (!iconContent) return null;
-    const cleanSvg = DOMPurify.sanitize(iconContent.replaceAll('black', 'currentColor').replace('<svg', '<svg width="100%" height="100%"'), {
-      USE_PROFILES: { svg: true, svgFilters: true },
-    });
+    const cleanSvg = DOMPurify.sanitize(
+      iconContent.replaceAll('black', 'currentColor').replace('<svg', '<svg width="100%" height="100%"'),
+      {
+        USE_PROFILES: { svg: true, svgFilters: true },
+      }
+    );
 
-    return <span
-      {...props}
-      className={cn(`custom-icon h-5 w-5 p-0.5 text-text-secondary`, className)}
-      dangerouslySetInnerHTML={{
-        __html: cleanSvg,
-      }}
-    />;
+    return (
+      <span
+        {...props}
+        className={cn(`custom-icon h-5 w-5 p-0.5 text-text-secondary [&_svg]:h-full [&_svg]:w-full`, className)}
+        dangerouslySetInnerHTML={{
+          __html: cleanSvg,
+        }}
+      />
+    );
   }, [iconContent, className, props]);
 
-  return icon || <FieldTypeIcon
-    type={type}
-    className={cn('icon h-5 w-5', className)}
-  />;
+  return icon || <FieldTypeIcon type={type} className={cn('icon h-5 w-5', className)} />;
 }
 
 export default FieldCustomIcon;

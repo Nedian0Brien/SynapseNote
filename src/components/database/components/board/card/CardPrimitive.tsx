@@ -105,8 +105,16 @@ export const CardPrimitive = forwardRef<HTMLDivElement, CardProps>(
 
     return (
       <div
-        onClick={() => {
+        onClick={(e) => {
           if (editing) return;
+          const target = e.target as HTMLElement;
+
+          console.log('custom-icon', target);
+          if (target.closest('.custom-icon')) {
+            e.stopPropagation();
+            return;
+          }
+
           navigateToRow?.(rowId);
         }}
         onPointerMove={(e) => {

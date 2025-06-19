@@ -4,7 +4,7 @@ import * as React from 'react';
 import { forwardRef } from 'react';
 
 import { ReactComponent as XIcon } from '@/assets/icons/close.svg';
-import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 function Dialog({ ...props }: React.ComponentProps<typeof DialogPrimitive.Root>) {
@@ -123,9 +123,9 @@ function DialogContent({
             '[&_svg]:pointer-events-none [&_svg]:h-5 [&_svg]:w-5 [&_svg]:shrink-0'
           )}
         >
-          <Button size={'icon'} variant={'ghost'}>
+          <div className={buttonVariants({ size: 'icon', variant: 'ghost' })}>
             <XIcon />
-          </Button>
+          </div>
         </DialogPrimitive.Close>
       </DialogPrimitive.Content>
     </DialogPortal>
