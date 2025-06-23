@@ -114,7 +114,7 @@ export default defineConfig({
     sourcemap: true,
     minifyIdentifiers: false, // Disable identifier minification in development
     minifySyntax: false, // Disable syntax minification in development
-    pure: !isDev ? ['console.log', 'console.debug', 'console.info', 'console.trace', 'console.warn'] : [],
+    drop: !isDev ? ['console', 'debugger'] : [],
   },
   build: {
     target: `esnext`,

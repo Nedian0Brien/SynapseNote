@@ -2920,6 +2920,20 @@ export function useDeleteSelectOption(fieldId: string) {
               columns.delete(columnIndex);
             }
           }
+
+          const filters = view?.get(YjsDatabaseKey.filters);
+          const filter = filters?.toArray().find((filter) => filter.get(YjsDatabaseKey.field_id) === fieldId);
+
+          if (filter) {
+            const content = filter?.get(YjsDatabaseKey.content);
+            const filterOptionIds = content?.split(',')?.filter((item) => item.trim() !== '') ?? [];
+
+            if (filterOptionIds.includes(optionId)) {
+              const newContent = filterOptionIds.filter((id) => id !== optionId).join(',');
+
+              filter.set(YjsDatabaseKey.content, newContent);
+            }
+          }
         },
         'deleteSelectOptionFromGroup'
       );
