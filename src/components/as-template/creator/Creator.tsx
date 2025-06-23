@@ -79,7 +79,7 @@ function Creator({ value, onChange }: { value?: string; onChange: (value: string
                   key={link.link_type}
                   target={'_blank'}
                   className={
-                    'flex h-10 w-10 items-center justify-between rounded-full border border-line-border p-3 hover:border-content-blue-400 hover:text-content-blue-400'
+                    'flex h-10 w-10 items-center justify-between rounded-full border border-line-border p-3 hover:border-content-blue-400 hover:text-text-action'
                   }
                   rel='noreferrer'
                 >

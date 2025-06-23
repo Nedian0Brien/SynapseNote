@@ -238,7 +238,7 @@ function ApproveRequestPage() {
                 email: (
                   <span
                     onClick={() => window.open(`mailto:support@appflowy.io`, '_blank')}
-                    className={'cursor-pointer text-fill-default underline'}
+                    className={'cursor-pointer text-text-action underline'}
                   >
                     support@appflowy.io
                   </span>

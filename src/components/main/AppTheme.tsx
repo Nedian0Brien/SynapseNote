@@ -54,7 +54,7 @@ function AppTheme({ children }: { children: React.ReactNode }) {
                   color: 'var(--icon-primary)',
                 },
                 '&.MuiIconButton-colorPrimary': {
-                  color: 'var(--fill-default)',
+                  color: 'var(--text-action)',
                 },
               },
               colorSecondary: {

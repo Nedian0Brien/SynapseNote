@@ -2,8 +2,8 @@ import { extractHeadings, nestHeadings } from '@/components/editor/components/bl
 import { EditorElementProps, HeadingNode, OutlineNode } from '@/components/editor/editor.type';
 import { forwardRef, memo, useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useReadOnly, useSlate } from 'slate-react';
 import { Element } from 'slate';
+import { useReadOnly, useSlate } from 'slate-react';
 
 export const Outline = memo(
   forwardRef<HTMLDivElement, EditorElementProps<OutlineNode>>(({ node, children, className, ...attributes }, ref) => {
@@ -52,13 +52,13 @@ export const Outline = memo(
             className={`my-1 ml-4 `}
             key={`${level}-${index}`}
           >
-            <div className={'cursor-pointer rounded px-2 underline hover:text-content-blue-400'}>{text}</div>
+            <div className={'cursor-pointer rounded px-2 underline hover:text-text-action'}>{text}</div>
 
             <div className={'ml-2'}>{children}</div>
           </div>
         );
       },
-      [jumpToHeading],
+      [jumpToHeading]
     );
 
     return (
@@ -68,21 +68,14 @@ export const Outline = memo(
         ref={ref}
         className={`outline-block relative px-2 ${className || ''}`}
       >
-        <div
-          className={'absolute left-0 top-0 select-none caret-transparent'}
-        >
-          {children}
-        </div>
-        <div
-          contentEditable={false}
-          className={`flex w-full select-none flex-col`}
-        >
+        <div className={'absolute left-0 top-0 select-none caret-transparent'}>{children}</div>
+        <div contentEditable={false} className={`flex w-full select-none flex-col`}>
           <div className={'text-md my-2 font-bold'}>{t('document.outlineBlock.placeholder')}</div>
           {root.map(renderHeading)}
         </div>
       </div>
     );
-  }),
+  })
 );
 
 export default Outline;

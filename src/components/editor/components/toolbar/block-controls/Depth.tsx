@@ -60,7 +60,7 @@ function Depth({ node }: { node: OutlineNode }) {
               <IconButton
                 key={depth}
                 className={`${
-                  originalDepth === Number(depth[1]) ? '!text-fill-default' : ''
+                  originalDepth === Number(depth[1]) ? '!text-text-action' : ''
                 } p-1 px-2 text-sm text-text-primary`}
                 onClick={() => {
                   handleDepthChange(Number(depth[1]));

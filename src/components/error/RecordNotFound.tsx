@@ -14,7 +14,7 @@ function RecordNotFound({ noContent, isViewNotFound }: { noContent?: boolean; is
             {`We're sorry for inconvenience\n`}
             Submit an issue on our{' '}
             <a
-              className={'text-fill-default  underline'}
+              className={'text-text-action  underline'}
               href={'https://github.com/AppFlowy-IO/AppFlowy/issues/new?template=bug_report.yaml'}
             >
               Github

@@ -122,7 +122,7 @@ function FileBlockPopoverContent({ blockId, onClose }: { blockId: string; onClos
             placeholder={
               <span>
                 {t('document.plugins.file.fileUploadHint')}
-                <span className={'text-fill-default'}>{t('document.plugins.photoGallery.browserLayout')}</span>
+                <span className={'text-text-action'}>{t('document.plugins.photoGallery.browserLayout')}</span>
               </span>
             }
             onChange={handleChangeUploadFiles}

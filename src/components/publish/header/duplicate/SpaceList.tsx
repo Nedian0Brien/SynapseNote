@@ -76,9 +76,7 @@ function SpaceList({ loading, spaceList, value, onChange, title }: SpaceListProp
                   }}
                 >
                   <div className={'flex-1 overflow-hidden text-left'}>{renderSpace(space)}</div>
-                  <div className={'h-5 w-5'}>
-                    {isSelected && <CheckIcon className={'h-5 w-5 text-content-blue-400'} />}
-                  </div>
+                  <div className={'h-5 w-5'}>{isSelected && <CheckIcon className={'h-5 w-5 text-text-action'} />}</div>
                 </Button>
               </Tooltip>
             );

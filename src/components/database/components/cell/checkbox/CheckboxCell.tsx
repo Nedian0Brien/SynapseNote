@@ -39,7 +39,7 @@ export function CheckboxCell({
   return (
     <div
       style={style}
-      className={cn('relative flex h-full w-full text-lg text-fill-default', readOnly ? '' : 'cursor-pointer')}
+      className={cn('relative flex h-full w-full text-lg text-text-action', readOnly ? '' : 'cursor-pointer')}
     >
       {checkedRef.current ? (
         <CheckboxCheckSvg className={'h-5 w-5'} />

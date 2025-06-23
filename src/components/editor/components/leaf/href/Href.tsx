@@ -63,7 +63,7 @@ export const Href = memo(({ text, children, leaf }: { leaf: Text; children: Reac
         style={{
           backgroundColor: selected ? 'var(--content-blue-100)' : undefined,
         }}
-        className={`cursor-pointer select-auto py-0.5 text-fill-default underline`}
+        className={`cursor-pointer select-auto py-0.5 text-text-action underline`}
       >
         {children}
         {hovered && (

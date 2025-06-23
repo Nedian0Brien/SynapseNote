@@ -35,7 +35,7 @@ function OutlineItem({
               backgroundColor: selected ? 'var(--fill-content-hover)' : undefined,
             }}
             className={
-              'flex w-full items-center gap-1 rounded-[8px] px-1 py-2 text-lg focus:bg-content-blue-50 focus:outline-none'
+              'flex w-full items-center gap-1 rounded-[8px] px-1 py-2 text-lg focus:bg-fill-theme-select focus:outline-none'
             }
           >
             {item.children?.length ? getIcon() : null}

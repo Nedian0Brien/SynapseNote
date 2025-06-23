@@ -7,7 +7,7 @@
   }
 
   .embed-block {
-    @apply z-[1] my-0.5 hover:bg-content-blue-50 flex relative w-full gap-4 overflow-hidden rounded-[8px] border border-border-primary bg-fill-list-active;
+    @apply z-[1] my-0.5 hover:bg-fill-theme-select flex relative w-full gap-4 overflow-hidden rounded-[8px] border border-border-primary bg-fill-list-active;
   }
 
   .math-equation-block, .gallery-block {
@@ -55,25 +55,25 @@
     }
 
     .embed-block {
-      @apply bg-content-blue-50;
+      @apply bg-fill-theme-select;
     }
   }
 
 
   .block-element[data-block-type="table/cell"] {
-    @apply bg-content-blue-50;
+    @apply bg-fill-theme-select;
     border-radius: 0 !important;
   }
 
   &.block-element[data-block-type="grid"], &.block-element[data-block-type="board"], &.block-element[data-block-type="calendar"] {
     .database-tabs, .grid-row-filed-cell, .column {
-      @apply bg-content-blue-50;
+      @apply bg-fill-theme-select;
     }
   }
 
   &.block-element[data-block-type="simple_table"] {
     table {
-      @apply bg-content-blue-50;
+      @apply bg-fill-theme-select;
     }
   }
 

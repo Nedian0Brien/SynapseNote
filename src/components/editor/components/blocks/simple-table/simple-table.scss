@@ -102,7 +102,7 @@
 
   &.selected {
     table {
-      @apply bg-content-blue-50 border border-fill-default;
+      @apply bg-fill-theme-select border border-fill-default;
     }
 
   }

@@ -32,7 +32,7 @@ function ShareTabs({ opened, viewId, onClose }: { opened: boolean; viewId: strin
       {
         value: TabKey.PUBLISH,
         label: t('shareAction.publish'),
-        icon: view?.is_published ? <SuccessIcon className={'mb-0 h-5 w-5 text-fill-default'} /> : undefined,
+        icon: view?.is_published ? <SuccessIcon className={'mb-0 h-5 w-5 text-text-action'} /> : undefined,
         Panel: PublishPanel,
       },
       currentUser?.email?.endsWith('appflowy.io') &&

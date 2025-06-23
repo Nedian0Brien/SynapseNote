@@ -89,7 +89,7 @@ function Comment({ comment }: CommentProps) {
                   }
                 }}
                 className={
-                  'relative flex cursor-pointer items-center justify-center gap-2 bg-transparent text-text-secondary hover:text-content-blue-400'
+                  'relative flex cursor-pointer items-center justify-center gap-2 bg-transparent text-text-secondary hover:text-text-action'
                 }
               >
                 <Divider className={'flex-1'} />

@@ -24,7 +24,7 @@ export interface GalleryPreviewProps {
   previewIndex: number;
 }
 
-const buttonClassName = 'p-1 hover:bg-transparent text-white hover:text-content-blue-400 p-0';
+const buttonClassName = 'p-1 hover:bg-transparent text-white hover:text-text-action p-0';
 
 function GalleryPreview({ images, open, onClose, previewIndex }: GalleryPreviewProps) {
   const { t } = useTranslation();
@@ -171,7 +171,7 @@ function GalleryPreview({ images, open, onClose, previewIndex }: GalleryPreviewP
                   <IconButton
                     size={'small'}
                     onClick={onClose}
-                    className={'rounded-[8px] bg-bg-mask px-3.5 text-white hover:text-content-blue-400'}
+                    className={'rounded-[8px] bg-bg-mask px-3.5 text-white hover:text-text-action'}
                   >
                     <CloseIcon />
                   </IconButton>

@@ -134,7 +134,7 @@ export function Favorite() {
               }}
               ref={moreButtonRef}
               className={
-                'flex w-full cursor-pointer items-center gap-2 rounded-[8px] px-2 py-1.5 text-sm hover:bg-content-blue-50 focus:bg-content-blue-50 focus:outline-none'
+                'flex w-full cursor-pointer items-center gap-2 rounded-[8px] px-2 py-1.5 text-sm hover:bg-fill-theme-select focus:bg-fill-theme-select focus:outline-none'
               }
             >
               <MoreIcon className={'h-5 w-5 text-text-secondary'} />

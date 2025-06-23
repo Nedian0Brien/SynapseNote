@@ -127,9 +127,7 @@ function SelectWorkspace({ loading, value, onChange, workspaceList }: SelectWork
                     color={'inherit'}
                   >
                     <div className={'flex-1 overflow-hidden'}>{renderWorkspace(workspace)}</div>
-                    <div className={'h-6 w-6'}>
-                      {isSelected && <CheckIcon className={'h-6 w-6 text-content-blue-400'} />}
-                    </div>
+                    <div className={'h-6 w-6'}>{isSelected && <CheckIcon className={'h-6 w-6 text-text-action'} />}</div>
                   </Button>
                 </Tooltip>
               );

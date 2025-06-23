@@ -39,7 +39,7 @@ function CheckboxIcon({ block, className }: { block: TodoListNode; className: st
       onMouseDown={(e) => {
         e.preventDefault();
       }}
-      className={`${className} ${readOnly ? '' : 'cursor-pointer hover:text-fill-default'} pr-1 text-xl`}
+      className={`${className} ${readOnly ? '' : 'cursor-pointer hover:text-text-action'} pr-1 text-xl`}
     >
       {checked ? (
         <CheckboxCheckSvg />

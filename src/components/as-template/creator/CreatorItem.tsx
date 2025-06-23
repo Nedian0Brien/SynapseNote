@@ -66,7 +66,7 @@ function CreatorItem({
           </IconButton>
         </Tooltip>
       </div>
-      {selected && !hovered && <CheckIcon className={'h-5 w-5 text-fill-default'} />}
+      {selected && !hovered && <CheckIcon className={'h-5 w-5 text-text-action'} />}
       {editModalOpen && (
         <EditCreator
           creator={creator}

@@ -12,7 +12,7 @@ function MentionDate({ date, reminder }: { date: string; reminder?: { id: string
     <span
       className={'mention-inline items-center gap-0 opacity-70'}
       style={{
-        color: reminder ? 'var(--fill-default)' : 'var(--text-primary)',
+        color: reminder ? 'var(--text-action)' : 'var(--text-primary)',
       }}
     >
       <span className={'mention-content ml-0 px-0'}>

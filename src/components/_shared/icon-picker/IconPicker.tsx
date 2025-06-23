@@ -166,7 +166,7 @@ function IconPicker({
             href={'https://www.streamlinehq.com/'}
             target={'_blank'}
             rel={'noreferrer'}
-            className={'ml-1 text-content-blue-400 underline'}
+            className={'ml-1 text-text-action underline'}
           >
             Streamline
           </a>

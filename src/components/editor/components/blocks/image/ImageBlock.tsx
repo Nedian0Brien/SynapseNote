@@ -1,19 +1,19 @@
+import { YjsEditor } from '@/application/slate-yjs';
+import { CustomEditor } from '@/application/slate-yjs/command';
 import { AlignType, BlockType, ImageBlockData, ImageType } from '@/application/types';
-import { notify } from '@/components/_shared/notify';
+import { ReactComponent as ErrorIcon } from '@/assets/icons/error.svg';
 import { usePopoverContext } from '@/components/editor/components/block-popover/BlockPopoverContext';
 import { EditorElementProps, ImageBlockNode } from '@/components/editor/editor.type';
+import { useEditorContext } from '@/components/editor/EditorContext';
+import { notify } from '@/components/_shared/notify';
+import { FileHandler } from '@/utils/file';
+import { CircularProgress } from '@mui/material';
 import React, { forwardRef, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Element } from 'slate';
 import { ReactEditor, useReadOnly, useSelected, useSlateStatic } from 'slate-react';
 import ImageEmpty from './ImageEmpty';
 import ImageRender from './ImageRender';
-import { useEditorContext } from '@/components/editor/EditorContext';
-import { YjsEditor } from '@/application/slate-yjs';
-import { FileHandler } from '@/utils/file';
-import { CustomEditor } from '@/application/slate-yjs/command';
-import { useTranslation } from 'react-i18next';
-import { ReactComponent as ErrorIcon } from '@/assets/icons/error.svg';
-import { CircularProgress } from '@mui/material';
-import { Element } from 'slate';
 
 export const ImageBlock = memo(
   forwardRef<HTMLDivElement, EditorElementProps<ImageBlockNode>>(({ node, children, ...attributes }, ref) => {
@@ -162,13 +162,13 @@ export const ImageBlock = memo(
             <ImageEmpty node={node} onEscape={onFocusNode} containerRef={containerRef} />
           )}
           {needRetry && (
-            <div className={'absolute right-4 bottom-2 flex items-center gap-2'}>
+            <div className={'absolute bottom-2 right-4 flex items-center gap-2'}>
               <ErrorIcon className={'h-5 w-5 text-function-error'} />
               <div className={'font-normal'}>{t('button.uploadFailed')}</div>
               {loading ? (
                 <CircularProgress size={16} />
               ) : (
-                <button onClick={handleRetry} className={'text-fill-default hover:underline'}>
+                <button onClick={handleRetry} className={'text-text-action hover:underline'}>
                   {t('button.retry')}
                 </button>
               )}

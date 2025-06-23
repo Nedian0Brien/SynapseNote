@@ -141,7 +141,7 @@ function DuplicateModal({ open, onClose }: { open: boolean; onClose: () => void 
                   onClick={() => {
                     window.open(downloadPage, '_blank');
                   }}
-                  className={'cursor-pointer text-fill-default hover:underline'}
+                  className={'cursor-pointer text-text-action hover:underline'}
                 >
                   {t('here')}
                 </span>

@@ -29,11 +29,7 @@ function GalleryToolbar({
       <div className={'flex space-x-1 rounded-[8px] border border-border-primary bg-background-primary p-1 shadow '}>
         {buttons.map(({ label, onClick, Icon }, index) => (
           <Tooltip title={label} key={index}>
-            <IconButton
-              size={'small'}
-              onClick={onClick}
-              className={'p-1 hover:bg-transparent hover:text-content-blue-400'}
-            >
+            <IconButton size={'small'} onClick={onClick} className={'p-1 hover:bg-transparent hover:text-text-action'}>
               <Icon />
             </IconButton>
           </Tooltip>

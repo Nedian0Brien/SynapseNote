@@ -20,7 +20,7 @@ function NoDateRow({ rowId }: { rowId: string }) {
       // onClick={() => {
       //   navigateToRow?.(rowId);
       // }}
-      className={'w-full hover:text-fill-default'}
+      className={'w-full hover:text-text-action'}
     >
       <Cell wrap readOnly cell={cell} rowId={rowId} fieldId={primaryFieldId} />
     </div>

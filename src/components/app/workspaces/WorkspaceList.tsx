@@ -49,7 +49,7 @@ function WorkspaceList({
       const hovered = hoveredWorkspaceId === workspace.id;
 
       if (workspace.id === currentWorkspaceId && !(hovered && showActions))
-        return <SelectedSvg className={'h-5 w-5 text-fill-default'} />;
+        return <SelectedSvg className={'h-5 w-5 text-text-action'} />;
 
       if (showActions) {
         return (

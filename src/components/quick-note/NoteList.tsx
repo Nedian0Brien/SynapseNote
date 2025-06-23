@@ -51,7 +51,7 @@ function NoteList({
                     onMouseEnter={() => setHoverId(note.id)}
                     onMouseLeave={() => setHoverId(null)}
                     key={note.id}
-                    className={`relative cursor-pointer overflow-hidden px-5 text-sm hover:bg-content-blue-50`}
+                    className={`relative cursor-pointer overflow-hidden px-5 text-sm hover:bg-fill-theme-select`}
                   >
                     <div
                       className={`w-full 

@@ -165,7 +165,7 @@ function Color() {
                     <div
                       className={`absolute left-0 top-0 h-full w-full cursor-pointer rounded-[6px] border-2 opacity-50 hover:opacity-100`}
                       style={{
-                        borderColor: activeFontColor === color.color ? 'var(--fill-default)' : undefined,
+                        borderColor: activeFontColor === color.color ? 'var(--text-action)' : undefined,
                         color: renderColor(color.color) || 'var(--text-primary)',
                         opacity: color.color ? undefined : 1,
                       }}
@@ -193,7 +193,7 @@ function Color() {
                     <div
                       className={`absolute left-0 top-0 h-full w-full rounded-[6px] border-2`}
                       style={{
-                        borderColor: activeBgColor === color.color ? 'var(--fill-default)' : undefined,
+                        borderColor: activeBgColor === color.color ? 'var(--text-action)' : undefined,
                       }}
                     />
                     <div
