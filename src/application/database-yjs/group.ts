@@ -62,6 +62,19 @@ export function groupByCheckbox(
   const fieldId = field.get(YjsDatabaseKey.id);
   const result = new Map<string, Row[]>();
 
+  ['Yes', 'No'].forEach((groupName) => {
+    if (filter) {
+      const condition = Number(filter?.get(YjsDatabaseKey.condition)) as CheckboxFilterCondition;
+
+      if (!checkboxFilterCheck(groupName, condition)) {
+        result.delete(groupName);
+        return;
+      }
+    }
+
+    result.set(groupName, []);
+  });
+
   rows.forEach((row) => {
     // Skip if the row is not in the database
     if (!rowMetas[row.id]) {
@@ -73,14 +86,8 @@ export function groupByCheckbox(
     const checked = getChecked(cellData as string);
     const groupName = checked ? 'Yes' : 'No';
 
-    if (filter) {
-      if (filter) {
-        const condition = Number(filter?.get(YjsDatabaseKey.condition)) as CheckboxFilterCondition;
-
-        if (!checkboxFilterCheck(groupName, condition)) {
-          return;
-        }
-      }
+    if (!result.has(groupName)) {
+      return;
     }
 
     const group = result.get(groupName) ?? [];
@@ -106,6 +113,22 @@ export function groupBySelectOption(
     return result;
   }
 
+  typeOption.options.forEach((option) => {
+    const groupName = option.id;
+
+    if (filter) {
+      const condition = Number(filter?.get(YjsDatabaseKey.condition)) as SelectOptionFilterCondition;
+      const content = filter?.get(YjsDatabaseKey.content);
+
+      if (!selectOptionFilterCheck(groupName, content, condition)) {
+        result.delete(groupName);
+        return;
+      }
+    }
+
+    result.set(groupName, []);
+  });
+
   rows.forEach((row) => {
     // Skip if the row is not in the database
     if (!rowMetas[row.id]) {
@@ -120,16 +143,11 @@ export function groupBySelectOption(
       return;
     }
 
-    if (filter) {
-      const condition = Number(filter?.get(YjsDatabaseKey.condition)) as SelectOptionFilterCondition;
-      const content = filter?.get(YjsDatabaseKey.content);
-
-      if (!selectOptionFilterCheck(cellData, content, condition)) {
+    if (selectedIds.length === 0) {
+      if (!result.has(fieldId)) {
         return;
       }
-    }
 
-    if (selectedIds.length === 0) {
       const group = result.get(fieldId) ?? [];
 
       group.push(row);
@@ -140,6 +158,11 @@ export function groupBySelectOption(
     selectedIds.forEach((id) => {
       const option = typeOption.options.find((option) => option.id === id);
       const groupName = option?.id ?? fieldId;
+
+      if (!result.has(groupName)) {
+        return;
+      }
+
       const group = result.get(groupName) ?? [];
 
       group.push(row);
