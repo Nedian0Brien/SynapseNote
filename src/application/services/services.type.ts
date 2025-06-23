@@ -29,6 +29,8 @@ import {
   CreateFolderViewPayload,
   GenerateAISummaryRowPayload,
   GenerateAITranslateRowPayload,
+  GuestInvitation,
+  GuestConversionCodeInfo,
 } from '@/application/types';
 import { GlobalComment, Reaction } from '@/application/comment.type';
 import { ViewMeta } from '@/application/db/tables/view_metas';
@@ -73,6 +75,10 @@ export interface WorkspaceService {
   getWorkspaceMembers: (workspaceId: string) => Promise<WorkspaceMember[]>;
   inviteMembers: (workspaceId: string, emails: string[]) => Promise<void>;
   searchWorkspace: (workspaceId: string, searchTerm: string) => Promise<string[]>;
+  getGuestInvitation: (workspaceId: string, code: string) => Promise<GuestInvitation>;
+  acceptGuestInvitation: (workspaceId: string) => Promise<void>;
+  getGuestToMemberConversionInfo: (workspaceId: string, code: string) => Promise<GuestConversionCodeInfo>;
+  approveTurnGuestToMember: (workspaceId: string, code: string) => Promise<void>;
 }
 
 export interface AppService {

@@ -1,18 +1,18 @@
-import { YjsEditor } from '@/application/slate-yjs';
-import { CustomEditor } from '@/application/slate-yjs/command';
-import { traverseBlock } from '@/application/slate-yjs/utils/convert';
-import { MentionType, UIVariant, View, ViewLayout, YjsEditorKey, YSharedRoot } from '@/application/types';
-import { ReactComponent as LinkArrowOverlay } from '@/assets/icons/link_arrow.svg';
-import { ReactComponent as ParagraphIcon } from '@/assets/icons/paragraph.svg';
-
-import { findSlateEntryByBlockId } from '@/application/slate-yjs/utils/editor';
-import { useEditorContext } from '@/components/editor/EditorContext';
-import PageIcon from '@/components/_shared/view-icon/PageIcon';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Element, Text } from 'slate';
 import { ReactEditor, useReadOnly, useSlate } from 'slate-react';
 import smoothScrollIntoViewIfNeeded from 'smooth-scroll-into-view-if-needed';
+
+import { YjsEditor } from '@/application/slate-yjs';
+import { CustomEditor } from '@/application/slate-yjs/command';
+import { traverseBlock } from '@/application/slate-yjs/utils/convert';
+import { findSlateEntryByBlockId } from '@/application/slate-yjs/utils/editor';
+import { MentionType, UIVariant, View, ViewLayout, YjsEditorKey, YSharedRoot } from '@/application/types';
+import { ReactComponent as LinkArrowOverlay } from '@/assets/icons/link_arrow.svg';
+import { ReactComponent as ParagraphIcon } from '@/assets/icons/paragraph.svg';
+import { useEditorContext } from '@/components/editor/EditorContext';
+import PageIcon from '@/components/_shared/view-icon/PageIcon';
 
 import './style.css';
 
@@ -123,7 +123,7 @@ function MentionPage({
             icon: icon,
             layout: meta?.layout || ViewLayout.Document,
           }}
-          className={'ml-0.5 flex h-[1em] w-[1em] items-center text-text-primary'}
+          className={'ml-0.5 flex h-[1.25em] w-[1.25em] items-center text-text-primary'}
         />
 
         {type === MentionType.PageRef && (

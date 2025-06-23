@@ -1,49 +1,42 @@
+import { HTMLAttributes, useCallback, useEffect, useMemo, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
+import { toast } from 'sonner';
+
+import { ERROR_CODE } from '@/application/constants';
 import {
   GetRequestAccessInfoResponse,
   RequestAccessInfoStatus,
   SubscriptionInterval,
   SubscriptionPlan,
 } from '@/application/types';
-import { ReactComponent as AppflowyLogo } from '@/assets/icons/appflowy.svg';
+import { ReactComponent as SuccessLogo } from '@/assets/icons/success_logo.svg';
 import { ReactComponent as WarningIcon } from '@/assets/icons/warning.svg';
-import { AFConfigContext, useService } from '@/components/main/app.hooks';
+import { useService } from '@/components/main/app.hooks';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ErrorPage } from '@/components/_shared/landing-page/ErrorPage';
+import LandingPage from '@/components/_shared/landing-page/LandingPage';
+import { NotInvitationAccount } from '@/components/_shared/landing-page/NotInvitationAccount';
 import { NormalModal } from '@/components/_shared/modal';
-import ChangeAccount from '@/components/_shared/modal/ChangeAccount';
-import { notify } from '@/components/_shared/notify';
-import { getAvatar } from '@/components/_shared/view-icon/utils';
-
-import { Avatar, Button } from '@mui/material';
-import React, { useCallback, useContext, useEffect, useMemo } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 
 const WorkspaceMemberLimitExceededCode = 1027;
 const REPEAT_REQUEST_CODE = 1043;
 
 function ApproveRequestPage() {
   const [searchParams] = useSearchParams();
-  const isAuthenticated = useContext(AFConfigContext)?.isAuthenticated;
 
-  const [requestInfo, setRequestInfo] = React.useState<GetRequestAccessInfoResponse | null>(null);
-  const [currentPlans, setCurrentPlans] = React.useState<SubscriptionPlan[]>([]);
+  const [requestInfo, setRequestInfo] = useState<GetRequestAccessInfoResponse | null>(null);
+  const [currentPlans, setCurrentPlans] = useState<SubscriptionPlan[]>([]);
   const isPro = useMemo(() => currentPlans.includes(SubscriptionPlan.Pro), [currentPlans]);
   const requestId = searchParams.get('request_id');
   const service = useService();
-  const navigate = useNavigate();
   const { t } = useTranslation();
-  const [upgradeModalOpen, setUpgradeModalOpen] = React.useState(true);
-  const [errorModalOpen, setErrorModalOpen] = React.useState(false);
-  const [alreadyProModalOpen, setAlreadyProModalOpen] = React.useState(false);
-  const [clicked, setClicked] = React.useState(false);
-  const url = useMemo(() => {
-    return window.location.href;
-  }, []);
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login?redirectTo=' + encodeURIComponent(window.location.href));
-    }
-  }, [isAuthenticated, navigate]);
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+  const [alreadyProModalOpen, setAlreadyProModalOpen] = useState(false);
+  const [hasSend, setHasSend] = useState(false);
+  const [isError, setIsError] = useState(false);
+  const [notInvitee, setNotInvitee] = useState(false);
 
   const loadRequestInfo = useCallback(async () => {
     if (!service || !requestId) return;
@@ -53,24 +46,40 @@ function ApproveRequestPage() {
       setRequestInfo(requestInfo);
 
       if (requestInfo.status === RequestAccessInfoStatus.Accepted) {
-        notify.warning(t('approveAccess.repeatApproveError'));
-        setClicked(true);
+        setHasSend(true);
+        return;
       }
 
       const plans = await service.getActiveSubscription(requestInfo.workspace.id);
 
       setCurrentPlans(plans);
-    } catch (e) {
-      setErrorModalOpen(true);
-      setClicked(true);
+      if (plans.length === 0 && requestInfo.workspace.memberCount > 1) {
+        setUpgradeModalOpen(true);
+      }
+      // eslint-disable-next-line
+    } catch (e: any) {
+      if (e.code === ERROR_CODE.NOT_INVITEE_OF_INVITATION || e.code === ERROR_CODE.NOT_HAS_PERMISSION) {
+        setNotInvitee(true);
+        return;
+      }
+
+      if (e.code === ERROR_CODE.INVALID_LINK) {
+        setIsError(true);
+        return;
+      }
+
+      setIsError(true);
     }
-  }, [t, requestId, service]);
+  }, [requestId, service]);
 
   const handleApprove = useCallback(async () => {
     if (!service || !requestId) return;
     try {
       await service.approveRequestAccess(requestId);
-      notify.success(t('approveAccess.approveSuccess'));
+      toast.success(t('approveAccess.approveSuccess'));
+
+      void loadRequestInfo();
+      setHasSend(true);
       // eslint-disable-next-line
     } catch (e: any) {
       if (e.code === WorkspaceMemberLimitExceededCode) {
@@ -78,13 +87,13 @@ function ApproveRequestPage() {
       }
 
       if (e.code === REPEAT_REQUEST_CODE) {
-        notify.error(t('approveAccess.repeatApproveError'));
+        toast.error(t('approveAccess.repeatApproveError'));
         return;
       }
 
-      notify.error(t('approveAccess.approveError'));
+      setIsError(true);
     }
-  }, [requestId, service, t]);
+  }, [requestId, service, t, loadRequestInfo]);
 
   const handleUpgrade = useCallback(async () => {
     if (!service || !requestInfo) return;
@@ -103,82 +112,94 @@ function ApproveRequestPage() {
       const link = await service.getSubscriptionLink(workspaceId, plan, SubscriptionInterval.Month);
 
       window.open(link, '_blank');
-    } catch (e) {
-      notify.error('Failed to get subscription link');
+      // eslint-disable-next-line
+    } catch (e: any) {
+      toast.error(e.message);
     }
   }, [requestInfo, service, isPro]);
-
-  const requesterAvatar = useMemo(() => {
-    if (!requestInfo) return null;
-    return getAvatar({
-      name: requestInfo.requester.name,
-      icon: requestInfo.requester.avatarUrl || undefined,
-    });
-  }, [requestInfo]);
 
   useEffect(() => {
     void loadRequestInfo();
   }, [loadRequestInfo]);
 
-  return (
-    <div
-      className={
-        'appflowy-scroller flex h-screen w-screen flex-col items-center gap-12 overflow-y-auto overflow-x-hidden bg-background-primary px-6 text-text-primary max-md:gap-4'
-      }
-    >
-      <div
-        onClick={() => {
-          navigate('/app');
-        }}
-        className={
-          'sticky flex h-20 w-full cursor-pointer items-center justify-between max-md:h-32 max-md:justify-center'
-        }
-      >
-        <AppflowyLogo className={'h-12 w-32 max-md:w-52'} />
-      </div>
-      <div className={'flex w-full max-w-[560px] flex-1 flex-col items-center justify-center gap-6 text-center'}>
-        <Avatar
-          className={'h-20 w-20 rounded-[16px] border border-text-primary text-[40px]'}
-          {...requesterAvatar}
-          variant='rounded'
-        />
-        <div
-          className={'whitespace-pre-wrap break-words px-4 text-center text-[40px] leading-[127%] max-sm:text-[24px]'}
-        >
-          <span className={'font-semibold'}>{requestInfo?.requester?.email}</span> {t('approveAccess.requestToJoin')}{' '}
-          <span className={'whitespace-nowrap font-semibold'}>{requestInfo?.workspace?.name}</span>{' '}
-          {t('approveAccess.asMember')}
-        </div>
+  const AvatarLogo = useCallback(
+    (props: HTMLAttributes<HTMLDivElement>) => {
+      return (
+        <Avatar className={cn(props.className)} variant='default' shape={'circle'}>
+          <AvatarImage src={requestInfo?.requester?.avatarUrl || ''} alt={''} />
+          <AvatarFallback className='text-2xl'>{requestInfo?.requester?.name}</AvatarFallback>
+        </Avatar>
+      );
+    },
+    [requestInfo]
+  );
 
-        <div className={'mb-52 mt-4 flex w-full items-center justify-between gap-4'}>
-          <Button
-            onClick={() => {
-              void handleApprove();
-              setClicked(true);
-            }}
-            disabled={clicked || !requestInfo}
-            className={
-              'flex-1 rounded-[8px] px-4 py-2 text-[20px] font-medium max-md:py-2 max-md:text-base max-sm:text-[14px]'
-            }
-            variant={'contained'}
-            color={'primary'}
-          >
-            {t('approveAccess.approveButton')}
-          </Button>
-          <Button
-            onClick={() => {
-              navigate('/');
-            }}
-            className={
-              'flex-1 rounded-[8px] px-4 py-2 text-[20px] font-medium max-md:py-2 max-md:text-base max-sm:text-[14px]'
-            }
-            variant={'outlined'}
-            color={'inherit'}
-          >
-            {t('requestAccess.backToHome')}
-          </Button>
-        </div>
-      </div>
+  if (isError) {
+    return <ErrorPage onRetry={loadRequestInfo} />;
+  }
+
+  if (notInvitee) {
+    return <NotInvitationAccount />;
+  }
+
+  if (hasSend) {
+    return (
+      <LandingPage
+        Logo={SuccessLogo}
+        workspace={requestInfo?.workspace}
+        title={
+          <div className='font-normal'>
+            <Trans
+              i18nKey={'landingPage.approve.alreadyApproved'}
+              components={{
+                user: (
+                  <span className='font-bold text-text-primary'>
+                    {requestInfo?.requester?.name || requestInfo?.requester?.email}
+                  </span>
+                ),
+                workspace: <span className='font-bold text-text-primary'>{requestInfo?.workspace.name}</span>,
+              }}
+            />
+          </div>
+        }
+        secondaryAction={{
+          onClick: () => window.open('/app', '_self'),
+          label: t('landingPage.backToHome'),
+        }}
+      />
+    );
+  }
+
+  return (
+    <>
+      <LandingPage
+        Logo={AvatarLogo}
+        workspace={requestInfo?.workspace}
+        title={
+          <div className='font-normal'>
+            <Trans
+              i18nKey={'landingPage.approve.requestedAsMember'}
+              components={{
+                user: (
+                  <span className='font-bold text-text-primary'>
+                    {requestInfo?.requester?.name || requestInfo?.requester?.email}
+                  </span>
+                ),
+                workspace: <span className='font-bold text-text-primary'>{`\n${requestInfo?.workspace.name}`}</span>,
+              }}
+            />
+          </div>
+        }
+        primaryAction={{
+          onClick: handleApprove,
+          label: t('landingPage.approve.requestApprove'),
+        }}
+        secondaryAction={{
+          onClick: () => window.open('/app', '_self'),
+          label: t('landingPage.backToHome'),
+        }}
+      />
+
       <NormalModal
         keepMounted={false}
         title={<div className={'text-left font-semibold'}>{t('upgradePlanModal.title')}</div>}
@@ -196,9 +217,6 @@ function ApproveRequestPage() {
           </p>
         </div>
       </NormalModal>
-      {isAuthenticated && (
-        <ChangeAccount redirectTo={url} setModalOpened={setErrorModalOpen} modalOpened={errorModalOpen} />
-      )}
 
       <NormalModal
         onOk={() => setAlreadyProModalOpen(false)}
@@ -230,7 +248,7 @@ function ApproveRequestPage() {
           </span>
         </div>
       </NormalModal>
-    </div>
+    </>
   );
 }
 

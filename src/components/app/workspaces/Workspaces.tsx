@@ -1,3 +1,8 @@
+import { Button, Divider, IconButton, Tooltip } from '@mui/material';
+import React, { useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+
 import { invalidToken } from '@/application/session/token';
 import { Workspace } from '@/application/types';
 import { ReactComponent as UpgradeAIMaxIcon } from '@/assets/icons/ai.svg';
@@ -14,14 +19,11 @@ import WorkspaceList from '@/components/app/workspaces/WorkspaceList';
 import UpgradeAIMax from '@/components/billing/UpgradeAIMax';
 import UpgradePlan from '@/components/billing/UpgradePlan';
 import { useCurrentUser } from '@/components/main/app.hooks';
+import { dropdownMenuItemVariants } from '@/components/ui/dropdown-menu';
 import Import from '@/components/_shared/more-actions/importer/Import';
 import { notify } from '@/components/_shared/notify';
 import { Popover } from '@/components/_shared/popover';
 import { openUrl } from '@/utils/url';
-import { Button, Divider, IconButton, Tooltip } from '@mui/material';
-import React, { useCallback, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useNavigate, useSearchParams } from 'react-router-dom';
 
 export function Workspaces() {
   const { t } = useTranslation();
@@ -127,14 +129,8 @@ export function Workspaces() {
               workspace={currentWorkspace}
             />
           )}
-          <Button
-            size={'small'}
-            component={'div'}
-            startIcon={<ImportIcon />}
-            color={'inherit'}
-            className={'justify-start px-2'}
-            onClick={handleOpenImport}
-          >
+          <div className={dropdownMenuItemVariants({ variant: 'default' })} onClick={handleOpenImport}>
+            <ImportIcon />
             <div className={'flex-1 text-left'}>{t('web.importNotion')}</div>
             <Tooltip title={t('workspace.learnMore')} enterDelay={1000} enterNextDelay={1000}>
               <IconButton
@@ -148,45 +144,36 @@ export function Workspaces() {
                 <TipIcon />
               </IconButton>
             </Tooltip>
-          </Button>
+          </div>
           <Divider className={'w-full'} />
-          <Button
-            size={'small'}
-            className={'justify-start px-2'}
-            color={'inherit'}
-            onClick={handleSignOut}
-            startIcon={<LogoutIcon />}
-          >
+          <div className={dropdownMenuItemVariants({ variant: 'default' })} onClick={handleSignOut}>
+            <LogoutIcon />
             {t('button.logout')}
-          </Button>
+          </div>
 
           {isOwner && (
             <>
               <Divider className={'w-full'} />
-              <Button
-                size={'small'}
-                startIcon={<UpgradeIcon />}
-                color={'inherit'}
+              <div
                 onClick={() => {
                   setOpenUpgradePlan(true);
                   setOpen(false);
                 }}
-                className={'justify-start px-2'}
+                className={dropdownMenuItemVariants({ variant: 'default' })}
               >
+                <UpgradeIcon />
                 {t('subscribe.changePlan')}
-              </Button>
-              <Button
-                size={'small'}
-                startIcon={<UpgradeAIMaxIcon />}
-                color={'inherit'}
+              </div>
+              <div
                 onClick={() => {
                   setOpenUpgradeAIMax(true);
                   setOpen(false);
                 }}
-                className={'justify-start px-2'}
+                className={dropdownMenuItemVariants({ variant: 'default' })}
               >
+                <UpgradeAIMaxIcon />
                 {t('subscribe.getAIMax')}
-              </Button>
+              </div>
             </>
           )}
         </div>

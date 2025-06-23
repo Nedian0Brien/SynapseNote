@@ -50,6 +50,8 @@ import {
   CreateFolderViewPayload,
   GenerateAITranslateRowPayload,
   GenerateAISummaryRowPayload,
+  GuestInvitation,
+  GuestConversionCodeInfo,
 } from '@/application/types';
 import { notify } from '@/components/_shared/notify';
 
@@ -2018,6 +2020,75 @@ export async function createOrphanedView (workspaceId: string, payload: { docume
 
   if (response?.data.code === 0) {
     return;
+  }
+
+  return Promise.reject(response?.data);
+}
+
+export async function getGuestInvitation (workspaceId: string, code: string) {
+  const url = `/api/sharing/workspace/${workspaceId}/guest-invite-code-info`;
+  const response = await axiosInstance?.get<{
+    code: number;
+    message: string;
+    data: GuestInvitation;
+  }>(url, {
+    params: {
+      code,
+    },
+  });
+
+  if (response?.data.code === 0) {
+    return response?.data.data;
+
+  }
+
+  return Promise.reject(response?.data);
+}
+
+export async function acceptGuestInvitation (workspaceId: string) {
+  const url = `/api/sharing/workspace/${workspaceId}/join-by-guest-invite-code`;
+  const response = await axiosInstance?.post<{
+    code: number;
+    message: string;
+  }>(url);
+
+  if (response?.data.code === 0) {
+    return;
+  }
+
+  return Promise.reject(response?.data);
+}
+
+export async function approveTurnGuestToMember (workspaceId: string, code: string) {
+  const url = `/api/sharing/workspace/${workspaceId}/approve-guest-conversion`;
+  const response = await axiosInstance?.post<{
+    code: number;
+    message: string;
+  }>(url, {
+    code
+  });
+
+  if (response?.data.code === 0) {
+    return;
+  }
+
+  return Promise.reject(response?.data);
+}
+
+export async function getGuestToMemberConversionInfo (workspaceId: string, code: string) {
+  const url = `/api/sharing/workspace/${workspaceId}/guest-conversion-code-info`;
+  const response = await axiosInstance?.get<{
+    code: number;
+    message: string;
+    data: GuestConversionCodeInfo;
+  }>(url, {
+    params: {
+      code,
+    },
+  });
+
+  if (response?.data.code === 0) {
+    return response?.data.data;
   }
 
   return Promise.reject(response?.data);

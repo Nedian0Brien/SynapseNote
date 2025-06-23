@@ -910,6 +910,25 @@ export interface Invitation {
   status: 'Accepted' | 'Pending';
 }
 
+export interface GuestInvitation {
+  workspace_id: string;
+  workspace_name: string;
+  workspace_icon_url: string;
+  view_id: string;
+  page_name: string;
+  is_existing_member: boolean;
+}
+
+export interface GuestConversionCodeInfo  {
+  workspace_name: string;
+  requester_avatar?: string;
+  requester_name: string;
+  workspace_icon_url?: string;
+  member_count: number;
+  guest_name: string;
+  guest_is_already_a_member: boolean;
+}
+
 export enum CoverType {
   NormalColor = 'color',
   GradientColor = 'gradient',

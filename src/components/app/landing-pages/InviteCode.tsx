@@ -1,147 +1,154 @@
-import LandingFooter from '@/components/app/landing-pages/LandingFooter';
-import { AFConfigContext, useCurrentUser, useService } from '@/components/main/app.hooks';
-import { Button } from '@/components/ui/button';
-import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useNavigate, useParams } from 'react-router-dom';
-import { toast } from 'sonner';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@/components/ui/avatar';
+import { HTMLAttributes, useCallback, useEffect, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
+import { useParams } from 'react-router-dom';
 
-const InvalidInviteCode = 1068;
+import { ERROR_CODE } from '@/application/constants';
+import { Workspace } from '@/application/types';
+import { ReactComponent as SuccessLogo } from '@/assets/icons/success_logo.svg';
+import { useService } from '@/components/main/app.hooks';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Progress } from '@/components/ui/progress';
+import { ErrorPage } from '@/components/_shared/landing-page/ErrorPage';
+import { InvalidLink } from '@/components/_shared/landing-page/InvalidLink';
+import LandingPage from '@/components/_shared/landing-page/LandingPage';
+import { cn } from '@/lib/utils';
 
-function InviteCode () {
+function InviteCode() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const isAuthenticated = useContext(AFConfigContext)?.isAuthenticated;
-  const url = useMemo(() => {
-    return window.location.href;
-  }, []);
   const service = useService();
   const params = useParams();
   const [loading, setLoading] = useState(false);
-  const currentUser = useCurrentUser();
   const [hasJoined, setHasJoined] = useState(false);
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login?redirectTo=' + encodeURIComponent(url));
+  const [isInValid, setIsInValid] = useState(false);
+  const [workspace, setWorkspace] = useState<Workspace>();
+  const [isError, setIsError] = useState(false);
+
+  const loadWorkspaceInfo = useCallback(async () => {
+    if (!service) return;
+    if (!params.code) {
+      setIsError(true);
+      return;
     }
-  }, [isAuthenticated, navigate, url]);
 
-  const [isValid, setIsValid] = useState(false);
-  const [workspace, setWorkspace] = useState<{
-    name: string;
-    avatar: string;
-    id: string
-  } | null>(null);
-
-  const openWorkspace = useCallback((workspaceId: string) => {
-    window.open(`appflowy-flutter://invitation-callback?workspace_id=${workspaceId}&email=${currentUser?.email}`, '_blank');
-  }, [currentUser?.email]);
-
-  useEffect(() => {
-    void (async () => {
-      if (!service || !params.code) return;
-      try {
-        const info = await service.getWorkspaceInfoByInvitationCode(params.code);
-
-        setWorkspace({
-          name: info.workspace_name,
-          avatar: info.workspace_icon_url,
-          id: info.workspace_id,
-        });
-
-        if (info.is_member) {
-          window.location.href = `/app/${info.workspace_id}`;
-          return;
-        }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } catch (e: any) {
-        if (e.code === InvalidInviteCode) {
-          setIsValid(true);
-        } else {
-          toast.error(e.message);
-        }
-      }
-    })();
-  }, [params.code, service]);
-
-  const handleJoin = async () => {
-    if (!service || !params.code) return;
-    setLoading(true);
     try {
-      const workspaceId = await service.joinWorkspaceByInvitationCode(params.code);
+      const info = await service.getWorkspaceInfoByInvitationCode(params.code);
 
-      setHasJoined(true);
-      openWorkspace(workspaceId);
+      setWorkspace({
+        name: info.workspace_name,
+        icon: info.workspace_icon_url,
+        id: info.workspace_id,
+        memberCount: info.member_count,
+        databaseStorageId: '',
+        createdAt: '',
+      });
+
+      if (info.is_member) {
+        setHasJoined(true);
+        return;
+      }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
-      if (e.code === InvalidInviteCode) {
-        setIsValid(true);
+      if (e.code === ERROR_CODE.INVALID_LINK) {
+        setIsInValid(true);
       } else {
-        toast.error(e.message);
+        setIsError(true);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [params.code, service]);
+
+  useEffect(() => {
+    void loadWorkspaceInfo();
+  }, [loadWorkspaceInfo]);
+
+  const handleJoin = async () => {
+    if (!service) return;
+    if (!params.code) {
+      setIsError(true);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await service.joinWorkspaceByInvitationCode(params.code);
+
+      window.open(`/app/${workspace?.id}`, '_self');
+      setHasJoined(true);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (e: any) {
+      if (e.code === ERROR_CODE.INVALID_LINK) {
+        setIsInValid(true);
+      } else {
+        setIsError(true);
       }
     } finally {
       setLoading(false);
     }
   };
 
+  const AvatarLogo = useCallback(
+    (props: HTMLAttributes<HTMLDivElement>) => {
+      return (
+        <Avatar className={cn(props.className)} variant='default' shape={'square'}>
+          <AvatarImage src={workspace?.icon || ''} alt={''} />
+          <AvatarFallback className='text-2xl'>{workspace?.name}</AvatarFallback>
+        </Avatar>
+      );
+    },
+    [workspace]
+  );
+
+  if (isInValid) {
+    return <InvalidLink />;
+  }
+
+  if (isError) {
+    return <ErrorPage onRetry={loadWorkspaceInfo} />;
+  }
+
+  if (hasJoined) {
+    return (
+      <LandingPage
+        Logo={SuccessLogo}
+        workspace={workspace}
+        title={
+          <Trans
+            i18nKey='landingPage.inviteCode.hasJoined'
+            components={{ workspace: <span className='font-bold'>{workspace?.name}</span> }}
+          />
+        }
+        secondaryAction={{
+          onClick: () => window.open('/app', '_self'),
+          label: t('landingPage.backToHome'),
+        }}
+      />
+    );
+  }
+
   return (
-    <div className={'bg-background-primary flex h-screen w-screen items-center justify-center'}>
-      <div className={'flex w-[352px] text-text-primary flex-col gap-5 items-center justify-center px-4'}>
-        <div
-          onClick={() => {
-            window.location.href = '/';
-          }}
-          className={'flex cursor-pointer'}
-        >
-          <Avatar
-            shape={'square'}
-          >
-            <AvatarImage
-              src={workspace?.avatar}
-              alt={''}
-            />
-            <AvatarFallback>{workspace?.name?.slice(0, 1)}</AvatarFallback>
-          </Avatar>
-        </div>
-        <div className={'text-xl text-center whitespace-pre-wrap break-words text-text-primary font-semibold'}>
-          {isValid ? t('inviteCode.invalid') : hasJoined ? t('inviteCode.hasJoined', {
-            workspaceName: workspace?.name,
-          }) : t('inviteCode.title', {
-            workspaceName: workspace?.name,
-          })}
-        </div>
-        {isValid || hasJoined ? (
-          <Button
-            variant={'outline'}
-            size={'lg'}
-            className={'w-full'}
-            onClick={() => {
-              if (hasJoined) {
-                window.location.href = `/app/${workspace?.id}`;
-              } else {
-                window.location.href = '/app';
-              }
-            }}
-          >
-            {t('inviteCode.backToMyContent')}
-          </Button>
-        ) : <Button
-          size={'lg'}
-          className={'w-full'}
-          onClick={handleJoin}
-          loading={loading}
-        >
-          {loading ? t('inviteCode.joining') : t('inviteCode.joinWorkspace')}
-        </Button>}
-        <LandingFooter />
-      </div>
-    </div>
+    <LandingPage
+      Logo={AvatarLogo}
+      title={
+        <Trans
+          i18nKey='landingPage.inviteCode.title'
+          components={{ workspace: <span className='font-bold'>{workspace?.name}</span> }}
+        />
+      }
+      primaryAction={{
+        onClick: handleJoin,
+        loading,
+        label: loading ? (
+          <span className='flex items-center gap-2'>
+            <Progress />
+            {t('landingPage.inviteCode.joinWorkspace')}
+          </span>
+        ) : (
+          t('landingPage.inviteCode.joinWorkspace')
+        ),
+      }}
+    />
   );
 }
 

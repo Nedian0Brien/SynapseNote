@@ -691,4 +691,20 @@ export class AFClientService implements AFService {
   async generateAITranslateForRow (workspaceId: string, payload: GenerateAITranslateRowPayload) {
     return APIService.generateAITranslateForRow(workspaceId, payload);
   }
+
+  async getGuestInvitation (workspaceId: string, code: string) {
+    return APIService.getGuestInvitation(workspaceId, code);
+  }
+
+  async acceptGuestInvitation (workspaceId: string) {
+    return APIService.acceptGuestInvitation(workspaceId);
+  }
+
+  async getGuestToMemberConversionInfo (workspaceId: string, code: string) {
+    return APIService.getGuestToMemberConversionInfo(workspaceId, code);
+  }
+
+  async approveTurnGuestToMember (workspaceId: string, code: string) {
+    return APIService.approveTurnGuestToMember(workspaceId, code);
+  }
 }

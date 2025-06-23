@@ -65,7 +65,6 @@ function NewCard({
         [fieldId]: columnId,
       };
 
-
       setValue('');
       void onNewCard({
         cellsData,
@@ -93,7 +92,7 @@ function NewCard({
           {isCreating ? (
             ''
           ) : (
-            <Tooltip disableHoverableContent>
+            <Tooltip>
               <TooltipTrigger asChild>
                 <div className={'flex w-full items-center gap-1.5'}>
                   <PlusIcon className={'h-5 w-5'} />

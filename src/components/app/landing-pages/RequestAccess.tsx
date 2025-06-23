@@ -1,132 +1,91 @@
-import { useAppViewId, useCurrentWorkspaceId } from '@/components/app/app.hooks';
-import { AFConfigContext, useCurrentUser, useService } from '@/components/main/app.hooks';
-import { NormalModal } from '@/components/_shared/modal';
-import { notify } from '@/components/_shared/notify';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 
-import { ReactComponent as AppflowyLogo } from '@/assets/icons/appflowy.svg';
-import TaskAltRounded from '@mui/icons-material/TaskAltRounded';
-import Button from '@mui/material/Button';
-import Divider from '@mui/material/Divider';
-import Typography from '@mui/material/Typography';
-import React, { useContext } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { ReactComponent as NoAccessLogo } from '@/assets/icons/no_access.svg';
+import { ReactComponent as SuccessLogo } from '@/assets/icons/success_logo.svg';
+import { useAppViewId, useCurrentWorkspaceId } from '@/components/app/app.hooks';
+import { useService } from '@/components/main/app.hooks';
+import { Progress } from '@/components/ui/progress';
+import { ErrorPage } from '@/components/_shared/landing-page/ErrorPage';
+import LandingPage from '@/components/_shared/landing-page/LandingPage';
 
 const REPEAT_REQUEST_CODE = 1043;
 
 function RequestAccess() {
   const { t } = useTranslation();
-  const currentUser = useCurrentUser();
-  const email = currentUser?.email || '';
-  const openLoginModal = useContext(AFConfigContext)?.openLoginModal;
-  const [clicked, setClicked] = React.useState(false);
-  const navigate = useNavigate();
-  const [modalOpen, setModalOpen] = React.useState(false);
   const service = useService();
   const currentWorkspaceId = useCurrentWorkspaceId();
   const viewId = useAppViewId();
+  const [hasSend, setHasSend] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [isError, setIsError] = useState(false);
+
   const handleSendRequest = async () => {
-    setModalOpen(false);
     try {
-      if (!service || !currentWorkspaceId || !viewId) return;
+      if (!service) return;
+      if (!currentWorkspaceId || !viewId) {
+        setIsError(true);
+        return;
+      }
+
+      setLoading(true);
       await service.sendRequestAccess(currentWorkspaceId, viewId);
-      setModalOpen(true);
+
+      toast.success(t('landingPage.noAccess.requestAccessSuccess'));
+      setHasSend(true);
       // eslint-disable-next-line
     } catch (e: any) {
       if (e.code === REPEAT_REQUEST_CODE) {
-        notify.error(t('requestAccess.repeatRequestError'));
+        toast.error(t('requestAccess.repeatRequestError'));
       } else {
-        notify.error(t('requestAccess.requestError'));
+        toast.error(t('requestAccess.requestError'));
       }
+    } finally {
+      setLoading(false);
     }
   };
 
+  if (hasSend) {
+    return (
+      <LandingPage
+        Logo={SuccessLogo}
+        title={t('landingPage.noAccess.requestAccessSuccess')}
+        description={t('landingPage.noAccess.requestAccessSuccessMessage')}
+        secondaryAction={{
+          onClick: () => window.open('/app', '_self'),
+          label: t('landingPage.backToHome'),
+        }}
+      />
+    );
+  }
+
+  if (isError) {
+    return <ErrorPage />;
+  }
+
   return (
-    <div className={'m-0 flex h-screen w-screen items-center justify-center bg-background-primary p-0'}>
-      <div className={'mb-10 flex max-w-[660px] flex-col items-center gap-3 px-6 text-center'}>
-        <Typography variant='h3' className={'mb-[27px] flex items-center gap-4 text-text-primary'} gutterBottom>
-          <>
-            <AppflowyLogo className={'w-48'} />
-          </>
-        </Typography>
-        <div className={'mb-[16px] text-[52px]  font-semibold leading-[128%] text-text-primary max-md:text-[24px]'}>
-          {t('requestAccess.title')}
-        </div>
-        <div className={'text-[20px] leading-[152%]  text-text-secondary max-md:text-[16px]'}>
-          <div>{t('requestAccess.subtitle')}</div>
-        </div>
-        <div className={'mt-4 flex w-full items-center justify-between gap-4'}>
-          <Button
-            onClick={() => {
-              setClicked(true);
-              void handleSendRequest();
-            }}
-            disabled={clicked}
-            className={
-              'flex-1 rounded-[8px] px-4 py-2 text-[20px] font-medium max-md:py-2 max-md:text-base max-sm:text-[14px]'
-            }
-            variant={'contained'}
-            color={'primary'}
-          >
-            {t('requestAccess.requestAccess')}
-          </Button>
-          <Button
-            onClick={() => {
-              navigate('/');
-            }}
-            className={
-              'flex-1 rounded-[8px] px-4 py-2 text-[20px] font-medium max-md:py-2 max-md:text-base max-sm:text-[14px]'
-            }
-            variant={'outlined'}
-            color={'inherit'}
-          >
-            {t('requestAccess.backToHome')}
-          </Button>
-        </div>
-        <Divider className={'mb-3 mt-4 w-full'} />
-        <div className={'flex max-w-[400px] flex-col text-text-secondary'}>
-          <span>
-            <Trans
-              i18nKey='requestAccess.tip'
-              components={{ link: <span className={'text-fill-default underline'}>{email}</span> }}
-            />
+    <LandingPage
+      Logo={NoAccessLogo}
+      title={t('landingPage.noAccess.title')}
+      description={t('landingPage.noAccess.description')}
+      primaryAction={{
+        onClick: handleSendRequest,
+        loading,
+        label: loading ? (
+          <span className='flex items-center gap-2'>
+            <Progress />
+            {t('landingPage.noAccess.requestAccess')}
           </span>
-          <span>
-            <Trans
-              i18nKey='requestAccess.mightBe'
-              components={{
-                login: (
-                  <span onClick={() => openLoginModal?.()} className={'cursor-pointer text-fill-default underline'}>
-                    {t('signIn.logIn')}
-                  </span>
-                ),
-              }}
-            />
-          </span>
-        </div>
-      </div>
-      <NormalModal
-        cancelButtonProps={{
-          className: 'hidden',
-        }}
-        onCancel={() => {
-          setModalOpen(false);
-        }}
-        onOk={() => {
-          setModalOpen(false);
-        }}
-        title={
-          <div className={'flex items-center gap-1.5 text-left font-semibold'}>
-            <TaskAltRounded className={'text-function-success'} />
-            {t('requestAccess.successful')}
-          </div>
-        }
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-      >
-        {t('requestAccess.successfulMessage')}
-      </NormalModal>
-    </div>
+        ) : (
+          t('landingPage.noAccess.requestAccess')
+        ),
+      }}
+      secondaryAction={{
+        onClick: () => window.open('/app', '_self'),
+        label: t('landingPage.backToHome'),
+      }}
+    />
   );
 }
 

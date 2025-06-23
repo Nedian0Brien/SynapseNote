@@ -3143,7 +3143,7 @@
   "loading": "Loading...",
   "tooManyRequests": "Too many requests, please try again later.",
   "mightNeedToLogin": "You might need to <login/> with a different account.",
-  "alreadyHaveAccount": "You're currently logged in as {{email}}.",
+  "alreadyHaveAccount": "You're currently logged in as <email/>.",
   "login": "login",
   "inviteCode": {
     "title": "You've been invited to join\n{{workspaceName}}",
@@ -3153,5 +3153,63 @@
     "backToMyContent": "Back to my content",
     "joining": "Joining...",
     "hasJoined": "You’ve joined to\n{{workspaceName}}"
-  }
+  },
+  "landingPage": {
+    "backToHome": "Back to home",
+    "noAccess": {
+      "title": "No access to this page",
+      "description": "You can request access from the owner of this page. Once approved, you can view the page.",
+      "requestAccess": "Request access",
+      "requestAccessSuccess": "Request access successfully",
+      "requestAccessSuccessMessage": "You will be notified once the owner approves your request."
+    },
+    "approve": {
+      "requestedAsMember": "<user /> requested to join <workspace /> as a member",
+      "requestApprove": "Approve",
+      "alreadyApproved": "Success! <user/> has been upgraded to a member of <workspace/>"
+    },
+    "afterPayment": {
+      "title": "Explore features in your new plan",
+      "description": "Congratulations! You just unlocked more workspace members and unlimited AI responses. 🎉"
+    },
+    "inviteMember": {
+      "title": "Join <workspace /> on AppFlowy",
+      "description": "You've been invited by <who />\nto join the workspace using this email:\n<email/>\nIf this isn't correct, please ask your collaborators to resend the invite.",
+      "joinWorkspace": "Join workspace",
+      "invalid": "The invitation link has expired",
+      "invalidMessage": "Please contact the workspace owner to resend the invitation",
+      "hasJoined": "You've joined to\n<workspace />"
+    },
+    "inviteCode": {
+      "title": "You've been invited to join\n<workspace />",
+      "joinWorkspace": "Join workspace",
+      "haveBeenInvited": "You've been invited to Join this workspace with the contact information below.",
+      "invalid": "The invitation code has expired",
+      "invalidMessage": "Please ask your collaborators to resend the invite.",
+      "joining": "Joining...",
+      "hasJoined": "You've joined to\n<workspace />"
+    },
+    "error": {
+      "title": "Something went wrong",
+      "description": "This might be due to a network issue or a temporary server error. Please check your internet connection or try again later.\n\nIf the problem persists, contact <support/>.",
+      "retry": "Retry"
+    },
+    "asGuest": {
+      "title": "You can now collaborate with others on\n<page/>",
+      "viewPage": "View page"
+    },
+    "notInvitationAccount": {
+      "title": "This invitation link isn't for your account",
+      "description": "You're currently logged in as <email/>.\nTry logging in with the email this invitation was sent to.",
+      "loginWithInvitationEmail": "Log in with a different account"
+    },
+    "approveConversion": {
+      "title": "Approve <requester />'s request to turn <guest /> to a member?",
+      "approve": "Approve"
+    }
+  },
+  "membersCount_zero": "{{count}} members",
+  "membersCount_one": "{{count}} member",
+  "membersCount_many": "{{count}} members",
+  "membersCount_other": "{{count}} members"
 }
