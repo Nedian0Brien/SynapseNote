@@ -41,10 +41,6 @@ export function AsGuest() {
     try {
       const info = await service.getGuestInvitation(workspaceId, code);
 
-      if (info.is_existing_member) {
-        return;
-      }
-
       setWorkspace({
         id: info.workspace_id,
         name: info.workspace_name,
@@ -59,7 +55,11 @@ export function AsGuest() {
         name: info.page_name,
       });
 
-      await service.acceptGuestInvitation(workspaceId);
+      if (info.is_existing_member) {
+        return;
+      }
+
+      await service.acceptGuestInvitation(workspaceId, code);
 
       // eslint-disable-next-line
     } catch (e: any) {

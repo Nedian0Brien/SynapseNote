@@ -696,8 +696,8 @@ export class AFClientService implements AFService {
     return APIService.getGuestInvitation(workspaceId, code);
   }
 
-  async acceptGuestInvitation (workspaceId: string) {
-    return APIService.acceptGuestInvitation(workspaceId);
+  async acceptGuestInvitation (workspaceId: string, code: string) {
+    return APIService.acceptGuestInvitation(workspaceId, code);
   }
 
   async getGuestToMemberConversionInfo (workspaceId: string, code: string) {

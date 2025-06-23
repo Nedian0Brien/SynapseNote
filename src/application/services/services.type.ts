@@ -76,7 +76,7 @@ export interface WorkspaceService {
   inviteMembers: (workspaceId: string, emails: string[]) => Promise<void>;
   searchWorkspace: (workspaceId: string, searchTerm: string) => Promise<string[]>;
   getGuestInvitation: (workspaceId: string, code: string) => Promise<GuestInvitation>;
-  acceptGuestInvitation: (workspaceId: string) => Promise<void>;
+  acceptGuestInvitation: (workspaceId: string, code: string) => Promise<void>;
   getGuestToMemberConversionInfo: (workspaceId: string, code: string) => Promise<GuestConversionCodeInfo>;
   approveTurnGuestToMember: (workspaceId: string, code: string) => Promise<void>;
 }

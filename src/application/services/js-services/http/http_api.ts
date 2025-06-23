@@ -2045,12 +2045,14 @@ export async function getGuestInvitation (workspaceId: string, code: string) {
   return Promise.reject(response?.data);
 }
 
-export async function acceptGuestInvitation (workspaceId: string) {
+export async function acceptGuestInvitation (workspaceId: string, code: string) {
   const url = `/api/sharing/workspace/${workspaceId}/join-by-guest-invite-code`;
   const response = await axiosInstance?.post<{
     code: number;
     message: string;
-  }>(url);
+  }>(url, {
+    code,
+  });
 
   if (response?.data.code === 0) {
     return;
