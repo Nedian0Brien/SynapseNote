@@ -127,8 +127,8 @@ function MentionPage({
         />
 
         {type === MentionType.PageRef && (
-          <span className={`absolute left-0 top-0 ml-0.5`}>
-            <LinkArrowOverlay className={'link-arrow-overlay'} />
+          <span className={`absolute left-0 top-0 ml-0.5 `}>
+            <LinkArrowOverlay className={' link-arrow-overlay h-[1.25em] w-[1.25em]'} />
           </span>
         )}
       </>
