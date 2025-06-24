@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Element } from 'slate';
 import { ReactEditor, useReadOnly, useSlateStatic } from 'slate-react';
 
-import { UIVariant, View, YDoc, YjsDatabaseKey, YjsEditorKey } from '@/application/types';
+import { View, YDoc, YjsDatabaseKey, YjsEditorKey } from '@/application/types';
 import { Database } from '@/components/database';
 import { DatabaseNode, EditorElementProps } from '@/components/editor/editor.type';
 import { useEditorContext } from '@/components/editor/EditorContext';
@@ -19,10 +19,8 @@ export const DatabaseBlock = memo(
     const navigateToView = context?.navigateToView;
     const loadView = context?.loadView;
     const createRowDoc = context?.createRowDoc;
-    const variant = context.variant;
 
     const [notFound, setNotFound] = useState(false);
-    const [showActions, setShowActions] = useState(false);
     const [doc, setDoc] = useState<YDoc | null>(null);
 
     useEffect(() => {
@@ -161,12 +159,7 @@ export const DatabaseBlock = memo(
 
     return (
       <>
-        <div
-          {...attributes}
-          contentEditable={readOnly ? false : undefined}
-          className={`relative w-full cursor-pointer`}
-        
-        >
+        <div {...attributes} contentEditable={readOnly ? false : undefined} className={`relative w-full cursor-pointer`}>
           <div ref={ref} className={'absolute left-0 top-0 h-full w-full caret-transparent'}>
             {children}
           </div>
