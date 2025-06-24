@@ -156,7 +156,7 @@ export function Workspaces() {
             <DropdownMenuLabel className='w-full overflow-hidden'>
               <span className='truncate'>{currentUser?.email}</span>
             </DropdownMenuLabel>
-            <DropdownMenuGroup className={'appflowy-scroller max-h-[236px] flex-1 overflow-x-hidden overflow-y-auto'}>
+            <DropdownMenuGroup className={'appflowy-scroller max-h-[200px] flex-1 overflow-y-auto overflow-x-hidden'}>
               <WorkspaceList
                 defaultWorkspaces={userWorkspaceInfo?.workspaces}
                 currentWorkspaceId={currentWorkspaceId}

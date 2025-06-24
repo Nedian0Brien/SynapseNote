@@ -16,7 +16,7 @@ function CurrentWorkspace({
   if (!userWorkspaceInfo || !selectedWorkspace) {
     return (
       <div
-        className={'flex cursor-pointer items-center gap-1 p-2 text-text-primary'}
+        className={'flex  h-[48px] cursor-pointer items-center gap-1 p-1 text-text-primary'}
         onClick={async () => {
           const selectedId = userWorkspaceInfo?.selectedWorkspace?.id || userWorkspaceInfo?.workspaces[0]?.id;
 
@@ -25,7 +25,7 @@ function CurrentWorkspace({
           void onChangeWorkspace(selectedId);
         }}
       >
-        <AppFlowyLogo className={'w-[88px]'} />
+        <AppFlowyLogo className='!h-full !w-[118px]' />
       </div>
     );
   }
