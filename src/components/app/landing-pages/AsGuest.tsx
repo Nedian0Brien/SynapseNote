@@ -96,11 +96,14 @@ export function AsGuest() {
   return (
     <LandingPage
       Logo={SuccessLogo}
+      workspace={workspace}
       title={
-        <Trans
-          i18nKey='landingPage.asGuest.title'
-          components={{ page: <span className='font-bold'>{page?.name}</span> }}
-        />
+        <div className='font-normal'>
+          <Trans
+            i18nKey='landingPage.asGuest.title'
+            components={{ page: <span className='font-bold'>{page?.name}</span> }}
+          />
+        </div>
       }
       primaryAction={{
         onClick: () => {
