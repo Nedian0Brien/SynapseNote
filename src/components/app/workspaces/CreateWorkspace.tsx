@@ -1,96 +1,109 @@
-import { ReactComponent as AddIcon } from '@/assets/icons/plus.svg';
-import { useAppHandlers } from '@/components/app/app.hooks';
-import { useService } from '@/components/main/app.hooks';
-import { NormalModal } from '@/components/_shared/modal';
-import { notify } from '@/components/_shared/notify';
-import { Button, OutlinedInput } from '@mui/material';
-import React, { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 
-function CreateWorkspace() {
+import { useCurrentUser } from '@/components/main/app.hooks';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
+
+function CreateWorkspace({
+  open,
+  openOnChange,
+  defaultName,
+  onOk,
+  okText,
+  title,
+}: {
+  defaultName?: string;
+  open?: boolean;
+  openOnChange?: (open: boolean) => void;
+  onOk?: (name: string) => Promise<void>;
+  okText?: string;
+  title?: string;
+}) {
   const { t } = useTranslation();
-  const { onChangeWorkspace: handleSelectedWorkspace } = useAppHandlers();
-  const service = useService();
-  const [loading, setLoading] = React.useState(false);
-  const [name, setName] = React.useState('');
-  const [open, setOpen] = React.useState(false);
+  const [loading, setLoading] = useState(false);
+  const currentUser = useCurrentUser();
+
+  const [name, setName] = useState(defaultName || `${currentUser?.name}'s Workspace`);
 
   const handleCreate = useCallback(async () => {
-    if (!service) return;
-
     setLoading(true);
     try {
-      const workspaceId = await service.createWorkspace({
-        workspace_name: name,
-      });
-
-      await handleSelectedWorkspace?.(workspaceId);
-      setOpen(false);
+      await onOk?.(name);
+      openOnChange?.(false);
       // eslint-disable-next-line
     } catch (e: any) {
-      notify.error(e.message);
+      toast.error(e.message);
     } finally {
       setLoading(false);
     }
-  }, [handleSelectedWorkspace, name, service]);
+  }, [name, openOnChange, onOk]);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (!open) {
       setName('');
     }
-  }, [open]);
+  }, [open, openOnChange]);
 
   return (
     <>
-      <Button
-        color={'inherit'}
-        className={'w-full justify-start gap-0.5 px-3'}
-        onClick={() => setOpen(true)}
-        startIcon={
-          <div
-            className={'flex h-[33px] w-[33px] items-center justify-center rounded-[8px] border border-border-primary'}
-          >
-            <AddIcon className={'h-5 w-5'} />
+      <Dialog open={open} onOpenChange={openOnChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{title || t('workspace.createNewWorkspace')}</DialogTitle>
+          </DialogHeader>
+          <div className='grid gap-4'>
+            <div className='grid gap-3'>
+              <Label htmlFor='name'>{t('workspace.workspaceName')}</Label>
+              <Input
+                id='name'
+                name='name'
+                autoFocus
+                value={name}
+                ref={(input: HTMLInputElement) => {
+                  if (!input) return;
+                  if (!inputRef.current) {
+                    setTimeout(() => {
+                      input.focus();
+                      input.setSelectionRange(0, input.value.length);
+                    }, 100);
+                    inputRef.current = input;
+                  }
+                }}
+                onChange={(e) => setName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.stopPropagation();
+                    void handleCreate();
+                  }
+                }}
+              />
+            </div>
           </div>
-        }
-      >
-        {t('workspace.create')}
-      </Button>
-      <NormalModal
-        title={t('workspace.create')}
-        open={open}
-        onClose={() => {
-          setOpen(false);
-        }}
-        disableRestoreFocus={true}
-        disableAutoFocus={false}
-        okLoading={loading}
-        onOk={handleCreate}
-        okText={t('button.create')}
-        PaperProps={{
-          className: 'w-96 max-w-[70vw]',
-        }}
-        classes={{ container: 'items-start max-md:mt-auto max-md:items-center mt-[10%] ' }}
-      >
-        <OutlinedInput
-          autoFocus
-          size={'small'}
-          placeholder={'Enter workspace name'}
-          value={name}
-          inputRef={(input: HTMLInputElement) => {
-            if (!input) return;
-            if (!inputRef.current) {
-              setTimeout(() => {
-                input.setSelectionRange(0, input.value.length);
-              }, 100);
-              inputRef.current = input;
-            }
-          }}
-          onChange={(e) => setName(e.target.value)}
-          fullWidth
-        />
-      </NormalModal>
+
+          <DialogFooter>
+            <Button variant={'outline'} onClick={() => openOnChange?.(false)}>
+              {t('button.cancel')}
+            </Button>
+            <Button
+              disabled={!name.trim()}
+              loading={loading}
+              onClick={() => {
+                void handleCreate();
+                openOnChange?.(false);
+              }}
+            >
+              {loading ? <Progress /> : null}
+              {okText || t('workspace.create')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

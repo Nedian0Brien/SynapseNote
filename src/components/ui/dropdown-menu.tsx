@@ -67,7 +67,7 @@ const DropdownMenuGroup = ({ ...props }: React.ComponentProps<typeof DropdownMen
 const dropdownMenuItemVariants = cva(
   cn(
     'focus:bg-fill-content-hover hover:bg-fill-content-hover focus-visible:outline-none',
-    'relative flex cursor-pointer items-center gap-[10px] rounded-300 px-2 py-1 min-h-[32px]',
+    'relative flex cursor-pointer items-center gap-[10px] rounded-300 px-2 py-1.5 min-h-[32px]',
     'text-sm text-text-primary outline-hidden select-none',
 
     // Disabled state

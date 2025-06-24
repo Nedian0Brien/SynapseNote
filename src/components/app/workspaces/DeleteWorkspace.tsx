@@ -1,20 +1,35 @@
-import React from 'react';
-import { Button } from '@mui/material';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ReactComponent as DeleteSvg } from '@/assets/icons/delete.svg';
-import { NormalModal } from '@/components/_shared/modal';
-import { notify } from '@/components/_shared/notify';
-import { useService } from '@/components/main/app.hooks';
+import { toast } from 'sonner';
 
-function DeleteWorkspace ({ workspaceId, name, onDeleted }: {
+import { useCurrentWorkspaceId } from '@/components/app/app.hooks';
+import { useService } from '@/components/main/app.hooks';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Progress } from '@/components/ui/progress';
+
+function DeleteWorkspace({
+  workspaceId,
+  name,
+  open,
+  openOnChange,
+}: {
   name: string;
   workspaceId: string;
-  onDeleted?: () => void;
+  open: boolean;
+  openOnChange: (open: boolean) => void;
 }) {
   const { t } = useTranslation();
-  const [confirmOpen, setConfirmOpen] = React.useState(false);
-  const [loading, setLoading] = React.useState(false);
+  const [loading, setLoading] = useState(false);
   const service = useService();
+  const currentWorkspaceId = useCurrentWorkspaceId();
 
   const handleOk = async () => {
     if (!service) return;
@@ -22,12 +37,13 @@ function DeleteWorkspace ({ workspaceId, name, onDeleted }: {
     try {
       setLoading(true);
       await service.deleteWorkspace(workspaceId);
-      setConfirmOpen(false);
-      onDeleted?.();
-
+      openOnChange(false);
+      if (currentWorkspaceId === workspaceId) {
+        window.location.href = `/app`;
+      }
       // eslint-disable-next-line
     } catch (e: any) {
-      notify.error(e.message);
+      toast.error(e.message);
     } finally {
       setLoading(false);
     }
@@ -35,30 +51,31 @@ function DeleteWorkspace ({ workspaceId, name, onDeleted }: {
 
   return (
     <>
-      <Button
-        onClick={() => {
-          setConfirmOpen(true);
-        }}
-        className={'w-full justify-start hover:text-function-error'}
-        size={'small'}
-        color={'inherit'}
-        startIcon={<DeleteSvg />}
-      >
-        {t('button.delete')}
-      </Button>
-      <NormalModal
-        okLoading={loading}
-        onOk={handleOk}
-        danger={true}
-        okText={t('button.delete')}
-        title={<div className={'flex items-center font-medium'}>
-          {t('button.delete')}: {name}
-        </div>}
-        open={confirmOpen}
-        onClose={() => setConfirmOpen(false)}
-      >
-        {t('workspace.deleteWorkspaceHintText')}
-      </NormalModal>
+      <Dialog open={open} onOpenChange={openOnChange}>
+        <DialogContent
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              void handleOk();
+            }
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>
+              {t('button.delete')}: {name}
+            </DialogTitle>
+          </DialogHeader>
+          <DialogDescription>{t('workspace.deleteWorkspaceHintText')}</DialogDescription>
+          <DialogFooter>
+            <Button variant='outline' onClick={() => openOnChange(false)}>
+              {t('button.cancel')}
+            </Button>
+            <Button variant='destructive' loading={loading} onClick={handleOk}>
+              {loading && <Progress />}
+              {t('button.delete')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

@@ -1,7 +1,6 @@
 import { UserWorkspaceInfo, Workspace } from '@/application/types';
 import { ReactComponent as AppFlowyLogo } from '@/assets/icons/appflowy.svg';
-import { getAvatarProps } from '@/components/app/workspaces/utils';
-import { Avatar } from '@mui/material';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 function CurrentWorkspace({
   userWorkspaceInfo,
@@ -32,19 +31,18 @@ function CurrentWorkspace({
   }
 
   return (
-    <div className={'flex items-center gap-1.5'}>
+    <div className={'flex w-full items-center gap-1.5 overflow-hidden'}>
       <Avatar
-        variant={'rounded'}
-        className={`flex items-center justify-center rounded-[8px] border-none border-border-primary p-1 ${
-          selectedWorkspace.icon ? 'bg-transparent' : ''
-        }`}
-        {...getAvatarProps(selectedWorkspace)}
+        shape={'square'}
         style={{
-          width: avatarSize,
-          height: avatarSize,
-          fontSize: avatarSize / 1.2,
+          minWidth: avatarSize,
+          fontSize: avatarSize / 1.5,
         }}
-      />
+      >
+        <AvatarImage src={selectedWorkspace.icon} alt={''} />
+        <AvatarFallback>{selectedWorkspace.name}</AvatarFallback>
+      </Avatar>
+
       <div className={'flex-1 truncate font-medium text-text-primary'}>{selectedWorkspace.name}</div>
     </div>
   );

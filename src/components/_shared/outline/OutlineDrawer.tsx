@@ -76,35 +76,41 @@ export function OutlineDrawer({
             backdropFilter: variant === UIVariant.Publish ? 'blur(4px)' : undefined,
             backgroundColor: variant === UIVariant.App ? 'var(--surface-container-layer-00)' : undefined,
           }}
-          className={'sticky top-0 z-10 flex h-[48px] min-h-[48px] transform-gpu items-center justify-between'}
+          className={
+            'sticky top-0 z-10 flex h-[48px] min-h-[48px] w-full transform-gpu items-center justify-between overflow-hidden'
+          }
         >
           {header ? (
             header
           ) : (
             <div
-              className={'flex cursor-pointer items-center gap-1 p-4 text-text-primary'}
+              className={'mx-1 flex h-full w-[141px] cursor-pointer items-center gap-1 p-2 text-text-primary'}
               onClick={() => {
                 navigate('/app');
               }}
             >
-              <AppFlowyLogo className={'w-[88px]'} />
+              <AppFlowyLogo className='h-full w-full' />
             </div>
           )}
-
-          {hovered && (
-            <Tooltip
-              title={
-                <div className={'flex flex-col'}>
-                  <span>{t('sideBar.closeSidebar')}</span>
-                  <span className={'text-xs text-text-secondary'}>{createHotKeyLabel(HOT_KEY_NAME.TOGGLE_SIDEBAR)}</span>
-                </div>
-              }
+          <Tooltip
+            title={
+              <div className={'flex flex-col'}>
+                <span>{t('sideBar.closeSidebar')}</span>
+                <span className={'text-xs text-text-secondary'}>{createHotKeyLabel(HOT_KEY_NAME.TOGGLE_SIDEBAR)}</span>
+              </div>
+            }
+          >
+            <IconButton
+              style={{
+                opacity: hovered ? 1 : 0,
+              }}
+              onClick={onClose}
+              className={'m-4'}
+              size={'small'}
             >
-              <IconButton onClick={onClose} className={'m-4'} size={'small'}>
-                <DoubleArrowLeft className={'text-text-secondary'} />
-              </IconButton>
-            </Tooltip>
-          )}
+              <DoubleArrowLeft className={'text-text-secondary'} />
+            </IconButton>
+          </Tooltip>
         </div>
         <div className={'flex h-fit flex-1 flex-col'}>{children}</div>
         {variant === 'publish' && <AppFlowyPower width={width} />}

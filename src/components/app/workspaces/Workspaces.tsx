@@ -1,28 +1,40 @@
-import { Button, Divider, IconButton, Tooltip } from '@mui/material';
-import React, { useCallback, useEffect } from 'react';
+import { IconButton, Tooltip } from '@mui/material';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { invalidToken } from '@/application/session/token';
 import { Workspace } from '@/application/types';
 import { ReactComponent as UpgradeAIMaxIcon } from '@/assets/icons/ai.svg';
-import { ReactComponent as ArrowDown } from '@/assets/icons/alt_arrow_down.svg';
+import { ReactComponent as ChevronDownIcon } from '@/assets/icons/alt_arrow_down.svg';
 import { ReactComponent as TipIcon } from '@/assets/icons/help.svg';
+import { ReactComponent as AddUserIcon } from '@/assets/icons/invite_user.svg';
 import { ReactComponent as LogoutIcon } from '@/assets/icons/logout.svg';
+import { ReactComponent as AddIcon } from '@/assets/icons/plus.svg';
 import { ReactComponent as ImportIcon } from '@/assets/icons/save_as.svg';
 import { ReactComponent as UpgradeIcon } from '@/assets/icons/upgrade.svg';
 import { useAppHandlers, useCurrentWorkspaceId, useUserWorkspaceInfo } from '@/components/app/app.hooks';
 import CreateWorkspace from '@/components/app/workspaces/CreateWorkspace';
 import CurrentWorkspace from '@/components/app/workspaces/CurrentWorkspace';
+import DeleteWorkspace from '@/components/app/workspaces/DeleteWorkspace';
 import InviteMember from '@/components/app/workspaces/InviteMember';
+import LeaveWorkspace from '@/components/app/workspaces/LeaveWorkspace';
 import WorkspaceList from '@/components/app/workspaces/WorkspaceList';
 import UpgradeAIMax from '@/components/billing/UpgradeAIMax';
 import UpgradePlan from '@/components/billing/UpgradePlan';
-import { useCurrentUser } from '@/components/main/app.hooks';
-import { dropdownMenuItemVariants } from '@/components/ui/dropdown-menu';
+import { useCurrentUser, useService } from '@/components/main/app.hooks';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  dropdownMenuItemVariants,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import Import from '@/components/_shared/more-actions/importer/Import';
 import { notify } from '@/components/_shared/notify';
-import { Popover } from '@/components/_shared/popover';
 import { openUrl } from '@/utils/url';
 
 export function Workspaces() {
@@ -30,20 +42,25 @@ export function Workspaces() {
   const userWorkspaceInfo = useUserWorkspaceInfo();
   const currentWorkspaceId = useCurrentWorkspaceId();
   const currentUser = useCurrentUser();
-  const [openUpgradePlan, setOpenUpgradePlan] = React.useState(false);
-  const [openUpgradeAIMax, setOpenUpgradeAIMax] = React.useState(false);
-  const [open, setOpen] = React.useState(false);
-  const [hoveredHeader, setHoveredHeader] = React.useState<boolean>(false);
-  const ref = React.useRef<HTMLButtonElement | null>(null);
+  const [openUpgradePlan, setOpenUpgradePlan] = useState(false);
+  const [openUpgradeAIMax, setOpenUpgradeAIMax] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [hoveredHeader, setHoveredHeader] = useState<boolean>(false);
+  const ref = useRef<HTMLDivElement | null>(null);
   const navigate = useNavigate();
-  const [changeLoading, setChangeLoading] = React.useState<string | null>(null);
+  const [changeLoading, setChangeLoading] = useState<string | null>(null);
   const handleSignOut = useCallback(() => {
     invalidToken();
     navigate('/login?redirectTo=' + encodeURIComponent(window.location.href));
   }, [navigate]);
 
   const { onChangeWorkspace: handleSelectedWorkspace } = useAppHandlers();
-  const [currentWorkspace, setCurrentWorkspace] = React.useState<Workspace | undefined>(undefined);
+  const [currentWorkspace, setCurrentWorkspace] = useState<Workspace | undefined>(undefined);
+  const [openInviteMember, setOpenInviteMember] = useState(false);
+  const [openCreateWorkspace, setOpenCreateWorkspace] = useState(false);
+  const [openRenameWorkspace, setOpenRenameWorkspace] = useState<Workspace | null>(null);
+  const [openDeleteWorkspace, setOpenDeleteWorkspace] = useState<Workspace | null>(null);
+  const [openLeaveWorkspace, setOpenLeaveWorkspace] = useState<Workspace | null>(null);
 
   const isOwner = currentWorkspace?.owner?.uid.toString() === currentUser?.uid.toString();
 
@@ -75,109 +92,159 @@ export function Workspaces() {
     });
   }, [setSearchParams]);
 
+  const service = useService();
+  const handleCreateWorkspace = useCallback(
+    async (name: string) => {
+      if (!service) return;
+      const workspaceId = await service.createWorkspace({
+        workspace_name: name,
+      });
+
+      await handleSelectedWorkspace?.(workspaceId);
+    },
+    [handleSelectedWorkspace, service]
+  );
+
+  const handleUpdateWorkspace = useCallback(
+    async (name: string) => {
+      if (!service || !openRenameWorkspace) return;
+      await service.updateWorkspace(openRenameWorkspace.id, {
+        workspace_name: name,
+      });
+      if (openRenameWorkspace.id === currentWorkspaceId) {
+        setCurrentWorkspace((prev) => {
+          if (!prev) return prev;
+          return { ...prev, name };
+        });
+      }
+
+      setOpenRenameWorkspace(null);
+    },
+    [service, openRenameWorkspace, currentWorkspaceId]
+  );
+
   return (
     <>
-      <Button
-        ref={ref}
-        onMouseLeave={() => setHoveredHeader(false)}
-        onMouseEnter={() => setHoveredHeader(true)}
-        onClick={() => setOpen(true)}
-        className={'mx-2 flex w-full cursor-pointer items-center justify-start gap-1 px-1 py-1 text-text-primary'}
-      >
-        <div className={'flex items-center gap-1.5 overflow-hidden text-[15px] text-text-primary'}>
-          <CurrentWorkspace
-            userWorkspaceInfo={userWorkspaceInfo}
-            selectedWorkspace={currentWorkspace}
-            onChangeWorkspace={handleChange}
-            avatarSize={24}
-          />
+      <div className='mx-1 flex-1 overflow-hidden'>
+        <DropdownMenu modal={false} open={open} onOpenChange={setOpen}>
+          <DropdownMenuTrigger asChild>
+            <div
+              ref={ref}
+              onMouseLeave={() => setHoveredHeader(false)}
+              onMouseEnter={() => setHoveredHeader(true)}
+              className={dropdownMenuItemVariants({ variant: 'default', className: 'w-full overflow-hidden' })}
+            >
+              <CurrentWorkspace
+                userWorkspaceInfo={userWorkspaceInfo}
+                selectedWorkspace={currentWorkspace}
+                onChangeWorkspace={handleChange}
+                avatarSize={24}
+              />
 
-          {hoveredHeader && <ArrowDown className={'h-5 w-5'} />}
-        </div>
-      </Button>
-      <Popover open={open} keepMounted={true} anchorEl={ref.current} onClose={() => setOpen(false)}>
-        <div className={'flex min-h-[303px] w-[288px] flex-col gap-2 overflow-hidden p-2 text-[14px]'}>
-          <div className={'flex items-center justify-between p-2 text-text-secondary'}>
-            <span className={'flex-1 text-sm font-medium'}>{currentUser?.email}</span>
-          </div>
-          <div className={'appflowy-scroller flex max-h-[236px] flex-1 flex-col gap-1 overflow-y-auto'}>
-            {open && (
+              <div
+                className='ml-auto transition-opacity duration-300'
+                style={{
+                  opacity: hoveredHeader ? 1 : 0,
+                }}
+              >
+                <ChevronDownIcon className='h-5 w-5' />
+              </div>
+            </div>
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent className='min-w-[300px] max-w-[300px] overflow-hidden'>
+            <DropdownMenuLabel className='w-full overflow-hidden'>
+              <span className='truncate'>{currentUser?.email}</span>
+            </DropdownMenuLabel>
+            <DropdownMenuGroup className={'appflowy-scroller max-h-[236px] flex-1 overflow-x-hidden overflow-y-auto'}>
               <WorkspaceList
                 defaultWorkspaces={userWorkspaceInfo?.workspaces}
                 currentWorkspaceId={currentWorkspaceId}
                 onChange={handleChange}
                 changeLoading={changeLoading || undefined}
-                onUpdateCurrentWorkspace={(name) => {
-                  setCurrentWorkspace((prev) => {
-                    if (!prev) return prev;
-                    return {
-                      ...prev,
-                      name,
-                    };
-                  });
-                }}
+                onUpdate={setOpenRenameWorkspace}
+                onDelete={setOpenDeleteWorkspace}
+                onLeave={setOpenLeaveWorkspace}
               />
-            )}
-          </div>
-          <CreateWorkspace />
-          <Divider className={'mt-1 w-full'} />
-          {currentWorkspace && (
-            <InviteMember
-              onClick={() => {
-                setOpen(false);
+            </DropdownMenuGroup>
+            <DropdownMenuItem
+              onSelect={() => {
+                setOpenCreateWorkspace(true);
               }}
-              workspace={currentWorkspace}
-            />
-          )}
-          <div className={dropdownMenuItemVariants({ variant: 'default' })} onClick={handleOpenImport}>
-            <ImportIcon />
-            <div className={'flex-1 text-left'}>{t('web.importNotion')}</div>
-            <Tooltip title={t('workspace.learnMore')} enterDelay={1000} enterNextDelay={1000}>
-              <IconButton
-                onClick={(e) => {
-                  e.stopPropagation();
-                  void openUrl('https://docs.appflowy.io/docs/guides/import-from-notion', '_blank');
-                }}
-                size={'small'}
-                className={'mx-2'}
+            >
+              <div
+                className={
+                  'flex h-[32px] w-[32px] items-center justify-center rounded-[8px] border border-border-primary'
+                }
               >
-                <TipIcon />
-              </IconButton>
-            </Tooltip>
-          </div>
-          <Divider className={'w-full'} />
-          <div className={dropdownMenuItemVariants({ variant: 'default' })} onClick={handleSignOut}>
-            <LogoutIcon />
-            {t('button.logout')}
-          </div>
+                <AddIcon className={'h-5 w-5'} />
+              </div>
+              {t('workspace.create')}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              {currentWorkspace && (
+                <DropdownMenuItem
+                  onSelect={() => {
+                    setOpenInviteMember(true);
+                  }}
+                >
+                  <AddUserIcon />
+                  {t('settings.appearance.members.inviteMembers')}
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem onSelect={handleOpenImport}>
+                <ImportIcon />
+                <div className={'flex-1 text-left'}>{t('web.importNotion')}</div>
+                <Tooltip title={t('workspace.learnMore')} enterDelay={1000} enterNextDelay={1000}>
+                  <IconButton
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void openUrl('https://docs.appflowy.io/docs/guides/import-from-notion', '_blank');
+                    }}
+                    size={'small'}
+                    className={'mx-2'}
+                  >
+                    <TipIcon />
+                  </IconButton>
+                </Tooltip>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
 
-          {isOwner && (
-            <>
-              <Divider className={'w-full'} />
-              <div
-                onClick={() => {
-                  setOpenUpgradePlan(true);
-                  setOpen(false);
-                }}
-                className={dropdownMenuItemVariants({ variant: 'default' })}
-              >
-                <UpgradeIcon />
-                {t('subscribe.changePlan')}
-              </div>
-              <div
-                onClick={() => {
-                  setOpenUpgradeAIMax(true);
-                  setOpen(false);
-                }}
-                className={dropdownMenuItemVariants({ variant: 'default' })}
-              >
-                <UpgradeAIMaxIcon />
-                {t('subscribe.getAIMax')}
-              </div>
-            </>
-          )}
-        </div>
-      </Popover>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuItem onSelect={handleSignOut}>
+                <LogoutIcon />
+                {t('button.logout')}
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+            {isOwner && (
+              <DropdownMenuGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onSelect={() => {
+                    setOpenUpgradePlan(true);
+                    setOpen(false);
+                  }}
+                >
+                  <UpgradeIcon />
+                  {t('subscribe.changePlan')}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => {
+                    setOpenUpgradeAIMax(true);
+                    setOpen(false);
+                  }}
+                >
+                  <UpgradeAIMaxIcon />
+                  {t('subscribe.getAIMax')}
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
       {isOwner && (
         <>
           <UpgradePlan
@@ -198,6 +265,48 @@ export function Workspaces() {
       )}
 
       <Import />
+      {openCreateWorkspace && (
+        <CreateWorkspace
+          onOk={handleCreateWorkspace}
+          okText={t('workspace.create')}
+          defaultName={`${currentUser?.name}'s Workspace`}
+          open={openCreateWorkspace}
+          openOnChange={setOpenCreateWorkspace}
+        />
+      )}
+
+      {currentWorkspace && (
+        <InviteMember open={openInviteMember} openOnChange={setOpenInviteMember} workspace={currentWorkspace} />
+      )}
+
+      {openRenameWorkspace && (
+        <CreateWorkspace
+          open={Boolean(openRenameWorkspace)}
+          openOnChange={() => setOpenRenameWorkspace(null)}
+          onOk={handleUpdateWorkspace}
+          okText={t('workspace.rename')}
+          defaultName={openRenameWorkspace.name}
+          title={t('workspace.rename')}
+        />
+      )}
+
+      {openDeleteWorkspace && (
+        <DeleteWorkspace
+          workspaceId={openDeleteWorkspace.id}
+          name={openDeleteWorkspace.name}
+          open={Boolean(openDeleteWorkspace)}
+          openOnChange={() => setOpenDeleteWorkspace(null)}
+        />
+      )}
+
+      {openLeaveWorkspace && (
+        <LeaveWorkspace
+          workspaceName={openLeaveWorkspace.name}
+          workspaceId={openLeaveWorkspace.id}
+          open={Boolean(openLeaveWorkspace)}
+          openOnChange={() => setOpenLeaveWorkspace(null)}
+        />
+      )}
     </>
   );
 }

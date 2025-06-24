@@ -1,26 +1,31 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { SubscriptionPlan, Workspace, WorkspaceMember } from '@/application/types';
-import { ReactComponent as AddUserIcon } from '@/assets/icons/invite_user.svg';
 import { ReactComponent as TipIcon } from '@/assets/icons/warning.svg';
 import { useAppHandlers } from '@/components/app/app.hooks';
 import { useCurrentUser, useService } from '@/components/main/app.hooks';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { dropdownMenuItemVariants } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 
-function InviteMember({ workspace, onClick }: { workspace: Workspace; onClick?: () => void }) {
+function InviteMember({
+  workspace,
+  open,
+  openOnChange,
+}: {
+  workspace: Workspace;
+  open?: boolean;
+  openOnChange?: (open: boolean) => void;
+}) {
   const { getSubscriptions } = useAppHandlers();
   const { t } = useTranslation();
-  const [open, setOpen] = React.useState(false);
-  const [value, setValue] = React.useState('');
-  const [loading, setLoading] = React.useState(false);
+  const [value, setValue] = useState('');
+  const [loading, setLoading] = useState(false);
   const service = useService();
   const currentWorkspaceId = workspace.id;
   const [, setSearch] = useSearchParams();
@@ -89,7 +94,7 @@ function InviteMember({ workspace, onClick }: { workspace: Workspace; onClick?: 
 
       await service.inviteMembers(currentWorkspaceId, emails);
 
-      setOpen(false);
+      openOnChange?.(false);
       toast.success(t('inviteMember.inviteSuccess'));
       // eslint-disable-next-line
     } catch (e: any) {
@@ -119,13 +124,7 @@ function InviteMember({ workspace, onClick }: { workspace: Workspace; onClick?: 
 
   return (
     <>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
-          <div className={dropdownMenuItemVariants({ variant: 'default' })} onClick={onClick}>
-            <AddUserIcon />
-            {t('settings.appearance.members.inviteMembers')}
-          </div>
-        </DialogTrigger>
+      <Dialog open={open} onOpenChange={openOnChange}>
         <DialogContent className={'w-[500px]'}>
           <DialogHeader>
             <DialogTitle>{t('inviteMember.requestInviteMembers')}</DialogTitle>
@@ -149,7 +148,6 @@ function InviteMember({ workspace, onClick }: { workspace: Workspace; onClick?: 
                 id='emails'
                 name='emails'
                 disabled={isExceed}
-                defaultValue={value}
                 onChange={(e) => setValue(e.target.value)}
                 value={value}
                 placeholder={t('inviteMember.addEmail')}

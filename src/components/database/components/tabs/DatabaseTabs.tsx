@@ -390,7 +390,7 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
                     size={'icon'}
                     variant={'ghost'}
                     loading={addLoading}
-                    className={'mx-1.5 mb-1.5 text-icon-tertiary'}
+                    className={'mx-1.5 mb-1.5 text-icon-secondary'}
                   >
                     {addLoading ? <Progress variant={'inherit'} /> : <PlusIcon className={'h-5 w-5'} />}
                   </Button>
