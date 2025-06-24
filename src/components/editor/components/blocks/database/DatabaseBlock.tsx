@@ -165,14 +165,7 @@ export const DatabaseBlock = memo(
           {...attributes}
           contentEditable={readOnly ? false : undefined}
           className={`relative w-full cursor-pointer`}
-          onMouseEnter={() => {
-            if (variant === UIVariant.App && !readOnly) {
-              setShowActions(true);
-            }
-          }}
-          onMouseLeave={() => {
-            setShowActions(false);
-          }}
+        
         >
           <div ref={ref} className={'absolute left-0 top-0 h-full w-full caret-transparent'}>
             {children}
@@ -205,7 +198,7 @@ export const DatabaseBlock = memo(
                   iidName={iidName}
                   visibleViewIds={visibleViewIds}
                   onChangeView={onChangeView}
-                  showActions={showActions}
+                  showActions={true}
                   paddingStart={paddingStart}
                   paddingEnd={paddingEnd}
                   isDocumentBlock={true}
