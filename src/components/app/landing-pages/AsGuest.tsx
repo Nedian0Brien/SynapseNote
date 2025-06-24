@@ -101,7 +101,9 @@ export function AsGuest() {
         <div className='font-normal'>
           <Trans
             i18nKey='landingPage.asGuest.title'
-            components={{ page: <span className='font-bold'>{page?.name}</span> }}
+            components={{
+              page: <span className='font-bold'>{page?.name || t('menuAppHeader.defaultNewPageName')}</span>,
+            }}
           />
         </div>
       }
