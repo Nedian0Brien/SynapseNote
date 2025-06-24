@@ -3,7 +3,7 @@
  * AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY
  * 
  * Generated from: semantic.dark.json
- * Generated time: 2025-06-17T06:26:25.623Z
+ * Generated time: 2025-06-24T06:01:38.064Z
  * 
  * To modify these values, edit the source JSON files and run the token conversion script:
  * node scripts/system-token/convert-tokens.cjs
@@ -111,7 +111,6 @@
   --surface-layer-04: #363845;
   --surface-layer-04-hover: #3d404f;
   --surface-inverse: #3d404f;
-  --surface-secondary: #3d404f;
   --surface-overlay: #00000099;
   --surface-container-layer-00: #272930;
   --surface-container-layer-01: #32343f;
@@ -247,7 +246,7 @@
   --brand-golden: #f7931e;
   --brand-amber: #ffbd00;
   --brand-lemon: #ffce00;
-  --other-colors-text-highlight: #a9e2ff;
+  --other-colors-text-highlight: #003c77;
   --other-colors-icon-shared: #9ab6ed;
   --spacing-spacing-0: 0px;
   --spacing-spacing-xs: 4px;

@@ -426,10 +426,6 @@
       "$type": "color",
       "$value": "{Neutral.1000}"
     },
-    "secondary": {
-      "$type": "color",
-      "$value": "{Neutral.1000}"
-    },
     "overlay": {
       "$type": "color",
       "$value": "{Neutral.alpha-black-60}"

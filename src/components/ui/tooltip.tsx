@@ -48,7 +48,7 @@ function TooltipContent ({
 
           // Styling and layout
           'shadow-tooltip max-w-[360px] z-50 origin-[--radix-tooltip-content-transform-origin]',
-          'w-fit rounded-400 bg-surface-secondary px-3 py-2 text-sm text-text-on-fill',
+          'w-fit rounded-400 bg-surface-inverse px-3 py-2 text-sm text-text-on-fill',
           'flex flex-col whitespace-pre-wrap break-all',
 
           className,

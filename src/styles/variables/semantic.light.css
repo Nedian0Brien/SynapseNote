@@ -3,7 +3,7 @@
  * AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY
  * 
  * Generated from: semantic.light.json
- * Generated time: 2025-06-17T06:26:25.620Z
+ * Generated time: 2025-06-24T06:01:38.059Z
  * 
  * To modify these values, edit the source JSON files and run the token conversion script:
  * node scripts/system-token/convert-tokens.cjs
@@ -111,7 +111,6 @@
   --surface-layer-04: #ffffff;
   --surface-layer-04-hover: #f8faff;
   --surface-inverse: #21232a;
-  --surface-secondary: #21232a;
   --surface-overlay: #00000099;
   --surface-container-layer-00: #f8faff;
   --surface-container-layer-01: #f8faff;

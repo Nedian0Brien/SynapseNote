@@ -426,10 +426,6 @@
       "$type": "color",
       "$value": "{Neutral.800}"
     },
-    "secondary": {
-      "$type": "color",
-      "$value": "{Neutral.800}"
-    },
     "overlay": {
       "$type": "color",
       "$value": "{Neutral.alpha-black-60}"
@@ -1024,7 +1020,7 @@
   "Other_Colors": {
     "text-highlight": {
       "$type": "color",
-      "$value": "{Blue.200}"
+      "$value": "{Blue.1000}"
     },
     "icon-shared": {
       "$type": "color",
