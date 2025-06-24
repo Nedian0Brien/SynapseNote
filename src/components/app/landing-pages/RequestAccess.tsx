@@ -39,7 +39,8 @@ function RequestAccess() {
       if (e.code === REPEAT_REQUEST_CODE) {
         toast.error(t('requestAccess.repeatRequestError'));
       } else {
-        toast.error(t('requestAccess.requestError'));
+        toast.error(e.message);
+        setIsError(true);
       }
     } finally {
       setLoading(false);
@@ -61,7 +62,7 @@ function RequestAccess() {
   }
 
   if (isError) {
-    return <ErrorPage />;
+    return <ErrorPage onRetry={handleSendRequest} />;
   }
 
   return (

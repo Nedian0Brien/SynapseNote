@@ -56,6 +56,7 @@ function AvatarImage({ className, ...props }: React.ComponentProps<typeof Avatar
   );
 }
 
+// return a number between 0 and 19
 function hashUsername(username: string) {
   let hash = 0;
 
