@@ -46,7 +46,7 @@ export const DatabaseBlock = memo(
     const [visibleViewIds, setVisibleViewIds] = useState<string[]>([]);
     const [iidName, setIidName] = useState<string>('');
 
-    const viewIdsRef = useRef<string[]>([]);
+    const viewIdsRef = useRef<string[]>([viewId]);
 
     useEffect(() => {
       viewIdsRef.current = visibleViewIds;
@@ -62,6 +62,7 @@ export const DatabaseBlock = memo(
       viewIds.unshift(meta.view_id);
 
       setIidName(meta.name);
+
       setVisibleViewIds(viewIds);
     }, []);
 
@@ -95,7 +96,7 @@ export const DatabaseBlock = memo(
 
     useLayoutEffect(() => {
       void loadViewMeta(viewId).then(() => {
-        if (!viewIdsRef.current.includes(viewId)) {
+        if (!viewIdsRef.current.includes(viewId) && viewIdsRef.current.length > 0) {
           setSelectedViewId(viewIdsRef.current[0]);
         } else {
           setSelectedViewId(viewId);
@@ -105,7 +106,6 @@ export const DatabaseBlock = memo(
     }, []);
 
     const onChangeView = useCallback((viewId: string) => {
-      console.log('onChangeView', viewId);
       setSelectedViewId(viewId);
     }, []);
 

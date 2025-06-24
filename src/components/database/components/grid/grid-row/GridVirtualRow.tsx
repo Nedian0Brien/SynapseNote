@@ -198,7 +198,10 @@ function GridVirtualRow({
             />
           )}
         </div>
-        <div ref={rowRef} className={cn('relative flex', state.type === GridDragState.DRAGGING && 'opacity-40')}>
+        <div
+          ref={rowRef}
+          className={cn('grid-table-row-content relative  flex', state.type === GridDragState.DRAGGING && 'opacity-40')}
+        >
           {children}
           {state.type === GridDragState.IS_OVER && isRegularRow && state.closestEdge && (
             <DropRowIndicator edge={state.closestEdge} />
