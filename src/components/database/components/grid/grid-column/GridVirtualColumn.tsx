@@ -76,30 +76,19 @@ function GridVirtualColumn({
         }
       }}
       className={cn(
-        'grid-row-cell relative',
+        'grid-row-cell relative min-h-fit',
         readOnly || [FieldType.CreatedTime, FieldType.LastEditedTime].includes(fieldType as FieldType)
           ? 'cursor-text'
           : 'cursor-pointer',
         columnData.wrap ? 'whitespace-prewrap' : 'whitespace-nowrap',
-        rowType === RenderRowType.Header && 'hover:bg-fill-content-hover'
+        rowType === RenderRowType.Header && 'hover:bg-fill-content-hover',
+        column.index === 0 || rowType === RenderRowType.CalculateRow ? '' : 'border-l border-border-primary',
+        rowIndex === 0 || rowType === RenderRowType.CalculateRow ? '' : 'border-t border-border-primary',
+        readOnly && rowType === RenderRowType.CalculateRow ? 'border-t border-border-primary' : ''
       )}
       style={{
         height: rowIndex === 0 ? MIN_HEIGHT : row.size,
-        minHeight: 'fit-content',
         width: columnData.width,
-        ...(column.index === 0 || rowType === RenderRowType.CalculateRow
-          ? {}
-          : {
-              borderLeft: '1px solid var(--border-primary)',
-            }),
-        ...(rowIndex === 0 || rowType === RenderRowType.CalculateRow
-          ? {
-              borderTop: '1px solid transparent',
-            }
-          : {
-              borderTop: '1px solid var(--border-primary)',
-            }),
-        ...(readOnly && rowIndex === data.length - 1 ? { borderBottom: '1px solid var(--border-primary)' } : {}),
       }}
     >
       <GridCell

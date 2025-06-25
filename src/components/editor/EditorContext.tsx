@@ -6,6 +6,7 @@ import {
   LoadViewMeta, UIVariant, View, CreatePagePayload, TextCount,
 } from '@/application/types';
 import { AxiosInstance } from 'axios';
+import EventEmitter from 'events';
 import { createContext, useCallback, useContext, useState } from 'react';
 import { BaseRange, Range } from 'slate';
 
@@ -56,6 +57,7 @@ export interface EditorContextState {
   uploadFile?: (file: File) => Promise<string>;
   requestInstance?: AxiosInstance | null;
   getMoreAIContext?: () => string;
+  eventEmitter?: EventEmitter;
 }
 
 export const EditorContext = createContext<EditorContextState>({

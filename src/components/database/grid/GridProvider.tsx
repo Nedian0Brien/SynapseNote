@@ -10,7 +10,6 @@ export const GridProvider = ({ children }: {
   const [activePropertyId, setActivePropertyId] = useState<string | undefined>();
   const { rows: initialRows } = useRenderRows();
   const [rows, setRows] = useState<RenderRow[]>(initialRows);
-  const [showStickyHeader, setShowStickyHeader] = useState(false);
   const [resizeRows, setResizeRows] = useState<Map<string, number>>(new Map());
 
   const isWheelingRef = useRef(false);
@@ -75,8 +74,7 @@ export const GridProvider = ({ children }: {
       setRows,
       activePropertyId,
       setActivePropertyId,
-      showStickyHeader,
-      setShowStickyHeader,
+    
       activeCell,
       setActiveCell,
       resizeRows,

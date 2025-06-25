@@ -7,10 +7,8 @@ export const GridContext = createContext<{
   setHoverRowId: (hoverRowId?: string) => void;
   rows: RenderRow[];
   setRows: (rows: RenderRow[]) => void;
-  showStickyHeader: boolean;
   activePropertyId?: string;
   setActivePropertyId: (activePropertyId?: string) => void;
-  setShowStickyHeader: (show: boolean) => void;
   activeCell?: {
     rowId: string;
     fieldId: string;
@@ -20,12 +18,10 @@ export const GridContext = createContext<{
   setResizeRow: (resizeRow: { rowId: string; maxCellHeight: number }) => void;
   onResizeRowEnd: (id: string) => void;
 }>({
-  showStickyHeader: false,
   rows: [],
   setRows: (_rows: RenderRow[]) => undefined,
   setHoverRowId: (_hoverRowId?: string) => undefined,
   setActivePropertyId: (_activePropertyId?: string) => undefined,
-  setShowStickyHeader: (_show: boolean) => undefined,
   setActiveCell: (_activeCell?: { rowId: string; fieldId: string }) => undefined,
   setResizeRow: () => undefined,
   onResizeRowEnd: () => undefined,

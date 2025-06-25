@@ -4,6 +4,7 @@ import { Element, Text } from 'slate';
 import { ReactEditor, useReadOnly, useSlate } from 'slate-react';
 import smoothScrollIntoViewIfNeeded from 'smooth-scroll-into-view-if-needed';
 
+import { APP_EVENTS } from '@/application/constants';
 import { YjsEditor } from '@/application/slate-yjs';
 import { CustomEditor } from '@/application/slate-yjs/command';
 import { traverseBlock } from '@/application/slate-yjs/utils/convert';
@@ -12,6 +13,7 @@ import { MentionType, UIVariant, View, ViewLayout, YjsEditorKey, YSharedRoot } f
 import { ReactComponent as LinkArrowOverlay } from '@/assets/icons/link_arrow.svg';
 import { ReactComponent as ParagraphIcon } from '@/assets/icons/paragraph.svg';
 import { useEditorContext } from '@/components/editor/EditorContext';
+import { findView } from '@/components/_shared/outline/utils';
 import PageIcon from '@/components/_shared/view-icon/PageIcon';
 
 import './style.css';
@@ -32,6 +34,7 @@ function MentionPage({
   const selection = editor.selection;
   const variant = context.variant;
   const currentViewId = context.viewId;
+  const eventEmitter = context.eventEmitter;
 
   const { navigateToView, loadViewMeta, loadView, openPageModal } = context;
   const [noAccess, setNoAccess] = useState(false);
@@ -43,7 +46,7 @@ function MentionPage({
       if (loadViewMeta) {
         setNoAccess(false);
         try {
-          const meta = await loadViewMeta(pageId, setMeta);
+          const meta = await loadViewMeta(pageId);
 
           setMeta(meta);
         } catch (e) {
@@ -55,6 +58,26 @@ function MentionPage({
       }
     })();
   }, [loadViewMeta, pageId]);
+
+  useEffect(() => {
+    const handleOutlineLoaded = (outline: View[]) => {
+      const view = findView(outline, pageId);
+
+      if (view) {
+        setMeta(view);
+      }
+    };
+
+    if (eventEmitter) {
+      eventEmitter.on(APP_EVENTS.OUTLINE_LOADED, handleOutlineLoaded);
+    }
+
+    return () => {
+      if (eventEmitter) {
+        eventEmitter.off(APP_EVENTS.OUTLINE_LOADED, handleOutlineLoaded);
+      }
+    };
+  }, [eventEmitter, pageId]);
 
   const icon = useMemo(() => {
     return meta?.icon;

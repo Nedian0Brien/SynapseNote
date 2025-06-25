@@ -17,7 +17,7 @@ import { useGridContext } from '@/components/database/grid/useGridContext';
 import { useColumnResize } from '../grid-column/useColumnResize';
 
 function GridVirtualizer({ columns }: { columns: RenderColumn[] }) {
-  const { rows: data, setShowStickyHeader, showStickyHeader, resizeRows, onResizeRowEnd } = useGridContext();
+  const { rows: data, resizeRows, onResizeRowEnd } = useGridContext();
   const { handleResizeStart, isResizing } = useColumnResize(columns);
   const { isDocumentBlock, paddingEnd } = useDatabaseContext();
 
@@ -35,6 +35,7 @@ function GridVirtualizer({ columns }: { columns: RenderColumn[] }) {
   const [isHover, setIsHover] = useState(false);
   const stickyHeaderRef = useRef<HTMLDivElement>(null);
   const rowsHeightRef = useRef<Map<string, number>>(new Map());
+  const [isScrolling, setIsScrolling] = useState(false);
 
   const onResizeRow = useCallback(
     (id: string, maxCellHeight: number) => {
@@ -59,11 +60,20 @@ function GridVirtualizer({ columns }: { columns: RenderColumn[] }) {
     }
   }, [columnVirtualizer, isResizing, columns]);
 
+  const isScrollingRef = useRef(false);
+
+  useEffect(() => {
+    isScrollingRef.current = isScrolling;
+  }, [isScrolling]);
+
   useEffect(() => {
     const rows = Array.from(resizeRows?.entries() || []);
 
     rows.forEach(([rowId, maxCellHeight]) => {
-      onResizeRow(rowId, maxCellHeight);
+      if (!isScrollingRef.current) {
+        onResizeRow(rowId, maxCellHeight);
+      }
+
       onResizeRowEnd(rowId);
     });
   }, [isResizing, resizeRows, onResizeRow, onResizeRowEnd]);
@@ -74,15 +84,29 @@ function GridVirtualizer({ columns }: { columns: RenderColumn[] }) {
 
     if (!scrollElement || !gridElement) return;
 
+    let timeout: NodeJS.Timeout;
+
     const onScroll = () => {
       const scrollMarginTop = gridElement.getBoundingClientRect().top ?? 0;
       const bottom = gridElement.getBoundingClientRect().bottom ?? 0;
+      const stickyHeader = stickyHeaderRef.current;
+
+      if (!stickyHeader) return;
 
       if (scrollMarginTop <= 48 && bottom - PADDING_END >= 48) {
-        setShowStickyHeader(true);
+        stickyHeader.style.opacity = '1';
+        stickyHeader.style.pointerEvents = 'auto';
       } else {
-        setShowStickyHeader(false);
+        stickyHeader.style.opacity = '0';
+        stickyHeader.style.pointerEvents = 'none';
       }
+
+      setIsScrolling(true);
+
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        setIsScrolling(false);
+      }, 1000);
     };
 
     onScroll();
@@ -90,7 +114,7 @@ function GridVirtualizer({ columns }: { columns: RenderColumn[] }) {
     return () => {
       scrollElement.removeEventListener('scroll', onScroll);
     };
-  }, [parentRef, scrollMarginTop, setShowStickyHeader, virtualizer.scrollElement]);
+  }, [parentRef, scrollMarginTop, virtualizer.scrollElement]);
 
   return (
     <GridDragContext.Provider value={contextValue}>
@@ -173,10 +197,6 @@ function GridVirtualizer({ columns }: { columns: RenderColumn[] }) {
               index: 0,
             }}
             ref={stickyHeaderRef}
-            style={{
-              opacity: showStickyHeader ? 1 : 0,
-              pointerEvents: showStickyHeader ? 'auto' : 'none',
-            }}
             columns={columns}
             data={data}
             totalSize={totalSize}

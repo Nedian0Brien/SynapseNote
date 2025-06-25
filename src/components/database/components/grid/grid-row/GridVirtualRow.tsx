@@ -4,7 +4,8 @@ import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-d
 import { VirtualItem } from '@tanstack/react-virtual';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { useReadOnly, useSortsSelector } from '@/application/database-yjs';
+import { useReadOnly, useRowData, useSortsSelector } from '@/application/database-yjs';
+import { YjsDatabaseKey } from '@/application/types';
 import { DropRowIndicator } from '@/components/database/components/drag-and-drop/DropRowIndicator';
 import {
   GridDragState,
@@ -46,6 +47,9 @@ function GridVirtualRow({
   const rowId = data[rowIndex].rowId as string;
   const rowType = data[rowIndex].type;
   const { setHoverRowId, setResizeRow } = useGridContext();
+  const databaseRow = useRowData(rowId);
+  const cells = databaseRow?.get(YjsDatabaseKey.cells);
+  const cellsCount = cells?.size;
 
   const rowRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
@@ -175,10 +179,25 @@ function GridVirtualRow({
     };
   }, [onResize]);
 
+  useEffect(() => {
+    if (!cells || !cellsCount) return;
+
+    if (isRegularRow && cells) {
+      onResize();
+    }
+
+    cells.observeDeep(onResize);
+
+    return () => {
+      cells.unobserveDeep(onResize);
+    };
+  }, [isRegularRow, onResize, cells, cellsCount]);
+
   return (
     <GridRowProvider
       value={{
         isSticky,
+        resizeRow: onResize,
       }}
     >
       <div
@@ -200,7 +219,10 @@ function GridVirtualRow({
         </div>
         <div
           ref={rowRef}
-          className={cn('grid-table-row-content relative  flex', state.type === GridDragState.DRAGGING && 'opacity-40')}
+          className={cn(
+            'grid-table-row-content relative flex min-h-[36px]',
+            state.type === GridDragState.DRAGGING && 'opacity-40'
+          )}
         >
           {children}
           {state.type === GridDragState.IS_OVER && isRegularRow && state.closestEdge && (
@@ -210,7 +232,9 @@ function GridVirtualRow({
 
         <div style={{ width: `${after}px` }} />
       </div>
-      <ClearSortingConfirm onClose={() => setOpenClearSortsConfirmed(false)} open={openClearSortsConfirmed} />
+      {openClearSortsConfirmed && (
+        <ClearSortingConfirm onClose={() => setOpenClearSortsConfirmed(false)} open={openClearSortsConfirmed} />
+      )}
     </GridRowProvider>
   );
 }

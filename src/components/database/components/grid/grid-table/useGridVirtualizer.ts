@@ -35,7 +35,7 @@ export function useGridVirtualizer({ data, columns }: { columns: RenderColumn[];
   const virtualizer = useVirtualizer({
     count: data.length,
     estimateSize: () => MIN_HEIGHT,
-    overscan: 5,
+    overscan: 10,
     scrollMargin: parentOffsetRef.current,
     getScrollElement,
     getItemKey: (index) => data[index].rowId || data[index].type,
@@ -47,14 +47,14 @@ export function useGridVirtualizer({ data, columns }: { columns: RenderColumn[];
   useLayoutEffect(() => {
     const scrollElement = getScrollElement();
 
-    if (!scrollElement) return;
+    if (!scrollElement || !isDocumentBlock) return;
 
     scrollElement.addEventListener('resize', updateParentOffset);
 
     return () => {
       scrollElement.removeEventListener('resize', updateParentOffset);
     };
-  }, [getScrollElement, updateParentOffset]);
+  }, [getScrollElement, updateParentOffset, isDocumentBlock]);
 
   const getColumn = useCallback((index: number) => columns[index], [columns]);
   const getColumnWidth = useCallback((index: number) => getColumn(index).width, [getColumn]);
@@ -66,7 +66,7 @@ export function useGridVirtualizer({ data, columns }: { columns: RenderColumn[];
     count: columns.length,
     getScrollElement: () => parentRef.current,
     estimateSize: getColumnWidth,
-    overscan: 10,
+    overscan: 5,
     paddingStart: paddingStart || PADDING_INLINE,
     paddingEnd: paddingEnd || PADDING_INLINE,
     getItemKey: (index) => columns[index].fieldId || columns[index].type,

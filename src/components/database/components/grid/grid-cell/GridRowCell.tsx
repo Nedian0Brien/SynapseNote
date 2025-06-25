@@ -6,6 +6,7 @@ import { useFieldSelector } from '@/application/database-yjs/selector';
 import { FieldId, YjsDatabaseKey } from '@/application/types';
 import { Cell } from '@/components/database/components/cell';
 import { PrimaryCell } from '@/components/database/components/cell/primary';
+import { useGridRowContext } from '@/components/database/components/grid/grid-row/GridRowContext';
 import { useGridContext } from '@/components/database/grid/useGridContext';
 import { cn } from '@/lib/utils';
 
@@ -26,7 +27,8 @@ export function GridRowCell({ rowId, fieldId }: GridCellProps) {
     rowId,
     fieldId,
   });
- 
+
+  const { resizeRow } = useGridRowContext();
   const { activeCell, setActiveCell } = useGridContext();
 
   const [hovered, setHovered] = useState(false);
@@ -36,7 +38,7 @@ export function GridRowCell({ rowId, fieldId }: GridCellProps) {
 
     if (!cellEl) return;
 
-    const gridRowCell = cellEl.closest('.grid-row-cell');
+    const gridRowCell = cellEl.closest('.grid-row-cell') as HTMLDivElement;
 
     if (!gridRowCell) return;
 
@@ -49,7 +51,6 @@ export function GridRowCell({ rowId, fieldId }: GridCellProps) {
     };
 
     gridRowCell.addEventListener('mouseenter', handleMouseEnter);
-
     gridRowCell.addEventListener('mouseleave', handleMouseLeave);
 
     return () => {
@@ -95,6 +96,21 @@ export function GridRowCell({ rowId, fieldId }: GridCellProps) {
         return 'py-2';
     }
   }, [fieldType]);
+
+  const wrapRef = useRef(wrap);
+  const isActiveRef = useRef(isActive);
+
+  useEffect(() => {
+    // Check if the wrap or isActive has changed
+    if (wrapRef.current !== wrap || isActiveRef.current !== isActive) {
+      if (!wrap || !isActive) {
+        resizeRow();
+      }
+
+      wrapRef.current = wrap;
+      isActiveRef.current = isActive;
+    }
+  }, [wrap, isActive, resizeRow]);
 
   if (!field) return null;
 

@@ -3,11 +3,11 @@ import { useTranslation } from 'react-i18next';
 
 import { useFieldSelector, useFieldWrap } from '@/application/database-yjs';
 import {
-  useAddPropertyRightDispatch,
   useAddPropertyLeftDispatch,
+  useAddPropertyRightDispatch,
+  useDuplicatePropertyDispatch,
   useHidePropertyDispatch,
   useTogglePropertyWrapDispatch,
-  useDuplicatePropertyDispatch,
 } from '@/application/database-yjs/dispatch';
 import { YjsDatabaseKey } from '@/application/types';
 import { ReactComponent as LeftIcon } from '@/assets/icons/arrow_left.svg';
@@ -17,7 +17,6 @@ import { ReactComponent as DeleteIcon } from '@/assets/icons/delete.svg';
 import { ReactComponent as DuplicateIcon } from '@/assets/icons/duplicate.svg';
 import { ReactComponent as EraserIcon } from '@/assets/icons/eraser.svg';
 import { ReactComponent as HideIcon } from '@/assets/icons/hide.svg';
-import { useGridRowContext } from '@/components/database/components/grid/grid-row/GridRowContext';
 import ClearCellsConfirm from '@/components/database/components/property/ClearCellsConfirm';
 import DeletePropertyConfirm from '@/components/database/components/property/DeletePropertyConfirm';
 import PropertyMenu from '@/components/database/components/property/PropertyMenu';
@@ -55,9 +54,7 @@ function GridFieldMenu({
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [clearCellsConfirmOpen, setClearCellsConfirmOpen] = useState(false);
 
-  const { isSticky } = useGridRowContext();
-
-  const { showStickyHeader, activePropertyId, setActivePropertyId } = useGridContext();
+  const { activePropertyId, setActivePropertyId } = useGridContext();
 
   const onDuplicateProperty = useDuplicatePropertyDispatch();
   const onHideProperty = useHidePropertyDispatch();
@@ -138,10 +135,6 @@ function GridFieldMenu({
   );
 
   const secondItemRef = useRef<HTMLDivElement | null>(null);
-
-  if ((isSticky && !showStickyHeader) || (!isSticky && showStickyHeader)) {
-    return null;
-  }
 
   return (
     <>

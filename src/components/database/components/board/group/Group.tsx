@@ -87,7 +87,6 @@ export const Group = ({ groupId }: GroupProps) => {
   const [totalSize, setTotalSize] = useState<number>(0);
   const innerRef = useRef<HTMLDivElement | null>(null);
   const stickyHeaderRef = useRef<HTMLDivElement>(null);
-  const [showStickyHeader, setShowStickyHeader] = useState(false);
 
   useEffect(() => {
     const inner = innerRef.current;
@@ -104,9 +103,11 @@ export const Group = ({ groupId }: GroupProps) => {
       const bottom = columnsEl.getBoundingClientRect().bottom ?? 0;
 
       if (scrollMarginTop <= 48 && bottom - PADDING_END >= 48) {
-        setShowStickyHeader(true);
+        stickyHeader.style.opacity = '1';
+        stickyHeader.style.pointerEvents = 'auto';
       } else {
-        setShowStickyHeader(false);
+        stickyHeader.style.opacity = '0';
+        stickyHeader.style.pointerEvents = 'none';
       }
     };
 
@@ -183,10 +184,6 @@ export const Group = ({ groupId }: GroupProps) => {
         <DatabaseStickyTopOverlay>
           <GroupStickyHeader
             groupId={groupId}
-            style={{
-              opacity: showStickyHeader ? 1 : 0,
-              pointerEvents: showStickyHeader ? 'auto' : 'none',
-            }}
             addCardBefore={addCardBefore}
             ref={stickyHeaderRef}
             groupResult={groupResult}

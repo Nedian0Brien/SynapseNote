@@ -37,7 +37,7 @@ export function TextCell({
   }, []);
 
   const showUrlActions = useMemo(() => {
-    return value && isValidUrl(value) && !editing && isHovering && cellType === FieldType.URL;
+    return cellType === FieldType.URL && value && isValidUrl(value) && !editing && isHovering;
   }, [value, isValidUrl, editing, isHovering, cellType]);
 
   const focusToEnd = useCallback((el: HTMLTextAreaElement) => {
@@ -83,7 +83,6 @@ export function TextCell({
             onExit={() => {
               setEditing?.(false);
             }}
-          
           />
         )}
         {showUrlActions && (
