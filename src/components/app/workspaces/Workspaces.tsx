@@ -1,4 +1,3 @@
-import { IconButton, Tooltip } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -33,6 +32,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import Import from '@/components/_shared/more-actions/importer/Import';
 import { notify } from '@/components/_shared/notify';
 import { openUrl } from '@/utils/url';
@@ -196,17 +196,19 @@ export function Workspaces() {
               <DropdownMenuItem onSelect={handleOpenImport}>
                 <ImportIcon />
                 <div className={'flex-1 text-left'}>{t('web.importNotion')}</div>
-                <Tooltip title={t('workspace.learnMore')} enterDelay={1000} enterNextDelay={1000}>
-                  <IconButton
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      void openUrl('https://docs.appflowy.io/docs/guides/import-from-notion', '_blank');
-                    }}
-                    size={'small'}
-                    className={'mx-2'}
-                  >
-                    <TipIcon />
-                  </IconButton>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void openUrl('https://docs.appflowy.io/docs/guides/import-from-notion', '_blank');
+                      }}
+                      className={'ml-auto cursor-pointer text-icon-secondary'}
+                    >
+                      <TipIcon />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>{t('workspace.learnMore')}</TooltipContent>
                 </Tooltip>
               </DropdownMenuItem>
             </DropdownMenuGroup>
