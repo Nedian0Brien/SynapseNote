@@ -28,7 +28,7 @@ export function WorkspaceItem({
   onLeave?: (workspace: Workspace) => void;
 }) {
   const { t } = useTranslation();
-  const [hovered, setHovered] = useState(true);
+  const [hovered, setHovered] = useState(false);
 
   const renderActions = useMemo(() => {
     if (changeLoading === workspace.id) return <CircularProgress size={16} />;
