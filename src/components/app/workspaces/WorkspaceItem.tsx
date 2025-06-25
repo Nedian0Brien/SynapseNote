@@ -80,7 +80,7 @@ export function WorkspaceItem({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <Avatar shape={'square'} className='h-[32px] min-w-[32px]'>
+      <Avatar shape={'square'} size={'xs'}>
         <AvatarImage src={workspace.icon} alt={''} />
         <AvatarFallback>{workspace.name}</AvatarFallback>
       </Avatar>

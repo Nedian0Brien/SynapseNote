@@ -172,12 +172,8 @@ export function Workspaces() {
                 setOpenCreateWorkspace(true);
               }}
             >
-              <div
-                className={
-                  'flex h-[32px] w-[32px] items-center justify-center rounded-[8px] border border-border-primary'
-                }
-              >
-                <AddIcon className={'h-5 w-5'} />
+              <div className={'flex h-5 w-5 items-center justify-center rounded-100 border border-border-primary'}>
+                <AddIcon className={'!h-4 !w-4'} />
               </div>
               {t('workspace.create')}
             </DropdownMenuItem>

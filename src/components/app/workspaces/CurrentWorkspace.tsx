@@ -6,7 +6,6 @@ function CurrentWorkspace({
   userWorkspaceInfo,
   selectedWorkspace,
   onChangeWorkspace,
-  avatarSize = 32,
 }: {
   userWorkspaceInfo?: UserWorkspaceInfo;
   selectedWorkspace?: Workspace;
@@ -32,12 +31,7 @@ function CurrentWorkspace({
 
   return (
     <>
-      <Avatar
-        shape={'square'}
-        style={{
-          minWidth: avatarSize,
-        }}
-      >
+      <Avatar shape={'square'} size={'xs'}>
         <AvatarImage src={selectedWorkspace.icon} alt={''} />
         <AvatarFallback>{selectedWorkspace.name}</AvatarFallback>
       </Avatar>
