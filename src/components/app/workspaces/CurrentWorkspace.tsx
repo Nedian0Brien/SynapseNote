@@ -31,12 +31,11 @@ function CurrentWorkspace({
   }
 
   return (
-    <div className={'flex w-full items-center gap-1.5 overflow-hidden'}>
+    <>
       <Avatar
         shape={'square'}
         style={{
           minWidth: avatarSize,
-          fontSize: avatarSize / 1.5,
         }}
       >
         <AvatarImage src={selectedWorkspace.icon} alt={''} />
@@ -44,7 +43,7 @@ function CurrentWorkspace({
       </Avatar>
 
       <div className={'flex-1 truncate font-medium text-text-primary'}>{selectedWorkspace.name}</div>
-    </div>
+    </>
   );
 }
 

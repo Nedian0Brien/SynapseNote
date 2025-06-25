@@ -1,17 +1,19 @@
+import { Dialog, Divider, InputBase } from '@mui/material';
+import React, { useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import { ReactComponent as DownIcon } from '@/assets/icons/alt_arrow_down.svg';
+import { ReactComponent as CloseIcon } from '@/assets/icons/close.svg';
 import { ReactComponent as SearchIcon } from '@/assets/icons/search.svg';
 import { ReactComponent as CheckIcon } from '@/assets/icons/tick.svg';
 import { useAppRecent } from '@/components/app/app.hooks';
 import BestMatch from '@/components/app/search/BestMatch';
 import RecentViews from '@/components/app/search/RecentViews';
 import TitleMatch from '@/components/app/search/TitleMatch';
+import { dropdownMenuItemVariants } from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Popover } from '@/components/_shared/popover';
 import { createHotkey, createHotKeyLabel, HOT_KEY_NAME } from '@/utils/hotkeys';
-import { Button, Dialog, Divider, InputBase, Tooltip } from '@mui/material';
-import React, { useCallback, useEffect } from 'react';
-
-import { ReactComponent as CloseIcon } from '@/assets/icons/close.svg';
-import { useTranslation } from 'react-i18next';
 
 enum SEARCH_TYPE {
   AI_SUGGESTION = 'AI_SUGGESTION',
@@ -61,26 +63,25 @@ export function Search() {
 
   return (
     <>
-      <Tooltip
-        title={
+      <Tooltip delayDuration={1000}>
+        <TooltipTrigger asChild>
+          <div
+            onClick={(e) => {
+              e.currentTarget.blur();
+              setOpen(true);
+            }}
+            className={dropdownMenuItemVariants()}
+          >
+            <SearchIcon />
+            {t('button.search')}
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side='right'>
           <div className={'flex flex-col gap-1'}>
             <span>{t('search.sidebarSearchIcon')}</span>
             <div className={'text-text-secondary'}>{createHotKeyLabel(HOT_KEY_NAME.SEARCH)}</div>
           </div>
-        }
-      >
-        <Button
-          onClick={(e) => {
-            e.currentTarget.blur();
-            setOpen(true);
-          }}
-          startIcon={<SearchIcon className={'mr-[1px] h-5 w-5 opacity-60'} />}
-          size={'small'}
-          className={'w-full justify-start py-1.5 text-sm font-normal hover:bg-fill-content-hover'}
-          color={'inherit'}
-        >
-          {t('button.search')}
-        </Button>
+        </TooltipContent>
       </Tooltip>
 
       <Dialog
@@ -117,10 +118,18 @@ export function Search() {
             >
               <CloseIcon className={'h-3 w-3'} />
             </span>
-            <Tooltip title={'we currently only support searching for pages and content in documents'}>
-              <span className={'flex cursor-default items-center rounded bg-fill-content-hover p-1 px-2 text-xs'}>
-                BETA
-              </span>
+            <Tooltip delayDuration={1000}>
+              <TooltipTrigger asChild>
+                <span
+                  onMouseDown={(e) => e.preventDefault()}
+                  className={'flex cursor-pointer items-center rounded bg-fill-content-hover p-1 px-2 text-xs'}
+                >
+                  BETA
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side='right'>
+                <span>we currently only support searching for pages and content in documents</span>
+              </TooltipContent>
             </Tooltip>
           </div>
         </div>

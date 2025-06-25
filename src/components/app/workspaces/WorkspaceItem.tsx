@@ -85,7 +85,7 @@ export function WorkspaceItem({
         <AvatarFallback>{workspace.name}</AvatarFallback>
       </Avatar>
       <div className={'flex flex-1 flex-col items-start overflow-hidden'}>
-        <Tooltip>
+        <Tooltip delayDuration={1000}>
           <TooltipTrigger asChild>
             <div className={'w-full overflow-hidden truncate text-left text-sm text-text-primary'}>{workspace.name}</div>
           </TooltipTrigger>

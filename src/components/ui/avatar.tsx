@@ -15,6 +15,7 @@ const avatarVariants = cva('relative flex aspect-square shrink-0 overflow-hidden
       outline: 'border-[1.5px] bg-transparent border-border-primary',
     },
     size: {
+      xs: 'h-5 text-xs leading-[16px] text-icon-primary font-normal',
       sm: 'h-6 text-xs leading-[16px] text-icon-primary font-normal',
       md: 'h-8 text-sm font-normal',
       xl: 'h-20 text-2xl font-normal',

@@ -36,9 +36,7 @@ function SideBar({ drawerWidth, drawerOpened, toggleOpenDrawer, onResizeDrawerWi
     >
       <div className={'flex w-full flex-1 flex-col gap-1'}>
         <div
-          className={
-            'sticky top-12 z-[1] flex-col items-center justify-around gap-2 bg-surface-container-layer-00 px-[10px]'
-          }
+          className={'sticky top-12 z-[1] mx-1 flex-col items-center justify-around gap-2 bg-surface-container-layer-00'}
         >
           <Search />
           <div
