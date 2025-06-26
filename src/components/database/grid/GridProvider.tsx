@@ -3,9 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { RenderRow, useRenderRows } from '@/components/database/components/grid/grid-row';
 import { GridContext } from '@/components/database/grid/useGridContext';
 
-export const GridProvider = ({ children }: {
-  children: React.ReactNode;
-}) => {
+export const GridProvider = ({ children }: { children: React.ReactNode }) => {
   const [hoverRowId, setHoverRowId] = useState<string | undefined>();
   const [activePropertyId, setActivePropertyId] = useState<string | undefined>();
   const { rows: initialRows } = useRenderRows();
@@ -46,11 +44,8 @@ export const GridProvider = ({ children }: {
   }, []);
   const [activeCell, setActiveCell] = useState<{ rowId: string; fieldId: string } | undefined>(undefined);
 
-  const onResizeRow = useCallback(({
-    rowId,
-    maxCellHeight,
-  }: {rowId: string, maxCellHeight: number}) => {
-    setResizeRows(prev => {
+  const onResizeRow = useCallback(({ rowId, maxCellHeight }: { rowId: string; maxCellHeight: number }) => {
+    setResizeRows((prev) => {
       const newMap = new Map(prev);
 
       newMap.set(rowId, maxCellHeight);
@@ -60,33 +55,36 @@ export const GridProvider = ({ children }: {
   }, []);
 
   const onResizeRowEnd = useCallback((id: string) => {
-    setResizeRows(prev => {
+    setResizeRows((prev) => {
       prev.delete(id);
       return prev;
     });
   }, []);
 
-  return <GridContext.Provider
-    value={{
-      hoverRowId,
-      setHoverRowId: handleHoverRowStart,
-      rows,
-      setRows,
-      activePropertyId,
-      setActivePropertyId,
-    
-      activeCell,
-      setActiveCell,
-      resizeRows,
-      setResizeRow: onResizeRow,
-      onResizeRowEnd,
-    }}
-  >
-    <div
-      ref={ref}
-      className={'flex-1'}
+  const [showStickyHeader, setShowStickyHeader] = useState(false);
+
+  return (
+    <GridContext.Provider
+      value={{
+        hoverRowId,
+        setHoverRowId: handleHoverRowStart,
+        rows,
+        setRows,
+        activePropertyId,
+        setActivePropertyId,
+
+        activeCell,
+        setActiveCell,
+        resizeRows,
+        setResizeRow: onResizeRow,
+        onResizeRowEnd,
+        showStickyHeader,
+        setShowStickyHeader,
+      }}
     >
-      {children}
-    </div>
-  </GridContext.Provider>;
+      <div ref={ref} className={'flex-1'}>
+        {children}
+      </div>
+    </GridContext.Provider>
+  );
 };

@@ -36,6 +36,7 @@ function GridVirtualizer({ columns }: { columns: RenderColumn[] }) {
   const stickyHeaderRef = useRef<HTMLDivElement>(null);
   const rowsHeightRef = useRef<Map<string, number>>(new Map());
   const [isScrolling, setIsScrolling] = useState(false);
+  const { setShowStickyHeader } = useGridContext();
 
   const onResizeRow = useCallback(
     (id: string, maxCellHeight: number) => {
@@ -96,9 +97,11 @@ function GridVirtualizer({ columns }: { columns: RenderColumn[] }) {
       if (scrollMarginTop <= 48 && bottom - PADDING_END >= 48) {
         stickyHeader.style.opacity = '1';
         stickyHeader.style.pointerEvents = 'auto';
+        setShowStickyHeader(true);
       } else {
         stickyHeader.style.opacity = '0';
         stickyHeader.style.pointerEvents = 'none';
+        setShowStickyHeader(false);
       }
 
       setIsScrolling(true);
@@ -114,7 +117,7 @@ function GridVirtualizer({ columns }: { columns: RenderColumn[] }) {
     return () => {
       scrollElement.removeEventListener('scroll', onScroll);
     };
-  }, [parentRef, scrollMarginTop, virtualizer.scrollElement]);
+  }, [parentRef, scrollMarginTop, virtualizer.scrollElement, setShowStickyHeader]);
 
   return (
     <GridDragContext.Provider value={contextValue}>

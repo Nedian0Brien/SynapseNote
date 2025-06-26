@@ -17,6 +17,8 @@ export const GridContext = createContext<{
   resizeRows?: Map<string, number>;
   setResizeRow: (resizeRow: { rowId: string; maxCellHeight: number }) => void;
   onResizeRowEnd: (id: string) => void;
+  showStickyHeader: boolean;
+  setShowStickyHeader: (show: boolean) => void;
 }>({
   rows: [],
   setRows: (_rows: RenderRow[]) => undefined,
@@ -25,6 +27,8 @@ export const GridContext = createContext<{
   setActiveCell: (_activeCell?: { rowId: string; fieldId: string }) => undefined,
   setResizeRow: () => undefined,
   onResizeRowEnd: () => undefined,
+  showStickyHeader: false,
+  setShowStickyHeader: (_show: boolean) => undefined,
 });
 
 export function useGridContext() {
