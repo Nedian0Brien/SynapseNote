@@ -46,7 +46,7 @@ Bring projects, wikis, and teams together with AI
 
 ## Features
 - Write beautiful documents with rich content types
-- Create custom Grid & Kanban Board-view to manage and digest data
+- Create custom Grid & Kanban Board-view databases to manage and digest data
 - Add a Quick Note to jot down lists, ideas, or to-dos
 - Invite members to your workspace for seamless collaboration
 - Create multiple public and private spaces to better organize your content
