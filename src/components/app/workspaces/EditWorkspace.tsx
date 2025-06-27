@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 
-function CreateWorkspace({
+function EditWorkspace({
   open,
   openOnChange,
   defaultName,
@@ -65,6 +65,7 @@ function CreateWorkspace({
                 name='name'
                 autoFocus
                 value={name}
+                autoComplete='off'
                 ref={(input: HTMLInputElement) => {
                   if (!input) return;
                   if (!inputRef.current) {
@@ -108,4 +109,4 @@ function CreateWorkspace({
   );
 }
 
-export default CreateWorkspace;
+export default EditWorkspace;

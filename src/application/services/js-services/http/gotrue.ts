@@ -1,11 +1,12 @@
+import axios, { AxiosInstance } from 'axios';
+
 import { emit, EventType } from '@/application/session';
 import { afterAuth } from '@/application/session/sign_in';
-import { refreshToken as refreshSessionToken } from '@/application/session/token';
-import axios, { AxiosInstance } from 'axios';
+import { getTokenParsed, refreshToken as refreshSessionToken } from '@/application/session/token';
 
 let axiosInstance: AxiosInstance | null = null;
 
-export function initGrantService (baseURL: string) {
+export function initGrantService(baseURL: string) {
   if (axiosInstance) {
     return;
   }
@@ -23,7 +24,7 @@ export function initGrantService (baseURL: string) {
   });
 }
 
-export async function refreshToken (refresh_token: string) {
+export async function refreshToken(refresh_token: string) {
   const response = await axiosInstance?.post<{
     access_token: string;
     expires_at: number;
@@ -43,13 +44,117 @@ export async function refreshToken (refresh_token: string) {
   return newToken;
 }
 
-export async function signInOTP ({
+export async function signInWithPassword(params: { email: string; password: string; redirectTo: string }) {
+  try {
+    const response = await axiosInstance?.post<{
+      access_token: string;
+      expires_at: number;
+      refresh_token: string;
+    }>('/token?grant_type=password', {
+      email: params.email,
+      password: params.password,
+    });
+
+    const data = response?.data;
+
+    if (data) {
+      refreshSessionToken(JSON.stringify(data));
+      emit(EventType.SESSION_VALID);
+      afterAuth();
+    } else {
+      emit(EventType.SESSION_INVALID);
+      return Promise.reject({
+        code: -1,
+        message: 'Failed to sign in with password',
+      });
+    }
+    // eslint-disable-next-line
+  } catch (e: any) {
+    emit(EventType.SESSION_INVALID);
+    return Promise.reject({
+      code: -1,
+      message: 'Incorrect password. Please try again.',
+    });
+  }
+}
+
+export async function forgotPassword(params: { email: string }) {
+  try {
+    const response = await axiosInstance?.post<{
+      access_token: string;
+      expires_at: number;
+      refresh_token: string;
+    }>('/recover', {
+      email: params.email,
+    });
+
+    if (response?.data) {
+      return;
+    } else {
+      emit(EventType.SESSION_INVALID);
+      return Promise.reject({
+        code: -1,
+        message: 'Failed to send recovery email',
+      });
+    }
+    // eslint-disable-next-line
+  } catch (e: any) {
+    emit(EventType.SESSION_INVALID);
+    return Promise.reject({
+      code: -1,
+      message: e.message,
+    });
+  }
+}
+
+export async function changePassword(params: { password: string }) {
+  try {
+    const token = getTokenParsed();
+    const access_token = token?.access_token;
+
+    if (!access_token) {
+      return Promise.reject({
+        code: -1,
+        message: 'You have not logged in yet. Can not change password.',
+      });
+    }
+
+    await axiosInstance?.post<{
+      code: number;
+      msg: string;
+    }>(
+      '/user/change-password',
+      {
+        password: params.password,
+        current_password: params.password,
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${access_token}`,
+        },
+      }
+    );
+
+    return;
+    // eslint-disable-next-line
+  } catch (e: any) {
+    emit(EventType.SESSION_INVALID);
+    return Promise.reject({
+      code: -1,
+      message: e.response?.data?.msg || e.message,
+    });
+  }
+}
+
+export async function signInOTP({
   email,
   code,
+  type = 'magiclink',
 }: {
   email: string;
   code: string;
-  redirectTo: string;
+  type?: 'magiclink' | 'recovery';
 }) {
   try {
     const response = await axiosInstance?.post<{
@@ -61,7 +166,7 @@ export async function signInOTP ({
     }>('/verify', {
       email,
       token: code,
-      type: 'magiclink',
+      type,
     });
 
     const data = response?.data;
@@ -69,7 +174,10 @@ export async function signInOTP ({
     if (data) {
       if (!data.code) {
         refreshSessionToken(JSON.stringify(data));
-        emit(EventType.SESSION_VALID);
+        if (type === 'magiclink') {
+          emit(EventType.SESSION_VALID);
+        }
+
         afterAuth();
       } else {
         emit(EventType.SESSION_INVALID);
@@ -87,7 +195,6 @@ export async function signInOTP ({
     }
     // eslint-disable-next-line
   } catch (e: any) {
-
     emit(EventType.SESSION_INVALID);
     return Promise.reject({
       code: e.response?.data?.code || e.response?.status,
@@ -98,7 +205,7 @@ export async function signInOTP ({
   return;
 }
 
-export async function signInWithMagicLink (email: string, authUrl: string) {
+export async function signInWithMagicLink(email: string, authUrl: string) {
   const res = await axiosInstance?.post(
     '/magiclink',
     {
@@ -111,19 +218,19 @@ export async function signInWithMagicLink (email: string, authUrl: string) {
       headers: {
         Redirect_to: authUrl,
       },
-    },
+    }
   );
 
   return res?.data;
 }
 
-export async function settings () {
+export async function settings() {
   const res = await axiosInstance?.get('/settings');
 
   return res?.data;
 }
 
-export function signInGoogle (authUrl: string) {
+export function signInGoogle(authUrl: string) {
   const provider = 'google';
   const redirectTo = encodeURIComponent(authUrl);
   const accessType = 'offline';
@@ -134,7 +241,7 @@ export function signInGoogle (authUrl: string) {
   window.open(url, '_current');
 }
 
-export function signInApple (authUrl: string) {
+export function signInApple(authUrl: string) {
   const provider = 'apple';
   const redirectTo = encodeURIComponent(authUrl);
   const baseURL = axiosInstance?.defaults.baseURL;
@@ -143,7 +250,7 @@ export function signInApple (authUrl: string) {
   window.open(url, '_current');
 }
 
-export function signInGithub (authUrl: string) {
+export function signInGithub(authUrl: string) {
   const provider = 'github';
   const redirectTo = encodeURIComponent(authUrl);
   const baseURL = axiosInstance?.defaults.baseURL;
@@ -152,7 +259,7 @@ export function signInGithub (authUrl: string) {
   window.open(url, '_current');
 }
 
-export function signInDiscord (authUrl: string) {
+export function signInDiscord(authUrl: string) {
   const provider = 'discord';
   const redirectTo = encodeURIComponent(authUrl);
   const baseURL = axiosInstance?.defaults.baseURL;

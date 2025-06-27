@@ -95,7 +95,10 @@ export interface AppService {
   getAppTrash: (workspaceId: string) => Promise<View[]>;
   loginAuth: (url: string) => Promise<void>;
   signInMagicLink: (params: { email: string; redirectTo: string }) => Promise<void>;
-  signInOTP: (params: { email: string; code: string; redirectTo: string }) => Promise<void>;
+  signInOTP: (params: { email: string; code: string; redirectTo: string; type?: 'magiclink' | 'recovery' }) => Promise<void>;
+  signInWithPassword: (params: { email: string; password: string; redirectTo: string }) => Promise<void>;
+  forgotPassword: (params: { email: string }) => Promise<void>;
+  changePassword: (params: { password: string }) => Promise<void>;
   signInGoogle: (params: { redirectTo: string }) => Promise<void>;
   signInGithub: (params: { redirectTo: string }) => Promise<void>;
   signInDiscord: (params: { redirectTo: string }) => Promise<void>;

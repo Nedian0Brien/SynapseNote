@@ -298,12 +298,25 @@ export class AFClientService implements AFService {
   }
 
   @withSignIn()
+  async signInWithPassword (params: { email: string; password: string; redirectTo: string }) {
+    return APIService.signInWithPassword(params);
+  }
+
+  async forgotPassword (params: { email: string }) {
+    return APIService.forgotPassword(params);
+  }
+
+  async changePassword (params: { password: string }) {
+    return APIService.changePassword(params);
+  }
+
+  @withSignIn()
   async signInMagicLink ({ email }: { email: string; redirectTo: string }) {
     return await APIService.signInWithMagicLink(email, AUTH_CALLBACK_URL);
   }
 
   @withSignIn()
-  async signInOTP (params: { email: string; code: string; redirectTo: string }) {
+  async signInOTP (params: { email: string; code: string; type?: 'magiclink' | 'recovery' }) {
     return APIService.signInOTP(params);
   }
 

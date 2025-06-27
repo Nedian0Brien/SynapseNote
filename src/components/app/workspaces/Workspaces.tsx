@@ -13,9 +13,9 @@ import { ReactComponent as AddIcon } from '@/assets/icons/plus.svg';
 import { ReactComponent as ImportIcon } from '@/assets/icons/save_as.svg';
 import { ReactComponent as UpgradeIcon } from '@/assets/icons/upgrade.svg';
 import { useAppHandlers, useCurrentWorkspaceId, useUserWorkspaceInfo } from '@/components/app/app.hooks';
-import CreateWorkspace from '@/components/app/workspaces/CreateWorkspace';
 import CurrentWorkspace from '@/components/app/workspaces/CurrentWorkspace';
 import DeleteWorkspace from '@/components/app/workspaces/DeleteWorkspace';
+import EditWorkspace from '@/components/app/workspaces/EditWorkspace';
 import InviteMember from '@/components/app/workspaces/InviteMember';
 import LeaveWorkspace from '@/components/app/workspaces/LeaveWorkspace';
 import WorkspaceList from '@/components/app/workspaces/WorkspaceList';
@@ -264,9 +264,9 @@ export function Workspaces() {
 
       <Import />
       {openCreateWorkspace && (
-        <CreateWorkspace
+        <EditWorkspace
           onOk={handleCreateWorkspace}
-          okText={t('workspace.create')}
+          okText={t('button.create')}
           defaultName={`${currentUser?.name}'s Workspace`}
           open={openCreateWorkspace}
           openOnChange={setOpenCreateWorkspace}
@@ -278,11 +278,11 @@ export function Workspaces() {
       )}
 
       {openRenameWorkspace && (
-        <CreateWorkspace
+        <EditWorkspace
           open={Boolean(openRenameWorkspace)}
           openOnChange={() => setOpenRenameWorkspace(null)}
           onOk={handleUpdateWorkspace}
-          okText={t('workspace.rename')}
+          okText={t('button.rename')}
           defaultName={openRenameWorkspace.name}
           title={t('workspace.rename')}
         />
