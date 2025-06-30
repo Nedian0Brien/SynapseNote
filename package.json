@@ -24,7 +24,7 @@
     "generate-tokens": "node scripts/system-token/convert-tokens.cjs"
   },
   "dependencies": {
-    "@appflowyinc/ai-chat": "0.1.26",
+    "@appflowyinc/ai-chat": "0.1.30",
     "@appflowyinc/editor": "^0.1.10",
     "@atlaskit/pragmatic-drag-and-drop": "1.5.2",
     "@atlaskit/pragmatic-drag-and-drop-auto-scroll": "2.1.0",

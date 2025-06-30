@@ -10,7 +10,7 @@ import { getScrollParent } from '@/components/global-comment/utils';
 import { notify } from '@/components/_shared/notify';
 import '@appflowyinc/ai-chat/style';
 
-import { AIAssistantProvider, ContextPlaceholder, WriterRequest } from '@appflowyinc/ai-chat';
+import { AIAssistantProvider, ContextPlaceholder, PromptModalProvider, WriterRequest } from '@appflowyinc/ai-chat';
 import { EditorData } from '@appflowyinc/editor';
 import { Portal } from '@mui/material';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -172,33 +172,35 @@ function EditorOverlay({ viewId, workspaceId }: { viewId: string; workspaceId: s
 
   return (
     <ErrorBoundary fallbackRender={() => null}>
-      <AIAssistantProvider
-        isGlobalDocument={!isRange}
-        onInsertBelow={handleInsertBelow}
-        onReplace={handleReplaceSelection}
-        request={writerRequest}
-        viewId={viewId}
-        onExit={handleExit}
-        scrollContainer={scrollerContainer || undefined}
-      >
-        <Toolbars />
-        <Panels />
-        <BlockPopover />
-        <Portal container={container}>
-          {absoluteHeight ? (
-            <div
-              style={{
-                transform: 'translateY(-' + absoluteHeight + 'px)',
-              }}
-              className={'flex w-full'}
-            >
+      <PromptModalProvider>
+        <AIAssistantProvider
+          isGlobalDocument={!isRange}
+          onInsertBelow={handleInsertBelow}
+          onReplace={handleReplaceSelection}
+          request={writerRequest}
+          viewId={viewId}
+          onExit={handleExit}
+          scrollContainer={scrollerContainer || undefined}
+        >
+          <Toolbars />
+          <Panels />
+          <BlockPopover />
+          <Portal container={container}>
+            {absoluteHeight ? (
+              <div
+                style={{
+                  transform: 'translateY(-' + absoluteHeight + 'px)',
+                }}
+                className={'flex w-full'}
+              >
+                <ContextPlaceholder />
+              </div>
+            ) : (
               <ContextPlaceholder />
-            </div>
-          ) : (
-            <ContextPlaceholder />
-          )}
-        </Portal>
-      </AIAssistantProvider>
+            )}
+          </Portal>
+        </AIAssistantProvider>
+      </PromptModalProvider>
     </ErrorBoundary>
   );
 }
