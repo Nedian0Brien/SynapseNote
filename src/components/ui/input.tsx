@@ -28,6 +28,8 @@ const baseInputStyles = cn(
 
   // Disabled state
   'disabled:pointer-events-none disabled:cursor-not-allowed'
+
+  // 'autofill:bg-fill-content'
 );
 
 const inputVariants = cva(baseInputStyles, {
@@ -75,6 +77,9 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({ className, type, varia
         'aria-invalid:ring-border-error-thick aria-invalid:border-border-error-thick',
         className
       )}
+      autoComplete='off'
+      spellCheck='false'
+      autoCorrect='off'
       {...props}
     />
   );
