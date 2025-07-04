@@ -115,7 +115,7 @@ jobs:
           # Get architectures and create image list
           archs="${{ github.event.inputs.archs }}"
           IMAGE_LIST=""
-          
+
           # Convert architectures to image tags
           IFS=',' read -ra ARCH_ARRAY <<< "$archs"
           for arch in "${ARCH_ARRAY[@]}"; do
@@ -125,7 +125,7 @@ jobs:
             fi
             IMAGE_LIST="${IMAGE_LIST}${{ env.IMAGE_NAME }}:test-${{ env.IMAGE_TAG }}-${platform_pair}"
           done
-          
+
           echo "image_list=${IMAGE_LIST}" >> $GITHUB_OUTPUT
           echo "latest_list=${IMAGE_LIST//test-${{ env.IMAGE_TAG }}/test-latest}" >> $GITHUB_OUTPUT
 
@@ -141,4 +141,4 @@ jobs:
         with:
           inputs: ${{ env.IMAGE_NAME }}:test-latest
           images: ${{ steps.generate-manifest.outputs.latest_list }}
-          push: true 
+          push: true

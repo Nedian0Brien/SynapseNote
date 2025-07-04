@@ -5,16 +5,14 @@ WORKDIR /app
 
 ARG VERSION=main
 
-RUN npm install -g pnpm@10.9.0
+COPY . .
+RUN corepack enable
 RUN pnpm install
 
-COPY . .
 
 RUN sed -i 's|https://test.appflowy.cloud||g' src/components/main/app.hooks.ts
 RUN pnpm run build
 
 FROM nginx:alpine
 COPY --from=builder /app/dist /usr/share/nginx/html/
-
-# Copy nginx.conf from docker folder
-COPY docker/nginx.conf /etc/nginx/nginx.conf
+COPY --from=builder /app/docker/nginx.conf /etc/nginx/nginx.conf
