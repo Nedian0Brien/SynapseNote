@@ -13,12 +13,17 @@ import {
   CreatePagePayload,
   CreateRowDoc,
   CreateSpacePayload,
+  DatabasePrompt,
+  DatabasePromptField,
+  DatabasePromptRow,
   DatabaseRelations,
   GenerateAISummaryRowPayload,
   GenerateAITranslateRowPayload,
+  LoadDatabasePrompts,
   LoadView,
   LoadViewMeta,
   Subscription,
+  TestDatabasePromptConfig,
   TextCount,
   Types,
   UIVariant,
@@ -27,6 +32,7 @@ import {
   UserWorkspaceInfo,
   View,
   ViewLayout,
+  YDatabase,
   YjsDatabaseKey,
   YjsEditorKey,
   YSharedRoot,
@@ -36,6 +42,9 @@ import { AppOverlayProvider } from '@/components/app/app-overlay/AppOverlayProvi
 import RequestAccess from '@/components/app/landing-pages/RequestAccess';
 import { AFConfigContext, useService } from '@/components/main/app.hooks';
 import { findAncestors, findView, findViewByLayout } from '@/components/_shared/outline/utils';
+import { PromptDatabaseConfiguration } from '@appflowyinc/ai-chat';
+import { FieldType } from '@/application/database-yjs';
+import { getCellDataText } from '@/application/database-yjs/cell.parse';
 
 const ViewModal = React.lazy(() => import('@/components/app/ViewModal'));
 
@@ -84,6 +93,8 @@ export interface AppContextType {
   generateAITranslateForRow?: (payload: GenerateAITranslateRowPayload) => Promise<string>;
   loadDatabaseRelations?: () => Promise<DatabaseRelations | undefined>;
   createOrphanedView?: (payload: { document_id: string }) => Promise<void>;
+  loadDatabasePrompts?: LoadDatabasePrompts;
+  testDatabasePromptConfig?: TestDatabasePromptConfig;
   eventEmitter?: EventEmitter;
 }
 
@@ -832,6 +843,203 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     [currentWorkspaceId, service]
   );
 
+  const rowDocsRef = useRef<Map<string, DatabasePromptRow>>(new Map());
+
+  const getRows = useCallback(
+    async (viewId: string) => {
+      if (!currentWorkspaceId) return [];
+
+      const doc = await loadView(viewId);
+      const database = doc?.getMap(YjsEditorKey.data_section)?.get(YjsEditorKey.database) as YDatabase;
+      const view = database.get(YjsDatabaseKey.views).get(viewId);
+      const rowOrders = view?.get(YjsDatabaseKey.row_orders) || [];
+
+      const rowPromises = rowOrders
+        .map(async (row: { id: string }) => {
+          if (rowDocsRef.current.has(row.id)) {
+            return rowDocsRef.current.get(row.id);
+          }
+
+          if (!createRowDoc) return;
+
+          const rowKey = `${doc.guid}_rows_${row.id}`;
+          const rowDoc = await createRowDoc(rowKey);
+
+          const rowSharedRoot = rowDoc?.getMap(YjsEditorKey.data_section);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const data = rowSharedRoot?.get(YjsEditorKey.database_row) as { [fieldId: string]: any };
+
+          const databaseRow = {
+            id: row.id,
+            data,
+          };
+
+          rowDocsRef.current.set(row.id, databaseRow);
+
+          return databaseRow;
+        })
+        .filter((p): p is Promise<DatabasePromptRow> => p !== undefined);
+
+      return Promise.all(rowPromises);
+    },
+    [createRowDoc, currentWorkspaceId, loadView]
+  );
+
+  const getFields = useCallback(
+    async (viewId: string) => {
+      if (!currentWorkspaceId) return [];
+
+      const doc = await loadView(viewId);
+      const database = doc?.getMap(YjsEditorKey.data_section)?.get(YjsEditorKey.database) as YDatabase;
+      const fields = database.get(YjsDatabaseKey.fields);
+
+      return Array.from(fields.entries())
+        .map(([id, field]) => {
+          const isPrimary = field.get(YjsDatabaseKey.is_primary) || false;
+          const name = field.get(YjsDatabaseKey.name) || '';
+          const fieldType = Number(field.get(YjsDatabaseKey.type));
+          const isSelect = fieldType === FieldType.SingleSelect || fieldType === FieldType.MultiSelect;
+
+          return {
+            id,
+            name,
+            fieldType,
+            isPrimary,
+            isSelect,
+            data: field,
+          };
+        })
+        .filter((f) => [FieldType.RichText, FieldType.SingleSelect, FieldType.MultiSelect].includes(f.fieldType));
+    },
+    [currentWorkspaceId, loadView]
+  );
+
+  const loadDatabasePromptsWithFields = useCallback(
+    async (
+      config: PromptDatabaseConfiguration,
+      fields: {
+        id: string;
+        name: string;
+        isPrimary: boolean;
+        fieldType: FieldType;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        data: any;
+      }[]
+    ) => {
+      const titleField = fields.find((field) => field.id === config.titleFieldId);
+
+      if (!titleField) {
+        throw new Error('Cannot find title field');
+      }
+
+      const contentField = fields.find((field) => field.id === config.contentFieldId);
+
+      if (!contentField) {
+        throw new Error('Cannot find content field');
+      }
+
+      const exampleField = config.exampleFieldId
+        ? fields.find((field) => field.id === config.exampleFieldId)
+        : undefined;
+
+      const categoryField = config.categoryFieldId
+        ? fields.find((field) => field.id === config.categoryFieldId)
+        : undefined;
+
+      const rows = await getRows(config.databaseViewId);
+
+      return rows
+        .map((row) => {
+          const cells = row?.data.get(YjsDatabaseKey.cells);
+
+          const nameCell = cells?.get(titleField.id);
+          const name = nameCell && titleField ? getCellDataText(nameCell, titleField.data) : '';
+
+          const contentCell = cells?.get(contentField.id);
+          const content = contentCell && contentField ? getCellDataText(contentCell, contentField.data) : '';
+
+          if (!name || !content) return null;
+
+          const exampleCell = exampleField ? cells?.get(exampleField.id) : null;
+          const example = exampleCell && exampleField ? getCellDataText(exampleCell, exampleField.data) : '';
+
+          const categoryCell = categoryField ? cells?.get(categoryField.id) : null;
+          const category = categoryCell && categoryField ? getCellDataText(categoryCell, categoryField.data) : '';
+
+          return {
+            id: row.id,
+            name,
+            content,
+            example,
+            category,
+          };
+        })
+        .filter((prompt): prompt is DatabasePrompt => prompt !== null);
+    },
+    [getRows]
+  );
+
+  const loadDatabasePrompts = async (
+    config: PromptDatabaseConfiguration
+  ): Promise<{
+    rawDatabasePrompts: DatabasePrompt[];
+    fields: DatabasePromptField[];
+  }> => {
+    const fields = await getFields(config.databaseViewId);
+
+    const rawDatabasePrompts = await loadDatabasePromptsWithFields(config, fields);
+
+    return {
+      rawDatabasePrompts,
+      fields: fields.map((field) => ({
+        id: field.id,
+        name: field.name,
+        isPrimary: field.isPrimary,
+        isSelect: field.fieldType === FieldType.SingleSelect || field.fieldType === FieldType.MultiSelect,
+      })),
+    };
+  };
+
+  const testDatabasePromptConfig = useCallback(
+    async (viewId: string) => {
+      const fields = await getFields(viewId);
+      const titleField = fields.find((field) => field.isPrimary);
+
+      if (!titleField) {
+        throw new Error('Cannot find primary field');
+      }
+
+      const contentField = fields.find(
+        (field) =>
+          !field.isPrimary &&
+          ((field.name.toLowerCase() === 'content' && field.fieldType === FieldType.RichText) ||
+            field.fieldType === FieldType.RichText)
+      );
+
+      if (!contentField) {
+        throw new Error('Cannot find content field');
+      }
+
+      const exampleField = fields.find(
+        (field) => field.name.toLowerCase() === 'example' && field.fieldType === FieldType.RichText
+      );
+      const categoryField = fields.find(
+        (field) => field.name.toLowerCase() === 'category' && field.fieldType === FieldType.RichText
+      );
+
+      const config: PromptDatabaseConfiguration = {
+        databaseViewId: viewId,
+        titleFieldId: titleField.id,
+        contentFieldId: contentField.id,
+        exampleFieldId: exampleField?.id || null,
+        categoryFieldId: categoryField?.id || null,
+      };
+
+      return { config, fields };
+    },
+    [getFields]
+  );
+
   return (
     <AppContext.Provider
       value={{
@@ -879,6 +1087,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         generateAITranslateForRow,
         loadDatabaseRelations,
         createOrphanedView,
+        loadDatabasePrompts,
+        testDatabasePromptConfig,
         eventEmitter: eventEmitterRef.current,
       }}
     >
@@ -1035,6 +1245,8 @@ export function useAppHandlers() {
     generateAITranslateForRow: context.generateAITranslateForRow,
     loadDatabaseRelations: context.loadDatabaseRelations,
     createOrphanedView: context.createOrphanedView,
+    loadDatabasePrompts: context.loadDatabasePrompts,
+    testDatabasePromptConfig: context.testDatabasePromptConfig,
     eventEmitter: context.eventEmitter,
   };
 }

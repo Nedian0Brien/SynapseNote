@@ -26,6 +26,7 @@ export const DatabaseRowSubDocument = memo(({ rowId }: { rowId: string }) => {
   const context = useDatabaseContext();
   const database = useDatabase();
   const row = useRowData(rowId);
+
   const getCellData = useCallback(
     (cell: YDatabaseCell, field: YDatabaseField) => {
       const type = Number(field?.get(YjsDatabaseKey.type));

@@ -94,6 +94,7 @@ const dropdownMenuItemVariants = cva(
 const DropdownMenuItem = forwardRef<
   HTMLDivElement,
   React.ComponentProps<typeof DropdownMenuPrimitive.Item> & {
+    className?: string;
     inset?: boolean;
     variant?: 'default' | 'destructive';
   }

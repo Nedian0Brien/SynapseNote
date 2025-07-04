@@ -1,3 +1,4 @@
+import { PromptDatabaseConfiguration } from '@appflowyinc/ai-chat';
 import { AxiosInstance } from 'axios';
 import * as Y from 'yjs';
 
@@ -1068,6 +1069,14 @@ export interface ViewComponentProps {
   createFolderView?: (payload: CreateFolderViewPayload) => Promise<string>;
   generateAISummaryForRow?: (payload: GenerateAISummaryRowPayload) => Promise<string>;
   generateAITranslateForRow?: (payload: GenerateAITranslateRowPayload) => Promise<string>;
+  loadDatabasePrompts?: (config: PromptDatabaseConfiguration) => Promise<{
+    rawDatabasePrompts: DatabasePrompt[];
+    fields: DatabasePromptField[];
+  }>;
+  testDatabasePromptConfig?: (viewId: string) => Promise<{
+    config: PromptDatabaseConfiguration;
+    fields: DatabasePromptField[];
+  }>;
 }
 
 export interface CreatePagePayload {
@@ -1142,3 +1151,35 @@ export interface GenerateAITranslateRowPayload {
   include_header?: boolean
 }
 
+export type LoadDatabasePrompts = (config: PromptDatabaseConfiguration) => Promise<{
+  rawDatabasePrompts: DatabasePrompt[];
+  fields: DatabasePromptField[];
+}>;
+
+export type TestDatabasePromptConfig = (viewId: string) => Promise<{
+  config: PromptDatabaseConfiguration;
+  fields: DatabasePromptField[];
+}>;
+
+export interface DatabasePrompt {
+  id: string;
+  name: string;
+  content: string;
+  example: string;
+  category: string;
+}
+
+export interface DatabasePromptField {
+  id: string;
+  name: string;
+  isPrimary: boolean;
+  isSelect: boolean;
+}
+
+export interface DatabasePromptRow {
+  id: string;
+  data: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    [fieldId: string]: any;
+  };
+}

@@ -23,7 +23,7 @@ import Panels from './components/panels';
 import Toolbars from './components/toolbar';
 
 function EditorOverlay({ viewId, workspaceId }: { viewId: string; workspaceId: string }) {
-  const { requestInstance } = useEditorContext();
+  const { requestInstance, loadDatabasePrompts, testDatabasePromptConfig } = useEditorContext();
   const editor = useSlate() as YjsEditor;
   const selection = editor.selection;
   const isRange = selection ? Range.isExpanded(selection) : false;
@@ -172,7 +172,11 @@ function EditorOverlay({ viewId, workspaceId }: { viewId: string; workspaceId: s
 
   return (
     <ErrorBoundary fallbackRender={() => null}>
-      <PromptModalProvider>
+      <PromptModalProvider
+        workspaceId={workspaceId}
+        loadDatabasePrompts={loadDatabasePrompts}
+        testDatabasePromptConfig={testDatabasePromptConfig}
+      >
         <AIAssistantProvider
           isGlobalDocument={!isRange}
           onInsertBelow={handleInsertBelow}

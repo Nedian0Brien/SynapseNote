@@ -24,10 +24,7 @@ export const Editor = memo(({ doc, onEditorConnected, layoutStyle = defaultLayou
       addCodeGrammars={handleAddCodeGrammars}
       layoutStyle={layoutStyle}
     >
-      <CollaborativeEditor
-        doc={doc}
-        onEditorConnected={onEditorConnected}
-      />
+      <CollaborativeEditor doc={doc} onEditorConnected={onEditorConnected} />
     </EditorContextProvider>
   );
 });

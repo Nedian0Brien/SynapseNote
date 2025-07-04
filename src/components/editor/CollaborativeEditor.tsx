@@ -13,9 +13,12 @@ import { clipboardFormatKey } from '@/components/editor/plugins/withCopy';
 
 const defaultInitialValue: Descendant[] = [];
 
-function CollaborativeEditor({ doc, onEditorConnected }: {
-  doc: Y.Doc,
-  onEditorConnected?: (editor: YjsEditor) => void
+function CollaborativeEditor({
+  doc,
+  onEditorConnected,
+}: {
+  doc: Y.Doc;
+  onEditorConnected?: (editor: YjsEditor) => void;
 }) {
   const context = useEditorContext();
   const readSummary = context.readSummary;
@@ -25,13 +28,16 @@ function CollaborativeEditor({ doc, onEditorConnected }: {
   const viewId = context.viewId;
   const onWordCountChange = context.onWordCountChange;
   const [, setClock] = useState(0);
-  const onContentChange = useCallback((content: Descendant[]) => {
-    const wordCount = getTextCount(content);
+  const onContentChange = useCallback(
+    (content: Descendant[]) => {
+      const wordCount = getTextCount(content);
 
-    onWordCountChange?.(viewId, wordCount);
-    setClock((prev) => prev + 1);
-    onRendered?.();
-  }, [onWordCountChange, viewId, onRendered]);
+      onWordCountChange?.(viewId, wordCount);
+      setClock((prev) => prev + 1);
+      onRendered?.();
+    },
+    [onWordCountChange, viewId, onRendered]
+  );
 
   const editor = useMemo(
     () =>
@@ -46,18 +52,18 @@ function CollaborativeEditor({ doc, onEditorConnected }: {
               onContentChange,
               uploadFile,
               id: viewId,
-            }),
+            })
           ),
-          clipboardFormatKey,
-        ),
+          clipboardFormatKey
+        )
       ) as YjsEditor),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [viewId, doc],
+    [viewId, doc]
   );
   const [, setIsConnected] = useState(false);
 
   useEffect(() => {
-    if(!editor) return;
+    if (!editor) return;
 
     editor.connect();
     setIsConnected(true);
@@ -71,13 +77,9 @@ function CollaborativeEditor({ doc, onEditorConnected }: {
   }, [editor]);
 
   return (
-    <Slate
-      editor={editor}
-      initialValue={defaultInitialValue}
-    >
+    <Slate editor={editor} initialValue={defaultInitialValue}>
       <EditorEditable />
     </Slate>
-
   );
 }
 

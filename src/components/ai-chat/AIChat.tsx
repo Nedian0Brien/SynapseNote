@@ -17,7 +17,7 @@ export function AIChat({ chatId, onRendered }: { chatId: string; onRendered?: ()
   const isMobile = getPlatform().isMobile;
   const [openMobilePrompt, setOpenMobilePrompt] = React.useState(isMobile);
 
-  const { refreshOutline, updatePage } = useAppHandlers();
+  const { refreshOutline, updatePage, loadDatabasePrompts, testDatabasePromptConfig } = useAppHandlers();
 
   const {
     selectionMode,
@@ -77,7 +77,7 @@ export function AIChat({ chatId, onRendered }: { chatId: string; onRendered?: ()
     }
   }, [onRendered]);
 
-  if (!requestInstance) return null;
+  if (!requestInstance || !workspaceId) return null;
 
   return (
     <div
@@ -88,6 +88,7 @@ export function AIChat({ chatId, onRendered }: { chatId: string; onRendered?: ()
     >
       <div className={'w-[952px] max-w-full px-24 max-sm:px-6'}>
         <Chat
+          workspaceId={workspaceId}
           requestInstance={requestInstance}
           chatId={chatId}
           currentUser={
@@ -106,6 +107,8 @@ export function AIChat({ chatId, onRendered }: { chatId: string; onRendered?: ()
           openingViewId={(drawerOpen && openViewId) || undefined}
           onCloseView={onCloseView}
           onOpenView={onOpenView}
+          loadDatabasePrompts={loadDatabasePrompts}
+          testDatabasePromptConfig={testDatabasePromptConfig}
         />
       </div>
 

@@ -7,9 +7,11 @@ import {
   DatabaseRelations,
   GenerateAISummaryRowPayload,
   GenerateAITranslateRowPayload,
+  LoadDatabasePrompts,
   LoadView,
   LoadViewMeta,
   RowId,
+  TestDatabasePromptConfig,
   UpdatePagePayload,
   View,
   YDatabase,
@@ -48,6 +50,8 @@ export interface DatabaseContextState {
   loadViews?: () => Promise<View[]>;
   uploadFile?: (file: File) => Promise<string>;
   createOrphanedView?: (payload: { document_id: string }) => Promise<void>;
+  loadDatabasePrompts?: LoadDatabasePrompts;
+  testDatabasePromptConfig?: TestDatabasePromptConfig;
   requestInstance?: AxiosInstance | null;
 }
 

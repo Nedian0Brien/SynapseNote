@@ -3,7 +3,13 @@ import {
   FontLayout,
   LineHeightLayout,
   LoadView,
-  LoadViewMeta, UIVariant, View, CreatePagePayload, TextCount,
+  LoadViewMeta,
+  UIVariant,
+  View,
+  CreatePagePayload,
+  TextCount,
+  LoadDatabasePrompts,
+  TestDatabasePromptConfig,
 } from '@/application/types';
 import { AxiosInstance } from 'axios';
 import EventEmitter from 'events';
@@ -57,6 +63,8 @@ export interface EditorContextState {
   uploadFile?: (file: File) => Promise<string>;
   requestInstance?: AxiosInstance | null;
   getMoreAIContext?: () => string;
+  loadDatabasePrompts?: LoadDatabasePrompts;
+  testDatabasePromptConfig?: TestDatabasePromptConfig;
   eventEmitter?: EventEmitter;
 }
 
@@ -76,7 +84,7 @@ export const EditorContextProvider = ({ children, ...props }: EditorContextState
     setDecorateState((prev) => {
       const oldValue = prev[type];
 
-      if(oldValue && Range.equals(oldValue.range, range) && oldValue.class_name === class_name) {
+      if (oldValue && Range.equals(oldValue.range, range) && oldValue.class_name === class_name) {
         return prev;
       }
 
@@ -92,7 +100,7 @@ export const EditorContextProvider = ({ children, ...props }: EditorContextState
 
   const removeDecorate = useCallback((type: string) => {
     setDecorateState((prev) => {
-      if(prev[type] === undefined) {
+      if (prev[type] === undefined) {
         return prev;
       }
 
@@ -103,16 +111,20 @@ export const EditorContextProvider = ({ children, ...props }: EditorContextState
     });
   }, []);
 
-  return <EditorContext.Provider
-    value={{
-      ...props,
-      decorateState,
-      addDecorate,
-      removeDecorate,
-      setSelectedBlockIds,
-      selectedBlockIds,
-    }}
-  >{children}</EditorContext.Provider>;
+  return (
+    <EditorContext.Provider
+      value={{
+        ...props,
+        decorateState,
+        addDecorate,
+        removeDecorate,
+        setSelectedBlockIds,
+        selectedBlockIds,
+      }}
+    >
+      {children}
+    </EditorContext.Provider>
+  );
 };
 
 export function useEditorContext() {

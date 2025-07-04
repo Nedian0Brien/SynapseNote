@@ -7,7 +7,9 @@ import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup, DropdownMenuSeparator,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -15,15 +17,17 @@ import { useTranslation } from 'react-i18next';
 import MoreActionsContent from './MoreActionsContent';
 import { ReactComponent as AddToPageIcon } from '@/assets/icons/add_to_page.svg';
 import { useService } from '@/components/main/app.hooks';
-import { Tooltip, TooltipContent } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
-function MoreActions ({ viewId, onDeleted, menuContentProps }:
-  {
-    viewId: string;
-    onDeleted?: () => void;
-    menuContentProps?: React.ComponentProps<typeof DropdownMenuContent>
-  } & React.ComponentProps<typeof DropdownMenu>,
-) {
+function MoreActions({
+  viewId,
+  onDeleted,
+  menuContentProps,
+}: {
+  viewId: string;
+  onDeleted?: () => void;
+  menuContentProps?: React.ComponentProps<typeof DropdownMenuContent>;
+} & React.ComponentProps<typeof DropdownMenu>) {
   const workspaceId = useCurrentWorkspaceId();
   const service = useService();
   const { selectionMode, onOpenSelectionMode } = useAIChatContext();
@@ -59,21 +63,21 @@ function MoreActions ({ viewId, onDeleted, menuContentProps }:
     return view?.layout === ViewLayout.AIChat ? (
       <>
         <Tooltip>
-          <div>
-            <Button
-              disabled={!hasMessages}
+          <TooltipTrigger asChild>
+            <DropdownMenuItem
               onClick={() => {
-                onOpenSelectionMode();
-                handleClose();
+                if (hasMessages) {
+                  onOpenSelectionMode();
+                  handleClose();
+                }
               }}
+              className={hasMessages ? '' : '!cursor-default !text-text-tertiary hover:!bg-fill-content'}
             >
               <AddToPageIcon />
               {t('web.addMessagesToPage')}
-            </Button>
-          </div>
-          <TooltipContent>
-            {hasMessages ? '' : t('web.addMessagesToPageDisabled')}
-          </TooltipContent>
+            </DropdownMenuItem>
+          </TooltipTrigger>
+          {!hasMessages && <TooltipContent>{t('web.addMessagesToPageDisabled')}</TooltipContent>}
         </Tooltip>
         <DropdownMenuSeparator />
       </>
@@ -85,23 +89,14 @@ function MoreActions ({ viewId, onDeleted, menuContentProps }:
   }
 
   return (
-    <DropdownMenu
-      open={open}
-      onOpenChange={setOpen}
-    >
+    <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        <Button
-          size={'icon'}
-          variant={'ghost'}
-          className={'text-icon-secondary'}
-        >
+        <Button size={'icon'} variant={'ghost'} className={'text-icon-secondary'}>
           <MoreIcon />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent {...menuContentProps}>
-        <DropdownMenuGroup>
-          {ChatOptions}
-        </DropdownMenuGroup>
+        <DropdownMenuGroup>{ChatOptions}</DropdownMenuGroup>
 
         <MoreActionsContent
           itemClicked={() => {
@@ -113,7 +108,6 @@ function MoreActions ({ viewId, onDeleted, menuContentProps }:
         <DropdownMenuSeparator />
         <DocumentInfo viewId={viewId} />
       </DropdownMenuContent>
-
     </DropdownMenu>
   );
 }
