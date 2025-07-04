@@ -1,4 +1,4 @@
-name: Manually Build AppFlowy Web Docker Images
+name: Manually Build Public AppFlowy Web Docker Images
 
 on:
   workflow_dispatch:

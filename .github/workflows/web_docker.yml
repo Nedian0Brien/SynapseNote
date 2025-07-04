@@ -1,4 +1,4 @@
-name: AppFlowy Web image build and push
+name: Public AppFlowy Web image build and push
 on:
   workflow_dispatch:
     inputs:

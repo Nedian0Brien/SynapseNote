@@ -5,7 +5,7 @@ WORKDIR /app
 
 ARG VERSION=main
 
-RUN npm install -g pnpm@8.5.0
+RUN npm install -g pnpm@10.9.0
 RUN pnpm install
 
 COPY . .
