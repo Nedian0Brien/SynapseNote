@@ -85,6 +85,7 @@ jobs:
             ${{ env.IMAGE_NAME }}:test-latest-${{ env.PLATFORM_PAIR }}
           build-args: VERSION=${{ github.event.inputs.version }}
           context: .
+          file: docker/Dockerfile
           provenance: false
           push: true
 

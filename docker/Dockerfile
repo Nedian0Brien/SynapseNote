@@ -15,3 +15,6 @@ RUN pnpm run build
 
 FROM nginx:alpine
 COPY --from=builder /app/dist /usr/share/nginx/html/
+
+# Copy nginx.conf from docker folder
+COPY docker/nginx.conf /etc/nginx/nginx.conf

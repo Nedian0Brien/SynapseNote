@@ -51,6 +51,7 @@ jobs:
             ${{ env.IMAGE_NAME }}:latest-${{ env.PLATFORM_PAIR }}
           build-args: VERSION=${{ github.event.inputs.version }}
           context: .
+          file: docker/Dockerfile
           provenance: false
           push: true
   merge:
