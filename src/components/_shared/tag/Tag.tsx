@@ -33,7 +33,7 @@ export const Tag: FC<TagProps> = ({ color, label, badge }) => {
           style={{
             color: `var(${badge})`,
           }}
-          className={`!h-1.5 !w-1.5`}
+          className={`!h-1.5 !w-1.5 min-w-1.5`}
         />
       )}
       <div className={'truncate'}>{label}</div>
