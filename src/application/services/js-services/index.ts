@@ -714,4 +714,12 @@ export class AFClientService implements AFService {
   async approveTurnGuestToMember(workspaceId: string, code: string) {
     return APIService.approveTurnGuestToMember(workspaceId, code);
   }
+
+  async getMentionableUsers(workspaceId: string) {
+    return APIService.getMentionableUsers(workspaceId);
+  }
+
+  async addRecentPages(workspaceId: string, viewIds: string[]) {
+    return APIService.addRecentPages(workspaceId, viewIds);
+  }
 }

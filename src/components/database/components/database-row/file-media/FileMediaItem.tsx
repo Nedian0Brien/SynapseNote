@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
+import isURL from 'validator/lib/isURL';
 
-import { useReadOnly } from '@/application/database-yjs';
+import { useDatabaseContext, useReadOnly } from '@/application/database-yjs';
 import { FileMediaCellDataItem, FileMediaType } from '@/application/database-yjs/cell.type';
 import FileIcon from '@/components/database/components/cell/file-media/FileIcon';
 import FileMediaMore from '@/components/database/components/cell/file-media/FileMediaMore';
@@ -24,6 +25,7 @@ function FileMediaItem({
   onDelete: () => void;
 }) {
   const readOnly = useReadOnly();
+  const { workspaceId } = useDatabaseContext();
 
   const isImage = file.file_type === FileMediaType.Image;
   const mouseDownStartTimeRef = useRef<number | null>(null);
@@ -44,6 +46,16 @@ function FileMediaItem({
     }
   }, [file.file_type]);
 
+  const fileUrl = useMemo(() => {
+    if (isURL(file.url)) {
+      return file.url;
+    }
+
+    const fileId = file.url;
+
+    return import.meta.env.AF_BASE_URL + '/api/file_storage/' + workspaceId + '/v1/blob/' + fileId;
+  }, [file.url, workspaceId]);
+
   const [hover, setHover] = useState(false);
 
   return (
@@ -52,7 +64,15 @@ function FileMediaItem({
         e.stopPropagation();
         // Open the file in a new tab
         if (file.file_type !== FileMediaType.Image) {
-          void openUrl(file.url, '_blank');
+          if (isURL(file.url)) {
+            void openUrl(file.url, '_blank');
+            return;
+          }
+
+          const fileId = file.url;
+          const newUrl = import.meta.env.AF_BASE_URL + '/api/file_storage/' + workspaceId + '/v1/blob/' + fileId;
+
+          void openUrl(newUrl, '_blank');
         }
       }}
       onMouseEnter={() => setHover(true)}
@@ -80,7 +100,7 @@ function FileMediaItem({
               >
                 <img
                   draggable={false}
-                  src={file.url}
+                  src={fileUrl}
                   alt={file.name}
                   className={'aspect-square h-full w-full overflow-hidden object-cover'}
                 />

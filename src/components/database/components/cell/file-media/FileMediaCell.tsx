@@ -1,5 +1,6 @@
 import React, { Suspense, useCallback, useMemo } from 'react';
 
+import { useDatabaseContext } from '@/application/database-yjs';
 import {
   CellProps,
   FileMediaCell as FileMediaCellType,
@@ -24,7 +25,7 @@ export function FileMediaCell({
   readOnly,
 }: CellProps<FileMediaCellType>) {
   const value = cell?.data;
-
+  const { workspaceId } = useDatabaseContext();
   const [openPreview, setOpenPreview] = React.useState(false);
   const previewIndexRef = React.useRef(0);
   const photos = useMemo(() => {
@@ -111,6 +112,7 @@ export function FileMediaCell({
       {openPreview && (
         <Suspense>
           <GalleryPreview
+            workspaceId={workspaceId}
             images={photos}
             previewIndex={previewIndexRef.current}
             open={openPreview}

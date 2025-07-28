@@ -1,9 +1,15 @@
-import { BlockType, FieldURLType, FileBlockData } from '@/application/types';
-import { ReactComponent as FileIcon } from '@/assets/icons/file.svg';
-import { ReactComponent as ReloadIcon } from '@/assets/icons/regenerate.svg';
+import { CircularProgress, IconButton, Tooltip } from '@mui/material';
+import React, { forwardRef, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Element } from 'slate';
+import { useReadOnly, useSlateStatic } from 'slate-react';
+import isURL from 'validator/lib/isURL';
 
 import { YjsEditor } from '@/application/slate-yjs';
 import { CustomEditor } from '@/application/slate-yjs/command';
+import { BlockType, FieldURLType, FileBlockData } from '@/application/types';
+import { ReactComponent as FileIcon } from '@/assets/icons/file.svg';
+import { ReactComponent as ReloadIcon } from '@/assets/icons/regenerate.svg';
 import { usePopoverContext } from '@/components/editor/components/block-popover/BlockPopoverContext';
 import FileToolbar from '@/components/editor/components/blocks/file/FileToolbar';
 import { EditorElementProps, FileNode } from '@/components/editor/editor.type';
@@ -11,25 +17,32 @@ import { useEditorContext } from '@/components/editor/EditorContext';
 import { notify } from '@/components/_shared/notify';
 import { FileHandler } from '@/utils/file';
 import { openUrl } from '@/utils/url';
-import { CircularProgress, IconButton, Tooltip } from '@mui/material';
-import React, { forwardRef, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Element } from 'slate';
-import { useReadOnly, useSlateStatic } from 'slate-react';
 
 export const FileBlock = memo(
   forwardRef<HTMLDivElement, EditorElementProps<FileNode>>(({ node, children, ...attributes }, ref) => {
     const { blockId, data } = node;
-    const { uploadFile } = useEditorContext();
+    const { uploadFile, workspaceId } = useEditorContext();
     const editor = useSlateStatic() as YjsEditor;
     const [needRetry, setNeedRetry] = useState(false);
     const fileHandler = useMemo(() => new FileHandler(), []);
     const [localUrl, setLocalUrl] = useState<string | undefined>(undefined);
     const [loading, setLoading] = useState(false);
-    const { url, name, retry_local_url } = useMemo(() => data || {}, [data]);
+    const { url: dataUrl, name, retry_local_url } = useMemo(() => data || {}, [data]);
     const readOnly = useReadOnly() || editor.isElementReadOnly(node as unknown as Element);
     const emptyRef = useRef<HTMLDivElement>(null);
     const [showToolbar, setShowToolbar] = useState(false);
+
+    const url = useMemo(() => {
+      if (!dataUrl) return '';
+
+      if (isURL(dataUrl)) {
+        return dataUrl;
+      }
+
+      const fileId = dataUrl;
+
+      return import.meta.env.AF_BASE_URL + '/api/file_storage/' + workspaceId + '/v1/blob/' + fileId;
+    }, [dataUrl, workspaceId]);
 
     const className = useMemo(() => {
       const classList = ['w-full'];
@@ -175,7 +188,17 @@ export const FileBlock = memo(
                 </IconButton>
               </Tooltip>
             ))}
-          {showToolbar && url && <FileToolbar node={node} />}
+          {showToolbar && url && (
+            <FileToolbar
+              node={{
+                ...node,
+                data: {
+                  ...data,
+                  url,
+                },
+              }}
+            />
+          )}
         </div>
         <div ref={ref} className={`absolute h-full w-full caret-transparent`}>
           {children}

@@ -1,19 +1,23 @@
+import React, { forwardRef, memo, Suspense, useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useReadOnly } from 'slate-react';
+import isURL from 'validator/lib/isURL';
+
 import { GalleryLayout } from '@/application/types';
 import { ReactComponent as GalleryIcon } from '@/assets/icons/gallery.svg';
 import Carousel from '@/components/editor/components/blocks/gallery/Carousel';
 import GalleryToolbar from '@/components/editor/components/blocks/gallery/GalleryToolbar';
 import ImageGallery from '@/components/editor/components/blocks/gallery/ImageGallery';
 import { EditorElementProps, GalleryBlockNode } from '@/components/editor/editor.type';
+import { useEditorContext } from '@/components/editor/EditorContext';
 import { GalleryPreview } from '@/components/_shared/gallery-preview';
 import { notify } from '@/components/_shared/notify';
 import { copyTextToClipboard } from '@/utils/copy';
-import React, { forwardRef, memo, Suspense, useCallback, useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useReadOnly } from 'slate-react';
 
 const GalleryBlock = memo(
   forwardRef<HTMLDivElement, EditorElementProps<GalleryBlockNode>>(({ node, children, ...attributes }, ref) => {
     const { t } = useTranslation();
+    const { workspaceId } = useEditorContext();
     const { images, layout } = useMemo(() => node.data || {}, [node.data]);
     const [openPreview, setOpenPreview] = React.useState(false);
     const previewIndexRef = React.useRef(0);
@@ -27,17 +31,23 @@ const GalleryBlock = memo(
 
     const photos = useMemo(() => {
       return images.map((image) => {
-        const url = new URL(image.url);
+        let imageUrl = image.url;
+
+        if (!isURL(image.url)) {
+          imageUrl = import.meta.env.AF_BASE_URL + '/api/file_storage/' + workspaceId + '/v1/blob/' + image.url;
+        }
+
+        const url = new URL(imageUrl);
 
         url.searchParams.set('auto', 'format');
         url.searchParams.set('fit', 'crop');
         return {
-          src: image.url,
+          src: imageUrl,
           thumb: url.toString() + '&w=240&q=80',
           responsive: [url.toString() + '&w=480&q=80 480', url.toString() + '&w=800&q=80 800'].join(', '),
         };
       });
-    }, [images]);
+    }, [images, workspaceId]);
 
     const handleOpenPreview = useCallback(() => {
       setOpenPreview(true);
@@ -112,6 +122,7 @@ const GalleryBlock = memo(
         {openPreview && (
           <Suspense>
             <GalleryPreview
+              workspaceId={workspaceId}
               images={photos}
               previewIndex={previewIndexRef.current}
               open={openPreview}

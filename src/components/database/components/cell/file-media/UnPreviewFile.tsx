@@ -1,24 +1,33 @@
+import isURL from 'validator/lib/isURL';
 
+import { useDatabaseContext } from '@/application/database-yjs';
 import { FileMediaCellDataItem } from '@/application/database-yjs/cell.type';
 import FileIcon from '@/components/database/components/cell/file-media/FileIcon';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { openUrl } from '@/utils/url';
 
-function UnPreviewFile ({ file }: { file: FileMediaCellDataItem }) {
+function UnPreviewFile({ file }: { file: FileMediaCellDataItem }) {
+  const { workspaceId } = useDatabaseContext();
+
   return (
-    <Tooltip
-      delayDuration={500}
-      disableHoverableContent
-    >
+    <Tooltip delayDuration={500} disableHoverableContent>
       <TooltipTrigger asChild>
         <Button
           size={'icon'}
           variant={'ghost'}
-          className={'rounded-[4px] text-icon-secondary bg-fill-content-hover cursor-pointer'}
-          onClick={e => {
+          className={'cursor-pointer rounded-[4px] bg-fill-content-hover text-icon-secondary'}
+          onClick={(e) => {
             e.stopPropagation();
-            void openUrl(file.url, '_blank');
+            if (isURL(file.url)) {
+              void openUrl(file.url, '_blank');
+              return;
+            }
+
+            const fileId = file.url;
+            const newUrl = import.meta.env.AF_BASE_URL + '/api/file_storage/' + workspaceId + '/v1/blob/' + fileId;
+
+            void openUrl(newUrl, '_blank');
           }}
         >
           <FileIcon fileType={file.file_type} />
@@ -26,7 +35,7 @@ function UnPreviewFile ({ file }: { file: FileMediaCellDataItem }) {
       </TooltipTrigger>
       <TooltipContent side={'bottom'}>
         <div className={'flex gap-1.5'}>
-          <span className={'min-w-5 w-5 h-5'}>
+          <span className={'h-5 w-5 min-w-5'}>
             <FileIcon fileType={file.file_type} />
           </span>
 

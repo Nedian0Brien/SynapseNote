@@ -31,6 +31,7 @@ import {
   GenerateAITranslateRowPayload,
   GuestInvitation,
   GuestConversionCodeInfo,
+  MentionablePerson,
 } from '@/application/types';
 import { GlobalComment, Reaction } from '@/application/comment.type';
 import { ViewMeta } from '@/application/db/tables/view_metas';
@@ -79,6 +80,8 @@ export interface WorkspaceService {
   acceptGuestInvitation: (workspaceId: string, code: string) => Promise<void>;
   getGuestToMemberConversionInfo: (workspaceId: string, code: string) => Promise<GuestConversionCodeInfo>;
   approveTurnGuestToMember: (workspaceId: string, code: string) => Promise<void>;
+  getMentionableUsers: (workspaceId: string) => Promise<MentionablePerson[]>;
+  addRecentPages: (workspaceId: string, viewIds: string[]) => Promise<void>;
 }
 
 export interface AppService {

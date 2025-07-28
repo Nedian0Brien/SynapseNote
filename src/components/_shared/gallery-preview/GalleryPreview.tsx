@@ -1,5 +1,5 @@
 import { IconButton, Portal, Tooltip } from '@mui/material';
-import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ReactZoomPanPinchContentRef, TransformComponent, TransformWrapper } from 'react-zoom-pan-pinch';
 
@@ -12,6 +12,7 @@ import { ReactComponent as ReloadIcon } from '@/assets/icons/reset.svg';
 import { ReactComponent as DownloadIcon } from '@/assets/icons/save_as.svg';
 import { notify } from '@/components/_shared/notify';
 import { copyTextToClipboard } from '@/utils/copy';
+import isURL from 'validator/lib/isURL';
 
 export interface GalleryImage {
   src: string;
@@ -22,11 +23,12 @@ export interface GalleryPreviewProps {
   open: boolean;
   onClose: () => void;
   previewIndex: number;
+  workspaceId: string;
 }
 
 const buttonClassName = 'p-1 hover:bg-transparent text-white hover:text-text-action p-0';
 
-function GalleryPreview({ images, open, onClose, previewIndex }: GalleryPreviewProps) {
+function GalleryPreview({ images, open, onClose, previewIndex, workspaceId }: GalleryPreviewProps) {
   const { t } = useTranslation();
   const [index, setIndex] = useState(previewIndex);
   const transformComponentRef = useRef<ReactZoomPanPinchContentRef>(null);
@@ -91,6 +93,16 @@ function GalleryPreview({ images, open, onClose, previewIndex }: GalleryPreviewP
       window.removeEventListener('keydown', handleKeydown);
     };
   }, [handleKeydown]);
+
+  const imageUrl = useMemo(() => {
+    if (isURL(images[index].src)) {
+      return images[index].src;
+    }
+
+    const fileId = images[index].src;
+
+    return import.meta.env.AF_BASE_URL + '/api/file_storage/' + workspaceId + '/v1/blob/' + fileId;
+  }, [images, index, workspaceId]);
 
   if (!open) {
     return null;
@@ -190,7 +202,7 @@ function GalleryPreview({ images, open, onClose, previewIndex }: GalleryPreviewP
                 }}
               >
                 <img
-                  src={images[index].src}
+                  src={imageUrl}
                   alt={images[index].src}
                   style={{
                     maxWidth: '100%',

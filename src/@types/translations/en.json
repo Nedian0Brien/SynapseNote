@@ -3249,5 +3249,6 @@
   "membersCount_zero": "{{count}} members",
   "membersCount_one": "{{count}} member",
   "membersCount_many": "{{count}} members",
-  "membersCount_other": "{{count}} members"
+  "membersCount_other": "{{count}} members",
+  "deleted": "deleted"
 }

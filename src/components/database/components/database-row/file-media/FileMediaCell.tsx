@@ -1,7 +1,7 @@
 import React, { Suspense, useCallback, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { useFieldSelector } from '@/application/database-yjs';
+import { useDatabaseContext, useFieldSelector } from '@/application/database-yjs';
 import {
   CellProps,
   FileMediaCell as FileMediaCellType, FileMediaCellData, FileMediaCellDataItem,
@@ -31,6 +31,7 @@ export function FileMediaCell ({
   const value = cell?.data;
   const { t } = useTranslation();
   const { field, clock } = useFieldSelector(fieldId);
+  const { workspaceId } = useDatabaseContext();
   const typeOption = useMemo(() => {
     if (!field) return null;
     return parseFileMediaTypeOptions(field);
@@ -167,6 +168,7 @@ export function FileMediaCell ({
         showUpload={true}
       />}
       {openPreview && <Suspense><GalleryPreview
+        workspaceId={workspaceId}
         images={photos}
         previewIndex={previewIndexRef.current}
         open={openPreview}

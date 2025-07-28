@@ -1,15 +1,26 @@
-import { FileMediaCellDataItem } from '@/application/database-yjs/cell.type';
 import { useMemo } from 'react';
+import isURL from 'validator/lib/isURL';
+
+import { useDatabaseContext } from '@/application/database-yjs';
+import { FileMediaCellDataItem } from '@/application/database-yjs/cell.type';
 
 function PreviewImage({ file, onClick }: { file: FileMediaCellDataItem; onClick: () => void }) {
+  const { workspaceId } = useDatabaseContext();
+
   const thumb = useMemo(() => {
-    const url = new URL(file.url);
+    let fileUrl = file.url;
+
+    if (!isURL(file.url)) {
+      fileUrl = import.meta.env.AF_BASE_URL + '/api/file_storage/' + workspaceId + '/v1/blob/' + file.url;
+    }
+
+    const url = new URL(fileUrl);
 
     url.searchParams.set('auto', 'format');
     url.searchParams.set('fit', 'crop');
 
     return url.toString() + '&w=240&q=80';
-  }, [file.url]);
+  }, [file.url, workspaceId]);
 
   return (
     <div

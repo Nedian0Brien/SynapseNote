@@ -1,11 +1,14 @@
 import EventEmitter from 'events';
 
+import { PromptDatabaseConfiguration } from '@appflowyinc/ai-chat';
 import { sortBy, uniqBy } from 'lodash-es';
 import React, { createContext, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { validate as uuidValidate } from 'uuid';
 
 import { APP_EVENTS } from '@/application/constants';
+import { FieldType } from '@/application/database-yjs';
+import { getCellDataText } from '@/application/database-yjs/cell.parse';
 import { invalidToken } from '@/application/session/token';
 import {
   AppendBreadcrumb,
@@ -22,6 +25,7 @@ import {
   LoadDatabasePrompts,
   LoadView,
   LoadViewMeta,
+  MentionablePerson,
   Subscription,
   TestDatabasePromptConfig,
   TextCount,
@@ -42,9 +46,6 @@ import { AppOverlayProvider } from '@/components/app/app-overlay/AppOverlayProvi
 import RequestAccess from '@/components/app/landing-pages/RequestAccess';
 import { AFConfigContext, useService } from '@/components/main/app.hooks';
 import { findAncestors, findView, findViewByLayout } from '@/components/_shared/outline/utils';
-import { PromptDatabaseConfiguration } from '@appflowyinc/ai-chat';
-import { FieldType } from '@/application/database-yjs';
-import { getCellDataText } from '@/application/database-yjs/cell.parse';
 
 const ViewModal = React.lazy(() => import('@/components/app/ViewModal'));
 
@@ -96,6 +97,7 @@ export interface AppContextType {
   loadDatabasePrompts?: LoadDatabasePrompts;
   testDatabasePromptConfig?: TestDatabasePromptConfig;
   eventEmitter?: EventEmitter;
+  getMentionUser?: (uuid: string) => Promise<MentionablePerson | undefined>;
 }
 
 const USER_NO_ACCESS_CODE = [1024, 1012];
@@ -298,6 +300,15 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
           objectId,
           collabType,
         });
+
+        // add recent pages when view is loaded
+        void (async () => {
+          try {
+            await service.addRecentPages(currentWorkspaceId, [id]);
+          } catch (e) {
+            console.error(e);
+          }
+        })();
 
         return res;
         // eslint-disable-next-line
@@ -1040,6 +1051,49 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     [getFields]
   );
 
+  const mentionableUsersRef = useRef<MentionablePerson[]>([]);
+  const loadMentionableUsers = useCallback(async () => {
+    if (!currentWorkspaceId || !service) {
+      throw new Error('No workspace or service found');
+    }
+
+    try {
+      const res = await service.getMentionableUsers(currentWorkspaceId);
+
+      mentionableUsersRef.current = res;
+
+      return res;
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  }, [currentWorkspaceId, service]);
+
+  useEffect(() => {
+    void loadMentionableUsers();
+  }, [loadMentionableUsers]);
+
+  const getMentionUser = useCallback(
+    async (uuid: string) => {
+      console.log('mentionableUsers', mentionableUsersRef.current);
+      if (mentionableUsersRef.current.length > 0) {
+        const user = mentionableUsersRef.current.find((user) => user.uuid === uuid);
+
+        if (user) {
+          return user;
+        }
+      }
+
+      try {
+        const res = await loadMentionableUsers();
+
+        return res.find((user) => user.uuid === uuid);
+      } catch (e) {
+        return Promise.reject(e);
+      }
+    },
+    [loadMentionableUsers]
+  );
+
   return (
     <AppContext.Provider
       value={{
@@ -1090,6 +1144,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         loadDatabasePrompts,
         testDatabasePromptConfig,
         eventEmitter: eventEmitterRef.current,
+        getMentionUser,
       }}
     >
       <AIChatProvider>
@@ -1248,6 +1303,7 @@ export function useAppHandlers() {
     loadDatabasePrompts: context.loadDatabasePrompts,
     testDatabasePromptConfig: context.testDatabasePromptConfig,
     eventEmitter: context.eventEmitter,
+    getMentionUser: context.getMentionUser,
   };
 }
 

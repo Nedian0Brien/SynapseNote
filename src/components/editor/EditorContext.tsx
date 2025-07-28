@@ -10,6 +10,7 @@ import {
   TextCount,
   LoadDatabasePrompts,
   TestDatabasePromptConfig,
+  MentionablePerson,
 } from '@/application/types';
 import { AxiosInstance } from 'axios';
 import EventEmitter from 'events';
@@ -66,6 +67,7 @@ export interface EditorContextState {
   loadDatabasePrompts?: LoadDatabasePrompts;
   testDatabasePromptConfig?: TestDatabasePromptConfig;
   eventEmitter?: EventEmitter;
+  getMentionUser?: (uuid: string) => Promise<MentionablePerson | undefined>;
 }
 
 export const EditorContext = createContext<EditorContextState>({
