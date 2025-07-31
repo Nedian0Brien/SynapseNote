@@ -1,7 +1,17 @@
 import { IconButton } from '@mui/material';
-import { colorMap } from '@/utils/color';
+import { ColorEnum, colorMap } from '@/utils/color';
 
-const colors = Object.entries(colorMap);
+const colors = [
+  [ColorEnum.Purple, colorMap[ColorEnum.Purple]],
+  [ColorEnum.Pink, colorMap[ColorEnum.Pink]],
+  [ColorEnum.LightPink, colorMap[ColorEnum.LightPink]],
+  [ColorEnum.Orange, colorMap[ColorEnum.Orange]],
+  [ColorEnum.Yellow, colorMap[ColorEnum.Yellow]],
+  [ColorEnum.Lime, colorMap[ColorEnum.Lime]],
+  [ColorEnum.Green, colorMap[ColorEnum.Green]],
+  [ColorEnum.Aqua, colorMap[ColorEnum.Aqua]],
+  [ColorEnum.Blue, colorMap[ColorEnum.Blue]],
+];
 
 function Colors ({ onDone }: { onDone?: (value: string) => void }) {
   return (

@@ -30,7 +30,8 @@ export enum EditorMarkFormat {
   Formula = 'formula',
   Mention = 'mention',
   FontColor = 'font_color',
+  FontToken = 'af_text_color',
   BgColor = 'bg_color',
+  BgToken = 'af_background_color',
   Align = 'align',
 }
-

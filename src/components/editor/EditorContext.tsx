@@ -10,6 +10,7 @@ import {
   TextCount,
   LoadDatabasePrompts,
   TestDatabasePromptConfig,
+  Subscription,
   MentionablePerson,
 } from '@/application/types';
 import { AxiosInstance } from 'axios';
@@ -66,6 +67,7 @@ export interface EditorContextState {
   getMoreAIContext?: () => string;
   loadDatabasePrompts?: LoadDatabasePrompts;
   testDatabasePromptConfig?: TestDatabasePromptConfig;
+  getSubscriptions?: (() => Promise<Subscription[]>) | undefined;
   eventEmitter?: EventEmitter;
   getMentionUser?: (uuid: string) => Promise<MentionablePerson | undefined>;
 }

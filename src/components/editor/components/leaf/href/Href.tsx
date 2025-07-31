@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { Element, Text } from 'slate';
 import { ReactEditor, useReadOnly, useSlateStatic } from 'slate-react';
 
-export const Href = memo(({ text, children, leaf }: { leaf: Text; children: React.ReactNode; text: Text }) => {
+export const Href = memo(({ text, children, leaf, textColor }: { leaf: Text; children: React.ReactNode; text: Text; textColor?: string }) => {
   const editor = useSlateStatic() as YjsEditor;
 
   const readOnly = useReadOnly() || editor.isElementReadOnly(text as unknown as Element);
@@ -62,8 +62,9 @@ export const Href = memo(({ text, children, leaf }: { leaf: Text; children: Reac
         }}
         style={{
           backgroundColor: selected ? 'var(--content-blue-100)' : undefined,
+          color: textColor || 'var(--text-action)',
         }}
-        className={`cursor-pointer select-auto py-0.5 text-text-action underline`}
+        className={`cursor-pointer select-auto py-0.5 underline`}
       >
         {children}
         {hovered && (

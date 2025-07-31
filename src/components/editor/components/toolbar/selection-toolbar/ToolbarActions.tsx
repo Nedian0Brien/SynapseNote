@@ -6,7 +6,7 @@ import Align from '@/components/editor/components/toolbar/selection-toolbar/acti
 import Bold from '@/components/editor/components/toolbar/selection-toolbar/actions/Bold';
 import BulletedList from '@/components/editor/components/toolbar/selection-toolbar/actions/BulletedList';
 import Href from '@/components/editor/components/toolbar/selection-toolbar/actions/Href';
-import Color from '@/components/editor/components/toolbar/selection-toolbar/actions/Color';
+import TextColor from '@/components/editor/components/toolbar/selection-toolbar/actions/TextColor';
 import Formula from '@/components/editor/components/toolbar/selection-toolbar/actions/Formula';
 import Heading from '@/components/editor/components/toolbar/selection-toolbar/actions/Heading';
 import InlineCode from '@/components/editor/components/toolbar/selection-toolbar/actions/InlineCode';
@@ -21,15 +21,65 @@ import {
 import { Divider } from '@mui/material';
 import { Editor, Element, Path } from 'slate';
 import Paragraph from './actions/Paragraph';
-import { useMemo } from 'react';
-import { useSlate } from 'slate-react';
+import { useCallback, useMemo, useRef } from 'react';
+import { ReactEditor, useSlate } from 'slate-react';
+import BgColor from './actions/BgColor';
+import { useEditorContext } from '@/components/editor/EditorContext';
 
 function ToolbarActions() {
   const editor = useSlate() as YjsEditor;
   const selection = editor.selection;
   const {
+    forceShow,
     visible: toolbarVisible,
   } = useSelectionToolbarContext();
+  const { removeDecorate } = useEditorContext();
+  
+  const refocusTimeout = useRef<NodeJS.Timeout | null>(null);
+  const disableFocusRef = useRef<boolean>(false);
+
+  const focusEditor = useCallback(
+    (debounce: number | undefined) => {
+      if (disableFocusRef.current) {
+        return;
+      }
+
+      if (refocusTimeout.current) {
+        clearTimeout(refocusTimeout.current);
+      }
+
+      if (debounce === undefined) {
+        ReactEditor.focus(editor);
+        forceShow(false);
+        removeDecorate?.('selection-toolbar');
+        return;
+      }
+
+      refocusTimeout.current = setTimeout(() => {
+        if (!disableFocusRef.current) {
+          ReactEditor.focus(editor);
+          forceShow(false);
+          removeDecorate?.('selection-toolbar');
+        }
+      }, debounce);
+    },
+    [editor, forceShow, removeDecorate]
+  );
+
+  const toggleDisableEditorFocus = useCallback(() => {
+    if (refocusTimeout.current) {
+      clearTimeout(refocusTimeout.current);
+      refocusTimeout.current = null;
+    }
+
+    if (disableFocusRef.current) {
+      setTimeout(() => {
+        disableFocusRef.current = false;
+      }, 50);
+    } else {
+      disableFocusRef.current = true;
+    }
+  }, []);
 
   const start = useMemo(() => selection ? editor.start(selection) : null, [editor, selection]);
   const end = useMemo(() => selection ? editor.end(selection) : null, [editor, selection]);
@@ -111,7 +161,8 @@ function ToolbarActions() {
         </>
       }
       {!isCodeBlock && <Align enabled={toolbarVisible} />}
-      <Color />
+      <TextColor focusEditor={focusEditor} toggleDisableEditorFocus={toggleDisableEditorFocus} />
+      <BgColor focusEditor={focusEditor} toggleDisableEditorFocus={toggleDisableEditorFocus} />
     </div>
   );
 }

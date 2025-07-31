@@ -66,9 +66,7 @@ export function useVisible() {
   }, [visible, removeDecorate]);
 
   useEffect(() => {
-
     const handleMouseDown = () => {
-
       const { selection } = editor;
 
       if(selection && Range.isExpanded(selection)) {

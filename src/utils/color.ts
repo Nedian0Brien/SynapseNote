@@ -8,6 +8,48 @@ export enum ColorEnum {
   Green = 'appflowy_them_color_tint7',
   Aqua = 'appflowy_them_color_tint8',
   Blue = 'appflowy_them_color_tint9',
+  DefaultText = 'text-default',
+  DefaultBackground = 'bg-default',
+  TextColor1 = 'text-color-1',
+  TextColor2 = 'text-color-2',
+  TextColor3 = 'text-color-3',
+  TextColor4 = 'text-color-4',
+  TextColor5 = 'text-color-5',
+  TextColor6 = 'text-color-6',
+  TextColor7 = 'text-color-7',
+  TextColor8 = 'text-color-8',
+  TextColor9 = 'text-color-9',
+  TextColor10 = 'text-color-10',
+  TextColor11 = 'text-color-11',
+  TextColor12 = 'text-color-12',
+  TextColor13 = 'text-color-13',
+  TextColor14 = 'text-color-14',
+  TextColor15 = 'text-color-15',
+  TextColor16 = 'text-color-16',
+  TextColor17 = 'text-color-17',
+  TextColor18 = 'text-color-18',
+  TextColor19 = 'text-color-19',
+  TextColor20 = 'text-color-20',
+  BgColor1 = 'bg-color-1',
+  BgColor2 = 'bg-color-2',
+  BgColor3 = 'bg-color-3',
+  BgColor4 = 'bg-color-4',
+  BgColor5 = 'bg-color-5',
+  BgColor6 = 'bg-color-6',
+  BgColor7 = 'bg-color-7',
+  BgColor8 = 'bg-color-8',
+  BgColor9 = 'bg-color-9',
+  BgColor10 = 'bg-color-10',
+  BgColor11 = 'bg-color-11',
+  BgColor12 = 'bg-color-12',
+  BgColor13 = 'bg-color-13',
+  BgColor14 = 'bg-color-14',
+  BgColor15 = 'bg-color-15',
+  BgColor16 = 'bg-color-16',
+  BgColor17 = 'bg-color-17',
+  BgColor18 = 'bg-color-18',
+  BgColor19 = 'bg-color-19',
+  BgColor20 = 'bg-color-20',
 }
 
 export enum GradientEnum {
@@ -30,6 +72,48 @@ export const colorMap = {
   [ColorEnum.Green]: 'var(--tint-green)',
   [ColorEnum.Aqua]: 'var(--tint-aqua)',
   [ColorEnum.Blue]: 'var(--tint-blue)',
+  [ColorEnum.DefaultText]: 'var(--text-primary)',
+  [ColorEnum.DefaultBackground]: '',
+  [ColorEnum.TextColor1]: 'var(--palette-text-color-1)',
+  [ColorEnum.TextColor2]: 'var(--palette-text-color-2)',
+  [ColorEnum.TextColor3]: 'var(--palette-text-color-3)',
+  [ColorEnum.TextColor4]: 'var(--palette-text-color-4)',
+  [ColorEnum.TextColor5]: 'var(--palette-text-color-5)',
+  [ColorEnum.TextColor6]: 'var(--palette-text-color-6)',
+  [ColorEnum.TextColor7]: 'var(--palette-text-color-7)',
+  [ColorEnum.TextColor8]: 'var(--palette-text-color-8)',
+  [ColorEnum.TextColor9]: 'var(--palette-text-color-9)',
+  [ColorEnum.TextColor10]: 'var(--palette-text-color-10)',
+  [ColorEnum.TextColor11]: 'var(--palette-text-color-11)',
+  [ColorEnum.TextColor12]: 'var(--palette-text-color-12)',
+  [ColorEnum.TextColor13]: 'var(--palette-text-color-13)',
+  [ColorEnum.TextColor14]: 'var(--palette-text-color-14)',
+  [ColorEnum.TextColor15]: 'var(--palette-text-color-15)',
+  [ColorEnum.TextColor16]: 'var(--palette-text-color-16)',
+  [ColorEnum.TextColor17]: 'var(--palette-text-color-17)',
+  [ColorEnum.TextColor18]: 'var(--palette-text-color-18)',
+  [ColorEnum.TextColor19]: 'var(--palette-text-color-19)',
+  [ColorEnum.TextColor20]: 'var(--palette-text-color-20)',
+  [ColorEnum.BgColor1]: 'var(--palette-bg-color-1)',
+  [ColorEnum.BgColor2]: 'var(--palette-bg-color-2)',
+  [ColorEnum.BgColor3]: 'var(--palette-bg-color-3)',
+  [ColorEnum.BgColor4]: 'var(--palette-bg-color-4)',
+  [ColorEnum.BgColor5]: 'var(--palette-bg-color-5)',
+  [ColorEnum.BgColor6]: 'var(--palette-bg-color-6)',
+  [ColorEnum.BgColor7]: 'var(--palette-bg-color-7)',
+  [ColorEnum.BgColor8]: 'var(--palette-bg-color-8)',
+  [ColorEnum.BgColor9]: 'var(--palette-bg-color-9)',
+  [ColorEnum.BgColor10]: 'var(--palette-bg-color-10)',
+  [ColorEnum.BgColor11]: 'var(--palette-bg-color-11)',
+  [ColorEnum.BgColor12]: 'var(--palette-bg-color-12)',
+  [ColorEnum.BgColor13]: 'var(--palette-bg-color-13)',
+  [ColorEnum.BgColor14]: 'var(--palette-bg-color-14)',
+  [ColorEnum.BgColor15]: 'var(--palette-bg-color-15)',
+  [ColorEnum.BgColor16]: 'var(--palette-bg-color-16)',
+  [ColorEnum.BgColor17]: 'var(--palette-bg-color-17)',
+  [ColorEnum.BgColor18]: 'var(--palette-bg-color-18)',
+  [ColorEnum.BgColor19]: 'var(--palette-bg-color-19)',
+  [ColorEnum.BgColor20]: 'var(--palette-bg-color-20)',
 };
 
 export const gradientMap = {
@@ -45,7 +129,7 @@ export const gradientMap = {
 // Convert ARGB to RGBA
 // Flutter uses ARGB, but CSS uses RGBA
 function argbToRgba(color: string): string {
-  if(!color) {
+  if (!color) {
     return '';
   }
 
@@ -53,7 +137,7 @@ function argbToRgba(color: string): string {
 
   const hasAlpha = hex.length === 8;
 
-  if(!hasAlpha) {
+  if (!hasAlpha) {
     return color.replace('0x', '#');
   }
 
@@ -66,11 +150,11 @@ function argbToRgba(color: string): string {
 }
 
 export function renderColor(color: string) {
-  if(colorMap[color as ColorEnum]) {
+  if (colorMap[color as ColorEnum]) {
     return colorMap[color as ColorEnum];
   }
 
-  if(gradientMap[color as GradientEnum]) {
+  if (gradientMap[color as GradientEnum]) {
     return gradientMap[color as GradientEnum];
   }
 
@@ -82,17 +166,17 @@ export function stringToColor(string: string, colorArray?: string[]) {
   let i;
 
   /* eslint-disable no-bitwise */
-  for(i = 0; i < string.length; i += 1) {
+  for (i = 0; i < string.length; i += 1) {
     hash = string.charCodeAt(i) + ((hash << 5) - hash);
   }
 
-  if(colorArray) {
+  if (colorArray) {
     return colorArray[string.slice(0, 1).charCodeAt(0) % colorArray.length];
   }
 
   let color = '#';
 
-  for(i = 0; i < 3; i += 1) {
+  for (i = 0; i < 3; i += 1) {
     const value = (hash >> (i * 8)) & 0xff;
 
     color += `00${value.toString(16)}`.slice(-2);
@@ -154,7 +238,7 @@ const colorDefaultArray: string[] = [
 ];
 
 export function stringAvatar(name: string, colorArray: string[] = colorDefaultArray) {
-  if(!name) {
+  if (!name) {
     return null;
   }
 

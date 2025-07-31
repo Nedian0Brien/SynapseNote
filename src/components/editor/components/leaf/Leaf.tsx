@@ -1,20 +1,18 @@
+import { CSSProperties } from 'react';
+import { RenderLeafProps } from 'slate-react';
+
 import { Mention } from '@/application/types';
 import FormulaLeaf from '@/components/editor/components/leaf/formula/FormulaLeaf';
 import { Href } from '@/components/editor/components/leaf/href';
 import MentionLeaf from '@/components/editor/components/leaf/mention/MentionLeaf';
+import { cn } from '@/lib/utils';
 import { renderColor } from '@/utils/color';
 import { getFontFamily } from '@/utils/font';
-import { CSSProperties } from 'react';
-import { RenderLeafProps } from 'slate-react';
 
 export function Leaf({ attributes, children, leaf, text }: RenderLeafProps) {
   let newChildren = children;
 
   const classList = [leaf.prism_token, leaf.prism_token && 'token', leaf.class_name].filter(Boolean);
-
-  if (leaf.code && !(leaf.formula || leaf.mention)) {
-    newChildren = <span className={'bg-border-primary font-medium text-[#EB5757]'}>{newChildren}</span>;
-  }
 
   if (leaf.underline) {
     newChildren = <u>{newChildren}</u>;
@@ -44,9 +42,33 @@ export function Leaf({ attributes, children, leaf, text }: RenderLeafProps) {
     style['backgroundColor'] = renderColor(leaf.bg_color);
   }
 
+  if (leaf.af_text_color) {
+    if (!classList.includes('text-color')) {
+      classList.push('text-color');
+    }
+
+    style['color'] = renderColor(leaf.af_text_color);
+  }
+
+  if (leaf.af_background_color) {
+    if (!classList.includes('bg-color')) {
+      classList.push('bg-color');
+    }
+
+    style['backgroundColor'] = renderColor(leaf.af_background_color);
+  }
+
+  if (leaf.code && !(leaf.formula || leaf.mention)) {
+    newChildren = (
+      <span className={cn('bg-border-primary font-medium', style['color'] ? undefined : 'text-[#EB5757]')}>
+        {newChildren}
+      </span>
+    );
+  }
+
   if (leaf.href) {
     newChildren = (
-      <Href text={text} leaf={leaf}>
+      <Href text={text} leaf={leaf} textColor={style['color']}>
         {newChildren}
       </Href>
     );
