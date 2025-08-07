@@ -71,6 +71,7 @@ module.exports = {
   
   },
   rules: {
+
     'react-hooks/rules-of-hooks': 'error',
     'react-hooks/exhaustive-deps': 'error',
     'react/display-name': 'off',
@@ -186,5 +187,5 @@ module.exports = {
       'pathGroupsExcludedImportTypes': ['builtin']
     }]
   },
-  ignorePatterns: ['src/**/*.test.ts', '**/__tests__/**/*.json', 'package.json', '__mocks__/*.ts'],
+  ignorePatterns: ['src/**/*.test.ts', '**/__tests__/**/*.json', 'package.json', '__mocks__/**/*.ts'],
 };

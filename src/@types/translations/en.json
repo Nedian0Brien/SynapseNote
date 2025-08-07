@@ -3272,5 +3272,10 @@
   "membersCount_one": "{{count}} member",
   "membersCount_many": "{{count}} members",
   "membersCount_other": "{{count}} members",
-  "deleted": "deleted"
+  "deleted": "deleted",
+  "view_more_users": "View more users",
+  "other_users": "Other users ({{count}})",
+  "connecting": "Connecting...",
+  "disconnected": "Disconnected from cloud. Reconnect to sync changes.",
+  "reconnect": "Reconnect"
 }

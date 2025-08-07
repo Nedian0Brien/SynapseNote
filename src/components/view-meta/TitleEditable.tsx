@@ -28,11 +28,13 @@ function TitleEditable({
   name,
   onUpdateName,
   onEnter,
+  onFocus,
 }: {
   viewId: string;
   name: string;
   onUpdateName: (name: string) => void;
   onEnter?: (text: string) => void;
+  onFocus?: () => void;
 }) {
   const { t } = useTranslation();
   const debounceUpdateName = useMemo(() => {
@@ -100,6 +102,7 @@ function TitleEditable({
       contentEditable={true}
       aria-readonly={false}
       autoFocus={true}
+      onFocus={onFocus}
       onInput={() => {
         if (!contentRef.current) return;
         debounceUpdateName(contentRef.current.textContent || '');

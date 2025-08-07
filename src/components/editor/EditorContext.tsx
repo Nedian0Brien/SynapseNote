@@ -17,6 +17,7 @@ import { AxiosInstance } from 'axios';
 import EventEmitter from 'events';
 import { createContext, useCallback, useContext, useState } from 'react';
 import { BaseRange, Range } from 'slate';
+import { Awareness } from 'y-protocols/awareness';
 
 export interface EditorLayoutStyle {
   fontLayout: FontLayout;
@@ -70,6 +71,8 @@ export interface EditorContextState {
   getSubscriptions?: (() => Promise<Subscription[]>) | undefined;
   eventEmitter?: EventEmitter;
   getMentionUser?: (uuid: string) => Promise<MentionablePerson | undefined>;
+  awareness?: Awareness;
+  getDeviceId?: () => string;
 }
 
 export const EditorContext = createContext<EditorContextState>({

@@ -788,7 +788,7 @@ export interface PublishViewMetaData {
 export type AppendBreadcrumb = (view?: View) => void;
 
 export type CreateRowDoc = (rowKey: string) => Promise<YDoc>;
-export type LoadView = (viewId: string, isSubDocument?: boolean) => Promise<YDoc>;
+export type LoadView = (viewId: string, isSubDocument?: boolean, loadAwareness?: boolean) => Promise<YDoc>;
 
 export type LoadViewMeta = (viewId: string, onChange?: (meta: View | null) => void) => Promise<View>;
 
@@ -1041,6 +1041,7 @@ export interface ViewMetaProps {
   uploadFile?: (file: File) => Promise<string>;
   onEnter?: (text: string) => void;
   maxWidth?: number;
+  onFocus?: () => void;
 }
 
 export interface TextCount {

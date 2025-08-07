@@ -18,7 +18,6 @@ import { getBlock, getText } from '@/application/slate-yjs/utils/yjs';
 // transform slate op to yjs op and apply it to ydoc
 export function applyToYjs(ydoc: Y.Doc, editor: Editor, op: Operation, slateContent: Descendant[]) {
   if(op.type === 'set_selection') return;
-  console.log('applySlateOp', op, slateContent);
 
   switch(op.type) {
     case 'insert_text':
@@ -58,7 +57,6 @@ function insertText(ydoc: Y.Doc, editor: Editor, { path, offset, text, attribute
 }, slateContent: Descendant[]) {
   const node = getNodeAtPath(slateContent, path.slice(0, -1)) as Element;
 
-  console.log('insertText', node, slateContent);
   const textId = node.textId as string;
   const sharedRoot = ydoc.getMap(YjsEditorKey.data_section) as YSharedRoot;
   const yText = getText(textId, sharedRoot);

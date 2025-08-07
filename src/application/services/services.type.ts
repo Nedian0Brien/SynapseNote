@@ -12,7 +12,6 @@ import {
   Subscriptions,
   SubscriptionPlan,
   SubscriptionInterval,
-  Types,
   UpdatePagePayload,
   CreatePagePayload,
   CreateSpacePayload,
@@ -53,7 +52,8 @@ export type AFService =
   & QuickNoteService
   & AIChatService
   & {
-    getClientId: () => string;
+    getClientId: () => number;
+    getDeviceId: () => string;
     getAxiosInstance: () => AxiosInstance | null;
   };
 
@@ -121,9 +121,6 @@ export interface AppService {
   cancelSubscription: (workspaceId: string, plan: SubscriptionPlan, reason?: string) => Promise<void>;
   getActiveSubscription: (workspaceId: string) => Promise<SubscriptionPlan[]>;
   getWorkspaceSubscriptions: (workspaceId: string) => Promise<Subscription[]>;
-  registerDocUpdate: (doc: YDoc, context: {
-    workspaceId: string, objectId: string, collabType: Types
-  }) => void;
   importFile: (file: File, onProgress: (progress: number) => void) => Promise<void>;
   createSpace: (workspaceId: string, payload: CreateSpacePayload) => Promise<string>;
   updateSpace: (workspaceId: string, payload: UpdateSpacePayload) => Promise<void>;

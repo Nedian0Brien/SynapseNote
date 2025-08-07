@@ -74,7 +74,11 @@ function ControlsMenu({ open, onClose, anchorEl }: {
         });
 
         ReactEditor.focus(editor);
-        const [, path] = findSlateEntryByBlockId(editor, newBlockIds[0]);
+        const entry = findSlateEntryByBlockId(editor, newBlockIds[0]);
+
+        if(!entry) return;
+
+        const [, path] = entry;
 
         editor.select(editor.start(path));
 

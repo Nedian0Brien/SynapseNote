@@ -38,12 +38,16 @@ export function Align({ blockId, enabled = true }: { blockId?: string; enabled?:
   const editor = useSlateStatic() as YjsEditor;
 
   const getNode = useCallback(() => {
-    let node: Element;
+    let node: Element | null = null;
 
     if (!blockId) {
-      node = getBlockEntry(editor)[0];
+      node = getBlockEntry(editor)?.[0] as Element;
     } else {
-      node = findSlateEntryByBlockId(editor, blockId)[0];
+      const entry = findSlateEntryByBlockId(editor, blockId);
+
+      if (!entry) return null;
+
+      node = entry[0];
     }
 
     return node;
@@ -52,6 +56,8 @@ export function Align({ blockId, enabled = true }: { blockId?: string; enabled?:
   const getAlign = useCallback(() => {
     try {
       const node = getNode();
+
+      if (!node) return;
 
       return (node.data as BlockData).align;
     } catch (e) {
@@ -89,6 +95,8 @@ export function Align({ blockId, enabled = true }: { blockId?: string; enabled?:
       return () => {
         try {
           const node = getNode();
+
+          if (!node) return;
 
           CustomEditor.setBlockData(editor, node.blockId as string, {
             align,

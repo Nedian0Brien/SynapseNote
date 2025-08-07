@@ -159,6 +159,6 @@ export default defineConfig({
   },
 
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-katex', '@appflowyinc/editor', '@appflowyinc/ai-chat'],
+    include: ['react', 'react-dom', 'react-katex', '@appflowyinc/editor', '@appflowyinc/ai-chat', 'react-colorful'],
   },
 });

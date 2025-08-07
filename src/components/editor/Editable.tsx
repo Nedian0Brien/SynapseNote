@@ -1,9 +1,11 @@
 import { Skeleton } from '@mui/material';
 import { debounce } from 'lodash-es';
 import React, { lazy, Suspense, useCallback, useEffect, useMemo } from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
 import { BaseRange, Editor, Element as SlateElement, NodeEntry, Range, Text } from 'slate';
 import { Editable, RenderElementProps, useSlate } from 'slate-react';
 
+import { useRemoteSelectionsSelector } from '@/application/awareness/selector';
 import { YjsEditor } from '@/application/slate-yjs';
 import { CustomEditor } from '@/application/slate-yjs/command';
 import { ensureBlockText } from '@/application/slate-yjs/utils/editor';
@@ -14,8 +16,10 @@ import { Leaf } from '@/components/editor/components/leaf';
 import HrefPopover from '@/components/editor/components/leaf/href/HrefPopover';
 import { LeafContext } from '@/components/editor/components/leaf/leaf.hooks';
 import { PanelProvider } from '@/components/editor/components/panels/PanelsContext';
+import { RemoteSelectionsLayer } from '@/components/editor/components/remote-selections';
 import { useEditorContext } from '@/components/editor/EditorContext';
 import { useShortcuts } from '@/components/editor/shortcut.hooks';
+import { ElementFallbackRender } from '@/components/error/ElementFallbackRender';
 import { cn } from '@/lib/utils';
 import { getTextCount } from '@/utils/word';
 
@@ -24,8 +28,9 @@ import { Element } from './components/element';
 const EditorOverlay = lazy(() => import('@/components/editor/EditorOverlay'));
 
 const EditorEditable = () => {
-  const { readOnly, decorateState, onWordCountChange, viewId, workspaceId, fullWidth } = useEditorContext();
+  const { readOnly, decorateState, onWordCountChange, viewId, workspaceId, fullWidth, awareness } = useEditorContext();
   const editor = useSlate();
+  const remoteSelections = useRemoteSelectionsSelector(awareness);
 
   const codeDecorate = useDecorate(editor);
 
@@ -145,36 +150,49 @@ const EditorEditable = () => {
             closeLinkPopover: handleCloseLinkPopover,
           }}
         >
-          <Editable
-            role={'textbox'}
-            decorate={(entry: NodeEntry) => {
-              const codeDecoration = codeDecorate?.(entry);
-              const decoration = decorate(entry);
+          <ErrorBoundary fallbackRender={ElementFallbackRender}>
+            <Editable
+              role={'textbox'}
+              decorate={(entry: NodeEntry) => {
+                const codeDecoration = codeDecorate?.(entry);
+                const decoration = decorate(entry);
 
-              return [...codeDecoration, ...decoration];
-            }}
-            id={`editor-${viewId}`}
-            className={cn(
-              'custom-caret min-w-0 max-w-full scroll-mb-[100px] scroll-mt-[300px] px-24 pb-56 outline-none focus:outline-none max-sm:px-6',
-              fullWidth ? 'w-full' : 'w-[952px]'
-            )}
-            renderLeaf={Leaf}
-            renderElement={renderElement}
-            readOnly={readOnly}
-            spellCheck={false}
-            autoCorrect={'off'}
-            autoComplete={'off'}
-            onCompositionStart={onCompositionStart}
-            onKeyDown={onKeyDown}
-            onMouseDown={handleMouseDown}
-            onClick={handleClick}
-          />
+                return [...codeDecoration, ...decoration];
+              }}
+              id={`editor-${viewId}`}
+              className={cn(
+                'custom-caret min-w-0 max-w-full scroll-mb-[100px] scroll-mt-[300px] px-24 pb-56 outline-none focus:outline-none max-sm:px-6',
+                fullWidth ? 'w-full' : 'w-[952px]'
+              )}
+              renderLeaf={Leaf}
+              renderElement={renderElement}
+              readOnly={readOnly}
+              spellCheck={false}
+              autoCorrect={'off'}
+              autoComplete={'off'}
+              onCompositionStart={onCompositionStart}
+              onKeyDown={onKeyDown}
+              onMouseDown={handleMouseDown}
+              onClick={handleClick}
+            />
+          </ErrorBoundary>
+
           {!readOnly && (
             <Suspense>
               <EditorOverlay workspaceId={workspaceId} viewId={viewId} />
               <HrefPopover open={!!linkOpen} onClose={handleCloseLinkPopover} />
             </Suspense>
           )}
+
+          <div className={cn('pointer-events-none absolute left-0 right-0 top-0 flex h-full justify-center')}>
+            <div
+              className={cn(fullWidth ? 'w-full' : 'w-[952px]', 'relative h-full min-w-0 max-w-full px-24 max-sm:px-6')}
+            >
+              <ErrorBoundary fallback={null}>
+                <RemoteSelectionsLayer remoteSelections={remoteSelections} editor={editor} />
+              </ErrorBoundary>
+            </div>
+          </div>
         </LeafContext.Provider>
       </BlockPopoverProvider>
     </PanelProvider>

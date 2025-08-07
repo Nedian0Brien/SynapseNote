@@ -132,6 +132,9 @@ export function SlashPanel({
   const turnInto = useCallback(
     (type: BlockType, data: BlockData) => {
       const block = getBlockEntry(editor);
+
+      if (!block) return;
+
       const blockId = block[0].blockId as string;
       const isEmpty = !CustomEditor.getBlockTextContent(block[0], 2);
       let newBlockId: string | undefined;
@@ -143,7 +146,11 @@ export function SlashPanel({
       }
 
       if (newBlockId && isEmbedBlockTypes(type)) {
-        const [, path] = findSlateEntryByBlockId(editor, newBlockId);
+        const entry = findSlateEntryByBlockId(editor, newBlockId);
+
+        if(!entry) return;
+
+        const [, path] = entry;
 
         editor.select(editor.start(path));
       }

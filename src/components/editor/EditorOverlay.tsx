@@ -63,7 +63,11 @@ function EditorOverlay({ viewId, workspaceId }: { viewId: string; workspaceId: s
 
         try {
           ReactEditor.focus(editor);
-          const [, path] = findSlateEntryByBlockId(editor, blockId);
+          const entry = findSlateEntryByBlockId(editor, blockId);
+
+          if(!entry) return;
+
+          const [, path] = entry;
 
           editor.select(editor.end(path));
         } catch (e) {
@@ -120,7 +124,11 @@ function EditorOverlay({ viewId, workspaceId }: { viewId: string; workspaceId: s
           }
 
           ReactEditor.focus(editor);
-          const [, path] = findSlateEntryByBlockId(editor, blockId);
+          const entry = findSlateEntryByBlockId(editor, blockId);
+
+          if(!entry) return;
+
+          const [, path] = entry;
 
           editor.select(editor.end(path));
         }

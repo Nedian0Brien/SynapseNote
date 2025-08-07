@@ -38,7 +38,11 @@ function BlockPopover() {
     window.getSelection()?.removeAllRanges();
     if(!blockId) return;
 
-    const [, path] = findSlateEntryByBlockId(editor, blockId);
+    const entry = findSlateEntryByBlockId(editor, blockId);
+
+    if(!entry) return;
+
+    const [, path] = entry;
 
     editor.select(editor.start(path));
     ReactEditor.focus(editor);

@@ -1,3 +1,7 @@
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
+import { ReactEditor, useSlateStatic } from 'slate-react';
+
 import { YjsEditor } from '@/application/slate-yjs';
 import { CustomEditor } from '@/application/slate-yjs/command';
 import { findSlateEntryByBlockId } from '@/application/slate-yjs/utils/editor';
@@ -8,9 +12,6 @@ import { ALLOWED_IMAGE_EXTENSIONS, Unsplash } from '@/components/_shared/image-u
 import EmbedLink from '@/components/_shared/image-upload/EmbedLink';
 import { TabPanel, ViewTab, ViewTabs } from '@/components/_shared/tabs/ViewTabs';
 import { FileHandler } from '@/utils/file';
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
-import { ReactEditor, useSlateStatic } from 'slate-react';
 
 function ImageBlockPopoverContent({ blockId, onClose }: { blockId: string; onClose: () => void }) {
   const { uploadFile } = useEditorContext();
@@ -106,7 +107,11 @@ function ImageBlockPopoverContent({ blockId, onClose }: { blockId: string; onClo
 
       belowBlockId = CustomEditor.addBelowBlock(editor, belowBlockId, BlockType.Paragraph, {});
 
-      const [node, path] = belowBlockId ? findSlateEntryByBlockId(editor, belowBlockId) : [null, null];
+      const entry = belowBlockId ? findSlateEntryByBlockId(editor, belowBlockId) : null;
+
+      if (!entry) return;
+
+      const [node, path] = entry;
 
       onClose();
 

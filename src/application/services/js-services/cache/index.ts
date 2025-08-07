@@ -238,7 +238,7 @@ export async function getPageDoc<T extends {
   switch (strategy) {
     case StrategyType.CACHE_ONLY: {
       if (!exist) {
-        throw new Error('No cache found');
+        console.warn('No cache found for doc', name);
       }
 
       break;

@@ -3,6 +3,7 @@ import { ErrorBoundary } from 'react-error-boundary';
 
 import { useAIChatContext } from '@/components/ai-chat/AIChatProvider';
 import { useViewErrorStatus } from '@/components/app/app.hooks';
+import { ConnectBanner } from '@/components/app/ConnectBanner';
 import { AppHeader } from '@/components/app/header';
 import Main from '@/components/app/Main';
 import SideBar from '@/components/app/SideBar';
@@ -62,6 +63,8 @@ function MainLayout() {
           }}
           openDrawer={drawerOpened}
         />
+        <ConnectBanner />
+
         <div
           className={'sticky-header-overlay'}
           style={{

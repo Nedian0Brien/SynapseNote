@@ -1,4 +1,5 @@
 import { RepeatedChatMessage } from '@appflowyinc/ai-chat';
+import * as random from 'lib0/random';
 import { nanoid } from 'nanoid';
 import * as Y from 'yjs';
 
@@ -23,7 +24,6 @@ import {
   fetchViewInfo,
 } from '@/application/services/js-services/fetch';
 import { APIService } from '@/application/services/js-services/http';
-import { SyncManager } from '@/application/services/js-services/sync';
 import { AFService, AFServiceConfig } from '@/application/services/services.type';
 import { emit, EventType } from '@/application/session';
 import { afterAuth, AUTH_CALLBACK_URL, withSignIn } from '@/application/session/sign_in';
@@ -58,9 +58,8 @@ import {
 import { applyYDoc } from '@/application/ydoc/apply';
 
 export class AFClientService implements AFService {
+  private clientId: number = random.uint32();
   private deviceId: string = nanoid(8);
-
-  private clientId: string = 'web';
 
   private viewLoaded: Set<string> = new Set();
 
@@ -84,6 +83,10 @@ export class AFClientService implements AFService {
 
   getClientId() {
     return this.clientId;
+  }
+
+  getDeviceId() {
+    return this.deviceId;
   }
 
   async publishView(workspaceId: string, viewId: string, payload?: PublishViewPayload) {
@@ -484,7 +487,7 @@ export class AFClientService implements AFService {
       throw new Error('User not found');
     }
 
-    const name = `${userId}_${workspaceId}_${viewId}`;
+    const name = viewId;
 
     const isLoaded = this.viewLoaded.has(name);
 
@@ -506,7 +509,7 @@ export class AFClientService implements AFService {
         }
       },
       name,
-      isLoaded ? StrategyType.CACHE_FIRST : StrategyType.CACHE_AND_NETWORK
+      StrategyType.CACHE_ONLY
     );
 
     if (!isLoaded) {
@@ -555,36 +558,6 @@ export class AFClientService implements AFService {
   getWorkspaceSubscriptions(workspaceId: string) {
     return APIService.getWorkspaceSubscriptions(workspaceId);
   }
-
-  private registeredDocSync = new Map<string, SyncManager>();
-
-  registerDocUpdate = (
-    doc: Y.Doc,
-    context: {
-      workspaceId: string;
-      objectId: string;
-      collabType: Types;
-    }
-  ) => {
-    const token = getTokenParsed();
-    const userId = token?.user.id;
-
-    if (!userId) {
-      throw new Error('User not found');
-    }
-
-    if (this.registeredDocSync.has(context.objectId)) {
-      // if (context.collabType !== Types.DatabaseRow) return;
-
-      this.registeredDocSync.get(context.objectId)?.destroy();
-      this.registeredDocSync.delete(context.objectId);
-    }
-
-    const sync = new SyncManager(doc, { userId, ...context });
-
-    this.registeredDocSync.set(context.objectId, sync);
-    sync.initialize();
-  };
 
   async importFile(file: File, onProgress: (progress: number) => void) {
     const task = await APIService.createImportTask(file);

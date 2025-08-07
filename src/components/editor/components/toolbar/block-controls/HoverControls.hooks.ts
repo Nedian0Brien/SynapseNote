@@ -130,7 +130,10 @@ export function useHoverControls({ disabled }: { disabled: boolean }) {
 
     if (hoveredBlockId) {
       try {
-        const [node] = findSlateEntryByBlockId(editor, hoveredBlockId);
+        const entry = findSlateEntryByBlockId(editor, hoveredBlockId);
+
+        if (!entry) return;
+        const [node] = entry;
 
         if (!node) return;
 

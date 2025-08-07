@@ -5,3 +5,4 @@ tsconfig.json
 vite.config.ts
 vite-env.d.ts
 coverage/
+src/proto/**/*

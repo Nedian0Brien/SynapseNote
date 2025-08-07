@@ -38,7 +38,11 @@ export function Heading() {
     (level: number) => {
       return () => {
         try {
-          const [node] = getBlockEntry(editor);
+          const entry = getBlockEntry(editor);
+
+          if (!entry) return;
+
+          const [node] = entry;
 
           if (!node) return;
 
@@ -59,7 +63,11 @@ export function Heading() {
   const isActivated = useCallback(
     (level: number) => {
       try {
-        const [node] = getBlockEntry(editor);
+        const entry = getBlockEntry(editor);
+
+        if (!entry) return false;
+
+        const [node] = entry;
 
         const isBlock = CustomEditor.isBlockActive(editor, BlockType.HeadingBlock);
 

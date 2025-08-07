@@ -22,6 +22,7 @@ export function ViewMetaPreview({
   maxWidth,
   uploadFile,
   layout,
+  onFocus,
 }: ViewMetaProps) {
   const [cover, setCover] = React.useState<ViewMetaCover | null>(coverProp || null);
   const [icon, setIcon] = React.useState<ViewMetaIcon | null>(iconProp || null);
@@ -258,7 +259,7 @@ export function ViewMetaPreview({
               </CustomIconPopover>
             ) : null}
             {!readOnly && viewId ? (
-              <TitleEditable viewId={viewId} name={name || ''} onUpdateName={handleUpdateName} onEnter={onEnter} />
+              <TitleEditable onFocus={onFocus}   viewId={viewId} name={name || ''} onUpdateName={handleUpdateName} onEnter={onEnter} />
             ) : (
               <div
                 style={{

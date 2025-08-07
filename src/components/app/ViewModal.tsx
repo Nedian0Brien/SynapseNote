@@ -1,3 +1,8 @@
+import { Button, Dialog, Divider, IconButton, Tooltip, Zoom } from '@mui/material';
+import { TransitionProps } from '@mui/material/transitions';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import { UIVariant, ViewComponentProps, ViewLayout, ViewMetaProps, YDoc } from '@/application/types';
 import { ReactComponent as ArrowDownIcon } from '@/assets/icons/alt_arrow_down.svg';
 import { ReactComponent as CloseIcon } from '@/assets/icons/close.svg';
@@ -11,11 +16,10 @@ import RecordNotFound from '@/components/error/RecordNotFound';
 import { useService } from '@/components/main/app.hooks';
 import { findAncestors, findView } from '@/components/_shared/outline/utils';
 import SpaceIcon from '@/components/_shared/view-icon/SpaceIcon';
-import { Button, Dialog, Divider, IconButton, Tooltip, Zoom } from '@mui/material';
-import { TransitionProps } from '@mui/material/transitions';
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
+
 import ShareButton from 'src/components/app/share/ShareButton';
+
+import { Users } from './header/Users';
 
 const Transition = React.forwardRef(function Transition(
   props: TransitionProps & {
@@ -60,7 +64,7 @@ function ViewModal({ viewId, open, onClose }: { viewId?: string; open: boolean; 
       setNotFound(false);
       setDoc(undefined);
       try {
-        const doc = await loadView(id);
+        const doc = await loadView(id, false, true);
 
         setDoc({ doc, id });
       } catch (e) {
@@ -169,6 +173,7 @@ function ViewModal({ viewId, open, onClose }: { viewId?: string; open: boolean; 
         </div>
 
         <div className={'flex items-center gap-4'}>
+          <Users viewId={viewId} />
           <ShareButton viewId={viewId} />
           {ref.current && (
             <MoreActions

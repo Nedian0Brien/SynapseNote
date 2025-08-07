@@ -21,10 +21,9 @@ const openedSet = new Set<string>();
 /**
  * Open the collaboration database, and return a function to close it
  */
-export async function openCollabDB(docName: string): Promise<YDoc> {
-  const name = `${databasePrefix}_${docName}`;
+export async function openCollabDB(name: string): Promise<YDoc> {
   const doc = new Y.Doc({
-    guid: docName,
+    guid: name,
   });
 
   const provider = new IndexeddbPersistence(name, doc);
@@ -47,14 +46,15 @@ export async function openCollabDB(docName: string): Promise<YDoc> {
   return doc as YDoc;
 }
 
-export async function closeCollabDB(docName: string) {
-  const name = `${databasePrefix}_${docName}`;
+export async function closeCollabDB(name: string) {
 
   if (openedSet.has(name)) {
     openedSet.delete(name);
   }
 
-  const doc = new Y.Doc();
+  const doc = new Y.Doc({
+    guid: name,
+  });
 
   const provider = new IndexeddbPersistence(name, doc);
 

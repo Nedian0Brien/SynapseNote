@@ -1,8 +1,6 @@
-import { useLiveQuery } from 'dexie-react-hooks';
 import { debounce } from 'lodash-es';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { db } from '@/application/db';
 import {
   AppendBreadcrumb,
   CreateFolderViewPayload,
@@ -60,37 +58,32 @@ function Database(props: Database2Props) {
     onOpenRowPage,
     appendBreadcrumb,
     readOnly = true,
-    variant = UIVariant.App,
     loadView,
     navigateToView,
   } = props;
-  const database = doc.getMap(YjsEditorKey.data_section)?.get(YjsEditorKey.database) as YDatabase;
-  const view = database.get(YjsDatabaseKey.views).get(iidIndex);
+  const database = doc.getMap(YjsEditorKey.data_section)?.get(YjsEditorKey.database) as YDatabase | null;
+  const view = database?.get(YjsDatabaseKey.views)?.get(iidIndex);
 
   const rowOrders = view?.get(YjsDatabaseKey.row_orders);
   const [rowIds, setRowIds] = useState<RowId[]>([]);
   const [rowDocMap, setRowDocMap] = useState<Record<RowId, YDoc> | null>(null);
-  const dbRows = useLiveQuery(async () => {
-    const rows = await db.rows.bulkGet(rowIds.map((id) => `${doc.guid}_rows_${id}`));
-
-    return rows;
-  }, [rowIds, variant]);
 
   const updateRowMap = useCallback(async () => {
     const newRowMap: Record<RowId, YDoc> = {};
 
-    if (!dbRows || !createRowDoc) return;
-
-    for (const row of dbRows) {
-      if (!row) {
+    if (!rowIds || !createRowDoc) return;
+    for (const id of rowIds) {
+      if (!id) {
         continue;
       }
 
-      newRowMap[row.row_id] = await createRowDoc(row.row_key);
+      const rowKey = `${doc.guid}_rows_${id}`;
+
+      newRowMap[id] = await createRowDoc(rowKey);
     }
 
     setRowDocMap(newRowMap);
-  }, [createRowDoc, dbRows]);
+  }, [createRowDoc, doc.guid, rowIds]);
 
   const debounceUpdateRowMap = useMemo(() => {
     return debounce(updateRowMap, 200);
@@ -101,7 +94,7 @@ function Database(props: Database2Props) {
   }, [debounceUpdateRowMap]);
 
   useEffect(() => {
-    console.log('Database.tsx: database', database.toJSON());
+    console.log('Database.tsx: database', database?.toJSON());
     console.log('Database.tsx: rowDocMap', rowDocMap);
   }, [rowDocMap, database]);
 
@@ -111,15 +104,7 @@ function Database(props: Database2Props) {
         throw new Error('createRowDoc function is not provided');
       }
 
-      const rowId = rowKey.split('_rows_')[1];
-
       const rowDoc = await createRowDoc(rowKey);
-
-      await db.rows.put({
-        row_id: rowId,
-        version: 1,
-        row_key: rowKey,
-      });
 
       return rowDoc;
     },

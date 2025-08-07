@@ -18,7 +18,13 @@ export const withInsertText = (editor: ReactEditor) => {
     }
 
     const point = newAt.anchor;
-    const [blockNode] = getBlockEntry(editor as YjsEditor, point);
+    const entry = getBlockEntry(editor as YjsEditor, point);
+
+    if (!entry) return;
+
+    const [blockNode] = entry;
+
+    if (!blockNode) return;
 
     if (blockNode && isEmbedBlockTypes(blockNode.type as BlockType)) {
       return;

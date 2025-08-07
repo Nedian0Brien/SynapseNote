@@ -30,7 +30,11 @@ export const withPasted = (editor: ReactEditor) => {
 
       const lineLength = lines.filter(Boolean).length;
       const point = editor.selection?.anchor as BasePoint;
-      const [node] = getBlockEntry(editor as YjsEditor, point);
+      const entry = getBlockEntry(editor as YjsEditor, point);
+
+      if (!entry) return false;
+
+      const [node] = entry;
 
       if(lineLength === 1) {
         const isUrl = !!processUrl(text);
@@ -147,7 +151,14 @@ function insertFragment(editor: ReactEditor, fragment: Node[], options = {}) {
     return;
 
   const point = editor.selection?.anchor as BasePoint;
-  const [node] = getBlockEntry(editor as YjsEditor, point);
+  const entry = getBlockEntry(editor as YjsEditor, point);
+
+  if (!entry) return;
+
+  const [node] = entry;
+
+  if (!node) return;
+
   const blockId = node.blockId as string;
   const sharedRoot = getSharedRoot(editor as YjsEditor);
   const isEmptyNode = CustomEditor.getBlockTextContent(node) === '';
@@ -197,7 +208,11 @@ function insertFragment(editor: ReactEditor, fragment: Node[], options = {}) {
 
   setTimeout(() => {
     try {
-      const [, path] = findSlateEntryByBlockId(editor as YjsEditor, lastBlockId);
+      const entry = findSlateEntryByBlockId(editor as YjsEditor, lastBlockId);
+
+      if (!entry) return;
+
+      const [, path] = entry;
 
       const point = editor.end(path);
 

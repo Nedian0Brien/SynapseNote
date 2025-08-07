@@ -54,7 +54,8 @@
   "exclude": [
     "node_modules",
     "dist",
-    "coverage"
+    "coverage",
+    "src/proto/**/*"
   ],
   "references": [
     {

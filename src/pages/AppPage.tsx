@@ -64,7 +64,7 @@ function AppPage () {
       setNotFound(false);
       setDoc(undefined);
       try {
-        const doc = await loadView(id);
+        const doc = await loadView(id, false, true);
 
         setDoc(doc);
       } catch (e) {

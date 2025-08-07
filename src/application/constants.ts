@@ -11,4 +11,6 @@ export const ERROR_CODE = {
 
 export const APP_EVENTS = {
   OUTLINE_LOADED: 'outline-loaded',
+  RECONNECT_WEBSOCKET: 'reconnect-websocket',
+  WEBSOCKET_STATUS: 'websocket-status',
 };

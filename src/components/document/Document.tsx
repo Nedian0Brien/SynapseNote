@@ -1,10 +1,18 @@
-import { Suspense, useCallback, useRef } from 'react';
+import { Suspense, useCallback, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
+import {
+  generateUserColors,
+  useDispatchClearAwareness,
+  useDispatchCursorAwareness,
+  useDispatchUserAwareness,
+} from '@/application/awareness';
 import { YjsEditor } from '@/application/slate-yjs';
 import { appendFirstEmptyParagraph } from '@/application/slate-yjs/utils/yjs';
 import { ViewComponentProps, YjsEditorKey, YSharedRoot } from '@/application/types';
+import { useAppAwareness } from '@/components/app/app.hooks';
 import { Editor } from '@/components/editor';
+import { useCurrentUser, useService } from '@/components/main/app.hooks';
 import ViewMetaPreview from '@/components/view-meta/ViewMetaPreview';
 import EditorSkeleton from '@/components/_shared/skeleton/EditorSkeleton';
 
@@ -17,9 +25,43 @@ export const Document = (props: DocumentProps) => {
   const { doc, readOnly, viewMeta, isTemplateThumb, updatePage, onRendered, onEditorConnected, uploadFile } = props;
   const blockId = search.get('blockId') || undefined;
 
+  const awareness = useAppAwareness(viewMeta.viewId);
+  const currentUser = useCurrentUser();
+  const service = useService();
+  const dispatchUserAwareness = useDispatchUserAwareness(awareness);
+  const dispatchCursorAwareness = useDispatchCursorAwareness(awareness);
+  const { clearAwareness, clearCursor } = useDispatchClearAwareness(awareness);
+
+  // Sync user information to awareness when component mounts or user changes
+  useEffect(() => {
+    if (!currentUser || !service || !awareness) return;
+
+    const deviceId = service.getDeviceId();
+    const colors = generateUserColors(currentUser.name || '');
+
+    const userParams = {
+      uid: Number(currentUser.uid),
+      device_id: deviceId,
+      user_name: currentUser.name || 'Anonymous',
+      cursor_color: colors.cursor_color,
+      selection_color: colors.selection_color,
+      user_avatar: currentUser.avatar || '',
+    };
+
+    dispatchUserAwareness(userParams);
+  }, [currentUser, service, awareness, dispatchUserAwareness]);
+
+  // Clean up awareness when component unmounts
+  useEffect(() => {
+    return () => {
+      clearAwareness();
+    };
+  }, [clearAwareness]);
+
   const onJumpedBlockId = useCallback(() => {
     // do nothing
   }, []);
+
   const document = doc?.getMap(YjsEditorKey.data_section)?.get(YjsEditorKey.document);
 
   const handleEnter = useCallback(
@@ -53,6 +95,37 @@ export const Document = (props: DocumentProps) => {
     el.style.minHeight = `${scrollElement?.clientHeight - 64}px`;
   }, [onRendered]);
 
+  const handleBlur = useCallback(() => {
+    clearCursor();
+  }, [clearCursor]);
+
+  const handleEditorConnected = useCallback(
+    (editor: YjsEditor) => {
+      // Set up cursor synchronization when editor is connected
+      if (currentUser && service && awareness) {
+        const deviceId = service.getDeviceId();
+        const colors = generateUserColors(currentUser.name || '');
+
+        const userParams = {
+          uid: Number(currentUser.uid),
+          device_id: deviceId,
+          user_name: currentUser.name || 'Anonymous',
+          cursor_color: colors.cursor_color,
+          selection_color: colors.selection_color,
+          user_avatar: currentUser.avatar || '',
+        };
+
+        dispatchCursorAwareness(userParams, editor);
+      }
+
+      // Call original onEditorConnected if provided
+      if (onEditorConnected) {
+        onEditorConnected(editor);
+      }
+    },
+    [currentUser, service, awareness, dispatchCursorAwareness, onEditorConnected]
+  );
+
   if (!document || !viewMeta.viewId) return null;
 
   return (
@@ -64,16 +137,18 @@ export const Document = (props: DocumentProps) => {
         onEnter={readOnly ? undefined : handleEnter}
         maxWidth={952}
         uploadFile={uploadFile}
+        onFocus={handleBlur}
       />
       <Suspense fallback={<EditorSkeleton />}>
-        <div className={'flex w-full justify-center'}>
+        <div className={'relative flex w-full justify-center'}>
           <Editor
             viewId={viewMeta.viewId}
             readSummary={isTemplateThumb}
             jumpBlockId={blockId}
             onJumpedBlockId={onJumpedBlockId}
             onRendered={handleRendered}
-            onEditorConnected={onEditorConnected}
+            onEditorConnected={handleEditorConnected}
+            awareness={awareness}
             {...props}
           />
         </div>

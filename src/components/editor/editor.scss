@@ -129,6 +129,10 @@
   }
 }
 
+.text-element {
+  z-index: 2;
+}
+
 .block-element.block-align-left {
   > div > .text-element {
     text-align: left !important;

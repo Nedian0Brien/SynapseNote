@@ -1,14 +1,16 @@
 import EventEmitter from 'events';
 
 import { PromptDatabaseConfiguration } from '@appflowyinc/ai-chat';
-import { sortBy, uniqBy } from 'lodash-es';
+import { debounce, sortBy, uniqBy } from 'lodash-es';
 import React, { createContext, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { validate as uuidValidate } from 'uuid';
+import { Awareness } from 'y-protocols/awareness';
 
 import { APP_EVENTS } from '@/application/constants';
 import { FieldType } from '@/application/database-yjs';
 import { getCellDataText } from '@/application/database-yjs/cell.parse';
+import { openCollabDB } from '@/application/db';
 import { invalidToken } from '@/application/session/token';
 import {
   AppendBreadcrumb,
@@ -37,14 +39,15 @@ import {
   View,
   ViewLayout,
   YDatabase,
+  YDoc,
   YjsDatabaseKey,
   YjsEditorKey,
-  YSharedRoot,
 } from '@/application/types';
 import { AIChatProvider } from '@/components/ai-chat/AIChatProvider';
 import { AppOverlayProvider } from '@/components/app/app-overlay/AppOverlayProvider';
 import RequestAccess from '@/components/app/landing-pages/RequestAccess';
 import { AFConfigContext, useService } from '@/components/main/app.hooks';
+import { useAppflowyWebSocket, useBroadcastChannel, useSync } from '@/components/ws';
 import { findAncestors, findView, findViewByLayout } from '@/components/_shared/outline/utils';
 import { createDeduplicatedNoArgsRequest } from '@/utils/deduplicateRequest';
 
@@ -99,6 +102,7 @@ export interface AppContextType {
   testDatabasePromptConfig?: TestDatabasePromptConfig;
   eventEmitter?: EventEmitter;
   getMentionUser?: (uuid: string) => Promise<MentionablePerson | undefined>;
+  awarenessMap?: Record<string, Awareness>;
 }
 
 const USER_NO_ACCESS_CODE = [1024, 1012];
@@ -114,6 +118,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     if (id && !uuidValidate(id)) return;
     return id;
   }, [params.viewId]);
+  const [awarenessMap, setAwarenessMap] = useState<Record<string, Awareness>>({});
   const [openModalViewId, setOpenModalViewId] = useState<string | undefined>(undefined);
   const wordCountRef = useRef<Record<string, TextCount>>({});
 
@@ -129,6 +134,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [favoriteViews, setFavoriteViews] = useState<View[]>();
   const [recentViews, setRecentViews] = useState<View[]>();
   const [trashList, setTrashList] = React.useState<View[]>();
+  const eventEmitterRef = useRef<EventEmitter>(new EventEmitter());
+
   const viewHasBeenDeleted = useMemo(() => {
     if (!viewId) return false;
     return trashList?.some((v) => v.view_id === viewId);
@@ -144,8 +151,37 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const createdRowKeys = useRef<string[]>([]);
   const [requestAccessOpened, setRequestAccessOpened] = useState(false);
   const [rendered, setRendered] = useState(false);
-  const service = useService();
+  const service = useService()!;
   const navigate = useNavigate();
+  const webSocket = useAppflowyWebSocket({
+    workspaceId: currentWorkspaceId!,
+    clientId: service.getClientId(),
+    deviceId: service.getDeviceId(),
+  });
+
+  const broadcastChannel = useBroadcastChannel(`workspace:${currentWorkspaceId!}`);
+  const { registerSyncContext, lastUpdatedCollab } = useSync(webSocket, broadcastChannel);
+
+  const reconnectWebSocket = useCallback(() => {
+    webSocket.reconnect();
+  }, [webSocket]);
+
+  useEffect(() => {
+    const currentEventEmitter = eventEmitterRef.current;
+
+    currentEventEmitter.on(APP_EVENTS.RECONNECT_WEBSOCKET, reconnectWebSocket);
+
+    return () => {
+      currentEventEmitter.off(APP_EVENTS.RECONNECT_WEBSOCKET, reconnectWebSocket);
+    };
+  }, [reconnectWebSocket]);
+
+  useEffect(() => {
+    const currentEventEmitter = eventEmitterRef.current;
+
+    currentEventEmitter.emit(APP_EVENTS.WEBSOCKET_STATUS, webSocket.readyState);
+  }, [webSocket.readyState]);
+
   const onRendered = useCallback(() => {
     setRendered(true);
   }, []);
@@ -204,8 +240,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       return [...rest, view];
     });
   }, []);
-
-  const eventEmitterRef = useRef<EventEmitter>(new EventEmitter());
 
   const loadViewMeta = useCallback(
     async (viewId: string, callback?: (meta: View) => void) => {
@@ -266,60 +300,126 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     [currentWorkspaceId, loadViewMeta, navigate]
   );
 
-  const loadView = useCallback(
-    async (id: string) => {
-      const errorCallback = (e: { code: number }) => {
-        if (viewId === id && USER_NO_ACCESS_CODE.includes(e.code)) {
-          setRequestAccessOpened(true);
-        }
-      };
+  const workspaceDatabaseDocMapRef = useRef<Map<string, YDoc>>(new Map());
+  const databaseStorageId = userWorkspaceInfo?.selectedWorkspace?.databaseStorageId;
 
+  const registerWorkspaceDatabaseDoc = useCallback(
+    async (workspaceId: string, databaseStorageId: string) => {
+      const doc = await openCollabDB(databaseStorageId);
+
+      doc.guid = databaseStorageId;
+      const { doc: workspaceDatabaseDoc } = registerSyncContext({ doc, collabType: Types.WorkspaceDatabase });
+
+      workspaceDatabaseDocMapRef.current.clear();
+      workspaceDatabaseDocMapRef.current.set(workspaceId, workspaceDatabaseDoc);
+    },
+    [registerSyncContext]
+  );
+
+  const getDatabaseId = useCallback(
+    async (id: string) => {
+      if (!currentWorkspaceId) return;
+
+      if (databaseStorageId && !workspaceDatabaseDocMapRef.current.has(currentWorkspaceId)) {
+        await registerWorkspaceDatabaseDoc(currentWorkspaceId, databaseStorageId);
+      }
+
+      return new Promise<string | null>((resolve) => {
+        const sharedRoot = workspaceDatabaseDocMapRef.current.get(currentWorkspaceId)?.getMap(YjsEditorKey.data_section);
+        const observeEvent = () => {
+          const databases = sharedRoot?.toJSON()?.databases;
+          const databaseId = databases?.find(
+            (database: { database_id: string; views: string[] }) => database.views[0] === id
+          )?.database_id;
+
+          if (databaseId) {
+            resolve(databaseId);
+          }
+        };
+
+        observeEvent();
+
+        sharedRoot?.observeDeep(observeEvent);
+
+        return () => {
+          sharedRoot?.unobserveDeep(observeEvent);
+        };
+      });
+    },
+    [currentWorkspaceId, databaseStorageId, registerWorkspaceDatabaseDoc]
+  );
+
+  const loadView = useCallback(
+    async (id: string, _isSubDocument = false, loadAwareness = false) => {
       try {
         if (!service || !currentWorkspaceId) {
           throw new Error('Service or workspace not found');
         }
 
-        const res = await service?.getPageDoc(currentWorkspaceId, id, errorCallback);
+        const res = await service?.getPageDoc(currentWorkspaceId, id);
 
         if (!res) {
           throw new Error('View not found');
         }
 
-        const sharedRoot = res.get(YjsEditorKey.data_section) as YSharedRoot;
-        let objectId = id;
-        let collabType = Types.Document;
-
-        if (sharedRoot.has(YjsEditorKey.database)) {
-          const database = sharedRoot.get(YjsEditorKey.database);
-
-          objectId = database?.get(YjsDatabaseKey.id);
-          collabType = Types.Database;
+        if (loadAwareness) {
+          // add recent pages when view is loaded
+          void (async () => {
+            try {
+              await service.addRecentPages(currentWorkspaceId, [id]);
+            } catch (e) {
+              console.error(e);
+            }
+          })();
         }
 
-        service.registerDocUpdate(res, {
-          workspaceId: currentWorkspaceId,
-          objectId,
-          collabType,
-        });
+        const view = findView(outlineRef.current || [], id);
 
-        // add recent pages when view is loaded
-        void (async () => {
-          try {
-            await service.addRecentPages(currentWorkspaceId, [id]);
-          } catch (e) {
-            console.error(e);
+        const collabType = view
+          ? view?.layout === ViewLayout.Document
+            ? Types.Document
+            : Types.Database
+          : Types.Document;
+
+        if (collabType === Types.Document) {
+          let awareness: Awareness | undefined;
+
+          if (loadAwareness) {
+            setAwarenessMap((prev) => {
+              if (prev[id]) {
+                awareness = prev[id];
+                return prev;
+              }
+
+              awareness = new Awareness(res);
+
+              return { ...prev, [id]: awareness };
+            });
           }
-        })();
 
-        return res;
+          const { doc } = registerSyncContext({ doc: res, collabType, awareness });
+
+          return doc;
+        }
+
+        const databaseId = await getDatabaseId(id);
+
+        if (!databaseId) {
+          throw new Error('Database not found');
+        }
+
+        res.guid = databaseId;
+
+        const { doc } = registerSyncContext({ doc: res, collabType });
+
+        return doc;
+
         // eslint-disable-next-line
       } catch (e: any) {
-        errorCallback(e);
-
         return Promise.reject(e);
       }
     },
-    [viewId, currentWorkspaceId, service]
+    [service, currentWorkspaceId, getDatabaseId, registerSyncContext]
   );
 
   const createRowDoc = useCallback(
@@ -341,19 +441,19 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
           throw new Error('Failed to create row doc');
         }
 
-        service.registerDocUpdate(doc, {
-          workspaceId: currentWorkspaceId,
-          objectId: rowId,
+        doc.guid = rowId;
+        const syncContext = registerSyncContext({
+          doc,
           collabType: Types.DatabaseRow,
         });
 
         createdRowKeys.current.push(rowKey);
-        return doc;
+        return syncContext.doc;
       } catch (e) {
         return Promise.reject(e);
       }
     },
-    [currentWorkspaceId, service]
+    [currentWorkspaceId, service, registerSyncContext]
   );
 
   const loadUserWorkspaceInfo = useCallback(async () => {
@@ -505,7 +605,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
   const loadDatabaseRelations = useCallback(async () => {
     if (!currentWorkspaceId || !service) {
-      throw new Error('No workspace or service found');
+      return;
     }
 
     const selectedWorkspace = userWorkspaceInfo?.selectedWorkspace;
@@ -784,7 +884,23 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const refreshOutline = useCallback(async () => {
     if (!currentWorkspaceId) return;
     await loadOutline(currentWorkspaceId, false);
+    console.log(`Refreshed outline for workspace ${currentWorkspaceId}`);
   }, [currentWorkspaceId, loadOutline]);
+
+  // Refresh outline when a folder collab update is detected
+  const debouncedRefreshOutline = useMemo(
+    () =>
+      debounce(() => {
+        void refreshOutline();
+      }, 1000),
+    [refreshOutline]
+  );
+
+  useEffect(() => {
+    if (lastUpdatedCollab?.collabType === Types.Folder) {
+      return debouncedRefreshOutline();
+    }
+  }, [lastUpdatedCollab, debouncedRefreshOutline]);
 
   const createFolderView = useCallback(
     async (payload: CreateFolderViewPayload) => {
@@ -874,7 +990,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
           if (!createRowDoc) return;
 
-          const rowKey = `${doc.guid}_rows_${row.id}`;
+          const rowKey = `${doc?.guid}_rows_${row.id}`;
           const rowDoc = await createRowDoc(rowKey);
 
           const rowSharedRoot = rowDoc?.getMap(YjsEditorKey.data_section);
@@ -1152,6 +1268,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         testDatabasePromptConfig,
         eventEmitter: eventEmitterRef.current,
         getMentionUser,
+        awarenessMap,
       }}
     >
       <AIChatProvider>
@@ -1211,6 +1328,20 @@ export function useAppOutline() {
   }
 
   return context.outline;
+}
+
+export function useAppAwareness(viewId?: string) {
+  const context = useContext(AppContext);
+
+  if (!context) {
+    throw new Error('useAppAwareness must be used within an AppProvider');
+  }
+
+  if (!viewId) {
+    return;
+  }
+
+  return context.awarenessMap?.[viewId];
 }
 
 export function useAppViewId() {
@@ -1311,6 +1442,7 @@ export function useAppHandlers() {
     testDatabasePromptConfig: context.testDatabasePromptConfig,
     eventEmitter: context.eventEmitter,
     getMentionUser: context.getMentionUser,
+    awarenessMap: context.awarenessMap,
   };
 }
 

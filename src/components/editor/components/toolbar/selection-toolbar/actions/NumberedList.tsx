@@ -15,7 +15,11 @@ export function NumberedList() {
 
   const onClick = useCallback(() => {
     try {
-      const [node] = getBlockEntry(editor);
+      const entry = getBlockEntry(editor);
+
+      if (!entry) return;
+
+      const [node] = entry;
 
       if (!node) return;
 

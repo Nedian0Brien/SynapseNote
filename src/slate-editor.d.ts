@@ -13,6 +13,7 @@ interface EditorInlineAttributes {
   formula?: string;
   prism_token?: string;
   class_name?: string;
+
   mention?: {
     type: string;
     // inline page ref id
