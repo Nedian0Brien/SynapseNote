@@ -1196,7 +1196,7 @@ export interface MentionablePerson {
 
   name: string;
   role: number;
-  uuid: string;
+  person_id: string;
   invited: boolean;
   last_mentioned_at: string | null;
 }

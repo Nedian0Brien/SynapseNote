@@ -46,6 +46,7 @@ import { AppOverlayProvider } from '@/components/app/app-overlay/AppOverlayProvi
 import RequestAccess from '@/components/app/landing-pages/RequestAccess';
 import { AFConfigContext, useService } from '@/components/main/app.hooks';
 import { findAncestors, findView, findViewByLayout } from '@/components/_shared/outline/utils';
+import { createDeduplicatedNoArgsRequest } from '@/utils/deduplicateRequest';
 
 const ViewModal = React.lazy(() => import('@/components/app/ViewModal'));
 
@@ -1052,7 +1053,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   );
 
   const mentionableUsersRef = useRef<MentionablePerson[]>([]);
-  const loadMentionableUsers = useCallback(async () => {
+
+  // 原始的请求函数
+  const _loadMentionableUsers = useCallback(async () => {
     if (!currentWorkspaceId || !service) {
       throw new Error('No workspace or service found');
     }
@@ -1068,15 +1071,19 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [currentWorkspaceId, service]);
 
+  const loadMentionableUsers = useMemo(
+    () => createDeduplicatedNoArgsRequest(_loadMentionableUsers),
+    [_loadMentionableUsers]
+  );
+
   useEffect(() => {
     void loadMentionableUsers();
   }, [loadMentionableUsers]);
 
   const getMentionUser = useCallback(
     async (uuid: string) => {
-      console.log('mentionableUsers', mentionableUsersRef.current);
       if (mentionableUsersRef.current.length > 0) {
-        const user = mentionableUsersRef.current.find((user) => user.uuid === uuid);
+        const user = mentionableUsersRef.current.find((user) => user.person_id === uuid);
 
         if (user) {
           return user;
@@ -1086,7 +1093,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         const res = await loadMentionableUsers();
 
-        return res.find((user) => user.uuid === uuid);
+        return res.find((user: MentionablePerson) => user.person_id === uuid);
       } catch (e) {
         return Promise.reject(e);
       }
