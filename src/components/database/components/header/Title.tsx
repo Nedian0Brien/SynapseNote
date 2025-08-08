@@ -124,8 +124,10 @@ export function Title({
               value={value}
               onChange={(e) => {
                 if (readOnly) return;
-                setValue(e.target.value);
+
                 updateCell(e.target.value);
+
+                setValue(e.target.value);
               }}
               onKeyDown={(e) => {
                 if (createHotkey(HOT_KEY_NAME.ESCAPE)(e.nativeEvent)) {

@@ -584,6 +584,7 @@ export function useRowsByGroup(groupId: string) {
   const { columns, fieldId } = useGroup(groupId);
   const rows = useRowDocMap();
   const rowOrders = useRowOrdersSelector();
+
   const [visibleColumns, setVisibleColumns] = useState<GroupColumn[]>([]);
 
   const fields = useDatabaseFields();
@@ -607,7 +608,6 @@ export function useRowsByGroup(groupId: string) {
         return;
       }
 
-
       const fieldType = Number(field.get(YjsDatabaseKey.type)) as FieldType;
 
       if (![FieldType.SingleSelect, FieldType.MultiSelect, FieldType.Checkbox].includes(fieldType)) {
@@ -615,7 +615,7 @@ export function useRowsByGroup(groupId: string) {
         setGroupResult(newResult);
         return;
       }
-      
+
       const filter = filters?.toArray().find((filter) => filter.get(YjsDatabaseKey.field_id) === fieldId);
 
       const groupResult = groupByField(rowOrders, rows, field, filter);
@@ -632,9 +632,24 @@ export function useRowsByGroup(groupId: string) {
 
     fields.observeDeep(onConditionsChange);
     filters?.observeDeep(onConditionsChange);
+
+    const debouncedConditionsChange = debounce(onConditionsChange, 150);
+
+    const observerRowsEvent = () => {
+      debouncedConditionsChange();
+    };
+
+    Object.values(rows).forEach((row) => {
+      row.getMap(YjsEditorKey.data_section).observeDeep(observerRowsEvent);
+    });
     return () => {
+      debouncedConditionsChange.cancel();
+
       fields.unobserveDeep(onConditionsChange);
       filters?.unobserveDeep(onConditionsChange);
+      Object.values(rows).forEach((row) => {
+        row.getMap(YjsEditorKey.data_section).unobserveDeep(observerRowsEvent);
+      });
     };
   }, [fieldId, fields, rowOrders, rows, filters]);
 

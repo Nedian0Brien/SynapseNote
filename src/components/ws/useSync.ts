@@ -4,20 +4,20 @@ import * as awarenessProtocol from 'y-protocols/awareness';
 import * as Y from 'yjs';
 
 import { handleMessage, initSync, SyncContext } from '@/application/services/js-services/sync-protocol';
-import {Types} from "@/application/types";
+import { Types } from '@/application/types';
 import { AppflowyWebSocketType } from '@/components/ws/useAppflowyWebSocket';
-import {BroadcastChannelType} from "@/components/ws/useBroadcastChannel";
-import {messages} from "@/proto/messages";
+import { BroadcastChannelType } from '@/components/ws/useBroadcastChannel';
+import { messages } from '@/proto/messages';
 
 export interface RegisterSyncContext {
   /**
    * The Y.Doc instance to be used for collaboration.
    * It must have a valid guid (UUID v4).
    */
-  doc: Y.Doc,
-  awareness?: awarenessProtocol.Awareness,
-  collabType: Types,
-  emit?: (reply: messages.IMessage) => void
+  doc: Y.Doc;
+  awareness?: awarenessProtocol.Awareness;
+  collabType: Types;
+  emit?: (reply: messages.IMessage) => void;
 }
 
 export type UpdateCollabInfo = {
@@ -25,18 +25,18 @@ export type UpdateCollabInfo = {
    * The objectId of the Y.Doc instance.
    * It must be a valid UUID v4.
    */
-  objectId: string,
-  collabType: Types,
+  objectId: string;
+  collabType: Types;
   /**
    * The timestamp when the corresponding update has been known to the server.
    */
-  publishedAt?: Date,
-}
+  publishedAt?: Date;
+};
 
 export type SyncContextType = {
-  registerSyncContext: (context: RegisterSyncContext) => SyncContext,
-  lastUpdatedCollab: UpdateCollabInfo | null,
-}
+  registerSyncContext: (context: RegisterSyncContext) => SyncContext;
+  lastUpdatedCollab: UpdateCollabInfo | null;
+};
 
 export const useSync = (ws: AppflowyWebSocketType, bc: BroadcastChannelType): SyncContextType => {
   const { sendMessage, lastMessage } = ws;
@@ -60,7 +60,7 @@ export const useSync = (ws: AppflowyWebSocketType, bc: BroadcastChannelType): Sy
 
       console.log('Received collab message:', message.collabType, publishedAt, message);
 
-      setLastUpdatedCollab({objectId, publishedAt, collabType: message.collabType as Types});
+      setLastUpdatedCollab({ objectId, publishedAt, collabType: message.collabType as Types });
     }
   }, [lastMessage, registeredContexts, setLastUpdatedCollab]);
 
@@ -80,43 +80,45 @@ export const useSync = (ws: AppflowyWebSocketType, bc: BroadcastChannelType): Sy
 
       console.log('Received broadcasted collab message:', message.collabType, publishedAt, message);
 
-      setLastUpdatedCollab({objectId, publishedAt, collabType: message.collabType as Types});
+      setLastUpdatedCollab({ objectId, publishedAt, collabType: message.collabType as Types });
     }
-
   }, [lastBroadcastMessage, registeredContexts, setLastUpdatedCollab]);
 
-  const registerSyncContext = useCallback(((context: RegisterSyncContext): SyncContext => {
-    if (!uuidValidate(context.doc.guid)) {
-      throw new Error(`Invalid Y.Doc guid: ${context.doc.guid}. It must be a valid UUID v4.`);
-    }
+  const registerSyncContext = useCallback(
+    (context: RegisterSyncContext): SyncContext => {
+      if (!uuidValidate(context.doc.guid)) {
+        throw new Error(`Invalid Y.Doc guid: ${context.doc.guid}. It must be a valid UUID v4.`);
+      }
 
-    const existingContext = registeredContexts.current.get(context.doc.guid);
+      const existingContext = registeredContexts.current.get(context.doc.guid);
 
-    // If the context is already registered, return it
-    if (existingContext !== undefined) {
-      return existingContext;
-    }
+      // If the context is already registered, return it
+      if (existingContext !== undefined) {
+        return existingContext;
+      }
 
-    console.log(`Registering sync context for objectId ${context.doc.guid} with collabType ${context.collabType}`);
-    context.emit = (message) => {
-      sendMessage(message);
-      postMessage(message);
-    };
+      console.log(`Registering sync context for objectId ${context.doc.guid} with collabType ${context.collabType}`);
+      context.emit = (message) => {
+        sendMessage(message);
+        postMessage(message);
+      };
 
-    // SyncContext extends RegisterSyncContext by attaching the emit function and destroy handler
-    const syncContext = context as SyncContext;
+      // SyncContext extends RegisterSyncContext by attaching the emit function and destroy handler
+      const syncContext = context as SyncContext;
 
-    registeredContexts.current.set(syncContext.doc.guid, syncContext);
-    context.doc.on('destroy', () => {
-      // Remove the context from the registered contexts when the Y.Doc is destroyed
-      registeredContexts.current.delete(context.doc.guid);
-    });
+      registeredContexts.current.set(syncContext.doc.guid, syncContext);
+      context.doc.on('destroy', () => {
+        // Remove the context from the registered contexts when the Y.Doc is destroyed
+        registeredContexts.current.delete(context.doc.guid);
+      });
 
-    // Initialize the sync process for the new context
-    initSync(syncContext);
+      // Initialize the sync process for the new context
+      initSync(syncContext);
 
-    return syncContext;
-  }), [registeredContexts, sendMessage, postMessage]);
+      return syncContext;
+    },
+    [registeredContexts, sendMessage, postMessage]
+  );
 
-  return {registerSyncContext, lastUpdatedCollab};
-}
+  return { registerSyncContext, lastUpdatedCollab };
+};

@@ -53,6 +53,7 @@ export interface DatabaseContextState {
   loadDatabasePrompts?: LoadDatabasePrompts;
   testDatabasePromptConfig?: TestDatabasePromptConfig;
   requestInstance?: AxiosInstance | null;
+  checkIfRowDocumentExists?: (documentId: string) => Promise<void>;
 }
 
 export const DatabaseContext = createContext<DatabaseContextState | null>(null);

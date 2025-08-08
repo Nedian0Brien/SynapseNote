@@ -13,11 +13,9 @@ import {
 } from '@/application/database-yjs';
 import { getCellDataText } from '@/application/database-yjs/cell.parse';
 import { useUpdateRowMetaDispatch } from '@/application/database-yjs/dispatch';
-import { YDatabaseCell, YDatabaseField, YDoc, YjsDatabaseKey } from '@/application/types';
+import { YDatabaseCell, YDatabaseField, YDatabaseRow, YDoc, YjsDatabaseKey, YjsEditorKey } from '@/application/types';
 import { Editor } from '@/components/editor';
 import { EditorSkeleton } from '@/components/_shared/skeleton/EditorSkeleton';
-
-const ViewNotFoundCodes = [1040, 1017]; // Error code for "View not found"
 
 export const DatabaseRowSubDocument = memo(({ rowId }: { rowId: string }) => {
   const meta = useRowMetaSelector(rowId);
@@ -25,10 +23,12 @@ export const DatabaseRowSubDocument = memo(({ rowId }: { rowId: string }) => {
   const documentId = meta?.documentId;
   const context = useDatabaseContext();
   const database = useDatabase();
-  const row = useRowData(rowId);
+  const row = useRowData(rowId) as YDatabaseRow | undefined;
+  const checkIfRowDocumentExists = context.checkIfRowDocumentExists;
 
   const getCellData = useCallback(
     (cell: YDatabaseCell, field: YDatabaseField) => {
+      if (!row) return '';
       const type = Number(field?.get(YjsDatabaseKey.type));
 
       if (type === FieldType.CreatedTime) {
@@ -51,6 +51,8 @@ export const DatabaseRowSubDocument = memo(({ rowId }: { rowId: string }) => {
 
   const properties = useMemo(() => {
     const obj = {};
+
+    if (!row) return obj;
 
     const cells = row.get(YjsDatabaseKey.cells);
     const fields = database.get(YjsDatabaseKey.fields);
@@ -84,7 +86,7 @@ export const DatabaseRowSubDocument = memo(({ rowId }: { rowId: string }) => {
         setDoc(null);
         await createOrphanedView({ document_id: documentId });
 
-        const doc = await loadView?.(documentId, true);
+        const doc = await loadView?.(documentId, true, true);
 
         if (doc) {
           setDoc(doc);
@@ -96,6 +98,7 @@ export const DatabaseRowSubDocument = memo(({ rowId }: { rowId: string }) => {
     },
     [createOrphanedView, loadView]
   );
+  const document = doc?.getMap(YjsEditorKey.data_section)?.get(YjsEditorKey.document);
 
   const handleOpenDocument = useCallback(
     async (documentId: string) => {
@@ -109,23 +112,26 @@ export const DatabaseRowSubDocument = memo(({ rowId }: { rowId: string }) => {
         // eslint-disable-next-line
       } catch (e: any) {
         console.error(e);
-        if (ViewNotFoundCodes.includes(e.code)) {
-          // This means the document does not exist, so we create a new one
-          void handleCreateDocument(documentId);
-        } else {
-          toast.error(e.message);
-        }
+        toast.error(e.message);
       } finally {
         setLoading(false);
       }
     },
-    [loadView, handleCreateDocument]
+    [loadView]
   );
 
   useEffect(() => {
     if (!documentId) return;
-    void handleOpenDocument(documentId);
-  }, [handleOpenDocument, documentId]);
+
+    void (async () => {
+      try {
+        await checkIfRowDocumentExists?.(documentId);
+        void handleOpenDocument(documentId);
+      } catch (e) {
+        void handleCreateDocument(documentId);
+      }
+    })();
+  }, [handleOpenDocument, documentId, handleCreateDocument, checkIfRowDocumentExists]);
 
   const getMoreAIContext = useCallback(() => {
     return JSON.stringify(properties);
@@ -135,7 +141,7 @@ export const DatabaseRowSubDocument = memo(({ rowId }: { rowId: string }) => {
     return <EditorSkeleton />;
   }
 
-  if (!doc || !documentId) return null;
+  if (!document || !doc || !documentId || !row) return null;
   return (
     <Editor
       {...context}

@@ -18,9 +18,6 @@ export function useUsersSelector(awareness?: Awareness) {
     const renderUsers = () => {
       const states = awareness?.getStates() as Map<number, AwarenessState>;
 
-      // Log the raw awareness states map for debugging
-      console.log('👥 Raw awareness states map:', states);
-
       const users: AwarenessUser[] = [];
 
       states?.forEach((state) => {
@@ -45,7 +42,7 @@ export function useUsersSelector(awareness?: Awareness) {
         uniqBy(
           users.sort((a, b) => b.timestamp - a.timestamp),
           'uid'
-        )
+        ).filter((user) => !!user.name)
       );
     };
 
@@ -66,10 +63,6 @@ export function useRemoteSelectionsSelector(awareness?: Awareness) {
   useEffect(() => {
     const renderCursors = () => {
       const states = awareness?.getStates() as Map<number, AwarenessState>;
-
-      // Log the raw awareness states map for cursor processing
-      console.log('🎯 Raw awareness states map for cursors:', states);
-
       const cursors: Cursor[] = [];
 
       states?.forEach((state, clientId) => {

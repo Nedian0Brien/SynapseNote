@@ -1,14 +1,11 @@
 import { Skeleton } from '@mui/material';
-import { debounce } from 'lodash-es';
-import React, { lazy, Suspense, useCallback, useEffect, useMemo } from 'react';
+import React, { lazy, Suspense, useCallback } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { BaseRange, Editor, Element as SlateElement, NodeEntry, Range, Text } from 'slate';
 import { Editable, RenderElementProps, useSlate } from 'slate-react';
 
-import { useRemoteSelectionsSelector } from '@/application/awareness/selector';
 import { YjsEditor } from '@/application/slate-yjs';
 import { CustomEditor } from '@/application/slate-yjs/command';
-import { ensureBlockText } from '@/application/slate-yjs/utils/editor';
 import { BlockType } from '@/application/types';
 import { BlockPopoverProvider } from '@/components/editor/components/block-popover/BlockPopoverContext';
 import { useDecorate } from '@/components/editor/components/blocks/code/useDecorate';
@@ -21,16 +18,14 @@ import { useEditorContext } from '@/components/editor/EditorContext';
 import { useShortcuts } from '@/components/editor/shortcut.hooks';
 import { ElementFallbackRender } from '@/components/error/ElementFallbackRender';
 import { cn } from '@/lib/utils';
-import { getTextCount } from '@/utils/word';
 
 import { Element } from './components/element';
 
 const EditorOverlay = lazy(() => import('@/components/editor/EditorOverlay'));
 
 const EditorEditable = () => {
-  const { readOnly, decorateState, onWordCountChange, viewId, workspaceId, fullWidth, awareness } = useEditorContext();
+  const { readOnly, decorateState, viewId, workspaceId, fullWidth } = useEditorContext();
   const editor = useSlate();
-  const remoteSelections = useRemoteSelectionsSelector(awareness);
 
   const codeDecorate = useDecorate(editor);
 
@@ -75,30 +70,6 @@ const EditorEditable = () => {
       editor.delete();
     }
   }, [editor]);
-
-  const debounceCalculateWordCount = useMemo(() => {
-    return debounce(() => {
-      const wordCount = getTextCount(editor.children);
-
-      onWordCountChange?.(viewId, wordCount);
-    }, 300);
-  }, [onWordCountChange, viewId, editor]);
-
-  useEffect(() => {
-    if (readOnly) return;
-    const { onChange } = editor;
-
-    editor.onChange = () => {
-      ensureBlockText(editor as YjsEditor);
-
-      onChange();
-      debounceCalculateWordCount();
-    };
-
-    return () => {
-      editor.onChange = onChange;
-    };
-  }, [editor, debounceCalculateWordCount, readOnly]);
 
   const handleClick = useCallback(
     (e: React.MouseEvent) => {
@@ -189,7 +160,7 @@ const EditorEditable = () => {
               className={cn(fullWidth ? 'w-full' : 'w-[952px]', 'relative h-full min-w-0 max-w-full px-24 max-sm:px-6')}
             >
               <ErrorBoundary fallback={null}>
-                <RemoteSelectionsLayer remoteSelections={remoteSelections} editor={editor} />
+                <RemoteSelectionsLayer editor={editor} />
               </ErrorBoundary>
             </div>
           </div>

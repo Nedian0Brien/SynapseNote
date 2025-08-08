@@ -103,6 +103,7 @@ export interface AppContextType {
   eventEmitter?: EventEmitter;
   getMentionUser?: (uuid: string) => Promise<MentionablePerson | undefined>;
   awarenessMap?: Record<string, Awareness>;
+  checkIfRowDocumentExists?: (databaseId: string, rowIds: string[]) => Promise<void>;
 }
 
 const USER_NO_ACCESS_CODE = [1024, 1012];
@@ -328,8 +329,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         const sharedRoot = workspaceDatabaseDocMapRef.current.get(currentWorkspaceId)?.getMap(YjsEditorKey.data_section);
         const observeEvent = () => {
           const databases = sharedRoot?.toJSON()?.databases;
-          const databaseId = databases?.find(
-            (database: { database_id: string; views: string[] }) => database.views[0] === id
+
+          const databaseId = databases?.find((database: { database_id: string; views: string[] }) =>
+            database.views.find((view) => view === id)
           )?.database_id;
 
           if (databaseId) {
@@ -392,7 +394,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
               }
 
               awareness = new Awareness(res);
-
               return { ...prev, [id]: awareness };
             });
           }
@@ -1107,26 +1108,29 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     [getRows]
   );
 
-  const loadDatabasePrompts = async (
-    config: PromptDatabaseConfiguration
-  ): Promise<{
-    rawDatabasePrompts: DatabasePrompt[];
-    fields: DatabasePromptField[];
-  }> => {
-    const fields = await getFields(config.databaseViewId);
+  const loadDatabasePrompts = useCallback(
+    async (
+      config: PromptDatabaseConfiguration
+    ): Promise<{
+      rawDatabasePrompts: DatabasePrompt[];
+      fields: DatabasePromptField[];
+    }> => {
+      const fields = await getFields(config.databaseViewId);
 
-    const rawDatabasePrompts = await loadDatabasePromptsWithFields(config, fields);
+      const rawDatabasePrompts = await loadDatabasePromptsWithFields(config, fields);
 
-    return {
-      rawDatabasePrompts,
-      fields: fields.map((field) => ({
-        id: field.id,
-        name: field.name,
-        isPrimary: field.isPrimary,
-        isSelect: field.fieldType === FieldType.SingleSelect || field.fieldType === FieldType.MultiSelect,
-      })),
-    };
-  };
+      return {
+        rawDatabasePrompts,
+        fields: fields.map((field) => ({
+          id: field.id,
+          name: field.name,
+          isPrimary: field.isPrimary,
+          isSelect: field.fieldType === FieldType.SingleSelect || field.fieldType === FieldType.MultiSelect,
+        })),
+      };
+    },
+    [getFields, loadDatabasePromptsWithFields]
+  );
 
   const testDatabasePromptConfig = useCallback(
     async (viewId: string) => {
@@ -1170,7 +1174,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
   const mentionableUsersRef = useRef<MentionablePerson[]>([]);
 
-  // 原始的请求函数
   const _loadMentionableUsers = useCallback(async () => {
     if (!currentWorkspaceId || !service) {
       throw new Error('No workspace or service found');
@@ -1215,6 +1218,17 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       }
     },
     [loadMentionableUsers]
+  );
+
+  const checkIfRowDocumentExists = useCallback(
+    async (documentId: string) => {
+      if (!service || !currentWorkspaceId) {
+        throw new Error('No service found');
+      }
+
+      return service.checkIfCollabExists(currentWorkspaceId, documentId);
+    },
+    [service, currentWorkspaceId]
   );
 
   return (
@@ -1269,6 +1283,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         eventEmitter: eventEmitterRef.current,
         getMentionUser,
         awarenessMap,
+        checkIfRowDocumentExists,
       }}
     >
       <AIChatProvider>
@@ -1443,6 +1458,7 @@ export function useAppHandlers() {
     eventEmitter: context.eventEmitter,
     getMentionUser: context.getMentionUser,
     awarenessMap: context.awarenessMap,
+    checkIfRowDocumentExists: context.checkIfRowDocumentExists,
   };
 }
 

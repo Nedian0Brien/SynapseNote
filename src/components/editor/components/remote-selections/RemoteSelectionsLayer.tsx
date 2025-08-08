@@ -2,20 +2,11 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Editor, Range, Text } from 'slate';
 import { ReactEditor } from 'slate-react';
 
+import { useRemoteSelectionsSelector } from '@/application/awareness';
+import { useEditorContext } from '@/components/editor/EditorContext';
 import { cn } from '@/lib/utils';
 import { renderColor } from '@/utils/color';
 
-interface RemoteSelection {
-  uid: number;
-  name: string;
-  deviceId: string;
-  cursorColor: string;
-  selectionColor: string;
-  baseRange?: {
-    anchor: { path: number[]; offset: number };
-    focus: { path: number[]; offset: number };
-  };
-}
 
 interface SelectionRect {
   x: number;
@@ -36,11 +27,13 @@ interface RemoteSelectionPosition {
 }
 
 interface RemoteSelectionsLayerProps {
-  remoteSelections: RemoteSelection[];
   editor: Editor;
 }
 
-export const RemoteSelectionsLayer: React.FC<RemoteSelectionsLayerProps> = ({ remoteSelections, editor }) => {
+export const RemoteSelectionsLayer: React.FC<RemoteSelectionsLayerProps> = ({ editor }) => {
+  const { awareness } = useEditorContext();
+  const remoteSelections = useRemoteSelectionsSelector(awareness);
+
   const [selectionPositions, setSelectionPositions] = useState<RemoteSelectionPosition[]>([]);
 
   const calculateSelectionPositions = useCallback((): RemoteSelectionPosition[] => {

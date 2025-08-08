@@ -201,6 +201,10 @@ export class AFClientService implements AFService {
     return deleteRowDoc(rowKey);
   }
 
+  async checkIfCollabExists(workspaceId: string, objectId: string) {
+    return APIService.checkIfCollabExists(workspaceId, objectId);
+  }
+
   async getAppDatabaseViewRelations(workspaceId: string, databaseStorageId: string) {
     const res = await APIService.getCollab(workspaceId, databaseStorageId, Types.WorkspaceDatabase);
     const doc = new Y.Doc();

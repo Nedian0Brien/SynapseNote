@@ -8,9 +8,10 @@ import './editor.scss';
 export interface EditorProps extends EditorContextState {
   doc: YDoc;
   onEditorConnected?: (editor: YjsEditor) => void;
+  onSelectionChange?: (editor: YjsEditor) => void;
 }
 
-export const Editor = memo(({ doc, onEditorConnected, layoutStyle = defaultLayoutStyle, ...props }: EditorProps) => {
+export const Editor = memo(({ doc, onEditorConnected, onSelectionChange, layoutStyle = defaultLayoutStyle, ...props }: EditorProps) => {
   const [codeGrammars, setCodeGrammars] = React.useState<Record<string, string>>({});
 
   const handleAddCodeGrammars = React.useCallback((blockId: string, grammar: string) => {
@@ -24,7 +25,7 @@ export const Editor = memo(({ doc, onEditorConnected, layoutStyle = defaultLayou
       addCodeGrammars={handleAddCodeGrammars}
       layoutStyle={layoutStyle}
     >
-      <CollaborativeEditor doc={doc} onEditorConnected={onEditorConnected} />
+      <CollaborativeEditor doc={doc} onEditorConnected={onEditorConnected} onSelectionChange={onSelectionChange} />
     </EditorContextProvider>
   );
 });

@@ -23,7 +23,6 @@ import {
   SOFT_BREAK_TYPES,
   TEXT_BLOCK_TYPES,
 } from '@/application/slate-yjs/command/const';
-import { isValidSelection } from '@/application/slate-yjs/utils/transformSelection';
 import {
   appendEmptyParagraph,
   assertDocExists,
@@ -499,12 +498,12 @@ export function getBlockEntry(editor: YjsEditor, point?: Point) {
     throw new Error('Point not found');
   }
 
-  if (!isValidSelection(editor, { anchor: at, focus: at })) {
+  if (!ReactEditor.hasRange(editor, { anchor: at, focus: at })) {
     return;
   }
 
   const blockEntry = editor.above({
-    at: point,
+    at,
     match: (n) => !Editor.isEditor(n) && Element.isElement(n) && n.blockId !== undefined,
   });
 

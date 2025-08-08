@@ -2135,3 +2135,21 @@ export async function addRecentPages(workspaceId: string, viewIds: string[]) {
 
   return Promise.reject(response?.data);
 }
+
+export async function checkIfCollabExists(workspaceId: string, objectId: string) {
+  const url = `/api/workspace/${workspaceId}/collab/${objectId}/row-document-collab-exists`;
+
+  const response = await axiosInstance?.get<{
+    code: number;
+    message: string;
+    data: {
+      exists: boolean;
+    };
+  }>(url);
+
+  if (response?.data.code === 0 && response?.data.data.exists === true) {
+    return;
+  }
+
+  return Promise.reject(response?.data);
+}

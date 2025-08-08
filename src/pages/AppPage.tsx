@@ -1,6 +1,7 @@
+import React, { lazy, memo, Suspense, useCallback, useContext, useEffect, useMemo } from 'react';
+
 import { UIVariant, ViewLayout, ViewMetaProps, YDoc } from '@/application/types';
-import Help from '@/components/_shared/help/Help';
-import { findView } from '@/components/_shared/outline/utils';
+import { AIChat } from '@/components/ai-chat';
 import {
   AppContext,
   useAppHandlers,
@@ -12,13 +13,13 @@ import DatabaseView from '@/components/app/DatabaseView';
 import { Document } from '@/components/document';
 import RecordNotFound from '@/components/error/RecordNotFound';
 import { useService } from '@/components/main/app.hooks';
+import Help from '@/components/_shared/help/Help';
+import { findView } from '@/components/_shared/outline/utils';
 import { getPlatform } from '@/utils/platform';
-import React, { lazy, memo, Suspense, useCallback, useContext, useEffect, useMemo } from 'react';
-import { AIChat } from '@/components/ai-chat';
 
 const ViewHelmet = lazy(() => import('@/components/_shared/helmet/ViewHelmet'));
 
-function AppPage () {
+function AppPage() {
   const viewId = useAppViewId();
   const outline = useAppOutline();
   const ref = React.useRef<HTMLDivElement>(null);
@@ -48,10 +49,7 @@ function AppPage () {
   const helmet = useMemo(() => {
     return view && rendered ? (
       <Suspense>
-        <ViewHelmet
-          name={view.name}
-          icon={view.icon || undefined}
-        />
+        <ViewHelmet name={view.name} icon={view.icon || undefined} />
       </Suspense>
     ) : null;
   }, [rendered, view]);
@@ -72,7 +70,7 @@ function AppPage () {
         console.error(e);
       }
     },
-    [loadView],
+    [loadView]
   );
 
   useEffect(() => {
@@ -91,15 +89,15 @@ function AppPage () {
   const viewMeta: ViewMetaProps | null = useMemo(() => {
     return view
       ? {
-        name: view.name,
-        icon: view.icon || undefined,
-        cover: view.extra?.cover || undefined,
-        layout: view.layout,
-        visibleViewIds: [],
-        viewId: view.view_id,
-        extra: view.extra,
-        workspaceId,
-      }
+          name: view.name,
+          icon: view.icon || undefined,
+          cover: view.extra?.cover || undefined,
+          layout: view.layout,
+          visibleViewIds: [],
+          viewId: view.view_id,
+          extra: view.extra,
+          workspaceId,
+        }
       : null;
   }, [view, workspaceId]);
 
@@ -111,7 +109,7 @@ function AppPage () {
 
       return Promise.reject();
     },
-    [uploadFile, view],
+    [uploadFile, view]
   );
 
   const service = useService();
@@ -119,14 +117,10 @@ function AppPage () {
   const isMobile = getPlatform().isMobile;
 
   const viewDom = useMemo(() => {
-
     if (!doc && layout === ViewLayout.AIChat && viewId) {
       return (
         <Suspense>
-          <AIChat
-            chatId={viewId}
-            onRendered={onRendered}
-          />
+          <AIChat chatId={viewId} onRendered={onRendered} />
         </Suspense>
       );
     }
@@ -157,7 +151,29 @@ function AppPage () {
         {...handlers}
       />
     ) : null;
-  }, [doc, layout, handlers, viewId, viewMeta, workspaceId, requestInstance, isMobile, toView, loadViewMeta, createRowDoc, appendBreadcrumb, loadView, onRendered, updatePage, addPage, deletePage, openPageModal, loadViews, setWordCount, handleUploadFile]);
+  }, [
+    doc,
+    layout,
+    handlers,
+    viewId,
+    viewMeta,
+    workspaceId,
+    requestInstance,
+    isMobile,
+    toView,
+    loadViewMeta,
+    createRowDoc,
+    appendBreadcrumb,
+    loadView,
+    onRendered,
+    updatePage,
+    addPage,
+    deletePage,
+    openPageModal,
+    loadViews,
+    setWordCount,
+    handleUploadFile,
+  ]);
 
   useEffect(() => {
     if (!viewId) return;
@@ -166,10 +182,7 @@ function AppPage () {
 
   if (!viewId) return null;
   return (
-    <div
-      ref={ref}
-      className={'relative h-full w-full'}
-    >
+    <div ref={ref} className={'relative h-full w-full'}>
       {helmet}
 
       {notFound ? <RecordNotFound /> : <div className={'h-full w-full'}>{viewDom}</div>}

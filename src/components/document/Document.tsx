@@ -99,7 +99,7 @@ export const Document = (props: DocumentProps) => {
     clearCursor();
   }, [clearCursor]);
 
-  const handleEditorConnected = useCallback(
+  const handleSyncCursor = useCallback(
     (editor: YjsEditor) => {
       // Set up cursor synchronization when editor is connected
       if (currentUser && service && awareness) {
@@ -117,13 +117,20 @@ export const Document = (props: DocumentProps) => {
 
         dispatchCursorAwareness(userParams, editor);
       }
+    },
+    [dispatchCursorAwareness, currentUser, service, awareness]
+  );
 
+  const handleEditorConnected = useCallback(
+    (editor: YjsEditor) => {
+      // Set up cursor synchronization when editor is connected
+      handleSyncCursor(editor);
       // Call original onEditorConnected if provided
       if (onEditorConnected) {
         onEditorConnected(editor);
       }
     },
-    [currentUser, service, awareness, dispatchCursorAwareness, onEditorConnected]
+    [handleSyncCursor, onEditorConnected]
   );
 
   if (!document || !viewMeta.viewId) return null;
@@ -148,6 +155,7 @@ export const Document = (props: DocumentProps) => {
             onJumpedBlockId={onJumpedBlockId}
             onRendered={handleRendered}
             onEditorConnected={handleEditorConnected}
+            onSelectionChange={handleSyncCursor}
             awareness={awareness}
             {...props}
           />

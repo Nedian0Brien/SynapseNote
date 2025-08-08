@@ -259,7 +259,13 @@ export function ViewMetaPreview({
               </CustomIconPopover>
             ) : null}
             {!readOnly && viewId ? (
-              <TitleEditable onFocus={onFocus}   viewId={viewId} name={name || ''} onUpdateName={handleUpdateName} onEnter={onEnter} />
+              <TitleEditable
+                onFocus={onFocus}
+                viewId={viewId}
+                name={name || ''}
+                onUpdateName={handleUpdateName}
+                onEnter={onEnter}
+              />
             ) : (
               <div
                 style={{

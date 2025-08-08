@@ -3,6 +3,7 @@ import { ReactEditor } from 'slate-react';
 import * as Y from 'yjs';
 
 import { relativeRangeToSlateRange, slateRangeToRelativeRange } from '@/application/slate-yjs/utils/positions';
+import { isValidSelection } from '@/application/slate-yjs/utils/transformSelection';
 import { getDocument } from '@/application/slate-yjs/utils/yjs';
 import { CollabOrigin } from '@/application/types';
 
@@ -44,7 +45,13 @@ export function withYHistory<T extends YjsEditor>(editor: T): T & YHistoryEditor
     return e;
   }
 
-  e.undoManager = new Y.UndoManager(getDocument(e.sharedRoot), {
+  const document = getDocument(e.sharedRoot);
+
+  if (!document) {
+    return e;
+  }
+
+  e.undoManager = new Y.UndoManager(document, {
     trackedOrigins: new Set([CollabOrigin.Local, null]),
     captureTimeout: 200,
   });
@@ -87,11 +94,16 @@ export function withYHistory<T extends YjsEditor>(editor: T): T & YHistoryEditor
     if (!selection || !ReactEditor.hasRange(editor, selection)) {
       const startPoint = Editor.start(e, [0]);
 
-      Transforms.select(e, startPoint);
+      if (isValidSelection(e, { anchor: startPoint, focus: startPoint })) {
+        Transforms.select(e, startPoint);
+      }
+
       return;
     }
 
-    Transforms.select(e, selection);
+    if (isValidSelection(e, selection)) {
+      Transforms.select(e, selection);
+    }
   };
 
   const { connect } = e;

@@ -38,16 +38,23 @@ function TitleEditable({
 }) {
   const { t } = useTranslation();
   const debounceUpdateName = useMemo(() => {
-    return debounce(onUpdateName, 300);
+    return debounce(onUpdateName, 200);
   }, [onUpdateName]);
   const contentRef = useRef<HTMLDivElement>(null);
+  const timestampsRef = useRef<{
+    local: number;
+    remote: number;
+  }>({
+    local: 0,
+    remote: 0,
+  });
 
   useEffect(() => {
-    if (contentRef.current) {
+    timestampsRef.current.remote = Date.now();
+    if (contentRef.current && timestampsRef.current.local < timestampsRef.current.remote) {
       contentRef.current.textContent = name;
     }
-    // eslint-disable-next-line
-  }, []);
+  }, [name]);
 
   useEffect(() => {
     if (contentRef.current) {
@@ -102,17 +109,16 @@ function TitleEditable({
       contentEditable={true}
       aria-readonly={false}
       autoFocus={true}
-      onFocus={onFocus}
+      onFocus={() => {
+        onFocus?.();
+      }}
       onInput={() => {
         if (!contentRef.current) return;
+        timestampsRef.current.local = Date.now();
         debounceUpdateName(contentRef.current.textContent || '');
         if (contentRef.current.innerHTML === '<br>') {
           contentRef.current.innerHTML = '';
         }
-      }}
-      onBlur={() => {
-        if (!contentRef.current) return;
-        onUpdateName(contentRef.current.textContent || '');
       }}
       onKeyDown={(e) => {
         if (!contentRef.current) return;
@@ -124,6 +130,7 @@ function TitleEditable({
             const afterText = contentRef.current.textContent?.slice(offset) || '';
 
             contentRef.current.textContent = beforeText;
+            timestampsRef.current.remote = Date.now();
             onUpdateName(beforeText);
             onEnter?.(afterText);
 
@@ -131,6 +138,7 @@ function TitleEditable({
               focusedTextbox();
             }, 0);
           } else {
+            timestampsRef.current.remote = Date.now();
             onUpdateName(contentRef.current.textContent || '');
           }
         } else if (e.key === 'ArrowDown' || (e.key === 'ArrowRight' && isCursorAtEnd(contentRef.current))) {

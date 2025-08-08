@@ -1,8 +1,9 @@
+import React, { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import { ReactComponent as ErrorOutline } from '@/assets/icons/error.svg';
 import LoadingDots from '@/components/_shared/LoadingDots';
 import { checkImage } from '@/utils/image';
-import React, { useCallback, useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 
 function Img({
   onLoad,

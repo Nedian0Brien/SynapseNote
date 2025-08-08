@@ -5,7 +5,6 @@ import Y, { Transaction, YEvent } from 'yjs';
 import { translateYEvents } from '@/application/slate-yjs/utils/applyToSlate';
 import { applyToYjs } from '@/application/slate-yjs/utils/applyToYjs';
 import { yDocToSlateContent } from '@/application/slate-yjs/utils/convert';
-import { transformSelectionWithOperations } from '@/application/slate-yjs/utils/transformSelection';
 import { CollabOrigin, YjsEditorKey, YSharedRoot } from '@/application/types';
 
 type LocalChange = {
@@ -82,11 +81,20 @@ export function withYjs<T extends Editor>(
     readSummary?: boolean;
     onContentChange?: (content: Descendant[]) => void;
     uploadFile?: (file: File) => Promise<string>;
+    onSelectionChange?: (editor: YjsEditor) => void;
   }
 ): T & YjsEditor {
-  const { id, uploadFile, localOrigin = CollabOrigin.Local, readSummary, onContentChange, readOnly = true } = opts ?? {};
+  const {
+    id,
+    uploadFile,
+    localOrigin = CollabOrigin.Local,
+    readSummary,
+    onContentChange,
+    readOnly = true,
+    onSelectionChange,
+  } = opts ?? {};
   const e = editor as T & YjsEditor;
-  const { apply, onChange } = e;
+  const { apply, onChange, select } = e;
 
   e.interceptLocalChange = false;
   e.readOnly = readOnly;
@@ -146,10 +154,7 @@ export function withYjs<T extends Editor>(
       translateYEvents(e, events);
       newSelection = myCurrentSelection;
     } else {
-      newSelection = transformSelectionWithOperations(editor, myCurrentSelection, () => {
-        // Apply remote user operations
-        translateYEvents(e, events);
-      });
+      translateYEvents(e, events);
     }
 
     // Update my cursor position
@@ -209,11 +214,49 @@ export function withYjs<T extends Editor>(
     }, localOrigin);
   };
 
+  // Proxy the select function with error handling
+  const selectWithErrorHandling = (...args: Parameters<typeof select>) => {
+    try {
+      return select.apply(e, args);
+    } catch (error) {
+      console.error('Editor select operation failed:', error);
+      console.warn('Selection arguments:', args);
+
+      // Try to fallback to a safe selection
+      try {
+        if (e.children.length > 0) {
+          // Try to select the start of the first block
+          const startPoint = Editor.start(e, [0]);
+
+          if (startPoint) {
+            select.call(e, startPoint);
+            console.info('Fallback to document start selection');
+            return;
+          }
+        }
+      } catch (fallbackError) {
+        console.error('Fallback selection also failed:', fallbackError);
+      }
+
+      // Last resort: deselect
+      try {
+        e.deselect();
+        console.info('Deselected as last resort');
+      } catch (deselectError) {
+        console.error('Even deselect failed:', deselectError);
+      }
+    }
+  };
+
   e.apply = applyIntercept;
+  e.select = selectWithErrorHandling;
 
   e.onChange = () => {
     if (YjsEditor.connected(e)) {
       YjsEditor.flushLocalChanges(e);
+      if (onSelectionChange) {
+        onSelectionChange(e);
+      }
     }
 
     onChange();

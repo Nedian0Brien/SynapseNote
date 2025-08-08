@@ -120,6 +120,7 @@ export const ImageBlock = memo(
       [uploadFile]
     );
 
+
     const handleRetry = useCallback(
       async (e: React.MouseEvent) => {
         e.stopPropagation();

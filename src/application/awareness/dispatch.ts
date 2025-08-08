@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
-import { useCallback, useRef } from 'react';
+import { debounce } from 'lodash-es';
+import { useCallback, useMemo, useRef } from 'react';
 import { Editor } from 'slate';
 import { Awareness } from 'y-protocols/awareness';
 
@@ -105,6 +106,10 @@ export function useDispatchCursorAwareness(awareness?: Awareness) {
     }
   }, [awareness]);
 
+  const debounceSyncCursor = useMemo(() => {
+    return debounce(syncCursor, 100);
+  }, [syncCursor]);
+
   const dispatchCursor = useCallback(
     (userParams: UserAwarenessParams, editor?: Editor) => {
       if (!awareness || !editor) return;
@@ -114,45 +119,9 @@ export function useDispatchCursorAwareness(awareness?: Awareness) {
       editorRef.current = editor;
 
       // Initial sync
-      syncCursor();
-
-      // Log cursor awareness setup
-      console.log('🚀 Cursor awareness set up for user:', {
-        uid: userParams.uid,
-        device_id: userParams.device_id,
-        user_name: userParams.user_name,
-      });
-
-      // Set up onChange handler with debounce
-      let timeoutId: NodeJS.Timeout;
-
-      const originalOnChange = editor.onChange;
-
-      editor.onChange = (value) => {
-        // Call original onChange
-        if (originalOnChange) {
-          originalOnChange(value);
-        }
-
-        // For selection changes, we just need to sync the cursor
-        // The onChange is called whenever the editor state changes
-        clearTimeout(timeoutId);
-        timeoutId = setTimeout(() => {
-          syncCursor();
-        }, 100);
-      };
-
-      // Return cleanup function
-      return () => {
-        clearTimeout(timeoutId);
-        // Restore original onChange
-        editor.onChange = originalOnChange;
-
-        // Log cleanup
-        console.log('🧹 Cursor awareness cleaned up for user:', userParams.uid);
-      };
+      debounceSyncCursor();
     },
-    [awareness, syncCursor]
+    [awareness, debounceSyncCursor]
   );
 
   return dispatchCursor;

@@ -135,7 +135,7 @@ export function groupBySelectOption(
       return;
     }
 
-    const cellData = getCellData(row.id, fieldId, rowMetas);
+    const cellData = getCellData(row.id, fieldId, rowMetas) || '';
 
     const selectedIds = (cellData as string)?.split(',') ?? [];
 

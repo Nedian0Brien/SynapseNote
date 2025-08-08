@@ -1,24 +1,28 @@
-import { withYHistory } from '@/application/slate-yjs/plugins/withHistory';
-import { CollabOrigin } from '@/application/types';
-import { withYjs, YjsEditor } from '@/application/slate-yjs/plugins/withYjs';
-import EditorEditable from '@/components/editor/Editable';
-import { useEditorContext } from '@/components/editor/EditorContext';
-import { withPlugins } from '@/components/editor/plugins';
-import { getTextCount } from '@/utils/word';
+import { debounce } from 'lodash-es';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { createEditor, Descendant } from 'slate';
 import { Slate, withReact } from 'slate-react';
 import * as Y from 'yjs';
+
+import { withYHistory } from '@/application/slate-yjs/plugins/withHistory';
+import { withYjs, YjsEditor } from '@/application/slate-yjs/plugins/withYjs';
+import { CollabOrigin } from '@/application/types';
+import EditorEditable from '@/components/editor/Editable';
+import { useEditorContext } from '@/components/editor/EditorContext';
+import { withPlugins } from '@/components/editor/plugins';
 import { clipboardFormatKey } from '@/components/editor/plugins/withCopy';
+import { getTextCount } from '@/utils/word';
 
 const defaultInitialValue: Descendant[] = [];
 
 function CollaborativeEditor({
   doc,
   onEditorConnected,
+  onSelectionChange,
 }: {
   doc: Y.Doc;
   onEditorConnected?: (editor: YjsEditor) => void;
+  onSelectionChange?: (editor: YjsEditor) => void;
 }) {
   const context = useEditorContext();
   const readSummary = context.readSummary;
@@ -39,6 +43,23 @@ function CollaborativeEditor({
     [onWordCountChange, viewId, onRendered]
   );
 
+  const debounceCalculateWordCount = useMemo(() => {
+    return debounce((editor) => {
+      const wordCount = getTextCount(editor.children);
+
+      onWordCountChange?.(viewId, wordCount);
+    }, 300);
+  }, [onWordCountChange, viewId]);
+
+  const handleSelectionChange = useCallback(
+    (editor: YjsEditor) => {
+      onSelectionChange?.(editor);
+
+      debounceCalculateWordCount(editor);
+    },
+    [onSelectionChange, debounceCalculateWordCount]
+  );
+
   const editor = useMemo(
     () =>
       doc &&
@@ -52,6 +73,7 @@ function CollaborativeEditor({
               onContentChange,
               uploadFile,
               id: viewId,
+              onSelectionChange: handleSelectionChange,
             })
           ),
           clipboardFormatKey
