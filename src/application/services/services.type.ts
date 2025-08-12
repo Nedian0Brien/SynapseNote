@@ -113,6 +113,7 @@ export interface AppService {
   getWorkspaces: () => Promise<Workspace[]>;
   getWorkspaceFolder: (workspaceId: string) => Promise<FolderView>;
   getCurrentUser: () => Promise<User>;
+  updateUserProfile: (metadata: Record<string, unknown>) => Promise<void>;
   getUserWorkspaceInfo: () => Promise<UserWorkspaceInfo>;
   uploadTemplateAvatar: (file: File) => Promise<string>;
   getInvitation: (invitationId: string) => Promise<Invitation>;

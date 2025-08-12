@@ -837,6 +837,7 @@ export interface User {
   avatar: string | null;
   uuid: string;
   latestWorkspaceId: string;
+  metadata?: Record<string, unknown>;
 }
 
 export interface DuplicatePublishView {

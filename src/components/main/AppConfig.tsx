@@ -12,6 +12,9 @@ import { LoginModal } from '@/components/login';
 import { AFConfigContext, defaultConfig } from '@/components/main/app.hooks';
 import { useAppLanguage } from '@/components/main/useAppLanguage';
 import { createHotkey, HOT_KEY_NAME } from '@/utils/hotkeys';
+import { useUserTimezone } from '@/components/main/hooks/useUserTimezone';
+import { MetadataKey } from '@/application/user-metadata';
+import { createInitialTimezone, UserTimezone } from '@/application/user-timezone.types';
 
 function AppConfig({ children }: { children: React.ReactNode }) {
   const [appConfig] = useState<AFServiceConfig>(defaultConfig);
@@ -74,6 +77,49 @@ function AppConfig({ children }: { children: React.ReactNode }) {
     });
   }, []);
   useAppLanguage();
+  
+  const [hasCheckedTimezone, setHasCheckedTimezone] = useState(false);
+
+  // Handle initial timezone setup - only when timezone is not set
+  const handleTimezoneSetup = useCallback(async (detectedTimezone: string) => {
+    if (!isAuthenticated || !service || hasCheckedTimezone) return;
+
+    try {
+      // Get current user profile to check if timezone is already set
+      const user = await service.getCurrentUser();
+      const currentMetadata = user.metadata || {};
+      
+      // Check if user has timezone metadata
+      const existingTimezone = currentMetadata[MetadataKey.Timezone] as UserTimezone | undefined;
+      
+      // Only set timezone if it's not already set (None in Rust = no timezone field or null)
+      if (!existingTimezone || existingTimezone.timezone === null || existingTimezone.timezone === undefined) {
+        // Create the UserTimezone struct format matching Rust
+        const timezoneData = createInitialTimezone(detectedTimezone);
+        
+        const metadata = {
+          [MetadataKey.Timezone]: timezoneData,
+        };
+        
+        await service.updateUserProfile(metadata);
+        console.log('Initial timezone set in user profile:', timezoneData);
+      } else {
+        console.log('User timezone already set, skipping update:', existingTimezone);
+      }
+      
+      setHasCheckedTimezone(true);
+    } catch (e) {
+      console.error('Failed to check/update timezone:', e);
+      // Still mark as checked to avoid repeated attempts
+      setHasCheckedTimezone(true);
+    }
+  }, [isAuthenticated, service, hasCheckedTimezone]);
+
+  // Detect timezone once on mount
+  const _timezoneInfo = useUserTimezone({
+    onTimezoneChange: handleTimezoneSetup,
+    updateInterval: 0, // Disable periodic checks - only check once
+  });
 
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
 

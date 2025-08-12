@@ -1,5 +1,5 @@
-import { User } from '@/application/types';
 import { AFService, AFServiceConfig } from '@/application/services/services.type';
+import { User } from '@/application/types';
 import { createContext, useContext } from 'react';
 
 const baseURL = import.meta.env.AF_BASE_URL || 'https://test.appflowy.cloud';
@@ -16,15 +16,15 @@ export const defaultConfig: AFServiceConfig = {
 
 export const AFConfigContext = createContext<
   | {
-  service: AFService | undefined;
-  isAuthenticated: boolean;
-  currentUser?: User;
-  openLoginModal: (redirectTo?: string) => void;
-}
+    service: AFService | undefined;
+    isAuthenticated: boolean;
+    currentUser?: User;
+    openLoginModal: (redirectTo?: string) => void;
+  }
   | undefined
 >(undefined);
 
-export function useCurrentUser () {
+export function useCurrentUser() {
   const context = useContext(AFConfigContext);
 
   if (!context) {
@@ -34,7 +34,7 @@ export function useCurrentUser () {
   return context.currentUser;
 }
 
-export function useService () {
+export function useService() {
   const context = useContext(AFConfigContext);
 
   if (!context) {

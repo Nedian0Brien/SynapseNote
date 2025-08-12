@@ -369,6 +369,10 @@ export class AFClientService implements AFService {
     return user;
   }
 
+  async updateUserProfile(metadata: Record<string, unknown>) {
+    return APIService.updateUserProfile(metadata);
+  }
+
   async openWorkspace(workspaceId: string) {
     return APIService.openWorkspace(workspaceId);
   }

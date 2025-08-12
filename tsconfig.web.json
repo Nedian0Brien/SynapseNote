@@ -3,6 +3,9 @@
   "exclude": [
     "node_modules",
     "**/*.cy.tsx",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/__tests__/**",
     "dist",
     "coverage"
   ],

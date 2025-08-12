@@ -66,6 +66,7 @@
     "clsx": "^2.1.1",
     "colorthief": "^2.4.0",
     "date-fns": "^4.1.0",
+    "date-fns-tz": "^3.2.0",
     "dayjs": "^1.11.9",
     "dexie": "^4.0.7",
     "dexie-react-hooks": "^1.1.7",

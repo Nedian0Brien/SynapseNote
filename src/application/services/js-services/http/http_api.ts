@@ -206,9 +206,7 @@ export async function getCurrentUser(): Promise<User> {
       uuid: string;
       email: string;
       name: string;
-      metadata: {
-        icon_url: string;
-      };
+      metadata: Record<string, unknown>;
       encryption_sign: null;
       latest_workspace_id: string;
       updated_at: number;
@@ -226,9 +224,29 @@ export async function getCurrentUser(): Promise<User> {
       uuid,
       email,
       name,
-      avatar: metadata.icon_url,
+      avatar: (metadata?.icon_url as string) || null,
       latestWorkspaceId: data.data.latest_workspace_id,
+      metadata: metadata || {},
     };
+  }
+
+  return Promise.reject(data);
+}
+
+
+export async function updateUserProfile(metadata: Record<string, unknown>): Promise<void> {
+  const url = 'api/user/update';
+  const response = await axiosInstance?.post<{
+    code: number;
+    message: string;
+  }>(url, {
+    metadata
+  });
+
+  const data = response?.data;
+
+  if (data?.code === 0) {
+    return;
   }
 
   return Promise.reject(data);
