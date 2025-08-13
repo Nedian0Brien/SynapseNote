@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Workspace } from '@/application/types';
 import MoreActions from '@/components/app/workspaces/MoreActions';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenuItem, DropdownMenuItemTick } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -81,8 +81,9 @@ export function WorkspaceItem({
       onMouseLeave={() => setHovered(false)}
     >
       <Avatar shape={'square'} size={'xs'}>
-        <AvatarImage src={workspace.icon} alt={''} />
-        <AvatarFallback>{workspace.name}</AvatarFallback>
+        <AvatarFallback>
+          {workspace.icon ? <span className='text-xl'>{workspace.icon}</span> : workspace.name}
+        </AvatarFallback>
       </Avatar>
       <div className={'flex flex-1 flex-col items-start overflow-hidden'}>
         <Tooltip delayDuration={1000}>

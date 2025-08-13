@@ -33,7 +33,9 @@ function CurrentWorkspace({
     <>
       <Avatar shape={'square'} size={'xs'}>
         <AvatarImage src={selectedWorkspace.icon} alt={''} />
-        <AvatarFallback>{selectedWorkspace.name}</AvatarFallback>
+        <AvatarFallback>
+          {selectedWorkspace.icon ? <span className='text-xl'>{selectedWorkspace.icon}</span> : selectedWorkspace.name}
+        </AvatarFallback>
       </Avatar>
 
       <div className={'flex-1 truncate font-medium text-text-primary'}>{selectedWorkspace.name}</div>
