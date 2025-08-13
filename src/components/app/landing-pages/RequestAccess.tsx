@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { ReactComponent as NoAccessLogo } from '@/assets/icons/no_access.svg';
 import { ReactComponent as SuccessLogo } from '@/assets/icons/success_logo.svg';
 import { useAppViewId, useCurrentWorkspaceId } from '@/components/app/app.hooks';
-import { useService } from '@/components/main/app.hooks';
+import { useCurrentUser, useService } from '@/components/main/app.hooks';
 import { Progress } from '@/components/ui/progress';
 import { ErrorPage } from '@/components/_shared/landing-page/ErrorPage';
 import LandingPage from '@/components/_shared/landing-page/LandingPage';
@@ -17,10 +18,12 @@ function RequestAccess() {
   const service = useService();
   const currentWorkspaceId = useCurrentWorkspaceId();
   const viewId = useAppViewId();
+  const [searchParams] = useSearchParams();
+  const isGuest = searchParams.get('is_guest') === 'true';
   const [hasSend, setHasSend] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isError, setIsError] = useState(false);
-
+  const currentUser = useCurrentUser();
   const handleSendRequest = async () => {
     try {
       if (!service) return;
@@ -47,6 +50,21 @@ function RequestAccess() {
     }
   };
 
+  useEffect(() => {
+    if (isGuest && currentUser) {
+      window.open(
+        `appflowy-flutter://open-page?workspace_id=${currentWorkspaceId}&view_id=${viewId}&email=${currentUser.email}`,
+        '_self'
+      );
+    }
+  }, [isGuest, currentWorkspaceId, viewId, currentUser]);
+
+  const description = isGuest
+    ? `${t(
+        'landingPage.noAccess.description'
+      )}\n\n Guests invited to this page can access it via the desktop or mobile app.`
+    : t('landingPage.noAccess.description');
+
   if (hasSend) {
     return (
       <LandingPage
@@ -69,7 +87,7 @@ function RequestAccess() {
     <LandingPage
       Logo={NoAccessLogo}
       title={t('landingPage.noAccess.title')}
-      description={t('landingPage.noAccess.description')}
+      description={description}
       primaryAction={{
         onClick: handleSendRequest,
         loading,

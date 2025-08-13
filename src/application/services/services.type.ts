@@ -42,6 +42,7 @@ import {
   User,
   UserWorkspaceInfo,
   View,
+  ViewIconType,
   Workspace,
   WorkspaceMember,
   YDoc,
@@ -132,6 +133,8 @@ export interface AppService {
   addAppPage: (workspaceId: string, parentViewId: string, payload: CreatePagePayload) => Promise<string>;
   createFolderView: (workspaceId: string, payload: CreateFolderViewPayload) => Promise<string>;
   updateAppPage: (workspaceId: string, viewId: string, data: UpdatePagePayload) => Promise<void>;
+  updateAppPageIcon: (workspaceId: string, viewId: string, icon: { ty: ViewIconType; value: string }) => Promise<void>;
+  updateAppPageName: (workspaceId: string, viewId: string, name: string) => Promise<void>;
   deleteTrash: (workspaceId: string, viewId?: string) => Promise<void>;
   moveToTrash: (workspaceId: string, viewId: string) => Promise<void>;
   restoreFromTrash: (workspaceId: string, viewId?: string) => Promise<void>;

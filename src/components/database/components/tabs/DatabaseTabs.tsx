@@ -2,6 +2,7 @@ import { forwardRef, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
+import { APP_EVENTS } from '@/application/constants';
 import { useDatabase, useDatabaseContext } from '@/application/database-yjs';
 import { useAddDatabaseView, useUpdateDatabaseView } from '@/application/database-yjs/dispatch';
 import { DatabaseViewLayout, View, ViewLayout, YDatabaseView, YjsDatabaseKey } from '@/application/types';
@@ -17,6 +18,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Progress } from '@/components/ui/progress';
 import { TabLabel, Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { findView } from '@/components/_shared/outline/utils';
 import { AFScroller } from '@/components/_shared/scroller';
 import { ViewIcon } from '@/components/_shared/view-icon';
 import PageIcon from '@/components/_shared/view-icon/PageIcon';
@@ -36,7 +38,7 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
     const views = useDatabase().get(YjsDatabaseKey.views);
     const context = useDatabaseContext();
     const onAddView = useAddDatabaseView();
-    const { loadViewMeta, readOnly, showActions = true } = context;
+    const { loadViewMeta, readOnly, showActions = true, eventEmitter } = context;
     const updatePage = useUpdateDatabaseView();
     const [meta, setMeta] = useState<View | null>(null);
     const scrollLeft = context.paddingStart;
@@ -117,6 +119,26 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
         }
       }
     }, [iidIndex, loadViewMeta]);
+
+    useEffect(() => {
+      const handleOutlineLoaded = (outline: View[]) => {
+        const view = findView(outline, iidIndex);
+
+        if (view) {
+          setMeta(view);
+        }
+      };
+
+      if (eventEmitter) {
+        eventEmitter.on(APP_EVENTS.OUTLINE_LOADED, handleOutlineLoaded);
+      }
+
+      return () => {
+        if (eventEmitter) {
+          eventEmitter.off(APP_EVENTS.OUTLINE_LOADED, handleOutlineLoaded);
+        }
+      };
+    }, [iidIndex, eventEmitter, reloadView]);
 
     const renameView = useMemo(() => {
       if (renameViewId === iidIndex) return meta;

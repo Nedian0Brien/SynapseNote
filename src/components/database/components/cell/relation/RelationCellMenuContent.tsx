@@ -111,7 +111,7 @@ function RelationCellMenuContent({
 
       const rowSharedRoot = rowDoc.getMap(YjsEditorKey.data_section);
       const row = rowSharedRoot?.get(YjsEditorKey.database_row) as YDatabaseRow;
-      const cell = row.get(YjsDatabaseKey.cells)?.get(primaryFieldId);
+      const cell = row?.get(YjsDatabaseKey.cells)?.get(primaryFieldId);
 
       if (!cell) return '';
       const cellValue = parseYDatabaseCellToCell(cell);

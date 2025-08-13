@@ -4,12 +4,11 @@ import * as Y from 'yjs';
 import {
   DatabaseContextState,
   getPrimaryFieldId,
-  parseRelationTypeOption,
   useDatabaseContext,
-  useFieldSelector,
+  useDatabaseIdFromField,
 } from '@/application/database-yjs';
 import { RelationCell, RelationCellData } from '@/application/database-yjs/cell.type';
-import { View, YDatabase, YDoc, YjsEditorKey } from '@/application/types';
+import { YDoc, YjsEditorKey } from '@/application/types';
 import { RelationPrimaryValue } from '@/components/database/components/cell/relation/RelationPrimaryValue';
 import { notify } from '@/components/_shared/notify';
 import { cn } from '@/lib/utils';
@@ -27,13 +26,12 @@ function RelationItems({
 }) {
   const context = useDatabaseContext();
   const viewId = context.iidIndex;
-  const { field } = useFieldSelector(fieldId);
-  const relatedDatabaseId = field ? parseRelationTypeOption(field)?.database_id : null;
+  const relatedDatabaseId = useDatabaseIdFromField(fieldId);
 
   const createRowDoc = context.createRowDoc;
-  const loadViewMeta = context.loadViewMeta;
   const loadView = context.loadView;
   const navigateToRow = context.navigateToRow;
+  const loadDatabaseRelations = context.loadDatabaseRelations;
 
   const [noAccess, setNoAccess] = useState(false);
   const [relations, setRelations] = useState<Record<string, string> | null>();
@@ -41,25 +39,25 @@ function RelationItems({
   const [relatedFieldId, setRelatedFieldId] = useState<string | undefined>();
   const relatedViewId = relatedDatabaseId ? relations?.[relatedDatabaseId] : null;
   const [docGuid, setDocGuid] = useState<string | null>(null);
+  const [databaseDoc, setDatabaseDoc] = useState<YDoc | null>(null);
 
   const [rowIds, setRowIds] = useState([] as string[]);
 
   const navigateToView = context.navigateToView;
 
   useEffect(() => {
-    if (!viewId) return;
+    const loadRelations = async () => {
+      const relations = await loadDatabaseRelations?.();
 
-    const update = (meta: View | null) => {
-      if (!meta) return;
-      setRelations(meta.database_relations);
+      setRelations(relations);
     };
 
     try {
-      void loadViewMeta?.(viewId, update);
+      void loadRelations();
     } catch (e) {
       console.error(e);
     }
-  }, [loadViewMeta, viewId]);
+  }, [loadDatabaseRelations]);
 
   const handleUpdateRowIds = useCallback(() => {
     const data = cell?.data;
@@ -109,17 +107,35 @@ function RelationItems({
         }
 
         setDocGuid(viewDoc.guid);
-        const database = viewDoc.getMap(YjsEditorKey.data_section).get(YjsEditorKey.database) as YDatabase;
-        const fieldId = getPrimaryFieldId(database);
 
-        setNoAccess(!fieldId);
-        setRelatedFieldId(fieldId);
+        setDatabaseDoc(viewDoc);
       } catch (e) {
         console.error(e);
         setNoAccess(true);
       }
     })();
   }, [loadView, relatedViewId]);
+
+  useEffect(() => {
+    if (!databaseDoc) return;
+    const sharedRoot = databaseDoc.getMap(YjsEditorKey.data_section);
+
+    const observerEvent = () => {
+      const database = sharedRoot.get(YjsEditorKey.database);
+
+      const fieldId = getPrimaryFieldId(database);
+
+      setRelatedFieldId(fieldId);
+      setNoAccess(!fieldId);
+    };
+
+    observerEvent();
+
+    sharedRoot.observe(observerEvent);
+    return () => {
+      sharedRoot.unobserve(observerEvent);
+    };
+  }, [databaseDoc]);
 
   return (
     <div

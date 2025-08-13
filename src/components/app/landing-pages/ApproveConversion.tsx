@@ -153,7 +153,7 @@ export function ApproveConversion() {
   }
 
   if (isError) {
-    return <ErrorPage onRetry={loadConversion} />;
+    return <ErrorPage onRetry={handleApprove} />;
   }
 
   return (

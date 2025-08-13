@@ -1040,6 +1040,8 @@ export interface ViewMetaProps {
   readOnly?: boolean;
   updatePage?: (viewId: string, data: UpdatePagePayload) => Promise<void>;
   uploadFile?: (file: File) => Promise<string>;
+  updatePageIcon?: (viewId: string, icon: { ty: ViewIconType; value: string }) => Promise<void>;
+  updatePageName?: (viewId: string, name: string) => Promise<void>;
   onEnter?: (text: string) => void;
   maxWidth?: number;
   onFocus?: () => void;
@@ -1082,6 +1084,8 @@ export interface ViewComponentProps {
     config: PromptDatabaseConfiguration;
     fields: DatabasePromptField[];
   }>;
+  updatePageIcon?: (viewId: string, icon: { ty: ViewIconType; value: string }) => Promise<void>;
+  updatePageName?: (viewId: string, name: string) => Promise<void>;
 }
 
 export interface CreatePagePayload {

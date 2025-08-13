@@ -1,7 +1,8 @@
+import { useMemo } from 'react';
+
 import { CellProps, RelationCell as RelationCellType } from '@/application/database-yjs/cell.type';
 import RelationCellMenu from '@/components/database/components/cell/relation/RelationCellMenu';
 import RelationItems from '@/components/database/components/cell/relation/RelationItems';
-import { useMemo } from 'react';
 
 export function RelationCell({
   cell,

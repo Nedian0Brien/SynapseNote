@@ -105,7 +105,7 @@ function InviteCode() {
   }
 
   if (isError) {
-    return <ErrorPage onRetry={loadWorkspaceInfo} />;
+    return <ErrorPage onRetry={handleJoin} />;
   }
 
   if (hasJoined) {

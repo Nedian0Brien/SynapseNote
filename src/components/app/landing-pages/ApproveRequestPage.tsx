@@ -135,7 +135,7 @@ function ApproveRequestPage() {
   );
 
   if (isError) {
-    return <ErrorPage onRetry={loadRequestInfo} />;
+    return <ErrorPage onRetry={handleApprove} />;
   }
 
   if (notInvitee) {

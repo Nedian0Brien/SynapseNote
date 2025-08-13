@@ -22,7 +22,7 @@ export type DocumentProps = ViewComponentProps & {
 
 export const Document = (props: DocumentProps) => {
   const [search] = useSearchParams();
-  const { doc, readOnly, viewMeta, isTemplateThumb, updatePage, onRendered, onEditorConnected, uploadFile } = props;
+  const { doc, readOnly, viewMeta, isTemplateThumb, updatePage, onRendered, onEditorConnected, uploadFile, updatePageIcon, updatePageName } = props;
   const blockId = search.get('blockId') || undefined;
 
   const awareness = useAppAwareness(viewMeta.viewId);
@@ -141,6 +141,8 @@ export const Document = (props: DocumentProps) => {
         {...viewMeta}
         readOnly={readOnly}
         updatePage={updatePage}
+        updatePageIcon={updatePageIcon}
+        updatePageName={updatePageName}
         onEnter={readOnly ? undefined : handleEnter}
         maxWidth={952}
         uploadFile={uploadFile}

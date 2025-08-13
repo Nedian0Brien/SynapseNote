@@ -134,7 +134,7 @@ function AcceptInvitationPage() {
   }
 
   if (isError) {
-    return <ErrorPage onRetry={loadInvitation} />;
+    return <ErrorPage onRetry={handleJoinWorkspace} />;
   }
 
   if (hasJoined) {

@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import {
@@ -13,7 +13,16 @@ import {
 } from '@/application/database-yjs';
 import { getCellDataText } from '@/application/database-yjs/cell.parse';
 import { useUpdateRowMetaDispatch } from '@/application/database-yjs/dispatch';
-import { YDatabaseCell, YDatabaseField, YDatabaseRow, YDoc, YjsDatabaseKey, YjsEditorKey } from '@/application/types';
+import { YjsEditor } from '@/application/slate-yjs';
+import {
+  BlockType,
+  YDatabaseCell,
+  YDatabaseField,
+  YDatabaseRow,
+  YDoc,
+  YjsDatabaseKey,
+  YjsEditorKey,
+} from '@/application/types';
 import { Editor } from '@/components/editor';
 import { EditorSkeleton } from '@/components/_shared/skeleton/EditorSkeleton';
 
@@ -79,25 +88,6 @@ export const DatabaseRowSubDocument = memo(({ rowId }: { rowId: string }) => {
   const [loading, setLoading] = useState(true);
   const [doc, setDoc] = useState<YDoc | null>(null);
 
-  const handleCreateDocument = useCallback(
-    async (documentId: string) => {
-      if (!createOrphanedView || !documentId) return;
-      try {
-        setDoc(null);
-        await createOrphanedView({ document_id: documentId });
-
-        const doc = await loadView?.(documentId, true, true);
-
-        if (doc) {
-          setDoc(doc);
-        }
-        // eslint-disable-next-line
-      } catch (e: any) {
-        toast.error(e.message);
-      }
-    },
-    [createOrphanedView, loadView]
-  );
   const document = doc?.getMap(YjsEditorKey.data_section)?.get(YjsEditorKey.document);
 
   const handleOpenDocument = useCallback(
@@ -119,6 +109,24 @@ export const DatabaseRowSubDocument = memo(({ rowId }: { rowId: string }) => {
     },
     [loadView]
   );
+  const handleCreateDocument = useCallback(
+    async (documentId: string) => {
+      if (!createOrphanedView || !documentId) return;
+      setLoading(true);
+      try {
+        setDoc(null);
+        await createOrphanedView({ document_id: documentId });
+
+        await handleOpenDocument(documentId);
+        // eslint-disable-next-line
+      } catch (e: any) {
+        toast.error(e.message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [createOrphanedView, handleOpenDocument]
+  );
 
   useEffect(() => {
     if (!documentId) return;
@@ -137,6 +145,57 @@ export const DatabaseRowSubDocument = memo(({ rowId }: { rowId: string }) => {
     return JSON.stringify(properties);
   }, [properties]);
 
+  const editorRef = useRef<YjsEditor | null>(null);
+
+  const isDocumentEmpty = useCallback((editor: YjsEditor) => {
+    const children = editor.children;
+
+    if (children.length === 0) {
+      return true;
+    }
+
+    if (children.length === 1) {
+      const firstChildBlockType = 'type' in children[0] ? (children[0].type as BlockType) : BlockType.Paragraph;
+
+      if (firstChildBlockType !== BlockType.Paragraph) {
+        return false;
+      }
+
+      return true;
+    }
+
+    return false;
+  }, []);
+
+  const handleEditorConnected = useCallback(
+    (editor: YjsEditor) => {
+      editorRef.current = editor;
+      if (readOnly) return;
+
+      if (!isDocumentEmpty(editor)) {
+        updateRowMeta(RowMetaKey.IsDocumentEmpty, false);
+        return;
+      }
+    },
+    [isDocumentEmpty, updateRowMeta, readOnly]
+  );
+
+  const handleWordCountChange = useCallback(
+    (_: string, { characters }: { characters: number }) => {
+      if (characters > 0) {
+        updateRowMeta(RowMetaKey.IsDocumentEmpty, false);
+        return;
+      }
+
+      const editor = editorRef.current;
+
+      if (!editor) return;
+
+      updateRowMeta(RowMetaKey.IsDocumentEmpty, isDocumentEmpty(editor));
+    },
+    [isDocumentEmpty, updateRowMeta]
+  );
+
   if (loading) {
     return <EditorSkeleton />;
   }
@@ -150,9 +209,8 @@ export const DatabaseRowSubDocument = memo(({ rowId }: { rowId: string }) => {
       doc={doc}
       readOnly={readOnly}
       getMoreAIContext={getMoreAIContext}
-      onWordCountChange={(_, { characters }) => {
-        updateRowMeta(RowMetaKey.IsDocumentEmpty, characters <= 0);
-      }}
+      onEditorConnected={handleEditorConnected}
+      onWordCountChange={handleWordCountChange}
     />
   );
 });

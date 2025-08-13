@@ -21,6 +21,7 @@ import {
   YjsEditorKey,
   YSharedRoot,
 } from '@/application/types';
+import EventEmitter from 'events';
 
 export interface DatabaseContextState {
   readOnly: boolean;
@@ -54,6 +55,7 @@ export interface DatabaseContextState {
   testDatabasePromptConfig?: TestDatabasePromptConfig;
   requestInstance?: AxiosInstance | null;
   checkIfRowDocumentExists?: (documentId: string) => Promise<void>;
+  eventEmitter?: EventEmitter;
 }
 
 export const DatabaseContext = createContext<DatabaseContextState | null>(null);

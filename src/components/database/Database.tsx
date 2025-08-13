@@ -152,9 +152,6 @@ function Database(props: Database2Props) {
 
           setOpenModalViewId(viewId);
           setOpenModalRowDatabaseDoc(viewDoc);
-          const database = viewDoc.getMap(YjsEditorKey.data_section)?.get(YjsEditorKey.database) as YDatabase;
-
-          console.log('======', database.toJSON());
 
           const rowDoc = await createRowDoc?.(`${viewDoc.guid}_rows_${rowId}`);
 

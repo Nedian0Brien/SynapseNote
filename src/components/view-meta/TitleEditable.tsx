@@ -1,5 +1,5 @@
 import { debounce } from 'lodash-es';
-import { memo, useEffect, useMemo, useRef } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const isCursorAtEnd = (el: HTMLDivElement) => {
@@ -23,6 +23,22 @@ const getCursorOffset = () => {
   return range.startOffset;
 };
 
+const setCursorPosition = (element: HTMLDivElement, position: number) => {
+  const range = document.createRange();
+  const selection = window.getSelection();
+
+  if (!element.firstChild) return;
+
+  const textNode = element.firstChild;
+  const maxPosition = textNode.textContent?.length || 0;
+  const safePosition = Math.min(position, maxPosition);
+
+  range.setStart(textNode, safePosition);
+  range.collapse(true);
+  selection?.removeAllRanges();
+  selection?.addRange(range);
+};
+
 function TitleEditable({
   viewId,
   name,
@@ -40,33 +56,29 @@ function TitleEditable({
   const debounceUpdateName = useMemo(() => {
     return debounce(onUpdateName, 200);
   }, [onUpdateName]);
+
   const contentRef = useRef<HTMLDivElement>(null);
-  const timestampsRef = useRef<{
-    local: number;
-    remote: number;
-  }>({
-    local: 0,
-    remote: 0,
-  });
+  const [isEditing, setIsEditing] = useState(false);
+  const cursorPositionRef = useRef<number>(0);
+  const initialEditValueRef = useRef<string>('');
 
+  // Only update the content when not editing
   useEffect(() => {
-    timestampsRef.current.remote = Date.now();
-    if (contentRef.current && timestampsRef.current.local < timestampsRef.current.remote) {
+    if (!isEditing && contentRef.current && contentRef.current.textContent !== name) {
+      const cursorPosition = cursorPositionRef.current;
+
       contentRef.current.textContent = name;
-    }
-  }, [name]);
 
-  useEffect(() => {
-    if (contentRef.current) {
-      const activeElement = document.activeElement;
-
-      if (activeElement === contentRef.current) {
-        return;
+      // If the element has focus, restore the cursor position
+      if (document.activeElement === contentRef.current) {
+        setTimeout(() => {
+          if (contentRef.current) {
+            setCursorPosition(contentRef.current, cursorPosition);
+          }
+        }, 0);
       }
-
-      contentRef.current.textContent = name;
     }
-  }, [name]);
+  }, [name, isEditing]);
 
   const focusedTextbox = () => {
     const contentBox = contentRef.current;
@@ -78,19 +90,22 @@ function TitleEditable({
     textbox?.focus();
   };
 
+  // Set focus and cursor position when initializing
   useEffect(() => {
     const contentBox = contentRef.current;
 
     if (!contentBox) return;
-    contentBox.focus();
-    if (contentBox.textContent !== '') {
-      const range = document.createRange();
-      const sel = window.getSelection();
 
-      range.setStart(contentBox.childNodes[0], contentBox.textContent?.length || 0);
-      range.collapse(true);
-      sel?.removeAllRanges();
-      sel?.addRange(range);
+    // Record the initial value (for subsequent editing comparison)
+    initialEditValueRef.current = contentBox.textContent || '';
+
+    contentBox.focus();
+
+    // Move the cursor to the end
+    if (contentBox.textContent !== '') {
+      setTimeout(() => {
+        setCursorPosition(contentBox, contentBox.textContent?.length || 0);
+      }, 0);
     }
   }, []);
 
@@ -110,18 +125,52 @@ function TitleEditable({
       aria-readonly={false}
       autoFocus={true}
       onFocus={() => {
+        // Record the initial value when starting to edit
+        if (contentRef.current) {
+          initialEditValueRef.current = contentRef.current.textContent || '';
+        }
+
+        setIsEditing(true);
         onFocus?.();
+      }}
+      onBlur={() => {
+        // Immediately save the user's latest input to avoid content loss due to debounce
+        if (contentRef.current) {
+          const currentText = contentRef.current.textContent || '';
+          const initialValue = initialEditValueRef.current;
+
+          // Cancel debounce, update immediately (but only when the user really modified the content)
+          debounceUpdateName.cancel();
+          if (currentText !== initialValue) {
+            onUpdateName(currentText);
+          }
+        }
+
+        // Delay a bit before setting the editing state to avoid issues with rapid focus switching
+        setTimeout(() => {
+          setIsEditing(false);
+        }, 100);
       }}
       onInput={() => {
         if (!contentRef.current) return;
-        timestampsRef.current.local = Date.now();
-        debounceUpdateName(contentRef.current.textContent || '');
+
+        // Save the current cursor position
+        cursorPositionRef.current = getCursorOffset();
+
+        // Clean up the automatically inserted <br> tags by the browser
         if (contentRef.current.innerHTML === '<br>') {
           contentRef.current.innerHTML = '';
         }
+
+        // Debounce update remote data
+        debounceUpdateName(contentRef.current.textContent || '');
       }}
       onKeyDown={(e) => {
         if (!contentRef.current) return;
+
+        // Save the current cursor position
+        cursorPositionRef.current = getCursorOffset();
+
         if (e.key === 'Enter' || e.key === 'Escape') {
           e.preventDefault();
           if (e.key === 'Enter') {
@@ -130,7 +179,7 @@ function TitleEditable({
             const afterText = contentRef.current.textContent?.slice(offset) || '';
 
             contentRef.current.textContent = beforeText;
-            timestampsRef.current.remote = Date.now();
+            setIsEditing(false);
             onUpdateName(beforeText);
             onEnter?.(afterText);
 
@@ -138,7 +187,8 @@ function TitleEditable({
               focusedTextbox();
             }, 0);
           } else {
-            timestampsRef.current.remote = Date.now();
+            // Escape key: complete editing and save the current content
+            setIsEditing(false);
             onUpdateName(contentRef.current.textContent || '');
           }
         } else if (e.key === 'ArrowDown' || (e.key === 'ArrowRight' && isCursorAtEnd(contentRef.current))) {

@@ -50,6 +50,7 @@ import {
   UploadPublishNamespacePayload,
   User,
   View,
+  ViewIconType,
   ViewId,
   ViewInfo,
   ViewLayout,
@@ -1548,6 +1549,37 @@ export async function updatePage(workspaceId: string, viewId: string, data: Upda
   return Promise.reject(res?.data);
 }
 
+export async function updatePageIcon(workspaceId: string, viewId: string, icon: {
+  ty: ViewIconType;
+  value: string;
+}): Promise<void> {
+  const url = `/api/workspace/${workspaceId}/page-view/${viewId}/update-icon`;
+  const response = await axiosInstance?.post<{
+    code: number;
+    message: string;
+  }>(url, { icon });
+
+  if (response?.data.code === 0) {
+    return;
+  }
+
+  return Promise.reject(response?.data);
+}
+
+export async function updatePageName(workspaceId: string, viewId: string, name: string): Promise<void> {
+  const url = `/api/workspace/${workspaceId}/page-view/${viewId}/update-name`;
+  const response = await axiosInstance?.post<{
+    code: number;
+    message: string;
+  }>(url, { name });
+
+  if (response?.data.code === 0) {
+    return;
+  }
+
+  return Promise.reject(response?.data);
+}
+
 export async function deleteTrash(workspaceId: string, viewId?: string) {
   if (viewId) {
     const url = `/api/workspace/${workspaceId}/trash/${viewId}`;
@@ -2155,7 +2187,7 @@ export async function addRecentPages(workspaceId: string, viewIds: string[]) {
 }
 
 export async function checkIfCollabExists(workspaceId: string, objectId: string) {
-  const url = `/api/workspace/${workspaceId}/collab/${objectId}/row-document-collab-exists`;
+  const url = `/api/workspace/${workspaceId}/collab/${objectId}/collab-exists`;
 
   const response = await axiosInstance?.get<{
     code: number;

@@ -54,6 +54,7 @@ import {
   UploadPublishNamespacePayload,
   WorkspaceMember,
   YjsEditorKey,
+  ViewIconType
 } from '@/application/types';
 import { applyYDoc } from '@/application/ydoc/apply';
 
@@ -702,5 +703,17 @@ export class AFClientService implements AFService {
 
   async addRecentPages(workspaceId: string, viewIds: string[]) {
     return APIService.addRecentPages(workspaceId, viewIds);
+  }
+
+  async updateAppPageIcon(
+    workspaceId: string,
+    viewId: string,
+    icon: { ty: ViewIconType; value: string }
+  ): Promise<void> {
+    return APIService.updatePageIcon(workspaceId, viewId, icon);
+  }
+
+  async updateAppPageName(workspaceId: string, viewId: string, name: string): Promise<void> {
+    return APIService.updatePageName(workspaceId, viewId, name);
   }
 }

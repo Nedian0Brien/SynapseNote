@@ -37,6 +37,7 @@ import {
   UpdateSpacePayload,
   UserWorkspaceInfo,
   View,
+  ViewIconType,
   ViewLayout,
   YDatabase,
   YDoc,
@@ -80,6 +81,8 @@ export interface AppContextType {
   addPage?: (parentId: string, payload: CreatePagePayload) => Promise<string>;
   deletePage?: (viewId: string) => Promise<void>;
   updatePage?: (viewId: string, payload: UpdatePagePayload) => Promise<void>;
+  updatePageIcon?: (viewId: string, icon: { ty: ViewIconType; value: string }) => Promise<void>;
+  updatePageName?: (viewId: string, name: string) => Promise<void>;
   deleteTrash?: (viewId?: string) => Promise<void>;
   restorePage?: (viewId?: string) => Promise<void>;
   movePage?: (viewId: string, parentId: string, prevViewId?: string) => Promise<void>;
@@ -744,6 +747,40 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     [currentWorkspaceId, service, loadOutline]
   );
 
+  const updatePageIcon = useCallback(
+    async (viewId: string, icon: { ty: ViewIconType; value: string }) => {
+      if (!currentWorkspaceId || !service) {
+        throw new Error('No workspace or service found');
+      }
+
+      try {
+        await service.updateAppPageIcon(currentWorkspaceId, viewId, icon);
+
+        return;
+      } catch (e) {
+        return Promise.reject(e);
+      }
+    },
+    [currentWorkspaceId, service]
+  );
+
+  const updatePageName = useCallback(
+    async (viewId: string, name: string) => {
+      if (!currentWorkspaceId || !service) {
+        throw new Error('No workspace or service found');
+      }
+
+      try {
+        await service.updateAppPageName(currentWorkspaceId, viewId, name);
+
+        return;
+      } catch (e) {
+        return Promise.reject(e);
+      }
+    },
+    [currentWorkspaceId, service]
+  );
+
   const movePage = useCallback(
     async (viewId: string, parentId: string, prevViewId?: string) => {
       if (!currentWorkspaceId || !service) {
@@ -1284,6 +1321,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         getMentionUser,
         awarenessMap,
         checkIfRowDocumentExists,
+        updatePageIcon,
+        updatePageName,
       }}
     >
       <AIChatProvider>
@@ -1459,6 +1498,8 @@ export function useAppHandlers() {
     getMentionUser: context.getMentionUser,
     awarenessMap: context.awarenessMap,
     checkIfRowDocumentExists: context.checkIfRowDocumentExists,
+    updatePageIcon: context.updatePageIcon,
+    updatePageName: context.updatePageName,
   };
 }
 

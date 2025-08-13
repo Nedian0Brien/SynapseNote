@@ -1,4 +1,3 @@
-import { openUrl } from '@/utils/url';
 import { CircularProgress } from '@mui/material';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
@@ -6,6 +5,8 @@ import debounce from 'lodash-es/debounce';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createApi } from 'unsplash-js';
+
+import { openUrl } from '@/utils/url';
 
 const unsplash = createApi({
   accessKey: '1WxD1JpMOUX86lZKKob4Ca0LMZPyO2rUmAgjpWm9Ids',
@@ -129,7 +130,7 @@ export function Unsplash({ onDone, onEscape }: { onDone?: (value: string) => voi
             <>
               <div className={`grid w-full grid-cols-4 gap-4 max-sm:grid-cols-3`}>
                 {photos.map((photo) => (
-                  <div key={photo.id} className={'flex flex-col gap-2'}>
+                  <div key={photo.id + photo.full} className={'flex flex-col gap-2'}>
                     <div className={'relative pt-[56.25%]'}>
                       <img
                         onClick={() => {

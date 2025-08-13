@@ -23,6 +23,8 @@ export function ViewMetaPreview({
   uploadFile,
   layout,
   onFocus,
+  updatePageIcon,
+  updatePageName,
 }: ViewMetaProps) {
   const [cover, setCover] = React.useState<ViewMetaCover | null>(coverProp || null);
   const [icon, setIcon] = React.useState<ViewMetaIcon | null>(iconProp || null);
@@ -69,41 +71,30 @@ export function ViewMetaPreview({
 
   const handleUpdateIcon = React.useCallback(
     async (icon: { ty: ViewIconType; value: string }) => {
-      if (!updatePage || !viewId) return;
+      if (!updatePageIcon || !viewId) return;
       setIcon(icon);
       try {
-        await updatePage(viewId, {
-          icon,
-          name: name || '',
-          extra: extra || {},
-        });
+        await updatePageIcon(viewId, icon);
         // eslint-disable-next-line
       } catch (e: any) {
         notify.error(e.message);
       }
     },
-    [updatePage, viewId, name, extra]
+    [updatePageIcon, viewId]
   );
 
   const handleUpdateName = React.useCallback(
     async (newName: string) => {
-      if (!updatePage || !viewId) return;
+      if (!updatePageName || !viewId) return;
       try {
         if (name === newName) return;
-        await updatePage(viewId, {
-          icon: icon || {
-            ty: ViewIconType.Emoji,
-            value: '',
-          },
-          name: newName,
-          extra: extra || {},
-        });
+        await updatePageName(viewId, newName);
         // eslint-disable-next-line
       } catch (e: any) {
         notify.error(e.message);
       }
     },
-    [name, updatePage, viewId, icon, extra]
+    [name, updatePageName, viewId]
   );
 
   const handleUpdateCover = React.useCallback(
@@ -253,7 +244,7 @@ export function ViewMetaPreview({
                       icon,
                       layout: ViewLayout.Document,
                     }}
-                    className={'flex h-[90%] w-[90%] items-center justify-center'}
+                    className={'flex h-[90%] w-[90%] min-w-[36px] items-center justify-center'}
                   />
                 </div>
               </CustomIconPopover>

@@ -82,7 +82,14 @@ function DatabaseView(props: ViewComponentProps) {
       className={'relative flex h-full w-full flex-col'}
     >
       {rowId ? null : (
-        <ViewMetaPreview {...viewMeta} readOnly={props.readOnly} updatePage={props.updatePage} uploadFile={uploadFile} />
+        <ViewMetaPreview
+          {...viewMeta}
+          readOnly={props.readOnly}
+          updatePage={props.updatePage}
+          updatePageIcon={props.updatePageIcon}
+          updatePageName={props.updatePageName}
+          uploadFile={uploadFile}
+        />
       )}
 
       <Suspense fallback={skeleton}>

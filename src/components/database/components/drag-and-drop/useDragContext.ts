@@ -78,9 +78,9 @@ export function useDragContextValue<
     stableData.current = data;
   }, [data]);
 
-  const getData = () => {
+  const getData = useCallback(() => {
     return stableData.current;
-  };
+  }, []);
 
   const reorderItem = useCallback(
     ({ startIndex, indexOfTarget, closestEdgeOfTarget }: ReorderPayload) => {
@@ -163,9 +163,9 @@ export function useDragContextValue<
       reorderItem,
       registerItem: registry.register,
       instanceId,
-      enabled
+      enabled,
     }),
-    [reorderItem, registry.register, instanceId, enabled]
+    [getData, reorderItem, registry.register, instanceId, enabled]
   );
 
   return contextValue;

@@ -18,6 +18,7 @@ import {
   getDateFormat,
   getTimeFormat,
   getTypeOptions,
+  parseRelationTypeOption,
   parseSelectOptionTypeOptions,
   SelectOption,
   TimeFormat,
@@ -288,6 +289,30 @@ export function useFieldSelector(fieldId: string) {
     field,
     clock,
   };
+}
+
+export function useDatabaseIdFromField(fieldId: string) {
+  const database = useDatabase();
+  const field = database?.get(YjsDatabaseKey.fields)?.get(fieldId);
+  const [databaseId, setDatabaseId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!field) return;
+
+    const observerEvent = () => {
+      setDatabaseId(parseRelationTypeOption(field)?.database_id);
+    };
+
+    observerEvent();
+
+    field.observe(observerEvent);
+
+    return () => {
+      field.unobserve(observerEvent);
+    };
+  }, [database, field, fieldId]);
+
+  return databaseId;
 }
 
 export function useFiltersSelector() {
@@ -725,11 +750,14 @@ export function useRowOrdersSelector() {
     sorts?.observeDeep(throttleChange);
     filters?.observeDeep(throttleChange);
     fields?.observeDeep(throttleChange);
-    Object.values(rows || {}).forEach((rowDoc) => {
-      const rowSharedRoot = rowDoc.getMap(YjsEditorKey.data_section);
-      const databaseRow = rowSharedRoot.get(YjsEditorKey.database_row) as YDatabaseRow;
+    const debouncedConditionsChange = debounce(onConditionsChange, 150);
 
-      databaseRow?.get(YjsDatabaseKey.cells)?.observeDeep(throttleChange);
+    const observerRowsEvent = () => {
+      debouncedConditionsChange();
+    };
+
+    Object.values(rows || {}).forEach((row) => {
+      row.getMap(YjsEditorKey.data_section).observeDeep(observerRowsEvent);
     });
 
     return () => {
@@ -737,12 +765,8 @@ export function useRowOrdersSelector() {
       sorts?.unobserveDeep(throttleChange);
       filters?.unobserveDeep(throttleChange);
       fields?.unobserveDeep(throttleChange);
-
-      Object.values(rows || {}).forEach((rowDoc) => {
-        const rowSharedRoot = rowDoc.getMap(YjsEditorKey.data_section);
-        const databaseRow = rowSharedRoot.get(YjsEditorKey.database_row) as YDatabaseRow;
-
-        databaseRow?.get(YjsDatabaseKey.cells)?.unobserveDeep(throttleChange);
+      Object.values(rows || {}).forEach((row) => {
+        row.getMap(YjsEditorKey.data_section).unobserveDeep(observerRowsEvent);
       });
     };
   }, [onConditionsChange, view, fields, filters, sorts, rows]);
