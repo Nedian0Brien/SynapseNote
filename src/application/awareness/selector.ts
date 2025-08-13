@@ -34,6 +34,7 @@ export function useUsersSelector(awareness?: Awareness) {
           timestamp: state.timestamp,
           device_id: state.user.device_id,
           color: '',
+          avatar: meta.user_avatar,
         });
       });
 

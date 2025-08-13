@@ -1387,15 +1387,11 @@ export function useAppOutline() {
 export function useAppAwareness(viewId?: string) {
   const context = useContext(AppContext);
 
-  if (!context) {
-    throw new Error('useAppAwareness must be used within an AppProvider');
-  }
-
   if (!viewId) {
     return;
   }
 
-  return context.awarenessMap?.[viewId];
+  return context?.awarenessMap?.[viewId];
 }
 
 export function useAppViewId() {

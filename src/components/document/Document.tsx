@@ -22,7 +22,18 @@ export type DocumentProps = ViewComponentProps & {
 
 export const Document = (props: DocumentProps) => {
   const [search] = useSearchParams();
-  const { doc, readOnly, viewMeta, isTemplateThumb, updatePage, onRendered, onEditorConnected, uploadFile, updatePageIcon, updatePageName } = props;
+  const {
+    doc,
+    readOnly,
+    viewMeta,
+    isTemplateThumb,
+    updatePage,
+    onRendered,
+    onEditorConnected,
+    uploadFile,
+    updatePageIcon,
+    updatePageName,
+  } = props;
   const blockId = search.get('blockId') || undefined;
 
   const awareness = useAppAwareness(viewMeta.viewId);

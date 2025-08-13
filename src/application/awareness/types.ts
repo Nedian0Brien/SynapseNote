@@ -17,6 +17,7 @@ export interface AwarenessUser {
   timestamp: number;
   device_id: string;
   color: string;
+  avatar: string;
 }
 
 export interface AwarenessMetadata {

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useUsersSelector } from '@/application/awareness/selector';
 import { useAppAwareness } from '@/components/app/app.hooks';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -27,7 +27,10 @@ export function Users({ viewId }: { viewId?: string }) {
           <Tooltip delayDuration={800}>
             <TooltipTrigger>
               <Avatar style={{ zIndex: visibleUsers.length - index, border: '1px solid var(--border-primary)' }}>
-                <AvatarFallback>{user.name}</AvatarFallback>
+                <AvatarImage src={user.avatar} alt={''} />
+                <AvatarFallback>
+                  {user.avatar ? <span className='text-xl'>{user.avatar}</span> : user.name}
+                </AvatarFallback>
               </Avatar>
             </TooltipTrigger>
             <TooltipContent>
