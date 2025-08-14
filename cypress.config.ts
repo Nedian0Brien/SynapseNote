@@ -19,6 +19,9 @@ export default defineConfig({
   },
   e2e: {
     baseUrl: process.env.CYPRESS_BASE_URL || 'http://localhost:3000',
+    // Set viewport to MacBook Pro screen size
+    viewportWidth: 1440,
+    viewportHeight: 900,
     setupNodeEvents(on, config) {
       // Override baseUrl if CYPRESS_BASE_URL is set
       if (process.env.CYPRESS_BASE_URL) {

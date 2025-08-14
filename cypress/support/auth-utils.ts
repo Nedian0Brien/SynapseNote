@@ -156,7 +156,7 @@ export class AuthTestUtils {
       if (hashIndex === -1) {
         throw new Error('No hash found in callback link');
       }
-      
+
       const hash = callbackLink.substring(hashIndex);
       const params = new URLSearchParams(hash.slice(1));
       const accessToken = params.get('access_token');
@@ -173,7 +173,7 @@ export class AuthTestUtils {
         failOnStatusCode: false,
       }).then((verifyResponse) => {
         cy.task('log', `Token verification response: ${JSON.stringify(verifyResponse)}`);
-        
+
         if (verifyResponse.status !== 200) {
           throw new Error('Token verification failed');
         }
@@ -196,20 +196,13 @@ export class AuthTestUtils {
 
           // Store the token in localStorage
           const tokenData = response.body;
-          
+
           return cy.window().then((win) => {
             win.localStorage.setItem('token', JSON.stringify(tokenData));
-            
-            // Now visit the app - we should be authenticated
+
             cy.visit('/app');
-            
-            // Wait for the app to load and workspace to be created
-            cy.wait(2000);
-            
-            // Reload the page to ensure workspace is loaded after verification
-            cy.reload();
-            
-            // Wait for the page to load after reload
+
+            // Wait for the app to initialize
             cy.wait(2000);
 
             // Verify we're logged in and on the app page
