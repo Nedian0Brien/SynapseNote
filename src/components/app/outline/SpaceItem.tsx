@@ -32,6 +32,7 @@ function SpaceItem({
 
     return (
       <div
+        data-testid={`space-${view.view_id}`}
         style={{
           width,
         }}
@@ -53,7 +54,7 @@ function SpaceItem({
         />
         <Tooltip title={name} disableInteractive={true}>
           <div className={'flex flex-1 items-center justify-start gap-1 overflow-hidden text-sm'}>
-            <div className={'truncate font-medium'}>{name}</div>
+            <div data-testid="space-name" className={'truncate font-medium'}>{name}</div>
 
             {isPrivate && (
               <div className={'min-h-5 min-w-5 text-base text-text-primary opacity-80'}>

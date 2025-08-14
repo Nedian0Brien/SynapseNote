@@ -68,6 +68,7 @@ function SpaceList({ loading, spaceList, value, onChange, title }: SpaceListProp
             return (
               <Tooltip title={space.name} key={space.id} placement={'bottom'} enterDelay={1000} enterNextDelay={1000}>
                 <Button
+                  data-testid="space-item"
                   variant={'text'}
                   color={'inherit'}
                   className={'flex items-center p-1 font-normal'}

@@ -63,7 +63,7 @@ function OutlineItemContent({
         title={name}
         disableInteractive={true}
       >
-        <div className={'flex-1 truncate'}>{name || t('menuAppHeader.defaultNewPageName')}</div>
+        <div data-testid={isSpace ? 'space-name' : 'page-name'} className={'flex-1 truncate'}>{name || t('menuAppHeader.defaultNewPageName')}</div>
       </Tooltip>
       {hovered && variant === UIVariant.Publish && <PublishIcon
         variant={variant}

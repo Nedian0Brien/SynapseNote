@@ -234,6 +234,7 @@ function TitleEditable({
       ref={contentRef}
       suppressContentEditableWarning={true}
       id={`editor-title-${viewId}`}
+      data-testid="page-title-input"
       style={{
         wordBreak: 'break-word',
       }}

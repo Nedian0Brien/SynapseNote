@@ -82,6 +82,7 @@ function ViewItem({
 
     return (
       <div
+        data-testid={`page-${view.view_id}`}
         style={{
           backgroundColor: selected ? 'var(--fill-content-hover)' : undefined,
           cursor: 'pointer',
@@ -134,7 +135,7 @@ function ViewItem({
         </CustomIconPopover>
 
         <div className={'flex flex-1 items-center gap-1 overflow-hidden text-sm'}>
-          <div className={'w-full truncate'}>{view.name.trim() || t('menuAppHeader.defaultNewPageName')}</div>
+          <div data-testid="page-name" className={'w-full truncate'}>{view.name.trim() || t('menuAppHeader.defaultNewPageName')}</div>
         </div>
         {renderExtra && renderExtra({ hovered, view })}
       </div>

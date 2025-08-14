@@ -22,6 +22,7 @@
     "test:cy": "cypress run",
     "test:integration": "cypress run --spec 'cypress/e2e/**/*.cy.ts'",
     "test:integration:user": "cypress run --spec 'cypress/e2e/user/**/*.cy.ts' --headed --browser chrome",
+    "test:integration:page": "cypress run --spec 'cypress/e2e/page/**/*.cy.ts' --headed --browser chrome",
     "test:integration:publish": "cypress run --spec 'cypress/e2e/publish/**/*.cy.ts'",
     "wait:backend": "AF_BASE_URL=${AF_BASE_URL:-http://localhost} node scripts/wait-for-backend.js",
     "coverage": "cross-env COVERAGE=true pnpm run test:unit && cross-env COVERAGE=true pnpm run test:components",
