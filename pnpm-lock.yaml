@@ -534,6 +534,9 @@ importers:
       cypress-real-events:
         specifier: ^1.13.0
         version: 1.14.0(cypress@13.17.0)
+      dotenv:
+        specifier: ^17.2.1
+        version: 17.2.1
       eslint:
         specifier: ^8.57.0
         version: 8.57.1
@@ -4925,6 +4928,10 @@ packages:
 
   dotenv@16.5.0:
     resolution: {integrity: sha512-m/C+AwOAr9/W1UOIZUo232ejMNnJAJtYQjUbHoNTBNTJSvqzzDh7vnrei3o3r3m9blf6ZoDkvcw0VmozNRFJxg==}
+    engines: {node: '>=12'}
+
+  dotenv@17.2.1:
+    resolution: {integrity: sha512-kQhDYKZecqnM0fCnzI5eIv5L4cAe/iRI+HqMbO/hbRdTAeXDG+M9FjipUxNfbARuEg4iHIbhnhs78BCHNbSxEQ==}
     engines: {node: '>=12'}
 
   downloadjs@1.4.7:
@@ -13929,6 +13936,8 @@ snapshots:
   dotenv-expand@8.0.3: {}
 
   dotenv@16.5.0: {}
+
+  dotenv@17.2.1: {}
 
   downloadjs@1.4.7: {}
 

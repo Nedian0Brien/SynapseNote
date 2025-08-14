@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "lsof -ti:3000 | xargs kill -9 2>/dev/null || true && vite",
     "dev:coverage": "cross-env COVERAGE=true vite",
     "build": "vite build",
     "type-check": "tsc --noEmit --project tsconfig.web.json",
@@ -20,6 +20,10 @@
     "test:unit:coverage": "cross-env COVERAGE=true jest --coverage",
     "test:components:coverage": "cross-env COVERAGE=true cypress run --component --browser chrome --headless",
     "test:cy": "cypress run",
+    "test:integration": "cypress run --spec 'cypress/e2e/**/*.cy.ts'",
+    "test:integration:login": "CYPRESS_BASE_URL=http://localhost:3000 node scripts/wait-for-frontend.js && CYPRESS_BASE_URL=http://localhost:3000 cypress run --spec 'cypress/e2e/login/**/*.cy.ts' --headed --browser chrome",
+    "test:integration:publish": "cypress run --spec 'cypress/e2e/publish/**/*.cy.ts'",
+    "wait:backend": "AF_BASE_URL=${AF_BASE_URL:-http://localhost} node scripts/wait-for-backend.js",
     "coverage": "cross-env COVERAGE=true pnpm run test:unit && cross-env COVERAGE=true pnpm run test:components",
     "generate-tokens": "node scripts/system-token/convert-tokens.cjs",
     "generate-protobuf": "pbjs -t static-module -w es6 -o ./src/proto/messages.js ./src/proto/messages.proto & pbts -o ./src/proto/messages.d.ts ./src/proto/messages.js"
@@ -202,6 +206,7 @@
     "cypress": "^13.7.2",
     "cypress-image-snapshot": "^4.0.1",
     "cypress-real-events": "^1.13.0",
+    "dotenv": "^17.2.1",
     "eslint": "^8.57.0",
     "eslint-import-resolver-typescript": "^3.6.1",
     "eslint-plugin-import": "^2.29.1",
