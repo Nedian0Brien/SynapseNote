@@ -2,6 +2,8 @@
 
 // Import auth utilities
 import './auth-utils';
+// Import page utilities
+import './page-utils';
 
 // ***********************************************
 // This example commands.ts shows you how to

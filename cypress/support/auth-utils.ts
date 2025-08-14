@@ -172,7 +172,7 @@ export class AuthTestUtils {
         url: `${this.config.baseUrl}/api/user/verify/${accessToken}`,
         failOnStatusCode: false,
       }).then((verifyResponse) => {
-        cy.task('log', `Token verification response: ${JSON.stringify(verifyResponse)}`);
+        // cy.task('log', `Token verification response: ${JSON.stringify(verifyResponse)}`);
 
         if (verifyResponse.status !== 200) {
           throw new Error('Token verification failed');

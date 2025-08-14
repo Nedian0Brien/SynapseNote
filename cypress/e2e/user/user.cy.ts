@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { AuthTestUtils } from '../../support/auth-utils';
+import { PageUtils } from '../../support/page-utils';
 
 describe('User Feature Tests', () => {
     const AF_BASE_URL = Cypress.env('AF_BASE_URL');
@@ -49,10 +50,8 @@ describe('User Feature Tests', () => {
                 // Wait for workspace to be fully loaded
                 cy.wait(3000);
 
-                // Open workspace dropdown by clicking on the trigger
-                cy.get('[data-testid="workspace-dropdown-trigger"]', { timeout: 10000 })
-                    .should('be.visible')
-                    .click();
+                // Open workspace dropdown
+                PageUtils.openWorkspaceDropdown();
 
                 // Wait for dropdown to open
                 cy.wait(500);
@@ -64,12 +63,12 @@ describe('User Feature Tests', () => {
                 cy.task('log', `Verified email ${randomEmail} is displayed in dropdown`);
 
                 // Verify one member count
-                cy.get('[data-testid="workspace-member-count"]')
+                PageUtils.getWorkspaceMemberCounts()
                     .should('contain', '1 member');
                 cy.task('log', 'Verified workspace has 1 member');
 
                 // Verify exactly one workspace exists
-                cy.get('[data-testid="workspace-item"]')
+                PageUtils.getWorkspaceItems()
                     .should('have.length', 1);
 
                 // Verify workspace name is present

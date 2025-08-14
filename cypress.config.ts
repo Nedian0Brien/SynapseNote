@@ -62,7 +62,7 @@ export default defineConfig({
   },
   chromeWebSecurity: false,
   retries: {
-    runMode: 1,
+    runMode: 0,
     // Configure retry attempts for `cypress open`
     // Default is 0
     openMode: 0,
