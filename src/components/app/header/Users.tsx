@@ -29,7 +29,7 @@ export function Users({ viewId }: { viewId?: string }) {
               <Avatar style={{ zIndex: visibleUsers.length - index, border: '1px solid var(--border-primary)' }}>
                 <AvatarImage src={user.avatar} alt={''} />
                 <AvatarFallback>
-                  {user.avatar ? <span className='text-xl'>{user.avatar}</span> : user.name}
+                  {user.avatar ? <span className='text-lg'>{user.avatar}</span> : user.name}
                 </AvatarFallback>
               </Avatar>
             </TooltipTrigger>

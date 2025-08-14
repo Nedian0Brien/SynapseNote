@@ -82,7 +82,7 @@ export function WorkspaceItem({
     >
       <Avatar shape={'square'} size={'xs'}>
         <AvatarFallback>
-          {workspace.icon ? <span className='text-xl'>{workspace.icon}</span> : workspace.name}
+          {workspace.icon ? <span className='text-lg'>{workspace.icon}</span> : workspace.name}
         </AvatarFallback>
       </Avatar>
       <div className={'flex flex-1 flex-col items-start overflow-hidden'}>

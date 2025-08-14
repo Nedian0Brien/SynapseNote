@@ -1,9 +1,10 @@
-import { extractHeadings, nestHeadings } from '@/components/editor/components/blocks/outline/utils';
-import { EditorElementProps, HeadingNode, OutlineNode } from '@/components/editor/editor.type';
 import { forwardRef, memo, useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Element } from 'slate';
 import { useReadOnly, useSlate } from 'slate-react';
+
+import { extractHeadings, nestHeadings } from '@/components/editor/components/blocks/outline/utils';
+import { EditorElementProps, HeadingNode, OutlineNode } from '@/components/editor/editor.type';
 
 export const Outline = memo(
   forwardRef<HTMLDivElement, EditorElementProps<OutlineNode>>(({ node, children, className, ...attributes }, ref) => {
@@ -16,7 +17,7 @@ export const Outline = memo(
       const root = nestHeadings(extractHeadings(editor, node.data.depth || 6));
 
       setRoot(root);
-    }, [editor, node.data.depth]);
+    }, [editor, node.data.depth, editor.children]);
 
     const jumpToHeading = useCallback((heading: HeadingNode) => {
       const id = `heading-${heading.blockId}`;
