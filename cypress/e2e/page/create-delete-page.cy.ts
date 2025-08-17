@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { AuthTestUtils } from '../../support/auth-utils';
-import { PageUtils } from '../../support/page-utils';
+import { TestTool } from '../../support/page-utils';
 
 describe('Page Create and Delete Tests', () => {
     const AF_BASE_URL = Cypress.env('AF_BASE_URL');
@@ -13,9 +13,7 @@ describe('Page Create and Delete Tests', () => {
         // Log environment configuration for debugging
         cy.task('log', `Test Environment Configuration:
           - AF_BASE_URL: ${AF_BASE_URL}
-          - AF_GOTRUE_URL: ${AF_GOTRUE_URL}
-          - Running in CI: ${Cypress.env('CI')}
-          - Use Real Backend: ${Cypress.env('USE_REAL_BACKEND')}`);
+          - AF_GOTRUE_URL: ${AF_GOTRUE_URL}`);
     });
 
     beforeEach(() => {
@@ -41,58 +39,57 @@ describe('Page Create and Delete Tests', () => {
             const authUtils = new AuthTestUtils();
             authUtils.signInWithTestUrl(testEmail).then(() => {
                 cy.url().should('include', '/app');
-                cy.task('log', 'Authentication completed successfully');
                 cy.wait(3000);
 
                 // Step 2: Create a new page
-                PageUtils.clickNewPageButton();
+                TestTool.clickNewPageButton();
                 cy.task('log', 'Clicked New Page button');
 
                 // Wait for the modal to open
                 cy.wait(1000);
 
                 // Select the first space in the modal
-                PageUtils.selectFirstSpaceInModal();
+                TestTool.selectFirstSpaceInModal();
 
                 // Wait for the page to be created and modal to open
                 cy.wait(2000);
 
                 // Enter the page name
                 cy.task('log', `Entering page title: ${testPageName}`);
-                PageUtils.enterPageTitle(testPageName);
+                TestTool.enterPageTitle(testPageName);
 
                 // Save the title and close the modal
-                PageUtils.savePageTitle();
+                TestTool.savePageTitle();
                 cy.wait(1000);
 
                 cy.task('log', `Created page with title: ${testPageName}`);
 
                 // Step 3: Reload and verify the page exists
                 cy.reload();
-                PageUtils.waitForPageLoad(3000);
+                TestTool.waitForPageLoad(3000);
 
                 // Expand the first space to see its pages
-                PageUtils.expandSpace();
+                TestTool.expandSpace();
                 cy.wait(1000);
 
                 // Verify the page exists
-                PageUtils.verifyPageExists('e2e test-create page');
+                TestTool.verifyPageExists('e2e test-create page');
                 cy.task('log', `Verified page exists after reload: ${testPageName}`);
 
                 // Step 4: Delete the page
-                PageUtils.deletePageByName('e2e test-create page');
+                TestTool.deletePageByName('e2e test-create page');
                 cy.task('log', `Deleted page: ${testPageName}`);
 
                 // Step 5: Reload and verify the page is gone
                 cy.reload();
-                PageUtils.waitForPageLoad(3000);
+                TestTool.waitForPageLoad(3000);
 
                 // Expand the space again to check if page is gone
-                PageUtils.expandSpace();
+                TestTool.expandSpace();
                 cy.wait(1000);
 
                 // Verify the page no longer exists
-                PageUtils.verifyPageNotExists('e2e test-create page');
+                TestTool.verifyPageNotExists('e2e test-create page');
                 cy.task('log', `Verified page is gone after reload: ${testPageName}`);
             });
         });

@@ -13,7 +13,7 @@ import React, { useCallback, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 
-export function Outline ({
+export function Outline({
   width,
 }: {
   width: number;
@@ -74,6 +74,7 @@ export function Outline ({
       >
         <TooltipTrigger asChild>
           <Button
+            data-testid='inline-more-actions'
             variant={'ghost'}
             size={'icon-sm'}
             onClick={(e) => {
@@ -124,11 +125,11 @@ export function Outline ({
       <div className={'flex folder-views w-full flex-1 flex-col pb-[10px] pt-1 px-[8px]'}>
         <Favorite />
         {!outline || outline.length === 0 ? <div
-            style={{
-              width: width - 20,
-            }}
-          ><DirectoryStructure />
-          </div> :
+          style={{
+            width: width - 20,
+          }}
+        ><DirectoryStructure />
+        </div> :
           outline.map((view) => <SpaceItem
             view={view}
             key={view.view_id}

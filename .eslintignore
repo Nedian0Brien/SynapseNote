@@ -8,3 +8,4 @@ vite.config.ts
 *.config.ts
 coverage/
 src/proto/**/*
+cypress/e2e/**

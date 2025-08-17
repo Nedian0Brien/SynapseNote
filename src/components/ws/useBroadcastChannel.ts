@@ -31,7 +31,7 @@ export const useBroadcastChannel = (channelName: string): BroadcastChannelType =
   const sendMessage = useCallback(
     (msg: messages.IMessage) => {
       if (isChannelClosed) {
-        console.warn('You cannot send message to a closed channel');
+        console.warn('⚠️ You cannot send message to a closed channel');
         return;
       }
 

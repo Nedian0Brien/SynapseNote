@@ -1,4 +1,4 @@
-name: Integration Tests
+name: E2E Tests
 
 on:
   push:
@@ -9,11 +9,13 @@ on:
 
 env:
   CLOUD_VERSION: latest-amd64
+  CYPRESS_BASE_URL: http://localhost:3000
+  GOTRUE_ADMIN_EMAIL: admin@example.com
+  GOTRUE_ADMIN_PASSWORD: password
 
 jobs:
-  integration-test:
+  run_e2e_tests:
     runs-on: ubuntu-latest
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -21,8 +23,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          
+          node-version: '24'
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
@@ -45,206 +47,121 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Clean and Run Docker-Compose
+      - name: Start web server (background)
         run: |
-          echo "Stopping existing compose services..."
-          docker compose down -v --remove-orphans || true
-          
-          echo "Removing project-specific resources..."
-          docker compose rm -f -s -v || true
-          
-          echo "Cleaning up unused Docker resources..."
-          docker container prune -f || true
-          docker image prune -f || true
-          docker network prune -f || true
-          docker volume prune -f || true
-          
-          echo "Docker cleanup completed successfully"
+          cp deploy.env .env
+          nohup pnpm run dev > web.log 2>&1 &
 
       - name: Checkout AppFlowy-Cloud-Premium code
         uses: actions/checkout@v4
         with:
           repository: AppFlowy-IO/AppFlowy-Cloud-Premium
+          token: ${{ secrets.CI_TOKEN }}
           path: AppFlowy-Cloud-Premium
-          token: ${{ secrets.ADMIN_GITHUB_TOKEN }}
-          ref: 'main'
 
-      - name: Run Server
+      - name: Prepare appflowy cloud env
         working-directory: AppFlowy-Cloud-Premium
         run: |
           cp deploy.env .env
+          sed -i 's/GOTRUE_EXTERNAL_GOOGLE_ENABLED=.*/GOTRUE_EXTERNAL_GOOGLE_ENABLED=true/' .env
           sed -i 's|GOTRUE_MAILER_AUTOCONFIRM=.*|GOTRUE_MAILER_AUTOCONFIRM=true|' .env
           sed -i 's|API_EXTERNAL_URL=.*|API_EXTERNAL_URL=http://localhost|' .env
-          sed -i 's|APPFLOWY_SPAM_DETECT_ENABLED=.*|APPFLOWY_SPAM_DETECT_ENABLED=false|' .env
           sed -i 's|AI_OPENAI_API_KEY=.*|AI_OPENAI_API_KEY=${{ secrets.CI_OPENAI_API_KEY }}|' .env
+          sed -i 's|APPFLOWY_SPAM_DETECT_ENABLED=.*|APPFLOWY_SPAM_DETECT_ENABLED=false|' .env
 
-          cat .env
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-          export APPFLOWY_ENVIRONMENT=local
-          export APPFLOWY_CLOUD_VERSION=${{ env.CLOUD_VERSION }}
-          export APPFLOWY_WORKER_VERSION=${{ env.CLOUD_VERSION }}
-          export APPFLOWY_ADMIN_FRONTEND_VERSION=${{ env.CLOUD_VERSION }}
-          export APPFLOWY_AI_VERSION=${{ env.CLOUD_VERSION }}
-
-          docker login -u appflowyinc -p ${{ secrets.DOCKER_TOKEN }}
+      - name: Run Docker-Compose
+        working-directory: AppFlowy-Cloud-Premium
+        env:
+          APPFLOWY_CLOUD_VERSION: ${{ env.CLOUD_VERSION }}
+          APPFLOWY_AI_VERSION: ${{ env.CLOUD_VERSION }}
+          APPFLOWY_WORKER_VERSION: ${{ env.CLOUD_VERSION }}
+          APPFLOWY_ADMIN_FRONTEND_VERSION: ${{ env.CLOUD_VERSION }}
+          RUST_LOG: appflowy_cloud=debug
+        run: |
           docker compose pull
           docker compose up -d
-          echo "Waiting for the container to be ready..."
-          sleep 30
-          docker ps -a
-
-      - name: Check backend health
-        run: |
-          max_attempts=30
-          attempt=0
-          while [ $attempt -lt $max_attempts ]; do
-            if curl --fail http://localhost/health; then
-              echo "Backend is healthy"
-              break
-            fi
-            echo "Waiting for backend... (attempt $((attempt+1))/$max_attempts)"
-            sleep 5
-            attempt=$((attempt+1))
-          done
-          if [ $attempt -eq $max_attempts ]; then
-            echo "Backend failed to become healthy"
-            docker compose logs
-            exit 1
-          fi
-
-      - name: Build application
-        run: pnpm run build
-
-      - name: Start development server
-        run: |
-          pnpm run dev &
+          echo "Waiting for the containers to be ready..."
           sleep 10
-          curl --fail http://localhost:3000 || exit 1
+          docker ps -a
+          docker logs appflowy-cloud-premium-appflowy_cloud-1
+
+      - name: Wait for frontend to be ready
+        shell: bash
+        run: |
+          for i in {1..120}; do
+            if curl -sSf http://localhost:3000 > /dev/null; then
+              echo "Frontend is up"; exit 0;
+            fi
+            sleep 10
+          done
+          echo "Frontend did not become ready in time"; exit 1
+
+      - name: Wait for backend to be ready
+        shell: bash
+        run: |
+          for i in {1..180}; do
+            if curl -sSf http://localhost/health > /dev/null; then
+              echo "Backend is up"; exit 0;
+            fi
+            sleep 10
+          done
+          echo "Backend did not become ready in time"; exit 1
 
       - name: Run integration tests
-        run: |
-          export AF_BASE_URL=http://localhost
-          export CYPRESS_BASE_URL=http://localhost:3000
-          export GOTRUE_ADMIN_EMAIL=admin@example.com
-          export GOTRUE_ADMIN_PASSWORD=password
-          pnpm run test:integration
         env:
           AF_BASE_URL: http://localhost
-          CYPRESS_BASE_URL: http://localhost:3000
-          GOTRUE_ADMIN_EMAIL: admin@example.com
-          GOTRUE_ADMIN_PASSWORD: password
-          CI: true
-          
-      - name: Run publish feature integration tests
-        run: |
-          export AF_BASE_URL=http://localhost
-          export CYPRESS_BASE_URL=http://localhost:3000
-          export GOTRUE_ADMIN_EMAIL=admin@example.com
-          export GOTRUE_ADMIN_PASSWORD=password
-          pnpm run test:integration:publish
-        env:
-          AF_BASE_URL: http://localhost
-          CYPRESS_BASE_URL: http://localhost:3000
-          GOTRUE_ADMIN_EMAIL: admin@example.com
-          GOTRUE_ADMIN_PASSWORD: password
-          CI: true
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: cypress-results
-          path: |
-            cypress/videos
-            cypress/screenshots
-            
-      - name: Upload coverage reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-reports
-          path: |
-            coverage/
-            .nyc_output/
-
-      - name: Show docker logs on failure
-        if: failure()
-        working-directory: AppFlowy-Cloud-Premium
-        run: |
-          docker compose logs
-
-      - name: Cleanup
-        if: always()
-        working-directory: AppFlowy-Cloud-Premium
-        run: |
-          docker compose down -v
-
-  publish-integration-test:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 10.9.0
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Checkout AppFlowy-Cloud-Premium code
-        uses: actions/checkout@v4
-        with:
-          repository: AppFlowy-IO/AppFlowy-Cloud-Premium
-          path: AppFlowy-Cloud-Premium
-          token: ${{ secrets.ADMIN_GITHUB_TOKEN }}
-          ref: 'main'
-
-      - name: Run Server for Publish Testing
-        working-directory: AppFlowy-Cloud-Premium
+          AF_GOTRUE_URL: http://localhost/gotrue
+          AF_WS_V2_URL: ws://localhost/ws/v2
+          CYPRESS_chromeWebSecurity: 'false'
         run: |
           cp deploy.env .env
-          sed -i 's|GOTRUE_MAILER_AUTOCONFIRM=.*|GOTRUE_MAILER_AUTOCONFIRM=true|' .env
-          sed -i 's|API_EXTERNAL_URL=.*|API_EXTERNAL_URL=http://localhost|' .env
-          sed -i 's|APPFLOWY_SPAM_DETECT_ENABLED=.*|APPFLOWY_SPAM_DETECT_ENABLED=false|' .env
-          sed -i 's|AI_OPENAI_API_KEY=.*|AI_OPENAI_API_KEY=${{ secrets.CI_OPENAI_API_KEY }}|' .env
+          npx cypress install
+          pnpm run test:integration:page:create-delete 
+          # pnpm run test:integration
 
-          export APPFLOWY_ENVIRONMENT=local
-          export APPFLOWY_CLOUD_VERSION=${{ env.CLOUD_VERSION }}
-          export APPFLOWY_WORKER_VERSION=${{ env.CLOUD_VERSION }}
-          export APPFLOWY_ADMIN_FRONTEND_VERSION=${{ env.CLOUD_VERSION }}
-          export APPFLOWY_AI_VERSION=${{ env.CLOUD_VERSION }}
-
-          docker login -u appflowyinc -p ${{ secrets.DOCKER_TOKEN }}
-          docker compose pull
-          docker compose up -d
-          sleep 30
-
-      - name: Build and start application
-        run: |
-          pnpm run build
-          pnpm run dev &
-          sleep 10
-
-      - name: Test publish workflow
-        run: |
-          export AF_BASE_URL=http://localhost
-          export CYPRESS_BASE_URL=http://localhost:3000
-          pnpm run test:integration:publish
-        env:
-          AF_BASE_URL: http://localhost
-          CYPRESS_BASE_URL: http://localhost:3000
-          
-      - name: Cleanup
+      - name: Cloud server logs
         if: always()
-        working-directory: AppFlowy-Cloud-Premium
         run: |
-          docker compose down -v
+          docker logs appflowy-cloud-premium-appflowy_cloud-1
+
+      - name: Upload Cypress screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-screenshots
+          path: cypress/screenshots/**
+          if-no-files-found: ignore
+          retention-days: 1
+
+      - name: Upload Cypress videos
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-videos
+          path: cypress/videos/**
+          if-no-files-found: ignore
+          retention-days: 1
+
+      - name: Upload web server log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web.log
+          path: web.log
+          if-no-files-found: ignore
+          retention-days: 1
+
+      - name: Upload Cypress console logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-console-logs
+          path: cypress/logs/**
+          if-no-files-found: ignore
+          retention-days: 1

@@ -84,7 +84,7 @@ function TitleEditable({
     (newName: string) => {
       const updateId = generateUpdateId();
 
-      console.log('Sending update:', { newName, updateId });
+      console.debug('Sending update:', { newName, updateId });
 
       updateStateRef.current = {
         ...updateStateRef.current,
@@ -122,7 +122,7 @@ function TitleEditable({
         console.log('Sending update immediately');
         sendUpdate(newName);
       } else {
-        console.log('Sending update with delay');
+        console.debug('Sending update with delay');
         debounceUpdateName(newName);
       }
     },
@@ -131,7 +131,7 @@ function TitleEditable({
 
   // Handle remote name changes
   useEffect(() => {
-    console.log('Remote name changed:', {
+    console.debug('Remote name changed:', {
       newName: name,
       pendingUpdate: updateStateRef.current.pendingUpdate,
       lastConfirmedName: updateStateRef.current.lastConfirmedName,
@@ -186,7 +186,7 @@ function TitleEditable({
       return;
     }
 
-    console.log('Accepting remote update');
+    console.debug('Accepting remote update');
     updateStateRef.current = {
       ...updateStateRef.current,
       localName: name,

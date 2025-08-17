@@ -49,13 +49,12 @@ export class AuthTestUtils {
         'Content-Type': 'application/json',
       },
       failOnStatusCode: false,
-    }).then((response) => {
+    }).then((response): string => {
       if (response.status === 200) {
-        this.adminAccessToken = response.body.access_token;
-        return this.adminAccessToken;
-      } else {
-        throw new Error(`Failed to sign in as admin: ${response.status} - ${JSON.stringify(response.body)}`);
+        this.adminAccessToken = response.body.access_token as string;
+        return this.adminAccessToken as string;
       }
+      throw new Error(`Failed to sign in as admin: ${response.status} - ${JSON.stringify(response.body)}`);
     });
   }
 
@@ -99,14 +98,15 @@ export class AuthTestUtils {
     }).then((response) => {
       // Check if we got a redirect (3xx status)
       if (response.status >= 300 && response.status < 400) {
-        const location = response.headers['location'] || response.headers['Location'];
-        if (location) {
+        const locationHeader = (response.headers['location'] || response.headers['Location']) as string | string[] | undefined;
+        const locationStr = Array.isArray(locationHeader) ? locationHeader[0] : locationHeader;
+        if (locationStr) {
           // The redirect location contains the sign-in URL with tokens
           // It's in the format: http://localhost:9999/appflowy_web://#access_token=...
           // We need to extract the part after the host (appflowy_web://...)
 
           // Parse the redirect URL
-          const redirectUrl = new URL(location, actionLink);
+          const redirectUrl = new URL(locationStr as string, actionLink);
           // The path contains the actual redirect URL (appflowy_web://)
           const pathWithoutSlash = redirectUrl.pathname.substring(1); // Remove leading /
           const signInUrl = pathWithoutSlash + redirectUrl.hash;
@@ -148,7 +148,7 @@ export class AuthTestUtils {
    * Sign in a user using the generated sign-in URL
    * Replicates the logic from APIService.signInWithUrl
    */
-  signInWithTestUrl(email: string): Cypress.Chainable<void> {
+  signInWithTestUrl(email: string): Cypress.Chainable<any> {
     return this.generateSignInUrl(email).then((callbackLink) => {
       // Replicate signInWithUrl logic from http_api.ts
       // Extract hash from the callback link
@@ -208,7 +208,7 @@ export class AuthTestUtils {
             // Verify we're logged in and on the app page
             cy.url().should('not.include', '/login');
             cy.url().should('include', '/app');
-          });
+          }).then(() => undefined);
         });
       });
     });
@@ -227,9 +227,8 @@ export function signInTestUser(email: string = 'test@example.com'): Cypress.Chai
 declare global {
   namespace Cypress {
     interface Chainable {
-      signIn(email?: string): Chainable<void>;
+      signIn(email?: string): Chainable<any>;
       generateSignInUrl(email: string): Chainable<string>;
-      simulateAuthentication(options?: { email?: string; userId?: string; expiresIn?: number }): Chainable<void>;
     }
   }
 }
@@ -243,51 +242,4 @@ Cypress.Commands.add('signIn', (email: string = 'test@example.com') => {
 Cypress.Commands.add('generateSignInUrl', (email: string) => {
   const authUtils = new AuthTestUtils();
   return authUtils.generateSignInUrl(email);
-});
-
-/**
- * Simulate an authenticated user by setting a valid token in localStorage.
- * This is useful for E2E tests that need to bypass the login flow.
- * 
- * @param options - Configuration options
- * @param options.email - User email (defaults to random UUID@appflowy.io)
- * @param options.userId - User ID (defaults to random UUID)
- * @param options.expiresIn - Token expiration in seconds from now (defaults to 3600)
- * 
- * @example
- * // Use with default values
- * cy.simulateAuthentication();
- * 
- * @example
- * // Use with custom email
- * cy.simulateAuthentication({ email: 'test@appflowy.io' });
- * 
- * @example
- * // Use in beforeEach hook for all tests
- * beforeEach(() => {
- *   cy.simulateAuthentication();
- *   cy.visit('/app');
- * });
- */
-Cypress.Commands.add('simulateAuthentication', (options = {}) => {
-  const {
-    email = `${Math.random().toString(36).substring(7)}@appflowy.io`,
-    userId = `user-${Math.random().toString(36).substring(7)}`,
-    expiresIn = 3600
-  } = options;
-
-  const mockTokenData = {
-    access_token: `mock-token-${Math.random().toString(36).substring(7)}`,
-    refresh_token: 'mock-refresh-token',
-    expires_at: Math.floor(Date.now() / 1000) + expiresIn,
-    user: {
-      id: userId,
-      email: email,
-      name: 'Test User'
-    }
-  };
-
-  cy.window().then((win) => {
-    win.localStorage.setItem('token', JSON.stringify(mockTokenData));
-  });
 });

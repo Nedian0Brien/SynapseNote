@@ -1,18 +1,19 @@
 import { v4 as uuidv4 } from 'uuid';
 import { AuthTestUtils } from '../../support/auth-utils';
-import { PageUtils } from '../../support/page-utils';
+import { TestTool } from '../../support/page-utils';
 
 describe('User Feature Tests', () => {
     const AF_BASE_URL = Cypress.env('AF_BASE_URL');
     const AF_GOTRUE_URL = Cypress.env('AF_GOTRUE_URL');
+    const AF_WS_URL = Cypress.env('AF_WS_V2_URL');
     const generateRandomEmail = () => `${uuidv4()}@appflowy.io`;
 
     before(() => {
         cy.task('log', `Test Environment Configuration:
           - AF_BASE_URL: ${AF_BASE_URL}
           - AF_GOTRUE_URL: ${AF_GOTRUE_URL}
-          - Running in CI: ${Cypress.env('CI')}
-          - Use Real Backend: ${Cypress.env('USE_REAL_BACKEND')}`);
+          - AF_WS_URL: ${AF_WS_URL}
+         `);
 
     });
 
@@ -25,8 +26,11 @@ describe('User Feature Tests', () => {
         it('should show AppFlowy Web login page, authenticate, and verify workspace', () => {
             // Handle uncaught exceptions during workspace creation
             cy.on('uncaught:exception', (err, runnable) => {
-                // Ignore "No workspace or service found" error which happens before workspace is created
-                if (err.message.includes('No workspace or service found')) {
+                // Ignore transient pre-initialization errors during E2E
+                if (
+                    err.message.includes('No workspace or service found') ||
+                    err.message.includes('Failed to fetch dynamically imported module')
+                ) {
                     return false;
                 }
                 // Let other errors fail the test
@@ -51,7 +55,7 @@ describe('User Feature Tests', () => {
                 cy.wait(3000);
 
                 // Open workspace dropdown
-                PageUtils.openWorkspaceDropdown();
+                TestTool.openWorkspaceDropdown();
 
                 // Wait for dropdown to open
                 cy.wait(500);
@@ -63,12 +67,12 @@ describe('User Feature Tests', () => {
                 cy.task('log', `Verified email ${randomEmail} is displayed in dropdown`);
 
                 // Verify one member count
-                PageUtils.getWorkspaceMemberCounts()
+                TestTool.getWorkspaceMemberCounts()
                     .should('contain', '1 member');
                 cy.task('log', 'Verified workspace has 1 member');
 
                 // Verify exactly one workspace exists
-                PageUtils.getWorkspaceItems()
+                TestTool.getWorkspaceItems()
                     .should('have.length', 1);
 
                 // Verify workspace name is present

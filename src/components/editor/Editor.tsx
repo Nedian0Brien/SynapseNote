@@ -5,6 +5,12 @@ import { defaultLayoutStyle, EditorContextProvider, EditorContextState } from '@
 import React, { memo } from 'react';
 import './editor.scss';
 
+declare global {
+  interface Window {
+    __currentYDoc?: YDoc;
+  }
+}
+
 export interface EditorProps extends EditorContextState {
   doc: YDoc;
   onEditorConnected?: (editor: YjsEditor) => void;
@@ -17,6 +23,19 @@ export const Editor = memo(({ doc, onEditorConnected, onSelectionChange, layoutS
   const handleAddCodeGrammars = React.useCallback((blockId: string, grammar: string) => {
     setCodeGrammars((prev) => ({ ...prev, [blockId]: grammar }));
   }, []);
+
+  // Expose YDoc to window for testing/debugging (only in development)
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+      window.__currentYDoc = doc;
+    }
+
+    return () => {
+      if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+        delete window.__currentYDoc;
+      }
+    };
+  }, [doc]);
 
   return (
     <EditorContextProvider

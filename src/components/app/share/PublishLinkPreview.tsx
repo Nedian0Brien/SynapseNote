@@ -1,10 +1,10 @@
 import { UpdatePublishConfigPayload } from '@/application/types';
 import { ReactComponent as LinkIcon } from '@/assets/icons/link.svg';
 import { ReactComponent as DownIcon } from '@/assets/icons/toggle_list.svg';
-import { PublishManage } from '@/components/app/publish-manage';
-import { PublishNameSetting } from '@/components/app/publish-manage/PublishNameSetting';
 import { NormalModal } from '@/components/_shared/modal';
 import { notify } from '@/components/_shared/notify';
+import { PublishManage } from '@/components/app/publish-manage';
+import { PublishNameSetting } from '@/components/app/publish-manage/PublishNameSetting';
 import { copyTextToClipboard } from '@/utils/copy';
 import { CircularProgress, IconButton, InputBase, Tooltip } from '@mui/material';
 import React, { useEffect } from 'react';
@@ -63,6 +63,7 @@ function PublishLinkPreview({
               className={
                 'flex-1 cursor-default truncate rounded-[6px] border border-border-primary bg-fill-content-hover px-2 py-1'
               }
+              data-testid={'publish-origin'}
             >
               {window.location.origin}
             </div>
@@ -70,7 +71,7 @@ function PublishLinkPreview({
           {'/'}
           <div className={'flex w-[110px] items-center gap-1 rounded-[6px] border border-border-primary px-2 py-1'}>
             <Tooltip placement={'top'} title={publishInfo.namespace}>
-              <span className={'flex-1 truncate'}>{publishInfo.namespace}</span>
+              <span className={'flex-1 truncate'} data-testid={'publish-namespace'}>{publishInfo.namespace}</span>
             </Tooltip>
             <Tooltip placement={'top'} title={t('settings.sites.namespaceDescription')}>
               <IconButton
@@ -79,6 +80,7 @@ function PublishLinkPreview({
                   setSiteOpen(true);
                   onClose?.();
                 }}
+                data-testid={'open-publish-settings'}
               >
                 <DownIcon className={'rotate-90 transform'} />
               </IconButton>
@@ -96,6 +98,7 @@ function PublishLinkPreview({
                 disabled={!isOwner && !isPublisher}
                 inputProps={{
                   className: 'pb-0',
+                  'data-testid': 'publish-name-input',
                 }}
                 onBlur={() => {
                   void handleUpdatePublishName(publishName);
