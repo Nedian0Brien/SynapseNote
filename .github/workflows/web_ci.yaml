@@ -65,3 +65,48 @@ jobs:
           name: stats.html
           path: dist/stats.html
           retention-days: 30
+
+  docker-runtime-test:
+    if: github.event.pull_request.draft != true
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker image (runtime env injection test)
+        run: |
+          docker build -t appflowy-web-test:ci -f docker/Dockerfile .
+
+      - name: Run container with injected env vars
+        run: |
+          docker run -d --rm --name appflowy-web-test -p 8080:80 \
+            -e AF_BASE_URL=https://ci-backend.example.com \
+            -e AF_GOTRUE_URL=https://ci-backend.example.com/gotrue \
+            -e AF_WS_V2_URL=wss://ci-backend.example.com/ws/v2 \
+            appflowy-web-test:ci
+
+      - name: Wait for server to be ready
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8080/ >/dev/null 2>&1; then
+              echo "Server is up"; break; fi; sleep 1; done
+          curl -fsS http://localhost:8080/ >/dev/null
+
+      - name: Verify injected runtime config in index.html
+        run: |
+          set -e
+          HTML=$(curl -fsS http://localhost:8080/index.html)
+          echo "$HTML" | grep -q "window.__APP_CONFIG__" || (echo "Missing __APP_CONFIG__" && exit 1)
+          echo "$HTML" | grep -q "AF_BASE_URL: 'https://ci-backend.example.com'" || (echo "AF_BASE_URL not injected" && exit 1)
+          echo "$HTML" | grep -q "AF_GOTRUE_URL: 'https://ci-backend.example.com/gotrue'" || (echo "AF_GOTRUE_URL not injected" && exit 1)
+          echo "$HTML" | grep -q "AF_WS_V2_URL: 'wss://ci-backend.example.com/ws/v2'" || (echo "AF_WS_V2_URL not injected" && exit 1)
+
+      - name: Show container logs on failure
+        if: failure()
+        run: |
+          docker logs appflowy-web-test || true
+
+      - name: Cleanup container
+        if: always()
+        run: |
+          docker rm -f appflowy-web-test || true
