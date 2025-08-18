@@ -3,6 +3,7 @@ import isURL from 'validator/lib/isURL';
 
 import { useDatabaseContext } from '@/application/database-yjs';
 import { FileMediaCellDataItem } from '@/application/database-yjs/cell.type';
+import { getConfigValue } from '@/utils/runtime-config';
 
 function PreviewImage({ file, onClick }: { file: FileMediaCellDataItem; onClick: () => void }) {
   const { workspaceId } = useDatabaseContext();
@@ -11,7 +12,7 @@ function PreviewImage({ file, onClick }: { file: FileMediaCellDataItem; onClick:
     let fileUrl = file.url;
 
     if (!isURL(file.url)) {
-      fileUrl = import.meta.env.AF_BASE_URL + '/api/file_storage/' + workspaceId + '/v1/blob/' + file.url;
+      fileUrl = getConfigValue('AF_BASE_URL', '') + '/api/file_storage/' + workspaceId + '/v1/blob/' + file.url;
     }
 
     const url = new URL(fileUrl);

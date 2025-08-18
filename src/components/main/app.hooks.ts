@@ -1,16 +1,16 @@
 import { AFService, AFServiceConfig } from '@/application/services/services.type';
 import { User } from '@/application/types';
+import { getConfigValue } from '@/utils/runtime-config';
 import { createContext, useContext } from 'react';
 
-const baseURL = import.meta.env.AF_BASE_URL || 'https://test.appflowy.cloud';
-const gotrueURL = import.meta.env.AF_GOTRUE_URL || 'https://test.appflowy.cloud/gotrue';
-const wsURL = import.meta.env.AF_WS_URL || 'wss://test.appflowy.cloud/ws/v1';
+const baseURL = getConfigValue('AF_BASE_URL', 'https://test.appflowy.cloud');
+const gotrueURL = getConfigValue('AF_GOTRUE_URL', 'https://test.appflowy.cloud/gotrue');
 
 export const defaultConfig: AFServiceConfig = {
   cloudConfig: {
     baseURL,
     gotrueURL,
-    wsURL,
+    wsURL: '', // Legacy field - not used, keeping for backward compatibility
   },
 };
 

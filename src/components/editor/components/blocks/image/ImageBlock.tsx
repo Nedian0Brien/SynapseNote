@@ -17,6 +17,7 @@ import { FileHandler } from '@/utils/file';
 
 import ImageEmpty from './ImageEmpty';
 import ImageRender from './ImageRender';
+import { getConfigValue } from '@/utils/runtime-config';
 
 export const ImageBlock = memo(
   forwardRef<HTMLDivElement, EditorElementProps<ImageBlockNode>>(({ node, children, ...attributes }, ref) => {
@@ -43,7 +44,7 @@ export const ImageBlock = memo(
 
       const fileId = dataUrl;
 
-      return import.meta.env.AF_BASE_URL + '/api/file_storage/' + workspaceId + '/v1/blob/' + fileId;
+      return getConfigValue('AF_BASE_URL', '') + '/api/file_storage/' + workspaceId + '/v1/blob/' + fileId;
     }, [dataUrl, workspaceId]);
 
     const containerRef = useRef<HTMLDivElement>(null);
