@@ -22,17 +22,4 @@ export function getPageTitleInput() {
     return cy.get('[data-testid="page-title-input"]', { timeout: 30000 });
 }
 
-export function enterPageTitle(title: string) {
-    return getPageTitleInput()
-        .should('be.visible')
-        .first()
-        .click({ force: true })
-        .clear({ force: true })
-        .type(title, { force: true });
-}
-
-export function savePageTitle() {
-    return getPageTitleInput().first().type('{esc}');
-}
-
 

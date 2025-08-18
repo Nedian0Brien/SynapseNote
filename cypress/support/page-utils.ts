@@ -30,8 +30,6 @@ export class TestTool {
     static clickPageByName = Pages.clickPageByName;
     static getPageById = Pages.getPageById;
     static getPageTitleInput = Pages.getPageTitleInput;
-    static enterPageTitle = Pages.enterPageTitle;
-    static savePageTitle = Pages.savePageTitle;
 
     // ========== Page Actions ==========
     static clickPageMoreActions = PageActions.clickPageMoreActions;
@@ -94,7 +92,6 @@ export class TestTool {
     static prepareNewPageEditor = Flows.prepareNewPageEditor;
     static typeLinesInVisibleEditor = Flows.typeLinesInVisibleEditor;
     static openPageFromSidebar = Flows.openPageFromSidebar;
-    static openFirstAvailablePage = Flows.openFirstAvailablePage;
     static createPage = Flows.createPage;
     static createPageAndAddContent = Flows.createPageAndAddContent;
     static assertEditorContentEquals = Flows.assertEditorContentEquals;
@@ -144,8 +141,6 @@ export const {
     clickPageByName,
     getPageById,
     getPageTitleInput,
-    enterPageTitle,
-    savePageTitle,
 
     // Page Actions
     clickPageMoreActions,
@@ -197,7 +192,6 @@ export const {
     createPage,
     createPageAndAddContent,
     expandSpace,
-    openFirstAvailablePage,
     isSpaceExpanded,
 } = TestTool;
 

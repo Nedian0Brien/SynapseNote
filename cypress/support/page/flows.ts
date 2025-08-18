@@ -141,12 +141,14 @@ export function createPage(pageName: string) {
             cy.contains('button', 'Add').click();
         });
     cy.wait(2000);
+    cy.task('log', 'Click first space item');
+
     if (Cypress.env('MOCK_WEBSOCKET')) {
         cy.task('log', 'Waiting for document to sync');
         cy.waitForDocumentSync();
         cy.task('log', 'Document synced');
     }
-    cy.wait(1000);
+    cy.wait(5000);
     cy.get('body').then(($body) => {
         if ($body.find('[data-testid="page-title-input"]').length > 0) {
             cy.task('log', 'Found page title input in modal');

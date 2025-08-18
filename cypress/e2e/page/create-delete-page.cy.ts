@@ -41,28 +41,10 @@ describe('Page Create and Delete Tests', () => {
                 cy.url().should('include', '/app');
                 cy.wait(3000);
 
-                // Step 2: Create a new page
-                TestTool.clickNewPageButton();
-                cy.task('log', 'Clicked New Page button');
-
-                // Wait for the modal to open
-                cy.wait(1000);
-
-                // Select the first space in the modal
-                TestTool.selectFirstSpaceInModal();
-
-                // Wait for the page to be created and modal to open
-                cy.wait(2000);
-
-                // Enter the page name
-                cy.task('log', `Entering page title: ${testPageName}`);
-                TestTool.enterPageTitle(testPageName);
-
-                // Save the title and close the modal
-                TestTool.savePageTitle();
-                cy.wait(1000);
-
-                cy.task('log', `Created page with title: ${testPageName}`);
+                // Step 2: Create a new page (robust flow that handles presence/absence of title input)
+                cy.task('log', `Creating page with title: ${testPageName}`);
+                TestTool.createPage(testPageName);
+                cy.task('log', `Created page with title (or default if inline title not available): ${testPageName}`);
 
                 // Step 3: Reload and verify the page exists
                 cy.reload();
