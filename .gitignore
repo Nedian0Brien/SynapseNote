@@ -34,4 +34,4 @@ coverage
 
 cypress/snapshots/**/__diff_output__/
 **/.claude
-cypress/screenshots/**
+cypress/screenshots

@@ -13,6 +13,7 @@ import { useEditorContext } from '@/components/editor/EditorContext';
 import { GalleryPreview } from '@/components/_shared/gallery-preview';
 import { notify } from '@/components/_shared/notify';
 import { copyTextToClipboard } from '@/utils/copy';
+import { getConfigValue } from '@/utils/runtime-config';
 
 const GalleryBlock = memo(
   forwardRef<HTMLDivElement, EditorElementProps<GalleryBlockNode>>(({ node, children, ...attributes }, ref) => {
@@ -34,7 +35,7 @@ const GalleryBlock = memo(
         let imageUrl = image.url;
 
         if (!isURL(image.url)) {
-          imageUrl = import.meta.env.AF_BASE_URL + '/api/file_storage/' + workspaceId + '/v1/blob/' + image.url;
+          imageUrl = getConfigValue('AF_BASE_URL', '') + '/api/file_storage/' + workspaceId + '/v1/blob/' + image.url;
         }
 
         const url = new URL(imageUrl);
