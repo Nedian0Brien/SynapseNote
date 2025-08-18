@@ -21,10 +21,10 @@ if [ -z "${AF_WS_V2_URL}" ]; then
 fi
 
 # Create inline config script
-CONFIG_SCRIPT="<script>window.__APP_CONFIG__ = {AF_BASE_URL: '${AF_BASE_URL}',AF_GOTRUE_URL: '${AF_GOTRUE_URL}',AF_WS_V2_URL: '${AF_WS_V2_URL}'};</script>"
+CONFIG_SCRIPT="<script>window.__APP_CONFIG__={AF_BASE_URL:'${AF_BASE_URL}',AF_GOTRUE_URL:'${AF_GOTRUE_URL}',AF_WS_V2_URL:'${AF_WS_V2_URL}'};</script>"
 
-# Inject the config script into index.html before the closing head tag
-sed -i "s|<!-- Runtime config will be injected here -->|${CONFIG_SCRIPT}|g" /usr/share/nginx/html/index.html
+# Inject the config script into index.html right before </head>
+sed -i "s|</head>|${CONFIG_SCRIPT}</head>|g" /usr/share/nginx/html/index.html
 
 echo "Runtime configuration injected:"
 echo "  AF_BASE_URL: ${AF_BASE_URL}"
