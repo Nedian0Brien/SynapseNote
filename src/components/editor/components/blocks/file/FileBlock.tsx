@@ -16,6 +16,7 @@ import { EditorElementProps, FileNode } from '@/components/editor/editor.type';
 import { useEditorContext } from '@/components/editor/EditorContext';
 import { notify } from '@/components/_shared/notify';
 import { FileHandler } from '@/utils/file';
+import { getConfigValue } from '@/utils/runtime-config';
 import { openUrl } from '@/utils/url';
 
 export const FileBlock = memo(
@@ -41,7 +42,7 @@ export const FileBlock = memo(
 
       const fileId = dataUrl;
 
-      return import.meta.env.AF_BASE_URL + '/api/file_storage/' + workspaceId + '/v1/blob/' + fileId;
+      return getConfigValue('AF_BASE_URL', '') + '/api/file_storage/' + workspaceId + '/v1/blob/' + fileId;
     }, [dataUrl, workspaceId]);
 
     const className = useMemo(() => {

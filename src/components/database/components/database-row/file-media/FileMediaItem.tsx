@@ -8,6 +8,7 @@ import FileMediaMore from '@/components/database/components/cell/file-media/File
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { openUrl } from '@/utils/url';
+import { getConfigValue } from '@/utils/runtime-config';
 
 function FileMediaItem({
   file,
@@ -53,7 +54,7 @@ function FileMediaItem({
 
     const fileId = file.url;
 
-    return import.meta.env.AF_BASE_URL + '/api/file_storage/' + workspaceId + '/v1/blob/' + fileId;
+    return getConfigValue('AF_BASE_URL', '') + '/api/file_storage/' + workspaceId + '/v1/blob/' + fileId;
   }, [file.url, workspaceId]);
 
   const [hover, setHover] = useState(false);
@@ -70,7 +71,7 @@ function FileMediaItem({
           }
 
           const fileId = file.url;
-          const newUrl = import.meta.env.AF_BASE_URL + '/api/file_storage/' + workspaceId + '/v1/blob/' + fileId;
+          const newUrl = getConfigValue('AF_BASE_URL', '') + '/api/file_storage/' + workspaceId + '/v1/blob/' + fileId;
 
           void openUrl(newUrl, '_blank');
         }

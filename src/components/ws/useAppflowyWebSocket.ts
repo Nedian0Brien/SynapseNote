@@ -3,9 +3,10 @@ import { useCallback, useMemo, useState } from 'react';
 import useWebSocket from 'react-use-websocket';
 
 import { getTokenParsed } from '@/application/session/token';
+import { getConfigValue } from '@/utils/runtime-config';
 import { messages } from '@/proto/messages';
 
-const wsURL = import.meta.env.AF_WS_V2_URL || 'ws://localhost:8000/ws/v2';
+const wsURL = getConfigValue('AF_WS_V2_URL', 'ws://localhost:8000/ws/v2');
 
 // WebSocket close code enum
 enum CloseCode {
