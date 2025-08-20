@@ -300,6 +300,10 @@
       "$type": "color",
       "$value": "{Blue.alpha-blue-500-20}"
     },
+    "button-active": {
+      "$type": "color",
+      "$value": "{Blue.alpha-blue-500-10}"
+    },
     "info-light": {
       "$type": "color",
       "$value": "{Blue.100}"
@@ -457,6 +461,172 @@
       "$value": "{Neutral.white}"
     }
   },
+  "Palette": {
+    "text": {
+      "color-1": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Rose.500}"
+      },
+      "color-2": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Papaya.500}"
+      },
+      "color-3": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Tangerine.500}"
+      },
+      "color-4": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Mango.500}"
+      },
+      "color-5": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Lemon.500}"
+      },
+      "color-6": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Olive.500}"
+      },
+      "color-7": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Lime.500}"
+      },
+      "color-8": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Grass.500}"
+      },
+      "color-9": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Forest.500}"
+      },
+      "color-10": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Jade.500}"
+      },
+      "color-11": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Aqua.500}"
+      },
+      "color-12": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Azure.500}"
+      },
+      "color-13": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Denim.500}"
+      },
+      "color-14": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Mauve.500}"
+      },
+      "color-15": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Lavender.500}"
+      },
+      "color-16": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Lilac.500}"
+      },
+      "color-17": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Mallow.500}"
+      },
+      "color-18": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Camellia.500}"
+      },
+      "color-19": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Smoke.500}"
+      },
+      "color-20": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Iron.500}"
+      }
+    },
+    "bg": {
+      "color-1": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Rose.300}"
+      },
+      "color-2": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Papaya.300}"
+      },
+      "color-3": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Tangerine.300}"
+      },
+      "color-4": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Mango.300}"
+      },
+      "color-5": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Lemon.300}"
+      },
+      "color-6": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Olive.300}"
+      },
+      "color-7": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Lime.300}"
+      },
+      "color-8": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Grass.300}"
+      },
+      "color-9": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Forest.300}"
+      },
+      "color-10": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Jade.300}"
+      },
+      "color-11": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Aqua.300}"
+      },
+      "color-12": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Azure.300}"
+      },
+      "color-13": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Denim.300}"
+      },
+      "color-14": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Mauve.300}"
+      },
+      "color-15": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Lavender.300}"
+      },
+      "color-16": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Lilac.300}"
+      },
+      "color-17": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Mallow.300}"
+      },
+      "color-18": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Camellia.300}"
+      },
+      "color-19": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Smoke.300}"
+      },
+      "color-20": {
+        "$type": "color",
+        "$value": "{Subtle_Color.Iron.300}"
+      }
+    }
+  },
   "Badge": {
     "color-1": {
       "light-1": {
@@ -482,10 +652,6 @@
       "thick-3": {
         "$type": "color",
         "$value": "{Subtle_Color.Rose.600}"
-      },
-      "thick-4": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Rose.700}"
       }
     },
     "color-2": {
@@ -512,10 +678,6 @@
       "thick-3": {
         "$type": "color",
         "$value": "{Subtle_Color.Papaya.600}"
-      },
-      "thick-4": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Papaya.700}"
       }
     },
     "color-3": {
@@ -542,10 +704,6 @@
       "thick-3": {
         "$type": "color",
         "$value": "{Subtle_Color.Tangerine.600}"
-      },
-      "thick-4": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Tangerine.700}"
       }
     },
     "color-4": {
@@ -572,10 +730,6 @@
       "thick-3": {
         "$type": "color",
         "$value": "{Subtle_Color.Mango.600}"
-      },
-      "thick-4": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Mango.700}"
       }
     },
     "color-5": {
@@ -602,10 +756,6 @@
       "thick-3": {
         "$type": "color",
         "$value": "{Subtle_Color.Lemon.600}"
-      },
-      "thick-4": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Lemon.700}"
       }
     },
     "color-6": {
@@ -632,10 +782,6 @@
       "thick-3": {
         "$type": "color",
         "$value": "{Subtle_Color.Olive.600}"
-      },
-      "thick-4": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Olive.700}"
       }
     },
     "color-7": {
@@ -662,10 +808,6 @@
       "thick-3": {
         "$type": "color",
         "$value": "{Subtle_Color.Lime.600}"
-      },
-      "thick-4": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Lime.700}"
       }
     },
     "color-8": {
@@ -692,10 +834,6 @@
       "thick-3": {
         "$type": "color",
         "$value": "{Subtle_Color.Grass.600}"
-      },
-      "thick-4": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Grass.700}"
       }
     },
     "color-9": {
@@ -722,10 +860,6 @@
       "thick-3": {
         "$type": "color",
         "$value": "{Subtle_Color.Forest.600}"
-      },
-      "thick-4": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Forest.700}"
       }
     },
     "color-10": {
@@ -752,10 +886,6 @@
       "thick-3": {
         "$type": "color",
         "$value": "{Subtle_Color.Jade.600}"
-      },
-      "thick-4": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Jade.700}"
       }
     },
     "color-11": {
@@ -782,10 +912,6 @@
       "thick-3": {
         "$type": "color",
         "$value": "{Subtle_Color.Aqua.600}"
-      },
-      "thick-4": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Aqua.700}"
       }
     },
     "color-12": {
@@ -1023,170 +1149,264 @@
       }
     }
   },
-  "Palette": {
-    "text": {
-      "color-1": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Rose.500}"
-      },
-      "color-2": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Papaya.500}"
-      },
-      "color-3": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Tangerine.500}"
-      },
-      "color-4": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Mango.500}"
-      },
-      "color-5": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Lemon.500}"
-      },
-      "color-6": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Olive.500}"
-      },
-      "color-7": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Lime.500}"
-      },
-      "color-8": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Grass.500}"
-      },
-      "color-9": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Forest.500}"
-      },
-      "color-10": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Jade.500}"
-      },
-      "color-11": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Aqua.500}"
-      },
-      "color-12": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Azure.500}"
-      },
-      "color-13": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Denim.500}"
-      },
-      "color-14": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Mauve.500}"
-      },
-      "color-15": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Lavender.500}"
-      },
-      "color-16": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Lilac.500}"
-      },
-      "color-17": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Mallow.500}"
-      },
-      "color-18": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Camellia.500}"
-      },
-      "color-19": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Smoke.500}"
-      },
-      "color-20": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Iron.500}"
-      }
+  "Tag": {
+    "fill-01-light": {
+      "$type": "color",
+      "$value": "{Subtle_Color.Mauve.200}",
+      "$description": "Pearl"
     },
-    "bg": {
-      "color-1": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Rose.300}"
-      },
-      "color-2": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Papaya.300}"
-      },
-      "color-3": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Tangerine.300}"
-      },
-      "color-4": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Mango.300}"
-      },
-      "color-5": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Lemon.300}"
-      },
-      "color-6": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Olive.300}"
-      },
-      "color-7": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Lime.300}"
-      },
-      "color-8": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Grass.300}"
-      },
-      "color-9": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Forest.300}"
-      },
-      "color-10": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Jade.300}"
-      },
-      "color-11": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Aqua.300}"
-      },
-      "color-12": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Azure.300}"
-      },
-      "color-13": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Denim.300}"
-      },
-      "color-14": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Mauve.300}"
-      },
-      "color-15": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Lavender.300}"
-      },
-      "color-16": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Lilac.300}"
-      },
-      "color-17": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Mallow.300}"
-      },
-      "color-18": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Camellia.300}"
-      },
-      "color-19": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Smoke.300}"
-      },
-      "color-20": {
-        "$type": "color",
-        "$value": "{Subtle_Color.Iron.300}"
-      }
+    "fill-01-thick": {
+      "$type": "color",
+      "$value": "{Subtle_Color.Mauve.600}",
+      "$description": "Pearl"
+    },
+    "text-01-light": {
+      "$type": "color",
+      "$value": "{Subtle_Color.Mauve.600}",
+      "$description": "Sky"
+    },
+    "text-01-thick": {
+      "$type": "color",
+      "$value": "{Neutral.white}",
+      "$description": "Sky"
+    },
+    "fill-02-light": {
+      "$type": "color",
+      "$value": "{Subtle_Color.Lilac.200}",
+      "$description": "Pearl"
+    },
+    "fill-02-thick": {
+      "$type": "color",
+      "$value": "{Subtle_Color.Lilac.600}",
+      "$description": "Pearl"
+    },
+    "text-02-light": {
+      "$type": "color",
+      "$value": "{Subtle_Color.Lilac.600}",
+      "$description": "Sky"
+    },
+    "text-02-thick": {
+      "$type": "color",
+      "$value": "{Neutral.white}",
+      "$description": "Sky"
+    },
+    "fill-03-light": {
+      "$type": "color",
+      "$value": "{Subtle_Color.Camellia.200}",
+      "$description": "Pearl"
+    },
+    "fill-03-thick": {
+      "$type": "color",
+      "$value": "{Subtle_Color.Camellia.600}",
+      "$description": "Pearl"
+    },
+    "text-03-light": {
+      "$type": "color",
+      "$value": "{Subtle_Color.Camellia.600}",
+      "$description": "Sky"
+    },
+    "text-03-thick": {
+      "$type": "color",
+      "$value": "{Neutral.white}",
+      "$description": "Sky"
+    },
+    "fill-04-light": {
+      "$type": "color",
+      "$value": "{Subtle_Color.Papaya.200}",
+      "$description": "Blush"
+    },
+    "fill-04-thick": {
+      "$type": "color",
+      "$value": "{Subtle_Color.Papaya.600}",
+      "$description": "Blush"
+    },
+    "text-04-light": {
+      "$type": "color",
+      "$value": "{Subtle_Color.Papaya.600}",
+      "$description": "Blush"
+    },
+    "text-04-thick": {
+      "$type": "color",
+      "$value": "{Neutral.white}",
+      "$description": "Blush"
+    },
+    "fill-05-light": {
+      "$type": "color",
+      "$value": "{Subtle_Color.Mango.200}",
+      "$description": "Peach"
+    },
+    "fill-05-thick": {
+      "$type": "color",
+      "$value": "{Subtle_Color.Mango.600}",
+      "$description": "Peach"
+    },
+    "text-05-light": {
+      "$type": "color",
+      "$value": "{Subtle_Color.Mango.600}",
+      "$description": "Peach"
+    },
+    "text-05-thick": {
+      "$type": "color",
+      "$value": "{Neutral.white}",
+      "$description": "Peach"
+    },
+    "fill-06-light": {
+      "$type": "color",
+      "$value": "{Subtle_Color.Olive.200}",
+      "$description": "Cream"
+    },
+    "fill-06-thick": {
+      "$type": "color",
+      "$value": "{Subtle_Color.Olive.600}",
+      "$description": "Cream"
+    },
+    "text-06-light": {
+      "$type": "color",
+      "$value": "{Subtle_Color.Olive.600}",
+      "$description": "Cream"
+    },
+    "text-06-thick": {
+      "$type": "color",
+      "$value": "{Neutral.white}",
+      "$description": "Cream"
+    },
+    "fill-07-light": {
+      "$type": "color",
+      "$value": "{Subtle_Color.Grass.200}",
+      "$description": "Mint"
+    },
+    "fill-07-thick": {
+      "$type": "color",
+      "$value": "{Subtle_Color.Grass.600}",
+      "$description": "Mint"
+    },
+    "text-07-light": {
+      "$type": "color",
+      "$value": "{Subtle_Color.Grass.600}",
+      "$description": "Mint"
+    },
+    "text-07-thick": {
+      "$type": "color",
+      "$value": "{Neutral.white}",
+      "$description": "Mint"
+    },
+    "fill-08-light": {
+      "$type": "color",
+      "$value": "{Subtle_Color.Jade.200}",
+      "$description": "Sky"
+    },
+    "fill-08-thick": {
+      "$type": "color",
+      "$value": "{Subtle_Color.Jade.600}",
+      "$description": "Sky"
+    },
+    "text-08-light": {
+      "$type": "color",
+      "$value": "{Subtle_Color.Jade.600}",
+      "$description": "Sky"
+    },
+    "text-08-thick": {
+      "$type": "color",
+      "$value": "{Neutral.white}",
+      "$description": "Sky"
+    },
+    "fill-09-light": {
+      "$type": "color",
+      "$value": "{Subtle_Color.Azure.200}",
+      "$description": "Lilac"
+    },
+    "fill-09-thick": {
+      "$type": "color",
+      "$value": "{Subtle_Color.Azure.600}",
+      "$description": "Lilac"
+    },
+    "text-09-light": {
+      "$type": "color",
+      "$value": "{Subtle_Color.Azure.600}",
+      "$description": "Lilac"
+    },
+    "text-09-thick": {
+      "$type": "color",
+      "$value": "{Neutral.white}",
+      "$description": "Lilac"
+    },
+    "fill-10-light": {
+      "$type": "color",
+      "$value": "{Subtle_Color.Iron.200}",
+      "$description": "Pearl"
+    },
+    "fill-10-thick": {
+      "$type": "color",
+      "$value": "{Subtle_Color.Iron.600}",
+      "$description": "Pearl"
+    },
+    "text-10-light": {
+      "$type": "color",
+      "$value": "{Subtle_Color.Iron.600}",
+      "$description": "Sky"
+    },
+    "text-10-thick": {
+      "$type": "color",
+      "$value": "{Neutral.white}",
+      "$description": "Sky"
+    }
+  },
+  "Comment": {
+    "fill-01": {
+      "$type": "color",
+      "$value": "{Yellow.alpha-yellow-500-15}"
+    },
+    "fill-01-select": {
+      "$type": "color",
+      "$value": "{Yellow.alpha-yellow-500-25}"
+    },
+    "fill-02": {
+      "$type": "color",
+      "$value": "{Yellow.alpha-yellow-500-25}"
+    },
+    "fill-02-select": {
+      "$type": "color",
+      "$value": "{Yellow.alpha-yellow-500-35}"
+    },
+    "fill-03": {
+      "$type": "color",
+      "$value": "{Yellow.alpha-yellow-500-35}"
+    },
+    "fill-03-select": {
+      "$type": "color",
+      "$value": "{Yellow.alpha-yellow-500-45}"
+    },
+    "border-01": {
+      "$type": "color",
+      "$value": "{Yellow.alpha-yellow-500-30}"
+    },
+    "border-01-select": {
+      "$type": "color",
+      "$value": "{Yellow.alpha-yellow-500-60}"
+    },
+    "border-02": {
+      "$type": "color",
+      "$value": "{Yellow.alpha-yellow-500-60}"
+    },
+    "border-02-select": {
+      "$type": "color",
+      "$value": "{Yellow.alpha-yellow-500-90}"
+    },
+    "border-03": {
+      "$type": "color",
+      "$value": "{Yellow.alpha-yellow-500-90}"
+    },
+    "border-03-select": {
+      "$type": "color",
+      "$value": "{Yellow.500}"
+    },
+    "icon": {
+      "$type": "color",
+      "$value": "{Yellow.800}"
+    },
+    "highlight": {
+      "$type": "color",
+      "$value": "{Subtle_Color.Azure.alpha-azure-500-10}"
     }
   },
   "Brand": {

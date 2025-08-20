@@ -36,7 +36,7 @@ export function getColorByOption (text: string): SelectOptionColor {
   hash = Math.abs(hash);
 
   const colors = Object.values(SelectOptionColor);
-  const colorIndex = hash % colors.length;
+  const colorIndex = hash % 10;
 
   return colors[colorIndex];
 }

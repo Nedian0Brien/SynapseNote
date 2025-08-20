@@ -1,11 +1,15 @@
 import { parseSelectOptionTypeOptions, SelectOption, useFieldSelector } from '@/application/database-yjs';
 import { Tag } from '@/components/_shared/tag';
-import { SelectOptionColorMap } from '@/components/database/components/cell/cell.const';
+import { SelectOptionColorMap, SelectOptionFgColorMap } from '@/components/database/components/cell/cell.const';
 import { DropdownMenuItemTick, dropdownMenuItemVariants } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { useCallback, useMemo } from 'react';
 
-export function SelectOptionList ({ fieldId, selectedIds, onSelect }: {
+export function SelectOptionList({
+  fieldId,
+  selectedIds,
+  onSelect,
+}: {
   fieldId: string;
   selectedIds: string[];
   onSelect: (optionId: string) => void;
@@ -26,20 +30,21 @@ export function SelectOptionList ({ fieldId, selectedIds, onSelect }: {
           data-testid={'select-option-list'}
           data-checked={isSelected}
           className={cn(dropdownMenuItemVariants({ variant: 'default' }))}
-          onClick={e => {
+          onClick={(e) => {
             e.stopPropagation();
             onSelect(option.id);
           }}
         >
           <Tag
             label={option.name}
-            color={SelectOptionColorMap[option.color]}
+            textColor={SelectOptionFgColorMap[option.color]}
+            bgColor={SelectOptionColorMap[option.color]}
           />
           {isSelected && <DropdownMenuItemTick />}
         </div>
       );
     },
-    [onSelect, selectedIds],
+    [onSelect, selectedIds]
   );
 
   if (!field || !typeOption) return null;

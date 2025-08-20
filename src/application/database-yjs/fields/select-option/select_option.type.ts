@@ -1,15 +1,26 @@
 import { Filter } from '@/application/database-yjs';
 
 export enum SelectOptionColor {
-  Purple = 'Purple',
-  Pink = 'Pink',
-  LightPink = 'LightPink',
-  Orange = 'Orange',
-  Yellow = 'Yellow',
-  Lime = 'Lime',
-  Green = 'Green',
-  Aqua = 'Aqua',
-  Blue = 'Blue',
+  OptionColor1 = 'Purple',
+  OptionColor2 = 'Pink',
+  OptionColor3 = 'LightPink',
+  OptionColor4 = 'Orange',
+  OptionColor5 = 'Yellow',
+  OptionColor6 = 'Lime',
+  OptionColor7 = 'Green',
+  OptionColor8 = 'Aqua',
+  OptionColor9 = 'Blue',
+  OptionColor10 = 'Cream',
+  OptionColor11 = 'Mint',
+  OptionColor12 = 'Sky',
+  OptionColor13 = 'Lilac',
+  OptionColor14 = 'Pearl',
+  OptionColor15 = 'Sunset',
+  OptionColor16 = 'Coral',
+  OptionColor17 = 'Sapphire',
+  OptionColor18 = 'Moss',
+  OptionColor19 = 'Sand',
+  OptionColor20 = 'Charcoal',
 }
 
 export enum SelectOptionFilterCondition {

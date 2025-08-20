@@ -134,6 +134,10 @@
       "$type": "color",
       "$value": "#003c77"
     },
+    "alpha-blue-500-10": {
+      "$type": "color",
+      "$value": "#00b5ff1a"
+    },
     "alpha-blue-500-15": {
       "$type": "color",
       "$value": "#00b5ff26"
@@ -406,6 +410,34 @@
     "1000": {
       "$type": "color",
       "$value": "#7f6200"
+    },
+    "alpha-yellow-500-15": {
+      "$type": "color",
+      "$value": "#ffce0026"
+    },
+    "alpha-yellow-500-25": {
+      "$type": "color",
+      "$value": "#ffce0040"
+    },
+    "alpha-yellow-500-30": {
+      "$type": "color",
+      "$value": "#ffce004d"
+    },
+    "alpha-yellow-500-35": {
+      "$type": "color",
+      "$value": "#ffce0059"
+    },
+    "alpha-yellow-500-45": {
+      "$type": "color",
+      "$value": "#ffce0073"
+    },
+    "alpha-yellow-500-60": {
+      "$type": "color",
+      "$value": "#ffce0099"
+    },
+    "alpha-yellow-500-90": {
+      "$type": "color",
+      "$value": "#ffce00e5"
     }
   },
   "Subtle_Color": {
@@ -433,10 +465,6 @@
       "600": {
         "$type": "color",
         "$value": "#9e3b3b"
-      },
-      "700": {
-        "$type": "color",
-        "$value": "#100505"
       }
     },
     "Papaya": {
@@ -463,10 +491,6 @@
       "600": {
         "$type": "color",
         "$value": "#a54b24"
-      },
-      "700": {
-        "$type": "color",
-        "$value": "#33221b"
       }
     },
     "Tangerine": {
@@ -493,10 +517,6 @@
       "600": {
         "$type": "color",
         "$value": "#9a570c"
-      },
-      "700": {
-        "$type": "color",
-        "$value": "#44341e"
       }
     },
     "Mango": {
@@ -523,10 +543,6 @@
       "600": {
         "$type": "color",
         "$value": "#906000"
-      },
-      "700": {
-        "$type": "color",
-        "$value": "#4f4020"
       }
     },
     "Lemon": {
@@ -553,10 +569,6 @@
       "600": {
         "$type": "color",
         "$value": "#866800"
-      },
-      "700": {
-        "$type": "color",
-        "$value": "#574d1c"
       }
     },
     "Olive": {
@@ -583,10 +595,6 @@
       "600": {
         "$type": "color",
         "$value": "#627300"
-      },
-      "700": {
-        "$type": "color",
-        "$value": "#404207"
       }
     },
     "Lime": {
@@ -613,10 +621,6 @@
       "600": {
         "$type": "color",
         "$value": "#637000"
-      },
-      "700": {
-        "$type": "color",
-        "$value": "#313908"
       }
     },
     "Grass": {
@@ -643,10 +647,6 @@
       "600": {
         "$type": "color",
         "$value": "#456514"
-      },
-      "700": {
-        "$type": "color",
-        "$value": "#273611"
       }
     },
     "Forest": {
@@ -673,10 +673,6 @@
       "600": {
         "$type": "color",
         "$value": "#2b6c20"
-      },
-      "700": {
-        "$type": "color",
-        "$value": "#1a2e17"
       }
     },
     "Jade": {
@@ -703,10 +699,6 @@
       "600": {
         "$type": "color",
         "$value": "#127b47"
-      },
-      "700": {
-        "$type": "color",
-        "$value": "#0f231a"
       }
     },
     "Aqua": {
@@ -733,10 +725,6 @@
       "600": {
         "$type": "color",
         "$value": "#00727e"
-      },
-      "700": {
-        "$type": "color",
-        "$value": "#0d1a1c"
       }
     },
     "Azure": {
@@ -763,6 +751,10 @@
       "600": {
         "$type": "color",
         "$value": "#0c5b9e"
+      },
+      "alpha-azure-500-10": {
+        "$type": "color",
+        "$value": "#0877cc1a"
       }
     },
     "Denim": {

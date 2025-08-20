@@ -7,7 +7,7 @@ export interface ChecklistCellData {
   percentage: number;
 }
 
-export function parseChecklistData (data: string): ChecklistCellData | null {
+export function parseChecklistData(data: string): ChecklistCellData | null {
   try {
     const { options, selected_option_ids } = JSON.parse(data);
     const percentage = selected_option_ids.length / options.length;
@@ -22,13 +22,13 @@ export function parseChecklistData (data: string): ChecklistCellData | null {
   }
 }
 
-export function addTask (data: string, taskName: string): string {
+export function addTask(data: string, taskName: string): string {
   const parsedData = parseChecklistData(data);
 
   const task: SelectOption = {
     id: generateUUID(),
     name: taskName,
-    color: SelectOptionColor.Purple,
+    color: SelectOptionColor.OptionColor1,
   };
 
   if (!parsedData) {
@@ -50,7 +50,7 @@ export function addTask (data: string, taskName: string): string {
   });
 }
 
-export function toggleSelectedTask (data: string, taskId: string): string {
+export function toggleSelectedTask(data: string, taskId: string): string {
   const parsedData = parseChecklistData(data);
 
   if (!parsedData) {
@@ -70,7 +70,7 @@ export function toggleSelectedTask (data: string, taskId: string): string {
   });
 }
 
-export function updateTask (data: string, taskId: string, taskName: string): string {
+export function updateTask(data: string, taskId: string, taskName: string): string {
   const parsedData = parseChecklistData(data);
 
   if (!parsedData) {
@@ -96,7 +96,7 @@ export function updateTask (data: string, taskId: string, taskName: string): str
   });
 }
 
-export function removeTask (data: string, taskId: string): string {
+export function removeTask(data: string, taskId: string): string {
   const parsedData = parseChecklistData(data);
 
   if (!parsedData) {
@@ -114,7 +114,7 @@ export function removeTask (data: string, taskId: string): string {
   });
 }
 
-export function reorderTasks (data: string, { beforeId, taskId }: { beforeId?: string, taskId: string }): string {
+export function reorderTasks(data: string, { beforeId, taskId }: { beforeId?: string, taskId: string }): string {
   const parsedData = parseChecklistData(data);
 
   if (!parsedData) {
