@@ -108,7 +108,7 @@ export default defineConfig({
     cors: false,
     sourcemapIgnoreList: false,
   },
-  envPrefix: ['AF'],
+  envPrefix: ['APPFLOWY'],
   esbuild: {
     keepNames: true,
     sourcesContent: true,

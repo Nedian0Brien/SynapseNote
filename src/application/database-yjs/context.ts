@@ -11,6 +11,7 @@ import {
   LoadView,
   LoadViewMeta,
   RowId,
+  Subscription,
   TestDatabasePromptConfig,
   UpdatePagePayload,
   View,
@@ -56,6 +57,7 @@ export interface DatabaseContextState {
   requestInstance?: AxiosInstance | null;
   checkIfRowDocumentExists?: (documentId: string) => Promise<void>;
   eventEmitter?: EventEmitter;
+  getSubscriptions?: (() => Promise<Subscription[]>) | undefined;
 }
 
 export const DatabaseContext = createContext<DatabaseContextState | null>(null);

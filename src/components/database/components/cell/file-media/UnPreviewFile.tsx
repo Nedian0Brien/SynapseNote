@@ -26,7 +26,7 @@ function UnPreviewFile({ file }: { file: FileMediaCellDataItem }) {
             }
 
             const fileId = file.url;
-            const newUrl = getConfigValue('AF_BASE_URL', '') + '/api/file_storage/' + workspaceId + '/v1/blob/' + fileId;
+            const newUrl = getConfigValue('APPFLOWY_BASE_URL', '') + '/api/file_storage/' + workspaceId + '/v1/blob/' + fileId;
 
             void openUrl(newUrl, '_blank');
           }}

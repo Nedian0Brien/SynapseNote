@@ -1,30 +1,29 @@
 import { FC, useMemo } from 'react';
 
 import { ReactComponent as CircleIcon } from '@/assets/icons/circle.svg';
+import { cn } from '@/lib/utils';
 
 export interface TagProps {
-  color?: string;
+  bgColor?: string;
+  textColor?: string;
   label?: string;
   badge?: string;
 }
 
-export const Tag: FC<TagProps> = ({ color, label, badge }) => {
+export const Tag: FC<TagProps> = ({ bgColor, textColor, label, badge }) => {
   const className = useMemo(() => {
-    const classList = [
-      'rounded-[6px]',
-      'font-medium min-w-[22px]',
-      'w-fit flex items-center gap-0.5 truncate leading-[20px] py-[1px] px-1 max-w-full justify-center',
-    ];
-
-    if (color) classList.push(`text-text-primary`);
-    if (badge) classList.push('px-2 gap-1');
-    return classList.join(' ');
-  }, [color, badge]);
+    return cn(
+      'text-[0.75rem] leading-[1.5] truncate',
+      'min-w-[22px] w-fit flex items-center gap-0.5 py-[1px] px-2 max-w-full justify-center, rounded-[6px]',
+      badge && 'px-2 gap-1'
+    );
+  }, [badge]);
 
   return (
     <div
       style={{
-        backgroundColor: color ? `var(${color})` : undefined,
+        backgroundColor: bgColor ? `var(${bgColor})` : undefined,
+        color: `var(${textColor || '--text-primary'})`,
       }}
       className={className}
     >

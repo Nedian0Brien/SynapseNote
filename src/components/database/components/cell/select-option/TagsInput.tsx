@@ -7,15 +7,26 @@ import { ReactComponent as CloseIcon } from '@/assets/icons/close.svg';
 import { cn } from '@/lib/utils';
 
 const tagColorClasses = {
-  [SelectOptionColor.Purple]: `bg-tint-purple`,
-  [SelectOptionColor.Pink]: `bg-tint-pink`,
-  [SelectOptionColor.LightPink]: `bg-tint-red`,
-  [SelectOptionColor.Orange]: `bg-tint-orange`,
-  [SelectOptionColor.Yellow]: `bg-tint-yellow`,
-  [SelectOptionColor.Lime]: `bg-tint-lime`,
-  [SelectOptionColor.Green]: `bg-tint-green`,
-  [SelectOptionColor.Aqua]: `bg-tint-aqua`,
-  [SelectOptionColor.Blue]: `bg-tint-blue`,
+  [SelectOptionColor.OptionColor1]: 'bg-tag-fill-01-light text-tag-text-01-light',
+  [SelectOptionColor.OptionColor2]: 'bg-tag-fill-02-light text-tag-text-02-light',
+  [SelectOptionColor.OptionColor3]: 'bg-tag-fill-03-light text-tag-text-03-light',
+  [SelectOptionColor.OptionColor4]: 'bg-tag-fill-04-light text-tag-text-04-light',
+  [SelectOptionColor.OptionColor5]: 'bg-tag-fill-05-light text-tag-text-05-light',
+  [SelectOptionColor.OptionColor6]: 'bg-tag-fill-06-light text-tag-text-06-light',
+  [SelectOptionColor.OptionColor7]: 'bg-tag-fill-07-light text-tag-text-07-light',
+  [SelectOptionColor.OptionColor8]: 'bg-tag-fill-08-light text-tag-text-08-light',
+  [SelectOptionColor.OptionColor9]: 'bg-tag-fill-09-light text-tag-text-09-light',
+  [SelectOptionColor.OptionColor10]: 'bg-tag-fill-10-light text-tag-text-10-light',
+  [SelectOptionColor.OptionColor11]: 'bg-tag-fill-01-thick text-tag-text-01-thick',
+  [SelectOptionColor.OptionColor12]: 'bg-tag-fill-02-thick text-tag-text-02-thick',
+  [SelectOptionColor.OptionColor13]: 'bg-tag-fill-03-thick text-tag-text-03-thick',
+  [SelectOptionColor.OptionColor14]: 'bg-tag-fill-04-thick text-tag-text-04-thick',
+  [SelectOptionColor.OptionColor15]: 'bg-tag-fill-05-thick text-tag-text-05-thick',
+  [SelectOptionColor.OptionColor16]: 'bg-tag-fill-06-thick text-tag-text-06-thick',
+  [SelectOptionColor.OptionColor17]: 'bg-tag-fill-07-thick text-tag-text-07-thick',
+  [SelectOptionColor.OptionColor18]: 'bg-tag-fill-08-thick text-tag-text-08-thick',
+  [SelectOptionColor.OptionColor19]: 'bg-tag-fill-09-thick text-tag-text-09-thick',
+  [SelectOptionColor.OptionColor20]: 'bg-tag-fill-10-thick text-tag-text-10-thick',
 };
 
 export interface Tag {
@@ -47,31 +58,29 @@ const baseInputStyles = cn(
   'file:inline-flex file:border-0 file:bg-fill-content file:text-sm file:font-medium',
 
   // Disabled state
-  'disabled:pointer-events-none disabled:cursor-not-allowed',
+  'disabled:pointer-events-none disabled:cursor-not-allowed'
 );
 
-const tagInputVariants = cva(
-  'flex items-center gap-1 overflow-x-auto scrollbar-hide',
-  {
-    variants: {
-      variant: {
-        // Default variant with focus styles
-        default: 'border-border-primary border data-[focused=true]:border-border-theme-thick data-[focused=true]:ring-border-theme-thick data-[focused=true]:ring-[0.5px] disabled:border-border-primary disabled:bg-fill-primary-hover disabled:text-text-tertiary hover:border-border-primary-hover',
-      },
-      size: {
-        // Small size input
-        sm: 'h-8 px-2 rounded-300',
-
-        // Medium size input (default)
-        md: 'h-10 px-2 rounded-400',
-      },
+const tagInputVariants = cva('flex items-center gap-1 overflow-x-auto scrollbar-hide', {
+  variants: {
+    variant: {
+      // Default variant with focus styles
+      default:
+        'border-border-primary border data-[focused=true]:border-border-theme-thick data-[focused=true]:ring-border-theme-thick data-[focused=true]:ring-[0.5px] disabled:border-border-primary disabled:bg-fill-primary-hover disabled:text-text-tertiary hover:border-border-primary-hover',
     },
-    defaultVariants: {
-      variant: 'default',
-      size: 'sm',
+    size: {
+      // Small size input
+      sm: 'h-8 px-2 rounded-300',
+
+      // Medium size input (default)
+      md: 'h-10 px-2 rounded-400',
     },
   },
-);
+  defaultVariants: {
+    variant: 'default',
+    size: 'sm',
+  },
+});
 
 // Tag component styles
 const tagStyles = cva(
@@ -81,9 +90,9 @@ const tagStyles = cva(
       color: tagColorClasses,
     },
     defaultVariants: {
-      color: SelectOptionColor.Purple,
+      color: SelectOptionColor.OptionColor1,
     },
-  },
+  }
 );
 
 // Tag component
@@ -94,15 +103,15 @@ interface TagComponentProps {
 
 const TagComponent = ({ tag, onRemove }: TagComponentProps) => {
   return (
-    <div className={cn(tagStyles({ color: tag.color || SelectOptionColor.Blue }))}>
-      <span className={'truncate flex-1'}>{tag.text}</span>
+    <div className={cn(tagStyles({ color: tag.color || SelectOptionColor.OptionColor9 }))}>
+      <span className={'flex-1 truncate text-[0.75rem] leading-[1.5]'}>{tag.text}</span>
       <button
-        type="button"
+        type='button'
         tabIndex={-1}
-        className="p-0.5 w-[14px] flex items-start justify-center h-[14px] focus:outline-none rounded-full hover:bg-fill-content-hover focus:ring-1 focus:ring-offset-1"
+        className='flex h-[14px] w-[14px] items-start justify-center rounded-full p-0.5 hover:bg-fill-content-hover focus:outline-none focus:ring-1 focus:ring-offset-1'
         onClick={() => onRemove(tag.id)}
       >
-        <CloseIcon className="w-[10px] h-[10px]" />
+        <CloseIcon className='h-[10px] w-[10px]' />
       </button>
     </div>
   );
@@ -120,139 +129,134 @@ export interface TagInputProps
   inputValue?: string;
 }
 
-const TagsInput = forwardRef<HTMLDivElement, TagInputProps>(({
-  className,
-  variant,
-  size,
-  multiple = false,
-  tags,
-  onTagsChange,
-  inputProps,
-  inputRef,
-  onInputChange,
-  inputValue = '',
-  ...props
-}, ref) => {
-  const [focused, setFocused] = useState(false);
-  const [internalInputValue, setInternalInputValue] = useState(inputValue);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const inputElementRef = useRef<HTMLInputElement>(null);
+const TagsInput = forwardRef<HTMLDivElement, TagInputProps>(
+  (
+    {
+      className,
+      variant,
+      size,
+      multiple = false,
+      tags,
+      onTagsChange,
+      inputProps,
+      inputRef,
+      onInputChange,
+      inputValue = '',
+      ...props
+    },
+    ref
+  ) => {
+    const [focused, setFocused] = useState(false);
+    const [internalInputValue, setInternalInputValue] = useState(inputValue);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const inputElementRef = useRef<HTMLInputElement>(null);
 
-  // Handle the forwarded ref
-  const resolvedInputRef = (inputRef as React.RefObject<HTMLInputElement>) || inputElementRef;
+    // Handle the forwarded ref
+    const resolvedInputRef = (inputRef as React.RefObject<HTMLInputElement>) || inputElementRef;
 
-  useEffect(() => {
-    setInternalInputValue(inputValue);
-  }, [inputValue]);
+    useEffect(() => {
+      setInternalInputValue(inputValue);
+    }, [inputValue]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
 
-    setInternalInputValue(value);
-    onInputChange?.(value);
-  };
+      setInternalInputValue(value);
+      onInputChange?.(value);
+    };
 
-  const handleRemoveTag = (id: string) => {
-    const newTags = tags.filter(tag => tag.id !== id);
+    const handleRemoveTag = (id: string) => {
+      const newTags = tags.filter((tag) => tag.id !== id);
 
-    onTagsChange(newTags);
-  };
-
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    // Handle a backspace key when input is empty to remove the last tag
-    if (e.key === 'Backspace' && internalInputValue === '' && tags.length > 0) {
-      const newTags = [...tags];
-
-      newTags.pop();
       onTagsChange(newTags);
-    }
+    };
 
-    // Handle Enter key to add a new tag
-    if (e.key === 'Enter' && internalInputValue.trim() !== '') {
-      e.preventDefault();
+    const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+      // Handle a backspace key when input is empty to remove the last tag
+      if (e.key === 'Backspace' && internalInputValue === '' && tags.length > 0) {
+        const newTags = [...tags];
 
-      // For single tag mode, replace the existing tag
-      if (!multiple) {
-        onTagsChange([{
-          id: Date.now().toString(),
-          text: internalInputValue.trim(),
-        }]);
-      } else {
-        // For multiple tags, add to the existing ones
-        onTagsChange([
-          ...tags,
-          {
-            id: Date.now().toString(),
-            text: internalInputValue.trim(),
-          },
-        ]);
+        newTags.pop();
+        onTagsChange(newTags);
       }
 
-      setInternalInputValue('');
-      onInputChange?.('');
-    }
-  };
+      // Handle Enter key to add a new tag
+      if (e.key === 'Enter' && internalInputValue.trim() !== '') {
+        e.preventDefault();
 
-  const focusInput = () => {
-    resolvedInputRef.current?.focus();
-  };
+        // For single tag mode, replace the existing tag
+        if (!multiple) {
+          onTagsChange([
+            {
+              id: Date.now().toString(),
+              text: internalInputValue.trim(),
+            },
+          ]);
+        } else {
+          // For multiple tags, add to the existing ones
+          onTagsChange([
+            ...tags,
+            {
+              id: Date.now().toString(),
+              text: internalInputValue.trim(),
+            },
+          ]);
+        }
 
-  return (
-    <div
-      ref={ref}
-      data-slot="tag-input"
-      className={cn(
-        tagInputVariants({ variant, size }),
-        className,
-      )}
-      data-focused={focused}
-      onClick={focusInput}
-    >
+        setInternalInputValue('');
+        onInputChange?.('');
+      }
+    };
+
+    const focusInput = () => {
+      resolvedInputRef.current?.focus();
+    };
+
+    return (
       <div
-        ref={containerRef}
-        className={'w-full appflowy-hidden-scroller h-full overflow-x-auto'}
+        ref={ref}
+        data-slot='tag-input'
+        className={cn(tagInputVariants({ variant, size }), className)}
+        data-focused={focused}
+        onClick={focusInput}
       >
-        <div className={'flex items-center h-full gap-1 flex-grow flex-nowrap'}>
-          {/* Render tags */}
-          {tags.map(tag => (
-            <TagComponent
-              key={tag.id}
-              tag={tag}
-              onRemove={handleRemoveTag}
+        <div ref={containerRef} className={'appflowy-hidden-scroller h-full w-full overflow-x-auto'}>
+          <div className={'flex h-full flex-grow flex-nowrap items-center gap-1'}>
+            {/* Render tags */}
+            {tags.map((tag) => (
+              <TagComponent key={tag.id} tag={tag} onRemove={handleRemoveTag} />
+            ))}
+
+            {/* Input field */}
+            <input
+              ref={resolvedInputRef}
+              type='text'
+              className={cn(
+                'min-w-[100px] flex-1',
+                baseInputStyles,
+                // Invalid state styling (applied via aria-invalid attribute)
+                'aria-invalid:ring-border-error-thick aria-invalid:border-border-error-thick',
+                inputProps?.className
+              )}
+              onFocus={(e) => {
+                setFocused(true);
+                props?.onFocus?.(e);
+              }}
+              onKeyDown={handleKeyDown}
+              onBlur={(e) => {
+                setFocused(false);
+                props?.onBlur?.(e);
+              }}
+              value={internalInputValue}
+              onChange={handleInputChange}
+              {...props}
+              {...inputProps}
             />
-          ))}
-
-          {/* Input field */}
-          <input
-            ref={resolvedInputRef}
-            type="text"
-            className={cn(
-              'flex-1 min-w-[100px]',
-              baseInputStyles,
-              // Invalid state styling (applied via aria-invalid attribute)
-              'aria-invalid:ring-border-error-thick aria-invalid:border-border-error-thick',
-              inputProps?.className,
-            )}
-
-            onFocus={(e) => {
-              setFocused(true);
-              props?.onFocus?.(e);
-            }}
-            onKeyDown={handleKeyDown}
-            onBlur={(e) => {
-              setFocused(false);
-              props?.onBlur?.(e);
-            }}
-            value={internalInputValue}
-            onChange={handleInputChange}
-            {...props}
-            {...inputProps}
-          />
+          </div>
         </div>
-
       </div>
-    </div>
-  );
-});
+    );
+  }
+);
 
 export { TagsInput };

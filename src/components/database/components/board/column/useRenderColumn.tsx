@@ -7,7 +7,7 @@ import { getChecked } from '@/application/database-yjs/fields/checkbox/utils';
 import { YjsDatabaseKey } from '@/application/types';
 import { ReactComponent as CheckboxCheckSvg } from '@/assets/icons/check_filled.svg';
 import { ReactComponent as CheckboxUncheckSvg } from '@/assets/icons/uncheck.svg';
-import { SelectOptionBadgeColorMap, SelectOptionColorMap } from '@/components/database/components/cell/cell.const';
+import { SelectOptionColorMap, SelectOptionFgColorMap } from '@/components/database/components/cell/cell.const';
 import { Tag } from '@/components/_shared/tag';
 
 export function useRenderColumn(id: string, fieldId: string) {
@@ -44,8 +44,8 @@ export function useRenderColumn(id: string, fieldId: string) {
           <span>
             <Tag
               label={label}
-              color={option?.color ? SelectOptionColorMap[option?.color] : 'transparent'}
-              badge={option?.color ? SelectOptionBadgeColorMap[option?.color] : undefined}
+              textColor={option?.color ? SelectOptionFgColorMap[option?.color] : 'text-text-primary'}
+              bgColor={option?.color ? SelectOptionColorMap[option?.color] : 'transparent'}
             />
           </span>
         </Tooltip>

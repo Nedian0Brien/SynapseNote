@@ -1,6 +1,6 @@
 import { SelectOption, useReadOnly } from '@/application/database-yjs';
 import { Tag } from '@/components/_shared/tag';
-import { SelectOptionColorMap } from '@/components/database/components/cell/cell.const';
+import { SelectOptionColorMap, SelectOptionFgColorMap } from '@/components/database/components/cell/cell.const';
 import OptionMenu from '@/components/database/components/property/select/OptionMenu';
 import { useOptionDragContext } from '@/components/database/components/property/select/useOptionDragContext';
 import { Button } from '@/components/ui/button';
@@ -31,7 +31,14 @@ export type ItemState =
 const idleState: ItemState = { type: DragState.IDLE };
 const draggingState: ItemState = { type: DragState.DRAGGING };
 
-function Option ({ option, fieldId, isSelected = false, onSelect, isHovered, onHover }: {
+function Option({
+  option,
+  fieldId,
+  isSelected = false,
+  onSelect,
+  isHovered,
+  onHover,
+}: {
   option: SelectOption;
   fieldId: string;
   isSelected?: boolean;
@@ -42,10 +49,7 @@ function Option ({ option, fieldId, isSelected = false, onSelect, isHovered, onH
   const id = option.id;
   const dragHandleRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
-  const {
-    registerOption,
-    instanceId,
-  } = useOptionDragContext();
+  const { registerOption, instanceId } = useOptionDragContext();
   const readOnly = useReadOnly();
   const [state, setState] = useState<ItemState>(idleState);
 
@@ -66,31 +70,28 @@ function Option ({ option, fieldId, isSelected = false, onSelect, isHovered, onH
         element,
         dragHandle,
         getInitialData: () => data,
-        onGenerateDragPreview () {
+        onGenerateDragPreview() {
           setState({ type: DragState.PREVIEW });
         },
-        onDragStart () {
+        onDragStart() {
           setState(draggingState);
         },
-        onDrop () {
+        onDrop() {
           setState(idleState);
         },
       }),
       dropTargetForElements({
         element,
-        canDrop: ({ source }) =>
-          source.data &&
-          source.data.instanceId === instanceId &&
-          source.data.id !== id,
+        canDrop: ({ source }) => source.data && source.data.instanceId === instanceId && source.data.id !== id,
         getIsSticky: () => true,
-        getData ({ input }) {
+        getData({ input }) {
           return attachClosestEdge(data, {
             element,
             input,
             allowedEdges: ['top', 'bottom'],
           });
         },
-        onDrag ({ self }) {
+        onDrag({ self }) {
           const closestEdge = extractClosestEdge(self.data);
 
           setState((current) => {
@@ -101,13 +102,13 @@ function Option ({ option, fieldId, isSelected = false, onSelect, isHovered, onH
             return { type: DragState.IS_OVER, closestEdge };
           });
         },
-        onDragLeave () {
+        onDragLeave() {
           setState(idleState);
         },
-        onDrop () {
+        onDrop() {
           setState(idleState);
         },
-      }),
+      })
     );
   }, [readOnly, instanceId, registerOption, id]);
 
@@ -118,7 +119,7 @@ function Option ({ option, fieldId, isSelected = false, onSelect, isHovered, onH
       <div
         ref={innerRef}
         key={option.id}
-        onClick={e => {
+        onClick={(e) => {
           e.preventDefault();
           if (onSelect) {
             onSelect(option.id);
@@ -135,64 +136,51 @@ function Option ({ option, fieldId, isSelected = false, onSelect, isHovered, onH
           'relative',
           state.type === DragState.DRAGGING && 'opacity-40',
           open && 'bg-fill-content-hover',
-          'relative flex cursor-pointer items-center gap-[10px] rounded-300 px-2 py-1 min-h-[32px]',
-          'text-sm text-text-primary outline-hidden select-none',
+          'relative flex min-h-[32px] cursor-pointer items-center gap-[10px] rounded-300 px-2 py-1',
+          'outline-hidden select-none text-sm text-text-primary',
           'hover:bg-fill-content-hover hover:text-text-primary',
-          isHovered && 'bg-fill-content-hover text-text-primary',
+          isHovered && 'bg-fill-content-hover text-text-primary'
         )}
       >
         <div
-          onMouseDown={e => {
+          onMouseDown={(e) => {
             e.stopPropagation();
           }}
           ref={dragHandleRef}
         >
-          <DragIcon className={'w-5 h-5 text-icon-secondary'} />
+          <DragIcon className={'h-5 w-5 text-icon-secondary'} />
         </div>
 
         <Tag
           key={option.id}
-          color={SelectOptionColorMap[option.color]}
+          textColor={SelectOptionFgColorMap[option.color]}
+          bgColor={SelectOptionColorMap[option.color]}
           label={option.name}
         />
-        <div className={'ml-auto flex items-center gap-1 h-6'}>
-          {isSelected &&
-            <span
-              className={cn(
-                'text-icon-info-thick ml-auto tracking-widest')}
-            >
-             <CheckIcon className={'w-5 h-5'} />
-           </span>
-          }
+        <div className={'ml-auto flex h-6 items-center gap-1'}>
+          {isSelected && (
+            <span className={cn('ml-auto tracking-widest text-icon-info-thick')}>
+              <CheckIcon className={'h-5 w-5'} />
+            </span>
+          )}
 
           <Button
             variant={'ghost'}
             size={'icon-sm'}
-            onClick={e => {
+            onClick={(e) => {
               if (onSelect) {
                 e.stopPropagation();
                 setOpen(true);
               }
             }}
           >
-            <MoreIcon className={'w-5 h-5 text-icon-secondary'} />
+            <MoreIcon className={'h-5 w-5 text-icon-secondary'} />
           </Button>
         </div>
 
-        {state.type === DragState.IS_OVER && state.closestEdge && (
-          <DropRowIndicator
-            edge={state.closestEdge}
-          />
-        )}
-        {open && <OptionMenu
-          open={open}
-          onOpenChange={setOpen}
-          fieldId={fieldId}
-          option={option}
-        />}
-
+        {state.type === DragState.IS_OVER && state.closestEdge && <DropRowIndicator edge={state.closestEdge} />}
+        {<OptionMenu open={open} onOpenChange={setOpen} fieldId={fieldId} option={option} />}
       </div>
-
     </>
   );
 }

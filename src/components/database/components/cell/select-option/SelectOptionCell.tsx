@@ -1,6 +1,6 @@
 import { FieldType, parseSelectOptionTypeOptions, useFieldSelector } from '@/application/database-yjs';
 import { CellProps, SelectOptionCell as SelectOptionCellType } from '@/application/database-yjs/cell.type';
-import { SelectOptionColorMap } from '@/components/database/components/cell/cell.const';
+import { SelectOptionColorMap, SelectOptionFgColorMap } from '@/components/database/components/cell/cell.const';
 import SelectOptionCellMenu from '@/components/database/components/cell/select-option/SelectOptionCellMenu';
 import { Tag } from '@/components/_shared/tag';
 import { cn } from '@/lib/utils';
@@ -41,7 +41,11 @@ export function SelectOptionCell({
         if (!option) return null;
         return (
           <div key={option.id} className={'min-w-fit max-w-[120px]'}>
-            <Tag color={SelectOptionColorMap[option.color]} label={option.name} />
+            <Tag
+              bgColor={SelectOptionColorMap[option.color]}
+              textColor={SelectOptionFgColorMap[option.color]}
+              label={option.name}
+            />
           </div>
         );
       }),

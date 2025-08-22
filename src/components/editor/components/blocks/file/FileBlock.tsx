@@ -42,7 +42,7 @@ export const FileBlock = memo(
 
       const fileId = dataUrl;
 
-      return getConfigValue('AF_BASE_URL', '') + '/api/file_storage/' + workspaceId + '/v1/blob/' + fileId;
+      return getConfigValue('APPFLOWY_BASE_URL', '') + '/api/file_storage/' + workspaceId + '/v1/blob/' + fileId;
     }, [dataUrl, workspaceId]);
 
     const className = useMemo(() => {

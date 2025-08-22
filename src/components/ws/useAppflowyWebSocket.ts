@@ -6,7 +6,7 @@ import { getTokenParsed } from '@/application/session/token';
 import { getConfigValue } from '@/utils/runtime-config';
 import { messages } from '@/proto/messages';
 
-const wsURL = getConfigValue('AF_WS_V2_URL', 'ws://localhost:8000/ws/v2');
+const wsURL = getConfigValue('APPFLOWY_WS_BASE_URL', 'ws://localhost:8000/ws/v2');
 
 // WebSocket close code enum
 enum CloseCode {

@@ -1,4 +1,4 @@
-import { forwardRef, useMemo } from 'react';
+import { forwardRef, MouseEventHandler, useMemo } from 'react';
 
 import { cn } from '@/lib/utils';
 
@@ -7,7 +7,7 @@ export const ColorTile = forwardRef<
   {
     value: string;
     isText?: boolean;
-    onClick: () => void;
+    onClick: MouseEventHandler<HTMLDivElement> | undefined;
     active?: boolean;
   }
 >(({ value, onClick, isText = false, active = false, ...props }, forwardedRef) => {

@@ -35,7 +35,7 @@ const GalleryBlock = memo(
         let imageUrl = image.url;
 
         if (!isURL(image.url)) {
-          imageUrl = getConfigValue('AF_BASE_URL', '') + '/api/file_storage/' + workspaceId + '/v1/blob/' + image.url;
+          imageUrl = getConfigValue('APPFLOWY_BASE_URL', '') + '/api/file_storage/' + workspaceId + '/v1/blob/' + image.url;
         }
 
         const url = new URL(imageUrl);
