@@ -102,7 +102,7 @@ function GalleryPreview({ images, open, onClose, previewIndex, workspaceId }: Ga
 
     const fileId = images[index].src;
 
-    return getConfigValue('AF_BASE_URL', '') + '/api/file_storage/' + workspaceId + '/v1/blob/' + fileId;
+    return getConfigValue('APPFLOWY_BASE_URL', '') + '/api/file_storage/' + workspaceId + '/v1/blob/' + fileId;
   }, [images, index, workspaceId]);
 
   if (!open) {

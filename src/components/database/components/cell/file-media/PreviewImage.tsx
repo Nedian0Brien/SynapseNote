@@ -12,7 +12,7 @@ function PreviewImage({ file, onClick }: { file: FileMediaCellDataItem; onClick:
     let fileUrl = file.url;
 
     if (!isURL(file.url)) {
-      fileUrl = getConfigValue('AF_BASE_URL', '') + '/api/file_storage/' + workspaceId + '/v1/blob/' + file.url;
+      fileUrl = getConfigValue('APPFLOWY_BASE_URL', '') + '/api/file_storage/' + workspaceId + '/v1/blob/' + file.url;
     }
 
     const url = new URL(fileUrl);
