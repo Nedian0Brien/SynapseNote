@@ -1,7 +1,7 @@
 interface RuntimeConfig {
-  AF_BASE_URL?: string;
-  AF_GOTRUE_URL?: string;
-  AF_WS_V2_URL?: string;
+  APPFLOWY_BASE_URL?: string;
+  APPFLOWY_GOTRUE_BASE_URL?: string;
+  APPFLOWY_WS_BASE_URL?: string;
 }
 
 declare global {
