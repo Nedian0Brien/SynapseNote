@@ -87,16 +87,17 @@ export const useSync = (ws: AppflowyWebSocketType, bc: BroadcastChannelType, eve
   }, [lastBroadcastMessage, registeredContexts, setLastUpdatedCollab]);
 
   // Handle workspace notifications from WebSocket
+  // This handles notifications received directly from the server via WebSocket connection.
+  // Only the "active" tab per workspace maintains a WebSocket connection to prevent
+  // duplicate notifications and reduce server load.
   useEffect(() => {
     const notification = lastMessage?.notification;
 
     if (notification && eventEmitter) {
       console.log('Received workspace notification:', notification);
 
-      // Emit generic workspace notification event
-      eventEmitter.emit(APP_EVENTS.WORKSPACE_NOTIFICATION, notification);
-
-      // Emit specific notification events
+      // Emit specific notification events for each notification type
+      // These events are consumed by AppProvider to update local state/database
       if (notification.profileChange) {
         eventEmitter.emit(APP_EVENTS.USER_PROFILE_CHANGED, notification.profileChange);
       }
@@ -124,16 +125,26 @@ export const useSync = (ws: AppflowyWebSocketType, bc: BroadcastChannelType, eve
   }, [lastMessage, eventEmitter]);
 
   // Handle workspace notifications from BroadcastChannel
+  // This handles cross-tab synchronization for multi-tab scenarios. When a user has multiple
+  // tabs open in the same workspace, only one tab maintains the WebSocket connection.
+  // That "active" tab broadcasts notifications to other tabs via BroadcastChannel.
+  // 
+  // Example flow:
+  // 1. User has 2 tabs open:  Document A, Document B
+  // 2. Server sends notification → Document A(active WebSocket tab)
+  // 3. Document A processes notification + broadcasts via BroadcastChannel
+  // 4. Document B receive broadcast → process same notification
+  // 5. Result: All tabs show consistent updated data simultaneously
+  //
+  // Without this: Only the active tab would update, other tabs would show stale data
   useEffect(() => {
     const notification = lastBroadcastMessage?.notification;
 
     if (notification && eventEmitter) {
       console.log('Received broadcasted workspace notification:', notification);
 
-      // Emit generic workspace notification event
-      eventEmitter.emit(APP_EVENTS.WORKSPACE_NOTIFICATION, notification);
-
-      // Emit specific notification events
+      // Process notifications identically to WebSocket notifications to ensure
+      // consistent behavior across all tabs. Same event emissions = same UI updates.
       if (notification.profileChange) {
         eventEmitter.emit(APP_EVENTS.USER_PROFILE_CHANGED, notification.profileChange);
       }
