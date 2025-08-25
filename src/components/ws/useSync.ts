@@ -2,12 +2,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { validate as uuidValidate } from 'uuid';
 import * as awarenessProtocol from 'y-protocols/awareness';
 import * as Y from 'yjs';
+import EventEmitter from 'events';
 
 import { handleMessage, initSync, SyncContext } from '@/application/services/js-services/sync-protocol';
 import { Types } from '@/application/types';
 import { AppflowyWebSocketType } from '@/components/ws/useAppflowyWebSocket';
 import { BroadcastChannelType } from '@/components/ws/useBroadcastChannel';
 import { messages } from '@/proto/messages';
+import { APP_EVENTS } from '@/application/constants';
 
 export interface RegisterSyncContext {
   /**
@@ -38,7 +40,7 @@ export type SyncContextType = {
   lastUpdatedCollab: UpdateCollabInfo | null;
 };
 
-export const useSync = (ws: AppflowyWebSocketType, bc: BroadcastChannelType): SyncContextType => {
+export const useSync = (ws: AppflowyWebSocketType, bc: BroadcastChannelType, eventEmitter?: EventEmitter): SyncContextType => {
   const { sendMessage, lastMessage } = ws;
   const { postMessage, lastBroadcastMessage } = bc;
   const registeredContexts = useRef<Map<string, SyncContext>>(new Map());
@@ -83,6 +85,80 @@ export const useSync = (ws: AppflowyWebSocketType, bc: BroadcastChannelType): Sy
       setLastUpdatedCollab({ objectId, publishedAt, collabType: message.collabType as Types });
     }
   }, [lastBroadcastMessage, registeredContexts, setLastUpdatedCollab]);
+
+  // Handle workspace notifications from WebSocket
+  useEffect(() => {
+    const notification = lastMessage?.notification;
+
+    if (notification && eventEmitter) {
+      console.log('Received workspace notification:', notification);
+
+      // Emit generic workspace notification event
+      eventEmitter.emit(APP_EVENTS.WORKSPACE_NOTIFICATION, notification);
+
+      // Emit specific notification events
+      if (notification.profileChange) {
+        eventEmitter.emit(APP_EVENTS.USER_PROFILE_CHANGED, notification.profileChange);
+      }
+
+      if (notification.permissionChanged) {
+        eventEmitter.emit(APP_EVENTS.PERMISSION_CHANGED, notification.permissionChanged);
+      }
+
+      if (notification.sectionChanged) {
+        eventEmitter.emit(APP_EVENTS.SECTION_CHANGED, notification.sectionChanged);
+      }
+
+      if (notification.shareViewsChanged) {
+        eventEmitter.emit(APP_EVENTS.SHARE_VIEWS_CHANGED, notification.shareViewsChanged);
+      }
+
+      if (notification.mentionablePersonListChanged) {
+        eventEmitter.emit(APP_EVENTS.MENTIONABLE_PERSON_LIST_CHANGED, notification.mentionablePersonListChanged);
+      }
+
+      if (notification.serverLimit) {
+        eventEmitter.emit(APP_EVENTS.SERVER_LIMIT_CHANGED, notification.serverLimit);
+      }
+    }
+  }, [lastMessage, eventEmitter]);
+
+  // Handle workspace notifications from BroadcastChannel
+  useEffect(() => {
+    const notification = lastBroadcastMessage?.notification;
+
+    if (notification && eventEmitter) {
+      console.log('Received broadcasted workspace notification:', notification);
+
+      // Emit generic workspace notification event
+      eventEmitter.emit(APP_EVENTS.WORKSPACE_NOTIFICATION, notification);
+
+      // Emit specific notification events
+      if (notification.profileChange) {
+        eventEmitter.emit(APP_EVENTS.USER_PROFILE_CHANGED, notification.profileChange);
+      }
+
+      if (notification.permissionChanged) {
+        eventEmitter.emit(APP_EVENTS.PERMISSION_CHANGED, notification.permissionChanged);
+      }
+
+      if (notification.sectionChanged) {
+        eventEmitter.emit(APP_EVENTS.SECTION_CHANGED, notification.sectionChanged);
+      }
+
+      if (notification.shareViewsChanged) {
+        eventEmitter.emit(APP_EVENTS.SHARE_VIEWS_CHANGED, notification.shareViewsChanged);
+      }
+
+      if (notification.mentionablePersonListChanged) {
+        eventEmitter.emit(APP_EVENTS.MENTIONABLE_PERSON_LIST_CHANGED, notification.mentionablePersonListChanged);
+      }
+
+      if (notification.serverLimit) {
+        eventEmitter.emit(APP_EVENTS.SERVER_LIMIT_CHANGED, notification.serverLimit);
+      }
+    }
+  }, [lastBroadcastMessage, eventEmitter]);
 
   const registerSyncContext = useCallback(
     (context: RegisterSyncContext): SyncContext => {

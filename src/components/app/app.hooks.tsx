@@ -164,7 +164,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   });
 
   const broadcastChannel = useBroadcastChannel(`workspace:${currentWorkspaceId!}`);
-  const { registerSyncContext, lastUpdatedCollab } = useSync(webSocket, broadcastChannel);
+  const { registerSyncContext, lastUpdatedCollab } = useSync(webSocket, broadcastChannel, eventEmitterRef.current);
 
   const reconnectWebSocket = useCallback(() => {
     webSocket.reconnect();

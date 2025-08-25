@@ -129,11 +129,9 @@ export const messages = $root.messages = (() => {
         Message.decode = function decode(reader, length, error) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            const end = length === undefined ? reader.len : reader.pos + length, message = new $root.messages.Message();
-
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.messages.Message();
             while (reader.pos < end) {
-                const tag = reader.uint32();
-
+                let tag = reader.uint32();
                 if (tag === error)
                     break;
                 switch (tag >>> 3) {
@@ -141,18 +139,15 @@ export const messages = $root.messages = (() => {
                         message.collabMessage = $root.collab.CollabMessage.decode(reader, reader.uint32());
                         break;
                     }
-
                 case 2: {
                         message.notification = $root.notification.WorkspaceNotification.decode(reader, reader.uint32());
                         break;
                     }
-
                 default:
                     reader.skipType(tag & 7);
                     break;
                 }
             }
-
             return message;
         };
 
@@ -183,30 +178,25 @@ export const messages = $root.messages = (() => {
         Message.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            const properties = {};
-
+            let properties = {};
             if (message.collabMessage != null && message.hasOwnProperty("collabMessage")) {
                 properties.payload = 1;
                 {
-                    const error = $root.collab.CollabMessage.verify(message.collabMessage);
-
+                    let error = $root.collab.CollabMessage.verify(message.collabMessage);
                     if (error)
                         return "collabMessage." + error;
                 }
             }
-
             if (message.notification != null && message.hasOwnProperty("notification")) {
                 if (properties.payload === 1)
                     return "payload: multiple values";
                 properties.payload = 1;
                 {
-                    const error = $root.notification.WorkspaceNotification.verify(message.notification);
-
+                    let error = $root.notification.WorkspaceNotification.verify(message.notification);
                     if (error)
                         return "notification." + error;
                 }
             }
-
             return null;
         };
 
@@ -221,20 +211,17 @@ export const messages = $root.messages = (() => {
         Message.fromObject = function fromObject(object) {
             if (object instanceof $root.messages.Message)
                 return object;
-            const message = new $root.messages.Message();
-
+            let message = new $root.messages.Message();
             if (object.collabMessage != null) {
                 if (typeof object.collabMessage !== "object")
                     throw TypeError(".messages.Message.collabMessage: object expected");
                 message.collabMessage = $root.collab.CollabMessage.fromObject(object.collabMessage);
             }
-
             if (object.notification != null) {
                 if (typeof object.notification !== "object")
                     throw TypeError(".messages.Message.notification: object expected");
                 message.notification = $root.notification.WorkspaceNotification.fromObject(object.notification);
             }
-
             return message;
         };
 
@@ -250,20 +237,17 @@ export const messages = $root.messages = (() => {
         Message.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            const object = {};
-
+            let object = {};
             if (message.collabMessage != null && message.hasOwnProperty("collabMessage")) {
                 object.collabMessage = $root.collab.CollabMessage.toObject(message.collabMessage, options);
                 if (options.oneofs)
                     object.payload = "collabMessage";
             }
-
             if (message.notification != null && message.hasOwnProperty("notification")) {
                 object.notification = $root.notification.WorkspaceNotification.toObject(message.notification, options);
                 if (options.oneofs)
                     object.payload = "notification";
             }
-
             return object;
         };
 
@@ -290,7 +274,6 @@ export const messages = $root.messages = (() => {
             if (typeUrlPrefix === undefined) {
                 typeUrlPrefix = "type.googleapis.com";
             }
-
             return typeUrlPrefix + "/messages.Message";
         };
 
@@ -412,11 +395,9 @@ export const collab = $root.collab = (() => {
         Rid.decode = function decode(reader, length, error) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            const end = length === undefined ? reader.len : reader.pos + length, message = new $root.collab.Rid();
-
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.collab.Rid();
             while (reader.pos < end) {
-                const tag = reader.uint32();
-
+                let tag = reader.uint32();
                 if (tag === error)
                     break;
                 switch (tag >>> 3) {
@@ -424,18 +405,15 @@ export const collab = $root.collab = (() => {
                         message.timestamp = reader.fixed64();
                         break;
                     }
-
                 case 2: {
                         message.counter = reader.uint32();
                         break;
                     }
-
                 default:
                     reader.skipType(tag & 7);
                     break;
                 }
             }
-
             return message;
         };
 
@@ -486,8 +464,7 @@ export const collab = $root.collab = (() => {
         Rid.fromObject = function fromObject(object) {
             if (object instanceof $root.collab.Rid)
                 return object;
-            const message = new $root.collab.Rid();
-
+            let message = new $root.collab.Rid();
             if (object.timestamp != null)
                 if ($util.Long)
                     (message.timestamp = $util.Long.fromValue(object.timestamp)).unsigned = false;
@@ -514,18 +491,15 @@ export const collab = $root.collab = (() => {
         Rid.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            const object = {};
-
+            let object = {};
             if (options.defaults) {
                 if ($util.Long) {
-                    const long = new $util.Long(0, 0, false);
-
+                    let long = new $util.Long(0, 0, false);
                     object.timestamp = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
                 } else
                     object.timestamp = options.longs === String ? "0" : 0;
                 object.counter = 0;
             }
-
             if (message.timestamp != null && message.hasOwnProperty("timestamp"))
                 if (typeof message.timestamp === "number")
                     object.timestamp = options.longs === String ? String(message.timestamp) : message.timestamp;
@@ -559,7 +533,6 @@ export const collab = $root.collab = (() => {
             if (typeUrlPrefix === undefined) {
                 typeUrlPrefix = "type.googleapis.com";
             }
-
             return typeUrlPrefix + "/collab.Rid";
         };
 
@@ -669,11 +642,9 @@ export const collab = $root.collab = (() => {
         SyncRequest.decode = function decode(reader, length, error) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            const end = length === undefined ? reader.len : reader.pos + length, message = new $root.collab.SyncRequest();
-
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.collab.SyncRequest();
             while (reader.pos < end) {
-                const tag = reader.uint32();
-
+                let tag = reader.uint32();
                 if (tag === error)
                     break;
                 switch (tag >>> 3) {
@@ -681,18 +652,15 @@ export const collab = $root.collab = (() => {
                         message.lastMessageId = $root.collab.Rid.decode(reader, reader.uint32());
                         break;
                     }
-
                 case 2: {
                         message.stateVector = reader.bytes();
                         break;
                     }
-
                 default:
                     reader.skipType(tag & 7);
                     break;
                 }
             }
-
             return message;
         };
 
@@ -724,12 +692,10 @@ export const collab = $root.collab = (() => {
             if (typeof message !== "object" || message === null)
                 return "object expected";
             if (message.lastMessageId != null && message.hasOwnProperty("lastMessageId")) {
-                const error = $root.collab.Rid.verify(message.lastMessageId);
-
+                let error = $root.collab.Rid.verify(message.lastMessageId);
                 if (error)
                     return "lastMessageId." + error;
             }
-
             if (message.stateVector != null && message.hasOwnProperty("stateVector"))
                 if (!(message.stateVector && typeof message.stateVector.length === "number" || $util.isString(message.stateVector)))
                     return "stateVector: buffer expected";
@@ -747,14 +713,12 @@ export const collab = $root.collab = (() => {
         SyncRequest.fromObject = function fromObject(object) {
             if (object instanceof $root.collab.SyncRequest)
                 return object;
-            const message = new $root.collab.SyncRequest();
-
+            let message = new $root.collab.SyncRequest();
             if (object.lastMessageId != null) {
                 if (typeof object.lastMessageId !== "object")
                     throw TypeError(".collab.SyncRequest.lastMessageId: object expected");
                 message.lastMessageId = $root.collab.Rid.fromObject(object.lastMessageId);
             }
-
             if (object.stateVector != null)
                 if (typeof object.stateVector === "string")
                     $util.base64.decode(object.stateVector, message.stateVector = $util.newBuffer($util.base64.length(object.stateVector)), 0);
@@ -775,8 +739,7 @@ export const collab = $root.collab = (() => {
         SyncRequest.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            const object = {};
-
+            let object = {};
             if (options.defaults) {
                 object.lastMessageId = null;
                 if (options.bytes === String)
@@ -787,7 +750,6 @@ export const collab = $root.collab = (() => {
                         object.stateVector = $util.newBuffer(object.stateVector);
                 }
             }
-
             if (message.lastMessageId != null && message.hasOwnProperty("lastMessageId"))
                 object.lastMessageId = $root.collab.Rid.toObject(message.lastMessageId, options);
             if (message.stateVector != null && message.hasOwnProperty("stateVector"))
@@ -818,7 +780,6 @@ export const collab = $root.collab = (() => {
             if (typeUrlPrefix === undefined) {
                 typeUrlPrefix = "type.googleapis.com";
             }
-
             return typeUrlPrefix + "/collab.SyncRequest";
         };
 
@@ -937,11 +898,9 @@ export const collab = $root.collab = (() => {
         Update.decode = function decode(reader, length, error) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            const end = length === undefined ? reader.len : reader.pos + length, message = new $root.collab.Update();
-
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.collab.Update();
             while (reader.pos < end) {
-                const tag = reader.uint32();
-
+                let tag = reader.uint32();
                 if (tag === error)
                     break;
                 switch (tag >>> 3) {
@@ -949,23 +908,19 @@ export const collab = $root.collab = (() => {
                         message.messageId = $root.collab.Rid.decode(reader, reader.uint32());
                         break;
                     }
-
                 case 2: {
                         message.flags = reader.uint32();
                         break;
                     }
-
                 case 3: {
                         message.payload = reader.bytes();
                         break;
                     }
-
                 default:
                     reader.skipType(tag & 7);
                     break;
                 }
             }
-
             return message;
         };
 
@@ -997,12 +952,10 @@ export const collab = $root.collab = (() => {
             if (typeof message !== "object" || message === null)
                 return "object expected";
             if (message.messageId != null && message.hasOwnProperty("messageId")) {
-                const error = $root.collab.Rid.verify(message.messageId);
-
+                let error = $root.collab.Rid.verify(message.messageId);
                 if (error)
                     return "messageId." + error;
             }
-
             if (message.flags != null && message.hasOwnProperty("flags"))
                 if (!$util.isInteger(message.flags))
                     return "flags: integer expected";
@@ -1023,14 +976,12 @@ export const collab = $root.collab = (() => {
         Update.fromObject = function fromObject(object) {
             if (object instanceof $root.collab.Update)
                 return object;
-            const message = new $root.collab.Update();
-
+            let message = new $root.collab.Update();
             if (object.messageId != null) {
                 if (typeof object.messageId !== "object")
                     throw TypeError(".collab.Update.messageId: object expected");
                 message.messageId = $root.collab.Rid.fromObject(object.messageId);
             }
-
             if (object.flags != null)
                 message.flags = object.flags >>> 0;
             if (object.payload != null)
@@ -1053,8 +1004,7 @@ export const collab = $root.collab = (() => {
         Update.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            const object = {};
-
+            let object = {};
             if (options.defaults) {
                 object.messageId = null;
                 object.flags = 0;
@@ -1066,7 +1016,6 @@ export const collab = $root.collab = (() => {
                         object.payload = $util.newBuffer(object.payload);
                 }
             }
-
             if (message.messageId != null && message.hasOwnProperty("messageId"))
                 object.messageId = $root.collab.Rid.toObject(message.messageId, options);
             if (message.flags != null && message.hasOwnProperty("flags"))
@@ -1099,7 +1048,6 @@ export const collab = $root.collab = (() => {
             if (typeUrlPrefix === undefined) {
                 typeUrlPrefix = "type.googleapis.com";
             }
-
             return typeUrlPrefix + "/collab.Update";
         };
 
@@ -1195,11 +1143,9 @@ export const collab = $root.collab = (() => {
         AwarenessUpdate.decode = function decode(reader, length, error) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            const end = length === undefined ? reader.len : reader.pos + length, message = new $root.collab.AwarenessUpdate();
-
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.collab.AwarenessUpdate();
             while (reader.pos < end) {
-                const tag = reader.uint32();
-
+                let tag = reader.uint32();
                 if (tag === error)
                     break;
                 switch (tag >>> 3) {
@@ -1207,13 +1153,11 @@ export const collab = $root.collab = (() => {
                         message.payload = reader.bytes();
                         break;
                     }
-
                 default:
                     reader.skipType(tag & 7);
                     break;
                 }
             }
-
             return message;
         };
 
@@ -1261,8 +1205,7 @@ export const collab = $root.collab = (() => {
         AwarenessUpdate.fromObject = function fromObject(object) {
             if (object instanceof $root.collab.AwarenessUpdate)
                 return object;
-            const message = new $root.collab.AwarenessUpdate();
-
+            let message = new $root.collab.AwarenessUpdate();
             if (object.payload != null)
                 if (typeof object.payload === "string")
                     $util.base64.decode(object.payload, message.payload = $util.newBuffer($util.base64.length(object.payload)), 0);
@@ -1283,8 +1226,7 @@ export const collab = $root.collab = (() => {
         AwarenessUpdate.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            const object = {};
-
+            let object = {};
             if (options.defaults)
                 if (options.bytes === String)
                     object.payload = "";
@@ -1293,7 +1235,6 @@ export const collab = $root.collab = (() => {
                     if (options.bytes !== Array)
                         object.payload = $util.newBuffer(object.payload);
                 }
-
             if (message.payload != null && message.hasOwnProperty("payload"))
                 object.payload = options.bytes === String ? $util.base64.encode(message.payload, 0, message.payload.length) : options.bytes === Array ? Array.prototype.slice.call(message.payload) : message.payload;
             return object;
@@ -1322,7 +1263,6 @@ export const collab = $root.collab = (() => {
             if (typeUrlPrefix === undefined) {
                 typeUrlPrefix = "type.googleapis.com";
             }
-
             return typeUrlPrefix + "/collab.AwarenessUpdate";
         };
 
@@ -1440,11 +1380,9 @@ export const collab = $root.collab = (() => {
         AccessChanged.decode = function decode(reader, length, error) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            const end = length === undefined ? reader.len : reader.pos + length, message = new $root.collab.AccessChanged();
-
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.collab.AccessChanged();
             while (reader.pos < end) {
-                const tag = reader.uint32();
-
+                let tag = reader.uint32();
                 if (tag === error)
                     break;
                 switch (tag >>> 3) {
@@ -1452,23 +1390,19 @@ export const collab = $root.collab = (() => {
                         message.canRead = reader.bool();
                         break;
                     }
-
                 case 2: {
                         message.canWrite = reader.bool();
                         break;
                     }
-
                 case 3: {
                         message.reason = reader.int32();
                         break;
                     }
-
                 default:
                     reader.skipType(tag & 7);
                     break;
                 }
             }
-
             return message;
         };
 
@@ -1522,8 +1456,7 @@ export const collab = $root.collab = (() => {
         AccessChanged.fromObject = function fromObject(object) {
             if (object instanceof $root.collab.AccessChanged)
                 return object;
-            const message = new $root.collab.AccessChanged();
-
+            let message = new $root.collab.AccessChanged();
             if (object.canRead != null)
                 message.canRead = Boolean(object.canRead);
             if (object.canWrite != null)
@@ -1545,14 +1478,12 @@ export const collab = $root.collab = (() => {
         AccessChanged.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            const object = {};
-
+            let object = {};
             if (options.defaults) {
                 object.canRead = false;
                 object.canWrite = false;
                 object.reason = 0;
             }
-
             if (message.canRead != null && message.hasOwnProperty("canRead"))
                 object.canRead = message.canRead;
             if (message.canWrite != null && message.hasOwnProperty("canWrite"))
@@ -1585,7 +1516,6 @@ export const collab = $root.collab = (() => {
             if (typeUrlPrefix === undefined) {
                 typeUrlPrefix = "type.googleapis.com";
             }
-
             return typeUrlPrefix + "/collab.AccessChanged";
         };
 
@@ -1749,11 +1679,9 @@ export const collab = $root.collab = (() => {
         CollabMessage.decode = function decode(reader, length, error) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            const end = length === undefined ? reader.len : reader.pos + length, message = new $root.collab.CollabMessage();
-
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.collab.CollabMessage();
             while (reader.pos < end) {
-                const tag = reader.uint32();
-
+                let tag = reader.uint32();
                 if (tag === error)
                     break;
                 switch (tag >>> 3) {
@@ -1761,38 +1689,31 @@ export const collab = $root.collab = (() => {
                         message.objectId = reader.string();
                         break;
                     }
-
                 case 2: {
                         message.collabType = reader.int32();
                         break;
                     }
-
                 case 3: {
                         message.syncRequest = $root.collab.SyncRequest.decode(reader, reader.uint32());
                         break;
                     }
-
                 case 4: {
                         message.update = $root.collab.Update.decode(reader, reader.uint32());
                         break;
                     }
-
                 case 5: {
                         message.awarenessUpdate = $root.collab.AwarenessUpdate.decode(reader, reader.uint32());
                         break;
                     }
-
                 case 6: {
                         message.accessChanged = $root.collab.AccessChanged.decode(reader, reader.uint32());
                         break;
                     }
-
                 default:
                     reader.skipType(tag & 7);
                     break;
                 }
             }
-
             return message;
         };
 
@@ -1823,8 +1744,7 @@ export const collab = $root.collab = (() => {
         CollabMessage.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            const properties = {};
-
+            let properties = {};
             if (message.objectId != null && message.hasOwnProperty("objectId"))
                 if (!$util.isString(message.objectId))
                     return "objectId: string expected";
@@ -1834,49 +1754,41 @@ export const collab = $root.collab = (() => {
             if (message.syncRequest != null && message.hasOwnProperty("syncRequest")) {
                 properties.data = 1;
                 {
-                    const error = $root.collab.SyncRequest.verify(message.syncRequest);
-
+                    let error = $root.collab.SyncRequest.verify(message.syncRequest);
                     if (error)
                         return "syncRequest." + error;
                 }
             }
-
             if (message.update != null && message.hasOwnProperty("update")) {
                 if (properties.data === 1)
                     return "data: multiple values";
                 properties.data = 1;
                 {
-                    const error = $root.collab.Update.verify(message.update);
-
+                    let error = $root.collab.Update.verify(message.update);
                     if (error)
                         return "update." + error;
                 }
             }
-
             if (message.awarenessUpdate != null && message.hasOwnProperty("awarenessUpdate")) {
                 if (properties.data === 1)
                     return "data: multiple values";
                 properties.data = 1;
                 {
-                    const error = $root.collab.AwarenessUpdate.verify(message.awarenessUpdate);
-
+                    let error = $root.collab.AwarenessUpdate.verify(message.awarenessUpdate);
                     if (error)
                         return "awarenessUpdate." + error;
                 }
             }
-
             if (message.accessChanged != null && message.hasOwnProperty("accessChanged")) {
                 if (properties.data === 1)
                     return "data: multiple values";
                 properties.data = 1;
                 {
-                    const error = $root.collab.AccessChanged.verify(message.accessChanged);
-
+                    let error = $root.collab.AccessChanged.verify(message.accessChanged);
                     if (error)
                         return "accessChanged." + error;
                 }
             }
-
             return null;
         };
 
@@ -1891,8 +1803,7 @@ export const collab = $root.collab = (() => {
         CollabMessage.fromObject = function fromObject(object) {
             if (object instanceof $root.collab.CollabMessage)
                 return object;
-            const message = new $root.collab.CollabMessage();
-
+            let message = new $root.collab.CollabMessage();
             if (object.objectId != null)
                 message.objectId = String(object.objectId);
             if (object.collabType != null)
@@ -1902,25 +1813,21 @@ export const collab = $root.collab = (() => {
                     throw TypeError(".collab.CollabMessage.syncRequest: object expected");
                 message.syncRequest = $root.collab.SyncRequest.fromObject(object.syncRequest);
             }
-
             if (object.update != null) {
                 if (typeof object.update !== "object")
                     throw TypeError(".collab.CollabMessage.update: object expected");
                 message.update = $root.collab.Update.fromObject(object.update);
             }
-
             if (object.awarenessUpdate != null) {
                 if (typeof object.awarenessUpdate !== "object")
                     throw TypeError(".collab.CollabMessage.awarenessUpdate: object expected");
                 message.awarenessUpdate = $root.collab.AwarenessUpdate.fromObject(object.awarenessUpdate);
             }
-
             if (object.accessChanged != null) {
                 if (typeof object.accessChanged !== "object")
                     throw TypeError(".collab.CollabMessage.accessChanged: object expected");
                 message.accessChanged = $root.collab.AccessChanged.fromObject(object.accessChanged);
             }
-
             return message;
         };
 
@@ -1936,13 +1843,11 @@ export const collab = $root.collab = (() => {
         CollabMessage.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            const object = {};
-
+            let object = {};
             if (options.defaults) {
                 object.objectId = "";
                 object.collabType = 0;
             }
-
             if (message.objectId != null && message.hasOwnProperty("objectId"))
                 object.objectId = message.objectId;
             if (message.collabType != null && message.hasOwnProperty("collabType"))
@@ -1952,25 +1857,21 @@ export const collab = $root.collab = (() => {
                 if (options.oneofs)
                     object.data = "syncRequest";
             }
-
             if (message.update != null && message.hasOwnProperty("update")) {
                 object.update = $root.collab.Update.toObject(message.update, options);
                 if (options.oneofs)
                     object.data = "update";
             }
-
             if (message.awarenessUpdate != null && message.hasOwnProperty("awarenessUpdate")) {
                 object.awarenessUpdate = $root.collab.AwarenessUpdate.toObject(message.awarenessUpdate, options);
                 if (options.oneofs)
                     object.data = "awarenessUpdate";
             }
-
             if (message.accessChanged != null && message.hasOwnProperty("accessChanged")) {
                 object.accessChanged = $root.collab.AccessChanged.toObject(message.accessChanged, options);
                 if (options.oneofs)
                     object.data = "accessChanged";
             }
-
             return object;
         };
 
@@ -1997,7 +1898,6 @@ export const collab = $root.collab = (() => {
             if (typeUrlPrefix === undefined) {
                 typeUrlPrefix = "type.googleapis.com";
             }
-
             return typeUrlPrefix + "/collab.CollabMessage";
         };
 
@@ -2024,6 +1924,10 @@ export const notification = $root.notification = (() => {
          * @interface IWorkspaceNotification
          * @property {notification.IUserProfileChange|null} [profileChange] WorkspaceNotification profileChange
          * @property {notification.IPermissionChanged|null} [permissionChanged] WorkspaceNotification permissionChanged
+         * @property {notification.ISectionChanged|null} [sectionChanged] WorkspaceNotification sectionChanged
+         * @property {notification.IShareViewsChanged|null} [shareViewsChanged] WorkspaceNotification shareViewsChanged
+         * @property {notification.IMentionablePersonListChanged|null} [mentionablePersonListChanged] WorkspaceNotification mentionablePersonListChanged
+         * @property {notification.IServerLimit|null} [serverLimit] WorkspaceNotification serverLimit
          */
 
         /**
@@ -2057,17 +1961,49 @@ export const notification = $root.notification = (() => {
          */
         WorkspaceNotification.prototype.permissionChanged = null;
 
+        /**
+         * WorkspaceNotification sectionChanged.
+         * @member {notification.ISectionChanged|null|undefined} sectionChanged
+         * @memberof notification.WorkspaceNotification
+         * @instance
+         */
+        WorkspaceNotification.prototype.sectionChanged = null;
+
+        /**
+         * WorkspaceNotification shareViewsChanged.
+         * @member {notification.IShareViewsChanged|null|undefined} shareViewsChanged
+         * @memberof notification.WorkspaceNotification
+         * @instance
+         */
+        WorkspaceNotification.prototype.shareViewsChanged = null;
+
+        /**
+         * WorkspaceNotification mentionablePersonListChanged.
+         * @member {notification.IMentionablePersonListChanged|null|undefined} mentionablePersonListChanged
+         * @memberof notification.WorkspaceNotification
+         * @instance
+         */
+        WorkspaceNotification.prototype.mentionablePersonListChanged = null;
+
+        /**
+         * WorkspaceNotification serverLimit.
+         * @member {notification.IServerLimit|null|undefined} serverLimit
+         * @memberof notification.WorkspaceNotification
+         * @instance
+         */
+        WorkspaceNotification.prototype.serverLimit = null;
+
         // OneOf field names bound to virtual getters and setters
         let $oneOfFields;
 
         /**
          * WorkspaceNotification payload.
-         * @member {"profileChange"|"permissionChanged"|undefined} payload
+         * @member {"profileChange"|"permissionChanged"|"sectionChanged"|"shareViewsChanged"|"mentionablePersonListChanged"|"serverLimit"|undefined} payload
          * @memberof notification.WorkspaceNotification
          * @instance
          */
         Object.defineProperty(WorkspaceNotification.prototype, "payload", {
-            get: $util.oneOfGetter($oneOfFields = ["profileChange", "permissionChanged"]),
+            get: $util.oneOfGetter($oneOfFields = ["profileChange", "permissionChanged", "sectionChanged", "shareViewsChanged", "mentionablePersonListChanged", "serverLimit"]),
             set: $util.oneOfSetter($oneOfFields)
         });
 
@@ -2099,6 +2035,14 @@ export const notification = $root.notification = (() => {
                 $root.notification.UserProfileChange.encode(message.profileChange, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
             if (message.permissionChanged != null && Object.hasOwnProperty.call(message, "permissionChanged"))
                 $root.notification.PermissionChanged.encode(message.permissionChanged, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
+            if (message.sectionChanged != null && Object.hasOwnProperty.call(message, "sectionChanged"))
+                $root.notification.SectionChanged.encode(message.sectionChanged, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
+            if (message.shareViewsChanged != null && Object.hasOwnProperty.call(message, "shareViewsChanged"))
+                $root.notification.ShareViewsChanged.encode(message.shareViewsChanged, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
+            if (message.mentionablePersonListChanged != null && Object.hasOwnProperty.call(message, "mentionablePersonListChanged"))
+                $root.notification.MentionablePersonListChanged.encode(message.mentionablePersonListChanged, writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
+            if (message.serverLimit != null && Object.hasOwnProperty.call(message, "serverLimit"))
+                $root.notification.ServerLimit.encode(message.serverLimit, writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
             return writer;
         };
 
@@ -2129,11 +2073,9 @@ export const notification = $root.notification = (() => {
         WorkspaceNotification.decode = function decode(reader, length, error) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            const end = length === undefined ? reader.len : reader.pos + length, message = new $root.notification.WorkspaceNotification();
-
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.notification.WorkspaceNotification();
             while (reader.pos < end) {
-                const tag = reader.uint32();
-
+                let tag = reader.uint32();
                 if (tag === error)
                     break;
                 switch (tag >>> 3) {
@@ -2141,18 +2083,31 @@ export const notification = $root.notification = (() => {
                         message.profileChange = $root.notification.UserProfileChange.decode(reader, reader.uint32());
                         break;
                     }
-
                 case 2: {
                         message.permissionChanged = $root.notification.PermissionChanged.decode(reader, reader.uint32());
                         break;
                     }
-
+                case 3: {
+                        message.sectionChanged = $root.notification.SectionChanged.decode(reader, reader.uint32());
+                        break;
+                    }
+                case 4: {
+                        message.shareViewsChanged = $root.notification.ShareViewsChanged.decode(reader, reader.uint32());
+                        break;
+                    }
+                case 5: {
+                        message.mentionablePersonListChanged = $root.notification.MentionablePersonListChanged.decode(reader, reader.uint32());
+                        break;
+                    }
+                case 6: {
+                        message.serverLimit = $root.notification.ServerLimit.decode(reader, reader.uint32());
+                        break;
+                    }
                 default:
                     reader.skipType(tag & 7);
                     break;
                 }
             }
-
             return message;
         };
 
@@ -2183,30 +2138,65 @@ export const notification = $root.notification = (() => {
         WorkspaceNotification.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            const properties = {};
-
+            let properties = {};
             if (message.profileChange != null && message.hasOwnProperty("profileChange")) {
                 properties.payload = 1;
                 {
-                    const error = $root.notification.UserProfileChange.verify(message.profileChange);
-
+                    let error = $root.notification.UserProfileChange.verify(message.profileChange);
                     if (error)
                         return "profileChange." + error;
                 }
             }
-
             if (message.permissionChanged != null && message.hasOwnProperty("permissionChanged")) {
                 if (properties.payload === 1)
                     return "payload: multiple values";
                 properties.payload = 1;
                 {
-                    const error = $root.notification.PermissionChanged.verify(message.permissionChanged);
-
+                    let error = $root.notification.PermissionChanged.verify(message.permissionChanged);
                     if (error)
                         return "permissionChanged." + error;
                 }
             }
-
+            if (message.sectionChanged != null && message.hasOwnProperty("sectionChanged")) {
+                if (properties.payload === 1)
+                    return "payload: multiple values";
+                properties.payload = 1;
+                {
+                    let error = $root.notification.SectionChanged.verify(message.sectionChanged);
+                    if (error)
+                        return "sectionChanged." + error;
+                }
+            }
+            if (message.shareViewsChanged != null && message.hasOwnProperty("shareViewsChanged")) {
+                if (properties.payload === 1)
+                    return "payload: multiple values";
+                properties.payload = 1;
+                {
+                    let error = $root.notification.ShareViewsChanged.verify(message.shareViewsChanged);
+                    if (error)
+                        return "shareViewsChanged." + error;
+                }
+            }
+            if (message.mentionablePersonListChanged != null && message.hasOwnProperty("mentionablePersonListChanged")) {
+                if (properties.payload === 1)
+                    return "payload: multiple values";
+                properties.payload = 1;
+                {
+                    let error = $root.notification.MentionablePersonListChanged.verify(message.mentionablePersonListChanged);
+                    if (error)
+                        return "mentionablePersonListChanged." + error;
+                }
+            }
+            if (message.serverLimit != null && message.hasOwnProperty("serverLimit")) {
+                if (properties.payload === 1)
+                    return "payload: multiple values";
+                properties.payload = 1;
+                {
+                    let error = $root.notification.ServerLimit.verify(message.serverLimit);
+                    if (error)
+                        return "serverLimit." + error;
+                }
+            }
             return null;
         };
 
@@ -2221,20 +2211,37 @@ export const notification = $root.notification = (() => {
         WorkspaceNotification.fromObject = function fromObject(object) {
             if (object instanceof $root.notification.WorkspaceNotification)
                 return object;
-            const message = new $root.notification.WorkspaceNotification();
-
+            let message = new $root.notification.WorkspaceNotification();
             if (object.profileChange != null) {
                 if (typeof object.profileChange !== "object")
                     throw TypeError(".notification.WorkspaceNotification.profileChange: object expected");
                 message.profileChange = $root.notification.UserProfileChange.fromObject(object.profileChange);
             }
-
             if (object.permissionChanged != null) {
                 if (typeof object.permissionChanged !== "object")
                     throw TypeError(".notification.WorkspaceNotification.permissionChanged: object expected");
                 message.permissionChanged = $root.notification.PermissionChanged.fromObject(object.permissionChanged);
             }
-
+            if (object.sectionChanged != null) {
+                if (typeof object.sectionChanged !== "object")
+                    throw TypeError(".notification.WorkspaceNotification.sectionChanged: object expected");
+                message.sectionChanged = $root.notification.SectionChanged.fromObject(object.sectionChanged);
+            }
+            if (object.shareViewsChanged != null) {
+                if (typeof object.shareViewsChanged !== "object")
+                    throw TypeError(".notification.WorkspaceNotification.shareViewsChanged: object expected");
+                message.shareViewsChanged = $root.notification.ShareViewsChanged.fromObject(object.shareViewsChanged);
+            }
+            if (object.mentionablePersonListChanged != null) {
+                if (typeof object.mentionablePersonListChanged !== "object")
+                    throw TypeError(".notification.WorkspaceNotification.mentionablePersonListChanged: object expected");
+                message.mentionablePersonListChanged = $root.notification.MentionablePersonListChanged.fromObject(object.mentionablePersonListChanged);
+            }
+            if (object.serverLimit != null) {
+                if (typeof object.serverLimit !== "object")
+                    throw TypeError(".notification.WorkspaceNotification.serverLimit: object expected");
+                message.serverLimit = $root.notification.ServerLimit.fromObject(object.serverLimit);
+            }
             return message;
         };
 
@@ -2250,20 +2257,37 @@ export const notification = $root.notification = (() => {
         WorkspaceNotification.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            const object = {};
-
+            let object = {};
             if (message.profileChange != null && message.hasOwnProperty("profileChange")) {
                 object.profileChange = $root.notification.UserProfileChange.toObject(message.profileChange, options);
                 if (options.oneofs)
                     object.payload = "profileChange";
             }
-
             if (message.permissionChanged != null && message.hasOwnProperty("permissionChanged")) {
                 object.permissionChanged = $root.notification.PermissionChanged.toObject(message.permissionChanged, options);
                 if (options.oneofs)
                     object.payload = "permissionChanged";
             }
-
+            if (message.sectionChanged != null && message.hasOwnProperty("sectionChanged")) {
+                object.sectionChanged = $root.notification.SectionChanged.toObject(message.sectionChanged, options);
+                if (options.oneofs)
+                    object.payload = "sectionChanged";
+            }
+            if (message.shareViewsChanged != null && message.hasOwnProperty("shareViewsChanged")) {
+                object.shareViewsChanged = $root.notification.ShareViewsChanged.toObject(message.shareViewsChanged, options);
+                if (options.oneofs)
+                    object.payload = "shareViewsChanged";
+            }
+            if (message.mentionablePersonListChanged != null && message.hasOwnProperty("mentionablePersonListChanged")) {
+                object.mentionablePersonListChanged = $root.notification.MentionablePersonListChanged.toObject(message.mentionablePersonListChanged, options);
+                if (options.oneofs)
+                    object.payload = "mentionablePersonListChanged";
+            }
+            if (message.serverLimit != null && message.hasOwnProperty("serverLimit")) {
+                object.serverLimit = $root.notification.ServerLimit.toObject(message.serverLimit, options);
+                if (options.oneofs)
+                    object.payload = "serverLimit";
+            }
             return object;
         };
 
@@ -2290,7 +2314,6 @@ export const notification = $root.notification = (() => {
             if (typeUrlPrefix === undefined) {
                 typeUrlPrefix = "type.googleapis.com";
             }
-
             return typeUrlPrefix + "/notification.WorkspaceNotification";
         };
 
@@ -2432,11 +2455,9 @@ export const notification = $root.notification = (() => {
         UserProfileChange.decode = function decode(reader, length, error) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            const end = length === undefined ? reader.len : reader.pos + length, message = new $root.notification.UserProfileChange();
-
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.notification.UserProfileChange();
             while (reader.pos < end) {
-                const tag = reader.uint32();
-
+                let tag = reader.uint32();
                 if (tag === error)
                     break;
                 switch (tag >>> 3) {
@@ -2444,23 +2465,19 @@ export const notification = $root.notification = (() => {
                         message.uid = reader.int64();
                         break;
                     }
-
                 case 2: {
                         message.name = reader.string();
                         break;
                     }
-
                 case 3: {
                         message.email = reader.string();
                         break;
                     }
-
                 default:
                     reader.skipType(tag & 7);
                     break;
                 }
             }
-
             return message;
         };
 
@@ -2491,8 +2508,7 @@ export const notification = $root.notification = (() => {
         UserProfileChange.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            const properties = {};
-
+            let properties = {};
             if (message.uid != null && message.hasOwnProperty("uid"))
                 if (!$util.isInteger(message.uid) && !(message.uid && $util.isInteger(message.uid.low) && $util.isInteger(message.uid.high)))
                     return "uid: integer|Long expected";
@@ -2501,13 +2517,11 @@ export const notification = $root.notification = (() => {
                 if (!$util.isString(message.name))
                     return "name: string expected";
             }
-
             if (message.email != null && message.hasOwnProperty("email")) {
                 properties._email = 1;
                 if (!$util.isString(message.email))
                     return "email: string expected";
             }
-
             return null;
         };
 
@@ -2522,8 +2536,7 @@ export const notification = $root.notification = (() => {
         UserProfileChange.fromObject = function fromObject(object) {
             if (object instanceof $root.notification.UserProfileChange)
                 return object;
-            const message = new $root.notification.UserProfileChange();
-
+            let message = new $root.notification.UserProfileChange();
             if (object.uid != null)
                 if ($util.Long)
                     (message.uid = $util.Long.fromValue(object.uid)).unsigned = false;
@@ -2552,12 +2565,10 @@ export const notification = $root.notification = (() => {
         UserProfileChange.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            const object = {};
-
+            let object = {};
             if (options.defaults)
                 if ($util.Long) {
-                    const long = new $util.Long(0, 0, false);
-
+                    let long = new $util.Long(0, 0, false);
                     object.uid = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
                 } else
                     object.uid = options.longs === String ? "0" : 0;
@@ -2571,13 +2582,11 @@ export const notification = $root.notification = (() => {
                 if (options.oneofs)
                     object._name = "name";
             }
-
             if (message.email != null && message.hasOwnProperty("email")) {
                 object.email = message.email;
                 if (options.oneofs)
                     object._email = "email";
             }
-
             return object;
         };
 
@@ -2604,7 +2613,6 @@ export const notification = $root.notification = (() => {
             if (typeUrlPrefix === undefined) {
                 typeUrlPrefix = "type.googleapis.com";
             }
-
             return typeUrlPrefix + "/notification.UserProfileChange";
         };
 
@@ -2710,11 +2718,9 @@ export const notification = $root.notification = (() => {
         PermissionChanged.decode = function decode(reader, length, error) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            const end = length === undefined ? reader.len : reader.pos + length, message = new $root.notification.PermissionChanged();
-
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.notification.PermissionChanged();
             while (reader.pos < end) {
-                const tag = reader.uint32();
-
+                let tag = reader.uint32();
                 if (tag === error)
                     break;
                 switch (tag >>> 3) {
@@ -2722,18 +2728,15 @@ export const notification = $root.notification = (() => {
                         message.objectId = reader.string();
                         break;
                     }
-
                 case 2: {
                         message.reason = reader.uint32();
                         break;
                     }
-
                 default:
                     reader.skipType(tag & 7);
                     break;
                 }
             }
-
             return message;
         };
 
@@ -2784,8 +2787,7 @@ export const notification = $root.notification = (() => {
         PermissionChanged.fromObject = function fromObject(object) {
             if (object instanceof $root.notification.PermissionChanged)
                 return object;
-            const message = new $root.notification.PermissionChanged();
-
+            let message = new $root.notification.PermissionChanged();
             if (object.objectId != null)
                 message.objectId = String(object.objectId);
             if (object.reason != null)
@@ -2805,13 +2807,11 @@ export const notification = $root.notification = (() => {
         PermissionChanged.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
-            const object = {};
-
+            let object = {};
             if (options.defaults) {
                 object.objectId = "";
                 object.reason = 0;
             }
-
             if (message.objectId != null && message.hasOwnProperty("objectId"))
                 object.objectId = message.objectId;
             if (message.reason != null && message.hasOwnProperty("reason"))
@@ -2842,11 +2842,2027 @@ export const notification = $root.notification = (() => {
             if (typeUrlPrefix === undefined) {
                 typeUrlPrefix = "type.googleapis.com";
             }
-
             return typeUrlPrefix + "/notification.PermissionChanged";
         };
 
         return PermissionChanged;
+    })();
+
+    notification.SectionChanged = (function() {
+
+        /**
+         * Properties of a SectionChanged.
+         * @memberof notification
+         * @interface ISectionChanged
+         * @property {string|null} [data] SectionChanged data
+         */
+
+        /**
+         * Constructs a new SectionChanged.
+         * @memberof notification
+         * @classdesc Represents a SectionChanged.
+         * @implements ISectionChanged
+         * @constructor
+         * @param {notification.ISectionChanged=} [properties] Properties to set
+         */
+        function SectionChanged(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * SectionChanged data.
+         * @member {string} data
+         * @memberof notification.SectionChanged
+         * @instance
+         */
+        SectionChanged.prototype.data = "";
+
+        /**
+         * Creates a new SectionChanged instance using the specified properties.
+         * @function create
+         * @memberof notification.SectionChanged
+         * @static
+         * @param {notification.ISectionChanged=} [properties] Properties to set
+         * @returns {notification.SectionChanged} SectionChanged instance
+         */
+        SectionChanged.create = function create(properties) {
+            return new SectionChanged(properties);
+        };
+
+        /**
+         * Encodes the specified SectionChanged message. Does not implicitly {@link notification.SectionChanged.verify|verify} messages.
+         * @function encode
+         * @memberof notification.SectionChanged
+         * @static
+         * @param {notification.ISectionChanged} message SectionChanged message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        SectionChanged.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.data != null && Object.hasOwnProperty.call(message, "data"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.data);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified SectionChanged message, length delimited. Does not implicitly {@link notification.SectionChanged.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof notification.SectionChanged
+         * @static
+         * @param {notification.ISectionChanged} message SectionChanged message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        SectionChanged.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a SectionChanged message from the specified reader or buffer.
+         * @function decode
+         * @memberof notification.SectionChanged
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {notification.SectionChanged} SectionChanged
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        SectionChanged.decode = function decode(reader, length, error) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.notification.SectionChanged();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.data = reader.string();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a SectionChanged message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof notification.SectionChanged
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {notification.SectionChanged} SectionChanged
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        SectionChanged.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a SectionChanged message.
+         * @function verify
+         * @memberof notification.SectionChanged
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        SectionChanged.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.data != null && message.hasOwnProperty("data"))
+                if (!$util.isString(message.data))
+                    return "data: string expected";
+            return null;
+        };
+
+        /**
+         * Creates a SectionChanged message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof notification.SectionChanged
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {notification.SectionChanged} SectionChanged
+         */
+        SectionChanged.fromObject = function fromObject(object) {
+            if (object instanceof $root.notification.SectionChanged)
+                return object;
+            let message = new $root.notification.SectionChanged();
+            if (object.data != null)
+                message.data = String(object.data);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a SectionChanged message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof notification.SectionChanged
+         * @static
+         * @param {notification.SectionChanged} message SectionChanged
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        SectionChanged.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults)
+                object.data = "";
+            if (message.data != null && message.hasOwnProperty("data"))
+                object.data = message.data;
+            return object;
+        };
+
+        /**
+         * Converts this SectionChanged to JSON.
+         * @function toJSON
+         * @memberof notification.SectionChanged
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        SectionChanged.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for SectionChanged
+         * @function getTypeUrl
+         * @memberof notification.SectionChanged
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        SectionChanged.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/notification.SectionChanged";
+        };
+
+        return SectionChanged;
+    })();
+
+    notification.MentionablePersonListChanged = (function() {
+
+        /**
+         * Properties of a MentionablePersonListChanged.
+         * @memberof notification
+         * @interface IMentionablePersonListChanged
+         * @property {notification.IUpdateMemberRole|null} [updateMemberRole] MentionablePersonListChanged updateMemberRole
+         * @property {notification.IPageMention|null} [pageMention] MentionablePersonListChanged pageMention
+         * @property {notification.INewMember|null} [newMember] MentionablePersonListChanged newMember
+         * @property {notification.IRemovedMember|null} [removedMember] MentionablePersonListChanged removedMember
+         */
+
+        /**
+         * Constructs a new MentionablePersonListChanged.
+         * @memberof notification
+         * @classdesc Represents a MentionablePersonListChanged.
+         * @implements IMentionablePersonListChanged
+         * @constructor
+         * @param {notification.IMentionablePersonListChanged=} [properties] Properties to set
+         */
+        function MentionablePersonListChanged(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * MentionablePersonListChanged updateMemberRole.
+         * @member {notification.IUpdateMemberRole|null|undefined} updateMemberRole
+         * @memberof notification.MentionablePersonListChanged
+         * @instance
+         */
+        MentionablePersonListChanged.prototype.updateMemberRole = null;
+
+        /**
+         * MentionablePersonListChanged pageMention.
+         * @member {notification.IPageMention|null|undefined} pageMention
+         * @memberof notification.MentionablePersonListChanged
+         * @instance
+         */
+        MentionablePersonListChanged.prototype.pageMention = null;
+
+        /**
+         * MentionablePersonListChanged newMember.
+         * @member {notification.INewMember|null|undefined} newMember
+         * @memberof notification.MentionablePersonListChanged
+         * @instance
+         */
+        MentionablePersonListChanged.prototype.newMember = null;
+
+        /**
+         * MentionablePersonListChanged removedMember.
+         * @member {notification.IRemovedMember|null|undefined} removedMember
+         * @memberof notification.MentionablePersonListChanged
+         * @instance
+         */
+        MentionablePersonListChanged.prototype.removedMember = null;
+
+        // OneOf field names bound to virtual getters and setters
+        let $oneOfFields;
+
+        /**
+         * MentionablePersonListChanged payload.
+         * @member {"updateMemberRole"|"pageMention"|"newMember"|"removedMember"|undefined} payload
+         * @memberof notification.MentionablePersonListChanged
+         * @instance
+         */
+        Object.defineProperty(MentionablePersonListChanged.prototype, "payload", {
+            get: $util.oneOfGetter($oneOfFields = ["updateMemberRole", "pageMention", "newMember", "removedMember"]),
+            set: $util.oneOfSetter($oneOfFields)
+        });
+
+        /**
+         * Creates a new MentionablePersonListChanged instance using the specified properties.
+         * @function create
+         * @memberof notification.MentionablePersonListChanged
+         * @static
+         * @param {notification.IMentionablePersonListChanged=} [properties] Properties to set
+         * @returns {notification.MentionablePersonListChanged} MentionablePersonListChanged instance
+         */
+        MentionablePersonListChanged.create = function create(properties) {
+            return new MentionablePersonListChanged(properties);
+        };
+
+        /**
+         * Encodes the specified MentionablePersonListChanged message. Does not implicitly {@link notification.MentionablePersonListChanged.verify|verify} messages.
+         * @function encode
+         * @memberof notification.MentionablePersonListChanged
+         * @static
+         * @param {notification.IMentionablePersonListChanged} message MentionablePersonListChanged message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        MentionablePersonListChanged.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.updateMemberRole != null && Object.hasOwnProperty.call(message, "updateMemberRole"))
+                $root.notification.UpdateMemberRole.encode(message.updateMemberRole, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
+            if (message.pageMention != null && Object.hasOwnProperty.call(message, "pageMention"))
+                $root.notification.PageMention.encode(message.pageMention, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
+            if (message.newMember != null && Object.hasOwnProperty.call(message, "newMember"))
+                $root.notification.NewMember.encode(message.newMember, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
+            if (message.removedMember != null && Object.hasOwnProperty.call(message, "removedMember"))
+                $root.notification.RemovedMember.encode(message.removedMember, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified MentionablePersonListChanged message, length delimited. Does not implicitly {@link notification.MentionablePersonListChanged.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof notification.MentionablePersonListChanged
+         * @static
+         * @param {notification.IMentionablePersonListChanged} message MentionablePersonListChanged message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        MentionablePersonListChanged.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a MentionablePersonListChanged message from the specified reader or buffer.
+         * @function decode
+         * @memberof notification.MentionablePersonListChanged
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {notification.MentionablePersonListChanged} MentionablePersonListChanged
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        MentionablePersonListChanged.decode = function decode(reader, length, error) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.notification.MentionablePersonListChanged();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.updateMemberRole = $root.notification.UpdateMemberRole.decode(reader, reader.uint32());
+                        break;
+                    }
+                case 2: {
+                        message.pageMention = $root.notification.PageMention.decode(reader, reader.uint32());
+                        break;
+                    }
+                case 3: {
+                        message.newMember = $root.notification.NewMember.decode(reader, reader.uint32());
+                        break;
+                    }
+                case 4: {
+                        message.removedMember = $root.notification.RemovedMember.decode(reader, reader.uint32());
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a MentionablePersonListChanged message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof notification.MentionablePersonListChanged
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {notification.MentionablePersonListChanged} MentionablePersonListChanged
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        MentionablePersonListChanged.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a MentionablePersonListChanged message.
+         * @function verify
+         * @memberof notification.MentionablePersonListChanged
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        MentionablePersonListChanged.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            let properties = {};
+            if (message.updateMemberRole != null && message.hasOwnProperty("updateMemberRole")) {
+                properties.payload = 1;
+                {
+                    let error = $root.notification.UpdateMemberRole.verify(message.updateMemberRole);
+                    if (error)
+                        return "updateMemberRole." + error;
+                }
+            }
+            if (message.pageMention != null && message.hasOwnProperty("pageMention")) {
+                if (properties.payload === 1)
+                    return "payload: multiple values";
+                properties.payload = 1;
+                {
+                    let error = $root.notification.PageMention.verify(message.pageMention);
+                    if (error)
+                        return "pageMention." + error;
+                }
+            }
+            if (message.newMember != null && message.hasOwnProperty("newMember")) {
+                if (properties.payload === 1)
+                    return "payload: multiple values";
+                properties.payload = 1;
+                {
+                    let error = $root.notification.NewMember.verify(message.newMember);
+                    if (error)
+                        return "newMember." + error;
+                }
+            }
+            if (message.removedMember != null && message.hasOwnProperty("removedMember")) {
+                if (properties.payload === 1)
+                    return "payload: multiple values";
+                properties.payload = 1;
+                {
+                    let error = $root.notification.RemovedMember.verify(message.removedMember);
+                    if (error)
+                        return "removedMember." + error;
+                }
+            }
+            return null;
+        };
+
+        /**
+         * Creates a MentionablePersonListChanged message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof notification.MentionablePersonListChanged
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {notification.MentionablePersonListChanged} MentionablePersonListChanged
+         */
+        MentionablePersonListChanged.fromObject = function fromObject(object) {
+            if (object instanceof $root.notification.MentionablePersonListChanged)
+                return object;
+            let message = new $root.notification.MentionablePersonListChanged();
+            if (object.updateMemberRole != null) {
+                if (typeof object.updateMemberRole !== "object")
+                    throw TypeError(".notification.MentionablePersonListChanged.updateMemberRole: object expected");
+                message.updateMemberRole = $root.notification.UpdateMemberRole.fromObject(object.updateMemberRole);
+            }
+            if (object.pageMention != null) {
+                if (typeof object.pageMention !== "object")
+                    throw TypeError(".notification.MentionablePersonListChanged.pageMention: object expected");
+                message.pageMention = $root.notification.PageMention.fromObject(object.pageMention);
+            }
+            if (object.newMember != null) {
+                if (typeof object.newMember !== "object")
+                    throw TypeError(".notification.MentionablePersonListChanged.newMember: object expected");
+                message.newMember = $root.notification.NewMember.fromObject(object.newMember);
+            }
+            if (object.removedMember != null) {
+                if (typeof object.removedMember !== "object")
+                    throw TypeError(".notification.MentionablePersonListChanged.removedMember: object expected");
+                message.removedMember = $root.notification.RemovedMember.fromObject(object.removedMember);
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a MentionablePersonListChanged message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof notification.MentionablePersonListChanged
+         * @static
+         * @param {notification.MentionablePersonListChanged} message MentionablePersonListChanged
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        MentionablePersonListChanged.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (message.updateMemberRole != null && message.hasOwnProperty("updateMemberRole")) {
+                object.updateMemberRole = $root.notification.UpdateMemberRole.toObject(message.updateMemberRole, options);
+                if (options.oneofs)
+                    object.payload = "updateMemberRole";
+            }
+            if (message.pageMention != null && message.hasOwnProperty("pageMention")) {
+                object.pageMention = $root.notification.PageMention.toObject(message.pageMention, options);
+                if (options.oneofs)
+                    object.payload = "pageMention";
+            }
+            if (message.newMember != null && message.hasOwnProperty("newMember")) {
+                object.newMember = $root.notification.NewMember.toObject(message.newMember, options);
+                if (options.oneofs)
+                    object.payload = "newMember";
+            }
+            if (message.removedMember != null && message.hasOwnProperty("removedMember")) {
+                object.removedMember = $root.notification.RemovedMember.toObject(message.removedMember, options);
+                if (options.oneofs)
+                    object.payload = "removedMember";
+            }
+            return object;
+        };
+
+        /**
+         * Converts this MentionablePersonListChanged to JSON.
+         * @function toJSON
+         * @memberof notification.MentionablePersonListChanged
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        MentionablePersonListChanged.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for MentionablePersonListChanged
+         * @function getTypeUrl
+         * @memberof notification.MentionablePersonListChanged
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        MentionablePersonListChanged.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/notification.MentionablePersonListChanged";
+        };
+
+        return MentionablePersonListChanged;
+    })();
+
+    notification.NewMember = (function() {
+
+        /**
+         * Properties of a NewMember.
+         * @memberof notification
+         * @interface INewMember
+         * @property {string|null} [userUuid] NewMember userUuid
+         */
+
+        /**
+         * Constructs a new NewMember.
+         * @memberof notification
+         * @classdesc Represents a NewMember.
+         * @implements INewMember
+         * @constructor
+         * @param {notification.INewMember=} [properties] Properties to set
+         */
+        function NewMember(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * NewMember userUuid.
+         * @member {string} userUuid
+         * @memberof notification.NewMember
+         * @instance
+         */
+        NewMember.prototype.userUuid = "";
+
+        /**
+         * Creates a new NewMember instance using the specified properties.
+         * @function create
+         * @memberof notification.NewMember
+         * @static
+         * @param {notification.INewMember=} [properties] Properties to set
+         * @returns {notification.NewMember} NewMember instance
+         */
+        NewMember.create = function create(properties) {
+            return new NewMember(properties);
+        };
+
+        /**
+         * Encodes the specified NewMember message. Does not implicitly {@link notification.NewMember.verify|verify} messages.
+         * @function encode
+         * @memberof notification.NewMember
+         * @static
+         * @param {notification.INewMember} message NewMember message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        NewMember.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.userUuid != null && Object.hasOwnProperty.call(message, "userUuid"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.userUuid);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified NewMember message, length delimited. Does not implicitly {@link notification.NewMember.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof notification.NewMember
+         * @static
+         * @param {notification.INewMember} message NewMember message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        NewMember.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a NewMember message from the specified reader or buffer.
+         * @function decode
+         * @memberof notification.NewMember
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {notification.NewMember} NewMember
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        NewMember.decode = function decode(reader, length, error) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.notification.NewMember();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.userUuid = reader.string();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a NewMember message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof notification.NewMember
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {notification.NewMember} NewMember
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        NewMember.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a NewMember message.
+         * @function verify
+         * @memberof notification.NewMember
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        NewMember.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.userUuid != null && message.hasOwnProperty("userUuid"))
+                if (!$util.isString(message.userUuid))
+                    return "userUuid: string expected";
+            return null;
+        };
+
+        /**
+         * Creates a NewMember message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof notification.NewMember
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {notification.NewMember} NewMember
+         */
+        NewMember.fromObject = function fromObject(object) {
+            if (object instanceof $root.notification.NewMember)
+                return object;
+            let message = new $root.notification.NewMember();
+            if (object.userUuid != null)
+                message.userUuid = String(object.userUuid);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a NewMember message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof notification.NewMember
+         * @static
+         * @param {notification.NewMember} message NewMember
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        NewMember.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults)
+                object.userUuid = "";
+            if (message.userUuid != null && message.hasOwnProperty("userUuid"))
+                object.userUuid = message.userUuid;
+            return object;
+        };
+
+        /**
+         * Converts this NewMember to JSON.
+         * @function toJSON
+         * @memberof notification.NewMember
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        NewMember.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for NewMember
+         * @function getTypeUrl
+         * @memberof notification.NewMember
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        NewMember.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/notification.NewMember";
+        };
+
+        return NewMember;
+    })();
+
+    notification.RemovedMember = (function() {
+
+        /**
+         * Properties of a RemovedMember.
+         * @memberof notification
+         * @interface IRemovedMember
+         * @property {string|null} [userUuid] RemovedMember userUuid
+         */
+
+        /**
+         * Constructs a new RemovedMember.
+         * @memberof notification
+         * @classdesc Represents a RemovedMember.
+         * @implements IRemovedMember
+         * @constructor
+         * @param {notification.IRemovedMember=} [properties] Properties to set
+         */
+        function RemovedMember(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * RemovedMember userUuid.
+         * @member {string} userUuid
+         * @memberof notification.RemovedMember
+         * @instance
+         */
+        RemovedMember.prototype.userUuid = "";
+
+        /**
+         * Creates a new RemovedMember instance using the specified properties.
+         * @function create
+         * @memberof notification.RemovedMember
+         * @static
+         * @param {notification.IRemovedMember=} [properties] Properties to set
+         * @returns {notification.RemovedMember} RemovedMember instance
+         */
+        RemovedMember.create = function create(properties) {
+            return new RemovedMember(properties);
+        };
+
+        /**
+         * Encodes the specified RemovedMember message. Does not implicitly {@link notification.RemovedMember.verify|verify} messages.
+         * @function encode
+         * @memberof notification.RemovedMember
+         * @static
+         * @param {notification.IRemovedMember} message RemovedMember message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        RemovedMember.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.userUuid != null && Object.hasOwnProperty.call(message, "userUuid"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.userUuid);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified RemovedMember message, length delimited. Does not implicitly {@link notification.RemovedMember.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof notification.RemovedMember
+         * @static
+         * @param {notification.IRemovedMember} message RemovedMember message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        RemovedMember.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a RemovedMember message from the specified reader or buffer.
+         * @function decode
+         * @memberof notification.RemovedMember
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {notification.RemovedMember} RemovedMember
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        RemovedMember.decode = function decode(reader, length, error) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.notification.RemovedMember();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.userUuid = reader.string();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a RemovedMember message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof notification.RemovedMember
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {notification.RemovedMember} RemovedMember
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        RemovedMember.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a RemovedMember message.
+         * @function verify
+         * @memberof notification.RemovedMember
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        RemovedMember.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.userUuid != null && message.hasOwnProperty("userUuid"))
+                if (!$util.isString(message.userUuid))
+                    return "userUuid: string expected";
+            return null;
+        };
+
+        /**
+         * Creates a RemovedMember message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof notification.RemovedMember
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {notification.RemovedMember} RemovedMember
+         */
+        RemovedMember.fromObject = function fromObject(object) {
+            if (object instanceof $root.notification.RemovedMember)
+                return object;
+            let message = new $root.notification.RemovedMember();
+            if (object.userUuid != null)
+                message.userUuid = String(object.userUuid);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a RemovedMember message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof notification.RemovedMember
+         * @static
+         * @param {notification.RemovedMember} message RemovedMember
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        RemovedMember.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults)
+                object.userUuid = "";
+            if (message.userUuid != null && message.hasOwnProperty("userUuid"))
+                object.userUuid = message.userUuid;
+            return object;
+        };
+
+        /**
+         * Converts this RemovedMember to JSON.
+         * @function toJSON
+         * @memberof notification.RemovedMember
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        RemovedMember.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for RemovedMember
+         * @function getTypeUrl
+         * @memberof notification.RemovedMember
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        RemovedMember.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/notification.RemovedMember";
+        };
+
+        return RemovedMember;
+    })();
+
+    notification.UpdateMemberRole = (function() {
+
+        /**
+         * Properties of an UpdateMemberRole.
+         * @memberof notification
+         * @interface IUpdateMemberRole
+         * @property {string|null} [userUuid] UpdateMemberRole userUuid
+         * @property {string|null} [email] UpdateMemberRole email
+         * @property {number|null} [role] UpdateMemberRole role
+         */
+
+        /**
+         * Constructs a new UpdateMemberRole.
+         * @memberof notification
+         * @classdesc Represents an UpdateMemberRole.
+         * @implements IUpdateMemberRole
+         * @constructor
+         * @param {notification.IUpdateMemberRole=} [properties] Properties to set
+         */
+        function UpdateMemberRole(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * UpdateMemberRole userUuid.
+         * @member {string} userUuid
+         * @memberof notification.UpdateMemberRole
+         * @instance
+         */
+        UpdateMemberRole.prototype.userUuid = "";
+
+        /**
+         * UpdateMemberRole email.
+         * @member {string} email
+         * @memberof notification.UpdateMemberRole
+         * @instance
+         */
+        UpdateMemberRole.prototype.email = "";
+
+        /**
+         * UpdateMemberRole role.
+         * @member {number} role
+         * @memberof notification.UpdateMemberRole
+         * @instance
+         */
+        UpdateMemberRole.prototype.role = 0;
+
+        /**
+         * Creates a new UpdateMemberRole instance using the specified properties.
+         * @function create
+         * @memberof notification.UpdateMemberRole
+         * @static
+         * @param {notification.IUpdateMemberRole=} [properties] Properties to set
+         * @returns {notification.UpdateMemberRole} UpdateMemberRole instance
+         */
+        UpdateMemberRole.create = function create(properties) {
+            return new UpdateMemberRole(properties);
+        };
+
+        /**
+         * Encodes the specified UpdateMemberRole message. Does not implicitly {@link notification.UpdateMemberRole.verify|verify} messages.
+         * @function encode
+         * @memberof notification.UpdateMemberRole
+         * @static
+         * @param {notification.IUpdateMemberRole} message UpdateMemberRole message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        UpdateMemberRole.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.userUuid != null && Object.hasOwnProperty.call(message, "userUuid"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.userUuid);
+            if (message.email != null && Object.hasOwnProperty.call(message, "email"))
+                writer.uint32(/* id 2, wireType 2 =*/18).string(message.email);
+            if (message.role != null && Object.hasOwnProperty.call(message, "role"))
+                writer.uint32(/* id 3, wireType 0 =*/24).int32(message.role);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified UpdateMemberRole message, length delimited. Does not implicitly {@link notification.UpdateMemberRole.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof notification.UpdateMemberRole
+         * @static
+         * @param {notification.IUpdateMemberRole} message UpdateMemberRole message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        UpdateMemberRole.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes an UpdateMemberRole message from the specified reader or buffer.
+         * @function decode
+         * @memberof notification.UpdateMemberRole
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {notification.UpdateMemberRole} UpdateMemberRole
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        UpdateMemberRole.decode = function decode(reader, length, error) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.notification.UpdateMemberRole();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.userUuid = reader.string();
+                        break;
+                    }
+                case 2: {
+                        message.email = reader.string();
+                        break;
+                    }
+                case 3: {
+                        message.role = reader.int32();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes an UpdateMemberRole message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof notification.UpdateMemberRole
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {notification.UpdateMemberRole} UpdateMemberRole
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        UpdateMemberRole.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies an UpdateMemberRole message.
+         * @function verify
+         * @memberof notification.UpdateMemberRole
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        UpdateMemberRole.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.userUuid != null && message.hasOwnProperty("userUuid"))
+                if (!$util.isString(message.userUuid))
+                    return "userUuid: string expected";
+            if (message.email != null && message.hasOwnProperty("email"))
+                if (!$util.isString(message.email))
+                    return "email: string expected";
+            if (message.role != null && message.hasOwnProperty("role"))
+                if (!$util.isInteger(message.role))
+                    return "role: integer expected";
+            return null;
+        };
+
+        /**
+         * Creates an UpdateMemberRole message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof notification.UpdateMemberRole
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {notification.UpdateMemberRole} UpdateMemberRole
+         */
+        UpdateMemberRole.fromObject = function fromObject(object) {
+            if (object instanceof $root.notification.UpdateMemberRole)
+                return object;
+            let message = new $root.notification.UpdateMemberRole();
+            if (object.userUuid != null)
+                message.userUuid = String(object.userUuid);
+            if (object.email != null)
+                message.email = String(object.email);
+            if (object.role != null)
+                message.role = object.role | 0;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from an UpdateMemberRole message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof notification.UpdateMemberRole
+         * @static
+         * @param {notification.UpdateMemberRole} message UpdateMemberRole
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        UpdateMemberRole.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.userUuid = "";
+                object.email = "";
+                object.role = 0;
+            }
+            if (message.userUuid != null && message.hasOwnProperty("userUuid"))
+                object.userUuid = message.userUuid;
+            if (message.email != null && message.hasOwnProperty("email"))
+                object.email = message.email;
+            if (message.role != null && message.hasOwnProperty("role"))
+                object.role = message.role;
+            return object;
+        };
+
+        /**
+         * Converts this UpdateMemberRole to JSON.
+         * @function toJSON
+         * @memberof notification.UpdateMemberRole
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        UpdateMemberRole.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for UpdateMemberRole
+         * @function getTypeUrl
+         * @memberof notification.UpdateMemberRole
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        UpdateMemberRole.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/notification.UpdateMemberRole";
+        };
+
+        return UpdateMemberRole;
+    })();
+
+    notification.PageMention = (function() {
+
+        /**
+         * Properties of a PageMention.
+         * @memberof notification
+         * @interface IPageMention
+         * @property {string|null} [userUuid] PageMention userUuid
+         * @property {string|null} [viewId] PageMention viewId
+         * @property {number|Long|null} [mentionedAt] PageMention mentionedAt
+         */
+
+        /**
+         * Constructs a new PageMention.
+         * @memberof notification
+         * @classdesc Represents a PageMention.
+         * @implements IPageMention
+         * @constructor
+         * @param {notification.IPageMention=} [properties] Properties to set
+         */
+        function PageMention(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * PageMention userUuid.
+         * @member {string} userUuid
+         * @memberof notification.PageMention
+         * @instance
+         */
+        PageMention.prototype.userUuid = "";
+
+        /**
+         * PageMention viewId.
+         * @member {string} viewId
+         * @memberof notification.PageMention
+         * @instance
+         */
+        PageMention.prototype.viewId = "";
+
+        /**
+         * PageMention mentionedAt.
+         * @member {number|Long} mentionedAt
+         * @memberof notification.PageMention
+         * @instance
+         */
+        PageMention.prototype.mentionedAt = $util.Long ? $util.Long.fromBits(0,0,false) : 0;
+
+        /**
+         * Creates a new PageMention instance using the specified properties.
+         * @function create
+         * @memberof notification.PageMention
+         * @static
+         * @param {notification.IPageMention=} [properties] Properties to set
+         * @returns {notification.PageMention} PageMention instance
+         */
+        PageMention.create = function create(properties) {
+            return new PageMention(properties);
+        };
+
+        /**
+         * Encodes the specified PageMention message. Does not implicitly {@link notification.PageMention.verify|verify} messages.
+         * @function encode
+         * @memberof notification.PageMention
+         * @static
+         * @param {notification.IPageMention} message PageMention message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        PageMention.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.userUuid != null && Object.hasOwnProperty.call(message, "userUuid"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.userUuid);
+            if (message.viewId != null && Object.hasOwnProperty.call(message, "viewId"))
+                writer.uint32(/* id 2, wireType 2 =*/18).string(message.viewId);
+            if (message.mentionedAt != null && Object.hasOwnProperty.call(message, "mentionedAt"))
+                writer.uint32(/* id 3, wireType 0 =*/24).int64(message.mentionedAt);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified PageMention message, length delimited. Does not implicitly {@link notification.PageMention.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof notification.PageMention
+         * @static
+         * @param {notification.IPageMention} message PageMention message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        PageMention.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a PageMention message from the specified reader or buffer.
+         * @function decode
+         * @memberof notification.PageMention
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {notification.PageMention} PageMention
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        PageMention.decode = function decode(reader, length, error) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.notification.PageMention();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.userUuid = reader.string();
+                        break;
+                    }
+                case 2: {
+                        message.viewId = reader.string();
+                        break;
+                    }
+                case 3: {
+                        message.mentionedAt = reader.int64();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a PageMention message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof notification.PageMention
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {notification.PageMention} PageMention
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        PageMention.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a PageMention message.
+         * @function verify
+         * @memberof notification.PageMention
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        PageMention.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.userUuid != null && message.hasOwnProperty("userUuid"))
+                if (!$util.isString(message.userUuid))
+                    return "userUuid: string expected";
+            if (message.viewId != null && message.hasOwnProperty("viewId"))
+                if (!$util.isString(message.viewId))
+                    return "viewId: string expected";
+            if (message.mentionedAt != null && message.hasOwnProperty("mentionedAt"))
+                if (!$util.isInteger(message.mentionedAt) && !(message.mentionedAt && $util.isInteger(message.mentionedAt.low) && $util.isInteger(message.mentionedAt.high)))
+                    return "mentionedAt: integer|Long expected";
+            return null;
+        };
+
+        /**
+         * Creates a PageMention message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof notification.PageMention
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {notification.PageMention} PageMention
+         */
+        PageMention.fromObject = function fromObject(object) {
+            if (object instanceof $root.notification.PageMention)
+                return object;
+            let message = new $root.notification.PageMention();
+            if (object.userUuid != null)
+                message.userUuid = String(object.userUuid);
+            if (object.viewId != null)
+                message.viewId = String(object.viewId);
+            if (object.mentionedAt != null)
+                if ($util.Long)
+                    (message.mentionedAt = $util.Long.fromValue(object.mentionedAt)).unsigned = false;
+                else if (typeof object.mentionedAt === "string")
+                    message.mentionedAt = parseInt(object.mentionedAt, 10);
+                else if (typeof object.mentionedAt === "number")
+                    message.mentionedAt = object.mentionedAt;
+                else if (typeof object.mentionedAt === "object")
+                    message.mentionedAt = new $util.LongBits(object.mentionedAt.low >>> 0, object.mentionedAt.high >>> 0).toNumber();
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a PageMention message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof notification.PageMention
+         * @static
+         * @param {notification.PageMention} message PageMention
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        PageMention.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.userUuid = "";
+                object.viewId = "";
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, false);
+                    object.mentionedAt = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.mentionedAt = options.longs === String ? "0" : 0;
+            }
+            if (message.userUuid != null && message.hasOwnProperty("userUuid"))
+                object.userUuid = message.userUuid;
+            if (message.viewId != null && message.hasOwnProperty("viewId"))
+                object.viewId = message.viewId;
+            if (message.mentionedAt != null && message.hasOwnProperty("mentionedAt"))
+                if (typeof message.mentionedAt === "number")
+                    object.mentionedAt = options.longs === String ? String(message.mentionedAt) : message.mentionedAt;
+                else
+                    object.mentionedAt = options.longs === String ? $util.Long.prototype.toString.call(message.mentionedAt) : options.longs === Number ? new $util.LongBits(message.mentionedAt.low >>> 0, message.mentionedAt.high >>> 0).toNumber() : message.mentionedAt;
+            return object;
+        };
+
+        /**
+         * Converts this PageMention to JSON.
+         * @function toJSON
+         * @memberof notification.PageMention
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        PageMention.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for PageMention
+         * @function getTypeUrl
+         * @memberof notification.PageMention
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        PageMention.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/notification.PageMention";
+        };
+
+        return PageMention;
+    })();
+
+    notification.ShareViewsChanged = (function() {
+
+        /**
+         * Properties of a ShareViewsChanged.
+         * @memberof notification
+         * @interface IShareViewsChanged
+         * @property {string|null} [viewId] ShareViewsChanged viewId
+         * @property {Array.<string>|null} [emails] ShareViewsChanged emails
+         */
+
+        /**
+         * Constructs a new ShareViewsChanged.
+         * @memberof notification
+         * @classdesc Represents a ShareViewsChanged.
+         * @implements IShareViewsChanged
+         * @constructor
+         * @param {notification.IShareViewsChanged=} [properties] Properties to set
+         */
+        function ShareViewsChanged(properties) {
+            this.emails = [];
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * ShareViewsChanged viewId.
+         * @member {string} viewId
+         * @memberof notification.ShareViewsChanged
+         * @instance
+         */
+        ShareViewsChanged.prototype.viewId = "";
+
+        /**
+         * ShareViewsChanged emails.
+         * @member {Array.<string>} emails
+         * @memberof notification.ShareViewsChanged
+         * @instance
+         */
+        ShareViewsChanged.prototype.emails = $util.emptyArray;
+
+        /**
+         * Creates a new ShareViewsChanged instance using the specified properties.
+         * @function create
+         * @memberof notification.ShareViewsChanged
+         * @static
+         * @param {notification.IShareViewsChanged=} [properties] Properties to set
+         * @returns {notification.ShareViewsChanged} ShareViewsChanged instance
+         */
+        ShareViewsChanged.create = function create(properties) {
+            return new ShareViewsChanged(properties);
+        };
+
+        /**
+         * Encodes the specified ShareViewsChanged message. Does not implicitly {@link notification.ShareViewsChanged.verify|verify} messages.
+         * @function encode
+         * @memberof notification.ShareViewsChanged
+         * @static
+         * @param {notification.IShareViewsChanged} message ShareViewsChanged message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        ShareViewsChanged.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.viewId != null && Object.hasOwnProperty.call(message, "viewId"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.viewId);
+            if (message.emails != null && message.emails.length)
+                for (let i = 0; i < message.emails.length; ++i)
+                    writer.uint32(/* id 2, wireType 2 =*/18).string(message.emails[i]);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified ShareViewsChanged message, length delimited. Does not implicitly {@link notification.ShareViewsChanged.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof notification.ShareViewsChanged
+         * @static
+         * @param {notification.IShareViewsChanged} message ShareViewsChanged message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        ShareViewsChanged.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a ShareViewsChanged message from the specified reader or buffer.
+         * @function decode
+         * @memberof notification.ShareViewsChanged
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {notification.ShareViewsChanged} ShareViewsChanged
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        ShareViewsChanged.decode = function decode(reader, length, error) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.notification.ShareViewsChanged();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.viewId = reader.string();
+                        break;
+                    }
+                case 2: {
+                        if (!(message.emails && message.emails.length))
+                            message.emails = [];
+                        message.emails.push(reader.string());
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a ShareViewsChanged message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof notification.ShareViewsChanged
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {notification.ShareViewsChanged} ShareViewsChanged
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        ShareViewsChanged.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a ShareViewsChanged message.
+         * @function verify
+         * @memberof notification.ShareViewsChanged
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        ShareViewsChanged.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.viewId != null && message.hasOwnProperty("viewId"))
+                if (!$util.isString(message.viewId))
+                    return "viewId: string expected";
+            if (message.emails != null && message.hasOwnProperty("emails")) {
+                if (!Array.isArray(message.emails))
+                    return "emails: array expected";
+                for (let i = 0; i < message.emails.length; ++i)
+                    if (!$util.isString(message.emails[i]))
+                        return "emails: string[] expected";
+            }
+            return null;
+        };
+
+        /**
+         * Creates a ShareViewsChanged message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof notification.ShareViewsChanged
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {notification.ShareViewsChanged} ShareViewsChanged
+         */
+        ShareViewsChanged.fromObject = function fromObject(object) {
+            if (object instanceof $root.notification.ShareViewsChanged)
+                return object;
+            let message = new $root.notification.ShareViewsChanged();
+            if (object.viewId != null)
+                message.viewId = String(object.viewId);
+            if (object.emails) {
+                if (!Array.isArray(object.emails))
+                    throw TypeError(".notification.ShareViewsChanged.emails: array expected");
+                message.emails = [];
+                for (let i = 0; i < object.emails.length; ++i)
+                    message.emails[i] = String(object.emails[i]);
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a ShareViewsChanged message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof notification.ShareViewsChanged
+         * @static
+         * @param {notification.ShareViewsChanged} message ShareViewsChanged
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        ShareViewsChanged.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.arrays || options.defaults)
+                object.emails = [];
+            if (options.defaults)
+                object.viewId = "";
+            if (message.viewId != null && message.hasOwnProperty("viewId"))
+                object.viewId = message.viewId;
+            if (message.emails && message.emails.length) {
+                object.emails = [];
+                for (let j = 0; j < message.emails.length; ++j)
+                    object.emails[j] = message.emails[j];
+            }
+            return object;
+        };
+
+        /**
+         * Converts this ShareViewsChanged to JSON.
+         * @function toJSON
+         * @memberof notification.ShareViewsChanged
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        ShareViewsChanged.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for ShareViewsChanged
+         * @function getTypeUrl
+         * @memberof notification.ShareViewsChanged
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        ShareViewsChanged.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/notification.ShareViewsChanged";
+        };
+
+        return ShareViewsChanged;
+    })();
+
+    notification.ServerLimit = (function() {
+
+        /**
+         * Properties of a ServerLimit.
+         * @memberof notification
+         * @interface IServerLimit
+         * @property {Array.<number>|null} [features] ServerLimit features
+         * @property {number|Long|null} [maxUsers] ServerLimit maxUsers
+         * @property {number|Long|null} [maxGuests] ServerLimit maxGuests
+         */
+
+        /**
+         * Constructs a new ServerLimit.
+         * @memberof notification
+         * @classdesc Represents a ServerLimit.
+         * @implements IServerLimit
+         * @constructor
+         * @param {notification.IServerLimit=} [properties] Properties to set
+         */
+        function ServerLimit(properties) {
+            this.features = [];
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * ServerLimit features.
+         * @member {Array.<number>} features
+         * @memberof notification.ServerLimit
+         * @instance
+         */
+        ServerLimit.prototype.features = $util.emptyArray;
+
+        /**
+         * ServerLimit maxUsers.
+         * @member {number|Long} maxUsers
+         * @memberof notification.ServerLimit
+         * @instance
+         */
+        ServerLimit.prototype.maxUsers = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * ServerLimit maxGuests.
+         * @member {number|Long} maxGuests
+         * @memberof notification.ServerLimit
+         * @instance
+         */
+        ServerLimit.prototype.maxGuests = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * Creates a new ServerLimit instance using the specified properties.
+         * @function create
+         * @memberof notification.ServerLimit
+         * @static
+         * @param {notification.IServerLimit=} [properties] Properties to set
+         * @returns {notification.ServerLimit} ServerLimit instance
+         */
+        ServerLimit.create = function create(properties) {
+            return new ServerLimit(properties);
+        };
+
+        /**
+         * Encodes the specified ServerLimit message. Does not implicitly {@link notification.ServerLimit.verify|verify} messages.
+         * @function encode
+         * @memberof notification.ServerLimit
+         * @static
+         * @param {notification.IServerLimit} message ServerLimit message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        ServerLimit.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.features != null && message.features.length) {
+                writer.uint32(/* id 1, wireType 2 =*/10).fork();
+                for (let i = 0; i < message.features.length; ++i)
+                    writer.int32(message.features[i]);
+                writer.ldelim();
+            }
+            if (message.maxUsers != null && Object.hasOwnProperty.call(message, "maxUsers"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint64(message.maxUsers);
+            if (message.maxGuests != null && Object.hasOwnProperty.call(message, "maxGuests"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint64(message.maxGuests);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified ServerLimit message, length delimited. Does not implicitly {@link notification.ServerLimit.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof notification.ServerLimit
+         * @static
+         * @param {notification.IServerLimit} message ServerLimit message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        ServerLimit.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a ServerLimit message from the specified reader or buffer.
+         * @function decode
+         * @memberof notification.ServerLimit
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {notification.ServerLimit} ServerLimit
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        ServerLimit.decode = function decode(reader, length, error) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.notification.ServerLimit();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        if (!(message.features && message.features.length))
+                            message.features = [];
+                        if ((tag & 7) === 2) {
+                            let end2 = reader.uint32() + reader.pos;
+                            while (reader.pos < end2)
+                                message.features.push(reader.int32());
+                        } else
+                            message.features.push(reader.int32());
+                        break;
+                    }
+                case 2: {
+                        message.maxUsers = reader.uint64();
+                        break;
+                    }
+                case 3: {
+                        message.maxGuests = reader.uint64();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a ServerLimit message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof notification.ServerLimit
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {notification.ServerLimit} ServerLimit
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        ServerLimit.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a ServerLimit message.
+         * @function verify
+         * @memberof notification.ServerLimit
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        ServerLimit.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.features != null && message.hasOwnProperty("features")) {
+                if (!Array.isArray(message.features))
+                    return "features: array expected";
+                for (let i = 0; i < message.features.length; ++i)
+                    if (!$util.isInteger(message.features[i]))
+                        return "features: integer[] expected";
+            }
+            if (message.maxUsers != null && message.hasOwnProperty("maxUsers"))
+                if (!$util.isInteger(message.maxUsers) && !(message.maxUsers && $util.isInteger(message.maxUsers.low) && $util.isInteger(message.maxUsers.high)))
+                    return "maxUsers: integer|Long expected";
+            if (message.maxGuests != null && message.hasOwnProperty("maxGuests"))
+                if (!$util.isInteger(message.maxGuests) && !(message.maxGuests && $util.isInteger(message.maxGuests.low) && $util.isInteger(message.maxGuests.high)))
+                    return "maxGuests: integer|Long expected";
+            return null;
+        };
+
+        /**
+         * Creates a ServerLimit message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof notification.ServerLimit
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {notification.ServerLimit} ServerLimit
+         */
+        ServerLimit.fromObject = function fromObject(object) {
+            if (object instanceof $root.notification.ServerLimit)
+                return object;
+            let message = new $root.notification.ServerLimit();
+            if (object.features) {
+                if (!Array.isArray(object.features))
+                    throw TypeError(".notification.ServerLimit.features: array expected");
+                message.features = [];
+                for (let i = 0; i < object.features.length; ++i)
+                    message.features[i] = object.features[i] | 0;
+            }
+            if (object.maxUsers != null)
+                if ($util.Long)
+                    (message.maxUsers = $util.Long.fromValue(object.maxUsers)).unsigned = true;
+                else if (typeof object.maxUsers === "string")
+                    message.maxUsers = parseInt(object.maxUsers, 10);
+                else if (typeof object.maxUsers === "number")
+                    message.maxUsers = object.maxUsers;
+                else if (typeof object.maxUsers === "object")
+                    message.maxUsers = new $util.LongBits(object.maxUsers.low >>> 0, object.maxUsers.high >>> 0).toNumber(true);
+            if (object.maxGuests != null)
+                if ($util.Long)
+                    (message.maxGuests = $util.Long.fromValue(object.maxGuests)).unsigned = true;
+                else if (typeof object.maxGuests === "string")
+                    message.maxGuests = parseInt(object.maxGuests, 10);
+                else if (typeof object.maxGuests === "number")
+                    message.maxGuests = object.maxGuests;
+                else if (typeof object.maxGuests === "object")
+                    message.maxGuests = new $util.LongBits(object.maxGuests.low >>> 0, object.maxGuests.high >>> 0).toNumber(true);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a ServerLimit message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof notification.ServerLimit
+         * @static
+         * @param {notification.ServerLimit} message ServerLimit
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        ServerLimit.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.arrays || options.defaults)
+                object.features = [];
+            if (options.defaults) {
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.maxUsers = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.maxUsers = options.longs === String ? "0" : 0;
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.maxGuests = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.maxGuests = options.longs === String ? "0" : 0;
+            }
+            if (message.features && message.features.length) {
+                object.features = [];
+                for (let j = 0; j < message.features.length; ++j)
+                    object.features[j] = message.features[j];
+            }
+            if (message.maxUsers != null && message.hasOwnProperty("maxUsers"))
+                if (typeof message.maxUsers === "number")
+                    object.maxUsers = options.longs === String ? String(message.maxUsers) : message.maxUsers;
+                else
+                    object.maxUsers = options.longs === String ? $util.Long.prototype.toString.call(message.maxUsers) : options.longs === Number ? new $util.LongBits(message.maxUsers.low >>> 0, message.maxUsers.high >>> 0).toNumber(true) : message.maxUsers;
+            if (message.maxGuests != null && message.hasOwnProperty("maxGuests"))
+                if (typeof message.maxGuests === "number")
+                    object.maxGuests = options.longs === String ? String(message.maxGuests) : message.maxGuests;
+                else
+                    object.maxGuests = options.longs === String ? $util.Long.prototype.toString.call(message.maxGuests) : options.longs === Number ? new $util.LongBits(message.maxGuests.low >>> 0, message.maxGuests.high >>> 0).toNumber(true) : message.maxGuests;
+            return object;
+        };
+
+        /**
+         * Converts this ServerLimit to JSON.
+         * @function toJSON
+         * @memberof notification.ServerLimit
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        ServerLimit.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for ServerLimit
+         * @function getTypeUrl
+         * @memberof notification.ServerLimit
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        ServerLimit.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/notification.ServerLimit";
+        };
+
+        return ServerLimit;
     })();
 
     return notification;
