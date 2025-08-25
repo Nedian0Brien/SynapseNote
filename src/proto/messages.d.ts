@@ -1,6 +1,5 @@
 import * as $protobuf from "protobufjs";
 import Long = require("long");
-
 /** Namespace messages. */
 export namespace messages {
 
@@ -799,6 +798,18 @@ export namespace notification {
 
         /** WorkspaceNotification permissionChanged */
         permissionChanged?: (notification.IPermissionChanged|null);
+
+        /** WorkspaceNotification sectionChanged */
+        sectionChanged?: (notification.ISectionChanged|null);
+
+        /** WorkspaceNotification shareViewsChanged */
+        shareViewsChanged?: (notification.IShareViewsChanged|null);
+
+        /** WorkspaceNotification mentionablePersonListChanged */
+        mentionablePersonListChanged?: (notification.IMentionablePersonListChanged|null);
+
+        /** WorkspaceNotification serverLimit */
+        serverLimit?: (notification.IServerLimit|null);
     }
 
     /** Represents a WorkspaceNotification. */
@@ -816,8 +827,20 @@ export namespace notification {
         /** WorkspaceNotification permissionChanged. */
         public permissionChanged?: (notification.IPermissionChanged|null);
 
+        /** WorkspaceNotification sectionChanged. */
+        public sectionChanged?: (notification.ISectionChanged|null);
+
+        /** WorkspaceNotification shareViewsChanged. */
+        public shareViewsChanged?: (notification.IShareViewsChanged|null);
+
+        /** WorkspaceNotification mentionablePersonListChanged. */
+        public mentionablePersonListChanged?: (notification.IMentionablePersonListChanged|null);
+
+        /** WorkspaceNotification serverLimit. */
+        public serverLimit?: (notification.IServerLimit|null);
+
         /** WorkspaceNotification payload. */
-        public payload?: ("profileChange"|"permissionChanged");
+        public payload?: ("profileChange"|"permissionChanged"|"sectionChanged"|"shareViewsChanged"|"mentionablePersonListChanged"|"serverLimit");
 
         /**
          * Creates a new WorkspaceNotification instance using the specified properties.
@@ -1109,6 +1132,845 @@ export namespace notification {
 
         /**
          * Gets the default type url for PermissionChanged
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a SectionChanged. */
+    interface ISectionChanged {
+
+        /** SectionChanged data */
+        data?: (string|null);
+    }
+
+    /** Represents a SectionChanged. */
+    class SectionChanged implements ISectionChanged {
+
+        /**
+         * Constructs a new SectionChanged.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: notification.ISectionChanged);
+
+        /** SectionChanged data. */
+        public data: string;
+
+        /**
+         * Creates a new SectionChanged instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns SectionChanged instance
+         */
+        public static create(properties?: notification.ISectionChanged): notification.SectionChanged;
+
+        /**
+         * Encodes the specified SectionChanged message. Does not implicitly {@link notification.SectionChanged.verify|verify} messages.
+         * @param message SectionChanged message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: notification.ISectionChanged, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified SectionChanged message, length delimited. Does not implicitly {@link notification.SectionChanged.verify|verify} messages.
+         * @param message SectionChanged message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: notification.ISectionChanged, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a SectionChanged message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns SectionChanged
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): notification.SectionChanged;
+
+        /**
+         * Decodes a SectionChanged message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns SectionChanged
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): notification.SectionChanged;
+
+        /**
+         * Verifies a SectionChanged message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a SectionChanged message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns SectionChanged
+         */
+        public static fromObject(object: { [k: string]: any }): notification.SectionChanged;
+
+        /**
+         * Creates a plain object from a SectionChanged message. Also converts values to other types if specified.
+         * @param message SectionChanged
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: notification.SectionChanged, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this SectionChanged to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for SectionChanged
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a MentionablePersonListChanged. */
+    interface IMentionablePersonListChanged {
+
+        /** MentionablePersonListChanged updateMemberRole */
+        updateMemberRole?: (notification.IUpdateMemberRole|null);
+
+        /** MentionablePersonListChanged pageMention */
+        pageMention?: (notification.IPageMention|null);
+
+        /** MentionablePersonListChanged newMember */
+        newMember?: (notification.INewMember|null);
+
+        /** MentionablePersonListChanged removedMember */
+        removedMember?: (notification.IRemovedMember|null);
+    }
+
+    /** Represents a MentionablePersonListChanged. */
+    class MentionablePersonListChanged implements IMentionablePersonListChanged {
+
+        /**
+         * Constructs a new MentionablePersonListChanged.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: notification.IMentionablePersonListChanged);
+
+        /** MentionablePersonListChanged updateMemberRole. */
+        public updateMemberRole?: (notification.IUpdateMemberRole|null);
+
+        /** MentionablePersonListChanged pageMention. */
+        public pageMention?: (notification.IPageMention|null);
+
+        /** MentionablePersonListChanged newMember. */
+        public newMember?: (notification.INewMember|null);
+
+        /** MentionablePersonListChanged removedMember. */
+        public removedMember?: (notification.IRemovedMember|null);
+
+        /** MentionablePersonListChanged payload. */
+        public payload?: ("updateMemberRole"|"pageMention"|"newMember"|"removedMember");
+
+        /**
+         * Creates a new MentionablePersonListChanged instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns MentionablePersonListChanged instance
+         */
+        public static create(properties?: notification.IMentionablePersonListChanged): notification.MentionablePersonListChanged;
+
+        /**
+         * Encodes the specified MentionablePersonListChanged message. Does not implicitly {@link notification.MentionablePersonListChanged.verify|verify} messages.
+         * @param message MentionablePersonListChanged message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: notification.IMentionablePersonListChanged, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified MentionablePersonListChanged message, length delimited. Does not implicitly {@link notification.MentionablePersonListChanged.verify|verify} messages.
+         * @param message MentionablePersonListChanged message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: notification.IMentionablePersonListChanged, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a MentionablePersonListChanged message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns MentionablePersonListChanged
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): notification.MentionablePersonListChanged;
+
+        /**
+         * Decodes a MentionablePersonListChanged message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns MentionablePersonListChanged
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): notification.MentionablePersonListChanged;
+
+        /**
+         * Verifies a MentionablePersonListChanged message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a MentionablePersonListChanged message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns MentionablePersonListChanged
+         */
+        public static fromObject(object: { [k: string]: any }): notification.MentionablePersonListChanged;
+
+        /**
+         * Creates a plain object from a MentionablePersonListChanged message. Also converts values to other types if specified.
+         * @param message MentionablePersonListChanged
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: notification.MentionablePersonListChanged, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this MentionablePersonListChanged to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for MentionablePersonListChanged
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a NewMember. */
+    interface INewMember {
+
+        /** NewMember userUuid */
+        userUuid?: (string|null);
+    }
+
+    /** Represents a NewMember. */
+    class NewMember implements INewMember {
+
+        /**
+         * Constructs a new NewMember.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: notification.INewMember);
+
+        /** NewMember userUuid. */
+        public userUuid: string;
+
+        /**
+         * Creates a new NewMember instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns NewMember instance
+         */
+        public static create(properties?: notification.INewMember): notification.NewMember;
+
+        /**
+         * Encodes the specified NewMember message. Does not implicitly {@link notification.NewMember.verify|verify} messages.
+         * @param message NewMember message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: notification.INewMember, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified NewMember message, length delimited. Does not implicitly {@link notification.NewMember.verify|verify} messages.
+         * @param message NewMember message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: notification.INewMember, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a NewMember message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns NewMember
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): notification.NewMember;
+
+        /**
+         * Decodes a NewMember message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns NewMember
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): notification.NewMember;
+
+        /**
+         * Verifies a NewMember message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a NewMember message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns NewMember
+         */
+        public static fromObject(object: { [k: string]: any }): notification.NewMember;
+
+        /**
+         * Creates a plain object from a NewMember message. Also converts values to other types if specified.
+         * @param message NewMember
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: notification.NewMember, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this NewMember to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for NewMember
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a RemovedMember. */
+    interface IRemovedMember {
+
+        /** RemovedMember userUuid */
+        userUuid?: (string|null);
+    }
+
+    /** Represents a RemovedMember. */
+    class RemovedMember implements IRemovedMember {
+
+        /**
+         * Constructs a new RemovedMember.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: notification.IRemovedMember);
+
+        /** RemovedMember userUuid. */
+        public userUuid: string;
+
+        /**
+         * Creates a new RemovedMember instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns RemovedMember instance
+         */
+        public static create(properties?: notification.IRemovedMember): notification.RemovedMember;
+
+        /**
+         * Encodes the specified RemovedMember message. Does not implicitly {@link notification.RemovedMember.verify|verify} messages.
+         * @param message RemovedMember message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: notification.IRemovedMember, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified RemovedMember message, length delimited. Does not implicitly {@link notification.RemovedMember.verify|verify} messages.
+         * @param message RemovedMember message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: notification.IRemovedMember, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a RemovedMember message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns RemovedMember
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): notification.RemovedMember;
+
+        /**
+         * Decodes a RemovedMember message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns RemovedMember
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): notification.RemovedMember;
+
+        /**
+         * Verifies a RemovedMember message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a RemovedMember message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns RemovedMember
+         */
+        public static fromObject(object: { [k: string]: any }): notification.RemovedMember;
+
+        /**
+         * Creates a plain object from a RemovedMember message. Also converts values to other types if specified.
+         * @param message RemovedMember
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: notification.RemovedMember, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this RemovedMember to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for RemovedMember
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of an UpdateMemberRole. */
+    interface IUpdateMemberRole {
+
+        /** UpdateMemberRole userUuid */
+        userUuid?: (string|null);
+
+        /** UpdateMemberRole email */
+        email?: (string|null);
+
+        /** UpdateMemberRole role */
+        role?: (number|null);
+    }
+
+    /** Represents an UpdateMemberRole. */
+    class UpdateMemberRole implements IUpdateMemberRole {
+
+        /**
+         * Constructs a new UpdateMemberRole.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: notification.IUpdateMemberRole);
+
+        /** UpdateMemberRole userUuid. */
+        public userUuid: string;
+
+        /** UpdateMemberRole email. */
+        public email: string;
+
+        /** UpdateMemberRole role. */
+        public role: number;
+
+        /**
+         * Creates a new UpdateMemberRole instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns UpdateMemberRole instance
+         */
+        public static create(properties?: notification.IUpdateMemberRole): notification.UpdateMemberRole;
+
+        /**
+         * Encodes the specified UpdateMemberRole message. Does not implicitly {@link notification.UpdateMemberRole.verify|verify} messages.
+         * @param message UpdateMemberRole message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: notification.IUpdateMemberRole, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified UpdateMemberRole message, length delimited. Does not implicitly {@link notification.UpdateMemberRole.verify|verify} messages.
+         * @param message UpdateMemberRole message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: notification.IUpdateMemberRole, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes an UpdateMemberRole message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns UpdateMemberRole
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): notification.UpdateMemberRole;
+
+        /**
+         * Decodes an UpdateMemberRole message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns UpdateMemberRole
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): notification.UpdateMemberRole;
+
+        /**
+         * Verifies an UpdateMemberRole message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates an UpdateMemberRole message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns UpdateMemberRole
+         */
+        public static fromObject(object: { [k: string]: any }): notification.UpdateMemberRole;
+
+        /**
+         * Creates a plain object from an UpdateMemberRole message. Also converts values to other types if specified.
+         * @param message UpdateMemberRole
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: notification.UpdateMemberRole, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this UpdateMemberRole to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for UpdateMemberRole
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a PageMention. */
+    interface IPageMention {
+
+        /** PageMention userUuid */
+        userUuid?: (string|null);
+
+        /** PageMention viewId */
+        viewId?: (string|null);
+
+        /** PageMention mentionedAt */
+        mentionedAt?: (number|Long|null);
+    }
+
+    /** Represents a PageMention. */
+    class PageMention implements IPageMention {
+
+        /**
+         * Constructs a new PageMention.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: notification.IPageMention);
+
+        /** PageMention userUuid. */
+        public userUuid: string;
+
+        /** PageMention viewId. */
+        public viewId: string;
+
+        /** PageMention mentionedAt. */
+        public mentionedAt: (number|Long);
+
+        /**
+         * Creates a new PageMention instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns PageMention instance
+         */
+        public static create(properties?: notification.IPageMention): notification.PageMention;
+
+        /**
+         * Encodes the specified PageMention message. Does not implicitly {@link notification.PageMention.verify|verify} messages.
+         * @param message PageMention message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: notification.IPageMention, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified PageMention message, length delimited. Does not implicitly {@link notification.PageMention.verify|verify} messages.
+         * @param message PageMention message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: notification.IPageMention, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a PageMention message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns PageMention
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): notification.PageMention;
+
+        /**
+         * Decodes a PageMention message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns PageMention
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): notification.PageMention;
+
+        /**
+         * Verifies a PageMention message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a PageMention message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns PageMention
+         */
+        public static fromObject(object: { [k: string]: any }): notification.PageMention;
+
+        /**
+         * Creates a plain object from a PageMention message. Also converts values to other types if specified.
+         * @param message PageMention
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: notification.PageMention, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this PageMention to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for PageMention
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a ShareViewsChanged. */
+    interface IShareViewsChanged {
+
+        /** ShareViewsChanged viewId */
+        viewId?: (string|null);
+
+        /** ShareViewsChanged emails */
+        emails?: (string[]|null);
+    }
+
+    /** Represents a ShareViewsChanged. */
+    class ShareViewsChanged implements IShareViewsChanged {
+
+        /**
+         * Constructs a new ShareViewsChanged.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: notification.IShareViewsChanged);
+
+        /** ShareViewsChanged viewId. */
+        public viewId: string;
+
+        /** ShareViewsChanged emails. */
+        public emails: string[];
+
+        /**
+         * Creates a new ShareViewsChanged instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns ShareViewsChanged instance
+         */
+        public static create(properties?: notification.IShareViewsChanged): notification.ShareViewsChanged;
+
+        /**
+         * Encodes the specified ShareViewsChanged message. Does not implicitly {@link notification.ShareViewsChanged.verify|verify} messages.
+         * @param message ShareViewsChanged message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: notification.IShareViewsChanged, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified ShareViewsChanged message, length delimited. Does not implicitly {@link notification.ShareViewsChanged.verify|verify} messages.
+         * @param message ShareViewsChanged message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: notification.IShareViewsChanged, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a ShareViewsChanged message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns ShareViewsChanged
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): notification.ShareViewsChanged;
+
+        /**
+         * Decodes a ShareViewsChanged message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns ShareViewsChanged
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): notification.ShareViewsChanged;
+
+        /**
+         * Verifies a ShareViewsChanged message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a ShareViewsChanged message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns ShareViewsChanged
+         */
+        public static fromObject(object: { [k: string]: any }): notification.ShareViewsChanged;
+
+        /**
+         * Creates a plain object from a ShareViewsChanged message. Also converts values to other types if specified.
+         * @param message ShareViewsChanged
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: notification.ShareViewsChanged, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this ShareViewsChanged to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for ShareViewsChanged
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a ServerLimit. */
+    interface IServerLimit {
+
+        /** ServerLimit features */
+        features?: (number[]|null);
+
+        /** ServerLimit maxUsers */
+        maxUsers?: (number|Long|null);
+
+        /** ServerLimit maxGuests */
+        maxGuests?: (number|Long|null);
+    }
+
+    /** Represents a ServerLimit. */
+    class ServerLimit implements IServerLimit {
+
+        /**
+         * Constructs a new ServerLimit.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: notification.IServerLimit);
+
+        /** ServerLimit features. */
+        public features: number[];
+
+        /** ServerLimit maxUsers. */
+        public maxUsers: (number|Long);
+
+        /** ServerLimit maxGuests. */
+        public maxGuests: (number|Long);
+
+        /**
+         * Creates a new ServerLimit instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns ServerLimit instance
+         */
+        public static create(properties?: notification.IServerLimit): notification.ServerLimit;
+
+        /**
+         * Encodes the specified ServerLimit message. Does not implicitly {@link notification.ServerLimit.verify|verify} messages.
+         * @param message ServerLimit message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: notification.IServerLimit, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified ServerLimit message, length delimited. Does not implicitly {@link notification.ServerLimit.verify|verify} messages.
+         * @param message ServerLimit message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: notification.IServerLimit, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a ServerLimit message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns ServerLimit
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): notification.ServerLimit;
+
+        /**
+         * Decodes a ServerLimit message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns ServerLimit
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): notification.ServerLimit;
+
+        /**
+         * Verifies a ServerLimit message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a ServerLimit message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns ServerLimit
+         */
+        public static fromObject(object: { [k: string]: any }): notification.ServerLimit;
+
+        /**
+         * Creates a plain object from a ServerLimit message. Also converts values to other types if specified.
+         * @param message ServerLimit
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: notification.ServerLimit, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this ServerLimit to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for ServerLimit
          * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns The default type url
          */

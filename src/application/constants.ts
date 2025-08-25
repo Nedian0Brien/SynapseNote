@@ -10,7 +10,16 @@ export const ERROR_CODE = {
 };
 
 export const APP_EVENTS = {
+  // App lifecycle events
   OUTLINE_LOADED: 'outline-loaded',
   RECONNECT_WEBSOCKET: 'reconnect-websocket',
   WEBSOCKET_STATUS: 'websocket-status',
+  
+  // Workspace notification events
+  USER_PROFILE_CHANGED: 'user-profile-changed',           // User name/email updated
+  PERMISSION_CHANGED: 'permission-changed',               // Object access permissions changed  
+  SECTION_CHANGED: 'section-changed',                     // Workspace sections updated (recent views, etc.)
+  SHARE_VIEWS_CHANGED: 'share-views-changed',             // View sharing settings changed
+  MENTIONABLE_PERSON_LIST_CHANGED: 'mentionable-person-list-changed', // Team member changes
+  SERVER_LIMIT_CHANGED: 'server-limit-changed',           // Billing/feature limits updated
 };
