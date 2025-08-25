@@ -2,12 +2,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { validate as uuidValidate } from 'uuid';
 import * as awarenessProtocol from 'y-protocols/awareness';
 import * as Y from 'yjs';
+import EventEmitter from 'events';
 
 import { handleMessage, initSync, SyncContext } from '@/application/services/js-services/sync-protocol';
 import { Types } from '@/application/types';
 import { AppflowyWebSocketType } from '@/components/ws/useAppflowyWebSocket';
 import { BroadcastChannelType } from '@/components/ws/useBroadcastChannel';
 import { messages } from '@/proto/messages';
+import { APP_EVENTS } from '@/application/constants';
 
 export interface RegisterSyncContext {
   /**
@@ -38,7 +40,7 @@ export type SyncContextType = {
   lastUpdatedCollab: UpdateCollabInfo | null;
 };
 
-export const useSync = (ws: AppflowyWebSocketType, bc: BroadcastChannelType): SyncContextType => {
+export const useSync = (ws: AppflowyWebSocketType, bc: BroadcastChannelType, eventEmitter?: EventEmitter): SyncContextType => {
   const { sendMessage, lastMessage } = ws;
   const { postMessage, lastBroadcastMessage } = bc;
   const registeredContexts = useRef<Map<string, SyncContext>>(new Map());
@@ -83,6 +85,91 @@ export const useSync = (ws: AppflowyWebSocketType, bc: BroadcastChannelType): Sy
       setLastUpdatedCollab({ objectId, publishedAt, collabType: message.collabType as Types });
     }
   }, [lastBroadcastMessage, registeredContexts, setLastUpdatedCollab]);
+
+  // Handle workspace notifications from WebSocket
+  // This handles notifications received directly from the server via WebSocket connection.
+  // Only the "active" tab per workspace maintains a WebSocket connection to prevent
+  // duplicate notifications and reduce server load.
+  useEffect(() => {
+    const notification = lastMessage?.notification;
+
+    if (notification && eventEmitter) {
+      console.log('Received workspace notification:', notification);
+
+      // Emit specific notification events for each notification type
+      // These events are consumed by AppProvider to update local state/database
+      if (notification.profileChange) {
+        eventEmitter.emit(APP_EVENTS.USER_PROFILE_CHANGED, notification.profileChange);
+      }
+
+      if (notification.permissionChanged) {
+        eventEmitter.emit(APP_EVENTS.PERMISSION_CHANGED, notification.permissionChanged);
+      }
+
+      if (notification.sectionChanged) {
+        eventEmitter.emit(APP_EVENTS.SECTION_CHANGED, notification.sectionChanged);
+      }
+
+      if (notification.shareViewsChanged) {
+        eventEmitter.emit(APP_EVENTS.SHARE_VIEWS_CHANGED, notification.shareViewsChanged);
+      }
+
+      if (notification.mentionablePersonListChanged) {
+        eventEmitter.emit(APP_EVENTS.MENTIONABLE_PERSON_LIST_CHANGED, notification.mentionablePersonListChanged);
+      }
+
+      if (notification.serverLimit) {
+        eventEmitter.emit(APP_EVENTS.SERVER_LIMIT_CHANGED, notification.serverLimit);
+      }
+    }
+  }, [lastMessage, eventEmitter]);
+
+  // Handle workspace notifications from BroadcastChannel
+  // This handles cross-tab synchronization for multi-tab scenarios. When a user has multiple
+  // tabs open in the same workspace, only one tab maintains the WebSocket connection.
+  // That "active" tab broadcasts notifications to other tabs via BroadcastChannel.
+  // 
+  // Example flow:
+  // 1. User has 2 tabs open:  Document A, Document B
+  // 2. Server sends notification → Document A(active WebSocket tab)
+  // 3. Document A processes notification + broadcasts via BroadcastChannel
+  // 4. Document B receive broadcast → process same notification
+  // 5. Result: All tabs show consistent updated data simultaneously
+  //
+  // Without this: Only the active tab would update, other tabs would show stale data
+  useEffect(() => {
+    const notification = lastBroadcastMessage?.notification;
+
+    if (notification && eventEmitter) {
+      console.log('Received broadcasted workspace notification:', notification);
+
+      // Process notifications identically to WebSocket notifications to ensure
+      // consistent behavior across all tabs. Same event emissions = same UI updates.
+      if (notification.profileChange) {
+        eventEmitter.emit(APP_EVENTS.USER_PROFILE_CHANGED, notification.profileChange);
+      }
+
+      if (notification.permissionChanged) {
+        eventEmitter.emit(APP_EVENTS.PERMISSION_CHANGED, notification.permissionChanged);
+      }
+
+      if (notification.sectionChanged) {
+        eventEmitter.emit(APP_EVENTS.SECTION_CHANGED, notification.sectionChanged);
+      }
+
+      if (notification.shareViewsChanged) {
+        eventEmitter.emit(APP_EVENTS.SHARE_VIEWS_CHANGED, notification.shareViewsChanged);
+      }
+
+      if (notification.mentionablePersonListChanged) {
+        eventEmitter.emit(APP_EVENTS.MENTIONABLE_PERSON_LIST_CHANGED, notification.mentionablePersonListChanged);
+      }
+
+      if (notification.serverLimit) {
+        eventEmitter.emit(APP_EVENTS.SERVER_LIMIT_CHANGED, notification.serverLimit);
+      }
+    }
+  }, [lastBroadcastMessage, eventEmitter]);
 
   const registerSyncContext = useCallback(
     (context: RegisterSyncContext): SyncContext => {
