@@ -53,14 +53,20 @@ export const useBroadcastChannel = (channelName: string): BroadcastChannelType =
   const sendMessage = useCallback(
     (msg: messages.IMessage) => {
       if (isChannelClosed) {
-        console.warn('⚠️ You cannot send message to a closed channel');
+        // Fail silently instead of showing warning - this is normal during cleanup
+        console.debug('BroadcastChannel closed, skipping message send');
         return;
       }
 
       try {
         channel.postMessage(messages.Message.encode(msg).finish());
       } catch (error) {
-        console.error('Failed to send message to BroadcastChannel:', error);
+        if (error instanceof Error && error.name === 'InvalidStateError') {
+          setIsChannelClosed(true);
+          console.debug('BroadcastChannel closed during send operation');
+        } else {
+          console.error('Failed to send message to BroadcastChannel:', error);
+        }
       }
     },
     [channel, isChannelClosed]

@@ -222,8 +222,7 @@ function TitleEditable({
 
     console.log('[TitleEditable] Initializing component:', {
       hasContentBox: !!contentBox,
-      localName: updateStateRef.current.localName,
-      viewId
+      localName: updateStateRef.current.localName
     });
 
     if (!contentBox) {

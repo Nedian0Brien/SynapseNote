@@ -149,7 +149,7 @@ jobs:
           curl -v http://localhost/health || true
           curl -v http://localhost/api/health || true
           echo "Running Cypress tests..."
-          npx cypress run --spec 'cypress/e2e/page/create-delete-page.cy.ts'
+          pnpm cypress run --spec 'cypress/e2e/page/create-delete-page.cy.ts'
 
       - name: Cloud server logs
         if: always()
