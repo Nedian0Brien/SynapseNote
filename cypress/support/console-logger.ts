@@ -50,6 +50,18 @@ function installConsoleInterceptors(win: any) {
         
         // Log to Node.js console directly
         console.log(logMessage);
+        
+        // Also use cy.task for guaranteed CI visibility (if available)
+        try {
+          // Check if we're in a Cypress context and can use cy.task
+          if (typeof Cypress !== 'undefined' && Cypress.cy) {
+            Cypress.cy.task('log', logMessage, { log: false }).catch(() => {
+              // Ignore errors if cy.task is not available in current context
+            });
+          }
+        } catch (e) {
+          // Ignore errors if Cypress is not available
+        }
       }
       
       // Call original method
@@ -63,9 +75,19 @@ Cypress.Commands.add('startConsoleCapture', () => {
   consoleLogs = [];
   isCapturing = true;
   
+  // Check if we're in CI environment
+  const isCi = Cypress.env('CI') || Cypress.env('GITHUB_ACTIONS');
+  cy.task('log', `[CONSOLE-LOGGER] Starting console capture (CI: ${!!isCi})`);
+  
   // Install on current window
   cy.window({ log: false }).then((win) => {
     installConsoleInterceptors(win);
+    
+    // Test console capture immediately in CI
+    if (isCi) {
+      cy.task('log', '[CONSOLE-LOGGER] Console interceptors installed, testing...');
+      win.console.log('🧪 TEST: Console capture is working in CI environment');
+    }
   });
   
   // Install on all future windows (navigation, reload, etc.)
@@ -98,6 +120,9 @@ Cypress.Commands.add('printConsoleLogsSummary', () => {
     debug: consoleLogs.filter(l => l.type === 'debug').length
   };
   
+  // Enhanced logging summary for CI visibility
+  const isCi = Cypress.env('CI') || Cypress.env('GITHUB_ACTIONS');
+  
   cy.task('log', '=== Console Logs Summary ===');
   cy.task('log', `Total logs captured: ${summary.total}`);
   cy.task('log', `  - Errors: ${summary.errors}`);
@@ -105,6 +130,12 @@ Cypress.Commands.add('printConsoleLogsSummary', () => {
   cy.task('log', `  - Logs: ${summary.logs}`);
   cy.task('log', `  - Info: ${summary.info}`);
   cy.task('log', `  - Debug: ${summary.debug}`);
+  
+  if (isCi && summary.total === 0) {
+    cy.task('log', '⚠️  WARNING: No console logs captured in CI environment!');
+    cy.task('log', '   This might indicate console interceptor is not working properly.');
+    cy.task('log', '   Check if the web app is loading correctly in CI.');
+  }
   
   // Print all logs
   if (consoleLogs.length > 0) {
