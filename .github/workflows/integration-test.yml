@@ -9,7 +9,7 @@ on:
 
 env:
   CLOUD_VERSION: latest-amd64
-  CYPRESS_BASE_URL: http://localhost:3000
+  CYPRESS_BASE_URL: http://localhost:80
   GOTRUE_ADMIN_EMAIL: admin@example.com
   GOTRUE_ADMIN_PASSWORD: password
 
@@ -45,12 +45,18 @@ jobs:
             ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: |
+          echo "Node version: $(node --version)"
+          echo "pnpm version: $(pnpm --version)"
+          echo "Installing dependencies..."
+          pnpm install --frozen-lockfile
+          echo "Pre-installing Cypress to avoid server timeout issues..."
+          npx cypress install
 
-      - name: Start web server (background)
+      - name: Prepare web app environment
         run: |
           cp deploy.env .env
-          nohup pnpm run dev > web.log 2>&1 &
+          echo "Web app will be served via Docker Compose and nginx proxy"
 
       - name: Checkout AppFlowy-Cloud-Premium code
         uses: actions/checkout@v4
@@ -68,12 +74,31 @@ jobs:
           sed -i 's|API_EXTERNAL_URL=.*|API_EXTERNAL_URL=http://localhost|' .env
           sed -i 's|AI_OPENAI_API_KEY=.*|AI_OPENAI_API_KEY=${{ secrets.CI_OPENAI_API_KEY }}|' .env
           sed -i 's|APPFLOWY_SPAM_DETECT_ENABLED=.*|APPFLOWY_SPAM_DETECT_ENABLED=false|' .env
+          
+          # Update nginx CORS configuration to allow localhost (port 80) for testing
+          echo "Backing up original nginx.conf..."
+          cp nginx/nginx.conf nginx/nginx.conf.backup
+          echo "Updating nginx CORS configuration for testing..."
+          sed -i 's|"~^http://localhost:3000$"|"~^http://localhost(:[0-9]+)?$"|g' nginx/nginx.conf
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+      - name: Build AppFlowy Web Docker Image
+        run: |
+          echo "Building local AppFlowy Web Docker image..."
+          # Get current commit SHA for versioning
+          COMMIT_SHA=$(git rev-parse --short HEAD)
+          WEB_VERSION="local-${COMMIT_SHA}"
+          
+          # Build the Docker image using the docker/Dockerfile
+          docker build -t appflowyinc/appflowy_web:${WEB_VERSION} -f docker/Dockerfile .
+          
+          echo "Built image: appflowyinc/appflowy_web:${WEB_VERSION}"
+          echo "WEB_VERSION=${WEB_VERSION}" >> $GITHUB_ENV
 
       - name: Run Docker-Compose
         working-directory: AppFlowy-Cloud-Premium
@@ -82,25 +107,23 @@ jobs:
           APPFLOWY_AI_VERSION: ${{ env.CLOUD_VERSION }}
           APPFLOWY_WORKER_VERSION: ${{ env.CLOUD_VERSION }}
           APPFLOWY_ADMIN_FRONTEND_VERSION: ${{ env.CLOUD_VERSION }}
+          APPFLOWY_WEB_VERSION: ${{ env.WEB_VERSION }}
           RUST_LOG: appflowy_cloud=debug
         run: |
-          docker compose pull
+          # Pull all services except appflowy_web (since we built it locally)
+          docker compose pull --ignore-pull-failures appflowy_cloud gotrue admin_frontend ai appflowy_worker nginx minio postgres redis
           docker compose up -d
           echo "Waiting for the containers to be ready..."
           sleep 10
+          echo "=== Docker Container Status ==="
           docker ps -a
-          docker logs appflowy-cloud-premium-appflowy_cloud-1
+          echo ""
+          echo "=== Checking AppFlowy Web Container ==="
+          docker inspect appflowy-cloud-premium-appflowy_web-1 --format='{{.State.Status}}' || echo "Web container not found"
+          echo ""
+          echo "=== Docker Images ==="
+          docker images | grep appflowy
 
-      - name: Wait for frontend to be ready
-        shell: bash
-        run: |
-          for i in {1..120}; do
-            if curl -sSf http://localhost:3000 > /dev/null; then
-              echo "Frontend is up"; exit 0;
-            fi
-            sleep 10
-          done
-          echo "Frontend did not become ready in time"; exit 1
 
       - name: Wait for backend to be ready
         shell: bash
@@ -115,20 +138,33 @@ jobs:
 
       - name: Run integration tests
         env:
-          AF_BASE_URL: http://localhost
-          AF_GOTRUE_URL: http://localhost/gotrue
-          AF_WS_V2_URL: ws://localhost/ws/v2
+          APPFLOWY_BASE_URL: http://localhost
+          APPFLOWY_GOTRUE_BASE_URL: http://localhost/gotrue
+          APPFLOWY_WS_BASE_URL: ws://localhost/ws/v2
           CYPRESS_chromeWebSecurity: 'false'
         run: |
           cp deploy.env .env
-          npx cypress install
-          pnpm run test:integration:page:create-delete 
-          # pnpm run test:integration
+          # Add extra debugging for CI
+          echo "Testing backend connectivity..."
+          curl -v http://localhost/health || true
+          curl -v http://localhost/api/health || true
+          echo "Running Cypress tests..."
+          npx cypress run --spec 'cypress/e2e/page/create-delete-page.cy.ts'
 
       - name: Cloud server logs
         if: always()
         run: |
-          docker logs appflowy-cloud-premium-appflowy_cloud-1
+          echo "=== AppFlowy Cloud Logs ==="
+          docker logs appflowy-cloud-premium-appflowy_cloud-1 2>&1 | tail -100
+          echo ""
+          echo "=== GoTrue Auth Logs ==="
+          docker logs appflowy-cloud-premium-gotrue-1 2>&1 | tail -50
+          echo ""
+          echo "=== AppFlowy Web Logs ==="
+          docker logs appflowy-cloud-premium-appflowy_web-1 2>&1 | tail -50 || echo "No web container logs"
+          echo ""
+          echo "=== Nginx Logs ==="
+          docker logs appflowy-cloud-premium-nginx-1 2>&1 | tail -50
 
       - name: Upload Cypress screenshots
         if: always()
@@ -156,6 +192,17 @@ jobs:
           path: web.log
           if-no-files-found: ignore
           retention-days: 1
+
+      - name: Cleanup and restore nginx config
+        if: always()
+        run: |          
+          echo "Restoring original nginx configuration..."
+          if [ -f "AppFlowy-Cloud-Premium/nginx/nginx.conf.backup" ]; then
+            mv AppFlowy-Cloud-Premium/nginx/nginx.conf.backup AppFlowy-Cloud-Premium/nginx/nginx.conf
+            echo "✅ Original nginx.conf restored"
+          else
+            echo "⚠️ No backup found, nginx.conf left modified"
+          fi
 
       - name: Upload Cypress console logs
         if: always()

@@ -25,7 +25,7 @@
     "test:integration:page:create-delete": "cypress run --spec 'cypress/e2e/page/create-delete-page.cy.ts'",
     "test:integration:page:edit": "cypress run --spec 'cypress/e2e/page/edit-page.cy.ts'",
     "test:integration:publish": "cypress run --spec 'cypress/e2e/publish/**/*.cy.ts'",
-    "wait:backend": "AF_BASE_URL=${AF_BASE_URL:-http://localhost} node scripts/wait-for-backend.js",
+    "wait:backend": "APPFLOWY_BASE_URL=${APPFLOWY_BASE_URL:-http://localhost} node scripts/wait-for-backend.js",
     "coverage": "cross-env COVERAGE=true pnpm run test:unit && cross-env COVERAGE=true pnpm run test:components",
     "generate-tokens": "node scripts/system-token/convert-tokens.cjs",
     "generate-protobuf": "pbjs -t static-module -w es6 -o ./src/proto/messages.js ./src/proto/messages.proto & pbts -o ./src/proto/messages.d.ts ./src/proto/messages.js"

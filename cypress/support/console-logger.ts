@@ -44,7 +44,7 @@ function installConsoleInterceptors(win: any) {
         };
         consoleLogs.push(logEntry);
         
-        // Immediately output to Node.js console for CI visibility
+        // Immediately output to Cypress task for CI visibility
         const message = stringifyArgs(args);
         const logMessage = `[${new Date().toISOString()}] [CONSOLE.${method.toUpperCase()}] ${message}`;
         

@@ -3,8 +3,8 @@ import { AuthTestUtils } from '../../support/auth-utils';
 import { TestTool } from '../../support/page-utils';
 
 describe('Publish Page Test', () => {
-    const AF_BASE_URL = Cypress.env('AF_BASE_URL');
-    const AF_GOTRUE_URL = Cypress.env('AF_GOTRUE_URL');
+    const APPFLOWY_BASE_URL = Cypress.env('APPFLOWY_BASE_URL');
+    const APPFLOWY_GOTRUE_BASE_URL = Cypress.env('APPFLOWY_GOTRUE_BASE_URL');
     const generateRandomEmail = () => `${uuidv4()}@appflowy.io`;
 
     let testEmail: string;
@@ -12,7 +12,7 @@ describe('Publish Page Test', () => {
     const pageContent = 'This is a publish page content';
 
     before(() => {
-        cy.task('log', `Env:\n- AF_BASE_URL: ${AF_BASE_URL}\n- AF_GOTRUE_URL: ${AF_GOTRUE_URL}`);
+        cy.task('log', `Env:\n- APPFLOWY_BASE_URL: ${APPFLOWY_BASE_URL}\n- APPFLOWY_GOTRUE_BASE_URL: ${APPFLOWY_GOTRUE_BASE_URL}`);
     });
 
     beforeEach(() => {

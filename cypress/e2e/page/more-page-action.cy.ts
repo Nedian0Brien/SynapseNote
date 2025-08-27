@@ -3,8 +3,8 @@ import { uuidv4 } from 'lib0/random';
 import { TestTool } from '../../support/page-utils';
 
 describe('More Page Actions', () => {
-    const AF_BASE_URL = Cypress.env('AF_BASE_URL');
-    const AF_GOTRUE_URL = Cypress.env('AF_GOTRUE_URL');
+    const APPFLOWY_BASE_URL = Cypress.env('APPFLOWY_BASE_URL');
+    const APPFLOWY_GOTRUE_BASE_URL = Cypress.env('APPFLOWY_GOTRUE_BASE_URL');
     const newPageName = 'Renamed Test Page';
     let testEmail: string;
     let testEmail2: string;

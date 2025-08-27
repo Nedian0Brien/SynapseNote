@@ -10,9 +10,9 @@ export default defineConfig({
       exclude: ['cypress/**/*.*', '**/__tests__/**/*.*', '**/*.test.*'],
     },
     // Backend URL configuration - load from .env or use defaults
-    AF_BASE_URL: process.env.AF_BASE_URL || 'http://localhost:8000',
-    AF_GOTRUE_URL: process.env.AF_GOTRUE_URL || 'http://localhost:9999',
-    AF_WS_V2_URL: process.env.AF_WS_V2_URL || 'ws://localhost:8000/ws/v2',
+    APPFLOWY_BASE_URL: process.env.APPFLOWY_BASE_URL || 'http://localhost',
+    APPFLOWY_GOTRUE_BASE_URL: process.env.APPFLOWY_GOTRUE_BASE_URL || 'http://localhost/gotrue',
+    APPFLOWY_WS_BASE_URL: process.env.APPFLOWY_WS_BASE_URL || 'ws://localhost/ws/v2',
     GOTRUE_ADMIN_EMAIL: process.env.GOTRUE_ADMIN_EMAIL || 'admin@example.com',
     GOTRUE_ADMIN_PASSWORD: process.env.GOTRUE_ADMIN_PASSWORD || 'password',
     // WebSocket mocking configuration
@@ -33,9 +33,9 @@ export default defineConfig({
       }
 
       // Pass environment variables to Cypress
-      config.env.AF_BASE_URL = process.env.AF_BASE_URL || config.env.AF_BASE_URL;
-      config.env.AF_GOTRUE_URL = process.env.AF_GOTRUE_URL || config.env.AF_GOTRUE_URL;
-      config.env.AF_WS_V2_URL = process.env.AF_WS_V2_URL || config.env.AF_WS_V2_URL;
+      config.env.APPFLOWY_BASE_URL = process.env.APPFLOWY_BASE_URL || config.env.APPFLOWY_BASE_URL;
+      config.env.APPFLOWY_GOTRUE_BASE_URL = process.env.APPFLOWY_GOTRUE_BASE_URL || config.env.APPFLOWY_GOTRUE_BASE_URL;
+      config.env.APPFLOWY_WS_BASE_URL = process.env.APPFLOWY_WS_BASE_URL || config.env.APPFLOWY_WS_BASE_URL;
       config.env.GOTRUE_ADMIN_EMAIL = process.env.GOTRUE_ADMIN_EMAIL || config.env.GOTRUE_ADMIN_EMAIL;
       config.env.GOTRUE_ADMIN_PASSWORD = process.env.GOTRUE_ADMIN_PASSWORD || config.env.GOTRUE_ADMIN_PASSWORD;
       // Pass WebSocket mock configuration
@@ -51,7 +51,8 @@ export default defineConfig({
         },
         async httpCheck({ url, method = 'HEAD' }: { url: string; method?: string }) {
           try {
-            const response = await fetch(url, { method: method as any });
+            const response = await fetch(url, { method: method as 'GET' | 'POST' | 'PUT' | 'DELETE' | 'HEAD' | 'OPTIONS' | 'PATCH' });
+
             return response.ok;
           } catch (error) {
             return false;

@@ -30,6 +30,7 @@ export class TestTool {
     static clickPageByName = Pages.clickPageByName;
     static getPageById = Pages.getPageById;
     static getPageTitleInput = Pages.getPageTitleInput;
+    static savePageTitle = Pages.savePageTitle;
 
     // ========== Page Actions ==========
     static clickPageMoreActions = PageActions.clickPageMoreActions;
@@ -141,6 +142,7 @@ export const {
     clickPageByName,
     getPageById,
     getPageTitleInput,
+    savePageTitle,
 
     // Page Actions
     clickPageMoreActions,

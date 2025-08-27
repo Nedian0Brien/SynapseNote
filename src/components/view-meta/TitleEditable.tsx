@@ -61,6 +61,13 @@ function TitleEditable({
 }) {
   const { t } = useTranslation();
 
+  // Debug logging for initialization
+  console.log('[TitleEditable] Component initialized:', {
+    viewId,
+    name,
+    timestamp: Date.now()
+  });
+
   // Use ref to manage state, avoid re-rendering
   const updateStateRef = useRef<UpdateState>({
     localName: name,
@@ -213,20 +220,38 @@ function TitleEditable({
   useEffect(() => {
     const contentBox = contentRef.current;
 
-    if (!contentBox) return;
+    console.log('[TitleEditable] Initializing component:', {
+      hasContentBox: !!contentBox,
+      localName: updateStateRef.current.localName,
+      viewId
+    });
+
+    if (!contentBox) {
+      console.warn('[TitleEditable] contentRef not available yet');
+      return;
+    }
 
     // Set initial content to local state
     contentBox.textContent = updateStateRef.current.localName;
     initialEditValueRef.current = updateStateRef.current.localName;
 
-    contentBox.focus();
+    // Use requestAnimationFrame for better timing
+    const focusAndPosition = () => {
+      requestAnimationFrame(() => {
+        console.log('[TitleEditable] Focusing element');
+        contentBox.focus();
+        
+        // Move cursor to end
+        if (contentBox.textContent !== '') {
+          requestAnimationFrame(() => {
+            setCursorPosition(contentBox, contentBox.textContent?.length || 0);
+            console.log('[TitleEditable] Cursor positioned at end');
+          });
+        }
+      });
+    };
 
-    // Move cursor to end
-    if (contentBox.textContent !== '') {
-      setTimeout(() => {
-        setCursorPosition(contentBox, contentBox.textContent?.length || 0);
-      }, 0);
-    }
+    focusAndPosition();
   }, []); // Only execute once when component mounts
 
   return (
@@ -246,6 +271,8 @@ function TitleEditable({
       aria-readonly={false}
       autoFocus={true}
       onFocus={() => {
+        console.log('[TitleEditable] Focus event triggered');
+        
         // Record initial value when starting to edit
         if (contentRef.current) {
           initialEditValueRef.current = contentRef.current.textContent || '';

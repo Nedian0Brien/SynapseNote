@@ -22,4 +22,8 @@ export function getPageTitleInput() {
     return cy.get('[data-testid="page-title-input"]', { timeout: 30000 });
 }
 
+export function savePageTitle() {
+    return cy.get('[data-testid="page-title-input"]').type('{esc}');
+}
+
 

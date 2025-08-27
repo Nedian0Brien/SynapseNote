@@ -29,6 +29,15 @@ export function ViewMetaPreview({
   const [cover, setCover] = React.useState<ViewMetaCover | null>(coverProp || null);
   const [icon, setIcon] = React.useState<ViewMetaIcon | null>(iconProp || null);
 
+  // Debug logging for TitleEditable visibility issues
+  console.log('[ViewMetaPreview] Props:', {
+    viewId,
+    readOnly,
+    name,
+    hasUpdatePageName: !!updatePageName,
+    timestamp: Date.now()
+  });
+
   useEffect(() => {
     setCover(coverProp || null);
   }, [coverProp]);
@@ -250,26 +259,32 @@ export function ViewMetaPreview({
               </CustomIconPopover>
             ) : null}
             {!readOnly && viewId ? (
-              <TitleEditable
-                onFocus={onFocus}
-                viewId={viewId}
-                name={name || ''}
-                onUpdateName={handleUpdateName}
-                onEnter={onEnter}
-              />
+              <>
+                {console.log('[ViewMetaPreview] Rendering TitleEditable:', { viewId, readOnly, name })}
+                <TitleEditable
+                  onFocus={onFocus}
+                  viewId={viewId}
+                  name={name || ''}
+                  onUpdateName={handleUpdateName}
+                  onEnter={onEnter}
+                />
+              </>
             ) : (
-              <div
-                style={{
-                  wordBreak: 'break-word',
-                }}
-                className={
-                  'relative flex-1 cursor-text whitespace-pre-wrap break-words empty:before:text-text-tertiary empty:before:content-[attr(data-placeholder)] focus:outline-none'
-                }
-                data-placeholder={t('menuAppHeader.defaultNewPageName')}
-                contentEditable={false}
-              >
-                {name}
-              </div>
+              <>
+                {console.log('[ViewMetaPreview] Rendering non-editable div:', { viewId, readOnly, name })}
+                <div
+                  style={{
+                    wordBreak: 'break-word',
+                  }}
+                  className={
+                    'relative flex-1 cursor-text whitespace-pre-wrap break-words empty:before:text-text-tertiary empty:before:content-[attr(data-placeholder)] focus:outline-none'
+                  }
+                  data-placeholder={t('menuAppHeader.defaultNewPageName')}
+                  contentEditable={false}
+                >
+                  {name}
+                </div>
+              </>
             )}
           </h1>
         </div>

@@ -3,16 +3,16 @@ import { AuthTestUtils } from '../../support/auth-utils';
 import { TestTool } from '../../support/page-utils';
 
 describe('User Feature Tests', () => {
-    const AF_BASE_URL = Cypress.env('AF_BASE_URL');
-    const AF_GOTRUE_URL = Cypress.env('AF_GOTRUE_URL');
-    const AF_WS_URL = Cypress.env('AF_WS_V2_URL');
+    const APPFLOWY_BASE_URL = Cypress.env('APPFLOWY_BASE_URL');
+    const APPFLOWY_GOTRUE_BASE_URL = Cypress.env('APPFLOWY_GOTRUE_BASE_URL');
+    const APPFLOWY_WS_BASE_URL = Cypress.env('APPFLOWY_WS_BASE_URL');
     const generateRandomEmail = () => `${uuidv4()}@appflowy.io`;
 
     before(() => {
         cy.task('log', `Test Environment Configuration:
-          - AF_BASE_URL: ${AF_BASE_URL}
-          - AF_GOTRUE_URL: ${AF_GOTRUE_URL}
-          - AF_WS_URL: ${AF_WS_URL}
+          - APPFLOWY_BASE_URL: ${APPFLOWY_BASE_URL}
+          - APPFLOWY_GOTRUE_BASE_URL: ${APPFLOWY_GOTRUE_BASE_URL}
+          - APPFLOWY_WS_BASE_URL: ${APPFLOWY_WS_BASE_URL}
          `);
 
     });

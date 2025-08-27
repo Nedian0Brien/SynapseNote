@@ -3,8 +3,8 @@ import { AuthTestUtils } from '../../support/auth-utils';
 import { TestTool } from '../../support/page-utils';
 
 describe('Page Create and Delete Tests', () => {
-    const AF_BASE_URL = Cypress.env('AF_BASE_URL');
-    const AF_GOTRUE_URL = Cypress.env('AF_GOTRUE_URL');
+    const APPFLOWY_BASE_URL = Cypress.env('APPFLOWY_BASE_URL');
+    const APPFLOWY_GOTRUE_BASE_URL = Cypress.env('APPFLOWY_GOTRUE_BASE_URL');
     const generateRandomEmail = () => `${uuidv4()}@appflowy.io`;
     let testEmail: string;
     let testPageName: string;
@@ -12,8 +12,8 @@ describe('Page Create and Delete Tests', () => {
     before(() => {
         // Log environment configuration for debugging
         cy.task('log', `Test Environment Configuration:
-          - AF_BASE_URL: ${AF_BASE_URL}
-          - AF_GOTRUE_URL: ${AF_GOTRUE_URL}`);
+          - APPFLOWY_BASE_URL: ${APPFLOWY_BASE_URL}
+          - APPFLOWY_GOTRUE_BASE_URL: ${APPFLOWY_GOTRUE_BASE_URL}`);
     });
 
     beforeEach(() => {

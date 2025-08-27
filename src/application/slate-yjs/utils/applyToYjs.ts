@@ -89,6 +89,7 @@ function insertText(ydoc: Y.Doc, editor: Editor, { path, offset, text, attribute
   } else {
     yText.insert(relativeOffset, text, attributes);
   }
+
   console.log(`insert text:${text}, ytext delta:${JSON.stringify(yText.toDelta())}`);
 }
 

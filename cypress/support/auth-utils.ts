@@ -15,9 +15,9 @@ export class AuthTestUtils {
   private adminAccessToken?: string;
 
   constructor(config?: Partial<AuthConfig>) {
-    // Use AF_GOTRUE_URL from environment if available, otherwise construct from AF_BASE_URL
-    const baseUrl = config?.baseUrl || Cypress.env('AF_BASE_URL') || 'http://localhost:8000';
-    const gotrueUrl = config?.gotrueUrl || Cypress.env('AF_GOTRUE_URL') || `http://localhost:9999`;
+    // Use APPFLOWY_GOTRUE_BASE_URL from environment if available, otherwise construct from APPFLOWY_BASE_URL
+    const baseUrl = config?.baseUrl || Cypress.env('APPFLOWY_BASE_URL') || 'http://localhost';
+    const gotrueUrl = config?.gotrueUrl || Cypress.env('APPFLOWY_GOTRUE_BASE_URL') || `http://localhost/gotrue`;
 
     this.config = {
       baseUrl: baseUrl,
