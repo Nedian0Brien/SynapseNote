@@ -2,11 +2,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Awareness } from 'y-protocols/awareness';
 
-import { ViewLayout, Types, YjsEditorKey, View, YDoc } from '@/application/types';
+import { openCollabDB } from '@/application/db';
+import { Types, View, ViewLayout, YDoc, YjsEditorKey } from '@/application/types';
 import { findView } from '@/components/_shared/outline/utils';
+
 import { useAuthInternal } from '../contexts/AuthInternalContext';
 import { useSyncInternal } from '../contexts/SyncInternalContext';
-import { openCollabDB } from '@/application/db';
 
 // Hook for managing view-related operations
 export function useViewOperations() {
@@ -136,8 +137,9 @@ export function useViewOperations() {
         return Promise.reject(e);
       }
     },
-    [service, currentWorkspaceId, getDatabaseId, registerSyncContext]
+    [service, currentWorkspaceId, getDatabaseId, registerSyncContext] // Add dependencies to prevent re-creation of functions
   );
+
 
   // Create row document
   const createRowDoc = useCallback(
