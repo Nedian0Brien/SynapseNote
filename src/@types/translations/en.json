@@ -495,6 +495,16 @@
     "checked": "Checked",
     "unchecked": "Unchecked"
   },
+  "global-loading": {
+    "welcome": "Welcome!",
+    "installing": "Loading Workspace",
+    "steps": {
+      "checkingAuth": "Checking authentication",
+      "loadingData": "Loading workspace data",
+      "preparingInterface": "Preparing interface",
+      "finalizing": "Almost ready"
+    }
+  },
   "label": {
     "welcome": "Welcome!",
     "firstName": "First Name",
