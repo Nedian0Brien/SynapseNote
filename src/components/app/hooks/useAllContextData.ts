@@ -15,6 +15,7 @@ export function useAllContextData(awarenessMap: Record<string, Awareness>): AppC
   const syncData = useContext(SyncInternalContext);
   const businessData = useContext(BusinessInternalContext);
 
+
   return useMemo(() => ({
     // From AuthInternalContext
     ...authData,

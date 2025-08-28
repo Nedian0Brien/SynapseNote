@@ -16,6 +16,7 @@ export function useWorkspaceData() {
   const navigate = useNavigate();
   
   const [outline, setOutline] = useState<View[]>();
+  const stableOutlineRef = useRef<View[]>([]);
   const [favoriteViews, setFavoriteViews] = useState<View[]>();
   const [recentViews, setRecentViews] = useState<View[]>();
   const [trashList, setTrashList] = useState<View[]>();
@@ -35,7 +36,9 @@ export function useWorkspaceData() {
           throw new Error('App outline not found');
         }
 
+        stableOutlineRef.current = res;
         setOutline(res);
+
 
         if (!force) return;
 
@@ -268,5 +271,6 @@ export function useWorkspaceData() {
     loadViews,
     getMentionUser,
     loadMentionableUsers,
+    stableOutlineRef,
   };
 }

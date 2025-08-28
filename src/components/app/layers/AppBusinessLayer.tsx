@@ -56,6 +56,7 @@ export const AppBusinessLayer: React.FC<AppBusinessLayerProps> = ({ children }) 
     loadViews,
     getMentionUser,
     loadMentionableUsers,
+    stableOutlineRef,
   } = useWorkspaceData();
 
   // Initialize view operations
@@ -193,9 +194,9 @@ export const AppBusinessLayer: React.FC<AppBusinessLayerProps> = ({ children }) 
   // Enhanced loadView with outline context
   const enhancedLoadView = useCallback(
     async (id: string, isSubDocument = false, loadAwareness = false) => {
-      return loadView(id, isSubDocument, loadAwareness, outline);
+      return loadView(id, isSubDocument, loadAwareness, stableOutlineRef.current);
     },
-    [loadView, outline]
+    [loadView, stableOutlineRef]
   );
 
   // Enhanced deletePage with loadTrash
