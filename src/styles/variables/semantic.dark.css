@@ -3,7 +3,7 @@
  * AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY
  * 
  * Generated from: semantic.dark.json
- * Generated time: 2025-08-19T02:49:46.811Z
+ * Generated time: 2025-08-27T10:50:43.202Z
  * 
  * To modify these values, edit the source JSON files and run the token conversion script:
  * node scripts/system-token/convert-tokens.cjs
@@ -15,9 +15,11 @@
   --text-tertiary: #6f748c;
   --text-quaternary: #21232a;
   --text-on-fill: #ffffff;
+  --text-inverse: #21232a;
   --text-action: #00b5ff;
   --text-action-hover: #4ec1ff;
   --text-info: #00b5ff;
+  --text-info-light: #0078c0bf;
   --text-info-hover: #4ec1ff;
   --text-info-on-fill: #a9e2ff;
   --text-success: #48a982;
@@ -27,6 +29,7 @@
   --text-warning-hover: #ffa02e;
   --text-warning-on-fill: #ffe4ab;
   --text-error: #ff5050;
+  --text-error-light: #e71d32bf;
   --text-error-hover: #ff7d87;
   --text-error-on-fill: #ffa5b4;
   --text-featured: #e1b3ff;
@@ -343,6 +346,9 @@
   --brand-lemon: #ffce00;
   --other-colors-text-highlight: #003c77;
   --other-colors-icon-shared: #9ab6ed;
+  --other-colors-text-event: #a9e2ff;
+  --other-colors-filled-event: #003c77;
+  --other-colors-filled-today: #f36bb1;
   --spacing-spacing-0: 0px;
   --spacing-spacing-xs: 4px;
   --spacing-spacing-s: 6px;
