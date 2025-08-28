@@ -33,7 +33,6 @@ function ControlActions({ setOpenMenu, blockId }: {
   } = usePanelContext();
 
   const onAdded = useCallback(() => {
-
     setTimeout(() => {
       const rect = getRangeRect();
 

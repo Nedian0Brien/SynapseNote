@@ -15,7 +15,7 @@ const origins: Origins = {
   },
   transformOrigin: {
     vertical: 'top',
-    horizontal: -16,
+    horizontal: 'left',
   },
 };
 

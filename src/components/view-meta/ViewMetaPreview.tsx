@@ -7,6 +7,7 @@ import ViewCover from '@/components/view-meta/ViewCover';
 import { CustomIconPopover } from '@/components/_shared/cutsom-icon';
 import { notify } from '@/components/_shared/notify';
 import PageIcon from '@/components/_shared/view-icon/PageIcon';
+import { ColorEnum } from '@/utils/color';
 
 const AddIconCover = lazy(() => import('@/components/view-meta/AddIconCover'));
 
@@ -183,8 +184,8 @@ export function ViewMetaPreview({
                 onUpdateIcon={handleUpdateIcon}
                 onAddCover={() => {
                   void handleUpdateCover({
-                    type: CoverType.BuildInImage,
-                    value: '1',
+                    type: CoverType.NormalColor,
+                    value: ColorEnum.Tint1,
                   });
                 }}
                 maxWidth={maxWidth}

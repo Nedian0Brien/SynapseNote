@@ -168,7 +168,12 @@ function DatabaseRowHeader({ rowId, appendBreadcrumb }: { rowId: string; appendB
           >
             {renderCoverImage(cover)}
             {!readOnly && (
-              <ViewCoverActions show={hoveredCover} onUpdateCover={onUpdateCover} onRemove={onRemoveCover} />
+              <ViewCoverActions
+                show={hoveredCover}
+                onUpdateCover={onUpdateCover}
+                onRemove={onRemoveCover}
+                coverValue={cover.data}
+              />
             )}
           </div>
         )}

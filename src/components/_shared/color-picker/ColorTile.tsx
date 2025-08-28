@@ -23,7 +23,7 @@ export const ColorTile = forwardRef<
     return (
       <div
         className={cn(active ? 'h-5 w-5 rounded-[3px]' : 'min-h-6 min-w-6 rounded-[4px]')}
-        style={{ backgroundColor: value }}
+        style={{ background: value }}
       />
     );
   }, [active, isText, value]);
@@ -44,3 +44,11 @@ export const ColorTile = forwardRef<
     </div>
   );
 });
+
+export function ColorTileIcon({ value }: { value: string }) {
+  return (
+    <div className='m-0.5 flex h-4 w-4 items-center justify-center rounded-[4px] border border-border-primary'>
+      <div className='min-h-3 min-w-3 rounded-[2px]' style={{ background: value }} />
+    </div>
+  );
+}

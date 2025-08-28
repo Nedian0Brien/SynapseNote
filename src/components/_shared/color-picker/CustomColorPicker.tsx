@@ -37,7 +37,7 @@ export function CustomColorPicker({
     <div className='flex flex-col gap-3'>
       <HexColorPicker color={color} onChange={handleChange} className='custom-color-picker' />
       <div className='mb-5 flex gap-2'>
-        <div style={{ backgroundColor: color }} className='h-8 w-8 rounded-[16px] border border-border-primary' />
+        <div style={{ backgroundColor: color }} className='h-8 w-8 min-w-8 rounded-[16px] border border-border-primary' />
         <Input
           value={colorHex}
           onChange={(e) => setColorHex(e.target.value)}

@@ -88,15 +88,18 @@ export function UploadPopover({
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
-      <PopoverContent onKeyDown={onKeyDown} className={'flex min-w-[600px] flex-col overflow-hidden max-md:min-w-full'}>
-        <div className={'flex w-full items-center justify-center gap-2 border-b border-border-primary pt-1'}>
+      <PopoverContent
+        onKeyDown={onKeyDown}
+        className={'flex w-[400px] flex-col overflow-hidden max-md:min-w-full'}
+      >
+        <div className={'flex items-center justify-start gap-2 border-b border-border-primary pt-1 mx-4'}>
           <ViewTabs
             value={tabValue}
             onChange={handleTabChange}
             scrollButtons={false}
             variant='scrollable'
             allowScrollButtonsMobile
-            className={'min-h-[38px] px-2'}
+            className={'min-h-[38px]'}
           >
             {tabOptions.map((tab) => {
               const { key, label } = tab;
@@ -107,7 +110,7 @@ export function UploadPopover({
           {extra}
         </div>
 
-        <div ref={ref} className={'appflowy-scroller h-full w-full flex-1 overflow-y-auto overflow-x-hidden p-2'}>
+        <div ref={ref} className={'appflowy-scroller h-full w-full flex-1 overflow-y-auto overflow-x-hidden'}>
           <SwipeableViews
             slideStyle={{
               overflow: 'hidden',
@@ -120,7 +123,7 @@ export function UploadPopover({
               const { key, Component, onDone } = tab;
 
               return (
-                <TabPanel className={'flex h-full w-full flex-col p-1'} key={key} index={index} value={selectedIndex}>
+                <TabPanel className={'flex h-full w-full flex-col px-4 py-3'} key={key} index={index} value={selectedIndex}>
                   <Component onDone={onDone} uploadAction={tab.uploadAction} onEscape={() => onOpenChange?.(false)} />
                 </TabPanel>
               );
