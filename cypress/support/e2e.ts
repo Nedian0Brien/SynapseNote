@@ -18,33 +18,11 @@ import 'cypress-file-upload';
 import 'cypress-plugin-api';
 import 'cypress-real-events';
 import './commands';
-import { CollabWebSocketMock } from './websocket-collab-mock';
-
-
-// Install WebSocket mock before window loads if enabled
-if (Cypress.env('MOCK_WEBSOCKET') === true || Cypress.env('MOCK_WEBSOCKET') === 'true') {
-  const delay = parseInt(Cypress.env('WS_RESPONSE_DELAY') || '50');
-
-  Cypress.on('window:before:load', (win) => {
-    // Install mock on every window load
-    if (!(win as any).__collabMockInstance) {
-      (win as any).__collabMockInstance = new CollabWebSocketMock(win as any, delay);
-      // eslint-disable-next-line no-console
-      console.log('[E2E] Collab WebSocket mock installed on window:', win.location.href);
-    }
-  });
-}
 
 // Global hooks for console logging
 beforeEach(() => {
   // Start capturing console logs for each test
   cy.startConsoleCapture();
-
-  // Log if WebSocket mocking is enabled
-  if (Cypress.env('MOCK_WEBSOCKET') === true || Cypress.env('MOCK_WEBSOCKET') === 'true') {
-    cy.task('log', 'Collab WebSocket mocking enabled for this test');
-    cy.log('Collab WebSocket mocking enabled');
-  }
 });
 
 afterEach(() => {
@@ -54,11 +32,6 @@ afterEach(() => {
 
   // Stop capturing to clean up
   cy.stopConsoleCapture();
-
-  // Restore WebSocket if it was mocked
-  if (Cypress.env('MOCK_WEBSOCKET') === true || Cypress.env('MOCK_WEBSOCKET') === 'true') {
-    cy.restoreCollabWebSocket();
-  }
 });
 
 // Globally ignore transient app bootstrap errors during tests

@@ -204,20 +204,9 @@ export function createPage(pageName: string) {
         // Check if there are any WebSocket connection indicators
         const wsConnected = win.localStorage.getItem('ws_connected');
         cy.task('log', `WebSocket connection status: ${wsConnected || 'unknown'}`);
+        // Log any global WebSocket state if available
+        cy.task('log', `Window has WebSocket: ${!!win.WebSocket}`);
     });
-
-    if (Cypress.env('MOCK_WEBSOCKET')) {
-        cy.task('log', 'Waiting for document to sync (MOCK_WEBSOCKET mode)');
-        cy.waitForDocumentSync();
-        cy.task('log', 'Document synced');
-    } else {
-        cy.task('log', 'WebSocket mode: Real-time sync expected');
-        // Check if WebSocket is connected
-        cy.window().then((win) => {
-            // Log any global WebSocket state if available
-            cy.task('log', `Window has WebSocket: ${!!win.WebSocket}`);
-        });
-    }
     
     // Wait for document to load properly - be more generous with WebSocket sync
     const isCi = Cypress.env('CI') || Cypress.env('GITHUB_ACTIONS');

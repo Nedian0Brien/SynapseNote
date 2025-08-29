@@ -6,10 +6,6 @@ import './auth-utils';
 import './page-utils';
 // Import console logger v2 (improved version)
 import './console-logger';
-// Import WebSocket mock utilities
-import './websocket-mock';
-// Import WebSocket collab mock for document sync
-import './websocket-collab-mock';
 
 // ***********************************************
 // This example commands.ts shows you how to
