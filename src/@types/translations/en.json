@@ -2817,7 +2817,9 @@
     },
     "visitOurWebsite": "Visit our official website",
     "addMessagesToPage": "Add messages to page",
-    "addMessagesToPageDisabled": "No messages available"
+    "addMessagesToPageDisabled": "No messages available",
+    "accountSettings": "Account settings",
+    "startWeekOn": "Start week on"
   },
   "globalComment": {
     "comments": "Comments",

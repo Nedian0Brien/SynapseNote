@@ -1,37 +1,10 @@
 import dayjs from 'dayjs';
 
-import { DateFormat, getTypeOptions, TimeFormat } from '@/application/database-yjs';
+import { getTypeOptions } from '@/application/database-yjs';
 import { DateTimeCell } from '@/application/database-yjs/cell.type';
-import { YDatabaseField, YjsDatabaseKey } from '@/application/types';
-import { renderDate } from '@/utils/time';
-
-export function getTimeFormat(timeFormat?: TimeFormat) {
-  switch (timeFormat) {
-    case TimeFormat.TwelveHour:
-      return 'h:mm A';
-    case TimeFormat.TwentyFourHour:
-      return 'HH:mm';
-    default:
-      return 'HH:mm';
-  }
-}
-
-export function getDateFormat(dateFormat?: DateFormat) {
-  switch (dateFormat) {
-    case DateFormat.Friendly:
-      return 'MMM DD, YYYY';
-    case DateFormat.ISO:
-      return 'YYYY-MM-DD';
-    case DateFormat.US:
-      return 'YYYY/MM/DD';
-    case DateFormat.Local:
-      return 'MM/DD/YYYY';
-    case DateFormat.DayMonthYear:
-      return 'DD/MM/YYYY';
-    default:
-      return 'YYYY-MM-DD';
-  }
-}
+import { DateFormat, TimeFormat, User, YDatabaseField, YjsDatabaseKey, YMapFieldTypeOption } from '@/application/types';
+import { MetadataKey } from '@/application/user-metadata';
+import { getDateFormat, getTimeFormat, renderDate } from '@/utils/time';
 
 function getDateTimeStr({
   timeStamp,
@@ -59,38 +32,44 @@ function getDateTimeStr({
 
 export const RIGHTWARDS_ARROW = '→';
 
-export function getRowTimeString(field: YDatabaseField, timeStamp: string) {
+export function getRowTimeString(field: YDatabaseField, timeStamp: string, currentUser?: User) {
   const typeOption = getTypeOptions(field);
+  const typeOptionValue = getFieldDateTimeFormats(typeOption, currentUser);
 
-  const timeFormat = parseInt(typeOption.get(YjsDatabaseKey.time_format)) as TimeFormat;
-  const dateFormat = parseInt(typeOption.get(YjsDatabaseKey.date_format)) as DateFormat;
   const includeTime = typeOption.get(YjsDatabaseKey.include_time);
-
 
   return getDateTimeStr({
     timeStamp,
     includeTime,
-    typeOptionValue: {
-      timeFormat,
-      dateFormat,
-    },
+    typeOptionValue,
   });
 }
 
-export function getDateCellStr({ cell, field }: { cell: DateTimeCell; field: YDatabaseField }) {
+export function getFieldDateTimeFormats(typeOption: YMapFieldTypeOption, currentUser?: User) {
+  const typeOptionTimeFormat = typeOption.get(YjsDatabaseKey.time_format);
+  const typeOptionDateFormat = typeOption.get(YjsDatabaseKey.date_format);
+
+  const dateFormat = typeOptionDateFormat
+    ? parseInt(typeOptionDateFormat) as DateFormat
+    : currentUser?.metadata?.[MetadataKey.DateFormat] as DateFormat ?? DateFormat.Local;
+  const timeFormat = typeOptionTimeFormat
+    ? parseInt(typeOptionTimeFormat) as TimeFormat
+    : currentUser?.metadata?.[MetadataKey.TimeFormat] as TimeFormat ?? TimeFormat.TwelveHour;
+
+  return {
+    dateFormat,
+    timeFormat,
+  }
+}
+
+export function getDateCellStr({ cell, field, currentUser }: { cell: DateTimeCell; field: YDatabaseField, currentUser?: User }) {
   const typeOptionMap = field.get(YjsDatabaseKey.type_option);
   const typeOption = typeOptionMap.get(String(cell.fieldType));
-  const timeFormat = parseInt(typeOption.get(YjsDatabaseKey.time_format)) as TimeFormat;
 
-  const dateFormat = parseInt(typeOption.get(YjsDatabaseKey.date_format)) as DateFormat;
+  const typeOptionValue = getFieldDateTimeFormats(typeOption, currentUser);
 
   const startData = cell.data || '';
   const includeTime = cell.includeTime;
-
-  const typeOptionValue = {
-    timeFormat,
-    dateFormat,
-  };
 
   const startDateTime = getDateTimeStr({
     timeStamp: startData,
@@ -105,10 +84,10 @@ export function getDateCellStr({ cell, field }: { cell: DateTimeCell; field: YDa
   const endDateTime =
     endTimestamp && isRange
       ? getDateTimeStr({
-          timeStamp: endTimestamp,
-          includeTime,
-          typeOptionValue,
-        })
+        timeStamp: endTimestamp,
+        includeTime,
+        typeOptionValue,
+      })
       : null;
 
   return [startDateTime, endDateTime].filter(Boolean).join(` ${RIGHTWARDS_ARROW} `);

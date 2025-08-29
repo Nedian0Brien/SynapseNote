@@ -23,8 +23,9 @@ import {
   YjsDatabaseKey,
   YjsEditorKey,
 } from '@/application/types';
-import { Editor } from '@/components/editor';
 import { EditorSkeleton } from '@/components/_shared/skeleton/EditorSkeleton';
+import { Editor } from '@/components/editor';
+import { useCurrentUser } from '@/components/main/app.hooks';
 
 export const DatabaseRowSubDocument = memo(({ rowId }: { rowId: string }) => {
   const meta = useRowMetaSelector(rowId);
@@ -34,6 +35,8 @@ export const DatabaseRowSubDocument = memo(({ rowId }: { rowId: string }) => {
   const database = useDatabase();
   const row = useRowData(rowId) as YDatabaseRow | undefined;
   const checkIfRowDocumentExists = context.checkIfRowDocumentExists;
+  const { createOrphanedView, loadView } = context;
+  const currentUser = useCurrentUser();
 
   const getCellData = useCallback(
     (cell: YDatabaseCell, field: YDatabaseField) => {
@@ -41,12 +44,12 @@ export const DatabaseRowSubDocument = memo(({ rowId }: { rowId: string }) => {
       const type = Number(field?.get(YjsDatabaseKey.type));
 
       if (type === FieldType.CreatedTime) {
-        return getRowTimeString(field, row.get(YjsDatabaseKey.created_at)) || '';
+        return getRowTimeString(field, row.get(YjsDatabaseKey.created_at), currentUser) || '';
       } else if (type === FieldType.LastEditedTime) {
-        return getRowTimeString(field, row.get(YjsDatabaseKey.last_modified)) || '';
+        return getRowTimeString(field, row.get(YjsDatabaseKey.last_modified), currentUser) || '';
       } else if (cell) {
         try {
-          return getCellDataText(cell, field);
+          return getCellDataText(cell, field, currentUser);
         } catch (e) {
           console.error(e);
           return '';
@@ -55,7 +58,7 @@ export const DatabaseRowSubDocument = memo(({ rowId }: { rowId: string }) => {
 
       return '';
     },
-    [row]
+    [row, currentUser]
   );
 
   const properties = useMemo(() => {
@@ -82,7 +85,6 @@ export const DatabaseRowSubDocument = memo(({ rowId }: { rowId: string }) => {
     return obj;
   }, [database, getCellData, row]);
 
-  const { createOrphanedView, loadView } = context;
   const updateRowMeta = useUpdateRowMetaDispatch(rowId);
 
   const [loading, setLoading] = useState(true);

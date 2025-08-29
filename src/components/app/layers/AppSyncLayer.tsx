@@ -31,7 +31,7 @@ export const AppSyncLayer: React.FC<AppSyncLayerProps> = ({ children }) => {
 
   // Initialize broadcast channel for multi-tab communication
   const broadcastChannel = useBroadcastChannel(`workspace:${currentWorkspaceId!}`);
-  
+
   // Initialize sync context for collaborative editing
   const { registerSyncContext, lastUpdatedCollab } = useSync(webSocket, broadcastChannel, eventEmitterRef.current);
 
@@ -60,23 +60,23 @@ export const AppSyncLayer: React.FC<AppSyncLayerProps> = ({ children }) => {
 
   // Handle user profile change notifications
   // This provides automatic UI updates when user profile changes occur via WebSocket.
-  // 
+  //
   // Notification Flow:
   // 1. Server sends WorkspaceNotification with profileChange
   // 2. useSync processes notification from WebSocket OR BroadcastChannel
-  // 3. useSync emits USER_PROFILE_CHANGED event via eventEmitter  
+  // 3. useSync emits USER_PROFILE_CHANGED event via eventEmitter
   // 4. This handler receives the event and updates local database
   // 5. useLiveQuery in AppConfig detects database change
   // 6. All components using currentUser automatically re-render with new data
   //
   // Multi-tab Support:
   // - Active tab: WebSocket → useSync → this handler → database update
-  // - Other tabs: BroadcastChannel → useSync → this handler → database update  
+  // - Other tabs: BroadcastChannel → useSync → this handler → database update
   // - Result: All tabs show updated profile simultaneously
   //
   // UI Components that auto-update:
   // - Workspace dropdown (shows email)
-  // - Collaboration user lists (shows names/avatars) 
+  // - Collaboration user lists (shows names/avatars)
   // - Any component using useCurrentUser() hook
   useEffect(() => {
     if (!isAuthenticated || !currentWorkspaceId) return;
@@ -86,11 +86,11 @@ export const AppSyncLayer: React.FC<AppSyncLayerProps> = ({ children }) => {
     const handleUserProfileChange = async (profileChange: notification.IUserProfileChange) => {
       try {
         console.log('Received user profile change notification:', profileChange);
-        
+
         // Extract user ID from authentication token
         const token = getTokenParsed();
         const userId = token?.user?.id;
-        
+
         if (!userId) {
           console.warn('No user ID found for profile update');
           return;
@@ -98,26 +98,14 @@ export const AppSyncLayer: React.FC<AppSyncLayerProps> = ({ children }) => {
 
         // Retrieve current user data from local database cache
         const existingUser = await db.users.get(userId);
-        
+
         if (!existingUser) {
           console.warn('No existing user found in database for profile update');
           return;
         }
 
-        // Merge notification changes with existing user data
-        // Only update fields that are present in the notification (selective update)
-        const updatedUser = {
-          ...existingUser,
-          // Update name if provided in notification
-          ...(profileChange.name !== undefined && { name: profileChange.name }),
-          // Update email if provided in notification  
-          ...(profileChange.email !== undefined && { email: profileChange.email }),
-        };
+        const updatedUser = service?.getCurrentUser();
 
-        // Update database cache - this triggers useLiveQuery to re-render all UI components
-        // displaying user profile information. No manual component updates needed.
-        await db.users.put(updatedUser, userId);
-        
         console.log('User profile updated in database:', updatedUser);
       } catch (error) {
         console.error('Failed to handle user profile change notification:', error);
@@ -131,21 +119,20 @@ export const AppSyncLayer: React.FC<AppSyncLayerProps> = ({ children }) => {
     return () => {
       currentEventEmitter.off(APP_EVENTS.USER_PROFILE_CHANGED, handleUserProfileChange);
     };
-  }, [isAuthenticated, currentWorkspaceId]);
+  }, [isAuthenticated, currentWorkspaceId, service]);
 
   // Context value for synchronization layer
-  const syncContextValue: SyncInternalContextType = useMemo(() => ({
-    webSocket,
-    broadcastChannel,
-    registerSyncContext,
-    eventEmitter: eventEmitterRef.current,
-    awarenessMap,
-    lastUpdatedCollab,
-  }), [webSocket, broadcastChannel, registerSyncContext, awarenessMap, lastUpdatedCollab]);
-
-  return (
-    <SyncInternalContext.Provider value={syncContextValue}>
-      {children}
-    </SyncInternalContext.Provider>
+  const syncContextValue: SyncInternalContextType = useMemo(
+    () => ({
+      webSocket,
+      broadcastChannel,
+      registerSyncContext,
+      eventEmitter: eventEmitterRef.current,
+      awarenessMap,
+      lastUpdatedCollab,
+    }),
+    [webSocket, broadcastChannel, registerSyncContext, awarenessMap, lastUpdatedCollab]
   );
+
+  return <SyncInternalContext.Provider value={syncContextValue}>{children}</SyncInternalContext.Provider>;
 };

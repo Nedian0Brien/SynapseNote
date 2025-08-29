@@ -13,15 +13,12 @@ import {
   useRowDocMap,
 } from '@/application/database-yjs/context';
 import {
-  DateFormat,
   getDateCellStr,
-  getDateFormat,
-  getTimeFormat,
+  getFieldDateTimeFormats,
   getTypeOptions,
   parseRelationTypeOption,
   parseSelectOptionTypeOptions,
   SelectOption,
-  TimeFormat,
 } from '@/application/database-yjs/fields';
 import { filterBy, parseFilter } from '@/application/database-yjs/filter';
 import { groupByField } from '@/application/database-yjs/group';
@@ -38,7 +35,8 @@ import {
   YjsDatabaseKey,
   YjsEditorKey,
 } from '@/application/types';
-import { renderDate } from '@/utils/time';
+import { useCurrentUser } from '@/components/main/app.hooks';
+import { getDateFormat, getTimeFormat, renderDate } from '@/utils/time';
 
 import { CalendarLayoutSetting, FieldType, FieldVisibility, Filter, RowMeta, SortCondition } from './database.type';
 
@@ -1145,28 +1143,32 @@ export const usePropertiesSelector = (isFilterHidden?: boolean) => {
 };
 
 export const useDateTimeCellString = (cell: DateTimeCell | undefined, fieldId: string) => {
+  const currentUser = useCurrentUser();
   const { field, clock } = useFieldSelector(fieldId);
 
   return useMemo(() => {
     if (!cell) return null;
-    return getDateCellStr({ cell, field });
+    return getDateCellStr({ cell, field, currentUser });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cell, field, clock]);
+  }, [cell, field, clock, currentUser]);
 };
 
 export const useRowTimeString = (rowId: string, fieldId: string, attrName: string) => {
+  const currentUser = useCurrentUser();
   const { field, clock } = useFieldSelector(fieldId);
 
   const typeOptionValue = useMemo(() => {
     const typeOption = getTypeOptions(field);
 
+    const { dateFormat, timeFormat } = getFieldDateTimeFormats(typeOption, currentUser);
+
     return {
-      timeFormat: parseInt(typeOption.get(YjsDatabaseKey.time_format)) as TimeFormat,
-      dateFormat: parseInt(typeOption.get(YjsDatabaseKey.date_format)) as DateFormat,
+      dateFormat,
+      timeFormat,
       includeTime: typeOption.get(YjsDatabaseKey.include_time),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [field, clock]);
+  }, [field, clock, currentUser?.metadata]);
 
   const getDateTimeStr = useCallback(
     (timeStamp: string, includeTime?: boolean) => {

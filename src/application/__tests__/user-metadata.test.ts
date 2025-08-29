@@ -1,7 +1,7 @@
 import { expect } from '@jest/globals';
 import { toZonedTime } from 'date-fns-tz';
+import { DateFormat } from '../types';
 import {
-  DateFormatType,
   MetadataDefaults,
   MetadataKey,
   MetadataUtils,
@@ -18,28 +18,11 @@ describe('User Metadata', () => {
     jest.clearAllMocks();
   });
 
-  describe('MetadataKey enum', () => {
-    it('should have correct values', () => {
-      expect(MetadataKey.Timezone).toBe('timezone');
-      expect(MetadataKey.Language).toBe('language');
-      expect(MetadataKey.DateFormat).toBe('date_format');
-      expect(MetadataKey.IconUrl).toBe('icon_url');
-    });
-  });
-
-  describe('DateFormatType enum', () => {
-    it('should have correct date format patterns', () => {
-      expect(DateFormatType.US).toBe('MM/DD/YYYY');
-      expect(DateFormatType.EU).toBe('DD/MM/YYYY');
-      expect(DateFormatType.ISO).toBe('YYYY-MM-DD');
-    });
-  });
-
   describe('MetadataDefaults', () => {
     it('should have default values for all metadata keys', () => {
       expect(MetadataDefaults[MetadataKey.Timezone]).toBe('UTC');
       expect(MetadataDefaults[MetadataKey.Language]).toBe('en');
-      expect(MetadataDefaults[MetadataKey.DateFormat]).toBe(DateFormatType.US);
+      expect(MetadataDefaults[MetadataKey.DateFormat]).toBe(DateFormat.US);
       expect(MetadataDefaults[MetadataKey.IconUrl]).toBe('');
     });
   });
@@ -62,8 +45,8 @@ describe('User Metadata', () => {
     });
 
     it('should set date format', () => {
-      const result = builder.setDateFormat(DateFormatType.EU).build();
-      expect(result[MetadataKey.DateFormat]).toBe('DD/MM/YYYY');
+      const result = builder.setDateFormat(DateFormat.DayMonthYear).build();
+      expect(result[MetadataKey.DateFormat]).toBe(4);
     });
 
     it('should set icon URL', () => {
@@ -71,24 +54,17 @@ describe('User Metadata', () => {
       expect(result[MetadataKey.IconUrl]).toBe('https://example.com/icon.png');
     });
 
-    it('should set custom metadata', () => {
-      const result = builder.setCustom('theme', 'dark').build();
-      expect(result.theme).toBe('dark');
-    });
-
     it('should chain multiple setters', () => {
       const result = builder
         .setTimezone('Europe/London')
         .setLanguage('en-GB')
-        .setDateFormat(DateFormatType.EU)
-        .setCustom('theme', 'light')
+        .setDateFormat(DateFormat.DayMonthYear)
         .build();
 
       expect(result).toEqual({
         [MetadataKey.Timezone]: 'Europe/London',
         [MetadataKey.Language]: 'en-GB',
-        [MetadataKey.DateFormat]: DateFormatType.EU,
-        theme: 'light',
+        [MetadataKey.DateFormat]: DateFormat.DayMonthYear,
       });
     });
 
@@ -105,21 +81,21 @@ describe('User Metadata', () => {
   describe('MetadataUtils', () => {
     describe('detectDateFormat', () => {
       it('should detect US format for US locale', () => {
-        expect(MetadataUtils.detectDateFormat('en-US')).toBe(DateFormatType.US);
-        expect(MetadataUtils.detectDateFormat('en-CA')).toBe(DateFormatType.US);
-        expect(MetadataUtils.detectDateFormat('en-PH')).toBe(DateFormatType.US);
+        expect(MetadataUtils.detectDateFormat('en-US')).toBe(DateFormat.US);
+        expect(MetadataUtils.detectDateFormat('en-CA')).toBe(DateFormat.US);
+        expect(MetadataUtils.detectDateFormat('en-PH')).toBe(DateFormat.US);
       });
 
       it('should detect EU format for European locales', () => {
-        expect(MetadataUtils.detectDateFormat('en-GB')).toBe(DateFormatType.EU);
-        expect(MetadataUtils.detectDateFormat('fr-FR')).toBe(DateFormatType.EU);
-        expect(MetadataUtils.detectDateFormat('de-DE')).toBe(DateFormatType.EU);
+        expect(MetadataUtils.detectDateFormat('en-GB')).toBe(DateFormat.DayMonthYear);
+        expect(MetadataUtils.detectDateFormat('fr-FR')).toBe(DateFormat.DayMonthYear);
+        expect(MetadataUtils.detectDateFormat('de-DE')).toBe(DateFormat.DayMonthYear);
       });
 
       it('should detect ISO format for specific regions', () => {
-        expect(MetadataUtils.detectDateFormat('sv-SE')).toBe(DateFormatType.ISO);
-        expect(MetadataUtils.detectDateFormat('fi-FI')).toBe(DateFormatType.ISO);
-        expect(MetadataUtils.detectDateFormat('ko-KR')).toBe(DateFormatType.ISO);
+        expect(MetadataUtils.detectDateFormat('sv-SE')).toBe(DateFormat.ISO);
+        expect(MetadataUtils.detectDateFormat('fi-FI')).toBe(DateFormat.ISO);
+        expect(MetadataUtils.detectDateFormat('ko-KR')).toBe(DateFormat.ISO);
       });
 
       it('should use browser locale as default', () => {
@@ -129,7 +105,7 @@ describe('User Metadata', () => {
           configurable: true,
         });
 
-        expect(MetadataUtils.detectDateFormat()).toBe(DateFormatType.US);
+        expect(MetadataUtils.detectDateFormat()).toBe(DateFormat.US);
 
         Object.defineProperty(navigator, 'language', {
           value: originalLanguage,
@@ -138,8 +114,8 @@ describe('User Metadata', () => {
       });
 
       it('should handle locale without region', () => {
-        expect(MetadataUtils.detectDateFormat('en')).toBe(DateFormatType.EU);
-        expect(MetadataUtils.detectDateFormat('fr')).toBe(DateFormatType.EU);
+        expect(MetadataUtils.detectDateFormat('en')).toBe(DateFormat.DayMonthYear);
+        expect(MetadataUtils.detectDateFormat('fr')).toBe(DateFormat.DayMonthYear);
       });
     });
 
@@ -222,14 +198,12 @@ describe('User Metadata', () => {
       it('should merge multiple metadata objects', () => {
         const obj1 = { [MetadataKey.Timezone]: 'UTC' };
         const obj2 = { [MetadataKey.Language]: 'en' };
-        const obj3 = { custom: 'value' };
 
-        const result = MetadataUtils.merge(obj1, obj2, obj3);
+        const result = MetadataUtils.merge(obj1, obj2);
 
         expect(result).toEqual({
           [MetadataKey.Timezone]: 'UTC',
           [MetadataKey.Language]: 'en',
-          custom: 'value',
         });
       });
 

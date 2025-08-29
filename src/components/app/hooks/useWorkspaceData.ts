@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { sortBy, uniqBy } from 'lodash-es';
 import { validate as uuidValidate } from 'uuid';
 
-import { View, DatabaseRelations, UIVariant , ViewLayout, MentionablePerson } from '@/application/types';
+import { View, DatabaseRelations, UIVariant, ViewLayout, MentionablePerson } from '@/application/types';
 import { findView, findViewByLayout } from '@/components/_shared/outline/utils';
 import { createDeduplicatedNoArgsRequest } from '@/utils/deduplicateRequest';
 import { useAuthInternal } from '../contexts/AuthInternalContext';
@@ -14,7 +14,7 @@ const USER_NO_ACCESS_CODE = [1024, 1012];
 export function useWorkspaceData() {
   const { service, currentWorkspaceId, userWorkspaceInfo } = useAuthInternal();
   const navigate = useNavigate();
-  
+
   const [outline, setOutline] = useState<View[]>();
   const stableOutlineRef = useRef<View[]>([]);
   const [favoriteViews, setFavoriteViews] = useState<View[]>();
@@ -22,7 +22,7 @@ export function useWorkspaceData() {
   const [trashList, setTrashList] = useState<View[]>();
   const [workspaceDatabases, setWorkspaceDatabases] = useState<DatabaseRelations | undefined>(undefined);
   const [requestAccessOpened, setRequestAccessOpened] = useState(false);
-  
+
   const mentionableUsersRef = useRef<MentionablePerson[]>([]);
 
   // Load application outline
@@ -214,7 +214,9 @@ export function useWorkspaceData() {
     }
   }, [currentWorkspaceId, service]);
 
-  const loadMentionableUsers = createDeduplicatedNoArgsRequest(_loadMentionableUsers);
+  const loadMentionableUsers = useMemo(() => {
+    return createDeduplicatedNoArgsRequest(_loadMentionableUsers);
+  }, [_loadMentionableUsers]);
 
   // Get mention user
   const getMentionUser = useCallback(
