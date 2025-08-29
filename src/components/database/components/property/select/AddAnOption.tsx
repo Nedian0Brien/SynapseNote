@@ -7,7 +7,8 @@ import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ReactComponent as AddIcon } from '@/assets/icons/plus.svg';
 
-function AddAnOption ({ onAdd }: {
+function AddAnOption ({ options, onAdd }: {
+  options: SelectOption[];
   onAdd: (option: SelectOption) => void;
 }) {
   const { t } = useTranslation();
@@ -19,11 +20,11 @@ function AddAnOption ({ onAdd }: {
       onAdd({
         id: generateOptionId(),
         name: value,
-        color: getColorByOption(value),
+        color: getColorByOption(options),
       });
       setValue('');
     }
-  }, [onAdd, value]);
+  }, [onAdd, options, value]);
 
   return (
     <DropdownMenuItem

@@ -10,6 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { createHotkey, HOT_KEY_NAME } from '@/utils/hotkeys';
+import { useSelectFieldOptions } from '@/application/database-yjs';
 
 
 function AddGroupColumn({ fieldId }: { fieldId: string; groupId: string }) {
@@ -18,6 +19,7 @@ function AddGroupColumn({ fieldId }: { fieldId: string; groupId: string }) {
   const [isCreating, setIsCreating] = useState(false);
   const [value, setValue] = useState('');
 
+  const options = useSelectFieldOptions(fieldId);
   const addOption = useAddSelectOption(fieldId);
 
   const [focused, setFocused] = useState(false);
@@ -59,7 +61,7 @@ function AddGroupColumn({ fieldId }: { fieldId: string; groupId: string }) {
                 addOption({
                   id: value,
                   name: value,
-                  color: getColorByOption(value),
+                  color: getColorByOption(options),
                 });
                 setIsCreating(false);
                 setValue('');
@@ -91,7 +93,7 @@ function AddGroupColumn({ fieldId }: { fieldId: string; groupId: string }) {
                   addOption({
                     id: value,
                     name: value,
-                    color: getColorByOption(value),
+                    color: getColorByOption(options),
                   });
                 }}
                 size={'sm'}

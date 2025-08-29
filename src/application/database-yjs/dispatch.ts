@@ -36,11 +36,12 @@ import {
   RIGHTWARDS_ARROW,
   safeParseTimestamp,
   SelectOption,
+  SelectOptionColor,
   SelectTypeOption,
 } from '@/application/database-yjs/fields';
 import { createCheckboxCell, getChecked } from '@/application/database-yjs/fields/checkbox/utils';
 import { EnhancedBigStats } from '@/application/database-yjs/fields/number/EnhancedBigStats';
-import { createSelectOptionCell, getColorByOption } from '@/application/database-yjs/fields/select-option/utils';
+import { createSelectOptionCell } from '@/application/database-yjs/fields/select-option/utils';
 import { createTextField } from '@/application/database-yjs/fields/text/utils';
 import { dateFilterFillData, filterFillData, getDefaultFilterCondition } from '@/application/database-yjs/filter';
 import { getOptionsFromRow, initialDatabaseRow } from '@/application/database-yjs/row';
@@ -2337,11 +2338,11 @@ export function useSwitchPropertyType() {
 
                       content = JSON.stringify({
                         disable_color: false,
-                        options: Array.from(options).map((name) => {
+                        options: Array.from(options).map((name, index) => {
                           return {
                             id: name,
                             name,
-                            color: getColorByOption(name),
+                            color: Object.values(SelectOptionColor)[index % 10],
                           };
                         }),
                       });
