@@ -40,6 +40,7 @@ npx pbts <options>   # Generate TypeScript definitions
 ```
 
 ## Development Guidelines
+Do not run the pnpm run dev in the chat. Ask user to run pnpm run dev instead.
 
 ### Mandatory Verification Steps
 1. **Build verification**: Always run `pnpm run build` to ensure successful compilation

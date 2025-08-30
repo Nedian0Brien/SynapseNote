@@ -25,7 +25,7 @@
     "generate-protobuf": "pbjs -t static-module -w es6 -o ./src/proto/messages.js ./src/proto/messages.proto & pbts -o ./src/proto/messages.d.ts ./src/proto/messages.js"
   },
   "dependencies": {
-    "@appflowyinc/ai-chat": "0.1.33",
+    "@appflowyinc/ai-chat": "file:../AppFlowy-Chat",
     "@appflowyinc/editor": "^0.1.13",
     "@atlaskit/pragmatic-drag-and-drop": "1.5.2",
     "@atlaskit/pragmatic-drag-and-drop-auto-scroll": "2.1.0",
