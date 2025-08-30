@@ -5,6 +5,8 @@ import { omit } from 'lodash-es';
 import { nanoid } from 'nanoid';
 
 import { GlobalComment, Reaction } from '@/application/comment.type';
+import { ApiResponse } from '@/application/services/js-services/http/api-utils';
+import { ErrorCode } from '@/application/services/js-services/http/error-handler';
 import { initGrantService, refreshToken } from '@/application/services/js-services/http/gotrue';
 import { blobToBytes } from '@/application/services/js-services/http/utils';
 import { AFCloudConfig } from '@/application/services/services.type';
@@ -57,7 +59,6 @@ import {
   Workspace,
   WorkspaceMember,
 } from '@/application/types';
-import { notify } from '@/components/_shared/notify';
 
 export * from './gotrue';
 
@@ -200,9 +201,8 @@ export async function verifyToken(accessToken: string) {
 
 export async function getCurrentUser(): Promise<User> {
   const url = '/api/user/profile';
-  const response = await axiosInstance?.get<{
-    code: number;
-    data?: {
+  const response = await axiosInstance?.get<ApiResponse<
+    {
       uid: number;
       uuid: string;
       email: string;
@@ -211,13 +211,12 @@ export async function getCurrentUser(): Promise<User> {
       encryption_sign: null;
       latest_workspace_id: string;
       updated_at: number;
-    };
-    message: string;
-  }>(url);
+    }
+  >>(url);
 
   const data = response?.data;
 
-  if (data?.code === 0 && data.data) {
+  if (data?.code === ErrorCode.Ok && data.data) {
     const { uid, uuid, email, name, metadata } = data.data;
 
     return {
@@ -230,6 +229,7 @@ export async function getCurrentUser(): Promise<User> {
       metadata: metadata || {},
     };
   }
+
 
   return Promise.reject(data);
 }
@@ -1695,28 +1695,10 @@ export async function uploadFile(
 ) {
   const url = `/api/file_storage/${workspaceId}/v1/blob/${viewId}`;
 
-  // Check file size, if over 7MB, check subscription plan
-  if (file.size > 7 * 1024 * 1024) {
-    const plan = await getActiveSubscription(workspaceId);
-
-    if (plan?.length === 0 || plan?.[0] === SubscriptionPlan.Free) {
-      notify.error('Your file is over 7 MB limit of the Free plan. Upgrade for unlimited uploads.');
-
-      return Promise.reject({
-        code: 413,
-        message: 'File size is too large. Please upgrade your plan for unlimited uploads.',
-      });
-    }
-  }
-
   try {
-    const response = await axiosInstance?.put<{
-      code: number;
-      message: string;
-      data: {
-        file_id: string;
-      };
-    }>(url, file, {
+    const axiosResponse = await axiosInstance?.put<ApiResponse<{
+      file_id: string;
+    }>>(url, file, {
       onUploadProgress: (progressEvent) => {
         const { progress = 0 } = progressEvent;
 
@@ -1727,26 +1709,28 @@ export async function uploadFile(
       },
     });
 
-    if (response?.data.code === 0) {
-      const baseURL = axiosInstance?.defaults.baseURL;
-      const url = `${baseURL}/api/file_storage/${workspaceId}/v1/blob/${viewId}/${response?.data.data.file_id}`;
+    const response = axiosResponse?.data;
 
-      return url;
+    if (response?.code === ErrorCode.Ok && response?.data) {
+      const baseURL = axiosInstance?.defaults.baseURL;
+      const fileUrl = `${baseURL}/api/file_storage/${workspaceId}/v1/blob/${viewId}/${response.data.file_id}`;
+
+      return fileUrl;
     }
 
-    return Promise.reject(response?.data);
+    return Promise.reject(response);
     // eslint-disable-next-line
   } catch (e: any) {
-    if (e.response.status === 413) {
+    if (e.response?.status === 413) {
       return Promise.reject({
-        code: 413,
+        code: ErrorCode.PayloadTooLarge,
         message: 'File size is too large. Please upgrade your plan for unlimited uploads.',
       });
     }
   }
 
   return Promise.reject({
-    code: -1,
+    code: ErrorCode.Unhandled,
     message: 'Upload file failed.',
   });
 }

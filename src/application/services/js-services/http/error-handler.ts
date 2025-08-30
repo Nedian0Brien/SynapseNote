@@ -1,5 +1,5 @@
-import { notify } from '@/components/_shared/notify';
 import { invalidToken } from '@/application/session/token';
+import { notify } from '@/components/_shared/notify';
 
 // Error codes from AppFlowy-Cloud-Premium
 export enum ErrorCode {
@@ -130,6 +130,7 @@ export interface AppResponseError {
   message: string;
 }
 
+
 // Error categories for better handling
 export const isAuthError = (code: ErrorCode): boolean => {
   return [
@@ -170,6 +171,10 @@ export const isDuplicateError = (code: ErrorCode): boolean => {
     ErrorCode.AccessRequestAlreadyExists,
     ErrorCode.AlreadySubscribed,
   ].includes(code);
+};
+
+export const isOk = (code: ErrorCode): boolean => {
+  return code === ErrorCode.Ok;
 };
 
 export const isLimitError = (code: ErrorCode): boolean => {
@@ -408,7 +413,7 @@ export class ApiErrorHandler {
     // Show user-friendly notification
     if (showNotification) {
       const message = customMessage || getUserFriendlyMessage(error);
-      
+
       if (isLimitError(error.code)) {
         // For limit errors, show warning with upgrade prompt
         notify.warning(message);

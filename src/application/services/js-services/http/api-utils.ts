@@ -1,7 +1,7 @@
 import { AppResponseError, ErrorCode, apiErrorHandler } from './error-handler';
 
 export interface ApiResponse<T = unknown> {
-  code: number;
+  code: ErrorCode;
   data?: T;
   message: string;
 }
@@ -78,13 +78,13 @@ export async function apiCall<T>(
     if ((error as AppResponseError)?.code !== undefined) {
       throw error;
     }
-    
+
     // Otherwise, wrap in a generic error
     const apiError: AppResponseError = {
       code: ErrorCode.Unhandled,
       message: (error as Error)?.message || 'An unexpected error occurred'
     };
-    
+
     await apiErrorHandler.handleError(apiError, options);
     throw apiError;
   }
