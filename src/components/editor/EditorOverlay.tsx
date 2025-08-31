@@ -8,9 +8,9 @@ import { insertDataAfterBlock } from '@/components/ai-chat/utils';
 import { useEditorContext } from '@/components/editor/EditorContext';
 import { getScrollParent } from '@/components/global-comment/utils';
 import { notify } from '@/components/_shared/notify';
-import '@appflowyinc/ai-chat/style';
+import '@/components/chat/styles/index.scss';
 
-import { AIAssistantProvider, ContextPlaceholder, PromptModalProvider, WriterRequest } from '@appflowyinc/ai-chat';
+import { AIAssistantProvider, ContextPlaceholder, PromptModalProvider, WriterRequest } from '@/components/chat';
 import { EditorData } from '@appflowyinc/editor';
 import { Portal } from '@mui/material';
 import { useCallback, useEffect, useMemo, useState } from 'react';

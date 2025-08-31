@@ -1,4 +1,4 @@
-import { RepeatedChatMessage } from '@appflowyinc/ai-chat';
+import { RepeatedChatMessage } from '@/components/chat';
 import * as random from 'lib0/random';
 import { nanoid } from 'nanoid';
 import * as Y from 'yjs';

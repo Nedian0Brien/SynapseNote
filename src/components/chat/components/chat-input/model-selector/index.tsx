@@ -1,0 +1,279 @@
+import { Check } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+import { ReactComponent as AISparksIcon } from '../../../assets/icons/ai_sparks.svg';
+
+import { useChatContext } from '../../../chat/context';
+import { ModelCache } from '../../../lib/model-cache';
+import { cn } from '../../../lib/utils';
+import { useMessagesHandlerContext } from '../../../provider/messages-handler-provider';
+import { UpdateChatSettingsParams } from '../../../request/chat-request';
+import { AvailableModel, toModelDisplayInfo } from '../../../types/ai-model';
+import { Button } from '../../ui/button';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '../../ui/popover';
+
+interface ModelSelectorProps {
+  className?: string;
+  disabled?: boolean;
+}
+
+export function ModelSelector({ className, disabled }: ModelSelectorProps) {
+
+  const [open, setOpen] = useState(false);
+  const [selectedModel, setSelectedModel] = useState<string>(''); // Start empty, will be loaded from settings
+  const [models, setModels] = useState<AvailableModel[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isInitialized, setIsInitialized] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Get context - hooks must be called unconditionally
+  // If the provider is missing, these will throw - that's expected behavior
+  const chatContext = useChatContext();
+  const messagesContext = useMessagesHandlerContext();
+
+  const requestInstance = chatContext?.requestInstance;
+  const chatId = chatContext?.chatId;
+  // const workspaceId = chatContext?.workspaceId; // Not used currently
+  const setSelectedModelName = messagesContext?.setSelectedModelName;
+
+
+  // Initialize: Load cached model first, then fetch from server
+  useEffect(() => {
+    if (!chatId || !requestInstance || isInitialized) return;
+
+    // Step 1: Load from cache immediately for instant UI
+    const cachedModel = ModelCache.get(chatId);
+
+    if (cachedModel) {
+      setSelectedModel(cachedModel);
+      setSelectedModelName?.(cachedModel);
+    }
+
+    // Step 2: Fetch chat settings in background to get the truth
+    const loadChatSettings = async () => {
+      try {
+        const settings = await requestInstance.getChatSettings();
+        const modelFromSettings = settings.metadata?.ai_model as string | undefined;
+
+        if (modelFromSettings) {
+          // Server has a model saved, use it
+          setSelectedModel(modelFromSettings);
+          setSelectedModelName?.(modelFromSettings);
+          ModelCache.set(chatId, modelFromSettings);
+        }
+        // Don't set a default if there's no saved model - let user choose
+        // If no model in settings but we have cache, keep using cache
+      } catch (error) {
+        console.warn('Failed to load chat settings', error);
+        // Keep cached model if available, otherwise let user choose
+      }
+    };
+
+    void loadChatSettings();
+    setIsInitialized(true);
+  }, [chatId, requestInstance, isInitialized, setSelectedModelName]);
+
+  const loadModels = useCallback(async () => {
+    if (!requestInstance) {
+      // Provide fallback models when no context
+      setModels([
+        { name: 'Auto', metadata: { is_default: true, desc: 'Auto select the best model' } },
+        { name: 'GPT-4', metadata: { is_default: false, desc: 'Most capable model' } },
+        { name: 'GPT-3.5', metadata: { is_default: false, desc: 'Fast and efficient' } },
+      ]);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const modelList = await requestInstance.getModelList();
+
+      setModels(modelList.models);
+
+      // Don't override the selected model - it should come from chat settings
+    } catch (error) {
+      console.error('Failed to load models:', error);
+      // Fallback to Auto only if API fails
+      setModels([
+        { name: 'Auto', metadata: { is_default: true, desc: 'Auto select the best model' } },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  }, [requestInstance]);
+
+  // Load models when popover opens
+  useEffect(() => {
+    if (open && models.length === 0) {
+      void loadModels();
+    }
+  }, [open, models.length, loadModels]);
+
+  // Focus search input when popover opens
+  useEffect(() => {
+    if (open && searchInputRef.current) {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 100);
+    } else if (!open) {
+      setSearchQuery('');
+    }
+  }, [open]);
+
+  const handleSelect = useCallback(async (modelName: string) => {
+    // Update UI immediately
+    setSelectedModel(modelName);
+    setOpen(false);
+
+    // Only update context if available
+    if (setSelectedModelName) {
+      setSelectedModelName(modelName);
+    }
+
+    // Update cache if chatId is available
+    if (chatId) {
+      ModelCache.set(chatId, modelName);
+    }
+
+    // Send update request to server if context is available
+    if (requestInstance && chatId) {
+      try {
+        const params: UpdateChatSettingsParams = {
+          metadata: {
+            ai_model: modelName
+          }
+        };
+
+        await requestInstance.updateChatSettings(params);
+      } catch (error) {
+        console.error('Failed to update chat settings:', error);
+        // Cache is already updated, so user experience is not affected
+      }
+    }
+  }, [setSelectedModelName, chatId, requestInstance]);
+
+  const filteredModels = models.filter((model) => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+
+    return (
+      model.name.toLowerCase().includes(query) ||
+      model.metadata?.desc?.toLowerCase().includes(query) ||
+      model.provider?.toLowerCase().includes(query)
+    );
+  });
+
+  const selectedModelData = models.find((m) => m.name === selectedModel);
+  const displayText = selectedModelData?.name || selectedModel || 'Select Model';
+
+  const getProviderIcon = (_provider?: string) => {
+    // You can add specific icons for different providers here
+    return null;
+  };
+
+  // Always render the button, even without full context
+  const hasContext = !!(requestInstance && chatId);
+
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          className={cn('h-7 px-2 text-xs font-normal gap-1', className)}
+          onMouseDown={(e) => e.preventDefault()}
+          disabled={disabled}
+          title={hasContext ? 'Select AI Model' : 'Model selector (offline mode)'}
+        >
+          {AISparksIcon ? (
+            <AISparksIcon className="w-4 h-4" />
+          ) : (
+            <span className="text-[10px]">🤖</span>
+          )}
+          <span className="truncate max-w-[120px]">{displayText}</span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-[380px] p-0 rounded-lg"
+        align="start"
+        side="top"
+        sideOffset={8}
+      >
+        {/* Search Input */}
+        <div className="px-3 py-2 border-b border-border-primary">
+          <input
+            ref={searchInputRef}
+            type="text"
+            placeholder="Search models..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full px-2 py-1 text-sm bg-transparent outline-none placeholder:text-text-placeholder"
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                setOpen(false);
+              }
+            }}
+          />
+        </div>
+
+        {/* Models List */}
+        <div className="max-h-[380px] overflow-y-auto py-1">
+          {loading ? (
+            <div className="px-3 py-8 text-center text-sm text-text-secondary">
+              Loading models...
+            </div>
+          ) : filteredModels.length === 0 ? (
+            <div className="px-3 py-8 text-center text-sm text-text-secondary">
+              {searchQuery ? 'No models found' : 'No models available'}
+            </div>
+          ) : (
+            filteredModels.map((model) => {
+              const displayInfo = toModelDisplayInfo(model);
+              const isSelected = selectedModel === model.name;
+
+              return (
+                <button
+                  key={displayInfo.id}
+                  onClick={() => handleSelect(model.name)}
+                  className={cn(
+                    'w-full px-3 py-2.5 text-left hover:bg-fill-content-hover transition-colors',
+                    'flex items-start justify-between group',
+                    'focus:outline-none focus:bg-fill-content-hover',
+                    isSelected && 'bg-fill-content-select'
+                  )}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      {getProviderIcon(model.provider)}
+                      <span className={cn(
+                        "text-sm font-medium",
+                        isSelected && "text-primary"
+                      )}>
+                        {model.name}
+                      </span>
+                    </div>
+                    {model.metadata?.desc && (
+                      <p className="text-xs text-muted-foreground mt-0.5 truncate pr-2">
+                        {model.metadata.desc}
+                      </p>
+                    )}
+                  </div>
+                  {isSelected && (
+                    <Check className="h-4 w-4 text-primary mt-0.5 ml-2 flex-shrink-0" />
+                  )}
+                </button>
+              );
+            })
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+export default ModelSelector;

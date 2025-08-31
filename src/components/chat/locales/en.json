@@ -1,0 +1,151 @@
+{
+  "chat": {
+    "placeholder": "Hi {{name}}, how can I help you today?",
+    "dear": "Dear",
+    "input": {
+      "placeholder": "Ask AppFlowy AI",
+      "placeholderFormat": "AI response will generate with the format you define above",
+      "button": {
+        "format": "Format response",
+        "auto": "Auto",
+        "text": "Text",
+        "textWithImage": "Text and image",
+        "imageOnly": "Image only",
+        "paragraph": "Paragraph",
+        "bulletList": "Bullet list",
+        "numberedList": "Numbered list",
+        "table": "Table"
+      }
+    },
+    "generating": "Generating response...",
+    "errors": {
+      "copied": "Error copying to clipboard",
+      "noLimit": "Your workspace has ran out of free AI responses. Please ask your workspace owner to upgrade the workspace plan or purchase AI add-ons.",
+      "emptyMessage": "Please enter a message",
+      "wait": "Please wait for the current response to finish generating"
+    },
+    "button": {
+      "copyClipboard": "Copy to clipboard",
+      "tryAgain": "Try again",
+      "changeFormat": "Change format",
+      "addToPage": "Add message to page",
+      "regenerateWithNewFormat": "Regenerate with this format",
+      "addTo": "Add to..."
+    },
+    "success": {
+      "copied": "Copied to clipboard",
+      "addMessageToPage": "Message added to '{{name}}'"
+    },
+    "suggestion": {
+      "title": "Suggested"
+    },
+    "sources": {
+      "label": "{{sourceCount}} sources found"
+    },
+    "search": {
+      "label": "Search",
+      "noSpacesFound": "No spaces found"
+    },
+    "view": {
+      "placeholder": "Untitled"
+    },
+    "addMessageToPage": {
+      "placeholder": "Add message to...",
+      "createNewPage": "Create new page",
+      "selectMsg": "Select messages",
+      "selectedCount": "{{count}} selected"
+    },
+    "questions": {
+      "one": "How to use Kanban to manage tasks",
+      "two": "Explain the GTD method",
+      "three": "Why use Rust",
+      "four": "Recipe with what's in my kitchen",
+      "five": "Create an illustration for my page",
+      "six": "Draw up a to-do list for my upcoming week"
+    },
+    "writer": {
+      "continue": "Continue writing",
+      "improve": "Improve writing",
+      "askAI": "Ask AI Anything",
+      "fixSpelling": "Fix spelling & grammar",
+      "explain": "Explain",
+      "makeLonger": "Make longer",
+      "makeShorter": "Make shorter",
+      "discard": "Discard",
+      "confirm-discard": "Are you sure you want to discard the AI generated response?",
+      "current-page": "Current Page",
+      "editing": "Editing....",
+      "analyzing": "Analyzing....",
+      "button": {
+        "discard": "Discard",
+        "cancel": "Cancel",
+        "keep": "Keep",
+        "rewrite": "Rewrite",
+        "more": "More",
+        "insert-below": "Insert Below",
+        "accept": "Accept",
+        "try-again": "Try Again",
+        "close": "Close",
+        "retry": "Retry."
+      },
+      "errors": {
+        "noAssistantType": "No assistant type selected",
+        "connection": "Connection lost. Please check your internet and",
+        "noLimit": "Your working space is running out of free AI responses. To get more responses, please upgrade to Pro Plan or purchase an AI add-on."
+      }
+    },
+    "customPrompt": {
+      "browsePrompts": "Browse prompts",
+      "usePrompt": "Use prompt",
+      "featured": "Featured",
+      "custom": "Custom",
+      "customPrompt": "Custom Prompts",
+      "databasePrompts": "Load prompts from your own database",
+      "selectDatabase": "Select database",
+      "promptDatabase": "Prompt database",
+      "configureDatabase": "Configure Database",
+      "title": "Title",
+      "content": "Content",
+      "example": "Example",
+      "category": "Category",
+      "selectField": "Select field",
+      "loading": "Loading",
+      "invalidDatabase": "Invalid Database",
+      "invalidDatabaseHelp": "Ensure that the database has at least two text properties:\n ◦ One used for the prompt name\n ◦ One used for the prompt content\nYou can also optionally add properties for the prompt example and category.",
+      "noResults": "No prompts found",
+      "all": "All",
+      "development": "Development",
+      "writing": "Writing",
+      "healthAndFitness": "Health & fitness",
+      "business": "Business",
+      "marketing": "Marketing",
+      "travel": "Travel",
+      "others": "Other",
+      "prompt": "Prompt",
+      "promptExample": "Prompt Example",
+      "sampleOutput": "Sample output",
+      "contentSeo": "Content/SEO",
+      "emailMarketing": "Email Marketing",
+      "paidAds": "Paid Ads",
+      "prCommunication": "PR/Communication",
+      "recruiting": "Recruiting",
+      "sales": "Sales",
+      "socialMedia": "Social Media",
+      "strategy": "Strategy",
+      "caseStudies": "Case Studies",
+      "salesCopy": "Sales Copy",
+      "education": "Education",
+      "work": "Work",
+      "podcastProduction": "Podcast Production",
+      "copyWriting": "Copy Writing",
+      "customerSuccess": "Customer Success",
+      "button": {
+        "cancel": "Cancel",
+        "done": "Done",
+        "change": "Change",
+        "ok": "OK"
+      },
+      "optional": "(optional)"
+    }
+  }
+}

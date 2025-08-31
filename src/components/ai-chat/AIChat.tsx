@@ -1,4 +1,4 @@
-import { Chat, ChatRequest } from '@appflowyinc/ai-chat';
+import { Chat, ChatRequest } from '@/components/chat';
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
 import React, { useEffect, useMemo } from 'react';
 
@@ -8,7 +8,7 @@ import { useCurrentUser, useService } from '@/components/main/app.hooks';
 import { getPlatform } from '@/utils/platform';
 import { downloadPage } from '@/utils/url';
 
-import '@appflowyinc/ai-chat/style';
+import '@/components/chat/styles/index.scss';
 
 export function AIChat({ chatId, onRendered }: { chatId: string; onRendered?: () => void }) {
   const service = useService();

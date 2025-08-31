@@ -1,4 +1,4 @@
-import { RepeatedChatMessage } from '@appflowyinc/ai-chat';
+import { RepeatedChatMessage } from '@/components/chat';
 import axios, { AxiosInstance } from 'axios';
 import dayjs from 'dayjs';
 import { omit } from 'lodash-es';

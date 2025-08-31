@@ -6,7 +6,7 @@ import { ReactComponent as TriangleDownIcon } from '@/assets/icons/triangle_down
 import ActionButton from '@/components/editor/components/toolbar/selection-toolbar/actions/ActionButton';
 import { useSelectionToolbarContext } from '@/components/editor/components/toolbar/selection-toolbar/SelectionToolbar.hooks';
 import { useEditorContext } from '@/components/editor/EditorContext';
-import { AIAssistantType, AIWriterMenu, useAIWriter } from '@appflowyinc/ai-chat';
+import { AIAssistantType, AIWriterMenu, useAIWriter } from '@/components/chat';
 import React, { useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ReactEditor, useSlate } from 'slate-react';

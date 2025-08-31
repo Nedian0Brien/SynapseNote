@@ -3,7 +3,7 @@ import { EditorMarkFormat } from '@/application/slate-yjs/types';
 import { getSelectionPosition } from '@/components/editor/components/toolbar/selection-toolbar/utils';
 import { Decorate, useEditorContext } from '@/components/editor/EditorContext';
 import { createHotkey, HOT_KEY_NAME } from '@/utils/hotkeys';
-import { useAIWriter } from '@appflowyinc/ai-chat';
+import { useAIWriter } from '@/components/chat';
 import { debounce } from 'lodash-es';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Range } from 'slate';

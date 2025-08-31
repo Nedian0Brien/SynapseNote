@@ -1,4 +1,4 @@
-import { PromptDatabaseConfiguration } from '@appflowyinc/ai-chat';
+import { PromptDatabaseConfiguration } from '@/components/chat';
 import { AxiosInstance } from 'axios';
 import * as Y from 'yjs';
 

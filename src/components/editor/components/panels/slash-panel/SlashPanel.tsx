@@ -1,4 +1,4 @@
-import { useAIWriter } from '@appflowyinc/ai-chat';
+import { useAIWriter } from '@/components/chat';
 import { Button } from '@mui/material';
 import { PopoverOrigin } from '@mui/material/Popover/Popover';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
