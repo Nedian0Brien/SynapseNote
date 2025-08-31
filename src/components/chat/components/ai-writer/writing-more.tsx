@@ -1,11 +1,11 @@
 import { AiWriterMenuContent } from '../ai-writer/ai-writer-menu-content';
-import { Button } from '../ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
-import { useTranslation } from '../../i18n';
-import { AIAssistantType } from '../../types';
-import { useWriterContext } from '../../writer/context';
+import { Button } from '@/components/chat/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/chat/components/ui/popover';
+import { useTranslation } from '@/components/chat/i18n';
+import { AIAssistantType } from '@/components/chat/types';
+import { useWriterContext } from '@/components/chat/writer/context';
 import { ChevronDown } from 'lucide-react';
-import { ReactComponent as MoreIcon } from '../../assets/icons/ai-more.svg';
+import { ReactComponent as MoreIcon } from '@/components/chat/assets/icons/ai-more.svg';
 import { useCallback, useState } from 'react';
 
 export function WritingMore({ input }: {

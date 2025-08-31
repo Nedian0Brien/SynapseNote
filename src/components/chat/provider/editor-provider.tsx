@@ -1,6 +1,6 @@
 import { AppFlowyEditor } from '@appflowyinc/editor';
 import { createContext, ReactNode, useCallback, useContext, useEffect, useRef } from 'react';
-import { useChatContext } from '../chat/context';
+import { useChatContext } from '@/components/chat/chat/context';
 
 interface EditorContextTypes {
   getEditor: (messageId: number) => AppFlowyEditor | undefined;

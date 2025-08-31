@@ -1,4 +1,4 @@
-import { Alert, AlertDescription } from '../ui/alert';
+import { Alert, AlertDescription } from '@/components/chat/components/ui/alert';
 
 import { Editor, EditorData, useEditor } from '@appflowyinc/editor';
 

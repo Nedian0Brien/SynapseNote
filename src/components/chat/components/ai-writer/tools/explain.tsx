@@ -1,6 +1,6 @@
 import { ExplainToolbar } from './explain-toolbar';
 import { WritingInput } from '../writing-input';
-import { ApplyingState, useWriterContext } from '../../../writer/context';
+import { ApplyingState, useWriterContext } from '@/components/chat/writer/context';
 import { useCallback } from 'react';
 
 export function Explain() {

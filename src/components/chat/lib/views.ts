@@ -1,4 +1,4 @@
-import { View, ViewLayout } from '../types';
+import { View, ViewLayout } from '@/components/chat/types';
 
 export function findView(views: View[], id: string): View | undefined {
   for (const view of views) {

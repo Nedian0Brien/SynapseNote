@@ -1,5 +1,5 @@
-import { Alert, AlertDescription } from '../ui/alert';
-import { useEditorContext } from '../../provider/editor-provider';
+import { Alert, AlertDescription } from '@/components/chat/components/ui/alert';
+import { useEditorContext } from '@/components/chat/provider/editor-provider';
 import { Editor, useEditor } from '@appflowyinc/editor';
 import { useEffect } from 'react';
 

@@ -1,9 +1,9 @@
-import { useViewLoader } from '../../../../provider/view-loader-provider';
-import LoadingDots from '../../../ui/loading-dots';
-import SpaceItem from '../../../view/space-item';
-import { useTranslation } from '../../../../i18n';
-import { hasDatabaseViewChild, searchDatabaseViews } from '../../../../lib/views';
-import { View } from '../../../../types';
+import { useViewLoader } from '@/components/chat/provider/view-loader-provider';
+import LoadingDots from '@/components/chat/components/ui/loading-dots';
+import SpaceItem from '@/components/chat/components/view/space-item';
+import { useTranslation } from '@/components/chat/i18n';
+import { hasDatabaseViewChild, searchDatabaseViews } from '@/components/chat/lib/views';
+import { View } from '@/components/chat/types';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import ViewList from './view-list';
 

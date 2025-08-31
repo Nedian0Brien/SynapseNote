@@ -1,26 +1,26 @@
-import { ReactComponent as SendIcon } from '../../assets/icons/arrow-up.svg';
-import { ReactComponent as AutoTextIcon } from '../../assets/icons/auto-text.svg';
-import { ReactComponent as ImageTextIcon } from '../../assets/icons/image-text.svg';
+import { ReactComponent as SendIcon } from '@/components/chat/assets/icons/arrow-up.svg';
+import { ReactComponent as AutoTextIcon } from '@/components/chat/assets/icons/auto-text.svg';
+import { ReactComponent as ImageTextIcon } from '@/components/chat/assets/icons/image-text.svg';
 import { ViewTree } from '../ai-writer/view-tree';
 import { WritingMore } from '../ai-writer/writing-more';
-import { Button } from '../ui/button';
-import { FormatGroup } from '../ui/format-group';
-import LoadingDots from '../ui/loading-dots';
-import { Textarea } from '../ui/textarea';
+import { Button } from '@/components/chat/components/ui/button';
+import { FormatGroup } from '@/components/chat/components/ui/format-group';
+import LoadingDots from '@/components/chat/components/ui/loading-dots';
+import { Textarea } from '@/components/chat/components/ui/textarea';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '../ui/tooltip';
-import { toast } from '../../hooks/use-toast';
-import { useTranslation } from '../../i18n';
-import { cn } from '../../lib/utils';
-import { usePromptModal } from '../../provider/prompt-modal-provider';
-import { ChatInputMode } from '../../types';
-import { AiPrompt } from '../../types/prompt';
-import { useWriterContext } from '../../writer/context';
+} from '@/components/chat/components/ui/tooltip';
+import { toast } from '@/components/chat/hooks/use-toast';
+import { useTranslation } from '@/components/chat/i18n';
+import { cn } from '@/components/chat/lib/utils';
+import { usePromptModal } from '@/components/chat/provider/prompt-modal-provider';
+import { ChatInputMode } from '@/components/chat/types';
+import { AiPrompt } from '@/components/chat/types/prompt';
+import { useWriterContext } from '@/components/chat/writer/context';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { PromptModal } from '../chat-input/prompt-modal';
+import { PromptModal } from '@/components/chat/components/chat-input/prompt-modal';
 
 const MAX_HEIGHT = 200;
 // Prevent focus on page load and cause the page to scroll

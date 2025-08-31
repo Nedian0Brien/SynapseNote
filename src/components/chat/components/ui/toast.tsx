@@ -4,7 +4,7 @@ import * as ToastPrimitives from '@radix-ui/react-toast';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { X, CircleX, CircleCheck } from 'lucide-react';
 
-import { cn } from '../../lib/utils';
+import { cn } from '@/components/chat/lib/utils';
 
 const ToastContext = React.createContext<{ variant?: 'default' | 'destructive' | 'success' | null | undefined }>({});
 

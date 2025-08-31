@@ -1,8 +1,8 @@
-import { Button } from '../ui/button';
-import LoadingDots from '../ui/loading-dots';
-import { useTranslation } from '../../i18n';
-import { useWriterContext } from '../../writer/context';
-import { ReactComponent as StopIcon } from '../../assets/icons/stop.svg';
+import { Button } from '@/components/chat/components/ui/button';
+import LoadingDots from '@/components/chat/components/ui/loading-dots';
+import { useTranslation } from '@/components/chat/i18n';
+import { useWriterContext } from '@/components/chat/writer/context';
+import { ReactComponent as StopIcon } from '@/components/chat/assets/icons/stop.svg';
 
 export function Loading() {
   const { t } = useTranslation();

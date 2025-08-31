@@ -1,11 +1,11 @@
 import { CommentWithAskAnything } from './with-comment';
 
-import { useTranslation } from '../../../i18n';
-import { useWriterContext } from '../../../writer/context';
+import { useTranslation } from '@/components/chat/i18n';
+import { useWriterContext } from '@/components/chat/writer/context';
 import { useMemo } from 'react';
 import { CheckIcon, XIcon } from 'lucide-react';
-import { ReactComponent as TryAgainIcon } from '../../../assets/icons/undo.svg';
-import { ReactComponent as InsertBelowIcon } from '../../../assets/icons/insert-below.svg';
+import { ReactComponent as TryAgainIcon } from '@/components/chat/assets/icons/undo.svg';
+import { ReactComponent as InsertBelowIcon } from '@/components/chat/assets/icons/insert-below.svg';
 
 export function FixSpelling() {
   const { t } = useTranslation();

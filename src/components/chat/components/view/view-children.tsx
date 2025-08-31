@@ -1,6 +1,6 @@
-import { ViewItem } from '../view/view-item';
-import { View } from '../../types';
-import { CheckStatus } from '../../types/checkbox';
+import { ViewItem } from '@/components/chat/components/view/view-item';
+import { View } from '@/components/chat/types';
+import { CheckStatus } from '@/components/chat/types/checkbox';
 
 export function ViewChildren({
   item,

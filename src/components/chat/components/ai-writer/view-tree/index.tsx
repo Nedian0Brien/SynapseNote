@@ -1,17 +1,17 @@
-import LoadingDots from '../../ui/loading-dots';
-import { toast } from '../../../hooks/use-toast';
-import { useTranslation } from '../../../i18n';
-import { searchViews } from '../../../lib/views';
+import LoadingDots from '@/components/chat/components/ui/loading-dots';
+import { toast } from '@/components/chat/hooks/use-toast';
+import { useTranslation } from '@/components/chat/i18n';
+import { searchViews } from '@/components/chat/lib/views';
 import { Spaces } from './spaces';
-import { Button } from '../../ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '../../ui/popover';
-import { SearchInput } from '../../ui/search-input';
-import { Separator } from '../../ui/separator';
-import { useCheckboxTree } from '../../../hooks/use-checkbox-tree';
-import { View } from '../../../types';
-import { useWriterContext } from '../../../writer/context';
+import { Button } from '@/components/chat/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/chat/components/ui/popover';
+import { SearchInput } from '@/components/chat/components/ui/search-input';
+import { Separator } from '@/components/chat/components/ui/separator';
+import { useCheckboxTree } from '@/components/chat/hooks/use-checkbox-tree';
+import { View } from '@/components/chat/types';
+import { useWriterContext } from '@/components/chat/writer/context';
 import { ChevronDown } from 'lucide-react';
-import { ReactComponent as DocIcon } from '../../../assets/icons/doc.svg';
+import { ReactComponent as DocIcon } from '@/components/chat/assets/icons/doc.svg';
 import { useEffect, useMemo, useState } from 'react';
 
 export function ViewTree() {

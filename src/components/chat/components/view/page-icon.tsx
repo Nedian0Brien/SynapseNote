@@ -1,9 +1,9 @@
-import { ReactComponent as BoardIcon } from '../../assets/icons/board.svg';
-import { ReactComponent as CalendarIcon } from '../../assets/icons/calendar.svg';
-import { ReactComponent as DocIcon } from '../../assets/icons/doc.svg';
-import { ReactComponent as GridIcon } from '../../assets/icons/grid.svg';
-import { cn, getIcon, renderColor } from '../../lib/utils';
-import { View, ViewIconType, ViewLayout } from '../../types';
+import { ReactComponent as BoardIcon } from '@/components/chat/assets/icons/board.svg';
+import { ReactComponent as CalendarIcon } from '@/components/chat/assets/icons/calendar.svg';
+import { ReactComponent as DocIcon } from '@/components/chat/assets/icons/doc.svg';
+import { ReactComponent as GridIcon } from '@/components/chat/assets/icons/grid.svg';
+import { cn, getIcon, renderColor } from '@/components/chat/lib/utils';
+import { View, ViewIconType, ViewLayout } from '@/components/chat/types';
 import DOMPurify from 'dompurify';
 import { useEffect, useMemo, useState } from 'react';
 

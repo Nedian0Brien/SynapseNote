@@ -1,6 +1,6 @@
-import { useTranslation } from '../../../i18n';
-import { cn } from '../../../lib/utils';
-import { AiPrompt } from '../../../types/prompt';
+import { useTranslation } from '@/components/chat/i18n';
+import { cn } from '@/components/chat/lib/utils';
+import { AiPrompt } from '@/components/chat/types/prompt';
 import { useState } from 'react';
 
 export function PromptCard({

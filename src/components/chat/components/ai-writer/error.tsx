@@ -1,7 +1,7 @@
-import { useTranslation } from '../../i18n';
-import { ERROR_CODE_NO_LIMIT } from '../../lib/const';
-import { useWriterContext } from '../../writer/context';
-import { ReactComponent as XCircleIcon } from '../../assets/icons/error.svg';
+import { useTranslation } from '@/components/chat/i18n';
+import { ERROR_CODE_NO_LIMIT } from '@/components/chat/lib/const';
+import { useWriterContext } from '@/components/chat/writer/context';
+import { ReactComponent as XCircleIcon } from '@/components/chat/assets/icons/error.svg';
 
 export function Error() {
   const { t } = useTranslation();

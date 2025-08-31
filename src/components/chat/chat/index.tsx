@@ -1,12 +1,12 @@
 import Main from './main';
-import { TooltipProvider } from '../components/ui/tooltip';
-import { ChatI18nContext, getI18n, initI18n } from '../i18n/config';
-import { ChatProps } from '../types';
-import { Toaster } from '../components/ui/toaster';
-import '../styles/index.scss';
+import { TooltipProvider } from '@/components/chat/components/ui/tooltip';
+import { ChatI18nContext, getI18n, initI18n } from '@/components/chat/i18n/config';
+import { ChatProps } from '@/components/chat/types';
+import { Toaster } from '@/components/chat/components/ui/toaster';
+import '@/components/chat/styles/index.scss';
 
-export * from '../provider/prompt-modal-provider';
-export * from '../provider/view-loader-provider';
+export * from '@/components/chat/provider/prompt-modal-provider';
+export * from '@/components/chat/provider/view-loader-provider';
 
 initI18n();
 const i18n = getI18n();

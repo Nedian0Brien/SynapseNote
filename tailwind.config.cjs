@@ -21,6 +21,12 @@ module.exports = {
           foreground: 'hsl(var(--primary-foreground))',
         },
         'chat-border': 'hsl(var(--border))',
+        // Missing color classes for template.css and app.scss
+        'border-primary': 'var(--line-border)',
+        'fill-default': 'var(--fill-default)',
+      },
+      caretColor: {
+        'fill-default': 'var(--fill-default)',
       },
       boxShadow,
       borderRadius: {

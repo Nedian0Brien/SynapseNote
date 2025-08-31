@@ -1,16 +1,16 @@
-import { ReactComponent as CopyIcon } from '../../assets/icons/copy.svg';
+import { ReactComponent as CopyIcon } from '@/components/chat/assets/icons/copy.svg';
 
-import { useChatContext } from '../../chat/context';
+import { useChatContext } from '@/components/chat/chat/context';
 import AddMessageTo from '../chat-messages/add-message-to';
 import Regenerations from '../chat-messages/regenerations';
-import { Button } from '../ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
-import { useToast } from '../../hooks/use-toast';
-import { useTranslation } from '../../i18n';
-import { convertToAppFlowyFragment } from '../../lib/copy';
-import { cn, convertToPageData } from '../../lib/utils';
-import { useEditorContext } from '../../provider/editor-provider';
-import { useChatMessagesContext } from '../../provider/messages-provider';
+import { Button } from '@/components/chat/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/chat/components/ui/tooltip';
+import { useToast } from '@/components/chat/hooks/use-toast';
+import { useTranslation } from '@/components/chat/i18n';
+import { convertToAppFlowyFragment } from '@/components/chat/lib/copy';
+import { cn, convertToPageData } from '@/components/chat/lib/utils';
+import { useEditorContext } from '@/components/chat/provider/editor-provider';
+import { useChatMessagesContext } from '@/components/chat/provider/messages-provider';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 export function MessageActions({

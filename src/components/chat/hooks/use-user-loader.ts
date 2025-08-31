@@ -1,5 +1,5 @@
-import { useChatContext } from '../chat/context';
-import { User } from '../types';
+import { useChatContext } from '@/components/chat/chat/context';
+import { User } from '@/components/chat/types';
 import { useCallback, useRef } from 'react';
 
 export function useUserLoader() {

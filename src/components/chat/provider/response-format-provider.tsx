@@ -1,5 +1,5 @@
-import { useChatContext } from '../chat/context';
-import { ChatInputMode, OutputContent, OutputLayout, ResponseFormat } from '../types';
+import { useChatContext } from '@/components/chat/chat/context';
+import { ChatInputMode, OutputContent, OutputLayout, ResponseFormat } from '@/components/chat/types';
 import { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
 
 interface ResponseFormatContextTypes {

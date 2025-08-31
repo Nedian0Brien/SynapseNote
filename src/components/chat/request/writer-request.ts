@@ -3,7 +3,7 @@ import {
   getAccessToken,
   readableStreamToAsyncIterator,
   requestInterceptor,
-} from '../lib/requets';
+} from '@/components/chat/lib/requets';
 import {
   AIAssistantType,
   CompletionResult,
@@ -12,7 +12,7 @@ import {
   ResponseFormat,
   StreamType,
   View,
-} from '../types';
+} from '@/components/chat/types';
 import { AxiosInstance } from 'axios';
 
 export class WriterRequest {

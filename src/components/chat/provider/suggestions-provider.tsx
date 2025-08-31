@@ -1,7 +1,7 @@
-import { useToast } from '../hooks/use-toast';
-import { Suggestions } from '../types';
+import { useToast } from '@/components/chat/hooks/use-toast';
+import { Suggestions } from '@/components/chat/types';
 import { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { useChatContext } from '../chat/context';
+import { useChatContext } from '@/components/chat/chat/context';
 
 interface SuggestionsContextTypes {
   registerFetchSuggestions: (messageId: number) => void;

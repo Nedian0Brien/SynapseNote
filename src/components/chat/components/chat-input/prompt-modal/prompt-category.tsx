@@ -1,9 +1,9 @@
-import { Button } from '../../ui/button';
-import { cn } from '../../../lib/utils';
-import { AiPromptCategory } from '../../../types/prompt';
-import { Separator } from '../../ui/separator';
+import { Button } from '@/components/chat/components/ui/button';
+import { cn } from '@/components/chat/lib/utils';
+import { AiPromptCategory } from '@/components/chat/types/prompt';
+import { Separator } from '@/components/chat/components/ui/separator';
 import { useMemo } from 'react';
-import { useTranslation } from '../../../i18n';
+import { useTranslation } from '@/components/chat/i18n';
 
 export function PromptCategory({
   isFeaturedSelected,

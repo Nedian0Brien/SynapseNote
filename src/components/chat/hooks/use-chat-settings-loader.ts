@@ -1,6 +1,6 @@
-import { useChatContext } from '../chat/context';
+import { useChatContext } from '@/components/chat/chat/context';
 import { useToast } from './use-toast';
-import { ChatSettings } from '../types';
+import { ChatSettings } from '@/components/chat/types';
 import { useCallback, useEffect, useState } from 'react';
 
 export function useChatSettingsLoader() {

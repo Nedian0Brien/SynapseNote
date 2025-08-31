@@ -1,20 +1,20 @@
 import { Check } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { ReactComponent as AISparksIcon } from '../../../assets/icons/ai_sparks.svg';
+import { ReactComponent as AISparksIcon } from '@/components/chat/assets/icons/ai_sparks.svg';
 
-import { useChatContext } from '../../../chat/context';
-import { ModelCache } from '../../../lib/model-cache';
-import { cn } from '../../../lib/utils';
-import { useMessagesHandlerContext } from '../../../provider/messages-handler-provider';
-import { UpdateChatSettingsParams } from '../../../request/chat-request';
-import { AvailableModel, toModelDisplayInfo } from '../../../types/ai-model';
-import { Button } from '../../ui/button';
+import { useChatContext } from '@/components/chat/chat/context';
+import { ModelCache } from '@/components/chat/lib/model-cache';
+import { cn } from '@/components/chat/lib/utils';
+import { useMessagesHandlerContext } from '@/components/chat/provider/messages-handler-provider';
+import { UpdateChatSettingsParams } from '@/components/chat/request/chat-request';
+import { AvailableModel, toModelDisplayInfo } from '@/components/chat/types/ai-model';
+import { Button } from '@/components/chat/components/ui/button';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '../../ui/popover';
+} from '@/components/chat/components/ui/popover';
 
 interface ModelSelectorProps {
   className?: string;

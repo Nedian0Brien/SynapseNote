@@ -1,6 +1,6 @@
 import { Input } from './input';
-import { useTranslation } from '../../i18n';
-import { cn } from '../../lib/utils';
+import { useTranslation } from '@/components/chat/i18n';
+import { cn } from '@/components/chat/lib/utils';
 import { SearchIcon } from 'lucide-react';
 import { useState } from 'react';
 

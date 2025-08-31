@@ -1,12 +1,12 @@
 import { RenderEditor } from '../render-editor';
-import { Button } from '../../ui/button';
-import { Label } from '../../ui/label';
-import { useTranslation } from '../../../i18n';
-import { useWriterContext } from '../../../writer/context';
+import { Button } from '@/components/chat/components/ui/button';
+import { Label } from '@/components/chat/components/ui/label';
+import { useTranslation } from '@/components/chat/i18n';
+import { useWriterContext } from '@/components/chat/writer/context';
 import { EditorProvider } from '@appflowyinc/editor';
 import { XIcon } from 'lucide-react';
-import { ReactComponent as InsertBelowIcon } from '../../../assets/icons/insert-below.svg';
-import { ReactComponent as TryAgainIcon } from '../../../assets/icons/undo.svg';
+import { ReactComponent as InsertBelowIcon } from '@/components/chat/assets/icons/insert-below.svg';
+import { ReactComponent as TryAgainIcon } from '@/components/chat/assets/icons/undo.svg';
 
 export function ExplainToolbar() {
   const { t } = useTranslation();

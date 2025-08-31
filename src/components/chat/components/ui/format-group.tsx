@@ -1,15 +1,15 @@
 import { Button } from './button';
-import { ReactComponent as TextIcon } from '../../assets/icons/text.svg';
-import { ReactComponent as TextWithIcon } from '../../assets/icons/image-text.svg';
-import { ReactComponent as ImageIcon } from '../../assets/icons/image.svg';
-import { ReactComponent as ParagraphIcon } from '../../assets/icons/paragraph.svg';
-import { ReactComponent as BulletedListIcon } from '../../assets/icons/bullet-list.svg';
-import { ReactComponent as NumberedListIcon } from '../../assets/icons/num-list.svg';
-import { ReactComponent as TableIcon } from '../../assets/icons/table.svg';
+import { ReactComponent as TextIcon } from '@/components/chat/assets/icons/text.svg';
+import { ReactComponent as TextWithIcon } from '@/components/chat/assets/icons/image-text.svg';
+import { ReactComponent as ImageIcon } from '@/components/chat/assets/icons/image.svg';
+import { ReactComponent as ParagraphIcon } from '@/components/chat/assets/icons/paragraph.svg';
+import { ReactComponent as BulletedListIcon } from '@/components/chat/assets/icons/bullet-list.svg';
+import { ReactComponent as NumberedListIcon } from '@/components/chat/assets/icons/num-list.svg';
+import { ReactComponent as TableIcon } from '@/components/chat/assets/icons/table.svg';
 import { Separator } from './separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip';
-import { useTranslation } from '../../i18n';
-import { OutputContent, OutputLayout } from '../../types';
+import { useTranslation } from '@/components/chat/i18n';
+import { OutputContent, OutputLayout } from '@/components/chat/types';
 import { useMemo } from 'react';
 
 export function FormatGroup({

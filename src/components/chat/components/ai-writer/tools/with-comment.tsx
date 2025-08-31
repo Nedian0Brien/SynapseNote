@@ -1,8 +1,8 @@
 import { RenderEditor } from '../render-editor';
 import { WritingInput } from '../writing-input';
-import { Button } from '../../ui/button';
-import { Label } from '../../ui/label';
-import { ApplyingState, useWriterContext } from '../../../writer/context';
+import { Button } from '@/components/chat/components/ui/button';
+import { Label } from '@/components/chat/components/ui/label';
+import { ApplyingState, useWriterContext } from '@/components/chat/writer/context';
 import { EditorProvider } from '@appflowyinc/editor';
 import { ReactNode, useCallback, useMemo } from 'react';
 

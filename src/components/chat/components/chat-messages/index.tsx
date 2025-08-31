@@ -1,17 +1,17 @@
-import { useChatContext } from '../../chat/context';
+import { useChatContext } from '@/components/chat/chat/context';
 import { EmptyMessages } from '../chat-messages/empty-messages';
 import { Message } from '../chat-messages/message';
 import { useChatMessages } from '../chat-messages/use-chat-messages';
-import { Button } from '../ui/button';
-import LoadingDots from '../ui/loading-dots';
-import { useUserLoader } from '../../hooks/use-user-loader';
-import { ANIMATION_PRESETS } from '../../lib/animations';
-import { User } from '../../types';
+import { Button } from '@/components/chat/components/ui/button';
+import LoadingDots from '@/components/chat/components/ui/loading-dots';
+import { useUserLoader } from '@/components/chat/hooks/use-user-loader';
+import { ANIMATION_PRESETS } from '@/components/chat/lib/animations';
+import { User } from '@/components/chat/types';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import { ArrowDown } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { cn } from '../../lib/utils';
+import { cn } from '@/components/chat/lib/utils';
 
 const LoadingIndicator = () => (
   <div className="flex items-center justify-center w-full h-[48px]">

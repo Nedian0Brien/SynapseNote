@@ -1,16 +1,16 @@
-import { useChatContext } from '../../chat/context';
+import { useChatContext } from '@/components/chat/chat/context';
 import { SpaceList } from '../add-messages-to-page-wrapper/space-list';
-import { Label } from '../ui/label';
-import { SearchInput } from '../ui/search-input';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
-import { Separator } from '../ui/separator';
-import { toast } from '../../hooks/use-toast';
-import { useViewContentInserter } from '../../hooks/use-view-content-inserter';
-import { useTranslation } from '../../i18n';
-import { useEditorContext } from '../../provider/editor-provider';
-import { ChatMessage } from '../../types';
+import { Label } from '@/components/chat/components/ui/label';
+import { SearchInput } from '@/components/chat/components/ui/search-input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/chat/components/ui/popover';
+import { Separator } from '@/components/chat/components/ui/separator';
+import { toast } from '@/components/chat/hooks/use-toast';
+import { useViewContentInserter } from '@/components/chat/hooks/use-view-content-inserter';
+import { useTranslation } from '@/components/chat/i18n';
+import { useEditorContext } from '@/components/chat/provider/editor-provider';
+import { ChatMessage } from '@/components/chat/types';
 import { useCallback, useState } from 'react';
-import { useViewLoader } from '../../provider/view-loader-provider';
+import { useViewLoader } from '@/components/chat/provider/view-loader-provider';
 
 export function AddMessageToPageWrapper({ onFinished, messages, children }: {
   messages: ChatMessage[];

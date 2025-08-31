@@ -1,4 +1,4 @@
-import { useChatContext } from '../chat/context';
+import { useChatContext } from '@/components/chat/chat/context';
 import { EditorData } from '@appflowyinc/editor';
 import { useCallback } from 'react';
 

@@ -1,16 +1,16 @@
-import { ReactComponent as RegenerateIcon } from '../../assets/icons/change-font.svg';
-import { ReactComponent as ChevronIcon } from '../../assets/icons/chevron.svg';
-import { ReactComponent as RegenerateCircleIcon } from '../../assets/icons/regenerate-circle.svg';
-import { ReactComponent as TryAgainIcon } from '../../assets/icons/undo.svg';
-import { FormatGroup } from '../ui/format-group';
-import { Button } from '../ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
-import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
-import { useTranslation } from '../../i18n';
-import { useMessagesHandlerContext } from '../../provider/messages-handler-provider';
-import { useChatMessagesContext } from '../../provider/messages-provider';
-import { useResponseFormatContext } from '../../provider/response-format-provider';
-import { OutputContent, OutputLayout } from '../../types';
+import { ReactComponent as RegenerateIcon } from '@/components/chat/assets/icons/change-font.svg';
+import { ReactComponent as ChevronIcon } from '@/components/chat/assets/icons/chevron.svg';
+import { ReactComponent as RegenerateCircleIcon } from '@/components/chat/assets/icons/regenerate-circle.svg';
+import { ReactComponent as TryAgainIcon } from '@/components/chat/assets/icons/undo.svg';
+import { FormatGroup } from '@/components/chat/components/ui/format-group';
+import { Button } from '@/components/chat/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/chat/components/ui/popover';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/chat/components/ui/tooltip';
+import { useTranslation } from '@/components/chat/i18n';
+import { useMessagesHandlerContext } from '@/components/chat/provider/messages-handler-provider';
+import { useChatMessagesContext } from '@/components/chat/provider/messages-provider';
+import { useResponseFormatContext } from '@/components/chat/provider/response-format-provider';
+import { OutputContent, OutputLayout } from '@/components/chat/types';
 import { useCallback, useState } from 'react';
 
 export function Regenerations({ id }: {

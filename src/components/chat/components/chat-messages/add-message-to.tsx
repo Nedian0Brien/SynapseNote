@@ -1,9 +1,9 @@
-import { AddMessageToPageWrapper } from '../add-messages-to-page-wrapper';
-import { Button } from '../ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
-import { ReactComponent as AddPageIcon } from '../../assets/icons/doc-forward.svg';
-import { useTranslation } from '../../i18n';
-import { useChatMessagesContext } from '../../provider/messages-provider';
+import { AddMessageToPageWrapper } from '@/components/chat/components/add-messages-to-page-wrapper';
+import { Button } from '@/components/chat/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/chat/components/ui/tooltip';
+import { ReactComponent as AddPageIcon } from '@/components/chat/assets/icons/doc-forward.svg';
+import { useTranslation } from '@/components/chat/i18n';
+import { useChatMessagesContext } from '@/components/chat/provider/messages-provider';
 
 export function AddMessageTo({ id }: {
   id: number

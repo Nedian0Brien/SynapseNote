@@ -1,4 +1,4 @@
-import { View } from '../../types';
+import { View } from '@/components/chat/types';
 import { ViewItem } from './view-item';
 
 function ViewList({

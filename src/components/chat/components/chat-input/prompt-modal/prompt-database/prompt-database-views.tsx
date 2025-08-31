@@ -2,9 +2,9 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '../../../ui/popover';
-import { SearchInput } from '../../../ui/search-input';
-import { Separator } from '../../../ui/separator';
+} from '@/components/chat/components/ui/popover';
+import { SearchInput } from '@/components/chat/components/ui/search-input';
+import { Separator } from '@/components/chat/components/ui/separator';
 import { ReactNode, useState } from 'react';
 import { SpaceList } from './space-list';
 

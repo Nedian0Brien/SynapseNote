@@ -1,12 +1,12 @@
-import { Banner } from '../components/multi-selection/banner';
-import { ANIMATION_PRESETS, MESSAGE_VARIANTS } from '../lib/animations';
-import { cn } from '../lib/utils';
+import { Banner } from '@/components/chat/components/multi-selection/banner';
+import { ANIMATION_PRESETS, MESSAGE_VARIANTS } from '@/components/chat/lib/animations';
+import { cn } from '@/components/chat/lib/utils';
 import { useChatMessagesContext } from './messages-provider';
-import { AuthorType, ChatMessage } from '../types';
-import { CheckStatus } from '../types/checkbox';
+import { AuthorType, ChatMessage } from '@/components/chat/types';
+import { CheckStatus } from '@/components/chat/types/checkbox';
 import { AnimatePresence, motion } from 'framer-motion';
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { useChatContext } from '../chat/context';
+import { useChatContext } from '@/components/chat/chat/context';
 
 interface SelectionModeContextTypes {
   messages: ChatMessage[];

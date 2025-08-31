@@ -1,5 +1,5 @@
 import { ViewItem } from '../add-messages-to-page-wrapper/view-item';
-import { View } from '../../types';
+import { View } from '@/components/chat/types';
 
 function ViewList({
   item,

@@ -3,9 +3,9 @@ import { cva } from 'class-variance-authority';
 import * as React from 'react';
 import { forwardRef } from 'react';
 
-import { ReactComponent as Close } from '../../assets/icons/close.svg';
+import { ReactComponent as Close } from '@/components/chat/assets/icons/close.svg';
 import { buttonVariants } from './button';
-import { cn } from '../../lib/utils';
+import { cn } from '@/components/chat/lib/utils';
 
 function Dialog({
   ...props

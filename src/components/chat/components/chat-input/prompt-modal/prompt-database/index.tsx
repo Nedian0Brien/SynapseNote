@@ -1,21 +1,21 @@
-import { Button } from '../../../ui/button';
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from '../../../ui/dialog';
+import { Button } from '@/components/chat/components/ui/button';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/chat/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
-} from '../../../ui/dropdown-menu';
-import { useTranslation } from '../../../../i18n';
-import { cn } from '../../../../lib/utils';
-import { usePromptModal } from '../../../../provider/prompt-modal-provider';
+} from '@/components/chat/components/ui/dropdown-menu';
+import { useTranslation } from '@/components/chat/i18n';
+import { cn } from '@/components/chat/lib/utils';
+import { usePromptModal } from '@/components/chat/provider/prompt-modal-provider';
 import { ChevronDown } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { PromptDatabaseViews } from './prompt-database-views';
-import { ReactComponent as CloseCircle } from '../../../../assets/icons/close_circle.svg';
+import { ReactComponent as CloseCircle } from '@/components/chat/assets/icons/close_circle.svg';
 import { InvalidDatabaseDialog } from './invalid-database-dialog';
-import { useViewLoader } from '../../../../provider/view-loader-provider';
+import { useViewLoader } from '@/components/chat/provider/view-loader-provider';
 
 export function PromptDatabaseModal({
   isOpen,

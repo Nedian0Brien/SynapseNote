@@ -1,18 +1,18 @@
-import LoadingDots from '../../ui/loading-dots';
-import { SearchInput } from '../../ui/search-input';
+import LoadingDots from '@/components/chat/components/ui/loading-dots';
+import { SearchInput } from '@/components/chat/components/ui/search-input';
 import { Spaces } from './spaces';
-import { Button } from '../../ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '../../ui/popover';
-import { ReactComponent as DocIcon } from '../../../assets/icons/doc.svg';
-import { Separator } from '../../ui/separator';
-import { useChatSettingsLoader } from '../../../hooks/use-chat-settings-loader';
-import { useCheckboxTree } from '../../../hooks/use-checkbox-tree';
-import { searchViews } from '../../../lib/views';
-import { View } from '../../../types';
+import { Button } from '@/components/chat/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/chat/components/ui/popover';
+import { ReactComponent as DocIcon } from '@/components/chat/assets/icons/doc.svg';
+import { Separator } from '@/components/chat/components/ui/separator';
+import { useChatSettingsLoader } from '@/components/chat/hooks/use-chat-settings-loader';
+import { useCheckboxTree } from '@/components/chat/hooks/use-checkbox-tree';
+import { searchViews } from '@/components/chat/lib/views';
+import { View } from '@/components/chat/types';
 import { ChevronDown } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import debounce from 'lodash-es/debounce';
-import { useViewLoader } from '../../..';
+import { useViewLoader } from '@/components/chat';
 
 export function RelatedViews() {
 

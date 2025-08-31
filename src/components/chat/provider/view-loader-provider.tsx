@@ -1,6 +1,6 @@
-import { useToast } from '../hooks/use-toast';
-import { filterDocumentViews } from '../lib/views';
-import { View } from '../types/request';
+import { useToast } from '@/components/chat/hooks/use-toast';
+import { filterDocumentViews } from '@/components/chat/lib/views';
+import { View } from '@/components/chat/types/request';
 import { createContext, useCallback, useContext, useState } from 'react';
 
 interface ViewLoaderProviderProps {

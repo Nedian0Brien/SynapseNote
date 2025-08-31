@@ -1,7 +1,7 @@
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from '../../ui/dialog';
-import { useTranslation } from '../../../i18n';
-import { usePromptModal } from '../../../provider/prompt-modal-provider';
-import { AiPrompt, AiPromptCategory } from '../../../types/prompt';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/chat/components/ui/dialog';
+import { useTranslation } from '@/components/chat/i18n';
+import { usePromptModal } from '@/components/chat/provider/prompt-modal-provider';
+import { AiPrompt, AiPromptCategory } from '@/components/chat/types/prompt';
 import { SearchIcon } from 'lucide-react';
 import {
   forwardRef,
@@ -13,12 +13,12 @@ import {
 } from 'react';
 import { PromptCard } from './prompt-card';
 import { PromptPreview } from './prompt-preview';
-import { ReactComponent as CloseCircle } from '../../../assets/icons/close_circle.svg';
+import { ReactComponent as CloseCircle } from '@/components/chat/assets/icons/close_circle.svg';
 import { PromptCategory } from './prompt-category';
-import { SearchInput } from '../../ui/search-input';
-import { Button } from '../../ui/button';
+import { SearchInput } from '@/components/chat/components/ui/search-input';
+import { Button } from '@/components/chat/components/ui/button';
 import { PromptDatabaseModal } from './prompt-database';
-import { useViewLoader } from '../../../provider/view-loader-provider';
+import { useViewLoader } from '@/components/chat/provider/view-loader-provider';
 
 export const PromptModal = forwardRef<
   HTMLDivElement,

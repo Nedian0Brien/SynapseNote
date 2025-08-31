@@ -7,15 +7,15 @@ import {
   useRef,
   useState,
 } from 'react';
-import promptsData from '../data/built_in_prompts.json';
-import { parsePromptData } from '../lib/utils';
+import promptsData from '@/components/chat/data/built_in_prompts.json';
+import { parsePromptData } from '@/components/chat/lib/utils';
 import {
   AiPrompt,
   AiPromptCategory,
   PromptDatabaseField,
   RawPromptData,
-} from '../types/prompt';
-import { useTranslation } from '../i18n';
+} from '@/components/chat/types/prompt';
+import { useTranslation } from '@/components/chat/i18n';
 
 const STORAGE_KEY = 'appflowy_prompt_db_config';
 

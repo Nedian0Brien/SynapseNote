@@ -2,17 +2,17 @@ import { AnswerMd } from '../chat-messages/answer-md';
 import { MessageActions } from '../chat-messages/message-actions';
 import MessageSources from '../chat-messages/message-sources';
 import { MessageSuggestions } from '../chat-messages/message-suggestions';
-import LoadingDots from '../ui/loading-dots';
-import { useTranslation } from '../../i18n';
-import { useMessagesHandlerContext } from '../../provider/messages-handler-provider';
-import { useChatMessagesContext } from '../../provider/messages-provider';
-import { useResponseFormatContext } from '../../provider/response-format-provider';
-import { useSuggestionsContext } from '../../provider/suggestions-provider';
-import { ChatInputMode } from '../../types';
+import LoadingDots from '@/components/chat/components/ui/loading-dots';
+import { useTranslation } from '@/components/chat/i18n';
+import { useMessagesHandlerContext } from '@/components/chat/provider/messages-handler-provider';
+import { useChatMessagesContext } from '@/components/chat/provider/messages-provider';
+import { useResponseFormatContext } from '@/components/chat/provider/response-format-provider';
+import { useSuggestionsContext } from '@/components/chat/provider/suggestions-provider';
+import { ChatInputMode } from '@/components/chat/types';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, AlertDescription } from '../ui/alert';
+import { Alert, AlertDescription } from '@/components/chat/components/ui/alert';
 import { EditorProvider } from '@appflowyinc/editor';
-import { ReactComponent as Error } from '../../assets/icons/error.svg';
+import { ReactComponent as Error } from '@/components/chat/assets/icons/error.svg';
 import MessageCheckbox from './message-checkbox';
 
 export function AssistantMessage({ id, isHovered }: { id: number; isHovered: boolean }) {

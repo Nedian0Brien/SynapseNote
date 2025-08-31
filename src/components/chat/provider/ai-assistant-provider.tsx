@@ -1,9 +1,9 @@
-import { ConfirmDiscard } from '../components/ai-writer/confirm-discard';
-import { TooltipProvider } from '../components/ui/tooltip';
-import { toast } from '../hooks/use-toast';
-import { useTranslation } from '../i18n';
-import { ChatI18nContext, getI18n, initI18n } from '../i18n/config';
-import { WriterRequest } from '../request';
+import { ConfirmDiscard } from '@/components/chat/components/ai-writer/confirm-discard';
+import { TooltipProvider } from '@/components/chat/components/ui/tooltip';
+import { toast } from '@/components/chat/hooks/use-toast';
+import { useTranslation } from '@/components/chat/i18n';
+import { ChatI18nContext, getI18n, initI18n } from '@/components/chat/i18n/config';
+import { WriterRequest } from '@/components/chat/request';
 import {
   AIAssistantType,
   ChatInputMode,
@@ -12,8 +12,8 @@ import {
   OutputContent,
   OutputLayout,
   ResponseFormat,
-} from '../types';
-import { ApplyingState, WriterContext } from '../writer/context';
+} from '@/components/chat/types';
+import { ApplyingState, WriterContext } from '@/components/chat/writer/context';
 import { EditorData } from '@appflowyinc/editor';
 import { findLast } from 'lodash-es';
 import { ReactNode, useCallback, useEffect, useRef, useState } from 'react';

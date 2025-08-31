@@ -1,4 +1,4 @@
-import { ApplyingState, useWriterContext } from '../../writer/context';
+import { ApplyingState, useWriterContext } from '@/components/chat/writer/context';
 import throttle from 'lodash-es/throttle';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 

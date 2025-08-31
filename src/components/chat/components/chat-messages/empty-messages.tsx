@@ -1,9 +1,9 @@
-import { Button } from '../ui/button';
-import { Label } from '../ui/label';
-import { useTranslation } from '../../i18n';
-import { useMessagesHandlerContext } from '../../provider/messages-handler-provider';
-import { User } from '../../types';
-import { ReactComponent as Logo } from '../../assets/logo.svg';
+import { Button } from '@/components/chat/components/ui/button';
+import { Label } from '@/components/chat/components/ui/label';
+import { useTranslation } from '@/components/chat/i18n';
+import { useMessagesHandlerContext } from '@/components/chat/provider/messages-handler-provider';
+import { User } from '@/components/chat/types';
+import { ReactComponent as Logo } from '@/components/chat/assets/logo.svg';
 import { useCallback } from 'react';
 
 export function EmptyMessages({ currentUser }: {

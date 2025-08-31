@@ -1,15 +1,15 @@
-import { ReactComponent as ChevronDown } from '../../../../assets/icons/drop_menu_show.svg';
-import { Button } from '../../../ui/button';
+import { ReactComponent as ChevronDown } from '@/components/chat/assets/icons/drop_menu_show.svg';
+import { Button } from '@/components/chat/components/ui/button';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '../../../ui/tooltip';
-import PageIcon from '../../../view/page-icon';
-import { useTranslation } from '../../../../i18n';
-import { cn } from '../../../../lib/utils';
-import { View } from '../../../../types';
+} from '@/components/chat/components/ui/tooltip';
+import PageIcon from '@/components/chat/components/view/page-icon';
+import { useTranslation } from '@/components/chat/i18n';
+import { cn } from '@/components/chat/lib/utils';
+import { View } from '@/components/chat/types';
 import { useMemo, useState } from 'react';
 
 export function ViewItem({

@@ -1,11 +1,11 @@
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
-import { useTranslation } from '../../i18n';
-import { cn, getIcon, renderColor, stringToColor } from '../../lib/utils';
-import { View } from '../../types';
-import { ReactComponent as ChevronDown } from '../../assets/icons/drop_menu_show.svg';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/chat/components/ui/tooltip';
+import { useTranslation } from '@/components/chat/i18n';
+import { cn, getIcon, renderColor, stringToColor } from '@/components/chat/lib/utils';
+import { View } from '@/components/chat/types';
+import { ReactComponent as ChevronDown } from '@/components/chat/assets/icons/drop_menu_show.svg';
 import { ReactNode, useEffect, useMemo, useState } from 'react';
 import DOMPurify from 'dompurify';
-import { Button } from '../ui/button';
+import { Button } from '@/components/chat/components/ui/button';
 
 function SpaceItem({
   view,

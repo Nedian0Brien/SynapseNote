@@ -1,12 +1,12 @@
-import { useChatContext } from '../../chat/context';
-import { Button } from '../ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
-import { useTranslation } from '../../i18n';
-import { ChatMessageMetadata, View } from '../../types';
+import { useChatContext } from '@/components/chat/chat/context';
+import { Button } from '@/components/chat/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/chat/components/ui/tooltip';
+import { useTranslation } from '@/components/chat/i18n';
+import { ChatMessageMetadata, View } from '@/components/chat/types';
 import { ChevronDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { ReactComponent as DocumentIcon } from '../../assets/icons/doc.svg';
-import { useViewLoader } from '../../provider/view-loader-provider';
+import { ReactComponent as DocumentIcon } from '@/components/chat/assets/icons/doc.svg';
+import { useViewLoader } from '@/components/chat/provider/view-loader-provider';
 
 function MessageSources({
   sources,

@@ -1,6 +1,6 @@
-import { Button } from '../../ui/button';
-import { useTranslation } from '../../../i18n';
-import { AiPrompt } from '../../../types/prompt';
+import { Button } from '@/components/chat/components/ui/button';
+import { useTranslation } from '@/components/chat/i18n';
+import { AiPrompt } from '@/components/chat/types/prompt';
 import { useMemo } from 'react';
 
 export function PromptPreview({

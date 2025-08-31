@@ -1,6 +1,6 @@
-import { useChatContext } from '../chat/context';
-import { useToast } from '../hooks/use-toast';
-import { ERROR_CODE_NO_LIMIT } from '../lib/const';
+import { useChatContext } from '@/components/chat/chat/context';
+import { useToast } from '@/components/chat/hooks/use-toast';
+import { ERROR_CODE_NO_LIMIT } from '@/components/chat/lib/const';
 import { useMessageAnimation } from './message-animation-provider';
 import { useChatMessagesContext } from './messages-provider';
 import { useResponseFormatContext } from './response-format-provider';
@@ -13,7 +13,7 @@ import {
   OutputContent,
   OutputLayout, RepeatedChatMessage,
   ResponseFormat,
-} from '../types';
+} from '@/components/chat/types';
 import { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { usePromptModal } from './prompt-modal-provider';
 

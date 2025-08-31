@@ -1,13 +1,13 @@
-import { Button } from '../ui/button';
+import { Button } from '@/components/chat/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription, DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../ui/dialog';
-import { useTranslation } from '../../i18n';
-import { useWriterContext } from '../../writer/context';
+} from '@/components/chat/components/ui/dialog';
+import { useTranslation } from '@/components/chat/i18n';
+import { useWriterContext } from '@/components/chat/writer/context';
 import React from 'react';
 
 export const ConfirmDiscard = React.forwardRef<HTMLDivElement, {

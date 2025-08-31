@@ -1,4 +1,4 @@
-import { AIAssistantType, ChatInputMode, ResponseFormat, View } from '../types';
+import { AIAssistantType, ChatInputMode, ResponseFormat, View } from '@/components/chat/types';
 import { EditorData } from '@appflowyinc/editor';
 import { createContext, useContext } from 'react';
 

@@ -1,27 +1,27 @@
 import { motion } from 'framer-motion';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ReactComponent as SendIcon } from '../../assets/icons/arrow-up.svg';
-import { ReactComponent as AutoTextIcon } from '../../assets/icons/auto-text.svg';
-import { ReactComponent as ImageTextIcon } from '../../assets/icons/image-text.svg';
-import { ReactComponent as StopIcon } from '../../assets/icons/stop.svg';
-import { useChatContext } from '../../chat/context';
-import { toast } from '../../hooks/use-toast';
-import { useTranslation } from '../../i18n';
-import { MESSAGE_VARIANTS } from '../../lib/animations';
-import { useMessagesHandlerContext } from '../../provider/messages-handler-provider';
-import { usePromptModal } from '../../provider/prompt-modal-provider';
-import { useResponseFormatContext } from '../../provider/response-format-provider';
-import { ChatInputMode } from '../../types';
-import { AiPrompt } from '../../types/prompt';
-import { Button } from '../ui/button';
-import { FormatGroup } from '../ui/format-group';
-import LoadingDots from '../ui/loading-dots';
-import { Textarea } from '../ui/textarea';
+import { ReactComponent as SendIcon } from '@/components/chat/assets/icons/arrow-up.svg';
+import { ReactComponent as AutoTextIcon } from '@/components/chat/assets/icons/auto-text.svg';
+import { ReactComponent as ImageTextIcon } from '@/components/chat/assets/icons/image-text.svg';
+import { ReactComponent as StopIcon } from '@/components/chat/assets/icons/stop.svg';
+import { useChatContext } from '@/components/chat/chat/context';
+import { toast } from '@/components/chat/hooks/use-toast';
+import { useTranslation } from '@/components/chat/i18n';
+import { MESSAGE_VARIANTS } from '@/components/chat/lib/animations';
+import { useMessagesHandlerContext } from '@/components/chat/provider/messages-handler-provider';
+import { usePromptModal } from '@/components/chat/provider/prompt-modal-provider';
+import { useResponseFormatContext } from '@/components/chat/provider/response-format-provider';
+import { ChatInputMode } from '@/components/chat/types';
+import { AiPrompt } from '@/components/chat/types/prompt';
+import { Button } from '@/components/chat/components/ui/button';
+import { FormatGroup } from '@/components/chat/components/ui/format-group';
+import LoadingDots from '@/components/chat/components/ui/loading-dots';
+import { Textarea } from '@/components/chat/components/ui/textarea';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '../ui/tooltip';
+} from '@/components/chat/components/ui/tooltip';
 import { ModelSelector } from './model-selector';
 import { PromptModal } from './prompt-modal';
 import { RelatedViews } from './related-views';
@@ -168,7 +168,7 @@ export function ChatInput() {
     >
       <div
         ref={containerRef}
-        className={`relative justify-between gap-1 flex flex-col py-1 px-2 w-full rounded-[12px] border ${focused ? 'border-chat-primary ring-1 ring-ring' : 'border-chat-border'}`}
+        className={`border relative justify-between gap-1 flex flex-col ${focused ? 'ring-1 ring-ring border-primary' : 'ring-0'} border-border py-1 px-2 focus:border-primary w-full rounded-[12px]`}
       >
         {responseMode === ChatInputMode.FormatResponse && (
           <FormatGroup
@@ -204,7 +204,7 @@ export function ChatInput() {
           }}
           rows={1}
           className={
-            'resize-none !text-sm caret-primary min-h-[32px] !py-1 !px-1.5 border-none shadow-none w-full !ring-0 h-full !outline-none'
+            'resize-none !text-sm caret-primary min-h-[32px] !py-1 !px-1.5 !border-none !shadow-none w-full !ring-0 h-full !outline-none'
           }
         />
 
@@ -240,8 +240,15 @@ export function ChatInput() {
               </TooltipContent>
             </Tooltip>
 
-            <ModelSelector
-              className={'h-7'}
+            <Button
+              variant={'ghost'}
+              className={'h-7 text-xs'}
+            >
+              Test Model Button
+            </Button>
+            
+            <ModelSelector 
+              className={'h-7'} 
               disabled={questionSending || answerApplying}
             />
 

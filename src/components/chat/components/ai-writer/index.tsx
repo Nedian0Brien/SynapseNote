@@ -1,15 +1,15 @@
-import { usePromptModal } from '../../provider/prompt-modal-provider';
-import { ConfirmDiscard } from '../ai-writer/confirm-discard';
-import { Error } from '../ai-writer/error';
-import { Loading } from '../ai-writer/loading';
-import { AskAnything } from '../ai-writer/tools/ask-anything';
-import { Explain } from '../ai-writer/tools/explain';
-import { FixSpelling } from '../ai-writer/tools/fix-spelling';
-import { ImproveWriting } from '../ai-writer/tools/improve-writing';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
-import { useTranslation } from '../../i18n';
-import { AIAssistantType } from '../../types';
-import { useWriterContext } from '../../writer/context';
+import { usePromptModal } from '@/components/chat/provider/prompt-modal-provider';
+import { ConfirmDiscard } from '@/components/chat/components/ai-writer/confirm-discard';
+import { Error } from '@/components/chat/components/ai-writer/error';
+import { Loading } from '@/components/chat/components/ai-writer/loading';
+import { AskAnything } from '@/components/chat/components/ai-writer/tools/ask-anything';
+import { Explain } from '@/components/chat/components/ai-writer/tools/explain';
+import { FixSpelling } from '@/components/chat/components/ai-writer/tools/fix-spelling';
+import { ImproveWriting } from '@/components/chat/components/ai-writer/tools/improve-writing';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/chat/components/ui/popover';
+import { useTranslation } from '@/components/chat/i18n';
+import { AIAssistantType } from '@/components/chat/types';
+import { useWriterContext } from '@/components/chat/writer/context';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 type PointerDownOutsideEvent = CustomEvent<{

@@ -1,9 +1,9 @@
-import ViewChildren from '../../view/view-children';
-import SpaceItem from '../../view/space-item';
-import LoadingDots from '../../ui/loading-dots';
-import { useTranslation } from '../../../i18n';
-import { View } from '../../../types';
-import { CheckStatus } from '../../../types/checkbox';
+import ViewChildren from '@/components/chat/components/view/view-children';
+import SpaceItem from '@/components/chat/components/view/space-item';
+import LoadingDots from '@/components/chat/components/ui/loading-dots';
+import { useTranslation } from '@/components/chat/i18n';
+import { View } from '@/components/chat/types';
+import { CheckStatus } from '@/components/chat/types/checkbox';
 
 interface SpacesProps {
   getCheckStatus: (view: View) => CheckStatus;

@@ -1,7 +1,7 @@
 import { EditorData, EditorNode } from '@appflowyinc/editor';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { AiPrompt, AiPromptCategory, RawPromptData } from '../types/prompt';
+import { AiPrompt, AiPromptCategory, RawPromptData } from '@/components/chat/types/prompt';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

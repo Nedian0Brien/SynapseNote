@@ -3,9 +3,9 @@ import {
   getAccessToken,
   readableStreamToAsyncIterator,
   requestInterceptor,
-} from '../lib/requets';
-import { convertToPageData } from '../lib/utils';
-import { findView } from '../lib/views';
+} from '@/components/chat/lib/requets';
+import { convertToPageData } from '@/components/chat/lib/utils';
+import { findView } from '@/components/chat/lib/views';
 import {
   ChatMessage,
   GetChatMessagesPayload,
@@ -15,8 +15,8 @@ import {
   Suggestions,
   User, View, ViewLayout,
   ChatMessageMetadata, StreamType,
-} from '../types';
-import { ModelList } from '../types/ai-model';
+} from '@/components/chat/types';
+import { ModelList } from '@/components/chat/types/ai-model';
 import { EditorData } from '@appflowyinc/editor';
 import { AxiosInstance } from 'axios';
 

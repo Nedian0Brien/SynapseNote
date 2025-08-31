@@ -1,7 +1,7 @@
-import { useChatContext } from '../../chat/context';
-import { Button } from '../ui/button';
-import { useChatMessagesContext } from '../../provider/messages-provider';
-import { useSelectionModeContext } from '../../provider/selection-mode-provider';
+import { useChatContext } from '@/components/chat/chat/context';
+import { Button } from '@/components/chat/components/ui/button';
+import { useChatMessagesContext } from '@/components/chat/provider/messages-provider';
+import { useSelectionModeContext } from '@/components/chat/provider/selection-mode-provider';
 import { useMemo } from 'react';
 import { CheckSquare, Square } from 'lucide-react';
 

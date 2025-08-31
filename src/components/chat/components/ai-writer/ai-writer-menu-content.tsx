@@ -1,15 +1,15 @@
-import { Button } from '../ui/button';
-import { Separator } from '../ui/separator';
-import { useTranslation } from '../../i18n';
-import { ReactComponent as ImproveWritingIcon } from '../../assets/icons/improve-writing.svg';
-import { ReactComponent as AskAIIcon } from '../../assets/icons/ai.svg';
-import { ReactComponent as FixSpellingIcon } from '../../assets/icons/fix-spelling.svg';
-import { ReactComponent as ExplainIcon } from '../../assets/icons/explain.svg';
-import { ReactComponent as MakeLongerIcon } from '../../assets/icons/make-longer.svg';
-import { ReactComponent as MakeShorterIcon } from '../../assets/icons/make-shorter.svg';
-import { ReactComponent as ContinueWritingIcon } from '../../assets/icons/continue-writing.svg';
-import { AIAssistantType } from '../../types';
-import { useWriterContext } from '../../writer/context';
+import { Button } from '@/components/chat/components/ui/button';
+import { Separator } from '@/components/chat/components/ui/separator';
+import { useTranslation } from '@/components/chat/i18n';
+import { ReactComponent as ImproveWritingIcon } from '@/components/chat/assets/icons/improve-writing.svg';
+import { ReactComponent as AskAIIcon } from '@/components/chat/assets/icons/ai.svg';
+import { ReactComponent as FixSpellingIcon } from '@/components/chat/assets/icons/fix-spelling.svg';
+import { ReactComponent as ExplainIcon } from '@/components/chat/assets/icons/explain.svg';
+import { ReactComponent as MakeLongerIcon } from '@/components/chat/assets/icons/make-longer.svg';
+import { ReactComponent as MakeShorterIcon } from '@/components/chat/assets/icons/make-shorter.svg';
+import { ReactComponent as ContinueWritingIcon } from '@/components/chat/assets/icons/continue-writing.svg';
+import { AIAssistantType } from '@/components/chat/types';
+import { useWriterContext } from '@/components/chat/writer/context';
 import { useMemo } from 'react';
 
 export function AiWriterMenuContent({ input, onClicked, isFilterOut }: {

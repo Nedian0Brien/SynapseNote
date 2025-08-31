@@ -1,4 +1,4 @@
-import { Button } from '../../../ui/button';
+import { Button } from '@/components/chat/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -6,8 +6,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../../../ui/dialog';
-import { useTranslation } from '../../../../i18n';
+} from '@/components/chat/components/ui/dialog';
+import { useTranslation } from '@/components/chat/i18n';
 
 export function InvalidDatabaseDialog({
   isOpen,

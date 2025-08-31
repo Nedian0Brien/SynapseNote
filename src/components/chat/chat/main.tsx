@@ -1,19 +1,19 @@
 // Code: Chat main component
 import { ChatContext } from './context';
-import { ChatInput } from '../components/chat-input';
-import { ChatMessages } from '../components/chat-messages';
-import { cn } from '../lib/utils';
-import { MessageAnimationProvider } from '../provider/message-animation-provider';
-import { EditorProvider } from '../provider/editor-provider';
-import { MessagesHandlerProvider } from '../provider/messages-handler-provider';
-import { ChatMessagesProvider } from '../provider/messages-provider';
-import { PromptModalProvider } from '../provider/prompt-modal-provider';
-import { ResponseFormatProvider } from '../provider/response-format-provider';
-import { SelectionModeProvider } from '../provider/selection-mode-provider';
-import { SuggestionsProvider } from '../provider/suggestions-provider';
-import { ChatProps } from '../types';
+import { ChatInput } from '@/components/chat/components/chat-input';
+import { ChatMessages } from '@/components/chat/components/chat-messages';
+import { cn } from '@/components/chat/lib/utils';
+import { MessageAnimationProvider } from '@/components/chat/provider/message-animation-provider';
+import { EditorProvider } from '@/components/chat/provider/editor-provider';
+import { MessagesHandlerProvider } from '@/components/chat/provider/messages-handler-provider';
+import { ChatMessagesProvider } from '@/components/chat/provider/messages-provider';
+import { PromptModalProvider } from '@/components/chat/provider/prompt-modal-provider';
+import { ResponseFormatProvider } from '@/components/chat/provider/response-format-provider';
+import { SelectionModeProvider } from '@/components/chat/provider/selection-mode-provider';
+import { SuggestionsProvider } from '@/components/chat/provider/suggestions-provider';
+import { ChatProps } from '@/components/chat/types';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ViewLoaderProvider } from '../provider/view-loader-provider';
+import { ViewLoaderProvider } from '@/components/chat/provider/view-loader-provider';
 
 function Main(props: ChatProps) {
   const { currentUser, selectionMode } = props;
