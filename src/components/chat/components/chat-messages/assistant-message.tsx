@@ -81,7 +81,7 @@ export function AssistantMessage({ id, isHovered }: { id: number; isHovered: boo
       {error ? (
         <div className={`flex items-center w-full justify-center`}>
           <div className="max-w-[480px]">
-            <Alert className={'border-none text-foreground bg-red-500/10'}>
+            <Alert className={'border-none text-foreground bg-fill-error-light'}>
               <AlertDescription>
                 <div className="flex gap-3 items-center">
                   <div className={'!w-4 !h-4 !min-w-4 !min-h-4'}>

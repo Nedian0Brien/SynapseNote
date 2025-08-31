@@ -12,22 +12,7 @@ module.exports = {
   darkMode: 'class',
   theme: {
     extend: {
-      colors: {
-        ...colors,
-        // Chat-specific colors for focus states (avoiding conflicts with existing system)
-        ring: 'hsl(var(--ring))',
-        'chat-primary': {
-          DEFAULT: 'hsl(var(--primary))',
-          foreground: 'hsl(var(--primary-foreground))',
-        },
-        'chat-border': 'hsl(var(--border))',
-        // Missing color classes for template.css and app.scss
-        'border-primary': 'var(--line-border)',
-        'fill-default': 'var(--fill-default)',
-      },
-      caretColor: {
-        'fill-default': 'var(--fill-default)',
-      },
+      colors,
       boxShadow,
       borderRadius: {
         100: '4px',
