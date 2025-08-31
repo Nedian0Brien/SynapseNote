@@ -26,6 +26,7 @@ export function convertToAppFlowyFragment(data: EditorData) {
     } : undefined;
 
     const children = item.children.map(traverse);
+
     if(textNode) {
       children.unshift(textNode);
     }
@@ -35,6 +36,7 @@ export function convertToAppFlowyFragment(data: EditorData) {
       data,
       children,
     };
+
     return newNode;
   };
 

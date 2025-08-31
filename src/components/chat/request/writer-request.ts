@@ -49,7 +49,7 @@ export class WriterRequest {
     let reader: ReadableStreamDefaultReader<Uint8Array> | undefined = undefined;
 
     const cancel = () => {
-      reader?.cancel();
+      void reader?.cancel();
       reader?.releaseLock();
     };
 
@@ -86,9 +86,11 @@ export class WriterRequest {
 
       if(contentType?.includes('application/json')) {
         const json = await response.json();
+
         if(json.code !== 0) {
           return Promise.reject(json);
         }
+
         return;
       }
 
@@ -97,6 +99,7 @@ export class WriterRequest {
       if(!reader) {
         throw new Error('Failed to get reader');
       }
+
       const decoder = new TextDecoder();
       let buffer = '';
       let text = '';
@@ -108,6 +111,7 @@ export class WriterRequest {
 
           while(buffer.length > 0) {
             const openBraceIndex = buffer.indexOf('{');
+
             if(openBraceIndex === -1) break;
 
             let closeBraceIndex = -1;
@@ -125,8 +129,10 @@ export class WriterRequest {
             if(closeBraceIndex === -1) break;
 
             const jsonStr = buffer.slice(openBraceIndex, closeBraceIndex + 1);
+
             try {
               const data = JSON.parse(jsonStr);
+
               Object.entries(data).forEach(([key, value]) => {
                 if(key === StreamType.META_DATA || key === StreamType.KEEP_ALIVE_KEY) {
                   return;

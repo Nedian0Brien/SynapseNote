@@ -56,6 +56,7 @@ export function usePromptModal() {
       'usePromptModal: usePromptModal must be used within a PromptModalProvider',
     );
   }
+
   return context;
 }
 
@@ -94,6 +95,7 @@ export const PromptModalProvider = ({
     try {
       if (Array.isArray(promptsData.prompts)) {
         const parsedPrompts = parsePromptData(promptsData.prompts);
+
         prompts.current = parsedPrompts;
       } else {
         throw new Error(
@@ -110,6 +112,7 @@ export const PromptModalProvider = ({
 
     const storageKey = `${STORAGE_KEY}_${workspaceId}`;
     const savedConfig = localStorage.getItem(storageKey);
+
     if (!savedConfig) return;
 
     const config = JSON.parse(savedConfig) as PromptDatabaseConfiguration;
@@ -128,6 +131,7 @@ export const PromptModalProvider = ({
       const databasePrompts = parsePromptData(rawDatabasePrompts, categories);
 
       const builtInPrompts = prompts.current.filter((p) => !p.isCustom);
+
       prompts.current = [
         ...builtInPrompts,
         ...databasePrompts.map((p) => ({
@@ -153,8 +157,9 @@ export const PromptModalProvider = ({
     (config: PromptDatabaseConfiguration) => {
       try {
         const storageKey = `${STORAGE_KEY}_${workspaceId}`;
+
         localStorage.setItem(storageKey, JSON.stringify(config));
-        fetchCustomPrompts();
+        void fetchCustomPrompts();
       } catch (err) {
         console.error('Failed to save database config:', err);
       }

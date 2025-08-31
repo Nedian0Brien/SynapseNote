@@ -27,16 +27,20 @@ function MessageSources({
   useEffect(() => {
     void (async() => {
       const views = [];
+
       for(const source of sources) {
         const view = await getView(source.id, false);
+
         if(!view) {
           continue;
         }
+
         views.push({
           ...view,
           name: view.name || t('view.placeholder'),
         });
       }
+
       setViews(views);
     })();
   }, [getView, sources, t]);

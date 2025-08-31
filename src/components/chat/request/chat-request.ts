@@ -23,12 +23,12 @@ import { AxiosInstance } from 'axios';
 export interface ChatSettings {
   name: string;
   rag_ids: string[];
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export interface UpdateChatSettingsParams {
   name?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   rag_ids?: string[];
 }
 
@@ -171,6 +171,7 @@ export class ChatRequest {
 
     if(res?.data.code === 0) {
       const { data } = res.data;
+
       return data ? {
         uuid,
         email: data.email,
@@ -248,7 +249,7 @@ export class ChatRequest {
     let reader: ReadableStreamDefaultReader<Uint8Array> | undefined = undefined;
 
     const cancel = () => {
-      reader?.cancel();
+      void reader?.cancel();
       reader?.releaseLock();
       console.log('Stream canceled');
     };
@@ -275,9 +276,11 @@ export class ChatRequest {
 
       if(contentType?.includes('application/json')) {
         const json = await response.json();
+
         if(json.code !== 0) {
           return Promise.reject(json);
         }
+
         return;
       }
 
@@ -286,6 +289,7 @@ export class ChatRequest {
       if(!reader) {
         throw new Error('Failed to get reader');
       }
+
       const decoder = new TextDecoder();
       let buffer = '';
       let text = '';
@@ -297,6 +301,7 @@ export class ChatRequest {
 
           while(buffer.length > 0) {
             const openBraceIndex = buffer.indexOf('{');
+
             if(openBraceIndex === -1) break;
 
             let closeBraceIndex = -1;
@@ -314,13 +319,16 @@ export class ChatRequest {
             if(closeBraceIndex === -1) break;
 
             const jsonStr = buffer.slice(openBraceIndex, closeBraceIndex + 1);
+
             try {
               const data = JSON.parse(jsonStr);
+
               Object.entries(data).forEach(([key, value]) => {
                 if(key === StreamType.META_DATA) {
                   if(Array.isArray(value)) {
                     metadata.push(...value);
                   }
+
                   return;
                 }
 

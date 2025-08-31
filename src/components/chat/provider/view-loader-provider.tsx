@@ -24,6 +24,7 @@ export function useViewLoader() {
       'useViewLoader: useViewLoader must be used within a ViewLoaderProvider',
     );
   }
+
   return context;
 }
 
@@ -51,6 +52,7 @@ export const ViewLoaderProvider = ({
             ? filter(view.children)
             : filterDocumentViews(view.children),
         };
+
         setViewsLoading(false);
         return result;
         // eslint-disable-next-line

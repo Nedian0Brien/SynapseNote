@@ -32,6 +32,7 @@ export function Regenerations({ id }: {
 
   const regenerate = useCallback(() => {
     const index = messageIds.indexOf(id);
+
     if(index < 0) {
       return;
     }
@@ -40,6 +41,7 @@ export function Regenerations({ id }: {
 
     void regenerateAnswer(questionId);
   }, [id, messageIds, regenerateAnswer]);
+
   return (
     <>
       <Tooltip>

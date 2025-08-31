@@ -27,6 +27,7 @@ export const useCheckboxTree = (initialSelected: string[] = [], source: View[]) 
   // Get all descendant IDs of a view
   const getDescendantIds = useCallback((view: View): string[] => {
     const ids: string[] = [view.view_id];
+
     view.children.forEach(child => {
       ids.push(...getDescendantIds(child));
     });
@@ -71,6 +72,7 @@ export const useCheckboxTree = (initialSelected: string[] = [], source: View[]) 
     const descendantIds = getDescendantIds(view);
 
     const next = new Set(selected);
+
     if(status === CheckStatus.Checked) {
       descendantIds.forEach(id => next.delete(id));
     } else {
@@ -84,6 +86,7 @@ export const useCheckboxTree = (initialSelected: string[] = [], source: View[]) 
   const selectAll = useCallback((views: View[]) => {
     setSelected(prev => {
       const next = new Set(prev);
+
       views.forEach(view => {
         getDescendantIds(view).forEach(id => next.add(id));
       });
@@ -94,6 +97,7 @@ export const useCheckboxTree = (initialSelected: string[] = [], source: View[]) 
   const unselectAll = useCallback((views: View[]) => {
     setSelected(prev => {
       const next = new Set(prev);
+
       views.forEach(view => {
         getDescendantIds(view).forEach(id => next.delete(id));
       });

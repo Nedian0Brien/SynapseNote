@@ -76,6 +76,7 @@ function useMessagesHandler() {
     try {
       const data = await requestInstance.getChatMessages(payload);
       const messages = data.messages;
+
       addMessages(messages);
 
       return data;
@@ -112,6 +113,7 @@ function useMessagesHandler() {
 
     setTimeout(() => {
       const index = newMessages.map((message) => message.message_id).indexOf(questionId);
+
       createAssistantMessage(answerId, index);
     }, 200);
 
@@ -127,6 +129,7 @@ function useMessagesHandler() {
         author_uuid: currentUser?.uuid || '',
         author_type: AuthorType.Human,
       };
+
       insertMessage({
         message_id: fakeMessageId,
         content: message,
@@ -164,6 +167,7 @@ function useMessagesHandler() {
       void (async() => {
         try {
           const view = await requestInstance.getCurrentView();
+
           if((!messageIds || messageIds.length === 0) && view) {
             await requestInstance.updateViewName(view, message);
           }
@@ -222,6 +226,7 @@ function useMessagesHandler() {
 
     const question = getMessage(questionId);
     let answerId = question?.reply_message_id;
+
     if(!answerId) {
       answerId = questionId + 1;
     }
@@ -250,8 +255,10 @@ function useMessagesHandler() {
           if(answerId) {
             removeAssistantMessage(answerId);
           }
+
           setAnswerApplying(false);
         }
+
         return;
       }
 
@@ -267,6 +274,7 @@ function useMessagesHandler() {
         },
         model_name: selectedModelName,
       }, handleMessageProgress);
+
       cancelStreamRef.current = cancel;
       await streamPromise;
       // eslint-disable-next-line
@@ -277,11 +285,13 @@ function useMessagesHandler() {
       });
       setAnswerApplying(false);
       const code = e.code;
+
       if(code !== ERROR_CODE_NO_LIMIT) {
         // remove assistant message if error is not no limit
         if(answerId) {
           removeAssistantMessage(answerId);
         }
+
         return;
       }
 

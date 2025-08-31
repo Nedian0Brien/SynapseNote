@@ -25,6 +25,7 @@ export function PromptPreview({
           </span>
         );
       }
+
       return <span key={index}>{part}</span>;
     });
   }, [prompt?.content]);

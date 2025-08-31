@@ -19,6 +19,7 @@ function HumanQuestion({
     void (async() => {
       try {
         const member = await fetchMember(userId);
+
         setMember(member);
       } catch(e) {
         console.error(e);

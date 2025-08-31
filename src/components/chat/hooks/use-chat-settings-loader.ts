@@ -25,6 +25,7 @@ export function useChatSettingsLoader() {
   const fetchChatSettings = useCallback(async() => {
     try {
       const data = await requestInstance.getChatSettings();
+
       setLoading(false);
       setChatSettings(data);
       return data;

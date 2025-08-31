@@ -32,6 +32,7 @@ export function ViewTree() {
       setViewsLoading(true);
       try {
         const data = await fetchViews();
+
         if(!data) return;
         setFolder(data);
         // eslint-disable-next-line
@@ -61,6 +62,7 @@ export function ViewTree() {
 
   const spaces = useMemo(() => {
     const spaces = folder?.children.filter(view => view.extra?.is_space);
+
     return searchViews(spaces || [], searchValue);
   }, [folder, searchValue]);
 
@@ -100,6 +102,7 @@ export function ViewTree() {
               (view: View) => {
                 if(view.view_id === viewId) return;
                 const ids = toggleNode(view);
+
                 setRagIds(Array.from(ids));
               }
             }

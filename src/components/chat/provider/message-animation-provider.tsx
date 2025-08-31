@@ -14,6 +14,7 @@ export function useMessageAnimation() {
   if(!context) {
     throw new Error('useAnimating: useAnimating must be used within a motion');
   }
+
   return context;
 }
 
@@ -25,6 +26,7 @@ export const MessageAnimationProvider = ({ children }: {
   const registerAnimation = useCallback((id: number) => {
     setAnimatingIds(prev => {
       const newSet = new Set(prev);
+
       newSet.add(id);
       return newSet;
     });
@@ -33,6 +35,7 @@ export const MessageAnimationProvider = ({ children }: {
   const completeAnimation = useCallback((id: number) => {
     setAnimatingIds(prev => {
       const newSet = new Set(prev);
+
       newSet.delete(id);
       return newSet;
     });

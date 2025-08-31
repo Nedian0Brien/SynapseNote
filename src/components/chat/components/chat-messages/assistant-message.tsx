@@ -54,6 +54,7 @@ export function AssistantMessage({ id, isHovered }: { id: number; isHovered: boo
             if (done || text) {
               setLoading(false);
             }
+
             setDone(done || false);
             setContent(text);
           },

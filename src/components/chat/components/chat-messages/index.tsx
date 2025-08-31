@@ -43,12 +43,14 @@ export function ChatMessages({ currentUser }: {
 
   const scrollToBottom = useCallback((immediate = false) => {
     const container = scrollContainerRef.current;
+
     if(!container) return;
 
     if(immediate) {
       container.scrollTop = container.scrollHeight;
       return;
     }
+
     container.scroll({
       top: container.scrollHeight,
       behavior: 'smooth',
@@ -57,6 +59,7 @@ export function ChatMessages({ currentUser }: {
 
   const checkScrollPosition = useCallback(() => {
     const container = scrollContainerRef.current;
+
     if(!container) return;
 
     const scrollTop = container.scrollTop;
@@ -67,6 +70,7 @@ export function ChatMessages({ currentUser }: {
 
   useEffect(() => {
     const container = scrollContainerRef.current;
+
     if(!container) return;
 
     container.addEventListener('scroll', checkScrollPosition);
@@ -75,6 +79,7 @@ export function ChatMessages({ currentUser }: {
 
   useEffect(() => {
     const container = scrollContainerRef.current;
+
     if(!container || !isFirstLoadRef.current || messageIds.length === 0) return;
     const observer = new MutationObserver(() => {
       scrollToBottom(true);

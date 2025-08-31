@@ -8,6 +8,7 @@ export function findView(views: View[], id: string): View | undefined {
 
     if (view.children.length) {
       const found = findView(view.children, id);
+
       if (found) {
         return found;
       }

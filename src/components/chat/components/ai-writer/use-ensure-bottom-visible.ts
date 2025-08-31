@@ -42,6 +42,7 @@ function useEnsureBottomVisible() {
   const scrollToBottom = useCallback((container: HTMLElement) => {
     const containerRect = container.getBoundingClientRect();
     const rect = document.querySelector('.writer-anchor')?.getBoundingClientRect();
+
     if(!rect) return;
 
     const offset = rect.bottom - containerRect.bottom;
@@ -57,6 +58,7 @@ function useEnsureBottomVisible() {
   const scrollIntoView = useMemo(() => {
     return throttle(() => {
       const target = getTarget();
+
       if(!scrollContainer || !target || isUserScrollingRef.current) return;
 
       scrollToBottom(scrollContainer);
@@ -97,6 +99,7 @@ function useEnsureBottomVisible() {
 
   useEffect(() => {
     const target = getTarget();
+
     if(!placeholderContent || !target) {
       return;
     }

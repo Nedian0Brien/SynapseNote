@@ -47,6 +47,7 @@ export class ModelCache {
         modelName,
         timestamp: Date.now(),
       };
+
       localStorage.setItem(key, JSON.stringify(data));
     } catch (error) {
       console.error('Error setting model cache:', error);
@@ -59,6 +60,7 @@ export class ModelCache {
   static clear(chatId: string): void {
     try {
       const key = `${CACHE_KEY_PREFIX}${chatId}`;
+
       localStorage.removeItem(key);
     } catch (error) {
       console.error('Error clearing model cache:', error);
@@ -71,6 +73,7 @@ export class ModelCache {
   static clearAll(): void {
     try {
       const keys = Object.keys(localStorage);
+
       keys.forEach(key => {
         if (key.startsWith(CACHE_KEY_PREFIX)) {
           localStorage.removeItem(key);

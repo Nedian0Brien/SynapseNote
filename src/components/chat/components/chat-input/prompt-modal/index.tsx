@@ -84,6 +84,7 @@ export const PromptModal = forwardRef<
     const foundVisiblePrompt = visiblePrompts.find(
       (prompt) => prompt.id === selectedPreviewPromptId,
     );
+
     if (foundVisiblePrompt) {
       return foundVisiblePrompt;
     }
@@ -153,6 +154,7 @@ export const PromptModal = forwardRef<
           if (visiblePrompts.length > 0) {
             setSelectedPreviewPromptId(visiblePrompts[0].id);
           }
+
           returnFocus();
           closeModal();
         } else {

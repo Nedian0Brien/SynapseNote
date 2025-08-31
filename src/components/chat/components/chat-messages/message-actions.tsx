@@ -56,10 +56,13 @@ export function MessageActions({
 
   const handleCopy = useCallback(async() => {
     const message = getMessage(id);
+
     if(!message) {
       return;
     }
+
     const editor = getEditor(id);
+
     if(!editor) return;
     try {
       const data = editor?.getData();
@@ -74,6 +77,7 @@ export function MessageActions({
         e.clipboardData?.setData('application/json', stringifies);
 
         const { key, value } = convertToAppFlowyFragment(data);
+
         e.clipboardData?.setData(key, value);
       }, { once: true });
 

@@ -16,6 +16,7 @@ export function useUserLoader() {
 
     // Check if the user is already being fetched
     const existingRequest = users.current.get(uuid);
+
     if(existingRequest) {
       return existingRequest;
     }
@@ -23,6 +24,7 @@ export function useUserLoader() {
     const promise = (async() => {
       try {
         const user = await requestInstance.getMember(uuid);
+
         // Cache the user
         users.current.set(uuid, Promise.resolve(user));
         return user;

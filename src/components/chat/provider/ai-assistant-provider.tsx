@@ -105,6 +105,7 @@ export const AIAssistantProvider = ({
     if(initialScrollTopRef.current === null) {
       initialScrollTopRef.current = scrollContainer?.scrollTop || null;
     }
+
     if(done) {
       cancelRef.current = undefined;
       setApplyingState(ApplyingState.completed);
@@ -218,6 +219,7 @@ export const AIAssistantProvider = ({
       if(!scrollLocked) {
         scrollToView();
       }
+
       setComment('');
       setEditorData(undefined);
       onExit?.();
@@ -229,6 +231,7 @@ export const AIAssistantProvider = ({
     if(!editorData) {
       return;
     }
+
     completionHistoryRef.current = [];
 
     if(isGlobalDocument) {
@@ -236,6 +239,7 @@ export const AIAssistantProvider = ({
     } else {
       onInsertBelow?.(editorData);
     }
+
     exit(true);
 
   }, [editorData, isGlobalDocument, exit, onReplace, onInsertBelow]);
@@ -244,6 +248,7 @@ export const AIAssistantProvider = ({
     if(!editorData) {
       return;
     }
+
     completionHistoryRef.current = [];
     onReplace?.(editorData);
     exit(true);

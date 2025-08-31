@@ -19,6 +19,7 @@ export function useChatMessagesContext() {
   if(!context) {
     throw new Error('useMessagesManager: useMessagesManager must be used within a ChatMessagesProvider');
   }
+
   return context;
 }
 
@@ -58,6 +59,7 @@ export const ChatMessagesProvider = ({ children }: { children: ReactNode }) => {
 
   const insertMessage = useCallback((message: ChatMessage, index: number) => {
     const newMessage = [...messagesRef.current];
+
     newMessage.splice(index, 0, message);
     messagesRef.current = newMessage;
     setMessageIds(messagesRef.current.map((message) => message.message_id));
@@ -68,6 +70,7 @@ export const ChatMessagesProvider = ({ children }: { children: ReactNode }) => {
       const message = messagesRef.current.find(
         (message) => message.message_id === messageId
       );
+
       if(message) {
         message.content = content;
         message.meta_data = [...metadata];

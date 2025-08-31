@@ -63,6 +63,7 @@ export function ChatInput() {
 
   const adjustHeight = useCallback(() => {
     const textarea = textareaRef.current;
+
     if (!textarea) return;
 
     // reset height
@@ -70,6 +71,7 @@ export function ChatInput() {
 
     // calculate height
     const newHeight = Math.min(textarea.scrollHeight, MAX_HEIGHT);
+
     textarea.style.height = `${newHeight}px`;
 
     // toggle overflowY
@@ -106,6 +108,7 @@ export function ChatInput() {
       });
       return;
     }
+
     if (questionSending || answerApplying) {
       toast({
         variant: 'destructive',
@@ -113,6 +116,7 @@ export function ChatInput() {
       });
       return;
     }
+
     setMessage('');
     adjustHeight();
 

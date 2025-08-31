@@ -113,6 +113,7 @@ export function convertToPageData(data: EditorData) {
       },
       children: item.children.map(traverse),
     };
+
     return newNode;
   };
 
@@ -126,6 +127,7 @@ export const parsePromptData = (
   return rawData.flatMap((raw) => {
     const parseCategory = (categoryStr: string): AiPromptCategory => {
       const trimmedCategory = categoryStr.trim();
+
       if (!trimmedCategory) {
         return AiPromptCategory.Others;
       }
@@ -142,6 +144,7 @@ export const parsePromptData = (
             translations.get(cat)?.toLowerCase() ===
             trimmedCategory.toLowerCase(),
         );
+
         if (matchingCategory) {
           return matchingCategory;
         }

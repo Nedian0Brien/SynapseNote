@@ -26,6 +26,7 @@ function PageIcon({ view }: {
 
       if(iconJson) {
         const svg = await getIcon(`${iconJson.groupName}/${iconJson.iconName}`);
+
         if(svg) {
           setIconSvg(svg);
         }

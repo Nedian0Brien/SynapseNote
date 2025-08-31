@@ -64,6 +64,7 @@ export function WritingInput({
 
   const adjustHeight = useCallback(() => {
     const textarea = textareaRef.current;
+
     if (!textarea) return;
 
     // reset height
@@ -71,6 +72,7 @@ export function WritingInput({
 
     // calculate height
     const newHeight = Math.min(textarea.scrollHeight, MAX_HEIGHT);
+
     textarea.style.height = `${newHeight}px`;
 
     // toggle overflowY
@@ -107,6 +109,7 @@ export function WritingInput({
       });
       return;
     }
+
     if (isFetching || isApplying) {
       toast({
         variant: 'destructive',
@@ -114,6 +117,7 @@ export function WritingInput({
       });
       return;
     }
+
     setMessage('');
     adjustHeight();
 
@@ -147,6 +151,7 @@ export function WritingInput({
     setTimeout(() => {
       const rect = textareaRef.current?.getBoundingClientRect();
       const containerRect = scrollContainer?.getBoundingClientRect();
+
       if (!rect || !containerRect) return;
 
       const inViewport =
@@ -193,6 +198,7 @@ export function WritingInput({
     responseMode === ChatInputMode.FormatResponse
       ? AutoTextIcon
       : ImageTextIcon;
+
   return (
     <div
       className={cn(

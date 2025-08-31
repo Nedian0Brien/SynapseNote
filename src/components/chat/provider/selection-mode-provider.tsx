@@ -57,6 +57,7 @@ export const SelectionModeProvider = ({ children }: { children: ReactNode }) => 
       if(messages.find(m => m.message_id === message.message_id)) {
         return messages.filter(m => m.message_id !== message.message_id);
       }
+
       return [...messages, message];
     });
   }, []);
@@ -72,6 +73,7 @@ export const SelectionModeProvider = ({ children }: { children: ReactNode }) => 
   useEffect(() => {
     const isAllChecked = allMessages.length > 0 && messages.length === allMessages.length;
     const isAllUnchecked = messages.length === 0;
+
     setCheckStatus(isAllChecked ? CheckStatus.Checked : isAllUnchecked ? CheckStatus.Unchecked : CheckStatus.Indeterminate);
   }, [allMessages, messages]);
 

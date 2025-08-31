@@ -32,6 +32,7 @@ function SpaceItem({
 
       if(icon) {
         const svg = await getIcon(icon);
+
         if(svg) {
           setIconSvg(svg);
         }
@@ -77,6 +78,7 @@ function SpaceItem({
   }, [expanded, view.children.length]);
 
   const name = view.name || t('view.placeholder');
+
   return (
     <div
       className={'flex flex-col'}

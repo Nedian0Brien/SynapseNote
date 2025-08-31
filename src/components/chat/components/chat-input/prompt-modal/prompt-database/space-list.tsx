@@ -33,6 +33,7 @@ export function SpaceList({
   useEffect(() => {
     void (async () => {
       const data = await fetchViews((v) => v);
+
       if (!data) return;
       setFolder(data);
     })();

@@ -28,6 +28,7 @@ function MessageCheckbox({ id }: {
     <Button
       onClick={() => {
         const message = getMessage(id);
+
         if(!message) return;
 
         toggleMessage?.(message);

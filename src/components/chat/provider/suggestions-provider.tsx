@@ -64,6 +64,7 @@ export const SuggestionsProvider = ({ children }: { children: ReactNode }) => {
 
       setSuggestions(() => {
         const newSuggestions = new Map();
+
         newSuggestions.set(questionMessageId, data);
         return newSuggestions;
       });

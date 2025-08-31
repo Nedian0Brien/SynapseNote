@@ -35,6 +35,7 @@ export function AddMessageToPageWrapper({ onFinished, messages, children }: {
   const getData = useCallback(() => {
     return messages.reverse().flatMap(item => {
       const editor = getEditor(item.message_id);
+
       return editor?.getData() || [];
     });
   }, [messages, getEditor]);
@@ -51,7 +52,7 @@ export function AddMessageToPageWrapper({ onFinished, messages, children }: {
         variant: 'success',
         description: t('success.addMessageToPage', {
           name,
-        }) as string,
+        }),
       });
       onFinished?.();
       // eslint-disable-next-line
@@ -73,7 +74,7 @@ export function AddMessageToPageWrapper({ onFinished, messages, children }: {
         variant: 'success',
         description: t('success.addMessageToPage', {
           name: chat?.name || t('view.placeholder'),
-        }) as string,
+        }),
       });
       onFinished?.();
       // eslint-disable-next-line

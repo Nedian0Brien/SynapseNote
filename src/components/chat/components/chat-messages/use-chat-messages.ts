@@ -32,6 +32,7 @@ export function useChatMessages() {
 
       if(data.messages.length > 0) {
         const messages = data.messages.map(message => message.message_id);
+
         lastMessageId.current = messages[messages.length - 1];
       }
 
@@ -48,6 +49,7 @@ export function useChatMessages() {
   const fetchInitialMessages = useCallback(async() => {
     isInitialLoad.current = true;
     const data = await fetchMessagesWithParams({ limit: DEFAULT_LIMIT });
+
     isInitialLoad.current = false;
     return data;
   }, [fetchMessagesWithParams]);

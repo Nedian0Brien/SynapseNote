@@ -81,6 +81,7 @@ export function AIAssistant({
     if(container && open) {
       setWidth(container.clientWidth);
     }
+
     if(scrollContainer) {
       if(open) {
         scrollContainer.style.userSelect = 'none';
@@ -115,12 +116,14 @@ export function AIAssistant({
             e.preventDefault();
             return;
           }
+
           if (openModal) {
             e.preventDefault();
             e.stopPropagation();
             setOpenModal(false);
             return;
           }
+
           if(hasAIAnswer()) {
             e.preventDefault();
             e.stopPropagation();

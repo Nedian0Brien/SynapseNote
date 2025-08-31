@@ -86,6 +86,7 @@ export function PromptDatabaseModal({
         ...currentDatabaseConfig,
         contentFieldId,
       };
+
       setCurrentDatabaseConfig(newConfig);
     },
     [currentDatabaseConfig],
@@ -98,6 +99,7 @@ export function PromptDatabaseModal({
         ...currentDatabaseConfig,
         exampleFieldId: exampleFieldId,
       };
+
       setCurrentDatabaseConfig(newConfig);
     },
     [currentDatabaseConfig],
@@ -110,6 +112,7 @@ export function PromptDatabaseModal({
         ...currentDatabaseConfig,
         categoryFieldId: categoryFieldId,
       };
+
       setCurrentDatabaseConfig(newConfig);
     },
     [currentDatabaseConfig],
@@ -128,7 +131,7 @@ export function PromptDatabaseModal({
     >
       <DialogContent
         className='h-[400px] w-[450px] flex flex-col gap-3 min-h-0 sm:max-w-[calc(100%-2rem)]'
-        onEscapeKeyDown={(_e) => {}}
+        onEscapeKeyDown={(_e) => closeModal()}
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <DialogTitle className='text-md text-text-primary font-bold'>
@@ -161,7 +164,7 @@ export function PromptDatabaseModal({
                 selectedFieldId={currentDatabaseConfig?.titleFieldId || null}
                 fields={currentFields.filter((f) => !f.isSelect)}
                 isDisabled={true}
-                onFieldChange={() => {}}
+                onFieldChange={() => undefined}
               />
               <FieldSelector
                 title={t('customPrompt.content')}
@@ -203,6 +206,7 @@ export function PromptDatabaseModal({
               if (currentDatabaseConfig) {
                 saveDatabaseConfig(currentDatabaseConfig);
               }
+
               closeModal();
             }}
           >
@@ -262,6 +266,7 @@ function FieldSelector({
               ) {
                 onFieldChange('');
               }
+
               setIsOpen((prev) => !prev);
             }}
           >

@@ -31,6 +31,7 @@ export function SpaceList({
   useEffect(() => {
     void (async() => {
       const data = await fetchViews();
+
       if(!data) return;
       setFolder(data);
     })();
@@ -38,6 +39,7 @@ export function SpaceList({
 
   const filteredSpaces = useMemo(() => {
     const spaces = folder?.children.filter(view => view.extra?.is_space);
+
     return searchViews(spaces || [], searchValue);
   }, [folder, searchValue]);
 
