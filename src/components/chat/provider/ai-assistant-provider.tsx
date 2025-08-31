@@ -2,7 +2,7 @@ import { ConfirmDiscard } from '@/components/chat/components/ai-writer/confirm-d
 import { TooltipProvider } from '@/components/chat/components/ui/tooltip';
 import { toast } from '@/components/chat/hooks/use-toast';
 import { useTranslation } from '@/components/chat/i18n';
-import { ChatI18nContext, getI18n, initI18n } from '@/components/chat/i18n/config';
+// Using main AppFlowy i18n system - no separate chat context needed
 import { WriterRequest } from '@/components/chat/request';
 import {
   AIAssistantType,
@@ -19,10 +19,6 @@ import { findLast } from 'lodash-es';
 import { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { usePromptModal } from './prompt-modal-provider';
 import { ViewLoaderProvider } from './view-loader-provider';
-
-initI18n();
-
-const i18n = getI18n();
 
 export const AIAssistantProvider = ({
   isGlobalDocument,
@@ -346,20 +342,18 @@ export const AIAssistantProvider = ({
       }}
     >
 
-      <ChatI18nContext.Provider value={i18n}>
-        <TooltipProvider>
-          <ViewLoaderProvider
-            getView={(viewId: string) => request.getView(viewId)}
-            fetchViews={() => request.fetchViews()}
-          >
-            {children}
-            <ConfirmDiscard
-              open={openDiscard}
-              onClose={() => setOpenDiscard(false)}
-            />
-          </ViewLoaderProvider>
-        </TooltipProvider>
-      </ChatI18nContext.Provider>
+      <TooltipProvider>
+        <ViewLoaderProvider
+          getView={(viewId: string) => request.getView(viewId)}
+          fetchViews={() => request.fetchViews()}
+        >
+          {children}
+          <ConfirmDiscard
+            open={openDiscard}
+            onClose={() => setOpenDiscard(false)}
+          />
+        </ViewLoaderProvider>
+      </TooltipProvider>
     </WriterContext.Provider>
   );
 };

@@ -1,18 +1,8 @@
-import { motion } from 'framer-motion';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { ReactComponent as SendIcon } from '@/components/chat/assets/icons/arrow-up.svg';
 import { ReactComponent as AutoTextIcon } from '@/components/chat/assets/icons/auto-text.svg';
 import { ReactComponent as ImageTextIcon } from '@/components/chat/assets/icons/image-text.svg';
 import { ReactComponent as StopIcon } from '@/components/chat/assets/icons/stop.svg';
 import { useChatContext } from '@/components/chat/chat/context';
-import { toast } from '@/components/chat/hooks/use-toast';
-import { useTranslation } from '@/components/chat/i18n';
-import { MESSAGE_VARIANTS } from '@/components/chat/lib/animations';
-import { useMessagesHandlerContext } from '@/components/chat/provider/messages-handler-provider';
-import { usePromptModal } from '@/components/chat/provider/prompt-modal-provider';
-import { useResponseFormatContext } from '@/components/chat/provider/response-format-provider';
-import { ChatInputMode } from '@/components/chat/types';
-import { AiPrompt } from '@/components/chat/types/prompt';
 import { Button } from '@/components/chat/components/ui/button';
 import { FormatGroup } from '@/components/chat/components/ui/format-group';
 import LoadingDots from '@/components/chat/components/ui/loading-dots';
@@ -22,6 +12,16 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/chat/components/ui/tooltip';
+import { toast } from '@/components/chat/hooks/use-toast';
+import { useTranslation } from '@/components/chat/i18n';
+import { MESSAGE_VARIANTS } from '@/components/chat/lib/animations';
+import { useMessagesHandlerContext } from '@/components/chat/provider/messages-handler-provider';
+import { usePromptModal } from '@/components/chat/provider/prompt-modal-provider';
+import { useResponseFormatContext } from '@/components/chat/provider/response-format-provider';
+import { ChatInputMode } from '@/components/chat/types';
+import { AiPrompt } from '@/components/chat/types/prompt';
+import { motion } from 'framer-motion';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ModelSelector } from './model-selector';
 import { PromptModal } from './prompt-modal';
 import { RelatedViews } from './related-views';
@@ -240,15 +240,8 @@ export function ChatInput() {
               </TooltipContent>
             </Tooltip>
 
-            <Button
-              variant={'ghost'}
-              className={'h-7 text-xs'}
-            >
-              Test Model Button
-            </Button>
-            
-            <ModelSelector 
-              className={'h-7'} 
+            <ModelSelector
+              className={'h-7'}
               disabled={questionSending || answerApplying}
             />
 

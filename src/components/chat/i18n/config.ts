@@ -1,34 +1,6 @@
-import i18n from 'i18next';
-import { initReactI18next } from 'react-i18next';
-import en from '../locales/en.json';
-import { createContext } from 'react';
+// This file is no longer needed since we're using the main AppFlowy i18n configuration
+// Chat translations have been merged into the main translation files
+// Use @/i18n/config instead
 
-let chatI18n: typeof i18n | null = null;
-
-export function initI18n() {
-  chatI18n = i18n.createInstance();
-
-  chatI18n
-    .use(initReactI18next)
-    .init({
-      resources: { en: { chat: en.chat } },
-      lng: 'en',
-      fallbackLng: 'en',
-      defaultNS: 'chat',
-      interpolation: {
-        escapeValue: false,
-      },
-      keySeparator: '.',
-      cache: {
-        enabled: true,
-        prefix: `i18next_chat_`,
-      },
-    });
-  return chatI18n;
-}
-
-export function getI18n() {
-  return chatI18n;
-}
-
-export const ChatI18nContext = createContext<typeof i18n | null>(null);
+export { i18nInstance as chatI18n } from '@/i18n/config';
+export { i18nInstance } from '@/i18n/config';

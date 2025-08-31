@@ -51,7 +51,7 @@ export function AddMessageToPageWrapper({ onFinished, messages, children }: {
         variant: 'success',
         description: t('success.addMessageToPage', {
           name,
-        }),
+        }) as string,
       });
       onFinished?.();
       // eslint-disable-next-line
@@ -73,7 +73,7 @@ export function AddMessageToPageWrapper({ onFinished, messages, children }: {
         variant: 'success',
         description: t('success.addMessageToPage', {
           name: chat?.name || t('view.placeholder'),
-        }),
+        }) as string,
       });
       onFinished?.();
       // eslint-disable-next-line
