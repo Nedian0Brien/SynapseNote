@@ -7,6 +7,8 @@ import { useWriterContext } from '@/components/chat/writer/context';
 import { ChevronDown } from 'lucide-react';
 import { ReactComponent as MoreIcon } from '@/components/chat/assets/icons/ai-more.svg';
 import { useCallback, useState } from 'react';
+import { MESSAGE_VARIANTS } from '@/components/chat/lib/animations';
+import { motion } from 'framer-motion';
 
 export function WritingMore({ input }: {
   input: string
@@ -51,12 +53,19 @@ export function WritingMore({ input }: {
 
       </Button>
     </PopoverTrigger>
-    <PopoverContent className={'min-w-[240px] !p-2'}>
-      <AiWriterMenuContent
-        input={input}
-        isFilterOut={isFilterOut}
-        onClicked={handleClose}
-      />
+    <PopoverContent asChild className={'min-w-[240px] !p-0'}>
+      <motion.div
+        variants={MESSAGE_VARIANTS.getSelectorVariants()}
+        initial="hidden"
+        animate={open ? "visible" : "exit"}
+        className={'min-w-[240px] p-2 bg-popover border border-border rounded-md shadow-md'}
+      >
+        <AiWriterMenuContent
+          input={input}
+          isFilterOut={isFilterOut}
+          onClicked={handleClose}
+        />
+      </motion.div>
     </PopoverContent>
   </Popover>;
 }

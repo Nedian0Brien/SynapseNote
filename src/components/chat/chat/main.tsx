@@ -14,13 +14,34 @@ import { SuggestionsProvider } from '@/components/chat/provider/suggestions-prov
 import { ChatProps } from '@/components/chat/types';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ViewLoaderProvider } from '@/components/chat/provider/view-loader-provider';
+import { ModelSelectorContext } from '@/components/chat/contexts/model-selector-context';
 
 function Main(props: ChatProps) {
   const { currentUser, selectionMode } = props;
 
   return (
     <ChatContext.Provider value={props}>
-      <ChatMessagesProvider>
+      <ModelSelectorContext.Provider
+        value={{
+          requestInstance: {
+            getModelList: () => props.requestInstance.getModelList(),
+            getCurrentModel: async () => {
+              const settings = await props.requestInstance.getChatSettings();
+
+              return settings.metadata?.ai_model as string | undefined || '';
+            },
+            setCurrentModel: async (modelName: string) => {
+              await props.requestInstance.updateChatSettings({
+                metadata: {
+                  ai_model: modelName
+                }
+              });
+            },
+          },
+          chatId: props.chatId,
+        }}
+      >
+        <ChatMessagesProvider>
         <MessageAnimationProvider>
           <SuggestionsProvider>
             <EditorProvider>
@@ -62,6 +83,7 @@ function Main(props: ChatProps) {
           </SuggestionsProvider>
         </MessageAnimationProvider>
       </ChatMessagesProvider>
+      </ModelSelectorContext.Provider>
     </ChatContext.Provider>
   );
 }

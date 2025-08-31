@@ -34,27 +34,25 @@ export function ModelSelector({ className, disabled }: ModelSelectorProps) {
   // Get unified context for model selection
   const context = useModelSelectorContext();
 
-  const requestInstance = context?.requestInstance;
-  const chatId = context?.chatId;
-  const setSelectedModelName = context?.setSelectedModelName;
-  const contextSelectedModel = context?.selectedModelName;
+  if (!context) {
+    throw new Error('ModelSelector must be used within a ModelSelectorContext.Provider');
+  }
+
+  const requestInstance = context.requestInstance;
+  const chatId = context.chatId;
+  const setSelectedModelName = context.setSelectedModelName;
+  const contextSelectedModel = context.selectedModelName;
 
 
   // Initialize: Load cached model or sync with context
   useEffect(() => {
-    // If no context, just mark as initialized
-    if (!context) {
-      setIsInitialized(true);
-      return;
-    }
-
     // Sync with context's selected model
     if (contextSelectedModel) {
       setSelectedModel(contextSelectedModel);
     }
 
     // If we have chat capabilities, load from server
-    if (!chatId || !requestInstance || isInitialized) {
+    if (!chatId || isInitialized) {
       setIsInitialized(true);
       return;
     }
@@ -67,39 +65,37 @@ export function ModelSelector({ className, disabled }: ModelSelectorProps) {
       setSelectedModelName?.(cachedModel);
     }
 
-    // Step 2: Fetch chat settings in background to get the truth
-    const loadChatSettings = async () => {
-      try {
-        const settings = await requestInstance.getChatSettings();
-        const modelFromSettings = settings.metadata?.ai_model as string | undefined;
+    // Step 2: Fetch current model in background to get the truth
+    const loadCurrentModel = async () => {
+      if (!requestInstance.getCurrentModel) {
+        // No model persistence available
+        return;
+      }
 
-        if (modelFromSettings) {
-          // Server has a model saved, use it
-          setSelectedModel(modelFromSettings);
-          setSelectedModelName?.(modelFromSettings);
-          ModelCache.set(chatId, modelFromSettings);
+      try {
+        const currentModel = await requestInstance.getCurrentModel();
+
+        if (currentModel) {
+          // Saved model found, use it
+          setSelectedModel(currentModel);
+          setSelectedModelName?.(currentModel);
+          if (chatId) {
+            ModelCache.set(chatId, currentModel);
+          }
         }
         // Don't set a default if there's no saved model - let user choose
-        // If no model in settings but we have cache, keep using cache
+        // If no model saved but we have cache, keep using cache
       } catch (error) {
-        console.warn('Failed to load chat settings', error);
+        console.warn('Failed to load current model', error);
         // Keep cached model if available, otherwise let user choose
       }
     };
 
-    void loadChatSettings();
+    void loadCurrentModel();
     setIsInitialized(true);
-  }, [chatId, requestInstance, isInitialized, setSelectedModelName, context, contextSelectedModel]);
+  }, [chatId, requestInstance, isInitialized, setSelectedModelName, contextSelectedModel]);
 
   const loadModels = useCallback(async () => {
-    if (!requestInstance) {
-      // Provide fallback models when no context (e.g., in writer mode)
-      setModels([
-        { name: 'Auto', metadata: { is_default: true, desc: 'Auto select the best model for writing tasks' } },
-      ]);
-      return;
-    }
-
     setLoading(true);
     try {
       const modelList = await requestInstance.getModelList();
@@ -118,7 +114,12 @@ export function ModelSelector({ className, disabled }: ModelSelectorProps) {
     }
   }, [requestInstance]);
 
-  // Load models when popover opens
+  // Load models immediately on mount to display correct model names
+  useEffect(() => {
+    void loadModels();
+  }, [loadModels]);
+
+  // Load models when popover opens if not already loaded
   useEffect(() => {
     if (open && models.length === 0) {
       void loadModels();
@@ -146,24 +147,20 @@ export function ModelSelector({ className, disabled }: ModelSelectorProps) {
       setSelectedModelName(modelName);
     }
 
-    // For chat context: update cache and server settings
-    if (chatId && requestInstance) {
-      ModelCache.set(chatId, modelName);
+    // Persist model selection using unified interface
+    if (requestInstance.setCurrentModel) {
+      // Update cache for chat context
+      if (chatId) {
+        ModelCache.set(chatId, modelName);
+      }
 
       try {
-        await requestInstance.updateChatSettings({
-          metadata: {
-            ai_model: modelName
-          }
-        });
+        await requestInstance.setCurrentModel(modelName);
       } catch (error) {
-        console.error('Failed to update chat settings:', error);
+        console.error('Failed to save current model:', error);
         // Cache is already updated, so user experience is not affected
       }
     }
-
-    // For writer context: model is already updated via setSelectedModelName
-    // No additional persistence needed as it's session-based
   }, [setSelectedModelName, chatId, requestInstance]);
 
   const filteredModels = models.filter((model) => {
@@ -188,7 +185,7 @@ export function ModelSelector({ className, disabled }: ModelSelectorProps) {
   };
 
   // Always render the button, even without full context
-  const hasContext = !!(requestInstance && chatId);
+  const hasContext = !!chatId;
 
 
   return (

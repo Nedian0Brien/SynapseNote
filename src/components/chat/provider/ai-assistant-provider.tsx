@@ -317,7 +317,17 @@ export const AIAssistantProvider = ({
       value={{
         selectedModelName,
         setSelectedModelName,
-        // No request capabilities for writer context
+        requestInstance: {
+          getModelList: () => request.getModelList(),
+          getCurrentModel: async () => {
+            // For writer context, get from localStorage
+            return localStorage.getItem('writer_selected_model') || '';
+          },
+          setCurrentModel: async (modelName: string) => {
+            // For writer context, save to localStorage
+            localStorage.setItem('writer_selected_model', modelName);
+          },
+        },
       }}
     >
       <WriterContext.Provider

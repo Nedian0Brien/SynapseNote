@@ -3,6 +3,8 @@ import { toast } from '@/components/chat/hooks/use-toast';
 import { useTranslation } from '@/components/chat/i18n';
 import { searchViews } from '@/components/chat/lib/views';
 import { Spaces } from './spaces';
+import { MESSAGE_VARIANTS } from '@/components/chat/lib/animations';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/chat/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/chat/components/ui/popover';
 import { SearchInput } from '@/components/chat/components/ui/search-input';
@@ -66,7 +68,9 @@ export function ViewTree() {
     return searchViews(spaces || [], searchValue);
   }, [folder, searchValue]);
 
-  return <Popover modal={false}>
+  const [open, setOpen] = useState(false);
+
+  return <Popover modal={false} open={open} onOpenChange={setOpen}>
     <PopoverTrigger asChild>
       <Button
         className={'text-xs !gap-1 !text-secondary-foreground h-[28px]'}
@@ -85,8 +89,13 @@ export function ViewTree() {
 
       </Button>
     </PopoverTrigger>
-    <PopoverContent side={'top'}>
-      <div className={'h-fit py-1 px-1 min-h-[200px] max-h-[360px] w-[300px] flex gap-2 flex-col'}>
+    <PopoverContent side={'top'} asChild>
+      <motion.div
+        variants={MESSAGE_VARIANTS.getSelectorVariants()}
+        initial="hidden"
+        animate={open ? "visible" : "exit"}
+        className={'h-fit py-1 px-1 min-h-[200px] max-h-[360px] w-[300px] flex gap-2 flex-col bg-popover border border-border rounded-md shadow-md'}
+      >
         <SearchInput
           value={searchValue}
           onChange={setSearchValue}
@@ -108,8 +117,7 @@ export function ViewTree() {
             }
           />
         </div>
-
-      </div>
+      </motion.div>
     </PopoverContent>
   </Popover>;
 }

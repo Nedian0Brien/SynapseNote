@@ -6,14 +6,14 @@ export interface ModelSelectorContextType {
   selectedModelName?: string;
   setSelectedModelName?: (modelName: string) => void;
   
-  // Optional: for chat context - server sync capabilities  
-  requestInstance?: {
+  // Required: for both chat and writer contexts - server capabilities  
+  requestInstance: {
     getModelList: () => Promise<{ models: AvailableModel[] }>;
-    getChatSettings: () => Promise<{ metadata?: Record<string, unknown> }>;
-    updateChatSettings: (params: { metadata: Record<string, unknown> }) => Promise<void>;
+    getCurrentModel?: () => Promise<string>;
+    setCurrentModel?: (modelName: string) => Promise<void>;
   };
   
-  // Optional: for chat context - identification
+  // Optional: for chat context - identification for settings persistence
   chatId?: string;
 }
 

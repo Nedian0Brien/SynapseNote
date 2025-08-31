@@ -13,6 +13,7 @@ import {
   StreamType,
   View,
 } from '@/components/chat/types';
+import { AvailableModel } from '@/components/chat/types/ai-model';
 import { AxiosInstance } from 'axios';
 
 export class WriterRequest {
@@ -204,4 +205,23 @@ export class WriterRequest {
 
     return Promise.reject(res?.data);
   };
+
+  async getModelList(): Promise<{ models: AvailableModel[] }> {
+    if (!this.workspaceId) {
+      return Promise.reject('workspaceId is not defined');
+    }
+
+    const url = `/api/ai/${this.workspaceId}/model/list`;
+    const response = await this.axiosInstance.get<{
+      code: number;
+      data?: { models: AvailableModel[] };
+      message?: string;
+    }>(url);
+
+    if (response?.data.code === 0 && response.data.data) {
+      return response.data.data;
+    }
+
+    return Promise.reject(response?.data.message || 'Failed to load models');
+  }
 }
