@@ -1,22 +1,20 @@
+import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
 
 import { ReactComponent as AISparksIcon } from '@/components/chat/assets/icons/ai_sparks.svg';
 
-import { useChatContext } from '@/components/chat/chat/context';
-import { MESSAGE_VARIANTS } from '@/components/chat/lib/animations';
-import { ModelCache } from '@/components/chat/lib/model-cache';
-import { cn } from '@/components/chat/lib/utils';
-import { useMessagesHandlerContext } from '@/components/chat/provider/messages-handler-provider';
-import { UpdateChatSettingsParams } from '@/components/chat/request/chat-request';
-import { AvailableModel, toModelDisplayInfo } from '@/components/chat/types/ai-model';
 import { Button } from '@/components/chat/components/ui/button';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/chat/components/ui/popover';
+import { useModelSelectorContext } from '@/components/chat/contexts/model-selector-context';
+import { MESSAGE_VARIANTS } from '@/components/chat/lib/animations';
+import { ModelCache } from '@/components/chat/lib/model-cache';
+import { cn } from '@/components/chat/lib/utils';
+import { AvailableModel, toModelDisplayInfo } from '@/components/chat/types/ai-model';
 
 interface ModelSelectorProps {
   className?: string;
@@ -33,20 +31,33 @@ export function ModelSelector({ className, disabled }: ModelSelectorProps) {
   const [isInitialized, setIsInitialized] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Get context - hooks must be called unconditionally
-  // If the provider is missing, these will throw - that's expected behavior
-  const chatContext = useChatContext();
-  const messagesContext = useMessagesHandlerContext();
+  // Get unified context for model selection
+  const context = useModelSelectorContext();
 
-  const requestInstance = chatContext?.requestInstance;
-  const chatId = chatContext?.chatId;
-  // const workspaceId = chatContext?.workspaceId; // Not used currently
-  const setSelectedModelName = messagesContext?.setSelectedModelName;
+  const requestInstance = context?.requestInstance;
+  const chatId = context?.chatId;
+  const setSelectedModelName = context?.setSelectedModelName;
+  const contextSelectedModel = context?.selectedModelName;
 
 
-  // Initialize: Load cached model first, then fetch from server
+  // Initialize: Load cached model or sync with context
   useEffect(() => {
-    if (!chatId || !requestInstance || isInitialized) return;
+    // If no context, just mark as initialized
+    if (!context) {
+      setIsInitialized(true);
+      return;
+    }
+
+    // Sync with context's selected model
+    if (contextSelectedModel) {
+      setSelectedModel(contextSelectedModel);
+    }
+
+    // If we have chat capabilities, load from server
+    if (!chatId || !requestInstance || isInitialized) {
+      setIsInitialized(true);
+      return;
+    }
 
     // Step 1: Load from cache immediately for instant UI
     const cachedModel = ModelCache.get(chatId);
@@ -78,15 +89,13 @@ export function ModelSelector({ className, disabled }: ModelSelectorProps) {
 
     void loadChatSettings();
     setIsInitialized(true);
-  }, [chatId, requestInstance, isInitialized, setSelectedModelName]);
+  }, [chatId, requestInstance, isInitialized, setSelectedModelName, context, contextSelectedModel]);
 
   const loadModels = useCallback(async () => {
     if (!requestInstance) {
-      // Provide fallback models when no context
+      // Provide fallback models when no context (e.g., in writer mode)
       setModels([
-        { name: 'Auto', metadata: { is_default: true, desc: 'Auto select the best model' } },
-        { name: 'GPT-4', metadata: { is_default: false, desc: 'Most capable model' } },
-        { name: 'GPT-3.5', metadata: { is_default: false, desc: 'Fast and efficient' } },
+        { name: 'Auto', metadata: { is_default: true, desc: 'Auto select the best model for writing tasks' } },
       ]);
       return;
     }
@@ -132,31 +141,29 @@ export function ModelSelector({ className, disabled }: ModelSelectorProps) {
     setSelectedModel(modelName);
     setOpen(false);
 
-    // Only update context if available
+    // Update context if available (works for both chat and writer contexts)
     if (setSelectedModelName) {
       setSelectedModelName(modelName);
     }
 
-    // Update cache if chatId is available
-    if (chatId) {
+    // For chat context: update cache and server settings
+    if (chatId && requestInstance) {
       ModelCache.set(chatId, modelName);
-    }
 
-    // Send update request to server if context is available
-    if (requestInstance && chatId) {
       try {
-        const params: UpdateChatSettingsParams = {
+        await requestInstance.updateChatSettings({
           metadata: {
             ai_model: modelName
           }
-        };
-
-        await requestInstance.updateChatSettings(params);
+        });
       } catch (error) {
         console.error('Failed to update chat settings:', error);
         // Cache is already updated, so user experience is not affected
       }
     }
+
+    // For writer context: model is already updated via setSelectedModelName
+    // No additional persistence needed as it's session-based
   }, [setSelectedModelName, chatId, requestInstance]);
 
   const filteredModels = models.filter((model) => {
@@ -170,8 +177,10 @@ export function ModelSelector({ className, disabled }: ModelSelectorProps) {
     );
   });
 
-  const selectedModelData = models.find((m) => m.name === selectedModel);
-  const displayText = selectedModelData?.name || selectedModel || 'Select Model';
+  // Use writer's model if in writer context, otherwise use local selected model
+  const currentModel = contextSelectedModel || selectedModel;
+  const selectedModelData = models.find((m) => m.name === currentModel);
+  const displayText = selectedModelData?.name || currentModel || 'Select Model';
 
   const getProviderIcon = (_provider?: string) => {
     // You can add specific icons for different providers here
@@ -211,73 +220,73 @@ export function ModelSelector({ className, disabled }: ModelSelectorProps) {
           initial="hidden"
           animate={open ? "visible" : "exit"}
         >
-        {/* Search Input */}
-        <div className="px-3 py-2 border-b border-border-primary">
-          <input
-            ref={searchInputRef}
-            type="text"
-            placeholder="Search models..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-2 py-1 text-sm bg-transparent outline-none placeholder:text-text-placeholder"
-            onKeyDown={(e) => {
-              if (e.key === 'Escape') {
-                setOpen(false);
-              }
-            }}
-          />
-        </div>
+          {/* Search Input */}
+          <div className="px-3 py-2 border-b border-border-primary">
+            <input
+              ref={searchInputRef}
+              type="text"
+              placeholder="Search models..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-2 py-1 text-sm bg-transparent outline-none placeholder:text-text-placeholder"
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') {
+                  setOpen(false);
+                }
+              }}
+            />
+          </div>
 
-        {/* Models List */}
-        <div className="max-h-[380px] overflow-y-auto py-1">
-          {loading ? (
-            <div className="px-3 py-8 text-center text-sm text-text-secondary">
-              Loading models...
-            </div>
-          ) : filteredModels.length === 0 ? (
-            <div className="px-3 py-8 text-center text-sm text-text-secondary">
-              {searchQuery ? 'No models found' : 'No models available'}
-            </div>
-          ) : (
-            filteredModels.map((model) => {
-              const displayInfo = toModelDisplayInfo(model);
-              const isSelected = selectedModel === model.name;
+          {/* Models List */}
+          <div className="max-h-[380px] overflow-y-auto py-1">
+            {loading ? (
+              <div className="px-3 py-8 text-center text-sm text-text-secondary">
+                Loading models...
+              </div>
+            ) : filteredModels.length === 0 ? (
+              <div className="px-3 py-8 text-center text-sm text-text-secondary">
+                {searchQuery ? 'No models found' : 'No models available'}
+              </div>
+            ) : (
+              filteredModels.map((model) => {
+                const displayInfo = toModelDisplayInfo(model);
+                const isSelected = currentModel === model.name;
 
-              return (
-                <button
-                  key={displayInfo.id}
-                  onClick={() => handleSelect(model.name)}
-                  className={cn(
-                    'w-full px-3 py-2.5 text-left hover:bg-fill-content-hover transition-colors',
-                    'flex items-start justify-between group',
-                    'focus:outline-none focus:bg-fill-content-hover',
-                    isSelected && 'bg-fill-content-select'
-                  )}
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      {getProviderIcon(model.provider)}
-                      <span className={cn(
-                        "text-sm font-medium",
-                        isSelected && "text-primary"
-                      )}>
-                        {model.name}
-                      </span>
-                    </div>
-                    {model.metadata?.desc && (
-                      <p className="text-xs text-muted-foreground mt-0.5 truncate pr-2">
-                        {model.metadata.desc}
-                      </p>
+                return (
+                  <button
+                    key={displayInfo.id}
+                    onClick={() => handleSelect(model.name)}
+                    className={cn(
+                      'w-full px-3 py-2.5 text-left hover:bg-fill-content-hover transition-colors',
+                      'flex items-start justify-between group',
+                      'focus:outline-none focus:bg-fill-content-hover',
+                      isSelected && 'bg-fill-content-select'
                     )}
-                  </div>
-                  {isSelected && (
-                    <Check className="h-4 w-4 text-primary mt-0.5 ml-2 flex-shrink-0" />
-                  )}
-                </button>
-              );
-            })
-          )}
-        </div>
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        {getProviderIcon(model.provider)}
+                        <span className={cn(
+                          "text-sm font-medium",
+                          isSelected && "text-primary"
+                        )}>
+                          {model.name}
+                        </span>
+                      </div>
+                      {model.metadata?.desc && (
+                        <p className="text-xs text-muted-foreground mt-0.5 truncate pr-2">
+                          {model.metadata.desc}
+                        </p>
+                      )}
+                    </div>
+                    {isSelected && (
+                      <Check className="h-4 w-4 text-primary mt-0.5 ml-2 flex-shrink-0" />
+                    )}
+                  </button>
+                );
+              })
+            )}
+          </div>
         </motion.div>
       </PopoverContent>
     </Popover>

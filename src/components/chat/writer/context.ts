@@ -49,6 +49,9 @@ export interface WriterContextTypes {
     message: string;
   } | null;
   scrollContainer?: HTMLElement;
+  // Model selection for AI writer
+  selectedModelName?: string;
+  setSelectedModelName?: (modelName: string) => void;
 }
 
 export const WriterContext = createContext<WriterContextTypes | undefined>(undefined);

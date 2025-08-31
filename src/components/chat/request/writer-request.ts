@@ -40,6 +40,7 @@ export class WriterRequest {
     ragIds: string[];
     completionHistory: CompletionResult[];
     promptId?: string;
+    modelName?: string;
   }, onMessage: (text: string, comment: string, done?: boolean) => void) => {
     const baseUrl = this.axiosInstance.defaults.baseURL;
     const url = `${baseUrl}/api/ai/${this.workspaceId}/v2/complete/stream`;
@@ -58,7 +59,7 @@ export class WriterRequest {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
-        'ai-model': 'Auto',
+        'ai-model': payload.modelName || 'Auto',
       },
       body: JSON.stringify({
         text: payload.inputText,

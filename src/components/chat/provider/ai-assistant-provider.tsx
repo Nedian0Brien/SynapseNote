@@ -1,5 +1,6 @@
 import { ConfirmDiscard } from '@/components/chat/components/ai-writer/confirm-discard';
 import { TooltipProvider } from '@/components/chat/components/ui/tooltip';
+import { ModelSelectorContext } from '@/components/chat/contexts/model-selector-context';
 import { toast } from '@/components/chat/hooks/use-toast';
 import { useTranslation } from '@/components/chat/i18n';
 // Using main AppFlowy i18n system - no separate chat context needed
@@ -63,6 +64,7 @@ export const AIAssistantProvider = ({
   const isApplying = applyingState === ApplyingState.applying;
   const cancelRef = useRef<(() => void) | undefined>();
   const initialScrollTopRef = useRef<number | null>(null);
+  const [selectedModelName, setSelectedModelName] = useState<string>('Auto');
 
   const { currentPromptId, updateCurrentPromptId } = usePromptModal();
 
@@ -137,6 +139,7 @@ export const AIAssistantProvider = ({
         ragIds,
         completionHistory: completionHistoryRef.current,
         promptId: currentPromptId || undefined,
+        modelName: selectedModelName,
       }, handleMessageChange);
 
       completionHistoryRef.current.push({
@@ -158,7 +161,7 @@ export const AIAssistantProvider = ({
 
     return () => undefined;
 
-  }, [currentPromptId, handleMessageChange, ragIds, request, responseFormat, responseMode, updateCurrentPromptId]);
+  }, [currentPromptId, handleMessageChange, ragIds, request, responseFormat, responseMode, selectedModelName, updateCurrentPromptId]);
 
   const improveWriting = useCallback(async(content: string) => {
     return fetchRequest(AIAssistantType.ImproveWriting, content);
@@ -310,42 +313,51 @@ export const AIAssistantProvider = ({
   }, []);
 
   return (
-    <WriterContext.Provider
+    <ModelSelectorContext.Provider
       value={{
-        viewId,
-        fetchViews: request.fetchViews,
-        placeholderContent,
-        comment,
-        improveWriting,
-        assistantType,
-        isFetching,
-        isApplying,
-        askAIAnything,
-        continueWriting,
-        explain,
-        fixSpelling,
-        makeLonger,
-        makeShorter,
-        askAIAnythingWithRequest,
-        setOpenDiscard,
-        applyingState,
-        setRagIds,
-        exit,
-        setEditorData,
-        keep,
-        accept,
-        rewrite,
-        stop,
-        responseMode,
-        setResponseMode,
-        responseFormat,
-        setResponseFormat,
-        isGlobalDocument,
-        error,
-        scrollContainer,
-        hasAIAnswer,
+        selectedModelName,
+        setSelectedModelName,
+        // No request capabilities for writer context
       }}
     >
+      <WriterContext.Provider
+        value={{
+          viewId,
+          fetchViews: request.fetchViews,
+          placeholderContent,
+          comment,
+          improveWriting,
+          assistantType,
+          isFetching,
+          isApplying,
+          askAIAnything,
+          continueWriting,
+          explain,
+          fixSpelling,
+          makeLonger,
+          makeShorter,
+          askAIAnythingWithRequest,
+          setOpenDiscard,
+          applyingState,
+          setRagIds,
+          exit,
+          setEditorData,
+          keep,
+          accept,
+          rewrite,
+          stop,
+          responseMode,
+          setResponseMode,
+          responseFormat,
+          setResponseFormat,
+          isGlobalDocument,
+          error,
+          scrollContainer,
+          hasAIAnswer,
+          selectedModelName,
+          setSelectedModelName,
+        }}
+      >
 
       <TooltipProvider>
         <ViewLoaderProvider
@@ -359,6 +371,7 @@ export const AIAssistantProvider = ({
           />
         </ViewLoaderProvider>
       </TooltipProvider>
-    </WriterContext.Provider>
+      </WriterContext.Provider>
+    </ModelSelectorContext.Provider>
   );
 };

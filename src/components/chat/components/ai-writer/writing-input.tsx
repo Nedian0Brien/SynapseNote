@@ -3,6 +3,7 @@ import { ReactComponent as AutoTextIcon } from '@/components/chat/assets/icons/a
 import { ReactComponent as ImageTextIcon } from '@/components/chat/assets/icons/image-text.svg';
 import { ViewTree } from '../ai-writer/view-tree';
 import { WritingMore } from '../ai-writer/writing-more';
+import { ModelSelector } from '@/components/chat/components/chat-input/model-selector';
 import { Button } from '@/components/chat/components/ui/button';
 import { FormatGroup } from '@/components/chat/components/ui/format-group';
 import LoadingDots from '@/components/chat/components/ui/loading-dots';
@@ -292,6 +293,11 @@ export function WritingInput({
             ) : (
               <div />
             )}
+
+            <ModelSelector
+              className={'h-7'}
+              disabled={isFetching || isApplying}
+            />
 
             <Tooltip>
               <TooltipTrigger asChild>
