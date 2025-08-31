@@ -1,6 +1,6 @@
 import { useChatContext } from '../../chat/context';
-import { Button } from '../../../ui/button';
-import { Label } from '../../../ui/label';
+import { Button } from '../ui/button';
+import { Label } from '../ui/label';
 import { useTranslation } from '../../i18n';
 import { MESSAGE_VARIANTS } from '../../lib/animations';
 import { useMessagesHandlerContext } from '../../provider/messages-handler-provider';

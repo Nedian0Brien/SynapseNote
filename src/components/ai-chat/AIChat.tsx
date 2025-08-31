@@ -8,7 +8,6 @@ import { useCurrentUser, useService } from '@/components/main/app.hooks';
 import { getPlatform } from '@/utils/platform';
 import { downloadPage } from '@/utils/url';
 
-import '@/components/chat/styles/index.scss';
 
 export function AIChat({ chatId, onRendered }: { chatId: string; onRendered?: () => void }) {
   const service = useService();

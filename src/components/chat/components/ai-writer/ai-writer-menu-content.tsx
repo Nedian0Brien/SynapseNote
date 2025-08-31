@@ -1,5 +1,5 @@
-import { Button } from '../../../ui/button';
-import { Separator } from '../../../ui/separator';
+import { Button } from '../ui/button';
+import { Separator } from '../ui/separator';
 import { useTranslation } from '../../i18n';
 import { ReactComponent as ImproveWritingIcon } from '../../assets/icons/improve-writing.svg';
 import { ReactComponent as AskAIIcon } from '../../assets/icons/ai.svg';

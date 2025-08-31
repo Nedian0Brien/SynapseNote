@@ -1,6 +1,6 @@
 import { ReactComponent as ChevronDown } from '../../assets/icons/drop_menu_show.svg';
-import { Button } from '../../../ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../../ui/tooltip';
+import { Button } from '../ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import PageIcon from '../view/page-icon';
 import { useTranslation } from '../../i18n';
 import { cn } from '../../lib/utils';

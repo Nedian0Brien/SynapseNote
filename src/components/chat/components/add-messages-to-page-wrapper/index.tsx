@@ -1,9 +1,9 @@
 import { useChatContext } from '../../chat/context';
 import { SpaceList } from '../add-messages-to-page-wrapper/space-list';
-import { Label } from '../../../ui/label';
+import { Label } from '../ui/label';
 import { SearchInput } from '../ui/search-input';
-import { Popover, PopoverContent, PopoverTrigger } from '../../../ui/popover';
-import { Separator } from '../../../ui/separator';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Separator } from '../ui/separator';
 import { toast } from '../../hooks/use-toast';
 import { useViewContentInserter } from '../../hooks/use-view-content-inserter';
 import { useTranslation } from '../../i18n';

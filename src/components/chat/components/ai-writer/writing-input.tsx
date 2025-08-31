@@ -3,7 +3,7 @@ import { ReactComponent as AutoTextIcon } from '../../assets/icons/auto-text.svg
 import { ReactComponent as ImageTextIcon } from '../../assets/icons/image-text.svg';
 import { ViewTree } from '../ai-writer/view-tree';
 import { WritingMore } from '../ai-writer/writing-more';
-import { Button } from '../../../ui/button';
+import { Button } from '../ui/button';
 import { FormatGroup } from '../ui/format-group';
 import LoadingDots from '../ui/loading-dots';
 import { Textarea } from '../ui/textarea';
@@ -11,7 +11,7 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '../../../ui/tooltip';
+} from '../ui/tooltip';
 import { toast } from '../../hooks/use-toast';
 import { useTranslation } from '../../i18n';
 import { cn } from '../../lib/utils';

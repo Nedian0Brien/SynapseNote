@@ -1,11 +1,11 @@
-import { Button } from '../../../ui/button';
+import { Button } from '../ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription, DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../../../ui/dialog';
+} from '../ui/dialog';
 import { useTranslation } from '../../i18n';
 import { useWriterContext } from '../../writer/context';
 import React from 'react';

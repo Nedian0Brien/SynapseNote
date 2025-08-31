@@ -1,5 +1,5 @@
 import { Button } from '../../../ui/button';
-import { Dialog, DialogContent, DialogTitle } from '../../../ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '../../../ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -134,6 +134,9 @@ export function PromptDatabaseModal({
         <DialogTitle className='text-md text-text-primary font-bold'>
           {t('customPrompt.configureDatabase')}
         </DialogTitle>
+        <DialogDescription className='sr-only'>
+          Configure database settings for custom prompts
+        </DialogDescription>
         <div className='flex-1 flex flex-col min-h-0 w-full gap-4 px-2 py-4'>
           <div className='flex items-center'>
             <span className='flex-1 text-sm text-text-secondary'>

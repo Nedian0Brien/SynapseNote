@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogTitle } from '../../../../ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '../../ui/dialog';
 import { useTranslation } from '../../../i18n';
 import { usePromptModal } from '../../../provider/prompt-modal-provider';
 import { AiPrompt, AiPromptCategory } from '../../../types/prompt';
@@ -16,7 +16,7 @@ import { PromptPreview } from './prompt-preview';
 import { ReactComponent as CloseCircle } from '../../../assets/icons/close_circle.svg';
 import { PromptCategory } from './prompt-category';
 import { SearchInput } from '../../ui/search-input';
-import { Button } from '../../../../ui/button';
+import { Button } from '../../ui/button';
 import { PromptDatabaseModal } from './prompt-database';
 import { useViewLoader } from '../../../provider/view-loader-provider';
 
@@ -170,6 +170,9 @@ export const PromptModal = forwardRef<
         <DialogTitle className='text-md text-text-primary font-bold'>
           {t('customPrompt.browsePrompts')}
         </DialogTitle>
+        <DialogDescription className='sr-only'>
+          Browse and select from available prompts to enhance your chat experience
+        </DialogDescription>
         <div className='flex-1 flex min-h-0 w-full'>
           <div className='w-[17%] flex flex-col min-h-0'>
             <PromptCategory

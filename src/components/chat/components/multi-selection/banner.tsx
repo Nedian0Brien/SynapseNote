@@ -1,6 +1,6 @@
 import { useChatContext } from '../../chat/context';
 import { AddMessageToPageWrapper } from '../add-messages-to-page-wrapper';
-import { Button } from '../../../ui/button';
+import { Button } from '../ui/button';
 import { useTranslation } from '../../i18n';
 import { ChatMessage } from '../../types';
 import { CheckStatus } from '../../types/checkbox';

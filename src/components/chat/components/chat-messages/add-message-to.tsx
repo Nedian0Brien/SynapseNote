@@ -1,6 +1,6 @@
 import { AddMessageToPageWrapper } from '../add-messages-to-page-wrapper';
-import { Button } from '../../../ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '../../../ui/tooltip';
+import { Button } from '../ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import { ReactComponent as AddPageIcon } from '../../assets/icons/doc-forward.svg';
 import { useTranslation } from '../../i18n';
 import { useChatMessagesContext } from '../../provider/messages-provider';
@@ -39,9 +39,7 @@ export function AddMessageTo({ id }: {
             />
           </Button>
         </TooltipTrigger>
-
       </AddMessageToPageWrapper>
-
       <TooltipContent
         align={'center'}
         side={'bottom'}

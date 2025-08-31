@@ -1,4 +1,4 @@
-import { Avatar, AvatarFallback } from '../../../ui/avatar';
+import { Avatar, AvatarFallback } from '../ui/avatar';
 import { stringToColor } from '../../lib/utils';
 import { User } from '../../types';
 import { useEffect, useState } from 'react';

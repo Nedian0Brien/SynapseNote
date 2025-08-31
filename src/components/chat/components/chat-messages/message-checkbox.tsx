@@ -1,5 +1,5 @@
 import { useChatContext } from '../../chat/context';
-import { Button } from '../../../ui/button';
+import { Button } from '../ui/button';
 import { useChatMessagesContext } from '../../provider/messages-provider';
 import { useSelectionModeContext } from '../../provider/selection-mode-provider';
 import { useMemo } from 'react';

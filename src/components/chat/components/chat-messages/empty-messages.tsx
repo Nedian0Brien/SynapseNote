@@ -1,5 +1,5 @@
-import { Button } from '../../../ui/button';
-import { Label } from '../../../ui/label';
+import { Button } from '../ui/button';
+import { Label } from '../ui/label';
 import { useTranslation } from '../../i18n';
 import { useMessagesHandlerContext } from '../../provider/messages-handler-provider';
 import { User } from '../../types';

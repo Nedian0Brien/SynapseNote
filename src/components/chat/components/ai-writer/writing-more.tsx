@@ -1,6 +1,6 @@
 import { AiWriterMenuContent } from '../ai-writer/ai-writer-menu-content';
-import { Button } from '../../../ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '../../../ui/popover';
+import { Button } from '../ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { useTranslation } from '../../i18n';
 import { AIAssistantType } from '../../types';
 import { useWriterContext } from '../../writer/context';

@@ -6,7 +6,7 @@ import { AskAnything } from '../ai-writer/tools/ask-anything';
 import { Explain } from '../ai-writer/tools/explain';
 import { FixSpelling } from '../ai-writer/tools/fix-spelling';
 import { ImproveWriting } from '../ai-writer/tools/improve-writing';
-import { Popover, PopoverContent, PopoverTrigger } from '../../../ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { useTranslation } from '../../i18n';
 import { AIAssistantType } from '../../types';
 import { useWriterContext } from '../../writer/context';

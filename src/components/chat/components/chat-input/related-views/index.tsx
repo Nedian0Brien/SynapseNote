@@ -1,10 +1,10 @@
 import LoadingDots from '../../ui/loading-dots';
 import { SearchInput } from '../../ui/search-input';
 import { Spaces } from './spaces';
-import { Button } from '../../../../ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '../../../../ui/popover';
+import { Button } from '../../ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '../../ui/popover';
 import { ReactComponent as DocIcon } from '../../../assets/icons/doc.svg';
-import { Separator } from '../../../../ui/separator';
+import { Separator } from '../../ui/separator';
 import { useChatSettingsLoader } from '../../../hooks/use-chat-settings-loader';
 import { useCheckboxTree } from '../../../hooks/use-checkbox-tree';
 import { searchViews } from '../../../lib/views';

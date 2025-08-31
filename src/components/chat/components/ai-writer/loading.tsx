@@ -1,4 +1,4 @@
-import { Button } from '../../../ui/button';
+import { Button } from '../ui/button';
 import LoadingDots from '../ui/loading-dots';
 import { useTranslation } from '../../i18n';
 import { useWriterContext } from '../../writer/context';

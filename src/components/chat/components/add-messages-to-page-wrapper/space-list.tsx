@@ -1,7 +1,7 @@
 import ViewList from '../add-messages-to-page-wrapper/view-list';
-import { Button } from '../../../ui/button';
+import { Button } from '../ui/button';
 import LoadingDots from '../ui/loading-dots';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../../ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import SpaceItem from '../view/space-item';
 import { useTranslation } from '../../i18n';
 import { searchViews } from '../../lib/views';
