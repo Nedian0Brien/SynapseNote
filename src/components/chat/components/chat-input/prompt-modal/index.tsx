@@ -1,6 +1,8 @@
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/chat/components/ui/dialog';
 import { useTranslation } from '@/components/chat/i18n';
 import { usePromptModal } from '@/components/chat/provider/prompt-modal-provider';
+import { motion } from 'framer-motion';
+import { MESSAGE_VARIANTS } from '@/components/chat/lib/animations';
 import { AiPrompt, AiPromptCategory } from '@/components/chat/types/prompt';
 import { SearchIcon } from 'lucide-react';
 import {
@@ -160,13 +162,19 @@ export const PromptModal = forwardRef<
       }}
     >
       <DialogContent
-        className='max-h-[800px] w-[1200px] flex flex-col gap-3 min-h-0 sm:max-w-[calc(100%-2rem)]'
         ref={ref}
         onEscapeKeyDown={(_e) => {
           setFilter('');
           closeModal();
         }}
+        className='max-h-[800px] w-[1200px] flex flex-col gap-3 min-h-0 sm:max-w-[calc(100%-2rem)] p-0'
       >
+        <motion.div
+          variants={MESSAGE_VARIANTS.getSelectorVariants()}
+          initial="hidden"
+          animate={isOpen ? "visible" : "exit"}
+          className='flex flex-col gap-3 min-h-0 p-5'
+        >
         <DialogTitle className='text-md text-text-primary font-bold'>
           {t('customPrompt.browsePrompts')}
         </DialogTitle>
@@ -274,6 +282,7 @@ export const PromptModal = forwardRef<
             setIsPromptDatabaseModalOpen(false);
           }}
         />
+        </motion.div>
       </DialogContent>
     </Dialog>
   );

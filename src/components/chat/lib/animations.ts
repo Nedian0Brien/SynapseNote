@@ -121,4 +121,32 @@ export const MESSAGE_VARIANTS = {
       },
     },
   }),
+  getSelectorVariants: () => ({
+    hidden: {
+      opacity: 0,
+      scale: 0.95,
+      y: -8,
+    },
+    visible: {
+      opacity: 1,
+      scale: 1,
+      y: 0,
+      transition: {
+        type: 'spring',
+        stiffness: 600,
+        damping: 30,
+        mass: 0.8,
+      },
+    },
+    exit: {
+      opacity: 0,
+      scale: 0.95,
+      y: -8,
+      transition: {
+        type: 'tween',
+        duration: 0.15,
+        ease: 'easeIn',
+      },
+    },
+  }),
 };

@@ -1,9 +1,11 @@
 import { Check } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
 
 import { ReactComponent as AISparksIcon } from '@/components/chat/assets/icons/ai_sparks.svg';
 
 import { useChatContext } from '@/components/chat/chat/context';
+import { MESSAGE_VARIANTS } from '@/components/chat/lib/animations';
 import { ModelCache } from '@/components/chat/lib/model-cache';
 import { cn } from '@/components/chat/lib/utils';
 import { useMessagesHandlerContext } from '@/components/chat/provider/messages-handler-provider';
@@ -198,12 +200,17 @@ export function ModelSelector({ className, disabled }: ModelSelectorProps) {
           <span className="truncate max-w-[120px]">{displayText}</span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent
+      <PopoverContent asChild
         className="w-[380px] p-0 rounded-lg"
         align="start"
         side="top"
         sideOffset={8}
       >
+        <motion.div
+          variants={MESSAGE_VARIANTS.getSelectorVariants()}
+          initial="hidden"
+          animate={open ? "visible" : "exit"}
+        >
         {/* Search Input */}
         <div className="px-3 py-2 border-b border-border-primary">
           <input
@@ -271,6 +278,7 @@ export function ModelSelector({ className, disabled }: ModelSelectorProps) {
             })
           )}
         </div>
+        </motion.div>
       </PopoverContent>
     </Popover>
   );

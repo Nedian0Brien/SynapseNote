@@ -3,9 +3,11 @@ import { SearchInput } from '@/components/chat/components/ui/search-input';
 import { Spaces } from './spaces';
 import { Button } from '@/components/chat/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/chat/components/ui/popover';
+import { motion } from 'framer-motion';
 import { ReactComponent as DocIcon } from '@/components/chat/assets/icons/doc.svg';
 import { Separator } from '@/components/chat/components/ui/separator';
 import { useChatSettingsLoader } from '@/components/chat/hooks/use-chat-settings-loader';
+import { MESSAGE_VARIANTS } from '@/components/chat/lib/animations';
 import { useCheckboxTree } from '@/components/chat/hooks/use-checkbox-tree';
 import { searchViews } from '@/components/chat/lib/views';
 import { View } from '@/components/chat/types';
@@ -17,6 +19,7 @@ import { useViewLoader } from '@/components/chat';
 export function RelatedViews() {
 
   const [searchValue, setSearchValue] = useState('');
+  const [open, setOpen] = useState(false);
 
   const {
     chatSettings,
@@ -74,7 +77,7 @@ export function RelatedViews() {
   }, [updateChatSettings]);
 
   return (
-    <Popover modal>
+    <Popover open={open} onOpenChange={setOpen} modal>
       <PopoverTrigger asChild={true}>
         <Button
           disabled={viewsLoading}
@@ -89,8 +92,13 @@ export function RelatedViews() {
 
         </Button>
       </PopoverTrigger>
-      <PopoverContent>
-        <div className={'h-fit py-1 px-1 min-h-[200px] max-h-[360px] w-[300px] flex gap-2 flex-col'}>
+      <PopoverContent asChild>
+        <motion.div
+          variants={MESSAGE_VARIANTS.getSelectorVariants()}
+          initial="hidden"
+          animate={open ? "visible" : "exit"}
+          className={'h-fit py-1 px-1 min-h-[200px] max-h-[360px] w-[300px] flex gap-2 flex-col'}
+        >
           <SearchInput
             value={searchValue}
             onChange={setSearchValue}
@@ -110,8 +118,7 @@ export function RelatedViews() {
               }
             />
           </div>
-
-        </div>
+        </motion.div>
       </PopoverContent>
     </Popover>
   );
