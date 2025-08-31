@@ -127,4 +127,3 @@ export function FormatGroup({
     </div>
   );
 }
-

@@ -12,7 +12,16 @@ module.exports = {
   darkMode: 'class',
   theme: {
     extend: {
-      colors,
+      colors: {
+        ...colors,
+        // Chat-specific colors for focus states (avoiding conflicts with existing system)
+        ring: 'hsl(var(--ring))',
+        'chat-primary': {
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
+        },
+        'chat-border': 'hsl(var(--border))',
+      },
       boxShadow,
       borderRadius: {
         100: '4px',

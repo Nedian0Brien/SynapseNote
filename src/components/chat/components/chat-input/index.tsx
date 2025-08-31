@@ -1,11 +1,20 @@
+import { motion } from 'framer-motion';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ReactComponent as SendIcon } from '../../assets/icons/arrow-up.svg';
 import { ReactComponent as AutoTextIcon } from '../../assets/icons/auto-text.svg';
 import { ReactComponent as ImageTextIcon } from '../../assets/icons/image-text.svg';
 import { ReactComponent as StopIcon } from '../../assets/icons/stop.svg';
 import { useChatContext } from '../../chat/context';
-import { FormatGroup } from '../ui/format-group';
-import { RelatedViews } from './related-views';
+import { toast } from '../../hooks/use-toast';
+import { useTranslation } from '../../i18n';
+import { MESSAGE_VARIANTS } from '../../lib/animations';
+import { useMessagesHandlerContext } from '../../provider/messages-handler-provider';
+import { usePromptModal } from '../../provider/prompt-modal-provider';
+import { useResponseFormatContext } from '../../provider/response-format-provider';
+import { ChatInputMode } from '../../types';
+import { AiPrompt } from '../../types/prompt';
 import { Button } from '../ui/button';
+import { FormatGroup } from '../ui/format-group';
 import LoadingDots from '../ui/loading-dots';
 import { Textarea } from '../ui/textarea';
 import {
@@ -13,18 +22,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '../ui/tooltip';
-import { toast } from '../../hooks/use-toast';
-import { useTranslation } from '../../i18n';
-import { MESSAGE_VARIANTS } from '../../lib/animations';
-import { useMessagesHandlerContext } from '../../provider/messages-handler-provider';
-import { useResponseFormatContext } from '../../provider/response-format-provider';
-import { ChatInputMode } from '../../types';
-import { motion } from 'framer-motion';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { PromptModal } from './prompt-modal';
-import { usePromptModal } from '../../provider/prompt-modal-provider';
-import { AiPrompt } from '../../types/prompt';
 import { ModelSelector } from './model-selector';
+import { PromptModal } from './prompt-modal';
+import { RelatedViews } from './related-views';
 
 const MAX_HEIGHT = 200;
 
@@ -168,7 +168,7 @@ export function ChatInput() {
     >
       <div
         ref={containerRef}
-        className={`border relative justify-between gap-1 flex flex-col ${focused ? 'ring-1 ring-ring border-primary' : 'ring-0'} border-border py-1 px-2 focus:border-primary w-full rounded-[12px]`}
+        className={`relative justify-between gap-1 flex flex-col py-1 px-2 w-full rounded-[12px] border ${focused ? 'border-chat-primary ring-1 ring-ring' : 'border-chat-border'}`}
       >
         {responseMode === ChatInputMode.FormatResponse && (
           <FormatGroup
@@ -204,7 +204,7 @@ export function ChatInput() {
           }}
           rows={1}
           className={
-            'resize-none !text-sm caret-primary min-h-[32px] !py-1 !px-1.5 !border-none !shadow-none w-full !ring-0 h-full !outline-none'
+            'resize-none !text-sm caret-primary min-h-[32px] !py-1 !px-1.5 border-none shadow-none w-full !ring-0 h-full !outline-none'
           }
         />
 
@@ -240,8 +240,8 @@ export function ChatInput() {
               </TooltipContent>
             </Tooltip>
 
-            <ModelSelector 
-              className={'h-7'} 
+            <ModelSelector
+              className={'h-7'}
               disabled={questionSending || answerApplying}
             />
 
