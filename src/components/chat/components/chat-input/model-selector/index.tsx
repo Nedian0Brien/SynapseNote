@@ -24,7 +24,7 @@ interface ModelSelectorProps {
 export function ModelSelector({ className, disabled }: ModelSelectorProps) {
 
   const [open, setOpen] = useState(false);
-  const [selectedModel, setSelectedModel] = useState<string>(''); // Start empty, will be loaded from settings
+  const [selectedModel, setSelectedModel] = useState<string>('Auto'); // Start with Auto as default
   const [models, setModels] = useState<AvailableModel[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -53,6 +53,11 @@ export function ModelSelector({ className, disabled }: ModelSelectorProps) {
 
     // If we have chat capabilities, load from server
     if (!chatId || isInitialized) {
+      // For contexts without chatId, ensure Auto is used as default if nothing is set
+      if (!contextSelectedModel && selectedModel !== 'Auto') {
+        setSelectedModel('Auto');
+        setSelectedModelName?.('Auto');
+      }
       setIsInitialized(true);
       return;
     }
@@ -68,7 +73,11 @@ export function ModelSelector({ className, disabled }: ModelSelectorProps) {
     // Step 2: Fetch current model in background to get the truth
     const loadCurrentModel = async () => {
       if (!requestInstance.getCurrentModel) {
-        // No model persistence available
+        // No model persistence available, use Auto as default
+        if (!cachedModel) {
+          setSelectedModel('Auto');
+          setSelectedModelName?.('Auto');
+        }
         return;
       }
 
@@ -82,12 +91,19 @@ export function ModelSelector({ className, disabled }: ModelSelectorProps) {
           if (chatId) {
             ModelCache.set(chatId, currentModel);
           }
+        } else if (!cachedModel) {
+          // No saved model and no cache, use Auto as default
+          setSelectedModel('Auto');
+          setSelectedModelName?.('Auto');
         }
-        // Don't set a default if there's no saved model - let user choose
         // If no model saved but we have cache, keep using cache
       } catch (error) {
         console.warn('Failed to load current model', error);
-        // Keep cached model if available, otherwise let user choose
+        // Keep cached model if available, otherwise use Auto as default
+        if (!cachedModel) {
+          setSelectedModel('Auto');
+          setSelectedModelName?.('Auto');
+        }
       }
     };
 
@@ -177,7 +193,7 @@ export function ModelSelector({ className, disabled }: ModelSelectorProps) {
   // Use writer's model if in writer context, otherwise use local selected model
   const currentModel = contextSelectedModel || selectedModel;
   const selectedModelData = models.find((m) => m.name === currentModel);
-  const displayText = selectedModelData?.name || currentModel || 'Select Model';
+  const displayText = selectedModelData?.name || currentModel || 'Auto';
 
   const getProviderIcon = (_provider?: string) => {
     // You can add specific icons for different providers here
