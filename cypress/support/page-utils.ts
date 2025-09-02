@@ -8,6 +8,9 @@
  * - Test coverage: All exported functions are actively used in tests
  */
 
+// Import selectors for use in utility functions
+import { PageSelectors } from './selectors';
+
 // Flow utilities - High-level test orchestration
 import {
     waitForPageLoad,
@@ -156,8 +159,7 @@ export class TestTool {
      */
     static verifyPageExists(pageName: string) {
         cy.task('log', `Verifying page exists: ${pageName}`);
-        cy.get('[data-testid="page-name"]')
-            .contains(pageName)
+        PageSelectors.nameContaining(pageName)
             .should('exist')
             .should('be.visible');
     }
@@ -168,8 +170,7 @@ export class TestTool {
      */
     static verifyPageNotExists(pageName: string) {
         cy.task('log', `Verifying page does not exist: ${pageName}`);
-        cy.get('[data-testid="page-name"]')
-            .contains(pageName)
+        PageSelectors.nameContaining(pageName)
             .should('not.exist');
     }
 }

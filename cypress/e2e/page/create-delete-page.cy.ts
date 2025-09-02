@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { AuthTestUtils } from '../../support/auth-utils';
 import { TestTool } from '../../support/page-utils';
+import { PageSelectors, ModalSelectors, waitForReactUpdate } from '../../support/selectors';
 
 describe('Page Create and Delete Tests', () => {
     const APPFLOWY_BASE_URL = Cypress.env('APPFLOWY_BASE_URL');
@@ -48,22 +49,24 @@ describe('Page Create and Delete Tests', () => {
                 
                 // Now wait for the new page button to be available
                 cy.task('log', 'Looking for new page button...');
-                cy.get('[data-testid="new-page-button"]', { timeout: 20000 }).should('exist').then(() => {
-                    cy.task('log', 'New page button found!');
-                });
+                PageSelectors.newPageButton()
+                    .should('exist', { timeout: 20000 })
+                    .then(() => {
+                        cy.task('log', 'New page button found!');
+                    });
 
                 // Step 2: Since user already has a workspace, just create a new page
                 cy.task('log', `Creating page with title: ${testPageName}`);
                 
                 // Click new page button
-                cy.get('[data-testid="new-page-button"]').click();
-                cy.wait(1000);
+                PageSelectors.newPageButton().click();
+                waitForReactUpdate(1000);
                 
                 // Handle the new page modal
-                cy.get('[data-testid="new-page-modal"]').should('be.visible').within(() => {
+                ModalSelectors.newPageModal().should('be.visible').within(() => {
                     // Select the first available space
-                    cy.get('[data-testid="space-item"]').first().click();
-                    cy.wait(500);
+                    ModalSelectors.spaceItemInModal().first().click();
+                    waitForReactUpdate(500);
                     // Click Add button
                     cy.contains('button', 'Add').click();
                 });
@@ -83,11 +86,11 @@ describe('Page Create and Delete Tests', () => {
                 });
                 
                 // Set the page title
-                cy.get('[data-testid="page-title-input"]').should('exist');
+                PageSelectors.titleInput().should('exist');
                 cy.wait(1000); // Give time for the page to fully load
                 
                 // Now set the title
-                cy.get('[data-testid="page-title-input"]')
+                PageSelectors.titleInput()
                     .first()
                     .should('be.visible')
                     .click({ force: true })  // Use force to ensure we can click even if partially covered
@@ -114,7 +117,7 @@ describe('Page Create and Delete Tests', () => {
                 cy.wait(1000);
 
                 // Verify the page exists - it might be "Untitled" or our custom name
-                cy.get('[data-testid="page-name"]').then($pages => {
+                PageSelectors.names().then($pages => {
                     const pageNames = Array.from($pages).map(el => el.textContent?.trim());
                     cy.task('log', `Found pages: ${pageNames.join(', ')}`);
                     
@@ -127,7 +130,7 @@ describe('Page Create and Delete Tests', () => {
                 });
 
                 // Step 4: Delete the page (try both names)
-                cy.get('[data-testid="page-name"]').then($pages => {
+                PageSelectors.names().then($pages => {
                     const pageNames = Array.from($pages).map(el => el.textContent?.trim());
                     // Delete whichever name exists
                     if (pageNames.includes(testPageName)) {
@@ -148,7 +151,7 @@ describe('Page Create and Delete Tests', () => {
                 cy.wait(1000);
 
                 // Verify the page no longer exists (check both possible names)
-                cy.get('[data-testid="page-name"]').then($pages => {
+                PageSelectors.names().then($pages => {
                     const pageNames = Array.from($pages).map(el => el.textContent?.trim());
                     cy.task('log', `Pages after delete: ${pageNames.join(', ')}`);
                     
