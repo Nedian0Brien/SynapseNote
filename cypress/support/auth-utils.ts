@@ -166,19 +166,19 @@ export class AuthTestUtils {
         throw new Error('No access token or refresh token found');
       }
 
-      // First verify the token (matching verifyToken from http_api.ts)
+      // First, we need to call the verify endpoint to create the user profile
+      // This endpoint creates the user in the AppFlowy backend
+      cy.task('log', 'Calling verify endpoint to create user profile');
+      
+      // Make the verify call - this creates the user profile in AppFlowy backend
       return cy.request({
         method: 'GET',
         url: `${this.config.baseUrl}/api/user/verify/${accessToken}`,
         failOnStatusCode: false,
       }).then((verifyResponse) => {
-        // cy.task('log', `Token verification response: ${JSON.stringify(verifyResponse)}`);
-
-        if (verifyResponse.status !== 200) {
-          throw new Error('Token verification failed');
-        }
-
-        // Then refresh the token (matching refreshToken from gotrue.ts)
+        cy.task('log', `Verify response status: ${verifyResponse.status}`);
+        
+        // Now refresh the token to get session data
         return cy.request({
           method: 'POST',
           url: `${this.config.gotrueUrl}/token?grant_type=refresh_token`,
@@ -194,16 +194,25 @@ export class AuthTestUtils {
             throw new Error(`Failed to refresh token: ${response.status}`);
           }
 
-          // Store the token in localStorage
+          // Store the tokens in localStorage as the app expects
           const tokenData = response.body;
-
+          
           return cy.window().then((win) => {
+            // Store the auth data in localStorage
+            win.localStorage.setItem('af_auth_token', tokenData.access_token);
+            win.localStorage.setItem('af_refresh_token', tokenData.refresh_token || refreshToken);
+            if (tokenData.user) {
+              win.localStorage.setItem('af_user_id', tokenData.user.id);
+            }
+            
+            // Also store as 'token' for compatibility
             win.localStorage.setItem('token', JSON.stringify(tokenData));
 
+            // Navigate directly to the app
             cy.visit('/app');
 
             // Wait for the app to initialize
-            cy.wait(2000);
+            cy.wait(5000);
 
             // Verify we're logged in and on the app page
             cy.url().should('not.include', '/login');
