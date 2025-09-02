@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { AuthTestUtils } from '../../support/auth-utils';
 import { TestTool } from '../../support/page-utils';
+import { WorkspaceSelectors } from '../../support/selectors';
 
 describe('User Feature Tests', () => {
     const APPFLOWY_BASE_URL = Cypress.env('APPFLOWY_BASE_URL');
@@ -61,7 +62,7 @@ describe('User Feature Tests', () => {
                 cy.wait(500);
 
                 // Verify user email is displayed in the dropdown
-                cy.get('[data-testid="workspace-dropdown-content"]').within(() => {
+                WorkspaceSelectors.dropdownContent().within(() => {
                     cy.contains(randomEmail).should('be.visible');
                 });
                 cy.task('log', `Verified email ${randomEmail} is displayed in dropdown`);
@@ -76,7 +77,7 @@ describe('User Feature Tests', () => {
                     .should('have.length', 1);
 
                 // Verify workspace name is present
-                cy.get('[data-testid="workspace-item-name"]')
+                WorkspaceSelectors.itemName()
                     .should('exist')
                     .and('not.be.empty');
                 cy.task('log', 'Verified one workspace exists');

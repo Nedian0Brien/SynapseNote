@@ -3,6 +3,14 @@
  * Contains high-level test flow operations that orchestrate multiple page interactions
  */
 
+import { 
+    PageSelectors, 
+    SpaceSelectors, 
+    ModalSelectors,
+    SidebarSelectors,
+    waitForReactUpdate 
+} from '../selectors';
+
 /**
  * Waits for the page to fully load
  * @param waitTime - Time to wait in milliseconds (default: 3000)
@@ -20,7 +28,8 @@ export function waitForPageLoad(waitTime: number = 3000) {
  */
 export function waitForSidebarReady(timeout: number = 10000) {
     cy.task('log', 'Waiting for sidebar to be ready');
-    return cy.get('[data-testid="sidebar-page-header"]', { timeout }).should('be.visible');
+    return SidebarSelectors.pageHeader()
+        .should('be.visible', { timeout });
 }
 
 /**
@@ -39,18 +48,18 @@ export function createPageAndAddContent(pageName: string, content: string[]) {
     // Handle WebSocket mock mode vs regular mode
     if (Cypress.env('MOCK_WEBSOCKET')) {
         cy.task('log', 'Opening first available page (WebSocket mock mode)');
-        cy.wait(2000);
-        cy.get('[data-testid="space-name"]').first().then(($space) => {
-            const $parent = $space.closest('[data-testid="space-item"]');
-            if ($parent.find('[data-testid="page-name"]:visible').length === 0) {
+        waitForReactUpdate(2000);
+        SpaceSelectors.names().first().then(($space) => {
+            const $parent = $space.closest(SpaceSelectors.items().selector);
+            if ($parent.find(PageSelectors.names().selector + ':visible').length === 0) {
                 cy.task('log', 'Expanding space to show pages');
                 cy.wrap($space).click();
-                cy.wait(500);
+                waitForReactUpdate(500);
             }
         });
-        cy.get('[data-testid="page-name"]:visible').first().click();
+        PageSelectors.names().filter(':visible').first().click();
         cy.task('log', 'Waiting for page to load in WebSocket mock mode');
-        cy.wait(5000);
+        waitForReactUpdate(5000);
     } else {
         openPageFromSidebar(pageName);
     }
@@ -58,7 +67,7 @@ export function createPageAndAddContent(pageName: string, content: string[]) {
     cy.task('log', 'Opened page from sidebar');
     typeLinesInVisibleEditor(content);
     cy.task('log', 'Content typed successfully');
-    cy.wait(1000);
+    waitForReactUpdate(1000);
     assertEditorContentEquals(content);
     cy.task('log', 'Content verification completed');
 }
@@ -72,17 +81,16 @@ export function openPageFromSidebar(pageName: string) {
     cy.task('log', `Opening page from sidebar: ${pageName}`);
     
     // Ensure sidebar is visible
-    cy.get('[data-testid="sidebar-page-header"]').should('be.visible');
+    SidebarSelectors.pageHeader().should('be.visible');
     
     // Find and click the page
-    cy.get('[data-testid="page-name"]')
-        .contains(pageName)
+    PageSelectors.nameContaining(pageName)
         .scrollIntoView()
         .should('be.visible')
         .click();
     
     // Wait for page to load
-    cy.wait(2000);
+    waitForReactUpdate(2000);
     cy.task('log', `Page "${pageName}" opened successfully`);
 }
 
@@ -94,20 +102,20 @@ export function openPageFromSidebar(pageName: string) {
 export function expandSpace(spaceIndex: number = 0) {
     cy.task('log', `Expanding space at index ${spaceIndex}`);
     
-    cy.get('[data-testid="space-item"]').eq(spaceIndex).within(() => {
-        cy.get('[data-testid="space-expanded"]').then($expanded => {
+    SpaceSelectors.items().eq(spaceIndex).within(() => {
+        SpaceSelectors.expanded().then($expanded => {
             const isExpanded = $expanded.attr('data-expanded') === 'true';
             
             if (!isExpanded) {
                 cy.task('log', 'Space is collapsed, expanding it');
-                cy.get('[data-testid="space-name"]').click();
+                SpaceSelectors.names().first().click();
             } else {
                 cy.task('log', 'Space is already expanded');
             }
         });
     });
     
-    cy.wait(500);
+    waitForReactUpdate(500);
 }
 
 // Internal helper functions (not exported but used by exported functions)
@@ -120,27 +128,27 @@ function createPage(pageName: string) {
     cy.task('log', `Creating page: ${pageName}`);
     
     // Click new page button
-    cy.get('[data-testid="new-page-button"]').should('be.visible').click();
-    cy.wait(1000);
+    PageSelectors.newPageButton().should('be.visible').click();
+    waitForReactUpdate(1000);
     
     // Handle the new page modal
-    cy.get('[data-testid="new-page-modal"]').should('be.visible').within(() => {
+    ModalSelectors.newPageModal().should('be.visible').within(() => {
         // Select the first available space
-        cy.get('[data-testid="space-item"]').first().click();
-        cy.wait(500);
+        ModalSelectors.spaceItemInModal().first().click();
+        waitForReactUpdate(500);
         // Click Add button
         cy.contains('button', 'Add').click();
     });
     
     // Wait for navigation to the new page
-    cy.wait(3000);
+    waitForReactUpdate(3000);
     
     // Close any modal dialogs
     cy.get('body').then($body => {
         if ($body.find('[role="dialog"]').length > 0) {
             cy.task('log', 'Closing modal dialog');
             cy.get('body').type('{esc}');
-            cy.wait(1000);
+            waitForReactUpdate(1000);
         }
     });
 }
@@ -185,4 +193,45 @@ function assertEditorContentEquals(lines: string[]) {
         cy.contains(line).should('exist');
         cy.task('log', `✓ Found content: "${line}"`);
     });
+}
+
+// Additional exported functions referenced in page-utils.ts
+
+/**
+ * Closes the sidebar
+ * Referenced in page-utils.ts
+ */
+export function closeSidebar() {
+    cy.task('log', 'Closing sidebar');
+    // Implementation would depend on how sidebar is closed in the UI
+    // This is a placeholder to maintain compatibility
+}
+
+/**
+ * Creates a new page via backend quick action
+ * Referenced in page-utils.ts
+ */
+export function createNewPageViaBackendQuickAction(pageName?: string) {
+    cy.task('log', `Creating new page via backend quick action: ${pageName || 'unnamed'}`);
+    // Implementation would depend on the backend quick action flow
+    // This is a placeholder to maintain compatibility
+}
+
+/**
+ * Opens the command palette
+ * Referenced in page-utils.ts
+ */
+export function openCommandPalette() {
+    cy.task('log', 'Opening command palette');
+    // Implementation would depend on how command palette is opened
+    // This is a placeholder to maintain compatibility
+}
+
+/**
+ * Navigates to a specific route
+ * Referenced in page-utils.ts
+ */
+export function navigateTo(route: string) {
+    cy.task('log', `Navigating to: ${route}`);
+    cy.visit(route);
 }

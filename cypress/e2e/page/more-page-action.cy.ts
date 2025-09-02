@@ -1,6 +1,7 @@
 import { AuthTestUtils } from 'cypress/support/auth-utils';
 import { uuidv4 } from 'lib0/random';
 import { TestTool } from '../../support/page-utils';
+import { PageSelectors, ViewActionSelectors, SpaceSelectors, waitForReactUpdate } from '../../support/selectors';
 
 describe('More Page Actions', () => {
     const APPFLOWY_BASE_URL = Cypress.env('APPFLOWY_BASE_URL');
@@ -33,11 +34,11 @@ describe('More Page Actions', () => {
         cy.task('log', 'Expanded space');
 
         // // Wait for pages to render
-        // cy.get('[data-testid="page-name"]', { timeout: 20000 }).should('exist');
+        // PageSelectors.names(), { timeout: 20000 }).should('exist');
         // cy.task('log', 'Pages rendered');
 
         // Open the first available page from the sidebar, then trigger inline ViewActionsPopover via "..." on the row
-        cy.get('[data-testid="page-name"]', { timeout: 30000 }).should('exist').first().invoke('text').then((raw) => {
+        PageSelectors.names(), { timeout: 30000 }).should('exist').first().invoke('text').then((raw) => {
             const pageName = (raw || '').trim();
             cy.task('log', `Opening ViewActionsPopover for page: ${pageName}`);
             TestTool.openViewActionsPopoverForPage(pageName);
@@ -69,11 +70,11 @@ describe('More Page Actions', () => {
         cy.wait(2000); // Wait for app to load
         
         // Expand space if needed by clicking on it
-        cy.get('[data-testid="space-name"]').first().parent().parent().click({ force: true });
+        SpaceSelectors.names().first().parent().parent().click({ force: true });
         cy.wait(500);
         
         // Get the first page and open its more actions menu
-        cy.get('[data-testid="page-name"]', { timeout: 30000 }).should('exist').first().invoke('text').then((raw) => {
+        PageSelectors.names(), { timeout: 30000 }).should('exist').first().invoke('text').then((raw) => {
             const originalPageName = (raw || '').trim();
             cy.task('log', `Opening More Actions for page: ${originalPageName}`);
             
@@ -82,7 +83,7 @@ describe('More Page Actions', () => {
             
             // Click on Rename option
             cy.get('[data-slot="dropdown-menu-content"]').within(() => {
-                cy.get('[data-testid="more-page-rename"]').click();
+                ViewActionSelectors.renameButton().click();
             });
             cy.task('log', 'Clicked Rename option');
             
@@ -92,7 +93,7 @@ describe('More Page Actions', () => {
             // Check if a modal opened or if it's inline editing
             cy.get('body').then(($body) => {
                 const hasModal = $body.find('[role="dialog"]').length > 0;
-                const hasPageTitleInput = $body.find('[data-testid="page-title-input"]').length > 0;
+                const hasPageTitleInput = $body.find(PageSelectors.titleInput().selector).length > 0;
                 
                 if (hasPageTitleInput) {
                     // It's a page title input (modal or inline)

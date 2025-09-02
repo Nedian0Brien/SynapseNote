@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { AuthTestUtils } from '../../support/auth-utils';
 import { TestTool } from '../../support/page-utils';
+import { PageSelectors, ModalSelectors, waitForReactUpdate } from '../../support/selectors';
 
 describe('Page Edit Tests', () => {
     const APPFLOWY_BASE_URL = Cypress.env('APPFLOWY_BASE_URL');
@@ -53,14 +54,14 @@ describe('Page Edit Tests', () => {
             cy.task('log', `Target page name: ${testPageName}`);
             
             // Click new page button
-            cy.get('[data-testid="new-page-button"]').should('be.visible').click();
-            cy.wait(1000);
+            PageSelectors.newPageButton().should('be.visible').click();
+            waitForReactUpdate(1000);
             
             // Handle the new page modal
-            cy.get('[data-testid="new-page-modal"]').should('be.visible').within(() => {
+            ModalSelectors.newPageModal().should('be.visible').within(() => {
                 // Select the first available space
-                cy.get('[data-testid="space-item"]').first().click();
-                cy.wait(500);
+                ModalSelectors.spaceItemInModal().first().click();
+                waitForReactUpdate(500);
                 // Click Add button
                 cy.contains('button', 'Add').click();
             });

@@ -3,6 +3,8 @@
  * Contains functions for interacting with pages in the sidebar
  */
 
+import { PageSelectors, waitForReactUpdate } from '../selectors';
+
 /**
  * Gets a page element by its name
  * Used in more-page-action.cy.ts for finding specific pages
@@ -11,9 +13,7 @@
  */
 export function getPageByName(pageName: string) {
     cy.task('log', `Getting page by name: ${pageName}`);
-    return cy.get('[data-testid="page-name"]')
-        .contains(pageName)
-        .closest('[data-testid="page-item"]');
+    return PageSelectors.itemByName(pageName);
 }
 
 /**
@@ -23,7 +23,7 @@ export function getPageByName(pageName: string) {
  */
 export function getPageTitleInput() {
     cy.task('log', 'Getting page title input element');
-    return cy.get('[data-testid="page-title-input"]').first();
+    return PageSelectors.titleInput().first();
 }
 
 /**
@@ -33,5 +33,28 @@ export function getPageTitleInput() {
 export function savePageTitle() {
     cy.task('log', 'Saving page title');
     cy.focused().type('{enter}');
-    cy.wait(1000); // Wait for save to complete
+    waitForReactUpdate(1000); // Wait for save to complete
+}
+
+/**
+ * Opens the more actions menu for a specific page
+ * Referenced in page-utils.ts
+ * @param pageName - The name of the page
+ */
+export function openPageMoreActions(pageName: string) {
+    cy.task('log', `Opening more actions for page: ${pageName}`);
+    
+    // Find the page and trigger hover to show actions
+    PageSelectors.nameContaining(pageName)
+        .parent()
+        .parent()
+        .trigger('mouseenter', { force: true });
+    
+    // Wait for the button to appear
+    waitForReactUpdate(500);
+    
+    // Click the more actions button
+    PageSelectors.moreActionsButton(pageName)
+        .should('exist')
+        .click({ force: true });
 }
