@@ -99,7 +99,7 @@ function MoreActionsContent ({ itemClicked, viewId }: {
       }
 
       <DropdownMenuItem
-        data-testid="delete-page-button"
+        data-testid="view-action-delete"
         variant={'destructive'}
         onSelect={() => {
           openDeleteModal(viewId);
