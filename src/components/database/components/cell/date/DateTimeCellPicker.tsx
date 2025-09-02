@@ -4,20 +4,19 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import {
-  DateFormat,
-  getDateFormat,
-  getTimeFormat,
-  getTypeOptions, TimeFormat,
+  getFieldDateTimeFormats,
+  getTypeOptions,
   useFieldSelector,
 } from '@/application/database-yjs';
 import { DateTimeCell } from '@/application/database-yjs/cell.type';
 import { useUpdateCellDispatch } from '@/application/database-yjs/dispatch';
-import { YjsDatabaseKey } from '@/application/types';
+import { MetadataKey } from '@/application/user-metadata';
 import { ReactComponent as ChevronRight } from '@/assets/icons/alt_arrow_right.svg';
 import { ReactComponent as DateSvg } from '@/assets/icons/date.svg';
 import { ReactComponent as TimeIcon } from '@/assets/icons/time.svg';
 import DateTimeFormatMenu from '@/components/database/components/cell/date/DateTimeFormatMenu';
 import DateTimeInput from '@/components/database/components/cell/date/DateTimeInput';
+import { useCurrentUser } from '@/components/main/app.hooks';
 import { Calendar } from '@/components/ui/calendar';
 import { dropdownMenuItemVariants } from '@/components/ui/dropdown-menu';
 import {
@@ -28,6 +27,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
+import { getDateFormat, getTimeFormat } from '@/utils/time';
 
 function DateTimeCellPicker ({ open, onOpenChange, cell, fieldId, rowId }: {
   open: boolean;
@@ -36,6 +36,7 @@ function DateTimeCellPicker ({ open, onOpenChange, cell, fieldId, rowId }: {
   fieldId: string;
   rowId: string;
 }) {
+  const currentUser = useCurrentUser();
   const { t } = useTranslation();
 
   const [isRange, setIsRange] = useState<boolean>(() => {
@@ -56,13 +57,20 @@ function DateTimeCellPicker ({ open, onOpenChange, cell, fieldId, rowId }: {
 
   const typeOptionValue = useMemo(() => {
     const typeOption = getTypeOptions(field);
+    const { dateFormat, timeFormat } = getFieldDateTimeFormats(typeOption, currentUser);
 
     return {
-      timeFormat: getTimeFormat(Number(typeOption.get(YjsDatabaseKey.time_format)) as TimeFormat),
-      dateFormat: getDateFormat(Number(typeOption.get(YjsDatabaseKey.date_format)) as DateFormat),
+      dateFormat: getDateFormat(dateFormat),
+      timeFormat: getTimeFormat(timeFormat),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [field, clock]);
+  }, [field, clock, currentUser?.metadata]);
+  
+  const weekStartsOn = useMemo(() => {
+    const value = Number(currentUser?.metadata?.[MetadataKey.StartWeekOn]) || 0;
+
+    return value >= 0 && value <= 6 ? (value as 0 | 1 | 2 | 3 | 4 | 5 | 6) : 0;
+  }, [currentUser?.metadata]);
 
   const updateCell = useUpdateCellDispatch(rowId, fieldId);
 
@@ -193,6 +201,7 @@ function DateTimeCellPicker ({ open, onOpenChange, cell, fieldId, rowId }: {
             showOutsideDays
             month={month}
             onMonthChange={onMonthChange}
+            weekStartsOn={weekStartsOn}
             {...(isRange ? {
               mode: 'range',
               selected: dateRange,

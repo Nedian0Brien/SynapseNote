@@ -2,7 +2,6 @@ import FileDropzone from '@/components/_shared/file-dropzone/FileDropzone';
 import LoadingDots from '@/components/_shared/LoadingDots';
 import { notify } from '@/components/_shared/notify';
 import React, { useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
 
 export const ALLOWED_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'];
 
@@ -13,7 +12,6 @@ export function UploadImage({
   onDone?: (url: string) => void;
   uploadAction?: (file: File) => Promise<string>;
 }) {
-  const { t } = useTranslation();
   const [loading, setLoading] = React.useState(false);
   const handleFileChange = useCallback(
     async (files: File[]) => {
@@ -43,9 +41,8 @@ export function UploadImage({
   );
 
   return (
-    <div className={'h-full px-4 pb-4'}>
+    <div className={'h-full'}>
       <FileDropzone
-        placeholder={t('fileDropzone.dropFile')}
         onChange={handleFileChange}
         accept={ALLOWED_IMAGE_EXTENSIONS.join(',')}
       />

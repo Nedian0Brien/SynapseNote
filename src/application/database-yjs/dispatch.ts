@@ -28,7 +28,6 @@ import {
   SortCondition,
 } from '@/application/database-yjs/database.type';
 import {
-  DateFormat,
   getDateCellStr,
   getFieldName,
   isDate,
@@ -37,12 +36,12 @@ import {
   RIGHTWARDS_ARROW,
   safeParseTimestamp,
   SelectOption,
+  SelectOptionColor,
   SelectTypeOption,
-  TimeFormat,
 } from '@/application/database-yjs/fields';
 import { createCheckboxCell, getChecked } from '@/application/database-yjs/fields/checkbox/utils';
 import { EnhancedBigStats } from '@/application/database-yjs/fields/number/EnhancedBigStats';
-import { createSelectOptionCell, getColorByOption } from '@/application/database-yjs/fields/select-option/utils';
+import { createSelectOptionCell } from '@/application/database-yjs/fields/select-option/utils';
 import { createTextField } from '@/application/database-yjs/fields/text/utils';
 import { dateFilterFillData, filterFillData, getDefaultFilterCondition } from '@/application/database-yjs/filter';
 import { getOptionsFromRow, initialDatabaseRow } from '@/application/database-yjs/row';
@@ -51,8 +50,10 @@ import { useBoardLayoutSettings, useFieldSelector, useFieldType } from '@/applic
 import { executeOperations } from '@/application/slate-yjs/utils/yjs';
 import {
   DatabaseViewLayout,
+  DateFormat,
   FieldId,
   RowId,
+  TimeFormat,
   UpdatePagePayload,
   ViewLayout,
   YDatabase,
@@ -81,6 +82,7 @@ import {
   YMapFieldTypeOption,
   YSharedRoot,
 } from '@/application/types';
+import { useCurrentUser } from '@/components/main/app.hooks';
 
 export function useResizeColumnWidthDispatch() {
   const database = useDatabase();
@@ -2232,6 +2234,7 @@ export function useSwitchPropertyType() {
   const database = useDatabase();
   const sharedRoot = useSharedRoot();
   const rowDocMap = useRowDocMap();
+  const currentUser = useCurrentUser();
 
   return useCallback(
     (fieldId: string, fieldType: FieldType) => {
@@ -2284,8 +2287,6 @@ export function useSwitchPropertyType() {
                 // Set default values for the type option
                 if ([FieldType.CreatedTime, FieldType.LastEditedTime, FieldType.DateTime].includes(fieldType)) {
                   // to DateTime
-                  newTypeOption.set(YjsDatabaseKey.time_format, TimeFormat.TwentyFourHour);
-                  newTypeOption.set(YjsDatabaseKey.date_format, DateFormat.Friendly);
                   if (oldFieldType !== FieldType.DateTime) {
                     newTypeOption.set(YjsDatabaseKey.include_time, true);
                   }
@@ -2337,11 +2338,11 @@ export function useSwitchPropertyType() {
 
                       content = JSON.stringify({
                         disable_color: false,
-                        options: Array.from(options).map((name) => {
+                        options: Array.from(options).map((name, index) => {
                           return {
                             id: name,
                             name,
-                            color: getColorByOption(name),
+                            color: Object.values(SelectOptionColor)[index % 10],
                           };
                         }),
                       });
@@ -2455,6 +2456,7 @@ export function useSwitchPropertyType() {
                           newData = getDateCellStr({
                             cell: dateCell,
                             field,
+                            currentUser,
                           });
 
                           break;
@@ -2545,7 +2547,7 @@ export function useSwitchPropertyType() {
         'switchPropertyType'
       );
     },
-    [database, sharedRoot, rowDocMap]
+    [database, sharedRoot, rowDocMap, currentUser]
   );
 }
 

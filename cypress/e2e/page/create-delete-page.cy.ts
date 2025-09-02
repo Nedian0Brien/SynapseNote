@@ -39,7 +39,18 @@ describe('Page Create and Delete Tests', () => {
             const authUtils = new AuthTestUtils();
             authUtils.signInWithTestUrl(testEmail).then(() => {
                 cy.url().should('include', '/app');
-                cy.wait(3000);
+                
+                // Wait for the app to fully load
+                cy.task('log', 'Waiting for app to fully load...');
+                
+                // Wait for WebSocket connection to establish
+                cy.wait(8000);
+                
+                // Now wait for the new page button to be available
+                cy.task('log', 'Looking for new page button...');
+                cy.get('[data-testid="new-page-button"]', { timeout: 20000 }).should('exist').then(() => {
+                    cy.task('log', 'New page button found!');
+                });
 
                 // Step 2: Create a new page (robust flow that handles presence/absence of title input)
                 cy.task('log', `Creating page with title: ${testPageName}`);

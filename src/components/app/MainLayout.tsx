@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 
+import { useOutlineDrawer } from '@/components/_shared/outline/outline.hooks';
+import { AFScroller } from '@/components/_shared/scroller';
 import { useAIChatContext } from '@/components/ai-chat/AIChatProvider';
 import { useViewErrorStatus } from '@/components/app/app.hooks';
 import { ConnectBanner } from '@/components/app/ConnectBanner';
@@ -10,8 +12,6 @@ import SideBar from '@/components/app/SideBar';
 import DeletedPageComponent from '@/components/error/PageHasBeenDeleted';
 import RecordNotFound from '@/components/error/RecordNotFound';
 import SomethingError from '@/components/error/SomethingError';
-import { useOutlineDrawer } from '@/components/_shared/outline/outline.hooks';
-import { AFScroller } from '@/components/_shared/scroller';
 
 function MainLayout() {
   const { drawerOpened, drawerWidth, setDrawerWidth, toggleOpenDrawer } = useOutlineDrawer();

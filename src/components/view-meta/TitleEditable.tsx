@@ -52,12 +52,14 @@ function TitleEditable({
   onUpdateName,
   onEnter,
   onFocus,
+  autoFocus = true,
 }: {
   viewId: string;
   name: string;
   onUpdateName: (name: string) => void;
   onEnter?: (text: string) => void;
   onFocus?: () => void;
+  autoFocus?: boolean;
 }) {
   const { t } = useTranslation();
 
@@ -75,7 +77,7 @@ function TitleEditable({
     pendingUpdate: null,
     updateId: null,
   });
-  const [isEditing, setIsEditing] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
 
   const contentRef = useRef<HTMLDivElement>(null);
   const cursorPositionRef = useRef<number>(0);
@@ -142,11 +144,11 @@ function TitleEditable({
       newName: name,
       pendingUpdate: updateStateRef.current.pendingUpdate,
       lastConfirmedName: updateStateRef.current.lastConfirmedName,
-      isEditing,
+      isFocused,
     });
 
-    // If editing, ignore all remote updates
-    if (isEditing) {
+    // If focused, ignore all remote updates
+    if (isFocused) {
       return;
     }
 
@@ -204,7 +206,7 @@ function TitleEditable({
     if (contentRef.current) {
       contentRef.current.textContent = name;
     }
-  }, [name, isEditing, smartSendUpdate]);
+  }, [name, isFocused, smartSendUpdate]);
 
   const focusedTextbox = useCallback(() => {
     const contentBox = contentRef.current;
@@ -216,7 +218,7 @@ function TitleEditable({
     textbox?.focus();
   }, [viewId]);
 
-  // Initialize settings
+  // Initialize content and handle autoFocus
   useEffect(() => {
     const contentBox = contentRef.current;
 
@@ -234,24 +236,23 @@ function TitleEditable({
     contentBox.textContent = updateStateRef.current.localName;
     initialEditValueRef.current = updateStateRef.current.localName;
 
-    // Use requestAnimationFrame for better timing
-    const focusAndPosition = () => {
+    // Ensure focus if autoFocus is true
+    if (autoFocus) {
+      // Use requestAnimationFrame for next paint cycle to ensure DOM is fully ready
       requestAnimationFrame(() => {
-        console.log('[TitleEditable] Focusing element');
-        contentBox.focus();
-        
-        // Move cursor to end
-        if (contentBox.textContent !== '') {
-          requestAnimationFrame(() => {
-            setCursorPosition(contentBox, contentBox.textContent?.length || 0);
-            console.log('[TitleEditable] Cursor positioned at end');
-          });
+        // Double-check the element still exists and is in the document
+        if (contentBox && document.contains(contentBox)) {
+          contentBox.focus();
+          // Move cursor to end if there's content
+          if (contentBox.textContent) {
+            setCursorPosition(contentBox, contentBox.textContent.length);
+          }
         }
       });
-    };
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only execute once when component mounts - autoFocus is intentionally not in deps
 
-    focusAndPosition();
-  }, []); // Only execute once when component mounts
 
   return (
     <div
@@ -268,16 +269,16 @@ function TitleEditable({
       data-placeholder={t('menuAppHeader.defaultNewPageName')}
       contentEditable={true}
       aria-readonly={false}
-      autoFocus={true}
+      autoFocus={autoFocus}
       onFocus={() => {
         console.log('[TitleEditable] Focus event triggered');
-        
+
         // Record initial value when starting to edit
         if (contentRef.current) {
           initialEditValueRef.current = contentRef.current.textContent || '';
         }
 
-        setIsEditing(true);
+        setIsFocused(true);
         onFocus?.();
       }}
       onBlur={() => {
@@ -299,10 +300,10 @@ function TitleEditable({
           }
         }
 
-        // Delay setting editing state to avoid issues with rapid focus switching
-        setTimeout(() => {
-          setIsEditing(false);
-        }, 100);
+        // Use microtask to avoid race conditions
+        void Promise.resolve().then(() => {
+          setIsFocused(false);
+        });
       }}
       onInput={() => {
         if (!contentRef.current) return;
@@ -341,7 +342,7 @@ function TitleEditable({
 
             if (offset >= currentText.length || offset <= 0) {
               // Cursor at end or position inaccurate, keep all text
-              setIsEditing(false);
+              setIsFocused(false);
               updateStateRef.current = {
                 ...updateStateRef.current,
                 localName: currentText,
@@ -354,7 +355,7 @@ function TitleEditable({
               const afterText = currentText.slice(offset);
 
               contentRef.current.textContent = beforeText;
-              setIsEditing(false);
+              setIsFocused(false);
               updateStateRef.current = {
                 ...updateStateRef.current,
                 localName: beforeText,
@@ -370,7 +371,7 @@ function TitleEditable({
             // Escape key: complete editing and save current content
             const currentText = contentRef.current.textContent || '';
 
-            setIsEditing(false);
+            setIsFocused(false);
             updateStateRef.current = {
               ...updateStateRef.current,
               localName: currentText,

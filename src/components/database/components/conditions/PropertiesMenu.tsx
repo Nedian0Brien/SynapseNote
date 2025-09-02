@@ -26,7 +26,7 @@ function PropertiesMenu({
   children?: React.ReactNode;
   asChild?: boolean;
 }) {
-  const { properties } = usePropertiesSelector(true);
+  const { properties } = usePropertiesSelector(false);
   const [searchInput, setSearchInput] = useState('');
 
   const filteredProperties = useMemo(() => {

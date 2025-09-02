@@ -78,6 +78,16 @@
     --gradient5: linear-gradient(56.2deg, #5749CA 0%, #BB4A97 100%);
     --gradient6: linear-gradient(180deg, #036FFA 0%, #00B8E5 100%);
     --gradient7: linear-gradient(38.2deg, #F0C6CF 0%, #DECCE2 40.4754%, #CAD3F9 100%);
+    --new-gradient1: linear-gradient(180deg, #6DD5FF 0%, #D0A2FF 100%);
+    --new-gradient2: linear-gradient(180deg, #D0A2FF 0%, #FF84BF 100%);
+    --new-gradient3: linear-gradient(180deg, #FF84BF 0%, #FFDD7B 100%);
+    --new-gradient4: linear-gradient(180deg, #FFDD7B 0%, #87FFAB 100%);
+    --new-gradient5: linear-gradient(180deg, #89D7FE 0%, #7A81FF 100%);
+    --new-gradient6: linear-gradient(180deg, #00B5FF 0%, #9225FF 100%);
+    --new-gradient7: linear-gradient(180deg, #9327FF 0%, #E7348A 100%);
+    --new-gradient8: linear-gradient(180deg, #E3006D 0%, #FFBD00 100%);
+    --new-gradient9: linear-gradient(180deg, #FFBD00 0%, #00BC38 100%);
+    --new-gradient10: linear-gradient(180deg, #1CF8E3 0%, #4B32FE 100%);
     --bg-header: #1a202ccc;
     --bg-footer: #00000000;
     --note-header: #232b38;
@@ -85,5 +95,4 @@
     --billing-primary-hover: #7A2EBF;
     --ai-primary: #D08EED;
     --writer-placeholder: #49CFF4;
-
 }

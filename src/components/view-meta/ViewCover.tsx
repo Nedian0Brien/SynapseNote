@@ -68,6 +68,7 @@ function ViewCover({
       {!readOnly && (
         <Suspense>
           <ViewCoverActions
+            coverValue={coverValue}
             show={showAction}
             ref={actionRef}
             fullWidth={layout !== ViewLayout.Document}

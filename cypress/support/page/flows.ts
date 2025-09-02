@@ -148,13 +148,40 @@ export function createPage(pageName: string) {
     
     getModal()
         .should('be.visible')
-        .within(() => {
-            cy.get('[data-testid="space-item"]', { timeout: 10000 }).should('have.length.at.least', 1);
-            cy.get('[data-testid="space-item"]').first().click();
-            cy.contains('button', 'Add').click();
+        .then(($modal) => {
+            // Check if there are any space items available
+            const spaceItems = $modal.find('[data-testid="space-item"]');
+            
+            if (spaceItems.length === 0) {
+                cy.task('log', 'No spaces found, need to create one first');
+                
+                // Click "Create new space" button within the modal
+                cy.wrap($modal).within(() => {
+                    cy.contains('button', /create.*space/i).click();
+                });
+                
+                cy.wait(1000);
+                
+                // Fill in the space creation form
+                cy.get('input[type="text"]').first().clear().type('Test Space');
+                cy.contains('button', 'Create').click();
+                cy.wait(3000); // Wait for space creation
+                
+                // The page should be created in the new space automatically
+                cy.task('log', 'Created new space and page');
+            } else {
+                cy.task('log', `Found ${spaceItems.length} spaces, selecting the first one`);
+                
+                // Select the first space and create page
+                cy.wrap($modal).within(() => {
+                    cy.get('[data-testid="space-item"]').first().click();
+                    cy.contains('button', 'Add').click();
+                });
+                
+                cy.wait(2000);
+                cy.task('log', 'Clicked Add button, initiating page creation...');
+            }
         });
-    cy.wait(2000);
-    cy.task('log', 'Clicked Add button, initiating page creation...');
 
     // After clicking Add, the modal should close and we should navigate to the new page
     // Wait for the modal to disappear first - with retry logic for WebSocket connectivity issues

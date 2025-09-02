@@ -45,6 +45,7 @@ function BgColor({
 
   const [activeSubscriptionPlan, setActiveSubscriptionPlan] = useState<SubscriptionPlan | null>(null);
   const isPro = activeSubscriptionPlan === SubscriptionPlan.Pro;
+  const maxCustomColors = isPro ? 9 : 4;
 
   const loadSubscription = useCallback(async () => {
     try {
@@ -75,24 +76,24 @@ function BgColor({
     try {
       const recentParsed: string[] = recent ? JSON.parse(recent) : [];
 
-      setRecentColors(recentParsed.slice(0, 6));
+      setRecentColors(recentParsed.slice(0, 5));
     } catch (e) {
       console.error('Failed to parse recent colors:', e);
     }
 
     try {
       const customParsed: string[] = custom ? JSON.parse(custom) : [];
-      let updatedCustomColors = customParsed.slice(0, 5);
+      let updatedCustomColors = customParsed.slice(0, maxCustomColors);
 
       if (singleColor !== undefined && isCustomColor(singleColor) && !updatedCustomColors.includes(singleColor)) {
-        updatedCustomColors = [singleColor, ...updatedCustomColors].slice(0, 5);
+        updatedCustomColors = [singleColor, ...updatedCustomColors].slice(0, maxCustomColors);
       }
 
       setCustomColors(updatedCustomColors);
     } catch (e) {
       console.error('Failed to parse recent colors:', e);
     }
-  }, [isCustomColor, singleColor]);
+  }, [isCustomColor, maxCustomColors, singleColor]);
 
   useEffect(() => {
     if (!visible && isOpen) {
@@ -159,12 +160,12 @@ function BgColor({
         return;
       }
 
-      const updatedCustomColors = [...customColors, color].slice(-5);
+      const updatedCustomColors = [...customColors, color].slice(-maxCustomColors);
 
       setCustomColors(updatedCustomColors);
       localStorage.setItem('custom-bg-colors', JSON.stringify(updatedCustomColors));
     },
-    [customColors]
+    [customColors, maxCustomColors]
   );
 
   const saveRecentColors = useCallback(() => {
@@ -175,7 +176,7 @@ function BgColor({
     const color = recentColorToSave.current;
 
     if (color && color !== initialColor.current) {
-      const updated = [color, ...recentColors.filter((c) => c !== color)].slice(0, 6);
+      const updated = [color, ...recentColors.filter((c) => c !== color)].slice(0, 5);
 
       localStorage.setItem('recent-bg-colors', JSON.stringify(updated));
     }
@@ -191,44 +192,60 @@ function BgColor({
             color: '',
           },
           {
-            label: t('colors.smoke'),
-            color: 'bg-color-19',
-          },
-          {
-            label: t('colors.mallow'),
-            color: 'bg-color-17',
+            label: t('colors.mauve'),
+            color: 'bg-color-14',
           },
           {
             label: t('colors.lavender'),
             color: 'bg-color-15',
           },
           {
-            label: t('colors.denim'),
-            color: 'bg-color-13',
+            label: t('colors.lilac'),
+            color: 'bg-color-16',
           },
           {
-            label: t('colors.aqua'),
-            color: 'bg-color-11',
+            label: t('colors.mallow'),
+            color: 'bg-color-17',
           },
           {
-            label: t('colors.forest'),
-            color: 'bg-color-9',
+            label: t('colors.camellia'),
+            color: 'bg-color-18',
           },
           {
-            label: t('colors.lime'),
-            color: 'bg-color-7',
+            label: t('colors.rose'),
+            color: 'bg-color-1',
+          },
+          {
+            label: t('colors.papaya'),
+            color: 'bg-color-2',
+          },
+          {
+            label: t('colors.mango'),
+            color: 'bg-color-4',
           },
           {
             label: t('colors.lemon'),
             color: 'bg-color-5',
           },
           {
-            label: t('colors.tangerine'),
-            color: 'bg-color-3',
+            label: t('colors.olive'),
+            color: 'bg-color-6',
           },
           {
-            label: t('colors.rose'),
-            color: 'bg-color-1',
+            label: t('colors.grass'),
+            color: 'bg-color-8',
+          },
+          {
+            label: t('colors.jade'),
+            color: 'bg-color-10',
+          },
+          {
+            label: t('colors.azure'),
+            color: 'bg-color-12',
+          },
+          {
+            label: t('colors.iron'),
+            color: 'bg-color-20',
           },
         ]
       : [
@@ -237,32 +254,40 @@ function BgColor({
             color: '',
           },
           {
-            label: t('colors.smoke'),
-            color: 'bg-color-19',
+            label: t('colors.mauve'),
+            color: 'bg-color-14',
           },
           {
-            label: t('colors.mallow'),
-            color: 'bg-color-17',
+            label: t('colors.lilac'),
+            color: 'bg-color-16',
           },
           {
-            label: t('colors.lavender'),
-            color: 'bg-color-15',
+            label: t('colors.camellia'),
+            color: 'bg-color-18',
           },
           {
-            label: t('colors.aqua'),
-            color: 'bg-color-11',
+            label: t('colors.papaya'),
+            color: 'bg-color-2',
           },
           {
-            label: t('colors.lime'),
-            color: 'bg-color-7',
+            label: t('colors.mango'),
+            color: 'bg-color-4',
           },
           {
-            label: t('colors.lemon'),
-            color: 'bg-color-5',
+            label: t('colors.olive'),
+            color: 'bg-color-6',
           },
           {
-            label: t('colors.tangerine'),
-            color: 'bg-color-3',
+            label: t('colors.grass'),
+            color: 'bg-color-8',
+          },
+          {
+            label: t('colors.jade'),
+            color: 'bg-color-10',
+          },
+          {
+            label: t('colors.azure'),
+            color: 'bg-color-12',
           },
         ];
   }, [isPro, t]);
@@ -292,7 +317,7 @@ function BgColor({
     }
 
     return (
-      <div className={'flex w-[236px] flex-col py-1.5'}>
+      <div className={'flex w-[200px] flex-col py-1.5'}>
         {recentColors.length > 0 && (
           <>
             <div className={'px-3.5 pb-2 pt-1.5 text-xs font-medium text-text-tertiary'}>{t('colors.recent')}</div>
@@ -326,7 +351,7 @@ function BgColor({
         </div>
         <Separator className={'my-2'} />
         <div className={'px-3.5 pb-2 pt-1.5 text-xs font-medium text-text-tertiary'}>{t('colors.custom')}</div>
-        <div className='flex gap-2 px-3.5 pb-1.5'>
+        <div className='flex flex-wrap gap-2 px-3.5 pb-1.5'>
           {customColors.map((color, index) => (
             <ColorTile
               key={index}
@@ -387,7 +412,7 @@ function BgColor({
         </ActionButton>
       </PopoverTrigger>
       <PopoverContent
-        className='!min-w-[236px]'
+        className='!min-w-[200px]'
         sideOffset={6}
         align='start'
         onMouseUp={(e) => e.stopPropagation()}

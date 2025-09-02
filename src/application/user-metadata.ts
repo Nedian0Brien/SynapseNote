@@ -1,4 +1,6 @@
 import { toZonedTime } from 'date-fns-tz';
+
+import { DateFormat, TimeFormat } from './types';
 import { UserTimezone } from './user-timezone.types';
 
 /**
@@ -9,6 +11,8 @@ export enum MetadataKey {
   Timezone = 'timezone',
   Language = 'language',
   DateFormat = 'date_format',
+  TimeFormat = 'time_format',
+  StartWeekOn = 'start_week_on',
   IconUrl = 'icon_url',
 }
 
@@ -18,18 +22,10 @@ export enum MetadataKey {
 export interface MetadataValues {
   [MetadataKey.Timezone]: string | UserTimezone;
   [MetadataKey.Language]: string;
-  [MetadataKey.DateFormat]: DateFormatType;
+  [MetadataKey.DateFormat]: DateFormat;
+  [MetadataKey.TimeFormat]: TimeFormat;
+  [MetadataKey.StartWeekOn]: number;
   [MetadataKey.IconUrl]: string;
-  [key: string]: string | DateFormatType | UserTimezone | Record<string, unknown> | number | boolean | null | undefined; // Allow custom keys
-}
-
-/**
- * Supported date format types
- */
-export enum DateFormatType {
-  US = 'MM/DD/YYYY',
-  EU = 'DD/MM/YYYY',
-  ISO = 'YYYY-MM-DD',
 }
 
 /**
@@ -38,7 +34,9 @@ export enum DateFormatType {
 export const MetadataDefaults: Partial<MetadataValues> = {
   [MetadataKey.Timezone]: 'UTC',
   [MetadataKey.Language]: 'en',
-  [MetadataKey.DateFormat]: DateFormatType.US,
+  [MetadataKey.DateFormat]: DateFormat.US,
+  [MetadataKey.TimeFormat]: TimeFormat.TwelveHour,
+  [MetadataKey.StartWeekOn]: 0,
   [MetadataKey.IconUrl]: '',
 };
 
@@ -67,7 +65,7 @@ export class UserMetadataBuilder {
   /**
    * Set date format metadata
    */
-  setDateFormat(format: DateFormatType): this {
+  setDateFormat(format: DateFormat): this {
     this.metadata[MetadataKey.DateFormat] = format;
     return this;
   }
@@ -77,14 +75,6 @@ export class UserMetadataBuilder {
    */
   setIconUrl(url: string): this {
     this.metadata[MetadataKey.IconUrl] = url;
-    return this;
-  }
-
-  /**
-   * Set custom metadata
-   */
-  setCustom(key: string, value: string | DateFormatType | UserTimezone | Record<string, unknown> | number | boolean | null | undefined): this {
-    this.metadata[key] = value;
     return this;
   }
 
@@ -103,21 +93,21 @@ export const MetadataUtils = {
   /**
    * Detect user's preferred date format based on locale
    */
-  detectDateFormat(locale: string = navigator.language): DateFormatType {
+  detectDateFormat(locale: string = navigator.language): DateFormat {
     const region = locale.split('-')[1]?.toUpperCase() || locale.toUpperCase();
 
     // US format countries
     if (['US', 'CA', 'PH'].includes(region)) {
-      return DateFormatType.US;
+      return DateFormat.US;
     }
 
     // ISO format preference
     if (['SE', 'FI', 'JP', 'KR', 'CN', 'TW', 'HK'].includes(region)) {
-      return DateFormatType.ISO;
+      return DateFormat.ISO;
     }
 
     // Default to EU format for most other countries
-    return DateFormatType.EU;
+    return DateFormat.DayMonthYear;
   },
 
   /**
@@ -153,10 +143,10 @@ export const MetadataUtils = {
     // Validate timezone if present - must be valid IANA timezone for chrono-tz compatibility
     if (metadata[MetadataKey.Timezone]) {
       const timezoneValue = metadata[MetadataKey.Timezone];
-      
+
       // Extract the timezone string whether it's a string or UserTimezone object
-      const timezone = typeof timezoneValue === 'string' 
-        ? timezoneValue 
+      const timezone = typeof timezoneValue === 'string'
+        ? timezoneValue
         : timezoneValue.timezone || timezoneValue.default_timezone;
 
       if (timezone) {

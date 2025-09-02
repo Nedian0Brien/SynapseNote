@@ -495,6 +495,16 @@
     "checked": "Checked",
     "unchecked": "Unchecked"
   },
+  "global-loading": {
+    "welcome": "Welcome!",
+    "installing": "Loading Workspace",
+    "steps": {
+      "checkingAuth": "Checking authentication",
+      "loadingData": "Loading workspace data",
+      "preparingInterface": "Preparing interface",
+      "finalizing": "Almost ready"
+    }
+  },
   "label": {
     "welcome": "Welcome!",
     "firstName": "First Name",
@@ -1977,6 +1987,7 @@
         "fileUploadHintSuffix": "Browse",
         "networkHint": "Paste a file link",
         "networkUrlInvalid": "Invalid URL. Check the URL and try again.",
+        "noImages": "No images selected. Please try again.",
         "networkAction": "Embed",
         "fileTooBigError": "File size is too big, please upload a file with size less than 10MB",
         "renameFile": {
@@ -2806,7 +2817,9 @@
     },
     "visitOurWebsite": "Visit our official website",
     "addMessagesToPage": "Add messages to page",
-    "addMessagesToPageDisabled": "No messages available"
+    "addMessagesToPageDisabled": "No messages available",
+    "accountSettings": "Account settings",
+    "startWeekOn": "Start week on"
   },
   "globalComment": {
     "comments": "Comments",

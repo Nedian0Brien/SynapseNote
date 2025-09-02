@@ -20,6 +20,10 @@
       "$type": "color",
       "$value": "{Neutral.white}"
     },
+    "inverse": {
+      "$type": "color",
+      "$value": "{Neutral.1000}"
+    },
     "action": {
       "$type": "color",
       "$value": "{Blue.500}"
@@ -31,6 +35,10 @@
     "info": {
       "$type": "color",
       "$value": "{Blue.500}"
+    },
+    "info-light": {
+      "$type": "color",
+      "$value": "{Blue.alpha-blue-700-75}"
     },
     "info-hover": {
       "$type": "color",
@@ -67,6 +75,10 @@
     "error": {
       "$type": "color",
       "$value": "{Red.400}"
+    },
+    "error-light": {
+      "$type": "color",
+      "$value": "{Red.alpha-red-600-75}"
     },
     "error-hover": {
       "$type": "color",
@@ -1456,6 +1468,18 @@
       "$type": "color",
       "$value": "{Subtle_Color.Denim.400}",
       "$description": "Sidebar Shared Category"
+    },
+    "text-event": {
+      "$type": "color",
+      "$value": "{Blue.200}"
+    },
+    "filled-event": {
+      "$type": "color",
+      "$value": "{Blue.1000}"
+    },
+    "filled-today": {
+      "$type": "color",
+      "$value": "#f36bb1"
     }
   },
   "Spacing": {

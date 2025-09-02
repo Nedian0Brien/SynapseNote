@@ -1,22 +1,26 @@
 import dayjs from 'dayjs';
 import { useCallback, useMemo, useState } from 'react';
 
-import {
-  DateFilter,
-  DateFilterCondition,
-  DateFormat,
-  getDateFormat,
-  getTimeFormat,
-  TimeFormat,
-} from '@/application/database-yjs';
+import { DateFilter, DateFilterCondition } from '@/application/database-yjs';
 import { useUpdateFilter } from '@/application/database-yjs/dispatch';
+import { DateFormat, TimeFormat } from '@/application/types';
+import { MetadataKey } from '@/application/user-metadata';
 import DateTimeInput from '@/components/database/components/cell/date/DateTimeInput';
+import { useCurrentUser } from '@/components/main/app.hooks';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { renderDate } from '@/utils/time';
+import { getDateFormat, getTimeFormat, renderDate } from '@/utils/time';
 
 function DateTimeFilterDatePicker({ filter }: { filter: DateFilter }) {
+  const currentUser = useCurrentUser();
+
+  const weekStartsOn = useMemo(() => {
+    const value = Number(currentUser?.metadata?.[MetadataKey.StartWeekOn]) || 0;
+
+    return value >= 0 && value <= 6 ? (value as 0 | 1 | 2 | 3 | 4 | 5 | 6) : 0;
+  }, [currentUser?.metadata]);
+
   const isRange = useMemo(() => {
     return [DateFilterCondition.DateStartsBetween, DateFilterCondition.DateEndsBetween].includes(filter.condition);
   }, [filter.condition]);
@@ -74,9 +78,11 @@ function DateTimeFilterDatePicker({ filter }: { filter: DateFilter }) {
     const { timestamp, end, start } = filter;
 
     if (isRange && start && end) {
-      return `${renderDate(start.toString(), getDateFormat(DateFormat.Local), true)} - ${renderDate(
+      const dateFormat = currentUser?.metadata?.[MetadataKey.DateFormat] as DateFormat | DateFormat.Local;
+
+      return `${renderDate(start.toString(), getDateFormat(dateFormat), true)} - ${renderDate(
         end.toString(),
-        getDateFormat(DateFormat.Local),
+        getDateFormat(dateFormat),
         true
       )}`;
     }
@@ -84,7 +90,7 @@ function DateTimeFilterDatePicker({ filter }: { filter: DateFilter }) {
     if (!timestamp) return '';
 
     return renderDate(timestamp.toString(), getDateFormat(DateFormat.Local), true);
-  }, [filter, isRange]);
+  }, [filter, isRange, currentUser?.metadata]);
 
   const [month, setMonth] = useState<Date | undefined>(undefined);
 
@@ -135,6 +141,7 @@ function DateTimeFilterDatePicker({ filter }: { filter: DateFilter }) {
             showOutsideDays
             month={month}
             onMonthChange={onMonthChange}
+            weekStartsOn={weekStartsOn}
             {...(isRange
               ? {
                   mode: 'range',

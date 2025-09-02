@@ -1,6 +1,5 @@
-import { DateFormat, TimeFormat } from '@/application/database-yjs';
 import { useUpdateDateTimeFieldFormat } from '@/application/database-yjs/dispatch';
-import { YjsDatabaseKey } from '@/application/types';
+import { DateFormat, TimeFormat, YjsDatabaseKey } from '@/application/types';
 import { useFieldTypeOption } from '@/components/database/components/cell/Cell.hooks';
 import {
   DropdownMenuGroup, DropdownMenuItem, DropdownMenuItemTick,
@@ -18,8 +17,11 @@ function DateTimeFormatGroup ({
 }) {
   const { t } = useTranslation();
   const typeOption = useFieldTypeOption(fieldId);
-  const selectedDateFormat = Number(typeOption.get(YjsDatabaseKey.date_format));
-  const selectedTimeFormat = Number(typeOption.get(YjsDatabaseKey.time_format));
+  const typeOptionDateFormat = typeOption.get(YjsDatabaseKey.date_format);
+  const typeOptionTimeFormat = typeOption.get(YjsDatabaseKey.time_format);
+
+  const selectedDateFormat = typeOptionDateFormat !== undefined ? Number(typeOptionDateFormat) : undefined;
+  const selectedTimeFormat = typeOptionTimeFormat !== undefined ? Number(typeOptionTimeFormat) : undefined;
 
   const updateFormat = useUpdateDateTimeFieldFormat(fieldId);
   const dateFormats = useMemo(() => [{

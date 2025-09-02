@@ -146,6 +146,10 @@
       "$type": "color",
       "$value": "#00b5ff33",
       "$description": "Text Selected Effect"
+    },
+    "alpha-blue-700-75": {
+      "$type": "color",
+      "$value": "#0078c0bf"
     }
   },
   "Green": {
@@ -326,6 +330,10 @@
     "alpha-red-500-10": {
       "$type": "color",
       "$value": "#f336411a"
+    },
+    "alpha-red-600-75": {
+      "$type": "color",
+      "$value": "#e71d32bf"
     }
   },
   "Orange": {

@@ -1,6 +1,8 @@
 import React, { lazy, memo, Suspense, useCallback, useContext, useEffect, useMemo } from 'react';
 
 import { UIVariant, ViewLayout, ViewMetaProps, YDoc } from '@/application/types';
+import Help from '@/components/_shared/help/Help';
+import { findView } from '@/components/_shared/outline/utils';
 import { AIChat } from '@/components/ai-chat';
 import {
   AppContext,
@@ -13,8 +15,6 @@ import DatabaseView from '@/components/app/DatabaseView';
 import { Document } from '@/components/document';
 import RecordNotFound from '@/components/error/RecordNotFound';
 import { useService } from '@/components/main/app.hooks';
-import Help from '@/components/_shared/help/Help';
-import { findView } from '@/components/_shared/outline/utils';
 import { getPlatform } from '@/utils/platform';
 
 const ViewHelmet = lazy(() => import('@/components/_shared/helmet/ViewHelmet'));

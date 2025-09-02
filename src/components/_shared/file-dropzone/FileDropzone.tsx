@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-
-import { ReactComponent as ImageIcon } from '@/assets/icons/image.svg';
+import { toast } from 'sonner';
 
 interface FileDropzoneProps {
   onChange?: (files: File[]) => void;
@@ -11,7 +10,7 @@ interface FileDropzoneProps {
   placeholder?: string | React.ReactNode;
 }
 
-function FileDropzone ({ onChange, accept, multiple, disabled, placeholder }: FileDropzoneProps) {
+function FileDropzone({ onChange, accept, multiple, disabled, placeholder }: FileDropzoneProps) {
   const { t } = useTranslation();
   const [dragging, setDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -33,10 +32,31 @@ function FileDropzone ({ onChange, accept, multiple, disabled, placeholder }: Fi
     event.stopPropagation();
     setDragging(false);
 
-    if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
-      handleFiles(event.dataTransfer.files);
-      event.dataTransfer.clearData();
+    const toastError = () => toast.error(t('document.plugins.file.noImages'));
+
+    if (!event.dataTransfer.files || event.dataTransfer.files.length === 0) {
+      toastError();
+      return;
     }
+
+    const files = Array.from(event.dataTransfer.files);
+
+    if (accept) {
+      const isEveryFileValid = files.every((file: File) => {
+        const acceptedTypes = accept.split(',');
+
+        return acceptedTypes.some((type) => file.name.endsWith(type) || file.type === type);
+      });
+
+      if (!isEveryFileValid) {
+        toastError();
+        event.dataTransfer.clearData();
+        return;
+      }
+    }
+
+    handleFiles(event.dataTransfer.files);
+    event.dataTransfer.clearData();
   };
 
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
@@ -64,9 +84,7 @@ function FileDropzone ({ onChange, accept, multiple, disabled, placeholder }: Fi
 
   return (
     <div
-      className={
-        'flex h-full min-h-[160px] w-full cursor-pointer flex-col justify-center rounded-xl border-2 border-dashed border-border-primary bg-surface-primary px-4 hover:bg-surface-primary-hover'
-      }
+      className='flex h-full min-h-[294px] w-full cursor-pointer flex-col justify-center rounded-[8px] bg-surface-primary px-4 outline-dashed outline-2 outline-border-primary hover:bg-surface-primary-hover'
       onDrop={handleDrop}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -78,14 +96,16 @@ function FileDropzone ({ onChange, accept, multiple, disabled, placeholder }: Fi
         cursor: disabled ? 'not-allowed' : undefined,
       }}
     >
-      <div className={'flex h-full w-full flex-col items-center justify-center gap-4 overflow-hidden'}>
-        <ImageIcon className={'h-12 w-12 text-text-secondary'} />
-        <div className={'whitespace-pre-wrap break-words text-center text-text-secondary'}>
-          {placeholder || t('fileDropzone.dropFile')}
-        </div>
+      <div className={'whitespace-pre-wrap break-words text-center text-sm text-text-primary'}>
+        {placeholder || (
+          <>
+            <span>{t('document.plugins.file.fileUploadHint')}</span>
+            <span className='text-text-action'>{t('document.plugins.file.fileUploadHintSuffix')}</span>
+          </>
+        )}
       </div>
       <input
-        type="file"
+        type='file'
         disabled={disabled}
         ref={fileInputRef}
         style={{ display: 'none' }}

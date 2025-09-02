@@ -1,3 +1,4 @@
+import { DateFormat, TimeFormat } from '@/application/types';
 import dayjs from 'dayjs';
 
 export function renderDate(date: string | number, format: string, isUnix?: boolean): string {
@@ -60,4 +61,32 @@ export function isTimestampBetweenRange(timestamp: string, startTimestamp: strin
   const endUnix = endDate.unix();
 
   return dateUnix >= startUnix && dateUnix <= endUnix;
+}
+
+export function getTimeFormat(timeFormat?: TimeFormat) {
+  switch (timeFormat) {
+    case TimeFormat.TwelveHour:
+      return 'h:mm A';
+    case TimeFormat.TwentyFourHour:
+      return 'HH:mm';
+    default:
+      return 'HH:mm';
+  }
+}
+
+export function getDateFormat(dateFormat?: DateFormat) {
+  switch (dateFormat) {
+    case DateFormat.Friendly:
+      return 'MMM DD, YYYY';
+    case DateFormat.ISO:
+      return 'YYYY-MM-DD';
+    case DateFormat.US:
+      return 'YYYY/MM/DD';
+    case DateFormat.Local:
+      return 'MM/DD/YYYY';
+    case DateFormat.DayMonthYear:
+      return 'DD/MM/YYYY';
+    default:
+      return 'YYYY-MM-DD';
+  }
 }

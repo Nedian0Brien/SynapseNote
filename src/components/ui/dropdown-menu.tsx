@@ -7,6 +7,8 @@ import { ReactComponent as ChevronRightIcon } from '@/assets/icons/alt_arrow_rig
 import { ReactComponent as CheckIcon } from '@/assets/icons/tick.svg';
 import { cn } from '@/lib/utils';
 
+const DropdownMenuRadioGroup = DropdownMenuPrimitive.RadioGroup;
+
 function DropdownMenu({ ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
   return <DropdownMenuPrimitive.Root data-slot='dropdown-menu' {...props} />;
 }
@@ -111,6 +113,28 @@ const DropdownMenuItem = forwardRef<
     />
   );
 });
+
+const DropdownMenuRadioItem = React.forwardRef<
+  React.ElementRef<typeof DropdownMenuPrimitive.RadioItem>,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.RadioItem>
+>(({ className, children, ...props }, ref) => (
+  <DropdownMenuPrimitive.RadioItem
+    ref={ref}
+    className={cn(
+      'relative flex items-center rounded-[8px] px-2 py-1.5',
+      'cursor-default select-none text-sm',
+      'outline-none transition-colors focus:bg-fill-content-hover',
+      'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+      'data-[state=checked]:bg-fill-theme-select',
+      className
+    )}
+    {...props}
+  >
+    {children}
+  </DropdownMenuPrimitive.RadioItem>
+));
+
+DropdownMenuRadioItem.displayName = DropdownMenuPrimitive.RadioItem.displayName;
 
 function DropdownMenuLabel({
   className,
@@ -245,6 +269,7 @@ export {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuItemTick,
+  DropdownMenuRadioItem,
   dropdownMenuItemVariants,
   DropdownMenuLabel,
   DropdownMenuPortal,
@@ -254,4 +279,5 @@ export {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
+  DropdownMenuRadioGroup,
 };

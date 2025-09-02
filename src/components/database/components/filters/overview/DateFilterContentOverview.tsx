@@ -1,10 +1,16 @@
-import { DateFilter, DateFilterCondition, DateFormat, getDateFormat } from '@/application/database-yjs';
 import dayjs from 'dayjs';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-function DateFilterContentOverview ({ filter }: { filter: DateFilter }) {
+import { DateFilter, DateFilterCondition, } from '@/application/database-yjs';
+import { DateFormat } from '@/application/types';
+import { MetadataKey } from '@/application/user-metadata';
+import { getDateFormat } from '@/utils/time';
+import { useCurrentUser } from '@/components/main/app.hooks';
+
+function DateFilterContentOverview({ filter }: { filter: DateFilter }) {
   const { t } = useTranslation();
+  const currentUser = useCurrentUser();
 
   const value = useMemo(() => {
     let startStr = '';
@@ -18,7 +24,8 @@ function DateFilterContentOverview ({ filter }: { filter: DateFilter }) {
       endStr = dayjs.unix(end).format(format);
     }
 
-    const timestamp = filter.timestamp ? dayjs.unix(filter.timestamp).format(getDateFormat(DateFormat.Local)) : '';
+    const dateFormat = currentUser?.metadata?.[MetadataKey.DateFormat] as DateFormat | DateFormat.Local;
+    const timestamp = filter.timestamp ? dayjs.unix(filter.timestamp).format(getDateFormat(dateFormat)) : '';
 
     switch (filter.condition) {
       case DateFilterCondition.DateStartsOn:
@@ -48,7 +55,7 @@ function DateFilterContentOverview ({ filter }: { filter: DateFilter }) {
       default:
         return '';
     }
-  }, [filter, t]);
+  }, [filter, t, currentUser?.metadata]);
 
   return <>{value}</>;
 }

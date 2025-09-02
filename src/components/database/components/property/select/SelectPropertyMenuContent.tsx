@@ -17,7 +17,7 @@ function SelectPropertyMenuContent({ fieldId }: { fieldId: string }) {
       <DropdownMenuSeparator />
       <DropdownMenuGroup className={'max-w-[240px] overflow-hidden py-0.5'}>
         <DropdownMenuLabel>{t('grid.field.optionTitle')}</DropdownMenuLabel>
-        <AddAnOption onAdd={onAdd} />
+        <AddAnOption options={options} onAdd={onAdd} />
       </DropdownMenuGroup>
       <DropdownMenuGroup>
         <Options fieldId={fieldId} options={options} />
