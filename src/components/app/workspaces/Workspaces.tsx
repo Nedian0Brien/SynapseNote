@@ -129,7 +129,7 @@ export function Workspaces() {
 
   return (
     <>
-      <div className='mx-1 flex-1 overflow-hidden'>
+      <div className='mx-1 flex-1 overflow-hidden' data-testid='sidebar-page-header'>
         <DropdownMenu modal={false} open={open} onOpenChange={setOpen}>
           <DropdownMenuTrigger asChild>
             <div

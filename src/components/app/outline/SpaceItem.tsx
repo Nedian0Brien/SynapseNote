@@ -33,6 +33,7 @@ function SpaceItem({
     return (
       <div
         data-testid={`space-${view.view_id}`}
+        data-expanded={isExpanded}
         style={{
           width,
         }}
@@ -92,7 +93,8 @@ function SpaceItem({
   }, [onClickView, isExpanded, view?.children, width, renderExtra, expandIds, toggleExpand]);
 
   return (
-    <div className={'flex h-fit w-full flex-col'}>
+    <div className={'flex h-fit w-full flex-col'} data-testid='space-item'>
+      <div data-testid='space-expanded' data-expanded={isExpanded} style={{ display: 'none' }} />
       {renderItem}
       {renderChildren}
     </div>

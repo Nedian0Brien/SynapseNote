@@ -1,29 +1,37 @@
-/// <reference types="cypress" />
+/**
+ * Page management utility functions for Cypress E2E tests
+ * Contains functions for interacting with pages in the sidebar
+ */
 
-// ========== Page Management ==========
-
-export function getPageNames() {
-    return cy.get('[data-testid="page-name"]');
+/**
+ * Gets a page element by its name
+ * Used in more-page-action.cy.ts for finding specific pages
+ * @param pageName - The name of the page to find
+ * @returns Cypress chainable element
+ */
+export function getPageByName(pageName: string) {
+    cy.task('log', `Getting page by name: ${pageName}`);
+    return cy.get('[data-testid="page-name"]')
+        .contains(pageName)
+        .closest('[data-testid="page-item"]');
 }
 
-export function getPageByName(name: string) {
-    return cy.get('[data-testid="page-name"]').contains(name);
-}
-
-export function clickPageByName(name: string) {
-    return getPageByName(name).click({ force: true });
-}
-
-export function getPageById(viewId: string) {
-    return cy.get(`[data-testid="page-${viewId}"]`);
-}
-
+/**
+ * Gets the page title input element for the currently open page
+ * Used in more-page-action.cy.ts for renaming pages
+ * @returns Cypress chainable element
+ */
 export function getPageTitleInput() {
-    return cy.get('[data-testid="page-title-input"]', { timeout: 30000 });
+    cy.task('log', 'Getting page title input element');
+    return cy.get('[data-testid="page-title-input"]').first();
 }
 
+/**
+ * Saves the current page title by pressing Enter
+ * Used in more-page-action.cy.ts after editing page titles
+ */
 export function savePageTitle() {
-    return cy.get('[data-testid="page-title-input"]').type('{esc}');
+    cy.task('log', 'Saving page title');
+    cy.focused().type('{enter}');
+    cy.wait(1000); // Wait for save to complete
 }
-
-

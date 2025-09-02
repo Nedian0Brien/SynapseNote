@@ -74,7 +74,7 @@ export function Outline({
       >
         <TooltipTrigger asChild>
           <Button
-            data-testid='inline-more-actions'
+            data-testid={isSpace ? 'inline-more-actions' : 'page-more-actions'}
             variant={'ghost'}
             size={'icon-sm'}
             onClick={(e) => {

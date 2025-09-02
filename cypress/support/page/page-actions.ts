@@ -1,116 +1,56 @@
-/// <reference types="cypress" />
+/**
+ * Page actions utility functions for Cypress E2E tests
+ * Contains functions for page context menu actions
+ */
 
-import { getPageByName } from './pages';
-
-export function clickPageMoreActions() {
-    return cy.get('[data-testid="page-more-actions"]').click({ force: true });
-}
-
+/**
+ * Opens the view actions popover for a specific page
+ * Used in more-page-action.cy.ts to access page actions like rename, delete, etc.
+ * @param pageName - The name of the page to open actions for
+ * @returns Cypress chainable
+ */
 export function openViewActionsPopoverForPage(pageName: string) {
-    return getPageByName(pageName)
-        .should('be.visible')
-        .first()
-        .scrollIntoView()
-        .parent()
-        .parent()
-        .then(($row) => {
-            cy.task('log', `Found row for page ${pageName}`);
-            cy.task('log', 'Triggering hover on page row with realHover');
-
-            cy.wrap($row).first().scrollIntoView().realHover();
-            cy.wait(500);
-
-            cy.task('log', `Looking for inline more actions button`);
-            cy.wrap($row).then(($el) => {
-                const hasButton = $el.find('[data-testid="inline-more-actions"]').length > 0;
-                cy.task('log', `Button exists in DOM: ${hasButton}`);
-                if (!hasButton) {
-                    cy.task('log', 'Button not found, trying to click page name first');
-                    getPageByName(pageName).click({ force: true });
-                    cy.wait(500);
-                    cy.wrap($row).realHover();
-                    cy.wait(500);
-                }
-            });
-
-            cy.wrap($row)
-                .find('[data-testid="inline-more-actions"]')
-                .should('exist')
-                .click({ force: true });
-            cy.task('log', `Successfully clicked inline more actions`);
-        })
-        .then(() => {
-            cy.get('[data-slot="dropdown-menu-content"]', { timeout: 10000 }).should('exist');
-            cy.get('[data-testid="more-page-rename"], [data-testid="more-page-change-icon"], [data-testid="more-page-open-new-tab"], [data-testid="delete-page-button"]').should('exist');
+    cy.task('log', `Opening view actions popover for page: ${pageName}`);
+    
+    // Find the page in the sidebar
+    cy.get('[data-testid="page-name"]')
+        .contains(pageName)
+        .closest('[data-testid="page-item"]')
+        .within(() => {
+            // Hover to show the more actions button
+            cy.get('[data-testid="page-more-actions"]').invoke('show');
+            // Click the more actions button
+            cy.get('[data-testid="page-more-actions"]').click({ force: true });
         });
+    
+    // Wait for popover to appear
+    cy.wait(500);
+    
+    // Verify popover is visible
+    cy.get('[data-testid="view-actions-popover"]').should('be.visible');
+    
+    cy.task('log', 'View actions popover opened successfully');
 }
 
-export function morePageActionsRename() {
-    clickPageMoreActions();
-    return cy.get('[data-testid="more-page-rename"]').click();
+/**
+ * Deletes a page by its name
+ * Composite function that handles the complete deletion flow
+ * Note: This function is used via TestTool in create-delete-page.cy.ts
+ * @param pageName - The name of the page to delete
+ */
+export function deletePageByName(pageName: string) {
+    cy.task('log', `=== Deleting page: ${pageName} ===`);
+    
+    // Open the actions popover for the page
+    openViewActionsPopoverForPage(pageName);
+    
+    // Click delete option
+    cy.get('[data-testid="view-action-delete"]').click();
+    cy.wait(500);
+    
+    // Confirm deletion in the confirmation dialog
+    cy.get('[data-testid="confirm-delete-button"]').click();
+    cy.wait(1000);
+    
+    cy.task('log', `✓ Page "${pageName}" deleted successfully`);
 }
-
-export function morePageActionsChangeIcon() {
-    clickPageMoreActions();
-    return cy.get('[data-testid="more-page-change-icon"]').click();
-}
-
-export function morePageActionsOpenNewTab() {
-    clickPageMoreActions();
-    return cy.get('[data-testid="more-page-open-new-tab"]').click();
-}
-
-export function morePageActionsDuplicate() {
-    clickPageMoreActions();
-    cy.contains('button', 'Duplicate').click();
-}
-
-export function morePageActionsMoveTo() {
-    clickPageMoreActions();
-    cy.contains('button', 'Move to').click();
-}
-
-export function morePageActionsDelete() {
-    clickPageMoreActions();
-    cy.get('[data-testid="delete-page-button"]').click();
-}
-
-export function getMorePageActionsRenameButton() {
-    return cy.get('[data-testid="more-page-rename"]');
-}
-
-export function getMorePageActionsChangeIconButton() {
-    return cy.get('[data-testid="more-page-change-icon"]');
-}
-
-export function getMorePageActionsOpenNewTabButton() {
-    return cy.get('[data-testid="more-page-open-new-tab"]');
-}
-
-export function getMorePageActionsDuplicateButton() {
-    return cy.get('[data-slot="dropdown-menu-content"]').find('[data-slot="dropdown-menu-item"]').contains('Duplicate');
-}
-
-export function getMorePageActionsMoveToButton() {
-    return cy.get('[data-slot="dropdown-menu-content"]').find('[data-slot="dropdown-menu-item"]').contains('Move to');
-}
-
-export function getMorePageActionsDeleteButton() {
-    return cy.get('[data-testid="delete-page-button"]');
-}
-
-export function clickDeletePageButton() {
-    return cy.get('[data-testid="delete-page-button"]').click();
-}
-
-export function confirmPageDeletion() {
-    return cy.get('body').then(($body) => {
-        if ($body.find('[data-testid="delete-page-confirm-modal"]').length > 0) {
-            cy.get('[data-testid="delete-page-confirm-modal"]').within(() => {
-                cy.contains('button', 'Delete').click();
-            });
-        }
-    });
-}
-
-

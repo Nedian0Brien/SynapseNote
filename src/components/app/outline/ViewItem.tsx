@@ -185,6 +185,7 @@ function ViewItem({
         width,
       }}
       className={'flex h-fit flex-col overflow-hidden'}
+      data-testid='page-item'
     >
       {renderItem}
       {renderChildren}

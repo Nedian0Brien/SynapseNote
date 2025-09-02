@@ -1,507 +1,42 @@
-/// <reference types="cypress" />
+/**
+ * Flow utility functions for Cypress E2E tests
+ * Contains high-level test flow operations that orchestrate multiple page interactions
+ */
 
-import { getVisibleEditor } from './editor';
-import { getModal, selectSpace } from './modal';
-import { clickPageByName, getPageByName } from './pages';
-import { clickNewPageButton } from './sidebar';
-
-export function closeDialogIfOpen() {
-    return cy.get('body').then(($body) => {
-        if ($body.find('[role="dialog"]').length > 0) {
-            cy.get('body').type('{esc}', { force: true });
-            cy.get('[role="dialog"]').should('not.exist');
-        }
-    });
+/**
+ * Waits for the page to fully load
+ * @param waitTime - Time to wait in milliseconds (default: 3000)
+ * @returns Cypress chainable
+ */
+export function waitForPageLoad(waitTime: number = 3000) {
+    cy.task('log', `Waiting for page load (${waitTime}ms)`);
+    return cy.wait(waitTime);
 }
 
-export function focusEditorInDialogIfPresent() {
-    return cy.get('body', { timeout: 15000 }).then(($body) => {
-        const hasDialog = $body.find('[role="dialog"]').length > 0;
-        if (hasDialog) {
-            const hasTitle = $body.find('[data-testid="page-title-input"]').length > 0;
-            if (hasTitle) {
-                cy.get('[data-testid="page-title-input"]').first().type('{enter}', { force: true });
-            }
-            cy.get('[role="dialog"] [data-testid="editor-content"]', { timeout: 20000 }).should('be.visible');
-        } else {
-            cy.get('[data-testid="editor-content"]', { timeout: 20000 }).should('be.visible');
-        }
-    });
+/**
+ * Waits for the sidebar to be ready and visible
+ * @param timeout - Maximum time to wait in milliseconds (default: 10000)
+ * @returns Cypress chainable
+ */
+export function waitForSidebarReady(timeout: number = 10000) {
+    cy.task('log', 'Waiting for sidebar to be ready');
+    return cy.get('[data-testid="sidebar-page-header"]', { timeout }).should('be.visible');
 }
 
-export function prepareNewPageEditor(spaceName: string = 'General') {
-    clickNewPageButton();
-    cy.wait(1000);
-    selectSpace(spaceName);
-    return focusEditorInDialogIfPresent();
-}
-
-export function typeLinesInVisibleEditor(lines: string[]) {
-    return cy.get('body').then(($body) => {
-        const hasTestIdEditor = $body.find('[data-testid="editor-content"]:visible').length > 0;
-        if (hasTestIdEditor) {
-            return getVisibleEditor().then(($editor) => {
-                lines.forEach((line, index) => {
-                    if (index > 0) {
-                        cy.wrap($editor).type('{enter}', { force: true });
-                    }
-                    cy.wrap($editor).type(line, { force: true });
-                });
-            });
-        } else {
-            cy.task('log', 'Editor with data-testid not found, trying fallback strategies');
-            const hasContentEditable = $body.find('[contenteditable="true"]:visible').length > 0;
-            if (hasContentEditable) {
-                cy.task('log', 'Found contenteditable element');
-                return cy.get('[contenteditable="true"]:visible').first().then(($editor) => {
-                    lines.forEach((line, index) => {
-                        if (index > 0) {
-                            cy.wrap($editor).type('{enter}', { force: true });
-                        }
-                        cy.wrap($editor).type(line, { force: true });
-                    });
-                });
-            }
-            const hasInput = $body.find('input:visible, textarea:visible').length > 0;
-            if (hasInput) {
-                cy.task('log', 'Found input/textarea element');
-                return cy.get('input:visible, textarea:visible').first().then(($editor) => {
-                    lines.forEach((line, index) => {
-                        if (index > 0) {
-                            cy.wrap($editor).type('{enter}', { force: true });
-                        }
-                        cy.wrap($editor).type(line, { force: true });
-                    });
-                });
-            }
-            const hasTextbox = $body.find('[role="textbox"]:visible').length > 0;
-            if (hasTextbox) {
-                cy.task('log', 'Found textbox element');
-                return cy.get('[role="textbox"]:visible').first().then(($editor) => {
-                    lines.forEach((line, index) => {
-                        if (index > 0) {
-                            cy.wrap($editor).type('{enter}', { force: true });
-                        }
-                        cy.wrap($editor).type(line, { force: true });
-                    });
-                });
-            }
-            cy.task('log', 'No suitable editor element found, skipping typing');
-            cy.task('log', `Would have typed: ${lines.join(' | ')}`);
-            return cy.wrap(null);
-        }
-    });
-}
-
-export function openPageFromSidebar(pageName: string, spaceName?: string) {
-    closeDialogIfOpen();
-    if (spaceName) {
-        cy.get('[data-testid="space-name"]').contains(spaceName).parents('[data-testid="space-item"]').first().click({ force: true });
-    } else {
-        cy.get('[data-testid="space-name"]').first().parents('[data-testid="space-item"]').first().click({ force: true });
-    }
-    return cy
-        .get('body')
-        .then(($body) => {
-            const pageExists = $body.find(`[data-testid="page-name"]:contains("${pageName}")`).length > 0;
-            if (pageExists) {
-                cy.task('log', `Found page with exact name: ${pageName}`);
-                getPageByName(pageName).should('exist');
-                clickPageByName(pageName);
-            } else {
-                cy.task('log', `Page with exact name "${pageName}" not found, using first available page`);
-                cy.get('[data-testid="page-name"]:visible').first().then(($el) => {
-                    const actualName = $el.text().trim();
-                    cy.task('log', `Opening page with name: ${actualName}`);
-                    cy.wrap($el).click();
-                });
-            }
-        })
-        .then(() => {
-            cy.wait(2000);
-            return cy.get('body').then(($body) => {
-                if ($body.find('[data-testid="editor-content"]').length > 0) {
-                    return cy.get('[data-testid="editor-content"]').should('be.visible');
-                } else {
-                    cy.task('log', 'Editor content not found, but page opened successfully');
-                    return cy.wrap(null);
-                }
-            });
-        });
-}
-
-export function createPage(pageName: string) {
-    // Log initial state
-    cy.task('log', '=== Starting Page Creation ===');
-    cy.task('log', `Target page name: ${pageName}`);
-    
-    // Check authentication state before creating page
-    cy.window().then((win) => {
-        const storage = win.localStorage;
-        const authToken = storage.getItem('af_auth_token');
-        const userId = storage.getItem('af_user_id');
-        cy.task('log', `Auth state - Token exists: ${!!authToken}, User ID: ${userId || 'none'}`);
-    });
-    
-    clickNewPageButton();
-    cy.wait(2000);
-    
-    getModal()
-        .should('be.visible')
-        .then(($modal) => {
-            // Check if there are any space items available
-            const spaceItems = $modal.find('[data-testid="space-item"]');
-            
-            if (spaceItems.length === 0) {
-                cy.task('log', 'No spaces found, need to create one first');
-                
-                // Click "Create new space" button within the modal
-                cy.wrap($modal).within(() => {
-                    cy.contains('button', /create.*space/i).click({ force: true });
-                });
-                
-                cy.wait(1000);
-                
-                // Fill in the space creation form
-                cy.get('input[type="text"]').first().clear().type('Test Space');
-                cy.contains('button', 'Save').click({ force: true });
-                cy.wait(3000); // Wait for space creation
-                
-                // The space is created and we're navigated to it
-                // Close any remaining modals
-                cy.task('log', 'Space created, closing modals');
-                
-                // Press ESC multiple times to close any open modals
-                cy.get('body').type('{esc}');
-                cy.wait(500);
-                cy.get('body').type('{esc}');
-                cy.wait(2000);
-                
-                // Since we created a space but not a page, we'll skip the page creation
-                // The test will need to be adjusted to handle this scenario
-                cy.task('log', 'Space created, no page created in this flow');
-                
-                // Return early from the function since we're not creating a page
-                return;
-            } else {
-                cy.task('log', `Found ${spaceItems.length} spaces, selecting the first one`);
-                
-                // Select the first space and create page
-                cy.wrap($modal).within(() => {
-                    cy.get('[data-testid="space-item"]').first().click();
-                    cy.contains('button', 'Add').click();
-                });
-                
-                cy.wait(2000);
-                cy.task('log', 'Clicked Add button, initiating page creation...');
-            }
-        });
-
-    // After clicking Add, the modal should close and we should navigate to the new page
-    // Wait for the modal to disappear first - with retry logic for WebSocket connectivity issues
-    cy.get('body').then($body => {
-        if ($body.find('[role="dialog"]').length > 0) {
-            cy.task('log', 'Modal still open after Add click, waiting for closure...');
-            // Give WebSocket time to process and close modal
-            cy.wait(2000);
-            
-            // If still open, try ESC key to force close
-            cy.get('body').then($bodyCheck => {
-                if ($bodyCheck.find('[role="dialog"]').length > 0) {
-                    cy.task('log', 'Modal still open, attempting ESC key to close');
-                    cy.get('body').type('{esc}');
-                    cy.wait(1000);
-                }
-            });
-        }
-    });
-    
-    // Check if modal exists and close it if needed
-    cy.get('body').then($body => {
-        if ($body.find('[role="dialog"]').length > 0) {
-            cy.get('[role="dialog"]', { timeout: 15000 }).should('not.exist');
-            cy.task('log', 'Modal closed successfully');
-        } else {
-            cy.task('log', 'No modal to close');
-        }
-    });
-    
-    // Capture URL before and after navigation
-    cy.url().then((urlBefore) => {
-        cy.task('log', `URL before navigation: ${urlBefore}`);
-    });
-    
-    // Wait for URL to change - it should include a view ID after navigation
-    cy.url().should('include', '/app/', { timeout: 10000 }).then((urlAfter) => {
-        cy.task('log', `URL after navigation: ${urlAfter}`);
-        // Extract view ID from URL if present
-        const viewIdMatch = urlAfter.match(/\/app\/[^/]+\/([^/]+)/);
-        if (viewIdMatch) {
-            cy.task('log', `View ID from URL: ${viewIdMatch[1]}`);
-        } else {
-            cy.task('log', 'WARNING: No view ID found in URL');
-        }
-    });
-    
-    // Wait for WebSocket connection to stabilize
-    cy.task('log', 'Waiting for WebSocket connection to stabilize...');
-    cy.wait(3000); // Give WebSocket time to establish stable connection
-    
-    // Check WebSocket connection status
-    cy.window().then((win) => {
-        // Check if there are any WebSocket connection indicators
-        const wsConnected = win.localStorage.getItem('ws_connected');
-        cy.task('log', `WebSocket connection status: ${wsConnected || 'unknown'}`);
-        // Log any global WebSocket state if available
-        cy.task('log', `Window has WebSocket: ${!!win.WebSocket}`);
-    });
-    
-    // Wait for document to load properly - be more generous with WebSocket sync
-    const isCi = Cypress.env('CI') || Cypress.env('GITHUB_ACTIONS');
-    const initialWaitTime = isCi ? 10000 : 5000;
-    const retryTimeoutMs = isCi ? 45000 : 30000; // 45s for CI, 30s for local
-    
-    cy.task('log', `Initial wait: ${initialWaitTime}ms, then retry timeout: ${retryTimeoutMs}ms (CI: ${!!isCi})`);
-    cy.wait(initialWaitTime);
-    
-    // Wait for document elements to appear using proper Cypress retry mechanism
-    
-    cy.task('log', `Waiting for document elements with ${retryTimeoutMs}ms timeout...`);
-    
-    cy.get('body', { timeout: retryTimeoutMs }).should(($body) => {
-        const titleInputs = $body.find('[data-testid="page-title-input"]').length;
-        const h1Elements = $body.find('h1').length;
-        const contentEditable = $body.find('[contenteditable="true"]').length;
-        const totalElements = titleInputs + h1Elements + contentEditable;
-        
-        // At least one type of document element should be present
-        expect(totalElements).to.be.greaterThan(0);
-    }).then(($body) => {
-        // Log success after elements are found
-        const titleInputs = $body.find('[data-testid="page-title-input"]').length;
-        const h1Elements = $body.find('h1').length;
-        const contentEditable = $body.find('[contenteditable="true"]').length;
-        cy.task('log', `✓ Document loaded: title=${titleInputs}, h1=${h1Elements}, editable=${contentEditable}`);
-    });
-    
-    // Now check for the page title input on the new page
-    cy.task('log', '=== Checking Page Title Input ===');
-    cy.get('body').then(($body) => {
-        // Debug: Check what elements are available
-        const titleInputCount = $body.find('[data-testid="page-title-input"]').length;
-        const h1Count = $body.find('h1').length;
-        const contentEditableCount = $body.find('[contenteditable="true"]').length;
-        const readOnlyEditableCount = $body.find('[contenteditable="false"]').length;
-        const ariaReadOnlyCount = $body.find('[aria-readonly="true"]').length;
-        
-        // Check for ViewMetaPreview component indicators
-        const viewIconCount = $body.find('.view-icon').length;
-        const pageIconCount = $body.find('[data-testid^="page-icon"]').length;
-        
-        // Check for any error messages or loading states
-        const errorCount = $body.find('[role="alert"]').length;
-        const loadingCount = $body.find('[data-testid*="loading"], .loading, .spinner').length;
-        
-        cy.task('log', '--- Element Counts ---');
-        cy.task('log', `page-title-input elements: ${titleInputCount}`);
-        cy.task('log', `h1 elements: ${h1Count}`);
-        cy.task('log', `contenteditable="true": ${contentEditableCount}`);
-        cy.task('log', `contenteditable="false": ${readOnlyEditableCount}`);
-        cy.task('log', `aria-readonly="true": ${ariaReadOnlyCount}`);
-        cy.task('log', `view-icon elements: ${viewIconCount}`);
-        cy.task('log', `page-icon elements: ${pageIconCount}`);
-        cy.task('log', `error alerts: ${errorCount}`);
-        cy.task('log', `loading indicators: ${loadingCount}`);
-        
-        // Check if we're in the right component context
-        if (h1Count > 0) {
-            cy.get('h1').first().then(($h1) => {
-                const h1Text = $h1.text().trim();
-                const h1Classes = $h1.attr('class') || '';
-                const h1Parent = $h1.parent().attr('class') || '';
-                cy.task('log', `First h1 text: "${h1Text}"`);
-                cy.task('log', `First h1 classes: ${h1Classes}`);
-                cy.task('log', `First h1 parent classes: ${h1Parent}`);
-                
-                // Check if h1 contains the title input
-                const hasNestedInput = $h1.find('[data-testid="page-title-input"]').length > 0;
-                const hasContentEditable = $h1.find('[contenteditable]').length > 0;
-                cy.task('log', `h1 contains page-title-input: ${hasNestedInput}`);
-                cy.task('log', `h1 contains contenteditable: ${hasContentEditable}`);
-            });
-        }
-        
-        // Log any contenteditable elements found
-        if (contentEditableCount > 0) {
-            cy.get('[contenteditable="true"]').first().then(($editable) => {
-                const editableTag = $editable.prop('tagName');
-                const editableId = $editable.attr('id') || 'none';
-                const editableTestId = $editable.attr('data-testid') || 'none';
-                const editablePlaceholder = $editable.attr('data-placeholder') || 'none';
-                cy.task('log', `First contenteditable element:`);
-                cy.task('log', `  - Tag: ${editableTag}`);
-                cy.task('log', `  - ID: ${editableId}`);
-                cy.task('log', `  - data-testid: ${editableTestId}`);
-                cy.task('log', `  - placeholder: ${editablePlaceholder}`);
-            });
-        }
-        
-        // === ATTEMPT TO SET PAGE TITLE ===
-        cy.task('log', '=== Attempting to Set Page Title ===');
-        
-        if (titleInputCount > 0) {
-            cy.task('log', '✓ Found page-title-input element');
-            cy.get('[data-testid="page-title-input"]').first().then(($input) => {
-                // Check if the input is actually editable
-                const isEditable = $input.attr('contenteditable') === 'true';
-                const isReadOnly = $input.attr('aria-readonly') === 'true';
-                cy.task('log', `  - Is editable: ${isEditable}`);
-                cy.task('log', `  - Is read-only: ${isReadOnly}`);
-                
-                if (isEditable && !isReadOnly && $input && $input.length > 0) {
-                    // Re-query the element to ensure it's fresh
-                    cy.get('[data-testid="page-title-input"]').first()
-                        .scrollIntoView()
-                        .should('be.visible')
-                        .click({ force: true })
-                        .clear({ force: true })
-                        .type(pageName, { force: true })
-                        .type('{esc}');
-                    cy.task('log', `✓ Set page title to: ${pageName}`);
-                } else {
-                    cy.task('log', '✗ Title input found but not editable or element is null!');
-                    cy.task('log', '  This indicates the page is in read-only mode or element was not found');
-                }
-            });
-        } else if (contentEditableCount > 0) {
-            cy.task('log', '⚠ No page-title-input found, trying contenteditable elements...');
-            cy.get('[contenteditable="true"]').first().then(($editable) => {
-                const editableTestId = $editable.attr('data-testid') || '';
-                const isPageTitle = editableTestId.includes('title') || $editable.attr('id')?.includes('title');
-                
-                if (isPageTitle || $editable.prop('tagName') === 'H1') {
-                    cy.task('log', '✓ Found likely title element (contenteditable)');
-                    cy.wrap($editable)
-                        .scrollIntoView()
-                        .should('be.visible')
-                        .click({ force: true })
-                        .clear({ force: true })
-                        .type(pageName, { force: true })
-                        .type('{esc}');
-                    cy.task('log', `✓ Set page title using contenteditable: ${pageName}`);
-                } else {
-                    cy.task('log', '⚠ Found contenteditable but might not be title field');
-                    cy.wrap($editable)
-                        .scrollIntoView()
-                        .should('be.visible')
-                        .click({ force: true })
-                        .clear({ force: true })
-                        .type(pageName, { force: true })
-                        .type('{esc}');
-                    cy.task('log', `⚠ Attempted to set title in contenteditable: ${pageName}`);
-                }
-            });
-        } else {
-            // No editable elements found - handle CI vs local differently  
-            const isCi = Cypress.env('CI') || Cypress.env('GITHUB_ACTIONS');
-            
-            if (isCi) {
-                cy.task('log', '⚠ No editable elements found in CI environment');
-                cy.task('log', 'This is often due to WebSocket connectivity or slower loading');
-                cy.task('log', 'Continuing test - the page verification should still work...');
-                
-                // Don't try complex sidebar navigation in CI - just continue
-                // The test can still verify page creation/deletion through the sidebar
-                
-            } else {
-                cy.task('log', '✗ CRITICAL: No editable elements found on page!');
-                cy.task('log', 'Possible causes:');
-                cy.task('log', '  1. Page is in read-only mode');
-                cy.task('log', '  2. User lacks edit permissions');
-                cy.task('log', '  3. Page failed to load properly');
-                cy.task('log', '  4. Authentication/session issue');
-                
-                // Try to get more context in local environment
-                cy.get('[data-testid="page-name"]').then(($pageNames) => {
-                    if ($pageNames.length > 0) {
-                        cy.task('log', 'Pages visible in sidebar:');
-                        $pageNames.each((_, el) => {
-                            cy.task('log', `  - "${el.textContent?.trim()}"`);
-                        });
-                    }
-                });
-            }
-        }
-        
-        cy.task('log', '=== End Page Title Setting Attempt ===');
-    });
-    
-    // Wait a moment for any changes to take effect
-    cy.wait(2000);
-    
-    // Reload the page to ensure sidebar reflects the title change
-    cy.task('log', 'Reloading page to refresh sidebar with new title...');
-    cy.reload();
-    cy.wait(3000);
-    
-    // === VERIFY PAGE TITLE WAS SET ===
-    cy.task('log', '=== Verifying Page Title ===');
-    
-    // Check sidebar for the page name
-    cy.get('[data-testid="page-name"]').then(($pageNames) => {
-        const pageNamesArray = Array.from($pageNames).map(el => el.textContent?.trim());
-        cy.task('log', `Pages in sidebar after title attempt: ${JSON.stringify(pageNamesArray)}`);
-        
-        const targetPageFound = pageNamesArray.includes(pageName);
-        const isCi = Cypress.env('CI') || Cypress.env('GITHUB_ACTIONS');
-        
-        if (targetPageFound) {
-            cy.task('log', `✓ SUCCESS: Page "${pageName}" found in sidebar`);
-        } else if (isCi) {
-            // In CI, look for any new pages or "Untitled" pages
-            const hasUntitled = pageNamesArray.some(name => name === 'Untitled' || name === '');
-            const hasNewPage = pageNamesArray.length > 0;
-            
-            if (hasUntitled || hasNewPage) {
-                cy.task('log', `✓ CI SUCCESS: Page creation detected (found ${pageNamesArray.length} pages)`);
-                cy.task('log', '  Title setting may have failed, but page creation succeeded');
-            } else {
-                cy.task('log', `⚠ CI PARTIAL: Could not verify page "${pageName}"`);
-                cy.task('log', `  Found: ${JSON.stringify(pageNamesArray)}`);
-            }
-        } else {
-            cy.task('log', `✗ FAILURE: Page "${pageName}" NOT found in sidebar`);
-            cy.task('log', `  Expected: "${pageName}"`);
-            cy.task('log', `  Found: ${JSON.stringify(pageNamesArray)}`);
-        }
-    });
-    
-    // Also check the page title on the page itself (if h1 exists)
-    cy.get('body').then(($body) => {
-        const h1Elements = $body.find('h1');
-        if (h1Elements.length > 0) {
-            const h1Text = h1Elements.first().text().trim();
-            cy.task('log', `Current h1 text: "${h1Text}"`);
-            
-            // Handle emoji prefix - check if title ends with our expected name
-            if (h1Text === pageName || h1Text.endsWith(pageName)) {
-                cy.task('log', `✓ Page title matches expected (with possible emoji prefix): "${pageName}"`);
-            } else {
-                cy.task('log', `⚠ Page title doesn't match. Expected: "${pageName}", Got: "${h1Text}"`);
-            }
-        } else {
-            cy.task('log', '⚠ No h1 element found on page - document may still be loading');
-        }
-    });
-    
-    cy.task('log', '=== End Verification ===');
-    
-    return cy.wait(1000);
-}
-
+/**
+ * Creates a new page and adds content to it
+ * Used in publish-page.cy.ts for setting up test pages with content
+ * @param pageName - Name for the new page
+ * @param content - Array of content lines to add to the page
+ */
 export function createPageAndAddContent(pageName: string, content: string[]) {
+    cy.task('log', `Creating page "${pageName}" with ${content.length} lines of content`);
+    
+    // Create the page first
     createPage(pageName);
-    cy.task('log', 'Page created');
+    cy.task('log', 'Page created successfully');
+    
+    // Handle WebSocket mock mode vs regular mode
     if (Cypress.env('MOCK_WEBSOCKET')) {
         cy.task('log', 'Opening first available page (WebSocket mock mode)');
         cy.wait(2000);
@@ -516,83 +51,138 @@ export function createPageAndAddContent(pageName: string, content: string[]) {
         cy.get('[data-testid="page-name"]:visible').first().click();
         cy.task('log', 'Waiting for page to load in WebSocket mock mode');
         cy.wait(5000);
-        cy.get('body').then(($body) => {
-            if ($body.find('[data-testid="editor-content"]').length > 0) {
-                cy.task('log', 'Editor content found');
-                cy.get('[data-testid="editor-content"]').should('be.visible');
-            } else {
-                cy.task('log', 'Editor content not found, checking for alternative elements');
-                cy.url().should('include', '/app/');
-                cy.wait(2000);
-            }
-        });
     } else {
         openPageFromSidebar(pageName);
     }
+    
     cy.task('log', 'Opened page from sidebar');
     typeLinesInVisibleEditor(content);
-    cy.task('log', 'Content typed');
+    cy.task('log', 'Content typed successfully');
     cy.wait(1000);
     assertEditorContentEquals(content);
     cy.task('log', 'Content verification completed');
 }
 
-export function assertEditorContentEquals(lines: string[]) {
-    const joinLines = (arr: string[]) => arr.join('\n');
-    const normalize = (s: string) => s
-        .replace(/\u00A0/g, ' ')
-        .replace(/[\t ]+/g, ' ')
-        .replace(/[ ]*\n[ ]*/g, '\n')
-        .trim();
-    const expected = normalize(joinLines(lines));
-    return cy.get('body').then(($body) => {
-        const hasEditor = $body.find('[data-testid="editor-content"]:visible, [contenteditable="true"]:visible, input:visible, textarea:visible, [role="textbox"]:visible').length > 0;
-        if (hasEditor) {
-            return cy.window().then((win) => {
-                const yDoc = (win as any).__currentYDoc;
-                if (!yDoc) {
-                    return getVisibleEditor().invoke('text').then((domText) => {
-                        const actual = normalize(domText as string);
-                        expect(actual).to.eq(expected);
-                    });
-                }
-            }).then(() => {
-                return getVisibleEditor().invoke('text').then((domText) => {
-                    const actual = normalize(domText as string);
-                    expect(actual).to.eq(expected);
-                });
-            });
-        } else {
-            cy.task('log', 'No editor found for content assertion, skipping verification');
-            cy.task('log', `Expected content would have been: ${expected}`);
-            return cy.wrap(null);
+/**
+ * Opens a page from the sidebar by its name
+ * Used in publish-page.cy.ts for navigating to specific pages
+ * @param pageName - Name of the page to open
+ */
+export function openPageFromSidebar(pageName: string) {
+    cy.task('log', `Opening page from sidebar: ${pageName}`);
+    
+    // Ensure sidebar is visible
+    cy.get('[data-testid="sidebar-page-header"]').should('be.visible');
+    
+    // Find and click the page
+    cy.get('[data-testid="page-name"]')
+        .contains(pageName)
+        .scrollIntoView()
+        .should('be.visible')
+        .click();
+    
+    // Wait for page to load
+    cy.wait(2000);
+    cy.task('log', `Page "${pageName}" opened successfully`);
+}
+
+/**
+ * Expands a space in the sidebar to show its pages
+ * Used in create-delete-page.cy.ts and more-page-action.cy.ts
+ * @param spaceIndex - Index of the space to expand (default: 0 for first space)
+ */
+export function expandSpace(spaceIndex: number = 0) {
+    cy.task('log', `Expanding space at index ${spaceIndex}`);
+    
+    cy.get('[data-testid="space-item"]').eq(spaceIndex).within(() => {
+        cy.get('[data-testid="space-expanded"]').then($expanded => {
+            const isExpanded = $expanded.attr('data-expanded') === 'true';
+            
+            if (!isExpanded) {
+                cy.task('log', 'Space is collapsed, expanding it');
+                cy.get('[data-testid="space-name"]').click();
+            } else {
+                cy.task('log', 'Space is already expanded');
+            }
+        });
+    });
+    
+    cy.wait(500);
+}
+
+// Internal helper functions (not exported but used by exported functions)
+
+/**
+ * Creates a new page with the given name
+ * Internal function used by createPageAndAddContent
+ */
+function createPage(pageName: string) {
+    cy.task('log', `Creating page: ${pageName}`);
+    
+    // Click new page button
+    cy.get('[data-testid="new-page-button"]').should('be.visible').click();
+    cy.wait(1000);
+    
+    // Handle the new page modal
+    cy.get('[data-testid="new-page-modal"]').should('be.visible').within(() => {
+        // Select the first available space
+        cy.get('[data-testid="space-item"]').first().click();
+        cy.wait(500);
+        // Click Add button
+        cy.contains('button', 'Add').click();
+    });
+    
+    // Wait for navigation to the new page
+    cy.wait(3000);
+    
+    // Close any modal dialogs
+    cy.get('body').then($body => {
+        if ($body.find('[role="dialog"]').length > 0) {
+            cy.task('log', 'Closing modal dialog');
+            cy.get('body').type('{esc}');
+            cy.wait(1000);
         }
     });
 }
 
-export function waitForPageLoad(timeout: number = 3000) {
-    return cy.wait(timeout);
-}
-
-export function waitForSidebarReady(timeout: number = 10000) {
-    cy.task('log', 'Waiting for sidebar to be ready');
-    return cy.get('[data-testid="new-page-button"]', { timeout }).should('be.visible');
-}
-
-export function verifyPageExists(pageName: string) {
-    return getPageByName(pageName).should('exist');
-}
-
-export function verifyPageNotExists(pageName: string) {
-    return cy.get('body').then(($body) => {
-        if ($body.find('[data-testid="page-name"]').length > 0) {
-            cy.get('[data-testid="page-name"]').each(($el) => {
-                cy.wrap($el).should('not.contain', pageName);
-            });
-        } else {
-            cy.get('[data-testid="page-name"]').should('not.exist');
+/**
+ * Types multiple lines of content in the visible editor
+ * Internal function used by createPageAndAddContent
+ */
+function typeLinesInVisibleEditor(lines: string[]) {
+    cy.task('log', `Typing ${lines.length} lines in editor`);
+    
+    cy.get('[contenteditable="true"]').then($editors => {
+        cy.task('log', `Found ${$editors.length} editable elements`);
+        
+        let editorFound = false;
+        $editors.each((index, el) => {
+            const $el = Cypress.$(el);
+            // Skip title inputs
+            if (!$el.attr('data-testid')?.includes('title') && !$el.hasClass('editor-title')) {
+                cy.task('log', `Using editor at index ${index}`);
+                cy.wrap(el).click().type(lines.join('{enter}'));
+                editorFound = true;
+                return false; // break the loop
+            }
+        });
+        
+        if (!editorFound) {
+            cy.task('log', 'Using fallback: last contenteditable element');
+            cy.wrap($editors.last()).click().type(lines.join('{enter}'));
         }
     });
 }
 
-
+/**
+ * Asserts that the editor content matches the expected lines
+ * Internal function used by createPageAndAddContent
+ */
+function assertEditorContentEquals(lines: string[]) {
+    cy.task('log', 'Verifying editor content');
+    
+    lines.forEach(line => {
+        cy.contains(line).should('exist');
+        cy.task('log', `✓ Found content: "${line}"`);
+    });
+}
