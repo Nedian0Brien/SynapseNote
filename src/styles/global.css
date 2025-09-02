@@ -4,7 +4,6 @@
 @import "./variables/semantic.light.css";
 @import "./variables/semantic.dark.css";
 @import "./template.css";
-@import "../components/chat/styles/index.scss";
 
 :root {
     /* new shadow */

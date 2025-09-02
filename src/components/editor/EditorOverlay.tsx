@@ -8,7 +8,6 @@ import { insertDataAfterBlock } from '@/components/ai-chat/utils';
 import { useEditorContext } from '@/components/editor/EditorContext';
 import { getScrollParent } from '@/components/global-comment/utils';
 import { notify } from '@/components/_shared/notify';
-import '@/components/chat/styles/index.scss';
 
 import { AIAssistantProvider, ContextPlaceholder, PromptModalProvider, WriterRequest } from '@/components/chat';
 import { EditorData } from '@appflowyinc/editor';
@@ -65,7 +64,7 @@ function EditorOverlay({ viewId, workspaceId }: { viewId: string; workspaceId: s
           ReactEditor.focus(editor);
           const entry = findSlateEntryByBlockId(editor, blockId);
 
-          if(!entry) return;
+          if (!entry) return;
 
           const [, path] = entry;
 
@@ -126,7 +125,7 @@ function EditorOverlay({ viewId, workspaceId }: { viewId: string; workspaceId: s
           ReactEditor.focus(editor);
           const entry = findSlateEntryByBlockId(editor, blockId);
 
-          if(!entry) return;
+          if (!entry) return;
 
           const [, path] = entry;
 
