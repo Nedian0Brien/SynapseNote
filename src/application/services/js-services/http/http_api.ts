@@ -1,12 +1,13 @@
 import { RepeatedChatMessage } from '@appflowyinc/ai-chat';
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import dayjs from 'dayjs';
 import { omit } from 'lodash-es';
 import { nanoid } from 'nanoid';
 
 import { GlobalComment, Reaction } from '@/application/comment.type';
+import { apiGet, apiPostVoid } from '@/application/services/js-services/http/api-client';
 import { ApiResponse } from '@/application/services/js-services/http/api-utils';
-import { ErrorCode } from '@/application/services/js-services/http/error-handler';
+import { apiErrorHandler, AppResponseError, ErrorCode } from '@/application/services/js-services/http/error-handler';
 import { initGrantService, refreshToken } from '@/application/services/js-services/http/gotrue';
 import { blobToBytes } from '@/application/services/js-services/http/utils';
 import { AFCloudConfig } from '@/application/services/services.type';
@@ -119,28 +120,117 @@ export function initAPIService(config: AFCloudConfig) {
     }
   );
 
-  axiosInstance.interceptors.response.use(async (response) => {
-    const status = response.status;
+  axiosInstance.interceptors.response.use(
+    async (response) => {
+      const status = response.status;
 
-    if (status === 401) {
-      const token = getTokenParsed();
+      if (status === 401) {
+        const token = getTokenParsed();
 
-      if (!token) {
-        invalidToken();
+        if (!token) {
+          invalidToken();
+          return response;
+        }
+
+        const refresh_token = token.refresh_token;
+
+        try {
+          await refreshToken(refresh_token);
+        } catch (e) {
+          invalidToken();
+        }
+      }
+
+      // Check if this looks like an ApiResponse
+      // ApiResponse should have a 'code' field that's a number
+      const responseData = response.data;
+      const isApiResponse = responseData &&
+        typeof responseData === 'object' &&
+        'code' in responseData &&
+        typeof responseData.code === 'number';
+
+      if (!isApiResponse) {
+        // Not an API response, check HTTP status to determine success
+        if (response.status !== 200) {
+          // Non-200 status for non-API response
+          const error: AppResponseError = {
+            code: ErrorCode.Unhandled,
+            message: `HTTP ${response.status}: ${response.statusText}`
+          };
+          
+          const showNotification = (response.config as AxiosRequestConfig & { showNotification?: boolean })?.showNotification ?? false;
+          
+          await apiErrorHandler.handleError(error, { showNotification });
+          return Promise.reject(error);
+        }
+        
+        // Status 200 - success, return data as-is
+        response.data = responseData;
         return response;
       }
 
-      const refresh_token = token.refresh_token;
+      // Now we know it's an ApiResponse
+      const apiResponse = responseData as ApiResponse;
 
-      try {
-        await refreshToken(refresh_token);
-      } catch (e) {
+      // Handle error codes
+      if (apiResponse.code !== ErrorCode.Ok) {
+        const error: AppResponseError = {
+          code: Object.values(ErrorCode).includes(apiResponse.code) ? apiResponse.code : ErrorCode.Unhandled,
+          message: apiResponse.message || 'An error occurred'
+        };
+
+        // Check if this request wants to show notifications
+        const showNotification = (response.config as AxiosRequestConfig & { showNotification?: boolean })?.showNotification ?? false;
+
+        await apiErrorHandler.handleError(error, { showNotification });
+
+        return Promise.reject(error);
+      }
+
+      // Success - return just the data portion
+      // For void responses, data will be undefined which is fine
+      response.data = apiResponse.data;
+
+      return response;
+    },
+    async (error) => {
+      // Handle network errors or non-2xx status codes
+      if (error.response?.status === 401) {
         invalidToken();
       }
-    }
 
-    return response;
-  });
+      const showNotification = (error.config as AxiosRequestConfig & { showNotification?: boolean })?.showNotification ?? false;
+
+      // If we got a response, try to parse it as ApiResponse
+      if (error.response?.data) {
+        const responseData = error.response.data;
+        const isApiResponse = responseData &&
+          typeof responseData === 'object' &&
+          'code' in responseData &&
+          typeof responseData.code === 'number';
+
+        if (isApiResponse) {
+          const apiResponse = responseData;
+          const appError: AppResponseError = {
+            code: Object.values(ErrorCode).includes(apiResponse.code) ? apiResponse.code : ErrorCode.Unhandled,
+            message: apiResponse.message || 'An error occurred'
+          };
+
+          await apiErrorHandler.handleError(appError, { showNotification });
+          return Promise.reject(appError);
+        }
+      }
+
+      // Fallback for network errors or unparseable responses
+      const appError: AppResponseError = {
+        code: ErrorCode.NetworkError,
+        message: error.message || 'Network error occurred'
+      };
+
+      await apiErrorHandler.handleError(appError, { showNotification });
+      return Promise.reject(appError);
+    }
+  );
 }
 
 export async function signInWithUrl(url: string) {
@@ -182,75 +272,45 @@ export async function signInWithUrl(url: string) {
 
 export async function verifyToken(accessToken: string) {
   const url = `/api/user/verify/${accessToken}`;
-  const response = await axiosInstance?.get<{
-    code: number;
-    data?: {
-      is_new: boolean;
-    };
-    message: string;
-  }>(url);
-
-  const data = response?.data;
-
-  if (data?.code === 0 && data.data) {
-    return data.data;
-  }
-
-  return Promise.reject(data);
+  
+  return await apiGet<{ is_new: boolean }>(url);
 }
 
 export async function getCurrentUser(): Promise<User> {
   const url = '/api/user/profile';
-  const response = await axiosInstance?.get<ApiResponse<
-    {
-      uid: number;
-      uuid: string;
-      email: string;
-      name: string;
-      metadata: Record<string, unknown>;
-      encryption_sign: null;
-      latest_workspace_id: string;
-      updated_at: number;
-    }
-  >>(url);
 
-  const data = response?.data;
+  const data = await apiGet<{
+    uid: number;
+    uuid: string;
+    email: string;
+    name: string;
+    metadata: Record<string, unknown>;
+    latest_workspace_id: string;
+    updated_at: number;
+  }>(url);
 
-  if (data?.code === ErrorCode.Ok && data.data) {
-    const { uid, uuid, email, name, metadata } = data.data;
+  const { uid, uuid, email, name, metadata } = data;
 
-    return {
-      uid: String(uid),
-      uuid,
-      email,
-      name,
-      avatar: (metadata?.icon_url as string) || null,
-      latestWorkspaceId: data.data.latest_workspace_id,
-      metadata: metadata || {},
-    };
-  }
-
-
-  return Promise.reject(data);
+  return {
+    uid: String(uid),
+    uuid,
+    email,
+    name,
+    avatar: (metadata?.icon_url as string) || null,
+    latestWorkspaceId: data.latest_workspace_id,
+    metadata: metadata || {},
+  };
 }
 
 
 export async function updateUserProfile(metadata: Record<string, unknown>): Promise<void> {
-  const url = 'api/user/update';
-  const response = await axiosInstance?.post<{
-    code: number;
-    message: string;
-  }>(url, {
-    metadata
-  });
-
-  const data = response?.data;
-
-  if (data?.code === 0) {
+  if (!metadata || Object.keys(metadata).length === 0) {
     return;
   }
 
-  return Promise.reject(data);
+  const url = 'api/user/update';
+  
+  await apiPostVoid(url, { metadata });
 }
 
 interface AFWorkspace {

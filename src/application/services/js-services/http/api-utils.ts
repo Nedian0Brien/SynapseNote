@@ -34,7 +34,7 @@ export async function processApiResponse<T>(
   }
 
   const error: AppResponseError = {
-    code: response.code || ErrorCode.Unhandled,
+    code: Object.values(ErrorCode).includes(response.code) ? response.code : ErrorCode.Unhandled,
     message: response.message || 'An error occurred'
   };
 
@@ -54,7 +54,7 @@ export async function processVoidApiResponse(
   }
 
   const error: AppResponseError = {
-    code: response.code || ErrorCode.Unhandled,
+    code: Object.values(ErrorCode).includes(response.code) ? response.code : ErrorCode.Unhandled,
     message: response.message || 'An error occurred'
   };
 
@@ -63,9 +63,9 @@ export async function processVoidApiResponse(
 }
 
 /**
- * Wrap API call with automatic error handling
+ * Internal API call wrapper with automatic error handling
  */
-export async function apiCall<T>(
+async function processApiCall<T>(
   fn: () => Promise<ApiResponse<T>>,
   options?: Parameters<typeof processApiResponse>[1]
 ): Promise<T> {
@@ -91,14 +91,44 @@ export async function apiCall<T>(
 }
 
 /**
- * Create a standardized API error
+ * API call with mapping function for easy data transformation
  */
-export function createApiError(
-  code: ErrorCode = ErrorCode.Unhandled,
-  message?: string
-): AppResponseError {
-  return {
-    code,
-    message: message || 'An error occurred'
+export async function apiCall<T, R>(
+  fn: () => Promise<ApiResponse<T> | undefined>,
+  mapper: (data: T) => R,
+  options?: Parameters<typeof processApiResponse>[1]
+): Promise<R>;
+
+/**
+ * API call for void responses (no mapper needed)
+ */
+export async function apiCall<T>(
+  fn: () => Promise<ApiResponse<T> | undefined>,
+  options?: Parameters<typeof processApiResponse>[1]
+): Promise<void>;
+
+export async function apiCall<T, R>(
+  fn: () => Promise<ApiResponse<T> | undefined>,
+  mapperOrOptions?: ((data: T) => R) | Parameters<typeof processApiResponse>[1],
+  options?: Parameters<typeof processApiResponse>[1]
+): Promise<R | void> {
+  const wrappedFn = async (): Promise<ApiResponse<T>> => {
+    const response = await fn();
+
+    if (!response) {
+      throw new Error('No response data');
+    }
+
+    return response;
   };
+
+  // If second parameter is a function, it's a mapper
+  if (typeof mapperOrOptions === 'function') {
+    const data = await processApiCall(wrappedFn, options);
+
+    return mapperOrOptions(data);
+  }
+
+  // Otherwise, it's options (void response)
+  await processApiCall(wrappedFn, mapperOrOptions);
 }
