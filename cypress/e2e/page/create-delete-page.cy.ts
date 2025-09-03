@@ -125,43 +125,41 @@ describe('Page Create and Delete Tests', () => {
                 TestTool.expandSpace();
                 cy.wait(1000);
 
-                // Verify the page exists - it might be "Untitled" or our custom name
+                // Store initial page count and names before creation for comparison
+                let initialPageCount = 0;
+                let createdPageName = '';
+                
+                // Verify the page exists - it should be our custom name
                 PageSelectors.names().then($pages => {
                     const pageNames = Array.from($pages).map((el: Element) => el.textContent?.trim());
-                    cy.task('log', `Found pages: ${pageNames.join(', ')}`);
+                    initialPageCount = pageNames.length;
+                    cy.task('log', `Found pages after creating new page: ${pageNames.join(', ')}`);
                     
-                    // Check if either "Untitled" or our custom name exists
-                    if (pageNames.includes('Untitled') || pageNames.includes(testPageName)) {
-                        cy.task('log', `Found the created page: ${pageNames.includes(testPageName) ? testPageName : 'Untitled'}`);
+                    // The created page should have our test name
+                    if (pageNames.includes(testPageName)) {
+                        createdPageName = testPageName;
+                        cy.task('log', `Found the created page with correct name: ${testPageName}`);
                     } else {
-                        throw new Error(`Could not find created page. Expected "${testPageName}" or "Untitled", found: ${pageNames.join(', ')}`);
+                        // If title didn't save properly, find the newest "Untitled" page
+                        const untitledPages = pageNames.filter(name => name === 'Untitled');
+                        if (untitledPages.length > 0) {
+                            createdPageName = 'Untitled';
+                            cy.task('log', `Warning: Page title didn't save. Page exists as "Untitled"`);
+                        } else {
+                            throw new Error(`Could not find created page. Expected "${testPageName}", found: ${pageNames.join(', ')}`);
+                        }
                     }
                 });
 
-                // Step 4: Delete the page - find the newest page (not "Getting started")
-                PageSelectors.names().then($pages => {
-                    const pageNames = Array.from($pages).map((el: Element) => el.textContent?.trim());
-                    cy.task('log', `Available pages for deletion: ${pageNames.join(', ')}`);
-                    
-                    // Find a page that's not "Getting started" (the default page)
-                    const pageToDelete = pageNames.find(name => 
-                        name !== 'Getting started' && 
-                        (name === testPageName || name === 'Untitled' || name?.includes('test'))
-                    );
-                    
-                    if (pageToDelete) {
-                        cy.task('log', `Attempting to delete page: ${pageToDelete}`);
-                        TestTool.deletePageByName(pageToDelete);
-                        cy.task('log', `Deleted page: ${pageToDelete}`);
+                // Step 4: Delete the page we just created
+                cy.then(() => {
+                    // Use the stored createdPageName from step 3
+                    if (createdPageName) {
+                        cy.task('log', `Attempting to delete the created page: ${createdPageName}`);
+                        TestTool.deletePageByName(createdPageName);
+                        cy.task('log', `Deleted page: ${createdPageName}`);
                     } else {
-                        // If no specific page found, try to delete the first non-default page
-                        const nonDefaultPage = pageNames.find(name => name !== 'Getting started');
-                        if (nonDefaultPage) {
-                            cy.task('log', `Deleting non-default page: ${nonDefaultPage}`);
-                            TestTool.deletePageByName(nonDefaultPage);
-                        } else {
-                            throw new Error(`No deletable page found. Available pages: ${pageNames.join(', ')}`);
-                        }
+                        throw new Error('No page was created to delete');
                     }
                 });
 
@@ -174,23 +172,23 @@ describe('Page Create and Delete Tests', () => {
                 cy.wait(1000);
 
                 // Verify the page no longer exists
-                PageSelectors.names().then($pages => {
-                    const pageNames = Array.from($pages).map((el: Element) => el.textContent?.trim());
-                    cy.task('log', `Pages after delete and reload: ${pageNames.join(', ')}`);
-                    
-                    // We should only have "Getting started" or fewer pages than before
-                    // Check that we don't have our test page anymore
-                    const hasTestPage = pageNames.some(name => 
-                        name === testPageName || 
-                        name === 'Untitled' || 
-                        (name?.includes('test') && name !== 'Getting started')
-                    );
-                    
-                    if (!hasTestPage) {
-                        cy.task('log', `✓ Verified test page is gone after reload`);
-                    } else {
-                        throw new Error(`Test page still exists after delete. Found pages: ${pageNames.join(', ')}`);
-                    }
+                cy.then(() => {
+                    PageSelectors.names().then($pages => {
+                        const pageNames = Array.from($pages).map((el: Element) => el.textContent?.trim());
+                        cy.task('log', `Pages after delete and reload: ${pageNames.join(', ')}`);
+                        
+                        // Check that the created page (whatever its final name was) no longer exists
+                        const pageStillExists = pageNames.some(name => 
+                            name === createdPageName
+                        );
+                        
+                        if (!pageStillExists) {
+                            cy.task('log', `✓ Verified test page "${createdPageName}" is gone after reload`);
+                            cy.task('log', `Remaining pages: ${pageNames.join(', ')}`);
+                        } else {
+                            throw new Error(`Test page "${createdPageName}" still exists after delete. Found pages: ${pageNames.join(', ')}`);
+                        }
+                    });
                 });
             });
         });
