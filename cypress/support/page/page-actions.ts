@@ -93,7 +93,7 @@ export function deletePageByName(pageName: string) {
     
     // Check if confirmation modal appears (only for published pages)
     // For unpublished pages, deletion happens immediately
-    cy.get('body').then($body => {
+    cy.get('body').then(($body: JQuery<HTMLBodyElement>) => {
         if ($body.find('[data-testid="delete-page-confirm-modal"]').length > 0) {
             cy.task('log', 'Confirmation modal appeared, clicking confirm...');
             

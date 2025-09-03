@@ -64,6 +64,7 @@ export function Outline({
 
     // For testing purposes, always show the button if it has a data-testid
     const isTestEnvironment = window.Cypress !== undefined;
+
     if (shouldHidden && !isTestEnvironment) return null;
 
     return <div

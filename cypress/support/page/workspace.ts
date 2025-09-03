@@ -34,9 +34,9 @@ export function getWorkspaceMemberCounts() {
     cy.task('log', 'Getting workspace member counts');
     
     return WorkspaceSelectors.memberCount()
-        .then($elements => {
-            const counts = [];
-            $elements.each((index, el) => {
+        .then(($elements: JQuery<HTMLElement>) => {
+            const counts: string[] = [];
+            $elements.each((index: number, el: HTMLElement) => {
                 counts.push(el.textContent?.trim() || '');
             });
             cy.task('log', `Found member counts: ${counts.join(', ')}`);

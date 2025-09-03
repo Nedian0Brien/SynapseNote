@@ -26,7 +26,7 @@ describe('Page Create and Delete Tests', () => {
     describe('Page Management Tests', () => {
         it('should login, create a page, reload and verify page exists, delete page, reload and verify page is gone', () => {
             // Handle uncaught exceptions during workspace creation
-            cy.on('uncaught:exception', (err) => {
+            cy.on('uncaught:exception', (err: Error) => {
                 if (err.message.includes('No workspace or service found')) {
                     return false;
                 }
@@ -84,7 +84,7 @@ describe('Page Create and Delete Tests', () => {
                 cy.wait(3000);
                 
                 // Close any share/modal dialogs that might be open
-                cy.get('body').then($body => {
+                cy.get('body').then(($body: JQuery<HTMLBodyElement>) => {
                     // Check if there's a modal dialog open
                     if ($body.find('[role="dialog"]').length > 0 || $body.find('.MuiDialog-container').length > 0) {
                         cy.task('log', 'Closing modal dialog');
@@ -127,7 +127,7 @@ describe('Page Create and Delete Tests', () => {
 
                 // Verify the page exists - it might be "Untitled" or our custom name
                 PageSelectors.names().then($pages => {
-                    const pageNames = Array.from($pages).map(el => el.textContent?.trim());
+                    const pageNames = Array.from($pages).map((el: Element) => el.textContent?.trim());
                     cy.task('log', `Found pages: ${pageNames.join(', ')}`);
                     
                     // Check if either "Untitled" or our custom name exists
@@ -140,7 +140,7 @@ describe('Page Create and Delete Tests', () => {
 
                 // Step 4: Delete the page - find the newest page (not "Getting started")
                 PageSelectors.names().then($pages => {
-                    const pageNames = Array.from($pages).map(el => el.textContent?.trim());
+                    const pageNames = Array.from($pages).map((el: Element) => el.textContent?.trim());
                     cy.task('log', `Available pages for deletion: ${pageNames.join(', ')}`);
                     
                     // Find a page that's not "Getting started" (the default page)
@@ -175,7 +175,7 @@ describe('Page Create and Delete Tests', () => {
 
                 // Verify the page no longer exists
                 PageSelectors.names().then($pages => {
-                    const pageNames = Array.from($pages).map(el => el.textContent?.trim());
+                    const pageNames = Array.from($pages).map((el: Element) => el.textContent?.trim());
                     cy.task('log', `Pages after delete and reload: ${pageNames.join(', ')}`);
                     
                     // We should only have "Getting started" or fewer pages than before

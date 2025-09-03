@@ -14,7 +14,7 @@ export function publishCurrentPage() {
     cy.task('log', '=== Publishing Current Page ===');
     
     // Check if share popover is already open
-    cy.get('body').then($body => {
+    cy.get('body').then(($body: JQuery<HTMLBodyElement>) => {
         if (!$body.find('[data-testid="share-popover"]').length) {
             cy.task('log', 'Share popover not open, opening it');
             ShareSelectors.shareButton().should('be.visible').click();
@@ -25,7 +25,7 @@ export function publishCurrentPage() {
     });
     
     // Check if we need to switch to the Publish tab or if we're already there
-    cy.get('body').then($body => {
+    cy.get('body').then(($body: JQuery<HTMLBodyElement>) => {
         // Check if we're already on the Publish tab by looking for "Publish to Web" text
         if (!$body.text().includes('Publish to Web')) {
             // If we don't see "Publish to Web", we need to click on Publish tab
@@ -51,7 +51,7 @@ export function publishCurrentPage() {
         const urlInputs = $body.find('input[readonly]');
         let publishedUrl = '';
         
-        urlInputs.each((i, el) => {
+        urlInputs.each((i: number, el: HTMLElement) => {
             const val = (el as HTMLInputElement).value;
             if (val && val.includes('http') && val.includes('/published/')) {
                 publishedUrl = val;
@@ -64,7 +64,7 @@ export function publishCurrentPage() {
         }
         
         // If not found in inputs, look for URL text
-        const urlText = $body.find('*').filter((i, el) => {
+        const urlText = $body.find('*').filter((i: number, el: HTMLElement) => {
             const text = el.textContent || '';
             return text.includes('http') && text.includes('/published/') && !text.includes('script');
         });
@@ -90,8 +90,8 @@ export function readPublishUrlFromPanel() {
     cy.task('log', 'Reading publish URL from panel');
     
     // First check if there's an input field with the URL (published state)
-    return cy.get('body').then($body => {
-        const urlInput = $body.find('input[readonly]').filter((i, el) => {
+    return cy.get('body').then(($body: JQuery<HTMLBodyElement>) => {
+        const urlInput = $body.find('input[readonly]').filter((i: number, el: HTMLElement) => {
             const val = el.getAttribute('value') || '';
             return val.includes('http') && val.includes('/published/');
         });
@@ -142,7 +142,7 @@ export function unpublishCurrentPageAndVerify(publishUrl: string) {
     cy.task('log', '=== Unpublishing Current Page ===');
     
     // Check if share popover is already open
-    cy.get('body').then($body => {
+    cy.get('body').then(($body: JQuery<HTMLBodyElement>) => {
         if (!$body.find('[data-testid="share-popover"]').length) {
             cy.task('log', 'Share popover not open, opening it');
             ShareSelectors.shareButton().should('be.visible').click();
@@ -153,7 +153,7 @@ export function unpublishCurrentPageAndVerify(publishUrl: string) {
     });
     
     // Check if we need to switch to the Publish tab or if we're already there
-    cy.get('body').then($body => {
+    cy.get('body').then(($body: JQuery<HTMLBodyElement>) => {
         if (!$body.text().includes('Publish to Web')) {
             // If we don't see "Publish to Web", click on Publish tab
             cy.task('log', 'Switching to Publish tab');
@@ -177,7 +177,7 @@ export function unpublishCurrentPageAndVerify(publishUrl: string) {
     cy.request({
         url: publishUrl,
         failOnStatusCode: false
-    }).then((response) => {
+    }).then((response: Cypress.Response<any>) => {
         expect(response.status).to.not.equal(200);
         cy.task('log', `✓ Published page is no longer accessible (status: ${response.status})`);
     });
@@ -214,7 +214,7 @@ export function unpublishFromSettingsAndVerify(publishUrl: string, pageName?: st
     cy.request({
         url: publishUrl,
         failOnStatusCode: false
-    }).then((response) => {
+    }).then((response: Cypress.Response<any>) => {
         expect(response.status).to.not.equal(200);
         cy.task('log', `✓ Published page is no longer accessible (status: ${response.status})`);
     });

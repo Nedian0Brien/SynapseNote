@@ -26,7 +26,7 @@ describe('Page Edit Tests', () => {
     describe('Page Content Editing Tests', () => {
         it('should sign up, create a page, edit with multiple lines, and verify content', () => {
             // Handle uncaught exceptions during workspace creation
-            cy.on('uncaught:exception', (err) => {
+            cy.on('uncaught:exception', (err: Error) => {
                 if (err.message.includes('No workspace or service found')) {
                     return false;
                 }
@@ -70,7 +70,7 @@ describe('Page Edit Tests', () => {
             cy.wait(3000);
             
             // Close any modal dialogs
-            cy.get('body').then($body => {
+            cy.get('body').then(($body: JQuery<HTMLBodyElement>) => {
                 if ($body.find('[role="dialog"]').length > 0 || $body.find('.MuiDialog-container').length > 0) {
                     cy.task('log', 'Closing modal dialog');
                     cy.get('body').type('{esc}');
@@ -87,7 +87,7 @@ describe('Page Edit Tests', () => {
                 
                 // Look for the main editor (not the title)
                 let editorFound = false;
-                $editors.each((index, el) => {
+                $editors.each((index: number, el: HTMLElement) => {
                     const $el = Cypress.$(el);
                     // Skip title inputs
                     if (!$el.attr('data-testid')?.includes('title') && !$el.hasClass('editor-title')) {

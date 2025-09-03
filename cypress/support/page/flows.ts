@@ -66,8 +66,8 @@ export function openPageFromSidebar(pageName: string) {
     SidebarSelectors.pageHeader().should('be.visible');
     
     // Try to find the page - it might be named differently in the sidebar
-    PageSelectors.names().then($pages => {
-        const pageNames = Array.from($pages).map(el => el.textContent?.trim());
+    PageSelectors.names().then(($pages: JQuery<HTMLElement>) => {
+        const pageNames = Array.from($pages).map((el: Element) => el.textContent?.trim());
         cy.task('log', `Available pages in sidebar: ${pageNames.join(', ')}`);
         
         // Try to find exact match first
@@ -118,7 +118,7 @@ export function expandSpace(spaceIndex: number = 0) {
     cy.task('log', `Expanding space at index ${spaceIndex}`);
     
     SpaceSelectors.items().eq(spaceIndex).within(() => {
-        SpaceSelectors.expanded().then($expanded => {
+        SpaceSelectors.expanded().then(($expanded: JQuery<HTMLElement>) => {
             const isExpanded = $expanded.attr('data-expanded') === 'true';
             
             if (!isExpanded) {
@@ -159,7 +159,7 @@ function createPage(pageName: string) {
     waitForReactUpdate(3000);
     
     // Close any modal dialogs
-    cy.get('body').then($body => {
+    cy.get('body').then(($body: JQuery<HTMLBodyElement>) => {
         if ($body.find('[role="dialog"]').length > 0) {
             cy.task('log', 'Closing modal dialog');
             cy.get('body').type('{esc}');
@@ -202,7 +202,7 @@ function typeLinesInVisibleEditor(lines: string[]) {
     waitForReactUpdate(1000);
     
     // Check if we need to dismiss welcome content or click to create editor
-    cy.get('body').then($body => {
+    cy.get('body').then(($body: JQuery<HTMLBodyElement>) => {
         if ($body.text().includes('Welcome to AppFlowy')) {
             cy.task('log', 'Welcome template detected, looking for editor area');
         }
@@ -211,7 +211,7 @@ function typeLinesInVisibleEditor(lines: string[]) {
     // Wait for contenteditable elements to be available
     cy.get('[contenteditable="true"]', { timeout: 10000 }).should('exist');
     
-    cy.get('[contenteditable="true"]').then($editors => {
+    cy.get('[contenteditable="true"]').then(($editors: JQuery<HTMLElement>) => {
         cy.task('log', `Found ${$editors.length} editable elements`);
         
         if ($editors.length === 0) {
@@ -219,7 +219,7 @@ function typeLinesInVisibleEditor(lines: string[]) {
         }
         
         let editorFound = false;
-        $editors.each((index, el) => {
+        $editors.each((index: number, el: HTMLElement) => {
             const $el = Cypress.$(el);
             // Skip title inputs - find the main document editor
             const isTitle = $el.attr('data-testid')?.includes('title') || 

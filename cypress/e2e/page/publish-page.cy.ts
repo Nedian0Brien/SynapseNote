@@ -22,7 +22,7 @@ describe('Publish Page Test', () => {
 
     it('sign in, create a page, type content, open share and publish', () => {
         // Handle uncaught exceptions during workspace creation
-        cy.on('uncaught:exception', (err) => {
+        cy.on('uncaught:exception', (err: Error) => {
             if (err.message.includes('No workspace or service found')) {
                 return false;
             }

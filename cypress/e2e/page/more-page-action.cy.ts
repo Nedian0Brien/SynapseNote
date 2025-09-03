@@ -17,7 +17,7 @@ describe('More Page Actions', () => {
 
     it('should open the More actions menu for a page (verify visibility of core items)', () => {
         // Handle uncaught exceptions during workspace creation
-        cy.on('uncaught:exception', (err) => {
+        cy.on('uncaught:exception', (err: Error) => {
             if (err.message.includes('No workspace or service found')) {
                 return false;
             }
@@ -74,7 +74,7 @@ describe('More Page Actions', () => {
 
     it('should trigger Duplicate action from More actions menu', () => {        
         // Handle uncaught exceptions during workspace creation
-        cy.on('uncaught:exception', (err) => {
+        cy.on('uncaught:exception', (err: Error) => {
             if (err.message.includes('No workspace or service found')) {
                 return false;
             }
@@ -127,8 +127,8 @@ describe('More Page Actions', () => {
         cy.contains('Getting started').should('exist');
         
         // Check if there's a duplicated page (might have a suffix like "(1)" or "(copy)")
-        PageSelectors.names().then($pages => {
-            const pageCount = $pages.filter((index, el) => 
+        PageSelectors.names().then(($pages: JQuery<HTMLElement>) => {
+            const pageCount = $pages.filter((index: number, el: HTMLElement) => 
                 el.textContent?.includes('Getting started')).length;
             expect(pageCount).to.be.at.least(1);
             cy.task('log', `Found ${pageCount} pages with 'Getting started' in the name`);

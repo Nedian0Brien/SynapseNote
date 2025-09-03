@@ -26,7 +26,7 @@ describe('User Feature Tests', () => {
     describe('User Login Tests', () => {
         it('should show AppFlowy Web login page, authenticate, and verify workspace', () => {
             // Handle uncaught exceptions during workspace creation
-            cy.on('uncaught:exception', (err, runnable) => {
+            cy.on('uncaught:exception', (err: Error) => {
                 // Ignore transient pre-initialization errors during E2E
                 if (
                     err.message.includes('No workspace or service found') ||
