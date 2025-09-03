@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { AuthTestUtils } from '../../support/auth-utils';
 import { TestTool } from '../../support/page-utils';
-import { PageSelectors, ModalSelectors, waitForReactUpdate } from '../../support/selectors';
+import { PageSelectors, ModalSelectors, SidebarSelectors, waitForReactUpdate } from '../../support/selectors';
 
 describe('Page Create and Delete Tests', () => {
     const APPFLOWY_BASE_URL = Cypress.env('APPFLOWY_BASE_URL');
@@ -48,10 +48,10 @@ describe('Page Create and Delete Tests', () => {
                 cy.get('body', { timeout: 30000 }).should('not.contain', 'Welcome!');
                 
                 // Wait for the sidebar to be visible (indicates app is loaded)
-                cy.get('[data-testid="sidebar-page-header"]', { timeout: 30000 }).should('be.visible');
+                SidebarSelectors.pageHeader().should('be.visible', { timeout: 30000 });
                 
                 // Wait for at least one page to exist in the sidebar
-                cy.get('[data-testid="page-name"]', { timeout: 30000 }).should('exist');
+                PageSelectors.names().should('exist', { timeout: 30000 });
                 
                 // Additional wait for stability
                 cy.wait(2000);

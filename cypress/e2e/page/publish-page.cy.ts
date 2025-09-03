@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { AuthTestUtils } from '../../support/auth-utils';
 import { TestTool } from '../../support/page-utils';
+import { SidebarSelectors, PageSelectors, ModalSelectors, SpaceSelectors } from '../../support/selectors';
 
 describe('Publish Page Test', () => {
     const APPFLOWY_BASE_URL = Cypress.env('APPFLOWY_BASE_URL');
@@ -37,8 +38,8 @@ describe('Publish Page Test', () => {
             
             // Wait for app to fully load
             cy.task('log', 'Waiting for app to fully load...');
-            cy.get('[data-testid="sidebar-page-header"]', { timeout: 30000 }).should('be.visible');
-            cy.get('[data-testid="page-name"]', { timeout: 30000 }).should('exist');
+            SidebarSelectors.pageHeader().should('be.visible', { timeout: 30000 });
+            PageSelectors.names().should('exist', { timeout: 30000 });
             cy.wait(2000);
 
             // 2. create a new page called publish page
@@ -47,13 +48,13 @@ describe('Publish Page Test', () => {
             cy.task('log', 'Creating page without content (template issue workaround)');
             
             // Click new page button
-            cy.get('[data-testid="new-page-button"]').should('be.visible').click();
+            PageSelectors.newPageButton().should('be.visible').click();
             cy.wait(1000);
             
             // Handle the new page modal
-            cy.get('[data-testid="new-page-modal"]').should('be.visible').within(() => {
+            ModalSelectors.newPageModal().should('be.visible').within(() => {
                 // Select the first available space
-                cy.get('[data-testid="space-item"]').first().click();
+                SpaceSelectors.items().first().click();
                 cy.wait(500);
                 // Click Add button
                 cy.contains('button', 'Add').click();

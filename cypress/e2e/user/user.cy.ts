@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { AuthTestUtils } from '../../support/auth-utils';
 import { TestTool } from '../../support/page-utils';
-import { WorkspaceSelectors } from '../../support/selectors';
+import { WorkspaceSelectors, SidebarSelectors, PageSelectors } from '../../support/selectors';
 
 describe('User Feature Tests', () => {
     const APPFLOWY_BASE_URL = Cypress.env('APPFLOWY_BASE_URL');
@@ -59,13 +59,13 @@ describe('User Feature Tests', () => {
                 cy.get('body', { timeout: 30000 }).should('not.contain', 'Welcome!');
                 
                 // Wait for the sidebar to be visible (indicates app is loaded)
-                cy.get('[data-testid="sidebar-page-header"]', { timeout: 30000 }).should('be.visible');
+                SidebarSelectors.pageHeader().should('be.visible', { timeout: 30000 });
                 
                 // Wait for at least one page to exist in the sidebar
-                cy.get('[data-testid="page-name"]', { timeout: 30000 }).should('exist');
+                PageSelectors.names().should('exist', { timeout: 30000 });
                 
                 // Wait for workspace dropdown to be available
-                cy.get('[data-testid="workspace-dropdown-trigger"]', { timeout: 30000 }).should('be.visible');
+                WorkspaceSelectors.dropdownTrigger().should('be.visible', { timeout: 30000 });
                 
                 cy.task('log', 'App fully loaded');
                 

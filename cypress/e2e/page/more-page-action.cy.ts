@@ -54,8 +54,8 @@ describe('More Page Actions', () => {
         
         cy.wait(1000);
         
-        // Look for any three-dot menu or more actions button
-        cy.get('[data-testid*="more"]').first().click({ force: true });
+        // Look for the more actions button - using PageSelectors
+        PageSelectors.moreActionsButton().first().click({ force: true });
         
         cy.task('log', 'Clicked more actions button');
 
@@ -108,8 +108,8 @@ describe('More Page Actions', () => {
         
         cy.wait(1000);
         
-        // Look for any three-dot menu or more actions button
-        cy.get('[data-testid*="more"]').first().click({ force: true });
+        // Look for the more actions button - using PageSelectors
+        PageSelectors.moreActionsButton().first().click({ force: true });
         
         cy.task('log', 'Clicked more actions button');
         
@@ -127,7 +127,7 @@ describe('More Page Actions', () => {
         cy.contains('Getting started').should('exist');
         
         // Check if there's a duplicated page (might have a suffix like "(1)" or "(copy)")
-        cy.get('[data-testid="page-name"]').then($pages => {
+        PageSelectors.names().then($pages => {
             const pageCount = $pages.filter((index, el) => 
                 el.textContent?.includes('Getting started')).length;
             expect(pageCount).to.be.at.least(1);
