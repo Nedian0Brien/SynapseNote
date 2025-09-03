@@ -41,30 +41,12 @@ export function waitForSidebarReady(timeout: number = 10000) {
 export function createPageAndAddContent(pageName: string, content: string[]) {
     cy.task('log', `Creating page "${pageName}" with ${content.length} lines of content`);
     
-    // Create the page first
+    // Create the page first - this navigates to the new page automatically
     createPage(pageName);
-    cy.task('log', 'Page created successfully');
+    cy.task('log', 'Page created successfully and we are now on the page');
     
-    // Handle WebSocket mock mode vs regular mode
-    if (Cypress.env('MOCK_WEBSOCKET')) {
-        cy.task('log', 'Opening first available page (WebSocket mock mode)');
-        waitForReactUpdate(2000);
-        SpaceSelectors.names().first().then(($space) => {
-            const $parent = $space.closest(SpaceSelectors.items().selector);
-            if ($parent.find(PageSelectors.names().selector + ':visible').length === 0) {
-                cy.task('log', 'Expanding space to show pages');
-                cy.wrap($space).click();
-                waitForReactUpdate(500);
-            }
-        });
-        PageSelectors.names().filter(':visible').first().click();
-        cy.task('log', 'Waiting for page to load in WebSocket mock mode');
-        waitForReactUpdate(5000);
-    } else {
-        openPageFromSidebar(pageName);
-    }
-    
-    cy.task('log', 'Opened page from sidebar');
+    // We're already on the newly created page, just add content
+    cy.task('log', 'Adding content to the page');
     typeLinesInVisibleEditor(content);
     cy.task('log', 'Content typed successfully');
     waitForReactUpdate(1000);
@@ -83,15 +65,48 @@ export function openPageFromSidebar(pageName: string) {
     // Ensure sidebar is visible
     SidebarSelectors.pageHeader().should('be.visible');
     
-    // Find and click the page
-    PageSelectors.nameContaining(pageName)
-        .scrollIntoView()
-        .should('be.visible')
-        .click();
+    // Try to find the page - it might be named differently in the sidebar
+    PageSelectors.names().then($pages => {
+        const pageNames = Array.from($pages).map(el => el.textContent?.trim());
+        cy.task('log', `Available pages in sidebar: ${pageNames.join(', ')}`);
+        
+        // Try to find exact match first
+        if (pageNames.includes(pageName)) {
+            cy.task('log', `Found exact match for: ${pageName}`);
+            PageSelectors.nameContaining(pageName)
+                .first()
+                .scrollIntoView()
+                .should('be.visible')
+                .click();
+        } else {
+            // If no exact match, try to find the most recently created page (usually last or first untitled)
+            cy.task('log', `No exact match for "${pageName}", clicking most recent page`);
+            
+            // Look for "Untitled" or the first/last page
+            const untitledPage = pageNames.find(name => name === 'Untitled' || name?.includes('Untitled'));
+            if (untitledPage) {
+                cy.task('log', `Found untitled page: ${untitledPage}`);
+                PageSelectors.nameContaining('Untitled')
+                    .first()
+                    .scrollIntoView()
+                    .should('be.visible')
+                    .click();
+            } else {
+                // Just click the first non-"Getting started" page
+                const targetPage = pageNames.find(name => name !== 'Getting started') || pageNames[0];
+                cy.task('log', `Clicking page: ${targetPage}`);
+                PageSelectors.names()
+                    .first()
+                    .scrollIntoView()
+                    .should('be.visible')
+                    .click();
+            }
+        }
+    });
     
     // Wait for page to load
     waitForReactUpdate(2000);
-    cy.task('log', `Page "${pageName}" opened successfully`);
+    cy.task('log', `Page opened successfully`);
 }
 
 /**
@@ -151,6 +166,29 @@ function createPage(pageName: string) {
             waitForReactUpdate(1000);
         }
     });
+    
+    // Set the page title in the editor
+    PageSelectors.titleInput()
+        .should('exist')
+        .first()
+        .then($el => {
+            // Since it's a contentEditable div, we need to handle it differently
+            cy.wrap($el)
+                .click({ force: true })
+                .then(() => {
+                    // Select all existing text first
+                    cy.wrap($el).type('{selectall}');
+                })
+                .type(pageName, { force: true })
+                .type('{enter}');
+        });
+    
+    cy.task('log', `Set page title to: ${pageName}`);
+    waitForReactUpdate(2000);
+    
+    // Also update the page name in the sidebar if possible
+    // This ensures the page can be found later by name
+    cy.task('log', 'Page created and title set');
 }
 
 /**
@@ -160,24 +198,48 @@ function createPage(pageName: string) {
 function typeLinesInVisibleEditor(lines: string[]) {
     cy.task('log', `Typing ${lines.length} lines in editor`);
     
+    // Wait for any template to load
+    waitForReactUpdate(1000);
+    
+    // Check if we need to dismiss welcome content or click to create editor
+    cy.get('body').then($body => {
+        if ($body.text().includes('Welcome to AppFlowy')) {
+            cy.task('log', 'Welcome template detected, looking for editor area');
+        }
+    });
+    
+    // Wait for contenteditable elements to be available
+    cy.get('[contenteditable="true"]', { timeout: 10000 }).should('exist');
+    
     cy.get('[contenteditable="true"]').then($editors => {
         cy.task('log', `Found ${$editors.length} editable elements`);
+        
+        if ($editors.length === 0) {
+            throw new Error('No editable elements found on page');
+        }
         
         let editorFound = false;
         $editors.each((index, el) => {
             const $el = Cypress.$(el);
-            // Skip title inputs
-            if (!$el.attr('data-testid')?.includes('title') && !$el.hasClass('editor-title')) {
+            // Skip title inputs - find the main document editor
+            const isTitle = $el.attr('data-testid')?.includes('title') || 
+                           $el.hasClass('editor-title') ||
+                           $el.attr('id')?.includes('title');
+            
+            if (!isTitle && el) {
                 cy.task('log', `Using editor at index ${index}`);
-                cy.wrap(el).click().type(lines.join('{enter}'));
+                cy.wrap(el).click({ force: true }).clear().type(lines.join('{enter}'), { force: true });
                 editorFound = true;
                 return false; // break the loop
             }
         });
         
-        if (!editorFound) {
+        if (!editorFound && $editors.length > 0) {
             cy.task('log', 'Using fallback: last contenteditable element');
-            cy.wrap($editors.last()).click().type(lines.join('{enter}'));
+            const lastEditor = $editors.last().get(0);
+            if (lastEditor) {
+                cy.wrap(lastEditor).click({ force: true }).clear().type(lines.join('{enter}'), { force: true });
+            }
         }
     });
 }

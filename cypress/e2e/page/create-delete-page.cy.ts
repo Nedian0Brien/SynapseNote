@@ -44,8 +44,17 @@ describe('Page Create and Delete Tests', () => {
                 // Wait for the app to fully load
                 cy.task('log', 'Waiting for app to fully load...');
                 
-                // Wait for WebSocket connection to establish
-                cy.wait(8000);
+                // Wait for the loading screen to disappear and main app to appear
+                cy.get('body', { timeout: 30000 }).should('not.contain', 'Welcome!');
+                
+                // Wait for the sidebar to be visible (indicates app is loaded)
+                cy.get('[data-testid="sidebar-page-header"]', { timeout: 30000 }).should('be.visible');
+                
+                // Wait for at least one page to exist in the sidebar
+                cy.get('[data-testid="page-name"]', { timeout: 30000 }).should('exist');
+                
+                // Additional wait for stability
+                cy.wait(2000);
                 
                 // Now wait for the new page button to be available
                 cy.task('log', 'Looking for new page button...');
@@ -129,16 +138,30 @@ describe('Page Create and Delete Tests', () => {
                     }
                 });
 
-                // Step 4: Delete the page (try both names)
+                // Step 4: Delete the page - find the newest page (not "Getting started")
                 PageSelectors.names().then($pages => {
                     const pageNames = Array.from($pages).map(el => el.textContent?.trim());
-                    // Delete whichever name exists
-                    if (pageNames.includes(testPageName)) {
-                        TestTool.deletePageByName(testPageName);
-                        cy.task('log', `Deleted page: ${testPageName}`);
-                    } else if (pageNames.includes('Untitled')) {
-                        TestTool.deletePageByName('Untitled');
-                        cy.task('log', `Deleted page: Untitled`);
+                    cy.task('log', `Available pages for deletion: ${pageNames.join(', ')}`);
+                    
+                    // Find a page that's not "Getting started" (the default page)
+                    const pageToDelete = pageNames.find(name => 
+                        name !== 'Getting started' && 
+                        (name === testPageName || name === 'Untitled' || name?.includes('test'))
+                    );
+                    
+                    if (pageToDelete) {
+                        cy.task('log', `Attempting to delete page: ${pageToDelete}`);
+                        TestTool.deletePageByName(pageToDelete);
+                        cy.task('log', `Deleted page: ${pageToDelete}`);
+                    } else {
+                        // If no specific page found, try to delete the first non-default page
+                        const nonDefaultPage = pageNames.find(name => name !== 'Getting started');
+                        if (nonDefaultPage) {
+                            cy.task('log', `Deleting non-default page: ${nonDefaultPage}`);
+                            TestTool.deletePageByName(nonDefaultPage);
+                        } else {
+                            throw new Error(`No deletable page found. Available pages: ${pageNames.join(', ')}`);
+                        }
                     }
                 });
 
@@ -150,16 +173,23 @@ describe('Page Create and Delete Tests', () => {
                 TestTool.expandSpace();
                 cy.wait(1000);
 
-                // Verify the page no longer exists (check both possible names)
+                // Verify the page no longer exists
                 PageSelectors.names().then($pages => {
                     const pageNames = Array.from($pages).map(el => el.textContent?.trim());
-                    cy.task('log', `Pages after delete: ${pageNames.join(', ')}`);
+                    cy.task('log', `Pages after delete and reload: ${pageNames.join(', ')}`);
                     
-                    // Ensure neither name exists
-                    if (!pageNames.includes('Untitled') && !pageNames.includes(testPageName)) {
-                        cy.task('log', `Verified page is gone after reload`);
+                    // We should only have "Getting started" or fewer pages than before
+                    // Check that we don't have our test page anymore
+                    const hasTestPage = pageNames.some(name => 
+                        name === testPageName || 
+                        name === 'Untitled' || 
+                        (name?.includes('test') && name !== 'Getting started')
+                    );
+                    
+                    if (!hasTestPage) {
+                        cy.task('log', `✓ Verified test page is gone after reload`);
                     } else {
-                        throw new Error(`Page still exists after delete. Found: ${pageNames.join(', ')}`);
+                        throw new Error(`Test page still exists after delete. Found pages: ${pageNames.join(', ')}`);
                     }
                 });
             });

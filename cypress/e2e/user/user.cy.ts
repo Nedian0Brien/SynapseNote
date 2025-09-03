@@ -52,8 +52,25 @@ describe('User Feature Tests', () => {
 
                 cy.task('log', 'Authentication flow completed successfully');
 
-                // Wait for workspace to be fully loaded
-                cy.wait(3000);
+                // Wait for workspace to be fully loaded by checking for key elements
+                cy.task('log', 'Waiting for app to fully load...');
+                
+                // Wait for the loading screen to disappear and main app to appear
+                cy.get('body', { timeout: 30000 }).should('not.contain', 'Welcome!');
+                
+                // Wait for the sidebar to be visible (indicates app is loaded)
+                cy.get('[data-testid="sidebar-page-header"]', { timeout: 30000 }).should('be.visible');
+                
+                // Wait for at least one page to exist in the sidebar
+                cy.get('[data-testid="page-name"]', { timeout: 30000 }).should('exist');
+                
+                // Wait for workspace dropdown to be available
+                cy.get('[data-testid="workspace-dropdown-trigger"]', { timeout: 30000 }).should('be.visible');
+                
+                cy.task('log', 'App fully loaded');
+                
+                // Additional wait for stability
+                cy.wait(1000);
 
                 // Open workspace dropdown
                 TestTool.openWorkspaceDropdown();
