@@ -129,6 +129,11 @@ export default defineConfig({
             assetFileNames: 'static/[ext]/[name]-[hash].[ext]',
             manualChunks(id) {
               if (id.includes('node_modules')) {
+                // Bundle i18n first to ensure it's loaded before editor
+                if (id.includes('/i18next') || id.includes('i18n')) {
+                  return 'i18n-vendor';
+                }
+                
                 if (
                   id.includes('/react-is@') ||
                   id.includes('/react-custom-scrollbars') ||
@@ -201,6 +206,17 @@ export default defineConfig({
   },
 
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-katex', '@appflowyinc/editor', '@appflowyinc/ai-chat', 'react-colorful'],
+    include: [
+      'react',
+      'react-dom',
+      'react-katex',
+      '@appflowyinc/editor',
+      '@appflowyinc/ai-chat',
+      'react-colorful',
+      'i18next',
+      'i18next-browser-languagedetector',
+      'i18next-resources-to-backend',
+      'react-i18next'
+    ],
   },
 });

@@ -19,3 +19,8 @@ void i18next
   });
 
 export const i18nInstance = i18next;
+
+// Make i18n available globally for external packages
+if (typeof window !== 'undefined') {
+  (window as any).i18n = i18next;
+}
