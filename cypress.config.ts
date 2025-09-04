@@ -41,9 +41,9 @@ export default defineConfig({
           console.log(message);
           return null;
         },
-        async httpCheck({ url, method = 'HEAD' }: { url: string; method?: string }) {
+        async httpCheck({ url, method = 'HEAD' }) {
           try {
-            const response = await fetch(url, { method: method as 'GET' | 'POST' | 'PUT' | 'DELETE' | 'HEAD' | 'OPTIONS' | 'PATCH' });
+            const response = await fetch(url, { method });
 
             return response.ok;
           } catch (error) {

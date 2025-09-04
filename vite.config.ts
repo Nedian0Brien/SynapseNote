@@ -120,6 +120,7 @@ export default defineConfig({
   build: {
     target: `esnext`,
     reportCompressedSize: true,
+    chunkSizeWarningLimit: 600,
     rollupOptions: isProd
       ? {
           output: {
@@ -127,24 +128,64 @@ export default defineConfig({
             entryFileNames: 'static/js/[name]-[hash].js',
             assetFileNames: 'static/[ext]/[name]-[hash].[ext]',
             manualChunks(id) {
-              if (
-                // id.includes('/react@') ||
-                // id.includes('/react-dom@') ||
-                id.includes('/react-is@') ||
-                id.includes('/yjs@') ||
-                id.includes('/y-indexeddb@') ||
-                id.includes('/dexie') ||
-                id.includes('/redux') ||
-                id.includes('/react-custom-scrollbars') ||
-                id.includes('/dayjs') ||
-                id.includes('/smooth-scroll-into-view-if-needed') ||
-                id.includes('/react-virtualized-auto-sizer') ||
-                id.includes('/react-window') ||
-                id.includes('/@popperjs') ||
-                id.includes('/@mui/material/Dialog') ||
-                id.includes('/quill-delta')
-              ) {
-                return 'common';
+              if (id.includes('node_modules')) {
+                if (
+                  id.includes('/react-is@') ||
+                  id.includes('/react-custom-scrollbars') ||
+                  id.includes('/react-virtualized-auto-sizer') ||
+                  id.includes('/react-window')
+                ) {
+                  return 'react-vendor';
+                }
+                
+                if (
+                  id.includes('/yjs@') ||
+                  id.includes('/y-indexeddb@') ||
+                  id.includes('/quill-delta')
+                ) {
+                  return 'editor-vendor';
+                }
+                
+                if (
+                  id.includes('/dexie') ||
+                  id.includes('/redux') ||
+                  id.includes('/@reduxjs')
+                ) {
+                  return 'data-vendor';
+                }
+                
+                if (
+                  id.includes('/@mui') ||
+                  id.includes('/@emotion') ||
+                  id.includes('/@popperjs')
+                ) {
+                  return 'mui-vendor';
+                }
+                
+                if (
+                  id.includes('/dayjs') ||
+                  id.includes('/smooth-scroll-into-view-if-needed') ||
+                  id.includes('/lodash') ||
+                  id.includes('/uuid')
+                ) {
+                  return 'utils-vendor';
+                }
+                
+                if (id.includes('/@appflowyinc/editor')) {
+                  return 'appflowy-editor';
+                }
+                
+                if (id.includes('/@appflowyinc/ai-chat')) {
+                  return 'appflowy-ai';
+                }
+                
+                if (id.includes('/react-colorful')) {
+                  return 'color-vendor';
+                }
+                
+                if (id.includes('/react-katex') || id.includes('/katex')) {
+                  return 'katex-vendor';
+                }
               }
             },
           },
