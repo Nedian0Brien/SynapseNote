@@ -120,7 +120,7 @@ export default defineConfig({
   build: {
     target: `esnext`,
     reportCompressedSize: true,
-    chunkSizeWarningLimit: 600,
+    chunkSizeWarningLimit: 1600,
     rollupOptions: isProd
       ? {
           output: {
