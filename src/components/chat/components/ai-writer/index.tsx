@@ -6,7 +6,7 @@ import { AskAnything } from '@/components/chat/components/ai-writer/tools/ask-an
 import { Explain } from '@/components/chat/components/ai-writer/tools/explain';
 import { FixSpelling } from '@/components/chat/components/ai-writer/tools/fix-spelling';
 import { ImproveWriting } from '@/components/chat/components/ai-writer/tools/improve-writing';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/chat/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useTranslation } from '@/components/chat/i18n';
 import { AIAssistantType } from '@/components/chat/types';
 import { useWriterContext } from '@/components/chat/writer/context';

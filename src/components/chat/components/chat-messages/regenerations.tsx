@@ -4,7 +4,7 @@ import { ReactComponent as RegenerateCircleIcon } from '@/components/chat/assets
 import { ReactComponent as TryAgainIcon } from '@/components/chat/assets/icons/undo.svg';
 import { FormatGroup } from '@/components/chat/components/ui/format-group';
 import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/chat/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTranslation } from '@/components/chat/i18n';
 import { useMessagesHandlerContext } from '@/components/chat/provider/messages-handler-provider';

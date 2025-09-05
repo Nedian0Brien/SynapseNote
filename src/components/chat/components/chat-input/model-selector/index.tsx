@@ -9,7 +9,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/chat/components/ui/popover';
+} from '@/components/ui/popover';
 import { useModelSelectorContext } from '@/components/chat/contexts/model-selector-context';
 import { MESSAGE_VARIANTS } from '@/components/chat/lib/animations';
 import { ModelCache } from '@/components/chat/lib/model-cache';

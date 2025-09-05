@@ -6,7 +6,7 @@ import { Spaces } from './spaces';
 import { MESSAGE_VARIANTS } from '@/components/chat/lib/animations';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/chat/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { SearchInput } from '@/components/chat/components/ui/search-input';
 import { Separator } from '@/components/ui/separator';
 import { useCheckboxTree } from '@/components/chat/hooks/use-checkbox-tree';

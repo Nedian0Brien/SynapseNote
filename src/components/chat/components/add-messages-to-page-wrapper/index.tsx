@@ -2,7 +2,7 @@ import { useChatContext } from '@/components/chat/chat/context';
 import { SpaceList } from '../add-messages-to-page-wrapper/space-list';
 import { Label } from '@/components/ui/label';
 import { SearchInput } from '@/components/chat/components/ui/search-input';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/chat/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { useViewContentInserter } from '@/components/chat/hooks/use-view-content-inserter';
