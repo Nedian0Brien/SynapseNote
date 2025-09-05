@@ -28,7 +28,7 @@ export function ViewItem({
 
   const ToggleButton = useMemo(() => {
     return view.children.length > 0 ? (
-      <Button variant={'ghost'} size={'icon'} className={'!h-4 !min-h-4 !w-4 !min-w-4 hover:bg-muted-foreground/10'}>
+      <Button variant={'ghost'} className={'!h-4 !min-h-4 !w-4 !min-w-4 hover:bg-muted-foreground/10'}>
         <ChevronDown className={cn('transform transition-transform', expanded ? 'rotate-0' : '-rotate-90')} />
       </Button>
     ) : (

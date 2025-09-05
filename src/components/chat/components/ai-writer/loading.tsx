@@ -29,7 +29,7 @@ export function Loading() {
         onClick={stop}
         size={'icon'}
         variant={'link'}
-        className={'w-7 h-7 text-fill-theme-thick !p-0.5'}
+        className={'text-fill-theme-thick'}
       >
         <StopIcon
           style={{

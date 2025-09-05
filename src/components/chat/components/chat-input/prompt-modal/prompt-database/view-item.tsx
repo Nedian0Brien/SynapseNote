@@ -25,7 +25,6 @@ export function ViewItem({
     return view.children.length > 0 ? (
       <Button
         variant={'ghost'}
-        size={'icon'}
         className={'!h-4 !min-h-4 !w-4 !min-w-4 hover:bg-muted-foreground/10'}
         onClick={(e) => {
           e.stopPropagation();

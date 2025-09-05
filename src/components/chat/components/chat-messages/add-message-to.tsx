@@ -23,7 +23,6 @@ export function AddMessageTo({ id }: { id: number }) {
             }}
             variant={'ghost'}
             size={'icon'}
-            className={`h-7 w-7 !p-0`}
           >
             <AddPageIcon
               style={{

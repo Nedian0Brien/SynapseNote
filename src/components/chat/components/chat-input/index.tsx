@@ -199,7 +199,6 @@ export function ChatInput() {
                   }}
                   variant={'ghost'}
                   size={'icon'}
-                  className={'h-7 w-7'}
                   onClick={() => {
                     setResponseMode(
                       responseMode === ChatInputMode.FormatResponse ? ChatInputMode.Auto : ChatInputMode.FormatResponse
@@ -260,7 +259,7 @@ export function ChatInput() {
                 onClick={cancelAnswerStream}
                 size={'icon'}
                 variant={'link'}
-                className={'h-7 w-7 !p-0.5 text-fill-theme-thick'}
+                className={'text-fill-theme-thick'}
               >
                 <StopIcon
                   style={{
@@ -274,7 +273,7 @@ export function ChatInput() {
                 onClick={handleSubmit}
                 size={'icon'}
                 variant={'link'}
-                className={'h-7 w-7 !p-0.5 text-fill-theme-thick'}
+                className={'text-fill-theme-thick'}
                 disabled={!message.trim() || disabled}
               >
                 {questionSending ? (

@@ -243,7 +243,6 @@ export function WritingInput({
                     }}
                     variant={'ghost'}
                     size={'icon'}
-                    className={'h-7 w-7'}
                     onClick={() => {
                       setResponseMode(
                         responseMode === ChatInputMode.FormatResponse ? ChatInputMode.Auto : ChatInputMode.FormatResponse
@@ -305,7 +304,7 @@ export function WritingInput({
               onClick={handleSubmit}
               size={'icon'}
               variant={'link'}
-              className={'h-7 w-7 !p-0.5 text-fill-theme-thick'}
+              className={'text-fill-theme-thick'}
               disabled={!message.trim() || isFetching}
               onMouseDown={(e) => {
                 e.preventDefault();
