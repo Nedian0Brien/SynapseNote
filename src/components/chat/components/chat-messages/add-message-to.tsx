@@ -1,5 +1,5 @@
 import { AddMessageToPageWrapper } from '@/components/chat/components/add-messages-to-page-wrapper';
-import { Button } from '@/components/chat/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ReactComponent as AddPageIcon } from '@/components/chat/assets/icons/doc-forward.svg';
 import { useTranslation } from '@/components/chat/i18n';

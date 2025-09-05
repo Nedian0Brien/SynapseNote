@@ -5,7 +5,7 @@ import { View } from '@/components/chat/types';
 import { ReactComponent as ChevronDown } from '@/components/chat/assets/icons/drop_menu_show.svg';
 import { ReactNode, useEffect, useMemo, useState } from 'react';
 import DOMPurify from 'dompurify';
-import { Button } from '@/components/chat/components/ui/button';
+import { Button } from '@/components/ui/button';
 
 function SpaceItem({
   view,

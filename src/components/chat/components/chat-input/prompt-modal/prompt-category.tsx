@@ -1,7 +1,7 @@
-import { Button } from '@/components/chat/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/components/chat/lib/utils';
 import { AiPromptCategory } from '@/components/chat/types/prompt';
-import { Separator } from '@/components/chat/components/ui/separator';
+import { Separator } from '@/components/ui/separator';
 import { useMemo } from 'react';
 import { useTranslation } from '@/components/chat/i18n';
 

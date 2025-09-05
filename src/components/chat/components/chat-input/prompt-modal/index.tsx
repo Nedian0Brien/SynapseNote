@@ -18,7 +18,7 @@ import { PromptPreview } from './prompt-preview';
 import { ReactComponent as CloseCircle } from '@/components/chat/assets/icons/close_circle.svg';
 import { PromptCategory } from './prompt-category';
 import { SearchInput } from '@/components/chat/components/ui/search-input';
-import { Button } from '@/components/chat/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { PromptDatabaseModal } from './prompt-database';
 import { useViewLoader } from '@/components/chat/provider/view-loader-provider';
 

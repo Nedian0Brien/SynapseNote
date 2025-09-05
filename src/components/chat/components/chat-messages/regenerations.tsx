@@ -3,7 +3,7 @@ import { ReactComponent as ChevronIcon } from '@/components/chat/assets/icons/ch
 import { ReactComponent as RegenerateCircleIcon } from '@/components/chat/assets/icons/regenerate-circle.svg';
 import { ReactComponent as TryAgainIcon } from '@/components/chat/assets/icons/undo.svg';
 import { FormatGroup } from '@/components/chat/components/ui/format-group';
-import { Button } from '@/components/chat/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/chat/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTranslation } from '@/components/chat/i18n';

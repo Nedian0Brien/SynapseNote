@@ -1,11 +1,11 @@
 import LoadingDots from '@/components/chat/components/ui/loading-dots';
 import { SearchInput } from '@/components/chat/components/ui/search-input';
 import { Spaces } from './spaces';
-import { Button } from '@/components/chat/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/chat/components/ui/popover';
 import { motion } from 'framer-motion';
 import { ReactComponent as DocIcon } from '@/components/chat/assets/icons/doc.svg';
-import { Separator } from '@/components/chat/components/ui/separator';
+import { Separator } from '@/components/ui/separator';
 import { useChatSettingsLoader } from '@/components/chat/hooks/use-chat-settings-loader';
 import { MESSAGE_VARIANTS } from '@/components/chat/lib/animations';
 import { useCheckboxTree } from '@/components/chat/hooks/use-checkbox-tree';

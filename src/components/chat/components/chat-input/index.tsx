@@ -3,7 +3,7 @@ import { ReactComponent as AutoTextIcon } from '@/components/chat/assets/icons/a
 import { ReactComponent as ImageTextIcon } from '@/components/chat/assets/icons/image-text.svg';
 import { ReactComponent as StopIcon } from '@/components/chat/assets/icons/stop.svg';
 import { useChatContext } from '@/components/chat/chat/context';
-import { Button } from '@/components/chat/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { FormatGroup } from '@/components/chat/components/ui/format-group';
 import LoadingDots from '@/components/chat/components/ui/loading-dots';
 import { Textarea } from '@/components/chat/components/ui/textarea';

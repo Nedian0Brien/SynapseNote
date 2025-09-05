@@ -2,7 +2,7 @@ import { useChatContext } from '@/components/chat/chat/context';
 import { EmptyMessages } from '../chat-messages/empty-messages';
 import { Message } from '../chat-messages/message';
 import { useChatMessages } from '../chat-messages/use-chat-messages';
-import { Button } from '@/components/chat/components/ui/button';
+import { Button } from '@/components/ui/button';
 import LoadingDots from '@/components/chat/components/ui/loading-dots';
 import { useUserLoader } from '@/components/chat/hooks/use-user-loader';
 import { ANIMATION_PRESETS } from '@/components/chat/lib/animations';

@@ -4,7 +4,7 @@ import * as React from 'react';
 import { forwardRef } from 'react';
 
 import { ReactComponent as Close } from '@/components/chat/assets/icons/close.svg';
-import { buttonVariants } from './button';
+import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/components/chat/lib/utils';
 
 function Dialog({

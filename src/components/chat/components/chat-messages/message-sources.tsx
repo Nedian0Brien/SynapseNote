@@ -1,5 +1,5 @@
 import { useChatContext } from '@/components/chat/chat/context';
-import { Button } from '@/components/chat/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTranslation } from '@/components/chat/i18n';
 import { ChatMessageMetadata, View } from '@/components/chat/types';

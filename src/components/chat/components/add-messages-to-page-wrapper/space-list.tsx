@@ -1,5 +1,5 @@
 import ViewList from '../add-messages-to-page-wrapper/view-list';
-import { Button } from '@/components/chat/components/ui/button';
+import { Button } from '@/components/ui/button';
 import LoadingDots from '@/components/chat/components/ui/loading-dots';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import SpaceItem from '@/components/chat/components/view/space-item';

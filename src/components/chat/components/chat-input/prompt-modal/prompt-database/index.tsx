@@ -1,4 +1,4 @@
-import { Button } from '@/components/chat/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/chat/components/ui/dialog';
 import {
   DropdownMenu,

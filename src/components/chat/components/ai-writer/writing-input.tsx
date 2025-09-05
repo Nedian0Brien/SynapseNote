@@ -4,7 +4,7 @@ import { ReactComponent as ImageTextIcon } from '@/components/chat/assets/icons/
 import { ViewTree } from '../ai-writer/view-tree';
 import { WritingMore } from '../ai-writer/writing-more';
 import { ModelSelector } from '@/components/chat/components/chat-input/model-selector';
-import { Button } from '@/components/chat/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { FormatGroup } from '@/components/chat/components/ui/format-group';
 import LoadingDots from '@/components/chat/components/ui/loading-dots';
 import { Textarea } from '@/components/chat/components/ui/textarea';

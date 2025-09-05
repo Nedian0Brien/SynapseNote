@@ -3,7 +3,7 @@ import { ReactComponent as CopyIcon } from '@/components/chat/assets/icons/copy.
 import { useChatContext } from '@/components/chat/chat/context';
 import AddMessageTo from '../chat-messages/add-message-to';
 import Regenerations from '../chat-messages/regenerations';
-import { Button } from '@/components/chat/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { useTranslation } from '@/components/chat/i18n';

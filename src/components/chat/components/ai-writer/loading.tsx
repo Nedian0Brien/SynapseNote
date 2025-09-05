@@ -1,4 +1,4 @@
-import { Button } from '@/components/chat/components/ui/button';
+import { Button } from '@/components/ui/button';
 import LoadingDots from '@/components/chat/components/ui/loading-dots';
 import { useTranslation } from '@/components/chat/i18n';
 import { useWriterContext } from '@/components/chat/writer/context';

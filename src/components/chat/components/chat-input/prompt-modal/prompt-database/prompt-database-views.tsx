@@ -4,7 +4,7 @@ import {
   PopoverTrigger,
 } from '@/components/chat/components/ui/popover';
 import { SearchInput } from '@/components/chat/components/ui/search-input';
-import { Separator } from '@/components/chat/components/ui/separator';
+import { Separator } from '@/components/ui/separator';
 import { ReactNode, useState } from 'react';
 import { SpaceList } from './space-list';
 
