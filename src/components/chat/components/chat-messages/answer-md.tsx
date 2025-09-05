@@ -1,49 +1,37 @@
-import { Alert, AlertDescription } from '@/components/chat/components/ui/alert';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useEditorContext } from '@/components/chat/provider/editor-provider';
 import { Editor, useEditor } from '@appflowyinc/editor';
 import { useEffect } from 'react';
 
 import { ErrorBoundary } from 'react-error-boundary';
 
-export function AnswerMd({
-  mdContent,
-  id,
-}: {
-  mdContent: string;
-  id: number;
-}) {
+export function AnswerMd({ mdContent, id }: { mdContent: string; id: number }) {
   const editor = useEditor();
-  const {
-    setEditor: setMessageEditor,
-  } = useEditorContext();
+  const { setEditor: setMessageEditor } = useEditorContext();
 
   useEffect(() => {
     setMessageEditor(id, editor);
   }, [editor, id, setMessageEditor]);
 
   useEffect(() => {
-
-    if(!mdContent) return;
+    if (!mdContent) return;
 
     try {
       editor.applyMarkdown(mdContent);
-    } catch(error) {
+    } catch (error) {
       console.error('Failed to apply markdown', error);
     }
   }, [editor, mdContent]);
 
   return (
     <ErrorBoundary
-      fallback={<Alert variant={'destructive'}>
-        <AlertDescription>
-          Failed to render content
-        </AlertDescription>
-      </Alert>}
+      fallback={
+        <Alert variant={'destructive'}>
+          <AlertDescription>Failed to render content</AlertDescription>
+        </Alert>
+      }
     >
-      <Editor
-        readOnly
-      />
+      <Editor readOnly />
     </ErrorBoundary>
   );
 }
-

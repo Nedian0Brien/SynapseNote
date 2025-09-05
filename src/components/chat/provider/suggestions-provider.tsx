@@ -1,4 +1,4 @@
-import { useToast } from '@/components/chat/hooks/use-toast';
+import { toast } from 'sonner';
 import { Suggestions } from '@/components/chat/types';
 import { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useChatContext } from '@/components/chat/chat/context';
@@ -16,7 +16,7 @@ export const SuggestionsContext = createContext<SuggestionsContextTypes | undefi
 export function useSuggestionsContext() {
   const context = useContext(SuggestionsContext);
 
-  if(!context) {
+  if (!context) {
     throw new Error('useSuggestionsContext must be used within a SuggestionsProvider');
   }
 
@@ -24,13 +24,9 @@ export function useSuggestionsContext() {
 }
 
 export const SuggestionsProvider = ({ children }: { children: ReactNode }) => {
-  const {
-    chatId,
-    requestInstance,
-  } = useChatContext();
+  const { chatId, requestInstance } = useChatContext();
   const [suggestions, setSuggestions] = useState<Map<number, Suggestions>>(new Map());
 
-  const { toast } = useToast();
   const fetchingMessageIdsRef = useRef<Set<number>>(new Set());
 
   useEffect(() => {
@@ -45,40 +41,46 @@ export const SuggestionsProvider = ({ children }: { children: ReactNode }) => {
     setSuggestions(new Map());
   }, []);
 
-  const registerFetchSuggestions = useCallback((messageId: number) => {
-    clearSuggestions();
-    fetchingMessageIdsRef.current.add(messageId);
-  }, [clearSuggestions]);
+  const registerFetchSuggestions = useCallback(
+    (messageId: number) => {
+      clearSuggestions();
+      fetchingMessageIdsRef.current.add(messageId);
+    },
+    [clearSuggestions]
+  );
 
   const unregisterFetchSuggestions = useCallback((messageId: number) => {
     fetchingMessageIdsRef.current.delete(messageId);
   }, []);
 
-  const getMessageSuggestions = useCallback((messageId: number) => {
-    return suggestions.get(messageId);
-  }, [suggestions]);
+  const getMessageSuggestions = useCallback(
+    (messageId: number) => {
+      return suggestions.get(messageId);
+    },
+    [suggestions]
+  );
 
-  const startFetchSuggestions = useCallback(async(questionMessageId: number) => {
-    try {
-      const data = await requestInstance.getSuggestions(questionMessageId);
+  const startFetchSuggestions = useCallback(
+    async (questionMessageId: number) => {
+      try {
+        const data = await requestInstance.getSuggestions(questionMessageId);
 
-      setSuggestions(() => {
-        const newSuggestions = new Map();
+        setSuggestions(() => {
+          const newSuggestions = new Map();
 
-        newSuggestions.set(questionMessageId, data);
-        return newSuggestions;
-      });
+          newSuggestions.set(questionMessageId, data);
+          return newSuggestions;
+        });
 
-      // eslint-disable-next-line
-    } catch(e: any) {
-      toast({
-        variant: 'destructive',
-        description: e.message,
-      });
-    } finally {
-      unregisterFetchSuggestions(questionMessageId);
-    }
-  }, [requestInstance, toast, unregisterFetchSuggestions]);
+        // eslint-disable-next-line
+      } catch (e: any) {
+        toast.error(e.message);
+      } finally {
+        unregisterFetchSuggestions(questionMessageId);
+      }
+    },
+    [requestInstance, unregisterFetchSuggestions]
+  );
 
   return (
     <SuggestionsContext.Provider

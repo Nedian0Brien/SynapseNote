@@ -1,7 +1,7 @@
 import { useChatContext } from '@/components/chat/chat/context';
-import { useToast } from './use-toast';
 import { ChatSettings } from '@/components/chat/types';
 import { useCallback, useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 export function useChatSettingsLoader() {
   const [loading, setLoading] = useState(true);
@@ -10,10 +10,6 @@ export function useChatSettingsLoader() {
     requestInstance,
     chatId,
   } = useChatContext();
-
-  const {
-    toast,
-  } = useToast();
 
   useEffect(() => {
     return () => {
@@ -40,12 +36,9 @@ export function useChatSettingsLoader() {
       await requestInstance.updateChatSettings(payload);
       // eslint-disable-next-line
     } catch(e: any) {
-      toast({
-        variant: 'destructive',
-        description: e.message,
-      });
+      toast.error(e.message);
     }
-  }, [requestInstance, toast]);
+  }, [requestInstance]);
 
   return {
     loading,

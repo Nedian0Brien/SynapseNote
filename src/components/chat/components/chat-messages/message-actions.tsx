@@ -4,8 +4,8 @@ import { useChatContext } from '@/components/chat/chat/context';
 import AddMessageTo from '../chat-messages/add-message-to';
 import Regenerations from '../chat-messages/regenerations';
 import { Button } from '@/components/chat/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/chat/components/ui/tooltip';
-import { useToast } from '@/components/chat/hooks/use-toast';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { toast } from 'sonner';
 import { useTranslation } from '@/components/chat/i18n';
 import { convertToAppFlowyFragment } from '@/components/chat/lib/copy';
 import { cn, convertToPageData } from '@/components/chat/lib/utils';
@@ -13,25 +13,10 @@ import { useEditorContext } from '@/components/chat/provider/editor-provider';
 import { useChatMessagesContext } from '@/components/chat/provider/messages-provider';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-export function MessageActions({
-  id,
-  isHovered,
-}: {
-  id: number;
-  isHovered: boolean;
-}) {
-  const {
-    toast,
-  } = useToast();
+export function MessageActions({ id, isHovered }: { id: number; isHovered: boolean }) {
+  const { getMessage, messageIds } = useChatMessagesContext();
 
-  const {
-    getMessage,
-    messageIds,
-  } = useChatMessagesContext();
-
-  const {
-    selectionMode,
-  } = useChatContext();
+  const { selectionMode } = useChatContext();
 
   const { getEditor } = useEditorContext();
 
@@ -39,12 +24,10 @@ export function MessageActions({
   const [visible, setVisible] = useState(false);
 
   const ref = useRef<HTMLDivElement>(null);
-  const {
-    t,
-  } = useTranslation();
+  const { t } = useTranslation();
 
   useEffect(() => {
-    if(isLast) {
+    if (isLast) {
       setVisible(true);
       return;
     }
@@ -54,16 +37,16 @@ export function MessageActions({
 
   const message = getMessage(id);
 
-  const handleCopy = useCallback(async() => {
+  const handleCopy = useCallback(async () => {
     const message = getMessage(id);
 
-    if(!message) {
+    if (!message) {
       return;
     }
 
     const editor = getEditor(id);
 
-    if(!editor) return;
+    if (!editor) return;
     try {
       const data = editor?.getData();
 
@@ -71,45 +54,42 @@ export function MessageActions({
 
       const stringifies = JSON.stringify(newJson, null, 2);
 
-      document.addEventListener('copy', (e: ClipboardEvent) => {
-        e.preventDefault();
-        e.clipboardData?.setData('text/plain', message.content);
-        e.clipboardData?.setData('application/json', stringifies);
+      document.addEventListener(
+        'copy',
+        (e: ClipboardEvent) => {
+          e.preventDefault();
+          e.clipboardData?.setData('text/plain', message.content);
+          e.clipboardData?.setData('application/json', stringifies);
 
-        const { key, value } = convertToAppFlowyFragment(data);
+          const { key, value } = convertToAppFlowyFragment(data);
 
-        e.clipboardData?.setData(key, value);
-      }, { once: true });
+          e.clipboardData?.setData(key, value);
+        },
+        { once: true }
+      );
 
       document.execCommand('copy');
 
-      toast({
-        variant: 'success',
-        description: t('success.copied'),
-        duration: 2000,
-      });
+      toast.success(t('success.copied'), { duration: 2000 });
       // eslint-disable-next-line
-    } catch(e: any) {
+    } catch (e: any) {
       console.error(e);
-      toast({
-        variant: 'destructive',
-        description: t('errors.copied'),
-        duration: 2000,
-      });
+      toast.error(t('errors.copied'), { duration: 2000 });
     }
+  }, [getEditor, getMessage, id, t]);
 
-  }, [getEditor, getMessage, id, t, toast]);
-
-  if(selectionMode) return null;
+  if (selectionMode) return null;
 
   return (
     <div
       ref={ref}
       className={cn(
-        "flex max-sm:hidden gap-2 min-w-0 w-fit",
+        'flex w-fit min-w-0 gap-2 max-sm:hidden',
         isLast
-          ? `min-h-[28px] mt-2`
-          : `min-h-[34px] ml-0.5 absolute -bottom-[34px] ${isHovered ? 'p-0.5 border border-border rounded-[8px] shadow-popover' : ''}`
+          ? `mt-2 min-h-[28px]`
+          : `absolute -bottom-[34px] ml-0.5 min-h-[34px] ${
+              isHovered ? 'rounded-[8px] border border-border p-0.5 shadow-popover' : ''
+            }`
       )}
     >
       {visible && message && (
@@ -117,12 +97,12 @@ export function MessageActions({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                onMouseDown={e => {
+                onMouseDown={(e) => {
                   e.preventDefault();
                 }}
                 variant={'ghost'}
                 size={'icon'}
-                className={`h-7 !p-0 w-7`}
+                className={`h-7 w-7 !p-0`}
                 onClick={handleCopy}
               >
                 <CopyIcon
@@ -134,10 +114,7 @@ export function MessageActions({
               </Button>
             </TooltipTrigger>
 
-            <TooltipContent
-              align={'center'}
-              side={'bottom'}
-            >
+            <TooltipContent align={'center'} side={'bottom'}>
               {t('button.copyClipboard')}
             </TooltipContent>
           </Tooltip>
@@ -146,7 +123,5 @@ export function MessageActions({
         </>
       )}
     </div>
-
   );
 }
-

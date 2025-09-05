@@ -1,7 +1,7 @@
 import { ConfirmDiscard } from '@/components/chat/components/ai-writer/confirm-discard';
-import { TooltipProvider } from '@/components/chat/components/ui/tooltip';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { ModelSelectorContext } from '@/components/chat/contexts/model-selector-context';
-import { toast } from '@/components/chat/hooks/use-toast';
+import { toast } from 'sonner';
 import { useTranslation } from '@/components/chat/i18n';
 // Using main AppFlowy i18n system - no separate chat context needed
 import { WriterRequest } from '@/components/chat/request';
@@ -31,7 +31,7 @@ export const AIAssistantProvider = ({
   onExit,
   scrollContainer,
 }: {
-  viewId: string,
+  viewId: string;
   children: ReactNode;
   request: WriterRequest;
   onInsertBelow?: (data: EditorData) => void;
@@ -69,7 +69,7 @@ export const AIAssistantProvider = ({
   const { currentPromptId, updateCurrentPromptId } = usePromptModal();
 
   useEffect(() => {
-    if(!assistantType) {
+    if (!assistantType) {
       cancelRef.current = undefined;
       completionHistoryRef.current = [];
       setResponseMode(ChatInputMode.Auto);
@@ -82,13 +82,13 @@ export const AIAssistantProvider = ({
   }, [assistantType]);
 
   const scrollToView = useCallback(() => {
-    if(!initialScrollTopRef.current) {
+    if (!initialScrollTopRef.current) {
       return;
     }
 
     const rect = document.getElementById('appflowy-ai-writer')?.getBoundingClientRect();
 
-    if(rect && rect.top < 100) {
+    if (rect && rect.top < 100) {
       scrollContainer?.scrollTo({
         top: initialScrollTopRef.current,
       });
@@ -97,75 +97,96 @@ export const AIAssistantProvider = ({
     initialScrollTopRef.current = null;
   }, [scrollContainer]);
 
-  const handleMessageChange = useCallback((text: string, comment: string, done?: boolean) => {
-    setFetching(false);
-
-    setPlaceholderContent(text);
-    setComment(comment);
-    setApplyingState(ApplyingState.applying);
-
-    if(initialScrollTopRef.current === null) {
-      initialScrollTopRef.current = scrollContainer?.scrollTop || null;
-    }
-
-    if(done) {
-      cancelRef.current = undefined;
-      setApplyingState(ApplyingState.completed);
-      completionHistoryRef.current.push({
-        role: CompletionRole.AI,
-        content: text,
-      });
-    }
-
-  }, [scrollContainer]);
-
-  const fetchRequest = useCallback(async(assistantType: AIAssistantType, content: string) => {
-    // Do not change assistant type if there is already an AI response
-    if(!completionHistoryRef.current.some(item => {
-      return item.role === CompletionRole.AI;
-    })) {
-      lastAssistantTypeRef.current = assistantType;
-      setAssistantType(assistantType);
-    }
-
-    setFetching(true);
-    setError(null);
-    try {
-      setApplyingState(ApplyingState.analyzing);
-      const { cancel, streamPromise } = await request.fetchAIAssistant({
-        inputText: content,
-        assistantType: lastAssistantTypeRef.current || assistantType,
-        format: responseMode === ChatInputMode.FormatResponse ? responseFormat : undefined,
-        ragIds,
-        completionHistory: completionHistoryRef.current,
-        promptId: currentPromptId || undefined,
-        modelName: selectedModelName,
-      }, handleMessageChange);
-
-      completionHistoryRef.current.push({
-        role: CompletionRole.Human,
-        content,
-      });
-
-      cancelRef.current = cancel;
-      await streamPromise;
-      return cancel;
-      // eslint-disable-next-line
-    } catch(e: any) {
-      setError(e);
-      setApplyingState(ApplyingState.failed);
-    } finally {
+  const handleMessageChange = useCallback(
+    (text: string, comment: string, done?: boolean) => {
       setFetching(false);
-      updateCurrentPromptId(null);
-    }
 
-    return () => undefined;
+      setPlaceholderContent(text);
+      setComment(comment);
+      setApplyingState(ApplyingState.applying);
 
-  }, [currentPromptId, handleMessageChange, ragIds, request, responseFormat, responseMode, selectedModelName, updateCurrentPromptId]);
+      if (initialScrollTopRef.current === null) {
+        initialScrollTopRef.current = scrollContainer?.scrollTop || null;
+      }
 
-  const improveWriting = useCallback(async(content: string) => {
-    return fetchRequest(AIAssistantType.ImproveWriting, content);
-  }, [fetchRequest]);
+      if (done) {
+        cancelRef.current = undefined;
+        setApplyingState(ApplyingState.completed);
+        completionHistoryRef.current.push({
+          role: CompletionRole.AI,
+          content: text,
+        });
+      }
+    },
+    [scrollContainer]
+  );
+
+  const fetchRequest = useCallback(
+    async (assistantType: AIAssistantType, content: string) => {
+      // Do not change assistant type if there is already an AI response
+      if (
+        !completionHistoryRef.current.some((item) => {
+          return item.role === CompletionRole.AI;
+        })
+      ) {
+        lastAssistantTypeRef.current = assistantType;
+        setAssistantType(assistantType);
+      }
+
+      setFetching(true);
+      setError(null);
+      try {
+        setApplyingState(ApplyingState.analyzing);
+        const { cancel, streamPromise } = await request.fetchAIAssistant(
+          {
+            inputText: content,
+            assistantType: lastAssistantTypeRef.current || assistantType,
+            format: responseMode === ChatInputMode.FormatResponse ? responseFormat : undefined,
+            ragIds,
+            completionHistory: completionHistoryRef.current,
+            promptId: currentPromptId || undefined,
+            modelName: selectedModelName,
+          },
+          handleMessageChange
+        );
+
+        completionHistoryRef.current.push({
+          role: CompletionRole.Human,
+          content,
+        });
+
+        cancelRef.current = cancel;
+        await streamPromise;
+        return cancel;
+        // eslint-disable-next-line
+      } catch (e: any) {
+        setError(e);
+        setApplyingState(ApplyingState.failed);
+      } finally {
+        setFetching(false);
+        updateCurrentPromptId(null);
+      }
+
+      return () => undefined;
+    },
+    [
+      currentPromptId,
+      handleMessageChange,
+      ragIds,
+      request,
+      responseFormat,
+      responseMode,
+      selectedModelName,
+      updateCurrentPromptId,
+    ]
+  );
+
+  const improveWriting = useCallback(
+    async (content: string) => {
+      return fetchRequest(AIAssistantType.ImproveWriting, content);
+    },
+    [fetchRequest]
+  );
 
   const askAIAnything = useCallback((content: string) => {
     completionHistoryRef.current.push({
@@ -175,95 +196,110 @@ export const AIAssistantProvider = ({
     setAssistantType(AIAssistantType.AskAIAnything);
   }, []);
 
-  const askAIAnythingWithRequest = useCallback((content: string) => {
-    setApplyingState(ApplyingState.idle);
-    setPlaceholderContent('');
-    setComment('');
-    setEditorData(undefined);
-    scrollToView();
-    return fetchRequest(AIAssistantType.AskAIAnything, content);
-  }, [scrollToView, fetchRequest]);
+  const askAIAnythingWithRequest = useCallback(
+    (content: string) => {
+      setApplyingState(ApplyingState.idle);
+      setPlaceholderContent('');
+      setComment('');
+      setEditorData(undefined);
+      scrollToView();
+      return fetchRequest(AIAssistantType.AskAIAnything, content);
+    },
+    [scrollToView, fetchRequest]
+  );
 
-  const continueWriting = useCallback(async(content: string) => {
-    return fetchRequest(AIAssistantType.ContinueWriting, content);
-  }, [fetchRequest]);
+  const continueWriting = useCallback(
+    async (content: string) => {
+      return fetchRequest(AIAssistantType.ContinueWriting, content);
+    },
+    [fetchRequest]
+  );
 
-  const explain = useCallback((content: string) => {
-    return fetchRequest(AIAssistantType.Explain, content);
-  }, [fetchRequest]);
+  const explain = useCallback(
+    (content: string) => {
+      return fetchRequest(AIAssistantType.Explain, content);
+    },
+    [fetchRequest]
+  );
 
-  const fixSpelling = useCallback((content: string) => {
-    return fetchRequest(AIAssistantType.FixSpelling, content);
-  }, [fetchRequest]);
+  const fixSpelling = useCallback(
+    (content: string) => {
+      return fetchRequest(AIAssistantType.FixSpelling, content);
+    },
+    [fetchRequest]
+  );
 
-  const makeLonger = useCallback((content: string) => {
-    return fetchRequest(AIAssistantType.MakeLonger, content);
-  }, [fetchRequest]);
+  const makeLonger = useCallback(
+    (content: string) => {
+      return fetchRequest(AIAssistantType.MakeLonger, content);
+    },
+    [fetchRequest]
+  );
 
-  const makeShorter = useCallback((content: string) => {
-    return fetchRequest(AIAssistantType.MakeShorter, content);
-  }, [fetchRequest]);
+  const makeShorter = useCallback(
+    (content: string) => {
+      return fetchRequest(AIAssistantType.MakeShorter, content);
+    },
+    [fetchRequest]
+  );
 
   const stop = useCallback(() => {
     cancelRef.current?.();
     setApplyingState(ApplyingState.idle);
   }, []);
 
-  const exit = useCallback((scrollLocked?: boolean) => {
-    cancelRef.current?.();
-    setApplyingState(ApplyingState.idle);
-    cancelRef.current = undefined;
-    completionHistoryRef.current = [];
+  const exit = useCallback(
+    (scrollLocked?: boolean) => {
+      cancelRef.current?.();
+      setApplyingState(ApplyingState.idle);
+      cancelRef.current = undefined;
+      completionHistoryRef.current = [];
 
-    setTimeout(() => {
-      lastAssistantTypeRef.current = undefined;
-      setAssistantType(undefined);
-      setPlaceholderContent('');
-      if(!scrollLocked) {
-        scrollToView();
-      }
+      setTimeout(() => {
+        lastAssistantTypeRef.current = undefined;
+        setAssistantType(undefined);
+        setPlaceholderContent('');
+        if (!scrollLocked) {
+          scrollToView();
+        }
 
-      setComment('');
-      setEditorData(undefined);
-      onExit?.();
-    }, 0);
-
-  }, [onExit, scrollToView]);
+        setComment('');
+        setEditorData(undefined);
+        onExit?.();
+      }, 0);
+    },
+    [onExit, scrollToView]
+  );
 
   const keep = useCallback(() => {
-    if(!editorData) {
+    if (!editorData) {
       return;
     }
 
     completionHistoryRef.current = [];
 
-    if(isGlobalDocument) {
+    if (isGlobalDocument) {
       onReplace?.(editorData);
     } else {
       onInsertBelow?.(editorData);
     }
 
     exit(true);
-
   }, [editorData, isGlobalDocument, exit, onReplace, onInsertBelow]);
 
   const accept = useCallback(() => {
-    if(!editorData) {
+    if (!editorData) {
       return;
     }
 
     completionHistoryRef.current = [];
     onReplace?.(editorData);
     exit(true);
-
   }, [editorData, onReplace, exit]);
 
   const rewrite = useCallback(() => {
-    if(!assistantType) {
-      toast({
-        variant: 'destructive',
-        description: t('writer.errors.noAssistantType'),
-      });
+    if (!assistantType) {
+      toast.error(t('writer.errors.noAssistantType'));
       return;
     }
 
@@ -272,11 +308,12 @@ export const AIAssistantProvider = ({
     setComment('');
     setEditorData(undefined);
     scrollToView();
-    const content = findLast(completionHistoryRef.current, item => {
-      return item.role === CompletionRole.Human;
-    })?.content || '';
+    const content =
+      findLast(completionHistoryRef.current, (item) => {
+        return item.role === CompletionRole.Human;
+      })?.content || '';
 
-    switch(assistantType) {
+    switch (assistantType) {
       case AIAssistantType.ImproveWriting:
         return improveWriting(content);
       case AIAssistantType.AskAIAnything:
@@ -292,11 +329,22 @@ export const AIAssistantProvider = ({
       case AIAssistantType.MakeShorter:
         return makeShorter(content);
     }
-  }, [scrollToView, assistantType, t, improveWriting, askAIAnythingWithRequest, continueWriting, explain, fixSpelling, makeLonger, makeShorter]);
+  }, [
+    scrollToView,
+    assistantType,
+    t,
+    improveWriting,
+    askAIAnythingWithRequest,
+    continueWriting,
+    explain,
+    fixSpelling,
+    makeLonger,
+    makeShorter,
+  ]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if(e.ctrlKey && e.key === 'c') {
+      if (e.ctrlKey && e.key === 'c') {
         stop();
       }
     };
@@ -368,19 +416,15 @@ export const AIAssistantProvider = ({
           setSelectedModelName,
         }}
       >
-
-      <TooltipProvider>
-        <ViewLoaderProvider
-          getView={(viewId: string) => request.getView(viewId)}
-          fetchViews={() => request.fetchViews()}
-        >
-          {children}
-          <ConfirmDiscard
-            open={openDiscard}
-            onClose={() => setOpenDiscard(false)}
-          />
-        </ViewLoaderProvider>
-      </TooltipProvider>
+        <TooltipProvider>
+          <ViewLoaderProvider
+            getView={(viewId: string) => request.getView(viewId)}
+            fetchViews={() => request.fetchViews()}
+          >
+            {children}
+            <ConfirmDiscard open={openDiscard} onClose={() => setOpenDiscard(false)} />
+          </ViewLoaderProvider>
+        </TooltipProvider>
       </WriterContext.Provider>
     </ModelSelectorContext.Provider>
   );

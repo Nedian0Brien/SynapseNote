@@ -7,12 +7,8 @@ import { Button } from '@/components/chat/components/ui/button';
 import { FormatGroup } from '@/components/chat/components/ui/format-group';
 import LoadingDots from '@/components/chat/components/ui/loading-dots';
 import { Textarea } from '@/components/chat/components/ui/textarea';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/chat/components/ui/tooltip';
-import { toast } from '@/components/chat/hooks/use-toast';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { toast } from 'sonner';
 import { useTranslation } from '@/components/chat/i18n';
 import { MESSAGE_VARIANTS } from '@/components/chat/lib/animations';
 import { useMessagesHandlerContext } from '@/components/chat/provider/messages-handler-provider';
@@ -36,20 +32,9 @@ export function ChatInput() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const {
-    submitQuestion,
-    cancelAnswerStream,
-    answerApplying,
-    questionSending,
-  } = useMessagesHandlerContext();
-  const { responseFormat, responseMode, setResponseFormat, setResponseMode } =
-    useResponseFormatContext();
-  const {
-    openModal,
-    currentPromptId,
-    updateCurrentPromptId,
-    reloadDatabasePrompts,
-  } = usePromptModal();
+  const { submitQuestion, cancelAnswerStream, answerApplying, questionSending } = useMessagesHandlerContext();
+  const { responseFormat, responseMode, setResponseFormat, setResponseMode } = useResponseFormatContext();
+  const { openModal, currentPromptId, updateCurrentPromptId, reloadDatabasePrompts } = usePromptModal();
 
   const { chatId } = useChatContext();
 
@@ -75,12 +60,13 @@ export function ChatInput() {
     textarea.style.height = `${newHeight}px`;
 
     // toggle overflowY
-    textarea.style.overflowY =
-      textarea.scrollHeight > MAX_HEIGHT ? 'auto' : 'hidden';
+    textarea.style.overflowY = textarea.scrollHeight > MAX_HEIGHT ? 'auto' : 'hidden';
 
     // adjust container height
     if (containerRef.current) {
-      containerRef.current.style.height = `${newHeight + (responseMode === ChatInputMode.FormatResponse ? 54 + 20 : 30 + 16)}px`; // 32px padding
+      containerRef.current.style.height = `${
+        newHeight + (responseMode === ChatInputMode.FormatResponse ? 54 + 20 : 30 + 16)
+      }px`; // 32px padding
     }
   }, [responseMode]);
 
@@ -102,18 +88,12 @@ export function ChatInput() {
 
   const handleSubmit = async () => {
     if (!message.trim()) {
-      toast({
-        variant: 'destructive',
-        description: `${t('errors.emptyMessage')}`,
-      });
+      toast.error(`${t('errors.emptyMessage')}`);
       return;
     }
 
     if (questionSending || answerApplying) {
-      toast({
-        variant: 'destructive',
-        description: `${t('errors.wait')}`,
-      });
+      toast.error(`${t('errors.wait')}`);
       return;
     }
 
@@ -141,13 +121,8 @@ export function ChatInput() {
   }, [adjustHeight, message]);
 
   const formatTooltip =
-    responseMode === ChatInputMode.FormatResponse
-      ? t('input.button.auto')
-      : t('input.button.format');
-  const FormatIcon =
-    responseMode === ChatInputMode.FormatResponse
-      ? AutoTextIcon
-      : ImageTextIcon;
+    responseMode === ChatInputMode.FormatResponse ? t('input.button.auto') : t('input.button.format');
+  const FormatIcon = responseMode === ChatInputMode.FormatResponse ? AutoTextIcon : ImageTextIcon;
 
   useEffect(() => {
     adjustHeight();
@@ -159,7 +134,7 @@ export function ChatInput() {
       setResponseMode(ChatInputMode.Auto);
       setMessage(prompt.content);
     },
-    [setResponseMode, updateCurrentPromptId],
+    [setResponseMode, updateCurrentPromptId]
   );
 
   return (
@@ -172,7 +147,9 @@ export function ChatInput() {
     >
       <div
         ref={containerRef}
-        className={`border relative justify-between gap-1 flex flex-col ${focused ? 'ring-1 ring-ring border-primary' : 'ring-0'} border-border py-1 px-2 focus:border-primary w-full rounded-[12px]`}
+        className={`relative flex flex-col justify-between gap-1 border ${
+          focused ? 'border-primary ring-1 ring-ring' : 'ring-0'
+        } w-full rounded-[12px] border-border px-2 py-1 focus:border-primary`}
       >
         {responseMode === ChatInputMode.FormatResponse && (
           <FormatGroup
@@ -208,11 +185,11 @@ export function ChatInput() {
           }}
           rows={1}
           className={
-            'resize-none !text-sm caret-primary min-h-[32px] !py-1 !px-1.5 !border-none !shadow-none w-full !ring-0 h-full !outline-none'
+            'h-full min-h-[32px] w-full resize-none !border-none !px-1.5 !py-1 !text-sm caret-primary !shadow-none !outline-none !ring-0'
           }
         />
 
-        <div className={'flex justify-between items-center gap-4'}>
+        <div className={'flex items-center justify-between gap-4'}>
           <div className={'flex items-center gap-1'}>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -222,12 +199,10 @@ export function ChatInput() {
                   }}
                   variant={'ghost'}
                   size={'icon'}
-                  className={'w-7 h-7'}
+                  className={'h-7 w-7'}
                   onClick={() => {
                     setResponseMode(
-                      responseMode === ChatInputMode.FormatResponse
-                        ? ChatInputMode.Auto
-                        : ChatInputMode.FormatResponse,
+                      responseMode === ChatInputMode.FormatResponse ? ChatInputMode.Auto : ChatInputMode.FormatResponse
                     );
                   }}
                 >
@@ -244,10 +219,7 @@ export function ChatInput() {
               </TooltipContent>
             </Tooltip>
 
-            <ModelSelector
-              className={'h-7'}
-              disabled={questionSending || answerApplying}
-            />
+            <ModelSelector className={'h-7'} disabled={questionSending || answerApplying} />
 
             <Tooltip>
               <TooltipTrigger asChild>
@@ -288,7 +260,7 @@ export function ChatInput() {
                 onClick={cancelAnswerStream}
                 size={'icon'}
                 variant={'link'}
-                className={'w-7 h-7 text-fill-theme-thick !p-0.5'}
+                className={'h-7 w-7 !p-0.5 text-fill-theme-thick'}
               >
                 <StopIcon
                   style={{
@@ -302,7 +274,7 @@ export function ChatInput() {
                 onClick={handleSubmit}
                 size={'icon'}
                 variant={'link'}
-                className={'w-7 h-7 text-fill-theme-thick !p-0.5'}
+                className={'h-7 w-7 !p-0.5 text-fill-theme-thick'}
                 disabled={!message.trim() || disabled}
               >
                 {questionSending ? (

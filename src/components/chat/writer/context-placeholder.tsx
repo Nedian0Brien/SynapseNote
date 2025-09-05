@@ -1,6 +1,5 @@
 import { AIAssistant } from '@/components/chat/components/ai-writer';
 import { RenderEditor } from '@/components/chat/components/ai-writer/render-editor';
-import { Toaster } from '@/components/chat/components/ui/toaster';
 import useEnsureBottomVisible from '@/components/chat/components/ai-writer/use-ensure-bottom-visible';
 import { AIAssistantType } from '@/components/chat/types';
 import { useWriterContext } from './context';
@@ -31,7 +30,5 @@ export function ContextPlaceholder() {
         />
       </EditorProvider>}
     </AIAssistant>
-    
-    <Toaster />
   </div>;
 }

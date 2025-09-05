@@ -8,12 +8,8 @@ import { Button } from '@/components/chat/components/ui/button';
 import { FormatGroup } from '@/components/chat/components/ui/format-group';
 import LoadingDots from '@/components/chat/components/ui/loading-dots';
 import { Textarea } from '@/components/chat/components/ui/textarea';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/chat/components/ui/tooltip';
-import { toast } from '@/components/chat/hooks/use-toast';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { toast } from 'sonner';
 import { useTranslation } from '@/components/chat/i18n';
 import { cn } from '@/components/chat/lib/utils';
 import { usePromptModal } from '@/components/chat/provider/prompt-modal-provider';
@@ -51,8 +47,7 @@ export function WritingInput({
     hasAIAnswer,
     scrollContainer,
   } = useWriterContext();
-  const { openModal, currentPromptId, updateCurrentPromptId } =
-    usePromptModal();
+  const { openModal, currentPromptId, updateCurrentPromptId } = usePromptModal();
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -77,12 +72,13 @@ export function WritingInput({
     textarea.style.height = `${newHeight}px`;
 
     // toggle overflowY
-    textarea.style.overflowY =
-      textarea.scrollHeight > MAX_HEIGHT ? 'auto' : 'hidden';
+    textarea.style.overflowY = textarea.scrollHeight > MAX_HEIGHT ? 'auto' : 'hidden';
 
     // adjust container height
     if (containerRef.current) {
-      containerRef.current.style.height = `${newHeight + (responseMode === ChatInputMode.FormatResponse ? 54 + 24 : 30 + 16)}px`; // 32px padding
+      containerRef.current.style.height = `${
+        newHeight + (responseMode === ChatInputMode.FormatResponse ? 54 + 24 : 30 + 16)
+      }px`; // 32px padding
     }
   }, [responseMode]);
 
@@ -104,18 +100,12 @@ export function WritingInput({
 
   const handleSubmit = async () => {
     if (!message.trim()) {
-      toast({
-        variant: 'destructive',
-        description: `${t('errors.emptyMessage')}`,
-      });
+      toast.error(`${t('errors.emptyMessage')}`);
       return;
     }
 
     if (isFetching || isApplying) {
-      toast({
-        variant: 'destructive',
-        description: `${t('errors.wait')}`,
-      });
+      toast.error(`${t('errors.wait')}`);
       return;
     }
 
@@ -126,10 +116,7 @@ export function WritingInput({
       await onSubmit(message);
       // eslint-disable-next-line
     } catch (e: any) {
-      toast({
-        variant: 'destructive',
-        description: e.message,
-      });
+      toast.error(e.message);
     }
   };
 
@@ -155,12 +142,9 @@ export function WritingInput({
 
       if (!rect || !containerRect) return;
 
-      const inViewport =
-        rect.top >= containerRect.top && rect.bottom <= containerRect.bottom;
-      const bottomInView =
-        rect.top < containerRect.top && rect.bottom > containerRect.top;
-      const topInView =
-        rect.bottom > containerRect.bottom && rect.top < containerRect.bottom;
+      const inViewport = rect.top >= containerRect.top && rect.bottom <= containerRect.bottom;
+      const bottomInView = rect.top < containerRect.top && rect.bottom > containerRect.top;
+      const topInView = rect.bottom > containerRect.bottom && rect.top < containerRect.bottom;
 
       if (inViewport || bottomInView || topInView) {
         textareaRef.current?.focus();
@@ -188,25 +172,15 @@ export function WritingInput({
         setFocused(true);
       }
     },
-    [setResponseMode, updateCurrentPromptId],
+    [setResponseMode, updateCurrentPromptId]
   );
 
   const formatTooltip =
-    responseMode === ChatInputMode.FormatResponse
-      ? t('input.button.auto')
-      : t('input.button.format');
-  const FormatIcon =
-    responseMode === ChatInputMode.FormatResponse
-      ? AutoTextIcon
-      : ImageTextIcon;
+    responseMode === ChatInputMode.FormatResponse ? t('input.button.auto') : t('input.button.format');
+  const FormatIcon = responseMode === ChatInputMode.FormatResponse ? AutoTextIcon : ImageTextIcon;
 
   return (
-    <div
-      className={cn(
-        'writer-anchor flex w-full flex-col',
-        noBorder ? '' : 'pb-[150px]',
-      )}
-    >
+    <div className={cn('writer-anchor flex w-full flex-col', noBorder ? '' : 'pb-[150px]')}>
       <div
         ref={containerRef}
         style={{
@@ -217,8 +191,8 @@ export function WritingInput({
         }}
         className={cn(
           noBorder ? '' : 'shadow-menu',
-          'border bg-input-background w-full relative justify-between gap-1 flex flex-col border-border py-1 px-2 focus:border-primary rounded-[12px]',
-          noBorder ? 'ring-0' : 'ring-[0.5px] ring-input',
+          'relative flex w-full flex-col justify-between gap-1 rounded-[12px] border border-border bg-input-background px-2 py-1 focus:border-primary',
+          noBorder ? 'ring-0' : 'ring-[0.5px] ring-input'
         )}
       >
         {responseMode === ChatInputMode.FormatResponse && (
@@ -254,11 +228,11 @@ export function WritingInput({
           }}
           rows={1}
           className={
-            'resize-none select-text writer-input !text-sm caret-primary min-h-[32px] !py-1 !px-1.5 !border-none !shadow-none w-full !ring-0 h-full !outline-none'
+            'writer-input h-full min-h-[32px] w-full select-text resize-none !border-none !px-1.5 !py-1 !text-sm caret-primary !shadow-none !outline-none !ring-0'
           }
         />
 
-        <div className={'flex justify-between items-center gap-4'}>
+        <div className={'flex items-center justify-between gap-4'}>
           <div className='flex items-center gap-1'>
             {!noSwitchMode ? (
               <Tooltip>
@@ -269,12 +243,10 @@ export function WritingInput({
                     }}
                     variant={'ghost'}
                     size={'icon'}
-                    className={'w-7 h-7'}
+                    className={'h-7 w-7'}
                     onClick={() => {
                       setResponseMode(
-                        responseMode === ChatInputMode.FormatResponse
-                          ? ChatInputMode.Auto
-                          : ChatInputMode.FormatResponse,
+                        responseMode === ChatInputMode.FormatResponse ? ChatInputMode.Auto : ChatInputMode.FormatResponse
                       );
                     }}
                   >
@@ -294,10 +266,7 @@ export function WritingInput({
               <div />
             )}
 
-            <ModelSelector
-              className={'h-7'}
-              disabled={isFetching || isApplying}
-            />
+            <ModelSelector className={'h-7'} disabled={isFetching || isApplying} />
 
             <Tooltip>
               <TooltipTrigger asChild>
@@ -328,7 +297,7 @@ export function WritingInput({
             />
           </div>
 
-          <div className={'flex gap-1 items-center'}>
+          <div className={'flex items-center gap-1'}>
             <ViewTree />
             {!hasAIAnswer() && <WritingMore input={message} />}
 
@@ -336,7 +305,7 @@ export function WritingInput({
               onClick={handleSubmit}
               size={'icon'}
               variant={'link'}
-              className={'w-7 h-7 text-fill-theme-thick !p-0.5'}
+              className={'h-7 w-7 !p-0.5 text-fill-theme-thick'}
               disabled={!message.trim() || isFetching}
               onMouseDown={(e) => {
                 e.preventDefault();

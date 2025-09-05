@@ -1,6 +1,6 @@
 import { ReactComponent as ChevronDown } from '@/components/chat/assets/icons/drop_menu_show.svg';
 import { Button } from '@/components/chat/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/chat/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import PageIcon from '@/components/chat/components/view/page-icon';
 import { useTranslation } from '@/components/chat/i18n';
 import { cn } from '@/components/chat/lib/utils';
@@ -9,7 +9,12 @@ import { PlusIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { ReactComponent as AddPageIcon } from '@/components/chat/assets/icons/doc-forward.svg';
 
-export function ViewItem({ view, children, onCreateViewWithContent, onInsertContentToView }: {
+export function ViewItem({
+  view,
+  children,
+  onCreateViewWithContent,
+  onInsertContentToView,
+}: {
   view: View;
   children?: React.ReactNode;
   onCreateViewWithContent: (parentViewId: string) => void;
@@ -23,17 +28,8 @@ export function ViewItem({ view, children, onCreateViewWithContent, onInsertCont
 
   const ToggleButton = useMemo(() => {
     return view.children.length > 0 ? (
-      <Button
-        variant={'ghost'}
-        size={'icon'}
-        className={'!w-4 !h-4 !min-w-4 !min-h-4 hover:bg-muted-foreground/10'}
-      >
-        <ChevronDown
-          className={cn(
-            'transform transition-transform',
-            expanded ? 'rotate-0' : '-rotate-90',
-          )}
-        />
+      <Button variant={'ghost'} size={'icon'} className={'!h-4 !min-h-4 !w-4 !min-w-4 hover:bg-muted-foreground/10'}>
+        <ChevronDown className={cn('transform transition-transform', expanded ? 'rotate-0' : '-rotate-90')} />
       </Button>
     ) : (
       <div style={{ width: 16, height: 16 }}></div>
@@ -46,9 +42,11 @@ export function ViewItem({ view, children, onCreateViewWithContent, onInsertCont
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
         onClick={() => setExpanded(!expanded)}
-        className={'px-1.5 h-[28px] w-full select-none text-sm cursor-pointer rounded-[8px] flex items-center justify-between gap-2 hover:bg-muted'}
+        className={
+          'flex h-[28px] w-full cursor-pointer select-none items-center justify-between gap-2 rounded-[8px] px-1.5 text-sm hover:bg-muted'
+        }
       >
-        <div className={'flex items-center gap-2 w-full overflow-hidden'}>
+        <div className={'flex w-full items-center gap-2 overflow-hidden'}>
           <div className={'flex items-center gap-0.5'}>
             {ToggleButton}
             <PageIcon view={view} />
@@ -58,15 +56,13 @@ export function ViewItem({ view, children, onCreateViewWithContent, onInsertCont
               <TooltipTrigger asChild>
                 <span className={'flex-1 truncate'}>{name}</span>
               </TooltipTrigger>
-              <TooltipContent>
-                {name}
-              </TooltipContent>
+              <TooltipContent>{name}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
         {isHovering && (
           <div
-            onClick={e => {
+            onClick={(e) => {
               e.stopPropagation();
             }}
             className={'flex items-center gap-1'}
@@ -77,18 +73,13 @@ export function ViewItem({ view, children, onCreateViewWithContent, onInsertCont
                   <Button
                     onClick={() => onInsertContentToView(view.view_id)}
                     variant={'ghost'}
-                    className={'!w-5 !h-5 !p-0 rounded-md hover:bg-muted-foreground/10'}
+                    className={'!h-5 !w-5 rounded-md !p-0 hover:bg-muted-foreground/10'}
                   >
-                    <AddPageIcon
-                      className={'w-4 h-4'}
-                    />
+                    <AddPageIcon className={'h-4 w-4'} />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>
-                  {t('button.addToPage')}
-                </TooltipContent>
+                <TooltipContent>{t('button.addToPage')}</TooltipContent>
               </Tooltip>
-
 
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -97,16 +88,12 @@ export function ViewItem({ view, children, onCreateViewWithContent, onInsertCont
                       onCreateViewWithContent(view.view_id);
                     }}
                     variant={'ghost'}
-                    className={'!w-5 !h-5 !p-0 rounded-md hover:bg-muted-foreground/10'}
+                    className={'!h-5 !w-5 rounded-md !p-0 hover:bg-muted-foreground/10'}
                   >
-                    <PlusIcon
-                      className={'w-4 h-4'}
-                    />
+                    <PlusIcon className={'h-4 w-4'} />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>
-                  {t('addMessageToPage.createNewPage')}
-                </TooltipContent>
+                <TooltipContent>{t('addMessageToPage.createNewPage')}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
@@ -116,4 +103,3 @@ export function ViewItem({ view, children, onCreateViewWithContent, onInsertCont
     </div>
   );
 }
-

@@ -1,5 +1,5 @@
 import LoadingDots from '@/components/chat/components/ui/loading-dots';
-import { toast } from '@/components/chat/hooks/use-toast';
+import { toast } from 'sonner';
 import { useTranslation } from '@/components/chat/i18n';
 import { searchViews } from '@/components/chat/lib/views';
 import { Spaces } from './spaces';
@@ -18,10 +18,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 export function ViewTree() {
   const [searchValue, setSearchValue] = useState('');
-  const {
-    viewId,
-    setRagIds,
-  } = useWriterContext();
+  const { viewId, setRagIds } = useWriterContext();
   const { fetchViews } = useWriterContext();
   const [viewsLoading, setViewsLoading] = useState(true);
   const [folder, setFolder] = useState<View | null>(null);
@@ -30,19 +27,16 @@ export function ViewTree() {
   const { t } = useTranslation();
 
   useEffect(() => {
-    void (async() => {
+    void (async () => {
       setViewsLoading(true);
       try {
         const data = await fetchViews();
 
-        if(!data) return;
+        if (!data) return;
         setFolder(data);
         // eslint-disable-next-line
-      } catch(e: any) {
-        toast({
-          variant: 'destructive',
-          description: e.message,
-        });
+      } catch (e: any) {
+        toast.error(e.message);
       } finally {
         setViewsLoading(false);
       }
@@ -53,71 +47,61 @@ export function ViewTree() {
     return folder?.children || [];
   }, [folder]);
 
-  const {
-    getSelected,
-    getCheckStatus,
-    toggleNode,
-    getInitialExpand,
-  } = useCheckboxTree(viewIds, views);
+  const { getSelected, getCheckStatus, toggleNode, getInitialExpand } = useCheckboxTree(viewIds, views);
 
   const length = getSelected().length;
 
   const spaces = useMemo(() => {
-    const spaces = folder?.children.filter(view => view.extra?.is_space);
+    const spaces = folder?.children.filter((view) => view.extra?.is_space);
 
     return searchViews(spaces || [], searchValue);
   }, [folder, searchValue]);
 
   const [open, setOpen] = useState(false);
 
-  return <Popover modal={false} open={open} onOpenChange={setOpen}>
-    <PopoverTrigger asChild>
-      <Button
-        className={'text-xs !gap-1 !text-secondary-foreground h-[28px]'}
-        startIcon={
-          <DocIcon />
-        }
-        size={'sm'}
-        variant={'ghost'}
-        disabled={viewsLoading}
-      >
-        <div className={'flex gap-0.5 items-center flex-1'}>
-          {length > 1 ? length : t('writer.current-page')}
-          {viewsLoading ? <LoadingDots size={12} /> : <ChevronDown className={'!w-2 !h-2'} />}
-
-        </div>
-
-      </Button>
-    </PopoverTrigger>
-    <PopoverContent side={'top'} asChild>
-      <motion.div
-        variants={MESSAGE_VARIANTS.getSelectorVariants()}
-        initial="hidden"
-        animate={open ? "visible" : "exit"}
-        className={'h-fit py-1 px-1 min-h-[200px] max-h-[360px] w-[300px] flex gap-2 flex-col bg-popover border border-border rounded-md shadow-md'}
-      >
-        <SearchInput
-          value={searchValue}
-          onChange={setSearchValue}
-        />
-        <Separator />
-        <div className={'overflow-x-hidden overflow-y-auto flex-1 appflowy-scrollbar'}>
-          <Spaces
-            viewsLoading={viewsLoading}
-            spaces={spaces}
-            getCheckStatus={getCheckStatus}
-            getInitialExpand={getInitialExpand}
-            onToggle={
-              (view: View) => {
-                if(view.view_id === viewId) return;
+  return (
+    <Popover modal={false} open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          className={'h-[28px] !gap-1 text-xs !text-secondary-foreground'}
+          startIcon={<DocIcon />}
+          size={'sm'}
+          variant={'ghost'}
+          disabled={viewsLoading}
+        >
+          <div className={'flex flex-1 items-center gap-0.5'}>
+            {length > 1 ? length : t('writer.current-page')}
+            {viewsLoading ? <LoadingDots size={12} /> : <ChevronDown className={'!h-2 !w-2'} />}
+          </div>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent side={'top'} asChild>
+        <motion.div
+          variants={MESSAGE_VARIANTS.getSelectorVariants()}
+          initial='hidden'
+          animate={open ? 'visible' : 'exit'}
+          className={
+            'flex h-fit max-h-[360px] min-h-[200px] w-[300px] flex-col gap-2 rounded-md border border-border bg-popover px-1 py-1 shadow-md'
+          }
+        >
+          <SearchInput value={searchValue} onChange={setSearchValue} />
+          <Separator />
+          <div className={'appflowy-scrollbar flex-1 overflow-y-auto overflow-x-hidden'}>
+            <Spaces
+              viewsLoading={viewsLoading}
+              spaces={spaces}
+              getCheckStatus={getCheckStatus}
+              getInitialExpand={getInitialExpand}
+              onToggle={(view: View) => {
+                if (view.view_id === viewId) return;
                 const ids = toggleNode(view);
 
                 setRagIds(Array.from(ids));
-              }
-            }
-          />
-        </div>
-      </motion.div>
-    </PopoverContent>
-  </Popover>;
+              }}
+            />
+          </div>
+        </motion.div>
+      </PopoverContent>
+    </Popover>
+  );
 }

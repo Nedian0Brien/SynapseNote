@@ -1,4 +1,4 @@
-import { Avatar, AvatarFallback } from '@/components/chat/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { stringToColor } from '@/components/chat/lib/utils';
 import { User } from '@/components/chat/types';
 import { useEffect, useState } from 'react';
@@ -12,16 +12,15 @@ function HumanQuestion({
   userId: string;
   fetchMember: (uuid: string) => Promise<User>;
 }) {
-
   const [member, setMember] = useState<User | null>(null);
 
   useEffect(() => {
-    void (async() => {
+    void (async () => {
       try {
         const member = await fetchMember(userId);
 
         setMember(member);
-      } catch(e) {
+      } catch (e) {
         console.error(e);
       }
     })();
@@ -30,13 +29,11 @@ function HumanQuestion({
   const name = member?.name || 'Anonymous';
 
   return (
-    <div className={`flex gap-2 w-full`}>
-      <div className={'flex-1 flex items-center justify-end'}>
-        <div className={'w-fit max-w-[83%] bg-muted rounded-[16px] px-4 py-2'}>
-          {content}
-        </div>
+    <div className={`flex w-full gap-2`}>
+      <div className={'flex flex-1 items-center justify-end'}>
+        <div className={'w-fit max-w-[83%] rounded-[16px] bg-muted px-4 py-2'}>{content}</div>
       </div>
-      <Avatar className={'w-9 h-9 border border-border'}>
+      <Avatar className={'h-9 w-9 border border-border'}>
         <AvatarFallback
           style={{
             background: stringToColor(name),

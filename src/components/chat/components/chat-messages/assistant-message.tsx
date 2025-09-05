@@ -10,7 +10,7 @@ import { useResponseFormatContext } from '@/components/chat/provider/response-fo
 import { useSuggestionsContext } from '@/components/chat/provider/suggestions-provider';
 import { ChatInputMode } from '@/components/chat/types';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, AlertDescription } from '@/components/chat/components/ui/alert';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { EditorProvider } from '@appflowyinc/editor';
 import { ReactComponent as Error } from '@/components/chat/assets/icons/error.svg';
 import MessageCheckbox from './message-checkbox';
@@ -57,7 +57,7 @@ export function AssistantMessage({ id, isHovered }: { id: number; isHovered: boo
 
             setDone(done || false);
             setContent(text);
-          },
+          }
         );
         // eslint-disable-next-line
       } catch (e: any) {
@@ -74,18 +74,14 @@ export function AssistantMessage({ id, isHovered }: { id: number; isHovered: boo
   }, [questionId, getMessageSuggestions]);
 
   return (
-    <div
-      className={
-        'assistant-message transform transition-transform flex flex-col w-full gap-1 relative'
-      }
-    >
+    <div className={'assistant-message relative flex w-full transform flex-col gap-1 transition-transform'}>
       {error ? (
-        <div className={`flex items-center w-full justify-center`}>
-          <div className="max-w-[480px]">
-            <Alert className={'border-none text-foreground bg-fill-error-light'}>
+        <div className={`flex w-full items-center justify-center`}>
+          <div className='max-w-[480px]'>
+            <Alert className={'border-none bg-fill-error-light text-foreground'}>
               <AlertDescription>
-                <div className="flex gap-3 items-center">
-                  <div className={'!w-4 !h-4 !min-w-4 !min-h-4'}>
+                <div className='flex items-center gap-3'>
+                  <div className={'!h-4 !min-h-4 !w-4 !min-w-4'}>
                     <Error />
                   </div>
                   {t('errors.noLimit')}
@@ -94,22 +90,21 @@ export function AssistantMessage({ id, isHovered }: { id: number; isHovered: boo
             </Alert>
           </div>
         </div>
-      ) : loading
-        ? (
-          <div className={`flex gap-2 overflow-hidden items-center pl-0.5`}>
-            <span className={'text-foreground opacity-60 text-sm'}>{t('generating')}</span>
-            <LoadingDots />
-          </div>
-        ) :
+      ) : loading ? (
+        <div className={`flex items-center gap-2 overflow-hidden pl-0.5`}>
+          <span className={'text-sm text-foreground opacity-60'}>{t('generating')}</span>
+          <LoadingDots />
+        </div>
+      ) : (
         content && (
-          <div className={'flex gap-2 w-full overflow-hidden py-1 pl-0.5'}>
+          <div className={'flex w-full gap-2 overflow-hidden py-1 pl-0.5'}>
             <MessageCheckbox id={id} />
             <EditorProvider>
               <AnswerMd id={id} mdContent={content} />
             </EditorProvider>
           </div>
         )
-      }
+      )}
       {sources && sources.length > 0 ? <MessageSources sources={sources} /> : null}
       {done && <MessageActions id={id} isHovered={isHovered} />}
       {suggestions && suggestions.items.length > 0 ? <MessageSuggestions suggestions={suggestions} /> : null}

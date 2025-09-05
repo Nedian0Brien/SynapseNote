@@ -1,11 +1,6 @@
 import { ReactComponent as ChevronDown } from '@/components/chat/assets/icons/drop_menu_show.svg';
 import { Button } from '@/components/chat/components/ui/button';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/chat/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import PageIcon from '@/components/chat/components/view/page-icon';
 import { useTranslation } from '@/components/chat/i18n';
 import { cn } from '@/components/chat/lib/utils';
@@ -31,18 +26,13 @@ export function ViewItem({
       <Button
         variant={'ghost'}
         size={'icon'}
-        className={'!w-4 !h-4 !min-w-4 !min-h-4 hover:bg-muted-foreground/10'}
+        className={'!h-4 !min-h-4 !w-4 !min-w-4 hover:bg-muted-foreground/10'}
         onClick={(e) => {
           e.stopPropagation();
           setExpanded(!expanded);
         }}
       >
-        <ChevronDown
-          className={cn(
-            'transform transition-transform',
-            expanded ? 'rotate-0' : '-rotate-90',
-          )}
-        />
+        <ChevronDown className={cn('transform transition-transform', expanded ? 'rotate-0' : '-rotate-90')} />
       </Button>
     ) : (
       <div style={{ width: 16, height: 16 }}></div>
@@ -54,10 +44,10 @@ export function ViewItem({
       <div
         onClick={() => onSelectDatabaseView(view.view_id)}
         className={
-          'px-1.5 h-[28px] w-full select-none text-sm cursor-pointer rounded-[8px] flex items-center justify-between gap-2 hover:bg-muted'
+          'flex h-[28px] w-full cursor-pointer select-none items-center justify-between gap-2 rounded-[8px] px-1.5 text-sm hover:bg-muted'
         }
       >
-        <div className={'flex items-center gap-2 w-full overflow-hidden'}>
+        <div className={'flex w-full items-center gap-2 overflow-hidden'}>
           <div className={'flex items-center gap-0.5'}>
             {ToggleButton}
             <PageIcon view={view} />

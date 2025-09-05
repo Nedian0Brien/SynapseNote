@@ -1,35 +1,29 @@
 import { AddMessageToPageWrapper } from '@/components/chat/components/add-messages-to-page-wrapper';
 import { Button } from '@/components/chat/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/chat/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ReactComponent as AddPageIcon } from '@/components/chat/assets/icons/doc-forward.svg';
 import { useTranslation } from '@/components/chat/i18n';
 import { useChatMessagesContext } from '@/components/chat/provider/messages-provider';
 
-export function AddMessageTo({ id }: {
-  id: number
-}) {
-  const {
-    getMessage,
-  } = useChatMessagesContext();
+export function AddMessageTo({ id }: { id: number }) {
+  const { getMessage } = useChatMessagesContext();
 
   const message = getMessage(id);
-  const {
-    t,
-  } = useTranslation();
+  const { t } = useTranslation();
 
-  if(!message) return null;
+  if (!message) return null;
 
   return (
     <Tooltip>
-      <AddMessageToPageWrapper messages={[message]}>
-        <TooltipTrigger asChild>
+      <TooltipTrigger asChild>
+        <AddMessageToPageWrapper messages={[message]}>
           <Button
-            onMouseDown={e => {
+            onMouseDown={(e) => {
               e.preventDefault();
             }}
             variant={'ghost'}
             size={'icon'}
-            className={`h-7 !p-0 w-7`}
+            className={`h-7 w-7 !p-0`}
           >
             <AddPageIcon
               style={{
@@ -38,12 +32,9 @@ export function AddMessageTo({ id }: {
               }}
             />
           </Button>
-        </TooltipTrigger>
-      </AddMessageToPageWrapper>
-      <TooltipContent
-        align={'center'}
-        side={'bottom'}
-      >
+        </AddMessageToPageWrapper>
+      </TooltipTrigger>
+      <TooltipContent align={'center'} side={'bottom'}>
         {t('button.addToPage')}
       </TooltipContent>
     </Tooltip>

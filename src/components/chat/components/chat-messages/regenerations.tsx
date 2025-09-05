@@ -5,7 +5,7 @@ import { ReactComponent as TryAgainIcon } from '@/components/chat/assets/icons/u
 import { FormatGroup } from '@/components/chat/components/ui/format-group';
 import { Button } from '@/components/chat/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/chat/components/ui/popover';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/chat/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTranslation } from '@/components/chat/i18n';
 import { useMessagesHandlerContext } from '@/components/chat/provider/messages-handler-provider';
 import { useChatMessagesContext } from '@/components/chat/provider/messages-provider';
@@ -13,27 +13,24 @@ import { useResponseFormatContext } from '@/components/chat/provider/response-fo
 import { OutputContent, OutputLayout } from '@/components/chat/types';
 import { useCallback, useState } from 'react';
 
-export function Regenerations({ id }: {
-  id: number;
-}) {
+export function Regenerations({ id }: { id: number }) {
   const { t } = useTranslation();
-  const {
-    messageIds,
-  } = useChatMessagesContext();
-  const {
-    setResponseFormat,
-    getMessageResponseFormat,
-  } = useResponseFormatContext();
+  const { messageIds } = useChatMessagesContext();
+  const { setResponseFormat, getMessageResponseFormat } = useResponseFormatContext();
 
   const { regenerateAnswer } = useMessagesHandlerContext();
 
-  const [outputContent, setOutputContent] = useState<OutputContent | undefined>(getMessageResponseFormat(id)?.output_content);
-  const [outputLayout, setOutputLayout] = useState<OutputLayout | undefined>(getMessageResponseFormat(id)?.output_layout);
+  const [outputContent, setOutputContent] = useState<OutputContent | undefined>(
+    getMessageResponseFormat(id)?.output_content
+  );
+  const [outputLayout, setOutputLayout] = useState<OutputLayout | undefined>(
+    getMessageResponseFormat(id)?.output_layout
+  );
 
   const regenerate = useCallback(() => {
     const index = messageIds.indexOf(id);
 
-    if(index < 0) {
+    if (index < 0) {
       return;
     }
 
@@ -47,7 +44,7 @@ export function Regenerations({ id }: {
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
-            onMouseDown={e => {
+            onMouseDown={(e) => {
               e.preventDefault();
             }}
             onClick={() => {
@@ -55,7 +52,7 @@ export function Regenerations({ id }: {
             }}
             variant={'ghost'}
             size={'icon'}
-            className={`h-7 !p-0 w-7`}
+            className={`h-7 w-7 !p-0`}
           >
             <TryAgainIcon
               style={{
@@ -65,12 +62,8 @@ export function Regenerations({ id }: {
             />
           </Button>
         </TooltipTrigger>
-        <TooltipContent
-          align={'center'}
-          side={'bottom'}
-        >
+        <TooltipContent align={'center'} side={'bottom'}>
           {t('button.tryAgain')}
-
         </TooltipContent>
       </Tooltip>
       <Popover modal>
@@ -78,12 +71,12 @@ export function Regenerations({ id }: {
           <TooltipTrigger asChild>
             <PopoverTrigger asChild>
               <Button
-                onMouseDown={e => {
+                onMouseDown={(e) => {
                   e.preventDefault();
                 }}
                 variant={'ghost'}
                 size={'icon'}
-                className={`h-7 !p-0 w-10`}
+                className={`h-7 w-10 !p-0`}
               >
                 <RegenerateIcon
                   style={{
@@ -98,25 +91,21 @@ export function Regenerations({ id }: {
                   }}
                 />
               </Button>
-
             </PopoverTrigger>
           </TooltipTrigger>
-          <TooltipContent
-            align={'center'}
-            side={'bottom'}
-          >
+          <TooltipContent align={'center'} side={'bottom'}>
             {t('button.changeFormat')}
           </TooltipContent>
         </Tooltip>
         <PopoverContent
-          onOpenAutoFocus={e => e.preventDefault()}
-          onCloseAutoFocus={e => e.preventDefault()}
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          onCloseAutoFocus={(e) => e.preventDefault()}
           className={'flex items-center gap-2'}
         >
           <FormatGroup
             outputContent={outputContent}
             outputLayout={outputLayout}
-            setOutputContent={content => {
+            setOutputContent={(content) => {
               setOutputContent(content);
               setOutputLayout(OutputLayout.Paragraph);
             }}
@@ -127,9 +116,9 @@ export function Regenerations({ id }: {
               <Button
                 variant={'link'}
                 size={'icon'}
-                disabled={(outputContent === undefined) || (outputLayout === undefined)}
+                disabled={outputContent === undefined || outputLayout === undefined}
                 onClick={() => {
-                  if(outputContent === undefined || outputLayout === undefined) {
+                  if (outputContent === undefined || outputLayout === undefined) {
                     return;
                   }
 
@@ -148,9 +137,7 @@ export function Regenerations({ id }: {
                 />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>
-              {t('button.regenerateWithNewFormat')}
-            </TooltipContent>
+            <TooltipContent>{t('button.regenerateWithNewFormat')}</TooltipContent>
           </Tooltip>
         </PopoverContent>
       </Popover>

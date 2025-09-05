@@ -7,7 +7,7 @@ import { ReactComponent as BulletedListIcon } from '@/components/chat/assets/ico
 import { ReactComponent as NumberedListIcon } from '@/components/chat/assets/icons/num-list.svg';
 import { ReactComponent as TableIcon } from '@/components/chat/assets/icons/table.svg';
 import { Separator } from './separator';
-import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTranslation } from '@/components/chat/i18n';
 import { OutputContent, OutputLayout } from '@/components/chat/types';
 import { useMemo } from 'react';

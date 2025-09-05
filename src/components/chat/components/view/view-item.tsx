@@ -1,6 +1,6 @@
 import { ReactComponent as ChevronDown } from '@/components/chat/assets/icons/drop_menu_show.svg';
 import { Button } from '@/components/chat/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/chat/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import PageIcon from '@/components/chat/components/view/page-icon';
 import { useTranslation } from '@/components/chat/i18n';
 import { cn } from '@/components/chat/lib/utils';
@@ -9,7 +9,13 @@ import { CheckStatus } from '@/components/chat/types/checkbox';
 import { CheckSquare, Minus, Square } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
-export function ViewItem({ view, children, getCheckStatus, onToggle, getInitialExpand }: {
+export function ViewItem({
+  view,
+  children,
+  getCheckStatus,
+  onToggle,
+  getInitialExpand,
+}: {
   view: View;
   children?: React.ReactNode;
   getCheckStatus: (view: View) => CheckStatus;
@@ -24,13 +30,17 @@ export function ViewItem({ view, children, getCheckStatus, onToggle, getInitialE
   const name = view.name || t('view.placeholder');
   const checkStatus = getCheckStatus(view);
   const CheckboxIcon = useMemo(() => {
-    switch(checkStatus) {
+    switch (checkStatus) {
       case CheckStatus.Checked:
-        return <CheckSquare className="h-4 w-4 text-primary" />;
+        return <CheckSquare className='h-4 w-4 text-primary' />;
       case CheckStatus.Indeterminate:
-        return <Square className="h-4 w-4  text-primary"><Minus className="h-3 w-3" /></Square>;
+        return (
+          <Square className='h-4 w-4  text-primary'>
+            <Minus className='h-3 w-3' />
+          </Square>
+        );
       default:
-        return <Square className="h-4 w-4" />;
+        return <Square className='h-4 w-4' />;
     }
   }, [checkStatus]);
 
@@ -41,16 +51,11 @@ export function ViewItem({ view, children, getCheckStatus, onToggle, getInitialE
         size={'icon'}
         onClick={(e) => {
           e.stopPropagation();
-          setExpanded(prev => !prev);
+          setExpanded((prev) => !prev);
         }}
-        className={'!w-4 !h-4 !min-w-4 !min-h-4 hover:bg-muted-foreground/10'}
+        className={'!h-4 !min-h-4 !w-4 !min-w-4 hover:bg-muted-foreground/10'}
       >
-        <ChevronDown
-          className={cn(
-            'transform transition-transform',
-            expanded ? 'rotate-0' : '-rotate-90',
-          )}
-        />
+        <ChevronDown className={cn('transform transition-transform', expanded ? 'rotate-0' : '-rotate-90')} />
       </Button>
     ) : (
       <div style={{ width: 16, height: 16 }}></div>
@@ -64,18 +69,14 @@ export function ViewItem({ view, children, getCheckStatus, onToggle, getInitialE
           e.stopPropagation();
           onToggle(view);
         }}
-        className={'px-1.5 h-[28px] w-full select-none text-sm cursor-pointer rounded-[8px] flex items-center justify-between gap-2 hover:bg-muted'}
+        className={
+          'flex h-[28px] w-full cursor-pointer select-none items-center justify-between gap-2 rounded-[8px] px-1.5 text-sm hover:bg-muted'
+        }
       >
-        <div className={'flex items-center gap-2 w-full overflow-hidden'}>
-          <div
-            className={'flex cursor-pointer items-center gap-0.5'}
-          >
+        <div className={'flex w-full items-center gap-2 overflow-hidden'}>
+          <div className={'flex cursor-pointer items-center gap-0.5'}>
             {ToggleButton}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="p-0 h-4 w-4 mr-1"
-            >
+            <Button variant='ghost' size='sm' className='mr-1 h-4 w-4 p-0'>
               {CheckboxIcon}
             </Button>
             <PageIcon view={view} />
@@ -85,9 +86,7 @@ export function ViewItem({ view, children, getCheckStatus, onToggle, getInitialE
               <TooltipTrigger asChild>
                 <span className={'flex-1 truncate'}>{name}</span>
               </TooltipTrigger>
-              <TooltipContent>
-                {name}
-              </TooltipContent>
+              <TooltipContent>{name}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
@@ -96,4 +95,3 @@ export function ViewItem({ view, children, getCheckStatus, onToggle, getInitialE
     </div>
   );
 }
-

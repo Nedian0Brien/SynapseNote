@@ -1,18 +1,11 @@
-import { Alert, AlertDescription } from '@/components/chat/components/ui/alert';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 import { Editor, EditorData, useEditor } from '@appflowyinc/editor';
 
 import { useEffect } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 
-export function RenderEditor({
-  content,
-  onDataChange,
-}: {
-  content: string;
-  onDataChange?: (data: EditorData) => void;
-}) {
-
+export function RenderEditor({ content, onDataChange }: { content: string; onDataChange?: (data: EditorData) => void }) {
   const editor = useEditor();
 
   useEffect(() => {
@@ -21,16 +14,15 @@ export function RenderEditor({
   }, [content, editor, onDataChange]);
 
   return (
-    <div className={`relative select-text text-left w-full h-full`}>
+    <div className={`relative h-full w-full select-text text-left`}>
       <ErrorBoundary
-        fallback={<Alert variant={'destructive'}>
-          <AlertDescription>
-            Failed to render content
-          </AlertDescription>
-        </Alert>}
+        fallback={
+          <Alert variant={'destructive'}>
+            <AlertDescription>Failed to render content</AlertDescription>
+          </Alert>
+        }
       >
         {content && <Editor readOnly />}
-
       </ErrorBoundary>
     </div>
   );

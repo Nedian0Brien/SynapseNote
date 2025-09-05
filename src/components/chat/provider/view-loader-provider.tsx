@@ -1,4 +1,4 @@
-import { useToast } from '@/components/chat/hooks/use-toast';
+import { toast } from 'sonner';
 import { filterDocumentViews } from '@/components/chat/lib/views';
 import { View } from '@/components/chat/types/request';
 import { createContext, useCallback, useContext, useState } from 'react';
@@ -6,23 +6,16 @@ import { createContext, useCallback, useContext, useState } from 'react';
 interface ViewLoaderProviderProps {
   viewsLoading: boolean;
   fetchViews: (filter?: (v: View[]) => View[]) => Promise<View | undefined>;
-  getView: (
-    viewId: string,
-    forceRefresh?: boolean,
-  ) => Promise<View | undefined>;
+  getView: (viewId: string, forceRefresh?: boolean) => Promise<View | undefined>;
 }
 
-export const ViewLoaderContext = createContext<
-  ViewLoaderProviderProps | undefined
->(undefined);
+export const ViewLoaderContext = createContext<ViewLoaderProviderProps | undefined>(undefined);
 
 export function useViewLoader() {
   const context = useContext(ViewLoaderContext);
 
   if (!context) {
-    throw new Error(
-      'useViewLoader: useViewLoader must be used within a ViewLoaderProvider',
-    );
+    throw new Error('useViewLoader: useViewLoader must be used within a ViewLoaderProvider');
   }
 
   return context;
@@ -37,8 +30,6 @@ export const ViewLoaderProvider = ({
   fetchViews: (forceRefresh?: boolean) => Promise<View>;
   children: React.ReactNode;
 }) => {
-  const { toast } = useToast();
-
   const [viewsLoading, setViewsLoading] = useState(false);
 
   const fetchViewsImpl = useCallback(
@@ -48,9 +39,7 @@ export const ViewLoaderProvider = ({
         const view = await fetchViews(true);
         const result = {
           ...view,
-          children: filter
-            ? filter(view.children)
-            : filterDocumentViews(view.children),
+          children: filter ? filter(view.children) : filterDocumentViews(view.children),
         };
 
         setViewsLoading(false);
@@ -60,7 +49,7 @@ export const ViewLoaderProvider = ({
         // do not show toast for no views
       }
     },
-    [fetchViews],
+    [fetchViews]
   );
 
   const getViewImpl = useCallback(
@@ -69,19 +58,14 @@ export const ViewLoaderProvider = ({
         return await getView(viewId, forceRefresh);
         // eslint-disable-next-line
       } catch (e: any) {
-        toast({
-          variant: 'destructive',
-          description: e.message,
-        });
+        toast.error(e.message);
       }
     },
-    [getView, toast],
+    [getView]
   );
 
   return (
-    <ViewLoaderContext.Provider
-      value={{ viewsLoading, getView: getViewImpl, fetchViews: fetchViewsImpl }}
-    >
+    <ViewLoaderContext.Provider value={{ viewsLoading, getView: getViewImpl, fetchViews: fetchViewsImpl }}>
       {children}
     </ViewLoaderContext.Provider>
   );
