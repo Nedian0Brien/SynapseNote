@@ -7,6 +7,7 @@ import { createHtmlPlugin } from 'vite-plugin-html';
 import istanbul from 'vite-plugin-istanbul';
 import svgr from 'vite-plugin-svgr';
 import { totalBundleSize } from 'vite-plugin-total-bundle-size';
+import { stripTestIdPlugin } from './vite-plugin-strip-testid';
 
 const resourcesPath = path.resolve(__dirname, '../resources');
 const isDev = process.env.NODE_ENV === 'development';
@@ -17,6 +18,8 @@ const isTest = process.env.NODE_ENV === 'test' || process.env.COVERAGE === 'true
 export default defineConfig({
   plugins: [
     react(),
+    // Strip data-testid attributes in production builds
+    isProd ? stripTestIdPlugin() : undefined,
     createHtmlPlugin({
       inject: {
         data: {
