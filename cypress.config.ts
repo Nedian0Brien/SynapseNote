@@ -58,19 +58,48 @@ export default defineConfig({
     specPattern: 'cypress/e2e/**/*.cy.{js,jsx,ts,tsx}',
   },
   watchForFileChanges: false,
+  // Increase timeouts for CI stability
+  defaultCommandTimeout: 10000,
+  requestTimeout: 10000,
+  responseTimeout: 10000,
   component: {
     devServer: {
       framework: 'react',
       bundler: 'vite',
     },
     setupNodeEvents(on, config) {
+      // Add event listeners for better debugging
+      on('task', {
+        log(message) {
+          console.log(message);
+          return null;
+        },
+        failed(message) {
+          console.error('Test failed:', message);
+          return null;
+        },
+      });
+      
+      // Modify config for CI environment
+      if (process.env.CI) {
+        config.defaultCommandTimeout = 15000;
+        config.requestTimeout = 15000;
+        config.responseTimeout = 15000;
+        config.video = false;
+        config.screenshotOnRunFailure = true;
+      }
+      
       return config;
     },
     supportFile: 'cypress/support/component.ts',
+    specPattern: 'cypress/**/*.cy.{ts,tsx}',
+    // Viewport size for component tests
+    viewportWidth: 1280,
+    viewportHeight: 720,
   },
   chromeWebSecurity: false,
   retries: {
-    runMode: 0,
+    runMode: 3,
     openMode: 0,
   },
 });

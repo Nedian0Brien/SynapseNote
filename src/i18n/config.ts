@@ -22,5 +22,6 @@ export const i18nInstance = i18next;
 
 // Make i18n available globally for external packages
 if (typeof window !== 'undefined') {
-  (window as Window & { i18n?: typeof i18next }).i18n = i18next;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (window as any).i18n = i18next;
 }

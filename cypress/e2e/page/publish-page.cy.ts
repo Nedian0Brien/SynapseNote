@@ -68,9 +68,13 @@ describe('Publish Page Test', () => {
                 .should('exist')
                 .click({ force: true });
             
-            // Now type to replace the title
-            cy.focused()
-                .type('{selectall}')
+            // Wait for the title to become editable and then type
+            cy.wait(500);
+            
+            // Try to find the editable title element more specifically
+            cy.get('[contenteditable="true"]').first()
+                .should('exist')
+                .clear()
                 .type(pageName, { force: true })
                 .type('{enter}');
             
