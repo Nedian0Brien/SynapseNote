@@ -129,7 +129,7 @@ jobs:
         run: |
           echo "Checking backend health..."
           for i in {1..60}; do
-            if curl -sSf http://localhost/api/health > /dev/null 2>&1; then
+            if curl -sSf http://localhost/health > /dev/null 2>&1; then
               echo "✓ Backend API is healthy"
               break
             fi
@@ -139,7 +139,7 @@ jobs:
           
           # Verify all required endpoints
           echo "Verifying backend endpoints..."
-          curl -f http://localhost/api/health || (echo "API health check failed" && exit 1)
+          curl -f http://localhost/health || (echo "API health check failed" && exit 1)
           curl -f http://localhost/gotrue/health || (echo "GoTrue health check failed" && exit 1)
           echo "✓ All backend services are ready"
 
