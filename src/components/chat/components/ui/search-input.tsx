@@ -1,4 +1,4 @@
-import { Input } from './input';
+import { Input } from '@/components/ui/input';
 import { useTranslation } from '@/components/chat/i18n';
 import { cn } from '@/components/chat/lib/utils';
 import { SearchIcon } from 'lucide-react';

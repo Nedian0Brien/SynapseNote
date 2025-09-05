@@ -1,6 +1,6 @@
 import { useChatContext } from '@/components/chat/chat/context';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/chat/components/ui/label';
+import { Label } from '@/components/ui/label';
 import { useTranslation } from '@/components/chat/i18n';
 import { MESSAGE_VARIANTS } from '@/components/chat/lib/animations';
 import { useMessagesHandlerContext } from '@/components/chat/provider/messages-handler-provider';

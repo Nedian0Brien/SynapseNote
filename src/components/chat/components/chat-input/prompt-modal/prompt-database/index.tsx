@@ -6,7 +6,7 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
-} from '@/components/chat/components/ui/dropdown-menu';
+} from '@/components/ui/dropdown-menu';
 import { useTranslation } from '@/components/chat/i18n';
 import { cn } from '@/components/chat/lib/utils';
 import { usePromptModal } from '@/components/chat/provider/prompt-modal-provider';

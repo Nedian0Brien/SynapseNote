@@ -1,6 +1,6 @@
 import { useChatContext } from '@/components/chat/chat/context';
 import { SpaceList } from '../add-messages-to-page-wrapper/space-list';
-import { Label } from '@/components/chat/components/ui/label';
+import { Label } from '@/components/ui/label';
 import { SearchInput } from '@/components/chat/components/ui/search-input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/chat/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
