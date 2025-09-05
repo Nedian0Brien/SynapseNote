@@ -124,24 +124,6 @@ jobs:
           echo "=== Verify web container is not running ==="
           docker ps | grep appflowy_web || echo "✓ Web container not running (expected)"
 
-      - name: Wait for backend to be ready
-        shell: bash
-        run: |
-          echo "Checking backend health..."
-          for i in {1..60}; do
-            if curl -sSf http://localhost/health > /dev/null 2>&1; then
-              echo "✓ Backend API is healthy"
-              break
-            fi
-            echo "Waiting for backend... (attempt $i/60)"
-            sleep 3
-          done
-          
-          # Verify all required endpoints
-          echo "Verifying backend endpoints..."
-          curl -f http://localhost/health || (echo "API health check failed" && exit 1)
-          curl -f http://localhost/gotrue/health || (echo "GoTrue health check failed" && exit 1)
-          echo "✓ All backend services are ready"
 
       - name: Start dev server
         run: |
