@@ -2,11 +2,11 @@ import React, { lazy, Suspense, useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { CoverType, ViewIconType, ViewLayout, ViewMetaCover, ViewMetaIcon, ViewMetaProps } from '@/application/types';
-import TitleEditable from '@/components/view-meta/TitleEditable';
-import ViewCover from '@/components/view-meta/ViewCover';
 import { CustomIconPopover } from '@/components/_shared/cutsom-icon';
 import { notify } from '@/components/_shared/notify';
 import PageIcon from '@/components/_shared/view-icon/PageIcon';
+import TitleEditable from '@/components/view-meta/TitleEditable';
+import ViewCover from '@/components/view-meta/ViewCover';
 import { ColorEnum } from '@/utils/color';
 
 const AddIconCover = lazy(() => import('@/components/view-meta/AddIconCover'));
@@ -29,15 +29,6 @@ export function ViewMetaPreview({
 }: ViewMetaProps) {
   const [cover, setCover] = React.useState<ViewMetaCover | null>(coverProp || null);
   const [icon, setIcon] = React.useState<ViewMetaIcon | null>(iconProp || null);
-
-  // Debug logging for TitleEditable visibility issues
-  console.log('[ViewMetaPreview] Props:', {
-    viewId,
-    readOnly,
-    name,
-    hasUpdatePageName: !!updatePageName,
-    timestamp: Date.now()
-  });
 
   useEffect(() => {
     setCover(coverProp || null);
@@ -245,9 +236,8 @@ export function ViewMetaPreview({
                 onUploadFile={onUploadFile}
               >
                 <div
-                  className={`view-icon flex h-[1.25em] w-[1.25em] items-center justify-center px-1.5 ${
-                    readOnly ? 'cursor-default' : 'cursor-pointer hover:bg-fill-content-hover '
-                  }`}
+                  className={`view-icon flex h-[1.25em] w-[1.25em] items-center justify-center px-1.5 ${readOnly ? 'cursor-default' : 'cursor-pointer hover:bg-fill-content-hover '
+                    }`}
                 >
                   <PageIcon
                     view={{
@@ -261,7 +251,6 @@ export function ViewMetaPreview({
             ) : null}
             {!readOnly && viewId ? (
               <>
-                {console.log('[ViewMetaPreview] Rendering TitleEditable:', { viewId, readOnly, name })}
                 <TitleEditable
                   onFocus={onFocus}
                   viewId={viewId}

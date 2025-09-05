@@ -23,6 +23,21 @@ import './commands';
 beforeEach(() => {
   // Start capturing console logs for each test
   cy.startConsoleCapture();
+  
+  // Mock billing endpoints to prevent 502 errors in console
+  cy.intercept('GET', '**/billing/api/v1/active-subscription/**', {
+    statusCode: 200,
+    body: {
+      subscription: null,
+      status: 'free'
+    }
+  }).as('billingSubscription');
+  
+  // Mock other billing endpoints
+  cy.intercept('GET', '**/billing/api/**', {
+    statusCode: 200,
+    body: {}
+  }).as('billingAPI');
 });
 
 afterEach(() => {

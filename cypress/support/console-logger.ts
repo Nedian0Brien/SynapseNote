@@ -7,6 +7,39 @@ interface ConsoleLog {
   url?: string;
 }
 
+// Configuration for filtering console logs
+interface ConsoleFilterConfig {
+  enabled: boolean;
+  filters: Array<{
+    name: string;
+    patterns: string[];
+    matchAll?: boolean; // If true, all patterns must match. If false (default), any pattern match triggers filter
+  }>;
+}
+
+// Configure which console logs to filter out
+const CONSOLE_FILTER_CONFIG: ConsoleFilterConfig = {
+  enabled: true, // Set to false to disable all filtering
+  filters: [
+    {
+      name: 'Billing 502 Errors',
+      patterns: ['billing/api', '502'],
+      matchAll: true // Both patterns must be present
+    },
+    {
+      name: 'Subscription Errors',
+      patterns: ['active-subscription', 'ERR_BAD_RESPONSE'],
+      matchAll: true
+    },
+    // Add more filters here as needed
+    // {
+    //   name: 'React Warnings',
+    //   patterns: ['React Router Future Flag Warning'],
+    //   matchAll: false
+    // }
+  ]
+};
+
 // Store captured console logs globally
 let consoleLogs: ConsoleLog[] = [];
 let isCapturing = false;
@@ -25,6 +58,31 @@ function stringifyArgs(args: any[]): string {
   }).join(' ');
 }
 
+// Helper to check if a message should be filtered
+function shouldFilterMessage(message: string): boolean {
+  if (!CONSOLE_FILTER_CONFIG.enabled) {
+    return false;
+  }
+
+  for (const filter of CONSOLE_FILTER_CONFIG.filters) {
+    const matchAll = filter.matchAll ?? false;
+    
+    if (matchAll) {
+      // All patterns must be present in the message
+      if (filter.patterns.every(pattern => message.includes(pattern))) {
+        return true; // Filter out this message
+      }
+    } else {
+      // Any pattern match triggers the filter
+      if (filter.patterns.some(pattern => message.includes(pattern))) {
+        return true; // Filter out this message
+      }
+    }
+  }
+  
+  return false;
+}
+
 // Install console interceptors on window
 function installConsoleInterceptors(win: any) {
   const methods: (keyof Console)[] = ['log', 'error', 'warn'];
@@ -35,6 +93,16 @@ function installConsoleInterceptors(win: any) {
     // Override the console method
     win.console[method] = (...args: any[]) => {
       if (isCapturing) {
+        // Get message for filtering and logging
+        const message = stringifyArgs(args);
+        
+        // Check if this message should be filtered
+        if (shouldFilterMessage(message)) {
+          // Skip logging filtered messages but still call original method
+          originalMethod(...args);
+          return;
+        }
+        
         // Store the log
         const logEntry: ConsoleLog = {
           type: method,
@@ -45,7 +113,6 @@ function installConsoleInterceptors(win: any) {
         consoleLogs.push(logEntry);
         
         // Immediately output to Cypress task for CI visibility
-        const message = stringifyArgs(args);
         const logMessage = `[${new Date().toISOString()}] [CONSOLE.${method.toUpperCase()}] ${message}`;
         
         // Log to Node.js console directly
