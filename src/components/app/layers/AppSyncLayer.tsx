@@ -104,7 +104,13 @@ export const AppSyncLayer: React.FC<AppSyncLayerProps> = ({ children }) => {
           return;
         }
 
-        const updatedUser = service?.getCurrentUser();
+        const updatedUser = {
+          ...existingUser,
+          name: profileChange.name || existingUser.name,
+          email: profileChange.email || existingUser.email,
+        };
+
+        await db.users.put(updatedUser, userId);
 
         console.log('User profile updated in database:', updatedUser);
       } catch (error) {
