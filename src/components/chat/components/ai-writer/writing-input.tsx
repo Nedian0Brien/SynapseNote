@@ -1,6 +1,6 @@
-import { ReactComponent as SendIcon } from '@/components/chat/assets/icons/arrow-up.svg';
-import { ReactComponent as AutoTextIcon } from '@/components/chat/assets/icons/auto-text.svg';
-import { ReactComponent as ImageTextIcon } from '@/components/chat/assets/icons/image-text.svg';
+import { ReactComponent as SendIcon } from '@/assets/icons/filled_round_arrow_up.svg';
+import { ReactComponent as AutoTextIcon } from '@/assets/icons/text.svg';
+import { ReactComponent as ImageTextIcon } from '@/assets/icons/text_image.svg';
 import { ViewTree } from '../ai-writer/view-tree';
 import { WritingMore } from '../ai-writer/writing-more';
 import { ModelSelector } from '@/components/chat/components/chat-input/model-selector';

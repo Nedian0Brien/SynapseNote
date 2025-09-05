@@ -46,10 +46,11 @@ export function withComment(WrappedComponent: React.ComponentType<{
         <Button
           key={label}
           onClick={onClick}
-          startIcon={icon}
           variant={'ghost'}
-          className={'text-sm !h-[28px] !text-foreground'}
-        >{label}</Button>
+          className={'text-sm !text-foreground'}
+        >
+          {icon}
+          {label}</Button>
       ));
     }, [actions]);
 

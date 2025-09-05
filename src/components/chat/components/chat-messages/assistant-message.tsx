@@ -12,7 +12,7 @@ import { ChatInputMode } from '@/components/chat/types';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { EditorProvider } from '@appflowyinc/editor';
-import { ReactComponent as Error } from '@/components/chat/assets/icons/error.svg';
+import { ReactComponent as Error } from '@/assets/icons/error.svg';
 import MessageCheckbox from './message-checkbox';
 
 export function AssistantMessage({ id, isHovered }: { id: number; isHovered: boolean }) {

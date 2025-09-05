@@ -4,14 +4,14 @@ import { Spaces } from './spaces';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { motion } from 'framer-motion';
-import { ReactComponent as DocIcon } from '@/components/chat/assets/icons/doc.svg';
+import { ReactComponent as DocIcon } from '@/assets/icons/page.svg';
+import { ReactComponent as ChevronDown } from '@/assets/icons/triangle_down.svg';
 import { Separator } from '@/components/ui/separator';
 import { useChatSettingsLoader } from '@/components/chat/hooks/use-chat-settings-loader';
 import { MESSAGE_VARIANTS } from '@/components/chat/lib/animations';
 import { useCheckboxTree } from '@/components/chat/hooks/use-checkbox-tree';
 import { searchViews } from '@/components/chat/lib/views';
 import { View } from '@/components/chat/types';
-import { ChevronDown } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import debounce from 'lodash-es/debounce';
 import { useViewLoader } from '@/components/chat';
@@ -83,14 +83,13 @@ export function RelatedViews() {
       <PopoverTrigger asChild={true}>
         <Button
           disabled={viewsLoading}
-          className={'text-sm h-7 p-1.5'}
-          startIcon={
-            <span className={'text-foreground'}><DocIcon /></span>
-          }
+          size='sm'
+          className='gap-0.5 px-1.5 text-sm text-text-secondary'
           variant={'ghost'}
         >
+          <DocIcon className='h-5 w-5 text-icon-primary' />
           {length}
-          {viewsLoading ? <LoadingDots size={12} /> : <ChevronDown className={'!w-2 !h-2'} />}
+          {viewsLoading ? <LoadingDots size={12} /> : <ChevronDown className='w-3 h-5' />}
 
         </Button>
       </PopoverTrigger>

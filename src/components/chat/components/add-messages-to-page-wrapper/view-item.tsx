@@ -1,4 +1,4 @@
-import { ReactComponent as ChevronDown } from '@/components/chat/assets/icons/drop_menu_show.svg';
+import { ReactComponent as ChevronRight } from '@/assets/icons/toggle_list.svg';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import PageIcon from '@/components/chat/components/view/page-icon';
@@ -7,7 +7,7 @@ import { cn } from '@/components/chat/lib/utils';
 import { View } from '@/components/chat/types';
 import { PlusIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { ReactComponent as AddPageIcon } from '@/components/chat/assets/icons/doc-forward.svg';
+import { ReactComponent as AddPageIcon } from '@/assets/icons/add_to_page.svg';
 
 export function ViewItem({
   view,
@@ -28,8 +28,8 @@ export function ViewItem({
 
   const ToggleButton = useMemo(() => {
     return view.children.length > 0 ? (
-      <Button variant={'ghost'} className={'!h-4 !min-h-4 !w-4 !min-w-4 hover:bg-muted-foreground/10'}>
-        <ChevronDown className={cn('transform transition-transform', expanded ? 'rotate-0' : '-rotate-90')} />
+      <Button variant={'ghost'} className={'!h-4 !min-h-4 !w-4 !min-w-4 !p-0 hover:bg-muted-foreground/10'}>
+        <ChevronRight className={cn('transform transition-transform', expanded ? 'rotate-90' : 'rotate-0')} />
       </Button>
     ) : (
       <div style={{ width: 16, height: 16 }}></div>
@@ -75,7 +75,7 @@ export function ViewItem({
                     variant={'ghost'}
                     className={'!h-5 !w-5 rounded-md !p-0 hover:bg-muted-foreground/10'}
                   >
-                    <AddPageIcon className={'h-4 w-4'} />
+                    <AddPageIcon className={'h-5 w-5'} />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>{t('button.addToPage')}</TooltipContent>
@@ -90,7 +90,7 @@ export function ViewItem({
                     variant={'ghost'}
                     className={'!h-5 !w-5 rounded-md !p-0 hover:bg-muted-foreground/10'}
                   >
-                    <PlusIcon className={'h-4 w-4'} />
+                    <PlusIcon className={'h-5 w-5'} />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>{t('addMessageToPage.createNewPage')}</TooltipContent>

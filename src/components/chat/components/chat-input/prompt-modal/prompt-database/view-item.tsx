@@ -1,4 +1,4 @@
-import { ReactComponent as ChevronDown } from '@/components/chat/assets/icons/drop_menu_show.svg';
+import { ReactComponent as ChevronDown } from '@/assets/icons/triangle_down.svg';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import PageIcon from '@/components/chat/components/view/page-icon';

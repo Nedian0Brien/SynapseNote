@@ -1,4 +1,4 @@
-import { ReactComponent as CopyIcon } from '@/components/chat/assets/icons/copy.svg';
+import { ReactComponent as CopyIcon } from '@/assets/icons/copy.svg';
 
 import { useChatContext } from '@/components/chat/chat/context';
 import AddMessageTo from '../chat-messages/add-message-to';
@@ -102,15 +102,9 @@ export function MessageActions({ id, isHovered }: { id: number; isHovered: boole
                 }}
                 variant={'ghost'}
                 size={'icon'}
-                className={`h-7 w-7 !p-0`}
                 onClick={handleCopy}
               >
-                <CopyIcon
-                  style={{
-                    width: 16,
-                    height: 16,
-                  }}
-                />
+                <CopyIcon className='h-5 w-5' />
               </Button>
             </TooltipTrigger>
 

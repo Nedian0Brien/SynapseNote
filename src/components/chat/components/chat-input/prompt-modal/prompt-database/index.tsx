@@ -13,7 +13,7 @@ import { usePromptModal } from '@/components/chat/provider/prompt-modal-provider
 import { ChevronDown } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { PromptDatabaseViews } from './prompt-database-views';
-import { ReactComponent as CloseCircle } from '@/components/chat/assets/icons/close_circle.svg';
+import { ReactComponent as CloseCircle } from '@/assets/icons/close_circle.svg';
 import { InvalidDatabaseDialog } from './invalid-database-dialog';
 import { useViewLoader } from '@/components/chat/provider/view-loader-provider';
 

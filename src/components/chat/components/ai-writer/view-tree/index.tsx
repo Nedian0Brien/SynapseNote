@@ -13,7 +13,7 @@ import { useCheckboxTree } from '@/components/chat/hooks/use-checkbox-tree';
 import { View } from '@/components/chat/types';
 import { useWriterContext } from '@/components/chat/writer/context';
 import { ChevronDown } from 'lucide-react';
-import { ReactComponent as DocIcon } from '@/components/chat/assets/icons/doc.svg';
+import { ReactComponent as DocIcon } from '@/assets/icons/doc.svg';
 import { useEffect, useMemo, useState } from 'react';
 
 export function ViewTree() {

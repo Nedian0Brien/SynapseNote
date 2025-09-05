@@ -5,7 +5,6 @@ import { useTranslation } from '@/components/chat/i18n';
 import { AIAssistantType } from '@/components/chat/types';
 import { useWriterContext } from '@/components/chat/writer/context';
 import { ChevronDown } from 'lucide-react';
-import { ReactComponent as MoreIcon } from '@/components/chat/assets/icons/ai-more.svg';
 import { useCallback, useState } from 'react';
 import { MESSAGE_VARIANTS } from '@/components/chat/lib/animations';
 import { motion } from 'framer-motion';
@@ -41,9 +40,6 @@ export function WritingMore({ input }: {
       <Button
         className={'text-xs !gap-1 !text-secondary-foreground h-[28px]'}
         size={'sm'}
-        startIcon={
-          <MoreIcon className={'!w-5 !h-5'} />
-        }
         variant={'ghost'}
       >
         <div className={'flex gap-0.5 items-center flex-1'}>

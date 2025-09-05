@@ -5,7 +5,7 @@ import { useTranslation } from '@/components/chat/i18n';
 import { ChatMessageMetadata, View } from '@/components/chat/types';
 import { ChevronDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { ReactComponent as DocumentIcon } from '@/components/chat/assets/icons/doc.svg';
+import { ReactComponent as DocumentIcon } from '@/assets/icons/page.svg';
 import { useViewLoader } from '@/components/chat/provider/view-loader-provider';
 
 function MessageSources({ sources }: { sources: ChatMessageMetadata[] }) {
@@ -61,8 +61,8 @@ function MessageSources({ sources }: { sources: ChatMessageMetadata[] }) {
                   onClick={() => onOpenView?.(source.view_id)}
                   variant={'ghost'}
                   className={'max-w-[160px] overflow-hidden'}
-                  startIcon={<DocumentIcon />}
                 >
+                  <DocumentIcon />
                   <span className={'truncate text-foreground'}>{source.name}</span>
                 </Button>
               </TooltipTrigger>

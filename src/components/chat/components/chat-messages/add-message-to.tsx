@@ -1,7 +1,7 @@
 import { AddMessageToPageWrapper } from '@/components/chat/components/add-messages-to-page-wrapper';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { ReactComponent as AddPageIcon } from '@/components/chat/assets/icons/doc-forward.svg';
+import { ReactComponent as AddPageIcon } from '@/assets/icons/add_to_page.svg';
 import { useTranslation } from '@/components/chat/i18n';
 import { useChatMessagesContext } from '@/components/chat/provider/messages-provider';
 
@@ -24,12 +24,7 @@ export function AddMessageTo({ id }: { id: number }) {
             variant={'ghost'}
             size={'icon'}
           >
-            <AddPageIcon
-              style={{
-                width: 16,
-                height: 16,
-              }}
-            />
+            <AddPageIcon className='h-5 w-5' />
           </Button>
         </AddMessageToPageWrapper>
       </TooltipTrigger>

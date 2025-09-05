@@ -5,7 +5,7 @@ import { useTranslation } from '@/components/chat/i18n';
 import { MESSAGE_VARIANTS } from '@/components/chat/lib/animations';
 import { useMessagesHandlerContext } from '@/components/chat/provider/messages-handler-provider';
 import { Suggestions } from '@/components/chat/types';
-import { ReactComponent as ChatIcon } from '@/components/chat/assets/icons/chat-outlined.svg';
+import { ReactComponent as ChatIcon } from '@/assets/icons/ai_chat.svg';
 import { motion } from 'framer-motion';
 
 interface MessageSuggestionsProps {

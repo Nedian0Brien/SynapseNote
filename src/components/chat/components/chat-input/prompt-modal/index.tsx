@@ -15,7 +15,7 @@ import {
 } from 'react';
 import { PromptCard } from './prompt-card';
 import { PromptPreview } from './prompt-preview';
-import { ReactComponent as CloseCircle } from '@/components/chat/assets/icons/close_circle.svg';
+import { ReactComponent as CloseCircle } from '@/assets/icons/close_circle.svg';
 import { PromptCategory } from './prompt-category';
 import { SearchInput } from '@/components/chat/components/ui/search-input';
 import { Button } from '@/components/ui/button';

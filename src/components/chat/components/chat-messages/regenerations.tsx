@@ -1,7 +1,7 @@
-import { ReactComponent as RegenerateIcon } from '@/components/chat/assets/icons/change-font.svg';
-import { ReactComponent as ChevronIcon } from '@/components/chat/assets/icons/chevron.svg';
-import { ReactComponent as RegenerateCircleIcon } from '@/components/chat/assets/icons/regenerate-circle.svg';
-import { ReactComponent as TryAgainIcon } from '@/components/chat/assets/icons/undo.svg';
+import { ReactComponent as RegenerateCircleIcon } from '@/assets/icons/ai_regenerate.svg';
+import { ReactComponent as RegenerateIcon } from '@/assets/icons/regenerate.svg';
+import { ReactComponent as ChevronIcon } from '@/assets/icons/triangle_down.svg';
+import { ReactComponent as TryAgainIcon } from '@/assets/icons/undo.svg';
 import { FormatGroup } from '@/components/chat/components/ui/format-group';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -52,14 +52,8 @@ export function Regenerations({ id }: { id: number }) {
             }}
             variant={'ghost'}
             size={'icon'}
-            className={`h-7 w-7 !p-0`}
           >
-            <TryAgainIcon
-              style={{
-                width: 16,
-                height: 16,
-              }}
-            />
+            <TryAgainIcon className='h-5 w-5' />
           </Button>
         </TooltipTrigger>
         <TooltipContent align={'center'} side={'bottom'}>
@@ -76,20 +70,10 @@ export function Regenerations({ id }: { id: number }) {
                 }}
                 variant={'ghost'}
                 size={'icon'}
-                className={`h-7 w-10 !p-0`}
+                className={`!w-10 gap-0`}
               >
-                <RegenerateIcon
-                  style={{
-                    width: 16,
-                    height: 16,
-                  }}
-                />
-                <ChevronIcon
-                  style={{
-                    width: 12,
-                    height: 12,
-                  }}
-                />
+                <RegenerateIcon className='h-5 w-5' />
+                <ChevronIcon className='h-5 w-3' />
               </Button>
             </PopoverTrigger>
           </TooltipTrigger>
@@ -100,7 +84,7 @@ export function Regenerations({ id }: { id: number }) {
         <PopoverContent
           onOpenAutoFocus={(e) => e.preventDefault()}
           onCloseAutoFocus={(e) => e.preventDefault()}
-          className={'flex items-center gap-2'}
+          className='flex !min-w-[0px] items-center gap-1 p-0.5'
         >
           <FormatGroup
             outputContent={outputContent}
@@ -112,7 +96,7 @@ export function Regenerations({ id }: { id: number }) {
             setOutputLayout={setOutputLayout}
           />
           <Tooltip>
-            <TooltipTrigger>
+            <TooltipTrigger asChild>
               <Button
                 variant={'link'}
                 size={'icon'}
@@ -129,12 +113,7 @@ export function Regenerations({ id }: { id: number }) {
                   void regenerate();
                 }}
               >
-                <RegenerateCircleIcon
-                  style={{
-                    width: 20,
-                    height: 20,
-                  }}
-                />
+                <RegenerateCircleIcon className='h-5 w-5' />
               </Button>
             </TooltipTrigger>
             <TooltipContent>{t('button.regenerateWithNewFormat')}</TooltipContent>

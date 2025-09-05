@@ -1,7 +1,7 @@
-import { ReactComponent as SendIcon } from '@/components/chat/assets/icons/arrow-up.svg';
-import { ReactComponent as AutoTextIcon } from '@/components/chat/assets/icons/auto-text.svg';
-import { ReactComponent as ImageTextIcon } from '@/components/chat/assets/icons/image-text.svg';
-import { ReactComponent as StopIcon } from '@/components/chat/assets/icons/stop.svg';
+import { ReactComponent as SendIcon } from '@/assets/icons/filled_round_arrow_up.svg';
+import { ReactComponent as AutoTextIcon } from '@/assets/icons/text.svg';
+import { ReactComponent as ImageTextIcon } from '@/assets/icons/text_image.svg';
+import { ReactComponent as StopIcon } from '@/assets/icons/ai_stop_answering.svg';
 import { useChatContext } from '@/components/chat/chat/context';
 import { Button } from '@/components/ui/button';
 import { FormatGroup } from '@/components/chat/components/ui/format-group';

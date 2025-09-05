@@ -3,7 +3,7 @@ import { Label } from '@/components/ui/label';
 import { useTranslation } from '@/components/chat/i18n';
 import { useMessagesHandlerContext } from '@/components/chat/provider/messages-handler-provider';
 import { User } from '@/components/chat/types';
-import { ReactComponent as Logo } from '@/components/chat/assets/logo.svg';
+import { ReactComponent as Logo } from '@/assets/icons/logo.svg';
 import { useCallback } from 'react';
 
 export function EmptyMessages({ currentUser }: {

@@ -5,52 +5,49 @@ import { useTranslation } from '@/components/chat/i18n';
 import { useWriterContext } from '@/components/chat/writer/context';
 import { EditorProvider } from '@appflowyinc/editor';
 import { XIcon } from 'lucide-react';
-import { ReactComponent as InsertBelowIcon } from '@/components/chat/assets/icons/insert-below.svg';
-import { ReactComponent as TryAgainIcon } from '@/components/chat/assets/icons/undo.svg';
+import { ReactComponent as InsertBelowIcon } from '@/assets/icons/insert.svg';
+import { ReactComponent as TryAgainIcon } from '@/assets/icons/undo.svg';
 
 export function ExplainToolbar() {
   const { t } = useTranslation();
-  const {
-    rewrite,
-    keep: insertBelow,
-    exit,
-    placeholderContent,
-    setEditorData,
-  } = useWriterContext();
+  const { rewrite, keep: insertBelow, exit, placeholderContent, setEditorData } = useWriterContext();
 
-  return <div
-    className={'flex h-fit gap-2 p-2 py-3 min-h-[48px] flex-col bg-secondary-background border-b border-input overflow-hidden w-full max-w-full'}
-  >
-    <Label className={'font-semibold select-text px-[6px] text-xs text-foreground/60'}>{t('writer.explain')}</Label>
-    <div className={'text-sm leading-[20px] select-none px-[4px] max-h-[238px] appflowy-scrollbar overflow-y-auto w-full font-medium'}>
-      <EditorProvider>
-        <RenderEditor
-          content={placeholderContent || ''}
-          onDataChange={setEditorData}
-        />
-      </EditorProvider>
+  return (
+    <div
+      className={
+        'flex h-fit min-h-[48px] w-full max-w-full flex-col gap-2 overflow-hidden border-b border-input bg-secondary-background p-2 py-3'
+      }
+    >
+      <Label className={'select-text px-[6px] text-xs font-semibold text-foreground/60'}>{t('writer.explain')}</Label>
+      <div
+        className={
+          'appflowy-scrollbar max-h-[238px] w-full select-none overflow-y-auto px-[4px] text-sm font-medium leading-[20px]'
+        }
+      >
+        <EditorProvider>
+          <RenderEditor content={placeholderContent || ''} onDataChange={setEditorData} />
+        </EditorProvider>
+      </div>
+      <div className={'flex w-fit items-center gap-1 text-sm'}>
+        <Button onClick={insertBelow} variant={'ghost'} className={'!text-sm text-text-primary'}>
+          <InsertBelowIcon className='h-5 w-5' />
+          {t('writer.button.insert-below')}
+        </Button>
+        <Button onClick={() => rewrite()} variant={'ghost'} className={'!text-sm text-text-primary'}>
+          <TryAgainIcon className='h-5 w-5' />
+          {t('writer.button.try-again')}
+        </Button>
+        <Button
+          onClick={() => {
+            exit();
+          }}
+          variant={'ghost'}
+          className={'!text-sm text-text-primary'}
+        >
+          <XIcon className={'h-5 w-5 text-destructive'} />
+          {t('writer.button.close')}
+        </Button>
+      </div>
     </div>
-    <div className={'flex text-sm items-center w-fit gap-1'}>
-      <Button
-        onClick={insertBelow}
-        startIcon={<InsertBelowIcon />}
-        variant={'ghost'}
-        className={'!text-sm !h-[28px] text-foreground'}
-      >{t('writer.button.insert-below')}</Button>
-      <Button
-        onClick={() => rewrite()}
-        startIcon={<TryAgainIcon />}
-        variant={'ghost'}
-        className={'!text-sm !h-[28px] text-foreground'}
-      >{t('writer.button.try-again')}</Button>
-      <Button
-        onClick={() => {
-          exit();
-        }}
-        startIcon={<XIcon className={'text-destructive'} />}
-        variant={'ghost'}
-        className={'!text-sm !h-[28px] text-foreground'}
-      >{t('writer.button.close')}</Button>
-    </div>
-  </div>;
+  );
 }

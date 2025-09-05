@@ -1,11 +1,11 @@
 import { Button } from '@/components/ui/button';
-import { ReactComponent as TextIcon } from '@/components/chat/assets/icons/text.svg';
-import { ReactComponent as TextWithIcon } from '@/components/chat/assets/icons/image-text.svg';
-import { ReactComponent as ImageIcon } from '@/components/chat/assets/icons/image.svg';
-import { ReactComponent as ParagraphIcon } from '@/components/chat/assets/icons/paragraph.svg';
-import { ReactComponent as BulletedListIcon } from '@/components/chat/assets/icons/bullet-list.svg';
-import { ReactComponent as NumberedListIcon } from '@/components/chat/assets/icons/num-list.svg';
-import { ReactComponent as TableIcon } from '@/components/chat/assets/icons/table.svg';
+import { ReactComponent as TextIcon } from '@/assets/icons/menu.svg';
+import { ReactComponent as TextWithIcon } from '@/assets/icons/text_image.svg';
+import { ReactComponent as ImageIcon } from '@/assets/icons/image.svg';
+import { ReactComponent as ParagraphIcon } from '@/assets/icons/paragraph.svg';
+import { ReactComponent as BulletedListIcon } from '@/assets/icons/bulleted_list.svg';
+import { ReactComponent as NumberedListIcon } from '@/assets/icons/numbered_list.svg';
+import { ReactComponent as TableIcon } from '@/assets/icons/table.svg';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTranslation } from '@/components/chat/i18n';
@@ -85,7 +85,7 @@ export function FormatGroup({
             variant={'ghost'}
             size={'icon'}
             onClick={onClick}
-            className={`${(outputContent === key && !isLayout) || (outputLayout === key && isLayout) ? 'bg-fill-theme-select hover:bg-fill-theme-select' : ''}`}
+            className={`${(outputContent === key && !isLayout) || (outputLayout === key && isLayout) ? 'bg-fill-content-hover' : ''}`}
           >
             <Icon
               style={{
@@ -115,7 +115,7 @@ export function FormatGroup({
           <>
             <Separator
               orientation={'vertical'}
-              className={'h-4'}
+              className={'!h-4'}
             />
             <div className={'flex gap-1'}>
               {renderGroup(textFormats, true)}

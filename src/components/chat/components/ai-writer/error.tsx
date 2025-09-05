@@ -1,7 +1,7 @@
 import { useTranslation } from '@/components/chat/i18n';
 import { ERROR_CODE_NO_LIMIT } from '@/components/chat/lib/const';
 import { useWriterContext } from '@/components/chat/writer/context';
-import { ReactComponent as XCircleIcon } from '@/components/chat/assets/icons/error.svg';
+import { ReactComponent as ErrorIcon } from '@/assets/icons/error.svg';
 
 export function Error() {
   const { t } = useTranslation();
@@ -11,7 +11,7 @@ export function Error() {
   return (
     <div className={'writer-anchor flex bg-background w-full justify-between p-2 rounded-lg max-w-full border border-input shadow-toast items-center gap-2'}>
       <div className={'flex text-foreground/70 text-sm items-center gap-2 p-2'}>
-        <XCircleIcon className={'text-destructive min-w-4 w-4 h-4'} />
+        <ErrorIcon className={'text-icon-error-thick'} />
         {error?.code === undefined ? <span>
           {t('writer.errors.connection')}
           <span

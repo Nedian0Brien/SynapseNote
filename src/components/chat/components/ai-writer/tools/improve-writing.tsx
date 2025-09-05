@@ -3,9 +3,10 @@ import { CommentWithAskAnything } from './with-comment';
 import { useTranslation } from '@/components/chat/i18n';
 import { useWriterContext } from '@/components/chat/writer/context';
 import { useMemo } from 'react';
-import { CheckIcon, XIcon } from 'lucide-react';
-import { ReactComponent as TryAgainIcon } from '@/components/chat/assets/icons/undo.svg';
-import { ReactComponent as InsertBelowIcon } from '@/components/chat/assets/icons/insert-below.svg';
+import { ReactComponent as TryAgainIcon } from '@/assets/icons/undo.svg';
+import { ReactComponent as InsertBelowIcon } from '@/assets/icons/insert.svg';
+import { ReactComponent as CheckIcon } from '@/assets/icons/tick.svg';
+import { ReactComponent as XIcon } from '@/assets/icons/close.svg';
 
 export function ImproveWriting({
   title,
@@ -25,37 +26,37 @@ export function ImproveWriting({
     {
       label: t('writer.button.accept'),
       onClick: accept,
-      icon: <CheckIcon className={'text-success'} />,
+      icon: <CheckIcon className="text-icon-success-thick h-5 w-5" />,
     },
     {
       label: t('writer.button.discard'),
       onClick: () => {
         exit();
       },
-      icon: <XIcon className={'text-destructive'} />,
+      icon: <XIcon className="text-icon-error-thick h-5 w-5" />,
     },
     {
       label: t('writer.button.insert-below'),
       onClick: insertBelow,
-      icon: <InsertBelowIcon />,
+      icon: <InsertBelowIcon className="h-5 w-5" />,
     },
     {
       label: t('writer.button.rewrite'),
       onClick: rewrite,
-      icon: <TryAgainIcon />,
+      icon: <TryAgainIcon className="h-5 w-5" />,
     },
   ] : [
     {
       label: t('writer.button.try-again'),
       onClick: rewrite,
-      icon: <TryAgainIcon />,
+      icon: <TryAgainIcon className="h-5 w-5" />,
     },
     {
       label: t('writer.button.close'),
       onClick: () => {
         exit();
       },
-      icon: <XIcon className={'text-destructive'} />,
+      icon: <XIcon className="text-icon-error-thick h-5 w-5" />,
     },
   ], [accept, exit, insertBelow, placeholderContent, rewrite, t]);
 

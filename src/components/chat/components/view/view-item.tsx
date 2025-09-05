@@ -1,4 +1,4 @@
-import { ReactComponent as ChevronDown } from '@/components/chat/assets/icons/drop_menu_show.svg';
+import { ReactComponent as ChevronRight } from '@/assets/icons/toggle_list.svg';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import PageIcon from '@/components/chat/components/view/page-icon';
@@ -55,7 +55,7 @@ export function ViewItem({
         }}
         className={'!h-4 !min-h-4 !w-4 !min-w-4 hover:bg-muted-foreground/10'}
       >
-        <ChevronDown className={cn('transform transition-transform', expanded ? 'rotate-0' : '-rotate-90')} />
+        <ChevronRight className={cn('transform transition-transform', expanded ? 'rotate-90' : 'rotate-0')} />
       </Button>
     ) : (
       <div style={{ width: 16, height: 16 }}></div>

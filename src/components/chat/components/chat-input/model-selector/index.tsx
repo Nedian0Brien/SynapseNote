@@ -2,14 +2,10 @@ import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { ReactComponent as AISparksIcon } from '@/components/chat/assets/icons/ai_sparks.svg';
+import { ReactComponent as AISparksIcon } from '@/assets/icons/ai.svg';
 
 import { Button } from '@/components/ui/button';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useModelSelectorContext } from '@/components/chat/contexts/model-selector-context';
 import { MESSAGE_VARIANTS } from '@/components/chat/lib/animations';
 import { ModelCache } from '@/components/chat/lib/model-cache';
@@ -22,7 +18,6 @@ interface ModelSelectorProps {
 }
 
 export function ModelSelector({ className, disabled }: ModelSelectorProps) {
-
   const [open, setOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState<string>('Auto'); // Start with Auto as default
   const [models, setModels] = useState<AvailableModel[]>([]);
@@ -43,7 +38,6 @@ export function ModelSelector({ className, disabled }: ModelSelectorProps) {
   const setSelectedModelName = context.setSelectedModelName;
   const contextSelectedModel = context.selectedModelName;
 
-
   // Initialize: Load cached model or sync with context
   useEffect(() => {
     // Sync with context's selected model
@@ -58,6 +52,7 @@ export function ModelSelector({ className, disabled }: ModelSelectorProps) {
         setSelectedModel('Auto');
         setSelectedModelName?.('Auto');
       }
+
       setIsInitialized(true);
       return;
     }
@@ -78,6 +73,7 @@ export function ModelSelector({ className, disabled }: ModelSelectorProps) {
           setSelectedModel('Auto');
           setSelectedModelName?.('Auto');
         }
+
         return;
       }
 
@@ -109,7 +105,7 @@ export function ModelSelector({ className, disabled }: ModelSelectorProps) {
 
     void loadCurrentModel();
     setIsInitialized(true);
-  }, [chatId, requestInstance, isInitialized, setSelectedModelName, contextSelectedModel]);
+  }, [chatId, requestInstance, isInitialized, setSelectedModelName, contextSelectedModel, selectedModel]);
 
   const loadModels = useCallback(async () => {
     setLoading(true);
@@ -122,9 +118,7 @@ export function ModelSelector({ className, disabled }: ModelSelectorProps) {
     } catch (error) {
       console.error('Failed to load models:', error);
       // Fallback to Auto only if API fails
-      setModels([
-        { name: 'Auto', metadata: { is_default: true, desc: 'Auto select the best model' } },
-      ]);
+      setModels([{ name: 'Auto', metadata: { is_default: true, desc: 'Auto select the best model' } }]);
     } finally {
       setLoading(false);
     }
@@ -153,31 +147,34 @@ export function ModelSelector({ className, disabled }: ModelSelectorProps) {
     }
   }, [open]);
 
-  const handleSelect = useCallback(async (modelName: string) => {
-    // Update UI immediately
-    setSelectedModel(modelName);
-    setOpen(false);
+  const handleSelect = useCallback(
+    async (modelName: string) => {
+      // Update UI immediately
+      setSelectedModel(modelName);
+      setOpen(false);
 
-    // Update context if available (works for both chat and writer contexts)
-    if (setSelectedModelName) {
-      setSelectedModelName(modelName);
-    }
-
-    // Persist model selection using unified interface
-    if (requestInstance.setCurrentModel) {
-      // Update cache for chat context
-      if (chatId) {
-        ModelCache.set(chatId, modelName);
+      // Update context if available (works for both chat and writer contexts)
+      if (setSelectedModelName) {
+        setSelectedModelName(modelName);
       }
 
-      try {
-        await requestInstance.setCurrentModel(modelName);
-      } catch (error) {
-        console.error('Failed to save current model:', error);
-        // Cache is already updated, so user experience is not affected
+      // Persist model selection using unified interface
+      if (requestInstance.setCurrentModel) {
+        // Update cache for chat context
+        if (chatId) {
+          ModelCache.set(chatId, modelName);
+        }
+
+        try {
+          await requestInstance.setCurrentModel(modelName);
+        } catch (error) {
+          console.error('Failed to save current model:', error);
+          // Cache is already updated, so user experience is not affected
+        }
       }
-    }
-  }, [setSelectedModelName, chatId, requestInstance]);
+    },
+    [setSelectedModelName, chatId, requestInstance]
+  );
 
   const filteredModels = models.filter((model) => {
     if (!searchQuery) return true;
@@ -203,45 +200,35 @@ export function ModelSelector({ className, disabled }: ModelSelectorProps) {
   // Always render the button, even without full context
   const hasContext = !!chatId;
 
-
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
-          variant="ghost"
-          className={cn('h-7 px-2 text-xs font-normal gap-1', className)}
+          variant='ghost'
+          className={cn('h-7 gap-1 px-2 text-xs font-normal', className)}
           onMouseDown={(e) => e.preventDefault()}
           disabled={disabled}
           title={hasContext ? 'Select AI Model' : 'Model selector (offline mode)'}
         >
-          {AISparksIcon ? (
-            <AISparksIcon className="w-4 h-4" />
-          ) : (
-            <span className="text-[10px]">🤖</span>
-          )}
-          <span className="truncate max-w-[120px]">{displayText}</span>
+          {AISparksIcon ? <AISparksIcon className='h-5 w-5' /> : <span className='text-[10px]'>🤖</span>}
+          <span className='max-w-[120px] truncate'>{displayText}</span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent asChild
-        className="w-[380px] p-0 rounded-lg"
-        align="start"
-        side="top"
-        sideOffset={8}
-      >
+      <PopoverContent asChild className='w-[380px] rounded-lg p-0' align='start' side='top' sideOffset={8}>
         <motion.div
           variants={MESSAGE_VARIANTS.getSelectorVariants()}
-          initial="hidden"
-          animate={open ? "visible" : "exit"}
+          initial='hidden'
+          animate={open ? 'visible' : 'exit'}
         >
           {/* Search Input */}
-          <div className="px-3 py-2 border-b border-border-primary">
+          <div className='border-b border-border-primary px-3 py-2'>
             <input
               ref={searchInputRef}
-              type="text"
-              placeholder="Search models..."
+              type='text'
+              placeholder='Search models...'
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-2 py-1 text-sm bg-transparent outline-none placeholder:text-text-placeholder"
+              className='w-full bg-transparent px-2 py-1 text-sm outline-none placeholder:text-text-placeholder'
               onKeyDown={(e) => {
                 if (e.key === 'Escape') {
                   setOpen(false);
@@ -251,13 +238,11 @@ export function ModelSelector({ className, disabled }: ModelSelectorProps) {
           </div>
 
           {/* Models List */}
-          <div className="max-h-[380px] overflow-y-auto py-1">
+          <div className='max-h-[380px] overflow-y-auto py-1'>
             {loading ? (
-              <div className="px-3 py-8 text-center text-sm text-text-secondary">
-                Loading models...
-              </div>
+              <div className='px-3 py-8 text-center text-sm text-text-secondary'>Loading models...</div>
             ) : filteredModels.length === 0 ? (
-              <div className="px-3 py-8 text-center text-sm text-text-secondary">
+              <div className='px-3 py-8 text-center text-sm text-text-secondary'>
                 {searchQuery ? 'No models found' : 'No models available'}
               </div>
             ) : (
@@ -270,31 +255,22 @@ export function ModelSelector({ className, disabled }: ModelSelectorProps) {
                     key={displayInfo.id}
                     onClick={() => handleSelect(model.name)}
                     className={cn(
-                      'w-full px-3 py-2.5 text-left hover:bg-fill-content-hover transition-colors',
-                      'flex items-start justify-between group',
-                      'focus:outline-none focus:bg-fill-content-hover',
+                      'w-full px-3 py-2.5 text-left transition-colors hover:bg-fill-content-hover',
+                      'group flex items-start justify-between',
+                      'focus:bg-fill-content-hover focus:outline-none',
                       isSelected && 'bg-fill-content-select'
                     )}
                   >
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
+                    <div className='min-w-0 flex-1'>
+                      <div className='flex items-center gap-2'>
                         {getProviderIcon(model.provider)}
-                        <span className={cn(
-                          "text-sm font-medium",
-                          isSelected && "text-primary"
-                        )}>
-                          {model.name}
-                        </span>
+                        <span className={cn('text-sm font-medium', isSelected && 'text-primary')}>{model.name}</span>
                       </div>
                       {model.metadata?.desc && (
-                        <p className="text-xs text-muted-foreground mt-0.5 truncate pr-2">
-                          {model.metadata.desc}
-                        </p>
+                        <p className='mt-0.5 truncate pr-2 text-xs text-muted-foreground'>{model.metadata.desc}</p>
                       )}
                     </div>
-                    {isSelected && (
-                      <Check className="h-4 w-4 text-primary mt-0.5 ml-2 flex-shrink-0" />
-                    )}
+                    {isSelected && <Check className='ml-2 mt-0.5 h-4 w-4 flex-shrink-0 text-primary' />}
                   </button>
                 );
               })

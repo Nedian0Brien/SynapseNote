@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import LoadingDots from '@/components/chat/components/ui/loading-dots';
 import { useTranslation } from '@/components/chat/i18n';
 import { useWriterContext } from '@/components/chat/writer/context';
-import { ReactComponent as StopIcon } from '@/components/chat/assets/icons/stop.svg';
+import { ReactComponent as StopIcon } from '@/assets/icons/ai_stop_answering.svg';
 
 export function Loading() {
   const { t } = useTranslation();

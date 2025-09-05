@@ -1,7 +1,7 @@
-import { ReactComponent as BoardIcon } from '@/components/chat/assets/icons/board.svg';
-import { ReactComponent as CalendarIcon } from '@/components/chat/assets/icons/calendar.svg';
-import { ReactComponent as DocIcon } from '@/components/chat/assets/icons/doc.svg';
-import { ReactComponent as GridIcon } from '@/components/chat/assets/icons/grid.svg';
+import { ReactComponent as BoardIcon } from '@/assets/icons/board.svg';
+import { ReactComponent as CalendarIcon } from '@/assets/icons/calendar.svg';
+import { ReactComponent as GridIcon } from '@/assets/icons/grid.svg';
+import { ReactComponent as DocIcon } from '@/assets/icons/page.svg';
 import { cn, getIcon, renderColor } from '@/components/chat/lib/utils';
 import { View, ViewIconType, ViewLayout } from '@/components/chat/types';
 import DOMPurify from 'dompurify';
@@ -42,7 +42,7 @@ function PageIcon({ view }: {
     }) : '';
 
     return <span
-      className={cn('flex w-4 h-4 rounded-md items-center justify-center')}
+      className={cn('flex w-5 h-5 rounded-md items-center justify-center')}
     ><span
       dangerouslySetInnerHTML={{
         __html: cleanSvg,
@@ -59,7 +59,7 @@ function PageIcon({ view }: {
       case ViewLayout.Grid:
         return <GridIcon className='h-5 w-5' />;
       default:
-        return <DocIcon className='h-4 w-4' />;
+        return <DocIcon className='h-5 w-5' />;
     }
   }
 
@@ -67,8 +67,8 @@ function PageIcon({ view }: {
     return <span
       className={'flex justify-center items-center'}
       style={{
-        width: 16,
-        height: 16,
+        width: 20,
+        height: 20,
       }}
     >{icon.value}</span>;
   }

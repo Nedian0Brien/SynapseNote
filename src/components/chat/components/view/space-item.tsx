@@ -2,7 +2,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useTranslation } from '@/components/chat/i18n';
 import { cn, getIcon, renderColor, stringToColor } from '@/components/chat/lib/utils';
 import { View } from '@/components/chat/types';
-import { ReactComponent as ChevronDown } from '@/components/chat/assets/icons/drop_menu_show.svg';
+import { ReactComponent as ChevronRight } from '@/assets/icons/toggle_list.svg';
 import { ReactNode, useEffect, useMemo, useState } from 'react';
 import DOMPurify from 'dompurify';
 import { Button } from '@/components/ui/button';
@@ -72,7 +72,7 @@ function SpaceItem({
   const ToggleButton = useMemo(() => {
     return view.children.length > 0 ? (
       <Button variant={'ghost'} size={'icon'} className={'!h-4 !min-h-4 !w-4 !min-w-4 hover:bg-muted-foreground/10'}>
-        <ChevronDown className={cn('transform transition-transform', expanded ? 'rotate-0' : '-rotate-90')} />
+        <ChevronRight className={cn('transform transition-transform', expanded ? 'rotate-90' : 'rotate-0')} />
       </Button>
     ) : (
       <div style={{ width: 16, height: 16 }}></div>

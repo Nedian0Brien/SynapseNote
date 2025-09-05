@@ -1,8 +1,9 @@
-import { ReactComponent as TryAgainIcon } from '@/components/chat/assets/icons/undo.svg';
+import { ReactComponent as XIcon } from '@/assets/icons/close.svg';
+import { ReactComponent as TickIcon } from '@/assets/icons/tick.svg';
+import { ReactComponent as TryAgainIcon } from '@/assets/icons/undo.svg';
 import { CommentWithAskAnything } from './with-comment';
 import { useTranslation } from '@/components/chat/i18n';
 import { useWriterContext } from '@/components/chat/writer/context';
-import { CheckIcon, XIcon } from 'lucide-react';
 import { useMemo } from 'react';
 
 export function AskAnything({
@@ -21,19 +22,19 @@ export function AskAnything({
     {
       label: t('writer.button.keep'),
       onClick: keep,
-      icon: <CheckIcon className={'text-success'} />,
+      icon: <TickIcon className="text-icon-success-thick h-5 w-5" />,
     },
     {
       label: t('writer.button.discard'),
       onClick: () => {
         exit();
       },
-      icon: <XIcon className={'text-destructive'} />,
+      icon: <XIcon className="text-icon-error-thick h-5 w-5" />,
     },
     {
       label: t('writer.button.rewrite'),
       onClick: rewrite,
-      icon: <TryAgainIcon />,
+      icon: <TryAgainIcon className="h-5 w-5" />,
     },
   ], [exit, keep, rewrite, t]);
 

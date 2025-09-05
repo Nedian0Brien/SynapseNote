@@ -99,7 +99,7 @@ export function AddMessageToPageWrapper({
       <PopoverTrigger asChild>{children}</PopoverTrigger>
       <PopoverContent onOpenAutoFocus={(e) => e.preventDefault()} onCloseAutoFocus={(e) => e.preventDefault()}>
         <div className={'flex h-fit max-h-[360px] min-h-[200px] w-[300px] flex-col gap-2 px-1 py-1'}>
-          <Label className={'font-normal opacity-60'}>{t('addMessageToPage.placeholder')}</Label>
+          <Label className={'font-normal'}>{t('addMessageToPage.placeholder')}</Label>
 
           <SearchInput value={searchValue} onChange={setSearchValue} />
           <Separator />
