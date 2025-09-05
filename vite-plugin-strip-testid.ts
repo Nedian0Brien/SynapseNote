@@ -32,6 +32,7 @@ export function stripTestIdPlugin(): Plugin {
         // This is the safest pattern to remove
         const simpleStringPattern = /\s+data-testid\s*=\s*["'][^"']*["']/g;
         const matches = transformedCode.match(simpleStringPattern);
+
         if (matches && matches.length > 0) {
           console.log(`Stripping ${matches.length} data-testid attributes from ${id}`);
           transformedCode = transformedCode.replace(simpleStringPattern, '');
@@ -41,6 +42,7 @@ export function stripTestIdPlugin(): Plugin {
         // Pattern 2: Simple expressions without nested braces: data-testid={variable}
         const simpleExpressionPattern = /\s+data-testid\s*=\s*\{[^{}]+\}/g;
         const exprMatches = transformedCode.match(simpleExpressionPattern);
+
         if (exprMatches && exprMatches.length > 0) {
           console.log(`Stripping ${exprMatches.length} data-testid expressions from ${id}`);
           transformedCode = transformedCode.replace(simpleExpressionPattern, '');
@@ -49,6 +51,7 @@ export function stripTestIdPlugin(): Plugin {
 
         // Pattern 3: Template literals: data-testid={`value-${id}`}
         const templatePattern = /\s+data-testid\s*=\s*\{`[^`]*`\}/g;
+
         if (templatePattern.test(transformedCode)) {
           transformedCode = transformedCode.replace(templatePattern, '');
           hasChanges = true;

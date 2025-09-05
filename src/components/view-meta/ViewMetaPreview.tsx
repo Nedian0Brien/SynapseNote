@@ -261,7 +261,6 @@ export function ViewMetaPreview({
               </>
             ) : (
               <>
-                {console.log('[ViewMetaPreview] Rendering non-editable div:', { viewId, readOnly, name })}
                 <div
                   style={{
                     wordBreak: 'break-word',

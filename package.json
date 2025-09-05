@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "lsof -ti:3000 | xargs kill -9 2>/dev/null || true && vite",
+    "dev": "vite",
     "dev:coverage": "cross-env COVERAGE=true vite",
     "build": "vite build",
     "type-check": "tsc --noEmit --project tsconfig.web.json",
@@ -21,8 +21,6 @@
     "test:components:coverage": "cross-env COVERAGE=true cypress run --component --browser chrome --headless",
     "test:cy": "cypress run",
     "test:integration": "cypress run --spec 'cypress/e2e/**/*.cy.ts'",
-    "test:integration:user": "cypress run --spec 'cypress/e2e/user/**/*.cy.ts' --headed --browser chrome",
-    "wait:backend": "APPFLOWY_BASE_URL=${APPFLOWY_BASE_URL:-http://localhost} node scripts/wait-for-backend.js",
     "coverage": "cross-env COVERAGE=true pnpm run test:unit && cross-env COVERAGE=true pnpm run test:components",
     "generate-tokens": "node scripts/system-token/convert-tokens.cjs",
     "generate-protobuf": "pbjs -t static-module -w es6 -o ./src/proto/messages.js ./src/proto/messages.proto & pbts -o ./src/proto/messages.d.ts ./src/proto/messages.js"

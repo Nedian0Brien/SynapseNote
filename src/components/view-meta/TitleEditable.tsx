@@ -63,13 +63,6 @@ function TitleEditable({
 }) {
   const { t } = useTranslation();
 
-  // Debug logging for initialization
-  console.log('[TitleEditable] Component initialized:', {
-    viewId,
-    name,
-    timestamp: Date.now()
-  });
-
   // Use ref to manage state, avoid re-rendering
   const updateStateRef = useRef<UpdateState>({
     localName: name,
@@ -221,11 +214,6 @@ function TitleEditable({
   // Initialize content and handle autoFocus
   useEffect(() => {
     const contentBox = contentRef.current;
-
-    console.log('[TitleEditable] Initializing component:', {
-      hasContentBox: !!contentBox,
-      localName: updateStateRef.current.localName
-    });
 
     if (!contentBox) {
       console.warn('[TitleEditable] contentRef not available yet');
