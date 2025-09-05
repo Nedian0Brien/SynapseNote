@@ -7,7 +7,7 @@ import { useAIWriter } from '@appflowyinc/ai-chat';
 import { debounce } from 'lodash-es';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Range } from 'slate';
-import { ReactEditor, useFocused, useSlate, useSlateStatic } from 'slate-react';
+import { ReactEditor, useFocused, useReadOnly, useSlate, useSlateStatic } from 'slate-react';
 
 export function useVisible() {
   const editor = useSlate();
@@ -15,7 +15,7 @@ export function useVisible() {
   const { decorateState, addDecorate, removeDecorate } = useEditorContext();
   const [forceShow, setForceShow] = useState<boolean>(false);
   const [isDragging, setDragging] = useState<boolean>(false);
-
+  const readOnly = useReadOnly()
   const focus = useFocused();
 
   const isExpanded = selection ? Range.isExpanded(selection) : false;
@@ -108,7 +108,8 @@ export function useVisible() {
   }, [decorateState]);
 
   useEffect(() => {
-    if(!visible) return;
+    if (readOnly) return;
+
     const handleKeyDown = (event: KeyboardEvent) => {
 
       switch(true) {
@@ -191,7 +192,7 @@ export function useVisible() {
     return () => {
       slateEditorDom.removeEventListener('keydown', handleKeyDown);
     };
-  }, [editor, visible]);
+  }, [editor, readOnly, visible]);
 
   return {
     visible,
