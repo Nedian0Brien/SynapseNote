@@ -6,7 +6,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/chat/components/ui/dialog';
+} from '@/components/ui/dialog';
 import { useTranslation } from '@/components/chat/i18n';
 
 export function InvalidDatabaseDialog({
