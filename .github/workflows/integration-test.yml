@@ -9,7 +9,7 @@ on:
 
 env:
   CLOUD_VERSION: latest-amd64
-  CYPRESS_BASE_URL: http://localhost:80
+  CYPRESS_BASE_URL: http://localhost:3000
   GOTRUE_ADMIN_EMAIL: admin@example.com
   GOTRUE_ADMIN_PASSWORD: password
 
@@ -55,8 +55,9 @@ jobs:
 
       - name: Prepare web app environment
         run: |
+          # Copy deploy.env to .env for the dev server to use
           cp deploy.env .env
-          echo "Web app will be served via Docker Compose and nginx proxy"
+          echo "Web app will be served via pnpm dev server on port 3000"
 
       - name: Checkout AppFlowy-Cloud-Premium code
         uses: actions/checkout@v4
@@ -68,18 +69,34 @@ jobs:
       - name: Prepare appflowy cloud env
         working-directory: AppFlowy-Cloud-Premium
         run: |
+          # Copy and configure the cloud environment
           cp deploy.env .env
+          
+          # Configure authentication settings
           sed -i 's/GOTRUE_EXTERNAL_GOOGLE_ENABLED=.*/GOTRUE_EXTERNAL_GOOGLE_ENABLED=true/' .env
           sed -i 's|GOTRUE_MAILER_AUTOCONFIRM=.*|GOTRUE_MAILER_AUTOCONFIRM=true|' .env
           sed -i 's|API_EXTERNAL_URL=.*|API_EXTERNAL_URL=http://localhost|' .env
           sed -i 's|AI_OPENAI_API_KEY=.*|AI_OPENAI_API_KEY=${{ secrets.CI_OPENAI_API_KEY }}|' .env
           sed -i 's|APPFLOWY_SPAM_DETECT_ENABLED=.*|APPFLOWY_SPAM_DETECT_ENABLED=false|' .env
           
-          # Update nginx CORS configuration to allow localhost (port 80) for testing
+          # Update nginx configuration to allow CORS from port 3000 (dev server)
           echo "Backing up original nginx.conf..."
           cp nginx/nginx.conf nginx/nginx.conf.backup
-          echo "Updating nginx CORS configuration for testing..."
+          echo "Updating nginx CORS configuration for dev server on port 3000..."
+          # Allow both localhost:3000 (dev server) and localhost (for API access)
           sed -i 's|"~^http://localhost:3000$"|"~^http://localhost(:[0-9]+)?$"|g' nginx/nginx.conf
+          
+          # Remove appflowy_web service from docker-compose since we'll use dev server
+          echo "Creating docker-compose override to exclude appflowy_web service..."
+          cat > docker-compose.override.yml << 'EOF'
+          version: '3.8'
+          services:
+            appflowy_web:
+              # Disable the web container since we're using dev server
+              deploy:
+                replicas: 0
+              command: echo "Web service disabled - using dev server instead"
+          EOF
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -87,84 +104,117 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-      - name: Build AppFlowy Web Docker Image
-        run: |
-          echo "Building local AppFlowy Web Docker image..."
-          # Get current commit SHA for versioning
-          COMMIT_SHA=$(git rev-parse --short HEAD)
-          WEB_VERSION="local-${COMMIT_SHA}"
-          
-          # Build the Docker image using the docker/Dockerfile
-          docker build -t appflowyinc/appflowy_web:${WEB_VERSION} -f docker/Dockerfile .
-          
-          echo "Built image: appflowyinc/appflowy_web:${WEB_VERSION}"
-          echo "WEB_VERSION=${WEB_VERSION}" >> $GITHUB_ENV
-
-      - name: Run Docker-Compose
+      - name: Run Docker-Compose (without web service)
         working-directory: AppFlowy-Cloud-Premium
         env:
           APPFLOWY_CLOUD_VERSION: ${{ env.CLOUD_VERSION }}
           APPFLOWY_AI_VERSION: ${{ env.CLOUD_VERSION }}
           APPFLOWY_WORKER_VERSION: ${{ env.CLOUD_VERSION }}
           APPFLOWY_ADMIN_FRONTEND_VERSION: ${{ env.CLOUD_VERSION }}
-          APPFLOWY_WEB_VERSION: ${{ env.WEB_VERSION }}
           RUST_LOG: appflowy_cloud=debug
         run: |
-          # Pull all services except appflowy_web (since we built it locally)
-          docker compose pull --ignore-pull-failures appflowy_cloud gotrue admin_frontend ai appflowy_worker nginx minio postgres redis
+          # Pull and start all backend services (excluding web)
+          docker compose pull appflowy_cloud gotrue admin_frontend ai appflowy_worker nginx minio postgres redis
           docker compose up -d
           echo "Waiting for the containers to be ready..."
           sleep 10
           echo "=== Docker Container Status ==="
           docker ps -a
           echo ""
-          echo "=== Checking AppFlowy Web Container ==="
-          docker inspect appflowy-cloud-premium-appflowy_web-1 --format='{{.State.Status}}' || echo "Web container not found"
-          echo ""
-          echo "=== Docker Images ==="
-          docker images | grep appflowy
-
+          echo "=== Verify web container is not running ==="
+          docker ps | grep appflowy_web || echo "✓ Web container not running (expected)"
 
       - name: Wait for backend to be ready
         shell: bash
         run: |
-          for i in {1..180}; do
-            if curl -sSf http://localhost/health > /dev/null; then
-              echo "Backend is up"; exit 0;
+          echo "Checking backend health..."
+          for i in {1..60}; do
+            if curl -sSf http://localhost/api/health > /dev/null 2>&1; then
+              echo "✓ Backend API is healthy"
+              break
             fi
-            sleep 10
+            echo "Waiting for backend... (attempt $i/60)"
+            sleep 3
           done
-          echo "Backend did not become ready in time"; exit 1
+          
+          # Verify all required endpoints
+          echo "Verifying backend endpoints..."
+          curl -f http://localhost/api/health || (echo "API health check failed" && exit 1)
+          curl -f http://localhost/gotrue/health || (echo "GoTrue health check failed" && exit 1)
+          echo "✓ All backend services are ready"
+
+      - name: Start dev server
+        run: |
+          echo "Starting dev server in background..."
+          # Start the dev server in the background and save its PID
+          nohup pnpm run dev > web-dev-server.log 2>&1 &
+          echo $! > dev-server.pid
+          
+          echo "Dev server PID: $(cat dev-server.pid)"
+          echo "Waiting for dev server to be ready..."
+          
+          # Wait for dev server to be ready
+          for i in {1..60}; do
+            if curl -sSf http://localhost:3000 > /dev/null 2>&1; then
+              echo "✓ Dev server is ready on port 3000"
+              break
+            fi
+            echo "Waiting for dev server... (attempt $i/60)"
+            sleep 3
+          done
+          
+          # Verify the dev server is serving the app
+          if ! curl -sSf http://localhost:3000 > /dev/null 2>&1; then
+            echo "Dev server failed to start. Last 50 lines of log:"
+            tail -50 web-dev-server.log
+            exit 1
+          fi
 
       - name: Run integration tests
         env:
           APPFLOWY_BASE_URL: http://localhost
           APPFLOWY_GOTRUE_BASE_URL: http://localhost/gotrue
           APPFLOWY_WS_BASE_URL: ws://localhost/ws/v2
+          CYPRESS_BASE_URL: http://localhost:3000
           CYPRESS_chromeWebSecurity: 'false'
         run: |
-          cp deploy.env .env
-          # Add extra debugging for CI
-          echo "Testing backend connectivity..."
-          curl -v http://localhost/health || true
-          curl -v http://localhost/api/health || true
-          echo "Running Cypress tests..."
+          echo "Environment variables for tests:"
+          echo "  CYPRESS_BASE_URL: $CYPRESS_BASE_URL"
+          echo "  APPFLOWY_BASE_URL: $APPFLOWY_BASE_URL"
+          echo "  APPFLOWY_GOTRUE_BASE_URL: $APPFLOWY_GOTRUE_BASE_URL"
+          echo "  APPFLOWY_WS_BASE_URL: $APPFLOWY_WS_BASE_URL"
+          
+          echo "Running Cypress tests against dev server..."
           pnpm cypress run --spec 'cypress/e2e/**/*.cy.ts'
 
-      - name: Cloud server logs
+      - name: Stop dev server
         if: always()
         run: |
+          if [ -f dev-server.pid ]; then
+            PID=$(cat dev-server.pid)
+            echo "Stopping dev server (PID: $PID)..."
+            kill $PID || true
+            rm dev-server.pid
+          fi
+
+      - name: Server logs
+        if: always()
+        run: |
+          echo "=== Dev Server Logs ==="
+          if [ -f web-dev-server.log ]; then
+            tail -100 web-dev-server.log
+          else
+            echo "No dev server logs found"
+          fi
+          echo ""
           echo "=== AppFlowy Cloud Logs ==="
-          docker logs appflowy-cloud-premium-appflowy_cloud-1 2>&1 | tail -100
+          docker logs appflowy-cloud-premium-appflowy_cloud-1 2>&1 | tail -100 || true
           echo ""
           echo "=== GoTrue Auth Logs ==="
-          docker logs appflowy-cloud-premium-gotrue-1 2>&1 | tail -50
-          echo ""
-          echo "=== AppFlowy Web Logs ==="
-          docker logs appflowy-cloud-premium-appflowy_web-1 2>&1 | tail -50 || echo "No web container logs"
+          docker logs appflowy-cloud-premium-gotrue-1 2>&1 | tail -50 || true
           echo ""
           echo "=== Nginx Logs ==="
-          docker logs appflowy-cloud-premium-nginx-1 2>&1 | tail -50
+          docker logs appflowy-cloud-premium-nginx-1 2>&1 | tail -50 || true
 
       - name: Upload Cypress screenshots
         if: always()
@@ -184,25 +234,14 @@ jobs:
           if-no-files-found: ignore
           retention-days: 1
 
-      - name: Upload web server log
+      - name: Upload dev server log
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: web.log
-          path: web.log
+          name: web-dev-server.log
+          path: web-dev-server.log
           if-no-files-found: ignore
           retention-days: 1
-
-      - name: Cleanup and restore nginx config
-        if: always()
-        run: |          
-          echo "Restoring original nginx configuration..."
-          if [ -f "AppFlowy-Cloud-Premium/nginx/nginx.conf.backup" ]; then
-            mv AppFlowy-Cloud-Premium/nginx/nginx.conf.backup AppFlowy-Cloud-Premium/nginx/nginx.conf
-            echo "✅ Original nginx.conf restored"
-          else
-            echo "⚠️ No backup found, nginx.conf left modified"
-          fi
 
       - name: Upload Cypress console logs
         if: always()
@@ -212,3 +251,19 @@ jobs:
           path: cypress/logs/**
           if-no-files-found: ignore
           retention-days: 1
+
+      - name: Cleanup
+        if: always()
+        working-directory: AppFlowy-Cloud-Premium
+        run: |
+          echo "Stopping Docker containers..."
+          docker compose down || true
+          
+          echo "Restoring original nginx configuration..."
+          if [ -f nginx/nginx.conf.backup ]; then
+            mv nginx/nginx.conf.backup nginx/nginx.conf
+            echo "✅ Original nginx.conf restored"
+          fi
+          
+          echo "Removing override file..."
+          rm -f docker-compose.override.yml
