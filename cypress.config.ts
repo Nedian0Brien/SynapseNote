@@ -92,7 +92,7 @@ export default defineConfig({
       return config;
     },
     supportFile: 'cypress/support/component.ts',
-    specPattern: 'cypress/**/*.cy.{ts,tsx}',
+    specPattern: 'cypress/components/**/*.cy.{ts,tsx}',
     // Viewport size for component tests
     viewportWidth: 1280,
     viewportHeight: 720,
