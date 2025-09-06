@@ -97,6 +97,7 @@ export function Outline({
       >
         <TooltipTrigger asChild>
           <Button
+            data-testid="inline-add-page"
             variant={'ghost'}
             size={'icon-sm'}
             onClick={(e) => {
