@@ -26,6 +26,7 @@ function SideBarBottom() {
 
         <Tooltip title={t('trash.text')}>
           <IconButton
+            data-testid="sidebar-trash-button"
             size={'small'}
             onClick={() => {
               navigate('/app/trash');
