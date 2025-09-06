@@ -136,4 +136,106 @@ describe('More Page Actions', () => {
 
         cy.task('log', 'Page successfully duplicated');
     });
+
+    it.skip('should rename a page and verify the name persists after refresh', () => {
+        // Handle uncaught exceptions during workspace creation
+        cy.on('uncaught:exception', (err: Error) => {
+            if (err.message.includes('No workspace or service found')) {
+                return false;
+            }
+            return true;
+        });
+
+        // Sign in first
+        cy.visit('/login', { failOnStatusCode: false });
+        cy.wait(2000);
+
+        const authUtils = new AuthTestUtils();
+        authUtils.signInWithTestUrl(testEmail);
+
+        cy.url().should('include', '/app');
+        TestTool.waitForPageLoad(3000);
+
+        // Wait for the sidebar to load properly
+        TestTool.waitForSidebarReady();
+        cy.wait(2000);
+
+        // Store the original page name
+        const originalPageName = 'Getting started';
+        const renamedPageName = `Renamed Page ${Date.now()}`;
+        
+        cy.task('log', `Starting rename test: ${originalPageName} -> ${renamedPageName}`);
+
+        // Find the page by its text content and hover
+        cy.contains(originalPageName)
+            .parent()
+            .parent()
+            .trigger('mouseenter', { force: true })
+            .trigger('mouseover', { force: true });
+
+        cy.wait(1000);
+
+        // Look for the more actions button - using PageSelectors
+        PageSelectors.moreActionsButton().first().click({ force: true });
+
+        cy.task('log', 'Clicked more actions button');
+
+        // Wait for the dropdown menu to be visible
+        cy.get('[data-slot="dropdown-menu-content"]', { timeout: 5000 }).should('be.visible');
+
+        // Click on Rename option - simplified approach
+        cy.get('[data-slot="dropdown-menu-content"]').within(() => {
+            cy.contains('Rename').click();
+        });
+        
+        cy.task('log', 'Clicked Rename option');
+
+        // Wait for the rename modal to appear
+        cy.get('[data-testid="rename-modal-input"]', { timeout: 5000 })
+            .should('be.visible')
+            .clear()
+            .type(renamedPageName);
+
+        cy.task('log', `Entered new page name: ${renamedPageName}`);
+
+        // Click the save button
+        cy.get('[data-testid="rename-modal-save"]').click();
+
+        cy.task('log', 'Clicked save button');
+
+        // Wait for the modal to close and the page to update
+        waitForReactUpdate(2000);
+
+        // Verify the page was renamed in the sidebar
+        cy.contains(renamedPageName, { timeout: 10000 }).should('exist');
+        cy.task('log', 'Page renamed successfully in sidebar');
+
+        // Also verify the original name doesn't exist anymore
+        cy.contains(originalPageName).should('not.exist');
+        
+        // Now refresh the page to verify the rename persisted
+        cy.task('log', 'Refreshing page to verify persistence...');
+        cy.reload();
+        
+        // Wait for the page to reload completely
+        TestTool.waitForPageLoad(3000);
+        TestTool.waitForSidebarReady();
+        cy.wait(2000);
+        
+        // Verify the renamed page still exists after refresh
+        cy.contains(renamedPageName, { timeout: 10000 }).should('exist');
+        cy.task('log', 'Renamed page persisted after refresh');
+        
+        // Verify the original name is still gone
+        cy.contains(originalPageName).should('not.exist');
+        
+        // Optional: Also verify the page is clickable and can be opened
+        cy.contains(renamedPageName).click();
+        cy.wait(2000);
+        
+        // Verify we're on the renamed page by checking the URL or page content
+        cy.url().should('include', '/app');
+        
+        cy.task('log', 'Rename test completed successfully - name persisted after refresh');
+    });
 });
