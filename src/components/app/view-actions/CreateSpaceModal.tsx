@@ -59,8 +59,12 @@ function CreateSpaceModal({
       classes={{ container: 'items-start max-md:mt-auto max-md:items-center mt-[10%] ' }}
       okLoading={loading}
       onOk={handleOk}
+      okButtonProps={{
+        'data-testid': 'modal-ok-button',
+      }}
       PaperProps={{
         className: 'w-[600px] max-w-[70vw]',
+        'data-testid': 'create-space-modal',
       }}
     >
       <div
@@ -86,6 +90,7 @@ function CreateSpaceModal({
         <div className={'flex flex-col gap-2'}>
           <div className={'text-text-secondary'}>{t('space.spaceName')}</div>
           <OutlinedInput
+            data-testid="space-name-input"
             value={spaceName}
             fullWidth={true}
             onChange={(e) => setSpaceName(e.target.value)}

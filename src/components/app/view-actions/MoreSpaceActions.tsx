@@ -81,6 +81,7 @@ function MoreSpaceActions ({
       ))}
       <DropdownMenuSeparator className={'w-full'} />
       <DropdownMenuItem
+        data-testid="create-new-space-button"
         onSelect={() => {
           onClose();
           openCreateSpaceModal();
