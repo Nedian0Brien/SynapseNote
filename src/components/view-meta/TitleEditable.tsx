@@ -259,7 +259,6 @@ function TitleEditable({
       aria-readonly={false}
       autoFocus={autoFocus}
       onFocus={() => {
-        console.log('[TitleEditable] Focus event triggered');
 
         // Record initial value when starting to edit
         if (contentRef.current) {

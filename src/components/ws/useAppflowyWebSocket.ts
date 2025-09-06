@@ -3,8 +3,8 @@ import { useCallback, useMemo, useState } from 'react';
 import useWebSocket from 'react-use-websocket';
 
 import { getTokenParsed } from '@/application/session/token';
-import { getConfigValue } from '@/utils/runtime-config';
 import { messages } from '@/proto/messages';
+import { getConfigValue } from '@/utils/runtime-config';
 
 const wsURL = getConfigValue('APPFLOWY_WS_BASE_URL', 'ws://localhost:8000/ws/v2');
 
@@ -183,17 +183,9 @@ export const useAppflowyWebSocket = (options: Options): AppflowyWebSocketType =>
 
       const protobufMessage = messages.Message.encode(message).finish();
 
-      // Check if WebSocket is ready
-      if (readyState !== 1) { // Not OPEN (0=CONNECTING, 2=CLOSING, 3=CLOSED)
-        console.debug('WebSocket not ready (state: ' + readyState + '), queueing message with keep=' + keep);
-        // Use react-use-websocket's built-in queuing when keep=true
-        sendMessage(protobufMessage, keep);
-        return;
-      }
-
       sendMessage(protobufMessage, keep);
     },
-    [sendMessage, readyState]
+    [sendMessage]
   );
 
   const manualReconnect = useCallback(() => {
