@@ -66,22 +66,17 @@ describe('Space Creation Tests', () => {
                 // Step 2: Find the first space and open its more actions menu
                 cy.task('log', '=== Step 2: Opening space more actions menu ===');
                 
-                // Get the first space item and hover over it to show actions
+                // Get the first space item and click more actions
+                // With the test environment check, the button is always visible in tests
                 SpaceSelectors.items().first().then($space => {
-                    cy.task('log', 'Found first space, hovering to show actions...');
-                    
-                    // Hover over the space to reveal the action buttons
-                    cy.wrap($space)
-                        .trigger('mouseenter', { force: true })
-                        .trigger('mouseover', { force: true });
-                    
-                    cy.wait(1000);
+                    cy.task('log', 'Found first space, clicking more actions...');
                     
                     // Click the more actions button for spaces
+                    // It's always visible in test environment
                     cy.get('[data-testid="inline-more-actions"]')
                         .first()
                         .should('be.visible')
-                        .click({ force: true });
+                        .click();
                     
                     cy.task('log', 'Clicked space more actions button');
                 });

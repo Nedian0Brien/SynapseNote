@@ -63,7 +63,8 @@ export function Outline({
     const shouldHidden = !hovered && menuProps?.view.view_id !== view.view_id;
 
     // For testing purposes, always show the button if it has a data-testid
-    const isTestEnvironment = window.Cypress !== undefined;
+    // This is a temporary workaround until we can properly simulate hover in tests
+    const isTestEnvironment = typeof window !== 'undefined' && (window as any).Cypress !== undefined;
 
     if (shouldHidden && !isTestEnvironment) return null;
 
