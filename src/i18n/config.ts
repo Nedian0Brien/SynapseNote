@@ -1,7 +1,7 @@
 import i18next from 'i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
-import { initReactI18next } from 'react-i18next';
 import resourcesToBackend from 'i18next-resources-to-backend';
+import { initReactI18next } from 'react-i18next';
 
 void i18next
   .use(resourcesToBackend((language: string) => import(`../@types/translations/${language}.json`)))
@@ -19,9 +19,3 @@ void i18next
   });
 
 export const i18nInstance = i18next;
-
-// Make i18n available globally for external packages
-if (typeof window !== 'undefined') {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (window as any).i18n = i18next;
-}
