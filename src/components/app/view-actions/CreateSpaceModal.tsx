@@ -59,12 +59,9 @@ function CreateSpaceModal({
       classes={{ container: 'items-start max-md:mt-auto max-md:items-center mt-[10%] ' }}
       okLoading={loading}
       onOk={handleOk}
-      okButtonProps={{
-        'data-testid': 'modal-ok-button',
-      }}
       PaperProps={{
         className: 'w-[600px] max-w-[70vw]',
-        'data-testid': 'create-space-modal',
+        ...({ 'data-testid': 'create-space-modal' } as Record<string, unknown>),
       }}
     >
       <div
