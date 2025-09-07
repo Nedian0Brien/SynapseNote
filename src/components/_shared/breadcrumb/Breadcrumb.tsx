@@ -77,7 +77,7 @@ export function Breadcrumb({ crumbs, toView, variant }: BreadcrumbProps) {
   }, [crumbs, toView, variant]);
 
   return (
-    <div className={'relative flex h-full w-full flex-1 items-center gap-2 overflow-hidden'}>
+    <div data-testid="breadcrumb-navigation" className={'relative flex h-full w-full flex-1 items-center gap-2 overflow-hidden'}>
       {renderCrumb}
       <BreadcrumbMoreModal open={openMore} onClose={() => setOpenMore(false)} crumbs={crumbs} toView={toView} />
     </div>

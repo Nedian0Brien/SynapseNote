@@ -1,18 +1,18 @@
 import { View } from '@/application/types';
+import { ReactComponent as DeleteIcon } from '@/assets/icons/delete.svg';
+import { ReactComponent as DuplicateIcon } from '@/assets/icons/duplicate.svg';
+import { ReactComponent as AddIcon } from '@/assets/icons/plus.svg';
+import { ReactComponent as SettingsIcon } from '@/assets/icons/settings.svg';
 import { useAppOverlayContext } from '@/components/app/app-overlay/AppOverlayContext';
-import { Progress } from '@/components/ui/progress';
-import { toast } from 'sonner';
 import { useAppHandlers, useCurrentWorkspaceId } from '@/components/app/app.hooks';
 import { useService } from '@/components/main/app.hooks';
 import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { Progress } from '@/components/ui/progress';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ReactComponent as DeleteIcon } from '@/assets/icons/delete.svg';
-import { ReactComponent as DuplicateIcon } from '@/assets/icons/duplicate.svg';
-import { ReactComponent as SettingsIcon } from '@/assets/icons/settings.svg';
-import { ReactComponent as AddIcon } from '@/assets/icons/plus.svg';
+import { toast } from 'sonner';
 
-function MoreSpaceActions ({
+function MoreSpaceActions({
   view,
   onClose,
 }: {
@@ -57,14 +57,14 @@ function MoreSpaceActions ({
         openManageSpaceModal(view.view_id);
       },
     },
-      {
-        label: t('space.duplicate'),
-        icon: duplicateLoading ? <Progress variant={'primary'} /> : <DuplicateIcon />,
-        disabled: duplicateLoading,
-        onClick: () => {
-          void handleDuplicateClick();
-        },
+    {
+      label: t('space.duplicate'),
+      icon: duplicateLoading ? <Progress variant={'primary'} /> : <DuplicateIcon />,
+      disabled: duplicateLoading,
+      onClick: () => {
+        void handleDuplicateClick();
       },
+    },
     ];
   }, [duplicateLoading, handleDuplicateClick, onClose, openManageSpaceModal, t, view.view_id]);
 
