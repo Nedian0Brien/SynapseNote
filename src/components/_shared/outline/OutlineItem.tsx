@@ -41,6 +41,7 @@ function OutlineItem({
     (item: View) => {
       return (
         <div
+          data-testid={`outline-item-${item.view_id}`}
           className={`flex ${
             variant === UIVariant.App ? 'folder-view-item' : ''
           } my-0.5 h-fit w-full cursor-pointer justify-between`}

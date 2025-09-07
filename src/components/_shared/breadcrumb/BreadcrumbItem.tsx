@@ -38,6 +38,7 @@ function BreadcrumbItem({
 
   return (
     <div
+      data-testid={`breadcrumb-item-${name?.toLowerCase().replace(/\s+/g, '-')}`}
       className={className}
       onClick={async () => {
         if (disableClick || extra?.is_space || (!is_published && variant === 'publish')) return;

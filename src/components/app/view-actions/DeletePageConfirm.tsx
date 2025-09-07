@@ -52,6 +52,7 @@ function DeletePageConfirm({
 
   return (
     <NormalModal
+      data-testid="delete-page-confirm-modal"
       okLoading={loading}
       keepMounted={false}
       disableRestoreFocus={true}

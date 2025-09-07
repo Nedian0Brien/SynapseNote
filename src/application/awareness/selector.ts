@@ -38,7 +38,6 @@ export function useUsersSelector(awareness?: Awareness) {
         });
       });
 
-      console.log('👥 Final users array:', users);
       setUsers(
         uniqBy(
           users.sort((a, b) => b.timestamp - a.timestamp),

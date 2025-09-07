@@ -36,12 +36,12 @@ function ShareTabs({ opened, viewId, onClose }: { opened: boolean; viewId: strin
         Panel: PublishPanel,
       },
       currentUser?.email?.endsWith('appflowy.io') &&
-        view?.is_published && {
-          value: TabKey.TEMPLATE,
-          label: t('template.asTemplate'),
-          icon: <Templates className={'mb-0 h-5 w-5'} />,
-          Panel: TemplatePanel,
-        },
+      view?.is_published && {
+        value: TabKey.TEMPLATE,
+        label: t('template.asTemplate'),
+        icon: <Templates className={'mb-0 h-5 w-5'} />,
+        Panel: TemplatePanel,
+      },
     ].filter(Boolean) as {
       value: TabKey;
       label: string;
@@ -71,6 +71,7 @@ function ShareTabs({ opened, viewId, onClose }: { opened: boolean; viewId: strin
               value={option.value}
               label={option.label}
               icon={option.icon}
+              data-testid={option.value === TabKey.PUBLISH ? 'publish-tab' : undefined}
             />
           ))}
       </ViewTabs>

@@ -14,12 +14,13 @@ export function ShareButton({ viewId }: { viewId: string }) {
   const [opened, setOpened] = React.useState(false);
   const ref = useRef<HTMLButtonElement>(null);
 
-  if(layout === ViewLayout.AIChat) return null;
+  if (layout === ViewLayout.AIChat) return null;
 
   return (
     <>
       <Button
         className={'max-sm:hidden'}
+        data-testid={'share-button'}
         onClick={() => {
           setOpened(true);
         }}
@@ -47,7 +48,7 @@ export function ShareButton({ viewId }: { viewId: string }) {
           horizontal: 'center',
         }}
       >
-        <div className={'flex flex-col gap-2 w-fit p-2'}>
+        <div className={'flex flex-col gap-2 w-fit p-2'} data-testid={'share-popover'}>
           <ShareTabs
             opened={opened}
             viewId={viewId}

@@ -86,7 +86,7 @@ function TitleEditable({
     (newName: string) => {
       const updateId = generateUpdateId();
 
-      console.log('Sending update:', { newName, updateId });
+      console.debug('Sending update:', { newName, updateId });
 
       updateStateRef.current = {
         ...updateStateRef.current,
@@ -124,7 +124,7 @@ function TitleEditable({
         console.log('Sending update immediately');
         sendUpdate(newName);
       } else {
-        console.log('Sending update with delay');
+        console.debug('Sending update with delay');
         debounceUpdateName(newName);
       }
     },
@@ -133,7 +133,7 @@ function TitleEditable({
 
   // Handle remote name changes
   useEffect(() => {
-    console.log('Remote name changed:', {
+    console.debug('Remote name changed:', {
       newName: name,
       pendingUpdate: updateStateRef.current.pendingUpdate,
       lastConfirmedName: updateStateRef.current.lastConfirmedName,
@@ -188,7 +188,7 @@ function TitleEditable({
       return;
     }
 
-    console.log('Accepting remote update');
+    console.debug('Accepting remote update');
     updateStateRef.current = {
       ...updateStateRef.current,
       localName: name,
@@ -215,7 +215,10 @@ function TitleEditable({
   useEffect(() => {
     const contentBox = contentRef.current;
 
-    if (!contentBox) return;
+    if (!contentBox) {
+      console.warn('[TitleEditable] contentRef not available yet');
+      return;
+    }
 
     // Set initial content to local state
     contentBox.textContent = updateStateRef.current.localName;
@@ -238,11 +241,13 @@ function TitleEditable({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only execute once when component mounts - autoFocus is intentionally not in deps
 
+
   return (
     <div
       ref={contentRef}
       suppressContentEditableWarning={true}
       id={`editor-title-${viewId}`}
+      data-testid="page-title-input"
       style={{
         wordBreak: 'break-word',
       }}
@@ -254,6 +259,7 @@ function TitleEditable({
       aria-readonly={false}
       autoFocus={autoFocus}
       onFocus={() => {
+
         // Record initial value when starting to edit
         if (contentRef.current) {
           initialEditValueRef.current = contentRef.current.textContent || '';

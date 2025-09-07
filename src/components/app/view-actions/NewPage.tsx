@@ -62,11 +62,12 @@ function NewPage() {
 
   return (
     <>
-      <div onClick={() => setOpen(true)} className={cn(dropdownMenuItemVariants(), 'w-full')}>
+      <div data-testid="new-page-button" onClick={() => setOpen(true)} className={cn(dropdownMenuItemVariants(), 'w-full')}>
         <Add />
         {t('newPageText')}
       </div>
       <NormalModal
+        data-testid="new-page-modal"
         okText={t('button.add')}
         title={t('publish.duplicateTitle')}
         open={open}

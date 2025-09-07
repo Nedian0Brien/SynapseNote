@@ -87,6 +87,7 @@ function TrashPage() {
           <div className={'flex gap-2'}>
             <Tooltip title={t('trash.restore')}>
               <IconButton
+                data-testid="trash-restore-button"
                 size={'small'}
                 onClick={() => {
                   void handleRestore(row.view_id);
@@ -97,6 +98,7 @@ function TrashPage() {
             </Tooltip>
             <Tooltip title={t('button.delete')}>
               <IconButton
+                data-testid="trash-delete-button"
                 size={'small'}
                 onClick={() => {
                   setDeleteViewId(row.view_id);
@@ -160,7 +162,7 @@ function TrashPage() {
           {!trashList ? (
             <TableSkeleton rows={8} columns={4} />
           ) : (
-            <TableContainer className={'appflowy-scroller'} sx={{ maxHeight: '100%' }}>
+            <TableContainer data-testid="trash-table" className={'appflowy-scroller'} sx={{ maxHeight: '100%' }}>
               <Table stickyHeader aria-label='sticky table'>
                 <TableHead>
                   <TableRow>
@@ -180,6 +182,7 @@ function TrashPage() {
                   {trashList.map((row) => {
                     return (
                       <TableRow
+                        data-testid="trash-table-row"
                         hover
                         role='checkbox'
                         tabIndex={-1}

@@ -72,6 +72,7 @@ export function WorkspaceItem({
   return (
     <DropdownMenuItem
       key={workspace.id}
+      data-testid="workspace-item"
       className={'relative'}
       onSelect={async () => {
         if (workspace.id === currentWorkspaceId) return;
@@ -88,13 +89,13 @@ export function WorkspaceItem({
       <div className={'flex flex-1 flex-col items-start overflow-hidden'}>
         <Tooltip delayDuration={1000}>
           <TooltipTrigger asChild>
-            <div className={'w-full overflow-hidden truncate text-left text-sm text-text-primary'}>{workspace.name}</div>
+            <div data-testid="workspace-item-name" className={'w-full overflow-hidden truncate text-left text-sm text-text-primary'}>{workspace.name}</div>
           </TooltipTrigger>
           <TooltipContent>
             <p>{workspace.name}</p>
           </TooltipContent>
         </Tooltip>
-        <div className={'text-xs leading-[18px] text-text-secondary'}>
+        <div data-testid="workspace-member-count" className={'text-xs leading-[18px] text-text-secondary'}>
           {t('invitation.membersCount', { count: workspace.memberCount || 0 })}
         </div>
       </div>

@@ -102,6 +102,7 @@ function AddPageActions ({ view }: {
       {actions.map(action => (
         <DropdownMenuItem
           key={action.label}
+          data-testid={action.label === t('chat.newChat') ? 'add-ai-chat-button' : undefined}
           disabled={action.disabled}
           onSelect={() => {
             action.onSelect();

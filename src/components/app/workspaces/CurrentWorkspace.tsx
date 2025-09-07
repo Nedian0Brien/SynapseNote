@@ -38,7 +38,7 @@ function CurrentWorkspace({
         </AvatarFallback>
       </Avatar>
 
-      <div className={'flex-1 truncate font-medium text-text-primary'}>{selectedWorkspace.name}</div>
+      <div data-testid="current-workspace-name" className={'flex-1 truncate font-medium text-text-primary'}>{selectedWorkspace.name}</div>
     </>
   );
 }
