@@ -64,7 +64,7 @@ export function Outline({
 
     // For testing purposes, always show the button if it has a data-testid
     // This is a temporary workaround until we can properly simulate hover in tests
-    const isTestEnvironment = typeof window !== 'undefined' && (window as any).Cypress !== undefined;
+    const isTestEnvironment = typeof window !== 'undefined' && 'Cypress' in window;
 
     if (shouldHidden && !isTestEnvironment) return null;
 
