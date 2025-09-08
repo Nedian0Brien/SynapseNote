@@ -3,20 +3,20 @@ import { ReactComponent as EditIcon } from '@/assets/icons/edit.svg';
 import { ReactComponent as EmojiIcon } from '@/assets/icons/emoji.svg';
 import { ReactComponent as OpenIcon } from '@/assets/icons/open.svg';
 import { useAppOverlayContext } from '@/components/app/app-overlay/AppOverlayContext';
+import { useAppHandlers, useCurrentWorkspaceId } from '@/components/app/app.hooks';
+import MoreActionsContent from '@/components/app/header/MoreActionsContent';
 import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
-import { useAppHandlers, useCurrentWorkspaceId } from '@/components/app/app.hooks';
-import MoreActionsContent from '@/components/app/header/MoreActionsContent';
 
+import { CustomIconPopover } from '@/components/_shared/cutsom-icon';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CustomIconPopover } from '@/components/_shared/cutsom-icon';
 
-function MorePageActions ({ view, onClose }: {
+function MorePageActions({ view, onClose }: {
   view: View;
   onClose?: () => void;
 }) {
@@ -68,6 +68,7 @@ function MorePageActions ({ view, onClose }: {
     <>
       <DropdownMenuGroup>
         <DropdownMenuItem
+          data-testid={'more-page-rename'}
           onSelect={() => {
             onClose?.();
             openRenameModal(viewId);
@@ -86,6 +87,7 @@ function MorePageActions ({ view, onClose }: {
           }}
         >
           <DropdownMenuItem
+            data-testid={'more-page-change-icon'}
             onSelect={(e) => {
               e.preventDefault();
             }}
@@ -102,6 +104,7 @@ function MorePageActions ({ view, onClose }: {
       <DropdownMenuSeparator />
       <DropdownMenuGroup>
         <DropdownMenuItem
+          data-testid={'more-page-open-new-tab'}
           onSelect={() => {
             if (!currentWorkspaceId) return;
             window.open(`/app/${currentWorkspaceId}/${view.view_id}`, '_blank');

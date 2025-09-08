@@ -95,6 +95,7 @@ export function NormalModal ({
             {modalCancelText}
           </Button>
           <Button
+            data-testid={danger ? 'confirm-delete-button' : 'modal-ok-button'}
             color={danger ? 'error' : 'primary'}
             variant={'contained'}
             size={'small'}

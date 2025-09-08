@@ -32,6 +32,8 @@ function SpaceItem({
 
     return (
       <div
+        data-testid={`space-${view.view_id}`}
+        data-expanded={isExpanded}
         style={{
           width,
         }}
@@ -53,7 +55,7 @@ function SpaceItem({
         />
         <Tooltip title={name} disableInteractive={true}>
           <div className={'flex flex-1 items-center justify-start gap-1 overflow-hidden text-sm'}>
-            <div className={'truncate font-medium'}>{name}</div>
+            <div data-testid="space-name" className={'truncate font-medium'}>{name}</div>
 
             {isPrivate && (
               <div className={'min-h-5 min-w-5 text-base text-text-primary opacity-80'}>
@@ -91,7 +93,8 @@ function SpaceItem({
   }, [onClickView, isExpanded, view?.children, width, renderExtra, expandIds, toggleExpand]);
 
   return (
-    <div className={'flex h-fit w-full flex-col'}>
+    <div className={'flex h-fit w-full flex-col'} data-testid='space-item'>
+      <div data-testid='space-expanded' data-expanded={isExpanded} style={{ display: 'none' }} />
       {renderItem}
       {renderChildren}
     </div>

@@ -2,10 +2,12 @@
   "extends": "./tsconfig.json",
   "exclude": [
     "node_modules",
+    "**/*.cy.ts",
     "**/*.cy.tsx",
     "**/*.test.ts",
     "**/*.test.tsx",
     "**/__tests__/**",
+    "cypress/**/*",
     "dist",
     "coverage"
   ],

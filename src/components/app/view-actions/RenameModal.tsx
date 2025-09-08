@@ -80,6 +80,7 @@ function RenameModal ({ view, open, onClose, viewId, updatePage }: {
         </DialogHeader>
         <Input
           autoFocus
+          data-testid="rename-modal-input"
           placeholder={'Enter new name'}
           value={newValue}
           ref={(input: HTMLInputElement) => {
@@ -108,6 +109,7 @@ function RenameModal ({ view, open, onClose, viewId, updatePage }: {
             {t('button.cancel')}
           </Button>
           <Button
+            data-testid="rename-modal-save"
             loading={loading}
             onClick={() => {
               void handleOk();

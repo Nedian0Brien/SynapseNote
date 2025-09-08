@@ -124,6 +124,7 @@ const EditorEditable = () => {
           <ErrorBoundary fallbackRender={ElementFallbackRender}>
             <Editable
               role={'textbox'}
+              data-testid={'editor-content'}
               decorate={(entry: NodeEntry) => {
                 const codeDecoration = codeDecorate?.(entry);
                 const decoration = decorate(entry);

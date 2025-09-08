@@ -12,6 +12,7 @@ function OutlineIcon({
   if (isExpanded) {
     return (
       <button
+        data-testid="outline-toggle-collapse"
         style={{
           paddingLeft: 1.125 * level + 'em',
         }}
@@ -28,6 +29,7 @@ function OutlineIcon({
 
   return (
     <button
+      data-testid="outline-toggle-expand"
       style={{
         paddingLeft: 1.125 * level + 'em',
       }}

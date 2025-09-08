@@ -91,7 +91,7 @@ function MoreActions({
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        <Button size={'icon'} variant={'ghost'} className={'text-icon-secondary'}>
+        <Button data-testid="page-more-actions" size={'icon'} variant={'ghost'} className={'text-icon-secondary'}>
           <MoreIcon />
         </Button>
       </DropdownMenuTrigger>

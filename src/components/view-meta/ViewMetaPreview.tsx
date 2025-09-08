@@ -2,11 +2,11 @@ import React, { lazy, Suspense, useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { CoverType, ViewIconType, ViewLayout, ViewMetaCover, ViewMetaIcon, ViewMetaProps } from '@/application/types';
-import TitleEditable from '@/components/view-meta/TitleEditable';
-import ViewCover from '@/components/view-meta/ViewCover';
 import { CustomIconPopover } from '@/components/_shared/cutsom-icon';
 import { notify } from '@/components/_shared/notify';
 import PageIcon from '@/components/_shared/view-icon/PageIcon';
+import TitleEditable from '@/components/view-meta/TitleEditable';
+import ViewCover from '@/components/view-meta/ViewCover';
 import { ColorEnum } from '@/utils/color';
 
 const AddIconCover = lazy(() => import('@/components/view-meta/AddIconCover'));
@@ -236,9 +236,8 @@ export function ViewMetaPreview({
                 onUploadFile={onUploadFile}
               >
                 <div
-                  className={`view-icon flex h-[1.25em] w-[1.25em] items-center justify-center px-1.5 ${
-                    readOnly ? 'cursor-default' : 'cursor-pointer hover:bg-fill-content-hover '
-                  }`}
+                  className={`view-icon flex h-[1.25em] w-[1.25em] items-center justify-center px-1.5 ${readOnly ? 'cursor-default' : 'cursor-pointer hover:bg-fill-content-hover '
+                    }`}
                 >
                   <PageIcon
                     view={{
@@ -251,26 +250,30 @@ export function ViewMetaPreview({
               </CustomIconPopover>
             ) : null}
             {!readOnly && viewId ? (
-              <TitleEditable
-                onFocus={onFocus}
-                viewId={viewId}
-                name={name || ''}
-                onUpdateName={handleUpdateName}
-                onEnter={onEnter}
-              />
+              <>
+                <TitleEditable
+                  onFocus={onFocus}
+                  viewId={viewId}
+                  name={name || ''}
+                  onUpdateName={handleUpdateName}
+                  onEnter={onEnter}
+                />
+              </>
             ) : (
-              <div
-                style={{
-                  wordBreak: 'break-word',
-                }}
-                className={
-                  'relative flex-1 cursor-text whitespace-pre-wrap break-words empty:before:text-text-tertiary empty:before:content-[attr(data-placeholder)] focus:outline-none'
-                }
-                data-placeholder={t('menuAppHeader.defaultNewPageName')}
-                contentEditable={false}
-              >
-                {name}
-              </div>
+              <>
+                <div
+                  style={{
+                    wordBreak: 'break-word',
+                  }}
+                  className={
+                    'relative flex-1 cursor-text whitespace-pre-wrap break-words empty:before:text-text-tertiary empty:before:content-[attr(data-placeholder)] focus:outline-none'
+                  }
+                  data-placeholder={t('menuAppHeader.defaultNewPageName')}
+                  contentEditable={false}
+                >
+                  {name}
+                </div>
+              </>
             )}
           </h1>
         </div>

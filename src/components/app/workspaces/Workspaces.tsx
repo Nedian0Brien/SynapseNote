@@ -129,11 +129,12 @@ export function Workspaces() {
 
   return (
     <>
-      <div className='mx-1 flex-1 overflow-hidden'>
+      <div className='mx-1 flex-1 overflow-hidden' data-testid='sidebar-page-header'>
         <DropdownMenu modal={false} open={open} onOpenChange={setOpen}>
           <DropdownMenuTrigger asChild>
             <div
               ref={ref}
+              data-testid="workspace-dropdown-trigger"
               onMouseLeave={() => setHoveredHeader(false)}
               onMouseEnter={() => setHoveredHeader(true)}
               className={dropdownMenuItemVariants({ variant: 'default', className: 'w-full overflow-hidden' })}
@@ -156,11 +157,11 @@ export function Workspaces() {
             </div>
           </DropdownMenuTrigger>
 
-          <DropdownMenuContent className='min-w-[300px] max-w-[300px] overflow-hidden'>
+          <DropdownMenuContent data-testid="workspace-dropdown-content" className='min-w-[300px] max-w-[300px] overflow-hidden'>
             <DropdownMenuLabel className='w-full overflow-hidden'>
               <span className='truncate'>{currentUser?.email}</span>
             </DropdownMenuLabel>
-            <DropdownMenuGroup className={'appflowy-scroller max-h-[200px] flex-1 overflow-y-auto overflow-x-hidden'}>
+            <DropdownMenuGroup data-testid="workspace-list" className={'appflowy-scroller max-h-[200px] flex-1 overflow-y-auto overflow-x-hidden'}>
               <WorkspaceList
                 defaultWorkspaces={userWorkspaceInfo?.workspaces}
                 currentWorkspaceId={currentWorkspaceId}

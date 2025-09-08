@@ -55,6 +55,7 @@ function ViewActionsPopover ({
         {children}
       </DropdownMenuTrigger>
       <DropdownMenuContent
+        data-testid="view-actions-popover"
         align={'start'}
         onCloseAutoFocus={e => {
           e.preventDefault();

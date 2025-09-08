@@ -127,7 +127,7 @@ export function withYjs<T extends Editor>(
     }
 
     onContentChange?.(content.children);
-    console.log('===initializeDocumentContent', e.children);
+    console.debug('===initializeDocumentContent', e.children);
     Editor.normalize(e, { force: true });
   };
 
