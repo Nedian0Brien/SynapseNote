@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { DateFormat, TimeFormat } from '@/application/types';
@@ -21,29 +21,49 @@ export function AccountSettings({ children }: { children?: React.ReactNode }) {
   const currentUser = useCurrentUser();
   const service = useService();
 
+  const [dateFormat, setDateFormat] = useState(
+    () => Number(currentUser?.metadata?.[MetadataKey.DateFormat] as DateFormat) || DateFormat.Local
+  );
+  const [timeFormat, setTimeFormat] = useState(
+    () => Number(currentUser?.metadata?.[MetadataKey.TimeFormat] as TimeFormat) || TimeFormat.TwelveHour
+  );
+  const [startWeekOn, setStartWeekOn] = useState(() => Number(currentUser?.metadata?.[MetadataKey.StartWeekOn]) || 0);
+
+  useEffect(() => {
+    setDateFormat(Number(currentUser?.metadata?.[MetadataKey.DateFormat] as DateFormat) || DateFormat.Local);
+    setTimeFormat(Number(currentUser?.metadata?.[MetadataKey.TimeFormat] as TimeFormat) || TimeFormat.TwelveHour);
+    setStartWeekOn(Number(currentUser?.metadata?.[MetadataKey.StartWeekOn]) || 0);
+  }, [currentUser]);
+
   const handleSelectDateFormat = useCallback(
     async (dateFormat: number) => {
+      setDateFormat(dateFormat);
       if (!service || !currentUser?.metadata) return;
 
       await service?.updateUserProfile({ ...currentUser.metadata, [MetadataKey.DateFormat]: dateFormat });
+      await service?.getCurrentUser();
     },
     [currentUser, service]
   );
 
   const handleSelectTimeFormat = useCallback(
     async (timeFormat: number) => {
+      setTimeFormat(timeFormat);
       if (!service || !currentUser?.metadata) return;
 
       await service?.updateUserProfile({ ...currentUser.metadata, [MetadataKey.TimeFormat]: timeFormat });
+      await service?.getCurrentUser();
     },
     [currentUser, service]
   );
 
   const handleSelectStartWeekOn = useCallback(
     async (startWeekOn: number) => {
+      setStartWeekOn(startWeekOn);
       if (!service || !currentUser?.metadata) return;
 
       await service?.updateUserProfile({ ...currentUser.metadata, [MetadataKey.StartWeekOn]: startWeekOn });
+      await service?.getCurrentUser();
     },
     [currentUser, service]
   );
@@ -51,10 +71,6 @@ export function AccountSettings({ children }: { children?: React.ReactNode }) {
   if (!currentUser || !service) {
     return <></>;
   }
-
-  const dateFormat = Number(currentUser?.metadata?.[MetadataKey.DateFormat] as DateFormat) || DateFormat.Local;
-  const timeFormat = Number(currentUser?.metadata?.[MetadataKey.TimeFormat] as TimeFormat) || TimeFormat.TwelveHour;
-  const startWeekOn = Number(currentUser?.metadata?.[MetadataKey.StartWeekOn] as number) || 0;
 
   return (
     <Dialog>
