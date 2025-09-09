@@ -15,7 +15,7 @@ import {
   PromptDatabaseField,
   RawPromptData,
 } from '@/components/chat/types/prompt';
-import { useTranslation } from '@/components/chat/i18n';
+import { useTranslation } from 'react-i18next';
 
 const STORAGE_KEY = 'appflowy_prompt_db_config';
 
@@ -124,7 +124,7 @@ export const PromptModalProvider = ({
       const categories = new Map(
         Object.values(AiPromptCategory).map((category) => [
           category,
-          t(`customPrompt.${category}`),
+          t(`chat.customPrompt.${category}`),
         ]),
       );
 
