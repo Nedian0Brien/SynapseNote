@@ -361,7 +361,7 @@ export class AFClientService implements AFService {
     const token = getTokenParsed();
     const userId = token?.user?.id;
 
-    const user = await getUser(() => APIService.getCurrentUser(), userId, StrategyType.CACHE_AND_NETWORK);
+    const user = await getUser(() => APIService.getCurrentUser(), userId, StrategyType.NETWORK_ONLY);
 
     if (!user) {
       return Promise.reject(new Error('User not found'));

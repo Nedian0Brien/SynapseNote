@@ -134,7 +134,7 @@ export function Workspaces() {
           <DropdownMenuTrigger asChild>
             <div
               ref={ref}
-              data-testid="workspace-dropdown-trigger"
+              data-testid='workspace-dropdown-trigger'
               onMouseLeave={() => setHoveredHeader(false)}
               onMouseEnter={() => setHoveredHeader(true)}
               className={dropdownMenuItemVariants({ variant: 'default', className: 'w-full overflow-hidden' })}
@@ -157,11 +157,17 @@ export function Workspaces() {
             </div>
           </DropdownMenuTrigger>
 
-          <DropdownMenuContent data-testid="workspace-dropdown-content" className='min-w-[300px] max-w-[300px] overflow-hidden'>
+          <DropdownMenuContent
+            data-testid='workspace-dropdown-content'
+            className='min-w-[300px] max-w-[300px] overflow-hidden'
+          >
             <DropdownMenuLabel className='w-full overflow-hidden'>
               <span className='truncate'>{currentUser?.email}</span>
             </DropdownMenuLabel>
-            <DropdownMenuGroup data-testid="workspace-list" className={'appflowy-scroller max-h-[200px] flex-1 overflow-y-auto overflow-x-hidden'}>
+            <DropdownMenuGroup
+              data-testid='workspace-list'
+              className={'appflowy-scroller max-h-[200px] flex-1 overflow-y-auto overflow-x-hidden'}
+            >
               <WorkspaceList
                 defaultWorkspaces={userWorkspaceInfo?.workspaces}
                 currentWorkspaceId={currentWorkspaceId}
@@ -217,7 +223,7 @@ export function Workspaces() {
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <AccountSettings>
-                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                <DropdownMenuItem data-testid='account-settings-button' onSelect={(e) => e.preventDefault()}>
                   <SettingsIcon />
                   <div className={'flex-1 text-left'}>{t('web.accountSettings')}</div>
                   <ChevronRightIcon className='text-icon-tertiary' />

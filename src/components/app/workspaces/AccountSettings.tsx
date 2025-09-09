@@ -1,12 +1,13 @@
 import dayjs from 'dayjs';
-import { useCallback, useMemo, useState, useEffect } from 'react';
+import { debounce } from 'lodash-es';
+import { useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { DateFormat, TimeFormat } from '@/application/types';
 import { MetadataKey } from '@/application/user-metadata';
 import { ReactComponent as ChevronDownIcon } from '@/assets/icons/alt_arrow_down.svg';
 import { useCurrentUser, useService } from '@/components/main/app.hooks';
-import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +21,7 @@ export function AccountSettings({ children }: { children?: React.ReactNode }) {
   const { t } = useTranslation();
   const currentUser = useCurrentUser();
   const service = useService();
+  const [open, setIsOpen] = useState(false);
 
   const [dateFormat, setDateFormat] = useState(
     () => Number(currentUser?.metadata?.[MetadataKey.DateFormat] as DateFormat) || DateFormat.Local
@@ -29,43 +31,69 @@ export function AccountSettings({ children }: { children?: React.ReactNode }) {
   );
   const [startWeekOn, setStartWeekOn] = useState(() => Number(currentUser?.metadata?.[MetadataKey.StartWeekOn]) || 0);
 
+  const metadataUpdateRef = useRef<Record<string, unknown> | null>(null);
+
+  const debounceUpdateProfile = useMemo(() => {
+    return debounce(async () => {
+      if (!service || !currentUser?.metadata || !metadataUpdateRef.current) return;
+
+      await service?.updateUserProfile(metadataUpdateRef.current);
+    }, 300);
+  }, [service, currentUser]);
+
   useEffect(() => {
-    setDateFormat(Number(currentUser?.metadata?.[MetadataKey.DateFormat] as DateFormat) || DateFormat.Local);
-    setTimeFormat(Number(currentUser?.metadata?.[MetadataKey.TimeFormat] as TimeFormat) || TimeFormat.TwelveHour);
-    setStartWeekOn(Number(currentUser?.metadata?.[MetadataKey.StartWeekOn]) || 0);
-  }, [currentUser]);
+    return () => {
+      debounceUpdateProfile.cancel();
+    };
+  }, [debounceUpdateProfile]);
 
   const handleSelectDateFormat = useCallback(
     async (dateFormat: number) => {
       setDateFormat(dateFormat);
-      if (!service || !currentUser?.metadata) return;
+      if (!currentUser?.metadata) return;
 
-      await service?.updateUserProfile({ ...currentUser.metadata, [MetadataKey.DateFormat]: dateFormat });
-      await service?.getCurrentUser();
+      metadataUpdateRef.current = { ...currentUser.metadata, [MetadataKey.DateFormat]: dateFormat };
+      await debounceUpdateProfile();
     },
-    [currentUser, service]
+    [currentUser, debounceUpdateProfile]
   );
 
   const handleSelectTimeFormat = useCallback(
     async (timeFormat: number) => {
       setTimeFormat(timeFormat);
-      if (!service || !currentUser?.metadata) return;
+      if (!currentUser?.metadata) return;
 
-      await service?.updateUserProfile({ ...currentUser.metadata, [MetadataKey.TimeFormat]: timeFormat });
-      await service?.getCurrentUser();
+      metadataUpdateRef.current = { ...currentUser.metadata, [MetadataKey.TimeFormat]: timeFormat };
+      await debounceUpdateProfile();
     },
-    [currentUser, service]
+    [currentUser, debounceUpdateProfile]
   );
 
   const handleSelectStartWeekOn = useCallback(
     async (startWeekOn: number) => {
       setStartWeekOn(startWeekOn);
-      if (!service || !currentUser?.metadata) return;
 
-      await service?.updateUserProfile({ ...currentUser.metadata, [MetadataKey.StartWeekOn]: startWeekOn });
-      await service?.getCurrentUser();
+      if (!currentUser?.metadata) return;
+
+      metadataUpdateRef.current = { ...currentUser.metadata, [MetadataKey.StartWeekOn]: startWeekOn };
+      await debounceUpdateProfile();
     },
-    [currentUser, service]
+    [currentUser, debounceUpdateProfile]
+  );
+
+  const onOpenChange = useCallback(
+    async (isOpen: boolean) => {
+      if (isOpen) {
+        const user = await service?.getCurrentUser();
+
+        setDateFormat(Number(user?.metadata?.[MetadataKey.DateFormat] as DateFormat) || DateFormat.Local);
+        setTimeFormat(Number(user?.metadata?.[MetadataKey.TimeFormat] as TimeFormat) || TimeFormat.TwelveHour);
+        setStartWeekOn(Number(user?.metadata?.[MetadataKey.StartWeekOn]) || 0);
+      }
+
+      setIsOpen(isOpen);
+    },
+    [service]
   );
 
   if (!currentUser || !service) {
@@ -73,10 +101,16 @@ export function AccountSettings({ children }: { children?: React.ReactNode }) {
   }
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className='flex h-[300px] min-h-0 w-[400px] flex-col gap-3 sm:max-w-[calc(100%-2rem)]'>
+      <DialogContent
+        data-testid='account-settings-dialog'
+        className='flex h-[300px] min-h-0 w-[400px] flex-col gap-3 sm:max-w-[calc(100%-2rem)]'
+      >
         <DialogTitle className='text-md font-bold text-text-primary'>{t('web.accountSettings')}</DialogTitle>
+        <DialogDescription className='sr-only'>
+          Configure your account preferences including date format, time format, and week start day
+        </DialogDescription>
         <div className='flex min-h-0 w-full flex-1 flex-col items-start gap-3 py-4'>
           <DateFormatDropdown dateFormat={dateFormat} onSelect={handleSelectDateFormat} />
           <TimeFormatDropdown timeFormat={timeFormat} onSelect={handleSelectTimeFormat} />
@@ -126,6 +160,7 @@ function DateFormatDropdown({ dateFormat, onSelect }: { dateFormat: number; onSe
       <div className='relative'>
         <DropdownMenu open={isOpen} onOpenChange={setIsOpen} modal={false}>
           <DropdownMenuTrigger
+            data-testid='date-format-dropdown'
             asChild
             onPointerDown={(e) => {
               e.preventDefault();
@@ -148,7 +183,11 @@ function DateFormatDropdown({ dateFormat, onSelect }: { dateFormat: number; onSe
           <DropdownMenuContent align='start'>
             <DropdownMenuRadioGroup value={dateFormat.toString()} onValueChange={(value) => onSelect(Number(value))}>
               {dateFormats.map((item) => (
-                <DropdownMenuRadioItem key={item.value} value={item.value.toString()}>
+                <DropdownMenuRadioItem
+                  data-testid={`date-format-${item.value}`}
+                  key={item.value}
+                  value={item.value.toString()}
+                >
                   {item.label}
                 </DropdownMenuRadioItem>
               ))}
@@ -187,6 +226,7 @@ function TimeFormatDropdown({ timeFormat, onSelect }: { timeFormat: number; onSe
       <div className='relative'>
         <DropdownMenu open={isOpen} onOpenChange={setIsOpen} modal={false}>
           <DropdownMenuTrigger
+            data-testid='time-format-dropdown'
             asChild
             onPointerDown={(e) => {
               e.preventDefault();
@@ -209,7 +249,11 @@ function TimeFormatDropdown({ timeFormat, onSelect }: { timeFormat: number; onSe
           <DropdownMenuContent align='start'>
             <DropdownMenuRadioGroup value={timeFormat.toString()} onValueChange={(value) => onSelect(Number(value))}>
               {timeFormats.map((item) => (
-                <DropdownMenuRadioItem key={item.value} value={item.value.toString()}>
+                <DropdownMenuRadioItem
+                  data-testid={`time-format-${item.value}`}
+                  key={item.value}
+                  value={item.value.toString()}
+                >
                   {item.label}
                 </DropdownMenuRadioItem>
               ))}
@@ -251,6 +295,7 @@ function StartWeekOnDropdown({
       <div className='relative'>
         <DropdownMenu open={isOpen} onOpenChange={setIsOpen} modal={false}>
           <DropdownMenuTrigger
+            data-testid='start-week-on-dropdown'
             asChild
             onPointerDown={(e) => {
               e.preventDefault();
@@ -273,7 +318,11 @@ function StartWeekOnDropdown({
           <DropdownMenuContent align='start'>
             <DropdownMenuRadioGroup value={startWeekOn.toString()} onValueChange={(value) => onSelect(Number(value))}>
               {daysOfWeek.map((item) => (
-                <DropdownMenuRadioItem key={item.value} value={item.value.toString()}>
+                <DropdownMenuRadioItem
+                  data-testid={`start-week-${item.value}`}
+                  key={item.value}
+                  value={item.value.toString()}
+                >
                   {item.label}
                 </DropdownMenuRadioItem>
               ))}
