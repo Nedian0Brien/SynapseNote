@@ -73,7 +73,7 @@ export function Regenerations({ id }: { id: number }) {
                 className={`!w-10 gap-0`}
               >
                 <RegenerateIcon className='h-5 w-5' />
-                <ChevronIcon className='h-5 w-3' />
+                <ChevronIcon className='h-5 w-3 text-icon-tertiary' />
               </Button>
             </PopoverTrigger>
           </TooltipTrigger>

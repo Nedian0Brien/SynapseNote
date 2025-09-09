@@ -96,7 +96,9 @@ export function AddMessageToPageWrapper({
 
   return (
     <Popover modal>
-      <PopoverTrigger asChild>{children}</PopoverTrigger>
+      <PopoverTrigger asChild>
+        <div>{children}</div>
+      </PopoverTrigger>
       <PopoverContent onOpenAutoFocus={(e) => e.preventDefault()} onCloseAutoFocus={(e) => e.preventDefault()}>
         <div className={'flex h-fit max-h-[360px] min-h-[200px] w-[300px] flex-col gap-2 px-1 py-1'}>
           <Label className={'font-normal'}>{t('addMessageToPage.placeholder')}</Label>

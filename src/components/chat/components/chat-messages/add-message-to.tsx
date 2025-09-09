@@ -15,8 +15,8 @@ export function AddMessageTo({ id }: { id: number }) {
 
   return (
     <Tooltip>
-      <TooltipTrigger asChild>
-        <AddMessageToPageWrapper messages={[message]}>
+      <AddMessageToPageWrapper messages={[message]}>
+        <TooltipTrigger asChild>
           <Button
             onMouseDown={(e) => {
               e.preventDefault();
@@ -26,8 +26,8 @@ export function AddMessageTo({ id }: { id: number }) {
           >
             <AddPageIcon className='h-5 w-5' />
           </Button>
-        </AddMessageToPageWrapper>
-      </TooltipTrigger>
+        </TooltipTrigger>
+      </AddMessageToPageWrapper>
       <TooltipContent align={'center'} side={'bottom'}>
         {t('button.addToPage')}
       </TooltipContent>
