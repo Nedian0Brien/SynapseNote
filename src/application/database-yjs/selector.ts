@@ -13,15 +13,12 @@ import {
   useRowDocMap,
 } from '@/application/database-yjs/context';
 import {
-  DateFormat,
   getDateCellStr,
-  getDateFormat,
-  getTimeFormat,
+  getFieldDateTimeFormats,
   getTypeOptions,
   parseRelationTypeOption,
   parseSelectOptionTypeOptions,
   SelectOption,
-  TimeFormat,
 } from '@/application/database-yjs/fields';
 import { filterBy, parseFilter } from '@/application/database-yjs/filter';
 import { groupByField } from '@/application/database-yjs/group';
@@ -38,7 +35,9 @@ import {
   YjsDatabaseKey,
   YjsEditorKey,
 } from '@/application/types';
-import { renderDate } from '@/utils/time';
+import { MetadataKey } from '@/application/user-metadata';
+import { useCurrentUser } from '@/components/main/app.hooks';
+import { getDateFormat, getTimeFormat, renderDate } from '@/utils/time';
 
 import { CalendarLayoutSetting, FieldType, FieldVisibility, Filter, RowMeta, SortCondition } from './database.type';
 
@@ -843,12 +842,17 @@ export interface CalendarEvent {
   start?: Date;
   end?: Date;
   id: string;
+  title: string;
+  allDay: boolean;
+  rowId: string;
+  isRange?: boolean;
 }
 
 export function useCalendarEventsSelector() {
   const setting = useCalendarLayoutSetting();
   const filedId = setting.fieldId;
   const { field } = useFieldSelector(filedId);
+  const primaryFieldId = usePrimaryFieldId();
   const rowOrders = useRowOrdersSelector();
   const rows = useRowDocMap();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -858,68 +862,134 @@ export function useCalendarEventsSelector() {
     if (!field || !rowOrders || !rows) return;
     const fieldType = Number(field?.get(YjsDatabaseKey.type)) as FieldType;
 
-    if (fieldType !== FieldType.DateTime) return;
-    const newEvents: CalendarEvent[] = [];
-    const emptyEvents: CalendarEvent[] = [];
+    if (![FieldType.DateTime, FieldType.LastEditedTime, FieldType.CreatedTime].includes(fieldType) || !primaryFieldId) return;
 
-    rowOrders?.forEach((row) => {
-      const cell = getCell(row.id, filedId, rows);
+    const observerEvent = () => {
+      const newEvents: CalendarEvent[] = [];
+      const emptyEvents: CalendarEvent[] = [];
 
-      if (!cell) {
-        emptyEvents.push({
-          id: `${row.id}:${filedId}`,
-        });
-        return;
-      }
+      rowOrders?.forEach((row) => {
+        const cell = getCell(row.id, filedId, rows);
+        const primaryCell = getCell(row.id, primaryFieldId, rows);
+        const allDay = !cell?.get(YjsDatabaseKey.include_time);
 
-      const value = parseYDatabaseCellToCell(cell) as DateTimeCell;
+        const title = (primaryCell?.get(YjsDatabaseKey.data) as string) || '';
 
-      if (!value || !value.data) {
-        emptyEvents.push({
-          id: `${row.id}:${filedId}`,
-        });
-        return;
-      }
+        const doc = rows?.[row.id];
 
-      const getDate = (timestamp: string) => {
-        const dayjsResult = timestamp.length === 10 ? dayjs.unix(Number(timestamp)) : dayjs(timestamp);
+        if (!doc) return;
 
-        return dayjsResult.toDate();
-      };
+        const rowSharedRoot = doc.getMap(YjsEditorKey.data_section);
+        const databbaseRow = rowSharedRoot.get(YjsEditorKey.database_row);
 
-      newEvents.push({
-        id: `${row.id}:${filedId}`,
-        start: getDate(value.data),
-        end: value.endTimestamp && value.isRange ? getDate(value.endTimestamp) : getDate(value.data),
+        const rowCreatedTime = databbaseRow.get(YjsDatabaseKey.created_at);
+        const rowLastEditedTime = databbaseRow.get(YjsDatabaseKey.last_modified);
+
+
+        const value = cell ? parseYDatabaseCellToCell(cell) as DateTimeCell : undefined;
+
+        if ((!value?.data && fieldType !== FieldType.CreatedTime && fieldType !== FieldType.LastEditedTime) ||
+          (fieldType === FieldType.CreatedTime && !rowCreatedTime) ||
+          (fieldType === FieldType.LastEditedTime && !rowLastEditedTime)
+        ) {
+          emptyEvents.push({
+            id: `${row.id}`,
+            title,
+            allDay,
+            rowId: row.id,
+          });
+          return;
+        }
+
+        const getDate = (timestamp: string) => {
+          const dayjsResult = timestamp.length === 10 ? dayjs.unix(Number(timestamp)) : dayjs(timestamp);
+
+          return dayjsResult.toDate();
+        };
+
+
+        if ([FieldType.CreatedTime, FieldType.LastEditedTime].includes(fieldType)) {
+          newEvents.push({
+            id: `${row.id}`,
+            start: fieldType === FieldType.CreatedTime ? getDate(rowCreatedTime) : getDate(rowLastEditedTime),
+            title,
+            allDay,
+            rowId: row.id,
+          });
+        } else if (value) {
+          newEvents.push({
+            id: `${row.id}`,
+            start: getDate(value.data),
+            isRange: value.isRange || false,
+            end: value.endTimestamp && value.isRange ? getDate(value.endTimestamp) : dayjs(getDate(value.data)).add(30, 'minute').toDate(),
+            title,
+            allDay,
+            rowId: row.id,
+          });
+        }
+
+
       });
-    });
 
-    setEvents(newEvents);
-    setEmptyEvents(emptyEvents);
-  }, [field, rowOrders, rows, filedId]);
+      setEvents(newEvents);
+      setEmptyEvents(emptyEvents);
+    }
+
+    observerEvent();
+
+    field?.observeDeep(observerEvent);
+    
+    const debouncedObserverEvent = debounce(observerEvent, 150);
+
+    // for every row
+    rowOrders?.forEach((row) => {
+      const rowDoc = rows?.[row.id];
+
+      if (!rowDoc) return;
+      rowDoc.getMap(YjsEditorKey.data_section).observeDeep(debouncedObserverEvent);
+    });
+    return () => {
+      debouncedObserverEvent.cancel();
+      field?.unobserveDeep(observerEvent);
+      rowOrders?.forEach((row) => {
+        const rowDoc = rows?.[row.id];
+
+        if (!rowDoc) return;
+        rowDoc.getMap(YjsEditorKey.data_section).unobserveDeep(debouncedObserverEvent);
+      });
+    };
+
+  }, [field, rowOrders, rows, filedId, primaryFieldId]);
 
   return { events, emptyEvents };
 }
 
 export function useCalendarLayoutSetting() {
+  const currentUser = useCurrentUser();
+  const startWeekOn = Number(currentUser?.metadata?.[MetadataKey.StartWeekOn] || 0);
+
   const view = useDatabaseView();
   const layoutSetting = view?.get(YjsDatabaseKey.layout_settings)?.get('2');
   const [setting, setSetting] = useState<CalendarLayoutSetting>({
     fieldId: '',
-    firstDayOfWeek: 0,
+    firstDayOfWeek: startWeekOn,
     showWeekNumbers: true,
     showWeekends: true,
     layout: 0,
+    numberOfDays: 7
   });
 
   useEffect(() => {
     const observerHandler = () => {
+      const firstDayOfWeek = layoutSetting?.get(YjsDatabaseKey.first_day_of_week) === undefined ? startWeekOn : Number(layoutSetting?.get(YjsDatabaseKey.first_day_of_week) || 0);
+
       setSetting({
         fieldId: layoutSetting?.get(YjsDatabaseKey.field_id) as string,
-        firstDayOfWeek: Number(layoutSetting?.get(YjsDatabaseKey.first_day_of_week)),
+        firstDayOfWeek,
         showWeekNumbers: Boolean(layoutSetting?.get(YjsDatabaseKey.show_week_numbers)),
         showWeekends: Boolean(layoutSetting?.get(YjsDatabaseKey.show_weekends)),
         layout: Number(layoutSetting?.get(YjsDatabaseKey.layout_ty)),
+        numberOfDays: layoutSetting?.get(YjsDatabaseKey.number_of_days) || 7,
       });
     };
 
@@ -928,7 +998,7 @@ export function useCalendarLayoutSetting() {
     return () => {
       layoutSetting?.unobserve(observerHandler);
     };
-  }, [layoutSetting]);
+  }, [layoutSetting, startWeekOn]);
 
   return setting;
 }
@@ -1145,28 +1215,32 @@ export const usePropertiesSelector = (isFilterHidden?: boolean) => {
 };
 
 export const useDateTimeCellString = (cell: DateTimeCell | undefined, fieldId: string) => {
+  const currentUser = useCurrentUser();
   const { field, clock } = useFieldSelector(fieldId);
 
   return useMemo(() => {
     if (!cell) return null;
-    return getDateCellStr({ cell, field });
+    return getDateCellStr({ cell, field, currentUser });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cell, field, clock]);
+  }, [cell, field, clock, currentUser]);
 };
 
 export const useRowTimeString = (rowId: string, fieldId: string, attrName: string) => {
+  const currentUser = useCurrentUser();
   const { field, clock } = useFieldSelector(fieldId);
 
   const typeOptionValue = useMemo(() => {
     const typeOption = getTypeOptions(field);
 
+    const { dateFormat, timeFormat } = getFieldDateTimeFormats(typeOption, currentUser);
+
     return {
-      timeFormat: parseInt(typeOption.get(YjsDatabaseKey.time_format)) as TimeFormat,
-      dateFormat: parseInt(typeOption.get(YjsDatabaseKey.date_format)) as DateFormat,
+      dateFormat,
+      timeFormat,
       includeTime: typeOption.get(YjsDatabaseKey.include_time),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [field, clock]);
+  }, [field, clock, currentUser?.metadata]);
 
   const getDateTimeStr = useCallback(
     (timeStamp: string, includeTime?: boolean) => {

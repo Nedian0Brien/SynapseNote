@@ -92,7 +92,7 @@ function CollaborativeEditor({
     onEditorConnected?.(editor);
 
     return () => {
-      console.log('disconnect');
+      console.debug('disconnect');
       editor.disconnect();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -17,6 +17,7 @@ import { languageTexts, parseAITranslateTypeOption } from '@/application/databas
 import { GenerateAITranslateRowPayload, YDatabaseCell, YDatabaseField, YjsDatabaseKey } from '@/application/types';
 import { ReactComponent as AIIcon } from '@/assets/icons/ai_improve_writing.svg';
 import { ReactComponent as CopyIcon } from '@/assets/icons/copy.svg';
+import { useCurrentUser } from '@/components/main/app.hooks';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -56,18 +57,20 @@ function AITextCellActions({
   const row = useRowData(rowId);
   const updateCell = useUpdateCellDispatch(rowId, fieldId);
   const { generateAITranslateForRow, generateAISummaryForRow } = useDatabaseContext();
+  const currentUser = useCurrentUser();
 
   const getCellData = useCallback(
     (cell: YDatabaseCell, field: YDatabaseField) => {
+      if (!currentUser) return '';
       const type = Number(field?.get(YjsDatabaseKey.type));
 
       if (type === FieldType.CreatedTime) {
-        return getRowTimeString(field, row.get(YjsDatabaseKey.created_at)) || '';
+        return getRowTimeString(field, row.get(YjsDatabaseKey.created_at), currentUser) || '';
       } else if (type === FieldType.LastEditedTime) {
-        return getRowTimeString(field, row.get(YjsDatabaseKey.last_modified)) || '';
+        return getRowTimeString(field, row.get(YjsDatabaseKey.last_modified), currentUser) || '';
       } else if (cell && ![FieldType.AISummaries, FieldType.AITranslations].includes(type)) {
         try {
-          return getCellDataText(cell, field);
+          return getCellDataText(cell, field, currentUser);
         } catch (e) {
           console.error(e);
           return '';
@@ -76,7 +79,7 @@ function AITextCellActions({
 
       return '';
     },
-    [row]
+    [currentUser, row]
   );
 
   const handleGenerateSummary = useCallback(async () => {

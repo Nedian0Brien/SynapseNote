@@ -1,11 +1,11 @@
-import { userSchema, UserTable } from '@/application/db/tables/users';
-import { YDoc } from '@/application/types';
 import { databasePrefix } from '@/application/constants';
+import { rowSchema, rowTable } from '@/application/db/tables/rows';
+import { userSchema, UserTable } from '@/application/db/tables/users';
+import { viewMetasSchema, ViewMetasTable } from '@/application/db/tables/view_metas';
+import { YDoc } from '@/application/types';
+import BaseDexie from 'dexie';
 import { IndexeddbPersistence } from 'y-indexeddb';
 import * as Y from 'yjs';
-import BaseDexie from 'dexie';
-import { viewMetasSchema, ViewMetasTable } from '@/application/db/tables/view_metas';
-import { rowSchema, rowTable } from '@/application/db/tables/rows';
 
 type DexieTables = ViewMetasTable & UserTable & rowTable;
 
@@ -47,7 +47,6 @@ export async function openCollabDB(name: string): Promise<YDoc> {
 }
 
 export async function closeCollabDB(name: string) {
-
   if (openedSet.has(name)) {
     openedSet.delete(name);
   }
@@ -80,7 +79,7 @@ export async function clearData() {
         const deleteRequest = indexedDB.deleteDatabase(dbName);
 
         deleteRequest.onsuccess = () => {
-          console.log(`Database ${dbName} deleted successfully`);
+          console.debug(`Database ${dbName} deleted successfully`);
           resolve(true);
         };
 

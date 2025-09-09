@@ -11,3 +11,13 @@ export function createTextField (id: string) {
 
   return field;
 }
+
+export function createDateTimeField(fieldId: string) {
+  const field = new Y.Map() as YDatabaseField;
+
+  field.set(YjsDatabaseKey.name, 'Date');
+  field.set(YjsDatabaseKey.id, fieldId);
+  field.set(YjsDatabaseKey.type, FieldType.DateTime);
+  
+  return field;
+}

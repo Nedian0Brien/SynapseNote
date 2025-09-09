@@ -1,14 +1,16 @@
+import React, { useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useSlateStatic } from 'slate-react';
+
 import { YjsEditor } from '@/application/slate-yjs';
 import { CustomEditor } from '@/application/slate-yjs/command';
 import { findSlateEntryByBlockId } from '@/application/slate-yjs/utils/editor';
 import { BlockType, FieldURLType, FileBlockData } from '@/application/types';
-import { useEditorContext } from '@/components/editor/EditorContext';
 import FileDropzone from '@/components/_shared/file-dropzone/FileDropzone';
 import { TabPanel, ViewTab, ViewTabs } from '@/components/_shared/tabs/ViewTabs';
+import { useEditorContext } from '@/components/editor/EditorContext';
 import { FileHandler } from '@/utils/file';
-import React, { useCallback, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useSlateStatic } from 'slate-react';
+
 import EmbedLink from 'src/components/_shared/image-upload/EmbedLink';
 
 export function getFileName(url: string) {
@@ -32,6 +34,7 @@ function FileBlockPopoverContent({ blockId, onClose }: { blockId: string; onClos
   const { t } = useTranslation();
 
   const [tabValue, setTabValue] = React.useState('upload');
+  const [uploading, setUploading] = React.useState(false);
 
   const handleTabChange = useCallback((_event: React.SyntheticEvent, newValue: string) => {
     setTabValue(newValue);
@@ -96,17 +99,22 @@ function FileBlockPopoverContent({ blockId, onClose }: { blockId: string; onClos
     async (files: File[]) => {
       if (!files.length) return;
 
-      const [file, ...otherFiles] = files;
-      const url = await uploadFileRemote(file);
-      const data = await getData(file, url);
+      setUploading(true);
+      try {
+        const [file, ...otherFiles] = files;
+        const url = await uploadFileRemote(file);
+        const data = await getData(file, url);
 
-      CustomEditor.setBlockData(editor, blockId, data);
+        CustomEditor.setBlockData(editor, blockId, data);
 
-      for (const file of otherFiles.reverse()) {
-        await insertFileBlock(file);
+        for (const file of otherFiles.reverse()) {
+          await insertFileBlock(file);
+        }
+
+        onClose();
+      } finally {
+        setUploading(false);
       }
-
-      onClose();
     },
     [blockId, editor, getData, insertFileBlock, onClose, uploadFileRemote]
   );
@@ -126,6 +134,7 @@ function FileBlockPopoverContent({ blockId, onClose }: { blockId: string; onClos
               </span>
             }
             onChange={handleChangeUploadFiles}
+            loading={uploading}
           />
         ),
       },
@@ -141,7 +150,7 @@ function FileBlockPopoverContent({ blockId, onClose }: { blockId: string; onClos
         ),
       },
     ];
-  }, [entry, handleChangeUploadFiles, handleInsertEmbedLink, t]);
+  }, [entry, handleChangeUploadFiles, handleInsertEmbedLink, t, uploading]);
 
   const selectedIndex = tabOptions.findIndex((tab) => tab.key === tabValue);
 

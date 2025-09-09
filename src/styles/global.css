@@ -6,15 +6,17 @@
 @import "./template.css";
 
 :root {
+    --shadow-color: rgba(31, 35, 41, 0.10);
     /* new shadow */
-    --custom-shadow-sm: 0px 4px 20px 0px rgba(31, 35, 41, 0.10);
-    --custom-shadow-md: 0px 4px 32px 0px rgba(31, 34, 37, 0.12);
+    --custom-shadow-sm: 0px 4px 20px 0px var(--shadow-color);
+        --custom-shadow-md: 0px 4px 32px 0px var(--shadow-color);
 }
 
 :root[data-dark-mode=true] {
+    --shadow-color: rgba(0, 0, 0, 0.10);
     /* new shadow */
-    --custom-shadow-sm: 0px 2px 16px 0px rgba(0, 0, 0, 0.48);
-    --custom-shadow-md: 0px 4px 32px 0px rgba(0, 0, 0, 0.48);
+    --custom-shadow-sm: 0px 2px 16px 0px var(--shadow-color);
+    --custom-shadow-md: 0px 4px 32px 0px var(--shadow-color);
 }
 
 @layer base {

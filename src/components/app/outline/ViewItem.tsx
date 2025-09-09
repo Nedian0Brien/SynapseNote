@@ -3,10 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 import { View, ViewIconType } from '@/application/types';
-import { useAppHandlers, useAppViewId } from '@/components/app/app.hooks';
 import { CustomIconPopover } from '@/components/_shared/cutsom-icon';
 import OutlineIcon from '@/components/_shared/outline/OutlineIcon';
 import PageIcon from '@/components/_shared/view-icon/PageIcon';
+import { useAppHandlers, useAppViewId } from '@/components/app/app.hooks';
 
 function ViewItem({
   view,
@@ -82,6 +82,7 @@ function ViewItem({
 
     return (
       <div
+        data-testid={`page-${view.view_id}`}
         style={{
           backgroundColor: selected ? 'var(--fill-content-hover)' : undefined,
           cursor: 'pointer',
@@ -128,13 +129,15 @@ function ViewItem({
           >
             <PageIcon
               view={view}
-              className={'mr-1 flex h-5 w-5 items-center justify-center text-lg text-text-secondary'}
+              className={'mr-1 flex h-5 w-5 items-center justify-center text-base text-text-secondary'}
             />
           </div>
         </CustomIconPopover>
 
         <div className={'flex flex-1 items-center gap-1 overflow-hidden text-sm'}>
-          <div className={'w-full truncate'}>{view.name.trim() || t('menuAppHeader.defaultNewPageName')}</div>
+          <div data-testid='page-name' className={'w-full truncate'}>
+            {view.name.trim() || t('menuAppHeader.defaultNewPageName')}
+          </div>
         </div>
         {renderExtra && renderExtra({ hovered, view })}
       </div>
@@ -184,6 +187,7 @@ function ViewItem({
         width,
       }}
       className={'flex h-fit flex-col overflow-hidden'}
+      data-testid='page-item'
     >
       {renderItem}
       {renderChildren}

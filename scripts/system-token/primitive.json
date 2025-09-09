@@ -98,6 +98,10 @@
       "$type": "color",
       "$value": "#e3f6ff"
     },
+    "150": {
+      "$type": "color",
+      "$value": "#c6ecff"
+    },
     "200": {
       "$type": "color",
       "$value": "#a9e2ff"
@@ -134,6 +138,10 @@
       "$type": "color",
       "$value": "#003c77"
     },
+    "alpha-blue-200-85": {
+      "$type": "color",
+      "$value": "#a9e2ffd9"
+    },
     "alpha-blue-500-10": {
       "$type": "color",
       "$value": "#00b5ff1a"
@@ -150,6 +158,10 @@
     "alpha-blue-700-75": {
       "$type": "color",
       "$value": "#0078c0bf"
+    },
+    "alpha-blue-800-85": {
+      "$type": "color",
+      "$value": "#0065a9d9"
     }
   },
   "Green": {
@@ -473,6 +485,10 @@
       "600": {
         "$type": "color",
         "$value": "#9e3b3b"
+      },
+      "alpha-rose-600-40": {
+        "$type": "color",
+        "$value": "#9e3b3b66"
       }
     },
     "Papaya": {
@@ -499,6 +515,10 @@
       "600": {
         "$type": "color",
         "$value": "#a54b24"
+      },
+      "alpha-papaya-600-40": {
+        "$type": "color",
+        "$value": "#a54b2466"
       }
     },
     "Tangerine": {
@@ -525,6 +545,10 @@
       "600": {
         "$type": "color",
         "$value": "#9a570c"
+      },
+      "alpha-tangerine-600-40": {
+        "$type": "color",
+        "$value": "#9a570c66"
       }
     },
     "Mango": {
@@ -551,6 +575,10 @@
       "600": {
         "$type": "color",
         "$value": "#906000"
+      },
+      "alpha-mango-600-40": {
+        "$type": "color",
+        "$value": "#90600066"
       }
     },
     "Lemon": {
@@ -577,6 +605,10 @@
       "600": {
         "$type": "color",
         "$value": "#866800"
+      },
+      "alpha-lemon-600-40": {
+        "$type": "color",
+        "$value": "#86680066"
       }
     },
     "Olive": {
@@ -603,6 +635,10 @@
       "600": {
         "$type": "color",
         "$value": "#627300"
+      },
+      "alpha-olive-600-40": {
+        "$type": "color",
+        "$value": "#62730066"
       }
     },
     "Lime": {
@@ -629,6 +665,10 @@
       "600": {
         "$type": "color",
         "$value": "#637000"
+      },
+      "alpha-lime-600-40": {
+        "$type": "color",
+        "$value": "#63700066"
       }
     },
     "Grass": {
@@ -655,6 +695,10 @@
       "600": {
         "$type": "color",
         "$value": "#456514"
+      },
+      "alpha-grass-600-40": {
+        "$type": "color",
+        "$value": "#45651466"
       }
     },
     "Forest": {
@@ -681,6 +725,10 @@
       "600": {
         "$type": "color",
         "$value": "#2b6c20"
+      },
+      "alpha-forest-600-40": {
+        "$type": "color",
+        "$value": "#2b6c2066"
       }
     },
     "Jade": {
@@ -707,6 +755,10 @@
       "600": {
         "$type": "color",
         "$value": "#127b47"
+      },
+      "alpha-jade-600-40": {
+        "$type": "color",
+        "$value": "#127b4766"
       }
     },
     "Aqua": {
@@ -733,6 +785,10 @@
       "600": {
         "$type": "color",
         "$value": "#00727e"
+      },
+      "alpha-aqua-600-40": {
+        "$type": "color",
+        "$value": "#00727e66"
       }
     },
     "Azure": {
@@ -759,6 +815,10 @@
       "600": {
         "$type": "color",
         "$value": "#0c5b9e"
+      },
+      "alpha-azure-600-40": {
+        "$type": "color",
+        "$value": "#0c5b9e66"
       },
       "alpha-azure-500-10": {
         "$type": "color",
@@ -789,6 +849,10 @@
       "600": {
         "$type": "color",
         "$value": "#2a51a0"
+      },
+      "alpha-denim-600-40": {
+        "$type": "color",
+        "$value": "#2a51a066"
       }
     },
     "Mauve": {
@@ -815,6 +879,10 @@
       "600": {
         "$type": "color",
         "$value": "#4545a6"
+      },
+      "alpha-mauve-600-40": {
+        "$type": "color",
+        "$value": "#4545a666"
       }
     },
     "Lavender": {
@@ -841,6 +909,10 @@
       "600": {
         "$type": "color",
         "$value": "#6435a8"
+      },
+      "alpha-lavender-600-40": {
+        "$type": "color",
+        "$value": "#6435a866"
       }
     },
     "Lilac": {
@@ -867,6 +939,10 @@
       "600": {
         "$type": "color",
         "$value": "#772f96"
+      },
+      "alpha-lilac-600-40": {
+        "$type": "color",
+        "$value": "#772f9666"
       }
     },
     "Mallow": {
@@ -893,6 +969,10 @@
       "600": {
         "$type": "color",
         "$value": "#8a3485"
+      },
+      "alpha-mallow-600-40": {
+        "$type": "color",
+        "$value": "#8a348566"
       }
     },
     "Camellia": {
@@ -919,6 +999,10 @@
       "600": {
         "$type": "color",
         "$value": "#6e2343"
+      },
+      "alpha-camellia-600-40": {
+        "$type": "color",
+        "$value": "#6e234366"
       }
     },
     "Smoke": {
@@ -945,6 +1029,10 @@
       "600": {
         "$type": "color",
         "$value": "#585858"
+      },
+      "alpha-smoke-600-40": {
+        "$type": "color",
+        "$value": "#58585866"
       }
     },
     "Iron": {
@@ -971,6 +1059,10 @@
       "600": {
         "$type": "color",
         "$value": "#4c5966"
+      },
+      "alpha-iron-600-40": {
+        "$type": "color",
+        "$value": "#4c596666"
       }
     }
   },

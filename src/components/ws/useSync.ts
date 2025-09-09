@@ -60,7 +60,7 @@ export const useSync = (ws: AppflowyWebSocketType, bc: BroadcastChannelType, eve
       const updateTimestamp = message.update?.messageId?.timestamp;
       const publishedAt = updateTimestamp ? new Date(updateTimestamp) : undefined;
 
-      console.log('Received collab message:', message.collabType, publishedAt, message);
+      console.debug('Received collab message:', message.collabType, publishedAt, message);
 
       setLastUpdatedCollab({ objectId, publishedAt, collabType: message.collabType as Types });
     }
@@ -80,7 +80,7 @@ export const useSync = (ws: AppflowyWebSocketType, bc: BroadcastChannelType, eve
       const updateTimestamp = message.update?.messageId?.timestamp;
       const publishedAt = updateTimestamp ? new Date(updateTimestamp) : undefined;
 
-      console.log('Received broadcasted collab message:', message.collabType, publishedAt, message);
+      console.debug('Received broadcasted collab message:', message.collabType, publishedAt, message);
 
       setLastUpdatedCollab({ objectId, publishedAt, collabType: message.collabType as Types });
     }
@@ -184,7 +184,7 @@ export const useSync = (ws: AppflowyWebSocketType, bc: BroadcastChannelType, eve
         return existingContext;
       }
 
-      console.log(`Registering sync context for objectId ${context.doc.guid} with collabType ${context.collabType}`);
+      console.debug(`Registering sync context for objectId ${context.doc.guid} with collabType ${context.collabType}`);
       context.emit = (message) => {
         sendMessage(message);
         postMessage(message);

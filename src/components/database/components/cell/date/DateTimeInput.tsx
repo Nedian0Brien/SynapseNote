@@ -66,7 +66,6 @@ function DateTimeInput({
   });
 
   useEffect(() => {
-  
     if (date) {
       setDateValue(format(date, replacedDateFormat));
       if (includeTime) {
@@ -102,7 +101,7 @@ function DateTimeInput({
 
       onDateChange?.(newDate);
     } catch (error) {
-      console.log(error);
+      console.debug(error);
     }
   };
 
@@ -154,7 +153,7 @@ function DateTimeInput({
 
       onDateChange?.(updatedDate);
     } catch (error) {
-      console.log(error);
+      console.debug(error);
     }
   };
 

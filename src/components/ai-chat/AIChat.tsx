@@ -80,6 +80,7 @@ export function AIChat({ chatId, onRendered }: { chatId: string; onRendered?: ()
 
   return (
     <div
+      data-testid="ai-chat-container"
       style={{
         height: 'calc(100vh - 48px)',
       }}

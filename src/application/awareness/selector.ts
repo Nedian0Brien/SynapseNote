@@ -38,7 +38,6 @@ export function useUsersSelector(awareness?: Awareness) {
         });
       });
 
-      console.log('👥 Final users array:', users);
       setUsers(
         uniqBy(
           users.sort((a, b) => b.timestamp - a.timestamp),
@@ -93,7 +92,7 @@ export function useRemoteSelectionsSelector(awareness?: Awareness) {
             timestamp: state.timestamp,
           });
         } else {
-          console.log(`🎯 No selection found for client ${clientId}`);
+          console.debug(`🎯 No selection found for client ${clientId}`);
         }
       });
 
@@ -121,7 +120,7 @@ export function useRemoteSelectionsSelector(awareness?: Awareness) {
       };
     });
 
-    console.log('🎯 Final cursors array:', result);
+    console.debug('🎯 Final cursors array:', result);
     return result;
   }, [cursors, editor]);
 

@@ -150,7 +150,7 @@ export function insertHtmlData(editor: ReactEditor, data: DataTransfer) {
   const html = data.getData('text/html');
 
   if (html) {
-    console.log('insert HTML Data', html);
+    console.debug('insert HTML Data', html);
     const fragment = deserializeHTML(html) as Node[];
 
     insertFragment(editor, fragment);
@@ -162,7 +162,7 @@ export function insertHtmlData(editor: ReactEditor, data: DataTransfer) {
 }
 
 function insertFragment(editor: ReactEditor, fragment: Node[], options = {}) {
-  console.log('insertFragment', fragment, options);
+  console.debug('insertFragment', fragment, options);
   if (!beforePasted(editor)) return;
 
   const point = editor.selection?.anchor as BasePoint;
@@ -218,7 +218,6 @@ function insertFragment(editor: ReactEditor, fragment: Node[], options = {}) {
     if (isEmptyNode) {
       deleteBlock(sharedRoot, blockId);
     }
-
   });
 
   setTimeout(() => {

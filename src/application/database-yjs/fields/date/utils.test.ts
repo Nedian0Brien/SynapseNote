@@ -1,6 +1,6 @@
-import { getTimeFormat, getDateFormat } from './utils';
+import { DateFormat, TimeFormat } from '@/application/types';
+import { getDateFormat, getTimeFormat } from '@/utils/time';
 import { expect } from '@jest/globals';
-import { DateFormat, TimeFormat } from '@/application/database-yjs';
 
 describe('DateFormat', () => {
   it('should return time format', () => {

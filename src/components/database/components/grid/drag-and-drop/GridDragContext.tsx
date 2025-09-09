@@ -26,7 +26,7 @@ export type GridDragContextValue = {
 
 export const GridDragContext = createContext<GridDragContextValue | null>(null);
 
-export function useGridDragContext () {
+export function useGridDragContext() {
   const context = useContext(GridDragContext);
 
   if (!context) throw new Error('useGridDragContext must be used within a GridDragProvider');
@@ -34,21 +34,21 @@ export function useGridDragContext () {
   return context;
 }
 
-export function getRowRegistry () {
+export function getRowRegistry() {
   const registry = new Map<string, HTMLElement>();
 
-  function register ({ rowId, element }: RowEntry) {
+  function register({ rowId, element }: RowEntry) {
     registry.set(rowId, element);
 
-    return function unregister () {
+    return function unregister() {
       if (registry.get(rowId) === element) {
         registry.delete(rowId);
       }
     };
   }
 
-  function getElement (rowId: string): HTMLElement | null {
-    console.log(`getElement: ${rowId}`);
+  function getElement(rowId: string): HTMLElement | null {
+    console.debug(`getElement: ${rowId}`);
 
     return registry.get(rowId) ?? null;
   }
@@ -56,21 +56,21 @@ export function getRowRegistry () {
   return { register, getElement };
 }
 
-export function getColumnRegistry () {
+export function getColumnRegistry() {
   const registry = new Map<string, HTMLElement>();
 
-  function register ({ fieldId, element }: ColumnEntry) {
+  function register({ fieldId, element }: ColumnEntry) {
     registry.set(fieldId, element);
 
-    return function unregister () {
+    return function unregister() {
       if (registry.get(fieldId) === element) {
         registry.delete(fieldId);
       }
     };
   }
 
-  function getElement (fieldId: string): HTMLElement | null {
-    console.log(`getElement: ${fieldId}`);
+  function getElement(fieldId: string): HTMLElement | null {
+    console.debug(`getElement: ${fieldId}`);
 
     return registry.get(fieldId) ?? null;
   }

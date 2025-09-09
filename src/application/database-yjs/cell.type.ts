@@ -2,8 +2,7 @@ import React from 'react';
 import * as Y from 'yjs';
 
 import { FieldType } from '@/application/database-yjs/database.type';
-import { DateFormat, TimeFormat } from '@/application/database-yjs/index';
-import { FieldId, RowId } from '@/application/types';
+import { DateFormat, FieldId, RowId, TimeFormat } from '@/application/types';
 
 export interface Cell {
   createdAt: number;
@@ -116,4 +115,5 @@ export interface CellProps<T extends Cell> {
   setEditing?: (editing: boolean) => void;
   isHovering?: boolean;
   wrap: boolean;
+  onCellUpdated?: (cell: Cell) => void;
 }

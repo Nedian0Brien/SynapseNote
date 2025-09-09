@@ -13,6 +13,7 @@ import {
   useDatabaseFields,
   useDatabaseView,
   useDatabaseViewId,
+  useDefaultTimeSetting,
   useDocGuid,
   useRowDocMap,
   useSharedRoot,
@@ -20,6 +21,8 @@ import {
 import {
   AITranslateLanguage,
   CalculationType,
+  CalendarLayout,
+  CalendarLayoutSetting,
   DateGroupCondition,
   FieldType,
   FieldVisibility,
@@ -28,7 +31,6 @@ import {
   SortCondition,
 } from '@/application/database-yjs/database.type';
 import {
-  DateFormat,
   getDateCellStr,
   getFieldName,
   isDate,
@@ -37,28 +39,31 @@ import {
   RIGHTWARDS_ARROW,
   safeParseTimestamp,
   SelectOption,
+  SelectOptionColor,
   SelectTypeOption,
-  TimeFormat,
 } from '@/application/database-yjs/fields';
 import { createCheckboxCell, getChecked } from '@/application/database-yjs/fields/checkbox/utils';
 import { EnhancedBigStats } from '@/application/database-yjs/fields/number/EnhancedBigStats';
-import { createSelectOptionCell, getColorByOption } from '@/application/database-yjs/fields/select-option/utils';
-import { createTextField } from '@/application/database-yjs/fields/text/utils';
+import { createSelectOptionCell } from '@/application/database-yjs/fields/select-option/utils';
+import { createDateTimeField, createTextField } from '@/application/database-yjs/fields/text/utils';
 import { dateFilterFillData, filterFillData, getDefaultFilterCondition } from '@/application/database-yjs/filter';
 import { getOptionsFromRow, initialDatabaseRow } from '@/application/database-yjs/row';
 import { generateRowMeta, getMetaIdMap, getMetaJSON } from '@/application/database-yjs/row_meta';
-import { useBoardLayoutSettings, useFieldSelector, useFieldType } from '@/application/database-yjs/selector';
+import { useBoardLayoutSettings, useCalendarLayoutSetting, useDatabaseViewLayout, useFieldSelector, useFieldType } from '@/application/database-yjs/selector';
 import { executeOperations } from '@/application/slate-yjs/utils/yjs';
 import {
   DatabaseViewLayout,
+  DateFormat,
   FieldId,
   RowId,
+  TimeFormat,
   UpdatePagePayload,
   ViewLayout,
   YDatabase,
   YDatabaseBoardLayoutSetting,
   YDatabaseCalculation,
   YDatabaseCalculations,
+  YDatabaseCalendarLayoutSetting,
   YDatabaseCell,
   YDatabaseField,
   YDatabaseFieldOrders,
@@ -81,6 +86,8 @@ import {
   YMapFieldTypeOption,
   YSharedRoot,
 } from '@/application/types';
+import { DefaultTimeSetting } from '@/application/user-metadata';
+import { useCurrentUser } from '@/components/main/app.hooks';
 
 export function useResizeColumnWidthDispatch() {
   const database = useDatabase();
@@ -964,6 +971,8 @@ function createField(type: FieldType, fieldId: string) {
   switch (type) {
     case FieldType.RichText:
       return createTextField(fieldId);
+    case FieldType.DateTime:
+      return createDateTimeField(fieldId);
     default:
       throw new Error(`Field type ${type} not supported`);
   }
@@ -1178,6 +1187,9 @@ export function useNewRowDispatch() {
   const guid = useDocGuid();
   const viewId = useDatabaseViewId();
   const currentView = useDatabaseView();
+  const layout = useDatabaseViewLayout();
+  const isCalendar = layout === DatabaseViewLayout.Calendar;
+  const calendarSetting = useCalendarLayoutSetting();
   const filters = currentView?.get(YjsDatabaseKey.filters);
   const { navigateToRow } = useDatabaseContext();
 
@@ -1188,7 +1200,17 @@ export function useNewRowDispatch() {
       tailing = false,
     }: {
       beforeRowId?: string;
-      cellsData?: Record<FieldId, string>;
+      cellsData?: Record<
+        FieldId,
+        | string
+        | {
+            data: string;
+            endTimestamp?: string;
+            isRange?: boolean;
+            includeTime?: boolean;
+            reminderId?: string;
+          }
+      >;
       tailing?: boolean;
     }) => {
       if (!createRow) {
@@ -1198,6 +1220,7 @@ export function useNewRowDispatch() {
       const rowId = uuidv4();
 
       const rowDoc = await createRow(`${guid}_rows_${rowId}`);
+      let shouldOpenRowModal = false;
 
       rowDoc.transact(() => {
         initialDatabaseRow(rowId, database.get(YjsDatabaseKey.id), rowDoc);
@@ -1206,7 +1229,7 @@ export function useNewRowDispatch() {
 
         const cells = row.get(YjsDatabaseKey.cells);
 
-        let shouldOpenRowModal = false;
+
 
         if (filters) {
           filters.toArray().forEach((filter) => {
@@ -1216,6 +1239,10 @@ export function useNewRowDispatch() {
 
             if (!field) {
               return;
+            }
+
+            if (isCalendar && calendarSetting.fieldId === fieldId) {
+              shouldOpenRowModal = true;
             }
 
             const type = Number(field.get(YjsDatabaseKey.type));
@@ -1264,7 +1291,15 @@ export function useNewRowDispatch() {
             cell.set(YjsDatabaseKey.created_at, String(dayjs().unix()));
             cell.set(YjsDatabaseKey.field_type, type);
 
-            cell.set(YjsDatabaseKey.data, data);
+            if (typeof data === 'object') {
+              cell.set(YjsDatabaseKey.data, data.data);
+              cell.set(YjsDatabaseKey.end_timestamp, data.endTimestamp);
+              cell.set(YjsDatabaseKey.is_range, data.isRange);
+              cell.set(YjsDatabaseKey.include_time, data.includeTime);
+              cell.set(YjsDatabaseKey.reminder_id, data.reminderId);
+            } else {
+              cell.set(YjsDatabaseKey.data, data);
+            }
 
             cells.set(fieldId, cell);
           });
@@ -1303,9 +1338,44 @@ export function useNewRowDispatch() {
         'newRowDispatch'
       );
 
+      if (isCalendar && shouldOpenRowModal) {
+        return null;
+      }
+
       return rowId;
     },
-    [createRow, database, filters, guid, navigateToRow, sharedRoot, viewId]
+    [calendarSetting.fieldId, createRow, database, filters, guid, isCalendar, navigateToRow, sharedRoot, viewId]
+  );
+}
+
+export function useCreateCalendarEvent(fieldId: string) {
+  const newRowDispatch = useNewRowDispatch();
+
+  return useCallback(
+    async ({
+      startTimestamp,
+      endTimestamp,
+      includeTime,
+    }: {
+      startTimestamp: string;
+      endTimestamp?: string;
+      includeTime?: boolean;
+    }) => {
+      const rowId = await newRowDispatch({
+        tailing: true,
+        cellsData: {
+          [fieldId]: {
+            data: startTimestamp,
+            endTimestamp,
+            isRange: !!endTimestamp,
+            includeTime,
+          },
+        },
+      });
+
+      return rowId;
+    },
+    [fieldId, newRowDispatch]
   );
 }
 
@@ -1421,8 +1491,8 @@ export function useDuplicateRowDispatch() {
               throw new Error(`Cell not found`);
             }
 
-            const field = database.get(YjsDatabaseKey.fields);
-            const fieldType = Number(field.get(fieldId)?.get(YjsDatabaseKey.type));
+            const fields = database.get(YjsDatabaseKey.fields);
+            const fieldType = Number(fields.get(fieldId)?.get(YjsDatabaseKey.type));
 
             const cell = cloneCell(fieldType, referenceCell);
 
@@ -1883,7 +1953,7 @@ function updateDateCell(
   }
 
   if (payload.includeTime !== undefined) {
-    console.log('includeTime', payload.includeTime);
+    console.debug('includeTime', payload.includeTime);
     cell.set(YjsDatabaseKey.include_time, payload.includeTime);
   }
 
@@ -1961,6 +2031,51 @@ export function useUpdateCellDispatch(rowId: string, fieldId: string) {
   );
 }
 
+export function useUpdateStartEndTimeCell() {
+  const rowDocMap = useRowDocMap();
+
+  return useCallback(
+    (rowId: string, fieldId: string, startTimestamp: string, endTimestamp?: string, isAllDay?: boolean) => {
+      const rowDoc = rowDocMap?.[rowId];
+
+      if (!rowDoc) {
+        throw new Error(`Row not found`);
+      }
+
+      const rowSharedRoot = rowDoc.getMap(YjsEditorKey.data_section) as YSharedRoot;
+      const row = rowSharedRoot.get(YjsEditorKey.database_row);
+
+      const cells = row.get(YjsDatabaseKey.cells);
+
+      rowDoc.transact(() => {
+        let cell = cells.get(fieldId);
+
+        if (!cell) {
+          cell = new Y.Map() as YDatabaseCell;
+          cell.set(YjsDatabaseKey.field_type, FieldType.DateTime);
+
+          cell.set(YjsDatabaseKey.created_at, String(dayjs().unix()));
+          cells.set(fieldId, cell);
+        }
+
+
+        cell.set(YjsDatabaseKey.data, startTimestamp);
+        cell.set(YjsDatabaseKey.last_modified, String(dayjs().unix()));
+
+        updateDateCell(cell, {
+          data: startTimestamp,
+          endTimestamp,
+          isRange: !!endTimestamp,
+          includeTime: !isAllDay,
+        });
+        row.set(YjsDatabaseKey.last_modified, String(dayjs().unix()));
+      });
+
+    },
+    [rowDocMap]
+  );
+}
+
 function generateBoardSetting(database: YDatabase): YDatabaseFieldSettings {
   const fieldSettingsMap = new Y.Map() as YDatabaseFieldSettings;
 
@@ -2030,10 +2145,25 @@ function generateBoardGroup(database: YDatabase, fieldOrders: YDatabaseFieldOrde
   return groups;
 }
 
+function generateCalendarLayoutSettings(fieldId: FieldId, defaultTimeSetting: DefaultTimeSetting) {
+  const layoutSettings = new Y.Map() as YDatabaseLayoutSettings;
+  const layoutSetting = new Y.Map() as YDatabaseCalendarLayoutSetting;
+
+  layoutSetting.set(YjsDatabaseKey.first_day_of_week, defaultTimeSetting.startWeekOn);
+  layoutSetting.set(YjsDatabaseKey.field_id, fieldId);
+  layoutSetting.set(YjsDatabaseKey.layout_ty, CalendarLayout.MonthLayout);
+  layoutSetting.set(YjsDatabaseKey.show_week_numbers, true);
+  layoutSetting.set(YjsDatabaseKey.show_weekends, true);
+  layoutSettings.set('2', layoutSetting);
+  return layoutSettings;
+}
+
 export function useAddDatabaseView() {
   const { iidIndex, createFolderView } = useDatabaseContext();
   const database = useDatabase();
   const sharedRoot = useSharedRoot();
+
+  const defaultTimeSetting = useDefaultTimeSetting();
 
   return useCallback(
     async (layout: DatabaseViewLayout) => {
@@ -2064,6 +2194,52 @@ export function useAddDatabaseView() {
       const refView = database.get(YjsDatabaseKey.views)?.get(iidIndex);
       const refRowOrders = refView.get(YjsDatabaseKey.row_orders);
       const refFieldOrders = refView.get(YjsDatabaseKey.field_orders);
+      const fields = database.get(YjsDatabaseKey.fields);
+
+      // find date field in all views
+      let dateField: YDatabaseField | undefined;
+
+      if (layout === DatabaseViewLayout.Calendar) {
+        refFieldOrders.forEach((fieldOrder) => {
+          const field = fields?.get(fieldOrder.id);
+
+          if (
+            !dateField &&
+            [FieldType.DateTime].includes(
+              Number(field?.get(YjsDatabaseKey.type))
+            )
+          ) {
+            dateField = field;
+          }
+        });
+
+        // if no date field, create a new one
+        if (!dateField) {
+          const fieldId = nanoid(6);
+
+          dateField = createField(FieldType.DateTime, fieldId);
+
+          const typeOptionMap = generateDateTimeFieldTypeOptions();
+
+          dateField.set(YjsDatabaseKey.type_option, typeOptionMap);
+          fields.set(fieldId, dateField);
+
+          executeOperationWithAllViews(
+            sharedRoot,
+            database,
+            (view) => {
+              const fieldOrders = view?.get(YjsDatabaseKey.field_orders);
+
+              fieldOrders.push([
+                {
+                  id: fieldId,
+                },
+              ]);
+            },
+            'newDateTimeField'
+          );
+        }
+      }
 
       executeOperations(
         sharedRoot,
@@ -2101,6 +2277,16 @@ export function useAddDatabaseView() {
               layoutSettings = generateBoardLayoutSettings();
             }
 
+            if (layout === DatabaseViewLayout.Calendar) {
+              const fieldId = dateField?.get(YjsDatabaseKey.id);
+
+              if (!fieldId) {
+                throw new Error(`Date field not found`);
+              }
+
+              layoutSettings = generateCalendarLayoutSettings(fieldId, defaultTimeSetting);
+            }
+
             newView.set(YjsDatabaseKey.database_id, databaseId);
             newView.set(YjsDatabaseKey.name, name);
             newView.set(YjsDatabaseKey.layout, layout);
@@ -2123,7 +2309,7 @@ export function useAddDatabaseView() {
       );
       return newViewId;
     },
-    [createFolderView, database, iidIndex, sharedRoot]
+    [createFolderView, database, defaultTimeSetting, iidIndex, sharedRoot]
   );
 }
 
@@ -2228,10 +2414,24 @@ export function useDeleteView() {
   );
 }
 
+function generateDateTimeFieldTypeOptions() {
+  const typeOptionMap = new Y.Map() as YDatabaseFieldTypeOption;
+  const typeOption = new Y.Map() as YMapFieldTypeOption;
+
+  typeOptionMap.set(String(FieldType.DateTime), typeOption);
+
+  typeOption.set(YjsDatabaseKey.time_format, TimeFormat.TwentyFourHour);
+  typeOption.set(YjsDatabaseKey.date_format, DateFormat.Friendly);
+  typeOption.set(YjsDatabaseKey.include_time, true);
+
+  return typeOptionMap;
+}
+
 export function useSwitchPropertyType() {
   const database = useDatabase();
   const sharedRoot = useSharedRoot();
   const rowDocMap = useRowDocMap();
+  const currentUser = useCurrentUser();
 
   return useCallback(
     (fieldId: string, fieldType: FieldType) => {
@@ -2284,8 +2484,6 @@ export function useSwitchPropertyType() {
                 // Set default values for the type option
                 if ([FieldType.CreatedTime, FieldType.LastEditedTime, FieldType.DateTime].includes(fieldType)) {
                   // to DateTime
-                  newTypeOption.set(YjsDatabaseKey.time_format, TimeFormat.TwentyFourHour);
-                  newTypeOption.set(YjsDatabaseKey.date_format, DateFormat.Friendly);
                   if (oldFieldType !== FieldType.DateTime) {
                     newTypeOption.set(YjsDatabaseKey.include_time, true);
                   }
@@ -2337,11 +2535,11 @@ export function useSwitchPropertyType() {
 
                       content = JSON.stringify({
                         disable_color: false,
-                        options: Array.from(options).map((name) => {
+                        options: Array.from(options).map((name, index) => {
                           return {
                             id: name,
                             name,
-                            color: getColorByOption(name),
+                            color: Object.values(SelectOptionColor)[index % 10],
                           };
                         }),
                       });
@@ -2455,6 +2653,7 @@ export function useSwitchPropertyType() {
                           newData = getDateCellStr({
                             cell: dateCell,
                             field,
+                            currentUser,
                           });
 
                           break;
@@ -2545,7 +2744,7 @@ export function useSwitchPropertyType() {
         'switchPropertyType'
       );
     },
-    [database, sharedRoot, rowDocMap]
+    [database, sharedRoot, rowDocMap, currentUser]
   );
 }
 
@@ -3489,7 +3688,7 @@ export function useUpdateFileMediaTypeOption(fieldId: string) {
               );
               typeOptionMap.set(String(FieldType.FileMedia), newTypeOption);
             } else {
-              console.log('Updating file media type option', typeOption.toJSON());
+              console.debug('Updating file media type option', typeOption.toJSON());
               typeOption.set(
                 YjsDatabaseKey.content,
                 JSON.stringify({
@@ -3503,5 +3702,65 @@ export function useUpdateFileMediaTypeOption(fieldId: string) {
       );
     },
     [database, fieldId, sharedRoot]
+  );
+}
+
+export function useUpdateCalendarSetting() {
+  const view = useDatabaseView();
+  const sharedRoot = useSharedRoot();
+
+  return useCallback(
+    (settings: Partial<CalendarLayoutSetting>) => {
+      executeOperations(
+        sharedRoot,
+        [
+          () => {
+            if (!view) {
+              throw new Error(`Unable to toggle hide ungrouped column`);
+            }
+
+            // Get or create the layout settings for the view
+            let layoutSettings = view.get(YjsDatabaseKey.layout_settings);
+
+            if (!layoutSettings) {
+              layoutSettings = new Y.Map() as YDatabaseLayoutSettings;
+            }
+
+            let layoutSetting = layoutSettings.get('2');
+
+            if (!layoutSetting) {
+              layoutSetting = new Y.Map() as YDatabaseCalendarLayoutSetting;
+              layoutSettings.set('2', layoutSetting);
+            }
+
+            if (settings.fieldId !== undefined) {
+              layoutSetting.set(YjsDatabaseKey.field_id, settings.fieldId);
+            }
+
+            if (settings.firstDayOfWeek !== undefined) {
+              layoutSetting.set(YjsDatabaseKey.first_day_of_week, settings.firstDayOfWeek);
+            }
+
+            if (settings.showWeekNumbers !== undefined) {
+              layoutSetting.set(YjsDatabaseKey.show_week_numbers, settings.showWeekNumbers);
+            }
+
+            if (settings.showWeekends !== undefined) {
+              layoutSetting.set(YjsDatabaseKey.show_weekends, settings.showWeekends);
+            }
+
+            if (settings.layout !== undefined) {
+              layoutSetting.set(YjsDatabaseKey.layout_ty, settings.layout);
+            }
+
+            if (settings.numberOfDays !== undefined) {
+              layoutSetting.set(YjsDatabaseKey.number_of_days, settings.numberOfDays);
+            }
+          },
+        ],
+        'updateCalendarSetting'
+      );
+    },
+    [sharedRoot, view]
   );
 }

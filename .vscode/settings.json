@@ -1,5 +1,8 @@
 {
   "typescript.tsdk": "node_modules/typescript/lib",
+  "cursor.ai.language": "en",
+  "cursor.commitMessage.language": "english",
+  "locale": "en-US",
   "editor.rulers": [
     120
   ],

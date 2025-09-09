@@ -109,7 +109,7 @@ export const CardPrimitive = forwardRef<HTMLDivElement, CardProps>(
           if (editing) return;
           const target = e.target as HTMLElement;
 
-          console.log('custom-icon', target);
+          console.debug('custom-icon', target);
           if (target.closest('.custom-icon')) {
             e.stopPropagation();
             return;

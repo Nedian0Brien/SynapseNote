@@ -5,6 +5,7 @@ import {
   CreateFolderViewPayload,
   CreateRowDoc,
   DatabaseRelations,
+  DateFormat,
   GenerateAISummaryRowPayload,
   GenerateAITranslateRowPayload,
   LoadDatabasePrompts,
@@ -13,6 +14,7 @@ import {
   RowId,
   Subscription,
   TestDatabasePromptConfig,
+  TimeFormat,
   UpdatePagePayload,
   View,
   YDatabase,
@@ -23,6 +25,8 @@ import {
   YSharedRoot,
 } from '@/application/types';
 import EventEmitter from 'events';
+import { useCurrentUser } from '@/components/main/app.hooks';
+import { DefaultTimeSetting, MetadataKey } from '@/application/user-metadata';
 
 export interface DatabaseContextState {
   readOnly: boolean;
@@ -58,6 +62,7 @@ export interface DatabaseContextState {
   checkIfRowDocumentExists?: (documentId: string) => Promise<void>;
   eventEmitter?: EventEmitter;
   getSubscriptions?: (() => Promise<Subscription[]>) | undefined;
+  getViewIdFromDatabaseId?: (databaseId: string) => string | null;
 }
 
 export const DatabaseContext = createContext<DatabaseContextState | null>(null);
@@ -146,3 +151,14 @@ export const useDatabaseSelectedView = (viewId: string) => {
 
   return database.get(YjsDatabaseKey.views).get(viewId);
 };
+
+export const useDefaultTimeSetting = (): DefaultTimeSetting => {
+  const currentUser = useCurrentUser();
+
+  
+  return {
+    dateFormat: currentUser?.metadata?.[MetadataKey.DateFormat] as DateFormat ?? DateFormat.Local,
+    timeFormat: currentUser?.metadata?.[MetadataKey.TimeFormat] as TimeFormat ?? TimeFormat.TwelveHour,
+    startWeekOn: currentUser?.metadata?.[MetadataKey.StartWeekOn] as number ?? 0,
+  }
+}

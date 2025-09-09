@@ -1,9 +1,9 @@
 import { SpacePermission } from '@/application/types';
+import { NormalModal } from '@/components/_shared/modal';
+import { notify } from '@/components/_shared/notify';
 import { useAppHandlers } from '@/components/app/app.hooks';
 import SpaceIconButton from '@/components/app/view-actions/SpaceIconButton';
 import SpacePermissionButton from '@/components/app/view-actions/SpacePermissionButton';
-import { NormalModal } from '@/components/_shared/modal';
-import { notify } from '@/components/_shared/notify';
 import { OutlinedInput } from '@mui/material';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -61,6 +61,7 @@ function CreateSpaceModal({
       onOk={handleOk}
       PaperProps={{
         className: 'w-[600px] max-w-[70vw]',
+        ...({ 'data-testid': 'create-space-modal' } as Record<string, unknown>),
       }}
     >
       <div
@@ -86,6 +87,7 @@ function CreateSpaceModal({
         <div className={'flex flex-col gap-2'}>
           <div className={'text-text-secondary'}>{t('space.spaceName')}</div>
           <OutlinedInput
+            data-testid="space-name-input"
             value={spaceName}
             fullWidth={true}
             onChange={(e) => setSpaceName(e.target.value)}

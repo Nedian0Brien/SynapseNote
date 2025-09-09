@@ -2,7 +2,7 @@ import * as Y from 'yjs';
 
 import { FieldType } from '@/application/database-yjs/database.type';
 import { getDateCellStr, parseChecklistData, parseSelectOptionTypeOptions } from '@/application/database-yjs/fields';
-import { YDatabaseCell, YDatabaseField, YjsDatabaseKey } from '@/application/types';
+import { User, YDatabaseCell, YDatabaseField, YjsDatabaseKey } from '@/application/types';
 
 import { Cell, DateTimeCell, FileMediaCell, FileMediaCellData } from './cell.type';
 
@@ -94,7 +94,7 @@ export function parseYDatabaseRelationCellToCell(cell: YDatabaseCell): Cell {
   };
 }
 
-export function getCellDataText(cell: YDatabaseCell, field: YDatabaseField): string {
+export function getCellDataText(cell: YDatabaseCell, field: YDatabaseField, currentUser?: User): string {
   const type = parseInt(field.get(YjsDatabaseKey.type));
 
   switch (type) {
@@ -143,7 +143,7 @@ export function getCellDataText(cell: YDatabaseCell, field: YDatabaseField): str
     case FieldType.DateTime: {
       const dateCell = parseYDatabaseDateTimeCellToCell(cell);
 
-      return getDateCellStr({ cell: dateCell, field });
+      return getDateCellStr({ cell: dateCell, field, currentUser });
     }
 
     case FieldType.CreatedTime:

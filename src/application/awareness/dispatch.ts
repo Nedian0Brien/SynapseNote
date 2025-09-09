@@ -48,7 +48,7 @@ export function useDispatchUserAwareness(awareness?: Awareness) {
       awareness.setLocalState(awarenessState);
 
       // Log successful user awareness dispatch
-      console.log('📡 User awareness dispatched:', awarenessState);
+      console.debug('📡 User awareness dispatched:', awarenessState);
     },
     [awareness]
   );
@@ -99,7 +99,7 @@ export function useDispatchCursorAwareness(awareness?: Awareness) {
       awareness.setLocalState(awarenessState);
 
       // Log successful cursor awareness sync
-      console.log('🎯 Cursor awareness synced:', awarenessState);
+      console.debug('🎯 Cursor awareness synced:', awarenessState);
     } catch (error) {
       // Log conversion errors for debugging
       console.warn('⚠️ Cursor awareness sync failed:', error);
@@ -148,7 +148,7 @@ export function useDispatchClearAwareness(awareness?: Awareness) {
     });
 
     // Log awareness clear
-    console.log('🚫 Awareness cleared for current user');
+    console.debug('🚫 Awareness cleared for current user');
   }, [awareness, service, currentUser]);
 
   const clearCursor = useCallback(() => {
@@ -168,7 +168,7 @@ export function useDispatchClearAwareness(awareness?: Awareness) {
       }),
     });
 
-    console.log('🚫 Cursor awareness cleared for current user');
+    console.debug('🚫 Cursor awareness cleared for current user');
   }, [awareness, service, currentUser]);
 
   return { clearAwareness, clearCursor };

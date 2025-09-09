@@ -65,6 +65,7 @@ export interface CalendarLayoutSetting {
   showWeekNumbers: boolean;
   showWeekends: boolean;
   layout: CalendarLayout;
+  numberOfDays: number;
 }
 
 export enum RowMetaKey {

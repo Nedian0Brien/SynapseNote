@@ -1,5 +1,7 @@
 import dayjs from 'dayjs';
 
+import { DateFormat, TimeFormat } from '@/application/types';
+
 export function renderDate(date: string | number, format: string, isUnix?: boolean): string {
   if (isUnix) return dayjs.unix(Number(date)).format(format);
   return dayjs(date).format(format);
@@ -60,4 +62,106 @@ export function isTimestampBetweenRange(timestamp: string, startTimestamp: strin
   const endUnix = endDate.unix();
 
   return dateUnix >= startUnix && dateUnix <= endUnix;
+}
+
+export function getTimeFormat(timeFormat?: TimeFormat) {
+  switch (timeFormat) {
+    case TimeFormat.TwelveHour:
+      return 'h:mm A';
+    case TimeFormat.TwentyFourHour:
+      return 'HH:mm';
+    default:
+      return 'HH:mm';
+  }
+}
+
+export function getDateFormat(dateFormat?: DateFormat) {
+  switch (dateFormat) {
+    case DateFormat.Friendly:
+      return 'MMM DD, YYYY';
+    case DateFormat.ISO:
+      return 'YYYY-MM-DD';
+    case DateFormat.US:
+      return 'YYYY/MM/DD';
+    case DateFormat.Local:
+      return 'MM/DD/YYYY';
+    case DateFormat.DayMonthYear:
+      return 'DD/MM/YYYY';
+    default:
+      return 'YYYY-MM-DD';
+  }
+}
+
+/**
+ * Convert JavaScript Date to 10-digit Unix timestamp string
+ * @param {Date} date - The JavaScript Date object
+ * @returns {string} - 10-digit Unix timestamp string
+ */
+export function dateToUnixTimestamp(date: Date): string {
+  return Math.floor(date.getTime() / 1000).toString();
+}
+
+/**
+ * Convert 10-digit Unix timestamp string to JavaScript Date
+ * @param {string} timestamp - 10-digit Unix timestamp string
+ * @returns {Date} - JavaScript Date object
+ */
+export function unixTimestampToDate(timestamp: string): Date {
+  return dayjs.unix(Number(timestamp)).toDate();
+}
+
+/**
+ * Check if a Date object is at the start of day (00:00), ignoring seconds and milliseconds
+ * @param {Date} date - The JavaScript Date object to check
+ * @returns {boolean} - True if the date is at 00:00, false otherwise
+ */
+export function isDateStartOfDay(date: Date): boolean {
+  const dayjsDate = dayjs(date);
+
+  return dayjsDate.hour() === 0 && dayjsDate.minute() === 0;
+}
+
+/**
+ * Check if a Date object is at the end of day (23:59), ignoring seconds and milliseconds
+ * @param {Date} date - The JavaScript Date object to check
+ * @returns {boolean} - True if the date is at 23:59, false otherwise
+ */
+export function isDateEndOfDay(date: Date): boolean {
+  const dayjsDate = dayjs(date);
+
+  return dayjsDate.hour() === 23 && dayjsDate.minute() === 59;
+}
+
+/**
+ * Correct all-day event end time for FullCalendar display (forward correction)
+ * If the date is not at start of day (00:00), adjust it to next day 00:00
+ * This ensures FullCalendar shows all-day events correctly across multiple days
+ * @param {Date} date - The end date to correct
+ * @returns {Date} - The corrected date for display
+ */
+export function correctAllDayEndForDisplay(date: Date): Date {
+  if (isDateStartOfDay(date)) {
+    // Already at 00:00, no correction needed
+    return date;
+  }
+  
+  // Move to next day at 00:00 (exclusive boundary for FullCalendar)
+  return dayjs(date).add(1, 'day').startOf('day').toDate();
+}
+
+/**
+ * Correct all-day event end time for storage (reverse correction)
+ * If the date is at start of day (00:00), adjust it to previous day 23:59
+ * This ensures the stored end time reflects the actual last day of the event
+ * @param {Date} date - The end date to correct
+ * @returns {Date} - The corrected date for storage
+ */
+export function correctAllDayEndForStorage(date: Date): Date {
+  if (!isDateStartOfDay(date)) {
+    // Not at 00:00, no correction needed
+    return date;
+  }
+  
+  // Move to previous day at 23:59
+  return dayjs(date).subtract(1, 'day').hour(23).minute(59).second(0).millisecond(0).toDate();
 }

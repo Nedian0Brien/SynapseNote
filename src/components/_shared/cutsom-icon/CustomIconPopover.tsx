@@ -72,21 +72,15 @@ export function CustomIconPopover ({
   if (!enable) return <>{children}</>;
 
   return (
-    <Popover
-      {...props}
-      open={openState}
-      onOpenChange={handleOpenChange}
-    >
-      <PopoverTrigger asChild>
-        {children}
-      </PopoverTrigger>
+    <Popover {...props} open={openState} onOpenChange={handleOpenChange}>
+      <PopoverTrigger asChild>{children}</PopoverTrigger>
       <PopoverContent
         side={'bottom'}
         align={'start'}
-        className="w-[402px]"
-        onCloseAutoFocus={e => e.preventDefault()}
-        onOpenAutoFocus={e => e.preventDefault()}
-        onClick={e => {
+        className='w-[402px]'
+        onCloseAutoFocus={(e) => e.preventDefault()}
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        onClick={(e) => {
           e.stopPropagation();
         }}
         {...popoverContentProps}
@@ -95,21 +89,15 @@ export function CustomIconPopover ({
           value={tabValue}
           onValueChange={setTabValue}
           defaultValue={defaultActiveTab}
-          className="flex flex-col gap-3"
+          className='flex flex-col gap-3'
         >
-          <div className="flex  px-3 border-b border-border-primary items-center justify-between gap-3">
-            <TabsList className="flex flex-1 justify-start w-full mt-2">
+          <div className='flex  items-center justify-between gap-3 border-b border-border-primary px-3'>
+            <TabsList className='mt-2 flex w-full flex-1 justify-start'>
               {tabs.map((tab) => (
-                <TabsTrigger
-                  key={tab}
-                  value={tab}
-                >
-                  <TabLabel>
-                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                  </TabLabel>
+                <TabsTrigger key={tab} value={tab}>
+                  <TabLabel>{tab.charAt(0).toUpperCase() + tab.slice(1)}</TabLabel>
                 </TabsTrigger>
               ))}
-
             </TabsList>
             {!hideRemove && (
               <Button
@@ -124,7 +112,7 @@ export function CustomIconPopover ({
             )}
           </div>
 
-          <TabsContent value="emoji">
+          <TabsContent value='emoji'>
             <EmojiPicker
               size={[400, 360]}
               onEmojiSelect={(emoji: string) => {
@@ -136,7 +124,7 @@ export function CustomIconPopover ({
               }}
             />
           </TabsContent>
-          <TabsContent value="icon">
+          <TabsContent value='icon'>
             <IconPicker
               enableColor={enableColor}
               size={[400, 360]}
@@ -150,15 +138,9 @@ export function CustomIconPopover ({
               }}
               container={popoverContentProps?.container as HTMLDivElement}
             />
-
-
           </TabsContent>
-          <TabsContent
-            value="upload"
-          >
-            <div
-              className={'w-full flex flex-col h-[360px]'}
-            >
+          <TabsContent value='upload'>
+            <div className={'flex h-[360px] w-full flex-col px-3 pb-3'}>
               <UploadImage
                 onDone={(url) => {
                   onSelectIcon?.({
@@ -170,7 +152,6 @@ export function CustomIconPopover ({
                 uploadAction={onUploadFile}
               />
             </div>
-
           </TabsContent>
         </Tabs>
       </PopoverContent>

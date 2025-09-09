@@ -9,6 +9,10 @@ import { DatabaseViewLayout, View, ViewLayout, YDatabaseView, YjsDatabaseKey } f
 import { ReactComponent as ChevronLeft } from '@/assets/icons/alt_arrow_left.svg';
 import { ReactComponent as ChevronRight } from '@/assets/icons/alt_arrow_right.svg';
 import { ReactComponent as PlusIcon } from '@/assets/icons/plus.svg';
+import { findView } from '@/components/_shared/outline/utils';
+import { AFScroller } from '@/components/_shared/scroller';
+import { ViewIcon } from '@/components/_shared/view-icon';
+import PageIcon from '@/components/_shared/view-icon/PageIcon';
 import RenameModal from '@/components/app/view-actions/RenameModal';
 import { DatabaseActions } from '@/components/database/components/conditions';
 import DeleteViewConfirm from '@/components/database/components/tabs/DeleteViewConfirm';
@@ -18,10 +22,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Progress } from '@/components/ui/progress';
 import { TabLabel, Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { findView } from '@/components/_shared/outline/utils';
-import { AFScroller } from '@/components/_shared/scroller';
-import { ViewIcon } from '@/components/_shared/view-icon';
-import PageIcon from '@/components/_shared/view-icon/PageIcon';
 
 export interface DatabaseTabBarProps {
   viewIds: string[];
@@ -61,7 +61,7 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
         setShowScrollRightButton(
           scrollWidth > clientWidth && scrollerContainer.scrollLeft + 1 < scrollWidth - clientWidth
         );
-        setShowScrollLeftButton(scrollerContainer.scrollLeft > 0);
+        setShowScrollLeftButton(scrollerContainer.scrollLeft > 5);
       }
     }, [scrollerContainer]);
 
@@ -342,7 +342,7 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
                                       : ViewLayout.Grid,
                                 }
                               }
-                              className={'h-5 w-5'}
+                              className={'!h-5 !w-5 text-base'}
                             />
 
                             <Tooltip delayDuration={500}>
@@ -376,7 +376,6 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
                             <DropdownMenuContent
                               side={'bottom'}
                               align={'start'}
-                              className={'!min-w-fit'}
                               onCloseAutoFocus={(e) => e.preventDefault()}
                             >
                               {menuView && (
@@ -438,6 +437,14 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
                   >
                     <ViewIcon layout={ViewLayout.Board} size={'small'} />
                     {t('board.menuName')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() => {
+                      void handleAddView(DatabaseViewLayout.Calendar);
+                    }}
+                  >
+                    <ViewIcon layout={ViewLayout.Calendar} size={'small'} />
+                    {t('calendar.menuName')}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

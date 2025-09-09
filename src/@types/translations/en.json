@@ -342,6 +342,7 @@
     "lightMode": "Switch to Light mode",
     "darkMode": "Switch to Dark mode",
     "openAsPage": "Open as a Page",
+    "openEvent": "Open event",
     "addNewRow": "Add a new row",
     "openMenu": "Click to open menu",
     "dragRow": "Drag to reorder the row",
@@ -1608,7 +1609,8 @@
       "action": "Action",
       "add": "Click add to below",
       "drag": "Drag to move",
-      "deleteRowPrompt": "Are you sure you want to delete {{count}} rows? This action cannot be undone.",
+      "deleteRowPrompt_one": "Are you sure you want to delete {{count}} row? This action cannot be undone.",
+      "deleteRowPrompt_many": "Are you sure you want to delete {{count}} rows? This action cannot be undone.",
       "deleteCardPrompt": "Are you sure you want to delete this card? This action cannot be undone.",
       "dragAndClick": "Drag to move, click to open menu",
       "insertRecordAbove": "Insert record above",
@@ -2201,11 +2203,14 @@
     "menuName": "Calendar",
     "defaultNewCalendarTitle": "Untitled",
     "newEventButtonTooltip": "Add a new event",
+    "deleteEvent": "Delete event",
+    "addEventOn": "Add event on",
+    "more": "{{num}}+ more",
     "navigation": {
       "today": "Today",
       "jumpToday": "Jump to Today",
-      "previousMonth": "Previous Month",
-      "nextMonth": "Next Month",
+      "previous": "Previous {{view}}",
+      "next": "Next {{view}}",
       "views": {
         "day": "Day",
         "week": "Week",
@@ -2213,6 +2218,9 @@
         "year": "Year"
       }
     },
+    "week": "Week",
+    "month": "Month",
+    "multiMonth": "Multi-month",
     "mobileEventScreen": {
       "emptyTitle": "No events yet",
       "emptyBody": "Press the plus button to create an event on this day."
@@ -2232,7 +2240,8 @@
       "unscheduledEventsTitle": "Unscheduled events",
       "clickToAdd": "Click to add to the calendar",
       "name": "Calendar settings",
-      "clickToOpen": "Click to open the record"
+      "clickToOpen": "Click to open the record",
+      "noDatePopoverTitle": "Drag or click to assign a date"
     },
     "referencedCalendarPrefix": "View of",
     "quickJumpYear": "Jump to",
@@ -2817,7 +2826,9 @@
     },
     "visitOurWebsite": "Visit our official website",
     "addMessagesToPage": "Add messages to page",
-    "addMessagesToPageDisabled": "No messages available"
+    "addMessagesToPageDisabled": "No messages available",
+    "accountSettings": "Account settings",
+    "startWeekOn": "Start week on"
   },
   "globalComment": {
     "comments": "Comments",

@@ -3,8 +3,8 @@ import { useCallback, useMemo, useState } from 'react';
 import useWebSocket from 'react-use-websocket';
 
 import { getTokenParsed } from '@/application/session/token';
-import { getConfigValue } from '@/utils/runtime-config';
 import { messages } from '@/proto/messages';
+import { getConfigValue } from '@/utils/runtime-config';
 
 const wsURL = getConfigValue('APPFLOWY_WS_BASE_URL', 'ws://localhost:8000/ws/v2');
 
@@ -96,6 +96,11 @@ export const useAppflowyWebSocket = (options: Options): AppflowyWebSocketType =>
   options.token = options.token || getTokenParsed()?.access_token;
   options.clientId = options.clientId || random.uint32();
   options.deviceId = options.deviceId || random.uuidv4();
+  console.debug('🔗 Start WebSocket connection', {
+    url: options.url,
+    workspaceId: options.workspaceId,
+    deviceId: options.deviceId,
+  });
   const url = `${options.url}/${options.workspaceId}/?clientId=${options.clientId}&deviceId=${options.deviceId}&token=${options.token}`;
   const [reconnectAttempt, setReconnectAttempt] = useState(0);
   const { lastMessage, sendMessage, readyState, getWebSocket } = useWebSocket(url, {
@@ -108,20 +113,23 @@ export const useAppflowyWebSocket = (options: Options): AppflowyWebSocketType =>
     },
     // Reconnect configuration
     shouldReconnect: (closeEvent) => {
-      console.log('Connection closed, code:', closeEvent.code, 'reason:', closeEvent.reason);
+      console.info('Connection closed, code:', closeEvent.code, 'reason:', closeEvent.reason);
 
       // Determine if reconnect is needed based on the close code
       if (closeEvent.code === CloseCode.NormalClose) {
         // Normal close, no reconnect
+        console.debug('✅ Normal close, no reconnect');
         return false;
       }
 
       if (closeEvent.code === CloseCode.EndpointLeft) {
         // Endpoint left, reconnect
+        console.debug('✅ Endpoint left, reconnect');
         return true;
       }
 
       if (closeEvent.code >= CloseCode.ProtocolError && closeEvent.code <= CloseCode.TLSHandshakeFailed) {
+        console.debug('✅ Protocol error, reconnect');
         // Protocol error, reconnect
         return true;
       }
@@ -136,26 +144,26 @@ export const useAppflowyWebSocket = (options: Options): AppflowyWebSocketType =>
       setReconnectAttempt(attemptNumber);
       const delay = Math.min(RECONNECT_INTERVAL * Math.pow(1.5, attemptNumber), 30000);
 
-      console.log(`Reconnect attempt ${attemptNumber}, delay ${delay}ms`);
+      console.info(`Reconnect attempt ${attemptNumber}, delay ${delay}ms`);
       return delay;
     },
 
     // Connection event callback
     onOpen: () => {
-      console.log('✅ WebSocket connection opened');
+      console.info('✅ WebSocket connection opened');
       setReconnectAttempt(0);
     },
 
     onClose: (event) => {
-      console.log('❌ WebSocket connection closed', event);
+      console.info('❌ WebSocket connection closed', event);
     },
 
     onError: (event) => {
-      console.error('🔥 WebSocket error:', event);
+      console.error('❌ WebSocket error', { event, deviceId: options.deviceId });
     },
 
     onReconnectStop: (numAttempts) => {
-      console.log('❌ Reconnect stopped, attempt number:', numAttempts);
+      console.info('❌ Reconnect stopped, attempt number:', numAttempts);
     },
   });
   const websocket = getWebSocket() as WebSocket | null;
@@ -166,7 +174,7 @@ export const useAppflowyWebSocket = (options: Options): AppflowyWebSocketType =>
 
   const sendProtobufMessage = useCallback(
     (message: messages.IMessage, keep = true): void => {
-      console.log('sending sync message:', message);
+      console.debug('sending sync message:', message);
 
       const protobufMessage = messages.Message.encode(message).finish();
 
@@ -176,7 +184,7 @@ export const useAppflowyWebSocket = (options: Options): AppflowyWebSocketType =>
   );
 
   const manualReconnect = useCallback(() => {
-    console.log('Manual reconnect triggered');
+    console.debug('Manual reconnect triggered');
     const ws = getWebSocket();
 
     if (ws) {

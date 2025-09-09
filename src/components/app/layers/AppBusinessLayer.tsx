@@ -60,10 +60,10 @@ export const AppBusinessLayer: React.FC<AppBusinessLayerProps> = ({ children }) 
   } = useWorkspaceData();
 
   // Initialize view operations
-  const { loadView, createRowDoc, toView, awarenessMap } = useViewOperations();
+  const { loadView, createRowDoc, toView, awarenessMap, getViewIdFromDatabaseId } = useViewOperations();
 
   // Initialize page operations
-  const pageOperations = usePageOperations(outline, loadOutline);
+  const pageOperations = usePageOperations({ outline, loadOutline });
 
   // Initialize database operations
   const databaseOperations = useDatabaseOperations(loadView, createRowDoc);
@@ -115,7 +115,7 @@ export const AppBusinessLayer: React.FC<AppBusinessLayerProps> = ({ children }) 
   // Load view metadata
   const loadViewMeta = useCallback(
     async (viewId: string, callback?: (meta: View) => void) => {
-      const view = findView(outline || [], viewId);
+      const view = findView(stableOutlineRef.current || [], viewId);
       const deletedView = trashList?.find((v) => v.view_id === viewId);
 
       if (deletedView) {
@@ -138,7 +138,7 @@ export const AppBusinessLayer: React.FC<AppBusinessLayerProps> = ({ children }) 
         database_relations: workspaceDatabases,
       };
     },
-    [outline, trashList, workspaceDatabases]
+    [stableOutlineRef, trashList, workspaceDatabases]
   );
 
   // Word count management
@@ -233,40 +233,13 @@ export const AppBusinessLayer: React.FC<AppBusinessLayerProps> = ({ children }) 
       loadViews,
 
       // Page operations
-      addPage: pageOperations.addPage,
+      ...pageOperations,
       deletePage: enhancedDeletePage,
-      updatePage: pageOperations.updatePage,
-      updatePageIcon: pageOperations.updatePageIcon,
-      updatePageName: pageOperations.updatePageName,
-      movePage: pageOperations.movePage,
-
-      // Trash operations
-      deleteTrash: pageOperations.deleteTrash,
-      restorePage: pageOperations.restorePage,
-
-      // Space operations
-      createSpace: pageOperations.createSpace,
-      updateSpace: pageOperations.updateSpace,
-      createFolderView: pageOperations.createFolderView,
-
-      // File operations
-      uploadFile: pageOperations.uploadFile,
-
-      // Publishing
-      getSubscriptions: pageOperations.getSubscriptions,
-      publish: pageOperations.publish,
-      unpublish: pageOperations.unpublish,
-
-      // AI operations
-      generateAISummaryForRow: databaseOperations.generateAISummaryForRow,
-      generateAITranslateForRow: databaseOperations.generateAITranslateForRow,
 
       // Database operations
       loadDatabaseRelations,
-      createOrphanedView: pageOperations.createOrphanedView,
-      loadDatabasePrompts: databaseOperations.loadDatabasePrompts,
-      testDatabasePromptConfig: databaseOperations.testDatabasePromptConfig,
-      checkIfRowDocumentExists: databaseOperations.checkIfRowDocumentExists,
+      ...databaseOperations,
+      getViewIdFromDatabaseId,
 
       // User operations
       getMentionUser,
@@ -304,6 +277,7 @@ export const AppBusinessLayer: React.FC<AppBusinessLayerProps> = ({ children }) 
       enhancedDeletePage,
       loadDatabaseRelations,
       databaseOperations,
+      getViewIdFromDatabaseId,
       getMentionUser,
       rendered,
       onRendered,

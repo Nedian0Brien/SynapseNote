@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Awareness } from 'y-protocols/awareness';
 
 import { openCollabDB } from '@/application/db';
-import { Types, View, ViewLayout, YDoc, YjsEditorKey } from '@/application/types';
+import { DatabaseId, Types, View, ViewId, ViewLayout, YDoc, YjsEditorKey } from '@/application/types';
 import { findView } from '@/components/_shared/outline/utils';
 
 import { useAuthInternal } from '../contexts/AuthInternalContext';
@@ -18,6 +18,7 @@ export function useViewOperations() {
   const [awarenessMap, setAwarenessMap] = useState<Record<string, Awareness>>({});
   const workspaceDatabaseDocMapRef = useRef<Map<string, YDoc>>(new Map());
   const createdRowKeys = useRef<string[]>([]);
+  const databaseIdViewIdMapRef = useRef<Map<DatabaseId, ViewId>>(new Map());
 
   const databaseStorageId = userWorkspaceInfo?.selectedWorkspace?.databaseStorageId;
 
@@ -68,6 +69,36 @@ export function useViewOperations() {
     },
     [currentWorkspaceId, databaseStorageId, registerWorkspaceDatabaseDoc]
   );
+
+  const getViewIdFromDatabaseId = useCallback((databaseId: string) => {
+    if (!currentWorkspaceId) {
+      return null;
+    }
+
+    if (databaseIdViewIdMapRef.current.has(databaseId)) {
+      return databaseIdViewIdMapRef.current.get(databaseId) || null;
+    }
+
+    const workspaceDatabaseDoc = workspaceDatabaseDocMapRef.current.get(currentWorkspaceId);
+
+    if (!workspaceDatabaseDoc) {
+      return null;
+    }
+
+    const sharedRoot = workspaceDatabaseDoc.getMap(YjsEditorKey.data_section);
+
+    const databases = sharedRoot?.toJSON()?.databases;
+
+    const database = databases?.find((db: { database_id: string; views: string[] }) =>
+      db.database_id === databaseId
+    );
+
+    if (database) {
+      databaseIdViewIdMapRef.current.set(databaseId, database.views[0]);
+    }
+
+    return databaseIdViewIdMapRef.current.get(databaseId) || null;
+  }, [currentWorkspaceId]);
 
   // Load view document
   const loadView = useCallback(
@@ -182,6 +213,7 @@ export function useViewOperations() {
       let url = `/app/${currentWorkspaceId}/${viewId}`;
       const view = await loadViewMeta?.(viewId);
 
+      console.log('view', view);
       const searchParams = new URLSearchParams(keepSearch ? window.location.search : undefined);
 
       if (blockId && view) {
@@ -230,5 +262,6 @@ export function useViewOperations() {
     createRowDoc,
     toView,
     awarenessMap,
+    getViewIdFromDatabaseId,
   };
 }

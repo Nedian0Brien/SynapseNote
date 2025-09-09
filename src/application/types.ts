@@ -344,8 +344,8 @@ export enum YjsDatabaseKey {
   include_time = 'include_time',
   is_range = 'is_range',
   reminder_id = 'reminder_id',
-  time_format = 'time_format',
-  date_format = 'date_format',
+  time_format = 'time_format_v2',
+  date_format = 'date_format_v2',
   calculations = 'calculations',
   field_id = 'field_id',
   calculation_value = 'calculation_value',
@@ -363,6 +363,7 @@ export enum YjsDatabaseKey {
   is_inline = 'is_inline',
   auto_fill = 'auto_fill',
   language = 'language',
+  number_of_days = 'number_of_days',
 }
 
 export interface YDoc extends Y.Doc {
@@ -589,6 +590,7 @@ export interface YDatabaseBoardLayoutSetting extends Y.Map<unknown> {
 
 export interface YDatabaseCalendarLayoutSetting extends Y.Map<unknown> {
   get(key: YjsDatabaseKey.first_day_of_week | YjsDatabaseKey.field_id | YjsDatabaseKey.layout_ty): string;
+  get(key: YjsDatabaseKey.number_of_days): number;
 
   get(key: YjsDatabaseKey.show_week_numbers | YjsDatabaseKey.show_weekends): boolean;
 }
@@ -686,11 +688,11 @@ export interface YMapFieldTypeOption extends Y.Map<unknown> {
 
   // CreatedTime, LastEditedTime, DateTime
   // eslint-disable-next-line @typescript-eslint/unified-signatures
-  get(key: YjsDatabaseKey.time_format): string;
+  get(key: YjsDatabaseKey.time_format): string | undefined;
 
   // CreatedTime, LastEditedTime, DateTime
   // eslint-disable-next-line @typescript-eslint/unified-signatures
-  get(key: YjsDatabaseKey.date_format): string;
+  get(key: YjsDatabaseKey.date_format): string | undefined;
 
   // Relation
   get(key: YjsDatabaseKey.database_id): DatabaseId;
@@ -699,7 +701,7 @@ export interface YMapFieldTypeOption extends Y.Map<unknown> {
   // eslint-disable-next-line @typescript-eslint/unified-signatures
   get(key: YjsDatabaseKey.format): string;
 
-  // LastModified and CreatedTime
+  // LastEditedTime and CreatedTime
   get(key: YjsDatabaseKey.include_time): boolean;
 
   // AI Translate
@@ -1086,6 +1088,7 @@ export interface ViewComponentProps {
   }>;
   updatePageIcon?: (viewId: string, icon: { ty: ViewIconType; value: string }) => Promise<void>;
   updatePageName?: (viewId: string, name: string) => Promise<void>;
+  currentUser?: User;
 }
 
 export interface CreatePagePayload {
@@ -1205,4 +1208,17 @@ export interface MentionablePerson {
   person_id: string;
   invited: boolean;
   last_mentioned_at: string | null;
+}
+
+export enum DateFormat {
+  Local = 0,
+  US = 1,
+  ISO = 2,
+  Friendly = 3,
+  DayMonthYear = 4,
+}
+
+export enum TimeFormat {
+  TwelveHour = 0,
+  TwentyFourHour = 1,
 }

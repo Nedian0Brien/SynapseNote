@@ -28,6 +28,7 @@ function ImageBlockPopoverContent({ blockId, onClose }: { blockId: string; onClo
   const { t } = useTranslation();
 
   const [tabValue, setTabValue] = React.useState('upload');
+  const [uploading, setUploading] = React.useState(false);
 
   const handleTabChange = useCallback((_event: React.SyntheticEvent, newValue: string) => {
     setTabValue(newValue);
@@ -89,42 +90,47 @@ function ImageBlockPopoverContent({ blockId, onClose }: { blockId: string; onClo
     async (files: File[]) => {
       if (!files.length) return;
 
-      const [file, ...otherFiles] = files;
-      const url = await uploadFileRemote(file);
-      const data = await getData(file, url);
+      setUploading(true);
+      try {
+        const [file, ...otherFiles] = files;
+        const url = await uploadFileRemote(file);
+        const data = await getData(file, url);
 
-      CustomEditor.setBlockData(editor, blockId, data);
+        CustomEditor.setBlockData(editor, blockId, data);
 
-      let belowBlockId: string | undefined = blockId;
+        let belowBlockId: string | undefined = blockId;
 
-      for (const file of otherFiles) {
-        const newId = await insertImageBlock(file);
+        for (const file of otherFiles) {
+          const newId = await insertImageBlock(file);
 
-        if (newId) {
-          belowBlockId = newId;
+          if (newId) {
+            belowBlockId = newId;
+          }
         }
+
+        belowBlockId = CustomEditor.addBelowBlock(editor, belowBlockId, BlockType.Paragraph, {});
+
+        const entry = belowBlockId ? findSlateEntryByBlockId(editor, belowBlockId) : null;
+
+        if (!entry) return;
+
+        const [node, path] = entry;
+
+        onClose();
+
+        if (path) {
+          editor.select(editor.start(path));
+        }
+
+        setTimeout(() => {
+          if (!node) return;
+          const el = ReactEditor.toDOMNode(editor, node);
+
+          el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 250);
+      } finally {
+        setUploading(false);
       }
-
-      belowBlockId = CustomEditor.addBelowBlock(editor, belowBlockId, BlockType.Paragraph, {});
-
-      const entry = belowBlockId ? findSlateEntryByBlockId(editor, belowBlockId) : null;
-
-      if (!entry) return;
-
-      const [node, path] = entry;
-
-      onClose();
-
-      if (path) {
-        editor.select(editor.start(path));
-      }
-
-      setTimeout(() => {
-        if (!node) return;
-        const el = ReactEditor.toDOMNode(editor, node);
-
-        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 250);
     },
     [blockId, editor, getData, insertImageBlock, onClose, uploadFileRemote]
   );
@@ -135,7 +141,7 @@ function ImageBlockPopoverContent({ blockId, onClose }: { blockId: string; onClo
         key: 'upload',
         label: t('button.upload'),
         panel: (
-          <FileDropzone multiple={true} onChange={handleChangeUploadFiles} accept={ALLOWED_IMAGE_EXTENSIONS.join(',')} />
+          <FileDropzone multiple={true} onChange={handleChangeUploadFiles} accept={ALLOWED_IMAGE_EXTENSIONS.join(',')} loading={uploading} />
         ),
       },
       {
@@ -155,7 +161,7 @@ function ImageBlockPopoverContent({ blockId, onClose }: { blockId: string; onClo
         panel: <Unsplash onDone={handleUpdateLink} />,
       },
     ];
-  }, [entry, handleChangeUploadFiles, handleUpdateLink, t]);
+  }, [entry, handleChangeUploadFiles, handleUpdateLink, t, uploading]);
 
   const selectedIndex = tabOptions.findIndex((tab) => tab.key === tabValue);
   const ref = useRef<HTMLDivElement>(null);

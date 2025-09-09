@@ -386,7 +386,7 @@ export const CustomEditor = {
 
     // Try to apply the new selection, with multiple fallback strategies
     if (newSelection && isValidSelection(editor, newSelection)) {
-      console.log('✅ Using calculated selection:', newSelection);
+      console.debug('✅ Using calculated selection:', newSelection);
       Transforms.select(editor, newSelection);
     } else {
       console.warn('⚠️ Calculated selection invalid, trying fallback strategies');
@@ -396,7 +396,7 @@ export const CustomEditor = {
         const nearestFromCalculated = findNearestValidSelection(editor, newSelection);
 
         if (nearestFromCalculated) {
-          console.log('✅ Using nearest from calculated:', nearestFromCalculated);
+          console.debug('✅ Using nearest from calculated:', nearestFromCalculated);
           Transforms.select(editor, nearestFromCalculated);
           return;
         }
@@ -406,7 +406,7 @@ export const CustomEditor = {
       const nearestFromOriginal = findNearestValidSelection(editor, originalSelection);
 
       if (nearestFromOriginal) {
-        console.log('✅ Using nearest from original:', nearestFromOriginal);
+        console.debug('✅ Using nearest from original:', nearestFromOriginal);
         Transforms.select(editor, nearestFromOriginal);
         return;
       }
@@ -417,7 +417,7 @@ export const CustomEditor = {
           const startOfBlock = Editor.start(editor, newStartBlockPath);
 
           if (isValidSelection(editor, { anchor: startOfBlock, focus: startOfBlock })) {
-            console.log('✅ Using start of block:', startOfBlock);
+            console.debug('✅ Using start of block:', startOfBlock);
             Transforms.select(editor, startOfBlock);
             return;
           }
@@ -430,7 +430,7 @@ export const CustomEditor = {
       const documentSelection = findNearestValidSelection(editor, null);
 
       if (documentSelection) {
-        console.log('✅ Using document fallback:', documentSelection);
+        console.debug('✅ Using document fallback:', documentSelection);
         Transforms.select(editor, documentSelection);
       } else {
         console.warn('❌ Could not establish any valid selection after tab operation');

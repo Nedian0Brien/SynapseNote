@@ -1,4 +1,4 @@
-import { FieldType, SelectOptionColor } from '@/application/database-yjs';
+import { FieldType, SelectOption, SelectOptionColor } from '@/application/database-yjs';
 import { YDatabaseCell, YjsDatabaseKey } from '@/application/types';
 import { nanoid } from 'nanoid';
 import * as Y from 'yjs';
@@ -19,24 +19,24 @@ export function generateOptionId () {
   return nanoid(6);
 }
 
-export function getColorByOption (text: string): SelectOptionColor {
-  if (!text || text.length === 0) {
-    const colors = Object.values(SelectOptionColor);
+export function getColorByOption (options: SelectOption[]): SelectOptionColor {
+  const colorFrequency = Array(10).fill(0);
 
-    return colors[Math.floor(Math.random() * colors.length)];
+  for (const option of options) {
+    const colorIndex = Object.values(SelectOptionColor).indexOf(option.color);
+
+    if (colorIndex < 10) {
+      colorFrequency[colorIndex]++;
+    }
   }
 
-  let hash = 0;
+  let minIndex = 0;
 
-  for (let i = 0; i < text.length; i++) {
-    hash = ((hash << 5) - hash) + text.charCodeAt(i);
-    hash = hash & hash;
+  for (let i = 1; i < colorFrequency.length; i++) {
+    if (colorFrequency[i] < colorFrequency[minIndex]) {
+      minIndex = i;
+    }
   }
 
-  hash = Math.abs(hash);
-
-  const colors = Object.values(SelectOptionColor);
-  const colorIndex = hash % 10;
-
-  return colors[colorIndex];
+  return Object.values(SelectOptionColor)?.[minIndex];
 }

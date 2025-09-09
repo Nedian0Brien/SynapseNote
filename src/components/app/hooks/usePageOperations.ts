@@ -1,19 +1,20 @@
 import { useCallback } from 'react';
 
 import {
-  CreatePagePayload,
-  UpdatePagePayload,
-  ViewIconType,
-  CreateSpacePayload,
-  UpdateSpacePayload,
   CreateFolderViewPayload,
+  CreatePagePayload,
+  CreateSpacePayload,
+  UpdatePagePayload,
+  UpdateSpacePayload,
   View,
+  ViewIconType,
 } from '@/application/types';
 import { findView } from '@/components/_shared/outline/utils';
+
 import { useAuthInternal } from '../contexts/AuthInternalContext';
 
 // Hook for managing page and space operations
-export function usePageOperations(outline?: View[], loadOutline?: (workspaceId: string, force?: boolean) => Promise<void>) {
+export function usePageOperations({ outline, loadOutline }: { outline?: View[], loadOutline?: (workspaceId: string, force?: boolean) => Promise<void> }) {
   const { service, currentWorkspaceId } = useAuthInternal();
 
   // Add a new page
@@ -95,6 +96,7 @@ export function usePageOperations(outline?: View[], loadOutline?: (workspaceId: 
       if (!currentWorkspaceId || !service) {
         throw new Error('No workspace or service found');
       }
+
 
       try {
         await service?.updateAppPageName(currentWorkspaceId, viewId, name);

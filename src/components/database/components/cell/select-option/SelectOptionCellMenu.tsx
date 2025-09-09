@@ -121,13 +121,13 @@ function SelectOptionCellMenu ({ open, onOpenChange, fieldId, rowId, selectOptio
     const newOption: SelectOption = {
       id: searchValue,
       name: searchValue,
-      color: getColorByOption(searchValue),
+      color: getColorByOption(typeOption?.options || []),
     };
 
     onCreateOption(newOption);
     setSearchValue('');
     handleSelectOption(newOption.id);
-  }, [handleSelectOption, onCreateOption]);
+  }, [handleSelectOption, onCreateOption, typeOption]);
 
   const handleEnter = useCallback(() => {
     const hoveredId = hoveredIdRef.current;

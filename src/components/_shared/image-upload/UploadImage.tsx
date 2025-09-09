@@ -1,5 +1,4 @@
 import FileDropzone from '@/components/_shared/file-dropzone/FileDropzone';
-import LoadingDots from '@/components/_shared/LoadingDots';
 import { notify } from '@/components/_shared/notify';
 import React, { useCallback } from 'react';
 
@@ -45,16 +44,8 @@ export function UploadImage({
       <FileDropzone
         onChange={handleFileChange}
         accept={ALLOWED_IMAGE_EXTENSIONS.join(',')}
+        loading={loading}
       />
-      {loading && (
-        <div
-          className={
-            'absolute inset-0 z-10 flex h-full w-full items-center justify-center bg-background-primary opacity-90'
-          }
-        >
-          <LoadingDots />
-        </div>
-      )}
     </div>
   );
 }

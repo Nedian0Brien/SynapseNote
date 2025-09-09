@@ -29,7 +29,7 @@ function AddCreator({ searchText, onCreated }: { searchText: string; onCreated: 
 
   const onSubmit = useCallback(
     async (data: TemplateCreatorFormValues) => {
-      console.log('data', data);
+      console.debug('data', data);
       try {
         await service?.createTemplateCreator(data);
         onCreated();

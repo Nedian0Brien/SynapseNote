@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import * as Y from 'yjs';
 
 import {
@@ -9,8 +9,8 @@ import {
 } from '@/application/database-yjs';
 import { RelationCell, RelationCellData } from '@/application/database-yjs/cell.type';
 import { YDoc, YjsEditorKey } from '@/application/types';
-import { RelationPrimaryValue } from '@/components/database/components/cell/relation/RelationPrimaryValue';
 import { notify } from '@/components/_shared/notify';
+import { RelationPrimaryValue } from '@/components/database/components/cell/relation/RelationPrimaryValue';
 import { cn } from '@/lib/utils';
 
 function RelationItems({
@@ -31,13 +31,16 @@ function RelationItems({
   const createRowDoc = context.createRowDoc;
   const loadView = context.loadView;
   const navigateToRow = context.navigateToRow;
-  const loadDatabaseRelations = context.loadDatabaseRelations;
+  const getViewIdFromDatabaseId = context.getViewIdFromDatabaseId;
 
   const [noAccess, setNoAccess] = useState(false);
-  const [relations, setRelations] = useState<Record<string, string> | null>();
   const [rows, setRows] = useState<DatabaseContextState['rowDocMap'] | null>();
   const [relatedFieldId, setRelatedFieldId] = useState<string | undefined>();
-  const relatedViewId = relatedDatabaseId ? relations?.[relatedDatabaseId] : null;
+  const relatedViewId = useMemo(
+    () => (relatedDatabaseId ? getViewIdFromDatabaseId?.(relatedDatabaseId) : null),
+    [getViewIdFromDatabaseId, relatedDatabaseId]
+  );
+
   const [docGuid, setDocGuid] = useState<string | null>(null);
   const [databaseDoc, setDatabaseDoc] = useState<YDoc | null>(null);
 
@@ -45,24 +48,10 @@ function RelationItems({
 
   const navigateToView = context.navigateToView;
 
-  useEffect(() => {
-    const loadRelations = async () => {
-      const relations = await loadDatabaseRelations?.();
-
-      setRelations(relations);
-    };
-
-    try {
-      void loadRelations();
-    } catch (e) {
-      console.error(e);
-    }
-  }, [loadDatabaseRelations]);
-
   const handleUpdateRowIds = useCallback(() => {
     const data = cell?.data;
 
-    if (!data || !(data instanceof Y.Array<string>)) {
+    if (!data || !(data instanceof Y.Array)) {
       setRowIds([]);
       return;
     }

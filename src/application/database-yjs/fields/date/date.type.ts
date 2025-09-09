@@ -1,18 +1,5 @@
 import { Filter } from '@/application/database-yjs';
 
-export enum TimeFormat {
-  TwelveHour = 0,
-  TwentyFourHour = 1,
-}
-
-export enum DateFormat {
-  Local = 0,
-  US = 1,
-  ISO = 2,
-  Friendly = 3,
-  DayMonthYear = 4,
-}
-
 export enum DateFilterCondition {
   DateStartsOn = 0,
   DateStartsBefore = 1,

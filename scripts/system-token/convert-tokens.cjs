@@ -5,7 +5,7 @@ const path = require('path');
 function ensureDirectoryExists (dirPath) {
   if (!fs.existsSync(dirPath)) {
     fs.mkdirSync(dirPath, { recursive: true });
-    console.log(`Created directory: ${dirPath}`);
+    console.debug(`Created directory: ${dirPath}`);
   }
 }
 
@@ -219,7 +219,7 @@ function convertDesignTokens (primitiveFilePath, semanticFilePath, outputFilePat
 
   // Write file
   fs.writeFileSync(outputFilePath, css, 'utf8');
-  console.log(`CSS variables written to ${outputFilePath}`);
+  console.debug(`CSS variables written to ${outputFilePath}`);
 
   return { variableNames };
 }
@@ -237,7 +237,7 @@ ensureDirectoryExists(cssOutputDir);
 ensureDirectoryExists(tailwindOutputDir);
 
 // Execute conversion
-console.log('Converting design tokens to CSS variables...');
+console.debug('Converting design tokens to CSS variables...');
 
 // Collect all variable names
 let allVariableNames = [];
@@ -261,9 +261,9 @@ const darkResult = convertDesignTokens(
 // Dark theme variables are the same as light theme, no need to merge
 
 // Generate Tailwind color configuration
-console.log('Generating Tailwind color configuration with CSS variable references...');
+console.debug('Generating Tailwind color configuration with CSS variable references...');
 const tailwindColors = createTailwindColorsFromVariables(allVariableNames);
 fs.writeFileSync(path.join(tailwindOutputDir, 'new-colors.cjs'), tailwindColors);
-console.log(`Tailwind colors written to ${path.join(tailwindOutputDir, 'new-colors.cjs')}`);
+console.debug(`Tailwind colors written to ${path.join(tailwindOutputDir, 'new-colors.cjs')}`);
 
-console.log('Conversion completed successfully!');
+console.debug('Conversion completed successfully!');

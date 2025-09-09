@@ -7,6 +7,7 @@ import { createHtmlPlugin } from 'vite-plugin-html';
 import istanbul from 'vite-plugin-istanbul';
 import svgr from 'vite-plugin-svgr';
 import { totalBundleSize } from 'vite-plugin-total-bundle-size';
+import { stripTestIdPlugin } from './vite-plugin-strip-testid';
 
 const resourcesPath = path.resolve(__dirname, '../resources');
 const isDev = process.env.NODE_ENV === 'development';
@@ -17,6 +18,8 @@ const isTest = process.env.NODE_ENV === 'test' || process.env.COVERAGE === 'true
 export default defineConfig({
   plugins: [
     react(),
+    // Strip data-testid attributes in production builds
+    isProd ? stripTestIdPlugin() : undefined,
     createHtmlPlugin({
       inject: {
         data: {
@@ -99,6 +102,7 @@ export default defineConfig({
   // prevent vite from obscuring rust errors
   clearScreen: false,
   server: {
+    host: '0.0.0.0', // Listen on all network interfaces (both IPv4 and IPv6)
     port: process.env.PORT ? parseInt(process.env.PORT) : 3000,
     strictPort: true,
     watch: {
@@ -119,34 +123,35 @@ export default defineConfig({
   build: {
     target: `esnext`,
     reportCompressedSize: true,
+    chunkSizeWarningLimit: 1600,
     rollupOptions: isProd
       ? {
-          output: {
-            chunkFileNames: 'static/js/[name]-[hash].js',
-            entryFileNames: 'static/js/[name]-[hash].js',
-            assetFileNames: 'static/[ext]/[name]-[hash].[ext]',
-            manualChunks(id) {
-              if (
-                // id.includes('/react@') ||
-                // id.includes('/react-dom@') ||
-                id.includes('/react-is@') ||
-                id.includes('/yjs@') ||
-                id.includes('/y-indexeddb@') ||
-                id.includes('/dexie') ||
-                id.includes('/redux') ||
-                id.includes('/react-custom-scrollbars') ||
-                id.includes('/dayjs') ||
-                id.includes('/smooth-scroll-into-view-if-needed') ||
-                id.includes('/react-virtualized-auto-sizer') ||
-                id.includes('/react-window') ||
-                id.includes('/@popperjs') ||
-                id.includes('/@mui/material/Dialog') ||
-                id.includes('/quill-delta')
-              ) {
-                return 'common';
-              }
-            },
+        output: {
+          chunkFileNames: 'static/js/[name]-[hash].js',
+          entryFileNames: 'static/js/[name]-[hash].js',
+          assetFileNames: 'static/[ext]/[name]-[hash].[ext]',
+          manualChunks(id) {
+            if (
+              // id.includes('/react@') ||
+              // id.includes('/react-dom@') ||
+              id.includes('/react-is@') ||
+              id.includes('/yjs@') ||
+              id.includes('/y-indexeddb@') ||
+              id.includes('/dexie') ||
+              id.includes('/redux') ||
+              id.includes('/react-custom-scrollbars') ||
+              id.includes('/dayjs') ||
+              id.includes('/smooth-scroll-into-view-if-needed') ||
+              id.includes('/react-virtualized-auto-sizer') ||
+              id.includes('/react-window') ||
+              id.includes('/@popperjs') ||
+              id.includes('/@mui/material/Dialog') ||
+              id.includes('/quill-delta')
+            ) {
+              return 'common';
+            }
           },
+        },
         }
       : {},
   },
@@ -159,6 +164,17 @@ export default defineConfig({
   },
 
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-katex', '@appflowyinc/editor', '@appflowyinc/ai-chat', 'react-colorful'],
+    include: [
+      'react',
+      'react-dom',
+      'react-katex',
+      '@appflowyinc/editor',
+      '@appflowyinc/ai-chat',
+      'react-colorful',
+      'i18next',
+      'i18next-browser-languagedetector',
+      'i18next-resources-to-backend',
+      'react-i18next'
+    ],
   },
 });

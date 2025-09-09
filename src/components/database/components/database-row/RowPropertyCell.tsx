@@ -1,16 +1,23 @@
+import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import { FieldType, useCellSelector, useFieldSelector, useReadOnly } from '@/application/database-yjs';
-import { Cell as CellType, CellProps } from '@/application/database-yjs/cell.type';
+import { CellProps, Cell as CellType } from '@/application/database-yjs/cell.type';
 import { YjsDatabaseKey } from '@/application/types';
 import ChecklistCell from '@/components/database/components/database-row/checklist/ChecklistCell';
 import FileMediaCell from '@/components/database/components/database-row/file-media/FileMediaCell';
 import { cn } from '@/lib/utils';
-import React, { useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
+
 import Cell from 'src/components/database/components/cell/Cell';
 
-function RowPropertyCell ({ fieldId, rowId }: {
+function RowPropertyCell({
+  fieldId,
+  rowId,
+  onCellUpdated,
+}: {
   fieldId: string;
   rowId: string;
+  onCellUpdated?: (cell: CellType) => void;
 }) {
   const cell = useCellSelector({
     fieldId,
@@ -19,9 +26,11 @@ function RowPropertyCell ({ fieldId, rowId }: {
   const { t } = useTranslation();
 
   const readOnly = useReadOnly();
-  const { field } = useFieldSelector(fieldId);
+  const { field, clock } = useFieldSelector(fieldId);
   const fieldType = Number(field?.get(YjsDatabaseKey.type)) as FieldType;
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const fieldName = useMemo(() => field?.get(YjsDatabaseKey.name) || '', [field, clock]);
   const [hovering, setHovering] = React.useState<boolean>(false);
   const [editing, setEditing] = React.useState<boolean>(false);
 
@@ -39,6 +48,10 @@ function RowPropertyCell ({ fieldId, rowId }: {
     return Cell;
   }, [isChecklist, isFileMedia]) as React.FC<CellProps<CellType>>;
 
+  const placeholder = useMemo(() => {
+    return `${t('button.add')} ${fieldName}`;
+  }, [fieldName, t]);
+
   return (
     <div
       onClick={() => {
@@ -53,11 +66,14 @@ function RowPropertyCell ({ fieldId, rowId }: {
         if (readOnly) return;
         setHovering(false);
       }}
-      className={cn('flex rounded-300 px-2 text-sm h-fit min-h-[36px] relative flex-1 flex-wrap items-center overflow-x-hidden py-2 pr-1', !readOnly && !isChecklist && 'hover:bg-fill-content-hover cursor-pointer')}
+      className={cn(
+        'relative flex h-fit min-h-[36px] flex-1 flex-wrap items-center overflow-x-hidden rounded-300 px-2 py-2 pr-1 text-sm',
+        !readOnly && !isChecklist && 'cursor-pointer hover:bg-fill-content-hover'
+      )}
     >
       <CellComponent
         cell={cell}
-        placeholder={t('grid.row.textPlaceholder')}
+        placeholder={placeholder}
         fieldId={fieldId}
         rowId={rowId}
         readOnly={readOnly}
@@ -65,12 +81,13 @@ function RowPropertyCell ({ fieldId, rowId }: {
         editing={editing}
         setEditing={setEditing}
         wrap={true}
-        {...([
-          FieldType.LastEditedTime,
-          FieldType.CreatedTime,
-        ].includes(fieldType) ? {
-          attrName: fieldType === FieldType.LastEditedTime ? YjsDatabaseKey.last_modified : YjsDatabaseKey.created_at,
-        } : undefined)}
+        onCellUpdated={onCellUpdated}
+        {...([FieldType.LastEditedTime, FieldType.CreatedTime].includes(fieldType)
+          ? {
+              attrName:
+                fieldType === FieldType.LastEditedTime ? YjsDatabaseKey.last_modified : YjsDatabaseKey.created_at,
+            }
+          : undefined)}
       />
     </div>
   );
