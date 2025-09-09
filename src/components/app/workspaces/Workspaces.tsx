@@ -49,6 +49,7 @@ export function Workspaces() {
   const [openUpgradePlan, setOpenUpgradePlan] = useState(false);
   const [openUpgradeAIMax, setOpenUpgradeAIMax] = useState(false);
   const [open, setOpen] = useState(false);
+  const [openAccountSettings, setOpenAccountSettings] = useState(false);
   const [hoveredHeader, setHoveredHeader] = useState<boolean>(false);
   const ref = useRef<HTMLDivElement | null>(null);
   const navigate = useNavigate();
@@ -216,13 +217,17 @@ export function Workspaces() {
 
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <AccountSettings>
-                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                  <SettingsIcon />
-                  <div className={'flex-1 text-left'}>{t('web.accountSettings')}</div>
-                  <ChevronRightIcon className='text-icon-tertiary' />
-                </DropdownMenuItem>
-              </AccountSettings>
+              <DropdownMenuItem 
+                data-testid="account-settings-button" 
+                onSelect={() => {
+                  setOpenAccountSettings(true);
+                  setOpen(false);
+                }}
+              >
+                <SettingsIcon />
+                <div className={'flex-1 text-left'}>{t('web.accountSettings')}</div>
+                <ChevronRightIcon className='text-icon-tertiary' />
+              </DropdownMenuItem>
               <DropdownMenuItem onSelect={handleSignOut}>
                 <LogoutIcon />
                 {t('button.logout')}
@@ -316,6 +321,10 @@ export function Workspaces() {
           open={Boolean(openLeaveWorkspace)}
           openOnChange={() => setOpenLeaveWorkspace(null)}
         />
+      )}
+
+      {openAccountSettings && (
+        <AccountSettings open={openAccountSettings} onOpenChange={setOpenAccountSettings} />
       )}
     </>
   );

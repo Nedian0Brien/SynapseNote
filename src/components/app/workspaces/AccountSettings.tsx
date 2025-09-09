@@ -6,7 +6,7 @@ import { DateFormat, TimeFormat } from '@/application/types';
 import { MetadataKey } from '@/application/user-metadata';
 import { ReactComponent as ChevronDownIcon } from '@/assets/icons/alt_arrow_down.svg';
 import { useCurrentUser, useService } from '@/components/main/app.hooks';
-import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -16,7 +16,15 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 
-export function AccountSettings({ children }: { children?: React.ReactNode }) {
+export function AccountSettings({ 
+  children, 
+  open, 
+  onOpenChange 
+}: { 
+  children?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}) {
   const { t } = useTranslation();
   const currentUser = useCurrentUser();
   const service = useService();
@@ -29,54 +37,144 @@ export function AccountSettings({ children }: { children?: React.ReactNode }) {
   );
   const [startWeekOn, setStartWeekOn] = useState(() => Number(currentUser?.metadata?.[MetadataKey.StartWeekOn]) || 0);
 
+  // Track if we're in the middle of an update to prevent syncing
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  // Sync state with currentUser only when dialog opens/remounts
   useEffect(() => {
-    setDateFormat(Number(currentUser?.metadata?.[MetadataKey.DateFormat] as DateFormat) || DateFormat.Local);
-    setTimeFormat(Number(currentUser?.metadata?.[MetadataKey.TimeFormat] as TimeFormat) || TimeFormat.TwelveHour);
-    setStartWeekOn(Number(currentUser?.metadata?.[MetadataKey.StartWeekOn]) || 0);
-  }, [currentUser]);
+    // Only sync if controlled mode and dialog is opening AND we're not updating
+    if (open !== undefined && open && !isUpdating) {
+      const newDateFormat = Number(currentUser?.metadata?.[MetadataKey.DateFormat] as DateFormat) || DateFormat.Local;
+      const newTimeFormat = Number(currentUser?.metadata?.[MetadataKey.TimeFormat] as TimeFormat) || TimeFormat.TwelveHour;
+      const newStartWeek = Number(currentUser?.metadata?.[MetadataKey.StartWeekOn]) || 0;
+      
+      setDateFormat(newDateFormat);
+      setTimeFormat(newTimeFormat);
+      setStartWeekOn(newStartWeek);
+    }
+  }, [open, currentUser?.metadata, isUpdating]); // Include metadata but only use when opening
+
+  // Reusable helper for optimistic metadata updates
+  const updateMetadataOptimistically = useCallback(
+    async (
+      metadataKey: MetadataKey,
+      newValue: number,
+      setStateFunction: (value: number) => void,
+      previousValue: number,
+      errorMessage: string
+    ) => {
+      if (!service || !currentUser) return;
+
+      // Mark as updating to prevent re-sync
+      setIsUpdating(true);
+      
+      // Optimistic update - update UI immediately
+      setStateFunction(newValue);
+      
+      try {
+        const metadata = currentUser.metadata || {};
+        const updatedMetadata = { ...metadata, [metadataKey]: newValue };
+        
+        // Update in memory immediately
+        if (currentUser.metadata) {
+          currentUser.metadata[metadataKey] = newValue;
+        }
+        
+        // Send update to server
+        await service.updateUserProfile(updatedMetadata);
+        
+        // Delayed getCurrentUser to allow test verification without causing flicker
+        setTimeout(() => service.getCurrentUser(), 300);
+      } catch (error) {
+        // Rollback on failure
+        console.error(errorMessage, error);
+        setStateFunction(previousValue);
+        
+        // Restore in-memory value
+        if (currentUser.metadata) {
+          currentUser.metadata[metadataKey] = previousValue;
+        }
+      } finally {
+        // Clear updating flag after a short delay to ensure WebSocket update has been processed
+        setTimeout(() => setIsUpdating(false), 500);
+      }
+    },
+    [currentUser, service]
+  );
 
   const handleSelectDateFormat = useCallback(
     async (dateFormat: number) => {
-      setDateFormat(dateFormat);
-      if (!service || !currentUser?.metadata) return;
-
-      await service?.updateUserProfile({ ...currentUser.metadata, [MetadataKey.DateFormat]: dateFormat });
-      await service?.getCurrentUser();
+      const previousFormat = Number(currentUser?.metadata?.[MetadataKey.DateFormat] as DateFormat) || DateFormat.Local;
+      
+      await updateMetadataOptimistically(
+        MetadataKey.DateFormat,
+        dateFormat,
+        setDateFormat,
+        previousFormat,
+        'Failed to update date format:'
+      );
     },
-    [currentUser, service]
+    [currentUser?.metadata, updateMetadataOptimistically]
   );
 
   const handleSelectTimeFormat = useCallback(
     async (timeFormat: number) => {
-      setTimeFormat(timeFormat);
-      if (!service || !currentUser?.metadata) return;
-
-      await service?.updateUserProfile({ ...currentUser.metadata, [MetadataKey.TimeFormat]: timeFormat });
-      await service?.getCurrentUser();
+      const previousFormat = Number(currentUser?.metadata?.[MetadataKey.TimeFormat] as TimeFormat) || TimeFormat.TwelveHour;
+      
+      await updateMetadataOptimistically(
+        MetadataKey.TimeFormat,
+        timeFormat,
+        setTimeFormat,
+        previousFormat,
+        'Failed to update time format:'
+      );
     },
-    [currentUser, service]
+    [currentUser?.metadata, updateMetadataOptimistically]
   );
 
   const handleSelectStartWeekOn = useCallback(
     async (startWeekOn: number) => {
-      setStartWeekOn(startWeekOn);
-      if (!service || !currentUser?.metadata) return;
-
-      await service?.updateUserProfile({ ...currentUser.metadata, [MetadataKey.StartWeekOn]: startWeekOn });
-      await service?.getCurrentUser();
+      const previousValue = Number(currentUser?.metadata?.[MetadataKey.StartWeekOn]) || 0;
+      
+      await updateMetadataOptimistically(
+        MetadataKey.StartWeekOn,
+        startWeekOn,
+        setStartWeekOn,
+        previousValue,
+        'Failed to update start week on:'
+      );
     },
-    [currentUser, service]
+    [currentUser?.metadata, updateMetadataOptimistically]
   );
 
   if (!currentUser || !service) {
     return <></>;
   }
 
+  // If open/onOpenChange are provided, use them for controlled mode
+  if (open !== undefined && onOpenChange) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent data-testid="account-settings-dialog" className='flex h-[300px] min-h-0 w-[400px] flex-col gap-3 sm:max-w-[calc(100%-2rem)]'>
+          <DialogTitle className='text-md font-bold text-text-primary'>{t('web.accountSettings')}</DialogTitle>
+          <DialogDescription className='sr-only'>Configure your account preferences including date format, time format, and week start day</DialogDescription>
+          <div className='flex min-h-0 w-full flex-1 flex-col items-start gap-3 py-4'>
+            <DateFormatDropdown dateFormat={dateFormat} onSelect={handleSelectDateFormat} />
+            <TimeFormatDropdown timeFormat={timeFormat} onSelect={handleSelectTimeFormat} />
+            <StartWeekOnDropdown startWeekOn={startWeekOn} onSelect={handleSelectStartWeekOn} />
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // Legacy mode with children as trigger
   return (
     <Dialog>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className='flex h-[300px] min-h-0 w-[400px] flex-col gap-3 sm:max-w-[calc(100%-2rem)]'>
+      <DialogContent data-testid="account-settings-dialog" className='flex h-[300px] min-h-0 w-[400px] flex-col gap-3 sm:max-w-[calc(100%-2rem)]'>
         <DialogTitle className='text-md font-bold text-text-primary'>{t('web.accountSettings')}</DialogTitle>
+        <DialogDescription className='sr-only'>Configure your account preferences including date format, time format, and week start day</DialogDescription>
         <div className='flex min-h-0 w-full flex-1 flex-col items-start gap-3 py-4'>
           <DateFormatDropdown dateFormat={dateFormat} onSelect={handleSelectDateFormat} />
           <TimeFormatDropdown timeFormat={timeFormat} onSelect={handleSelectTimeFormat} />
@@ -126,6 +224,7 @@ function DateFormatDropdown({ dateFormat, onSelect }: { dateFormat: number; onSe
       <div className='relative'>
         <DropdownMenu open={isOpen} onOpenChange={setIsOpen} modal={false}>
           <DropdownMenuTrigger
+            data-testid="date-format-dropdown"
             asChild
             onPointerDown={(e) => {
               e.preventDefault();
@@ -148,7 +247,7 @@ function DateFormatDropdown({ dateFormat, onSelect }: { dateFormat: number; onSe
           <DropdownMenuContent className='w-[--radix-dropdown-menu-trigger-width]' align='start'>
             <DropdownMenuRadioGroup value={dateFormat.toString()} onValueChange={(value) => onSelect(Number(value))}>
               {dateFormats.map((item) => (
-                <DropdownMenuRadioItem key={item.value} value={item.value.toString()}>
+                <DropdownMenuRadioItem data-testid={`date-format-${item.value}`} key={item.value} value={item.value.toString()}>
                   {item.label}
                 </DropdownMenuRadioItem>
               ))}
@@ -187,6 +286,7 @@ function TimeFormatDropdown({ timeFormat, onSelect }: { timeFormat: number; onSe
       <div className='relative'>
         <DropdownMenu open={isOpen} onOpenChange={setIsOpen} modal={false}>
           <DropdownMenuTrigger
+            data-testid="time-format-dropdown"
             asChild
             onPointerDown={(e) => {
               e.preventDefault();
@@ -209,7 +309,7 @@ function TimeFormatDropdown({ timeFormat, onSelect }: { timeFormat: number; onSe
           <DropdownMenuContent className='w-[--radix-dropdown-menu-trigger-width]' align='start'>
             <DropdownMenuRadioGroup value={timeFormat.toString()} onValueChange={(value) => onSelect(Number(value))}>
               {timeFormats.map((item) => (
-                <DropdownMenuRadioItem key={item.value} value={item.value.toString()}>
+                <DropdownMenuRadioItem data-testid={`time-format-${item.value}`} key={item.value} value={item.value.toString()}>
                   {item.label}
                 </DropdownMenuRadioItem>
               ))}
@@ -251,6 +351,7 @@ function StartWeekOnDropdown({
       <div className='relative'>
         <DropdownMenu open={isOpen} onOpenChange={setIsOpen} modal={false}>
           <DropdownMenuTrigger
+            data-testid="start-week-on-dropdown"
             asChild
             onPointerDown={(e) => {
               e.preventDefault();
@@ -273,7 +374,7 @@ function StartWeekOnDropdown({
           <DropdownMenuContent className='w-[--radix-dropdown-menu-trigger-width]' align='start'>
             <DropdownMenuRadioGroup value={startWeekOn.toString()} onValueChange={(value) => onSelect(Number(value))}>
               {daysOfWeek.map((item) => (
-                <DropdownMenuRadioItem key={item.value} value={item.value.toString()}>
+                <DropdownMenuRadioItem data-testid={`start-week-${item.value}`} key={item.value} value={item.value.toString()}>
                   {item.label}
                 </DropdownMenuRadioItem>
               ))}
