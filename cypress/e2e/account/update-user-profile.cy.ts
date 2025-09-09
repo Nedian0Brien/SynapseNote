@@ -87,7 +87,6 @@ describe('Update User Profile', () => {
 
       // Re-open to verify settings were saved
       cy.log('Step 10: Re-opening Account Settings to verify changes');
-      cy.get('[data-testid="workspace-dropdown-trigger"]').click();
       cy.get('[data-testid="workspace-dropdown-content"]', { timeout: 5000 }).should('be.visible');
       cy.get('[data-testid="account-settings-button"]').click();
       cy.wait(1000);
