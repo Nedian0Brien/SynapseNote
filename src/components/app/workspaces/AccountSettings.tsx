@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 import { debounce } from 'lodash-es';
-import { useCallback, useMemo, useState, useEffect } from 'react';
+import { useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { DateFormat, TimeFormat } from '@/application/types';
@@ -31,11 +31,13 @@ export function AccountSettings({ children }: { children?: React.ReactNode }) {
   );
   const [startWeekOn, setStartWeekOn] = useState(() => Number(currentUser?.metadata?.[MetadataKey.StartWeekOn]) || 0);
 
-  const debounceUpdateProfile = useMemo(() => {
-    return debounce(async (metadata: Record<string, unknown>) => {
-      if (!service || !currentUser?.metadata) return;
+  const metadataUpdateRef = useRef<Record<string, unknown> | null>(null);
 
-      await service?.updateUserProfile(metadata);
+  const debounceUpdateProfile = useMemo(() => {
+    return debounce(async () => {
+      if (!service || !currentUser?.metadata || !metadataUpdateRef.current) return;
+
+      await service?.updateUserProfile(metadataUpdateRef.current);
     }, 300);
   }, [service, currentUser]);
 
@@ -50,7 +52,8 @@ export function AccountSettings({ children }: { children?: React.ReactNode }) {
       setDateFormat(dateFormat);
       if (!currentUser?.metadata) return;
 
-      await debounceUpdateProfile({ ...currentUser.metadata, [MetadataKey.DateFormat]: dateFormat });
+      metadataUpdateRef.current = { ...currentUser.metadata, [MetadataKey.DateFormat]: dateFormat };
+      await debounceUpdateProfile();
     },
     [currentUser, debounceUpdateProfile]
   );
@@ -60,7 +63,8 @@ export function AccountSettings({ children }: { children?: React.ReactNode }) {
       setTimeFormat(timeFormat);
       if (!currentUser?.metadata) return;
 
-      await debounceUpdateProfile({ ...currentUser.metadata, [MetadataKey.TimeFormat]: timeFormat });
+      metadataUpdateRef.current = { ...currentUser.metadata, [MetadataKey.TimeFormat]: timeFormat };
+      await debounceUpdateProfile();
     },
     [currentUser, debounceUpdateProfile]
   );
@@ -71,7 +75,8 @@ export function AccountSettings({ children }: { children?: React.ReactNode }) {
 
       if (!currentUser?.metadata) return;
 
-      await debounceUpdateProfile({ ...currentUser.metadata, [MetadataKey.StartWeekOn]: startWeekOn });
+      metadataUpdateRef.current = { ...currentUser.metadata, [MetadataKey.StartWeekOn]: startWeekOn };
+      await debounceUpdateProfile();
     },
     [currentUser, debounceUpdateProfile]
   );
