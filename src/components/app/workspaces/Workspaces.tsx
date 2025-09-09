@@ -49,7 +49,6 @@ export function Workspaces() {
   const [openUpgradePlan, setOpenUpgradePlan] = useState(false);
   const [openUpgradeAIMax, setOpenUpgradeAIMax] = useState(false);
   const [open, setOpen] = useState(false);
-  const [openAccountSettings, setOpenAccountSettings] = useState(false);
   const [hoveredHeader, setHoveredHeader] = useState<boolean>(false);
   const ref = useRef<HTMLDivElement | null>(null);
   const navigate = useNavigate();
@@ -135,7 +134,7 @@ export function Workspaces() {
           <DropdownMenuTrigger asChild>
             <div
               ref={ref}
-              data-testid="workspace-dropdown-trigger"
+              data-testid='workspace-dropdown-trigger'
               onMouseLeave={() => setHoveredHeader(false)}
               onMouseEnter={() => setHoveredHeader(true)}
               className={dropdownMenuItemVariants({ variant: 'default', className: 'w-full overflow-hidden' })}
@@ -158,11 +157,17 @@ export function Workspaces() {
             </div>
           </DropdownMenuTrigger>
 
-          <DropdownMenuContent data-testid="workspace-dropdown-content" className='min-w-[300px] max-w-[300px] overflow-hidden'>
+          <DropdownMenuContent
+            data-testid='workspace-dropdown-content'
+            className='min-w-[300px] max-w-[300px] overflow-hidden'
+          >
             <DropdownMenuLabel className='w-full overflow-hidden'>
               <span className='truncate'>{currentUser?.email}</span>
             </DropdownMenuLabel>
-            <DropdownMenuGroup data-testid="workspace-list" className={'appflowy-scroller max-h-[200px] flex-1 overflow-y-auto overflow-x-hidden'}>
+            <DropdownMenuGroup
+              data-testid='workspace-list'
+              className={'appflowy-scroller max-h-[200px] flex-1 overflow-y-auto overflow-x-hidden'}
+            >
               <WorkspaceList
                 defaultWorkspaces={userWorkspaceInfo?.workspaces}
                 currentWorkspaceId={currentWorkspaceId}
@@ -217,17 +222,13 @@ export function Workspaces() {
 
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem 
-                data-testid="account-settings-button" 
-                onSelect={() => {
-                  setOpenAccountSettings(true);
-                  setOpen(false);
-                }}
-              >
-                <SettingsIcon />
-                <div className={'flex-1 text-left'}>{t('web.accountSettings')}</div>
-                <ChevronRightIcon className='text-icon-tertiary' />
-              </DropdownMenuItem>
+              <AccountSettings>
+                <DropdownMenuItem data-testid='account-settings-button' onSelect={(e) => e.preventDefault()}>
+                  <SettingsIcon />
+                  <div className={'flex-1 text-left'}>{t('web.accountSettings')}</div>
+                  <ChevronRightIcon className='text-icon-tertiary' />
+                </DropdownMenuItem>
+              </AccountSettings>
               <DropdownMenuItem onSelect={handleSignOut}>
                 <LogoutIcon />
                 {t('button.logout')}
@@ -321,10 +322,6 @@ export function Workspaces() {
           open={Boolean(openLeaveWorkspace)}
           openOnChange={() => setOpenLeaveWorkspace(null)}
         />
-      )}
-
-      {openAccountSettings && (
-        <AccountSettings open={openAccountSettings} onOpenChange={setOpenAccountSettings} />
       )}
     </>
   );
