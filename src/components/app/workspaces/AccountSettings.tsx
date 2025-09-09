@@ -31,65 +31,59 @@ export function AccountSettings({ children }: { children?: React.ReactNode }) {
   );
   const [startWeekOn, setStartWeekOn] = useState(() => Number(currentUser?.metadata?.[MetadataKey.StartWeekOn]) || 0);
 
-  const debounceUpdateState = useMemo(() => {
-    return debounce(
-      ({ dateFormat, timeFormat, startWeekOn }: { dateFormat?: number; timeFormat?: number; startWeekOn?: number }) => {
-        if (dateFormat !== undefined) setDateFormat(dateFormat);
-        if (timeFormat !== undefined) setTimeFormat(timeFormat);
-        if (startWeekOn !== undefined) setStartWeekOn(startWeekOn);
-      },
-      300
-    );
-  }, []);
+  const debounceUpdateProfile = useMemo(() => {
+    return debounce(async (metadata: Record<string, unknown>) => {
+      if (!service || !currentUser?.metadata) return;
+
+      await service?.updateUserProfile(metadata);
+    }, 300);
+  }, [service, currentUser]);
 
   useEffect(() => {
     return () => {
-      debounceUpdateState.cancel();
+      debounceUpdateProfile.cancel();
     };
-  }, [debounceUpdateState]);
-
-  useEffect(() => {
-    debounceUpdateState({
-      dateFormat: Number(currentUser?.metadata?.[MetadataKey.DateFormat] as DateFormat) || DateFormat.Local,
-      timeFormat: Number(currentUser?.metadata?.[MetadataKey.TimeFormat] as TimeFormat) || TimeFormat.TwelveHour,
-      startWeekOn: Number(currentUser?.metadata?.[MetadataKey.StartWeekOn]) || 0,
-    });
-  }, [currentUser, debounceUpdateState]);
+  }, [debounceUpdateProfile]);
 
   const handleSelectDateFormat = useCallback(
     async (dateFormat: number) => {
-      debounceUpdateState({ dateFormat });
-      if (!service || !currentUser?.metadata) return;
+      setDateFormat(dateFormat);
+      if (!currentUser?.metadata) return;
 
-      await service?.updateUserProfile({ ...currentUser.metadata, [MetadataKey.DateFormat]: dateFormat });
+      await debounceUpdateProfile({ ...currentUser.metadata, [MetadataKey.DateFormat]: dateFormat });
     },
-    [currentUser, service, debounceUpdateState]
+    [currentUser, debounceUpdateProfile]
   );
 
   const handleSelectTimeFormat = useCallback(
     async (timeFormat: number) => {
-      debounceUpdateState({ timeFormat });
-      if (!service || !currentUser?.metadata) return;
+      setTimeFormat(timeFormat);
+      if (!currentUser?.metadata) return;
 
-      await service?.updateUserProfile({ ...currentUser.metadata, [MetadataKey.TimeFormat]: timeFormat });
+      await debounceUpdateProfile({ ...currentUser.metadata, [MetadataKey.TimeFormat]: timeFormat });
     },
-    [currentUser, service, debounceUpdateState]
+    [currentUser, debounceUpdateProfile]
   );
 
   const handleSelectStartWeekOn = useCallback(
     async (startWeekOn: number) => {
-      debounceUpdateState({ startWeekOn });
-      if (!service || !currentUser?.metadata) return;
+      setStartWeekOn(startWeekOn);
 
-      await service?.updateUserProfile({ ...currentUser.metadata, [MetadataKey.StartWeekOn]: startWeekOn });
+      if (!currentUser?.metadata) return;
+
+      await debounceUpdateProfile({ ...currentUser.metadata, [MetadataKey.StartWeekOn]: startWeekOn });
     },
-    [currentUser, service, debounceUpdateState]
+    [currentUser, debounceUpdateProfile]
   );
 
   const onOpenChange = useCallback(
     async (isOpen: boolean) => {
       if (isOpen) {
-        await service?.getCurrentUser();
+        const user = await service?.getCurrentUser();
+
+        setDateFormat(Number(user?.metadata?.[MetadataKey.DateFormat] as DateFormat) || DateFormat.Local);
+        setTimeFormat(Number(user?.metadata?.[MetadataKey.TimeFormat] as TimeFormat) || TimeFormat.TwelveHour);
+        setStartWeekOn(Number(user?.metadata?.[MetadataKey.StartWeekOn]) || 0);
       }
 
       setIsOpen(isOpen);
