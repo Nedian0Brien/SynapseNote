@@ -185,6 +185,52 @@ export const SidebarSelectors = {
 };
 
 /**
+ * Database Grid-related selectors
+ */
+export const DatabaseGridSelectors = {
+  // Main grid container
+  grid: () => cy.get(byTestId('database-grid')),
+  
+  // Grid rows
+  rows: () => cy.get('[data-testid^="grid-row-"]'),
+  
+  // Get specific row by row ID
+  rowById: (rowId: string) => cy.get(byTestId(`grid-row-${rowId}`)),
+  
+  // Get first row
+  firstRow: () => cy.get('[data-testid^="grid-row-"]').first(),
+  
+  // Grid cells
+  cells: () => cy.get('[data-testid^="grid-cell-"]'),
+  
+  // Get specific cell by row ID and field ID
+  cellByIds: (rowId: string, fieldId: string) => cy.get(byTestId(`grid-cell-${rowId}-${fieldId}`)),
+  
+  // Get all cells in a specific row
+  cellsInRow: (rowId: string) => cy.get(`[data-testid^="grid-cell-${rowId}-"]`),
+  
+  // Get first cell
+  firstCell: () => cy.get('[data-testid^="grid-cell-"]').first(),
+  
+  // Get new row button (if exists)
+  newRowButton: () => cy.get(byTestId('grid-new-row')),
+};
+
+/**
+ * Add Page Actions selectors
+ */
+export const AddPageSelectors = {
+  // Inline add page button
+  inlineAddButton: () => cy.get(byTestId('inline-add-page')),
+  
+  // Add grid button in dropdown
+  addGridButton: () => cy.get(byTestId('add-grid-button')),
+  
+  // Add AI chat button in dropdown
+  addAIChatButton: () => cy.get(byTestId('add-ai-chat-button')),
+};
+
+/**
  * Helper function to wait for React to re-render after state changes
  */
 export function waitForReactUpdate(ms: number = 500) {
