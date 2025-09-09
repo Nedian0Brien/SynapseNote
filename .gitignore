@@ -34,3 +34,5 @@ coverage
 
 cypress/snapshots/**/__diff_output__/
 cypress/screenshots
+
+.serena
