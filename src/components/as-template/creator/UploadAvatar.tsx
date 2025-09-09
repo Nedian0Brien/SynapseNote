@@ -51,6 +51,7 @@ function UploadAvatar({ onChange }: { onChange: (url: string) => void }) {
           setFile(files[0]);
           void handleUpload(files[0]);
         }}
+        loading={uploadStatus === 'loading'}
       />
       {file && (
         <div className={'flex items-center gap-2'}>

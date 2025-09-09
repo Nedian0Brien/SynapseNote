@@ -1,4 +1,5 @@
 import { FieldType, useFieldSelector, useReadOnly } from '@/application/database-yjs';
+import { Cell } from '@/application/database-yjs/cell.type';
 import { YjsDatabaseKey } from '@/application/types';
 import { ReactComponent as AIIndicatorSvg } from '@/assets/icons/database/ai.svg';
 import RowPropertyCell from '@/components/database/components/database-row/RowPropertyCell';
@@ -12,11 +13,15 @@ function RowPropertyPrimitive({
   rowId,
   isActive,
   setActivePropertyId,
+  onCellUpdated,
+  showPropertyName = true,
 }: {
   fieldId: string;
   rowId: string;
   isActive: boolean;
+  onCellUpdated?: (cell: Cell) => void;
   setActivePropertyId: (id: string | null) => void;
+  showPropertyName?: boolean;
 }) {
   const readOnly = useReadOnly();
   const { field } = useFieldSelector(fieldId);
@@ -44,19 +49,24 @@ function RowPropertyPrimitive({
         <div
           className={cn(
             'property-label flex h-auto w-[30%] max-w-[240px] items-center gap-2 overflow-hidden rounded-300 px-1 py-2',
-            !readOnly && 'cursor-pointer hover:bg-fill-content-hover'
+            !readOnly && 'cursor-pointer hover:bg-fill-content-hover',
+            !showPropertyName && 'w-auto gap-0 p-2'
           )}
         >
           <Tooltip delayDuration={1000} disableHoverableContent>
             <TooltipTrigger className={'overflow-hidden'}>
-              <FieldDisplay fieldId={fieldId} className={'flex-1 gap-1.5 truncate text-sm text-text-primary'} />
+              <FieldDisplay
+                showPropertyName={showPropertyName}
+                fieldId={fieldId}
+                className={'flex-1 gap-1.5 truncate text-sm text-text-primary'}
+              />
             </TooltipTrigger>
             <TooltipContent side={'left'}>{fieldName}</TooltipContent>
           </Tooltip>
           {isAIField && <AIIndicatorSvg className={'h-5 w-5 min-w-5 text-text-featured'} />}
         </div>
       </PropertyMenu>
-      <RowPropertyCell fieldId={fieldId} rowId={rowId} />
+      <RowPropertyCell fieldId={fieldId} rowId={rowId} onCellUpdated={onCellUpdated} />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { VirtualItem } from '@tanstack/react-virtual';
+import { uniqBy } from 'lodash-es';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useReadOnly, useRowData, useSortsSelector } from '@/application/database-yjs';
@@ -137,7 +138,7 @@ function GridVirtualRow({
   const readOnly = useReadOnly();
 
   const children = useMemo(() => {
-    return columnItems.map((column) => {
+    return uniqBy(columnItems, 'key').map((column) => {
       return (
         <GridVirtualColumn
           key={column.key}

@@ -34,6 +34,7 @@ function FileMediaUpload({
 }) {
   const { t } = useTranslation();
   const [tabValue, setTabValue] = useState<string>(FileMediaCellTab.Upload);
+  const [uploading, setUploading] = useState(false);
 
   const { uploadFile } = useDatabaseContext();
 
@@ -73,27 +74,32 @@ function FileMediaUpload({
 
   const handleFileChange = useCallback(
     async (files: File[]) => {
-      const urls = await Promise.all(files.map(uploadFileRemote));
+      setUploading(true);
+      try {
+        const urls = await Promise.all(files.map(uploadFileRemote));
 
-      if (!urls) {
-        toast.error(t('grid.media.uploadError'));
-        return;
+        if (!urls) {
+          toast.error(t('grid.media.uploadError'));
+          return;
+        }
+
+        const items = urls.map((url, index) => {
+          const file = files[index];
+
+          return {
+            file_type: getFileMediaType(file.name),
+            id: crypto.randomUUID(),
+            name: file.name,
+            upload_type: FileMediaUploadType.CloudMedia,
+            url,
+          } as FileMediaCellDataItem;
+        });
+
+        addItems(items);
+        onClose?.();
+      } finally {
+        setUploading(false);
       }
-
-      const items = urls.map((url, index) => {
-        const file = files[index];
-
-        return {
-          file_type: getFileMediaType(file.name),
-          id: crypto.randomUUID(),
-          name: file.name,
-          upload_type: FileMediaUploadType.CloudMedia,
-          url,
-        } as FileMediaCellDataItem;
-      });
-
-      addItems(items);
-      onClose?.();
     },
     [addItems, t, uploadFileRemote, onClose]
   );
@@ -130,6 +136,7 @@ function FileMediaUpload({
                 </div>
               }
               onChange={handleFileChange}
+              loading={uploading}
             />
           );
         },
@@ -148,7 +155,7 @@ function FileMediaUpload({
         },
       },
     ];
-  }, [handleFileChange, tabValue, handleInsertEmbedLink, t]);
+  }, [t, handleFileChange, uploading, tabValue, handleInsertEmbedLink]);
 
   return (
     <div className={'min-h-[228px] w-[360px]'}>

@@ -18,12 +18,11 @@ export function DatabaseActions() {
   const conditionsContext = useConditionsContext();
   const { isDocumentBlock, navigateToView, iidIndex } = useDatabaseContext();
 
-  const showFilters = [DatabaseViewLayout.Grid, DatabaseViewLayout.Board].includes(layout);
   const showSorts = [DatabaseViewLayout.Grid].includes(layout);
 
   return (
     <div className='flex w-[120px] items-center justify-end gap-1.5'>
-      {showFilters && <FiltersButton {...conditionsContext} />}
+      <FiltersButton {...conditionsContext} />
       {showSorts && <SortsButton {...conditionsContext} />}
       <Settings>
         <Tooltip>

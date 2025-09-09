@@ -9,10 +9,10 @@ import { useCurrentUser, useService } from '@/components/main/app.hooks';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import {
   DropdownMenu,
-  DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 
@@ -135,7 +135,7 @@ function DateFormatDropdown({ dateFormat, onSelect }: { dateFormat: number; onSe
           >
             <div
               className={cn(
-                'flex h-8 flex-1 cursor-default items-center gap-1 rounded-300 border px-2 text-sm font-normal',
+                'flex h-8 flex-1 cursor-pointer items-center gap-1 rounded-300 border px-2 text-sm font-normal',
                 isOpen ? 'border-border-theme-thick' : 'border-border-primary hover:border-border-primary-hover'
               )}
             >
@@ -145,7 +145,7 @@ function DateFormatDropdown({ dateFormat, onSelect }: { dateFormat: number; onSe
               <ChevronDownIcon className='text-icon-primary' />
             </div>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className='w-[--radix-dropdown-menu-trigger-width]' align='start'>
+          <DropdownMenuContent align='start'>
             <DropdownMenuRadioGroup value={dateFormat.toString()} onValueChange={(value) => onSelect(Number(value))}>
               {dateFormats.map((item) => (
                 <DropdownMenuRadioItem key={item.value} value={item.value.toString()}>
@@ -196,7 +196,7 @@ function TimeFormatDropdown({ timeFormat, onSelect }: { timeFormat: number; onSe
           >
             <div
               className={cn(
-                'flex h-8 flex-1 cursor-default items-center gap-1 rounded-300 border px-2 text-sm font-normal',
+                'flex h-8 flex-1 cursor-pointer items-center gap-1 rounded-300 border px-2 text-sm font-normal',
                 isOpen ? 'border-border-theme-thick' : 'border-border-primary hover:border-border-primary-hover'
               )}
             >
@@ -206,7 +206,7 @@ function TimeFormatDropdown({ timeFormat, onSelect }: { timeFormat: number; onSe
               <ChevronDownIcon className='text-icon-primary' />
             </div>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className='w-[--radix-dropdown-menu-trigger-width]' align='start'>
+          <DropdownMenuContent align='start'>
             <DropdownMenuRadioGroup value={timeFormat.toString()} onValueChange={(value) => onSelect(Number(value))}>
               {timeFormats.map((item) => (
                 <DropdownMenuRadioItem key={item.value} value={item.value.toString()}>
@@ -260,7 +260,7 @@ function StartWeekOnDropdown({
           >
             <div
               className={cn(
-                'flex h-8 flex-1 cursor-default items-center gap-1 rounded-300 border px-2 text-sm font-normal',
+                'flex h-8 flex-1 cursor-pointer items-center gap-1 rounded-300 border px-2 text-sm font-normal',
                 isOpen ? 'border-border-theme-thick' : 'border-border-primary hover:border-border-primary-hover'
               )}
             >
@@ -270,7 +270,7 @@ function StartWeekOnDropdown({
               <ChevronDownIcon className='text-icon-primary' />
             </div>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className='w-[--radix-dropdown-menu-trigger-width]' align='start'>
+          <DropdownMenuContent align='start'>
             <DropdownMenuRadioGroup value={startWeekOn.toString()} onValueChange={(value) => onSelect(Number(value))}>
               {daysOfWeek.map((item) => (
                 <DropdownMenuRadioItem key={item.value} value={item.value.toString()}>

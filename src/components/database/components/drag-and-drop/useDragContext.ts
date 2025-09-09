@@ -47,7 +47,7 @@ export function getRegistry() {
   }
 
   function getElement(id: string): HTMLElement | null {
-    console.log(`getElement: ${id}`);
+    console.debug(`getElement: ${id}`);
 
     return registry.get(id) ?? null;
   }

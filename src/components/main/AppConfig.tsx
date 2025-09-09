@@ -40,7 +40,7 @@ function AppConfig({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     return on(EventType.SESSION_VALID, () => {
-      console.log('session valid');
+      console.debug('session valid');
       setIsAuthenticated(true);
     });
   }, []);
@@ -72,7 +72,7 @@ function AppConfig({ children }: { children: React.ReactNode }) {
   }, []);
   useEffect(() => {
     return on(EventType.SESSION_INVALID, () => {
-      console.log('session invalid');
+      console.debug('session invalid');
       setIsAuthenticated(false);
     });
   }, []);
@@ -81,8 +81,9 @@ function AppConfig({ children }: { children: React.ReactNode }) {
   const [hasCheckedTimezone, setHasCheckedTimezone] = useState(false);
 
   // Handle initial timezone setup - only when timezone is not set
-  const handleTimezoneSetup = useCallback(async (detectedTimezone: string) => {
-    if (!isAuthenticated || !service || hasCheckedTimezone) return;
+  const handleTimezoneSetup = useCallback(
+    async (detectedTimezone: string) => {
+      if (!isAuthenticated || !service || hasCheckedTimezone) return;
 
     try {
       // Get current user profile to check if timezone is already set

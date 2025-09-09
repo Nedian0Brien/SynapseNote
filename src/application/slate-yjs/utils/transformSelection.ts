@@ -97,14 +97,14 @@ export function isValidSelection(editor: Editor, selection: Range): boolean {
  */
 export function findNearestValidSelection(editor: Editor, originalSelection: Range | null): Range | null {
   try {
-    console.log('🎯 Finding nearest valid selection for:', originalSelection);
+    console.debug('🎯 Finding nearest valid selection for:', originalSelection);
 
     // Strategy 1: Try to fix the original selection if it exists
     if (originalSelection) {
       const fixedSelection = tryFixSelection(editor, originalSelection);
 
       if (fixedSelection) {
-        console.log('✅ Fixed original selection:', fixedSelection);
+        console.debug('✅ Fixed original selection:', fixedSelection);
         return fixedSelection;
       }
     }
@@ -114,7 +114,7 @@ export function findNearestValidSelection(editor: Editor, originalSelection: Ran
       const nearestSelection = findNearestTextNode(editor, originalSelection.anchor.path);
 
       if (nearestSelection) {
-        console.log('✅ Found nearest text node selection:', nearestSelection);
+        console.debug('✅ Found nearest text node selection:', nearestSelection);
         return nearestSelection;
       }
     }
@@ -123,7 +123,7 @@ export function findNearestValidSelection(editor: Editor, originalSelection: Ran
     const startSelection = findDocumentStart(editor);
 
     if (startSelection) {
-      console.log('✅ Using document start selection:', startSelection);
+      console.debug('✅ Using document start selection:', startSelection);
       return startSelection;
     }
 
@@ -131,7 +131,7 @@ export function findNearestValidSelection(editor: Editor, originalSelection: Ran
     const endSelection = findDocumentEnd(editor);
 
     if (endSelection) {
-      console.log('✅ Using document end selection:', endSelection);
+      console.debug('✅ Using document end selection:', endSelection);
       return endSelection;
     }
 

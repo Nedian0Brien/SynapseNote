@@ -49,7 +49,7 @@ function PropertyProfile({
           updateIcon('');
         }}
         onSelectIcon={(icon) => {
-          console.log(icon);
+          console.debug(icon);
           updateIcon(icon.value);
         }}
       >

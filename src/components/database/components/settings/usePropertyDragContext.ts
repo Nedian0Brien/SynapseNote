@@ -2,9 +2,7 @@ import { useDatabaseViewId, useReadOnly } from '@/application/database-yjs';
 import { useReorderColumnDispatch } from '@/application/database-yjs/dispatch';
 import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
 import { Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
-import {
-  getReorderDestinationIndex,
-} from '@atlaskit/pragmatic-drag-and-drop-hitbox/util/get-reorder-destination-index';
+import { getReorderDestinationIndex } from '@atlaskit/pragmatic-drag-and-drop-hitbox/util/get-reorder-destination-index';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { reorder } from '@atlaskit/pragmatic-drag-and-drop/reorder';
@@ -18,23 +16,20 @@ export interface ReorderPayload {
 }
 
 export interface Property {
-  id: string,
-  visible: boolean
+  id: string;
+  visible: boolean;
 }
 
 export interface PropertyDragContextState {
   getData: () => Property[];
   reorderProperty: (args: ReorderPayload) => void;
-  registerProperty: (args: {
-    id: string;
-    element: HTMLDivElement;
-  }) => CleanupFn;
+  registerProperty: (args: { id: string; element: HTMLDivElement }) => CleanupFn;
   instanceId: symbol;
 }
 
 export const PropertyDragContext = createContext<PropertyDragContextState | undefined>(undefined);
 
-export function usePropertyDragContext (): PropertyDragContextState {
+export function usePropertyDragContext(): PropertyDragContextState {
   const context = useContext(PropertyDragContext);
 
   if (!context) {
@@ -44,21 +39,21 @@ export function usePropertyDragContext (): PropertyDragContextState {
   return context;
 }
 
-export function getRegistry () {
+export function getRegistry() {
   const registry = new Map<string, HTMLElement>();
 
-  function register ({ id, element }: { id: string, element: HTMLDivElement }) {
+  function register({ id, element }: { id: string; element: HTMLDivElement }) {
     registry.set(id, element);
 
-    return function unregister () {
+    return function unregister() {
       if (registry.get(id) === element) {
         registry.delete(id);
       }
     };
   }
 
-  function getElement (id: string): HTMLElement | null {
-    console.log(`getElement: ${id}`);
+  function getElement(id: string): HTMLElement | null {
+    console.debug(`getElement: ${id}`);
 
     return registry.get(id) ?? null;
   }
@@ -66,7 +61,10 @@ export function getRegistry () {
   return { register, getElement };
 }
 
-export function usePropertyDragContextValue (data: Property[], scrollContainer: HTMLDivElement | null): PropertyDragContextState {
+export function usePropertyDragContextValue(
+  data: Property[],
+  scrollContainer: HTMLDivElement | null
+): PropertyDragContextState {
   const readOnly = useReadOnly();
   const [registry] = useState(getRegistry);
   const viewId = useDatabaseViewId();
@@ -82,48 +80,47 @@ export function usePropertyDragContextValue (data: Property[], scrollContainer: 
     return stableData.current;
   };
 
-  const reorderProperty = useCallback(({
-    startIndex,
-    indexOfTarget,
-    closestEdgeOfTarget,
-  }: ReorderPayload) => {
-    const finishIndex = getReorderDestinationIndex({
-      startIndex,
-      closestEdgeOfTarget,
-      indexOfTarget,
-      axis: 'vertical',
-    });
+  const reorderProperty = useCallback(
+    ({ startIndex, indexOfTarget, closestEdgeOfTarget }: ReorderPayload) => {
+      const finishIndex = getReorderDestinationIndex({
+        startIndex,
+        closestEdgeOfTarget,
+        indexOfTarget,
+        axis: 'vertical',
+      });
 
-    if (finishIndex === startIndex) {
-      return;
-    }
+      if (finishIndex === startIndex) {
+        return;
+      }
 
-    const newProperties = reorder({
-      list: stableData.current,
-      startIndex,
-      finishIndex,
-    });
+      const newProperties = reorder({
+        list: stableData.current,
+        startIndex,
+        finishIndex,
+      });
 
-    if (!newProperties) {
-      throw new Error('No newProperties provided');
-    }
+      if (!newProperties) {
+        throw new Error('No newProperties provided');
+      }
 
-    const id = stableData.current[startIndex].id;
+      const id = stableData.current[startIndex].id;
 
-    if (!id) {
-      throw new Error('No property id provided');
-    }
+      if (!id) {
+        throw new Error('No property id provided');
+      }
 
-    const beforeId = newProperties[finishIndex - 1]?.id;
+      const beforeId = newProperties[finishIndex - 1]?.id;
 
-    onReorderProperty(id, beforeId);
-  }, [onReorderProperty]);
+      onReorderProperty(id, beforeId);
+    },
+    [onReorderProperty]
+  );
 
   useEffect(() => {
     if (!scrollContainer || readOnly) return;
 
     // eslint-disable-next-line
-    function canRespond ({ source }: Record<string, any>) {
+    function canRespond({ source }: Record<string, any>) {
       return source.data && source.data.instanceId === instanceId;
     }
 
@@ -131,7 +128,7 @@ export function usePropertyDragContextValue (data: Property[], scrollContainer: 
       monitorForElements({
         canMonitor: canRespond,
         // eslint-disable-next-line
-        onDrop ({ location, source }) {
+        onDrop({ location, source }) {
           const target = location.current.dropTargets[0];
 
           if (!target) {
@@ -141,11 +138,9 @@ export function usePropertyDragContextValue (data: Property[], scrollContainer: 
           const sourceData = source.data;
           const targetData = target.data;
 
-          const indexOfTarget = data.findIndex(
-            (item) => item.id === targetData.id,
-          );
+          const indexOfTarget = data.findIndex((item) => item.id === targetData.id);
 
-          console.log(`onDrop:`, {
+          console.debug(`onDrop:`, {
             indexOfTarget,
             sourceData,
           });
@@ -156,7 +151,7 @@ export function usePropertyDragContextValue (data: Property[], scrollContainer: 
 
           const closestEdgeOfTarget = extractClosestEdge(targetData);
 
-          const startIndex = stableData.current.findIndex(item => item.id === sourceData.id);
+          const startIndex = stableData.current.findIndex((item) => item.id === sourceData.id);
 
           reorderProperty({
             startIndex,
@@ -168,17 +163,19 @@ export function usePropertyDragContextValue (data: Property[], scrollContainer: 
       autoScrollForElements({
         canScroll: canRespond,
         element: scrollContainer,
-      }),
+      })
     );
   }, [readOnly, instanceId, data, reorderProperty, scrollContainer]);
 
-  const contextValue = useMemo(() => ({
-    getData,
-    reorderProperty,
-    registerProperty: registry.register,
-    instanceId,
-  }), [reorderProperty, registry.register, instanceId]);
+  const contextValue = useMemo(
+    () => ({
+      getData,
+      reorderProperty,
+      registerProperty: registry.register,
+      instanceId,
+    }),
+    [reorderProperty, registry.register, instanceId]
+  );
 
   return contextValue;
 }
-

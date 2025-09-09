@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-export function useBottomEdgeIntersection (element: HTMLDivElement | null, gap = 40) {
+export function useBottomEdgeIntersection(element: HTMLDivElement | null, gap = 40) {
   const [isBottomTouching, setIsBottomTouching] = useState(false);
 
   useEffect(() => {
@@ -9,12 +9,12 @@ export function useBottomEdgeIntersection (element: HTMLDivElement | null, gap =
       (entries) => {
         const isIntersecting = entries[0]?.isIntersecting || false;
 
-        console.log('IntersectionObserver', isIntersecting);
+        console.debug('IntersectionObserver', isIntersecting);
         setIsBottomTouching(isIntersecting);
       },
       {
         rootMargin: `0px 0px -${gap}px 0px`,
-      },
+      }
     );
 
     observer.observe(element);

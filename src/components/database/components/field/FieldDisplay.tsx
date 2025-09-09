@@ -1,10 +1,15 @@
-import { FieldId, YjsDatabaseKey } from '@/application/types';
-import { useFieldSelector } from '@/application/database-yjs';
-import FieldCustomIcon from '@/components/database/components/field/FieldCustomIcon';
-import { cn } from '@/lib/utils';
 import React from 'react';
 
-export function FieldDisplay ({ fieldId, ...props }: { fieldId: FieldId } & React.HTMLAttributes<HTMLDivElement>) {
+import { useFieldSelector } from '@/application/database-yjs';
+import { FieldId, YjsDatabaseKey } from '@/application/types';
+import FieldCustomIcon from '@/components/database/components/field/FieldCustomIcon';
+import { cn } from '@/lib/utils';
+
+export function FieldDisplay({
+  fieldId,
+  showPropertyName = true,
+  ...props
+}: { fieldId: FieldId; showPropertyName?: boolean } & React.HTMLAttributes<HTMLDivElement>) {
   const { field } = useFieldSelector(fieldId);
   const name = field?.get(YjsDatabaseKey.name);
 
@@ -13,7 +18,7 @@ export function FieldDisplay ({ fieldId, ...props }: { fieldId: FieldId } & Reac
   return (
     <div {...props} className={cn('flex items-center gap-[10px]', props.className)}>
       <FieldCustomIcon fieldId={fieldId} />
-      <div className={'flex-1 truncate'}>{name}</div>
+      {showPropertyName && <div className={'flex-1 truncate'}>{name}</div>}
     </div>
   );
 }

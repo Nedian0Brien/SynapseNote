@@ -181,7 +181,7 @@ export function withYjs<T extends Editor>(
       throw new Error('Already connected');
     }
 
-    console.log('===connect', id);
+    console.debug('===connect', id);
     initializeDocumentContent();
     e.sharedRoot.observeDeep(handleYEvents);
     connectSet.add(e);

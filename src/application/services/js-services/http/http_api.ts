@@ -234,14 +234,13 @@ export async function getCurrentUser(): Promise<User> {
   return Promise.reject(data);
 }
 
-
 export async function updateUserProfile(metadata: Record<string, unknown>): Promise<void> {
   const url = 'api/user/update';
   const response = await axiosInstance?.post<{
     code: number;
     message: string;
   }>(url, {
-    metadata
+    metadata,
   });
 
   const data = response?.data;
@@ -1471,7 +1470,7 @@ export async function uploadImportFile(presignedUrl: string, file: File, onProgr
     onUploadProgress: (progressEvent) => {
       const { progress = 0 } = progressEvent;
 
-      console.log(`Upload progress: ${progress * 100}%`);
+      console.debug(`Upload progress: ${progress * 100}%`);
       onProgress(progress);
     },
     headers: {
@@ -1549,10 +1548,14 @@ export async function updatePage(workspaceId: string, viewId: string, data: Upda
   return Promise.reject(res?.data);
 }
 
-export async function updatePageIcon(workspaceId: string, viewId: string, icon: {
-  ty: ViewIconType;
-  value: string;
-}): Promise<void> {
+export async function updatePageIcon(
+  workspaceId: string,
+  viewId: string,
+  icon: {
+    ty: ViewIconType;
+    value: string;
+  }
+): Promise<void> {
   const url = `/api/workspace/${workspaceId}/page-view/${viewId}/update-icon`;
   const response = await axiosInstance?.post<{
     code: number;

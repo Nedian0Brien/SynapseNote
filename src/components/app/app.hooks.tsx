@@ -88,6 +88,7 @@ export interface AppContextType {
   getMentionUser?: (uuid: string) => Promise<MentionablePerson | undefined>;
   awarenessMap?: Record<string, Awareness>;
   checkIfRowDocumentExists?: (databaseId: string, rowIds: string[]) => Promise<void>;
+  getViewIdFromDatabaseId?: (databaseId: string) => string | null;
 }
 
 // Main AppContext - same as original
@@ -273,6 +274,7 @@ export function useAppHandlers() {
     checkIfRowDocumentExists: context.checkIfRowDocumentExists,
     updatePageIcon: context.updatePageIcon,
     updatePageName: context.updatePageName,
+    getViewIdFromDatabaseId: context.getViewIdFromDatabaseId,
   };
 }
 

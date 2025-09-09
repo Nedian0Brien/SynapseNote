@@ -21,21 +21,21 @@ type BlockMapEvent = YMapEvent<any>;
  * @param events - Array of Yjs events to process
  */
 export function translateYEvents(editor: YjsEditor, events: Array<YEvent>) {
-  console.log('=== Translating Yjs events to Slate operations ===', {
+  console.debug('=== Translating Yjs events to Slate operations ===', {
     eventCount: events.length,
     eventTypes: events.map((e) => e.path.join('.')),
     timestamp: new Date().toISOString(),
   });
 
   events.forEach((event, index) => {
-    console.log(`Processing event ${index + 1}/${events.length}:`, {
+    console.debug(`Processing event ${index + 1}/${events.length}:`, {
       path: event.path,
       type: event.constructor.name,
     });
 
     // Handle block-level changes (document.blocks)
     if (isEqual(event.path, ['document', 'blocks'])) {
-      console.log('→ Applying block map changes');
+      console.debug('→ Applying block map changes');
       applyBlocksYEvent(editor, event as BlockMapEvent);
     }
 
@@ -43,7 +43,7 @@ export function translateYEvents(editor: YjsEditor, events: Array<YEvent>) {
     if (isEqual(event.path, ['document', 'blocks', event.path[2]])) {
       const blockId = event.path[2] as string;
 
-      console.log(`→ Applying block update for blockId: ${blockId}`);
+      console.debug(`→ Applying block update for blockId: ${blockId}`);
       applyUpdateBlockYEvent(editor, blockId, event as YMapEvent<unknown>);
     }
 
@@ -51,12 +51,12 @@ export function translateYEvents(editor: YjsEditor, events: Array<YEvent>) {
     if (isEqual(event.path, ['document', 'meta', 'text_map', event.path[3]])) {
       const textId = event.path[3] as string;
 
-      console.log(`→ Applying text content changes for textId: ${textId}`);
+      console.debug(`→ Applying text content changes for textId: ${textId}`);
       applyTextYEvent(editor, textId, event as YTextEvent);
     }
   });
 
-  console.log('=== Yjs events translation completed ===');
+  console.debug('=== Yjs events translation completed ===');
 }
 
 /**
@@ -85,7 +85,7 @@ function applyUpdateBlockYEvent(editor: YjsEditor, blockId: string, event: YMapE
   const [node, path] = entry;
   const oldData = node.data as Record<string, unknown>;
 
-  console.log(`✅ Updating block data for blockId: ${blockId}`, {
+  console.debug(`✅ Updating block data for blockId: ${blockId}`, {
     path,
     oldDataKeys: Object.keys(oldData),
     newDataKeys: Object.keys(newData),
@@ -115,7 +115,7 @@ function applyBlocksYEvent(editor: YjsEditor, event: BlockMapEvent) {
   const { changes, keysChanged } = event;
   const { keys } = changes;
 
-  console.log('🔄 Processing block map changes:', {
+  console.debug('🔄 Processing block map changes:', {
     keysChangedCount: keysChanged?.size ?? 0,
     keysChanged: Array.from(keysChanged ?? []),
     changes: Array.from(keys.entries()).map(([key, value]) => ({
@@ -135,20 +135,20 @@ function applyBlocksYEvent(editor: YjsEditor, event: BlockMapEvent) {
       return;
     }
 
-    console.log(`📋 Processing block change ${index + 1}/${keysChanged.size}:`, {
+    console.debug(`📋 Processing block change ${index + 1}/${keysChanged.size}:`, {
       key,
       action: value.action,
       oldValue: value.oldValue,
     });
 
     if (value.action === 'add') {
-      console.log(`➕ Adding new block: ${key}`);
+      console.debug(`➕ Adding new block: ${key}`);
       handleNewBlock(editor, key, keyPath);
     } else if (value.action === 'delete') {
-      console.log(`🗑️ Deleting block: ${key}`);
+      console.debug(`🗑️ Deleting block: ${key}`);
       handleDeleteNode(editor, key);
     } else if (value.action === 'update') {
-      console.log(`🔄 Updating block: ${key}`);
+      console.debug(`🔄 Updating block: ${key}`);
       // TODO: Implement block update logic
     }
   });
@@ -168,7 +168,7 @@ function handleNewBlock(editor: YjsEditor, key: string, keyPath: Record<string, 
   const pageId = getPageId(editor.sharedRoot);
   const parent = getBlock(parentId, editor.sharedRoot);
 
-  console.log(`🏗️ Creating new block: ${key}`, {
+  console.debug(`🏗️ Creating new block: ${key}`, {
     parentId,
     pageId,
     parentFound: !!parent,
@@ -192,7 +192,7 @@ function handleNewBlock(editor: YjsEditor, key: string, keyPath: Record<string, 
   const yText = getText(textId, editor.sharedRoot);
   let textNode: Element | undefined;
 
-  console.log(`📊 Block creation details:`, {
+  console.debug(`📊 Block creation details:`, {
     key,
     parentId,
     index,
@@ -217,7 +217,7 @@ function handleNewBlock(editor: YjsEditor, key: string, keyPath: Record<string, 
       children: slateDelta,
     };
 
-    console.log(`📝 Text node created:`, {
+    console.debug(`📝 Text node created:`, {
       textId,
       deltaLength: delta.length,
       slateDeltaLength: slateDelta.length,
@@ -236,7 +236,7 @@ function handleNewBlock(editor: YjsEditor, key: string, keyPath: Record<string, 
     if (!parentEntry) {
       if (keyPath[parentId]) {
         path = [...keyPath[parentId], index + 1];
-        console.log(`📍 Using cached path for nested block:`, { parentId, path });
+        console.debug(`📍 Using cached path for nested block:`, { parentId, path });
       } else {
         console.error(`❌ Parent block not found in Slate editor: ${parentId}`, {
           keyPath,
@@ -254,17 +254,17 @@ function handleNewBlock(editor: YjsEditor, key: string, keyPath: Record<string, 
         childrenLength === 0 ? true : Element.isElement(silblings[0]) && silblings[0].type === YjsEditorKey.text;
 
       path = [...parentEntry[1], Math.min(index + (parentHasTextNode ? 1 : 0), childrenLength)];
-      console.log(`📍 Calculated path for nested block:`, {
+      console.debug(`📍 Calculated path for nested block:`, {
         parentPath: parentEntry[1],
         childrenLength,
         finalPath: path,
       });
     }
   } else {
-    console.log(`📍 Using root-level path:`, { path });
+    console.debug(`📍 Using root-level path:`, { path });
   }
 
-  console.log(`✅ Inserting new block at path:`, {
+  console.debug(`✅ Inserting new block at path:`, {
     key,
     path,
     hasTextNode: !!textNode,
@@ -281,7 +281,7 @@ function handleNewBlock(editor: YjsEditor, key: string, keyPath: Record<string, 
   });
 
   keyPath[key] = path;
-  console.log(`💾 Cached path for block ${key}:`, keyPath[key]);
+  console.debug(`💾 Cached path for block ${key}:`, keyPath[key]);
 }
 
 /**
@@ -308,7 +308,7 @@ function handleDeleteNode(editor: YjsEditor, key: string) {
 
   const [node, path] = entry;
 
-  console.log(`🗑️ Deleting block: ${key}`, {
+  console.debug(`🗑️ Deleting block: ${key}`, {
     path,
     nodeType: (node as Element).type,
     childrenCount: (node as Element).children.length,
@@ -320,5 +320,5 @@ function handleDeleteNode(editor: YjsEditor, key: string) {
     node,
   });
 
-  console.log(`✅ Block deleted successfully: ${key}`);
+  console.debug(`✅ Block deleted successfully: ${key}`);
 }

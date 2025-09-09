@@ -1,15 +1,18 @@
-import { setHours, setMinutes, setSeconds, setMilliseconds } from 'date-fns';
+import { setHours, setMilliseconds, setMinutes, setSeconds } from 'date-fns';
 import dayjs from 'dayjs';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import {
+  FieldType,
   getFieldDateTimeFormats,
   getTypeOptions,
+  useDatabaseViewLayout,
   useFieldSelector,
 } from '@/application/database-yjs';
 import { DateTimeCell } from '@/application/database-yjs/cell.type';
 import { useUpdateCellDispatch } from '@/application/database-yjs/dispatch';
+import { DatabaseViewLayout } from '@/application/types';
 import { MetadataKey } from '@/application/user-metadata';
 import { ReactComponent as ChevronRight } from '@/assets/icons/alt_arrow_right.svg';
 import { ReactComponent as DateSvg } from '@/assets/icons/date.svg';
@@ -19,22 +22,26 @@ import DateTimeInput from '@/components/database/components/cell/date/DateTimeIn
 import { useCurrentUser } from '@/components/main/app.hooks';
 import { Calendar } from '@/components/ui/calendar';
 import { dropdownMenuItemVariants } from '@/components/ui/dropdown-menu';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { getDateFormat, getTimeFormat } from '@/utils/time';
 
-function DateTimeCellPicker ({ open, onOpenChange, cell, fieldId, rowId }: {
+function DateTimeCellPicker({
+  open,
+  onOpenChange,
+  cell,
+  fieldId,
+  rowId,
+  onCellUpdated,
+}: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   cell?: DateTimeCell;
   fieldId: string;
   rowId: string;
+  onCellUpdated?: (cell: DateTimeCell) => void;
 }) {
   const currentUser = useCurrentUser();
   const { t } = useTranslation();
@@ -65,7 +72,7 @@ function DateTimeCellPicker ({ open, onOpenChange, cell, fieldId, rowId }: {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [field, clock, currentUser?.metadata]);
-  
+
   const weekStartsOn = useMemo(() => {
     const value = Number(currentUser?.metadata?.[MetadataKey.StartWeekOn]) || 0;
 
@@ -74,24 +81,29 @@ function DateTimeCellPicker ({ open, onOpenChange, cell, fieldId, rowId }: {
 
   const updateCell = useUpdateCellDispatch(rowId, fieldId);
 
-  const setCurrentTime = useCallback((date: Date, time?: Date) => {
+  const setCurrentTime = useCallback(
+    (date: Date, time?: Date) => {
+      let newDate = date;
 
-    let newDate = date;
+      const newCurrentTime = time || currentTime;
 
-    const newCurrentTime = time || currentTime;
+      newDate = setHours(newDate, newCurrentTime.getHours());
+      newDate = setMinutes(newDate, newCurrentTime.getMinutes());
+      newDate = setSeconds(newDate, newCurrentTime.getSeconds());
+      newDate = setMilliseconds(newDate, newCurrentTime.getMilliseconds());
 
-    newDate = setHours(newDate, newCurrentTime.getHours());
-    newDate = setMinutes(newDate, newCurrentTime.getMinutes());
-    newDate = setSeconds(newDate, newCurrentTime.getSeconds());
-    newDate = setMilliseconds(newDate, newCurrentTime.getMilliseconds());
+      return newDate;
+    },
+    [currentTime]
+  );
 
-    return newDate;
-  }, [currentTime]);
-
-  const [dateRange, setDateRange] = useState<{
-    from: Date | undefined;
-    to?: Date | undefined;
-  } | undefined>(() => {
+  const [dateRange, setDateRange] = useState<
+    | {
+        from: Date | undefined;
+        to?: Date | undefined;
+      }
+    | undefined
+  >(() => {
     if (!cell) return;
     if (typeof cell.data !== 'string' && typeof cell.data !== 'number') {
       return;
@@ -108,7 +120,6 @@ function DateTimeCellPicker ({ open, onOpenChange, cell, fieldId, rowId }: {
     } catch (e) {
       return;
     }
-
   });
 
   const dateOptsRef = useRef<{
@@ -119,19 +130,30 @@ function DateTimeCellPicker ({ open, onOpenChange, cell, fieldId, rowId }: {
     isRange,
   });
 
-  const onSelect = useCallback((dateRange: { from: Date | undefined; to?: Date | undefined } | undefined) => {
-    const newDateRange = dateRange;
+  const onSelect = useCallback(
+    (dateRange: { from: Date | undefined; to?: Date | undefined } | undefined) => {
+      const newDateRange = dateRange;
 
-    setDateRange(newDateRange);
-    const data = newDateRange?.from ? dayjs(newDateRange.from).unix().toString() : '';
-    const endTimestamp = newDateRange?.to ? dayjs(newDateRange.to).unix().toString() : undefined;
+      setDateRange(newDateRange);
+      const data = newDateRange?.from ? dayjs(newDateRange.from).unix().toString() : '';
+      const endTimestamp = newDateRange?.to ? dayjs(newDateRange.to).unix().toString() : undefined;
 
-    updateCell(data, {
-      includeTime: dateOptsRef.current?.includeTime,
-      isRange: dateOptsRef.current?.isRange,
-      endTimestamp,
-    });
-  }, [updateCell]);
+      updateCell(data, {
+        includeTime: dateOptsRef.current?.includeTime,
+        isRange: dateOptsRef.current?.isRange,
+        endTimestamp,
+      });
+
+      onCellUpdated?.({
+        ...cell,
+        data,
+        fieldType: FieldType.DateTime,
+        createdAt: cell?.createdAt || 0,
+        lastModified: cell?.lastModified || 0,
+      });
+    },
+    [updateCell, onCellUpdated, cell]
+  );
 
   const [month, setMonth] = useState<Date | undefined>(() => {
     if (!dateRange?.from) {
@@ -145,11 +167,10 @@ function DateTimeCellPicker ({ open, onOpenChange, cell, fieldId, rowId }: {
     setMonth(date);
   }, []);
 
+  const layout = useDatabaseViewLayout();
+
   return (
-    <Popover
-      open={open}
-      onOpenChange={onOpenChange}
-    >
+    <Popover open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger
         style={{
           zIndex: open ? 1 : -1,
@@ -157,43 +178,51 @@ function DateTimeCellPicker ({ open, onOpenChange, cell, fieldId, rowId }: {
         onPointerDown={() => {
           onOpenChange(false);
         }}
-        className={'absolute bg-transparent left-0 top-0 w-full h-full z-[-1]'}
+        className={'absolute left-0 top-0 z-[-1] h-full w-full bg-transparent'}
       />
       <PopoverContent
         avoidCollisions={true}
-        side={'bottom'}
-        align={'start'}
-        onClick={e => e.stopPropagation()}
-        onCloseAutoFocus={e => e.preventDefault()}
+        {...(layout === DatabaseViewLayout.Calendar
+          ? {
+              side: 'right',
+              align: 'center',
+            }
+          : {
+              side: 'bottom',
+              align: 'start',
+            })}
+        onClick={(e) => e.stopPropagation()}
+        onCloseAutoFocus={(e) => e.preventDefault()}
         className={'w-[260px] overflow-y-auto'}
       >
-        <div className={'flex flex-col w-full gap-2 p-2'}>
+        <div className={'flex w-full flex-col gap-2 p-2'}>
           <DateTimeInput
             autoFocus
             timeFormat={typeOptionValue.timeFormat}
             dateFormat={typeOptionValue.dateFormat}
             date={dateRange?.from}
             includeTime={includeTime}
-            onDateChange={date => {
+            onDateChange={(date) => {
               onSelect({
                 from: date,
                 to: dateRange?.to,
               });
             }}
           />
-          {isRange && <DateTimeInput
-            timeFormat={typeOptionValue.timeFormat}
-            dateFormat={typeOptionValue.dateFormat}
-            date={dateRange?.to}
-            includeTime={includeTime}
-            onDateChange={date => {
-              onSelect({
-                from: dateRange?.from,
-                to: date,
-              });
-            }}
-          />}
-
+          {isRange && (
+            <DateTimeInput
+              timeFormat={typeOptionValue.timeFormat}
+              dateFormat={typeOptionValue.dateFormat}
+              date={dateRange?.to}
+              includeTime={includeTime}
+              onDateChange={(date) => {
+                onSelect({
+                  from: dateRange?.from,
+                  to: date,
+                });
+              }}
+            />
+          )}
         </div>
         <div className={'flex w-full justify-center'}>
           <Calendar
@@ -202,43 +231,52 @@ function DateTimeCellPicker ({ open, onOpenChange, cell, fieldId, rowId }: {
             month={month}
             onMonthChange={onMonthChange}
             weekStartsOn={weekStartsOn}
-            {...(isRange ? {
-              mode: 'range',
-              selected: dateRange,
-              onSelect: (range) => {
-                const { from, to } = dateRange || {};
+            {...(isRange
+              ? {
+                  mode: 'range',
+                  selected: dateRange,
+                  onSelect: (range) => {
+                    const { from, to } = dateRange || {};
 
-                onSelect(range ? {
-                  from: range.from ? setCurrentTime(range.from, from) : undefined,
-                  to: range.to ? setCurrentTime(range.to, to) : undefined,
-                } : undefined);
-              },
-            } : {
-              mode: 'single',
-              selected: dateRange?.from,
-              onSelect: (date) => {
-                const from = dateRange?.from;
+                    onSelect(
+                      range
+                        ? {
+                            from: range.from ? setCurrentTime(range.from, from) : undefined,
+                            to: range.to ? setCurrentTime(range.to, to) : undefined,
+                          }
+                        : undefined
+                    );
+                  },
+                }
+              : {
+                  mode: 'single',
+                  selected: dateRange?.from,
+                  onSelect: (date) => {
+                    const from = dateRange?.from;
 
-                onSelect({
-                  from: date ? setCurrentTime(date, from) : undefined,
-                });
-              },
-            })}
+                    onSelect({
+                      from: date ? setCurrentTime(date, from) : undefined,
+                    });
+                  },
+                })}
           />
         </div>
         <Separator className={'my-2'} />
         <div className={'px-2'}>
           <div
-            className={cn(dropdownMenuItemVariants({
-              variant: 'default',
-            }), 'hover:bg-transparent  cursor-default w-full')}
+            className={cn(
+              dropdownMenuItemVariants({
+                variant: 'default',
+              }),
+              'w-full  cursor-default hover:bg-transparent'
+            )}
           >
-            <DateSvg className={'w-5 h-5'} />
+            <DateSvg className={'h-5 w-5'} />
             {t('grid.dateFilter.endDate')}
             <Switch
               className={'ml-auto'}
               checked={isRange}
-              onCheckedChange={checked => {
+              onCheckedChange={(checked) => {
                 setIsRange(checked);
                 dateOptsRef.current = {
                   ...dateOptsRef.current,
@@ -259,25 +297,32 @@ function DateTimeCellPicker ({ open, onOpenChange, cell, fieldId, rowId }: {
             />
           </div>
           <div
-            className={cn(dropdownMenuItemVariants({
-              variant: 'default',
-            }), 'hover:bg-transparent cursor-default w-full')}
+            className={cn(
+              dropdownMenuItemVariants({
+                variant: 'default',
+              }),
+              'w-full cursor-default hover:bg-transparent'
+            )}
           >
-            <TimeIcon className={'w-5 h-5'} />
+            <TimeIcon className={'h-5 w-5'} />
             {t('grid.field.includeTime')}
             <Switch
               className={'ml-auto'}
               checked={includeTime}
-              onCheckedChange={checked => {
+              onCheckedChange={(checked) => {
                 setIncludeTime(checked);
                 dateOptsRef.current = {
                   ...dateOptsRef.current,
                   includeTime: checked,
                 };
-                onSelect(dateRange ? dateRange : {
-                  from: currentTime,
-                  to: isRange ? currentTime : undefined,
-                });
+                onSelect(
+                  dateRange
+                    ? dateRange
+                    : {
+                        from: currentTime,
+                        to: isRange ? currentTime : undefined,
+                      }
+                );
               }}
             />
           </div>
@@ -286,14 +331,16 @@ function DateTimeCellPicker ({ open, onOpenChange, cell, fieldId, rowId }: {
         <div className={'px-2'}>
           <DateTimeFormatMenu fieldId={fieldId}>
             <div
-              className={cn(dropdownMenuItemVariants({
-                variant: 'default',
-              }), 'w-full')}
+              className={cn(
+                dropdownMenuItemVariants({
+                  variant: 'default',
+                }),
+                'w-full'
+              )}
             >
               {`${t('datePicker.dateFormat')} & ${t('datePicker.timeFormat')}`}
 
-              <ChevronRight className={'ml-auto w-5 h-5 text-text-tertiary'} />
-
+              <ChevronRight className={'ml-auto h-5 w-5 text-text-tertiary'} />
             </div>
           </DateTimeFormatMenu>
         </div>
@@ -312,9 +359,12 @@ function DateTimeCellPicker ({ open, onOpenChange, cell, fieldId, rowId }: {
 
               onOpenChange(false);
             }}
-            className={cn(dropdownMenuItemVariants({
-              variant: 'default',
-            }), 'w-full')}
+            className={cn(
+              dropdownMenuItemVariants({
+                variant: 'default',
+              }),
+              'w-full'
+            )}
           >
             {t('grid.field.clearDate')}
           </div>

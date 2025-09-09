@@ -363,6 +363,7 @@ export enum YjsDatabaseKey {
   is_inline = 'is_inline',
   auto_fill = 'auto_fill',
   language = 'language',
+  number_of_days = 'number_of_days',
 }
 
 export interface YDoc extends Y.Doc {
@@ -589,6 +590,7 @@ export interface YDatabaseBoardLayoutSetting extends Y.Map<unknown> {
 
 export interface YDatabaseCalendarLayoutSetting extends Y.Map<unknown> {
   get(key: YjsDatabaseKey.first_day_of_week | YjsDatabaseKey.field_id | YjsDatabaseKey.layout_ty): string;
+  get(key: YjsDatabaseKey.number_of_days): number;
 
   get(key: YjsDatabaseKey.show_week_numbers | YjsDatabaseKey.show_weekends): boolean;
 }

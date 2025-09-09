@@ -105,7 +105,7 @@ export function useNavigationKey(
         event.preventDefault();
 
         if (isEsc) {
-          console.log('esc');
+          console.debug('esc');
           clearSelection();
           return;
         }

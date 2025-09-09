@@ -47,7 +47,7 @@ export const withInsertText = (editor: ReactEditor) => {
 
     // If the text node is a formula or mention, split the node and insert the text
     if (textNode.formula || textNode.mention) {
-      console.log('Inserting text into formula or mention', newAt);
+      console.debug('Inserting text into formula or mention', newAt);
       Transforms.insertNodes(editor, { text }, { at: point, select: true, voids: false });
 
       return;

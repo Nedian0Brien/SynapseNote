@@ -1,24 +1,24 @@
-import * as Y from 'yjs';
-import * as awarenessProtocol from 'y-protocols/awareness';
-import * as random from 'lib0/random';
-import { expect } from '@jest/globals';
+import { handleMessage, initSync, SyncContext } from '@/application/services/js-services/sync-protocol';
 import { Types } from '@/application/types';
 import { messages } from '@/proto/messages';
-import { handleMessage, initSync, SyncContext } from '@/application/services/js-services/sync-protocol';
+import { expect } from '@jest/globals';
+import * as random from 'lib0/random';
+import * as awarenessProtocol from 'y-protocols/awareness';
+import * as Y from 'yjs';
 
 /**
  * Default tracer function for logging messages sent by clients.
  * This function can be replaced with a custom tracer used to assertions etc.
  */
 const defaultTracer = (message: messages.IMessage, i: number) => {
-  console.log(`Client ${i} sending message:`, message);
-}
+  console.debug(`Client ${i} sending message:`, message);
+};
 
 const mockSync = (clientCount: number, tracer = defaultTracer): SyncContext[] => {
   const clients: SyncContext[] = [];
   const guid = random.uuidv4();
   for (let i = 0; i < clientCount; i++) {
-    const doc = new Y.Doc({guid});
+    const doc = new Y.Doc({ guid });
     const awareness = new awarenessProtocol.Awareness(doc);
     clients.push({
       doc,
@@ -37,10 +37,9 @@ const mockSync = (clientCount: number, tracer = defaultTracer): SyncContext[] =>
         }
       });
     };
-
   }
   return clients;
-}
+};
 
 describe('sync protocol', () => {
   it('should exchange updates between client and server', () => {
@@ -59,6 +58,5 @@ describe('sync protocol', () => {
     // remote -> local
     txt2.insert(5, ' World');
     expect(txt1.toString()).toEqual('Hello World');
-
-  })
-})
+  });
+});

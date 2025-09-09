@@ -4,7 +4,7 @@ import CalendarSkeleton from '@/components/_shared/skeleton/CalendarSkeleton';
 import GridSkeleton from '@/components/_shared/skeleton/GridSkeleton';
 import KanbanSkeleton from '@/components/_shared/skeleton/KanbanSkeleton';
 import { Board } from '@/components/database/board';
-import { Calendar } from '@/components/database/calendar';
+import { Calendar } from '@/components/database/fullcalendar';
 import { DatabaseConditionsContext } from '@/components/database/components/conditions/context';
 import { DatabaseTabs } from '@/components/database/components/tabs';
 import { Grid } from '@/components/database/grid';

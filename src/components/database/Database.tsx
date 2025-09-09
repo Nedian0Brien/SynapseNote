@@ -94,8 +94,8 @@ function Database(props: Database2Props) {
   }, [debounceUpdateRowMap]);
 
   useEffect(() => {
-    console.log('Database.tsx: database', database?.toJSON());
-    console.log('Database.tsx: rowDocMap', rowDocMap);
+    console.debug('Database.tsx: database', database?.toJSON());
+    console.debug('Database.tsx: rowDocMap', rowDocMap);
   }, [rowDocMap, database]);
 
   const createNewRowDoc = useCallback(

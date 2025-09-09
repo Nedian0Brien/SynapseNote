@@ -23,6 +23,7 @@ export function DateTimeCell({
   readOnly,
   wrap,
   isHovering,
+  onCellUpdated
 }: CellProps<DateTimeCellType>) {
   const { t } = useTranslation();
   const dateStr = useDateTimeCellString(cell, fieldId);
@@ -55,7 +56,7 @@ export function DateTimeCell({
       {cell?.data ? dateStr : placeholder || null}
       {hasReminder && <ReminderSvg className={'h-5 w-5'} />}
       {editing ? (
-        <DateTimeCellPicker cell={cell} fieldId={fieldId} rowId={rowId} open={editing} onOpenChange={handleOpenChange} />
+        <DateTimeCellPicker onCellUpdated={onCellUpdated} cell={cell} fieldId={fieldId} rowId={rowId} open={editing} onOpenChange={handleOpenChange} />
       ) : null}
       {isHovering && dateStr && (
         <div className={'absolute right-1 top-1'}>

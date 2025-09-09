@@ -115,4 +115,5 @@ export interface CellProps<T extends Cell> {
   setEditing?: (editing: boolean) => void;
   isHovering?: boolean;
   wrap: boolean;
+  onCellUpdated?: (cell: Cell) => void;
 }

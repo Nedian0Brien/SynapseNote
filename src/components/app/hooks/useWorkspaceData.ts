@@ -1,11 +1,12 @@
+import { sortBy, uniqBy } from 'lodash-es';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { sortBy, uniqBy } from 'lodash-es';
 import { validate as uuidValidate } from 'uuid';
 
-import { View, DatabaseRelations, UIVariant, ViewLayout, MentionablePerson } from '@/application/types';
+import { DatabaseRelations, MentionablePerson, UIVariant, View, ViewLayout } from '@/application/types';
 import { findView, findViewByLayout } from '@/components/_shared/outline/utils';
 import { createDeduplicatedNoArgsRequest } from '@/utils/deduplicateRequest';
+
 import { useAuthInternal } from '../contexts/AuthInternalContext';
 
 const USER_NO_ACCESS_CODE = [1024, 1012];
@@ -167,6 +168,10 @@ export function useWorkspaceData() {
     }
   }, [currentWorkspaceId, service, userWorkspaceInfo?.selectedWorkspace]);
 
+  const enhancedLoadDatabaseRelations = useMemo(() => {
+    return createDeduplicatedNoArgsRequest(loadDatabaseRelations);
+  }, [loadDatabaseRelations]);
+
   // Load views based on variant
   const loadViews = useCallback(
     async (variant?: UIVariant) => {
@@ -255,8 +260,9 @@ export function useWorkspaceData() {
 
   // Load database relations
   useEffect(() => {
-    void loadDatabaseRelations();
-  }, [loadDatabaseRelations]);
+    void enhancedLoadDatabaseRelations();
+  }, [enhancedLoadDatabaseRelations]);
+
 
   return {
     outline,
@@ -269,7 +275,7 @@ export function useWorkspaceData() {
     loadFavoriteViews,
     loadRecentViews,
     loadTrash,
-    loadDatabaseRelations,
+    loadDatabaseRelations: enhancedLoadDatabaseRelations,
     loadViews,
     getMentionUser,
     loadMentionableUsers,

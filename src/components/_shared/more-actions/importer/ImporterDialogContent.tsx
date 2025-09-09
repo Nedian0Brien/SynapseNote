@@ -60,6 +60,7 @@ function ImporterDialogContent({ source, onSuccess }: { source?: string; onSucce
             }}
             disabled={!isError && progress < 1 && progress > 0}
             placeholder={t('web.dropNotionFile')}
+            loading={!isError && progress < 1 && progress > 0}
           />
           {progress > 0 && (
             <LinearProgress

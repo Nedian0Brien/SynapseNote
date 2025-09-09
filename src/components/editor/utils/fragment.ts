@@ -1,26 +1,31 @@
 import { TEXT_BLOCK_TYPES } from '@/application/slate-yjs/command/const';
 import { yDocToSlateContent } from '@/application/slate-yjs/utils/convert';
 import {
-  AlignType,
-  BlockData,
-  BlockType, HeadingBlockData,
-  ImageBlockData,
-  ImageType, NumberedListBlockData, TodoListBlockData,
-  YBlock,
-  YjsEditorKey,
-  YSharedRoot,
-} from '@/application/types';
-import { filter } from 'lodash-es';
-import {
-  createBlock, createEmptyDocument, generateBlockId,
+  createBlock,
+  createEmptyDocument,
+  generateBlockId,
   getBlock,
   getChildrenArray,
   getPageId,
   getText,
   updateBlockParent,
 } from '@/application/slate-yjs/utils/yjs';
+import {
+  AlignType,
+  BlockData,
+  BlockType,
+  HeadingBlockData,
+  ImageBlockData,
+  ImageType,
+  NumberedListBlockData,
+  TodoListBlockData,
+  YBlock,
+  YjsEditorKey,
+  YSharedRoot,
+} from '@/application/types';
+import { filter } from 'lodash-es';
 import { Op } from 'quill-delta';
-import { Text as SlateText, Element as SlateElement, Node as SlateNode } from 'slate';
+import { Element as SlateElement, Node as SlateNode, Text as SlateText } from 'slate';
 
 export function deserialize(body: HTMLElement, sharedRoot: YSharedRoot) {
   const pageId = getPageId(sharedRoot);
@@ -105,7 +110,12 @@ function deserializeNode(node: Node, parentBlock: YBlock, sharedRoot: YSharedRoo
       }
 
       currentBlock = createBlock(sharedRoot, { ty: blockType, data: blockData });
-      updateBlockParent(sharedRoot, currentBlock, parentBlock, getChildrenArray(parentBlock.get(YjsEditorKey.block_children), sharedRoot)?.length || 0);
+      updateBlockParent(
+        sharedRoot,
+        currentBlock,
+        parentBlock,
+        getChildrenArray(parentBlock.get(YjsEditorKey.block_children), sharedRoot)?.length || 0
+      );
       if (tagName === 'pre') {
         const code = element.querySelector('code');
 
@@ -117,7 +127,6 @@ function deserializeNode(node: Node, parentBlock: YBlock, sharedRoot: YSharedRoo
 
         return;
       }
-
     }
 
     if (tagName === 'span') {
@@ -126,7 +135,10 @@ function deserializeNode(node: Node, parentBlock: YBlock, sharedRoot: YSharedRoo
       const lastChild = getBlock(lastChildId, sharedRoot);
       const attributes = getInlineAttributes(element);
 
-      if (lastChild && (filter(TEXT_BLOCK_TYPES, n => n !== BlockType.CodeBlock).includes(lastChild.get(YjsEditorKey.block_type)))) {
+      if (
+        lastChild &&
+        filter(TEXT_BLOCK_TYPES, (n) => n !== BlockType.CodeBlock).includes(lastChild.get(YjsEditorKey.block_type))
+      ) {
         applyTextToDelta(lastChild, sharedRoot, element.textContent || '', attributes);
         return;
       } else {
@@ -139,20 +151,20 @@ function deserializeNode(node: Node, parentBlock: YBlock, sharedRoot: YSharedRoo
       }
     }
 
-    Array.from(node.childNodes).forEach(childNode => {
+    Array.from(node.childNodes).forEach((childNode) => {
       deserializeNode(childNode, currentBlock, sharedRoot);
     });
   } else if (node.nodeType === Node.TEXT_NODE) {
     const textContent = node.textContent || '';
 
     if (textContent.trim()) {
-      console.log('===textContent', node, textContent);
+      console.debug('===textContent', node, textContent);
       const { ops } = textContentToDelta(textContent || '');
 
       if (TEXT_BLOCK_TYPES.includes(currentBlock.get(YjsEditorKey.block_type))) {
         const attributes = getInlineAttributes(node.parentElement as HTMLElement);
 
-        ops.forEach(op => {
+        ops.forEach((op) => {
           applyTextToDelta(currentBlock, sharedRoot, op.insert as string, {
             ...op.attributes,
             ...attributes,
@@ -167,7 +179,6 @@ function deserializeNode(node: Node, parentBlock: YBlock, sharedRoot: YSharedRoo
 
         updateBlockParent(sharedRoot, block, currentBlock, index);
       }
-
     }
   }
 }
@@ -177,10 +188,10 @@ function textContentToDelta(text: string) {
   let currentIndex = 0;
 
   const patterns = [
-    { regex: /\*\*(.*?)\*\*/g, format: 'bold' },     // **bold**
-    { regex: /\*(.*?)\*/g, format: 'italic' },        // *italic*
-    { regex: /__(.*?)__/g, format: 'underline' },     // __underline__
-    { regex: /~~(.*?)~~/g, format: 'strike' },        // ~~strike~~
+    { regex: /\*\*(.*?)\*\*/g, format: 'bold' }, // **bold**
+    { regex: /\*(.*?)\*/g, format: 'italic' }, // *italic*
+    { regex: /__(.*?)__/g, format: 'underline' }, // __underline__
+    { regex: /~~(.*?)~~/g, format: 'strike' }, // ~~strike~~
   ];
 
   type Mark = {
@@ -189,7 +200,7 @@ function textContentToDelta(text: string) {
     text: string;
     format: string;
     length: number;
-  }
+  };
 
   const findMarks = (): Mark[] => {
     const marks: Mark[] = [];
@@ -216,7 +227,7 @@ function textContentToDelta(text: string) {
   const getFormatsAt = (index: number): Record<string, boolean> => {
     const formats: Record<string, boolean> = {};
 
-    marks.forEach(mark => {
+    marks.forEach((mark) => {
       if (index >= mark.start && index < mark.end) {
         formats[mark.format] = true;
       }
@@ -227,7 +238,7 @@ function textContentToDelta(text: string) {
   const findNextBreakPoint = (currentIndex: number): number => {
     const points = new Set<number>();
 
-    marks.forEach(mark => {
+    marks.forEach((mark) => {
       if (mark.start > currentIndex) points.add(mark.start);
       if (mark.end > currentIndex) points.add(mark.end);
     });
@@ -274,10 +285,14 @@ function isImageUrl(url: string): boolean {
 }
 
 function processTodoList(element: HTMLElement, sharedRoot: YSharedRoot, parentBlock: YBlock, blockData: BlockData) {
-
   const checkboxBlock = createBlock(sharedRoot, { ty: BlockType.TodoListBlock, data: blockData });
 
-  updateBlockParent(sharedRoot, checkboxBlock, parentBlock, getChildrenArray(parentBlock.get(YjsEditorKey.block_children), sharedRoot)?.length || 0);
+  updateBlockParent(
+    sharedRoot,
+    checkboxBlock,
+    parentBlock,
+    getChildrenArray(parentBlock.get(YjsEditorKey.block_children), sharedRoot)?.length || 0
+  );
 
   const textContent = element.nextSibling?.textContent?.trim() || '';
 
@@ -287,22 +302,30 @@ function processTodoList(element: HTMLElement, sharedRoot: YSharedRoot, parentBl
 }
 
 function processImage(sharedRoot: YSharedRoot, parentBlock: YBlock, data: ImageBlockData) {
-
   const imageBlock = createBlock(sharedRoot, { ty: BlockType.ImageBlock, data });
 
-  updateBlockParent(sharedRoot, imageBlock, parentBlock, getChildrenArray(parentBlock.get(YjsEditorKey.block_children), sharedRoot)?.length || 0);
+  updateBlockParent(
+    sharedRoot,
+    imageBlock,
+    parentBlock,
+    getChildrenArray(parentBlock.get(YjsEditorKey.block_children), sharedRoot)?.length || 0
+  );
 }
 
-function processList(parentEl: HTMLElement, sharedRoot: YSharedRoot, {
-  ty,
-  data,
-  parent,
-}: {
-  ty: BlockType,
-  data: BlockData,
-  parent: YBlock
-}) {
-  Array.from(parentEl.childNodes).forEach(childNode => {
+function processList(
+  parentEl: HTMLElement,
+  sharedRoot: YSharedRoot,
+  {
+    ty,
+    data,
+    parent,
+  }: {
+    ty: BlockType;
+    data: BlockData;
+    parent: YBlock;
+  }
+) {
+  Array.from(parentEl.childNodes).forEach((childNode) => {
     const el = childNode as HTMLElement;
 
     if (!el || !el.tagName) return;
@@ -310,8 +333,13 @@ function processList(parentEl: HTMLElement, sharedRoot: YSharedRoot, {
     const type = tagName === 'li' ? ty : BlockType.Paragraph;
     const block = createBlock(sharedRoot, { ty: type, data });
 
-    updateBlockParent(sharedRoot, block, parent, getChildrenArray(parent.get(YjsEditorKey.block_children), sharedRoot)?.length || 0);
-    Array.from(el.childNodes).forEach(childNode => {
+    updateBlockParent(
+      sharedRoot,
+      block,
+      parent,
+      getChildrenArray(parent.get(YjsEditorKey.block_children), sharedRoot)?.length || 0
+    );
+    Array.from(el.childNodes).forEach((childNode) => {
       deserializeNode(childNode, block, sharedRoot);
     });
   });
@@ -365,7 +393,7 @@ function mapToBlockData<T extends BlockData>(element: HTMLElement): T {
 
   if (styleString) {
     const styles = styleString.split(';').reduce((acc, style) => {
-      const [key, value] = style.split(':').map(s => s.trim());
+      const [key, value] = style.split(':').map((s) => s.trim());
 
       if (key && value) {
         acc[key] = value;
@@ -487,7 +515,6 @@ export function deserializeHTML(html: string) {
 
 export function convertSlateFragmentTo(fragment: SlateNode[]) {
   const traverse = (node: SlateNode) => {
-
     if (SlateText.isText(node)) {
       return node;
     }
@@ -503,13 +530,20 @@ export function convertSlateFragmentTo(fragment: SlateNode[]) {
         type = BlockType.Paragraph;
       }
 
-      const blockChildren = isTextChildren ? [{
-        textId: blockId,
-        children: isTextChildren ? children : [],
-      }] : [{
-        textId: blockId,
-        children: [{ text: '' }],
-      }, ...children];
+      const blockChildren = isTextChildren
+        ? [
+            {
+              textId: blockId,
+              children: isTextChildren ? children : [],
+            },
+          ]
+        : [
+            {
+              textId: blockId,
+              children: [{ text: '' }],
+            },
+            ...children,
+          ];
 
       return {
         blockId,

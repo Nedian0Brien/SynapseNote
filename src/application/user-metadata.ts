@@ -3,6 +3,11 @@ import { toZonedTime } from 'date-fns-tz';
 import { DateFormat, TimeFormat } from './types';
 import { UserTimezone } from './user-timezone.types';
 
+export interface DefaultTimeSetting {
+  dateFormat: DateFormat;
+  timeFormat: TimeFormat;
+  startWeekOn: number;
+}
 /**
  * Predefined metadata keys to ensure consistency
  * This matches the Rust implementation on the backend

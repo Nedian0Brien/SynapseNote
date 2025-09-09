@@ -113,7 +113,7 @@ export const useAppflowyWebSocket = (options: Options): AppflowyWebSocketType =>
     },
     // Reconnect configuration
     shouldReconnect: (closeEvent) => {
-      console.log('Connection closed, code:', closeEvent.code, 'reason:', closeEvent.reason);
+      console.info('Connection closed, code:', closeEvent.code, 'reason:', closeEvent.reason);
 
       // Determine if reconnect is needed based on the close code
       if (closeEvent.code === CloseCode.NormalClose) {
@@ -144,23 +144,18 @@ export const useAppflowyWebSocket = (options: Options): AppflowyWebSocketType =>
       setReconnectAttempt(attemptNumber);
       const delay = Math.min(RECONNECT_INTERVAL * Math.pow(1.5, attemptNumber), 30000);
 
-      console.log(`Reconnect attempt ${attemptNumber}, delay ${delay}ms`);
+      console.info(`Reconnect attempt ${attemptNumber}, delay ${delay}ms`);
       return delay;
     },
 
     // Connection event callback
     onOpen: () => {
-      console.log('✅ WebSocket connection opened', { deviceId: options.deviceId });
+      console.info('✅ WebSocket connection opened');
       setReconnectAttempt(0);
     },
 
     onClose: (event) => {
-      console.log('❌ WebSocket connection closed', {
-        code: event.code,
-        reason: event.reason,
-        wasClean: event.wasClean,
-        deviceId: options.deviceId,
-      });
+      console.info('❌ WebSocket connection closed', event);
     },
 
     onError: (event) => {
@@ -168,7 +163,7 @@ export const useAppflowyWebSocket = (options: Options): AppflowyWebSocketType =>
     },
 
     onReconnectStop: (numAttempts) => {
-      console.log('❌ Reconnect stopped, attempt number:', numAttempts);
+      console.info('❌ Reconnect stopped, attempt number:', numAttempts);
     },
   });
   const websocket = getWebSocket() as WebSocket | null;
@@ -189,7 +184,7 @@ export const useAppflowyWebSocket = (options: Options): AppflowyWebSocketType =>
   );
 
   const manualReconnect = useCallback(() => {
-    console.log('Manual reconnect triggered');
+    console.debug('Manual reconnect triggered');
     const ws = getWebSocket();
 
     if (ws) {

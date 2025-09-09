@@ -29,7 +29,7 @@ fs.copyFileSync(path.join(__dirname, '../coverage/merged/coverage-final.json'), 
 
 // Generate final merged report
 execSync('nyc report --reporter=html --reporter=text-summary --report-dir=coverage/merged --temp-dir=coverage/.nyc_output', { stdio: 'inherit' });
-console.log(`Merged coverage report written to coverage/merged`);
+console.debug(`Merged coverage report written to coverage/merged`);
 
 
 

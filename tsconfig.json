@@ -28,6 +28,9 @@
       "jest",
       "cypress-real-events"
     ],
+    "typeRoots": [
+      "./node_modules/@fullcalendar"
+    ],
     "baseUrl": ".",
     "paths": {
       "@/*": [
