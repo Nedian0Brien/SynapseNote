@@ -87,7 +87,7 @@ export function RelatedViews() {
           className='gap-0.5 px-1.5 text-sm text-text-secondary'
           variant={'ghost'}
         >
-          <DocIcon className='h-5 w-5 text-icon-primary' />
+          <DocIcon className='h-5 w-5 text-icon-secondary' />
           {length}
           {viewsLoading ? <LoadingDots size={12} /> : <ChevronDown className='w-3 h-5' />}
 

@@ -84,7 +84,7 @@ export function Regenerations({ id }: { id: number }) {
         <PopoverContent
           onOpenAutoFocus={(e) => e.preventDefault()}
           onCloseAutoFocus={(e) => e.preventDefault()}
-          className='flex !min-w-[0px] items-center gap-1 p-0.5'
+          className='flex !min-w-[0px] items-center gap-1 p-0.5 !rounded-[8px]'
         >
           <FormatGroup
             outputContent={outputContent}

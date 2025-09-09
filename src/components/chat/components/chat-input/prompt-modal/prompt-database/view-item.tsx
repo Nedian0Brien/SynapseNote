@@ -1,4 +1,4 @@
-import { ReactComponent as ChevronDown } from '@/assets/icons/triangle_down.svg';
+import { ReactComponent as ChevronRight } from '@/assets/icons/toggle_list.svg';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import PageIcon from '@/components/chat/components/view/page-icon';
@@ -25,13 +25,13 @@ export function ViewItem({
     return view.children.length > 0 ? (
       <Button
         variant={'ghost'}
-        className={'!h-4 !min-h-4 !w-4 !min-w-4 hover:bg-muted-foreground/10'}
+        className={'!h-4 !min-h-4 !w-4 !min-w-4 !p-0 hover:bg-muted-foreground/10'}
         onClick={(e) => {
           e.stopPropagation();
           setExpanded(!expanded);
         }}
       >
-        <ChevronDown className={cn('transform transition-transform', expanded ? 'rotate-0' : '-rotate-90')} />
+        <ChevronRight className={cn('transform transition-transform', expanded ? 'rotate-90' : 'rotate-0')} />
       </Button>
     ) : (
       <div style={{ width: 16, height: 16 }}></div>

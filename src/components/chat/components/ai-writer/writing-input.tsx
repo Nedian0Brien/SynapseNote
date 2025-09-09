@@ -249,12 +249,7 @@ export function WritingInput({
                       );
                     }}
                   >
-                    <FormatIcon
-                      style={{
-                        width: 20,
-                        height: 20,
-                      }}
-                    />
+                    <FormatIcon className='text-icon-secondary h-5 w-5' />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent align={'center'} side={'right'}>
@@ -274,7 +269,7 @@ export function WritingInput({
                     e.preventDefault();
                   }}
                   variant={'ghost'}
-                  className={'h-7 text-xs'}
+                  className={'h-7 text-xs text-text-secondary'}
                   onClick={openModal}
                 >
                   {t('customPrompt.browsePrompts')}

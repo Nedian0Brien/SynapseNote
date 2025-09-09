@@ -12,8 +12,8 @@ import { Separator } from '@/components/ui/separator';
 import { useCheckboxTree } from '@/components/chat/hooks/use-checkbox-tree';
 import { View } from '@/components/chat/types';
 import { useWriterContext } from '@/components/chat/writer/context';
-import { ChevronDown } from 'lucide-react';
-import { ReactComponent as DocIcon } from '@/assets/icons/doc.svg';
+import { ReactComponent as ChevronDown } from '@/assets/icons/triangle_down.svg';
+import { ReactComponent as DocIcon } from '@/assets/icons/page.svg';
 import { useEffect, useMemo, useState } from 'react';
 
 export function ViewTree() {
@@ -63,15 +63,15 @@ export function ViewTree() {
     <Popover modal={false} open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
-          className={'h-[28px] !gap-1 text-xs !text-secondary-foreground'}
-          startIcon={<DocIcon />}
+          className={'h-[28px] !gap-1 text-xs !text-text-secondary'}
           size={'sm'}
           variant={'ghost'}
           disabled={viewsLoading}
         >
+          <DocIcon className='h-5 w-5'/>
           <div className={'flex flex-1 items-center gap-0.5'}>
             {length > 1 ? length : t('writer.current-page')}
-            {viewsLoading ? <LoadingDots size={12} /> : <ChevronDown className={'!h-2 !w-2'} />}
+            {viewsLoading ? <LoadingDots size={12} /> : <ChevronDown className='w-3 h-5' />}
           </div>
         </Button>
       </PopoverTrigger>

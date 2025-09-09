@@ -4,7 +4,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { useTranslation } from '@/components/chat/i18n';
 import { AIAssistantType } from '@/components/chat/types';
 import { useWriterContext } from '@/components/chat/writer/context';
-import { ChevronDown } from 'lucide-react';
+import { ReactComponent as ChevronDown } from '@/assets/icons/triangle_down.svg';
 import { useCallback, useState } from 'react';
 import { MESSAGE_VARIANTS } from '@/components/chat/lib/animations';
 import { motion } from 'framer-motion';
@@ -38,23 +38,23 @@ export function WritingMore({ input }: {
   >
     <PopoverTrigger asChild>
       <Button
-        className={'text-xs !gap-1 !text-secondary-foreground h-[28px]'}
+        className={'text-xs !gap-1 !text-text-secondary h-[28px]'}
         size={'sm'}
         variant={'ghost'}
       >
         <div className={'flex gap-0.5 items-center flex-1'}>
           {t('writer.button.more')}
-          <ChevronDown className={'!w-2 !h-2'} />
+          <ChevronDown className='w-3 h-5' />
         </div>
 
       </Button>
     </PopoverTrigger>
-    <PopoverContent asChild className={'min-w-[240px] !p-0'}>
+    <PopoverContent asChild className={'min-w-[240px] !p-2'}>
       <motion.div
         variants={MESSAGE_VARIANTS.getSelectorVariants()}
         initial="hidden"
         animate={open ? "visible" : "exit"}
-        className={'min-w-[240px] p-2 bg-popover border border-border rounded-md shadow-md'}
+        className={'min-w-[240px] p-2 bg-popover border border-border-primary shadow-md'}
       >
         <AiWriterMenuContent
           input={input}

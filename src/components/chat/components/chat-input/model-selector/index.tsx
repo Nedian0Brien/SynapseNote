@@ -205,12 +205,12 @@ export function ModelSelector({ className, disabled }: ModelSelectorProps) {
       <PopoverTrigger asChild>
         <Button
           variant='ghost'
-          className={cn('h-7 gap-1 px-2 text-xs font-normal', className)}
+          className={cn('h-7 gap-1 px-2 text-xs font-normal text-text-secondary', className)}
           onMouseDown={(e) => e.preventDefault()}
           disabled={disabled}
           title={hasContext ? 'Select AI Model' : 'Model selector (offline mode)'}
         >
-          {AISparksIcon ? <AISparksIcon className='h-5 w-5' /> : <span className='text-[10px]'>🤖</span>}
+          {AISparksIcon ? <AISparksIcon className='h-5 w-5 text-icon-secondary' /> : <span className='text-[10px]'>🤖</span>}
           <span className='max-w-[120px] truncate'>{displayText}</span>
         </Button>
       </PopoverTrigger>
