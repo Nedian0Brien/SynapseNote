@@ -89,18 +89,21 @@ jobs:
             sleep 5
           done
 
-      - name: Start dev server
+      - name: Build project
+        run: pnpm run build
+        
+      - name: Start preview server
         run: |
-          pnpm run dev &
-          echo $! > dev-server.pid
+          pnpm run start &
+          echo $! > preview-server.pid
           
-          # Wait for dev server
+          # Wait for preview server
           for i in {1..30}; do
             if curl -sf http://localhost:3000 > /dev/null 2>&1; then
-              echo "✓ Dev server is ready"
+              echo "✓ Preview server is ready"
               break
             fi
-            echo "Waiting for dev server... (attempt $i/30)"
+            echo "Waiting for preview server... (attempt $i/30)"
             sleep 3
           done
 
@@ -122,7 +125,7 @@ jobs:
       - name: Cleanup
         if: always()
         run: |
-          if [ -f dev-server.pid ]; then
-            kill $(cat dev-server.pid) || true
+          if [ -f preview-server.pid ]; then
+            kill $(cat preview-server.pid) || true
           fi
           cd AppFlowy-Cloud-Premium && docker compose down || true
