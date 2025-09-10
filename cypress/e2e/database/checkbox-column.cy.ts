@@ -3,6 +3,7 @@ import { AuthTestUtils } from '../../support/auth-utils';
 import {
   AddPageSelectors,
   DatabaseGridSelectors,
+  CheckboxSelectors,
   waitForReactUpdate
 } from '../../support/selectors';
 
@@ -47,7 +48,7 @@ describe('Checkbox Column Type', () => {
 
       // Verify cells exist
       cy.log('[STEP 7] Verifying cells exist');
-      cy.get('[data-testid^="grid-cell-"]', { timeout: 10000 }).should('exist');
+      DatabaseGridSelectors.cells().should('exist');
 
       // Click on first cell
       cy.log('[STEP 8] Clicking on first cell');
@@ -63,7 +64,7 @@ describe('Checkbox Column Type', () => {
           cy.log(`[STEP 10] Found ${checkboxCells.length} checkbox cells`);
 
           // Click first checkbox cell
-          cy.get('[data-testid^="checkbox-cell-"]').first().click();
+          CheckboxSelectors.allCheckboxCells().first().click();
           waitForReactUpdate(500);
           cy.log('[STEP 11] Clicked checkbox cell');
         } else {

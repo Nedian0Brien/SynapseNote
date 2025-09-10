@@ -243,14 +243,8 @@ export const GridFieldSelectors = {
   // Field header by field ID
   fieldHeader: (fieldId: string) => cy.get(byTestId(`grid-field-header-${fieldId}`)),
   
-  // Edit property menu item
-  editPropertyMenuItem: () => cy.get(byTestId('grid-field-edit-property')),
-  
-  // Property type trigger in property menu
-  propertyTypeTrigger: () => cy.get(byTestId('property-type-trigger')),
-  
-  // Property type option (e.g. SingleSelect = 3)
-  propertyTypeOption: (fieldType: number) => cy.get(byTestId(`property-type-option-${fieldType}`)),
+  // All field headers
+  allFieldHeaders: () => cy.get('[data-testid^="grid-field-header-"]'),
   
   // Add select option button
   addSelectOptionButton: () => cy.get(byTestId('add-select-option')),
@@ -294,6 +288,63 @@ export const CheckboxSelectors = {
 /**
  * Helper function to wait for React to re-render after state changes
  */
+/**
+ * DateTime Column selectors
+ */
+export const DateTimeSelectors = {
+  // DateTime cell by row and field ID
+  dateTimeCell: (rowId: string, fieldId: string) => cy.get(byTestId(`datetime-cell-${rowId}-${fieldId}`)),
+  
+  // All datetime cells
+  allDateTimeCells: () => cy.get('[data-testid^="datetime-cell-"]'),
+  
+  // DateTime picker popover
+  dateTimePickerPopover: () => cy.get(byTestId('datetime-picker-popover')),
+  
+  // DateTime date input field
+  dateTimeDateInput: () => cy.get(byTestId('datetime-date-input')),
+  
+  // DateTime time input field
+  dateTimeTimeInput: () => cy.get(byTestId('datetime-time-input')),
+};
+
+/**
+ * Property Menu selectors
+ */
+export const PropertyMenuSelectors = {
+  // Property type trigger button
+  propertyTypeTrigger: () => cy.get(byTestId('property-type-trigger')),
+  
+  // Property type option by field type number
+  propertyTypeOption: (fieldType: number) => cy.get(byTestId(`property-type-option-${fieldType}`)),
+  
+  // Grid new property button
+  newPropertyButton: () => cy.get(byTestId('grid-new-property-button')),
+  
+  // Edit property menu item
+  editPropertyMenuItem: () => cy.get(byTestId('grid-field-edit-property')),
+};
+
+/**
+ * Field Types enum for database columns
+ */
+export const FieldType = {
+  RichText: 0,
+  Number: 1,
+  DateTime: 2,
+  SingleSelect: 3,
+  MultiSelect: 4,
+  Checkbox: 5,
+  URL: 6,
+  Checklist: 7,
+  LastEditedTime: 8,
+  CreatedTime: 9,
+  Relation: 10,
+  AISummaries: 11,
+  AITranslations: 12,
+  FileMedia: 14
+};
+
 export function waitForReactUpdate(ms: number = 500) {
   return cy.wait(ms);
 }

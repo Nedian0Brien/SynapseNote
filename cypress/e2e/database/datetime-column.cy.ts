@@ -3,12 +3,15 @@ import { AuthTestUtils } from '../../support/auth-utils';
 import {
   AddPageSelectors,
   DatabaseGridSelectors,
+  DateTimeSelectors,
+  PropertyMenuSelectors,
+  GridFieldSelectors,
+  FieldType,
   waitForReactUpdate
 } from '../../support/selectors';
 
 describe('DateTime Column Type', () => {
   const generateRandomEmail = () => `${uuidv4()}@appflowy.io`;
-  const DATETIME_FIELD_TYPE = 2; // From FieldType enum
 
   beforeEach(() => {
     cy.on('uncaught:exception', (err) => {
@@ -56,8 +59,8 @@ describe('DateTime Column Type', () => {
 
       // Add new column
       cy.log('[STEP 7] Adding new column by clicking new property button');
-      cy.get('[data-testid="grid-new-property-button"]').should('be.visible');
-      cy.get('[data-testid="grid-new-property-button"]').first().scrollIntoView().click({ force: true });
+      PropertyMenuSelectors.newPropertyButton().should('be.visible');
+      PropertyMenuSelectors.newPropertyButton().first().scrollIntoView().click({ force: true });
       waitForReactUpdate(3000);
       
       // The new column is created and the property menu should be open automatically
@@ -67,26 +70,26 @@ describe('DateTime Column Type', () => {
         // Check if property type trigger exists
         if ($body.find('[data-testid="property-type-trigger"]').length > 0) {
           cy.log('[STEP 9] Property type trigger found, changing to DateTime');
-          cy.get('[data-testid="property-type-trigger"]').first().click({ force: true });
+          PropertyMenuSelectors.propertyTypeTrigger().first().click({ force: true });
           waitForReactUpdate(1000);
           
           // Select DateTime option
           cy.log('[STEP 10] Selecting DateTime option');
-          cy.get(`[data-testid="property-type-option-${DATETIME_FIELD_TYPE}"]`).click({ force: true });
+          PropertyMenuSelectors.propertyTypeOption(FieldType.DateTime).click({ force: true });
           waitForReactUpdate(2000);
         } else {
           cy.log('[STEP 9] Property type trigger not found, looking for field header');
           // Try clicking on the new field header first
-          cy.get('[data-testid^="grid-field-header-"]').last().scrollIntoView().click({ force: true });
+          GridFieldSelectors.allFieldHeaders().last().scrollIntoView().click({ force: true });
           waitForReactUpdate(1000);
           
           // Now try to find the property type trigger
-          cy.get('[data-testid="property-type-trigger"]').first().click({ force: true });
+          PropertyMenuSelectors.propertyTypeTrigger().first().click({ force: true });
           waitForReactUpdate(1000);
           
           // Select DateTime option
           cy.log('[STEP 10] Selecting DateTime option');
-          cy.get(`[data-testid="property-type-option-${DATETIME_FIELD_TYPE}"]`).click({ force: true });
+          PropertyMenuSelectors.propertyTypeOption(FieldType.DateTime).click({ force: true });
           waitForReactUpdate(2000);
         }
       });
@@ -104,7 +107,7 @@ describe('DateTime Column Type', () => {
           cy.log(`[STEP 13] Found ${datetimeCells.length} datetime cells`);
           
           // Try to interact with the first datetime cell
-          cy.get('[data-testid^="datetime-cell-"]').first().scrollIntoView().click({ force: true });
+          DateTimeSelectors.allDateTimeCells().first().scrollIntoView().click({ force: true });
           waitForReactUpdate(1000);
           
           // Check if picker opens
@@ -117,8 +120,8 @@ describe('DateTime Column Type', () => {
               const dateStr = `${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getDate().toString().padStart(2, '0')}/${today.getFullYear()}`;
               
               cy.log(`[STEP 15] Entering date: ${dateStr}`);
-              cy.get('[data-testid="datetime-date-input"]').clear().type(dateStr);
-              cy.get('[data-testid="datetime-date-input"]').type('{enter}');
+              DateTimeSelectors.dateTimeDateInput().clear().type(dateStr);
+              DateTimeSelectors.dateTimeDateInput().type('{enter}');
               waitForReactUpdate(1000);
               
               cy.log('[STEP 16] Date entered successfully');

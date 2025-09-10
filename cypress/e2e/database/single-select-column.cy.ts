@@ -47,7 +47,7 @@ describe('Single Select Column Type', () => {
 
 
       // Verify cells exist
-      cy.get('[data-testid^="grid-cell-"]', { timeout: 10000 }).should('exist');
+      DatabaseGridSelectors.cells().should('exist');
 
       // Get all cells and verify interaction
       DatabaseGridSelectors.cells().then($cells => {
