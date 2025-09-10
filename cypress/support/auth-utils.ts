@@ -170,13 +170,27 @@ export class AuthTestUtils {
       // This endpoint creates the user in the AppFlowy backend
       cy.task('log', 'Calling verify endpoint to create user profile');
       
-      // Make the verify call - this creates the user profile in AppFlowy backend
-      return cy.request({
-        method: 'GET',
-        url: `${this.config.baseUrl}/api/user/verify/${accessToken}`,
-        failOnStatusCode: false,
-      }).then((verifyResponse) => {
-        cy.task('log', `Verify response status: ${verifyResponse.status}`);
+      // Make the verify call with retry logic for CI environment
+      const verifyWithRetry = (retries = 3): Cypress.Chainable<any> => {
+        return cy.request({
+          method: 'GET',
+          url: `${this.config.baseUrl}/api/user/verify/${accessToken}`,
+          failOnStatusCode: false,
+          timeout: 30000,
+        }).then((verifyResponse) => {
+          cy.task('log', `Verify response status: ${verifyResponse.status}`);
+          
+          // If we get a 502 or 503 error, retry
+          if ((verifyResponse.status === 502 || verifyResponse.status === 503) && retries > 0) {
+            cy.task('log', `Retrying verify endpoint, ${retries} attempts remaining`);
+            return cy.wait(2000).then(() => verifyWithRetry(retries - 1));
+          }
+          
+          return cy.wrap(verifyResponse);
+        });
+      };
+      
+      return verifyWithRetry().then((verifyResponse) => {
         
         // Now refresh the token to get session data
         return cy.request({

@@ -40,12 +40,46 @@ describe('Single Select Column Type', () => {
     authUtils.signInWithTestUrl(testEmail).then(() => {
       cy.log('[STEP 3] Authentication successful');
       cy.url({ timeout: 30000 }).should('include', '/app');
-      cy.wait(3000);
+      cy.wait(5000); // Increased wait for CI environment
+      
+      // Ensure we're on the right page before proceeding
+      cy.log('[STEP 3.1] Verifying workspace loaded');
+      cy.get('body').should('exist');
+      cy.wait(2000);
 
       // Create a new grid
       cy.log('[STEP 4] Creating new grid');
-      AddPageSelectors.inlineAddButton().first().click({ force: true });
+      cy.log('[STEP 4.1] Waiting for inline add button or new page button');
+      
+      // Try to find either inline add button or new page button
+      cy.get('body').then($body => {
+        const inlineAddExists = $body.find('[data-testid="inline-add-page"]').length > 0;
+        const newPageExists = $body.find('[data-testid="new-page-button"]').length > 0;
+        
+        if (inlineAddExists) {
+          cy.log('[STEP 4.2] Using inline add button');
+          return cy.wrap(null).then(() => {
+            AddPageSelectors.inlineAddButton().first().click({ force: true });
+          });
+        } else if (newPageExists) {
+          cy.log('[STEP 4.2] Using new page button instead');
+          return cy.wrap(null).then(() => {
+            cy.get('[data-testid="new-page-button"]').first().click({ force: true });
+          });
+        } else {
+          // Wait a bit more and try inline add button
+          cy.log('[STEP 4.2] Waiting for UI to stabilize');
+          return cy.wrap(null).then(() => {
+            cy.wait(3000);
+            AddPageSelectors.inlineAddButton().should('exist', { timeout: 15000 });
+            AddPageSelectors.inlineAddButton().first().click({ force: true });
+          });
+        }
+      });
+      
       waitForReactUpdate(1000);
+      cy.log('[STEP 4.3] Clicking add grid button');
+      AddPageSelectors.addGridButton().should('exist', { timeout: 10000 });
       AddPageSelectors.addGridButton().click({ force: true });
       cy.wait(8000);
 
@@ -97,12 +131,21 @@ describe('Single Select Column Type', () => {
     authUtils.signInWithTestUrl(testEmail).then(() => {
       cy.log('[STEP 3] Authentication successful');
       cy.url({ timeout: 30000 }).should('include', '/app');
-      cy.wait(3000);
+      cy.wait(5000); // Increased wait for CI environment
+      
+      // Ensure we're on the right page before proceeding
+      cy.log('[STEP 3.1] Verifying workspace loaded');
+      cy.get('body').should('exist');
+      cy.wait(2000);
 
       // Create a new grid
       cy.log('[STEP 4] Creating new grid');
+      cy.log('[STEP 4.1] Waiting for inline add button');
+      AddPageSelectors.inlineAddButton().should('exist', { timeout: 15000 });
       AddPageSelectors.inlineAddButton().first().scrollIntoView().click({ force: true });
       waitForReactUpdate(1000);
+      cy.log('[STEP 4.2] Clicking add grid button');
+      AddPageSelectors.addGridButton().should('exist', { timeout: 10000 });
       AddPageSelectors.addGridButton().click({ force: true });
       cy.wait(8000);
 
