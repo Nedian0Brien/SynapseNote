@@ -89,6 +89,8 @@ export function AccountSettings({ children }: { children?: React.ReactNode }) {
         setDateFormat(Number(user?.metadata?.[MetadataKey.DateFormat] as DateFormat) || DateFormat.Local);
         setTimeFormat(Number(user?.metadata?.[MetadataKey.TimeFormat] as TimeFormat) || TimeFormat.TwelveHour);
         setStartWeekOn(Number(user?.metadata?.[MetadataKey.StartWeekOn]) || 0);
+      } else {
+        void service?.getCurrentUser();
       }
 
       setIsOpen(isOpen);

@@ -49,12 +49,12 @@ export function getFieldDateTimeFormats(typeOption: YMapFieldTypeOption, current
   const typeOptionTimeFormat = typeOption.get(YjsDatabaseKey.time_format);
   const typeOptionDateFormat = typeOption.get(YjsDatabaseKey.date_format);
 
-  const dateFormat = typeOptionDateFormat
-    ? parseInt(typeOptionDateFormat) as DateFormat
-    : currentUser?.metadata?.[MetadataKey.DateFormat] as DateFormat ?? DateFormat.Local;
-  const timeFormat = typeOptionTimeFormat
-    ? parseInt(typeOptionTimeFormat) as TimeFormat
-    : currentUser?.metadata?.[MetadataKey.TimeFormat] as TimeFormat ?? TimeFormat.TwelveHour;
+  const dateFormat = typeOptionDateFormat === undefined
+    ? currentUser?.metadata?.[MetadataKey.DateFormat] as DateFormat ?? DateFormat.Local
+    : parseInt(typeOptionDateFormat) as DateFormat;
+  const timeFormat = typeOptionTimeFormat === undefined
+    ? currentUser?.metadata?.[MetadataKey.TimeFormat] as TimeFormat ?? TimeFormat.TwelveHour
+    : parseInt(typeOptionTimeFormat) as TimeFormat;
 
   return {
     dateFormat,
