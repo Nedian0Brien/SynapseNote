@@ -185,6 +185,27 @@ export const SidebarSelectors = {
 };
 
 /**
+ * Chat Model Selector-related selectors
+ * Used for testing AI model selection in chat interface
+ */
+export const ModelSelectorSelectors = {
+  // Model selector button
+  button: () => cy.get(byTestId('model-selector-button')),
+  
+  // Model search input
+  searchInput: () => cy.get(byTestId('model-search-input')),
+  
+  // Get all model options
+  options: () => cy.get('[data-testid^="model-option-"]'),
+  
+  // Get specific model option by name
+  optionByName: (modelName: string) => cy.get(byTestId(`model-option-${modelName}`)),
+  
+  // Get selected model option (has the selected class)
+  selectedOption: () => cy.get('[data-testid^="model-option-"]').filter('.bg-fill-content-select'),
+};
+
+/**
  * Database Grid-related selectors
  */
 export const DatabaseGridSelectors = {

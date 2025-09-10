@@ -39,7 +39,28 @@ export const MessagesHandlerContext = createContext<MessagesHandlerContextTypes 
 function useMessagesHandler() {
   const { chatId, requestInstance, currentUser } = useChatContext();
 
+  // Get the current model from chat settings
   const [selectedModelName, setSelectedModelName] = useState<string>();
+  
+  // Load initial model from settings
+  useEffect(() => {
+    const loadModel = async () => {
+      try {
+        const settings = await requestInstance.getChatSettings();
+        const model = settings.metadata?.ai_model as string | undefined;
+
+        if (model) {
+          setSelectedModelName(model);
+        }
+      } catch (error) {
+        console.error('Failed to load chat model settings:', error);
+      }
+    };
+    
+    if (chatId) {
+      void loadModel();
+    }
+  }, [chatId, requestInstance]);
 
   const { messageIds, addMessages, insertMessage, removeMessages, saveMessageContent, getMessage } =
     useChatMessagesContext();
@@ -318,6 +339,20 @@ function useMessagesHandler() {
     }
   }, []);
 
+  // Update local state and persist to chat settings
+  const updateSelectedModel = useCallback(async (modelName: string) => {
+    setSelectedModelName(modelName);
+    try {
+      await requestInstance.updateChatSettings({
+        metadata: {
+          ai_model: modelName
+        }
+      });
+    } catch (error) {
+      console.error('Failed to update chat model settings:', error);
+    }
+  }, [requestInstance]);
+
   return {
     fetchMessages,
     submitQuestion,
@@ -327,7 +362,7 @@ function useMessagesHandler() {
     questionSending,
     answerApplying,
     selectedModelName,
-    setSelectedModelName,
+    setSelectedModelName: updateSelectedModel,
   };
 }
 
