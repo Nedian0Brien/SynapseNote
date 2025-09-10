@@ -192,3 +192,63 @@ body {
 }
 
 
+@mixin scrollbar-style {
+  ::-webkit-scrollbar, &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  &:hover {
+
+    &::-webkit-scrollbar-thumb, & *::-webkit-scrollbar-thumb {
+      border-radius: 4px;
+      background-color: var(--scrollbar-thumb);
+    }
+  }
+}
+
+@mixin hidden-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.appflowy-scrollbar {
+  @include scrollbar-style;
+}
+
+.appflowy-hidden-scrollbar {
+  @include hidden-scrollbar;
+}
+
+
+#appflowy-chat, #ai-assistant {
+  #appflowy-editor > div {
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+
+  #appflowy-editor {
+    [data-block-type="bulleted_list"] .h-6 {
+      height: 1.25rem;
+    }
+  }
+}
+
+
+@keyframes dots-loading {
+  20% {
+    background-position: 0% 0%, 50% 50%, 100% 50%;
+  }
+  40% {
+    background-position: 0% 100%, 50% 0%, 100% 50%;
+  }
+  60% {
+    background-position: 0% 50%, 50% 100%, 100% 0%;
+  }
+  80% {
+    background-position: 0% 50%, 50% 50%, 100% 100%;
+  }
+}

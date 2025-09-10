@@ -10,5 +10,3 @@ Running test prerequest:
 2. Check the appflowy-cloud server is running or not. If not you go to appflowy-cloud-premium repo and then:
 1. cp .env.nginx to .env
 2. docker compose up -d
-
-

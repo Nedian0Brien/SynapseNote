@@ -1,5 +1,5 @@
 import { useCallback, useRef } from 'react';
-import { PromptDatabaseConfiguration } from '@appflowyinc/ai-chat';
+import { PromptDatabaseConfiguration } from '@/components/chat';
 
 import {
   DatabasePrompt,

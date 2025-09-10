@@ -1,6 +1,7 @@
 const newColors = require('./new-colors.cjs');
 
 module.exports = {
+  // Existing AppFlowy colors
   'bg': {
     'selection': 'var(--bg-selection)',
     'body': 'var(--bg-body)',
@@ -11,7 +12,6 @@ module.exports = {
     'header': 'var(--bg-header)',
     'footer': 'var(--bg-footer)',
   },
-
   'line': {
     'border': 'var(--line-border)',
     'divider': 'var(--line-divider)',
@@ -94,11 +94,16 @@ module.exports = {
     ...newColors['text'],
   },
   'icon': {
+    DEFAULT: 'hsl(var(--icon))',
     'primary': 'var(--icon-primary)',
     'secondary': 'var(--icon-secondary)',
     'disabled': 'var(--icon-disabled)',
     'on-toolbar': 'var(--icon-on-toolbar)',
     ...newColors['icon'],
+  },
+  'border': {
+    DEFAULT: 'hsl(var(--border))',
+    ...newColors['border'],
   },
   'badge': {
     'purple': 'var(--badge-purple)',
@@ -111,5 +116,57 @@ module.exports = {
     'orange': 'var(--badge-orange)',
     'yellow': 'var(--badge-yellow)',
     ...newColors['badge'],
+  },
+  background: {
+    DEFAULT: 'hsl(var(--background))',
+    ...newColors['background'],
+  },
+  foreground: 'hsl(var(--foreground))',
+  card: {
+    DEFAULT: 'hsl(var(--card))',
+    foreground: 'hsl(var(--card-foreground))',
+  },
+  popover: {
+    DEFAULT: 'hsl(var(--popover))',
+    foreground: 'hsl(var(--popover-foreground))',
+  },
+  primary: {
+    DEFAULT: 'hsl(var(--primary))',
+    foreground: 'hsl(var(--primary-foreground))',
+  },
+  secondary: {
+    DEFAULT: 'hsl(var(--secondary))',
+    foreground: 'hsl(var(--secondary-foreground))',
+    background: 'var(--secondary-background)',
+  },
+  muted: {
+    DEFAULT: 'hsl(var(--muted))',
+    foreground: 'hsl(var(--muted-foreground))',
+  },
+  accent: {
+    DEFAULT: 'hsl(var(--accent))',
+    foreground: 'hsl(var(--accent-foreground))',
+  },
+  destructive: {
+    DEFAULT: 'hsl(var(--destructive))',
+    foreground: 'hsl(var(--destructive-foreground))',
+  },
+  button: {
+    disabled: 'hsl(var(--button-disabled))',
+  },
+  placeholder: {
+    DEFAULT: 'hsl(var(--placeholder))',
+  },
+  success: {
+    DEFAULT: 'hsl(var(--success))',
+  },
+  input: {
+    DEFAULT: 'hsl(var(--input))',
+    background: 'var(--input-background)',
+  },
+  ring: 'hsl(var(--ring))',
+  tooltip: {
+    DEFAULT: 'hsl(var(--tooltip))',
+    foreground: 'hsl(var(--tooltip-foreground))',
   },
 };

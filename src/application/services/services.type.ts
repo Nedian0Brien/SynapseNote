@@ -1,4 +1,4 @@
-import { RepeatedChatMessage } from '@appflowyinc/ai-chat';
+import { RepeatedChatMessage } from '@/components/chat';
 import { AxiosInstance } from 'axios';
 
 import { GlobalComment, Reaction } from '@/application/comment.type';
