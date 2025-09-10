@@ -220,17 +220,14 @@ export const DatabaseGridSelectors = {
  * Single Select Column selectors
  */
 export const SingleSelectSelectors = {
-  // Select option cell
+  // Select option cell by row and field ID
   selectOptionCell: (rowId: string, fieldId: string) => cy.get(byTestId(`select-option-cell-${rowId}-${fieldId}`)),
-  
-  // Select option in dropdown
-  selectOption: (optionId: string) => cy.get(byTestId(`select-option-${optionId}`)),
-  
-  // New property button in grid header
-  newPropertyButton: () => cy.get(byTestId('grid-new-property-button')),
   
   // All select option cells
   allSelectOptionCells: () => cy.get('[data-testid^="select-option-cell-"]'),
+  
+  // Select option in dropdown by option ID
+  selectOption: (optionId: string) => cy.get(byTestId(`select-option-${optionId}`)),
   
   // Select option menu popover
   selectOptionMenu: () => cy.get(byTestId('select-option-menu')),
