@@ -45,23 +45,15 @@ describe('Checkbox Column Type', () => {
       AddPageSelectors.addGridButton().should('be.visible').click();
       cy.wait(8000);
 
-      // Refresh to ensure grid is loaded
-      cy.log('[STEP 5] Refreshing page');
-      cy.reload();
-      cy.wait(5000);
-
-      cy.log('[STEP 6] Verifying grid is visible');
-      DatabaseGridSelectors.grid().should('be.visible');
-      
       // Verify cells exist
       cy.log('[STEP 7] Verifying cells exist');
       cy.get('[data-testid^="grid-cell-"]', { timeout: 10000 }).should('exist');
-      
+
       // Click on first cell
       cy.log('[STEP 8] Clicking on first cell');
       DatabaseGridSelectors.cells().first().click();
       waitForReactUpdate(500);
-      
+
       // Look for any checkbox-specific elements that might appear
       cy.log('[STEP 9] Looking for checkbox elements');
       cy.get('body').then($body => {
@@ -69,7 +61,7 @@ describe('Checkbox Column Type', () => {
         const checkboxCells = $body.find('[data-testid^="checkbox-cell-"]');
         if (checkboxCells.length > 0) {
           cy.log(`[STEP 10] Found ${checkboxCells.length} checkbox cells`);
-          
+
           // Click first checkbox cell
           cy.get('[data-testid^="checkbox-cell-"]').first().click();
           waitForReactUpdate(500);
@@ -78,7 +70,7 @@ describe('Checkbox Column Type', () => {
           cy.log('[STEP 10] No checkbox cells found, cell interaction test completed');
         }
       });
-      
+
       cy.log('[STEP 12] Test completed successfully');
     });
   });

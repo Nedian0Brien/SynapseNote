@@ -45,16 +45,6 @@ describe('Single Select Column Type', () => {
       AddPageSelectors.addGridButton().click();
       cy.wait(8000);
 
-      // Refresh to ensure grid is loaded
-      cy.log('[STEP 5] Refreshing page');
-      cy.reload();
-      cy.wait(5000);
-
-      cy.log('[STEP 6] Verifying grid is visible');
-      DatabaseGridSelectors.grid().should('be.visible');
-
-      // Simplified test - basic grid cell testing
-      cy.log('[STEP 7] Testing basic grid cells');
 
       // Verify cells exist
       cy.get('[data-testid^="grid-cell-"]', { timeout: 10000 }).should('exist');

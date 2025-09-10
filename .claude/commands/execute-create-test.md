@@ -28,6 +28,7 @@ Create end-to-end test based on user request: `$ARGUMENTS`
 - No other source code changes allowed
 - Test multiple times to prevent flaky tests
 - Include descriptive logs for each action
+- Only create one test
 
 ## Test Quality Checklist
 - ✓ Test requirements understood
