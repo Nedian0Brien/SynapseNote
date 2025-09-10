@@ -271,6 +271,27 @@ export const AddPageSelectors = {
 };
 
 /**
+ * Checkbox Column selectors
+ */
+export const CheckboxSelectors = {
+  // Checkbox cell by row and field ID
+  checkboxCell: (rowId: string, fieldId: string) => cy.get(byTestId(`checkbox-cell-${rowId}-${fieldId}`)),
+  
+  // All checkbox cells
+  allCheckboxCells: () => cy.get('[data-testid^="checkbox-cell-"]'),
+  
+  // Checked icon
+  checkedIcon: () => cy.get(byTestId('checkbox-checked-icon')),
+  
+  // Unchecked icon
+  uncheckedIcon: () => cy.get(byTestId('checkbox-unchecked-icon')),
+  
+  // Get checkbox cell by checked state
+  checkedCells: () => cy.get('[data-checked="true"]'),
+  uncheckedCells: () => cy.get('[data-checked="false"]'),
+};
+
+/**
  * Helper function to wait for React to re-render after state changes
  */
 export function waitForReactUpdate(ms: number = 500) {
