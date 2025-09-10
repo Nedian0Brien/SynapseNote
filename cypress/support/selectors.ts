@@ -185,8 +185,166 @@ export const SidebarSelectors = {
 };
 
 /**
+ * Database Grid-related selectors
+ */
+export const DatabaseGridSelectors = {
+  // Main grid container
+  grid: () => cy.get(byTestId('database-grid')),
+  
+  // Grid rows
+  rows: () => cy.get('[data-testid^="grid-row-"]'),
+  
+  // Get specific row by row ID
+  rowById: (rowId: string) => cy.get(byTestId(`grid-row-${rowId}`)),
+  
+  // Get first row
+  firstRow: () => cy.get('[data-testid^="grid-row-"]').first(),
+  
+  // Grid cells
+  cells: () => cy.get('[data-testid^="grid-cell-"]'),
+  
+  // Get specific cell by row ID and field ID
+  cellByIds: (rowId: string, fieldId: string) => cy.get(byTestId(`grid-cell-${rowId}-${fieldId}`)),
+  
+  // Get all cells in a specific row
+  cellsInRow: (rowId: string) => cy.get(`[data-testid^="grid-cell-${rowId}-"]`),
+  
+  // Get first cell
+  firstCell: () => cy.get('[data-testid^="grid-cell-"]').first(),
+  
+  // Get new row button (if exists)
+  newRowButton: () => cy.get(byTestId('grid-new-row')),
+};
+
+/**
+ * Single Select Column selectors
+ */
+export const SingleSelectSelectors = {
+  // Select option cell
+  selectOptionCell: (rowId: string, fieldId: string) => cy.get(byTestId(`select-option-cell-${rowId}-${fieldId}`)),
+  
+  // Select option in dropdown
+  selectOption: (optionId: string) => cy.get(byTestId(`select-option-${optionId}`)),
+  
+  // New property button in grid header
+  newPropertyButton: () => cy.get(byTestId('grid-new-property-button')),
+  
+  // All select option cells
+  allSelectOptionCells: () => cy.get('[data-testid^="select-option-cell-"]'),
+  
+  // Select option menu popover
+  selectOptionMenu: () => cy.get(byTestId('select-option-menu')),
+};
+
+/**
+ * Grid Field/Column Header selectors
+ */
+export const GridFieldSelectors = {
+  // Field header by field ID
+  fieldHeader: (fieldId: string) => cy.get(byTestId(`grid-field-header-${fieldId}`)),
+  
+  // All field headers
+  allFieldHeaders: () => cy.get('[data-testid^="grid-field-header-"]'),
+  
+  // Add select option button
+  addSelectOptionButton: () => cy.get(byTestId('add-select-option')),
+};
+
+/**
+ * Add Page Actions selectors
+ */
+export const AddPageSelectors = {
+  // Inline add page button
+  inlineAddButton: () => cy.get(byTestId('inline-add-page')),
+  
+  // Add grid button in dropdown
+  addGridButton: () => cy.get(byTestId('add-grid-button')),
+  
+  // Add AI chat button in dropdown
+  addAIChatButton: () => cy.get(byTestId('add-ai-chat-button')),
+};
+
+/**
+ * Checkbox Column selectors
+ */
+export const CheckboxSelectors = {
+  // Checkbox cell by row and field ID
+  checkboxCell: (rowId: string, fieldId: string) => cy.get(byTestId(`checkbox-cell-${rowId}-${fieldId}`)),
+  
+  // All checkbox cells
+  allCheckboxCells: () => cy.get('[data-testid^="checkbox-cell-"]'),
+  
+  // Checked icon
+  checkedIcon: () => cy.get(byTestId('checkbox-checked-icon')),
+  
+  // Unchecked icon
+  uncheckedIcon: () => cy.get(byTestId('checkbox-unchecked-icon')),
+  
+  // Get checkbox cell by checked state
+  checkedCells: () => cy.get('[data-checked="true"]'),
+  uncheckedCells: () => cy.get('[data-checked="false"]'),
+};
+
+/**
  * Helper function to wait for React to re-render after state changes
  */
+/**
+ * DateTime Column selectors
+ */
+export const DateTimeSelectors = {
+  // DateTime cell by row and field ID
+  dateTimeCell: (rowId: string, fieldId: string) => cy.get(byTestId(`datetime-cell-${rowId}-${fieldId}`)),
+  
+  // All datetime cells
+  allDateTimeCells: () => cy.get('[data-testid^="datetime-cell-"]'),
+  
+  // DateTime picker popover
+  dateTimePickerPopover: () => cy.get(byTestId('datetime-picker-popover')),
+  
+  // DateTime date input field
+  dateTimeDateInput: () => cy.get(byTestId('datetime-date-input')),
+  
+  // DateTime time input field
+  dateTimeTimeInput: () => cy.get(byTestId('datetime-time-input')),
+};
+
+/**
+ * Property Menu selectors
+ */
+export const PropertyMenuSelectors = {
+  // Property type trigger button
+  propertyTypeTrigger: () => cy.get(byTestId('property-type-trigger')),
+  
+  // Property type option by field type number
+  propertyTypeOption: (fieldType: number) => cy.get(byTestId(`property-type-option-${fieldType}`)),
+  
+  // Grid new property button
+  newPropertyButton: () => cy.get(byTestId('grid-new-property-button')),
+  
+  // Edit property menu item
+  editPropertyMenuItem: () => cy.get(byTestId('grid-field-edit-property')),
+};
+
+/**
+ * Field Types enum for database columns
+ */
+export const FieldType = {
+  RichText: 0,
+  Number: 1,
+  DateTime: 2,
+  SingleSelect: 3,
+  MultiSelect: 4,
+  Checkbox: 5,
+  URL: 6,
+  Checklist: 7,
+  LastEditedTime: 8,
+  CreatedTime: 9,
+  Relation: 10,
+  AISummaries: 11,
+  AITranslations: 12,
+  FileMedia: 14
+};
+
 export function waitForReactUpdate(ms: number = 500) {
   return cy.wait(ms);
 }

@@ -64,6 +64,7 @@ export function SelectOptionCell({
   return (
     <div
       style={style}
+      data-testid={`select-option-cell-${rowId}-${fieldId}`}
       className={cn(
         'select-option-cell flex w-full items-center gap-1',
         isEmpty && placeholder ? 'text-text-tertiary' : '',

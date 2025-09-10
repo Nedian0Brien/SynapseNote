@@ -115,7 +115,11 @@ export function GridRowCell({ rowId, fieldId }: GridCellProps) {
   if (!field) return null;
 
   return (
-    <div ref={ref} className={cn('grid-cell flex w-full items-start overflow-hidden px-2 text-sm', paddingVertical)}>
+    <div
+      ref={ref}
+      data-testid={`grid-cell-${rowId}-${fieldId}`}
+      className={cn('grid-cell flex w-full items-start overflow-hidden px-2 text-sm', paddingVertical)}
+    >
       <Component
         cell={cell}
         rowId={rowId}

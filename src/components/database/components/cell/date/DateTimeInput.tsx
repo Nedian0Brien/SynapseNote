@@ -167,6 +167,7 @@ function DateTimeInput({
       data-focused={focused}
     >
       <input
+        data-testid="datetime-date-input"
         autoFocus={autoFocus}
         type={'text'}
         className={cn('flex-1', baseInputStyles)}
@@ -194,6 +195,7 @@ function DateTimeInput({
         <>
           <Separator className={'!h-4'} orientation={'vertical'} />
           <input
+            data-testid="datetime-time-input"
             className={cn(is12HourFormat ? 'w-[70px]' : 'w-[50px]', baseInputStyles)}
             type={'text'}
             placeholder={timePlaceholder}

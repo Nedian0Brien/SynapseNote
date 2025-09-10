@@ -45,6 +45,7 @@ export function DateTimeCell({
 
   return (
     <div
+      data-testid={`datetime-cell-${rowId}-${fieldId}`}
       style={style}
       className={cn(
         'flex gap-1',

@@ -44,6 +44,7 @@ export function GridHeaderColumn({
       >
         <Tooltip disableHoverableContent delayDuration={500}>
           <TooltipTrigger
+            data-testid={`grid-field-header-${fieldId}`}
             onClick={(e) => {
               if (readOnly) return;
               e.stopPropagation();

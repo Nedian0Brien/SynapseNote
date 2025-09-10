@@ -181,6 +181,7 @@ function DateTimeCellPicker({
         className={'absolute left-0 top-0 z-[-1] h-full w-full bg-transparent'}
       />
       <PopoverContent
+        data-testid="datetime-picker-popover"
         avoidCollisions={true}
         {...(layout === DatabaseViewLayout.Calendar
           ? {

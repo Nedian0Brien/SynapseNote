@@ -220,6 +220,7 @@ function GridVirtualRow({
         </div>
         <div
           ref={rowRef}
+          data-testid={`grid-row-${rowId}`}
           className={cn(
             'grid-table-row-content relative flex min-h-[36px]',
             state.type === GridDragState.DRAGGING && 'opacity-40'

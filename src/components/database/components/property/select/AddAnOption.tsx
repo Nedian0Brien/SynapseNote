@@ -28,6 +28,7 @@ function AddAnOption ({ options, onAdd }: {
 
   return (
     <DropdownMenuItem
+      data-testid="add-select-option"
       onPointerLeave={e => {
         if (editing) {
           e.preventDefault();

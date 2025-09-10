@@ -18,7 +18,7 @@ export function Grid () {
 
   return (
     <GridProvider>
-      <div className={`database-grid relative grid-table-${viewId} flex w-full flex-1 flex-col`}>
+      <div data-testid="database-grid" className={`database-grid relative grid-table-${viewId} flex w-full flex-1 flex-col`}>
         <GridVirtualizer
           columns={fields}
         />

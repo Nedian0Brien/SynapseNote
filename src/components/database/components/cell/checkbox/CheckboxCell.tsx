@@ -39,12 +39,14 @@ export function CheckboxCell({
   return (
     <div
       style={style}
+      data-testid={`checkbox-cell-${rowId}-${fieldId}`}
+      data-checked={checkedRef.current}
       className={cn('relative flex h-full w-full text-lg text-text-action', readOnly ? '' : 'cursor-pointer')}
     >
       {checkedRef.current ? (
-        <CheckboxCheckSvg className={'h-5 w-5'} />
+        <CheckboxCheckSvg className={'h-5 w-5'} data-testid="checkbox-checked-icon" />
       ) : (
-        <CheckboxUncheckSvg className={'h-5 w-5 text-border-primary hover:text-border-primary-hover'} />
+        <CheckboxUncheckSvg className={'h-5 w-5 text-border-primary hover:text-border-primary-hover'} data-testid="checkbox-unchecked-icon" />
       )}
     </div>
   );

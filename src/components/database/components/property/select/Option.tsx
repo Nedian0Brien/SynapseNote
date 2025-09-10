@@ -119,6 +119,7 @@ function Option({
       <div
         ref={innerRef}
         key={option.id}
+        data-testid={`select-option-${option.id}`}
         onClick={(e) => {
           e.preventDefault();
           if (onSelect) {
