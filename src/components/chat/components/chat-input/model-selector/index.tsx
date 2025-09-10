@@ -208,6 +208,7 @@ export function ModelSelector({ className, disabled }: ModelSelectorProps) {
           className={cn('h-7 gap-1 px-2 text-xs font-normal text-text-secondary', className)}
           onMouseDown={(e) => e.preventDefault()}
           disabled={disabled}
+          data-testid="model-selector-button"
           title={hasContext ? 'Select AI Model' : 'Model selector (offline mode)'}
         >
           {AISparksIcon ? <AISparksIcon className='h-5 w-5 text-icon-secondary' /> : <span className='text-[10px]'>🤖</span>}
@@ -229,6 +230,7 @@ export function ModelSelector({ className, disabled }: ModelSelectorProps) {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className='w-full bg-transparent px-2 py-1 text-sm outline-none placeholder:text-text-placeholder'
+              data-testid="model-search-input"
               onKeyDown={(e) => {
                 if (e.key === 'Escape') {
                   setOpen(false);
@@ -238,7 +240,7 @@ export function ModelSelector({ className, disabled }: ModelSelectorProps) {
           </div>
 
           {/* Models List */}
-          <div className='max-h-[380px] overflow-y-auto py-1'>
+          <div className='appflowy-scrollbar max-h-[380px] overflow-y-auto py-1'>
             {loading ? (
               <div className='px-3 py-8 text-center text-sm text-text-secondary'>Loading models...</div>
             ) : filteredModels.length === 0 ? (
@@ -260,6 +262,7 @@ export function ModelSelector({ className, disabled }: ModelSelectorProps) {
                       'focus:bg-fill-content-hover focus:outline-none',
                       isSelected && 'bg-fill-content-select'
                     )}
+                    data-testid={`model-option-${model.name}`}
                   >
                     <div className='min-w-0 flex-1'>
                       <div className='flex items-center gap-2'>
