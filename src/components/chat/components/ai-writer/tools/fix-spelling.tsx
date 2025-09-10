@@ -1,6 +1,6 @@
 import { CommentWithAskAnything } from './with-comment';
 
-import { useTranslation } from '@/components/chat/i18n';
+import { useTranslation } from 'react-i18next';
 import { useWriterContext } from '@/components/chat/writer/context';
 import { useMemo } from 'react';
 import { CheckIcon, XIcon } from 'lucide-react';
@@ -19,35 +19,35 @@ export function FixSpelling() {
 
   const actions = useMemo(() => placeholderContent ? [
     {
-      label: t('writer.button.accept'),
+      label: t('chat.writer.button.accept'),
       onClick: accept,
       icon: <CheckIcon className={'text-success'} />,
     },
     {
-      label: t('writer.button.discard'),
+      label: t('chat.writer.button.discard'),
       onClick: () => {
         exit();
       },
       icon: <XIcon className={'text-destructive'} />,
     },
     {
-      label: t('writer.button.insert-below'),
+      label: t('chat.writer.button.insert-below'),
       onClick: insertBelow,
       icon: <InsertBelowIcon />,
     },
     {
-      label: t('writer.button.try-again'),
+      label: t('chat.writer.button.try-again'),
       onClick: rewrite,
       icon: <TryAgainIcon />,
     },
   ] : [
     {
-      label: t('writer.button.try-again'),
+      label: t('chat.writer.button.try-again'),
       onClick: rewrite,
       icon: <TryAgainIcon />,
     },
     {
-      label: t('writer.button.close'),
+      label: t('chat.writer.button.close'),
       onClick: () => {
         exit();
       },
@@ -56,7 +56,7 @@ export function FixSpelling() {
   ], [accept, exit, insertBelow, placeholderContent, rewrite, t]);
 
   return <CommentWithAskAnything
-    title={t('writer.fixSpelling')}
+    title={t('chat.writer.fixSpelling')}
     actions={actions}
     noSwitchMode={true}
 

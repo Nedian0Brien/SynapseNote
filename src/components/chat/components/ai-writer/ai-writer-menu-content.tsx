@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { useTranslation } from '@/components/chat/i18n';
+import { useTranslation } from 'react-i18next';
 import { ReactComponent as ImproveWritingIcon } from '@/assets/icons/ai_improve_writing.svg';
 import { ReactComponent as AskAIIcon } from '@/assets/icons/ai.svg';
 import { ReactComponent as FixSpellingIcon } from '@/assets/icons/tick.svg';
@@ -30,32 +30,32 @@ export function AiWriterMenuContent({
       [
         {
           icon: ContinueWritingIcon,
-          label: t('writer.continue'),
+          label: t('chat.writer.continue'),
           key: AIAssistantType.ContinueWriting,
           onClick: () => continueWriting(input),
         },
         {
           icon: ImproveWritingIcon,
-          label: t('writer.improve'),
+          label: t('chat.writer.improve'),
           key: AIAssistantType.ImproveWriting,
           onClick: () => improveWriting(input),
         },
         {
           key: AIAssistantType.AskAIAnything,
           icon: AskAIIcon,
-          label: t('writer.askAI'),
+          label: t('chat.writer.askAI'),
           onClick: () => askAIAnything(input),
         },
         {
           key: AIAssistantType.FixSpelling,
           icon: FixSpellingIcon,
-          label: t('writer.fixSpelling'),
+          label: t('chat.writer.fixSpelling'),
           onClick: () => fixSpelling(input),
         },
         {
           key: AIAssistantType.Explain,
           icon: ExplainIcon,
-          label: t('writer.explain'),
+          label: t('chat.writer.explain'),
           onClick: () => explain(input),
         },
       ].filter((item) => {
@@ -69,13 +69,13 @@ export function AiWriterMenuContent({
       [
         {
           icon: MakeLongerIcon,
-          label: t('writer.makeLonger'),
+          label: t('chat.writer.makeLonger'),
           onClick: () => makeLonger(input),
           key: AIAssistantType.MakeLonger,
         },
         {
           icon: MakeShorterIcon,
-          label: t('writer.makeShorter'),
+          label: t('chat.writer.makeShorter'),
           onClick: () => makeShorter(input),
           key: AIAssistantType.MakeShorter,
         },

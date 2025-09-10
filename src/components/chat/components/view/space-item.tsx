@@ -1,5 +1,5 @@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useTranslation } from '@/components/chat/i18n';
+import { useTranslation } from 'react-i18next';
 import { cn, getIcon, renderColor, stringToColor } from '@/components/chat/lib/utils';
 import { View } from '@/components/chat/types';
 import { ReactComponent as ChevronRight } from '@/assets/icons/toggle_list.svg';
@@ -79,7 +79,7 @@ function SpaceItem({
     );
   }, [expanded, view.children.length]);
 
-  const name = view.name || t('view.placeholder');
+  const name = view.name || t('chat.view.placeholder');
 
   return (
     <div className={'flex flex-col'}>

@@ -1,7 +1,7 @@
 import ViewChildren from '@/components/chat/components/view/view-children';
 import SpaceItem from '@/components/chat/components/view/space-item';
 import LoadingDots from '@/components/chat/components/ui/loading-dots';
-import { useTranslation } from '@/components/chat/i18n';
+import { useTranslation } from 'react-i18next';
 import { View } from '@/components/chat/types';
 import { CheckStatus } from '@/components/chat/types/checkbox';
 
@@ -30,7 +30,7 @@ export function Spaces({
 
   if(!spaces || spaces.length === 0) {
     return <div className={'flex w-full opacity-60 h-full py-10 items-center justify-center'}>
-      {t('search.noSpacesFound')}
+      {t('chat.search.noSpacesFound')}
     </div>;
   }
 

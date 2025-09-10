@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useTranslation } from '@/components/chat/i18n';
+import { useTranslation } from 'react-i18next';
 
 export function InvalidDatabaseDialog({
   isOpen,
@@ -25,9 +25,9 @@ export function InvalidDatabaseDialog({
         onCloseAutoFocus={(e) => e.preventDefault()}
       >
         <DialogHeader className={'!text-left'}>
-          <DialogTitle>{t('customPrompt.invalidDatabase')}</DialogTitle>
+          <DialogTitle>{t('chat.customPrompt.invalidDatabase')}</DialogTitle>
           <DialogDescription className={'whitespace-pre-line'}>
-            {t('customPrompt.invalidDatabaseHelp')}
+            {t('chat.customPrompt.invalidDatabaseHelp')}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
@@ -37,7 +37,7 @@ export function InvalidDatabaseDialog({
             }}
             type='submit'
           >
-            {t('customPrompt.button.ok')}
+            {t('chat.customPrompt.button.ok')}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,4 +1,4 @@
-import { useTranslation } from '@/components/chat/i18n';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/components/chat/lib/utils';
 import { AiPrompt } from '@/components/chat/types/prompt';
 import { useState } from 'react';
@@ -57,7 +57,7 @@ export function PromptCard({
           onMouseLeave={() => setIsUsePromptHovered(false)}
           onClick={onUsePrompt}
         >
-          {t('customPrompt.usePrompt')}
+          {t('chat.customPrompt.usePrompt')}
         </div>
       )}
     </div>

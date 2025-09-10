@@ -1,7 +1,7 @@
 import { useViewLoader } from '@/components/chat/provider/view-loader-provider';
 import LoadingDots from '@/components/chat/components/ui/loading-dots';
 import SpaceItem from '@/components/chat/components/view/space-item';
-import { useTranslation } from '@/components/chat/i18n';
+import { useTranslation } from 'react-i18next';
 import { hasDatabaseViewChild, searchDatabaseViews } from '@/components/chat/lib/views';
 import { View } from '@/components/chat/types';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -63,7 +63,7 @@ export function SpaceList({
           'flex w-full opacity-60 h-full py-10 items-center justify-center'
         }
       >
-        {t('search.noSpacesFound')}
+        {t('chat.search.noSpacesFound')}
       </div>
     );
   }

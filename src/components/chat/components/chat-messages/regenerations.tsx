@@ -6,7 +6,7 @@ import { FormatGroup } from '@/components/chat/components/ui/format-group';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { useTranslation } from '@/components/chat/i18n';
+import { useTranslation } from 'react-i18next';
 import { useMessagesHandlerContext } from '@/components/chat/provider/messages-handler-provider';
 import { useChatMessagesContext } from '@/components/chat/provider/messages-provider';
 import { useResponseFormatContext } from '@/components/chat/provider/response-format-provider';
@@ -57,7 +57,7 @@ export function Regenerations({ id }: { id: number }) {
           </Button>
         </TooltipTrigger>
         <TooltipContent align={'center'} side={'bottom'}>
-          {t('button.tryAgain')}
+          {t('chat.button.tryAgain')}
         </TooltipContent>
       </Tooltip>
       <Popover modal>
@@ -78,7 +78,7 @@ export function Regenerations({ id }: { id: number }) {
             </PopoverTrigger>
           </TooltipTrigger>
           <TooltipContent align={'center'} side={'bottom'}>
-            {t('button.changeFormat')}
+            {t('chat.button.changeFormat')}
           </TooltipContent>
         </Tooltip>
         <PopoverContent
@@ -116,7 +116,7 @@ export function Regenerations({ id }: { id: number }) {
                 <RegenerateCircleIcon className='h-5 w-5' />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>{t('button.regenerateWithNewFormat')}</TooltipContent>
+            <TooltipContent>{t('chat.button.regenerateWithNewFormat')}</TooltipContent>
           </Tooltip>
         </PopoverContent>
       </Popover>

@@ -8,7 +8,7 @@ import { ReactComponent as NumberedListIcon } from '@/assets/icons/numbered_list
 import { ReactComponent as TableIcon } from '@/assets/icons/table.svg';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { useTranslation } from '@/components/chat/i18n';
+import { useTranslation } from 'react-i18next';
 import { OutputContent, OutputLayout } from '@/components/chat/types';
 import { useMemo } from 'react';
 
@@ -28,17 +28,17 @@ export function FormatGroup({
   const actions = useMemo(() => [{
     Icon: TextIcon,
     key: OutputContent.TEXT,
-    title: t('input.button.text'),
+    title: t('chat.input.button.text'),
     onClick: () => setOutputContent(OutputContent.TEXT),
   }, {
     Icon: TextWithIcon,
     key: OutputContent.RichTextImage,
-    title: t('input.button.textWithImage'),
+    title: t('chat.input.button.textWithImage'),
     onClick: () => setOutputContent(OutputContent.RichTextImage),
   }, {
     Icon: ImageIcon,
     key: OutputContent.IMAGE,
-    title: t('input.button.imageOnly'),
+    title: t('chat.input.button.imageOnly'),
     onClick: () => setOutputContent(OutputContent.IMAGE),
   }], [setOutputContent, t]);
 
@@ -46,25 +46,25 @@ export function FormatGroup({
     {
       Icon: ParagraphIcon,
       key: OutputLayout.Paragraph,
-      title: t('input.button.paragraph'),
+      title: t('chat.input.button.paragraph'),
       onClick: () => setOutputLayout(OutputLayout.Paragraph),
     },
     {
       Icon: BulletedListIcon,
       key: OutputLayout.BulletList,
-      title: t('input.button.bulletList'),
+      title: t('chat.input.button.bulletList'),
       onClick: () => setOutputLayout(OutputLayout.BulletList),
     },
     {
       Icon: NumberedListIcon,
       key: OutputLayout.NumberedList,
-      title: t('input.button.numberedList'),
+      title: t('chat.input.button.numberedList'),
       onClick: () => setOutputLayout(OutputLayout.NumberedList),
     },
     {
       Icon: TableIcon,
       key: OutputLayout.SimpleTable,
-      title: t('input.button.table'),
+      title: t('chat.input.button.table'),
       onClick: () => setOutputLayout(OutputLayout.SimpleTable),
     },
   ], [setOutputLayout, t]);

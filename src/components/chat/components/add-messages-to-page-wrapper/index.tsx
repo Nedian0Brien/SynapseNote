@@ -6,7 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { useViewContentInserter } from '@/components/chat/hooks/use-view-content-inserter';
-import { useTranslation } from '@/components/chat/i18n';
+import { useTranslation } from 'react-i18next';
 import { useEditorContext } from '@/components/chat/provider/editor-provider';
 import { ChatMessage } from '@/components/chat/types';
 import { useCallback, useState } from 'react';
@@ -48,7 +48,7 @@ export function AddMessageToPageWrapper({
       try {
         await createViewWithContent(parentViewId, name, data);
         toast.success(
-          t('success.addMessageToPage', {
+          t('chat.success.addMessageToPage', {
             name,
           })
         );
@@ -69,8 +69,8 @@ export function AddMessageToPageWrapper({
       try {
         await insertContentToView(viewId, data);
         toast.success(
-          t('success.addMessageToPage', {
-            name: chat?.name || t('view.placeholder'),
+          t('chat.success.addMessageToPage', {
+            name: chat?.name || t('chat.view.placeholder'),
           })
         );
         onFinished?.();
@@ -101,7 +101,7 @@ export function AddMessageToPageWrapper({
       </PopoverTrigger>
       <PopoverContent onOpenAutoFocus={(e) => e.preventDefault()} onCloseAutoFocus={(e) => e.preventDefault()}>
         <div className={'flex h-fit max-h-[360px] min-h-[200px] w-[300px] flex-col gap-2 px-1 py-1'}>
-          <Label className={'font-normal'}>{t('addMessageToPage.placeholder')}</Label>
+          <Label className={'font-normal'}>{t('chat.addMessageToPage.placeholder')}</Label>
 
           <SearchInput value={searchValue} onChange={setSearchValue} />
           <Separator />

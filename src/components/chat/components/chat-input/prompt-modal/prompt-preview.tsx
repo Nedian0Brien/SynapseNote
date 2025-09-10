@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { useTranslation } from '@/components/chat/i18n';
+import { useTranslation } from 'react-i18next';
 import { AiPrompt } from '@/components/chat/types/prompt';
 import { useMemo } from 'react';
 
@@ -35,12 +35,12 @@ export function PromptPreview({
       <div className='flex items-center justify-between gap-1.5 sticky top-0 bg-background-primary pb-3'>
         <span className='text-2xl text-text-primary'>{prompt?.name}</span>
         <Button onClick={onUsePrompt} className='px-4 py-1.5'>
-          {t('customPrompt.usePrompt')}
+          {t('chat.customPrompt.usePrompt')}
         </Button>
       </div>
       <div className='flex flex-col gap-4 pt-3'>
         <div className='flex flex-col gap-1'>
-          <span className='text-text-primary'>{t('customPrompt.prompt')}</span>
+          <span className='text-text-primary'>{t('chat.customPrompt.prompt')}</span>
           <span className='text-sm text-text-primary p-3 rounded-[8px] bg-surface-container-layer-01 whitespace-pre-wrap'>
             {formattedContent}
           </span>
@@ -48,7 +48,7 @@ export function PromptPreview({
         {prompt?.example && (
           <div className='flex flex-col gap-1'>
             <span className='text-text-primary'>
-              {t('customPrompt.promptExample')}
+              {t('chat.customPrompt.promptExample')}
             </span>
             <span className='text-sm text-text-primary p-3 rounded-[8px] bg-surface-container-layer-01 whitespace-pre-wrap'>
               {prompt.example}

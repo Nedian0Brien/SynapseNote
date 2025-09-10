@@ -1,6 +1,6 @@
 import LoadingDots from '@/components/chat/components/ui/loading-dots';
 import { toast } from 'sonner';
-import { useTranslation } from '@/components/chat/i18n';
+import { useTranslation } from 'react-i18next';
 import { searchViews } from '@/components/chat/lib/views';
 import { Spaces } from './spaces';
 import { MESSAGE_VARIANTS } from '@/components/chat/lib/animations';
@@ -70,7 +70,7 @@ export function ViewTree() {
         >
           <DocIcon className='h-5 w-5'/>
           <div className={'flex flex-1 items-center gap-0.5'}>
-            {length > 1 ? length : t('writer.current-page')}
+            {length > 1 ? length : t('chat.writer.current-page')}
             {viewsLoading ? <LoadingDots size={12} /> : <ChevronDown className='w-3 h-5' />}
           </div>
         </Button>

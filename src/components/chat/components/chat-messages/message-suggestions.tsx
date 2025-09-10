@@ -1,7 +1,7 @@
 import { useChatContext } from '@/components/chat/chat/context';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { useTranslation } from '@/components/chat/i18n';
+import { useTranslation } from 'react-i18next';
 import { MESSAGE_VARIANTS } from '@/components/chat/lib/animations';
 import { useMessagesHandlerContext } from '@/components/chat/provider/messages-handler-provider';
 import { Suggestions } from '@/components/chat/types';
@@ -44,7 +44,7 @@ export function MessageSuggestions({ suggestions }: MessageSuggestionsProps) {
       variants={MESSAGE_VARIANTS.getSuggestionsVariants()}
       className={'flex flex-col gap-4 w-full overflow-hidden mr-auto mt-9'}
     >
-      <Label>{t('suggestion.title')}</Label>
+      <Label>{t('chat.suggestion.title')}</Label>
       <div className={'flex gap-2 flex-col items-start w-full overflow-hidden'}>
         {suggestions.items.length === 0 ? (
           <EmptySuggestions />

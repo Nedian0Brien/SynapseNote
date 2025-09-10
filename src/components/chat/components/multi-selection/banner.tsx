@@ -1,7 +1,7 @@
 import { useChatContext } from '@/components/chat/chat/context';
 import { AddMessageToPageWrapper } from '@/components/chat/components/add-messages-to-page-wrapper';
 import { Button } from '@/components/ui/button';
-import { useTranslation } from '@/components/chat/i18n';
+import { useTranslation } from 'react-i18next';
 import { ChatMessage } from '@/components/chat/types';
 import { CheckStatus } from '@/components/chat/types/checkbox';
 import { CheckSquare, Minus, Square, X } from 'lucide-react';
@@ -58,9 +58,9 @@ export function Banner({
         </Button>
 
         <div className={'text-sm font-medium'}>
-          {messages.length > 0 ? t('addMessageToPage.selectedCount', {
+          {messages.length > 0 ? t('chat.addMessageToPage.selectedCount', {
             count: messages.length,
-          }) : t('addMessageToPage.selectMsg')}
+          }) : t('chat.addMessageToPage.selectMsg')}
         </div>
       </div>
       <div className={'flex items-center justify-end gap-2'}>
@@ -72,7 +72,7 @@ export function Banner({
             variant={'outline'}
             className={'text-primary-foreground h-[28px] px-3 text-sm bg-transparent hover:bg-primary hover:text-primary-foreground'}
           >
-            {t('button.addTo')}
+            {t('chat.button.addTo')}
           </Button>
         </AddMessageToPageWrapper>
         <Button

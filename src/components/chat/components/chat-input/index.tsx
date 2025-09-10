@@ -9,7 +9,7 @@ import LoadingDots from '@/components/chat/components/ui/loading-dots';
 import { Textarea } from '@/components/chat/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
-import { useTranslation } from '@/components/chat/i18n';
+import { useTranslation } from 'react-i18next';
 import { MESSAGE_VARIANTS } from '@/components/chat/lib/animations';
 import { useMessagesHandlerContext } from '@/components/chat/provider/messages-handler-provider';
 import { usePromptModal } from '@/components/chat/provider/prompt-modal-provider';
@@ -88,12 +88,12 @@ export function ChatInput() {
 
   const handleSubmit = async () => {
     if (!message.trim()) {
-      toast.error(`${t('errors.emptyMessage')}`);
+      toast.error(`${t('chat.errors.emptyMessage')}`);
       return;
     }
 
     if (questionSending || answerApplying) {
-      toast.error(`${t('errors.wait')}`);
+      toast.error(`${t('chat.errors.wait')}`);
       return;
     }
 
@@ -121,7 +121,7 @@ export function ChatInput() {
   }, [adjustHeight, message]);
 
   const formatTooltip =
-    responseMode === ChatInputMode.FormatResponse ? t('input.button.auto') : t('input.button.format');
+    responseMode === ChatInputMode.FormatResponse ? t('chat.input.button.auto') : t('chat.input.button.format');
   const FormatIcon = responseMode === ChatInputMode.FormatResponse ? AutoTextIcon : ImageTextIcon;
 
   useEffect(() => {
@@ -179,7 +179,7 @@ export function ChatInput() {
           onFocus={() => {
             setFocused(true);
           }}
-          placeholder={t('input.placeholder')}
+          placeholder={t('chat.input.placeholder')}
           onBlur={() => {
             setFocused(false);
           }}
@@ -228,11 +228,11 @@ export function ChatInput() {
                     openModal();
                   }}
                 >
-                  {t('customPrompt.browsePrompts')}
+                  {t('chat.customPrompt.browsePrompts')}
                 </Button>
               </TooltipTrigger>
               <TooltipContent align={'center'} side={'right'}>
-                {t('customPrompt.browsePrompts')}
+                {t('chat.customPrompt.browsePrompts')}
               </TooltipContent>
             </Tooltip>
 

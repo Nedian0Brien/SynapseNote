@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import LoadingDots from '@/components/chat/components/ui/loading-dots';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import SpaceItem from '@/components/chat/components/view/space-item';
-import { useTranslation } from '@/components/chat/i18n';
+import { useTranslation } from 'react-i18next';
 import { searchViews } from '@/components/chat/lib/views';
 import { View } from '@/components/chat/types';
 import { useEffect, useMemo, useState } from 'react';
@@ -51,7 +51,7 @@ export function SpaceList({
   if (!filteredSpaces || filteredSpaces.length === 0) {
     return (
       <div className={'flex h-full w-full items-center justify-center py-10 opacity-60'}>
-        {t('search.noSpacesFound')}
+        {t('chat.search.noSpacesFound')}
       </div>
     );
   }
@@ -78,7 +78,7 @@ export function SpaceList({
                       <PlusIcon className={'h-4 w-4'} />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>{t('addMessageToPage.createNewPage')}</TooltipContent>
+                  <TooltipContent>{t('chat.addMessageToPage.createNewPage')}</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             }

@@ -7,7 +7,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useTranslation } from '@/components/chat/i18n';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/components/chat/lib/utils';
 import { usePromptModal } from '@/components/chat/provider/prompt-modal-provider';
 import { ChevronDown } from 'lucide-react';
@@ -135,7 +135,7 @@ export function PromptDatabaseModal({
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <DialogTitle className='text-md text-text-primary font-bold'>
-          {t('customPrompt.configureDatabase')}
+          {t('chat.customPrompt.configureDatabase')}
         </DialogTitle>
         <DialogDescription className='sr-only'>
           Configure database settings for custom prompts
@@ -143,15 +143,15 @@ export function PromptDatabaseModal({
         <div className='flex-1 flex flex-col min-h-0 w-full gap-4 px-2 py-4'>
           <div className='flex items-center'>
             <span className='flex-1 text-sm text-text-secondary'>
-              {t('customPrompt.selectDatabase')}
+              {t('chat.customPrompt.selectDatabase')}
             </span>
             <PromptDatabaseViews onSelectView={handleChangeViewId}>
               <div className='flex-1 flex justify-center'>
                 <Button variant={'outline'}>
                   {viewName === null
-                    ? t('customPrompt.selectDatabase')
+                    ? t('chat.customPrompt.selectDatabase')
                     : viewName === ''
-                      ? t('view.placeholder')
+                      ? t('chat.view.placeholder')
                       : viewName}
                 </Button>
               </div>
@@ -160,27 +160,27 @@ export function PromptDatabaseModal({
           {currentDatabaseConfig && (
             <div className='flex flex-col gap-2'>
               <FieldSelector
-                title={t('customPrompt.title')}
+                title={t('chat.customPrompt.title')}
                 selectedFieldId={currentDatabaseConfig?.titleFieldId || null}
                 fields={currentFields.filter((f) => !f.isSelect)}
                 isDisabled={true}
                 onFieldChange={() => undefined}
               />
               <FieldSelector
-                title={t('customPrompt.content')}
+                title={t('chat.customPrompt.content')}
                 selectedFieldId={currentDatabaseConfig?.contentFieldId || null}
                 fields={currentFields.filter((f) => !f.isSelect)}
                 onFieldChange={handleChangeContentId}
               />
               <FieldSelector
-                title={t('customPrompt.example')}
+                title={t('chat.customPrompt.example')}
                 selectedFieldId={currentDatabaseConfig?.exampleFieldId || null}
                 fields={currentFields.filter((f) => !f.isSelect)}
                 onFieldChange={handleChangeExampleId}
                 isOptional={true}
               />
               <FieldSelector
-                title={t('customPrompt.category')}
+                title={t('chat.customPrompt.category')}
                 selectedFieldId={currentDatabaseConfig?.categoryFieldId || null}
                 fields={currentFields}
                 onFieldChange={handleChangeCategoryId}
@@ -198,7 +198,7 @@ export function PromptDatabaseModal({
               closeModal();
             }}
           >
-            {t('customPrompt.button.cancel')}
+            {t('chat.customPrompt.button.cancel')}
           </Button>
           <Button
             disabled={!currentDatabaseConfig}
@@ -210,7 +210,7 @@ export function PromptDatabaseModal({
               closeModal();
             }}
           >
-            {t('customPrompt.button.done')}
+            {t('chat.customPrompt.button.done')}
           </Button>
         </div>
         <InvalidDatabaseDialog
@@ -288,7 +288,7 @@ function FieldSelector({
                 className='flex-1 truncate'
                 onMouseDown={(e) => e.preventDefault()}
               >
-                {value?.name || t('customPrompt.optional')}
+                {value?.name || t('chat.customPrompt.optional')}
               </span>
               {isOptional && isOpen && value && (
                 <div ref={closeButtonRef}>

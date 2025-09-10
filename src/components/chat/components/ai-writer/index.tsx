@@ -7,7 +7,7 @@ import { Explain } from '@/components/chat/components/ai-writer/tools/explain';
 import { FixSpelling } from '@/components/chat/components/ai-writer/tools/fix-spelling';
 import { ImproveWriting } from '@/components/chat/components/ai-writer/tools/improve-writing';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useTranslation } from '@/components/chat/i18n';
+import { useTranslation } from 'react-i18next';
 import { AIAssistantType } from '@/components/chat/types';
 import { useWriterContext } from '@/components/chat/writer/context';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -46,9 +46,9 @@ export function AIAssistant({
     if(isApplying || isFetching) return <Loading />;
     switch(assistantType) {
       case AIAssistantType.AskAIAnything:
-        return <AskAnything title={t('writer.askAI')} />;
+        return <AskAnything title={t('chat.writer.askAI')} />;
       case AIAssistantType.ContinueWriting:
-        return <AskAnything title={t('writer.continue')} />;
+        return <AskAnything title={t('chat.writer.continue')} />;
 
       case AIAssistantType.Explain:
         return <Explain />;
@@ -57,11 +57,11 @@ export function AIAssistant({
         return <FixSpelling />;
 
       case AIAssistantType.ImproveWriting:
-        return <ImproveWriting title={t('writer.improve')} />;
+        return <ImproveWriting title={t('chat.writer.improve')} />;
       case AIAssistantType.MakeLonger:
-        return <ImproveWriting title={t('writer.makeLonger')} />;
+        return <ImproveWriting title={t('chat.writer.makeLonger')} />;
       case AIAssistantType.MakeShorter:
-        return <ImproveWriting title={t('writer.makeShorter')} />;
+        return <ImproveWriting title={t('chat.writer.makeShorter')} />;
       default:
         return null;
     }
@@ -130,7 +130,6 @@ export function AIAssistant({
             setOpenModal(true);
           }
         }}
-        disableOutsidePointerEvents
         onInteractOutside={onInteractOutside}
         container={scrollContainer || document.body}
         forceMount

@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import LoadingDots from '@/components/chat/components/ui/loading-dots';
-import { useTranslation } from '@/components/chat/i18n';
+import { useTranslation } from 'react-i18next';
 import { useWriterContext } from '@/components/chat/writer/context';
 import { ReactComponent as StopIcon } from '@/assets/icons/ai_stop_answering.svg';
 
@@ -16,7 +16,7 @@ export function Loading() {
     <div className={'writer-anchor flex bg-background w-full justify-between p-2 rounded-lg max-w-full border border-input shadow-toast items-center gap-2'}>
       <div className={'flex text-foreground/70 text-xs items-center gap-2 px-2'}>
         {
-          isFetching ? t('writer.analyzing') : isApplying ? t('writer.editing') : null
+          isFetching ? t('chat.writer.analyzing') : isApplying ? t('chat.writer.editing') : null
         }
         <LoadingDots size={20} />
       </div>

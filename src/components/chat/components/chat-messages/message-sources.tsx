@@ -1,7 +1,7 @@
 import { useChatContext } from '@/components/chat/chat/context';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { useTranslation } from '@/components/chat/i18n';
+import { useTranslation } from 'react-i18next';
 import { ChatMessageMetadata, View } from '@/components/chat/types';
 import { ChevronDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -29,7 +29,7 @@ function MessageSources({ sources }: { sources: ChatMessageMetadata[] }) {
 
         views.push({
           ...view,
-          name: view.name || t('view.placeholder'),
+          name: view.name || t('chat.view.placeholder'),
         });
       }
 
@@ -45,7 +45,7 @@ function MessageSources({ sources }: { sources: ChatMessageMetadata[] }) {
         className={'w-full justify-start text-foreground !no-underline opacity-60 hover:text-primary'}
       >
         <span>
-          {t('sources.label', {
+          {t('chat.sources.label', {
             sourceCount: sources.length,
           })}
         </span>

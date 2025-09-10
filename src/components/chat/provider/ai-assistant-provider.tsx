@@ -2,7 +2,7 @@ import { ConfirmDiscard } from '@/components/chat/components/ai-writer/confirm-d
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ModelSelectorContext } from '@/components/chat/contexts/model-selector-context';
 import { toast } from 'sonner';
-import { useTranslation } from '@/components/chat/i18n';
+import { useTranslation } from 'react-i18next';
 // Using main AppFlowy i18n system - no separate chat context needed
 import { WriterRequest } from '@/components/chat/request';
 import {
@@ -299,7 +299,7 @@ export const AIAssistantProvider = ({
 
   const rewrite = useCallback(() => {
     if (!assistantType) {
-      toast.error(t('writer.errors.noAssistantType'));
+      toast.error(t('chat.writer.errors.noAssistantType'));
       return;
     }
 

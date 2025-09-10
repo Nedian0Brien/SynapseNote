@@ -1,6 +1,6 @@
 import { CommentWithAskAnything } from './with-comment';
 
-import { useTranslation } from '@/components/chat/i18n';
+import { useTranslation } from 'react-i18next';
 import { useWriterContext } from '@/components/chat/writer/context';
 import { useMemo } from 'react';
 import { ReactComponent as TryAgainIcon } from '@/assets/icons/undo.svg';
@@ -24,35 +24,35 @@ export function ImproveWriting({
 
   const actions = useMemo(() => placeholderContent ? [
     {
-      label: t('writer.button.accept'),
+      label: t('chat.writer.button.accept'),
       onClick: accept,
       icon: <CheckIcon className="text-icon-success-thick h-5 w-5" />,
     },
     {
-      label: t('writer.button.discard'),
+      label: t('chat.writer.button.discard'),
       onClick: () => {
         exit();
       },
       icon: <XIcon className="text-icon-error-thick h-5 w-5" />,
     },
     {
-      label: t('writer.button.insert-below'),
+      label: t('chat.writer.button.insert-below'),
       onClick: insertBelow,
       icon: <InsertBelowIcon className="h-5 w-5" />,
     },
     {
-      label: t('writer.button.rewrite'),
+      label: t('chat.writer.button.rewrite'),
       onClick: rewrite,
       icon: <TryAgainIcon className="h-5 w-5" />,
     },
   ] : [
     {
-      label: t('writer.button.try-again'),
+      label: t('chat.writer.button.try-again'),
       onClick: rewrite,
       icon: <TryAgainIcon className="h-5 w-5" />,
     },
     {
-      label: t('writer.button.close'),
+      label: t('chat.writer.button.close'),
       onClick: () => {
         exit();
       },

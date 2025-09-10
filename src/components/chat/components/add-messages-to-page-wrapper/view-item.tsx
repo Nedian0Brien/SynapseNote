@@ -2,7 +2,7 @@ import { ReactComponent as ChevronRight } from '@/assets/icons/toggle_list.svg';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import PageIcon from '@/components/chat/components/view/page-icon';
-import { useTranslation } from '@/components/chat/i18n';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/components/chat/lib/utils';
 import { View } from '@/components/chat/types';
 import { PlusIcon } from 'lucide-react';
@@ -24,7 +24,7 @@ export function ViewItem({
   const { t } = useTranslation();
 
   const [isHovering, setIsHovering] = useState(false);
-  const name = view.name || t('view.placeholder');
+  const name = view.name || t('chat.view.placeholder');
 
   const ToggleButton = useMemo(() => {
     return view.children.length > 0 ? (
@@ -78,7 +78,7 @@ export function ViewItem({
                     <AddPageIcon className={'h-5 w-5'} />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>{t('button.addToPage')}</TooltipContent>
+                <TooltipContent>{t('chat.button.addToPage')}</TooltipContent>
               </Tooltip>
 
               <Tooltip>
@@ -93,7 +93,7 @@ export function ViewItem({
                     <PlusIcon className={'h-5 w-5'} />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>{t('addMessageToPage.createNewPage')}</TooltipContent>
+                <TooltipContent>{t('chat.addMessageToPage.createNewPage')}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>

@@ -1,7 +1,7 @@
 import { AiWriterMenuContent } from '../ai-writer/ai-writer-menu-content';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useTranslation } from '@/components/chat/i18n';
+import { useTranslation } from 'react-i18next';
 import { AIAssistantType } from '@/components/chat/types';
 import { useWriterContext } from '@/components/chat/writer/context';
 import { ReactComponent as ChevronDown } from '@/assets/icons/triangle_down.svg';
@@ -43,7 +43,7 @@ export function WritingMore({ input }: {
         variant={'ghost'}
       >
         <div className={'flex gap-0.5 items-center flex-1'}>
-          {t('writer.button.more')}
+          {t('chat.writer.button.more')}
           <ChevronDown className='w-3 h-5' />
         </div>
 

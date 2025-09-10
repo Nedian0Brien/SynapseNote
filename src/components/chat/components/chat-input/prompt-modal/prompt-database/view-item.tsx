@@ -2,7 +2,7 @@ import { ReactComponent as ChevronRight } from '@/assets/icons/toggle_list.svg';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import PageIcon from '@/components/chat/components/view/page-icon';
-import { useTranslation } from '@/components/chat/i18n';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/components/chat/lib/utils';
 import { View } from '@/components/chat/types';
 import { useMemo, useState } from 'react';
@@ -19,7 +19,7 @@ export function ViewItem({
   const [expanded, setExpanded] = useState(false);
   const { t } = useTranslation();
 
-  const name = view.name || t('view.placeholder');
+  const name = view.name || t('chat.view.placeholder');
 
   const ToggleButton = useMemo(() => {
     return view.children.length > 0 ? (

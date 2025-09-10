@@ -6,7 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useTranslation } from '@/components/chat/i18n';
+import { useTranslation } from 'react-i18next';
 import { useWriterContext } from '@/components/chat/writer/context';
 import React from 'react';
 
@@ -27,16 +27,16 @@ export const ConfirmDiscard = React.forwardRef<HTMLDivElement, {
       onCloseAutoFocus={e => e.preventDefault()}
     >
       <DialogHeader className={'!text-left'}>
-        <DialogTitle>{t('writer.discard')}</DialogTitle>
+        <DialogTitle>{t('chat.writer.discard')}</DialogTitle>
         <DialogDescription>
-          {t('writer.confirm-discard')}
+          {t('chat.writer.confirm-discard')}
         </DialogDescription>
       </DialogHeader>
       <DialogFooter>
         <Button
           variant={'outline'}
           onClick={onClose}
-        >{t('writer.button.cancel')}</Button>
+        >{t('chat.writer.button.cancel')}</Button>
         <Button
           onClick={() => {
             exit();
@@ -44,7 +44,7 @@ export const ConfirmDiscard = React.forwardRef<HTMLDivElement, {
           }}
           variant={'destructive'}
           type="submit"
-        >{t('writer.button.discard')}</Button>
+        >{t('chat.writer.button.discard')}</Button>
       </DialogFooter>
     </DialogContent>
   </Dialog>;

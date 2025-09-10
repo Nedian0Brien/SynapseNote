@@ -1,5 +1,5 @@
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { useTranslation } from '@/components/chat/i18n';
+import { useTranslation } from 'react-i18next';
 import { usePromptModal } from '@/components/chat/provider/prompt-modal-provider';
 import { motion } from 'framer-motion';
 import { MESSAGE_VARIANTS } from '@/components/chat/lib/animations';
@@ -132,13 +132,13 @@ export const PromptModal = forwardRef<
       <div className='w-[83%] flex items-center justify-center'>
         <div className='flex flex-col items-center'>
           <span className='text-text-primary text-xl mb-1.5'>
-            {t('customPrompt.customPrompt')}
+            {t('chat.customPrompt.customPrompt')}
           </span>
           <span className='text-text-secondary text-sm mb-5'>
-            {t('customPrompt.databasePrompts')}
+            {t('chat.customPrompt.databasePrompts')}
           </span>
           <Button onClick={() => setIsPromptDatabaseModalOpen(true)}>
-            {t('customPrompt.selectDatabase')}
+            {t('chat.customPrompt.selectDatabase')}
           </Button>
         </div>
       </div>
@@ -178,7 +178,7 @@ export const PromptModal = forwardRef<
           className='flex flex-col gap-3 min-h-0 p-5'
         >
         <DialogTitle className='text-md text-text-primary font-bold'>
-          {t('customPrompt.browsePrompts')}
+          {t('chat.customPrompt.browsePrompts')}
         </DialogTitle>
         <DialogDescription className='sr-only'>
           Browse and select from available prompts to enhance your chat experience
@@ -207,17 +207,17 @@ export const PromptModal = forwardRef<
                     <div className='flex items-center justify-between rounded-[8px] p-2 bg-surface-container-layer-01'>
                       <div>
                         <span className='text-text-primary text-sm font-medium'>
-                          {`${t('customPrompt.promptDatabase')}: `}
+                          {`${t('chat.customPrompt.promptDatabase')}: `}
                         </span>
                         <span className='text-text-primary text-sm truncate'>
-                          {viewName || t('view.placeholder')}
+                          {viewName || t('chat.view.placeholder')}
                         </span>
                       </div>
                       <Button
                         variant='outline'
                         onClick={() => setIsPromptDatabaseModalOpen(true)}
                       >
-                        {t('customPrompt.button.change')}
+                        {t('chat.customPrompt.button.change')}
                       </Button>
                     </div>
                   )}
@@ -256,7 +256,7 @@ export const PromptModal = forwardRef<
                   <div className='flex-1 flex flex-col items-center justify-center min-h-0'>
                     <SearchIcon size={24} className={'text-icon-secondary'} />
                     <span className='text-text-secondary text-sm'>
-                      {t('customPrompt.noResults')}
+                      {t('chat.customPrompt.noResults')}
                     </span>
                   </div>
                 )}

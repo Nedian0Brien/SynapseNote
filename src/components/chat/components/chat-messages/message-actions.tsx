@@ -6,7 +6,7 @@ import Regenerations from '../chat-messages/regenerations';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
-import { useTranslation } from '@/components/chat/i18n';
+import { useTranslation } from 'react-i18next';
 import { convertToAppFlowyFragment } from '@/components/chat/lib/copy';
 import { cn, convertToPageData } from '@/components/chat/lib/utils';
 import { useEditorContext } from '@/components/chat/provider/editor-provider';
@@ -70,11 +70,11 @@ export function MessageActions({ id, isHovered }: { id: number; isHovered: boole
 
       document.execCommand('copy');
 
-      toast.success(t('success.copied'), { duration: 2000 });
+      toast.success(t('chat.success.copied'), { duration: 2000 });
       // eslint-disable-next-line
     } catch (e: any) {
       console.error(e);
-      toast.error(t('errors.copied'), { duration: 2000 });
+      toast.error(t('chat.errors.copied'), { duration: 2000 });
     }
   }, [getEditor, getMessage, id, t]);
 
@@ -109,7 +109,7 @@ export function MessageActions({ id, isHovered }: { id: number; isHovered: boole
             </TooltipTrigger>
 
             <TooltipContent align={'center'} side={'bottom'}>
-              {t('button.copyClipboard')}
+              {t('chat.button.copyClipboard')}
             </TooltipContent>
           </Tooltip>
           <Regenerations id={id} />

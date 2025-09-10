@@ -3,7 +3,7 @@ import { cn } from '@/components/chat/lib/utils';
 import { AiPromptCategory } from '@/components/chat/types/prompt';
 import { Separator } from '@/components/ui/separator';
 import { useMemo } from 'react';
-import { useTranslation } from '@/components/chat/i18n';
+import { useTranslation } from 'react-i18next';
 
 export function PromptCategory({
   isFeaturedSelected,
@@ -36,7 +36,7 @@ export function PromptCategory({
     const sorted = withoutOthers
       .slice()
       .sort((a, b) =>
-        t(`customPrompt.${a}`).localeCompare(t(`customPrompt.${b}`)),
+        t(`chat.customPrompt.${a}`).localeCompare(t(`chat.customPrompt.${b}`)),
       );
 
     return [...sorted, 'others'];
@@ -58,7 +58,7 @@ export function PromptCategory({
             isFeaturedSelected ? '!bg-fill-theme-select' : '',
           )}
         >
-          {t('customPrompt.featured')}
+          {t('chat.customPrompt.featured')}
         </Button>
         <Button
           variant={'ghost'}
@@ -73,7 +73,7 @@ export function PromptCategory({
             isCustomSelected ? '!bg-fill-theme-select' : '',
           )}
         >
-          {t('customPrompt.custom')}
+          {t('chat.customPrompt.custom')}
         </Button>
         <Separator className='mt-2' />
       </div>
@@ -90,7 +90,7 @@ export function PromptCategory({
           isAllSelected && '!bg-fill-theme-select',
         )}
       >
-        {t('customPrompt.all')}
+        {t('chat.customPrompt.all')}
       </Button>
       {categoryList.map((category) => (
         <Button
@@ -107,7 +107,7 @@ export function PromptCategory({
             selectedCatecory === category ? '!bg-fill-theme-select' : '',
           )}
         >
-          {t(`customPrompt.${category}`, category)}
+          {t(`chat.customPrompt.${category}`, category)}
         </Button>
       ))}
     </div>

@@ -3,7 +3,7 @@ import { MessageActions } from '../chat-messages/message-actions';
 import MessageSources from '../chat-messages/message-sources';
 import { MessageSuggestions } from '../chat-messages/message-suggestions';
 import LoadingDots from '@/components/chat/components/ui/loading-dots';
-import { useTranslation } from '@/components/chat/i18n';
+import { useTranslation } from 'react-i18next';
 import { useMessagesHandlerContext } from '@/components/chat/provider/messages-handler-provider';
 import { useChatMessagesContext } from '@/components/chat/provider/messages-provider';
 import { useResponseFormatContext } from '@/components/chat/provider/response-format-provider';
@@ -84,7 +84,7 @@ export function AssistantMessage({ id, isHovered }: { id: number; isHovered: boo
                   <div className={'!h-4 !min-h-4 !w-4 !min-w-4'}>
                     <Error />
                   </div>
-                  {t('errors.noLimit')}
+                  {t('chat.errors.noLimit')}
                 </div>
               </AlertDescription>
             </Alert>
@@ -92,7 +92,7 @@ export function AssistantMessage({ id, isHovered }: { id: number; isHovered: boo
         </div>
       ) : loading ? (
         <div className={`flex items-center gap-2 overflow-hidden pl-0.5`}>
-          <span className={'text-sm text-foreground opacity-60'}>{t('generating')}</span>
+          <span className={'text-sm text-foreground opacity-60'}>{t('chat.generating')}</span>
           <LoadingDots />
         </div>
       ) : (
