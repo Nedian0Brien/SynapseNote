@@ -217,6 +217,46 @@ export const DatabaseGridSelectors = {
 };
 
 /**
+ * Single Select Column selectors
+ */
+export const SingleSelectSelectors = {
+  // Select option cell
+  selectOptionCell: (rowId: string, fieldId: string) => cy.get(byTestId(`select-option-cell-${rowId}-${fieldId}`)),
+  
+  // Select option in dropdown
+  selectOption: (optionId: string) => cy.get(byTestId(`select-option-${optionId}`)),
+  
+  // New property button in grid header
+  newPropertyButton: () => cy.get(byTestId('grid-new-property-button')),
+  
+  // All select option cells
+  allSelectOptionCells: () => cy.get('[data-testid^="select-option-cell-"]'),
+  
+  // Select option menu popover
+  selectOptionMenu: () => cy.get(byTestId('select-option-menu')),
+};
+
+/**
+ * Grid Field/Column Header selectors
+ */
+export const GridFieldSelectors = {
+  // Field header by field ID
+  fieldHeader: (fieldId: string) => cy.get(byTestId(`grid-field-header-${fieldId}`)),
+  
+  // Edit property menu item
+  editPropertyMenuItem: () => cy.get(byTestId('grid-field-edit-property')),
+  
+  // Property type trigger in property menu
+  propertyTypeTrigger: () => cy.get(byTestId('property-type-trigger')),
+  
+  // Property type option (e.g. SingleSelect = 3)
+  propertyTypeOption: (fieldType: number) => cy.get(byTestId(`property-type-option-${fieldType}`)),
+  
+  // Add select option button
+  addSelectOptionButton: () => cy.get(byTestId('add-select-option')),
+};
+
+/**
  * Add Page Actions selectors
  */
 export const AddPageSelectors = {

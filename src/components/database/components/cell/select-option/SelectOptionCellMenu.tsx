@@ -226,6 +226,7 @@ function SelectOptionCellMenu ({ open, onOpenChange, fieldId, rowId, selectOptio
         className={'absolute left-0 top-0 w-full h-full z-[-1]'}
       />
       <PopoverContent
+        data-testid="select-option-menu"
         side={'bottom'}
         align={'start'}
         onMouseDown={(e) => {

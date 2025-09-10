@@ -12,6 +12,7 @@ function GridNewProperty () {
   } = useGridContext();
 
   return <div
+    data-testid="grid-new-property-button"
     onClick={() => {
       const id = onNewProperty(FieldType.RichText);
 

@@ -157,6 +157,7 @@ function GridFieldMenu({
           <DropdownMenuGroup>
             {operations.map((operation, index) => (
               <DropdownMenuItem
+                data-testid={operation.label === t('grid.field.editProperty') ? 'grid-field-edit-property' : undefined}
                 onPointerMove={(e) => e.preventDefault()}
                 onPointerEnter={(e) => e.preventDefault()}
                 onPointerLeave={(e) => e.preventDefault()}

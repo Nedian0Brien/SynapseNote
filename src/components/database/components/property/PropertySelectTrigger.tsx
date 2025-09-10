@@ -70,7 +70,7 @@ export function PropertySelectTrigger({ fieldId, disabled }: { fieldId: string; 
   return (
     <DropdownMenuGroup>
       <DropdownMenuSub open={open} onOpenChange={setOpen}>
-        <DropdownMenuSubTrigger disabled={disabled}>
+        <DropdownMenuSubTrigger data-testid="property-type-trigger" disabled={disabled}>
           <FieldTypeIcon type={type} />
           <FieldLabel type={type} />
         </DropdownMenuSubTrigger>
@@ -80,6 +80,7 @@ export function PropertySelectTrigger({ fieldId, disabled }: { fieldId: string; 
               <Tooltip key={property}>
                 <TooltipTrigger asChild>
                   <DropdownMenuItem
+                    data-testid={`property-type-option-${property}`}
                     onSelect={(e) => {
                       handleSelect(property);
                       if ([FieldType.AITranslations, FieldType.Relation].includes(property)) {
