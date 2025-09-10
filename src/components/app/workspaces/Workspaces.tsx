@@ -190,7 +190,7 @@ export function Workspaces() {
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              {currentWorkspace && (
+              {currentWorkspace && isOwner && (
                 <DropdownMenuItem
                   onSelect={() => {
                     setOpenInviteMember(true);
