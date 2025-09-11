@@ -19,10 +19,27 @@ export const AFConfigContext = createContext<
     service: AFService | undefined;
     isAuthenticated: boolean;
     currentUser?: User;
+    updateCurrentUser: (user: User) => Promise<void>;
     openLoginModal: (redirectTo?: string) => void;
   }
   | undefined
 >(undefined);
+
+export function useAppConfig() {
+  const context = useContext(AFConfigContext);
+
+  if (!context) {
+    throw new Error('useAppConfig must be used within a AFConfigContext');
+  }
+
+  return {
+    service: context.service,
+    isAuthenticated: context.isAuthenticated,
+    currentUser: context.currentUser,
+    updateCurrentUser: context.updateCurrentUser,
+    openLoginModal: context.openLoginModal,
+  };
+}
 
 export function useCurrentUser() {
   const context = useContext(AFConfigContext);

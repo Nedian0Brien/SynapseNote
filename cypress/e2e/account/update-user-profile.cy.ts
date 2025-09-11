@@ -50,21 +50,21 @@ describe('Update User Profile', () => {
       cy.log('Step 5: Verifying Account Settings dialog opened');
       cy.get('[data-testid="account-settings-dialog"]', { timeout: 10000 }).should('be.visible');
 
-      // Check initial date format (should be Local/default)
+      // Check initial date format (should be Month/Day/Year)
       cy.log('Step 6: Checking initial date format');
       cy.get('[data-testid="date-format-dropdown"]').should('be.visible');
 
-      // Test Date Format change - select US format (Month/Day/Year)
-      cy.log('Step 7: Testing Date Format change to US format');
+      // Test Date Format change - select Year/Month/Day
+      cy.log('Step 7: Testing Date Format change to Year/Month/Day');
       cy.get('[data-testid="date-format-dropdown"]').click();
       cy.wait(500);
 
-      // Select US format (value 1) which is Month/Day/Year
+      // Select US format (value 1) which is Year/Month/Day
       cy.get('[data-testid="date-format-1"]').should('be.visible').click();
       cy.wait(3000); // Wait for API call to complete
 
-      // Verify the dropdown now shows US format
-      cy.get('[data-testid="date-format-dropdown"]').should('contain.text', 'Month/Day/Year');
+      // Verify the dropdown now shows Year/Month/Day
+      cy.get('[data-testid="date-format-dropdown"]').should('contain.text', 'Year/Month/Day');
 
       // Test Time Format change
       cy.log('Step 8: Testing Time Format change');
@@ -93,7 +93,7 @@ describe('Update User Profile', () => {
       cy.log('Step 10: Verifying all settings are showing correctly');
 
       // Verify all dropdowns still show the selected values
-      cy.get('[data-testid="date-format-dropdown"]').should('contain.text', 'Month/Day/Year');
+      cy.get('[data-testid="date-format-dropdown"]').should('contain.text', 'Year/Month/Day');
       cy.get('[data-testid="time-format-dropdown"]').should('contain.text', '24');
       cy.get('[data-testid="start-week-on-dropdown"]').should('contain.text', 'Monday');
 

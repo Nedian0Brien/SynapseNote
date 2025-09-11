@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { DateFormat, TimeFormat } from '@/application/types';
 import { MetadataKey } from '@/application/user-metadata';
 import { ReactComponent as ChevronDownIcon } from '@/assets/icons/alt_arrow_down.svg';
-import { useCurrentUser, useService } from '@/components/main/app.hooks';
+import { useAppConfig } from '@/components/main/app.hooks';
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import {
   DropdownMenu,
@@ -19,8 +19,7 @@ import { cn } from '@/lib/utils';
 
 export function AccountSettings({ children }: { children?: React.ReactNode }) {
   const { t } = useTranslation();
-  const currentUser = useCurrentUser();
-  const service = useService();
+  const { currentUser, updateCurrentUser, service } = useAppConfig();
   const [open, setIsOpen] = useState(false);
 
   const [dateFormat, setDateFormat] = useState(
@@ -50,35 +49,40 @@ export function AccountSettings({ children }: { children?: React.ReactNode }) {
   const handleSelectDateFormat = useCallback(
     async (dateFormat: number) => {
       setDateFormat(dateFormat);
-      if (!currentUser?.metadata) return;
 
-      metadataUpdateRef.current = { ...currentUser.metadata, [MetadataKey.DateFormat]: dateFormat };
+      metadataUpdateRef.current = {
+        ...metadataUpdateRef?.current,
+        [MetadataKey.DateFormat]: dateFormat,
+      };
       await debounceUpdateProfile();
     },
-    [currentUser, debounceUpdateProfile]
+    [debounceUpdateProfile]
   );
 
   const handleSelectTimeFormat = useCallback(
     async (timeFormat: number) => {
       setTimeFormat(timeFormat);
-      if (!currentUser?.metadata) return;
 
-      metadataUpdateRef.current = { ...currentUser.metadata, [MetadataKey.TimeFormat]: timeFormat };
+      metadataUpdateRef.current = {
+        ...metadataUpdateRef?.current,
+        [MetadataKey.TimeFormat]: timeFormat,
+      };
       await debounceUpdateProfile();
     },
-    [currentUser, debounceUpdateProfile]
+    [debounceUpdateProfile]
   );
 
   const handleSelectStartWeekOn = useCallback(
     async (startWeekOn: number) => {
       setStartWeekOn(startWeekOn);
 
-      if (!currentUser?.metadata) return;
-
-      metadataUpdateRef.current = { ...currentUser.metadata, [MetadataKey.StartWeekOn]: startWeekOn };
+      metadataUpdateRef.current = {
+        ...metadataUpdateRef?.current,
+        [MetadataKey.StartWeekOn]: startWeekOn,
+      };
       await debounceUpdateProfile();
     },
-    [currentUser, debounceUpdateProfile]
+    [debounceUpdateProfile]
   );
 
   const onOpenChange = useCallback(
@@ -89,13 +93,22 @@ export function AccountSettings({ children }: { children?: React.ReactNode }) {
         setDateFormat(Number(user?.metadata?.[MetadataKey.DateFormat] as DateFormat) || DateFormat.Local);
         setTimeFormat(Number(user?.metadata?.[MetadataKey.TimeFormat] as TimeFormat) || TimeFormat.TwelveHour);
         setStartWeekOn(Number(user?.metadata?.[MetadataKey.StartWeekOn]) || 0);
+
+        metadataUpdateRef.current = {
+          ...user?.metadata,
+        };
       } else {
-        void service?.getCurrentUser();
+        if (currentUser) {
+          void updateCurrentUser({
+            ...currentUser,
+            metadata: metadataUpdateRef.current || currentUser.metadata,
+          });
+        }
       }
 
       setIsOpen(isOpen);
     },
-    [service]
+    [currentUser, service, updateCurrentUser]
   );
 
   if (!currentUser || !service) {

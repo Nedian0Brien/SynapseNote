@@ -7,6 +7,7 @@ import { getService } from '@/application/services';
 import { AFServiceConfig } from '@/application/services/services.type';
 import { EventType, on } from '@/application/session';
 import { getTokenParsed, isTokenValid } from '@/application/session/token';
+import { User } from '@/application/types';
 import { MetadataKey } from '@/application/user-metadata';
 import { createInitialTimezone, UserTimezone } from '@/application/user-timezone.types';
 import { InfoSnackbarProps } from '@/components/_shared/notify';
@@ -32,6 +33,19 @@ function AppConfig({ children }: { children: React.ReactNode }) {
   }, [userId]);
   const [loginOpen, setLoginOpen] = React.useState(false);
   const [loginCompletedRedirectTo, setLoginCompletedRedirectTo] = React.useState<string>('');
+
+  const updateCurrentUser = useCallback(
+    async (user: User) => {
+      if (!service || !userId) return;
+
+      try {
+        await db.users.put(user, user.uuid);
+      } catch (e) {
+        console.error(e);
+      }
+    },
+    [service, userId]
+  );
 
   const openLoginModal = useCallback((redirectTo?: string) => {
     setLoginOpen(true);
@@ -176,6 +190,7 @@ function AppConfig({ children }: { children: React.ReactNode }) {
         service,
         isAuthenticated,
         currentUser,
+        updateCurrentUser,
         openLoginModal,
       }}
     >
