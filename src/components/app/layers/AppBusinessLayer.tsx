@@ -65,9 +65,6 @@ export const AppBusinessLayer: React.FC<AppBusinessLayerProps> = ({ children }) 
   // Initialize page operations
   const pageOperations = usePageOperations({ outline, loadOutline });
 
-  // Initialize database operations
-  const databaseOperations = useDatabaseOperations(loadView, createRowDoc);
-
   // Check if current view has been deleted
   const viewHasBeenDeleted = useMemo(() => {
     if (!viewId) return false;
@@ -206,6 +203,9 @@ export const AppBusinessLayer: React.FC<AppBusinessLayerProps> = ({ children }) 
     },
     [pageOperations, loadTrash]
   );
+
+  // Initialize database operations
+  const databaseOperations = useDatabaseOperations(enhancedLoadView, createRowDoc);
 
   // Business context value
   const businessContextValue: BusinessInternalContextType = useMemo(
