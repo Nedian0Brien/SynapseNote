@@ -11,7 +11,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import { ArrowDown } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { cn } from '@/components/chat/lib/utils';
+import { cn } from '@/lib/utils';
 
 const LoadingIndicator = () => (
   <div className="flex items-center justify-center w-full h-[48px]">

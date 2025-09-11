@@ -11,7 +11,7 @@ import { Textarea } from '@/components/chat/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
-import { cn } from '@/components/chat/lib/utils';
+import { cn } from '@/lib/utils';
 import { usePromptModal } from '@/components/chat/provider/prompt-modal-provider';
 import { ChatInputMode } from '@/components/chat/types';
 import { AiPrompt } from '@/components/chat/types/prompt';
@@ -252,7 +252,7 @@ export function WritingInput({
                     <FormatIcon className='text-icon-secondary h-5 w-5' />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent align={'center'} side={'right'}>
+                <TooltipContent>
                   {formatTooltip}
                 </TooltipContent>
               </Tooltip>
@@ -275,7 +275,7 @@ export function WritingInput({
                   {t('chat.customPrompt.browsePrompts')}
                 </Button>
               </TooltipTrigger>
-              <TooltipContent align={'center'} side={'right'}>
+              <TooltipContent>
                 {t('chat.customPrompt.browsePrompts')}
               </TooltipContent>
             </Tooltip>
@@ -299,7 +299,7 @@ export function WritingInput({
               onClick={handleSubmit}
               size={'icon'}
               variant={'link'}
-              className={'text-fill-theme-thick'}
+              className={'text-fill-theme-thick p-0'}
               disabled={!message.trim() || isFetching}
               onMouseDown={(e) => {
                 e.preventDefault();
@@ -308,12 +308,7 @@ export function WritingInput({
               {isFetching ? (
                 <LoadingDots />
               ) : (
-                <SendIcon
-                  style={{
-                    width: 24,
-                    height: 24,
-                  }}
-                />
+                <SendIcon className='h-7 w-7' />
               )}
             </Button>
           </div>

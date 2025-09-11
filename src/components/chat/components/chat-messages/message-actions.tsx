@@ -8,7 +8,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { convertToAppFlowyFragment } from '@/components/chat/lib/copy';
-import { cn, convertToPageData } from '@/components/chat/lib/utils';
+import { convertToPageData } from '@/components/chat/lib/utils';
+import { cn } from '@/lib/utils';
 import { useEditorContext } from '@/components/chat/provider/editor-provider';
 import { useChatMessagesContext } from '@/components/chat/provider/messages-provider';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -88,7 +89,7 @@ export function MessageActions({ id, isHovered }: { id: number; isHovered: boole
         isLast
           ? `mt-2 min-h-[28px]`
           : `absolute -bottom-[34px] ml-0.5 min-h-[34px] ${
-              isHovered ? 'rounded-[8px] border border-border p-0.5 shadow-popover' : ''
+              isHovered ? 'rounded-[8px] border border-border-primary p-0.5 shadow-popover' : ''
             }`
       )}
     >
@@ -104,7 +105,7 @@ export function MessageActions({ id, isHovered }: { id: number; isHovered: boole
                 size={'icon'}
                 onClick={handleCopy}
               >
-                <CopyIcon className='h-5 w-5' />
+                <CopyIcon className='h-5 w-5 text-icon-secondary' />
               </Button>
             </TooltipTrigger>
 
@@ -112,7 +113,7 @@ export function MessageActions({ id, isHovered }: { id: number; isHovered: boole
               {t('chat.button.copyClipboard')}
             </TooltipContent>
           </Tooltip>
-          <Regenerations id={id} />
+          <Regenerations id={id} sideOffset={isLast ? 4 : 8} />
           <AddMessageTo id={id} />
         </>
       )}

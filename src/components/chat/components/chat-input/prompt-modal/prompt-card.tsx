@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { cn } from '@/components/chat/lib/utils';
+import { cn } from '@/lib/utils';
 import { AiPrompt } from '@/components/chat/types/prompt';
 import { useState } from 'react';
 

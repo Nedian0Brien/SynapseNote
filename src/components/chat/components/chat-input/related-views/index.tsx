@@ -98,14 +98,15 @@ export function RelatedViews() {
           variants={MESSAGE_VARIANTS.getSelectorVariants()}
           initial="hidden"
           animate={open ? "visible" : "exit"}
-          className={'h-fit py-1 px-1 min-h-[200px] max-h-[360px] w-[300px] flex gap-2 flex-col'}
+          className={'h-fit min-h-[200px] max-h-[360px] w-[300px] flex flex-col'}
         >
           <SearchInput
+            className='m-2'
             value={searchValue}
             onChange={setSearchValue}
           />
           <Separator />
-          <div className={'overflow-x-hidden overflow-y-auto flex-1 appflowy-scrollbar'}>
+          <div className={'overflow-x-hidden overflow-y-auto flex-1 appflowy-scrollbar p-2'}>
             <Spaces
               getInitialExpand={getInitialExpand}
               spaces={filteredSpaces}

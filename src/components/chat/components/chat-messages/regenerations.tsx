@@ -13,7 +13,7 @@ import { useResponseFormatContext } from '@/components/chat/provider/response-fo
 import { OutputContent, OutputLayout } from '@/components/chat/types';
 import { useCallback, useState } from 'react';
 
-export function Regenerations({ id }: { id: number }) {
+export function Regenerations({ id, sideOffset }: { id: number; sideOffset: number }) {
   const { t } = useTranslation();
   const { messageIds } = useChatMessagesContext();
   const { setResponseFormat, getMessageResponseFormat } = useResponseFormatContext();
@@ -53,7 +53,7 @@ export function Regenerations({ id }: { id: number }) {
             variant={'ghost'}
             size={'icon'}
           >
-            <TryAgainIcon className='h-5 w-5' />
+            <TryAgainIcon className='h-5 w-5 text-icon-secondary' />
           </Button>
         </TooltipTrigger>
         <TooltipContent align={'center'} side={'bottom'}>
@@ -72,7 +72,7 @@ export function Regenerations({ id }: { id: number }) {
                 size={'icon'}
                 className={`!w-10 gap-0`}
               >
-                <RegenerateIcon className='h-5 w-5' />
+                <RegenerateIcon className='h-5 w-5 text-icon-secondary' />
                 <ChevronIcon className='h-5 w-3 text-icon-tertiary' />
               </Button>
             </PopoverTrigger>
@@ -84,7 +84,8 @@ export function Regenerations({ id }: { id: number }) {
         <PopoverContent
           onOpenAutoFocus={(e) => e.preventDefault()}
           onCloseAutoFocus={(e) => e.preventDefault()}
-          className='flex !min-w-[0px] items-center gap-1 p-0.5 !rounded-[8px]'
+          sideOffset={sideOffset}
+          className='flex !min-w-[0px] items-center gap-1 !rounded-[8px] border border-border-primary p-0.5'
         >
           <FormatGroup
             outputContent={outputContent}
@@ -112,8 +113,9 @@ export function Regenerations({ id }: { id: number }) {
                   });
                   void regenerate();
                 }}
+                className='p-0 text-fill-theme-thick'
               >
-                <RegenerateCircleIcon className='h-5 w-5' />
+                <RegenerateCircleIcon className='h-7 w-7' />
               </Button>
             </TooltipTrigger>
             <TooltipContent>{t('chat.button.regenerateWithNewFormat')}</TooltipContent>

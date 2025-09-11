@@ -81,12 +81,12 @@ export function ViewTree() {
           initial='hidden'
           animate={open ? 'visible' : 'exit'}
           className={
-            'flex h-fit max-h-[360px] min-h-[200px] w-[300px] flex-col gap-2 rounded-md border border-border bg-popover px-1 py-1 shadow-md'
+            'flex h-fit max-h-[360px] min-h-[200px] w-[300px] flex-col rounded-md border border-border bg-popover shadow-md'
           }
         >
-          <SearchInput value={searchValue} onChange={setSearchValue} />
+          <SearchInput value={searchValue} onChange={setSearchValue} className='m-2'/>
           <Separator />
-          <div className={'appflowy-scrollbar flex-1 overflow-y-auto overflow-x-hidden'}>
+          <div className={'appflowy-scrollbar flex-1 overflow-y-auto overflow-x-hidden p-2'}>
             <Spaces
               viewsLoading={viewsLoading}
               spaces={spaces}

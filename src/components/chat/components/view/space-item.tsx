@@ -1,6 +1,7 @@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTranslation } from 'react-i18next';
-import { cn, getIcon, renderColor, stringToColor } from '@/components/chat/lib/utils';
+import { getIcon, renderColor, stringToColor } from '@/components/chat/lib/utils';
+import { cn } from '@/lib/utils';
 import { View } from '@/components/chat/types';
 import { ReactComponent as ChevronRight } from '@/assets/icons/toggle_list.svg';
 import { ReactNode, useEffect, useMemo, useState } from 'react';

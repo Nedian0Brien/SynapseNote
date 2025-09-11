@@ -3,14 +3,14 @@ import { Check } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { ReactComponent as AISparksIcon } from '@/assets/icons/ai.svg';
-
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useModelSelectorContext } from '@/components/chat/contexts/model-selector-context';
 import { MESSAGE_VARIANTS } from '@/components/chat/lib/animations';
 import { ModelCache } from '@/components/chat/lib/model-cache';
-import { cn } from '@/components/chat/lib/utils';
 import { AvailableModel, toModelDisplayInfo } from '@/components/chat/types/ai-model';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 
 interface ModelSelectorProps {
   className?: string;
@@ -192,29 +192,25 @@ export function ModelSelector({ className, disabled }: ModelSelectorProps) {
   const selectedModelData = models.find((m) => m.name === currentModel);
   const displayText = selectedModelData?.name || currentModel || 'Auto';
 
-  const getProviderIcon = (_provider?: string) => {
-    // You can add specific icons for different providers here
-    return null;
-  };
-
-  // Always render the button, even without full context
-  const hasContext = !!chatId;
-
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant='ghost'
-          className={cn('h-7 gap-1 px-2 text-xs font-normal text-text-secondary', className)}
-          onMouseDown={(e) => e.preventDefault()}
-          disabled={disabled}
-          data-testid="model-selector-button"
-          title={hasContext ? 'Select AI Model' : 'Model selector (offline mode)'}
-        >
-          {AISparksIcon ? <AISparksIcon className='h-5 w-5 text-icon-secondary' /> : <span className='text-[10px]'>🤖</span>}
-          <span className='max-w-[120px] truncate'>{displayText}</span>
-        </Button>
-      </PopoverTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <PopoverTrigger asChild>
+            <Button
+              variant='ghost'
+              className={cn('h-7 gap-1 px-2 text-xs font-normal text-text-secondary', className)}
+              onMouseDown={(e) => e.preventDefault()}
+              disabled={disabled}
+              data-testid='model-selector-button'
+            >
+              <AISparksIcon className='h-5 w-5 text-icon-secondary' />
+              <span className='max-w-[120px] truncate'>{displayText}</span>
+            </Button>
+          </PopoverTrigger>
+        </TooltipTrigger>
+        <TooltipContent>{'Select AI Model'}</TooltipContent>
+      </Tooltip>
       <PopoverContent asChild className='w-[380px] rounded-lg p-0' align='start' side='top' sideOffset={8}>
         <motion.div
           variants={MESSAGE_VARIANTS.getSelectorVariants()}
@@ -230,7 +226,7 @@ export function ModelSelector({ className, disabled }: ModelSelectorProps) {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className='w-full bg-transparent px-2 py-1 text-sm outline-none placeholder:text-text-placeholder'
-              data-testid="model-search-input"
+              data-testid='model-search-input'
               onKeyDown={(e) => {
                 if (e.key === 'Escape') {
                   setOpen(false);
@@ -265,10 +261,7 @@ export function ModelSelector({ className, disabled }: ModelSelectorProps) {
                     data-testid={`model-option-${model.name}`}
                   >
                     <div className='min-w-0 flex-1'>
-                      <div className='flex items-center gap-2'>
-                        {getProviderIcon(model.provider)}
-                        <span className={cn('text-sm font-medium', isSelected && 'text-primary')}>{model.name}</span>
-                      </div>
+                      <span className={cn('text-sm font-medium', isSelected && 'text-primary')}>{model.name}</span>
                       {model.metadata?.desc && (
                         <p className='mt-0.5 truncate pr-2 text-xs text-muted-foreground'>{model.metadata.desc}</p>
                       )}

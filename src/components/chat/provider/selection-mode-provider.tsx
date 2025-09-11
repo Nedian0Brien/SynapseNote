@@ -1,6 +1,6 @@
 import { Banner } from '@/components/chat/components/multi-selection/banner';
 import { ANIMATION_PRESETS, MESSAGE_VARIANTS } from '@/components/chat/lib/animations';
-import { cn } from '@/components/chat/lib/utils';
+import { cn } from '@/lib/utils';
 import { useChatMessagesContext } from './messages-provider';
 import { AuthorType, ChatMessage } from '@/components/chat/types';
 import { CheckStatus } from '@/components/chat/types/checkbox';

@@ -10,7 +10,7 @@ import { useResponseFormatContext } from '@/components/chat/provider/response-fo
 import { useSuggestionsContext } from '@/components/chat/provider/suggestions-provider';
 import { ChatInputMode } from '@/components/chat/types';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription } from '@/components/chat/components/ui/alert';
 import { EditorProvider } from '@appflowyinc/editor';
 import { ReactComponent as Error } from '@/assets/icons/error.svg';
 import MessageCheckbox from './message-checkbox';
@@ -81,9 +81,7 @@ export function AssistantMessage({ id, isHovered }: { id: number; isHovered: boo
             <Alert className={'border-none bg-fill-error-light text-foreground'}>
               <AlertDescription>
                 <div className='flex items-center gap-3'>
-                  <div className={'!h-4 !min-h-4 !w-4 !min-w-4'}>
-                    <Error />
-                  </div>
+                  <Error className='!min-h-5 !min-w-5 text-icon-error-thick'/>
                   {t('chat.errors.noLimit')}
                 </div>
               </AlertDescription>

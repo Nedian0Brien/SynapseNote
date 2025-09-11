@@ -24,7 +24,7 @@ export function AddMessageTo({ id }: { id: number }) {
             variant={'ghost'}
             size={'icon'}
           >
-            <AddPageIcon className='h-5 w-5' />
+            <AddPageIcon className='h-5 w-5 text-icon-secondary' />
           </Button>
         </TooltipTrigger>
       </AddMessageToPageWrapper>

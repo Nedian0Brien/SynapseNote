@@ -1,6 +1,6 @@
 import { Input } from '@/components/ui/input';
 import { useTranslation } from 'react-i18next';
-import { cn } from '@/components/chat/lib/utils';
+import { cn } from '@/lib/utils';
 import { SearchIcon } from 'lucide-react';
 import { useState } from 'react';
 
@@ -40,7 +40,7 @@ export function SearchInput({
         type='text'
         placeholder={t('chat.search.label')}
         className={
-          '!p-0 !h-fit !ring-0 !border-none !shadow-none rounded-none text-sm text-text-primary caret-fill-theme-thick'
+          '!p-0 !h-fit !ring-0 !border-none !shadow-none rounded-none text-sm text-text-primary caret-fill-theme-thick flex-1'
         }
       />
       {children}

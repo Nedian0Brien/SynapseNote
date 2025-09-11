@@ -2,7 +2,7 @@
 import { ChatInput } from '@/components/chat/components/chat-input';
 import { ChatMessages } from '@/components/chat/components/chat-messages';
 import { ModelSelectorContext } from '@/components/chat/contexts/model-selector-context';
-import { cn } from '@/components/chat/lib/utils';
+import { cn } from '@/lib/utils';
 import { EditorProvider } from '@/components/chat/provider/editor-provider';
 import { MessageAnimationProvider } from '@/components/chat/provider/message-animation-provider';
 import { MessagesHandlerProvider, useMessagesHandlerContext } from '@/components/chat/provider/messages-handler-provider';

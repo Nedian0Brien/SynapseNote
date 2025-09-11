@@ -28,10 +28,10 @@ export function PromptDatabaseViews({
     <Popover modal open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
       <PopoverContent>
-        <div className='h-fit py-1 px-1 min-h-[200px] max-h-[360px] w-[300px] flex gap-2 flex-col'>
-          <SearchInput value={searchValue} onChange={setSearchValue} />
+        <div className='h-fit min-h-[200px] max-h-[360px] w-[300px] flex flex-col'>
+          <SearchInput value={searchValue} onChange={setSearchValue} className='m-2' />
           <Separator />
-          <div className='overflow-x-hidden overflow-y-auto flex-1 appflowy-scrollbar'>
+          <div className='overflow-x-hidden overflow-y-auto flex-1 appflowy-scrollbar p-2'>
             <SpaceList
               searchValue={searchValue}
               onSelectDatabaseView={handleSelectDatabaseView}

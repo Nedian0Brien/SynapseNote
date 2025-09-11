@@ -97,15 +97,14 @@ export function AddMessageToPageWrapper({
   return (
     <Popover modal>
       <PopoverTrigger asChild>
-        <div>{children}</div>
+        <div className='h-7'>{children}</div>
       </PopoverTrigger>
       <PopoverContent onOpenAutoFocus={(e) => e.preventDefault()} onCloseAutoFocus={(e) => e.preventDefault()}>
-        <div className={'flex h-fit max-h-[360px] min-h-[200px] w-[300px] flex-col gap-2 px-1 py-1'}>
-          <Label className={'font-normal'}>{t('chat.addMessageToPage.placeholder')}</Label>
-
-          <SearchInput value={searchValue} onChange={setSearchValue} />
+        <div className={'flex h-fit max-h-[360px] min-h-[200px] w-[300px] flex-col'}>
+          <Label className={'font-normal px-2 pt-2'}>{t('chat.addMessageToPage.placeholder')}</Label>
+          <SearchInput value={searchValue} onChange={setSearchValue} className='m-2'/>
           <Separator />
-          <div className={'appflowy-scrollbar flex-1 overflow-y-auto  overflow-x-hidden'}>
+          <div className={'appflowy-scrollbar flex-1 overflow-y-auto  overflow-x-hidden p-2'}>
             <SpaceList
               onCreateViewWithContent={handleCreateViewWithContent}
               onInsertContentToView={handleInsertContentToView}

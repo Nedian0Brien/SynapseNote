@@ -11,6 +11,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useTranslation } from 'react-i18next';
 import { OutputContent, OutputLayout } from '@/components/chat/types';
 import { useMemo } from 'react';
+import { cn } from '@/lib/utils';
 
 export function FormatGroup({
   outputContent,
@@ -85,7 +86,10 @@ export function FormatGroup({
             variant={'ghost'}
             size={'icon'}
             onClick={onClick}
-            className={`${(outputContent === key && !isLayout) || (outputLayout === key && isLayout) ? 'bg-fill-content-hover' : ''}`}
+            className={cn(
+              (outputContent === key && !isLayout) || (outputLayout === key && isLayout) ? 'bg-fill-content-hover' : '',
+              'text-icon-secondary',
+            )}
           >
             <Icon
               style={{

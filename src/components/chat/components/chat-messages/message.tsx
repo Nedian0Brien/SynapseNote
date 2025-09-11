@@ -2,7 +2,7 @@ import { AIAnswer } from '../chat-messages/ai-answer';
 import { AssistantMessage } from '../chat-messages/assistant-message';
 import HumanQuestion from '../chat-messages/human-question';
 import { MESSAGE_VARIANTS } from '@/components/chat/lib/animations';
-import { cn } from '@/components/chat/lib/utils';
+import { cn } from '@/lib/utils';
 import { useMessageAnimation } from '@/components/chat/provider/message-animation-provider';
 import { useChatMessagesContext } from '@/components/chat/provider/messages-provider';
 import { useSelectionModeContext } from '@/components/chat/provider/selection-mode-provider';

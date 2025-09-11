@@ -208,7 +208,7 @@ export function ChatInput() {
                   <FormatIcon className='text-icon-secondary h-5 w-5' />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent align={'center'} side={'right'}>
+              <TooltipContent>
                 {formatTooltip}
               </TooltipContent>
             </Tooltip>
@@ -231,7 +231,7 @@ export function ChatInput() {
                   {t('chat.customPrompt.browsePrompts')}
                 </Button>
               </TooltipTrigger>
-              <TooltipContent align={'center'} side={'right'}>
+              <TooltipContent>
                 {t('chat.customPrompt.browsePrompts')}
               </TooltipContent>
             </Tooltip>
@@ -250,36 +250,21 @@ export function ChatInput() {
           <div className={'flex items-center gap-2'}>
             <RelatedViews />
             {answerApplying ? (
-              <Button
-                onClick={cancelAnswerStream}
-                size={'icon'}
-                variant={'link'}
-                className={'text-fill-theme-thick'}
-              >
-                <StopIcon
-                  style={{
-                    width: 24,
-                    height: 24,
-                  }}
-                />
+              <Button onClick={cancelAnswerStream} size={'icon'} variant={'link'} className={'text-fill-theme-thick p-0'}>
+                <StopIcon className='h-7 w-7' />
               </Button>
             ) : (
               <Button
                 onClick={handleSubmit}
                 size={'icon'}
                 variant={'link'}
-                className={'text-fill-theme-thick'}
+                className={'text-fill-theme-thick p-0'}
                 disabled={!message.trim() || disabled}
               >
                 {questionSending ? (
                   <LoadingDots />
                 ) : (
-                  <SendIcon
-                    style={{
-                      width: 24,
-                      height: 24,
-                    }}
-                  />
+                  <SendIcon className='h-7 w-7' />
                 )}
               </Button>
             )}

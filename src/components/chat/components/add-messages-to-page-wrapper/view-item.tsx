@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import PageIcon from '@/components/chat/components/view/page-icon';
 import { useTranslation } from 'react-i18next';
-import { cn } from '@/components/chat/lib/utils';
+import { cn } from '@/lib/utils';
 import { View } from '@/components/chat/types';
 import { PlusIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
