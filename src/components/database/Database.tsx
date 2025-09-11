@@ -17,6 +17,7 @@ import {
 import { DatabaseRow } from '@/components/database/DatabaseRow';
 import DatabaseRowModal from '@/components/database/DatabaseRowModal';
 import DatabaseViews from '@/components/database/DatabaseViews';
+import { CalendarViewType } from '@/components/database/fullcalendar/types';
 
 import { DatabaseContextProvider } from './DatabaseContext';
 
@@ -129,6 +130,18 @@ function Database(props: Database2Props) {
   const [openModalRowDatabaseDoc, setOpenModalRowDatabaseDoc] = useState<YDoc | null>(null);
   const [openModalRowDocMap, setOpenModalRowDocMap] = useState<Record<RowId, YDoc> | null>(null);
 
+  // Calendar view type map state
+  const [calendarViewTypeMap, setCalendarViewTypeMap] = useState<Map<string, CalendarViewType>>(() => new Map());
+
+  const setCalendarViewType = useCallback((viewId: string, viewType: CalendarViewType) => {
+    setCalendarViewTypeMap((prev) => {
+      const newMap = new Map(prev);
+
+      newMap.set(viewId, viewType);
+      return newMap;
+    });
+  }, []);
+
   const handleOpenRow = useCallback(
     async (rowId: string, viewId?: string) => {
       if (readOnly) {
@@ -191,6 +204,8 @@ function Database(props: Database2Props) {
         rowDocMap={rowDocMap}
         readOnly={readOnly}
         createRowDoc={createNewRowDoc}
+        calendarViewTypeMap={calendarViewTypeMap}
+        setCalendarViewType={setCalendarViewType}
       >
         {rowId ? (
           <DatabaseRow appendBreadcrumb={appendBreadcrumb} rowId={rowId} />
@@ -217,6 +232,8 @@ function Database(props: Database2Props) {
           navigateToRow={handleOpenRow}
           readOnly={readOnly}
           createRowDoc={createNewRowDoc}
+          calendarViewTypeMap={calendarViewTypeMap}
+          setCalendarViewType={setCalendarViewType}
         >
           <DatabaseRowModal
             rowId={openModalRowId}

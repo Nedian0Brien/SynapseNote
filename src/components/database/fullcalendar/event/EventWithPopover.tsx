@@ -12,10 +12,9 @@ interface EventWithPopoverProps {
   event: EventApi;
   eventInfo: EventContentArg;
   isWeekView?: boolean;
-  isHiddenFirst?: boolean;
 }
 
-export const EventWithPopover = memo(({ event, eventInfo, isWeekView = false, isHiddenFirst = false }: EventWithPopoverProps) => {
+export const EventWithPopover = memo(({ event, eventInfo, isWeekView = false }: EventWithPopoverProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const { clearNewEvent, setOpenEventRowId, clearUpdateEvent } = useEventContext();
   const rowId =  event.id;
@@ -69,16 +68,32 @@ export const EventWithPopover = memo(({ event, eventInfo, isWeekView = false, is
   );
 
   return (
-    <Popover open={isOpen} modal onOpenChange={handleOpenChange}>
-      <PopoverTrigger className='h-full w-full' asChild>
-        <div className='h-full w-full'>
-          <EventDisplay event={event} eventInfo={eventInfo} isWeekView={isWeekView} isHiddenFirst={isHiddenFirst} />
-        </div>
-      </PopoverTrigger>
-      <PopoverContent collisionPadding={20} side='left' align='center' sideOffset={8}>
-        <EventPopoverContent onGotoDate={handleGotoDate} rowId={rowId} onCloseEvent={handleCloseEvent} />
-      </PopoverContent>
-    </Popover>
+    <div className='relative h-full w-full'>
+      <EventDisplay
+        onClick={() => {
+          handleOpenChange(true);
+        }}
+        event={event}
+        eventInfo={eventInfo}
+        isWeekView={isWeekView}
+      />
+      {isOpen && (
+        <Popover open={isOpen} modal onOpenChange={handleOpenChange}>
+          <PopoverTrigger asChild>
+            <div
+              style={{
+                zIndex: isOpen ? 1 : -1,
+                pointerEvents: isOpen ? 'auto' : 'none',
+              }}
+              className='absolute left-0 top-0 h-full w-full'
+            ></div>
+          </PopoverTrigger>
+          <PopoverContent collisionPadding={20} side='left' align='center' sideOffset={8}>
+            {isOpen && <EventPopoverContent onGotoDate={handleGotoDate} rowId={rowId} onCloseEvent={handleCloseEvent} />}
+          </PopoverContent>
+        </Popover>
+      )}
+    </div>
   );
 });
 

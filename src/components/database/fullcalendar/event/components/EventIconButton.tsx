@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 import { CustomIconPopover } from '@/components/_shared/cutsom-icon';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -14,28 +16,48 @@ interface EventIconButtonProps {
 export function EventIconButton({ rowId, readOnly = false, iconSize, className }: EventIconButtonProps) {
   const { showIcon, isFlag, onSelectIcon, removeIcon, renderIcon } = useEventIcon(rowId);
 
-  if (!showIcon) return null;
+  const [open, setOpen] = useState(false);
+  const icon = renderIcon(iconSize);
+
+  if (!showIcon || !icon) return null;
 
   return (
-    <CustomIconPopover
-      defaultActiveTab={'emoji'}
-      tabs={['emoji']}
-      onSelectIcon={(icon) => {
-        onSelectIcon(icon.value);
-      }}
-      removeIcon={removeIcon}
-      enable={Boolean(!readOnly && showIcon)}
-    >
+    <div className={cn('custom-icon relative h-4 w-4 flex-shrink-0 ', className)}>
       <Button
-        className={cn('custom-icon h-4 w-4 flex-shrink-0 !rounded-100 p-0 disabled:text-icon-primary', className)}
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen(true);
+        }}
+        className='h-full w-full !rounded-100 p-0'
         variant={'ghost'}
+        style={{
+          color: 'unset',
+        }}
         disabled={readOnly}
-        onClick={(e) => e.stopPropagation()}
       >
-        <div className={cn('flex h-full w-full items-center justify-center', isFlag && 'icon')}>
-          {renderIcon(iconSize)}
-        </div>
+        <div className={cn('flex h-full w-full items-center justify-center', isFlag && 'icon')}>{icon}</div>
       </Button>
-    </CustomIconPopover>
+      {open && (
+        <CustomIconPopover
+          open={open}
+          onOpenChange={setOpen}
+          defaultActiveTab={'emoji'}
+          tabs={['emoji']}
+          onSelectIcon={(icon) => {
+            onSelectIcon(icon.value);
+          }}
+          removeIcon={removeIcon}
+          enable={Boolean(!readOnly && showIcon)}
+        >
+          <div
+            className='absolute left-0 top-0 h-full w-full'
+            style={{
+              zIndex: open ? 1 : -1,
+              pointerEvents: open ? 'auto' : 'none',
+            }}
+          />
+        </CustomIconPopover>
+      )}
+    </div>
   );
 }

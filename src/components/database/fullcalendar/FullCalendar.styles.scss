@@ -238,6 +238,7 @@
 
     .fc-event {
       overflow: hidden;
+      cursor: pointer;
     }
 
     .fc-daygrid-day-events .fc-event {
@@ -431,7 +432,7 @@
         height: 8px;
         @apply bg-other-colors-filled-today;
         border-radius: 50%;
-        z-index: 11;
+        z-index: 50;
       }
     }
   
@@ -450,7 +451,7 @@
       border: none !important;
       width: 58px !important;
       height: auto !important;
-      text-align: right;
+      text-align: center;
     }
 
     /* Custom horizontal time indicator line */
@@ -503,27 +504,37 @@
   .fc-event {
     @apply border-0 bg-transparent !important;
     border-color: transparent !important;
+    box-shadow: none !important;
     
     .fc-event-main {
       @apply bg-transparent px-0 !important;
     }
+
     
     .fc-event-title {
       @apply bg-transparent truncate !important;
     }
 
-    
-
+  
   }
 
   .fc-event-past {
     &:not(:hover):not(.fc-event-open) {
-      .event-inner {
+      .event-inner, .event-title {
+        opacity: 0.50 !important;
+      }
+      .time-slot {
         opacity: 0.50 !important;
       }
       .event-line {
         opacity: 0.30 !important;
       }
+    }
+  }
+
+  .fc-timegrid-event.fc-event-past:not(:hover):not(.fc-event-open) > .fc-event-main {
+    &:before {
+      opacity: 0.30 !important;
     }
   }
 
@@ -588,6 +599,7 @@
     height: auto !important;
     min-height: auto !important;
     max-height: none !important;
+    margin-right: 2px;
     
     &:has(.event-no-end) {
       height: 22px !important;
@@ -678,80 +690,7 @@
     @apply border-none rounded-200 cursor-pointer;
   }
 
-  .fc-popover {
-    @apply bg-background-primary shadow-popover rounded-400 border-none;
-    min-width: 240px !important;
-    z-index: 60 !important;
-    
-    .fc-event {
-      @apply bg-transparent !important;
-    }
-    
-   
-    .fc-popover-header {
-      @apply bg-transparent border-none px-2 py-2;
-
-      .fc-popover-title {
-        @apply text-sm font-medium text-text-primary;
-      }
-
-      .fc-popover-close {
-        @apply text-text-secondary hover:text-text-primary bg-transparent border-none;
-        @apply h-5 w-5 p-0 flex items-center justify-center rounded-200;
-        @apply hover:bg-fill-content;
-        
-        &::before {
-          content: '×';
-          @apply font-normal;
-          line-height: 0.7;
-          font-size: 18px;
-          height: 20px;
-          width: 20px;
-        }
-      }
-    }
-
-    &.fc-day-today {
-      .fc-popover-header {
-        .fc-popover-title {
-          @apply relative pl-4;
-          &:before {
-            @apply absolute left-0 top-1/2 -translate-y-1/2 bg-other-colors-filled-today rounded-full;
-            content: ' ';
-            height: 10px;
-            width: 10px;
-          }
-        }
-      }
-    }
-
-    .fc-popover-body {
-      @apply p-2 pt-0;
-      max-height: 240px;
-      overflow-y: auto;
-      scrollbar-width: thin;
-      scrollbar-color: theme('colors.border.primary') transparent;
-      
-      &::-webkit-scrollbar {
-        width: 6px;
-      }
-      
-      &::-webkit-scrollbar-track {
-        @apply bg-transparent;
-      }
-      
-      &::-webkit-scrollbar-thumb {
-        @apply bg-border-primary rounded-full;
-        
-        &:hover {
-          @apply bg-border-primary-hover;
-        }
-      }
-
-      
-    }
-  }
-
+  
   /* =============================================
      9. Drag and Drop Styles
      ============================================= */
@@ -766,7 +705,8 @@
     }
   }
 
-  
+
+
   .fc-event-dragging {
     transform: scale(1.001) !important;
     transition: opacity 0.2s ease, transform 0.2s ease !important;
@@ -856,12 +796,14 @@ body > .fc-event[style*="z-index"] {
     &:not(.fc-timegrid-event) .event-content {
       @apply border !bg-fill-theme-thick !border-border-theme-thick !text-text-inverse;
       
-      .event-inner {
+      .event-inner, .event-title, .event-icon {
         @apply text-text-inverse !important;
+        @apply opacity-100 !important;
       }
 
       .time-slot {
         @apply text-text-inverse !important;
+        @apply opacity-100 !important;
       }
     }
     
@@ -871,14 +813,25 @@ body > .fc-event[style*="z-index"] {
       .event-content {
         @apply bg-fill-theme-thick text-text-inverse !important;
         
-        .event-inner {
+        .event-inner, .event-title, .event-icon {
           @apply text-text-inverse !important;
+          @apply opacity-100 !important;
         }
 
         .time-slot {
           @apply text-text-inverse !important;
+          @apply opacity-100 !important;
         }
       }
+    }
+  }
+
+  &.fc-popover-event.event-hovered {
+    .event-content {
+      @apply bg-other-colors-filled-event-hover !important;
+    }
+    .time-event-content {
+      @apply bg-fill-content-hover !important;
     }
   }
 }
@@ -913,20 +866,34 @@ body > .fc-event[style*="z-index"] {
   }
 }
 
+.event-time-icon .event-icon {
+  @apply text-text-primary opacity-65;
+}
+
+.fc-scrollgrid-sync-table {
+  @apply overflow-hidden;
+}
+.event-icon {
+  @apply opacity-80;
+}
+
 body {
   .fc-event.fc-event-dragging {
     border: none !important;
     transform: scale(1.001) !important;
     opacity: 1 !important;
+    cursor: grabbing;
     &.fc-nodate-event {
       box-shadow: 0 2px 16px 0 var(--shadow-color);
+      opacity: 1 !important;
     }
   
     &:not(.fc-timegrid-event) .event-content {
       @apply border !bg-fill-theme-thick !border-border-theme-thick !text-text-inverse;
       
-      .event-inner {
+      .event-inner, .event-time-icon .event-icon {
         @apply text-text-inverse !important;
+        opacity: 1;
       }
 
       .time-slot {
@@ -935,12 +902,16 @@ body {
     }
     
     &.fc-timegrid-event {
-      @apply border !bg-fill-theme-thick !border-border-theme-thick !text-text-inverse;
+      @apply text-text-inverse;
+
+      &:hover {
+        @apply bg-fill-theme-thick !important;
+      }
       
       .event-content {
-        @apply bg-fill-theme-thick text-text-inverse !important;
+        @apply  text-text-inverse !important;
         
-        .event-inner {
+        .event-inner, .event-title, .event-icon {
           @apply text-text-inverse !important;
         }
 

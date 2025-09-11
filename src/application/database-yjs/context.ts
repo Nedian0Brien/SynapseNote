@@ -1,3 +1,5 @@
+import EventEmitter from 'events';
+
 import { AxiosInstance } from 'axios';
 import { createContext, useContext } from 'react';
 
@@ -15,6 +17,7 @@ import {
   Subscription,
   TestDatabasePromptConfig,
   TimeFormat,
+  UIVariant,
   UpdatePagePayload,
   View,
   YDatabase,
@@ -24,9 +27,9 @@ import {
   YjsEditorKey,
   YSharedRoot,
 } from '@/application/types';
-import EventEmitter from 'events';
-import { useCurrentUser } from '@/components/main/app.hooks';
+import { CalendarViewType } from '@/components/database/fullcalendar/types';
 import { DefaultTimeSetting, MetadataKey } from '@/application/user-metadata';
+import { useCurrentUser } from '@/components/main/app.hooks';
 
 export interface DatabaseContextState {
   readOnly: boolean;
@@ -63,6 +66,10 @@ export interface DatabaseContextState {
   eventEmitter?: EventEmitter;
   getSubscriptions?: (() => Promise<Subscription[]>) | undefined;
   getViewIdFromDatabaseId?: (databaseId: string) => string | null;
+  variant?: UIVariant;
+  // Calendar view type map: viewId -> CalendarViewType
+  calendarViewTypeMap?: Map<string, CalendarViewType>;
+  setCalendarViewType?: (viewId: string, viewType: CalendarViewType) => void;
 }
 
 export const DatabaseContext = createContext<DatabaseContextState | null>(null);

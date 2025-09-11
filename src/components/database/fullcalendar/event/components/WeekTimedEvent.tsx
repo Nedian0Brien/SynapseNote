@@ -2,6 +2,7 @@ import { EventApi, EventContentArg } from '@fullcalendar/core';
 import dayjs from 'dayjs';
 import { useCallback, useMemo } from 'react';
 
+import { useTimeFormat } from '@/components/database/fullcalendar/hooks';
 import { cn } from '@/lib/utils';
 
 import { EventIconButton } from './EventIconButton';
@@ -15,24 +16,8 @@ interface WeekTimedEventProps {
   rowId: string;
 }
 
-const formatTimeDisplay = (date: Date): string => {
-  const time = dayjs(date);
-  const minutes = time.minute();
-
-  if (minutes === 0) {
-    return time.format('h A').toLowerCase();
-  } else {
-    return time.format('h:mm A').toLowerCase();
-  }
-};
-
-export function WeekTimedEvent({
-  event,
-  eventInfo,
-  onClick,
-  className,
-  rowId,
-}: WeekTimedEventProps) {
+export function WeekTimedEvent({ event, eventInfo, onClick, className, rowId }: WeekTimedEventProps) {
+  const { formatTimeDisplay } = useTimeFormat();
   const isEventStart = eventInfo.isStart;
   const isEventEnd = eventInfo.isEnd;
   const isRange = event.extendedProps.isRange;
@@ -60,17 +45,17 @@ export function WeekTimedEvent({
     if (isShortEvent) {
       // For short events (< 30 minutes), use single line layout with minimum height
       return (
-        <div className='relative flex min-h-[18px] items-center gap-1 py-0.5 text-xs'>
+        <div className='relative flex min-h-[18px] items-center gap-1 py-0.5 text-xs text-other-colors-text-event'>
           <span
-            className='event-inner flex-1 truncate font-medium'
+            className='event-title  shrink-0 truncate whitespace-nowrap font-medium'
             style={{
               fontSize: '11px',
               lineHeight: '1.2',
             }}
           >
-            {getDisplayContent()}
+            {getDisplayContent()},
           </span>
-          <div className='time-slot flex shrink-0 items-center text-[10px] font-normal text-other-colors-text-event'>
+          <div className='time-slot flex items-center text-[10px] font-normal'>
             {isEventStart && event.start && <span className='shrink-0'>{formatTimeDisplay(event.start)}</span>}
             <span className='shrink-0'>
               {isEventStart && <span className='mx-0.5'>-</span>}
@@ -84,16 +69,18 @@ export function WeekTimedEvent({
     return (
       <div
         className={cn(
-          'relative flex pt-[1px] text-xs',
-          moreThanHalfHour ? 'h-full max-h-full flex-col' : 'flex-nowrap items-center gap-1 overflow-hidden truncate'
+          'event-title relative flex pt-[1px] text-xs text-other-colors-text-event',
+          moreThanHalfHour
+            ? 'h-full max-h-full flex-col pt-[3px]'
+            : 'flex-nowrap items-center gap-1 overflow-hidden truncate'
         )}
       >
-        <div className={cn('flex min-w-[20px] items-center gap-1', moreThanHalfHour ? 'w-full' : 'truncate')}>
+        <div className={cn('flex min-w-fit items-center gap-1', moreThanHalfHour ? 'w-full' : 'truncate')}>
           <EventIconButton rowId={rowId} />
           <span
             className={cn(
-              'event-inner font-medium text-other-colors-text-event',
-              moreThanHalfHour ? 'flex-shrink overflow-hidden break-words leading-tight' : 'min-w-[28px] truncate'
+              'event-title whitespace-nowrap  font-medium text-other-colors-text-event',
+              moreThanHalfHour ? 'flex-shrink overflow-hidden break-words leading-tight' : 'truncate'
             )}
             style={
               moreThanHalfHour
@@ -107,11 +94,11 @@ export function WeekTimedEvent({
                 : undefined
             }
           >
-            {getDisplayContent()}
+            <span className='w-fit'>{getDisplayContent()}</span>
             {moreThanHalfHour ? '' : ','}
           </span>
         </div>
-        <div className='time-slot text-other-colors-text-event-light flex h-[16px] shrink-0 items-center text-xs font-normal'>
+        <div className='time-slot flex h-[16px] items-center text-xs font-normal text-other-colors-text-event-light'>
           {isEventStart && event.start && <span className='shrink-0'>{formatTimeDisplay(event.start)}</span>}
           {isRange && (
             <span className='shrink-0'>
@@ -122,7 +109,7 @@ export function WeekTimedEvent({
         </div>
       </div>
     );
-  }, [event.end, event.start, getDisplayContent, isEventStart, rowId, isRange]);
+  }, [event.end, event.start, rowId, getDisplayContent, isEventStart, formatTimeDisplay, isRange]);
 
   const isShortEvent = event.end && dayjs(event.end).diff(dayjs(event.start), 'minute') < 30;
   const isCompactLayout = !event.end || isShortEvent;
@@ -130,10 +117,11 @@ export function WeekTimedEvent({
   return (
     <div
       className={cn(
-        'event-content relative flex h-full max-h-full min-h-[22px] w-full cursor-pointer flex-col items-center overflow-hidden text-xs font-medium',
+        'event-content  relative flex h-full max-h-full min-h-[22px] w-full cursor-pointer flex-col items-center overflow-hidden !bg-transparent text-xs font-medium hover:!bg-transparent',
         'text-text-primary',
         'transition-shadow duration-200',
-        isCompactLayout ? 'pl-1.5 pr-1 min-h-[12px] py-0' : 'pl-1.5 py-0',
+        isCompactLayout ? 'min-h-[12px] py-0 pl-1.5 pr-1' : 'py-0 pl-1.5',
+        isShortEvent && 'h-[12px]',
         className
       )}
       onClick={handleClick}

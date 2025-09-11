@@ -12,62 +12,84 @@ import { NoDateRow } from './NoDateRow';
 interface NoDateButtonProps {
   emptyEvents: CalendarEvent[];
   isWeekView: boolean;
+  onDragStart?: (rowId: string) => void;
+  draggingRowId?: string | null;
+  onDragEnd?: () => void;
 }
 
-export const NoDateButton = memo(({ emptyEvents, isWeekView }: NoDateButtonProps) => {
-  const [open, setOpen] = useState(false);
-  const { t } = useTranslation();
-  const primaryFieldId = usePrimaryFieldId();
+export const NoDateButton = memo(
+  ({ onDragEnd, emptyEvents, isWeekView, onDragStart, draggingRowId }: NoDateButtonProps) => {
+    const [open, setOpen] = useState(false);
+    const { t } = useTranslation();
+    const primaryFieldId = usePrimaryFieldId();
 
-  if (emptyEvents.length === 0 || !primaryFieldId) {
-    return null;
-  }
+    if (emptyEvents.length === 0 || !primaryFieldId) {
+      return null;
+    }
 
-  return (
-    <Popover open={open}>
-      <PopoverTrigger asChild>
-        <Button
-          onClick={() => {
-            setOpen((prev) => !prev);
+    return (
+      <Popover open={open}>
+        <PopoverTrigger asChild>
+          <Button
+            onClick={() => {
+              setOpen((prev) => !prev);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                setOpen(false);
+              }
+            }}
+            size='sm'
+            variant='ghost'
+            className='no-date-button gap-1 overflow-hidden whitespace-nowrap'
+          >
+            {`${t('calendar.settings.noDateTitle')} (${emptyEvents.length})`}
+            <DropdownIcon className='h-5 w-5' />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent
+          onOpenAutoFocus={(e) => {
+            e.preventDefault();
           }}
-          onKeyDown={(e) => {
-            if (e.key === 'Escape') {
-              setOpen(false);
-            }
+          onMouseUp={() => {
+            onDragEnd?.();
           }}
-          size='sm'
-          variant='ghost'
-          className='no-date-button gap-1 overflow-hidden whitespace-nowrap'
+          onPointerDownOutside={(e) => {
+            const target = e.target as HTMLElement;
+
+            if (target.closest('.MuiDialog-root')) return;
+            setOpen(false);
+          }}
+          className='appflowy-scroller max-h-[360px] w-[260px] overflow-y-auto p-2'
         >
-          {`${t('calendar.settings.noDateTitle')} (${emptyEvents.length})`}
-          <DropdownIcon className='h-5 w-5' />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent
-        onOpenAutoFocus={(e) => {
-          e.preventDefault();
-        }}
-        onPointerDownOutside={(e) => {
-          const target = e.target as HTMLElement;
+          <div
+            style={{
+              opacity: draggingRowId ? 0.6 : 1,
+              transition: 'opacity 0.2s ease-in-out',
+            }}
+          >
+            <DropdownMenuLabel className='px-3'>{t('calendar.settings.noDatePopoverTitle')}</DropdownMenuLabel>
+            <div className='flex flex-col'>
+              {emptyEvents.map((event) => {
+                const rowId = event.id;
 
-          if (target.closest('.MuiDialogContent-root')) return;
-          setOpen(false);
-        }}
-        className='appflowy-scroller max-h-[360px] w-[260px] overflow-y-auto p-2'
-      >
-        <DropdownMenuLabel className='px-3'>{t('calendar.settings.noDatePopoverTitle')}</DropdownMenuLabel>
-        <div className='flex flex-col'>
-          {emptyEvents.map((event) => {
-            const rowId = event.id;
-
-            return <NoDateRow primaryFieldId={primaryFieldId} rowId={rowId} key={event.id} isWeekView={isWeekView} />;
-          })}
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
-});
-
-NoDateButton.displayName = 'NoDateButton';
+                return (
+                  <NoDateRow
+                    primaryFieldId={primaryFieldId}
+                    rowId={rowId}
+                    key={event.id}
+                    isWeekView={isWeekView}
+                    onDragStart={onDragStart}
+                    isDragging={draggingRowId === rowId}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        </PopoverContent>
+      </Popover>
+    );
+  }
+);
 
 export default NoDateButton;

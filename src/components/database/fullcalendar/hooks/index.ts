@@ -9,3 +9,5 @@ export { useAddButton } from './useAddButton';
 export { useDynamicDayMaxEventRows } from './useDynamicDayMaxEventRows';
 export { useScrollDetection } from './useScrollDetection';
 export { useCurrentTimeIndicator } from './useCurrentTimeIndicator';
+export { useTimeFormat } from './useTimeFormat';
+export { useCalendarKeyboardShortcuts } from './useCalendarKeyboardShortcuts';

@@ -154,7 +154,7 @@ export function StickyWeekHeader({
                             className='today-date'
                             style={{
                               backgroundColor: 'var(--other-colors-filled-today)',
-                              color: 'var(--text-on-fill)',
+                              color: 'var(--text-inverse)',
                               borderRadius: '6px',
                               width: '24px',
                               height: '24px',

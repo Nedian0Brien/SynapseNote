@@ -1,4 +1,6 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+
+import { useDatabaseContext, useDatabaseViewId } from '@/application/database-yjs';
 
 import { CalendarViewType } from '../types';
 
@@ -11,7 +13,13 @@ import type { CalendarApi, DatesSetArg, MoreLinkArg } from '@fullcalendar/core';
  * Centralizes all calendar interaction logic
  */
 export function useCalendarHandlers() {
-  const [currentView, setCurrentView] = useState(CalendarViewType.DAY_GRID_MONTH);
+  // Get current view from context
+  const { calendarViewTypeMap } = useDatabaseContext();
+  const viewId = useDatabaseViewId();
+  const currentView: CalendarViewType = useMemo(() => {
+    return calendarViewTypeMap?.get(viewId) || CalendarViewType.DAY_GRID_MONTH
+  }, [calendarViewTypeMap, viewId]);
+
   const [calendarTitle, setCalendarTitle] = useState('');
   const [morelinkInfo, setMorelinkInfo] = useState<MoreLinkArg | undefined>(undefined);
   const [, setCurrentDateRange] = useState<{ start: Date; end: Date } | null>(null);
@@ -27,15 +35,12 @@ export function useCalendarHandlers() {
       
       // Navigate to today
       calendarApi.today();
-      
-      setCurrentView(view);
     }
   }, []);
 
   // Handle calendar date range changes
   const handleDatesSet = useCallback((dateInfo: DatesSetArg, _calendarApi: CalendarApi | null) => {
     setCalendarTitle(dateInfo.view.title);
-    setCurrentView(dateInfo.view.type as CalendarViewType);
     setCurrentDateRange({
       start: dateInfo.start,
       end: dateInfo.end,

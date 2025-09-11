@@ -53,7 +53,7 @@ function RowPropertyPrimitive({
             !showPropertyName && 'w-auto gap-0 p-2'
           )}
         >
-          <Tooltip delayDuration={1000} disableHoverableContent>
+          <Tooltip delayDuration={200} disableHoverableContent>
             <TooltipTrigger className={'overflow-hidden'}>
               <FieldDisplay
                 showPropertyName={showPropertyName}

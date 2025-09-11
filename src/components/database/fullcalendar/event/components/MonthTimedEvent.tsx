@@ -2,6 +2,7 @@ import { EventApi, EventContentArg } from '@fullcalendar/core';
 import dayjs from 'dayjs';
 
 import { cn } from '@/lib/utils';
+import { useTimeFormat } from '@/components/database/fullcalendar/hooks';
 
 import { EventIconButton } from './EventIconButton';
 
@@ -14,18 +15,8 @@ interface MonthTimedEventProps {
   rowId: string;
 }
 
-const formatTimeDisplay = (date: Date): string => {
-  const time = dayjs(date);
-  const minutes = time.minute();
-
-  if (minutes === 0) {
-    return time.format('h A').toLowerCase();
-  } else {
-    return time.format('h:mm A').toLowerCase();
-  }
-};
-
 export function MonthTimedEvent({ event, onClick, showLeftIndicator = true, className, rowId }: MonthTimedEventProps) {
+  const { formatTimeDisplay } = useTimeFormat();
   const handleClick = () => {
     onClick?.(event);
   };
@@ -37,7 +28,7 @@ export function MonthTimedEvent({ event, onClick, showLeftIndicator = true, clas
   return (
     <div
       className={cn(
-        'event-content relative flex h-full max-h-full min-h-[22px] w-full cursor-pointer flex-col items-center overflow-hidden text-xs font-medium text-text-primary hover:bg-fill-content-hover',
+        'event-content time-event-content relative flex h-full max-h-full min-h-[22px] w-full cursor-pointer flex-col items-center overflow-hidden text-xs font-medium text-text-primary hover:bg-fill-content-hover',
         isPastEvent ? 'fc-event-past' : '',
         'transition-shadow duration-200',
         'rounded-200',
@@ -51,12 +42,12 @@ export function MonthTimedEvent({ event, onClick, showLeftIndicator = true, clas
         <div className='event-inner flex h-full max-h-full w-full flex-1 flex-col justify-center overflow-hidden'>
           <div className='flex h-full items-center gap-1 truncate'>
             {event.start && (
-              <span className='time-slot shrink-0 text-xs font-normal text-text-secondary'>
+              <span className='time-slot shrink-0 text-xs font-normal text-text-primary'>
                 {formatTimeDisplay(event.start)}
               </span>
             )}
             <div className='flex w-full items-center gap-1 truncate'>
-              <EventIconButton rowId={rowId} />
+              <EventIconButton className='event-time-icon' rowId={rowId} />
               <span className='min-w-full flex-1 truncate'>{event.title || 'Untitled'}</span>
             </div>
           </div>

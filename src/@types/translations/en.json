@@ -2131,8 +2131,8 @@
         "networkTab": "Embed link",
         "placeholderText": "Upload or embed a file",
         "placeholderDragging": "Drop the file to upload",
-        "dropFileToUpload": "Drop a file to upload",
-        "fileUploadHint": "Drag & drop a file or click to ",
+        "dropFileToUpload": "Drop a file to upload or ",
+        "fileUploadHint": "Drag & drop a file or ",
         "fileUploadHintSuffix": "Browse",
         "networkHint": "Paste a file link",
         "networkUrlInvalid": "Invalid URL. Check the URL and try again.",
@@ -2392,7 +2392,9 @@
     },
     "referencedCalendarPrefix": "View of",
     "quickJumpYear": "Jump to",
-    "duplicateEvent": "Duplicate event"
+    "duplicateEvent": "Duplicate event",
+    "deleteEventPrompt_one": "Are you sure you want to delete this event? This action cannot be undone.",
+    "deleteEventPrompt_other": "Are you sure you want to delete these events? This action cannot be undone."
   },
   "errorDialog": {
     "title": "@:appName Error",

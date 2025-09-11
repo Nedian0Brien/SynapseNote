@@ -45,12 +45,17 @@ export function useCalendarStickyHeader(calendarApi: CalendarApi | null, toolbar
     if (!scrollElement) return;
 
     const handleScroll = () => {
+      const parent = parentRef.current;
+
+      if (!parent) return;
       updateToolbarOffset();
       // Show sticky toolbar when normal toolbar reaches the app header area
       // App header is approximately 48px, so show sticky when toolbar goes above 48px from top
       const APP_HEADER_HEIGHT = 48;
 
-      const shouldShow = toolbarOffsetRef.current <= APP_HEADER_HEIGHT;
+      const bottom = parent.getBoundingClientRect().bottom ?? 0;
+
+      const shouldShow = toolbarOffsetRef.current <= APP_HEADER_HEIGHT && bottom - 200 >= APP_HEADER_HEIGHT;
 
       setShowStickyToolbar(shouldShow);
     };
@@ -93,6 +98,12 @@ export function useCalendarStickyHeader(calendarApi: CalendarApi | null, toolbar
       window.removeEventListener('resize', handleResize);
     };
   }, [getScrollElement, updateToolbarOffset]);
+
+  useEffect(() => {
+    return () => {
+      setShowStickyToolbar(false);
+    }
+  }, [])
 
   return {
     parentRef,

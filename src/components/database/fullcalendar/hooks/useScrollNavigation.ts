@@ -45,12 +45,10 @@ export function useScrollNavigation(currentView: CalendarViewType, calendarApi: 
     if (direction === 'up') {
       const isAtTop = scrollTop <= tolerance;
 
-      console.debug(`📅 Boundary check UP: scrollTop=${scrollTop}, tolerance=${tolerance}, isAtTop=${isAtTop}`);
       return isAtTop;
     } else {
       const isAtBottom = scrollTop + clientHeight >= scrollHeight - tolerance;
 
-      console.debug(`📅 Boundary check DOWN: scrollTop=${scrollTop}, clientHeight=${clientHeight}, scrollHeight=${scrollHeight}, isAtBottom=${isAtBottom}`);
       return isAtBottom;
     }
   }, [getScrollElement]);
@@ -117,7 +115,6 @@ export function useScrollNavigation(currentView: CalendarViewType, calendarApi: 
 
       // Check if we're in cooldown period
       if (isInCooldown()) {
-        console.debug(`📅 In cooldown period, ignoring scroll`);
         return;
       }
 
@@ -125,7 +122,6 @@ export function useScrollNavigation(currentView: CalendarViewType, calendarApi: 
       if (!isAccumulating.current) {
         isAccumulating.current = true;
         scrollAccumulator.current = 0;
-        console.debug(`📅 Started accumulating scroll at ${direction} boundary`);
       }
 
       // Only accumulate significant scroll amounts to reduce sensitivity
@@ -133,18 +129,16 @@ export function useScrollNavigation(currentView: CalendarViewType, calendarApi: 
 
       if (deltaY >= 8) { // Only count scrolls >= 8px to reduce sensitivity
         scrollAccumulator.current += deltaY;
-        console.debug(`📅 Scroll accumulated: ${Math.round(scrollAccumulator.current)}px (threshold: ${SCROLL_THRESHOLD}px, delta: ${deltaY}px)`);
 
         // Check if threshold is reached
         if (scrollAccumulator.current >= SCROLL_THRESHOLD) {
-          console.debug(`📅 Threshold reached! Triggering navigation ${direction}`);
           // Set cooldown time and reset accumulator
           lastTriggerTime.current = Date.now();
           resetScrollAccumulator();
           navigateMonth(direction);
         }
       } else {
-        console.debug(`📅 Ignoring small scroll: ${deltaY}px`);
+        // console.debug(`📅 Ignoring small scroll: ${deltaY}px`);
       }
     } else if (isAccumulating.current) {
       // Not at boundary anymore - reset accumulator

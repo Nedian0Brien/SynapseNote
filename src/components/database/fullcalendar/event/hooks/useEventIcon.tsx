@@ -2,8 +2,9 @@ import { useMemo } from 'react';
 
 import { RowMetaKey, useRowMetaSelector } from '@/application/database-yjs';
 import { useUpdateRowMetaDispatch } from '@/application/database-yjs/dispatch';
-import { ReactComponent as DocumentSvg } from '@/assets/icons/doc.svg';
+import { ReactComponent as DocumentSvg } from '@/assets/icons/page.svg';
 import { isFlagEmoji } from '@/utils/emoji';
+
 
 export function useEventIcon(rowId: string) {
   const meta = useRowMetaSelector(rowId);
@@ -38,7 +39,7 @@ export function useEventIcon(rowId: string) {
             height: iconSize,
             width: iconSize,
           }}
-          className='h-full w-full'
+          className='h-full event-icon w-full'
         />
       );
     }

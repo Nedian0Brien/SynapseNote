@@ -1,19 +1,22 @@
-import { DatabaseViewLayout, YjsDatabaseKey } from '@/application/types';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
+
 import { useDatabaseViewsSelector } from '@/application/database-yjs';
+import { DatabaseViewLayout, YjsDatabaseKey } from '@/application/types';
 import CalendarSkeleton from '@/components/_shared/skeleton/CalendarSkeleton';
 import GridSkeleton from '@/components/_shared/skeleton/GridSkeleton';
 import KanbanSkeleton from '@/components/_shared/skeleton/KanbanSkeleton';
 import { Board } from '@/components/database/board';
-import { Calendar } from '@/components/database/fullcalendar';
 import { DatabaseConditionsContext } from '@/components/database/components/conditions/context';
 import { DatabaseTabs } from '@/components/database/components/tabs';
+import { Calendar } from '@/components/database/fullcalendar';
 import { Grid } from '@/components/database/grid';
 import { ElementFallbackRender } from '@/components/error/ElementFallbackRender';
-import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
-import { ErrorBoundary } from 'react-error-boundary';
+
 import DatabaseConditions from 'src/components/database/components/conditions/DatabaseConditions';
 
-function DatabaseViews ({
+function DatabaseViews({
   onChangeView,
   viewId,
   iidIndex,
@@ -32,7 +35,7 @@ function DatabaseViews ({
   const value = useMemo(() => {
     return Math.max(
       0,
-      viewIds.findIndex((id) => id === viewId),
+      viewIds.findIndex((id) => id === viewId)
     );
   }, [viewId, viewIds]);
 
@@ -41,7 +44,6 @@ function DatabaseViews ({
     setConditionsExpanded((prev) => !prev);
   }, []);
   const [openFilterId, setOpenFilterId] = useState<string>();
-
 
   const activeView = useMemo(() => {
     return childViews[value];
@@ -64,36 +66,69 @@ function DatabaseViews ({
   }, [activeView]);
 
   const view = useMemo(() => {
+    // 使用 viewId 和 layout 的组合作为 key，确保在任一变化时都有动画
+    const animationKey = `${layout}-${viewId}`;
+    
     switch (layout) {
       case DatabaseViewLayout.Grid:
-        return <Grid
-        />;
+        return (
+          <motion.div
+            key={animationKey}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{
+              duration: 0.15,
+              ease: 'easeOut',
+            }}
+            className="h-full w-full"
+          >
+            <Grid />
+          </motion.div>
+        );
       case DatabaseViewLayout.Board:
-        return <Board
-        />;
+        return (
+          <motion.div
+            key={animationKey}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{
+              duration: 0.15,
+              ease: 'easeOut',
+            }}
+            className="h-full w-full"
+          >
+            <Board />
+          </motion.div>
+        );
       case DatabaseViewLayout.Calendar:
-        return <Calendar
-        />;
+        return (
+          <motion.div
+            key={animationKey}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{
+              duration: 0.15,
+              ease: 'easeOut',
+            }}
+            className="h-full w-full"
+          >
+            <Calendar />
+          </motion.div>
+        );
     }
-  }, [layout]);
+  }, [layout, viewId]);
 
   const skeleton = useMemo(() => {
     switch (layout) {
       case DatabaseViewLayout.Grid:
-        return <GridSkeleton
-          includeTitle={false}
-          includeTabs={false}
-        />;
+        return <GridSkeleton includeTitle={false} includeTabs={false} />;
       case DatabaseViewLayout.Board:
-        return <KanbanSkeleton
-          includeTitle={false}
-          includeTabs={false}
-        />;
+        return <KanbanSkeleton includeTitle={false} includeTabs={false} />;
       case DatabaseViewLayout.Calendar:
-        return <CalendarSkeleton
-          includeTitle={false}
-          includeTabs={false}
-        />;
+        return <CalendarSkeleton includeTitle={false} includeTabs={false} />;
       default:
         return null;
     }
@@ -120,7 +155,11 @@ function DatabaseViews ({
 
         <div className={'flex h-full w-full flex-1 flex-col overflow-hidden'}>
           <Suspense fallback={skeleton}>
-            <ErrorBoundary fallbackRender={ElementFallbackRender}>{view}</ErrorBoundary>
+            <ErrorBoundary fallbackRender={ElementFallbackRender}>
+              <AnimatePresence mode="wait">
+                {view}
+              </AnimatePresence>
+            </ErrorBoundary>
           </Suspense>
         </div>
       </DatabaseConditionsContext.Provider>

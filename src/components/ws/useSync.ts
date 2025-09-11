@@ -1,15 +1,16 @@
+import EventEmitter from 'events';
+
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { validate as uuidValidate } from 'uuid';
 import * as awarenessProtocol from 'y-protocols/awareness';
 import * as Y from 'yjs';
-import EventEmitter from 'events';
 
+import { APP_EVENTS } from '@/application/constants';
 import { handleMessage, initSync, SyncContext } from '@/application/services/js-services/sync-protocol';
 import { Types } from '@/application/types';
 import { AppflowyWebSocketType } from '@/components/ws/useAppflowyWebSocket';
 import { BroadcastChannelType } from '@/components/ws/useBroadcastChannel';
 import { messages } from '@/proto/messages';
-import { APP_EVENTS } from '@/application/constants';
 
 export interface RegisterSyncContext {
   /**
@@ -184,7 +185,7 @@ export const useSync = (ws: AppflowyWebSocketType, bc: BroadcastChannelType, eve
         return existingContext;
       }
 
-      console.debug(`Registering sync context for objectId ${context.doc.guid} with collabType ${context.collabType}`);
+      console.log(`Registering sync context for objectId ${context.doc.guid} with collabType ${context.collabType}`);
       context.emit = (message) => {
         sendMessage(message);
         postMessage(message);

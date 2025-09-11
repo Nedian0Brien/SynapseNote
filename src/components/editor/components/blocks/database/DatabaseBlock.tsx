@@ -1,18 +1,18 @@
-import CircularProgress from '@mui/material/CircularProgress';
-import { forwardRef, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { forwardRef, memo, useCallback, useEffect, useRef, useState } from 'react';
 import { Element } from 'slate';
-import { ReactEditor, useReadOnly, useSlateStatic } from 'slate-react';
+import { useReadOnly, useSlateStatic } from 'slate-react';
 
-import { View, YDoc, YjsDatabaseKey, YjsEditorKey } from '@/application/types';
-import { Database } from '@/components/database';
+import { DatabaseContextState } from '@/application/database-yjs';
+import { YjsEditorKey, YSharedRoot } from '@/application/types';
 import { DatabaseNode, EditorElementProps } from '@/components/editor/editor.type';
 import { useEditorContext } from '@/components/editor/EditorContext';
-import { getScrollParent } from '@/components/global-comment/utils';
+
+import { DatabaseContent } from './components/DatabaseContent';
+import { useDatabaseLoading } from './hooks/useDatabaseLoading';
+import { useResizePositioning } from './hooks/useResizePositioning';
 
 export const DatabaseBlock = memo(
   forwardRef<HTMLDivElement, EditorElementProps<DatabaseNode>>(({ node, children, ...attributes }, ref) => {
-    const { t } = useTranslation();
     const viewId = node.data.view_id;
     const context = useEditorContext();
     const workspaceId = context.workspaceId;
@@ -20,92 +20,16 @@ export const DatabaseBlock = memo(
     const loadView = context?.loadView;
     const createRowDoc = context?.createRowDoc;
 
-    const [notFound, setNotFound] = useState(false);
-    const [doc, setDoc] = useState<YDoc | null>(null);
+    const [hasDatabase, setHasDatabase] = useState(false);
+    const containerRef = useRef<HTMLDivElement | null>(null);
+    const editor = useSlateStatic();
+    const readOnly = useReadOnly() || editor.isElementReadOnly(node as unknown as Element);
 
-    useEffect(() => {
-      if (!viewId) return;
-      void (async () => {
-        try {
-          const view = await loadView?.(viewId);
-
-          if (!view) {
-            throw new Error('View not found');
-          }
-
-          setDoc(view);
-        } catch (e) {
-          setNotFound(true);
-        }
-      })();
-    }, [viewId, loadView]);
-
-    const [selectedViewId, setSelectedViewId] = useState<string>(viewId);
-    const [visibleViewIds, setVisibleViewIds] = useState<string[]>([]);
-    const [iidName, setIidName] = useState<string>('');
-
-    const viewIdsRef = useRef<string[]>([viewId]);
-
-    useEffect(() => {
-      viewIdsRef.current = visibleViewIds;
-    }, [visibleViewIds]);
-
-    const updateVisibleViewIds = useCallback(async (meta: View | null) => {
-      if (!meta) {
-        return;
-      }
-
-      const viewIds = meta.children.map((v) => v.view_id) || [];
-
-      viewIds.unshift(meta.view_id);
-
-      setIidName(meta.name);
-
-      setVisibleViewIds(viewIds);
-    }, []);
-
-    const loadViewMeta = useCallback(
-      async (id: string, callback?: (meta: View | null) => void) => {
-        if (id === viewId) {
-          try {
-            const meta = await context?.loadViewMeta?.(viewId, updateVisibleViewIds);
-
-            if (meta) {
-              await updateVisibleViewIds(meta);
-              return meta;
-            }
-          } catch (e) {
-            setNotFound(true);
-          }
-
-          return Promise.reject(new Error('View not found'));
-        } else {
-          const meta = await context?.loadViewMeta?.(id, callback);
-
-          if (meta) {
-            return meta;
-          }
-
-          return Promise.reject(new Error('View not found'));
-        }
-      },
-      [context, updateVisibleViewIds, viewId]
-    );
-
-    useLayoutEffect(() => {
-      void loadViewMeta(viewId).then(() => {
-        if (!viewIdsRef.current.includes(viewId) && viewIdsRef.current.length > 0) {
-          setSelectedViewId(viewIdsRef.current[0]);
-        } else {
-          setSelectedViewId(viewId);
-        }
-      });
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
-    const onChangeView = useCallback((viewId: string) => {
-      setSelectedViewId(viewId);
-    }, []);
+    const { notFound, doc, selectedViewId, visibleViewIds, iidName, onChangeView, loadViewMeta } = useDatabaseLoading({
+      viewId,
+      loadView,
+      loadViewMeta: context?.loadViewMeta,
+    });
 
     const handleNavigateToRow = useCallback(
       async (rowId: string) => {
@@ -114,107 +38,62 @@ export const DatabaseBlock = memo(
       },
       [navigateToView, viewId]
     );
-    const editor = useSlateStatic();
-    const readOnly = useReadOnly() || editor.isElementReadOnly(node as unknown as Element);
 
-    const containerRef = useRef<HTMLDivElement | null>(null);
-    const selectedView = useMemo(() => {
-      const database = doc?.getMap(YjsEditorKey.data_section)?.get(YjsEditorKey.database);
-
-      return database?.get(YjsDatabaseKey.views)?.get(selectedViewId);
-    }, [doc, selectedViewId]);
-
-    const [paddingStart, setPaddingStart] = useState(0);
-    const [paddingEnd, setPaddingEnd] = useState(0);
-    const [width, setWidth] = useState(0);
+    const { paddingStart, paddingEnd, width } = useResizePositioning({
+      editor,
+      node: node as unknown as Element,
+    });
 
     useEffect(() => {
-      const dom = ReactEditor.toDOMNode(editor, node);
+      const sharedRoot = doc?.getMap(YjsEditorKey.data_section) as YSharedRoot;
 
-      const scrollContainer = dom.closest('.appflowy-scroll-container') || (getScrollParent(dom) as HTMLElement);
+      if (!sharedRoot) return;
 
-      if (!dom || !scrollContainer) return;
-
-      const onResize = () => {
-        const rect = scrollContainer.getBoundingClientRect();
-        const blockRect = dom.getBoundingClientRect();
-
-        const offsetLeft = blockRect.left - rect.left;
-        const offsetRight = rect.right - blockRect.right;
-
-        setWidth(rect.width);
-        setPaddingStart(offsetLeft);
-        setPaddingEnd(offsetRight);
+      const setStatus = () => {
+        setHasDatabase(!!sharedRoot.get(YjsEditorKey.database));
       };
 
-      onResize();
+      setStatus();
+      sharedRoot.observe(setStatus);
 
-      const resizeObserver = new ResizeObserver(onResize);
-
-      resizeObserver.observe(scrollContainer);
       return () => {
-        resizeObserver.disconnect();
+        sharedRoot.unobserve(setStatus);
       };
-    }, [editor, selectedView, node]);
+    }, [doc]);
 
     return (
-      <>
-        <div {...attributes} contentEditable={readOnly ? false : undefined} className={`relative w-full cursor-pointer`}>
-          <div ref={ref} className={'absolute left-0 top-0 h-full w-full caret-transparent'}>
-            {children}
-          </div>
-
-          <div
-            contentEditable={false}
-            ref={containerRef}
-            className={`container-bg relative my-1 flex w-full select-none flex-col`}
-          >
-            {selectedViewId && doc ? (
-              <div
-                className={'relative'}
-                style={{
-                  left: `-${paddingStart}px`,
-                  width,
-                }}
-              >
-                <Database
-                  {...context}
-                  workspaceId={workspaceId}
-                  doc={doc}
-                  iidIndex={viewId}
-                  viewId={selectedViewId}
-                  createRowDoc={createRowDoc}
-                  loadView={loadView}
-                  navigateToView={navigateToView}
-                  onOpenRowPage={handleNavigateToRow}
-                  loadViewMeta={loadViewMeta}
-                  iidName={iidName}
-                  visibleViewIds={visibleViewIds}
-                  onChangeView={onChangeView}
-                  showActions={true}
-                  paddingStart={paddingStart}
-                  paddingEnd={paddingEnd}
-                  isDocumentBlock={true}
-                />
-              </div>
-            ) : (
-              <div
-                className={
-                  'flex h-full w-full flex-col items-center justify-center gap-2 rounded bg-background-primary px-16 py-10 text-text-secondary max-md:px-4'
-                }
-              >
-                {notFound ? (
-                  <>
-                    <div className={'text-base font-medium'}>{t('publish.hasNotBeenPublished')}</div>
-                  </>
-                ) : (
-                  <CircularProgress size={20} />
-                )}
-              </div>
-            )}
-          </div>
+      <div {...attributes} contentEditable={readOnly ? false : undefined} className='relative w-full cursor-pointer'>
+        <div ref={ref} className='absolute left-0 top-0 h-full w-full caret-transparent'>
+          {children}
         </div>
-      </>
+        <div
+          contentEditable={false}
+          ref={containerRef}
+          className='container-bg relative my-1 flex w-full select-none flex-col'
+        >
+          <DatabaseContent
+            selectedViewId={selectedViewId}
+            hasDatabase={hasDatabase}
+            notFound={notFound}
+            paddingStart={paddingStart}
+            paddingEnd={paddingEnd}
+            width={width}
+            doc={doc}
+            workspaceId={workspaceId}
+            viewId={viewId}
+            createRowDoc={createRowDoc}
+            loadView={loadView}
+            navigateToView={navigateToView}
+            onOpenRowPage={handleNavigateToRow}
+            loadViewMeta={loadViewMeta}
+            iidName={iidName}
+            visibleViewIds={visibleViewIds}
+            onChangeView={onChangeView}
+            // eslint-disable-next-line
+            context={context as DatabaseContextState}
+          />
+        </div>
+      </div>
     );
   }),
   (prevProps, nextProps) => prevProps.node.data.view_id === nextProps.node.data.view_id

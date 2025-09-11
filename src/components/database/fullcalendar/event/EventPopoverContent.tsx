@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 import { FieldType, useFieldsSelector, useNavigateToRow, usePrimaryFieldId } from '@/application/database-yjs';
 import { Cell } from '@/application/database-yjs/cell.type';
+import { useReadOnly } from '@/application/database-yjs/context';
 import { useDuplicateRowDispatch } from '@/application/database-yjs/dispatch';
 import { ReactComponent as CloseIcon } from '@/assets/icons/close.svg';
 import { ReactComponent as DeleteIcon } from '@/assets/icons/delete.svg';
@@ -27,6 +28,7 @@ function EventPopoverContent({
   onCloseEvent: () => void;
   onGotoDate: (date: Date) => void;
 }) {
+  const readOnly = useReadOnly();
   const primaryFieldId = usePrimaryFieldId();
   const { setOpenEventRowId, markEventAsNew, markEventAsUpdate } = useEventContext();
   const duplicateRowDispatch = useDuplicateRowDispatch();
@@ -94,23 +96,27 @@ function EventPopoverContent({
     <div className={'appflowy-scroller max-h-[560px] w-[360px] overflow-y-auto px-3 py-2'}>
       <div className={'sticky top-0 flex w-full items-center justify-end gap-1'}>
         {/* Duplicate button */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant='ghost' size='icon' onClick={handleDuplicate}>
-              <DuplicateIcon className='h-5 w-5' />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side='top'>{t('calendar.duplicateEvent')}</TooltipContent>
-        </Tooltip>
+        {!readOnly && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant='ghost' size='icon' onClick={handleDuplicate}>
+                <DuplicateIcon className='h-5 w-5' />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side='top'>{t('calendar.duplicateEvent')}</TooltipContent>
+          </Tooltip>
+        )}
         {/* Delete button */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant='ghost' size='icon' className='hover:text-text-error' onClick={handleDelete}>
-              <DeleteIcon className='h-5 w-5' />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side='top'>{t('calendar.deleteEvent')}</TooltipContent>
-        </Tooltip>
+        {!readOnly && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant='ghost' size='icon' className='hover:text-text-error' onClick={handleDelete}>
+                <DeleteIcon className='h-5 w-5' />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side='top'>{t('calendar.deleteEvent')}</TooltipContent>
+          </Tooltip>
+        )}
 
         {/* Open page button */}
         <Tooltip>

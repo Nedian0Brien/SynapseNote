@@ -5,13 +5,13 @@ import isURL from 'validator/lib/isURL';
 
 import { GalleryLayout } from '@/application/types';
 import { ReactComponent as GalleryIcon } from '@/assets/icons/gallery.svg';
+import { GalleryPreview } from '@/components/_shared/gallery-preview';
+import { notify } from '@/components/_shared/notify';
 import Carousel from '@/components/editor/components/blocks/gallery/Carousel';
 import GalleryToolbar from '@/components/editor/components/blocks/gallery/GalleryToolbar';
 import ImageGallery from '@/components/editor/components/blocks/gallery/ImageGallery';
 import { EditorElementProps, GalleryBlockNode } from '@/components/editor/editor.type';
 import { useEditorContext } from '@/components/editor/EditorContext';
-import { GalleryPreview } from '@/components/_shared/gallery-preview';
-import { notify } from '@/components/_shared/notify';
 import { copyTextToClipboard } from '@/utils/copy';
 import { getConfigValue } from '@/utils/runtime-config';
 
@@ -31,23 +31,31 @@ const GalleryBlock = memo(
     }, [attributes.className]);
 
     const photos = useMemo(() => {
-      return images.map((image) => {
-        let imageUrl = image.url;
+      return images
+        .map((image) => {
+          let imageUrl = image.url;
 
-        if (!isURL(image.url)) {
-          imageUrl = getConfigValue('APPFLOWY_BASE_URL', '') + '/api/file_storage/' + workspaceId + '/v1/blob/' + image.url;
-        }
+          if (!imageUrl) return null;
+          if (!isURL(image.url)) {
+            imageUrl =
+              getConfigValue('APPFLOWY_BASE_URL', '') + '/api/file_storage/' + workspaceId + '/v1/blob/' + image.url;
+          }
 
-        const url = new URL(imageUrl);
+          const url = new URL(imageUrl);
 
-        url.searchParams.set('auto', 'format');
-        url.searchParams.set('fit', 'crop');
-        return {
-          src: imageUrl,
-          thumb: url.toString() + '&w=240&q=80',
-          responsive: [url.toString() + '&w=480&q=80 480', url.toString() + '&w=800&q=80 800'].join(', '),
-        };
-      });
+          url.searchParams.set('auto', 'format');
+          url.searchParams.set('fit', 'crop');
+          return {
+            src: imageUrl,
+            thumb: url.toString() + '&w=240&q=80',
+            responsive: [url.toString() + '&w=480&q=80 480', url.toString() + '&w=800&q=80 800'].join(', '),
+          };
+        })
+        .filter(Boolean) as {
+        src: string;
+        thumb: string;
+        responsive: string;
+      }[];
     }, [images, workspaceId]);
 
     const handleOpenPreview = useCallback(() => {

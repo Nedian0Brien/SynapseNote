@@ -1,10 +1,11 @@
 import { DateSelectArg, EventDropArg } from '@fullcalendar/core';
 import { EventResizeDoneArg } from '@fullcalendar/interaction';
+import dayjs from 'dayjs';
 import { useCallback } from 'react';
 
 
 import { useCalendarLayoutSetting, useCreateCalendarEvent, useUpdateStartEndTimeCell } from '@/application/database-yjs';
-import { dateToUnixTimestamp, correctAllDayEndForStorage } from '@/utils/time';
+import { correctAllDayEndForStorage, dateToUnixTimestamp } from '@/utils/time';
 
 import { CalendarViewType } from '../types';
 
@@ -14,8 +15,9 @@ import { CalendarViewType } from '../types';
  */
 export function useCalendarEvents() {
   const calendarSetting = useCalendarLayoutSetting();
-  const fieldId = calendarSetting.fieldId;
-  const createCalendarEvent = useCreateCalendarEvent(fieldId);
+  const fieldId = calendarSetting?.fieldId || '';
+
+  const createCalendarEvent = useCreateCalendarEvent();
   const updateCell = useUpdateStartEndTimeCell();
 
   // Create a function that can update any event's time directly
@@ -41,12 +43,19 @@ export function useCalendarEvents() {
           throw new Error('Invalid event ID format');
         }
 
+        const start = dropInfo.event.start;
+
+        if (!start) {
+          throw new Error('Invalid event start date');
+        }
+
         // Convert dates to Unix timestamps
-        const startTimestamp = dateToUnixTimestamp(dropInfo.event.start!);
+        const startTimestamp = dateToUnixTimestamp(start);
         const isAllDay = dropInfo.event.allDay;
         
         // For all-day events, correct end time for storage if needed
-        const endDate = dropInfo.event.end;
+        const endDate = dropInfo.event.end ? dropInfo.event.end : dayjs(new Date(start)).add(1, 'hour').toDate();
+
         const correctedEndDate = isAllDay && endDate ? correctAllDayEndForStorage(endDate) : endDate;
         const endTimestamp = correctedEndDate ? dateToUnixTimestamp(correctedEndDate) : undefined;
 

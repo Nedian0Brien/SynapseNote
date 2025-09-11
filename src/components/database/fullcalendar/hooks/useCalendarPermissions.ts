@@ -12,7 +12,7 @@ import { YjsDatabaseKey } from '@/application/types';
 export function useCalendarPermissions() {
   const readOnly = useReadOnly();
   const calendarSetting = useCalendarLayoutSetting();
-  const { field: layoutField } = useFieldSelector(calendarSetting.fieldId);
+  const { field: layoutField } = useFieldSelector(calendarSetting?.fieldId || '');
   const newRowDispatch = useNewRowDispatch();
 
   // Get field type

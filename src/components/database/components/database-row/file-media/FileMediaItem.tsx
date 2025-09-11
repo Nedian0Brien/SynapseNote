@@ -48,7 +48,7 @@ function FileMediaItem({
   }, [file.file_type]);
 
   const fileUrl = useMemo(() => {
-    if (isURL(file.url)) {
+    if (file.url && isURL(file.url)) {
       return file.url;
     }
 
@@ -65,7 +65,7 @@ function FileMediaItem({
         e.stopPropagation();
         // Open the file in a new tab
         if (file.file_type !== FileMediaType.Image) {
-          if (isURL(file.url)) {
+          if (file.url && isURL(file.url)) {
             void openUrl(file.url, '_blank');
             return;
           }

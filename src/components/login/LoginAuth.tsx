@@ -1,11 +1,11 @@
 import { getRedirectTo } from '@/application/session/sign_in';
 import { NormalModal } from '@/components/_shared/modal';
 import { AFConfigContext } from '@/components/main/app.hooks';
-import LinearBuffer from '@/components/login/LinearBuffer';
 import { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { ReactComponent as ErrorIcon } from '@/assets/icons/error.svg';
+import { WorkspaceLoadingAnimation } from '@/components/app/WorkspaceLoadingAnimation';
 
 function LoginAuth () {
   const service = useContext(AFConfigContext)?.service;
@@ -36,7 +36,7 @@ function LoginAuth () {
     <>
       {loading ? (
         <div className={'flex h-screen w-screen items-center justify-center p-20'}>
-          <LinearBuffer />
+          <WorkspaceLoadingAnimation />
         </div>
       ) : null}
       <NormalModal

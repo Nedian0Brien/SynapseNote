@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react';
 
+import { useCalendarLayoutSetting } from '@/application/database-yjs';
+
 import { CalendarViewType } from '../types';
 
 import type { CalendarApi } from '@fullcalendar/core';
@@ -10,6 +12,9 @@ import type { CalendarApi } from '@fullcalendar/core';
  */
 export function useCurrentTimeIndicator(calendarApi: CalendarApi | null, currentView: CalendarViewType) {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const isCurrentWeekRef = useRef(false);
+  const setting = useCalendarLayoutSetting();
 
   useEffect(() => {
     if (!calendarApi || currentView !== CalendarViewType.TIME_GRID_WEEK) {
@@ -32,33 +37,74 @@ export function useCurrentTimeIndicator(calendarApi: CalendarApi | null, current
       return;
     }
 
+    const isCurrentWeek = () => {
+      if (!calendarApi) return false;
+
+      const now = new Date();
+      const currentViewStart = calendarApi.view.activeStart;
+      const currentViewEnd = calendarApi.view.activeEnd;
+
+      // Check if current time falls within the displayed week range
+      return now >= currentViewStart && now < currentViewEnd;
+    };
+
     const updateTimeLabel = () => {
-      // Find FullCalendar's native now indicator arrow element
-      const nowIndicatorArrow = document.querySelector('.fc-timegrid-now-indicator-arrow') as HTMLElement;
-      
-      if (nowIndicatorArrow) {
-        // Get current time
-        const now = new Date();
-        const timeString = now.toLocaleTimeString('en-US', {
-          hour: 'numeric',
-          minute: '2-digit',
-          hour12: true
-        });
-        const [time, period] = timeString.split(' ');
+      // Check if we're viewing the current week
+      if (!isCurrentWeek()) {
+        isCurrentWeekRef.current = false;
+        // Remove horizontal line if not in current week
+        const existingLine = document.querySelector('.custom-now-indicator-line');
+
+        if (existingLine) {
+          existingLine.remove();
+          // Reset time slot visibility on unmount
+          resetTimeSlotVisibility();
+        }
 
 
-        // Set the content directly to the arrow element
-        nowIndicatorArrow.innerHTML = `<span class="font-medium mr-0.5">${time}</span><span class="font-normal">${period}</span>`;
-
-        // Handle dynamic time slot visibility
-        handleTimeSlotVisibility(now);
-
-        // Create or update the horizontal line across the week view
-        createHorizontalTimeLine(nowIndicatorArrow);
+        return;
       }
+
+      isCurrentWeekRef.current = true;
+
+      // We're in the current week, try to find and update the time indicator
+      const tryUpdateTimeIndicator = (retryCount = 0) => {
+        const nowIndicatorArrow = document.querySelector('.fc-timegrid-now-indicator-arrow') as HTMLElement;
+
+        if (nowIndicatorArrow) {
+          // Get current time
+          const now = new Date();
+          const timeString = now.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: !setting?.use24Hour
+          });
+          const [time, period] = timeString.split(' ');
+          // Set the content directly to the arrow element
+
+          if (period) {
+            nowIndicatorArrow.innerHTML = `<span class="font-medium mr-0.5">${time}</span><span class="font-normal">${period}</span>`;
+
+          } else {
+            nowIndicatorArrow.innerHTML = `<span class="font-medium">${time}</span>`;
+          }
+
+          // Handle dynamic time slot visibility
+          handleTimeSlotVisibility(now);
+
+          // Create or update the horizontal line across the week view
+          createHorizontalTimeLine(nowIndicatorArrow);
+        } else if (retryCount < 3) {
+          // Retry after a short delay if element not found yet
+          setTimeout(() => tryUpdateTimeIndicator(retryCount + 1), 100);
+        }
+      };
+
+      tryUpdateTimeIndicator();
     };
 
     const handleTimeSlotVisibility = (currentTime: Date) => {
+      if (!isCurrentWeekRef.current) return;
       const currentHour = currentTime.getHours();
       const currentMinute = currentTime.getMinutes();
 
@@ -148,16 +194,25 @@ export function useCurrentTimeIndicator(calendarApi: CalendarApi | null, current
     // Initial update
     updateTimeLabel();
 
-    // Update 15s to keep the time accurate
+    // Update every 15s to keep the time accurate
     intervalRef.current = setInterval(updateTimeLabel, 15000);
+
+    // Listen for date range changes (when user navigates to different weeks)
+    const handleDatesSet = () => {
+      updateTimeLabel();
+    };
+
+    calendarApi.on('datesSet', handleDatesSet);
 
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
+
+      calendarApi.off('datesSet', handleDatesSet);
     };
-  }, [calendarApi, currentView]);
+  }, [calendarApi, currentView, setting]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -186,11 +241,7 @@ export function useCurrentTimeIndicator(calendarApi: CalendarApi | null, current
       const timeSlot = document.querySelector(`[data-time="${timeString}"]`) as HTMLElement;
 
       if (timeSlot) {
-        const timeLabel = timeSlot.querySelector('.fc-timegrid-slot-label') as HTMLElement;
-
-        if (timeLabel) {
-          timeLabel.style.opacity = '1';
-        }
+        timeSlot.classList.remove('hidden-text');
       }
     }
   };

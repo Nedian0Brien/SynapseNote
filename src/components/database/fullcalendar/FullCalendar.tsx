@@ -43,6 +43,20 @@ function Calendar() {
   const [slideDirection, setSlideDirection] = useState<'up' | 'down' | null>(null);
   const prevMonthRef = useRef('');
 
+  // Drag state management
+  const [draggingRowId, setDraggingRowId] = useState<string | null>(null);
+
+  // Drag handlers
+  const handleDragStart = useCallback((rowId: string) => {
+    console.debug('🎯 Drag started for rowId:', rowId);
+    setDraggingRowId(rowId);
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    console.debug('🎯 Drag ended');
+    setDraggingRowId(null);
+  }, []);
+
   // Mobile detection
   const [isMobile, setIsMobile] = useState(false);
 
@@ -55,7 +69,6 @@ function Calendar() {
 
   // Handle calendar data changes from CalendarContent
   const handleCalendarDataChange = useCallback((data: CalendarData) => {
-    // 当calendar数据变化时，检查月份变化并设置动画方向
     if (data.calendarApi) {
       const currentDate = dayjs(data.calendarApi.getDate());
       const currentMonth = currentDate.format('MMMM YYYY');
@@ -98,6 +111,9 @@ function Calendar() {
             onViewChange={calendarData.handleViewChange}
             slideDirection={slideDirection}
             emptyEvents={calendarData.emptyEvents}
+            onDragStart={handleDragStart}
+            draggingRowId={draggingRowId}
+            onDragEnd={handleDragEnd}
           />
         </div>
       )}
@@ -113,7 +129,11 @@ function Calendar() {
       )}
 
       {/* Calendar content without toolbar */}
-      <CalendarContent onDataChange={handleCalendarDataChange} normalToolbarRef={normalToolbarRef} />
+      <CalendarContent
+        onDataChange={handleCalendarDataChange}
+        normalToolbarRef={normalToolbarRef}
+        onDragEnd={handleDragEnd}
+      />
 
       {/* Sticky toolbar and week header via DatabaseStickyTopOverlay */}
       {calendarData?.showStickyToolbar && (
@@ -124,6 +144,9 @@ function Calendar() {
             onViewChange={calendarData.handleViewChange}
             slideDirection={slideDirection}
             emptyEvents={calendarData.emptyEvents}
+            onDragStart={handleDragStart}
+            draggingRowId={draggingRowId}
+            onDragEnd={handleDragEnd}
           />
           <StickyWeekHeader
             headerCells={calendarData.weekHeaderCells}

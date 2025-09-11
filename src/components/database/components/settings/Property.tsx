@@ -126,7 +126,7 @@ function Property({
       }}
       className={cn('relative', state.type === DragState.DRAGGING && 'opacity-40')}
     >
-      <div ref={dragHandleRef} className={'flex w-full items-center gap-[10px] overflow-hidden'}>
+      <div ref={dragHandleRef} className={'flex w-full cursor-grab items-center gap-[10px] overflow-hidden'}>
         <DragIcon className={'!text-icon-secondary'} />
         <Tooltip delayDuration={1000}>
           <TooltipTrigger className={'w-full overflow-hidden text-left'}>

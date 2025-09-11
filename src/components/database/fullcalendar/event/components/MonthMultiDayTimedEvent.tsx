@@ -3,6 +3,7 @@ import dayjs from 'dayjs';
 import { useCallback } from 'react';
 
 import { cn } from '@/lib/utils';
+import { useTimeFormat } from '@/components/database/fullcalendar/hooks';
 
 import { EventIconButton } from './EventIconButton';
 
@@ -15,17 +16,6 @@ interface MonthMultiDayTimedEventProps {
   rowId: string;
 }
 
-const formatTimeDisplay = (date: Date): string => {
-  const time = dayjs(date);
-  const minutes = time.minute();
-
-  if (minutes === 0) {
-    return time.format('h A').toLowerCase();
-  } else {
-    return time.format('h:mm A').toLowerCase();
-  }
-};
-
 export function MonthMultiDayTimedEvent({
   event,
   eventInfo,
@@ -34,6 +24,7 @@ export function MonthMultiDayTimedEvent({
   className,
   rowId,
 }: MonthMultiDayTimedEventProps) {
+  const { formatTimeDisplay } = useTimeFormat();
   const isEventStart = eventInfo.isStart;
   const isEventEnd = eventInfo.isEnd;
 
@@ -121,12 +112,16 @@ export function MonthMultiDayTimedEvent({
         <div className='event-inner flex h-full max-h-full w-full flex-1 flex-col justify-center overflow-hidden'>
           <div className='flex h-full items-center gap-1 truncate'>
             {isEventStart && event.start && (
-              <span className='time-slot shrink-0 text-xs text-text-secondary'>{formatTimeDisplay(event.start)}</span>
+              <span className='time-slot shrink-0 text-xs font-normal text-other-colors-text-event'>
+                {formatTimeDisplay(event.start)}
+              </span>
             )}
             {isEventEnd && event.end && !isEventStart && (
-              <span className='time-slot shrink-0 text-xs text-text-secondary'>{formatTimeDisplay(event.end)}</span>
+              <span className='time-slot shrink-0 text-xs font-normal text-other-colors-text-event'>
+                {formatTimeDisplay(event.end)}
+              </span>
             )}
-            <EventIconButton rowId={rowId} />
+            <EventIconButton className='event-time-icon' rowId={rowId} />
             <span className='min-w-[28px] flex-1 truncate'>{getDisplayContent()}</span>
           </div>
         </div>

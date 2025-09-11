@@ -18,11 +18,11 @@ export const dayCellContent = (args: DayCellContentArgs) => {
   
   return (
     <div className='flex items-center gap-1'>
-      {(dayNumber === 1 || isPopover) ? monthName : null}
+      {dayNumber === 1 || isPopover ? monthName : null}
       <span
         className={cn(
           isToday
-            ? 'flex h-5 w-5 items-center justify-center rounded-200 bg-other-colors-filled-today text-text-on-fill'
+            ? 'flex h-5 w-5 items-center justify-center rounded-200 bg-other-colors-filled-today text-text-inverse'
             : ''
         )}
       >

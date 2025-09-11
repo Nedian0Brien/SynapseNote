@@ -14,7 +14,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const properties = [
   FieldType.RichText,
@@ -93,7 +93,9 @@ export function PropertySelectTrigger({ fieldId, disabled }: { fieldId: string; 
                     <FieldLabel type={property} />
                   </DropdownMenuItem>
                 </TooltipTrigger>
-                <TooltipContent side={'left'}>{propertyTooltip[property]}</TooltipContent>
+                <TooltipContent side={'left'} className='whitespace-pre-wrap break-words'>
+                  {propertyTooltip[property]}
+                </TooltipContent>
               </Tooltip>
             ))}
           </DropdownMenuSubContent>

@@ -98,12 +98,11 @@ export function WeekAllDayEvent({
         'event-content relative flex h-full max-h-full min-h-[22px] w-full cursor-pointer flex-col items-center overflow-hidden text-xs font-medium hover:bg-other-colors-filled-event-hover',
         'bg-other-colors-filled-event text-other-colors-text-event',
         'transition-shadow duration-200',
-        'flex border border-transparent',
-        segmentConfig.leftArrow ? 'left-arrow pl-2' : 'pl-1',
-        segmentConfig.rightArrow ? 'right-arrow pr-2.5' : 'pr-1',
+        'flex border border-transparent pl-0.5',
+        segmentConfig.leftArrow ? 'left-arrow pl-2' : 'pl-0.5',
+        segmentConfig.rightArrow ? 'right-arrow pr-2.5' : 'pr-0.5',
         'py-0',
         segmentConfig.className,
-        'pl-1.5',
         className
       )}
       onClick={handleClick}
@@ -119,7 +118,7 @@ export function WeekAllDayEvent({
       }}
     >
       <div className='relative flex h-full max-h-full w-full flex-1 items-center gap-1 overflow-hidden'>
-        {showLeftIndicator && !hideLine && <div className='event-line h-4 w-1 rounded-200 bg-fill-theme-thick' />}
+        {showLeftIndicator && !hideLine && <div className='event-line h-4 w-[3px] rounded-200 bg-fill-theme-thick' />}
         <div className='event-inner flex h-full max-h-full w-full flex-1 flex-col justify-center overflow-hidden'>
           {renderAllDayEvent}
         </div>

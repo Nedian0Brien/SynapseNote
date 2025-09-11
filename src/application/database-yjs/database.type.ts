@@ -66,6 +66,7 @@ export interface CalendarLayoutSetting {
   showWeekends: boolean;
   layout: CalendarLayout;
   numberOfDays: number;
+  use24Hour: boolean;
 }
 
 export enum RowMetaKey {

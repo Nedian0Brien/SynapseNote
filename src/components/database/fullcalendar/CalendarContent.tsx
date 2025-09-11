@@ -24,6 +24,7 @@ import {
   useDynamicDayMaxEventRows,
   useScrollDetection,
   useScrollNavigation,
+  useTimeFormat,
 } from '@/components/database/fullcalendar/hooks';
 import { dayCellContent } from '@/components/database/fullcalendar/utils/dayCellContent';
 import { dateToUnixTimestamp } from '@/utils/time';
@@ -81,23 +82,44 @@ interface CalendarContentData {
 interface CalendarContentProps {
   onDataChange?: (data: CalendarContentData) => void;
   normalToolbarRef?: React.RefObject<HTMLDivElement>;
+  onDragEnd?: () => void;
 }
 
 /**
  * Inner calendar component that uses the popover context
  */
-export function CalendarContent({ onDataChange, normalToolbarRef }: CalendarContentProps) {
+export function CalendarContent({ onDataChange, normalToolbarRef, onDragEnd }: CalendarContentProps) {
   // State to track newly created events
   const [newEventRowIds, setNewEventRowIds] = useState<Set<string>>(new Set());
   const [openEventRowId, setOpenEventRowId] = useState<string | null>(null);
   const [updateEventRowIds, setUpdateEventRowIds] = useState<Set<string>>(new Set());
 
+  // Calendar handlers and state
+  const {
+    currentView,
+    calendarTitle,
+    handleViewChange,
+    handleDatesSet,
+    handleMoreLinkClick,
+    handleEventDrop,
+    handleEventResize,
+    handleSelect: originalHandleSelect,
+    handleAdd: originalHandleAdd,
+    updateEventTime,
+    morelinkInfo,
+    closeMorePopover,
+  } = useCalendarHandlers();
+
   // Get calendar data and setup
   const { events, emptyEvents, firstDayOfWeek } = useFullCalendarSetup(
     newEventRowIds,
     openEventRowId,
-    updateEventRowIds
+    updateEventRowIds,
+    currentView
   );
+
+  // Time formatting hook
+  const { formatSlotLabel } = useTimeFormat();
   const { paddingStart, paddingEnd, isDocumentBlock, onRendered } = useDatabaseContext();
   const conditionsContext = useConditionsContext();
   const expanded = conditionsContext?.expanded ?? false;
@@ -143,22 +165,6 @@ export function CalendarContent({ onDataChange, normalToolbarRef }: CalendarCont
       return newSet;
     });
   }, []);
-
-  // Calendar handlers and state
-  const {
-    currentView,
-    calendarTitle,
-    handleViewChange,
-    handleDatesSet,
-    handleMoreLinkClick,
-    handleEventDrop,
-    handleEventResize,
-    handleSelect: originalHandleSelect,
-    handleAdd: originalHandleAdd,
-    updateEventTime,
-    morelinkInfo,
-    closeMorePopover,
-  } = useCalendarHandlers();
 
   // Wrap handleAdd to mark event as new after creating
   const handleAdd = useCallback(
@@ -268,13 +274,17 @@ export function CalendarContent({ onDataChange, normalToolbarRef }: CalendarCont
         // Remove the external event since we'll show our own calendar event
         receiveInfo.revert();
 
+        // Reset drag state after successful drop
+        onDragEnd?.();
+
         console.debug('📅 NoDateRow successfully converted to calendar event');
       } catch (error) {
         console.error('❌ Failed to handle external event receive:', error);
         receiveInfo.revert();
+        onDragEnd?.(); // Also reset on error
       }
     },
-    [updateEventTime]
+    [updateEventTime, onDragEnd]
   );
 
   // No need for manual drop target setup - FullCalendar handles this with droppable: true
@@ -364,15 +374,6 @@ export function CalendarContent({ onDataChange, normalToolbarRef }: CalendarCont
   // Memoized calendar plugins array
   const calendarPlugins = useMemo(() => [dayGridPlugin, timeGridPlugin, interactionPlugin], []);
 
-  // Memoized slot label format
-  const slotLabelFormat = useMemo(
-    () => ({
-      hour: 'numeric' as const,
-      meridiem: 'short' as const,
-    }),
-    []
-  );
-
   // Memoized day header format for week view
   const dayHeaderFormat = useMemo(
     () =>
@@ -386,18 +387,7 @@ export function CalendarContent({ onDataChange, normalToolbarRef }: CalendarCont
   );
 
   // Memoized slot label content component
-  const slotLabelContent = useCallback((args: { date: Date }) => {
-    const hour = args.date.getHours();
-    const period = hour >= 12 ? 'PM' : 'AM';
-    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-
-    return (
-      <span>
-        <span className='text-number mr-1'>{displayHour}</span>
-        <span className='text-slot'>{period}</span>
-      </span>
-    );
-  }, []);
+  const slotLabelContent = useCallback((args: { date: Date }) => formatSlotLabel(args.date), [formatSlotLabel]);
 
   // Memoized day header content for week view
   const dayHeaderContent = useCallback(
@@ -519,10 +509,10 @@ export function CalendarContent({ onDataChange, normalToolbarRef }: CalendarCont
     >
       <div ref={setContainerRef} style={containerStyle} className={containerClassName}>
         <FullCalendar
+          initialView={currentView}
           viewDidMount={updateDayMaxEventRows}
           ref={calendarRef}
           plugins={calendarPlugins}
-          initialView={CalendarViewType.DAY_GRID_MONTH}
           headerToolbar={false}
           dayHeaders={false}
           events={events}
@@ -537,7 +527,6 @@ export function CalendarContent({ onDataChange, normalToolbarRef }: CalendarCont
           slotMaxTime='24:00:00'
           snapDuration='00:30:00'
           slotDuration='00:30:00'
-          slotLabelFormat={slotLabelFormat}
           slotLabelContent={slotLabelContent}
           dayHeaderFormat={currentView === CalendarViewType.TIME_GRID_WEEK ? dayHeaderFormat : undefined}
           dayHeaderContent={currentView === CalendarViewType.TIME_GRID_WEEK ? dayHeaderContent : undefined}
@@ -549,7 +538,7 @@ export function CalendarContent({ onDataChange, normalToolbarRef }: CalendarCont
           moreLinkContent={renderMoreLinkContent}
           dayPopoverFormat={dayPopoverFormat}
           // eslint-disable-next-line
-          eventOrder={eventOrder as any}
+          eventOrder={currentView === CalendarViewType.TIME_GRID_WEEK ? ['start', 'title'] : (eventOrder as any)}
           eventOrderStrict={false}
           editable={permissions.editable}
           selectable={permissions.selectable}

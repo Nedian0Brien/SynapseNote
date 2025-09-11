@@ -1,10 +1,10 @@
-import { RepeatedChatMessage } from '@/components/chat';
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import dayjs from 'dayjs';
 import { omit } from 'lodash-es';
 import { nanoid } from 'nanoid';
 
 import { GlobalComment, Reaction } from '@/application/comment.type';
+import { ERROR_CODE } from '@/application/constants';
 import { initGrantService, refreshToken } from '@/application/services/js-services/http/gotrue';
 import { blobToBytes } from '@/application/services/js-services/http/utils';
 import { AFCloudConfig } from '@/application/services/services.type';
@@ -58,6 +58,7 @@ import {
   WorkspaceMember,
 } from '@/application/types';
 import { notify } from '@/components/_shared/notify';
+import { RepeatedChatMessage } from '@/components/chat';
 
 export * from './gotrue';
 
@@ -118,7 +119,7 @@ export function initAPIService(config: AFCloudConfig) {
     }
   );
 
-  axiosInstance.interceptors.response.use(async (response) => {
+  const handleUnauthorized = async (response: AxiosResponse) => {
     const status = response.status;
 
     if (status === 401) {
@@ -139,7 +140,9 @@ export function initAPIService(config: AFCloudConfig) {
     }
 
     return response;
-  });
+  };
+
+  axiosInstance.interceptors.response.use(undefined, handleUnauthorized);
 }
 
 export async function signInWithUrl(url: string) {
@@ -229,6 +232,11 @@ export async function getCurrentUser(): Promise<User> {
       latestWorkspaceId: data.data.latest_workspace_id,
       metadata: metadata || {},
     };
+  }
+
+  if (data?.code === ERROR_CODE.USER_UNAUTHORIZED) {
+    invalidToken();
+    return Promise.reject(new Error('User unauthorized'));
   }
 
   return Promise.reject(data);

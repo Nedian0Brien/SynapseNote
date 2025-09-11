@@ -20,7 +20,7 @@ function UnPreviewFile({ file }: { file: FileMediaCellDataItem }) {
           className={'cursor-pointer rounded-[4px] bg-fill-content-hover text-icon-secondary'}
           onClick={(e) => {
             e.stopPropagation();
-            if (isURL(file.url)) {
+            if (file.url && isURL(file.url)) {
               void openUrl(file.url, '_blank');
               return;
             }

@@ -11,7 +11,8 @@ function PreviewImage({ file, onClick }: { file: FileMediaCellDataItem; onClick:
   const thumb = useMemo(() => {
     let fileUrl = file.url;
 
-    if (!isURL(file.url)) {
+    if (!fileUrl) return '';
+    if (!isURL(fileUrl)) {
       fileUrl = getConfigValue('APPFLOWY_BASE_URL', '') + '/api/file_storage/' + workspaceId + '/v1/blob/' + file.url;
     }
 

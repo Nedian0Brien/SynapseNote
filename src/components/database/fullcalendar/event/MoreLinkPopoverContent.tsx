@@ -1,21 +1,25 @@
 import { CalendarApi, EventContentArg, MoreLinkArg } from "@fullcalendar/core";
 import { Draggable } from "@fullcalendar/interaction";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from 'react';
 
-import { ReactComponent as CloseIcon } from "@/assets/icons/close.svg";
-import { dayCellContent } from "@/components/database/fullcalendar/utils/dayCellContent";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { ReactComponent as CloseIcon } from '@/assets/icons/close.svg';
+import { dayCellContent } from '@/components/database/fullcalendar/utils/dayCellContent';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
-import EventWithPopover from "./EventWithPopover";
+import EventWithPopover from './EventWithPopover';
 
-
-export function MoreLinkPopoverContent({moreLinkInfo, calendar, onClose}: {
+export function MoreLinkPopoverContent({
+  moreLinkInfo,
+  calendar,
+  onClose,
+}: {
   moreLinkInfo: MoreLinkArg;
   calendar: CalendarApi;
   onClose: () => void;
 }) {
   const { allSegs, date, view, hiddenSegs } = moreLinkInfo;
+  const [hoverEvent, setHoverEvent] = useState<string | null>(null);
 
   const dragContainerRef = useRef<HTMLDivElement>(null);
   // Use dayCellContent for consistent date formatting
@@ -49,6 +53,16 @@ export function MoreLinkPopoverContent({moreLinkInfo, calendar, onClose}: {
     };
   }, []);
 
+  useEffect(() => {
+    if (hiddenSegs && hiddenSegs.length) {
+      setHoverEvent(hiddenSegs[0].event.extendedProps.rowId);
+
+      setTimeout(() => {
+        setHoverEvent(null);
+      }, 1000);
+    }
+  }, [hiddenSegs]);
+
   return (
     <>
       <div className='relative mb-2 px-3 pt-2 text-sm font-medium text-text-title'>
@@ -64,9 +78,6 @@ export function MoreLinkPopoverContent({moreLinkInfo, calendar, onClose}: {
         className='appflowy-scroller  flex max-h-[140px] flex-col gap-0.5 overflow-y-auto px-2 pb-2'
       >
         {allSegs.map((seg) => {
-          // Check if this segment is the first hidden segment
-          const isHiddenFirst = hiddenSegs.length > 0 && hiddenSegs[0].event.id === seg.event.id;
-
           // Construct EventContentArg-like object for EventWithPopover
           const eventInfo: EventContentArg = {
             event: seg.event,
@@ -91,10 +102,14 @@ export function MoreLinkPopoverContent({moreLinkInfo, calendar, onClose}: {
           return (
             <div
               key={seg.event.id}
-              className={cn('fc-event fc-event-draggable w-full', event.classNames)}
+              className={cn(
+                'fc-event fc-event-draggable fc-popover-event w-full transform transition-all duration-200',
+                hoverEvent === seg.event.extendedProps.rowId && 'event-hovered opacity-50',
+                event.classNames
+              )}
               data-row-id={seg.event.extendedProps.rowId}
             >
-              <EventWithPopover event={event} eventInfo={eventInfo} isWeekView={false} isHiddenFirst={isHiddenFirst} />
+              <EventWithPopover event={event} eventInfo={eventInfo} isWeekView={false} />
             </div>
           );
         })}

@@ -1212,7 +1212,11 @@ export function useNewRowDispatch() {
           }
       >;
       tailing?: boolean;
-    }) => {
+      }) => {
+      if (!currentView) {
+        throw new Error('Current view not found');
+      }
+
       if (!createRow) {
         throw new Error('No createRow function');
       }
@@ -1229,8 +1233,6 @@ export function useNewRowDispatch() {
 
         const cells = row.get(YjsDatabaseKey.cells);
 
-
-
         if (filters) {
           filters.toArray().forEach((filter) => {
             const cell = new Y.Map() as YDatabaseCell;
@@ -1241,7 +1243,7 @@ export function useNewRowDispatch() {
               return;
             }
 
-            if (isCalendar && calendarSetting.fieldId === fieldId) {
+            if (isCalendar && calendarSetting?.fieldId === fieldId) {
               shouldOpenRowModal = true;
             }
 
@@ -1344,12 +1346,16 @@ export function useNewRowDispatch() {
 
       return rowId;
     },
-    [calendarSetting.fieldId, createRow, database, filters, guid, isCalendar, navigateToRow, sharedRoot, viewId]
+    [calendarSetting, createRow, currentView, database, filters, guid, isCalendar, navigateToRow, sharedRoot, viewId]
   );
 }
 
-export function useCreateCalendarEvent(fieldId: string) {
+export function useCreateCalendarEvent() {
   const newRowDispatch = useNewRowDispatch();
+  const currentView = useDatabaseView();
+  const defaultTimeSetting = useDefaultTimeSetting();
+  const enhanceCalendarLayoutByFieldExists = useEnhanceCalendarLayoutByFieldExists();
+  const calendarSetting = useCalendarLayoutSetting();
 
   return useCallback(
     async ({
@@ -1361,10 +1367,46 @@ export function useCreateCalendarEvent(fieldId: string) {
       endTimestamp?: string;
       includeTime?: boolean;
     }) => {
+      if (!currentView) {
+        throw new Error('Current view not found');
+      }
+
+      // Create or ensure correct date field before creating the event
+      const fieldOrders = currentView.get(YjsDatabaseKey.field_orders);
+      const validFieldId = () => {
+        if (!calendarSetting || !calendarSetting.fieldId) {
+          return false;
+        }
+
+        return fieldOrders.toArray().some((fieldOrder) => fieldOrder.id === calendarSetting.fieldId);
+      }
+
+      let finalFieldId = calendarSetting?.fieldId;
+
+      if (!validFieldId()) {
+        const dateField: YDatabaseField | undefined = enhanceCalendarLayoutByFieldExists(fieldOrders);
+        const createdFieldId = dateField?.get(YjsDatabaseKey.id);
+
+        if (!createdFieldId) {
+          throw new Error(`Date field not found`);
+        }
+
+        const newCalendarSetting = generateCalendarLayoutSettings(createdFieldId, defaultTimeSetting);
+
+        currentView.set(YjsDatabaseKey.layout_settings, newCalendarSetting);
+
+        // Use the created field ID for the event
+        finalFieldId = createdFieldId;
+      }
+
+      if (!finalFieldId) {
+        throw new Error(`Field ID not found`);
+      }
+
       const rowId = await newRowDispatch({
         tailing: true,
         cellsData: {
-          [fieldId]: {
+          [finalFieldId]: {
             data: startTimestamp,
             endTimestamp,
             isRange: !!endTimestamp,
@@ -1375,7 +1417,7 @@ export function useCreateCalendarEvent(fieldId: string) {
 
       return rowId;
     },
-    [fieldId, newRowDispatch]
+    [newRowDispatch, currentView, defaultTimeSetting, enhanceCalendarLayoutByFieldExists, calendarSetting]
   );
 }
 
@@ -2158,11 +2200,67 @@ function generateCalendarLayoutSettings(fieldId: FieldId, defaultTimeSetting: De
   return layoutSettings;
 }
 
+function useEnhanceCalendarLayoutByFieldExists() {
+  const database = useDatabase();
+  const fields = database.get(YjsDatabaseKey.fields);
+
+  const sharedRoot = useSharedRoot();
+
+  return useCallback((fieldOrders: YDatabaseFieldOrders) => {
+    // find date field in all views
+    let dateField: YDatabaseField | undefined;
+
+    fieldOrders.forEach((fieldOrder) => {
+      const field = fields?.get(fieldOrder.id);
+
+      if (
+        !dateField &&
+        [FieldType.DateTime].includes(
+          Number(field?.get(YjsDatabaseKey.type))
+        )
+      ) {
+        dateField = field;
+      }
+    });
+
+    // if no date field, create a new one
+    if (!dateField) {
+      const fieldId = nanoid(6);
+
+      dateField = createField(FieldType.DateTime, fieldId);
+
+      const typeOptionMap = generateDateTimeFieldTypeOptions();
+
+      dateField.set(YjsDatabaseKey.type_option, typeOptionMap);
+      fields.set(fieldId, dateField);
+
+      executeOperationWithAllViews(
+        sharedRoot,
+        database,
+        (view) => {
+          const fieldOrders = view?.get(YjsDatabaseKey.field_orders);
+
+          fieldOrders.push([
+            {
+              id: fieldId,
+            },
+          ]);
+        },
+        'newDateTimeField'
+      );
+    }
+
+    return dateField;
+  }, [database, fields, sharedRoot])
+
+}
+
 export function useAddDatabaseView() {
   const { iidIndex, createFolderView } = useDatabaseContext();
   const database = useDatabase();
   const sharedRoot = useSharedRoot();
 
+  const enhanceCalendarLayoutByFieldExists = useEnhanceCalendarLayoutByFieldExists();
   const defaultTimeSetting = useDefaultTimeSetting();
 
   return useCallback(
@@ -2194,52 +2292,10 @@ export function useAddDatabaseView() {
       const refView = database.get(YjsDatabaseKey.views)?.get(iidIndex);
       const refRowOrders = refView.get(YjsDatabaseKey.row_orders);
       const refFieldOrders = refView.get(YjsDatabaseKey.field_orders);
-      const fields = database.get(YjsDatabaseKey.fields);
 
       // find date field in all views
-      let dateField: YDatabaseField | undefined;
+      const dateField: YDatabaseField | undefined = enhanceCalendarLayoutByFieldExists(refFieldOrders);
 
-      if (layout === DatabaseViewLayout.Calendar) {
-        refFieldOrders.forEach((fieldOrder) => {
-          const field = fields?.get(fieldOrder.id);
-
-          if (
-            !dateField &&
-            [FieldType.DateTime].includes(
-              Number(field?.get(YjsDatabaseKey.type))
-            )
-          ) {
-            dateField = field;
-          }
-        });
-
-        // if no date field, create a new one
-        if (!dateField) {
-          const fieldId = nanoid(6);
-
-          dateField = createField(FieldType.DateTime, fieldId);
-
-          const typeOptionMap = generateDateTimeFieldTypeOptions();
-
-          dateField.set(YjsDatabaseKey.type_option, typeOptionMap);
-          fields.set(fieldId, dateField);
-
-          executeOperationWithAllViews(
-            sharedRoot,
-            database,
-            (view) => {
-              const fieldOrders = view?.get(YjsDatabaseKey.field_orders);
-
-              fieldOrders.push([
-                {
-                  id: fieldId,
-                },
-              ]);
-            },
-            'newDateTimeField'
-          );
-        }
-      }
 
       executeOperations(
         sharedRoot,
@@ -2309,13 +2365,16 @@ export function useAddDatabaseView() {
       );
       return newViewId;
     },
-    [createFolderView, database, defaultTimeSetting, iidIndex, sharedRoot]
+    [createFolderView, database, defaultTimeSetting, enhanceCalendarLayoutByFieldExists, iidIndex, sharedRoot]
   );
 }
 
 export function useUpdateDatabaseLayout(viewId: string) {
   const database = useDatabase();
   const sharedRoot = useSharedRoot();
+
+  const enhanceCalendarLayoutByFieldExists = useEnhanceCalendarLayoutByFieldExists();
+  const defaultTimeSetting = useDefaultTimeSetting();
 
   return useCallback(
     (layout: DatabaseViewLayout) => {
@@ -2333,8 +2392,9 @@ export function useUpdateDatabaseLayout(viewId: string) {
               return;
             }
 
+            const fieldOrders = view.get(YjsDatabaseKey.field_orders);
+
             if (layout === DatabaseViewLayout.Board) {
-              const fieldOrders = view.get(YjsDatabaseKey.field_orders);
               const groups = generateBoardGroup(database, fieldOrders);
               const settings = generateBoardSetting(database);
               const layoutSettings = generateBoardLayoutSettings();
@@ -2344,13 +2404,28 @@ export function useUpdateDatabaseLayout(viewId: string) {
               view.set(YjsDatabaseKey.layout_settings, layoutSettings);
             }
 
+            if (layout === DatabaseViewLayout.Calendar) {
+              // find date field in all views
+              const dateField: YDatabaseField | undefined = enhanceCalendarLayoutByFieldExists(fieldOrders);
+              const fieldId = dateField?.get(YjsDatabaseKey.id);
+
+              if (!fieldId) {
+                throw new Error(`Date field not found`);
+              }
+
+              const layoutSettings = generateCalendarLayoutSettings(fieldId, defaultTimeSetting);
+
+              view.set(YjsDatabaseKey.layout_settings, layoutSettings);
+
+            }
+
             view.set(YjsDatabaseKey.layout, layout);
           },
         ],
         'updateDatabaseLayout'
       );
     },
-    [database, sharedRoot, viewId]
+    [database, defaultTimeSetting, enhanceCalendarLayoutByFieldExists, sharedRoot, viewId]
   );
 }
 

@@ -28,12 +28,14 @@ import {
   DatabaseViewLayout,
   FieldId,
   SortId,
+  TimeFormat,
   YDatabase,
   YDatabaseMetas,
   YDatabaseRow,
   YDoc,
   YjsDatabaseKey,
   YjsEditorKey,
+  YSharedRoot,
 } from '@/application/types';
 import { MetadataKey } from '@/application/user-metadata';
 import { useCurrentUser } from '@/components/main/app.hooks';
@@ -850,7 +852,7 @@ export interface CalendarEvent {
 
 export function useCalendarEventsSelector() {
   const setting = useCalendarLayoutSetting();
-  const filedId = setting.fieldId;
+  const filedId = setting?.fieldId || '';
   const { field } = useFieldSelector(filedId);
   const primaryFieldId = usePrimaryFieldId();
   const rowOrders = useRowOrdersSelector();
@@ -859,7 +861,7 @@ export function useCalendarEventsSelector() {
   const [emptyEvents, setEmptyEvents] = useState<CalendarEvent[]>([]);
 
   useEffect(() => {
-    if (!field || !rowOrders || !rows) return;
+    if (!field || !rowOrders || !rows || !filedId) return;
     const fieldType = Number(field?.get(YjsDatabaseKey.type)) as FieldType;
 
     if (![FieldType.DateTime, FieldType.LastEditedTime, FieldType.CreatedTime].includes(fieldType) || !primaryFieldId) return;
@@ -879,12 +881,13 @@ export function useCalendarEventsSelector() {
 
         if (!doc) return;
 
-        const rowSharedRoot = doc.getMap(YjsEditorKey.data_section);
-        const databbaseRow = rowSharedRoot.get(YjsEditorKey.database_row);
+        const rowSharedRoot = doc.getMap(YjsEditorKey.data_section) as YSharedRoot;
+        const databbaseRow = rowSharedRoot?.get(YjsEditorKey.database_row);
 
-        const rowCreatedTime = databbaseRow.get(YjsDatabaseKey.created_at);
-        const rowLastEditedTime = databbaseRow.get(YjsDatabaseKey.last_modified);
+        if (!databbaseRow) return;
 
+        const rowCreatedTime = databbaseRow.get(YjsDatabaseKey.created_at).toString();
+        const rowLastEditedTime = databbaseRow.get(YjsDatabaseKey.last_modified).toString();
 
         const value = cell ? parseYDatabaseCellToCell(cell) as DateTimeCell : undefined;
 
@@ -948,6 +951,7 @@ export function useCalendarEventsSelector() {
       if (!rowDoc) return;
       rowDoc.getMap(YjsEditorKey.data_section).observeDeep(debouncedObserverEvent);
     });
+
     return () => {
       debouncedObserverEvent.cancel();
       field?.unobserveDeep(observerEvent);
@@ -968,37 +972,35 @@ export function useCalendarLayoutSetting() {
   const currentUser = useCurrentUser();
   const startWeekOn = Number(currentUser?.metadata?.[MetadataKey.StartWeekOn] || 0);
 
-  const view = useDatabaseView();
-  const layoutSetting = view?.get(YjsDatabaseKey.layout_settings)?.get('2');
-  const [setting, setSetting] = useState<CalendarLayoutSetting>({
-    fieldId: '',
-    firstDayOfWeek: startWeekOn,
-    showWeekNumbers: true,
-    showWeekends: true,
-    layout: 0,
-    numberOfDays: 7
-  });
+  const timeFormat = currentUser?.metadata?.[MetadataKey.TimeFormat] || TimeFormat.TwelveHour;
+  const database = useDatabase();
+
+  const [setting, setSetting] = useState<CalendarLayoutSetting | null>(null);
+  const viewId = useDatabaseViewId();
 
   useEffect(() => {
+    const view = database.get(YjsDatabaseKey.views)?.get(viewId);
     const observerHandler = () => {
+      const layoutSetting = view?.get(YjsDatabaseKey.layout_settings)?.get('2');
       const firstDayOfWeek = layoutSetting?.get(YjsDatabaseKey.first_day_of_week) === undefined ? startWeekOn : Number(layoutSetting?.get(YjsDatabaseKey.first_day_of_week) || 0);
 
       setSetting({
-        fieldId: layoutSetting?.get(YjsDatabaseKey.field_id) as string,
+        fieldId: layoutSetting?.get(YjsDatabaseKey.field_id),
         firstDayOfWeek,
         showWeekNumbers: Boolean(layoutSetting?.get(YjsDatabaseKey.show_week_numbers)),
         showWeekends: Boolean(layoutSetting?.get(YjsDatabaseKey.show_weekends)),
         layout: Number(layoutSetting?.get(YjsDatabaseKey.layout_ty)),
         numberOfDays: layoutSetting?.get(YjsDatabaseKey.number_of_days) || 7,
+        use24Hour: timeFormat === TimeFormat.TwentyFourHour,
       });
     };
 
     observerHandler();
-    layoutSetting?.observe(observerHandler);
+    view?.observeDeep(observerHandler);
     return () => {
-      layoutSetting?.unobserve(observerHandler);
+      view?.unobserveDeep(observerHandler);
     };
-  }, [layoutSetting, startWeekOn]);
+  }, [startWeekOn, timeFormat, database, viewId]);
 
   return setting;
 }

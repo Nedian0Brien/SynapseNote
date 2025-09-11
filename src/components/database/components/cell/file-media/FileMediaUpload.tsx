@@ -46,7 +46,7 @@ function FileMediaUpload({
         return await uploadFile(file);
         // eslint-disable-next-line
       } catch (e: any) {
-        console.error(e);
+        toast.error(e.message);
         return;
       }
     },
@@ -86,16 +86,17 @@ function FileMediaUpload({
         const items = urls.map((url, index) => {
           const file = files[index];
 
+          if (!url) return;
           return {
             file_type: getFileMediaType(file.name),
             id: crypto.randomUUID(),
             name: file.name,
             upload_type: FileMediaUploadType.CloudMedia,
-            url,
+            url: url?.toString(),
           } as FileMediaCellDataItem;
         });
 
-        addItems(items);
+        addItems(items.filter((item): item is FileMediaCellDataItem => item !== undefined));
         onClose?.();
       } finally {
         setUploading(false);
@@ -131,7 +132,7 @@ function FileMediaUpload({
               multiple={true}
               placeholder={
                 <div className={'flex items-center font-medium'}>
-                  <span className={'text-sm text-text-secondary'}>{t('grid.media.dragAndDropFiles')}</span>
+                  <span className={'text-sm text-text-secondary'}>{t('grid.media.dragAndDropFiles')}click to </span>
                   <span className={'text-sm text-text-action'}>{t('grid.media.browse')}</span>
                 </div>
               }

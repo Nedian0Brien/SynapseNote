@@ -1,5 +1,4 @@
 import { EventApi, EventContentArg } from '@fullcalendar/core';
-import { useEffect, useState } from 'react';
 
 import {
   MonthAllDayEvent,
@@ -16,7 +15,6 @@ interface EventDisplayProps {
   isWeekView?: boolean;
   showLeftIndicator?: boolean;
   className?: string;
-  isHiddenFirst?: boolean;
 }
 
 export function EventDisplay({
@@ -26,21 +24,8 @@ export function EventDisplay({
   isWeekView = false,
   showLeftIndicator = true,
   className,
-  isHiddenFirst = false,
 }: EventDisplayProps) {
   const rowId = event.extendedProps?.rowId;
-  const [showBling, setShowBling] = useState(isHiddenFirst);
-
-  useEffect(() => {
-    if (isHiddenFirst) {
-      setShowBling(true);
-      const timer = setTimeout(() => {
-        setShowBling(false);
-      }, 1000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [isHiddenFirst]);
 
   if (!rowId) return null;
 
@@ -61,12 +46,7 @@ export function EventDisplay({
   const EventComponent = getEventComponent();
 
   return (
-    <div
-      className={showBling ? 'animate-pulse' : ''}
-      style={{
-        animation: showBling ? 'event-bling 0.9s ease-in-out infinite' : undefined,
-      }}
-    >
+    <div>
       <EventComponent
         event={event}
         eventInfo={eventInfo}

@@ -108,7 +108,7 @@ function FileDropzone({ onChange, accept, multiple, disabled, placeholder, loadi
           {placeholder || (
             <>
               <span>{t('document.plugins.file.fileUploadHint')}</span>
-              <span className='text-text-action'>{t('document.plugins.file.fileUploadHintSuffix')}</span>
+              click to <span className='text-text-action'>{t('document.plugins.file.fileUploadHintSuffix')}</span>
             </>
           )}
         </div>

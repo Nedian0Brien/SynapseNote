@@ -2,9 +2,10 @@ import { sortBy } from 'lodash-es';
 import { useMemo } from 'react';
 
 import { useCalendarEventsSelector, useCalendarLayoutSetting } from '@/application/database-yjs';
+import { CalendarViewType } from '@/components/database/fullcalendar/types';
 import { correctAllDayEndForDisplay } from '@/utils/time';
 
-export function useFullCalendarSetup(newEventRowIds: Set<string>, openEventRowId: string | null, updateEventRowIds: Set<string>) {
+export function useFullCalendarSetup(newEventRowIds: Set<string>, openEventRowId: string | null, updateEventRowIds: Set<string>, currentView: CalendarViewType) {
   const layoutSetting = useCalendarLayoutSetting();
   const { events, emptyEvents } = useCalendarEventsSelector();
 
@@ -59,12 +60,12 @@ export function useFullCalendarSetup(newEventRowIds: Set<string>, openEventRowId
       };
     });
 
-    return sortBy(processedEvents, ['allDay', 'isMultipleDayEvent', 'start', 'title']);
-  }, [events, newEventRowIds, openEventRowId, updateEventRowIds]);
+    return sortBy(processedEvents, currentView === CalendarViewType.TIME_GRID_WEEK ? [] : ['allDay', 'isMultipleDayEvent', 'start', 'title']);
+  }, [currentView, events, newEventRowIds, openEventRowId, updateEventRowIds]);
 
   return {
     events: fullCalendarEvents,
     emptyEvents,
-    firstDayOfWeek: layoutSetting.firstDayOfWeek,
+    firstDayOfWeek: layoutSetting?.firstDayOfWeek || 0,
   };
 }

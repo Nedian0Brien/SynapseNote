@@ -1,6 +1,7 @@
+import React, { useCallback } from 'react';
+
 import FileDropzone from '@/components/_shared/file-dropzone/FileDropzone';
 import { notify } from '@/components/_shared/notify';
-import React, { useCallback } from 'react';
 
 export const ALLOWED_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'];
 
@@ -23,7 +24,6 @@ export function UploadImage({
         const url = await uploadAction?.(file);
 
         if (!url) {
-          onDone?.(URL.createObjectURL(file));
           return;
         }
 
@@ -31,7 +31,6 @@ export function UploadImage({
         // eslint-disable-next-line
       } catch (e: any) {
         notify.error(e.message);
-        onDone?.(URL.createObjectURL(file));
       } finally {
         setLoading(false);
       }
@@ -41,11 +40,7 @@ export function UploadImage({
 
   return (
     <div className={'h-full'}>
-      <FileDropzone
-        onChange={handleFileChange}
-        accept={ALLOWED_IMAGE_EXTENSIONS.join(',')}
-        loading={loading}
-      />
+      <FileDropzone onChange={handleFileChange} accept={ALLOWED_IMAGE_EXTENSIONS.join(',')} loading={loading} />
     </div>
   );
 }

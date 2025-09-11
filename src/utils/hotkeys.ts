@@ -69,6 +69,14 @@ export enum HOT_KEY_NAME {
   CREATE_CARD_BEFORE = 'create-card-before',
   MOVE_CARD_PREV_COLUMN = 'move-card-prev-column',
   MOVE_CARD_NEXT_COLUMN = 'move-card-next-column',
+  /**
+   * Calendar shortcuts
+   */
+  CALENDAR_MONTH_VIEW = 'calendar-month-view',
+  CALENDAR_WEEK_VIEW = 'calendar-week-view',
+  CALENDAR_PREV = 'calendar-prev',
+  CALENDAR_NEXT = 'calendar-next',
+  CALENDAR_TODAY = 'calendar-today',
 }
 
 const defaultHotKeys = {
@@ -124,6 +132,11 @@ const defaultHotKeys = {
   [HOT_KEY_NAME.CREATE_CARD_BEFORE]: ['shift+mod+up'],
   [HOT_KEY_NAME.MOVE_CARD_PREV_COLUMN]: [','],
   [HOT_KEY_NAME.MOVE_CARD_NEXT_COLUMN]: ['.'],
+  [HOT_KEY_NAME.CALENDAR_MONTH_VIEW]: ['m'],
+  [HOT_KEY_NAME.CALENDAR_WEEK_VIEW]: ['w'],
+  [HOT_KEY_NAME.CALENDAR_PREV]: ['k'],
+  [HOT_KEY_NAME.CALENDAR_NEXT]: ['j'],
+  [HOT_KEY_NAME.CALENDAR_TODAY]: ['t'],
 };
 
 const replaceModifier = (hotkey: string) => {
@@ -167,4 +180,16 @@ export const createHotKeyLabel = (hotkeyName: HOT_KEY_NAME, customHotKeys?: Reco
         .join(' + ')
     )
     .join(' / ');
+};
+
+export const isInputElement = (): boolean => {
+  const activeElement = document.activeElement;
+  
+  if (!activeElement) return false;
+  
+  const tagName = activeElement.tagName.toLowerCase();
+  const isEditable = activeElement.hasAttribute('contenteditable');
+  const isInput = ['input', 'textarea', 'select'].includes(tagName);
+  
+  return isInput || isEditable;
 };

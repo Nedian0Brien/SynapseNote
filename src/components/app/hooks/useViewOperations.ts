@@ -102,7 +102,7 @@ export function useViewOperations() {
 
   // Load view document
   const loadView = useCallback(
-    async (id: string, _isSubDocument = false, loadAwareness = false, outline?: View[]) => {
+    async (id: string, isSubDocument = false, loadAwareness = false, outline?: View[]) => {
       try {
         if (!service || !currentWorkspaceId) {
           throw new Error('Service or workspace not found');
@@ -127,11 +127,23 @@ export function useViewOperations() {
 
         const view = findView(outline || [], id);
 
-        const collabType = view
-          ? view?.layout === ViewLayout.Document
-            ? Types.Document
-            : Types.Database
-          : Types.Document;
+        let collabType = isSubDocument ? Types.Document : null;
+
+        switch (view?.layout) {
+          case ViewLayout.Document:
+            collabType = Types.Document;
+            break;
+          case ViewLayout.Grid:
+          case ViewLayout.Board:
+          case ViewLayout.Calendar:
+            collabType = Types.Database;
+            break;
+        }
+
+        if (collabType === null) {
+          return Promise.reject(new Error('Invalid view layout'));
+        }
+
 
         if (collabType === Types.Document) {
           let awareness: Awareness | undefined;

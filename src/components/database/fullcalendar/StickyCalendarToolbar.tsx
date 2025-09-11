@@ -15,13 +15,16 @@ interface StickyCalendarToolbarProps {
   onViewChange: (view: CalendarViewType) => void;
   slideDirection?: 'up' | 'down' | null;
   emptyEvents?: CalendarEvent[];
+  onDragStart?: (rowId: string) => void;
+  draggingRowId?: string | null;
+  onDragEnd?: () => void;
 }
 
 /**
  * Sticky calendar toolbar component that wraps CustomToolbar
  * Used for both normal and sticky positioning with proper spacing
  */
-export function StickyCalendarToolbar({ calendar, currentView, onViewChange, slideDirection, emptyEvents = [] }: StickyCalendarToolbarProps) {
+export function StickyCalendarToolbar(props: StickyCalendarToolbarProps) {
   const { paddingStart, paddingEnd } = useDatabaseContext();
 
   // Memoized style object matching calendar spacing
@@ -41,13 +44,7 @@ export function StickyCalendarToolbar({ calendar, currentView, onViewChange, sli
 
   return (
     <div style={toolbarStyle} className={toolbarClassName}>
-      <CustomToolbar 
-        calendar={calendar} 
-        currentView={currentView} 
-        onViewChange={onViewChange} 
-        slideDirection={slideDirection} 
-        emptyEvents={emptyEvents}
-      />
+      <CustomToolbar {...props} />
     </div>
   );
 }

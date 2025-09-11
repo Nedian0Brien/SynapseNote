@@ -29,7 +29,7 @@ function PopoverContent({
         align={align}
         sideOffset={sideOffset}
         className={cn(
-          'z-50 min-w-[240px] rounded-400 bg-background-primary p-0 shadow-popover',
+          'z-50 min-w-[240px] rounded-400 bg-surface-layer-03  p-0 shadow-popover',
 
           'origin-(--radix-popover-content-transform-origin)',
 

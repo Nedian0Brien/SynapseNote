@@ -1,6 +1,8 @@
 import { useTranslation } from 'react-i18next';
 
+import { useDatabaseViewLayout } from '@/application/database-yjs';
 import { useBulkDeleteRowDispatch } from '@/application/database-yjs/dispatch';
+import { DatabaseViewLayout } from '@/application/types';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -26,6 +28,7 @@ export function DeleteRowConfirm({
   const { t } = useTranslation();
   const deleteRowsDispatch = useBulkDeleteRowDispatch();
 
+  const layout = useDatabaseViewLayout();
   const handleDelete = () => {
     deleteRowsDispatch(rowIds);
     onDeleted?.();
@@ -56,7 +59,11 @@ export function DeleteRowConfirm({
         <DialogHeader>
           <DialogTitle>{t('grid.row.delete')}</DialogTitle>
         </DialogHeader>
-        <DialogDescription>{t('grid.row.deleteRowPrompt', { count: rowIds?.length || 0 })}</DialogDescription>
+        <DialogDescription>
+          {t(layout === DatabaseViewLayout.Calendar ? 'calendar.deleteEventPrompt' : 'grid.row.deleteRowPrompt', {
+            count: rowIds?.length || 0,
+          })}
+        </DialogDescription>
         <DialogFooter>
           <Button variant={'outline'} onClick={onClose}>
             {t('button.cancel')}

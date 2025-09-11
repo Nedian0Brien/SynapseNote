@@ -97,10 +97,10 @@ export const AppContext = createContext<AppContextType | null>(null);
 // Internal component to conditionally render sync and business layers only when workspace ID exists
 const ConditionalWorkspaceLayers = ({ children }: { children: React.ReactNode }) => {
   const authContext = useContext(AuthInternalContext);
-  const { currentWorkspaceId } = authContext || {};
+  const { userWorkspaceInfo } = authContext || {};
 
   // Show loading animation while workspace ID is being loaded
-  if (!currentWorkspaceId) {
+  if (!userWorkspaceInfo) {
     return <WorkspaceLoadingAnimation />;
   }
 

@@ -67,7 +67,7 @@ function CalendarLayoutSettings() {
               }}
             >
               <FieldDisplay fieldId={property.id} />
-              {calendarSetting.fieldId === property.id && <DropdownMenuItemTick />}
+              {calendarSetting?.fieldId === property.id && <DropdownMenuItemTick />}
             </DropdownMenuItem>
           ))}
 
@@ -84,7 +84,7 @@ function CalendarLayoutSettings() {
               }}
             >
               {day.name}
-              {calendarSetting.firstDayOfWeek === day.value && <DropdownMenuItemTick />}
+              {calendarSetting?.firstDayOfWeek === day.value && <DropdownMenuItemTick />}
             </DropdownMenuItem>
           ))}
         </DropdownMenuSubContent>
