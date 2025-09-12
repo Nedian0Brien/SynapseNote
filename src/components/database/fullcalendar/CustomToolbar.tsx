@@ -18,7 +18,7 @@ import { NoDateButton } from './NoDateButton';
 import { CalendarViewType } from './types';
 
 interface CustomToolbarProps {
-  calendar: CalendarApi | null;
+  calendar?: CalendarApi | null;
   onViewChange?: (view: CalendarViewType) => void;
   slideDirection?: 'up' | 'down' | null;
   emptyEvents?: CalendarEvent[];

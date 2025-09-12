@@ -185,7 +185,7 @@ export const useSync = (ws: AppflowyWebSocketType, bc: BroadcastChannelType, eve
         return existingContext;
       }
 
-      console.log(`Registering sync context for objectId ${context.doc.guid} with collabType ${context.collabType}`);
+      console.debug(`Registering sync context for objectId ${context.doc.guid} with collabType ${context.collabType}`);
       context.emit = (message) => {
         sendMessage(message);
         postMessage(message);

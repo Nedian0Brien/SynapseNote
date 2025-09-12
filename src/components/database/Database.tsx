@@ -73,15 +73,25 @@ function Database(props: Database2Props) {
     const newRowMap: Record<RowId, YDoc> = {};
 
     if (!rowIds || !createRowDoc) return;
-    for (const id of rowIds) {
+
+    const promises = rowIds.map(async (id) => {
       if (!id) {
-        continue;
+        return;
       }
 
       const rowKey = `${doc.guid}_rows_${id}`;
+      const rowDoc = await createRowDoc(rowKey);
 
-      newRowMap[id] = await createRowDoc(rowKey);
-    }
+      return { id, rowDoc };
+    });
+
+    const results = await Promise.all(promises);
+
+    results.forEach((result) => {
+      if (result) {
+        newRowMap[result.id] = result.rowDoc;
+      }
+    });
 
     setRowDocMap(newRowMap);
   }, [createRowDoc, doc.guid, rowIds]);
