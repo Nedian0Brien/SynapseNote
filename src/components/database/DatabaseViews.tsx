@@ -89,6 +89,7 @@ function DatabaseViews({
   }, [layout]);
 
   const view = useMemo(() => {
+    if (isLoading) return skeleton;
     switch (layout) {
       case DatabaseViewLayout.Grid:
         return <Grid />;
@@ -97,7 +98,7 @@ function DatabaseViews({
       case DatabaseViewLayout.Calendar:
         return <Calendar />;
     }
-  }, [layout]);
+  }, [layout, isLoading, skeleton]);
 
   return (
     <>

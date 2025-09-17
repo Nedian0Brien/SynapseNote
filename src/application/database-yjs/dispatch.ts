@@ -2187,11 +2187,10 @@ function generateBoardGroup(database: YDatabase, fieldOrders: YDatabaseFieldOrde
   return groups;
 }
 
-function generateCalendarLayoutSettings(fieldId: FieldId, defaultTimeSetting: DefaultTimeSetting) {
+function generateCalendarLayoutSettings(fieldId: FieldId, _defaultTimeSetting: DefaultTimeSetting) {
   const layoutSettings = new Y.Map() as YDatabaseLayoutSettings;
   const layoutSetting = new Y.Map() as YDatabaseCalendarLayoutSetting;
 
-  layoutSetting.set(YjsDatabaseKey.first_day_of_week, defaultTimeSetting.startWeekOn);
   layoutSetting.set(YjsDatabaseKey.field_id, fieldId);
   layoutSetting.set(YjsDatabaseKey.layout_ty, CalendarLayout.MonthLayout);
   layoutSetting.set(YjsDatabaseKey.show_week_numbers, true);
