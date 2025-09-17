@@ -161,8 +161,9 @@ function RelationItems({
                   notify.error(e.message);
                 }
               }}
-              className={`min-w-fit overflow-hidden text-text-primary underline ${relatedViewId ? 'cursor-pointer hover:text-text-action' : ''
-                }`}
+              className={`min-w-fit overflow-hidden text-text-primary underline ${
+                relatedViewId ? 'cursor-pointer hover:text-text-action' : ''
+              }`}
             >
               <RelationPrimaryValue fieldId={relatedFieldId} rowDoc={rowDoc} />
             </div>
