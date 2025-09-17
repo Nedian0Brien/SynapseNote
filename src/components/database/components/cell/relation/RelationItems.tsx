@@ -8,7 +8,7 @@ import {
   useDatabaseIdFromField,
 } from '@/application/database-yjs';
 import { RelationCell, RelationCellData } from '@/application/database-yjs/cell.type';
-import { getRowDocumentId } from '@/application/database-yjs/row_meta';
+import { getRowKey } from '@/application/database-yjs/row_meta';
 import { YDoc, YjsEditorKey } from '@/application/types';
 import { notify } from '@/components/_shared/notify';
 import { RelationPrimaryValue } from '@/components/database/components/cell/relation/RelationPrimaryValue';
@@ -69,7 +69,7 @@ function RelationItems({
         const rows: Record<string, YDoc> = {};
 
         for (const rowId of rowIds) {
-          const rowDoc = await createRowDoc(getRowDocumentId(rowId));
+          const rowDoc = await createRowDoc(getRowKey(docGuid, rowId));
 
           rows[rowId] = rowDoc;
         }
@@ -161,9 +161,8 @@ function RelationItems({
                   notify.error(e.message);
                 }
               }}
-              className={`min-w-fit overflow-hidden text-text-primary underline ${
-                relatedViewId ? 'cursor-pointer hover:text-text-action' : ''
-              }`}
+              className={`min-w-fit overflow-hidden text-text-primary underline ${relatedViewId ? 'cursor-pointer hover:text-text-action' : ''
+                }`}
             >
               <RelationPrimaryValue fieldId={relatedFieldId} rowDoc={rowDoc} />
             </div>

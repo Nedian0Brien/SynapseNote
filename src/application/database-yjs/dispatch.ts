@@ -48,7 +48,7 @@ import { createSelectOptionCell } from '@/application/database-yjs/fields/select
 import { createDateTimeField, createTextField } from '@/application/database-yjs/fields/text/utils';
 import { dateFilterFillData, filterFillData, getDefaultFilterCondition } from '@/application/database-yjs/filter';
 import { getOptionsFromRow, initialDatabaseRow } from '@/application/database-yjs/row';
-import { generateRowMeta, getMetaIdMap, getMetaJSON, getRowDocumentId } from '@/application/database-yjs/row_meta';
+import { generateRowMeta, getMetaIdMap, getMetaJSON, getRowKey } from '@/application/database-yjs/row_meta';
 import { useBoardLayoutSettings, useCalendarLayoutSetting, useDatabaseViewLayout, useFieldSelector, useFieldType } from '@/application/database-yjs/selector';
 import { executeOperations } from '@/application/slate-yjs/utils/yjs';
 import {
@@ -1222,9 +1222,8 @@ export function useNewRowDispatch() {
       }
 
       const rowId = uuidv4();
-      const documentId = getRowDocumentId(rowId);
-
-      const rowDoc = await createRow(documentId);
+      const rowKey = getRowKey(guid, rowId);
+      const rowDoc = await createRow(rowKey);
       let shouldOpenRowModal = false;
 
       rowDoc.transact(() => {
@@ -1505,8 +1504,8 @@ export function useDuplicateRowDispatch() {
         [RowMetaKey.CoverId]: cover ? JSON.stringify(cover) : null,
       });
 
-      const documentId = getRowDocumentId(rowId);
-      const rowDoc = await createRow(documentId);
+      const rowKey = getRowKey(guid, rowId);
+      const rowDoc = await createRow(rowKey);
 
       rowDoc.transact(() => {
         initialDatabaseRow(rowId, database.get(YjsDatabaseKey.id), rowDoc);

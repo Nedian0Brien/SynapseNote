@@ -1,5 +1,5 @@
+import { getRowKey } from '@/application/database-yjs/row_meta';
 import { closeCollabDB, db, openCollabDB } from '@/application/db';
-import { getRowDocumentId } from '@/application/database-yjs/row_meta';
 import { Fetcher, StrategyType } from '@/application/services/js-services/cache/types';
 import {
   DatabaseId,
@@ -275,7 +275,7 @@ async function updateRows(collab: YDoc, rows: Record<RowId, number[]>) {
   const bulkData = [];
 
   for (const [key, value] of Object.entries(rows)) {
-    const rowKey = getRowDocumentId(key);
+    const rowKey = getRowKey(collab.guid, key);
     const doc = await createRowDoc(rowKey);
 
     const dbRow = await db.rows.get(key);
