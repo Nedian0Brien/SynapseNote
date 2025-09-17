@@ -8,6 +8,7 @@ import {
   useDatabaseIdFromField,
 } from '@/application/database-yjs';
 import { RelationCell, RelationCellData } from '@/application/database-yjs/cell.type';
+import { getRowDocumentId } from '@/application/database-yjs/row_meta';
 import { YDoc, YjsEditorKey } from '@/application/types';
 import { notify } from '@/components/_shared/notify';
 import { RelationPrimaryValue } from '@/components/database/components/cell/relation/RelationPrimaryValue';
@@ -68,7 +69,7 @@ function RelationItems({
         const rows: Record<string, YDoc> = {};
 
         for (const rowId of rowIds) {
-          const rowDoc = await createRowDoc(`${docGuid}_rows_${rowId}`);
+          const rowDoc = await createRowDoc(getRowDocumentId(rowId));
 
           rows[rowId] = rowDoc;
         }

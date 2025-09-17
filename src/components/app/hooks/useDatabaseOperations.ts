@@ -14,6 +14,7 @@ import {
 } from '@/application/types';
 import { FieldType } from '@/application/database-yjs';
 import { getCellDataText } from '@/application/database-yjs/cell.parse';
+import { getRowDocumentId } from '@/application/database-yjs/row_meta';
 import { useAuthInternal } from '../contexts/AuthInternalContext';
 
 // Hook for managing database-related operations
@@ -79,7 +80,7 @@ export function useDatabaseOperations(
 
           if (!createRowDoc) return;
 
-          const rowKey = `${doc?.guid}_rows_${row.id}`;
+          const rowKey = getRowDocumentId(row.id);
           const rowDoc = await createRowDoc(rowKey);
 
           const rowSharedRoot = rowDoc?.getMap(YjsEditorKey.data_section);

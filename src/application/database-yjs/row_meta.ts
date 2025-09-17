@@ -34,6 +34,19 @@ export function generateRowMeta(rowId: string, data: Record<string, string | boo
 
 export const metaIdMapFromRowIdMap = new Map<string, Map<RowMetaKey, string>>();
 
+/**
+ * Generate row document ID from row ID using UUID v5
+ * This matches the Rust implementation:
+ * pub fn database_row_document_id_from_row_id(row_id: &RowId) -> RowId {
+ *   Uuid::new_v5(row_id, RowMetaKey::DocumentId.as_str().as_bytes())
+ * }
+ */
+export function getRowDocumentId(rowId: string): string {
+  const parser = metaIdFromRowId(rowId);
+
+  return parser(RowMetaKey.DocumentId);
+}
+
 export function getMetaIdMap(rowId: string) {
   const hasMetaIdMap = metaIdMapFromRowIdMap.has(rowId);
 
