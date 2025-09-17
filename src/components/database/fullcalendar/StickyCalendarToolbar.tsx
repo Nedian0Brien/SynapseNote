@@ -10,9 +10,9 @@ import { CalendarViewType } from './types';
  * Props for StickyCalendarToolbar component
  */
 interface StickyCalendarToolbarProps {
-  calendar: CalendarApi | null;
-  currentView: CalendarViewType;
-  onViewChange: (view: CalendarViewType) => void;
+  calendar?: CalendarApi | null;
+  currentView?: CalendarViewType;
+  onViewChange?: (view: CalendarViewType) => void;
   slideDirection?: 'up' | 'down' | null;
   emptyEvents?: CalendarEvent[];
   onDragStart?: (rowId: string) => void;

@@ -6,7 +6,7 @@ import { createHotkey, HOT_KEY_NAME, isInputElement } from '@/utils/hotkeys';
 import { CalendarViewType } from '../types';
 
 interface UseCalendarKeyboardShortcutsProps {
-  calendar: CalendarApi | null;
+  calendar?: CalendarApi | null;
   currentView: CalendarViewType;
   onViewChange?: (view: CalendarViewType) => void;
   onPrev?: () => void;

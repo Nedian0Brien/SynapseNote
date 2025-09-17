@@ -19,7 +19,7 @@ interface HeaderCellData {
  * Props for StickyWeekHeader component
  */
 interface StickyWeekHeaderProps {
-  headerCells: HeaderCellData[];
+  headerCells?: HeaderCellData[];
   visible: boolean;
   scrollLeft?: number;
   currentView?: CalendarViewType;
@@ -59,7 +59,7 @@ export function StickyWeekHeader({
     return currentView === CalendarViewType.TIME_GRID_WEEK;
   }, [currentView]);
 
-  if (!visible || headerCells.length === 0) {
+  if (!visible || headerCells?.length === 0) {
     return null;
   }
 
@@ -110,7 +110,7 @@ export function StickyWeekHeader({
                 )}
 
                 {/* Date columns */}
-                {headerCells.map((cell, index) => (
+                {headerCells?.map((cell, index) => (
                   <th
                     key={index}
                     className={`fc-col-header-cell ${cell.isToday ? 'fc-day-today' : ''} ${

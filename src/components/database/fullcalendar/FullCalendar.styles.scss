@@ -338,7 +338,7 @@
         @apply bg-transparent;
         
         .fc-daygrid-day-number {
-          @apply flex items-center justify-center font-medium;
+          @apply flex items-center px-1 justify-center font-medium;
         }
       }
       

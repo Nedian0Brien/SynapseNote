@@ -103,30 +103,26 @@ function Calendar() {
   return (
     <div className='calendar-wrapper pb-5'>
       {/* Normal toolbar - always visible */}
-      {calendarData && (
-        <div ref={normalToolbarRef}>
-          <StickyCalendarToolbar
-            calendar={calendarData.calendarApi}
-            currentView={calendarData.currentView}
-            onViewChange={calendarData.handleViewChange}
-            slideDirection={slideDirection}
-            emptyEvents={calendarData.emptyEvents}
-            onDragStart={handleDragStart}
-            draggingRowId={draggingRowId}
-            onDragEnd={handleDragEnd}
-          />
-        </div>
-      )}
+      <div ref={normalToolbarRef}>
+        <StickyCalendarToolbar
+          calendar={calendarData?.calendarApi}
+          currentView={calendarData?.currentView}
+          onViewChange={calendarData?.handleViewChange}
+          slideDirection={slideDirection}
+          emptyEvents={calendarData?.emptyEvents}
+          onDragStart={handleDragStart}
+          draggingRowId={draggingRowId}
+          onDragEnd={handleDragEnd}
+        />
+      </div>
 
       {/* Normal week header - always visible for comparison */}
-      {calendarData && calendarData.shouldShowWeekHeader && (
-        <StickyWeekHeader
-          headerCells={calendarData.weekHeaderCells}
-          visible={true}
-          scrollLeft={calendarData.weekHeaderScrollLeft}
-          currentView={calendarData.currentView}
-        />
-      )}
+      <StickyWeekHeader
+        headerCells={calendarData?.weekHeaderCells}
+        visible={true}
+        scrollLeft={calendarData?.weekHeaderScrollLeft}
+        currentView={calendarData?.currentView}
+      />
 
       {/* Calendar content without toolbar */}
       <CalendarContent

@@ -1,4 +1,3 @@
-import { AnimatePresence, motion } from 'framer-motion';
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 
@@ -13,6 +12,7 @@ import { DatabaseTabs } from '@/components/database/components/tabs';
 import { Calendar } from '@/components/database/fullcalendar';
 import { Grid } from '@/components/database/grid';
 import { ElementFallbackRender } from '@/components/error/ElementFallbackRender';
+import { Progress } from '@/components/ui/progress';
 
 import DatabaseConditions from 'src/components/database/components/conditions/DatabaseConditions';
 
@@ -31,6 +31,7 @@ function DatabaseViews({
 }) {
   const { childViews, viewIds } = useDatabaseViewsSelector(iidIndex, visibleViewIds);
 
+  const [isLoading, setIsLoading] = useState(false);
   const [layout, setLayout] = useState<DatabaseViewLayout | null>(null);
   const value = useMemo(() => {
     return Math.max(
@@ -54,6 +55,7 @@ function DatabaseViews({
 
     const observerEvent = () => {
       setLayout(Number(activeView.get(YjsDatabaseKey.layout)) as DatabaseViewLayout);
+      setIsLoading(false);
     };
 
     observerEvent();
@@ -65,61 +67,13 @@ function DatabaseViews({
     };
   }, [activeView]);
 
-  const view = useMemo(() => {
-    // 使用 viewId 和 layout 的组合作为 key，确保在任一变化时都有动画
-    const animationKey = `${layout}-${viewId}`;
-    
-    switch (layout) {
-      case DatabaseViewLayout.Grid:
-        return (
-          <motion.div
-            key={animationKey}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{
-              duration: 0.15,
-              ease: 'easeOut',
-            }}
-            className="h-full w-full"
-          >
-            <Grid />
-          </motion.div>
-        );
-      case DatabaseViewLayout.Board:
-        return (
-          <motion.div
-            key={animationKey}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{
-              duration: 0.15,
-              ease: 'easeOut',
-            }}
-            className="h-full w-full"
-          >
-            <Board />
-          </motion.div>
-        );
-      case DatabaseViewLayout.Calendar:
-        return (
-          <motion.div
-            key={animationKey}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{
-              duration: 0.15,
-              ease: 'easeOut',
-            }}
-            className="h-full w-full"
-          >
-            <Calendar />
-          </motion.div>
-        );
-    }
-  }, [layout, viewId]);
+  const handleViewChange = useCallback(
+    (newViewId: string) => {
+      setIsLoading(true);
+      onChangeView(newViewId);
+    },
+    [onChangeView]
+  );
 
   const skeleton = useMemo(() => {
     switch (layout) {
@@ -133,6 +87,18 @@ function DatabaseViews({
         return null;
     }
   }, [layout]);
+
+  const view = useMemo(() => {
+    if (isLoading) return skeleton;
+    switch (layout) {
+      case DatabaseViewLayout.Grid:
+        return <Grid />;
+      case DatabaseViewLayout.Board:
+        return <Board />;
+      case DatabaseViewLayout.Calendar:
+        return <Calendar />;
+    }
+  }, [layout, isLoading, skeleton]);
 
   return (
     <>
@@ -148,19 +114,20 @@ function DatabaseViews({
           viewName={viewName}
           iidIndex={iidIndex}
           selectedViewId={viewId}
-          setSelectedViewId={onChangeView}
+          setSelectedViewId={handleViewChange}
           viewIds={viewIds}
         />
         <DatabaseConditions />
 
-        <div className={'flex h-full w-full flex-1 flex-col overflow-hidden'}>
+        <div className={'relative flex h-full w-full flex-1 flex-col overflow-hidden'}>
           <Suspense fallback={skeleton}>
-            <ErrorBoundary fallbackRender={ElementFallbackRender}>
-              <AnimatePresence mode="wait">
-                {view}
-              </AnimatePresence>
-            </ErrorBoundary>
+            <ErrorBoundary fallbackRender={ElementFallbackRender}>{view}</ErrorBoundary>
           </Suspense>
+          {isLoading && (
+            <div className='absolute inset-0 z-50 flex items-center justify-center bg-white/50 backdrop-blur-sm'>
+              <Progress />
+            </div>
+          )}
         </div>
       </DatabaseConditionsContext.Provider>
     </>

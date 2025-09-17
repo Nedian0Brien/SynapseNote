@@ -152,6 +152,11 @@ export const useAppflowyWebSocket = (options: Options): AppflowyWebSocketType =>
     onOpen: () => {
       console.info('✅ WebSocket connection opened');
       setReconnectAttempt(0);
+      const websocket = getWebSocket() as WebSocket | null;
+
+      if (websocket && websocket.binaryType !== 'arraybuffer') {
+        websocket.binaryType = 'arraybuffer';
+      }
     },
 
     onClose: (event) => {
@@ -166,11 +171,6 @@ export const useAppflowyWebSocket = (options: Options): AppflowyWebSocketType =>
       console.info('❌ Reconnect stopped, attempt number:', numAttempts);
     },
   });
-  const websocket = getWebSocket() as WebSocket | null;
-
-  if (websocket && websocket.binaryType !== 'arraybuffer') {
-    websocket.binaryType = 'arraybuffer';
-  }
 
   const sendProtobufMessage = useCallback(
     (message: messages.IMessage, keep = true): void => {
@@ -185,13 +185,8 @@ export const useAppflowyWebSocket = (options: Options): AppflowyWebSocketType =>
 
   const manualReconnect = useCallback(() => {
     console.debug('Manual reconnect triggered');
-    const ws = getWebSocket();
-
-    if (ws) {
-      // Close the current connection and let the automatic reconnect logic handle the reconnection
-      ws.close(1000, 'Manual reconnect');
-    }
-  }, [getWebSocket]);
+    window.location.reload();
+  }, []);
   const lastProtobufMessage = useMemo(
     () => (lastMessage ? messages.Message.decode(new Uint8Array(lastMessage.data)) : null),
     [lastMessage]
