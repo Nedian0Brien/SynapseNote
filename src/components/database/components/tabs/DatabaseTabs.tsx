@@ -342,7 +342,7 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
                                       : ViewLayout.Grid,
                                 }
                               }
-                              className={'!h-5 !w-5 text-base'}
+                              className={'!h-5 !w-5 text-base leading-[1.3rem]'}
                             />
 
                             <Tooltip delayDuration={500}>

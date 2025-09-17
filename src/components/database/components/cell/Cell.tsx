@@ -1,8 +1,8 @@
 import { FC, useMemo } from 'react';
 
-import { Cell as CellType, CellProps } from '@/application/database-yjs/cell.type';
+import { CellProps, Cell as CellType } from '@/application/database-yjs/cell.type';
 import { FieldType } from '@/application/database-yjs/database.type';
-import { useCellSelector, useFieldSelector } from '@/application/database-yjs/selector';
+import { useFieldSelector } from '@/application/database-yjs/selector';
 import { YjsDatabaseKey } from '@/application/types';
 import { AITextCell } from '@/components/database/components/cell/ai-text/AITextCell';
 import { CheckboxCell } from '@/components/database/components/cell/checkbox';
@@ -20,7 +20,6 @@ export function Cell(props: CellProps<CellType>) {
   const { rowId, fieldId, style, wrap, isHovering } = props;
   const { field } = useFieldSelector(fieldId);
   const fieldType = Number(field?.get(YjsDatabaseKey.type)) as FieldType;
-  const cell = useCellSelector({ rowId, fieldId });
 
   const Component = useMemo(() => {
     switch (fieldType) {
@@ -63,10 +62,6 @@ export function Cell(props: CellProps<CellType>) {
         isHovering={isHovering}
       />
     );
-  }
-
-  if (cell && cell.fieldType !== fieldType) {
-    return null;
   }
 
   return <Component {...props} />;

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { FieldType, useCellSelector, useFieldWrap, useReadOnly } from '@/application/database-yjs';
-import { Cell as CellType, CellProps } from '@/application/database-yjs/cell.type';
+import { CellProps, Cell as CellType } from '@/application/database-yjs/cell.type';
 import { useFieldSelector } from '@/application/database-yjs/selector';
 import { FieldId, YjsDatabaseKey } from '@/application/types';
 import { Cell } from '@/components/database/components/cell';
@@ -70,6 +70,7 @@ export function GridRowCell({ rowId, fieldId }: GridCellProps) {
   const wrap = useFieldWrap(fieldId);
 
   const isActive = activeCell?.rowId === rowId && activeCell?.fieldId === fieldId;
+
 
   const setEditing = useCallback(
     (status: boolean) => {

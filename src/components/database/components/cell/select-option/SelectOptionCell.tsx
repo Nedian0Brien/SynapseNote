@@ -1,10 +1,11 @@
+import { useCallback, useMemo } from 'react';
+
 import { FieldType, parseSelectOptionTypeOptions, useFieldSelector } from '@/application/database-yjs';
 import { CellProps, SelectOptionCell as SelectOptionCellType } from '@/application/database-yjs/cell.type';
+import { Tag } from '@/components/_shared/tag';
 import { SelectOptionColorMap, SelectOptionFgColorMap } from '@/components/database/components/cell/cell.const';
 import SelectOptionCellMenu from '@/components/database/components/cell/select-option/SelectOptionCellMenu';
-import { Tag } from '@/components/_shared/tag';
 import { cn } from '@/lib/utils';
-import { useCallback, useMemo } from 'react';
 
 export function SelectOptionCell({
   editing,
