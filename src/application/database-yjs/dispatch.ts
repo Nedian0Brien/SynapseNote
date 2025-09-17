@@ -48,7 +48,7 @@ import { createSelectOptionCell } from '@/application/database-yjs/fields/select
 import { createDateTimeField, createTextField } from '@/application/database-yjs/fields/text/utils';
 import { dateFilterFillData, filterFillData, getDefaultFilterCondition } from '@/application/database-yjs/filter';
 import { getOptionsFromRow, initialDatabaseRow } from '@/application/database-yjs/row';
-import { generateRowMeta, getMetaIdMap, getMetaJSON } from '@/application/database-yjs/row_meta';
+import { generateRowMeta, getMetaIdMap, getMetaJSON, getRowKey } from '@/application/database-yjs/row_meta';
 import { useBoardLayoutSettings, useCalendarLayoutSetting, useDatabaseViewLayout, useFieldSelector, useFieldType } from '@/application/database-yjs/selector';
 import { executeOperations } from '@/application/slate-yjs/utils/yjs';
 import {
@@ -1204,15 +1204,15 @@ export function useNewRowDispatch() {
         FieldId,
         | string
         | {
-            data: string;
-            endTimestamp?: string;
-            isRange?: boolean;
-            includeTime?: boolean;
-            reminderId?: string;
-          }
+          data: string;
+          endTimestamp?: string;
+          isRange?: boolean;
+          includeTime?: boolean;
+          reminderId?: string;
+        }
       >;
       tailing?: boolean;
-      }) => {
+    }) => {
       if (!currentView) {
         throw new Error('Current view not found');
       }
@@ -1222,8 +1222,8 @@ export function useNewRowDispatch() {
       }
 
       const rowId = uuidv4();
-
-      const rowDoc = await createRow(`${guid}_rows_${rowId}`);
+      const rowKey = getRowKey(guid, rowId);
+      const rowDoc = await createRow(rowKey);
       let shouldOpenRowModal = false;
 
       rowDoc.transact(() => {
@@ -1504,7 +1504,8 @@ export function useDuplicateRowDispatch() {
         [RowMetaKey.CoverId]: cover ? JSON.stringify(cover) : null,
       });
 
-      const rowDoc = await createRow(`${guid}_rows_${rowId}`);
+      const rowKey = getRowKey(guid, rowId);
+      const rowDoc = await createRow(rowKey);
 
       rowDoc.transact(() => {
         initialDatabaseRow(rowId, database.get(YjsDatabaseKey.id), rowDoc);

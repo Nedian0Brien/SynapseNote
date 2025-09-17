@@ -1,6 +1,7 @@
 import { debounce } from 'lodash-es';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { getRowKey } from '@/application/database-yjs/row_meta';
 import {
   AppendBreadcrumb,
   CreateFolderViewPayload,
@@ -79,7 +80,7 @@ function Database(props: Database2Props) {
         return;
       }
 
-      const rowKey = `${doc.guid}_rows_${id}`;
+      const rowKey = getRowKey(doc.guid, id);
       const rowDoc = await createRowDoc(rowKey);
 
       return { id, rowDoc };
@@ -176,7 +177,7 @@ function Database(props: Database2Props) {
           setOpenModalViewId(viewId);
           setOpenModalRowDatabaseDoc(viewDoc);
 
-          const rowDoc = await createRowDoc?.(`${viewDoc.guid}_rows_${rowId}`);
+          const rowDoc = await createRowDoc?.(getRowKey(viewDoc.guid, rowId));
 
           if (!rowDoc) {
             throw new Error('Row document not found');

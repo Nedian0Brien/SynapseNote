@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import { getPrimaryFieldId, useDatabaseContext } from '@/application/database-yjs';
 import { parseYDatabaseCellToCell } from '@/application/database-yjs/cell.parse';
+import { getRowKey } from '@/application/database-yjs/row_meta';
 import { View, YDatabase, YDatabaseRow, YDoc, YjsDatabaseKey, YjsEditorKey } from '@/application/types';
 import { ReactComponent as MinusIcon } from '@/assets/icons/minus.svg';
 import { ReactComponent as PlusIcon } from '@/assets/icons/plus.svg';
@@ -139,7 +140,7 @@ function RelationCellMenuContent({
           continue;
         }
 
-        const rowKey = `${guid}_rows_${rowId}`;
+        const rowKey = getRowKey(guid, rowId);
         const rowDoc = await createRowDoc(rowKey);
 
         rowDocsRef.current.set(rowId, rowDoc);

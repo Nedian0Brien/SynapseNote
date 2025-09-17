@@ -1,28 +1,29 @@
-import { useCallback, useRef } from 'react';
 import { PromptDatabaseConfiguration } from '@/components/chat';
+import { useCallback, useRef } from 'react';
 
+import { FieldType } from '@/application/database-yjs';
+import { getCellDataText } from '@/application/database-yjs/cell.parse';
+import { getRowKey } from '@/application/database-yjs/row_meta';
 import {
   DatabasePrompt,
   DatabasePromptField,
   DatabasePromptRow,
   GenerateAISummaryRowPayload,
   GenerateAITranslateRowPayload,
-  YDoc,
   YDatabase,
-  YjsEditorKey,
+  YDoc,
   YjsDatabaseKey,
+  YjsEditorKey,
 } from '@/application/types';
-import { FieldType } from '@/application/database-yjs';
-import { getCellDataText } from '@/application/database-yjs/cell.parse';
 import { useAuthInternal } from '../contexts/AuthInternalContext';
 
 // Hook for managing database-related operations
 export function useDatabaseOperations(
-  loadView?: (id: string, isSubDocument?: boolean, loadAwareness?: boolean) => Promise<YDoc | null>, 
+  loadView?: (id: string, isSubDocument?: boolean, loadAwareness?: boolean) => Promise<YDoc | null>,
   createRowDoc?: (rowKey: string) => Promise<YDoc>
 ) {
   const { service, currentWorkspaceId } = useAuthInternal();
-  
+
   const rowDocsRef = useRef<Map<string, DatabasePromptRow>>(new Map());
 
   // Generate AI summary for row
@@ -79,7 +80,7 @@ export function useDatabaseOperations(
 
           if (!createRowDoc) return;
 
-          const rowKey = `${doc?.guid}_rows_${row.id}`;
+          const rowKey = getRowKey(doc?.guid || '', row.id);
           const rowDoc = await createRowDoc(rowKey);
 
           const rowSharedRoot = rowDoc?.getMap(YjsEditorKey.data_section);

@@ -34,6 +34,10 @@ export function generateRowMeta(rowId: string, data: Record<string, string | boo
 
 export const metaIdMapFromRowIdMap = new Map<string, Map<RowMetaKey, string>>();
 
+export function getRowKey(guid: string, rowId: string): string {
+  return `${guid}_rows_${rowId}`;
+}
+
 export function getMetaIdMap(rowId: string) {
   const hasMetaIdMap = metaIdMapFromRowIdMap.has(rowId);
 
@@ -67,9 +71,9 @@ export function getMetaJSON(rowId: string, meta: Y.Map<unknown>) {
   try {
     cover = metaJson[coverKey]
       ? (JSON.parse(metaJson[coverKey]) as {
-          data: string;
-          cover_type: RowCoverType;
-        })
+        data: string;
+        cover_type: RowCoverType;
+      })
       : null;
   } catch (e) {
     // do nothing
