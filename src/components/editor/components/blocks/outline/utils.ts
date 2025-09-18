@@ -1,8 +1,10 @@
-import { BlockType } from '@/application/types';
-import { CustomEditor } from 'src/application/slate-yjs/command';
-import { HeadingNode } from '@/components/editor/editor.type';
 import { Element, Text } from 'slate';
 import { ReactEditor } from 'slate-react';
+
+import { BlockType } from '@/application/types';
+import { HeadingNode } from '@/components/editor/editor.type';
+
+import { CustomEditor } from 'src/application/slate-yjs/command';
 
 export function extractHeadings (editor: ReactEditor, maxDepth: number): HeadingNode[] {
   const headings: HeadingNode[] = [];
@@ -20,7 +22,7 @@ export function extractHeadings (editor: ReactEditor, maxDepth: number): Heading
           ...block,
           data: {
             level: (block as HeadingNode).data.level,
-            text: CustomEditor.getBlockTextContent(block, 2),
+            text: CustomEditor.getBlockTextContent(block, 2).trim(),
           },
           children: [],
         } as HeadingNode);

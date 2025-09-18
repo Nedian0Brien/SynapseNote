@@ -1,4 +1,4 @@
-import { forwardRef, memo, useCallback, useEffect, useState } from 'react';
+import { forwardRef, memo, useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Element } from 'slate';
 import { useReadOnly, useSlate } from 'slate-react';
@@ -12,12 +12,14 @@ export const Outline = memo(
     const [root, setRoot] = useState<HeadingNode[]>([]);
     const { t } = useTranslation();
     const readOnly = useReadOnly() || editor.isElementReadOnly(node as unknown as Element);
+    const [isReady, setIsReady] = useState(false);
 
     useEffect(() => {
+      if (!isReady) return;
       const root = nestHeadings(extractHeadings(editor, node.data.depth || 6));
 
       setRoot(root);
-    }, [editor, node.data.depth, editor.children]);
+    }, [editor, node.data.depth, editor.children, isReady]);
 
     const jumpToHeading = useCallback((heading: HeadingNode) => {
       const id = `heading-${heading.blockId}`;
@@ -62,6 +64,12 @@ export const Outline = memo(
       [jumpToHeading]
     );
 
+    useLayoutEffect(() => {
+      setTimeout(() => {
+        setIsReady(true);
+      }, 1000);
+    }, []);
+
     return (
       <div
         {...attributes}
@@ -72,7 +80,7 @@ export const Outline = memo(
         <div className={'absolute left-0 top-0 select-none caret-transparent'}>{children}</div>
         <div contentEditable={false} className={`flex w-full select-none flex-col`}>
           <div className={'text-md my-2 font-bold'}>{t('document.outlineBlock.placeholder')}</div>
-          {root.map(renderHeading)}
+          {isReady && root.map(renderHeading)}
         </div>
       </div>
     );
