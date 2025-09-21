@@ -39,7 +39,7 @@ COPY --from=builder /app/dist /app/dist
 
 # Copy only necessary files for SSR
 COPY deploy/server.ts /app/server.ts
-COPY deploy/nginx.conf /etc/nginx/nginx.conf
+COPY docker/nginx-ssr.conf /etc/nginx/nginx.conf 
 COPY docker/supervisord-ssr.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/entrypoint-ssr.sh /docker-entrypoint.sh
 
