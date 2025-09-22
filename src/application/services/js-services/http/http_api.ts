@@ -6,6 +6,7 @@ import { nanoid } from 'nanoid';
 import { GlobalComment, Reaction } from '@/application/comment.type';
 import { ERROR_CODE } from '@/application/constants';
 import { initGrantService, refreshToken } from '@/application/services/js-services/http/gotrue';
+import { parseGoTrueErrorFromUrl } from '@/application/services/js-services/http/gotrue-error';
 import { blobToBytes } from '@/application/services/js-services/http/utils';
 import { AFCloudConfig } from '@/application/services/services.type';
 import { getTokenParsed, invalidToken } from '@/application/session/token';
@@ -146,7 +147,20 @@ export function initAPIService(config: AFCloudConfig) {
 }
 
 export async function signInWithUrl(url: string) {
-  const hash = new URL(url).hash;
+  // First check for GoTrue errors in the URL
+  const gotrueError = parseGoTrueErrorFromUrl(url);
+
+  if (gotrueError) {
+    // GoTrue returned an error, reject with parsed error
+    return Promise.reject({
+      code: gotrueError.code,
+      message: gotrueError.message,
+    });
+  }
+
+  // No errors found, proceed with normal token extraction
+  const urlObj = new URL(url);
+  const hash = urlObj.hash;
 
   if (!hash) {
     return Promise.reject('No hash found');

@@ -4,6 +4,10 @@ import { emit, EventType } from '@/application/session';
 import { afterAuth } from '@/application/session/sign_in';
 import { getTokenParsed, refreshToken as refreshSessionToken } from '@/application/session/token';
 
+import { parseGoTrueError } from './gotrue-error';
+
+export * from './gotrue-error';
+
 let axiosInstance: AxiosInstance | null = null;
 
 export function initGrantService(baseURL: string) {
@@ -71,9 +75,18 @@ export async function signInWithPassword(params: { email: string; password: stri
     // eslint-disable-next-line
   } catch (e: any) {
     emit(EventType.SESSION_INVALID);
+
+    // Parse error from response
+    const error = parseGoTrueError({
+      error: e.response?.data?.error,
+      errorDescription: e.response?.data?.error_description || e.response?.data?.msg,
+      errorCode: e.response?.status,
+      message: e.response?.data?.message || 'Incorrect password. Please try again.',
+    });
+
     return Promise.reject({
-      code: -1,
-      message: 'Incorrect password. Please try again.',
+      code: error.code,
+      message: error.message,
     });
   }
 }
