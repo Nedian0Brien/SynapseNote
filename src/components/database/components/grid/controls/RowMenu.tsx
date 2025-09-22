@@ -77,6 +77,7 @@ function RowMenu({ rowId, onClose }: { rowId: string; onClose: () => void }) {
           {actions.map((item) => (
             <DropdownMenuItem
               key={item.label}
+              data-testid={item.label === t('grid.row.duplicate') ? 'row-menu-duplicate' : undefined}
               onSelect={async (e) => {
                 e.preventDefault();
                 item.onSelect();
