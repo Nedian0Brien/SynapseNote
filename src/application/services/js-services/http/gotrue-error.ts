@@ -141,13 +141,14 @@ export function parseGoTrueError(errorData: {
   // Try to extract code from message format like "422: Signups not allowed"
   if (code === GoTrueErrorCode.UNKNOWN && errorMessage) {
     const codeMatch = errorMessage.match(/^(\d{3}):/);
+
     if (codeMatch) {
       code = parseInt(codeMatch[1]);
     }
   }
 
   // Clean up the message - remove error codes and clean up formatting
-  let cleanMessage = errorMessage
+  const cleanMessage = errorMessage
     .replace(/^\d{3}:\s*/, '') // Remove "422: " prefix
     .replace(/\+/g, ' ') // Replace + with spaces (URL encoding)
     .replace(/%20/g, ' ') // Replace %20 with spaces
@@ -227,6 +228,7 @@ export function enhanceErrorMessage(message: string, errorType?: string | null, 
  */
 export function hasGoTrueError(url: string): boolean {
   const error = parseGoTrueErrorFromUrl(url);
+
   return error !== null;
 }
 
@@ -238,5 +240,6 @@ export function formatGoTrueError(error: GoTrueError): string {
     // In development, show more details
     return `${error.message}\n\n[Debug] Original: ${error.originalError} (Code: ${error.code})`;
   }
+
   return error.message;
 }
