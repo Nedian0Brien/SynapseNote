@@ -345,6 +345,10 @@ export class AFClientService implements AFService {
     return APIService.signInDiscord(AUTH_CALLBACK_URL);
   }
 
+  async getAuthProviders() {
+    return APIService.getAuthProviders();
+  }
+
   async getWorkspaces() {
     const data = APIService.getWorkspaces();
 

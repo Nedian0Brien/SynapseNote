@@ -21,6 +21,7 @@ import {
 } from '@/application/template.type';
 import {
   AFWebUser,
+  AuthProvider,
   CreateFolderViewPayload,
   CreatePagePayload,
   CreateSpacePayload,
@@ -213,6 +214,63 @@ export async function verifyToken(accessToken: string) {
   }
 
   return Promise.reject(data);
+}
+
+export async function getAuthProviders(): Promise<AuthProvider[]> {
+  const url = '/api/server-info/auth-providers';
+
+  try {
+    const response = await axiosInstance?.get<{
+      code: number;
+      data?: {
+        count: number;
+        providers: string[];
+        signup_disabled: boolean;
+        mailer_autoconfirm: boolean;
+      };
+      message: string;
+    }>(url);
+
+    const data = response?.data;
+
+    if (data?.code === 0 && data.data) {
+      // Map server provider names to our AuthProvider enum
+      return data.data.providers.map((provider: string) => {
+        switch (provider.toLowerCase()) {
+          case 'google':
+            return AuthProvider.GOOGLE;
+          case 'apple':
+            return AuthProvider.APPLE;
+          case 'github':
+            return AuthProvider.GITHUB;
+          case 'discord':
+            return AuthProvider.DISCORD;
+          case 'email':
+            return AuthProvider.EMAIL;
+          case 'password':
+            return AuthProvider.PASSWORD;
+          case 'magic_link':
+            return AuthProvider.MAGIC_LINK;
+          case 'saml':
+            return AuthProvider.SAML;
+          case 'phone':
+            return AuthProvider.PHONE;
+          default:
+            // Log unknown provider but don't include it
+            console.warn(`Unknown auth provider from server: ${provider}`);
+            return null;
+        }
+      }).filter((provider): provider is AuthProvider => provider !== null);
+    }
+
+    // Default to password provider if API returns error
+    console.warn('Auth providers API returned error:', data?.message);
+    return [AuthProvider.PASSWORD];
+  } catch (error) {
+    console.error('Failed to fetch auth providers:', error);
+    // Return default providers on error
+    return [AuthProvider.PASSWORD];
+  }
 }
 
 export async function getCurrentUser(): Promise<User> {

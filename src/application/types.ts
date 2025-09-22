@@ -832,6 +832,22 @@ export interface FolderView {
   children: FolderView[];
 }
 
+export enum AuthProvider {
+  GOOGLE = 'google',
+  APPLE = 'apple',
+  GITHUB = 'github',
+  DISCORD = 'discord',
+  PASSWORD = 'password',
+  MAGIC_LINK = 'magic_link',
+  SAML = 'saml',
+  PHONE = 'phone',
+  EMAIL = 'email'
+}
+
+export interface AuthProvidersResponse {
+  providers: AuthProvider[];
+}
+
 export interface User {
   email: string | null;
   name: string | null;
