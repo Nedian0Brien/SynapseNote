@@ -1,13 +1,15 @@
 import { notify } from '@/components/_shared/notify';
 import { AFConfigContext } from '@/components/main/app.hooks';
 import { motion, AnimatePresence } from 'framer-motion';
-import React, { useCallback, useContext, useMemo } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ReactComponent as GoogleSvg } from '@/assets/login/google.svg';
 import { ReactComponent as GithubSvg } from '@/assets/login/github.svg';
 import { ReactComponent as DiscordSvg } from '@/assets/login/discord.svg';
 import { ReactComponent as AppleSvg } from '@/assets/login/apple.svg';
 import { Button } from '@/components/ui/button';
+import { AuthProvider } from '@/application/types';
+import CircularProgress from '@mui/material/CircularProgress';
 
 const moreOptionsVariants = {
   hidden: {
@@ -33,46 +35,76 @@ const moreOptionsVariants = {
 function LoginProvider ({ redirectTo }: { redirectTo: string }) {
   const { t } = useTranslation();
   const [expand, setExpand] = React.useState(false);
-  const options = useMemo(
+  const [availableProviders, setAvailableProviders] = useState<AuthProvider[]>([]);
+  const [loading, setLoading] = useState(true);
+  const service = useContext(AFConfigContext)?.service;
+
+  // Fetch available providers on mount
+  useEffect(() => {
+    const fetchProviders = async () => {
+      try {
+        setLoading(true);
+        const providers = await service?.getAuthProviders();
+
+        setAvailableProviders(providers || []);
+      } catch (error) {
+        console.error('Failed to fetch auth providers:', error);
+        // Fallback to default providers
+        setAvailableProviders([AuthProvider.PASSWORD]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void fetchProviders();
+  }, [service]);
+
+  const allOptions = useMemo(
     () => [
       {
         label: t('web.continueWithGoogle'),
         Icon: GoogleSvg,
-        value: 'google',
+        value: AuthProvider.GOOGLE,
       },
       {
         label: t('web.continueWithApple'),
         Icon: AppleSvg,
-        value: 'apple',
+        value: AuthProvider.APPLE,
       },
       {
         label: t('web.continueWithGithub'),
-        value: 'github',
+        value: AuthProvider.GITHUB,
         Icon: GithubSvg,
       },
       {
         label: t('web.continueWithDiscord'),
-        value: 'discord',
+        value: AuthProvider.DISCORD,
         Icon: DiscordSvg,
       },
     ],
     [t],
   );
-  const service = useContext(AFConfigContext)?.service;
 
-  const handleClick = useCallback(async (option: string) => {
+  // Filter options based on available providers
+  const options = useMemo(() => {
+    return allOptions.filter(option =>
+      availableProviders.includes(option.value)
+    );
+  }, [allOptions, availableProviders]);
+
+  const handleClick = useCallback(async (option: AuthProvider) => {
     try {
       switch (option) {
-        case 'google':
+        case AuthProvider.GOOGLE:
           await service?.signInGoogle({ redirectTo });
           break;
-        case 'apple':
+        case AuthProvider.APPLE:
           await service?.signInApple({ redirectTo });
           break;
-        case 'github':
+        case AuthProvider.GITHUB:
           await service?.signInGithub({ redirectTo });
           break;
-        case 'discord':
+        case AuthProvider.DISCORD:
           await service?.signInDiscord({ redirectTo });
           break;
       }
@@ -96,6 +128,20 @@ function LoginProvider ({ redirectTo }: { redirectTo: string }) {
     </Button>;
   }, [handleClick]);
 
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center p-4">
+        <CircularProgress size={24} />
+      </div>
+    );
+  }
+
+  // Don't show component if no OAuth providers available
+  if (options.length === 0) {
+    return null;
+  }
+
   return (
     <div className={'flex transform transition-all gap-3 w-full flex-col items-center justify-center'}>
       {options.slice(0, 2).map((option, index) => (
@@ -114,7 +160,7 @@ function LoginProvider ({ redirectTo }: { redirectTo: string }) {
       ))}
 
       <AnimatePresence mode="wait">
-        {!expand && (
+        {!expand && options.length > 2 && (
           <motion.div
             className="w-full"
             initial="initial"

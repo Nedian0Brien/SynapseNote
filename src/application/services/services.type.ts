@@ -13,6 +13,7 @@ import {
   UploadTemplatePayload,
 } from '@/application/template.type';
 import {
+  AuthProvider,
   CreateFolderViewPayload,
   CreatePagePayload,
   CreateSpacePayload,
@@ -111,6 +112,7 @@ export interface AppService {
   signInGithub: (params: { redirectTo: string }) => Promise<void>;
   signInDiscord: (params: { redirectTo: string }) => Promise<void>;
   signInApple: (params: { redirectTo: string }) => Promise<void>;
+  getAuthProviders: () => Promise<AuthProvider[]>;
   getWorkspaces: () => Promise<Workspace[]>;
   getWorkspaceFolder: (workspaceId: string) => Promise<FolderView>;
   getCurrentUser: () => Promise<User>;
