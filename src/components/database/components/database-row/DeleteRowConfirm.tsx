@@ -68,7 +68,7 @@ export function DeleteRowConfirm({
           <Button variant={'outline'} onClick={onClose}>
             {t('button.cancel')}
           </Button>
-          <Button variant={'destructive'} onClick={handleDelete}>
+          <Button variant={'destructive'} onClick={handleDelete} data-testid="delete-row-confirm-button">
             {t('button.delete')}
           </Button>
         </DialogFooter>
