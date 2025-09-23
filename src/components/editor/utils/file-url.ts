@@ -18,7 +18,10 @@ export function constructFileUrl(
   workspaceId: string,
   viewId?: string
 ): string {
-  if (!dataUrl) return '';
+  if (!dataUrl) {
+    console.warn('File URL construction: dataUrl is undefined');
+    return '';
+  }
 
   // Case 1: Already a full URL (http/https)
   // This is the format returned by uploadFile() function
@@ -33,7 +36,7 @@ export function constructFileUrl(
   }
 
   // Fallback without viewId - this will likely fail to load
-  console.warn('File URL construction: viewId not available, file may not load correctly', { fileId });
+  console.error('File URL construction: viewId not available, file may not load correctly', { fileId });
   // Use empty string as viewId fallback, though this may not work
   return getFileUrl(workspaceId, '', fileId);
 }

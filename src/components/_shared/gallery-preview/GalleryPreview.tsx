@@ -101,6 +101,7 @@ function GalleryPreview({ images, open, onClose, previewIndex, workspaceId, view
     }
 
     const fileId = images[index].src;
+
     return getFileUrl(workspaceId, viewId, fileId);
   }, [images, index, workspaceId, viewId]);
 
