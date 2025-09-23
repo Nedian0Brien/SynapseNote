@@ -7,6 +7,7 @@ import {
   PropertyMenuSelectors,
   GridFieldSelectors,
   FieldType,
+  byTestId,
   waitForReactUpdate
 } from '../../support/selectors';
 
@@ -55,7 +56,7 @@ describe('DateTime Column Type', () => {
       
       // Verify cells exist
       cy.log('[STEP 6] Verifying cells exist');
-      cy.get('[data-testid^="grid-cell-"]', { timeout: 10000 }).should('exist');
+      DatabaseGridSelectors.cells().should('exist');
 
       // Add new column
       cy.log('[STEP 7] Adding new column by clicking new property button');
@@ -68,7 +69,7 @@ describe('DateTime Column Type', () => {
       cy.log('[STEP 8] Waiting for property menu to open');
       cy.get('body').then($body => {
         // Check if property type trigger exists
-        if ($body.find('[data-testid="property-type-trigger"]').length > 0) {
+        if ($body.find(byTestId('property-type-trigger')).length > 0) {
           cy.log('[STEP 9] Property type trigger found, changing to DateTime');
           PropertyMenuSelectors.propertyTypeTrigger().first().click({ force: true });
           waitForReactUpdate(1000);
@@ -112,7 +113,7 @@ describe('DateTime Column Type', () => {
           
           // Check if picker opens
           cy.get('body').then($body => {
-            if ($body.find('[data-testid="datetime-picker-popover"]').length > 0) {
+            if ($body.find(byTestId('datetime-picker-popover')).length > 0) {
               cy.log('[STEP 14] DateTime picker opened successfully');
               
               // Enter a date

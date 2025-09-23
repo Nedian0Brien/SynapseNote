@@ -6,7 +6,7 @@
 /**
  * Helper function to create a data-testid selector
  */
-function byTestId(id: string): string {
+export function byTestId(id: string): string {
   return `[data-testid="${id}"]`;
 }
 

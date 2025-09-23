@@ -6,7 +6,9 @@ import {
   PropertyMenuSelectors,
   GridFieldSelectors,
   SingleSelectSelectors,
+  PageSelectors,
   FieldType,
+  byTestId,
   waitForReactUpdate
 } from '../../support/selectors';
 
@@ -53,8 +55,8 @@ describe('Single Select Column Type', () => {
       
       // Try to find either inline add button or new page button
       cy.get('body').then($body => {
-        const inlineAddExists = $body.find('[data-testid="inline-add-page"]').length > 0;
-        const newPageExists = $body.find('[data-testid="new-page-button"]').length > 0;
+        const inlineAddExists = $body.find(byTestId('inline-add-page')).length > 0;
+        const newPageExists = $body.find(byTestId('new-page-button')).length > 0;
         
         if (inlineAddExists) {
           cy.log('[STEP 4.2] Using inline add button');
@@ -64,7 +66,7 @@ describe('Single Select Column Type', () => {
         } else if (newPageExists) {
           cy.log('[STEP 4.2] Using new page button instead');
           return cy.wrap(null).then(() => {
-            cy.get('[data-testid="new-page-button"]').first().click({ force: true });
+            PageSelectors.newPageButton().first().click({ force: true });
           });
         } else {
           // Wait a bit more and try inline add button
@@ -165,7 +167,7 @@ describe('Single Select Column Type', () => {
       // Check if property menu is open and change to SingleSelect
       cy.log('[STEP 7] Changing column type to SingleSelect');
       cy.get('body').then($body => {
-        if ($body.find('[data-testid="property-type-trigger"]').length > 0) {
+        if ($body.find(byTestId('property-type-trigger')).length > 0) {
           PropertyMenuSelectors.propertyTypeTrigger().first().click({ force: true });
           waitForReactUpdate(1000);
           PropertyMenuSelectors.propertyTypeOption(FieldType.SingleSelect).click({ force: true });
@@ -240,7 +242,7 @@ describe('Single Select Column Type', () => {
 
       // Click edit property if available
       cy.get('body').then($body => {
-        if ($body.find('[data-testid="grid-field-edit-property"]').length > 0) {
+        if ($body.find(byTestId('grid-field-edit-property')).length > 0) {
           PropertyMenuSelectors.editPropertyMenuItem().click();
           waitForReactUpdate(1000);
         }
@@ -284,7 +286,7 @@ describe('Single Select Column Type', () => {
 
       // Click edit property if available
       cy.get('body').then($body => {
-        if ($body.find('[data-testid="grid-field-edit-property"]').length > 0) {
+        if ($body.find(byTestId('grid-field-edit-property')).length > 0) {
           PropertyMenuSelectors.editPropertyMenuItem().click();
           waitForReactUpdate(1000);
         }
@@ -314,7 +316,7 @@ describe('Single Select Column Type', () => {
           
           // Check if select menu appears
           cy.get('body').then($body => {
-            if ($body.find('[data-testid="select-option-menu"]').length > 0) {
+            if ($body.find(byTestId('select-option-menu')).length > 0) {
               cy.log('[STEP 18] Select option menu opened - options preserved!');
             } else {
               cy.log('[STEP 18] Select cells exist but menu behavior may differ');

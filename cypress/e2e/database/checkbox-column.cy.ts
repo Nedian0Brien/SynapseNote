@@ -4,6 +4,7 @@ import {
   AddPageSelectors,
   DatabaseGridSelectors,
   CheckboxSelectors,
+  byTestId,
   waitForReactUpdate
 } from '../../support/selectors';
 
