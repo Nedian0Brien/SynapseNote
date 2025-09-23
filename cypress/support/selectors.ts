@@ -363,6 +363,23 @@ export const FieldType = {
   FileMedia: 14
 };
 
+/**
+ * Database Row Controls selectors
+ */
+export const RowControlsSelectors = {
+  // Row accessory button (appears on hover)
+  rowAccessoryButton: () => cy.get(byTestId('row-accessory-button')),
+  
+  // Row menu items
+  rowMenuDuplicate: () => cy.get(byTestId('row-menu-duplicate')),
+  rowMenuInsertAbove: () => cy.get(byTestId('row-menu-insert-above')),
+  rowMenuInsertBelow: () => cy.get(byTestId('row-menu-insert-below')),
+  rowMenuDelete: () => cy.get(byTestId('row-menu-delete')),
+  
+  // Delete confirmation
+  deleteRowConfirmButton: () => cy.get(byTestId('delete-row-confirm-button')),
+};
+
 export function waitForReactUpdate(ms: number = 500) {
   return cy.wait(ms);
 }

@@ -3,6 +3,7 @@ import { AuthTestUtils } from '../../support/auth-utils';
 import {
   AddPageSelectors,
   DatabaseGridSelectors,
+  RowControlsSelectors,
   waitForReactUpdate
 } from '../../support/selectors';
 
@@ -87,7 +88,7 @@ describe('Database Row Duplication', () => {
 
       // The drag icon should be visible after hovering
       // Try to find it by the data-testid we added or by its class
-      cy.get('[data-testid="row-accessory-button"]').then($button => {
+      RowControlsSelectors.rowAccessoryButton().then($button => {
         if ($button.length > 0) {
           cy.log('[STEP 10.1] Found row accessory button with data-testid');
           cy.wrap($button.first()).click({ force: true });
@@ -121,7 +122,7 @@ describe('Database Row Duplication', () => {
 
         if (!found) {
           // Try clicking by the data-testid we added
-          cy.get('[data-testid="row-menu-duplicate"]').then($duplicate => {
+          RowControlsSelectors.rowMenuDuplicate().then($duplicate => {
             if ($duplicate.length > 0) {
               cy.log('[STEP 11.2] Found duplicate menu item by data-testid');
               cy.wrap($duplicate).click();

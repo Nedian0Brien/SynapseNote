@@ -3,6 +3,7 @@ import { AuthTestUtils } from '../../support/auth-utils';
 import {
   AddPageSelectors,
   DatabaseGridSelectors,
+  RowControlsSelectors,
   waitForReactUpdate
 } from '../../support/selectors';
 
@@ -91,7 +92,7 @@ describe('Database Row Deletion', () => {
         // Click on the drag icon/row accessory button
         cy.log('[STEP 11] Looking for and clicking row accessory button');
 
-        cy.get('[data-testid="row-accessory-button"]').then($button => {
+        RowControlsSelectors.rowAccessoryButton().then($button => {
           if ($button.length > 0) {
             cy.log('[STEP 11.1] Found row accessory button with data-testid');
             cy.wrap($button.first()).click({ force: true });
@@ -110,7 +111,7 @@ describe('Database Row Deletion', () => {
         cy.get('[role="menu"], [data-slot="dropdown-menu-content"]').should('be.visible');
 
         // Click on the delete option
-        cy.get('[data-testid="row-menu-delete"]').then($delete => {
+        RowControlsSelectors.rowMenuDelete().then($delete => {
           if ($delete.length > 0) {
             cy.log('[STEP 12.1] Found delete menu item by data-testid');
             cy.wrap($delete).click();
@@ -127,7 +128,7 @@ describe('Database Row Deletion', () => {
         cy.log('[STEP 13] Handling deletion confirmation dialog');
 
         // Click the confirm button
-        cy.get('[data-testid="delete-row-confirm-button"]').then($confirm => {
+        RowControlsSelectors.deleteRowConfirmButton().then($confirm => {
           if ($confirm.length > 0) {
             cy.log('[STEP 13.1] Found delete confirmation button by data-testid');
             cy.wrap($confirm).click();

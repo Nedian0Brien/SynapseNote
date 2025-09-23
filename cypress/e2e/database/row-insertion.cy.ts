@@ -3,6 +3,7 @@ import { AuthTestUtils } from '../../support/auth-utils';
 import {
   AddPageSelectors,
   DatabaseGridSelectors,
+  RowControlsSelectors,
   waitForReactUpdate
 } from '../../support/selectors';
 
@@ -93,7 +94,7 @@ describe('Database Row Insertion', () => {
         // Click on the drag icon/row accessory button
         cy.log('[STEP 11] Looking for and clicking row accessory button');
 
-        cy.get('[data-testid="row-accessory-button"]').then($button => {
+        RowControlsSelectors.rowAccessoryButton().then($button => {
           if ($button.length > 0) {
             cy.log('[STEP 11.1] Found row accessory button with data-testid');
             cy.wrap($button.first()).click({ force: true });
@@ -112,7 +113,7 @@ describe('Database Row Insertion', () => {
         cy.get('[role="menu"], [data-slot="dropdown-menu-content"]').should('be.visible');
 
         // Click on the insert above option - using data-testid first
-        cy.get('[data-testid="row-menu-insert-above"]').then($insertAbove => {
+        RowControlsSelectors.rowMenuInsertAbove().then($insertAbove => {
           if ($insertAbove.length > 0) {
             cy.log('[STEP 12.1] Found insert above menu item by data-testid');
             cy.wrap($insertAbove).click();
@@ -153,7 +154,7 @@ describe('Database Row Insertion', () => {
         cy.log('[STEP 16] Looking for and clicking row accessory button for second row');
 
         // The row controls should appear for the second row after hovering
-        cy.get('[data-testid="row-accessory-button"]').then($buttons => {
+        RowControlsSelectors.rowAccessoryButton().then($buttons => {
           if ($buttons.length > 0) {
             cy.log('[STEP 16.1] Found row accessory button');
             // Click the last visible button (should be for the hovered row)
@@ -173,7 +174,7 @@ describe('Database Row Insertion', () => {
         cy.get('[role="menu"], [data-slot="dropdown-menu-content"]').should('be.visible');
 
         // Click on the insert below option - using data-testid first
-        cy.get('[data-testid="row-menu-insert-below"]').then($insertBelow => {
+        RowControlsSelectors.rowMenuInsertBelow().then($insertBelow => {
           if ($insertBelow.length > 0) {
             cy.log('[STEP 17.1] Found insert below menu item by data-testid');
             cy.wrap($insertBelow).click();
