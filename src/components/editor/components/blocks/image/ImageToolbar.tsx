@@ -22,7 +22,7 @@ function ImageToolbar({ node }: { node: ImageBlockNode }) {
   const readOnly = useReadOnly() || editor.isElementReadOnly(node as unknown as Element);
   const { t } = useTranslation();
   const [openPreview, setOpenPreview] = React.useState(false);
-  const { workspaceId } = useEditorContext();
+  const { workspaceId, viewId } = useEditorContext();
   const onOpenPreview = () => {
     setOpenPreview(true);
   };
@@ -63,6 +63,7 @@ function ImageToolbar({ node }: { node: ImageBlockNode }) {
         <Suspense>
           <GalleryPreview
             workspaceId={workspaceId}
+            viewId={viewId}
             images={[{ src: node.data.url || '' }]}
             previewIndex={0}
             open={openPreview}

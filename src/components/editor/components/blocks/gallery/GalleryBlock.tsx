@@ -1,7 +1,6 @@
 import React, { forwardRef, memo, Suspense, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useReadOnly } from 'slate-react';
-import isURL from 'validator/lib/isURL';
 
 import { GalleryLayout } from '@/application/types';
 import { ReactComponent as GalleryIcon } from '@/assets/icons/gallery.svg';
@@ -13,12 +12,12 @@ import ImageGallery from '@/components/editor/components/blocks/gallery/ImageGal
 import { EditorElementProps, GalleryBlockNode } from '@/components/editor/editor.type';
 import { useEditorContext } from '@/components/editor/EditorContext';
 import { copyTextToClipboard } from '@/utils/copy';
-import { getFileLegacyUrl } from '@/utils/file-storage-url';
+import { getFileUrl, isFileURL } from '@/utils/file-storage-url';
 
 const GalleryBlock = memo(
   forwardRef<HTMLDivElement, EditorElementProps<GalleryBlockNode>>(({ node, children, ...attributes }, ref) => {
     const { t } = useTranslation();
-    const { workspaceId } = useEditorContext();
+    const { workspaceId, viewId } = useEditorContext();
     const { images, layout } = useMemo(() => node.data || {}, [node.data]);
     const [openPreview, setOpenPreview] = React.useState(false);
     const previewIndexRef = React.useRef(0);
@@ -36,8 +35,8 @@ const GalleryBlock = memo(
           let imageUrl = image.url;
 
           if (!imageUrl) return null;
-          if (!isURL(image.url)) {
-            imageUrl = getFileLegacyUrl(workspaceId, image.url);
+          if (!isFileURL(image.url)) {
+            imageUrl = getFileUrl(workspaceId, viewId, image.url);
           }
 
           const url = new URL(imageUrl);
@@ -51,11 +50,11 @@ const GalleryBlock = memo(
           };
         })
         .filter(Boolean) as {
-        src: string;
-        thumb: string;
-        responsive: string;
-      }[];
-    }, [images, workspaceId]);
+          src: string;
+          thumb: string;
+          responsive: string;
+        }[];
+    }, [images, workspaceId, viewId]);
 
     const handleOpenPreview = useCallback(() => {
       setOpenPreview(true);
@@ -131,6 +130,7 @@ const GalleryBlock = memo(
           <Suspense>
             <GalleryPreview
               workspaceId={workspaceId}
+              viewId={viewId}
               images={photos}
               previewIndex={previewIndexRef.current}
               open={openPreview}

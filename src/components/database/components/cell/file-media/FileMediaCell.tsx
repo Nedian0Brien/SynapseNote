@@ -25,7 +25,7 @@ export function FileMediaCell({
   readOnly,
 }: CellProps<FileMediaCellType>) {
   const value = cell?.data;
-  const { workspaceId } = useDatabaseContext();
+  const { workspaceId, viewId } = useDatabaseContext();
   const [openPreview, setOpenPreview] = React.useState(false);
   const previewIndexRef = React.useRef(0);
   const photos = useMemo(() => {
@@ -113,6 +113,7 @@ export function FileMediaCell({
         <Suspense>
           <GalleryPreview
             workspaceId={workspaceId}
+            viewId={viewId}
             images={photos}
             previewIndex={previewIndexRef.current}
             open={openPreview}

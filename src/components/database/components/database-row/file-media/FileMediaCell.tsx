@@ -31,7 +31,7 @@ export function FileMediaCell ({
   const value = cell?.data;
   const { t } = useTranslation();
   const { field, clock } = useFieldSelector(fieldId);
-  const { workspaceId } = useDatabaseContext();
+  const { workspaceId, viewId } = useDatabaseContext();
   const typeOption = useMemo(() => {
     if (!field) return null;
     return parseFileMediaTypeOptions(field);
@@ -169,6 +169,7 @@ export function FileMediaCell ({
       />}
       {openPreview && <Suspense><GalleryPreview
         workspaceId={workspaceId}
+        viewId={viewId}
         images={photos}
         previewIndex={previewIndexRef.current}
         open={openPreview}

@@ -1,15 +1,14 @@
-import isURL from 'validator/lib/isURL';
 
 import { useDatabaseContext } from '@/application/database-yjs';
 import { FileMediaCellDataItem } from '@/application/database-yjs/cell.type';
 import FileIcon from '@/components/database/components/cell/file-media/FileIcon';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { getFileUrl, isFileURL } from '@/utils/file-storage-url';
 import { openUrl } from '@/utils/url';
-import { getFileLegacyUrl } from '@/utils/file-storage-url';
 
 function UnPreviewFile({ file }: { file: FileMediaCellDataItem }) {
-  const { workspaceId } = useDatabaseContext();
+  const { workspaceId, viewId } = useDatabaseContext();
 
   return (
     <Tooltip delayDuration={500} disableHoverableContent>
@@ -20,13 +19,13 @@ function UnPreviewFile({ file }: { file: FileMediaCellDataItem }) {
           className={'cursor-pointer rounded-[4px] bg-fill-content-hover text-icon-secondary'}
           onClick={(e) => {
             e.stopPropagation();
-            if (file.url && isURL(file.url)) {
+            if (file.url && isFileURL(file.url)) {
               void openUrl(file.url, '_blank');
               return;
             }
 
             const fileId = file.url;
-            const newUrl = getFileLegacyUrl(workspaceId, fileId);
+            const newUrl = getFileUrl(workspaceId, viewId, fileId);
 
             void openUrl(newUrl, '_blank');
           }}

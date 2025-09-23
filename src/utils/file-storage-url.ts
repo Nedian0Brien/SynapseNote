@@ -1,4 +1,5 @@
 import { getConfigValue } from '@/utils/runtime-config';
+import isURL from 'validator/lib/isURL';
 
 /**
  * Constructs file storage URLs for the AppFlowy API
@@ -12,14 +13,19 @@ function getFileStorageBaseUrl(): string {
   return getConfigValue('APPFLOWY_BASE_URL', '') + '/api/file_storage';
 }
 
-/**
- * Constructs URL for file upload endpoint
- * @param workspaceId - The workspace ID
- * @param viewId - The view ID (used as parent_dir)
- * @returns Complete upload URL
- */
-export function getFileUploadUrl(workspaceId: string, viewId: string): string {
-  return `${getFileStorageBaseUrl()}/${workspaceId}/v1/blob/${viewId}`;
+
+export function isFileURL(url: string): boolean {
+  if (isURL(url)) {
+    return true;
+  }
+
+  // workaround for this case:http://localhost:8000/api/file_storage/06b1b077-1042-4c5f-8bd4-774c71e27a0c/v1/blob/103df21d-c365-4b2c-87f1-80d64e956603/ea47M1S0xOXE5jIti4H3QSHAAZvoF8BOpFzRHApzc4U=
+  // when isURL(url) is false
+  if (url.startsWith('http://localhost')) {
+    return true;
+  }
+
+  return false;
 }
 
 /**
@@ -30,17 +36,18 @@ export function getFileUploadUrl(workspaceId: string, viewId: string): string {
  * @returns Complete file URL
  */
 export function getFileUrl(workspaceId: string, viewId: string, fileId: string): string {
+  console.warn("URL should be valid - seeing this indicates a bug")
   return `${getFileStorageBaseUrl()}/${workspaceId}/v1/blob/${viewId}/${fileId}`;
 }
 
 /**
- * Constructs URL for file retrieval (legacy fallback without viewId)
+ * Constructs URL for file upload endpoint
  * @param workspaceId - The workspace ID
- * @param fileId - The file ID
- * @returns Complete file URL (may not work properly without viewId)
+ * @param viewId - The view ID (used as parent_dir)
+ * @returns Complete upload URL
  */
-export function getFileLegacyUrl(workspaceId: string, fileId: string): string {
-  return `${getFileStorageBaseUrl()}/${workspaceId}/v1/blob/${fileId}`;
+export function getFileUploadUrl(workspaceId: string, viewId: string): string {
+  return `${getFileStorageBaseUrl()}/${workspaceId}/v1/blob/${viewId}`;
 }
 
 /**
