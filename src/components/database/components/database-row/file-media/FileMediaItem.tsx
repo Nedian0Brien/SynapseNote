@@ -8,7 +8,7 @@ import FileMediaMore from '@/components/database/components/cell/file-media/File
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { openUrl } from '@/utils/url';
-import { getConfigValue } from '@/utils/runtime-config';
+import { getFileLegacyUrl } from '@/utils/file-storage-url';
 
 function FileMediaItem({
   file,
@@ -54,7 +54,7 @@ function FileMediaItem({
 
     const fileId = file.url;
 
-    return getConfigValue('APPFLOWY_BASE_URL', '') + '/api/file_storage/' + workspaceId + '/v1/blob/' + fileId;
+    return getFileLegacyUrl(workspaceId, fileId);
   }, [file.url, workspaceId]);
 
   const [hover, setHover] = useState(false);
@@ -71,7 +71,7 @@ function FileMediaItem({
           }
 
           const fileId = file.url;
-          const newUrl = getConfigValue('APPFLOWY_BASE_URL', '') + '/api/file_storage/' + workspaceId + '/v1/blob/' + fileId;
+          const newUrl = getFileLegacyUrl(workspaceId, fileId);
 
           void openUrl(newUrl, '_blank');
         }

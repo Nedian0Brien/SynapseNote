@@ -13,7 +13,7 @@ import ImageGallery from '@/components/editor/components/blocks/gallery/ImageGal
 import { EditorElementProps, GalleryBlockNode } from '@/components/editor/editor.type';
 import { useEditorContext } from '@/components/editor/EditorContext';
 import { copyTextToClipboard } from '@/utils/copy';
-import { getConfigValue } from '@/utils/runtime-config';
+import { getFileLegacyUrl } from '@/utils/file-storage-url';
 
 const GalleryBlock = memo(
   forwardRef<HTMLDivElement, EditorElementProps<GalleryBlockNode>>(({ node, children, ...attributes }, ref) => {
@@ -37,8 +37,7 @@ const GalleryBlock = memo(
 
           if (!imageUrl) return null;
           if (!isURL(image.url)) {
-            imageUrl =
-              getConfigValue('APPFLOWY_BASE_URL', '') + '/api/file_storage/' + workspaceId + '/v1/blob/' + image.url;
+            imageUrl = getFileLegacyUrl(workspaceId, image.url);
           }
 
           const url = new URL(imageUrl);

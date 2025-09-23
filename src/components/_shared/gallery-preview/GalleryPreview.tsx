@@ -13,7 +13,7 @@ import { ReactComponent as DownloadIcon } from '@/assets/icons/save_as.svg';
 import { notify } from '@/components/_shared/notify';
 import { copyTextToClipboard } from '@/utils/copy';
 import isURL from 'validator/lib/isURL';
-import { getConfigValue } from '@/utils/runtime-config';
+import { getFileLegacyUrl } from '@/utils/file-storage-url';
 
 export interface GalleryImage {
   src: string;
@@ -102,7 +102,7 @@ function GalleryPreview({ images, open, onClose, previewIndex, workspaceId }: Ga
 
     const fileId = images[index].src;
 
-    return getConfigValue('APPFLOWY_BASE_URL', '') + '/api/file_storage/' + workspaceId + '/v1/blob/' + fileId;
+    return getFileLegacyUrl(workspaceId, fileId);
   }, [images, index, workspaceId]);
 
   if (!open) {

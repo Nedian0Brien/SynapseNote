@@ -6,7 +6,7 @@ import FileIcon from '@/components/database/components/cell/file-media/FileIcon'
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { openUrl } from '@/utils/url';
-import { getConfigValue } from '@/utils/runtime-config';
+import { getFileLegacyUrl } from '@/utils/file-storage-url';
 
 function UnPreviewFile({ file }: { file: FileMediaCellDataItem }) {
   const { workspaceId } = useDatabaseContext();
@@ -26,7 +26,7 @@ function UnPreviewFile({ file }: { file: FileMediaCellDataItem }) {
             }
 
             const fileId = file.url;
-            const newUrl = getConfigValue('APPFLOWY_BASE_URL', '') + '/api/file_storage/' + workspaceId + '/v1/blob/' + fileId;
+            const newUrl = getFileLegacyUrl(workspaceId, fileId);
 
             void openUrl(newUrl, '_blank');
           }}
