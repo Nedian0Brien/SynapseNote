@@ -98,6 +98,7 @@ export function HoverControls ({ rowId, dragHandleRef }: {
           <TooltipTrigger asChild>
             <div
               ref={dragHandleRef}
+              data-testid="row-accessory-button"
               onClick={() => {
                 setMenuOpen(true);
               }}

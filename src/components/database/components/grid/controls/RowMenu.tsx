@@ -77,6 +77,13 @@ function RowMenu({ rowId, onClose }: { rowId: string; onClose: () => void }) {
           {actions.map((item) => (
             <DropdownMenuItem
               key={item.label}
+              data-testid={
+                item.label === t('grid.row.duplicate') ? 'row-menu-duplicate' :
+                item.label === t('grid.row.insertRecordAbove') ? 'row-menu-insert-above' :
+                item.label === t('grid.row.insertRecordBelow') ? 'row-menu-insert-below' :
+                item.label === t('grid.row.delete') ? 'row-menu-delete' :
+                undefined
+              }
               onSelect={async (e) => {
                 e.preventDefault();
                 item.onSelect();
