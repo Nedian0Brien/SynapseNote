@@ -6,7 +6,6 @@ import { invalidToken } from '@/application/session/token';
 import { Workspace } from '@/application/types';
 import { ReactComponent as UpgradeAIMaxIcon } from '@/assets/icons/ai.svg';
 import { ReactComponent as ChevronDownIcon } from '@/assets/icons/alt_arrow_down.svg';
-import { ReactComponent as ChevronRightIcon } from '@/assets/icons/alt_arrow_right.svg';
 import { ReactComponent as TipIcon } from '@/assets/icons/help.svg';
 import { ReactComponent as AddUserIcon } from '@/assets/icons/invite_user.svg';
 import { ReactComponent as LogoutIcon } from '@/assets/icons/logout.svg';
@@ -226,7 +225,6 @@ export function Workspaces() {
                 <DropdownMenuItem data-testid='account-settings-button' onSelect={(e) => e.preventDefault()}>
                   <SettingsIcon />
                   <div className={'flex-1 text-left'}>{t('web.accountSettings')}</div>
-                  <ChevronRightIcon className='text-icon-tertiary' />
                 </DropdownMenuItem>
               </AccountSettings>
               <DropdownMenuItem onSelect={handleSignOut}>
