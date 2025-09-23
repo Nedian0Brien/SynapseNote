@@ -10,7 +10,6 @@ import { RenderRow, RenderRowType } from '@/components/database/components/grid/
 import { useGridContext } from '@/components/database/grid/useGridContext';
 import { cn } from '@/lib/utils';
 
-const MIN_HEIGHT = 36;
 
 function GridVirtualColumn({
   data,
@@ -87,7 +86,6 @@ function GridVirtualColumn({
         readOnly && rowType === RenderRowType.CalculateRow ? 'border-t border-border-primary' : ''
       )}
       style={{
-        height: rowIndex === 0 ? MIN_HEIGHT : row.size,
         width: columnData.width,
       }}
     >

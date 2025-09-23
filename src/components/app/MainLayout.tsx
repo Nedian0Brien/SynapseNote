@@ -4,7 +4,7 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { useOutlineDrawer } from '@/components/_shared/outline/outline.hooks';
 import { AFScroller } from '@/components/_shared/scroller';
 import { useAIChatContext } from '@/components/ai-chat/AIChatProvider';
-import { useViewErrorStatus } from '@/components/app/app.hooks';
+import { useAppHandlers, useViewErrorStatus } from '@/components/app/app.hooks';
 import { ConnectBanner } from '@/components/app/ConnectBanner';
 import { AppHeader } from '@/components/app/header';
 import Main from '@/components/app/Main';
@@ -17,6 +17,7 @@ function MainLayout() {
   const { drawerOpened, drawerWidth, setDrawerWidth, toggleOpenDrawer } = useOutlineDrawer();
   const { drawerOpen: chatViewDrawerOpen, drawerWidth: openViewDrawerWidth } = useAIChatContext();
 
+  const { openPageModalViewId } = useAppHandlers();
   const { notFound, deleted } = useViewErrorStatus();
 
   const main = useMemo(() => {
@@ -65,17 +66,19 @@ function MainLayout() {
         />
         <ConnectBanner />
 
-        <div
-          className={'sticky-header-overlay'}
-          style={{
-            width: '100%',
-            position: 'sticky',
-            top: 48,
-            left: 0,
-            right: 0,
-            zIndex: 50,
-          }}
-        />
+        {!openPageModalViewId && (
+          <div
+            className={'sticky-header-overlay'}
+            style={{
+              width: '100%',
+              position: 'sticky',
+              top: 48,
+              left: 0,
+              right: 0,
+              zIndex: 50,
+            }}
+          />
+        )}
 
         <ErrorBoundary FallbackComponent={SomethingError}>{main}</ErrorBoundary>
       </AFScroller>

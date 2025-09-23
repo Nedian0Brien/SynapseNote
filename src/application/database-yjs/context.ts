@@ -70,6 +70,7 @@ export interface DatabaseContextState {
   // Calendar view type map: viewId -> CalendarViewType
   calendarViewTypeMap?: Map<string, CalendarViewType>;
   setCalendarViewType?: (viewId: string, viewType: CalendarViewType) => void;
+  openPageModalViewId?: string;
 }
 
 export const DatabaseContext = createContext<DatabaseContextState | null>(null);

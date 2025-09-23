@@ -3,11 +3,14 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
+import { useDatabaseContext } from '@/application/database-yjs';
 import { useDeleteRowDispatch, useDuplicateRowDispatch } from '@/application/database-yjs/dispatch';
+import { ReactComponent as ArrowLeftIcon } from '@/assets/icons/arrow_left.svg';
 import { ReactComponent as DeleteIcon } from '@/assets/icons/delete.svg';
 import { ReactComponent as DuplicateIcon } from '@/assets/icons/duplicate.svg';
 import { ReactComponent as ExpandIcon } from '@/assets/icons/expand.svg';
 import { ReactComponent as MoreIcon } from '@/assets/icons/more.svg';
+import { AFScroller } from '@/components/_shared/scroller';
 import { DatabaseRow } from '@/components/database/DatabaseRow';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,7 +22,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { AFScroller } from '@/components/_shared/scroller';
 
 function DatabaseRowModal({
   open,
@@ -32,7 +34,7 @@ function DatabaseRowModal({
   onOpenChange: (open: boolean) => void;
   openPage?: (rowId: string) => void;
 }) {
-  // const {} = useDatabaseContext();
+  const { openPageModalViewId } = useDatabaseContext();
   const { t } = useTranslation();
   const duplicateRow = useDuplicateRowDispatch();
   const deleteRow = useDeleteRowDispatch();
@@ -49,12 +51,32 @@ function DatabaseRowModal({
       disableAutoFocus={false}
       disableEnforceFocus={false}
       disableRestoreFocus={true}
+      hideBackdrop={!!openPageModalViewId}
       PaperProps={{
         className: `max-w-[70vw] relative w-[1188px] h-[80vh] overflow-hidden flex flex-col`,
       }}
     >
       <DialogContent className={'flex h-full w-full flex-col px-0 py-0'}>
         <DialogTitle className={'flex max-h-[48px] flex-1 items-center justify-end gap-2 px-2'}>
+          <div className='flex flex-1 items-center'>
+            {openPageModalViewId && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size={'icon'}
+                    variant='ghost'
+                    onClick={() => {
+                      onOpenChange(false);
+                    }}
+                  >
+                    <ArrowLeftIcon className='h-5 w-5' />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Go back</TooltipContent>
+              </Tooltip>
+            )}
+          </div>
+
           <Tooltip>
             <TooltipTrigger asChild>
               <Button

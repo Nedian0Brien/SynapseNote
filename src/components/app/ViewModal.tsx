@@ -7,6 +7,8 @@ import { UIVariant, ViewComponentProps, ViewLayout, ViewMetaProps, YDoc } from '
 import { ReactComponent as ArrowDownIcon } from '@/assets/icons/alt_arrow_down.svg';
 import { ReactComponent as CloseIcon } from '@/assets/icons/close.svg';
 import { ReactComponent as ExpandIcon } from '@/assets/icons/expand.svg';
+import { findAncestors, findView } from '@/components/_shared/outline/utils';
+import SpaceIcon from '@/components/_shared/view-icon/SpaceIcon';
 import { useAppHandlers, useAppOutline, useCurrentWorkspaceId } from '@/components/app/app.hooks';
 import DatabaseView from '@/components/app/DatabaseView';
 import MoreActions from '@/components/app/header/MoreActions';
@@ -14,8 +16,6 @@ import MovePagePopover from '@/components/app/view-actions/MovePagePopover';
 import { Document } from '@/components/document';
 import RecordNotFound from '@/components/error/RecordNotFound';
 import { useService } from '@/components/main/app.hooks';
-import { findAncestors, findView } from '@/components/_shared/outline/utils';
-import SpaceIcon from '@/components/_shared/view-icon/SpaceIcon';
 
 import ShareButton from 'src/components/app/share/ShareButton';
 
@@ -144,9 +144,6 @@ function ViewModal({ viewId, open, onClose }: { viewId?: string; open: boolean; 
           {space && ref.current && (
             <MovePagePopover
               viewId={viewId}
-              popoverContentProps={{
-                container: ref.current,
-              }}
               open={movePageOpen}
               onOpenChange={setMovePageOpen}
               onMoved={() => {

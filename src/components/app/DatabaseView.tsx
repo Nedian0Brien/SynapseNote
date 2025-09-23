@@ -2,14 +2,14 @@ import { Suspense, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import { ViewComponentProps, ViewLayout, YDatabase, YjsEditorKey } from '@/application/types';
-import { useAppOutline } from '@/components/app/app.hooks';
-import { Database } from '@/components/database';
 import { findView } from '@/components/_shared/outline/utils';
 import ComponentLoading from '@/components/_shared/progress/ComponentLoading';
 import CalendarSkeleton from '@/components/_shared/skeleton/CalendarSkeleton';
 import DocumentSkeleton from '@/components/_shared/skeleton/DocumentSkeleton';
 import GridSkeleton from '@/components/_shared/skeleton/GridSkeleton';
 import KanbanSkeleton from '@/components/_shared/skeleton/KanbanSkeleton';
+import { useAppOutline } from '@/components/app/app.hooks';
+import { Database } from '@/components/database';
 
 import ViewMetaPreview from 'src/components/view-meta/ViewMetaPreview';
 
@@ -53,6 +53,7 @@ function DatabaseView(props: ViewComponentProps) {
   );
 
   const rowId = search.get('r') || undefined;
+  const modalRowId = search.get('r-modal') || undefined;
   const doc = props.doc;
   const database = doc?.getMap(YjsEditorKey.data_section)?.get(YjsEditorKey.database) as YDatabase;
   const skeleton = useMemo(() => {
@@ -103,6 +104,7 @@ function DatabaseView(props: ViewComponentProps) {
           visibleViewIds={visibleViewIds}
           onChangeView={handleChangeView}
           onOpenRowPage={handleNavigateToRow}
+          modalRowId={modalRowId}
         />
       </Suspense>
     </div>

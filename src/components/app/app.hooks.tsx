@@ -247,6 +247,7 @@ export function useAppHandlers() {
     onRendered: context.onRendered,
     addPage: context.addPage,
     openPageModal: context.openPageModal,
+    openPageModalViewId: context.openPageModalViewId,
     deletePage: context.deletePage,
     deleteTrash: context.deleteTrash,
     restorePage: context.restorePage,

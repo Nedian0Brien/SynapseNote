@@ -33,6 +33,7 @@ export interface Database2Props {
   viewId: string;
   iidName: string;
   rowId?: string;
+  modalRowId?: string;
   appendBreadcrumb?: AppendBreadcrumb;
   onChangeView: (viewId: string) => void;
   onOpenRowPage?: (rowId: string) => void;
@@ -62,6 +63,7 @@ function Database(props: Database2Props) {
     readOnly = true,
     loadView,
     navigateToView,
+    modalRowId,
   } = props;
   const database = doc.getMap(YjsEditorKey.data_section)?.get(YjsEditorKey.database) as YDatabase | null;
   const view = database?.get(YjsDatabaseKey.views)?.get(iidIndex);
@@ -136,8 +138,8 @@ function Database(props: Database2Props) {
     };
   }, [handleUpdateRowDocMap, rowOrders]);
 
-  const [openModalRowId, setOpenModalRowId] = useState<string | null>(null);
-  const [openModalViewId, setOpenModalViewId] = useState<string | null>(null);
+  const [openModalRowId, setOpenModalRowId] = useState<string | null>(() => modalRowId || null);
+  const [openModalViewId, setOpenModalViewId] = useState<string | null>(() => (modalRowId ? viewId : null));
   const [openModalRowDatabaseDoc, setOpenModalRowDatabaseDoc] = useState<YDoc | null>(null);
   const [openModalRowDocMap, setOpenModalRowDocMap] = useState<Record<RowId, YDoc> | null>(null);
 

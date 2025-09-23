@@ -1,8 +1,13 @@
-import { ThemeModeContext } from '@/components/main/useAppThemeMode';
-import { renderColor } from '@/utils/color';
-import { getIcon } from '@/utils/emoji';
+import DOMPurify from 'dompurify';
 import { useContext, useEffect, useMemo, useState } from 'react';
+
 import { ReactComponent as SpaceIcon1 } from '@/assets/space_icon/space_icon_1.svg';
+import { ReactComponent as SpaceIcon10 } from '@/assets/space_icon/space_icon_10.svg';
+import { ReactComponent as SpaceIcon11 } from '@/assets/space_icon/space_icon_11.svg';
+import { ReactComponent as SpaceIcon12 } from '@/assets/space_icon/space_icon_12.svg';
+import { ReactComponent as SpaceIcon13 } from '@/assets/space_icon/space_icon_13.svg';
+import { ReactComponent as SpaceIcon14 } from '@/assets/space_icon/space_icon_14.svg';
+import { ReactComponent as SpaceIcon15 } from '@/assets/space_icon/space_icon_15.svg';
 import { ReactComponent as SpaceIcon2 } from '@/assets/space_icon/space_icon_2.svg';
 import { ReactComponent as SpaceIcon3 } from '@/assets/space_icon/space_icon_3.svg';
 import { ReactComponent as SpaceIcon4 } from '@/assets/space_icon/space_icon_4.svg';
@@ -11,13 +16,9 @@ import { ReactComponent as SpaceIcon6 } from '@/assets/space_icon/space_icon_6.s
 import { ReactComponent as SpaceIcon7 } from '@/assets/space_icon/space_icon_7.svg';
 import { ReactComponent as SpaceIcon8 } from '@/assets/space_icon/space_icon_8.svg';
 import { ReactComponent as SpaceIcon9 } from '@/assets/space_icon/space_icon_9.svg';
-import { ReactComponent as SpaceIcon10 } from '@/assets/space_icon/space_icon_10.svg';
-import { ReactComponent as SpaceIcon11 } from '@/assets/space_icon/space_icon_11.svg';
-import { ReactComponent as SpaceIcon12 } from '@/assets/space_icon/space_icon_12.svg';
-import { ReactComponent as SpaceIcon13 } from '@/assets/space_icon/space_icon_13.svg';
-import { ReactComponent as SpaceIcon14 } from '@/assets/space_icon/space_icon_14.svg';
-import { ReactComponent as SpaceIcon15 } from '@/assets/space_icon/space_icon_15.svg';
-import DOMPurify from 'dompurify';
+import { ThemeModeContext } from '@/components/main/useAppThemeMode';
+import { renderColor } from '@/utils/color';
+import { getIcon } from '@/utils/emoji';
 
 export const getIconComponent = (icon: string) => {
   switch (icon) {
@@ -58,11 +59,16 @@ export const getIconComponent = (icon: string) => {
   }
 };
 
-function SpaceIcon({ value, char, bgColor, className: classNameProp }: {
-  value: string,
-  char?: string,
-  bgColor?: string,
-  className?: string
+function SpaceIcon({
+  value,
+  char,
+  bgColor,
+  className: classNameProp,
+}: {
+  value: string;
+  char?: string;
+  bgColor?: string;
+  className?: string;
 }) {
   const IconComponent = getIconComponent(value);
   const isDark = useContext(ThemeModeContext)?.isDark || false;
@@ -70,7 +76,7 @@ function SpaceIcon({ value, char, bgColor, className: classNameProp }: {
 
   useEffect(() => {
     if (value) {
-      void getIcon(value).then(icon => {
+      void getIcon(value).then((icon) => {
         setCustomIconContent(icon?.content || '');
       });
     }
@@ -78,22 +84,31 @@ function SpaceIcon({ value, char, bgColor, className: classNameProp }: {
 
   const customIcon = useMemo(() => {
     if (customIconContent) {
-      const cleanSvg = DOMPurify.sanitize(customIconContent.replaceAll('black', isDark ? 'black' : 'white').replace('<svg', '<svg width="100%" height="100%"'), {
-        USE_PROFILES: { svg: true, svgFilters: true },
-      });
+      const cleanSvg = DOMPurify.sanitize(
+        customIconContent
+          .replaceAll('black', isDark ? 'black' : 'white')
+          .replace('<svg', '<svg width="100%" height="100%"'),
+        {
+          USE_PROFILES: { svg: true, svgFilters: true },
+        }
+      );
 
-      return <span className={'flex p-[0.2em] items-center justify-center'}><span dangerouslySetInnerHTML={{
-        __html: cleanSvg,
-      }}/></span>;
+      return (
+        <span className={'flex items-center justify-center p-[0.2em]'}>
+          <span
+            dangerouslySetInnerHTML={{
+              __html: cleanSvg,
+            }}
+          />
+        </span>
+      );
     }
   }, [customIconContent, isDark]);
 
   const content = useMemo(() => {
     if (char) {
       return (
-        <span className={'text-content-on-fill font-medium h-full w-full flex items-center justify-center'}>
-        {char}
-      </span>
+        <span className={'flex h-full w-full items-center justify-center font-medium text-content-on-fill'}>{char}</span>
       );
     }
 
@@ -101,11 +116,18 @@ function SpaceIcon({ value, char, bgColor, className: classNameProp }: {
       return customIcon;
     }
 
-    return <IconComponent className={'h-full w-full'}/>;
+    return <IconComponent className={'h-full w-full'} />;
   }, [IconComponent, char, customIcon]);
 
   const className = useMemo(() => {
-    const classList = ['icon', 'h-[1.2em]', 'w-[1.2em]', 'shrink-0', 'rounded-[4px]', 'p-[0.1em]'];
+    const classList = [
+      'icon',
+      'h-[1.2em] min-h-[1.2em]',
+      'w-[1.2em] min-w-[1.2em]',
+      'shrink-0',
+      'rounded-[4px]',
+      'p-[0.1em]',
+    ];
 
     if (classNameProp) {
       classList.push(classNameProp);
@@ -114,12 +136,16 @@ function SpaceIcon({ value, char, bgColor, className: classNameProp }: {
     return classList.join(' ');
   }, [classNameProp]);
 
-  return <span
-    className={className}
-    style={{
-      backgroundColor: bgColor ? renderColor(bgColor) : 'rgb(163, 74, 253)',
-    }}
-  >{content}</span>;
+  return (
+    <span
+      className={className}
+      style={{
+        backgroundColor: bgColor ? renderColor(bgColor) : 'rgb(163, 74, 253)',
+      }}
+    >
+      {content}
+    </span>
+  );
 }
 
 export default SpaceIcon;
