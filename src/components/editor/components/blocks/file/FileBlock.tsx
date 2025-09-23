@@ -3,26 +3,25 @@ import React, { forwardRef, memo, useCallback, useEffect, useMemo, useRef, useSt
 import { useTranslation } from 'react-i18next';
 import { Element } from 'slate';
 import { useReadOnly, useSlateStatic } from 'slate-react';
-import isURL from 'validator/lib/isURL';
 
 import { YjsEditor } from '@/application/slate-yjs';
 import { CustomEditor } from '@/application/slate-yjs/command';
 import { BlockType, FieldURLType, FileBlockData } from '@/application/types';
 import { ReactComponent as FileIcon } from '@/assets/icons/file.svg';
 import { ReactComponent as ReloadIcon } from '@/assets/icons/regenerate.svg';
+import { notify } from '@/components/_shared/notify';
 import { usePopoverContext } from '@/components/editor/components/block-popover/BlockPopoverContext';
 import FileToolbar from '@/components/editor/components/blocks/file/FileToolbar';
 import { EditorElementProps, FileNode } from '@/components/editor/editor.type';
 import { useEditorContext } from '@/components/editor/EditorContext';
-import { notify } from '@/components/_shared/notify';
 import { FileHandler } from '@/utils/file';
-import { getConfigValue } from '@/utils/runtime-config';
+import { constructFileUrl } from '@/components/editor/utils/file-url';
 import { openUrl } from '@/utils/url';
 
 export const FileBlock = memo(
   forwardRef<HTMLDivElement, EditorElementProps<FileNode>>(({ node, children, ...attributes }, ref) => {
     const { blockId, data } = node;
-    const { uploadFile, workspaceId } = useEditorContext();
+    const { uploadFile, workspaceId, viewId } = useEditorContext();
     const editor = useSlateStatic() as YjsEditor;
     const [needRetry, setNeedRetry] = useState(false);
     const fileHandler = useMemo(() => new FileHandler(), []);
@@ -33,17 +32,7 @@ export const FileBlock = memo(
     const emptyRef = useRef<HTMLDivElement>(null);
     const [showToolbar, setShowToolbar] = useState(false);
 
-    const url = useMemo(() => {
-      if (!dataUrl) return '';
-
-      if (isURL(dataUrl)) {
-        return dataUrl;
-      }
-
-      const fileId = dataUrl;
-
-      return getConfigValue('APPFLOWY_BASE_URL', '') + '/api/file_storage/' + workspaceId + '/v1/blob/' + fileId;
-    }, [dataUrl, workspaceId]);
+    const url = useMemo(() => constructFileUrl(dataUrl, workspaceId, viewId), [dataUrl, workspaceId, viewId]);
 
     const className = useMemo(() => {
       const classList = ['w-full'];

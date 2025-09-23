@@ -12,8 +12,7 @@ import { ReactComponent as ReloadIcon } from '@/assets/icons/reset.svg';
 import { ReactComponent as DownloadIcon } from '@/assets/icons/save_as.svg';
 import { notify } from '@/components/_shared/notify';
 import { copyTextToClipboard } from '@/utils/copy';
-import isURL from 'validator/lib/isURL';
-import { getConfigValue } from '@/utils/runtime-config';
+import { getFileUrl, isFileURL } from '@/utils/file-storage-url';
 
 export interface GalleryImage {
   src: string;
@@ -25,11 +24,12 @@ export interface GalleryPreviewProps {
   onClose: () => void;
   previewIndex: number;
   workspaceId: string;
+  viewId: string;
 }
 
 const buttonClassName = 'p-1 hover:bg-transparent text-white hover:text-text-action p-0';
 
-function GalleryPreview({ images, open, onClose, previewIndex, workspaceId }: GalleryPreviewProps) {
+function GalleryPreview({ images, open, onClose, previewIndex, workspaceId, viewId }: GalleryPreviewProps) {
   const { t } = useTranslation();
   const [index, setIndex] = useState(previewIndex);
   const transformComponentRef = useRef<ReactZoomPanPinchContentRef>(null);
@@ -96,14 +96,14 @@ function GalleryPreview({ images, open, onClose, previewIndex, workspaceId }: Ga
   }, [handleKeydown]);
 
   const imageUrl = useMemo(() => {
-    if (isURL(images[index].src)) {
+    if (isFileURL(images[index].src)) {
       return images[index].src;
     }
 
     const fileId = images[index].src;
 
-    return getConfigValue('APPFLOWY_BASE_URL', '') + '/api/file_storage/' + workspaceId + '/v1/blob/' + fileId;
-  }, [images, index, workspaceId]);
+    return getFileUrl(workspaceId, viewId, fileId);
+  }, [images, index, workspaceId, viewId]);
 
   if (!open) {
     return null;

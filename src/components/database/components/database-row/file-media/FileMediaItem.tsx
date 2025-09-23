@@ -1,5 +1,4 @@
 import { useMemo, useRef, useState } from 'react';
-import isURL from 'validator/lib/isURL';
 
 import { useDatabaseContext, useReadOnly } from '@/application/database-yjs';
 import { FileMediaCellDataItem, FileMediaType } from '@/application/database-yjs/cell.type';
@@ -7,8 +6,8 @@ import FileIcon from '@/components/database/components/cell/file-media/FileIcon'
 import FileMediaMore from '@/components/database/components/cell/file-media/FileMediaMore';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { getFileUrl, isFileURL } from '@/utils/file-storage-url';
 import { openUrl } from '@/utils/url';
-import { getConfigValue } from '@/utils/runtime-config';
 
 function FileMediaItem({
   file,
@@ -26,7 +25,7 @@ function FileMediaItem({
   onDelete: () => void;
 }) {
   const readOnly = useReadOnly();
-  const { workspaceId } = useDatabaseContext();
+  const { workspaceId, viewId } = useDatabaseContext();
 
   const isImage = file.file_type === FileMediaType.Image;
   const mouseDownStartTimeRef = useRef<number | null>(null);
@@ -48,14 +47,14 @@ function FileMediaItem({
   }, [file.file_type]);
 
   const fileUrl = useMemo(() => {
-    if (file.url && isURL(file.url)) {
+    if (file.url && isFileURL(file.url)) {
       return file.url;
     }
 
     const fileId = file.url;
 
-    return getConfigValue('APPFLOWY_BASE_URL', '') + '/api/file_storage/' + workspaceId + '/v1/blob/' + fileId;
-  }, [file.url, workspaceId]);
+    return getFileUrl(workspaceId, viewId, fileId);
+  }, [file.url, workspaceId, viewId]);
 
   const [hover, setHover] = useState(false);
 
@@ -65,13 +64,13 @@ function FileMediaItem({
         e.stopPropagation();
         // Open the file in a new tab
         if (file.file_type !== FileMediaType.Image) {
-          if (file.url && isURL(file.url)) {
+          if (file.url && isFileURL(file.url)) {
             void openUrl(file.url, '_blank');
             return;
           }
 
           const fileId = file.url;
-          const newUrl = getConfigValue('APPFLOWY_BASE_URL', '') + '/api/file_storage/' + workspaceId + '/v1/blob/' + fileId;
+          const newUrl = getFileUrl(workspaceId, viewId, fileId);
 
           void openUrl(newUrl, '_blank');
         }

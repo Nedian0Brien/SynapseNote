@@ -2,6 +2,7 @@ import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import dayjs from 'dayjs';
 import { omit } from 'lodash-es';
 import { nanoid } from 'nanoid';
+import { getFileUploadUrl, getFileUrl } from '@/utils/file-storage-url';
 
 import { GlobalComment, Reaction } from '@/application/comment.type';
 import { ERROR_CODE } from '@/application/constants';
@@ -1776,7 +1777,7 @@ export async function uploadFile(
   file: File,
   onProgress?: (progress: number) => void
 ) {
-  const url = `/api/file_storage/${workspaceId}/v1/blob/${viewId}`;
+  const url = getFileUploadUrl(workspaceId, viewId);
 
   // Check file size, if over 7MB, check subscription plan
   if (file.size > 7 * 1024 * 1024) {
@@ -1811,10 +1812,7 @@ export async function uploadFile(
     });
 
     if (response?.data.code === 0) {
-      const baseURL = axiosInstance?.defaults.baseURL;
-      const url = `${baseURL}/api/file_storage/${workspaceId}/v1/blob/${viewId}/${response?.data.data.file_id}`;
-
-      return url;
+      return getFileUrl(workspaceId, viewId, response?.data.data.file_id);
     }
 
     return Promise.reject(response?.data);

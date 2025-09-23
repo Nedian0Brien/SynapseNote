@@ -1,19 +1,18 @@
 import { useMemo } from 'react';
-import isURL from 'validator/lib/isURL';
 
 import { useDatabaseContext } from '@/application/database-yjs';
 import { FileMediaCellDataItem } from '@/application/database-yjs/cell.type';
-import { getConfigValue } from '@/utils/runtime-config';
+import { getFileUrl, isFileURL } from '@/utils/file-storage-url';
 
 function PreviewImage({ file, onClick }: { file: FileMediaCellDataItem; onClick: () => void }) {
-  const { workspaceId } = useDatabaseContext();
+  const { workspaceId, viewId } = useDatabaseContext();
 
   const thumb = useMemo(() => {
     let fileUrl = file.url;
 
     if (!fileUrl) return '';
-    if (!isURL(fileUrl)) {
-      fileUrl = getConfigValue('APPFLOWY_BASE_URL', '') + '/api/file_storage/' + workspaceId + '/v1/blob/' + file.url;
+    if (!isFileURL(fileUrl)) {
+      fileUrl = getFileUrl(workspaceId, viewId, file.url);
     }
 
     const url = new URL(fileUrl);
@@ -22,7 +21,7 @@ function PreviewImage({ file, onClick }: { file: FileMediaCellDataItem; onClick:
     url.searchParams.set('fit', 'crop');
 
     return url.toString() + '&w=240&q=80';
-  }, [file.url, workspaceId]);
+  }, [file.url, workspaceId, viewId]);
 
   return (
     <div

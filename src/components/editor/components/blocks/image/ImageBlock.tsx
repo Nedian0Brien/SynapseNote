@@ -3,21 +3,19 @@ import React, { forwardRef, memo, useCallback, useEffect, useMemo, useRef, useSt
 import { useTranslation } from 'react-i18next';
 import { Element } from 'slate';
 import { ReactEditor, useReadOnly, useSelected, useSlateStatic } from 'slate-react';
-import isURL from 'validator/lib/isURL';
 
 import { YjsEditor } from '@/application/slate-yjs';
 import { CustomEditor } from '@/application/slate-yjs/command';
 import { AlignType, BlockType, ImageBlockData, ImageType } from '@/application/types';
 import { ReactComponent as ErrorIcon } from '@/assets/icons/error.svg';
+import { notify } from '@/components/_shared/notify';
 import { usePopoverContext } from '@/components/editor/components/block-popover/BlockPopoverContext';
 import { EditorElementProps, ImageBlockNode } from '@/components/editor/editor.type';
 import { useEditorContext } from '@/components/editor/EditorContext';
-import { notify } from '@/components/_shared/notify';
 import { FileHandler } from '@/utils/file';
-
+import { constructFileUrl } from '@/components/editor/utils/file-url';
 import ImageEmpty from './ImageEmpty';
 import ImageRender from './ImageRender';
-import { getConfigValue } from '@/utils/runtime-config';
 
 export const ImageBlock = memo(
   forwardRef<HTMLDivElement, EditorElementProps<ImageBlockNode>>(({ node, children, ...attributes }, ref) => {
@@ -25,7 +23,7 @@ export const ImageBlock = memo(
 
     const { blockId, data } = node;
     const retry_local_url = data?.retry_local_url;
-    const { uploadFile, workspaceId } = useEditorContext();
+    const { uploadFile, workspaceId, viewId } = useEditorContext();
     const editor = useSlateStatic() as YjsEditor;
     const [needRetry, setNeedRetry] = useState(false);
     const [localUrl, setLocalUrl] = useState<string | undefined>(undefined);
@@ -35,17 +33,7 @@ export const ImageBlock = memo(
     const readOnly = useReadOnly() || editor.isElementReadOnly(node as unknown as Element);
     const selected = useSelected();
     const { url: dataUrl, align } = useMemo(() => data || {}, [data]);
-    const url = useMemo(() => {
-      if (!dataUrl) return '';
-
-      if (isURL(dataUrl)) {
-        return dataUrl;
-      }
-
-      const fileId = dataUrl;
-
-      return getConfigValue('APPFLOWY_BASE_URL', '') + '/api/file_storage/' + workspaceId + '/v1/blob/' + fileId;
-    }, [dataUrl, workspaceId]);
+    const url = useMemo(() => constructFileUrl(dataUrl, workspaceId, viewId), [dataUrl, workspaceId, viewId]);
 
     const containerRef = useRef<HTMLDivElement>(null);
     const onFocusNode = useCallback(() => {
@@ -169,9 +157,8 @@ export const ImageBlock = memo(
       >
         <div
           contentEditable={false}
-          className={`embed-block relative ${alignCss} ${
-            url || needRetry ? '!rounded-none !border-none !bg-transparent' : 'p-4'
-          }`}
+          className={`embed-block relative ${alignCss} ${url || needRetry ? '!rounded-none !border-none !bg-transparent' : 'p-4'
+            }`}
         >
           {url || needRetry ? (
             <ImageRender
