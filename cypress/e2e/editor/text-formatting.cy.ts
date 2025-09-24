@@ -36,53 +36,105 @@ describe('Text Formatting - Selection and Formatting', () => {
       cy.focused().type('{selectall}{backspace}');
       waitForReactUpdate(1000); // Give more time for content to clear
 
-      // Test 1: Bold text
+      // Test 1: Bold text using toolbar button
       cy.log('Testing BOLD formatting');
       cy.focused().type('This line is bold');
       waitForReactUpdate(1000);
+      
+      // Select all text
       cy.focused().type('{selectall}');
-      waitForReactUpdate(500);
-      cy.focused().type('{cmd+b}');
       waitForReactUpdate(1000);
+      
+      // Wait for selection toolbar to appear and click bold button
+      cy.get('[data-testid="selection-toolbar"]', { timeout: 10000 })
+        .should('exist')
+        .should('have.css', 'opacity', '1');
+      
+      cy.get('[data-testid="toolbar-bold-button"]', { timeout: 10000 })
+        .should('exist')
+        .should('be.visible')
+        .click({ force: true });
+      
+      waitForReactUpdate(1000);
+      
       // Wait for the strong element to appear with retry and longer timeout
       cy.get('strong', { timeout: 15000 }).should('exist').and('be.visible');
       cy.focused().type('{end}{enter}');
       waitForReactUpdate(1000);
 
-      // Test 2: Italic text
+      // Test 2: Italic text using toolbar button
       cy.log('Testing ITALIC formatting');
       cy.focused().type('This line is italic');
       waitForReactUpdate(1000);
+      
+      // Select all text
       cy.focused().type('{selectall}');
-      waitForReactUpdate(500);
-      cy.focused().type('{cmd+i}');
       waitForReactUpdate(1000);
+      
+      // Wait for selection toolbar and click italic button
+      cy.get('[data-testid="selection-toolbar"]', { timeout: 10000 })
+        .should('exist')
+        .should('have.css', 'opacity', '1');
+      
+      cy.get('[data-testid="toolbar-italic-button"]', { timeout: 10000 })
+        .should('exist')
+        .should('be.visible')
+        .click({ force: true });
+      
+      waitForReactUpdate(1000);
+      
       // Wait for the em element to appear with retry and longer timeout
       cy.get('em', { timeout: 15000 }).should('exist').and('be.visible');
       cy.focused().type('{end}{enter}');
       waitForReactUpdate(1000);
 
-      // Test 3: Underline text
+      // Test 3: Underline text using toolbar button
       cy.log('Testing UNDERLINE formatting');
       cy.focused().type('This line is underlined');
       waitForReactUpdate(1000);
+      
+      // Select all text
       cy.focused().type('{selectall}');
-      waitForReactUpdate(500);
-      cy.focused().type('{cmd+u}');
       waitForReactUpdate(1000);
+      
+      // Wait for selection toolbar and click underline button
+      cy.get('[data-testid="selection-toolbar"]', { timeout: 10000 })
+        .should('exist')
+        .should('have.css', 'opacity', '1');
+      
+      cy.get('[data-testid="toolbar-underline-button"]', { timeout: 10000 })
+        .should('exist')
+        .should('be.visible')
+        .click({ force: true });
+      
+      waitForReactUpdate(1000);
+      
       // Wait for the u element to appear with retry and longer timeout
       cy.get('u', { timeout: 15000 }).should('exist').and('be.visible');
       cy.focused().type('{end}{enter}');
       waitForReactUpdate(1000);
 
-      // Test 4: Strikethrough text
+      // Test 4: Strikethrough text using toolbar button
       cy.log('Testing STRIKETHROUGH formatting');
       cy.focused().type('This line has strikethrough');
       waitForReactUpdate(1000);
+      
+      // Select all text
       cy.focused().type('{selectall}');
-      waitForReactUpdate(500);
-      cy.focused().type('{shift+cmd+s}');
       waitForReactUpdate(1000);
+      
+      // Wait for selection toolbar and click strikethrough button
+      cy.get('[data-testid="selection-toolbar"]', { timeout: 10000 })
+        .should('exist')
+        .should('have.css', 'opacity', '1');
+      
+      cy.get('[data-testid="toolbar-strikethrough-button"]', { timeout: 10000 })
+        .should('exist')
+        .should('be.visible')
+        .click({ force: true });
+      
+      waitForReactUpdate(1000);
+      
       // Wait for the strikethrough element to appear with retry and longer timeout
       cy.get('s, del, strike, [style*="text-decoration: line-through"]', { timeout: 15000 }).should('exist').and('be.visible');
 
