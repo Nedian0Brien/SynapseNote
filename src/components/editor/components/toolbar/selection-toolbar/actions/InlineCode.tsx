@@ -24,6 +24,7 @@ export function InlineCode() {
     <ActionButton
       onClick={onClick}
       active={isActivated}
+      data-testid="toolbar-code-button"
       tooltip={
         <>
           <div>{t('editor.embedCode')}</div>

@@ -43,6 +43,7 @@ export function SelectionToolbar() {
     <SelectionToolbarContext.Provider value={{ visible, forceShow, rePosition, getDecorateState }}>
       <div
         ref={ref}
+        data-testid="selection-toolbar"
         className={
           'selection-toolbar pointer-events-none transform transition-opacity duration-200 absolute z-[100] flex min-h-[32px] w-fit flex-grow items-center rounded-lg bg-[var(--fill-toolbar)] px-2 opacity-0 shadow-lg'
         }

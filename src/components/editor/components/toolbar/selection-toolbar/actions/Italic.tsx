@@ -24,6 +24,7 @@ export function Italic() {
     <ActionButton
       onClick={onClick}
       active={isActivated}
+      data-testid="toolbar-italic-button"
       tooltip={
         <>
           <div>{t('toolbar.italic')}</div>

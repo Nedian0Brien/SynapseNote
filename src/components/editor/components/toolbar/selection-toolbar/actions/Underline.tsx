@@ -24,6 +24,7 @@ export function Underline() {
     <ActionButton
       onClick={onClick}
       active={isActivated}
+      data-testid="toolbar-underline-button"
       tooltip={
         <>
           <div>{t('editor.underline')}</div>
