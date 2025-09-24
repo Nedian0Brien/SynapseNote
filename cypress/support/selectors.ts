@@ -320,11 +320,11 @@ export const EditorSelectors = {
   selectionToolbar: () => cy.get('[data-testid="selection-toolbar"]'),
 
   // Formatting buttons in toolbar
-  boldButton: () => cy.get('[data-testid="toolbar-bold-button"]'),
-  italicButton: () => cy.get('[data-testid="toolbar-italic-button"]'),
-  underlineButton: () => cy.get('[data-testid="toolbar-underline-button"]'),
-  strikethroughButton: () => cy.get('[data-testid="toolbar-strikethrough-button"]'),
-  codeButton: () => cy.get('[data-testid="toolbar-code-button"]'),
+  boldButton: () => cy.get(byTestId('toolbar-bold-button')),
+  italicButton: () => cy.get(byTestId('toolbar-italic-button')),
+  underlineButton: () => cy.get(byTestId('toolbar-underline-button')),
+  strikethroughButton: () => cy.get(byTestId('toolbar-strikethrough-button')),
+  codeButton: () => cy.get(byTestId('toolbar-code-button')),
 };
 
 /**

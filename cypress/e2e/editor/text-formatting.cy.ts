@@ -46,12 +46,12 @@ describe('Text Formatting - Selection and Formatting', () => {
       waitForReactUpdate(1000);
       
       // Wait for selection toolbar to appear and click bold button
-      cy.get('[data-testid="selection-toolbar"]', { timeout: 10000 })
-        .should('exist')
+      EditorSelectors.selectionToolbar()
+        .should('exist', { timeout: 10000 })
         .should('have.css', 'opacity', '1');
       
-      cy.get('[data-testid="toolbar-bold-button"]', { timeout: 10000 })
-        .should('exist')
+      EditorSelectors.boldButton()
+        .should('exist', { timeout: 10000 })
         .should('be.visible')
         .click({ force: true });
       
@@ -72,12 +72,12 @@ describe('Text Formatting - Selection and Formatting', () => {
       waitForReactUpdate(1000);
       
       // Wait for selection toolbar and click italic button
-      cy.get('[data-testid="selection-toolbar"]', { timeout: 10000 })
-        .should('exist')
+      EditorSelectors.selectionToolbar()
+        .should('exist', { timeout: 10000 })
         .should('have.css', 'opacity', '1');
       
-      cy.get('[data-testid="toolbar-italic-button"]', { timeout: 10000 })
-        .should('exist')
+      EditorSelectors.italicButton()
+        .should('exist', { timeout: 10000 })
         .should('be.visible')
         .click({ force: true });
       
@@ -98,12 +98,12 @@ describe('Text Formatting - Selection and Formatting', () => {
       waitForReactUpdate(1000);
       
       // Wait for selection toolbar and click underline button
-      cy.get('[data-testid="selection-toolbar"]', { timeout: 10000 })
-        .should('exist')
+      EditorSelectors.selectionToolbar()
+        .should('exist', { timeout: 10000 })
         .should('have.css', 'opacity', '1');
       
-      cy.get('[data-testid="toolbar-underline-button"]', { timeout: 10000 })
-        .should('exist')
+      EditorSelectors.underlineButton()
+        .should('exist', { timeout: 10000 })
         .should('be.visible')
         .click({ force: true });
       
@@ -124,12 +124,12 @@ describe('Text Formatting - Selection and Formatting', () => {
       waitForReactUpdate(1000);
       
       // Wait for selection toolbar and click strikethrough button
-      cy.get('[data-testid="selection-toolbar"]', { timeout: 10000 })
-        .should('exist')
+      EditorSelectors.selectionToolbar()
+        .should('exist', { timeout: 10000 })
         .should('have.css', 'opacity', '1');
       
-      cy.get('[data-testid="toolbar-strikethrough-button"]', { timeout: 10000 })
-        .should('exist')
+      EditorSelectors.strikethroughButton()
+        .should('exist', { timeout: 10000 })
         .should('be.visible')
         .click({ force: true });
       
