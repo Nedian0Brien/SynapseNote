@@ -304,6 +304,30 @@ export const CheckboxSelectors = {
 };
 
 /**
+ * Editor-related selectors
+ */
+export const EditorSelectors = {
+  // Main Slate editor
+  slateEditor: () => cy.get('[data-slate-editor="true"]'),
+
+  // Get first editor
+  firstEditor: () => cy.get('[data-slate-editor="true"]').first(),
+
+  // Get editor with specific content
+  editorWithText: (text: string) => cy.get('[data-slate-editor="true"]').contains(text),
+
+  // Selection toolbar
+  selectionToolbar: () => cy.get('[data-testid="selection-toolbar"]'),
+
+  // Formatting buttons in toolbar
+  boldButton: () => cy.get(byTestId('toolbar-bold-button')),
+  italicButton: () => cy.get(byTestId('toolbar-italic-button')),
+  underlineButton: () => cy.get(byTestId('toolbar-underline-button')),
+  strikethroughButton: () => cy.get(byTestId('toolbar-strikethrough-button')),
+  codeButton: () => cy.get(byTestId('toolbar-code-button')),
+};
+
+/**
  * Helper function to wait for React to re-render after state changes
  */
 /**

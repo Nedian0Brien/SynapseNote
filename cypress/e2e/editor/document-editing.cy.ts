@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { AuthTestUtils } from '../../support/auth-utils';
+import { EditorSelectors } from '../../support/selectors';
 
 describe('Document Editing with Formatting', () => {
   const generateRandomEmail = () => `${uuidv4()}@appflowy.io`;
@@ -26,9 +27,8 @@ describe('Document Editing with Formatting', () => {
       cy.wait(5000);
 
       // Find and focus the editor
-      cy.get('[data-slate-editor="true"]', { timeout: 10000 })
+      EditorSelectors.firstEditor()
         .should('exist')
-        .first()
         .click({ force: true });
       cy.wait(1000);
 
@@ -65,9 +65,9 @@ describe('Document Editing with Formatting', () => {
       cy.wait(1000);
 
       // Verify content
-      cy.get('[data-slate-editor="true"]').should('contain.text', 'Document Title');
-      cy.get('[data-slate-editor="true"]').should('contain.text', 'Main Heading');
-      cy.get('[data-slate-editor="true"]').should('contain.text', 'Some content text');
+      EditorSelectors.slateEditor().should('contain.text', 'Document Title');
+      EditorSelectors.slateEditor().should('contain.text', 'Main Heading');
+      EditorSelectors.slateEditor().should('contain.text', 'Some content text');
     });
   });
 
@@ -88,9 +88,8 @@ describe('Document Editing with Formatting', () => {
       cy.wait(5000);
 
       // Find and focus the editor
-      cy.get('[data-slate-editor="true"]', { timeout: 10000 })
+      EditorSelectors.firstEditor()
         .should('exist')
-        .first()
         .click({ force: true });
       cy.wait(1000);
 
@@ -136,10 +135,10 @@ describe('Document Editing with Formatting', () => {
       cy.wait(1000);
 
       // Verify content
-      cy.get('[data-slate-editor="true"]').should('contain.text', 'Shopping List');
-      cy.get('[data-slate-editor="true"]').should('contain.text', 'Apples');
-      cy.get('[data-slate-editor="true"]').should('contain.text', 'Bananas');
-      cy.get('[data-slate-editor="true"]').should('contain.text', 'Oranges');
+      EditorSelectors.slateEditor().should('contain.text', 'Shopping List');
+      EditorSelectors.slateEditor().should('contain.text', 'Apples');
+      EditorSelectors.slateEditor().should('contain.text', 'Bananas');
+      EditorSelectors.slateEditor().should('contain.text', 'Oranges');
     });
   });
 
@@ -160,9 +159,8 @@ describe('Document Editing with Formatting', () => {
       cy.wait(5000);
 
       // Find and focus the editor
-      cy.get('[data-slate-editor="true"]', { timeout: 10000 })
+      EditorSelectors.firstEditor()
         .should('exist')
-        .first()
         .click({ force: true });
       cy.wait(1000);
 
@@ -235,12 +233,12 @@ describe('Document Editing with Formatting', () => {
       cy.wait(1000);
 
       // Verify content
-      cy.get('[data-slate-editor="true"]').should('contain.text', 'Steps to Follow');
-      cy.get('[data-slate-editor="true"]').should('contain.text', 'First step');
-      cy.get('[data-slate-editor="true"]').should('contain.text', 'Second step');
-      cy.get('[data-slate-editor="true"]').should('contain.text', 'Tasks');
-      cy.get('[data-slate-editor="true"]').should('contain.text', 'Complete report');
-      cy.get('[data-slate-editor="true"]').should('contain.text', 'Review code');
+      EditorSelectors.slateEditor().should('contain.text', 'Steps to Follow');
+      EditorSelectors.slateEditor().should('contain.text', 'First step');
+      EditorSelectors.slateEditor().should('contain.text', 'Second step');
+      EditorSelectors.slateEditor().should('contain.text', 'Tasks');
+      EditorSelectors.slateEditor().should('contain.text', 'Complete report');
+      EditorSelectors.slateEditor().should('contain.text', 'Review code');
     });
   });
 });

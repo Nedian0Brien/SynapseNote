@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { AuthTestUtils } from '../../support/auth-utils';
-import { PageSelectors, waitForReactUpdate } from '../../support/selectors';
+import { EditorSelectors, PageSelectors, waitForReactUpdate } from '../../support/selectors';
 
 describe('Editor Slash Menu', () => {
   const generateRandomEmail = () => `${uuidv4()}@appflowy.io`;
@@ -37,7 +37,7 @@ describe('Editor Slash Menu', () => {
       cy.wait(5000); // Give page time to fully load
 
       // Focus on editor
-      cy.get('[data-slate-editor="true"]').should('exist').click();
+      EditorSelectors.slateEditor().should('exist').click();
       waitForReactUpdate(1000);
 
       // Type slash to open menu

@@ -25,6 +25,7 @@ export function Bold() {
     <ActionButton
       onClick={onClick}
       active={isActivated}
+      data-testid="toolbar-bold-button"
       tooltip={
         <>
           <div>{t('toolbar.bold')}</div>

@@ -24,6 +24,7 @@ export function StrikeThrough() {
     <ActionButton
       onClick={onClick}
       active={isActivated}
+      data-testid="toolbar-strikethrough-button"
       tooltip={
         <>
           <div>{t('editor.strikethrough')}</div>
