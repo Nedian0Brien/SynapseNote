@@ -695,6 +695,7 @@ export function SlashPanel({
               color={'inherit'}
               startIcon={option.icon}
               key={option.key}
+              data-testid={`slash-menu-${option.key}`}
               data-option-key={option.key}
               onClick={() => {
                 handleSelectOption(option.key);
