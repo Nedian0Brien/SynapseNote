@@ -52,6 +52,7 @@ export function EnterPassword({ email, redirectTo }: { email: string; redirectTo
       <div className={'flex w-full flex-col gap-2'}>
         <div className={'flex flex-col gap-1'}>
           <PasswordInput
+            data-testid="password-input"
             autoFocus
             size={'md'}
             className={'w-full'}
@@ -80,7 +81,7 @@ export function EnterPassword({ email, redirectTo }: { email: string; redirectTo
           {t('signIn.forgotPassword')}
         </Button>
       </div>
-      <Button size={'lg'} className={'w-full'} onMouseDown={handleSubmit}>
+      <Button data-testid="password-submit-button" size={'lg'} className={'w-full'} onMouseDown={handleSubmit}>
         {loading ? (
           <>
             <Progress />
