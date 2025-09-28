@@ -77,6 +77,7 @@ function EmailLogin({ redirectTo }: { redirectTo: string }) {
     <div className={'flex w-full flex-col items-center justify-center gap-3'}>
       <div className={'flex flex-col gap-1'}>
         <Input
+          data-testid="login-email-input"
           autoFocus
           size={'md'}
           variant={error ? 'destructive' : 'default'}
@@ -97,7 +98,7 @@ function EmailLogin({ redirectTo }: { redirectTo: string }) {
         {error && <div className={cn('help-text text-xs text-text-error')}>{error}</div>}
       </div>
 
-      <Button onMouseDown={handleSubmitEmail} size={'lg'} className={'w-[320px]'} loading={loading}>
+      <Button data-testid="login-magic-link-button" onMouseDown={handleSubmitEmail} size={'lg'} className={'w-[320px]'} loading={loading}>
         {loading ? (
           <>
             <Progress />
@@ -107,7 +108,7 @@ function EmailLogin({ redirectTo }: { redirectTo: string }) {
           t('signIn.signInWithEmail')
         )}
       </Button>
-      <Button variant={'outline'} onMouseDown={handleSubmitPassword} size={'lg'} className={'w-[320px]'}>
+      <Button data-testid="login-password-button" variant={'outline'} onMouseDown={handleSubmitPassword} size={'lg'} className={'w-[320px]'}>
         {t('signIn.signInWithPassword')}
       </Button>
     </div>
