@@ -23,6 +23,22 @@ export default defineConfig({
     viewportWidth: 1440,
     viewportHeight: 900,
     setupNodeEvents(on, config) {
+      // Configure browser launch options
+      on('before:browser:launch', (browser, launchOptions) => {
+        if (browser.family === 'chromium' && browser.name !== 'electron') {
+          // Remove --start-fullscreen flag and set window size
+          launchOptions.args = launchOptions.args.filter(arg => !arg.includes('--start-fullscreen'));
+          launchOptions.args.push('--window-size=1440,900');
+          launchOptions.args.push('--window-position=100,100');
+
+          // Disable kiosk mode
+          const kioskIndex = launchOptions.args.indexOf('--kiosk');
+          if (kioskIndex > -1) {
+            launchOptions.args.splice(kioskIndex, 1);
+          }
+        }
+        return launchOptions;
+      });
       // Override baseUrl if CYPRESS_BASE_URL is set
       if (process.env.CYPRESS_BASE_URL) {
         config.baseUrl = process.env.CYPRESS_BASE_URL;
