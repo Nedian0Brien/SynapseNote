@@ -50,6 +50,7 @@ export default defineConfig({
 
           console.log('Chrome launch args:', launchOptions.args);
         }
+
         return launchOptions;
       });
       // Override baseUrl if CYPRESS_BASE_URL is set
