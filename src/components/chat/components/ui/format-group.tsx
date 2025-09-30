@@ -110,7 +110,7 @@ export function FormatGroup({
   };
 
   return (
-    <div className={'flex gap-2 items-center'}>
+    <div className={'flex gap-2 items-center'} data-testid='chat-format-group'>
       <div className={'flex gap-1'}>
         {renderGroup(actions, false)}
       </div>

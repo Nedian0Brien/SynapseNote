@@ -192,18 +192,19 @@ export function ChatInput() {
         <div className={'flex items-center justify-between gap-4'}>
           <div className={'flex items-center gap-1'}>
             <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                  }}
-                  variant={'ghost'}
-                  size={'icon'}
-                  onClick={() => {
-                    setResponseMode(
-                      responseMode === ChatInputMode.FormatResponse ? ChatInputMode.Auto : ChatInputMode.FormatResponse
-                    );
-                  }}
+            <TooltipTrigger asChild>
+              <Button
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                }}
+                variant={'ghost'}
+                size={'icon'}
+                data-testid='chat-input-format-toggle'
+                onClick={() => {
+                  setResponseMode(
+                    responseMode === ChatInputMode.FormatResponse ? ChatInputMode.Auto : ChatInputMode.FormatResponse
+                  );
+                }}
                 >
                   <FormatIcon className='text-icon-secondary h-5 w-5' />
                 </Button>
@@ -216,18 +217,19 @@ export function ChatInput() {
             <ModelSelector className={'h-7'} disabled={questionSending || answerApplying} />
 
             <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                  }}
-                  variant={'ghost'}
-                  className={'h-7 text-xs text-text-secondary'}
-                  onClick={() => {
-                    reloadDatabasePrompts();
-                    openModal();
-                  }}
-                >
+            <TooltipTrigger asChild>
+              <Button
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                }}
+                variant={'ghost'}
+                className={'h-7 text-xs text-text-secondary'}
+                data-testid='chat-input-browse-prompts'
+                onClick={() => {
+                  reloadDatabasePrompts();
+                  openModal();
+                }}
+              >
                   {t('chat.customPrompt.browsePrompts')}
                 </Button>
               </TooltipTrigger>
@@ -260,6 +262,7 @@ export function ChatInput() {
                 variant={'link'}
                 className={'text-fill-theme-thick p-0'}
                 disabled={!message.trim() || disabled}
+                data-testid='chat-input-send'
               >
                 {questionSending ? (
                   <LoadingDots />

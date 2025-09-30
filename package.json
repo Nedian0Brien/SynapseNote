@@ -20,6 +20,8 @@
     "test:unit:coverage": "cross-env COVERAGE=true jest --coverage",
     "test:components:coverage": "cross-env COVERAGE=true cypress run --component --browser chrome --headless",
     "test:cy": "cypress run",
+    "test:cy:chrome": "cypress run --browser chrome --headed",
+    "test:cy:chrome:windowed": "ELECTRON_EXTRA_LAUNCH_ARGS='--window-size=1440,900 --window-position=100,100' cypress run --browser chrome --headed",
     "test:integration": "cypress run --spec 'cypress/e2e/**/*.cy.ts'",
     "coverage": "cross-env COVERAGE=true pnpm run test:unit && cross-env COVERAGE=true pnpm run test:components",
     "generate-tokens": "node scripts/system-token/convert-tokens.cjs",

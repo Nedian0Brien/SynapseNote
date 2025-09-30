@@ -86,6 +86,7 @@ export function RelatedViews() {
           size='sm'
           className='gap-0.5 px-1.5 text-sm text-text-secondary'
           variant={'ghost'}
+          data-testid='chat-input-related-views'
         >
           <DocIcon className='h-5 w-5 text-icon-secondary' />
           {length}
@@ -99,6 +100,7 @@ export function RelatedViews() {
           initial="hidden"
           animate={open ? "visible" : "exit"}
           className={'h-fit min-h-[200px] max-h-[360px] w-[300px] flex flex-col'}
+          data-testid='chat-related-views-popover'
         >
           <SearchInput
             className='m-2'
@@ -126,4 +128,3 @@ export function RelatedViews() {
     </Popover>
   );
 }
-

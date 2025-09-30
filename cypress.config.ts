@@ -23,6 +23,36 @@ export default defineConfig({
     viewportWidth: 1440,
     viewportHeight: 900,
     setupNodeEvents(on, config) {
+      // Configure browser launch options
+      on('before:browser:launch', (browser, launchOptions) => {
+        if (browser.name === 'chrome' || browser.family === 'chromium') {
+          // Remove fullscreen and kiosk related flags
+          launchOptions.args = launchOptions.args.filter(arg => {
+            return !arg.includes('--start-fullscreen') &&
+                   !arg.includes('--start-maximized') &&
+                   !arg.includes('--kiosk') &&
+                   !arg.includes('--app') &&
+                   !arg.includes('--auto-open-devtools-for-tabs');
+          });
+
+          // Add flags to ensure windowed mode
+          // Position window at bottom of screen (adjust based on your screen height)
+          // For a 1080p screen (1920x1080), positioning at y=180 leaves the window at bottom
+          // For a 1440p screen (2560x1440), positioning at y=540 leaves the window at bottom
+          launchOptions.args.push('--window-size=1440,900');
+          launchOptions.args.push('--window-position=0,180');
+          launchOptions.args.push('--disable-gpu-sandbox');
+          launchOptions.args.push('--no-sandbox');
+          launchOptions.args.push('--disable-dev-shm-usage');
+
+          // Force disable fullscreen
+          launchOptions.args.push('--force-device-scale-factor=1');
+
+          console.log('Chrome launch args:', launchOptions.args);
+        }
+
+        return launchOptions;
+      });
       // Override baseUrl if CYPRESS_BASE_URL is set
       if (process.env.CYPRESS_BASE_URL) {
         config.baseUrl = process.env.CYPRESS_BASE_URL;
