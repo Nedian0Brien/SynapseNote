@@ -25,17 +25,30 @@ export default defineConfig({
     setupNodeEvents(on, config) {
       // Configure browser launch options
       on('before:browser:launch', (browser, launchOptions) => {
-        if (browser.family === 'chromium' && browser.name !== 'electron') {
-          // Remove --start-fullscreen flag and set window size
-          launchOptions.args = launchOptions.args.filter(arg => !arg.includes('--start-fullscreen'));
-          launchOptions.args.push('--window-size=1440,900');
-          launchOptions.args.push('--window-position=100,100');
+        if (browser.name === 'chrome' || browser.family === 'chromium') {
+          // Remove fullscreen and kiosk related flags
+          launchOptions.args = launchOptions.args.filter(arg => {
+            return !arg.includes('--start-fullscreen') &&
+                   !arg.includes('--start-maximized') &&
+                   !arg.includes('--kiosk') &&
+                   !arg.includes('--app') &&
+                   !arg.includes('--auto-open-devtools-for-tabs');
+          });
 
-          // Disable kiosk mode
-          const kioskIndex = launchOptions.args.indexOf('--kiosk');
-          if (kioskIndex > -1) {
-            launchOptions.args.splice(kioskIndex, 1);
-          }
+          // Add flags to ensure windowed mode
+          // Position window at bottom of screen (adjust based on your screen height)
+          // For a 1080p screen (1920x1080), positioning at y=180 leaves the window at bottom
+          // For a 1440p screen (2560x1440), positioning at y=540 leaves the window at bottom
+          launchOptions.args.push('--window-size=1440,900');
+          launchOptions.args.push('--window-position=0,180');
+          launchOptions.args.push('--disable-gpu-sandbox');
+          launchOptions.args.push('--no-sandbox');
+          launchOptions.args.push('--disable-dev-shm-usage');
+
+          // Force disable fullscreen
+          launchOptions.args.push('--force-device-scale-factor=1');
+
+          console.log('Chrome launch args:', launchOptions.args);
         }
         return launchOptions;
       });
