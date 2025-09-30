@@ -21,6 +21,7 @@ function FieldLabel ({ type, ...props }: { type: FieldType } & React.HTMLAttribu
       [FieldType.AISummaries]: t('grid.field.summaryFieldName'),
       [FieldType.AITranslations]: t('grid.field.translateFieldName'),
       [FieldType.FileMedia]: t('grid.field.mediaFieldName'),
+      [FieldType.Person]: t('grid.field.personFieldName'),
     }[type];
   }, [t, type]);
 

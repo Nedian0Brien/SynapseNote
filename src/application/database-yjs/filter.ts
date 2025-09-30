@@ -14,6 +14,7 @@ import {
   NumberFilter,
   NumberFilterCondition,
   parseChecklistData,
+  PersonFilterCondition,
   SelectOptionFilter,
   SelectOptionFilterCondition,
   TextFilter,
@@ -87,6 +88,22 @@ export function parseFilter(fieldType: FieldType, filter: YDatabaseFilter) {
           condition: DateFilterCondition.DateStartsOn,
         };
       }
+
+    case FieldType.Person:
+      try {
+        const personIds = JSON.parse(value.content) as string[];
+
+        return {
+          ...value,
+          personIds,
+        };
+      } catch (e) {
+        console.error('Error parsing person filter content:', e);
+        return {
+          ...value,
+          personIds: [],
+        };
+      }
   }
 
   return value;
@@ -156,6 +173,10 @@ export function filterBy(
           const data = meta.get(YjsDatabaseKey.last_modified);
 
           return rowTimeFilterCheck(data, filterValue as DateFilter);
+        }
+
+        case FieldType.Person: {
+          return personFilterCheck(cellData, content, condition);
         }
 
         default:
@@ -352,6 +373,42 @@ export function selectOptionFilterCheck(data: string, content: string, condition
     case SelectOptionFilterCondition.OptionDoesNotContain:
       if (!content) return true;
       return every(filterOptionIds, (option) => !selectedOptionIds.includes(option));
+
+    // Default case, if no conditions match
+    default:
+      return false;
+  }
+}
+
+
+export function personFilterCheck(data: string, content: string, condition: number) {
+  let userIds: string[] = [];
+  let filterIds: string[] = [];
+
+  try {
+    userIds = JSON.parse(data || '[]');
+    filterIds = JSON.parse(content || '[]');
+  } catch (e) {
+    console.error('Error parsing person filter data:', e);
+    return false;
+  }
+
+  if (PersonFilterCondition.PersonIsEmpty === condition) {
+    return filterIds.length === 0 || data === '';
+  }
+
+  if (PersonFilterCondition.PersonIsNotEmpty === condition) {
+    return filterIds.length > 0 && data !== '';
+  }
+
+  switch (condition) {
+    case PersonFilterCondition.PersonContains:
+      if (filterIds.length === 0) return true;
+      return some(filterIds, (id) => userIds.includes(id));
+
+    case PersonFilterCondition.PersonDoesNotContain:
+      if (filterIds.length === 0) return true;
+      return every(filterIds, (id) => !userIds.includes(id));
 
     // Default case, if no conditions match
     default:
@@ -566,6 +623,21 @@ export function dateFilterFillData(filter: YDatabaseFilter): {
   }
 }
 
+export function personFilterFillData(content: string, condition: number) {
+  switch (condition) {
+    case PersonFilterCondition.PersonContains:
+      return content;
+    case PersonFilterCondition.PersonDoesNotContain:
+      return '';
+    case PersonFilterCondition.PersonIsEmpty:
+      return '';
+    case PersonFilterCondition.PersonIsNotEmpty:
+      return content;
+    default:
+      return '';
+  }
+}
+
 export function filterFillData(filter: YDatabaseFilter, field: YDatabaseField) {
   const content = filter.get(YjsDatabaseKey.content);
   const condition = Number(filter.get(YjsDatabaseKey.condition));
@@ -585,6 +657,8 @@ export function filterFillData(filter: YDatabaseFilter, field: YDatabaseField) {
       return selectOptionFilterFillData(content, condition);
     case FieldType.Checklist:
       return checklistFilterFillData(content, condition);
+    case FieldType.Person:
+      return personFilterFillData(content, condition);
     default:
       return null;
   }
@@ -629,6 +703,11 @@ export function getDefaultFilterCondition(fieldType: FieldType) {
         content: JSON.stringify({
           timestamp: dayjs().startOf('day').unix(),
         }),
+      };
+    case FieldType.Person:
+      return {
+        condition: PersonFilterCondition.PersonContains,
+        content: '',
       };
   }
 }

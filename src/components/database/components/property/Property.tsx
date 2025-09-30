@@ -15,6 +15,7 @@ import { TextProperty } from '@/components/database/components/property/text';
 import { FC, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChecklistProperty } from 'src/components/database/components/property/cheklist';
+import { PersonCell } from '../cell/person';
 
 export function Property ({ fieldId, rowId }: { fieldId: string; rowId: string }) {
   const cell = useCellSelector({
@@ -48,6 +49,8 @@ export function Property ({ fieldId, rowId }: { fieldId: string; rowId: string }
         return TextCell;
       case FieldType.FileMedia:
         return FileMediaCell;
+      case FieldType.Person:
+        return PersonCell;
       default:
         return TextProperty;
     }

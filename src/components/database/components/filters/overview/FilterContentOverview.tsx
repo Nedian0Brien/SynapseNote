@@ -3,6 +3,7 @@ import {
   ChecklistFilterCondition,
   FieldType,
   Filter,
+  PersonFilterCondition,
   SelectOptionFilter,
   useFieldSelector,
 } from '@/application/database-yjs';
@@ -50,6 +51,21 @@ export function FilterContentOverview({ filter }: { filter: Filter }) {
             {filter.condition === ChecklistFilterCondition.IsComplete
               ? t('grid.checklistFilter.isComplete')
               : t('grid.checklistFilter.isIncomplted')}
+          </>
+        );
+      case FieldType.Person:
+        return (
+          <>
+            :{' '}
+            {filter.condition === PersonFilterCondition.PersonContains
+              ? t('grid.personFilter.contains')
+              : filter.condition === PersonFilterCondition.PersonDoesNotContain
+              ? t('grid.personFilter.doesNotContain')
+              : filter.condition === PersonFilterCondition.PersonIsEmpty
+              ? t('grid.personFilter.isEmpty')
+              : filter.condition === PersonFilterCondition.PersonIsNotEmpty
+              ? t('grid.personFilter.isNotEmpty')
+              : ''}
           </>
         );
       default:

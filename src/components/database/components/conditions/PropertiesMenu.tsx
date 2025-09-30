@@ -36,9 +36,13 @@ function PropertiesMenu({
       }
 
       if (
-        [FieldType.Relation, FieldType.AISummaries, FieldType.AITranslations, FieldType.FileMedia].includes(
-          property.type
-        )
+        [
+          FieldType.Relation,
+          FieldType.AISummaries,
+          FieldType.AITranslations,
+          FieldType.FileMedia,
+          FieldType.Person,
+        ].includes(property.type)
       ) {
         return false;
       }

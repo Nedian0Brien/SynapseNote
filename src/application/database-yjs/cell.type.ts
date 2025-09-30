@@ -103,6 +103,11 @@ export interface RelationCell extends Cell {
 
 export type RelationCellData = RowId[];
 
+export interface PersonCell extends Cell {
+  fieldType: FieldType.Person;
+  data: string;
+}
+
 export interface CellProps<T extends Cell> {
   cell?: T;
   rowId: string;

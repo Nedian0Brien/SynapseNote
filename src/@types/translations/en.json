@@ -510,7 +510,8 @@
     "relationField": "Relate to another database. Useful for linking items across databases",
     "AISummaryField": "Summarize the content of the record. Useful for getting a quick overview",
     "AITranslateField": "Translate the content of the record. Useful for multilingual support",
-    "mediaField": "Add images, videos, or other media. Useful for rich content"
+    "mediaField": "Add images, videos, or other media. Useful for rich content",
+    "personField": "Select a person from your workspace. Useful for assigning tasks or ownership"
   },
   "sideBar": {
     "closeSidebar": "Close sidebar",
@@ -1653,6 +1654,12 @@
       "isEmpty": "Is empty",
       "isNotEmpty": "Is not empty"
     },
+    "personFilter": {
+      "contains": "Contains",
+      "doesNotContain": "Does not contain",
+      "isEmpty": "Is empty",
+      "isNotEmpty": "Is not empty"
+    },
     "field": {
       "label": "Property",
       "hide": "Hide property",
@@ -1679,6 +1686,7 @@
       "timeFieldName": "Time",
       "mediaFieldName": "Files & media",
       "translateFieldName": "AI Translate",
+      "personFieldName": "Person",
       "translateTo": "Translate to",
       "numberFormat": "Number format",
       "dateFormat": "Date format",

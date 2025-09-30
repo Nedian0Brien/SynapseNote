@@ -31,6 +31,7 @@ const properties = [
   FieldType.Relation,
   FieldType.AISummaries,
   FieldType.AITranslations,
+  FieldType.Person,
 ];
 
 export function PropertySelectTrigger({ fieldId, disabled }: { fieldId: string; disabled?: boolean }) {
@@ -62,6 +63,7 @@ export function PropertySelectTrigger({ fieldId, disabled }: { fieldId: string; 
       [FieldType.AISummaries]: t('tooltip.AISummaryField'),
       [FieldType.AITranslations]: t('tooltip.AITranslateField'),
       [FieldType.FileMedia]: t('tooltip.mediaField'),
+      [FieldType.Person]: t('tooltip.personField'),
     };
   }, [t]);
 
