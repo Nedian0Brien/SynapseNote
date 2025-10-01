@@ -18,7 +18,7 @@ export const AppAuthLayer: React.FC<AppAuthLayerProps> = ({ children }) => {
   const service = useService();
   const navigate = useNavigate();
   const params = useParams();
-  
+
   const [userWorkspaceInfo, setUserWorkspaceInfo] = useState<UserWorkspaceInfo | undefined>(undefined);
 
   // Calculate current workspace ID from URL params or user info

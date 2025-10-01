@@ -1,8 +1,8 @@
-import * as React from 'react';
 import Box from '@mui/material/Box';
 import LinearProgress from '@mui/material/LinearProgress';
+import * as React from 'react';
 
-export default function LinearBuffer () {
+export default function LinearBuffer() {
   const [progress, setProgress] = React.useState(0);
   const [buffer, setBuffer] = React.useState(10);
 

@@ -40,6 +40,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { openUrl } from '@/utils/url';
 
 import { AccountSettings } from './AccountSettings';
+import LogoutConfirm from '@/components/app/workspaces/LogoutConfirm';
 
 export function Workspaces() {
   const { t } = useTranslation();
@@ -66,6 +67,7 @@ export function Workspaces() {
   const [openRenameWorkspace, setOpenRenameWorkspace] = useState<Workspace | null>(null);
   const [openDeleteWorkspace, setOpenDeleteWorkspace] = useState<Workspace | null>(null);
   const [openLeaveWorkspace, setOpenLeaveWorkspace] = useState<Workspace | null>(null);
+  const [openLogoutConfirm, setOpenLogoutConfirm] = useState(false);
 
   const isOwner = currentWorkspace?.owner?.uid.toString() === currentUser?.uid.toString();
 
@@ -229,7 +231,7 @@ export function Workspaces() {
                   <div className={'flex-1 text-left'}>{t('web.accountSettings')}</div>
                 </DropdownMenuItem>
               </AccountSettings>
-              <DropdownMenuItem onSelect={handleSignOut}>
+              <DropdownMenuItem onSelect={() => setOpenLogoutConfirm(true)}>
                 <LogoutIcon />
                 {t('button.logout')}
               </DropdownMenuItem>
@@ -323,6 +325,12 @@ export function Workspaces() {
           openOnChange={() => setOpenLeaveWorkspace(null)}
         />
       )}
+
+      <LogoutConfirm
+        open={openLogoutConfirm}
+        onClose={() => setOpenLogoutConfirm(false)}
+        onConfirm={handleSignOut}
+      />
     </>
   );
 }

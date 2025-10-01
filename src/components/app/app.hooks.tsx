@@ -32,7 +32,7 @@ import { AuthInternalContext } from './contexts/AuthInternalContext';
 import { AppAuthLayer } from './layers/AppAuthLayer';
 import { AppBusinessLayer } from './layers/AppBusinessLayer';
 import { AppSyncLayer } from './layers/AppSyncLayer';
-import { WorkspaceLoadingAnimation } from './WorkspaceLoadingAnimation';
+import LoadingDots from '@/components/_shared/LoadingDots';
 
 // Main AppContext interface - kept identical to maintain backward compatibility
 export interface AppContextType {
@@ -101,7 +101,11 @@ const ConditionalWorkspaceLayers = ({ children }: { children: React.ReactNode })
 
   // Show loading animation while workspace ID is being loaded
   if (!userWorkspaceInfo) {
-    return <WorkspaceLoadingAnimation />;
+    return (
+      <div className='fixed inset-0 flex items-center justify-center bg-background-primary'>
+        <LoadingDots className='flex items-center justify-center' />
+      </div>
+    );
   }
 
   return (
