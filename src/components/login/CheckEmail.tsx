@@ -73,6 +73,7 @@ function CheckEmail ({ email, redirectTo }: {
         <div className={'flex flex-col gap-3'}>
           <div className={'flex flex-col gap-1'}>
             <Input
+              data-testid="otp-code-input"
               autoFocus
               size={'md'}
               className={'w-[320px]'}
@@ -95,6 +96,7 @@ function CheckEmail ({ email, redirectTo }: {
           </div>
 
           <Button
+            data-testid="otp-submit-button"
             loading={loading}
             onClick={handleSubmit}
             size={'lg'}
@@ -107,6 +109,7 @@ function CheckEmail ({ email, redirectTo }: {
           </Button>
         </div>
       ) : <Button
+        data-testid="enter-code-manually-button"
         size={'lg'}
         className={'w-[320px]'}
         onClick={() => setEnter(true)}
