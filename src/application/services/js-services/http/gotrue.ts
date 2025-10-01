@@ -2,7 +2,7 @@ import axios, { AxiosInstance } from 'axios';
 
 import { emit, EventType } from '@/application/session';
 import { afterAuth } from '@/application/session/sign_in';
-import { getTokenParsed, refreshToken as refreshSessionToken } from '@/application/session/token';
+import { getTokenParsed, saveGoTrueAuth } from '@/application/session/token';
 
 import { parseGoTrueError } from './gotrue-error';
 import { verifyToken } from './http_api';
@@ -41,7 +41,7 @@ export async function refreshToken(refresh_token: string) {
   const newToken = response?.data;
 
   if (newToken) {
-    refreshSessionToken(JSON.stringify(newToken));
+    saveGoTrueAuth(JSON.stringify(newToken));
   } else {
     return Promise.reject('Failed to refresh token');
   }
@@ -63,7 +63,7 @@ export async function signInWithPassword(params: { email: string; password: stri
     const data = response?.data;
 
     if (data) {
-      refreshSessionToken(JSON.stringify(data));
+      saveGoTrueAuth(JSON.stringify(data));
       emit(EventType.SESSION_VALID);
       afterAuth();
     } else {
@@ -184,19 +184,31 @@ export async function signInOTP({
     });
 
     const data = response?.data;
+    console.debug('signInOTP response data:', data);
 
     if (data) {
       if (!data.code) {
+        // Save token to localStorage FIRST so axios interceptor can use it
+        console.debug('Saving token data:', data);
+        saveGoTrueAuth(JSON.stringify(data));
+
         if (type === 'magiclink') {
           emit(EventType.SESSION_VALID);
         }
 
+        // Verify token with AppFlowy Cloud to create user if needed
         try {
+          console.debug('[signInOTP] Calling verifyToken');
           await verifyToken(data.access_token);
-          refreshSessionToken(JSON.stringify(data));
+
+          await new Promise(resolve => setTimeout(resolve, 500));
         } catch (error) {
-          console.error('Failed to verify token with AppFlowy Cloud:', error);
-          emit(EventType.SESSION_INVALID, { error });
+          console.error('[signInOTP] Failed to verify token with AppFlowy Cloud:', error);
+          emit(EventType.SESSION_INVALID);
+          return Promise.reject({
+            code: -1,
+            message: 'Failed to create user account',
+          });
         }
 
         afterAuth();

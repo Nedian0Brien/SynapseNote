@@ -42,18 +42,26 @@ export function withSignIn () {
 
 export function afterAuth () {
   const redirectTo = getRedirectTo();
-  
+
   clearRedirectTo();
 
   if (redirectTo) {
     const url = new URL(decodeURIComponent(redirectTo));
     const pathname = url.pathname;
 
-    if (pathname === '/' || !pathname) {
-      url.pathname = '/app';
-    }
+    // Check if URL contains workspace/view UUIDs (user-specific paths)
+    // Pattern matches /app/{uuid}/{uuid} or /app/{uuid}
+    const hasUserSpecificIds = /\/app\/[a-f0-9-]{36}/.test(pathname);
 
-    window.location.href = url.toString();
+    if (hasUserSpecificIds) {
+      // Don't redirect to user-specific pages from previous sessions
+      window.location.href = '/app';
+    } else if (pathname === '/' || !pathname) {
+      url.pathname = '/app';
+      window.location.href = url.toString();
+    } else {
+      window.location.href = url.toString();
+    }
   } else {
     window.location.href = '/app';
   }

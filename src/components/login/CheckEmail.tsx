@@ -27,15 +27,19 @@ function CheckEmail ({ email, redirectTo }: {
     }
 
     setLoading(true);
+    console.log('[CheckEmail] Starting OTP verification', { email, code: code.substring(0, 3) + '***' });
 
     try {
+      console.log('[CheckEmail] Calling service.signInOTP');
       await service?.signInOTP({
         email,
         redirectTo,
         code,
       });
+      console.log('[CheckEmail] signInOTP completed successfully');
       // eslint-disable-next-line
     } catch (e: any) {
+      console.error('[CheckEmail] signInOTP failed:', e);
       if (e.code === 403) {
         setError(t('invalidOTPCode'));
       } else {

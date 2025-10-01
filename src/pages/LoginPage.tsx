@@ -12,10 +12,10 @@ import { AFConfigContext } from '@/components/main/app.hooks';
 
 function LoginPage() {
   const [search] = useSearchParams();
-  const redirectTo = search.get('redirectTo') || '';
   const action = search.get('action') || '';
   const email = search.get('email') || '';
   const force = search.get('force') === 'true';
+  const redirectTo = search.get('redirectTo') || '';
   const isAuthenticated = useContext(AFConfigContext)?.isAuthenticated || false;
 
   useEffect(() => {
@@ -23,8 +23,12 @@ function LoginPage() {
       return;
     }
 
-    if (isAuthenticated && redirectTo && decodeURIComponent(redirectTo) !== window.location.href) {
-      window.location.href = decodeURIComponent(redirectTo);
+    if (isAuthenticated && redirectTo) {
+      const decodedRedirect = decodeURIComponent(redirectTo);
+
+      if (decodedRedirect !== window.location.href) {
+        window.location.href = decodedRedirect;
+      }
     }
   }, [action, force, isAuthenticated, redirectTo]);
 
