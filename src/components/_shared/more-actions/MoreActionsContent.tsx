@@ -6,6 +6,7 @@ import { ReactComponent as LoginIcon } from '@/assets/icons/logout.svg';
 import { ReactComponent as MoonIcon } from '@/assets/icons/moon.svg';
 import { ReactComponent as SunIcon } from '@/assets/icons/sun.svg';
 import CacheClearingDialog from '@/components/_shared/modal/CacheClearingDialog';
+import LogoutConfirm from '@/components/app/workspaces/LogoutConfirm';
 import { AFConfigContext } from '@/components/main/app.hooks';
 import { ThemeModeContext } from '@/components/main/useAppThemeMode';
 import { openUrl } from '@/utils/url';
@@ -23,12 +24,21 @@ function MoreActionsContent({
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const handleLogin = useCallback(() => {
+  const handleLogout = useCallback(() => {
     clearRedirectTo(); // Clear stored redirect URL from previous user
     invalidToken();
     navigate('/login?redirectTo=' + encodeURIComponent(window.location.href));
   }, [navigate]);
+
+  const handleLogin = useCallback(() => {
+    if (isAuthenticated) {
+      setOpenLogoutConfirm(true);
+    } else {
+      handleLogout();
+    }
+  }, [isAuthenticated, handleLogout]);
   const [openConfirm, setOpenConfirm] = React.useState(false);
+  const [openLogoutConfirm, setOpenLogoutConfirm] = React.useState(false);
 
   const actions = useMemo(() => {
     const items = [
@@ -98,6 +108,11 @@ function MoreActionsContent({
     <>
       {actionsContent}
       <CacheClearingDialog open={openConfirm} onClose={() => setOpenConfirm(false)} />
+      <LogoutConfirm
+        open={openLogoutConfirm}
+        onClose={() => setOpenLogoutConfirm(false)}
+        onConfirm={handleLogout}
+      />
     </>
   );
 }
