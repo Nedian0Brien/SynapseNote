@@ -2,7 +2,7 @@ import axios, { AxiosInstance } from 'axios';
 
 import { emit, EventType } from '@/application/session';
 import { afterAuth } from '@/application/session/sign_in';
-import { getTokenParsed, refreshToken as refreshSessionToken } from '@/application/session/token';
+import { getTokenParsed, saveGoTrueAuth } from '@/application/session/token';
 
 import { parseGoTrueError } from './gotrue-error';
 import { verifyToken } from './http_api';
@@ -41,7 +41,7 @@ export async function refreshToken(refresh_token: string) {
   const newToken = response?.data;
 
   if (newToken) {
-    refreshSessionToken(JSON.stringify(newToken));
+    saveGoTrueAuth(JSON.stringify(newToken));
   } else {
     return Promise.reject('Failed to refresh token');
   }
@@ -63,7 +63,7 @@ export async function signInWithPassword(params: { email: string; password: stri
     const data = response?.data;
 
     if (data) {
-      refreshSessionToken(JSON.stringify(data));
+      saveGoTrueAuth(JSON.stringify(data));
       emit(EventType.SESSION_VALID);
       afterAuth();
     } else {
@@ -185,21 +185,48 @@ export async function signInOTP({
 
     const data = response?.data;
 
+    console.log('[signInOTP] Response data:', data);
+
     if (data) {
       if (!data.code) {
+        // Save token first so axios interceptor can use it
+        console.log('[signInOTP] Saving token to localStorage');
+        saveGoTrueAuth(JSON.stringify(data));
+
+        // Verify token with AppFlowy Cloud to create user if needed
+        let isNewUser = false;
+
+        try {
+          console.log('[signInOTP] Calling verifyToken');
+          const result = await verifyToken(data.access_token);
+
+          isNewUser = result.is_new;
+          console.log('[signInOTP] verifyToken completed, isNewUser:', isNewUser);
+        } catch (error) {
+          console.error('[signInOTP] Failed to verify token with AppFlowy Cloud:', error);
+          emit(EventType.SESSION_INVALID);
+
+          return Promise.reject({
+            code: -1,
+            message: 'Failed to create user account',
+          });
+        }
+
+        // Emit session valid only after everything is complete
         if (type === 'magiclink') {
           emit(EventType.SESSION_VALID);
         }
 
-        try {
-          await verifyToken(data.access_token);
-          refreshSessionToken(JSON.stringify(data));
-        } catch (error) {
-          console.error('Failed to verify token with AppFlowy Cloud:', error);
-          emit(EventType.SESSION_INVALID, { error });
+        // For new users, always redirect to /app (don't use saved redirectTo)
+        if (isNewUser) {
+          console.log('[signInOTP] New user, clearing old data and redirecting to /app');
+          localStorage.removeItem('redirectTo');
+          // Use replace to avoid adding to history and ensure clean navigation
+          window.location.replace('/app');
+        } else {
+          console.log('[signInOTP] Existing user, calling afterAuth');
+          afterAuth();
         }
-
-        afterAuth();
       } else {
         emit(EventType.SESSION_INVALID);
         return Promise.reject({

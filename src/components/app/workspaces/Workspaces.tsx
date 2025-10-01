@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
+import { clearRedirectTo } from '@/application/session/sign_in';
 import { invalidToken } from '@/application/session/token';
 import { Workspace } from '@/application/types';
 import { ReactComponent as UpgradeAIMaxIcon } from '@/assets/icons/ai.svg';
@@ -53,8 +54,9 @@ export function Workspaces() {
   const navigate = useNavigate();
   const [changeLoading, setChangeLoading] = useState<string | null>(null);
   const handleSignOut = useCallback(() => {
+    clearRedirectTo(); // Clear stored redirect URL from previous user
     invalidToken();
-    navigate('/login?redirectTo=' + encodeURIComponent(window.location.href));
+    navigate('/login?force=true');
   }, [navigate]);
 
   const { onChangeWorkspace: handleSelectedWorkspace } = useAppHandlers();

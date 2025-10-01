@@ -27,15 +27,19 @@ function CheckEmail ({ email, redirectTo }: {
     }
 
     setLoading(true);
+    console.log('[CheckEmail] Starting OTP verification', { email, code: code.substring(0, 3) + '***' });
 
     try {
+      console.log('[CheckEmail] Calling service.signInOTP');
       await service?.signInOTP({
         email,
         redirectTo,
         code,
       });
+      console.log('[CheckEmail] signInOTP completed successfully');
       // eslint-disable-next-line
     } catch (e: any) {
+      console.error('[CheckEmail] signInOTP failed:', e);
       if (e.code === 403) {
         setError(t('invalidOTPCode'));
       } else {
@@ -69,6 +73,7 @@ function CheckEmail ({ email, redirectTo }: {
         <div className={'flex flex-col gap-3'}>
           <div className={'flex flex-col gap-1'}>
             <Input
+              data-testid="otp-code-input"
               autoFocus
               size={'md'}
               className={'w-[320px]'}
@@ -91,6 +96,7 @@ function CheckEmail ({ email, redirectTo }: {
           </div>
 
           <Button
+            data-testid="otp-submit-button"
             loading={loading}
             onClick={handleSubmit}
             size={'lg'}
@@ -103,6 +109,7 @@ function CheckEmail ({ email, redirectTo }: {
           </Button>
         </div>
       ) : <Button
+        data-testid="enter-code-manually-button"
         size={'lg'}
         className={'w-[320px]'}
         onClick={() => setEnter(true)}

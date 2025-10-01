@@ -1,12 +1,13 @@
+import { clearRedirectTo } from '@/application/session/sign_in';
 import { invalidToken } from '@/application/session/token';
 import { ReactComponent as TrashIcon } from '@/assets/icons/delete.svg';
 import { ReactComponent as ReportIcon } from '@/assets/icons/feedback.svg';
 import { ReactComponent as LoginIcon } from '@/assets/icons/logout.svg';
 import { ReactComponent as MoonIcon } from '@/assets/icons/moon.svg';
 import { ReactComponent as SunIcon } from '@/assets/icons/sun.svg';
+import CacheClearingDialog from '@/components/_shared/modal/CacheClearingDialog';
 import { AFConfigContext } from '@/components/main/app.hooks';
 import { ThemeModeContext } from '@/components/main/useAppThemeMode';
-import CacheClearingDialog from '@/components/_shared/modal/CacheClearingDialog';
 import { openUrl } from '@/utils/url';
 import React, { useCallback, useContext, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -23,6 +24,7 @@ function MoreActionsContent({
   const navigate = useNavigate();
 
   const handleLogin = useCallback(() => {
+    clearRedirectTo(); // Clear stored redirect URL from previous user
     invalidToken();
     navigate('/login?redirectTo=' + encodeURIComponent(window.location.href));
   }, [navigate]);
@@ -38,19 +40,19 @@ function MoreActionsContent({
 
       isDark
         ? {
-            Icon: SunIcon,
-            label: t('settings.appearance.themeMode.light'),
-            onClick: () => {
-              setDark?.(false);
-            },
-          }
-        : {
-            Icon: MoonIcon,
-            label: t('settings.appearance.themeMode.dark'),
-            onClick: () => {
-              setDark?.(true);
-            },
+          Icon: SunIcon,
+          label: t('settings.appearance.themeMode.light'),
+          onClick: () => {
+            setDark?.(false);
           },
+        }
+        : {
+          Icon: MoonIcon,
+          label: t('settings.appearance.themeMode.dark'),
+          onClick: () => {
+            setDark?.(true);
+          },
+        },
       {
         Icon: ReportIcon,
         label: t('publish.reportPage'),
