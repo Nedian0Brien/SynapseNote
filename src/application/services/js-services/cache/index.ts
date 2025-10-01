@@ -124,7 +124,6 @@ export async function getUser<T extends User>(
   strategy: StrategyType = StrategyType.CACHE_AND_NETWORK
 ) {
   const exist = userId && (await hasUserCache(userId));
-  const data = await db.users.get(userId);
 
   switch (strategy) {
     case StrategyType.CACHE_ONLY: {
@@ -132,6 +131,7 @@ export async function getUser<T extends User>(
         throw new Error('No cache found');
       }
 
+      const data = await db.users.get(userId);
       return data;
     }
 
@@ -140,6 +140,7 @@ export async function getUser<T extends User>(
         return revalidateUser(fetcher);
       }
 
+      const data = await db.users.get(userId);
       return data;
     }
 
@@ -150,6 +151,7 @@ export async function getUser<T extends User>(
         void revalidateUser(fetcher);
       }
 
+      const data = await db.users.get(userId);
       return data;
     }
 

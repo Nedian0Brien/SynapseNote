@@ -184,24 +184,21 @@ export async function signInOTP({
     });
 
     const data = response?.data;
-    console.debug('signInOTP response data:', data);
+    console.log('[signInOTP] Response data:', data);
 
     if (data) {
       if (!data.code) {
-        // Save token to localStorage FIRST so axios interceptor can use it
-        console.debug('Saving token data:', data);
+        // Save token first so axios interceptor can use it
+        console.log('[signInOTP] Saving token to localStorage');
         saveGoTrueAuth(JSON.stringify(data));
 
-        if (type === 'magiclink') {
-          emit(EventType.SESSION_VALID);
-        }
-
         // Verify token with AppFlowy Cloud to create user if needed
+        let isNewUser = false;
         try {
-          console.debug('[signInOTP] Calling verifyToken');
-          await verifyToken(data.access_token);
-
-          await new Promise(resolve => setTimeout(resolve, 500));
+          console.log('[signInOTP] Calling verifyToken');
+          const result = await verifyToken(data.access_token);
+          isNewUser = result.is_new;
+          console.log('[signInOTP] verifyToken completed, isNewUser:', isNewUser);
         } catch (error) {
           console.error('[signInOTP] Failed to verify token with AppFlowy Cloud:', error);
           emit(EventType.SESSION_INVALID);
@@ -211,7 +208,21 @@ export async function signInOTP({
           });
         }
 
-        afterAuth();
+        // Emit session valid only after everything is complete
+        if (type === 'magiclink') {
+          emit(EventType.SESSION_VALID);
+        }
+
+        // For new users, always redirect to /app (don't use saved redirectTo)
+        if (isNewUser) {
+          console.log('[signInOTP] New user, clearing old data and redirecting to /app');
+          localStorage.removeItem('redirectTo');
+          // Use replace to avoid adding to history and ensure clean navigation
+          window.location.replace('/app');
+        } else {
+          console.log('[signInOTP] Existing user, calling afterAuth');
+          afterAuth();
+        }
       } else {
         emit(EventType.SESSION_INVALID);
         return Promise.reject({

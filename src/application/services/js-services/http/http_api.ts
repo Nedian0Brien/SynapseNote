@@ -1,8 +1,8 @@
+import { getFileUploadUrl, getFileUrl } from '@/utils/file-storage-url';
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import dayjs from 'dayjs';
 import { omit } from 'lodash-es';
 import { nanoid } from 'nanoid';
-import { getFileUploadUrl, getFileUrl } from '@/utils/file-storage-url';
 
 import { GlobalComment, Reaction } from '@/application/comment.type';
 import { ERROR_CODE } from '@/application/constants';
