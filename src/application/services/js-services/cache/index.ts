@@ -132,6 +132,7 @@ export async function getUser<T extends User>(
       }
 
       const data = await db.users.get(userId);
+
       return data;
     }
 
@@ -141,6 +142,7 @@ export async function getUser<T extends User>(
       }
 
       const data = await db.users.get(userId);
+
       return data;
     }
 
@@ -152,6 +154,7 @@ export async function getUser<T extends User>(
       }
 
       const data = await db.users.get(userId);
+
       return data;
     }
 

@@ -3,15 +3,19 @@ import { emit, EventType } from '@/application/session/event';
 // Decode JWT to extract user info (simple base64 decode, no verification)
 function decodeJWT(token: string): { sub: string; email: string } | null {
   try {
+
     const parts = token.split('.');
+
     if (parts.length !== 3) return null;
 
     const payload = JSON.parse(atob(parts[1]));
+
     return {
       sub: payload.sub,
       email: payload.email,
     };
   } catch (e) {
+
     console.error('Failed to decode JWT:', e);
     return null;
   }
@@ -23,6 +27,7 @@ export function saveGoTrueAuth(tokenData: string) {
   // Decode JWT to extract user info if not present
   if (!parsed.user && parsed.access_token) {
     const userInfo = decodeJWT(parsed.access_token);
+
     if (userInfo) {
       parsed.user = {
         id: userInfo.sub,
