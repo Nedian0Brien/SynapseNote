@@ -5,6 +5,7 @@ import { afterAuth } from '@/application/session/sign_in';
 import { getTokenParsed, refreshToken as refreshSessionToken } from '@/application/session/token';
 
 import { parseGoTrueError } from './gotrue-error';
+import { verifyToken } from './http_api';
 
 export * from './gotrue-error';
 
@@ -186,9 +187,16 @@ export async function signInOTP({
 
     if (data) {
       if (!data.code) {
-        refreshSessionToken(JSON.stringify(data));
         if (type === 'magiclink') {
           emit(EventType.SESSION_VALID);
+        }
+
+        try {
+          await verifyToken(data.access_token);
+          refreshSessionToken(JSON.stringify(data));
+        } catch (error) {
+          console.error('Failed to verify token with AppFlowy Cloud:', error);
+          emit(EventType.SESSION_INVALID, { error });
         }
 
         afterAuth();
