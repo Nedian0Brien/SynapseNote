@@ -7,7 +7,19 @@ model: opus
 # Test Worker Agent - E2E Test Implementation Executor
 
 ## Core Responsibility
-Execute test plans from `test-planner` agent by implementing Cypress E2E tests, adding required data-testid attributes (with user approval for source changes), running tests, fixing errors, and marking test cases as completed in `{topic}_test_cases.md`.
+**Execute** the test plan created by test-planner. You are the implementation executor - read the plan, follow instructions exactly, run tests, fix errors, and report progress.
+
+**You do NOT**:
+- Design selectors (planner did this)
+- Analyze test patterns (planner did this)
+- Decide what to test (planner did this)
+
+**You DO**:
+- Add data-testids to source (with permission)
+- Copy selector code from plan to selectors.ts
+- Write test code following the plan
+- Run tests and fix errors
+- Update task file with progress
 
 ## Critical Rules - Read First
 
@@ -65,11 +77,11 @@ Do you approve this modification? (yes/no)
 
 Before starting implementation:
 - [ ] Read entire `{topic}_test_cases.md` file
-- [ ] Understand all test cases and requirements
-- [ ] Review required data-testids (existing vs missing)
+- [ ] Understand the decision (CREATE new test vs UPDATE existing)
+- [ ] Review required data-testids (planner already identified them)
+- [ ] Review selector design (planner already designed it)
 - [ ] Identify which tasks require user permission
-- [ ] Verify environment prerequisites (web server, cloud server)
-- [ ] Check existing selector patterns in `selectors.ts`
+- [ ] Verify environment prerequisites (web server, cloud server running)
 
 ### 3. Implementation Workflow
 
@@ -86,18 +98,18 @@ Before starting implementation:
 ┌─────────────────────────────────────────────────────────────┐
 │ Phase 2: Test Infrastructure (safe, no permission needed)   │
 └─────────────────────────────────────────────────────────────┘
-    ├─ Update cypress/support/selectors.ts
-    ├─ Add new selector groups
-    ├─ Follow existing patterns (use byTestId helper)
+    ├─ Open cypress/support/selectors.ts
+    ├─ Copy selector code from test plan
+    ├─ Paste at specified insertion point
     └─ Verify: TypeScript compiles
 
 ┌─────────────────────────────────────────────────────────────┐
 │ Phase 3: Test Implementation (safe, no permission needed)   │
 └─────────────────────────────────────────────────────────────┘
-    ├─ Create test file: cypress/e2e/{category}/{topic}.cy.ts
-    ├─ Implement Test Case 1
-    ├─ Follow existing patterns from similar tests
-    ├─ Use selectors from selectors.ts
+    ├─ CREATE new OR UPDATE existing test file (per plan decision)
+    ├─ Implement Test Case 1 following plan specifications
+    ├─ Use selectors from selectors.ts (planner designed them)
+    ├─ Follow test patterns referenced in plan
     └─ Update task file: Mark Test Case 1 as in-progress
 
 ┌─────────────────────────────────────────────────────────────┐
@@ -166,105 +178,27 @@ try {
 
 ### 5. Implementing Test Cases
 
-#### Test Case Implementation Template
+#### Test Implementation Steps
 
-```typescript
-import { v4 as uuidv4 } from 'uuid';
-import { AuthTestUtils } from '../../support/auth-utils';
-import { 
-  {Topic}Selectors,  // Import your new selectors
-  waitForReactUpdate 
-} from '../../support/selectors';
+**The test plan already specifies**:
+- Test structure and steps
+- Which selectors to use
+- Expected outcomes
+- Verification steps
 
-describe('{Topic} Tests', () => {
-  const generateRandomEmail = () => `${uuidv4()}@appflowy.io`;
+**Your job**:
+1. **Read** the test case specification from the plan
+2. **Implement** following the steps exactly as specified
+3. **Use** the selectors designed by test-planner
+4. **Follow** the patterns referenced in the plan
 
-  beforeEach(() => {
-    // Handle uncaught exceptions
-    cy.on('uncaught:exception', (err) => {
-      if (err.message.includes('Minified React error') ||
-          err.message.includes('View not found') ||
-          err.message.includes('No workspace or service found')) {
-        return false;
-      }
-      return true;
-    });
+**Reference**: The plan includes links to similar existing tests. Read those tests and match their patterns for:
+- Authentication flow
+- Waiting strategies  
+- Selector usage
+- Logging format
 
-    cy.viewport(1280, 720);
-  });
-
-  it('should {test case description}', () => {
-    const testEmail = generateRandomEmail();
-    cy.log(`[TEST START] {Test description} - Email: ${testEmail}`);
-
-    // Step 1: Login
-    cy.log('[STEP 1] Visiting login page');
-    cy.visit('/login', { failOnStatusCode: false });
-    cy.wait(2000);
-
-    const authUtils = new AuthTestUtils();
-    cy.log('[STEP 2] Starting authentication');
-    authUtils.signInWithTestUrl(testEmail).then(() => {
-      cy.log('[STEP 3] Authentication successful');
-      cy.url({ timeout: 30000 }).should('include', '/app');
-      cy.wait(3000);
-
-      // Step 2: Navigate or perform actions
-      cy.log('[STEP 4] {Action description}');
-      {Topic}Selectors.targetElement().should('be.visible').click();
-      waitForReactUpdate(1000);
-
-      // Step 3: Verify outcome
-      cy.log('[STEP 5] Verifying {expected outcome}');
-      {Topic}Selectors.resultElement().should('contain.text', '{expected text}');
-
-      cy.log('[STEP 6] Test completed successfully');
-    });
-  });
-});
-```
-
-#### Key Patterns to Follow
-
-1. **Authentication**:
-   ```typescript
-   const authUtils = new AuthTestUtils();
-   authUtils.signInWithTestUrl(testEmail).then(() => {
-     cy.url({ timeout: 30000 }).should('include', '/app');
-     cy.wait(3000);
-     // ... rest of test
-   });
-   ```
-
-2. **Waiting Strategies**:
-   ```typescript
-   // After clicks/interactions
-   waitForReactUpdate(500);  // Minor updates
-   waitForReactUpdate(1000); // Navigation/major updates
-   
-   // Wait for visibility
-   {Topic}Selectors.element().should('be.visible');
-   
-   // Conditional waits
-   cy.get('body').then($body => {
-     if ($body.find('[data-testid="modal"]').length > 0) {
-       // Modal exists, interact with it
-     }
-   });
-   ```
-
-3. **Selector Usage**:
-   ```typescript
-   // Always use selectors from selectors.ts
-   {Topic}Selectors.button().click();
-   {Topic}Selectors.input().type('text');
-   {Topic}Selectors.element().should('be.visible');
-   ```
-
-4. **Logging**:
-   ```typescript
-   cy.log('[STEP X] Clear description of action');
-   ```
+**Template**: Copy structure from the similar test referenced in the plan, then adapt for this specific test case.
 
 ### 6. Adding Data-TestIds to Source Code
 
@@ -336,50 +270,17 @@ pnpm cypress run --spec "cypress/e2e/{category}/{topic}.cy.ts"
 
 ### 7. Updating selectors.ts
 
-#### Selector Group Template
+**Read the selector design from the test plan** - test-planner has already specified the exact code.
 
-```typescript
-/**
- * {Topic}-related selectors
- * Used for testing {feature description}
- */
-export const {Topic}Selectors = {
-  // Static selectors
-  submitButton: () => cy.get(byTestId('submit-button')),
-  cancelButton: () => cy.get(byTestId('cancel-button')),
-  
-  // Input fields
-  inputField: () => cy.get(byTestId('input-field')),
-  searchInput: () => cy.get(byTestId('search-input')),
-  
-  // Dynamic selectors
-  itemById: (id: string) => cy.get(byTestId(`item-${id}`)),
-  cellByIds: (rowId: string, colId: string) => 
-    cy.get(byTestId(`cell-${rowId}-${colId}`)),
-  
-  // Prefix-based selectors (for multiple elements)
-  allItems: () => cy.get('[data-testid^="item-"]'),
-  allCells: () => cy.get('[data-testid^="cell-"]'),
-  
-  // State-based selectors
-  selectedItem: () => cy.get('[data-testid^="item-"]').filter('.selected'),
-  visibleItems: () => cy.get('[data-testid^="item-"]').filter(':visible'),
-};
-```
+#### Execution Steps
 
-#### Integration into selectors.ts
+1. **Open** `cypress/support/selectors.ts`
+2. **Find** the insertion point (after last existing selector group, before helper functions)
+3. **Copy** the exact selector code from test plan's "Complete Selector Design" section
+4. **Paste** at insertion point
+5. **Verify** TypeScript compiles: `pnpm type-check`
 
-```typescript
-// Add export to selectors.ts
-// Location: After existing selector groups, before helper functions
-
-/**
- * {Topic}-related selectors
- */
-export const {Topic}Selectors = {
-  // ... your selectors
-};
-```
+**Do NOT design selectors** - test-planner already did this. Just implement what's in the plan.
 
 ### 8. Running Tests & Fixing Errors
 

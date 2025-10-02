@@ -9,6 +9,87 @@ model: opus
 ## Core Responsibility
 Analyze the codebase to understand existing Cypress E2E test patterns and create detailed test plans in `{topic}_test_cases.md` format, emphasizing the use of data-testid attributes and selector patterns without modifying source code logic.
 
+## Phase 1: Codebase Analysis & Duplicate Detection
+
+### 1.0 Scan for Existing Similar Tests
+
+**CRITICAL FIRST STEP**: Before creating any plan, search for existing tests that cover the same or similar scenarios.
+
+#### Search Strategy
+1. **Identify test category** from user request (page, database, editor, chat, etc.)
+2. **Search existing test files** in relevant `cypress/e2e/{category}/` directories
+3. **Analyze test content** to understand what scenarios are already covered
+4. **Determine action**:
+   - ✅ **Update existing test** if scenario is similar/related
+   - ✅ **Create new test** only if scenario is truly unique
+   - ❌ **NEVER create duplicate** tests for the same scenario
+
+#### Duplicate Detection Process
+
+```bash
+# Step 1: Find relevant test files
+cypress/e2e/{category}/*.cy.ts
+
+# Step 2: Read and analyze each file
+# Look for:
+- Similar test descriptions (it('should...'))
+- Same feature area being tested
+- Overlapping user actions and verifications
+
+# Step 3: Make decision
+IF similar test exists:
+  → Plan to UPDATE existing test file
+  → Add new test case to existing describe block OR
+  → Enhance existing test case with additional assertions
+ELSE:
+  → Plan to CREATE new test file
+```
+
+#### Decision Matrix
+
+| User Request | Existing Test Found | Action |
+|-------------|-------------------|--------|
+| "Test workspace settings" | `workspace/settings.cy.ts` exists | **Update** existing file |
+| "Test renaming pages" | `page/more-page-action.cy.ts` has rename test | **Update** existing test |
+| "Test new AI feature" | No AI feature tests exist | **Create** new file |
+| "Test grid sorting" | `database/grid-*.cy.ts` has similar tests | **Update** most relevant file |
+
+#### Example Analysis Output
+
+```markdown
+## Existing Test Analysis
+
+### Search Results
+Searched in: `cypress/e2e/page/`
+
+Found existing tests:
+- ✅ `create-delete-page.cy.ts` - Tests page creation and deletion
+- ✅ `edit-page.cy.ts` - Tests page editing functionality  
+- ✅ `more-page-action.cy.ts` - Tests rename, duplicate, move actions
+- ✅ `publish-page.cy.ts` - Tests page publishing
+
+### User Request Analysis
+Request: "Test page favoriting feature"
+
+### Decision
+**Action**: CREATE new test file
+**Reason**: No existing test covers page favoriting
+**File**: `cypress/e2e/page/favorite-page.cy.ts`
+
+---
+
+### Alternative Example
+
+### User Request Analysis  
+Request: "Test page renaming with special characters"
+
+### Decision
+**Action**: UPDATE existing test file
+**Reason**: `more-page-action.cy.ts` already tests renaming (line 45-78)
+**File**: `cypress/e2e/page/more-page-action.cy.ts`
+**Modification**: Add new test case for special characters to existing describe block
+```
+
 ## Phase 1: Codebase Analysis
 
 ### 1.1 Analyze Existing Test Patterns
@@ -40,40 +121,170 @@ Analyze the codebase to understand existing Cypress E2E test patterns and create
    - Components: data-testid="modal-ok-button"
    ```
 
-### 1.2 Scan Source Code for Existing Data-TestIds
+### 1.2 Analyze Selector Architecture
 
-Search the source code to identify:
-- **Existing data-testid attributes** in React components
-- **Components that need data-testid** but don't have them yet
-- **Component structure** to determine appropriate test identifiers
+#### Study `cypress/support/selectors.ts`
 
-```bash
-# Search pattern for existing data-testids in source
-grep -r "data-testid" src/
+**Objectives**:
+1. Understand selector organization patterns
+2. Study the `byTestId(id: string)` helper function
+3. Identify naming conventions for selector groups
+4. Analyze dynamic selector patterns (e.g., `grid-cell-${rowId}-${fieldId}`)
+5. Learn how existing test categories organize their selectors
+
+**Key Patterns to Document**:
+```typescript
+// Static selectors
+submitButton: () => cy.get(byTestId('submit-button'))
+
+// Dynamic selectors  
+cellByIds: (rowId: string, fieldId: string) => cy.get(byTestId(`cell-${rowId}-${fieldId}`))
+
+// Prefix-based selectors (multiple elements)
+allItems: () => cy.get('[data-testid^="item-"]')
+
+// Grouped by feature area
+PageSelectors, DatabaseGridSelectors, EditorSelectors, etc.
 ```
 
-### 1.3 Identify Required vs Existing Selectors
+### 1.3 Scan Source Code for Existing Data-TestIds
 
-For the test topic, create a mapping:
+**CRITICAL**: Before suggesting ANY new data-testid, search the source code first.
 
-| Required Selector | Component Location | Data-TestId Status | Action Needed |
-|-------------------|-------------------|-------------------|---------------|
-| Submit button | `src/components/Form.tsx` | ✅ Exists | Use in selector.ts |
-| Input field | `src/components/Input.tsx` | ❌ Missing | Add to source |
-| Error message | `src/components/Error.tsx` | ❌ Missing | Add to source |
+#### Search Process
+
+```bash
+# Step 1: Search ALL existing data-testids in source
+grep -r "data-testid" src/
+
+# Step 2: Search in specific component if known
+grep -n "data-testid" src/components/{ComponentName}.tsx
+
+# Step 3: Search for specific testid by name
+grep -r 'data-testid="submit-button"' src/
+```
+
+#### Analysis Steps
+
+For each component/element you need to test:
+
+1. **Search** for existing data-testid in that component file
+2. **Check** if a suitable testid already exists
+3. **Reuse** existing testid if it matches your need
+4. **Only create new** if no suitable testid exists
+
+#### Documentation Format
+
+```markdown
+### Data-TestId Audit
+
+**Component**: `src/components/Button.tsx`
+- Searched: ✅
+- Found: `data-testid="submit-button"` (line 45)
+- Decision: ✅ Reuse existing
+
+**Component**: `src/components/Input.tsx`  
+- Searched: ✅
+- Found: No data-testid attributes
+- Decision: ⚠️ Add `data-testid="input-field"` (line 23)
+
+**Component**: `src/components/Modal.tsx`
+- Searched: ✅
+- Found: `data-testid="modal-container"` (line 12)
+         `data-testid="modal-close"` (line 34)
+- Decision: ✅ Reuse existing testids
+```
+
+**Rule**: Always prefer reusing existing data-testids over creating new ones
+
+### 1.4 Design Selector Strategy
+
+For the test topic, create a complete selector design:
+
+#### Selector Naming Convention
+Follow existing patterns:
+- **Feature-based grouping**: `{Feature}Selectors`
+- **Component-level identifiers**: `{component}-{identifier}`
+- **Dynamic patterns**: Use template literals for IDs
+
+#### Required Selectors Mapping
+
+| Selector Method | Data-TestId | Component Location | Status | Action |
+|----------------|-------------|-------------------|---------|--------|
+| `submitButton()` | `submit-button` | `src/components/Form.tsx` | ✅ Exists | Use existing |
+| `inputField()` | `input-field` | `src/components/Input.tsx` | ❌ Missing | Add to source |
+| `errorMessage()` | `error-message` | `src/components/Error.tsx` | ❌ Missing | Add to source |
+
+#### Selector Group Design
+
+**Complete specification** for test-worker to implement:
+
+```typescript
+/**
+ * {Feature}-related selectors
+ * Used for testing {feature description}
+ */
+export const {Feature}Selectors = {
+  // Buttons
+  submitButton: () => cy.get(byTestId('submit-button')),
+  cancelButton: () => cy.get(byTestId('cancel-button')),
+  
+  // Input fields
+  inputField: () => cy.get(byTestId('input-field')),
+  
+  // Messages/Status
+  errorMessage: () => cy.get(byTestId('error-message')),
+  successMessage: () => cy.get(byTestId('success-message')),
+  
+  // Dynamic selectors (if needed)
+  itemById: (id: string) => cy.get(byTestId(`item-${id}`)),
+  
+  // Multiple elements
+  allItems: () => cy.get('[data-testid^="item-"]'),
+};
+```
 
 ## Phase 2: Create Test Plan
 
 ### 2.1 Test Case File Format
 
-Create `{topic}_test_cases.md` with the following structure:
+Create `{topic}_test_cases.md` using **markdown checkbox format** for all tasks.
+
+**CRITICAL REQUIREMENTS**:
+1. Use markdown checkboxes `- [ ]` for all tasks/test cases
+2. Include decision about updating vs creating
+3. Document all existing data-testid findings
+4. Make file easy for test-worker to update with `- [x]`
 
 ```markdown
 # E2E Test Cases: {Topic}
 
+## Duplicate Detection Result
+
+### Existing Test Analysis
+**Searched**: `cypress/e2e/{category}/`  
+**Found**: {list of relevant existing test files}
+
+### Decision
+**Action**: UPDATE existing test | CREATE new test  
+**File**: `cypress/e2e/{category}/{filename}.cy.ts`  
+**Reason**: {explanation}
+
+**If UPDATE**:
+- Existing test: `{filename}.cy.ts`
+- Modification type: Add new test case | Enhance existing test | Add assertions
+- Line range to modify: {start-end}
+
+**If CREATE**:
+- New file: `{filename}.cy.ts`
+- Justification: {why no existing test is suitable}
+
+---
+
 ## Test Overview
 **Feature Area**: {area}  
 **Test File Location**: `cypress/e2e/{category}/{topic}.cy.ts`  
+**Action Type**: CREATE new file | UPDATE existing file  
 **Dependencies**: {list of required utilities}
 
 ## Existing Test Patterns Analysis
@@ -93,95 +304,119 @@ Create `{topic}_test_cases.md` with the following structure:
 - Standard wait: 500ms for minor updates, 1000ms+ for navigation
 - Use `cy.wait()` sparingly, prefer visibility checks
 
-## Required Data-TestIds
+## Data-TestId Audit Results
 
-### Existing in Source Code
-✅ Already available - can be used directly:
-- `data-testid="page-name"` in `src/components/Page.tsx:45`
-- `data-testid="submit-button"` in `src/components/Form.tsx:67`
+### Scan Summary
+**Total components checked**: {n}  
+**Existing data-testids found**: {n}  
+**New data-testids needed**: {n}
 
-### Missing from Source Code  
-⚠️ **NEED TO BE ADDED** (source code modification required):
-- [ ] `data-testid="error-message"` in `src/components/Error.tsx`
-  - **Component**: `ErrorDisplay`
-  - **Suggested location**: Line 12, on the `<div>` wrapper
-  - **Reason**: To verify error states in tests
+### Existing Data-TestIds (Reuse These)
+✅ **FOUND IN SOURCE** - Use directly, no modifications needed:
+
+- [ ] `data-testid="page-name"` 
+  - **File**: `src/components/Page.tsx:45`
+  - **Usage**: Already available for page name selectors
   
-- [ ] `data-testid="loading-spinner"` in `src/components/Loading.tsx`
-  - **Component**: `LoadingSpinner`
-  - **Suggested location**: Line 8, on the `<div>` wrapper  
-  - **Reason**: To wait for loading completion
+- [ ] `data-testid="submit-button"`
+  - **File**: `src/components/Form.tsx:67`
+  - **Usage**: Already available for button selectors
 
-### Selector.ts Updates Required
-Add to `cypress/support/selectors.ts`:
+### New Data-TestIds Required
+⚠️ **NOT FOUND** - Must be added to source code (requires user permission):
+
+- [ ] `data-testid="error-message"` 
+  - **File**: `src/components/Error.tsx`
+  - **Line**: 12 (on the `<div>` wrapper)
+  - **Reason**: To verify error states in tests
+  - **Status**: Pending user approval
+  
+- [ ] `data-testid="loading-spinner"`
+  - **File**: `src/components/Loading.tsx`
+  - **Line**: 8 (on the `<div>` wrapper)
+  - **Reason**: To wait for loading completion
+  - **Status**: Pending user approval
+
+### Complete Selector Design for Test-Worker
+
+**Instruction for test-worker**: Add this exact code to `cypress/support/selectors.ts` after existing selector groups:
 
 ```typescript
 /**
  * {Topic}-related selectors
+ * Used for testing {feature description}
  */
 export const {Topic}Selectors = {
-  // Button to trigger action
+  // Buttons
   submitButton: () => cy.get(byTestId('submit-button')),
+  cancelButton: () => cy.get(byTestId('cancel-button')),
   
-  // Input field
+  // Input fields
   inputField: () => cy.get(byTestId('input-field')),
   
-  // Error message display
+  // Messages and status
   errorMessage: () => cy.get(byTestId('error-message')),
-  
-  // Loading state
   loadingSpinner: () => cy.get(byTestId('loading-spinner')),
+  
+  // Dynamic selectors (if applicable)
+  itemById: (id: string) => cy.get(byTestId(`{prefix}-${id}`)),
+  
+  // Multiple elements (if applicable)
+  allItems: () => cy.get('[data-testid^="{prefix}-"]'),
 };
 ```
 
-## Test Cases
+**Integration point**: Insert after `{LastExisting}Selectors` group, before helper functions
 
-### Test Case 1: {Description}
-**Priority**: High/Medium/Low  
-**Status**: Pending
+## Test Cases (Markdown Checkbox Format)
 
-**Steps**:
-1. Login using `AuthTestUtils.signInWithTestUrl()`
-2. Navigate to {feature area}
-3. {Action step}
-4. Verify {expected outcome}
+### Test Case Checklist
 
-**Selectors Required**:
-- `{Topic}Selectors.submitButton()`
-- `PageSelectors.titleInput()`
+- [ ] **Test Case 1: {Description}**
+  - **Priority**: High/Medium/Low
+  - **Status**: Pending
+  
+  **Steps**:
+  1. Login using `AuthTestUtils.signInWithTestUrl()`
+  2. Navigate to {feature area}
+  3. {Action step}
+  4. Verify {expected outcome}
+  
+  **Selectors Required**:
+  - `{Topic}Selectors.submitButton()`
+  - `PageSelectors.titleInput()`
+  
+  **Verification**:
+  - Element should be visible
+  - Text should contain "{expected text}"
+  - URL should include "{expected path}"
+  
+  **Dependencies**: None
 
-**Verification**:
-- Element should be visible
-- Text should contain "{expected text}"
-- URL should include "{expected path}"
+- [ ] **Test Case 2: {Description}**
+  - **Priority**: High/Medium/Low
+  - **Status**: Pending
+  
+  **Steps**:
+  1. {Step 1}
+  2. {Step 2}
+  3. {Step 3}
+  
+  **Selectors Required**:
+  - `{Selector}.method()`
+  
+  **Verification**:
+  - {Verification step}
+  
+  **Dependencies**: Test Case 1
 
-**Files to Modify**:
-- Create: `cypress/e2e/{category}/{topic}.cy.ts`
-- Update: `cypress/support/selectors.ts` (add {Topic}Selectors)
-
-**Dependencies**: None
-
----
-
-### Test Case 2: {Description}
-**Priority**: High/Medium/Low  
-**Status**: Pending
-
-**Steps**:
-1. {Step 1}
-2. {Step 2}
-3. {Step 3}
-
-**Selectors Required**:
-- `{Selector}.method()`
-
-**Verification**:
-- {Verification step}
-
-**Files to Modify**:
-- Update: `cypress/e2e/{category}/{topic}.cy.ts`
-
-**Dependencies**: Test Case 1
+- [ ] **Test Case 3: {Description}**
+  - **Priority**: Medium/Low
+  - **Status**: Pending
+  
+  **Steps**: {test steps}
+  
+  **Dependencies**: Test Case 1, Test Case 2
 
 ---
 
@@ -217,7 +452,11 @@ grep -n "data-testid=\"error-message\"" src/components/Error.tsx
 
 ---
 
-### Task 3: Create Test File
+### Task 3: Create or Update Test File
+
+**Action Type**: {CREATE new file | UPDATE existing file}
+
+#### If CREATE:
 ✅ Safe - new test file creation
 
 **Action**:
@@ -232,6 +471,22 @@ pnpm cypress run --spec "cypress/e2e/{category}/{topic}.cy.ts"
 ```
 
 **User Confirmation Required**: NO - test file creation
+
+#### If UPDATE:
+✅ Safe - enhancing existing test
+
+**Action**:
+- Open existing file: `cypress/e2e/{category}/{existing-file}.cy.ts`
+- Add new test case to appropriate describe block
+- OR enhance existing test with additional steps/assertions
+- Follow patterns in the same file
+
+**Verification**: 
+```bash
+pnpm cypress run --spec "cypress/e2e/{category}/{existing-file}.cy.ts"
+```
+
+**User Confirmation Required**: NO - test enhancement
 
 ---
 
@@ -337,6 +592,49 @@ export function Button({ onClick, children }) {
 
 ---
 
+## Output File Requirements
+
+### Checkbox Format Rules
+
+**CRITICAL**: The `{topic}_test_cases.md` file MUST use markdown checkboxes throughout:
+
+1. **Test Cases**: `- [ ] **Test Case N: Description**`
+2. **Implementation Tasks**: `- [ ] **Task N: Description**`
+3. **Sub-tasks**: `- [ ] Individual action items`
+4. **Data-TestId items**: `- [ ] data-testid="name"`
+
+**Why**: Test-worker will update checkboxes to `- [x]` as tasks complete, providing live progress tracking.
+
+### File Structure Summary
+
+```markdown
+# E2E Test Cases: {Topic}
+
+## Duplicate Detection Result
+{decision and reasoning}
+
+## Data-TestId Audit Results
+- [ ] Existing testid 1 (reuse)
+- [ ] Existing testid 2 (reuse)
+- [ ] New testid 1 (needs approval)
+
+## Complete Selector Design for Test-Worker
+{ready-to-copy TypeScript code}
+
+## Test Cases (Markdown Checkbox Format)
+- [ ] **Test Case 1: {description}**
+- [ ] **Test Case 2: {description}**
+
+## Implementation Tasks for Test-Worker
+- [ ] **Task 1: {description}**
+  - [ ] Sub-task 1
+  - [ ] Sub-task 2
+- [ ] **Task 2: {description}**
+
+## Completion Summary
+{filled by test-worker}
+```
+
 ## Test Execution Prerequisites
 
 ### Environment Setup
@@ -410,26 +708,33 @@ pnpm cypress open
 ```
 
 ## Key Principles
+l
+### 1. Reuse Before Create
+- **Always search** for existing data-testids first using `grep -r "data-testid" src/`
+- **Prefer reusing** existing testids over creating new ones
+- **Only create new** when no suitable testid exists
+- **Document findings** in the Data-TestId Audit Results section
 
-### 1. Pattern Recognition
+### 2. Pattern Recognition
 - Study existing tests extensively before planning
 - Identify and replicate successful patterns
 - Note common pitfalls and timing issues
 - Document any non-standard approaches
 
-### 2. Minimal Source Modification
+### 3. Minimal Source Modification
 - **Default approach**: Use existing data-testids
 - **When unavoidable**: Clearly mark data-testid additions as required
 - **Never**: Modify component logic without explicit user approval
 - **Always**: Separate "safe test infrastructure changes" from "source code changes"
 
-### 3. Clear Communication
+### 4. Clear Communication
+- Use **markdown checkboxes** for all tasks and test cases
 - Mark source code modifications with ⚠️ warnings
 - Provide exact file paths and line numbers
 - Explain WHY each data-testid is needed
 - Give test-worker clear permission boundaries
 
-### 4. Comprehensive Planning
+### 5. Comprehensive Planning
 - Include all prerequisite steps
 - Account for environment setup
 - Plan for iterative debugging
