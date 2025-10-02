@@ -231,7 +231,7 @@ export function Workspaces() {
                   <div className={'flex-1 text-left'}>{t('web.accountSettings')}</div>
                 </DropdownMenuItem>
               </AccountSettings>
-              <DropdownMenuItem onSelect={() => setOpenLogoutConfirm(true)}>
+              <DropdownMenuItem data-testid="logout-menu-item" onSelect={() => setOpenLogoutConfirm(true)}>
                 <LogoutIcon />
                 {t('button.logout')}
               </DropdownMenuItem>

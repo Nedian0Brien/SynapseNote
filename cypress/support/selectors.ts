@@ -404,6 +404,26 @@ export const RowControlsSelectors = {
   deleteRowConfirmButton: () => cy.get(byTestId('delete-row-confirm-button')),
 };
 
+/**
+ * Authentication-related selectors
+ * Used for login/logout flow testing
+ */
+export const AuthSelectors = {
+  // Login page elements
+  emailInput: () => cy.get(byTestId('login-email-input')),
+
+  // Password sign-in button
+  passwordSignInButton: () => cy.get(byTestId('login-password-button')),
+
+  // Password page elements
+  passwordInput: () => cy.get(byTestId('password-input')),
+  passwordSubmitButton: () => cy.get(byTestId('password-submit-button')),
+
+  // Logout elements
+  logoutMenuItem: () => cy.get(byTestId('logout-menu-item')),
+  logoutConfirmButton: () => cy.get(byTestId('logout-confirm-button')),
+};
+
 export function waitForReactUpdate(ms: number = 500) {
   return cy.wait(ms);
 }
