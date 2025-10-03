@@ -16,8 +16,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Split tests across 4 parallel jobs for 4x speedup
-        shard: [1, 2, 3, 4]
+        # Split tests across 2 parallel jobs for better reliability
+        shard: [1, 2]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -104,12 +104,19 @@ jobs:
           docker compose pull appflowy_cloud gotrue ai appflowy_worker
           docker compose -f docker-compose-web-ci.yml up -d
 
-          # Optimized health check with timeout
+          # Extended health check with detailed logging
           echo "Waiting for backend services..."
-          timeout 90 bash -c 'until curl -sf http://localhost/api/health > /dev/null 2>&1; do
+          timeout 180 bash -c 'until curl -sf http://localhost/api/health > /dev/null 2>&1; do
             echo "Waiting for backend... ($(date +%T))"
-            sleep 3
-          done' && echo "✓ Backend is ready" || (echo "❌ Backend failed to start" && exit 1)
+            sleep 5
+          done' && echo "✓ Backend is ready" || (
+            echo "❌ Backend failed to start after 3 minutes"
+            echo "Docker container status:"
+            docker compose -f docker-compose-web-ci.yml ps
+            echo "Docker logs:"
+            docker compose -f docker-compose-web-ci.yml logs --tail=50
+            exit 1
+          )
 
       # Cache build artifacts
       - name: Cache build
@@ -136,14 +143,14 @@ jobs:
             sleep 2
           done' && echo "✓ Preview server is ready" || (echo "❌ Preview server failed to start" && exit 1)
 
-      - name: Run tests (shard ${{ matrix.shard }}/4)
+      - name: Run tests (shard ${{ matrix.shard }}/2)
         run: |
           pnpm cypress run \
             --spec 'cypress/e2e/**/*.cy.ts' \
             --config video=false
         env:
           CYPRESS_SHARD: ${{ matrix.shard }}
-          CYPRESS_TOTAL_SHARDS: 4
+          CYPRESS_TOTAL_SHARDS: 2
 
       - name: Upload artifacts
         if: always()
