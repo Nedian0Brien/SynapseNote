@@ -13,11 +13,6 @@ env:
 jobs:
   run_e2e_tests:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        # Split tests across 2 parallel jobs for better reliability
-        shard: [1, 2]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -143,20 +138,17 @@ jobs:
             sleep 2
           done' && echo "✓ Preview server is ready" || (echo "❌ Preview server failed to start" && exit 1)
 
-      - name: Run tests (shard ${{ matrix.shard }}/2)
+      - name: Run tests
         run: |
           pnpm cypress run \
             --spec 'cypress/e2e/**/*.cy.ts' \
             --config video=false
-        env:
-          CYPRESS_SHARD: ${{ matrix.shard }}
-          CYPRESS_TOTAL_SHARDS: 2
 
       - name: Upload artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results-shard-${{ matrix.shard }}
+          name: test-results
           path: |
             cypress/screenshots/**
             cypress/logs/**
