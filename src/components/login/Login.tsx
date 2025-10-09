@@ -1,12 +1,41 @@
-import LoginProvider from '@/components/login/LoginProvider';
-import { Separator } from '@/components/ui/separator';
-import { ReactComponent as Logo } from '@/assets/icons/logo.svg';
+import { useState, useEffect, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
+
+import { AuthProvider } from '@/application/types';
 import { ReactComponent as ArrowRight } from '@/assets/icons/arrow_right.svg';
+import { ReactComponent as Logo } from '@/assets/icons/logo.svg';
 import EmailLogin from '@/components/login/EmailLogin';
+import LoginProvider from '@/components/login/LoginProvider';
+import { AFConfigContext } from '@/components/main/app.hooks';
+import { Separator } from '@/components/ui/separator';
 
 export function Login ({ redirectTo }: { redirectTo: string }) {
   const { t } = useTranslation();
+  const [availableProviders, setAvailableProviders] = useState<AuthProvider[]>([]);
+  const service = useContext(AFConfigContext)?.service;
+
+  // Fetch available auth providers on mount
+  useEffect(() => {
+    const fetchProviders = async () => {
+      try {
+        const providers = await service?.getAuthProviders();
+
+        setAvailableProviders(providers || []);
+
+      } catch (error) {
+        console.error('Failed to fetch auth providers:', error);
+        // On error, set empty array (no OAuth providers)
+        setAvailableProviders([]);
+      }
+    };
+
+    void fetchProviders();
+  }, [service]);
+
+  // Filter to check if there are any OAuth providers (not EMAIL or PASSWORD)
+  const hasOAuthProviders = availableProviders.some(
+    provider => ![AuthProvider.EMAIL, AuthProvider.PASSWORD, AuthProvider.MAGIC_LINK].includes(provider)
+  );
 
   return (
     <div className={'py-10  text-text-primary flex flex-col h-full items-center justify-between gap-5 px-4'}>
@@ -21,12 +50,14 @@ export function Login ({ redirectTo }: { redirectTo: string }) {
           <div className={'text-xl font-semibold'}>{t('welcomeTo')} AppFlowy</div>
         </div>
         <EmailLogin redirectTo={redirectTo} />
-        <div className={'flex w-full items-center justify-center gap-2 text-text-secondary'}>
-          <Separator className={'flex-1'} />
-          {t('web.or')}
-          <Separator className={'flex-1'} />
-        </div>
-        <LoginProvider redirectTo={redirectTo} />
+        {hasOAuthProviders && (
+          <div className={'flex w-full items-center justify-center gap-2 text-text-secondary'}>
+            <Separator className={'flex-1'} />
+            {t('web.or')}
+            <Separator className={'flex-1'} />
+          </div>
+        )}
+        <LoginProvider redirectTo={redirectTo} availableProviders={availableProviders} />
         <div
           className={
             'w-[300px] overflow-hidden whitespace-pre-wrap break-words text-center text-[12px] tracking-[0.36px] text-text-secondary'
