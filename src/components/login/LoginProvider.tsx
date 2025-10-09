@@ -1,7 +1,7 @@
 import { notify } from '@/components/_shared/notify';
 import { AFConfigContext } from '@/components/main/app.hooks';
 import { motion, AnimatePresence } from 'framer-motion';
-import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useContext, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ReactComponent as GoogleSvg } from '@/assets/login/google.svg';
 import { ReactComponent as GithubSvg } from '@/assets/login/github.svg';
@@ -9,7 +9,6 @@ import { ReactComponent as DiscordSvg } from '@/assets/login/discord.svg';
 import { ReactComponent as AppleSvg } from '@/assets/login/apple.svg';
 import { Button } from '@/components/ui/button';
 import { AuthProvider } from '@/application/types';
-import CircularProgress from '@mui/material/CircularProgress';
 
 const moreOptionsVariants = {
   hidden: {
@@ -32,32 +31,10 @@ const moreOptionsVariants = {
   },
 };
 
-function LoginProvider ({ redirectTo }: { redirectTo: string }) {
+function LoginProvider ({ redirectTo, availableProviders = [] }: { redirectTo: string; availableProviders?: AuthProvider[] }) {
   const { t } = useTranslation();
   const [expand, setExpand] = React.useState(false);
-  const [availableProviders, setAvailableProviders] = useState<AuthProvider[]>([]);
-  const [loading, setLoading] = useState(true);
   const service = useContext(AFConfigContext)?.service;
-
-  // Fetch available providers on mount
-  useEffect(() => {
-    const fetchProviders = async () => {
-      try {
-        setLoading(true);
-        const providers = await service?.getAuthProviders();
-
-        setAvailableProviders(providers || []);
-      } catch (error) {
-        console.error('Failed to fetch auth providers:', error);
-        // Fallback to default providers
-        setAvailableProviders([AuthProvider.PASSWORD]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void fetchProviders();
-  }, [service]);
 
   const allOptions = useMemo(
     () => [
@@ -127,15 +104,6 @@ function LoginProvider ({ redirectTo }: { redirectTo: string }) {
 
     </Button>;
   }, [handleClick]);
-
-  // Show loading state
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center p-4">
-        <CircularProgress size={24} />
-      </div>
-    );
-  }
 
   // Don't show component if no OAuth providers available
   if (options.length === 0) {
