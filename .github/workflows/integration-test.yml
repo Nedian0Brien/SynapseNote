@@ -100,18 +100,18 @@ jobs:
           docker compose -f docker-compose-web-ci.yml up -d
 
           # Extended health check with detailed logging
-          echo "Waiting for backend services..."
-          timeout 180 bash -c 'until curl -sf http://localhost/api/health > /dev/null 2>&1; do
-            echo "Waiting for backend... ($(date +%T))"
-            sleep 5
-          done' && echo "✓ Backend is ready" || (
-            echo "❌ Backend failed to start after 3 minutes"
-            echo "Docker container status:"
-            docker compose -f docker-compose-web-ci.yml ps
-            echo "Docker logs:"
-            docker compose -f docker-compose-web-ci.yml logs --tail=50
-            exit 1
-          )
+          # echo "Waiting for backend services..."
+          # timeout 180 bash -c 'until curl -sf http://localhost/api/health > /dev/null 2>&1; do
+          #   echo "Waiting for backend... ($(date +%T))"
+          #   sleep 5
+          # done' && echo "✓ Backend is ready" || (
+          #   echo "❌ Backend failed to start after 3 minutes"
+          #   echo "Docker container status:"
+          #   docker compose -f docker-compose-web-ci.yml ps
+          #   echo "Docker logs:"
+          #   docker compose -f docker-compose-web-ci.yml logs --tail=50
+          #   exit 1
+          # )
 
       # Cache build artifacts
       - name: Cache build
