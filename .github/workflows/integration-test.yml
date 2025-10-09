@@ -27,6 +27,30 @@ jobs:
         with:
           version: 10.9.0
 
+      # Cache pnpm dependencies for faster installs
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      # Cache Cypress binary for faster setup
+      - name: Cache Cypress binary
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/Cypress
+          key: ${{ runner.os }}-cypress-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-cypress-
+
       - name: Install dependencies
         run: |
           pnpm install --frozen-lockfile
@@ -63,52 +87,62 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-      - name: Run Docker-Compose (without web service)
+      - name: Start Docker services
         working-directory: AppFlowy-Cloud-Premium
         env:
           APPFLOWY_CLOUD_VERSION: ${{ env.CLOUD_VERSION }}
           APPFLOWY_AI_VERSION: ${{ env.CLOUD_VERSION }}
           APPFLOWY_WORKER_VERSION: ${{ env.CLOUD_VERSION }}
-          RUST_LOG: appflowy_cloud=debug
+          RUST_LOG: appflowy_cloud=info
         run: |
-          # Pull and start all backend services (excluding web)
+          # Pull and start all backend services
           docker compose pull appflowy_cloud gotrue ai appflowy_worker
           docker compose -f docker-compose-web-ci.yml up -d
-          
-          # Wait for services to be ready
-          echo "Waiting for services to start..."
-          sleep 30
-          
-          # Check health
-          for i in {1..30}; do
-            if curl -sf http://localhost/api/health > /dev/null 2>&1; then
-              echo "✓ Backend is ready"
-              break
-            fi
-            echo "Waiting for backend... (attempt $i/30)"
+
+          # Extended health check with detailed logging
+          echo "Waiting for backend services..."
+          timeout 180 bash -c 'until curl -sf http://localhost/api/health > /dev/null 2>&1; do
+            echo "Waiting for backend... ($(date +%T))"
             sleep 5
-          done
+          done' && echo "✓ Backend is ready" || (
+            echo "❌ Backend failed to start after 3 minutes"
+            echo "Docker container status:"
+            docker compose -f docker-compose-web-ci.yml ps
+            echo "Docker logs:"
+            docker compose -f docker-compose-web-ci.yml logs --tail=50
+            exit 1
+          )
+
+      # Cache build artifacts
+      - name: Cache build
+        id: cache-build
+        uses: actions/cache@v4
+        with:
+          path: dist
+          key: ${{ runner.os }}-build-${{ hashFiles('src/**/*', 'package.json', 'vite.config.ts', 'tsconfig.json') }}
+          restore-keys: |
+            ${{ runner.os }}-build-
 
       - name: Build project
+        if: steps.cache-build.outputs.cache-hit != 'true'
         run: pnpm run build
         
       - name: Start preview server
         run: |
           pnpm run start &
           echo $! > preview-server.pid
-          
-          # Wait for preview server
-          for i in {1..30}; do
-            if curl -sf http://localhost:3000 > /dev/null 2>&1; then
-              echo "✓ Preview server is ready"
-              break
-            fi
-            echo "Waiting for preview server... (attempt $i/30)"
-            sleep 3
-          done
+
+          # Optimized preview server health check
+          timeout 60 bash -c 'until curl -sf http://localhost:3000 > /dev/null 2>&1; do
+            echo "Waiting for preview server... ($(date +%T))"
+            sleep 2
+          done' && echo "✓ Preview server is ready" || (echo "❌ Preview server failed to start" && exit 1)
 
       - name: Run tests
-        run: pnpm cypress run --spec 'cypress/e2e/**/*.cy.ts'
+        run: |
+          pnpm cypress run \
+            --spec 'cypress/e2e/**/*.cy.ts' \
+            --config video=false
 
       - name: Upload artifacts
         if: always()
@@ -117,7 +151,6 @@ jobs:
           name: test-results
           path: |
             cypress/screenshots/**
-            cypress/videos/**
             cypress/logs/**
           if-no-files-found: ignore
           retention-days: 3
@@ -125,7 +158,11 @@ jobs:
       - name: Cleanup
         if: always()
         run: |
+          # Kill preview server
           if [ -f preview-server.pid ]; then
-            kill $(cat preview-server.pid) || true
+            kill $(cat preview-server.pid) 2>/dev/null || true
           fi
+          pkill -f "vite preview" 2>/dev/null || true
+
+          # Stop Docker services
           cd AppFlowy-Cloud-Premium && docker compose down || true
