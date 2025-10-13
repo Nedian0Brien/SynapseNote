@@ -13,6 +13,7 @@ import {
   UploadTemplatePayload,
 } from '@/application/template.type';
 import {
+  AccessLevel,
   AuthProvider,
   CreateFolderViewPayload,
   CreatePagePayload,
@@ -27,6 +28,7 @@ import {
   GuestConversionCodeInfo,
   GuestInvitation,
   Invitation,
+  IPeopleWithAccessType,
   MentionablePerson,
   PublishViewPayload,
   QuickNote,
@@ -85,6 +87,14 @@ export interface WorkspaceService {
   approveTurnGuestToMember: (workspaceId: string, code: string) => Promise<void>;
   getMentionableUsers: (workspaceId: string) => Promise<MentionablePerson[]>;
   addRecentPages: (workspaceId: string, viewIds: string[]) => Promise<void>;
+  getShareDetail: (workspaceId: string, viewId: string, ancestorViewIds: string[]) => Promise<{
+    view_id: string;
+    shared_with: IPeopleWithAccessType[];
+  }>;
+  sharePageTo: (workspaceId: string, viewId: string, emails: string[], accessLevel?: AccessLevel) => Promise<void>;
+  revokeAccess: (workspaceId: string, viewId: string, emails: string[]) => Promise<void>;
+  turnIntoMember: (workspaceId: string, email: string) => Promise<void>;
+  getShareWithMe: (workspaceId: string) => Promise<View>;
 }
 
 export interface AppService {

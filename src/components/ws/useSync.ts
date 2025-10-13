@@ -91,11 +91,42 @@ export const useSync = (ws: AppflowyWebSocketType, bc: BroadcastChannelType, eve
   // This handles notifications received directly from the server via WebSocket connection.
   // Only the "active" tab per workspace maintains a WebSocket connection to prevent
   // duplicate notifications and reduce server load.
+  //
+  // Notification Triggers and Recipients:
+  // 
+  // - profileChange: When current user updates their name/email via account settings
+  //   Recipients: The triggering user (SingleUser) OR all other sessions of the user (ExcludeUserAndDevice)
+  //   Note: If device_id present, excludes triggering device to avoid duplicate updates
+  // 
+  // - permissionChanged: When object access permissions change (delete, permission denied)
+  //   Recipients: ALL users in the workspace
+  // 
+  // - sectionChanged: When workspace sections update (recent views added/removed)
+  //   Recipients: DEPENDS on action:
+  //     * AddRecentViews: ALL users EXCEPT the trigger user (ExcludeSingleUser/ExcludeUserAndDevice)
+  //     * RemoveRecentViews: ONLY the trigger user (SingleUser/SingleUserAndDevice)
+  //   Reason: Recent views are personal to each user, so add notifications inform others while
+  //           remove notifications only update the user who removed them
+  // 
+  // - shareViewsChanged: When view sharing settings change (guests added/removed from a view)
+  //   Triggered by: share_view_with_guests() or revoke_access_to_view() in guest.rs
+  //   Contains: view_id and list of affected email addresses
+  //   Recipients: ALL users in the workspace
+  // 
+  // - mentionablePersonListChanged: When workspace members change (add/remove/role/mention)
+  //   Recipients: ALL users in the workspace
+  // 
+  // - serverLimit: When billing or feature limits are updated
+  //   Recipients: ALL users across ALL workspaces
+  // 
+  // - workspaceMemberProfileChanged: When ANY workspace member updates their profile
+  //   (name, avatar_url, cover_image_url, custom_image_url, description) via PUT /{workspace_id}/update-member-profile
+  //   Recipients: ALL users in the workspace (including the trigger user)
   useEffect(() => {
     const notification = lastMessage?.notification;
 
     if (notification && eventEmitter) {
-      console.log('Received workspace notification:', notification);
+      console.debug('Received workspace notification:', notification);
 
       // Emit specific notification events for each notification type
       // These events are consumed by AppProvider to update local state/database
@@ -122,6 +153,10 @@ export const useSync = (ws: AppflowyWebSocketType, bc: BroadcastChannelType, eve
       if (notification.serverLimit) {
         eventEmitter.emit(APP_EVENTS.SERVER_LIMIT_CHANGED, notification.serverLimit);
       }
+
+      if (notification.workspaceMemberProfileChanged) {
+        eventEmitter.emit(APP_EVENTS.WORKSPACE_MEMBER_PROFILE_CHANGED, notification.workspaceMemberProfileChanged);
+      }
     }
   }, [lastMessage, eventEmitter]);
 
@@ -142,7 +177,7 @@ export const useSync = (ws: AppflowyWebSocketType, bc: BroadcastChannelType, eve
     const notification = lastBroadcastMessage?.notification;
 
     if (notification && eventEmitter) {
-      console.log('Received broadcasted workspace notification:', notification);
+      console.debug('Received broadcasted workspace notification:', notification);
 
       // Process notifications identically to WebSocket notifications to ensure
       // consistent behavior across all tabs. Same event emissions = same UI updates.
@@ -168,6 +203,10 @@ export const useSync = (ws: AppflowyWebSocketType, bc: BroadcastChannelType, eve
 
       if (notification.serverLimit) {
         eventEmitter.emit(APP_EVENTS.SERVER_LIMIT_CHANGED, notification.serverLimit);
+      }
+
+      if (notification.workspaceMemberProfileChanged) {
+        eventEmitter.emit(APP_EVENTS.WORKSPACE_MEMBER_PROFILE_CHANGED, notification.workspaceMemberProfileChanged);
       }
     }
   }, [lastBroadcastMessage, eventEmitter]);

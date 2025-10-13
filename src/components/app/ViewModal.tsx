@@ -2,7 +2,9 @@ import { Button, Dialog, Divider, IconButton, Tooltip, Zoom } from '@mui/materia
 import { TransitionProps } from '@mui/material/transitions';
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 
+import { APP_EVENTS } from '@/application/constants';
 import { UIVariant, ViewComponentProps, ViewLayout, ViewMetaProps, YDoc } from '@/application/types';
 import { ReactComponent as ArrowDownIcon } from '@/assets/icons/alt_arrow_down.svg';
 import { ReactComponent as CloseIcon } from '@/assets/icons/close.svg';
@@ -12,10 +14,11 @@ import SpaceIcon from '@/components/_shared/view-icon/SpaceIcon';
 import { useAppHandlers, useAppOutline, useCurrentWorkspaceId } from '@/components/app/app.hooks';
 import DatabaseView from '@/components/app/DatabaseView';
 import MoreActions from '@/components/app/header/MoreActions';
+import { useViewOperations } from '@/components/app/hooks/useViewOperations';
 import MovePagePopover from '@/components/app/view-actions/MovePagePopover';
 import { Document } from '@/components/document';
 import RecordNotFound from '@/components/error/RecordNotFound';
-import { useService } from '@/components/main/app.hooks';
+import { useCurrentUser, useService } from '@/components/main/app.hooks';
 
 import ShareButton from 'src/components/app/share/ShareButton';
 
@@ -46,9 +49,11 @@ function ViewModal({ viewId, open, onClose }: { viewId?: string; open: boolean; 
     loadViews,
     setWordCount,
     uploadFile,
+    eventEmitter,
     ...handlers
   } = useAppHandlers();
   const outline = useAppOutline();
+  const { getViewReadOnlyStatus } = useViewOperations();
   const [doc, setDoc] = React.useState<
     | {
         id: string;
@@ -194,6 +199,12 @@ function ViewModal({ viewId, open, onClose }: { viewId?: string; open: boolean; 
 
   const layout = view?.layout || ViewLayout.Document;
 
+  // Check if view is in shareWithMe and determine readonly status
+  const isReadOnly = useMemo(() => {
+    if (!viewId) return false;
+    return getViewReadOnlyStatus(viewId, outline);
+  }, [getViewReadOnlyStatus, viewId, outline]);
+
   const View = useMemo(() => {
     switch (layout) {
       case ViewLayout.Document:
@@ -214,7 +225,7 @@ function ViewModal({ viewId, open, onClose }: { viewId?: string; open: boolean; 
         requestInstance={requestInstance}
         workspaceId={workspaceId || ''}
         doc={doc.doc}
-        readOnly={false}
+        readOnly={isReadOnly}
         viewMeta={viewMeta}
         navigateToView={toView}
         loadViewMeta={loadViewMeta}
@@ -232,16 +243,12 @@ function ViewModal({ viewId, open, onClose }: { viewId?: string; open: boolean; 
       />
     );
   }, [
-    requestInstance,
-    handlers,
-    openPageModal,
-    workspaceId,
-    handleUploadFile,
-    setWordCount,
-    loadViews,
     doc,
     viewMeta,
     View,
+    requestInstance,
+    workspaceId,
+    isReadOnly,
     toView,
     loadViewMeta,
     createRowDoc,
@@ -249,7 +256,32 @@ function ViewModal({ viewId, open, onClose }: { viewId?: string; open: boolean; 
     updatePage,
     addPage,
     deletePage,
+    openPageModal,
+    loadViews,
+    setWordCount,
+    handleUploadFile,
+    handlers,
   ]);
+
+  const currentUser = useCurrentUser();
+
+  useEffect(() => {
+    const handleShareViewsChanged = ({ emails, viewId: id }: { emails: string[]; viewId: string }) => {
+      if (id === viewId && emails.includes(currentUser?.email || '')) {
+        toast.success('Permission changed');
+      }
+    };
+
+    if (eventEmitter) {
+      eventEmitter.on(APP_EVENTS.SHARE_VIEWS_CHANGED, handleShareViewsChanged);
+    }
+
+    return () => {
+      if (eventEmitter) {
+        eventEmitter.off(APP_EVENTS.SHARE_VIEWS_CHANGED, handleShareViewsChanged);
+      }
+    };
+  }, [eventEmitter, viewId, currentUser?.email]);
 
   return (
     <Dialog
@@ -267,7 +299,7 @@ function ViewModal({ viewId, open, onClose }: { viewId?: string; open: boolean; 
       }}
     >
       {renderModalTitle()}
-      {notFound ? <RecordNotFound /> : <div className={'h-full w-full'}>{viewDom}</div>}
+      {notFound ? <RecordNotFound viewId={viewId} /> : <div className={'h-full w-full'}>{viewDom}</div>}
     </Dialog>
   );
 }

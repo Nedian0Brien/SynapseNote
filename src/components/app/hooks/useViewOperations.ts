@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { Awareness } from 'y-protocols/awareness';
 
 import { openCollabDB } from '@/application/db';
-import { DatabaseId, Types, View, ViewId, ViewLayout, YDoc, YjsEditorKey } from '@/application/types';
-import { findView } from '@/components/_shared/outline/utils';
+import { AccessLevel, DatabaseId, Types, View, ViewId, ViewLayout, YDoc, YjsEditorKey } from '@/application/types';
+import { findView, findViewInShareWithMe } from '@/components/_shared/outline/utils';
+import { getPlatform } from '@/utils/platform';
 
 import { useAuthInternal } from '../contexts/AuthInternalContext';
 import { useSyncInternal } from '../contexts/SyncInternalContext';
@@ -69,6 +70,26 @@ export function useViewOperations() {
     },
     [currentWorkspaceId, databaseStorageId, registerWorkspaceDatabaseDoc]
   );
+
+  // Check if view should be readonly based on access permissions
+  const getViewReadOnlyStatus = useCallback((viewId: string, outline?: View[]) => {
+    const isMobile = getPlatform().isMobile;
+
+    if (isMobile) return true; // Mobile has highest priority - always readonly
+
+    if (!outline) return false;
+
+    // Check if view exists in shareWithMe
+    const shareWithMeView = findViewInShareWithMe(outline, viewId);
+
+    if (shareWithMeView?.access_level !== undefined) {
+      // If found in shareWithMe, check access level
+      return shareWithMeView.access_level <= AccessLevel.ReadAndComment;
+    }
+
+    // If not found in shareWithMe, default is false (editable)
+    return false;
+  }, []);
 
   const getViewIdFromDatabaseId = useCallback((databaseId: string) => {
     if (!currentWorkspaceId) {
@@ -275,5 +296,6 @@ export function useViewOperations() {
     toView,
     awarenessMap,
     getViewIdFromDatabaseId,
+    getViewReadOnlyStatus,
   };
 }

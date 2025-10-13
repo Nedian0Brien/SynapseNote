@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 
+import { useDatabaseContext } from '@/application/database-yjs';
 import { useBoardContext } from '@/components/database/board/BoardProvider';
 import { createHotkey, HOT_KEY_NAME } from '@/utils/hotkeys';
 
@@ -13,6 +14,7 @@ export function useNavigationKey(
     onEnter: (id: string) => void;
   }
 ) {
+  const { isDocumentBlock } = useDatabaseContext();
   const {
     selectedCardIds,
     setSelectedCardIds,
@@ -50,7 +52,7 @@ export function useNavigationKey(
   }, [creatingColumnId]);
 
   useEffect(() => {
-    if (!element) return;
+    if (!element || isDocumentBlock) return;
 
     const clearSelection = () => {
       if (stableSelectedCardId.current.length > 0) {
@@ -347,5 +349,5 @@ export function useNavigationKey(
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('mousedown', clearSelection);
     };
-  }, [element, setSelectedCardIds, onDelete, onEnter, setEditingCardId, setCreatingColumnId, createCard, moveCard]);
+  }, [element, setSelectedCardIds, onDelete, onEnter, setEditingCardId, setCreatingColumnId, createCard, moveCard, isDocumentBlock]);
 }

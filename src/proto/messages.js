@@ -1928,6 +1928,7 @@ export const notification = $root.notification = (() => {
          * @property {notification.IShareViewsChanged|null} [shareViewsChanged] WorkspaceNotification shareViewsChanged
          * @property {notification.IMentionablePersonListChanged|null} [mentionablePersonListChanged] WorkspaceNotification mentionablePersonListChanged
          * @property {notification.IServerLimit|null} [serverLimit] WorkspaceNotification serverLimit
+         * @property {notification.IWorkspaceMemberProfileChanged|null} [workspaceMemberProfileChanged] WorkspaceNotification workspaceMemberProfileChanged
          */
 
         /**
@@ -1993,17 +1994,25 @@ export const notification = $root.notification = (() => {
          */
         WorkspaceNotification.prototype.serverLimit = null;
 
+        /**
+         * WorkspaceNotification workspaceMemberProfileChanged.
+         * @member {notification.IWorkspaceMemberProfileChanged|null|undefined} workspaceMemberProfileChanged
+         * @memberof notification.WorkspaceNotification
+         * @instance
+         */
+        WorkspaceNotification.prototype.workspaceMemberProfileChanged = null;
+
         // OneOf field names bound to virtual getters and setters
         let $oneOfFields;
 
         /**
          * WorkspaceNotification payload.
-         * @member {"profileChange"|"permissionChanged"|"sectionChanged"|"shareViewsChanged"|"mentionablePersonListChanged"|"serverLimit"|undefined} payload
+         * @member {"profileChange"|"permissionChanged"|"sectionChanged"|"shareViewsChanged"|"mentionablePersonListChanged"|"serverLimit"|"workspaceMemberProfileChanged"|undefined} payload
          * @memberof notification.WorkspaceNotification
          * @instance
          */
         Object.defineProperty(WorkspaceNotification.prototype, "payload", {
-            get: $util.oneOfGetter($oneOfFields = ["profileChange", "permissionChanged", "sectionChanged", "shareViewsChanged", "mentionablePersonListChanged", "serverLimit"]),
+            get: $util.oneOfGetter($oneOfFields = ["profileChange", "permissionChanged", "sectionChanged", "shareViewsChanged", "mentionablePersonListChanged", "serverLimit", "workspaceMemberProfileChanged"]),
             set: $util.oneOfSetter($oneOfFields)
         });
 
@@ -2043,6 +2052,8 @@ export const notification = $root.notification = (() => {
                 $root.notification.MentionablePersonListChanged.encode(message.mentionablePersonListChanged, writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
             if (message.serverLimit != null && Object.hasOwnProperty.call(message, "serverLimit"))
                 $root.notification.ServerLimit.encode(message.serverLimit, writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
+            if (message.workspaceMemberProfileChanged != null && Object.hasOwnProperty.call(message, "workspaceMemberProfileChanged"))
+                $root.notification.WorkspaceMemberProfileChanged.encode(message.workspaceMemberProfileChanged, writer.uint32(/* id 7, wireType 2 =*/58).fork()).ldelim();
             return writer;
         };
 
@@ -2101,6 +2112,10 @@ export const notification = $root.notification = (() => {
                     }
                 case 6: {
                         message.serverLimit = $root.notification.ServerLimit.decode(reader, reader.uint32());
+                        break;
+                    }
+                case 7: {
+                        message.workspaceMemberProfileChanged = $root.notification.WorkspaceMemberProfileChanged.decode(reader, reader.uint32());
                         break;
                     }
                 default:
@@ -2197,6 +2212,16 @@ export const notification = $root.notification = (() => {
                         return "serverLimit." + error;
                 }
             }
+            if (message.workspaceMemberProfileChanged != null && message.hasOwnProperty("workspaceMemberProfileChanged")) {
+                if (properties.payload === 1)
+                    return "payload: multiple values";
+                properties.payload = 1;
+                {
+                    let error = $root.notification.WorkspaceMemberProfileChanged.verify(message.workspaceMemberProfileChanged);
+                    if (error)
+                        return "workspaceMemberProfileChanged." + error;
+                }
+            }
             return null;
         };
 
@@ -2241,6 +2266,11 @@ export const notification = $root.notification = (() => {
                 if (typeof object.serverLimit !== "object")
                     throw TypeError(".notification.WorkspaceNotification.serverLimit: object expected");
                 message.serverLimit = $root.notification.ServerLimit.fromObject(object.serverLimit);
+            }
+            if (object.workspaceMemberProfileChanged != null) {
+                if (typeof object.workspaceMemberProfileChanged !== "object")
+                    throw TypeError(".notification.WorkspaceNotification.workspaceMemberProfileChanged: object expected");
+                message.workspaceMemberProfileChanged = $root.notification.WorkspaceMemberProfileChanged.fromObject(object.workspaceMemberProfileChanged);
             }
             return message;
         };
@@ -2287,6 +2317,11 @@ export const notification = $root.notification = (() => {
                 object.serverLimit = $root.notification.ServerLimit.toObject(message.serverLimit, options);
                 if (options.oneofs)
                     object.payload = "serverLimit";
+            }
+            if (message.workspaceMemberProfileChanged != null && message.hasOwnProperty("workspaceMemberProfileChanged")) {
+                object.workspaceMemberProfileChanged = $root.notification.WorkspaceMemberProfileChanged.toObject(message.workspaceMemberProfileChanged, options);
+                if (options.oneofs)
+                    object.payload = "workspaceMemberProfileChanged";
             }
             return object;
         };
@@ -4863,6 +4898,391 @@ export const notification = $root.notification = (() => {
         };
 
         return ServerLimit;
+    })();
+
+    notification.WorkspaceMemberProfileChanged = (function() {
+
+        /**
+         * Properties of a WorkspaceMemberProfileChanged.
+         * @memberof notification
+         * @interface IWorkspaceMemberProfileChanged
+         * @property {string|null} [userUuid] WorkspaceMemberProfileChanged userUuid
+         * @property {string|null} [name] WorkspaceMemberProfileChanged name
+         * @property {string|null} [avatarUrl] WorkspaceMemberProfileChanged avatarUrl
+         * @property {string|null} [coverImageUrl] WorkspaceMemberProfileChanged coverImageUrl
+         * @property {string|null} [customImageUrl] WorkspaceMemberProfileChanged customImageUrl
+         * @property {string|null} [description] WorkspaceMemberProfileChanged description
+         */
+
+        /**
+         * Constructs a new WorkspaceMemberProfileChanged.
+         * @memberof notification
+         * @classdesc Represents a WorkspaceMemberProfileChanged.
+         * @implements IWorkspaceMemberProfileChanged
+         * @constructor
+         * @param {notification.IWorkspaceMemberProfileChanged=} [properties] Properties to set
+         */
+        function WorkspaceMemberProfileChanged(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * WorkspaceMemberProfileChanged userUuid.
+         * @member {string} userUuid
+         * @memberof notification.WorkspaceMemberProfileChanged
+         * @instance
+         */
+        WorkspaceMemberProfileChanged.prototype.userUuid = "";
+
+        /**
+         * WorkspaceMemberProfileChanged name.
+         * @member {string} name
+         * @memberof notification.WorkspaceMemberProfileChanged
+         * @instance
+         */
+        WorkspaceMemberProfileChanged.prototype.name = "";
+
+        /**
+         * WorkspaceMemberProfileChanged avatarUrl.
+         * @member {string|null|undefined} avatarUrl
+         * @memberof notification.WorkspaceMemberProfileChanged
+         * @instance
+         */
+        WorkspaceMemberProfileChanged.prototype.avatarUrl = null;
+
+        /**
+         * WorkspaceMemberProfileChanged coverImageUrl.
+         * @member {string|null|undefined} coverImageUrl
+         * @memberof notification.WorkspaceMemberProfileChanged
+         * @instance
+         */
+        WorkspaceMemberProfileChanged.prototype.coverImageUrl = null;
+
+        /**
+         * WorkspaceMemberProfileChanged customImageUrl.
+         * @member {string|null|undefined} customImageUrl
+         * @memberof notification.WorkspaceMemberProfileChanged
+         * @instance
+         */
+        WorkspaceMemberProfileChanged.prototype.customImageUrl = null;
+
+        /**
+         * WorkspaceMemberProfileChanged description.
+         * @member {string|null|undefined} description
+         * @memberof notification.WorkspaceMemberProfileChanged
+         * @instance
+         */
+        WorkspaceMemberProfileChanged.prototype.description = null;
+
+        // OneOf field names bound to virtual getters and setters
+        let $oneOfFields;
+
+        /**
+         * WorkspaceMemberProfileChanged _avatarUrl.
+         * @member {"avatarUrl"|undefined} _avatarUrl
+         * @memberof notification.WorkspaceMemberProfileChanged
+         * @instance
+         */
+        Object.defineProperty(WorkspaceMemberProfileChanged.prototype, "_avatarUrl", {
+            get: $util.oneOfGetter($oneOfFields = ["avatarUrl"]),
+            set: $util.oneOfSetter($oneOfFields)
+        });
+
+        /**
+         * WorkspaceMemberProfileChanged _coverImageUrl.
+         * @member {"coverImageUrl"|undefined} _coverImageUrl
+         * @memberof notification.WorkspaceMemberProfileChanged
+         * @instance
+         */
+        Object.defineProperty(WorkspaceMemberProfileChanged.prototype, "_coverImageUrl", {
+            get: $util.oneOfGetter($oneOfFields = ["coverImageUrl"]),
+            set: $util.oneOfSetter($oneOfFields)
+        });
+
+        /**
+         * WorkspaceMemberProfileChanged _customImageUrl.
+         * @member {"customImageUrl"|undefined} _customImageUrl
+         * @memberof notification.WorkspaceMemberProfileChanged
+         * @instance
+         */
+        Object.defineProperty(WorkspaceMemberProfileChanged.prototype, "_customImageUrl", {
+            get: $util.oneOfGetter($oneOfFields = ["customImageUrl"]),
+            set: $util.oneOfSetter($oneOfFields)
+        });
+
+        /**
+         * WorkspaceMemberProfileChanged _description.
+         * @member {"description"|undefined} _description
+         * @memberof notification.WorkspaceMemberProfileChanged
+         * @instance
+         */
+        Object.defineProperty(WorkspaceMemberProfileChanged.prototype, "_description", {
+            get: $util.oneOfGetter($oneOfFields = ["description"]),
+            set: $util.oneOfSetter($oneOfFields)
+        });
+
+        /**
+         * Creates a new WorkspaceMemberProfileChanged instance using the specified properties.
+         * @function create
+         * @memberof notification.WorkspaceMemberProfileChanged
+         * @static
+         * @param {notification.IWorkspaceMemberProfileChanged=} [properties] Properties to set
+         * @returns {notification.WorkspaceMemberProfileChanged} WorkspaceMemberProfileChanged instance
+         */
+        WorkspaceMemberProfileChanged.create = function create(properties) {
+            return new WorkspaceMemberProfileChanged(properties);
+        };
+
+        /**
+         * Encodes the specified WorkspaceMemberProfileChanged message. Does not implicitly {@link notification.WorkspaceMemberProfileChanged.verify|verify} messages.
+         * @function encode
+         * @memberof notification.WorkspaceMemberProfileChanged
+         * @static
+         * @param {notification.IWorkspaceMemberProfileChanged} message WorkspaceMemberProfileChanged message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        WorkspaceMemberProfileChanged.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.userUuid != null && Object.hasOwnProperty.call(message, "userUuid"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.userUuid);
+            if (message.name != null && Object.hasOwnProperty.call(message, "name"))
+                writer.uint32(/* id 2, wireType 2 =*/18).string(message.name);
+            if (message.avatarUrl != null && Object.hasOwnProperty.call(message, "avatarUrl"))
+                writer.uint32(/* id 3, wireType 2 =*/26).string(message.avatarUrl);
+            if (message.coverImageUrl != null && Object.hasOwnProperty.call(message, "coverImageUrl"))
+                writer.uint32(/* id 4, wireType 2 =*/34).string(message.coverImageUrl);
+            if (message.customImageUrl != null && Object.hasOwnProperty.call(message, "customImageUrl"))
+                writer.uint32(/* id 5, wireType 2 =*/42).string(message.customImageUrl);
+            if (message.description != null && Object.hasOwnProperty.call(message, "description"))
+                writer.uint32(/* id 6, wireType 2 =*/50).string(message.description);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified WorkspaceMemberProfileChanged message, length delimited. Does not implicitly {@link notification.WorkspaceMemberProfileChanged.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof notification.WorkspaceMemberProfileChanged
+         * @static
+         * @param {notification.IWorkspaceMemberProfileChanged} message WorkspaceMemberProfileChanged message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        WorkspaceMemberProfileChanged.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a WorkspaceMemberProfileChanged message from the specified reader or buffer.
+         * @function decode
+         * @memberof notification.WorkspaceMemberProfileChanged
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {notification.WorkspaceMemberProfileChanged} WorkspaceMemberProfileChanged
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        WorkspaceMemberProfileChanged.decode = function decode(reader, length, error) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.notification.WorkspaceMemberProfileChanged();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.userUuid = reader.string();
+                        break;
+                    }
+                case 2: {
+                        message.name = reader.string();
+                        break;
+                    }
+                case 3: {
+                        message.avatarUrl = reader.string();
+                        break;
+                    }
+                case 4: {
+                        message.coverImageUrl = reader.string();
+                        break;
+                    }
+                case 5: {
+                        message.customImageUrl = reader.string();
+                        break;
+                    }
+                case 6: {
+                        message.description = reader.string();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a WorkspaceMemberProfileChanged message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof notification.WorkspaceMemberProfileChanged
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {notification.WorkspaceMemberProfileChanged} WorkspaceMemberProfileChanged
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        WorkspaceMemberProfileChanged.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a WorkspaceMemberProfileChanged message.
+         * @function verify
+         * @memberof notification.WorkspaceMemberProfileChanged
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        WorkspaceMemberProfileChanged.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            let properties = {};
+            if (message.userUuid != null && message.hasOwnProperty("userUuid"))
+                if (!$util.isString(message.userUuid))
+                    return "userUuid: string expected";
+            if (message.name != null && message.hasOwnProperty("name"))
+                if (!$util.isString(message.name))
+                    return "name: string expected";
+            if (message.avatarUrl != null && message.hasOwnProperty("avatarUrl")) {
+                properties._avatarUrl = 1;
+                if (!$util.isString(message.avatarUrl))
+                    return "avatarUrl: string expected";
+            }
+            if (message.coverImageUrl != null && message.hasOwnProperty("coverImageUrl")) {
+                properties._coverImageUrl = 1;
+                if (!$util.isString(message.coverImageUrl))
+                    return "coverImageUrl: string expected";
+            }
+            if (message.customImageUrl != null && message.hasOwnProperty("customImageUrl")) {
+                properties._customImageUrl = 1;
+                if (!$util.isString(message.customImageUrl))
+                    return "customImageUrl: string expected";
+            }
+            if (message.description != null && message.hasOwnProperty("description")) {
+                properties._description = 1;
+                if (!$util.isString(message.description))
+                    return "description: string expected";
+            }
+            return null;
+        };
+
+        /**
+         * Creates a WorkspaceMemberProfileChanged message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof notification.WorkspaceMemberProfileChanged
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {notification.WorkspaceMemberProfileChanged} WorkspaceMemberProfileChanged
+         */
+        WorkspaceMemberProfileChanged.fromObject = function fromObject(object) {
+            if (object instanceof $root.notification.WorkspaceMemberProfileChanged)
+                return object;
+            let message = new $root.notification.WorkspaceMemberProfileChanged();
+            if (object.userUuid != null)
+                message.userUuid = String(object.userUuid);
+            if (object.name != null)
+                message.name = String(object.name);
+            if (object.avatarUrl != null)
+                message.avatarUrl = String(object.avatarUrl);
+            if (object.coverImageUrl != null)
+                message.coverImageUrl = String(object.coverImageUrl);
+            if (object.customImageUrl != null)
+                message.customImageUrl = String(object.customImageUrl);
+            if (object.description != null)
+                message.description = String(object.description);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a WorkspaceMemberProfileChanged message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof notification.WorkspaceMemberProfileChanged
+         * @static
+         * @param {notification.WorkspaceMemberProfileChanged} message WorkspaceMemberProfileChanged
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        WorkspaceMemberProfileChanged.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.userUuid = "";
+                object.name = "";
+            }
+            if (message.userUuid != null && message.hasOwnProperty("userUuid"))
+                object.userUuid = message.userUuid;
+            if (message.name != null && message.hasOwnProperty("name"))
+                object.name = message.name;
+            if (message.avatarUrl != null && message.hasOwnProperty("avatarUrl")) {
+                object.avatarUrl = message.avatarUrl;
+                if (options.oneofs)
+                    object._avatarUrl = "avatarUrl";
+            }
+            if (message.coverImageUrl != null && message.hasOwnProperty("coverImageUrl")) {
+                object.coverImageUrl = message.coverImageUrl;
+                if (options.oneofs)
+                    object._coverImageUrl = "coverImageUrl";
+            }
+            if (message.customImageUrl != null && message.hasOwnProperty("customImageUrl")) {
+                object.customImageUrl = message.customImageUrl;
+                if (options.oneofs)
+                    object._customImageUrl = "customImageUrl";
+            }
+            if (message.description != null && message.hasOwnProperty("description")) {
+                object.description = message.description;
+                if (options.oneofs)
+                    object._description = "description";
+            }
+            return object;
+        };
+
+        /**
+         * Converts this WorkspaceMemberProfileChanged to JSON.
+         * @function toJSON
+         * @memberof notification.WorkspaceMemberProfileChanged
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        WorkspaceMemberProfileChanged.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for WorkspaceMemberProfileChanged
+         * @function getTypeUrl
+         * @memberof notification.WorkspaceMemberProfileChanged
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        WorkspaceMemberProfileChanged.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/notification.WorkspaceMemberProfileChanged";
+        };
+
+        return WorkspaceMemberProfileChanged;
     })();
 
     return notification;

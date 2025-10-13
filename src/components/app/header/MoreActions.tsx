@@ -1,8 +1,14 @@
-import { ViewLayout } from '@/application/types';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+
+import { Role, ViewLayout } from '@/application/types';
+import { ReactComponent as AddToPageIcon } from '@/assets/icons/add_to_page.svg';
 import { ReactComponent as MoreIcon } from '@/assets/icons/more.svg';
+import { findViewInShareWithMe } from '@/components/_shared/outline/utils';
 import { useAIChatContext } from '@/components/ai-chat/AIChatProvider';
-import { useAppView, useCurrentWorkspaceId } from '@/components/app/app.hooks';
+import { useAppOutline, useAppView, useCurrentWorkspaceId, useUserWorkspaceInfo } from '@/components/app/app.hooks';
 import DocumentInfo from '@/components/app/header/DocumentInfo';
+import { useService } from '@/components/main/app.hooks';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -12,12 +18,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import MoreActionsContent from './MoreActionsContent';
-import { ReactComponent as AddToPageIcon } from '@/assets/icons/add_to_page.svg';
-import { useService } from '@/components/main/app.hooks';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+
+import MoreActionsContent from './MoreActionsContent';
 
 function MoreActions({
   viewId,
@@ -33,6 +36,7 @@ function MoreActions({
   const { selectionMode, onOpenSelectionMode } = useAIChatContext();
   const [hasMessages, setHasMessages] = useState(false);
   const [open, setOpen] = useState(false);
+  const outline = useAppOutline();
 
   const view = useAppView(viewId);
   const { t } = useTranslation();
@@ -59,6 +63,10 @@ function MoreActions({
     void handleFetchChatMessages();
   }, [handleFetchChatMessages]);
 
+  const userWorkspaceInfo = useUserWorkspaceInfo();
+
+  const role = userWorkspaceInfo?.selectedWorkspace.role;
+
   const ChatOptions = useMemo(() => {
     return view?.layout === ViewLayout.AIChat ? (
       <>
@@ -84,6 +92,10 @@ function MoreActions({
     ) : null;
   }, [view?.layout, hasMessages, t, onOpenSelectionMode, handleClose]);
 
+  const shareWithMeView = useMemo(() => {
+    return findViewInShareWithMe(outline || [], viewId);
+  }, [outline, viewId]);
+
   if (view?.layout === ViewLayout.AIChat && selectionMode) {
     return null;
   }
@@ -91,21 +103,26 @@ function MoreActions({
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        <Button data-testid="page-more-actions" size={'icon'} variant={'ghost'} className={'text-icon-secondary'}>
+        <Button data-testid='page-more-actions' size={'icon'} variant={'ghost'} className={'text-icon-secondary'}>
           <MoreIcon />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent {...menuContentProps}>
         <DropdownMenuGroup>{ChatOptions}</DropdownMenuGroup>
 
-        <MoreActionsContent
-          itemClicked={() => {
-            handleClose();
-          }}
-          onDeleted={onDeleted}
-          viewId={viewId}
-        />
-        <DropdownMenuSeparator />
+        {role === Role.Guest || shareWithMeView ? null : (
+          <>
+            <MoreActionsContent
+              itemClicked={() => {
+                handleClose();
+              }}
+              onDeleted={onDeleted}
+              viewId={viewId}
+            />
+            <DropdownMenuSeparator />
+          </>
+        )}
+
         <DocumentInfo viewId={viewId} />
       </DropdownMenuContent>
     </DropdownMenu>

@@ -5,12 +5,12 @@ import { useSearchParams } from 'react-router-dom';
 import { ERROR_CODE } from '@/application/constants';
 import { Workspace } from '@/application/types';
 import { ReactComponent as SuccessLogo } from '@/assets/icons/success_logo.svg';
-import { useCurrentUser, useService } from '@/components/main/app.hooks';
-import { Progress } from '@/components/ui/progress';
 import { ErrorPage } from '@/components/_shared/landing-page/ErrorPage';
 import { InvalidLink } from '@/components/_shared/landing-page/InvalidLink';
 import LandingPage from '@/components/_shared/landing-page/LandingPage';
 import { NotInvitationAccount } from '@/components/_shared/landing-page/NotInvitationAccount';
+import { useService } from '@/components/main/app.hooks';
+import { Progress } from '@/components/ui/progress';
 
 export function AsGuest() {
   const { t } = useTranslation();
@@ -19,7 +19,6 @@ export function AsGuest() {
   const code = searchParams.get('code');
   const workspaceId = searchParams.get('workspace_id');
   const [loading, setLoading] = useState(false);
-  const currentUser = useCurrentUser();
 
   const [workspace, setWorkspace] = useState<Workspace>();
   const [page, setPage] = useState<{ view_id: string; name: string } | null>(null);
@@ -109,10 +108,7 @@ export function AsGuest() {
       }
       primaryAction={{
         onClick: () => {
-          window.open(
-            `appflowy-flutter://open-page?workspace_id=${workspace?.id}&view_id=${page?.view_id}&email=${currentUser?.email}`,
-            '_self'
-          );
+          window.open(`/app/${workspace?.id}/${page?.view_id}`, '_self');
         },
         label: loading ? (
           <span className='flex items-center gap-2'>

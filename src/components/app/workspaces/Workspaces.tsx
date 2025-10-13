@@ -22,6 +22,7 @@ import DeleteWorkspace from '@/components/app/workspaces/DeleteWorkspace';
 import EditWorkspace from '@/components/app/workspaces/EditWorkspace';
 import InviteMember from '@/components/app/workspaces/InviteMember';
 import LeaveWorkspace from '@/components/app/workspaces/LeaveWorkspace';
+import LogoutConfirm from '@/components/app/workspaces/LogoutConfirm';
 import WorkspaceList from '@/components/app/workspaces/WorkspaceList';
 import UpgradeAIMax from '@/components/billing/UpgradeAIMax';
 import UpgradePlan from '@/components/billing/UpgradePlan';
@@ -40,7 +41,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { openUrl } from '@/utils/url';
 
 import { AccountSettings } from './AccountSettings';
-import LogoutConfirm from '@/components/app/workspaces/LogoutConfirm';
 
 export function Workspaces() {
   const { t } = useTranslation();
@@ -147,6 +147,7 @@ export function Workspaces() {
                 selectedWorkspace={currentWorkspace}
                 onChangeWorkspace={handleChange}
                 avatarSize={24}
+                changeLoading={changeLoading ? true : false}
               />
 
               <div
@@ -231,7 +232,7 @@ export function Workspaces() {
                   <div className={'flex-1 text-left'}>{t('web.accountSettings')}</div>
                 </DropdownMenuItem>
               </AccountSettings>
-              <DropdownMenuItem data-testid="logout-menu-item" onSelect={() => setOpenLogoutConfirm(true)}>
+              <DropdownMenuItem data-testid='logout-menu-item' onSelect={() => setOpenLogoutConfirm(true)}>
                 <LogoutIcon />
                 {t('button.logout')}
               </DropdownMenuItem>
@@ -326,11 +327,7 @@ export function Workspaces() {
         />
       )}
 
-      <LogoutConfirm
-        open={openLogoutConfirm}
-        onClose={() => setOpenLogoutConfirm(false)}
-        onConfirm={handleSignOut}
-      />
+      <LogoutConfirm open={openLogoutConfirm} onClose={() => setOpenLogoutConfirm(false)} onConfirm={handleSignOut} />
     </>
   );
 }

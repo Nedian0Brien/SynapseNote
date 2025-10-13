@@ -3,17 +3,20 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { validate as uuidValidate } from 'uuid';
 
+import { APP_EVENTS } from '@/application/constants';
 import { DatabaseRelations, MentionablePerson, UIVariant, View, ViewLayout } from '@/application/types';
 import { findView, findViewByLayout } from '@/components/_shared/outline/utils';
 import { createDeduplicatedNoArgsRequest } from '@/utils/deduplicateRequest';
 
 import { useAuthInternal } from '../contexts/AuthInternalContext';
+import { useSyncInternal } from '../contexts/SyncInternalContext';
 
 const USER_NO_ACCESS_CODE = [1024, 1012];
 
 // Hook for managing workspace data (outline, favorites, recent, trash)
 export function useWorkspaceData() {
   const { service, currentWorkspaceId, userWorkspaceInfo } = useAuthInternal();
+  const { eventEmitter } = useSyncInternal();
   const navigate = useNavigate();
 
   const [outline, setOutline] = useState<View[]>();
@@ -37,21 +40,45 @@ export function useWorkspaceData() {
           throw new Error('App outline not found');
         }
 
-        stableOutlineRef.current = res;
-        setOutline(res);
+        // Load shareWithMe data and append as hidden space
+        let outlineWithShareWithMe = res;
+
+        try {
+          const shareWithMe = await service.getShareWithMe(workspaceId);
+
+          if (shareWithMe && shareWithMe.children && shareWithMe.children.length > 0) {
+            // Create a hidden space for shareWithMe
+            const shareWithMeSpace: View = {
+              ...shareWithMe,
+              extra: {
+                ...shareWithMe.extra,
+                is_space: true,
+                is_hidden_space: true, // Mark as hidden so it doesn't show in normal space list
+              },
+            };
+
+            outlineWithShareWithMe = [...res, shareWithMeSpace];
+          }
+        } catch (error) {
+          console.error('Failed to load shareWithMe data:', error);
+          // Continue with original outline if shareWithMe fails
+        }
+
+        stableOutlineRef.current = outlineWithShareWithMe;
+        setOutline(outlineWithShareWithMe);
 
 
         if (!force) return;
 
-        const firstView = findViewByLayout(res, [
+        const firstView = findViewByLayout(outlineWithShareWithMe, [
           ViewLayout.Document,
           ViewLayout.Board,
           ViewLayout.Grid,
           ViewLayout.Calendar,
         ]);
 
+
         try {
-          await service.openWorkspace(workspaceId);
           const wId = window.location.pathname.split('/')[2];
           const pageId = window.location.pathname.split('/')[3];
           const search = window.location.search;
@@ -68,7 +95,7 @@ export function useWorkspaceData() {
 
           const lastViewId = localStorage.getItem('last_view_id');
 
-          if (lastViewId && findView(res, lastViewId)) {
+          if (lastViewId && findView(outlineWithShareWithMe, lastViewId)) {
             navigate(`/app/${workspaceId}/${lastViewId}${search}`);
           } else if (firstView) {
             navigate(`/app/${workspaceId}/${firstView.view_id}${search}`);
@@ -88,6 +115,24 @@ export function useWorkspaceData() {
     },
     [navigate, service]
   );
+
+  useEffect(() => {
+    const handleShareViewsChanged = () => {
+      if (!currentWorkspaceId) return;
+
+      void loadOutline(currentWorkspaceId, false);
+    };
+
+    if (eventEmitter) {
+      eventEmitter.on(APP_EVENTS.SHARE_VIEWS_CHANGED, handleShareViewsChanged);
+    }
+
+    return () => {
+      if (eventEmitter) {
+        eventEmitter.off(APP_EVENTS.SHARE_VIEWS_CHANGED, handleShareViewsChanged);
+      }
+    };
+  }, [currentWorkspaceId, eventEmitter, loadOutline]);
 
   // Load favorite views
   const loadFavoriteViews = useCallback(async () => {
@@ -248,7 +293,8 @@ export function useWorkspaceData() {
   // Load data when workspace changes
   useEffect(() => {
     if (!currentWorkspaceId) return;
-    void loadOutline(currentWorkspaceId);
+    setOutline([]);
+    void loadOutline(currentWorkspaceId, true);
     void (async () => {
       try {
         await loadTrash(currentWorkspaceId);
@@ -256,7 +302,8 @@ export function useWorkspaceData() {
         console.error(e);
       }
     })();
-  }, [loadOutline, currentWorkspaceId, loadTrash]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentWorkspaceId]);
 
   // Load database relations
   useEffect(() => {

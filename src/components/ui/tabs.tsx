@@ -33,7 +33,7 @@ function TabsTrigger({ className, ...props }: React.ComponentProps<typeof TabsPr
 
         // Text Styles
         'whitespace-nowrap text-sm font-medium',
-        'text-text-secondary',
+        'text-text-tertiary',
 
         // Active State
         'data-[state=active]:text-text-primary',

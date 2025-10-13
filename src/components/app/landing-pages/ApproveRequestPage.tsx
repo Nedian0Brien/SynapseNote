@@ -1,4 +1,4 @@
-import { HTMLAttributes, useCallback, useEffect, useMemo, useState } from 'react';
+import { HTMLAttributes, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -12,16 +12,16 @@ import {
 } from '@/application/types';
 import { ReactComponent as SuccessLogo } from '@/assets/icons/success_logo.svg';
 import { ReactComponent as WarningIcon } from '@/assets/icons/warning.svg';
-import { useService } from '@/components/main/app.hooks';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ErrorPage } from '@/components/_shared/landing-page/ErrorPage';
 import LandingPage from '@/components/_shared/landing-page/LandingPage';
 import { NotInvitationAccount } from '@/components/_shared/landing-page/NotInvitationAccount';
 import { NormalModal } from '@/components/_shared/modal';
+import { useService } from '@/components/main/app.hooks';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 
-const WorkspaceMemberLimitExceededCode = 1027;
-const REPEAT_REQUEST_CODE = 1043;
+const GuestLimitExceededCode = 1070;
+const REPEAT_REQUEST_CODE = 1122;
 
 function ApproveRequestPage() {
   const [searchParams] = useSearchParams();
@@ -53,7 +53,7 @@ function ApproveRequestPage() {
       const plans = await service.getActiveSubscription(requestInfo.workspace.id);
 
       setCurrentPlans(plans);
-      if (plans.length === 0 && requestInfo.workspace.memberCount > 1) {
+      if (plans.length === 0) {
         setUpgradeModalOpen(true);
       }
       // eslint-disable-next-line
@@ -82,8 +82,9 @@ function ApproveRequestPage() {
       setHasSend(true);
       // eslint-disable-next-line
     } catch (e: any) {
-      if (e.code === WorkspaceMemberLimitExceededCode) {
+      if (e.code === GuestLimitExceededCode) {
         setUpgradeModalOpen(true);
+        return;
       }
 
       if (e.code === REPEAT_REQUEST_CODE) {
@@ -134,6 +135,10 @@ function ApproveRequestPage() {
     [requestInfo]
   );
 
+  useLayoutEffect(() => {
+    void handleApprove();
+  }, [handleApprove]);
+
   if (isError) {
     return <ErrorPage onRetry={handleApprove} />;
   }
@@ -157,14 +162,17 @@ function ApproveRequestPage() {
                     {requestInfo?.requester?.name || requestInfo?.requester?.email}
                   </span>
                 ),
-                workspace: <span className='font-bold text-text-primary'>{requestInfo?.workspace.name}</span>,
+                view: <span className='font-bold text-text-primary underline'>{requestInfo?.view?.name}</span>,
               }}
             />
           </div>
         }
-        secondaryAction={{
-          onClick: () => window.open('/app', '_self'),
-          label: t('landingPage.backToHome'),
+        primaryAction={{
+          onClick: () => {
+            if (!requestInfo?.workspace.id || !requestInfo?.view?.view_id) return;
+            window.open(`/app/${requestInfo?.workspace.id}/${requestInfo?.view?.view_id}`, '_self');
+          },
+          label: t('landingPage.asGuest.viewPage'),
         }}
       />
     );
@@ -178,14 +186,14 @@ function ApproveRequestPage() {
         title={
           <div className='font-normal'>
             <Trans
-              i18nKey={'landingPage.approve.requestedAsMember'}
+              i18nKey={'landingPage.asGuest.requestAccess'}
               components={{
                 user: (
                   <span className='font-bold text-text-primary'>
                     {requestInfo?.requester?.name || requestInfo?.requester?.email}
                   </span>
                 ),
-                workspace: <span className='font-bold text-text-primary'>{`\n${requestInfo?.workspace.name}`}</span>,
+                view: <span className='font-bold text-text-primary underline'>{`\n${requestInfo?.view?.name}`}</span>,
               }}
             />
           </div>

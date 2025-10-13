@@ -1,14 +1,15 @@
+import React, { useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+
+import { ReactComponent as SuccessIcon } from '@/assets/icons/success.svg';
 import { ReactComponent as Templates } from '@/assets/icons/template.svg';
 import { useAppView } from '@/components/app/app.hooks';
 import PublishPanel from '@/components/app/share/PublishPanel';
 import SharePanel from '@/components/app/share/SharePanel';
 import TemplatePanel from '@/components/app/share/TemplatePanel';
 import { useCurrentUser } from '@/components/main/app.hooks';
-import React, { useCallback, useEffect, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
-import { TabPanel, ViewTab, ViewTabs } from 'src/components/_shared/tabs/ViewTabs';
-
-import { ReactComponent as SuccessIcon } from '@/assets/icons/success.svg';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 enum TabKey {
   SHARE = 'share',
@@ -36,12 +37,12 @@ function ShareTabs({ opened, viewId, onClose }: { opened: boolean; viewId: strin
         Panel: PublishPanel,
       },
       currentUser?.email?.endsWith('appflowy.io') &&
-      view?.is_published && {
-        value: TabKey.TEMPLATE,
-        label: t('template.asTemplate'),
-        icon: <Templates className={'mb-0 h-5 w-5'} />,
-        Panel: TemplatePanel,
-      },
+        view?.is_published && {
+          value: TabKey.TEMPLATE,
+          label: t('template.asTemplate'),
+          icon: <Templates className={'mb-0 h-5 w-5'} />,
+          Panel: TemplatePanel,
+        },
     ].filter(Boolean) as {
       value: TabKey;
       label: string;
@@ -50,10 +51,6 @@ function ShareTabs({ opened, viewId, onClose }: { opened: boolean; viewId: strin
     }[];
   }, [currentUser?.email, t, view?.is_published]);
 
-  const onChange = useCallback((_event: React.SyntheticEvent, newValue: TabKey) => {
-    setValue(newValue);
-  }, []);
-
   useEffect(() => {
     if (opened) {
       setValue(TabKey.SHARE);
@@ -61,33 +58,28 @@ function ShareTabs({ opened, viewId, onClose }: { opened: boolean; viewId: strin
   }, [opened]);
 
   return (
-    <>
-      <ViewTabs className={'border-b border-border-primary'} onChange={onChange} value={value}>
+    <Tabs value={value} className='gap-0' onValueChange={(newValue) => setValue(newValue as TabKey)}>
+      <TabsList className={'flex w-full items-center justify-start px-3 pt-3'}>
         {opened &&
           options.map((option) => (
-            <ViewTab
-              className={'flex flex-row items-center justify-center gap-1.5'}
+            <TabsTrigger
+              className={'flex flex-row items-center justify-center gap-3 px-1.5 pb-1.5'}
               key={option.value}
               value={option.value}
-              label={option.label}
-              icon={option.icon}
               data-testid={option.value === TabKey.PUBLISH ? 'publish-tab' : undefined}
-            />
+            >
+              {option.icon}
+              {option.label}
+            </TabsTrigger>
           ))}
-      </ViewTabs>
-      <div className={'p-2'}>
-        {options.map((option) => (
-          <TabPanel
-            className={'w-[500px] min-w-[500px] max-w-full max-sm:min-w-[80vw]'}
-            key={option.value}
-            index={option.value}
-            value={value}
-          >
-            <option.Panel viewId={viewId} onClose={onClose} opened={opened} />
-          </TabPanel>
-        ))}
-      </div>
-    </>
+      </TabsList>
+      <Separator className='my-0' />
+      {options.map((option) => (
+        <TabsContent key={option.value} value={option.value}>
+          <option.Panel viewId={viewId} onClose={onClose} opened={opened} />
+        </TabsContent>
+      ))}
+    </Tabs>
   );
 }
 

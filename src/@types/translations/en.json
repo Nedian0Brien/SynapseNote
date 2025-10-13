@@ -171,8 +171,51 @@
     "copyLinkToBlockSuccess": "Copied block link to clipboard",
     "copyLinkToBlockFailed": "Failed to copy block link to clipboard",
     "manageAllSites": "Manage all sites",
-    "updatePathName": "Update path name"
+    "updatePathName": "Update path name",
+    "copyLinkTitle": "People above can access with the link",
+    "generalAccess": "General access",
+    "anyoneAt": "Anyone at ",
+    "anyoneInThisGroupWithTheLinkHasFullAccess": "Anyone in this group with the link has full access",
+    "fullAccess": "Full access",
+    "peopleWithAccess": "People with access",
+    "readOnly": "Can view",
+    "readAndComment": "Can view and comment",
+    "readAndWrite": "Can edit",
+    "guest": "Guest",
+    "pending": "Pending",
+    "you": "You",
+    "canView": "Can view",
+    "canEdit": "Can edit",
+    "canViewAndComment": "Can view and comment",
+    "canEditAndComment": "Can edit and comment",
+    "removeAccess": "Remove access",
+    "canViewDescription": "Can’t make changes",
+    "canEditDescription": "Can make any changes",
+    "turnIntoMember": "Turn into member",
+    "notInvitedToPage": "Not invited to page",
+    "keepTypingEmail": "Keep typing an email to invite",
+    "noResults": "No results",
+    "inviteByEmail": "Invite by email",
+    "invite": "Invite",
+    "inviteSuccess": "Invite sent successfully",
+    "changeAccessSuccess": "Access level changed successfully for {{email}}",
+    "changeAccessError": "Failed to change access level",
+    "removeAccessError": "Failed to remove access",
+    "removeAccessSuccess": "Access removed successfully for {{email}}",
+    "turnIntoMemberSuccess": "Turn into member successfully for {{email}}",
+    "turnIntoMemberError": "Failed to turn into member",
+    "restricted": "Restricted",
+    "restrictedDescription": "Only people with access can open with the link",
+    "removeYourAccess": "Remove your own access",
+    "upgrade": "Upgrade",
+    "upgradeText": " to the Pro plan to invite guests to this page",
+    "pendingTooltip": "Invitation not yet accepted",
+    "onlyFullAccess": "Only user with full access can invite others",
+    "onlyProCanInvite": "Please upgrade to the Pro plan to invite others",
+    "upgradeConfirmTitle": "Upgrade to invite guest editors",
+    "upgradeConfirmDescription": "Upgrade to Pro to collaborate with non-members on this page"
   },
+  "private": "Private",
   "moreAction": {
     "small": "small",
     "medium": "medium",
@@ -198,6 +241,8 @@
     "csv": "CSV",
     "database": "Database"
   },
+  "teamSpace": "Team space",
+  "share": "Share",
   "disclosureAction": {
     "rename": "Rename",
     "delete": "Delete",
@@ -563,7 +608,8 @@
     "purchaseAIResponse": "Purchase ",
     "askOwnerToUpgradeToLocalAI": "Ask workspace owner to enable AI On-device",
     "upgradeToAILocal": "Run local models on your device for ultimate privacy",
-    "upgradeToAILocalDesc": "Chat with PDFs, improve your writing, and auto-fill tables using local AI"
+    "upgradeToAILocalDesc": "Chat with PDFs, improve your writing, and auto-fill tables using local AI",
+    "shareWithMe": "Shared with me"
   },
   "notifications": {
     "export": {
@@ -3415,7 +3461,7 @@
     "approve": {
       "requestedAsMember": "<user /> requested to join <workspace /> as a member",
       "requestApprove": "Approve",
-      "alreadyApproved": "Success! <user/> has been upgraded to a member of <workspace/>"
+      "alreadyApproved": "<user/> can now access <view />"
     },
     "afterPayment": {
       "title": "Explore features in your new plan",
@@ -3445,7 +3491,8 @@
     },
     "asGuest": {
       "title": "You can now collaborate with others on\n<page/>",
-      "viewPage": "View page"
+      "viewPage": "View page",
+      "requestAccess": "<user/> requested the access to <view />"
     },
     "notInvitationAccount": {
       "title": "This invitation link isn't for your account",

@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { invalidToken } from '@/application/session/token';
 import { UserWorkspaceInfo } from '@/application/types';
 import { AFConfigContext, useService } from '@/components/main/app.hooks';
+
 import { AuthInternalContext, AuthInternalContextType } from '../contexts/AuthInternalContext';
 
 interface AppAuthLayerProps {
@@ -56,11 +57,14 @@ export const AppAuthLayer: React.FC<AppAuthLayerProps> = ({ children }) => {
       }
 
       await service?.openWorkspace(workspaceId);
+
       await loadUserWorkspaceInfo();
+
       localStorage.removeItem('last_view_id');
+
       navigate(`/app/${workspaceId}`);
     },
-    [navigate, service, userWorkspaceInfo, loadUserWorkspaceInfo]
+    [loadUserWorkspaceInfo, navigate, service, userWorkspaceInfo]
   );
 
   // If the user is not authenticated, log out the user
@@ -76,17 +80,16 @@ export const AppAuthLayer: React.FC<AppAuthLayerProps> = ({ children }) => {
   }, [loadUserWorkspaceInfo]);
 
   // Context value for authentication layer
-  const authContextValue: AuthInternalContextType = useMemo(() => ({
-    service,
-    userWorkspaceInfo,
-    currentWorkspaceId,
-    isAuthenticated: !!isAuthenticated,
-    onChangeWorkspace,
-  }), [service, userWorkspaceInfo, currentWorkspaceId, isAuthenticated, onChangeWorkspace]);
-
-  return (
-    <AuthInternalContext.Provider value={authContextValue}>
-      {children}
-    </AuthInternalContext.Provider>
+  const authContextValue: AuthInternalContextType = useMemo(
+    () => ({
+      service,
+      userWorkspaceInfo,
+      currentWorkspaceId,
+      isAuthenticated: !!isAuthenticated,
+      onChangeWorkspace,
+    }),
+    [service, userWorkspaceInfo, currentWorkspaceId, isAuthenticated, onChangeWorkspace]
   );
+
+  return <AuthInternalContext.Provider value={authContextValue}>{children}</AuthInternalContext.Provider>;
 };

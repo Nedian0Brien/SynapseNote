@@ -4,7 +4,7 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { useOutlineDrawer } from '@/components/_shared/outline/outline.hooks';
 import { AFScroller } from '@/components/_shared/scroller';
 import { useAIChatContext } from '@/components/ai-chat/AIChatProvider';
-import { useAppHandlers, useViewErrorStatus } from '@/components/app/app.hooks';
+import { useAppHandlers, useAppViewId, useViewErrorStatus } from '@/components/app/app.hooks';
 import { ConnectBanner } from '@/components/app/ConnectBanner';
 import { AppHeader } from '@/components/app/header';
 import Main from '@/components/app/Main';
@@ -18,6 +18,7 @@ function MainLayout() {
   const { drawerOpen: chatViewDrawerOpen, drawerWidth: openViewDrawerWidth } = useAIChatContext();
 
   const { openPageModalViewId } = useAppHandlers();
+  const viewId = useAppViewId();
   const { notFound, deleted } = useViewErrorStatus();
 
   const main = useMemo(() => {
@@ -25,8 +26,8 @@ function MainLayout() {
       return <DeletedPageComponent />;
     }
 
-    return notFound ? <RecordNotFound isViewNotFound /> : <Main />;
-  }, [deleted, notFound]);
+    return notFound ? <RecordNotFound isViewNotFound viewId={viewId} /> : <Main />;
+  }, [deleted, notFound, viewId]);
 
   const width = useMemo(() => {
     let diff = 0;

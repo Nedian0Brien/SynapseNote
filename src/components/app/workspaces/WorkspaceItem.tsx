@@ -2,7 +2,7 @@ import { CircularProgress } from '@mui/material';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Workspace } from '@/application/types';
+import { Role, Workspace } from '@/application/types';
 import MoreActions from '@/components/app/workspaces/MoreActions';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenuItem, DropdownMenuItemTick } from '@/components/ui/dropdown-menu';
@@ -29,7 +29,7 @@ export function WorkspaceItem({
 }) {
   const { t } = useTranslation();
   const [hovered, setHovered] = useState(false);
-
+  const isGuest = workspace.role === Role.Guest;
   const renderActions = useMemo(() => {
     if (changeLoading === workspace.id) return <CircularProgress size={16} />;
 
@@ -72,7 +72,7 @@ export function WorkspaceItem({
   return (
     <DropdownMenuItem
       key={workspace.id}
-      data-testid="workspace-item"
+      data-testid='workspace-item'
       className={'relative'}
       onSelect={async () => {
         if (workspace.id === currentWorkspaceId) return;
@@ -82,22 +82,34 @@ export function WorkspaceItem({
       onMouseLeave={() => setHovered(false)}
     >
       <Avatar shape={'square'} size={'xs'}>
-        <AvatarFallback>
+        <AvatarFallback name={workspace.name}>
           {workspace.icon ? <span className='text-lg'>{workspace.icon}</span> : workspace.name}
         </AvatarFallback>
       </Avatar>
       <div className={'flex flex-1 flex-col items-start overflow-hidden'}>
         <Tooltip delayDuration={1000}>
           <TooltipTrigger asChild>
-            <div data-testid="workspace-item-name" className={'w-full overflow-hidden truncate text-left text-sm text-text-primary'}>{workspace.name}</div>
+            <div
+              data-testid='workspace-item-name'
+              className={'flex w-full items-center gap-2 overflow-hidden truncate text-left text-sm text-text-primary'}
+            >
+              <div className='truncate text-sm text-text-primary'>{workspace.name}</div>
+              {isGuest && (
+                <span className='rounded-full bg-fill-warning-light px-2 py-[1px] text-xs text-text-warning-on-fill'>
+                  {t('shareAction.guest')}
+                </span>
+              )}
+            </div>
           </TooltipTrigger>
           <TooltipContent>
             <p>{workspace.name}</p>
           </TooltipContent>
         </Tooltip>
-        <div data-testid="workspace-member-count" className={'text-xs leading-[18px] text-text-secondary'}>
-          {t('invitation.membersCount', { count: workspace.memberCount || 0 })}
-        </div>
+        {!isGuest && (
+          <div data-testid='workspace-member-count' className={'text-xs leading-[18px] text-text-secondary'}>
+            {t('invitation.membersCount', { count: workspace.memberCount || 0 })}
+          </div>
+        )}
       </div>
       {renderActions}
     </DropdownMenuItem>

@@ -86,6 +86,7 @@ export interface BusinessInternalContextType {
 
   // User operations
   getMentionUser?: (uuid: string) => Promise<MentionablePerson | undefined>;
+  loadMentionableUsers?: () => Promise<MentionablePerson[]>;
 
   // UI state
   rendered?: boolean;

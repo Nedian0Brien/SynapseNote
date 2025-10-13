@@ -1,7 +1,8 @@
-import MentionPage from '@/components/editor/components/leaf/mention/MentionPage';
-import { EditorElementProps, SubpageNode } from '@/components/editor/editor.type';
 import { forwardRef, memo, useMemo } from 'react';
 import { useReadOnly } from 'slate-react';
+
+import MentionPage from '@/components/editor/components/leaf/mention/MentionPage';
+import { EditorElementProps, SubpageNode } from '@/components/editor/editor.type';
 
 export const SubPage = memo(
   forwardRef<HTMLDivElement, EditorElementProps<SubpageNode>>(({ node, children, ...attributes }, ref) => {

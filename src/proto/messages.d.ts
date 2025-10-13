@@ -810,6 +810,9 @@ export namespace notification {
 
         /** WorkspaceNotification serverLimit */
         serverLimit?: (notification.IServerLimit|null);
+
+        /** WorkspaceNotification workspaceMemberProfileChanged */
+        workspaceMemberProfileChanged?: (notification.IWorkspaceMemberProfileChanged|null);
     }
 
     /** Represents a WorkspaceNotification. */
@@ -839,8 +842,11 @@ export namespace notification {
         /** WorkspaceNotification serverLimit. */
         public serverLimit?: (notification.IServerLimit|null);
 
+        /** WorkspaceNotification workspaceMemberProfileChanged. */
+        public workspaceMemberProfileChanged?: (notification.IWorkspaceMemberProfileChanged|null);
+
         /** WorkspaceNotification payload. */
-        public payload?: ("profileChange"|"permissionChanged"|"sectionChanged"|"shareViewsChanged"|"mentionablePersonListChanged"|"serverLimit");
+        public payload?: ("profileChange"|"permissionChanged"|"sectionChanged"|"shareViewsChanged"|"mentionablePersonListChanged"|"serverLimit"|"workspaceMemberProfileChanged");
 
         /**
          * Creates a new WorkspaceNotification instance using the specified properties.
@@ -1971,6 +1977,145 @@ export namespace notification {
 
         /**
          * Gets the default type url for ServerLimit
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a WorkspaceMemberProfileChanged. */
+    interface IWorkspaceMemberProfileChanged {
+
+        /** WorkspaceMemberProfileChanged userUuid */
+        userUuid?: (string|null);
+
+        /** WorkspaceMemberProfileChanged name */
+        name?: (string|null);
+
+        /** WorkspaceMemberProfileChanged avatarUrl */
+        avatarUrl?: (string|null);
+
+        /** WorkspaceMemberProfileChanged coverImageUrl */
+        coverImageUrl?: (string|null);
+
+        /** WorkspaceMemberProfileChanged customImageUrl */
+        customImageUrl?: (string|null);
+
+        /** WorkspaceMemberProfileChanged description */
+        description?: (string|null);
+    }
+
+    /** Represents a WorkspaceMemberProfileChanged. */
+    class WorkspaceMemberProfileChanged implements IWorkspaceMemberProfileChanged {
+
+        /**
+         * Constructs a new WorkspaceMemberProfileChanged.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: notification.IWorkspaceMemberProfileChanged);
+
+        /** WorkspaceMemberProfileChanged userUuid. */
+        public userUuid: string;
+
+        /** WorkspaceMemberProfileChanged name. */
+        public name: string;
+
+        /** WorkspaceMemberProfileChanged avatarUrl. */
+        public avatarUrl?: (string|null);
+
+        /** WorkspaceMemberProfileChanged coverImageUrl. */
+        public coverImageUrl?: (string|null);
+
+        /** WorkspaceMemberProfileChanged customImageUrl. */
+        public customImageUrl?: (string|null);
+
+        /** WorkspaceMemberProfileChanged description. */
+        public description?: (string|null);
+
+        /** WorkspaceMemberProfileChanged _avatarUrl. */
+        public _avatarUrl?: "avatarUrl";
+
+        /** WorkspaceMemberProfileChanged _coverImageUrl. */
+        public _coverImageUrl?: "coverImageUrl";
+
+        /** WorkspaceMemberProfileChanged _customImageUrl. */
+        public _customImageUrl?: "customImageUrl";
+
+        /** WorkspaceMemberProfileChanged _description. */
+        public _description?: "description";
+
+        /**
+         * Creates a new WorkspaceMemberProfileChanged instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns WorkspaceMemberProfileChanged instance
+         */
+        public static create(properties?: notification.IWorkspaceMemberProfileChanged): notification.WorkspaceMemberProfileChanged;
+
+        /**
+         * Encodes the specified WorkspaceMemberProfileChanged message. Does not implicitly {@link notification.WorkspaceMemberProfileChanged.verify|verify} messages.
+         * @param message WorkspaceMemberProfileChanged message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: notification.IWorkspaceMemberProfileChanged, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified WorkspaceMemberProfileChanged message, length delimited. Does not implicitly {@link notification.WorkspaceMemberProfileChanged.verify|verify} messages.
+         * @param message WorkspaceMemberProfileChanged message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: notification.IWorkspaceMemberProfileChanged, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a WorkspaceMemberProfileChanged message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns WorkspaceMemberProfileChanged
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): notification.WorkspaceMemberProfileChanged;
+
+        /**
+         * Decodes a WorkspaceMemberProfileChanged message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns WorkspaceMemberProfileChanged
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): notification.WorkspaceMemberProfileChanged;
+
+        /**
+         * Verifies a WorkspaceMemberProfileChanged message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a WorkspaceMemberProfileChanged message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns WorkspaceMemberProfileChanged
+         */
+        public static fromObject(object: { [k: string]: any }): notification.WorkspaceMemberProfileChanged;
+
+        /**
+         * Creates a plain object from a WorkspaceMemberProfileChanged message. Also converts values to other types if specified.
+         * @param message WorkspaceMemberProfileChanged
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: notification.WorkspaceMemberProfileChanged, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this WorkspaceMemberProfileChanged to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for WorkspaceMemberProfileChanged
          * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns The default type url
          */

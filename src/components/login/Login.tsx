@@ -6,10 +6,11 @@ import { ReactComponent as ArrowRight } from '@/assets/icons/arrow_right.svg';
 import { ReactComponent as Logo } from '@/assets/icons/logo.svg';
 import EmailLogin from '@/components/login/EmailLogin';
 import LoginProvider from '@/components/login/LoginProvider';
-import { AFConfigContext } from '@/components/main/app.hooks';
 import { Separator } from '@/components/ui/separator';
+import { getPlatform } from '@/utils/platform';
+import { AFConfigContext } from '@/components/main/app.hooks';
 
-export function Login ({ redirectTo }: { redirectTo: string }) {
+export function Login({ redirectTo }: { redirectTo: string }) {
   const { t } = useTranslation();
   const [availableProviders, setAvailableProviders] = useState<AuthProvider[]>([]);
   const service = useContext(AFConfigContext)?.service;
@@ -37,9 +38,16 @@ export function Login ({ redirectTo }: { redirectTo: string }) {
     provider => ![AuthProvider.EMAIL, AuthProvider.PASSWORD, AuthProvider.MAGIC_LINK].includes(provider)
   );
 
+  const isMobile = getPlatform().isMobile;
+
   return (
-    <div className={'py-10  text-text-primary flex flex-col h-full items-center justify-between gap-5 px-4'}>
-      <div className={'flex flex-1 flex-col items-center justify-center w-full gap-5'}>
+    <div
+      style={{
+        justifyContent: isMobile ? 'flex-start' : 'between',
+      }}
+      className={'flex  h-full flex-col items-center justify-between gap-5 px-4 py-10 text-text-primary'}
+    >
+      <div className={'flex w-full flex-1 flex-col items-center justify-center gap-5'}>
         <div
           onClick={() => {
             window.location.href = '/';
@@ -67,7 +75,8 @@ export function Login ({ redirectTo }: { redirectTo: string }) {
           <a
             href={'https://appflowy.com/terms'}
             target={'_blank'}
-            className={'text-text-secondary underline'} rel="noreferrer"
+            className={'text-text-secondary underline'}
+            rel='noreferrer'
           >
             {t('web.termOfUse')}
           </a>{' '}
@@ -75,7 +84,8 @@ export function Login ({ redirectTo }: { redirectTo: string }) {
           <a
             href={'https://appflowy.com/privacy'}
             target={'_blank'}
-            className={'text-text-secondary underline'} rel="noreferrer"
+            className={'text-text-secondary underline'}
+            rel='noreferrer'
           >
             {t('web.privacyPolicy')}
           </a>
@@ -83,21 +93,25 @@ export function Login ({ redirectTo }: { redirectTo: string }) {
         </div>
       </div>
 
-      <div className={'flex flex-col w-full gap-5'}>
+      <div
+        style={{
+          marginBottom: isMobile ? 64 : '0',
+        }}
+        className={'flex w-full flex-col gap-5'}
+      >
         <Separator className={'w-[320px] max-w-full'} />
         <div
           onClick={() => {
             window.location.href = 'https://appflowy.com';
           }}
           className={
-            'flex w-full cursor-pointer text-text-secondary items-center justify-center gap-2 text-xs font-medium'
+            'flex w-full cursor-pointer items-center justify-center gap-2 text-xs font-medium text-text-secondary'
           }
         >
           <span>{t('web.visitOurWebsite')}</span>
           <ArrowRight className={'h-5 w-5'} />
         </div>
       </div>
-
     </div>
   );
 }

@@ -1,27 +1,37 @@
 import { useCallback } from 'react';
+import { toast } from 'sonner';
 
 import {
   CreateFolderViewPayload,
   CreatePagePayload,
   CreateSpacePayload,
+  Role,
   UpdatePagePayload,
   UpdateSpacePayload,
   View,
   ViewIconType,
 } from '@/application/types';
-import { findView } from '@/components/_shared/outline/utils';
+import { findView, findViewInShareWithMe } from '@/components/_shared/outline/utils';
 
 import { useAuthInternal } from '../contexts/AuthInternalContext';
 
 // Hook for managing page and space operations
 export function usePageOperations({ outline, loadOutline }: { outline?: View[], loadOutline?: (workspaceId: string, force?: boolean) => Promise<void> }) {
-  const { service, currentWorkspaceId } = useAuthInternal();
+  const { service, currentWorkspaceId, userWorkspaceInfo } = useAuthInternal();
+  const role = userWorkspaceInfo?.selectedWorkspace.role;
 
   // Add a new page
   const addPage = useCallback(
     async (parentViewId: string, payload: CreatePagePayload) => {
       if (!currentWorkspaceId || !service) {
         throw new Error('No workspace or service found');
+      }
+
+      const shareWithMeView = findViewInShareWithMe(outline || [], parentViewId);
+
+      if (role === Role.Guest || shareWithMeView) {
+        toast.error('No permission to create pages');
+        throw new Error('No permission to create pages');
       }
 
       try {
@@ -33,7 +43,7 @@ export function usePageOperations({ outline, loadOutline }: { outline?: View[], 
         return Promise.reject(e);
       }
     },
-    [currentWorkspaceId, service, loadOutline]
+    [currentWorkspaceId, service, outline, role, loadOutline]
   );
 
   // Delete a page (move to trash)
@@ -41,6 +51,12 @@ export function usePageOperations({ outline, loadOutline }: { outline?: View[], 
     async (id: string, loadTrash?: (workspaceId: string) => Promise<void>) => {
       if (!currentWorkspaceId || !service) {
         throw new Error('No workspace or service found');
+      }
+
+      const shareWithMeView = findViewInShareWithMe(outline || [], id);
+
+      if (role === Role.Guest || shareWithMeView) {
+        throw new Error('Guest cannot delete pages');
       }
 
       try {
@@ -52,7 +68,7 @@ export function usePageOperations({ outline, loadOutline }: { outline?: View[], 
         return Promise.reject(e);
       }
     },
-    [currentWorkspaceId, service, loadOutline]
+    [currentWorkspaceId, service, outline, role, loadOutline]
   );
 
   // Update page
@@ -115,6 +131,10 @@ export function usePageOperations({ outline, loadOutline }: { outline?: View[], 
         throw new Error('No workspace or service found');
       }
 
+      if (role === Role.Guest) {
+        throw new Error('Guest cannot move pages');
+      }
+
       try {
         const lastChild = findView(outline || [], parentId)?.children?.slice(-1)[0];
         const prevId = prevViewId || lastChild?.view_id;
@@ -126,7 +146,7 @@ export function usePageOperations({ outline, loadOutline }: { outline?: View[], 
         return Promise.reject(e);
       }
     },
-    [currentWorkspaceId, service, outline, loadOutline]
+    [currentWorkspaceId, service, outline, loadOutline, role]
   );
 
   // Delete from trash permanently

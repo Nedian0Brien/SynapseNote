@@ -118,12 +118,21 @@ export const AppSyncLayer: React.FC<AppSyncLayerProps> = ({ children }) => {
       }
     };
 
+    const handleWorkspaceMemberProfileChange = (
+      profileChange: notification.IWorkspaceMemberProfileChanged
+    ) => {
+      console.log('Received workspace member profile change notification:', profileChange);
+      // No database operations - just logging for now
+    };
+
     // Subscribe to user profile change notifications from the event system
     currentEventEmitter.on(APP_EVENTS.USER_PROFILE_CHANGED, handleUserProfileChange);
+    currentEventEmitter.on(APP_EVENTS.WORKSPACE_MEMBER_PROFILE_CHANGED, handleWorkspaceMemberProfileChange);
 
     // Cleanup subscription when component unmounts or dependencies change
     return () => {
       currentEventEmitter.off(APP_EVENTS.USER_PROFILE_CHANGED, handleUserProfileChange);
+      currentEventEmitter.off(APP_EVENTS.WORKSPACE_MEMBER_PROFILE_CHANGED, handleWorkspaceMemberProfileChange);
     };
   }, [isAuthenticated, currentWorkspaceId, service]);
 

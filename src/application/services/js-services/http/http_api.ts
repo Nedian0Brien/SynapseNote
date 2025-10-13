@@ -1,4 +1,3 @@
-import { getFileUploadUrl, getFileUrl } from '@/utils/file-storage-url';
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import dayjs from 'dayjs';
 import { omit } from 'lodash-es';
@@ -21,6 +20,7 @@ import {
   UploadTemplatePayload,
 } from '@/application/template.type';
 import {
+  AccessLevel,
   AFWebUser,
   AuthProvider,
   CreateFolderViewPayload,
@@ -35,6 +35,7 @@ import {
   GuestConversionCodeInfo,
   GuestInvitation,
   Invitation,
+  IPeopleWithAccessType,
   MentionablePerson,
   PublishViewPayload,
   QuickNote,
@@ -62,6 +63,7 @@ import {
 } from '@/application/types';
 import { notify } from '@/components/_shared/notify';
 import { RepeatedChatMessage } from '@/components/chat';
+import { getFileUploadUrl, getFileUrl } from '@/utils/file-storage-url';
 
 export * from './gotrue';
 
@@ -342,6 +344,7 @@ interface AFWorkspace {
   created_at: string;
   member_count: number;
   database_storage_id: string;
+  role?: Role;
 }
 
 function afWorkspace2Workspace(workspace: AFWorkspace): Workspace {
@@ -356,6 +359,7 @@ function afWorkspace2Workspace(workspace: AFWorkspace): Workspace {
     memberCount: workspace.member_count,
     databaseStorageId: workspace.database_storage_id,
     createdAt: workspace.created_at,
+    role: workspace.role,
   };
 }
 
@@ -1058,6 +1062,7 @@ export interface WorkspaceFolder {
   name: string;
   is_space: boolean;
   is_private: boolean;
+  access_level?: AccessLevel;
   extra: {
     is_space: boolean;
     space_created_at: number;
@@ -1077,6 +1082,7 @@ function iterateFolder(folder: WorkspaceFolder): FolderView {
     isSpace: folder.is_space,
     extra: folder.extra ? JSON.stringify(folder.extra) : null,
     isPrivate: folder.is_private,
+    accessLevel: folder.access_level,
     children: folder.children.map((child: WorkspaceFolder) => {
       return iterateFolder(child);
     }),
@@ -2283,4 +2289,93 @@ export async function checkIfCollabExists(workspaceId: string, objectId: string)
   }
 
   return Promise.reject(response?.data);
+}
+
+export async function getShareDetail(workspaceId: string, viewId: string, ancestorViewIds: string[]) {
+  const url = `api/sharing/workspace/${workspaceId}/view/${viewId}/access-details`;
+  const response = await axiosInstance?.post<{
+    code: number;
+    message: string;
+    data: {
+      view_id: string;
+      shared_with: IPeopleWithAccessType[];
+    };
+  }>(url, {
+    ancestor_view_ids: ancestorViewIds,
+  });
+
+  if (response?.data.code === 0) {
+    return response?.data.data;
+  }
+
+  return Promise.reject(response?.data);
+}
+
+export async function sharePageTo(workspaceId: string, viewId: string, emails: string[], accessLevel?: AccessLevel) {
+  const url = `/api/sharing/workspace/${workspaceId}/view`;
+  const response = await axiosInstance?.put<{
+    code: number;
+    message: string;
+  }>(url, {
+    "view_id": viewId,
+    "emails": emails,
+    "access_level": accessLevel || AccessLevel.ReadOnly
+  });
+
+  if (response?.data.code === 0) {
+    return;
+  }
+
+  return Promise.reject(response?.data);
+}
+
+export async function revokeAccess(workspaceId: string, viewId: string, emails: string[]) {
+  const url = `/api/sharing/workspace/${workspaceId}/view/${viewId}/revoke-access`;
+  const response = await axiosInstance?.post<{
+    code: number;
+    message: string;
+  }>(url, {
+    emails,
+  });
+
+  if (response?.data.code === 0) {
+    return;
+  }
+
+  return Promise.reject(response?.data);
+}
+
+export async function turnIntoMember(workspaceId: string, email: string) {
+  const url = `/api/workspace/${workspaceId}/member`;
+  const response = await axiosInstance?.put<{
+    code: number;
+    message: string;
+  }>(url, {
+    email,
+    role: Role.Member
+  });
+
+  if (response?.data.code === 0) {
+    return;
+  }
+
+  return Promise.reject(response?.data);
+}
+
+
+export async function getShareWithMe(workspaceId: string): Promise<View> {
+  const url = `/api/sharing/workspace/${workspaceId}/folder`;
+  const response = await axiosInstance?.get<{
+    code: number;
+    data?: View;
+    message: string;
+  }>(url);
+
+  const data = response?.data;
+
+  if (data?.code === 0 && data.data) {
+    return data.data;
+  }
+
+  return Promise.reject(data);
 }

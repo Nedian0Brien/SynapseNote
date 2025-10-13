@@ -1,16 +1,19 @@
 import { UserWorkspaceInfo, Workspace } from '@/application/types';
 import { ReactComponent as AppFlowyLogo } from '@/assets/icons/appflowy.svg';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Progress } from '@/components/ui/progress';
 
 function CurrentWorkspace({
   userWorkspaceInfo,
   selectedWorkspace,
   onChangeWorkspace,
+  changeLoading,
 }: {
   userWorkspaceInfo?: UserWorkspaceInfo;
   selectedWorkspace?: Workspace;
   onChangeWorkspace: (selectedId: string) => void;
   avatarSize?: number;
+  changeLoading?: boolean;
 }) {
   if (!userWorkspaceInfo || !selectedWorkspace) {
     return (
@@ -33,12 +36,15 @@ function CurrentWorkspace({
     <>
       <Avatar shape={'square'} size={'xs'}>
         <AvatarImage src={selectedWorkspace.icon} alt={''} />
-        <AvatarFallback>
+        <AvatarFallback name={selectedWorkspace.name}>
           {selectedWorkspace.icon ? <span className='text-lg'>{selectedWorkspace.icon}</span> : selectedWorkspace.name}
         </AvatarFallback>
       </Avatar>
 
-      <div data-testid="current-workspace-name" className={'flex-1 truncate font-medium text-text-primary'}>{selectedWorkspace.name}</div>
+      <div data-testid='current-workspace-name' className={'flex-1 truncate font-medium text-text-primary'}>
+        {selectedWorkspace.name}
+      </div>
+      {changeLoading && <Progress variant={'primary'} />}
     </>
   );
 }

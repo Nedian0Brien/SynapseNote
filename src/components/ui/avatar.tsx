@@ -80,28 +80,30 @@ function getFallbackColor(username: string) {
   };
 }
 
-function AvatarFallback({ className, children, ...props }: React.ComponentProps<typeof AvatarPrimitive.Fallback>) {
+interface AvatarFallbackProps extends React.ComponentProps<typeof AvatarPrimitive.Fallback> {
+  name?: string;
+}
+
+function AvatarFallback({ className, name, children, ...props }: AvatarFallbackProps) {
   const isString = typeof children === 'string';
   const char = isString ? children.charAt(0).toUpperCase() : '';
-  const { backgroundColor, color } = getFallbackColor(isString ? children : '');
+  const { backgroundColor, color } = getFallbackColor(isString ? children : name || '');
 
   return (
     <AvatarPrimitive.Fallback
       data-slot='avatar-fallback'
       className={cn('flex h-full w-full items-center justify-center text-icon-primary', className)}
-      style={
-        isString
-          ? {
-              backgroundColor,
-              color,
-            }
-          : undefined
-      }
       {...props}
+      style={{
+        backgroundColor,
+        color,
+        ...props.style,
+      }}
     >
       {!isString ? children : char}
     </AvatarPrimitive.Fallback>
   );
 }
 
-export { Avatar, AvatarImage, AvatarFallback };
+export { Avatar, AvatarFallback, AvatarImage };
+

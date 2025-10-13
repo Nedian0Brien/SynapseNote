@@ -1,5 +1,7 @@
 import React, { lazy, memo, Suspense, useCallback, useContext, useEffect, useMemo } from 'react';
+import { toast } from 'sonner';
 
+import { APP_EVENTS } from '@/application/constants';
 import { UIVariant, ViewLayout, ViewMetaProps, YDoc } from '@/application/types';
 import Help from '@/components/_shared/help/Help';
 import { findView } from '@/components/_shared/outline/utils';
@@ -12,10 +14,10 @@ import {
   useCurrentWorkspaceId,
 } from '@/components/app/app.hooks';
 import DatabaseView from '@/components/app/DatabaseView';
+import { useViewOperations } from '@/components/app/hooks/useViewOperations';
 import { Document } from '@/components/document';
 import RecordNotFound from '@/components/error/RecordNotFound';
-import { useService } from '@/components/main/app.hooks';
-import { getPlatform } from '@/utils/platform';
+import { useCurrentUser, useService } from '@/components/main/app.hooks';
 
 const ViewHelmet = lazy(() => import('@/components/_shared/helmet/ViewHelmet'));
 
@@ -38,8 +40,12 @@ function AppPage() {
     loadViews,
     setWordCount,
     uploadFile,
+    eventEmitter,
     ...handlers
   } = useAppHandlers();
+  const { getViewReadOnlyStatus } = useViewOperations();
+
+  const currentUser = useCurrentUser();
   const view = useMemo(() => {
     if (!outline || !viewId) return;
     return findView(outline, viewId);
@@ -114,7 +120,12 @@ function AppPage() {
 
   const service = useService();
   const requestInstance = service?.getAxiosInstance();
-  const isMobile = getPlatform().isMobile;
+
+  // Check if view is in shareWithMe and determine readonly status
+  const isReadOnly = useMemo(() => {
+    if (!viewId) return false;
+    return getViewReadOnlyStatus(viewId, outline);
+  }, [getViewReadOnlyStatus, viewId, outline]);
 
   const viewDom = useMemo(() => {
     if (!doc && layout === ViewLayout.AIChat && viewId) {
@@ -132,7 +143,7 @@ function AppPage() {
         requestInstance={requestInstance}
         workspaceId={workspaceId}
         doc={doc}
-        readOnly={Boolean(isMobile)}
+        readOnly={isReadOnly}
         viewMeta={viewMeta}
         navigateToView={toView}
         loadViewMeta={loadViewMeta}
@@ -159,7 +170,7 @@ function AppPage() {
     viewMeta,
     workspaceId,
     requestInstance,
-    isMobile,
+    isReadOnly,
     toView,
     loadViewMeta,
     createRowDoc,
@@ -180,12 +191,30 @@ function AppPage() {
     localStorage.setItem('last_view_id', viewId);
   }, [viewId]);
 
+  useEffect(() => {
+    const handleShareViewsChanged = ({ emails, viewId: id }: { emails: string[]; viewId: string }) => {
+      if (id === viewId && emails.includes(currentUser?.email || '')) {
+        toast.success('Permission changed');
+      }
+    };
+
+    if (eventEmitter) {
+      eventEmitter.on(APP_EVENTS.SHARE_VIEWS_CHANGED, handleShareViewsChanged);
+    }
+
+    return () => {
+      if (eventEmitter) {
+        eventEmitter.off(APP_EVENTS.SHARE_VIEWS_CHANGED, handleShareViewsChanged);
+      }
+    };
+  }, [eventEmitter, viewId, currentUser?.email]);
+
   if (!viewId) return null;
   return (
     <div ref={ref} className={'relative h-full w-full'}>
       {helmet}
 
-      {notFound ? <RecordNotFound /> : <div className={'h-full w-full'}>{viewDom}</div>}
+      {notFound ? <RecordNotFound viewId={viewId} /> : <div className={'h-full w-full'}>{viewDom}</div>}
       {view && <Help />}
     </div>
   );

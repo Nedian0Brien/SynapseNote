@@ -1,12 +1,14 @@
 import React, { lazy } from 'react';
 
-import { UIVariant } from '@/application/types';
+import { Role, UIVariant } from '@/application/types';
+import { OutlineDrawer } from '@/components/_shared/outline';
+import { useUserWorkspaceInfo } from '@/components/app/app.hooks';
 import NewPage from '@/components/app/view-actions/NewPage';
 import { Workspaces } from '@/components/app/workspaces';
-import { OutlineDrawer } from '@/components/_shared/outline';
 
 import Outline from 'src/components/app/outline/Outline';
 import { Search } from 'src/components/app/search';
+
 
 const SideBarBottom = lazy(() => import('@/components/app/SideBarBottom'));
 
@@ -24,6 +26,10 @@ function SideBar({ drawerWidth, drawerOpened, toggleOpenDrawer, onResizeDrawerWi
     setScrollTop(scrollTop);
   }, []);
 
+  const userWorkspaceInfo = useUserWorkspaceInfo();
+
+  const role = userWorkspaceInfo?.selectedWorkspace.role;
+
   return (
     <OutlineDrawer
       onResizeWidth={onResizeDrawerWidth}
@@ -39,19 +45,21 @@ function SideBar({ drawerWidth, drawerOpened, toggleOpenDrawer, onResizeDrawerWi
           className={'sticky top-12 z-[1] mx-1 flex-col items-center justify-around gap-2 bg-surface-container-layer-00'}
         >
           <Search />
-          <div
-            style={{
-              borderColor: scrollTop > 10 ? 'var(--border-primary)' : undefined,
-            }}
-            className={'flex w-full border-b border-transparent pb-3'}
-          >
-            <NewPage />
-          </div>
+          {role === Role.Guest ? null : (
+            <div
+              style={{
+                borderColor: scrollTop > 10 ? 'var(--border-primary)' : undefined,
+              }}
+              className={'flex w-full border-b border-transparent pb-3'}
+            >
+              <NewPage />
+            </div>
+          )}
         </div>
 
         <Outline width={drawerWidth} />
 
-        <SideBarBottom />
+        {role === Role.Guest ? null : <SideBarBottom />}
       </div>
     </OutlineDrawer>
   );

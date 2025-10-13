@@ -101,7 +101,7 @@ export const useAppflowyWebSocket = (options: Options): AppflowyWebSocketType =>
     workspaceId: options.workspaceId,
     deviceId: options.deviceId,
   });
-  const url = `${options.url}/${options.workspaceId}/?clientId=${options.clientId}&deviceId=${options.deviceId}&token=${options.token}`;
+  const url = `${options.url}/${options.workspaceId}/?clientId=${options.clientId}&deviceId=${options.deviceId}&token=${options.token}&cv=0.10.0&cp=web`;
   const [reconnectAttempt, setReconnectAttempt] = useState(0);
   const { lastMessage, sendMessage, readyState, getWebSocket } = useWebSocket(url, {
     share: true,

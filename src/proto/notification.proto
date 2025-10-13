@@ -10,6 +10,7 @@ message WorkspaceNotification {
         ShareViewsChanged share_views_changed = 4;
         MentionablePersonListChanged mentionable_person_list_changed = 5;
         ServerLimit server_limit = 6;
+        WorkspaceMemberProfileChanged workspace_member_profile_changed = 7;
     }
 }
 
@@ -66,4 +67,13 @@ message ServerLimit {
     repeated int32 features = 1;
     uint64 max_users = 2;
     uint64 max_guests = 3;
+}
+
+message WorkspaceMemberProfileChanged {
+    string user_uuid = 1;
+    string name = 2;
+    optional string avatar_url = 3;
+    optional string cover_image_url = 4;
+    optional string custom_image_url = 5;
+    optional string description = 6;
 }

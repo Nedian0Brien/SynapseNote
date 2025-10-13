@@ -7,7 +7,9 @@ export const ERROR_CODE = {
   ALREADY_JOINED: 1073,
   NOT_INVITEE_OF_INVITATION: 1041,
   NOT_HAS_PERMISSION: 1012,
-  USER_UNAUTHORIZED: 1024
+  USER_UNAUTHORIZED: 1024,
+  NOT_HAS_PERMISSION_TO_CREATE_PAGE: 1071,
+  NOT_HAS_PERMISSION_TO_INVITE_GUEST: 1070
 };
 
 export const APP_EVENTS = {
@@ -23,4 +25,5 @@ export const APP_EVENTS = {
   SHARE_VIEWS_CHANGED: 'share-views-changed',             // View sharing settings changed
   MENTIONABLE_PERSON_LIST_CHANGED: 'mentionable-person-list-changed', // Team member changes
   SERVER_LIMIT_CHANGED: 'server-limit-changed',           // Billing/feature limits updated
+  WORKSPACE_MEMBER_PROFILE_CHANGED: 'workspace-member-profile-changed', // Workspace member profile updated
 };

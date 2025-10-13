@@ -89,6 +89,7 @@ export interface AppContextType {
   awarenessMap?: Record<string, Awareness>;
   checkIfRowDocumentExists?: (databaseId: string, rowIds: string[]) => Promise<void>;
   getViewIdFromDatabaseId?: (databaseId: string) => string | null;
+  loadMentionableUsers?: () => Promise<MentionablePerson[]>;
 }
 
 // Main AppContext - same as original
@@ -280,6 +281,7 @@ export function useAppHandlers() {
     updatePageIcon: context.updatePageIcon,
     updatePageName: context.updatePageName,
     getViewIdFromDatabaseId: context.getViewIdFromDatabaseId,
+    loadMentionableUsers: context.loadMentionableUsers,
   };
 }
 

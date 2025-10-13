@@ -1,7 +1,24 @@
 import { ReactComponent as WarningIcon } from '@/assets/icons/warning.svg';
 import emptyImageSrc from '@/assets/images/empty.png';
+import { useCurrentWorkspaceId } from '@/components/app/app.hooks';
+import { RequestAccessContent } from '@/components/app/share/RequestAccessContent';
 
-function RecordNotFound({ noContent, isViewNotFound }: { noContent?: boolean; isViewNotFound?: boolean }) {
+function RecordNotFound({
+  viewId,
+  noContent,
+  isViewNotFound,
+}: {
+  viewId?: string;
+  noContent?: boolean;
+  isViewNotFound?: boolean;
+}) {
+  const currentWorkspaceId = useCurrentWorkspaceId();
+
+  // If viewId is provided, render the request access component instead
+  if (viewId && currentWorkspaceId) {
+    return <RequestAccessContent viewId={viewId} workspaceId={currentWorkspaceId} />;
+  }
+
   return (
     <div className={'flex h-full w-full flex-col items-center justify-center px-4'}>
       {!noContent && (

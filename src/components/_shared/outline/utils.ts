@@ -180,3 +180,23 @@ export function setOutlineExpands (viewId: string, isExpanded: boolean) {
 
   localStorage.setItem('outline_expanded', JSON.stringify(expands));
 }
+
+export function findShareWithMeSpace (views: View[]): View | null {
+  for (const view of views) {
+    if (view.extra?.is_space && view.extra?.is_hidden_space) {
+      return view;
+    }
+  }
+
+  return null;
+}
+
+export function findViewInShareWithMe (views: View[], targetViewId: string): View | null {
+  const shareWithMeSpace = findShareWithMeSpace(views);
+
+  if (!shareWithMeSpace?.children) {
+    return null;
+  }
+
+  return findView(shareWithMeSpace.children, targetViewId);
+}

@@ -1,6 +1,7 @@
-import { PromptDatabaseConfiguration } from '@/components/chat';
 import { AxiosInstance } from 'axios';
 import * as Y from 'yjs';
+
+import { PromptDatabaseConfiguration } from '@/components/chat';
 
 export type BlockId = string;
 
@@ -807,6 +808,7 @@ export interface Workspace {
   };
   databaseStorageId: string;
   createdAt: string;
+  role?: Role;
 }
 
 export interface UserWorkspaceInfo {
@@ -830,6 +832,7 @@ export interface FolderView {
   isSpace: boolean;
   isPrivate: boolean;
   children: FolderView[];
+  accessLevel?: AccessLevel;
 }
 
 export enum AuthProvider {
@@ -892,6 +895,7 @@ export interface ViewExtra {
     type: CoverType;
     value: string;
   };
+  is_hidden_space?: boolean;
 }
 
 export interface View {
@@ -912,6 +916,8 @@ export interface View {
   publish_name?: string;
   publish_timestamp?: string;
   parent_view_id?: string;
+  access_level?: AccessLevel;
+  
 }
 
 export interface UpdatePublishConfigPayload {
@@ -1212,6 +1218,11 @@ export interface DatabasePromptRow {
   };
 }
 
+export enum MentionPersonRole {
+  Member = 1,
+  Guest = 2,
+  Contact = 3
+}
 export interface MentionablePerson {
   avatar_url: string | null;
   cover_image_url: string | null;
@@ -1220,7 +1231,7 @@ export interface MentionablePerson {
   email: string;
 
   name: string;
-  role: number;
+  role: MentionPersonRole;
   person_id: string;
   invited: boolean;
   last_mentioned_at: string | null;
@@ -1237,4 +1248,20 @@ export enum DateFormat {
 export enum TimeFormat {
   TwelveHour = 0,
   TwentyFourHour = 1,
+}
+
+export interface IPeopleWithAccessType {
+  email: string;
+  name: string;
+  access_level?: number;
+  role: Role;
+  avatar_url: string;
+  pending_invitation: boolean;
+}
+
+export enum AccessLevel {
+  ReadOnly = 10,
+  ReadAndComment = 20,
+  ReadAndWrite = 30,
+  FullAccess = 50,
 }

@@ -54,7 +54,8 @@ import {
   UploadPublishNamespacePayload,
   WorkspaceMember,
   YjsEditorKey,
-  ViewIconType
+  ViewIconType,
+  AccessLevel
 } from '@/application/types';
 import { applyYDoc } from '@/application/ydoc/apply';
 
@@ -719,5 +720,25 @@ export class AFClientService implements AFService {
 
   async updateAppPageName(workspaceId: string, viewId: string, name: string): Promise<void> {
     return APIService.updatePageName(workspaceId, viewId, name);
+  }
+
+  async getShareDetail(workspaceId: string, viewId: string, ancestorViewIds: string[]) {
+    return APIService.getShareDetail(workspaceId, viewId, ancestorViewIds);
+  }
+
+  async sharePageTo(workspaceId: string, viewId: string, emails: string[], accessLevel?: AccessLevel) {
+    return APIService.sharePageTo(workspaceId, viewId, emails, accessLevel);
+  }
+
+  async revokeAccess(workspaceId: string, viewId: string, emails: string[]) {
+    return APIService.revokeAccess(workspaceId, viewId, emails);
+  }
+
+  async turnIntoMember(workspaceId: string, email: string) {
+    return APIService.turnIntoMember(workspaceId, email);
+  }
+
+  async getShareWithMe(workspaceId: string) {
+    return APIService.getShareWithMe(workspaceId);
   }
 }

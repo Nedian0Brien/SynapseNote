@@ -50,6 +50,7 @@
     &[data-block-type="bulleted_list"],
     &[data-block-type="numbered_list"],
     &[data-block-type="divider"],
+    &[data-block-type="sub_page"],
     {
       @apply bg-content-blue-100;
     }
