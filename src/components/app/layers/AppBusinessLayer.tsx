@@ -3,7 +3,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom';
 import { validate as uuidValidate } from 'uuid';
 
-import { APP_EVENTS } from '@/application/constants';
 import { TextCount, Types, View } from '@/application/types';
 import { findAncestors, findView } from '@/components/_shared/outline/utils';
 
@@ -25,7 +24,7 @@ interface AppBusinessLayerProps {
 // Depends on workspace ID and sync context from previous layers
 export const AppBusinessLayer: React.FC<AppBusinessLayerProps> = ({ children }) => {
   const { currentWorkspaceId } = useAuthInternal();
-  const { lastUpdatedCollab, eventEmitter } = useSyncInternal();
+  const { lastUpdatedCollab } = useSyncInternal();
   const params = useParams();
 
   // UI state
@@ -204,12 +203,6 @@ export const AppBusinessLayer: React.FC<AppBusinessLayerProps> = ({ children }) 
     },
     [pageOperations, loadTrash]
   );
-
-  useEffect(() => {
-    if (eventEmitter) {
-      eventEmitter.emit(APP_EVENTS.OUTLINE_LOADED, outline || []);
-    }
-  }, [outline, eventEmitter]);
 
   // Initialize database operations
   const databaseOperations = useDatabaseOperations(enhancedLoadView, createRowDoc);

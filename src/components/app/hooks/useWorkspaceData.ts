@@ -67,6 +67,9 @@ export function useWorkspaceData() {
         stableOutlineRef.current = outlineWithShareWithMe;
         setOutline(outlineWithShareWithMe);
 
+        if (eventEmitter) {
+          eventEmitter.emit(APP_EVENTS.OUTLINE_LOADED, outlineWithShareWithMe || []);
+        }
 
         if (!force) return;
 
@@ -113,7 +116,7 @@ export function useWorkspaceData() {
         }
       }
     },
-    [navigate, service]
+    [navigate, service, eventEmitter]
   );
 
   useEffect(() => {
