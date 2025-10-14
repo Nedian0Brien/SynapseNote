@@ -40,9 +40,9 @@ function AppPage() {
     loadViews,
     setWordCount,
     uploadFile,
-    eventEmitter,
     ...handlers
   } = useAppHandlers();
+  const { eventEmitter } = handlers;
   const { getViewReadOnlyStatus } = useViewOperations();
 
   const currentUser = useCurrentUser();
