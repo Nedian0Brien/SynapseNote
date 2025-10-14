@@ -15,32 +15,9 @@ function LoginPage() {
   const action = search.get('action') || '';
   const email = search.get('email') || '';
   const force = search.get('force') === 'true';
-  const rawRedirectTo = search.get('redirectTo') || '';
+  const redirectTo = search.get('redirectTo') || '';
   const isAuthenticated = useContext(AFConfigContext)?.isAuthenticated || false;
 
-  // Sanitize redirectTo - remove workspace-specific URLs from previous sessions
-  const redirectTo = useMemo(() => {
-    if (!rawRedirectTo) return '';
-
-    try {
-      const url = new URL(decodeURIComponent(rawRedirectTo));
-      const pathname = url.pathname;
-
-      // Check if URL contains workspace/view UUIDs (user-specific paths)
-      // Pattern matches /app/{uuid}/{uuid} or /app/{uuid}
-      const hasUserSpecificIds = /\/app\/[a-f0-9-]{36}/.test(pathname);
-
-      if (hasUserSpecificIds) {
-        // Replace with clean /app path
-        return encodeURIComponent(`${url.origin}/app`);
-      }
-
-      return rawRedirectTo;
-    } catch (e) {
-      // If URL parsing fails, return original
-      return rawRedirectTo;
-    }
-  }, [rawRedirectTo]);
 
   useEffect(() => {
     if (action === LOGIN_ACTION.CHANGE_PASSWORD || force) {
