@@ -1,4 +1,4 @@
-import { View } from '@/application/types';
+import { UIVariant, View } from '@/application/types';
 import BreadcrumbItem from '@/components/_shared/breadcrumb/BreadcrumbItem';
 import { NormalModal } from '@/components/_shared/modal';
 import { useMemo } from 'react';
@@ -9,11 +9,13 @@ function BreadcrumbMoreModal({
   onClose,
   crumbs,
   toView,
+  variant,
 }: {
   open: boolean;
   onClose: () => void;
   crumbs: View[];
   toView?: (viewId: string) => Promise<void>;
+  variant?: UIVariant;
 }) {
   const { t } = useTranslation();
   const title = useMemo(() => {
@@ -52,7 +54,7 @@ function BreadcrumbMoreModal({
             }}
           >
             {index !== 0 && <div className={'text-text-secondary'}> {'-'} </div>}
-            <BreadcrumbItem crumb={crumb} toView={toView} />
+            <BreadcrumbItem crumb={crumb} toView={toView} variant={variant} />
           </div>
         ))}
       </div>
