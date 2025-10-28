@@ -64,6 +64,10 @@
       "$type": "color",
       "$value": "{Orange.600}"
     },
+    "waring-light": {
+      "$type": "color",
+      "$value": "{Orange.alpha-orange-600-75}"
+    },
     "warning-hover": {
       "$type": "color",
       "$value": "{Orange.500}"
@@ -78,7 +82,7 @@
     },
     "error-light": {
       "$type": "color",
-      "$value": "{Red.alpha-red-600-75}"
+      "$value": "{Red.alpha-red-400-75}"
     },
     "error-hover": {
       "$type": "color",
@@ -144,11 +148,11 @@
     },
     "error-thick": {
       "$type": "color",
-      "$value": "{Red.500}"
+      "$value": "{Red.400}"
     },
     "error-thick-hover": {
       "$type": "color",
-      "$value": "{Red.400}"
+      "$value": "{Red.300}"
     },
     "featured-thick": {
       "$type": "color",

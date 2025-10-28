@@ -64,6 +64,10 @@
       "$type": "color",
       "$value": "{Orange.600}"
     },
+    "waring-light": {
+      "$type": "color",
+      "$value": "{Orange.alpha-orange-600-75}"
+    },
     "warning-hover": {
       "$type": "color",
       "$value": "{Orange.700}"
@@ -1405,7 +1409,7 @@
       },
       "color-20": {
         "$type": "color",
-        "$value": "{Subtle_Color.Iron.500}"
+        "$value": "{Subtle_Color.Iron.600}"
       }
     },
     "icon": {

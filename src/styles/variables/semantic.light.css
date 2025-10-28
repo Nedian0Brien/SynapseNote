@@ -3,7 +3,7 @@
  * AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY
  * 
  * Generated from: semantic.light.json
- * Generated time: 2025-09-09T02:51:20.040Z
+ * Generated time: 2025-10-28T03:13:52.614Z
  * 
  * To modify these values, edit the source JSON files and run the token conversion script:
  * node scripts/system-token/convert-tokens.cjs
@@ -26,6 +26,7 @@
   --text-success-hover: #29725d;
   --text-success-on-fill: #29725d;
   --text-warning: #db7e21;
+  --text-waring-light: #db7e21bf;
   --text-warning-hover: #b75f17;
   --text-warning-on-fill: #b75f17;
   --text-error: #e71d32;
@@ -340,7 +341,7 @@
   --block-text-color-17: #b240af;
   --block-text-color-18: #c24279;
   --block-text-color-19: #6e6e6e;
-  --block-text-color-20: #666f80;
+  --block-text-color-20: #4c5966;
   --block-icon-color-1: #cc4e4e;
   --block-icon-color-2: #d67240;
   --block-icon-color-3: #db8f2c;

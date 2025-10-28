@@ -3,7 +3,7 @@
  * AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY
  * 
  * Generated from: semantic.dark.json
- * Generated time: 2025-09-09T02:51:20.046Z
+ * Generated time: 2025-10-28T03:13:52.623Z
  * 
  * To modify these values, edit the source JSON files and run the token conversion script:
  * node scripts/system-token/convert-tokens.cjs
@@ -26,10 +26,11 @@
   --text-success-hover: #71bd9f;
   --text-success-on-fill: #c3e5d8;
   --text-warning: #db7e21;
+  --text-waring-light: #db7e21bf;
   --text-warning-hover: #ffa02e;
   --text-warning-on-fill: #ffe4ab;
   --text-error: #ff5050;
-  --text-error-light: #e71d32bf;
+  --text-error-light: #ff6250bf;
   --text-error-hover: #ff7d87;
   --text-error-on-fill: #ffa5b4;
   --text-featured: #e1b3ff;
@@ -45,8 +46,8 @@
   --icon-success-thick-hover: #248569;
   --icon-warning-thick: #db7e21;
   --icon-warning-thick-hover: #ffa02e;
-  --icon-error-thick: #f33641;
-  --icon-error-thick-hover: #ff5050;
+  --icon-error-thick: #ff5050;
+  --icon-error-thick-hover: #ff7d87;
   --icon-featured-thick: #9327ff;
   --icon-featured-thick-hover: #bc58ff;
   --icon-on-fill: #ffffff;

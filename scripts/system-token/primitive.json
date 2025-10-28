@@ -343,6 +343,10 @@
       "$type": "color",
       "$value": "#f336411a"
     },
+    "alpha-red-400-75": {
+      "$type": "color",
+      "$value": "#ff6250bf"
+    },
     "alpha-red-600-75": {
       "$type": "color",
       "$value": "#e71d32bf"
@@ -388,6 +392,10 @@
     "1000": {
       "$type": "color",
       "$value": "#602706"
+    },
+    "alpha-orange-600-75": {
+      "$type": "color",
+      "$value": "#db7e21bf"
     }
   },
   "Yellow": {
