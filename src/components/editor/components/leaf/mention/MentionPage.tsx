@@ -9,12 +9,12 @@ import { YjsEditor } from '@/application/slate-yjs';
 import { CustomEditor } from '@/application/slate-yjs/command';
 import { traverseBlock } from '@/application/slate-yjs/utils/convert';
 import { findSlateEntryByBlockId } from '@/application/slate-yjs/utils/editor';
-import { MentionType, UIVariant, View, ViewLayout, YjsEditorKey, YSharedRoot } from '@/application/types';
+import { MentionType, View, ViewLayout, YjsEditorKey, YSharedRoot } from '@/application/types';
 import { ReactComponent as LinkArrowOverlay } from '@/assets/icons/link_arrow.svg';
 import { ReactComponent as ParagraphIcon } from '@/assets/icons/paragraph.svg';
-import { useEditorContext } from '@/components/editor/EditorContext';
 import { findView } from '@/components/_shared/outline/utils';
 import PageIcon from '@/components/_shared/view-icon/PageIcon';
+import { useEditorContext } from '@/components/editor/EditorContext';
 
 import './style.css';
 
@@ -32,7 +32,6 @@ function MentionPage({
   const context = useEditorContext();
   const editor = useSlate();
   const selection = editor.selection;
-  const variant = context.variant;
   const currentViewId = context.viewId;
   const eventEmitter = context.eventEmitter;
 
@@ -205,9 +204,7 @@ function MentionPage({
       data-mention-id={pageId}
     >
       {noAccess ? (
-        <span className={'mention-unpublished font-semibold text-text-secondary'}>
-          {variant === UIVariant.App ? `${content}${t('document.mention.trashHint')}` : t('document.mention.noAccess')}
-        </span>
+        <span className={'mention-unpublished font-semibold text-text-secondary'}>{t('document.mention.noAccess')}</span>
       ) : (
         <>
           <span className={`mention-icon`}>{mentionIcon}</span>
