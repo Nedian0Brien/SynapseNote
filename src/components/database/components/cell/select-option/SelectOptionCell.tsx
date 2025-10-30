@@ -37,7 +37,7 @@ export function SelectOptionCell({
   const renderSelectedOptions = useCallback(
     (selected: string[]) =>
       selected.map((id) => {
-        const option = typeOption?.options?.find((option) => option.id === id);
+        const option = typeOption?.options?.find((option) => option?.id === id);
 
         if (!option) return null;
         return (

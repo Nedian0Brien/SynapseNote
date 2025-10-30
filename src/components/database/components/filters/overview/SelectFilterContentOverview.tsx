@@ -16,7 +16,7 @@ function SelectFilterContentOverview({ filter, field }: { filter: SelectOptionFi
 
     const options = filter.optionIds
       .map((optionId) => {
-        const option = typeOption?.options?.find((option) => option.id === optionId);
+      const option = typeOption?.options?.find((option) => option?.id === optionId);
 
         return option?.name;
       })

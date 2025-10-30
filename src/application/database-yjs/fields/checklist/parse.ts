@@ -7,6 +7,10 @@ export interface ChecklistCellData {
   percentage: number;
 }
 
+function normalizeChecklistOptions(options: SelectOption[] = []) {
+  return options.filter((option): option is SelectOption => Boolean(option && option.id));
+}
+
 export function parseChecklistData(data: string): ChecklistCellData | null {
   try {
     const { options, selected_option_ids } = JSON.parse(data);
@@ -39,13 +43,14 @@ export function addTask(data: string, taskName: string): string {
   }
 
   const { options = [], selectedOptionIds } = parsedData;
+  const normalizedOptions = normalizeChecklistOptions(options);
 
-  if (options.find((option) => option.id === task.id)) {
+  if (normalizedOptions.find((option) => option.id === task.id)) {
     return data;
   }
 
   return JSON.stringify({
-    options: [...options, task],
+    options: [...normalizedOptions, task],
     selected_option_ids: selectedOptionIds,
   });
 }
@@ -58,6 +63,7 @@ export function toggleSelectedTask(data: string, taskId: string): string {
   }
 
   const { options, selectedOptionIds = [] } = parsedData;
+  const normalizedOptions = normalizeChecklistOptions(options);
 
   const isSelected = selectedOptionIds.includes(taskId);
   const newSelectedOptionIds = isSelected
@@ -65,7 +71,7 @@ export function toggleSelectedTask(data: string, taskId: string): string {
     : [...selectedOptionIds, taskId];
 
   return JSON.stringify({
-    options,
+    options: normalizedOptions,
     selected_option_ids: newSelectedOptionIds,
   });
 }
@@ -78,8 +84,9 @@ export function updateTask(data: string, taskId: string, taskName: string): stri
   }
 
   const { options = [], selectedOptionIds } = parsedData;
+  const normalizedOptions = normalizeChecklistOptions(options);
 
-  const newOptions = options.map((option) => {
+  const newOptions = normalizedOptions.map((option) => {
     if (option.id === taskId) {
       return {
         ...option,
@@ -104,8 +111,9 @@ export function removeTask(data: string, taskId: string): string {
   }
 
   const { options = [], selectedOptionIds = [] } = parsedData;
+  const normalizedOptions = normalizeChecklistOptions(options);
 
-  const newOptions = options.filter((option) => option.id !== taskId);
+  const newOptions = normalizedOptions.filter((option) => option.id !== taskId);
   const newSelectedOptionIds = selectedOptionIds.filter((id) => id !== taskId);
 
   return JSON.stringify({
@@ -122,15 +130,16 @@ export function reorderTasks(data: string, { beforeId, taskId }: { beforeId?: st
   }
 
   const { selectedOptionIds, options = [] } = parsedData;
+  const normalizedOptions = normalizeChecklistOptions(options);
 
-  const index = options.findIndex((opt) => opt.id === taskId);
-  const option = options[index];
+  const index = normalizedOptions.findIndex((opt) => opt.id === taskId);
+  const option = normalizedOptions[index];
 
   if (index === -1) {
     return data;
   }
 
-  const newOptions = [...options];
+  const newOptions = [...normalizedOptions];
   const beforeIndex = newOptions.findIndex((opt) => opt.id === beforeId);
 
   if (beforeIndex === index) {

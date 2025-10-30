@@ -41,9 +41,11 @@ export function getGroupColumns(field: YDatabaseField) {
       return [{ id: field.get(YjsDatabaseKey.id) }];
     }
 
-    const options = typeOption.options.map((option) => ({
-      id: option.id,
-    }));
+    const options = typeOption.options
+      .map((option) => ({
+        id: option?.id,
+      }))
+      .filter((option): option is { id: string } => Boolean(option.id));
 
     return [{ id: field.get(YjsDatabaseKey.id) }, ...options];
   }
@@ -114,7 +116,11 @@ export function groupBySelectOption(
   }
 
   typeOption.options.forEach((option) => {
-    const groupName = option.id;
+    const groupName = option?.id;
+
+    if (!groupName) {
+      return;
+    }
 
     if (filter) {
       const condition = Number(filter?.get(YjsDatabaseKey.condition)) as SelectOptionFilterCondition;
@@ -156,7 +162,7 @@ export function groupBySelectOption(
     }
 
     selectedIds.forEach((id) => {
-      const option = typeOption.options.find((option) => option.id === id);
+      const option = typeOption.options.find((option) => option?.id === id);
       const groupName = option?.id ?? fieldId;
 
       if (!result.has(groupName)) {

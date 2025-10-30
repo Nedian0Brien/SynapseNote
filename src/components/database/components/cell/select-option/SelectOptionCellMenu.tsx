@@ -79,7 +79,7 @@ function SelectOptionCellMenu ({ open, onOpenChange, fieldId, rowId, selectOptio
     if (!typeOption) return [];
 
     return selectOptionIds.map((id) => {
-      const option = typeOption.options?.find((option) => option.id === id);
+      const option = typeOption.options?.find((option) => option?.id === id);
 
       if (!option) return null;
       return {
@@ -151,6 +151,7 @@ function SelectOptionCellMenu ({ open, onOpenChange, fieldId, rowId, selectOptio
     const lastOption = options[options.length - 1];
 
     if (hoveredId === 'create') {
+      if (!lastOption) return;
       setHoveredId(lastOption.id);
       return;
     }
@@ -167,7 +168,11 @@ function SelectOptionCellMenu ({ open, onOpenChange, fieldId, rowId, selectOptio
       return;
     }
 
-    const nextHoveredId = options[hoveredIndex - 1].id;
+    const previousOption = options[hoveredIndex - 1];
+
+    if (!previousOption) return;
+
+    const nextHoveredId = previousOption.id;
 
     setHoveredId(nextHoveredId);
 
@@ -181,6 +186,7 @@ function SelectOptionCellMenu ({ open, onOpenChange, fieldId, rowId, selectOptio
     const firstOption = options[0];
 
     if (hoveredId === 'create') {
+      if (!firstOption) return;
       setHoveredId(firstOption.id);
       return;
     }
@@ -197,7 +203,11 @@ function SelectOptionCellMenu ({ open, onOpenChange, fieldId, rowId, selectOptio
       return;
     }
 
-    const nextHoveredId = options[hoveredIndex + 1].id;
+    const nextOption = options[hoveredIndex + 1];
+
+    if (!nextOption) return;
+
+    const nextHoveredId = nextOption.id;
 
     setHoveredId(nextHoveredId);
   }, [createdShow, options]);

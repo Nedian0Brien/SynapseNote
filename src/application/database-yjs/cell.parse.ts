@@ -107,9 +107,7 @@ export function getCellDataText(cell: YDatabaseCell, field: YDatabaseField, curr
         return (
           data
             .split(',')
-            .map((item) => {
-              return options?.find((option) => option.id === item)?.name;
-            })
+            .map((item) => options?.find((option) => option?.id === item)?.name)
             .filter((item) => item)
             .join(',') || ''
         );
