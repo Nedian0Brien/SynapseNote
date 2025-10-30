@@ -65,7 +65,7 @@ export interface DatabaseContextState {
   checkIfRowDocumentExists?: (documentId: string) => Promise<void>;
   eventEmitter?: EventEmitter;
   getSubscriptions?: (() => Promise<Subscription[]>) | undefined;
-  getViewIdFromDatabaseId?: (databaseId: string) => string | null;
+  getViewIdFromDatabaseId?: (databaseId: string) => Promise<string | null>;
   variant?: UIVariant;
   // Calendar view type map: viewId -> CalendarViewType
   calendarViewTypeMap?: Map<string, CalendarViewType>;

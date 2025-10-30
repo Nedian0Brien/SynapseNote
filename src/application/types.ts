@@ -1111,6 +1111,7 @@ export interface ViewComponentProps {
   updatePageIcon?: (viewId: string, icon: { ty: ViewIconType; value: string }) => Promise<void>;
   updatePageName?: (viewId: string, name: string) => Promise<void>;
   currentUser?: User;
+  getViewIdFromDatabaseId?: (databaseId: string) => Promise<string | null>;
 }
 
 export interface CreatePagePayload {
