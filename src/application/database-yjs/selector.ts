@@ -1235,11 +1235,12 @@ export const useRowTimeString = (rowId: string, fieldId: string, attrName: strin
     const typeOption = getTypeOptions(field);
 
     const { dateFormat, timeFormat } = getFieldDateTimeFormats(typeOption, currentUser);
+    const includeTimeRaw = typeOption?.get(YjsDatabaseKey.include_time);
 
     return {
       dateFormat,
       timeFormat,
-      includeTime: typeOption.get(YjsDatabaseKey.include_time),
+      includeTime: typeof includeTimeRaw === 'boolean' ? includeTimeRaw : Boolean(includeTimeRaw),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [field, clock, currentUser?.metadata]);

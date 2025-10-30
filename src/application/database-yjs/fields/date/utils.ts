@@ -36,7 +36,8 @@ export function getRowTimeString(field: YDatabaseField, timeStamp: string, curre
   const typeOption = getTypeOptions(field);
   const typeOptionValue = getFieldDateTimeFormats(typeOption, currentUser);
 
-  const includeTime = typeOption.get(YjsDatabaseKey.include_time);
+  const includeTimeRaw = typeOption?.get(YjsDatabaseKey.include_time);
+  const includeTime = typeof includeTimeRaw === 'boolean' ? includeTimeRaw : Boolean(includeTimeRaw);
 
   return getDateTimeStr({
     timeStamp,
@@ -45,16 +46,36 @@ export function getRowTimeString(field: YDatabaseField, timeStamp: string, curre
   });
 }
 
-export function getFieldDateTimeFormats(typeOption: YMapFieldTypeOption, currentUser?: User) {
-  const typeOptionTimeFormat = typeOption.get(YjsDatabaseKey.time_format);
-  const typeOptionDateFormat = typeOption.get(YjsDatabaseKey.date_format);
+export function getFieldDateTimeFormats(typeOption: YMapFieldTypeOption | undefined, currentUser?: User) {
+  /**
+   * Resolve the preferred date/time formats for a field.
+   * 1. Read any persisted overrides from the Yjs type option map.
+   * 2. Fall back to the signed-in user's preference metadata.
+   * 3. Default to AppFlowy's locale-aware formats as a final safety net.
+   */
+  const typeOptionTimeFormat = typeOption?.get(YjsDatabaseKey.time_format);
+  const typeOptionDateFormat = typeOption?.get(YjsDatabaseKey.date_format);
 
-  const dateFormat = typeOptionDateFormat === undefined
-    ? currentUser?.metadata?.[MetadataKey.DateFormat] as DateFormat ?? DateFormat.Local
-    : parseInt(typeOptionDateFormat) as DateFormat;
-  const timeFormat = typeOptionTimeFormat === undefined
-    ? currentUser?.metadata?.[MetadataKey.TimeFormat] as TimeFormat ?? TimeFormat.TwelveHour
-    : parseInt(typeOptionTimeFormat) as TimeFormat;
+  const fallbackDateFormat = currentUser?.metadata?.[MetadataKey.DateFormat] as DateFormat | undefined;
+  const fallbackTimeFormat = currentUser?.metadata?.[MetadataKey.TimeFormat] as TimeFormat | undefined;
+
+  const parsedDateFormat =
+    typeOptionDateFormat === undefined || typeOptionDateFormat === null
+      ? undefined
+      : Number.parseInt(String(typeOptionDateFormat), 10);
+  const parsedTimeFormat =
+    typeOptionTimeFormat === undefined || typeOptionTimeFormat === null
+      ? undefined
+      : Number.parseInt(String(typeOptionTimeFormat), 10);
+
+  const dateFormat =
+    parsedDateFormat === undefined || Number.isNaN(parsedDateFormat)
+      ? fallbackDateFormat ?? DateFormat.Local
+      : parsedDateFormat as DateFormat;
+  const timeFormat =
+    parsedTimeFormat === undefined || Number.isNaN(parsedTimeFormat)
+      ? fallbackTimeFormat ?? TimeFormat.TwelveHour
+      : parsedTimeFormat as TimeFormat;
 
   return {
     dateFormat,
@@ -64,7 +85,7 @@ export function getFieldDateTimeFormats(typeOption: YMapFieldTypeOption, current
 
 export function getDateCellStr({ cell, field, currentUser }: { cell: DateTimeCell; field: YDatabaseField, currentUser?: User }) {
   const typeOptionMap = field.get(YjsDatabaseKey.type_option);
-  const typeOption = typeOptionMap.get(String(cell.fieldType));
+  const typeOption = typeOptionMap?.get(String(cell.fieldType));
 
   const typeOptionValue = getFieldDateTimeFormats(typeOption, currentUser);
 
