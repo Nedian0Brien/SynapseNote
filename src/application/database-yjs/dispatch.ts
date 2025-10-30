@@ -187,13 +187,19 @@ function generateGroupByField(field: YDatabaseField) {
     case FieldType.MultiSelect: {
       group.set(YjsDatabaseKey.content, '');
       const typeOption = parseSelectOptionTypeOptions(field);
-      const options = typeOption?.options || [];
+      const options = (typeOption?.options || []).filter((option) => Boolean(option && option.id));
 
       columns.push([{ id: fieldId, visible: true }]);
 
       // Add a column for each option
       options.forEach((option) => {
-        columns.push([{ id: option.id, visible: true }]);
+        const optionId = option?.id;
+
+        if (!optionId) {
+          return;
+        }
+
+        columns.push([{ id: optionId, visible: true }]);
       });
       break;
     }
@@ -2678,13 +2684,20 @@ export function useSwitchPropertyType() {
                     // 1. to RichText
                     if ([FieldType.RichText, FieldType.URL].includes(fieldType)) {
                       const cellType = Number(cell.get(YjsDatabaseKey.field_type));
-                      const typeOption = field.get(YjsDatabaseKey.type_option)?.get(String(cellType));
+                      const existingTypeOption = field
+                        .get(YjsDatabaseKey.type_option)
+                        ?.get(String(cellType)) as YMapFieldTypeOption | undefined;
 
                       switch (cellType) {
                         // From Number to RichText, keep the number format value
                         case FieldType.Number: {
+                          const formatRaw = existingTypeOption?.get(YjsDatabaseKey.format);
+                          const parsedFormat =
+                            formatRaw === undefined || formatRaw === null ? undefined : Number(formatRaw);
                           const format =
-                            (Number(typeOption.get(YjsDatabaseKey.format)) as NumberFormat) ?? NumberFormat.Num;
+                            parsedFormat === undefined || Number.isNaN(parsedFormat)
+                              ? NumberFormat.Num
+                              : (parsedFormat as NumberFormat);
 
                           if (data) {
                             newData = EnhancedBigStats.parse(data.toString(), format) || '';
@@ -2696,8 +2709,13 @@ export function useSwitchPropertyType() {
                         case FieldType.SingleSelect:
                         case FieldType.MultiSelect: {
                           const selectedIds = (data as string).split(',');
-                          const typeOption = typeOptionMap.get(String(cellType));
-                          const content = typeOption.get(YjsDatabaseKey.content);
+                          const optionSource = typeOptionMap?.get(String(cellType)) as YMapFieldTypeOption | undefined;
+                          const content = optionSource?.get(YjsDatabaseKey.content);
+
+                          if (typeof content !== 'string') {
+                            newData = '';
+                            break;
+                          }
 
                           try {
                             const parsedContent = JSON.parse(content) as SelectTypeOption;
@@ -2766,29 +2784,35 @@ export function useSwitchPropertyType() {
 
                     // 3. to SingleSelect or MultiSelect
                     if ([FieldType.SingleSelect, FieldType.MultiSelect].includes(fieldType)) {
-                      const typeOption = typeOptionMap.get(String(fieldType));
-                      const content = typeOption.get(YjsDatabaseKey.content);
+                      const targetTypeOption = typeOptionMap?.get(String(fieldType)) as
+                        | YMapFieldTypeOption
+                        | undefined;
+                      const content = targetTypeOption?.get(YjsDatabaseKey.content);
 
-                      try {
-                        const parsedContent = JSON.parse(content) as SelectTypeOption;
-                        const options = parsedContent.options;
+                      if (typeof content === 'string') {
+                        try {
+                          const parsedContent = JSON.parse(content) as SelectTypeOption;
+                          const options = parsedContent.options;
 
-                        const selectedOptionNames = (data as string).split(',');
-                        const selectedOptionIds = selectedOptionNames
-                          .map((name) => {
-                            const option = options.find((opt) => opt.name === name || opt.id === name);
+                          const selectedOptionNames = (data as string).split(',');
+                          const selectedOptionIds = selectedOptionNames
+                            .map((name) => {
+                              const option = options.find((opt) => opt.name === name || opt.id === name);
 
-                            if (!option) {
-                              return '';
-                            }
+                              if (!option) {
+                                return '';
+                              }
 
-                            return option.id;
-                          })
-                          .filter((id) => id !== '');
+                              return option.id;
+                            })
+                            .filter((id) => id !== '');
 
-                        newData = selectedOptionIds.join(',');
-                      } catch (e) {
-                        // do nothing
+                          newData = selectedOptionIds.join(',');
+                        } catch (e) {
+                          // do nothing
+                        }
+                      } else {
+                        newData = '';
                       }
                     }
 
@@ -2996,12 +3020,14 @@ export function useAddSelectOption(fieldId: string) {
 
           if (group) {
             const columns = group.get(YjsDatabaseKey.groups);
-            const column = columns.toArray().find((col) => col.id === option.id);
+            const optionId = option.id;
+
+            const column = columns.toArray().find((col) => col.id === optionId);
 
             if (!column) {
               columns.push([
                 {
-                  id: option.id,
+                  id: optionId,
                   visible: true,
                 },
               ]);

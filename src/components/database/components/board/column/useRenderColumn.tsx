@@ -35,7 +35,7 @@ export function useRenderColumn(id: string, fieldId: string) {
         </div>
       );
     if ([FieldType.SingleSelect, FieldType.MultiSelect].includes(fieldType)) {
-      const option = parseSelectOptionTypeOptions(field)?.options.find((option) => option.id === id);
+      const option = parseSelectOptionTypeOptions(field)?.options.find((option) => option?.id === id);
       const isFieldId = fieldId === id;
       const label = isFieldId ? `${t('button.no')} ${fieldName}` : option?.name || '';
 

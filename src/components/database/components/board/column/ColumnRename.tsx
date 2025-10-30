@@ -30,7 +30,7 @@ function ColumnRename({
   const option = useMemo(() => {
     if (!field || ![FieldType.SingleSelect, FieldType.MultiSelect].includes(fieldType)) return;
 
-    return parseSelectOptionTypeOptions(field)?.options.find((option) => option.id === id);
+    return parseSelectOptionTypeOptions(field)?.options.find((option) => option?.id === id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [field, clock, id]);
 
