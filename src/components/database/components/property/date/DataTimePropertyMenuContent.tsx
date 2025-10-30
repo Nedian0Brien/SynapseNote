@@ -22,7 +22,8 @@ function DataTimePropertyMenuContent({
   const { t } = useTranslation();
 
   const typeOption = useFieldTypeOption(fieldId);
-  const includeTime = Boolean(typeOption.get(YjsDatabaseKey.include_time));
+  const includeTimeRaw = typeOption?.get(YjsDatabaseKey.include_time);
+  const includeTime = typeof includeTimeRaw === 'boolean' ? includeTimeRaw : Boolean(includeTimeRaw);
 
   const updateFormat = useUpdateDateTimeFieldFormat(fieldId);
 

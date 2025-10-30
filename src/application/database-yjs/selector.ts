@@ -1294,7 +1294,11 @@ export const useSelectFieldOptions = (fieldId: string, searchValue?: string) => 
 
     if (!typeOption) return [] as SelectOption[];
 
-    return typeOption.options.filter((option) => {
+    const normalizedOptions = typeOption.options.filter((option): option is SelectOption => {
+      return Boolean(option && option.id && option.name);
+    });
+
+    return normalizedOptions.filter((option) => {
       if (!searchValue) return true;
       return option.name.toLowerCase().includes(searchValue.toLowerCase());
     });

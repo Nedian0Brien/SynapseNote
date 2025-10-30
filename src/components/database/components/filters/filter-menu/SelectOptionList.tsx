@@ -48,5 +48,9 @@ export function SelectOptionList({
   );
 
   if (!field || !typeOption) return null;
-  return <div className={'flex flex-col'}>{typeOption.options.map(renderOption)}</div>;
+  const normalizedOptions = typeOption.options.filter((option): option is SelectOption => {
+    return Boolean(option && option.id && option.name);
+  });
+
+  return <div className={'flex flex-col'}>{normalizedOptions.map(renderOption)}</div>;
 }

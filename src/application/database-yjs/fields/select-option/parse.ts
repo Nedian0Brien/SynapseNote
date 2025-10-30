@@ -27,7 +27,7 @@ export function parseSelectOptionCellData(field: YDatabaseField, data: string) {
 
   return selectedIds
     .map((id) => {
-      const option = typeOption?.options?.find((option) => option.id === id);
+      const option = typeOption?.options?.find((option) => option?.id === id);
 
       return option?.name ?? '';
     })
