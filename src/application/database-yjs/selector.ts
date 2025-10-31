@@ -538,7 +538,7 @@ export function useBoardLayoutSettings() {
   const view = useDatabaseView();
   const layoutSetting = view?.get(YjsDatabaseKey.layout_settings)?.get('1');
   const [isCollapsed, setIsCollapsed] = useState(true);
-  const [hideUnGroup, setHideUnGroup] = useState(true);
+  const [hideUnGroup, setHideUnGroup] = useState(false);
   const groups = view?.get(YjsDatabaseKey.groups);
   const [fieldId, setFieldId] = useState<string | null>(null);
 
@@ -1300,6 +1300,7 @@ export const useSelectFieldOptions = (fieldId: string, searchValue?: string) => 
 
     return normalizedOptions.filter((option) => {
       const optionName = typeof option.name === 'string' ? option.name : '';
+
       if (!searchValue) return true;
       return optionName.toLowerCase().includes(searchValue.toLowerCase());
     });
