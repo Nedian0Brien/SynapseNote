@@ -60,16 +60,24 @@ function RelationItems({
   }, [cell.data]);
 
   useEffect(() => {
-    if (!relatedDatabaseId) return;
+    if (!relatedDatabaseId) {
+      setRelatedViewId(null);
+      return;
+    }
+
     void (async () => {
       try {
         const viewId = await getViewIdFromDatabaseId?.(relatedDatabaseId);
 
-        if (!viewId) return;
+        if (!viewId) {
+          setRelatedViewId(null);
+          return;
+        }
 
         setRelatedViewId(viewId);
       } catch (e) {
         console.error(e);
+        setRelatedViewId(null);
       }
     })();
   }, [getViewIdFromDatabaseId, relatedDatabaseId]);

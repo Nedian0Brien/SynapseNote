@@ -32,7 +32,7 @@ export interface DatabaseProps {
   viewMeta: ViewMetaProps;
   appendBreadcrumb?: AppendBreadcrumb;
   onRendered?: () => void;
-  getViewIdFromDatabaseId?: (databaseId: string) => string | null;
+  getViewIdFromDatabaseId?: (databaseId: string) => Promise<string | null>;
 }
 
 function DatabaseView({ viewMeta, ...props }: DatabaseProps) {
