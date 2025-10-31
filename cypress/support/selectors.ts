@@ -157,6 +157,9 @@ export const ShareSelectors = {
 
   // Publish confirm button (the main publish button)
   publishConfirmButton: () => cy.get(byTestId('publish-confirm-button')),
+
+  // Visit Site button
+  visitSiteButton: () => cy.get(byTestId('visit-site-button')),
 };
 
 /**
