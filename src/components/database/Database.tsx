@@ -46,6 +46,7 @@ export interface Database2Props {
   paddingEnd?: number;
   showActions?: boolean;
   createFolderView?: (payload: CreateFolderViewPayload) => Promise<string>;
+  getViewIdFromDatabaseId?: (databaseId: string) => Promise<string | null>;
 }
 
 function Database(props: Database2Props) {

@@ -15,6 +15,7 @@ import { SelectOptionCell } from '@/components/database/components/cell/select-o
 import { TextCell } from '@/components/database/components/cell/text';
 
 import { FileMediaCell } from 'src/components/database/components/cell/file-media';
+
 import { PersonCell } from './person';
 
 export function Cell(props: CellProps<CellType>) {

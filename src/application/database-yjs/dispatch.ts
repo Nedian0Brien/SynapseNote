@@ -2149,7 +2149,7 @@ function generateBoardLayoutSettings() {
   const layoutSettings = new Y.Map() as YDatabaseLayoutSettings;
   const layoutSetting = new Y.Map() as YDatabaseBoardLayoutSetting;
 
-  layoutSetting.set(YjsDatabaseKey.hide_ungrouped_column, true);
+  layoutSetting.set(YjsDatabaseKey.hide_ungrouped_column, false);
   layoutSetting.set(YjsDatabaseKey.collapse_hidden_groups, true);
   layoutSettings.set('1', layoutSetting);
   return layoutSettings;

@@ -317,11 +317,12 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
                             onPointerDown={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              if (readOnly) return;
                               if (e.button === 0 && selectedViewId !== viewId && setSelectedViewId) {
                                 setSelectedViewId(viewId);
                                 return;
                               }
+
+                              if (readOnly) return;
 
                               if (viewId !== menuViewId) {
                                 setMenuViewId(viewId);

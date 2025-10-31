@@ -91,7 +91,7 @@ export function useViewOperations() {
     return false;
   }, []);
 
-  const getViewIdFromDatabaseId = useCallback((databaseId: string) => {
+  const getViewIdFromDatabaseId = useCallback(async (databaseId: string) => {
     if (!currentWorkspaceId) {
       return null;
     }

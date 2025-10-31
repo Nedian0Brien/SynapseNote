@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import * as Y from 'yjs';
 
 import {
@@ -37,10 +37,7 @@ function RelationItems({
   const [noAccess, setNoAccess] = useState(false);
   const [rows, setRows] = useState<DatabaseContextState['rowDocMap'] | null>();
   const [relatedFieldId, setRelatedFieldId] = useState<string | undefined>();
-  const relatedViewId = useMemo(
-    () => (relatedDatabaseId ? getViewIdFromDatabaseId?.(relatedDatabaseId) : null),
-    [getViewIdFromDatabaseId, relatedDatabaseId]
-  );
+  const [relatedViewId, setRelatedViewId] = useState<string | null>(null);
 
   const [docGuid, setDocGuid] = useState<string | null>(null);
   const [databaseDoc, setDatabaseDoc] = useState<YDoc | null>(null);
@@ -61,6 +58,29 @@ function RelationItems({
 
     setRowIds(ids);
   }, [cell.data]);
+
+  useEffect(() => {
+    if (!relatedDatabaseId) {
+      setRelatedViewId(null);
+      return;
+    }
+
+    void (async () => {
+      try {
+        const viewId = await getViewIdFromDatabaseId?.(relatedDatabaseId);
+
+        if (!viewId) {
+          setRelatedViewId(null);
+          return;
+        }
+
+        setRelatedViewId(viewId);
+      } catch (e) {
+        console.error(e);
+        setRelatedViewId(null);
+      }
+    })();
+  }, [getViewIdFromDatabaseId, relatedDatabaseId]);
 
   useEffect(() => {
     if (!relatedViewId || !createRowDoc || !docGuid) return;

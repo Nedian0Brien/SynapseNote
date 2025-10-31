@@ -1,9 +1,7 @@
-import {
-  UIVariant, ViewComponentProps,
-  ViewLayout,
-  YDoc,
-} from '@/application/types';
+import React, { Suspense, useMemo } from 'react';
+
 import { usePublishContext } from '@/application/publish';
+import { UIVariant, ViewComponentProps, ViewLayout, YDoc } from '@/application/types';
 import CalendarSkeleton from '@/components/_shared/skeleton/CalendarSkeleton';
 import DocumentSkeleton from '@/components/_shared/skeleton/DocumentSkeleton';
 import GridSkeleton from '@/components/_shared/skeleton/GridSkeleton';
@@ -11,7 +9,6 @@ import KanbanSkeleton from '@/components/_shared/skeleton/KanbanSkeleton';
 import { Document } from '@/components/document';
 import DatabaseView from '@/components/publish/DatabaseView';
 import { useViewMeta } from '@/components/publish/useViewMeta';
-import React, { useMemo, Suspense } from 'react';
 
 const ViewHelmet = React.lazy(() => import('@/components/_shared/helmet/ViewHelmet'));
 
@@ -19,7 +16,7 @@ export interface CollabViewProps {
   doc?: YDoc;
 }
 
-function CollabView ({ doc }: CollabViewProps) {
+function CollabView({ doc }: CollabViewProps) {
   const visibleViewIds = usePublishContext()?.viewMeta?.visible_view_ids;
   const { viewId, layout, icon, cover, layoutClassName, style, name } = useViewMeta();
   const View = useMemo(() => {
@@ -43,7 +40,7 @@ function CollabView ({ doc }: CollabViewProps) {
   const appendBreadcrumb = usePublishContext()?.appendBreadcrumb;
   const onRendered = usePublishContext()?.onRendered;
   const rendered = usePublishContext()?.rendered;
-
+  const getViewIdFromDatabaseId = usePublishContext()?.getViewIdFromDatabaseId;
   const className = useMemo(() => {
     const classList = ['relative w-full flex-1'];
 
@@ -81,17 +78,13 @@ function CollabView ({ doc }: CollabViewProps) {
 
   return (
     <>
-      {rendered && <Suspense>
-        <ViewHelmet
-          icon={icon}
-          name={name}
-        />
-      </Suspense>}
+      {rendered && (
+        <Suspense>
+          <ViewHelmet icon={icon} name={name} />
+        </Suspense>
+      )}
 
-      <div
-        style={style}
-        className={className}
-      >
+      <div style={style} className={className}>
         <View
           workspaceId={'publish'}
           doc={doc}
@@ -112,10 +105,10 @@ function CollabView ({ doc }: CollabViewProps) {
             layout: layout || ViewLayout.Document,
             visibleViewIds: visibleViewIds || [],
           }}
+          getViewIdFromDatabaseId={getViewIdFromDatabaseId}
         />
       </div>
     </>
-
   );
 }
 

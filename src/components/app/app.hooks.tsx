@@ -88,7 +88,7 @@ export interface AppContextType {
   getMentionUser?: (uuid: string) => Promise<MentionablePerson | undefined>;
   awarenessMap?: Record<string, Awareness>;
   checkIfRowDocumentExists?: (databaseId: string, rowIds: string[]) => Promise<void>;
-  getViewIdFromDatabaseId?: (databaseId: string) => string | null;
+  getViewIdFromDatabaseId?: (databaseId: string) => Promise<string | null>;
   loadMentionableUsers?: () => Promise<MentionablePerson[]>;
 }
 
