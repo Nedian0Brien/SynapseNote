@@ -1918,6 +1918,21 @@
     }
   },
   "document": {
+    "callout": {
+      "changeIcon": "Icon",
+      "quickStyle": "Quick Style",
+      "basic": "Basic",
+      "info": "Info",
+      "tip": "Tip",
+      "warning": "Warning",
+      "alert": "Alert",
+      "moreStyles": "More Styles",
+      "insight": "Insight",
+      "idea": "Idea",
+      "spark": "Spark",
+      "context": "Context",
+      "note": "Note"
+    },
     "menuName": "Document",
     "date": {
       "timeHintTextInTwelveHour": "01:00 PM",

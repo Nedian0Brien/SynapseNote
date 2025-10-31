@@ -1,22 +1,29 @@
+import DOMPurify from 'dompurify';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Element } from 'slate';
+import { useReadOnly, useSlateStatic } from 'slate-react';
+
 import { YjsEditor } from '@/application/slate-yjs';
 import { CustomEditor } from '@/application/slate-yjs/command';
 import { ViewIconType } from '@/application/types';
-import { CalloutNode } from '@/components/editor/editor.type';
 import { CustomIconPopover } from '@/components/_shared/cutsom-icon';
-import { renderColor } from '@/utils/color';
+import { CalloutNode } from '@/components/editor/editor.type';
+import { cn } from '@/lib/utils';
+import { ColorEnum, renderColor, toBlockColor } from '@/utils/color';
 import { getIcon, isFlagEmoji } from '@/utils/emoji';
-import DOMPurify from 'dompurify';
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
-import { Element } from 'slate';
-import { useReadOnly, useSlateStatic } from 'slate-react';
 
 function CalloutIcon({ block: node }: { block: CalloutNode; className: string }) {
   const ref = useRef<HTMLButtonElement>(null);
   const editor = useSlateStatic();
   const readOnly = useReadOnly() || editor.isElementReadOnly(node as unknown as Element);
   const blockId = node.blockId;
-  const [iconContent, setIconContent] = React.useState<string | undefined>(undefined);
-  const [open, setOpen] = React.useState(false);
+  const [iconContent, setIconContent] = useState<string | undefined>(undefined);
+  const [open, setOpen] = useState(false);
+
+  const { icon: blockIconColor, bgHover: blockBgHoverColor } = useMemo(() => {
+    return toBlockColor((node?.data?.bgColor || '') as ColorEnum);
+  }, [node?.data?.bgColor]);
+
   const handleChangeIcon = useCallback(
     (icon: { ty: ViewIconType; value: string; color?: string; content?: string }) => {
       setOpen(false);
@@ -46,11 +53,9 @@ function CalloutIcon({ block: node }: { block: CalloutNode; className: string })
   const data = node.data;
 
   const emoji = useMemo(() => {
-    if (data.icon && data.icon_type !== 'icon') {
-      return data.icon;
-    }
+    if (!data.icon || data.icon_type !== 'emoji') return;
 
-    return `📌`;
+    return data.icon;
   }, [data]);
 
   const isFlag = useMemo(() => {
@@ -58,23 +63,30 @@ function CalloutIcon({ block: node }: { block: CalloutNode; className: string })
   }, [emoji]);
 
   useEffect(() => {
-    if (data.icon && data.icon_type === 'icon') {
-      try {
-        const json = JSON.parse(data.icon);
-        const id = `${json.groupName}/${json.iconName}`;
+    try {
+      let id = '';
+      let iconColor = '';
 
-        void getIcon(id).then((item) => {
-          setIconContent(
-            item?.content.replaceAll('black', renderColor(json.color)).replace('<svg', '<svg width="100%" height="100%"')
-          );
-        });
-      } catch (e) {
-        console.error(e, data.icon);
+      if (data.icon && data.icon_type === 'icon') {
+        const json = JSON.parse(data.icon);
+
+        id = `${json.groupName}/${json.iconName}`;
+        iconColor = json.color || blockIconColor;
+      } else {
+        id = 'mail/chat-bubble-typing-oval';
+        iconColor = blockIconColor;
       }
-    } else {
-      setIconContent(undefined);
+
+      void getIcon(id).then((item) => {
+        setIconContent(
+          item?.content.replaceAll('black', renderColor(iconColor)).replace('<svg', '<svg width="100%" height="100%"')
+        );
+      });
+    } catch (e) {
+      console.error(e, data.icon);
     }
-  }, [data.icon, data.icon_type]);
+  }, [blockIconColor, data.icon, data.icon_type]);
+
   const icon = useMemo(() => {
     if (iconContent) {
       const cleanSvg = DOMPurify.sanitize(iconContent, {
@@ -84,8 +96,8 @@ function CalloutIcon({ block: node }: { block: CalloutNode; className: string })
       return (
         <span
           style={{
-            width: 18,
-            height: 18,
+            width: 14,
+            height: 14,
           }}
           dangerouslySetInnerHTML={{
             __html: cleanSvg,
@@ -104,25 +116,27 @@ function CalloutIcon({ block: node }: { block: CalloutNode; className: string })
       onSelectIcon={handleChangeIcon}
       removeIcon={handleRemoveIcon}
       defaultActiveTab={'emoji'}
-      tabs={['emoji']}
+      tabs={['emoji', 'icon']}
       enable={!readOnly}
     >
       <span
         data-testid='callout-icon-button'
         contentEditable={false}
         ref={ref}
-        className={`${readOnly ? '' : 'cursor-pointer'} relative flex items-start justify-center`}
-        style={{
-          width: '58px',
-          minWidth: '58px',
-        }}
+        className={cn(
+          'relative mr-2 flex h-7 w-7 flex-shrink-0 items-start justify-center',
+          !readOnly && 'cursor-pointer'
+        )}
       >
         <span
-          className={`w-8 ${isFlag ? 'icon' : ''} absolute -top-[4px] flex h-8 items-center justify-center text-[18px] ${
-            readOnly ? '' : 'rounded-[6px] hover:bg-fill-content-hover'
-          }`}
+          className={cn(
+            'absolute flex h-7 w-7 items-center justify-center text-[18px]',
+            isFlag && 'icon',
+            !readOnly && 'rounded-[6px] hover:bg-[var(--dynamic-background-color)]'
+          )}
+          style={{ '--dynamic-background-color': renderColor(blockBgHoverColor) } as React.CSSProperties}
         >
-          {icon || emoji}
+          {emoji || icon}
         </span>
       </span>
     </CustomIconPopover>

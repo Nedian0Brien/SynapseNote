@@ -7,16 +7,19 @@ import { ReactComponent as DeleteIcon } from '@/assets/icons/delete.svg';
 import { notify } from '@/components/_shared/notify';
 import { Popover } from '@/components/_shared/popover';
 import Depth from '@/components/editor/components/toolbar/block-controls/Depth';
-import { BlockNode, OutlineNode } from '@/components/editor/editor.type';
+import CalloutTextColor from '@/components/editor/components/toolbar/block-controls/CalloutTextColor';
+import { BlockNode, CalloutNode, OutlineNode } from '@/components/editor/editor.type';
 import { useEditorContext } from '@/components/editor/EditorContext';
 import { copyTextToClipboard } from '@/utils/copy';
-import { Button } from '@mui/material';
+import { Button, Divider } from '@mui/material';
 import { PopoverProps } from '@mui/material/Popover';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ReactEditor, useSlateStatic } from 'slate-react';
 import { findSlateEntryByBlockId } from '@/application/slate-yjs/utils/editor';
 import Color from './Color';
+import CalloutQuickStyleControl from './CalloutQuickStyleControl';
+import CalloutIconControl from './CalloutIconControl';
 
 const popoverProps: Partial<PopoverProps> = {
   transformOrigin: {
@@ -133,7 +136,7 @@ function ControlsMenu({
       open={open}
       {...popoverProps}
     >
-      <div data-testid={'controls-menu'} className={'flex flex-col gap-2 p-2'}>
+      <div data-testid={'controls-menu'} className={'flex w-[240px] flex-col p-2'}>
         {options.map((option) => {
           return (
             <Button
@@ -167,12 +170,24 @@ function ControlsMenu({
             BlockType.NumberedListBlock,
             BlockType.QuoteBlock,
             BlockType.TodoListBlock,
-            BlockType.CalloutBlock,
             BlockType.OutlineBlock,
             BlockType.ToggleListBlock,
           ].includes(node?.[0]?.type as BlockType) && (
-            <Color node={node[0] as BlockNode} onSelectColor={() => onClose()} />
+            <>
+              <Divider className='my-2' />
+              <Color node={node[0] as BlockNode} onSelectColor={onClose} />
+            </>
           )}
+
+        {node?.[0]?.type === BlockType.CalloutBlock && (
+          <>
+            <Divider className='my-2' />
+            <CalloutQuickStyleControl node={node[0] as CalloutNode} onSelectStyle={onClose} />
+            <CalloutIconControl node={node[0] as CalloutNode} onSelectIcon={onClose} />
+            <Color node={node[0] as BlockNode} onSelectColor={onClose} />
+            <CalloutTextColor node={node[0] as CalloutNode} onSelectColor={onClose} />
+          </>
+        )}
       </div>
     </Popover>
   );

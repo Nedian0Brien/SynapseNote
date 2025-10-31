@@ -92,6 +92,7 @@ export interface CodeBlockData extends BlockData {
 export interface CalloutBlockData extends BlockData {
   icon: string;
   icon_type?: 'emoji' | 'icon';
+  textColor?: string;
 }
 
 export interface MathEquationBlockData extends BlockData {

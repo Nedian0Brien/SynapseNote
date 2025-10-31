@@ -55,6 +55,106 @@ export enum ColorEnum {
   BgColor18 = 'bg-color-18',
   BgColor19 = 'bg-color-19',
   BgColor20 = 'bg-color-20',
+  BlockBgColor1 = 'block-bg-color-1',
+  BlockBgColor2 = 'block-bg-color-2',
+  BlockBgColor3 = 'block-bg-color-3',
+  BlockBgColor4 = 'block-bg-color-4',
+  BlockBgColor5 = 'block-bg-color-5',
+  BlockBgColor6 = 'block-bg-color-6',
+  BlockBgColor7 = 'block-bg-color-7',
+  BlockBgColor8 = 'block-bg-color-8',
+  BlockBgColor9 = 'block-bg-color-9',
+  BlockBgColor10 = 'block-bg-color-10',
+  BlockBgColor11 = 'block-bg-color-11',
+  BlockBgColor12 = 'block-bg-color-12',
+  BlockBgColor13 = 'block-bg-color-13',
+  BlockBgColor14 = 'block-bg-color-14',
+  BlockBgColor15 = 'block-bg-color-15',
+  BlockBgColor16 = 'block-bg-color-16',
+  BlockBgColor17 = 'block-bg-color-17',
+  BlockBgColor18 = 'block-bg-color-18',
+  BlockBgColor19 = 'block-bg-color-19',
+  BlockBgColor20 = 'block-bg-color-20',
+  BlockBgHoverColor1 = 'block-bg-hover-color-1',
+  BlockBgHoverColor2 = 'block-bg-hover-color-2',
+  BlockBgHoverColor3 = 'block-bg-hover-color-3',
+  BlockBgHoverColor4 = 'block-bg-hover-color-4',
+  BlockBgHoverColor5 = 'block-bg-hover-color-5',
+  BlockBgHoverColor6 = 'block-bg-hover-color-6',
+  BlockBgHoverColor7 = 'block-bg-hover-color-7',
+  BlockBgHoverColor8 = 'block-bg-hover-color-8',
+  BlockBgHoverColor9 = 'block-bg-hover-color-9',
+  BlockBgHoverColor10 = 'block-bg-hover-color-10',
+  BlockBgHoverColor11 = 'block-bg-hover-color-11',
+  BlockBgHoverColor12 = 'block-bg-hover-color-12',
+  BlockBgHoverColor13 = 'block-bg-hover-color-13',
+  BlockBgHoverColor14 = 'block-bg-hover-color-14',
+  BlockBgHoverColor15 = 'block-bg-hover-color-15',
+  BlockBgHoverColor16 = 'block-bg-hover-color-16',
+  BlockBgHoverColor17 = 'block-bg-hover-color-17',
+  BlockBgHoverColor18 = 'block-bg-hover-color-18',
+  BlockBgHoverColor19 = 'block-bg-hover-color-19',
+  BlockBgHoverColor20 = 'block-bg-hover-color-20',
+  BlockBorderColor1 = 'block-border-color-1',
+  BlockBorderColor2 = 'block-border-color-2',
+  BlockBorderColor3 = 'block-border-color-3',
+  BlockBorderColor4 = 'block-border-color-4',
+  BlockBorderColor5 = 'block-border-color-5',
+  BlockBorderColor6 = 'block-border-color-6',
+  BlockBorderColor7 = 'block-border-color-7',
+  BlockBorderColor8 = 'block-border-color-8',
+  BlockBorderColor9 = 'block-border-color-9',
+  BlockBorderColor10 = 'block-border-color-10',
+  BlockBorderColor11 = 'block-border-color-11',
+  BlockBorderColor12 = 'block-border-color-12',
+  BlockBorderColor13 = 'block-border-color-13',
+  BlockBorderColor14 = 'block-border-color-14',
+  BlockBorderColor15 = 'block-border-color-15',
+  BlockBorderColor16 = 'block-border-color-16',
+  BlockBorderColor17 = 'block-border-color-17',
+  BlockBorderColor18 = 'block-border-color-18',
+  BlockBorderColor19 = 'block-border-color-19',
+  BlockBorderColor20 = 'block-border-color-20',
+  BlockTextColor1 = 'block-text-color-1',
+  BlockTextColor2 = 'block-text-color-2',
+  BlockTextColor3 = 'block-text-color-3',
+  BlockTextColor4 = 'block-text-color-4',
+  BlockTextColor5 = 'block-text-color-5',
+  BlockTextColor6 = 'block-text-color-6',
+  BlockTextColor7 = 'block-text-color-7',
+  BlockTextColor8 = 'block-text-color-8',
+  BlockTextColor9 = 'block-text-color-9',
+  BlockTextColor10 = 'block-text-color-10',
+  BlockTextColor11 = 'block-text-color-11',
+  BlockTextColor12 = 'block-text-color-12',
+  BlockTextColor13 = 'block-text-color-13',
+  BlockTextColor14 = 'block-text-color-14',
+  BlockTextColor15 = 'block-text-color-15',
+  BlockTextColor16 = 'block-text-color-16',
+  BlockTextColor17 = 'block-text-color-17',
+  BlockTextColor18 = 'block-text-color-18',
+  BlockTextColor19 = 'block-text-color-19',
+  BlockTextColor20 = 'block-text-color-20',
+  BlockIconColor1 = 'block-icon-color-1',
+  BlockIconColor2 = 'block-icon-color-2',
+  BlockIconColor3 = 'block-icon-color-3',
+  BlockIconColor4 = 'block-icon-color-4',
+  BlockIconColor5 = 'block-icon-color-5',
+  BlockIconColor6 = 'block-icon-color-6',
+  BlockIconColor7 = 'block-icon-color-7',
+  BlockIconColor8 = 'block-icon-color-8',
+  BlockIconColor9 = 'block-icon-color-9',
+  BlockIconColor10 = 'block-icon-color-10',
+  BlockIconColor11 = 'block-icon-color-11',
+  BlockIconColor12 = 'block-icon-color-12',
+  BlockIconColor13 = 'block-icon-color-13',
+  BlockIconColor14 = 'block-icon-color-14',
+  BlockIconColor15 = 'block-icon-color-15',
+  BlockIconColor16 = 'block-icon-color-16',
+  BlockIconColor17 = 'block-icon-color-17',
+  BlockIconColor18 = 'block-icon-color-18',
+  BlockIconColor19 = 'block-icon-color-19',
+  BlockIconColor20 = 'block-icon-color-20',
 }
 
 export enum GradientEnum {
@@ -127,6 +227,106 @@ export const colorMap = {
   [ColorEnum.BgColor18]: 'var(--palette-bg-color-18)',
   [ColorEnum.BgColor19]: 'var(--palette-bg-color-19)',
   [ColorEnum.BgColor20]: 'var(--palette-bg-color-20)',
+  [ColorEnum.BlockBgColor1]: 'var(--block-bg-color-1)',
+  [ColorEnum.BlockBgColor2]: 'var(--block-bg-color-2)',
+  [ColorEnum.BlockBgColor3]: 'var(--block-bg-color-3)',
+  [ColorEnum.BlockBgColor4]: 'var(--block-bg-color-4)',
+  [ColorEnum.BlockBgColor5]: 'var(--block-bg-color-5)',
+  [ColorEnum.BlockBgColor6]: 'var(--block-bg-color-6)',
+  [ColorEnum.BlockBgColor7]: 'var(--block-bg-color-7)',
+  [ColorEnum.BlockBgColor8]: 'var(--block-bg-color-8)',
+  [ColorEnum.BlockBgColor9]: 'var(--block-bg-color-9)',
+  [ColorEnum.BlockBgColor10]: 'var(--block-bg-color-10)',
+  [ColorEnum.BlockBgColor11]: 'var(--block-bg-color-11)',
+  [ColorEnum.BlockBgColor12]: 'var(--block-bg-color-12)',
+  [ColorEnum.BlockBgColor13]: 'var(--block-bg-color-13)',
+  [ColorEnum.BlockBgColor14]: 'var(--block-bg-color-14)',
+  [ColorEnum.BlockBgColor15]: 'var(--block-bg-color-15)',
+  [ColorEnum.BlockBgColor16]: 'var(--block-bg-color-16)',
+  [ColorEnum.BlockBgColor17]: 'var(--block-bg-color-17)',
+  [ColorEnum.BlockBgColor18]: 'var(--block-bg-color-18)',
+  [ColorEnum.BlockBgColor19]: 'var(--block-bg-color-19)',
+  [ColorEnum.BlockBgColor20]: 'var(--block-bg-color-20)',
+  [ColorEnum.BlockBgHoverColor1]: 'var(--block-bg-hover-color-1)',
+  [ColorEnum.BlockBgHoverColor2]: 'var(--block-bg-hover-color-2)',
+  [ColorEnum.BlockBgHoverColor3]: 'var(--block-bg-hover-color-3)',
+  [ColorEnum.BlockBgHoverColor4]: 'var(--block-bg-hover-color-4)',
+  [ColorEnum.BlockBgHoverColor5]: 'var(--block-bg-hover-color-5)',
+  [ColorEnum.BlockBgHoverColor6]: 'var(--block-bg-hover-color-6)',
+  [ColorEnum.BlockBgHoverColor7]: 'var(--block-bg-hover-color-7)',
+  [ColorEnum.BlockBgHoverColor8]: 'var(--block-bg-hover-color-8)',
+  [ColorEnum.BlockBgHoverColor9]: 'var(--block-bg-hover-color-9)',
+  [ColorEnum.BlockBgHoverColor10]: 'var(--block-bg-hover-color-10)',
+  [ColorEnum.BlockBgHoverColor11]: 'var(--block-bg-hover-color-11)',
+  [ColorEnum.BlockBgHoverColor12]: 'var(--block-bg-hover-color-12)',
+  [ColorEnum.BlockBgHoverColor13]: 'var(--block-bg-hover-color-13)',
+  [ColorEnum.BlockBgHoverColor14]: 'var(--block-bg-hover-color-14)',
+  [ColorEnum.BlockBgHoverColor15]: 'var(--block-bg-hover-color-15)',
+  [ColorEnum.BlockBgHoverColor16]: 'var(--block-bg-hover-color-16)',
+  [ColorEnum.BlockBgHoverColor17]: 'var(--block-bg-hover-color-17)',
+  [ColorEnum.BlockBgHoverColor18]: 'var(--block-bg-hover-color-18)',
+  [ColorEnum.BlockBgHoverColor19]: 'var(--block-bg-hover-color-19)',
+  [ColorEnum.BlockBgHoverColor20]: 'var(--block-bg-hover-color-20)',
+  [ColorEnum.BlockBorderColor1]: 'var(--block-border-color-1)',
+  [ColorEnum.BlockBorderColor2]: 'var(--block-border-color-2)',
+  [ColorEnum.BlockBorderColor3]: 'var(--block-border-color-3)',
+  [ColorEnum.BlockBorderColor4]: 'var(--block-border-color-4)',
+  [ColorEnum.BlockBorderColor5]: 'var(--block-border-color-5)',
+  [ColorEnum.BlockBorderColor6]: 'var(--block-border-color-6)',
+  [ColorEnum.BlockBorderColor7]: 'var(--block-border-color-7)',
+  [ColorEnum.BlockBorderColor8]: 'var(--block-border-color-8)',
+  [ColorEnum.BlockBorderColor9]: 'var(--block-border-color-9)',
+  [ColorEnum.BlockBorderColor10]: 'var(--block-border-color-10)',
+  [ColorEnum.BlockBorderColor11]: 'var(--block-border-color-11)',
+  [ColorEnum.BlockBorderColor12]: 'var(--block-border-color-12)',
+  [ColorEnum.BlockBorderColor13]: 'var(--block-border-color-13)',
+  [ColorEnum.BlockBorderColor14]: 'var(--block-border-color-14)',
+  [ColorEnum.BlockBorderColor15]: 'var(--block-border-color-15)',
+  [ColorEnum.BlockBorderColor16]: 'var(--block-border-color-16)',
+  [ColorEnum.BlockBorderColor17]: 'var(--block-border-color-17)',
+  [ColorEnum.BlockBorderColor18]: 'var(--block-border-color-18)',
+  [ColorEnum.BlockBorderColor19]: 'var(--block-border-color-19)',
+  [ColorEnum.BlockBorderColor20]: 'var(--block-border-color-20)',
+  [ColorEnum.BlockTextColor1]: 'var(--block-text-color-1)',
+  [ColorEnum.BlockTextColor2]: 'var(--block-text-color-2)',
+  [ColorEnum.BlockTextColor3]: 'var(--block-text-color-3)',
+  [ColorEnum.BlockTextColor4]: 'var(--block-text-color-4)',
+  [ColorEnum.BlockTextColor5]: 'var(--block-text-color-5)',
+  [ColorEnum.BlockTextColor6]: 'var(--block-text-color-6)',
+  [ColorEnum.BlockTextColor7]: 'var(--block-text-color-7)',
+  [ColorEnum.BlockTextColor8]: 'var(--block-text-color-8)',
+  [ColorEnum.BlockTextColor9]: 'var(--block-text-color-9)',
+  [ColorEnum.BlockTextColor10]: 'var(--block-text-color-10)',
+  [ColorEnum.BlockTextColor11]: 'var(--block-text-color-11)',
+  [ColorEnum.BlockTextColor12]: 'var(--block-text-color-12)',
+  [ColorEnum.BlockTextColor13]: 'var(--block-text-color-13)',
+  [ColorEnum.BlockTextColor14]: 'var(--block-text-color-14)',
+  [ColorEnum.BlockTextColor15]: 'var(--block-text-color-15)',
+  [ColorEnum.BlockTextColor16]: 'var(--block-text-color-16)',
+  [ColorEnum.BlockTextColor17]: 'var(--block-text-color-17)',
+  [ColorEnum.BlockTextColor18]: 'var(--block-text-color-18)',
+  [ColorEnum.BlockTextColor19]: 'var(--block-text-color-19)',
+  [ColorEnum.BlockTextColor20]: 'var(--block-text-color-20)',
+  [ColorEnum.BlockIconColor1]: 'var(--block-icon-color-1)',
+  [ColorEnum.BlockIconColor2]: 'var(--block-icon-color-2)',
+  [ColorEnum.BlockIconColor3]: 'var(--block-icon-color-3)',
+  [ColorEnum.BlockIconColor4]: 'var(--block-icon-color-4)',
+  [ColorEnum.BlockIconColor5]: 'var(--block-icon-color-5)',
+  [ColorEnum.BlockIconColor6]: 'var(--block-icon-color-6)',
+  [ColorEnum.BlockIconColor7]: 'var(--block-icon-color-7)',
+  [ColorEnum.BlockIconColor8]: 'var(--block-icon-color-8)',
+  [ColorEnum.BlockIconColor9]: 'var(--block-icon-color-9)',
+  [ColorEnum.BlockIconColor10]: 'var(--block-icon-color-10)',
+  [ColorEnum.BlockIconColor11]: 'var(--block-icon-color-11)',
+  [ColorEnum.BlockIconColor12]: 'var(--block-icon-color-12)',
+  [ColorEnum.BlockIconColor13]: 'var(--block-icon-color-13)',
+  [ColorEnum.BlockIconColor14]: 'var(--block-icon-color-14)',
+  [ColorEnum.BlockIconColor15]: 'var(--block-icon-color-15)',
+  [ColorEnum.BlockIconColor16]: 'var(--block-icon-color-16)',
+  [ColorEnum.BlockIconColor17]: 'var(--block-icon-color-17)',
+  [ColorEnum.BlockIconColor18]: 'var(--block-icon-color-18)',
+  [ColorEnum.BlockIconColor19]: 'var(--block-icon-color-19)',
+  [ColorEnum.BlockIconColor20]: 'var(--block-icon-color-20)',
 };
 
 export const gradientMap = {
@@ -283,4 +483,164 @@ export const IconColors = [
 
 export function randomColor(colors: string[]): string {
   return colors[Math.floor(Math.random() * colors.length)];
+}
+
+export function toBlockColor(color: ColorEnum) {
+  switch (color) {
+    case ColorEnum.Tint1:
+      return {
+        bg: ColorEnum.BlockBgColor14,
+        bgHover: ColorEnum.BlockBgHoverColor14,
+        text: ColorEnum.BlockTextColor14,
+        border: ColorEnum.BlockBorderColor14,
+        icon: ColorEnum.BlockIconColor14,
+      };
+    case ColorEnum.Tint2:
+      return {
+        bg: ColorEnum.BlockBgColor16,
+        bgHover: ColorEnum.BlockBgHoverColor16,
+        text: ColorEnum.BlockTextColor16,
+        border: ColorEnum.BlockBorderColor16,
+        icon: ColorEnum.BlockIconColor16,
+      };
+    case ColorEnum.Tint3:
+      return {
+        bg: ColorEnum.BlockBgColor18,
+        bgHover: ColorEnum.BlockBgHoverColor18,
+        text: ColorEnum.BlockTextColor18,
+        border: ColorEnum.BlockBorderColor18,
+        icon: ColorEnum.BlockIconColor18,
+      };
+    case ColorEnum.Tint4:
+      return {
+        bg: ColorEnum.BlockBgColor2,
+        bgHover: ColorEnum.BlockBgHoverColor2,
+        text: ColorEnum.BlockTextColor2,
+        border: ColorEnum.BlockBorderColor2,
+        icon: ColorEnum.BlockIconColor2,
+      };
+    case ColorEnum.Tint5:
+      return {
+        bg: ColorEnum.BlockBgColor4,
+        bgHover: ColorEnum.BlockBgHoverColor4,
+        text: ColorEnum.BlockTextColor4,
+        border: ColorEnum.BlockBorderColor4,
+        icon: ColorEnum.BlockIconColor4,
+      };
+    case ColorEnum.Tint6:
+      return {
+        bg: ColorEnum.BlockBgColor6,
+        bgHover: ColorEnum.BlockBgHoverColor6,
+        text: ColorEnum.BlockTextColor6,
+        border: ColorEnum.BlockBorderColor6,
+        icon: ColorEnum.BlockIconColor6,
+      };
+    case ColorEnum.Tint7:
+      return {
+        bg: ColorEnum.BlockBgColor8,
+        bgHover: ColorEnum.BlockBgHoverColor8,
+        text: ColorEnum.BlockTextColor8,
+        border: ColorEnum.BlockBorderColor8,
+        icon: ColorEnum.BlockIconColor8,
+      };
+    case ColorEnum.Tint8:
+      return {
+        bg: ColorEnum.BlockBgColor10,
+        bgHover: ColorEnum.BlockBgHoverColor10,
+        text: ColorEnum.BlockTextColor10,
+        border: ColorEnum.BlockBorderColor10,
+        icon: ColorEnum.BlockIconColor10,
+      };
+    case ColorEnum.Tint9:
+      return {
+        bg: ColorEnum.BlockBgColor12,
+        bgHover: ColorEnum.BlockBgHoverColor12,
+        text: ColorEnum.BlockTextColor12,
+        border: ColorEnum.BlockBorderColor12,
+        icon: ColorEnum.BlockIconColor12,
+      };
+    case ColorEnum.Tint10:
+      return {
+        bg: ColorEnum.BlockBgColor20,
+        bgHover: ColorEnum.BlockBgHoverColor20,
+        text: ColorEnum.BlockTextColor20,
+        border: ColorEnum.BlockBorderColor20,
+        icon: ColorEnum.BlockIconColor20,
+      };
+    case ColorEnum.Tint11:
+      return {
+        bg: ColorEnum.BlockBgColor15,
+        bgHover: ColorEnum.BlockBgHoverColor15,
+        text: ColorEnum.BlockTextColor15,
+        border: ColorEnum.BlockBorderColor15,
+        icon: ColorEnum.BlockIconColor15,
+      };
+    case ColorEnum.Tint12:
+      return {
+        bg: ColorEnum.BlockBgColor17,
+        bgHover: ColorEnum.BlockBgHoverColor17,
+        text: ColorEnum.BlockTextColor17,
+        border: ColorEnum.BlockBorderColor17,
+        icon: ColorEnum.BlockIconColor17,
+      };
+    case ColorEnum.Tint13:
+      return {
+        bg: ColorEnum.BlockBgColor1,
+        bgHover: ColorEnum.BlockBgHoverColor1,
+        text: ColorEnum.BlockTextColor1,
+        border: ColorEnum.BlockBorderColor1,
+        icon: ColorEnum.BlockIconColor1,
+      };
+    case ColorEnum.Tint14:
+      return {
+        bg: ColorEnum.BlockBgColor5,
+        bgHover: ColorEnum.BlockBgHoverColor5,
+        text: ColorEnum.BlockTextColor5,
+        border: ColorEnum.BlockBorderColor5,
+        icon: ColorEnum.BlockIconColor5,
+      };
+    default:
+      return {
+        bg: ColorEnum.BlockBgColor20,
+        bgHover: ColorEnum.BlockBgHoverColor20,
+        text: ColorEnum.BlockTextColor20,
+        border: ColorEnum.BlockBorderColor20,
+        icon: ColorEnum.BlockIconColor20,
+      };
+  }
+}
+
+export function toTint(color: ColorEnum) {
+  switch (color) {
+    case ColorEnum.BlockTextColor14:
+      return ColorEnum.Tint1;
+    case ColorEnum.BlockTextColor16:
+      return ColorEnum.Tint2;
+    case ColorEnum.BlockTextColor18:
+      return ColorEnum.Tint3;
+    case ColorEnum.BlockTextColor2:
+      return ColorEnum.Tint4;
+    case ColorEnum.BlockTextColor4:
+      return ColorEnum.Tint5;
+    case ColorEnum.BlockTextColor6:
+      return ColorEnum.Tint6;
+    case ColorEnum.BlockTextColor8:
+      return ColorEnum.Tint7;
+    case ColorEnum.BlockTextColor10:
+      return ColorEnum.Tint8;
+    case ColorEnum.BlockTextColor12:
+      return ColorEnum.Tint9;
+    case ColorEnum.BlockTextColor20:
+      return ColorEnum.Tint10;
+    case ColorEnum.BlockTextColor15:
+      return ColorEnum.Tint11;
+    case ColorEnum.BlockTextColor17:
+      return ColorEnum.Tint12;
+    case ColorEnum.BlockTextColor1:
+      return ColorEnum.Tint13;
+    case ColorEnum.BlockTextColor5:
+      return ColorEnum.Tint14;
+    default:
+      return ColorEnum.Tint10;
+  }
 }
