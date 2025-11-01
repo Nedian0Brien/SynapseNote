@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useDatabaseContext, useDatabaseViewLayout } from '@/application/database-yjs';
 import { DatabaseViewLayout } from '@/application/types';
-import { ReactComponent as ExpandMoreIcon } from '@/assets/icons/expand.svg';
+import { ReactComponent as ExpandMoreIcon } from '@/assets/icons/full_screen.svg';
 import { ReactComponent as SettingsIcon } from '@/assets/icons/settings.svg';
 import { useConditionsContext } from '@/components/database/components/conditions/context';
 import FiltersButton from '@/components/database/components/conditions/FiltersButton';

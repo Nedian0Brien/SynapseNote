@@ -1,25 +1,30 @@
-import { YjsEditor } from '@/application/slate-yjs';
-import { CustomEditor } from '@/application/slate-yjs/command';
-import { BlockType } from '@/application/types';
-import { ReactComponent as DuplicateIcon } from '@/assets/icons/duplicate.svg';
-import { ReactComponent as CopyLinkIcon } from '@/assets/icons/link.svg';
-import { ReactComponent as DeleteIcon } from '@/assets/icons/delete.svg';
-import { notify } from '@/components/_shared/notify';
-import { Popover } from '@/components/_shared/popover';
-import Depth from '@/components/editor/components/toolbar/block-controls/Depth';
-import CalloutTextColor from '@/components/editor/components/toolbar/block-controls/CalloutTextColor';
-import { BlockNode, CalloutNode, OutlineNode } from '@/components/editor/editor.type';
-import { useEditorContext } from '@/components/editor/EditorContext';
-import { copyTextToClipboard } from '@/utils/copy';
 import { Button, Divider } from '@mui/material';
 import { PopoverProps } from '@mui/material/Popover';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ReactEditor, useSlateStatic } from 'slate-react';
+
+import { YjsEditor } from '@/application/slate-yjs';
+import { CustomEditor } from '@/application/slate-yjs/command';
 import { findSlateEntryByBlockId } from '@/application/slate-yjs/utils/editor';
-import Color from './Color';
-import CalloutQuickStyleControl from './CalloutQuickStyleControl';
+import { BlockType } from '@/application/types';
+import { ReactComponent as DeleteIcon } from '@/assets/icons/delete.svg';
+import { ReactComponent as DuplicateIcon } from '@/assets/icons/duplicate.svg';
+import { ReactComponent as CopyLinkIcon } from '@/assets/icons/link.svg';
+import { notify } from '@/components/_shared/notify';
+import { Popover } from '@/components/_shared/popover';
+import CalloutTextColor from '@/components/editor/components/toolbar/block-controls/CalloutTextColor';
+import {
+  OutlineCollapseControl,
+  OutlineDepthControl,
+} from '@/components/editor/components/toolbar/block-controls/OutlineControls';
+import { BlockNode, CalloutNode, OutlineNode } from '@/components/editor/editor.type';
+import { useEditorContext } from '@/components/editor/EditorContext';
+import { copyTextToClipboard } from '@/utils/copy';
+
 import CalloutIconControl from './CalloutIconControl';
+import CalloutQuickStyleControl from './CalloutQuickStyleControl';
+import Color from './Color';
 
 const popoverProps: Partial<PopoverProps> = {
   transformOrigin: {
@@ -158,10 +163,6 @@ function ControlsMenu({
           );
         })}
 
-        {node?.[0]?.type === BlockType.OutlineBlock && onlySingleBlockSelected && (
-          <Depth node={node[0] as OutlineNode} />
-        )}
-
         {node?.[0]?.type &&
           [
             BlockType.Paragraph,
@@ -170,7 +171,6 @@ function ControlsMenu({
             BlockType.NumberedListBlock,
             BlockType.QuoteBlock,
             BlockType.TodoListBlock,
-            BlockType.OutlineBlock,
             BlockType.ToggleListBlock,
           ].includes(node?.[0]?.type as BlockType) && (
             <>
@@ -178,6 +178,15 @@ function ControlsMenu({
               <Color node={node[0] as BlockNode} onSelectColor={onClose} />
             </>
           )}
+
+        {node?.[0]?.type === BlockType.OutlineBlock && onlySingleBlockSelected && (
+          <>
+            <Divider className='my-2' />
+            <OutlineCollapseControl node={node[0] as OutlineNode} onToggle={onClose} />
+            <OutlineDepthControl node={node[0] as OutlineNode} onClose={onClose} />
+            <Color node={node[0] as BlockNode} onSelectColor={onClose} />
+          </>
+        )}
 
         {node?.[0]?.type === BlockType.CalloutBlock && (
           <>

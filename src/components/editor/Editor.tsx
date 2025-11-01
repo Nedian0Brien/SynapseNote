@@ -1,8 +1,9 @@
+import { memo, useCallback, useState } from 'react';
+
 import { YjsEditor } from '@/application/slate-yjs';
 import { YDoc } from '@/application/types';
 import CollaborativeEditor from '@/components/editor/CollaborativeEditor';
 import { defaultLayoutStyle, EditorContextProvider, EditorContextState } from '@/components/editor/EditorContext';
-import React, { memo } from 'react';
 import './editor.scss';
 
 export interface EditorProps extends EditorContextState {
@@ -11,23 +12,25 @@ export interface EditorProps extends EditorContextState {
   onSelectionChange?: (editor: YjsEditor) => void;
 }
 
-export const Editor = memo(({ doc, onEditorConnected, onSelectionChange, layoutStyle = defaultLayoutStyle, ...props }: EditorProps) => {
-  const [codeGrammars, setCodeGrammars] = React.useState<Record<string, string>>({});
+export const Editor = memo(
+  ({ doc, onEditorConnected, onSelectionChange, layoutStyle = defaultLayoutStyle, ...props }: EditorProps) => {
+    const [codeGrammars, setCodeGrammars] = useState<Record<string, string>>({});
 
-  const handleAddCodeGrammars = React.useCallback((blockId: string, grammar: string) => {
-    setCodeGrammars((prev) => ({ ...prev, [blockId]: grammar }));
-  }, []);
+    const handleAddCodeGrammars = useCallback((blockId: string, grammar: string) => {
+      setCodeGrammars((prev) => ({ ...prev, [blockId]: grammar }));
+    }, []);
 
-  return (
-    <EditorContextProvider
-      {...props}
-      codeGrammars={codeGrammars}
-      addCodeGrammars={handleAddCodeGrammars}
-      layoutStyle={layoutStyle}
-    >
-      <CollaborativeEditor doc={doc} onEditorConnected={onEditorConnected} onSelectionChange={onSelectionChange} />
-    </EditorContextProvider>
-  );
-});
+    return (
+      <EditorContextProvider
+        {...props}
+        codeGrammars={codeGrammars}
+        addCodeGrammars={handleAddCodeGrammars}
+        layoutStyle={layoutStyle}
+      >
+        <CollaborativeEditor doc={doc} onEditorConnected={onEditorConnected} onSelectionChange={onSelectionChange} />
+      </EditorContextProvider>
+    );
+  }
+);
 
 export default Editor;

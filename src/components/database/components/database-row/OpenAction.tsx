@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 
 import { useNavigateToRow } from '@/application/database-yjs';
-import { ReactComponent as ExpandMoreIcon } from '@/assets/icons/expand.svg';
+import { ReactComponent as ExpandMoreIcon } from '@/assets/icons/full_screen.svg';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 

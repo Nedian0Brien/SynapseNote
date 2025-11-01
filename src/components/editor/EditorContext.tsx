@@ -73,6 +73,8 @@ export interface EditorContextState {
   getMentionUser?: (uuid: string) => Promise<MentionablePerson | undefined>;
   awareness?: Awareness;
   getDeviceId?: () => string;
+  collapsedMap?: Record<string, boolean>;
+  toggleCollapsed?: (blockId: string) => void;
 }
 
 export const EditorContext = createContext<EditorContextState>({
@@ -86,6 +88,7 @@ export const EditorContext = createContext<EditorContextState>({
 export const EditorContextProvider = ({ children, ...props }: EditorContextState & { children: React.ReactNode }) => {
   const [decorateState, setDecorateState] = useState<Record<string, Decorate>>({});
   const [selectedBlockIds, setSelectedBlockIds] = useState<string[]>([]);
+  const [collapsedMap, setCollapsedMap] = useState<Record<string, boolean>>({});
 
   const addDecorate = useCallback((range: BaseRange, class_name: string, type: string) => {
     setDecorateState((prev) => {
@@ -118,6 +121,13 @@ export const EditorContextProvider = ({ children, ...props }: EditorContextState
     });
   }, []);
 
+  const toggleCollapsed = useCallback((blockId: string) => {
+    setCollapsedMap((prev) => ({
+      ...prev,
+      [blockId]: !prev[blockId],
+    }));
+  }, []);
+
   return (
     <EditorContext.Provider
       value={{
@@ -127,6 +137,8 @@ export const EditorContextProvider = ({ children, ...props }: EditorContextState
         removeDecorate,
         setSelectedBlockIds,
         selectedBlockIds,
+        collapsedMap,
+        toggleCollapsed,
       }}
     >
       {children}

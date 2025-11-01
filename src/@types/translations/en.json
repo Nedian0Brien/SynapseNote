@@ -2155,8 +2155,14 @@
         "convertToLink": "Convert to embed link"
       },
       "outline": {
+        "outlineBlock": "Table of Contents",
         "addHeadingToCreateOutline": "Add headings to create a table of contents.",
-        "noMatchHeadings": "No matching headings found."
+        "noMatchHeadings": "No matching headings found.",
+        "outlineColor": "Custom color",
+        "expandAll": "Expand all",
+        "collapseAll": "Collapse all",
+        "depthCustomization": "Depth customization",
+        "depthHeading": "Depth H{{level}}"
       },
       "table": {
         "addAfter": "Add after",

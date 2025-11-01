@@ -32,9 +32,9 @@ function Color({ node, onSelectColor }: { node: BlockNode; onSelectColor: () => 
   const { t } = useTranslation();
   const editor = useSlateStatic() as YjsEditor;
   const blockId = node.blockId;
-  const isCallout = node.type === BlockType.CalloutBlock;
+  const hasNonTransparentBg = [BlockType.CalloutBlock, BlockType.OutlineBlock].includes(node.type);
   const [originalColor, setOriginalColor] = useState<string>(node.data?.bgColor || '');
-  const selectedColor = originalColor || (isCallout ? ColorEnum.Tint10 : '');
+  const selectedColor = originalColor || (hasNonTransparentBg ? ColorEnum.Tint10 : '');
 
   const [activeSubscriptionPlan, setActiveSubscriptionPlan] = useState<SubscriptionPlan | null>(null);
   const isPro = activeSubscriptionPlan === SubscriptionPlan.Pro;
@@ -76,7 +76,7 @@ function Color({ node, onSelectColor }: { node: BlockNode; onSelectColor: () => 
       { color: ColorEnum.Tint7, label: t('colors.grass') },
       { color: ColorEnum.Tint8, label: t('colors.jade') },
       { color: ColorEnum.Tint9, label: t('colors.azure') },
-      ...(!isCallout ? [{ color: ColorEnum.Tint10, label: t('colors.iron') }] : []),
+      ...(!hasNonTransparentBg ? [{ color: ColorEnum.Tint10, label: t('colors.iron') }] : []),
     ];
 
     const freePalette = [
@@ -92,10 +92,10 @@ function Color({ node, onSelectColor }: { node: BlockNode; onSelectColor: () => 
     ];
 
     return [
-      { color: isCallout ? ColorEnum.Tint10 : '', label: t('colors.default') },
+      { color: hasNonTransparentBg ? ColorEnum.Tint10 : '', label: t('colors.default') },
       ...(isPro ? proPalette : freePalette),
     ];
-  }, [isPro, isCallout, t]);
+  }, [isPro, hasNonTransparentBg, t]);
 
   const handlePickColor = useCallback(
     (bgColor: string) => {

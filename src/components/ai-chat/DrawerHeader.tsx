@@ -1,5 +1,5 @@
 import { ReactComponent as DoubleArrowRight } from '@/assets/icons/double_arrow_right.svg';
-import { ReactComponent as ExpandIcon } from '@/assets/icons/expand.svg';
+import { ReactComponent as ExpandIcon } from '@/assets/icons/full_screen.svg';
 import { useAIChatContext } from '@/components/ai-chat/AIChatProvider';
 import { useAppHandlers } from '@/components/app/app.hooks';
 import MoreActions from '@/components/app/header/MoreActions';

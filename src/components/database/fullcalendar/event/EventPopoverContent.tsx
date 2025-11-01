@@ -10,7 +10,7 @@ import { useDuplicateRowDispatch } from '@/application/database-yjs/dispatch';
 import { ReactComponent as CloseIcon } from '@/assets/icons/close.svg';
 import { ReactComponent as DeleteIcon } from '@/assets/icons/delete.svg';
 import { ReactComponent as DuplicateIcon } from '@/assets/icons/duplicate.svg';
-import { ReactComponent as ExpandMoreIcon } from '@/assets/icons/expand.svg';
+import { ReactComponent as ExpandMoreIcon } from '@/assets/icons/full_screen.svg';
 import DeleteRowConfirm from '@/components/database/components/database-row/DeleteRowConfirm';
 import RowPropertyPrimitive from '@/components/database/components/database-row/RowPropertyPrimitive';
 import { EventTitle } from '@/components/database/fullcalendar/event/EventTitle';

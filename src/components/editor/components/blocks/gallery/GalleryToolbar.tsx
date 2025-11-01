@@ -1,4 +1,4 @@
-import { ReactComponent as PreviewIcon } from '@/assets/icons/expand.svg';
+import { ReactComponent as PreviewIcon } from '@/assets/icons/full_screen.svg';
 import { ReactComponent as CopyLinkIcon } from '@/assets/icons/link.svg';
 import { ReactComponent as DownloadIcon } from '@/assets/icons/save_as.svg';
 import { IconButton, Tooltip } from '@mui/material';

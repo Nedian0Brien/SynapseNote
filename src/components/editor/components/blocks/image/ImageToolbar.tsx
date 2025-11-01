@@ -8,7 +8,7 @@ import { YjsEditor } from '@/application/slate-yjs';
 import { CustomEditor } from '@/application/slate-yjs/command';
 import { ReactComponent as CopyIcon } from '@/assets/icons/copy.svg';
 import { ReactComponent as DeleteIcon } from '@/assets/icons/delete.svg';
-import { ReactComponent as PreviewIcon } from '@/assets/icons/expand.svg';
+import { ReactComponent as PreviewIcon } from '@/assets/icons/full_screen.svg';
 import ActionButton from '@/components/editor/components/toolbar/selection-toolbar/actions/ActionButton';
 import Align from '@/components/editor/components/toolbar/selection-toolbar/actions/Align';
 import { ImageBlockNode } from '@/components/editor/editor.type';

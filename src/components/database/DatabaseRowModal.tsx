@@ -8,7 +8,7 @@ import { useDeleteRowDispatch, useDuplicateRowDispatch } from '@/application/dat
 import { ReactComponent as ArrowLeftIcon } from '@/assets/icons/arrow_left.svg';
 import { ReactComponent as DeleteIcon } from '@/assets/icons/delete.svg';
 import { ReactComponent as DuplicateIcon } from '@/assets/icons/duplicate.svg';
-import { ReactComponent as ExpandIcon } from '@/assets/icons/expand.svg';
+import { ReactComponent as ExpandIcon } from '@/assets/icons/full_screen.svg';
 import { ReactComponent as MoreIcon } from '@/assets/icons/more.svg';
 import { AFScroller } from '@/components/_shared/scroller';
 import { DatabaseRow } from '@/components/database/DatabaseRow';

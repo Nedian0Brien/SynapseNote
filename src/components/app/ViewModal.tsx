@@ -8,7 +8,7 @@ import { APP_EVENTS } from '@/application/constants';
 import { UIVariant, ViewComponentProps, ViewLayout, ViewMetaProps, YDoc } from '@/application/types';
 import { ReactComponent as ArrowDownIcon } from '@/assets/icons/alt_arrow_down.svg';
 import { ReactComponent as CloseIcon } from '@/assets/icons/close.svg';
-import { ReactComponent as ExpandIcon } from '@/assets/icons/expand.svg';
+import { ReactComponent as ExpandIcon } from '@/assets/icons/full_screen.svg';
 import { findAncestors, findView } from '@/components/_shared/outline/utils';
 import SpaceIcon from '@/components/_shared/view-icon/SpaceIcon';
 import { useAppHandlers, useAppOutline, useCurrentWorkspaceId } from '@/components/app/app.hooks';
