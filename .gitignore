@@ -34,5 +34,6 @@ coverage
 
 cypress/snapshots/**/__diff_output__/
 cypress/screenshots
+cypress/videos
 
 .serena
