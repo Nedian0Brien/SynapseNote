@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 
 import { APP_EVENTS } from '@/application/constants';
 import { UIVariant, ViewLayout, ViewMetaProps, YDoc } from '@/application/types';
+import { AppError, determineErrorType } from '@/application/utils/error-utils';
 import Help from '@/components/_shared/help/Help';
 import { findView } from '@/components/_shared/outline/utils';
 import { AIChat } from '@/components/ai-chat';
@@ -62,18 +63,20 @@ function AppPage() {
 
   const layout = view?.layout;
   const [doc, setDoc] = React.useState<YDoc | undefined>(undefined);
-  const [notFound, setNotFound] = React.useState(false);
+  const [error, setError] = React.useState<AppError | null>(null);
   const loadPageDoc = useCallback(
     async (id: string) => {
-      setNotFound(false);
+      setError(null);
       setDoc(undefined);
       try {
         const doc = await loadView(id, false, true);
 
         setDoc(doc);
       } catch (e) {
-        setNotFound(true);
-        console.error(e);
+        const appError = determineErrorType(e);
+
+        setError(appError);
+        console.error('[AppPage] Error loading view:', appError);
       }
     },
     [loadView]
@@ -88,7 +91,7 @@ function AppPage() {
   useEffect(() => {
     if (layout === ViewLayout.AIChat) {
       setDoc(undefined);
-      setNotFound(false);
+      setError(null);
     }
   }, [layout]);
 
@@ -214,7 +217,7 @@ function AppPage() {
     <div ref={ref} className={'relative h-full w-full'}>
       {helmet}
 
-      {notFound ? <RecordNotFound viewId={viewId} /> : <div className={'h-full w-full'}>{viewDom}</div>}
+      {error ? <RecordNotFound viewId={viewId} error={error} /> : <div className={'h-full w-full'}>{viewDom}</div>}
       {view && <Help />}
     </div>
   );

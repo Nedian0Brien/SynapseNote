@@ -3510,6 +3510,46 @@
       "description": "This might be due to a network issue or a temporary server error. Please check your internet connection or try again later.\n\nIf the problem persists, contact <support/>.",
       "retry": "Retry"
     },
+    "pageNotFound": {
+      "title": "Page not found",
+      "description": "This page doesn't exist or has been deleted. It may have been moved or removed by the owner.",
+      "goToHomepage": "Go to homepage"
+    },
+    "unauthorized": {
+      "title": "Sign in required",
+      "description": "You need to sign in to access this page. Please sign in with your AppFlowy account.",
+      "signIn": "Sign in"
+    },
+    "forbidden": {
+      "title": "Access denied",
+      "description": "You don't have permission to view this page. Contact the page owner to request access.",
+      "requestAccess": "Request access"
+    },
+    "serverError": {
+      "title": "Server error",
+      "description": "Our servers are experiencing issues. Please try again in a few moments.",
+      "retry": "Try again"
+    },
+    "networkError": {
+      "title": "Connection error",
+      "description": "Unable to connect to AppFlowy. Please check your internet connection and try again.",
+      "retry": "Retry connection"
+    },
+    "invalidLink": {
+      "title": "Invalid link",
+      "description": "This link is invalid or has expired. Please request a new invitation link from the sender.",
+      "goToHomepage": "Go to homepage"
+    },
+    "alreadyJoined": {
+      "title": "Already a member",
+      "description": "You're already a member of this workspace.",
+      "goToWorkspace": "Go to workspace"
+    },
+    "rateLimited": {
+      "title": "Too many requests",
+      "description": "You've made too many requests. Please wait a moment and try again.",
+      "retry": "Try again later"
+    },
     "asGuest": {
       "title": "You can now collaborate with others on\n<page/>",
       "viewPage": "View page",
