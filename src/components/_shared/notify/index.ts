@@ -1,20 +1,22 @@
-import { InfoProps } from '@/components/_shared/notify/InfoSnackbar';
 import React, { lazy } from 'react';
+import { toast } from 'sonner';
+
+import { InfoProps } from '@/components/_shared/notify/InfoSnackbar';
 
 export const InfoSnackbar = lazy(() => import('./InfoSnackbar'));
 
 export const notify = {
   success: (message: string | React.ReactNode) => {
-    window.toast.success(message);
+    toast.success(message);
   },
   error: (message: string | React.ReactNode) => {
-    window.toast.error(message);
+    toast.error(message);
   },
   default: (message: string | React.ReactNode) => {
-    window.toast.default(message);
+    toast(message);
   },
   warning: (message: string | React.ReactNode) => {
-    window.toast.warning(message);
+    toast.warning(message);
   },
   info: (props: InfoProps) => {
     window.toast.info({
@@ -27,7 +29,7 @@ export const notify = {
     });
   },
   clear: () => {
-    window.toast.clear();
+    toast.dismiss();
   },
 };
 

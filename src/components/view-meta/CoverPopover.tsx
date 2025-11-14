@@ -1,53 +1,66 @@
-import { CoverType, ViewMetaCover } from '@/application/types';
+import { CoverType, SubscriptionPlan, ViewMetaCover } from '@/application/types';
 import { useAppHandlers, useAppViewId, useOpenModalViewId } from '@/components/app/app.hooks';
-import React, { useMemo } from 'react';
-import { PopoverOrigin, PopoverProps } from '@mui/material/Popover';
-import { EmbedLink, Unsplash, UploadTabs, TabOption, TAB_KEY, UploadImage } from '@/components/_shared/image-upload';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { EmbedLink, Unsplash, UploadPopover, TabOption, TAB_KEY, UploadImage } from '@/components/_shared/image-upload';
 import { useTranslation } from 'react-i18next';
 import Colors from './CoverColors';
+import { GradientEnum } from '@/utils/color';
 
-const initialOrigin: {
-  anchorOrigin: PopoverOrigin;
-  transformOrigin: PopoverOrigin;
-} = {
-  anchorOrigin: {
-    vertical: 'bottom',
-    horizontal: 'center',
-  },
-  transformOrigin: {
-    vertical: -20,
-    horizontal: 'center',
-  },
-};
-
-function CoverPopover ({
-  anchorPosition,
+function CoverPopover({
+  coverValue,
   open,
-  onClose,
+  onOpenChange,
   onUpdateCover,
+  children,
 }: {
-  anchorPosition?: PopoverProps['anchorPosition'];
+  coverValue?: string;
   open: boolean;
-  onClose: () => void;
+  onOpenChange: (open: boolean) => void;
   onUpdateCover?: (cover: ViewMetaCover) => void;
+  children: React.ReactNode;
 }) {
   const { t } = useTranslation();
-  const {
-    uploadFile,
-  } = useAppHandlers();
+  const { uploadFile, getSubscriptions } = useAppHandlers();
   const appViewId = useAppViewId();
   const modalViewId = useOpenModalViewId();
   const viewId = modalViewId || appViewId;
+
+  const [activeSubscriptionPlan, setActiveSubscriptionPlan] = useState<SubscriptionPlan | null>(null);
+  const isPro = activeSubscriptionPlan === SubscriptionPlan.Pro;
+
+  const loadSubscription = useCallback(async () => {
+    try {
+      const subscriptions = await getSubscriptions?.();
+
+      if (!subscriptions || subscriptions.length === 0) {
+        setActiveSubscriptionPlan(SubscriptionPlan.Free);
+        return;
+      }
+
+      const subscription = subscriptions[0];
+
+      setActiveSubscriptionPlan(subscription?.plan || SubscriptionPlan.Free);
+    } catch (e) {
+      setActiveSubscriptionPlan(SubscriptionPlan.Free);
+      console.error(e);
+    }
+  }, [getSubscriptions]);
+
+  useEffect(() => {
+    void loadSubscription();
+  }, [loadSubscription]);
 
   const tabOptions: TabOption[] = useMemo(() => {
     return [
       {
         label: t('document.plugins.cover.colors'),
         key: TAB_KEY.Colors,
-        Component: Colors,
+        Component: (props) => <Colors {...props} isPro={isPro} selectedColor={coverValue} />,
         onDone: (value: string) => {
+          const isGradient = Object.values(GradientEnum).includes(value as GradientEnum);
+
           onUpdateCover?.({
-            type: CoverType.NormalColor,
+            type: isGradient ? CoverType.GradientColor : CoverType.NormalColor,
             value,
           });
         },
@@ -65,7 +78,7 @@ function CoverPopover ({
             type: CoverType.CustomImage,
             value,
           });
-          onClose();
+          onOpenChange(false);
         },
       },
       {
@@ -77,7 +90,7 @@ function CoverPopover ({
             type: CoverType.CustomImage,
             value,
           });
-          onClose();
+          onOpenChange(false);
         },
       },
       {
@@ -92,25 +105,12 @@ function CoverPopover ({
         },
       },
     ];
-  }, [onClose, onUpdateCover, t, uploadFile, viewId]);
+  }, [coverValue, isPro, onOpenChange, onUpdateCover, t, uploadFile, viewId]);
 
   return (
-    <UploadTabs
-      popoverProps={{
-        anchorPosition,
-        open,
-        onClose,
-        ...initialOrigin,
-        anchorReference: 'anchorPosition',
-        sx: {
-          '& .MuiPaper-root': {
-            margin: '10px 0',
-          },
-        },
-      }}
-      containerStyle={{ width: 433, maxHeight: 500 }}
-      tabOptions={tabOptions}
-    />
+    <UploadPopover open={open} onOpenChange={onOpenChange} tabOptions={tabOptions}>
+      {children}
+    </UploadPopover>
   );
 }
 

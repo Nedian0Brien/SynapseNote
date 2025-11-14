@@ -1,7 +1,7 @@
 import { BlockType } from '@/application/types';
 import { EditorElementProps, SimpleTableNode, SimpleTableRowNode } from '@/components/editor/editor.type';
 import { renderColor } from '@/utils/color';
-import React, { forwardRef, useMemo } from 'react';
+import { forwardRef, useMemo } from 'react';
 import { Editor, Element, NodeEntry } from 'slate';
 import { ReactEditor, useSlate } from 'slate-react';
 

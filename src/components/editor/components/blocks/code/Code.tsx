@@ -1,15 +1,15 @@
 import { useCodeBlock } from '@/components/editor/components/blocks/code/Code.hooks';
-import CodeToolbar from './CodeToolbar';
 import { CodeNode, EditorElementProps } from '@/components/editor/editor.type';
-import React, { forwardRef, useState, lazy, Suspense } from 'react';
-import { ReactEditor, useReadOnly, useSlateStatic } from 'slate-react';
-import LanguageSelect from './SelectLanguage';
+import { forwardRef, lazy, Suspense, useState } from 'react';
 import { Element } from 'slate';
+import { ReactEditor, useReadOnly, useSlateStatic } from 'slate-react';
+import CodeToolbar from './CodeToolbar';
+import LanguageSelect from './SelectLanguage';
 
 const MermaidChat = lazy(() => import('./MermaidChat'));
 
-export const CodeBlock =
-  forwardRef<HTMLDivElement, EditorElementProps<CodeNode>>(({ node, children, ...attributes }, ref) => {
+export const CodeBlock = forwardRef<HTMLDivElement, EditorElementProps<CodeNode>>(
+  ({ node, children, ...attributes }, ref) => {
     const { language, handleChangeLanguage } = useCodeBlock(node);
     const [showToolbar, setShowToolbar] = useState(false);
 
@@ -18,51 +18,52 @@ export const CodeBlock =
 
     return (
       <div
-        className={'relative w-full my-0.5'}
+        className={'relative my-0.5 w-full'}
         onMouseEnter={() => {
           setShowToolbar(true);
         }}
         onMouseLeave={() => setShowToolbar(false)}
       >
-        {<div
-          contentEditable={false}
-          style={{
-            visibility: showToolbar ? 'visible' : 'hidden',
-          }}
-          className={'absolute flex h-12 w-full select-none items-center px-2'}
-        >
-          <LanguageSelect
-            readOnly={readOnly}
-            language={language}
-            onChangeLanguage={handleChangeLanguage}
-            onClose={() => {
-              window.getSelection()?.removeAllRanges();
-              ReactEditor.focus(editor);
-              const path = ReactEditor.findPath(editor, node);
-
-              editor.select(editor.start(path));
+        {
+          <div
+            contentEditable={false}
+            style={{
+              visibility: showToolbar ? 'visible' : 'hidden',
             }}
-          />
-        </div>}
+            className={'absolute flex h-12 w-full select-none items-center px-2'}
+          >
+            <LanguageSelect
+              readOnly={readOnly}
+              language={language}
+              onChangeLanguage={handleChangeLanguage}
+              onClose={() => {
+                window.getSelection()?.removeAllRanges();
+                ReactEditor.focus(editor);
+                const path = ReactEditor.findPath(editor, node);
 
-        <div
-          {...attributes}
-          ref={ref}
-          className={`${attributes.className ?? ''} flex w-full`}
-        >
+                editor.select(editor.start(path));
+              }}
+            />
+          </div>
+        }
+
+        <div {...attributes} ref={ref} className={`${attributes.className ?? ''} flex w-full`}>
           <pre
             spellCheck={false}
-            className={`flex w-full flex-col overflow-auto rounded-[8px]  appflowy-scroller border border-line-divider bg-fill-list-active p-5 pt-12`}
+            className={`appflowy-scroller flex w-full flex-col overflow-auto  rounded-[8px] border border-border-primary bg-fill-list-active p-5 pt-12`}
           >
             <code>{children}</code>
-            {language === 'mermaid' && <Suspense><MermaidChat
-              node={node}
-            /></Suspense>}
+            {language === 'mermaid' && (
+              <Suspense>
+                <MermaidChat node={node} />
+              </Suspense>
+            )}
           </pre>
         </div>
 
         {showToolbar && <CodeToolbar node={node} />}
       </div>
     );
-  });
+  }
+);
 export default CodeBlock;

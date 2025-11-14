@@ -1,14 +1,35 @@
+import EventEmitter from 'events';
+
+import { AxiosInstance } from 'axios';
+import { createContext, useContext } from 'react';
+
 import {
+  CreateFolderViewPayload,
   CreateRowDoc,
+  DatabaseRelations,
+  DateFormat,
+  GenerateAISummaryRowPayload,
+  GenerateAITranslateRowPayload,
+  LoadDatabasePrompts,
   LoadView,
-  LoadViewMeta, RowId,
+  LoadViewMeta,
+  RowId,
+  Subscription,
+  TestDatabasePromptConfig,
+  TimeFormat,
+  UIVariant,
+  UpdatePagePayload,
+  View,
   YDatabase,
   YDatabaseRow,
   YDoc,
   YjsDatabaseKey,
   YjsEditorKey,
+  YSharedRoot,
 } from '@/application/types';
-import { createContext, useContext } from 'react';
+import { CalendarViewType } from '@/components/database/fullcalendar/types';
+import { DefaultTimeSetting, MetadataKey } from '@/application/user-metadata';
+import { useCurrentUser } from '@/components/main/app.hooks';
 
 export interface DatabaseContextState {
   readOnly: boolean;
@@ -17,16 +38,39 @@ export interface DatabaseContextState {
   viewId: string;
   rowDocMap: Record<RowId, YDoc> | null;
   isDatabaseRowPage?: boolean;
-  scrollLeft?: number;
+  paddingStart?: number;
+  paddingEnd?: number;
   isDocumentBlock?: boolean;
-  navigateToRow?: (rowId: string) => void;
+  // use different view id to navigate to row
+  navigateToRow?: (rowId: string, viewId?: string) => void;
   loadView?: LoadView;
   createRowDoc?: CreateRowDoc;
   loadViewMeta?: LoadViewMeta;
   navigateToView?: (viewId: string, blockId?: string) => Promise<void>;
-  onRendered?: (height: number) => void;
+  onRendered?: () => void;
   showActions?: boolean;
   workspaceId: string;
+  createFolderView?: (payload: CreateFolderViewPayload) => Promise<string>;
+  updatePage?: (viewId: string, payload: UpdatePagePayload) => Promise<void>;
+  deletePage?: (viewId: string) => Promise<void>;
+  generateAISummaryForRow?: (payload: GenerateAISummaryRowPayload) => Promise<string>;
+  generateAITranslateForRow?: (payload: GenerateAITranslateRowPayload) => Promise<string>;
+  loadDatabaseRelations?: () => Promise<DatabaseRelations | undefined>;
+  loadViews?: () => Promise<View[]>;
+  uploadFile?: (file: File) => Promise<string>;
+  createOrphanedView?: (payload: { document_id: string }) => Promise<void>;
+  loadDatabasePrompts?: LoadDatabasePrompts;
+  testDatabasePromptConfig?: TestDatabasePromptConfig;
+  requestInstance?: AxiosInstance | null;
+  checkIfRowDocumentExists?: (documentId: string) => Promise<void>;
+  eventEmitter?: EventEmitter;
+  getSubscriptions?: (() => Promise<Subscription[]>) | undefined;
+  getViewIdFromDatabaseId?: (databaseId: string) => Promise<string | null>;
+  variant?: UIVariant;
+  // Calendar view type map: viewId -> CalendarViewType
+  calendarViewTypeMap?: Map<string, CalendarViewType>;
+  setCalendarViewType?: (viewId: string, viewType: CalendarViewType) => void;
+  openPageModalViewId?: string;
 }
 
 export const DatabaseContext = createContext<DatabaseContextState | null>(null);
@@ -34,11 +78,25 @@ export const DatabaseContext = createContext<DatabaseContextState | null>(null);
 export const useDatabaseContext = () => {
   const context = useContext(DatabaseContext);
 
-  if(!context) {
+  if (!context) {
     throw new Error('DatabaseContext is not provided');
   }
 
   return context;
+};
+
+export const useDocGuid = () => {
+  return useDatabaseContext().databaseDoc.guid;
+};
+
+export const useSharedRoot = () => {
+  return useDatabaseContext().databaseDoc?.getMap(YjsEditorKey.data_section) as YSharedRoot;
+};
+
+export const useCreateRow = () => {
+  const context = useDatabaseContext();
+
+  return context.createRowDoc;
 };
 
 export const useDatabase = () => {
@@ -80,7 +138,7 @@ export const useDatabaseViewId = () => {
 export const useReadOnly = () => {
   const context = useDatabaseContext();
 
-  return context?.readOnly || true;
+  return context?.readOnly === undefined ? true : context?.readOnly;
 };
 
 export const useDatabaseView = () => {
@@ -101,3 +159,14 @@ export const useDatabaseSelectedView = (viewId: string) => {
 
   return database.get(YjsDatabaseKey.views).get(viewId);
 };
+
+export const useDefaultTimeSetting = (): DefaultTimeSetting => {
+  const currentUser = useCurrentUser();
+
+  
+  return {
+    dateFormat: currentUser?.metadata?.[MetadataKey.DateFormat] as DateFormat ?? DateFormat.Local,
+    timeFormat: currentUser?.metadata?.[MetadataKey.TimeFormat] as TimeFormat ?? TimeFormat.TwelveHour,
+    startWeekOn: currentUser?.metadata?.[MetadataKey.StartWeekOn] as number ?? 0,
+  }
+}

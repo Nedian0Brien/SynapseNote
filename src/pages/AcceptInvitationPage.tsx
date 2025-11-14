@@ -1,168 +1,192 @@
+import { HTMLAttributes, useCallback, useEffect, useMemo, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
+import { toast } from 'sonner';
+
+import { ERROR_CODE } from '@/application/constants';
 import { Invitation } from '@/application/types';
-import { ReactComponent as AppflowyLogo } from '@/assets/icons/appflowy.svg';
-import ChangeAccount from '@/components/_shared/modal/ChangeAccount';
-import { notify } from '@/components/_shared/notify';
-import { getAvatar } from '@/components/_shared/view-icon/utils';
-import { AFConfigContext, useCurrentUser, useService } from '@/components/main/app.hooks';
-import EmailOutlined from '@mui/icons-material/EmailOutlined';
-import { Avatar, Button, Divider } from '@mui/material';
-import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { ReactComponent as SuccessLogo } from '@/assets/icons/success_logo.svg';
+import { useCurrentUser, useService } from '@/components/main/app.hooks';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Progress } from '@/components/ui/progress';
+import { ErrorPage } from '@/components/_shared/landing-page/ErrorPage';
+import { InvalidLink } from '@/components/_shared/landing-page/InvalidLink';
+import LandingPage from '@/components/_shared/landing-page/LandingPage';
+import { NotInvitationAccount } from '@/components/_shared/landing-page/NotInvitationAccount';
+import { cn } from '@/lib/utils';
 
 function AcceptInvitationPage() {
-  const isAuthenticated = useContext(AFConfigContext)?.isAuthenticated;
   const currentUser = useCurrentUser();
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const invitationId = searchParams.get('invited_id');
   const service = useService();
   const [invitation, setInvitation] = useState<Invitation>();
-  const [modalOpened, setModalOpened] = useState(false);
   const { t } = useTranslation();
+  const [hasJoined, setHasJoined] = useState(false);
+  const [isInValid, setIsInValid] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [notInvitee, setNotInvitee] = useState(false);
+  const [isError, setIsError] = useState(false);
+
+  const loadInvitation = useCallback(async () => {
+    if (!service) return;
+    if (!invitationId) {
+      setIsError(true);
+      return;
+    }
+
+    try {
+      const res = await service.getInvitation(invitationId);
+
+      if (res.status === 'Accepted') {
+        setHasJoined(true);
+      }
+
+      setInvitation(res);
+      // eslint-disable-next-line
+    } catch (e: any) {
+      if (e.code === ERROR_CODE.NOT_INVITEE_OF_INVITATION) {
+        setNotInvitee(true);
+        return;
+      }
+
+      if (e.code === ERROR_CODE.INVALID_LINK) {
+        setIsInValid(true);
+        return;
+      }
+
+      setIsError(true);
+    }
+  }, [invitationId, service]);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login?redirectTo=' + encodeURIComponent(window.location.href));
+    void loadInvitation();
+  }, [loadInvitation]);
+
+  const workspace = useMemo(() => {
+    if (!invitation) return;
+    return {
+      id: invitation.workspace_id,
+      name: invitation.workspace_name,
+      icon: invitation.workspace_icon,
+      memberCount: invitation.member_count,
+      databaseStorageId: '',
+      createdAt: '',
+    };
+  }, [invitation]);
+
+  const whoSentInvitation = useMemo(() => {
+    if (!invitation) return '';
+
+    return invitation.inviter_name;
+  }, [invitation]);
+
+  const handleJoinWorkspace = useCallback(async () => {
+    if (!invitationId) return;
+    if (invitation?.status === 'Accepted') {
+      toast.warning(t('invitation.alreadyAccepted'));
+      setHasJoined(true);
+      return;
     }
-  }, [isAuthenticated, navigate]);
 
-  const loadInvitation = useCallback(
-    async (invitationId: string) => {
-      if (!service) return;
-      try {
-        const res = await service.getInvitation(invitationId);
-
-        if (res.status === 'Accepted') {
-          notify.warning(t('invitation.alreadyAccepted'));
-        }
-
-        setInvitation(res);
-        // eslint-disable-next-line
-      } catch (e: any) {
-        setModalOpened(true);
+    try {
+      setLoading(true);
+      await service?.acceptInvitation(invitationId);
+      toast.success(t('invitation.successMessage'));
+      window.open(`/app/${invitation?.workspace_id}`, '_self');
+      setHasJoined(true);
+      // eslint-disable-next-line
+    } catch (e: any) {
+      if (e.code === ERROR_CODE.INVALID_LINK) {
+        setIsInValid(true);
+        return;
       }
+
+      if (e.code === ERROR_CODE.NOT_INVITEE_OF_INVITATION) {
+        setNotInvitee(true);
+        return;
+      }
+
+      setIsError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [invitationId, invitation, service, t]);
+
+  const AvatarLogo = useCallback(
+    (props: HTMLAttributes<HTMLDivElement>) => {
+      return (
+        <Avatar className={cn(props.className)} variant='default' shape={'square'}>
+          <AvatarImage src={workspace?.icon || ''} alt={''} />
+          <AvatarFallback className='text-2xl'>{workspace?.name}</AvatarFallback>
+        </Avatar>
+      );
     },
-    [service, t]
+    [workspace]
   );
 
-  useEffect(() => {
-    if (!invitationId) return;
-    void loadInvitation(invitationId);
-  }, [loadInvitation, invitationId]);
+  if (isInValid) {
+    return <InvalidLink />;
+  }
 
-  const workspaceIconProps = useMemo(() => {
-    if (!invitation) return {};
+  if (notInvitee) {
+    return <NotInvitationAccount />;
+  }
 
-    return getAvatar({
-      icon: invitation.workspace_icon,
-      name: invitation.workspace_name,
-    });
-  }, [invitation]);
-  const url = useMemo(() => {
-    return window.location.href;
-  }, []);
+  if (isError) {
+    return <ErrorPage onRetry={handleJoinWorkspace} />;
+  }
 
-  const inviterIconProps = useMemo(() => {
-    if (!invitation) return {};
-
-    return getAvatar({
-      icon: invitation.inviter_icon,
-      name: invitation.inviter_name,
-    });
-  }, [invitation]);
+  if (hasJoined) {
+    return (
+      <LandingPage
+        Logo={SuccessLogo}
+        workspace={workspace}
+        title={
+          <Trans
+            i18nKey='landingPage.inviteMember.hasJoined'
+            components={{ workspace: <span className='font-bold'>{workspace?.name}</span> }}
+          />
+        }
+        secondaryAction={{
+          onClick: () => window.open('/app', '_self'),
+          label: t('landingPage.backToHome'),
+        }}
+      />
+    );
+  }
 
   return (
-    <div
-      className={
-        'appflowy-scroller flex h-screen w-screen flex-col items-center gap-12 overflow-y-auto overflow-x-hidden bg-bg-base px-6 text-text-title max-md:gap-4'
-      }
-    >
-      <div
-        onClick={() => {
-          navigate('/app');
-        }}
-        className={
-          'sticky flex h-20 w-full cursor-pointer items-center justify-between max-md:h-32 max-md:justify-center'
-        }
-      >
-        <AppflowyLogo className={'h-12 w-32 max-md:w-52'} />
-      </div>
-      <div className={'flex w-full max-w-[560px] flex-col items-center gap-6 text-center'}>
-        <Avatar
-          className={'h-20 w-20 rounded-[16px] border border-text-title text-[40px]'}
-          {...workspaceIconProps}
-          variant='rounded'
+    <LandingPage
+      Logo={AvatarLogo}
+      title={
+        <Trans
+          i18nKey='landingPage.inviteMember.title'
+          components={{ workspace: <span className='font-bold'>{workspace?.name}</span> }}
         />
-        <div
-          className={'whitespace-pre-wrap break-words px-4 text-center text-[40px] leading-[107%] max-sm:text-[24px]'}
-        >
-          {t('invitation.join')} <span className={'font-semibold'}>{invitation?.workspace_name}</span>{' '}
-          {t('invitation.on')} <span className={'whitespace-nowrap'}>AppFlowy</span>
-        </div>
-        <Divider className={'w-[400px] max-w-full'} />
-        <div className={'flex items-center justify-center gap-4 py-1'}>
-          <Avatar
-            className={'h-20 w-20 border border-line-divider text-[40px]'}
-            {...inviterIconProps}
-            variant='circular'
-          />
-          <div className={'flex flex-col items-start gap-1'}>
-            <div className={'text-text-title'}>{t('invitation.invitedBy')}</div>
-            <div className={'font-semibold text-text-title'}>{invitation?.inviter_name}</div>
-            <div className={'text-sm text-text-caption'}>
-              {t('invitation.membersCount', {
-                count: invitation?.member_count || 0,
-              })}
-            </div>
-          </div>
-        </div>
-        <div className={'w-[400px] max-w-full text-sm text-text-title'}>{t('invitation.tip')}</div>
-        <div
-          className={
-            'flex w-[400px] max-w-full items-center gap-2 border-b border-line-border bg-bg-body py-2 px-4 max-sm:rounded-[8px] max-sm:border'
-          }
-        >
-          <EmailOutlined />
-          {currentUser?.email}
-        </div>
-
-        <Button
-          variant={'contained'}
-          color={'primary'}
-          size={'large'}
-          className={'w-[400px] max-w-full rounded-[16px] py-5 px-10 text-[24px]'}
-          onClick={async () => {
-            if (!invitationId) return;
-            if (invitation?.status === 'Accepted') {
-              notify.warning(t('invitation.alreadyAccepted'));
-              return;
-            }
-
-            try {
-              await service?.acceptInvitation(invitationId);
-              notify.info({
-                type: 'success',
-                title: t('invitation.success'),
-                message: t('invitation.successMessage'),
-                okText: t('invitation.openWorkspace'),
-
-                onOk: () => {
-                  const origin = window.location.origin;
-
-                  window.open(`${origin}/app/${invitation?.workspace_id}`, '_current');
-                },
-              });
-            } catch (e) {
-              notify.error('Failed to join workspace');
-            }
+      }
+      description={
+        <Trans
+          i18nKey='landingPage.inviteMember.description'
+          components={{
+            who: <span className='font-bold'>{whoSentInvitation}</span>,
+            email: <span className='font-bold'>{currentUser?.email}</span>,
           }}
-        >
-          {t('invitation.joinWorkspace')}
-        </Button>
-      </div>
-      {isAuthenticated && <ChangeAccount redirectTo={url} setModalOpened={setModalOpened} modalOpened={modalOpened} />}
-    </div>
+        />
+      }
+      primaryAction={{
+        onClick: handleJoinWorkspace,
+        label: loading ? (
+          <span className='flex items-center gap-2'>
+            <Progress />
+            {t('landingPage.inviteMember.joinWorkspace')}
+          </span>
+        ) : (
+          t('landingPage.inviteMember.joinWorkspace')
+        ),
+        loading,
+      }}
+    />
   );
 }
 

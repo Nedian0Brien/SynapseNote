@@ -1,52 +1,64 @@
-import {
-  Invitation,
-  DuplicatePublishView,
-  FolderView,
-  User,
-  UserWorkspaceInfo,
-  View,
-  Workspace,
-  YDoc,
-  DatabaseRelations,
-  GetRequestAccessInfoResponse,
-  Subscriptions,
-  SubscriptionPlan,
-  SubscriptionInterval,
-  Types,
-  UpdatePagePayload,
-  CreatePagePayload,
-  CreateSpacePayload,
-  UpdateSpacePayload,
-  WorkspaceMember,
-  QuickNoteEditorData,
-  QuickNote,
-  Subscription,
-  CreateWorkspacePayload,
-  UpdateWorkspacePayload,
-  PublishViewPayload,
-  UploadPublishNamespacePayload, UpdatePublishConfigPayload,
-} from '@/application/types';
+import { RepeatedChatMessage } from '@/components/chat';
+import { AxiosInstance } from 'axios';
+
 import { GlobalComment, Reaction } from '@/application/comment.type';
 import { ViewMeta } from '@/application/db/tables/view_metas';
 import {
   Template,
   TemplateCategory,
   TemplateCategoryFormValues,
-  TemplateCreator, TemplateCreatorFormValues, TemplateSummary,
+  TemplateCreator,
+  TemplateCreatorFormValues,
+  TemplateSummary,
   UploadTemplatePayload,
 } from '@/application/template.type';
-import { AxiosInstance } from 'axios';
-import { RepeatedChatMessage } from '@appflowyinc/ai-chat';
+import {
+  AccessLevel,
+  AuthProvider,
+  CreateFolderViewPayload,
+  CreatePagePayload,
+  CreateSpacePayload,
+  CreateWorkspacePayload,
+  DatabaseRelations,
+  DuplicatePublishView,
+  FolderView,
+  GenerateAISummaryRowPayload,
+  GenerateAITranslateRowPayload,
+  GetRequestAccessInfoResponse,
+  GuestConversionCodeInfo,
+  GuestInvitation,
+  Invitation,
+  IPeopleWithAccessType,
+  MentionablePerson,
+  PublishViewPayload,
+  QuickNote,
+  QuickNoteEditorData,
+  Subscription,
+  SubscriptionInterval,
+  SubscriptionPlan,
+  Subscriptions,
+  UpdatePagePayload,
+  UpdatePublishConfigPayload,
+  UpdateSpacePayload,
+  UpdateWorkspacePayload,
+  UploadPublishNamespacePayload,
+  User,
+  UserWorkspaceInfo,
+  View,
+  ViewIconType,
+  Workspace,
+  WorkspaceMember,
+  YDoc,
+} from '@/application/types';
 
-export type AFService =
-  PublishService
-  & AppService
-  & WorkspaceService
-  & TemplateService
-  & QuickNoteService
-  & AIChatService
-  & {
-    getClientId: () => string;
+export type AFService = PublishService &
+  AppService &
+  WorkspaceService &
+  TemplateService &
+  QuickNoteService &
+  AIChatService & {
+    getClientId: () => number;
+    getDeviceId: () => string;
     getAxiosInstance: () => AxiosInstance | null;
   };
 
@@ -69,12 +81,24 @@ export interface WorkspaceService {
   getWorkspaceMembers: (workspaceId: string) => Promise<WorkspaceMember[]>;
   inviteMembers: (workspaceId: string, emails: string[]) => Promise<void>;
   searchWorkspace: (workspaceId: string, searchTerm: string) => Promise<string[]>;
+  getGuestInvitation: (workspaceId: string, code: string) => Promise<GuestInvitation>;
+  acceptGuestInvitation: (workspaceId: string, code: string) => Promise<void>;
+  getGuestToMemberConversionInfo: (workspaceId: string, code: string) => Promise<GuestConversionCodeInfo>;
+  approveTurnGuestToMember: (workspaceId: string, code: string) => Promise<void>;
+  getMentionableUsers: (workspaceId: string) => Promise<MentionablePerson[]>;
+  addRecentPages: (workspaceId: string, viewIds: string[]) => Promise<void>;
+  getShareDetail: (workspaceId: string, viewId: string, ancestorViewIds: string[]) => Promise<{
+    view_id: string;
+    shared_with: IPeopleWithAccessType[];
+  }>;
+  sharePageTo: (workspaceId: string, viewId: string, emails: string[], accessLevel?: AccessLevel) => Promise<void>;
+  revokeAccess: (workspaceId: string, viewId: string, emails: string[]) => Promise<void>;
+  turnIntoMember: (workspaceId: string, email: string) => Promise<void>;
+  getShareWithMe: (workspaceId: string) => Promise<View>;
 }
 
 export interface AppService {
-  getPageDoc: (workspaceId: string, viewId: string, errorCallback?: (error: {
-    code: number;
-  }) => void) => Promise<YDoc>;
+  getPageDoc: (workspaceId: string, viewId: string, errorCallback?: (error: { code: number }) => void) => Promise<YDoc>;
   createRowDoc: (rowKey: string) => Promise<YDoc>;
   deleteRowDoc: (rowKey: string) => void;
   getAppDatabaseViewRelations: (workspaceId: string, databaseStorageId: string) => Promise<DatabaseRelations>;
@@ -85,14 +109,24 @@ export interface AppService {
   getAppTrash: (workspaceId: string) => Promise<View[]>;
   loginAuth: (url: string) => Promise<void>;
   signInMagicLink: (params: { email: string; redirectTo: string }) => Promise<void>;
-  signInOTP: (params: { email: string; code: string; redirectTo: string }) => Promise<void>;
+  signInOTP: (params: {
+    email: string;
+    code: string;
+    redirectTo: string;
+    type?: 'magiclink' | 'recovery';
+  }) => Promise<void>;
+  signInWithPassword: (params: { email: string; password: string; redirectTo: string }) => Promise<void>;
+  forgotPassword: (params: { email: string }) => Promise<void>;
+  changePassword: (params: { password: string }) => Promise<void>;
   signInGoogle: (params: { redirectTo: string }) => Promise<void>;
   signInGithub: (params: { redirectTo: string }) => Promise<void>;
   signInDiscord: (params: { redirectTo: string }) => Promise<void>;
   signInApple: (params: { redirectTo: string }) => Promise<void>;
+  getAuthProviders: () => Promise<AuthProvider[]>;
   getWorkspaces: () => Promise<Workspace[]>;
   getWorkspaceFolder: (workspaceId: string) => Promise<FolderView>;
   getCurrentUser: () => Promise<User>;
+  updateUserProfile: (metadata: Record<string, unknown>) => Promise<void>;
   getUserWorkspaceInfo: () => Promise<UserWorkspaceInfo>;
   uploadTemplateAvatar: (file: File) => Promise<string>;
   getInvitation: (invitationId: string) => Promise<Invitation>;
@@ -105,19 +139,24 @@ export interface AppService {
   cancelSubscription: (workspaceId: string, plan: SubscriptionPlan, reason?: string) => Promise<void>;
   getActiveSubscription: (workspaceId: string) => Promise<SubscriptionPlan[]>;
   getWorkspaceSubscriptions: (workspaceId: string) => Promise<Subscription[]>;
-  registerDocUpdate: (doc: YDoc, context: {
-    workspaceId: string, objectId: string, collabType: Types
-  }) => void;
   importFile: (file: File, onProgress: (progress: number) => void) => Promise<void>;
   createSpace: (workspaceId: string, payload: CreateSpacePayload) => Promise<string>;
   updateSpace: (workspaceId: string, payload: UpdateSpacePayload) => Promise<void>;
   addAppPage: (workspaceId: string, parentViewId: string, payload: CreatePagePayload) => Promise<string>;
+  createFolderView: (workspaceId: string, payload: CreateFolderViewPayload) => Promise<string>;
   updateAppPage: (workspaceId: string, viewId: string, data: UpdatePagePayload) => Promise<void>;
+  updateAppPageIcon: (workspaceId: string, viewId: string, icon: { ty: ViewIconType; value: string }) => Promise<void>;
+  updateAppPageName: (workspaceId: string, viewId: string, name: string) => Promise<void>;
   deleteTrash: (workspaceId: string, viewId?: string) => Promise<void>;
   moveToTrash: (workspaceId: string, viewId: string) => Promise<void>;
   restoreFromTrash: (workspaceId: string, viewId?: string) => Promise<void>;
   movePage: (workspaceId: string, viewId: string, parentId: string, prevViewId?: string) => Promise<void>;
-  uploadFile: (workspaceId: string, viewId: string, file: File, onProgress?: (progress: number) => void) => Promise<string>;
+  uploadFile: (
+    workspaceId: string,
+    viewId: string,
+    file: File,
+    onProgress?: (progress: number) => void
+  ) => Promise<string>;
   duplicateAppPage: (workspaceId: string, viewId: string) => Promise<void>;
   joinWorkspaceByInvitationCode: (code: string) => Promise<string>;
   getWorkspaceInfoByInvitationCode: (code: string) => Promise<{
@@ -129,14 +168,21 @@ export interface AppService {
     is_member: boolean;
     member_count: number;
   }>;
+  generateAISummaryForRow: (workspaceId: string, payload: GenerateAISummaryRowPayload) => Promise<string>;
+  generateAITranslateForRow: (workspaceId: string, payload: GenerateAITranslateRowPayload) => Promise<string>;
+  createOrphanedView: (workspaceId: string, payload: { document_id: string }) => Promise<void>;
+  checkIfCollabExists: (workspaceId: string, objectId: string) => Promise<void>;
 }
 
 export interface QuickNoteService {
-  getQuickNoteList: (workspaceId: string, params: {
-    offset?: number;
-    limit?: number;
-    searchTerm?: string;
-  }) => Promise<{
+  getQuickNoteList: (
+    workspaceId: string,
+    params: {
+      offset?: number;
+      limit?: number;
+      searchTerm?: string;
+    }
+  ) => Promise<{
     data: QuickNote[];
     has_more: boolean;
   }>;
@@ -153,10 +199,7 @@ export interface TemplateService {
   createTemplateCreator: (creator: TemplateCreatorFormValues) => Promise<void>;
   deleteTemplateCreator: (creatorId: string) => Promise<void>;
   getTemplateById: (id: string) => Promise<Template>;
-  getTemplates: (params: {
-    categoryId?: string;
-    nameContains?: string;
-  }) => Promise<TemplateSummary[]>;
+  getTemplates: (params: { categoryId?: string; nameContains?: string }) => Promise<TemplateSummary[]>;
   deleteTemplate: (id: string) => Promise<void>;
   createTemplate: (template: UploadTemplatePayload) => Promise<void>;
   updateTemplate: (id: string, template: UploadTemplatePayload) => Promise<void>;
@@ -173,11 +216,11 @@ export interface PublishService {
   getPublishRowDocument: (viewId: string) => Promise<YDoc>;
   getPublishInfo: (viewId: string) => Promise<{
     namespace: string;
-    publishName: string,
-    publisherEmail: string,
-    publishedAt: string,
-    commentEnabled: boolean,
-    duplicateEnabled: boolean,
+    publishName: string;
+    publisherEmail: string;
+    publishedAt: string;
+    commentEnabled: boolean;
+    duplicateEnabled: boolean;
   }>;
   updatePublishConfig: (workspaceId: string, payload: UpdatePublishConfigPayload) => Promise<void>;
   getPublishNamespace: (namespace: string) => Promise<string>;
@@ -194,13 +237,8 @@ export interface PublishService {
   addPublishViewReaction: (viewId: string, commentId: string, reactionType: string) => Promise<void>;
   removePublishViewReaction: (viewId: string, commentId: string, reactionType: string) => Promise<void>;
   duplicatePublishView: (params: DuplicatePublishView) => Promise<string>;
-
 }
 
 export interface AIChatService {
-  getChatMessages: (
-    workspaceId: string,
-    chatId: string,
-    limit?: number | undefined,
-  ) => Promise<RepeatedChatMessage>;
+  getChatMessages: (workspaceId: string, chatId: string, limit?: number | undefined) => Promise<RepeatedChatMessage>;
 }

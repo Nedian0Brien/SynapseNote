@@ -1,11 +1,11 @@
-import FileDropzone from '@/components/_shared/file-dropzone/FileDropzone';
+import { ReactComponent as CheckIcon } from '@/assets/icons/check_circle.svg';
+import { ReactComponent as DeleteIcon } from '@/assets/icons/delete.svg';
+import { ReactComponent as LinkIcon } from '@/assets/icons/link.svg';
 import { useService } from '@/components/main/app.hooks';
+import FileDropzone from '@/components/_shared/file-dropzone/FileDropzone';
 import { CircularProgress, IconButton, Tooltip } from '@mui/material';
 import React, { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ReactComponent as LinkIcon } from '@/assets/icons/link.svg';
-import { ReactComponent as DeleteIcon } from '@/assets/icons/delete.svg';
-import { ReactComponent as CheckIcon } from '@/assets/icons/check_circle.svg';
 
 function UploadAvatar({ onChange }: { onChange: (url: string) => void }) {
   const { t } = useTranslation();
@@ -51,15 +51,16 @@ function UploadAvatar({ onChange }: { onChange: (url: string) => void }) {
           setFile(files[0]);
           void handleUpload(files[0]);
         }}
+        loading={uploadStatus === 'loading'}
       />
       {file && (
         <div className={'flex items-center gap-2'}>
-          <div className={'aspect-square w-[80px] rounded-xl border border-line-divider'}>
+          <div className={'aspect-square w-[80px] rounded-xl border border-border-primary'}>
             <img src={URL.createObjectURL(file)} alt={file.name} className={'h-full w-full'} />
           </div>
 
           <div
-            className={'flex w-full items-center gap-2 overflow-hidden rounded-lg p-1 hover:bg-fill-list-hover'}
+            className={'flex w-full items-center gap-2 overflow-hidden rounded-lg p-1 hover:bg-fill-content-hover'}
             onMouseLeave={() => setHovered(false)}
             onMouseEnter={() => setHovered(true)}
             style={{

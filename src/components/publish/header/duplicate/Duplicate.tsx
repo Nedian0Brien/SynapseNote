@@ -1,5 +1,5 @@
 import { getPlatform } from '@/utils/platform';
-import React, { useCallback, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { Button, IconButton, Tooltip } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { LoginModal } from '@/components/login';

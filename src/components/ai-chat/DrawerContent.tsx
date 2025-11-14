@@ -167,7 +167,7 @@ function DrawerContent({
 
   if(notFound) {
     return (
-      <RecordNotFound />
+      <RecordNotFound viewId={openViewId} />
     );
   }
 

@@ -58,4 +58,4 @@ fs.writeFileSync(tailwindConfigFilePath, tailwindColorTemplate, 'utf-8');
 const tailwindShadowFilePath = path.join(__dirname, '../tailwind/box-shadow.cjs');
 fs.writeFileSync(tailwindShadowFilePath, tailwindShadowTemplate, 'utf-8');
 
-console.log('Tailwind CSS colors configuration generated successfully.');
+console.debug('Tailwind CSS colors configuration generated successfully.');

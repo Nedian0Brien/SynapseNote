@@ -1,11 +1,11 @@
 import { GlobalComment } from '@/application/comment.type';
+import { ReactComponent as ArrowDown } from '@/assets/icons/alt_arrow_down.svg';
+import { ReactComponent as BulletedListIcon } from '@/assets/icons/bulleted_1.svg';
 import { useCommentRender } from '@/components/global-comment/GlobalComment.hooks';
 import { Reactions } from '@/components/global-comment/reactions';
 import { Avatar, Divider, Tooltip } from '@mui/material';
 import React, { memo, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ReactComponent as BulletedListIcon } from '@/assets/icons/bulleted_1.svg';
-import { ReactComponent as ArrowDown } from '@/assets/icons/alt_arrow_down.svg';
 import smoothScrollIntoViewIfNeeded from 'smooth-scroll-into-view-if-needed';
 
 interface CommentProps {
@@ -47,7 +47,7 @@ function Comment({ comment }: CommentProps) {
           </Tooltip>
         </div>
         <Tooltip title={timeFormat} enterNextDelay={500} enterDelay={1000} placement={'top-start'}>
-          <div className={'flex items-center gap-2 text-text-caption'}>
+          <div className={'flex items-center gap-2 text-text-secondary'}>
             <BulletedListIcon className={'h-3 w-3'} />
             <div className={'whitespace-nowrap text-sm'}>{time}</div>
           </div>
@@ -55,7 +55,7 @@ function Comment({ comment }: CommentProps) {
       </div>
       <div className={'ml-12 flex flex-col gap-2'}>
         {comment.isDeleted ? (
-          <span className={'text-text-caption'}>{`[${t('globalComment.hasBeenDeleted')}]`}</span>
+          <span className={'text-text-secondary'}>{`[${t('globalComment.hasBeenDeleted')}]`}</span>
         ) : (
           <div
             style={{
@@ -89,7 +89,7 @@ function Comment({ comment }: CommentProps) {
                   }
                 }}
                 className={
-                  'relative flex cursor-pointer items-center justify-center gap-2 bg-transparent text-text-caption hover:text-content-blue-400'
+                  'relative flex cursor-pointer items-center justify-center gap-2 bg-transparent text-text-secondary hover:text-text-action'
                 }
               >
                 <Divider className={'flex-1'} />

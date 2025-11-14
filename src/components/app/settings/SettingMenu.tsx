@@ -1,6 +1,6 @@
 import { SettingMenuItem } from '@/application/types';
 import { ReactComponent as PersonIcon } from '@/assets/icons/user.svg';
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface SettingMenuProps {
@@ -37,13 +37,13 @@ function SettingMenu({ selectedItem, onSelectItem }: SettingMenuProps) {
   }, [t]);
 
   return (
-    <div className={'flex h-full w-[228px] flex-col gap-3 overflow-y-auto overflow-x-hidden bg-bg-base py-4 px-2'}>
+    <div className={'flex h-full w-[228px] flex-col gap-3 overflow-y-auto overflow-x-hidden bg-bg-base px-2 py-4'}>
       {options.map((option) => (
         <div
           key={option.value}
           onClick={() => onSelectItem(option.value)}
-          className={`flex cursor-pointer items-center gap-3 rounded-[8px] p-2 hover:bg-fill-list-hover ${
-            option.value === selectedItem ? 'bg-fill-list-hover' : ''
+          className={`flex cursor-pointer items-center gap-3 rounded-[8px] p-2 hover:bg-fill-content-hover ${
+            option.value === selectedItem ? 'bg-fill-content-hover' : ''
           }`}
         >
           <option.IconComponent className={'h-5 w-5'} />

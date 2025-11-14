@@ -1,8 +1,10 @@
 import { AFConfigContext } from '@/components/main/app.hooks';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
 import { createHotkey, HOT_KEY_NAME } from '@/utils/hotkeys';
-import React, { useContext, useState } from 'react';
+import { useContext, useState } from 'react';
 import { ReactComponent as Logo } from '@/assets/icons/logo.svg';
 import { useTranslation } from 'react-i18next';
 
@@ -25,15 +27,19 @@ function CheckEmail ({ email, redirectTo }: {
     }
 
     setLoading(true);
+    console.log('[CheckEmail] Starting OTP verification', { email, code: code.substring(0, 3) + '***' });
 
     try {
+      console.log('[CheckEmail] Calling service.signInOTP');
       await service?.signInOTP({
         email,
         redirectTo,
         code,
       });
+      console.log('[CheckEmail] signInOTP completed successfully');
       // eslint-disable-next-line
     } catch (e: any) {
+      console.error('[CheckEmail] signInOTP failed:', e);
       if (e.code === 403) {
         setError(t('invalidOTPCode'));
       } else {
@@ -65,35 +71,45 @@ function CheckEmail ({ email, redirectTo }: {
       </div>
       {isEnter ? (
         <div className={'flex flex-col gap-3'}>
-          <Input
-            autoFocus
-            size={'md'}
-            className={'w-[320px]'}
-            onChange={(e) => {
-              setError('');
-              setCode(e.target.value);
-            }}
-            value={code}
-            placeholder={t('enterCode')}
-            helpText={error}
-            variant={error ? 'destructive' : 'default'}
-            onKeyDown={e => {
-              if (createHotkey(HOT_KEY_NAME.ENTER)(e.nativeEvent)) {
-                void handleSubmit();
-              }
-            }}
-          />
+          <div className={'flex flex-col gap-1'}>
+            <Input
+              data-testid="otp-code-input"
+              autoFocus
+              size={'md'}
+              className={'w-[320px]'}
+              onChange={(e) => {
+                setError('');
+                setCode(e.target.value);
+              }}
+              value={code}
+              placeholder={t('enterCode')}
+              variant={error ? 'destructive' : 'default'}
+              onKeyDown={e => {
+                if (createHotkey(HOT_KEY_NAME.ENTER)(e.nativeEvent)) {
+                  void handleSubmit();
+                }
+              }}
+            />
+            {error && <div className={cn('help-text text-xs text-text-error')}>
+              {error}
+            </div>}
+          </div>
 
           <Button
+            data-testid="otp-submit-button"
             loading={loading}
             onClick={handleSubmit}
             size={'lg'}
             className={'w-[320px]'}
           >
-            {loading ? t('verifying') : t('continueToSignIn')}
+            {loading ? <>
+              <Progress />
+              {t('verifying')}
+            </> : t('continueToSignIn')}
           </Button>
         </div>
       ) : <Button
+        data-testid="enter-code-manually-button"
         size={'lg'}
         className={'w-[320px]'}
         onClick={() => setEnter(true)}

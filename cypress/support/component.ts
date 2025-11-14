@@ -12,19 +12,17 @@
 // You can read more here:
 // https://on.cypress.io/configuration
 // ***********************************************************
+import '@cypress/code-coverage/support';
 import { addMatchImageSnapshotCommand } from 'cypress-image-snapshot/command';
 import 'cypress-real-events';
-
-// Import commands.js using ES2015 syntax:
-import '@cypress/code-coverage/support';
 import 'cypress-real-events/support';
+import { mount } from 'cypress/react18';
+import '../../src/styles/global.css';
 import './commands';
 import './document';
 
 // Alternatively you can use CommonJS syntax:
 // require('./commands')
-
-import { mount } from 'cypress/react18';
 
 // Augment the Cypress namespace to include type definitions for
 // your custom command.
@@ -74,7 +72,7 @@ Cypress.Commands.add('clickOutside', () => {
   });
 });
 
-function mergeRanges (ranges: Range[]): Range | null {
+function mergeRanges(ranges: Range[]): Range | null {
   if (ranges.length === 0) return null;
 
   const mergedRange = ranges[0].cloneRange();
@@ -133,7 +131,6 @@ Cypress.Commands.add('selectMultipleText', (texts: string[]) => {
         selection.removeAllRanges();
         if (mergedRange) {
           selection.addRange(mergedRange);
-
         }
       }
 

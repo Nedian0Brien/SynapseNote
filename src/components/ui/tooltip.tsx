@@ -1,5 +1,5 @@
-import * as React from 'react';
 import * as TooltipPrimitive from '@radix-ui/react-tooltip';
+import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 
@@ -25,10 +25,13 @@ function TooltipContent ({
   className,
   sideOffset = 0,
   children,
+  container,
   ...props
-}: React.ComponentProps<typeof TooltipPrimitive.Content>) {
+}: React.ComponentProps<typeof TooltipPrimitive.Content> & {
+  container?: Element;
+}) {
   return (
-    <TooltipPrimitive.Portal>
+    <TooltipPrimitive.Portal container={container}>
       <TooltipPrimitive.Content
         data-slot="tooltip-content"
         sideOffset={sideOffset}
@@ -44,9 +47,9 @@ function TooltipContent ({
           'data-[side=top]:slide-in-from-bottom-2',
 
           // Styling and layout
-          'shadow-tooltip z-50 origin-[--radix-tooltip-content-transform-origin]',
-          'w-fit rounded-400 bg-surface-secondary px-3 py-2 text-sm text-text-on-fill',
-          'flex flex-col',
+          'shadow-tooltip max-w-[360px] z-50 origin-[--radix-tooltip-content-transform-origin]',
+          'w-fit rounded-400 bg-surface-inverse px-3 py-2 text-sm text-text-on-fill',
+          'flex flex-col whitespace-pre-wrap break-all',
 
           className,
         )}

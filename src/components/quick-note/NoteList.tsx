@@ -1,12 +1,12 @@
-import React, { useCallback } from 'react';
 import { QuickNote, QuickNote as QuickNoteType } from '@/application/types';
-import { useTranslation } from 'react-i18next';
-import { Divider, IconButton, Tooltip } from '@mui/material';
-import { ReactComponent as EditIcon } from '@/assets/icons/edit.svg';
 import { ReactComponent as DeleteIcon } from '@/assets/icons/delete.svg';
+import { ReactComponent as EditIcon } from '@/assets/icons/edit.svg';
+import AddNote from '@/components/quick-note/AddNote';
 import DeleteNoteModal from '@/components/quick-note/DeleteNoteModal';
 import { getSummary, getTitle, getUpdateTime } from '@/components/quick-note/utils';
-import AddNote from '@/components/quick-note/AddNote';
+import { Divider, IconButton, Tooltip } from '@mui/material';
+import React, { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 
 function NoteList({
   list,
@@ -22,9 +22,12 @@ function NoteList({
   onScroll: (e: React.UIEvent<HTMLDivElement>) => void;
 }) {
   const { t } = useTranslation();
-  const renderTitle = useCallback((note: QuickNote) => {
-    return getTitle(note).trim() || t('menuAppHeader.defaultNewPageName');
-  }, [t]);
+  const renderTitle = useCallback(
+    (note: QuickNote) => {
+      return getTitle(note).trim() || t('menuAppHeader.defaultNewPageName');
+    },
+    [t]
+  );
 
   const [openDeleteModal, setOpenDeleteModal] = React.useState(false);
   const [selectedNote, setSelectedNote] = React.useState<QuickNoteType | null>(null);
@@ -32,82 +35,94 @@ function NoteList({
 
   return (
     <>
-      {list.length === 0 && (<div
-        className={'text-center text-sm text-text-caption h-full flex items-center justify-center w-full'}>{t('quickNote.quickNotesEmpty')}</div>)}
-      {list &&
-        <div onScroll={onScroll} className={'flex flex-col gap-3 h-full appflowy-custom-scroller   overflow-y-auto'}>
+      {list.length === 0 && (
+        <div className={'flex h-full w-full items-center justify-center text-center text-sm text-text-secondary'}>
+          {t('quickNote.quickNotesEmpty')}
+        </div>
+      )}
+      {list && (
+        <div onScroll={onScroll} className={'appflowy-custom-scroller flex h-full flex-col gap-3   overflow-y-auto'}>
           <div className={'flex flex-col'}>
-            {
-              list.map((note, index) => {
-                return (
-                  <React.StrictMode key={note.id}>
+            {list.map((note, index) => {
+              return (
+                <React.StrictMode key={note.id}>
+                  <div
+                    onClick={() => onEnterNode(note)}
+                    onMouseEnter={() => setHoverId(note.id)}
+                    onMouseLeave={() => setHoverId(null)}
+                    key={note.id}
+                    className={`relative cursor-pointer overflow-hidden px-5 text-sm hover:bg-fill-theme-select`}
+                  >
                     <div
-                      onClick={() => onEnterNode(note)}
-                      onMouseEnter={() => setHoverId(note.id)}
-                      onMouseLeave={() => setHoverId(null)}
-                      key={note.id}
-                      className={`px-5 relative hover:bg-content-blue-50 text-sm overflow-hidden cursor-pointer`}
+                      className={`w-full 
+                    ${
+                      index === list.length - 1 ? '' : 'border-b'
+                    } flex min-h-[68px] flex-col justify-center gap-1 border-line-card py-4`}
                     >
-                      <div
-                        className={`w-full 
-                    ${index === list.length - 1 ? '' : 'border-b'} py-4 gap-1 flex justify-center min-h-[68px] flex-col border-line-card`}>
-                        <div className={'font-medium w-full truncate'}>
-                          {renderTitle(note)}
-                        </div>
-                        <div className={'font-normal w-full flex gap-2'}>
-                      <span className={'text-text-title'}>
-                        {getUpdateTime(note)}
-                      </span>
-                          <span
-                            className={'flex-1 truncate text-text-caption'}>{getSummary(note) || t('quickNote.noAdditionalText')}</span>
-                        </div>
+                      <div className={'w-full truncate font-medium'}>{renderTitle(note)}</div>
+                      <div className={'flex w-full gap-2 font-normal'}>
+                        <span className={'text-text-primary'}>{getUpdateTime(note)}</span>
+                        <span className={'flex-1 truncate text-text-secondary'}>
+                          {getSummary(note) || t('quickNote.noAdditionalText')}
+                        </span>
                       </div>
-                      {hoverId === note.id ? <div
-                        className={'absolute border-line-divider right-4 top-1/2 bg-bg-body border rounded-[8px] p-1 -translate-y-1/2 flex items-center gap-1.5'}>
-                        <Tooltip placement={'top'} title={t('button.edit')}>
-                          <IconButton onClick={(e) => {
-                            e.stopPropagation();
-                            onEnterNode(note);
-                          }} size={'small'}>
-                            <EditIcon/>
-                          </IconButton>
-                        </Tooltip>
-                        <Divider orientation={'vertical'} flexItem className={'my-1'}/>
-                        <Tooltip placement={'top'} title={t('button.delete')}>
-                          <IconButton onClick={(e) => {
-                            e.stopPropagation();
-
-                            setSelectedNote(note);
-                            setOpenDeleteModal(true);
-                          }} size={'small'}>
-                            <DeleteIcon/>
-                          </IconButton>
-                        </Tooltip>
-                      </div> : null}
                     </div>
+                    {hoverId === note.id ? (
+                      <div
+                        className={
+                          'absolute right-4 top-1/2 flex -translate-y-1/2 items-center gap-1.5 rounded-[8px] border border-border-primary bg-background-primary p-1'
+                        }
+                      >
+                        <Tooltip placement={'top'} title={t('button.edit')}>
+                          <IconButton
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onEnterNode(note);
+                            }}
+                            size={'small'}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                        </Tooltip>
+                        <Divider orientation={'vertical'} flexItem className={'my-1'} />
+                        <Tooltip placement={'top'} title={t('button.delete')}>
+                          <IconButton
+                            onClick={(e) => {
+                              e.stopPropagation();
 
-                  </React.StrictMode>
-                );
-              })
-            }
+                              setSelectedNote(note);
+                              setOpenDeleteModal(true);
+                            }}
+                            size={'small'}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Tooltip>
+                      </div>
+                    ) : null}
+                  </div>
+                </React.StrictMode>
+              );
+            })}
           </div>
-          {selectedNote && <DeleteNoteModal
-            onDelete={onDelete}
-            open={openDeleteModal}
-            onClose={() => {
-              setOpenDeleteModal(false);
-              setSelectedNote(null);
-            }}
-            note={selectedNote}/>
-          }
+          {selectedNote && (
+            <DeleteNoteModal
+              onDelete={onDelete}
+              open={openDeleteModal}
+              onClose={() => {
+                setOpenDeleteModal(false);
+                setSelectedNote(null);
+              }}
+              note={selectedNote}
+            />
+          )}
+        </div>
+      )}
 
-        </div>}
-
-      <div className={'h-fit bg-bg-base min-h-[46px] px-4 py-2 w-full'}>
-        <AddNote onAdd={onAdd} onEnterNote={onEnterNode}/>
+      <div className={'h-fit min-h-[46px] w-full bg-bg-base px-4 py-2'}>
+        <AddNote onAdd={onAdd} onEnterNote={onEnterNode} />
       </div>
     </>
-
   );
 }
 

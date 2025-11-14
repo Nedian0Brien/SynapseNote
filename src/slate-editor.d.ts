@@ -13,6 +13,7 @@ interface EditorInlineAttributes {
   formula?: string;
   prism_token?: string;
   class_name?: string;
+
   mention?: {
     type: string;
     // inline page ref id
@@ -23,6 +24,8 @@ interface EditorInlineAttributes {
     reminder_id?: string;
     reminder_option?: string;
   };
+  af_text_color?: string;
+  af_background_color?: string;
 }
 
 type CustomElement = {

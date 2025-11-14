@@ -1,31 +1,29 @@
-import { useDatabase, useGroupsSelector } from '@/application/database-yjs';
+import { useEffect } from 'react';
+
+import { useDatabaseContext, useGroupsSelector } from '@/application/database-yjs';
 import { Group } from '@/components/database/components/board';
-import { CircularProgress } from '@mui/material';
-import React from 'react';
 
-export function Board () {
-  const database = useDatabase();
+import { BoardProvider } from './BoardProvider';
+
+export function Board() {
   const groups = useGroupsSelector();
+  const { onRendered } = useDatabaseContext();
 
-  if (!database) {
-    return (
-      <div className={'flex w-full flex-1 flex-col items-center justify-center'}>
-        <CircularProgress />
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (groups) {
+      onRendered?.();
+    }
+  }, [groups, onRendered]);
 
+  const group = groups[0];
+
+  if (!group) return null;
   return (
-    <div
-      className={'database-board flex w-full flex-1 flex-col'}
-    >
-      {groups.map((groupId) => (
-        <Group
-          key={groupId}
-          groupId={groupId}
-        />
-      ))}
-    </div>
+    <BoardProvider>
+      <div className={'database-board flex w-full flex-1 flex-col'}>
+        <Group groupId={group} key={group} />
+      </div>
+    </BoardProvider>
   );
 }
 

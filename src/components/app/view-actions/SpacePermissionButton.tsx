@@ -1,12 +1,13 @@
-import { Popover } from '@/components/_shared/popover';
 import { Button, Divider } from '@mui/material';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
+
+import { SpacePermission } from '@/application/types';
+import { ReactComponent as ArrowDownIcon } from '@/assets/icons/alt_arrow_down.svg';
 import { ReactComponent as LockIcon } from '@/assets/icons/lock.svg';
 import { ReactComponent as PublicIcon } from '@/assets/icons/public.svg';
-import { ReactComponent as ArrowDownIcon } from '@/assets/icons/alt_arrow_down.svg';
 import { ReactComponent as TickIcon } from '@/assets/icons/tick.svg';
-import { useTranslation } from 'react-i18next';
-import { SpacePermission } from '@/application/types';
+import { Popover } from '@/components/_shared/popover';
 
 function SpacePermissionButton({
   onSelected,
@@ -27,22 +28,20 @@ function SpacePermissionButton({
         endIcon={<ArrowDownIcon />}
         color={'inherit'}
         variant={'outlined'}
-        onClick={e => setAnchorEl(e.currentTarget)}
+        onClick={(e) => setAnchorEl(e.currentTarget)}
       >
-        <div className={'flex w-full items-start flex-col'}>
-          <div className={'text-text-title font-normal'}>{
-            SpacePermission.Private === value ? t('space.privatePermission') : t('space.publicPermission')
-          }</div>
-          <div className={'text-text-caption'}>{
-            SpacePermission.Private === value ? t('space.privatePermissionDescription') : t('space.publicPermissionDescription')
-          }</div>
+        <div className={'flex w-full flex-col items-start'}>
+          <div className={'font-normal text-text-primary'}>
+            {SpacePermission.Private === value ? t('space.privatePermission') : t('space.publicPermission')}
+          </div>
+          <div className={'text-text-secondary'}>
+            {SpacePermission.Private === value
+              ? t('space.privatePermissionDescription')
+              : t('space.publicPermissionDescription')}
+          </div>
         </div>
       </Button>
-      <Popover
-        open={Boolean(anchorEl)}
-        anchorEl={anchorEl}
-        onClose={() => setAnchorEl(null)}
-      >
+      <Popover open={Boolean(anchorEl)} anchorEl={anchorEl} onClose={() => setAnchorEl(null)}>
         <div
           style={{
             width: anchorEl?.clientWidth,
@@ -58,13 +57,11 @@ function SpacePermissionButton({
               setAnchorEl(null);
             }}
           >
-            <div className={'flex w-full items-start flex-col'}>
+            <div className={'flex w-full flex-col items-start'}>
               <div className={'text-base font-normal'}>{t('space.privatePermission')}</div>
-              <div className={'text-text-caption'}>{t('space.privatePermissionDescription')}</div>
+              <div className={'text-text-secondary'}>{t('space.privatePermissionDescription')}</div>
             </div>
-            {SpacePermission.Private === value &&
-              <TickIcon className={'w-6 h-6 text-function-success'} />}
-
+            {SpacePermission.Private === value && <TickIcon className={'h-6 w-6 text-function-success'} />}
           </Button>
           <Divider />
           <Button
@@ -76,13 +73,11 @@ function SpacePermissionButton({
               setAnchorEl(null);
             }}
           >
-            <div className={'flex w-full items-start flex-col'}>
+            <div className={'flex w-full flex-col items-start'}>
               <div className={'text-base font-normal'}>{t('space.publicPermission')}</div>
-              <div className={'text-text-caption'}>{t('space.publicPermissionDescription')}</div>
+              <div className={'text-text-secondary'}>{t('space.publicPermissionDescription')}</div>
             </div>
-            {SpacePermission.Public === value &&
-              <TickIcon className={'w-6 h-6 text-function-success'} />}
-
+            {SpacePermission.Public === value && <TickIcon className={'h-6 w-6 text-function-success'} />}
           </Button>
         </div>
       </Popover>

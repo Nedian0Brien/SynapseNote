@@ -1,30 +1,47 @@
-import { User } from '@/application/types';
 import { AFService, AFServiceConfig } from '@/application/services/services.type';
+import { User } from '@/application/types';
+import { getConfigValue } from '@/utils/runtime-config';
 import { createContext, useContext } from 'react';
 
-const baseURL = import.meta.env.AF_BASE_URL || 'https://test.appflowy.cloud';
-const gotrueURL = import.meta.env.AF_GOTRUE_URL || 'https://test.appflowy.cloud/gotrue';
-const wsURL = import.meta.env.AF_WS_URL || 'wss://test.appflowy.cloud/ws/v1';
+const baseURL = getConfigValue('APPFLOWY_BASE_URL', 'https://test.appflowy.cloud');
+const gotrueURL = getConfigValue('APPFLOWY_GOTRUE_BASE_URL', 'https://test.appflowy.cloud/gotrue');
 
 export const defaultConfig: AFServiceConfig = {
   cloudConfig: {
     baseURL,
     gotrueURL,
-    wsURL,
+    wsURL: '', // Legacy field - not used, keeping for backward compatibility
   },
 };
 
 export const AFConfigContext = createContext<
   | {
-  service: AFService | undefined;
-  isAuthenticated: boolean;
-  currentUser?: User;
-  openLoginModal: (redirectTo?: string) => void;
-}
+    service: AFService | undefined;
+    isAuthenticated: boolean;
+    currentUser?: User;
+    updateCurrentUser: (user: User) => Promise<void>;
+    openLoginModal: (redirectTo?: string) => void;
+  }
   | undefined
 >(undefined);
 
-export function useCurrentUser () {
+export function useAppConfig() {
+  const context = useContext(AFConfigContext);
+
+  if (!context) {
+    throw new Error('useAppConfig must be used within a AFConfigContext');
+  }
+
+  return {
+    service: context.service,
+    isAuthenticated: context.isAuthenticated,
+    currentUser: context.currentUser,
+    updateCurrentUser: context.updateCurrentUser,
+    openLoginModal: context.openLoginModal,
+  };
+}
+
+export function useCurrentUser() {
   const context = useContext(AFConfigContext);
 
   if (!context) {
@@ -34,7 +51,7 @@ export function useCurrentUser () {
   return context.currentUser;
 }
 
-export function useService () {
+export function useService() {
   const context = useContext(AFConfigContext);
 
   if (!context) {

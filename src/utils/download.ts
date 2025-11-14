@@ -1,4 +1,6 @@
-export async function downloadFile (url: string, filename?: string): Promise<void> {
+import download from 'downloadjs';
+
+export async function downloadFile(url: string, filename?: string): Promise<void> {
   try {
     const response = await fetch(url);
 
@@ -8,20 +10,8 @@ export async function downloadFile (url: string, filename?: string): Promise<voi
 
     const blob = await response.blob();
 
-    const anchor = document.createElement('a');
-    const blobUrl = window.URL.createObjectURL(blob);
-
-    anchor.href = blobUrl;
-
-    anchor.download = filename || url.split('/').pop() || 'download';
-
-    document.body.appendChild(anchor);
-    anchor.click();
-
-    document.body.removeChild(anchor);
-    window.URL.revokeObjectURL(blobUrl);
+    download(blob, filename);
   } catch (error) {
-    
-    return Promise.reject(error);
+    console.error(error);
   }
 }

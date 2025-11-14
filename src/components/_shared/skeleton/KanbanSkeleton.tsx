@@ -1,52 +1,47 @@
 import TabbarSkeleton from '@/components/_shared/skeleton/TabbarSkeleton';
 import TitleSkeleton from '@/components/_shared/skeleton/TitleSkeleton';
-import React from 'react';
 
-function KanbanSkeleton ({
-  includeTitle = true,
-  includeTabs = true,
-}: {
-  includeTitle?: boolean;
-  includeTabs?: boolean;
-}) {
+function KanbanSkeleton({ includeTitle = true, includeTabs = true }: { includeTitle?: boolean; includeTabs?: boolean }) {
   const columns = Math.max(Math.ceil(window.innerWidth / 420), 3);
   const cardsPerColumn = Math.max(Math.ceil(window.innerHeight / 300), 3);
 
   return (
-    <div className={`w-full overflow-x-auto py-${includeTitle ? '2' : '0'}  max-sm:px-6 px-24 min-w-0 max-w-full`}>
+    <div
+      className={`appflowy-custom-scroller w-full overflow-x-auto py-${
+        includeTitle ? '2' : '0'
+      }  min-w-0 max-w-full px-24 max-sm:px-6`}
+    >
       {includeTitle && (
         <>
-          <div className="w-full my-6 flex items-center h-20 mb-2">
+          <div className='my-6 mb-2 flex h-20 w-full items-center'>
             <TitleSkeleton />
           </div>
-
         </>
       )}
-      {includeTabs && <div className="w-full flex items-center h-10 mb-2">
-        <TabbarSkeleton />
-      </div>}
+      {includeTabs && (
+        <div className='mb-2 flex h-10 w-full items-center'>
+          <TabbarSkeleton />
+        </div>
+      )}
 
-      <div className="w-full mt-2">
-        <div className="flex space-x-4">
+      <div className='mt-2 w-full'>
+        <div className='flex space-x-4'>
           {[...Array(columns)].map((_, columnIndex) => (
             <div
               key={columnIndex}
-              className="min-w-[280px] bg-bg-body shadow-md rounded-lg p-4 flex flex-col"
+              className='flex min-w-[280px] flex-col rounded-lg bg-background-primary p-4 shadow-md'
             >
               {/* Column title */}
-              <div className="h-8 bg-fill-list-hover rounded w-3/5 mb-4 animate-pulse"></div>
+              <div className='mb-4 h-8 w-3/5 animate-pulse rounded bg-fill-content-hover'></div>
 
               {/* Cards */}
               {[...Array(cardsPerColumn)].map((_, cardIndex) => (
-                <div
-                  key={cardIndex}
-                  className="bg-bg-base rounded-lg p-4 mb-4 shadow"
-                >
-                  <div className="h-5 bg-fill-list-hover rounded w-full mb-2 animate-pulse"></div>
-                  <div className="h-4 bg-fill-list-hover rounded w-4/5 animate-pulse"></div>
-                  <div className="mt-4 flex justify-between items-center">
-                    <div className="h-8 w-8 bg-fill-list-hover rounded-full animate-pulse"></div>
-                    <div className="h-4 w-16 bg-fill-list-hover rounded animate-pulse"></div>
+                <div key={cardIndex} className='mb-4 rounded-lg bg-bg-base p-4 shadow'>
+                  <div className='mb-2 h-5 w-full animate-pulse rounded bg-fill-content-hover'></div>
+                  <div className='h-4 w-4/5 animate-pulse rounded bg-fill-content-hover'></div>
+                  <div className='mt-4 flex items-center justify-between'>
+                    <div className='h-8 w-8 animate-pulse rounded-full bg-fill-content-hover'></div>
+                    <div className='h-4 w-16 animate-pulse rounded bg-fill-content-hover'></div>
                   </div>
                 </div>
               ))}

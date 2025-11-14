@@ -1,27 +1,35 @@
-import { YjsEditor } from '@/application/slate-yjs';
-import { CustomEditor } from '@/application/slate-yjs/command';
-import { BlockType } from '@/application/types';
-import { ReactComponent as DuplicateIcon } from '@/assets/icons/duplicate.svg';
-import { ReactComponent as CopyLinkIcon } from '@/assets/icons/link.svg';
-import { ReactComponent as DeleteIcon } from '@/assets/icons/delete.svg';
-import { notify } from '@/components/_shared/notify';
-import { Popover } from '@/components/_shared/popover';
-import Depth from '@/components/editor/components/toolbar/block-controls/Depth';
-import { OutlineNode } from '@/components/editor/editor.type';
-import { useEditorContext } from '@/components/editor/EditorContext';
-import { copyTextToClipboard } from '@/utils/copy';
-import { Button } from '@mui/material';
+import { Button, Divider } from '@mui/material';
 import { PopoverProps } from '@mui/material/Popover';
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ReactEditor, useSlateStatic } from 'slate-react';
+
+import { YjsEditor } from '@/application/slate-yjs';
+import { CustomEditor } from '@/application/slate-yjs/command';
 import { findSlateEntryByBlockId } from '@/application/slate-yjs/utils/editor';
+import { BlockType } from '@/application/types';
+import { ReactComponent as DeleteIcon } from '@/assets/icons/delete.svg';
+import { ReactComponent as DuplicateIcon } from '@/assets/icons/duplicate.svg';
+import { ReactComponent as CopyLinkIcon } from '@/assets/icons/link.svg';
+import { notify } from '@/components/_shared/notify';
+import { Popover } from '@/components/_shared/popover';
+import CalloutTextColor from '@/components/editor/components/toolbar/block-controls/CalloutTextColor';
+import {
+  OutlineCollapseControl,
+  OutlineDepthControl,
+} from '@/components/editor/components/toolbar/block-controls/OutlineControls';
+import { BlockNode, CalloutNode, OutlineNode } from '@/components/editor/editor.type';
+import { useEditorContext } from '@/components/editor/EditorContext';
+import { copyTextToClipboard } from '@/utils/copy';
+
+import CalloutIconControl from './CalloutIconControl';
+import CalloutQuickStyleControl from './CalloutQuickStyleControl';
+import Color from './Color';
 
 const popoverProps: Partial<PopoverProps> = {
   transformOrigin: {
     vertical: 'center',
     horizontal: 'right',
-
   },
   anchorOrigin: {
     vertical: 'center',
@@ -32,7 +40,11 @@ const popoverProps: Partial<PopoverProps> = {
   disableEnforceFocus: true,
 };
 
-function ControlsMenu({ open, onClose, anchorEl }: {
+function ControlsMenu({
+  open,
+  onClose,
+  anchorEl,
+}: {
   open: boolean;
   onClose: () => void;
   anchorEl: HTMLElement | null;
@@ -50,50 +62,61 @@ function ControlsMenu({ open, onClose, anchorEl }: {
 
   const { t } = useTranslation();
   const options = useMemo(() => {
-    return [{
-      key: 'delete',
-      content: t('button.delete'),
-      icon: <DeleteIcon/>,
-      onClick: () => {
-        selectedBlockIds?.forEach((blockId) => {
-          CustomEditor.deleteBlock(editor, blockId);
-        });
+    return [
+      {
+        key: 'delete',
+        content: t('button.delete'),
+        icon: <DeleteIcon />,
+        onClick: () => {
+          selectedBlockIds?.forEach((blockId) => {
+            CustomEditor.deleteBlock(editor, blockId);
+          });
+        },
       },
-    }, {
-      key: 'duplicate',
-      content: t('button.duplicate'),
-      icon: <DuplicateIcon/>,
-      onClick: () => {
-        const newBlockIds: string[] = [];
-        const prevId = selectedBlockIds?.[selectedBlockIds.length - 1];
+      {
+        key: 'duplicate',
+        content: t('button.duplicate'),
+        icon: <DuplicateIcon />,
+        onClick: () => {
+          const newBlockIds: string[] = [];
+          const prevId = selectedBlockIds?.[selectedBlockIds.length - 1];
 
-        selectedBlockIds?.forEach((blockId, index) => {
-          const newBlockId = CustomEditor.duplicateBlock(editor, blockId, index === 0 ? prevId : newBlockIds[index - 1]);
+          selectedBlockIds?.forEach((blockId, index) => {
+            const newBlockId = CustomEditor.duplicateBlock(
+              editor,
+              blockId,
+              index === 0 ? prevId : newBlockIds[index - 1]
+            );
 
-          newBlockId && newBlockIds.push(newBlockId);
-        });
+            newBlockId && newBlockIds.push(newBlockId);
+          });
 
-        ReactEditor.focus(editor);
-        const [, path] = findSlateEntryByBlockId(editor, newBlockIds[0]);
+          ReactEditor.focus(editor);
+          const entry = findSlateEntryByBlockId(editor, newBlockIds[0]);
 
-        editor.select(editor.start(path));
+          if (!entry) return;
 
+          const [, path] = entry;
+
+          editor.select(editor.start(path));
+        },
       },
-    }, onlySingleBlockSelected && {
-      key: 'copyLinkToBlock',
-      content: t('document.plugins.optionAction.copyLinkToBlock'),
-      icon: <CopyLinkIcon/>,
-      onClick: async () => {
-        const blockId = selectedBlockIds?.[0];
+      onlySingleBlockSelected && {
+        key: 'copyLinkToBlock',
+        content: t('document.plugins.optionAction.copyLinkToBlock'),
+        icon: <CopyLinkIcon />,
+        onClick: async () => {
+          const blockId = selectedBlockIds?.[0];
 
-        const url = new URL(window.location.href);
+          const url = new URL(window.location.href);
 
-        url.searchParams.set('blockId', blockId);
+          url.searchParams.set('blockId', blockId);
 
-        await copyTextToClipboard(url.toString());
-        notify.success(t('shareAction.copyLinkToBlockSuccess'));
+          await copyTextToClipboard(url.toString());
+          notify.success(t('shareAction.copyLinkToBlockSuccess'));
+        },
       },
-    }].filter(Boolean) as {
+    ].filter(Boolean) as {
       key: string;
       content: string;
       icon: JSX.Element;
@@ -116,13 +139,9 @@ function ControlsMenu({ open, onClose, anchorEl }: {
         onClose();
       }}
       open={open}
-
       {...popoverProps}
     >
-      <div
-        data-testid={'controls-menu'}
-        className={'flex flex-col gap-2 p-2'}
-      >
+      <div data-testid={'controls-menu'} className={'flex w-[240px] flex-col p-2'}>
         {options.map((option) => {
           return (
             <Button
@@ -144,8 +163,39 @@ function ControlsMenu({ open, onClose, anchorEl }: {
           );
         })}
 
+        {node?.[0]?.type &&
+          [
+            BlockType.Paragraph,
+            BlockType.HeadingBlock,
+            BlockType.BulletedListBlock,
+            BlockType.NumberedListBlock,
+            BlockType.QuoteBlock,
+            BlockType.TodoListBlock,
+            BlockType.ToggleListBlock,
+          ].includes(node?.[0]?.type as BlockType) && (
+            <>
+              <Divider className='my-2' />
+              <Color node={node[0] as BlockNode} onSelectColor={onClose} />
+            </>
+          )}
+
         {node?.[0]?.type === BlockType.OutlineBlock && onlySingleBlockSelected && (
-          <Depth node={node[0] as OutlineNode}/>
+          <>
+            <Divider className='my-2' />
+            <OutlineCollapseControl node={node[0] as OutlineNode} onToggle={onClose} />
+            <OutlineDepthControl node={node[0] as OutlineNode} onClose={onClose} />
+            <Color node={node[0] as BlockNode} onSelectColor={onClose} />
+          </>
+        )}
+
+        {node?.[0]?.type === BlockType.CalloutBlock && (
+          <>
+            <Divider className='my-2' />
+            <CalloutQuickStyleControl node={node[0] as CalloutNode} onSelectStyle={onClose} />
+            <CalloutIconControl node={node[0] as CalloutNode} onSelectIcon={onClose} />
+            <Color node={node[0] as BlockNode} onSelectColor={onClose} />
+            <CalloutTextColor node={node[0] as CalloutNode} onSelectColor={onClose} />
+          </>
         )}
       </div>
     </Popover>

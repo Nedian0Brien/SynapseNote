@@ -1,8 +1,8 @@
+import emptyImageSrc from '@/assets/images/empty.png';
 import { EditorElementProps, LinkPreviewNode } from '@/components/editor/editor.type';
 import axios from 'axios';
-import React, { forwardRef, memo, useEffect, useState } from 'react';
+import { forwardRef, memo, useEffect, useState } from 'react';
 import { useReadOnly } from 'slate-react';
-import emptyImageSrc from '@/assets/images/empty.png';
 
 export const LinkPreview = memo(
   forwardRef<HTMLDivElement, EditorElementProps<LinkPreviewNode>>(({ node, children, ...attributes }, ref) => {
@@ -48,68 +48,46 @@ export const LinkPreview = memo(
         ref={ref}
         className={`link-preview-block relative w-full cursor-pointer`}
       >
-        <div
-          className={
-            'embed-block p-4 items-center'
-          }
-          contentEditable={false}
-        >
+        <div className={'embed-block items-center p-4'} contentEditable={false}>
           {notFound ? (
             <div className={'flex w-full items-center'}>
               <div
-                className={'text-text-title min-w-[80px] w-[120px] flex items-center justify-center mr-2 h-[80px] border rounded'}
+                className={
+                  'mr-2 flex h-[80px] w-[120px] min-w-[80px] items-center justify-center rounded border text-text-primary'
+                }
               >
-                <img
-                  src={emptyImageSrc}
-                  alt={'Empty state'}
-                  className={'h-full object-center object-cover'}
-                />
+                <img src={emptyImageSrc} alt={'Empty state'} className={'h-full object-cover object-center'} />
               </div>
-              <div className={'flex-1 flex flex-col'}>
-                <div className={'text-function-error'}>
-                  The link cannot be previewed. Click to open in a new tab.
-                </div>
-                <div className={'text-sm text-text-caption'}>
-                  {url}
-                </div>
+              <div className={'flex flex-1 flex-col'}>
+                <div className={'text-function-error'}>The link cannot be previewed. Click to open in a new tab.</div>
+                <div className={'text-sm text-text-secondary'}>{url}</div>
               </div>
-
             </div>
           ) : (
             <>
               <img
                 src={data?.image?.url}
                 alt={''}
-                className={'container max-sm:w-[25%] max-w-[120px] max-h-[80px] rounded bg-cover bg-center'}
+                className={'container max-h-[80px] max-w-[120px] rounded bg-cover bg-center max-sm:w-[25%]'}
               />
-              <div className={'flex flex-col flex-1 justify-center gap-2 overflow-hidden'}>
-                <div
-                  className={
-                    'max-h-[48px] overflow-hidden truncate text-base font-bold text-text-title'
-                  }
-                >
+              <div className={'flex flex-1 flex-col justify-center gap-2 overflow-hidden'}>
+                <div className={'max-h-[48px] overflow-hidden truncate text-base font-bold text-text-primary'}>
                   {data?.title}
                 </div>
-                <div
-                  className={
-                    'max-h-[64px] overflow-hidden truncate text-sm text-text-title'
-                  }
-                >
+                <div className={'max-h-[64px] overflow-hidden truncate text-sm text-text-primary'}>
                   {data?.description}
                 </div>
-                <div className={'truncate whitespace-nowrap text-xs text-text-caption'}>{url}</div>
+                <div className={'truncate whitespace-nowrap text-xs text-text-secondary'}>{url}</div>
               </div>
             </>
           )}
         </div>
-        <div
-          ref={ref}
-          className={'absolute left-0 top-0 h-full w-full caret-transparent'}
-        >
+        <div ref={ref} className={'absolute left-0 top-0 h-full w-full caret-transparent'}>
           {children}
         </div>
       </div>
     );
   }),
-  (prev, next) => prev.node.data.url === next.node.data.url);
+  (prev, next) => prev.node.data.url === next.node.data.url
+);
 export default LinkPreview;

@@ -1,16 +1,16 @@
 import { UIVariant } from '@/application/types';
+import { ReactComponent as FavoritedIcon } from '@/assets/icons/filled_star.svg';
+import { ReactComponent as MoreIcon } from '@/assets/icons/more.svg';
+import { useAppFavorites, useAppHandlers, useAppViewId } from '@/components/app/app.hooks';
 import OutlineItem from '@/components/_shared/outline/OutlineItem';
 import { Popover } from '@/components/_shared/popover';
 import RecentListSkeleton from '@/components/_shared/skeleton/RecentListSkeleton';
-import { useAppFavorites, useAppHandlers, useAppViewId } from '@/components/app/app.hooks';
 import { Collapse } from '@mui/material';
 import { PopoverProps } from '@mui/material/Popover';
 import dayjs from 'dayjs';
 import { groupBy, sortBy } from 'lodash-es';
 import React, { useEffect, useMemo } from 'react';
-import { ReactComponent as FavoritedIcon } from '@/assets/icons/filled_star.svg';
 import { useTranslation } from 'react-i18next';
-import { ReactComponent as MoreIcon } from '@/assets/icons/more.svg';
 
 const popoverOrigin: Partial<PopoverProps> = {
   transformOrigin: {
@@ -87,7 +87,7 @@ export function Favorite() {
 
       return (
         <div className={'flex flex-col gap-2'} key={key}>
-          <div className={'py-1 px-1 text-xs text-text-caption'}>{timeLabel[key]}</div>
+          <div className={'px-1 py-1 text-xs text-text-secondary'}>{timeLabel[key]}</div>
           <div className={'px-1'}>
             {value.map((view) => (
               <OutlineItem variant={UIVariant.Favorite} key={view.view_id} view={view} navigateToView={navigateToView} />
@@ -107,7 +107,7 @@ export function Favorite() {
       <div onClick={handleToggleExpand} className={'my-0.5 flex h-fit w-full cursor-pointer flex-col gap-2'}>
         <div
           className={
-            'flex w-full items-center gap-2 rounded-[8px] p-1 text-sm hover:bg-fill-list-hover focus:outline-none'
+            'flex w-full items-center gap-2 rounded-[8px] p-1 text-sm hover:bg-fill-content-hover focus:outline-none'
           }
         >
           <FavoritedIcon className={'h-5 w-5'} />
@@ -134,10 +134,10 @@ export function Favorite() {
               }}
               ref={moreButtonRef}
               className={
-                'flex w-full cursor-pointer items-center gap-2 rounded-[8px] px-2 py-1.5 text-sm hover:bg-content-blue-50 focus:bg-content-blue-50 focus:outline-none'
+                'flex w-full cursor-pointer items-center gap-2 rounded-[8px] px-2 py-1.5 text-sm hover:bg-fill-theme-select focus:bg-fill-theme-select focus:outline-none'
               }
             >
-              <MoreIcon className={'h-5 w-5 text-text-caption'} />
+              <MoreIcon className={'h-5 w-5 text-text-secondary'} />
               <div>{t('button.more')}</div>
             </div>
           )}

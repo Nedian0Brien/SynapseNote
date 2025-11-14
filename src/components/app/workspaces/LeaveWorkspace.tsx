@@ -1,59 +1,77 @@
-import React from 'react';
-import { Button } from '@mui/material';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ReactComponent as LeaveSvg } from '@/assets/icons/logout.svg';
-import { NormalModal } from '@/components/_shared/modal';
-import { notify } from '@/components/_shared/notify';
-import { useService } from '@/components/main/app.hooks';
-import { useCurrentWorkspaceId } from '@/components/app/app.hooks';
+import { toast } from 'sonner';
 
-function LeaveWorkspace({workspaceId}: {
+import { useCurrentWorkspaceId } from '@/components/app/app.hooks';
+import { useService } from '@/components/main/app.hooks';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+
+function LeaveWorkspace({
+  workspaceId,
+  open,
+  openOnChange,
+  workspaceName,
+}: {
   workspaceId: string;
+  open: boolean;
+  openOnChange: (open: boolean) => void;
+  workspaceName: string;
 }) {
-  const {t} = useTranslation();
-  const [confirmOpen, setConfirmOpen] = React.useState(false);
-  const [loading, setLoading] = React.useState(false);
+  const { t } = useTranslation();
+  const [loading, setLoading] = useState(false);
   const service = useService();
   const currentWorkspaceId = useCurrentWorkspaceId();
 
-  const handleOk = async() => {
+  const handleOk = async () => {
     if (!service) return;
 
-     try {
-       setLoading(true);
-       await service.leaveWorkspace(workspaceId);
-       setConfirmOpen(false);
-       if (currentWorkspaceId === workspaceId) {
-         window.location.href = `/app`
-       }
-       // eslint-disable-next-line
-     } catch (e: any) {
-       notify.error(e.message);
-     } finally {
-       setLoading(false);
-     }
-  }
+    try {
+      setLoading(true);
+      await service.leaveWorkspace(workspaceId);
+      openOnChange(false);
+      if (currentWorkspaceId === workspaceId) {
+        window.location.href = `/app`;
+      }
+      // eslint-disable-next-line
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <>
-      <Button onClick={() => {
-        setConfirmOpen(true);
-      }} size={'small'} className={'w-full justify-start hover:text-function-error'} color={'inherit'} startIcon={<LeaveSvg />}>
-        {t('workspace.leaveCurrentWorkspace')}
-      </Button>
-      <NormalModal
-        okLoading={loading}
-        onOk={handleOk}
-        danger={true}
-        okText={t('button.yes')}
-        title={<div className={'flex items-center font-medium'}>
-          {t('workspace.leaveCurrentWorkspace')}
-        </div>}
-        open={confirmOpen}
-        onClose={() => setConfirmOpen(false)}
-      >
-        {t('workspace.leaveCurrentWorkspacePrompt')}
-      </NormalModal>
+      <Dialog open={open} onOpenChange={openOnChange}>
+        <DialogContent
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              void handleOk();
+            }
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>{t('workspace.leaveWorkspace', { workspaceName })}</DialogTitle>
+          </DialogHeader>
+          <DialogDescription>{t('workspace.leaveWorkspacePrompt', { workspaceName })}</DialogDescription>
+          <DialogFooter>
+            <Button variant='outline' onClick={() => openOnChange(false)}>
+              {t('button.cancel')}
+            </Button>
+            <Button variant='destructive' loading={loading} onClick={handleOk}>
+              {t('button.yes')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

@@ -1,12 +1,14 @@
+import { DateFilter, FieldType, Filter, PersonFilter, SelectOptionFilter, useFieldSelector } from '@/application/database-yjs';
 import { YjsDatabaseKey } from '@/application/types';
-import { FieldType, Filter, SelectOptionFilter, useFieldSelector } from '@/application/database-yjs';
+import DateTimeFilterMenu from '@/components/database/components/filters/filter-menu/DateTimeFilterMenu';
+import { useMemo } from 'react';
 import CheckboxFilterMenu from './CheckboxFilterMenu';
 import ChecklistFilterMenu from './ChecklistFilterMenu';
 import MultiSelectOptionFilterMenu from './MultiSelectOptionFilterMenu';
 import NumberFilterMenu from './NumberFilterMenu';
+import PersonFilterMenu from './PersonFilterMenu';
 import SingleSelectOptionFilterMenu from './SingleSelectOptionFilterMenu';
 import TextFilterMenu from './TextFilterMenu';
-import React, { useMemo } from 'react';
 
 export function FilterMenu({ filter }: { filter: Filter }) {
   const { field } = useFieldSelector(filter?.fieldId);
@@ -28,6 +30,12 @@ export function FilterMenu({ filter }: { filter: Filter }) {
         return <MultiSelectOptionFilterMenu filter={filter as SelectOptionFilter} />;
       case FieldType.SingleSelect:
         return <SingleSelectOptionFilterMenu filter={filter as SelectOptionFilter} />;
+      case FieldType.DateTime:
+      case FieldType.LastEditedTime:
+      case FieldType.CreatedTime:
+        return <DateTimeFilterMenu filter={filter as DateFilter} />;
+      case FieldType.Person:
+        return <PersonFilterMenu filter={filter as PersonFilter} />;
       default:
         return null;
     }

@@ -1,7 +1,7 @@
 import { BlockType, ToggleListBlockData } from '@/application/types';
 import { HeadingNode, ToggleListNode } from '@/components/editor/editor.type';
 import { useEditorContext } from '@/components/editor/EditorContext';
-import React, { CSSProperties, useCallback, useEffect, useMemo, useState } from 'react';
+import { CSSProperties, useCallback, useEffect, useMemo, useState } from 'react';
 import { ReactEditor, useFocused, useSelected, useSlate } from 'slate-react';
 import { Editor, Element, Range } from 'slate';
 import { useTranslation } from 'react-i18next';

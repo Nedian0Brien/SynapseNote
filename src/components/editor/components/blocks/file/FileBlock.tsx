@@ -1,35 +1,38 @@
+import { CircularProgress, IconButton, Tooltip } from '@mui/material';
+import React, { forwardRef, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Element } from 'slate';
+import { useReadOnly, useSlateStatic } from 'slate-react';
+
+import { YjsEditor } from '@/application/slate-yjs';
+import { CustomEditor } from '@/application/slate-yjs/command';
 import { BlockType, FieldURLType, FileBlockData } from '@/application/types';
 import { ReactComponent as FileIcon } from '@/assets/icons/file.svg';
 import { ReactComponent as ReloadIcon } from '@/assets/icons/regenerate.svg';
-
 import { notify } from '@/components/_shared/notify';
 import { usePopoverContext } from '@/components/editor/components/block-popover/BlockPopoverContext';
 import FileToolbar from '@/components/editor/components/blocks/file/FileToolbar';
 import { EditorElementProps, FileNode } from '@/components/editor/editor.type';
-import React, { forwardRef, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useReadOnly, useSlateStatic } from 'slate-react';
-import { openUrl } from '@/utils/url';
-import { CircularProgress, IconButton, Tooltip } from '@mui/material';
 import { useEditorContext } from '@/components/editor/EditorContext';
-import { YjsEditor } from '@/application/slate-yjs';
-import { CustomEditor } from '@/application/slate-yjs/command';
 import { FileHandler } from '@/utils/file';
-import { Element } from 'slate';
+import { constructFileUrl } from '@/components/editor/utils/file-url';
+import { openUrl } from '@/utils/url';
 
 export const FileBlock = memo(
   forwardRef<HTMLDivElement, EditorElementProps<FileNode>>(({ node, children, ...attributes }, ref) => {
     const { blockId, data } = node;
-    const { uploadFile } = useEditorContext();
+    const { uploadFile, workspaceId, viewId } = useEditorContext();
     const editor = useSlateStatic() as YjsEditor;
     const [needRetry, setNeedRetry] = useState(false);
     const fileHandler = useMemo(() => new FileHandler(), []);
     const [localUrl, setLocalUrl] = useState<string | undefined>(undefined);
     const [loading, setLoading] = useState(false);
-    const { url, name, retry_local_url } = useMemo(() => data || {}, [data]);
+    const { url: dataUrl, name, retry_local_url } = useMemo(() => data || {}, [data]);
     const readOnly = useReadOnly() || editor.isElementReadOnly(node as unknown as Element);
     const emptyRef = useRef<HTMLDivElement>(null);
     const [showToolbar, setShowToolbar] = useState(false);
+
+    const url = useMemo(() => constructFileUrl(dataUrl, workspaceId, viewId), [dataUrl, workspaceId, viewId]);
 
     const className = useMemo(() => {
       const classList = ['w-full'];
@@ -37,7 +40,7 @@ export const FileBlock = memo(
       if (url) {
         classList.push('cursor-pointer');
       } else {
-        classList.push('text-text-caption');
+        classList.push('text-text-secondary');
       }
 
       if (attributes.className) {
@@ -52,9 +55,7 @@ export const FileBlock = memo(
     }, [attributes.className, readOnly, url]);
 
     const { t } = useTranslation();
-    const {
-      openPopover,
-    } = usePopoverContext();
+    const { openPopover } = usePopoverContext();
 
     const handleClick = useCallback(async () => {
       try {
@@ -91,49 +92,53 @@ export const FileBlock = memo(
       })();
     }, [readOnly, retry_local_url, fileHandler]);
 
-    const uploadFileRemote = useCallback(async (file: File) => {
-
-      try {
-        if (uploadFile) {
-          return await uploadFile(file);
+    const uploadFileRemote = useCallback(
+      async (file: File) => {
+        try {
+          if (uploadFile) {
+            return await uploadFile(file);
+          }
+          // eslint-disable-next-line
+        } catch (e: any) {
+          return;
         }
-        // eslint-disable-next-line
-      } catch (e: any) {
-        return;
-      }
-    }, [uploadFile]);
+      },
+      [uploadFile]
+    );
 
-    const handleRetry = useCallback(async (e: React.MouseEvent) => {
-      e.stopPropagation();
-      if (!retry_local_url) return;
-      const fileData = await fileHandler.getStoredFile(retry_local_url);
-      const file = fileData?.file;
+    const handleRetry = useCallback(
+      async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!retry_local_url) return;
+        const fileData = await fileHandler.getStoredFile(retry_local_url);
+        const file = fileData?.file;
 
-      if (!file) return;
+        if (!file) return;
 
-      const url = await uploadFileRemote(file);
+        const url = await uploadFileRemote(file);
 
-      if (!url) {
-        return;
-      }
+        if (!url) {
+          return;
+        }
 
-      setLoading(true);
-      try {
-        await fileHandler.cleanup(retry_local_url);
-        CustomEditor.setBlockData(editor, blockId, {
-          url,
-          name,
-          uploaded_at: Date.now(),
-          url_type: FieldURLType.Upload,
-          retry_local_url: '',
-        } as FileBlockData);
-      } catch (e) {
-        // do nothing
-      } finally {
-        setLoading(false);
-      }
-
-    }, [blockId, editor, fileHandler, name, retry_local_url, uploadFileRemote]);
+        setLoading(true);
+        try {
+          await fileHandler.cleanup(retry_local_url);
+          CustomEditor.setBlockData(editor, blockId, {
+            url,
+            name,
+            uploaded_at: Date.now(),
+            url_type: FieldURLType.Upload,
+            retry_local_url: '',
+          } as FileBlockData);
+        } catch (e) {
+          // do nothing
+        } finally {
+          setLoading(false);
+        }
+      },
+      [blockId, editor, fileHandler, name, retry_local_url, uploadFileRemote]
+    );
 
     return (
       <div
@@ -147,51 +152,50 @@ export const FileBlock = memo(
         onMouseLeave={() => setShowToolbar(false)}
         onClick={handleClick}
       >
-        <div
-          contentEditable={false}
-          className={`embed-block items-center p-4`}
-        >
-          <div className={'flex items-start h-full'}>
-            <FileIcon className={'w-6 h-6'}/>
+        <div contentEditable={false} className={`embed-block items-center p-4`}>
+          <div className={'flex h-full items-start'}>
+            <FileIcon className={'h-6 w-6'} />
           </div>
 
-          <div
-            ref={emptyRef}
-            className={'flex-1 flex flex-col gap-2 overflow-hidden text-base font-medium'}
-          >
-            {url || needRetry ?
+          <div ref={emptyRef} className={'flex flex-1 flex-col gap-2 overflow-hidden text-base font-medium'}>
+            {url || needRetry ? (
               <div className={'flex flex-col gap-2'}>
                 <div className={'w-full truncate'}>{name?.trim() || t('document.title.placeholder')}</div>
-                {needRetry &&
-                  <div className={'text-function-error font-normal'}>{t('web.fileBlock.uploadFailed')}</div>}
-              </div> :
-              <div className={'text-text-caption'}>
-                {t('web.fileBlock.empty')}
+                {needRetry && <div className={'font-normal text-function-error'}>{t('web.fileBlock.uploadFailed')}</div>}
               </div>
-            }
+            ) : (
+              <div className={'text-text-secondary'}>{t('web.fileBlock.empty')}</div>
+            )}
           </div>
 
-          {needRetry && (
-            loading ? (<CircularProgress size={16}/>) :
+          {needRetry &&
+            (loading ? (
+              <CircularProgress size={16} />
+            ) : (
               <Tooltip placement={'top'} title={t('web.fileBlock.retry')}>
                 <IconButton onClick={handleRetry} size={'small'} color={'error'}>
-                  <ReloadIcon/>
+                  <ReloadIcon />
                 </IconButton>
               </Tooltip>
-          )}
+            ))}
           {showToolbar && url && (
-            <FileToolbar node={node}/>
+            <FileToolbar
+              node={{
+                ...node,
+                data: {
+                  ...data,
+                  url,
+                },
+              }}
+            />
           )}
         </div>
-        <div
-          ref={ref}
-          className={`absolute h-full w-full caret-transparent`}
-        >
+        <div ref={ref} className={`absolute h-full w-full caret-transparent`}>
           {children}
         </div>
-
       </div>
     );
-  }));
+  })
+);
 
 export default FileBlock;

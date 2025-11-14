@@ -1,11 +1,11 @@
 import { parseChecklistData } from '@/application/database-yjs';
 import { CellProps, ChecklistCell as CellType } from '@/application/database-yjs/cell.type';
 import { ChecklistCell } from '@/components/database/components/cell/checklist';
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { ReactComponent as CheckboxCheckSvg } from '@/assets/icons/check_filled.svg';
 import { ReactComponent as CheckboxUncheckSvg } from '@/assets/icons/uncheck.svg';
 
-export function ChecklistProperty(props: CellProps<CellType>) {
+export function ChecklistProperty (props: CellProps<CellType>) {
   const { cell } = props;
   const data = useMemo(() => {
     return parseChecklistData(cell?.data ?? '');
@@ -21,8 +21,11 @@ export function ChecklistProperty(props: CellProps<CellType>) {
         const isSelected = selectedOptions?.includes(option.id);
 
         return (
-          <div key={option.id} className={'flex items-center gap-2 text-xs font-medium'}>
-            {isSelected ? <CheckboxCheckSvg className={'h-5 w-5'} /> : <CheckboxUncheckSvg className={'h-5 w-5'} />}
+          <div
+            key={option.id}
+            className={'flex items-center gap-2 text-xs font-medium'}
+          >
+            {isSelected ? <CheckboxCheckSvg className={'h-5 w-5'} /> : <CheckboxUncheckSvg className={'h-5 w-5 text-border-primary hover:text-border-primary-hover'} />}
             <div>{option.name}</div>
           </div>
         );

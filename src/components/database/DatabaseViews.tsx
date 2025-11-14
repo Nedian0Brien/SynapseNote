@@ -1,16 +1,19 @@
-import { DatabaseViewLayout, YjsDatabaseKey } from '@/application/types';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
+
 import { useDatabaseViewsSelector } from '@/application/database-yjs';
+import { DatabaseViewLayout, YjsDatabaseKey } from '@/application/types';
 import CalendarSkeleton from '@/components/_shared/skeleton/CalendarSkeleton';
 import GridSkeleton from '@/components/_shared/skeleton/GridSkeleton';
 import KanbanSkeleton from '@/components/_shared/skeleton/KanbanSkeleton';
 import { Board } from '@/components/database/board';
-import { Calendar } from '@/components/database/calendar';
 import { DatabaseConditionsContext } from '@/components/database/components/conditions/context';
 import { DatabaseTabs } from '@/components/database/components/tabs';
+import { Calendar } from '@/components/database/fullcalendar';
 import { Grid } from '@/components/database/grid';
 import { ElementFallbackRender } from '@/components/error/ElementFallbackRender';
-import React, { Suspense, useCallback, useMemo, useState } from 'react';
-import { ErrorBoundary } from 'react-error-boundary';
+import { Progress } from '@/components/ui/progress';
+
 import DatabaseConditions from 'src/components/database/components/conditions/DatabaseConditions';
 
 function DatabaseViews({
@@ -28,10 +31,12 @@ function DatabaseViews({
 }) {
   const { childViews, viewIds } = useDatabaseViewsSelector(iidIndex, visibleViewIds);
 
+  const [isLoading, setIsLoading] = useState(false);
+  const [layout, setLayout] = useState<DatabaseViewLayout | null>(null);
   const value = useMemo(() => {
     return Math.max(
       0,
-      viewIds.findIndex((id) => id === viewId),
+      viewIds.findIndex((id) => id === viewId)
     );
   }, [viewId, viewIds]);
 
@@ -39,51 +44,61 @@ function DatabaseViews({
   const toggleExpanded = useCallback(() => {
     setConditionsExpanded((prev) => !prev);
   }, []);
+  const [openFilterId, setOpenFilterId] = useState<string>();
 
   const activeView = useMemo(() => {
     return childViews[value];
   }, [childViews, value]);
 
-  const layout = useMemo(() => {
-    if (!activeView) return null;
-    return Number(activeView.get(YjsDatabaseKey.layout)) as DatabaseViewLayout;
+  useEffect(() => {
+    if (!activeView) return;
+
+    const observerEvent = () => {
+      setLayout(Number(activeView.get(YjsDatabaseKey.layout)) as DatabaseViewLayout);
+      setIsLoading(false);
+    };
+
+    observerEvent();
+
+    activeView.observe(observerEvent);
+
+    return () => {
+      activeView.unobserve(observerEvent);
+    };
   }, [activeView]);
 
-  const view = useMemo(() => {
-    switch (layout) {
-      case DatabaseViewLayout.Grid:
-        return <Grid
-        />;
-      case DatabaseViewLayout.Board:
-        return <Board
-        />;
-      case DatabaseViewLayout.Calendar:
-        return <Calendar
-        />;
-    }
-  }, [layout]);
+  const handleViewChange = useCallback(
+    (newViewId: string) => {
+      setIsLoading(true);
+      onChangeView(newViewId);
+    },
+    [onChangeView]
+  );
 
   const skeleton = useMemo(() => {
     switch (layout) {
       case DatabaseViewLayout.Grid:
-        return <GridSkeleton
-          includeTitle={false}
-          includeTabs={false}
-        />;
+        return <GridSkeleton includeTitle={false} includeTabs={false} />;
       case DatabaseViewLayout.Board:
-        return <KanbanSkeleton
-          includeTitle={false}
-          includeTabs={false}
-        />;
+        return <KanbanSkeleton includeTitle={false} includeTabs={false} />;
       case DatabaseViewLayout.Calendar:
-        return <CalendarSkeleton
-          includeTitle={false}
-          includeTabs={false}
-        />;
+        return <CalendarSkeleton includeTitle={false} includeTabs={false} />;
       default:
         return null;
     }
   }, [layout]);
+
+  const view = useMemo(() => {
+    if (isLoading) return skeleton;
+    switch (layout) {
+      case DatabaseViewLayout.Grid:
+        return <Grid />;
+      case DatabaseViewLayout.Board:
+        return <Board />;
+      case DatabaseViewLayout.Calendar:
+        return <Calendar />;
+    }
+  }, [layout, isLoading, skeleton]);
 
   return (
     <>
@@ -91,21 +106,28 @@ function DatabaseViews({
         value={{
           expanded: conditionsExpanded,
           toggleExpanded,
+          openFilterId,
+          setOpenFilterId,
         }}
       >
         <DatabaseTabs
           viewName={viewName}
           iidIndex={iidIndex}
           selectedViewId={viewId}
-          setSelectedViewId={onChangeView}
+          setSelectedViewId={handleViewChange}
           viewIds={viewIds}
         />
-        <DatabaseConditions/>
+        <DatabaseConditions />
 
-        <div className={'flex h-full w-full flex-1 flex-col overflow-hidden'}>
+        <div className={'relative flex h-full w-full flex-1 flex-col overflow-hidden'}>
           <Suspense fallback={skeleton}>
             <ErrorBoundary fallbackRender={ElementFallbackRender}>{view}</ErrorBoundary>
           </Suspense>
+          {isLoading && (
+            <div className='absolute inset-0 z-50 flex items-center justify-center bg-white/50 backdrop-blur-sm'>
+              <Progress />
+            </div>
+          )}
         </div>
       </DatabaseConditionsContext.Provider>
     </>

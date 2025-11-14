@@ -1,14 +1,14 @@
 import { PublishContext } from '@/application/publish';
-import { notify } from '@/components/_shared/notify';
-import { AFConfigContext } from '@/components/main/app.hooks';
 import { useGlobalCommentContext } from '@/components/global-comment/GlobalComment.hooks';
 import ReplyComment from '@/components/global-comment/ReplyComment';
+import { AFConfigContext } from '@/components/main/app.hooks';
+import { notify } from '@/components/_shared/notify';
 
+import { ReactComponent as CloseIcon } from '@/assets/icons/close.svg';
 import { Button, TextareaAutosize } from '@mui/material';
 import CircularProgress from '@mui/material/CircularProgress';
 import React, { memo, useCallback, useContext, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ReactComponent as CloseIcon } from '@/assets/icons/close.svg';
 import smoothScrollIntoViewIfNeeded from 'smooth-scroll-into-view-if-needed';
 
 interface AddCommentProps {
@@ -19,7 +19,7 @@ interface AddCommentProps {
   fixed: boolean;
 }
 
-function AddComment ({ content, setContent, focus, setFocus, fixed }: AddCommentProps) {
+function AddComment({ content, setContent, focus, setFocus, fixed }: AddCommentProps) {
   const { reload, replyCommentId, replyComment: setReplyCommentId } = useGlobalCommentContext();
 
   const { t } = useTranslation();
@@ -85,19 +85,19 @@ function AddComment ({ content, setContent, focus, setFocus, fixed }: AddComment
 
   return (
     <div className={'flex flex-col gap-2'}>
-      <div className={'bg-bg-body'}>
+      <div className={'bg-background-primary'}>
         <div
           style={{
-            backgroundColor: replyCommentId ? 'var(--fill-list-hover)' : undefined,
+            backgroundColor: replyCommentId ? 'var(--fill-content-hover)' : undefined,
           }}
           className={'flex flex-col rounded-[8px]'}
         >
           {replyCommentId && (
             <div className={'relative flex items-center gap-2 py-2 pl-2 pr-6'}>
-              <span className={'text-sm text-text-caption'}>{t('globalComment.replyingTo')}</span>
+              <span className={'text-sm text-text-secondary'}>{t('globalComment.replyingTo')}</span>
               <div className={'flex-1 overflow-hidden'}> {<ReplyComment commentId={replyCommentId} />}</div>
 
-              <div className={'absolute right-2 top-2 cursor-pointer rounded-full p-1 hover:bg-fill-list-hover'}>
+              <div className={'absolute right-2 top-2 cursor-pointer rounded-full p-1 hover:bg-fill-content-hover'}>
                 <CloseIcon className={'h-3 w-3 '} onClick={() => setReplyCommentId(null)} />
               </div>
             </div>
@@ -116,7 +116,7 @@ function AddComment ({ content, setContent, focus, setFocus, fixed }: AddComment
                 transition: 'width 0.3s ease-in-out',
               }}
               className={
-                'flex flex-1 transform flex-col gap-4 rounded-[8px] border border-line-border bg-bg-body px-3 py-1.5'
+                'flex flex-1 transform flex-col gap-4 rounded-[8px] border border-line-border bg-background-primary px-3 py-1.5'
               }
             >
               <TextareaAutosize
@@ -164,7 +164,7 @@ function AddComment ({ content, setContent, focus, setFocus, fixed }: AddComment
               setContent('');
               setReplyCommentId(null);
             }}
-            className={'h-7  bg-bg-body'}
+            className={'h-7  bg-background-primary'}
             size={'small'}
             color={'inherit'}
             variant={'outlined'}

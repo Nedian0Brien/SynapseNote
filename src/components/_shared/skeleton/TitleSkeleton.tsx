@@ -1,11 +1,9 @@
-import React from 'react';
-
-function TitleSkeleton () {
+function TitleSkeleton() {
   return (
-    <div className="w-full flex gap-2 items-center h-20 mb-2">
-      <div className="flex-shrink-0 w-16 h-16 bg-fill-list-hover rounded-full animate-pulse"></div>
-      <div className="ml-4 flex-grow">
-        <div className="h-10 bg-fill-list-hover rounded animate-pulse"></div>
+    <div className='mb-2 flex h-20 w-full items-center gap-2'>
+      <div className='h-16 w-16 flex-shrink-0 animate-pulse rounded-full bg-fill-content-hover'></div>
+      <div className='ml-4 flex-grow'>
+        <div className='h-10 animate-pulse rounded bg-fill-content-hover'></div>
       </div>
     </div>
   );

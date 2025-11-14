@@ -18,7 +18,11 @@ export const withCopy = (editor: ReactEditor) => {
     }
 
     if (Range.isCollapsed(selection)) {
-      const [node] = getBlockEntry(editor as YjsEditor);
+      const entry = getBlockEntry(editor as YjsEditor);
+
+      if (!entry) return;
+
+      const [node] = entry;
 
       if (node && isEmbedBlockTypes(node.type as BlockType)) {
         const fragment = editor.getFragment();

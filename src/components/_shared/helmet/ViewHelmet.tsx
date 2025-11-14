@@ -1,21 +1,15 @@
-import { ViewIcon, ViewIconType } from '@/application/types';
-import { getIconBase64 } from '@/utils/emoji';
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 
-function ViewHelmet ({
-  name,
-  icon,
-}: {
-  name?: string;
-  icon?: ViewIcon
-}) {
+import { ViewIcon, ViewIconType } from '@/application/types';
+import { getIconBase64 } from '@/utils/emoji';
 
+function ViewHelmet({ name, icon }: { name?: string; icon?: ViewIcon }) {
   useEffect(() => {
     const setFavicon = async () => {
       try {
         let url = '/appflowy.svg';
-        const link = document.querySelector('link[rel*=\'icon\']') as HTMLLinkElement || document.createElement('link');
+        const link = (document.querySelector("link[rel*='icon']") as HTMLLinkElement) || document.createElement('link');
 
         if (icon && icon.value) {
           if (icon.ty === ViewIconType.Emoji) {
@@ -29,19 +23,13 @@ function ViewHelmet ({
             url = URL.createObjectURL(blob);
 
             link.type = 'image/svg+xml';
-
           } else if (icon.ty === ViewIconType.Icon) {
-            const {
-              groupName,
-              iconName,
-              color,
-            } = JSON.parse(icon.value);
+            const { groupName, iconName, color } = JSON.parse(icon.value);
             const id = `${groupName}/${iconName}`;
 
             url = (await getIconBase64(id, color)) || '';
             link.type = 'image/svg+xml';
           }
-
         }
 
         link.rel = 'icon';
@@ -55,13 +43,44 @@ function ViewHelmet ({
     void setFavicon();
 
     return () => {
-      const link = document.querySelector('link[rel*=\'icon\']');
+      const link = document.querySelector("link[rel*='icon']");
 
       if (link) {
         document.getElementsByTagName('head')[0].removeChild(link);
       }
     };
   }, [icon]);
+
+  const url = window.location.href;
+
+  useEffect(() => {
+    const setCanonical = () => {
+      let link = document.querySelector("link[rel*='canonical']") as HTMLLinkElement;
+
+      if (link) {
+        document.getElementsByTagName('head')[0].removeChild(link);
+      }
+
+      let ogLink = document.querySelector("link[rel*='og:url']") as HTMLLinkElement;
+
+      if (ogLink) {
+        document.getElementsByTagName('head')[0].removeChild(ogLink);
+      }
+
+      link = document.createElement('link');
+
+      link.rel = 'canonical';
+      link.href = url;
+      document.getElementsByTagName('head')[0].appendChild(link);
+
+      ogLink = document.createElement('link');
+      ogLink.rel = 'og:url';
+      ogLink.href = url;
+      document.getElementsByTagName('head')[0].appendChild(ogLink);
+    };
+
+    setCanonical();
+  }, [url]);
 
   if (!name) return null;
   return (

@@ -1,59 +1,57 @@
-import React from 'react';
 import TabbarSkeleton from '@/components/_shared/skeleton/TabbarSkeleton';
 import TitleSkeleton from '@/components/_shared/skeleton/TitleSkeleton';
 
-function CalendarSkeleton ({ includeTitle = true, includeTabs = true }: {
+function CalendarSkeleton({
+  includeTitle = true,
+  includeTabs = true,
+}: {
   includeTitle?: boolean;
-  includeTabs?: boolean
+  includeTabs?: boolean;
 }) {
   const daysInWeek = 7;
   const weeksInMonth = 4;
 
   return (
-    <div className={`w-full overflow-x-auto  max-sm:px-6 px-24 min-w-0 max-w-full ${includeTitle ? 'py-2' : ''}`}>
+    <div className={`w-full min-w-0  max-w-full overflow-x-auto px-24 max-sm:px-6 ${includeTitle ? 'py-2' : ''}`}>
       {includeTitle && (
         <>
-          <div className="w-full my-6 flex items-center h-20 mb-2">
+          <div className='my-6 mb-2 flex h-20 w-full items-center'>
             <TitleSkeleton />
           </div>
         </>
       )}
 
-      {includeTabs && <div className="w-full flex items-center h-10 mb-2">
-        <TabbarSkeleton />
-      </div>}
+      {includeTabs && (
+        <div className='mb-2 flex h-10 w-full items-center'>
+          <TabbarSkeleton />
+        </div>
+      )}
       {/* Calendar Header */}
-      <div className="flex justify-between items-center mb-2">
-        <div className="w-24 h-10 bg-fill-list-hover rounded animate-pulse"></div>
-        <div className="flex gap-1">
-          <div className="w-10 h-10 bg-fill-list-hover rounded animate-pulse"></div>
-          <div className="w-10 h-10 bg-fill-list-hover rounded animate-pulse"></div>
+      <div className='mb-2 flex items-center justify-between'>
+        <div className='h-10 w-24 animate-pulse rounded bg-fill-content-hover'></div>
+        <div className='flex gap-1'>
+          <div className='h-10 w-10 animate-pulse rounded bg-fill-content-hover'></div>
+          <div className='h-10 w-10 animate-pulse rounded bg-fill-content-hover'></div>
         </div>
       </div>
 
       {/* Weekday Names */}
-      <div className="grid grid-cols-7 gap-1 mb-1">
+      <div className='mb-1 grid grid-cols-7 gap-1'>
         {[...Array(daysInWeek)].map((_, index) => (
-          <div
-            key={index}
-            className="h-8 bg-fill-list-hover rounded animate-pulse"
-          ></div>
+          <div key={index} className='h-8 animate-pulse rounded bg-fill-content-hover'></div>
         ))}
       </div>
 
       {/* Calendar Grid */}
-      <div className="border border-line-divider rounded shadow">
-        <div className="grid grid-cols-7">
+      <div className='rounded border border-border-primary shadow'>
+        <div className='grid grid-cols-7'>
           {[...Array(weeksInMonth * daysInWeek)].map((_, index) => (
-            <div
-              key={index}
-              className="aspect-square p-1 border-r border-b border-line-divider"
-            >
-              <div className="h-full flex flex-col">
-                <div className="w-1/3 h-5 bg-fill-list-hover rounded animate-pulse self-end"></div>
-                <div className="flex-1 flex flex-col justify-center mt-1">
-                  <div className="w-4/5 h-4 bg-fill-list-hover rounded animate-pulse mb-0.5"></div>
-                  <div className="w-3/5 h-4 bg-fill-list-hover rounded animate-pulse"></div>
+            <div key={index} className='aspect-square border-b border-r border-border-primary p-1'>
+              <div className='flex h-full flex-col'>
+                <div className='h-5 w-1/3 animate-pulse self-end rounded bg-fill-content-hover'></div>
+                <div className='mt-1 flex flex-1 flex-col justify-center'>
+                  <div className='mb-0.5 h-4 w-4/5 animate-pulse rounded bg-fill-content-hover'></div>
+                  <div className='h-4 w-3/5 animate-pulse rounded bg-fill-content-hover'></div>
                 </div>
               </div>
             </div>

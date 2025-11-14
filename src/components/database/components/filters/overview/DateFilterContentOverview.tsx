@@ -1,49 +1,61 @@
-import { DateFilter, DateFilterCondition } from '@/application/database-yjs';
-import React, { useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
+import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+
+import { DateFilter, DateFilterCondition, } from '@/application/database-yjs';
+import { DateFormat } from '@/application/types';
+import { MetadataKey } from '@/application/user-metadata';
+import { getDateFormat } from '@/utils/time';
+import { useCurrentUser } from '@/components/main/app.hooks';
 
 function DateFilterContentOverview({ filter }: { filter: DateFilter }) {
   const { t } = useTranslation();
+  const currentUser = useCurrentUser();
 
   const value = useMemo(() => {
-    if (!filter.timestamp) return '';
-
     let startStr = '';
     let endStr = '';
 
     if (filter.start) {
       const end = filter.end ?? filter.start;
-      const moreThanOneYear = dayjs.unix(end).diff(dayjs.unix(filter.start), 'year') > 1;
-      const format = moreThanOneYear ? 'MMM D, YYYY' : 'MMM D';
+      const format = getDateFormat(DateFormat.Local);
 
       startStr = dayjs.unix(filter.start).format(format);
       endStr = dayjs.unix(end).format(format);
     }
 
-    const timestamp = dayjs.unix(filter.timestamp).format('MMM D');
+    const dateFormat = currentUser?.metadata?.[MetadataKey.DateFormat] as DateFormat | DateFormat.Local;
+    const timestamp = filter.timestamp ? dayjs.unix(filter.timestamp).format(getDateFormat(dateFormat)) : '';
 
     switch (filter.condition) {
-      case DateFilterCondition.DateIs:
+      case DateFilterCondition.DateStartsOn:
+      case DateFilterCondition.DateEndsOn:
         return `: ${timestamp}`;
-      case DateFilterCondition.DateBefore:
+      case DateFilterCondition.DateStartsBefore:
+      case DateFilterCondition.DateEndsAfter:
         return `: ${t('grid.dateFilter.choicechipPrefix.before')} ${timestamp}`;
-      case DateFilterCondition.DateAfter:
+      case DateFilterCondition.DateStartsAfter:
+      case DateFilterCondition.DateEndsBefore:
         return `: ${t('grid.dateFilter.choicechipPrefix.after')} ${timestamp}`;
-      case DateFilterCondition.DateOnOrBefore:
+      case DateFilterCondition.DateStartsOnOrBefore:
+      case DateFilterCondition.DateEndsOnOrAfter:
         return `: ${t('grid.dateFilter.choicechipPrefix.onOrBefore')} ${timestamp}`;
-      case DateFilterCondition.DateOnOrAfter:
+      case DateFilterCondition.DateStartsOnOrAfter:
+      case DateFilterCondition.DateEndsOnOrBefore:
         return `: ${t('grid.dateFilter.choicechipPrefix.onOrAfter')} ${timestamp}`;
-      case DateFilterCondition.DateWithIn:
-        return `: ${startStr} - ${endStr}`;
-      case DateFilterCondition.DateIsEmpty:
+      case DateFilterCondition.DateStartsBetween:
+      case DateFilterCondition.DateEndsBetween:
+        return `: ${t('grid.dateFilter.choicechipPrefix.between')} ${startStr} - ${endStr}`;
+      case DateFilterCondition.DateStartIsEmpty:
+      case DateFilterCondition.DateEndIsEmpty:
         return `: ${t('grid.dateFilter.choicechipPrefix.isEmpty')}`;
-      case DateFilterCondition.DateIsNotEmpty:
+      case DateFilterCondition.DateStartIsNotEmpty:
+      case DateFilterCondition.DateEndIsNotEmpty:
         return `: ${t('grid.dateFilter.choicechipPrefix.isNotEmpty')}`;
       default:
         return '';
     }
-  }, [filter, t]);
+  }, [filter, t, currentUser?.metadata]);
 
   return <>{value}</>;
 }

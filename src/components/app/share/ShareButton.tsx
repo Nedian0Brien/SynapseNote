@@ -1,10 +1,11 @@
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+
 import { ViewLayout } from '@/application/types';
-import { Popover } from '@/components/_shared/popover';
 import { useAppView } from '@/components/app/app.hooks';
 import ShareTabs from '@/components/app/share/ShareTabs';
-import { Button } from '@mui/material';
-import React, { useRef } from 'react';
-import { useTranslation } from 'react-i18next';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 export function ShareButton({ viewId }: { viewId: string }) {
   const { t } = useTranslation();
@@ -12,50 +13,26 @@ export function ShareButton({ viewId }: { viewId: string }) {
   const view = useAppView(viewId);
   const layout = view?.layout;
   const [opened, setOpened] = React.useState(false);
-  const ref = useRef<HTMLButtonElement>(null);
 
-  if(layout === ViewLayout.AIChat) return null;
+  if (layout === ViewLayout.AIChat) return null;
 
   return (
-    <>
-      <Button
-        className={'max-sm:hidden'}
-        onClick={() => {
-          setOpened(true);
-        }}
-        ref={ref}
-        size={'small'}
-        variant={'contained'}
-        color={'primary'}
-      >{t('shareAction.buttonText')}</Button>
-      <Popover
-        keepMounted
-        open={opened}
-        anchorEl={ref.current}
-        onClose={() => setOpened(false)}
-        sx={{
-          '& .MuiPopover-paper': {
-            margin: '8px 0',
-          },
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'center',
-        }}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'center',
-        }}
+    <Popover open={opened} onOpenChange={setOpened}>
+      <PopoverTrigger asChild>
+        <Button className={'mx-2'} data-testid={'share-button'} size={'sm'} variant={'default'}>
+          {t('shareAction.buttonText')}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        side='bottom'
+        align='end'
+        alignOffset={-20}
+        className={'h-fit min-w-[480px] max-w-[480px]'}
+        data-testid={'share-popover'}
       >
-        <div className={'flex flex-col gap-2 w-fit p-2'}>
-          <ShareTabs
-            opened={opened}
-            viewId={viewId}
-            onClose={() => setOpened(false)}
-          />
-        </div>
-      </Popover>
-    </>
+        <ShareTabs opened={opened} viewId={viewId} onClose={() => setOpened(false)} />
+      </PopoverContent>
+    </Popover>
   );
 }
 

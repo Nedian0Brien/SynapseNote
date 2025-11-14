@@ -1,13 +1,18 @@
-import React, { useContext } from 'react';
-import { ToastContext } from '@/components/quick-note/QuickNote.hooks';
+import { QuickNote } from '@/application/types';
 import { useCurrentWorkspaceId } from '@/components/app/app.hooks';
 import { useService } from '@/components/main/app.hooks';
-import { NormalModal } from '@/components/_shared/modal';
-import { useTranslation } from 'react-i18next';
-import { QuickNote } from '@/application/types';
+import { ToastContext } from '@/components/quick-note/QuickNote.hooks';
 import { getTitle } from '@/components/quick-note/utils';
+import { NormalModal } from '@/components/_shared/modal';
+import React, { useContext } from 'react';
+import { useTranslation } from 'react-i18next';
 
-function DeleteNoteModal({ open, onClose, note, onDelete }: {
+function DeleteNoteModal({
+  open,
+  onClose,
+  note,
+  onDelete,
+}: {
   open: boolean;
   onClose: () => void;
   note: QuickNote;
@@ -47,19 +52,18 @@ function DeleteNoteModal({ open, onClose, note, onDelete }: {
       danger={true}
       onClose={onClose}
       title={
-        <div
-          className={'flex font-semibold items-center w-full text-left'}>
-          <span
-            className={'truncate w-full'}>{`${t('button.delete')}: ${getTitle(note) || t('menuAppHeader.defaultNewPageName')}`}</span>
+        <div className={'flex w-full items-center text-left font-semibold'}>
+          <span className={'w-full truncate'}>{`${t('button.delete')}: ${
+            getTitle(note) || t('menuAppHeader.defaultNewPageName')
+          }`}</span>
         </div>
       }
       onOk={handleDelete}
       PaperProps={{
         className: 'w-[420px] max-w-[70vw]',
-      }}>
-      <div className={'text-text-caption font-normal'}>
-        {t('quickNote.deleteNotePrompt')}
-      </div>
+      }}
+    >
+      <div className={'font-normal text-text-secondary'}>{t('quickNote.deleteNotePrompt')}</div>
     </NormalModal>
   );
 }

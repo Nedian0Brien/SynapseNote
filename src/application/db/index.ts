@@ -1,11 +1,11 @@
-import { userSchema, UserTable } from '@/application/db/tables/users';
-import { YDoc } from '@/application/types';
 import { databasePrefix } from '@/application/constants';
+import { rowSchema, rowTable } from '@/application/db/tables/rows';
+import { userSchema, UserTable } from '@/application/db/tables/users';
+import { viewMetasSchema, ViewMetasTable } from '@/application/db/tables/view_metas';
+import { YDoc } from '@/application/types';
+import BaseDexie from 'dexie';
 import { IndexeddbPersistence } from 'y-indexeddb';
 import * as Y from 'yjs';
-import BaseDexie from 'dexie';
-import { viewMetasSchema, ViewMetasTable } from '@/application/db/tables/view_metas';
-import { rowSchema, rowTable } from '@/application/db/tables/rows';
 
 type DexieTables = ViewMetasTable & UserTable & rowTable;
 
@@ -21,10 +21,9 @@ const openedSet = new Set<string>();
 /**
  * Open the collaboration database, and return a function to close it
  */
-export async function openCollabDB(docName: string): Promise<YDoc> {
-  const name = `${databasePrefix}_${docName}`;
+export async function openCollabDB(name: string): Promise<YDoc> {
   const doc = new Y.Doc({
-    guid: docName,
+    guid: name,
   });
 
   const provider = new IndexeddbPersistence(name, doc);
@@ -47,14 +46,14 @@ export async function openCollabDB(docName: string): Promise<YDoc> {
   return doc as YDoc;
 }
 
-export async function closeCollabDB(docName: string) {
-  const name = `${databasePrefix}_${docName}`;
-
+export async function closeCollabDB(name: string) {
   if (openedSet.has(name)) {
     openedSet.delete(name);
   }
 
-  const doc = new Y.Doc();
+  const doc = new Y.Doc({
+    guid: name,
+  });
 
   const provider = new IndexeddbPersistence(name, doc);
 
@@ -80,7 +79,7 @@ export async function clearData() {
         const deleteRequest = indexedDB.deleteDatabase(dbName);
 
         deleteRequest.onsuccess = () => {
-          console.log(`Database ${dbName} deleted successfully`);
+          console.debug(`Database ${dbName} deleted successfully`);
           resolve(true);
         };
 

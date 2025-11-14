@@ -1,28 +1,29 @@
 import { FC, useMemo } from 'react';
-import { ReactComponent as CircleIcon } from '@/assets/icons/bulleted_1.svg';
+
+import { ReactComponent as CircleIcon } from '@/assets/icons/circle.svg';
+import { cn } from '@/lib/utils';
 
 export interface TagProps {
-  color?: string;
+  bgColor?: string;
+  textColor?: string;
   label?: string;
-  size?: 'small' | 'medium';
   badge?: string;
 }
 
-export const Tag: FC<TagProps> = ({ color, size = 'small', label, badge }) => {
+export const Tag: FC<TagProps> = ({ bgColor, textColor, label, badge }) => {
   const className = useMemo(() => {
-    const classList = ['rounded-[6px]', 'font-medium', 'leading-[1.35em]', 'flex items-center gap-0.5 max-w-full'];
-
-    if (color) classList.push(`text-text-title`);
-    if (size === 'small') classList.push('px-2', 'py-0.5');
-    if (size === 'medium') classList.push('px-3', 'py-1');
-    if (badge) classList.push('pr-4');
-    return classList.join(' ');
-  }, [color, size, badge]);
+    return cn(
+      'text-[0.75rem] leading-[1.5] truncate',
+      'min-w-[22px] w-fit flex items-center gap-0.5 py-[1px] px-2 max-w-full justify-center, rounded-[6px]',
+      badge && 'px-2 gap-1'
+    );
+  }, [badge]);
 
   return (
     <div
       style={{
-        backgroundColor: color ? `var(${color})` : undefined,
+        backgroundColor: bgColor ? `var(${bgColor})` : undefined,
+        color: `var(${textColor || '--text-primary'})`,
       }}
       className={className}
     >
@@ -31,7 +32,7 @@ export const Tag: FC<TagProps> = ({ color, size = 'small', label, badge }) => {
           style={{
             color: `var(${badge})`,
           }}
-          className={`h-5 w-5`}
+          className={`!h-1.5 !w-1.5 min-w-1.5`}
         />
       )}
       <div className={'truncate'}>{label}</div>

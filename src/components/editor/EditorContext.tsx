@@ -3,11 +3,21 @@ import {
   FontLayout,
   LineHeightLayout,
   LoadView,
-  LoadViewMeta, UIVariant, View, CreatePagePayload, TextCount,
+  LoadViewMeta,
+  UIVariant,
+  View,
+  CreatePagePayload,
+  TextCount,
+  LoadDatabasePrompts,
+  TestDatabasePromptConfig,
+  Subscription,
+  MentionablePerson,
 } from '@/application/types';
 import { AxiosInstance } from 'axios';
+import EventEmitter from 'events';
 import { createContext, useCallback, useContext, useState } from 'react';
 import { BaseRange, Range } from 'slate';
+import { Awareness } from 'y-protocols/awareness';
 
 export interface EditorLayoutStyle {
   fontLayout: FontLayout;
@@ -27,6 +37,7 @@ export interface Decorate {
 }
 
 export interface EditorContextState {
+  fullWidth?: boolean;
   workspaceId: string;
   viewId: string;
   readOnly: boolean;
@@ -54,6 +65,16 @@ export interface EditorContextState {
   onWordCountChange?: (viewId: string, props: TextCount) => void;
   uploadFile?: (file: File) => Promise<string>;
   requestInstance?: AxiosInstance | null;
+  getMoreAIContext?: () => string;
+  loadDatabasePrompts?: LoadDatabasePrompts;
+  testDatabasePromptConfig?: TestDatabasePromptConfig;
+  getSubscriptions?: (() => Promise<Subscription[]>) | undefined;
+  eventEmitter?: EventEmitter;
+  getMentionUser?: (uuid: string) => Promise<MentionablePerson | undefined>;
+  awareness?: Awareness;
+  getDeviceId?: () => string;
+  collapsedMap?: Record<string, boolean>;
+  toggleCollapsed?: (blockId: string) => void;
 }
 
 export const EditorContext = createContext<EditorContextState>({
@@ -67,12 +88,13 @@ export const EditorContext = createContext<EditorContextState>({
 export const EditorContextProvider = ({ children, ...props }: EditorContextState & { children: React.ReactNode }) => {
   const [decorateState, setDecorateState] = useState<Record<string, Decorate>>({});
   const [selectedBlockIds, setSelectedBlockIds] = useState<string[]>([]);
+  const [collapsedMap, setCollapsedMap] = useState<Record<string, boolean>>({});
 
   const addDecorate = useCallback((range: BaseRange, class_name: string, type: string) => {
     setDecorateState((prev) => {
       const oldValue = prev[type];
 
-      if(oldValue && Range.equals(oldValue.range, range) && oldValue.class_name === class_name) {
+      if (oldValue && Range.equals(oldValue.range, range) && oldValue.class_name === class_name) {
         return prev;
       }
 
@@ -88,7 +110,7 @@ export const EditorContextProvider = ({ children, ...props }: EditorContextState
 
   const removeDecorate = useCallback((type: string) => {
     setDecorateState((prev) => {
-      if(prev[type] === undefined) {
+      if (prev[type] === undefined) {
         return prev;
       }
 
@@ -99,16 +121,29 @@ export const EditorContextProvider = ({ children, ...props }: EditorContextState
     });
   }, []);
 
-  return <EditorContext.Provider
-    value={{
-      ...props,
-      decorateState,
-      addDecorate,
-      removeDecorate,
-      setSelectedBlockIds,
-      selectedBlockIds,
-    }}
-  >{children}</EditorContext.Provider>;
+  const toggleCollapsed = useCallback((blockId: string) => {
+    setCollapsedMap((prev) => ({
+      ...prev,
+      [blockId]: !prev[blockId],
+    }));
+  }, []);
+
+  return (
+    <EditorContext.Provider
+      value={{
+        ...props,
+        decorateState,
+        addDecorate,
+        removeDecorate,
+        setSelectedBlockIds,
+        selectedBlockIds,
+        collapsedMap,
+        toggleCollapsed,
+      }}
+    >
+      {children}
+    </EditorContext.Provider>
+  );
 };
 
 export function useEditorContext() {

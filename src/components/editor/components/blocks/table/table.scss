@@ -6,10 +6,10 @@
 
   [id^=table-] {
     width: fit-content;
-    @apply border-t border-l border-line-divider;
+    @apply border-t border-l border-border-primary;
   }
 
   .table-cell {
-    @apply border-b border-r border-line-divider;
+    @apply border-b border-r border-border-primary;
   }
 }

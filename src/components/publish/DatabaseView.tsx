@@ -1,3 +1,6 @@
+import { Suspense, useCallback, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
+
 import { usePublishContext } from '@/application/publish';
 import {
   AppendBreadcrumb,
@@ -5,9 +8,9 @@ import {
   LoadView,
   LoadViewMeta,
   ViewLayout,
+  ViewMetaProps,
   YDatabase,
   YDoc,
-  ViewMetaProps,
   YjsEditorKey,
 } from '@/application/types';
 import ComponentLoading from '@/components/_shared/progress/ComponentLoading';
@@ -16,8 +19,7 @@ import DocumentSkeleton from '@/components/_shared/skeleton/DocumentSkeleton';
 import GridSkeleton from '@/components/_shared/skeleton/GridSkeleton';
 import KanbanSkeleton from '@/components/_shared/skeleton/KanbanSkeleton';
 import { Database } from '@/components/database';
-import React, { Suspense, useCallback, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+
 import ViewMetaPreview from 'src/components/view-meta/ViewMetaPreview';
 
 export interface DatabaseProps {
@@ -30,6 +32,7 @@ export interface DatabaseProps {
   viewMeta: ViewMetaProps;
   appendBreadcrumb?: AppendBreadcrumb;
   onRendered?: () => void;
+  getViewIdFromDatabaseId?: (databaseId: string) => Promise<string | null>;
 }
 
 function DatabaseView({ viewMeta, ...props }: DatabaseProps) {
@@ -44,22 +47,22 @@ function DatabaseView({ viewMeta, ...props }: DatabaseProps) {
 
   const handleChangeView = useCallback(
     (viewId: string) => {
-      setSearch(prev => {
+      setSearch((prev) => {
         prev.set('v', viewId);
         return prev;
       });
     },
-    [setSearch],
+    [setSearch]
   );
 
   const handleNavigateToRow = useCallback(
     (rowId: string) => {
-      setSearch(prev => {
+      setSearch((prev) => {
         prev.set('r', rowId);
         return prev;
       });
     },
-    [setSearch],
+    [setSearch]
   );
 
   const rowId = search.get('r') || undefined;
@@ -67,11 +70,11 @@ function DatabaseView({ viewMeta, ...props }: DatabaseProps) {
   const database = doc?.getMap(YjsEditorKey.data_section)?.get(YjsEditorKey.database) as YDatabase;
 
   const skeleton = useMemo(() => {
-    if(rowId) {
+    if (rowId) {
       return <DocumentSkeleton />;
     }
 
-    switch(viewMeta.layout) {
+    switch (viewMeta.layout) {
       case ViewLayout.Grid:
         return <GridSkeleton includeTitle={false} />;
       case ViewLayout.Board:
@@ -83,7 +86,7 @@ function DatabaseView({ viewMeta, ...props }: DatabaseProps) {
     }
   }, [rowId, viewMeta.layout]);
 
-  if(!viewId || !database) return null;
+  if (!viewId || !database) return null;
 
   return (
     <div
@@ -93,10 +96,7 @@ function DatabaseView({ viewMeta, ...props }: DatabaseProps) {
       }}
       className={'relative flex h-full w-full flex-col'}
     >
-      {rowId ? null : <ViewMetaPreview
-        {...viewMeta}
-        readOnly={true}
-      />}
+      {rowId ? null : <ViewMetaPreview {...viewMeta} readOnly={true} />}
 
       <Suspense fallback={skeleton}>
         <Database
@@ -107,7 +107,7 @@ function DatabaseView({ viewMeta, ...props }: DatabaseProps) {
           rowId={rowId}
           visibleViewIds={visibleViewIds}
           onChangeView={handleChangeView}
-          onOpenRow={handleNavigateToRow}
+          onOpenRowPage={handleNavigateToRow}
           showActions={false}
         />
       </Suspense>

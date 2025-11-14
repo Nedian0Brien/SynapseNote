@@ -1,17 +1,18 @@
-import { YjsDatabaseKey } from '@/application/types';
 import {
   CheckboxFilterCondition,
   ChecklistFilterCondition,
   FieldType,
   Filter,
+  PersonFilterCondition,
   SelectOptionFilter,
   useFieldSelector,
 } from '@/application/database-yjs';
+import { YjsDatabaseKey } from '@/application/types';
 import DateFilterContentOverview from '@/components/database/components/filters/overview/DateFilterContentOverview';
 import NumberFilterContentOverview from '@/components/database/components/filters/overview/NumberFilterContentOverview';
 import SelectFilterContentOverview from '@/components/database/components/filters/overview/SelectFilterContentOverview';
 import TextFilterContentOverview from '@/components/database/components/filters/overview/TextFilterContentOverview';
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export function FilterContentOverview({ filter }: { filter: Filter }) {
@@ -37,7 +38,7 @@ export function FilterContentOverview({ filter }: { filter: Filter }) {
       case FieldType.Checkbox:
         return (
           <>
-            : {t('grid.checkboxFilter.choicechipPrefix.is')}{' '}
+            :{' '}
             {filter.condition === CheckboxFilterCondition.IsChecked
               ? t('grid.checkboxFilter.isChecked')
               : t('grid.checkboxFilter.isUnchecked')}
@@ -50,6 +51,21 @@ export function FilterContentOverview({ filter }: { filter: Filter }) {
             {filter.condition === ChecklistFilterCondition.IsComplete
               ? t('grid.checklistFilter.isComplete')
               : t('grid.checklistFilter.isIncomplted')}
+          </>
+        );
+      case FieldType.Person:
+        return (
+          <>
+            :{' '}
+            {filter.condition === PersonFilterCondition.PersonContains
+              ? t('grid.personFilter.contains')
+              : filter.condition === PersonFilterCondition.PersonDoesNotContain
+              ? t('grid.personFilter.doesNotContain')
+              : filter.condition === PersonFilterCondition.PersonIsEmpty
+              ? t('grid.personFilter.isEmpty')
+              : filter.condition === PersonFilterCondition.PersonIsNotEmpty
+              ? t('grid.personFilter.isNotEmpty')
+              : ''}
           </>
         );
       default:

@@ -1,8 +1,8 @@
+import { ReactComponent as TipIcon } from '@/assets/icons/warning.svg';
 import { NormalModal } from '@/components/_shared/modal';
 import { IconButton, OutlinedInput, Tooltip } from '@mui/material';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { ReactComponent as TipIcon } from '@/assets/icons/warning.svg';
 
 function UpdateNamespace({
   namespace,
@@ -48,13 +48,15 @@ function UpdateNamespace({
           <div className={'text-left font-medium'}>{t('settings.sites.namespace.updateExistingNamespace')}</div>
           <Tooltip title={t('settings.sites.namespace.tooltip')}>
             <IconButton>
-              <TipIcon className={'h-5 w-5 cursor-pointer text-text-placeholder'} />
+              <TipIcon className={'h-5 w-5 cursor-pointer text-text-tertiary'} />
             </IconButton>
           </Tooltip>
         </div>
       }
     >
-      <div className={'mb-4 w-full overflow-hidden whitespace-pre-wrap break-words text-sm text-text-title opacity-60'}>
+      <div
+        className={'mb-4 w-full overflow-hidden whitespace-pre-wrap break-words text-sm text-text-primary opacity-60'}
+      >
         {t('settings.sites.namespace.description')}
       </div>
       <OutlinedInput
@@ -67,7 +69,7 @@ function UpdateNamespace({
           className: 'px-2 py-1.5 text-sm',
         }}
       />
-      <div className={'mt-2 text-sm text-text-title opacity-80'}>
+      <div className={'mt-2 text-sm text-text-primary opacity-80'}>
         {window.location.host}/{value}
       </div>
     </NormalModal>

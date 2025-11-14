@@ -1,6 +1,10 @@
 import { ReactComponent as ToggleListIcon } from '@/assets/icons/toggle_list.svg';
 
-function OutlineIcon ({ isExpanded, setIsExpanded, level }: {
+function OutlineIcon({
+  isExpanded,
+  setIsExpanded,
+  level,
+}: {
   isExpanded: boolean;
   setIsExpanded: (isExpanded: boolean) => void;
   level: number;
@@ -8,6 +12,7 @@ function OutlineIcon ({ isExpanded, setIsExpanded, level }: {
   if (isExpanded) {
     return (
       <button
+        data-testid="outline-toggle-collapse"
         style={{
           paddingLeft: 1.125 * level + 'em',
         }}
@@ -17,13 +22,14 @@ function OutlineIcon ({ isExpanded, setIsExpanded, level }: {
         }}
         className={'opacity-50 hover:opacity-100'}
       >
-        <ToggleListIcon className={'hover:bg-fill-list-hover rounded-[2px] rotate-90 transform'} />
+        <ToggleListIcon className={'rotate-90 transform rounded-[2px] hover:bg-fill-content-hover'} />
       </button>
     );
   }
 
   return (
     <button
+      data-testid="outline-toggle-expand"
       style={{
         paddingLeft: 1.125 * level + 'em',
       }}
@@ -33,7 +39,7 @@ function OutlineIcon ({ isExpanded, setIsExpanded, level }: {
         setIsExpanded(true);
       }}
     >
-      <ToggleListIcon className={'hover:bg-fill-list-hover rounded-[2px]'} />
+      <ToggleListIcon className={'rounded-[2px] hover:bg-fill-content-hover'} />
     </button>
   );
 }

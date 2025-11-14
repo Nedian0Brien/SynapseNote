@@ -1,3 +1,4 @@
+import { getRowKey } from '@/application/database-yjs/row_meta';
 import { closeCollabDB, db, openCollabDB } from '@/application/db';
 import { Fetcher, StrategyType } from '@/application/services/js-services/cache/types';
 import {
@@ -14,7 +15,7 @@ import {
 } from '@/application/types';
 import { applyYDoc } from '@/application/ydoc/apply';
 
-export function collabTypeToDBType (type: Types) {
+export function collabTypeToDBType(type: Types) {
   switch (type) {
     case Types.Folder:
       return 'folder';
@@ -43,7 +44,7 @@ const collabSharedRootKeyMap = {
   [Types.Empty]: YjsEditorKey.empty,
 };
 
-export function hasCollabCache (doc: YDoc) {
+export function hasCollabCache(doc: YDoc) {
   const data = doc.getMap(YjsEditorKey.data_section) as YSharedRoot;
 
   return Object.values(collabSharedRootKeyMap).some((key) => {
@@ -51,13 +52,13 @@ export function hasCollabCache (doc: YDoc) {
   });
 }
 
-export async function hasViewMetaCache (name: string) {
+export async function hasViewMetaCache(name: string) {
   const data = await db.view_metas.get(name);
 
   return !!data;
 }
 
-export async function hasUserCache (userId: string) {
+export async function hasUserCache(userId: string) {
   const data = await db.users.get(userId);
 
   return !!data;
@@ -69,7 +70,7 @@ export async function getPublishViewMeta<
     child_views: ViewInfo[];
     ancestor_views: ViewInfo[];
   }
-> (
+>(
   fetcher: Fetcher<T>,
   {
     namespace,
@@ -78,7 +79,7 @@ export async function getPublishViewMeta<
     namespace: string;
     publishName: string;
   },
-  strategy: StrategyType = StrategyType.CACHE_AND_NETWORK,
+  strategy: StrategyType = StrategyType.CACHE_AND_NETWORK
 ) {
   const name = `${namespace}_${publishName}`;
   const exist = await hasViewMetaCache(name);
@@ -117,21 +118,20 @@ export async function getPublishViewMeta<
   }
 }
 
-export async function getUser<
-  T extends User
-> (
+export async function getUser<T extends User>(
   fetcher: Fetcher<T>,
   userId?: string,
-  strategy: StrategyType = StrategyType.CACHE_AND_NETWORK,
+  strategy: StrategyType = StrategyType.CACHE_AND_NETWORK
 ) {
   const exist = userId && (await hasUserCache(userId));
-  const data = await db.users.get(userId);
 
   switch (strategy) {
     case StrategyType.CACHE_ONLY: {
       if (!exist) {
         throw new Error('No cache found');
       }
+
+      const data = await db.users.get(userId);
 
       return data;
     }
@@ -140,6 +140,8 @@ export async function getUser<
       if (!exist) {
         return revalidateUser(fetcher);
       }
+
+      const data = await db.users.get(userId);
 
       return data;
     }
@@ -150,6 +152,8 @@ export async function getUser<
       } else {
         void revalidateUser(fetcher);
       }
+
+      const data = await db.users.get(userId);
 
       return data;
     }
@@ -173,7 +177,7 @@ export async function getPublishView<
       ancestor_views: ViewInfo[];
     };
   }
-> (
+>(
   fetcher: Fetcher<T>,
   {
     namespace,
@@ -182,7 +186,7 @@ export async function getPublishView<
     namespace: string;
     publishName: string;
   },
-  strategy: StrategyType = StrategyType.CACHE_AND_NETWORK,
+  strategy: StrategyType = StrategyType.CACHE_AND_NETWORK
 ) {
   const name = `${namespace}_${publishName}`;
 
@@ -226,11 +230,12 @@ export async function getPublishView<
   return { doc };
 }
 
-export async function getPageDoc<T extends {
-  data: Uint8Array;
-  rows?: Record<RowId, number[]>;
-}> (fetcher: Fetcher<T>, name: string, strategy: StrategyType = StrategyType.CACHE_AND_NETWORK) {
-
+export async function getPageDoc<
+  T extends {
+    data: Uint8Array;
+    rows?: Record<RowId, number[]>;
+  }
+>(fetcher: Fetcher<T>, name: string, strategy: StrategyType = StrategyType.CACHE_AND_NETWORK) {
   const doc = await openCollabDB(name);
 
   const exist = hasCollabCache(doc);
@@ -238,7 +243,7 @@ export async function getPageDoc<T extends {
   switch (strategy) {
     case StrategyType.CACHE_ONLY: {
       if (!exist) {
-        throw new Error('No cache found');
+        console.warn('No cache found for doc', name);
       }
 
       break;
@@ -271,11 +276,11 @@ export async function getPageDoc<T extends {
   return { doc };
 }
 
-async function updateRows (collab: YDoc, rows: Record<RowId, number[]>) {
+async function updateRows(collab: YDoc, rows: Record<RowId, number[]>) {
   const bulkData = [];
 
   for (const [key, value] of Object.entries(rows)) {
-    const rowKey = `${collab.guid}_rows_${key}`;
+    const rowKey = getRowKey(collab.guid, key);
     const doc = await createRowDoc(rowKey);
 
     const dbRow = await db.rows.get(key);
@@ -296,7 +301,8 @@ export async function revalidateView<
   T extends {
     data: Uint8Array;
     rows?: Record<RowId, number[]>;
-  }> (fetcher: Fetcher<T>, collab: YDoc) {
+  }
+>(fetcher: Fetcher<T>, collab: YDoc) {
   try {
     const { data, rows } = await fetcher();
 
@@ -308,7 +314,6 @@ export async function revalidateView<
   } catch (e) {
     return Promise.reject(e);
   }
-
 }
 
 export async function revalidatePublishViewMeta<
@@ -317,7 +322,7 @@ export async function revalidatePublishViewMeta<
     child_views: ViewInfo[];
     ancestor_views: ViewInfo[];
   }
-> (name: string, fetcher: Fetcher<T>) {
+>(name: string, fetcher: Fetcher<T>) {
   const { view, child_views, ancestor_views } = await fetcher();
 
   const dbView = await db.view_metas.get(name);
@@ -331,7 +336,7 @@ export async function revalidatePublishViewMeta<
       visible_view_ids: dbView?.visible_view_ids ?? [],
       database_relations: dbView?.database_relations ?? {},
     },
-    name,
+    name
   );
 
   return db.view_metas.get(name);
@@ -346,7 +351,7 @@ export async function revalidatePublishView<
     subDocuments?: Record<string, number[]>;
     meta: PublishViewMetaData;
   }
-> (name: string, fetcher: Fetcher<T>, collab: YDoc) {
+>(name: string, fetcher: Fetcher<T>, collab: YDoc) {
   const { data, meta, rows, visibleViewIds = [], relations = {}, subDocuments } = await fetcher();
 
   await db.view_metas.put(
@@ -358,7 +363,7 @@ export async function revalidatePublishView<
       visible_view_ids: visibleViewIds,
       database_relations: relations,
     },
-    name,
+    name
   );
 
   if (rows) {
@@ -376,25 +381,23 @@ export async function revalidatePublishView<
   applyYDoc(collab, data);
 }
 
-export async function deleteViewMeta (name: string) {
+export async function deleteViewMeta(name: string) {
   try {
     await db.view_metas.delete(name);
-
   } catch (e) {
     console.error(e);
   }
 }
 
-export async function deleteView (name: string) {
-  console.log('deleteView', name);
+export async function deleteView(name: string) {
+  console.debug('deleteView', name);
   await deleteViewMeta(name);
   await closeCollabDB(name);
 
   await closeCollabDB(`${name}_rows`);
 }
 
-export async function revalidateUser<
-  T extends User> (fetcher: Fetcher<T>) {
+export async function revalidateUser<T extends User>(fetcher: Fetcher<T>) {
   const data = await fetcher();
 
   await db.users.put(data, data.uuid);
@@ -404,7 +407,7 @@ export async function revalidateUser<
 
 const rowDocs = new Map<string, YDoc>();
 
-export async function createRowDoc (rowKey: string) {
+export async function createRowDoc(rowKey: string) {
   if (rowDocs.has(rowKey)) {
     return rowDocs.get(rowKey) as YDoc;
   }
@@ -416,6 +419,6 @@ export async function createRowDoc (rowKey: string) {
   return doc;
 }
 
-export function deleteRowDoc (rowKey: string) {
+export function deleteRowDoc(rowKey: string) {
   rowDocs.delete(rowKey);
 }

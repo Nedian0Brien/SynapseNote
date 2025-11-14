@@ -1,5 +1,5 @@
 import { EditorElementProps, TodoListNode } from '@/components/editor/editor.type';
-import React, { forwardRef, memo, useMemo } from 'react';
+import { forwardRef, memo, useMemo } from 'react';
 
 export const TodoList = memo(
   forwardRef<HTMLDivElement, EditorElementProps<TodoListNode>>(({ node, children, ...attributes }, ref) => {

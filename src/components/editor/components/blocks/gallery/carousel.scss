@@ -16,6 +16,12 @@
     background: var(--bg-body);
   }
 
+  .lg-outer .lg-thumb {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+  }
 
   .lg-outer.lg-animate-thumb .lg-thumb {
     @apply max-sm:top-0 top-0;
@@ -36,10 +42,10 @@
 
   .lg-next, .lg-prev {
     background: transparent;
-    color: var(--text-caption);
+    color: var(--text-secondary);
     @apply max-md:hidden;
     &:hover:not(.disabled) {
-      color: var(--text-title);
+      color: var(--text-primary);
     }
   }
 }

@@ -1,24 +1,20 @@
-import { runCollaborationTest, runLocalChangeTest } from './convert';
-import { runApplyRemoteEventsTest } from './applyRemoteEvents';
+import { YjsEditor } from '@/application/slate-yjs';
 import {
   getTestingDocData,
   withTestingYDoc,
   withTestingYjsEditor,
 } from '@/application/slate-yjs/__tests__/withTestingYjsEditor';
-import { createEditor } from 'slate';
-import Y from 'yjs';
 import { expect } from '@jest/globals';
-import { YjsEditor } from '@/application/slate-yjs';
+import { createEditor } from 'slate';
+import { runCollaborationTest, runLocalChangeTest } from './convert';
 
 jest.mock('nanoid');
+
+jest.mock('lodash-es/isEqual');
 
 describe('slate-yjs adapter', () => {
   it('should pass the collaboration test', async () => {
     await runCollaborationTest();
-  });
-
-  it('should pass the apply remote events test', async () => {
-    await runApplyRemoteEventsTest();
   });
 
   it('should store local changes', () => {

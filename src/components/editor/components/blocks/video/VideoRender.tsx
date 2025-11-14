@@ -4,7 +4,7 @@ import ImageResizer from '@/components/editor/components/blocks/image/ImageResiz
 import { MIN_WIDTH } from '@/components/editor/components/blocks/simple-table/const';
 import VideoToolbar from '@/components/editor/components/blocks/video/VideoToolbar';
 import { VideoBlockNode } from '@/components/editor/editor.type';
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { Element } from 'slate';
 import { useReadOnly, useSlateStatic } from 'slate-react';
 import ReactPlayer from 'react-player';

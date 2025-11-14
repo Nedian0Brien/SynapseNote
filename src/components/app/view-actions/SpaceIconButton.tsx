@@ -1,20 +1,9 @@
-import SpaceIcon from '@/components/_shared/view-icon/SpaceIcon';
-import ChangeIconPopover from '@/components/_shared/view-icon/ChangeIconPopover';
 import { Avatar } from '@mui/material';
-import { PopoverProps } from '@mui/material/Popover';
 import React from 'react';
-import { ReactComponent as EditIcon } from '@/assets/icons/edit.svg';
 
-const popoverProps: Partial<PopoverProps> = {
-  transformOrigin: {
-    vertical: 'top',
-    horizontal: 'center',
-  },
-  anchorOrigin: {
-    vertical: 'bottom',
-    horizontal: 'center',
-  },
-};
+import { ReactComponent as EditIcon } from '@/assets/icons/edit.svg';
+import { CustomIconPopover } from '@/components/_shared/cutsom-icon';
+import SpaceIcon from '@/components/_shared/view-icon/SpaceIcon';
 
 function SpaceIconButton({
   spaceIcon,
@@ -23,6 +12,7 @@ function SpaceIconButton({
   onSelectSpaceIcon,
   onSelectSpaceIconColor,
   size,
+  container,
 }: {
   spaceIconColor?: string;
   spaceIcon?: string;
@@ -30,53 +20,52 @@ function SpaceIconButton({
   onSelectSpaceIcon: (icon: string) => void;
   onSelectSpaceIconColor: (color: string) => void;
   size?: number;
+  container: HTMLDivElement;
 }) {
   const [spaceIconEditing, setSpaceIconEditing] = React.useState<boolean>(false);
-  const [iconAnchorEl, setIconAnchorEl] = React.useState<null | HTMLElement>(null);
 
   return (
-
-    <>
+    <CustomIconPopover
+      onSelectIcon={({ value, color }) => {
+        onSelectSpaceIcon(value);
+        onSelectSpaceIconColor(color || '');
+      }}
+      removeIcon={() => {
+        onSelectSpaceIcon('');
+        onSelectSpaceIconColor('');
+      }}
+      defaultActiveTab={'icon'}
+      tabs={['icon']}
+      popoverContentProps={{ container }}
+    >
       <Avatar
         variant={'rounded'}
-        className={`${size ? `w-[${size}px] h-[${size}px]` : 'w-10 h-10'} rounded-[30%] bg-transparent`}
+        className={`aspect-square h-10 w-10 rounded-[30%] bg-transparent`}
         onMouseEnter={() => setSpaceIconEditing(true)}
         onMouseLeave={() => setSpaceIconEditing(false)}
-        onClick={e => {
+        onClick={() => {
           setSpaceIconEditing(false);
-          setIconAnchorEl(e.currentTarget);
+        }}
+        style={{
+          minWidth: size ? `${size}px` : undefined,
+          minHeight: size ? `${size}px` : '100%',
         }}
       >
         <SpaceIcon
           bgColor={spaceIconColor}
           value={spaceIcon || ''}
-          className={'w-full h-full p-0.5'}
+          className={'h-full w-full !p-2'}
           char={spaceIcon ? undefined : spaceName.slice(0, 1)}
         />
-        {spaceIconEditing &&
-          <div className={'absolute cursor-pointer inset-0 bg-black bg-opacity-30 rounded-[8px]'}>
-            <div className={'flex items-center text-white justify-center w-full h-full'}>
-              <EditIcon/>
+        {spaceIconEditing && (
+          <div className={'absolute inset-0 cursor-pointer rounded-[8px] bg-black bg-opacity-30'}>
+            <div className={'flex h-full w-full items-center justify-center text-white'}>
+              <EditIcon />
             </div>
           </div>
-        }
+        )}
       </Avatar>
-      {Boolean(iconAnchorEl) && <ChangeIconPopover
-        popoverProps={popoverProps}
-        defaultType={'icon'}
-        emojiEnabled={false}
-        open={Boolean(iconAnchorEl)}
-        anchorEl={iconAnchorEl}
-        onClose={() => {
-          setIconAnchorEl(null);
-
-        }}
-        onSelectIcon={({ value, color }) => {
-          onSelectSpaceIcon(value);
-          onSelectSpaceIconColor(color || '');
-        }}
-      />}
-    </>
+    </CustomIconPopover>
   );
 }
 

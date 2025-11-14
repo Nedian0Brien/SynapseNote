@@ -33,7 +33,6 @@ function ControlActions({ setOpenMenu, blockId }: {
   } = usePanelContext();
 
   const onAdded = useCallback(() => {
-
     setTimeout(() => {
       const rect = getRangeRect();
 
@@ -52,7 +51,11 @@ function ControlActions({ setOpenMenu, blockId }: {
     setOpenMenu?.(true);
     setMenuAnchorEl(e.currentTarget as HTMLElement);
     const { selection } = editor;
-    const [, nodePath] = findSlateEntryByBlockId(editor, blockId);
+    const entry = findSlateEntryByBlockId(editor, blockId);
+
+    if(!entry) return;
+
+    const [, nodePath] = entry;
 
     if (!selection) {
       setSelectedBlockIds?.([blockId]);
@@ -80,7 +83,12 @@ function ControlActions({ setOpenMenu, blockId }: {
   const onClickAdd = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     if (!blockId) return;
-    const [node, path] = findSlateEntryByBlockId(editor, blockId);
+    const entry = findSlateEntryByBlockId(editor, blockId);
+
+    if(!entry) return;
+
+    const [node, path] = entry;
+
     const start = editor.start(path);
 
     ReactEditor.focus(editor);

@@ -3,15 +3,7 @@ import { notify } from '@/components/_shared/notify';
 import DeleteIcon from '@mui/icons-material/Delete';
 import TaskAltRounded from '@mui/icons-material/TaskAltRounded';
 
-import {
-  Box,
-  Button,
-  Checkbox,
-  List, ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Typography
-} from '@mui/material';
+import { Box, Button, Checkbox, List, ListItemButton, ListItemIcon, ListItemText, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 
 const MAX_DELETE = 50;
@@ -24,7 +16,7 @@ const IndexedDBCleaner = () => {
     const fetchDatabases = async () => {
       const dbs = await window.indexedDB.databases();
 
-      setDatabases(dbs.map(db => db.name || '').filter(Boolean));
+      setDatabases(dbs.map((db) => db.name || '').filter(Boolean));
     };
 
     void fetchDatabases();
@@ -58,7 +50,7 @@ const IndexedDBCleaner = () => {
       indexedDB.deleteDatabase(dbName);
     }
 
-    setDatabases(databases.filter(db => !selectedDbs.includes(db)));
+    setDatabases(databases.filter((db) => !selectedDbs.includes(db)));
     setSelectedDbs([]);
     notify.success('Selected databases deleted successfully.');
 
@@ -66,7 +58,7 @@ const IndexedDBCleaner = () => {
 
     const reduceCountdown = () => {
       setTimeout(() => {
-        setCountdown(prev => {
+        setCountdown((prev) => {
           if (prev === 0) return 0;
           return prev - 1;
         });
@@ -75,26 +67,20 @@ const IndexedDBCleaner = () => {
     };
 
     reduceCountdown();
-
   };
 
   if (databases.length === 0) return null;
   return (
-    <div className={'w-full max-h-[360px] appflowy-scroller overflow-x-hidden overflow-y-auto'}>
-
+    <div className={'appflowy-scroller max-h-[360px] w-full overflow-y-auto overflow-x-hidden'}>
       <List sx={{ width: '100%' }}>
         {databases.map((dbName) => {
           const labelId = `checkbox-list-label-${dbName}`;
 
           return (
-            <ListItemButton
-              key={dbName}
-              dense
-              onClick={() => handleToggle(dbName)}
-            >
+            <ListItemButton key={dbName} dense onClick={() => handleToggle(dbName)}>
               <ListItemIcon>
                 <Checkbox
-                  edge="start"
+                  edge='start'
                   checked={selectedDbs.indexOf(dbName) !== -1}
                   tabIndex={-1}
                   disableRipple
@@ -107,26 +93,24 @@ const IndexedDBCleaner = () => {
         })}
       </List>
       <Box
-        className={'sticky bottom-0 p-2 bg-bg-body z-10'}
+        className={'sticky bottom-0 z-10 bg-background-primary p-2'}
         sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
       >
-        <Typography variant="body2">
-          Total: {databases.length}
-        </Typography>
-        <Typography variant="body2">
+        <Typography variant='body2'>Total: {databases.length}</Typography>
+        <Typography variant='body2'>
           Selected: {selectedDbs.length}/{MAX_DELETE}
         </Typography>
         <div className={'flex items-center gap-2'}>
           <Button
-            startIcon={
-              <TaskAltRounded />
-            } variant="contained" onClick={() => setSelectedDbs(databases.slice(0, MAX_DELETE))}
+            startIcon={<TaskAltRounded />}
+            variant='contained'
+            onClick={() => setSelectedDbs(databases.slice(0, MAX_DELETE))}
           >
             Select All
           </Button>
           <Button
-            variant="contained"
-            color="error"
+            variant='contained'
+            color='error'
             startIcon={<DeleteIcon />}
             onClick={handleDelete}
             disabled={selectedDbs.length === 0 || countdown !== 0}

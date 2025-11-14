@@ -27,7 +27,13 @@ export const withInsertData = (editor: ReactEditor) => {
     const fileArray = Array.from(data.files);
     const { selection } = editor;
     const entry = getBlockEntry(e);
+
+    if (!entry) return;
+
     const [node] = entry;
+
+    if (!node) return;
+
     const blockId = node.blockId;
 
     insertData(data);
@@ -91,7 +97,11 @@ export const withInsertData = (editor: ReactEditor) => {
 
           if (!id) return;
 
-          const [, path] = findSlateEntryByBlockId(e, id);
+          const entry = findSlateEntryByBlockId(e, id);
+
+          if (!entry) return;
+
+          const [, path] = entry;
 
           editor.select(editor.start(path));
 

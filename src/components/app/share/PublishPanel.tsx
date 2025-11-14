@@ -1,16 +1,17 @@
+import { Button, CircularProgress, Divider, Typography } from '@mui/material';
+import React, { useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import { ViewLayout } from '@/application/types';
+import { ReactComponent as CheckboxCheckSvg } from '@/assets/icons/check_filled.svg';
+import { ReactComponent as PublishIcon } from '@/assets/icons/earth.svg';
+import { ReactComponent as CheckboxUncheckSvg } from '@/assets/icons/uncheck.svg';
 import { notify } from '@/components/_shared/notify';
+import { Switch } from '@/components/_shared/switch';
 import PageIcon from '@/components/_shared/view-icon/PageIcon';
 import { useAppHandlers } from '@/components/app/app.hooks';
 import { useLoadPublishInfo } from '@/components/app/share/publish.hooks';
 import PublishLinkPreview from '@/components/app/share/PublishLinkPreview';
-import { Button, CircularProgress, Divider, Typography } from '@mui/material';
-import React, { useCallback, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { ReactComponent as PublishIcon } from '@/assets/icons/earth.svg';
-import { ReactComponent as CheckboxCheckSvg } from '@/assets/icons/check_filled.svg';
-import { ReactComponent as CheckboxUncheckSvg } from '@/assets/icons/uncheck.svg';
-import { Switch } from '@/components/_shared/switch';
 
 function PublishPanel({ viewId, opened, onClose }: { viewId: string; onClose: () => void; opened: boolean }) {
   const { t } = useTranslation();
@@ -101,6 +102,7 @@ function PublishPanel({ viewId, opened, onClose }: { viewId: string; onClose: ()
             color={'inherit'}
             variant={'outlined'}
             startIcon={unpublishLoading ? <CircularProgress size={16} /> : undefined}
+            data-testid={'unpublish-button'}
           >
             {t('shareAction.unPublish')}
           </Button>
@@ -109,6 +111,7 @@ function PublishPanel({ viewId, opened, onClose }: { viewId: string; onClose: ()
             onClick={() => {
               window.open(url, '_blank');
             }}
+            data-testid={'visit-site-button'}
             variant={'contained'}
           >
             {t('shareAction.visitSite')}
@@ -178,8 +181,8 @@ function PublishPanel({ viewId, opened, onClose }: { viewId: string; onClose: ()
     return (
       <div className={'flex w-full flex-col gap-4'}>
         {isDatabase && (
-          <div className={'mt-2 flex flex-col gap-3 rounded-[16px] border border-line-divider py-3 px-4 text-sm'}>
-            <div className={'text-text-caption'}>
+          <div className={'mt-2 flex flex-col gap-3 rounded-[16px] border border-border-primary px-4 py-3 text-sm'}>
+            <div className={'text-text-secondary'}>
               {t('publishSelectedViews', {
                 count: visibleViewId?.length || 0,
               })}
@@ -209,7 +212,13 @@ function PublishPanel({ viewId, opened, onClose }: { viewId: string; onClose: ()
                     key={id}
                     className={'flex items-center justify-start'}
                     size={'small'}
-                    startIcon={selected ? <CheckboxCheckSvg /> : <CheckboxUncheckSvg />}
+                    startIcon={
+                      selected ? (
+                        <CheckboxCheckSvg />
+                      ) : (
+                        <CheckboxUncheckSvg className={'text-border-primary hover:text-border-primary-hover'} />
+                      )
+                    }
                     color={'inherit'}
                   >
                     <div className={'flex items-center gap-2'}>
@@ -228,6 +237,7 @@ function PublishPanel({ viewId, opened, onClose }: { viewId: string; onClose: ()
           }}
           variant={'contained'}
           className={'w-full'}
+          data-testid={'publish-confirm-button'}
           color={'primary'}
           startIcon={publishLoading ? <CircularProgress color={'inherit'} size={16} /> : undefined}
         >
@@ -238,27 +248,29 @@ function PublishPanel({ viewId, opened, onClose }: { viewId: string; onClose: ()
   }, [handlePublish, isDatabase, publishLoading, t, view, visibleViewId]);
 
   return (
-    <div className={'flex w-full flex-col gap-2 overflow-hidden'}>
-      <Typography className={'flex items-center gap-1.5'} variant={'body2'}>
-        <PublishIcon className={'h-5 w-5'} />
-        {t('shareAction.publishToTheWeb')}
-      </Typography>
-      <Typography className={'text-text-caption'} variant={'caption'}>
-        {t('shareAction.publishToTheWebHint')}
-      </Typography>
-      {loading && (
-        <div className={'flex w-full items-center justify-center'}>
-          <CircularProgress size={20} />
+    <div className='flex flex-col items-start gap-1 self-stretch px-3 py-4'>
+      <div className={'flex w-full flex-col gap-2 overflow-hidden'}>
+        <Typography className={'flex items-center gap-1.5'} variant={'body2'}>
+          <PublishIcon className={'h-5 w-5'} />
+          {t('shareAction.publishToTheWeb')}
+        </Typography>
+        <Typography className={'text-text-secondary'} variant={'caption'}>
+          {t('shareAction.publishToTheWebHint')}
+        </Typography>
+        {loading && (
+          <div className={'flex w-full items-center justify-center'}>
+            <CircularProgress size={20} />
+          </div>
+        )}
+        <div
+          style={{
+            visibility: loading ? 'hidden' : 'visible',
+            height: loading ? 0 : 'auto',
+          }}
+          className={'overflow-hidden'}
+        >
+          {view?.is_published ? renderPublished() : renderUnpublished()}
         </div>
-      )}
-      <div
-        style={{
-          visibility: loading ? 'hidden' : 'visible',
-          height: loading ? 0 : 'auto',
-        }}
-        className={'overflow-hidden'}
-      >
-        {view?.is_published ? renderPublished() : renderUnpublished()}
       </div>
     </div>
   );

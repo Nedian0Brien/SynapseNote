@@ -1,12 +1,12 @@
-import { Popover } from '@/components/_shared/popover';
-import React, { useMemo } from 'react';
-import { ReactComponent as MoreIcon } from '@/assets/icons/settings_more.svg';
-import { Button, Divider, IconButton } from '@mui/material';
-import { ReactComponent as TemplateIcon } from '@/assets/icons/template.svg';
 import { ReactComponent as TrashIcon } from '@/assets/icons/delete.svg';
+import { ReactComponent as SupportIcon } from '@/assets/icons/help.svg';
+import { ReactComponent as MoreIcon } from '@/assets/icons/settings_more.svg';
+import { ReactComponent as TemplateIcon } from '@/assets/icons/template.svg';
+import { Popover } from '@/components/_shared/popover';
+import { Button, Divider, IconButton } from '@mui/material';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { ReactComponent as SupportIcon } from '@/assets/icons/help.svg';
 
 function MobileMore({ onClose }: { onClose: () => void }) {
   const [openMore, setOpenMore] = React.useState(false);
@@ -42,7 +42,7 @@ function MobileMore({ onClose }: { onClose: () => void }) {
   return (
     <>
       <IconButton ref={ref} onClick={() => setOpenMore(true)} size={'large'} className={'p-2'}>
-        <MoreIcon className={'h-5 w-5 text-text-title'} />
+        <MoreIcon className={'h-5 w-5 text-text-primary'} />
       </IconButton>
       <Popover
         open={openMore}

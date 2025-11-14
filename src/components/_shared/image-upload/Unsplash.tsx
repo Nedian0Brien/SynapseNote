@@ -1,11 +1,11 @@
-import { openUrl } from '@/utils/url';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { createApi } from 'unsplash-js';
-import TextField from '@mui/material/TextField';
-import { useTranslation } from 'react-i18next';
+import { CircularProgress } from '@mui/material';
 import Typography from '@mui/material/Typography';
 import debounce from 'lodash-es/debounce';
-import { CircularProgress } from '@mui/material';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { createApi } from 'unsplash-js';
+
+import { Input } from '@/components/ui/input';
 
 const unsplash = createApi({
   accessKey: '1WxD1JpMOUX86lZKKob4Ca0LMZPyO2rUmAgjpWm9Ids',
@@ -13,7 +13,7 @@ const unsplash = createApi({
 
 const SEARCH_DEBOUNCE_TIME = 500;
 
-export function Unsplash ({ onDone, onEscape }: { onDone?: (value: string) => void; onEscape?: () => void }) {
+export function Unsplash({ onDone, onEscape }: { onDone?: (value: string) => void; onEscape?: () => void }) {
   const { t } = useTranslation();
 
   const [loading, setLoading] = useState(true);
@@ -44,18 +44,20 @@ export function Unsplash ({ onDone, onEscape }: { onDone?: (value: string) => vo
         onEscape?.();
       }
     },
-    [onEscape],
+    [onEscape]
   );
 
   const loadPhotos = useCallback(async (searchValue: string) => {
-    const pages = 4;
-    const perPage = 30;
+    const pages = 1;
+    const perPage = 18;
     const requests = Array.from({ length: pages }, (_, i) =>
-      searchValue ? unsplash.search.getPhotos({
-        query: searchValue,
-        perPage,
-        page: i + 1,
-      }) : unsplash.photos.list({ perPage, page: i + 1 }),
+      searchValue
+        ? unsplash.search.getPhotos({
+            query: searchValue,
+            perPage,
+            page: i + 1,
+          })
+        : unsplash.photos.list({ perPage, page: i + 1 })
     );
 
     setError('');
@@ -86,7 +88,6 @@ export function Unsplash ({ onDone, onEscape }: { onDone?: (value: string) => vo
     setPhotos(photos);
 
     return photos;
-
   }, []);
 
   const debounceSearchPhotos = useMemo(() => {
@@ -101,26 +102,22 @@ export function Unsplash ({ onDone, onEscape }: { onDone?: (value: string) => vo
   }, [debounceSearchPhotos, searchValue]);
 
   return (
-    <div
-      tabIndex={0}
-      onKeyDown={handleKeyDown}
-      className={'flex h-fit flex-col gap-4 px-4 pb-4 max-w-[600px]'}
-    >
-      <TextField
+    <div tabIndex={0} onKeyDown={handleKeyDown} className={'flex h-fit max-w-[600px] flex-col gap-2'}>
+      <Input
+        variant={'default'}
         autoFocus
         onKeyDown={handleKeyDown}
-        size={'small'}
         spellCheck={false}
         onChange={handleChange}
         value={searchValue}
+        className={'w-full'}
         placeholder={t('document.imageBlock.searchForAnImage')}
-        fullWidth
       />
 
       {loading ? (
         <div className={'flex h-[120px] w-full items-center justify-center gap-2 text-xs'}>
           <CircularProgress size={24} />
-          <div className={'text-xs text-text-caption'}>{t('editor.loading')}</div>
+          <div className={'text-xs text-text-secondary'}>{t('editor.loading')}</div>
         </div>
       ) : error ? (
         <Typography className={'flex h-[120px] w-full items-center justify-center gap-2 text-xs text-function-error'}>
@@ -130,44 +127,28 @@ export function Unsplash ({ onDone, onEscape }: { onDone?: (value: string) => vo
         <div className={'flex flex-col gap-4'}>
           {photos.length > 0 ? (
             <>
-              <div
-                className={`grid gap-4 w-full grid-cols-4 max-sm:grid-cols-3`}
-              >
+              <div className={`grid w-full grid-cols-3 gap-2`}>
                 {photos.map((photo) => (
-                  <div
-                    key={photo.id}
-                    className={'flex flex-col gap-2'}
-                  >
-                    <div className={'relative pt-[56.25%]'}>
-                      <img
-                        onClick={() => {
-                          onDone?.(photo.full);
-                        }}
-                        src={photo.thumb}
-                        alt={photo.alt ?? ''}
-                        className={`absolute top-0 left-0 w-[128px] h-full rounded object-cover cursor-pointer hover:opacity-80 transition-opacity`}
-                      />
-                    </div>
-                    <div className={'w-full truncate text-xs text-text-caption'}>
-                      by
-                      <span
-                        onClick={() => {
-                          void openUrl(photo.user.link);
-                        }}
-                        className={'underline cursor-pointer underline-offset-[3px] ml-2 hover:text-function-info'}
-                      >
-                        {photo.user.name}
-                      </span>
-                    </div>
+                  <div key={photo.id + photo.full} className={'relative pt-[56.25%]'}>
+                    <img
+                      onClick={() => {
+                        onDone?.(photo.full);
+                      }}
+                      src={photo.thumb}
+                      alt={photo.alt ?? ''}
+                      className={`absolute left-0 top-0 h-full w-[128px] cursor-pointer rounded object-cover transition-opacity hover:opacity-80`}
+                    />
                   </div>
                 ))}
               </div>
-              <Typography className={'w-full text-center text-xs text-text-caption'}>
+              <Typography className={'w-full text-center text-xs text-text-secondary'}>
                 {t('findAndReplace.searchMore')}
               </Typography>
             </>
           ) : (
-            <Typography className={'flex h-[120px] w-full items-center justify-center gap-2 text-xs text-text-caption'}>
+            <Typography
+              className={'flex h-[120px] w-full items-center justify-center gap-2 text-xs text-text-secondary'}
+            >
               {t('findAndReplace.noResult')}
             </Typography>
           )}

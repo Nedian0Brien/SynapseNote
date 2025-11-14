@@ -1,12 +1,13 @@
-import { defineConfig, Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
-import svgr from 'vite-plugin-svgr';
-import { visualizer } from 'rollup-plugin-visualizer';
-import { totalBundleSize } from 'vite-plugin-total-bundle-size';
 import path from 'path';
-import istanbul from 'vite-plugin-istanbul';
-import { createHtmlPlugin } from 'vite-plugin-html';
+import { visualizer } from 'rollup-plugin-visualizer';
+import { defineConfig } from 'vite';
 import { viteExternalsPlugin } from 'vite-plugin-externals';
+import { createHtmlPlugin } from 'vite-plugin-html';
+import istanbul from 'vite-plugin-istanbul';
+import svgr from 'vite-plugin-svgr';
+import { totalBundleSize } from 'vite-plugin-total-bundle-size';
+import { stripTestIdPlugin } from './vite-plugin-strip-testid';
 
 const resourcesPath = path.resolve(__dirname, '../resources');
 const isDev = process.env.NODE_ENV === 'development';
@@ -17,24 +18,30 @@ const isTest = process.env.NODE_ENV === 'test' || process.env.COVERAGE === 'true
 export default defineConfig({
   plugins: [
     react(),
+    // Strip data-testid attributes in production builds
+    isProd ? stripTestIdPlugin() : undefined,
     createHtmlPlugin({
       inject: {
         data: {
           injectCdn: isProd,
-          cdnLinks: isProd ? `
+          cdnLinks: isProd
+            ? `
               <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
               <link rel="preconnect" href="//cdn.jsdelivr.net">
               
               <script crossorigin src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
               <script crossorigin src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
-            ` : '',
+            `
+            : '',
         },
       },
     }),
-    isProd ? viteExternalsPlugin({
-      react: 'React',
-      'react-dom': 'ReactDOM',
-    }) : undefined,
+    isProd
+      ? viteExternalsPlugin({
+          react: 'React',
+          'react-dom': 'ReactDOM',
+        })
+      : undefined,
     svgr({
       svgrOptions: {
         prettier: false,
@@ -67,60 +74,58 @@ export default defineConfig({
         },
         replaceAttrValues: {
           '#333': 'currentColor',
-          'black': 'currentColor',
+          black: 'currentColor',
         },
       },
     }),
     // Enable istanbul for code coverage (active if isTest is true)
-    isTest ? istanbul({
-      cypress: true,
-      requireEnv: false,
-      include: ['src/**/*'],
-      exclude: [
-        '**/__tests__/**/*',
-        'cypress/**/*',
-        'node_modules/**/*',
-      ],
-    }) : undefined,
+    isTest
+      ? istanbul({
+          cypress: true,
+          requireEnv: false,
+          include: ['src/**/*'],
+          exclude: ['**/__tests__/**/*', 'cypress/**/*', 'node_modules/**/*'],
+        })
+      : undefined,
     process.env.ANALYZE_MODE
       ? visualizer({
-        emitFile: true,
-      })
+          emitFile: true,
+        })
       : undefined,
     process.env.ANALYZE_MODE
       ? totalBundleSize({
-        fileNameRegex: /\.(js|css)$/,
-        calculateGzip: false,
-      })
+          fileNameRegex: /\.(js|css)$/,
+          calculateGzip: false,
+        })
       : undefined,
   ],
   // prevent vite from obscuring rust errors
   clearScreen: false,
   server: {
+    host: '0.0.0.0', // Listen on all network interfaces (both IPv4 and IPv6)
     port: process.env.PORT ? parseInt(process.env.PORT) : 3000,
     strictPort: true,
-    host: '0.0.0.0',
     watch: {
       ignored: ['node_modules'],
     },
     cors: false,
     sourcemapIgnoreList: false,
   },
-  envPrefix: ['AF'],
+  envPrefix: ['APPFLOWY'],
   esbuild: {
     keepNames: true,
     sourcesContent: true,
     sourcemap: true,
     minifyIdentifiers: false, // Disable identifier minification in development
-    minifySyntax: false,      // Disable syntax minification in development
-    pure: !isDev ? ['console.log', 'console.debug', 'console.info', 'console.trace'] : [],
+    minifySyntax: false, // Disable syntax minification in development
+    drop: !isDev ? ['console', 'debugger'] : [],
   },
   build: {
     target: `esnext`,
     reportCompressedSize: true,
+    chunkSizeWarningLimit: 1600,
     rollupOptions: isProd
       ? {
-
         output: {
           chunkFileNames: 'static/js/[name]-[hash].js',
           entryFileNames: 'static/js/[name]-[hash].js',
@@ -138,16 +143,16 @@ export default defineConfig({
               id.includes('/dayjs') ||
               id.includes('/smooth-scroll-into-view-if-needed') ||
               id.includes('/react-virtualized-auto-sizer') ||
-              id.includes('/react-window')
-              || id.includes('/@popperjs')
-              || id.includes('/@mui/material/Dialog') ||
+              id.includes('/react-window') ||
+              id.includes('/@popperjs') ||
+              id.includes('/@mui/material/Dialog') ||
               id.includes('/quill-delta')
             ) {
               return 'common';
             }
           },
         },
-      }
+        }
       : {},
   },
   resolve: {
@@ -159,6 +164,17 @@ export default defineConfig({
   },
 
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-katex', '@appflowyinc/editor', '@appflowyinc/ai-chat'],
+    include: [
+      'react',
+      'react-dom',
+      'react-katex',
+      '@appflowyinc/editor',
+      '@appflowyinc/ai-chat',
+      'react-colorful',
+      'i18next',
+      'i18next-browser-languagedetector',
+      'i18next-resources-to-backend',
+      'react-i18next'
+    ],
   },
 });

@@ -1,12 +1,12 @@
 import { Workspace } from '@/application/types';
-import { AFConfigContext } from '@/components/main/app.hooks';
-import React, { useCallback, useContext, useMemo, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Avatar, Button, CircularProgress, Divider, Tooltip } from '@mui/material';
 import { ReactComponent as RightIcon } from '@/assets/icons/alt_arrow_right.svg';
 import { ReactComponent as CheckIcon } from '@/assets/icons/tick.svg';
+import { AFConfigContext } from '@/components/main/app.hooks';
 import { Popover } from '@/components/_shared/popover';
 import { stringToColor } from '@/utils/color';
+import { Avatar, Button, CircularProgress, Divider, Tooltip } from '@mui/material';
+import { useCallback, useContext, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface SelectWorkspaceProps {
   value: string;
@@ -49,7 +49,7 @@ function SelectWorkspace({ loading, value, onChange, workspaceList }: SelectWork
           )}
           <div className={'flex flex-1 flex-col items-start gap-0.5 overflow-hidden'}>
             <div className={'w-full truncate text-left text-sm font-medium'}>{workspace.name}</div>
-            <div className={'text-xs text-text-caption'}>
+            <div className={'text-xs text-text-secondary'}>
               {t('publish.membersCount', {
                 count: workspace.memberCount || 0,
               })}
@@ -63,7 +63,7 @@ function SelectWorkspace({ loading, value, onChange, workspaceList }: SelectWork
 
   return (
     <div className={'flex w-[360px] flex-col gap-2 max-sm:w-full'}>
-      <div className={'text-sm text-text-caption'}>{t('publish.selectWorkspace')}</div>
+      <div className={'text-sm text-text-secondary'}>{t('publish.selectWorkspace')}</div>
       <Button
         ref={ref}
         onClick={() => {
@@ -102,7 +102,7 @@ function SelectWorkspace({ loading, value, onChange, workspaceList }: SelectWork
         }}
       >
         <div className={'flex max-h-[340px] w-[360px] flex-col gap-1 p-2 max-sm:w-full'}>
-          <div className={'w-full px-3 py-2 text-sm font-medium text-text-caption'}>{email}</div>
+          <div className={'w-full px-3 py-2 text-sm font-medium text-text-secondary'}>{email}</div>
           <Divider />
           <div className={'appflowy-scroller flex flex-1 flex-col overflow-y-auto overflow-x-hidden'}>
             {workspaceList.map((workspace) => {
@@ -127,9 +127,7 @@ function SelectWorkspace({ loading, value, onChange, workspaceList }: SelectWork
                     color={'inherit'}
                   >
                     <div className={'flex-1 overflow-hidden'}>{renderWorkspace(workspace)}</div>
-                    <div className={'h-6 w-6'}>
-                      {isSelected && <CheckIcon className={'h-6 w-6 text-content-blue-400'} />}
-                    </div>
+                    <div className={'h-6 w-6'}>{isSelected && <CheckIcon className={'h-6 w-6 text-text-action'} />}</div>
                   </Button>
                 </Tooltip>
               );

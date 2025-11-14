@@ -1,16 +1,23 @@
 import { YDatabaseField, YjsDatabaseKey } from '@/application/types';
+
 import { getTypeOptions } from '../type_option';
+
 import { SelectTypeOption } from './select_option.type';
 
 export function parseSelectOptionTypeOptions(field: YDatabaseField) {
   const content = getTypeOptions(field)?.get(YjsDatabaseKey.content);
 
-  if (!content) return null;
+  if (!content)
+    return {
+      options: [],
+    };
 
   try {
     return JSON.parse(content) as SelectTypeOption;
   } catch (e) {
-    return null;
+    return {
+      options: [],
+    };
   }
 }
 
@@ -20,7 +27,7 @@ export function parseSelectOptionCellData(field: YDatabaseField, data: string) {
 
   return selectedIds
     .map((id) => {
-      const option = typeOption?.options?.find((option) => option.id === id);
+      const option = typeOption?.options?.find((option) => option?.id === id);
 
       return option?.name ?? '';
     })

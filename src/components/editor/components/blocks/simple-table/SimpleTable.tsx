@@ -3,7 +3,7 @@ import { EditorElementProps, SimpleTableNode, SimpleTableRowNode } from '@/compo
 import { useEditorContext } from '@/components/editor/EditorContext';
 import TableContainer from '@/components/editor/components/table-container/TableContainer';
 import isEqual from 'lodash-es/isEqual';
-import React, { forwardRef, memo, useMemo } from 'react';
+import { forwardRef, memo, useMemo } from 'react';
 import './simple-table.scss';
 import { MIN_WIDTH } from '@/components/editor/components/blocks/simple-table/const';
 // import { useReadOnly } from 'slate-react';

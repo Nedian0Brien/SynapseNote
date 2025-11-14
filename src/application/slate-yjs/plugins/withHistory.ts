@@ -1,12 +1,15 @@
-import { relativeRangeToSlateRange, slateRangeToRelativeRange } from '@/application/slate-yjs/utils/positions';
-import { CollabOrigin } from '@/application/types';
 import { Editor, Transforms } from 'slate';
 import { ReactEditor } from 'slate-react';
 import * as Y from 'yjs';
-import { YjsEditor } from './withYjs';
+
+import { relativeRangeToSlateRange, slateRangeToRelativeRange } from '@/application/slate-yjs/utils/positions';
+import { isValidSelection } from '@/application/slate-yjs/utils/transformSelection';
+import { getDocument } from '@/application/slate-yjs/utils/yjs';
+import { CollabOrigin } from '@/application/types';
+
 import { HistoryStackItem, RelativeRange } from '../types';
 
-import { getDocument } from '@/application/slate-yjs/utils/yjs';
+import { YjsEditor } from './withYjs';
 
 const LAST_SELECTION: WeakMap<Editor, RelativeRange | null> = new WeakMap();
 
@@ -35,16 +38,20 @@ export const YHistoryEditor = {
   },
 };
 
-export function withYHistory<T extends YjsEditor>(
-  editor: T,
-): T & YHistoryEditor {
+export function withYHistory<T extends YjsEditor>(editor: T): T & YHistoryEditor {
   const e = editor as T & YHistoryEditor;
 
   if (e.readOnly) {
     return e;
   }
 
-  e.undoManager = new Y.UndoManager(getDocument(e.sharedRoot), {
+  const document = getDocument(e.sharedRoot);
+
+  if (!document) {
+    return e;
+  }
+
+  e.undoManager = new Y.UndoManager(document, {
     trackedOrigins: new Set([CollabOrigin.Local, null]),
     captureTimeout: 200,
   });
@@ -59,61 +66,44 @@ export function withYHistory<T extends YjsEditor>(
     try {
       const storeSelection = selection && slateRangeToRelativeRange(e.sharedRoot, e, selection);
 
-      LAST_SELECTION.set(
-        e,
-        storeSelection,
-      );
+      LAST_SELECTION.set(e, storeSelection);
     } catch (e) {
-      console.error(e);
+      //console.error(e);
     }
   };
 
-  const handleStackItemAdded = ({
-    stackItem,
-  }: {
-    stackItem: HistoryStackItem;
-    type: 'redo' | 'undo';
-  }) => {
+  const handleStackItemAdded = ({ stackItem }: { stackItem: HistoryStackItem; type: 'redo' | 'undo' }) => {
     try {
-      stackItem.meta.set(
-        'selection',
-        e.selection && slateRangeToRelativeRange(e.sharedRoot, e, e.selection),
-      );
+      stackItem.meta.set('selection', e.selection && slateRangeToRelativeRange(e.sharedRoot, e, e.selection));
 
       stackItem.meta.set('selectionBefore', LAST_SELECTION.get(e));
     } catch (e) {
       // console.error(e);
     }
-
   };
 
-  const handleStackItemPopped = ({
-    stackItem,
-  }: {
-    stackItem: HistoryStackItem;
-    type: 'redo' | 'undo';
-  }) => {
-    const relativeSelection = stackItem.meta.get(
-      'selectionBefore',
-    ) as RelativeRange | null;
+  const handleStackItemPopped = ({ stackItem }: { stackItem: HistoryStackItem; type: 'redo' | 'undo' }) => {
+    const relativeSelection = stackItem.meta.get('selectionBefore') as RelativeRange | null;
 
     if (!relativeSelection) {
       return;
     }
 
-    const selection = relativeRangeToSlateRange(
-      e.sharedRoot,
-      relativeSelection,
-    );
+    const selection = relativeRangeToSlateRange(e.sharedRoot, relativeSelection);
 
     if (!selection || !ReactEditor.hasRange(editor, selection)) {
       const startPoint = Editor.start(e, [0]);
 
-      Transforms.select(e, startPoint);
+      if (isValidSelection(e, { anchor: startPoint, focus: startPoint })) {
+        Transforms.select(e, startPoint);
+      }
+
       return;
     }
 
-    Transforms.select(e, selection);
+    if (isValidSelection(e, selection)) {
+      Transforms.select(e, selection);
+    }
   };
 
   const { connect } = e;

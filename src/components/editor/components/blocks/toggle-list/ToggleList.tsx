@@ -1,11 +1,11 @@
 import { YjsEditor } from '@/application/slate-yjs';
 import { CustomEditor } from '@/application/slate-yjs/command';
 import { BlockType } from '@/application/types';
-import React, { forwardRef, memo, useMemo } from 'react';
 import { EditorElementProps, ToggleListNode } from '@/components/editor/editor.type';
+import { forwardRef, memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useReadOnly, useSlateStatic } from 'slate-react';
 import { Element } from 'slate';
+import { useReadOnly, useSlateStatic } from 'slate-react';
 
 export const ToggleList = memo(
   forwardRef<HTMLDivElement, EditorElementProps<ToggleListNode>>(({ node, children, ...attributes }, ref) => {
@@ -16,7 +16,6 @@ export const ToggleList = memo(
     const readOnly = useReadOnly() || editor.isElementReadOnly(node as unknown as Element);
 
     const className = useMemo(() => {
-
       const classList = ['flex w-full flex-col'];
 
       if (attributes.className) {
@@ -32,39 +31,33 @@ export const ToggleList = memo(
       }
 
       return classList.join(' ');
-
     }, [collapsed, level, attributes.className]);
 
     return (
       <>
-        <div
-          {...attributes}
-          ref={ref}
-          className={className}
-          id={level ? `heading-${blockId}` : undefined}
-        >
+        <div {...attributes} ref={ref} className={className} id={level ? `heading-${blockId}` : undefined}>
           {children}
-          {!readOnly && !collapsed && node.children.slice(1).length === 0 &&
+          {!readOnly && !collapsed && node.children.slice(1).length === 0 && (
             <div
-              onMouseDown={e => {
+              onMouseDown={(e) => {
                 e.preventDefault();
                 CustomEditor.addChildBlock(editor, blockId, BlockType.Paragraph, {});
               }}
               data-testid={'toggle-list-empty'}
               contentEditable={false}
-              className={'text-text-caption select-none text-sm hover:bg-fill-list-hover rounded-[6px] cursor-pointer flex items-center h-[36px] px-[0.5em] ml-[1.45em]'}
-            >
-              {
-                level === 0 ?
-                  t('document.plugins.emptyToggleList') :
-                  t('document.plugins.emptyToggleHeadingWeb', { level })
+              className={
+                'ml-[1.45em] flex h-[36px] cursor-pointer select-none items-center rounded-[6px] px-[0.5em] text-sm text-text-secondary hover:bg-fill-content-hover'
               }
+            >
+              {level === 0
+                ? t('document.plugins.emptyToggleList')
+                : t('document.plugins.emptyToggleHeadingWeb', { level })}
             </div>
-          }
+          )}
         </div>
       </>
     );
-  }),
+  })
 );
 
 export default ToggleList;

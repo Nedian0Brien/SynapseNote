@@ -28,7 +28,7 @@ if (!fs.existsSync(fullTargetPath)) {
 
 if (fs.existsSync(fullTargetPath)) {
   // unlink existing symlink
-  console.log(chalk.yellow(`unlinking existing symlink: `) + chalk.blue(`${fullTargetPath}`));
+  console.debug(chalk.yellow(`unlinking existing symlink: `) + chalk.blue(`${fullTargetPath}`));
   fs.unlinkSync(fullTargetPath);
 }
 
@@ -38,6 +38,6 @@ fs.symlink(fullSourcePath, fullTargetPath, 'junction', (err) => {
     console.error(chalk.red(`error creating symlink: ${err.message}`));
     process.exit(1);
   }
-  console.log(chalk.green(`symlink created: `) + chalk.blue(`${fullSourcePath}`) + ' -> ' + chalk.blue(`${fullTargetPath}`));
+  console.debug(chalk.green(`symlink created: `) + chalk.blue(`${fullSourcePath}`) + ' -> ' + chalk.blue(`${fullTargetPath}`));
 
 });

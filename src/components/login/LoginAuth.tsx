@@ -1,13 +1,13 @@
 import { getRedirectTo } from '@/application/session/sign_in';
 import { NormalModal } from '@/components/_shared/modal';
 import { AFConfigContext } from '@/components/main/app.hooks';
-import LinearBuffer from '@/components/login/LinearBuffer';
-import React, { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { ReactComponent as ErrorIcon } from '@/assets/icons/error.svg';
+import LoadingDots from '@/components/_shared/LoadingDots';
 
-function LoginAuth() {
+function LoginAuth () {
   const service = useContext(AFConfigContext)?.service;
   const [loading, setLoading] = useState<boolean>(false);
   const [modalOpened, setModalOpened] = useState(false);
@@ -36,7 +36,7 @@ function LoginAuth() {
     <>
       {loading ? (
         <div className={'flex h-screen w-screen items-center justify-center p-20'}>
-          <LinearBuffer />
+          <LoadingDots className='flex items-center justify-center' />
         </div>
       ) : null}
       <NormalModal
@@ -63,7 +63,7 @@ function LoginAuth() {
         }
         open={modalOpened}
       >
-        <div className={'flex flex-col gap-1 whitespace-pre-wrap break-words text-sm text-text-title'}>{error}</div>
+        <div className={'flex flex-col gap-1 whitespace-pre-wrap break-words text-sm text-text-primary'}>{error}</div>
       </NormalModal>
     </>
   );

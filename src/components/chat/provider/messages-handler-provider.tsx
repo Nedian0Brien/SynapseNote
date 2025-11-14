@@ -1,0 +1,383 @@
+import { useChatContext } from '@/components/chat/chat/context';
+import { toast } from 'sonner';
+import { ERROR_CODE_NO_LIMIT } from '@/components/chat/lib/const';
+import { useMessageAnimation } from './message-animation-provider';
+import { useChatMessagesContext } from './messages-provider';
+import { useResponseFormatContext } from './response-format-provider';
+import { useSuggestionsContext } from './suggestions-provider';
+import {
+  AuthorType,
+  ChatMessageMetadata,
+  GetChatMessagesPayload,
+  MessageType,
+  OutputContent,
+  OutputLayout,
+  RepeatedChatMessage,
+  ResponseFormat,
+} from '@/components/chat/types';
+import { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { usePromptModal } from './prompt-modal-provider';
+
+interface MessagesHandlerContextTypes {
+  fetchMessages: (payload?: GetChatMessagesPayload) => Promise<RepeatedChatMessage>;
+  submitQuestion: (message: string) => Promise<void>;
+  regenerateAnswer: (questionId: number) => Promise<void>;
+  fetchAnswerStream: (
+    questionId: number,
+    format?: ResponseFormat,
+    onMessage?: (text: string, done?: boolean) => void
+  ) => Promise<void>;
+  cancelAnswerStream: () => void;
+  questionSending: boolean;
+  answerApplying: boolean;
+  selectedModelName?: string;
+  setSelectedModelName?: (modelName: string) => void;
+}
+
+export const MessagesHandlerContext = createContext<MessagesHandlerContextTypes | undefined>(undefined);
+
+function useMessagesHandler() {
+  const { chatId, requestInstance, currentUser } = useChatContext();
+
+  // Get the current model from chat settings
+  const [selectedModelName, setSelectedModelName] = useState<string>();
+  
+  // Load initial model from settings
+  useEffect(() => {
+    const loadModel = async () => {
+      try {
+        const settings = await requestInstance.getChatSettings();
+        const model = settings.metadata?.ai_model as string | undefined;
+
+        if (model) {
+          setSelectedModelName(model);
+        }
+      } catch (error) {
+        console.error('Failed to load chat model settings:', error);
+      }
+    };
+    
+    if (chatId) {
+      void loadModel();
+    }
+  }, [chatId, requestInstance]);
+
+  const { messageIds, addMessages, insertMessage, removeMessages, saveMessageContent, getMessage } =
+    useChatMessagesContext();
+
+  const { setResponseFormatWithId } = useResponseFormatContext();
+
+  const { currentPromptId } = usePromptModal();
+
+  const { registerAnimation } = useMessageAnimation();
+  const { registerFetchSuggestions, startFetchSuggestions } = useSuggestionsContext();
+  const [questionSending, setQuestionSending] = useState(false);
+  const [answerApplying, setAnswerApplying] = useState(false);
+  const cancelStreamRef = useRef<() => void>();
+
+  useEffect(() => {
+    return () => {
+      setQuestionSending(false);
+      setAnswerApplying(false);
+      cancelStreamRef.current = undefined;
+    };
+  }, [chatId]);
+
+  const fetchMessages = useCallback(
+    async (payload?: GetChatMessagesPayload) => {
+      try {
+        const data = await requestInstance.getChatMessages(payload);
+        const messages = data.messages;
+
+        addMessages(messages);
+
+        return data;
+        // eslint-disable-next-line
+      } catch (e: any) {
+        toast.error(e.message);
+        return Promise.reject(e);
+      }
+    },
+    [requestInstance, addMessages]
+  );
+
+  const createAssistantMessage = useCallback(
+    (answerId: number, index: number) => {
+      registerAnimation(answerId);
+
+      insertMessage(
+        {
+          message_id: answerId,
+          content: '',
+          author: {
+            author_uuid: 'assistant',
+            author_type: AuthorType.Assistant,
+          },
+        },
+        index
+      );
+    },
+    [insertMessage, registerAnimation]
+  );
+
+  const regenerateAnswer = useCallback(
+    async (questionId: number) => {
+      const question = getMessage(questionId);
+      const answerId = question?.reply_message_id || questionId + 1;
+
+      const newMessages = removeMessages([answerId]);
+
+      setTimeout(() => {
+        const index = newMessages.map((message) => message.message_id).indexOf(questionId);
+
+        createAssistantMessage(answerId, index);
+      }, 200);
+    },
+    [createAssistantMessage, getMessage, removeMessages]
+  );
+
+  const submitQuestion = useCallback(
+    async (message: string) => {
+      try {
+        setQuestionSending(true);
+
+        // insert fake message to show user message
+        const fakeMessageId = Date.now();
+        const author = {
+          author_uuid: currentUser?.uuid || '',
+          author_type: AuthorType.Human,
+        };
+
+        insertMessage(
+          {
+            message_id: fakeMessageId,
+            content: message,
+            author,
+          },
+          0
+        );
+        registerAnimation(fakeMessageId);
+
+        const promptId = currentPromptId || undefined;
+
+        const question = await requestInstance.submitQuestion({
+          content: message,
+          message_type: MessageType.User,
+          prompt_id: promptId,
+          model_name: selectedModelName,
+        });
+
+        const answerId = question.reply_message_id || question.message_id + 1;
+
+        // remove fake message
+        removeMessages([fakeMessageId]);
+
+        insertMessage(
+          {
+            ...question,
+            author,
+          },
+          0
+        );
+
+        // clear suggestions and set placeholder for this question
+        registerFetchSuggestions(question.message_id);
+
+        // create assistant message after user message
+        setTimeout(() => {
+          createAssistantMessage(answerId, 0);
+        }, 200);
+
+        void (async () => {
+          try {
+            const view = await requestInstance.getCurrentView();
+
+            if ((!messageIds || messageIds.length === 0) && view) {
+              await requestInstance.updateViewName(view, message);
+            }
+            // eslint-disable-next-line
+          } catch (e: any) {
+            toast.error(e.message);
+          }
+        })();
+
+        // eslint-disable-next-line
+      } catch (e: any) {
+        toast.error(e.message);
+
+        return Promise.reject(e);
+      } finally {
+        setQuestionSending(false);
+      }
+    },
+    [
+      currentUser?.uuid,
+      insertMessage,
+      registerAnimation,
+      currentPromptId,
+      requestInstance,
+      removeMessages,
+      registerFetchSuggestions,
+      createAssistantMessage,
+      messageIds,
+      selectedModelName,
+    ]
+  );
+
+  const saveAnswer = useCallback(
+    async (questionId: number, content: string, metadata: ChatMessageMetadata[]) => {
+      try {
+        const answer = await requestInstance.saveAnswer({
+          question_message_id: questionId,
+          content,
+          ...(metadata.length !== 0 && { meta_data: metadata }),
+        });
+
+        saveMessageContent(answer.message_id, content, metadata);
+        // eslint-disable-next-line
+      } catch (e: any) {
+        toast.error(e.message);
+      }
+    },
+    [requestInstance, saveMessageContent]
+  );
+
+  const removeAssistantMessage = useCallback(
+    (messageId: number) => {
+      removeMessages([messageId]);
+    },
+    [removeMessages]
+  );
+
+  const fetchAnswerStream = useCallback(
+    async (questionId: number, format?: ResponseFormat, onMessage?: (text: string, done?: boolean) => void) => {
+      const question = getMessage(questionId);
+      let answerId = question?.reply_message_id;
+
+      if (!answerId) {
+        answerId = questionId + 1;
+      }
+
+      if (format) {
+        setResponseFormatWithId(answerId, format);
+      }
+
+      const handleMessageProgress = (message: string, metadata: ChatMessageMetadata[], done?: boolean) => {
+        onMessage?.(message, done);
+
+        if (done) {
+          if (message) {
+            void (async () => {
+              await saveAnswer(questionId, message, metadata);
+              setAnswerApplying(false);
+              if (answerId && messageIds.indexOf(answerId) === 0) {
+                await startFetchSuggestions(questionId);
+              }
+            })();
+          } else {
+            if (answerId) {
+              removeAssistantMessage(answerId);
+            }
+
+            setAnswerApplying(false);
+          }
+
+          return;
+        }
+      };
+
+      try {
+        setAnswerApplying(true);
+        const { cancel, streamPromise } = await requestInstance.fetchAnswerStream(
+          {
+            question_id: questionId,
+            format: format || {
+              output_layout: OutputLayout.Paragraph,
+              output_content: OutputContent.TEXT,
+            },
+            model_name: selectedModelName,
+          },
+          handleMessageProgress
+        );
+
+        cancelStreamRef.current = cancel;
+        await streamPromise;
+        // eslint-disable-next-line
+      } catch (e: any) {
+        toast.error(e.message);
+        setAnswerApplying(false);
+        const code = e.code;
+
+        if (code !== ERROR_CODE_NO_LIMIT) {
+          // remove assistant message if error is not no limit
+          if (answerId) {
+            removeAssistantMessage(answerId);
+          }
+
+          return;
+        }
+
+        // if error is no limit, show assistant message with error
+        return Promise.reject(e);
+      }
+    },
+    [
+      getMessage,
+      setResponseFormatWithId,
+      saveAnswer,
+      messageIds,
+      startFetchSuggestions,
+      removeAssistantMessage,
+      requestInstance,
+      selectedModelName,
+    ]
+  );
+
+  const cancelAnswerStream = useCallback(() => {
+    if (cancelStreamRef.current) {
+      cancelStreamRef.current();
+    }
+  }, []);
+
+  // Update local state and persist to chat settings
+  const updateSelectedModel = useCallback(async (modelName: string) => {
+    setSelectedModelName(modelName);
+    try {
+      await requestInstance.updateChatSettings({
+        metadata: {
+          ai_model: modelName
+        }
+      });
+    } catch (error) {
+      console.error('Failed to update chat model settings:', error);
+    }
+  }, [requestInstance]);
+
+  return {
+    fetchMessages,
+    submitQuestion,
+    regenerateAnswer,
+    fetchAnswerStream,
+    cancelAnswerStream,
+    questionSending,
+    answerApplying,
+    selectedModelName,
+    setSelectedModelName: updateSelectedModel,
+  };
+}
+
+export function MessagesHandlerProvider({ children }: { children: ReactNode }) {
+  const value = useMessagesHandler();
+
+  return <MessagesHandlerContext.Provider value={value}>{children}</MessagesHandlerContext.Provider>;
+}
+
+export function useMessagesHandlerContext() {
+  const context = useContext(MessagesHandlerContext);
+
+  if (!context) {
+    throw new Error('useMessagesHandlerContext must be used within a MessagesHandlerProvider');
+  }
+
+  return context;
+}

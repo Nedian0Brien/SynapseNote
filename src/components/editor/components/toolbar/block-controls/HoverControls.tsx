@@ -1,6 +1,6 @@
 import ControlActions from '@/components/editor/components/toolbar/block-controls/ControlActions';
 import { useHoverControls } from '@/components/editor/components/toolbar/block-controls/HoverControls.hooks';
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 export function HoverControls () {
   const [openMenu, setOpenMenu] = useState(false);

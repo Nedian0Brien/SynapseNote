@@ -1,46 +1,42 @@
+import { useMemo } from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
+
 import { useOutlineDrawer } from '@/components/_shared/outline/outline.hooks';
 import { AFScroller } from '@/components/_shared/scroller';
 import { useAIChatContext } from '@/components/ai-chat/AIChatProvider';
-import { useViewErrorStatus } from '@/components/app/app.hooks';
+import { useAppHandlers, useAppViewId, useViewErrorStatus } from '@/components/app/app.hooks';
+import { ConnectBanner } from '@/components/app/ConnectBanner';
 import { AppHeader } from '@/components/app/header';
 import Main from '@/components/app/Main';
 import SideBar from '@/components/app/SideBar';
 import DeletedPageComponent from '@/components/error/PageHasBeenDeleted';
 import RecordNotFound from '@/components/error/RecordNotFound';
 import SomethingError from '@/components/error/SomethingError';
-import React, { useMemo } from 'react';
-import { ErrorBoundary } from 'react-error-boundary';
 
 function MainLayout() {
-  const {
-    drawerOpened,
-    drawerWidth,
-    setDrawerWidth,
-    toggleOpenDrawer,
-  } = useOutlineDrawer();
-  const {
-    drawerOpen: chatViewDrawerOpen,
-    drawerWidth: openViewDrawerWidth,
-  } = useAIChatContext();
+  const { drawerOpened, drawerWidth, setDrawerWidth, toggleOpenDrawer } = useOutlineDrawer();
+  const { drawerOpen: chatViewDrawerOpen, drawerWidth: openViewDrawerWidth } = useAIChatContext();
 
+  const { openPageModalViewId } = useAppHandlers();
+  const viewId = useAppViewId();
   const { notFound, deleted } = useViewErrorStatus();
 
   const main = useMemo(() => {
-    if(deleted) {
+    if (deleted) {
       return <DeletedPageComponent />;
     }
 
-    return notFound ? <RecordNotFound isViewNotFound /> : <Main />;
-  }, [deleted, notFound]);
+    return notFound ? <RecordNotFound isViewNotFound viewId={viewId} /> : <Main />;
+  }, [deleted, notFound, viewId]);
 
   const width = useMemo(() => {
     let diff = 0;
 
-    if(drawerOpened) {
+    if (drawerOpened) {
       diff = drawerWidth;
     }
 
-    if(chatViewDrawerOpen) {
+    if (chatViewDrawerOpen) {
       diff += openViewDrawerWidth;
     }
 
@@ -57,7 +53,7 @@ function MainLayout() {
           width,
           transition: 'width 0.2s ease-in-out, transform 0.2s ease-in-out',
         }}
-        className={'appflowy-layout transform flex flex-col appflowy-scroll-container h-full'}
+        className={'appflowy-layout appflowy-scroll-container flex h-full transform flex-col bg-background-primary'}
       >
         <AppHeader
           onOpenDrawer={() => {
@@ -69,12 +65,23 @@ function MainLayout() {
           }}
           openDrawer={drawerOpened}
         />
+        <ConnectBanner />
 
+        {!openPageModalViewId && (
+          <div
+            className={'sticky-header-overlay'}
+            style={{
+              width: '100%',
+              position: 'sticky',
+              top: 48,
+              left: 0,
+              right: 0,
+              zIndex: 50,
+            }}
+          />
+        )}
 
-        <ErrorBoundary FallbackComponent={SomethingError}>
-          {main}
-        </ErrorBoundary>
-
+        <ErrorBoundary FallbackComponent={SomethingError}>{main}</ErrorBoundary>
       </AFScroller>
       <SideBar
         onResizeDrawerWidth={setDrawerWidth}

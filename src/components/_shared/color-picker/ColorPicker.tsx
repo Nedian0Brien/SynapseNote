@@ -1,11 +1,11 @@
 import { EditorMarkFormat } from '@/application/slate-yjs/types';
 import KeyboardNavigation from '@/components/_shared/keyboard_navigation/KeyboardNavigation';
 import { ColorEnum, renderColor } from '@/utils/color';
-import React, { useCallback, useRef, useMemo } from 'react';
 import Typography from '@mui/material/Typography';
+import { useCallback, useMemo, useRef } from 'react';
 
-import { useTranslation } from 'react-i18next';
 import TitleOutlined from '@mui/icons-material/TitleOutlined';
+import { useTranslation } from 'react-i18next';
 
 export interface ColorPickerProps {
   onChange?: (format: EditorMarkFormat.FontColor | EditorMarkFormat.BgColor, color: string) => void;
@@ -13,7 +13,7 @@ export interface ColorPickerProps {
   disableFocus?: boolean;
 }
 
-export function ColorPicker ({ onEscape, onChange, disableFocus }: ColorPickerProps) {
+export function ColorPicker({ onEscape, onChange, disableFocus }: ColorPickerProps) {
   const { t } = useTranslation();
 
   const ref = useRef<HTMLDivElement>(null);
@@ -25,7 +25,7 @@ export function ColorPicker ({ onEscape, onChange, disableFocus }: ColorPickerPr
 
       onChange?.(formatKey, color);
     },
-    [onChange],
+    [onChange]
   );
 
   const renderColorItem = useCallback(
@@ -41,17 +41,17 @@ export function ColorPicker ({ onEscape, onChange, disableFocus }: ColorPickerPr
           <div
             style={{
               backgroundColor: backgroundColor ? renderColor(backgroundColor) : 'transparent',
-              color: color === '' ? 'var(--text-title)' : renderColor(color),
+              color: color === '' ? 'var(--text-primary)' : renderColor(color),
             }}
-            className={'flex h-5 w-5 items-center justify-center rounded border border-line-divider'}
+            className={'flex h-5 w-5 items-center justify-center rounded border border-border-primary'}
           >
             <TitleOutlined className={'h-4 w-4'} />
           </div>
-          <div className={'flex-1 text-xs text-text-title'}>{name}</div>
+          <div className={'flex-1 text-xs text-text-primary'}>{name}</div>
         </div>
       );
     },
-    [handleColorChange],
+    [handleColorChange]
   );
 
   const colors = useMemo(() => {
@@ -59,10 +59,7 @@ export function ColorPicker ({ onEscape, onChange, disableFocus }: ColorPickerPr
       {
         key: 'font_color',
         content: (
-          <Typography
-            className={'px-3 pb-1 pt-3 text-text-caption'}
-            variant="subtitle2"
-          >
+          <Typography className={'px-3 pb-1 pt-3 text-text-secondary'} variant='subtitle2'>
             {t('editor.textColor')}
           </Typography>
         ),
@@ -112,10 +109,7 @@ export function ColorPicker ({ onEscape, onChange, disableFocus }: ColorPickerPr
       {
         key: 'bg_color',
         content: (
-          <Typography
-            className={'px-3 pb-1 pt-3 text-text-caption'}
-            variant="subtitle2"
-          >
+          <Typography className={'px-3 pb-1 pt-3 text-text-secondary'} variant='subtitle2'>
             {t('editor.backgroundColor')}
           </Typography>
         ),
@@ -125,40 +119,40 @@ export function ColorPicker ({ onEscape, onChange, disableFocus }: ColorPickerPr
             content: renderColorItem(t('editor.backgroundColorDefault'), '', ''),
           },
           {
-            key: `bg-lime-${ColorEnum.Lime}`,
-            content: renderColorItem(t('editor.backgroundColorLime'), '', ColorEnum.Lime),
+            key: `bg-lime-${ColorEnum.Tint6}`,
+            content: renderColorItem(t('editor.backgroundColorLime'), '', ColorEnum.Tint6),
           },
           {
-            key: `bg-aqua-${ColorEnum.Aqua}`,
-            content: renderColorItem(t('editor.backgroundColorAqua'), '', ColorEnum.Aqua),
+            key: `bg-aqua-${ColorEnum.Tint8}`,
+            content: renderColorItem(t('editor.backgroundColorAqua'), '', ColorEnum.Tint8),
           },
           {
-            key: `bg-orange-${ColorEnum.Orange}`,
-            content: renderColorItem(t('editor.backgroundColorOrange'), '', ColorEnum.Orange),
+            key: `bg-orange-${ColorEnum.Tint4}`,
+            content: renderColorItem(t('editor.backgroundColorOrange'), '', ColorEnum.Tint4),
           },
           {
-            key: `bg-yellow-${ColorEnum.Yellow}`,
-            content: renderColorItem(t('editor.backgroundColorYellow'), '', ColorEnum.Yellow),
+            key: `bg-yellow-${ColorEnum.Tint5}`,
+            content: renderColorItem(t('editor.backgroundColorYellow'), '', ColorEnum.Tint5),
           },
           {
-            key: `bg-green-${ColorEnum.Green}`,
-            content: renderColorItem(t('editor.backgroundColorGreen'), '', ColorEnum.Green),
+            key: `bg-green-${ColorEnum.Tint7}`,
+            content: renderColorItem(t('editor.backgroundColorGreen'), '', ColorEnum.Tint7),
           },
           {
-            key: `bg-blue-${ColorEnum.Blue}`,
-            content: renderColorItem(t('editor.backgroundColorBlue'), '', ColorEnum.Blue),
+            key: `bg-blue-${ColorEnum.Tint9}`,
+            content: renderColorItem(t('editor.backgroundColorBlue'), '', ColorEnum.Tint9),
           },
           {
-            key: `bg-purple-${ColorEnum.Purple}`,
-            content: renderColorItem(t('editor.backgroundColorPurple'), '', ColorEnum.Purple),
+            key: `bg-purple-${ColorEnum.Tint1}`,
+            content: renderColorItem(t('editor.backgroundColorPurple'), '', ColorEnum.Tint1),
           },
           {
-            key: `bg-pink-${ColorEnum.Pink}`,
-            content: renderColorItem(t('editor.backgroundColorPink'), '', ColorEnum.Pink),
+            key: `bg-pink-${ColorEnum.Tint2}`,
+            content: renderColorItem(t('editor.backgroundColorPink'), '', ColorEnum.Tint2),
           },
           {
-            key: `bg-red-${ColorEnum.LightPink}`,
-            content: renderColorItem(t('editor.backgroundColorRed'), '', ColorEnum.LightPink),
+            key: `bg-red-${ColorEnum.Tint3}`,
+            content: renderColorItem(t('editor.backgroundColorRed'), '', ColorEnum.Tint3),
           },
         ],
       },
@@ -166,10 +160,7 @@ export function ColorPicker ({ onEscape, onChange, disableFocus }: ColorPickerPr
   }, [renderColorItem, t]);
 
   return (
-    <div
-      ref={ref}
-      className={'flex h-full max-h-[420px] appflowy-scroller w-full flex-col overflow-y-auto'}
-    >
+    <div ref={ref} className={'appflowy-scroller flex h-full max-h-[420px] w-full flex-col overflow-y-auto'}>
       <KeyboardNavigation
         disableFocus={disableFocus}
         onPressLeft={onEscape}

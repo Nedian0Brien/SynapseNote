@@ -1,16 +1,18 @@
+import { IconButton, Portal, Tooltip } from '@mui/material';
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { ReactZoomPanPinchContentRef, TransformComponent, TransformWrapper } from 'react-zoom-pan-pinch';
+
+import { ReactComponent as RightIcon } from '@/assets/icons/alt_arrow_right.svg';
+import { ReactComponent as CloseIcon } from '@/assets/icons/close.svg';
+import { ReactComponent as LinkIcon } from '@/assets/icons/link.svg';
+import { ReactComponent as MinusIcon } from '@/assets/icons/minus.svg';
+import { ReactComponent as AddIcon } from '@/assets/icons/plus.svg';
+import { ReactComponent as ReloadIcon } from '@/assets/icons/reset.svg';
+import { ReactComponent as DownloadIcon } from '@/assets/icons/save_as.svg';
 import { notify } from '@/components/_shared/notify';
 import { copyTextToClipboard } from '@/utils/copy';
-import { IconButton, Portal, Tooltip } from '@mui/material';
-import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { TransformWrapper, TransformComponent, ReactZoomPanPinchContentRef } from 'react-zoom-pan-pinch';
-import { ReactComponent as RightIcon } from '@/assets/icons/alt_arrow_right.svg';
-import { ReactComponent as ReloadIcon } from '@/assets/icons/reset.svg';
-import { ReactComponent as AddIcon } from '@/assets/icons/plus.svg';
-import { ReactComponent as MinusIcon } from '@/assets/icons/minus.svg';
-import { ReactComponent as LinkIcon } from '@/assets/icons/link.svg';
-import { ReactComponent as DownloadIcon } from '@/assets/icons/save_as.svg';
-import { ReactComponent as CloseIcon } from '@/assets/icons/close.svg';
+import { getFileUrl, isFileURL } from '@/utils/file-storage-url';
 
 export interface GalleryImage {
   src: string;
@@ -21,11 +23,13 @@ export interface GalleryPreviewProps {
   open: boolean;
   onClose: () => void;
   previewIndex: number;
+  workspaceId: string;
+  viewId: string;
 }
 
-const buttonClassName = 'p-1 hover:bg-transparent text-white hover:text-content-blue-400 p-0';
+const buttonClassName = 'p-1 hover:bg-transparent text-white hover:text-text-action p-0';
 
-function GalleryPreview({ images, open, onClose, previewIndex }: GalleryPreviewProps) {
+function GalleryPreview({ images, open, onClose, previewIndex, workspaceId, viewId }: GalleryPreviewProps) {
   const { t } = useTranslation();
   const [index, setIndex] = useState(previewIndex);
   const transformComponentRef = useRef<ReactZoomPanPinchContentRef>(null);
@@ -91,13 +95,29 @@ function GalleryPreview({ images, open, onClose, previewIndex }: GalleryPreviewP
     };
   }, [handleKeydown]);
 
+  const imageUrl = useMemo(() => {
+    if (isFileURL(images[index].src)) {
+      return images[index].src;
+    }
+
+    const fileId = images[index].src;
+
+    return getFileUrl(workspaceId, viewId, fileId);
+  }, [images, index, workspaceId, viewId]);
+
   if (!open) {
     return null;
   }
 
   return (
-    <Portal container={document.getElementById('root')}>
-      <div className={'fixed inset-0 z-[1400] bg-black bg-opacity-80'} onClick={onClose}>
+    <Portal>
+      <div
+        className={'fixed inset-0 z-[1400] bg-black bg-opacity-80'}
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose?.();
+        }}
+      >
         <TransformWrapper
           ref={transformComponentRef}
           initialScale={1}
@@ -118,7 +138,7 @@ function GalleryPreview({ images, open, onClose, previewIndex }: GalleryPreviewP
                         <RightIcon className={'rotate-180 transform'} />
                       </IconButton>
                     </Tooltip>
-                    <span className={'text-text-caption'}>
+                    <span className={'text-text-secondary'}>
                       {index + 1}/{images.length}
                     </span>
                     <Tooltip title={t('gallery.next')}>
@@ -164,7 +184,7 @@ function GalleryPreview({ images, open, onClose, previewIndex }: GalleryPreviewP
                   <IconButton
                     size={'small'}
                     onClick={onClose}
-                    className={'rounded-[8px] bg-bg-mask px-3.5 text-white hover:text-content-blue-400'}
+                    className={'rounded-[8px] bg-bg-mask px-3.5 text-white hover:text-text-action'}
                   >
                     <CloseIcon />
                   </IconButton>
@@ -183,7 +203,7 @@ function GalleryPreview({ images, open, onClose, previewIndex }: GalleryPreviewP
                 }}
               >
                 <img
-                  src={images[index].src}
+                  src={imageUrl}
                   alt={images[index].src}
                   style={{
                     maxWidth: '100%',

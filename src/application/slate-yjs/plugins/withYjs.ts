@@ -1,10 +1,11 @@
-import { translateYEvents } from '@/application/slate-yjs/utils/applyToSlate';
-import { CollabOrigin, YjsEditorKey, YSharedRoot } from '@/application/types';
-import { applyToYjs } from '@/application/slate-yjs/utils/applyToYjs';
-import { Editor, Operation, Descendant, Transforms } from 'slate';
+import { BaseRange, Descendant, Editor, Operation, Transforms } from 'slate';
 import { ReactEditor } from 'slate-react';
-import Y, { YEvent, Transaction } from 'yjs';
+import Y, { Transaction, YEvent } from 'yjs';
+
+import { translateYEvents } from '@/application/slate-yjs/utils/applyToSlate';
+import { applyToYjs } from '@/application/slate-yjs/utils/applyToYjs';
 import { yDocToSlateContent } from '@/application/slate-yjs/utils/convert';
+import { CollabOrigin, YjsEditorKey, YSharedRoot } from '@/application/types';
 
 type LocalChange = {
   op: Operation;
@@ -80,7 +81,8 @@ export function withYjs<T extends Editor>(
     readSummary?: boolean;
     onContentChange?: (content: Descendant[]) => void;
     uploadFile?: (file: File) => Promise<string>;
-  },
+    onSelectionChange?: (editor: YjsEditor) => void;
+  }
 ): T & YjsEditor {
   const {
     id,
@@ -89,9 +91,10 @@ export function withYjs<T extends Editor>(
     readSummary,
     onContentChange,
     readOnly = true,
+    onSelectionChange,
   } = opts ?? {};
   const e = editor as T & YjsEditor;
-  const { apply, onChange } = e;
+  const { apply, onChange, select } = e;
 
   e.interceptLocalChange = false;
   e.readOnly = readOnly;
@@ -102,35 +105,34 @@ export function withYjs<T extends Editor>(
   const initializeDocumentContent = () => {
     const content = yDocToSlateContent(doc);
 
-    if(!content) {
+    if (!content) {
       return;
     }
 
     const selection = e.selection;
 
-    if(readSummary) {
+    if (readSummary) {
       e.children = content.children.slice(0, 10);
     } else {
       e.children = content.children;
     }
 
-    if(selection && !ReactEditor.hasRange(editor, selection)) {
+    if (selection && !ReactEditor.hasRange(editor, selection)) {
       try {
         Transforms.select(e, Editor.start(editor, [0]));
-
-      } catch(e) {
+      } catch (e) {
         console.error(e);
         editor.deselect();
       }
     }
 
     onContentChange?.(content.children);
-    console.log('===initializeDocumentContent', e.children);
+    console.debug('===initializeDocumentContent', e.children);
     Editor.normalize(e, { force: true });
   };
 
   const applyIntercept = (op: Operation) => {
-    if(YjsEditor.connected(e) && !e.interceptLocalChange) {
+    if (YjsEditor.connected(e) && !e.interceptLocalChange) {
       YjsEditor.storeLocalChange(e, op);
     }
 
@@ -144,23 +146,24 @@ export function withYjs<T extends Editor>(
     // Replace the apply function to avoid storing remote changes as local changes
     e.interceptLocalChange = true;
 
-    // Initialize or update the document content to ensure it is in the correct state before applying remote events
-    if(transaction.origin === CollabOrigin.Remote) {
+    const myCurrentSelection = editor.selection;
 
-      initializeDocumentContent();
+    let newSelection: BaseRange | null = null;
+
+    if (transaction.origin === null) {
+      translateYEvents(e, events);
+      newSelection = myCurrentSelection;
     } else {
-      const selection = editor.selection;
+      translateYEvents(e, events);
+    }
 
-      Editor.withoutNormalizing(e, () => {
-        translateYEvents(e, events);
-      });
-      if(selection) {
-        if(!ReactEditor.hasRange(editor, selection)) {
-          editor.deselect();
-        } else {
-          e.select(selection);
-        }
+    // Update my cursor position
+    try {
+      if (newSelection) {
+        Transforms.select(editor, newSelection);
       }
+    } catch (error) {
+      console.error(error);
     }
 
     // Restore the apply function to store local changes after applying remote changes
@@ -169,24 +172,23 @@ export function withYjs<T extends Editor>(
   };
 
   const handleYEvents = (events: Array<YEvent>, transaction: Transaction) => {
-    if(transaction.origin === CollabOrigin.Local) return;
+    if (transaction.origin === CollabOrigin.Local) return;
     YjsEditor.applyRemoteEvents(e, events, transaction);
-
   };
 
   e.connect = () => {
-    if(YjsEditor.connected(e)) {
+    if (YjsEditor.connected(e)) {
       throw new Error('Already connected');
     }
 
-    console.log('===connect', id);
+    console.debug('===connect', id);
     initializeDocumentContent();
     e.sharedRoot.observeDeep(handleYEvents);
     connectSet.add(e);
   };
 
   e.disconnect = () => {
-    if(!YjsEditor.connected(e)) {
+    if (!YjsEditor.connected(e)) {
       throw new Error('Not connected');
     }
 
@@ -212,11 +214,49 @@ export function withYjs<T extends Editor>(
     }, localOrigin);
   };
 
+  // Proxy the select function with error handling
+  const selectWithErrorHandling = (...args: Parameters<typeof select>) => {
+    try {
+      return select.apply(e, args);
+    } catch (error) {
+      console.error('Editor select operation failed:', error);
+      console.warn('Selection arguments:', args);
+
+      // Try to fallback to a safe selection
+      try {
+        if (e.children.length > 0) {
+          // Try to select the start of the first block
+          const startPoint = Editor.start(e, [0]);
+
+          if (startPoint) {
+            select.call(e, startPoint);
+            console.info('Fallback to document start selection');
+            return;
+          }
+        }
+      } catch (fallbackError) {
+        console.error('Fallback selection also failed:', fallbackError);
+      }
+
+      // Last resort: deselect
+      try {
+        e.deselect();
+        console.info('Deselected as last resort');
+      } catch (deselectError) {
+        console.error('Even deselect failed:', deselectError);
+      }
+    }
+  };
+
   e.apply = applyIntercept;
+  e.select = selectWithErrorHandling;
 
   e.onChange = () => {
-    if(YjsEditor.connected(e)) {
+    if (YjsEditor.connected(e)) {
       YjsEditor.flushLocalChanges(e);
+      if (onSelectionChange) {
+        onSelectionChange(e);
+      }
     }
 
     onChange();

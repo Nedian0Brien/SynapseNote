@@ -1,12 +1,34 @@
 import { debounce } from 'lodash-es';
-import React, { memo, useEffect, useMemo, useRef } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+/**
+ * Title Update Flow & Echo Prevention Mechanism:
+ * 
+ * 1. USER INPUT → LOCAL UPDATE
+ *    - User types → debounced update (300ms) → send to server
+ *    - User blurs/enters → immediate update → send to server
+ *    - Cache sent values with timestamps for echo detection
+ * 
+ * 2. REMOTE UPDATE HANDLING
+ *    - Ignore updates while user is actively typing (500ms window)
+ *    - Ignore updates shortly after sending (2s protection window)
+ *    - Detect and ignore "echo" updates (values we recently sent)
+ *    - Accept genuine remote updates and clean old cache entries
+ * 
+ * 3. ECHO PREVENTION STRATEGY
+ *    - Track sent values in Map<string, timestamp>
+ *    - Ignore remote updates matching recently sent values
+ *    - Auto-cleanup old cache entries (15s expiry)
+ *    - Clear old cache when genuine remote updates arrive
+ */
+
+// Cursor utility functions
 const isCursorAtEnd = (el: HTMLDivElement) => {
   const selection = window.getSelection();
 
   if (!selection) return false;
-
+  
   const range = selection.getRangeAt(0);
   const text = el.textContent || '';
 
@@ -17,10 +39,24 @@ const getCursorOffset = () => {
   const selection = window.getSelection();
 
   if (!selection) return 0;
+  
+  return selection.getRangeAt(0).startOffset;
+};
 
-  const range = selection.getRangeAt(0);
-
-  return range.startOffset;
+const setCursorPosition = (element: HTMLDivElement, position: number) => {
+  const range = document.createRange();
+  const selection = window.getSelection();
+  
+  if (!element.firstChild) return;
+  
+  const textNode = element.firstChild;
+  const maxPosition = textNode.textContent?.length || 0;
+  const safePosition = Math.min(position, maxPosition);
+  
+  range.setStart(textNode, safePosition);
+  range.collapse(true);
+  selection?.removeAllRanges();
+  selection?.addRange(range);
 };
 
 function TitleEditable({
@@ -28,114 +64,310 @@ function TitleEditable({
   name,
   onUpdateName,
   onEnter,
+  onFocus,
+  autoFocus = true,
 }: {
   viewId: string;
   name: string;
   onUpdateName: (name: string) => void;
   onEnter?: (text: string) => void;
+  onFocus?: () => void;
+  autoFocus?: boolean;
 }) {
   const { t } = useTranslation();
-  const debounceUpdateName = useMemo(() => {
-    return debounce(onUpdateName, 300);
-  }, [onUpdateName]);
-  const contentRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (contentRef.current) {
-      contentRef.current.textContent = name;
-    }
-    // eslint-disable-next-line
+  // Component state and refs
+  const [isFocused, setIsFocused] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const cursorPositionRef = useRef<number>(0);
+  
+  // Timing and cache refs
+  const lastInputTimeRef = useRef<number>(0);
+  const lastUpdateSentTimeRef = useRef<number>(0);
+  const sentValuesRef = useRef<Map<string, number>>(new Map());
+  
+  // Timer refs
+  const inputTimerRef = useRef<NodeJS.Timeout>();
+  const blurTimerRef = useRef<NodeJS.Timeout>();
+  const cleanupTimerRef = useRef<NodeJS.Timeout>();
+
+  // State checking functions
+  const isTyping = useCallback(() => {
+    return Date.now() - lastInputTimeRef.current < 500; // 500ms typing window
   }, []);
 
-  useEffect(() => {
-    if (contentRef.current) {
-      const activeElement = document.activeElement;
+  const isRecentlyUpdated = useCallback(() => {
+    return Date.now() - lastUpdateSentTimeRef.current < 2000; // 2s protection window
+  }, []);
 
-      if (activeElement === contentRef.current) {
-        return;
+  const isPotentialEcho = useCallback((value: string) => {
+    return sentValuesRef.current.has(value);
+  }, []);
+
+  // Cache management
+  const cleanOldSentValues = useCallback(() => {
+    const now = Date.now();
+    const maxAge = 15000; // 15 seconds
+    
+    for (const [value, timestamp] of sentValuesRef.current.entries()) {
+      if (now - timestamp > maxAge) {
+        sentValuesRef.current.delete(value);
+        console.debug('🧹 Cleaned old sent value:', value);
       }
-
-      contentRef.current.textContent = name;
     }
-  }, [name]);
+  }, []);
 
-  const focusedTextbox = () => {
+  const scheduleCleanup = useCallback(() => {
+    if (cleanupTimerRef.current) {
+      clearTimeout(cleanupTimerRef.current);
+    }
+    
+    cleanupTimerRef.current = setTimeout(cleanOldSentValues, 5000);
+  }, [cleanOldSentValues]);
+
+  // Update functions - send changes to server and cache for echo detection
+  const sendUpdate = useCallback((value: string, isImmediate = false) => {
+    console.debug(isImmediate ? '⚡ Immediate update:' : '⏰ Debounced update:', value);
+    
+    const now = Date.now();
+
+    lastUpdateSentTimeRef.current = now;
+    sentValuesRef.current.set(value, now);
+    scheduleCleanup();
+    onUpdateName(value);
+  }, [onUpdateName, scheduleCleanup]);
+
+  const debouncedUpdate = useMemo(() => {
+    return debounce((value: string) => sendUpdate(value, false), 300);
+  }, [sendUpdate]);
+
+  const sendUpdateImmediately = useCallback((value: string) => {
+    debouncedUpdate.cancel();
+    sendUpdate(value, true);
+  }, [debouncedUpdate, sendUpdate]);
+
+  // Handle remote updates with echo prevention
+  useEffect(() => {
+    console.debug('🌐 Remote name changed:', {
+      name,
+      isFocused,
+      isCurrentlyTyping: isTyping(),
+      isRecentlyUpdated: isRecentlyUpdated(),
+      isPotentialEcho: isPotentialEcho(name),
+    });
+
+    // Step 1: Ignore if user is actively interacting
+    if (isTyping() || isRecentlyUpdated()) {
+      console.debug('✋ User activity detected, ignoring remote update');
+      return;
+    }
+
+    // Step 2: Detect and ignore echo updates (values we recently sent)
+    if (isPotentialEcho(name)) {
+      console.debug('🔄 Echo detected, ignoring remote update');
+      return;
+    }
+
+    // Step 3: Handle genuine remote updates
+    console.debug('✨ Genuine remote update detected');
+    
+    // Clean old cache entries (keep recent ones to prevent immediate re-acceptance)
+    const now = Date.now();
+
+    for (const [value, timestamp] of sentValuesRef.current.entries()) {
+      if (now - timestamp > 5000) { // Keep values from last 5 seconds
+        sentValuesRef.current.delete(value);
+      }
+    }
+
+    // Step 4: Update UI if content differs
+    if (contentRef.current) {
+      const currentContent = contentRef.current.textContent || '';
+
+      if (currentContent !== name) {
+        console.debug('✅ Applying remote update to UI');
+        contentRef.current.textContent = name;
+
+        // Preserve cursor position for focused input
+        if (isFocused && document.activeElement === contentRef.current) {
+          const cursorPos = Math.min(cursorPositionRef.current, name.length);
+
+          // Use microtask to ensure DOM update completes first
+          queueMicrotask(() => {
+            if (contentRef.current) {
+              setCursorPosition(contentRef.current, cursorPos);
+            }
+          });
+        }
+      }
+    }
+  }, [name, isTyping, isRecentlyUpdated, isPotentialEcho, isFocused]);
+
+  // Initialize component
+  useEffect(() => {
     const contentBox = contentRef.current;
 
-    if (!contentBox) return;
+    if (!contentBox) {
+      console.warn('[TitleEditable] contentRef not available yet');
+      return;
+    }
 
+    contentBox.textContent = name;
+
+    if (autoFocus) {
+      requestAnimationFrame(() => {
+        if (contentBox && document.contains(contentBox)) {
+          contentBox.focus();
+          if (contentBox.textContent) {
+            setCursorPosition(contentBox, contentBox.textContent.length);
+          }
+        }
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const focusedTextbox = useCallback(() => {
     const textbox = document.getElementById(`editor-${viewId}`) as HTMLElement;
 
     textbox?.focus();
-  };
+  }, [viewId]);
 
-  useEffect(() => {
-    const contentBox = contentRef.current;
-
-    if (!contentBox) return;
-    contentBox.focus();
-    if (contentBox.textContent !== '') {
-      const range = document.createRange();
-      const sel = window.getSelection();
-
-      range.setStart(contentBox.childNodes[0], contentBox.textContent?.length || 0);
-      range.collapse(true);
-      sel?.removeAllRanges();
-      sel?.addRange(range);
+  // Event handlers with useCallback optimization
+  const handleFocus = useCallback(() => {
+    console.debug('🎯 Input focused');
+    
+    if (blurTimerRef.current) {
+      clearTimeout(blurTimerRef.current);
+      blurTimerRef.current = undefined;
     }
-  }, []);
+    
+    setIsFocused(true);
+    onFocus?.();
+  }, [onFocus]);
+
+  const handleBlur = useCallback(() => {
+    console.debug('👋 Input blurred');
+    const currentText = contentRef.current?.textContent || '';
+    
+    sendUpdateImmediately(currentText);
+    setIsFocused(false);
+    
+    blurTimerRef.current = setTimeout(() => {
+      console.debug('🧹 Cleaning input state after blur');
+      lastInputTimeRef.current = 0;
+      if (inputTimerRef.current) {
+        clearTimeout(inputTimerRef.current);
+      }
+    }, 100);
+  }, [sendUpdateImmediately]);
+
+  const handleInput = useCallback(() => {
+    if (!contentRef.current) return;
+    
+    lastInputTimeRef.current = Date.now();
+    cursorPositionRef.current = getCursorOffset();
+    
+    // Clean up browser auto-inserted <br> tags
+    if (contentRef.current.innerHTML === '<br>') {
+      contentRef.current.innerHTML = '';
+    }
+    
+    const currentText = contentRef.current.textContent || '';
+
+    debouncedUpdate(currentText);
+    
+    if (inputTimerRef.current) {
+      clearTimeout(inputTimerRef.current);
+    }
+    
+    inputTimerRef.current = setTimeout(() => {
+      console.debug('⏸️ User stopped typing');
+    }, 500);
+  }, [debouncedUpdate]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!contentRef.current) return;
+    
+    lastInputTimeRef.current = Date.now();
+    cursorPositionRef.current = getCursorOffset();
+    
+    if (e.key === 'Enter' || e.key === 'Escape') {
+      e.preventDefault();
+      
+      if (e.key === 'Enter') {
+        const currentText = e.currentTarget.textContent || '';
+        const offset = getCursorOffset();
+        
+        if (offset >= currentText.length || offset <= 0) {
+          sendUpdateImmediately(currentText);
+          onEnter?.('');
+        } else {
+          const beforeText = currentText.slice(0, offset);
+          const afterText = currentText.slice(offset);
+          
+          contentRef.current.textContent = beforeText;
+          sendUpdateImmediately(beforeText);
+          onEnter?.(afterText);
+        }
+        
+        setTimeout(() => focusedTextbox(), 0);
+      } else {
+        const currentText = contentRef.current.textContent || '';
+
+        sendUpdateImmediately(currentText);
+      }
+      
+      setTimeout(() => {
+        lastInputTimeRef.current = 0;
+        if (inputTimerRef.current) {
+          clearTimeout(inputTimerRef.current);
+        }
+      }, 100);
+    } else if (e.key === 'ArrowDown' || (e.key === 'ArrowRight' && isCursorAtEnd(contentRef.current))) {
+      e.preventDefault();
+      focusedTextbox();
+    }
+  }, [sendUpdateImmediately, onEnter, focusedTextbox]);
+
+  // Cleanup timers
+  useEffect(() => {
+    return () => {
+      if (inputTimerRef.current) {
+        clearTimeout(inputTimerRef.current);
+      }
+
+      if (blurTimerRef.current) {
+        clearTimeout(blurTimerRef.current);
+      }
+
+      if (cleanupTimerRef.current) {
+        clearTimeout(cleanupTimerRef.current);
+      }
+
+      debouncedUpdate.cancel();
+    };
+  }, [debouncedUpdate]);
+
 
   return (
     <div
       ref={contentRef}
       suppressContentEditableWarning={true}
       id={`editor-title-${viewId}`}
-      style={{
-        wordBreak: 'break-word',
-      }}
-      className={'relative flex-1 custom-caret break-words whitespace-pre-wrap cursor-text focus:outline-none empty:before:content-[attr(data-placeholder)] empty:before:text-text-placeholder'}
+      data-testid='page-title-input'
+      style={{ wordBreak: 'break-word' }}
+      className={
+        'custom-caret relative flex-1 cursor-text whitespace-pre-wrap break-words empty:before:text-text-tertiary empty:before:content-[attr(data-placeholder)] focus:outline-none'
+      }
       data-placeholder={t('menuAppHeader.defaultNewPageName')}
       contentEditable={true}
-      aria-readonly={false}
-      autoFocus={true}
-      onInput={() => {
-        if (!contentRef.current) return;
-        debounceUpdateName(contentRef.current.textContent || '');
-        if (contentRef.current.innerHTML === '<br>') {
-          contentRef.current.innerHTML = '';
-        }
-      }}
-      onBlur={() => {
-        if (!contentRef.current) return;
-        onUpdateName(contentRef.current.textContent || '');
-      }}
-      onKeyDown={(e) => {
-        if (!contentRef.current) return;
-        if (e.key === 'Enter' || e.key === 'Escape') {
-          e.preventDefault();
-          if (e.key === 'Enter') {
-            const offset = getCursorOffset();
-            const beforeText = contentRef.current.textContent?.slice(0, offset) || '';
-            const afterText = contentRef.current.textContent?.slice(offset) || '';
-
-            contentRef.current.textContent = beforeText;
-            onUpdateName(beforeText);
-            onEnter?.(afterText);
-
-            setTimeout(() => {
-              focusedTextbox();
-            }, 0);
-
-          } else {
-            onUpdateName(contentRef.current.textContent || '');
-          }
-        } else if (e.key === 'ArrowDown' || (e.key === 'ArrowRight' && isCursorAtEnd(contentRef.current))) {
-          e.preventDefault();
-          focusedTextbox();
-        }
-      }}
+      autoFocus={autoFocus}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
+      onInput={handleInput}
+      onKeyDown={handleKeyDown}
     />
-
   );
 }
 

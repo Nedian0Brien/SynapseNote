@@ -1,20 +1,14 @@
+import { useAppHandlers, useAppView } from '@/components/app/app.hooks';
 import { NormalModal } from '@/components/_shared/modal';
 import { notify } from '@/components/_shared/notify';
-import { useAppHandlers, useAppView } from '@/components/app/app.hooks';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
-function DeleteSpaceConfirm ({ open, onClose, viewId }: {
-  open: boolean;
-  onClose: () => void;
-  viewId: string;
-}) {
+function DeleteSpaceConfirm({ open, onClose, viewId }: { open: boolean; onClose: () => void; viewId: string }) {
   const view = useAppView(viewId);
 
   const [loading, setLoading] = React.useState(false);
-  const {
-    deletePage,
-  } = useAppHandlers();
+  const { deletePage } = useAppHandlers();
   const { t } = useTranslation();
 
   const handleOk = async () => {
@@ -41,15 +35,16 @@ function DeleteSpaceConfirm ({ open, onClose, viewId }: {
       onClose={onClose}
       okLoading={loading}
       title={
-        <div className={'flex font-semibold items-center w-full text-left'}>{`${t('button.delete')}: ${view?.name}`}</div>
+        <div className={'flex w-full items-center text-left font-semibold'}>{`${t('button.delete')}: ${
+          view?.name
+        }`}</div>
       }
       onOk={handleOk}
       PaperProps={{
         className: 'w-[420px] max-w-[70vw]',
       }}
     >
-      <div className={'text-text-caption font-normal'}>{t('space.deleteConfirmationDescription')}</div>
-
+      <div className={'font-normal text-text-secondary'}>{t('space.deleteConfirmationDescription')}</div>
     </NormalModal>
   );
 }

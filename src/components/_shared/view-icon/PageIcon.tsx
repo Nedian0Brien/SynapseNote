@@ -1,13 +1,15 @@
+import DOMPurify from 'dompurify';
 import React, { useEffect, useMemo } from 'react';
+
 import { ViewIcon, ViewIconType, ViewLayout } from '@/application/types';
+import { ReactComponent as ChatSvg } from '@/assets/icons/ai_chat.svg';
 import { ReactComponent as BoardSvg } from '@/assets/icons/board.svg';
 import { ReactComponent as CalendarSvg } from '@/assets/icons/calendar.svg';
-import { ReactComponent as DocumentSvg } from '@/assets/icons/page.svg';
 import { ReactComponent as GridSvg } from '@/assets/icons/grid.svg';
-import { ReactComponent as ChatSvg } from '@/assets/icons/ai_chat.svg';
-import { getIcon, isFlagEmoji } from '@/utils/emoji';
-import DOMPurify from 'dompurify';
+import { ReactComponent as DocumentSvg } from '@/assets/icons/page.svg';
+import { cn } from '@/lib/utils';
 import { renderColor } from '@/utils/color';
+import { getIcon, isFlagEmoji } from '@/utils/emoji';
 
 function PageIcon({
   view,
@@ -24,7 +26,7 @@ function PageIcon({
   const [iconContent, setIconContent] = React.useState<string | undefined>(undefined);
 
   const emoji = useMemo(() => {
-    if(view.icon && view.icon.ty === ViewIconType.Emoji && view.icon.value) {
+    if (view.icon && view.icon.ty === ViewIconType.Emoji && view.icon.value) {
       return view.icon.value;
     }
 
@@ -32,12 +34,12 @@ function PageIcon({
   }, [view]);
 
   const img = useMemo(() => {
-    if(view.icon && view.icon.ty === ViewIconType.URL && view.icon.value) {
-      return <img
-        className={className}
-        src={view.icon.value}
-        alt="icon"
-      />;
+    if (view.icon && view.icon.ty === ViewIconType.URL && view.icon.value) {
+      return (
+        <span className={cn('h-full w-full p-[2px]', className)}>
+          <img className={'h-full w-full'} src={view.icon.value} alt='icon' />
+        </span>
+      );
     }
 
     return null;
@@ -48,15 +50,19 @@ function PageIcon({
   }, [emoji]);
 
   useEffect(() => {
-    if(view.icon && view.icon.ty === ViewIconType.Icon && view.icon.value) {
+    if (view.icon && view.icon.ty === ViewIconType.Icon && view.icon.value) {
       try {
         const json = JSON.parse(view.icon.value);
         const id = `${json.groupName}/${json.iconName}`;
 
         void getIcon(id).then((item) => {
-          setIconContent(item?.content.replaceAll('black', renderColor(json.color)).replace('<svg', '<svg width="100%" height="100%"'));
+          setIconContent(
+            item?.content
+              .replaceAll('black', json.color ? renderColor(json.color) : 'currentColor')
+              .replace('<svg', '<svg width="100%" height="100%"')
+          );
         });
-      } catch(e) {
+      } catch (e) {
         console.error(e, view.icon);
       }
     } else {
@@ -65,39 +71,43 @@ function PageIcon({
   }, [view.icon]);
 
   const icon = useMemo(() => {
-    if(iconContent) {
+    if (iconContent) {
       const cleanSvg = DOMPurify.sanitize(iconContent, {
         USE_PROFILES: { svg: true, svgFilters: true },
       });
 
-      return <span
-        style={{
-          width: iconSize,
-          height: iconSize,
-        }}
-        className={`${className ? className : 'w-full h-full'} `}
-        dangerouslySetInnerHTML={{
-          __html: cleanSvg,
-        }}
-      />;
+      return (
+        <span
+          style={{
+            width: iconSize,
+            height: iconSize,
+          }}
+          className={cn('h-full w-full p-[2px]', className)}
+          dangerouslySetInnerHTML={{
+            __html: cleanSvg,
+          }}
+        />
+      );
     }
   }, [iconContent, iconSize, className]);
 
-  if(emoji) {
-    return <>
-      <span className={`${isFlag ? 'icon' : ''} ${className || ''}`}>{emoji}</span>
-    </>;
+  if (emoji) {
+    return (
+      <>
+        <span className={`${isFlag ? 'icon' : ''} ${className || ''}`}>{emoji}</span>
+      </>
+    );
   }
 
-  if(img) {
+  if (img) {
     return img;
   }
 
-  if(icon) {
+  if (icon) {
     return icon;
   }
 
-  switch(view.layout) {
+  switch (view.layout) {
     case ViewLayout.AIChat:
       return <ChatSvg className={className} />;
     case ViewLayout.Grid:

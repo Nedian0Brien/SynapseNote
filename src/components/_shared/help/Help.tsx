@@ -1,20 +1,20 @@
-import { notify } from '@/components/_shared/notify';
-import { Popover } from '@/components/_shared/popover';
-import { ThemeModeContext } from '@/components/main/useAppThemeMode';
-import { copyTextToClipboard } from '@/utils/copy';
-import { Button, Divider, Portal, Tooltip } from '@mui/material';
-import { PopoverProps } from '@mui/material/Popover';
-import { useContext } from 'react';
-import * as React from 'react';
-import Box from '@mui/material/Box';
-import { useTranslation } from 'react-i18next';
-import { ReactComponent as WhatsNewIcon } from '@/assets/icons/star.svg';
-import { ReactComponent as SupportIcon } from '@/assets/icons/help.svg';
 import { ReactComponent as BugIcon } from '@/assets/icons/bug.svg';
 import { ReactComponent as FeedbackIcon } from '@/assets/icons/feedback.svg';
-import { ReactComponent as MoonIcon } from '@/assets/icons/moon.svg';
-import { ReactComponent as SunIcon } from '@/assets/icons/sun.svg';
+import { ReactComponent as SupportIcon } from '@/assets/icons/help.svg';
 import { ReactComponent as DocumentationIcon } from '@/assets/icons/help_&_documentation.svg';
+import { ReactComponent as MoonIcon } from '@/assets/icons/moon.svg';
+import { ReactComponent as WhatsNewIcon } from '@/assets/icons/star.svg';
+import { ReactComponent as SunIcon } from '@/assets/icons/sun.svg';
+import { ThemeModeContext } from '@/components/main/useAppThemeMode';
+import { notify } from '@/components/_shared/notify';
+import { Popover } from '@/components/_shared/popover';
+import { copyTextToClipboard } from '@/utils/copy';
+import { Button, Divider, Portal, Tooltip } from '@mui/material';
+import Box from '@mui/material/Box';
+import { PopoverProps } from '@mui/material/Popover';
+import * as React from 'react';
+import { useContext } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const popoverProps: Partial<PopoverProps> = {
   anchorOrigin: {
@@ -40,7 +40,7 @@ export default function Help() {
           <div ref={ref} onClick={() => setOpen(!open)} className={'py-2'}>
             <div
               className={
-                'flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-line-border bg-bg-body shadow-md hover:bg-fill-list-hover'
+                'flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-border-primary bg-surface-primary shadow-md hover:bg-surface-primary-hover'
               }
             >
               <SupportIcon className={'h-5 w-5'} />
@@ -127,7 +127,7 @@ export default function Help() {
               target='_blank'
               component={'a'}
               href={'https://forum.appflowy.io/'}
-              className={'justify-start text-text-caption'}
+              className={'justify-start text-text-secondary'}
               color={'inherit'}
               variant={'text'}
             >
@@ -138,7 +138,7 @@ export default function Help() {
               component={'a'}
               target='_blank'
               href={'https://x.com/appflowy'}
-              className={'justify-start text-text-caption'}
+              className={'justify-start text-text-secondary'}
               color={'inherit'}
               variant={'text'}
             >
@@ -149,7 +149,7 @@ export default function Help() {
               component={'a'}
               target='_blank'
               href={'https://www.reddit.com/r/AppFlowy/'}
-              className={'justify-start text-text-caption'}
+              className={'justify-start text-text-secondary'}
               color={'inherit'}
               variant={'text'}
             >

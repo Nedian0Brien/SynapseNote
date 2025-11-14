@@ -1,17 +1,36 @@
-import { FieldType } from '@/application/database-yjs';
+import { useMemo } from 'react';
+
 import { CellProps, RelationCell as RelationCellType } from '@/application/database-yjs/cell.type';
+import RelationCellMenu from '@/components/database/components/cell/relation/RelationCellMenu';
 import RelationItems from '@/components/database/components/cell/relation/RelationItems';
-import React from 'react';
 
-export function RelationCell({ cell, fieldId, style, placeholder }: CellProps<RelationCellType>) {
-  if (cell?.fieldType !== FieldType.Relation) return null;
+export function RelationCell({
+  cell,
+  fieldId,
+  style,
+  placeholder,
+  editing,
+  setEditing,
+  rowId,
+  wrap,
+}: CellProps<RelationCellType>) {
+  const children = useMemo(() => {
+    if (!cell?.data)
+      return placeholder ? (
+        <div style={style} className={'text-text-tertiary'}>
+          {placeholder}
+        </div>
+      ) : null;
 
-  if (!cell?.data)
-    return placeholder ? (
-      <div style={style} className={'text-text-placeholder'}>
-        {placeholder}
-      </div>
-    ) : null;
+    return <RelationItems cell={cell} fieldId={fieldId} style={style} wrap={wrap} />;
+  }, [cell, wrap, fieldId, placeholder, style]);
 
-  return <RelationItems cell={cell} fieldId={fieldId} style={style} />;
+  return (
+    <>
+      {children}
+      {editing && (
+        <RelationCellMenu open={editing} onOpenChange={setEditing} cell={cell} fieldId={fieldId} rowId={rowId} />
+      )}
+    </>
+  );
 }

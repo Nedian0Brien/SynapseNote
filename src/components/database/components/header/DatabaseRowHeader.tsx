@@ -1,10 +1,21 @@
-import { RowMeta, useCellSelector, usePrimaryFieldId, useRowMetaSelector } from '@/application/database-yjs';
-import { AppendBreadcrumb, RowCoverType, ViewIconType, ViewLayout } from '@/application/types';
+import React, { useCallback, useEffect, useState } from 'react';
+
+import {
+  RowMeta,
+  RowMetaKey,
+  useCellSelector,
+  useDatabaseContext,
+  usePrimaryFieldId,
+  useReadOnly,
+  useRowMetaSelector,
+} from '@/application/database-yjs';
+import { useUpdateRowMetaDispatch } from '@/application/database-yjs/dispatch';
+import { AppendBreadcrumb, CoverType, RowCoverType, ViewIconType, ViewLayout, ViewMetaCover } from '@/application/types';
 import Title from '@/components/database/components/header/Title';
 import { getScrollParent } from '@/components/global-comment/utils';
-import React, { useCallback, useEffect } from 'react';
-import { renderColor } from '@/utils/color';
+import ViewCoverActions from '@/components/view-meta/ViewCoverActions';
 import ImageRender from '@/components/_shared/image-render/ImageRender';
+import { renderColor } from '@/utils/color';
 
 function DatabaseRowHeader({ rowId, appendBreadcrumb }: { rowId: string; appendBreadcrumb?: AppendBreadcrumb }) {
   const fieldId = usePrimaryFieldId() || '';
@@ -14,22 +25,62 @@ function DatabaseRowHeader({ rowId, appendBreadcrumb }: { rowId: string; appendB
   const [width, setWidth] = React.useState<number | undefined>(undefined);
   const meta = useRowMetaSelector(rowId);
   const cover = meta?.cover;
+  const readOnly = useReadOnly();
+  const [hoveredCover, setShowAction] = useState(false);
+  const isDatabaseRowPage = useDatabaseContext()?.isDatabaseRowPage;
+
+  const updateRowMeta = useUpdateRowMetaDispatch(rowId);
+
+  const onUpdateCover = useCallback(
+    (cover: ViewMetaCover) => {
+      if (readOnly) return;
+
+      // eslint-disable-next-line
+      // @ts-ignore
+      const coverTypeMap: Record<CoverType, RowCoverType> = {
+        [CoverType.GradientColor]: RowCoverType.GradientCover,
+        [CoverType.NormalColor]: RowCoverType.ColorCover,
+        [CoverType.BuildInImage]: RowCoverType.AssetCover,
+        [CoverType.CustomImage]: RowCoverType.FileCover,
+        [CoverType.UpsplashImage]: RowCoverType.FileCover,
+      };
+      const coverType = coverTypeMap[cover.type];
+
+      updateRowMeta(
+        RowMetaKey.CoverId,
+        JSON.stringify({
+          cover_type: coverType,
+          data: cover.value,
+        })
+      );
+    },
+    [readOnly, updateRowMeta]
+  );
+
+  const onRemoveCover = useCallback(() => {
+    if (readOnly) return;
+    setShowAction(false);
+
+    updateRowMeta(RowMetaKey.CoverId, '');
+  }, [readOnly, updateRowMeta]);
 
   const renderCoverImage = useCallback((cover: RowMeta['cover']) => {
-    if(!cover) return null;
+    if (!cover) return null;
 
-    if(cover.cover_type === RowCoverType.GradientCover || cover.cover_type === RowCoverType.ColorCover) {
-      return <div
-        style={{
-          background: renderColor(cover.data),
-        }}
-        className={`h-full w-full`}
-      />;
+    if (cover.cover_type === RowCoverType.GradientCover || cover.cover_type === RowCoverType.ColorCover) {
+      return (
+        <div
+          style={{
+            background: renderColor(cover.data),
+          }}
+          className={`h-full w-full`}
+        />
+      );
     }
 
     let url: string | undefined = cover.data;
 
-    if(cover.cover_type === RowCoverType.AssetCover) {
+    if (cover.cover_type === RowCoverType.AssetCover) {
       url = {
         1: '/covers/m_cover_image_1.png',
         2: '/covers/m_cover_image_2.png',
@@ -40,16 +91,11 @@ function DatabaseRowHeader({ rowId, appendBreadcrumb }: { rowId: string; appendB
       }[Number(cover.data)];
     }
 
-    if(!url) return null;
+    if (!url) return null;
 
     return (
       <>
-        <ImageRender
-          draggable={false}
-          src={url}
-          alt={''}
-          className={'h-full w-full object-cover'}
-        />
+        <ImageRender draggable={false} src={url} alt={''} className={'h-full w-full object-cover'} />
       </>
     );
   }, []);
@@ -62,14 +108,19 @@ function DatabaseRowHeader({ rowId, appendBreadcrumb }: { rowId: string; appendB
   useEffect(() => {
     appendBreadcrumb?.({
       children: [],
-      extra: null, is_private: false, is_published: false, layout: ViewLayout.Document, view_id: rowId,
+      extra: null,
+      is_private: false,
+      is_published: false,
+      layout: ViewLayout.Document,
+      view_id: rowId,
       name: cell?.data as string,
-      icon: meta?.icon ? {
-        ty: ViewIconType.Emoji,
-        value: meta.icon,
-      } : null,
+      icon: meta?.icon
+        ? {
+            ty: ViewIconType.Emoji,
+            value: meta.icon,
+          }
+        : null,
     });
-
   }, [appendBreadcrumb, cell?.data, meta, rowId]);
 
   useEffect(() => {
@@ -81,11 +132,11 @@ function DatabaseRowHeader({ rowId, appendBreadcrumb }: { rowId: string; appendB
   useEffect(() => {
     const el = ref.current;
 
-    if(!el) return;
+    if (!el) return;
 
     const container = el.closest('.appflowy-scroll-container') || getScrollParent(el);
 
-    if(!container) return;
+    if (!container) return;
 
     const handleResize = () => {
       setOffsetLeft(container.getBoundingClientRect().left - el.getBoundingClientRect().left);
@@ -102,28 +153,34 @@ function DatabaseRowHeader({ rowId, appendBreadcrumb }: { rowId: string; appendB
     };
   }, []);
 
-  return <div
-    ref={ref}
-    className={'flex flex-col relative'}
-  >
-    <div
-      className={'row-header-cover relative'}
-      style={{ left: offsetLeft, width }}
-    >
-      {cover && <div
-        style={{
-          height: '40vh',
-        }}
-        className={'relative flex max-h-[288px] min-h-[130px] w-full max-sm:h-[180px]'}
-      >
-        {renderCoverImage(cover)}
-      </div>}
+  return (
+    <div ref={ref} className={'relative flex flex-col'}>
+      <div className={'row-header-cover relative'} style={{ left: offsetLeft, width }}>
+        {cover && cover.data && (
+          <div
+            style={{
+              height: isDatabaseRowPage ? '40vh' : '25vh',
+              maxHeight: isDatabaseRowPage ? '288px' : '200px',
+            }}
+            onMouseEnter={() => setShowAction(true)}
+            onMouseLeave={() => setShowAction(false)}
+            className={'relative flex min-h-[130px] w-full max-sm:h-[180px]'}
+          >
+            {renderCoverImage(cover)}
+            {!readOnly && (
+              <ViewCoverActions
+                show={hoveredCover}
+                onUpdateCover={onUpdateCover}
+                onRemove={onRemoveCover}
+                coverValue={cover.data}
+              />
+            )}
+          </div>
+        )}
+      </div>
+      <Title rowId={rowId} fieldId={fieldId} icon={meta?.icon} name={cell?.data as string} hasCover={!!cover} />
     </div>
-    <Title
-      icon={meta?.icon}
-      name={cell?.data as string}
-    />
-  </div>;
+  );
 }
 
 export default DatabaseRowHeader;

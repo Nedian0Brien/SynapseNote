@@ -1,6 +1,6 @@
-import React, { forwardRef } from 'react';
-import IconButton, { IconButtonProps } from '@mui/material/IconButton';
 import { Tooltip } from '@mui/material';
+import IconButton, { IconButtonProps } from '@mui/material/IconButton';
+import React, { forwardRef } from 'react';
 
 const ActionButton = forwardRef<
   HTMLButtonElement,
@@ -12,23 +12,19 @@ const ActionButton = forwardRef<
   } & IconButtonProps
 >(({ tooltip, onClick, disabled, children, active, className, ...props }, ref) => {
   return (
-    <Tooltip
-      disableInteractive={true}
-      placement={'top'}
-      title={tooltip}
-    >
+    <Tooltip disableInteractive={true} placement={'top'} title={tooltip}>
       <IconButton
         ref={ref}
         onClick={onClick}
         size={'small'}
         style={{
-          color: active ? 'var(--fill-default)' : disabled ? 'var(--line-on-toolbar)' : undefined,
+          color: active ? 'var(--text-action)' : disabled ? 'var(--line-on-toolbar)' : undefined,
         }}
         disabled={disabled}
         {...props}
         className={`${
           className ?? ''
-        } bg-transparent px-1 py-1 text-icon-on-toolbar hover:bg-transparent hover:text-fill-default`}
+        } bg-transparent px-1 py-1 text-icon-on-toolbar hover:bg-transparent hover:text-text-action`}
       >
         {children}
       </IconButton>

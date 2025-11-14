@@ -1,30 +1,36 @@
-import { YjsEditor } from '@/application/slate-yjs';
-import { CustomEditor } from '@/application/slate-yjs/command';
-import {
-  isAtBlockStart,
-  isAtBlockEnd,
-  isEntireDocumentSelected,
-  getBlockEntry,
-} from '@/application/slate-yjs/utils/editor';
-import { TextUnit, Range, EditorFragmentDeletionOptions } from 'slate';
+import { EditorFragmentDeletionOptions, Range, TextUnit } from 'slate';
 import { ReactEditor } from 'slate-react';
 import { TextDeleteOptions } from 'slate/dist/interfaces/transforms/text';
+
+import { YjsEditor } from '@/application/slate-yjs';
+import { CustomEditor } from '@/application/slate-yjs/command';
 import { isEmbedBlockTypes } from '@/application/slate-yjs/command/const';
+import {
+  getBlockEntry,
+  isAtBlockEnd,
+  isAtBlockStart,
+  isEntireDocumentSelected,
+} from '@/application/slate-yjs/utils/editor';
 import { BlockType } from '@/application/types';
 
 export function withDelete(editor: ReactEditor) {
-  const { deleteForward, deleteBackward, delete: deleteText } = editor;
+  const { deleteForward, deleteBackward, delete: deleteText, deleteFragment: originalDeleteFragment } = editor;
 
   editor.delete = (options?: TextDeleteOptions) => {
     const { selection } = editor;
 
     if (!selection) return;
 
-    const [node] = getBlockEntry(editor as YjsEditor);
+    const entry = getBlockEntry(editor as YjsEditor);
+
+    if (!entry) return;
+
+    const [node] = entry;
+
+    if (!node) return;
 
     if (Range.isCollapsed(selection)) {
       if (isEmbedBlockTypes(node.type as BlockType) && node.blockId) {
-
         CustomEditor.deleteBlock(editor as YjsEditor, node.blockId);
         return;
       }
@@ -34,10 +40,15 @@ export function withDelete(editor: ReactEditor) {
     }
 
     const [start, end] = Range.edges(selection);
-    const startBlock = getBlockEntry(editor as YjsEditor, start)[0];
-    const endBlock = getBlockEntry(editor as YjsEditor, end)[0];
+    const startBlock = getBlockEntry(editor as YjsEditor, start);
+    const endBlock = getBlockEntry(editor as YjsEditor, end);
 
-    if (startBlock.blockId === endBlock.blockId) {
+    if (!startBlock || !endBlock) return;
+
+    const [startNode] = startBlock;
+    const [endNode] = endBlock;
+
+    if (startNode.blockId === endNode.blockId) {
       deleteText(options);
       return;
     }
@@ -57,6 +68,27 @@ export function withDelete(editor: ReactEditor) {
 
     if (!selection) return;
 
+    // Check if selection is within a single block
+    const [start, end] = Range.edges(selection);
+    const startBlock = getBlockEntry(editor as YjsEditor, start);
+    const endBlock = getBlockEntry(editor as YjsEditor, end);
+
+    if (!startBlock || !endBlock) {
+      // Fallback to default behavior if we can't get block entries
+      originalDeleteFragment(options);
+      return;
+    }
+
+    const [startNode] = startBlock;
+    const [endNode] = endBlock;
+
+    // If selection is within the same block, use default Slate deletion
+    if (startNode.blockId === endNode.blockId) {
+      originalDeleteFragment(options);
+      return;
+    }
+
+    // Only use custom block deletion for cross-block selections
     if (options?.direction === 'backward') {
       CustomEditor.deleteBlockBackward(editor as YjsEditor, selection);
     } else {
@@ -72,30 +104,56 @@ export function withDelete(editor: ReactEditor) {
       return;
     }
 
-    let shouldUseDefaultBehavior = false;
+    // For collapsed selections, check if we're at block boundary
+    if (Range.isCollapsed(selection)) {
+      const shouldUseDefaultBehavior = !isAtBlockEnd(editor, selection.anchor);
 
-    if (selection && Range.isCollapsed(selection)) {
-      shouldUseDefaultBehavior = !isAtBlockEnd(editor, selection.anchor);
+      if (shouldUseDefaultBehavior) {
+        deleteForward(unit);
+        return;
+      }
+
+      // At block end, check next block
+      const after = editor.after(editor.end(selection), { unit: 'block' });
+
+      if (!after) {
+        return;
+      }
+
+      const nextBlock = getBlockEntry(editor as YjsEditor, after)?.[0];
+
+      if (!nextBlock) return;
+
+      if (isEmbedBlockTypes(nextBlock.type as BlockType) && nextBlock.blockId) {
+        CustomEditor.deleteBlock(editor as YjsEditor, nextBlock.blockId);
+        return;
+      }
+
+      CustomEditor.deleteBlockForward(editor as YjsEditor, selection);
+      return;
     }
 
-    if (shouldUseDefaultBehavior) {
+    // For range selections, check if selection spans multiple blocks
+    const [start, end] = Range.edges(selection);
+    const startBlock = getBlockEntry(editor as YjsEditor, start);
+    const endBlock = getBlockEntry(editor as YjsEditor, end);
+
+    if (!startBlock || !endBlock) {
+      // Fallback to default behavior if we can't get block entries
       deleteForward(unit);
       return;
     }
 
-    const after = editor.after(editor.end(selection), { unit: 'block' });
+    const [startNode] = startBlock;
+    const [endNode] = endBlock;
 
-    if (!after) {
+    // If selection is within the same block, use default Slate deletion
+    if (startNode.blockId === endNode.blockId) {
+      deleteForward(unit);
       return;
     }
 
-    const nextBlock = getBlockEntry(editor as YjsEditor, after)[0];
-
-    if (isEmbedBlockTypes(nextBlock.type as BlockType) && nextBlock.blockId) {
-      CustomEditor.deleteBlock(editor as YjsEditor, nextBlock.blockId);
-      return;
-    }
-
+    // Only use custom block deletion for cross-block selections
     CustomEditor.deleteBlockForward(editor as YjsEditor, selection);
   };
 
@@ -107,19 +165,41 @@ export function withDelete(editor: ReactEditor) {
       return;
     }
 
-    let shouldUseDefaultBehavior = false;
+    // For collapsed selections, check if we're at block boundary
+    if (Range.isCollapsed(selection)) {
+      const shouldUseDefaultBehavior = !isAtBlockStart(editor, selection.anchor);
 
-    const isCollapsed = selection && Range.isCollapsed(selection);
+      if (shouldUseDefaultBehavior) {
+        deleteBackward(unit);
+        return;
+      }
 
-    if (isCollapsed) {
-      shouldUseDefaultBehavior = !isAtBlockStart(editor, selection.anchor);
+      // At block start, use custom block backward deletion
+      CustomEditor.deleteBlockBackward(editor as YjsEditor, selection);
+      return;
     }
 
-    if (shouldUseDefaultBehavior) {
+    // For range selections, check if selection spans multiple blocks
+    const [start, end] = Range.edges(selection);
+    const startBlock = getBlockEntry(editor as YjsEditor, start);
+    const endBlock = getBlockEntry(editor as YjsEditor, end);
+
+    if (!startBlock || !endBlock) {
+      // Fallback to default behavior if we can't get block entries
       deleteBackward(unit);
       return;
     }
 
+    const [startNode] = startBlock;
+    const [endNode] = endBlock;
+
+    // If selection is within the same block, use default Slate deletion
+    if (startNode.blockId === endNode.blockId) {
+      deleteBackward(unit);
+      return;
+    }
+
+    // Only use custom block deletion for cross-block selections
     CustomEditor.deleteBlockBackward(editor as YjsEditor, selection);
   };
 

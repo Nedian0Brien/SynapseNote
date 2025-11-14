@@ -1,4 +1,4 @@
 export * from './Unsplash';
 export * from './UploadImage';
 export * from './EmbedLink';
-export * from './UploadTabs';
+export * from 'src/components/_shared/image-upload/UploadPopover';

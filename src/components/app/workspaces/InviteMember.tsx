@@ -1,21 +1,31 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
-import { Button, OutlinedInput } from '@mui/material';
-import { ReactComponent as AddUserIcon } from '@/assets/icons/invite_user.svg';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { NormalModal } from '@/components/_shared/modal';
-import { notify } from '@/components/_shared/notify';
-import { useCurrentUser, useService } from '@/components/main/app.hooks';
-import { SubscriptionPlan, Workspace, WorkspaceMember } from '@/application/types';
-import { useAppHandlers } from '@/components/app/app.hooks';
-import { ReactComponent as TipIcon } from '@/assets/icons/warning.svg';
 import { useSearchParams } from 'react-router-dom';
+import { toast } from 'sonner';
 
-function InviteMember({ workspace, onClick }: { workspace: Workspace; onClick?: () => void }) {
+import { SubscriptionPlan, Workspace, WorkspaceMember } from '@/application/types';
+import { ReactComponent as TipIcon } from '@/assets/icons/warning.svg';
+import { useAppHandlers } from '@/components/app/app.hooks';
+import { useCurrentUser, useService } from '@/components/main/app.hooks';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
+
+function InviteMember({
+  workspace,
+  open,
+  openOnChange,
+}: {
+  workspace: Workspace;
+  open?: boolean;
+  openOnChange?: (open: boolean) => void;
+}) {
   const { getSubscriptions } = useAppHandlers();
   const { t } = useTranslation();
-  const [open, setOpen] = React.useState(false);
-  const [value, setValue] = React.useState('');
-  const [loading, setLoading] = React.useState(false);
+  const [value, setValue] = useState('');
+  const [loading, setLoading] = useState(false);
   const service = useService();
   const currentWorkspaceId = workspace.id;
   const [, setSearch] = useSearchParams();
@@ -78,17 +88,17 @@ function InviteMember({ workspace, onClick }: { workspace: Workspace; onClick?: 
       const hadInvited = emails.filter((e) => memberListRef.current.find((m) => m.email === e));
 
       if (hadInvited.length > 0) {
-        notify.warning(t('inviteMember.inviteAlready', { email: hadInvited[0] }));
+        toast.warning(t('inviteMember.inviteAlready', { email: hadInvited[0] }));
         return;
       }
 
       await service.inviteMembers(currentWorkspaceId, emails);
 
-      setOpen(false);
-      notify.success(t('inviteMember.inviteSuccess'));
+      openOnChange?.(false);
+      toast.success(t('inviteMember.inviteSuccess'));
       // eslint-disable-next-line
     } catch (e: any) {
-      notify.error(e.message);
+      toast.error(e.message);
     } finally {
       setLoading(false);
     }
@@ -114,55 +124,49 @@ function InviteMember({ workspace, onClick }: { workspace: Workspace; onClick?: 
 
   return (
     <>
-      <Button
-        size={'small'}
-        className={'justify-start px-2'}
-        color={'inherit'}
-        onClick={() => {
-          setOpen(true);
-          onClick?.();
-        }}
-        startIcon={<AddUserIcon />}
-      >
-        {t('settings.appearance.members.inviteMembers')}
-      </Button>
-      <NormalModal
-        classes={{ container: 'items-start max-md:mt-auto max-md:items-center mt-[10%] ', paper: 'w-[500px]' }}
-        open={open}
-        okLoading={loading}
-        okButtonProps={{
-          disabled: !value || loading,
-        }}
-        cancelButtonProps={{
-          className: 'hidden',
-        }}
-        onClose={() => setOpen(false)}
-        title={<div className={'flex w-[320px] items-center font-medium'}>{t('inviteMember.requestInviteMembers')}</div>}
-        okText={t('inviteMember.requestInvites')}
-        onOk={handleOk}
-      >
-        <div
-          style={{
-            display: isExceed ? 'flex' : 'none',
-          }}
-          className={'mb-8 flex w-full flex-wrap items-center gap-1 overflow-hidden text-text-caption'}
-        >
-          <TipIcon className={'h-4 w-4 text-function-warning'} />
-          {t('inviteMember.inviteFailedMemberLimit')}
-          <span onClick={handleUpgrade} className={'cursor-pointer text-fill-default hover:underline'}>
-            {t('inviteMember.upgrade')}
-          </span>
-        </div>
-        <div className={'mb-1 text-xs text-text-caption'}>{t('inviteMember.emails')}</div>
-        <OutlinedInput
-          readOnly={isExceed}
-          fullWidth={true}
-          size={'small'}
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          placeholder={t('inviteMember.addEmail')}
-        />
-      </NormalModal>
+      <Dialog open={open} onOpenChange={openOnChange}>
+        <DialogContent className={'w-[500px]'}>
+          <DialogHeader>
+            <DialogTitle>{t('inviteMember.requestInviteMembers')}</DialogTitle>
+          </DialogHeader>
+          <div
+            style={{
+              display: isExceed ? 'flex' : 'none',
+            }}
+            className={'mb-4 flex w-full flex-wrap items-center gap-1 overflow-hidden text-text-secondary'}
+          >
+            <TipIcon className={'h-4 w-4 text-function-warning'} />
+            {t('inviteMember.inviteFailedMemberLimit')}
+            <span onClick={handleUpgrade} className={'cursor-pointer text-text-action hover:underline'}>
+              {t('inviteMember.upgrade')}
+            </span>
+          </div>
+          <div className='grid gap-4'>
+            <div className='grid gap-3'>
+              <Label htmlFor='emails'>{t('inviteMember.emails')}</Label>
+              <Input
+                id='emails'
+                name='emails'
+                disabled={isExceed}
+                onChange={(e) => setValue(e.target.value)}
+                value={value}
+                placeholder={t('inviteMember.addEmail')}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    void handleOk();
+                  }
+                }}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button loading={loading} onClick={handleOk} disabled={!value}>
+              {loading && <Progress />}
+              {t('inviteMember.requestInvites')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

@@ -1,44 +1,29 @@
-import { Button, Typography } from '@mui/material';
-import React, { useCallback, useEffect } from 'react';
-import { ReactComponent as AppflowyLogo } from '@/assets/icons/appflowy.svg';
+import { useCallback, useLayoutEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+
+import { ReactComponent as SuccessLogo } from '@/assets/icons/success_logo.svg';
+import LandingPage from '@/components/_shared/landing-page/LandingPage';
 
 function AfterPaymentPage() {
   const openAppFlowy = useCallback(() => {
     window.open(`appflowy-flutter://payment-success/${window.location.search || ''}`, '_self');
   }, []);
+  const { t } = useTranslation();
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     openAppFlowy();
   }, [openAppFlowy]);
+
   return (
-    <div className={'m-0 flex h-screen w-screen items-center justify-center bg-bg-body p-6'}>
-      <div className={'flex max-w-[560px] flex-col items-center gap-1 text-center'}>
-        <Typography variant='h3' className={'mb-[27px] flex items-center gap-4 text-text-title'} gutterBottom>
-          <>
-            <AppflowyLogo className={'w-32'} />
-          </>
-        </Typography>
-        <div className={'mb-[16px] text-[52px] font-semibold leading-[128%] text-text-title'}>
-          Explore features in your new plan
-        </div>
-        <div className={'flex flex-col items-center  justify-center  text-[20px] leading-[152%]'}>
-          <div>
-            Congratulations! You just unlocked more workspace members and <span className={''}>unlimited</span> AI
-            responses. 🎉
-          </div>
-        </div>
-        <Button
-          onClick={openAppFlowy}
-          variant='contained'
-          color='primary'
-          className={
-            'mt-[32px] mb-[48px] h-[68px] rounded-[20px] px-[44px] py-[18px] text-[20px] font-medium leading-[120%] text-content-on-fill'
-          }
-        >
-          Back to AppFlowy
-        </Button>
-      </div>
-    </div>
+    <LandingPage
+      Logo={SuccessLogo}
+      title={t('landingPage.afterPayment.title')}
+      description={t('landingPage.afterPayment.description')}
+      secondaryAction={{
+        onClick: () => window.open('/app', '_self'),
+        label: t('landingPage.backToHome'),
+      }}
+    />
   );
 }
 

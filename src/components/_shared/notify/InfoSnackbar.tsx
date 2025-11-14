@@ -1,12 +1,12 @@
-import { notify } from '@/components/_shared/notify/index';
-import React, { forwardRef } from 'react';
-import { Button, IconButton, Paper } from '@mui/material';
-import { useTranslation } from 'react-i18next';
-import { ReactComponent as CloseIcon } from '@/assets/icons/close.svg';
-import { CustomContentProps, SnackbarContent } from 'notistack';
 import { ReactComponent as CheckCircle } from '@/assets/icons/check_circle.svg';
+import { ReactComponent as CloseIcon } from '@/assets/icons/close.svg';
 import { ReactComponent as ErrorIcon } from '@/assets/icons/error.svg';
 import { ReactComponent as WarningAmber } from '@/assets/icons/warning.svg';
+import { notify } from '@/components/_shared/notify/index';
+import { Button, IconButton, Paper } from '@mui/material';
+import { CustomContentProps, SnackbarContent } from 'notistack';
+import { forwardRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface InfoProps {
   onOk?: () => void;
@@ -33,7 +33,7 @@ const InfoSnackbar = forwardRef<HTMLDivElement, InfoSnackbarProps>(
     return (
       <SnackbarContent ref={ref} className={'flex items-center justify-center'}>
         <Paper className={`relative flex flex-col gap-4 border p-5 ${getBorderColor(type)}`}>
-          <div className={'text-title flex w-full items-center justify-between font-medium'}>
+          <div className={'text-text-primary flex w-full items-center justify-between font-medium'}>
             <div className={'flex flex-1 items-center gap-2 text-left font-semibold'}>
               {getIcon(type)}
               <div>{title}</div>

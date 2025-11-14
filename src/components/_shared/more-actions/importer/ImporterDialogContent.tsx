@@ -1,12 +1,12 @@
+import { AFConfigContext } from '@/components/main/app.hooks';
 import FileDropzone from '@/components/_shared/file-dropzone/FileDropzone';
 import { notify } from '@/components/_shared/notify';
 import { TabPanel, ViewTab, ViewTabs } from '@/components/_shared/tabs/ViewTabs';
-import { AFConfigContext } from '@/components/main/app.hooks';
 
+import { ReactComponent as NotionIcon } from '@/assets/icons/notion.svg';
 import LinearProgress from '@mui/material/LinearProgress';
 import React, { useCallback, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ReactComponent as NotionIcon } from '@/assets/icons/notion.svg';
 
 function ImporterDialogContent({ source, onSuccess }: { source?: string; onSuccess: () => void }) {
   const { t } = useTranslation();
@@ -33,7 +33,11 @@ function ImporterDialogContent({ source, onSuccess }: { source?: string; onSucce
 
   return (
     <div className={'flex flex-col gap-8'}>
-      <ViewTabs className={'border-b border-line-divider'} onChange={(_e, newValue) => setValue(newValue)} value={value}>
+      <ViewTabs
+        className={'border-b border-border-primary'}
+        onChange={(_e, newValue) => setValue(newValue)}
+        value={value}
+      >
         <ViewTab
           className={'flex flex-row items-center justify-center gap-1.5'}
           value={'notion'}
@@ -56,6 +60,7 @@ function ImporterDialogContent({ source, onSuccess }: { source?: string; onSucce
             }}
             disabled={!isError && progress < 1 && progress > 0}
             placeholder={t('web.dropNotionFile')}
+            loading={!isError && progress < 1 && progress > 0}
           />
           {progress > 0 && (
             <LinearProgress

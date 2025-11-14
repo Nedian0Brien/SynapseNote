@@ -1,11 +1,11 @@
+import { HEADER_HEIGHT } from '@/application/constants';
 import { useGlobalCommentContext } from '@/components/global-comment/GlobalComment.hooks';
 import { getScrollParent } from '@/components/global-comment/utils';
-import { HEADER_HEIGHT } from '@/application/constants';
-import React, { useEffect, useRef, useState } from 'react';
-import AddComment from './AddComment';
 import { Portal } from '@mui/material';
+import { useEffect, useRef, useState } from 'react';
+import AddComment from './AddComment';
 
-export function AddCommentWrapper () {
+export function AddCommentWrapper() {
   const { replyCommentId } = useGlobalCommentContext();
   const addCommentRef = useRef<HTMLDivElement>(null);
   const [showFixedAddComment, setShowFixedAddComment] = useState(false);
@@ -61,11 +61,7 @@ export function AddCommentWrapper () {
 
   return (
     <>
-      <div
-        className={'my-2'}
-        id="addComment"
-        ref={addCommentRef}
-      >
+      <div className={'my-2'} id='addComment' ref={addCommentRef}>
         <AddComment
           content={content}
           setContent={setContent}
@@ -83,14 +79,8 @@ export function AddCommentWrapper () {
             }}
             className={'fixed top-[48px] flex w-full justify-center'}
           >
-            <div className={'w-[988px] min-w-0 max-w-full max-sm:px-6 px-24'}>
-              <AddComment
-                fixed
-                content={content}
-                setContent={setContent}
-                focus={focus}
-                setFocus={setFocus}
-              />
+            <div className={'w-[952px] min-w-0 max-w-full px-24 max-sm:px-6'}>
+              <AddComment fixed content={content} setContent={setContent} focus={focus} setFocus={setFocus} />
             </div>
           </div>
         </Portal>

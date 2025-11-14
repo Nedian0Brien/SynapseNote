@@ -1,3 +1,10 @@
+import { useAIWriter } from '@/components/chat';
+import { Button } from '@mui/material';
+import { PopoverOrigin } from '@mui/material/Popover/Popover';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { ReactEditor, useSlateStatic } from 'slate-react';
+
 import { YjsEditor } from '@/application/slate-yjs';
 import { CustomEditor } from '@/application/slate-yjs/command';
 import { isEmbedBlockTypes } from '@/application/slate-yjs/command/const';
@@ -14,50 +21,43 @@ import {
   VideoBlockData,
   ViewLayout,
 } from '@/application/types';
-import { ReactComponent as DocumentIcon } from '@/assets/icons/page.svg';
 // import { ReactComponent as AIWriterIcon } from '@/assets/slash_menu_icon_ai_writer.svg';
-import { ReactComponent as BulletedListIcon } from '@/assets/icons/bulleted_list.svg';
-import { ReactComponent as CalloutIcon } from '@/assets/icons/callout.svg';
-import { ReactComponent as TodoListIcon } from '@/assets/icons/todo.svg';
-import { ReactComponent as CodeIcon } from '@/assets/icons/inline_code.svg';
-import { ReactComponent as DividerIcon } from '@/assets/icons/divider.svg';
-import { ReactComponent as RefDocumentIcon } from '@/assets/icons/ref_page.svg';
 import { ReactComponent as EmojiIcon } from '@/assets/icons/add_emoji.svg';
-import { ReactComponent as FileIcon } from '@/assets/icons/file.svg';
 // import { ReactComponent as GridIcon } from '@/assets/slash_menu_icon_grid.svg';
 // import { ReactComponent as BoardIcon } from '@/assets/slash_menu_icon_kanban.svg';
 // import { ReactComponent as CalendarIcon } from '@/assets/slash_menu_icon_calendar.svg';
+import { ReactComponent as AskAIIcon } from '@/assets/icons/ai.svg';
+import { ReactComponent as BulletedListIcon } from '@/assets/icons/bulleted_list.svg';
+import { ReactComponent as CalloutIcon } from '@/assets/icons/callout.svg';
+import { ReactComponent as ContinueWritingIcon } from '@/assets/icons/continue_writing.svg';
+import { ReactComponent as DividerIcon } from '@/assets/icons/divider.svg';
+import { ReactComponent as OutlineIcon } from '@/assets/icons/doc.svg';
+import { ReactComponent as FileIcon } from '@/assets/icons/file.svg';
+import { ReactComponent as FormulaIcon } from '@/assets/icons/formula.svg';
 import { ReactComponent as Heading1Icon } from '@/assets/icons/h1.svg';
 import { ReactComponent as Heading2Icon } from '@/assets/icons/h2.svg';
 import { ReactComponent as Heading3Icon } from '@/assets/icons/h3.svg';
 import { ReactComponent as ImageIcon } from '@/assets/icons/image.svg';
+import { ReactComponent as CodeIcon } from '@/assets/icons/inline_code.svg';
 import { ReactComponent as NumberedListIcon } from '@/assets/icons/numbered_list.svg';
-import { ReactComponent as OutlineIcon } from '@/assets/icons/doc.svg';
+import { ReactComponent as DocumentIcon } from '@/assets/icons/page.svg';
 import { ReactComponent as QuoteIcon } from '@/assets/icons/quote.svg';
+import { ReactComponent as RefDocumentIcon } from '@/assets/icons/ref_page.svg';
 import { ReactComponent as TextIcon } from '@/assets/icons/text.svg';
-import { ReactComponent as ToggleListIcon } from '@/assets/icons/toggle_list.svg';
+import { ReactComponent as TodoListIcon } from '@/assets/icons/todo.svg';
 import { ReactComponent as ToggleHeading1Icon } from '@/assets/icons/toggle_h1.svg';
 import { ReactComponent as ToggleHeading2Icon } from '@/assets/icons/toggle_h2.svg';
 import { ReactComponent as ToggleHeading3Icon } from '@/assets/icons/toggle_h3.svg';
-import { ReactComponent as AskAIIcon } from '@/assets/icons/ai.svg';
-import { ReactComponent as ContinueWritingIcon } from '@/assets/icons/continue_writing.svg';
-import { ReactComponent as FormulaIcon } from '@/assets/icons/formula.svg';
+import { ReactComponent as ToggleListIcon } from '@/assets/icons/toggle_list.svg';
 import { ReactComponent as VideoIcon } from '@/assets/icons/video.svg';
-
-import { notify } from '@/components/_shared/notify';
-import { calculateOptimalOrigins, Popover } from '@/components/_shared/popover';
 import { usePopoverContext } from '@/components/editor/components/block-popover/BlockPopoverContext';
 import { usePanelContext } from '@/components/editor/components/panels/Panels.hooks';
 import { PanelType } from '@/components/editor/components/panels/PanelsContext';
 import { getRangeRect } from '@/components/editor/components/toolbar/selection-toolbar/utils';
 import { useEditorContext } from '@/components/editor/EditorContext';
+import { notify } from '@/components/_shared/notify';
+import { calculateOptimalOrigins, Popover } from '@/components/_shared/popover';
 import { getCharacters } from '@/utils/word';
-import { useAIWriter } from '@appflowyinc/ai-chat';
-import { Button } from '@mui/material';
-import { PopoverOrigin } from '@mui/material/Popover/Popover';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { ReactEditor, useSlateStatic } from 'slate-react';
 
 export function SlashPanel({
   setEmojiPosition,
@@ -65,7 +65,7 @@ export function SlashPanel({
   setEmojiPosition: (position: { top: number; left: number }) => void;
 }) {
   const { isPanelOpen, panelPosition, closePanel, searchText, removeContent } = usePanelContext();
-  const { addPage, openPageModal, viewId, loadViewMeta } = useEditorContext();
+  const { addPage, openPageModal, viewId, loadViewMeta, getMoreAIContext } = useEditorContext();
   const [viewName, setViewName] = useState('');
 
   const editor = useSlateStatic() as YjsEditor;
@@ -100,15 +100,18 @@ export function SlashPanel({
 
     const end = editor.end(selection);
 
+    const moreContext = getMoreAIContext?.();
+
     return (
       viewName +
       '\n' +
+      (moreContext ? `More context: ${moreContext} \n` : '') +
       CustomEditor.getSelectionContent(editor, {
         anchor: start,
         focus: end,
       })
     );
-  }, [editor, viewName]);
+  }, [editor, viewName, getMoreAIContext]);
 
   const chars = useMemo(() => {
     if (!open) return 0;
@@ -129,6 +132,9 @@ export function SlashPanel({
   const turnInto = useCallback(
     (type: BlockType, data: BlockData) => {
       const block = getBlockEntry(editor);
+
+      if (!block) return;
+
       const blockId = block[0].blockId as string;
       const isEmpty = !CustomEditor.getBlockTextContent(block[0], 2);
       let newBlockId: string | undefined;
@@ -140,7 +146,11 @@ export function SlashPanel({
       }
 
       if (newBlockId && isEmbedBlockTypes(type)) {
-        const [, path] = findSlateEntryByBlockId(editor, newBlockId);
+        const entry = findSlateEntryByBlockId(editor, newBlockId);
+
+        if(!entry) return;
+
+        const [, path] = entry;
 
         editor.select(editor.start(path));
       }
@@ -685,20 +695,21 @@ export function SlashPanel({
               color={'inherit'}
               startIcon={option.icon}
               key={option.key}
+              data-testid={`slash-menu-${option.key}`}
               data-option-key={option.key}
               onClick={() => {
                 handleSelectOption(option.key);
                 option.onClick?.();
               }}
-              className={`scroll-m-2 justify-start hover:bg-content-blue-50 ${
-                selectedOption === option.key ? 'bg-fill-list-hover' : ''
+              className={`scroll-m-2 justify-start hover:bg-fill-content-hover ${
+                selectedOption === option.key ? 'bg-fill-content-hover' : ''
               }`}
             >
               {option.label}
             </Button>
           ))
         ) : (
-          <div className={'flex items-center justify-center py-4 text-sm text-text-caption'}>
+          <div className={'flex items-center justify-center py-4 text-sm text-text-secondary'}>
             {t('findAndReplace.noResult')}
           </div>
         )}

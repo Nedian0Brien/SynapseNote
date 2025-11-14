@@ -1,12 +1,14 @@
-import { notify } from '@/components/_shared/notify';
-import { AFConfigContext } from '@/components/main/app.hooks';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import React, { useCallback, useContext, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ReactComponent as GoogleSvg } from '@/assets/login/google.svg';
-import { ReactComponent as GithubSvg } from '@/assets/login/github.svg';
-import { ReactComponent as DiscordSvg } from '@/assets/login/discord.svg';
+
+import { AuthProvider } from '@/application/types';
 import { ReactComponent as AppleSvg } from '@/assets/login/apple.svg';
+import { ReactComponent as DiscordSvg } from '@/assets/login/discord.svg';
+import { ReactComponent as GithubSvg } from '@/assets/login/github.svg';
+import { ReactComponent as GoogleSvg } from '@/assets/login/google.svg';
+import { notify } from '@/components/_shared/notify';
+import { AFConfigContext } from '@/components/main/app.hooks';
 import { Button } from '@/components/ui/button';
 
 const moreOptionsVariants = {
@@ -30,78 +32,101 @@ const moreOptionsVariants = {
   },
 };
 
-function LoginProvider ({ redirectTo }: { redirectTo: string }) {
+function LoginProvider({
+  redirectTo,
+  availableProviders = [],
+}: {
+  redirectTo: string;
+  availableProviders?: AuthProvider[];
+}) {
   const { t } = useTranslation();
   const [expand, setExpand] = React.useState(false);
-  const options = useMemo(
+  const service = useContext(AFConfigContext)?.service;
+
+  const allOptions = useMemo(
     () => [
       {
         label: t('web.continueWithGoogle'),
         Icon: GoogleSvg,
-        value: 'google',
+        value: AuthProvider.GOOGLE,
       },
       {
         label: t('web.continueWithApple'),
         Icon: AppleSvg,
-        value: 'apple',
+        value: AuthProvider.APPLE,
       },
       {
         label: t('web.continueWithGithub'),
-        value: 'github',
+        value: AuthProvider.GITHUB,
         Icon: GithubSvg,
       },
       {
         label: t('web.continueWithDiscord'),
-        value: 'discord',
+        value: AuthProvider.DISCORD,
         Icon: DiscordSvg,
       },
     ],
-    [t],
+    [t]
   );
-  const service = useContext(AFConfigContext)?.service;
 
-  const handleClick = useCallback(async (option: string) => {
-    try {
-      switch (option) {
-        case 'google':
-          await service?.signInGoogle({ redirectTo });
-          break;
-        case 'apple':
-          await service?.signInApple({ redirectTo });
-          break;
-        case 'github':
-          await service?.signInGithub({ redirectTo });
-          break;
-        case 'discord':
-          await service?.signInDiscord({ redirectTo });
-          break;
+  // Filter options based on available providers
+  const options = useMemo(() => {
+    return allOptions.filter((option) => availableProviders.includes(option.value));
+  }, [allOptions, availableProviders]);
+
+  const handleClick = useCallback(
+    async (option: AuthProvider) => {
+      try {
+        switch (option) {
+          case AuthProvider.GOOGLE:
+            await service?.signInGoogle({ redirectTo });
+            break;
+          case AuthProvider.APPLE:
+            await service?.signInApple({ redirectTo });
+            break;
+          case AuthProvider.GITHUB:
+            await service?.signInGithub({ redirectTo });
+            break;
+          case AuthProvider.DISCORD:
+            await service?.signInDiscord({ redirectTo });
+            break;
+        }
+      } catch (e) {
+        notify.error(t('web.signInError'));
       }
-    } catch (e) {
-      notify.error(t('web.signInError'));
-    }
-  }, [service, t, redirectTo]);
+    },
+    [service, t, redirectTo]
+  );
 
-  const renderOption = useCallback((option: typeof options[0]) => {
+  const renderOption = useCallback(
+    (option: (typeof options)[0]) => {
+      return (
+        <Button
+          key={option.value}
+          size={'lg'}
+          variant={'outline'}
+          className={'w-full'}
+          onClick={() => handleClick(option.value)}
+        >
+          <option.Icon className={'h-5 w-5'} />
+          <div className={'w-auto whitespace-pre'}>{option.label}</div>
+        </Button>
+      );
+    },
+    [handleClick]
+  );
 
-    return <Button
-      key={option.value}
-      size={'lg'}
-      variant={'outline'}
-      className={'w-full'}
-      onClick={() => handleClick(option.value)}
-    >
-      <option.Icon className={'w-5 h-5'} />
-      <div className={'w-auto whitespace-pre'}>{option.label}</div>
-
-    </Button>;
-  }, [handleClick]);
+  // Don't show component if no OAuth providers available
+  if (options.length === 0) {
+    return null;
+  }
 
   return (
-    <div className={'flex transform transition-all gap-3 w-full flex-col items-center justify-center'}>
+    <div className={'flex w-full transform flex-col items-center justify-center gap-3 transition-all'}>
       {options.slice(0, 2).map((option, index) => (
         <motion.div
           key={`option-${index}`}
-          className="w-full"
+          className='w-full'
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{
@@ -113,21 +138,17 @@ function LoginProvider ({ redirectTo }: { redirectTo: string }) {
         </motion.div>
       ))}
 
-      <AnimatePresence mode="wait">
-        {!expand && (
+      <AnimatePresence mode='wait'>
+        {!expand && options.length > 2 && (
           <motion.div
-            className="w-full"
-            initial="initial"
-            animate="initial"
-            exit="exit"
-            whileHover="hover"
-            whileTap="tap"
+            className='w-full'
+            initial='initial'
+            animate='initial'
+            exit='exit'
+            whileHover='hover'
+            whileTap='tap'
           >
-            <Button
-              variant={'link'}
-              onClick={() => setExpand(true)}
-              className={'w-full'}
-            >
+            <Button variant={'link'} onClick={() => setExpand(true)} className={'w-full'}>
               {t('web.moreOptions')}
             </Button>
           </motion.div>
@@ -137,20 +158,20 @@ function LoginProvider ({ redirectTo }: { redirectTo: string }) {
       <AnimatePresence>
         {expand && (
           <motion.div
-            className="w-full flex flex-col gap-3 overflow-hidden"
+            className='flex w-full flex-col gap-3 overflow-hidden'
             variants={moreOptionsVariants}
-            initial="hidden"
-            animate="visible"
+            initial='hidden'
+            animate='visible'
           >
             {options.slice(2).map((option, index) => (
               <motion.div
                 key={`extra-option-${index}`}
-                className="w-full"
+                className='w-full'
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{
                   duration: 0.25,
-                  delay: 0.1 + (index * 0.07),
+                  delay: 0.1 + index * 0.07,
                 }}
               >
                 {renderOption(option)}

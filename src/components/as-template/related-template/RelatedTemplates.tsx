@@ -1,16 +1,23 @@
 import { TemplateSummary } from '@/application/template.type';
+import { ReactComponent as DeleteIcon } from '@/assets/icons/delete.svg';
 import AddRelatedTemplates from '@/components/as-template/related-template/AddRelatedTemplates';
 import TemplateItem from '@/components/as-template/related-template/TemplateItem';
-import { InputLabel, Grid, IconButton, Tooltip } from '@mui/material';
-import React, { useCallback, useEffect, useMemo, useRef, forwardRef } from 'react';
+import { Grid, IconButton, InputLabel, Tooltip } from '@mui/material';
+import React, { forwardRef, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ReactComponent as DeleteIcon } from '@/assets/icons/delete.svg';
 
-function RelatedTemplates ({ value = [], onChange, defaultRelatedTemplates }: {
-  value?: string[];
-  onChange: (value: string[]) => void;
-  defaultRelatedTemplates?: TemplateSummary[];
-}, ref: React.ForwardedRef<HTMLDivElement>) {
+function RelatedTemplates(
+  {
+    value = [],
+    onChange,
+    defaultRelatedTemplates,
+  }: {
+    value?: string[];
+    onChange: (value: string[]) => void;
+    defaultRelatedTemplates?: TemplateSummary[];
+  },
+  ref: React.ForwardedRef<HTMLDivElement>
+) {
   const { t } = useTranslation();
   const relatedTemplatesRef = useRef<Map<string, TemplateSummary>>(new Map());
 
@@ -36,9 +43,8 @@ function RelatedTemplates ({ value = [], onChange, defaultRelatedTemplates }: {
           <div className={'template-item relative'}>
             <TemplateItem template={template} category={currentCategory} />
             <Tooltip title={t('template.removeRelatedTemplate')} placement={'top'}>
-
               <IconButton
-                className={'delete-icon absolute right-2 top-2 bg-bg-body hover:text-function-error'}
+                className={'delete-icon absolute right-2 top-2 bg-background-primary hover:text-function-error'}
                 onClick={() => onChange(value.filter((v) => v !== id))}
               >
                 <DeleteIcon />
@@ -67,7 +73,6 @@ function RelatedTemplates ({ value = [], onChange, defaultRelatedTemplates }: {
       >
         {renderTemplates}
       </Grid>
-
     </div>
   );
 }

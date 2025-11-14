@@ -1,18 +1,14 @@
 import { SubscriptionInterval, SubscriptionPlan } from '@/application/types';
-import { NormalModal } from '@/components/_shared/modal';
-import { notify } from '@/components/_shared/notify';
 import { useAppHandlers, useCurrentWorkspaceId } from '@/components/app/app.hooks';
 import { useService } from '@/components/main/app.hooks';
+import { NormalModal } from '@/components/_shared/modal';
+import { notify } from '@/components/_shared/notify';
 import { Button, CircularProgress } from '@mui/material';
 import React, { useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 
-function UpgradeAIMax({ open, onClose, onOpen }: {
-  open: boolean;
-  onClose: () => void;
-  onOpen: () => void;
-}) {
+function UpgradeAIMax({ open, onClose, onOpen }: { open: boolean; onClose: () => void; onOpen: () => void }) {
   const { t } = useTranslation();
   const [isActive, setIsActive] = React.useState(false);
   const service = useService();
@@ -25,12 +21,12 @@ function UpgradeAIMax({ open, onClose, onOpen }: {
   const action = search.get('action');
 
   useEffect(() => {
-    if(!open && action === 'upgrade_ai_max') {
+    if (!open && action === 'upgrade_ai_max') {
       onOpen();
     }
 
-    if(open) {
-      setSearch(prev => {
+    if (open) {
+      setSearch((prev) => {
         prev.set('action', 'upgrade_ai_max');
         return prev;
       });
@@ -38,34 +34,33 @@ function UpgradeAIMax({ open, onClose, onOpen }: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [action, open, setSearch]);
 
-  const loadSubscription = useCallback(async() => {
+  const loadSubscription = useCallback(async () => {
     try {
       const subscriptions = await getSubscriptions?.();
 
-      if(!subscriptions || subscriptions.length === 0) {
+      if (!subscriptions || subscriptions.length === 0) {
         setIsActive(false);
         return;
       }
 
-      const subscription = subscriptions.find(item => item.plan === SubscriptionPlan.AIMax);
+      const subscription = subscriptions.find((item) => item.plan === SubscriptionPlan.AIMax);
 
       setIsActive(!!subscription);
-
-    } catch(e) {
+    } catch (e) {
       console.error(e);
     }
   }, [getSubscriptions]);
 
   const handleClose = useCallback(() => {
     onClose();
-    setSearch(prev => {
+    setSearch((prev) => {
       prev.delete('action');
       return prev;
     });
   }, [onClose, setSearch]);
 
-  const handleUpgrade = useCallback(async() => {
-    if(!service || !currentWorkspaceId) return;
+  const handleUpgrade = useCallback(async () => {
+    if (!service || !currentWorkspaceId) return;
     const plan = SubscriptionPlan.AIMax;
 
     try {
@@ -73,13 +68,13 @@ function UpgradeAIMax({ open, onClose, onOpen }: {
 
       window.open(link, '_current');
       // eslint-disable-next-line
-    } catch(e: any) {
+    } catch (e: any) {
       notify.error(e.message);
     }
   }, [currentWorkspaceId, service]);
 
-  const handleCancel = useCallback(async() => {
-    if(!service || !currentWorkspaceId) return;
+  const handleCancel = useCallback(async () => {
+    if (!service || !currentWorkspaceId) return;
     setCancelLoading(true);
     const plan = SubscriptionPlan.AIMax;
 
@@ -89,16 +84,15 @@ function UpgradeAIMax({ open, onClose, onOpen }: {
       setCancelOpen(false);
       handleClose();
       // eslint-disable-next-line
-    } catch(e: any) {
+    } catch (e: any) {
       notify.error(e.message);
     } finally {
       setCancelLoading(false);
     }
-
   }, [currentWorkspaceId, service, t, handleClose]);
 
   useEffect(() => {
-    if(open) {
+    if (open) {
       void loadSubscription();
     }
   }, [open, loadSubscription]);
@@ -121,29 +115,21 @@ function UpgradeAIMax({ open, onClose, onOpen }: {
         },
       }}
     >
-      <div className={'flex relative border border-billing-primary rounded-[16px] flex-col gap-4 p-4 w-full'}>
-
-        <div className="flex flex-col gap-[14px]">
-          <div className="text-billing-primary">
-            {t('subscribe.AIMax.description')}
-          </div>
+      <div className={'relative flex w-full flex-col gap-4 rounded-[16px] border border-billing-primary p-4'}>
+        <div className='flex flex-col gap-[14px]'>
+          <div className='text-billing-primary'>{t('subscribe.AIMax.description')}</div>
         </div>
-        <div className="flex flex-col gap-[10px]">
-          <div className="text-xl font-semibold">$8</div>
-          <div className="text-text-caption whitespace-pre-wrap">
-            {t('subscribe.AIMax.pricing')}
-          </div>
+        <div className='flex flex-col gap-[10px]'>
+          <div className='text-xl font-semibold'>$8</div>
+          <div className='whitespace-pre-wrap text-text-secondary'>{t('subscribe.AIMax.pricing')}</div>
         </div>
-        {!isActive ?
+        {!isActive ? (
           <div className={'flex flex-col gap-2'}>
-            <Button
-              color={'secondary'}
-              onClick={handleUpgrade}
-              variant={'contained'}
-            >
+            <Button color={'secondary'} onClick={handleUpgrade} variant={'contained'}>
               {t('subscribe.unlock')}
             </Button>
-          </div> :
+          </div>
+        ) : (
           <Button
             onClick={() => {
               setCancelOpen(true);
@@ -154,39 +140,32 @@ function UpgradeAIMax({ open, onClose, onOpen }: {
           >
             {t('subscribe.cancel')}
           </Button>
-        }
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2">
+        )}
+        <div className='flex flex-col gap-2'>
+          <div className='flex items-center gap-2'>
             <div className={'flex h-6 items-center'}>
-              <div className={'w-2 h-2 rounded-full bg-billing-primary'} />
+              <div className={'h-2 w-2 rounded-full bg-billing-primary'} />
             </div>
-            <div className="flex-1 whitespace-pre-wrap break-words">{t('subscribe.AIMax.points.first')}</div>
+            <div className='flex-1 whitespace-pre-wrap break-words'>{t('subscribe.AIMax.points.first')}</div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className='flex items-center gap-2'>
             <div className={'flex h-6 items-center'}>
-              <div className={'w-2 h-2 rounded-full bg-billing-primary'} />
+              <div className={'h-2 w-2 rounded-full bg-billing-primary'} />
             </div>
-            <div className="flex-1 whitespace-pre-wrap break-words">
-              {t('subscribe.AIMax.points.second')}
-            </div>
+            <div className='flex-1 whitespace-pre-wrap break-words'>{t('subscribe.AIMax.points.second')}</div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className='flex items-center gap-2'>
             <div className={'flex h-6 items-center'}>
-              <div className={'w-2 h-2 rounded-full bg-billing-primary'} />
+              <div className={'h-2 w-2 rounded-full bg-billing-primary'} />
             </div>
-            <div className="flex-1 whitespace-pre-wrap break-words">{
-              t('subscribe.AIMax.points.third')
-            }</div>
+            <div className='flex-1 whitespace-pre-wrap break-words'>{t('subscribe.AIMax.points.third')}</div>
           </div>
         </div>
       </div>
       <NormalModal
-        title={
-          <div className={'w-full text-left'}>{t('subscribe.AIMax.removeTitle')}</div>
-        }
+        title={<div className={'w-full text-left'}>{t('subscribe.AIMax.removeTitle')}</div>}
         classes={{ paper: 'w-[420px]' }}
-
         open={cancelOpen}
         onOk={handleCancel}
         danger
@@ -199,10 +178,7 @@ function UpgradeAIMax({ open, onClose, onOpen }: {
         }}
         okText={t('button.confirm')}
       >
-        <div className={'opacity-80'}>
-          {t('subscribe.AIMax.removeDescription')}
-
-        </div>
+        <div className={'opacity-80'}>{t('subscribe.AIMax.removeDescription')}</div>
       </NormalModal>
     </NormalModal>
   );

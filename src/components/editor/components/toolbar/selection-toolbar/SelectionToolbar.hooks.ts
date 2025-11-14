@@ -1,13 +1,14 @@
-import { CustomEditor } from '@/application/slate-yjs/command';
-import { EditorMarkFormat } from '@/application/slate-yjs/types';
-import { getSelectionPosition } from '@/components/editor/components/toolbar/selection-toolbar/utils';
-import { Decorate, useEditorContext } from '@/components/editor/EditorContext';
-import { createHotkey, HOT_KEY_NAME } from '@/utils/hotkeys';
-import { useAIWriter } from '@appflowyinc/ai-chat';
 import { debounce } from 'lodash-es';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Range } from 'slate';
-import { ReactEditor, useFocused, useSlate, useSlateStatic } from 'slate-react';
+import { ReactEditor, useFocused, useReadOnly, useSlate, useSlateStatic } from 'slate-react';
+
+import { CustomEditor } from '@/application/slate-yjs/command';
+import { EditorMarkFormat } from '@/application/slate-yjs/types';
+import { useAIWriter } from '@/components/chat';
+import { getSelectionPosition } from '@/components/editor/components/toolbar/selection-toolbar/utils';
+import { Decorate, useEditorContext } from '@/components/editor/EditorContext';
+import { createHotkey, HOT_KEY_NAME } from '@/utils/hotkeys';
 
 export function useVisible() {
   const editor = useSlate();
@@ -15,7 +16,7 @@ export function useVisible() {
   const { decorateState, addDecorate, removeDecorate } = useEditorContext();
   const [forceShow, setForceShow] = useState<boolean>(false);
   const [isDragging, setDragging] = useState<boolean>(false);
-
+  const readOnly = useReadOnly()
   const focus = useFocused();
 
   const isExpanded = selection ? Range.isExpanded(selection) : false;
@@ -66,9 +67,7 @@ export function useVisible() {
   }, [visible, removeDecorate]);
 
   useEffect(() => {
-
     const handleMouseDown = () => {
-
       const { selection } = editor;
 
       if(selection && Range.isExpanded(selection)) {
@@ -110,7 +109,8 @@ export function useVisible() {
   }, [decorateState]);
 
   useEffect(() => {
-    if(!visible) return;
+    if (readOnly) return;
+
     const handleKeyDown = (event: KeyboardEvent) => {
 
       switch(true) {
@@ -193,7 +193,7 @@ export function useVisible() {
     return () => {
       slateEditorDom.removeEventListener('keydown', handleKeyDown);
     };
-  }, [editor, visible]);
+  }, [editor, readOnly, visible]);
 
   return {
     visible,

@@ -1,48 +1,67 @@
-import { YjsDatabaseKey } from '@/application/types';
-import { useRowDataSelector } from '@/application/database-yjs';
-import { useDateTypeCellDispatcher } from '@/components/database/components/cell/Cell.hooks';
-import React, { useEffect, useMemo, useState } from 'react';
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 
-export function RowCreateModifiedTime ({
+import { FieldType, useFieldType, useRowTimeString } from '@/application/database-yjs';
+import { YjsDatabaseKey } from '@/application/types';
+import { ReactComponent as CopyIcon } from '@/assets/icons/copy.svg';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import { copyTextToClipboard } from '@/utils/copy';
+
+export function RowCreateModifiedTime({
   rowId,
   fieldId,
   attrName,
   style,
+  wrap,
+  isHovering,
 }: {
   rowId: string;
   fieldId: string;
   style?: React.CSSProperties;
   attrName: YjsDatabaseKey.last_modified | YjsDatabaseKey.created_at;
+  wrap: boolean;
+  isHovering?: boolean;
 }) {
-  const { getDateTimeStr } = useDateTypeCellDispatcher(fieldId);
-  const { row: rowData } = useRowDataSelector(rowId);
-  const [value, setValue] = useState<string | null>(null);
+  const time = useRowTimeString(rowId, fieldId, attrName);
+  const { t } = useTranslation();
 
-  useEffect(() => {
-    if (!rowData) return;
-    const observeHandler = () => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-expect-error
-      setValue(rowData.get(attrName));
-    };
+  const fieldType = useFieldType(fieldId);
 
-    observeHandler();
-
-    rowData.observe(observeHandler);
-    return () => {
-      rowData.unobserve(observeHandler);
-    };
-  }, [rowData, attrName]);
-
-  const time = useMemo(() => {
-    if (!value) return null;
-    return getDateTimeStr(value, true);
-  }, [value, getDateTimeStr]);
+  const handleCopy = () => {
+    if (!time) return;
+    void copyTextToClipboard(time);
+    toast.success(
+      fieldType === FieldType.CreatedTime ? t('grid.field.copiedCreatedAt') : t('grid.field.copiedUpdatedAt')
+    );
+  };
 
   if (!time) return null;
   return (
-    <div style={style} className={'flex w-full items-center'}>
+    <div
+      style={style}
+      className={cn('flex w-full cursor-text select-text', wrap ? 'whitespace-pre-wrap break-all' : 'whitespace-nowrap')}
+    >
       {time}
+      {isHovering && (
+        <div className={'absolute right-1 top-1'}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={handleCopy}
+                variant={'outline'}
+                size={'icon'}
+                className={'bg-surface-primary hover:bg-surface-primary-hover'}
+              >
+                <CopyIcon className={'h-5 w-5'} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{t('settings.menu.clickToCopy')}</TooltipContent>
+          </Tooltip>
+        </div>
+      )}
     </div>
   );
 }

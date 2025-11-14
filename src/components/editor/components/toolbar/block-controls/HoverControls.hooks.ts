@@ -1,13 +1,15 @@
-import { YjsEditor } from '@/application/slate-yjs';
-import { BlockType } from '@/application/types';
-import { getScrollParent } from '@/components/global-comment/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Editor, Element, Range } from 'slate';
 import { ReactEditor, useSlateStatic } from 'slate-react';
-import { findEventNode, getBlockActionsPosition, getBlockCssProperty } from './utils';
-import { findSlateEntryByBlockId } from '@/application/slate-yjs/utils/editor';
 
-export function useHoverControls({ disabled }: { disabled: boolean; }) {
+import { YjsEditor } from '@/application/slate-yjs';
+import { findSlateEntryByBlockId } from '@/application/slate-yjs/utils/editor';
+import { BlockType } from '@/application/types';
+import { getScrollParent } from '@/components/global-comment/utils';
+
+import { findEventNode, getBlockActionsPosition, getBlockCssProperty } from './utils';
+
+export function useHoverControls({ disabled }: { disabled: boolean }) {
   const editor = useSlateStatic() as YjsEditor;
   const ref = useRef<HTMLDivElement>(null);
   const [hoveredBlockId, setHoveredBlockId] = useState<string | null>(null);
@@ -19,18 +21,18 @@ export function useHoverControls({ disabled }: { disabled: boolean; }) {
 
       const slateEditorDom = ReactEditor.toDOMNode(editor, editor);
 
-      if(!ref.current) return;
+      if (!ref.current) return;
 
       ref.current.style.top = `${top + slateEditorDom.offsetTop}px`;
       ref.current.style.left = `${left + slateEditorDom.offsetLeft - 64}px`;
     },
-    [editor],
+    [editor]
   );
 
   const close = useCallback(() => {
     const el = ref.current;
 
-    if(!el) return;
+    if (!el) return;
 
     el.style.opacity = '0';
     el.style.pointerEvents = 'none';
@@ -40,17 +42,17 @@ export function useHoverControls({ disabled }: { disabled: boolean; }) {
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if(disabled) return;
+      if (disabled) return;
       const el = ref.current;
 
-      if(!el) return;
+      if (!el) return;
 
       let range: Range | null = null;
       let node: Element | null = null;
 
       try {
         range = ReactEditor.findEventRange(editor, e);
-        if(!range) {
+        if (!range) {
           throw new Error('No range found');
         }
       } catch {
@@ -60,13 +62,12 @@ export function useHoverControls({ disabled }: { disabled: boolean; }) {
           x: newX,
           y: e.clientY,
         });
-
       }
 
-      if(!range && !node) {
+      if (!range && !node) {
         console.warn('No range and node found');
         return;
-      } else if(range) {
+      } else if (range) {
         try {
           const match = editor.above({
             match: (n) => {
@@ -75,7 +76,7 @@ export function useHoverControls({ disabled }: { disabled: boolean; }) {
             at: range,
           });
 
-          if(!match) {
+          if (!match) {
             close();
             return;
           }
@@ -84,23 +85,21 @@ export function useHoverControls({ disabled }: { disabled: boolean; }) {
         } catch {
           // do nothing
         }
-
       }
 
-      if(!node) {
+      if (!node) {
         close();
         return;
       }
 
       const blockElement = ReactEditor.toDOMNode(editor, node);
 
-      if(!blockElement) return;
-      const shouldSkipParentTypes = [BlockType.TableBlock, BlockType.GridBlock, BlockType.CalendarBlock, BlockType.BoardBlock, BlockType.SimpleTableBlock];
+      if (!blockElement) return;
+      const shouldSkipParentTypes = [BlockType.TableBlock, BlockType.SimpleTableBlock];
 
-      if(shouldSkipParentTypes.some((type) => blockElement.closest(`[data-block-type="${type}"]`))) {
+      if (shouldSkipParentTypes.some((type) => blockElement.closest(`[data-block-type="${type}"]`))) {
         close();
         return;
-
       } else {
         recalculatePosition(blockElement);
         el.style.opacity = '1';
@@ -109,12 +108,11 @@ export function useHoverControls({ disabled }: { disabled: boolean; }) {
         setCssProperty(getBlockCssProperty(node));
         setHoveredBlockId(node.blockId as string);
       }
-
     };
 
     const dom = ReactEditor.toDOMNode(editor, editor);
 
-    if(!disabled) {
+    if (!disabled) {
       dom.addEventListener('mousemove', handleMouseMove);
       dom.parentElement?.addEventListener('mouseleave', close);
       getScrollParent(dom)?.addEventListener('scroll', close);
@@ -130,22 +128,25 @@ export function useHoverControls({ disabled }: { disabled: boolean; }) {
   useEffect(() => {
     let observer: MutationObserver | null = null;
 
-    if(hoveredBlockId) {
+    if (hoveredBlockId) {
       try {
-        const [node] = findSlateEntryByBlockId(editor, hoveredBlockId);
+        const entry = findSlateEntryByBlockId(editor, hoveredBlockId);
 
-        if(!node) return;
+        if (!entry) return;
+        const [node] = entry;
+
+        if (!node) return;
 
         const dom = ReactEditor.toDOMNode(editor, node);
 
-        if(dom.parentElement) {
+        if (dom.parentElement) {
           observer = new MutationObserver(close);
 
           observer.observe(dom.parentElement, {
             childList: true,
           });
         }
-      } catch(e) {
+      } catch (e) {
         console.error(e);
       }
     }

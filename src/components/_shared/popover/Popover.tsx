@@ -1,6 +1,6 @@
 import { PopoverOrigin } from '@mui/material/Popover/Popover';
 import isEqual from 'lodash-es/isEqual';
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Popover as PopoverComponent, PopoverProps as PopoverComponentProps } from '@mui/material';
 
 const defaultProps: Partial<PopoverComponentProps> = {

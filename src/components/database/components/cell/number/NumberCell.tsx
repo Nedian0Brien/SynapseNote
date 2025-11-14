@@ -1,45 +1,69 @@
-import {
-  currencyFormaterMap,
-  NumberFormat,
-  useFieldSelector,
-  parseNumberTypeOptions,
-  FieldType,
-} from '@/application/database-yjs';
+import { NumberFormat } from '@/application/database-yjs';
 import { CellProps, NumberCell as NumberCellType } from '@/application/database-yjs/cell.type';
-import React, { useMemo } from 'react';
-import Decimal from 'decimal.js';
+import EnhancedBigStats from '@/application/database-yjs/fields/number/EnhancedBigStats';
+import { YjsDatabaseKey } from '@/application/types';
+import { useFieldTypeOption } from '@/components/database/components/cell/Cell.hooks';
+import NumberCellEditing from '@/components/database/components/cell/number/NumberCellEditing';
+import { cn } from '@/lib/utils';
+import { useCallback, useMemo } from 'react';
 
-export function NumberCell({ cell, fieldId, style, placeholder }: CellProps<NumberCellType>) {
-  const { field } = useFieldSelector(fieldId);
+export function NumberCell({
+  cell,
+  fieldId,
+  style,
+  placeholder,
+  editing,
+  setEditing,
+  readOnly,
+  rowId,
+  wrap,
+}: CellProps<NumberCellType>) {
+  const typeOption = useFieldTypeOption(fieldId);
 
-  const format = useMemo(() => (field ? parseNumberTypeOptions(field).format : NumberFormat.Num), [field]);
-
-  const className = useMemo(() => {
-    const classList = ['select-text', 'cursor-text'];
-
-    return classList.join(' ');
-  }, []);
+  const format = typeOption ? (Number(typeOption.get(YjsDatabaseKey.format)) as NumberFormat) : NumberFormat.Num;
 
   const value = useMemo(() => {
-    if (!cell || cell.fieldType !== FieldType.Number) return '';
-    const numberFormater = currencyFormaterMap[format];
+    if (!cell) return '';
 
-    if (!numberFormater) return cell.data;
-
-    if (isNaN(parseInt(cell.data))) return '';
-
-    return numberFormater(new Decimal(cell.data).toNumber());
+    return EnhancedBigStats.parse(cell.data, format) || '';
   }, [cell, format]);
 
-  if (value === undefined)
-    return placeholder ? (
-      <div style={style} className={'text-text-placeholder'}>
-        {placeholder}
-      </div>
-    ) : null;
+  const focusToEnd = useCallback((el: HTMLTextAreaElement) => {
+    if (el) {
+      const length = el.value.length;
+
+      el.setSelectionRange(length, length);
+      el.focus();
+    }
+  }, []);
+
+  const undefinedValue = value === undefined;
+
   return (
-    <div style={style} className={className}>
-      {value}
+    <div
+      style={style}
+      className={cn(
+        'w-full select-text',
+        readOnly ? 'cursor-text' : 'cursor-pointer',
+        undefinedValue && placeholder ? 'text-text-tertiary' : '',
+        wrap ? 'whitespace-pre-wrap break-all' : 'whitespace-nowrap'
+      )}
+    >
+      {undefinedValue ? (
+        placeholder
+      ) : editing ? (
+        <NumberCellEditing
+          ref={focusToEnd}
+          fieldId={fieldId}
+          rowId={rowId}
+          defaultValue={value}
+          onExit={() => {
+            setEditing?.(false);
+          }}
+        />
+      ) : (
+        <>{value}</>
+      )}
     </div>
   );
 }

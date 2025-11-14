@@ -1,0 +1,301 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Awareness } from 'y-protocols/awareness';
+
+import { openCollabDB } from '@/application/db';
+import { AccessLevel, DatabaseId, Types, View, ViewId, ViewLayout, YDoc, YjsEditorKey } from '@/application/types';
+import { findView, findViewInShareWithMe } from '@/components/_shared/outline/utils';
+import { getPlatform } from '@/utils/platform';
+
+import { useAuthInternal } from '../contexts/AuthInternalContext';
+import { useSyncInternal } from '../contexts/SyncInternalContext';
+
+// Hook for managing view-related operations
+export function useViewOperations() {
+  const { service, currentWorkspaceId, userWorkspaceInfo } = useAuthInternal();
+  const { registerSyncContext } = useSyncInternal();
+  const navigate = useNavigate();
+  
+  const [awarenessMap, setAwarenessMap] = useState<Record<string, Awareness>>({});
+  const workspaceDatabaseDocMapRef = useRef<Map<string, YDoc>>(new Map());
+  const createdRowKeys = useRef<string[]>([]);
+  const databaseIdViewIdMapRef = useRef<Map<DatabaseId, ViewId>>(new Map());
+
+  const databaseStorageId = userWorkspaceInfo?.selectedWorkspace?.databaseStorageId;
+
+  // Register workspace database document for sync
+  const registerWorkspaceDatabaseDoc = useCallback(
+    async (workspaceId: string, databaseStorageId: string) => {
+      const doc = await openCollabDB(databaseStorageId);
+
+      doc.guid = databaseStorageId;
+      const { doc: workspaceDatabaseDoc } = registerSyncContext({ doc, collabType: Types.WorkspaceDatabase });
+
+      workspaceDatabaseDocMapRef.current.clear();
+      workspaceDatabaseDocMapRef.current.set(workspaceId, workspaceDatabaseDoc);
+    },
+    [registerSyncContext]
+  );
+
+  // Get database ID for a view
+  const getDatabaseId = useCallback(
+    async (id: string) => {
+      if (!currentWorkspaceId) return;
+
+      if (databaseStorageId && !workspaceDatabaseDocMapRef.current.has(currentWorkspaceId)) {
+        await registerWorkspaceDatabaseDoc(currentWorkspaceId, databaseStorageId);
+      }
+
+      return new Promise<string | null>((resolve) => {
+        const sharedRoot = workspaceDatabaseDocMapRef.current.get(currentWorkspaceId)?.getMap(YjsEditorKey.data_section);
+        const observeEvent = () => {
+          const databases = sharedRoot?.toJSON()?.databases;
+
+          const databaseId = databases?.find((database: { database_id: string; views: string[] }) =>
+            database.views.find((view) => view === id)
+          )?.database_id;
+
+          if (databaseId) {
+            resolve(databaseId);
+          }
+        };
+
+        observeEvent();
+        sharedRoot?.observeDeep(observeEvent);
+
+        return () => {
+          sharedRoot?.unobserveDeep(observeEvent);
+        };
+      });
+    },
+    [currentWorkspaceId, databaseStorageId, registerWorkspaceDatabaseDoc]
+  );
+
+  // Check if view should be readonly based on access permissions
+  const getViewReadOnlyStatus = useCallback((viewId: string, outline?: View[]) => {
+    const isMobile = getPlatform().isMobile;
+
+    if (isMobile) return true; // Mobile has highest priority - always readonly
+
+    if (!outline) return false;
+
+    // Check if view exists in shareWithMe
+    const shareWithMeView = findViewInShareWithMe(outline, viewId);
+
+    if (shareWithMeView?.access_level !== undefined) {
+      // If found in shareWithMe, check access level
+      return shareWithMeView.access_level <= AccessLevel.ReadAndComment;
+    }
+
+    // If not found in shareWithMe, default is false (editable)
+    return false;
+  }, []);
+
+  const getViewIdFromDatabaseId = useCallback(async (databaseId: string) => {
+    if (!currentWorkspaceId) {
+      return null;
+    }
+
+    if (databaseIdViewIdMapRef.current.has(databaseId)) {
+      return databaseIdViewIdMapRef.current.get(databaseId) || null;
+    }
+
+    const workspaceDatabaseDoc = workspaceDatabaseDocMapRef.current.get(currentWorkspaceId);
+
+    if (!workspaceDatabaseDoc) {
+      return null;
+    }
+
+    const sharedRoot = workspaceDatabaseDoc.getMap(YjsEditorKey.data_section);
+
+    const databases = sharedRoot?.toJSON()?.databases;
+
+    const database = databases?.find((db: { database_id: string; views: string[] }) =>
+      db.database_id === databaseId
+    );
+
+    if (database) {
+      databaseIdViewIdMapRef.current.set(databaseId, database.views[0]);
+    }
+
+    return databaseIdViewIdMapRef.current.get(databaseId) || null;
+  }, [currentWorkspaceId]);
+
+  // Load view document
+  const loadView = useCallback(
+    async (id: string, isSubDocument = false, loadAwareness = false, outline?: View[]) => {
+      try {
+        if (!service || !currentWorkspaceId) {
+          throw new Error('Service or workspace not found');
+        }
+
+        const res = await service?.getPageDoc(currentWorkspaceId, id);
+
+        if (!res) {
+          throw new Error('View not found');
+        }
+
+        if (loadAwareness) {
+          // Add recent pages when view is loaded
+          void (async () => {
+            try {
+              await service.addRecentPages(currentWorkspaceId, [id]);
+            } catch (e) {
+              console.error(e);
+            }
+          })();
+        }
+
+        const view = findView(outline || [], id);
+
+        let collabType = isSubDocument ? Types.Document : null;
+
+        switch (view?.layout) {
+          case ViewLayout.Document:
+            collabType = Types.Document;
+            break;
+          case ViewLayout.Grid:
+          case ViewLayout.Board:
+          case ViewLayout.Calendar:
+            collabType = Types.Database;
+            break;
+        }
+
+        if (collabType === null) {
+          return Promise.reject(new Error('Invalid view layout'));
+        }
+
+
+        if (collabType === Types.Document) {
+          let awareness: Awareness | undefined;
+
+          if (loadAwareness) {
+            setAwarenessMap((prev) => {
+              if (prev[id]) {
+                awareness = prev[id];
+                return prev;
+              }
+
+              awareness = new Awareness(res);
+              return { ...prev, [id]: awareness };
+            });
+          }
+
+          const { doc } = registerSyncContext({ doc: res, collabType, awareness });
+
+          return doc;
+        }
+
+        const databaseId = await getDatabaseId(id);
+
+        if (!databaseId) {
+          throw new Error('Database not found');
+        }
+
+        res.guid = databaseId;
+        const { doc } = registerSyncContext({ doc: res, collabType });
+
+        return doc;
+
+      } catch (e) {
+        return Promise.reject(e);
+      }
+    },
+    [service, currentWorkspaceId, getDatabaseId, registerSyncContext] // Add dependencies to prevent re-creation of functions
+  );
+
+
+  // Create row document
+  const createRowDoc = useCallback(
+    async (rowKey: string): Promise<YDoc> => {
+      if (!currentWorkspaceId || !service) {
+        throw new Error('Failed to create row doc');
+      }
+
+      try {
+        const doc = await service?.createRowDoc(rowKey);
+
+        if (!doc) {
+          throw new Error('Failed to create row doc');
+        }
+
+        const rowId = rowKey.split('_rows_')[1];
+
+        if (!rowId) {
+          throw new Error('Failed to create row doc');
+        }
+
+        doc.guid = rowId;
+        const syncContext = registerSyncContext({
+          doc,
+          collabType: Types.DatabaseRow,
+        });
+
+        createdRowKeys.current.push(rowKey);
+        return syncContext.doc;
+      } catch (e) {
+        return Promise.reject(e);
+      }
+    },
+    [currentWorkspaceId, service, registerSyncContext]
+  );
+
+  // Navigate to view
+  const toView = useCallback(
+    async (viewId: string, blockId?: string, keepSearch?: boolean, loadViewMeta?: (viewId: string) => Promise<View>) => {
+      let url = `/app/${currentWorkspaceId}/${viewId}`;
+      const view = await loadViewMeta?.(viewId);
+
+      console.log('view', view);
+      const searchParams = new URLSearchParams(keepSearch ? window.location.search : undefined);
+
+      if (blockId && view) {
+        switch (view.layout) {
+          case ViewLayout.Document:
+            searchParams.set('blockId', blockId);
+            break;
+          case ViewLayout.Grid:
+          case ViewLayout.Board:
+          case ViewLayout.Calendar:
+            searchParams.set('r', blockId);
+            break;
+          default:
+            break;
+        }
+      }
+
+      if (searchParams.toString()) {
+        url += `?${searchParams.toString()}`;
+      }
+
+      navigate(url);
+    },
+    [currentWorkspaceId, navigate]
+  );
+
+  // Clean up created row documents when view changes
+  useEffect(() => {
+    const rowKeys = createdRowKeys.current;
+
+    createdRowKeys.current = [];
+    
+    if (!rowKeys.length) return;
+    
+    rowKeys.forEach((rowKey) => {
+      try {
+        service?.deleteRowDoc(rowKey);
+      } catch (e) {
+        console.error(e);
+      }
+    });
+  }, [service, currentWorkspaceId]); // Changed from viewId to currentWorkspaceId
+
+  return {
+    loadView,
+    createRowDoc,
+    toView,
+    awarenessMap,
+    getViewIdFromDatabaseId,
+    getViewReadOnlyStatus,
+  };
+}

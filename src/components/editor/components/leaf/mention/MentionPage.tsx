@@ -1,18 +1,20 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Element, Text } from 'slate';
+import { ReactEditor, useReadOnly, useSlate } from 'slate-react';
+import smoothScrollIntoViewIfNeeded from 'smooth-scroll-into-view-if-needed';
+
+import { APP_EVENTS } from '@/application/constants';
 import { YjsEditor } from '@/application/slate-yjs';
 import { CustomEditor } from '@/application/slate-yjs/command';
 import { traverseBlock } from '@/application/slate-yjs/utils/convert';
-import { MentionType, UIVariant, View, ViewLayout, YjsEditorKey, YSharedRoot } from '@/application/types';
+import { findSlateEntryByBlockId } from '@/application/slate-yjs/utils/editor';
+import { MentionType, View, ViewLayout, YjsEditorKey, YSharedRoot } from '@/application/types';
 import { ReactComponent as LinkArrowOverlay } from '@/assets/icons/link_arrow.svg';
 import { ReactComponent as ParagraphIcon } from '@/assets/icons/paragraph.svg';
-
-import { useEditorContext } from '@/components/editor/EditorContext';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { ReactEditor, useReadOnly, useSlate } from 'slate-react';
-import { Element, Text } from 'slate';
+import { findView } from '@/components/_shared/outline/utils';
 import PageIcon from '@/components/_shared/view-icon/PageIcon';
-import { findSlateEntryByBlockId } from '@/application/slate-yjs/utils/editor';
-import smoothScrollIntoViewIfNeeded from 'smooth-scroll-into-view-if-needed';
+import { useEditorContext } from '@/components/editor/EditorContext';
 
 import './style.css';
 
@@ -30,8 +32,8 @@ function MentionPage({
   const context = useEditorContext();
   const editor = useSlate();
   const selection = editor.selection;
-  const variant = context.variant;
   const currentViewId = context.viewId;
+  const eventEmitter = context.eventEmitter;
 
   const { navigateToView, loadViewMeta, loadView, openPageModal } = context;
   const [noAccess, setNoAccess] = useState(false);
@@ -43,7 +45,7 @@ function MentionPage({
       if (loadViewMeta) {
         setNoAccess(false);
         try {
-          const meta = await loadViewMeta(pageId, setMeta);
+          const meta = await loadViewMeta(pageId);
 
           setMeta(meta);
         } catch (e) {
@@ -55,6 +57,26 @@ function MentionPage({
       }
     })();
   }, [loadViewMeta, pageId]);
+
+  useEffect(() => {
+    const handleOutlineLoaded = (outline: View[]) => {
+      const view = findView(outline, pageId);
+
+      if (view) {
+        setMeta(view);
+      }
+    };
+
+    if (eventEmitter) {
+      eventEmitter.on(APP_EVENTS.OUTLINE_LOADED, handleOutlineLoaded);
+    }
+
+    return () => {
+      if (eventEmitter) {
+        eventEmitter.off(APP_EVENTS.OUTLINE_LOADED, handleOutlineLoaded);
+      }
+    };
+  }, [eventEmitter, pageId]);
 
   const icon = useMemo(() => {
     return meta?.icon;
@@ -123,12 +145,12 @@ function MentionPage({
             icon: icon,
             layout: meta?.layout || ViewLayout.Document,
           }}
-          className={'ml-0.5 flex h-[1em] w-[1em] items-center text-text-title'}
+          className={'ml-0.5 flex h-[1.25em] w-[1.25em] items-center text-text-primary'}
         />
 
         {type === MentionType.PageRef && (
-          <span className={`absolute top-0 left-0 ml-0.5`}>
-            <LinkArrowOverlay className={'link-arrow-overlay'} />
+          <span className={`absolute left-0 top-0 ml-0.5 `}>
+            <LinkArrowOverlay className={' link-arrow-overlay h-[1.25em] w-[1.25em]'} />
           </span>
         )}
       </>
@@ -182,9 +204,7 @@ function MentionPage({
       data-mention-id={pageId}
     >
       {noAccess ? (
-        <span className={'mention-unpublished font-semibold text-text-caption'}>
-          {variant === UIVariant.App ? `${content}${t('document.mention.trashHint')}` : t('document.mention.noAccess')}
-        </span>
+        <span className={'mention-unpublished font-semibold text-text-secondary'}>{t('document.mention.noAccess')}</span>
       ) : (
         <>
           <span className={`mention-icon`}>{mentionIcon}</span>

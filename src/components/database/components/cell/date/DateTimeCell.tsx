@@ -1,42 +1,85 @@
-import { FieldType } from '@/application/database-yjs';
-import { useDateTypeCellDispatcher } from '@/components/database/components/cell/Cell.hooks';
+import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
+
+import { useDateTimeCellString } from '@/application/database-yjs';
 import { CellProps, DateTimeCell as DateTimeCellType } from '@/application/database-yjs/cell.type';
-import React, { useMemo } from 'react';
 import { ReactComponent as ReminderSvg } from '@/assets/icons/clock_alarm.svg';
+import { ReactComponent as CopyIcon } from '@/assets/icons/copy.svg';
+import DateTimeCellPicker from '@/components/database/components/cell/date/DateTimeCellPicker';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import { copyTextToClipboard } from '@/utils/copy';
 
-export function DateTimeCell({ cell, fieldId, style, placeholder }: CellProps<DateTimeCellType>) {
-  const { getDateTimeStr } = useDateTypeCellDispatcher(fieldId);
-
-  const startDateTime = useMemo(() => {
-    return getDateTimeStr(cell?.data || '', cell?.includeTime);
-  }, [cell, getDateTimeStr]);
-
-  const endDateTime = useMemo(() => {
-    if (!cell) return null;
-    const { endTimestamp, isRange } = cell;
-
-    if (!isRange) return null;
-
-    return getDateTimeStr(endTimestamp || '', cell?.includeTime);
-  }, [cell, getDateTimeStr]);
-
-  const dateStr = useMemo(() => {
-    return [startDateTime, endDateTime].filter(Boolean).join(' - ');
-  }, [startDateTime, endDateTime]);
+export function DateTimeCell({
+  cell,
+  rowId,
+  fieldId,
+  style,
+  placeholder,
+  editing,
+  setEditing,
+  readOnly,
+  wrap,
+  isHovering,
+  onCellUpdated
+}: CellProps<DateTimeCellType>) {
+  const { t } = useTranslation();
+  const dateStr = useDateTimeCellString(cell, fieldId);
 
   const hasReminder = !!cell?.reminderId;
 
-  if (cell?.fieldType !== FieldType.DateTime) return null;
-  if (!cell?.data)
-    return placeholder ? (
-      <div style={style} className={'text-text-placeholder'}>
-        {placeholder}
-      </div>
-    ) : null;
+  const handleOpenChange = useCallback(
+    (status: boolean) => {
+      setEditing?.(status);
+    },
+    [setEditing]
+  );
+
+  const handleCopy = () => {
+    if (!dateStr) return;
+    void copyTextToClipboard(dateStr);
+    toast.success(t('grid.field.copiedDate'));
+  };
+
   return (
-    <div style={style} className={'flex cursor-text items-center gap-1'}>
-      {dateStr}
-      {hasReminder && <ReminderSvg className={'h-4 w-4'} />}
+    <div
+      data-testid={`datetime-cell-${rowId}-${fieldId}`}
+      style={style}
+      className={cn(
+        'flex gap-1',
+        !cell?.data && 'text-text-tertiary',
+        readOnly ? 'cursor-text' : 'cursor-pointer',
+        wrap ? 'flex-wrap whitespace-pre-wrap break-words' : 'flex-nowrap'
+      )}
+    >
+      {cell?.data ? dateStr : placeholder || null}
+      {hasReminder && <ReminderSvg className={'h-5 w-5'} />}
+      {editing ? (
+        <DateTimeCellPicker onCellUpdated={onCellUpdated} cell={cell} fieldId={fieldId} rowId={rowId} open={editing} onOpenChange={handleOpenChange} />
+      ) : null}
+      {isHovering && dateStr && (
+        <div className={'absolute right-1 top-1'}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleCopy();
+                }}
+                variant={'outline'}
+                size={'icon'}
+                className={'bg-surface-primary hover:bg-surface-primary-hover'}
+              >
+                <CopyIcon className={'h-5 w-5'} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{t('settings.menu.clickToCopy')}</TooltipContent>
+          </Tooltip>
+        </div>
+      )}
     </div>
   );
 }

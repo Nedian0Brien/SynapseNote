@@ -1,3 +1,6 @@
+import { IconButton } from '@mui/material';
+import { lazy, Suspense, useMemo } from 'react';
+
 import { HEADER_HEIGHT } from '@/application/constants';
 import { usePublishContext } from '@/application/publish';
 import { UIVariant } from '@/application/types';
@@ -8,29 +11,31 @@ import Outline from '@/components/_shared/outline/Outline';
 import { useOutlinePopover } from '@/components/_shared/outline/outline.hooks';
 import BreadcrumbSkeleton from '@/components/_shared/skeleton/BreadcrumbSkeleton';
 import { getPlatform } from '@/utils/platform';
-import { IconButton } from '@mui/material';
-import React, { lazy, Suspense, useMemo } from 'react';
 
 const RightMenu = lazy(() => import('@/components/publish/header/RightMenu'));
 
-export function PublishViewHeader ({
-  drawerWidth, onOpenDrawer, openDrawer, onCloseDrawer,
+export function PublishViewHeader({
+  drawerWidth,
+  onOpenDrawer,
+  openDrawer,
+  onCloseDrawer,
 }: {
   onOpenDrawer: () => void;
   drawerWidth: number;
   openDrawer: boolean;
-  onCloseDrawer: () => void
+  onCloseDrawer: () => void;
 }) {
   const viewMeta = usePublishContext()?.viewMeta;
   const outline = usePublishContext()?.outline;
   const toView = usePublishContext()?.toView;
   const crumbs = usePublishContext()?.breadcrumbs;
 
-  const {
-    openPopover, debounceClosePopover, handleOpenPopover, debounceOpenPopover, handleClosePopover,
-  } = useOutlinePopover({
-    onOpenDrawer, openDrawer, onCloseDrawer,
-  });
+  const { openPopover, debounceClosePopover, handleOpenPopover, debounceOpenPopover, handleClosePopover } =
+    useOutlinePopover({
+      onOpenDrawer,
+      openDrawer,
+      onCloseDrawer,
+    });
   const isMobile = useMemo(() => {
     return getPlatform().isMobile;
   }, []);
@@ -45,11 +50,10 @@ export function PublishViewHeader ({
         height: HEADER_HEIGHT,
         minHeight: HEADER_HEIGHT,
       }}
-      className={'appflowy-top-bar transform-gpu sticky top-0 z-10 flex px-5'}
+      className={'appflowy-top-bar sticky top-0 z-[100] flex transform-gpu px-5'}
     >
       <div className={'flex w-full items-center justify-between gap-4 overflow-hidden'}>
         {!openDrawer && !isMobile && (
-
           <OutlinePopover
             {...{
               onMouseEnter: handleOpenPopover,
@@ -58,10 +62,15 @@ export function PublishViewHeader ({
             open={openPopover}
             onClose={debounceClosePopover}
             drawerWidth={drawerWidth}
-            content={<Outline
-              variant={UIVariant.Publish} selectedViewId={viewId} navigateToView={toView} outline={outline}
-              width={drawerWidth}
-            />}
+            content={
+              <Outline
+                variant={UIVariant.Publish}
+                selectedViewId={viewId}
+                navigateToView={toView}
+                outline={outline}
+                width={drawerWidth}
+              />
+            }
             variant={UIVariant.Publish}
           >
             <IconButton
@@ -73,26 +82,28 @@ export function PublishViewHeader ({
                   onOpenDrawer();
                 },
               }}
-
             >
-              <DoubleRightIcon className={'text-text-caption'} />
+              <DoubleRightIcon className={'text-text-secondary'} />
             </IconButton>
           </OutlinePopover>
         )}
 
         <div className={'h-full flex-1 overflow-hidden'}>
-          {!viewMeta ? <div className={'h-[48px] flex items-center'}><BreadcrumbSkeleton /></div> : <Breadcrumb
-            toView={toView}
-            crumbs={crumbs || []}
-            variant={UIVariant.Publish}
-          />}
+          {!viewMeta ? (
+            <div className={'flex h-[48px] items-center'}>
+              <BreadcrumbSkeleton />
+            </div>
+          ) : (
+            <Breadcrumb toView={toView} crumbs={crumbs || []} variant={UIVariant.Publish} />
+          )}
         </div>
 
         <div className={'flex items-center gap-2'}>
-          {rendered && <Suspense fallback={null}>
-            <RightMenu />
-          </Suspense>}
-
+          {rendered && (
+            <Suspense fallback={null}>
+              <RightMenu />
+            </Suspense>
+          )}
         </div>
       </div>
     </div>

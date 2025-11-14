@@ -1,23 +1,19 @@
 import { SubscriptionPlan, View } from '@/application/types';
-import { notify } from '@/components/_shared/notify';
-import { flattenViews } from '@/components/_shared/outline/utils';
+import { ReactComponent as EditIcon } from '@/assets/icons/edit.svg';
 import { useAppHandlers, useUserWorkspaceInfo } from '@/components/app/app.hooks';
 import HomePageSetting from '@/components/app/publish-manage/HomePageSetting';
 import PublishedPages from '@/components/app/publish-manage/PublishedPages';
 import PublishPagesSkeleton from '@/components/app/publish-manage/PublishPagesSkeleton';
 import UpdateNamespace from '@/components/app/publish-manage/UpdateNamespace';
 import { useCurrentUser, useService } from '@/components/main/app.hooks';
+import { notify } from '@/components/_shared/notify';
+import { flattenViews } from '@/components/_shared/outline/utils';
 import { openUrl } from '@/utils/url';
 import { Button, CircularProgress, Divider, IconButton, Tooltip } from '@mui/material';
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ReactComponent as EditIcon } from '@/assets/icons/edit.svg';
 
-export function PublishManage ({
-  onClose,
-}: {
-  onClose?: () => void;
-}) {
+export function PublishManage({ onClose }: { onClose?: () => void }) {
   const { t } = useTranslation();
   const userWorkspaceInfo = useUserWorkspaceInfo();
   const currentUser = useCurrentUser();
@@ -30,7 +26,7 @@ export function PublishManage ({
   const [publishViews, setPublishViews] = React.useState<View[]>([]);
   const [updateOpen, setUpdateOpen] = React.useState<boolean>(false);
   const homePage = useMemo(() => {
-    return publishViews.find(view => view.view_id === homePageId);
+    return publishViews.find((view) => view.view_id === homePageId);
   }, [homePageId, publishViews]);
   const loadPublishNamespace = useCallback(async () => {
     if (!service || !workspaceId) return;
@@ -48,9 +44,7 @@ export function PublishManage ({
   const loadHomePageId = useCallback(async () => {
     if (!service || !workspaceId) return;
     try {
-      const {
-        view_id,
-      } = await service.getPublishHomepage(workspaceId);
+      const { view_id } = await service.getPublishHomepage(workspaceId);
 
       setHomePageId(view_id);
 
@@ -66,13 +60,17 @@ export function PublishManage ({
     try {
       const outline = await service.getPublishOutline(namespace);
 
-      setPublishViews(flattenViews(outline).filter(item => item.is_published).sort((a, b) => {
-        if (!a.publish_timestamp || !b.publish_timestamp) {
-          return 0;
-        }
+      setPublishViews(
+        flattenViews(outline)
+          .filter((item) => item.is_published)
+          .sort((a, b) => {
+            if (!a.publish_timestamp || !b.publish_timestamp) {
+              return 0;
+            }
 
-        return new Date(b.publish_timestamp).getTime() - new Date(a.publish_timestamp).getTime();
-      }));
+            return new Date(b.publish_timestamp).getTime() - new Date(a.publish_timestamp).getTime();
+          })
+      );
       // eslint-disable-next-line
     } catch (e: any) {
       console.error(e);
@@ -81,40 +79,46 @@ export function PublishManage ({
     setLoading(false);
   }, [namespace, service]);
 
-  const handleUpdateNamespace = useCallback(async (newNamespace: string) => {
-    if (!service || !workspaceId) return;
-    try {
-      await service.updatePublishNamespace(workspaceId, {
-        old_namespace: namespace,
-        new_namespace: newNamespace,
-      });
+  const handleUpdateNamespace = useCallback(
+    async (newNamespace: string) => {
+      if (!service || !workspaceId) return;
+      try {
+        await service.updatePublishNamespace(workspaceId, {
+          old_namespace: namespace,
+          new_namespace: newNamespace,
+        });
 
-      setNamespace(newNamespace);
-      notify.success(t('settings.sites.success.namespaceUpdated'));
-      // eslint-disable-next-line
-    } catch (e: any) {
-      notify.error(e.message);
-      throw e;
-    }
-  }, [namespace, service, t, workspaceId]);
+        setNamespace(newNamespace);
+        notify.success(t('settings.sites.success.namespaceUpdated'));
+        // eslint-disable-next-line
+      } catch (e: any) {
+        notify.error(e.message);
+        throw e;
+      }
+    },
+    [namespace, service, t, workspaceId]
+  );
 
-  const handleUpdateHomePage = useCallback(async (newHomePageId: string) => {
-    if (!service || !workspaceId) return;
-    if (!isOwner) {
-      return;
-    }
+  const handleUpdateHomePage = useCallback(
+    async (newHomePageId: string) => {
+      if (!service || !workspaceId) return;
+      if (!isOwner) {
+        return;
+      }
 
-    try {
-      await service.updatePublishHomepage(workspaceId, newHomePageId);
+      try {
+        await service.updatePublishHomepage(workspaceId, newHomePageId);
 
-      setHomePageId(newHomePageId);
-      notify.success(t('settings.sites.success.setHomepageSuccess'));
-      // eslint-disable-next-line
-    } catch (e: any) {
-      notify.error(e.message);
-      throw e;
-    }
-  }, [isOwner, service, t, workspaceId]);
+        setHomePageId(newHomePageId);
+        notify.success(t('settings.sites.success.setHomepageSuccess'));
+        // eslint-disable-next-line
+      } catch (e: any) {
+        notify.error(e.message);
+        throw e;
+      }
+    },
+    [isOwner, service, t, workspaceId]
+  );
 
   const handleRemoveHomePage = useCallback(async () => {
     if (!service || !workspaceId) return;
@@ -133,41 +137,41 @@ export function PublishManage ({
       notify.error(e.message);
       throw e;
     }
-
   }, [isOwner, service, t, workspaceId]);
 
-  const {
-    publish,
-    unpublish,
-  } = useAppHandlers();
-  const handlePublish = useCallback(async (view: View, publishName: string) => {
-    if (!publish) return;
+  const { publish, unpublish } = useAppHandlers();
+  const handlePublish = useCallback(
+    async (view: View, publishName: string) => {
+      if (!publish) return;
 
-    try {
-      await publish(view, publishName);
-      notify.success(t('publish.publishSuccessfully'));
-      // eslint-disable-next-line
-    } catch (e: any) {
-      notify.error(e.message);
-    }
-  }, [publish, t]);
+      try {
+        await publish(view, publishName);
+        notify.success(t('publish.publishSuccessfully'));
+        // eslint-disable-next-line
+      } catch (e: any) {
+        notify.error(e.message);
+      }
+    },
+    [publish, t]
+  );
 
-  const handleUnpublish = useCallback(async (viewId: string) => {
-    if (!unpublish) return;
+  const handleUnpublish = useCallback(
+    async (viewId: string) => {
+      if (!unpublish) return;
 
-    try {
-      await unpublish(viewId);
-      void loadPublishPages();
-      notify.success(t('publish.unpublishSuccessfully'));
-      // eslint-disable-next-line
-    } catch (e: any) {
-      notify.error(e.message);
-    }
-  }, [loadPublishPages, t, unpublish]);
+      try {
+        await unpublish(viewId);
+        void loadPublishPages();
+        notify.success(t('publish.unpublishSuccessfully'));
+        // eslint-disable-next-line
+      } catch (e: any) {
+        notify.error(e.message);
+      }
+    },
+    [loadPublishPages, t, unpublish]
+  );
 
-  const {
-    getSubscriptions,
-  } = useAppHandlers();
+  const { getSubscriptions } = useAppHandlers();
   const [activeSubscription, setActiveSubscription] = React.useState<SubscriptionPlan | null>(null);
   const loadSubscription = useCallback(async () => {
     try {
@@ -184,7 +188,6 @@ export function PublishManage ({
     } catch (e) {
       console.error(e);
     }
-
   }, [getSubscriptions]);
 
   useEffect(() => {
@@ -206,16 +209,16 @@ export function PublishManage ({
 
   return (
     <div className={'flex flex-col gap-2'}>
-      <div className={'text-base  px-1 font-medium'}>{t('namespace')}</div>
-      <div className={'text-text-caption  px-1 text-xs'}>{t('manageNamespaceDescription')}</div>
+      <div className={'px-1  text-base font-medium'}>{t('namespace')}</div>
+      <div className={'px-1  text-xs text-text-secondary'}>{t('manageNamespaceDescription')}</div>
       <Divider className={'mb-2'} />
-      <div className={'w-full px-1 flex text-sm font-medium items-center gap-2'}>
+      <div className={'flex w-full items-center gap-2 px-1 text-sm font-medium'}>
         <div className={'flex-1'}>{t('namespace')}</div>
         <div className={'flex-1'}>{t('homepage')}</div>
       </div>
       <Divider className={'mb-1'} />
 
-      <div className={'w-full flex text-sm items-center gap-2'}>
+      <div className={'flex w-full items-center gap-2 text-sm'}>
         <div className={'flex-1 overflow-hidden'}>
           <Tooltip
             title={
@@ -229,16 +232,17 @@ export function PublishManage ({
               onClick={() => {
                 void openUrl(url, '_blank');
               }}
-              className={'overflow-hidden justify-start w-full'}
+              className={'w-full justify-start overflow-hidden'}
               color={'inherit'}
               size={'small'}
             >
-              <span className={'truncate'}>{window.location.host}/{namespace}</span>
-
+              <span className={'truncate'}>
+                {window.location.host}/{namespace}
+              </span>
             </Button>
           </Tooltip>
         </div>
-        <div className={'flex-1 flex items-center justify-between'}>
+        <div className={'flex flex-1 items-center justify-between'}>
           <HomePageSetting
             activePlan={activeSubscription}
             isOwner={isOwner}
@@ -248,8 +252,13 @@ export function PublishManage ({
             onUpdateHomePage={handleUpdateHomePage}
           />
           <Tooltip
-            title={isOwner ? (activeSubscription === SubscriptionPlan.Free ? t('settings.sites.error.onlyProCanUpdateNamespace') : undefined)
-              : t('settings.sites.error.onlyWorkspaceOwnerCanUpdateNamespace')}
+            title={
+              isOwner
+                ? activeSubscription === SubscriptionPlan.Free
+                  ? t('settings.sites.error.onlyProCanUpdateNamespace')
+                  : undefined
+                : t('settings.sites.error.onlyWorkspaceOwnerCanUpdateNamespace')
+            }
           >
             <IconButton
               size={'small'}
@@ -268,13 +277,13 @@ export function PublishManage ({
         </div>
       </div>
 
-      <div className={'text-base flex items-center gap-2 mt-4 px-1 font-medium'}>
+      <div className={'mt-4 flex items-center gap-2 px-1 text-base font-medium'}>
         {t('settings.sites.publishedPage.title')}
         {loading && <CircularProgress size={14} />}
       </div>
-      <div className={'text-text-caption  px-1 text-xs'}>{t('settings.sites.publishedPage.description')}</div>
+      <div className={'px-1  text-xs text-text-secondary'}>{t('settings.sites.publishedPage.description')}</div>
       <Divider className={'mb-2'} />
-      <div className={'w-full px-1 flex text-sm font-medium items-center gap-4'}>
+      <div className={'flex w-full items-center gap-4 px-1 text-sm font-medium'}>
         <div className={'flex-1'}>{t('settings.sites.publishedPage.page')}</div>
         <div className={'flex-1'}>
           <span className={'px-2'}>{t('settings.sites.publishedPage.pathName')}</span>
@@ -283,21 +292,26 @@ export function PublishManage ({
       </div>
 
       <Divider className={'mb-1'} />
-      {loading && !publishViews.length ? <PublishPagesSkeleton /> :
+      {loading && !publishViews.length ? (
+        <PublishPagesSkeleton />
+      ) : (
         <PublishedPages
           publishViews={publishViews}
           onPublish={handlePublish}
           onClose={onClose}
           onUnPublish={handleUnpublish}
           namespace={namespace}
-        />}
+        />
+      )}
 
-      {updateOpen && <UpdateNamespace
-        namespace={namespace}
-        open={updateOpen}
-        onClose={() => setUpdateOpen(false)}
-        onUpdateNamespace={handleUpdateNamespace}
-      />}
+      {updateOpen && (
+        <UpdateNamespace
+          namespace={namespace}
+          open={updateOpen}
+          onClose={() => setUpdateOpen(false)}
+          onUpdateNamespace={handleUpdateNamespace}
+        />
+      )}
     </div>
   );
 }

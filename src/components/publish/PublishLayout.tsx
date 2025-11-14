@@ -1,34 +1,36 @@
 import { YDoc } from '@/application/types';
-import { useOutlineDrawer } from '@/components/_shared/outline/outline.hooks';
-import { AFScroller } from '@/components/_shared/scroller';
 import { PublishViewHeader } from '@/components/publish/header';
 import PublishMain from '@/components/publish/PublishMain';
 import SideBar from '@/components/publish/SideBar';
-import React from 'react';
+import { useOutlineDrawer } from '@/components/_shared/outline/outline.hooks';
+import { AFScroller } from '@/components/_shared/scroller';
 
-function PublishLayout ({ isTemplateThumb, isTemplate, doc }: {
+function PublishLayout({
+  isTemplateThumb,
+  isTemplate,
+  doc,
+}: {
   isTemplateThumb: boolean;
   isTemplate: boolean;
   doc?: YDoc;
 }) {
-  const {
-    drawerOpened,
-    drawerWidth,
-    setDrawerWidth,
-    toggleOpenDrawer,
-  } = useOutlineDrawer();
+  const { drawerOpened, drawerWidth, setDrawerWidth, toggleOpenDrawer } = useOutlineDrawer();
 
   return (
     <div
       className={'h-screen w-screen'}
-      style={isTemplateThumb ? {
-        pointerEvents: 'none',
-        transform: 'scale(0.333)',
-        transformOrigin: '0 0',
-        width: '300vw',
-        height: '400vh',
-        overflow: 'hidden',
-      } : undefined}
+      style={
+        isTemplateThumb
+          ? {
+              pointerEvents: 'none',
+              transform: 'scale(0.333)',
+              transformOrigin: '0 0',
+              width: '300vw',
+              height: '400vh',
+              overflow: 'hidden',
+            }
+          : undefined
+      }
     >
       <AFScroller
         overflowXHidden
@@ -40,31 +42,42 @@ function PublishLayout ({ isTemplateThumb, isTemplate, doc }: {
         }}
         className={'appflowy-layout appflowy-scroll-container h-full'}
       >
-        {!isTemplate && <PublishViewHeader
-          onOpenDrawer={() => {
-            toggleOpenDrawer(true);
-          }}
-          drawerWidth={drawerWidth}
-          onCloseDrawer={() => {
-            toggleOpenDrawer(false);
-          }}
-          openDrawer={drawerOpened}
-        />}
+        {!isTemplate && (
+          <PublishViewHeader
+            onOpenDrawer={() => {
+              toggleOpenDrawer(true);
+            }}
+            drawerWidth={drawerWidth}
+            onCloseDrawer={() => {
+              toggleOpenDrawer(false);
+            }}
+            openDrawer={drawerOpened}
+          />
+        )}
+        {!isTemplate && (
+          <div
+            className={'sticky-header-overlay'}
+            style={{
+              width: '100%',
+              position: 'sticky',
+              top: 48,
+              left: 0,
+              right: 0,
+              zIndex: 50,
+            }}
+          />
+        )}
 
-        <PublishMain
-          doc={doc}
-          isTemplate={isTemplate}
-        />
-
+        <PublishMain doc={doc} isTemplate={isTemplate} />
       </AFScroller>
-      {drawerOpened &&
+      {drawerOpened && (
         <SideBar
           onResizeDrawerWidth={setDrawerWidth}
           drawerWidth={drawerWidth}
           drawerOpened={drawerOpened}
           toggleOpenDrawer={toggleOpenDrawer}
         />
-      }
+      )}
     </div>
   );
 }

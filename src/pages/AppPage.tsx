@@ -1,8 +1,12 @@
+import React, { lazy, memo, Suspense, useCallback, useContext, useEffect, useMemo } from 'react';
+import { toast } from 'sonner';
+
+import { APP_EVENTS } from '@/application/constants';
 import { UIVariant, ViewLayout, ViewMetaProps, YDoc } from '@/application/types';
-import { ReactComponent as TipIcon } from '@/assets/icons/warning.svg';
+import { AppError, determineErrorType } from '@/application/utils/error-utils';
 import Help from '@/components/_shared/help/Help';
-import { notify } from '@/components/_shared/notify';
 import { findView } from '@/components/_shared/outline/utils';
+import { AIChat } from '@/components/ai-chat';
 import {
   AppContext,
   useAppHandlers,
@@ -11,14 +15,10 @@ import {
   useCurrentWorkspaceId,
 } from '@/components/app/app.hooks';
 import DatabaseView from '@/components/app/DatabaseView';
+import { useViewOperations } from '@/components/app/hooks/useViewOperations';
 import { Document } from '@/components/document';
 import RecordNotFound from '@/components/error/RecordNotFound';
-import { useService } from '@/components/main/app.hooks';
-import { getPlatform } from '@/utils/platform';
-import { desktopDownloadLink, openAppFlowySchema } from '@/utils/url';
-import { Button, Checkbox, FormControlLabel } from '@mui/material';
-import React, { lazy, memo, Suspense, useCallback, useContext, useEffect, useMemo } from 'react';
-import { AIChat } from '@/components/ai-chat';
+import { useCurrentUser, useService } from '@/components/main/app.hooks';
 
 const ViewHelmet = lazy(() => import('@/components/_shared/helmet/ViewHelmet'));
 
@@ -41,7 +41,12 @@ function AppPage() {
     loadViews,
     setWordCount,
     uploadFile,
+    ...handlers
   } = useAppHandlers();
+  const { eventEmitter } = handlers;
+  const { getViewReadOnlyStatus } = useViewOperations();
+
+  const currentUser = useCurrentUser();
   const view = useMemo(() => {
     if (!outline || !viewId) return;
     return findView(outline, viewId);
@@ -58,18 +63,20 @@ function AppPage() {
 
   const layout = view?.layout;
   const [doc, setDoc] = React.useState<YDoc | undefined>(undefined);
-  const [notFound, setNotFound] = React.useState(false);
+  const [error, setError] = React.useState<AppError | null>(null);
   const loadPageDoc = useCallback(
     async (id: string) => {
-      setNotFound(false);
+      setError(null);
       setDoc(undefined);
       try {
-        const doc = await loadView(id);
+        const doc = await loadView(id, false, true);
 
         setDoc(doc);
       } catch (e) {
-        setNotFound(true);
-        console.error(e);
+        const appError = determineErrorType(e);
+
+        setError(appError);
+        console.error('[AppPage] Error loading view:', appError);
       }
     },
     [loadView]
@@ -84,7 +91,7 @@ function AppPage() {
   useEffect(() => {
     if (layout === ViewLayout.AIChat) {
       setDoc(undefined);
-      setNotFound(false);
+      setError(null);
     }
   }, [layout]);
 
@@ -117,9 +124,13 @@ function AppPage() {
   const service = useService();
   const requestInstance = service?.getAxiosInstance();
 
-  const viewDom = useMemo(() => {
-    const isMobile = getPlatform().isMobile;
+  // Check if view is in shareWithMe and determine readonly status
+  const isReadOnly = useMemo(() => {
+    if (!viewId) return false;
+    return getViewReadOnlyStatus(viewId, outline);
+  }, [getViewReadOnlyStatus, viewId, outline]);
 
+  const viewDom = useMemo(() => {
     if (!doc && layout === ViewLayout.AIChat && viewId) {
       return (
         <Suspense>
@@ -135,7 +146,7 @@ function AppPage() {
         requestInstance={requestInstance}
         workspaceId={workspaceId}
         doc={doc}
-        readOnly={Boolean(isMobile)}
+        readOnly={isReadOnly}
         viewMeta={viewMeta}
         navigateToView={toView}
         loadViewMeta={loadViewMeta}
@@ -151,15 +162,18 @@ function AppPage() {
         onWordCountChange={setWordCount}
         uploadFile={handleUploadFile}
         variant={UIVariant.App}
+        {...handlers}
       />
     ) : null;
   }, [
-    requestInstance,
-    workspaceId,
     doc,
     layout,
+    handlers,
     viewId,
     viewMeta,
+    workspaceId,
+    requestInstance,
+    isReadOnly,
     toView,
     loadViewMeta,
     createRowDoc,
@@ -181,62 +195,29 @@ function AppPage() {
   }, [viewId]);
 
   useEffect(() => {
-    if (
-      layout !== undefined &&
-      [ViewLayout.Board, ViewLayout.Grid, ViewLayout.Calendar].includes(layout) &&
-      !localStorage.getItem('open_edit_tip')
-    ) {
-      notify.clear();
-      notify.info({
-        autoHideDuration: null,
-        type: 'info',
-        title: 'Edit in app',
-        message: (
-          <div className={'flex w-full flex-col items-start gap-2'}>
-            <div>{`Editing databases is supported in AppFlowy's desktop and mobile apps`}</div>
-            <div className={'flex items-center gap-2 text-sm text-text-caption'}>
-              <TipIcon className={'h-5 w-5 text-function-warning'} />
-              Don't have AppFlowy?{' '}
-              <a className={'text-fill-default hover:underline'} href={desktopDownloadLink}>
-                Download
-              </a>
-            </div>
-            <div className={'mt-2 flex w-full items-center justify-between max-sm:my-4 max-sm:flex-col'}>
-              <FormControlLabel
-                className={' max-sm:w-full'}
-                value='end'
-                onChange={(_e, value) => {
-                  if (value) {
-                    localStorage.setItem('open_edit_tip', 'true');
-                  } else {
-                    localStorage.removeItem('open_edit_tip');
-                  }
-                }}
-                control={<Checkbox />}
-                label="Don't remind me again"
-              />
-              <Button
-                color={'primary'}
-                className={'max-sm:w-full max-sm:py-4 max-sm:text-base'}
-                onClick={() => window.open(openAppFlowySchema, '_current')}
-                variant={'contained'}
-              >
-                Open in AppFlowy
-              </Button>
-            </div>
-          </div>
-        ),
-        showActions: false,
-      });
+    const handleShareViewsChanged = ({ emails, viewId: id }: { emails: string[]; viewId: string }) => {
+      if (id === viewId && emails.includes(currentUser?.email || '')) {
+        toast.success('Permission changed');
+      }
+    };
+
+    if (eventEmitter) {
+      eventEmitter.on(APP_EVENTS.SHARE_VIEWS_CHANGED, handleShareViewsChanged);
     }
-  }, [layout]);
+
+    return () => {
+      if (eventEmitter) {
+        eventEmitter.off(APP_EVENTS.SHARE_VIEWS_CHANGED, handleShareViewsChanged);
+      }
+    };
+  }, [eventEmitter, viewId, currentUser?.email]);
 
   if (!viewId) return null;
   return (
     <div ref={ref} className={'relative h-full w-full'}>
       {helmet}
 
-      {notFound ? <RecordNotFound /> : <div className={'h-full w-full'}>{viewDom}</div>}
+      {error ? <RecordNotFound viewId={viewId} error={error} /> : <div className={'h-full w-full'}>{viewDom}</div>}
       {view && <Help />}
     </div>
   );

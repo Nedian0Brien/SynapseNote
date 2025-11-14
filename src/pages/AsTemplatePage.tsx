@@ -1,9 +1,10 @@
-import { AsTemplate } from '@/components/as-template';
-import NotFound from '@/components/error/NotFound';
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
-function AsTemplatePage () {
+import { AsTemplate } from '@/components/as-template';
+import NotFound from '@/components/error/NotFound';
+
+function AsTemplatePage() {
   const [searchParams] = useSearchParams();
 
   const viewId = useMemo(() => searchParams.get('viewId'), [searchParams]);
@@ -20,7 +21,7 @@ function AsTemplatePage () {
 
   if (!viewUrl || !viewId) return <NotFound />;
   return (
-    <div className={'h-screen w-screen bg-bg-base overflow-hidden p-10'}>
+    <div className={'h-screen w-screen overflow-hidden bg-bg-base p-10'}>
       <AsTemplate viewId={viewId} viewUrl={viewUrl} viewName={viewName} />
     </div>
   );

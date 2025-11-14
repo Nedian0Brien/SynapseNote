@@ -1,17 +1,17 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
-import { Button, Divider, OutlinedInput, PopoverPosition } from '@mui/material';
+import { YjsEditor } from '@/application/slate-yjs';
 import { CustomEditor } from '@/application/slate-yjs/command';
 import { EditorMarkFormat } from '@/application/slate-yjs/types';
 import { ReactComponent as DeleteIcon } from '@/assets/icons/delete.svg';
-import { Popover } from '@/components/_shared/popover';
-import { ReactEditor, useSlateStatic } from 'slate-react';
-import { useTranslation } from 'react-i18next';
 import { getRangeRect } from '@/components/editor/components/toolbar/selection-toolbar/utils';
-import { YjsEditor } from '@/application/slate-yjs';
+import { Popover } from '@/components/_shared/popover';
 import { createHotkey, HOT_KEY_NAME } from '@/utils/hotkeys';
-import { debounce } from 'lodash-es';
-import { PopoverOrigin } from '@mui/material/Popover/Popover';
 import { processUrl } from '@/utils/url';
+import { Button, Divider, OutlinedInput, PopoverPosition } from '@mui/material';
+import { PopoverOrigin } from '@mui/material/Popover/Popover';
+import { debounce } from 'lodash-es';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
+import { ReactEditor, useSlateStatic } from 'slate-react';
 
 const defaultOrigin: PopoverOrigin = {
   vertical: 'top',
@@ -24,11 +24,7 @@ interface HrefPopoverProps {
   updatedSelection?: () => void;
 }
 
-function HrefPopover({
-  open,
-  onClose,
-  updatedSelection,
-}: HrefPopoverProps) {
+function HrefPopover({ open, onClose, updatedSelection }: HrefPopoverProps) {
   const editor = useSlateStatic() as YjsEditor;
   const { t } = useTranslation();
   const [isActivated, setIsActivated] = React.useState(CustomEditor.isMarkActive(editor, EditorMarkFormat.Href));
@@ -68,53 +64,58 @@ function HrefPopover({
     }, 50);
   }, [editor, onClose]);
 
-  const formatLink = useCallback((value: string) => {
-    CustomEditor.addMark(editor, {
-      key: EditorMarkFormat.Href,
-      value,
-    });
-    handleClose();
-    setIsActivated(true);
-  }, [editor, handleClose]);
+  const formatLink = useCallback(
+    (value: string) => {
+      CustomEditor.addMark(editor, {
+        key: EditorMarkFormat.Href,
+        value,
+      });
+      handleClose();
+      setIsActivated(true);
+    },
+    [editor, handleClose]
+  );
 
-  const updateText = useCallback((value: string) => {
-    const { selection } = editor;
+  const updateText = useCallback(
+    (value: string) => {
+      const { selection } = editor;
 
-    if (!selection) return;
-    const texts = CustomEditor.getTextNodes(editor);
-    const hrefNode = texts.find(n => {
-      if (n.href) return true;
-    });
+      if (!selection) return;
+      const texts = CustomEditor.getTextNodes(editor);
+      const hrefNode = texts.find((n) => {
+        if (n.href) return true;
+      });
 
-    if (!hrefNode) return;
-    const href = hrefNode.href;
+      if (!hrefNode) return;
+      const href = hrefNode.href;
 
-    editor.delete();
-    editor.insertText(value);
+      editor.delete();
+      editor.insertText(value);
 
-    const newSelection = editor.selection;
+      const newSelection = editor.selection;
 
-    if (!newSelection) return;
+      if (!newSelection) return;
 
-    const end = editor.end(newSelection);
+      const end = editor.end(newSelection);
 
-    editor.select({
-      anchor: {
-        path: end.path,
-        offset: end.offset - value.length,
-      },
-      focus: end,
-    });
+      editor.select({
+        anchor: {
+          path: end.path,
+          offset: end.offset - value.length,
+        },
+        focus: end,
+      });
 
-    CustomEditor.addMark(editor, {
-      key: EditorMarkFormat.Href,
-      value: href || '',
-    });
+      CustomEditor.addMark(editor, {
+        key: EditorMarkFormat.Href,
+        value: href || '',
+      });
 
-    updatedSelection?.();
-    setIsActivated(true);
-
-  }, [editor, updatedSelection]);
+      updatedSelection?.();
+      setIsActivated(true);
+    },
+    [editor, updatedSelection]
+  );
 
   const removeLink = useCallback(() => {
     CustomEditor.removeMark(editor, EditorMarkFormat.Href);
@@ -133,7 +134,7 @@ function HrefPopover({
         <OutlinedInput
           autoFocus={true}
           error={!urlValid}
-          onKeyDown={e => {
+          onKeyDown={(e) => {
             if (!urlValid) return;
             if (createHotkey(HOT_KEY_NAME.ENTER)(e.nativeEvent)) {
               e.preventDefault();
@@ -141,7 +142,7 @@ function HrefPopover({
               formatLink(e.currentTarget.value);
             }
           }}
-          onInput={e => {
+          onInput={(e) => {
             const target = e.target as HTMLInputElement;
             const url = processUrl(target.value);
 
@@ -152,12 +153,11 @@ function HrefPopover({
 
             setUrlValid(true);
           }}
-          size={'small'} fullWidth={true} placeholder={t('toolbar.addLink')}/>
-        {urlValid ? null : (
-          <div className={'text-function-error text-xs'}>
-            {t('editor.incorrectLink')}
-          </div>
-        )}
+          size={'small'}
+          fullWidth={true}
+          placeholder={t('toolbar.addLink')}
+        />
+        {urlValid ? null : <div className={'text-xs text-function-error'}>{t('editor.incorrectLink')}</div>}
       </div>
     );
   }, [formatLink, open, popoverType, t, urlValid]);
@@ -165,7 +165,7 @@ function HrefPopover({
   const updateLink = useMemo(() => {
     if (!open || popoverType !== 'update') return null;
     const texts = CustomEditor.getTextNodes(editor);
-    const hrefNode = texts.find(n => {
+    const hrefNode = texts.find((n) => {
       if (n.href) return true;
     });
 
@@ -184,7 +184,7 @@ function HrefPopover({
     return (
       <div className={'flex flex-col gap-4'}>
         <div className={'flex flex-col gap-1'}>
-          <div className={'text-text-caption text-xs'}>URL</div>
+          <div className={'text-xs text-text-secondary'}>URL</div>
           <OutlinedInput
             autoFocus={true}
             error={!urlValid}
@@ -192,10 +192,10 @@ function HrefPopover({
               urlRef.current = input;
             }}
             defaultValue={hrefNode.href}
-            onBlur={e => {
+            onBlur={(e) => {
               saveLink(e.currentTarget.value);
             }}
-            onInput={e => {
+            onInput={(e) => {
               const target = e.target as HTMLInputElement;
               const url = processUrl(target.value);
 
@@ -206,7 +206,7 @@ function HrefPopover({
 
               setUrlValid(true);
             }}
-            onKeyDown={e => {
+            onKeyDown={(e) => {
               if (!urlValid) return;
               if (createHotkey(HOT_KEY_NAME.ENTER)(e.nativeEvent)) {
                 e.preventDefault();
@@ -224,19 +224,15 @@ function HrefPopover({
             fullWidth={true}
             placeholder={t('toolbar.addLink')}
           />
-          {urlValid ? null : (
-            <div className={'text-function-error text-xs'}>
-              {t('editor.incorrectLink')}
-            </div>
-          )}
+          {urlValid ? null : <div className={'text-xs text-function-error'}>{t('editor.incorrectLink')}</div>}
         </div>
         <div className={'flex flex-col gap-1'}>
-          <div className={'text-text-caption text-xs'}>{t('editor.text')}</div>
+          <div className={'text-xs text-text-secondary'}>{t('editor.text')}</div>
           <OutlinedInput
             inputRef={(input: HTMLInputElement) => {
               textRef.current = input;
             }}
-            onKeyDown={e => {
+            onKeyDown={(e) => {
               if (createHotkey(HOT_KEY_NAME.UP)(e.nativeEvent)) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -244,7 +240,7 @@ function HrefPopover({
               }
             }}
             defaultValue={text}
-            onInput={e => {
+            onInput={(e) => {
               const target = e.target as HTMLInputElement;
 
               if (target.value) {
@@ -252,13 +248,19 @@ function HrefPopover({
               }
             }}
             size={'small'}
-            fullWidth={true} placeholder={t('toolbar.addLink')}/>
+            fullWidth={true}
+            placeholder={t('toolbar.addLink')}
+          />
         </div>
-        <Divider/>
+        <Divider />
         <Button
-          ref={buttonRef} onClick={removeLink} startIcon={<DeleteIcon/>} size={'small'}
-          className={'w-full hover:text-function-error justify-start'}
-          color={'inherit'}>
+          ref={buttonRef}
+          onClick={removeLink}
+          startIcon={<DeleteIcon />}
+          size={'small'}
+          className={'w-full justify-start hover:text-function-error'}
+          color={'inherit'}
+        >
           {t('document.inlineLink.removeLink')}
         </Button>
       </div>
@@ -269,7 +271,6 @@ function HrefPopover({
 
   const debouncePosition = useMemo(() => {
     return debounce(() => {
-
       if (!anchorPosition || !paperRef.current) return;
       const paperRect = paperRef.current.getBoundingClientRect();
 
@@ -280,14 +281,13 @@ function HrefPopover({
         });
         return;
       }
-
     }, 50);
   }, [anchorPosition]);
 
   return (
     <Popover
-      onMouseDown={e => e.stopPropagation()}
-      onMouseUp={e => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+      onMouseUp={(e) => e.stopPropagation()}
       disableRestoreFocus={true}
       open={open && !!anchorPosition}
       onClose={handleClose}
@@ -303,9 +303,7 @@ function HrefPopover({
       }}
       onTransitionEnd={debouncePosition}
     >
-      {popoverType && (
-        popoverType === 'add' ? addLink : updateLink
-      )}
+      {popoverType && (popoverType === 'add' ? addLink : updateLink)}
     </Popover>
   );
 }

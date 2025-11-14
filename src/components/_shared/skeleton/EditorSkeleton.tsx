@@ -1,14 +1,12 @@
-import React from 'react';
-
-function EditorSkeleton () {
+export function EditorSkeleton() {
   return (
-    <div className="w-full max-w-[988px] max-sm:px-6 px-24 mt-2">
-      <div className="h-10 bg-fill-list-hover w-full mb-4 animate-pulse"></div>
-      <div className="h-6 bg-fill-list-hover w-1/2 mb-4 animate-pulse"></div>
-      <div className="h-8 bg-fill-list-hover w-3/5 mb-4 animate-pulse"></div>
-      <div className="h-7 bg-fill-list-hover w-4/5 mb-4 animate-pulse"></div>
-      <div className="h-5 bg-fill-list-hover w-full mb-2 animate-pulse"></div>
-      <div className="h-5 bg-fill-list-hover w-full animate-pulse"></div>
+    <div className='mt-2 w-full max-w-[952px] px-24 max-sm:px-6'>
+      <div className='mb-4 h-10 w-full animate-pulse bg-fill-content-hover'></div>
+      <div className='mb-4 h-6 w-1/2 animate-pulse bg-fill-content-hover'></div>
+      <div className='mb-4 h-8 w-3/5 animate-pulse bg-fill-content-hover'></div>
+      <div className='mb-4 h-7 w-4/5 animate-pulse bg-fill-content-hover'></div>
+      <div className='mb-2 h-5 w-full animate-pulse bg-fill-content-hover'></div>
+      <div className='h-5 w-full animate-pulse bg-fill-content-hover'></div>
     </div>
   );
 }

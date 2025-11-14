@@ -58,7 +58,7 @@ const main = () => {
   const categories = processSvgFiles(iconsDirPath);
   const outputFilePath = path.join(iconsDirPath, 'icons.json');
   outputJson(categories, outputFilePath);
-  console.log(`JSON data has been written to ${outputFilePath}`);
+  console.debug(`JSON data has been written to ${outputFilePath}`);
 };
 
 main();

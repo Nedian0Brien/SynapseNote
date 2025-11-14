@@ -1,11 +1,12 @@
+import { IconButton } from '@mui/material';
+import { memo, useMemo, useState } from 'react';
+
 import { UIVariant, View } from '@/application/types';
+import { ReactComponent as RightIcon } from '@/assets/icons/alt_arrow_right.svg';
+import { ReactComponent as MoreIcon } from '@/assets/icons/more.svg';
 import BreadcrumbItem from '@/components/_shared/breadcrumb/BreadcrumbItem';
 import BreadcrumbMoreModal from '@/components/_shared/breadcrumb/BreadcrumbMoreModal';
 import { getPlatform } from '@/utils/platform';
-import { IconButton } from '@mui/material';
-import React, { memo, useMemo } from 'react';
-import { ReactComponent as RightIcon } from '@/assets/icons/alt_arrow_right.svg';
-import { ReactComponent as MoreIcon } from '@/assets/icons/more.svg';
 
 export interface BreadcrumbProps {
   crumbs: View[];
@@ -14,7 +15,7 @@ export interface BreadcrumbProps {
 }
 
 export function Breadcrumb({ crumbs, toView, variant }: BreadcrumbProps) {
-  const [openMore, setOpenMore] = React.useState(false);
+  const [openMore, setOpenMore] = useState(false);
   const renderCrumb = useMemo(() => {
     const tailCount = getPlatform().isMobile ? 1 : 2;
 
@@ -24,11 +25,13 @@ export function Breadcrumb({ crumbs, toView, variant }: BreadcrumbProps) {
 
       return (
         <>
-          <div className={'flex min-w-0 max-w-[160px] items-center gap-2 truncate text-text-title'}>
-            <BreadcrumbItem variant={variant} toView={toView} crumb={firstCrumb} disableClick={true} />
-            <RightIcon className={'h-5 w-5 shrink-0'} />
-          </div>
-          <div className={'flex min-w-0 max-w-[160px] shrink-0 items-center gap-2 truncate text-text-title'}>
+          {firstCrumb.extra?.is_hidden_space ? null : (
+            <div className={'flex min-w-0 max-w-[160px] items-center gap-2 truncate text-text-primary'}>
+              <BreadcrumbItem variant={variant} toView={toView} crumb={firstCrumb} disableClick={true} />
+              <RightIcon className={'h-5 w-5 shrink-0'} />
+            </div>
+          )}
+          <div className={'flex min-w-0 max-w-[160px] shrink-0 items-center gap-2 truncate text-text-primary'}>
             <IconButton
               onClick={() => {
                 setOpenMore(true);
@@ -43,7 +46,7 @@ export function Breadcrumb({ crumbs, toView, variant }: BreadcrumbProps) {
             const key = `${crumb.view_id}-${index}`;
 
             return (
-              <div className={'flex min-w-0 max-w-[160px] items-center gap-2 truncate text-text-title'} key={key}>
+              <div className={'flex min-w-0 max-w-[160px] items-center gap-2 truncate text-text-primary'} key={key}>
                 <BreadcrumbItem
                   variant={variant}
                   toView={toView}
@@ -62,14 +65,17 @@ export function Breadcrumb({ crumbs, toView, variant }: BreadcrumbProps) {
       const isLast = index === crumbs.length - 1;
       const key = `${crumb.view_id}-${index}`;
 
+      if (crumb.extra?.is_hidden_space) {
+        return null;
+      }
+
       return (
         <div
-          className={`${
-            isLast ? 'text-text-title' : 'text-text-caption'
-          } flex min-w-0 max-w-[160px] items-center gap-2 truncate`}
+          className={`${isLast ? 'text-text-primary' : 'text-text-secondary'
+            } flex min-w-0 max-w-[160px] items-center gap-2 truncate`}
           key={key}
         >
-          <BreadcrumbItem variant={variant} toView={toView} crumb={crumb} disableClick={isLast} />
+          <BreadcrumbItem toView={toView} crumb={crumb} disableClick={isLast} variant={variant} />
           {!isLast && <RightIcon className={'h-5 w-5 shrink-0'} />}
         </div>
       );
@@ -77,9 +83,18 @@ export function Breadcrumb({ crumbs, toView, variant }: BreadcrumbProps) {
   }, [crumbs, toView, variant]);
 
   return (
-    <div className={'relative flex h-full w-full flex-1 items-center gap-2 overflow-hidden'}>
+    <div
+      data-testid='breadcrumb-navigation'
+      className={'relative flex h-full w-full flex-1 items-center gap-2 overflow-hidden'}
+    >
       {renderCrumb}
-      <BreadcrumbMoreModal open={openMore} onClose={() => setOpenMore(false)} crumbs={crumbs} toView={toView} />
+      <BreadcrumbMoreModal
+        open={openMore}
+        onClose={() => setOpenMore(false)}
+        crumbs={crumbs}
+        toView={toView}
+        variant={variant}
+      />
     </div>
   );
 }

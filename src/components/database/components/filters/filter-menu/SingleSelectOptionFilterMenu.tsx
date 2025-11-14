@@ -1,46 +1,48 @@
 import { SelectOptionFilter, SelectOptionFilterCondition } from '@/application/database-yjs';
-import { SelectOptionList } from '@/components/database/components/field/select-option';
+import { useUpdateFilter } from '@/application/database-yjs/dispatch';
 import FieldMenuTitle from '@/components/database/components/filters/filter-menu/FieldMenuTitle';
-import React, { useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
+import { SelectOptionList } from '@/components/database/components/filters/filter-menu/SelectOptionList';
+import SingleSelectFilterConditionsSelect from '@/components/database/components/filters/filter-menu/SingleSelectOptionFilterConditionsSelect';
+import { useCallback, useMemo } from 'react';
 
 function SingleSelectOptionFilterMenu({ filter }: { filter: SelectOptionFilter }) {
-  const { t } = useTranslation();
-  const conditions = useMemo(() => {
-    return [
-      {
-        value: SelectOptionFilterCondition.OptionIs,
-        text: t('grid.selectOptionFilter.is'),
-      },
-      {
-        value: SelectOptionFilterCondition.OptionIsNot,
-        text: t('grid.selectOptionFilter.isNot'),
-      },
-      {
-        value: SelectOptionFilterCondition.OptionIsEmpty,
-        text: t('grid.selectOptionFilter.isEmpty'),
-      },
-      {
-        value: SelectOptionFilterCondition.OptionIsNotEmpty,
-        text: t('grid.selectOptionFilter.isNotEmpty'),
-      },
-    ];
-  }, [t]);
-
-  const selectedCondition = useMemo(() => {
-    return conditions.find((c) => c.value === filter.condition);
-  }, [filter.condition, conditions]);
-
   const displaySelectOptionList = useMemo(() => {
     return ![SelectOptionFilterCondition.OptionIsEmpty, SelectOptionFilterCondition.OptionIsNotEmpty].includes(
       filter.condition
     );
   }, [filter.condition]);
 
+  const updateFilter = useUpdateFilter();
+  const handleToggleSelectOption = useCallback(
+    (id: string) => {
+      const selectedIds = filter.optionIds;
+      const newSelectedIds = selectedIds.slice();
+      const index = newSelectedIds.indexOf(id);
+
+      if (index > -1) {
+        newSelectedIds.splice(index, 1);
+      } else {
+        newSelectedIds.push(id);
+      }
+
+      updateFilter({
+        filterId: filter.id,
+        content: newSelectedIds.filter((id) => id !== '').join(','),
+      });
+    },
+    [filter, updateFilter]
+  );
+
   return (
-    <div className={'flex flex-col gap-2 p-2'}>
-      <FieldMenuTitle fieldId={filter.fieldId} selectedConditionText={selectedCondition?.text ?? ''} />
-      {displaySelectOptionList && <SelectOptionList fieldId={filter.fieldId} selectedIds={filter.optionIds} />}
+    <div className={'flex flex-col'}>
+      <FieldMenuTitle
+        fieldId={filter.fieldId}
+        filterId={filter.id}
+        renderConditionSelect={<SingleSelectFilterConditionsSelect filter={filter} />}
+      />
+      {displaySelectOptionList && (
+        <SelectOptionList fieldId={filter.fieldId} selectedIds={filter.optionIds} onSelect={handleToggleSelectOption} />
+      )}
     </div>
   );
 }

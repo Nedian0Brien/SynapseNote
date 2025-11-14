@@ -1,10 +1,10 @@
-import { AFConfigContext } from '@/components/main/app.hooks';
 import CommentActions from '@/components/global-comment/actions/CommentActions';
-import Comment from './Comment';
 import { useGlobalCommentContext } from '@/components/global-comment/GlobalComment.hooks';
 import ReplyComment from '@/components/global-comment/ReplyComment';
+import { AFConfigContext } from '@/components/main/app.hooks';
 import React, { useCallback, useContext, useEffect, useMemo } from 'react';
 import smoothScrollIntoViewIfNeeded from 'smooth-scroll-into-view-if-needed';
+import Comment from './Comment';
 
 export interface CommentWrapProps {
   commentId: string;
@@ -13,7 +13,7 @@ export interface CommentWrapProps {
   isHighLight: boolean;
 }
 
-export function CommentWrap ({ commentId, isHighLight, isHovered, onHovered }: CommentWrapProps) {
+export function CommentWrap({ commentId, isHighLight, isHovered, onHovered }: CommentWrapProps) {
   const { getComment, setHighLightCommentId } = useGlobalCommentContext();
   const comment = useMemo(() => getComment(commentId), [commentId, getComment]);
   const ref = React.useRef<HTMLDivElement>(null);
@@ -62,7 +62,7 @@ export function CommentWrap ({ commentId, isHighLight, isHovered, onHovered }: C
     <div ref={ref} className={'flex flex-col gap-1'} data-comment-id={comment.commentId}>
       {comment.replyCommentId && renderReplyComment(comment.replyCommentId)}
       <div
-        className={`relative rounded-[8px] p-2 py-2.5 hover:bg-fill-list-hover ${isHighLight ? 'blink' : ''}`}
+        className={`relative rounded-[8px] p-2 py-2.5 hover:bg-fill-content-hover ${isHighLight ? 'blink' : ''}`}
         {...(comment.isDeleted ? { style: { opacity: 0.5, backgroundColor: 'var(--bg-body)' } } : {})}
         onMouseEnter={() => {
           onHovered();

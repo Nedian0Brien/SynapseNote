@@ -1,39 +1,46 @@
 import { View, ViewLayout } from '@/application/types';
-import { notify } from '@/components/_shared/notify';
-import { filterOutByCondition } from '@/components/_shared/outline/utils';
-import { Popover } from '@/components/_shared/popover';
+import { ReactComponent as SelectedIcon } from '@/assets/icons/tick.svg';
 import { useAppHandlers, useAppOutline } from '@/components/app/app.hooks';
 import SpaceItem from '@/components/app/outline/SpaceItem';
-import { Button, Divider, OutlinedInput } from '@mui/material';
-import { PopoverProps } from '@mui/material/Popover';
-import React, { useMemo } from 'react';
-import { ReactComponent as SearchIcon } from '@/assets/icons/search.svg';
-import { useTranslation } from 'react-i18next';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Separator } from '@/components/ui/separator';
 import OutlineIcon from '@/components/_shared/outline/OutlineIcon';
-import { ReactComponent as SelectedIcon } from '@/assets/icons/tick.svg';
+import { filterOutByCondition } from '@/components/_shared/outline/utils';
+import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
+
+import { Button } from '@/components/ui/button';
+import { SearchInput } from '@/components/ui/search-input';
 
 function MovePagePopover({
   viewId,
   onMoved,
-  onClose,
+  children,
+  popoverContentProps,
   ...props
-}: PopoverProps & {
+}: React.ComponentProps<typeof Popover> & {
   viewId: string;
   onMoved?: () => void;
+  children: React.ReactNode;
+  popoverContentProps?: React.ComponentProps<typeof PopoverContent>;
 }) {
   const outline = useAppOutline();
+
   const [search, setSearch] = React.useState<string>('');
-  const {
-    movePage,
-  } = useAppHandlers();
+  const { movePage } = useAppHandlers();
 
   const views = useMemo(() => {
     if (!outline) return [];
     return filterOutByCondition(outline, (view) => ({
-      remove: view.view_id === viewId || view.layout !== ViewLayout.Document || Boolean(search && !view.name.toLowerCase().includes(search.toLowerCase())),
+      remove:
+        view.view_id === viewId ||
+        view.layout !== ViewLayout.Document ||
+        Boolean(search && !view.name.toLowerCase().includes(search.toLowerCase())),
     }));
   }, [outline, search, viewId]);
   const { t } = useTranslation();
+
   const [expandViewIds, setExpandViewIds] = React.useState<string[]>([]);
   const toggleExpandView = React.useCallback((id: string, isExpanded: boolean) => {
     setExpandViewIds((prev) => {
@@ -47,75 +54,81 @@ function MovePagePopover({
     if (selectedViewId) {
       try {
         await movePage?.(viewId, selectedViewId);
-        onClose?.({}, 'backdropClick');
         onMoved?.();
+        setSelectedViewId(null);
         // eslint-disable-next-line
       } catch (e: any) {
-        notify.error(e.message);
+        toast.error(e.message);
       }
     }
-  }, [movePage, onMoved, onClose, selectedViewId, viewId]);
+  }, [movePage, onMoved, selectedViewId, viewId]);
 
-  const renderExtra = React.useCallback(({ view }: { view: View }) => {
-    if (view.view_id !== selectedViewId) return null;
-    return <SelectedIcon className={'text-fill-default mx-2'}/>;
-  }, [selectedViewId]);
+  const renderExtra = React.useCallback(
+    ({ view }: { view: View }) => {
+      if (view.view_id !== selectedViewId) return null;
+      return <SelectedIcon className={'mx-2 text-text-action'} />;
+    },
+    [selectedViewId]
+  );
 
   return (
-    <Popover {...props} onClose={onClose}>
-      <div className={'flex folder-views w-[320px] flex-1 flex-col gap-1 py-[10px] px-[10px]'}>
-        <OutlinedInput
-          startAdornment={<SearchIcon className={'h-5 w-5'}/>}
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-          }}
-          autoFocus={true}
-          fullWidth={true}
-          size={'small'}
-          autoCorrect={'off'}
-          autoComplete={'off'}
-          spellCheck={false}
-          inputProps={{
-            className: 'px-2 py-1.5 text-sm',
-          }}
-          className={'search-emoji-input'}
-          placeholder={t('disclosureAction.movePageTo')}
-        />
-        <div className={'flex-1 max-h-[400px] overflow-x-hidden overflow-y-auto appflowy-custom-scroller'}>
-          {views.map((view) => {
-            const isExpanded = expandViewIds.includes(view.view_id);
+    <Popover modal {...props}>
+      <PopoverTrigger asChild>{children}</PopoverTrigger>
+      <PopoverContent
+        onCloseAutoFocus={(e) => {
+          e.preventDefault();
+        }}
+        {...popoverContentProps}
+      >
+        <div className={'folder-views flex w-full flex-1 flex-col gap-2 p-2'}>
+          <SearchInput
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+            }}
+            autoFocus={true}
+            placeholder={t('disclosureAction.movePageTo')}
+          />
+          <div className={'appflowy-custom-scroller max-h-[400px] flex-1 overflow-y-auto overflow-x-hidden'}>
+            {views.map((view) => {
+              const isExpanded = expandViewIds.includes(view.view_id);
 
-            return <div key={view.view_id} className={'flex items-start gap-1'}>
-              <div className={'h-[34px] flex items-center'}>
-                <OutlineIcon isExpanded={isExpanded} setIsExpanded={(status) => {
-                  toggleExpandView(view.view_id, status);
-                }} level={0}/>
-              </div>
+              return (
+                <div key={view.view_id} className={'flex items-start gap-1'}>
+                  <div className={'flex h-[30px] items-center'}>
+                    <OutlineIcon
+                      isExpanded={isExpanded}
+                      setIsExpanded={(status) => {
+                        toggleExpandView(view.view_id, status);
+                      }}
+                      level={0}
+                    />
+                  </div>
 
-              <SpaceItem
-                view={view}
-                key={view.view_id}
-                width={268}
-                expandIds={expandViewIds}
-                toggleExpand={toggleExpandView}
-                onClickView={viewId => {
-                  toggleExpandView(viewId, !expandViewIds.includes(viewId));
-                  setSelectedViewId(viewId);
-                }}
-                onClickSpace={setSelectedViewId}
-                renderExtra={renderExtra}
-              /></div>;
-          })}
+                  <SpaceItem
+                    view={view}
+                    key={view.view_id}
+                    width={268}
+                    expandIds={expandViewIds}
+                    toggleExpand={toggleExpandView}
+                    onClickView={(viewId) => {
+                      toggleExpandView(viewId, !expandViewIds.includes(viewId));
+                      setSelectedViewId(viewId);
+                    }}
+                    onClickSpace={setSelectedViewId}
+                    renderExtra={renderExtra}
+                  />
+                </div>
+              );
+            })}
+          </div>
+
+          <Separator className={'mb-1'} />
+          <div className={'flex items-center justify-end'}>
+            <Button onClick={handleMoveTo}>{t('disclosureAction.move')}</Button>
+          </div>
         </div>
-
-        <Divider className={'mb-1'}/>
-        <div className={'flex items-center justify-end'}>
-          <Button onClick={handleMoveTo} size={'small'} color={'primary'} variant={'contained'}>
-            {t('disclosureAction.move')}
-          </Button>
-        </div>
-      </div>
+      </PopoverContent>
     </Popover>
   );
 }

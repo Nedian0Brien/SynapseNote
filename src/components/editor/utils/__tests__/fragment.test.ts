@@ -1,7 +1,7 @@
-import { deserializeHTML } from '../fragment';
-import { BlockType, ImageType, AlignType } from '@/application/types';
+import { AlignType, BlockType, ImageType } from '@/application/types';
 import { expect } from '@jest/globals';
 import { Element, Node } from 'slate';
+import { deserializeHTML } from '../fragment';
 
 jest.mock('nanoid');
 describe('deserializeHTML', () => {
@@ -24,51 +24,65 @@ describe('deserializeHTML', () => {
 
     // Check paragraph
     let blockId = (result[0] as Element).blockId as string;
-    expect(result[0]).toEqual(expect.objectContaining({
-      blockId,
-      type: BlockType.Paragraph,
-      data: {},
-      children: [{ type: 'text', children: [{ text: 'Hello, world!' }], textId: blockId }],
-    }));
+    expect(result[0]).toEqual(
+      expect.objectContaining({
+        blockId,
+        type: BlockType.Paragraph,
+        data: {},
+        children: [{ type: 'text', children: [{ text: 'Hello, world!' }], textId: blockId }],
+      })
+    );
 
     // Check headings
     for (let i = 1; i <= 3; i++) {
       const blockId = (result[i] as Element).blockId as string;
-      expect(result[i]).toEqual(expect.objectContaining({
-        type: BlockType.HeadingBlock,
-        children: [{
-          type: 'text',
-          textId: blockId,
-          children: [{ text: `Title ${i}` }],
-        }],
-        data: { level: i },
-        blockId,
-      }));
+      expect(result[i]).toEqual(
+        expect.objectContaining({
+          type: BlockType.HeadingBlock,
+          children: [
+            {
+              type: 'text',
+              textId: blockId,
+              children: [{ text: `Title ${i}` }],
+            },
+          ],
+          data: { level: i },
+          blockId,
+        })
+      );
     }
 
     // Check image
     blockId = (result[4] as Element).blockId as string;
-    expect(result[4]).toEqual(expect.objectContaining({
-      blockId,
-      type: BlockType.ImageBlock,
-      children: [{
-        text: '',
-      }],
-      data: { url: 'https://example.com/image.jpg', image_type: ImageType.External },
-    }));
+    expect(result[4]).toEqual(
+      expect.objectContaining({
+        blockId,
+        type: BlockType.ImageBlock,
+        children: [
+          {
+            text: '',
+          },
+        ],
+        data: { url: 'https://example.com/image.jpg', image_type: ImageType.External },
+      })
+    );
 
     // Check todo list
     blockId = (result[5] as Element).blockId as string;
-    expect(result[5]).toEqual(expect.objectContaining({
-      type: BlockType.TodoListBlock,
-      blockId,
-      children: [{
-        type: 'text',
-        textId: blockId,
-        children: [{ text: 'Task' }],
-      }],
-      data: { checked: true },
-    }));
+    expect(result[5]).toEqual(
+      expect.objectContaining({
+        type: BlockType.TodoListBlock,
+        blockId,
+        children: [
+          {
+            type: 'text',
+            textId: blockId,
+            children: [{ text: 'Task' }],
+          },
+        ],
+        data: { checked: true },
+      })
+    );
   });
 
   // Test list elements
@@ -90,34 +104,40 @@ describe('deserializeHTML', () => {
 
     // Check unordered list
     let blockId = (result[0] as Element).blockId as string;
-    expect(result[0]).toEqual(expect.objectContaining({
-      blockId,
-      type: BlockType.BulletedListBlock,
-      children: [
-        { type: 'text', textId: blockId, children: [{ text: 'Bullet 1' }] },
-      ],
-    }));
+    expect(result[0]).toEqual(
+      expect.objectContaining({
+        blockId,
+        type: BlockType.BulletedListBlock,
+        children: [{ type: 'text', textId: blockId, children: [{ text: 'Bullet 1' }] }],
+      })
+    );
     blockId = (result[1] as Element).blockId as string;
-    expect(result[1]).toEqual(expect.objectContaining({
-      blockId,
-      type: BlockType.BulletedListBlock,
-      children: [{ type: 'text', textId: blockId, children: [{ text: 'Bullet 2' }] }],
-    }));
+    expect(result[1]).toEqual(
+      expect.objectContaining({
+        blockId,
+        type: BlockType.BulletedListBlock,
+        children: [{ type: 'text', textId: blockId, children: [{ text: 'Bullet 2' }] }],
+      })
+    );
 
     // Check ordered list
     blockId = (result[2] as Element).blockId as string;
-    expect(result[2]).toEqual(expect.objectContaining({
-      blockId,
-      type: BlockType.NumberedListBlock,
-      children: [{ type: 'text', textId: blockId, children: [{ text: 'Number 1' }] }],
-    }));
+    expect(result[2]).toEqual(
+      expect.objectContaining({
+        blockId,
+        type: BlockType.NumberedListBlock,
+        children: [{ type: 'text', textId: blockId, children: [{ text: 'Number 1' }] }],
+      })
+    );
 
     blockId = (result[3] as Element).blockId as string;
-    expect(result[3]).toEqual(expect.objectContaining({
-      type: BlockType.NumberedListBlock,
-      children: [{ type: 'text', textId: blockId, children: [{ text: 'Number 2' }] }],
-      blockId,
-    }));
+    expect(result[3]).toEqual(
+      expect.objectContaining({
+        type: BlockType.NumberedListBlock,
+        children: [{ type: 'text', textId: blockId, children: [{ text: 'Number 2' }] }],
+        blockId,
+      })
+    );
   });
 
   // Test blockquote and code block
@@ -133,19 +153,23 @@ describe('deserializeHTML', () => {
 
     // Check blockquote
     let blockId = (result[0] as Element).blockId as string;
-    expect(result[0]).toEqual(expect.objectContaining({
-      type: BlockType.QuoteBlock,
-      children: [{ type: 'text', textId: blockId, children: [{ text: 'This is a quote' }] }],
-      blockId,
-    }));
+    expect(result[0]).toEqual(
+      expect.objectContaining({
+        type: BlockType.QuoteBlock,
+        children: [{ type: 'text', textId: blockId, children: [{ text: 'This is a quote' }] }],
+        blockId,
+      })
+    );
 
     // Check code block
     blockId = (result[1] as Element).blockId as string;
-    expect(result[1]).toEqual(expect.objectContaining({
-      type: BlockType.CodeBlock,
-      children: [{ type: 'text', textId: blockId, children: [{ text: 'const x = 5;' }] }],
-      blockId,
-    }));
+    expect(result[1]).toEqual(
+      expect.objectContaining({
+        type: BlockType.CodeBlock,
+        children: [{ type: 'text', textId: blockId, children: [{ text: 'const x = 5;' }] }],
+        blockId,
+      })
+    );
   });
 
   // Test inline styles
@@ -176,17 +200,19 @@ describe('deserializeHTML', () => {
 
     expect(result.length).toBe(1);
     let blockId = (result[0] as Element).blockId as string;
-    expect(result[0]).toEqual(expect.objectContaining({
-      blockId,
-      type: BlockType.Paragraph,
-      children: [{ type: 'text', textId: blockId, children: [{ text: 'Centered text with background and color' }] }],
+    expect(result[0]).toEqual(
+      expect.objectContaining({
+        blockId,
+        type: BlockType.Paragraph,
+        children: [{ type: 'text', textId: blockId, children: [{ text: 'Centered text with background and color' }] }],
 
-      data: {
-        align: AlignType.Center,
-        bgColor: '#f0f0f0',
-        font_color: '#333',
-      },
-    }));
+        data: {
+          align: AlignType.Center,
+          bgColor: '#f0f0f0',
+          font_color: '#333',
+        },
+      })
+    );
   });
 
   // Test empty HTML
@@ -213,7 +239,7 @@ describe('deserializeHTML', () => {
 
     expect(result.length).toBe(1);
     const block = result[0] as Element;
-    console.log('===', result);
+    console.debug('===', result);
     expect(block.type).toEqual(BlockType.BulletedListBlock);
     const blockChildren = block.children;
     expect(blockChildren.length).toEqual(3);
@@ -221,11 +247,13 @@ describe('deserializeHTML', () => {
       blockId: (blockChildren[1] as Element).blockId,
       type: BlockType.HeadingBlock,
       relationId: (blockChildren[1] as Element).blockId,
-      children: [{
-        type: 'text',
-        textId: (blockChildren[1] as Element).blockId,
-        children: [{ text: 'Nested Heading' }],
-      }],
+      children: [
+        {
+          type: 'text',
+          textId: (blockChildren[1] as Element).blockId,
+          children: [{ text: 'Nested Heading' }],
+        },
+      ],
       data: { level: 3 },
     });
     expect(blockChildren[2]).toEqual({
@@ -233,12 +261,13 @@ describe('deserializeHTML', () => {
       type: BlockType.Paragraph,
       relationId: (blockChildren[2] as Element).blockId,
       data: {},
-      children: [{
-        type: 'text',
-        textId: (blockChildren[2] as Element).blockId,
-        children: [{ text: 'Nested paragraph' }],
-      }],
+      children: [
+        {
+          type: 'text',
+          textId: (blockChildren[2] as Element).blockId,
+          children: [{ text: 'Nested paragraph' }],
+        },
+      ],
     });
-
   });
 });

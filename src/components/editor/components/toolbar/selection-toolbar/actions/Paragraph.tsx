@@ -13,7 +13,11 @@ export function Paragraph() {
   const editor = useSlateStatic() as YjsEditor;
 
   const onClick = useCallback(() => {
-    const [node] = getBlockEntry(editor);
+    const entry = getBlockEntry(editor);
+
+    if (!entry) return;
+
+    const [node] = entry;
 
     if (!node) return;
 

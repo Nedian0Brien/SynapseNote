@@ -1,89 +1,128 @@
+import React, { Suspense, useCallback, useMemo } from 'react';
+
+import { useDatabaseContext } from '@/application/database-yjs';
 import {
   CellProps,
   FileMediaCell as FileMediaCellType,
   FileMediaCellDataItem,
   FileMediaType,
 } from '@/application/database-yjs/cell.type';
-import { GalleryPreview } from '@/components/_shared/gallery-preview';
+import FileMediaCellMenu from '@/components/database/components/cell/file-media/FileMediaCellMenu';
 import PreviewImage from '@/components/database/components/cell/file-media/PreviewImage';
 import UnPreviewFile from '@/components/database/components/cell/file-media/UnPreviewFile';
+import { GalleryPreview } from '@/components/_shared/gallery-preview';
+import { cn } from '@/lib/utils';
 
-import React, { useCallback, useMemo, Suspense } from 'react';
-
-export function FileMediaCell ({ cell, style, placeholder }: CellProps<FileMediaCellType>) {
+export function FileMediaCell({
+  cell,
+  style,
+  placeholder,
+  editing,
+  setEditing,
+  wrap,
+  fieldId,
+  rowId,
+  readOnly,
+}: CellProps<FileMediaCellType>) {
   const value = cell?.data;
-  const className = useMemo(() => {
-    const classList = ['flex items-center gap-1.5 flex-wrap', 'cursor-text'];
-
-    return classList.join(' ');
-  }, []);
+  const { workspaceId, viewId } = useDatabaseContext();
   const [openPreview, setOpenPreview] = React.useState(false);
   const previewIndexRef = React.useRef(0);
   const photos = useMemo(() => {
-    return value?.filter(item => {
-      return item.file_type === FileMediaType.Image;
-    }).map(image => {
-      return {
-        src: image.url,
-      };
-    }) || [];
+    return (
+      value
+        ?.filter((item) => {
+          return item.file_type === FileMediaType.Image && item.url;
+        })
+        .map((image) => {
+          return {
+            src: image.url,
+          };
+        }) || []
+    );
   }, [value]);
 
-  const renderItem = useCallback((file: FileMediaCellDataItem, index: number) => {
+  const images = useMemo(() => {
+    return value?.filter((item) => item.file_type === FileMediaType.Image && item.url) || [];
+  }, [value]);
 
-    switch (file.file_type) {
-      case FileMediaType.Image:
-        return <PreviewImage
-          key={file.id}
-          file={file} onClick={() => {
-          previewIndexRef.current = index;
-          setOpenPreview(true);
-        }}
-        />;
-      default:
-        return <UnPreviewFile key={file.id} file={file} />;
-    }
+  const handlePreview = useCallback((index: number) => {
+    previewIndexRef.current = index;
+    setOpenPreview(true);
   }, []);
+
+  const renderItem = useCallback(
+    (file: FileMediaCellDataItem) => {
+      switch (file.file_type) {
+        case FileMediaType.Image:
+          return (
+            <PreviewImage
+              key={file.id}
+              file={file}
+              onClick={() => {
+                const index = images.findIndex((item) => item.id === file.id);
+
+                if (index === -1) {
+                  return;
+                }
+
+                handlePreview(index);
+              }}
+            />
+          );
+        default:
+          return <UnPreviewFile key={file.id} file={file} />;
+      }
+    },
+    [handlePreview, images]
+  );
 
   const renderChildren = useMemo(() => {
     const length = value?.length || 0;
 
-    if (length > 6) {
-      return <>
-        {value?.slice(0, 5).map(renderItem)}
-        <div
-          onClick={() => {
-            previewIndexRef.current = 0;
-            setOpenPreview(true);
-          }}
-          className={'flex items-center hover:scale-110 cursor-pointer justify-center w-fit aspect-square rounded-[8px] h-14 bg-gray-100 text-gray-500 text-sm'}
-        >
-          +{length - 5}
-        </div>
-      </>;
+    if (length === 0) {
+      return placeholder || null;
     }
 
     return value?.map(renderItem);
-  }, [renderItem, value]);
-
-  if (!value || value?.length === 0)
-    return placeholder ? (
-      <div style={style} className={'text-text-placeholder'}>
-        {placeholder}
-      </div>
-    ) : null;
+  }, [placeholder, renderItem, value]);
 
   return (
-    <div style={style} className={className}>
+    <div
+      style={style}
+      className={cn(
+        'flex items-center gap-1.5',
+        readOnly ? 'cursor-text' : 'cursor-pointer',
+        !value || (value?.length === 0 && 'text-text-tertiary'),
+        wrap ? 'flex-wrap' : 'appflowy-hidden-scroller w-full flex-nowrap overflow-x-auto overflow-y-hidden'
+      )}
+    >
       {renderChildren}
-      {openPreview && <Suspense><GalleryPreview
-        images={photos}
-        previewIndex={previewIndexRef.current}
-        open={openPreview}
-        onClose={() => {
-          setOpenPreview(false);
-        }}
-      /></Suspense>}
+      {editing && (
+        <FileMediaCellMenu
+          open={editing}
+          onOpenChange={setEditing}
+          fieldId={fieldId}
+          cell={cell}
+          rowId={rowId}
+          onPreview={handlePreview}
+          showUpload={!value || value.length === 0}
+        />
+      )}
+      {openPreview && (
+        <Suspense>
+          <GalleryPreview
+            workspaceId={workspaceId}
+            viewId={viewId}
+            images={photos}
+            previewIndex={previewIndexRef.current}
+            open={openPreview}
+            onClose={() => {
+              setOpenPreview(false);
+            }}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

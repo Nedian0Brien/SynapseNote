@@ -1,5 +1,11 @@
 @use "src/styles/mixin.scss";
 
+:root {
+  --font-size-base: 16px;
+  --rem-base: 16;
+  font-size: var(--font-size-base);
+}
+
 * {
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
@@ -12,7 +18,7 @@
 }
 
 .sketch-picker .flexbox-fix {
-  border-color: var(--line-divider) !important;
+  border-color: var(--border-primary) !important;
 }
 
 .custom-caret {
@@ -21,8 +27,8 @@
 
 .sketch-picker [id^='rc-editable-input'] {
   background-color: var(--bg-body) !important;
-  border-color: var(--line-divider) !important;
-  color: var(--text-title) !important;
+  border-color: var(--border-primary) !important;
+  color: var(--text-primary) !important;
   box-shadow: var(--line-border) 0px 0px 0px 1px inset !important;
 }
 
@@ -32,7 +38,7 @@ body {
     @apply bg-bg-selection;
   }
 
-  @apply bg-bg-body text-text-title;
+  @apply bg-background-primary text-text-primary;
 
   &[data-os="windows"]:not([data-browser="firefox"]) {
     .appflowy-custom-scroller {
@@ -57,19 +63,33 @@ body {
 
 .appflowy-scroller {
   @include mixin.scrollbar-style;
+}
 
+.appflowy-hidden-scroller {
+  ::-webkit-scrollbar, &::-webkit-scrollbar {
+    width: 0px;
+    height: 0px;
+    background-color: transparent;
+  }
+
+  &:hover {
+
+    &::-webkit-scrollbar-thumb, & *::-webkit-scrollbar-thumb {
+      border-radius: 0px;
+      background-color: transparent;
+    }
+  }
 }
 
 
 .appflowy-scrollbar-thumb-horizontal, .appflowy-scrollbar-thumb-vertical {
-  background-color: var(--scrollbar-thumb);
+  background-color: var(--fill-content-hover);
   border-radius: 4px;
-  opacity: 60%;
+  opacity: 100%;
 }
 
 .appflowy-scrollbar-track-horizontal, .appflowy-scrollbar-track-vertical {
-  background-color: var(--scrollbar-track);
-
+  background-color: var(--fill-content-hover);
 }
 
 .icon {
@@ -119,23 +139,6 @@ body {
   }
 }
 
-.grid-row-cell.wrap-cell {
-  .primary-cell {
-    @apply py-2;
-  }
-
-  .text-cell {
-    @apply break-words whitespace-pre-wrap overflow-hidden;
-  }
-
-  .relation-cell {
-    @apply py-2 break-words whitespace-pre-wrap flex-wrap;
-  }
-
-  .select-option-cell {
-    @apply flex-wrap py-2;
-  }
-}
 
 @keyframes blink {
   0%, 100% {
@@ -145,6 +148,7 @@ body {
     background-color: unset;
   }
 }
+
 
 .blink {
   animation: blink 2s linear infinite;
@@ -173,9 +177,78 @@ body {
 }
 
 .board-card {
+  @apply border-border-primary border-[1px];
   border-radius: 6px;
-  border: 1px solid var(--line-card);
-  background: var(--bg-body);
+  background: var(--background-primary);
+}
 
-  box-shadow: 0px 2px 8px 2px rgba(31, 35, 41, 0.02), 0px 2px 4px 0px rgba(31, 35, 41, 0.02), 0px 1px 2px -2px rgba(31, 35, 41, 0.02);
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Safari and Chrome */
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+
+@mixin scrollbar-style {
+  ::-webkit-scrollbar, &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  &:hover {
+
+    &::-webkit-scrollbar-thumb, & *::-webkit-scrollbar-thumb {
+      border-radius: 4px;
+      background-color: var(--scrollbar-thumb);
+    }
+  }
+}
+
+@mixin hidden-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.appflowy-scrollbar {
+  @include scrollbar-style;
+}
+
+.appflowy-hidden-scrollbar {
+  @include hidden-scrollbar;
+}
+
+
+#appflowy-chat, #ai-assistant {
+  #appflowy-editor > div {
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+
+  #appflowy-editor {
+    [data-block-type="bulleted_list"] .h-6 {
+      height: 1.25rem;
+    }
+  }
+}
+
+
+@keyframes dots-loading {
+  20% {
+    background-position: 0% 0%, 50% 50%, 100% 50%;
+  }
+  40% {
+    background-position: 0% 100%, 50% 0%, 100% 50%;
+  }
+  60% {
+    background-position: 0% 50%, 50% 100%, 100% 0%;
+  }
+  80% {
+    background-position: 0% 50%, 50% 50%, 100% 100%;
+  }
 }

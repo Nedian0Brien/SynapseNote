@@ -1,125 +1,128 @@
-import {
-  RowMeta,
-  useDatabaseContext,
-  useFieldsSelector,
-  useRowMetaSelector,
-} from '@/application/database-yjs';
-import CardField from '@/components/database/components/field/CardField';
-import React, { memo, useCallback, useEffect, useMemo } from 'react';
-import { RowCoverType } from '@/application/types';
-import { renderColor } from '@/utils/color';
-import ImageRender from '@/components/_shared/image-render/ImageRender';
+import { attachClosestEdge, extractClosestEdge, type Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
+import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/external/adapter';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 
-export interface CardProps {
-  groupFieldId: string;
-  rowId: string;
-  onResize?: (height: number) => void;
-  isDragging?: boolean;
-}
+import { useReadOnly } from '@/application/database-yjs';
+import { useBoardContext } from '@/components/database/board/BoardProvider';
+import { CardPrimitive } from '@/components/database/components/board/card/CardPrimitive';
+import NewCard from '@/components/database/components/board/card/NewCard';
+import { CardType } from '@/components/database/components/board/column/CardList';
+import { useBoardDragContext } from '@/components/database/components/board/drag-and-drop/board-context';
+import { DropCardIndicator } from '@/components/database/components/board/drag-and-drop/DropCardIndicator';
+import { cn } from '@/lib/utils';
 
-export const Card = memo(({ groupFieldId, rowId, onResize, isDragging }: CardProps) => {
-  const fields = useFieldsSelector();
-  const meta = useRowMetaSelector(rowId);
-  const cover = meta?.cover;
-  const showFields = useMemo(() => fields.filter((field) => field.fieldId !== groupFieldId), [fields, groupFieldId]);
+type State = { type: 'idle' } | { type: 'preview' } | { type: 'dragging' };
 
-  const ref = React.useRef<HTMLDivElement | null>(null);
+const idleState: State = { type: 'idle' };
+const draggingState: State = { type: 'dragging' };
 
-  useEffect(() => {
-    if (isDragging) return;
-    const el = ref.current;
+export const Card = memo(
+  (props: {
+    type: CardType;
+    groupFieldId: string;
+    rowId: string;
+    beforeId?: string;
+    columnId: string;
+    isCreating: boolean;
+    setIsCreating: (isCreating: boolean) => void;
+  }) => {
+    const { groupFieldId, rowId, type, columnId } = props;
+    const ref = useRef<HTMLDivElement | null>(null);
+    const { instanceId, registerCard } = useBoardDragContext();
+    const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
+    const [state, setState] = useState<State>(idleState);
+    const readOnly = useReadOnly();
+    const { editingCardId } = useBoardContext();
 
-    if (!el) return;
+    const editing = useMemo(() => {
+      return editingCardId === `${columnId}/${rowId}`;
+    }, [columnId, editingCardId, rowId]);
 
-    const observer = new ResizeObserver(() => {
-      onResize?.(el.offsetHeight);
-    });
+    useEffect(() => {
+      if (!ref.current || readOnly) return;
 
-    observer.observe(el);
+      return registerCard({
+        cardId: rowId || 'new_card',
+        entry: {
+          element: ref.current,
+        },
+      });
+    }, [registerCard, rowId, readOnly]);
 
-    return () => {
-      observer.disconnect();
-    };
-  }, [onResize, isDragging]);
+    useEffect(() => {
+      const element = ref.current;
 
-  const navigateToRow = useDatabaseContext().navigateToRow;
-  const className = useMemo(() => {
-    const classList = ['relative board-card flex flex-col gap-2 overflow-hidden rounded-[6px] border border-line-card text-xs'];
+      if (!element || readOnly) return;
+      return combine(
+        draggable({
+          element: element,
+          getInitialData: () => ({ type: 'card', itemId: rowId, instanceId }),
+          onGenerateDragPreview: () => {
+            setState({ type: 'preview' });
+          },
+          canDrag: () => {
+            return !editing && !readOnly && rowId !== 'new_card';
+          },
+          onDragStart: () => setState(draggingState),
+          onDrop: () => {
+            setState(idleState);
+          },
+        }),
+        dropTargetForExternal({
+          element: element,
+        }),
+        dropTargetForElements({
+          element: element,
+          canDrop: ({ source }) => {
+            return source.data.instanceId === instanceId && source.data.type === 'card';
+          },
+          getIsSticky: () => true,
+          getData: ({ input, element }) => {
+            const data = { type: 'card', itemId: rowId };
 
-    if (navigateToRow) {
-      classList.push('cursor-pointer hover:bg-fill-list-hover');
-    }
-
-    return classList.join(' ');
-  }, [navigateToRow]);
-
-  const renderCoverImage = useCallback((cover: RowMeta['cover']) => {
-    if (!cover) return null;
-
-    if (cover.cover_type === RowCoverType.GradientCover || cover.cover_type === RowCoverType.ColorCover) {
-      return <div
-        style={{
-          background: renderColor(cover.data),
-        }}
-        className={`h-full w-full`}
-      />;
-    }
-
-    let url: string | undefined = cover.data;
-
-    if (cover.cover_type === RowCoverType.AssetCover) {
-      url = {
-        1: '/covers/m_cover_image_1.png',
-        2: '/covers/m_cover_image_2.png',
-        3: '/covers/m_cover_image_3.png',
-        4: '/covers/m_cover_image_4.png',
-        5: '/covers/m_cover_image_5.png',
-        6: '/covers/m_cover_image_6.png',
-      }[Number(cover.data)];
-    }
-
-    if (!url) return null;
+            return attachClosestEdge(data, {
+              input,
+              element,
+              allowedEdges: ['top', 'bottom'],
+            });
+          },
+          onDragEnter: (args) => {
+            if (args.source.data.itemId !== rowId) {
+              setClosestEdge(rowId === 'new_card' ? 'top' : extractClosestEdge(args.self.data));
+            }
+          },
+          onDrag: (args) => {
+            if (args.source.data.itemId !== rowId) {
+              setClosestEdge(rowId === 'new_card' ? 'top' : extractClosestEdge(args.self.data));
+            }
+          },
+          onDragLeave: () => {
+            setClosestEdge(null);
+          },
+          onDrop: () => {
+            setClosestEdge(null);
+          },
+        })
+      );
+    }, [instanceId, rowId, readOnly, editing]);
 
     return (
-      <>
-        <ImageRender
-          draggable={false}
-          src={url}
-          alt={''}
-          className={'h-full w-full object-cover'}
-        />
-      </>
-    );
-  }, []);
-
-  return (
-    <div
-      onClick={() => {
-        navigateToRow?.(rowId);
-      }}
-      ref={ref}
-      className={className}
-    >
-      {cover && (
-        <div
-          className={'w-full h-[100px] bg-cover bg-center'}
-        >
-          {renderCoverImage(cover)}
-        </div>
-      )}
-      <div className={'flex flex-col gap-2 py-2 px-3'}>
-        {showFields.map((field, index) => {
-          return <CardField
-            index={index}
-            key={field.fieldId}
+      <div ref={ref} className={'relative w-full'}>
+        {type === CardType.NEW_CARD ? (
+          <NewCard fieldId={groupFieldId} {...props} />
+        ) : (
+          <CardPrimitive
+            {...props}
+            groupFieldId={groupFieldId}
             rowId={rowId}
-            fieldId={field.fieldId}
-          />;
-        })}
+            className={cn(state.type === 'dragging' && 'opacity-40')}
+          />
+        )}
+
+        {closestEdge && <DropCardIndicator edge={closestEdge} />}
       </div>
-
-    </div>
-  );
-});
-
-export default Card;
+    );
+  }
+);

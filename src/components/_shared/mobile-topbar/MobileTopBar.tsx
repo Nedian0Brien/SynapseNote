@@ -1,5 +1,11 @@
+import { IconButton } from '@mui/material';
+import React, { useCallback } from 'react';
+
 import { HEADER_HEIGHT } from '@/application/constants';
 import { UIVariant } from '@/application/types';
+import { ReactComponent as MenuIcon } from '@/assets/icons/double_arrow_right.svg';
+import { ReactComponent as Logo } from '@/assets/icons/logo.svg';
+import { ReactComponent as MoreIcon } from '@/assets/icons/more.svg';
 import { Breadcrumb } from '@/components/_shared/breadcrumb';
 import { withAppBreadcrumb } from '@/components/_shared/breadcrumb/withAppBreadcrumb';
 import { withPublishBreadcrumb } from '@/components/_shared/breadcrumb/withPublishBreadcrumb';
@@ -8,11 +14,6 @@ import MobileFolder from '@/components/_shared/mobile-topbar/MobileFolder';
 import PublishMobileFolder from '@/components/_shared/mobile-topbar/PublishMobileFolder';
 import MoreActionsContent from '@/components/_shared/more-actions/MoreActionsContent';
 import { openOrDownload } from '@/utils/open_schema';
-import { IconButton } from '@mui/material';
-import React, { useCallback } from 'react';
-import { ReactComponent as MenuIcon } from '@/assets/icons/double_arrow_right.svg';
-import { ReactComponent as Logo } from '@/assets/icons/logo.svg';
-import { ReactComponent as MoreIcon } from '@/assets/icons/more.svg';
 
 const PublishBreadcrumb = withPublishBreadcrumb(Breadcrumb);
 const AppBreadcrumb = withAppBreadcrumb(Breadcrumb);
@@ -45,7 +46,7 @@ function MobileTopBar({ variant }: { variant?: UIVariant }) {
         minHeight: HEADER_HEIGHT,
       }}
       className={
-        'appflowy-top-bar sticky top-0 z-10 flex h-[48px] min-h-[48px] w-full transform-gpu items-center justify-between gap-2 px-4'
+        'appflowy-top-bar sticky top-0 z-[100] flex h-[48px] min-h-[48px] w-full transform-gpu items-center justify-between gap-2 px-4'
       }
     >
       <MobileDrawer

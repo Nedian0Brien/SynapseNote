@@ -1,10 +1,14 @@
-import { OutlineDrawer } from '@/components/_shared/outline';
-import NewPage from '@/components/app/view-actions/NewPage';
 import React, { lazy } from 'react';
+
+import { Role, UIVariant } from '@/application/types';
+import { OutlineDrawer } from '@/components/_shared/outline';
+import { useUserWorkspaceInfo } from '@/components/app/app.hooks';
+import NewPage from '@/components/app/view-actions/NewPage';
 import { Workspaces } from '@/components/app/workspaces';
+
 import Outline from 'src/components/app/outline/Outline';
-import { UIVariant } from '@/application/types';
 import { Search } from 'src/components/app/search';
+
 
 const SideBarBottom = lazy(() => import('@/components/app/SideBarBottom'));
 
@@ -15,18 +19,16 @@ interface SideBarProps {
   onResizeDrawerWidth: (width: number) => void;
 }
 
-function SideBar ({
-  drawerWidth,
-  drawerOpened,
-  toggleOpenDrawer,
-  onResizeDrawerWidth,
-}: SideBarProps) {
-
+function SideBar({ drawerWidth, drawerOpened, toggleOpenDrawer, onResizeDrawerWidth }: SideBarProps) {
   const [scrollTop, setScrollTop] = React.useState<number>(0);
 
   const handleOnScroll = React.useCallback((scrollTop: number) => {
     setScrollTop(scrollTop);
   }, []);
+
+  const userWorkspaceInfo = useUserWorkspaceInfo();
+
+  const role = userWorkspaceInfo?.selectedWorkspace.role;
 
   return (
     <OutlineDrawer
@@ -38,29 +40,26 @@ function SideBar ({
       header={<Workspaces />}
       onScroll={handleOnScroll}
     >
-      <div
-        className={'flex w-full gap-1 flex-1 flex-col'}
-      >
+      <div className={'flex w-full flex-1 flex-col gap-1'}>
         <div
-          className={'px-[10px] bg-bg-base z-[1] flex-col gap-2 justify-around items-center sticky top-12'}
+          className={'sticky top-12 z-[1] mx-1 flex-col items-center justify-around gap-2 bg-surface-container-layer-00'}
         >
           <Search />
-          <div
-            style={{
-              borderColor: scrollTop > 10 ? 'var(--line-divider)' : undefined,
-            }}
-            className={'flex border-b pb-3 w-full border-transparent'}
-          >
-            <NewPage />
-          </div>
-
+          {role === Role.Guest ? null : (
+            <div
+              style={{
+                borderColor: scrollTop > 10 ? 'var(--border-primary)' : undefined,
+              }}
+              className={'flex w-full border-b border-transparent pb-3'}
+            >
+              <NewPage />
+            </div>
+          )}
         </div>
 
-        <Outline
-          width={drawerWidth}
-        />
+        <Outline width={drawerWidth} />
 
-        <SideBarBottom />
+        {role === Role.Guest ? null : <SideBarBottom />}
       </div>
     </OutlineDrawer>
   );

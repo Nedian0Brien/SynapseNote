@@ -14,7 +14,13 @@ export function withInsertBreak(editor: ReactEditor) {
 
     if (!selection) return;
 
-    const [node] = getBlockEntry(editor as YjsEditor);
+    const entry = getBlockEntry(editor as YjsEditor);
+
+    if (!entry) return;
+
+    const [node] = entry;
+
+    if (!node) return;
 
     if (Range.isCollapsed(selection) && isEmbedBlockTypes(node.type as BlockType)) {
       CustomEditor.addBelowBlock(editor as YjsEditor, node.blockId as string, BlockType.Paragraph, {});
@@ -35,7 +41,13 @@ export function withInsertBreak(editor: ReactEditor) {
     if (!selection) return;
 
     if (Range.isCollapsed(selection)) {
-      const [node] = getBlockEntry(editor as YjsEditor);
+      const entry = getBlockEntry(editor as YjsEditor);
+
+      if (!entry) return;
+
+      const [node] = entry;
+
+      if (!node) return;
 
       if (isEmbedBlockTypes(node.type as BlockType)) {
         CustomEditor.addBelowBlock(editor as YjsEditor, node.blockId as string, BlockType.Paragraph, {});

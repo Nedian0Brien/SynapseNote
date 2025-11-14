@@ -3,7 +3,7 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { useSlateStatic } from 'slate-react';
 import { useStartIcon } from './StartIcon.hooks';
 import { EditorElementProps, TextNode } from '@/components/editor/editor.type';
-import React, { forwardRef, useMemo } from 'react';
+import { forwardRef, useMemo } from 'react';
 
 export const Text = forwardRef<HTMLSpanElement, EditorElementProps<TextNode>>(
   ({ node, children, className: classNameProp, ...attributes }, ref) => {

@@ -1,128 +1,104 @@
-import { View, ViewLayout } from '@/application/types';
-import { notify } from '@/components/_shared/notify';
-import { ViewIcon } from '@/components/_shared/view-icon';
-import { useAppHandlers } from '@/components/app/app.hooks';
-import { Button } from '@mui/material';
-import CircularProgress from '@mui/material/CircularProgress';
 import React, { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 
-function AddPageActions({ view, onClose }: {
-  view: View;
-  onClose: () => void;
-}) {
+import { View, ViewLayout } from '@/application/types';
+import { ViewIcon } from '@/components/_shared/view-icon';
+import { useAppHandlers } from '@/components/app/app.hooks';
+import { DropdownMenuGroup, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+
+function AddPageActions({ view }: { view: View }) {
   const { t } = useTranslation();
-  const {
-    addPage,
-    openPageModal,
-    toView,
-  } = useAppHandlers();
+  const { addPage, openPageModal, toView } = useAppHandlers();
 
-  const handleAddPage = useCallback(async(layout: ViewLayout, name?: string) => {
-    if(!addPage) return;
-    notify.default(
-      <span>
-        <CircularProgress size={20} />
-        <span className={'ml-2'}>{t('document.creating')}</span>
-      </span>,
-    );
-    try {
-      const viewId = await addPage(view.view_id, { layout, name });
+  const handleAddPage = useCallback(
+    async (layout: ViewLayout, name?: string) => {
+      if (!addPage) return;
+      toast.loading(t('document.creating'));
+      try {
+        const viewId = await addPage(view.view_id, { layout, name });
 
-      if(layout === ViewLayout.AIChat) {
-        void toView(viewId);
-      } else {
-        void openPageModal?.(viewId);
+        if (layout === ViewLayout.Document) {
+          void openPageModal?.(viewId);
+        } else {
+          console.log('viewId', viewId, toView);
+          void toView(viewId);
+        }
+
+        toast.dismiss();
+        // eslint-disable-next-line
+      } catch (e: any) {
+        toast.error(e.message);
       }
-
-      notify.clear();
-      // eslint-disable-next-line
-    } catch(e: any) {
-      notify.clear();
-      notify.error(e.message);
-    }
-  }, [addPage, openPageModal, t, toView, view.view_id]);
+    },
+    [addPage, openPageModal, t, toView, view.view_id]
+  );
 
   const actions: {
     label: string;
     icon: React.ReactNode;
     disabled?: boolean;
-    onClick: (e: React.MouseEvent) => void;
-  }[] = useMemo(() => [
-    {
-      label: t('document.menuName'),
-      icon: <ViewIcon
-        layout={ViewLayout.Document}
-        size={'small'}
-      />,
-      onClick: () => {
-        void handleAddPage(ViewLayout.Document);
+    onSelect: () => void;
+  }[] = useMemo(
+    () => [
+      {
+        label: t('document.menuName'),
+        icon: <ViewIcon layout={ViewLayout.Document} size={'small'} />,
+        onSelect: () => {
+          void handleAddPage(ViewLayout.Document);
+        },
       },
-    },
-    // {
-    //   label: t('grid.menuName'),
-    //   disabled: true,
-    //   icon: <ViewIcon
-    //     layout={ViewLayout.Grid}
-    //     size={'medium'}
-    //   />,
-    //   onClick: () => {
-    //     void handleAddPage(ViewLayout.Grid, 'Table');
-    //   },
-    // },
-    // {
-    //   label: t('board.menuName'),
-    //   disabled: true,
-    //   icon: <ViewIcon
-    //     layout={ViewLayout.Board}
-    //     size={'medium'}
-    //   />,
-    //   onClick: () => {
-    //     void handleAddPage(ViewLayout.Board, 'Board');
-    //   },
-    // },
-    // {
-    //   label: t('calendar.menuName'),
-    //   disabled: true,
-    //   icon: <ViewIcon
-    //     layout={ViewLayout.Calendar}
-    //     size={'medium'}
-    //   />,
-    //   onClick: () => {
-    //     void handleAddPage(ViewLayout.Calendar, 'Calendar');
-    //   },
-    // },
-    {
-      label: t('chat.newChat'),
-      icon: <ViewIcon
-        layout={ViewLayout.AIChat}
-        size={'small'}
-      />,
-      onClick: () => {
-        void handleAddPage(ViewLayout.AIChat);
+      {
+        label: t('grid.menuName'),
+        icon: <ViewIcon layout={ViewLayout.Grid} size={'small'} />,
+        onSelect: () => {
+          void handleAddPage(ViewLayout.Grid, 'New Grid');
+        },
       },
-    },
-  ], [handleAddPage, t]);
+      {
+        label: t('board.menuName'),
+        icon: <ViewIcon layout={ViewLayout.Board} size={'small'} />,
+        onSelect: () => {
+          void handleAddPage(ViewLayout.Board, 'New Board');
+        },
+      },
+      {
+        label: t('calendar.menuName'),
+        icon: <ViewIcon layout={ViewLayout.Calendar} size={'medium'} />,
+        onSelect: () => {
+          void handleAddPage(ViewLayout.Calendar, 'New Calendar');
+        },
+      },
+      {
+        label: t('chat.newChat'),
+        icon: <ViewIcon layout={ViewLayout.AIChat} size={'small'} />,
+        onSelect: () => {
+          void handleAddPage(ViewLayout.AIChat);
+        },
+      },
+    ],
+    [handleAddPage, t]
+  );
 
   return (
-    <div className={'flex flex-col gap-2 w-full p-1.5 min-w-[230px]'}>
-      {actions.map(action => (
-        <Button
+    <DropdownMenuGroup>
+      {actions.map((action) => (
+        <DropdownMenuItem
           key={action.label}
-          size={'small'}
+          data-testid={
+            action.label === t('chat.newChat') ? 'add-ai-chat-button' :
+            action.label === t('grid.menuName') ? 'add-grid-button' : undefined
+          }
           disabled={action.disabled}
-          onClick={(e) => {
-            action.onClick(e);
-            onClose();
+          onSelect={() => {
+            action.onSelect();
           }}
-          className={'px-3 py-1 justify-start'}
-          color={'inherit'}
-          startIcon={action.icon}
         >
+          {action.icon}
           {action.label}
-        </Button>
+        </DropdownMenuItem>
       ))}
-    </div>
+    </DropdownMenuGroup>
   );
 }
 

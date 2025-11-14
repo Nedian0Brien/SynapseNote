@@ -1,9 +1,9 @@
+import { ReactComponent as Clear } from '@/assets/icons/delete.svg';
+import { ReactComponent as SelectCheck } from '@/assets/icons/tick.svg';
 import { Popover } from '@/components/_shared/popover';
 import { IconButton, PopoverPosition, TextField, Tooltip } from '@mui/material';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { ReactComponent as SelectCheck } from '@/assets/icons/tick.svg';
-import { ReactComponent as Clear } from '@/assets/icons/delete.svg';
 
 function FormulaPopover({
   open,
@@ -13,9 +13,9 @@ function FormulaPopover({
   onDone,
   onClear,
 }: {
-  open: boolean,
+  open: boolean;
   onClose: () => void;
-  defaultValue: string
+  defaultValue: string;
   anchorPosition?: PopoverPosition;
   onDone: (value: string) => void;
   onClear: () => void;
@@ -35,7 +35,7 @@ function FormulaPopover({
         horizontal: 'left',
       }}
     >
-      <div className={'p-4 flex items-center gap-2'}>
+      <div className={'flex items-center gap-2 p-4'}>
         <TextField
           variant={'standard'}
           size={'small'}
@@ -43,7 +43,7 @@ function FormulaPopover({
           value={value}
           spellCheck={false}
           placeholder={'E = mc^2'}
-          onClick={e => {
+          onClick={(e) => {
             if (e.detail > 2) {
               e.preventDefault();
               const target = e.target as HTMLInputElement;
@@ -54,37 +54,26 @@ function FormulaPopover({
           }}
           onChange={(e) => setValue(e.target.value)}
           fullWidth={true}
-          onKeyDown={e => {
+          onKeyDown={(e) => {
             if (e.key === 'Enter') {
               onDone(value);
             }
           }}
         />
-        <div className={'flex gap-2 items-center justify-end'}>
-          <Tooltip
-            placement={'top'}
-            title={t('button.done')}
-          >
+        <div className={'flex items-center justify-end gap-2'}>
+          <Tooltip placement={'top'} title={t('button.done')}>
             <IconButton
               size={'small'}
               onClick={() => {
-
                 onDone(value);
               }}
             >
-              <SelectCheck className={'text-content-blue-400'}/>
+              <SelectCheck className={'text-text-action'} />
             </IconButton>
           </Tooltip>
-          <Tooltip
-            placement={'top'}
-            title={t('button.clear')}
-          >
-            <IconButton
-              size={'small'}
-              color={'error'}
-              onClick={onClear}
-            >
-              <Clear/>
+          <Tooltip placement={'top'} title={t('button.clear')}>
+            <IconButton size={'small'} color={'error'} onClick={onClear}>
+              <Clear />
             </IconButton>
           </Tooltip>
         </div>

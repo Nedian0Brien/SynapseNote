@@ -1,14 +1,14 @@
 import { YjsEditor } from '@/application/slate-yjs';
 import { CustomEditor } from '@/application/slate-yjs/command';
 import { EditorMarkFormat } from '@/application/slate-yjs/types';
+import { ReactComponent as LinkSvg } from '@/assets/icons/link.svg';
+import HrefPopover from '@/components/editor/components/leaf/href/HrefPopover';
 import { useSelectionToolbarContext } from '@/components/editor/components/toolbar/selection-toolbar/SelectionToolbar.hooks';
 import { createHotkey, getModifier, HOT_KEY_NAME } from '@/utils/hotkeys';
 import React, { useCallback, useEffect, useMemo } from 'react';
-import ActionButton from './ActionButton';
 import { useTranslation } from 'react-i18next';
 import { ReactEditor, useSlate } from 'slate-react';
-import { ReactComponent as LinkSvg } from '@/assets/icons/link.svg';
-import HrefPopover from '@/components/editor/components/leaf/href/HrefPopover';
+import ActionButton from './ActionButton';
 
 export function Href() {
   const { t } = useTranslation();
@@ -59,7 +59,7 @@ export function Href() {
     return (
       <>
         <div>{t('editor.link')}</div>
-        <div className={'text-xs text-text-caption'}>{`${modifier} + K`}</div>
+        <div className={'text-xs text-text-secondary'}>{`${modifier} + K`}</div>
       </>
     );
   }, [t]);

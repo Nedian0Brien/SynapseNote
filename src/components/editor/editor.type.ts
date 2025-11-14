@@ -192,5 +192,3 @@ export interface ColumnNode extends BlockNode {
 export interface EditorElementProps<T = Element> extends HTMLAttributes<HTMLDivElement> {
   node: T;
 }
-
-

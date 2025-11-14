@@ -1,15 +1,15 @@
 import { GlobalComment } from '@/application/comment.type';
 import { PublishContext } from '@/application/publish';
+import { ReactComponent as TrashIcon } from '@/assets/icons/delete.svg';
+import { ReactComponent as MoreIcon } from '@/assets/icons/more.svg';
+import { useGlobalCommentContext } from '@/components/global-comment/GlobalComment.hooks';
+import { AFConfigContext } from '@/components/main/app.hooks';
 import { NormalModal } from '@/components/_shared/modal';
 import { notify } from '@/components/_shared/notify';
 import { Popover } from '@/components/_shared/popover';
-import { AFConfigContext } from '@/components/main/app.hooks';
-import { useGlobalCommentContext } from '@/components/global-comment/GlobalComment.hooks';
 import { Button, IconButton, Tooltip, TooltipProps } from '@mui/material';
 import React, { memo, useCallback, useContext, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ReactComponent as MoreIcon } from '@/assets/icons/more.svg';
-import { ReactComponent as TrashIcon } from '@/assets/icons/delete.svg';
 
 interface Item {
   Icon: React.FC<React.SVGProps<SVGSVGElement>>;
@@ -20,7 +20,7 @@ interface Item {
   tooltip?: TooltipProps;
 }
 
-function MoreActions ({ comment }: { comment: GlobalComment }) {
+function MoreActions({ comment }: { comment: GlobalComment }) {
   const { reload } = useGlobalCommentContext();
   const canDeleted = comment.canDeleted;
 
@@ -61,9 +61,9 @@ function MoreActions ({ comment }: { comment: GlobalComment }) {
         tooltip: canDeleted
           ? undefined
           : {
-            title: <div className={'text-center'}>{t('globalComment.noAccessDeleteComment')}</div>,
-            placement: 'top',
-          },
+              title: <div className={'text-center'}>{t('globalComment.noAccessDeleteComment')}</div>,
+              placement: 'top',
+            },
         onClick: () => {
           setDeleteModalOpen(true);
         },
@@ -135,7 +135,7 @@ function MoreActions ({ comment }: { comment: GlobalComment }) {
           open={deleteModalOpen}
           title={<div className={'text-left'}>{t('globalComment.deleteComment')}</div>}
         >
-          <div className={'w-full whitespace-pre-wrap break-words pb-1 text-text-caption'}>
+          <div className={'w-full whitespace-pre-wrap break-words pb-1 text-text-secondary'}>
             {t('globalComment.confirmDeleteDescription')}
           </div>
         </NormalModal>

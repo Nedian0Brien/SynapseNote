@@ -1,58 +1,68 @@
-import { useFilterSelector } from '@/application/database-yjs';
-import { Popover } from '@/components/_shared/popover';
-import { FilterContentOverview } from './overview';
-import React, { useState } from 'react';
+import { useFilterSelector, useReadOnly } from '@/application/database-yjs';
+import { ReactComponent as ArrowDown } from '@/assets/icons/alt_arrow_down.svg';
 import { FieldDisplay } from '@/components/database/components/field';
-import { ReactComponent as ArrowDown } from '@/assets/icons/alt_arrow_left.svg';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useCallback } from 'react';
+import { useConditionsContext } from '../conditions/context';
 import { FilterMenu } from './filter-menu';
+import { FilterContentOverview } from './overview';
 
 function Filter({ filterId }: { filterId: string }) {
   const filter = useFilterSelector(filterId);
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const open = Boolean(anchorEl);
+  const readOnly = useReadOnly();
+  const openFilterId = useConditionsContext()?.openFilterId;
+  const setOpenFilterId = useConditionsContext()?.setOpenFilterId;
+
+  const open = openFilterId === filterId;
+
+  const setOpen = useCallback(
+    (open: boolean) => {
+      setOpenFilterId?.(open ? filterId : undefined);
+    },
+    [filterId, setOpenFilterId]
+  );
 
   if (!filter) return null;
 
   return (
-    <>
-      <div
-        onClick={(e) => {
-          setAnchorEl(e.currentTarget);
-        }}
-        data-testid={'database-filter-condition'}
-        className={
-          'flex cursor-pointer flex-nowrap items-center gap-1 rounded-full border border-line-divider py-1 px-2 hover:border-fill-default hover:text-fill-default hover:shadow-sm'
-        }
-      >
-        <div className={'max-w-[180px] overflow-hidden'}>
-          <FieldDisplay fieldId={filter.fieldId} />
-        </div>
+    <div className={'relative h-7'}>
+      <Popover modal open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            onMouseDown={(e) => {
+              if (readOnly) {
+                e.stopPropagation();
+                e.preventDefault();
+                return;
+              }
+            }}
+            size={'sm'}
+            aria-readonly={readOnly ? 'true' : 'false'}
+            variant={'outline'}
+            data-testid={'database-filter-condition'}
+            className={'flex-1 justify-start gap-0 overflow-hidden rounded-full'}
+          >
+            <FieldDisplay fieldId={filter.fieldId} className={'max-w-[120px] truncate'} />
 
-        <div className={'whitespace-nowrap text-xs font-medium'}>
-          <FilterContentOverview filter={filter} />
-        </div>
-        <ArrowDown />
-      </div>
-      {open && (
-        <Popover
-          open={open}
-          anchorEl={anchorEl}
-          onClose={() => {
-            setAnchorEl(null);
-          }}
-          data-testid={'filter-menu-popover'}
-          slotProps={{
-            paper: {
-              style: {
-                maxHeight: '260px',
-              },
-            },
+            <div className={'max-w-[120px] truncate whitespace-nowrap text-xs font-medium'}>
+              <FilterContentOverview filter={filter} />
+            </div>
+            <ArrowDown className={'h-5 w-5'} />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent
+          align='start'
+          onCloseAutoFocus={(e) => e.preventDefault()}
+          className={'p-2'}
+          onClick={(e) => {
+            e.stopPropagation();
           }}
         >
           <FilterMenu filter={filter} />
-        </Popover>
-      )}
-    </>
+        </PopoverContent>
+      </Popover>
+    </div>
   );
 }
 

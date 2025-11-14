@@ -1,24 +1,24 @@
 import { UserWorkspaceInfo, Workspace } from '@/application/types';
-import { getAvatarProps } from '@/components/app/workspaces/utils';
-import { Avatar } from '@mui/material';
-import React from 'react';
 import { ReactComponent as AppFlowyLogo } from '@/assets/icons/appflowy.svg';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Progress } from '@/components/ui/progress';
 
 function CurrentWorkspace({
   userWorkspaceInfo,
   selectedWorkspace,
   onChangeWorkspace,
-  avatarSize = 32,
+  changeLoading,
 }: {
   userWorkspaceInfo?: UserWorkspaceInfo;
   selectedWorkspace?: Workspace;
   onChangeWorkspace: (selectedId: string) => void;
   avatarSize?: number;
+  changeLoading?: boolean;
 }) {
   if (!userWorkspaceInfo || !selectedWorkspace) {
     return (
       <div
-        className={'flex cursor-pointer items-center gap-1 p-2 text-text-title'}
+        className={'flex  h-[48px] cursor-pointer items-center gap-1 p-1 text-text-primary'}
         onClick={async () => {
           const selectedId = userWorkspaceInfo?.selectedWorkspace?.id || userWorkspaceInfo?.workspaces[0]?.id;
 
@@ -27,27 +27,25 @@ function CurrentWorkspace({
           void onChangeWorkspace(selectedId);
         }}
       >
-        <AppFlowyLogo className={'w-[88px]'} />
+        <AppFlowyLogo className='!h-full !w-[118px]' />
       </div>
     );
   }
 
   return (
-    <div className={'flex items-center gap-1.5'}>
-      <Avatar
-        variant={'rounded'}
-        className={`flex items-center justify-center rounded-[8px] border-none border-line-divider p-1 ${
-          selectedWorkspace.icon ? 'bg-transparent' : ''
-        }`}
-        {...getAvatarProps(selectedWorkspace)}
-        style={{
-          width: avatarSize,
-          height: avatarSize,
-          fontSize: avatarSize / 1.2,
-        }}
-      />
-      <div className={'flex-1 truncate font-medium text-text-title'}>{selectedWorkspace.name}</div>
-    </div>
+    <>
+      <Avatar shape={'square'} size={'xs'}>
+        <AvatarImage src={selectedWorkspace.icon} alt={''} />
+        <AvatarFallback name={selectedWorkspace.name}>
+          {selectedWorkspace.icon ? <span className='text-lg'>{selectedWorkspace.icon}</span> : selectedWorkspace.name}
+        </AvatarFallback>
+      </Avatar>
+
+      <div data-testid='current-workspace-name' className={'flex-1 truncate font-medium text-text-primary'}>
+        {selectedWorkspace.name}
+      </div>
+      {changeLoading && <Progress variant={'primary'} />}
+    </>
   );
 }
 

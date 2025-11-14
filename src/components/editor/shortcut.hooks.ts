@@ -1,3 +1,8 @@
+import { KeyboardEvent, useCallback } from 'react';
+import { BasePoint, Editor, Element, NodeEntry, Path, Range, Text, Transforms } from 'slate';
+import { ReactEditor, useReadOnly } from 'slate-react';
+import smoothScrollIntoViewIfNeeded from 'smooth-scroll-into-view-if-needed';
+
 import { YjsEditor } from '@/application/slate-yjs';
 import { CustomEditor } from '@/application/slate-yjs/command';
 import { SOFT_BREAK_TYPES } from '@/application/slate-yjs/command/const';
@@ -7,10 +12,6 @@ import { AlignType, BlockType } from '@/application/types';
 import { useEditorContext } from '@/components/editor/EditorContext';
 import { createHotkey, HOT_KEY_NAME } from '@/utils/hotkeys';
 import { openUrl } from '@/utils/url';
-import { KeyboardEvent, useCallback } from 'react';
-import { Editor, Text, Range, Transforms, BasePoint, Path, Element } from 'slate';
-import { ReactEditor, useReadOnly } from 'slate-react';
-import smoothScrollIntoViewIfNeeded from 'smooth-scroll-into-view-if-needed';
 
 export function useShortcuts(editor: ReactEditor) {
   const yjsEditor = editor as YjsEditor;
@@ -84,7 +85,9 @@ export function useShortcuts(editor: ReactEditor) {
           }
 
           case createHotkey(HOT_KEY_NAME.BACKSPACE)(e): {
-            const [node] = getBlockEntry(yjsEditor);
+            const [node] = getBlockEntry(yjsEditor) as NodeEntry<Element>;
+
+            if (!node) return;
             const type = node.type as BlockType;
 
             if (type !== BlockType.Paragraph) {
@@ -209,7 +212,9 @@ export function useShortcuts(editor: ReactEditor) {
       // Do not process shortcuts if editor is read-only or no selection
       if (readOnly || !selection) return;
       const [point] = editor.edges(selection);
-      const node = getBlockEntry(yjsEditor, point);
+      const node = getBlockEntry(yjsEditor, point) as NodeEntry<Element>;
+
+      if (!node) return;
 
       // Add more cases here for editing shortcuts
       switch (!readOnly) {
