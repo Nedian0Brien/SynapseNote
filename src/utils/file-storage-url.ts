@@ -13,6 +13,38 @@ function getFileStorageBaseUrl(): string {
   return getConfigValue('APPFLOWY_BASE_URL', '') + '/api/file_storage';
 }
 
+let cachedAppflowyOrigin: string | null | undefined;
+let cachedFileStoragePathname: string | null | undefined;
+
+function resolveAppflowyOriginAndPathname(): { origin: string | null; pathname: string | null } {
+  if (cachedAppflowyOrigin !== undefined && cachedFileStoragePathname !== undefined) {
+    return { origin: cachedAppflowyOrigin, pathname: cachedFileStoragePathname };
+  }
+
+  const baseUrl = getConfigValue('APPFLOWY_BASE_URL', '').trim();
+
+  if (baseUrl) {
+    try {
+      const parsed = new URL(baseUrl);
+      cachedAppflowyOrigin = parsed.origin;
+      cachedFileStoragePathname = `${parsed.pathname.replace(/\/$/, '')}/api/file_storage`;
+      return { origin: cachedAppflowyOrigin, pathname: cachedFileStoragePathname };
+    } catch (error) {
+      console.warn('Invalid APPFLOWY_BASE_URL provided:', error);
+    }
+  }
+
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    cachedAppflowyOrigin = window.location.origin;
+    cachedFileStoragePathname = '/api/file_storage';
+    return { origin: cachedAppflowyOrigin, pathname: cachedFileStoragePathname };
+  }
+
+  cachedAppflowyOrigin = null;
+  cachedFileStoragePathname = null;
+  return { origin: cachedAppflowyOrigin, pathname: cachedFileStoragePathname };
+}
+
 
 export function isFileURL(url: string): boolean {
   if (isURL(url)) {
@@ -36,8 +68,27 @@ export function isFileURL(url: string): boolean {
 export function isAppFlowyFileStorageUrl(url: string): boolean {
   if (!url) return false;
 
-  // Check for relative or absolute paths containing /api/file_storage
-  return url.includes('/api/file_storage');
+  const { origin, pathname: basePathname } = resolveAppflowyOriginAndPathname();
+
+  if (!origin || !basePathname) {
+    return false;
+  }
+
+  let parsedUrl: URL;
+
+  try {
+    parsedUrl =
+      url.startsWith('http://') || url.startsWith('https://') ? new URL(url) : new URL(url, origin);
+  } catch (error) {
+    console.warn('Failed to parse file storage URL:', error);
+    return false;
+  }
+
+  const isFirstParty = parsedUrl.origin === origin;
+  const normalizedBasePath = basePathname.startsWith('/') ? basePathname : `/${basePathname}`;
+  const isFileStoragePath = parsedUrl.pathname.startsWith(normalizedBasePath);
+
+  return isFirstParty && isFileStoragePath;
 }
 
 /**

@@ -126,7 +126,9 @@ export interface AppService {
   getWorkspaces: () => Promise<Workspace[]>;
   getWorkspaceFolder: (workspaceId: string) => Promise<FolderView>;
   getCurrentUser: () => Promise<User>;
+  getWorkspaceMemberProfile: (workspaceId: string) => Promise<MentionablePerson>;
   updateUserProfile: (metadata: Record<string, unknown>) => Promise<void>;
+  updateWorkspaceMemberProfile: (workspaceId: string, profile: WorkspaceMemberProfileUpdate) => Promise<void>;
   getUserWorkspaceInfo: () => Promise<UserWorkspaceInfo>;
   uploadTemplateAvatar: (file: File) => Promise<string>;
   getInvitation: (invitationId: string) => Promise<Invitation>;
@@ -172,6 +174,14 @@ export interface AppService {
   generateAITranslateForRow: (workspaceId: string, payload: GenerateAITranslateRowPayload) => Promise<string>;
   createOrphanedView: (workspaceId: string, payload: { document_id: string }) => Promise<void>;
   checkIfCollabExists: (workspaceId: string, objectId: string) => Promise<void>;
+}
+
+export interface WorkspaceMemberProfileUpdate {
+  name: string;
+  avatar_url?: string;
+  cover_image_url?: string;
+  custom_image_url?: string;
+  description?: string;
 }
 
 export interface QuickNoteService {

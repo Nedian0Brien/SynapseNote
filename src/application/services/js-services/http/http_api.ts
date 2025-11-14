@@ -8,7 +8,7 @@ import { ERROR_CODE } from '@/application/constants';
 import { initGrantService, refreshToken } from '@/application/services/js-services/http/gotrue';
 import { parseGoTrueErrorFromUrl } from '@/application/services/js-services/http/gotrue-error';
 import { blobToBytes } from '@/application/services/js-services/http/utils';
-import { AFCloudConfig } from '@/application/services/services.type';
+import { AFCloudConfig, WorkspaceMemberProfileUpdate } from '@/application/services/services.type';
 import { getTokenParsed, invalidToken } from '@/application/session/token';
 import {
   Template,
@@ -352,14 +352,6 @@ export async function getWorkspaceMemberProfile(workspaceId: string): Promise<Me
   }
 
   return Promise.reject(data);
-}
-
-export interface WorkspaceMemberProfileUpdate {
-  name: string;
-  avatar_url?: string;
-  cover_image_url?: string;
-  custom_image_url?: string;
-  description?: string;
 }
 
 export async function updateWorkspaceMemberProfile(

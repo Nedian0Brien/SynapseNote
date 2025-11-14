@@ -11,11 +11,17 @@ export const AvatarSelectors = {
   updateAvatarButton: () => cy.get(byTestId('update-avatar-button')),
 
   // Avatar Display Elements
-  avatarImage: () => cy.get('[data-slot="avatar-image"]'),
+  avatarImage: () => cy.get('[data-testid="avatar-image"]'),
   avatarFallback: () => cy.get('[data-slot="avatar-fallback"]'),
 
   // Workspace Dropdown Avatar
-  workspaceDropdownAvatar: () => cy.get('[data-testid="workspace-dropdown"] [data-slot="avatar"]'),
+  workspaceDropdownAvatar: () => cy.get('[data-testid="workspace-dropdown-trigger"] [data-slot="avatar"]'),
+
+  // Header Avatars (Top Right Corner - Collaborative Users)
+  headerAvatars: () => cy.get('.appflowy-top-bar [data-slot="avatar"]'),
+  headerAvatarContainer: () => cy.get('.appflowy-top-bar').find('[class*="flex"][class*="-space-x-2"]').first(),
+  headerAvatarImage: (index = 0) => cy.get('.appflowy-top-bar [data-slot="avatar"]').eq(index).find('[data-slot="avatar-image"]'),
+  headerAvatarFallback: (index = 0) => cy.get('.appflowy-top-bar [data-slot="avatar"]').eq(index).find('[data-slot="avatar-fallback"]'),
 
   // Date/Time Format Dropdowns (in Account Settings)
   dateFormatDropdown: () => cy.get(byTestId('date-format-dropdown')),

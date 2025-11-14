@@ -1,9 +1,11 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useContext, useMemo } from 'react';
+import { useContext, useEffect, useMemo } from 'react';
 
 import { db } from '@/application/db';
 import { AppContext } from '@/components/app/app.hooks';
 import { AFConfigContext } from '@/components/main/app.hooks';
+
+const pendingHydrations = new Set<string>();
 
 /**
  * Hook to get the current user's workspace member profile avatar
@@ -21,6 +23,62 @@ export function useCurrentUserWorkspaceAvatar() {
 
   const currentWorkspaceId = appContext?.currentWorkspaceId;
   const currentUser = configContext?.currentUser;
+  const service = configContext?.service;
+
+  useEffect(() => {
+    if (!currentWorkspaceId || !currentUser?.uuid || !service) {
+      return;
+    }
+
+    const cacheKey = `${currentWorkspaceId}:${currentUser.uuid}`;
+    let addedToPending = false;
+    let canceled = false;
+
+    const hydrateProfile = async () => {
+      try {
+        const existingProfile = await db.workspace_member_profiles
+          .where('[workspace_id+user_uuid]')
+          .equals([currentWorkspaceId, currentUser.uuid])
+          .first();
+
+        if (existingProfile) {
+          return;
+        }
+
+        if (pendingHydrations.has(cacheKey)) {
+          return;
+        }
+
+        pendingHydrations.add(cacheKey);
+        addedToPending = true;
+
+        const profile = await service.getWorkspaceMemberProfile(currentWorkspaceId);
+
+        if (!profile || canceled) {
+          return;
+        }
+
+        await db.workspace_member_profiles.put({
+          workspace_id: currentWorkspaceId,
+          user_uuid: currentUser.uuid,
+          ...profile,
+          updated_at: Date.now(),
+        });
+      } catch (error) {
+        console.error('Failed to hydrate workspace member profile:', error);
+      } finally {
+        if (addedToPending) {
+          pendingHydrations.delete(cacheKey);
+        }
+      }
+    };
+
+    void hydrateProfile();
+
+    return () => {
+      canceled = true;
+    };
+  }, [currentWorkspaceId, currentUser?.uuid, service]);
 
   // Use useLiveQuery to reactively watch the database for changes
   const profile = useLiveQuery(

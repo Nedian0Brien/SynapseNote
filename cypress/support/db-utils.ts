@@ -81,8 +81,7 @@ export class DBTestUtils {
       return new Cypress.Promise<WorkspaceMemberProfile | null>((resolve, reject) => {
         const transaction = db.transaction(['workspace_member_profiles'], 'readonly');
         const store = transaction.objectStore('workspace_member_profiles');
-        const index = store.index('[workspace_id+user_uuid]');
-        const request = index.get([workspaceId, userUuid]);
+        const request = store.get([workspaceId, userUuid]);
 
         request.onsuccess = () => {
           resolve(request.result || null);
@@ -159,6 +158,51 @@ export class DBTestUtils {
 
       db.close();
       return versionMatch && tablesMatch;
+    });
+  }
+
+  /**
+   * Get current user UUID from database using user ID from token
+   */
+  getCurrentUserUuid(): Cypress.Chainable<string | null> {
+    return cy.window().then((win) => {
+      const tokenStr = win.localStorage.getItem('token');
+      if (!tokenStr) return null;
+
+      const token = JSON.parse(tokenStr);
+      const userUuid = token?.user?.id;
+      if (!userUuid) return null;
+
+      return this.openDB().then((db) => {
+        return new Cypress.Promise<string | null>((resolve, reject) => {
+          const transaction = db.transaction(['users'], 'readonly');
+          const store = transaction.objectStore('users');
+          const request = store.get(userUuid);
+
+          request.onsuccess = () => {
+            const user = request.result;
+            resolve(user?.uuid || null);
+          };
+
+          request.onerror = () => {
+            reject(request.error);
+          };
+
+          transaction.oncomplete = () => {
+            db.close();
+          };
+        });
+      });
+    });
+  }
+
+  /**
+   * Get workspace ID from current URL
+   */
+  getCurrentWorkspaceId(): Cypress.Chainable<string | null> {
+    return cy.window().then((win) => {
+      const urlMatch = win.location.pathname.match(/\/app\/([^/]+)/);
+      return urlMatch ? urlMatch[1] : null;
     });
   }
 

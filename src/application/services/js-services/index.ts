@@ -24,7 +24,7 @@ import {
   fetchViewInfo,
 } from '@/application/services/js-services/fetch';
 import { APIService } from '@/application/services/js-services/http';
-import { AFService, AFServiceConfig } from '@/application/services/services.type';
+import { AFService, AFServiceConfig, WorkspaceMemberProfileUpdate } from '@/application/services/services.type';
 import { emit, EventType } from '@/application/session';
 import { afterAuth, AUTH_CALLBACK_URL, withSignIn } from '@/application/session/sign_in';
 import { getTokenParsed } from '@/application/session/token';
@@ -383,7 +383,7 @@ export class AFClientService implements AFService {
     return APIService.getWorkspaceMemberProfile(workspaceId);
   }
 
-  async updateWorkspaceMemberProfile(workspaceId: string, profile: APIService.WorkspaceMemberProfileUpdate) {
+  async updateWorkspaceMemberProfile(workspaceId: string, profile: WorkspaceMemberProfileUpdate) {
     return APIService.updateWorkspaceMemberProfile(workspaceId, profile);
   }
 

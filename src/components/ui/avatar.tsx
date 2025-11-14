@@ -96,6 +96,7 @@ function AvatarImage({ className, src, ...props }: React.ComponentProps<typeof A
   return (
     <AvatarPrimitive.Image
       data-slot='avatar-image'
+      data-testid='avatar-image'
       className={cn('aspect-square size-full', isLoading && 'opacity-0', className)}
       src={authenticatedSrc}
       {...props}

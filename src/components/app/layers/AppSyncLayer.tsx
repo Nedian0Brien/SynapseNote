@@ -1,14 +1,14 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import EventEmitter from 'events';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Awareness } from 'y-protocols/awareness';
 
 import { APP_EVENTS } from '@/application/constants';
-import { getTokenParsed } from '@/application/session/token';
 import { db } from '@/application/db';
+import { getTokenParsed } from '@/application/session/token';
 import { useAppflowyWebSocket, useBroadcastChannel, useSync } from '@/components/ws';
-import { SyncInternalContext, SyncInternalContextType } from '../contexts/SyncInternalContext';
-import { useAuthInternal } from '../contexts/AuthInternalContext';
 import { notification } from '@/proto/messages';
+import { useAuthInternal } from '../contexts/AuthInternalContext';
+import { SyncInternalContext, SyncInternalContextType } from '../contexts/SyncInternalContext';
 
 interface AppSyncLayerProps {
   children: React.ReactNode;
@@ -99,8 +99,6 @@ export const AppSyncLayer: React.FC<AppSyncLayerProps> = ({ children }) => {
 
     const handleUserProfileChange = async (profileChange: notification.IUserProfileChange) => {
       try {
-        console.log('Received user profile change notification:', profileChange);
-
         // Extract user ID from authentication token
         const token = getTokenParsed();
         const userId = token?.user?.id;
@@ -118,15 +116,17 @@ export const AppSyncLayer: React.FC<AppSyncLayerProps> = ({ children }) => {
           return;
         }
 
+        // UserProfileChange notification only contains uid, name, and email
+        // It does NOT include metadata or avatar_url
+        // Avatar updates come via WorkspaceMemberProfileChanged notification
         const updatedUser = {
           ...existingUser,
-          name: profileChange.name || existingUser.name,
-          email: profileChange.email || existingUser.email,
+          name: profileChange.name ?? existingUser.name,
+          email: profileChange.email ?? existingUser.email,
+          // Preserve existing metadata - UserProfileChange doesn't include it
         };
 
         await db.users.put(updatedUser, userId);
-
-        console.log('User profile updated in database:', updatedUser);
       } catch (error) {
         console.error('Failed to handle user profile change notification:', error);
       }
@@ -135,8 +135,6 @@ export const AppSyncLayer: React.FC<AppSyncLayerProps> = ({ children }) => {
     const handleWorkspaceMemberProfileChange = async (
       profileChange: notification.IWorkspaceMemberProfileChanged
     ) => {
-      console.log('Received workspace member profile change notification:', profileChange);
-
       if (!currentWorkspaceId) {
         console.warn('No current workspace ID available');
         return;
@@ -149,12 +147,90 @@ export const AppSyncLayer: React.FC<AppSyncLayerProps> = ({ children }) => {
         return;
       }
 
+      // Name is required in the proto, but we handle it defensively
+      if (!profileChange.name) {
+        console.warn('Workspace member profile change missing required name field');
+      }
+
+      // Note: Field name conversion
+      // - Server sends protobuf with snake_case: avatar_url, cover_image_url, etc.
+      // - Protobuf JS generator automatically converts to camelCase: avatarUrl, coverImageUrl, etc.
+      // - We use camelCase (avatarUrl) when reading from profileChange
+      // - We use snake_case (avatar_url) when storing in database (matches schema)
+
       try {
         const existingProfile = await db.workspace_member_profiles
           .where('[workspace_id+user_uuid]')
           .equals([currentWorkspaceId, userUuid])
           .first();
 
+        // If profile doesn't exist locally and this is the current user's profile,
+        // try fetching it from the API first (only works for current user)
+        // This can happen if the notification arrives before initial hydration
+        if (!existingProfile && service) {
+          // Check if this notification is for the current user
+          const token = getTokenParsed();
+          const currentUser = await db.users.get(token?.user?.id || '');
+          const isCurrentUser = currentUser?.uuid === userUuid;
+
+          if (isCurrentUser) {
+            try {
+              const fetchedProfile = await service.getWorkspaceMemberProfile(currentWorkspaceId);
+              if (fetchedProfile) {
+                // Use fetched profile as base, then apply notification updates
+                const baseProfile = {
+                  workspace_id: currentWorkspaceId,
+                  user_uuid: userUuid,
+                  person_id: fetchedProfile.person_id ?? userUuid,
+                  name: profileChange.name ?? fetchedProfile.name ?? '',
+                  email: fetchedProfile.email ?? '',
+                  role: fetchedProfile.role ?? 0,
+                  avatar_url: fetchedProfile.avatar_url ?? null,
+                  cover_image_url: fetchedProfile.cover_image_url ?? null,
+                  custom_image_url: fetchedProfile.custom_image_url ?? null,
+                  description: fetchedProfile.description ?? null,
+                  invited: fetchedProfile.invited ?? false,
+                  last_mentioned_at: fetchedProfile.last_mentioned_at ?? null,
+                  updated_at: Date.now(),
+                };
+
+                // Apply notification updates, handling optional fields correctly
+                // undefined = field not in notification (preserve existing)
+                // null/empty string = field explicitly cleared
+                // Note: profileChange uses camelCase (avatarUrl) from proto, we convert to snake_case (avatar_url) for database
+                const updatedProfile = {
+                  ...baseProfile,
+                  name: profileChange.name ?? baseProfile.name,
+                  avatar_url:
+                    profileChange.avatarUrl !== undefined
+                      ? profileChange.avatarUrl || null
+                      : baseProfile.avatar_url,
+                  cover_image_url:
+                    profileChange.coverImageUrl !== undefined
+                      ? profileChange.coverImageUrl || null
+                      : baseProfile.cover_image_url,
+                  custom_image_url:
+                    profileChange.customImageUrl !== undefined
+                      ? profileChange.customImageUrl || null
+                      : baseProfile.custom_image_url,
+                  description:
+                    profileChange.description !== undefined
+                      ? profileChange.description || null
+                      : baseProfile.description,
+                };
+
+                await db.workspace_member_profiles.put(updatedProfile);
+                return;
+              }
+            } catch (error) {
+              console.warn('Failed to fetch workspace member profile for notification:', error);
+              // Continue with creating a minimal profile from notification data
+            }
+          }
+          // For other users' profiles, we'll create from notification data below
+        }
+
+        // Update existing profile or create new one from notification
         const updatedProfile = {
           workspace_id: currentWorkspaceId,
           user_uuid: userUuid,
@@ -162,10 +238,24 @@ export const AppSyncLayer: React.FC<AppSyncLayerProps> = ({ children }) => {
           name: profileChange.name ?? existingProfile?.name ?? '',
           email: existingProfile?.email ?? '',
           role: existingProfile?.role ?? 0,
-          avatar_url: profileChange.avatarUrl ?? existingProfile?.avatar_url ?? null,
-          cover_image_url: profileChange.coverImageUrl ?? existingProfile?.cover_image_url ?? null,
-          custom_image_url: profileChange.customImageUrl ?? existingProfile?.custom_image_url ?? null,
-          description: profileChange.description ?? existingProfile?.description ?? null,
+          // Handle optional fields: undefined = preserve, null/empty = clear
+          // Note: profileChange uses camelCase (avatarUrl) from proto, we convert to snake_case (avatar_url) for database
+          avatar_url:
+            profileChange.avatarUrl !== undefined
+              ? profileChange.avatarUrl || null
+              : existingProfile?.avatar_url ?? null,
+          cover_image_url:
+            profileChange.coverImageUrl !== undefined
+              ? profileChange.coverImageUrl || null
+              : existingProfile?.cover_image_url ?? null,
+          custom_image_url:
+            profileChange.customImageUrl !== undefined
+              ? profileChange.customImageUrl || null
+              : existingProfile?.custom_image_url ?? null,
+          description:
+            profileChange.description !== undefined
+              ? profileChange.description || null
+              : existingProfile?.description ?? null,
           invited: existingProfile?.invited ?? false,
           last_mentioned_at: existingProfile?.last_mentioned_at ?? null,
           updated_at: Date.now(),
@@ -173,12 +263,6 @@ export const AppSyncLayer: React.FC<AppSyncLayerProps> = ({ children }) => {
 
         // Update workspace member profile in local database while preserving unspecified fields
         await db.workspace_member_profiles.put(updatedProfile);
-
-        console.log('Workspace member profile updated in database:', {
-          workspace_id: currentWorkspaceId,
-          user_uuid: userUuid,
-          avatar_url: updatedProfile.avatar_url,
-        });
 
         // Note: No need to re-emit event here. Components using useCurrentUserWorkspaceAvatar
         // will automatically re-render when the database is updated via Dexie's reactive queries.
