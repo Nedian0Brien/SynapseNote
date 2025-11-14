@@ -1,6 +1,6 @@
 import { toZonedTime } from 'date-fns-tz';
 
-import { DateFormat, TimeFormat } from './types';
+import { DateFormat, TimeFormat, User } from './types';
 import { UserTimezone } from './user-timezone.types';
 
 export interface DefaultTimeSetting {
@@ -192,3 +192,39 @@ export const MetadataUtils = {
     };
   },
 };
+
+export function getUserIconUrl(
+  user?: Pick<User, 'avatar' | 'metadata'> | null,
+  workspaceMemberAvatar?: string | null
+): string {
+  if (!user) {
+    console.debug('[UserMetadata] getUserIconUrl invoked without user');
+    return '';
+  }
+
+  // Priority 1: Workspace member avatar (if provided and not empty)
+  const trimmedWorkspaceAvatar = workspaceMemberAvatar?.trim();
+
+  if (trimmedWorkspaceAvatar && trimmedWorkspaceAvatar.length > 0) {
+    console.debug('[UserMetadata] resolved icon url from workspace member profile', {
+      workspaceMemberAvatar: trimmedWorkspaceAvatar,
+    });
+    return trimmedWorkspaceAvatar;
+  }
+
+  // Priority 2: User profile avatar (metadata.icon_url)
+  const metadata = user.metadata as Partial<MetadataValues> | undefined;
+  const iconUrl = typeof metadata?.[MetadataKey.IconUrl] === 'string' ? metadata?.[MetadataKey.IconUrl]?.trim() : '';
+
+  // Priority 3: User avatar fallback
+  const fallbackAvatar = user.avatar?.trim() ?? '';
+  const resolved = iconUrl?.length ? iconUrl : fallbackAvatar;
+
+  console.debug('[UserMetadata] resolved icon url from user profile', {
+    metadataIconUrl: iconUrl,
+    fallbackAvatar,
+    resolved,
+  });
+
+  return resolved;
+}

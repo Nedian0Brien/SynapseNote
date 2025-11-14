@@ -276,7 +276,7 @@ export async function getAuthProviders(): Promise<AuthProvider[]> {
   }
 }
 
-export async function getCurrentUser(): Promise<User> {
+export async function getCurrentUser(workspaceId?: string): Promise<User> {
   const url = '/api/user/profile';
   const response = await axiosInstance?.get<{
     code: number;
@@ -291,7 +291,9 @@ export async function getCurrentUser(): Promise<User> {
       updated_at: number;
     };
     message: string;
-  }>(url);
+  }>(url, {
+    params: workspaceId ? { workspace_id: workspaceId } : {},
+  });
 
   const data = response?.data;
 
@@ -325,6 +327,50 @@ export async function updateUserProfile(metadata: Record<string, unknown>): Prom
   }>(url, {
     metadata,
   });
+
+  const data = response?.data;
+
+  if (data?.code === 0) {
+    return;
+  }
+
+  return Promise.reject(data);
+}
+
+export async function getWorkspaceMemberProfile(workspaceId: string): Promise<MentionablePerson> {
+  const url = `/api/workspace/${workspaceId}/workspace-profile`;
+  const response = await axiosInstance?.get<{
+    code: number;
+    data?: MentionablePerson;
+    message: string;
+  }>(url);
+
+  const data = response?.data;
+
+  if (data?.code === 0 && data.data) {
+    return data.data;
+  }
+
+  return Promise.reject(data);
+}
+
+export interface WorkspaceMemberProfileUpdate {
+  name: string;
+  avatar_url?: string;
+  cover_image_url?: string;
+  custom_image_url?: string;
+  description?: string;
+}
+
+export async function updateWorkspaceMemberProfile(
+  workspaceId: string,
+  profile: WorkspaceMemberProfileUpdate
+): Promise<void> {
+  const url = `/api/workspace/${workspaceId}/update-member-profile`;
+  const response = await axiosInstance?.put<{
+    code: number;
+    message: string;
+  }>(url, profile);
 
   const data = response?.data;
 

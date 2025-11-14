@@ -22,6 +22,20 @@ export const AppSyncLayer: React.FC<AppSyncLayerProps> = ({ children }) => {
   const [awarenessMap] = useState<Record<string, Awareness>>({});
   const eventEmitterRef = useRef<EventEmitter>(new EventEmitter());
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const globalWindow = window as typeof window & {
+      Cypress?: unknown;
+      __APPFLOWY_EVENT_EMITTER__?: EventEmitter;
+    };
+
+    if (globalWindow.Cypress) {
+      // Expose event emitter for Cypress so tests can simulate workspace notifications
+      globalWindow.__APPFLOWY_EVENT_EMITTER__ = eventEmitterRef.current;
+    }
+  }, []);
+
   // Initialize WebSocket connection - currentWorkspaceId and service are guaranteed to exist when this component renders
   const webSocket = useAppflowyWebSocket({
     workspaceId: currentWorkspaceId!,
@@ -118,11 +132,59 @@ export const AppSyncLayer: React.FC<AppSyncLayerProps> = ({ children }) => {
       }
     };
 
-    const handleWorkspaceMemberProfileChange = (
+    const handleWorkspaceMemberProfileChange = async (
       profileChange: notification.IWorkspaceMemberProfileChanged
     ) => {
       console.log('Received workspace member profile change notification:', profileChange);
-      // No database operations - just logging for now
+
+      if (!currentWorkspaceId) {
+        console.warn('No current workspace ID available');
+        return;
+      }
+
+      const userUuid = profileChange.userUuid;
+
+      if (!userUuid) {
+        console.warn('Workspace member profile change missing user UUID');
+        return;
+      }
+
+      try {
+        const existingProfile = await db.workspace_member_profiles
+          .where('[workspace_id+user_uuid]')
+          .equals([currentWorkspaceId, userUuid])
+          .first();
+
+        const updatedProfile = {
+          workspace_id: currentWorkspaceId,
+          user_uuid: userUuid,
+          person_id: existingProfile?.person_id ?? userUuid,
+          name: profileChange.name ?? existingProfile?.name ?? '',
+          email: existingProfile?.email ?? '',
+          role: existingProfile?.role ?? 0,
+          avatar_url: profileChange.avatarUrl ?? existingProfile?.avatar_url ?? null,
+          cover_image_url: profileChange.coverImageUrl ?? existingProfile?.cover_image_url ?? null,
+          custom_image_url: profileChange.customImageUrl ?? existingProfile?.custom_image_url ?? null,
+          description: profileChange.description ?? existingProfile?.description ?? null,
+          invited: existingProfile?.invited ?? false,
+          last_mentioned_at: existingProfile?.last_mentioned_at ?? null,
+          updated_at: Date.now(),
+        };
+
+        // Update workspace member profile in local database while preserving unspecified fields
+        await db.workspace_member_profiles.put(updatedProfile);
+
+        console.log('Workspace member profile updated in database:', {
+          workspace_id: currentWorkspaceId,
+          user_uuid: userUuid,
+          avatar_url: updatedProfile.avatar_url,
+        });
+
+        // Note: No need to re-emit event here. Components using useCurrentUserWorkspaceAvatar
+        // will automatically re-render when the database is updated via Dexie's reactive queries.
+      } catch (error) {
+        console.error('Failed to handle workspace member profile change notification:', error);
+      }
     };
 
     // Subscribe to user profile change notifications from the event system

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useUsersSelector } from '@/application/awareness/selector';
@@ -7,11 +7,21 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
+const isImageSource = (value?: string) => {
+  if (!value) return false;
+
+  return /^https?:\/\//i.test(value) || value.startsWith('data:') || value.startsWith('blob:');
+};
+
 export function Users({ viewId }: { viewId?: string }) {
   const { t } = useTranslation();
   const awareness = useAppAwareness(viewId);
 
   const users = useUsersSelector(awareness);
+
+  useEffect(() => {
+    console.debug('[Header.Users] users updated', users);
+  }, [users]);
 
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
@@ -29,7 +39,12 @@ export function Users({ viewId }: { viewId?: string }) {
               <Avatar style={{ zIndex: visibleUsers.length - index, border: '1px solid var(--border-primary)' }}>
                 <AvatarImage src={user.avatar} alt={''} />
                 <AvatarFallback name={user.name}>
-                  {user.avatar ? <span className='text-lg'>{user.avatar}</span> : user.name}
+                  
+                  {user.avatar && !isImageSource(user.avatar) ? (
+                    <span className='text-lg'>{user.avatar}</span>
+                  ) : (
+                    user.name
+                  )}
                 </AvatarFallback>
               </Avatar>
             </TooltipTrigger>

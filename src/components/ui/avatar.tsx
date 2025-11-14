@@ -3,6 +3,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 
 import { cn } from '@/lib/utils';
+import { getImageUrl, revokeBlobUrl } from '@/utils/authenticated-image';
 
 const avatarVariants = cva('relative flex aspect-square shrink-0 overflow-hidden', {
   variants: {
@@ -51,9 +52,54 @@ function Avatar({
   );
 }
 
-function AvatarImage({ className, ...props }: React.ComponentProps<typeof AvatarPrimitive.Image>) {
+function AvatarImage({ className, src, ...props }: React.ComponentProps<typeof AvatarPrimitive.Image>) {
+  const [authenticatedSrc, setAuthenticatedSrc] = React.useState<string>('');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const blobUrlRef = React.useRef<string>('');
+
+  React.useEffect(() => {
+    if (!src) {
+      setAuthenticatedSrc('');
+      return;
+    }
+
+    let isMounted = true;
+
+    setIsLoading(true);
+
+    getImageUrl(src)
+      .then((url) => {
+        if (isMounted) {
+          setAuthenticatedSrc(url);
+          blobUrlRef.current = url;
+          setIsLoading(false);
+        }
+      })
+      .catch((error) => {
+        console.error('Failed to load avatar image:', error);
+        if (isMounted) {
+          setAuthenticatedSrc('');
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+      // Clean up blob URL if it was created
+      if (blobUrlRef.current) {
+        revokeBlobUrl(blobUrlRef.current);
+        blobUrlRef.current = '';
+      }
+    };
+  }, [src]);
+
   return (
-    <AvatarPrimitive.Image data-slot='avatar-image' className={cn('aspect-square size-full', className)} {...props} />
+    <AvatarPrimitive.Image
+      data-slot='avatar-image'
+      className={cn('aspect-square size-full', isLoading && 'opacity-0', className)}
+      src={authenticatedSrc}
+      {...props}
+    />
   );
 }
 

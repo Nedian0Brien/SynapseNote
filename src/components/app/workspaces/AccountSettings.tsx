@@ -120,16 +120,19 @@ export function AccountSettings({ children }: { children?: React.ReactNode }) {
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent
         data-testid='account-settings-dialog'
-        className='flex h-[300px] min-h-0 w-[400px] flex-col gap-3 sm:max-w-[calc(100%-2rem)]'
+        className='flex h-[500px] min-h-0 w-[400px] flex-col gap-3 sm:max-w-[calc(100%-2rem)]'
       >
         <DialogTitle className='text-md font-bold text-text-primary'>{t('web.accountSettings')}</DialogTitle>
         <DialogDescription className='sr-only'>
           Configure your account preferences including date format, time format, and week start day
         </DialogDescription>
-        <div className='flex min-h-0 w-full flex-1 flex-col items-start gap-3 py-4'>
-          <DateFormatDropdown dateFormat={dateFormat} onSelect={handleSelectDateFormat} />
-          <TimeFormatDropdown timeFormat={timeFormat} onSelect={handleSelectTimeFormat} />
-          <StartWeekOnDropdown startWeekOn={startWeekOn} onSelect={handleSelectStartWeekOn} />
+        <div className='flex min-h-0 w-full flex-1 flex-col items-start gap-4 overflow-y-auto py-4'>
+          {/* Date/Time Settings */}
+          <div className='flex w-full flex-col items-start gap-3'>
+            <DateFormatDropdown dateFormat={dateFormat} onSelect={handleSelectDateFormat} />
+            <TimeFormatDropdown timeFormat={timeFormat} onSelect={handleSelectTimeFormat} />
+            <StartWeekOnDropdown startWeekOn={startWeekOn} onSelect={handleSelectStartWeekOn} />
+          </div>
         </div>
       </DialogContent>
     </Dialog>

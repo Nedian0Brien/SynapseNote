@@ -1,6 +1,8 @@
 import { GlobalComment, Reaction } from '@/application/comment.type';
 import { PublishContext } from '@/application/publish';
 import { AFWebUser } from '@/application/types';
+import { getUserIconUrl } from '@/application/user-metadata';
+import { useCurrentUserWorkspaceAvatar } from '@/components/app/useWorkspaceMemberProfile';
 import { AFConfigContext } from '@/components/main/app.hooks';
 import { stringAvatar } from '@/utils/color';
 import { isFlagEmoji } from '@/utils/emoji';
@@ -40,6 +42,8 @@ export function useLoadReactions() {
   const viewId = useContext(PublishContext)?.viewMeta?.view_id;
   const service = useContext(AFConfigContext)?.service;
   const currentUser = useContext(AFConfigContext)?.currentUser;
+  const workspaceAvatar = useCurrentUserWorkspaceAvatar();
+  const currentUserAvatar = useMemo(() => getUserIconUrl(currentUser, workspaceAvatar), [currentUser, workspaceAvatar]);
   const [reactions, setReactions] = useState<Record<string, Reaction[]> | null>(null);
   const fetchReactions = useCallback(async () => {
     if (!viewId || !service) return;
@@ -73,7 +77,7 @@ export function useLoadReactions() {
           const reactUser = {
             uuid: currentUser?.uuid || '',
             name: currentUser?.name || '',
-            avatarUrl: currentUser?.avatar || null,
+            avatarUrl: currentUserAvatar || null,
           };
 
           // If the reaction does not exist, create a new reaction.
@@ -135,7 +139,7 @@ export function useLoadReactions() {
         console.error(e);
       }
     },
-    [currentUser, service, viewId]
+    [currentUser, currentUserAvatar, service, viewId]
   );
 
   return { reactions, toggleReaction };

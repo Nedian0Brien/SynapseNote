@@ -29,6 +29,18 @@ export function isFileURL(url: string): boolean {
 }
 
 /**
+ * Checks if a URL is an AppFlowy file storage URL that requires authentication
+ * @param url - The URL to check
+ * @returns true if the URL is an AppFlowy file storage URL
+ */
+export function isAppFlowyFileStorageUrl(url: string): boolean {
+  if (!url) return false;
+
+  // Check for relative or absolute paths containing /api/file_storage
+  return url.includes('/api/file_storage');
+}
+
+/**
  * Constructs URL for file retrieval
  * @param workspaceId - The workspace ID
  * @param viewId - The view ID (parent directory)
