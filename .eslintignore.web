@@ -1,5 +1,6 @@
 node_modules/
 dist/
+storybook-static/
 .eslintrc.cjs
 tsconfig.json
 vite.config.ts

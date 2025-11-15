@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 
 import { APP_EVENTS } from '@/application/constants';
 import { UIVariant, ViewLayout, ViewMetaProps, YDoc } from '@/application/types';
-import { AppError, determineErrorType } from '@/application/utils/error-utils';
+import { AppError, determineErrorType, formatErrorForLogging } from '@/application/utils/error-utils';
 import Help from '@/components/_shared/help/Help';
 import { findView } from '@/components/_shared/outline/utils';
 import { AIChat } from '@/components/ai-chat';
@@ -76,7 +76,7 @@ function AppPage() {
         const appError = determineErrorType(e);
 
         setError(appError);
-        console.error('[AppPage] Error loading view:', appError);
+        console.error('[AppPage] Error loading view:', formatErrorForLogging(e));
       }
     },
     [loadView]

@@ -3550,6 +3550,27 @@
       "description": "You've made too many requests. Please wait a moment and try again.",
       "retry": "Try again later"
     },
+    "notInvitee": {
+      "title": "Access denied",
+      "description": "This invitation wasn't sent to your account. Please contact the sender for a new invitation.",
+      "goToHomepage": "Go to homepage"
+    },
+    "gone": {
+      "title": "Resource deleted",
+      "description": "This resource has been permanently deleted and is no longer available.",
+      "goToHomepage": "Go to homepage"
+    },
+    "timeout": {
+      "title": "Request timeout",
+      "description": "The request took too long to complete. Please check your connection and try again.",
+      "retry": "Try again"
+    },
+    "unknown": {
+      "title": "Something went wrong",
+      "description": "An unexpected error occurred. Please try again or contact support if the problem persists.",
+      "goToHomepage": "Go to homepage",
+      "retry": "Try again"
+    },
     "asGuest": {
       "title": "You can now collaborate with others on\n<page/>",
       "viewPage": "View page",

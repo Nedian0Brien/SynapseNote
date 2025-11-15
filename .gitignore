@@ -37,3 +37,6 @@ cypress/snapshots/**/__diff_output__/
 cypress/screenshots
 cypress/videos
 .serena
+
+*storybook.log
+storybook-static
