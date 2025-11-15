@@ -49,6 +49,7 @@
   },
   "include": [
     "src",
+    ".storybook",
     "vite.config.ts",
     "cypress.config.ts",
     "cypress",

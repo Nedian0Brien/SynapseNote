@@ -1,9 +1,9 @@
-import { ReactEditor } from 'slate-react';
-import { Range } from 'slate';
-import { getBlockEntry } from '@/application/slate-yjs/utils/editor';
 import { YjsEditor } from '@/application/slate-yjs';
 import { isEmbedBlockTypes } from '@/application/slate-yjs/command/const';
+import { getBlockEntry } from '@/application/slate-yjs/utils/editor';
 import { BlockType } from '@/application/types';
+import { Range } from 'slate';
+import { ReactEditor } from 'slate-react';
 
 export const clipboardFormatKey = 'x-appflowy-fragment';
 
@@ -35,7 +35,7 @@ export const withCopy = (editor: ReactEditor) => {
       return;
     }
 
-    setFragmentData(<DataTransfer>data);
+    setFragmentData(data as DataTransfer);
   };
 
   return editor;

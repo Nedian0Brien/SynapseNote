@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { ReactComponent as ErrorIcon } from '@/assets/icons/error.svg';
@@ -6,6 +7,7 @@ import { ReactComponent as WarningIcon } from '@/assets/icons/warning.svg';
 import emptyImageSrc from '@/assets/images/empty.png';
 import { AppError, ErrorType } from '@/application/utils/error-utils';
 import LandingPage from '@/components/_shared/landing-page/LandingPage';
+import { Progress } from '@/components/ui/progress';
 import { useCurrentWorkspaceId } from '@/components/app/app.hooks';
 import { RequestAccessContent } from '@/components/app/share/RequestAccessContent';
 
@@ -22,8 +24,22 @@ function RecordNotFound({
 }) {
   const { t } = useTranslation();
   const currentWorkspaceId = useCurrentWorkspaceId();
+  const [retrying, setRetrying] = useState(false);
 
-  // NEW: If error is provided, render specific error page based on error type
+  const goToHomepage = () => {
+    window.location.href = '/app';
+  };
+
+  const goToLogin = () => {
+    window.location.href = '/';
+  };
+
+  const handleRetry = async () => {
+    setRetrying(true);
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    window.location.reload();
+  };
+
   if (error) {
     switch (error.type) {
       case ErrorType.PageNotFound:
@@ -33,7 +49,7 @@ function RecordNotFound({
             title={t('landingPage.pageNotFound.title')}
             description={t('landingPage.pageNotFound.description')}
             primaryAction={{
-              onClick: () => window.open('/app', '_self'),
+              onClick: goToHomepage,
               label: t('landingPage.pageNotFound.goToHomepage'),
             }}
           />
@@ -46,14 +62,13 @@ function RecordNotFound({
             title={t('landingPage.unauthorized.title')}
             description={t('landingPage.unauthorized.description')}
             primaryAction={{
-              onClick: () => window.open('/', '_self'),
+              onClick: goToLogin,
               label: t('landingPage.unauthorized.signIn'),
             }}
           />
         );
 
       case ErrorType.Forbidden:
-        // If viewId and workspaceId available, show request access
         if (viewId && currentWorkspaceId) {
           return <RequestAccessContent viewId={viewId} workspaceId={currentWorkspaceId} />;
         }
@@ -63,6 +78,10 @@ function RecordNotFound({
             Logo={NoAccessIcon}
             title={t('landingPage.forbidden.title')}
             description={t('landingPage.forbidden.description')}
+            primaryAction={{
+              onClick: goToHomepage,
+              label: t('landingPage.pageNotFound.goToHomepage'),
+            }}
           />
         );
 
@@ -73,8 +92,15 @@ function RecordNotFound({
             title={t('landingPage.serverError.title')}
             description={t('landingPage.serverError.description')}
             primaryAction={{
-              onClick: () => window.location.reload(),
-              label: t('landingPage.serverError.retry'),
+              onClick: handleRetry,
+              label: retrying ? (
+                <span className='flex items-center gap-2'>
+                  <Progress />
+                  {t('landingPage.serverError.retry')}
+                </span>
+              ) : (
+                t('landingPage.serverError.retry')
+              ),
             }}
           />
         );
@@ -86,8 +112,15 @@ function RecordNotFound({
             title={t('landingPage.networkError.title')}
             description={t('landingPage.networkError.description')}
             primaryAction={{
-              onClick: () => window.location.reload(),
-              label: t('landingPage.networkError.retry'),
+              onClick: handleRetry,
+              label: retrying ? (
+                <span className='flex items-center gap-2'>
+                  <Progress />
+                  {t('landingPage.networkError.retry')}
+                </span>
+              ) : (
+                t('landingPage.networkError.retry')
+              ),
             }}
           />
         );
@@ -99,7 +132,7 @@ function RecordNotFound({
             title={t('landingPage.invalidLink.title')}
             description={t('landingPage.invalidLink.description')}
             primaryAction={{
-              onClick: () => window.open('/app', '_self'),
+              onClick: goToHomepage,
               label: t('landingPage.invalidLink.goToHomepage'),
             }}
           />
@@ -112,8 +145,54 @@ function RecordNotFound({
             title={t('landingPage.alreadyJoined.title')}
             description={t('landingPage.alreadyJoined.description')}
             primaryAction={{
-              onClick: () => window.open('/app', '_self'),
+              onClick: goToHomepage,
               label: t('landingPage.alreadyJoined.goToWorkspace'),
+            }}
+          />
+        );
+
+      case ErrorType.NotInvitee:
+        return (
+          <LandingPage
+            Logo={NoAccessIcon}
+            title={t('landingPage.notInvitee.title')}
+            description={t('landingPage.notInvitee.description')}
+            primaryAction={{
+              onClick: goToHomepage,
+              label: t('landingPage.notInvitee.goToHomepage'),
+            }}
+          />
+        );
+
+      case ErrorType.Gone:
+        return (
+          <LandingPage
+            Logo={WarningIcon}
+            title={t('landingPage.gone.title')}
+            description={t('landingPage.gone.description')}
+            primaryAction={{
+              onClick: goToHomepage,
+              label: t('landingPage.gone.goToHomepage'),
+            }}
+          />
+        );
+
+      case ErrorType.Timeout:
+        return (
+          <LandingPage
+            Logo={WarningIcon}
+            title={t('landingPage.timeout.title')}
+            description={t('landingPage.timeout.description')}
+            primaryAction={{
+              onClick: handleRetry,
+              label: retrying ? (
+                <span className='flex items-center gap-2'>
+                  <Progress />
+                  {t('landingPage.timeout.retry')}
+                </span>
+              ) : (
+                t('landingPage.timeout.retry')
+              ),
             }}
           />
         );
@@ -125,24 +204,50 @@ function RecordNotFound({
             title={t('landingPage.rateLimited.title')}
             description={t('landingPage.rateLimited.description')}
             primaryAction={{
-              onClick: () => window.location.reload(),
-              label: t('landingPage.rateLimited.retry'),
+              onClick: handleRetry,
+              label: retrying ? (
+                <span className='flex items-center gap-2'>
+                  <Progress />
+                  {t('landingPage.rateLimited.retry')}
+                </span>
+              ) : (
+                t('landingPage.rateLimited.retry')
+              ),
             }}
           />
         );
 
+      case ErrorType.Unknown:
       default:
-        // Unknown error - fall through to legacy handling
-        break;
+        return (
+          <LandingPage
+            Logo={ErrorIcon}
+            title={t('landingPage.unknown.title')}
+            description={t('landingPage.unknown.description')}
+            primaryAction={{
+              onClick: handleRetry,
+              label: retrying ? (
+                <span className='flex items-center gap-2'>
+                  <Progress />
+                  {t('landingPage.unknown.retry')}
+                </span>
+              ) : (
+                t('landingPage.unknown.retry')
+              ),
+            }}
+            secondaryAction={{
+              onClick: goToHomepage,
+              label: t('landingPage.unknown.goToHomepage'),
+            }}
+          />
+        );
     }
   }
 
-  // LEGACY: If viewId is provided without error object, render the request access component
   if (viewId && currentWorkspaceId && !error) {
     return <RequestAccessContent viewId={viewId} workspaceId={currentWorkspaceId} />;
   }
 
-  // LEGACY: Original fallback rendering
   return (
     <div className={'flex h-full w-full flex-col items-center justify-center px-4'}>
       {!noContent && (
