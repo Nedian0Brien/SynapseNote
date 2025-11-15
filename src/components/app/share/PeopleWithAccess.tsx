@@ -47,12 +47,14 @@ export function PeopleWithAccess({ viewId, people, onPeopleChange, isLoading }: 
       // Set up listener for outline refresh BEFORE async operations
       // This ensures we don't miss the OUTLINE_LOADED event if it fires quickly
       let outlineRefreshPromise: Promise<void> | null = null;
+
       if (shouldNavigate && eventEmitter) {
         outlineRefreshPromise = new Promise<void>((resolve) => {
           const handleOutlineLoaded = () => {
             eventEmitter.off(APP_EVENTS.OUTLINE_LOADED, handleOutlineLoaded);
             resolve();
           };
+
           eventEmitter.on(APP_EVENTS.OUTLINE_LOADED, handleOutlineLoaded);
 
           // Timeout after 5 seconds to prevent infinite waiting
