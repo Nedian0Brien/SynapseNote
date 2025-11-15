@@ -2,8 +2,9 @@ import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
+import { APP_EVENTS } from '@/application/constants';
 import { AccessLevel, IPeopleWithAccessType, Role } from '@/application/types';
-import { useCurrentWorkspaceId } from '@/components/app/app.hooks';
+import { useAppHandlers, useCurrentWorkspaceId } from '@/components/app/app.hooks';
 import { useCurrentUser, useService } from '@/components/main/app.hooks';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
@@ -24,6 +25,7 @@ export function PeopleWithAccess({ viewId, people, onPeopleChange, isLoading }: 
   const service = useService();
   const currentWorkspaceId = useCurrentWorkspaceId();
   const navigate = useNavigate();
+  const { eventEmitter } = useAppHandlers();
   const handleAccessLevelChange = useCallback(
     async (personEmail: string, newAccessLevel: AccessLevel) => {
       if (!service || !currentWorkspaceId) return;
@@ -38,13 +40,42 @@ export function PeopleWithAccess({ viewId, people, onPeopleChange, isLoading }: 
   const handleRemoveAccess = useCallback(
     async (personEmail: string) => {
       if (!service || !currentWorkspaceId) return;
+
+      // Only navigate if the current user is removing their own access
+      const shouldNavigate = personEmail === currentUser?.email;
+
+      // Set up listener for outline refresh BEFORE async operations
+      // This ensures we don't miss the OUTLINE_LOADED event if it fires quickly
+      let outlineRefreshPromise: Promise<void> | null = null;
+      if (shouldNavigate && eventEmitter) {
+        outlineRefreshPromise = new Promise<void>((resolve) => {
+          const handleOutlineLoaded = () => {
+            eventEmitter.off(APP_EVENTS.OUTLINE_LOADED, handleOutlineLoaded);
+            resolve();
+          };
+          eventEmitter.on(APP_EVENTS.OUTLINE_LOADED, handleOutlineLoaded);
+
+          // Timeout after 5 seconds to prevent infinite waiting
+          setTimeout(() => {
+            eventEmitter.off(APP_EVENTS.OUTLINE_LOADED, handleOutlineLoaded);
+            resolve();
+          }, 5000);
+        });
+      }
+
       await service.revokeAccess(currentWorkspaceId, viewId, [personEmail]);
 
       // Refresh the people list after removal
       await onPeopleChange();
-      navigate('/app');
+
+      // Wait for outline refresh to complete before navigating
+      // This prevents race conditions where navigation happens before outline is updated
+      if (shouldNavigate && outlineRefreshPromise) {
+        await outlineRefreshPromise;
+        navigate('/app');
+      }
     },
-    [onPeopleChange, currentWorkspaceId, service, viewId, navigate]
+    [onPeopleChange, currentWorkspaceId, service, viewId, navigate, currentUser?.email, eventEmitter]
   );
 
   const handleTurnIntoMember = useCallback(
