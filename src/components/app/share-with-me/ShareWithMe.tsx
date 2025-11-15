@@ -1,5 +1,5 @@
 import { Collapse } from '@mui/material';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { ReactComponent as DownIcon } from '@/assets/icons/alt_arrow_down.svg';
@@ -15,12 +15,12 @@ export function ShareWithMe({ width }: { width: number }) {
   const { t } = useTranslation();
   const { toView: navigateToView } = useAppHandlers();
   const { outline, refreshOutline } = useBusinessInternal();
-  
+
   const [isExpanded, setIsExpanded] = useState(() => {
     return localStorage.getItem(LOCAL_STORAGE_KEY) !== 'false';
   });
   const [expandIds, setExpandIds] = useState<string[]>([]);
-  
+
   const toggleExpand = (id: string, isExpand: boolean) => {
     setExpandIds((prev) => {
       if (isExpand) {
@@ -41,8 +41,13 @@ export function ShareWithMe({ width }: { width: number }) {
   }, [refreshOutline]);
 
   // Get shareWithMe data from outline
-  const shareWithMe = findShareWithMeSpace(outline || []);
+  const shareWithMe = useMemo(() => {
+    if (!Array.isArray(outline)) {
+      return null;
+    }
 
+    return findShareWithMeSpace(outline);
+  }, [outline]);
 
   if (!shareWithMe?.children || shareWithMe?.children?.length === 0) return null;
 

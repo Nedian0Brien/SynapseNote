@@ -73,6 +73,130 @@ export function getAxiosInstance() {
   return axiosInstance;
 }
 
+/**
+ * Standard API response format from AppFlowy server
+ */
+interface APIResponse<T = unknown> {
+  code: number;
+  data?: T;
+  message: string;
+}
+
+/**
+ * Standardized error object with code and message
+ */
+interface APIError {
+  code: number;
+  message: string;
+}
+
+/**
+ * Safely handles axios errors and returns a consistent error format
+ * This ensures all API errors have a code property, even for network errors
+ */
+function handleAPIError(error: unknown): APIError {
+  if (axios.isAxiosError(error)) {
+    // Network error (no response from server)
+    if (!error.response) {
+      return {
+        code: -1,
+        message: error.message || 'Network error. Please check your connection.',
+      };
+    }
+
+    // Server responded with error status
+    const errorData = error.response.data as { code?: number; message?: string } | undefined;
+
+    return {
+      code: errorData?.code ?? error.response.status,
+      message: errorData?.message || error.message || 'Request failed',
+    };
+  }
+
+  // Non-axios error
+  return {
+    code: -1,
+    message: error instanceof Error ? error.message : 'Unknown error occurred',
+  };
+}
+
+/**
+ * Safely executes an axios request and handles errors consistently
+ * Returns the response data if successful, or rejects with a standardized error
+ */
+async function executeAPIRequest<TResponseData = unknown>(
+  request: () => Promise<AxiosResponse<APIResponse<TResponseData>> | undefined> | undefined
+): Promise<TResponseData> {
+  try {
+    if (!axiosInstance) {
+      return Promise.reject({
+        code: -1,
+        message: 'API service not initialized',
+      });
+    }
+
+    const response = await request();
+
+    if (!response?.data) {
+      return Promise.reject({
+        code: -1,
+        message: 'No response data received',
+      });
+    }
+
+    if (response.data.code === 0) {
+      // Type assertion needed because TypeScript can't infer that data exists when code === 0
+      return response.data.data as TResponseData;
+    }
+
+    // Server returned an error response
+    return Promise.reject({
+      code: response.data.code,
+      message: response.data.message || 'Request failed',
+    });
+  } catch (error) {
+    return Promise.reject(handleAPIError(error));
+  }
+}
+
+/**
+ * Safely executes an axios request that returns void (no data)
+ * Used for API calls that only need to check success/failure
+ */
+async function executeAPIVoidRequest(
+  request: () => Promise<AxiosResponse<APIResponse> | undefined> | undefined
+): Promise<void> {
+  try {
+    if (!axiosInstance) {
+      return Promise.reject({
+        code: -1,
+        message: 'API service not initialized',
+      });
+    }
+
+    const response = await request();
+
+    if (!response?.data) {
+      return Promise.reject({
+        code: -1,
+        message: 'No response data received',
+      });
+    }
+
+    if (response.data.code === 0) {
+      return;
+    }
+
+    // Server returned an error response
+    return Promise.reject({
+      code: response.data.code,
+      message: response.data.message || 'Request failed',
+    });
+  } catch (error) {
+    return Promise.reject(handleAPIError(error));
+  }
+}
+
 export function initAPIService(config: AFCloudConfig) {
   if (axiosInstance) {
     return;
@@ -321,37 +445,20 @@ export async function getCurrentUser(workspaceId?: string): Promise<User> {
 
 export async function updateUserProfile(metadata: Record<string, unknown>): Promise<void> {
   const url = 'api/user/update';
-  const response = await axiosInstance?.post<{
-    code: number;
-    message: string;
-  }>(url, {
-    metadata,
-  });
 
-  const data = response?.data;
-
-  if (data?.code === 0) {
-    return;
-  }
-
-  return Promise.reject(data);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.post<APIResponse>(url, {
+      metadata,
+    })
+  );
 }
 
 export async function getWorkspaceMemberProfile(workspaceId: string): Promise<MentionablePerson> {
   const url = `/api/workspace/${workspaceId}/workspace-profile`;
-  const response = await axiosInstance?.get<{
-    code: number;
-    data?: MentionablePerson;
-    message: string;
-  }>(url);
 
-  const data = response?.data;
-
-  if (data?.code === 0 && data.data) {
-    return data.data;
-  }
-
-  return Promise.reject(data);
+  return executeAPIRequest<MentionablePerson>(() =>
+    axiosInstance?.get<APIResponse<MentionablePerson>>(url)
+  );
 }
 
 export async function updateWorkspaceMemberProfile(
@@ -359,18 +466,10 @@ export async function updateWorkspaceMemberProfile(
   profile: WorkspaceMemberProfileUpdate
 ): Promise<void> {
   const url = `/api/workspace/${workspaceId}/update-member-profile`;
-  const response = await axiosInstance?.put<{
-    code: number;
-    message: string;
-  }>(url, profile);
 
-  const data = response?.data;
-
-  if (data?.code === 0) {
-    return;
-  }
-
-  return Promise.reject(data);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.put<APIResponse>(url, profile)
+  );
 }
 
 interface AFWorkspace {
@@ -403,57 +502,27 @@ function afWorkspace2Workspace(workspace: AFWorkspace): Workspace {
 
 export async function openWorkspace(workspaceId: string) {
   const url = `/api/workspace/${workspaceId}/open`;
-  const response = await axiosInstance?.put<{
-    code: number;
-    message: string;
-  }>(url);
 
-  if (response?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(response?.data);
+  return executeAPIVoidRequest(() => axiosInstance?.put<APIResponse>(url));
 }
 
 export async function updateWorkspace(workspaceId: string, payload: UpdateWorkspacePayload) {
   const url = `/api/workspace`;
-  const response = await axiosInstance?.patch<{
-    code: number;
-    data?: {
-      workspace_id: string;
-    };
-    message: string;
-  }>(url, {
-    workspace_id: workspaceId,
-    ...payload,
-  });
 
-  const data = response?.data;
-
-  if (data?.code === 0) {
-    return;
-  }
-
-  return Promise.reject(data);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.patch<APIResponse>(url, {
+      workspace_id: workspaceId,
+      ...payload,
+    })
+  );
 }
 
 export async function createWorkspace(payload: CreateWorkspacePayload) {
   const url = '/api/workspace';
-  const response = await axiosInstance?.post<{
-    code: number;
-    data?: {
-      workspace_id: string;
-    };
-    message: string;
-  }>(url, payload);
 
-  const data = response?.data;
-
-  if (data?.code === 0 && data.data) {
-    return data.data.workspace_id;
-  }
-
-  return Promise.reject(data);
+  return executeAPIRequest<{ workspace_id: string }>(() =>
+    axiosInstance?.post<APIResponse<{ workspace_id: string }>>(url, payload)
+  ).then((data) => data.workspace_id);
 }
 
 export async function getUserWorkspaceInfo(): Promise<{
@@ -491,63 +560,42 @@ export async function getUserWorkspaceInfo(): Promise<{
 
 export async function publishView(workspaceId: string, viewId: string, payload?: PublishViewPayload) {
   const url = `/api/workspace/${workspaceId}/page-view/${viewId}/publish`;
-  const response = await axiosInstance?.post<{
-    code: number;
-    message: string;
-  }>(url, payload);
 
-  if (response?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(response?.data);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.post<APIResponse>(url, payload)
+  );
 }
 
 export async function unpublishView(workspaceId: string, viewId: string) {
   const url = `/api/workspace/${workspaceId}/page-view/${viewId}/unpublish`;
-  const response = await axiosInstance?.post<{
-    code: number;
-    message: string;
-  }>(url);
 
-  if (response?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(response?.data);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.post<APIResponse>(url)
+  );
 }
 
 export async function updatePublishNamespace(workspaceId: string, payload: UploadPublishNamespacePayload) {
   const url = `/api/workspace/${workspaceId}/publish-namespace`;
-  const response = await axiosInstance?.put<{
-    code: number;
-    message: string;
-  }>(url, payload);
 
-  if (response?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(response?.data);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.put<APIResponse>(url, payload)
+  );
 }
 
 export async function getPublishViewMeta(namespace: string, publishName: string) {
   const url = `/api/workspace/v1/published/${namespace}/${publishName}`;
-  const response = await axiosInstance?.get<{
-    code: number;
-    data: {
+
+  return executeAPIRequest<{
+    view: ViewInfo;
+    child_views: ViewInfo[];
+    ancestor_views: ViewInfo[];
+  }>(() =>
+    axiosInstance?.get<APIResponse<{
       view: ViewInfo;
       child_views: ViewInfo[];
       ancestor_views: ViewInfo[];
-    };
-    message: string;
-  }>(url);
-
-  if (response?.data.code !== 0) {
-    return Promise.reject(response?.data);
-  }
-
-  return response?.data.data;
+    }>>(url)
+  );
 }
 
 export async function getPublishViewBlob(namespace: string, publishName: string) {
@@ -576,53 +624,44 @@ export async function updateCollab(
     localStorage.setItem('x-device-id', deviceId);
   }
 
-  const response = await axiosInstance?.post<{
-    code: number;
-    message: string;
-  }>(
-    url,
-    {
-      doc_state: Array.from(docState),
-      collab_type: collabType,
-    },
-    {
-      headers: {
-        'client-version': 'web',
-        'device-id': deviceId,
+  await executeAPIVoidRequest(() =>
+    axiosInstance?.post<APIResponse>(
+      url,
+      {
+        doc_state: Array.from(docState),
+        collab_type: collabType,
       },
-    }
+      {
+        headers: {
+          'client-version': 'web',
+          'device-id': deviceId,
+        },
+      }
+    )
   );
-
-  if (response?.data.code !== 0) {
-    return Promise.reject(response?.data);
-  }
 
   return context;
 }
 
 export async function getCollab(workspaceId: string, objectId: string, collabType: Types) {
   const url = `/api/workspace/v1/${workspaceId}/collab/${objectId}`;
-  const response = await axiosInstance?.get<{
-    code: number;
-    data: {
+
+  const data = await executeAPIRequest<{
+    doc_state: number[];
+    object_id: string;
+  }>(() =>
+    axiosInstance?.get<APIResponse<{
       doc_state: number[];
       object_id: string;
-    };
-    message: string;
-  }>(url, {
-    params: {
-      collab_type: collabType,
-    },
-  });
-
-  if (response?.data.code !== 0) {
-    return Promise.reject(response?.data);
-  }
-
-  const docState = response?.data.data.doc_state;
+    }>>(url, {
+      params: {
+        collab_type: collabType,
+      },
+    })
+  );
 
   return {
-    data: new Uint8Array(docState),
+    data: new Uint8Array(data.doc_state),
   };
 }
 
@@ -713,9 +752,17 @@ export async function updatePublishConfig(workspaceId: string, payload: UpdatePu
 
 export async function getPublishInfoWithViewId(viewId: string) {
   const url = `/api/workspace/v1/published-info/${viewId}`;
-  const response = await axiosInstance?.get<{
-    code: number;
-    data?: {
+
+  return executeAPIRequest<{
+    namespace: string;
+    publish_name: string;
+    publisher_email: string;
+    view_id: string;
+    publish_timestamp: string;
+    comments_enabled: boolean;
+    duplicate_enabled: boolean;
+  }>(() =>
+    axiosInstance?.get<APIResponse<{
       namespace: string;
       publish_name: string;
       publisher_email: string;
@@ -723,195 +770,100 @@ export async function getPublishInfoWithViewId(viewId: string) {
       publish_timestamp: string;
       comments_enabled: boolean;
       duplicate_enabled: boolean;
-    };
-    message: string;
-  }>(url);
-
-  const data = response?.data;
-
-  if (data?.code === 0 && data.data) {
-    return data.data;
-  }
-
-  return Promise.reject(data);
+    }>>(url)
+  );
 }
 
 export async function getAppFavorites(workspaceId: string) {
   const url = `/api/workspace/${workspaceId}/favorite`;
-  const response = await axiosInstance?.get<{
-    code: number;
-    data?: {
-      views: View[];
-    };
-    message: string;
-  }>(url);
 
-  const data = response?.data;
-
-  if (data?.code === 0 && data.data) {
-    return data.data.views;
-  }
-
-  return Promise.reject(data);
+  return executeAPIRequest<{ views: View[] }>(() =>
+    axiosInstance?.get<APIResponse<{ views: View[] }>>(url)
+  ).then((data) => data.views);
 }
 
 export async function getAppTrash(workspaceId: string) {
   const url = `/api/workspace/${workspaceId}/trash`;
-  const response = await axiosInstance?.get<{
-    code: number;
-    data?: {
-      views: View[];
-    };
-    message: string;
-  }>(url);
 
-  const data = response?.data;
-
-  if (data?.code === 0 && data.data) {
-    return data.data.views;
-  }
-
-  return Promise.reject(data);
+  return executeAPIRequest<{ views: View[] }>(() =>
+    axiosInstance?.get<APIResponse<{ views: View[] }>>(url)
+  ).then((data) => data.views);
 }
 
 export async function getAppRecent(workspaceId: string) {
   const url = `/api/workspace/${workspaceId}/recent`;
-  const response = await axiosInstance?.get<{
-    code: number;
-    data?: {
-      views: View[];
-    };
-    message: string;
-  }>(url);
 
-  const data = response?.data;
-
-  if (data?.code === 0 && data.data) {
-    return data.data.views;
-  }
-
-  return Promise.reject(data);
+  return executeAPIRequest<{ views: View[] }>(() =>
+    axiosInstance?.get<APIResponse<{ views: View[] }>>(url)
+  ).then((data) => data.views);
 }
 
 export async function getAppOutline(workspaceId: string) {
   const url = `/api/workspace/${workspaceId}/folder?depth=10`;
 
-  const response = await axiosInstance?.get<{
-    code: number;
-    data?: View;
-    message: string;
-  }>(url);
-
-  const data = response?.data;
-
-  if (data?.code === 0 && data.data) {
-    return data.data.children;
-  }
-
-  return Promise.reject(data);
+  return executeAPIRequest<View>(() =>
+    axiosInstance?.get<APIResponse<View>>(url)
+  ).then((data) => data.children);
 }
 
 export async function getView(workspaceId: string, viewId: string, depth: number = 1) {
   const url = `/api/workspace/${workspaceId}/folder?depth=${depth}&root_view_id=${viewId}`;
-  const response = await axiosInstance?.get<{
-    code: number;
-    data?: View;
-    message: string;
-  }>(url);
 
-  const data = response?.data;
-
-  if (data?.code === 0 && data.data) {
-    return data.data;
-  }
-
-  return Promise.reject(data);
+  return executeAPIRequest<View>(() =>
+    axiosInstance?.get<APIResponse<View>>(url)
+  );
 }
 
 export async function getPublishNamespace(workspaceId: string) {
   const url = `/api/workspace/${workspaceId}/publish-namespace`;
-  const response = await axiosInstance?.get<{
-    code: number;
-    data?: string;
-    message: string;
-  }>(url);
 
-  const data = response?.data;
-
-  if (data?.code === 0 && data.data) {
-    return data.data;
-  }
-
-  return Promise.reject(data);
+  return executeAPIRequest<string>(() =>
+    axiosInstance?.get<APIResponse<string>>(url)
+  );
 }
 
 export async function getPublishHomepage(workspaceId: string) {
   const url = `/api/workspace/${workspaceId}/publish-default`;
-  const response = await axiosInstance?.get<{
-    code: number;
-    data?: {
+
+  return executeAPIRequest<{
+    namespace: string;
+    publish_name: string;
+    publisher_email: string;
+    view_id: string;
+  }>(() =>
+    axiosInstance?.get<APIResponse<{
       namespace: string;
       publish_name: string;
       publisher_email: string;
       view_id: string;
-    };
-    message: string;
-  }>(url);
-
-  const data = response?.data;
-
-  if (data?.code === 0 && data.data) {
-    return data.data;
-  }
-
-  return Promise.reject(data);
+    }>>(url)
+  );
 }
 
 export async function updatePublishHomepage(workspaceId: string, viewId: string) {
   const url = `/api/workspace/${workspaceId}/publish-default`;
-  const response = await axiosInstance?.put<{
-    code: number;
-    message: string;
-  }>(url, {
-    view_id: viewId,
-  });
 
-  if (response?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(response?.data);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.put<APIResponse>(url, {
+      view_id: viewId,
+    })
+  );
 }
 
 export async function removePublishHomepage(workspaceId: string) {
   const url = `/api/workspace/${workspaceId}/publish-default`;
-  const response = await axiosInstance?.delete<{
-    code: number;
-    message: string;
-  }>(url);
 
-  if (response?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(response?.data);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.delete<APIResponse>(url)
+  );
 }
 
 export async function getPublishOutline(publishNamespace: string) {
   const url = `/api/workspace/published-outline/${publishNamespace}`;
-  const response = await axiosInstance?.get<{
-    code: number;
-    data?: View;
-    message: string;
-  }>(url);
 
-  const data = response?.data;
-
-  if (data?.code === 0 && data.data) {
-    return data.data.children;
-  }
-
-  return Promise.reject(data);
+  return executeAPIRequest<View>(() =>
+    axiosInstance?.get<APIResponse<View>>(url)
+  ).then((data) => data.children);
 }
 
 export async function getPublishViewComments(viewId: string): Promise<GlobalComment[]> {
@@ -1016,61 +968,49 @@ export async function getReactions(viewId: string, commentId?: string): Promise<
 
 export async function createGlobalCommentOnPublishView(viewId: string, content: string, replyCommentId?: string) {
   const url = `/api/workspace/published-info/${viewId}/comment`;
-  const response = await axiosInstance?.post<{ code: number; message: string }>(url, {
-    content,
-    reply_comment_id: replyCommentId,
-  });
 
-  if (response?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(response?.data.message);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.post<APIResponse>(url, {
+      content,
+      reply_comment_id: replyCommentId,
+    })
+  );
 }
 
 export async function deleteGlobalCommentOnPublishView(viewId: string, commentId: string) {
   const url = `/api/workspace/published-info/${viewId}/comment`;
-  const response = await axiosInstance?.delete<{ code: number; message: string }>(url, {
-    data: {
-      comment_id: commentId,
-    },
-  });
 
-  if (response?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(response?.data.message);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.delete<APIResponse>(url, {
+      data: {
+        comment_id: commentId,
+      },
+    })
+  );
 }
 
 export async function addReaction(viewId: string, commentId: string, reactionType: string) {
   const url = `/api/workspace/published-info/${viewId}/reaction`;
-  const response = await axiosInstance?.post<{ code: number; message: string }>(url, {
-    comment_id: commentId,
-    reaction_type: reactionType,
-  });
 
-  if (response?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(response?.data.message);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.post<APIResponse>(url, {
+      comment_id: commentId,
+      reaction_type: reactionType,
+    })
+  );
 }
 
 export async function removeReaction(viewId: string, commentId: string, reactionType: string) {
   const url = `/api/workspace/published-info/${viewId}/reaction`;
-  const response = await axiosInstance?.delete<{ code: number; message: string }>(url, {
-    data: {
-      comment_id: commentId,
-      reaction_type: reactionType,
-    },
-  });
 
-  if (response?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(response?.data.message);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.delete<APIResponse>(url, {
+      data: {
+        comment_id: commentId,
+        reaction_type: reactionType,
+      },
+    })
+  );
 }
 
 export async function getWorkspaces(): Promise<Workspace[]> {
@@ -1170,208 +1110,111 @@ export async function duplicatePublishView(workspaceId: string, payload: Duplica
 
 export async function createTemplate(template: UploadTemplatePayload) {
   const url = '/api/template-center/template';
-  const response = await axiosInstance?.post<{
-    code: number;
-    message: string;
-  }>(url, template);
 
-  if (response?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(response?.data.message);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.post<APIResponse>(url, template)
+  );
 }
 
 export async function updateTemplate(viewId: string, template: UploadTemplatePayload) {
   const url = `/api/template-center/template/${viewId}`;
-  const response = await axiosInstance?.put<{
-    code: number;
-    message: string;
-  }>(url, template);
 
-  if (response?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(response?.data.message);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.put<APIResponse>(url, template)
+  );
 }
 
 export async function getTemplates({ categoryId, nameContains }: { categoryId?: string; nameContains?: string }) {
   const url = `/api/template-center/template`;
 
-  const response = await axiosInstance?.get<{
-    code: number;
-    data?: {
-      templates: TemplateSummary[];
-    };
-    message: string;
-  }>(url, {
-    params: {
-      category_id: categoryId,
-      name_contains: nameContains,
-    },
-  });
-
-  const data = response?.data;
-
-  if (data?.code === 0 && data.data) {
-    return data.data.templates;
-  }
-
-  return Promise.reject(data);
+  return executeAPIRequest<{ templates: TemplateSummary[] }>(() =>
+    axiosInstance?.get<APIResponse<{ templates: TemplateSummary[] }>>(url, {
+      params: {
+        category_id: categoryId,
+        name_contains: nameContains,
+      },
+    })
+  ).then((data) => data.templates);
 }
 
 export async function getTemplateById(viewId: string) {
   const url = `/api/template-center/template/${viewId}`;
-  const response = await axiosInstance?.get<{
-    code: number;
-    data?: Template;
-    message: string;
-  }>(url);
 
-  const data = response?.data;
-
-  if (data?.code === 0 && data.data) {
-    return data.data;
-  }
-
-  return Promise.reject(data);
+  return executeAPIRequest<Template>(() =>
+    axiosInstance?.get<APIResponse<Template>>(url)
+  );
 }
 
 export async function deleteTemplate(viewId: string) {
   const url = `/api/template-center/template/${viewId}`;
-  const response = await axiosInstance?.delete<{
-    code: number;
-    message: string;
-  }>(url);
 
-  if (response?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(response?.data.message);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.delete<APIResponse>(url)
+  );
 }
 
 export async function getTemplateCategories() {
   const url = '/api/template-center/category';
-  const response = await axiosInstance?.get<{
-    code: number;
-    data?: {
-      categories: TemplateCategory[];
-    };
-    message: string;
-  }>(url);
 
-  const data = response?.data;
-
-  if (data?.code === 0 && data.data) {
-    return data.data.categories;
-  }
-
-  return Promise.reject(data);
+  return executeAPIRequest<{ categories: TemplateCategory[] }>(() =>
+    axiosInstance?.get<APIResponse<{ categories: TemplateCategory[] }>>(url)
+  ).then((data) => data.categories);
 }
 
 export async function addTemplateCategory(category: TemplateCategoryFormValues) {
   const url = '/api/template-center/category';
-  const response = await axiosInstance?.post<{
-    code: number;
-    message: string;
-  }>(url, category);
 
-  if (response?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(response?.data.message);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.post<APIResponse>(url, category)
+  );
 }
 
 export async function updateTemplateCategory(id: string, category: TemplateCategoryFormValues) {
   const url = `/api/template-center/category/${id}`;
-  const response = await axiosInstance?.put<{
-    code: number;
-    message: string;
-  }>(url, category);
 
-  if (response?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(response?.data.message);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.put<APIResponse>(url, category)
+  );
 }
 
 export async function deleteTemplateCategory(categoryId: string) {
   const url = `/api/template-center/category/${categoryId}`;
-  const response = await axiosInstance?.delete<{
-    code: number;
-    message: string;
-  }>(url);
 
-  if (response?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(response?.data.message);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.delete<APIResponse>(url)
+  );
 }
 
 export async function getTemplateCreators() {
   const url = '/api/template-center/creator';
-  const response = await axiosInstance?.get<{
-    code: number;
-    data?: {
-      creators: TemplateCreator[];
-    };
-    message: string;
-  }>(url);
 
-  const data = response?.data;
-
-  if (data?.code === 0 && data.data) {
-    return data.data.creators;
-  }
-
-  return Promise.reject(data);
+  return executeAPIRequest<{ creators: TemplateCreator[] }>(() =>
+    axiosInstance?.get<APIResponse<{ creators: TemplateCreator[] }>>(url)
+  ).then((data) => data.creators);
 }
 
 export async function createTemplateCreator(creator: TemplateCreatorFormValues) {
   const url = '/api/template-center/creator';
-  const response = await axiosInstance?.post<{
-    code: number;
-    message: string;
-  }>(url, creator);
 
-  if (response?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(response?.data.message);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.post<APIResponse>(url, creator)
+  );
 }
 
 export async function updateTemplateCreator(creatorId: string, creator: TemplateCreatorFormValues) {
   const url = `/api/template-center/creator/${creatorId}`;
-  const response = await axiosInstance?.put<{
-    code: number;
-    message: string;
-  }>(url, creator);
 
-  if (response?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(response?.data.message);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.put<APIResponse>(url, creator)
+  );
 }
 
 export async function deleteTemplateCreator(creatorId: string) {
   const url = `/api/template-center/creator/${creatorId}`;
-  const response = await axiosInstance?.delete<{
-    code: number;
-    message: string;
-  }>(url);
 
-  if (response?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(response?.data.message);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.delete<APIResponse>(url)
+  );
 }
 
 export async function uploadTemplateAvatar(file: File) {
@@ -1380,66 +1223,49 @@ export async function uploadTemplateAvatar(file: File) {
 
   formData.append('avatar', file);
 
-  const response = await axiosInstance?.request<{
-    code: number;
-    data?: {
-      file_id: string;
-    };
-    message: string;
-  }>({
-    method: 'PUT',
-    url,
-    data: formData,
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
+  const data = await executeAPIRequest<{ file_id: string }>(() =>
+    axiosInstance?.request<APIResponse<{ file_id: string }>>({
+      method: 'PUT',
+      url,
+      data: formData,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+  );
 
-  const data = response?.data;
-
-  if (data?.code === 0 && data.data) {
-    return axiosInstance?.defaults.baseURL + '/api/template-center/avatar/' + data.data.file_id;
-  }
-
-  return Promise.reject(data);
+  return axiosInstance?.defaults.baseURL + '/api/template-center/avatar/' + data.file_id;
 }
 
 export async function getInvitation(invitationId: string) {
   const url = `/api/workspace/invite/${invitationId}`;
-  const response = await axiosInstance?.get<{
-    code: number;
-    data?: Invitation;
-    message: string;
-  }>(url);
 
-  const data = response?.data;
-
-  if (data?.code === 0 && data.data) {
-    return data.data;
-  }
-
-  return Promise.reject(data);
+  return executeAPIRequest<Invitation>(() =>
+    axiosInstance?.get<APIResponse<Invitation>>(url)
+  );
 }
 
 export async function acceptInvitation(invitationId: string) {
   const url = `/api/workspace/accept-invite/${invitationId}`;
-  const response = await axiosInstance?.post<{
-    code: number;
-    message: string;
-  }>(url);
 
-  if (response?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(response?.data.message);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.post<APIResponse>(url)
+  );
 }
 
 export async function getRequestAccessInfo(requestId: string): Promise<GetRequestAccessInfoResponse> {
   const url = `/api/access-request/${requestId}`;
-  const response = await axiosInstance?.get<{
-    code: number;
-    data?: {
+
+  const data = await executeAPIRequest<{
+    request_id: string;
+    workspace: AFWorkspace;
+    requester: AFWebUser & {
+      email: string;
+    };
+    view: View;
+    status: RequestAccessInfoStatus;
+  }>(() =>
+    axiosInstance?.get<APIResponse<{
       request_id: string;
       workspace: AFWorkspace;
       requester: AFWebUser & {
@@ -1447,94 +1273,57 @@ export async function getRequestAccessInfo(requestId: string): Promise<GetReques
       };
       view: View;
       status: RequestAccessInfoStatus;
-    };
-    message: string;
-  }>(url);
+    }>>(url)
+  );
 
-  const data = response?.data;
-
-  if (data?.code === 0 && data.data) {
-    const workspace = data.data.workspace;
-
-    return {
-      ...data.data,
-      workspace: afWorkspace2Workspace(workspace),
-    };
-  }
-
-  return Promise.reject(data);
+  return {
+    ...data,
+    workspace: afWorkspace2Workspace(data.workspace),
+  };
 }
 
 export async function approveRequestAccess(requestId: string) {
   const url = `/api/access-request/${requestId}/approve`;
-  const response = await axiosInstance?.post<{
-    code: number;
-    message: string;
-  }>(url, {
-    is_approved: true,
-  });
 
-  if (response?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(response?.data);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.post<APIResponse>(url, {
+      is_approved: true,
+    })
+  );
 }
 
 export async function sendRequestAccess(workspaceId: string, viewId: string) {
   const url = `/api/access-request`;
-  const response = await axiosInstance?.post<{
-    code: number;
-    message: string;
-  }>(url, {
-    workspace_id: workspaceId,
-    view_id: viewId,
-  });
 
-  if (response?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(response?.data);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.post<APIResponse>(url, {
+      workspace_id: workspaceId,
+      view_id: viewId,
+    })
+  );
 }
 
 export async function getSubscriptionLink(workspaceId: string, plan: SubscriptionPlan, interval: SubscriptionInterval) {
   const url = `/billing/api/v1/subscription-link`;
-  const response = await axiosInstance?.get<{
-    code: number;
-    data?: string;
-    message: string;
-  }>(url, {
-    params: {
-      workspace_subscription_plan: plan,
-      recurring_interval: interval,
-      workspace_id: workspaceId,
-      success_url: window.location.href,
-    },
-  });
 
-  const data = response?.data;
-
-  if (data?.code === 0 && data.data) {
-    return data.data;
-  }
-
-  return Promise.reject(data);
+  return executeAPIRequest<string>(() =>
+    axiosInstance?.get<APIResponse<string>>(url, {
+      params: {
+        workspace_subscription_plan: plan,
+        recurring_interval: interval,
+        workspace_id: workspaceId,
+        success_url: window.location.href,
+      },
+    })
+  );
 }
 
 export async function getSubscriptions() {
   const url = `/billing/api/v1/subscriptions`;
-  const response = await axiosInstance?.get<{
-    code: number;
-    data: Subscriptions;
-    message: string;
-  }>(url);
 
-  if (response?.data.code === 0) {
-    return response?.data.data;
-  }
-
-  return Promise.reject(response?.data);
+  return executeAPIRequest<Subscriptions>(() =>
+    axiosInstance?.get<APIResponse<Subscriptions>>(url)
+  );
 }
 
 export async function getWorkspaceSubscriptions(workspaceId: string) {
@@ -1551,17 +1340,9 @@ export async function getWorkspaceSubscriptions(workspaceId: string) {
 export async function getActiveSubscription(workspaceId: string) {
   const url = `/billing/api/v1/active-subscription/${workspaceId}`;
 
-  const response = await axiosInstance?.get<{
-    code: number;
-    data: SubscriptionPlan[];
-    message: string;
-  }>(url);
-
-  if (response?.data.code === 0) {
-    return response?.data.data;
-  }
-
-  return Promise.reject(response?.data);
+  return executeAPIRequest<SubscriptionPlan[]>(() =>
+    axiosInstance?.get<APIResponse<SubscriptionPlan[]>>(url)
+  );
 }
 
 export async function createImportTask(file: File) {
@@ -1616,61 +1397,35 @@ export async function uploadImportFile(presignedUrl: string, file: File, onProgr
 export async function createFolderView(workspaceId: string, payload: CreateFolderViewPayload) {
   const url = `/api/workspace/${workspaceId}/folder-view`;
 
-  const res = await axiosInstance?.post<{
-    code: number;
-    data: {
-      view_id: string;
-    };
-    message: string;
-  }>(url, {
-    parent_view_id: payload.parentViewId,
-    layout: payload.layout,
-    name: payload.name,
-    view_id: payload.viewId,
-    database_id: payload.databaseId,
-  });
-
-  if (res?.data.code === 0) {
-    return res.data.data.view_id;
-  }
-
-  return Promise.reject(res?.data);
+  return executeAPIRequest<{ view_id: string }>(() =>
+    axiosInstance?.post<APIResponse<{ view_id: string }>>(url, {
+      parent_view_id: payload.parentViewId,
+      layout: payload.layout,
+      name: payload.name,
+      view_id: payload.viewId,
+      database_id: payload.databaseId,
+    })
+  ).then((data) => data.view_id);
 }
 
 export async function addAppPage(workspaceId: string, parentViewId: string, { layout, name }: CreatePagePayload) {
   const url = `/api/workspace/${workspaceId}/page-view`;
-  const response = await axiosInstance?.post<{
-    code: number;
-    data: {
-      view_id: string;
-    };
-    message: string;
-  }>(url, {
-    parent_view_id: parentViewId,
-    layout,
-    name,
-  });
 
-  if (response?.data.code === 0) {
-    return response?.data.data.view_id;
-  }
-
-  return Promise.reject(response?.data);
+  return executeAPIRequest<{ view_id: string }>(() =>
+    axiosInstance?.post<APIResponse<{ view_id: string }>>(url, {
+      parent_view_id: parentViewId,
+      layout,
+      name,
+    })
+  ).then((data) => data.view_id);
 }
 
 export async function updatePage(workspaceId: string, viewId: string, data: UpdatePagePayload) {
   const url = `/api/workspace/${workspaceId}/page-view/${viewId}`;
 
-  const res = await axiosInstance?.patch<{
-    code: number;
-    message: string;
-  }>(url, data);
-
-  if (res?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(res?.data);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.patch<APIResponse>(url, data)
+  );
 }
 
 export async function updatePageIcon(
@@ -1682,57 +1437,33 @@ export async function updatePageIcon(
   }
 ): Promise<void> {
   const url = `/api/workspace/${workspaceId}/page-view/${viewId}/update-icon`;
-  const response = await axiosInstance?.post<{
-    code: number;
-    message: string;
-  }>(url, { icon });
 
-  if (response?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(response?.data);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.post<APIResponse>(url, { icon })
+  );
 }
 
 export async function updatePageName(workspaceId: string, viewId: string, name: string): Promise<void> {
   const url = `/api/workspace/${workspaceId}/page-view/${viewId}/update-name`;
-  const response = await axiosInstance?.post<{
-    code: number;
-    message: string;
-  }>(url, { name });
 
-  if (response?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(response?.data);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.post<APIResponse>(url, { name })
+  );
 }
 
 export async function deleteTrash(workspaceId: string, viewId?: string) {
   if (viewId) {
     const url = `/api/workspace/${workspaceId}/trash/${viewId}`;
-    const response = await axiosInstance?.delete<{
-      code: number;
-      message: string;
-    }>(url);
 
-    if (response?.data.code === 0) {
-      return;
-    }
-
-    return Promise.reject(response?.data);
+    return executeAPIVoidRequest(() =>
+      axiosInstance?.delete<APIResponse>(url)
+    );
   } else {
     const url = `/api/workspace/${workspaceId}/delete-all-pages-from-trash`;
-    const response = await axiosInstance?.post<{
-      code: number;
-      message: string;
-    }>(url);
 
-    if (response?.data.code === 0) {
-      return;
-    }
-
-    return Promise.reject(response?.data);
+    return executeAPIVoidRequest(() =>
+      axiosInstance?.post<APIResponse>(url)
+    );
   }
 }
 

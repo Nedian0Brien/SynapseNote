@@ -176,6 +176,7 @@ export const AppSyncLayer: React.FC<AppSyncLayerProps> = ({ children }) => {
           if (isCurrentUser) {
             try {
               const fetchedProfile = await service.getWorkspaceMemberProfile(currentWorkspaceId);
+
               if (fetchedProfile) {
                 // Use fetched profile as base, then apply notification updates
                 const baseProfile = {

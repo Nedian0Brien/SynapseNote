@@ -26,6 +26,7 @@ function resolveAppflowyOriginAndPathname(): { origin: string | null; pathname: 
   if (baseUrl) {
     try {
       const parsed = new URL(baseUrl);
+
       cachedAppflowyOrigin = parsed.origin;
       cachedFileStoragePathname = `${parsed.pathname.replace(/\/$/, '')}/api/file_storage`;
       return { origin: cachedAppflowyOrigin, pathname: cachedFileStoragePathname };
