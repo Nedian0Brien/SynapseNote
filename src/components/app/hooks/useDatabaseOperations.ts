@@ -272,7 +272,7 @@ export function useDatabaseOperations(
         throw new Error('No service found');
       }
 
-      return service?.checkIfCollabExists(currentWorkspaceId, documentId) || Promise.resolve();
+      return service?.checkIfCollabExists(currentWorkspaceId, documentId) || Promise.resolve(false);
     },
     [service, currentWorkspaceId]
   );

@@ -58,11 +58,11 @@ export interface DatabaseContextState {
   loadDatabaseRelations?: () => Promise<DatabaseRelations | undefined>;
   loadViews?: () => Promise<View[]>;
   uploadFile?: (file: File) => Promise<string>;
-  createOrphanedView?: (payload: { document_id: string }) => Promise<void>;
+  createOrphanedView?: (payload: { document_id: string }) => Promise<View>;
   loadDatabasePrompts?: LoadDatabasePrompts;
   testDatabasePromptConfig?: TestDatabasePromptConfig;
   requestInstance?: AxiosInstance | null;
-  checkIfRowDocumentExists?: (documentId: string) => Promise<void>;
+  checkIfRowDocumentExists?: (documentId: string) => Promise<boolean>;
   eventEmitter?: EventEmitter;
   getSubscriptions?: (() => Promise<Subscription[]>) | undefined;
   getViewIdFromDatabaseId?: (databaseId: string) => Promise<string | null>;

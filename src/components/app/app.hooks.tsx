@@ -81,13 +81,13 @@ export interface AppContextType {
   generateAISummaryForRow?: (payload: GenerateAISummaryRowPayload) => Promise<string>;
   generateAITranslateForRow?: (payload: GenerateAITranslateRowPayload) => Promise<string>;
   loadDatabaseRelations?: () => Promise<DatabaseRelations | undefined>;
-  createOrphanedView?: (payload: { document_id: string }) => Promise<void>;
+  createOrphanedView?: (payload: { document_id: string }) => Promise<View>;
   loadDatabasePrompts?: LoadDatabasePrompts;
   testDatabasePromptConfig?: TestDatabasePromptConfig;
   eventEmitter?: EventEmitter;
   getMentionUser?: (uuid: string) => Promise<MentionablePerson | undefined>;
   awarenessMap?: Record<string, Awareness>;
-  checkIfRowDocumentExists?: (databaseId: string, rowIds: string[]) => Promise<void>;
+  checkIfRowDocumentExists?: (documentId: string) => Promise<boolean>;
   getViewIdFromDatabaseId?: (databaseId: string) => Promise<string | null>;
   loadMentionableUsers?: () => Promise<MentionablePerson[]>;
 }

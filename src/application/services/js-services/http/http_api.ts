@@ -137,7 +137,14 @@ async function executeAPIRequest<TResponseData = unknown>(
 
     const response = await request();
 
-    if (!response?.data) {
+    if (!response) {
+      return Promise.reject({
+        code: -1,
+        message: 'No response received from server',
+      });
+    }
+
+    if (!response.data) {
       return Promise.reject({
         code: -1,
         message: 'No response data received',
@@ -271,7 +278,7 @@ export function initAPIService(config: AFCloudConfig) {
     return response;
   };
 
-  axiosInstance.interceptors.response.use(undefined, handleUnauthorized);
+  axiosInstance.interceptors.response.use((response) => response, handleUnauthorized);
 }
 
 export async function signInWithUrl(url: string) {
@@ -326,43 +333,32 @@ export async function signInWithUrl(url: string) {
 
 export async function verifyToken(accessToken: string) {
   const url = `/api/user/verify/${accessToken}`;
-  const response = await axiosInstance?.get<{
-    code: number;
-    data?: {
-      is_new: boolean;
-    };
-    message: string;
-  }>(url);
 
-  const data = response?.data;
-
-  if (data?.code === 0 && data.data) {
-    return data.data;
-  }
-
-  return Promise.reject(data);
+  return executeAPIRequest<{ is_new: boolean }>(() =>
+    axiosInstance?.get<APIResponse<{ is_new: boolean }>>(url)
+  );
 }
 
 export async function getAuthProviders(): Promise<AuthProvider[]> {
   const url = '/api/server-info/auth-providers';
 
   try {
-    const response = await axiosInstance?.get<{
-      code: number;
-      data?: {
+    const payload = await executeAPIRequest<{
+      count: number;
+      providers: string[];
+      signup_disabled: boolean;
+      mailer_autoconfirm: boolean;
+    }>(() =>
+      axiosInstance?.get<APIResponse<{
         count: number;
         providers: string[];
         signup_disabled: boolean;
         mailer_autoconfirm: boolean;
-      };
-      message: string;
-    }>(url);
+      }>>(url)
+    );
 
-    const data = response?.data;
-
-    if (data?.code === 0 && data.data) {
-      // Map server provider names to our AuthProvider enum
-      return data.data.providers.map((provider: string) => {
+    return payload.providers
+      .map((provider: string) => {
         switch (provider.toLowerCase()) {
           case 'google':
             return AuthProvider.GOOGLE;
@@ -383,28 +379,25 @@ export async function getAuthProviders(): Promise<AuthProvider[]> {
           case 'phone':
             return AuthProvider.PHONE;
           default:
-            // Log unknown provider but don't include it
             console.warn(`Unknown auth provider from server: ${provider}`);
             return null;
         }
-      }).filter((provider): provider is AuthProvider => provider !== null);
-    }
-
-    // Default to password provider if API returns error
-    console.warn('Auth providers API returned error:', data?.message);
-    return [AuthProvider.PASSWORD];
+      })
+      .filter((provider): provider is AuthProvider => provider !== null);
   } catch (error) {
+    const message = (error as APIError)?.message;
+
+    console.warn('Auth providers API returned error:', message);
     console.error('Failed to fetch auth providers:', error);
-    // Return default providers on error
     return [AuthProvider.PASSWORD];
   }
 }
 
 export async function getCurrentUser(workspaceId?: string): Promise<User> {
   const url = '/api/user/profile';
-  const response = await axiosInstance?.get<{
-    code: number;
-    data?: {
+
+  try {
+    const payload = await executeAPIRequest<{
       uid: number;
       uuid: string;
       email: string;
@@ -413,16 +406,22 @@ export async function getCurrentUser(workspaceId?: string): Promise<User> {
       encryption_sign: null;
       latest_workspace_id: string;
       updated_at: number;
-    };
-    message: string;
-  }>(url, {
-    params: workspaceId ? { workspace_id: workspaceId } : {},
-  });
+    }>(() =>
+      axiosInstance?.get<APIResponse<{
+        uid: number;
+        uuid: string;
+        email: string;
+        name: string;
+        metadata: Record<string, unknown>;
+        encryption_sign: null;
+        latest_workspace_id: string;
+        updated_at: number;
+      }>>(url, {
+        params: workspaceId ? { workspace_id: workspaceId } : {},
+      })
+    );
 
-  const data = response?.data;
-
-  if (data?.code === 0 && data.data) {
-    const { uid, uuid, email, name, metadata } = data.data;
+    const { uid, uuid, email, name, metadata } = payload;
 
     return {
       uid: String(uid),
@@ -430,17 +429,19 @@ export async function getCurrentUser(workspaceId?: string): Promise<User> {
       email,
       name,
       avatar: (metadata?.icon_url as string) || null,
-      latestWorkspaceId: data.data.latest_workspace_id,
+      latestWorkspaceId: payload.latest_workspace_id,
       metadata: metadata || {},
     };
-  }
+  } catch (error) {
+    const apiError = error as APIError;
 
-  if (data?.code === ERROR_CODE.USER_UNAUTHORIZED) {
-    invalidToken();
-    return Promise.reject(new Error('User unauthorized'));
-  }
+    if (apiError?.code === ERROR_CODE.USER_UNAUTHORIZED) {
+      invalidToken();
+      return Promise.reject(new Error('User unauthorized'));
+    }
 
-  return Promise.reject(data);
+    return Promise.reject(apiError);
+  }
 }
 
 export async function updateUserProfile(metadata: Record<string, unknown>): Promise<void> {
@@ -531,31 +532,22 @@ export async function getUserWorkspaceInfo(): Promise<{
   workspaces: Workspace[];
 }> {
   const url = '/api/user/workspace';
-  const response = await axiosInstance?.get<{
-    code: number;
-    message: string;
-    data: {
-      user_profile: {
-        uuid: string;
-      };
+
+  return executeAPIRequest<{
+    user_profile: { uuid: string };
+    visiting_workspace: AFWorkspace;
+    workspaces: AFWorkspace[];
+  }>(() =>
+    axiosInstance?.get<APIResponse<{
+      user_profile: { uuid: string };
       visiting_workspace: AFWorkspace;
       workspaces: AFWorkspace[];
-    };
-  }>(url);
-
-  const data = response?.data;
-
-  if (data?.code === 0) {
-    const { visiting_workspace, workspaces, user_profile } = data.data;
-
-    return {
-      user_id: user_profile.uuid,
-      selected_workspace: afWorkspace2Workspace(visiting_workspace),
-      workspaces: workspaces.map(afWorkspace2Workspace),
-    };
-  }
-
-  return Promise.reject(data);
+    }>>(url)
+  ).then((payload) => ({
+    user_id: payload.user_profile.uuid,
+    selected_workspace: afWorkspace2Workspace(payload.visiting_workspace),
+    workspaces: payload.workspaces.map(afWorkspace2Workspace),
+  }));
 }
 
 export async function publishView(workspaceId: string, viewId: string, payload?: PublishViewPayload) {
@@ -667,9 +659,16 @@ export async function getCollab(workspaceId: string, objectId: string, collabTyp
 
 export async function getPageCollab(workspaceId: string, viewId: string) {
   const url = `/api/workspace/${workspaceId}/page-view/${viewId}`;
-  const response = await axiosInstance?.get<{
-    code: number;
+  const response = await executeAPIRequest<{
+    view: View;
     data: {
+      encoded_collab: number[];
+      row_data: Record<RowId, number[]>;
+      owner?: User;
+      last_editor?: User;
+    };
+  }>(() =>
+    axiosInstance?.get<APIResponse<{
       view: View;
       data: {
         encoded_collab: number[];
@@ -677,19 +676,10 @@ export async function getPageCollab(workspaceId: string, viewId: string) {
         owner?: User;
         last_editor?: User;
       };
-    };
-    message: string;
-  }>(url);
+    }>>(url)
+  );
 
-  if (!response) {
-    return Promise.reject('No response');
-  }
-
-  if (response.data.code !== 0) {
-    return Promise.reject(response?.data);
-  }
-
-  const { encoded_collab, row_data, owner, last_editor } = response.data.data.data;
+  const { encoded_collab, row_data, owner, last_editor } = response.data;
 
   return {
     data: new Uint8Array(encoded_collab),
@@ -738,16 +728,8 @@ export async function getPublishView(publishNamespace: string, publishName: stri
 
 export async function updatePublishConfig(workspaceId: string, payload: UpdatePublishConfigPayload) {
   const url = `/api/workspace/${workspaceId}/publish`;
-  const response = await axiosInstance?.patch<{
-    code: number;
-    message: string;
-  }>(url, [payload]);
 
-  if (response?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(response?.data);
+  return executeAPIVoidRequest(() => axiosInstance?.patch<APIResponse>(url, [payload]));
 }
 
 export async function getPublishInfoWithViewId(viewId: string) {
@@ -868,9 +850,23 @@ export async function getPublishOutline(publishNamespace: string) {
 
 export async function getPublishViewComments(viewId: string): Promise<GlobalComment[]> {
   const url = `/api/workspace/published-info/${viewId}/comment`;
-  const response = await axiosInstance?.get<{
-    code: number;
-    data?: {
+  const payload = await executeAPIRequest<{
+    comments: {
+      comment_id: string;
+      user: {
+        uuid: string;
+        name: string;
+        avatar_url: string | null;
+      };
+      content: string;
+      created_at: string;
+      last_updated_at: string;
+      reply_comment_id: string | null;
+      is_deleted: boolean;
+      can_be_deleted: boolean;
+    }[];
+  }>(() =>
+    axiosInstance?.get<APIResponse<{
       comments: {
         comment_id: string;
         user: {
@@ -885,34 +881,23 @@ export async function getPublishViewComments(viewId: string): Promise<GlobalComm
         is_deleted: boolean;
         can_be_deleted: boolean;
       }[];
-    };
-    message: string;
-  }>(url);
+    }>>(url)
+  );
 
-  const data = response?.data;
-
-  if (data?.code === 0 && data.data) {
-    const { comments } = data.data;
-
-    return comments.map((comment) => {
-      return {
-        commentId: comment.comment_id,
-        user: {
-          uuid: comment.user?.uuid || '',
-          name: comment.user?.name || '',
-          avatarUrl: comment.user?.avatar_url || null,
-        },
-        content: comment.content,
-        createdAt: comment.created_at,
-        lastUpdatedAt: comment.last_updated_at,
-        replyCommentId: comment.reply_comment_id,
-        isDeleted: comment.is_deleted,
-        canDeleted: comment.can_be_deleted,
-      };
-    });
-  }
-
-  return Promise.reject(data);
+  return payload.comments.map((comment) => ({
+    commentId: comment.comment_id,
+    user: {
+      uuid: comment.user?.uuid || '',
+      name: comment.user?.name || '',
+      avatarUrl: comment.user?.avatar_url || null,
+    },
+    content: comment.content,
+    createdAt: comment.created_at,
+    lastUpdatedAt: comment.last_updated_at,
+    replyCommentId: comment.reply_comment_id,
+    isDeleted: comment.is_deleted,
+    canDeleted: comment.can_be_deleted,
+  }));
 }
 
 export async function getReactions(viewId: string, commentId?: string): Promise<Record<string, Reaction[]>> {
@@ -922,9 +907,18 @@ export async function getReactions(viewId: string, commentId?: string): Promise<
     url += `?comment_id=${commentId}`;
   }
 
-  const response = await axiosInstance?.get<{
-    code: number;
-    data?: {
+  const payload = await executeAPIRequest<{
+    reactions: {
+      reaction_type: string;
+      react_users: {
+        uuid: string;
+        name: string;
+        avatar_url: string | null;
+      }[];
+      comment_id: string;
+    }[];
+  }>(() =>
+    axiosInstance?.get<APIResponse<{
       reactions: {
         reaction_type: string;
         react_users: {
@@ -934,36 +928,28 @@ export async function getReactions(viewId: string, commentId?: string): Promise<
         }[];
         comment_id: string;
       }[];
-    };
-    message: string;
-  }>(url);
+    }>>(url)
+  );
 
-  const data = response?.data;
+  const reactionsMap: Record<string, Reaction[]> = {};
 
-  if (data?.code === 0 && data.data) {
-    const { reactions } = data.data;
-    const reactionsMap: Record<string, Reaction[]> = {};
-
-    for (const reaction of reactions) {
-      if (!reactionsMap[reaction.comment_id]) {
-        reactionsMap[reaction.comment_id] = [];
-      }
-
-      reactionsMap[reaction.comment_id].push({
-        reactionType: reaction.reaction_type,
-        commentId: reaction.comment_id,
-        reactUsers: reaction.react_users.map((user) => ({
-          uuid: user.uuid,
-          name: user.name,
-          avatarUrl: user.avatar_url,
-        })),
-      });
+  for (const reaction of payload.reactions) {
+    if (!reactionsMap[reaction.comment_id]) {
+      reactionsMap[reaction.comment_id] = [];
     }
 
-    return reactionsMap;
+    reactionsMap[reaction.comment_id].push({
+      reactionType: reaction.reaction_type,
+      commentId: reaction.comment_id,
+      reactUsers: reaction.react_users.map((user) => ({
+        uuid: user.uuid,
+        name: user.name,
+        avatarUrl: user.avatar_url,
+      })),
+    });
   }
 
-  return Promise.reject(data);
+  return reactionsMap;
 }
 
 export async function createGlobalCommentOnPublishView(viewId: string, content: string, replyCommentId?: string) {
@@ -1019,19 +1005,11 @@ export async function getWorkspaces(): Promise<Workspace[]> {
   });
 
   const url = `/api/workspace?${query.toString()}`;
-  const response = await axiosInstance?.get<{
-    code: number;
-    data?: AFWorkspace[];
-    message: string;
-  }>(url);
+  const payload = await executeAPIRequest<AFWorkspace[]>(() =>
+    axiosInstance?.get<APIResponse<AFWorkspace[]>>(url)
+  );
 
-  const data = response?.data;
-
-  if (data?.code === 0 && data.data) {
-    return data.data.map(afWorkspace2Workspace);
-  }
-
-  return Promise.reject(data);
+  return payload.map(afWorkspace2Workspace);
 }
 
 export interface WorkspaceFolder {
@@ -1069,19 +1047,11 @@ function iterateFolder(folder: WorkspaceFolder): FolderView {
 
 export async function getWorkspaceFolder(workspaceId: string): Promise<FolderView> {
   const url = `/api/workspace/${workspaceId}/folder`;
-  const response = await axiosInstance?.get<{
-    code: number;
-    data?: WorkspaceFolder;
-    message: string;
-  }>(url);
+  const payload = await executeAPIRequest<WorkspaceFolder>(() =>
+    axiosInstance?.get<APIResponse<WorkspaceFolder>>(url)
+  );
 
-  const data = response?.data;
-
-  if (data?.code === 0 && data.data) {
-    return iterateFolder(data.data);
-  }
-
-  return Promise.reject(data);
+  return iterateFolder(payload);
 }
 
 export interface DuplicatePublishViewPayload {
@@ -1093,19 +1063,9 @@ export interface DuplicatePublishViewPayload {
 export async function duplicatePublishView(workspaceId: string, payload: DuplicatePublishViewPayload) {
   const url = `/api/workspace/${workspaceId}/published-duplicate`;
 
-  const res = await axiosInstance?.post<{
-    code: number;
-    data: {
-      view_id: string;
-    };
-    message: string;
-  }>(url, payload);
-
-  if (res?.data.code === 0) {
-    return res.data.data.view_id;
-  }
-
-  return Promise.reject(res?.data.message);
+  return executeAPIRequest<{ view_id: string }>(() =>
+    axiosInstance?.post<APIResponse<{ view_id: string }>>(url, payload)
+  ).then((data) => data.view_id);
 }
 
 export async function createTemplate(template: UploadTemplatePayload) {
@@ -1349,26 +1309,15 @@ export async function createImportTask(file: File) {
   const url = `/api/import/create`;
   const fileName = file.name.split('.').slice(0, -1).join('.') || crypto.randomUUID();
 
-  const res = await axiosInstance?.post<{
-    code: number;
-    data: {
-      task_id: string;
-      presigned_url: string;
-    };
-    message: string;
-  }>(url, {
-    workspace_name: fileName,
-    content_length: file.size,
-  });
-
-  if (res?.data.code === 0) {
-    return {
-      taskId: res?.data.data.task_id,
-      presignedUrl: res?.data.data.presigned_url,
-    };
-  }
-
-  return Promise.reject(res?.data);
+  return executeAPIRequest<{ task_id: string; presigned_url: string }>(() =>
+    axiosInstance?.post<APIResponse<{ task_id: string; presigned_url: string }>>(url, {
+      workspace_name: fileName,
+      content_length: file.size,
+    })
+  ).then((data) => ({
+    taskId: data.task_id,
+    presignedUrl: data.presigned_url,
+  }));
 }
 
 export async function uploadImportFile(presignedUrl: string, file: File, onProgress: (progress: number) => void) {
@@ -1469,81 +1418,44 @@ export async function deleteTrash(workspaceId: string, viewId?: string) {
 
 export async function moveToTrash(workspaceId: string, viewId: string) {
   const url = `/api/workspace/${workspaceId}/page-view/${viewId}/move-to-trash`;
-  const response = await axiosInstance?.post<{
-    code: number;
-    message: string;
-  }>(url);
 
-  if (response?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(response?.data);
+  return executeAPIVoidRequest(() => axiosInstance?.post<APIResponse>(url));
 }
 
 export async function movePageTo(workspaceId: string, viewId: string, parentViewId: string, prevViewId?: string) {
   const url = `/api/workspace/${workspaceId}/page-view/${viewId}/move`;
-  const response = await axiosInstance?.post<{
-    code: number;
-    message: string;
-  }>(url, {
-    new_parent_view_id: parentViewId,
-    prev_view_id: prevViewId,
-  });
 
-  if (response?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(response?.data);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.post<APIResponse>(url, {
+      new_parent_view_id: parentViewId,
+      prev_view_id: prevViewId,
+    })
+  );
 }
 
 export async function restorePage(workspaceId: string, viewId?: string) {
   const url = viewId
     ? `/api/workspace/${workspaceId}/page-view/${viewId}/restore-from-trash`
     : `/api/workspace/${workspaceId}/restore-all-pages-from-trash`;
-  const response = await axiosInstance?.post<{
-    code: number;
-    message: string;
-  }>(url);
 
-  if (response?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(response?.data);
+  return executeAPIVoidRequest(() => axiosInstance?.post<APIResponse>(url));
 }
 
 export async function createSpace(workspaceId: string, payload: CreateSpacePayload) {
   const url = `/api/workspace/${workspaceId}/space`;
-  const response = await axiosInstance?.post<{
-    code: number;
-    data: {
-      view_id: string;
-    };
-    message: string;
-  }>(url, payload);
 
-  if (response?.data.code === 0) {
-    return response?.data.data.view_id;
-  }
-
-  return Promise.reject(response?.data);
+  return executeAPIRequest<{ view_id: string }>(() =>
+    axiosInstance?.post<APIResponse<{ view_id: string }>>(url, payload)
+  ).then((data) => data.view_id);
 }
 
 export async function updateSpace(workspaceId: string, payload: UpdateSpacePayload) {
   const url = `/api/workspace/${workspaceId}/space/${payload.view_id}`;
   const data = omit(payload, ['view_id']);
-  const response = await axiosInstance?.patch<{
-    code: number;
-    message: string;
-  }>(url, data);
 
-  if (response?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(response?.data);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.patch<APIResponse>(url, data)
+  );
 }
 
 export async function uploadFile(
@@ -1615,59 +1527,29 @@ export async function inviteMembers(workspaceId: string, emails: string[]) {
     role: Role.Member,
   }));
 
-  const res = await axiosInstance?.post<{
-    code: number;
-    message: string;
-  }>(url, payload);
-
-  if (res?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(res?.data);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.post<APIResponse>(url, payload)
+  );
 }
 
 export async function getMembers(workspaceId: string) {
   const url = `/api/workspace/${workspaceId}/member`;
-  const res = await axiosInstance?.get<{
-    code: number;
-    data: WorkspaceMember[];
-    message: string;
-  }>(url);
 
-  if (res?.data.code === 0) {
-    return res?.data.data;
-  }
-
-  return Promise.reject(res?.data);
+  return executeAPIRequest<WorkspaceMember[]>(() =>
+    axiosInstance?.get<APIResponse<WorkspaceMember[]>>(url)
+  );
 }
 
 export async function leaveWorkspace(workspaceId: string) {
   const url = `/api/workspace/${workspaceId}/leave`;
-  const res = await axiosInstance?.post<{
-    code: number;
-    message: string;
-  }>(url);
 
-  if (res?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(res?.data);
+  return executeAPIVoidRequest(() => axiosInstance?.post<APIResponse>(url));
 }
 
 export async function deleteWorkspace(workspaceId: string) {
   const url = `/api/workspace/${workspaceId}`;
-  const res = await axiosInstance?.delete<{
-    code: number;
-    message: string;
-  }>(url);
 
-  if (res?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(res?.data);
+  return executeAPIVoidRequest(() => axiosInstance?.delete<APIResponse>(url));
 }
 
 export async function getQuickNoteList(
@@ -1679,178 +1561,117 @@ export async function getQuickNoteList(
   }
 ) {
   const url = `/api/workspace/${workspaceId}/quick-note`;
-  const res = await axiosInstance?.get<{
-    code: number;
-    data: {
+  const payload = await executeAPIRequest<{
+    quick_notes: QuickNote[];
+    has_more: boolean;
+  }>(() =>
+    axiosInstance?.get<APIResponse<{
       quick_notes: QuickNote[];
       has_more: boolean;
-    };
-    message: string;
-  }>(url, {
-    params: {
-      offset: params.offset,
-      limit: params.limit,
-      search_term: params.searchTerm || undefined,
-    },
-  });
+    }>>(url, {
+      params: {
+        offset: params.offset,
+        limit: params.limit,
+        search_term: params.searchTerm || undefined,
+      },
+    })
+  );
 
-  if (res?.data.code === 0) {
-    return {
-      data: res?.data.data.quick_notes,
-      has_more: res?.data.data.has_more,
-    };
-  }
-
-  return Promise.reject(res?.data);
+  return {
+    data: payload.quick_notes,
+    has_more: payload.has_more,
+  };
 }
 
 export async function createQuickNote(workspaceId: string, payload: QuickNoteEditorData[]): Promise<QuickNote> {
   const url = `/api/workspace/${workspaceId}/quick-note`;
-  const res = await axiosInstance?.post<{
-    code: number;
-    data: QuickNote;
-    message: string;
-  }>(url, {
-    data: payload,
-  });
 
-  if (res?.data.code === 0) {
-    return res?.data.data;
-  }
-
-  return Promise.reject(res?.data);
+  return executeAPIRequest<QuickNote>(() =>
+    axiosInstance?.post<APIResponse<QuickNote>>(url, { data: payload })
+  );
 }
 
 export async function updateQuickNote(workspaceId: string, noteId: string, payload: QuickNoteEditorData[]) {
   const url = `/api/workspace/${workspaceId}/quick-note/${noteId}`;
-  const res = await axiosInstance?.put<{
-    code: number;
-    message: string;
-  }>(url, {
-    data: payload,
-  });
 
-  if (res?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(res?.data);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.put<APIResponse>(url, { data: payload })
+  );
 }
 
 export async function deleteQuickNote(workspaceId: string, noteId: string) {
   const url = `/api/workspace/${workspaceId}/quick-note/${noteId}`;
-  const res = await axiosInstance?.delete<{
-    code: number;
-    message: string;
-  }>(url);
 
-  if (res?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(res?.data);
+  return executeAPIVoidRequest(() => axiosInstance?.delete<APIResponse>(url));
 }
 
 export async function cancelSubscription(workspaceId: string, plan: SubscriptionPlan, reason?: string) {
   const url = `/billing/api/v1/cancel-subscription`;
-  const res = await axiosInstance?.post<{
-    code: number;
-    message: string;
-  }>(url, {
-    workspace_id: workspaceId,
-    plan,
-    sync: true,
-    reason,
-  });
 
-  if (res?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(res?.data);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.post<APIResponse>(url, {
+      workspace_id: workspaceId,
+      plan,
+      sync: true,
+      reason,
+    })
+  );
 }
 
 export async function searchWorkspace(workspaceId: string, query: string) {
   const url = `/api/search/${workspaceId}`;
-  const res = await axiosInstance?.get<{
-    code: number;
-    data: {
+  const payload = await executeAPIRequest<
+    {
       object_id: string;
-    }[];
-    message: string;
-  }>(url, {
-    params: {
-      query,
-    },
-  });
+    }[]
+  >(() =>
+    axiosInstance?.get<APIResponse<{ object_id: string }[]>>(url, {
+      params: { query },
+    })
+  );
 
-  if (res?.data.code === 0) {
-    return res?.data.data.map((item) => item.object_id);
-  }
-
-  return Promise.reject(res?.data);
+  return payload.map((item) => item.object_id);
 }
 
 export async function getChatMessages(workspaceId: string, chatId: string, limit?: number | undefined) {
   const url = `/api/chat/${workspaceId}/${chatId}/message`;
 
-  const response = await axiosInstance?.get<{
-    code: number;
-    data?: RepeatedChatMessage;
-    message: string;
-  }>(url, {
-    params: { limit: limit },
-  });
-
-  const data = response?.data;
-
-  if (data?.code === 0 && data.data) {
-    return data.data;
-  }
-
-  return Promise.reject(data);
+  return executeAPIRequest<RepeatedChatMessage>(() =>
+    axiosInstance?.get<APIResponse<RepeatedChatMessage>>(url, {
+      params: { limit: limit },
+    })
+  );
 }
 
 export async function duplicatePage(workspaceId: string, viewId: string) {
   const url = `/api/workspace/${workspaceId}/page-view/${viewId}/duplicate`;
-  const response = await axiosInstance?.post<{
-    code: number;
-    message: string;
-  }>(url, {});
 
-  if (response?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(response?.data);
+  return executeAPIRequest<{ view_id: string }>(() =>
+    axiosInstance?.post<APIResponse<{ view_id: string }>>(url, {})
+  ).then((data) => data.view_id);
 }
 
 export async function joinWorkspaceByInvitationCode(code: string) {
   const url = `/api/workspace/join-by-invite-code`;
-  const response = await axiosInstance?.post<{
-    code: number;
-    message: string;
-    data: {
-      workspace_id: string;
-    };
-  }>(url, {
-    code,
-  });
 
-  if (response?.data.code === 0) {
-    return response?.data.data.workspace_id;
-  }
-
-  return Promise.reject(response?.data);
+  return executeAPIRequest<{ workspace_id: string }>(() =>
+    axiosInstance?.post<APIResponse<{ workspace_id: string }>>(url, { code })
+  ).then((data) => data.workspace_id);
 }
 
 export async function getWorkspaceInfoByInvitationCode(code: string) {
   const url = `/api/invite-code-info`;
 
-  const response = await axiosInstance?.get<{
-    code: number;
-    message: string;
-    data: {
+  return executeAPIRequest<{
+    workspace_id: string;
+    workspace_name: string;
+    workspace_icon_url: string;
+    owner_name: string;
+    owner_avatar: string;
+    is_member: boolean;
+    member_count: number;
+  }>(() =>
+    axiosInstance?.get<APIResponse<{
       workspace_id: string;
       workspace_name: string;
       workspace_icon_url: string;
@@ -1858,293 +1679,177 @@ export async function getWorkspaceInfoByInvitationCode(code: string) {
       owner_avatar: string;
       is_member: boolean;
       member_count: number;
-    };
-  }>(url, {
-    params: {
-      code,
-    },
-  });
-
-  const data = response?.data;
-
-  if (data?.code === 0 && data.data) {
-    return data.data;
-  }
-
-  return Promise.reject(data);
+    }>>(url, {
+      params: { code },
+    })
+  );
 }
 
 export async function generateAISummaryForRow(workspaceId: string, payload: GenerateAISummaryRowPayload) {
   const url = `/api/ai/${workspaceId}/summarize_row`;
-  const response = await axiosInstance?.post<{
-    code: number;
-    message: string;
-    data: {
-      text: string;
-    };
-  }>(url, {
-    workspace_id: workspaceId,
-    data: payload,
-  });
 
-  if (response?.data.code === 0) {
-    return response?.data.data.text;
-  }
-
-  return Promise.reject(response?.data);
+  return executeAPIRequest<{ text: string }>(() =>
+    axiosInstance?.post<APIResponse<{ text: string }>>(url, {
+      workspace_id: workspaceId,
+      data: payload,
+    })
+  ).then((data) => data.text);
 }
 
 export async function generateAITranslateForRow(workspaceId: string, payload: GenerateAITranslateRowPayload) {
   const url = `/api/ai/${workspaceId}/translate_row`;
-  const response = await axiosInstance?.post<{
-    code: number;
-    message: string;
-    data: {
+  const payloadResponse = await executeAPIRequest<{
+    items: {
+      [key: string]: string;
+    }[];
+  }>(() =>
+    axiosInstance?.post<APIResponse<{
       items: {
         [key: string]: string;
       }[];
-    };
-  }>(url, {
-    workspace_id: workspaceId,
-    data: payload,
-  });
+    }>>(url, {
+      workspace_id: workspaceId,
+      data: payload,
+    })
+  );
 
-  if (response?.data.code === 0) {
-    return response?.data.data.items
-      .map((item) => {
-        return Object.entries(item)
-          .map(([key, value]) => {
-            if (!value) return '';
-            return `${key}: ${value}`;
-          })
-          .join(', ');
-      })
-      .join('\n');
-  }
-
-  return Promise.reject(response?.data);
+  return payloadResponse.items
+    .map((item) => {
+      return Object.entries(item)
+        .map(([key, value]) => {
+          if (!value) return '';
+          return `${key}: ${value}`;
+        })
+        .join(', ');
+    })
+    .join('\n');
 }
 
 export async function createOrphanedView(workspaceId: string, payload: { document_id: string }) {
   const url = `/api/workspace/${workspaceId}/orphaned-view`;
-  const response = await axiosInstance?.post<{
-    code: number;
-    message: string;
-  }>(url, payload);
 
-  if (response?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(response?.data);
+  return executeAPIRequest<View>(() =>
+    axiosInstance?.post<APIResponse<View>>(url, payload)
+  );
 }
 
 export async function getGuestInvitation(workspaceId: string, code: string) {
   const url = `/api/sharing/workspace/${workspaceId}/guest-invite-code-info`;
-  const response = await axiosInstance?.get<{
-    code: number;
-    message: string;
-    data: GuestInvitation;
-  }>(url, {
-    params: {
-      code,
-    },
-  });
 
-  if (response?.data.code === 0) {
-    return response?.data.data;
-  }
-
-  return Promise.reject(response?.data);
+  return executeAPIRequest<GuestInvitation>(() =>
+    axiosInstance?.get<APIResponse<GuestInvitation>>(url, {
+      params: { code },
+    })
+  );
 }
 
 export async function acceptGuestInvitation(workspaceId: string, code: string) {
   const url = `/api/sharing/workspace/${workspaceId}/join-by-guest-invite-code`;
-  const response = await axiosInstance?.post<{
-    code: number;
-    message: string;
-  }>(url, {
-    code,
-  });
 
-  if (response?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(response?.data);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.post<APIResponse>(url, { code })
+  );
 }
 
 export async function approveTurnGuestToMember(workspaceId: string, code: string) {
   const url = `/api/sharing/workspace/${workspaceId}/approve-guest-conversion`;
-  const response = await axiosInstance?.post<{
-    code: number;
-    message: string;
-  }>(url, {
-    code,
-  });
 
-  if (response?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(response?.data);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.post<APIResponse>(url, { code })
+  );
 }
 
 export async function getGuestToMemberConversionInfo(workspaceId: string, code: string) {
   const url = `/api/sharing/workspace/${workspaceId}/guest-conversion-code-info`;
-  const response = await axiosInstance?.get<{
-    code: number;
-    message: string;
-    data: GuestConversionCodeInfo;
-  }>(url, {
-    params: {
-      code,
-    },
-  });
 
-  if (response?.data.code === 0) {
-    return response?.data.data;
-  }
-
-  return Promise.reject(response?.data);
+  return executeAPIRequest<GuestConversionCodeInfo>(() =>
+    axiosInstance?.get<APIResponse<GuestConversionCodeInfo>>(url, { params: { code } })
+  );
 }
 
 export async function getMentionableUsers(workspaceId: string) {
   const url = `/api/workspace/${workspaceId}/mentionable-person`;
-  const response = await axiosInstance?.get<{
-    code: number;
-    message: string;
-    data: {
-      persons: MentionablePerson[];
-    };
-  }>(url);
+  const payload = await executeAPIRequest<{
+    persons: MentionablePerson[];
+  }>(() =>
+    axiosInstance?.get<APIResponse<{ persons: MentionablePerson[] }>>(url)
+  );
 
-  if (response?.data.code === 0) {
-    return response?.data.data.persons;
-  }
-
-  return Promise.reject(response?.data);
+  return payload.persons;
 }
 
 export async function addRecentPages(workspaceId: string, viewIds: string[]) {
   const url = `/api/workspace/${workspaceId}/add-recent-pages`;
-  const response = await axiosInstance?.post<{
-    code: number;
-    message: string;
-  }>(url, {
-    recent_view_ids: viewIds,
-  });
 
-  if (response?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(response?.data);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.post<APIResponse>(url, {
+      recent_view_ids: viewIds,
+    })
+  );
 }
 
 export async function checkIfCollabExists(workspaceId: string, objectId: string) {
   const url = `/api/workspace/${workspaceId}/collab/${objectId}/collab-exists`;
 
-  const response = await axiosInstance?.get<{
-    code: number;
-    message: string;
-    data: {
-      exists: boolean;
-    };
-  }>(url);
+  const payload = await executeAPIRequest<{ exists: boolean }>(() =>
+    axiosInstance?.get<APIResponse<{ exists: boolean }>>(url)
+  );
 
-  if (response?.data.code === 0 && response?.data.data.exists === true) {
-    return;
-  }
-
-  return Promise.reject(response?.data);
+  return payload.exists;
 }
 
 export async function getShareDetail(workspaceId: string, viewId: string, ancestorViewIds: string[]) {
   const url = `api/sharing/workspace/${workspaceId}/view/${viewId}/access-details`;
-  const response = await axiosInstance?.post<{
-    code: number;
-    message: string;
-    data: {
+
+  return executeAPIRequest<{
+    view_id: string;
+    shared_with: IPeopleWithAccessType[];
+  }>(() =>
+    axiosInstance?.post<APIResponse<{
       view_id: string;
       shared_with: IPeopleWithAccessType[];
-    };
-  }>(url, {
-    ancestor_view_ids: ancestorViewIds,
-  });
-
-  if (response?.data.code === 0) {
-    return response?.data.data;
-  }
-
-  return Promise.reject(response?.data);
+    }>>(url, {
+      ancestor_view_ids: ancestorViewIds,
+    })
+  );
 }
 
 export async function sharePageTo(workspaceId: string, viewId: string, emails: string[], accessLevel?: AccessLevel) {
   const url = `/api/sharing/workspace/${workspaceId}/view`;
-  const response = await axiosInstance?.put<{
-    code: number;
-    message: string;
-  }>(url, {
-    "view_id": viewId,
-    "emails": emails,
-    "access_level": accessLevel || AccessLevel.ReadOnly
-  });
 
-  if (response?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(response?.data);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.put<APIResponse>(url, {
+      view_id: viewId,
+      emails,
+      access_level: accessLevel || AccessLevel.ReadOnly,
+    })
+  );
 }
 
 export async function revokeAccess(workspaceId: string, viewId: string, emails: string[]) {
   const url = `/api/sharing/workspace/${workspaceId}/view/${viewId}/revoke-access`;
-  const response = await axiosInstance?.post<{
-    code: number;
-    message: string;
-  }>(url, {
-    emails,
-  });
 
-  if (response?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(response?.data);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.post<APIResponse>(url, { emails })
+  );
 }
 
 export async function turnIntoMember(workspaceId: string, email: string) {
   const url = `/api/workspace/${workspaceId}/member`;
-  const response = await axiosInstance?.put<{
-    code: number;
-    message: string;
-  }>(url, {
-    email,
-    role: Role.Member
-  });
 
-  if (response?.data.code === 0) {
-    return;
-  }
-
-  return Promise.reject(response?.data);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.put<APIResponse>(url, {
+      email,
+      role: Role.Member,
+    })
+  );
 }
 
 
 export async function getShareWithMe(workspaceId: string): Promise<View> {
   const url = `/api/sharing/workspace/${workspaceId}/folder`;
-  const response = await axiosInstance?.get<{
-    code: number;
-    data?: View;
-    message: string;
-  }>(url);
 
-  const data = response?.data;
-
-  if (data?.code === 0 && data.data) {
-    return data.data;
-  }
-
-  return Promise.reject(data);
+  return executeAPIRequest<View>(() =>
+    axiosInstance?.get<APIResponse<View>>(url)
+  );
 }

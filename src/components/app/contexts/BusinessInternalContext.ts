@@ -79,10 +79,10 @@ export interface BusinessInternalContextType {
 
   // Database operations
   loadDatabaseRelations?: () => Promise<DatabaseRelations | undefined>;
-  createOrphanedView?: (payload: { document_id: string }) => Promise<void>;
+  createOrphanedView?: (payload: { document_id: string }) => Promise<View>;
   loadDatabasePrompts?: LoadDatabasePrompts;
   testDatabasePromptConfig?: TestDatabasePromptConfig;
-  checkIfRowDocumentExists?: (databaseId: string, rowIds: string[]) => Promise<void>;
+  checkIfRowDocumentExists?: (documentId: string) => Promise<boolean>;
 
   // User operations
   getMentionUser?: (uuid: string) => Promise<MentionablePerson | undefined>;
