@@ -67,13 +67,20 @@ describe('HTTP API - View Operations', () => {
 
         it('should create orphaned view', async () => {
             if (!testWorkspaceId) { throw new Error('testWorkspaceId is not available'); }
+            const documentId = uuidv4();
+
             try {
-                const result = await APIService.createOrphanedView(testWorkspaceId, {
-                    document_id: uuidv4(),
+                await APIService.createOrphanedView(testWorkspaceId, {
+                    document_id: documentId,
                 });
-                expect(result).toBeDefined();
-                expect(result).toHaveProperty('id');
+
+                // Verify the view was created by checking if the collab exists
+                const exists = await APIService.checkIfCollabExists(testWorkspaceId, documentId);
+
+                expect(exists).toBe(true);
             } catch (error: any) {
+                // May fail for various reasons
+                expect(error).toBeDefined();
                 expect(error.code).toBeDefined();
             }
         }, 30000);

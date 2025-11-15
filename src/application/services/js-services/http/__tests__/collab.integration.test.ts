@@ -87,6 +87,7 @@ describe('HTTP API - Collaboration Operations', () => {
                     expect(result).toHaveProperty('version_vector');
                 } catch (error: any) {
                     // May fail for various reasons
+                    expect(error).toBeDefined();
                     expect(error.code).toBeDefined();
                 }
             }

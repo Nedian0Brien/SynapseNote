@@ -159,7 +159,7 @@ export interface AppService {
     file: File,
     onProgress?: (progress: number) => void
   ) => Promise<string>;
-  duplicateAppPage: (workspaceId: string, viewId: string) => Promise<string>;
+  duplicateAppPage: (workspaceId: string, viewId: string) => Promise<void>;
   joinWorkspaceByInvitationCode: (code: string) => Promise<string>;
   getWorkspaceInfoByInvitationCode: (code: string) => Promise<{
     workspace_id: string;
@@ -172,7 +172,7 @@ export interface AppService {
   }>;
   generateAISummaryForRow: (workspaceId: string, payload: GenerateAISummaryRowPayload) => Promise<string>;
   generateAITranslateForRow: (workspaceId: string, payload: GenerateAITranslateRowPayload) => Promise<string>;
-  createOrphanedView: (workspaceId: string, payload: { document_id: string }) => Promise<View>;
+  createOrphanedView: (workspaceId: string, payload: { document_id: string }) => Promise<void>;
   checkIfCollabExists: (workspaceId: string, objectId: string) => Promise<boolean>;
 }
 

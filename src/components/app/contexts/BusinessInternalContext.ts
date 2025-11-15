@@ -79,7 +79,7 @@ export interface BusinessInternalContextType {
 
   // Database operations
   loadDatabaseRelations?: () => Promise<DatabaseRelations | undefined>;
-  createOrphanedView?: (payload: { document_id: string }) => Promise<View>;
+  createOrphanedView?: (payload: { document_id: string }) => Promise<void>;
   loadDatabasePrompts?: LoadDatabasePrompts;
   testDatabasePromptConfig?: TestDatabasePromptConfig;
   checkIfRowDocumentExists?: (documentId: string) => Promise<boolean>;

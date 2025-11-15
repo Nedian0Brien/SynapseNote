@@ -58,7 +58,7 @@ export interface DatabaseContextState {
   loadDatabaseRelations?: () => Promise<DatabaseRelations | undefined>;
   loadViews?: () => Promise<View[]>;
   uploadFile?: (file: File) => Promise<string>;
-  createOrphanedView?: (payload: { document_id: string }) => Promise<View>;
+  createOrphanedView?: (payload: { document_id: string }) => Promise<void>;
   loadDatabasePrompts?: LoadDatabasePrompts;
   testDatabasePromptConfig?: TestDatabasePromptConfig;
   requestInstance?: AxiosInstance | null;

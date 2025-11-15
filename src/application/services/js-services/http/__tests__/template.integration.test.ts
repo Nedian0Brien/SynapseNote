@@ -100,8 +100,7 @@ describe('HTTP API - Template Operations', () => {
                     is_featured: false,
                     related_view_ids: [],
                 });
-                // If it succeeds, that's okay too
-                expect(true).toBe(true);
+                // Function executed successfully
             } catch (error: any) {
                 // May fail for various reasons (permissions, invalid data, etc.)
                 expect(error).toBeDefined();
@@ -127,8 +126,7 @@ describe('HTTP API - Template Operations', () => {
                     is_featured: false,
                     related_view_ids: [],
                 });
-                // If it succeeds, that's okay too
-                expect(true).toBe(true);
+                // Function executed successfully
             } catch (error: any) {
                 // May fail for various reasons (permissions, invalid data, etc.)
                 expect(error).toBeDefined();
@@ -173,8 +171,7 @@ describe('HTTP API - Template Operations', () => {
                     category_type: TemplateCategoryType.ByUseCase,
                     priority: 0,
                 });
-                // If it succeeds, that's okay too
-                expect(true).toBe(true);
+                // Function executed successfully
             } catch (error: any) {
                 // May fail for various reasons (permissions, duplicate name, etc.)
                 expect(error).toBeDefined();
@@ -220,8 +217,7 @@ describe('HTTP API - Template Operations', () => {
                     name: `Test Creator ${Date.now()}`,
                     avatar_url: 'https://example.com/avatar.jpg',
                 });
-                // If it succeeds, that's okay too
-                expect(true).toBe(true);
+                // Function executed successfully
             } catch (error: any) {
                 // May fail for various reasons
                 expect(error).toBeDefined();

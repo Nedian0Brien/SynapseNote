@@ -16,6 +16,10 @@
     },
 };
 
+// Also mock localStorage globally for direct access
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(global as any).localStorage = (global as any).window.localStorage;
+
 // Polyfill File class for Node.js environment
 if (typeof File === 'undefined') {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

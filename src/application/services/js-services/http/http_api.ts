@@ -592,11 +592,26 @@ export async function getPublishViewMeta(namespace: string, publishName: string)
 
 export async function getPublishViewBlob(namespace: string, publishName: string) {
   const url = `/api/workspace/published/${namespace}/${publishName}/blob`;
-  const response = await axiosInstance?.get(url, {
-    responseType: 'blob',
-  });
 
-  return blobToBytes(response?.data);
+  try {
+    const response = await axiosInstance?.get(url, {
+      responseType: 'blob',
+      validateStatus: (status) => status < 400, // Only accept success status codes
+    });
+
+    if (!response?.data) {
+      const error: APIError = {
+        code: -1,
+        message: 'No response data received',
+      };
+
+      throw error;
+    }
+
+    return await blobToBytes(response.data);
+  } catch (error) {
+    throw handleAPIError(error);
+  }
 }
 
 export async function updateCollab(
@@ -1505,18 +1520,15 @@ export async function uploadFile(
     return Promise.reject(response?.data);
     // eslint-disable-next-line
   } catch (e: any) {
-    if (e.response.status === 413) {
+    if (e.response?.status === 413) {
       return Promise.reject({
         code: 413,
         message: 'File size is too large. Please upgrade your plan for unlimited uploads.',
       });
     }
-  }
 
-  return Promise.reject({
-    code: -1,
-    message: 'Upload file failed.',
-  });
+    return Promise.reject(handleAPIError(e));
+  }
 }
 
 export async function inviteMembers(workspaceId: string, emails: string[]) {
@@ -1646,9 +1658,9 @@ export async function getChatMessages(workspaceId: string, chatId: string, limit
 export async function duplicatePage(workspaceId: string, viewId: string) {
   const url = `/api/workspace/${workspaceId}/page-view/${viewId}/duplicate`;
 
-  return executeAPIRequest<{ view_id: string }>(() =>
-    axiosInstance?.post<APIResponse<{ view_id: string }>>(url, {})
-  ).then((data) => data.view_id);
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.post<APIResponse>(url, {})
+  );
 }
 
 export async function joinWorkspaceByInvitationCode(code: string) {
@@ -1728,8 +1740,8 @@ export async function generateAITranslateForRow(workspaceId: string, payload: Ge
 export async function createOrphanedView(workspaceId: string, payload: { document_id: string }) {
   const url = `/api/workspace/${workspaceId}/orphaned-view`;
 
-  return executeAPIRequest<View>(() =>
-    axiosInstance?.post<APIResponse<View>>(url, payload)
+  return executeAPIVoidRequest(() =>
+    axiosInstance?.post<APIResponse>(url, payload)
   );
 }
 
