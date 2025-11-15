@@ -113,6 +113,12 @@ jobs:
             exit 1
           )
 
+      # Run HTTP API integration tests
+      - name: Run HTTP API integration tests
+        run: |
+          echo "Running HTTP API integration tests..."
+          pnpm run test:http-api
+
       # Cache build artifacts
       - name: Cache build
         id: cache-build

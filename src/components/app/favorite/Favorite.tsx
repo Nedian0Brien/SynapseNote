@@ -1,10 +1,10 @@
 import { UIVariant } from '@/application/types';
 import { ReactComponent as FavoritedIcon } from '@/assets/icons/filled_star.svg';
 import { ReactComponent as MoreIcon } from '@/assets/icons/more.svg';
-import { useAppFavorites, useAppHandlers, useAppViewId } from '@/components/app/app.hooks';
 import OutlineItem from '@/components/_shared/outline/OutlineItem';
 import { Popover } from '@/components/_shared/popover';
 import RecentListSkeleton from '@/components/_shared/skeleton/RecentListSkeleton';
+import { useAppFavorites, useAppHandlers, useAppViewId } from '@/components/app/app.hooks';
 import { Collapse } from '@mui/material';
 import { PopoverProps } from '@mui/material/Popover';
 import dayjs from 'dayjs';
@@ -51,12 +51,27 @@ export function Favorite() {
   };
 
   const { pinViews, unpinViews } = useMemo(() => {
+    if (!favoriteViews) {
+      return { pinViews: [], unpinViews: [] };
+    }
+
     return groupBy(favoriteViews, (view) => (view.extra?.is_pinned ? 'pinViews' : 'unpinViews'));
   }, [favoriteViews]);
 
   const groupByViewsWithDay = useMemo(() => {
+    if (!favoriteViews) return {};
+
     return groupBy(favoriteViews, (view) => {
+      if (!view.favorited_at) {
+        return FavoriteGroup.Others;
+      }
+
       const date = dayjs(view.favorited_at);
+
+      if (!date.isValid()) {
+        return FavoriteGroup.Others;
+      }
+
       const today = date.isSame(dayjs(), 'day');
       const yesterday = date.isSame(dayjs().subtract(1, 'day'), 'day');
       const thisWeek = date.isSame(dayjs(), 'week');
@@ -73,10 +88,10 @@ export function Favorite() {
       return key === FavoriteGroup.today
         ? 0
         : key === FavoriteGroup.yesterday
-        ? 1
-        : key === FavoriteGroup.thisWeek
-        ? 2
-        : 3;
+          ? 1
+          : key === FavoriteGroup.thisWeek
+            ? 2
+            : 3;
     }).map(([key, value]) => {
       const timeLabel: Record<string, string> = {
         [FavoriteGroup.today]: t('calendar.navigation.today'),

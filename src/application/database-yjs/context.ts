@@ -62,7 +62,7 @@ export interface DatabaseContextState {
   loadDatabasePrompts?: LoadDatabasePrompts;
   testDatabasePromptConfig?: TestDatabasePromptConfig;
   requestInstance?: AxiosInstance | null;
-  checkIfRowDocumentExists?: (documentId: string) => Promise<void>;
+  checkIfRowDocumentExists?: (documentId: string) => Promise<boolean>;
   eventEmitter?: EventEmitter;
   getSubscriptions?: (() => Promise<Subscription[]>) | undefined;
   getViewIdFromDatabaseId?: (databaseId: string) => Promise<string | null>;

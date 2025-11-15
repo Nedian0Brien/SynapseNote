@@ -1,4 +1,4 @@
-import { Suspense, useCallback, useEffect, useRef } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import {
@@ -10,7 +10,9 @@ import {
 import { YjsEditor } from '@/application/slate-yjs';
 import { appendFirstEmptyParagraph } from '@/application/slate-yjs/utils/yjs';
 import { ViewComponentProps, YjsEditorKey, YSharedRoot } from '@/application/types';
+import { getUserIconUrl } from '@/application/user-metadata';
 import { useAppAwareness } from '@/components/app/app.hooks';
+import { useCurrentUserWorkspaceAvatar } from '@/components/app/useWorkspaceMemberProfile';
 import { Editor } from '@/components/editor';
 import { useCurrentUser, useService } from '@/components/main/app.hooks';
 import ViewMetaPreview from '@/components/view-meta/ViewMetaPreview';
@@ -38,6 +40,8 @@ export const Document = (props: DocumentProps) => {
 
   const awareness = useAppAwareness(viewMeta.viewId);
   const currentUser = useCurrentUser();
+  const workspaceAvatar = useCurrentUserWorkspaceAvatar();
+  const userAvatar = useMemo(() => getUserIconUrl(currentUser, workspaceAvatar), [currentUser, workspaceAvatar]);
   const service = useService();
   const dispatchUserAwareness = useDispatchUserAwareness(awareness);
   const dispatchCursorAwareness = useDispatchCursorAwareness(awareness);
@@ -56,11 +60,11 @@ export const Document = (props: DocumentProps) => {
       user_name: currentUser.name || 'Anonymous',
       cursor_color: colors.cursor_color,
       selection_color: colors.selection_color,
-      user_avatar: currentUser.avatar || '',
+      user_avatar: userAvatar,
     };
 
     dispatchUserAwareness(userParams);
-  }, [currentUser, service, awareness, dispatchUserAwareness]);
+  }, [currentUser, service, awareness, dispatchUserAwareness, userAvatar]);
 
   // Clean up awareness when component unmounts
   useEffect(() => {
@@ -107,8 +111,8 @@ export const Document = (props: DocumentProps) => {
   }, [onRendered]);
 
   const handleBlur = useCallback(() => {
-    clearCursor();
-  }, [clearCursor]);
+    clearCursor(workspaceAvatar);
+  }, [clearCursor, workspaceAvatar]);
 
   const handleSyncCursor = useCallback(
     (editor: YjsEditor) => {
@@ -123,13 +127,13 @@ export const Document = (props: DocumentProps) => {
           user_name: currentUser.name || 'Anonymous',
           cursor_color: colors.cursor_color,
           selection_color: colors.selection_color,
-          user_avatar: currentUser.avatar || '',
+          user_avatar: userAvatar,
         };
 
         dispatchCursorAwareness(userParams, editor);
       }
     },
-    [dispatchCursorAwareness, currentUser, service, awareness]
+    [dispatchCursorAwareness, currentUser, service, awareness, userAvatar]
   );
 
   const handleEditorConnected = useCallback(

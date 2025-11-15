@@ -76,7 +76,12 @@ const AppMain = withAppWrapper(() => {
 function App() {
 
   return (
-    <BrowserRouter>
+    <BrowserRouter
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}
+    >
       <AppMain />
       <Toaster />
     </BrowserRouter>

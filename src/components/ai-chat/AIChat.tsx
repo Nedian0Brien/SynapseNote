@@ -2,8 +2,10 @@ import { Chat, ChatRequest } from '@/components/chat';
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
 import React, { useEffect, useMemo } from 'react';
 
+import { getUserIconUrl } from '@/application/user-metadata';
 import { useAIChatContext } from '@/components/ai-chat/AIChatProvider';
 import { useAppHandlers, useCurrentWorkspaceId } from '@/components/app/app.hooks';
+import { useCurrentUserWorkspaceAvatar } from '@/components/app/useWorkspaceMemberProfile';
 import { useCurrentUser, useService } from '@/components/main/app.hooks';
 import { getPlatform } from '@/utils/platform';
 import { downloadPage } from '@/utils/url';
@@ -13,6 +15,8 @@ export function AIChat({ chatId, onRendered }: { chatId: string; onRendered?: ()
   const service = useService();
   const workspaceId = useCurrentWorkspaceId();
   const currentUser = useCurrentUser();
+  const workspaceAvatar = useCurrentUserWorkspaceAvatar();
+  const currentUserAvatar = useMemo(() => getUserIconUrl(currentUser, workspaceAvatar), [currentUser, workspaceAvatar]);
   const isMobile = getPlatform().isMobile;
   const [openMobilePrompt, setOpenMobilePrompt] = React.useState(isMobile);
 
@@ -97,7 +101,7 @@ export function AIChat({ chatId, onRendered }: { chatId: string; onRendered?: ()
                   uuid: currentUser.uuid,
                   name: currentUser.name || '',
                   email: currentUser.email || '',
-                  avatar: currentUser.avatar || '',
+                  avatar: currentUserAvatar,
                 }
               : undefined
           }

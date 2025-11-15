@@ -4,8 +4,8 @@ import { useCallback, useMemo, useRef } from 'react';
 import { Editor } from 'slate';
 import { Awareness } from 'y-protocols/awareness';
 
+import { getUserIconUrl } from '@/application/user-metadata';
 import { useCurrentUser, useService } from '@/components/main/app.hooks';
-
 import { AwarenessMetadata, AwarenessState } from './types';
 import { convertSlateSelectionToAwareness, generateUserColors } from './utils';
 
@@ -151,8 +151,10 @@ export function useDispatchClearAwareness(awareness?: Awareness) {
     console.debug('🚫 Awareness cleared for current user');
   }, [awareness, service, currentUser]);
 
-  const clearCursor = useCallback(() => {
+  const clearCursor = useCallback((workspaceAvatar?: string | null) => {
     if (!awareness) return;
+    const userAvatar = getUserIconUrl(currentUser, workspaceAvatar);
+
     awareness.setLocalState({
       version: 1,
       timestamp: dayjs().unix(),
@@ -164,7 +166,7 @@ export function useDispatchClearAwareness(awareness?: Awareness) {
         user_name: currentUser?.name || '',
         cursor_color: generateUserColors(currentUser?.name || '').cursor_color,
         selection_color: generateUserColors(currentUser?.name || '').selection_color,
-        user_avatar: currentUser?.avatar || '',
+        user_avatar: userAvatar,
       }),
     });
 
