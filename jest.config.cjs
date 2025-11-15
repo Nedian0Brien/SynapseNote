@@ -20,6 +20,7 @@ module.exports = {
   },
   'transformIgnorePatterns': [`/node_modules/(?!${esModules})`],
   testMatch: ['**/*.test.ts', '**/*.test.tsx'],
+  testPathIgnorePatterns: ['/node_modules/', '\\.integration\\.test\\.ts$'],
   coverageDirectory: '<rootDir>/coverage/jest',
   collectCoverage: true,
   coverageProvider: 'v8',
