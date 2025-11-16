@@ -59,11 +59,26 @@ function Img({
 
         // Success case
         if (result.ok) {
-          // Revoke previous blob URL if it exists and is different
-          if (previousBlobUrlRef.current && previousBlobUrlRef.current !== result.validatedUrl) {
-            if (previousBlobUrlRef.current.startsWith('blob:')) {
-              URL.revokeObjectURL(previousBlobUrlRef.current);
-            }
+          /**
+           * Revoke previous blob URL to prevent memory leaks.
+           *
+           * When checkImage handles AppFlowy file storage URLs, it creates blob URLs via
+           * URL.createObjectURL(). These blob URLs must be explicitly revoked using
+           * URL.revokeObjectURL() to free memory, otherwise they persist until page reload.
+           *
+           * We only revoke if:
+           * - A previous blob URL exists
+           * - It's different from the new one (to avoid revoking the URL we're about to use)
+           * - It's actually a blob URL (not a regular HTTP URL)
+           *
+           * This prevents memory leaks when images change or during polling retries.
+           */
+          if (
+            previousBlobUrlRef.current &&
+            previousBlobUrlRef.current !== result.validatedUrl &&
+            previousBlobUrlRef.current.startsWith('blob:')
+          ) {
+            URL.revokeObjectURL(previousBlobUrlRef.current);
           }
 
           setImgError(null);
