@@ -237,11 +237,12 @@ export function initAPIService(config: AFCloudConfig) {
       if (isExpired) {
         try {
           const newToken = await refreshToken(refresh_token);
+
           access_token = newToken?.access_token || '';
         } catch (e) {
           console.warn('[initAPIService][request] refresh token failed, marking token invalid', {
             url: config.url,
-            message: (e as any)?.message,
+            message: (e as Error)?.message,
           });
           invalidToken();
           return config;
@@ -279,7 +280,7 @@ export function initAPIService(config: AFCloudConfig) {
         await refreshToken(refresh_token);
       } catch (e) {
         console.warn('[initAPIService][response] refresh on 401 failed, emitting invalid token', {
-          message: (e as any)?.message,
+          message: (e as Error)?.message,
           url: response.config?.url,
         });
         invalidToken();
@@ -350,7 +351,7 @@ export async function signInWithUrl(url: string) {
   try {
     await verifyToken(accessToken);
   } catch (e) {
-    console.warn('[signInWithUrl] Verify token failed', { message: (e as any)?.message });
+    console.warn('[signInWithUrl] Verify token failed', { message: (e as Error)?.message });
     return Promise.reject({
       code: -1,
       message: 'Verify token failed',
@@ -360,7 +361,7 @@ export async function signInWithUrl(url: string) {
   try {
     await refreshToken(refresh_token);
   } catch (e) {
-    console.warn('[signInWithUrl] Refresh token failed', { message: (e as any)?.message });
+    console.warn('[signInWithUrl] Refresh token failed', { message: (e as Error)?.message });
     return Promise.reject({
       code: -1,
       message: 'Refresh token failed',

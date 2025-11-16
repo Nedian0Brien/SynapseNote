@@ -126,7 +126,8 @@ function AppConfig({ children }: { children: React.ReactNode }) {
     }, 100); // Small delay to allow all initialization to complete
 
     return () => clearTimeout(timeoutId);
-  }, []); // Only run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount - isAuthenticated is intentionally captured from closure
   useEffect(() => {
     return on(EventType.SESSION_INVALID, () => {
       setIsAuthenticated(false);
