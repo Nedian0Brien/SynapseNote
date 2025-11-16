@@ -1,7 +1,7 @@
 import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
-import { invalidToken } from '@/application/session/token';
+import { invalidToken, isTokenValid } from '@/application/session/token';
 import { UserWorkspaceInfo } from '@/application/types';
 import { AFConfigContext, useService } from '@/components/main/app.hooks';
 
@@ -15,7 +15,9 @@ interface AppAuthLayerProps {
 // Handles user authentication, workspace info, and service setup
 // Does not depend on workspace ID - establishes basic authentication context
 export const AppAuthLayer: React.FC<AppAuthLayerProps> = ({ children }) => {
-  const isAuthenticated = useContext(AFConfigContext)?.isAuthenticated;
+  const context = useContext(AFConfigContext);
+  const isAuthenticated = context?.isAuthenticated;
+  const location = useLocation();
   const service = useService();
   const navigate = useNavigate();
   const params = useParams();
@@ -68,16 +70,47 @@ export const AppAuthLayer: React.FC<AppAuthLayerProps> = ({ children }) => {
   );
 
   // If the user is not authenticated, log out the user
+  // But check localStorage token first to avoid redirect loops after login
+  // This handles the race condition where token exists but React state hasn't synced yet
   useEffect(() => {
-    if (!isAuthenticated) {
-      logout();
+    // Don't check if we're already on login/auth pages
+    if (location.pathname === '/login' || location.pathname.startsWith('/auth/callback')) {
+      return;
     }
-  }, [isAuthenticated, logout]);
+
+    // Wait a bit for context to be ready (in case it's still initializing)
+    // This prevents false negatives when context hasn't loaded yet
+    const timeoutId = setTimeout(() => {
+      // Check token on mount and whenever isAuthenticated changes
+      const hasToken = isTokenValid();
+
+      // Only redirect if both conditions are true:
+      // 1. Context exists and says not authenticated (don't redirect if context is undefined/not ready)
+      // 2. No token exists in localStorage
+      // This prevents redirect loops when token exists but state hasn't synced
+      if (context && !isAuthenticated && !hasToken) {
+        logout();
+      }
+      // If token exists but isAuthenticated is false/undefined, wait for state to sync
+      // The state will sync via:
+      // - Initial state in AppConfig (isTokenValid() on mount)
+      // - SESSION_VALID event listener
+      // - Storage event listener (for cross-tab updates)
+      // - Sync effect in AppConfig that checks token on mount
+    }, 50); // Small delay to allow context to initialize
+
+    return () => clearTimeout(timeoutId);
+  }, [isAuthenticated, location.pathname, logout, context]);
 
   // Load user workspace info on mount
   useEffect(() => {
-    void loadUserWorkspaceInfo();
-  }, [loadUserWorkspaceInfo]);
+    if (!isAuthenticated) {
+      return;
+    }
+    void loadUserWorkspaceInfo().catch((e) => {
+      console.error('[AppAuthLayer] Failed to load workspace info:', e);
+    });
+  }, [loadUserWorkspaceInfo, isAuthenticated]);
 
   // Context value for authentication layer
   const authContextValue: AuthInternalContextType = useMemo(
