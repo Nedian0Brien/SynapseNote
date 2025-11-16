@@ -1,11 +1,11 @@
 import { Route, Routes } from 'react-router-dom';
 
 import { AuthLayout } from '@/components/app/AuthLayout';
+import AppWorkspaceRedirect from '@/components/app/AppWorkspaceRedirect';
 import { ApproveConversion } from '@/components/app/landing-pages/ApproveConversion';
 import ApproveRequestPage from '@/components/app/landing-pages/ApproveRequestPage';
 import { AsGuest } from '@/components/app/landing-pages/AsGuest';
 import InviteCode from '@/components/app/landing-pages/InviteCode';
-import RecordNotFound from '@/components/error/RecordNotFound';
 import AppPage from '@/pages/AppPage';
 import TrashPage from '@/pages/TrashPage';
 
@@ -13,7 +13,8 @@ function AppRouter() {
   return (
     <Routes>
       <Route element={<AuthLayout />}>
-        <Route index element={<RecordNotFound noContent />} />
+        {/* Redirect from /app to /app/:workspaceId after OAuth login */}
+        <Route index element={<AppWorkspaceRedirect />} />
         <Route path={':workspaceId'} element={<AppPage />} />
         <Route path={':workspaceId/:viewId'} element={<AppPage />} />
         <Route path={'trash'} element={<TrashPage />} />

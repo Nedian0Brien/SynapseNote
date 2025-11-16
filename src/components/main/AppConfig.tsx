@@ -73,6 +73,15 @@ function AppConfig({ children }: { children: React.ReactNode }) {
     })();
   }, [isAuthenticated, service]);
 
+  // Authentication state synchronization effects
+  // Note: These are intentionally separate effects with different lifecycles:
+  // 1. Storage listener - handles cross-tab token changes
+  // 2. State sync on change - bidirectional sync between localStorage and React state
+  // 3. Mount sync with delay - safety net for OAuth callback race conditions
+  // 4. SESSION_INVALID listener - event-based invalidation from failed API calls
+  // Consolidating these would reduce clarity and make debugging harder
+
+  // 1. Cross-tab synchronization via storage events
   useEffect(() => {
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === 'token') setIsAuthenticated(isTokenValid());
@@ -84,17 +93,50 @@ function AppConfig({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // Sync authentication state whenever isAuthenticated changes
-  // This handles cases where token was saved but state wasn't updated (e.g., after page reload)
-  // This prevents redirect loops after OAuth callback or page reload
+  // 2. Bidirectional sync between localStorage token and React state
+  // Handles cases where token was saved but state wasn't updated (e.g., after page reload or OAuth callback)
   useEffect(() => {
     const hasToken = isTokenValid();
 
+    console.debug('[AppConfig] sync check', {
+      hasToken,
+      isAuthenticated,
+      willSync: hasToken && !isAuthenticated,
+    });
+
     // If token exists but state says not authenticated, sync the state
     if (hasToken && !isAuthenticated) {
+      console.debug('[AppConfig] syncing authentication state - token exists but state is false');
       setIsAuthenticated(true);
     }
+    // If no token but state says authenticated, invalidate the session
+    else if (!hasToken && isAuthenticated) {
+      console.debug('[AppConfig] token removed but state still authenticated - invalidating');
+      setIsAuthenticated(false);
+    }
   }, [isAuthenticated]);
+
+  // 3. Proactive sync on mount with delay - safety net for OAuth callback race conditions
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      const hasToken = isTokenValid();
+
+      console.debug('[AppConfig] mount sync check', {
+        hasToken,
+        isAuthenticated,
+      });
+
+      if (hasToken && !isAuthenticated) {
+        console.debug('[AppConfig] mount sync - forcing authentication state to true');
+        setIsAuthenticated(true);
+      }
+    }, 100); // Small delay to allow all initialization to complete
+
+    return () => clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount - isAuthenticated is intentionally captured from closure
+
+  // 4. Event-based session invalidation from failed API calls
   useEffect(() => {
     return on(EventType.SESSION_INVALID, () => {
       setIsAuthenticated(false);
@@ -141,7 +183,7 @@ function AppConfig({ children }: { children: React.ReactNode }) {
     }, [isAuthenticated, service, hasCheckedTimezone]);
 
   // Detect timezone once on mount
-  const _timezoneInfo = useUserTimezone({
+  useUserTimezone({
     onTimezoneChange: handleTimezoneSetup,
     updateInterval: 0, // Disable periodic checks - only check once
   });

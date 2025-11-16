@@ -11,6 +11,26 @@ interface AppAuthLayerProps {
   children: React.ReactNode;
 }
 
+/**
+ * OAuth Login Flow:
+ *
+ * 1. User completes Google OAuth → redirects to /auth/callback#access_token=...&refresh_token=...
+ * 2. LoginAuth component calls service.loginAuth()
+ * 3. signInWithUrl() clears old expired token, then extracts new tokens, calls verifyToken(), then refreshToken()
+ * 4. refreshToken() saves token to localStorage via saveGoTrueAuth()
+ * 5. SESSION_VALID event is emitted → AppConfig sets isAuthenticated = true
+ * 6. afterAuth() does full page navigation: window.location.href = '/app'
+ * 7. Page reloads with token in localStorage
+ * 8. AppConfig mounts with initial state: isAuthenticated = isTokenValid() (should be TRUE)
+ * 9. AppAuthLayer effect runs → sees authenticated user → no logout
+ * 10. AppWorkspaceRedirect component loads workspace info and redirects to /app/:workspaceId
+ *
+ * Race Condition Fixes:
+ * - Old token cleared BEFORE OAuth processing to prevent axios interceptor auto-refresh race
+ * - Multi-stage auth checks (50ms + 100ms delays) to wait for React state sync
+ * - Proactive state sync in AppConfig to force isAuthenticated sync on mount
+ */
+
 // First layer: Authentication and service initialization
 // Handles user authentication, workspace info, and service setup
 // Does not depend on workspace ID - establishes basic authentication context
@@ -78,28 +98,73 @@ export const AppAuthLayer: React.FC<AppAuthLayerProps> = ({ children }) => {
       return;
     }
 
-    // Wait a bit for context to be ready (in case it's still initializing)
-    // This prevents false negatives when context hasn't loaded yet
-    const timeoutId = setTimeout(() => {
-      // Check token on mount and whenever isAuthenticated changes
+    // Multi-stage timeout to handle various race conditions:
+    // 1. Wait for React context to initialize (50ms)
+    // 2. Check token and auth state multiple times to handle async state updates
+    // 3. Only logout if consistently unauthenticated across multiple checks
+    let secondCheckTimeoutId: number | null = null;
+
+    const timeoutId = window.setTimeout(() => {
+      // First check - token and auth state
       const hasToken = isTokenValid();
 
-      // Only redirect if both conditions are true:
-      // 1. Context exists and says not authenticated (don't redirect if context is undefined/not ready)
-      // 2. No token exists in localStorage
-      // This prevents redirect loops when token exists but state hasn't synced
-      if (context && !isAuthenticated && !hasToken) {
-        logout();
-      }
-      // If token exists but isAuthenticated is false/undefined, wait for state to sync
-      // The state will sync via:
-      // - Initial state in AppConfig (isTokenValid() on mount)
-      // - SESSION_VALID event listener
-      // - Storage event listener (for cross-tab updates)
-      // - Sync effect in AppConfig that checks token on mount
-    }, 50); // Small delay to allow context to initialize
+      console.debug('[AppAuthLayer] auth check (initial)', {
+        path: location.pathname,
+        isAuthenticated,
+        hasToken,
+        contextReady: !!context,
+      });
 
-    return () => clearTimeout(timeoutId);
+      // If token exists, trust it and wait for state to sync
+      // This prevents logout during OAuth callback → /app navigation
+      if (hasToken) {
+        console.debug('[AppAuthLayer] token exists, skipping logout check (waiting for state sync)');
+        return;
+      }
+
+      // If no token but we're not sure context is ready, don't logout yet
+      if (!context) {
+        console.debug('[AppAuthLayer] context not ready, skipping logout check');
+        return;
+      }
+
+      // Double-check after additional delay to handle async state updates
+      // This catches cases where token was just saved but state hasn't propagated
+      secondCheckTimeoutId = window.setTimeout(() => {
+        const hasTokenSecondCheck = isTokenValid();
+        const isAuthenticatedSecondCheck = context?.isAuthenticated;
+
+        console.debug('[AppAuthLayer] auth check (second)', {
+          path: location.pathname,
+          isAuthenticated: isAuthenticatedSecondCheck,
+          hasToken: hasTokenSecondCheck,
+          contextReady: !!context,
+        });
+
+        // Only redirect if BOTH checks confirm no authentication:
+        // 1. Context exists and says not authenticated
+        // 2. No token exists in localStorage (checked twice)
+        // 3. Still on the same page (user didn't navigate away)
+        if (context && !isAuthenticatedSecondCheck && !hasTokenSecondCheck) {
+          console.warn('[AppAuthLayer] redirecting to /login because auth check failed (double-checked)', {
+            path: location.pathname,
+            isAuthenticated: isAuthenticatedSecondCheck,
+            hasToken: hasTokenSecondCheck,
+            hasContext: !!context,
+          });
+          logout();
+        } else if (hasTokenSecondCheck && !isAuthenticatedSecondCheck) {
+          console.debug('[AppAuthLayer] token exists but state not synced - will sync via AppConfig effect');
+        }
+      }, 100); // Additional 100ms delay for second check
+    }, 50); // Initial delay to allow context to initialize
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      if (secondCheckTimeoutId !== null) {
+        window.clearTimeout(secondCheckTimeoutId);
+      }
+    };
   }, [isAuthenticated, location.pathname, logout, context]);
 
   // Load user workspace info on mount

@@ -485,5 +485,192 @@ describe('OAuth Login Flow', () => {
             cy.log('[STEP 5] Redirect loop prevention test passed - token persisted and no redirect occurred');
         });
     });
+
+    describe('Old Token Race Condition', () => {
+        it('should clear old expired token before processing OAuth callback', () => {
+            const oldExpiredToken = 'old-expired-token-' + uuidv4();
+            const oldRefreshToken = 'old-expired-refresh-' + uuidv4();
+            const newAccessToken = 'new-oauth-token-' + uuidv4();
+            const newRefreshToken = 'new-oauth-refresh-' + uuidv4();
+            const mockUserId = uuidv4();
+            const mockWorkspaceId = uuidv4();
+
+            cy.log('[TEST START] Testing old expired token race condition');
+
+            cy.log('[SETUP] Pre-populate localStorage with expired token');
+            cy.window().then((win) => {
+                // Set old expired token (expired 1 hour ago)
+                win.localStorage.setItem('token', JSON.stringify({
+                    access_token: oldExpiredToken,
+                    refresh_token: oldRefreshToken,
+                    expires_at: Math.floor(Date.now() / 1000) - 3600, // Expired!
+                    user: {
+                        id: mockUserId,
+                        email: 'old@example.com',
+                    },
+                }));
+            });
+
+            // Mock refresh endpoint to FAIL for old token, SUCCESS for new token
+            cy.intercept('POST', `${gotrueUrl}/token?grant_type=refresh_token`, (req) => {
+                const { body } = req;
+
+                if (body.refresh_token === oldRefreshToken) {
+                    // Old token refresh should fail
+                    req.reply({
+                        statusCode: 400,
+                        body: {
+                            error: 'invalid_grant',
+                            error_description: 'Refresh token is invalid or expired',
+                        },
+                    });
+                } else if (body.refresh_token === newRefreshToken) {
+                    // New token refresh should succeed
+                    req.reply({
+                        statusCode: 200,
+                        body: {
+                            access_token: newAccessToken,
+                            refresh_token: newRefreshToken,
+                            expires_at: Math.floor(Date.now() / 1000) + 3600,
+                            user: {
+                                id: mockUserId,
+                                email: 'test@example.com',
+                                email_confirmed_at: new Date().toISOString(),
+                                created_at: new Date().toISOString(),
+                                updated_at: new Date().toISOString(),
+                            },
+                        },
+                    });
+                } else {
+                    // Unknown token
+                    req.reply({ statusCode: 400, body: { error: 'unknown_token' } });
+                }
+            }).as('refreshToken');
+
+            // Mock verify for NEW token only
+            cy.intercept('GET', `${apiUrl}/api/user/verify/${newAccessToken}`, {
+                statusCode: 200,
+                body: {
+                    code: 0,
+                    data: { is_new: false },
+                    message: 'Success',
+                },
+            }).as('verifyNewToken');
+
+            // Mock verify for OLD token (should NOT be called if fix is working)
+            cy.intercept('GET', `${apiUrl}/api/user/verify/${oldExpiredToken}`, {
+                statusCode: 401,
+                body: {
+                    code: 401,
+                    message: 'Token expired',
+                },
+            }).as('verifyOldToken');
+
+            // Mock workspace endpoints
+            cy.intercept('GET', `${apiUrl}/api/user/workspace`, {
+                statusCode: 200,
+                body: {
+                    code: 0,
+                    data: {
+                        user_profile: { uuid: mockUserId },
+                        visiting_workspace: {
+                            workspace_id: mockWorkspaceId,
+                            workspace_name: 'My Workspace',
+                            icon: '',
+                            created_at: Date.now().toString(),
+                            database_storage_id: '',
+                            owner_uid: 1,
+                            owner_name: 'Test User',
+                            member_count: 1,
+                        },
+                        workspaces: [
+                            {
+                                workspace_id: mockWorkspaceId,
+                                workspace_name: 'My Workspace',
+                                icon: '',
+                                created_at: Date.now().toString(),
+                                database_storage_id: '',
+                                owner_uid: 1,
+                                owner_name: 'Test User',
+                                member_count: 1,
+                            },
+                        ],
+                    },
+                    message: 'Success',
+                },
+            }).as('getUserWorkspaceInfo');
+
+            cy.intercept('GET', `${apiUrl}/api/user/profile*`, {
+                statusCode: 200,
+                body: {
+                    code: 0,
+                    data: {
+                        uid: 1,
+                        uuid: mockUserId,
+                        email: 'test@example.com',
+                        name: 'Test User',
+                        metadata: {},
+                        encryption_sign: null,
+                        latest_workspace_id: mockWorkspaceId,
+                        updated_at: Date.now(),
+                    },
+                    message: 'Success',
+                },
+            }).as('getCurrentUser');
+
+            // Step 1: Simulate OAuth callback with NEW tokens
+            cy.log('[STEP 1] Simulating OAuth callback with NEW tokens (old expired token in localStorage)');
+            const callbackUrl = `${baseUrl}/auth/callback#access_token=${newAccessToken}&refresh_token=${newRefreshToken}&expires_at=${Math.floor(Date.now() / 1000) + 3600
+                }&token_type=bearer`;
+
+            cy.visit(callbackUrl, { failOnStatusCode: false });
+            cy.wait(2000);
+
+            // Step 2: Verify NEW token was used for verification (not old token)
+            cy.log('[STEP 2] Verifying NEW token is used for verification');
+            cy.wait('@verifyNewToken').then((interception) => {
+                expect(interception.response?.statusCode).to.equal(200);
+                cy.log('[SUCCESS] verifyToken called with NEW token (old token was cleared first)');
+            });
+
+            // Step 3: Verify refresh was called with NEW token (not old expired token)
+            cy.log('[STEP 3] Verifying refresh called with NEW token');
+            cy.wait('@refreshToken').then((interception) => {
+                const requestBody = interception.request.body;
+
+                expect(requestBody.refresh_token).to.equal(newRefreshToken);
+                cy.log('[SUCCESS] refreshToken called with NEW token (not old expired token)');
+            });
+
+            // Step 4: Verify we're redirected to /app (not /login due to token invalidation)
+            cy.log('[STEP 4] Verifying successful redirect to /app');
+            cy.url({ timeout: 15000 }).should('include', '/app');
+            cy.url().should('not.include', '/login');
+
+            // Step 5: Verify NEW token is saved (old token replaced)
+            cy.log('[STEP 5] Verifying NEW token is saved in localStorage');
+            cy.window().then((win) => {
+                const token = win.localStorage.getItem('token');
+
+                expect(token).to.exist;
+                const tokenData = JSON.parse(token || '{}');
+
+                expect(tokenData.access_token).to.equal(newAccessToken);
+                expect(tokenData.refresh_token).to.equal(newRefreshToken);
+                // Old token should be completely replaced
+                expect(tokenData.access_token).to.not.equal(oldExpiredToken);
+                expect(tokenData.refresh_token).to.not.equal(oldRefreshToken);
+                cy.log('[SUCCESS] NEW token saved, old token replaced');
+            });
+
+            // Step 6: Wait to ensure no redirect loop occurs
+            cy.log('[STEP 6] Verifying no redirect loop (session not invalidated)');
+            cy.wait(3000);
+            cy.url().should('include', '/app');
+            cy.url().should('not.include', '/login');
+
+            cy.log('[TEST COMPLETE] Old token race condition handled correctly - old token cleared before OAuth processing');
+        });
+    });
 });
 

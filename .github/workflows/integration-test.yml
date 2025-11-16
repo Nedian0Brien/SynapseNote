@@ -2,17 +2,42 @@ name: E2E Tests
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
   pull_request:
-    branches: [main, develop]
+    branches: [main]
   workflow_dispatch:
 
 env:
   CLOUD_VERSION: latest-amd64
 
 jobs:
-  run_e2e_tests:
+  # Run different test categories in parallel for 6x speedup
+  test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false # Don't cancel other jobs if one fails
+      matrix:
+        # Group tests by directory/feature for parallel execution
+        test-group:
+          - name: "auth"
+            spec: "cypress/e2e/auth/**/*.cy.ts"
+            description: "Authentication (OAuth, OTP, Password, Login/Logout)"
+          - name: "editor"
+            spec: "cypress/e2e/editor/**/*.cy.ts"
+            description: "Document editing and formatting"
+          - name: "database"
+            spec: "cypress/e2e/database/**/*.cy.ts"
+            description: "Database and grid operations"
+          - name: "page"
+            spec: "cypress/e2e/page/**/*.cy.ts"
+            description: "Page management (create, delete, share, publish)"
+          - name: "chat"
+            spec: "cypress/e2e/chat/**/*.cy.ts"
+            description: "AI chat features"
+          - name: "account-space-user"
+            spec: "cypress/e2e/{account,space,user,app}/**/*.cy.ts"
+            description: "Account, Space, User, and App tests"
+    name: "${{ matrix.test-group.name }}"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -113,8 +138,9 @@ jobs:
             exit 1
           )
 
-      # Run HTTP API integration tests
+      # Run HTTP API integration tests (only once, in auth group)
       - name: Run HTTP API integration tests
+        if: matrix.test-group.name == 'auth'
         run: |
           echo "Running HTTP API integration tests..."
           pnpm run test:http-api
@@ -144,17 +170,17 @@ jobs:
             sleep 2
           done' && echo "✓ Preview server is ready" || (echo "❌ Preview server failed to start" && exit 1)
 
-      - name: Run tests
+      - name: Run ${{ matrix.test-group.name }} tests
         run: |
           pnpm cypress run \
-            --spec 'cypress/e2e/**/*.cy.ts' \
+            --spec '${{ matrix.test-group.spec }}' \
             --config video=false
 
-      - name: Upload artifacts
-        if: always()
+      - name: Upload artifacts (${{ matrix.test-group.name }})
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results
+          name: test-results-${{ matrix.test-group.name }}
           path: |
             cypress/screenshots/**
             cypress/logs/**

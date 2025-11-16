@@ -34,6 +34,7 @@ import {
   UploadTemplatePayload,
 } from '@/application/template.type';
 import {
+  AccessLevel,
   CreateFolderViewPayload,
   CreatePagePayload,
   CreateSpacePayload,
@@ -52,10 +53,9 @@ import {
   UpdateSpacePayload,
   UpdateWorkspacePayload,
   UploadPublishNamespacePayload,
-  WorkspaceMember,
-  YjsEditorKey,
   ViewIconType,
-  AccessLevel
+  WorkspaceMember,
+  YjsEditorKey
 } from '@/application/types';
 import { applyYDoc } from '@/application/ydoc/apply';
 
