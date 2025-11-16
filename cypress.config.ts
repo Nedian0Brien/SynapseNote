@@ -31,10 +31,10 @@ export default defineConfig({
           // Remove fullscreen and kiosk related flags
           launchOptions.args = launchOptions.args.filter(arg => {
             return !arg.includes('--start-fullscreen') &&
-                   !arg.includes('--start-maximized') &&
-                   !arg.includes('--kiosk') &&
-                   !arg.includes('--app') &&
-                   !arg.includes('--auto-open-devtools-for-tabs');
+              !arg.includes('--start-maximized') &&
+              !arg.includes('--kiosk') &&
+              !arg.includes('--app') &&
+              !arg.includes('--auto-open-devtools-for-tabs');
           });
 
           // Add flags to ensure windowed mode
@@ -111,7 +111,7 @@ export default defineConfig({
           return null;
         },
       });
-      
+
       // Modify config for CI environment
       if (process.env.CI) {
         config.defaultCommandTimeout = 15000;
@@ -120,7 +120,7 @@ export default defineConfig({
         config.video = false;
         config.screenshotOnRunFailure = true;
       }
-      
+
       return config;
     },
     supportFile: 'cypress/support/component.ts',
@@ -131,8 +131,7 @@ export default defineConfig({
   },
   chromeWebSecurity: false,
   retries: {
-    // Reduce retries in CI for faster feedback
-    runMode: process.env.CI ? 1 : 3,
+    runMode: 1,
     openMode: 0,
   },
 });
