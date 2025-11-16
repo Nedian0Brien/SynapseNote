@@ -223,6 +223,9 @@ export function initAPIService(config: AFCloudConfig) {
       const token = getTokenParsed();
 
       if (!token) {
+        console.debug('[initAPIService][request] no token found, sending request without auth header', {
+          url: config.url,
+        });
         return config;
       }
 
@@ -234,9 +237,12 @@ export function initAPIService(config: AFCloudConfig) {
       if (isExpired) {
         try {
           const newToken = await refreshToken(refresh_token);
-
           access_token = newToken?.access_token || '';
         } catch (e) {
+          console.warn('[initAPIService][request] refresh token failed, marking token invalid', {
+            url: config.url,
+            message: (e as any)?.message,
+          });
           invalidToken();
           return config;
         }
@@ -262,6 +268,7 @@ export function initAPIService(config: AFCloudConfig) {
       const token = getTokenParsed();
 
       if (!token) {
+        console.warn('[initAPIService][response] 401 without token, emitting invalid token');
         invalidToken();
         return response;
       }
@@ -271,6 +278,10 @@ export function initAPIService(config: AFCloudConfig) {
       try {
         await refreshToken(refresh_token);
       } catch (e) {
+        console.warn('[initAPIService][response] refresh on 401 failed, emitting invalid token', {
+          message: (e as any)?.message,
+          url: response.config?.url,
+        });
         invalidToken();
       }
     }
@@ -286,6 +297,10 @@ export async function signInWithUrl(url: string) {
   const gotrueError = parseGoTrueErrorFromUrl(url);
 
   if (gotrueError) {
+    console.warn('[signInWithUrl] GoTrue error detected in callback URL', {
+      code: gotrueError.code,
+      message: gotrueError.message,
+    });
     // GoTrue returned an error, reject with parsed error
     return Promise.reject({
       code: gotrueError.code,
@@ -298,6 +313,7 @@ export async function signInWithUrl(url: string) {
   const hash = urlObj.hash;
 
   if (!hash) {
+    console.warn('[signInWithUrl] No hash found in callback URL');
     return Promise.reject('No hash found');
   }
 
@@ -306,15 +322,35 @@ export async function signInWithUrl(url: string) {
   const refresh_token = params.get('refresh_token');
 
   if (!accessToken || !refresh_token) {
+    console.warn('[signInWithUrl] Missing tokens in callback hash', {
+      hasAccessToken: !!accessToken,
+      hasRefreshToken: !!refresh_token,
+    });
     return Promise.reject({
       code: -1,
       message: 'No access token or refresh token found',
     });
   }
 
+  // CRITICAL: Clear old token BEFORE processing new OAuth tokens
+  // This prevents axios interceptor from trying to auto-refresh the old expired token
+  // during verifyToken() API call, which would cause a race condition where:
+  // 1. verifyToken() makes API call with NEW token in URL
+  // 2. Axios interceptor sees OLD token in localStorage, tries to refresh it
+  // 3. Old token refresh fails → invalidToken() called → session invalidated
+  // 4. Meanwhile, OAuth flow is trying to save NEW token → conflicts with invalidation
+  // By clearing the old token first, we ensure axios interceptor skips auto-refresh
+  const hadOldToken = !!localStorage.getItem('token');
+
+  if (hadOldToken) {
+    console.debug('[signInWithUrl] Clearing old token before processing OAuth callback to prevent race condition');
+    localStorage.removeItem('token');
+  }
+
   try {
     await verifyToken(accessToken);
   } catch (e) {
+    console.warn('[signInWithUrl] Verify token failed', { message: (e as any)?.message });
     return Promise.reject({
       code: -1,
       message: 'Verify token failed',
@@ -324,6 +360,7 @@ export async function signInWithUrl(url: string) {
   try {
     await refreshToken(refresh_token);
   } catch (e) {
+    console.warn('[signInWithUrl] Refresh token failed', { message: (e as any)?.message });
     return Promise.reject({
       code: -1,
       message: 'Refresh token failed',

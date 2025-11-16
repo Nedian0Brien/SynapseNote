@@ -84,17 +84,49 @@ function AppConfig({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // Sync authentication state whenever isAuthenticated changes
-  // This handles cases where token was saved but state wasn't updated (e.g., after page reload)
+  // Sync authentication state on mount and whenever isAuthenticated changes
+  // This handles cases where token was saved but state wasn't updated (e.g., after page reload or OAuth callback)
   // This prevents redirect loops after OAuth callback or page reload
   useEffect(() => {
     const hasToken = isTokenValid();
 
+    console.debug('[AppConfig] sync check', {
+      hasToken,
+      isAuthenticated,
+      willSync: hasToken && !isAuthenticated,
+    });
+
     // If token exists but state says not authenticated, sync the state
     if (hasToken && !isAuthenticated) {
+      console.debug('[AppConfig] syncing authentication state - token exists but state is false');
       setIsAuthenticated(true);
     }
+    // If no token but state says authenticated, invalidate the session
+    else if (!hasToken && isAuthenticated) {
+      console.debug('[AppConfig] token removed but state still authenticated - invalidating');
+      setIsAuthenticated(false);
+    }
   }, [isAuthenticated]);
+
+  // Proactive sync on mount - runs once to catch any initialization issues
+  // This is a safety net for race conditions during page load/OAuth callback
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      const hasToken = isTokenValid();
+
+      console.debug('[AppConfig] mount sync check', {
+        hasToken,
+        isAuthenticated,
+      });
+
+      if (hasToken && !isAuthenticated) {
+        console.debug('[AppConfig] mount sync - forcing authentication state to true');
+        setIsAuthenticated(true);
+      }
+    }, 100); // Small delay to allow all initialization to complete
+
+    return () => clearTimeout(timeoutId);
+  }, []); // Only run once on mount
   useEffect(() => {
     return on(EventType.SESSION_INVALID, () => {
       setIsAuthenticated(false);
@@ -141,7 +173,7 @@ function AppConfig({ children }: { children: React.ReactNode }) {
     }, [isAuthenticated, service, hasCheckedTimezone]);
 
   // Detect timezone once on mount
-  const _timezoneInfo = useUserTimezone({
+  useUserTimezone({
     onTimezoneChange: handleTimezoneSetup,
     updateInterval: 0, // Disable periodic checks - only check once
   });
