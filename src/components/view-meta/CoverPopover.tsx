@@ -1,11 +1,11 @@
-import { CoverType, SubscriptionPlan, ViewMetaCover } from '@/application/types';
+import { CoverType, ViewMetaCover } from '@/application/types';
+import { EmbedLink, TAB_KEY, TabOption, Unsplash, UploadImage, UploadPopover } from '@/components/_shared/image-upload';
 import { useAppHandlers, useAppViewId, useOpenModalViewId } from '@/components/app/app.hooks';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { EmbedLink, Unsplash, UploadPopover, TabOption, TAB_KEY, UploadImage } from '@/components/_shared/image-upload';
-import { useTranslation } from 'react-i18next';
-import { isOfficialHost } from '@/utils/subscription';
-import Colors from './CoverColors';
+import { useSubscriptionPlan } from '@/components/app/hooks/useSubscriptionPlan';
 import { GradientEnum } from '@/utils/color';
+import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import Colors from './CoverColors';
 
 function CoverPopover({
   coverValue,
@@ -26,31 +26,7 @@ function CoverPopover({
   const modalViewId = useOpenModalViewId();
   const viewId = modalViewId || appViewId;
 
-  const [activeSubscriptionPlan, setActiveSubscriptionPlan] = useState<SubscriptionPlan | null>(null);
-  // Pro features are enabled by default on self-hosted instances
-  const isPro = activeSubscriptionPlan === SubscriptionPlan.Pro || !isOfficialHost();
-
-  const loadSubscription = useCallback(async () => {
-    try {
-      const subscriptions = await getSubscriptions?.();
-
-      if (!subscriptions || subscriptions.length === 0) {
-        setActiveSubscriptionPlan(SubscriptionPlan.Free);
-        return;
-      }
-
-      const subscription = subscriptions[0];
-
-      setActiveSubscriptionPlan(subscription?.plan || SubscriptionPlan.Free);
-    } catch (e) {
-      setActiveSubscriptionPlan(SubscriptionPlan.Free);
-      console.error(e);
-    }
-  }, [getSubscriptions]);
-
-  useEffect(() => {
-    void loadSubscription();
-  }, [loadSubscription]);
+  const { isPro } = useSubscriptionPlan(getSubscriptions);
 
   const tabOptions: TabOption[] = useMemo(() => {
     return [

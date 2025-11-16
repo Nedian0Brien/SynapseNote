@@ -5,18 +5,17 @@ import { useSlateStatic } from 'slate-react';
 import { YjsEditor } from '@/application/slate-yjs';
 import { CustomEditor } from '@/application/slate-yjs/command';
 import { EditorMarkFormat } from '@/application/slate-yjs/types';
-import { SubscriptionPlan } from '@/application/types';
 import { ReactComponent as AddIcon } from '@/assets/icons/plus.svg';
 import { ReactComponent as ColorSvg } from '@/assets/icons/text_color.svg';
 import { ColorTile } from '@/components/_shared/color-picker';
 import { CustomColorPicker } from '@/components/_shared/color-picker/CustomColorPicker';
+import { useSubscriptionPlan } from '@/components/app/hooks/useSubscriptionPlan';
 import { useSelectionToolbarContext } from '@/components/editor/components/toolbar/selection-toolbar/SelectionToolbar.hooks';
 import { useEditorContext } from '@/components/editor/EditorContext';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { renderColor } from '@/utils/color';
-import { isOfficialHost } from '@/utils/subscription';
 
 import ActionButton from './ActionButton';
 
@@ -44,28 +43,8 @@ function TextColor({
   const recentColorToSave = useRef<string | null>(null);
   const initialColor = useRef<string | null>(null);
 
-  const [activeSubscriptionPlan, setActiveSubscriptionPlan] = useState<SubscriptionPlan | null>(null);
-  // Pro features are enabled by default on self-hosted instances
-  const isPro = activeSubscriptionPlan === SubscriptionPlan.Pro || !isOfficialHost();
+  const { isPro } = useSubscriptionPlan(getSubscriptions);
   const maxCustomColors = isPro ? 9 : 4;
-
-  const loadSubscription = useCallback(async () => {
-    try {
-      const subscriptions = await getSubscriptions?.();
-
-      if (!subscriptions || subscriptions.length === 0) {
-        setActiveSubscriptionPlan(SubscriptionPlan.Free);
-        return;
-      }
-
-      const subscription = subscriptions[0];
-
-      setActiveSubscriptionPlan(subscription?.plan || SubscriptionPlan.Free);
-    } catch (e) {
-      setActiveSubscriptionPlan(SubscriptionPlan.Free);
-      console.error(e);
-    }
-  }, [getSubscriptions]);
 
   const isCustomColor = useCallback((color: string) => {
     return color.startsWith('#') || color.startsWith('0x');
@@ -102,10 +81,6 @@ function TextColor({
       setIsOpen(false);
     }
   }, [isOpen, visible]);
-
-  useEffect(() => {
-    void loadSubscription();
-  }, [loadSubscription]);
 
   const getRawColorValue = useCallback(
     (color: string) => {
