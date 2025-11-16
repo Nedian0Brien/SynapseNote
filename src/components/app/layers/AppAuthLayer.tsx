@@ -107,6 +107,7 @@ export const AppAuthLayer: React.FC<AppAuthLayerProps> = ({ children }) => {
     if (!isAuthenticated) {
       return;
     }
+
     void loadUserWorkspaceInfo().catch((e) => {
       console.error('[AppAuthLayer] Failed to load workspace info:', e);
     });

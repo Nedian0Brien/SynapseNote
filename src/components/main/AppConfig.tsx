@@ -84,20 +84,13 @@ function AppConfig({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // Sync authentication state immediately on mount and whenever isAuthenticated changes
+  // Sync authentication state whenever isAuthenticated changes
   // This handles cases where token was saved but state wasn't updated (e.g., after page reload)
+  // This prevents redirect loops after OAuth callback or page reload
   useEffect(() => {
     const hasToken = isTokenValid();
-    // If token exists but state says not authenticated, sync the state immediately
-    // This prevents redirect loops after OAuth callback or page reload
-    if (hasToken && !isAuthenticated) {
-      setIsAuthenticated(true);
-    }
-  }, []); // Run on mount only
 
-  // Also sync whenever isAuthenticated changes (in case token is added after mount)
-  useEffect(() => {
-    const hasToken = isTokenValid();
+    // If token exists but state says not authenticated, sync the state
     if (hasToken && !isAuthenticated) {
       setIsAuthenticated(true);
     }

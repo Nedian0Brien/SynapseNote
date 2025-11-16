@@ -36,14 +36,15 @@ export function useSubscriptionPlan(
             const subscription = subscriptions[0];
 
             setActiveSubscriptionPlan(subscription?.plan || SubscriptionPlan.Free);
-        } catch (e: any) {
+        } catch (e: unknown) {
             // Silently handle expected errors (API not initialized, no response data, etc.)
             // These are normal scenarios when the service isn't available or there's no subscription data
+            const error = e as { code?: number; message?: string };
             const isExpectedError =
-                e?.code === -1 &&
-                (e?.message === 'No response data received' ||
-                    e?.message === 'No response received from server' ||
-                    e?.message === 'API service not initialized');
+                error?.code === -1 &&
+                (error?.message === 'No response data received' ||
+                    error?.message === 'No response received from server' ||
+                    error?.message === 'API service not initialized');
 
             if (!isExpectedError) {
                 console.error(e);
