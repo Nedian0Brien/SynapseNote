@@ -87,6 +87,7 @@ function ApproveRequestPage() {
         if (isOfficialHost()) {
           setUpgradeModalOpen(true);
         }
+
         return;
       }
 

@@ -6,12 +6,13 @@ This guide covers how to write Storybook stories for AppFlowy Web components, in
 
 1. [Setup and Configuration](#setup-and-configuration)
 2. [Writing Stories](#writing-stories)
-3. [Common Patterns](#common-patterns)
-4. [Mocking and Context Providers](#mocking-and-context-providers)
-5. [Hostname Mocking for Different Scenarios](#hostname-mocking-for-different-scenarios)
-6. [CSS and Styling](#css-and-styling)
-7. [Common Issues and Solutions](#common-issues-and-solutions)
-8. [Examples](#examples)
+3. [Shared Utilities](#shared-utilities)
+4. [Common Patterns](#common-patterns)
+5. [Mocking and Context Providers](#mocking-and-context-providers)
+6. [Hostname Mocking for Different Scenarios](#hostname-mocking-for-different-scenarios)
+7. [CSS and Styling](#css-and-styling)
+8. [Common Issues and Solutions](#common-issues-and-solutions)
+9. [Examples](#examples)
 
 ## Setup and Configuration
 
@@ -73,75 +74,137 @@ Organize stories by feature area:
 - `Editor/` - Editor components and features
 - `Error Pages/` - Error and not found pages
 
+## Shared Utilities
+
+**IMPORTANT:** To avoid code duplication, always use the shared utilities located in `.storybook/` instead of creating your own mocks, decorators, or argTypes.
+
+### Available Utilities
+
+#### 1. Shared Mocks (`.storybook/mocks.ts`)
+
+Pre-configured mock context values to use in your stories:
+
+```typescript
+import { mockAFConfigValue, mockAFConfigValueMinimal, mockAppContextValue } from '../../../.storybook/mocks';
+
+// mockAFConfigValue - Full mock with service.getSubscriptionLink
+// mockAFConfigValueMinimal - Minimal mock without service (use when service not needed)
+// mockAppContextValue - Mock for AppContext with workspace info
+```
+
+**When to use each:**
+- `mockAFConfigValue`: Components that need `service.getSubscriptionLink` (e.g., billing components)
+- `mockAFConfigValueMinimal`: Components that only need auth, no service functionality
+- `mockAppContextValue`: Components that need workspace information
+
+#### 2. Shared Decorators (`.storybook/decorators.tsx`)
+
+Pre-built decorator functions to wrap your components:
+
+```typescript
+import {
+  withContexts,           // AFConfig + AppContext
+  withContextsMinimal,    // AFConfig (minimal) + AppContext
+  withAFConfig,           // Just AFConfig
+  withAFConfigMinimal,    // Just AFConfig (minimal)
+  withAppContext,         // Just AppContext
+  withHostnameMocking,    // Hostname mocking only
+  withHostnameAndContexts,// Hostname + both contexts
+  withContainer,          // Padded container with max-width
+  withPadding,            // Simple padding wrapper
+} from '../../../.storybook/decorators';
+```
+
+**Common decorator patterns:**
+
+```typescript
+// For components needing both contexts
+decorators: [withContextsMinimal]
+
+// For hostname-aware components with contexts
+decorators: [
+  withHostnameAndContexts({ maxWidth: '600px', minimalAFConfig: true })
+]
+
+// For components needing hostname only (no contexts)
+decorators: [
+  withHostnameMocking(),
+  withContainer({ maxWidth: '600px' })
+]
+```
+
+#### 3. Shared ArgTypes (`.storybook/argTypes.ts`)
+
+Pre-configured argTypes for common controls:
+
+```typescript
+import {
+  hostnameArgType,                    // hostname control
+  subscriptionPlanArgType,            // activeSubscriptionPlan control
+  activePlanArgType,                  // activePlan control (alias)
+  isOwnerArgType,                     // isOwner boolean control
+  openArgType,                        // open boolean control (modals)
+  hostnameAndSubscriptionArgTypes,    // Combined hostname + subscription
+  ownershipArgTypes,                  // Combined owner + subscription
+} from '../../../.storybook/argTypes';
+
+// Usage
+argTypes: {
+  ...hostnameArgType,
+  ...subscriptionPlanArgType,
+}
+// or
+argTypes: hostnameAndSubscriptionArgTypes,
+```
+
+### Import Path Patterns
+
+The import path depends on your file's depth from the `.storybook/` directory:
+
+```typescript
+// From src/components/error/*.stories.tsx (3 levels deep)
+import { withContextsMinimal } from '../../../.storybook/decorators';
+
+// From src/components/app/share/*.stories.tsx (4 levels deep)
+import { withHostnameAndContexts } from '../../../../.storybook/decorators';
+
+// From src/components/editor/components/toolbar/selection-toolbar/actions/*.stories.tsx (8 levels deep)
+import { hostnameAndSubscriptionArgTypes } from '../../../../../../../.storybook/argTypes';
+```
+
+**Tip:** Count the number of `../` by counting how many directories you need to go up to reach `src/`, then add one more to reach the project root where `.storybook/` is located.
+
 ## Common Patterns
 
 ### 1. Component with Context Dependencies
 
-If your component uses React Context (like `AppContext`, `AFConfigContext`), you need to provide mock values:
+**Use shared decorators instead of creating your own!**
+
+If your component uses React Context (like `AppContext`, `AFConfigContext`), use the pre-built decorators:
 
 ```typescript
-import { AppContext } from '@/components/app/app.hooks';
-import { AFConfigContext } from '@/components/main/app.hooks';
-
-const mockAFConfigValue = {
-  service: undefined,
-  isAuthenticated: true,
-  currentUser: {
-    email: 'storybook@example.com',
-    name: 'Storybook User',
-    uid: 'storybook-uid',
-    avatar: null,
-    uuid: 'storybook-uuid',
-    latestWorkspaceId: 'storybook-workspace-id',
-  },
-  updateCurrentUser: async () => {},
-  openLoginModal: () => {},
-};
-
-const mockAppContextValue = {
-  userWorkspaceInfo: {
-    selectedWorkspace: {
-      id: 'storybook-workspace-id',
-      name: 'Storybook Workspace',
-      owner: {
-        uid: 'storybook-uid',
-      },
-    },
-    workspaces: [
-      {
-        id: 'storybook-workspace-id',
-        name: 'Storybook Workspace',
-        owner: { uid: 'storybook-uid' },
-      },
-    ],
-  },
-  currentWorkspaceId: 'storybook-workspace-id',
-  outline: [],
-  rendered: true,
-  toView: async () => {},
-  loadViewMeta: async () => {
-    throw new Error('Not implemented in story');
-  },
-  loadView: async () => {
-    throw new Error('Not implemented in story');
-  },
-  // ... other required properties
-};
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { withContextsMinimal } from '../../../.storybook/decorators';
+import YourComponent from './YourComponent';
 
 const meta = {
-  title: 'Share/YourComponent',
+  title: 'Category/YourComponent',
   component: YourComponent,
-  decorators: [
-    (Story) => (
-      <AFConfigContext.Provider value={mockAFConfigValue}>
-        <AppContext.Provider value={mockAppContextValue}>
-          <Story />
-        </AppContext.Provider>
-      </AFConfigContext.Provider>
-    ),
-  ],
+  parameters: {
+    layout: 'padded',
+  },
+  tags: ['autodocs'],
+  decorators: [withContextsMinimal],
 } satisfies Meta<typeof YourComponent>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
 ```
+
+**Choose the right decorator:**
+- `withContextsMinimal` - Most common, for components needing auth and workspace context
+- `withContexts` - When component needs `service.getSubscriptionLink`
+- `withAFConfigMinimal` or `withAppContext` - When only one context is needed
 
 ### 2. Router-Dependent Components
 
@@ -182,51 +245,34 @@ Many AppFlowy components require these contexts:
 3. **I18nextProvider** - Already provided globally in preview.tsx
 4. **BrowserRouter** - Already provided globally in preview.tsx
 
-### Minimal Mock Contexts
+### Using Shared Mock Contexts
 
-For components that only need basic context:
+**DO NOT create new mock contexts!** Use the pre-configured ones from `.storybook/mocks.ts`:
 
 ```typescript
-const mockAFConfigValue = {
-  service: undefined,
-  isAuthenticated: true,
-  currentUser: {
-    email: 'storybook@example.com',
-    name: 'Storybook User',
-    uid: 'storybook-uid',
-    avatar: null,
-    uuid: 'storybook-uuid',
-    latestWorkspaceId: 'storybook-workspace-id',
-  },
-  updateCurrentUser: async () => {},
-  openLoginModal: () => {},
+import {
+  mockAFConfigValue,        // Full mock with service
+  mockAFConfigValueMinimal, // Minimal mock without service
+  mockAppContextValue       // App context with workspace info
+} from '../../../.storybook/mocks';
+```
+
+These mocks are already configured with all required properties and sensible defaults. If you need custom behavior, you can extend them:
+
+```typescript
+import { mockAppContextValue } from '../../../.storybook/mocks';
+
+// Custom mock extending the base
+const customMock = {
+  ...mockAppContextValue,
+  currentWorkspaceId: 'custom-workspace-id',
 };
 ```
 
-For components that need workspace info:
-
-```typescript
-const mockAppContextValue = {
-  userWorkspaceInfo: {
-    selectedWorkspace: {
-      id: 'storybook-workspace-id',
-      name: 'Storybook Workspace',
-      owner: { uid: 'storybook-uid' },
-    },
-    workspaces: [
-      {
-        id: 'storybook-workspace-id',
-        name: 'Storybook Workspace',
-        owner: { uid: 'storybook-uid' },
-      },
-    ],
-  },
-  currentWorkspaceId: 'storybook-workspace-id',
-  outline: [],
-  rendered: true,
-  // ... add other required methods as needed
-};
-```
+**When to use each mock:**
+- `mockAFConfigValueMinimal` - Most components (no service needed)
+- `mockAFConfigValue` - Billing/subscription components that need `service.getSubscriptionLink`
+- `mockAppContextValue` - Components needing workspace/user information
 
 ## Hostname Mocking for Different Scenarios
 
@@ -236,52 +282,51 @@ Many components behave differently based on whether they're running on official 
 
 The `isOfficialHost()` function in `src/utils/subscription.ts` checks `window.location.hostname`. For Storybook, we mock this using a global variable.
 
-### Implementation Pattern
+### Using Shared Hostname Decorators
+
+**Use the pre-built decorators instead of writing your own!**
+
+#### Option 1: Hostname with Contexts (Most Common)
+
+For components that need both hostname mocking and context providers:
 
 ```typescript
-// Mock window.location.hostname for different scenarios using a global variable
-declare global {
-  interface Window {
-    __STORYBOOK_MOCK_HOSTNAME__?: string;
-  }
-}
-
-const mockHostname = (hostname: string) => {
-  window.__STORYBOOK_MOCK_HOSTNAME__ = hostname;
-};
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { SubscriptionPlan } from '@/application/types';
+import { hostnameAndSubscriptionArgTypes } from '../../../.storybook/argTypes';
+import { withHostnameAndContexts } from '../../../.storybook/decorators';
+import YourComponent from './YourComponent';
 
 const meta = {
-  title: 'YourComponent',
+  title: 'Category/YourComponent',
+  component: YourComponent,
+  parameters: {
+    layout: 'padded',
+  },
+  tags: ['autodocs'],
+  decorators: [
+    withHostnameAndContexts({ maxWidth: '600px', minimalAFConfig: true }),
+  ],
+  argTypes: hostnameAndSubscriptionArgTypes,
+} satisfies Meta<typeof YourComponent>;
+```
+
+#### Option 2: Hostname Only (No Contexts)
+
+For components that check hostname but don't need context providers:
+
+```typescript
+import { hostnameArgType } from '../../../.storybook/argTypes';
+import { withHostnameMocking, withContainer } from '../../../.storybook/decorators';
+
+const meta = {
+  title: 'Category/YourComponent',
   component: YourComponent,
   decorators: [
-    (Story: React.ComponentType, context: { args: { hostname?: string } }) => {
-      const hostname = context.args.hostname || 'beta.appflowy.cloud';
-      
-      // Set mock hostname synchronously before render
-      mockHostname(hostname);
-
-      useEffect(() => {
-        // Update if hostname changes
-        mockHostname(hostname);
-        // Cleanup
-        return () => {
-          delete (window as any).__STORYBOOK_MOCK_HOSTNAME__;
-        };
-      }, [hostname]);
-
-      return (
-        <div style={{ padding: '20px' }}>
-          <Story />
-        </div>
-      );
-    },
+    withHostnameMocking(),
+    withContainer({ maxWidth: '600px' }),
   ],
-  argTypes: {
-    hostname: {
-      control: 'text',
-      description: 'Mock hostname to simulate different hosting scenarios',
-    },
-  },
+  argTypes: hostnameArgType,
 } satisfies Meta<typeof YourComponent>;
 ```
 
@@ -324,11 +369,33 @@ export const TestHost: Story = {
 };
 ```
 
-### Important Notes
+### Custom Decorator (Advanced)
 
-1. **Set hostname synchronously**: Call `mockHostname()` before the component renders, not just in `useEffect`
-2. **Cleanup**: Delete the global variable in the cleanup function
-3. **The `isOfficialHost()` function** automatically checks `window.__STORYBOOK_MOCK_HOSTNAME__` if it exists
+If you need custom behavior (like modal state management), you can still use the shared `mockHostname` function and argTypes:
+
+```typescript
+import { useEffect, useState } from 'react';
+import { mockHostname } from '../../../.storybook/decorators';
+import { hostnameArgType } from '../../../.storybook/argTypes';
+
+const meta = {
+  decorators: [
+    (Story, context) => {
+      const hostname = context.args.hostname || 'beta.appflowy.cloud';
+      mockHostname(hostname);
+
+      useEffect(() => {
+        mockHostname(hostname);
+        return () => delete (window as any).__STORYBOOK_MOCK_HOSTNAME__;
+      }, [hostname]);
+
+      // Your custom logic here...
+      return <Story />;
+    },
+  ],
+  argTypes: hostnameArgType,
+};
+```
 
 ## CSS and Styling
 
@@ -440,150 +507,95 @@ window.__STORYBOOK_MOCK_HOSTNAME__ = hostname;
 
 ## Examples
 
-### Complete Example: Component with Hostname Mocking
+### Example 1: Component with Hostname and Context (Recommended Pattern)
+
+Most subscription/billing/sharing components follow this pattern:
 
 ```typescript
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import React, { useEffect } from 'react';
 import { SubscriptionPlan } from '@/application/types';
-import { AppContext } from '@/components/app/app.hooks';
-import { AFConfigContext } from '@/components/main/app.hooks';
-import YourComponent from './YourComponent';
-
-// Mock contexts
-const mockAFConfigValue = {
-  service: undefined,
-  isAuthenticated: true,
-  currentUser: {
-    email: 'storybook@example.com',
-    name: 'Storybook User',
-    uid: 'storybook-uid',
-    avatar: null,
-    uuid: 'storybook-uuid',
-    latestWorkspaceId: 'storybook-workspace-id',
-  },
-  updateCurrentUser: async () => {},
-  openLoginModal: () => {},
-};
-
-const mockAppContextValue = {
-  userWorkspaceInfo: {
-    selectedWorkspace: {
-      id: 'storybook-workspace-id',
-      name: 'Storybook Workspace',
-      owner: { uid: 'storybook-uid' },
-    },
-    workspaces: [],
-  },
-  currentWorkspaceId: 'storybook-workspace-id',
-  outline: [],
-  rendered: true,
-  toView: async () => {},
-  loadViewMeta: async () => {
-    throw new Error('Not implemented');
-  },
-  loadView: async () => {
-    throw new Error('Not implemented');
-  },
-  appendBreadcrumb: () => {},
-  onRendered: () => {},
-  updatePage: async () => {},
-  addPage: async () => 'test-page-id',
-  deletePage: async () => {},
-  openPageModal: () => {},
-  loadViews: async () => [],
-  setWordCount: () => {},
-  uploadFile: async () => {
-    throw new Error('Not implemented');
-  },
-  eventEmitter: undefined,
-  awarenessMap: {},
-};
-
-// Hostname mocking
-declare global {
-  interface Window {
-    __STORYBOOK_MOCK_HOSTNAME__?: string;
-  }
-}
-
-const mockHostname = (hostname: string) => {
-  window.__STORYBOOK_MOCK_HOSTNAME__ = hostname;
-};
+import { hostnameAndSubscriptionArgTypes } from '../../../../.storybook/argTypes';
+import { withHostnameAndContexts } from '../../../../.storybook/decorators';
+import { UpgradeBanner } from './UpgradeBanner';
 
 const meta = {
-  title: 'Category/YourComponent',
-  component: YourComponent,
+  title: 'Share/UpgradeBanner',
+  component: UpgradeBanner,
   parameters: {
     layout: 'padded',
   },
   tags: ['autodocs'],
   decorators: [
-    (Story: React.ComponentType, context: { args: { hostname?: string } }) => {
-      const hostname = context.args.hostname || 'beta.appflowy.cloud';
-      
-      // Set mock hostname synchronously before render
-      mockHostname(hostname);
-
-      useEffect(() => {
-        mockHostname(hostname);
-        return () => {
-          delete (window as any).__STORYBOOK_MOCK_HOSTNAME__;
-        };
-      }, [hostname]);
-
-      return (
-        <AFConfigContext.Provider value={mockAFConfigValue}>
-          <AppContext.Provider value={mockAppContextValue}>
-            <div style={{ padding: '20px', maxWidth: '600px' }}>
-              <Story />
-            </div>
-          </AppContext.Provider>
-        </AFConfigContext.Provider>
-      );
-    },
+    withHostnameAndContexts({ maxWidth: '600px', minimalAFConfig: true }),
   ],
-  argTypes: {
-    hostname: {
-      control: 'text',
-      description: 'Mock hostname to simulate different hosting scenarios',
-    },
-  },
-} satisfies Meta<typeof YourComponent>;
+  argTypes: hostnameAndSubscriptionArgTypes,
+} satisfies Meta<typeof UpgradeBanner>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const OfficialHost: Story = {
+export const OfficialHostFreePlan: Story = {
   args: {
+    activeSubscriptionPlan: SubscriptionPlan.Free,
     hostname: 'beta.appflowy.cloud',
-    activePlan: SubscriptionPlan.Free,
   },
   parameters: {
     docs: {
       description: {
-        story: 'Shows component behavior on official host',
+        story: 'Shows upgrade banner on official host when user has Free plan',
       },
     },
   },
 };
 
-export const SelfHosted: Story = {
+export const SelfHostedFreePlan: Story = {
   args: {
+    activeSubscriptionPlan: SubscriptionPlan.Free,
     hostname: 'self-hosted.example.com',
-    activePlan: SubscriptionPlan.Free,
   },
   parameters: {
     docs: {
       description: {
-        story: 'On self-hosted instances, Pro features are enabled by default',
+        story: 'No banner on self-hosted - Pro features enabled by default',
       },
     },
   },
 };
 ```
 
-### Simple Example: Component Without Context
+### Example 2: Error Page Component (Context Only, No Hostname)
+
+```typescript
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { ErrorType } from '@/application/utils/error-utils';
+import { withContextsMinimal } from '../../../.storybook/decorators';
+import RecordNotFound from './RecordNotFound';
+
+const meta = {
+  title: 'Error Pages/RecordNotFound',
+  component: RecordNotFound,
+  parameters: {
+    layout: 'fullscreen',
+  },
+  tags: ['autodocs'],
+  decorators: [withContextsMinimal],
+} satisfies Meta<typeof RecordNotFound>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const PageNotFound: Story = {
+  args: {
+    error: {
+      type: ErrorType.PageNotFound,
+      message: 'Page or resource not found',
+      statusCode: 404,
+    },
+  },
+};
+```
+
+### Example 3: Simple Component (No Context, No Hostname)
 
 ```typescript
 import type { Meta, StoryObj } from '@storybook/react-vite';
@@ -608,33 +620,145 @@ export const Default: Story = {
 };
 ```
 
+### Example 4: Custom Decorator with Shared Utilities
+
+When you need custom behavior (like managing modal state), use shared mocks and argTypes:
+
+```typescript
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import React, { useEffect, useState } from 'react';
+import { AppContext } from '@/components/app/app.hooks';
+import { AFConfigContext } from '@/components/main/app.hooks';
+import { hostnameArgType, openArgType } from '../../../.storybook/argTypes';
+import { mockHostname } from '../../../.storybook/decorators';
+import { mockAFConfigValue, mockAppContextValue } from '../../../.storybook/mocks';
+import UpgradePlan from './UpgradePlan';
+
+const meta = {
+  title: 'Billing/UpgradePlan',
+  component: UpgradePlan,
+  parameters: {
+    layout: 'centered',
+  },
+  tags: ['autodocs'],
+  decorators: [
+    (Story, context) => {
+      const hostname = context.args.hostname || 'beta.appflowy.cloud';
+      const [open, setOpen] = useState(context.args.open ?? false);
+
+      mockHostname(hostname);
+
+      useEffect(() => {
+        mockHostname(hostname);
+        return () => delete (window as any).__STORYBOOK_MOCK_HOSTNAME__;
+      }, [hostname]);
+
+      return (
+        <AFConfigContext.Provider value={mockAFConfigValue}>
+          <AppContext.Provider value={mockAppContextValue}>
+            <div style={{ padding: '20px', maxWidth: '800px' }}>
+              <button onClick={() => setOpen(true)}>Open Modal</button>
+              <Story args={{ ...context.args, open, onClose: () => setOpen(false) }} />
+            </div>
+          </AppContext.Provider>
+        </AFConfigContext.Provider>
+      );
+    },
+  ],
+  argTypes: {
+    ...openArgType,
+    ...hostnameArgType,
+  },
+} satisfies Meta<typeof UpgradePlan>;
+```
+
 ## Best Practices
 
-1. **Always provide required contexts**: If a component uses hooks from contexts, provide mock providers
-2. **Don't duplicate Router**: Never add `BrowserRouter` in stories
-3. **Mock hostname synchronously**: Set `__STORYBOOK_MOCK_HOSTNAME__` before render
-4. **Use descriptive story names**: Make it clear what scenario the story demonstrates
-5. **Add documentation**: Use `parameters.docs.description.story` to explain the story
-6. **Test different scenarios**: Create stories for official hosts, self-hosted, different plans, etc.
-7. **Keep mocks minimal**: Only mock what's necessary for the component to render
+1. **ALWAYS use shared utilities**: Never create your own mocks, decorators, or argTypes when shared ones exist in `.storybook/`
+2. **Use the right decorator for your needs**:
+   - `withContextsMinimal` - Most common (auth + workspace context, no service)
+   - `withHostnameAndContexts()` - For hostname-aware subscription components
+   - `withHostnameMocking()` - For hostname-only components (no contexts)
+3. **Don't duplicate Router**: Never add `BrowserRouter` in stories (already in preview.tsx)
+4. **Import shared utilities with correct relative paths**: Count `../` levels from your file to project root
+5. **Use descriptive story names**: Make it clear what scenario the story demonstrates
+6. **Add documentation**: Use `parameters.docs.description.story` to explain the story
+7. **Test different scenarios**: Create stories for official hosts, self-hosted, different plans, etc.
 8. **Use TypeScript**: Leverage `satisfies Meta<typeof Component>` for type safety
+9. **Follow existing patterns**: Look at existing `.stories.tsx` files for reference
+10. **Keep stories focused**: Each story should demonstrate one specific scenario or state
+
+## Quick Reference
+
+### Decision Tree: Which Utilities Do I Need?
+
+```
+Does my component check hostname (isOfficialHost)?
+├─ YES: Does it need context providers?
+│   ├─ YES: Use withHostnameAndContexts()
+│   └─ NO: Use withHostnameMocking() + withContainer()
+└─ NO: Does it need context providers?
+    ├─ YES: Does it need service.getSubscriptionLink?
+    │   ├─ YES: Use withContexts
+    │   └─ NO: Use withContextsMinimal
+    └─ NO: No decorators needed (or just layout decorators)
+```
+
+### Quick Import Cheatsheet
+
+```typescript
+// Decorators
+import {
+  withContextsMinimal,        // ← Most common
+  withHostnameAndContexts,    // ← For hostname-aware components
+  withHostnameMocking,        // ← Hostname only
+  withContainer,              // ← Layout helper
+} from '../../../.storybook/decorators';
+
+// ArgTypes
+import {
+  hostnameAndSubscriptionArgTypes,  // ← Most common combo
+  hostnameArgType,
+  subscriptionPlanArgType,
+} from '../../../.storybook/argTypes';
+
+// Mocks (only if you need custom decorator)
+import {
+  mockAFConfigValueMinimal,   // ← Most common
+  mockAppContextValue,
+} from '../../../.storybook/mocks';
+```
+
+### Common Patterns at a Glance
+
+| Component Type | Decorators | ArgTypes | Example |
+|---|---|---|---|
+| Error pages | `withContextsMinimal` | None | RecordNotFound |
+| Subscription UI | `withHostnameAndContexts({ ... })` | `hostnameAndSubscriptionArgTypes` | UpgradeBanner |
+| Billing modals | Custom (using shared mocks) | `hostnameArgType + openArgType` | UpgradePlan |
+| Settings pages | `withHostnameMocking() + withContainer()` | `hostnameArgType + activePlanArgType` | HomePageSetting |
+| Simple components | None | None | SimpleButton |
 
 ## Additional Resources
 
 - [Storybook Documentation](https://storybook.js.org/docs)
 - [Storybook React-Vite Framework](https://storybook.js.org/docs/react/get-started/install)
 - [Tailwind CSS Documentation](https://tailwindcss.com/docs)
+- **Shared Utilities**: `.storybook/mocks.ts`, `.storybook/decorators.tsx`, `.storybook/argTypes.ts`
+- **Example Stories**: All files in `src/**/*.stories.tsx`
 
 ## Troubleshooting
 
 If you encounter issues not covered here:
 
 1. Check the browser console for errors
-2. Verify all required contexts are provided
-3. Ensure CSS files are imported in preview.tsx
-4. Restart Storybook after configuration changes
-5. Check that Node.js version is v20.6.0 or higher
-6. Clear Storybook cache: `rm -rf node_modules/.cache/storybook`
+2. **Verify you're using shared utilities** from `.storybook/` instead of creating your own
+3. Verify all required contexts are provided (use appropriate decorator)
+4. Check import paths - count `../` levels correctly
+5. Ensure CSS files are imported in preview.tsx
+6. Restart Storybook after configuration changes
+7. Check that Node.js version is v20.6.0 or higher
+8. Clear Storybook cache: `rm -rf node_modules/.cache/storybook`
 
 For more help, refer to existing story files in the codebase for examples.
 

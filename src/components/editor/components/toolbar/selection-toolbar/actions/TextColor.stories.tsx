@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { SubscriptionPlan } from '@/application/types';
+import { hostnameAndSubscriptionArgTypes } from '../../../../../../../.storybook/argTypes';
 
 // Component to demonstrate Pro feature availability
 // Note: This story uses a local isOfficialHost function, so it doesn't need to mock window.location.hostname
@@ -65,16 +66,7 @@ const meta = {
     layout: 'centered',
   },
   tags: ['autodocs'],
-  argTypes: {
-    hostname: {
-      control: 'text',
-      description: 'Mock hostname to simulate different hosting scenarios',
-    },
-    activeSubscriptionPlan: {
-      control: 'select',
-      options: [SubscriptionPlan.Free, SubscriptionPlan.Pro, null],
-    },
-  },
+  argTypes: hostnameAndSubscriptionArgTypes,
 } satisfies Meta<typeof ProFeatureDemo>;
 
 export default meta;

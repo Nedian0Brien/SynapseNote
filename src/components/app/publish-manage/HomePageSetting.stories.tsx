@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import React, { useEffect } from 'react';
 
 import { SubscriptionPlan, View } from '@/application/types';
+import { activePlanArgType, hostnameArgType, isOwnerArgType } from '../../../../.storybook/argTypes';
+import { withHostnameMocking, withContainer } from '../../../../.storybook/decorators';
 import HomePageSetting from './HomePageSetting';
 
 const mockView: View = {
@@ -26,19 +27,6 @@ const mockPublishViews: View[] = [
   },
 ];
 
-// Mock window.location.hostname for different scenarios using a global variable
-// Since window.location.hostname is not configurable, we use a global variable
-// and mock the isOfficialHost function via module replacement
-declare global {
-  interface Window {
-    __STORYBOOK_MOCK_HOSTNAME__?: string;
-  }
-}
-
-const mockHostname = (hostname: string) => {
-  window.__STORYBOOK_MOCK_HOSTNAME__ = hostname;
-};
-
 const meta = {
   title: 'Publish/HomePageSetting',
   component: HomePageSetting,
@@ -47,40 +35,13 @@ const meta = {
   },
   tags: ['autodocs'],
   decorators: [
-    (Story: React.ComponentType, context: { args: { hostname?: string } }) => {
-      const hostname = context.args.hostname || 'beta.appflowy.cloud';
-      
-      // Set mock hostname synchronously before render
-      mockHostname(hostname);
-
-      useEffect(() => {
-        // Update if hostname changes
-        mockHostname(hostname);
-        // Cleanup
-        return () => {
-          delete (window as any).__STORYBOOK_MOCK_HOSTNAME__;
-        };
-      }, [hostname]);
-
-      return (
-        <div style={{ padding: '20px', maxWidth: '600px' }}>
-          <Story />
-        </div>
-      );
-    },
+    withHostnameMocking(),
+    withContainer({ maxWidth: '600px' }),
   ],
   argTypes: {
-    activePlan: {
-      control: 'select',
-      options: [SubscriptionPlan.Free, SubscriptionPlan.Pro, null],
-    },
-    isOwner: {
-      control: 'boolean',
-    },
-    hostname: {
-      control: 'text',
-      description: 'Mock hostname to simulate different hosting scenarios',
-    },
+    ...activePlanArgType,
+    ...isOwnerArgType,
+    ...hostnameArgType,
   },
 } satisfies Meta<typeof HomePageSetting>;
 
@@ -94,8 +55,12 @@ export const OfficialHostFreePlan: Story = {
     hostname: 'beta.appflowy.cloud',
     homePage: undefined,
     publishViews: mockPublishViews,
-    onRemoveHomePage: async () => {},
-    onUpdateHomePage: async () => {},
+    onRemoveHomePage: async () => {
+      // Mock implementation
+    },
+    onUpdateHomePage: async () => {
+      // Mock implementation
+    },
   },
   parameters: {
     docs: {
@@ -113,8 +78,12 @@ export const OfficialHostProPlan: Story = {
     hostname: 'beta.appflowy.cloud',
     homePage: mockView,
     publishViews: mockPublishViews,
-    onRemoveHomePage: async () => {},
-    onUpdateHomePage: async () => {},
+    onRemoveHomePage: async () => {
+      // Mock implementation
+    },
+    onUpdateHomePage: async () => {
+      // Mock implementation
+    },
   },
   parameters: {
     docs: {
@@ -132,8 +101,12 @@ export const SelfHostedFreePlan: Story = {
     hostname: 'self-hosted.example.com',
     homePage: undefined,
     publishViews: mockPublishViews,
-    onRemoveHomePage: async () => {},
-    onUpdateHomePage: async () => {},
+    onRemoveHomePage: async () => {
+      // Mock implementation
+    },
+    onUpdateHomePage: async () => {
+      // Mock implementation
+    },
   },
   parameters: {
     docs: {
@@ -151,8 +124,12 @@ export const SelfHostedProPlan: Story = {
     hostname: 'self-hosted.example.com',
     homePage: mockView,
     publishViews: mockPublishViews,
-    onRemoveHomePage: async () => {},
-    onUpdateHomePage: async () => {},
+    onRemoveHomePage: async () => {
+      // Mock implementation
+    },
+    onUpdateHomePage: async () => {
+      // Mock implementation
+    },
   },
   parameters: {
     docs: {
@@ -170,8 +147,12 @@ export const NotOwner: Story = {
     hostname: 'beta.appflowy.cloud',
     homePage: mockView,
     publishViews: mockPublishViews,
-    onRemoveHomePage: async () => {},
-    onUpdateHomePage: async () => {},
+    onRemoveHomePage: async () => {
+      // Mock implementation
+    },
+    onUpdateHomePage: async () => {
+      // Mock implementation
+    },
   },
   parameters: {
     docs: {

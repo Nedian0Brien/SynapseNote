@@ -30,10 +30,6 @@ const config: StorybookConfig = {
       shouldRemoveUndefinedFromOptional: true,
     },
   },
-  // Exclude plugin files and other non-component files from react-docgen
-  features: {
-    buildStoriesJson: true,
-  },
   async viteFinal(config) {
     if (config.resolve) {
       const existingAlias = Array.isArray(config.resolve.alias)
@@ -58,8 +54,32 @@ const config: StorybookConfig = {
     if (!config.css) {
       config.css = {};
     }
-    
+
     config.css.modules = config.css.modules || {};
+
+    // Ensure Material-UI is properly optimized for Storybook
+    if (!config.optimizeDeps) {
+      config.optimizeDeps = {};
+    }
+
+    config.optimizeDeps.include = [
+      ...(config.optimizeDeps.include || []),
+      '@mui/material/styles',
+      '@mui/material/styles/createTheme',
+      '@emotion/react',
+      '@emotion/styled',
+    ];
+
+    // Ensure proper module resolution for MUI v6
+    if (!config.resolve) {
+      config.resolve = {};
+    }
+    if (!config.resolve.dedupe) {
+      config.resolve.dedupe = [];
+    }
+    if (!config.resolve.dedupe.includes('@mui/material')) {
+      config.resolve.dedupe.push('@mui/material');
+    }
 
     return config;
   },

@@ -9,6 +9,7 @@
     "**/*.stories.ts",
     "**/*.stories.tsx",
     "**/__tests__/**",
+    ".storybook/**/*",
     "cypress/**/*",
     "dist",
     "coverage"

@@ -1,5 +1,4 @@
-import createTheme from '@mui/material/styles/createTheme';
-import ThemeProvider from '@mui/material/styles/ThemeProvider';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
 import React, { useMemo } from 'react';
 import { I18nextProvider } from 'react-i18next';
 
