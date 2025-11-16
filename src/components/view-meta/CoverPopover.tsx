@@ -3,6 +3,7 @@ import { useAppHandlers, useAppViewId, useOpenModalViewId } from '@/components/a
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { EmbedLink, Unsplash, UploadPopover, TabOption, TAB_KEY, UploadImage } from '@/components/_shared/image-upload';
 import { useTranslation } from 'react-i18next';
+import { isOfficialHost } from '@/utils/subscription';
 import Colors from './CoverColors';
 import { GradientEnum } from '@/utils/color';
 
@@ -26,7 +27,8 @@ function CoverPopover({
   const viewId = modalViewId || appViewId;
 
   const [activeSubscriptionPlan, setActiveSubscriptionPlan] = useState<SubscriptionPlan | null>(null);
-  const isPro = activeSubscriptionPlan === SubscriptionPlan.Pro;
+  // Pro features are enabled by default on self-hosted instances
+  const isPro = activeSubscriptionPlan === SubscriptionPlan.Pro || !isOfficialHost();
 
   const loadSubscription = useCallback(async () => {
     try {

@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { isOfficialHost } from '@/utils/subscription';
 
 function OptionMenu({
   open,
@@ -37,7 +38,8 @@ function OptionMenu({
   const onUpdate = useUpdateSelectOption(fieldId);
 
   const [activeSubscriptionPlan, setActiveSubscriptionPlan] = useState<SubscriptionPlan | null>(null);
-  const isPro = activeSubscriptionPlan === SubscriptionPlan.Pro;
+  // Pro features are enabled by default on self-hosted instances
+  const isPro = activeSubscriptionPlan === SubscriptionPlan.Pro || !isOfficialHost();
 
   const loadSubscription = useCallback(async () => {
     try {

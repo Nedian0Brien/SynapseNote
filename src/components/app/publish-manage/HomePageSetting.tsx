@@ -4,6 +4,7 @@ import { ReactComponent as SearchIcon } from '@/assets/icons/search.svg';
 import { ReactComponent as UpgradeIcon } from '@/assets/icons/upgrade.svg';
 import { Popover } from '@/components/_shared/popover';
 import PageIcon from '@/components/_shared/view-icon/PageIcon';
+import { isOfficialHost } from '@/utils/subscription';
 import { Button, CircularProgress, IconButton, OutlinedInput, Tooltip } from '@mui/material';
 import React, { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -48,6 +49,11 @@ function HomePageSetting({
   }, [setSearch, isOwner]);
 
   if (activePlan && activePlan !== SubscriptionPlan.Pro) {
+    // Only show upgrade button on official hosts (self-hosted instances have Pro features enabled by default)
+    if (!isOfficialHost()) {
+      return null;
+    }
+
     return (
       <Tooltip title={!isOwner ? t('settings.sites.namespace.pleaseAskOwnerToSetHomePage') : undefined}>
         <Button

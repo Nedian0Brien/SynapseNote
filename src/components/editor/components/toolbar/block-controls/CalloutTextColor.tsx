@@ -13,6 +13,7 @@ import { useEditorContext } from '@/components/editor/EditorContext';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ColorEnum, renderColor, toBlockColor, toTint } from '@/utils/color';
+import { isOfficialHost } from '@/utils/subscription';
 
 const origins: Origins = {
   anchorOrigin: {
@@ -46,7 +47,8 @@ function CalloutTextColor({ node, onSelectColor }: { node: CalloutNode; onSelect
   const selectedColor = originalColor || ColorEnum.BlockTextColor10;
 
   const [activeSubscriptionPlan, setActiveSubscriptionPlan] = useState<SubscriptionPlan | null>(null);
-  const isPro = activeSubscriptionPlan === SubscriptionPlan.Pro;
+  // Pro features are enabled by default on self-hosted instances
+  const isPro = activeSubscriptionPlan === SubscriptionPlan.Pro || !isOfficialHost();
 
   const loadSubscription = useCallback(async () => {
     try {

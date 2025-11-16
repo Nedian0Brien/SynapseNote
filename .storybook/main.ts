@@ -52,8 +52,14 @@ const config: StorybookConfig = {
       ];
     }
 
+    // Ensure CSS processing is enabled
     // PostCSS config is automatically picked up from postcss.config.cjs
-    // No need to configure it explicitly, but ensure CSS processing is enabled
+    // Vite/Storybook will automatically process CSS/SCSS files
+    if (!config.css) {
+      config.css = {};
+    }
+    
+    config.css.modules = config.css.modules || {};
 
     return config;
   },

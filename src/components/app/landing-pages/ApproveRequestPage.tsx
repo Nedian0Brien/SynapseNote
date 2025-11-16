@@ -19,6 +19,7 @@ import { NormalModal } from '@/components/_shared/modal';
 import { useService } from '@/components/main/app.hooks';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { isOfficialHost } from '@/utils/subscription';
 
 const GuestLimitExceededCode = 1070;
 const REPEAT_REQUEST_CODE = 1122;
@@ -53,7 +54,7 @@ function ApproveRequestPage() {
       const plans = await service.getActiveSubscription(requestInfo.workspace.id);
 
       setCurrentPlans(plans);
-      if (plans.length === 0) {
+      if (plans.length === 0 && isOfficialHost()) {
         setUpgradeModalOpen(true);
       }
       // eslint-disable-next-line
@@ -83,7 +84,9 @@ function ApproveRequestPage() {
       // eslint-disable-next-line
     } catch (e: any) {
       if (e.code === GuestLimitExceededCode) {
-        setUpgradeModalOpen(true);
+        if (isOfficialHost()) {
+          setUpgradeModalOpen(true);
+        }
         return;
       }
 
@@ -104,6 +107,12 @@ function ApproveRequestPage() {
 
     if (isPro) {
       setAlreadyProModalOpen(true);
+      return;
+    }
+
+    // This should not be called on self-hosted instances, but adding check as safety
+    if (!isOfficialHost()) {
+      // Self-hosted instances have Pro features enabled by default
       return;
     }
 

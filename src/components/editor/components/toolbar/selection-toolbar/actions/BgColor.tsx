@@ -15,6 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { renderColor } from '@/utils/color';
+import { isOfficialHost } from '@/utils/subscription';
 
 import ActionButton from './ActionButton';
 import { CreateCustomColorTile } from './TextColor';
@@ -44,7 +45,8 @@ function BgColor({
   const initialColor = useRef<string | null>(null);
 
   const [activeSubscriptionPlan, setActiveSubscriptionPlan] = useState<SubscriptionPlan | null>(null);
-  const isPro = activeSubscriptionPlan === SubscriptionPlan.Pro;
+  // Pro features are enabled by default on self-hosted instances
+  const isPro = activeSubscriptionPlan === SubscriptionPlan.Pro || !isOfficialHost();
   const maxCustomColors = isPro ? 9 : 4;
 
   const loadSubscription = useCallback(async () => {
@@ -187,109 +189,109 @@ function BgColor({
   const builtinColors = useMemo(() => {
     return isPro
       ? [
-          {
-            label: t('colors.default'),
-            color: '',
-          },
-          {
-            label: t('colors.mauve'),
-            color: 'bg-color-14',
-          },
-          {
-            label: t('colors.lavender'),
-            color: 'bg-color-15',
-          },
-          {
-            label: t('colors.lilac'),
-            color: 'bg-color-16',
-          },
-          {
-            label: t('colors.mallow'),
-            color: 'bg-color-17',
-          },
-          {
-            label: t('colors.camellia'),
-            color: 'bg-color-18',
-          },
-          {
-            label: t('colors.rose'),
-            color: 'bg-color-1',
-          },
-          {
-            label: t('colors.papaya'),
-            color: 'bg-color-2',
-          },
-          {
-            label: t('colors.mango'),
-            color: 'bg-color-4',
-          },
-          {
-            label: t('colors.lemon'),
-            color: 'bg-color-5',
-          },
-          {
-            label: t('colors.olive'),
-            color: 'bg-color-6',
-          },
-          {
-            label: t('colors.grass'),
-            color: 'bg-color-8',
-          },
-          {
-            label: t('colors.jade'),
-            color: 'bg-color-10',
-          },
-          {
-            label: t('colors.azure'),
-            color: 'bg-color-12',
-          },
-          {
-            label: t('colors.iron'),
-            color: 'bg-color-20',
-          },
-        ]
+        {
+          label: t('colors.default'),
+          color: '',
+        },
+        {
+          label: t('colors.mauve'),
+          color: 'bg-color-14',
+        },
+        {
+          label: t('colors.lavender'),
+          color: 'bg-color-15',
+        },
+        {
+          label: t('colors.lilac'),
+          color: 'bg-color-16',
+        },
+        {
+          label: t('colors.mallow'),
+          color: 'bg-color-17',
+        },
+        {
+          label: t('colors.camellia'),
+          color: 'bg-color-18',
+        },
+        {
+          label: t('colors.rose'),
+          color: 'bg-color-1',
+        },
+        {
+          label: t('colors.papaya'),
+          color: 'bg-color-2',
+        },
+        {
+          label: t('colors.mango'),
+          color: 'bg-color-4',
+        },
+        {
+          label: t('colors.lemon'),
+          color: 'bg-color-5',
+        },
+        {
+          label: t('colors.olive'),
+          color: 'bg-color-6',
+        },
+        {
+          label: t('colors.grass'),
+          color: 'bg-color-8',
+        },
+        {
+          label: t('colors.jade'),
+          color: 'bg-color-10',
+        },
+        {
+          label: t('colors.azure'),
+          color: 'bg-color-12',
+        },
+        {
+          label: t('colors.iron'),
+          color: 'bg-color-20',
+        },
+      ]
       : [
-          {
-            label: t('colors.default'),
-            color: '',
-          },
-          {
-            label: t('colors.mauve'),
-            color: 'bg-color-14',
-          },
-          {
-            label: t('colors.lilac'),
-            color: 'bg-color-16',
-          },
-          {
-            label: t('colors.camellia'),
-            color: 'bg-color-18',
-          },
-          {
-            label: t('colors.papaya'),
-            color: 'bg-color-2',
-          },
-          {
-            label: t('colors.mango'),
-            color: 'bg-color-4',
-          },
-          {
-            label: t('colors.olive'),
-            color: 'bg-color-6',
-          },
-          {
-            label: t('colors.grass'),
-            color: 'bg-color-8',
-          },
-          {
-            label: t('colors.jade'),
-            color: 'bg-color-10',
-          },
-          {
-            label: t('colors.azure'),
-            color: 'bg-color-12',
-          },
-        ];
+        {
+          label: t('colors.default'),
+          color: '',
+        },
+        {
+          label: t('colors.mauve'),
+          color: 'bg-color-14',
+        },
+        {
+          label: t('colors.lilac'),
+          color: 'bg-color-16',
+        },
+        {
+          label: t('colors.camellia'),
+          color: 'bg-color-18',
+        },
+        {
+          label: t('colors.papaya'),
+          color: 'bg-color-2',
+        },
+        {
+          label: t('colors.mango'),
+          color: 'bg-color-4',
+        },
+        {
+          label: t('colors.olive'),
+          color: 'bg-color-6',
+        },
+        {
+          label: t('colors.grass'),
+          color: 'bg-color-8',
+        },
+        {
+          label: t('colors.jade'),
+          color: 'bg-color-10',
+        },
+        {
+          label: t('colors.azure'),
+          color: 'bg-color-12',
+        },
+      ];
   }, [isPro, t]);
 
   const handleOpen = useCallback(() => {

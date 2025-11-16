@@ -1,10 +1,11 @@
 import { Subscription, SubscriptionInterval, SubscriptionPlan } from '@/application/types';
-import { useAppHandlers, useCurrentWorkspaceId } from '@/components/app/app.hooks';
-import CancelSubscribe from '@/components/billing/CancelSubscribe';
-import { useService } from '@/components/main/app.hooks';
 import { NormalModal } from '@/components/_shared/modal';
 import { notify } from '@/components/_shared/notify';
 import { ViewTab, ViewTabs } from '@/components/_shared/tabs/ViewTabs';
+import { useAppHandlers, useCurrentWorkspaceId } from '@/components/app/app.hooks';
+import CancelSubscribe from '@/components/billing/CancelSubscribe';
+import { useService } from '@/components/main/app.hooks';
+import { isOfficialHost } from '@/utils/subscription';
 import { Button } from '@mui/material';
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -68,6 +69,12 @@ function UpgradePlan({ open, onClose, onOpen }: { open: boolean; onClose: () => 
 
   const handleUpgrade = useCallback(async () => {
     if (!service || !currentWorkspaceId) return;
+
+    if (!isOfficialHost()) {
+      // Self-hosted instances have Pro features enabled by default
+      return;
+    }
+
     const plan = SubscriptionPlan.Pro;
 
     try {
@@ -87,7 +94,7 @@ function UpgradePlan({ open, onClose, onOpen }: { open: boolean; onClose: () => 
   }, [open, loadSubscription]);
 
   const plans = useMemo(() => {
-    return [
+    const allPlans = [
       {
         key: SubscriptionPlan.Free,
         name: t('subscribe.free'),
@@ -124,6 +131,13 @@ function UpgradePlan({ open, onClose, onOpen }: { open: boolean; onClose: () => 
         ],
       },
     ];
+
+    // Filter out Pro plan if not on official host (self-hosted instances don't need subscription)
+    if (!isOfficialHost()) {
+      return allPlans.filter((plan) => plan.key !== SubscriptionPlan.Pro);
+    }
+
+    return allPlans;
   }, [t, interval]);
 
   return (
