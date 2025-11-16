@@ -50,6 +50,10 @@ jobs:
         run: |
           pnpm run lint
 
+      - name: Build Storybook
+        run: |
+          pnpm run build-storybook
+
       - name: build and analyze
         run: |
           pnpm run analyze >> analyze-size.txt
