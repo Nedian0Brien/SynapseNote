@@ -42,7 +42,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        job: ${{ fromJson((github.event_name == 'workflow_dispatch' && github.event.inputs.build_arm64 == 'true') || github.event_name == 'push' && '[{"os":"ubuntu-22.04","platform":"linux/amd64","arch":"amd64"},{"os":"ubuntu-22.04-arm","platform":"linux/arm64","arch":"arm64v8"}]' || '[{"os":"ubuntu-22.04","platform":"linux/amd64","arch":"amd64"}]') }}
+        job: ${{ fromJson((github.event_name == 'workflow_dispatch' && github.event.inputs.build_arm64 == 'true' && '[{"os":"ubuntu-22.04","platform":"linux/amd64","arch":"amd64"},{"os":"ubuntu-22.04-arm","platform":"linux/arm64","arch":"arm64v8"}]') || (github.event_name == 'push' && '[{"os":"ubuntu-22.04","platform":"linux/amd64","arch":"amd64"},{"os":"ubuntu-22.04-arm","platform":"linux/arm64","arch":"arm64v8"}]') || '[{"os":"ubuntu-22.04","platform":"linux/amd64","arch":"amd64"}]') }}
     env:
       IMAGE_NAME: ${{ secrets.DOCKER_HUB_USERNAME }}/appflowy_web
 
