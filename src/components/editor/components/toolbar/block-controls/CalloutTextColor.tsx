@@ -4,10 +4,10 @@ import { useSlateStatic } from 'slate-react';
 
 import { YjsEditor } from '@/application/slate-yjs';
 import { CustomEditor } from '@/application/slate-yjs/command';
-import { SubscriptionPlan } from '@/application/types';
 import { ReactComponent as ChevronRightIcon } from '@/assets/icons/alt_arrow_right.svg';
 import { ColorTile } from '@/components/_shared/color-picker';
 import { Origins, Popover } from '@/components/_shared/popover';
+import { useSubscriptionPlan } from '@/components/app/hooks/useSubscriptionPlan';
 import { CalloutNode } from '@/components/editor/editor.type';
 import { useEditorContext } from '@/components/editor/EditorContext';
 import { Button } from '@/components/ui/button';
@@ -45,30 +45,7 @@ function CalloutTextColor({ node, onSelectColor }: { node: CalloutNode; onSelect
   const [originalColor, setOriginalColor] = useState<string>(node.data?.textColor || '');
   const selectedColor = originalColor || ColorEnum.BlockTextColor10;
 
-  const [activeSubscriptionPlan, setActiveSubscriptionPlan] = useState<SubscriptionPlan | null>(null);
-  const isPro = activeSubscriptionPlan === SubscriptionPlan.Pro;
-
-  const loadSubscription = useCallback(async () => {
-    try {
-      const subscriptions = await getSubscriptions?.();
-
-      if (!subscriptions || subscriptions.length === 0) {
-        setActiveSubscriptionPlan(SubscriptionPlan.Free);
-        return;
-      }
-
-      const subscription = subscriptions[0];
-
-      setActiveSubscriptionPlan(subscription?.plan || SubscriptionPlan.Free);
-    } catch (e) {
-      setActiveSubscriptionPlan(SubscriptionPlan.Free);
-      console.error(e);
-    }
-  }, [getSubscriptions]);
-
-  useEffect(() => {
-    void loadSubscription();
-  }, [loadSubscription]);
+  const { isPro } = useSubscriptionPlan(getSubscriptions);
 
   const builtinColors = useMemo(() => {
     const proPalette = [

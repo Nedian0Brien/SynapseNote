@@ -1,20 +1,20 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { SelectOption, SelectOptionColor, useDatabaseContext } from '@/application/database-yjs';
 import { useDeleteSelectOption, useUpdateSelectOption } from '@/application/database-yjs/dispatch';
-import { SubscriptionPlan } from '@/application/types';
 import { ReactComponent as DeleteIcon } from '@/assets/icons/delete.svg';
 import { ColorTile } from '@/components/_shared/color-picker';
+import { useSubscriptionPlan } from '@/components/app/hooks/useSubscriptionPlan';
 import { SelectOptionColorMap } from '@/components/database/components/cell/cell.const';
 import {
   DropdownMenu,
+  DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuContent,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -36,30 +36,7 @@ function OptionMenu({
   const onDelete = useDeleteSelectOption(fieldId);
   const onUpdate = useUpdateSelectOption(fieldId);
 
-  const [activeSubscriptionPlan, setActiveSubscriptionPlan] = useState<SubscriptionPlan | null>(null);
-  const isPro = activeSubscriptionPlan === SubscriptionPlan.Pro;
-
-  const loadSubscription = useCallback(async () => {
-    try {
-      const subscriptions = await getSubscriptions?.();
-
-      if (!subscriptions || subscriptions.length === 0) {
-        setActiveSubscriptionPlan(SubscriptionPlan.Free);
-        return;
-      }
-
-      const subscription = subscriptions[0];
-
-      setActiveSubscriptionPlan(subscription?.plan || SubscriptionPlan.Free);
-    } catch (e) {
-      setActiveSubscriptionPlan(SubscriptionPlan.Free);
-      console.error(e);
-    }
-  }, [getSubscriptions]);
-
-  useEffect(() => {
-    void loadSubscription();
-  }, [loadSubscription]);
+  const { isPro } = useSubscriptionPlan(getSubscriptions);
 
   const colors = useMemo(() => {
     const baseColors = [
@@ -280,10 +257,10 @@ function OptionMenu({
           className='mx-1.5 mb-1.5'
           {...(editing
             ? {
-                onPointerMove: (e) => e.preventDefault(),
-                onPointerEnter: (e) => e.preventDefault(),
-                onPointerLeave: (e) => e.preventDefault(),
-              }
+              onPointerMove: (e) => e.preventDefault(),
+              onPointerEnter: (e) => e.preventDefault(),
+              onPointerLeave: (e) => e.preventDefault(),
+            }
             : undefined)}
         >
           <DeleteIcon />

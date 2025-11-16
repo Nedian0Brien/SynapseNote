@@ -33,6 +33,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { isOfficialHost } from '@/utils/subscription';
 
 import { EmailTag, InviteInput } from './InviteInput';
 import { PersonSuggestionItem } from './PersonSuggestionItem';
@@ -393,6 +394,11 @@ export function InviteGuest({
       return;
     }
 
+    if (!isOfficialHost()) {
+      // Self-hosted instances have Pro features enabled by default
+      return;
+    }
+
     const plan = SubscriptionPlan.Pro;
 
     try {
@@ -516,9 +522,8 @@ export function InviteGuest({
           <div className='max-h-[200px] space-y-1 overflow-y-auto'>
             {allSuggestions.map((suggestion, index) => (
               <PersonSuggestionItem
-                key={`${suggestion.type}-${
-                  typeof suggestion.data === 'string' ? suggestion.data : suggestion.data.email
-                }`}
+                key={`${suggestion.type}-${typeof suggestion.data === 'string' ? suggestion.data : suggestion.data.email
+                  }`}
                 suggestion={suggestion}
                 isHovered={index === hoveredIndex}
                 onMouseEnter={() => setHoveredIndex(index)}

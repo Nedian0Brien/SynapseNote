@@ -6,8 +6,9 @@ import { BrowserRouter } from 'react-router-dom';
 import { AFConfigContext } from '@/components/main/app.hooks';
 import '@/i18n/config';
 import { i18nInstance } from '@/i18n/config';
-import '@/styles/app.scss';
+// Import styles - order matters: global.css imports tailwind.css
 import '@/styles/global.css';
+import '@/styles/app.scss';
 
 // Set dark mode attribute early, before React renders
 if (typeof window !== 'undefined') {

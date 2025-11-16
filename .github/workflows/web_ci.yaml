@@ -6,7 +6,7 @@ on:
       - "develop"
       - "release/*"
 env:
-  NODE_VERSION: "18.16.0"
+  NODE_VERSION: "20.19.0"
   PNPM_VERSION: "10.9.0"
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -49,6 +49,10 @@ jobs:
       - name: Run lint check
         run: |
           pnpm run lint
+
+      - name: Build Storybook
+        run: |
+          pnpm run build-storybook
 
       - name: build and analyze
         run: |

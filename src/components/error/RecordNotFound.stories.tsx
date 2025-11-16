@@ -1,65 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import React from 'react';
 
 import { ErrorType } from '@/application/utils/error-utils';
-import { AppContext } from '@/components/app/app.hooks';
-import { AFConfigContext } from '@/components/main/app.hooks';
+import { withContextsMinimal } from '../../../.storybook/decorators';
 import RecordNotFound from './RecordNotFound';
-
-const mockAppContext = {
-  currentWorkspaceId: 'test-workspace-id',
-  outline: [],
-  rendered: true,
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  toView: async () => {},
-  loadViewMeta: async () => {
-    throw new Error('Not implemented in story');
-  },
-  loadView: async () => {
-    throw new Error('Not implemented in story');
-  },
-  createRowDoc: async () => {
-    throw new Error('Not implemented in story');
-  },
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  appendBreadcrumb: () => {},
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  onRendered: () => {},
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  updatePage: async () => {},
-  addPage: async () => 'test-page-id',
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  deletePage: async () => {},
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  openPageModal: () => {},
-  loadViews: async () => [],
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  setWordCount: () => {},
-  uploadFile: async () => {
-    throw new Error('Not implemented in story');
-  },
-  eventEmitter: undefined,
-  awarenessMap: {},
-};
-
-const mockAFConfigValue = {
-  service: undefined,
-  isAuthenticated: true,
-  currentUser: {
-    email: 'storybook@example.com',
-    name: 'Storybook User',
-    uid: 'storybook-uid',
-    avatar: null,
-    uuid: 'storybook-uuid',
-    latestWorkspaceId: 'storybook-workspace-id',
-  },
-  updateCurrentUser: async () => {
-    // Mock implementation
-  },
-  openLoginModal: () => {
-    // Mock implementation
-  },
-};
 
 const meta = {
   title: 'Error Pages/RecordNotFound',
@@ -68,15 +11,7 @@ const meta = {
     layout: 'fullscreen',
   },
   tags: ['autodocs'],
-  decorators: [
-    (Story: React.ComponentType) => (
-      <AFConfigContext.Provider value={mockAFConfigValue}>
-        <AppContext.Provider value={mockAppContext}>
-          <Story />
-        </AppContext.Provider>
-      </AFConfigContext.Provider>
-    ),
-  ],
+  decorators: [withContextsMinimal],
 } satisfies Meta<typeof RecordNotFound>;
 
 export default meta;
