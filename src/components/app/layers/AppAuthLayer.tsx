@@ -102,9 +102,9 @@ export const AppAuthLayer: React.FC<AppAuthLayerProps> = ({ children }) => {
     // 1. Wait for React context to initialize (50ms)
     // 2. Check token and auth state multiple times to handle async state updates
     // 3. Only logout if consistently unauthenticated across multiple checks
-    let secondCheckTimeoutId: NodeJS.Timeout | null = null;
+    let secondCheckTimeoutId: number | null = null;
 
-    const timeoutId = setTimeout(() => {
+    const timeoutId = window.setTimeout(() => {
       // First check - token and auth state
       const hasToken = isTokenValid();
 
@@ -130,7 +130,7 @@ export const AppAuthLayer: React.FC<AppAuthLayerProps> = ({ children }) => {
 
       // Double-check after additional delay to handle async state updates
       // This catches cases where token was just saved but state hasn't propagated
-      secondCheckTimeoutId = setTimeout(() => {
+      secondCheckTimeoutId = window.setTimeout(() => {
         const hasTokenSecondCheck = isTokenValid();
         const isAuthenticatedSecondCheck = context?.isAuthenticated;
 
@@ -160,9 +160,9 @@ export const AppAuthLayer: React.FC<AppAuthLayerProps> = ({ children }) => {
     }, 50); // Initial delay to allow context to initialize
 
     return () => {
-      clearTimeout(timeoutId);
-      if (secondCheckTimeoutId) {
-        clearTimeout(secondCheckTimeoutId);
+      window.clearTimeout(timeoutId);
+      if (secondCheckTimeoutId !== null) {
+        window.clearTimeout(secondCheckTimeoutId);
       }
     };
   }, [isAuthenticated, location.pathname, logout, context]);

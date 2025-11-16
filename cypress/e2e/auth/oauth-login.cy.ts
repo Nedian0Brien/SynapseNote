@@ -513,7 +513,7 @@ describe('OAuth Login Flow', () => {
 
             // Mock refresh endpoint to FAIL for old token, SUCCESS for new token
             cy.intercept('POST', `${gotrueUrl}/token?grant_type=refresh_token`, (req) => {
-                const body = req.body;
+                const { body } = req;
 
                 if (body.refresh_token === oldRefreshToken) {
                     // Old token refresh should fail

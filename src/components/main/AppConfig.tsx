@@ -73,6 +73,15 @@ function AppConfig({ children }: { children: React.ReactNode }) {
     })();
   }, [isAuthenticated, service]);
 
+  // Authentication state synchronization effects
+  // Note: These are intentionally separate effects with different lifecycles:
+  // 1. Storage listener - handles cross-tab token changes
+  // 2. State sync on change - bidirectional sync between localStorage and React state
+  // 3. Mount sync with delay - safety net for OAuth callback race conditions
+  // 4. SESSION_INVALID listener - event-based invalidation from failed API calls
+  // Consolidating these would reduce clarity and make debugging harder
+
+  // 1. Cross-tab synchronization via storage events
   useEffect(() => {
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === 'token') setIsAuthenticated(isTokenValid());
@@ -84,9 +93,8 @@ function AppConfig({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // Sync authentication state on mount and whenever isAuthenticated changes
-  // This handles cases where token was saved but state wasn't updated (e.g., after page reload or OAuth callback)
-  // This prevents redirect loops after OAuth callback or page reload
+  // 2. Bidirectional sync between localStorage token and React state
+  // Handles cases where token was saved but state wasn't updated (e.g., after page reload or OAuth callback)
   useEffect(() => {
     const hasToken = isTokenValid();
 
@@ -108,8 +116,7 @@ function AppConfig({ children }: { children: React.ReactNode }) {
     }
   }, [isAuthenticated]);
 
-  // Proactive sync on mount - runs once to catch any initialization issues
-  // This is a safety net for race conditions during page load/OAuth callback
+  // 3. Proactive sync on mount with delay - safety net for OAuth callback race conditions
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       const hasToken = isTokenValid();
@@ -128,6 +135,8 @@ function AppConfig({ children }: { children: React.ReactNode }) {
     return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount - isAuthenticated is intentionally captured from closure
+
+  // 4. Event-based session invalidation from failed API calls
   useEffect(() => {
     return on(EventType.SESSION_INVALID, () => {
       setIsAuthenticated(false);
