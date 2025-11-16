@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 
 import { useDatabaseContext, useReadOnly } from '@/application/database-yjs';
 import { FileMediaCellDataItem, FileMediaType } from '@/application/database-yjs/cell.type';
+import { useAuthenticatedImage } from '@/components/_shared/hooks/useAuthenticatedImage';
 import FileIcon from '@/components/database/components/cell/file-media/FileIcon';
 import FileMediaMore from '@/components/database/components/cell/file-media/FileMediaMore';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -56,6 +57,8 @@ function FileMediaItem({
     return getFileUrl(workspaceId, viewId, fileId);
   }, [file.url, workspaceId, viewId]);
 
+  const authenticatedFileUrl = useAuthenticatedImage(fileUrl);
+
   const [hover, setHover] = useState(false);
 
   return (
@@ -100,7 +103,7 @@ function FileMediaItem({
               >
                 <img
                   draggable={false}
-                  src={fileUrl}
+                  src={authenticatedFileUrl}
                   alt={file.name}
                   className={'aspect-square h-full w-full overflow-hidden object-cover'}
                 />

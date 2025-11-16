@@ -2,6 +2,7 @@ import { Skeleton } from '@mui/material';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ReactComponent as ErrorOutline } from '@/assets/icons/error.svg';
+import { useAuthenticatedImage } from '@/components/_shared/hooks/useAuthenticatedImage';
 
 interface ImageRenderProps extends React.HTMLAttributes<HTMLImageElement> {
   src: string;
@@ -12,6 +13,7 @@ export function ImageRender({ src, ...props }: ImageRenderProps) {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const authenticatedSrc = useAuthenticatedImage(src);
 
   return (
     <>
@@ -30,7 +32,7 @@ export function ImageRender({ src, ...props }: ImageRenderProps) {
           width: loading ? 1 : '100%',
         }}
         draggable={false}
-        src={src}
+        src={authenticatedSrc}
         {...props}
         onLoad={(e) => {
           props.onLoad?.(e);

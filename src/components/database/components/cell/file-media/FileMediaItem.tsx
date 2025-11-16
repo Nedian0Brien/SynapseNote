@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 
 import { FileMediaCellDataItem, FileMediaType } from '@/application/database-yjs/cell.type';
+import { useAuthenticatedImage } from '@/components/_shared/hooks/useAuthenticatedImage';
 import FileIcon from '@/components/database/components/cell/file-media/FileIcon';
 import FileMediaMore from '@/components/database/components/cell/file-media/FileMediaMore';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -19,13 +20,15 @@ function FileMediaItem({
   onUpdateName: (name: string) => void;
   onDelete: () => void;
 }) {
+  const authenticatedUrl = useAuthenticatedImage(file.url);
+
   const renderItem = useMemo(() => {
     switch (file.file_type) {
       case FileMediaType.Image:
         return (
           <img
             onClick={onPreview}
-            src={file.url}
+            src={authenticatedUrl}
             alt={file.name}
             className={
               'aspect-square h-[72px] flex-1 cursor-zoom-in overflow-hidden rounded-[4px] border border-border-primary object-cover'
@@ -45,7 +48,7 @@ function FileMediaItem({
           </div>
         );
     }
-  }, [onPreview, file]);
+  }, [onPreview, file, authenticatedUrl]);
 
   return (
     <div
