@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { ReactComponent as ErrorOutline } from '@/assets/icons/error.svg';
@@ -24,6 +24,8 @@ function Img({
     status: number;
     statusText: string;
   } | null>(null);
+  const previousBlobUrlRef = useRef<string>('');
+  const isMountedRef = useRef(true);
 
   const handleCheckImage = useCallback(async (url: string) => {
     setLoading(true);
@@ -37,16 +39,41 @@ function Img({
     const startTime = Date.now();
 
     const attemptCheck: () => Promise<boolean> = async () => {
+      // Don't proceed if component is unmounted
+      if (!isMountedRef.current) {
+        return false;
+      }
+
       try {
         const result = await checkImage(url);
 
+        // Don't update state if component is unmounted
+        if (!isMountedRef.current) {
+          // Revoke blob URL if component unmounted during fetch
+          if (result.ok && result.validatedUrl && result.validatedUrl.startsWith('blob:')) {
+            URL.revokeObjectURL(result.validatedUrl);
+          }
+
+          return false;
+        }
+
         // Success case
         if (result.ok) {
+          // Revoke previous blob URL if it exists and is different
+          if (previousBlobUrlRef.current && previousBlobUrlRef.current !== result.validatedUrl) {
+            if (previousBlobUrlRef.current.startsWith('blob:')) {
+              URL.revokeObjectURL(previousBlobUrlRef.current);
+            }
+          }
+
           setImgError(null);
           setLoading(false);
-          setLocalUrl(result.validatedUrl || '');
+          const newUrl = result.validatedUrl || '';
+
+          setLocalUrl(newUrl);
+          previousBlobUrlRef.current = newUrl;
           setTimeout(() => {
-            if (onLoad) {
+            if (onLoad && isMountedRef.current) {
               onLoad();
             }
           }, 200);
@@ -92,7 +119,17 @@ function Img({
   }, []);
 
   useEffect(() => {
+    isMountedRef.current = true;
     void handleCheckImage(url);
+
+    // Cleanup: revoke blob URL when component unmounts or URL changes
+    return () => {
+      isMountedRef.current = false;
+      if (previousBlobUrlRef.current && previousBlobUrlRef.current.startsWith('blob:')) {
+        URL.revokeObjectURL(previousBlobUrlRef.current);
+        previousBlobUrlRef.current = '';
+      }
+    };
   }, [handleCheckImage, url]);
 
   return (

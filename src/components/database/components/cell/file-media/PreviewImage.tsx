@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 
 import { useDatabaseContext } from '@/application/database-yjs';
 import { FileMediaCellDataItem } from '@/application/database-yjs/cell.type';
+import { useAuthenticatedImage } from '@/components/_shared/hooks/useAuthenticatedImage';
 import { getFileUrl, isFileURL } from '@/utils/file-storage-url';
 
 function PreviewImage({ file, onClick }: { file: FileMediaCellDataItem; onClick: () => void }) {
@@ -23,6 +24,8 @@ function PreviewImage({ file, onClick }: { file: FileMediaCellDataItem; onClick:
     return url.toString() + '&w=240&q=80';
   }, [file.url, workspaceId, viewId]);
 
+  const authenticatedThumb = useAuthenticatedImage(thumb);
+
   return (
     <div
       onClick={(e) => {
@@ -32,7 +35,7 @@ function PreviewImage({ file, onClick }: { file: FileMediaCellDataItem; onClick:
       className={'cursor-zoom-in'}
     >
       <img
-        src={thumb}
+        src={authenticatedThumb}
         alt={file.name}
         className={
           'aspect-square h-[28px] w-[28px] min-w-[28px] overflow-hidden rounded-[4px] border border-border-primary object-cover'
