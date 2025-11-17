@@ -1,5 +1,6 @@
 import { avatarTestUtils } from './avatar-test-utils';
 import { PageSelectors } from '../../../support/selectors';
+import { TestTool } from '../../../support/page-utils';
 import { testLog } from '../../../support/test-helpers';
 
 const { generateRandomEmail, setupBeforeEach, imports } = avatarTestUtils;
@@ -29,7 +30,10 @@ describe('Avatar Header Display', () => {
         dbUtils.getCurrentWorkspaceId().then((workspaceId) => {
           expect(workspaceId).to.not.be.null;
 
-          updateWorkspaceMemberAvatar(workspaceId!, testAvatarUrl).then((response) => {
+          // Update avatar and wait for it to complete
+          cy.wrap(null).then(() => {
+            return updateWorkspaceMemberAvatar(workspaceId!, testAvatarUrl);
+          }).then((response) => {
             expect(response.status).to.equal(200);
           });
 
@@ -38,17 +42,16 @@ describe('Avatar Header Display', () => {
           cy.wait(3000);
 
           testLog.info( 'Step 4: Interact with editor to trigger collaborative user awareness');
+          // Expand space first to make pages visible
+          TestTool.expandSpace(0);
+          cy.wait(1000);
+          
+          // Wait for pages to be visible
+          PageSelectors.names().should('be.visible', { timeout: 10000 });
+          
           // Click on a page to open editor
-          PageSelectors.items().then($pages => {
-            if ($pages.length > 0) {
-              cy.wrap($pages.first()).click();
-            } else {
-              cy.get('body').then($body => {
-                if ($body.text().includes('Getting started')) {
-                  cy.contains('Getting started').click();
-                }
-              });
-            }
+          PageSelectors.names().first().then($page => {
+            cy.wrap($page).click({ force: true });
           });
 
           cy.wait(2000);
@@ -111,7 +114,10 @@ describe('Avatar Header Display', () => {
         dbUtils.getCurrentWorkspaceId().then((workspaceId) => {
           expect(workspaceId).to.not.be.null;
 
-          updateWorkspaceMemberAvatar(workspaceId!, testEmoji).then((response) => {
+          // Update avatar and wait for it to complete
+          cy.wrap(null).then(() => {
+            return updateWorkspaceMemberAvatar(workspaceId!, testEmoji);
+          }).then((response) => {
             expect(response.status).to.equal(200);
           });
 
@@ -120,17 +126,16 @@ describe('Avatar Header Display', () => {
           cy.wait(3000);
 
           testLog.info( 'Step 4: Interact with editor to trigger collaborative user awareness');
+          // Expand space first to make pages visible
+          TestTool.expandSpace(0);
+          cy.wait(1000);
+          
+          // Wait for pages to be visible
+          PageSelectors.names().should('be.visible', { timeout: 10000 });
+          
           // Click on a page to open editor
-          PageSelectors.items().then($pages => {
-            if ($pages.length > 0) {
-              cy.wrap($pages.first()).click();
-            } else {
-              cy.get('body').then($body => {
-                if ($body.text().includes('Getting started')) {
-                  cy.contains('Getting started').click();
-                }
-              });
-            }
+          PageSelectors.names().first().then($page => {
+            cy.wrap($page).click({ force: true });
           });
 
           cy.wait(2000);
@@ -220,17 +225,16 @@ describe('Avatar Header Display', () => {
             });
 
             testLog.info( 'Step 6: Interact with editor to trigger collaborative user awareness');
+            // Expand space first to make pages visible
+            TestTool.expandSpace(0);
+            cy.wait(1000);
+            
+            // Wait for pages to be visible
+            PageSelectors.names().should('be.visible', { timeout: 10000 });
+            
             // Click on a page to open editor
-            PageSelectors.items().then($pages => {
-              if ($pages.length > 0) {
-                cy.wrap($pages.first()).click();
-              } else {
-                cy.get('body').then($body => {
-                  if ($body.text().includes('Getting started')) {
-                    cy.contains('Getting started').click();
-                  }
-                });
-              }
+            PageSelectors.names().first().then($page => {
+              cy.wrap($page).click({ force: true });
             });
 
             cy.wait(2000);
