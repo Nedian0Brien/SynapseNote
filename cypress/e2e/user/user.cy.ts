@@ -2,13 +2,14 @@ import { AuthTestUtils } from '../../support/auth-utils';
 import { TestTool } from '../../support/page-utils';
 import { WorkspaceSelectors, SidebarSelectors, PageSelectors } from '../../support/selectors';
 import { generateRandomEmail, getTestEnvironment } from '../../support/test-config';
+import { testLog } from '../../support/test-helpers';
 
 describe('User Feature Tests', () => {
     const env = getTestEnvironment();
     const APPFLOWY_WS_BASE_URL = Cypress.env('APPFLOWY_WS_BASE_URL');
 
     before(() => {
-        cy.task('log', `Test Environment Configuration:
+        testLog.info( `Test Environment Configuration:
           - APPFLOWY_BASE_URL: ${env.appflowyBaseUrl}
           - APPFLOWY_GOTRUE_BASE_URL: ${env.appflowyGotrueBaseUrl}
           - APPFLOWY_WS_BASE_URL: ${APPFLOWY_WS_BASE_URL ?? ''}
@@ -48,10 +49,10 @@ describe('User Feature Tests', () => {
                 // Verify we're on the app page
                 cy.url().should('include', '/app');
 
-                cy.task('log', 'Authentication flow completed successfully');
+                testLog.info( 'Authentication flow completed successfully');
 
                 // Wait for workspace to be fully loaded by checking for key elements
-                cy.task('log', 'Waiting for app to fully load...');
+                testLog.info( 'Waiting for app to fully load...');
                 
                 // Wait for the loading screen to disappear and main app to appear
                 cy.get('body', { timeout: 30000 }).should('not.contain', 'Welcome!');
@@ -65,7 +66,7 @@ describe('User Feature Tests', () => {
                 // Wait for workspace dropdown to be available
                 WorkspaceSelectors.dropdownTrigger().should('be.visible', { timeout: 30000 });
                 
-                cy.task('log', 'App fully loaded');
+                testLog.info( 'App fully loaded');
                 
                 // Additional wait for stability
                 cy.wait(1000);
@@ -80,12 +81,12 @@ describe('User Feature Tests', () => {
                 WorkspaceSelectors.dropdownContent().within(() => {
                     cy.contains(randomEmail).should('be.visible');
                 });
-                cy.task('log', `Verified email ${randomEmail} is displayed in dropdown`);
+                testLog.info( `Verified email ${randomEmail} is displayed in dropdown`);
 
                 // Verify one member count
                 TestTool.getWorkspaceMemberCounts()
                     .should('contain', '1 member');
-                cy.task('log', 'Verified workspace has 1 member');
+                testLog.info( 'Verified workspace has 1 member');
 
                 // Verify exactly one workspace exists
                 TestTool.getWorkspaceItems()
@@ -95,7 +96,7 @@ describe('User Feature Tests', () => {
                 WorkspaceSelectors.itemName()
                     .should('exist')
                     .and('not.be.empty');
-                cy.task('log', 'Verified one workspace exists');
+                testLog.info( 'Verified one workspace exists');
             });
         });
 

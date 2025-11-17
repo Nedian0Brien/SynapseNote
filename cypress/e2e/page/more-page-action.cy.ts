@@ -2,6 +2,7 @@ import { AuthTestUtils } from '../../support/auth-utils';
 import { TestTool } from '../../support/page-utils';
 import { PageSelectors, byTestId, waitForReactUpdate } from '../../support/selectors';
 import { generateRandomEmail } from '../../support/test-config';
+import { testLog } from '../../support/test-helpers';
 
 describe('More Page Actions', () => {
     const newPageName = 'Renamed Test Page';
@@ -36,11 +37,11 @@ describe('More Page Actions', () => {
         cy.wait(2000);
 
         // Skip expanding space since Getting started is already visible
-        cy.task('log', 'Page already visible, skipping expand');
+        testLog.info( 'Page already visible, skipping expand');
 
         // Open the first available page from the sidebar, then trigger inline ViewActionsPopover via "..." on the row
         // Find the Getting started page and hover to reveal the more actions
-        cy.task('log', 'Looking for Getting started page');
+        testLog.info( 'Looking for Getting started page');
 
         // Find the page by its text content
         cy.contains('Getting started')
@@ -54,7 +55,7 @@ describe('More Page Actions', () => {
         // Look for the more actions button - using PageSelectors
         PageSelectors.moreActionsButton().first().click({ force: true });
 
-        cy.task('log', 'Clicked more actions button');
+        testLog.info( 'Clicked more actions button');
 
         // Verify core items in ViewActionsPopover
         // The menu should be open now, verify at least one of the common actions exists
@@ -94,7 +95,7 @@ describe('More Page Actions', () => {
 
         // Find the Getting started page and open its more actions menu
         const originalPageName = 'Getting started';
-        cy.task('log', `Opening More Actions for page: ${originalPageName}`);
+        testLog.info( `Opening More Actions for page: ${originalPageName}`);
 
         // Find the page by its text content and hover
         cy.contains(originalPageName)
@@ -108,13 +109,13 @@ describe('More Page Actions', () => {
         // Look for the more actions button - using PageSelectors
         PageSelectors.moreActionsButton().first().click({ force: true });
 
-        cy.task('log', 'Clicked more actions button');
+        testLog.info( 'Clicked more actions button');
 
         // Click on Duplicate option which is available in the dropdown
         cy.get('[data-slot="dropdown-menu-content"]').within(() => {
             cy.contains('Duplicate').click();
         });
-        cy.task('log', 'Clicked Duplicate option');
+        testLog.info( 'Clicked Duplicate option');
 
         // Wait for the duplication to complete
         waitForReactUpdate(2000);
@@ -128,10 +129,10 @@ describe('More Page Actions', () => {
             const pageCount = $pages.filter((index: number, el: HTMLElement) =>
                 el.textContent?.includes('Getting started')).length;
             expect(pageCount).to.be.at.least(1);
-            cy.task('log', `Found ${pageCount} pages with 'Getting started' in the name`);
+            testLog.info( `Found ${pageCount} pages with 'Getting started' in the name`);
         });
 
-        cy.task('log', 'Page successfully duplicated');
+        testLog.info( 'Page successfully duplicated');
     });
 
     it.skip('should rename a page and verify the name persists after refresh', () => {
@@ -161,7 +162,7 @@ describe('More Page Actions', () => {
         const originalPageName = 'Getting started';
         const renamedPageName = `Renamed Page ${Date.now()}`;
         
-        cy.task('log', `Starting rename test: ${originalPageName} -> ${renamedPageName}`);
+        testLog.info( `Starting rename test: ${originalPageName} -> ${renamedPageName}`);
 
         // Find the page by its text content and hover
         cy.contains(originalPageName)
@@ -175,7 +176,7 @@ describe('More Page Actions', () => {
         // Look for the more actions button - using PageSelectors
         PageSelectors.moreActionsButton().first().click({ force: true });
 
-        cy.task('log', 'Clicked more actions button');
+        testLog.info( 'Clicked more actions button');
 
         // Wait for the dropdown menu to be visible
         cy.get('[data-slot="dropdown-menu-content"]', { timeout: 5000 }).should('be.visible');
@@ -185,7 +186,7 @@ describe('More Page Actions', () => {
             cy.contains('Rename').click();
         });
         
-        cy.task('log', 'Clicked Rename option');
+        testLog.info( 'Clicked Rename option');
 
         // Wait for the rename modal to appear
         cy.get(byTestId('rename-modal-input'), { timeout: 5000 })
@@ -193,25 +194,25 @@ describe('More Page Actions', () => {
             .clear()
             .type(renamedPageName);
 
-        cy.task('log', `Entered new page name: ${renamedPageName}`);
+        testLog.info( `Entered new page name: ${renamedPageName}`);
 
         // Click the save button
         cy.get(byTestId('rename-modal-save')).click();
 
-        cy.task('log', 'Clicked save button');
+        testLog.info( 'Clicked save button');
 
         // Wait for the modal to close and the page to update
         waitForReactUpdate(2000);
 
         // Verify the page was renamed in the sidebar
         cy.contains(renamedPageName, { timeout: 10000 }).should('exist');
-        cy.task('log', 'Page renamed successfully in sidebar');
+        testLog.info( 'Page renamed successfully in sidebar');
 
         // Also verify the original name doesn't exist anymore
         cy.contains(originalPageName).should('not.exist');
         
         // Now refresh the page to verify the rename persisted
-        cy.task('log', 'Refreshing page to verify persistence...');
+        testLog.info( 'Refreshing page to verify persistence...');
         cy.reload();
         
         // Wait for the page to reload completely
@@ -221,7 +222,7 @@ describe('More Page Actions', () => {
         
         // Verify the renamed page still exists after refresh
         cy.contains(renamedPageName, { timeout: 10000 }).should('exist');
-        cy.task('log', 'Renamed page persisted after refresh');
+        testLog.info( 'Renamed page persisted after refresh');
         
         // Verify the original name is still gone
         cy.contains(originalPageName).should('not.exist');
@@ -233,6 +234,6 @@ describe('More Page Actions', () => {
         // Verify we're on the renamed page by checking the URL or page content
         cy.url().should('include', '/app');
         
-        cy.task('log', 'Rename test completed successfully - name persisted after refresh');
+        testLog.info( 'Rename test completed successfully - name persisted after refresh');
     });
 });

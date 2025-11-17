@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import { testLog } from './test-helpers';
 
 /**
  * Centralized test configuration
@@ -38,7 +39,7 @@ export const TestConfig = {
  * Useful for debugging test failures in CI/CD
  */
 export const logTestEnvironment = (env: Partial<typeof TestConfig> = TestConfig) => {
-  cy.task('log', `
+  testLog.info(`
 ╔════════════════════════════════════════════════════════════════╗
 ║              Test Environment Configuration                    ║
 ╠════════════════════════════════════════════════════════════════╣

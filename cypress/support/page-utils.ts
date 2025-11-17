@@ -1,3 +1,4 @@
+import { testLog } from './test-helpers';
 /**
  * Main export file for Cypress E2E test utilities
  * This file aggregates and re-exports all utility functions used in tests
@@ -158,7 +159,7 @@ export class TestTool {
      * Used in create-delete-page.cy.ts
      */
     static verifyPageExists(pageName: string) {
-        cy.task('log', `Verifying page exists: ${pageName}`);
+        testLog.info( `Verifying page exists: ${pageName}`);
         PageSelectors.nameContaining(pageName)
             .should('exist')
             .should('be.visible');
@@ -169,7 +170,7 @@ export class TestTool {
      * Used in create-delete-page.cy.ts
      */
     static verifyPageNotExists(pageName: string) {
-        cy.task('log', `Verifying page does not exist: ${pageName}`);
+        testLog.info( `Verifying page does not exist: ${pageName}`);
         PageSelectors.nameContaining(pageName)
             .should('not.exist');
     }

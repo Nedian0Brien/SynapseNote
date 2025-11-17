@@ -2,6 +2,7 @@ import { AuthTestUtils } from '../../support/auth-utils';
 import { TestTool } from '../../support/page-utils';
 import { PageSelectors, ModalSelectors, waitForReactUpdate } from '../../support/selectors';
 import { generateRandomEmail } from '../../support/test-config';
+import { testLog } from '../../support/test-helpers';
 
 describe('Page Edit Tests', () => {
     let testEmail: string;
@@ -46,8 +47,8 @@ describe('Page Edit Tests', () => {
             cy.wait(2000);
 
             // Step 2: Create a new page using the simpler approach
-            cy.task('log', '=== Starting Page Creation for Edit Test ===');
-            cy.task('log', `Target page name: ${testPageName}`);
+            testLog.info( '=== Starting Page Creation for Edit Test ===');
+            testLog.info( `Target page name: ${testPageName}`);
             
             // Click new page button
             PageSelectors.newPageButton().should('be.visible').click();
@@ -68,18 +69,18 @@ describe('Page Edit Tests', () => {
             // Close any modal dialogs
             cy.get('body').then(($body: JQuery<HTMLBodyElement>) => {
                 if ($body.find('[role="dialog"]').length > 0 || $body.find('.MuiDialog-container').length > 0) {
-                    cy.task('log', 'Closing modal dialog');
+                    testLog.info( 'Closing modal dialog');
                     cy.get('body').type('{esc}');
                     cy.wait(1000);
                 }
             });
             
             // Step 3: Add content to the page editor
-            cy.task('log', '=== Adding Content to Page ===');
+            testLog.info( '=== Adding Content to Page ===');
             
             // Find the editor and add content
             cy.get('[contenteditable="true"]').then($editors => {
-                cy.task('log', `Found ${$editors.length} editable elements`);
+                testLog.info( `Found ${$editors.length} editable elements`);
                 
                 // Look for the main editor (not the title)
                 let editorFound = false;
@@ -87,7 +88,7 @@ describe('Page Edit Tests', () => {
                     const $el = Cypress.$(el);
                     // Skip title inputs
                     if (!$el.attr('data-testid')?.includes('title') && !$el.hasClass('editor-title')) {
-                        cy.task('log', `Using editor at index ${index}`);
+                        testLog.info( `Using editor at index ${index}`);
                         cy.wrap(el).click().type(testContent.join('{enter}'));
                         editorFound = true;
                         return false; // break the loop
@@ -96,7 +97,7 @@ describe('Page Edit Tests', () => {
                 
                 if (!editorFound) {
                     // Fallback: use the last contenteditable element
-                    cy.task('log', 'Using fallback: last contenteditable element');
+                    testLog.info( 'Using fallback: last contenteditable element');
                     cy.wrap($editors.last()).click().type(testContent.join('{enter}'));
                 }
             });
@@ -105,15 +106,15 @@ describe('Page Edit Tests', () => {
             cy.wait(2000);
             
             // Step 4: Verify the content was added
-            cy.task('log', '=== Verifying Content ===');
+            testLog.info( '=== Verifying Content ===');
             
             // Verify each line of content exists in the page
             testContent.forEach(line => {
                 cy.contains(line).should('exist');
-                cy.task('log', `✓ Found content: "${line}"`);
+                testLog.info( `✓ Found content: "${line}"`);
             });
             
-            cy.task('log', '=== Test completed successfully ===');
+            testLog.info( '=== Test completed successfully ===');
         });
     });
 });

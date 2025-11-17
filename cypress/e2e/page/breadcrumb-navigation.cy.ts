@@ -1,6 +1,7 @@
 import { AuthTestUtils } from '../../support/auth-utils';
 import { TestTool } from '../../support/page-utils';
 import {
+import { testLog } from '../../support/test-helpers';
     PageSelectors,
     SpaceSelectors,
     SidebarSelectors,
@@ -38,7 +39,7 @@ describe('Breadcrumb Navigation Complete Tests', () => {
     describe('Basic Navigation Tests', () => {
         it('should navigate through space and check for breadcrumb availability', { timeout: 60000 }, () => {
             // Login
-            cy.task('log', '=== Step 1: Login ===');
+            testLog.info( '=== Step 1: Login ===');
             cy.visit('/login', { failOnStatusCode: false });
             cy.wait(2000);
 
@@ -47,41 +48,41 @@ describe('Breadcrumb Navigation Complete Tests', () => {
                 cy.url().should('include', '/app');
                 
                 // Wait for app to load
-                cy.task('log', 'Waiting for app to fully load...');
+                testLog.info( 'Waiting for app to fully load...');
                 cy.get('body', { timeout: 30000 }).should('not.contain', 'Welcome!');
                 SidebarSelectors.pageHeader().should('be.visible', { timeout: 30000 });
                 PageSelectors.names().should('exist', { timeout: 30000 });
                 cy.wait(2000);
 
-                cy.task('log', 'App loaded successfully');
+                testLog.info( 'App loaded successfully');
 
                 // Step 2: Expand first space
-                cy.task('log', '=== Step 2: Expanding first space ===');
+                testLog.info( '=== Step 2: Expanding first space ===');
                 TestTool.expandSpace(0);
                 cy.wait(2000);
-                cy.task('log', 'Expanded first space');
+                testLog.info( 'Expanded first space');
 
                 // Step 3: Navigate to first page
-                cy.task('log', '=== Step 3: Navigating to first page ===');
+                testLog.info( '=== Step 3: Navigating to first page ===');
                 PageSelectors.names().first().then($page => {
                     const pageName = $page.text();
-                    cy.task('log', `Navigating to: ${pageName}`);
+                    testLog.info( `Navigating to: ${pageName}`);
                     cy.wrap($page).click();
                 });
                 cy.wait(3000);
 
                 // Step 4: Check for breadcrumb navigation
-                cy.task('log', '=== Step 4: Checking for breadcrumb navigation ===');
+                testLog.info( '=== Step 4: Checking for breadcrumb navigation ===');
                 cy.get('body').then($body => {
                     if ($body.find(byTestId('breadcrumb-navigation')).length > 0) {
-                        cy.task('log', '✓ Breadcrumb navigation found on this page');
+                        testLog.info( '✓ Breadcrumb navigation found on this page');
                         
                         // Count breadcrumb items
                         cy.get(byTestIdContains('breadcrumb-item-')).then($items => {
-                            cy.task('log', `✓ Found ${$items.length} breadcrumb items`);
+                            testLog.info( `✓ Found ${$items.length} breadcrumb items`);
                         });
                     } else {
-                        cy.task('log', 'No breadcrumb navigation on this page (normal for top-level pages)');
+                        testLog.info( 'No breadcrumb navigation on this page (normal for top-level pages)');
                     }
                 });
 
@@ -91,11 +92,11 @@ describe('Breadcrumb Navigation Complete Tests', () => {
                                    $body.text().includes('Failed');
                     
                     if (!hasError) {
-                        cy.task('log', '✓ Navigation completed without errors');
+                        testLog.info( '✓ Navigation completed without errors');
                     }
                 });
 
-                cy.task('log', '=== Basic navigation test completed ===');
+                testLog.info( '=== Basic navigation test completed ===');
             });
         });
 
@@ -114,49 +115,49 @@ describe('Breadcrumb Navigation Complete Tests', () => {
                 PageSelectors.names().should('exist', { timeout: 30000 });
                 cy.wait(2000);
 
-                cy.task('log', '=== Step 1: Expand first space ===');
+                testLog.info( '=== Step 1: Expand first space ===');
                 TestTool.expandSpace(0);
                 cy.wait(2000);
 
-                cy.task('log', '=== Step 2: Navigate to first page ===');
+                testLog.info( '=== Step 2: Navigate to first page ===');
                 PageSelectors.names().first().click();
                 cy.wait(3000);
 
-                cy.task('log', '=== Step 3: Check for nested pages ===');
+                testLog.info( '=== Step 3: Check for nested pages ===');
                 PageSelectors.names().then($pages => {
-                    cy.task('log', `Found ${$pages.length} pages in sidebar`);
+                    testLog.info( `Found ${$pages.length} pages in sidebar`);
                     
                     if ($pages.length > 1) {
                         // Navigate to a nested page
-                        cy.task('log', 'Navigating to nested page');
+                        testLog.info( 'Navigating to nested page');
                         cy.wrap($pages[1]).click({ force: true });
                         cy.wait(3000);
                         
                         // Check for breadcrumb navigation
-                        cy.task('log', '=== Step 4: Testing breadcrumb navigation ===');
+                        testLog.info( '=== Step 4: Testing breadcrumb navigation ===');
                         cy.get('body', { timeout: 5000 }).then($body => {
                             if ($body.find(byTestId('breadcrumb-navigation')).length > 0) {
-                                cy.task('log', '✓ Breadcrumb navigation is visible');
+                                testLog.info( '✓ Breadcrumb navigation is visible');
                                 
                                 // Try to click breadcrumb to navigate back
                                 if ($body.find(byTestIdContains('breadcrumb-item-')).length > 1) {
                                     cy.get(byTestIdContains('breadcrumb-item-')).first().click({ force: true });
-                                    cy.task('log', '✓ Clicked breadcrumb item to navigate back');
+                                    testLog.info( '✓ Clicked breadcrumb item to navigate back');
                                     cy.wait(2000);
-                                    cy.task('log', '✓ Successfully used breadcrumb navigation');
+                                    testLog.info( '✓ Successfully used breadcrumb navigation');
                                 } else {
-                                    cy.task('log', 'Only one breadcrumb item found');
+                                    testLog.info( 'Only one breadcrumb item found');
                                 }
                             } else {
-                                cy.task('log', 'No breadcrumb navigation on nested page');
+                                testLog.info( 'No breadcrumb navigation on nested page');
                             }
                         });
                     } else {
-                        cy.task('log', 'No nested pages available for breadcrumb testing');
+                        testLog.info( 'No nested pages available for breadcrumb testing');
                     }
                 });
 
-                cy.task('log', '=== Nested navigation test completed ===');
+                testLog.info( '=== Nested navigation test completed ===');
             });
         });
     });
@@ -178,10 +179,10 @@ describe('Breadcrumb Navigation Complete Tests', () => {
                 cy.wait(2000);
 
                 // Step 1: Find and expand General space or first space
-                cy.task('log', '=== Step 1: Looking for General space ===');
+                testLog.info( '=== Step 1: Looking for General space ===');
                 SpaceSelectors.names().then($spaces => {
                     const spaceNames = Array.from($spaces).map((el: Element) => el.textContent?.trim());
-                    cy.task('log', `Available spaces: ${spaceNames.join(', ')}`);
+                    testLog.info( `Available spaces: ${spaceNames.join(', ')}`);
                     
                     // Find General space or use first
                     const generalIndex = spaceNames.findIndex(name => 
@@ -189,20 +190,20 @@ describe('Breadcrumb Navigation Complete Tests', () => {
                     );
                     
                     if (generalIndex !== -1) {
-                        cy.task('log', `Found General space at index ${generalIndex}`);
+                        testLog.info( `Found General space at index ${generalIndex}`);
                         TestTool.expandSpace(generalIndex);
                     } else {
-                        cy.task('log', 'Using first available space');
+                        testLog.info( 'Using first available space');
                         TestTool.expandSpace(0);
                     }
                 });
                 cy.wait(2000);
 
                 // Step 2: Look for Get Started page or use first page
-                cy.task('log', '=== Step 2: Looking for Get Started page ===');
+                testLog.info( '=== Step 2: Looking for Get Started page ===');
                 PageSelectors.names().then($pages => {
                     const pageNames = Array.from($pages).map((el: Element) => el.textContent?.trim());
-                    cy.task('log', `Available pages: ${pageNames.join(', ')}`);
+                    testLog.info( `Available pages: ${pageNames.join(', ')}`);
                     
                     // Find Get Started or similar page
                     const getStartedPage = Array.from($pages).find((el: Element) => {
@@ -213,20 +214,20 @@ describe('Breadcrumb Navigation Complete Tests', () => {
                     
                     if (getStartedPage) {
                         cy.wrap(getStartedPage).click();
-                        cy.task('log', `Clicked on: ${getStartedPage.textContent?.trim()}`);
+                        testLog.info( `Clicked on: ${getStartedPage.textContent?.trim()}`);
                     } else {
                         PageSelectors.names().first().click();
-                        cy.task('log', 'Clicked first available page');
+                        testLog.info( 'Clicked first available page');
                     }
                 });
                 cy.wait(3000);
 
                 // Step 3: Look for Desktop Guide or sub-page
-                cy.task('log', '=== Step 3: Looking for Desktop Guide or sub-pages ===');
+                testLog.info( '=== Step 3: Looking for Desktop Guide or sub-pages ===');
                 PageSelectors.names().then($subPages => {
                     if ($subPages.length > 1) {
                         const subPageNames = Array.from($subPages).map((el: Element) => el.textContent?.trim());
-                        cy.task('log', `Found sub-pages: ${subPageNames.join(', ')}`);
+                        testLog.info( `Found sub-pages: ${subPageNames.join(', ')}`);
                         
                         // Look for Desktop Guide or any guide - limit search to avoid hanging
                         const maxIndex = Math.min($subPages.length, 5);
@@ -243,40 +244,40 @@ describe('Breadcrumb Navigation Complete Tests', () => {
                         
                         if (guidePage) {
                             cy.wrap(guidePage).click({ force: true });
-                            cy.task('log', `Navigated to: ${guidePage.textContent?.trim()}`);
+                            testLog.info( `Navigated to: ${guidePage.textContent?.trim()}`);
                         } else if ($subPages.length > 1) {
                             cy.wrap($subPages[1]).click({ force: true });
-                            cy.task('log', 'Navigated to second page');
+                            testLog.info( 'Navigated to second page');
                         }
                         cy.wait(3000);
 
                         // Step 4: Test breadcrumb navigation
-                        cy.task('log', '=== Step 4: Testing breadcrumb navigation ===');
+                        testLog.info( '=== Step 4: Testing breadcrumb navigation ===');
                         cy.get('body').then($body => {
                             if ($body.find(byTestId('breadcrumb-navigation')).length > 0) {
-                                cy.task('log', '✓ Breadcrumb navigation is visible');
+                                testLog.info( '✓ Breadcrumb navigation is visible');
                                 
                                 // Check breadcrumb items with timeout
                                 cy.get(byTestIdContains('breadcrumb-item-'), { timeout: 10000 }).then($items => {
-                                    cy.task('log', `Found ${$items.length} breadcrumb items`);
+                                    testLog.info( `Found ${$items.length} breadcrumb items`);
                                     
                                     if ($items.length > 1) {
                                         // Click second-to-last breadcrumb (parent page)
                                         const targetIndex = Math.max(0, $items.length - 2);
                                         cy.wrap($items[targetIndex]).click({ force: true });
-                                        cy.task('log', `✓ Clicked breadcrumb at index ${targetIndex} to go back`);
+                                        testLog.info( `✓ Clicked breadcrumb at index ${targetIndex} to go back`);
                                         cy.wait(2000);
                                         
                                         // Verify navigation worked
-                                        cy.task('log', '✓ Successfully navigated back using breadcrumb');
+                                        testLog.info( '✓ Successfully navigated back using breadcrumb');
                                     }
                                 });
                             } else {
-                                cy.task('log', 'Breadcrumb navigation not available on this page');
+                                testLog.info( 'Breadcrumb navigation not available on this page');
                             }
                         });
                     } else {
-                        cy.task('log', 'No sub-pages found for breadcrumb testing');
+                        testLog.info( 'No sub-pages found for breadcrumb testing');
                     }
                 });
 
@@ -287,11 +288,11 @@ describe('Breadcrumb Navigation Complete Tests', () => {
                                    $body.find('[role="alert"]').length > 0;
                     
                     if (!hasError) {
-                        cy.task('log', '✓ Test completed without errors');
+                        testLog.info( '✓ Test completed without errors');
                     }
                 });
 
-                cy.task('log', '=== Full breadcrumb flow test completed ===');
+                testLog.info( '=== Full breadcrumb flow test completed ===');
             });
         });
     });

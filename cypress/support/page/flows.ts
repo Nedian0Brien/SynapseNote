@@ -1,3 +1,4 @@
+import { testLog } from '../test-helpers';
 /**
  * Flow utility functions for Cypress E2E tests
  * Contains high-level test flow operations that orchestrate multiple page interactions
@@ -17,7 +18,7 @@ import {
  * @returns Cypress chainable
  */
 export function waitForPageLoad(waitTime: number = 3000) {
-    cy.task('log', `Waiting for page load (${waitTime}ms)`);
+    testLog.info( `Waiting for page load (${waitTime}ms)`);
     return cy.wait(waitTime);
 }
 
@@ -27,7 +28,7 @@ export function waitForPageLoad(waitTime: number = 3000) {
  * @returns Cypress chainable
  */
 export function waitForSidebarReady(timeout: number = 10000) {
-    cy.task('log', 'Waiting for sidebar to be ready');
+    testLog.info( 'Waiting for sidebar to be ready');
     return SidebarSelectors.pageHeader()
         .should('be.visible', { timeout });
 }
@@ -39,19 +40,19 @@ export function waitForSidebarReady(timeout: number = 10000) {
  * @param content - Array of content lines to add to the page
  */
 export function createPageAndAddContent(pageName: string, content: string[]) {
-    cy.task('log', `Creating page "${pageName}" with ${content.length} lines of content`);
+    testLog.info( `Creating page "${pageName}" with ${content.length} lines of content`);
     
     // Create the page first - this navigates to the new page automatically
     createPage(pageName);
-    cy.task('log', 'Page created successfully and we are now on the page');
+    testLog.info( 'Page created successfully and we are now on the page');
     
     // We're already on the newly created page, just add content
-    cy.task('log', 'Adding content to the page');
+    testLog.info( 'Adding content to the page');
     typeLinesInVisibleEditor(content);
-    cy.task('log', 'Content typed successfully');
+    testLog.info( 'Content typed successfully');
     waitForReactUpdate(1000);
     assertEditorContentEquals(content);
-    cy.task('log', 'Content verification completed');
+    testLog.info( 'Content verification completed');
 }
 
 /**
@@ -60,7 +61,7 @@ export function createPageAndAddContent(pageName: string, content: string[]) {
  * @param pageName - Name of the page to open
  */
 export function openPageFromSidebar(pageName: string) {
-    cy.task('log', `Opening page from sidebar: ${pageName}`);
+    testLog.info( `Opening page from sidebar: ${pageName}`);
     
     // Ensure sidebar is visible
     SidebarSelectors.pageHeader().should('be.visible');
@@ -68,11 +69,11 @@ export function openPageFromSidebar(pageName: string) {
     // Try to find the page - it might be named differently in the sidebar
     PageSelectors.names().then(($pages: JQuery<HTMLElement>) => {
         const pageNames = Array.from($pages).map((el: Element) => el.textContent?.trim());
-        cy.task('log', `Available pages in sidebar: ${pageNames.join(', ')}`);
+        testLog.info( `Available pages in sidebar: ${pageNames.join(', ')}`);
         
         // Try to find exact match first
         if (pageNames.includes(pageName)) {
-            cy.task('log', `Found exact match for: ${pageName}`);
+            testLog.info( `Found exact match for: ${pageName}`);
             PageSelectors.nameContaining(pageName)
                 .first()
                 .scrollIntoView()
@@ -80,12 +81,12 @@ export function openPageFromSidebar(pageName: string) {
                 .click();
         } else {
             // If no exact match, try to find the most recently created page (usually last or first untitled)
-            cy.task('log', `No exact match for "${pageName}", clicking most recent page`);
+            testLog.info( `No exact match for "${pageName}", clicking most recent page`);
             
             // Look for "Untitled" or the first/last page
             const untitledPage = pageNames.find(name => name === 'Untitled' || name?.includes('Untitled'));
             if (untitledPage) {
-                cy.task('log', `Found untitled page: ${untitledPage}`);
+                testLog.info( `Found untitled page: ${untitledPage}`);
                 PageSelectors.nameContaining('Untitled')
                     .first()
                     .scrollIntoView()
@@ -94,7 +95,7 @@ export function openPageFromSidebar(pageName: string) {
             } else {
                 // Just click the first non-"Getting started" page
                 const targetPage = pageNames.find(name => name !== 'Getting started') || pageNames[0];
-                cy.task('log', `Clicking page: ${targetPage}`);
+                testLog.info( `Clicking page: ${targetPage}`);
                 PageSelectors.names()
                     .first()
                     .scrollIntoView()
@@ -106,7 +107,7 @@ export function openPageFromSidebar(pageName: string) {
     
     // Wait for page to load
     waitForReactUpdate(2000);
-    cy.task('log', `Page opened successfully`);
+    testLog.info( `Page opened successfully`);
 }
 
 /**
@@ -115,17 +116,17 @@ export function openPageFromSidebar(pageName: string) {
  * @param spaceIndex - Index of the space to expand (default: 0 for first space)
  */
 export function expandSpace(spaceIndex: number = 0) {
-    cy.task('log', `Expanding space at index ${spaceIndex}`);
+    testLog.info( `Expanding space at index ${spaceIndex}`);
     
     SpaceSelectors.items().eq(spaceIndex).within(() => {
         SpaceSelectors.expanded().then(($expanded: JQuery<HTMLElement>) => {
             const isExpanded = $expanded.attr('data-expanded') === 'true';
             
             if (!isExpanded) {
-                cy.task('log', 'Space is collapsed, expanding it');
+                testLog.info( 'Space is collapsed, expanding it');
                 SpaceSelectors.names().first().click();
             } else {
-                cy.task('log', 'Space is already expanded');
+                testLog.info( 'Space is already expanded');
             }
         });
     });
@@ -140,7 +141,7 @@ export function expandSpace(spaceIndex: number = 0) {
  * Internal function used by createPageAndAddContent
  */
 function createPage(pageName: string) {
-    cy.task('log', `Creating page: ${pageName}`);
+    testLog.info( `Creating page: ${pageName}`);
     
     // Click new page button
     PageSelectors.newPageButton().should('be.visible').click();
@@ -161,7 +162,7 @@ function createPage(pageName: string) {
     // Close any modal dialogs
     cy.get('body').then(($body: JQuery<HTMLBodyElement>) => {
         if ($body.find('[role="dialog"]').length > 0) {
-            cy.task('log', 'Closing modal dialog');
+            testLog.info( 'Closing modal dialog');
             cy.get('body').type('{esc}');
             waitForReactUpdate(1000);
         }
@@ -183,12 +184,12 @@ function createPage(pageName: string) {
                 .type('{enter}');
         });
     
-    cy.task('log', `Set page title to: ${pageName}`);
+    testLog.info( `Set page title to: ${pageName}`);
     waitForReactUpdate(2000);
     
     // Also update the page name in the sidebar if possible
     // This ensures the page can be found later by name
-    cy.task('log', 'Page created and title set');
+    testLog.info( 'Page created and title set');
 }
 
 /**
@@ -196,7 +197,7 @@ function createPage(pageName: string) {
  * Internal function used by createPageAndAddContent
  */
 function typeLinesInVisibleEditor(lines: string[]) {
-    cy.task('log', `Typing ${lines.length} lines in editor`);
+    testLog.info( `Typing ${lines.length} lines in editor`);
     
     // Wait for any template to load
     waitForReactUpdate(1000);
@@ -204,7 +205,7 @@ function typeLinesInVisibleEditor(lines: string[]) {
     // Check if we need to dismiss welcome content or click to create editor
     cy.get('body').then(($body: JQuery<HTMLBodyElement>) => {
         if ($body.text().includes('Welcome to AppFlowy')) {
-            cy.task('log', 'Welcome template detected, looking for editor area');
+            testLog.info( 'Welcome template detected, looking for editor area');
         }
     });
     
@@ -212,7 +213,7 @@ function typeLinesInVisibleEditor(lines: string[]) {
     cy.get('[contenteditable="true"]', { timeout: 10000 }).should('exist');
     
     cy.get('[contenteditable="true"]').then(($editors: JQuery<HTMLElement>) => {
-        cy.task('log', `Found ${$editors.length} editable elements`);
+        testLog.info( `Found ${$editors.length} editable elements`);
         
         if ($editors.length === 0) {
             throw new Error('No editable elements found on page');
@@ -227,7 +228,7 @@ function typeLinesInVisibleEditor(lines: string[]) {
                            $el.attr('id')?.includes('title');
             
             if (!isTitle && el) {
-                cy.task('log', `Using editor at index ${index}`);
+                testLog.info( `Using editor at index ${index}`);
                 cy.wrap(el).click({ force: true }).clear().type(lines.join('{enter}'), { force: true });
                 editorFound = true;
                 return false; // break the loop
@@ -235,7 +236,7 @@ function typeLinesInVisibleEditor(lines: string[]) {
         });
         
         if (!editorFound && $editors.length > 0) {
-            cy.task('log', 'Using fallback: last contenteditable element');
+            testLog.info( 'Using fallback: last contenteditable element');
             const lastEditor = $editors.last().get(0);
             if (lastEditor) {
                 cy.wrap(lastEditor).click({ force: true }).clear().type(lines.join('{enter}'), { force: true });
@@ -249,11 +250,11 @@ function typeLinesInVisibleEditor(lines: string[]) {
  * Internal function used by createPageAndAddContent
  */
 function assertEditorContentEquals(lines: string[]) {
-    cy.task('log', 'Verifying editor content');
+    testLog.info( 'Verifying editor content');
     
     lines.forEach(line => {
         cy.contains(line).should('exist');
-        cy.task('log', `✓ Found content: "${line}"`);
+        testLog.info( `✓ Found content: "${line}"`);
     });
 }
 
@@ -264,7 +265,7 @@ function assertEditorContentEquals(lines: string[]) {
  * Referenced in page-utils.ts
  */
 export function closeSidebar() {
-    cy.task('log', 'Closing sidebar');
+    testLog.info( 'Closing sidebar');
     // Implementation would depend on how sidebar is closed in the UI
     // This is a placeholder to maintain compatibility
 }
@@ -274,7 +275,7 @@ export function closeSidebar() {
  * Referenced in page-utils.ts
  */
 export function createNewPageViaBackendQuickAction(pageName?: string) {
-    cy.task('log', `Creating new page via backend quick action: ${pageName || 'unnamed'}`);
+    testLog.info( `Creating new page via backend quick action: ${pageName || 'unnamed'}`);
     // Implementation would depend on the backend quick action flow
     // This is a placeholder to maintain compatibility
 }
@@ -284,7 +285,7 @@ export function createNewPageViaBackendQuickAction(pageName?: string) {
  * Referenced in page-utils.ts
  */
 export function openCommandPalette() {
-    cy.task('log', 'Opening command palette');
+    testLog.info( 'Opening command palette');
     // Implementation would depend on how command palette is opened
     // This is a placeholder to maintain compatibility
 }
@@ -294,6 +295,6 @@ export function openCommandPalette() {
  * Referenced in page-utils.ts
  */
 export function navigateTo(route: string) {
-    cy.task('log', `Navigating to: ${route}`);
+    testLog.info( `Navigating to: ${route}`);
     cy.visit(route);
 }

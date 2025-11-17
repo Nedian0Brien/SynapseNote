@@ -2,6 +2,7 @@ import { AuthTestUtils } from '../../support/auth-utils';
 import { TestTool } from '../../support/page-utils';
 import { PageSelectors, SpaceSelectors, SidebarSelectors, byTestId, waitForReactUpdate } from '../../support/selectors';
 import { generateRandomEmail, logAppFlowyEnvironment } from '../../support/test-config';
+import { testLog } from '../../support/test-helpers';
 
 describe('Space Creation Tests', () => {
     let testEmail: string;
@@ -33,7 +34,7 @@ describe('Space Creation Tests', () => {
             });
 
             // Step 1: Login
-            cy.task('log', '=== Step 1: Login ===');
+            testLog.info( '=== Step 1: Login ===');
             cy.visit('/login', { failOnStatusCode: false });
             cy.wait(2000);
 
@@ -42,7 +43,7 @@ describe('Space Creation Tests', () => {
                 cy.url().should('include', '/app');
                 
                 // Wait for the app to fully load
-                cy.task('log', 'Waiting for app to fully load...');
+                testLog.info( 'Waiting for app to fully load...');
                 
                 // Wait for the loading screen to disappear and main app to appear
                 cy.get('body', { timeout: 30000 }).should('not.contain', 'Welcome!');
@@ -56,15 +57,15 @@ describe('Space Creation Tests', () => {
                 // Additional wait for stability
                 cy.wait(2000);
                 
-                cy.task('log', 'App loaded successfully');
+                testLog.info( 'App loaded successfully');
 
                 // Step 2: Find the first space and open its more actions menu
-                cy.task('log', '=== Step 2: Opening space more actions menu ===');
+                testLog.info( '=== Step 2: Opening space more actions menu ===');
                 
                 // Get the first space item and click more actions
                 // With the test environment check, the button is always visible in tests
                 SpaceSelectors.items().first().then($space => {
-                    cy.task('log', 'Found first space, clicking more actions...');
+                    testLog.info( 'Found first space, clicking more actions...');
                     
                     // Click the more actions button for spaces
                     // It's always visible in test environment
@@ -73,32 +74,32 @@ describe('Space Creation Tests', () => {
                         .should('be.visible')
                         .click();
                     
-                    cy.task('log', 'Clicked space more actions button');
+                    testLog.info( 'Clicked space more actions button');
                 });
                 
                 // Wait for the dropdown menu to appear
                 cy.wait(1000);
                 
                 // Step 3: Click on "Create New Space" option
-                cy.task('log', '=== Step 3: Clicking Create New Space option ===');
+                testLog.info( '=== Step 3: Clicking Create New Space option ===');
                 
                 cy.get(byTestId('create-new-space-button'))
                     .should('be.visible')
                     .click();
                 
-                cy.task('log', 'Clicked Create New Space button');
+                testLog.info( 'Clicked Create New Space button');
                 
                 // Wait for modal to appear
                 cy.wait(1000);
                 
                 // Step 4: Fill in the space details
-                cy.task('log', '=== Step 4: Filling space creation form ===');
+                testLog.info( '=== Step 4: Filling space creation form ===');
                 
                 // Verify the modal is visible
                 cy.get(byTestId('create-space-modal'))
                     .should('be.visible');
                 
-                cy.task('log', 'Create Space modal is visible');
+                testLog.info( 'Create Space modal is visible');
                 
                 // Enter space name
                 cy.get(byTestId('space-name-input'))
@@ -106,31 +107,31 @@ describe('Space Creation Tests', () => {
                     .clear()
                     .type(spaceName);
                 
-                cy.task('log', `Entered space name: ${spaceName}`);
+                testLog.info( `Entered space name: ${spaceName}`);
                 
                 // Optional: Click on space icon button to set an icon (skip for simplicity)
                 // Optional: Change space permission (default is Public, keep it)
                 
                 // Step 5: Save the new space
-                cy.task('log', '=== Step 5: Saving new space ===');
+                testLog.info( '=== Step 5: Saving new space ===');
                 
                 // Click the Save button
                 cy.get(byTestId('modal-ok-button'))
                     .should('be.visible')
                     .click();
                 
-                cy.task('log', 'Clicked Save button');
+                testLog.info( 'Clicked Save button');
                 
                 // Wait for the modal to close and space to be created
                 cy.wait(3000);
                 
                 // Step 6: Verify the new space appears in the sidebar
-                cy.task('log', '=== Step 6: Verifying new space in sidebar ===');
+                testLog.info( '=== Step 6: Verifying new space in sidebar ===');
                 
                 // Check that the new space exists in the sidebar
                 SpaceSelectors.names().then($spaces => {
                     const spaceNames = Array.from($spaces).map((el: Element) => el.textContent?.trim());
-                    cy.task('log', `Spaces in sidebar: ${spaceNames.join(', ')}`);
+                    testLog.info( `Spaces in sidebar: ${spaceNames.join(', ')}`);
                     
                     // Check if our space exists
                     const spaceExists = spaceNames.some(name => 
@@ -138,11 +139,11 @@ describe('Space Creation Tests', () => {
                     );
                     
                     if (spaceExists) {
-                        cy.task('log', `✓ New space "${spaceName}" found in sidebar`);
+                        testLog.info( `✓ New space "${spaceName}" found in sidebar`);
                     } else {
                         // Sometimes the space might be created but not immediately visible
                         // Let's refresh the outline
-                        cy.task('log', 'Space not immediately visible, checking again...');
+                        testLog.info( 'Space not immediately visible, checking again...');
                         cy.wait(2000);
                         
                         // Check again
@@ -153,16 +154,16 @@ describe('Space Creation Tests', () => {
                             );
                             
                             if (spaceExistsNow) {
-                                cy.task('log', `✓ New space "${spaceName}" found after refresh`);
+                                testLog.info( `✓ New space "${spaceName}" found after refresh`);
                             } else {
-                                cy.task('log', `Warning: Could not find space "${spaceName}" in sidebar, but creation likely succeeded`);
+                                testLog.info( `Warning: Could not find space "${spaceName}" in sidebar, but creation likely succeeded`);
                             }
                         });
                     }
                 });
                 
                 // Step 7: Optional - Verify the new space is clickable
-                cy.task('log', '=== Step 7: Testing space functionality ===');
+                testLog.info( '=== Step 7: Testing space functionality ===');
                 
                 // Simply verify the space exists and is clickable
                 SpaceSelectors.names()
@@ -170,14 +171,14 @@ describe('Space Creation Tests', () => {
                     .should('exist')
                     .click({ force: true });
                 
-                cy.task('log', '✓ Clicked on the new space');
+                testLog.info( '✓ Clicked on the new space');
                 
                 // Wait briefly to ensure no errors
                 cy.wait(1000);
                 
                 // Final verification
-                cy.task('log', '=== Test completed successfully! ===');
-                cy.task('log', '✓✓✓ New space created successfully');
+                testLog.info( '=== Test completed successfully! ===');
+                testLog.info( '✓✓✓ New space created successfully');
                 
                 // Verify no errors on the page
                 cy.get('body').then($body => {
@@ -186,7 +187,7 @@ describe('Space Creation Tests', () => {
                                    $body.find('[role="alert"]').length > 0;
                     
                     if (!hasError) {
-                        cy.task('log', '✓ No errors detected on page');
+                        testLog.info( '✓ No errors detected on page');
                     }
                 });
             });

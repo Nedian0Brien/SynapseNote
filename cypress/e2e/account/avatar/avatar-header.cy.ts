@@ -1,5 +1,6 @@
 import { avatarTestUtils } from './avatar-test-utils';
 import { byTestIdContains } from '../../../support/selectors';
+import { testLog } from '../../../support/test-helpers';
 
 const { generateRandomEmail, setupBeforeEach, imports } = avatarTestUtils;
 const { APP_EVENTS, updateWorkspaceMemberAvatar, AuthTestUtils, AvatarSelectors, dbUtils } = imports;
@@ -15,16 +16,16 @@ describe('Avatar Header Display', () => {
       const authUtils = new AuthTestUtils();
       const testAvatarUrl = 'https://api.dicebear.com/7.x/avataaars/svg?seed=header-test';
 
-      cy.task('log', 'Step 1: Visit login page');
+      testLog.info( 'Step 1: Visit login page');
       cy.visit('/login', { failOnStatusCode: false });
       cy.wait(2000);
 
-      cy.task('log', 'Step 2: Sign in with test account');
+      testLog.info( 'Step 2: Sign in with test account');
       authUtils.signInWithTestUrl(testEmail).then(() => {
         cy.url({ timeout: 30000 }).should('include', '/app');
         cy.wait(3000);
 
-        cy.task('log', 'Step 3: Set avatar via workspace member profile API');
+        testLog.info( 'Step 3: Set avatar via workspace member profile API');
         dbUtils.getCurrentWorkspaceId().then((workspaceId) => {
           expect(workspaceId).to.not.be.null;
 
@@ -36,7 +37,7 @@ describe('Avatar Header Display', () => {
           cy.reload();
           cy.wait(3000);
 
-          cy.task('log', 'Step 4: Interact with editor to trigger collaborative user awareness');
+          testLog.info( 'Step 4: Interact with editor to trigger collaborative user awareness');
           // Click on a page to open editor
           cy.get('body').then(($body) => {
             // Try to find and click on a page in the sidebar
@@ -74,13 +75,13 @@ describe('Avatar Header Display', () => {
 
           cy.wait(2000);
 
-          cy.task('log', 'Step 5: Verify avatar appears in header top right corner');
+          testLog.info( 'Step 5: Verify avatar appears in header top right corner');
           // Wait for header to be visible
           cy.get('.appflowy-top-bar').should('be.visible');
 
           // Check if avatar container exists in header (collaborative users area)
           // The current user's avatar will appear there when they're actively editing
-          cy.task('log', 'Header avatar area should be visible');
+          testLog.info( 'Header avatar area should be visible');
           AvatarSelectors.headerAvatarContainer().should('exist');
 
           // Verify avatar image or fallback is present
@@ -94,16 +95,16 @@ describe('Avatar Header Display', () => {
       const authUtils = new AuthTestUtils();
       const testEmoji = '🎨';
 
-      cy.task('log', 'Step 1: Visit login page');
+      testLog.info( 'Step 1: Visit login page');
       cy.visit('/login', { failOnStatusCode: false });
       cy.wait(2000);
 
-      cy.task('log', 'Step 2: Sign in with test account');
+      testLog.info( 'Step 2: Sign in with test account');
       authUtils.signInWithTestUrl(testEmail).then(() => {
         cy.url({ timeout: 30000 }).should('include', '/app');
         cy.wait(3000);
 
-        cy.task('log', 'Step 3: Set emoji avatar via API');
+        testLog.info( 'Step 3: Set emoji avatar via API');
         dbUtils.getCurrentWorkspaceId().then((workspaceId) => {
           expect(workspaceId).to.not.be.null;
 
@@ -115,7 +116,7 @@ describe('Avatar Header Display', () => {
           cy.reload();
           cy.wait(3000);
 
-          cy.task('log', 'Step 4: Interact with editor to trigger collaborative user awareness');
+          testLog.info( 'Step 4: Interact with editor to trigger collaborative user awareness');
           // Click on a page to open editor
           cy.get('body').then(($body) => {
             if ($body.find(byTestIdContains('page')).length > 0) {
@@ -151,12 +152,12 @@ describe('Avatar Header Display', () => {
 
           cy.wait(2000);
 
-          cy.task('log', 'Step 5: Verify emoji appears in header avatar fallback');
+          testLog.info( 'Step 5: Verify emoji appears in header avatar fallback');
           cy.get('.appflowy-top-bar').should('be.visible');
 
           // When user is actively editing, their avatar should appear in header
           // Emoji avatars show in fallback
-          cy.task('log', 'Header should be visible with avatar area');
+          testLog.info( 'Header should be visible with avatar area');
           AvatarSelectors.headerAvatarContainer().should('exist');
 
           // Verify emoji appears in fallback
@@ -171,23 +172,23 @@ describe('Avatar Header Display', () => {
       const authUtils = new AuthTestUtils();
       const testAvatarUrl = 'https://api.dicebear.com/7.x/avataaars/svg?seed=header-notification';
 
-      cy.task('log', 'Step 1: Visit login page');
+      testLog.info( 'Step 1: Visit login page');
       cy.visit('/login', { failOnStatusCode: false });
       cy.wait(2000);
 
-      cy.task('log', 'Step 2: Sign in with test account');
+      testLog.info( 'Step 2: Sign in with test account');
       authUtils.signInWithTestUrl(testEmail).then(() => {
         cy.url({ timeout: 30000 }).should('include', '/app');
         cy.wait(3000);
 
-        cy.task('log', 'Step 3: Get user UUID and workspace ID');
+        testLog.info( 'Step 3: Get user UUID and workspace ID');
         dbUtils.getCurrentWorkspaceId().then((workspaceId) => {
           expect(workspaceId).to.not.be.null;
 
           dbUtils.getCurrentUserUuid().then((userUuid) => {
             expect(userUuid).to.not.be.null;
 
-            cy.task('log', 'Step 4: Simulate workspace member profile changed notification');
+            testLog.info( 'Step 4: Simulate workspace member profile changed notification');
             cy.window().then((win) => {
               const emitter = (win as typeof window & {
                 __APPFLOWY_EVENT_EMITTER__?: { emit: (...args: unknown[]) => void };
@@ -205,13 +206,13 @@ describe('Avatar Header Display', () => {
 
             cy.wait(2000);
 
-            cy.task('log', 'Step 5: Verify avatar is updated in database');
+            testLog.info( 'Step 5: Verify avatar is updated in database');
             dbUtils.getWorkspaceMemberProfile(workspaceId!, userUuid!).then((profile) => {
               expect(profile).to.not.be.null;
               expect(profile?.avatar_url).to.equal(testAvatarUrl);
             });
 
-            cy.task('log', 'Step 6: Interact with editor to trigger collaborative user awareness');
+            testLog.info( 'Step 6: Interact with editor to trigger collaborative user awareness');
             // Click on a page to open editor
             cy.get('body').then(($body) => {
               if ($body.find(byTestIdContains('page')).length > 0) {
@@ -247,7 +248,7 @@ describe('Avatar Header Display', () => {
 
             cy.wait(2000);
 
-            cy.task('log', 'Step 7: Verify header avatar area is visible and updated');
+            testLog.info( 'Step 7: Verify header avatar area is visible and updated');
             cy.get('.appflowy-top-bar').should('be.visible');
             AvatarSelectors.headerAvatarContainer().should('exist');
 
@@ -257,7 +258,7 @@ describe('Avatar Header Display', () => {
             // Verify the avatar image uses the updated URL (if image is loaded)
             // The avatar might show as image or fallback depending on loading state
             // We already verified the database update in Step 5, so just verify avatar container exists
-            cy.task('log', 'Avatar container verified in header - database update confirmed in Step 5');
+            testLog.info( 'Avatar container verified in header - database update confirmed in Step 5');
           });
         });
       });
