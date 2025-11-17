@@ -1,6 +1,6 @@
 import { AuthTestUtils } from '../../support/auth-utils';
 import { TestTool } from '../../support/page-utils';
-import { AddPageSelectors, PageSelectors, ModalSelectors, SidebarSelectors, byTestId, waitForReactUpdate } from '../../support/selectors';
+import { AddPageSelectors, PageSelectors, ModalSelectors, SidebarSelectors, ChatSelectors, waitForReactUpdate } from '../../support/selectors';
 import { generateRandomEmail, logAppFlowyEnvironment } from '../../support/test-config';
 import { testLog } from '../../support/test-helpers';
 
@@ -125,8 +125,8 @@ describe('AI Chat Creation and Navigation Tests', () => {
                 testLog.info( '✓ Navigated to AI Chat page');
                 
                 // Check if the AI Chat container exists (but don't fail if it doesn't load immediately)
-                cy.get('body').then($body => {
-                    if ($body.find(byTestId('ai-chat-container')).length > 0) {
+                ChatSelectors.aiChatContainer().then($container => {
+                    if ($container.length > 0) {
                         testLog.info( '✓ AI Chat container exists');
                     } else {
                         testLog.info( 'AI Chat container not immediately visible, checking for navigation success...');
@@ -139,15 +139,14 @@ describe('AI Chat Creation and Navigation Tests', () => {
                 // Check for AI Chat specific elements (the chat interface)
                 // The AI chat library loads its own components
                 cy.get('body').then($body => {
-                    // Check if chat interface elements exist
-                    const hasChatElements = $body.find('.ai-chat').length > 0 || 
-                                           $body.find(byTestId('ai-chat-container')).length > 0;
-                    
-                    if (hasChatElements) {
-                        testLog.info( '✓ AI Chat interface loaded');
-                    } else {
-                        testLog.info( 'Warning: AI Chat elements not immediately visible, but container exists');
-                    }
+                    ChatSelectors.aiChatContainer().then($container => {
+                        const hasChatElements = $body.find('.ai-chat').length > 0 || $container.length > 0;
+                        if (hasChatElements) {
+                            testLog.info( '✓ AI Chat interface loaded');
+                        } else {
+                            testLog.info( 'Warning: AI Chat elements not immediately visible, but container exists');
+                        }
+                    });
                 });
                 
                 // Verify no error messages are displayed

@@ -2,8 +2,6 @@ import {
   AddPageSelectors,
   DatabaseGridSelectors,
   CheckboxSelectors,
-  byTestId,
-  byTestIdPrefix,
   waitForReactUpdate
 } from '../../support/selectors';
 import { AuthTestUtils } from '../../support/auth-utils';
@@ -59,18 +57,18 @@ describe('Checkbox Column Type', () => {
       cy.log('[STEP 9] Looking for checkbox elements');
       cy.get('body').then($body => {
         // Check for checkbox cells with our data-testid
-        const checkboxCells = $body.find(byTestIdPrefix('checkbox-cell-'));
-        if (checkboxCells.length > 0) {
-          cy.log(`[STEP 10] Found ${checkboxCells.length} checkbox cells`);
+        CheckboxSelectors.allCheckboxCells().then($checkboxCells => {
+          if ($checkboxCells.length > 0) {
+            cy.log(`[STEP 10] Found ${$checkboxCells.length} checkbox cells`);
 
-          // Click first checkbox cell
-          CheckboxSelectors.allCheckboxCells().first().click();
-          waitForReactUpdate(500);
-          cy.log('[STEP 11] Clicked checkbox cell');
-        } else {
-          cy.log('[STEP 10] No checkbox cells found, cell interaction test completed');
-        }
-      });
+            // Click first checkbox cell
+            CheckboxSelectors.allCheckboxCells().first().click();
+            waitForReactUpdate(500);
+            cy.log('[STEP 11] Clicked checkbox cell');
+          } else {
+            cy.log('[STEP 10] No checkbox cells found, cell interaction test completed');
+          }
+        });
 
       cy.log('[STEP 12] Test completed successfully');
     });

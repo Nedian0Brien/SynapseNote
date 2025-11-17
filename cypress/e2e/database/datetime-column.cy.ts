@@ -5,8 +5,6 @@ import {
   PropertyMenuSelectors,
   GridFieldSelectors,
   FieldType,
-  byTestId,
-  byTestIdPrefix,
   waitForReactUpdate
 } from '../../support/selectors';
 import { AuthTestUtils } from '../../support/auth-utils';
@@ -66,28 +64,23 @@ describe('DateTime Column Type', () => {
       // The new column is created and the property menu should be open automatically
       // Let's wait for property trigger to be available
       cy.log('[STEP 8] Waiting for property menu to open');
-      cy.get('body').then($body => {
-        // Check if property type trigger exists
-        if ($body.find(byTestId('property-type-trigger')).length > 0) {
+      PropertyMenuSelectors.propertyTypeTrigger().then($trigger => {
+        if ($trigger.length > 0) {
           cy.log('[STEP 9] Property type trigger found, changing to DateTime');
-          PropertyMenuSelectors.propertyTypeTrigger().first().click({ force: true });
+          cy.wrap($trigger.first()).click({ force: true });
           waitForReactUpdate(1000);
           
-          // Select DateTime option
           cy.log('[STEP 10] Selecting DateTime option');
           PropertyMenuSelectors.propertyTypeOption(FieldType.DateTime).click({ force: true });
           waitForReactUpdate(2000);
         } else {
           cy.log('[STEP 9] Property type trigger not found, looking for field header');
-          // Try clicking on the new field header first
           GridFieldSelectors.allFieldHeaders().last().scrollIntoView().click({ force: true });
           waitForReactUpdate(1000);
           
-          // Now try to find the property type trigger
           PropertyMenuSelectors.propertyTypeTrigger().first().click({ force: true });
           waitForReactUpdate(1000);
           
-          // Select DateTime option
           cy.log('[STEP 10] Selecting DateTime option');
           PropertyMenuSelectors.propertyTypeOption(FieldType.DateTime).click({ force: true });
           waitForReactUpdate(2000);
@@ -101,21 +94,17 @@ describe('DateTime Column Type', () => {
       
       // Verify datetime cells exist
       cy.log('[STEP 12] Checking for datetime cells');
-      cy.get('body').then($body => {
-        const datetimeCells = $body.find(byTestIdPrefix('datetime-cell-'));
-        if (datetimeCells.length > 0) {
-          cy.log(`[STEP 13] Found ${datetimeCells.length} datetime cells`);
+      DateTimeSelectors.allDateTimeCells().then($cells => {
+        if ($cells.length > 0) {
+          cy.log(`[STEP 13] Found ${$cells.length} datetime cells`);
           
-          // Try to interact with the first datetime cell
           DateTimeSelectors.allDateTimeCells().first().scrollIntoView().click({ force: true });
           waitForReactUpdate(1000);
           
-          // Check if picker opens
-          cy.get('body').then($body => {
-            if ($body.find(byTestId('datetime-picker-popover')).length > 0) {
+          DateTimeSelectors.dateTimePickerPopover().then($popover => {
+            if ($popover.length > 0) {
               cy.log('[STEP 14] DateTime picker opened successfully');
               
-              // Enter a date
               const today = new Date();
               const dateStr = `${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getDate().toString().padStart(2, '0')}/${today.getFullYear()}`;
               

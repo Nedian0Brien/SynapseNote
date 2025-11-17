@@ -1,6 +1,6 @@
 import { AuthTestUtils } from '../../support/auth-utils';
 import { TestTool } from '../../support/page-utils';
-import { PageSelectors, ShareSelectors, SidebarSelectors, byTestId } from '../../support/selectors';
+import { PageSelectors, ShareSelectors, SidebarSelectors } from '../../support/selectors';
 import { generateRandomEmail, logAppFlowyEnvironment } from '../../support/test-config';
 import { testLog } from '../../support/test-helpers';
 
@@ -71,7 +71,7 @@ describe('Publish Page Test', () => {
             cy.wait(5000);
 
             // Verify that the page is now published by checking for published UI elements
-            cy.get(byTestId('publish-namespace')).should('be.visible', { timeout: 10000 });
+            cy.get(ShareSelectors.publishNamespace()).should('be.visible', { timeout: 10000 });
             testLog.info( 'Page published successfully, URL elements visible');
 
             // 6. Get the published URL by constructing it from UI elements
@@ -79,8 +79,8 @@ describe('Publish Page Test', () => {
                 const origin = win.location.origin;
 
                 // Get namespace and publish name from the UI
-                cy.get(byTestId('publish-namespace')).should('be.visible').invoke('text').then((namespace) => {
-                    cy.get(byTestId('publish-name-input')).should('be.visible').invoke('val').then((publishName) => {
+                cy.get(ShareSelectors.publishNamespace()).should('be.visible').invoke('text').then((namespace) => {
+                    cy.get(ShareSelectors.publishNameInput()).should('be.visible').invoke('val').then((publishName) => {
                         const namespaceText = namespace.trim();
                         const publishNameText = String(publishName).trim();
                         const publishedUrl = `${origin}/${namespaceText}/${publishNameText}`;
@@ -91,7 +91,7 @@ describe('Publish Page Test', () => {
                         // Located in a div with class "p-1 text-text-primary" next to the URL container
                         ShareSelectors.sharePopover().within(() => {
                             // Find the parent container that holds both URL inputs and copy button
-                            cy.get(byTestId('publish-name-input'))
+                            cy.get(ShareSelectors.publishNameInput())
                                 .closest('div.flex.w-full.items-center.overflow-hidden')
                                 .find('div.p-1.text-text-primary')
                                 .should('be.visible')
@@ -263,13 +263,13 @@ describe('Publish Page Test', () => {
             cy.wait(5000);
 
             // Verify published
-            cy.get(byTestId('publish-namespace')).should('be.visible', { timeout: 10000 });
+            cy.get(ShareSelectors.publishNamespace()).should('be.visible', { timeout: 10000 });
 
             // Get the published URL
             cy.window().then((win) => {
                 const origin = win.location.origin;
-                cy.get(byTestId('publish-namespace')).should('be.visible').invoke('text').then((namespace) => {
-                    cy.get(byTestId('publish-name-input')).should('be.visible').invoke('val').then((publishName) => {
+                cy.get(ShareSelectors.publishNamespace()).should('be.visible').invoke('text').then((namespace) => {
+                    cy.get(ShareSelectors.publishNameInput()).should('be.visible').invoke('val').then((publishName) => {
                         const publishedUrl = `${origin}/${namespace.trim()}/${String(publishName).trim()}`;
                         testLog.info( `Published URL: ${publishedUrl}`);
 
@@ -315,20 +315,20 @@ describe('Publish Page Test', () => {
 
             ShareSelectors.publishConfirmButton().should('be.visible').click({ force: true });
             cy.wait(5000);
-            cy.get(byTestId('publish-namespace')).should('be.visible', { timeout: 10000 });
+            cy.get(ShareSelectors.publishNamespace()).should('be.visible', { timeout: 10000 });
 
             // Get original URL
             cy.window().then((win) => {
                 const origin = win.location.origin;
-                cy.get(byTestId('publish-namespace')).invoke('text').then((namespace) => {
-                    cy.get(byTestId('publish-name-input')).invoke('val').then((originalName) => {
+                cy.get(ShareSelectors.publishNamespace()).invoke('text').then((namespace) => {
+                    cy.get(ShareSelectors.publishNameInput()).invoke('val').then((originalName) => {
                         const namespaceText = namespace.trim();
                         const originalNameText = String(originalName).trim();
                         testLog.info( `Original publish name: ${originalNameText}`);
 
                         // Edit the publish name directly in the input
                         const newPublishName = `custom-name-${Date.now()}`;
-                        cy.get(byTestId('publish-name-input'))
+                        cy.get(ShareSelectors.publishNameInput())
                             .clear()
                             .type(newPublishName)
                             .blur();
@@ -397,14 +397,14 @@ describe('Publish Page Test', () => {
 
             ShareSelectors.publishConfirmButton().should('be.visible').click({ force: true });
             cy.wait(5000);
-            cy.get(byTestId('publish-namespace')).should('be.visible', { timeout: 10000 });
+            cy.get(ShareSelectors.publishNamespace()).should('be.visible', { timeout: 10000 });
             testLog.info( '✓ First publish successful');
 
             // Get published URL
             cy.window().then((win) => {
                 const origin = win.location.origin;
-                cy.get(byTestId('publish-namespace')).invoke('text').then((namespace) => {
-                    cy.get(byTestId('publish-name-input')).invoke('val').then((publishName) => {
+                cy.get(ShareSelectors.publishNamespace()).invoke('text').then((namespace) => {
+                    cy.get(ShareSelectors.publishNameInput()).invoke('val').then((publishName) => {
                         const publishedUrl = `${origin}/${namespace.trim()}/${String(publishName).trim()}`;
                         testLog.info( `Published URL: ${publishedUrl}`);
 
@@ -458,7 +458,7 @@ describe('Publish Page Test', () => {
                         // Republish with updated content
                         ShareSelectors.publishConfirmButton().should('be.visible').click({ force: true });
                         cy.wait(5000);
-                        cy.get(byTestId('publish-namespace')).should('be.visible', { timeout: 10000 });
+                        cy.get(ShareSelectors.publishNamespace()).should('be.visible', { timeout: 10000 });
                         testLog.info( '✓ Republished successfully');
 
                         // Verify updated content is published
@@ -501,14 +501,14 @@ describe('Publish Page Test', () => {
 
             ShareSelectors.publishConfirmButton().should('be.visible').click({ force: true });
             cy.wait(5000);
-            cy.get(byTestId('publish-namespace')).should('be.visible', { timeout: 10000 });
+            cy.get(ShareSelectors.publishNamespace()).should('be.visible', { timeout: 10000 });
 
             // Try to set invalid publish name with spaces
-            cy.get(byTestId('publish-name-input')).invoke('val').then((originalName) => {
+            cy.get(ShareSelectors.publishNameInput()).invoke('val').then((originalName) => {
                 testLog.info( `Original name: ${originalName}`);
 
                 // Try to set name with space (should be rejected)
-                cy.get(byTestId('publish-name-input'))
+                cy.get(ShareSelectors.publishNameInput())
                     .clear()
                     .type('invalid name with spaces')
                     .blur();
@@ -519,7 +519,7 @@ describe('Publish Page Test', () => {
                 cy.get('body').then(($body) => {
                     const bodyText = $body.text();
                     // The name should either revert or show an error
-                    cy.get(byTestId('publish-name-input')).invoke('val').then((currentName) => {
+                    cy.get(ShareSelectors.publishNameInput()).invoke('val').then((currentName) => {
                         // Name should not contain spaces (validation should prevent it)
                         if (String(currentName).includes(' ')) {
                             testLog.info( '⚠ Warning: Invalid characters were not rejected');
@@ -558,7 +558,7 @@ describe('Publish Page Test', () => {
 
             ShareSelectors.publishConfirmButton().should('be.visible').click({ force: true });
             cy.wait(5000);
-            cy.get(byTestId('publish-namespace')).should('be.visible', { timeout: 10000 });
+            cy.get(ShareSelectors.publishNamespace()).should('be.visible', { timeout: 10000 });
 
             // Test comments switch - find by looking for Switch components in the published panel
             ShareSelectors.sharePopover().within(() => {
@@ -632,13 +632,13 @@ describe('Publish Page Test', () => {
 
             ShareSelectors.publishConfirmButton().should('be.visible').click({ force: true });
             cy.wait(5000);
-            cy.get(byTestId('publish-namespace')).should('be.visible', { timeout: 10000 });
+            cy.get(ShareSelectors.publishNamespace()).should('be.visible', { timeout: 10000 });
 
             // Get first URL
             cy.window().then((win) => {
                 const origin = win.location.origin;
-                cy.get(byTestId('publish-namespace')).invoke('text').then((namespace) => {
-                    cy.get(byTestId('publish-name-input')).invoke('val').then((publishName) => {
+                cy.get(ShareSelectors.publishNamespace()).invoke('text').then((namespace) => {
+                    cy.get(ShareSelectors.publishNameInput()).invoke('val').then((publishName) => {
                         firstPublishedUrl = `${origin}/${namespace.trim()}/${String(publishName).trim()}`;
                         testLog.info( `First published URL: ${firstPublishedUrl}`);
 
@@ -651,9 +651,9 @@ describe('Publish Page Test', () => {
                         cy.contains('Publish').should('exist').click({ force: true });
                         cy.wait(1000);
 
-                        cy.get(byTestId('publish-namespace')).should('be.visible', { timeout: 10000 });
-                        cy.get(byTestId('publish-namespace')).invoke('text').then((namespace2) => {
-                            cy.get(byTestId('publish-name-input')).invoke('val').then((publishName2) => {
+                        cy.get(ShareSelectors.publishNamespace()).should('be.visible', { timeout: 10000 });
+                        cy.get(ShareSelectors.publishNamespace()).invoke('text').then((namespace2) => {
+                            cy.get(ShareSelectors.publishNameInput()).invoke('val').then((publishName2) => {
                                 const secondPublishedUrl = `${origin}/${namespace2.trim()}/${String(publishName2).trim()}`;
                                 testLog.info( `Second check URL: ${secondPublishedUrl}`);
 
@@ -750,7 +750,7 @@ describe('Publish Page Test', () => {
             cy.wait(5000);
 
             // Verify that the database is now published by checking for published UI elements
-            cy.get(byTestId('publish-namespace')).should('be.visible', { timeout: 10000 });
+            cy.get(ShareSelectors.publishNamespace()).should('be.visible', { timeout: 10000 });
             testLog.info( 'Database published successfully, URL elements visible');
 
             // Get the published URL
@@ -758,8 +758,8 @@ describe('Publish Page Test', () => {
                 const origin = win.location.origin;
 
                 // Get namespace and publish name from the UI
-                cy.get(byTestId('publish-namespace')).should('be.visible').invoke('text').then((namespace) => {
-                    cy.get(byTestId('publish-name-input')).should('be.visible').invoke('val').then((publishName) => {
+                cy.get(ShareSelectors.publishNamespace()).should('be.visible').invoke('text').then((namespace) => {
+                    cy.get(ShareSelectors.publishNameInput()).should('be.visible').invoke('val').then((publishName) => {
                         const namespaceText = namespace.trim();
                         const publishNameText = String(publishName).trim();
                         const publishedUrl = `${origin}/${namespaceText}/${publishNameText}`;

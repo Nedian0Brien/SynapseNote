@@ -6,8 +6,6 @@ import {
   SingleSelectSelectors,
   PageSelectors,
   FieldType,
-  byTestId,
-  byTestIdPrefix,
   waitForReactUpdate
 } from '../../support/selectors';
 import { AuthTestUtils } from '../../support/auth-utils';
@@ -54,29 +52,24 @@ describe('Single Select Column Type', () => {
       cy.log('[STEP 4.1] Waiting for inline add button or new page button');
       
       // Try to find either inline add button or new page button
-      cy.get('body').then($body => {
-        const inlineAddExists = $body.find(byTestId('inline-add-page')).length > 0;
-        const newPageExists = $body.find(byTestId('new-page-button')).length > 0;
-        
-        if (inlineAddExists) {
-          cy.log('[STEP 4.2] Using inline add button');
-          return cy.wrap(null).then(() => {
+      AddPageSelectors.inlineAddButton().then($inlineAdd => {
+        const inlineAddExists = $inlineAdd.length > 0;
+        PageSelectors.newPageButton().then($newPage => {
+          const newPageExists = $newPage.length > 0;
+
+          if (inlineAddExists) {
+            cy.log('[STEP 4.2] Using inline add button');
             AddPageSelectors.inlineAddButton().first().click({ force: true });
-          });
-        } else if (newPageExists) {
-          cy.log('[STEP 4.2] Using new page button instead');
-          return cy.wrap(null).then(() => {
+          } else if (newPageExists) {
+            cy.log('[STEP 4.2] Using new page button instead');
             PageSelectors.newPageButton().first().click({ force: true });
-          });
-        } else {
-          // Wait a bit more and try inline add button
-          cy.log('[STEP 4.2] Waiting for UI to stabilize');
-          return cy.wrap(null).then(() => {
+          } else {
+            cy.log('[STEP 4.2] Waiting for UI to stabilize');
             cy.wait(3000);
             AddPageSelectors.inlineAddButton().should('exist', { timeout: 15000 });
             AddPageSelectors.inlineAddButton().first().click({ force: true });
-          });
-        }
+          }
+        });
       });
       
       waitForReactUpdate(1000);
@@ -166,14 +159,13 @@ describe('Single Select Column Type', () => {
 
       // Check if property menu is open and change to SingleSelect
       cy.log('[STEP 7] Changing column type to SingleSelect');
-      cy.get('body').then($body => {
-        if ($body.find(byTestId('property-type-trigger')).length > 0) {
-          PropertyMenuSelectors.propertyTypeTrigger().first().click({ force: true });
+      PropertyMenuSelectors.propertyTypeTrigger().then($trigger => {
+        if ($trigger.length > 0) {
+          cy.wrap($trigger.first()).click({ force: true });
           waitForReactUpdate(1000);
           PropertyMenuSelectors.propertyTypeOption(FieldType.SingleSelect).click({ force: true });
           waitForReactUpdate(2000);
         } else {
-          // Try clicking on the field header first
           GridFieldSelectors.allFieldHeaders().last().scrollIntoView().click({ force: true });
           waitForReactUpdate(1000);
           PropertyMenuSelectors.propertyTypeTrigger().first().click({ force: true });
@@ -191,20 +183,16 @@ describe('Single Select Column Type', () => {
       cy.log('[STEP 8] Adding select options to cells');
       
       // First try to find select cells
-      cy.get('body').then($body => {
-        const selectCells = $body.find(byTestIdPrefix('select-option-cell-'));
-        
-        if (selectCells.length > 0) {
-          cy.log(`[STEP 9] Found ${selectCells.length} select cells`);
+      SingleSelectSelectors.allSelectOptionCells().then($cells => {
+        if ($cells.length > 0) {
+          cy.log(`[STEP 9] Found ${$cells.length} select cells`);
           
-          // Click first cell with force and add option
           SingleSelectSelectors.allSelectOptionCells().first().click({ force: true });
           waitForReactUpdate(500);
           cy.focused().type('Option A{enter}');
           waitForReactUpdate(1000);
           
-          // Add second option if possible
-          if (selectCells.length > 1) {
+          if ($cells.length > 1) {
             SingleSelectSelectors.allSelectOptionCells().eq(1).click({ force: true });
             waitForReactUpdate(500);
             cy.focused().type('Option B{enter}');
@@ -213,18 +201,14 @@ describe('Single Select Column Type', () => {
         } else {
           cy.log('[STEP 9] No select cells found, using regular cells');
           
-          // Get all rows and find cells in the newly added column
           DatabaseGridSelectors.rows().first().within(() => {
-            // Click the last cell in this row (should be the new column)
             DatabaseGridSelectors.cells().last().click({ force: true });
             waitForReactUpdate(500);
           });
           
-          // Type option A
           cy.focused().type('Option A{enter}');
           waitForReactUpdate(1000);
           
-          // Try second row
           DatabaseGridSelectors.rows().eq(1).within(() => {
             DatabaseGridSelectors.cells().last().click({ force: true });
             waitForReactUpdate(500);
@@ -241,9 +225,9 @@ describe('Single Select Column Type', () => {
       waitForReactUpdate(1000);
 
       // Click edit property if available
-      cy.get('body').then($body => {
-        if ($body.find(byTestId('grid-field-edit-property')).length > 0) {
-          PropertyMenuSelectors.editPropertyMenuItem().click();
+      PropertyMenuSelectors.editPropertyMenuItem().then($edit => {
+        if ($edit.length > 0) {
+          cy.wrap($edit).click();
           waitForReactUpdate(1000);
         }
       });
@@ -285,9 +269,9 @@ describe('Single Select Column Type', () => {
       waitForReactUpdate(1000);
 
       // Click edit property if available
-      cy.get('body').then($body => {
-        if ($body.find(byTestId('grid-field-edit-property')).length > 0) {
-          PropertyMenuSelectors.editPropertyMenuItem().click();
+      PropertyMenuSelectors.editPropertyMenuItem().then($edit => {
+        if ($edit.length > 0) {
+          cy.wrap($edit).click();
           waitForReactUpdate(1000);
         }
       });
@@ -305,18 +289,15 @@ describe('Single Select Column Type', () => {
 
       // Verify select options are displayed again
       cy.log('[STEP 16] Verifying select options are displayed again');
-      cy.get('body').then($body => {
-        const selectCells = $body.find(byTestIdPrefix('select-option-cell-'));
-        if (selectCells.length > 0) {
-          cy.log(`[STEP 17] Success! Found ${selectCells.length} select option cells after conversion`);
+      SingleSelectSelectors.allSelectOptionCells().then($cells => {
+        if ($cells.length > 0) {
+          cy.log(`[STEP 17] Success! Found ${$cells.length} select option cells after conversion`);
           
-          // Click on a cell to verify options are still available
           SingleSelectSelectors.allSelectOptionCells().first().click();
           waitForReactUpdate(500);
           
-          // Check if select menu appears
-          cy.get('body').then($body => {
-            if ($body.find(byTestId('select-option-menu')).length > 0) {
+          SingleSelectSelectors.selectOptionMenu().then($menu => {
+            if ($menu.length > 0) {
               cy.log('[STEP 18] Select option menu opened - options preserved!');
             } else {
               cy.log('[STEP 18] Select cells exist but menu behavior may differ');

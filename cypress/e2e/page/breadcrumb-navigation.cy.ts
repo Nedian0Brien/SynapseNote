@@ -1,12 +1,11 @@
 import { AuthTestUtils } from '../../support/auth-utils';
 import { TestTool } from '../../support/page-utils';
-import {
 import { testLog } from '../../support/test-helpers';
+import {
     PageSelectors,
     SpaceSelectors,
     SidebarSelectors,
-    byTestId,
-    byTestIdContains,
+    BreadcrumbSelectors,
     waitForReactUpdate
 } from '../../support/selectors';
 import { generateRandomEmail, logAppFlowyEnvironment } from '../../support/test-config';
@@ -73,12 +72,10 @@ describe('Breadcrumb Navigation Complete Tests', () => {
 
                 // Step 4: Check for breadcrumb navigation
                 testLog.info( '=== Step 4: Checking for breadcrumb navigation ===');
-                cy.get('body').then($body => {
-                    if ($body.find(byTestId('breadcrumb-navigation')).length > 0) {
+                BreadcrumbSelectors.navigation().then($nav => {
+                    if ($nav.length > 0) {
                         testLog.info( '✓ Breadcrumb navigation found on this page');
-                        
-                        // Count breadcrumb items
-                        cy.get(byTestIdContains('breadcrumb-item-')).then($items => {
+                        BreadcrumbSelectors.items().then($items => {
                             testLog.info( `✓ Found ${$items.length} breadcrumb items`);
                         });
                     } else {
@@ -135,19 +132,19 @@ describe('Breadcrumb Navigation Complete Tests', () => {
                         
                         // Check for breadcrumb navigation
                         testLog.info( '=== Step 4: Testing breadcrumb navigation ===');
-                        cy.get('body', { timeout: 5000 }).then($body => {
-                            if ($body.find(byTestId('breadcrumb-navigation')).length > 0) {
+                        BreadcrumbSelectors.navigation().then($nav => {
+                            if ($nav.length > 0) {
                                 testLog.info( '✓ Breadcrumb navigation is visible');
-                                
-                                // Try to click breadcrumb to navigate back
-                                if ($body.find(byTestIdContains('breadcrumb-item-')).length > 1) {
-                                    cy.get(byTestIdContains('breadcrumb-item-')).first().click({ force: true });
-                                    testLog.info( '✓ Clicked breadcrumb item to navigate back');
-                                    cy.wait(2000);
-                                    testLog.info( '✓ Successfully used breadcrumb navigation');
-                                } else {
-                                    testLog.info( 'Only one breadcrumb item found');
-                                }
+                                BreadcrumbSelectors.items().then($items => {
+                                    if ($items.length > 1) {
+                                        cy.wrap($items).first().click({ force: true });
+                                        testLog.info( '✓ Clicked breadcrumb item to navigate back');
+                                        cy.wait(2000);
+                                        testLog.info( '✓ Successfully used breadcrumb navigation');
+                                    } else {
+                                        testLog.info( 'Only one breadcrumb item found');
+                                    }
+                                });
                             } else {
                                 testLog.info( 'No breadcrumb navigation on nested page');
                             }
@@ -253,22 +250,16 @@ describe('Breadcrumb Navigation Complete Tests', () => {
 
                         // Step 4: Test breadcrumb navigation
                         testLog.info( '=== Step 4: Testing breadcrumb navigation ===');
-                        cy.get('body').then($body => {
-                            if ($body.find(byTestId('breadcrumb-navigation')).length > 0) {
+                        BreadcrumbSelectors.navigation().then($nav => {
+                            if ($nav.length > 0) {
                                 testLog.info( '✓ Breadcrumb navigation is visible');
-                                
-                                // Check breadcrumb items with timeout
-                                cy.get(byTestIdContains('breadcrumb-item-'), { timeout: 10000 }).then($items => {
+                                BreadcrumbSelectors.items().then($items => {
                                     testLog.info( `Found ${$items.length} breadcrumb items`);
-                                    
                                     if ($items.length > 1) {
-                                        // Click second-to-last breadcrumb (parent page)
                                         const targetIndex = Math.max(0, $items.length - 2);
                                         cy.wrap($items[targetIndex]).click({ force: true });
                                         testLog.info( `✓ Clicked breadcrumb at index ${targetIndex} to go back`);
                                         cy.wait(2000);
-                                        
-                                        // Verify navigation worked
                                         testLog.info( '✓ Successfully navigated back using breadcrumb');
                                     }
                                 });

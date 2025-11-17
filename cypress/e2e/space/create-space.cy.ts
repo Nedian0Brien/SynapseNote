@@ -1,6 +1,6 @@
 import { AuthTestUtils } from '../../support/auth-utils';
 import { TestTool } from '../../support/page-utils';
-import { PageSelectors, SpaceSelectors, SidebarSelectors, byTestId, waitForReactUpdate } from '../../support/selectors';
+import { PageSelectors, SpaceSelectors, SidebarSelectors, ModalSelectors, waitForReactUpdate } from '../../support/selectors';
 import { generateRandomEmail, logAppFlowyEnvironment } from '../../support/test-config';
 import { testLog } from '../../support/test-helpers';
 
@@ -83,7 +83,7 @@ describe('Space Creation Tests', () => {
                 // Step 3: Click on "Create New Space" option
                 testLog.info( '=== Step 3: Clicking Create New Space option ===');
                 
-                cy.get(byTestId('create-new-space-button'))
+                SpaceSelectors.createNewSpaceButton()
                     .should('be.visible')
                     .click();
                 
@@ -96,13 +96,13 @@ describe('Space Creation Tests', () => {
                 testLog.info( '=== Step 4: Filling space creation form ===');
                 
                 // Verify the modal is visible
-                cy.get(byTestId('create-space-modal'))
+                SpaceSelectors.createSpaceModal()
                     .should('be.visible');
                 
                 testLog.info( 'Create Space modal is visible');
                 
                 // Enter space name
-                cy.get(byTestId('space-name-input'))
+                SpaceSelectors.spaceNameInput()
                     .should('be.visible')
                     .clear()
                     .type(spaceName);
@@ -116,7 +116,7 @@ describe('Space Creation Tests', () => {
                 testLog.info( '=== Step 5: Saving new space ===');
                 
                 // Click the Save button
-                cy.get(byTestId('modal-ok-button'))
+                ModalSelectors.okButton()
                     .should('be.visible')
                     .click();
                 

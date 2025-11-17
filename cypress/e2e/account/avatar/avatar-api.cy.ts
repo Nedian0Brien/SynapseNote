@@ -1,5 +1,5 @@
 import { avatarTestUtils } from './avatar-test-utils';
-import { byTestId } from '../../../support/selectors';
+import { AccountSelectors, AvatarUiSelectors } from '../../../support/selectors';
 import { testLog } from '../../../support/test-helpers';
 
 const { generateRandomEmail, setupBeforeEach, imports } = avatarTestUtils;
@@ -39,7 +39,7 @@ describe('Avatar API', () => {
       testLog.info( 'Step 5: Open Account Settings to verify avatar');
       WorkspaceSelectors.dropdownTrigger().click();
       cy.wait(1000);
-      cy.get(byTestId('account-settings-button')).click();
+      AccountSelectors.settingsButton().click();
       AvatarSelectors.accountSettingsDialog().should('be.visible');
 
       testLog.info( 'Step 6: Verify avatar image is displayed in Account Settings');
@@ -50,7 +50,7 @@ describe('Avatar API', () => {
 
       // Wait for any avatar image to be present and loaded
       // The AvatarImage component loads asynchronously and sets opacity to 0 while loading
-      cy.get(byTestId('avatar-image'), { timeout: 10000 })
+      AvatarUiSelectors.image()
         .should('exist')
         .should(($imgs) => {
           // Find the first visible avatar image (opacity not 0)
@@ -68,7 +68,7 @@ describe('Avatar API', () => {
         });
 
       // Verify that the avatar image has loaded (check for non-empty src and visible state)
-      cy.get(byTestId('avatar-image')).then(($imgs) => {
+      AvatarUiSelectors.image().then(($imgs) => {
         let foundLoaded = false;
         $imgs.each((index, img) => {
           const $img = Cypress.$(img);
@@ -160,7 +160,7 @@ describe('Avatar API', () => {
       testLog.info( 'Step 5: Open Account Settings');
       WorkspaceSelectors.dropdownTrigger().click();
       cy.wait(1000);
-      cy.get(byTestId('account-settings-button')).click();
+      AccountSelectors.settingsButton().click();
       AvatarSelectors.accountSettingsDialog().should('be.visible');
 
       testLog.info( 'Step 6: Verify emoji is displayed in fallback');

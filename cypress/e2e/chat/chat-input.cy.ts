@@ -1,6 +1,6 @@
 import { AuthTestUtils } from '../../support/auth-utils';
 import { TestTool } from '../../support/page-utils';
-import { AddPageSelectors, ModelSelectorSelectors, PageSelectors, SidebarSelectors, byTestId } from '../../support/selectors';
+import { AddPageSelectors, ModelSelectorSelectors, PageSelectors, SidebarSelectors, ChatSelectors } from '../../support/selectors';
 import { generateRandomEmail, logAppFlowyEnvironment } from '../../support/test-config';
 
 describe('Chat Input Tests', () => {
@@ -55,18 +55,18 @@ describe('Chat Input Tests', () => {
 
       // Test 1: Format toggle
       cy.log('Testing format toggle');
-      cy.get('body').then($body => {
-        if ($body.find(byTestId('chat-format-group')).length > 0) {
-          cy.get(byTestId('chat-input-format-toggle')).click();
-          cy.get(byTestId('chat-format-group')).should('not.exist');
+      ChatSelectors.formatGroup().then($group => {
+        if ($group.length > 0) {
+          ChatSelectors.formatToggle().click();
+          ChatSelectors.formatGroup().should('not.exist');
         }
       });
 
-      cy.get(byTestId('chat-input-format-toggle')).should('be.visible').click();
-      cy.get(byTestId('chat-format-group')).should('exist');
-      cy.get(byTestId('chat-format-group')).find('button').should('have.length.at.least', 4);
-      cy.get(byTestId('chat-input-format-toggle')).click();
-      cy.get(byTestId('chat-format-group')).should('not.exist');
+      ChatSelectors.formatToggle().should('be.visible').click();
+      ChatSelectors.formatGroup().should('exist');
+      ChatSelectors.formatGroup().find('button').should('have.length.at.least', 4);
+      ChatSelectors.formatToggle().click();
+      ChatSelectors.formatGroup().should('not.exist');
 
       // Test 2: Model selector
       cy.log('Testing model selector');
@@ -76,7 +76,7 @@ describe('Chat Input Tests', () => {
 
       // Test 3: Browse prompts
       cy.log('Testing browse prompts');
-      cy.get(byTestId('chat-input-browse-prompts')).click();
+      ChatSelectors.browsePromptsButton().click();
       cy.get('[role="dialog"]').should('exist');
       cy.get('[role="dialog"]').contains('Browse prompts').should('be.visible');
       cy.get('body').type('{esc}');
@@ -84,10 +84,10 @@ describe('Chat Input Tests', () => {
 
       // Test 4: Related views
       cy.log('Testing related views');
-      cy.get(byTestId('chat-input-related-views')).click();
-      cy.get(byTestId('chat-related-views-popover')).should('be.visible');
+      ChatSelectors.relatedViewsButton().click();
+      ChatSelectors.relatedViewsPopover().should('be.visible');
       cy.get('body').type('{esc}');
-      cy.get(byTestId('chat-related-views-popover')).should('not.exist');
+      ChatSelectors.relatedViewsPopover().should('not.exist');
     });
   });
 
@@ -204,8 +204,8 @@ describe('Chat Input Tests', () => {
       cy.wait(500);
       
       // Check send button is disabled when empty
-      cy.get(byTestId('chat-input-send')).should('exist');
-      cy.get(byTestId('chat-input-send')).then($button => {
+      ChatSelectors.sendButton().should('exist');
+      ChatSelectors.sendButton().then($button => {
         // Button might be disabled via attribute or opacity
         const isDisabled = $button.prop('disabled') || $button.css('opacity') === '0.5';
         expect(isDisabled).to.be.true;
@@ -215,7 +215,7 @@ describe('Chat Input Tests', () => {
       getTextarea().type('Test message');
       cy.wait(500);
       
-      cy.get(byTestId('chat-input-send')).then($button => {
+      ChatSelectors.sendButton().then($button => {
         const isDisabled = $button.prop('disabled') || $button.css('opacity') === '0.5';
         expect(isDisabled).to.be.false;
       });
@@ -225,7 +225,7 @@ describe('Chat Input Tests', () => {
       getTextarea().clear().type('Hello world');
       cy.wait(500);
       
-      cy.get(byTestId('chat-input-send')).click();
+      ChatSelectors.sendButton().click();
       cy.wait('@submitQuestion', { timeout: 10000 });
       
       // Wait for textarea to be ready again

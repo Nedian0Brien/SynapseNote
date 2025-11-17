@@ -1,5 +1,5 @@
 import { avatarTestUtils } from './avatar-test-utils';
-import { byTestIdContains } from '../../../support/selectors';
+import { PageSelectors } from '../../../support/selectors';
 import { testLog } from '../../../support/test-helpers';
 
 const { generateRandomEmail, setupBeforeEach, imports } = avatarTestUtils;
@@ -39,12 +39,15 @@ describe('Avatar Header Display', () => {
 
           testLog.info( 'Step 4: Interact with editor to trigger collaborative user awareness');
           // Click on a page to open editor
-          cy.get('body').then(($body) => {
-            // Try to find and click on a page in the sidebar
-            if ($body.find(byTestIdContains('page')).length > 0) {
-              cy.get(byTestIdContains('page')).first().click();
-            } else if ($body.text().includes('Getting started')) {
-              cy.contains('Getting started').click();
+          PageSelectors.items().then($pages => {
+            if ($pages.length > 0) {
+              cy.wrap($pages.first()).click();
+            } else {
+              cy.get('body').then($body => {
+                if ($body.text().includes('Getting started')) {
+                  cy.contains('Getting started').click();
+                }
+              });
             }
           });
 
@@ -118,11 +121,15 @@ describe('Avatar Header Display', () => {
 
           testLog.info( 'Step 4: Interact with editor to trigger collaborative user awareness');
           // Click on a page to open editor
-          cy.get('body').then(($body) => {
-            if ($body.find(byTestIdContains('page')).length > 0) {
-              cy.get(byTestIdContains('page')).first().click();
-            } else if ($body.text().includes('Getting started')) {
-              cy.contains('Getting started').click();
+          PageSelectors.items().then($pages => {
+            if ($pages.length > 0) {
+              cy.wrap($pages.first()).click();
+            } else {
+              cy.get('body').then($body => {
+                if ($body.text().includes('Getting started')) {
+                  cy.contains('Getting started').click();
+                }
+              });
             }
           });
 
@@ -214,11 +221,15 @@ describe('Avatar Header Display', () => {
 
             testLog.info( 'Step 6: Interact with editor to trigger collaborative user awareness');
             // Click on a page to open editor
-            cy.get('body').then(($body) => {
-              if ($body.find(byTestIdContains('page')).length > 0) {
-                cy.get(byTestIdContains('page')).first().click();
-              } else if ($body.text().includes('Getting started')) {
-                cy.contains('Getting started').click();
+            PageSelectors.items().then($pages => {
+              if ($pages.length > 0) {
+                cy.wrap($pages.first()).click();
+              } else {
+                cy.get('body').then($body => {
+                  if ($body.text().includes('Getting started')) {
+                    cy.contains('Getting started').click();
+                  }
+                });
               }
             });
 

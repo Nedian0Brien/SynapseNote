@@ -1,6 +1,6 @@
 import { AuthTestUtils } from '../../support/auth-utils';
 import { TestTool } from '../../support/page-utils';
-import { PageSelectors, ModalSelectors, SidebarSelectors, byTestId, waitForReactUpdate } from '../../support/selectors';
+import { PageSelectors, ModalSelectors, SidebarSelectors, TrashSelectors, waitForReactUpdate } from '../../support/selectors';
 import { generateRandomEmail, logAppFlowyEnvironment } from '../../support/test-config';
 import { testLog } from '../../support/test-helpers';
 
@@ -164,7 +164,7 @@ describe('Delete Page, Verify in Trash, and Restore Tests', () => {
                 testLog.info( '=== Step 5: Navigating to trash page ===');
                 
                 // Click on the trash button in the sidebar
-                cy.get(byTestId('sidebar-trash-button')).click();
+                TrashSelectors.sidebarTrashButton().click();
                 
                 // Wait for navigation
                 cy.wait(2000);
@@ -177,10 +177,10 @@ describe('Delete Page, Verify in Trash, and Restore Tests', () => {
                 testLog.info( '=== Step 6: Verifying deleted page exists in trash ===');
                 
                 // Wait for trash table to load
-                cy.get(byTestId('trash-table'), { timeout: 10000 }).should('be.visible');
+                TrashSelectors.table().should('be.visible');
                 
                 // Look for our deleted page in the trash table
-                cy.get(byTestId('trash-table-row')).then($rows => {
+                TrashSelectors.rows().then($rows => {
                     let foundPage = false;
                     
                     // Check each row for our page name
@@ -206,13 +206,13 @@ describe('Delete Page, Verify in Trash, and Restore Tests', () => {
                 // Step 7: Verify restore and permanent delete buttons are present
                 testLog.info( '=== Step 7: Verifying trash actions are available ===');
                 
-                cy.get(byTestId('trash-table-row')).first().within(() => {
+                TrashSelectors.rows().first().within(() => {
                     // Check for restore button
-                    cy.get(byTestId('trash-restore-button')).should('exist');
+                    TrashSelectors.restoreButton().should('exist');
                     testLog.info( '✓ Restore button found');
                     
                     // Check for permanent delete button
-                    cy.get(byTestId('trash-delete-button')).should('exist');
+                    TrashSelectors.deleteButton().should('exist');
                     testLog.info( '✓ Permanent delete button found');
                 });
 
@@ -223,7 +223,7 @@ describe('Delete Page, Verify in Trash, and Restore Tests', () => {
                 let restoredPageName = 'Untitled'; // Default to Untitled since that's what usually gets created
                 
                 // Click the restore button on the first row (our deleted page)
-                cy.get(byTestId('trash-table-row')).first().within(() => {
+                TrashSelectors.rows().first().within(() => {
                     // Get the page name before restoring
                     cy.get('td').first().invoke('text').then((text) => {
                         restoredPageName = text.trim() || 'Untitled';
@@ -231,7 +231,7 @@ describe('Delete Page, Verify in Trash, and Restore Tests', () => {
                     });
                 
                     // Click restore button
-                    cy.get(byTestId('trash-restore-button')).click();
+                    TrashSelectors.restoreButton().click();
                 });
                 
                 // Wait for restore to complete
@@ -242,30 +242,26 @@ describe('Delete Page, Verify in Trash, and Restore Tests', () => {
                 testLog.info( '=== Step 9: Verifying page is removed from trash ===');
                 
                 // Check if trash is now empty or doesn't contain our page
-                cy.get('body').then(($body) => {
-                    // Check if there are any rows left in trash
-                    const rowsExist = $body.find(byTestId('trash-table-row')).length > 0;
+                TrashSelectors.rows().then($rows => {
+                    const rowsExist = $rows.length > 0;
                     
                     if (!rowsExist) {
                         testLog.info( '✓ Trash is now empty - page successfully removed from trash');
                     } else {
-                        // If there are still rows, verify our page is not among them
-                        cy.get(byTestId('trash-table-row')).then($rows => {
-                            let pageStillInTrash = false;
-                            
-                            $rows.each((index, row) => {
-                                const rowText = Cypress.$(row).text();
-                                if (rowText.includes(restoredPageName)) {
-                                    pageStillInTrash = true;
-                                }
-                            });
-                            
-                            if (pageStillInTrash) {
-                                throw new Error(`Page "${restoredPageName}" is still in trash after restore`);
-                            } else {
-                                testLog.info( `✓ Page "${restoredPageName}" successfully removed from trash`);
+                        let pageStillInTrash = false;
+                        
+                        $rows.each((index, row) => {
+                            const rowText = Cypress.$(row).text();
+                            if (rowText.includes(restoredPageName)) {
+                                pageStillInTrash = true;
                             }
                         });
+                        
+                        if (pageStillInTrash) {
+                            throw new Error(`Page "${restoredPageName}" is still in trash after restore`);
+                        } else {
+                            testLog.info( `✓ Page "${restoredPageName}" successfully removed from trash`);
+                        }
                     }
                 });
 

@@ -1,5 +1,5 @@
 import { avatarTestUtils } from './avatar-test-utils';
-import { byTestId } from '../../../support/selectors';
+import { AccountSelectors } from '../../../support/selectors';
 import { testLog } from '../../../support/test-helpers';
 
 const { generateRandomEmail, setupBeforeEach, imports } = avatarTestUtils;
@@ -63,7 +63,7 @@ describe('Avatar Notifications', () => {
             testLog.info( 'Step 7: Open Account Settings to verify avatar');
             WorkspaceSelectors.dropdownTrigger().click();
             cy.wait(1000);
-            cy.get(byTestId('account-settings-button')).click();
+            AccountSelectors.settingsButton().click();
             AvatarSelectors.accountSettingsDialog().should('be.visible');
 
             testLog.info( 'Step 8: Verify avatar image uses updated URL');

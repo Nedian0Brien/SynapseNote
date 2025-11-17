@@ -1,6 +1,6 @@
 import { AuthTestUtils } from '../../support/auth-utils';
 import { TestTool } from '../../support/page-utils';
-import { PageSelectors, byTestId, waitForReactUpdate } from '../../support/selectors';
+import { PageSelectors, ModalSelectors, waitForReactUpdate } from '../../support/selectors';
 import { generateRandomEmail } from '../../support/test-config';
 import { testLog } from '../../support/test-helpers';
 
@@ -189,15 +189,15 @@ describe('More Page Actions', () => {
         testLog.info( 'Clicked Rename option');
 
         // Wait for the rename modal to appear
-        cy.get(byTestId('rename-modal-input'), { timeout: 5000 })
-            .should('be.visible')
+        ModalSelectors.renameInput()
+            .should('be.visible', { timeout: 5000 })
             .clear()
             .type(renamedPageName);
 
         testLog.info( `Entered new page name: ${renamedPageName}`);
 
         // Click the save button
-        cy.get(byTestId('rename-modal-save')).click();
+        ModalSelectors.renameSaveButton().click();
 
         testLog.info( 'Clicked save button');
 
