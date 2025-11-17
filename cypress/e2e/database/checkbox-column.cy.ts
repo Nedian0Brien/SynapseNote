@@ -1,10 +1,10 @@
+import { AuthTestUtils } from '../../support/auth-utils';
 import {
   AddPageSelectors,
-  DatabaseGridSelectors,
   CheckboxSelectors,
+  DatabaseGridSelectors,
   waitForReactUpdate
 } from '../../support/selectors';
-import { AuthTestUtils } from '../../support/auth-utils';
 import { generateRandomEmail } from '../../support/test-config';
 
 describe('Checkbox Column Type', () => {
@@ -69,6 +69,7 @@ describe('Checkbox Column Type', () => {
             cy.log('[STEP 10] No checkbox cells found, cell interaction test completed');
           }
         });
+      });
 
       cy.log('[STEP 12] Test completed successfully');
     });
