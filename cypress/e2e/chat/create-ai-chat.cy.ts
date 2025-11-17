@@ -1,20 +1,16 @@
-import { v4 as uuidv4 } from 'uuid';
 import { AuthTestUtils } from '../../support/auth-utils';
 import { TestTool } from '../../support/page-utils';
-import { PageSelectors, ModalSelectors, SidebarSelectors, waitForReactUpdate } from '../../support/selectors';
+import { AddPageSelectors, PageSelectors, ModalSelectors, SidebarSelectors, ChatSelectors, waitForReactUpdate } from '../../support/selectors';
+import { generateRandomEmail, logAppFlowyEnvironment } from '../../support/test-config';
+import { testLog } from '../../support/test-helpers';
 
 describe('AI Chat Creation and Navigation Tests', () => {
-    const APPFLOWY_BASE_URL = Cypress.env('APPFLOWY_BASE_URL');
-    const APPFLOWY_GOTRUE_BASE_URL = Cypress.env('APPFLOWY_GOTRUE_BASE_URL');
-    const generateRandomEmail = () => `${uuidv4()}@appflowy.io`;
     let testEmail: string;
     let chatName: string;
 
     before(() => {
         // Log environment configuration for debugging
-        cy.task('log', `Test Environment Configuration:
-          - APPFLOWY_BASE_URL: ${APPFLOWY_BASE_URL}
-          - APPFLOWY_GOTRUE_BASE_URL: ${APPFLOWY_GOTRUE_BASE_URL}`);
+        logAppFlowyEnvironment();
     });
 
     beforeEach(() => {
@@ -42,7 +38,7 @@ describe('AI Chat Creation and Navigation Tests', () => {
             });
 
             // Step 1: Login
-            cy.task('log', '=== Step 1: Login ===');
+            testLog.info( '=== Step 1: Login ===');
             cy.visit('/login', { failOnStatusCode: false });
             cy.wait(2000);
 
@@ -51,7 +47,7 @@ describe('AI Chat Creation and Navigation Tests', () => {
                 cy.url().should('include', '/app');
                 
                 // Wait for the app to fully load
-                cy.task('log', 'Waiting for app to fully load...');
+                testLog.info( 'Waiting for app to fully load...');
                 
                 // Wait for the loading screen to disappear and main app to appear
                 cy.get('body', { timeout: 30000 }).should('not.contain', 'Welcome!');
@@ -66,26 +62,26 @@ describe('AI Chat Creation and Navigation Tests', () => {
                 cy.wait(2000);
                 
                 // Now wait for the new page button to be available
-                cy.task('log', 'Looking for new page button...');
+                testLog.info( 'Looking for new page button...');
                 PageSelectors.newPageButton()
                     .should('exist', { timeout: 20000 })
                     .then(() => {
-                        cy.task('log', 'New page button found!');
+                        testLog.info( 'New page button found!');
                     });
 
                 // Step 2: Find a space/document that has the add button
-                cy.task('log', '=== Step 2: Finding a space/document with add button ===');
+                testLog.info( '=== Step 2: Finding a space/document with add button ===');
                 
                 // Expand the first space to see its pages
                 TestTool.expandSpace();
                 cy.wait(1000);
                 
                 // Find the first page item and hover over it to show actions
-                cy.task('log', 'Finding first page item to access add actions...');
+                testLog.info( 'Finding first page item to access add actions...');
                 
                 // Get the first page and hover to show the inline actions
                 PageSelectors.items().first().then($page => {
-                    cy.task('log', 'Hovering over first page to show action buttons...');
+                    testLog.info( 'Hovering over first page to show action buttons...');
                     
                     // Hover over the page to reveal the action buttons
                     cy.wrap($page)
@@ -96,44 +92,44 @@ describe('AI Chat Creation and Navigation Tests', () => {
                     
                     // Click the inline add button (plus icon) - use first() since there might be multiple
                     cy.wrap($page).within(() => {
-                        cy.get('[data-testid="inline-add-page"]')
+                        AddPageSelectors.inlineAddButton()
                             .first()
                             .should('be.visible')
                             .click({ force: true });
                     });
                     
-                    cy.task('log', 'Clicked inline add page button');
+                    testLog.info( 'Clicked inline add page button');
                 });
                 
                 // Wait for the dropdown menu to appear
                 cy.wait(1000);
                 
                 // Step 3: Click on AI Chat option from the dropdown
-                cy.task('log', '=== Step 3: Creating AI Chat ===');
+                testLog.info( '=== Step 3: Creating AI Chat ===');
                 
                 // Click on the AI Chat option in the dropdown
-                cy.get('[data-testid="add-ai-chat-button"]')
+                AddPageSelectors.addAIChatButton()
                     .should('be.visible')
                     .click();
                 
-                cy.task('log', 'Clicked AI Chat option from dropdown');
+                testLog.info( 'Clicked AI Chat option from dropdown');
                 
                 // Wait for navigation to the AI chat page
                 cy.wait(3000);
                 
                 // Step 4: Verify AI Chat page loaded successfully
-                cy.task('log', '=== Step 4: Verifying AI Chat page loaded ===');
+                testLog.info( '=== Step 4: Verifying AI Chat page loaded ===');
                 
                 // Check that the URL contains a view ID (indicating navigation to chat)
                 cy.url().should('match', /\/app\/[a-f0-9-]+\/[a-f0-9-]+/, { timeout: 10000 });
-                cy.task('log', '✓ Navigated to AI Chat page');
+                testLog.info( '✓ Navigated to AI Chat page');
                 
                 // Check if the AI Chat container exists (but don't fail if it doesn't load immediately)
-                cy.get('body').then($body => {
-                    if ($body.find('[data-testid="ai-chat-container"]').length > 0) {
-                        cy.task('log', '✓ AI Chat container exists');
+                ChatSelectors.aiChatContainer().then($container => {
+                    if ($container.length > 0) {
+                        testLog.info( '✓ AI Chat container exists');
                     } else {
-                        cy.task('log', 'AI Chat container not immediately visible, checking for navigation success...');
+                        testLog.info( 'AI Chat container not immediately visible, checking for navigation success...');
                     }
                 });
                 
@@ -143,15 +139,14 @@ describe('AI Chat Creation and Navigation Tests', () => {
                 // Check for AI Chat specific elements (the chat interface)
                 // The AI chat library loads its own components
                 cy.get('body').then($body => {
-                    // Check if chat interface elements exist
-                    const hasChatElements = $body.find('.ai-chat').length > 0 || 
-                                           $body.find('[data-testid="ai-chat-container"]').length > 0;
-                    
-                    if (hasChatElements) {
-                        cy.task('log', '✓ AI Chat interface loaded');
-                    } else {
-                        cy.task('log', 'Warning: AI Chat elements not immediately visible, but container exists');
-                    }
+                    ChatSelectors.aiChatContainer().then($container => {
+                        const hasChatElements = $body.find('.ai-chat').length > 0 || $container.length > 0;
+                        if (hasChatElements) {
+                            testLog.info( '✓ AI Chat interface loaded');
+                        } else {
+                            testLog.info( 'Warning: AI Chat elements not immediately visible, but container exists');
+                        }
+                    });
                 });
                 
                 // Verify no error messages are displayed
@@ -166,11 +161,11 @@ describe('AI Chat Creation and Navigation Tests', () => {
                         throw new Error('Error detected on AI Chat page');
                     }
                     
-                    cy.task('log', '✓ No errors detected on page');
+                    testLog.info( '✓ No errors detected on page');
                 });
                 
                 // Step 5: Basic verification that we're on a chat page
-                cy.task('log', '=== Step 5: Final verification ===');
+                testLog.info( '=== Step 5: Final verification ===');
                 
                 // Simply verify that:
                 // 1. We navigated to a new page (URL changed)
@@ -178,17 +173,17 @@ describe('AI Chat Creation and Navigation Tests', () => {
                 // 3. The page appears to have loaded
                 
                 cy.url().then(url => {
-                    cy.task('log', `Current URL: ${url}`);
+                    testLog.info( `Current URL: ${url}`);
                     
                     // Verify we're on a view page
                     if (url.includes('/app/') && url.split('/').length >= 5) {
-                        cy.task('log', '✓ Successfully navigated to a view page');
+                        testLog.info( '✓ Successfully navigated to a view page');
                     }
                 });
                 
                 // Final verification
-                cy.task('log', '=== Test completed successfully! ===');
-                cy.task('log', '✓✓✓ AI Chat created and opened without errors');
+                testLog.info( '=== Test completed successfully! ===');
+                testLog.info( '✓✓✓ AI Chat created and opened without errors');
             });
         });
     });

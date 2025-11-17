@@ -1,3 +1,4 @@
+import { testLog } from '../test-helpers';
 /**
  * Page actions utility functions for Cypress E2E tests
  * Contains functions for page context menu actions
@@ -18,7 +19,7 @@ import {
  * @returns Cypress chainable
  */
 export function openViewActionsPopoverForPage(pageName: string) {
-    cy.task('log', `Opening view actions popover for page: ${pageName}`);
+    testLog.info( `Opening view actions popover for page: ${pageName}`);
     
     // Find the page item by name
     const pageItem = PageSelectors.itemByName(pageName);
@@ -48,7 +49,7 @@ export function openViewActionsPopoverForPage(pageName: string) {
     cy.get('[data-slot="dropdown-menu-content"]', { timeout: 5000 })
         .should('exist');
     
-    cy.task('log', 'View actions popover opened successfully');
+    testLog.info( 'View actions popover opened successfully');
 }
 
 /**
@@ -58,7 +59,7 @@ export function openViewActionsPopoverForPage(pageName: string) {
  * @param pageName - The name of the page to delete
  */
 export function deletePageByName(pageName: string) {
-    cy.task('log', `=== Deleting page: ${pageName} ===`);
+    testLog.info( `=== Deleting page: ${pageName} ===`);
     
     // Find and hover over the page to show actions
     // Use itemByName to ensure we get the right page item
@@ -79,7 +80,7 @@ export function deletePageByName(pageName: string) {
     ViewActionSelectors.popover()
         .should('be.visible');
     
-    cy.task('log', 'View actions popover is visible, looking for delete button...');
+    testLog.info( 'View actions popover is visible, looking for delete button...');
     
     // Click delete option - look in body since it's portalled
     ViewActionSelectors.deleteButton()
@@ -87,7 +88,7 @@ export function deletePageByName(pageName: string) {
         .should('be.visible')
         .click();
     
-    cy.task('log', 'Clicked delete button, checking if confirmation is needed...');
+    testLog.info( 'Clicked delete button, checking if confirmation is needed...');
     
     waitForReactUpdate(500);
     
@@ -95,7 +96,7 @@ export function deletePageByName(pageName: string) {
     // For unpublished pages, deletion happens immediately
     cy.get('body').then(($body: JQuery<HTMLBodyElement>) => {
         if ($body.find('[data-testid="delete-page-confirm-modal"]').length > 0) {
-            cy.task('log', 'Confirmation modal appeared, clicking confirm...');
+            testLog.info( 'Confirmation modal appeared, clicking confirm...');
             
             // Confirm deletion in the confirmation dialog
             ModalSelectors.confirmDeleteButton()
@@ -103,13 +104,13 @@ export function deletePageByName(pageName: string) {
                 .should('be.visible')
                 .click();
             
-            cy.task('log', 'Clicked confirm delete button');
+            testLog.info( 'Clicked confirm delete button');
         } else {
-            cy.task('log', 'No confirmation needed (unpublished page), deletion completed');
+            testLog.info( 'No confirmation needed (unpublished page), deletion completed');
         }
     });
     
     waitForReactUpdate(1000);
     
-    cy.task('log', `✓ Page "${pageName}" deleted successfully`);
+    testLog.info( `✓ Page "${pageName}" deleted successfully`);
 }

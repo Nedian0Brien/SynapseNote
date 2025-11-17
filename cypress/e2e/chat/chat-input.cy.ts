@@ -1,19 +1,13 @@
-import { v4 as uuidv4 } from 'uuid';
 import { AuthTestUtils } from '../../support/auth-utils';
 import { TestTool } from '../../support/page-utils';
-import { PageSelectors, SidebarSelectors } from '../../support/selectors';
+import { AddPageSelectors, ModelSelectorSelectors, PageSelectors, SidebarSelectors, ChatSelectors } from '../../support/selectors';
+import { generateRandomEmail, logAppFlowyEnvironment } from '../../support/test-config';
 
 describe('Chat Input Tests', () => {
-  const APPFLOWY_BASE_URL = Cypress.env('APPFLOWY_BASE_URL');
-  const APPFLOWY_GOTRUE_BASE_URL = Cypress.env('APPFLOWY_GOTRUE_BASE_URL');
-  const generateRandomEmail = () => `${uuidv4()}@appflowy.io`;
   let testEmail: string;
 
   before(() => {
-    cy.task(
-      'log',
-      `Test Environment Configuration:\n          - APPFLOWY_BASE_URL: ${APPFLOWY_BASE_URL}\n          - APPFLOWY_GOTRUE_BASE_URL: ${APPFLOWY_GOTRUE_BASE_URL}`
-    );
+    logAppFlowyEnvironment();
   });
 
   beforeEach(() => {
@@ -54,35 +48,35 @@ describe('Chat Input Tests', () => {
 
       cy.wait(1000);
 
-      cy.get('[data-testid="inline-add-page"]').first().click({ force: true });
-      cy.get('[data-testid="add-ai-chat-button"]').should('be.visible').click();
+      AddPageSelectors.inlineAddButton().first().click({ force: true });
+      AddPageSelectors.addAIChatButton().should('be.visible').click();
 
       cy.wait(2000);
 
       // Test 1: Format toggle
       cy.log('Testing format toggle');
-      cy.get('body').then($body => {
-        if ($body.find('[data-testid="chat-format-group"]').length > 0) {
-          cy.get('[data-testid="chat-input-format-toggle"]').click();
-          cy.get('[data-testid="chat-format-group"]').should('not.exist');
+      ChatSelectors.formatGroup().then($group => {
+        if ($group.length > 0) {
+          ChatSelectors.formatToggle().click();
+          ChatSelectors.formatGroup().should('not.exist');
         }
       });
 
-      cy.get('[data-testid="chat-input-format-toggle"]').should('be.visible').click();
-      cy.get('[data-testid="chat-format-group"]').should('exist');
-      cy.get('[data-testid="chat-format-group"] button').should('have.length.at.least', 4);
-      cy.get('[data-testid="chat-input-format-toggle"]').click();
-      cy.get('[data-testid="chat-format-group"]').should('not.exist');
+      ChatSelectors.formatToggle().should('be.visible').click();
+      ChatSelectors.formatGroup().should('exist');
+      ChatSelectors.formatGroup().find('button').should('have.length.at.least', 4);
+      ChatSelectors.formatToggle().click();
+      ChatSelectors.formatGroup().should('not.exist');
 
       // Test 2: Model selector
       cy.log('Testing model selector');
-      cy.get('[data-testid="model-selector-button"]').should('be.visible').click();
-      cy.get('[data-testid^="model-option-"]').should('exist');
+      ModelSelectorSelectors.button().should('be.visible').click();
+      ModelSelectorSelectors.options().should('exist');
       cy.get('body').click(0, 0);
 
       // Test 3: Browse prompts
       cy.log('Testing browse prompts');
-      cy.get('[data-testid="chat-input-browse-prompts"]').click();
+      ChatSelectors.browsePromptsButton().click();
       cy.get('[role="dialog"]').should('exist');
       cy.get('[role="dialog"]').contains('Browse prompts').should('be.visible');
       cy.get('body').type('{esc}');
@@ -90,10 +84,10 @@ describe('Chat Input Tests', () => {
 
       // Test 4: Related views
       cy.log('Testing related views');
-      cy.get('[data-testid="chat-input-related-views"]').click();
-      cy.get('[data-testid="chat-related-views-popover"]').should('be.visible');
+      ChatSelectors.relatedViewsButton().click();
+      ChatSelectors.relatedViewsPopover().should('be.visible');
       cy.get('body').type('{esc}');
-      cy.get('[data-testid="chat-related-views-popover"]').should('not.exist');
+      ChatSelectors.relatedViewsPopover().should('not.exist');
     });
   });
 
@@ -131,8 +125,8 @@ describe('Chat Input Tests', () => {
 
       cy.wait(1000);
 
-      cy.get('[data-testid="inline-add-page"]').first().click({ force: true });
-      cy.get('[data-testid="add-ai-chat-button"]').should('be.visible').click();
+      AddPageSelectors.inlineAddButton().first().click({ force: true });
+      AddPageSelectors.addAIChatButton().should('be.visible').click();
 
       cy.wait(3000); // Wait for chat to fully load
 
@@ -210,8 +204,8 @@ describe('Chat Input Tests', () => {
       cy.wait(500);
       
       // Check send button is disabled when empty
-      cy.get('[data-testid="chat-input-send"]').should('exist');
-      cy.get('[data-testid="chat-input-send"]').then($button => {
+      ChatSelectors.sendButton().should('exist');
+      ChatSelectors.sendButton().then($button => {
         // Button might be disabled via attribute or opacity
         const isDisabled = $button.prop('disabled') || $button.css('opacity') === '0.5';
         expect(isDisabled).to.be.true;
@@ -221,7 +215,7 @@ describe('Chat Input Tests', () => {
       getTextarea().type('Test message');
       cy.wait(500);
       
-      cy.get('[data-testid="chat-input-send"]').then($button => {
+      ChatSelectors.sendButton().then($button => {
         const isDisabled = $button.prop('disabled') || $button.css('opacity') === '0.5';
         expect(isDisabled).to.be.false;
       });
@@ -231,7 +225,7 @@ describe('Chat Input Tests', () => {
       getTextarea().clear().type('Hello world');
       cy.wait(500);
       
-      cy.get('[data-testid="chat-input-send"]').click();
+      ChatSelectors.sendButton().click();
       cy.wait('@submitQuestion', { timeout: 10000 });
       
       // Wait for textarea to be ready again

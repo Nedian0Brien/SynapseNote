@@ -1,16 +1,13 @@
-import { v4 as uuidv4 } from 'uuid';
 import { AuthTestUtils } from '../../support/auth-utils';
 import {
   AddPageSelectors,
-  DatabaseGridSelectors,
   CheckboxSelectors,
-  byTestId,
+  DatabaseGridSelectors,
   waitForReactUpdate
 } from '../../support/selectors';
+import { generateRandomEmail } from '../../support/test-config';
 
 describe('Checkbox Column Type', () => {
-  const generateRandomEmail = () => `${uuidv4()}@appflowy.io`;
-
   beforeEach(() => {
     cy.on('uncaught:exception', (err) => {
       if (err.message.includes('Minified React error') ||
@@ -60,17 +57,18 @@ describe('Checkbox Column Type', () => {
       cy.log('[STEP 9] Looking for checkbox elements');
       cy.get('body').then($body => {
         // Check for checkbox cells with our data-testid
-        const checkboxCells = $body.find('[data-testid^="checkbox-cell-"]');
-        if (checkboxCells.length > 0) {
-          cy.log(`[STEP 10] Found ${checkboxCells.length} checkbox cells`);
+        CheckboxSelectors.allCheckboxCells().then($checkboxCells => {
+          if ($checkboxCells.length > 0) {
+            cy.log(`[STEP 10] Found ${$checkboxCells.length} checkbox cells`);
 
-          // Click first checkbox cell
-          CheckboxSelectors.allCheckboxCells().first().click();
-          waitForReactUpdate(500);
-          cy.log('[STEP 11] Clicked checkbox cell');
-        } else {
-          cy.log('[STEP 10] No checkbox cells found, cell interaction test completed');
-        }
+            // Click first checkbox cell
+            CheckboxSelectors.allCheckboxCells().first().click();
+            waitForReactUpdate(500);
+            cy.log('[STEP 11] Clicked checkbox cell');
+          } else {
+            cy.log('[STEP 10] No checkbox cells found, cell interaction test completed');
+          }
+        });
       });
 
       cy.log('[STEP 12] Test completed successfully');

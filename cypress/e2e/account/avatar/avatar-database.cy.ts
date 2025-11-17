@@ -1,4 +1,5 @@
 import { avatarTestUtils } from './avatar-test-utils';
+import { testLog } from '../../../support/test-helpers';
 
 const { generateRandomEmail, setupBeforeEach, imports } = avatarTestUtils;
 const { updateWorkspaceMemberAvatar, AuthTestUtils, dbUtils } = imports;
@@ -14,16 +15,16 @@ describe('Avatar Database', () => {
       const authUtils = new AuthTestUtils();
       const testAvatarUrl = 'https://api.dicebear.com/7.x/avataaars/svg?seed=db-test';
 
-      cy.task('log', 'Step 1: Visit login page');
+      testLog.info( 'Step 1: Visit login page');
       cy.visit('/login', { failOnStatusCode: false });
       cy.wait(2000);
 
-      cy.task('log', 'Step 2: Sign in with test account');
+      testLog.info( 'Step 2: Sign in with test account');
       authUtils.signInWithTestUrl(testEmail).then(() => {
         cy.url({ timeout: 30000 }).should('include', '/app');
         cy.wait(3000);
 
-        cy.task('log', 'Step 3: Set avatar via API');
+        testLog.info( 'Step 3: Set avatar via API');
         dbUtils.getCurrentWorkspaceId().then((workspaceId) => {
           expect(workspaceId).to.not.be.null;
 
@@ -33,7 +34,7 @@ describe('Avatar Database', () => {
 
           cy.wait(3000);
 
-          cy.task('log', 'Step 4: Verify avatar is stored in database');
+          testLog.info( 'Step 4: Verify avatar is stored in database');
           dbUtils.getCurrentUserUuid().then((userUuid) => {
             expect(userUuid).to.not.be.null;
 

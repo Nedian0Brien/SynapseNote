@@ -1,4 +1,6 @@
 import { avatarTestUtils } from './avatar-test-utils';
+import { AccountSelectors } from '../../../support/selectors';
+import { testLog } from '../../../support/test-helpers';
 
 const { generateRandomEmail, setupBeforeEach, imports } = avatarTestUtils;
 const { updateWorkspaceMemberAvatar, AuthTestUtils, AvatarSelectors, dbUtils, WorkspaceSelectors } = imports;
@@ -13,16 +15,16 @@ describe('Avatar Types', () => {
         const authUtils = new AuthTestUtils();
         const httpsAvatar = 'https://api.dicebear.com/7.x/avataaars/svg?seed=https';
 
-        cy.task('log', 'Step 1: Visit login page');
+        testLog.info( 'Step 1: Visit login page');
         cy.visit('/login', { failOnStatusCode: false });
         cy.wait(2000);
 
-        cy.task('log', 'Step 2: Sign in with test account');
+        testLog.info( 'Step 2: Sign in with test account');
         authUtils.signInWithTestUrl(testEmail).then(() => {
             cy.url({ timeout: 30000 }).should('include', '/app');
             cy.wait(3000);
 
-            cy.task('log', 'Step 3: Test HTTPS avatar URL');
+            testLog.info( 'Step 3: Test HTTPS avatar URL');
             dbUtils.getCurrentWorkspaceId().then((workspaceId) => {
                 expect(workspaceId).to.not.be.null;
 
@@ -36,7 +38,7 @@ describe('Avatar Types', () => {
 
                 WorkspaceSelectors.dropdownTrigger().click();
                 cy.wait(1000);
-                cy.get('[data-testid="account-settings-button"]').click();
+                AccountSelectors.settingsButton().click();
                 AvatarSelectors.accountSettingsDialog().should('be.visible');
 
                 AvatarSelectors.avatarImage().should('exist').and('have.attr', 'src', httpsAvatar);
@@ -49,16 +51,16 @@ describe('Avatar Types', () => {
         const authUtils = new AuthTestUtils();
         const emojiAvatars = ['🎨', '🚀', '⭐', '🎯'];
 
-        cy.task('log', 'Step 1: Visit login page');
+        testLog.info( 'Step 1: Visit login page');
         cy.visit('/login', { failOnStatusCode: false });
         cy.wait(2000);
 
-        cy.task('log', 'Step 2: Sign in with test account');
+        testLog.info( 'Step 2: Sign in with test account');
         authUtils.signInWithTestUrl(testEmail).then(() => {
             cy.url({ timeout: 30000 }).should('include', '/app');
             cy.wait(3000);
 
-            cy.task('log', 'Step 3: Test each emoji avatar');
+            testLog.info( 'Step 3: Test each emoji avatar');
             dbUtils.getCurrentWorkspaceId().then((workspaceId) => {
                 expect(workspaceId).to.not.be.null;
 
@@ -73,7 +75,7 @@ describe('Avatar Types', () => {
 
                     WorkspaceSelectors.dropdownTrigger().click();
                     cy.wait(1000);
-                    cy.get('[data-testid="account-settings-button"]').click();
+                    AccountSelectors.settingsButton().click();
                     AvatarSelectors.accountSettingsDialog().should('be.visible');
 
                     // Emoji should be displayed in fallback, not as image
@@ -83,4 +85,3 @@ describe('Avatar Types', () => {
         });
     });
 });
-

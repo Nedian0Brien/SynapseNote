@@ -1,5 +1,3 @@
-import { v4 as uuidv4 } from 'uuid';
-
 import { APP_EVENTS } from '../../../../src/application/constants';
 
 import { updateUserMetadata, updateWorkspaceMemberAvatar } from '../../../support/api-utils';
@@ -7,13 +5,16 @@ import { AuthTestUtils } from '../../../support/auth-utils';
 import { AvatarSelectors } from '../../../support/avatar-selectors';
 import { dbUtils } from '../../../support/db-utils';
 import { WorkspaceSelectors } from '../../../support/selectors';
+import { generateRandomEmail, getTestEnvironment } from '../../../support/test-config';
+
+const appflowyEnv = getTestEnvironment();
 
 /**
  * Shared utilities and setup for avatar tests
  */
 export const avatarTestUtils = {
-  generateRandomEmail: () => `${uuidv4()}@appflowy.io`,
-  APPFLOWY_BASE_URL: Cypress.env('APPFLOWY_BASE_URL'),
+  generateRandomEmail,
+  APPFLOWY_BASE_URL: appflowyEnv.appflowyBaseUrl,
 
   /**
    * Common beforeEach setup for avatar tests
@@ -47,4 +48,3 @@ export const avatarTestUtils = {
     WorkspaceSelectors,
   },
 };
-

@@ -1,3 +1,4 @@
+import { testLog } from '../test-helpers';
 /**
  * Modal utility functions for Cypress E2E tests
  * Contains functions for interacting with modal dialogs and popovers
@@ -11,12 +12,12 @@ import { ShareSelectors, waitForReactUpdate } from '../selectors';
  * @returns Cypress chainable
  */
 export function openSharePopover() {
-    cy.task('log', 'Opening share popover');
+    testLog.info( 'Opening share popover');
 
     // Close any modals that might be blocking the share button
     cy.get('body').then(($body: JQuery<HTMLBodyElement>) => {
         if ($body.find('[role="dialog"]').length > 0 || $body.find('.MuiDialog-container').length > 0) {
-            cy.task('log', 'Closing modal dialog before opening share popover');
+            testLog.info( 'Closing modal dialog before opening share popover');
             cy.get('body').type('{esc}');
             waitForReactUpdate(1000);
         }
@@ -33,7 +34,7 @@ export function openSharePopover() {
     // Verify popover is visible
     ShareSelectors.sharePopover().should('be.visible');
 
-    cy.task('log', 'Share popover opened successfully');
+    testLog.info( 'Share popover opened successfully');
 }
 
 /**
@@ -41,7 +42,7 @@ export function openSharePopover() {
  * Referenced in page-utils.ts
  */
 export function clickOutsideModal() {
-    cy.task('log', 'Clicking outside modal to close it');
+    testLog.info( 'Clicking outside modal to close it');
 
     // Click at the top-left corner of the page
     cy.get('body').click(0, 0);
@@ -49,5 +50,5 @@ export function clickOutsideModal() {
     // Wait for modal to close
     waitForReactUpdate(500);
 
-    cy.task('log', 'Modal closed');
+    testLog.info( 'Modal closed');
 }

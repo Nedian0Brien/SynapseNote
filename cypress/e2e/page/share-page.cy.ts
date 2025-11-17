@@ -1,18 +1,15 @@
-import { v4 as uuidv4 } from 'uuid';
 import { AuthTestUtils } from '../../support/auth-utils';
 import { TestTool } from '../../support/page-utils';
-import { PageSelectors, SidebarSelectors, waitForReactUpdate } from '../../support/selectors';
+import { PageSelectors, SidebarSelectors, ShareSelectors, waitForReactUpdate } from '../../support/selectors';
+import { generateRandomEmail, logAppFlowyEnvironment } from '../../support/test-config';
+import { testLog } from '../../support/test-helpers';
 
 describe('Share Page Test', () => {
-    const APPFLOWY_BASE_URL = Cypress.env('APPFLOWY_BASE_URL');
-    const APPFLOWY_GOTRUE_BASE_URL = Cypress.env('APPFLOWY_GOTRUE_BASE_URL');
-    const generateRandomEmail = () => `${uuidv4()}@appflowy.io`;
-
     let userAEmail: string;
     let userBEmail: string;
 
     before(() => {
-        cy.task('log', `Env:\n- APPFLOWY_BASE_URL: ${APPFLOWY_BASE_URL}\n- APPFLOWY_GOTRUE_BASE_URL: ${APPFLOWY_GOTRUE_BASE_URL}`);
+        logAppFlowyEnvironment();
     });
 
     beforeEach(() => {
@@ -35,39 +32,39 @@ describe('Share Page Test', () => {
         const authUtils = new AuthTestUtils();
         authUtils.signInWithTestUrl(userAEmail).then(() => {
             cy.url().should('include', '/app');
-            cy.task('log', 'User A signed in');
+            testLog.info( 'User A signed in');
 
             // Wait for app to fully load
-            cy.task('log', 'Waiting for app to fully load...');
+            testLog.info( 'Waiting for app to fully load...');
             SidebarSelectors.pageHeader().should('be.visible', { timeout: 30000 });
             PageSelectors.names().should('exist', { timeout: 30000 });
             cy.wait(2000);
 
             // 2. Open share popover
             TestTool.openSharePopover();
-            cy.task('log', 'Share popover opened');
+            testLog.info( 'Share popover opened');
 
             // Verify that the Share and Publish tabs are visible
             cy.contains('Share').should('exist');
             cy.contains('Publish').should('exist');
-            cy.task('log', 'Share and Publish tabs verified');
+            testLog.info( 'Share and Publish tabs verified');
 
             // 3. Make sure we're on the Share tab (click it if needed)
-            cy.get('[data-testid="share-popover"]').then(($popover) => {
+            ShareSelectors.sharePopover().then(($popover) => {
                 const hasInviteInput = $popover.find('[data-slot="email-tag-input"]').length > 0;
 
                 if (!hasInviteInput) {
-                    cy.task('log', 'Switching to Share tab');
+                    testLog.info( 'Switching to Share tab');
                     cy.contains('Share').should('exist').click({ force: true });
                     waitForReactUpdate(1000);
                 } else {
-                    cy.task('log', 'Already on Share tab');
+                    testLog.info( 'Already on Share tab');
                 }
             });
 
             // 4. Find the email input field and type user B's email
-            cy.task('log', `Inviting user B: ${userBEmail}`);
-            cy.get('[data-testid="share-popover"]').within(() => {
+            testLog.info( `Inviting user B: ${userBEmail}`);
+            ShareSelectors.sharePopover().within(() => {
                 // Find the input field inside the email-tag-input container
                 cy.get('[data-slot="email-tag-input"]')
                     .find('input[type="text"]')
@@ -90,23 +87,23 @@ describe('Share Page Test', () => {
                     .should('not.be.disabled')
                     .click({ force: true });
 
-                cy.task('log', 'Clicked Invite button');
+                testLog.info( 'Clicked Invite button');
             });
 
             // 5. Wait for the invite to be sent and user B to appear in the list
-            cy.task('log', 'Waiting for user B to appear in the people list...');
+            testLog.info( 'Waiting for user B to appear in the people list...');
             waitForReactUpdate(3000);
 
             // Verify user B appears in the "People with access" section
-            cy.get('[data-testid="share-popover"]').within(() => {
+            ShareSelectors.sharePopover().within(() => {
                 cy.contains('People with access', { timeout: 10000 }).should('be.visible');
                 cy.contains(userBEmail, { timeout: 10000 }).should('be.visible');
-                cy.task('log', 'User B successfully added to the page');
+                testLog.info( 'User B successfully added to the page');
             });
 
             // 6. Find user B's access level dropdown and click it
-            cy.task('log', 'Finding user B\'s access dropdown...');
-            cy.get('[data-testid="share-popover"]').within(() => {
+            testLog.info( 'Finding user B\'s access dropdown...');
+            ShareSelectors.sharePopover().within(() => {
                 // Find the person item containing user B's email
                 // The PersonItem component renders the email in a div with text-xs class
                 cy.contains(userBEmail)
@@ -124,13 +121,13 @@ describe('Share Page Test', () => {
                             .should('be.visible')
                             .click({ force: true });
 
-                        cy.task('log', 'Opened access level dropdown');
+                        testLog.info( 'Opened access level dropdown');
                         waitForReactUpdate(500);
                     });
             });
 
             // 7. Click "Remove access" option in the dropdown menu
-            cy.task('log', 'Clicking Remove access...');
+            testLog.info( 'Clicking Remove access...');
             // The dropdown menu has role="menu" or uses DropdownMenuContent
             cy.get('[role="menu"]', { timeout: 5000 })
                 .should('be.visible')
@@ -147,15 +144,15 @@ describe('Share Page Test', () => {
             waitForReactUpdate(3000);
 
             // 8. Verify user B is removed from the list
-            cy.task('log', 'Verifying user B is removed...');
-            cy.get('[data-testid="share-popover"]').within(() => {
+            testLog.info( 'Verifying user B is removed...');
+            ShareSelectors.sharePopover().within(() => {
                 // User B should no longer appear in the people list
                 cy.contains(userBEmail).should('not.exist');
-                cy.task('log', '✓ User B successfully removed from access list');
+                testLog.info( '✓ User B successfully removed from access list');
             });
 
             // 9. Close the share popover and verify user A still has access to the page
-            cy.task('log', 'Closing share popover and verifying page is still accessible...');
+            testLog.info( 'Closing share popover and verifying page is still accessible...');
             cy.get('body').type('{esc}');
             waitForReactUpdate(1000);
 
@@ -165,8 +162,8 @@ describe('Share Page Test', () => {
             // Verify the page content is still visible (user A should still have access)
             // Check that we can still see page elements
             cy.get('body').should('be.visible');
-            cy.task('log', '✓ User A still has access to the page after removing user B');
-            cy.task('log', 'Test completed successfully');
+            testLog.info( '✓ User A still has access to the page after removing user B');
+            testLog.info( 'Test completed successfully');
         });
     });
 
@@ -183,7 +180,7 @@ describe('Share Page Test', () => {
         const authUtils = new AuthTestUtils();
         authUtils.signInWithTestUrl(userAEmail).then(() => {
             cy.url().should('include', '/app');
-            cy.task('log', 'User A signed in');
+            testLog.info( 'User A signed in');
 
             SidebarSelectors.pageHeader().should('be.visible', { timeout: 30000 });
             PageSelectors.names().should('exist', { timeout: 30000 });
@@ -191,7 +188,7 @@ describe('Share Page Test', () => {
 
             // Invite user B first
             TestTool.openSharePopover();
-            cy.get('[data-testid="share-popover"]').then(($popover) => {
+            ShareSelectors.sharePopover().then(($popover) => {
                 const hasInviteInput = $popover.find('[data-slot="email-tag-input"]').length > 0;
                 if (!hasInviteInput) {
                     cy.contains('Share').should('exist').click({ force: true });
@@ -199,7 +196,7 @@ describe('Share Page Test', () => {
                 }
             });
 
-            cy.get('[data-testid="share-popover"]').within(() => {
+            ShareSelectors.sharePopover().within(() => {
                 cy.get('[data-slot="email-tag-input"]')
                     .find('input[type="text"]')
                     .should('be.visible')
@@ -219,7 +216,7 @@ describe('Share Page Test', () => {
             waitForReactUpdate(3000);
 
             // Verify user B is added with default "Can view" access
-            cy.get('[data-testid="share-popover"]').within(() => {
+            ShareSelectors.sharePopover().within(() => {
                 cy.contains(userBEmail, { timeout: 10000 }).should('be.visible');
                 cy.contains(userBEmail)
                     .closest('div.group')
@@ -227,12 +224,12 @@ describe('Share Page Test', () => {
                         // Should show "Can view" or "Read only" initially
                         cy.get('button').contains(/view|read/i).should('be.visible');
                     });
-                cy.task('log', 'User B added with default view access');
+                testLog.info( 'User B added with default view access');
             });
 
             // Change access level to "Can edit"
-            cy.task('log', 'Changing user B access level to "Can edit"...');
-            cy.get('[data-testid="share-popover"]').within(() => {
+            testLog.info( 'Changing user B access level to "Can edit"...');
+            ShareSelectors.sharePopover().within(() => {
                 cy.contains(userBEmail)
                     .closest('div.group')
                     .within(() => {
@@ -259,18 +256,18 @@ describe('Share Page Test', () => {
             waitForReactUpdate(3000);
 
             // Verify access level changed
-            cy.get('[data-testid="share-popover"]').within(() => {
+            ShareSelectors.sharePopover().within(() => {
                 cy.contains(userBEmail)
                     .closest('div.group')
                     .within(() => {
                         // Should now show "Can edit" or "Read and write"
                         cy.get('button').contains(/edit|write/i, { timeout: 10000 }).should('be.visible');
-                        cy.task('log', '✓ User B access level successfully changed to "Can edit"');
+                        testLog.info( '✓ User B access level successfully changed to "Can edit"');
                     });
             });
 
             cy.get('body').type('{esc}');
-            cy.task('log', 'Test completed successfully');
+            testLog.info( 'Test completed successfully');
         });
     });
 
@@ -290,14 +287,14 @@ describe('Share Page Test', () => {
         const authUtils = new AuthTestUtils();
         authUtils.signInWithTestUrl(userAEmail).then(() => {
             cy.url().should('include', '/app');
-            cy.task('log', 'User A signed in');
+            testLog.info( 'User A signed in');
 
             SidebarSelectors.pageHeader().should('be.visible', { timeout: 30000 });
             PageSelectors.names().should('exist', { timeout: 30000 });
             cy.wait(2000);
 
             TestTool.openSharePopover();
-            cy.get('[data-testid="share-popover"]').then(($popover) => {
+            ShareSelectors.sharePopover().then(($popover) => {
                 const hasInviteInput = $popover.find('[data-slot="email-tag-input"]').length > 0;
                 if (!hasInviteInput) {
                     cy.contains('Share').should('exist').click({ force: true });
@@ -306,8 +303,8 @@ describe('Share Page Test', () => {
             });
 
             // Invite multiple users
-            cy.task('log', `Inviting multiple users: ${userBEmail}, ${userCEmail}, ${userDEmail}`);
-            cy.get('[data-testid="share-popover"]').within(() => {
+            testLog.info( `Inviting multiple users: ${userBEmail}, ${userCEmail}, ${userDEmail}`);
+            ShareSelectors.sharePopover().within(() => {
                 const emails = [userBEmail, userCEmail, userDEmail];
 
                 emails.forEach((email, index) => {
@@ -333,16 +330,16 @@ describe('Share Page Test', () => {
             waitForReactUpdate(3000);
 
             // Verify all users appear in the list
-            cy.get('[data-testid="share-popover"]').within(() => {
+            ShareSelectors.sharePopover().within(() => {
                 cy.contains('People with access', { timeout: 10000 }).should('be.visible');
                 cy.contains(userBEmail, { timeout: 10000 }).should('be.visible');
                 cy.contains(userCEmail, { timeout: 10000 }).should('be.visible');
                 cy.contains(userDEmail, { timeout: 10000 }).should('be.visible');
-                cy.task('log', '✓ All users successfully added to the page');
+                testLog.info( '✓ All users successfully added to the page');
             });
 
             cy.get('body').type('{esc}');
-            cy.task('log', 'Test completed successfully');
+            testLog.info( 'Test completed successfully');
         });
     });
 
@@ -359,14 +356,14 @@ describe('Share Page Test', () => {
         const authUtils = new AuthTestUtils();
         authUtils.signInWithTestUrl(userAEmail).then(() => {
             cy.url().should('include', '/app');
-            cy.task('log', 'User A signed in');
+            testLog.info( 'User A signed in');
 
             SidebarSelectors.pageHeader().should('be.visible', { timeout: 30000 });
             PageSelectors.names().should('exist', { timeout: 30000 });
             cy.wait(2000);
 
             TestTool.openSharePopover();
-            cy.get('[data-testid="share-popover"]').then(($popover) => {
+            ShareSelectors.sharePopover().then(($popover) => {
                 const hasInviteInput = $popover.find('[data-slot="email-tag-input"]').length > 0;
                 if (!hasInviteInput) {
                     cy.contains('Share').should('exist').click({ force: true });
@@ -375,8 +372,8 @@ describe('Share Page Test', () => {
             });
 
             // Set access level to "Can edit" before inviting
-            cy.task('log', `Inviting user B with "Can edit" access level`);
-            cy.get('[data-testid="share-popover"]').within(() => {
+            testLog.info( `Inviting user B with "Can edit" access level`);
+            ShareSelectors.sharePopover().within(() => {
                 // First, find and click the access level selector (if it exists)
                 // The access level selector might be a button or dropdown near the invite input
                 // Look for access level selector button within the popover
@@ -415,16 +412,16 @@ describe('Share Page Test', () => {
             waitForReactUpdate(3000);
 
             // Verify user B is added
-            cy.get('[data-testid="share-popover"]').within(() => {
+            ShareSelectors.sharePopover().within(() => {
                 cy.contains(userBEmail, { timeout: 10000 }).should('be.visible');
-                cy.task('log', 'User B successfully invited');
+                testLog.info( 'User B successfully invited');
 
                 // Note: The actual access level verification depends on UI implementation
                 // If the access level selector works, user B should have edit access
             });
 
             cy.get('body').type('{esc}');
-            cy.task('log', 'Test completed successfully');
+            testLog.info( 'Test completed successfully');
         });
     });
 
@@ -441,14 +438,14 @@ describe('Share Page Test', () => {
         const authUtils = new AuthTestUtils();
         authUtils.signInWithTestUrl(userAEmail).then(() => {
             cy.url().should('include', '/app');
-            cy.task('log', 'User A signed in');
+            testLog.info( 'User A signed in');
 
             SidebarSelectors.pageHeader().should('be.visible', { timeout: 30000 });
             PageSelectors.names().should('exist', { timeout: 30000 });
             cy.wait(2000);
 
             TestTool.openSharePopover();
-            cy.get('[data-testid="share-popover"]').then(($popover) => {
+            ShareSelectors.sharePopover().then(($popover) => {
                 const hasInviteInput = $popover.find('[data-slot="email-tag-input"]').length > 0;
                 if (!hasInviteInput) {
                     cy.contains('Share').should('exist').click({ force: true });
@@ -457,7 +454,7 @@ describe('Share Page Test', () => {
             });
 
             // Invite user B
-            cy.get('[data-testid="share-popover"]').within(() => {
+            ShareSelectors.sharePopover().within(() => {
                 cy.get('[data-slot="email-tag-input"]')
                     .find('input[type="text"]')
                     .should('be.visible')
@@ -477,7 +474,7 @@ describe('Share Page Test', () => {
             waitForReactUpdate(3000);
 
             // Check for pending status
-            cy.get('[data-testid="share-popover"]').within(() => {
+            ShareSelectors.sharePopover().within(() => {
                 cy.contains(userBEmail, { timeout: 10000 }).should('be.visible');
 
                 // Look for "Pending" badge or text near user B's email
@@ -489,16 +486,16 @@ describe('Share Page Test', () => {
                             const groupText = $elements.text().toLowerCase();
                             const hasPending = groupText.includes('pending');
                             if (hasPending) {
-                                cy.task('log', '✓ User B shows pending status');
+                                testLog.info( '✓ User B shows pending status');
                             } else {
-                                cy.task('log', 'Note: Pending status may not be visible immediately');
+                                testLog.info( 'Note: Pending status may not be visible immediately');
                             }
                         });
                     });
             });
 
             cy.get('body').type('{esc}');
-            cy.task('log', 'Test completed successfully');
+            testLog.info( 'Test completed successfully');
         });
     });
 
@@ -517,14 +514,14 @@ describe('Share Page Test', () => {
         const authUtils = new AuthTestUtils();
         authUtils.signInWithTestUrl(userAEmail).then(() => {
             cy.url().should('include', '/app');
-            cy.task('log', 'User A signed in');
+            testLog.info( 'User A signed in');
 
             SidebarSelectors.pageHeader().should('be.visible', { timeout: 30000 });
             PageSelectors.names().should('exist', { timeout: 30000 });
             cy.wait(2000);
 
             TestTool.openSharePopover();
-            cy.get('[data-testid="share-popover"]').then(($popover) => {
+            ShareSelectors.sharePopover().then(($popover) => {
                 const hasInviteInput = $popover.find('[data-slot="email-tag-input"]').length > 0;
                 if (!hasInviteInput) {
                     cy.contains('Share').should('exist').click({ force: true });
@@ -533,8 +530,8 @@ describe('Share Page Test', () => {
             });
 
             // Invite two users
-            cy.task('log', `Inviting users: ${userBEmail}, ${userCEmail}`);
-            cy.get('[data-testid="share-popover"]').within(() => {
+            testLog.info( `Inviting users: ${userBEmail}, ${userCEmail}`);
+            ShareSelectors.sharePopover().within(() => {
                 [userBEmail, userCEmail].forEach((email) => {
                     cy.get('[data-slot="email-tag-input"]')
                         .find('input[type="text"]')
@@ -557,15 +554,15 @@ describe('Share Page Test', () => {
             waitForReactUpdate(3000);
 
             // Verify both users are added
-            cy.get('[data-testid="share-popover"]').within(() => {
+            ShareSelectors.sharePopover().within(() => {
                 cy.contains(userBEmail, { timeout: 10000 }).should('be.visible');
                 cy.contains(userCEmail, { timeout: 10000 }).should('be.visible');
-                cy.task('log', 'Both users added successfully');
+                testLog.info( 'Both users added successfully');
             });
 
             // Remove user B's access
-            cy.task('log', 'Removing user B access...');
-            cy.get('[data-testid="share-popover"]').within(() => {
+            testLog.info( 'Removing user B access...');
+            ShareSelectors.sharePopover().within(() => {
                 cy.contains(userBEmail)
                     .closest('div.group')
                     .within(() => {
@@ -591,15 +588,15 @@ describe('Share Page Test', () => {
             waitForReactUpdate(3000);
 
             // Verify user B is removed but user C still exists
-            cy.get('[data-testid="share-popover"]').within(() => {
+            ShareSelectors.sharePopover().within(() => {
                 cy.contains(userBEmail).should('not.exist');
                 cy.contains(userCEmail).should('be.visible');
-                cy.task('log', '✓ User B removed, User C still has access');
+                testLog.info( '✓ User B removed, User C still has access');
             });
 
             // Remove user C's access
-            cy.task('log', 'Removing user C access...');
-            cy.get('[data-testid="share-popover"]').within(() => {
+            testLog.info( 'Removing user C access...');
+            ShareSelectors.sharePopover().within(() => {
                 cy.contains(userCEmail)
                     .closest('div.group')
                     .within(() => {
@@ -625,10 +622,10 @@ describe('Share Page Test', () => {
             waitForReactUpdate(3000);
 
             // Verify both users are removed
-            cy.get('[data-testid="share-popover"]').within(() => {
+            ShareSelectors.sharePopover().within(() => {
                 cy.contains(userBEmail).should('not.exist');
                 cy.contains(userCEmail).should('not.exist');
-                cy.task('log', '✓ Both users successfully removed');
+                testLog.info( '✓ Both users successfully removed');
             });
 
             // Verify user A still has access
@@ -636,8 +633,8 @@ describe('Share Page Test', () => {
             waitForReactUpdate(1000);
             cy.url().should('include', '/app');
             cy.get('body').should('be.visible');
-            cy.task('log', '✓ User A still has access after removing all guests');
-            cy.task('log', 'Test completed successfully');
+            testLog.info( '✓ User A still has access after removing all guests');
+            testLog.info( 'Test completed successfully');
         });
     });
 
@@ -654,7 +651,7 @@ describe('Share Page Test', () => {
         const authUtils = new AuthTestUtils();
         authUtils.signInWithTestUrl(userAEmail).then(() => {
             cy.url().should('include', '/app');
-            cy.task('log', 'User A signed in');
+            testLog.info( 'User A signed in');
 
             SidebarSelectors.pageHeader().should('be.visible', { timeout: 30000 });
             PageSelectors.names().should('exist', { timeout: 30000 });
@@ -662,12 +659,12 @@ describe('Share Page Test', () => {
 
             // Get the current page URL to verify we stay on it
             cy.url().then((initialUrl) => {
-                cy.task('log', `Initial URL: ${initialUrl}`);
+                testLog.info( `Initial URL: ${initialUrl}`);
 
                 TestTool.openSharePopover();
-                cy.task('log', 'Share popover opened');
+                testLog.info( 'Share popover opened');
 
-                cy.get('[data-testid="share-popover"]').then(($popover) => {
+                ShareSelectors.sharePopover().then(($popover) => {
                     const hasInviteInput = $popover.find('[data-slot="email-tag-input"]').length > 0;
                     if (!hasInviteInput) {
                         cy.contains('Share').should('exist').click({ force: true });
@@ -676,8 +673,8 @@ describe('Share Page Test', () => {
                 });
 
                 // Invite user B
-                cy.task('log', `Inviting user B: ${userBEmail}`);
-                cy.get('[data-testid="share-popover"]').within(() => {
+                testLog.info( `Inviting user B: ${userBEmail}`);
+                ShareSelectors.sharePopover().within(() => {
                     cy.get('[data-slot="email-tag-input"]')
                         .find('input[type="text"]')
                         .should('be.visible')
@@ -697,15 +694,15 @@ describe('Share Page Test', () => {
                 waitForReactUpdate(3000);
 
                 // Verify user B is added
-                cy.get('[data-testid="share-popover"]').within(() => {
+                ShareSelectors.sharePopover().within(() => {
                     cy.contains('People with access', { timeout: 10000 }).should('be.visible');
                     cy.contains(userBEmail, { timeout: 10000 }).should('be.visible');
-                    cy.task('log', 'User B successfully added');
+                    testLog.info( 'User B successfully added');
                 });
 
                 // Remove user B's access (NOT user A's own access)
-                cy.task('log', 'Removing user B\'s access (NOT user A\'s own access)...');
-                cy.get('[data-testid="share-popover"]').within(() => {
+                testLog.info( 'Removing user B\'s access (NOT user A\'s own access)...');
+                ShareSelectors.sharePopover().within(() => {
                     cy.contains(userBEmail)
                         .should('be.visible')
                         .closest('div.group')
@@ -733,16 +730,16 @@ describe('Share Page Test', () => {
                 waitForReactUpdate(3000);
 
                 // Verify user B is removed
-                cy.get('[data-testid="share-popover"]').within(() => {
+                ShareSelectors.sharePopover().within(() => {
                     cy.contains(userBEmail).should('not.exist');
-                    cy.task('log', '✓ User B removed');
+                    testLog.info( '✓ User B removed');
                 });
 
                 // CRITICAL: Verify we're still on the SAME page URL (no navigation happened)
                 cy.url().should('eq', initialUrl);
-                cy.task('log', `✓ URL unchanged: ${initialUrl}`);
-                cy.task('log', '✓ Navigation did NOT occur when removing another user\'s access');
-                cy.task('log', '✓ Fix verified: No navigation when removing someone else\'s access');
+                testLog.info( `✓ URL unchanged: ${initialUrl}`);
+                testLog.info( '✓ Navigation did NOT occur when removing another user\'s access');
+                testLog.info( '✓ Fix verified: No navigation when removing someone else\'s access');
             });
         });
     });
@@ -763,7 +760,7 @@ describe('Share Page Test', () => {
         const authUtils = new AuthTestUtils();
         authUtils.signInWithTestUrl(userAEmail).then(() => {
             cy.url().should('include', '/app');
-            cy.task('log', 'User A signed in');
+            testLog.info( 'User A signed in');
 
             SidebarSelectors.pageHeader().should('be.visible', { timeout: 30000 });
             PageSelectors.names().should('exist', { timeout: 30000 });
@@ -771,12 +768,12 @@ describe('Share Page Test', () => {
 
             // Get the current page URL to verify we stay on it
             cy.url().then((initialUrl) => {
-                cy.task('log', `Initial URL: ${initialUrl}`);
+                testLog.info( `Initial URL: ${initialUrl}`);
 
                 TestTool.openSharePopover();
-                cy.task('log', 'Share popover opened');
+                testLog.info( 'Share popover opened');
 
-                cy.get('[data-testid="share-popover"]').then(($popover) => {
+                ShareSelectors.sharePopover().then(($popover) => {
                     const hasInviteInput = $popover.find('[data-slot="email-tag-input"]').length > 0;
                     if (!hasInviteInput) {
                         cy.contains('Share').should('exist').click({ force: true });
@@ -785,8 +782,8 @@ describe('Share Page Test', () => {
                 });
 
                 // Invite user B
-                cy.task('log', `Inviting user B: ${userBEmail}`);
-                cy.get('[data-testid="share-popover"]').within(() => {
+                testLog.info( `Inviting user B: ${userBEmail}`);
+                ShareSelectors.sharePopover().within(() => {
                     cy.get('[data-slot="email-tag-input"]')
                         .find('input[type="text"]')
                         .should('be.visible')
@@ -806,19 +803,19 @@ describe('Share Page Test', () => {
                 waitForReactUpdate(3000);
 
                 // Verify user B is added
-                cy.get('[data-testid="share-popover"]').within(() => {
+                ShareSelectors.sharePopover().within(() => {
                     cy.contains('People with access', { timeout: 10000 }).should('be.visible');
                     cy.contains(userBEmail, { timeout: 10000 }).should('be.visible');
-                    cy.task('log', 'User B successfully added');
+                    testLog.info( 'User B successfully added');
                 });
 
                 // Record time before removal to verify outline refresh timing
                 const startTime = Date.now();
-                cy.task('log', `Start time: ${startTime}`);
+                testLog.info( `Start time: ${startTime}`);
 
                 // Remove user B's access (NOT user A's own access)
-                cy.task('log', 'Removing user B\'s access (verifying outline refresh mechanism)...');
-                cy.get('[data-testid="share-popover"]').within(() => {
+                testLog.info( 'Removing user B\'s access (verifying outline refresh mechanism)...');
+                ShareSelectors.sharePopover().within(() => {
                     cy.contains(userBEmail)
                         .should('be.visible')
                         .closest('div.group')
@@ -849,22 +846,21 @@ describe('Share Page Test', () => {
 
                 const endTime = Date.now();
                 const elapsed = endTime - startTime;
-                cy.task('log', `End time: ${endTime}, Elapsed: ${elapsed}ms`);
+                testLog.info( `End time: ${endTime}, Elapsed: ${elapsed}ms`);
 
                 // Verify user B is removed
-                cy.get('[data-testid="share-popover"]').within(() => {
+                ShareSelectors.sharePopover().within(() => {
                     cy.contains(userBEmail).should('not.exist');
-                    cy.task('log', '✓ User B removed');
+                    testLog.info( '✓ User B removed');
                 });
 
                 // CRITICAL: Verify we're still on the SAME page URL (no navigation happened)
                 cy.url().should('eq', initialUrl);
-                cy.task('log', `✓ URL unchanged: ${initialUrl}`);
-                cy.task('log', '✓ Navigation did NOT occur when removing another user\'s access');
-                cy.task('log', '✓ Outline refresh mechanism verified - fix working correctly');
-                cy.task('log', `✓ Operation completed in ${elapsed}ms (includes outline refresh time)`);
+                testLog.info( `✓ URL unchanged: ${initialUrl}`);
+                testLog.info( '✓ Navigation did NOT occur when removing another user\'s access');
+                testLog.info( '✓ Outline refresh mechanism verified - fix working correctly');
+                testLog.info( `✓ Operation completed in ${elapsed}ms (includes outline refresh time)`);
             });
         });
     });
 });
-

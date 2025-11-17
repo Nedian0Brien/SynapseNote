@@ -1,9 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
+import { TestConfig, generateRandomEmail } from '../../support/test-config';
+import { AuthSelectors } from '../../support/selectors';
 
 describe('Password Login Flow', () => {
-  const baseUrl = Cypress.config('baseUrl') || 'http://localhost:3000';
-  const gotrueUrl = Cypress.env('APPFLOWY_GOTRUE_BASE_URL') || 'http://localhost/gotrue';
-  const apiUrl = Cypress.env('APPFLOWY_BASE_URL') || 'http://localhost';
+  const { baseUrl, gotrueUrl, apiUrl } = TestConfig;
 
   beforeEach(() => {
     // Handle uncaught exceptions
@@ -33,7 +33,7 @@ describe('Password Login Flow', () => {
     });
 
     it('should allow entering email and navigating to password page', () => {
-      const testEmail = `test-${uuidv4()}@appflowy.io`;
+      const testEmail = generateRandomEmail();
 
       cy.log(`[TEST START] Testing email entry with: ${testEmail}`);
 
@@ -65,7 +65,7 @@ describe('Password Login Flow', () => {
 
   describe('Successful Authentication', () => {
     it('should successfully login with email and password', () => {
-      const testEmail = `test-${uuidv4()}@appflowy.io`;
+      const testEmail = generateRandomEmail();
       const testPassword = 'SecurePassword123!';
       const mockAccessToken = 'mock-access-token-' + uuidv4();
       const mockRefreshToken = 'mock-refresh-token-' + uuidv4();
@@ -105,12 +105,12 @@ describe('Password Login Flow', () => {
 
       // Enter email
       cy.log('[STEP 2] Entering email address');
-      cy.get('[data-testid="login-email-input"]').should('be.visible').type(testEmail);
+      AuthSelectors.emailInput().should('be.visible').type(testEmail);
       cy.wait(500);
 
       // Click on "Sign in with password" button
       cy.log('[STEP 3] Clicking sign in with password button');
-      cy.get('[data-testid="login-password-button"]').should('be.visible').click();
+      AuthSelectors.passwordSignInButton().should('be.visible').click();
       cy.wait(1000);
 
       // Verify we're on the password page
@@ -120,12 +120,12 @@ describe('Password Login Flow', () => {
 
       // Enter password
       cy.log('[STEP 5] Entering password');
-      cy.get('[data-testid="password-input"]').should('be.visible').type(testPassword);
+      AuthSelectors.passwordInput().should('be.visible').type(testPassword);
       cy.wait(500);
 
       // Submit password
       cy.log('[STEP 6] Submitting password for authentication');
-      cy.get('[data-testid="password-submit-button"]').should('be.visible').click();
+      AuthSelectors.passwordSubmitButton().should('be.visible').click();
 
       // Wait for API calls
       cy.log('[STEP 7] Waiting for authentication API calls');
@@ -142,7 +142,7 @@ describe('Password Login Flow', () => {
     });
 
     it('should handle login with mock API using flexible selectors', () => {
-      const testEmail = `test-${uuidv4()}@appflowy.io`;
+      const testEmail = generateRandomEmail();
       const testPassword = 'TestPassword123!';
       const mockAccessToken = 'mock-token-' + uuidv4();
 
@@ -236,14 +236,14 @@ describe('Password Login Flow', () => {
 
       // Enter email and go to password page
       cy.log('[STEP 2] Entering email and navigating to password page');
-      cy.get('[data-testid="login-email-input"]').type(testEmail);
-      cy.get('[data-testid="login-password-button"]').click();
+      AuthSelectors.emailInput().type(testEmail);
+      AuthSelectors.passwordSignInButton().click();
       cy.wait(1000);
 
       // Enter wrong password
       cy.log('[STEP 3] Entering incorrect password');
-      cy.get('[data-testid="password-input"]').type(wrongPassword);
-      cy.get('[data-testid="password-submit-button"]').click();
+      AuthSelectors.passwordInput().type(wrongPassword);
+      AuthSelectors.passwordSubmitButton().click();
 
       // Wait for failed API call
       cy.log('[STEP 4] Waiting for authentication to fail');
@@ -282,14 +282,14 @@ describe('Password Login Flow', () => {
 
       // Enter credentials
       cy.log('[STEP 2] Entering email and navigating to password page');
-      cy.get('[data-testid="login-email-input"]').type(testEmail);
-      cy.get('[data-testid="login-password-button"]').click();
+      AuthSelectors.emailInput().type(testEmail);
+      AuthSelectors.passwordSignInButton().click();
       cy.wait(1000);
 
       // Enter password and submit
       cy.log('[STEP 3] Entering password and submitting');
-      cy.get('[data-testid="password-input"]').type(testPassword);
-      cy.get('[data-testid="password-submit-button"]').click();
+      AuthSelectors.passwordInput().type(testPassword);
+      AuthSelectors.passwordSubmitButton().click();
 
       // Wait for network error
       cy.log('[STEP 4] Waiting for network error');
@@ -301,8 +301,8 @@ describe('Password Login Flow', () => {
 
       // Verify user can retry
       cy.log('[STEP 6] Verifying retry is possible');
-      cy.get('[data-testid="password-input"]').should('be.visible');
-      cy.get('[data-testid="password-submit-button"]').should('be.visible');
+      AuthSelectors.passwordInput().should('be.visible');
+      AuthSelectors.passwordSubmitButton().should('be.visible');
 
       cy.log('[STEP 7] Network error test completed successfully');
     });
@@ -321,11 +321,11 @@ describe('Password Login Flow', () => {
 
       // Enter email
       cy.log('[STEP 2] Entering email');
-      cy.get('[data-testid="login-email-input"]').type(testEmail);
+      AuthSelectors.emailInput().type(testEmail);
 
       // Navigate to password page
       cy.log('[STEP 3] Navigating to password page');
-      cy.get('[data-testid="login-password-button"]').click();
+      AuthSelectors.passwordSignInButton().click();
       cy.wait(1000);
 
       // Verify on password page
@@ -341,7 +341,7 @@ describe('Password Login Flow', () => {
       // Verify back on main login page
       cy.log('[STEP 6] Verifying back on main login page');
       cy.url().should('not.include', 'action=');
-      cy.get('[data-testid="login-email-input"]').should('be.visible');
+      AuthSelectors.emailInput().should('be.visible');
 
       cy.log('[STEP 7] Navigation test completed successfully');
     });

@@ -1,9 +1,9 @@
-import { v4 as uuidv4 } from 'uuid';
 import { AuthTestUtils } from '../../support/auth-utils';
 import { PageSelectors, SidebarSelectors } from '../../support/selectors';
+import { generateRandomEmail } from '../../support/test-config';
+import { testLog } from '../../support/test-helpers';
 
 describe('Sidebar Components Resilience Tests', () => {
-    const generateRandomEmail = () => `${uuidv4()}@appflowy.io`;
     let testEmail: string;
 
     beforeEach(() => {
@@ -35,10 +35,10 @@ describe('Sidebar Components Resilience Tests', () => {
         const authUtils = new AuthTestUtils();
         authUtils.signInWithTestUrl(testEmail).then(() => {
             cy.url().should('include', '/app');
-            cy.task('log', 'Signed in successfully');
+            testLog.info( 'Signed in successfully');
 
             // Wait for app to fully load
-            cy.task('log', 'Waiting for app to fully load...');
+            testLog.info( 'Waiting for app to fully load...');
             SidebarSelectors.pageHeader().should('be.visible', { timeout: 30000 });
             PageSelectors.names().should('exist', { timeout: 30000 });
             cy.wait(3000);
@@ -56,9 +56,9 @@ describe('Sidebar Components Resilience Tests', () => {
                 });
 
                 if (errorBoundaryLogs.length > 0) {
-                    cy.task('log', `Found ${errorBoundaryLogs.length} React error boundary logs`);
+                    testLog.info( `Found ${errorBoundaryLogs.length} React error boundary logs`);
                     errorBoundaryLogs.forEach((log: any) => {
-                        cy.task('log', `Error boundary log: ${JSON.stringify(log.args)}`);
+                        testLog.info( `Error boundary log: ${JSON.stringify(log.args)}`);
                     });
                 }
 
@@ -67,13 +67,13 @@ describe('Sidebar Components Resilience Tests', () => {
             });
 
             // Verify sidebar is visible and functional
-            cy.task('log', 'Verifying sidebar is visible and functional');
+            testLog.info( 'Verifying sidebar is visible and functional');
             SidebarSelectors.pageHeader().should('be.visible');
 
             // Verify we can interact with the sidebar without errors
             PageSelectors.items().should('exist');
 
-            cy.task('log', 'Sidebar components loaded successfully without errors');
+            testLog.info( 'Sidebar components loaded successfully without errors');
         });
     });
 
@@ -102,7 +102,7 @@ describe('Sidebar Components Resilience Tests', () => {
                 expect(favoriteErrors.length).to.equal(0, 'Favorite component should handle empty state gracefully');
             });
 
-            cy.task('log', 'App handles empty favorites state correctly');
+            testLog.info( 'App handles empty favorites state correctly');
         });
     });
 
@@ -134,7 +134,7 @@ describe('Sidebar Components Resilience Tests', () => {
                 expect(shareWithMeErrors.length).to.equal(0, 'ShareWithMe component should handle empty state gracefully');
             });
 
-            cy.task('log', 'App handles ShareWithMe with no shared content correctly');
+            testLog.info( 'App handles ShareWithMe with no shared content correctly');
         });
     });
 
@@ -168,7 +168,7 @@ describe('Sidebar Components Resilience Tests', () => {
                 expect(outlineErrors.length).to.equal(0, 'Components should handle invalid outline data gracefully');
             });
 
-            cy.task('log', 'App handles invalid outline data correctly');
+            testLog.info( 'App handles invalid outline data correctly');
         });
     });
 
@@ -202,8 +202,7 @@ describe('Sidebar Components Resilience Tests', () => {
                 expect(dateErrors.length).to.equal(0, 'Favorite component should handle invalid dates gracefully');
             });
 
-            cy.task('log', 'App handles invalid favorite dates correctly');
+            testLog.info( 'App handles invalid favorite dates correctly');
         });
     });
 });
-

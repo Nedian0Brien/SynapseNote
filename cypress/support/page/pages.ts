@@ -1,3 +1,4 @@
+import { testLog } from '../test-helpers';
 /**
  * Page management utility functions for Cypress E2E tests
  * Contains functions for interacting with pages in the sidebar
@@ -12,7 +13,7 @@ import { PageSelectors, waitForReactUpdate } from '../selectors';
  * @returns Cypress chainable element
  */
 export function getPageByName(pageName: string) {
-    cy.task('log', `Getting page by name: ${pageName}`);
+    testLog.info( `Getting page by name: ${pageName}`);
     return PageSelectors.itemByName(pageName);
 }
 
@@ -22,7 +23,7 @@ export function getPageByName(pageName: string) {
  * @returns Cypress chainable element
  */
 export function getPageTitleInput() {
-    cy.task('log', 'Getting page title input element');
+    testLog.info( 'Getting page title input element');
     return PageSelectors.titleInput().first();
 }
 
@@ -31,7 +32,7 @@ export function getPageTitleInput() {
  * Used in more-page-action.cy.ts after editing page titles
  */
 export function savePageTitle() {
-    cy.task('log', 'Saving page title');
+    testLog.info( 'Saving page title');
     cy.focused().type('{enter}');
     waitForReactUpdate(1000); // Wait for save to complete
 }
@@ -42,7 +43,7 @@ export function savePageTitle() {
  * @param pageName - The name of the page
  */
 export function openPageMoreActions(pageName: string) {
-    cy.task('log', `Opening more actions for page: ${pageName}`);
+    testLog.info( `Opening more actions for page: ${pageName}`);
     
     // Find the page and trigger hover to show actions
     PageSelectors.nameContaining(pageName)

@@ -11,6 +11,17 @@ export function byTestId(id: string): string {
 }
 
 /**
+ * Helper for selectors that match data-testid prefixes or substrings
+ */
+export function byTestIdPrefix(prefix: string): string {
+  return `[data-testid^="${prefix}"]`;
+}
+
+export function byTestIdContains(fragment: string): string {
+  return `[data-testid*="${fragment}"]`;
+}
+
+/**
  * Page-related selectors
  */
 export const PageSelectors = {
@@ -70,6 +81,19 @@ export const SpaceSelectors = {
 
   // Get more actions button for spaces
   moreActionsButton: () => cy.get(byTestId('inline-more-actions')),
+
+  // New space creation controls
+  createNewSpaceButton: () => cy.get(byTestId('create-new-space-button')),
+  createSpaceModal: () => cy.get(byTestId('create-space-modal')),
+  spaceNameInput: () => cy.get(byTestId('space-name-input')),
+};
+
+/**
+ * Breadcrumb selectors
+ */
+export const BreadcrumbSelectors = {
+  navigation: () => cy.get(byTestId('breadcrumb-navigation')),
+  items: () => cy.get(byTestIdContains('breadcrumb-item-')),
 };
 
 /**
@@ -113,6 +137,13 @@ export const ModalSelectors = {
 
   // Get space item in modal
   spaceItemInModal: () => cy.get(byTestId('space-item')),
+
+  // Generic modal accept/ok button
+  okButton: () => cy.get(byTestId('modal-ok-button')),
+
+  // Rename modal inputs
+  renameInput: () => cy.get(byTestId('rename-modal-input')),
+  renameSaveButton: () => cy.get(byTestId('rename-modal-save')),
 };
 
 /**
@@ -142,6 +173,10 @@ export const ShareSelectors = {
 
   // Publish URL input
   publishUrlInput: () => cy.get(byTestId('publish-url-input')),
+
+  // Publish namespace and name inputs
+  publishNamespace: () => cy.get(byTestId('publish-namespace')),
+  publishNameInput: () => cy.get(byTestId('publish-name-input')),
 
   // Page settings button
   pageSettingsButton: () => cy.get(byTestId('page-settings-button')),
@@ -191,6 +226,17 @@ export const SidebarSelectors = {
 };
 
 /**
+ * Trash view selectors
+ */
+export const TrashSelectors = {
+  sidebarTrashButton: () => cy.get(byTestId('sidebar-trash-button')),
+  table: () => cy.get(byTestId('trash-table')),
+  rows: () => cy.get(byTestId('trash-table-row')),
+  restoreButton: () => cy.get(byTestId('trash-restore-button')),
+  deleteButton: () => cy.get(byTestId('trash-delete-button')),
+};
+
+/**
  * Chat Model Selector-related selectors
  * Used for testing AI model selection in chat interface
  */
@@ -209,6 +255,19 @@ export const ModelSelectorSelectors = {
 
   // Get selected model option (has the selected class)
   selectedOption: () => cy.get('[data-testid^="model-option-"]').filter('.bg-fill-content-select'),
+};
+
+/**
+ * Chat UI selectors
+ */
+export const ChatSelectors = {
+  aiChatContainer: () => cy.get(byTestId('ai-chat-container')),
+  formatToggle: () => cy.get(byTestId('chat-input-format-toggle')),
+  formatGroup: () => cy.get(byTestId('chat-format-group')),
+  browsePromptsButton: () => cy.get(byTestId('chat-input-browse-prompts')),
+  relatedViewsButton: () => cy.get(byTestId('chat-input-related-views')),
+  relatedViewsPopover: () => cy.get(byTestId('chat-related-views-popover')),
+  sendButton: () => cy.get(byTestId('chat-input-send')),
 };
 
 /**
@@ -417,6 +476,10 @@ export const RowControlsSelectors = {
 export const AuthSelectors = {
   // Login page elements
   emailInput: () => cy.get(byTestId('login-email-input')),
+  magicLinkButton: () => cy.get(byTestId('login-magic-link-button')),
+  enterCodeManuallyButton: () => cy.get(byTestId('enter-code-manually-button')),
+  otpCodeInput: () => cy.get(byTestId('otp-code-input')),
+  otpSubmitButton: () => cy.get(byTestId('otp-submit-button')),
 
   // Password sign-in button
   passwordSignInButton: () => cy.get(byTestId('login-password-button')),
@@ -428,6 +491,27 @@ export const AuthSelectors = {
   // Logout elements
   logoutMenuItem: () => cy.get(byTestId('logout-menu-item')),
   logoutConfirmButton: () => cy.get(byTestId('logout-confirm-button')),
+};
+
+/**
+ * Account settings selectors
+ */
+export const AccountSelectors = {
+  settingsButton: () => cy.get(byTestId('account-settings-button')),
+  settingsDialog: () => cy.get(byTestId('account-settings-dialog')),
+  dateFormatDropdown: () => cy.get(byTestId('date-format-dropdown')),
+  dateFormatOptionYearMonthDay: () => cy.get(byTestId('date-format-1')),
+  timeFormatDropdown: () => cy.get(byTestId('time-format-dropdown')),
+  timeFormatOption24: () => cy.get(byTestId('time-format-1')),
+  startWeekDropdown: () => cy.get(byTestId('start-week-on-dropdown')),
+  startWeekMonday: () => cy.get(byTestId('start-week-1')),
+};
+
+/**
+ * Avatar display selectors
+ */
+export const AvatarUiSelectors = {
+  image: () => cy.get(byTestId('avatar-image')),
 };
 
 export function waitForReactUpdate(ms: number = 500) {

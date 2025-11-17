@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import { TestConfig, generateRandomEmail } from '../../support/test-config';
 
 /**
  * OAuth Login Flow Tests
@@ -19,9 +20,7 @@ import { v4 as uuidv4 } from 'uuid';
  * - Context initialization timing
  */
 describe('OAuth Login Flow', () => {
-    const baseUrl = Cypress.config('baseUrl') || 'http://localhost:3000';
-    const gotrueUrl = Cypress.env('APPFLOWY_GOTRUE_BASE_URL') || 'http://localhost/gotrue';
-    const apiUrl = Cypress.env('APPFLOWY_BASE_URL') || 'http://localhost';
+    const { baseUrl, gotrueUrl, apiUrl } = TestConfig;
 
     beforeEach(() => {
         // Handle uncaught exceptions
@@ -46,7 +45,7 @@ describe('OAuth Login Flow', () => {
 
     describe('Google OAuth Login - New User', () => {
         it('should complete OAuth login for new user without redirect loop', () => {
-            const testEmail = `oauth-test-${uuidv4()}@appflowy.io`;
+            const testEmail = generateRandomEmail();
             const mockAccessToken = 'mock-oauth-access-token-' + uuidv4();
             const mockRefreshToken = 'mock-oauth-refresh-token-' + uuidv4();
             const mockUserId = uuidv4();
@@ -204,7 +203,7 @@ describe('OAuth Login Flow', () => {
 
     describe('Google OAuth Login - Existing User', () => {
         it('should complete OAuth login for existing user without redirect loop', () => {
-            const testEmail = `oauth-existing-${uuidv4()}@appflowy.io`;
+            const testEmail = generateRandomEmail();
             const mockAccessToken = 'mock-oauth-access-token-existing-' + uuidv4();
             const mockRefreshToken = 'mock-oauth-refresh-token-existing-' + uuidv4();
             const mockUserId = uuidv4();
@@ -673,4 +672,3 @@ describe('OAuth Login Flow', () => {
         });
     });
 });
-

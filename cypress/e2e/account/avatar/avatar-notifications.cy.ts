@@ -1,4 +1,6 @@
 import { avatarTestUtils } from './avatar-test-utils';
+import { AccountSelectors } from '../../../support/selectors';
+import { testLog } from '../../../support/test-helpers';
 
 const { generateRandomEmail, setupBeforeEach, imports } = avatarTestUtils;
 const { APP_EVENTS, updateWorkspaceMemberAvatar, AuthTestUtils, AvatarSelectors, dbUtils, WorkspaceSelectors } = imports;
@@ -14,23 +16,23 @@ describe('Avatar Notifications', () => {
       const authUtils = new AuthTestUtils();
       const testAvatarUrl = 'https://api.dicebear.com/7.x/avataaars/svg?seed=notification-test';
 
-      cy.task('log', 'Step 1: Visit login page');
+      testLog.info( 'Step 1: Visit login page');
       cy.visit('/login', { failOnStatusCode: false });
       cy.wait(2000);
 
-      cy.task('log', 'Step 2: Sign in with test account');
+      testLog.info( 'Step 2: Sign in with test account');
       authUtils.signInWithTestUrl(testEmail).then(() => {
         cy.url({ timeout: 30000 }).should('include', '/app');
         cy.wait(3000);
 
-        cy.task('log', 'Step 3: Get user UUID and workspace ID');
+        testLog.info( 'Step 3: Get user UUID and workspace ID');
         dbUtils.getCurrentWorkspaceId().then((workspaceId) => {
           expect(workspaceId).to.not.be.null;
 
           dbUtils.getCurrentUserUuid().then((userUuid) => {
             expect(userUuid).to.not.be.null;
 
-            cy.task('log', 'Step 4: Simulate workspace member profile changed notification');
+            testLog.info( 'Step 4: Simulate workspace member profile changed notification');
             cy.window().then((win) => {
               const emitter = (win as typeof window & {
                 __APPFLOWY_EVENT_EMITTER__?: { emit: (...args: unknown[]) => void };
@@ -48,23 +50,23 @@ describe('Avatar Notifications', () => {
 
             cy.wait(2000);
 
-            cy.task('log', 'Step 5: Verify avatar is updated in database');
+            testLog.info( 'Step 5: Verify avatar is updated in database');
             dbUtils.getWorkspaceMemberProfile(workspaceId!, userUuid!).then((profile) => {
               expect(profile).to.not.be.null;
               expect(profile?.avatar_url).to.equal(testAvatarUrl);
             });
 
-            cy.task('log', 'Step 6: Reload page and verify avatar persists');
+            testLog.info( 'Step 6: Reload page and verify avatar persists');
             cy.reload();
             cy.wait(3000);
 
-            cy.task('log', 'Step 7: Open Account Settings to verify avatar');
+            testLog.info( 'Step 7: Open Account Settings to verify avatar');
             WorkspaceSelectors.dropdownTrigger().click();
             cy.wait(1000);
-            cy.get('[data-testid="account-settings-button"]').click();
+            AccountSelectors.settingsButton().click();
             AvatarSelectors.accountSettingsDialog().should('be.visible');
 
-            cy.task('log', 'Step 8: Verify avatar image uses updated URL');
+            testLog.info( 'Step 8: Verify avatar image uses updated URL');
             AvatarSelectors.avatarImage().should('exist').and('have.attr', 'src', testAvatarUrl);
           });
         });
@@ -76,16 +78,16 @@ describe('Avatar Notifications', () => {
       const authUtils = new AuthTestUtils();
       const existingAvatarUrl = 'https://api.dicebear.com/7.x/avataaars/svg?seed=existing';
 
-      cy.task('log', 'Step 1: Visit login page');
+      testLog.info( 'Step 1: Visit login page');
       cy.visit('/login', { failOnStatusCode: false });
       cy.wait(2000);
 
-      cy.task('log', 'Step 2: Sign in with test account');
+      testLog.info( 'Step 2: Sign in with test account');
       authUtils.signInWithTestUrl(testEmail).then(() => {
         cy.url({ timeout: 30000 }).should('include', '/app');
         cy.wait(3000);
 
-        cy.task('log', 'Step 3: Set initial avatar via API');
+        testLog.info( 'Step 3: Set initial avatar via API');
         dbUtils.getCurrentWorkspaceId().then((workspaceId) => {
           expect(workspaceId).to.not.be.null;
 
@@ -95,16 +97,16 @@ describe('Avatar Notifications', () => {
 
           cy.wait(2000);
 
-          cy.task('log', 'Step 4: Get user UUID and workspace ID');
+          testLog.info( 'Step 4: Get user UUID and workspace ID');
           dbUtils.getCurrentUserUuid().then((userUuid) => {
             expect(userUuid).to.not.be.null;
 
-            cy.task('log', 'Step 5: Verify initial avatar is set');
+            testLog.info( 'Step 5: Verify initial avatar is set');
             dbUtils.getWorkspaceMemberProfile(workspaceId!, userUuid!).then((profile) => {
               expect(profile?.avatar_url).to.equal(existingAvatarUrl);
             });
 
-            cy.task('log', 'Step 6: Simulate notification without avatar field');
+            testLog.info( 'Step 6: Simulate notification without avatar field');
             cy.window().then((win) => {
               const emitter = (win as typeof window & {
                 __APPFLOWY_EVENT_EMITTER__?: { emit: (...args: unknown[]) => void };
@@ -120,7 +122,7 @@ describe('Avatar Notifications', () => {
 
             cy.wait(2000);
 
-            cy.task('log', 'Step 7: Verify avatar is preserved');
+            testLog.info( 'Step 7: Verify avatar is preserved');
             dbUtils.getWorkspaceMemberProfile(workspaceId!, userUuid!).then((profile) => {
               expect(profile?.avatar_url).to.equal(existingAvatarUrl);
               expect(profile?.name).to.equal('Updated Name');
@@ -135,16 +137,16 @@ describe('Avatar Notifications', () => {
       const authUtils = new AuthTestUtils();
       const testAvatarUrl = 'https://api.dicebear.com/7.x/avataaars/svg?seed=to-clear';
 
-      cy.task('log', 'Step 1: Visit login page');
+      testLog.info( 'Step 1: Visit login page');
       cy.visit('/login', { failOnStatusCode: false });
       cy.wait(2000);
 
-      cy.task('log', 'Step 2: Sign in with test account');
+      testLog.info( 'Step 2: Sign in with test account');
       authUtils.signInWithTestUrl(testEmail).then(() => {
         cy.url({ timeout: 30000 }).should('include', '/app');
         cy.wait(3000);
 
-        cy.task('log', 'Step 3: Set initial avatar');
+        testLog.info( 'Step 3: Set initial avatar');
         dbUtils.getCurrentWorkspaceId().then((workspaceId) => {
           expect(workspaceId).to.not.be.null;
 
@@ -157,7 +159,7 @@ describe('Avatar Notifications', () => {
           dbUtils.getCurrentUserUuid().then((userUuid) => {
             expect(userUuid).to.not.be.null;
 
-            cy.task('log', 'Step 4: Simulate notification with empty avatar');
+            testLog.info( 'Step 4: Simulate notification with empty avatar');
             cy.window().then((win) => {
               const emitter = (win as typeof window & {
                 __APPFLOWY_EVENT_EMITTER__?: { emit: (...args: unknown[]) => void };
@@ -173,7 +175,7 @@ describe('Avatar Notifications', () => {
 
             cy.wait(2000);
 
-            cy.task('log', 'Step 5: Verify avatar is cleared');
+            testLog.info( 'Step 5: Verify avatar is cleared');
             dbUtils.getWorkspaceMemberProfile(workspaceId!, userUuid!).then((profile) => {
               expect(profile?.avatar_url).to.be.null;
             });
@@ -183,4 +185,3 @@ describe('Avatar Notifications', () => {
     });
   });
 });
-

@@ -1,20 +1,16 @@
-import { v4 as uuidv4 } from 'uuid';
 import { AuthTestUtils } from '../../support/auth-utils';
 import { TestTool } from '../../support/page-utils';
 import { PageSelectors, ModalSelectors, SidebarSelectors, waitForReactUpdate } from '../../support/selectors';
+import { generateRandomEmail, logAppFlowyEnvironment } from '../../support/test-config';
+import { testLog } from '../../support/test-helpers';
 
 describe('Page Create and Delete Tests', () => {
-    const APPFLOWY_BASE_URL = Cypress.env('APPFLOWY_BASE_URL');
-    const APPFLOWY_GOTRUE_BASE_URL = Cypress.env('APPFLOWY_GOTRUE_BASE_URL');
-    const generateRandomEmail = () => `${uuidv4()}@appflowy.io`;
     let testEmail: string;
     let testPageName: string;
 
     before(() => {
         // Log environment configuration for debugging
-        cy.task('log', `Test Environment Configuration:
-          - APPFLOWY_BASE_URL: ${APPFLOWY_BASE_URL}
-          - APPFLOWY_GOTRUE_BASE_URL: ${APPFLOWY_GOTRUE_BASE_URL}`);
+        logAppFlowyEnvironment();
     });
 
     beforeEach(() => {
@@ -42,7 +38,7 @@ describe('Page Create and Delete Tests', () => {
                 cy.url().should('include', '/app');
                 
                 // Wait for the app to fully load
-                cy.task('log', 'Waiting for app to fully load...');
+                testLog.info( 'Waiting for app to fully load...');
                 
                 // Wait for the loading screen to disappear and main app to appear
                 cy.get('body', { timeout: 30000 }).should('not.contain', 'Welcome!');
@@ -57,15 +53,15 @@ describe('Page Create and Delete Tests', () => {
                 cy.wait(2000);
                 
                 // Now wait for the new page button to be available
-                cy.task('log', 'Looking for new page button...');
+                testLog.info( 'Looking for new page button...');
                 PageSelectors.newPageButton()
                     .should('exist', { timeout: 20000 })
                     .then(() => {
-                        cy.task('log', 'New page button found!');
+                        testLog.info( 'New page button found!');
                     });
 
                 // Step 2: Since user already has a workspace, just create a new page
-                cy.task('log', `Creating page with title: ${testPageName}`);
+                testLog.info( `Creating page with title: ${testPageName}`);
                 
                 // Click new page button
                 PageSelectors.newPageButton().click();
@@ -87,7 +83,7 @@ describe('Page Create and Delete Tests', () => {
                 cy.get('body').then(($body: JQuery<HTMLBodyElement>) => {
                     // Check if there's a modal dialog open
                     if ($body.find('[role="dialog"]').length > 0 || $body.find('.MuiDialog-container').length > 0) {
-                        cy.task('log', 'Closing modal dialog');
+                        testLog.info( 'Closing modal dialog');
                         // Click the close button or press ESC
                         cy.get('body').type('{esc}');
                         cy.wait(1000);
@@ -110,7 +106,7 @@ describe('Page Create and Delete Tests', () => {
                                 .clear({ force: true })
                                 .type(testPageName, { force: true })
                                 .type('{enter}'); // Press enter to save the title
-                            cy.task('log', `Set page title to: ${testPageName}`);
+                            testLog.info( `Set page title to: ${testPageName}`);
                         }
                     });
                 
@@ -133,18 +129,18 @@ describe('Page Create and Delete Tests', () => {
                 PageSelectors.names().then($pages => {
                     const pageNames = Array.from($pages).map((el: Element) => el.textContent?.trim());
                     initialPageCount = pageNames.length;
-                    cy.task('log', `Found pages after creating new page: ${pageNames.join(', ')}`);
+                    testLog.info( `Found pages after creating new page: ${pageNames.join(', ')}`);
                     
                     // The created page should have our test name
                     if (pageNames.includes(testPageName)) {
                         createdPageName = testPageName;
-                        cy.task('log', `Found the created page with correct name: ${testPageName}`);
+                        testLog.info( `Found the created page with correct name: ${testPageName}`);
                     } else {
                         // If title didn't save properly, find the newest "Untitled" page
                         const untitledPages = pageNames.filter(name => name === 'Untitled');
                         if (untitledPages.length > 0) {
                             createdPageName = 'Untitled';
-                            cy.task('log', `Warning: Page title didn't save. Page exists as "Untitled"`);
+                            testLog.info( `Warning: Page title didn't save. Page exists as "Untitled"`);
                         } else {
                             throw new Error(`Could not find created page. Expected "${testPageName}", found: ${pageNames.join(', ')}`);
                         }
@@ -155,9 +151,9 @@ describe('Page Create and Delete Tests', () => {
                 cy.then(() => {
                     // Use the stored createdPageName from step 3
                     if (createdPageName) {
-                        cy.task('log', `Attempting to delete the created page: ${createdPageName}`);
+                        testLog.info( `Attempting to delete the created page: ${createdPageName}`);
                         TestTool.deletePageByName(createdPageName);
-                        cy.task('log', `Deleted page: ${createdPageName}`);
+                        testLog.info( `Deleted page: ${createdPageName}`);
                     } else {
                         throw new Error('No page was created to delete');
                     }
@@ -175,7 +171,7 @@ describe('Page Create and Delete Tests', () => {
                 cy.then(() => {
                     PageSelectors.names().then($pages => {
                         const pageNames = Array.from($pages).map((el: Element) => el.textContent?.trim());
-                        cy.task('log', `Pages after delete and reload: ${pageNames.join(', ')}`);
+                        testLog.info( `Pages after delete and reload: ${pageNames.join(', ')}`);
                         
                         // Check that the created page (whatever its final name was) no longer exists
                         const pageStillExists = pageNames.some(name => 
@@ -183,8 +179,8 @@ describe('Page Create and Delete Tests', () => {
                         );
                         
                         if (!pageStillExists) {
-                            cy.task('log', `✓ Verified test page "${createdPageName}" is gone after reload`);
-                            cy.task('log', `Remaining pages: ${pageNames.join(', ')}`);
+                            testLog.info( `✓ Verified test page "${createdPageName}" is gone after reload`);
+                            testLog.info( `Remaining pages: ${pageNames.join(', ')}`);
                         } else {
                             throw new Error(`Test page "${createdPageName}" still exists after delete. Found pages: ${pageNames.join(', ')}`);
                         }

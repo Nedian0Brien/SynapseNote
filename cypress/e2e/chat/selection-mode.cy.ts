@@ -1,7 +1,7 @@
-import { v4 as uuidv4 } from 'uuid';
 import { AuthTestUtils } from '../../support/auth-utils';
 import { TestTool } from '../../support/page-utils';
-import { PageSelectors, SidebarSelectors } from '../../support/selectors';
+import { AddPageSelectors, PageSelectors, SidebarSelectors } from '../../support/selectors';
+import { generateRandomEmail, logAppFlowyEnvironment } from '../../support/test-config';
 
 const STUBBED_MESSAGE_ID = 101;
 const STUBBED_MESSAGE_CONTENT = 'Stubbed AI answer ready for export';
@@ -88,13 +88,10 @@ function setupChatApiStubs() {
 }
 
 describe('Chat Selection Mode Tests', () => {
-    const APPFLOWY_BASE_URL = Cypress.env('APPFLOWY_BASE_URL');
-    const APPFLOWY_GOTRUE_BASE_URL = Cypress.env('APPFLOWY_GOTRUE_BASE_URL');
-    const generateRandomEmail = () => `${uuidv4()}@appflowy.io`;
     let testEmail: string;
 
     before(() => {
-        cy.task('log', `Test Environment Configuration:\n          - APPFLOWY_BASE_URL: ${APPFLOWY_BASE_URL}\n          - APPFLOWY_GOTRUE_BASE_URL: ${APPFLOWY_GOTRUE_BASE_URL}`);
+        logAppFlowyEnvironment();
     });
 
     beforeEach(() => {
@@ -140,9 +137,9 @@ describe('Chat Selection Mode Tests', () => {
 
             cy.wait(1000);
 
-            cy.get('[data-testid="inline-add-page"]').first().click({ force: true });
+            AddPageSelectors.inlineAddButton().first().click({ force: true });
 
-            cy.get('[data-testid="add-ai-chat-button"]').should('be.visible').click();
+            AddPageSelectors.addAIChatButton().should('be.visible').click();
 
             cy.wait('@getChatSettings');
             cy.wait('@getModelList');
@@ -150,7 +147,7 @@ describe('Chat Selection Mode Tests', () => {
 
             cy.contains(STUBBED_MESSAGE_CONTENT).should('be.visible');
 
-            cy.get('[data-testid="page-more-actions"]').first().click({ force: true });
+            PageSelectors.moreActionsButton().first().click({ force: true });
 
             cy.get('[role="menu"]').should('exist');
 

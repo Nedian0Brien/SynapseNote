@@ -1,3 +1,4 @@
+import { testLog } from '../test-helpers';
 /**
  * Workspace utility functions for Cypress E2E tests
  * Contains functions for interacting with workspace dropdown and settings
@@ -10,7 +11,7 @@ import { WorkspaceSelectors, waitForReactUpdate } from '../selectors';
  * Used in user.cy.ts to access workspace options
  */
 export function openWorkspaceDropdown() {
-    cy.task('log', 'Opening workspace dropdown');
+    testLog.info( 'Opening workspace dropdown');
     WorkspaceSelectors.dropdownTrigger().click();
     waitForReactUpdate(500);
 }
@@ -21,7 +22,7 @@ export function openWorkspaceDropdown() {
  * @returns Cypress chainable containing workspace items
  */
 export function getWorkspaceItems() {
-    cy.task('log', 'Getting workspace items from dropdown');
+    testLog.info( 'Getting workspace items from dropdown');
     return WorkspaceSelectors.item();
 }
 
@@ -31,7 +32,7 @@ export function getWorkspaceItems() {
  * @returns Cypress chainable with array of member count strings
  */
 export function getWorkspaceMemberCounts() {
-    cy.task('log', 'Getting workspace member counts');
+    testLog.info( 'Getting workspace member counts');
     
     return WorkspaceSelectors.memberCount()
         .then(($elements: JQuery<HTMLElement>) => {
@@ -39,7 +40,7 @@ export function getWorkspaceMemberCounts() {
             $elements.each((index: number, el: HTMLElement) => {
                 counts.push(el.textContent?.trim() || '');
             });
-            cy.task('log', `Found member counts: ${counts.join(', ')}`);
+            testLog.info( `Found member counts: ${counts.join(', ')}`);
             return cy.wrap(counts);
         });
 }
@@ -49,7 +50,7 @@ export function getWorkspaceMemberCounts() {
  * This function is referenced in page-utils.ts but implementation may vary
  */
 export function createWorkspace(workspaceName: string) {
-    cy.task('log', `Creating workspace: ${workspaceName}`);
+    testLog.info( `Creating workspace: ${workspaceName}`);
     // Implementation would go here based on the actual UI flow
     // This is a placeholder to maintain compatibility
 }

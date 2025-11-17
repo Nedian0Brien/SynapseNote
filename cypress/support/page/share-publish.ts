@@ -1,3 +1,4 @@
+import { testLog } from '../test-helpers';
 /**
  * Share and Publish utility functions for Cypress E2E tests
  * Contains functions for publishing pages and verifying published content
@@ -11,16 +12,16 @@ import { ShareSelectors, waitForReactUpdate } from '../selectors';
  * @returns Cypress chainable with the publish URL
  */
 export function publishCurrentPage() {
-    cy.task('log', '=== Publishing Current Page ===');
+    testLog.info( '=== Publishing Current Page ===');
     
     // Check if share popover is already open
     cy.get('body').then(($body: JQuery<HTMLBodyElement>) => {
         if (!$body.find('[data-testid="share-popover"]').length) {
-            cy.task('log', 'Share popover not open, opening it');
+            testLog.info( 'Share popover not open, opening it');
             ShareSelectors.shareButton().should('be.visible').click();
             waitForReactUpdate(1000);
         } else {
-            cy.task('log', 'Share popover already open');
+            testLog.info( 'Share popover already open');
         }
     });
     
@@ -29,17 +30,17 @@ export function publishCurrentPage() {
         // Check if we're already on the Publish tab by looking for "Publish to Web" text
         if (!$body.text().includes('Publish to Web')) {
             // If we don't see "Publish to Web", we need to click on Publish tab
-            cy.task('log', 'Switching to Publish tab');
+            testLog.info( 'Switching to Publish tab');
             cy.contains('Publish').should('be.visible').click();
             waitForReactUpdate(500);
         } else {
-            cy.task('log', 'Already on Publish tab');
+            testLog.info( 'Already on Publish tab');
         }
     });
     
     // Now we should see the Publish button, click it
     cy.contains('button', 'Publish').should('be.visible').click();
-    cy.task('log', 'Clicked Publish button, waiting for publish to complete');
+    testLog.info( 'Clicked Publish button, waiting for publish to complete');
     
     // Wait longer for the publish action to complete and URL to appear
     waitForReactUpdate(5000);
@@ -59,7 +60,7 @@ export function publishCurrentPage() {
         });
         
         if (publishedUrl) {
-            cy.task('log', `Page published at: ${publishedUrl}`);
+            testLog.info( `Page published at: ${publishedUrl}`);
             return publishedUrl;
         }
         
@@ -71,12 +72,12 @@ export function publishCurrentPage() {
         
         if (urlText.length > 0) {
             const url = urlText.first().text().match(/(https?:\/\/[^\s]+)/)?.[0] || '';
-            cy.task('log', `Page published at: ${url}`);
+            testLog.info( `Page published at: ${url}`);
             return url;
         }
         
         // If still not found, return a dummy URL for testing
-        cy.task('log', 'Warning: Could not find published URL, using dummy URL');
+        testLog.info( 'Warning: Could not find published URL, using dummy URL');
         return 'http://localhost/published/test-page';
     });
 }
@@ -87,7 +88,7 @@ export function publishCurrentPage() {
  * @returns Cypress chainable with the publish URL
  */
 export function readPublishUrlFromPanel() {
-    cy.task('log', 'Reading publish URL from panel');
+    testLog.info( 'Reading publish URL from panel');
     
     // First check if there's an input field with the URL (published state)
     return cy.get('body').then(($body: JQuery<HTMLBodyElement>) => {
@@ -98,7 +99,7 @@ export function readPublishUrlFromPanel() {
         
         if (urlInput.length > 0) {
             const url = urlInput.val();
-            cy.task('log', `Found publish URL: ${url}`);
+            testLog.info( `Found publish URL: ${url}`);
             return url;
         } else {
             // If not found, try the selector
@@ -106,7 +107,7 @@ export function readPublishUrlFromPanel() {
                 .should('be.visible')
                 .invoke('val')
                 .then((url) => {
-                    cy.task('log', `Found publish URL: ${url}`);
+                    testLog.info( `Found publish URL: ${url}`);
                     return url;
                 });
         }
@@ -119,7 +120,7 @@ export function readPublishUrlFromPanel() {
  * @param expectedContent - Array of content strings to verify
  */
 export function verifyPublishedContentMatches(expectedContent: string[]) {
-    cy.task('log', `=== Verifying Published Content ===`);
+    testLog.info( `=== Verifying Published Content ===`);
     
     // The page should already be loaded, just verify content
     waitForReactUpdate(2000);
@@ -127,10 +128,10 @@ export function verifyPublishedContentMatches(expectedContent: string[]) {
     // Verify each content line exists
     expectedContent.forEach(content => {
         cy.contains(content).should('be.visible');
-        cy.task('log', `✓ Found published content: "${content}"`);
+        testLog.info( `✓ Found published content: "${content}"`);
     });
     
-    cy.task('log', 'All published content verified successfully');
+    testLog.info( 'All published content verified successfully');
 }
 
 /**
@@ -139,16 +140,16 @@ export function verifyPublishedContentMatches(expectedContent: string[]) {
  * @param publishUrl - The URL to verify is no longer accessible
  */
 export function unpublishCurrentPageAndVerify(publishUrl: string) {
-    cy.task('log', '=== Unpublishing Current Page ===');
+    testLog.info( '=== Unpublishing Current Page ===');
     
     // Check if share popover is already open
     cy.get('body').then(($body: JQuery<HTMLBodyElement>) => {
         if (!$body.find('[data-testid="share-popover"]').length) {
-            cy.task('log', 'Share popover not open, opening it');
+            testLog.info( 'Share popover not open, opening it');
             ShareSelectors.shareButton().should('be.visible').click();
             waitForReactUpdate(1000);
         } else {
-            cy.task('log', 'Share popover already open');
+            testLog.info( 'Share popover already open');
         }
     });
     
@@ -156,11 +157,11 @@ export function unpublishCurrentPageAndVerify(publishUrl: string) {
     cy.get('body').then(($body: JQuery<HTMLBodyElement>) => {
         if (!$body.text().includes('Publish to Web')) {
             // If we don't see "Publish to Web", click on Publish tab
-            cy.task('log', 'Switching to Publish tab');
+            testLog.info( 'Switching to Publish tab');
             cy.contains('Publish').click();
             waitForReactUpdate(500);
         } else {
-            cy.task('log', 'Already on Publish tab');
+            testLog.info( 'Already on Publish tab');
         }
     });
     
@@ -173,13 +174,13 @@ export function unpublishCurrentPageAndVerify(publishUrl: string) {
     waitForReactUpdate(1000);
     
     // Verify the page is no longer accessible
-    cy.task('log', `Verifying ${publishUrl} is no longer accessible`);
+    testLog.info( `Verifying ${publishUrl} is no longer accessible`);
     cy.request({
         url: publishUrl,
         failOnStatusCode: false
     }).then((response: Cypress.Response<any>) => {
         expect(response.status).to.not.equal(200);
-        cy.task('log', `✓ Published page is no longer accessible (status: ${response.status})`);
+        testLog.info( `✓ Published page is no longer accessible (status: ${response.status})`);
     });
 }
 
@@ -191,7 +192,7 @@ export function unpublishCurrentPageAndVerify(publishUrl: string) {
  * @param pageContent - The content of the page (unused but kept for compatibility)
  */
 export function unpublishFromSettingsAndVerify(publishUrl: string, pageName?: string, pageContent?: string) {
-    cy.task('log', '=== Unpublishing from Settings ===');
+    testLog.info( '=== Unpublishing from Settings ===');
     
     // Open settings/share panel
     ShareSelectors.pageSettingsButton().click();
@@ -210,13 +211,13 @@ export function unpublishFromSettingsAndVerify(publishUrl: string, pageName?: st
     waitForReactUpdate(2000);
     
     // Verify the page is no longer accessible
-    cy.task('log', `Verifying ${publishUrl} is no longer accessible`);
+    testLog.info( `Verifying ${publishUrl} is no longer accessible`);
     cy.request({
         url: publishUrl,
         failOnStatusCode: false
     }).then((response: Cypress.Response<any>) => {
         expect(response.status).to.not.equal(200);
-        cy.task('log', `✓ Published page is no longer accessible (status: ${response.status})`);
+        testLog.info( `✓ Published page is no longer accessible (status: ${response.status})`);
     });
 }
 
@@ -225,7 +226,7 @@ export function unpublishFromSettingsAndVerify(publishUrl: string, pageName?: st
  * Used in share-publish.cy.ts (though not exported from page-utils.ts anymore)
  */
 export function openShareLink(shareUrl: string) {
-    cy.task('log', `Opening share link: ${shareUrl}`);
+    testLog.info( `Opening share link: ${shareUrl}`);
     
     // Visit the share URL
     cy.visit(shareUrl);
@@ -233,5 +234,5 @@ export function openShareLink(shareUrl: string) {
     // Wait for the page to load
     cy.url().should('include', '/publish');
     
-    cy.task('log', 'Share link opened successfully');
+    testLog.info( 'Share link opened successfully');
 }
