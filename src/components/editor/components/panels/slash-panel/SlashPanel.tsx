@@ -450,8 +450,6 @@ export function SlashPanel({
           view_id: newViewId,
           parent_id: baseViewId,
         } as DatabaseNodeData);
-
-        openPageModal?.(newViewId);
       } catch (e: any) {
         notify.error(e.message);
       } finally {
@@ -466,7 +464,6 @@ export function SlashPanel({
       blockTypeByLayout,
       getViewIdFromDatabaseId,
       turnInto,
-      openPageModal,
       t,
     ]
   );
