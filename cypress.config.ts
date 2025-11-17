@@ -49,8 +49,6 @@ export default defineConfig({
 
           // Force disable fullscreen
           launchOptions.args.push('--force-device-scale-factor=1');
-
-          console.log('Chrome launch args:', launchOptions.args);
         }
 
         return launchOptions;
