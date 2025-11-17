@@ -198,6 +198,7 @@ export interface TableCellBlockData extends BlockData {
 
 export interface DatabaseNodeData extends BlockData {
   view_id: ViewId;
+  parent_id?: ViewId;
 }
 
 export interface SubpageNodeData extends BlockData {
@@ -1061,6 +1062,7 @@ export interface ViewMetaProps {
   workspaceId?: string;
   layout?: ViewLayout;
   visibleViewIds?: string[];
+  database_relations?: DatabaseRelations;
   extra?: ViewExtra | null;
   readOnly?: boolean;
   updatePage?: (viewId: string, data: UpdatePagePayload) => Promise<void>;

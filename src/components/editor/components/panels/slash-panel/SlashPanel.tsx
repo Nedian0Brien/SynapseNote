@@ -20,12 +20,14 @@ import {
   ToggleListBlockData,
   VideoBlockData,
   ViewLayout,
+  DatabaseNodeData,
+  View,
 } from '@/application/types';
 // import { ReactComponent as AIWriterIcon } from '@/assets/slash_menu_icon_ai_writer.svg';
 import { ReactComponent as EmojiIcon } from '@/assets/icons/add_emoji.svg';
-// import { ReactComponent as GridIcon } from '@/assets/slash_menu_icon_grid.svg';
-// import { ReactComponent as BoardIcon } from '@/assets/slash_menu_icon_kanban.svg';
-// import { ReactComponent as CalendarIcon } from '@/assets/slash_menu_icon_calendar.svg';
+import { ReactComponent as GridIcon } from '@/assets/slash_menu_icon_grid.svg';
+import { ReactComponent as BoardIcon } from '@/assets/slash_menu_icon_kanban.svg';
+import { ReactComponent as CalendarIcon } from '@/assets/slash_menu_icon_calendar.svg';
 import { ReactComponent as AskAIIcon } from '@/assets/icons/ai.svg';
 import { ReactComponent as BulletedListIcon } from '@/assets/icons/bulleted_list.svg';
 import { ReactComponent as CalloutIcon } from '@/assets/icons/callout.svg';
@@ -57,7 +59,121 @@ import { getRangeRect } from '@/components/editor/components/toolbar/selection-t
 import { useEditorContext } from '@/components/editor/EditorContext';
 import { notify } from '@/components/_shared/notify';
 import { calculateOptimalOrigins, Popover } from '@/components/_shared/popover';
+import PageIcon from '@/components/_shared/view-icon/PageIcon';
+import { Label } from '@/components/ui/label';
+import { SearchInput } from '@/components/chat/components/ui/search-input';
+import { Separator } from '@/components/ui/separator';
+import { Button as OutlineButton } from '@/components/ui/button';
+import { ReactComponent as ChevronRight } from '@/assets/icons/toggle_list.svg';
+import { ReactComponent as AddPageIcon } from '@/assets/icons/add_to_page.svg';
 import { getCharacters } from '@/utils/word';
+import { flattenViews } from '@/components/_shared/outline/utils';
+
+type DatabaseOption = {
+  databaseId: string;
+  view: View;
+};
+
+function filterViewsByDatabases(views: View[], allowedIds: Set<string>, keyword: string) {
+  const lowercaseKeyword = keyword.toLowerCase();
+
+  const filter = (items: View[]): View[] => {
+    return items
+      .map((item) => {
+        const children = filter(item.children || []);
+        const matchKeyword = !keyword || item.name?.toLowerCase().includes(lowercaseKeyword);
+        const includeSelf = allowedIds.has(item.view_id) && matchKeyword;
+        const shouldKeep = includeSelf || children.length > 0;
+
+        if (!shouldKeep) return null;
+
+        return {
+          ...item,
+          children,
+        };
+      })
+      .filter(Boolean) as View[];
+  };
+
+  return filter(views);
+}
+
+const DatabaseTreeItem: React.FC<{
+  view: View;
+  allowedIds: Set<string>;
+  onSelect: (view: View) => void;
+  fallbackTitle: string;
+}> = ({ view, allowedIds, onSelect, fallbackTitle }) => {
+  const [expanded, setExpanded] = useState(view.extra?.is_space || false);
+  const isDatabase = allowedIds.has(view.view_id);
+  const hasChildren = view.children?.length > 0;
+  const name = view.name || fallbackTitle;
+
+  return (
+    <div className={'flex flex-col'}>
+      <div
+        onClick={() => {
+          if (!hasChildren) {
+            if (isDatabase) onSelect(view);
+            return;
+          }
+
+          if (isDatabase) {
+            onSelect(view);
+          }
+          setExpanded((prev) => !prev);
+        }}
+        className={
+          'flex h-[28px] w-full cursor-pointer select-none items-center justify-between gap-2 rounded-[8px] px-1.5 text-sm hover:bg-muted'
+        }
+      >
+        <div className={'flex w-full items-center gap-2 overflow-hidden'}>
+          {hasChildren ? (
+            <OutlineButton
+              variant={'ghost'}
+              className={'!h-4 !min-h-4 !w-4 !min-w-4 !p-0 hover:bg-muted-foreground/10'}
+              onClick={(e) => {
+                e.stopPropagation();
+                setExpanded((prev) => !prev);
+              }}
+            >
+              <ChevronRight className={`transform transition-transform ${expanded ? 'rotate-90' : 'rotate-0'}`} />
+            </OutlineButton>
+          ) : (
+            <div style={{ width: 16, height: 16 }} />
+          )}
+          <PageIcon view={view} />
+          <span className={'flex-1 truncate'}>{name}</span>
+        </div>
+        {isDatabase && (
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelect(view);
+            }}
+          >
+            <OutlineButton variant={'ghost'} className={'!h-5 !w-5 rounded-md !p-0 hover:bg-muted-foreground/10'}>
+              <AddPageIcon className={'h-5 w-5'} />
+            </OutlineButton>
+          </div>
+        )}
+      </div>
+      {hasChildren && expanded && (
+        <div className={'flex flex-col gap-1 pl-4'}>
+          {view.children?.map((child) => (
+            <DatabaseTreeItem
+              key={child.view_id}
+              view={child}
+              allowedIds={allowedIds}
+              onSelect={onSelect}
+              fallbackTitle={fallbackTitle}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export function SlashPanel({
   setEmojiPosition,
@@ -65,8 +181,28 @@ export function SlashPanel({
   setEmojiPosition: (position: { top: number; left: number }) => void;
 }) {
   const { isPanelOpen, panelPosition, closePanel, searchText, removeContent } = usePanelContext();
-  const { addPage, openPageModal, viewId, loadViewMeta, getMoreAIContext } = useEditorContext();
+  const {
+    addPage,
+    openPageModal,
+    viewId,
+    loadViewMeta,
+    getMoreAIContext,
+    createFolderView,
+    getViewIdFromDatabaseId,
+    loadViews,
+    databaseRelations,
+  } = useEditorContext();
   const [viewName, setViewName] = useState('');
+  const [linkedPicker, setLinkedPicker] = useState<{
+    position: { top: number; left: number };
+    layout: ViewLayout;
+  } | null>(null);
+  const [linkedTransformOrigin, setLinkedTransformOrigin] = useState<PopoverOrigin | undefined>(undefined);
+  const [databaseSearch, setDatabaseSearch] = useState('');
+  const [databaseOutline, setDatabaseOutline] = useState<View[]>([]);
+  const [databaseOptions, setDatabaseOptions] = useState<DatabaseOption[]>([]);
+  const [databaseLoading, setDatabaseLoading] = useState(false);
+  const [databaseError, setDatabaseError] = useState<string | null>(null);
 
   const editor = useSlateStatic() as YjsEditor;
 
@@ -118,6 +254,19 @@ export function SlashPanel({
 
     return getCharacters(getBeforeContent());
   }, [open, getBeforeContent]);
+
+  const blockTypeByLayout = useCallback((layout: ViewLayout) => {
+    switch (layout) {
+      case ViewLayout.Grid:
+        return BlockType.GridBlock;
+      case ViewLayout.Board:
+        return BlockType.BoardBlock;
+      case ViewLayout.Calendar:
+        return BlockType.CalendarBlock;
+      default:
+        return null;
+    }
+  }, []);
 
   const handleSelectOption = useCallback(
     (option: string) => {
@@ -171,9 +320,156 @@ export function SlashPanel({
     [editor, openPopover]
   );
 
+  const allowedDatabaseIds = useMemo(() => {
+    return new Set(databaseOptions.map((option) => option.view.view_id));
+  }, [databaseOptions]);
+
+  const filteredDatabaseTree = useMemo(() => {
+    if (!databaseOutline.length) return [];
+    return filterViewsByDatabases(databaseOutline, allowedDatabaseIds, databaseSearch);
+  }, [databaseOutline, allowedDatabaseIds, databaseSearch]);
+
   const { openPanel } = usePanelContext();
 
   const { askAIAnything, continueWriting } = useAIWriter();
+
+  const loadDatabasesForPicker = useCallback(async () => {
+    if (!loadViews) return false;
+    setDatabaseLoading(true);
+    setDatabaseError(null);
+
+    let relations = databaseRelations;
+
+    if ((!relations || Object.keys(relations).length === 0) && loadViewMeta && viewId) {
+      try {
+        const meta = await loadViewMeta(viewId);
+        relations = meta?.database_relations;
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    if (!relations || Object.keys(relations).length === 0) {
+      setDatabaseOptions([]);
+      setDatabaseLoading(false);
+      return false;
+    }
+
+    try {
+      const views = (await loadViews()) || [];
+      setDatabaseOutline(views);
+      const flatViews = flattenViews(views);
+      const options = Object.entries(relations).reduce<DatabaseOption[]>((acc, [databaseId, baseViewId]) => {
+        const view = flatViews.find((item) => item.view_id === baseViewId);
+        if (view) {
+          acc.push({
+            databaseId,
+            view,
+          });
+        }
+        return acc;
+      }, []);
+
+      setDatabaseOptions(options);
+      return options.length > 0;
+    } catch (e: any) {
+      notify.error(e.message);
+      setDatabaseError(e.message);
+      setDatabaseOutline([]);
+      setDatabaseOptions([]);
+      return false;
+    } finally {
+      setDatabaseLoading(false);
+    }
+  }, [databaseRelations, loadViewMeta, loadViews, viewId]);
+
+  const handleOpenLinkedDatabasePicker = useCallback(
+    async (layout: ViewLayout, optionKey: string) => {
+      if (!viewId || !createFolderView) return;
+      const rect = getRangeRect();
+
+      if (!rect) return;
+
+      handleSelectOption(optionKey);
+      setDatabaseSearch('');
+      const hasDatabases = await loadDatabasesForPicker();
+
+      if (!hasDatabases) {
+        notify.error(
+          t('document.slashMenu.linkedDatabase.empty', {
+            defaultValue: 'No databases available to link',
+          })
+        );
+        setLinkedPicker(null);
+        return;
+      }
+
+      setLinkedPicker({
+        position: {
+          top: rect.top,
+          left: rect.left,
+        },
+        layout,
+      });
+    },
+    [createFolderView, handleSelectOption, loadDatabasesForPicker, t, viewId]
+  );
+
+  const handleSelectDatabase = useCallback(
+    async (targetViewId: string) => {
+      if (!linkedPicker) return;
+
+      if (!createFolderView || !viewId) {
+        notify.error(
+          t('document.slashMenu.linkedDatabase.actionUnavailable', {
+            defaultValue: 'Linking databases is not available right now',
+          })
+        );
+        return;
+      }
+
+      const option = databaseOptions.find((item) => item.view.view_id === targetViewId);
+      const blockType = blockTypeByLayout(linkedPicker.layout);
+
+      if (!option || !blockType) {
+        setLinkedPicker(null);
+        return;
+      }
+
+      try {
+        const baseViewId =
+          (await getViewIdFromDatabaseId?.(option.databaseId)) || option.view.view_id;
+        const newViewId = await createFolderView({
+          parentViewId: viewId,
+          layout: linkedPicker.layout,
+          name: option.view.name,
+          databaseId: option.databaseId,
+        });
+
+        turnInto(blockType, {
+          view_id: newViewId,
+          parent_id: baseViewId,
+        } as DatabaseNodeData);
+
+        openPageModal?.(newViewId);
+      } catch (e: any) {
+        notify.error(e.message);
+      } finally {
+        setLinkedPicker(null);
+      }
+    },
+    [
+      linkedPicker,
+      createFolderView,
+      viewId,
+      databaseOptions,
+      blockTypeByLayout,
+      getViewIdFromDatabaseId,
+      turnInto,
+      openPageModal,
+      t,
+    ]
+  );
 
   const options: {
     label: string;
@@ -352,91 +648,108 @@ export function SlashPanel({
           }
         },
       },
-      //   {
-      //   label: t('document.slashMenu.name.grid'),
-      //   key: 'grid',
-      //   icon: <GridIcon />,
-      //   keywords: ['grid', 'table'],
-      //   onClick: async () => {
-      //     if (!viewId || !addPage || !openPageModal) return;
-      //     try {
-      //       const newViewId = await addPage(viewId, {
-      //         layout: ViewLayout.Grid,
-      //         name: 'Table',
-      //       });
-      //
-      //       turnInto(BlockType.GridBlock, {
-      //         view_id: newViewId,
-      //       } as DatabaseNodeData);
-      //
-      //       openPageModal(newViewId);
-      //       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      //     } catch (e: any) {
-      //       notify.error(e.message);
-      //     }
-      //   },
-      // }, {
-      //   label: t('document.slashMenu.name.linkedGrid'),
-      //   key: 'linkedGrid',
-      //   icon: <GridIcon />,
-      //   keywords: ['linked', 'grid', 'table'],
-      // }, {
-      //   label: t('document.slashMenu.name.kanban'),
-      //   key: 'board',
-      //   icon: <BoardIcon />,
-      //   keywords: ['board', 'kanban'],
-      //   onClick: async () => {
-      //     if (!viewId || !addPage || !openPageModal) return;
-      //     try {
-      //       const newViewId = await addPage(viewId, {
-      //         layout: ViewLayout.Board,
-      //         name: 'Board',
-      //       });
-      //
-      //       turnInto(BlockType.BoardBlock, {
-      //         view_id: newViewId,
-      //       } as DatabaseNodeData);
-      //
-      //       openPageModal(newViewId);
-      //       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      //     } catch (e: any) {
-      //       notify.error(e.message);
-      //     }
-      //   },
-      // }, {
-      //   label: t('document.slashMenu.name.linkedKanban'),
-      //   key: 'linkedKanban',
-      //   icon: <BoardIcon />,
-      //   keywords: ['linked', 'kanban', 'board'],
-      // }, {
-      //   label: t('document.slashMenu.name.calendar'),
-      //   key: 'calendar',
-      //   icon: <CalendarIcon />,
-      //   keywords: ['calendar', 'date'],
-      //   onClick: async () => {
-      //     if (!viewId || !addPage || !openPageModal) return;
-      //     try {
-      //       const newViewId = await addPage(viewId, {
-      //         layout: ViewLayout.Calendar,
-      //         name: 'Calendar',
-      //       });
-      //
-      //       turnInto(BlockType.BoardBlock, {
-      //         view_id: newViewId,
-      //       } as DatabaseNodeData);
-      //
-      //       openPageModal(newViewId);
-      //       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      //     } catch (e: any) {
-      //       notify.error(e.message);
-      //     }
-      //   },
-      // }, {
-      //   label: t('document.slashMenu.name.linkedCalendar'),
-      //   key: 'linkedCalendar',
-      //   icon: <CalendarIcon />,
-      //   keywords: ['linked', 'calendar', 'date'],
-      // },
+      {
+        label: t('document.slashMenu.name.grid'),
+        key: 'grid',
+        icon: <GridIcon />,
+        keywords: ['grid', 'table', 'database'],
+        onClick: async () => {
+          if (!viewId || !addPage || !openPageModal) return;
+          try {
+            const newViewId = await addPage(viewId, {
+              layout: ViewLayout.Grid,
+              name: t('document.slashMenu.name.grid'),
+            });
+
+            turnInto(BlockType.GridBlock, {
+              view_id: newViewId,
+              parent_id: viewId,
+            } as DatabaseNodeData);
+
+            openPageModal(newViewId);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } catch (e: any) {
+            notify.error(e.message);
+          }
+        },
+      },
+      {
+        label: t('document.slashMenu.name.linkedGrid'),
+        key: 'linkedGrid',
+        icon: <GridIcon />,
+        keywords: ['linked', 'grid', 'table', 'database'],
+        onClick: () => {
+          void handleOpenLinkedDatabasePicker(ViewLayout.Grid, 'linkedGrid');
+        },
+      },
+      {
+        label: t('document.slashMenu.name.kanban'),
+        key: 'board',
+        icon: <BoardIcon />,
+        keywords: ['board', 'kanban', 'database'],
+        onClick: async () => {
+          if (!viewId || !addPage || !openPageModal) return;
+          try {
+            const newViewId = await addPage(viewId, {
+              layout: ViewLayout.Board,
+              name: t('document.slashMenu.name.kanban'),
+            });
+
+            turnInto(BlockType.BoardBlock, {
+              view_id: newViewId,
+              parent_id: viewId,
+            } as DatabaseNodeData);
+
+            openPageModal(newViewId);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } catch (e: any) {
+            notify.error(e.message);
+          }
+        },
+      },
+      {
+        label: t('document.slashMenu.name.linkedKanban'),
+        key: 'linkedKanban',
+        icon: <BoardIcon />,
+        keywords: ['linked', 'kanban', 'board', 'database'],
+        onClick: () => {
+          void handleOpenLinkedDatabasePicker(ViewLayout.Board, 'linkedKanban');
+        },
+      },
+      {
+        label: t('document.slashMenu.name.calendar'),
+        key: 'calendar',
+        icon: <CalendarIcon />,
+        keywords: ['calendar', 'date', 'database'],
+        onClick: async () => {
+          if (!viewId || !addPage || !openPageModal) return;
+          try {
+            const newViewId = await addPage(viewId, {
+              layout: ViewLayout.Calendar,
+              name: t('document.slashMenu.name.calendar'),
+            });
+
+            turnInto(BlockType.CalendarBlock, {
+              view_id: newViewId,
+              parent_id: viewId,
+            } as DatabaseNodeData);
+
+            openPageModal(newViewId);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } catch (e: any) {
+            notify.error(e.message);
+          }
+        },
+      },
+      {
+        label: t('document.slashMenu.name.linkedCalendar'),
+        key: 'linkedCalendar',
+        icon: <CalendarIcon />,
+        keywords: ['linked', 'calendar', 'date', 'database'],
+        onClick: () => {
+          void handleOpenLinkedDatabasePicker(ViewLayout.Calendar, 'linkedCalendar');
+        },
+      },
       {
         label: t('document.slashMenu.name.callout'),
         key: 'callout',
@@ -568,6 +881,7 @@ export function SlashPanel({
     openPageModal,
     setEmojiPosition,
     searchText,
+    handleOpenLinkedDatabasePicker,
   ]);
 
   const resultLength = options.length;
@@ -670,51 +984,115 @@ export function SlashPanel({
     }
   }, [open, panelPosition]);
 
+  useEffect(() => {
+    if (!linkedPicker) return;
+    const origins = calculateOptimalOrigins(linkedPicker.position, 360, 360, undefined, 16);
+    setLinkedTransformOrigin(origins.transformOrigin);
+  }, [linkedPicker]);
+
+  useEffect(() => {
+    if (!linkedPicker) {
+      setDatabaseSearch('');
+    }
+  }, [linkedPicker]);
+
   return (
-    <Popover
-      adjustOrigins={false}
-      data-testid={'slash-panel'}
-      open={open}
-      onClose={closePanel}
-      anchorReference={'anchorPosition'}
-      anchorPosition={panelPosition}
-      disableAutoFocus={true}
-      disableRestoreFocus={true}
-      disableEnforceFocus={true}
-      transformOrigin={transformOrigin}
-      onMouseDown={(e) => e.preventDefault()}
-    >
-      <div
-        ref={optionsRef}
-        className={'appflowy-scroller flex max-h-[400px] w-[320px] flex-col gap-2 overflow-y-auto overflow-x-hidden p-2'}
+    <>
+      <Popover
+        adjustOrigins={false}
+        data-testid={'slash-panel'}
+        open={open}
+        onClose={closePanel}
+        anchorReference={'anchorPosition'}
+        anchorPosition={panelPosition}
+        disableAutoFocus={true}
+        disableRestoreFocus={true}
+        disableEnforceFocus={true}
+        transformOrigin={transformOrigin}
+        onMouseDown={(e) => e.preventDefault()}
       >
-        {options.length > 0 ? (
-          options.map((option) => (
-            <Button
-              size={'small'}
-              color={'inherit'}
-              startIcon={option.icon}
-              key={option.key}
-              data-testid={`slash-menu-${option.key}`}
-              data-option-key={option.key}
-              onClick={() => {
-                handleSelectOption(option.key);
-                option.onClick?.();
-              }}
-              className={`scroll-m-2 justify-start hover:bg-fill-content-hover ${
-                selectedOption === option.key ? 'bg-fill-content-hover' : ''
-              }`}
-            >
-              {option.label}
-            </Button>
-          ))
-        ) : (
-          <div className={'flex items-center justify-center py-4 text-sm text-text-secondary'}>
-            {t('findAndReplace.noResult')}
+        <div
+          ref={optionsRef}
+          className={
+            'appflowy-scroller flex max-h-[400px] w-[320px] flex-col gap-2 overflow-y-auto overflow-x-hidden p-2'
+          }
+        >
+          {options.length > 0 ? (
+            options.map((option) => (
+              <Button
+                size={'small'}
+                color={'inherit'}
+                startIcon={option.icon}
+                key={option.key}
+                data-testid={`slash-menu-${option.key}`}
+                data-option-key={option.key}
+                onClick={() => {
+                  handleSelectOption(option.key);
+                  option.onClick?.();
+                }}
+                className={`scroll-m-2 justify-start hover:bg-fill-content-hover ${
+                  selectedOption === option.key ? 'bg-fill-content-hover' : ''
+                }`}
+              >
+                {option.label}
+              </Button>
+            ))
+          ) : (
+            <div className={'flex items-center justify-center py-4 text-sm text-text-secondary'}>
+              {t('findAndReplace.noResult')}
+            </div>
+          )}
+        </div>
+      </Popover>
+
+      <Popover
+        adjustOrigins={false}
+        open={!!linkedPicker}
+        onClose={() => setLinkedPicker(null)}
+        anchorReference={'anchorPosition'}
+        anchorPosition={linkedPicker?.position}
+        disableAutoFocus={true}
+        disableRestoreFocus={true}
+        disableEnforceFocus={true}
+        transformOrigin={linkedTransformOrigin}
+        onMouseDown={(e) => e.preventDefault()}
+      >
+        <div className={'flex h-fit max-h-[360px] min-h-[200px] w-[360px] flex-col'}>
+          <Label className={'px-2 pt-2 font-normal'}>
+            {t('document.slashMenu.linkedDatabase.title', { defaultValue: 'Link to an existing database' })}
+          </Label>
+          <SearchInput value={databaseSearch} onChange={setDatabaseSearch} className='m-2' />
+          <Separator />
+          <div className={'appflowy-scrollbar flex-1 overflow-y-auto overflow-x-hidden p-2'}>
+            {databaseLoading ? (
+              <div className={'flex h-full w-full items-center justify-center py-10 opacity-60'}>
+                {t('common.loading', { defaultValue: 'Loading...' })}
+              </div>
+            ) : databaseError ? (
+              <div className={'flex h-full w-full items-center justify-center py-10 text-destructive'}>
+                {databaseError}
+              </div>
+            ) : filteredDatabaseTree.length > 0 ? (
+              filteredDatabaseTree.map((view) => (
+                <DatabaseTreeItem
+                  key={view.view_id}
+                  view={view}
+                  allowedIds={allowedDatabaseIds}
+                  onSelect={(selectedView) => {
+                    void handleSelectDatabase(selectedView.view_id);
+                  }}
+                  fallbackTitle={t('document.view.placeholder', { defaultValue: 'Untitled' })}
+                />
+              ))
+            ) : (
+              <div className={'flex h-full w-full items-center justify-center py-10 opacity-60'}>
+                {t('document.slashMenu.linkedDatabase.empty', { defaultValue: 'No databases found' })}
+              </div>
+            )}
           </div>
-        )}
-      </div>
-    </Popover>
+        </div>
+      </Popover>
+    </>
   );
 }
 

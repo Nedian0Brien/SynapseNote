@@ -1991,6 +1991,11 @@
         "continueWriting": "Continue Writing",
         "askAIAnything": "Ask AI Anything"
       },
+      "linkedDatabase": {
+        "title": "Link to an existing database",
+        "empty": "No databases found",
+        "actionUnavailable": "Linking databases is not available right now"
+      },
       "subPage": {
         "name": "Document",
         "keyword1": "sub page",

@@ -174,6 +174,7 @@ export const Document = (props: DocumentProps) => {
             onEditorConnected={handleEditorConnected}
             onSelectionChange={handleSyncCursor}
             awareness={awareness}
+            databaseRelations={viewMeta.database_relations}
             {...props}
           />
         </div>
