@@ -23,29 +23,62 @@ export function useGridVirtualizer({ data, columns }: { columns: RenderColumn[];
 
   const parentOffsetRef = useRef(0);
   const [parentOffset, setParentOffset] = useState(0);
-
-  const updateParentOffset = useCallback(() => {
-    if (!parentRef.current) return;
-
-    const nextOffset = parentRef.current.getBoundingClientRect()?.top ?? 0;
-    if (nextOffset === parentOffsetRef.current) return;
-
-    parentOffsetRef.current = nextOffset;
-    setParentOffset(nextOffset);
-    logDebug('[GridVirtualizer] parent offset updated', {
-      nextOffset,
-      scrollMarginBeforeRender: parentOffset,
-    });
-  }, [parentOffset]);
-
-  useLayoutEffect(() => {
-    updateParentOffset();
-  }, [updateParentOffset]);
+  const rafIdRef = useRef<number>();
 
   const getScrollElement = useCallback(() => {
     if (!parentRef.current) return null;
     return parentRef.current.closest('.appflowy-scroll-container') || getScrollParent(parentRef.current);
   }, [parentRef]);
+
+  const measureParentOffset = useCallback(() => {
+    const scrollElement = getScrollElement();
+    if (!parentRef.current || !scrollElement) return null;
+
+    const parentRect = parentRef.current.getBoundingClientRect();
+    const scrollRect = scrollElement.getBoundingClientRect();
+
+    // Position of parent within the scroll container's content coordinates
+    // using scrollTop to normalize viewport changes.
+    return scrollElement.scrollTop + (parentRect.top - scrollRect.top);
+  }, [getScrollElement]);
+
+  const updateParentOffset = useCallback(() => {
+    if (rafIdRef.current !== undefined) {
+      cancelAnimationFrame(rafIdRef.current);
+    }
+
+    // Double RAF to avoid transient measurements during layout thrash when views switch.
+    const first = measureParentOffset();
+    if (first == null) {
+      logDebug('[GridVirtualizer] skip parent offset update; missing refs', {
+        hasParent: !!parentRef.current,
+        hasScrollElement: !!getScrollElement(),
+      });
+      return;
+    }
+
+    rafIdRef.current = requestAnimationFrame(() => {
+      rafIdRef.current = requestAnimationFrame(() => {
+        const second = measureParentOffset();
+        const nextOffset = second ?? first;
+        const delta = Math.abs(nextOffset - parentOffsetRef.current);
+
+        if (nextOffset === parentOffsetRef.current) return;
+
+        parentOffsetRef.current = nextOffset;
+        setParentOffset(nextOffset);
+        logDebug('[GridVirtualizer] parent offset updated', {
+          nextOffset,
+          previous: parentOffset,
+          delta,
+        });
+      });
+    });
+  }, [measureParentOffset, getScrollElement, parentOffset]);
+
+  useLayoutEffect(() => {
+    updateParentOffset();
+  }, [updateParentOffset]);
 
   const virtualizer = useVirtualizer({
     count: data.length,
@@ -92,6 +125,9 @@ export function useGridVirtualizer({ data, columns }: { columns: RenderColumn[];
     return () => {
       observer.disconnect();
       logDebug('[GridVirtualizer] resize observer disconnected');
+      if (rafIdRef.current !== undefined) {
+        cancelAnimationFrame(rafIdRef.current);
+      }
     };
   }, [getScrollElement, updateParentOffset, isDocumentBlock]);
 
