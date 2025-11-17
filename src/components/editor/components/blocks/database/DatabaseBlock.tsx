@@ -14,6 +14,7 @@ import { useResizePositioning } from './hooks/useResizePositioning';
 export const DatabaseBlock = memo(
   forwardRef<HTMLDivElement, EditorElementProps<DatabaseNode>>(({ node, children, ...attributes }, ref) => {
     const viewId = node.data.view_id;
+    const parentId = node.data.parent_id;
     const context = useEditorContext();
     const workspaceId = context.workspaceId;
     const navigateToView = context?.navigateToView;
@@ -25,8 +26,12 @@ export const DatabaseBlock = memo(
     const editor = useSlateStatic();
     const readOnly = useReadOnly() || editor.isElementReadOnly(node as unknown as Element);
 
+    // For linked databases, load the parent view (original database)
+    // For inline databases, parent_id === current document, so load view_id
+    const viewToLoad = parentId || viewId;
+
     const { notFound, doc, selectedViewId, visibleViewIds, iidName, onChangeView, loadViewMeta } = useDatabaseLoading({
-      viewId,
+      viewId: viewToLoad,
       loadView,
       loadViewMeta: context?.loadViewMeta,
     });

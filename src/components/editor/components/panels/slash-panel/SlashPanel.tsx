@@ -25,9 +25,9 @@ import {
 } from '@/application/types';
 // import { ReactComponent as AIWriterIcon } from '@/assets/slash_menu_icon_ai_writer.svg';
 import { ReactComponent as EmojiIcon } from '@/assets/icons/add_emoji.svg';
-import { ReactComponent as GridIcon } from '@/assets/slash_menu_icon_grid.svg';
-import { ReactComponent as BoardIcon } from '@/assets/slash_menu_icon_kanban.svg';
-import { ReactComponent as CalendarIcon } from '@/assets/slash_menu_icon_calendar.svg';
+import { ReactComponent as GridIcon } from '@/assets/icons/grid.svg';
+import { ReactComponent as BoardIcon } from '@/assets/icons/board.svg';
+import { ReactComponent as CalendarIcon } from '@/assets/icons/calendar.svg';
 import { ReactComponent as AskAIIcon } from '@/assets/icons/ai.svg';
 import { ReactComponent as BulletedListIcon } from '@/assets/icons/bulleted_list.svg';
 import { ReactComponent as CalloutIcon } from '@/assets/icons/callout.svg';

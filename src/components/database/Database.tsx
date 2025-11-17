@@ -65,18 +65,47 @@ function Database(props: Database2Props) {
     loadView,
     navigateToView,
     modalRowId,
+    isDocumentBlock,
   } = props;
-  const database = doc.getMap(YjsEditorKey.data_section)?.get(YjsEditorKey.database) as YDatabase | null;
-  const view = database?.get(YjsDatabaseKey.views)?.get(iidIndex);
 
+  const database = doc.getMap(YjsEditorKey.data_section)?.get(YjsEditorKey.database) as YDatabase | null;
+  const views = database?.get(YjsDatabaseKey.views);
+
+  // Find view by iid field (views map uses numeric keys like "0", "1", "2")
+  const findViewByIid = useCallback((viewsMap: typeof views, targetIid: string) => {
+    if (!viewsMap) return null;
+
+    // Try direct access first (for standalone databases)
+    const directView = viewsMap.get(targetIid);
+    if (directView) return directView;
+
+    // Search by iid field (for embedded databases)
+    const viewsData = viewsMap.toJSON();
+    const keys = Object.keys(viewsData);
+
+    for (const key of keys) {
+      const v = viewsMap.get(key);
+      const viewIid = v?.get?.(YjsDatabaseKey.iid);
+      if (viewIid === targetIid) {
+        return v;
+      }
+    }
+
+    return null;
+  }, []);
+
+  const view = findViewByIid(views, iidIndex);
   const rowOrders = view?.get(YjsDatabaseKey.row_orders);
+
   const [rowIds, setRowIds] = useState<RowId[]>([]);
   const [rowDocMap, setRowDocMap] = useState<Record<RowId, YDoc> | null>(null);
 
   const updateRowMap = useCallback(async () => {
     const newRowMap: Record<RowId, YDoc> = {};
 
-    if (!rowIds || !createRowDoc) return;
+    if (!rowIds || !createRowDoc) {
+      return;
+    }
 
     const promises = rowIds.map(async (id) => {
       if (!id) {
@@ -108,10 +137,6 @@ function Database(props: Database2Props) {
     void debounceUpdateRowMap();
   }, [debounceUpdateRowMap]);
 
-  useEffect(() => {
-    console.debug('Database.tsx: database', database?.toJSON());
-    console.debug('Database.tsx: rowDocMap', rowDocMap);
-  }, [rowDocMap, database]);
 
   const createNewRowDoc = useCallback(
     async (rowKey: string) => {
@@ -127,7 +152,10 @@ function Database(props: Database2Props) {
   );
 
   const handleUpdateRowDocMap = useCallback(async () => {
-    setRowIds(rowOrders?.toJSON().map(({ id }: { id: string }) => id) || []);
+    const rowOrdersData = rowOrders?.toJSON() || [];
+    const ids = rowOrdersData.map(({ id }: { id: string }) => id);
+
+    setRowIds(ids);
   }, [rowOrders]);
 
   useEffect(() => {

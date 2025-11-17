@@ -13,6 +13,7 @@ import DatabaseStickyBottomOverlay from '@/components/database/components/sticky
 import DatabaseStickyHorizontalScrollbar from '@/components/database/components/sticky-overlay/DatabaseStickyHorizontalScrollbar';
 import DatabaseStickyTopOverlay from '@/components/database/components/sticky-overlay/DatabaseStickyTopOverlay';
 import { getScrollParent } from '@/components/global-comment/utils';
+import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
 
 import { useNavigationKey } from './useNavigationKey';
 
@@ -87,6 +88,18 @@ export const Group = ({ groupId }: GroupProps) => {
   const [totalSize, setTotalSize] = useState<number>(0);
   const innerRef = useRef<HTMLDivElement | null>(null);
   const stickyHeaderRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll for card dragging (registered once at Group level)
+  useEffect(() => {
+    if (!verticalScrollContainer || readOnly) return;
+
+    const cleanup = autoScrollForElements({
+      element: verticalScrollContainer,
+      canScroll: ({ source }) => source.data.instanceId === contextValue.instanceId && source.data.type === 'card',
+    });
+
+    return cleanup;
+  }, [verticalScrollContainer, readOnly, contextValue.instanceId]);
 
   useEffect(() => {
     const inner = innerRef.current;

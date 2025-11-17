@@ -38,8 +38,7 @@ export const Column = memo(
     }, [rows, readOnly]);
 
     const { columnRef, headerRef, state, isDragging } = useColumnHeaderDrag(id);
-    const [scrollerContainer, setScrollerContainer] = React.useState<HTMLDivElement | null>(null);
-    const { contextValue, columnInnerRef } = useCardsDrag(id, rows, scrollerContainer);
+    const { contextValue, columnInnerRef } = useCardsDrag(id, rows);
 
     const getCards = useCallback(
       (_columnId: string): Row[] => {
@@ -76,8 +75,6 @@ export const Column = memo(
               columnId={id}
               data={data}
               fieldId={fieldId}
-              setScrollElement={setScrollerContainer}
-            
             />
           </div>
           {state.type === StateType.IS_COLUMN_OVER && state.closestEdge && (
