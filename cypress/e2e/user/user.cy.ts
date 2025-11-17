@@ -1,19 +1,17 @@
-import { v4 as uuidv4 } from 'uuid';
 import { AuthTestUtils } from '../../support/auth-utils';
 import { TestTool } from '../../support/page-utils';
 import { WorkspaceSelectors, SidebarSelectors, PageSelectors } from '../../support/selectors';
+import { generateRandomEmail, getTestEnvironment } from '../../support/test-config';
 
 describe('User Feature Tests', () => {
-    const APPFLOWY_BASE_URL = Cypress.env('APPFLOWY_BASE_URL');
-    const APPFLOWY_GOTRUE_BASE_URL = Cypress.env('APPFLOWY_GOTRUE_BASE_URL');
+    const env = getTestEnvironment();
     const APPFLOWY_WS_BASE_URL = Cypress.env('APPFLOWY_WS_BASE_URL');
-    const generateRandomEmail = () => `${uuidv4()}@appflowy.io`;
 
     before(() => {
         cy.task('log', `Test Environment Configuration:
-          - APPFLOWY_BASE_URL: ${APPFLOWY_BASE_URL}
-          - APPFLOWY_GOTRUE_BASE_URL: ${APPFLOWY_GOTRUE_BASE_URL}
-          - APPFLOWY_WS_BASE_URL: ${APPFLOWY_WS_BASE_URL}
+          - APPFLOWY_BASE_URL: ${env.appflowyBaseUrl}
+          - APPFLOWY_GOTRUE_BASE_URL: ${env.appflowyGotrueBaseUrl}
+          - APPFLOWY_WS_BASE_URL: ${APPFLOWY_WS_BASE_URL ?? ''}
          `);
 
     });

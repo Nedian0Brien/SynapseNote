@@ -11,6 +11,17 @@ export function byTestId(id: string): string {
 }
 
 /**
+ * Helper for selectors that match data-testid prefixes or substrings
+ */
+export function byTestIdPrefix(prefix: string): string {
+  return `[data-testid^="${prefix}"]`;
+}
+
+export function byTestIdContains(fragment: string): string {
+  return `[data-testid*="${fragment}"]`;
+}
+
+/**
  * Page-related selectors
  */
 export const PageSelectors = {
@@ -417,6 +428,10 @@ export const RowControlsSelectors = {
 export const AuthSelectors = {
   // Login page elements
   emailInput: () => cy.get(byTestId('login-email-input')),
+  magicLinkButton: () => cy.get(byTestId('login-magic-link-button')),
+  enterCodeManuallyButton: () => cy.get(byTestId('enter-code-manually-button')),
+  otpCodeInput: () => cy.get(byTestId('otp-code-input')),
+  otpSubmitButton: () => cy.get(byTestId('otp-submit-button')),
 
   // Password sign-in button
   passwordSignInButton: () => cy.get(byTestId('login-password-button')),

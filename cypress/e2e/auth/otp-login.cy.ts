@@ -1,4 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
+import { TestConfig, generateRandomEmail } from '../../support/test-config';
+import { AuthSelectors } from '../../support/selectors';
 
 /**
  * OTP Login Flow Tests
@@ -20,9 +22,7 @@ import { v4 as uuidv4 } from 'uuid';
  * - localStorage cleanup for new users
  */
 describe('OTP Login Flow', () => {
-  const baseUrl = Cypress.config('baseUrl') || 'http://localhost:3000';
-  const gotrueUrl = Cypress.env('APPFLOWY_GOTRUE_BASE_URL') || 'http://localhost/gotrue';
-  const apiUrl = Cypress.env('APPFLOWY_BASE_URL') || 'http://localhost';
+  const { baseUrl, gotrueUrl, apiUrl } = TestConfig;
 
   beforeEach(() => {
     // Handle uncaught exceptions
@@ -32,7 +32,7 @@ describe('OTP Login Flow', () => {
 
   describe('OTP Code Login with Redirect URL Conversion', () => {
     it('should successfully login with OTP code for new user and redirect to /app', () => {
-      const testEmail = `test-${uuidv4()}@appflowy.io`;
+      const testEmail = generateRandomEmail();
       const testOtpCode = '123456';
       const mockAccessToken = 'mock-access-token-' + uuidv4();
       const mockRefreshToken = 'mock-refresh-token-' + uuidv4();
@@ -97,12 +97,12 @@ describe('OTP Login Flow', () => {
 
       // Enter email
       cy.log('[STEP 2] Entering email address');
-      cy.get('[data-testid="login-email-input"]').should('be.visible').type(testEmail);
+      AuthSelectors.emailInput().should('be.visible').type(testEmail);
       cy.wait(500);
 
       // Click on "Sign in with email" button (magic link)
       cy.log('[STEP 3] Clicking sign in with email button (magic link)');
-      cy.get('[data-testid="login-magic-link-button"]').should('be.visible').click();
+      AuthSelectors.magicLinkButton().should('be.visible').click();
 
       // Wait for magic link request
       cy.log('[STEP 4] Waiting for magic link request');
@@ -127,17 +127,17 @@ describe('OTP Login Flow', () => {
 
       // Click "Enter code manually" button
       cy.log('[STEP 7] Clicking enter code manually button');
-      cy.get('[data-testid="enter-code-manually-button"]').should('be.visible').click();
+      AuthSelectors.enterCodeManuallyButton().should('be.visible').click();
       cy.wait(1000);
 
       // Enter OTP code
       cy.log('[STEP 8] Entering OTP code');
-      cy.get('[data-testid="otp-code-input"]').should('be.visible').type(testOtpCode);
+      AuthSelectors.otpCodeInput().should('be.visible').type(testOtpCode);
       cy.wait(500);
 
       // Submit OTP code
       cy.log('[STEP 9] Submitting OTP code for verification');
-      cy.get('[data-testid="otp-submit-button"]').should('be.visible').click();
+      AuthSelectors.otpSubmitButton().should('be.visible').click();
 
       // Wait for OTP verification API call
       cy.log('[STEP 10] Waiting for OTP verification API call');
@@ -173,7 +173,7 @@ describe('OTP Login Flow', () => {
     });
 
     it('should login existing user and use afterAuth redirect logic', () => {
-      const testEmail = `test-${uuidv4()}@appflowy.io`;
+      const testEmail = generateRandomEmail();
       const testOtpCode = '123456';
       const mockAccessToken = 'mock-access-token-' + uuidv4();
       const mockRefreshToken = 'mock-refresh-token-' + uuidv4();
@@ -228,24 +228,24 @@ describe('OTP Login Flow', () => {
 
       // Enter email and request magic link
       cy.log('[STEP 2] Entering email and requesting magic link');
-      cy.get('[data-testid="login-email-input"]').type(testEmail);
-      cy.get('[data-testid="login-magic-link-button"]').click();
+      AuthSelectors.emailInput().type(testEmail);
+      AuthSelectors.magicLinkButton().click();
       cy.wait('@magicLinkRequest');
       cy.wait(1000);
 
       // Click "Enter code manually" button
       cy.log('[STEP 3] Clicking enter code manually button');
-      cy.get('[data-testid="enter-code-manually-button"]').click();
+      AuthSelectors.enterCodeManuallyButton().click();
       cy.wait(1000);
 
       // Enter OTP code
       cy.log('[STEP 4] Entering OTP code');
-      cy.get('[data-testid="otp-code-input"]').type(testOtpCode);
+      AuthSelectors.otpCodeInput().type(testOtpCode);
       cy.wait(500);
 
       // Submit OTP code
       cy.log('[STEP 5] Submitting OTP code');
-      cy.get('[data-testid="otp-submit-button"]').click();
+      AuthSelectors.otpSubmitButton().click();
 
       // Wait for verification
       cy.log('[STEP 6] Waiting for OTP verification');
@@ -263,7 +263,7 @@ describe('OTP Login Flow', () => {
     });
 
     it('should handle invalid OTP code error', () => {
-      const testEmail = `test-${uuidv4()}@appflowy.io`;
+      const testEmail = generateRandomEmail();
       const invalidOtpCode = '000000';
       const redirectToUrl = '/app';
       const encodedRedirectTo = encodeURIComponent(`${baseUrl}${redirectToUrl}`);
@@ -292,24 +292,24 @@ describe('OTP Login Flow', () => {
 
       // Enter email and request magic link
       cy.log('[STEP 2] Entering email and requesting magic link');
-      cy.get('[data-testid="login-email-input"]').type(testEmail);
-      cy.get('[data-testid="login-magic-link-button"]').click();
+      AuthSelectors.emailInput().type(testEmail);
+      AuthSelectors.magicLinkButton().click();
       cy.wait('@magicLinkRequest');
       cy.wait(1000);
 
       // Click "Enter code manually" button
       cy.log('[STEP 3] Clicking enter code manually button');
-      cy.get('[data-testid="enter-code-manually-button"]').click();
+      AuthSelectors.enterCodeManuallyButton().click();
       cy.wait(1000);
 
       // Enter invalid OTP code
       cy.log('[STEP 4] Entering invalid OTP code');
-      cy.get('[data-testid="otp-code-input"]').type(invalidOtpCode);
+      AuthSelectors.otpCodeInput().type(invalidOtpCode);
       cy.wait(500);
 
       // Submit OTP code
       cy.log('[STEP 5] Submitting invalid OTP code');
-      cy.get('[data-testid="otp-submit-button"]').click();
+      AuthSelectors.otpSubmitButton().click();
 
       // Wait for failed verification
       cy.log('[STEP 6] Waiting for OTP verification to fail');
@@ -327,7 +327,7 @@ describe('OTP Login Flow', () => {
     });
 
     it('should navigate back to login from check email page', () => {
-      const testEmail = `test-${uuidv4()}@appflowy.io`;
+      const testEmail = generateRandomEmail();
       const redirectToUrl = '/app';
       const encodedRedirectTo = encodeURIComponent(`${baseUrl}${redirectToUrl}`);
 
@@ -346,8 +346,8 @@ describe('OTP Login Flow', () => {
 
       // Enter email and request magic link
       cy.log('[STEP 2] Entering email and requesting magic link');
-      cy.get('[data-testid="login-email-input"]').type(testEmail);
-      cy.get('[data-testid="login-magic-link-button"]').click();
+      AuthSelectors.emailInput().type(testEmail);
+      AuthSelectors.magicLinkButton().click();
       cy.wait('@magicLinkRequest');
       cy.wait(1000);
 
@@ -364,13 +364,13 @@ describe('OTP Login Flow', () => {
       cy.log('[STEP 5] Verifying back on login page');
       cy.url().should('not.include', 'action=');
       cy.url().should('include', 'redirectTo=');
-      cy.get('[data-testid="login-email-input"]').should('be.visible');
+      AuthSelectors.emailInput().should('be.visible');
 
       cy.log('[STEP 6] Navigation test completed successfully');
     });
 
     it('should sanitize workspace-specific UUIDs from redirectTo before login', () => {
-      const testEmail = `test-${uuidv4()}@appflowy.io`;
+      const testEmail = generateRandomEmail();
       const testOtpCode = '123456';
       const mockAccessToken = 'mock-access-token-' + uuidv4();
       const mockRefreshToken = 'mock-refresh-token-' + uuidv4();
@@ -449,12 +449,12 @@ describe('OTP Login Flow', () => {
 
       // Enter email (User B)
       cy.log('[STEP 2] User B entering email address');
-      cy.get('[data-testid="login-email-input"]').should('be.visible').type(testEmail);
+      AuthSelectors.emailInput().should('be.visible').type(testEmail);
       cy.wait(500);
 
       // Click on "Sign in with email" button (magic link)
       cy.log('[STEP 3] User B clicking sign in with email button');
-      cy.get('[data-testid="login-magic-link-button"]').should('be.visible').click();
+      AuthSelectors.magicLinkButton().should('be.visible').click();
 
       // Wait for magic link request
       cy.log('[STEP 4] Waiting for magic link request');
@@ -479,17 +479,17 @@ describe('OTP Login Flow', () => {
 
       // Click "Enter code manually" button
       cy.log('[STEP 6] Clicking enter code manually button');
-      cy.get('[data-testid="enter-code-manually-button"]').should('be.visible').click();
+      AuthSelectors.enterCodeManuallyButton().should('be.visible').click();
       cy.wait(1000);
 
       // Enter OTP code
       cy.log('[STEP 7] User B entering OTP code');
-      cy.get('[data-testid="otp-code-input"]').should('be.visible').type(testOtpCode);
+      AuthSelectors.otpCodeInput().should('be.visible').type(testOtpCode);
       cy.wait(500);
 
       // Submit OTP code
       cy.log('[STEP 8] User B submitting OTP code for verification');
-      cy.get('[data-testid="otp-submit-button"]').should('be.visible').click();
+      AuthSelectors.otpSubmitButton().should('be.visible').click();
 
       // Wait for OTP verification
       cy.log('[STEP 9] Waiting for OTP verification');

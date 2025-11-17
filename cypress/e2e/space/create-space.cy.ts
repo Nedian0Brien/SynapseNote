@@ -1,20 +1,15 @@
-import { v4 as uuidv4 } from 'uuid';
 import { AuthTestUtils } from '../../support/auth-utils';
 import { TestTool } from '../../support/page-utils';
-import { PageSelectors, SpaceSelectors, SidebarSelectors, waitForReactUpdate } from '../../support/selectors';
+import { PageSelectors, SpaceSelectors, SidebarSelectors, byTestId, waitForReactUpdate } from '../../support/selectors';
+import { generateRandomEmail, logAppFlowyEnvironment } from '../../support/test-config';
 
 describe('Space Creation Tests', () => {
-    const APPFLOWY_BASE_URL = Cypress.env('APPFLOWY_BASE_URL');
-    const APPFLOWY_GOTRUE_BASE_URL = Cypress.env('APPFLOWY_GOTRUE_BASE_URL');
-    const generateRandomEmail = () => `${uuidv4()}@appflowy.io`;
     let testEmail: string;
     let spaceName: string;
 
     before(() => {
         // Log environment configuration for debugging
-        cy.task('log', `Test Environment Configuration:
-          - APPFLOWY_BASE_URL: ${APPFLOWY_BASE_URL}
-          - APPFLOWY_GOTRUE_BASE_URL: ${APPFLOWY_GOTRUE_BASE_URL}`);
+        logAppFlowyEnvironment();
     });
 
     beforeEach(() => {
@@ -73,7 +68,7 @@ describe('Space Creation Tests', () => {
                     
                     // Click the more actions button for spaces
                     // It's always visible in test environment
-                    cy.get('[data-testid="inline-more-actions"]')
+                    SpaceSelectors.moreActionsButton()
                         .first()
                         .should('be.visible')
                         .click();
@@ -87,7 +82,7 @@ describe('Space Creation Tests', () => {
                 // Step 3: Click on "Create New Space" option
                 cy.task('log', '=== Step 3: Clicking Create New Space option ===');
                 
-                cy.get('[data-testid="create-new-space-button"]')
+                cy.get(byTestId('create-new-space-button'))
                     .should('be.visible')
                     .click();
                 
@@ -100,13 +95,13 @@ describe('Space Creation Tests', () => {
                 cy.task('log', '=== Step 4: Filling space creation form ===');
                 
                 // Verify the modal is visible
-                cy.get('[data-testid="create-space-modal"]')
+                cy.get(byTestId('create-space-modal'))
                     .should('be.visible');
                 
                 cy.task('log', 'Create Space modal is visible');
                 
                 // Enter space name
-                cy.get('[data-testid="space-name-input"]')
+                cy.get(byTestId('space-name-input'))
                     .should('be.visible')
                     .clear()
                     .type(spaceName);
@@ -120,7 +115,7 @@ describe('Space Creation Tests', () => {
                 cy.task('log', '=== Step 5: Saving new space ===');
                 
                 // Click the Save button
-                cy.get('[data-testid="modal-ok-button"]')
+                cy.get(byTestId('modal-ok-button'))
                     .should('be.visible')
                     .click();
                 

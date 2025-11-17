@@ -1,4 +1,5 @@
 import { avatarTestUtils } from './avatar-test-utils';
+import { byTestId } from '../../../support/selectors';
 
 const { generateRandomEmail, setupBeforeEach, imports } = avatarTestUtils;
 const { updateWorkspaceMemberAvatar, AuthTestUtils, AvatarSelectors, dbUtils, WorkspaceSelectors } = imports;
@@ -36,7 +37,7 @@ describe('Avatar Types', () => {
 
                 WorkspaceSelectors.dropdownTrigger().click();
                 cy.wait(1000);
-                cy.get('[data-testid="account-settings-button"]').click();
+                cy.get(byTestId('account-settings-button')).click();
                 AvatarSelectors.accountSettingsDialog().should('be.visible');
 
                 AvatarSelectors.avatarImage().should('exist').and('have.attr', 'src', httpsAvatar);
@@ -73,7 +74,7 @@ describe('Avatar Types', () => {
 
                     WorkspaceSelectors.dropdownTrigger().click();
                     cy.wait(1000);
-                    cy.get('[data-testid="account-settings-button"]').click();
+                    cy.get(byTestId('account-settings-button')).click();
                     AvatarSelectors.accountSettingsDialog().should('be.visible');
 
                     // Emoji should be displayed in fallback, not as image
@@ -83,4 +84,3 @@ describe('Avatar Types', () => {
         });
     });
 });
-

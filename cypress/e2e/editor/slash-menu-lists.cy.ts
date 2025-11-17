@@ -1,10 +1,8 @@
-import { v4 as uuidv4 } from 'uuid';
 import { AuthTestUtils } from '../../support/auth-utils';
 import { waitForReactUpdate } from '../../support/selectors';
+import { generateRandomEmail } from '../../support/test-config';
 
 describe('Slash Menu - List Actions', () => {
-  const generateRandomEmail = () => `${uuidv4()}@appflowy.io`;
-
   beforeEach(() => {
     cy.on('uncaught:exception', (err) => {
       if (err.message.includes('Minified React error') ||

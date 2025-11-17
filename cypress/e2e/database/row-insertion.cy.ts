@@ -1,15 +1,13 @@
-import { v4 as uuidv4 } from 'uuid';
-import { AuthTestUtils } from '../../support/auth-utils';
 import {
   AddPageSelectors,
   DatabaseGridSelectors,
   RowControlsSelectors,
   waitForReactUpdate
 } from '../../support/selectors';
+import { AuthTestUtils } from '../../support/auth-utils';
+import { generateRandomEmail } from '../../support/test-config';
 
 describe('Database Row Insertion', () => {
-  const generateRandomEmail = () => `${uuidv4()}@appflowy.io`;
-
   beforeEach(() => {
     cy.on('uncaught:exception', (err) => {
       if (err.message.includes('Minified React error') ||

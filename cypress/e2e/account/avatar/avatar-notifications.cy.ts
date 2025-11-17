@@ -1,4 +1,5 @@
 import { avatarTestUtils } from './avatar-test-utils';
+import { byTestId } from '../../../support/selectors';
 
 const { generateRandomEmail, setupBeforeEach, imports } = avatarTestUtils;
 const { APP_EVENTS, updateWorkspaceMemberAvatar, AuthTestUtils, AvatarSelectors, dbUtils, WorkspaceSelectors } = imports;
@@ -61,7 +62,7 @@ describe('Avatar Notifications', () => {
             cy.task('log', 'Step 7: Open Account Settings to verify avatar');
             WorkspaceSelectors.dropdownTrigger().click();
             cy.wait(1000);
-            cy.get('[data-testid="account-settings-button"]').click();
+            cy.get(byTestId('account-settings-button')).click();
             AvatarSelectors.accountSettingsDialog().should('be.visible');
 
             cy.task('log', 'Step 8: Verify avatar image uses updated URL');
@@ -183,4 +184,3 @@ describe('Avatar Notifications', () => {
     });
   });
 });
-

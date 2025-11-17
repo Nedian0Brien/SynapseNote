@@ -1,19 +1,21 @@
-import { v4 as uuidv4 } from 'uuid';
 import { AuthTestUtils } from '../../support/auth-utils';
 import { TestTool } from '../../support/page-utils';
-import { PageSelectors, SpaceSelectors, SidebarSelectors, waitForReactUpdate } from '../../support/selectors';
+import {
+    PageSelectors,
+    SpaceSelectors,
+    SidebarSelectors,
+    byTestId,
+    byTestIdContains,
+    waitForReactUpdate
+} from '../../support/selectors';
+import { generateRandomEmail, logAppFlowyEnvironment } from '../../support/test-config';
 
 describe('Breadcrumb Navigation Complete Tests', () => {
-    const APPFLOWY_BASE_URL = Cypress.env('APPFLOWY_BASE_URL');
-    const APPFLOWY_GOTRUE_BASE_URL = Cypress.env('APPFLOWY_GOTRUE_BASE_URL');
-    const generateRandomEmail = () => `${uuidv4()}@appflowy.io`;
     let testEmail: string;
 
     before(() => {
         // Log environment configuration for debugging
-        cy.task('log', `Test Environment Configuration:
-          - APPFLOWY_BASE_URL: ${APPFLOWY_BASE_URL}
-          - APPFLOWY_GOTRUE_BASE_URL: ${APPFLOWY_GOTRUE_BASE_URL}`);
+        logAppFlowyEnvironment();
     });
 
     beforeEach(() => {
@@ -71,11 +73,11 @@ describe('Breadcrumb Navigation Complete Tests', () => {
                 // Step 4: Check for breadcrumb navigation
                 cy.task('log', '=== Step 4: Checking for breadcrumb navigation ===');
                 cy.get('body').then($body => {
-                    if ($body.find('[data-testid="breadcrumb-navigation"]').length > 0) {
+                    if ($body.find(byTestId('breadcrumb-navigation')).length > 0) {
                         cy.task('log', '✓ Breadcrumb navigation found on this page');
                         
                         // Count breadcrumb items
-                        cy.get('[data-testid*="breadcrumb-item-"]').then($items => {
+                        cy.get(byTestIdContains('breadcrumb-item-')).then($items => {
                             cy.task('log', `✓ Found ${$items.length} breadcrumb items`);
                         });
                     } else {
@@ -133,12 +135,12 @@ describe('Breadcrumb Navigation Complete Tests', () => {
                         // Check for breadcrumb navigation
                         cy.task('log', '=== Step 4: Testing breadcrumb navigation ===');
                         cy.get('body', { timeout: 5000 }).then($body => {
-                            if ($body.find('[data-testid="breadcrumb-navigation"]').length > 0) {
+                            if ($body.find(byTestId('breadcrumb-navigation')).length > 0) {
                                 cy.task('log', '✓ Breadcrumb navigation is visible');
                                 
                                 // Try to click breadcrumb to navigate back
-                                if ($body.find('[data-testid*="breadcrumb-item-"]').length > 1) {
-                                    cy.get('[data-testid*="breadcrumb-item-"]').first().click({ force: true });
+                                if ($body.find(byTestIdContains('breadcrumb-item-')).length > 1) {
+                                    cy.get(byTestIdContains('breadcrumb-item-')).first().click({ force: true });
                                     cy.task('log', '✓ Clicked breadcrumb item to navigate back');
                                     cy.wait(2000);
                                     cy.task('log', '✓ Successfully used breadcrumb navigation');
@@ -251,11 +253,11 @@ describe('Breadcrumb Navigation Complete Tests', () => {
                         // Step 4: Test breadcrumb navigation
                         cy.task('log', '=== Step 4: Testing breadcrumb navigation ===');
                         cy.get('body').then($body => {
-                            if ($body.find('[data-testid="breadcrumb-navigation"]').length > 0) {
+                            if ($body.find(byTestId('breadcrumb-navigation')).length > 0) {
                                 cy.task('log', '✓ Breadcrumb navigation is visible');
                                 
                                 // Check breadcrumb items with timeout
-                                cy.get('[data-testid*="breadcrumb-item-"]', { timeout: 10000 }).then($items => {
+                                cy.get(byTestIdContains('breadcrumb-item-'), { timeout: 10000 }).then($items => {
                                     cy.task('log', `Found ${$items.length} breadcrumb items`);
                                     
                                     if ($items.length > 1) {

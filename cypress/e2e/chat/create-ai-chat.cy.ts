@@ -1,20 +1,15 @@
-import { v4 as uuidv4 } from 'uuid';
 import { AuthTestUtils } from '../../support/auth-utils';
 import { TestTool } from '../../support/page-utils';
-import { PageSelectors, ModalSelectors, SidebarSelectors, waitForReactUpdate } from '../../support/selectors';
+import { AddPageSelectors, PageSelectors, ModalSelectors, SidebarSelectors, byTestId, waitForReactUpdate } from '../../support/selectors';
+import { generateRandomEmail, logAppFlowyEnvironment } from '../../support/test-config';
 
 describe('AI Chat Creation and Navigation Tests', () => {
-    const APPFLOWY_BASE_URL = Cypress.env('APPFLOWY_BASE_URL');
-    const APPFLOWY_GOTRUE_BASE_URL = Cypress.env('APPFLOWY_GOTRUE_BASE_URL');
-    const generateRandomEmail = () => `${uuidv4()}@appflowy.io`;
     let testEmail: string;
     let chatName: string;
 
     before(() => {
         // Log environment configuration for debugging
-        cy.task('log', `Test Environment Configuration:
-          - APPFLOWY_BASE_URL: ${APPFLOWY_BASE_URL}
-          - APPFLOWY_GOTRUE_BASE_URL: ${APPFLOWY_GOTRUE_BASE_URL}`);
+        logAppFlowyEnvironment();
     });
 
     beforeEach(() => {
@@ -96,7 +91,7 @@ describe('AI Chat Creation and Navigation Tests', () => {
                     
                     // Click the inline add button (plus icon) - use first() since there might be multiple
                     cy.wrap($page).within(() => {
-                        cy.get('[data-testid="inline-add-page"]')
+                        AddPageSelectors.inlineAddButton()
                             .first()
                             .should('be.visible')
                             .click({ force: true });
@@ -112,7 +107,7 @@ describe('AI Chat Creation and Navigation Tests', () => {
                 cy.task('log', '=== Step 3: Creating AI Chat ===');
                 
                 // Click on the AI Chat option in the dropdown
-                cy.get('[data-testid="add-ai-chat-button"]')
+                AddPageSelectors.addAIChatButton()
                     .should('be.visible')
                     .click();
                 
@@ -130,7 +125,7 @@ describe('AI Chat Creation and Navigation Tests', () => {
                 
                 // Check if the AI Chat container exists (but don't fail if it doesn't load immediately)
                 cy.get('body').then($body => {
-                    if ($body.find('[data-testid="ai-chat-container"]').length > 0) {
+                    if ($body.find(byTestId('ai-chat-container')).length > 0) {
                         cy.task('log', '✓ AI Chat container exists');
                     } else {
                         cy.task('log', 'AI Chat container not immediately visible, checking for navigation success...');
@@ -145,7 +140,7 @@ describe('AI Chat Creation and Navigation Tests', () => {
                 cy.get('body').then($body => {
                     // Check if chat interface elements exist
                     const hasChatElements = $body.find('.ai-chat').length > 0 || 
-                                           $body.find('[data-testid="ai-chat-container"]').length > 0;
+                                           $body.find(byTestId('ai-chat-container')).length > 0;
                     
                     if (hasChatElements) {
                         cy.task('log', '✓ AI Chat interface loaded');

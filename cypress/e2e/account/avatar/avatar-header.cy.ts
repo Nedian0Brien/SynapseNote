@@ -1,4 +1,5 @@
 import { avatarTestUtils } from './avatar-test-utils';
+import { byTestIdContains } from '../../../support/selectors';
 
 const { generateRandomEmail, setupBeforeEach, imports } = avatarTestUtils;
 const { APP_EVENTS, updateWorkspaceMemberAvatar, AuthTestUtils, AvatarSelectors, dbUtils } = imports;
@@ -39,8 +40,8 @@ describe('Avatar Header Display', () => {
           // Click on a page to open editor
           cy.get('body').then(($body) => {
             // Try to find and click on a page in the sidebar
-            if ($body.find('[data-testid*="page"]').length > 0) {
-              cy.get('[data-testid*="page"]').first().click();
+            if ($body.find(byTestIdContains('page')).length > 0) {
+              cy.get(byTestIdContains('page')).first().click();
             } else if ($body.text().includes('Getting started')) {
               cy.contains('Getting started').click();
             }
@@ -117,8 +118,8 @@ describe('Avatar Header Display', () => {
           cy.task('log', 'Step 4: Interact with editor to trigger collaborative user awareness');
           // Click on a page to open editor
           cy.get('body').then(($body) => {
-            if ($body.find('[data-testid*="page"]').length > 0) {
-              cy.get('[data-testid*="page"]').first().click();
+            if ($body.find(byTestIdContains('page')).length > 0) {
+              cy.get(byTestIdContains('page')).first().click();
             } else if ($body.text().includes('Getting started')) {
               cy.contains('Getting started').click();
             }
@@ -213,8 +214,8 @@ describe('Avatar Header Display', () => {
             cy.task('log', 'Step 6: Interact with editor to trigger collaborative user awareness');
             // Click on a page to open editor
             cy.get('body').then(($body) => {
-              if ($body.find('[data-testid*="page"]').length > 0) {
-                cy.get('[data-testid*="page"]').first().click();
+              if ($body.find(byTestIdContains('page')).length > 0) {
+                cy.get(byTestIdContains('page')).first().click();
               } else if ($body.text().includes('Getting started')) {
                 cy.contains('Getting started').click();
               }
@@ -263,4 +264,3 @@ describe('Avatar Header Display', () => {
     });
   });
 });
-

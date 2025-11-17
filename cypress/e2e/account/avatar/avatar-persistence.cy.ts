@@ -1,4 +1,5 @@
 import { avatarTestUtils } from './avatar-test-utils';
+import { byTestId } from '../../../support/selectors';
 
 const { generateRandomEmail, setupBeforeEach, imports } = avatarTestUtils;
 const { updateWorkspaceMemberAvatar, AuthTestUtils, AvatarSelectors, dbUtils, WorkspaceSelectors } = imports;
@@ -39,7 +40,7 @@ describe('Avatar Persistence', () => {
         cy.task('log', 'Step 5: Verify avatar persisted');
         WorkspaceSelectors.dropdownTrigger().click();
         cy.wait(1000);
-        cy.get('[data-testid="account-settings-button"]').click();
+        cy.get(byTestId('account-settings-button')).click();
         AvatarSelectors.accountSettingsDialog().should('be.visible');
 
         AvatarSelectors.avatarImage().should('exist').and('have.attr', 'src', testAvatarUrl);
@@ -50,7 +51,7 @@ describe('Avatar Persistence', () => {
 
         WorkspaceSelectors.dropdownTrigger().click();
         cy.wait(1000);
-        cy.get('[data-testid="account-settings-button"]').click();
+        cy.get(byTestId('account-settings-button')).click();
         AvatarSelectors.accountSettingsDialog().should('be.visible');
 
         AvatarSelectors.avatarImage().should('exist').and('have.attr', 'src', testAvatarUrl);
@@ -58,4 +59,3 @@ describe('Avatar Persistence', () => {
     });
   });
 });
-

@@ -1,4 +1,5 @@
 import { avatarTestUtils } from './avatar-test-utils';
+import { byTestId } from '../../../support/selectors';
 
 const { generateRandomEmail, setupBeforeEach, imports } = avatarTestUtils;
 const { updateUserMetadata, AuthTestUtils, AvatarSelectors, WorkspaceSelectors } = imports;
@@ -37,7 +38,7 @@ describe('Avatar API', () => {
       cy.task('log', 'Step 5: Open Account Settings to verify avatar');
       WorkspaceSelectors.dropdownTrigger().click();
       cy.wait(1000);
-      cy.get('[data-testid="account-settings-button"]').click();
+      cy.get(byTestId('account-settings-button')).click();
       AvatarSelectors.accountSettingsDialog().should('be.visible');
 
       cy.task('log', 'Step 6: Verify avatar image is displayed in Account Settings');
@@ -48,7 +49,7 @@ describe('Avatar API', () => {
 
       // Wait for any avatar image to be present and loaded
       // The AvatarImage component loads asynchronously and sets opacity to 0 while loading
-      cy.get('[data-testid="avatar-image"]', { timeout: 10000 })
+      cy.get(byTestId('avatar-image'), { timeout: 10000 })
         .should('exist')
         .should(($imgs) => {
           // Find the first visible avatar image (opacity not 0)
@@ -66,7 +67,7 @@ describe('Avatar API', () => {
         });
 
       // Verify that the avatar image has loaded (check for non-empty src and visible state)
-      cy.get('[data-testid="avatar-image"]').then(($imgs) => {
+      cy.get(byTestId('avatar-image')).then(($imgs) => {
         let foundLoaded = false;
         $imgs.each((index, img) => {
           const $img = Cypress.$(img);
@@ -158,7 +159,7 @@ describe('Avatar API', () => {
       cy.task('log', 'Step 5: Open Account Settings');
       WorkspaceSelectors.dropdownTrigger().click();
       cy.wait(1000);
-      cy.get('[data-testid="account-settings-button"]').click();
+      cy.get(byTestId('account-settings-button')).click();
       AvatarSelectors.accountSettingsDialog().should('be.visible');
 
       cy.task('log', 'Step 6: Verify emoji is displayed in fallback');
@@ -190,4 +191,3 @@ describe('Avatar API', () => {
     });
   });
 });
-

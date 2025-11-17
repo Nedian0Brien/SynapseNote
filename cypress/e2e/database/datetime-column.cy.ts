@@ -1,5 +1,3 @@
-import { v4 as uuidv4 } from 'uuid';
-import { AuthTestUtils } from '../../support/auth-utils';
 import {
   AddPageSelectors,
   DatabaseGridSelectors,
@@ -8,12 +6,13 @@ import {
   GridFieldSelectors,
   FieldType,
   byTestId,
+  byTestIdPrefix,
   waitForReactUpdate
 } from '../../support/selectors';
+import { AuthTestUtils } from '../../support/auth-utils';
+import { generateRandomEmail } from '../../support/test-config';
 
 describe('DateTime Column Type', () => {
-  const generateRandomEmail = () => `${uuidv4()}@appflowy.io`;
-
   beforeEach(() => {
     cy.on('uncaught:exception', (err) => {
       if (err.message.includes('Minified React error') ||
@@ -103,7 +102,7 @@ describe('DateTime Column Type', () => {
       // Verify datetime cells exist
       cy.log('[STEP 12] Checking for datetime cells');
       cy.get('body').then($body => {
-        const datetimeCells = $body.find('[data-testid^="datetime-cell-"]');
+        const datetimeCells = $body.find(byTestIdPrefix('datetime-cell-'));
         if (datetimeCells.length > 0) {
           cy.log(`[STEP 13] Found ${datetimeCells.length} datetime cells`);
           

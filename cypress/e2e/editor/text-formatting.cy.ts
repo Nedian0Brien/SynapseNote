@@ -1,10 +1,8 @@
-import { v4 as uuidv4 } from 'uuid';
 import { AuthTestUtils } from '../../support/auth-utils';
 import { EditorSelectors, waitForReactUpdate } from '../../support/selectors';
+import { generateRandomEmail } from '../../support/test-config';
 
 describe('Text Formatting - Selection and Formatting', () => {
-  const generateRandomEmail = () => `${uuidv4()}@appflowy.io`;
-
   beforeEach(() => {
     cy.on('uncaught:exception', () => false);
     cy.viewport(1280, 720);

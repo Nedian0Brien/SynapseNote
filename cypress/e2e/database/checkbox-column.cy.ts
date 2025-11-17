@@ -1,16 +1,15 @@
-import { v4 as uuidv4 } from 'uuid';
-import { AuthTestUtils } from '../../support/auth-utils';
 import {
   AddPageSelectors,
   DatabaseGridSelectors,
   CheckboxSelectors,
   byTestId,
+  byTestIdPrefix,
   waitForReactUpdate
 } from '../../support/selectors';
+import { AuthTestUtils } from '../../support/auth-utils';
+import { generateRandomEmail } from '../../support/test-config';
 
 describe('Checkbox Column Type', () => {
-  const generateRandomEmail = () => `${uuidv4()}@appflowy.io`;
-
   beforeEach(() => {
     cy.on('uncaught:exception', (err) => {
       if (err.message.includes('Minified React error') ||
@@ -60,7 +59,7 @@ describe('Checkbox Column Type', () => {
       cy.log('[STEP 9] Looking for checkbox elements');
       cy.get('body').then($body => {
         // Check for checkbox cells with our data-testid
-        const checkboxCells = $body.find('[data-testid^="checkbox-cell-"]');
+        const checkboxCells = $body.find(byTestIdPrefix('checkbox-cell-'));
         if (checkboxCells.length > 0) {
           cy.log(`[STEP 10] Found ${checkboxCells.length} checkbox cells`);
 

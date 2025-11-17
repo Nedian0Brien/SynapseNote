@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from 'uuid';
 import { AuthTestUtils } from '../../support/auth-utils';
 import { TestTool } from '../../support/page-utils';
 import {
@@ -6,11 +5,10 @@ import {
   AuthSelectors,
   waitForReactUpdate
 } from '../../support/selectors';
+import { TestConfig, generateRandomEmail } from '../../support/test-config';
 
 describe('Login and Logout Flow', () => {
-  const baseUrl = Cypress.config('baseUrl') || 'http://localhost:3000';
-  const gotrueUrl = Cypress.env('APPFLOWY_GOTRUE_BASE_URL') || 'http://localhost/gotrue';
-  const apiUrl = Cypress.env('APPFLOWY_BASE_URL') || 'http://localhost';
+  const { baseUrl, gotrueUrl, apiUrl } = TestConfig;
 
   beforeEach(() => {
     // Handle uncaught exceptions
@@ -27,7 +25,7 @@ describe('Login and Logout Flow', () => {
 
   describe('Test Case 1: Complete Login and Logout Flow', () => {
     it('should login and successfully logout with detailed verification', () => {
-      const testEmail = `test-${uuidv4()}@appflowy.io`;
+      const testEmail = generateRandomEmail();
 
       cy.log(`[TEST START] Complete Login and Logout Flow - Email: ${testEmail}`);
 
@@ -103,7 +101,7 @@ describe('Login and Logout Flow', () => {
 
   describe('Test Case 2: Quick Login and Logout using Test URL', () => {
     it('should login with test URL and successfully logout', () => {
-      const testEmail = `test-${uuidv4()}@appflowy.io`;
+      const testEmail = generateRandomEmail();
 
       cy.log(`[TEST START] Quick Login and Logout using Test URL - Email: ${testEmail}`);
 
@@ -167,7 +165,7 @@ describe('Login and Logout Flow', () => {
 
   describe('Test Case 3: Cancel Logout Confirmation', () => {
     it('should cancel logout when clicking cancel button', () => {
-      const testEmail = `test-${uuidv4()}@appflowy.io`;
+      const testEmail = generateRandomEmail();
 
       cy.log(`[TEST START] Cancel Logout Confirmation - Email: ${testEmail}`);
 

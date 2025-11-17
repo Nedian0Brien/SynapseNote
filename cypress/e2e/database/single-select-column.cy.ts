@@ -1,5 +1,3 @@
-import { v4 as uuidv4 } from 'uuid';
-import { AuthTestUtils } from '../../support/auth-utils';
 import {
   AddPageSelectors,
   DatabaseGridSelectors,
@@ -9,11 +7,13 @@ import {
   PageSelectors,
   FieldType,
   byTestId,
+  byTestIdPrefix,
   waitForReactUpdate
 } from '../../support/selectors';
+import { AuthTestUtils } from '../../support/auth-utils';
+import { generateRandomEmail } from '../../support/test-config';
 
 describe('Single Select Column Type', () => {
-  const generateRandomEmail = () => `${uuidv4()}@appflowy.io`;
   const SINGLE_SELECT_FIELD_TYPE = 3; // From FieldType enum
 
   beforeEach(() => {
@@ -192,7 +192,7 @@ describe('Single Select Column Type', () => {
       
       // First try to find select cells
       cy.get('body').then($body => {
-        const selectCells = $body.find('[data-testid^="select-option-cell-"]');
+        const selectCells = $body.find(byTestIdPrefix('select-option-cell-'));
         
         if (selectCells.length > 0) {
           cy.log(`[STEP 9] Found ${selectCells.length} select cells`);
@@ -306,7 +306,7 @@ describe('Single Select Column Type', () => {
       // Verify select options are displayed again
       cy.log('[STEP 16] Verifying select options are displayed again');
       cy.get('body').then($body => {
-        const selectCells = $body.find('[data-testid^="select-option-cell-"]');
+        const selectCells = $body.find(byTestIdPrefix('select-option-cell-'));
         if (selectCells.length > 0) {
           cy.log(`[STEP 17] Success! Found ${selectCells.length} select option cells after conversion`);
           

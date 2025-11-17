@@ -1,19 +1,15 @@
-import { v4 as uuidv4 } from 'uuid';
 import { AuthTestUtils } from '../../support/auth-utils';
 import { TestTool } from '../../support/page-utils';
-import { PageSelectors, ShareSelectors, SidebarSelectors } from '../../support/selectors';
+import { PageSelectors, ShareSelectors, SidebarSelectors, byTestId } from '../../support/selectors';
+import { generateRandomEmail, logAppFlowyEnvironment } from '../../support/test-config';
 
 describe('Publish Page Test', () => {
-    const APPFLOWY_BASE_URL = Cypress.env('APPFLOWY_BASE_URL');
-    const APPFLOWY_GOTRUE_BASE_URL = Cypress.env('APPFLOWY_GOTRUE_BASE_URL');
-    const generateRandomEmail = () => `${uuidv4()}@appflowy.io`;
-
     let testEmail: string;
     const pageName = 'publish page';
     const pageContent = 'This is a publish page content';
 
     before(() => {
-        cy.task('log', `Env:\n- APPFLOWY_BASE_URL: ${APPFLOWY_BASE_URL}\n- APPFLOWY_GOTRUE_BASE_URL: ${APPFLOWY_GOTRUE_BASE_URL}`);
+        logAppFlowyEnvironment();
     });
 
     beforeEach(() => {
@@ -74,7 +70,7 @@ describe('Publish Page Test', () => {
             cy.wait(5000);
 
             // Verify that the page is now published by checking for published UI elements
-            cy.get('[data-testid="publish-namespace"]').should('be.visible', { timeout: 10000 });
+            cy.get(byTestId('publish-namespace')).should('be.visible', { timeout: 10000 });
             cy.task('log', 'Page published successfully, URL elements visible');
 
             // 6. Get the published URL by constructing it from UI elements
@@ -82,8 +78,8 @@ describe('Publish Page Test', () => {
                 const origin = win.location.origin;
 
                 // Get namespace and publish name from the UI
-                cy.get('[data-testid="publish-namespace"]').should('be.visible').invoke('text').then((namespace) => {
-                    cy.get('[data-testid="publish-name-input"]').should('be.visible').invoke('val').then((publishName) => {
+                cy.get(byTestId('publish-namespace')).should('be.visible').invoke('text').then((namespace) => {
+                    cy.get(byTestId('publish-name-input')).should('be.visible').invoke('val').then((publishName) => {
                         const namespaceText = namespace.trim();
                         const publishNameText = String(publishName).trim();
                         const publishedUrl = `${origin}/${namespaceText}/${publishNameText}`;
@@ -92,9 +88,9 @@ describe('Publish Page Test', () => {
                         // 7. Find and click the copy link button
                         // The copy button is an IconButton with LinkIcon SVG, inside a Tooltip
                         // Located in a div with class "p-1 text-text-primary" next to the URL container
-                        cy.get('[data-testid="share-popover"]').within(() => {
+                        ShareSelectors.sharePopover().within(() => {
                             // Find the parent container that holds both URL inputs and copy button
-                            cy.get('[data-testid="publish-name-input"]')
+                            cy.get(byTestId('publish-name-input'))
                                 .closest('div.flex.w-full.items-center.overflow-hidden')
                                 .find('div.p-1.text-text-primary')
                                 .should('be.visible')
@@ -266,13 +262,13 @@ describe('Publish Page Test', () => {
             cy.wait(5000);
 
             // Verify published
-            cy.get('[data-testid="publish-namespace"]').should('be.visible', { timeout: 10000 });
+            cy.get(byTestId('publish-namespace')).should('be.visible', { timeout: 10000 });
 
             // Get the published URL
             cy.window().then((win) => {
                 const origin = win.location.origin;
-                cy.get('[data-testid="publish-namespace"]').should('be.visible').invoke('text').then((namespace) => {
-                    cy.get('[data-testid="publish-name-input"]').should('be.visible').invoke('val').then((publishName) => {
+                cy.get(byTestId('publish-namespace')).should('be.visible').invoke('text').then((namespace) => {
+                    cy.get(byTestId('publish-name-input')).should('be.visible').invoke('val').then((publishName) => {
                         const publishedUrl = `${origin}/${namespace.trim()}/${String(publishName).trim()}`;
                         cy.task('log', `Published URL: ${publishedUrl}`);
 
@@ -318,20 +314,20 @@ describe('Publish Page Test', () => {
 
             ShareSelectors.publishConfirmButton().should('be.visible').click({ force: true });
             cy.wait(5000);
-            cy.get('[data-testid="publish-namespace"]').should('be.visible', { timeout: 10000 });
+            cy.get(byTestId('publish-namespace')).should('be.visible', { timeout: 10000 });
 
             // Get original URL
             cy.window().then((win) => {
                 const origin = win.location.origin;
-                cy.get('[data-testid="publish-namespace"]').invoke('text').then((namespace) => {
-                    cy.get('[data-testid="publish-name-input"]').invoke('val').then((originalName) => {
+                cy.get(byTestId('publish-namespace')).invoke('text').then((namespace) => {
+                    cy.get(byTestId('publish-name-input')).invoke('val').then((originalName) => {
                         const namespaceText = namespace.trim();
                         const originalNameText = String(originalName).trim();
                         cy.task('log', `Original publish name: ${originalNameText}`);
 
                         // Edit the publish name directly in the input
                         const newPublishName = `custom-name-${Date.now()}`;
-                        cy.get('[data-testid="publish-name-input"]')
+                        cy.get(byTestId('publish-name-input'))
                             .clear()
                             .type(newPublishName)
                             .blur();
@@ -400,14 +396,14 @@ describe('Publish Page Test', () => {
 
             ShareSelectors.publishConfirmButton().should('be.visible').click({ force: true });
             cy.wait(5000);
-            cy.get('[data-testid="publish-namespace"]').should('be.visible', { timeout: 10000 });
+            cy.get(byTestId('publish-namespace')).should('be.visible', { timeout: 10000 });
             cy.task('log', '✓ First publish successful');
 
             // Get published URL
             cy.window().then((win) => {
                 const origin = win.location.origin;
-                cy.get('[data-testid="publish-namespace"]').invoke('text').then((namespace) => {
-                    cy.get('[data-testid="publish-name-input"]').invoke('val').then((publishName) => {
+                cy.get(byTestId('publish-namespace')).invoke('text').then((namespace) => {
+                    cy.get(byTestId('publish-name-input')).invoke('val').then((publishName) => {
                         const publishedUrl = `${origin}/${namespace.trim()}/${String(publishName).trim()}`;
                         cy.task('log', `Published URL: ${publishedUrl}`);
 
@@ -461,7 +457,7 @@ describe('Publish Page Test', () => {
                         // Republish with updated content
                         ShareSelectors.publishConfirmButton().should('be.visible').click({ force: true });
                         cy.wait(5000);
-                        cy.get('[data-testid="publish-namespace"]').should('be.visible', { timeout: 10000 });
+                        cy.get(byTestId('publish-namespace')).should('be.visible', { timeout: 10000 });
                         cy.task('log', '✓ Republished successfully');
 
                         // Verify updated content is published
@@ -504,14 +500,14 @@ describe('Publish Page Test', () => {
 
             ShareSelectors.publishConfirmButton().should('be.visible').click({ force: true });
             cy.wait(5000);
-            cy.get('[data-testid="publish-namespace"]').should('be.visible', { timeout: 10000 });
+            cy.get(byTestId('publish-namespace')).should('be.visible', { timeout: 10000 });
 
             // Try to set invalid publish name with spaces
-            cy.get('[data-testid="publish-name-input"]').invoke('val').then((originalName) => {
+            cy.get(byTestId('publish-name-input')).invoke('val').then((originalName) => {
                 cy.task('log', `Original name: ${originalName}`);
 
                 // Try to set name with space (should be rejected)
-                cy.get('[data-testid="publish-name-input"]')
+                cy.get(byTestId('publish-name-input'))
                     .clear()
                     .type('invalid name with spaces')
                     .blur();
@@ -522,7 +518,7 @@ describe('Publish Page Test', () => {
                 cy.get('body').then(($body) => {
                     const bodyText = $body.text();
                     // The name should either revert or show an error
-                    cy.get('[data-testid="publish-name-input"]').invoke('val').then((currentName) => {
+                    cy.get(byTestId('publish-name-input')).invoke('val').then((currentName) => {
                         // Name should not contain spaces (validation should prevent it)
                         if (String(currentName).includes(' ')) {
                             cy.task('log', '⚠ Warning: Invalid characters were not rejected');
@@ -561,10 +557,10 @@ describe('Publish Page Test', () => {
 
             ShareSelectors.publishConfirmButton().should('be.visible').click({ force: true });
             cy.wait(5000);
-            cy.get('[data-testid="publish-namespace"]').should('be.visible', { timeout: 10000 });
+            cy.get(byTestId('publish-namespace')).should('be.visible', { timeout: 10000 });
 
             // Test comments switch - find by looking for Switch components in the published panel
-            cy.get('[data-testid="share-popover"]').within(() => {
+            ShareSelectors.sharePopover().within(() => {
                 // Find switches by looking for Switch components (they use MUI Switch which renders as input[type="checkbox"])
                 // Look for the container divs that have the text labels
                 cy.get('div.flex.items-center.justify-between').contains(/comments|comment/i).parent().within(() => {
@@ -635,13 +631,13 @@ describe('Publish Page Test', () => {
 
             ShareSelectors.publishConfirmButton().should('be.visible').click({ force: true });
             cy.wait(5000);
-            cy.get('[data-testid="publish-namespace"]').should('be.visible', { timeout: 10000 });
+            cy.get(byTestId('publish-namespace')).should('be.visible', { timeout: 10000 });
 
             // Get first URL
             cy.window().then((win) => {
                 const origin = win.location.origin;
-                cy.get('[data-testid="publish-namespace"]').invoke('text').then((namespace) => {
-                    cy.get('[data-testid="publish-name-input"]').invoke('val').then((publishName) => {
+                cy.get(byTestId('publish-namespace')).invoke('text').then((namespace) => {
+                    cy.get(byTestId('publish-name-input')).invoke('val').then((publishName) => {
                         firstPublishedUrl = `${origin}/${namespace.trim()}/${String(publishName).trim()}`;
                         cy.task('log', `First published URL: ${firstPublishedUrl}`);
 
@@ -654,9 +650,9 @@ describe('Publish Page Test', () => {
                         cy.contains('Publish').should('exist').click({ force: true });
                         cy.wait(1000);
 
-                        cy.get('[data-testid="publish-namespace"]').should('be.visible', { timeout: 10000 });
-                        cy.get('[data-testid="publish-namespace"]').invoke('text').then((namespace2) => {
-                            cy.get('[data-testid="publish-name-input"]').invoke('val').then((publishName2) => {
+                        cy.get(byTestId('publish-namespace')).should('be.visible', { timeout: 10000 });
+                        cy.get(byTestId('publish-namespace')).invoke('text').then((namespace2) => {
+                            cy.get(byTestId('publish-name-input')).invoke('val').then((publishName2) => {
                                 const secondPublishedUrl = `${origin}/${namespace2.trim()}/${String(publishName2).trim()}`;
                                 cy.task('log', `Second check URL: ${secondPublishedUrl}`);
 
@@ -753,7 +749,7 @@ describe('Publish Page Test', () => {
             cy.wait(5000);
 
             // Verify that the database is now published by checking for published UI elements
-            cy.get('[data-testid="publish-namespace"]').should('be.visible', { timeout: 10000 });
+            cy.get(byTestId('publish-namespace')).should('be.visible', { timeout: 10000 });
             cy.task('log', 'Database published successfully, URL elements visible');
 
             // Get the published URL
@@ -761,8 +757,8 @@ describe('Publish Page Test', () => {
                 const origin = win.location.origin;
 
                 // Get namespace and publish name from the UI
-                cy.get('[data-testid="publish-namespace"]').should('be.visible').invoke('text').then((namespace) => {
-                    cy.get('[data-testid="publish-name-input"]').should('be.visible').invoke('val').then((publishName) => {
+                cy.get(byTestId('publish-namespace')).should('be.visible').invoke('text').then((namespace) => {
+                    cy.get(byTestId('publish-name-input')).should('be.visible').invoke('val').then((publishName) => {
                         const namespaceText = namespace.trim();
                         const publishNameText = String(publishName).trim();
                         const publishedUrl = `${origin}/${namespaceText}/${publishNameText}`;
@@ -803,5 +799,3 @@ describe('Publish Page Test', () => {
         });
     });
 });
-
-

@@ -1,9 +1,8 @@
-import { v4 as uuidv4 } from 'uuid';
 import { AuthTestUtils } from '../../support/auth-utils';
 import { PageSelectors, SidebarSelectors } from '../../support/selectors';
+import { generateRandomEmail } from '../../support/test-config';
 
 describe('Sidebar Components Resilience Tests', () => {
-    const generateRandomEmail = () => `${uuidv4()}@appflowy.io`;
     let testEmail: string;
 
     beforeEach(() => {
@@ -206,4 +205,3 @@ describe('Sidebar Components Resilience Tests', () => {
         });
     });
 });
-

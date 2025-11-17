@@ -1,19 +1,14 @@
-import { v4 as uuidv4 } from 'uuid';
 import { AuthTestUtils } from '../../support/auth-utils';
 import { TestTool } from '../../support/page-utils';
-import { PageSelectors, SidebarSelectors, ModelSelectorSelectors } from '../../support/selectors';
+import { AddPageSelectors, PageSelectors, SidebarSelectors, ModelSelectorSelectors } from '../../support/selectors';
+import { generateRandomEmail, logAppFlowyEnvironment } from '../../support/test-config';
 
 describe('Chat Model Selection Persistence Tests', () => {
-    const APPFLOWY_BASE_URL = Cypress.env('APPFLOWY_BASE_URL');
-    const APPFLOWY_GOTRUE_BASE_URL = Cypress.env('APPFLOWY_GOTRUE_BASE_URL');
-    const generateRandomEmail = () => `${uuidv4()}@appflowy.io`;
     let testEmail: string;
 
     before(() => {
         // Log environment configuration for debugging
-        cy.task('log', `Test Environment Configuration:
-          - APPFLOWY_BASE_URL: ${APPFLOWY_BASE_URL}
-          - APPFLOWY_GOTRUE_BASE_URL: ${APPFLOWY_GOTRUE_BASE_URL}`);
+        logAppFlowyEnvironment();
     });
 
     beforeEach(() => {
@@ -81,7 +76,7 @@ describe('Chat Model Selection Persistence Tests', () => {
                     
                     // Click the inline add button (plus icon)
                     cy.wrap($page).within(() => {
-                        cy.get('[data-testid="inline-add-page"]')
+                        AddPageSelectors.inlineAddButton()
                             .first()
                             .should('be.visible')
                             .click({ force: true });
@@ -92,7 +87,7 @@ describe('Chat Model Selection Persistence Tests', () => {
                 cy.wait(1000);
                 
                 // Click on the AI Chat option from the dropdown
-                cy.get('[data-testid="add-ai-chat-button"]')
+                AddPageSelectors.addAIChatButton()
                     .should('be.visible')
                     .click();
                 

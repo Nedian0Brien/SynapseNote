@@ -1,4 +1,5 @@
 import { avatarTestUtils } from './avatar-test-utils';
+import { byTestId } from '../../../support/selectors';
 
 const { generateRandomEmail, setupBeforeEach, imports } = avatarTestUtils;
 const { updateUserMetadata, updateWorkspaceMemberAvatar, AuthTestUtils, AvatarSelectors, dbUtils, WorkspaceSelectors } = imports;
@@ -45,7 +46,7 @@ describe('Avatar Priority', () => {
         cy.task('log', 'Step 5: Verify workspace avatar is displayed (priority)');
         WorkspaceSelectors.dropdownTrigger().click();
         cy.wait(1000);
-        cy.get('[data-testid="account-settings-button"]').click();
+        cy.get(byTestId('account-settings-button')).click();
         AvatarSelectors.accountSettingsDialog().should('be.visible');
 
         // Workspace avatar should be displayed, not user metadata avatar
@@ -54,4 +55,3 @@ describe('Avatar Priority', () => {
     });
   });
 });
-
