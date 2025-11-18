@@ -7,6 +7,7 @@ export enum RenderRowType {
   Row = 'row',
   NewRow = 'new-row',
   CalculateRow = 'calculate-row',
+  PlaceholderRow = 'placeholder-row',
 }
 
 export type RenderRow = {
@@ -19,6 +20,18 @@ export function useRenderRows () {
   const readOnly = useReadOnly();
 
   const renderRows = useMemo(() => {
+    // If rows are still loading, show placeholder rows
+    if (rows === undefined) {
+      return [
+        {
+          type: RenderRowType.Header,
+        },
+        {
+          type: RenderRowType.CalculateRow,
+        },
+      ].filter(Boolean) as RenderRow[];
+    }
+
     const rowItems =
       rows?.map((row) => ({
         type: RenderRowType.Row,

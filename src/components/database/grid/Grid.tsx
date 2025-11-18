@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-import { useDatabaseContext, useDatabaseViewId } from '@/application/database-yjs';
+import { useDatabaseContext, useDatabaseViewId, useRowOrdersSelector } from '@/application/database-yjs';
 import { useRenderFields } from '@/components/database/components/grid/grid-column';
 import GridVirtualizer from '@/components/database/components/grid/grid-table/GridVirtualizer';
 import { GridProvider } from '@/components/database/grid/GridProvider';
@@ -8,14 +8,15 @@ import { GridProvider } from '@/components/database/grid/GridProvider';
 export function Grid() {
   const { fields } = useRenderFields();
   const viewId = useDatabaseViewId();
+  const rows = useRowOrdersSelector();
 
   const { onRendered } = useDatabaseContext();
 
   useEffect(() => {
-    if (fields) {
+    if (fields && rows !== undefined) {
       onRendered?.();
     }
-  }, [fields, onRendered]);
+  }, [fields, rows, onRendered]);
 
   return (
     <GridProvider>

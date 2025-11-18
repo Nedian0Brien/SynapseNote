@@ -3,9 +3,6 @@ import { ErrorBoundary } from 'react-error-boundary';
 
 import { useDatabaseViewsSelector } from '@/application/database-yjs';
 import { DatabaseViewLayout, YjsDatabaseKey } from '@/application/types';
-import CalendarSkeleton from '@/components/_shared/skeleton/CalendarSkeleton';
-import GridSkeleton from '@/components/_shared/skeleton/GridSkeleton';
-import KanbanSkeleton from '@/components/_shared/skeleton/KanbanSkeleton';
 import { Board } from '@/components/database/board';
 import { DatabaseConditionsContext } from '@/components/database/components/conditions/context';
 import { DatabaseTabs } from '@/components/database/components/tabs';
@@ -112,22 +109,9 @@ function DatabaseViews({
     [fixedHeight, onChangeView]
   );
 
-  const skeleton = useMemo(() => {
-    switch (layout) {
-      case DatabaseViewLayout.Grid:
-        return <GridSkeleton includeTitle={false} includeTabs={false} />;
-      case DatabaseViewLayout.Board:
-        return <KanbanSkeleton includeTitle={false} includeTabs={false} />;
-      case DatabaseViewLayout.Calendar:
-        return <CalendarSkeleton includeTitle={false} includeTabs={false} />;
-      default:
-        return null;
-    }
-  }, [layout]);
 
-  // Simple conditional rendering - Board's autoScrollForElements doesn't support keep-alive
   const view = useMemo(() => {
-    if (isLoading) return skeleton;
+    if (isLoading) return null;
     switch (layout) {
       case DatabaseViewLayout.Grid:
         return <Grid />;
@@ -136,7 +120,7 @@ function DatabaseViews({
       case DatabaseViewLayout.Calendar:
         return <Calendar />;
     }
-  }, [layout, isLoading, skeleton]);
+  }, [layout, isLoading]);
 
   useEffect(() => {
     if (!isLoading && viewContainerRef.current) {
@@ -279,7 +263,7 @@ function DatabaseViews({
                 : {}
             }
           >
-            <Suspense fallback={skeleton}>
+            <Suspense fallback={null}>
               <ErrorBoundary fallbackRender={ElementFallbackRender}>{view}</ErrorBoundary>
             </Suspense>
           </div>
