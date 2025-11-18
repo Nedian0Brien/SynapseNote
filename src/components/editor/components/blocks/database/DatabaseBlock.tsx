@@ -67,25 +67,6 @@ export const DatabaseBlock = memo(
       };
     }, [doc, viewId]);
 
-    const EMBEDDED_DB_HEIGHT = 560;
-
-    const logContainerSize = () => {
-      if (!containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
-      console.debug('[DatabaseBlock] container size', {
-        viewId,
-        selectedViewId,
-        width,
-        height: rect.height,
-        paddingStart,
-        paddingEnd,
-      });
-    };
-
-    useEffect(() => {
-      logContainerSize();
-    }, [selectedViewId, width, paddingStart, paddingEnd]);
-
     return (
       <div {...attributes} contentEditable={readOnly ? false : undefined} className='relative w-full cursor-pointer'>
         <div ref={ref} className='absolute left-0 top-0 h-full w-full caret-transparent'>
@@ -95,11 +76,6 @@ export const DatabaseBlock = memo(
           contentEditable={false}
           ref={containerRef}
           className='container-bg relative my-1 flex w-full select-none flex-col'
-          style={{
-            minHeight: EMBEDDED_DB_HEIGHT,
-            height: EMBEDDED_DB_HEIGHT,
-            width: '100%',
-          }}
         >
           <DatabaseContent
             selectedViewId={selectedViewId}
@@ -121,7 +97,6 @@ export const DatabaseBlock = memo(
             onChangeView={onChangeView}
             // eslint-disable-next-line
             context={context as DatabaseContextState}
-            fixedHeight={EMBEDDED_DB_HEIGHT}
           />
         </div>
       </div>

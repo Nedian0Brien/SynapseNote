@@ -153,7 +153,7 @@ function DatabaseViews({
   }, [isLoading, viewVisible, layout, viewId]);
 
   // Scroll restoration with RAF enforcement
-  // Even with keep-mounted, Board's autoScrollForElements can still interfere on first switch
+  // Board's autoScrollForElements interferes with scroll, so we enforce for multiple frames
   useEffect(() => {
     if (isLoading) return;
     if (lastScrollRef.current == null) return;
@@ -168,8 +168,17 @@ function DatabaseViews({
     let rafCount = 0;
     let rafId: number;
 
+    // Temporarily prevent scroll events during restoration
+    const preventScroll = (e: Event) => {
+      if (scrollElement.scrollTop !== targetScroll) {
+        e.preventDefault();
+        scrollElement.scrollTop = targetScroll;
+      }
+    };
+
+    scrollElement.addEventListener('scroll', preventScroll, { passive: false });
+
     // Use RAF loop to enforce scroll position
-    // This handles Board's autoScrollForElements which may still interfere on first display
     const enforceScroll = () => {
       const currentScroll = scrollElement.scrollTop;
       const delta = Math.abs(currentScroll - targetScroll);
@@ -185,16 +194,22 @@ function DatabaseViews({
       }
 
       rafCount++;
-      // Run for 3 frames (~48ms) - shorter than before since views stay mounted
-      if (rafCount < 3) {
+      // Run for 5 frames (~80ms) to catch delayed scroll changes from Board mount
+      if (rafCount < 5) {
         rafId = requestAnimationFrame(enforceScroll);
       } else {
         logDebug('[DatabaseViews] scroll restoration completed', {
           final: scrollElement.scrollTop,
           target: targetScroll,
         });
+        // Remove scroll listener and clean up
+        scrollElement.removeEventListener('scroll', preventScroll);
         lastScrollRef.current = null;
         setViewVisible(true);
+        // Release height lock to allow view to resize to its natural height
+        if (!fixedHeight) {
+          setLockedHeight(null);
+        }
       }
     };
 
@@ -204,6 +219,7 @@ function DatabaseViews({
       if (rafId) {
         cancelAnimationFrame(rafId);
       }
+      scrollElement.removeEventListener('scroll', preventScroll);
     };
   }, [isLoading, viewId]);
 
@@ -251,20 +267,17 @@ function DatabaseViews({
           className={'relative flex h-full w-full flex-1 flex-col overflow-hidden'}
           style={
             effectiveHeight !== null
-              ? { height: `${effectiveHeight}px` }
+              ? { height: `${effectiveHeight}px`, maxHeight: `${effectiveHeight}px` }
               : undefined
           }
         >
           <div
-            className='h-full w-full transition-opacity duration-100'
-            style={{
-              ...(effectiveHeight !== null
-                ? { minHeight: `${effectiveHeight}px`, height: `${effectiveHeight}px` }
-                : {}),
-              opacity: viewVisible ? 1 : 0,
-              pointerEvents: viewVisible ? undefined : 'none',
-            }}
-            aria-hidden={!viewVisible}
+            className='h-full w-full'
+            style={
+              effectiveHeight !== null
+                ? { height: `${effectiveHeight}px`, maxHeight: `${effectiveHeight}px` }
+                : {}
+            }
           >
             <Suspense fallback={skeleton}>
               <ErrorBoundary fallbackRender={ElementFallbackRender}>{view}</ErrorBoundary>
