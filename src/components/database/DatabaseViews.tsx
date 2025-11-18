@@ -232,7 +232,9 @@ function DatabaseViews({
     });
   }, [lockedHeight, fixedHeight, isLoading, viewVisible, viewId, layout, iidIndex]);
 
-  const effectiveHeight = lockedHeight ?? fixedHeight ?? null;
+  // Only use locked height during transitions (isLoading) or if fixedHeight is explicitly set
+  // This prevents the empty space issue when filters/sorts expand/collapse
+  const effectiveHeight = isLoading ? (lockedHeight ?? fixedHeight ?? null) : (fixedHeight ?? null);
 
   return (
     <>
@@ -251,6 +253,7 @@ function DatabaseViews({
           setSelectedViewId={handleViewChange}
           viewIds={viewIds}
         />
+
         <DatabaseConditions />
 
         <div

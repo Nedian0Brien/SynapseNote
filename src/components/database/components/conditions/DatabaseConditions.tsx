@@ -34,8 +34,8 @@ export function DatabaseConditions() {
   return (
     <div
       style={{
-        // Keep a stable vertical footprint to avoid layout shifts between views.
-        height: '40px',
+        // Collapse to 0 height when not expanded to avoid unnecessary space
+        height: expanded ? '40px' : '0',
         visibility: expanded ? 'visible' : 'hidden',
         opacity: expanded ? 1 : 0,
         pointerEvents: expanded ? 'auto' : 'none',
