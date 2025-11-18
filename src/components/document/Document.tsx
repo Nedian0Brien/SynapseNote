@@ -11,12 +11,12 @@ import { YjsEditor } from '@/application/slate-yjs';
 import { appendFirstEmptyParagraph } from '@/application/slate-yjs/utils/yjs';
 import { ViewComponentProps, YjsEditorKey, YSharedRoot } from '@/application/types';
 import { getUserIconUrl } from '@/application/user-metadata';
+import EditorSkeleton from '@/components/_shared/skeleton/EditorSkeleton';
 import { useAppAwareness } from '@/components/app/app.hooks';
 import { useCurrentUserWorkspaceAvatar } from '@/components/app/useWorkspaceMemberProfile';
 import { Editor } from '@/components/editor';
 import { useCurrentUser, useService } from '@/components/main/app.hooks';
 import ViewMetaPreview from '@/components/view-meta/ViewMetaPreview';
-import EditorSkeleton from '@/components/_shared/skeleton/EditorSkeleton';
 
 export type DocumentProps = ViewComponentProps & {
   onEditorConnected?: (editor: YjsEditor) => void;

@@ -32,6 +32,7 @@ export function useGridVirtualizer({ data, columns }: { columns: RenderColumn[];
 
   const measureParentOffset = useCallback(() => {
     const scrollElement = getScrollElement();
+
     if (!parentRef.current || !scrollElement) return null;
 
     const parentRect = parentRef.current.getBoundingClientRect();
@@ -52,7 +53,8 @@ export function useGridVirtualizer({ data, columns }: { columns: RenderColumn[];
     // Second frame: Browser has processed initial layout
     // Third frame: Layout is fully settled
     const first = measureParentOffset();
-    if (first == null) {
+
+    if (first === null) {
       logDebug('[GridVirtualizer] skip parent offset update; missing refs', {
         hasParent: !!parentRef.current,
         hasScrollElement: !!getScrollElement(),

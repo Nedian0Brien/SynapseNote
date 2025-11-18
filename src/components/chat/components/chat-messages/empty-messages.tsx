@@ -1,10 +1,12 @@
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
+import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+
+import { ReactComponent as Logo } from '@/assets/icons/logo.svg';
 import { useMessagesHandlerContext } from '@/components/chat/provider/messages-handler-provider';
 import { User } from '@/components/chat/types';
-import { ReactComponent as Logo } from '@/assets/icons/logo.svg';
-import { useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+
 
 export function EmptyMessages({ currentUser }: {
   currentUser?: User;

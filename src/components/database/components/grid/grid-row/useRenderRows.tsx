@@ -1,6 +1,7 @@
+import { useMemo } from 'react';
+
 import { useReadOnly, useRowOrdersSelector } from '@/application/database-yjs';
 
-import { useMemo } from 'react';
 
 export enum RenderRowType {
   Header = 'header',

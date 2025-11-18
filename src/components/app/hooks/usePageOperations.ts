@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { toast } from 'sonner';
 
 import {
+  CreateDatabaseViewPayload,
   CreateFolderViewPayload,
   CreatePagePayload,
   CreateSpacePayload,
@@ -242,6 +243,25 @@ export function usePageOperations({ outline, loadOutline }: { outline?: View[], 
     [currentWorkspaceId, loadOutline, service]
   );
 
+  // Create database view (linked view using new endpoint)
+  const createDatabaseView = useCallback(
+    async (viewId: string, payload: CreateDatabaseViewPayload) => {
+      if (!currentWorkspaceId || !service) {
+        throw new Error('No workspace or service found');
+      }
+
+      try {
+        const res = await service?.createDatabaseView(currentWorkspaceId, viewId, payload);
+
+        // Note: No need to reload outline - server handles Yjs synchronization
+        return res;
+      } catch (e) {
+        return Promise.reject(e);
+      }
+    },
+    [currentWorkspaceId, service]
+  );
+
   // Upload file
   const uploadFile = useCallback(
     async (viewId: string, file: File, onProgress?: (n: number) => void) => {
@@ -330,6 +350,7 @@ export function usePageOperations({ outline, loadOutline }: { outline?: View[], 
     createSpace,
     updateSpace,
     createFolderView,
+    createDatabaseView,
     uploadFile,
     getSubscriptions,
     publish,

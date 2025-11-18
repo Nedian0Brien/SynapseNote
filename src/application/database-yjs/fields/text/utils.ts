@@ -1,6 +1,7 @@
+import * as Y from 'yjs';
+
 import { FieldType } from '@/application/database-yjs';
 import { YDatabaseField, YjsDatabaseKey } from '@/application/types';
-import * as Y from 'yjs';
 
 export function createTextField (id: string) {
   const field = new Y.Map() as YDatabaseField;

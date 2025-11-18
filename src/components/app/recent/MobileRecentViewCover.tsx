@@ -1,8 +1,8 @@
-import { CoverType } from '@/application/types';
+import { useCallback, useMemo } from 'react';
 
+import { CoverType } from '@/application/types';
 import ImageRender from '@/components/_shared/image-render/ImageRender';
 import { renderColor } from '@/utils/color';
-import { useCallback, useMemo } from 'react';
 
 function MobileRecentViewCover ({ cover }: { cover: { type: string; value: string } }) {
   const renderCoverColor = useCallback((color: string) => {

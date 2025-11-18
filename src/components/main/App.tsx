@@ -3,9 +3,11 @@ import NotFound from '@/components/error/NotFound';
 import LoginAuth from '@/components/login/LoginAuth';
 import withAppWrapper from '@/components/main/withAppWrapper';
 import PublishPage from '@/pages/PublishPage';
+
 import '@/styles/app.scss';
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+
 import { Toaster } from '../ui/sonner';
 
 const LoginPage = lazy(() => import('@/pages/LoginPage'));

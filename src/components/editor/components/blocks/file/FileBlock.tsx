@@ -14,8 +14,8 @@ import { usePopoverContext } from '@/components/editor/components/block-popover/
 import FileToolbar from '@/components/editor/components/blocks/file/FileToolbar';
 import { EditorElementProps, FileNode } from '@/components/editor/editor.type';
 import { useEditorContext } from '@/components/editor/EditorContext';
-import { FileHandler } from '@/utils/file';
 import { constructFileUrl } from '@/components/editor/utils/file-url';
+import { FileHandler } from '@/utils/file';
 import { openUrl } from '@/utils/url';
 
 export const FileBlock = memo(

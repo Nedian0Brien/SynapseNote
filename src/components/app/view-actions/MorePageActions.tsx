@@ -1,7 +1,12 @@
+import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
+
 import { View, ViewIconType } from '@/application/types';
 import { ReactComponent as EditIcon } from '@/assets/icons/edit.svg';
 import { ReactComponent as EmojiIcon } from '@/assets/icons/emoji.svg';
 import { ReactComponent as OpenIcon } from '@/assets/icons/open.svg';
+import { CustomIconPopover } from '@/components/_shared/cutsom-icon';
 import { useAppOverlayContext } from '@/components/app/app-overlay/AppOverlayContext';
 import { useAppHandlers, useCurrentWorkspaceId } from '@/components/app/app.hooks';
 import MoreActionsContent from '@/components/app/header/MoreActionsContent';
@@ -10,11 +15,8 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import { toast } from 'sonner';
 
-import { CustomIconPopover } from '@/components/_shared/cutsom-icon';
-import { useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
+
 
 function MorePageActions({ view, onClose }: {
   view: View;

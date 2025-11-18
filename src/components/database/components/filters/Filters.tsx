@@ -1,11 +1,13 @@
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import { useFiltersSelector, useReadOnly } from '@/application/database-yjs';
 import { useAddFilter } from '@/application/database-yjs/dispatch';
 import { ReactComponent as AddFilterSvg } from '@/assets/icons/plus.svg';
 import PropertiesMenu from '@/components/database/components/conditions/PropertiesMenu';
 import Filter from '@/components/database/components/filters/Filter';
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
+
 import { useConditionsContext } from '../conditions/context';
 
 export function Filters() {

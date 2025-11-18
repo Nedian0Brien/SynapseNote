@@ -1,11 +1,13 @@
+import React, { useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useSlateStatic } from 'slate-react';
+
 import { YjsEditor } from '@/application/slate-yjs';
 import { CustomEditor } from '@/application/slate-yjs/command';
 import { findSlateEntryByBlockId } from '@/application/slate-yjs/utils/editor';
 import { VideoBlockData, VideoType } from '@/application/types';
 import { TabPanel, ViewTab, ViewTabs } from '@/components/_shared/tabs/ViewTabs';
-import React, { useCallback, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useSlateStatic } from 'slate-react';
+
 import EmbedLink from 'src/components/_shared/image-upload/EmbedLink';
 
 function VideoBlockPopoverContent({ blockId, onClose }: { blockId: string; onClose: () => void }) {

@@ -1,3 +1,8 @@
+import { Button, CircularProgress, IconButton, OutlinedInput, Tooltip } from '@mui/material';
+import React, { useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
+
 import { SubscriptionPlan, View } from '@/application/types';
 import { ReactComponent as RemoveIcon } from '@/assets/icons/close.svg';
 import { ReactComponent as SearchIcon } from '@/assets/icons/search.svg';
@@ -5,11 +10,6 @@ import { ReactComponent as UpgradeIcon } from '@/assets/icons/upgrade.svg';
 import { Popover } from '@/components/_shared/popover';
 import PageIcon from '@/components/_shared/view-icon/PageIcon';
 import { isOfficialHost } from '@/utils/subscription';
-import { Button, CircularProgress, IconButton, OutlinedInput, Tooltip } from '@mui/material';
-import React, { useCallback, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
-
-import { useSearchParams } from 'react-router-dom';
 
 interface HomePageSettingProps {
   onRemoveHomePage: () => Promise<void>;

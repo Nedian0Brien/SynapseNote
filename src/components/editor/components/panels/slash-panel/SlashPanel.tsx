@@ -1,4 +1,3 @@
-import { useAIWriter } from '@/components/chat';
 import { Button } from '@mui/material';
 import { PopoverOrigin } from '@mui/material/Popover/Popover';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -25,17 +24,18 @@ import {
 } from '@/application/types';
 // import { ReactComponent as AIWriterIcon } from '@/assets/slash_menu_icon_ai_writer.svg';
 import { ReactComponent as EmojiIcon } from '@/assets/icons/add_emoji.svg';
-import { ReactComponent as GridIcon } from '@/assets/icons/grid.svg';
-import { ReactComponent as BoardIcon } from '@/assets/icons/board.svg';
-import { ReactComponent as CalendarIcon } from '@/assets/icons/calendar.svg';
+import { ReactComponent as AddPageIcon } from '@/assets/icons/add_to_page.svg';
 import { ReactComponent as AskAIIcon } from '@/assets/icons/ai.svg';
+import { ReactComponent as BoardIcon } from '@/assets/icons/board.svg';
 import { ReactComponent as BulletedListIcon } from '@/assets/icons/bulleted_list.svg';
+import { ReactComponent as CalendarIcon } from '@/assets/icons/calendar.svg';
 import { ReactComponent as CalloutIcon } from '@/assets/icons/callout.svg';
 import { ReactComponent as ContinueWritingIcon } from '@/assets/icons/continue_writing.svg';
 import { ReactComponent as DividerIcon } from '@/assets/icons/divider.svg';
 import { ReactComponent as OutlineIcon } from '@/assets/icons/doc.svg';
 import { ReactComponent as FileIcon } from '@/assets/icons/file.svg';
 import { ReactComponent as FormulaIcon } from '@/assets/icons/formula.svg';
+import { ReactComponent as GridIcon } from '@/assets/icons/grid.svg';
 import { ReactComponent as Heading1Icon } from '@/assets/icons/h1.svg';
 import { ReactComponent as Heading2Icon } from '@/assets/icons/h2.svg';
 import { ReactComponent as Heading3Icon } from '@/assets/icons/h3.svg';
@@ -50,24 +50,23 @@ import { ReactComponent as TodoListIcon } from '@/assets/icons/todo.svg';
 import { ReactComponent as ToggleHeading1Icon } from '@/assets/icons/toggle_h1.svg';
 import { ReactComponent as ToggleHeading2Icon } from '@/assets/icons/toggle_h2.svg';
 import { ReactComponent as ToggleHeading3Icon } from '@/assets/icons/toggle_h3.svg';
-import { ReactComponent as ToggleListIcon } from '@/assets/icons/toggle_list.svg';
+import { ReactComponent as ToggleListIcon , ReactComponent as ChevronRight } from '@/assets/icons/toggle_list.svg';
 import { ReactComponent as VideoIcon } from '@/assets/icons/video.svg';
+import { notify } from '@/components/_shared/notify';
+import { flattenViews } from '@/components/_shared/outline/utils';
+import { calculateOptimalOrigins, Popover } from '@/components/_shared/popover';
+import PageIcon from '@/components/_shared/view-icon/PageIcon';
+import { useAIWriter } from '@/components/chat';
+import { SearchInput } from '@/components/chat/components/ui/search-input';
 import { usePopoverContext } from '@/components/editor/components/block-popover/BlockPopoverContext';
 import { usePanelContext } from '@/components/editor/components/panels/Panels.hooks';
 import { PanelType } from '@/components/editor/components/panels/PanelsContext';
 import { getRangeRect } from '@/components/editor/components/toolbar/selection-toolbar/utils';
 import { useEditorContext } from '@/components/editor/EditorContext';
-import { notify } from '@/components/_shared/notify';
-import { calculateOptimalOrigins, Popover } from '@/components/_shared/popover';
-import PageIcon from '@/components/_shared/view-icon/PageIcon';
-import { Label } from '@/components/ui/label';
-import { SearchInput } from '@/components/chat/components/ui/search-input';
-import { Separator } from '@/components/ui/separator';
 import { Button as OutlineButton } from '@/components/ui/button';
-import { ReactComponent as ChevronRight } from '@/assets/icons/toggle_list.svg';
-import { ReactComponent as AddPageIcon } from '@/assets/icons/add_to_page.svg';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 import { getCharacters } from '@/utils/word';
-import { flattenViews } from '@/components/_shared/outline/utils';
 
 type DatabaseOption = {
   databaseId: string;
@@ -121,6 +120,7 @@ const DatabaseTreeItem: React.FC<{
           if (isDatabase) {
             onSelect(view);
           }
+
           setExpanded((prev) => !prev);
         }}
         className={
@@ -188,6 +188,7 @@ export function SlashPanel({
     loadViewMeta,
     getMoreAIContext,
     createFolderView,
+    createDatabaseView,
     getViewIdFromDatabaseId,
     loadViews,
     databaseRelations,
@@ -343,6 +344,7 @@ export function SlashPanel({
     if ((!relations || Object.keys(relations).length === 0) && loadViewMeta && viewId) {
       try {
         const meta = await loadViewMeta(viewId);
+
         relations = meta?.database_relations;
       } catch (e) {
         console.error(e);
@@ -357,24 +359,29 @@ export function SlashPanel({
 
     try {
       const views = (await loadViews()) || [];
+
       setDatabaseOutline(views);
       const flatViews = flattenViews(views);
       const options = Object.entries(relations).reduce<DatabaseOption[]>((acc, [databaseId, baseViewId]) => {
         const view = flatViews.find((item) => item.view_id === baseViewId);
+
         if (view) {
           acc.push({
             databaseId,
             view,
           });
         }
+
         return acc;
       }, []);
 
       setDatabaseOptions(options);
       return options.length > 0;
-    } catch (e: any) {
-      notify.error(e.message);
-      setDatabaseError(e.message);
+    } catch (e) {
+      const error = e as Error;
+
+      notify.error(error.message);
+      setDatabaseError(error.message);
       setDatabaseOutline([]);
       setDatabaseOptions([]);
       return false;
@@ -419,7 +426,7 @@ export function SlashPanel({
     async (targetViewId: string) => {
       if (!linkedPicker) return;
 
-      if (!createFolderView || !viewId) {
+      if (!createDatabaseView || !viewId) {
         notify.error(
           t('document.slashMenu.linkedDatabase.actionUnavailable', {
             defaultValue: 'Linking databases is not available right now',
@@ -463,34 +470,35 @@ export function SlashPanel({
         })();
         const referencedName = prefix ? `${prefix} ${baseName}` : baseName;
 
-        const newViewId = await createFolderView({
-          parentViewId: baseViewId,
+        // Use new createDatabaseView endpoint - server handles all Yjs initialization
+        const response = await createDatabaseView(baseViewId, {
           layout: linkedPicker.layout,
           name: referencedName,
-          databaseId: option.databaseId,
         });
 
         console.debug('[SlashPanel] created linked database', {
           optionKey: linkedPicker.layout,
           baseViewId,
           databaseId: option.databaseId,
-          newViewId,
+          newViewId: response.view_id,
           referencedName,
         });
 
         turnInto(blockType, {
-          view_id: newViewId,
+          view_id: response.view_id,
           parent_id: baseViewId,
         } as DatabaseNodeData);
-      } catch (e: any) {
-        notify.error(e.message);
+      } catch (e) {
+        const error = e as Error;
+
+        notify.error(error.message);
       } finally {
         setLinkedPicker(null);
       }
     },
     [
       linkedPicker,
-      createFolderView,
+      createDatabaseView,
       viewId,
       databaseOptions,
       blockTypeByLayout,
@@ -1016,6 +1024,7 @@ export function SlashPanel({
   useEffect(() => {
     if (!linkedPicker) return;
     const origins = calculateOptimalOrigins(linkedPicker.position, 360, 360, undefined, 16);
+
     setLinkedTransformOrigin(origins.transformOrigin);
   }, [linkedPicker]);
 

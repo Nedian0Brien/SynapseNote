@@ -1,8 +1,9 @@
+import { dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
 import { Row, useReadOnly } from '@/application/database-yjs';
 import { useBoardDragContext } from '@/components/database/components/board/drag-and-drop/board-context';
 import { ColumnDragContextProps } from '@/components/database/components/board/drag-and-drop/column-context';
-import { dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 export enum StateType {
   IDLE = 'idle',

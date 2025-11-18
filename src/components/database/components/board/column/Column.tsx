@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useMemo } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 
 import { Row, useReadOnly } from '@/application/database-yjs';
 import CardList, { CardType, RenderCard } from '@/components/database/components/board/column/CardList';

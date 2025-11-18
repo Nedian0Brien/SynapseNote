@@ -6,13 +6,13 @@ import { ReactComponent as DownIcon } from '@/assets/icons/alt_arrow_down.svg';
 import { ReactComponent as CloseIcon } from '@/assets/icons/close.svg';
 import { ReactComponent as SearchIcon } from '@/assets/icons/search.svg';
 import { ReactComponent as CheckIcon } from '@/assets/icons/tick.svg';
+import { Popover } from '@/components/_shared/popover';
 import { useAppRecent } from '@/components/app/app.hooks';
 import BestMatch from '@/components/app/search/BestMatch';
 import RecentViews from '@/components/app/search/RecentViews';
 import TitleMatch from '@/components/app/search/TitleMatch';
 import { dropdownMenuItemVariants } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Popover } from '@/components/_shared/popover';
 import { createHotkey, createHotKeyLabel, HOT_KEY_NAME } from '@/utils/hotkeys';
 
 enum SEARCH_TYPE {

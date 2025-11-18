@@ -1,4 +1,3 @@
-import { PromptDatabaseConfiguration } from '@/components/chat';
 import { useCallback, useRef } from 'react';
 
 import { FieldType } from '@/application/database-yjs';
@@ -15,6 +14,8 @@ import {
   YjsDatabaseKey,
   YjsEditorKey,
 } from '@/application/types';
+import { PromptDatabaseConfiguration } from '@/components/chat';
+
 import { useAuthInternal } from '../contexts/AuthInternalContext';
 
 // Hook for managing database-related operations

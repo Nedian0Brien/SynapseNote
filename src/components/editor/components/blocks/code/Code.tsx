@@ -1,8 +1,10 @@
-import { useCodeBlock } from '@/components/editor/components/blocks/code/Code.hooks';
-import { CodeNode, EditorElementProps } from '@/components/editor/editor.type';
 import { forwardRef, lazy, Suspense, useState } from 'react';
 import { Element } from 'slate';
 import { ReactEditor, useReadOnly, useSlateStatic } from 'slate-react';
+
+import { useCodeBlock } from '@/components/editor/components/blocks/code/Code.hooks';
+import { CodeNode, EditorElementProps } from '@/components/editor/editor.type';
+
 import CodeToolbar from './CodeToolbar';
 import LanguageSelect from './SelectLanguage';
 

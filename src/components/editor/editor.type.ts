@@ -1,3 +1,6 @@
+import { HTMLAttributes } from 'react';
+import { Element } from 'slate';
+
 import {
   BlockType,
   CalloutBlockData,
@@ -23,8 +26,6 @@ import {
   VideoBlockData,
   ColumnNodeData,
 } from '@/application/types';
-import { HTMLAttributes } from 'react';
-import { Element } from 'slate';
 
 export interface BlockNode extends Element {
   blockId: BlockId;

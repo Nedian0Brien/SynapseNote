@@ -1,9 +1,10 @@
+import React, { useCallback, useEffect, useMemo } from 'react';
+
 import { UIVariant, View } from '@/application/types';
 import { ReactComponent as PrivateIcon } from '@/assets/icons/lock.svg';
 import OutlineIcon from '@/components/_shared/outline/OutlineIcon';
 import OutlineItemContent from '@/components/_shared/outline/OutlineItemContent';
 import { getOutlineExpands, setOutlineExpands } from '@/components/_shared/outline/utils';
-import React, { useCallback, useEffect, useMemo } from 'react';
 
 function OutlineItem({
   view,

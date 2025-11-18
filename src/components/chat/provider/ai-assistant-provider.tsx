@@ -1,8 +1,12 @@
-import { ConfirmDiscard } from '@/components/chat/components/ai-writer/confirm-discard';
-import { TooltipProvider } from '@/components/ui/tooltip';
-import { ModelSelectorContext } from '@/components/chat/contexts/model-selector-context';
-import { toast } from 'sonner';
+import { EditorData } from '@appflowyinc/editor';
+import { findLast } from 'lodash-es';
+import { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
+
+import { ConfirmDiscard } from '@/components/chat/components/ai-writer/confirm-discard';
+import { ModelSelectorContext } from '@/components/chat/contexts/model-selector-context';
+
 // Using main AppFlowy i18n system - no separate chat context needed
 import { WriterRequest } from '@/components/chat/request';
 import {
@@ -15,9 +19,8 @@ import {
   ResponseFormat,
 } from '@/components/chat/types';
 import { ApplyingState, WriterContext } from '@/components/chat/writer/context';
-import { EditorData } from '@appflowyinc/editor';
-import { findLast } from 'lodash-es';
-import { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import { TooltipProvider } from '@/components/ui/tooltip';
+
 import { usePromptModal } from './prompt-modal-provider';
 import { ViewLoaderProvider } from './view-loader-provider';
 

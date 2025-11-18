@@ -1,8 +1,9 @@
+import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import { NormalModal } from '@/components/_shared/modal';
 import { notify } from '@/components/_shared/notify';
 import { useService } from '@/components/main/app.hooks';
-import { useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
 
 function DeleteCreator ({ id, onClose, onDeleted, open }: {
   id: string;

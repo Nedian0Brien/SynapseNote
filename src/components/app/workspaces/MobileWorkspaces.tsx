@@ -1,13 +1,14 @@
+import { Divider, IconButton } from '@mui/material';
+import React, { useCallback, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import { ReactComponent as CloseIcon } from '@/assets/icons/close.svg';
+import { MobileDrawer } from '@/components/_shared/mobile-drawer';
+import { notify } from '@/components/_shared/notify';
 import { useAppHandlers, useCurrentWorkspaceId, useUserWorkspaceInfo } from '@/components/app/app.hooks';
 import CurrentWorkspace from '@/components/app/workspaces/CurrentWorkspace';
 import WorkspaceList from '@/components/app/workspaces/WorkspaceList';
 import { useCurrentUser } from '@/components/main/app.hooks';
-import { MobileDrawer } from '@/components/_shared/mobile-drawer';
-import { notify } from '@/components/_shared/notify';
-import { Divider, IconButton } from '@mui/material';
-import React, { useCallback, useMemo, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
 
 function MobileWorkspaces({ onClose }: { onClose: () => void }) {
   const [open, setOpen] = React.useState(false);

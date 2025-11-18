@@ -1,5 +1,6 @@
-import { initialEditorTest, moveCursor } from '@/components/editor/__tests__/mount';
 import { FromBlockJSON } from 'cypress/support/document';
+
+import { initialEditorTest, moveCursor } from '@/components/editor/__tests__/mount';
 
 const initialData: FromBlockJSON[] = [{
   type: 'paragraph',

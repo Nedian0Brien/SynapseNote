@@ -6,9 +6,9 @@ import { ReactComponent as ArrowRight } from '@/assets/icons/arrow_right.svg';
 import { ReactComponent as Logo } from '@/assets/icons/logo.svg';
 import EmailLogin from '@/components/login/EmailLogin';
 import LoginProvider from '@/components/login/LoginProvider';
+import { AFConfigContext } from '@/components/main/app.hooks';
 import { Separator } from '@/components/ui/separator';
 import { getPlatform } from '@/utils/platform';
-import { AFConfigContext } from '@/components/main/app.hooks';
 
 export function Login({ redirectTo }: { redirectTo: string }) {
   const { t } = useTranslation();

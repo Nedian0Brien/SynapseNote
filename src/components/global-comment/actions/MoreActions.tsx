@@ -1,15 +1,16 @@
+import { Button, IconButton, Tooltip, TooltipProps } from '@mui/material';
+import React, { memo, useCallback, useContext, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import { GlobalComment } from '@/application/comment.type';
 import { PublishContext } from '@/application/publish';
 import { ReactComponent as TrashIcon } from '@/assets/icons/delete.svg';
 import { ReactComponent as MoreIcon } from '@/assets/icons/more.svg';
-import { useGlobalCommentContext } from '@/components/global-comment/GlobalComment.hooks';
-import { AFConfigContext } from '@/components/main/app.hooks';
 import { NormalModal } from '@/components/_shared/modal';
 import { notify } from '@/components/_shared/notify';
 import { Popover } from '@/components/_shared/popover';
-import { Button, IconButton, Tooltip, TooltipProps } from '@mui/material';
-import React, { memo, useCallback, useContext, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useGlobalCommentContext } from '@/components/global-comment/GlobalComment.hooks';
+import { AFConfigContext } from '@/components/main/app.hooks';
 
 interface Item {
   Icon: React.FC<React.SVGProps<SVGSVGElement>>;

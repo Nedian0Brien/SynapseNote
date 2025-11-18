@@ -1,4 +1,10 @@
+import { Button, Skeleton } from '@mui/material';
+import React, { useCallback, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import { Template } from '@/application/template.type';
+import { ReactComponent as DeleteIcon } from '@/assets/icons/delete.svg';
+import { ReactComponent as EditIcon } from '@/assets/icons/edit.svg';
 import { useAppView } from '@/components/app/app.hooks';
 import LinkPreview from '@/components/app/share/LinkPreview';
 import { useLoadPublishInfo } from '@/components/app/share/publish.hooks';
@@ -6,11 +12,7 @@ import AsTemplateButton from '@/components/as-template/AsTemplateButton';
 import DeleteTemplate from '@/components/as-template/DeleteTemplate';
 import { slugify } from '@/components/as-template/utils';
 import { useService } from '@/components/main/app.hooks';
-import { Button, Skeleton } from '@mui/material';
-import React, { useCallback, useEffect, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
-import { ReactComponent as DeleteIcon } from '@/assets/icons/delete.svg';
-import { ReactComponent as EditIcon } from '@/assets/icons/edit.svg';
+
 
 function TemplatePanel({ viewId }: { viewId: string }) {
   const view = useAppView(viewId);

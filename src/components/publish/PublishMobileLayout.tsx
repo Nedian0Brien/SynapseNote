@@ -1,7 +1,8 @@
+import React, { Suspense } from 'react';
+
 import { UIVariant, YDoc } from '@/application/types';
 import { AFScroller } from '@/components/_shared/scroller';
 import PublishMain from '@/components/publish/PublishMain';
-import React, { Suspense } from 'react';
 
 const MobileTopBar = React.lazy(() => import('@/components/_shared/mobile-topbar/MobileTopBar'));
 

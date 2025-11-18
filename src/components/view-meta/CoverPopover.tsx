@@ -1,10 +1,12 @@
+import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import { CoverType, ViewMetaCover } from '@/application/types';
 import { EmbedLink, TAB_KEY, TabOption, Unsplash, UploadImage, UploadPopover } from '@/components/_shared/image-upload';
 import { useAppHandlers, useAppViewId, useOpenModalViewId } from '@/components/app/app.hooks';
 import { useSubscriptionPlan } from '@/components/app/hooks/useSubscriptionPlan';
 import { GradientEnum } from '@/utils/color';
-import React, { useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
+
 import Colors from './CoverColors';
 
 function CoverPopover({

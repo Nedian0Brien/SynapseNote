@@ -2,8 +2,8 @@ import { useMemo } from 'react';
 
 import { parsePersonCellData, useFieldSelector } from '@/application/database-yjs';
 import { CellProps, PersonCell as PersonCellType } from '@/application/database-yjs/cell.type';
-import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
 
 export function PersonCell({ cell, style, placeholder, fieldId, wrap }: CellProps<PersonCellType>) {
   const { field, clock } = useFieldSelector(fieldId);

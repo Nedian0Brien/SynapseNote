@@ -1,8 +1,9 @@
-import { SimpleTableNode } from '@/components/editor/editor.type';
-import { createHotkey, HOT_KEY_NAME } from '@/utils/hotkeys';
 import { useEffect, useState } from 'react';
 import { Editor, Path, Range } from 'slate';
 import { ReactEditor, useSlateStatic } from 'slate-react';
+
+import { SimpleTableNode } from '@/components/editor/editor.type';
+import { createHotkey, HOT_KEY_NAME } from '@/utils/hotkeys';
 
 export function useSimpleTable(node: SimpleTableNode) {
   const editor = useSlateStatic();

@@ -1,8 +1,9 @@
-import emptyImageSrc from '@/assets/images/empty.png';
-import { EditorElementProps, LinkPreviewNode } from '@/components/editor/editor.type';
 import axios from 'axios';
 import { forwardRef, memo, useEffect, useState } from 'react';
 import { useReadOnly } from 'slate-react';
+
+import emptyImageSrc from '@/assets/images/empty.png';
+import { EditorElementProps, LinkPreviewNode } from '@/components/editor/editor.type';
 
 export const LinkPreview = memo(
   forwardRef<HTMLDivElement, EditorElementProps<LinkPreviewNode>>(({ node, children, ...attributes }, ref) => {

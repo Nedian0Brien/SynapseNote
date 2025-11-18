@@ -1,12 +1,15 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
 import React, { useEffect, useState } from 'react';
 
 import { AppContext } from '@/components/app/app.hooks';
 import { AFConfigContext } from '@/components/main/app.hooks';
+
 import { hostnameArgType, openArgType } from '../../../.storybook/argTypes';
 import { mockHostname } from '../../../.storybook/decorators';
 import { mockAFConfigValue, mockAppContextValue } from '../../../.storybook/mocks';
+
 import UpgradePlan from './UpgradePlan';
+
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 const meta = {
   title: 'Billing/UpgradePlan',

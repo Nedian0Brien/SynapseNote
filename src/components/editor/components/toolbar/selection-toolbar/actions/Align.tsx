@@ -1,3 +1,9 @@
+import { PopoverProps } from '@mui/material/Popover';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Element } from 'slate';
+import { useSlateStatic } from 'slate-react';
+
 import { YjsEditor } from '@/application/slate-yjs';
 import { CustomEditor } from '@/application/slate-yjs/command';
 import { findSlateEntryByBlockId, getBlockEntry } from '@/application/slate-yjs/utils/editor';
@@ -5,13 +11,9 @@ import { AlignType, BlockData } from '@/application/types';
 import { ReactComponent as AlignCenterSvg } from '@/assets/icons/align_center.svg';
 import { ReactComponent as AlignLeftSvg } from '@/assets/icons/align_left.svg';
 import { ReactComponent as AlignRightSvg } from '@/assets/icons/align_right.svg';
-import { useSelectionToolbarContext } from '@/components/editor/components/toolbar/selection-toolbar/SelectionToolbar.hooks';
 import { Popover } from '@/components/_shared/popover';
-import { PopoverProps } from '@mui/material/Popover';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Element } from 'slate';
-import { useSlateStatic } from 'slate-react';
+import { useSelectionToolbarContext } from '@/components/editor/components/toolbar/selection-toolbar/SelectionToolbar.hooks';
+
 import ActionButton from './ActionButton';
 
 const popoverProps: Partial<PopoverProps> = {

@@ -1,7 +1,8 @@
-import AIChatDrawer from '@/components/ai-chat/AIChatDrawer';
-import { useAppViewId } from '@/components/app/app.hooks';
 import { EditorData } from '@appflowyinc/editor';
 import React, { useCallback, useEffect, useState } from 'react';
+
+import AIChatDrawer from '@/components/ai-chat/AIChatDrawer';
+import { useAppViewId } from '@/components/app/app.hooks';
 
 const DEFAULT_WIDTH = 600;
 

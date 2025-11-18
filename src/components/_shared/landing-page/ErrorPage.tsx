@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
 import { ReactComponent as ErrorLogo } from '@/assets/icons/warning_logo.svg';
-import { Progress } from '@/components/ui/progress';
 import LandingPage from '@/components/_shared/landing-page/LandingPage';
+import { Progress } from '@/components/ui/progress';
 
 export function ErrorPage({ onRetry }: { onRetry?: () => Promise<void> }) {
   const { t } = useTranslation();

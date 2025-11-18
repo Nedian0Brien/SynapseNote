@@ -1,14 +1,13 @@
-import { YDoc } from '@/application/types';
+import { useCallback, useContext, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+
 import { PublishProvider } from '@/application/publish';
-
+import { YDoc } from '@/application/types';
+import NotFound from '@/components/error/NotFound';
 import { AFConfigContext } from '@/components/main/app.hooks';
-
 import PublishLayout from '@/components/publish/PublishLayout';
 import PublishMobileLayout from '@/components/publish/PublishMobileLayout';
 import { getPlatform } from '@/utils/platform';
-import { useCallback, useContext, useEffect, useState } from 'react';
-import NotFound from '@/components/error/NotFound';
-import { useSearchParams } from 'react-router-dom';
 
 export interface PublishViewProps {
   namespace: string;

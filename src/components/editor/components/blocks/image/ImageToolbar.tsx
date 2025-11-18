@@ -9,12 +9,12 @@ import { CustomEditor } from '@/application/slate-yjs/command';
 import { ReactComponent as CopyIcon } from '@/assets/icons/copy.svg';
 import { ReactComponent as DeleteIcon } from '@/assets/icons/delete.svg';
 import { ReactComponent as PreviewIcon } from '@/assets/icons/full_screen.svg';
+import { GalleryPreview } from '@/components/_shared/gallery-preview';
+import { notify } from '@/components/_shared/notify';
 import ActionButton from '@/components/editor/components/toolbar/selection-toolbar/actions/ActionButton';
 import Align from '@/components/editor/components/toolbar/selection-toolbar/actions/Align';
 import { ImageBlockNode } from '@/components/editor/editor.type';
 import { useEditorContext } from '@/components/editor/EditorContext';
-import { GalleryPreview } from '@/components/_shared/gallery-preview';
-import { notify } from '@/components/_shared/notify';
 import { copyTextToClipboard } from '@/utils/copy';
 
 function ImageToolbar({ node }: { node: ImageBlockNode }) {

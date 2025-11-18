@@ -1,9 +1,10 @@
-import { View } from '@/application/types';
-import { ReactComponent as PrivateIcon } from '@/assets/icons/lock.svg';
-import ViewItem from '@/components/app/outline/ViewItem';
-import SpaceIcon from '@/components/_shared/view-icon/SpaceIcon';
 import { Tooltip } from '@mui/material';
 import React, { useMemo } from 'react';
+
+import { View } from '@/application/types';
+import { ReactComponent as PrivateIcon } from '@/assets/icons/lock.svg';
+import SpaceIcon from '@/components/_shared/view-icon/SpaceIcon';
+import ViewItem from '@/components/app/outline/ViewItem';
 
 function SpaceItem({
   view,

@@ -4,13 +4,13 @@ import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import isEmail from 'validator/lib/isEmail';
 
+import { LOGIN_ACTION } from '@/components/login/const';
 import { AFConfigContext } from '@/components/main/app.hooks';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { createHotkey, HOT_KEY_NAME } from '@/utils/hotkeys';
-import { LOGIN_ACTION } from '@/components/login/const';
 
 function EmailLogin({ redirectTo }: { redirectTo: string }) {
   const { t } = useTranslation();

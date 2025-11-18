@@ -1,8 +1,10 @@
+import { Portal } from '@mui/material';
+import { useEffect, useRef, useState } from 'react';
+
 import { HEADER_HEIGHT } from '@/application/constants';
 import { useGlobalCommentContext } from '@/components/global-comment/GlobalComment.hooks';
 import { getScrollParent } from '@/components/global-comment/utils';
-import { Portal } from '@mui/material';
-import { useEffect, useRef, useState } from 'react';
+
 import AddComment from './AddComment';
 
 export function AddCommentWrapper() {

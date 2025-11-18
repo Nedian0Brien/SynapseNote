@@ -1,9 +1,10 @@
+import { useCallback, useMemo } from 'react';
+
 import { parseSelectOptionTypeOptions, SelectOption, useFieldSelector } from '@/application/database-yjs';
 import { Tag } from '@/components/_shared/tag';
 import { SelectOptionColorMap, SelectOptionFgColorMap } from '@/components/database/components/cell/cell.const';
 import { DropdownMenuItemTick, dropdownMenuItemVariants } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
-import { useCallback, useMemo } from 'react';
 
 export function SelectOptionList({
   fieldId,

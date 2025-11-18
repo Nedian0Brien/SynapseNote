@@ -1,20 +1,23 @@
-import LoadingDots from '@/components/chat/components/ui/loading-dots';
-import { toast } from 'sonner';
-import { useTranslation } from 'react-i18next';
-import { searchViews } from '@/components/chat/lib/views';
-import { Spaces } from './spaces';
-import { MESSAGE_VARIANTS } from '@/components/chat/lib/animations';
 import { motion } from 'framer-motion';
+import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
+
+import { ReactComponent as DocIcon } from '@/assets/icons/page.svg';
+import { ReactComponent as ChevronDown } from '@/assets/icons/triangle_down.svg';
+import LoadingDots from '@/components/chat/components/ui/loading-dots';
+import { SearchInput } from '@/components/chat/components/ui/search-input';
+import { useCheckboxTree } from '@/components/chat/hooks/use-checkbox-tree';
+import { MESSAGE_VARIANTS } from '@/components/chat/lib/animations';
+import { searchViews } from '@/components/chat/lib/views';
+import { View } from '@/components/chat/types';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { SearchInput } from '@/components/chat/components/ui/search-input';
 import { Separator } from '@/components/ui/separator';
-import { useCheckboxTree } from '@/components/chat/hooks/use-checkbox-tree';
-import { View } from '@/components/chat/types';
 import { useWriterContext } from '@/components/chat/writer/context';
-import { ReactComponent as ChevronDown } from '@/assets/icons/triangle_down.svg';
-import { ReactComponent as DocIcon } from '@/assets/icons/page.svg';
-import { useEffect, useMemo, useState } from 'react';
+
+import { Spaces } from './spaces';
+
 
 export function ViewTree() {
   const [searchValue, setSearchValue] = useState('');

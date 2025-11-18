@@ -2,6 +2,7 @@ import { useAIChatContext } from '@/components/ai-chat/AIChatProvider';
 import DrawerContent from '@/components/ai-chat/DrawerContent';
 import DrawerHeader from '@/components/ai-chat/DrawerHeader';
 import Pinned from '@/components/ai-chat/Pinned';
+
 import Resizer from './Resizer';
 
 function AIChatDrawer() {

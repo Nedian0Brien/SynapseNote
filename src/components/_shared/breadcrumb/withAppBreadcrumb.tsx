@@ -1,14 +1,15 @@
+import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import { UIVariant } from '@/application/types';
+import { ReactComponent as PrivateSpaceIcon } from '@/assets/icons/private-space.svg';
+import { ReactComponent as ShareIcon } from '@/assets/icons/share-to.svg';
+import { ReactComponent as TeamIcon } from '@/assets/icons/team.svg';
 import { BreadcrumbProps } from '@/components/_shared/breadcrumb/Breadcrumb';
 import BreadcrumbSkeleton from '@/components/_shared/skeleton/BreadcrumbSkeleton';
 import { useAppHandlers, useBreadcrumb, useCurrentWorkspaceId } from '@/components/app/app.hooks';
 import { useCurrentUser, useService } from '@/components/main/app.hooks';
 import { Progress } from '@/components/ui/progress';
-import { ReactComponent as PrivateSpaceIcon } from '@/assets/icons/private-space.svg';
-import { ReactComponent as ShareIcon } from '@/assets/icons/share-to.svg';
-import { ReactComponent as TeamIcon } from '@/assets/icons/team.svg';
-import React, { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 
 export function withAppBreadcrumb (Component: React.ComponentType<BreadcrumbProps>) {
   return function AppBreadcrumbComponent () {

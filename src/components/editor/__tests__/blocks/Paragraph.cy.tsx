@@ -1,5 +1,6 @@
-import { initialEditorTest, mountEditor, moveCursor } from '@/components/editor/__tests__/mount';
 import { DocumentTest, FromBlockJSON } from 'cypress/support/document';
+
+import { initialEditorTest, mountEditor, moveCursor } from '@/components/editor/__tests__/mount';
 
 describe('<Paragraph />', () => {
   beforeEach(() => {

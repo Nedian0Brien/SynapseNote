@@ -1,23 +1,26 @@
+import { motion } from 'framer-motion';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
+
+import { ReactComponent as StopIcon } from '@/assets/icons/ai_stop_answering.svg';
 import { ReactComponent as SendIcon } from '@/assets/icons/filled_round_arrow_up.svg';
 import { ReactComponent as AutoTextIcon } from '@/assets/icons/text.svg';
 import { ReactComponent as ImageTextIcon } from '@/assets/icons/text_image.svg';
-import { ReactComponent as StopIcon } from '@/assets/icons/ai_stop_answering.svg';
 import { useChatContext } from '@/components/chat/chat/context';
-import { Button } from '@/components/ui/button';
 import { FormatGroup } from '@/components/chat/components/ui/format-group';
 import LoadingDots from '@/components/chat/components/ui/loading-dots';
 import { Textarea } from '@/components/chat/components/ui/textarea';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { toast } from 'sonner';
-import { useTranslation } from 'react-i18next';
 import { MESSAGE_VARIANTS } from '@/components/chat/lib/animations';
 import { useMessagesHandlerContext } from '@/components/chat/provider/messages-handler-provider';
 import { usePromptModal } from '@/components/chat/provider/prompt-modal-provider';
 import { useResponseFormatContext } from '@/components/chat/provider/response-format-provider';
 import { ChatInputMode } from '@/components/chat/types';
 import { AiPrompt } from '@/components/chat/types/prompt';
-import { motion } from 'framer-motion';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+
+
 import { ModelSelector } from './model-selector';
 import { PromptModal } from './prompt-modal';
 import { RelatedViews } from './related-views';

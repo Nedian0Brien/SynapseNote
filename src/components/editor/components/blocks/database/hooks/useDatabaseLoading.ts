@@ -75,6 +75,7 @@ export const useDatabaseLoading = ({ viewId, loadView, loadViewMeta }: UseDataba
     const loadViewData = async () => {
       try {
         const view = await retryLoadView(viewId);
+
         console.debug('[DatabaseBlock] loaded view doc', { viewId });
 
         setDoc(view);

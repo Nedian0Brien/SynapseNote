@@ -6,11 +6,11 @@ import { YjsEditor } from '@/application/slate-yjs';
 import { CustomEditor } from '@/application/slate-yjs/command';
 import { findSlateEntryByBlockId } from '@/application/slate-yjs/utils/editor';
 import { BlockType, ImageBlockData, ImageType } from '@/application/types';
-import { useEditorContext } from '@/components/editor/EditorContext';
 import FileDropzone from '@/components/_shared/file-dropzone/FileDropzone';
 import { ALLOWED_IMAGE_EXTENSIONS, Unsplash } from '@/components/_shared/image-upload';
 import EmbedLink from '@/components/_shared/image-upload/EmbedLink';
 import { TabPanel, ViewTab, ViewTabs } from '@/components/_shared/tabs/ViewTabs';
+import { useEditorContext } from '@/components/editor/EditorContext';
 import { FileHandler } from '@/utils/file';
 
 function ImageBlockPopoverContent({ blockId, onClose }: { blockId: string; onClose: () => void }) {

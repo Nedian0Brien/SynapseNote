@@ -5,8 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { DateFilter, DateFilterCondition, } from '@/application/database-yjs';
 import { DateFormat } from '@/application/types';
 import { MetadataKey } from '@/application/user-metadata';
-import { getDateFormat } from '@/utils/time';
 import { useCurrentUser } from '@/components/main/app.hooks';
+import { getDateFormat } from '@/utils/time';
 
 function DateFilterContentOverview({ filter }: { filter: DateFilter }) {
   const { t } = useTranslation();

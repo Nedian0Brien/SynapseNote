@@ -1,6 +1,7 @@
+import { Button } from '@mui/material';
+
 import { ReactComponent as CloseSvg } from '@/assets/icons/close.svg';
 import { ReactComponent as InformationSvg } from '@/assets/icons/help.svg';
-import { Button } from '@mui/material';
 
 export const ErrorModal = ({ message, onClose }: { message: string; onClose: () => void }) => {
   return (

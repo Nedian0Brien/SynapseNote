@@ -1,6 +1,7 @@
-import { AFConfigContext } from '@/components/main/app.hooks';
 import React, { useCallback, useContext, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+
+import { AFConfigContext } from '@/components/main/app.hooks';
 
 export function useImport (force?: boolean) {
   const isAuthenticated = useContext(AFConfigContext)?.isAuthenticated || false;

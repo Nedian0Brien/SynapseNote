@@ -1,15 +1,16 @@
-import { PublishContext } from '@/application/publish';
-import { useGlobalCommentContext } from '@/components/global-comment/GlobalComment.hooks';
-import ReplyComment from '@/components/global-comment/ReplyComment';
-import { AFConfigContext } from '@/components/main/app.hooks';
-import { notify } from '@/components/_shared/notify';
 
-import { ReactComponent as CloseIcon } from '@/assets/icons/close.svg';
 import { Button, TextareaAutosize } from '@mui/material';
 import CircularProgress from '@mui/material/CircularProgress';
 import React, { memo, useCallback, useContext, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import smoothScrollIntoViewIfNeeded from 'smooth-scroll-into-view-if-needed';
+
+import { PublishContext } from '@/application/publish';
+import { ReactComponent as CloseIcon } from '@/assets/icons/close.svg';
+import { notify } from '@/components/_shared/notify';
+import { useGlobalCommentContext } from '@/components/global-comment/GlobalComment.hooks';
+import ReplyComment from '@/components/global-comment/ReplyComment';
+import { AFConfigContext } from '@/components/main/app.hooks';
 
 interface AddCommentProps {
   content: string;

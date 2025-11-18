@@ -1,3 +1,5 @@
+import React, { useMemo, useState } from 'react';
+
 import { findView } from '@/components/_shared/outline/utils';
 import { AppOverlayContext } from '@/components/app/app-overlay/AppOverlayContext';
 import { useAppHandlers, useAppOutline } from '@/components/app/app.hooks';
@@ -6,7 +8,6 @@ import DeletePageConfirm from '@/components/app/view-actions/DeletePageConfirm';
 import DeleteSpaceConfirm from '@/components/app/view-actions/DeleteSpaceConfirm';
 import ManageSpace from '@/components/app/view-actions/ManageSpace';
 import RenameModal from '@/components/app/view-actions/RenameModal';
-import React, { useMemo, useState } from 'react';
 
 export function AppOverlayProvider ({
   children,

@@ -1,3 +1,10 @@
+import EventEmitter from 'events';
+
+import { AxiosInstance } from 'axios';
+import { createContext, useCallback, useContext, useState } from 'react';
+import { BaseRange, Range } from 'slate';
+import { Awareness } from 'y-protocols/awareness';
+
 import {
   CreateRowDoc,
   FontLayout,
@@ -8,6 +15,8 @@ import {
   View,
   CreatePagePayload,
   CreateFolderViewPayload,
+  CreateDatabaseViewPayload,
+  CreateDatabaseViewResponse,
   TextCount,
   LoadDatabasePrompts,
   TestDatabasePromptConfig,
@@ -15,11 +24,6 @@ import {
   MentionablePerson,
   DatabaseRelations,
 } from '@/application/types';
-import { AxiosInstance } from 'axios';
-import EventEmitter from 'events';
-import { createContext, useCallback, useContext, useState } from 'react';
-import { BaseRange, Range } from 'slate';
-import { Awareness } from 'y-protocols/awareness';
 
 export interface EditorLayoutStyle {
   fontLayout: FontLayout;
@@ -65,6 +69,7 @@ export interface EditorContextState {
   openPageModal?: (viewId: string) => void;
   loadViews?: (variant?: UIVariant) => Promise<View[] | undefined>;
   createFolderView?: (payload: CreateFolderViewPayload) => Promise<string>;
+  createDatabaseView?: (viewId: string, payload: CreateDatabaseViewPayload) => Promise<CreateDatabaseViewResponse>;
   onWordCountChange?: (viewId: string, props: TextCount) => void;
   uploadFile?: (file: File) => Promise<string>;
   requestInstance?: AxiosInstance | null;

@@ -1,8 +1,9 @@
+import { useEffect, useState } from 'react';
+
 import { parseRelationTypeOption, useDatabaseContext, useFieldSelector } from '@/application/database-yjs';
 import { useUpdateRelationDatabaseId } from '@/application/database-yjs/dispatch';
 import { DatabaseRelations, View } from '@/application/types';
 import { findView } from '@/components/_shared/outline/utils';
-import { useEffect, useState } from 'react';
 
 export function useRelationData (fieldId: string) {
   const { loadDatabaseRelations, loadViews } = useDatabaseContext();

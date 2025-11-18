@@ -1130,6 +1130,16 @@ export interface CreateFolderViewPayload {
   databaseId?: string;
 }
 
+export interface CreateDatabaseViewPayload {
+  layout: ViewLayout;
+  name?: string;
+}
+
+export interface CreateDatabaseViewResponse {
+  view_id: string;
+  database_id: string;
+}
+
 export interface CreateSpacePayload {
   name?: string;
   space_icon?: string;

@@ -1,3 +1,7 @@
+import dayjs from 'dayjs';
+import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import { GlobalComment, Reaction } from '@/application/comment.type';
 import { PublishContext } from '@/application/publish';
 import { AFWebUser } from '@/application/types';
@@ -6,9 +10,6 @@ import { useCurrentUserWorkspaceAvatar } from '@/components/app/useWorkspaceMemb
 import { AFConfigContext } from '@/components/main/app.hooks';
 import { stringAvatar } from '@/utils/color';
 import { isFlagEmoji } from '@/utils/emoji';
-import dayjs from 'dayjs';
-import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 
 export const GlobalCommentContext = React.createContext<{
   reload: () => Promise<void>;

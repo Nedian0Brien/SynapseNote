@@ -4,6 +4,8 @@ import { AxiosInstance } from 'axios';
 import { createContext, useContext } from 'react';
 
 import {
+  CreateDatabaseViewPayload,
+  CreateDatabaseViewResponse,
   CreateFolderViewPayload,
   CreateRowDoc,
   DatabaseRelations,
@@ -27,8 +29,8 @@ import {
   YjsEditorKey,
   YSharedRoot,
 } from '@/application/types';
-import { CalendarViewType } from '@/components/database/fullcalendar/types';
 import { DefaultTimeSetting, MetadataKey } from '@/application/user-metadata';
+import { CalendarViewType } from '@/components/database/fullcalendar/types';
 import { useCurrentUser } from '@/components/main/app.hooks';
 
 export interface DatabaseContextState {
@@ -51,6 +53,7 @@ export interface DatabaseContextState {
   showActions?: boolean;
   workspaceId: string;
   createFolderView?: (payload: CreateFolderViewPayload) => Promise<string>;
+  createDatabaseView?: (viewId: string, payload: CreateDatabaseViewPayload) => Promise<CreateDatabaseViewResponse>;
   updatePage?: (viewId: string, payload: UpdatePagePayload) => Promise<void>;
   deletePage?: (viewId: string) => Promise<void>;
   generateAISummaryForRow?: (payload: GenerateAISummaryRowPayload) => Promise<string>;

@@ -1,12 +1,12 @@
-import { AFConfigContext } from '@/components/main/app.hooks';
-import FileDropzone from '@/components/_shared/file-dropzone/FileDropzone';
-import { notify } from '@/components/_shared/notify';
-import { TabPanel, ViewTab, ViewTabs } from '@/components/_shared/tabs/ViewTabs';
-
-import { ReactComponent as NotionIcon } from '@/assets/icons/notion.svg';
 import LinearProgress from '@mui/material/LinearProgress';
 import React, { useCallback, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
+
+import { ReactComponent as NotionIcon } from '@/assets/icons/notion.svg';
+import FileDropzone from '@/components/_shared/file-dropzone/FileDropzone';
+import { notify } from '@/components/_shared/notify';
+import { TabPanel, ViewTab, ViewTabs } from '@/components/_shared/tabs/ViewTabs';
+import { AFConfigContext } from '@/components/main/app.hooks';
 
 function ImporterDialogContent({ source, onSuccess }: { source?: string; onSuccess: () => void }) {
   const { t } = useTranslation();

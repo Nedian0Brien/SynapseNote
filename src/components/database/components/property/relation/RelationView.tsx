@@ -1,13 +1,14 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+
+import { useDatabaseContext } from '@/application/database-yjs';
+import { View } from '@/application/types';
+import { ReactComponent as RightIcon } from '@/assets/icons/alt_arrow_right.svg';
+import { ReactComponent as PrivateIcon } from '@/assets/icons/lock.svg';
+import { ReactComponent as MoreIcon } from '@/assets/icons/more.svg';
+import { findAncestors } from '@/components/_shared/outline/utils';
 import PageIcon from '@/components/_shared/view-icon/PageIcon';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { useTranslation } from 'react-i18next';
-import { View } from '@/application/types';
-import { useDatabaseContext } from '@/application/database-yjs';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { findAncestors } from '@/components/_shared/outline/utils';
-import { ReactComponent as MoreIcon } from '@/assets/icons/more.svg';
-import { ReactComponent as PrivateIcon } from '@/assets/icons/lock.svg';
-import { ReactComponent as RightIcon } from '@/assets/icons/alt_arrow_right.svg';
 
 export function RelationView({ view }: { view: View }) {
   const { t } = useTranslation();

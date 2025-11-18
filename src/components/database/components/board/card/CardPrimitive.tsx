@@ -9,10 +9,10 @@ import {
   useRowMetaSelector,
 } from '@/application/database-yjs';
 import { RowCoverType } from '@/application/types';
+import ImageRender from '@/components/_shared/image-render/ImageRender';
 import { useBoardContext } from '@/components/database/board/BoardProvider';
 import CardToolbar from '@/components/database/components/board/card/CardToolbar';
 import CardField from '@/components/database/components/field/CardField';
-import ImageRender from '@/components/_shared/image-render/ImageRender';
 import { cn } from '@/lib/utils';
 import { renderColor } from '@/utils/color';
 

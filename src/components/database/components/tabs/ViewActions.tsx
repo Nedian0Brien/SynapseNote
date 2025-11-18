@@ -7,8 +7,8 @@ import { View, ViewIconType } from '@/application/types';
 import { ReactComponent as DeleteIcon } from '@/assets/icons/delete.svg';
 import { ReactComponent as EditIcon } from '@/assets/icons/edit.svg';
 import { ReactComponent as EmojiIcon } from '@/assets/icons/emoji.svg';
-import { DropdownMenuGroup, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { CustomIconPopover } from '@/components/_shared/cutsom-icon';
+import { DropdownMenuGroup, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 
 export function DatabaseViewActions({
   onOpenRenameModal,

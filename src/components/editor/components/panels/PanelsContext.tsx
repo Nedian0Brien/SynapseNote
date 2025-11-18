@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useEffect, useRef, useState } from 'react';
 import { BaseRange, Point } from 'slate';
-import { ReactEditor } from 'slate-react';
 import { TextInsertTextOptions } from 'slate/dist/interfaces/transforms/text';
+import { ReactEditor } from 'slate-react';
 
 import { getRangeRect } from '@/components/editor/components/toolbar/selection-toolbar/utils';
 

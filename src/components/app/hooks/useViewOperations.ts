@@ -60,6 +60,7 @@ export function useViewOperations() {
             resolve(databaseId);
             return;
           }
+
           console.warn('[useViewOperations] databaseId not found for view', { viewId: id });
         };
 

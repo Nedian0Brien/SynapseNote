@@ -1,3 +1,10 @@
+import { IconButton, Portal, Snackbar, Tooltip, Zoom } from '@mui/material';
+import CircularProgress from '@mui/material/CircularProgress';
+import Popover from '@mui/material/Popover';
+import { TransitionProps } from '@mui/material/transitions';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import { QuickNote as QuickNoteType, QuickNoteEditorData } from '@/application/types';
 import { ReactComponent as EditIcon } from '@/assets/icons/edit.svg';
 import { useCurrentWorkspaceId } from '@/components/app/app.hooks';
@@ -8,12 +15,7 @@ import NoteList from '@/components/quick-note/NoteList';
 import NoteListHeader from '@/components/quick-note/NoteListHeader';
 import { getPopoverPosition, setPopoverPosition } from '@/components/quick-note/utils';
 import { createHotkey, createHotKeyLabel, HOT_KEY_NAME } from '@/utils/hotkeys';
-import { IconButton, Portal, Snackbar, Tooltip, Zoom } from '@mui/material';
-import CircularProgress from '@mui/material/CircularProgress';
-import Popover from '@mui/material/Popover';
-import { TransitionProps } from '@mui/material/transitions';
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
+
 import { LISI_LIMIT, ToastContext } from './QuickNote.hooks';
 
 const PAPER_SIZE = [480, 396];

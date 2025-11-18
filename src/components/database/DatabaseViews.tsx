@@ -20,7 +20,7 @@ const logDebug = (...args: Parameters<typeof console.debug>) => {
 };
 
 const getScrollElement = () =>
-  document.querySelector('.appflowy-scroll-container') as HTMLElement | null;
+  document.querySelector('.appflowy-scroll-container');
 
 function DatabaseViews({
   onChangeView,
@@ -69,6 +69,7 @@ function DatabaseViews({
       setLayout(Number(activeView.get(YjsDatabaseKey.layout)) as DatabaseViewLayout);
       setIsLoading(false);
       const currentHeight = viewContainerRef.current?.offsetHeight ?? null;
+
       logDebug('[DatabaseViews] layout set', {
         layout: Number(activeView.get(YjsDatabaseKey.layout)),
         viewId,
@@ -84,11 +85,12 @@ function DatabaseViews({
     return () => {
       activeView.unobserve(observerEvent);
     };
-  }, [activeView]);
+  }, [activeView, iidIndex, viewId]);
 
   const handleViewChange = useCallback(
     (newViewId: string) => {
       const scrollElement = getScrollElement();
+
       lastScrollRef.current = scrollElement?.scrollTop ?? null;
       logDebug('[DatabaseViews] captured scroll before view change', {
         scrollTop: lastScrollRef.current,
@@ -96,6 +98,7 @@ function DatabaseViews({
 
       const currentHeight = viewContainerRef.current?.offsetHeight;
       const heightToLock = fixedHeight ?? currentHeight ?? null;
+
       setLockedHeight(heightToLock ?? null);
       logDebug('[DatabaseViews] handleViewChange height lock', {
         currentHeight,
@@ -125,6 +128,7 @@ function DatabaseViews({
   useEffect(() => {
     if (!isLoading && viewContainerRef.current) {
       const h = viewContainerRef.current.offsetHeight;
+
       if (h > 0) {
         logDebug('[DatabaseViews] measured container height', {
           height: h,
@@ -134,15 +138,16 @@ function DatabaseViews({
         });
       }
     }
-  }, [isLoading, viewVisible, layout, viewId]);
+  }, [isLoading, viewVisible, layout, viewId, iidIndex]);
 
   // Scroll restoration with RAF enforcement
   // Board's autoScrollForElements interferes with scroll, so we enforce for multiple frames
   useEffect(() => {
     if (isLoading) return;
-    if (lastScrollRef.current == null) return;
+    if (lastScrollRef.current === null) return;
 
     const scrollElement = getScrollElement();
+
     if (!scrollElement) {
       lastScrollRef.current = null;
       return;
@@ -203,9 +208,10 @@ function DatabaseViews({
       if (rafId) {
         cancelAnimationFrame(rafId);
       }
+
       scrollElement.removeEventListener('scroll', preventScroll);
     };
-  }, [isLoading, viewId]);
+  }, [isLoading, viewId, fixedHeight]);
 
   useEffect(() => {
     setLockedHeight(fixedHeight ?? null);
@@ -214,6 +220,7 @@ function DatabaseViews({
   useEffect(() => {
     if (!viewContainerRef.current) return;
     const rect = viewContainerRef.current.getBoundingClientRect();
+
     logDebug('[DatabaseViews] container render', {
       height: rect.height,
       lockedHeight,
@@ -223,7 +230,7 @@ function DatabaseViews({
       viewId,
       layout,
     });
-  }, [lockedHeight, fixedHeight, isLoading, viewVisible, viewId, layout]);
+  }, [lockedHeight, fixedHeight, isLoading, viewVisible, viewId, layout, iidIndex]);
 
   const effectiveHeight = lockedHeight ?? fixedHeight ?? null;
 

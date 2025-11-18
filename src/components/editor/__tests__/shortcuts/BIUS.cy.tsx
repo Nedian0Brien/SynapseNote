@@ -1,5 +1,6 @@
-import { initialEditorTest, getModKey } from '@/components/editor/__tests__/mount';
 import { FromBlockJSON } from 'cypress/support/document';
+
+import { initialEditorTest, getModKey } from '@/components/editor/__tests__/mount';
 
 const { assertJSON, initializeEditor } = initialEditorTest();
 

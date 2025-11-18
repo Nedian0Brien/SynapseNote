@@ -1,5 +1,6 @@
-import { getConfigValue } from '@/utils/runtime-config';
 import isURL from 'validator/lib/isURL';
+
+import { getConfigValue } from '@/utils/runtime-config';
 
 /**
  * Constructs file storage URLs for the AppFlowy API

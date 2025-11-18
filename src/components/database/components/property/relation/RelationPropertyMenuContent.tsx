@@ -1,7 +1,7 @@
 
-import { useRelationData } from '@/components/database/components/property/relation/useRelationData';
-import { Progress } from '@/components/ui/progress';
 import { useTranslation } from 'react-i18next';
+
+import { useRelationData } from '@/components/database/components/property/relation/useRelationData';
 import {
   DropdownMenuGroup,
   DropdownMenuItem,
@@ -13,6 +13,8 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuItemTick,
 } from '@/components/ui/dropdown-menu';
+import { Progress } from '@/components/ui/progress';
+
 import { RelationView } from './RelationView';
 
 function RelationPropertyMenuContent({ fieldId }: { fieldId: string }) {

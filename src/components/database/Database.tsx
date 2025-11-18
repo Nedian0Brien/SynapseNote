@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getRowKey } from '@/application/database-yjs/row_meta';
 import {
   AppendBreadcrumb,
+  CreateDatabaseViewPayload,
+  CreateDatabaseViewResponse,
   CreateFolderViewPayload,
   CreateRowDoc,
   LoadView,
@@ -46,6 +48,7 @@ export interface Database2Props {
   paddingEnd?: number;
   showActions?: boolean;
   createFolderView?: (payload: CreateFolderViewPayload) => Promise<string>;
+  createDatabaseView?: (viewId: string, payload: CreateDatabaseViewPayload) => Promise<CreateDatabaseViewResponse>;
   getViewIdFromDatabaseId?: (databaseId: string) => Promise<string | null>;
   embeddedHeight?: number;
 }
@@ -66,7 +69,7 @@ function Database(props: Database2Props) {
     loadView,
     navigateToView,
     modalRowId,
-    isDocumentBlock,
+    isDocumentBlock: _isDocumentBlock,
     embeddedHeight,
   } = props;
 
@@ -79,6 +82,7 @@ function Database(props: Database2Props) {
 
     // Try direct access first (for standalone databases)
     const directView = viewsMap.get(targetIid);
+
     if (directView) return directView;
 
     // Search by iid field (for embedded databases)
@@ -87,7 +91,9 @@ function Database(props: Database2Props) {
 
     for (const key of keys) {
       const v = viewsMap.get(key);
-      const viewIid = v?.get?.(YjsDatabaseKey.iid);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const viewIid = v?.get?.(YjsDatabaseKey.iid as any);
+
       if (viewIid === targetIid) {
         return v;
       }

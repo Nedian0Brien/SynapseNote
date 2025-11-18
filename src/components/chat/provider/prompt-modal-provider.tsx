@@ -7,6 +7,8 @@ import {
   useRef,
   useState,
 } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import promptsData from '@/components/chat/data/built_in_prompts.json';
 import { parsePromptData } from '@/components/chat/lib/utils';
 import {
@@ -15,7 +17,6 @@ import {
   PromptDatabaseField,
   RawPromptData,
 } from '@/components/chat/types/prompt';
-import { useTranslation } from 'react-i18next';
 
 const STORAGE_KEY = 'appflowy_prompt_db_config';
 

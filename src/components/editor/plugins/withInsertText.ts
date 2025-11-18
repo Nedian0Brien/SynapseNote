@@ -1,6 +1,6 @@
 import { BaseRange, NodeEntry, Point, Range, Text, Transforms } from 'slate';
-import { ReactEditor } from 'slate-react';
 import { TextInsertTextOptions } from 'slate/dist/interfaces/transforms/text';
+import { ReactEditor } from 'slate-react';
 
 import { YjsEditor } from '@/application/slate-yjs';
 import { isEmbedBlockTypes } from '@/application/slate-yjs/command/const';

@@ -1,6 +1,7 @@
-import { FieldType } from '@/application/database-yjs';
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+
+import { FieldType } from '@/application/database-yjs';
 
 function FieldLabel ({ type, ...props }: { type: FieldType } & React.HTMLAttributes<HTMLDivElement>) {
   const { t } = useTranslation();

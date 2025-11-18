@@ -1,12 +1,13 @@
+import { OutlinedInput } from '@mui/material';
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+
 import { SpacePermission } from '@/application/types';
 import { NormalModal } from '@/components/_shared/modal';
 import { notify } from '@/components/_shared/notify';
 import { useAppHandlers } from '@/components/app/app.hooks';
 import SpaceIconButton from '@/components/app/view-actions/SpaceIconButton';
 import SpacePermissionButton from '@/components/app/view-actions/SpacePermissionButton';
-import { OutlinedInput } from '@mui/material';
-import React from 'react';
-import { useTranslation } from 'react-i18next';
 
 function CreateSpaceModal({
   open,

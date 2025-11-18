@@ -1,9 +1,10 @@
-import MobileOutlineWithCover from '@/components/_shared/mobile-outline/MobileOutlineWithCover';
-import { useAppHandlers } from '@/components/app/app.hooks';
-import { useRecent } from '@/components/app/recent/useRecent';
 import orderBy from 'lodash-es/orderBy';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+
+import MobileOutlineWithCover from '@/components/_shared/mobile-outline/MobileOutlineWithCover';
+import { useAppHandlers } from '@/components/app/app.hooks';
+import { useRecent } from '@/components/app/recent/useRecent';
 
 function MobileRecent ({
   onClose,

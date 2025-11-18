@@ -1,4 +1,3 @@
-import { RepeatedChatMessage } from '@/components/chat';
 import * as random from 'lib0/random';
 import { nanoid } from 'nanoid';
 import * as Y from 'yjs';
@@ -35,6 +34,8 @@ import {
 } from '@/application/template.type';
 import {
   AccessLevel,
+  CreateDatabaseViewPayload,
+  CreateDatabaseViewResponse,
   CreateFolderViewPayload,
   CreatePagePayload,
   CreateSpacePayload,
@@ -58,6 +59,7 @@ import {
   YjsEditorKey
 } from '@/application/types';
 import { applyYDoc } from '@/application/ydoc/apply';
+import { RepeatedChatMessage } from '@/components/chat';
 
 export class AFClientService implements AFService {
   private clientId: number = random.uint32();
@@ -601,6 +603,10 @@ export class AFClientService implements AFService {
 
   async createFolderView(workspaceId: string, payload: CreateFolderViewPayload) {
     return APIService.createFolderView(workspaceId, payload);
+  }
+
+  async createDatabaseView(workspaceId: string, viewId: string, payload: CreateDatabaseViewPayload): Promise<CreateDatabaseViewResponse> {
+    return APIService.createDatabaseView(workspaceId, viewId, payload);
   }
 
   async updateAppPage(workspaceId: string, viewId: string, data: UpdatePagePayload) {

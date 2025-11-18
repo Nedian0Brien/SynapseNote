@@ -1,6 +1,6 @@
-import isURL from 'validator/lib/isURL';
-import isIP from 'validator/lib/isIP';
 import isFQDN from 'validator/lib/isFQDN';
+import isIP from 'validator/lib/isIP';
+import isURL from 'validator/lib/isURL';
 
 export const downloadPage = 'https://appflowy.com/download';
 

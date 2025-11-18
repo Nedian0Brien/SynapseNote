@@ -1,4 +1,5 @@
 import { generateUUID } from '@/application/database-yjs';
+
 import { SelectOption, SelectOptionColor } from '../select-option';
 
 export interface ChecklistCellData {

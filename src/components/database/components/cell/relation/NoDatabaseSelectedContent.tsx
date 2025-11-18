@@ -1,10 +1,11 @@
+import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+
+import { View } from '@/application/types';
 import PageIcon from '@/components/_shared/view-icon/PageIcon';
 import { dropdownMenuItemVariants, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
-import { useCallback } from 'react';
-import { View } from '@/application/types';
-import { useTranslation } from 'react-i18next';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 function NoDatabaseSelectedContent ({ views, onSelect, loading }: {

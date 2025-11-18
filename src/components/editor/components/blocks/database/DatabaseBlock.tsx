@@ -51,6 +51,7 @@ export const DatabaseBlock = memo(
 
       const setStatus = () => {
         const hasDb = !!sharedRoot.get(YjsEditorKey.database);
+
         setHasDatabase(hasDb);
         if (hasDb) {
           console.debug('[DatabaseBlock] database found in doc', { viewId });

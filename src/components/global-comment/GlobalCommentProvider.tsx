@@ -1,11 +1,12 @@
+import { debounce } from 'lodash-es';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+
 import GlobalComment from '@/components/global-comment/GlobalComment';
 import {
   GlobalCommentContext,
   useLoadComments,
   useLoadReactions,
 } from '@/components/global-comment/GlobalComment.hooks';
-import { debounce } from 'lodash-es';
-import { useCallback, useEffect, useMemo, useState } from 'react';
 
 export function GlobalCommentProvider() {
   const { comments, loading, reload } = useLoadComments();

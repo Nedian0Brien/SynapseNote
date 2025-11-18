@@ -1,3 +1,7 @@
+import React, { useCallback, useContext, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
+
 import { clearRedirectTo } from '@/application/session/sign_in';
 import { invalidToken } from '@/application/session/token';
 import { ReactComponent as TrashIcon } from '@/assets/icons/delete.svg';
@@ -10,9 +14,6 @@ import LogoutConfirm from '@/components/app/workspaces/LogoutConfirm';
 import { AFConfigContext } from '@/components/main/app.hooks';
 import { ThemeModeContext } from '@/components/main/useAppThemeMode';
 import { openUrl } from '@/utils/url';
-import React, { useCallback, useContext, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
 
 function MoreActionsContent({
   itemClicked,

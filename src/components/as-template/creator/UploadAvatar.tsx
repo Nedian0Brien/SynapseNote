@@ -1,11 +1,12 @@
-import { ReactComponent as CheckIcon } from '@/assets/icons/check_circle.svg';
-import { ReactComponent as DeleteIcon } from '@/assets/icons/delete.svg';
-import { ReactComponent as LinkIcon } from '@/assets/icons/link.svg';
-import { useService } from '@/components/main/app.hooks';
-import FileDropzone from '@/components/_shared/file-dropzone/FileDropzone';
 import { CircularProgress, IconButton, Tooltip } from '@mui/material';
 import React, { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+
+import { ReactComponent as CheckIcon } from '@/assets/icons/check_circle.svg';
+import { ReactComponent as DeleteIcon } from '@/assets/icons/delete.svg';
+import { ReactComponent as LinkIcon } from '@/assets/icons/link.svg';
+import FileDropzone from '@/components/_shared/file-dropzone/FileDropzone';
+import { useService } from '@/components/main/app.hooks';
 
 function UploadAvatar({ onChange }: { onChange: (url: string) => void }) {
   const { t } = useTranslation();

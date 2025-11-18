@@ -1,7 +1,7 @@
-import React, { ReactElement, useCallback } from 'react';
-import SwipeableDrawer from '@mui/material/SwipeableDrawer';
-
 import { styled } from '@mui/material/styles';
+import SwipeableDrawer from '@mui/material/SwipeableDrawer';
+import React, { ReactElement, useCallback } from 'react';
+
 
 const BasePuller = styled('div')(({ theme }) => ({
   backgroundColor: theme.palette.mode === 'light' ? '#dadada' : '#666',

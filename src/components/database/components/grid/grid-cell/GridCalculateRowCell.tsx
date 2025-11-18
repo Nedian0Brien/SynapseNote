@@ -1,13 +1,14 @@
-import { useCalculateFieldDispatch, useClearCalculate, useUpdateCalculate } from '@/application/database-yjs/dispatch';
-import { YjsDatabaseKey } from '@/application/types';
+import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import { useDatabaseView, useFieldCellsSelector, useReadOnly } from '@/application/database-yjs';
 import { CalculationType } from '@/application/database-yjs/database.type';
+import { useCalculateFieldDispatch, useClearCalculate, useUpdateCalculate } from '@/application/database-yjs/dispatch';
+import { YjsDatabaseKey } from '@/application/types';
+import { ReactComponent as DropdownIcon } from '@/assets/icons/alt_arrow_down.svg';
 import { CalculationCell, ICalculationCell } from '@/components/database/components/grid/grid-calculation-cell';
 import CalcationMenu from '@/components/database/components/grid/grid-calculation-cell/CalcationMenu';
 import { cn } from '@/lib/utils';
-import { useCallback, useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { ReactComponent as DropdownIcon } from '@/assets/icons/alt_arrow_down.svg';
 
 export interface GridCalculateRowCellProps {
   fieldId: string;

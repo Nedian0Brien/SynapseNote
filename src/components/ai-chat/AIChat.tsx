@@ -1,4 +1,3 @@
-import { Chat, ChatRequest } from '@/components/chat';
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
 import React, { useEffect, useMemo } from 'react';
 
@@ -6,6 +5,7 @@ import { getUserIconUrl } from '@/application/user-metadata';
 import { useAIChatContext } from '@/components/ai-chat/AIChatProvider';
 import { useAppHandlers, useCurrentWorkspaceId } from '@/components/app/app.hooks';
 import { useCurrentUserWorkspaceAvatar } from '@/components/app/useWorkspaceMemberProfile';
+import { Chat, ChatRequest } from '@/components/chat';
 import { useCurrentUser, useService } from '@/components/main/app.hooks';
 import { getPlatform } from '@/utils/platform';
 import { downloadPage } from '@/utils/url';

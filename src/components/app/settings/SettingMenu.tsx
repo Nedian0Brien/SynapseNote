@@ -1,7 +1,8 @@
-import { SettingMenuItem } from '@/application/types';
-import { ReactComponent as PersonIcon } from '@/assets/icons/user.svg';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+
+import { SettingMenuItem } from '@/application/types';
+import { ReactComponent as PersonIcon } from '@/assets/icons/user.svg';
 
 interface SettingMenuProps {
   selectedItem: SettingMenuItem;

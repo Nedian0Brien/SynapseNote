@@ -1,15 +1,16 @@
+import React, { useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { ReactEditor, useSlate } from 'slate-react';
+
 import { YjsEditor } from '@/application/slate-yjs';
 import { CustomEditor } from '@/application/slate-yjs/command';
 import { ReactComponent as AskAIIcon } from '@/assets/icons/ai.svg';
 import { ReactComponent as ImproveWritingIcon } from '@/assets/icons/ai_improve_writing.svg';
 import { ReactComponent as TriangleDownIcon } from '@/assets/icons/triangle_down.svg';
+import { AIAssistantType, AIWriterMenu, useAIWriter } from '@/components/chat';
 import ActionButton from '@/components/editor/components/toolbar/selection-toolbar/actions/ActionButton';
 import { useSelectionToolbarContext } from '@/components/editor/components/toolbar/selection-toolbar/SelectionToolbar.hooks';
 import { useEditorContext } from '@/components/editor/EditorContext';
-import { AIAssistantType, AIWriterMenu, useAIWriter } from '@/components/chat';
-import React, { useCallback, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { ReactEditor, useSlate } from 'slate-react';
 
 function AIAssistant() {
   const { t } = useTranslation();

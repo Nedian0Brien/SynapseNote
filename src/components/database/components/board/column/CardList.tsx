@@ -20,7 +20,7 @@ function CardList({
   data,
   fieldId,
   columnId,
-  setScrollElement,
+  setScrollElement: _setScrollElement,
 }: {
   columnId: string;
   data: RenderCard[];

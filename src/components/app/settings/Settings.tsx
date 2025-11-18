@@ -1,10 +1,11 @@
-import { SettingMenuItem } from '@/application/types';
-import { ReactComponent as SettingsIcon } from '@/assets/settings.svg';
-import SettingMenu from '@/components/app/settings/SettingMenu';
 import { Button, Dialog } from '@mui/material';
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
+
+import { SettingMenuItem } from '@/application/types';
+import { ReactComponent as SettingsIcon } from '@/assets/settings.svg';
+import SettingMenu from '@/components/app/settings/SettingMenu';
 
 export function Settings() {
   const { t } = useTranslation();

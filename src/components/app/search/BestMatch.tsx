@@ -1,12 +1,13 @@
+import { debounce, uniq } from 'lodash-es';
+import React, { useCallback, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import { View } from '@/application/types';
 import { notify } from '@/components/_shared/notify';
 import { findView } from '@/components/_shared/outline/utils';
 import { useAppOutline, useCurrentWorkspaceId } from '@/components/app/app.hooks';
 import ViewList from '@/components/app/search/ViewList';
 import { useService } from '@/components/main/app.hooks';
-import { debounce, uniq } from 'lodash-es';
-import React, { useCallback, useEffect, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
 
 function BestMatch ({
   onClose,

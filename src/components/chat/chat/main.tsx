@@ -1,8 +1,9 @@
 // Code: Chat main component
+import { AnimatePresence, motion } from 'framer-motion';
+
 import { ChatInput } from '@/components/chat/components/chat-input';
 import { ChatMessages } from '@/components/chat/components/chat-messages';
 import { ModelSelectorContext } from '@/components/chat/contexts/model-selector-context';
-import { cn } from '@/lib/utils';
 import { EditorProvider } from '@/components/chat/provider/editor-provider';
 import { MessageAnimationProvider } from '@/components/chat/provider/message-animation-provider';
 import { MessagesHandlerProvider, useMessagesHandlerContext } from '@/components/chat/provider/messages-handler-provider';
@@ -13,7 +14,8 @@ import { SelectionModeProvider } from '@/components/chat/provider/selection-mode
 import { SuggestionsProvider } from '@/components/chat/provider/suggestions-provider';
 import { ViewLoaderProvider } from '@/components/chat/provider/view-loader-provider';
 import { ChatProps, User } from '@/components/chat/types';
-import { AnimatePresence, motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
+
 import { ChatContext, useChatContext } from './context';
 
 // Component to bridge ModelSelector with MessagesHandler

@@ -164,15 +164,76 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
         try {
           const viewId = await onAddView(layout);
 
+          // Wait for the view to be synchronized to the local Yjs document
+          // The server creates the view, but there's a small delay before it appears in the local views map
+          const waitForViewSync = async (maxAttempts = 20, delayMs = 100): Promise<boolean> => {
+            for (let i = 0; i < maxAttempts; i++) {
+              const view = views?.get(viewId);
+
+              if (view) {
+                console.debug('[DatabaseTabs] View synced to Yjs', { viewId, attempt: i + 1 });
+                // View exists in Yjs, now wait for DOM element to be rendered
+                // Give React time to re-render with the new view
+                await new Promise((resolve) => setTimeout(resolve, 100));
+
+                // Check if DOM element exists
+                const element = document.getElementById(`view-tab-${viewId}`);
+
+                if (element) {
+                  console.debug('[DatabaseTabs] View DOM element found', { viewId });
+                  return true;
+                }
+
+                console.debug('[DatabaseTabs] View synced but DOM not ready, waiting...', { viewId, attempt: i + 1 });
+              } else {
+                console.debug('[DatabaseTabs] Waiting for view sync...', { viewId, attempt: i + 1 });
+              }
+
+              await new Promise((resolve) => setTimeout(resolve, delayMs));
+            }
+
+            console.warn('[DatabaseTabs] View sync timeout', { viewId });
+            return false;
+          };
+
+          // Wait for Yjs sync first
+          const synced = await waitForViewSync();
+
+          // Reload view metadata to ensure folder structure is updated
           await reloadView();
-          setSelectedViewId?.(viewId);
-          setTimeout(() => {
-            document.getElementById(`view-tab-${viewId}`)?.scrollIntoView({
-              behavior: 'smooth',
-              block: 'nearest',
-              inline: 'center',
-            });
-          }, 200); // scroll to the new tab
+
+          // Select the new view - this should trigger the tab to become active
+          if (setSelectedViewId) {
+            console.debug('[DatabaseTabs] Selecting new view', { viewId });
+            setSelectedViewId(viewId);
+          }
+
+          // Wait a bit for React to process the selection update
+          await new Promise((resolve) => setTimeout(resolve, 100));
+
+          // Now scroll to the tab
+          const scrollToView = () => {
+            const element = document.getElementById(`view-tab-${viewId}`);
+
+            if (element) {
+              console.debug('[DatabaseTabs] Scrolling to view', { viewId });
+              element.scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest',
+                inline: 'center',
+              });
+            } else {
+              console.warn('[DatabaseTabs] Cannot scroll - element not found', { viewId });
+            }
+          };
+
+          if (synced) {
+            // Element confirmed to exist, scroll immediately
+            scrollToView();
+          } else {
+            // Fallback: try scrolling after a delay
+            setTimeout(scrollToView, 500);
+          }
 
           // eslint-disable-next-line
         } catch (e: any) {
@@ -181,7 +242,7 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
           setAddLoading(false);
         }
       },
-      [onAddView, setSelectedViewId, reloadView]
+      [onAddView, setSelectedViewId, reloadView, views]
     );
 
     useEffect(() => {

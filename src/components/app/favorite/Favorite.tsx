@@ -1,3 +1,10 @@
+import { Collapse } from '@mui/material';
+import { PopoverProps } from '@mui/material/Popover';
+import dayjs from 'dayjs';
+import { groupBy, sortBy } from 'lodash-es';
+import React, { useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import { UIVariant } from '@/application/types';
 import { ReactComponent as FavoritedIcon } from '@/assets/icons/filled_star.svg';
 import { ReactComponent as MoreIcon } from '@/assets/icons/more.svg';
@@ -5,12 +12,6 @@ import OutlineItem from '@/components/_shared/outline/OutlineItem';
 import { Popover } from '@/components/_shared/popover';
 import RecentListSkeleton from '@/components/_shared/skeleton/RecentListSkeleton';
 import { useAppFavorites, useAppHandlers, useAppViewId } from '@/components/app/app.hooks';
-import { Collapse } from '@mui/material';
-import { PopoverProps } from '@mui/material/Popover';
-import dayjs from 'dayjs';
-import { groupBy, sortBy } from 'lodash-es';
-import React, { useEffect, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
 
 const popoverOrigin: Partial<PopoverProps> = {
   transformOrigin: {

@@ -1,3 +1,7 @@
+import React, { FC, useCallback, useEffect, useLayoutEffect, useMemo } from 'react';
+import { ErrorBoundary, FallbackProps } from 'react-error-boundary';
+import { ReactEditor, RenderElementProps, useSelected, useSlateStatic } from 'slate-react';
+
 import { CONTAINER_BLOCK_TYPES, SOFT_BREAK_TYPES } from '@/application/slate-yjs/command/const';
 import { BlockData, BlockType, ColumnNodeData, YjsEditorKey } from '@/application/types';
 import { BulletedList } from '@/components/editor/components/blocks/bulleted-list';
@@ -28,9 +32,7 @@ import { EditorElementProps, TextNode } from '@/components/editor/editor.type';
 import { useEditorContext } from '@/components/editor/EditorContext';
 import { ElementFallbackRender } from '@/components/error/ElementFallbackRender';
 import { renderColor } from '@/utils/color';
-import React, { FC, useCallback, useEffect, useLayoutEffect, useMemo } from 'react';
-import { ErrorBoundary, FallbackProps } from 'react-error-boundary';
-import { ReactEditor, RenderElementProps, useSelected, useSlateStatic } from 'slate-react';
+
 import SubPage from 'src/components/editor/components/blocks/sub-page/SubPage';
 import { TodoList } from 'src/components/editor/components/blocks/todo-list';
 import { ToggleList } from 'src/components/editor/components/blocks/toggle-list';

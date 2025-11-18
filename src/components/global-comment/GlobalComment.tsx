@@ -1,9 +1,10 @@
-import { AddCommentWrapper } from '@/components/global-comment/add-comment';
-import CommentList from '@/components/global-comment/CommentList';
-import { useGlobalCommentContext } from '@/components/global-comment/GlobalComment.hooks';
 import { Divider } from '@mui/material';
 import CircularProgress from '@mui/material/CircularProgress';
 import { useTranslation } from 'react-i18next';
+
+import { AddCommentWrapper } from '@/components/global-comment/add-comment';
+import CommentList from '@/components/global-comment/CommentList';
+import { useGlobalCommentContext } from '@/components/global-comment/GlobalComment.hooks';
 
 function GlobalComment() {
   const { t } = useTranslation();

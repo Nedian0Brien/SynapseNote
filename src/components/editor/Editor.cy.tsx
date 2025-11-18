@@ -1,9 +1,12 @@
-import { YDoc } from '@/application/types';
-import { DocumentTest } from 'cypress/support/document';
-import { applyYDoc } from '@/application/ydoc/apply';
 import * as Y from 'yjs';
-import { Editor } from './Editor';
+
+import { DocumentTest } from 'cypress/support/document';
+
+import { YDoc } from '@/application/types';
+import { applyYDoc } from '@/application/ydoc/apply';
 import withAppWrapper from '@/components/main/withAppWrapper';
+
+import { Editor } from './Editor';
 
 describe('<Editor />', () => {
   beforeEach(() => {

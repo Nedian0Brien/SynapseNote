@@ -36,7 +36,7 @@ export const DatabaseContent = ({
   width,
   doc,
   workspaceId,
-  viewId,
+  viewId: _viewId,
   createRowDoc,
   loadView,
   navigateToView,

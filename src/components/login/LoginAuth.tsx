@@ -1,11 +1,12 @@
-import { getRedirectTo } from '@/application/session/sign_in';
-import { NormalModal } from '@/components/_shared/modal';
-import { AFConfigContext } from '@/components/main/app.hooks';
 import { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+
+import { getRedirectTo } from '@/application/session/sign_in';
 import { ReactComponent as ErrorIcon } from '@/assets/icons/error.svg';
 import LoadingDots from '@/components/_shared/LoadingDots';
+import { NormalModal } from '@/components/_shared/modal';
+import { AFConfigContext } from '@/components/main/app.hooks';
 
 function LoginAuth () {
   const service = useContext(AFConfigContext)?.service;

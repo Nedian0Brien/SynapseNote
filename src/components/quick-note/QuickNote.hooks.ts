@@ -1,7 +1,8 @@
 import React, { useContext } from 'react';
+
+import { QuickNote } from '@/application/types';
 import { useCurrentWorkspaceId } from '@/components/app/app.hooks';
 import { useService } from '@/components/main/app.hooks';
-import { QuickNote } from '@/application/types';
 
 export const ToastContext = React.createContext<{
   onOpen: (message: string) => void;

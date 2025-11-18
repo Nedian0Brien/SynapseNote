@@ -1,3 +1,6 @@
+import { FC, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import { FieldType, useCellSelector, useFieldSelector } from '@/application/database-yjs';
 import { Cell as CellType, CellProps } from '@/application/database-yjs/cell.type';
 import { YjsDatabaseKey } from '@/application/types';
@@ -12,9 +15,9 @@ import { TextCell } from '@/components/database/components/cell/text';
 import PropertyWrapper from '@/components/database/components/property/PropertyWrapper';
 import { TextProperty } from '@/components/database/components/property/text';
 
-import { FC, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
+
 import { ChecklistProperty } from 'src/components/database/components/property/cheklist';
+
 import { PersonCell } from '../cell/person';
 
 export function Property ({ fieldId, rowId }: { fieldId: string; rowId: string }) {

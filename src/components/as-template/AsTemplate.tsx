@@ -1,19 +1,21 @@
+import { Button, CircularProgress, InputLabel, Paper, Switch } from '@mui/material';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import { UploadTemplatePayload } from '@/application/template.type';
+import { ReactComponent as DeleteIcon } from '@/assets/icons/delete.svg';
+import { ReactComponent as WebsiteIcon } from '@/assets/icons/earth.svg';
 import { notify } from '@/components/_shared/notify';
 import { AFScroller } from '@/components/_shared/scroller';
-import { useService } from '@/components/main/app.hooks';
 import AsTemplateForm, { AsTemplateFormValue } from '@/components/as-template/AsTemplateForm';
 import Categories from '@/components/as-template/category/Categories';
 import Creator from '@/components/as-template/creator/Creator';
 import DeleteTemplate from '@/components/as-template/DeleteTemplate';
 import { useLoadTemplate } from '@/components/as-template/hooks';
-import { Button, CircularProgress, InputLabel, Paper, Switch } from '@mui/material';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { ReactComponent as DeleteIcon } from '@/assets/icons/delete.svg';
+
 import './template.scss';
 import { slugify } from '@/components/as-template/utils';
-import { ReactComponent as WebsiteIcon } from '@/assets/icons/earth.svg';
+import { useService } from '@/components/main/app.hooks';
 
 function AsTemplate({ viewName, viewUrl, viewId }: { viewName: string; viewUrl: string; viewId: string }) {
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);

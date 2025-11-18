@@ -1,10 +1,8 @@
-import { useChatContext } from '@/components/chat/chat/context';
+import { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+
+import { useChatContext } from '@/components/chat/chat/context';
 import { ERROR_CODE_NO_LIMIT } from '@/components/chat/lib/const';
-import { useMessageAnimation } from './message-animation-provider';
-import { useChatMessagesContext } from './messages-provider';
-import { useResponseFormatContext } from './response-format-provider';
-import { useSuggestionsContext } from './suggestions-provider';
 import {
   AuthorType,
   ChatMessageMetadata,
@@ -15,8 +13,13 @@ import {
   RepeatedChatMessage,
   ResponseFormat,
 } from '@/components/chat/types';
-import { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
+
+import { useMessageAnimation } from './message-animation-provider';
+import { useChatMessagesContext } from './messages-provider';
 import { usePromptModal } from './prompt-modal-provider';
+import { useResponseFormatContext } from './response-format-provider';
+import { useSuggestionsContext } from './suggestions-provider';
+
 
 interface MessagesHandlerContextTypes {
   fetchMessages: (payload?: GetChatMessagesPayload) => Promise<RepeatedChatMessage>;

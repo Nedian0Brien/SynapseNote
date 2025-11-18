@@ -1,8 +1,9 @@
-import { useAppHandlers, useAppView } from '@/components/app/app.hooks';
-import { NormalModal } from '@/components/_shared/modal';
-import { notify } from '@/components/_shared/notify';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+
+import { NormalModal } from '@/components/_shared/modal';
+import { notify } from '@/components/_shared/notify';
+import { useAppHandlers, useAppView } from '@/components/app/app.hooks';
 
 function DeleteSpaceConfirm({ open, onClose, viewId }: { open: boolean; onClose: () => void; viewId: string }) {
   const view = useAppView(viewId);

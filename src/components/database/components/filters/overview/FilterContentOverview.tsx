@@ -1,3 +1,6 @@
+import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import {
   CheckboxFilterCondition,
   ChecklistFilterCondition,
@@ -12,8 +15,6 @@ import DateFilterContentOverview from '@/components/database/components/filters/
 import NumberFilterContentOverview from '@/components/database/components/filters/overview/NumberFilterContentOverview';
 import SelectFilterContentOverview from '@/components/database/components/filters/overview/SelectFilterContentOverview';
 import TextFilterContentOverview from '@/components/database/components/filters/overview/TextFilterContentOverview';
-import { useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
 
 export function FilterContentOverview({ filter }: { filter: Filter }) {
   const { field } = useFieldSelector(filter?.fieldId);
