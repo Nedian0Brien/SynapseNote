@@ -47,7 +47,10 @@ export function useGridVirtualizer({ data, columns }: { columns: RenderColumn[];
       cancelAnimationFrame(rafIdRef.current);
     }
 
-    // Double RAF to avoid transient measurements during layout thrash when views switch.
+    // Triple RAF to avoid transient measurements during layout thrash when views switch.
+    // First frame: Initial measurement (may be unstable)
+    // Second frame: Browser has processed initial layout
+    // Third frame: Layout is fully settled
     const first = measureParentOffset();
     if (first == null) {
       logDebug('[GridVirtualizer] skip parent offset update; missing refs', {
@@ -59,18 +62,28 @@ export function useGridVirtualizer({ data, columns }: { columns: RenderColumn[];
 
     rafIdRef.current = requestAnimationFrame(() => {
       rafIdRef.current = requestAnimationFrame(() => {
-        const second = measureParentOffset();
-        const nextOffset = second ?? first;
-        const delta = Math.abs(nextOffset - parentOffsetRef.current);
+        rafIdRef.current = requestAnimationFrame(() => {
+          const second = measureParentOffset();
+          const nextOffset = second ?? first;
+          const delta = Math.abs(nextOffset - parentOffsetRef.current);
 
-        if (nextOffset === parentOffsetRef.current) return;
+          // Only update if change is significant (>1px) to avoid micro-adjustments
+          if (delta < 1) {
+            logDebug('[GridVirtualizer] parent offset stable (delta < 1px)', {
+              current: parentOffsetRef.current,
+              measured: nextOffset,
+              delta,
+            });
+            return;
+          }
 
-        parentOffsetRef.current = nextOffset;
-        setParentOffset(nextOffset);
-        logDebug('[GridVirtualizer] parent offset updated', {
-          nextOffset,
-          previous: parentOffset,
-          delta,
+          parentOffsetRef.current = nextOffset;
+          setParentOffset(nextOffset);
+          logDebug('[GridVirtualizer] parent offset updated', {
+            nextOffset,
+            previous: parentOffset,
+            delta,
+          });
         });
       });
     });
