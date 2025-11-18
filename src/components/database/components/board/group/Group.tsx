@@ -101,6 +101,7 @@ export const Group = ({ groupId }: GroupProps) => {
     return cleanup;
   }, [verticalScrollContainer, readOnly, contextValue.instanceId]);
 
+  // Sticky header scroll listener
   useEffect(() => {
     const inner = innerRef.current;
     const columnsEl = ref.current;
@@ -142,6 +143,7 @@ export const Group = ({ groupId }: GroupProps) => {
 
   if (!fieldId) return null;
   if (readOnly && columns.length === 0) return null;
+
   return (
     <BoardDragContext.Provider value={contextValue}>
       <div
