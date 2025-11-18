@@ -56,8 +56,11 @@ export function useViewOperations() {
           )?.database_id;
 
           if (databaseId) {
+            console.debug('[useViewOperations] mapped view to database', { viewId: id, databaseId });
             resolve(databaseId);
+            return;
           }
+          console.warn('[useViewOperations] databaseId not found for view', { viewId: id });
         };
 
         observeEvent();
@@ -165,6 +168,7 @@ export function useViewOperations() {
           return Promise.reject(new Error('Invalid view layout'));
         }
 
+        console.debug('[useViewOperations] loadView resolved layout', { viewId: id, layout: view?.layout, collabType });
 
         if (collabType === Types.Document) {
           let awareness: Awareness | undefined;

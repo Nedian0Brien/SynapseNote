@@ -439,11 +439,43 @@ export function SlashPanel({
       try {
         const baseViewId =
           (await getViewIdFromDatabaseId?.(option.databaseId)) || option.view.view_id;
+        const baseName =
+          option.view.name ||
+          t('document.view.placeholder', { defaultValue: 'Untitled' });
+
+        const prefix = (() => {
+          switch (linkedPicker.layout) {
+            case ViewLayout.Grid:
+              return t('document.grid.referencedGridPrefix', {
+                defaultValue: 'View of',
+              });
+            case ViewLayout.Board:
+              return t('document.board.referencedBoardPrefix', {
+                defaultValue: 'View of',
+              });
+            case ViewLayout.Calendar:
+              return t('document.calendar.referencedCalendarPrefix', {
+                defaultValue: 'View of',
+              });
+            default:
+              return '';
+          }
+        })();
+        const referencedName = prefix ? `${prefix} ${baseName}` : baseName;
+
         const newViewId = await createFolderView({
-          parentViewId: viewId,
+          parentViewId: baseViewId,
           layout: linkedPicker.layout,
-          name: option.view.name,
+          name: referencedName,
           databaseId: option.databaseId,
+        });
+
+        console.debug('[SlashPanel] created linked database', {
+          optionKey: linkedPicker.layout,
+          baseViewId,
+          databaseId: option.databaseId,
+          newViewId,
+          referencedName,
         });
 
         turnInto(blockType, {

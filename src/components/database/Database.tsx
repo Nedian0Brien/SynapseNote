@@ -47,6 +47,7 @@ export interface Database2Props {
   showActions?: boolean;
   createFolderView?: (payload: CreateFolderViewPayload) => Promise<string>;
   getViewIdFromDatabaseId?: (databaseId: string) => Promise<string | null>;
+  embeddedHeight?: number;
 }
 
 function Database(props: Database2Props) {
@@ -66,6 +67,7 @@ function Database(props: Database2Props) {
     navigateToView,
     modalRowId,
     isDocumentBlock,
+    embeddedHeight,
   } = props;
 
   const database = doc.getMap(YjsEditorKey.data_section)?.get(YjsEditorKey.database) as YDatabase | null;
@@ -155,8 +157,14 @@ function Database(props: Database2Props) {
     const rowOrdersData = rowOrders?.toJSON() || [];
     const ids = rowOrdersData.map(({ id }: { id: string }) => id);
 
+    console.debug('[Database] row orders updated', {
+      viewId,
+      iidIndex,
+      ids,
+      raw: rowOrdersData,
+    });
     setRowIds(ids);
-  }, [rowOrders]);
+  }, [iidIndex, rowOrders, viewId]);
 
   useEffect(() => {
     void handleUpdateRowDocMap();
@@ -252,13 +260,14 @@ function Database(props: Database2Props) {
         {rowId ? (
           <DatabaseRow appendBreadcrumb={appendBreadcrumb} rowId={rowId} />
         ) : (
-          <div className='appflowy-database relative flex w-full flex-1 select-text flex-col overflow-y-hidden'>
+          <div className='appflowy-database relative flex w-full flex-1 select-text flex-col overflow-hidden'>
             <DatabaseViews
               visibleViewIds={visibleViewIds}
               iidIndex={iidIndex}
               viewName={iidName}
               onChangeView={onChangeView}
               viewId={viewId}
+              fixedHeight={embeddedHeight}
             />
           </div>
         )}

@@ -31,22 +31,23 @@ function DatabaseViews({
   iidIndex,
   viewName,
   visibleViewIds,
+  fixedHeight,
 }: {
   onChangeView: (viewId: string) => void;
   viewId: string;
   iidIndex: string;
   viewName?: string;
   visibleViewIds?: string[];
+  fixedHeight?: number;
 }) {
   const { childViews, viewIds } = useDatabaseViewsSelector(iidIndex, visibleViewIds);
 
   const [isLoading, setIsLoading] = useState(false);
   const [layout, setLayout] = useState<DatabaseViewLayout | null>(null);
-  const pendingScrollTopRef = useRef<number | null>(null);
-  const restoreRafRef = useRef<number>();
   const [viewVisible, setViewVisible] = useState(true);
   const viewContainerRef = useRef<HTMLDivElement | null>(null);
-  const [lockedHeight, setLockedHeight] = useState<number | null>(null);
+  const [lockedHeight, setLockedHeight] = useState<number | null>(fixedHeight ?? null);
+  const lastScrollRef = useRef<number | null>(null);
   const value = useMemo(() => {
     return Math.max(
       0,
@@ -70,6 +71,13 @@ function DatabaseViews({
     const observerEvent = () => {
       setLayout(Number(activeView.get(YjsDatabaseKey.layout)) as DatabaseViewLayout);
       setIsLoading(false);
+      const currentHeight = viewContainerRef.current?.offsetHeight ?? null;
+      logDebug('[DatabaseViews] layout set', {
+        layout: Number(activeView.get(YjsDatabaseKey.layout)),
+        viewId,
+        iidIndex,
+        currentHeight,
+      });
     };
 
     observerEvent();
@@ -84,17 +92,24 @@ function DatabaseViews({
   const handleViewChange = useCallback(
     (newViewId: string) => {
       const scrollElement = getScrollElement();
-      pendingScrollTopRef.current = scrollElement?.scrollTop ?? null;
+      lastScrollRef.current = scrollElement?.scrollTop ?? null;
       logDebug('[DatabaseViews] captured scroll before view change', {
-        scrollTop: pendingScrollTopRef.current,
+        scrollTop: lastScrollRef.current,
       });
 
-      setLockedHeight(viewContainerRef.current?.offsetHeight ?? null);
-      setViewVisible(false);
+      const currentHeight = viewContainerRef.current?.offsetHeight;
+      const heightToLock = fixedHeight ?? currentHeight ?? null;
+      setLockedHeight(heightToLock ?? null);
+      logDebug('[DatabaseViews] handleViewChange height lock', {
+        currentHeight,
+        fixedHeight,
+        heightToLock,
+      });
       setIsLoading(true);
+      setViewVisible(false); // Hide view during transition to prevent flash
       onChangeView(newViewId);
     },
-    [onChangeView]
+    [fixedHeight, onChangeView]
   );
 
   const skeleton = useMemo(() => {
@@ -110,6 +125,7 @@ function DatabaseViews({
     }
   }, [layout]);
 
+  // Simple conditional rendering - Board's autoScrollForElements doesn't support keep-alive
   const view = useMemo(() => {
     if (isLoading) return skeleton;
     switch (layout) {
@@ -123,52 +139,93 @@ function DatabaseViews({
   }, [layout, isLoading, skeleton]);
 
   useEffect(() => {
+    if (!isLoading && viewContainerRef.current) {
+      const h = viewContainerRef.current.offsetHeight;
+      if (h > 0) {
+        logDebug('[DatabaseViews] measured container height', {
+          height: h,
+          viewId,
+          iidIndex,
+          layout,
+        });
+      }
+    }
+  }, [isLoading, viewVisible, layout, viewId]);
+
+  // Scroll restoration with RAF enforcement
+  // Even with keep-mounted, Board's autoScrollForElements can still interfere on first switch
+  useEffect(() => {
     if (isLoading) return;
-    if (pendingScrollTopRef.current == null) return;
+    if (lastScrollRef.current == null) return;
 
     const scrollElement = getScrollElement();
-    if (!scrollElement) return;
-
-    const target = pendingScrollTopRef.current;
-    if (restoreRafRef.current !== undefined) {
-      cancelAnimationFrame(restoreRafRef.current);
+    if (!scrollElement) {
+      lastScrollRef.current = null;
+      return;
     }
 
-    let start = performance.now();
-    setViewVisible(false);
-    const enforce = () => {
-      const delta = scrollElement.scrollTop - target;
-      if (Math.abs(delta) > 0.5) {
-        scrollElement.scrollTop = target;
-        logDebug('[DatabaseViews] enforcing scroll position', {
-          target,
-          applied: scrollElement.scrollTop,
+    const targetScroll = lastScrollRef.current;
+    let rafCount = 0;
+    let rafId: number;
+
+    // Use RAF loop to enforce scroll position
+    // This handles Board's autoScrollForElements which may still interfere on first display
+    const enforceScroll = () => {
+      const currentScroll = scrollElement.scrollTop;
+      const delta = Math.abs(currentScroll - targetScroll);
+
+      if (delta > 0.5) {
+        scrollElement.scrollTop = targetScroll;
+        logDebug('[DatabaseViews] RAF restore scroll', {
+          frame: rafCount,
+          target: targetScroll,
+          current: currentScroll,
           delta,
         });
       }
 
-      if (performance.now() - start < 350) {
-        restoreRafRef.current = requestAnimationFrame(enforce);
+      rafCount++;
+      // Run for 3 frames (~48ms) - shorter than before since views stay mounted
+      if (rafCount < 3) {
+        rafId = requestAnimationFrame(enforceScroll);
       } else {
-        pendingScrollTopRef.current = null;
-        restoreRafRef.current = undefined;
-        setViewVisible(true);
-        setLockedHeight(null);
-        logDebug('[DatabaseViews] scroll enforcement completed', {
+        logDebug('[DatabaseViews] scroll restoration completed', {
           final: scrollElement.scrollTop,
+          target: targetScroll,
         });
+        lastScrollRef.current = null;
+        setViewVisible(true);
       }
     };
 
-    restoreRafRef.current = requestAnimationFrame(enforce);
+    rafId = requestAnimationFrame(enforceScroll);
 
     return () => {
-      if (restoreRafRef.current !== undefined) {
-        cancelAnimationFrame(restoreRafRef.current);
-        restoreRafRef.current = undefined;
+      if (rafId) {
+        cancelAnimationFrame(rafId);
       }
     };
-  }, [isLoading, layout, viewId]);
+  }, [isLoading, viewId]);
+
+  useEffect(() => {
+    setLockedHeight(fixedHeight ?? null);
+  }, [fixedHeight]);
+
+  useEffect(() => {
+    if (!viewContainerRef.current) return;
+    const rect = viewContainerRef.current.getBoundingClientRect();
+    logDebug('[DatabaseViews] container render', {
+      height: rect.height,
+      lockedHeight,
+      fixedHeight,
+      isLoading,
+      viewVisible,
+      viewId,
+      layout,
+    });
+  }, [lockedHeight, fixedHeight, isLoading, viewVisible, viewId, layout]);
+
+  const effectiveHeight = lockedHeight ?? fixedHeight ?? null;
 
   return (
     <>
@@ -192,11 +249,21 @@ function DatabaseViews({
         <div
           ref={viewContainerRef}
           className={'relative flex h-full w-full flex-1 flex-col overflow-hidden'}
-          style={lockedHeight !== null ? { height: `${lockedHeight}px` } : undefined}
+          style={
+            effectiveHeight !== null
+              ? { height: `${effectiveHeight}px` }
+              : undefined
+          }
         >
           <div
-            className='h-full w-full transition-opacity duration-75'
-            style={{ opacity: viewVisible ? 1 : 0, pointerEvents: viewVisible ? undefined : 'none' }}
+            className='h-full w-full transition-opacity duration-100'
+            style={{
+              ...(effectiveHeight !== null
+                ? { minHeight: `${effectiveHeight}px`, height: `${effectiveHeight}px` }
+                : {}),
+              opacity: viewVisible ? 1 : 0,
+              pointerEvents: viewVisible ? undefined : 'none',
+            }}
             aria-hidden={!viewVisible}
           >
             <Suspense fallback={skeleton}>

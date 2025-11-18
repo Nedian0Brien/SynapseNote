@@ -50,7 +50,13 @@ export const DatabaseBlock = memo(
       if (!sharedRoot) return;
 
       const setStatus = () => {
-        setHasDatabase(!!sharedRoot.get(YjsEditorKey.database));
+        const hasDb = !!sharedRoot.get(YjsEditorKey.database);
+        setHasDatabase(hasDb);
+        if (hasDb) {
+          console.debug('[DatabaseBlock] database found in doc', { viewId });
+        } else {
+          console.warn('[DatabaseBlock] database missing in doc', { viewId });
+        }
       };
 
       setStatus();
@@ -59,7 +65,26 @@ export const DatabaseBlock = memo(
       return () => {
         sharedRoot.unobserve(setStatus);
       };
-    }, [doc]);
+    }, [doc, viewId]);
+
+    const EMBEDDED_DB_HEIGHT = 560;
+
+    const logContainerSize = () => {
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      console.debug('[DatabaseBlock] container size', {
+        viewId,
+        selectedViewId,
+        width,
+        height: rect.height,
+        paddingStart,
+        paddingEnd,
+      });
+    };
+
+    useEffect(() => {
+      logContainerSize();
+    }, [selectedViewId, width, paddingStart, paddingEnd]);
 
     return (
       <div {...attributes} contentEditable={readOnly ? false : undefined} className='relative w-full cursor-pointer'>
@@ -70,6 +95,11 @@ export const DatabaseBlock = memo(
           contentEditable={false}
           ref={containerRef}
           className='container-bg relative my-1 flex w-full select-none flex-col'
+          style={{
+            minHeight: EMBEDDED_DB_HEIGHT,
+            height: EMBEDDED_DB_HEIGHT,
+            width: '100%',
+          }}
         >
           <DatabaseContent
             selectedViewId={selectedViewId}
@@ -91,6 +121,7 @@ export const DatabaseBlock = memo(
             onChangeView={onChangeView}
             // eslint-disable-next-line
             context={context as DatabaseContextState}
+            fixedHeight={EMBEDDED_DB_HEIGHT}
           />
         </div>
       </div>

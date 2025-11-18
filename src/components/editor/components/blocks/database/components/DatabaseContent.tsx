@@ -24,6 +24,7 @@ interface DatabaseContentProps {
   visibleViewIds: string[];
   onChangeView: (viewId: string) => void;
   context: DatabaseContextState;
+  fixedHeight?: number;
 }
 
 export const DatabaseContent = ({
@@ -45,6 +46,7 @@ export const DatabaseContent = ({
   visibleViewIds,
   onChangeView,
   context,
+  fixedHeight,
 }: DatabaseContentProps) => {
   const { t } = useTranslation();
   const isPublishVarient = context?.variant === UIVariant.Publish;
@@ -76,6 +78,7 @@ export const DatabaseContent = ({
           paddingStart={paddingStart}
           paddingEnd={paddingEnd}
           isDocumentBlock={true}
+          embeddedHeight={fixedHeight}
         />
       </div>
     );
