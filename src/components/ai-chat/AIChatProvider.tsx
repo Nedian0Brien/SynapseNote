@@ -32,6 +32,11 @@ export function useAIChatContext() {
   return context;
 }
 
+// Optional version that returns undefined if provider is not available
+export function useAIChatContextOptional() {
+  return React.useContext(AIChatContext);
+}
+
 export function AIChatProvider({
   children,
 }: {
