@@ -88,7 +88,7 @@ export const DatabaseContent = ({
     <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded bg-background-primary px-16 py-10 text-text-secondary max-md:px-4">
       {notFound ? (
         <div className="text-base font-medium">
-          {isPublishVarient ? t('publish.hasNotBeenPublished') : 'Something went wrong'}
+          {isPublishVarient ? t('publish.hasNotBeenPublished') : t('error.generalError')}
         </div>
       ) : (
         <CircularProgress size={20} />

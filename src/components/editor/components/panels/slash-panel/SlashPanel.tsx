@@ -13,14 +13,14 @@ import {
   BlockData,
   BlockType,
   CalloutBlockData,
+  DatabaseNodeData,
   HeadingBlockData,
   ImageBlockData,
   SubpageNodeData,
   ToggleListBlockData,
   VideoBlockData,
-  ViewLayout,
-  DatabaseNodeData,
   View,
+  ViewLayout,
 } from '@/application/types';
 // import { ReactComponent as AIWriterIcon } from '@/assets/slash_menu_icon_ai_writer.svg';
 import { ReactComponent as EmojiIcon } from '@/assets/icons/add_emoji.svg';
@@ -50,7 +50,7 @@ import { ReactComponent as TodoListIcon } from '@/assets/icons/todo.svg';
 import { ReactComponent as ToggleHeading1Icon } from '@/assets/icons/toggle_h1.svg';
 import { ReactComponent as ToggleHeading2Icon } from '@/assets/icons/toggle_h2.svg';
 import { ReactComponent as ToggleHeading3Icon } from '@/assets/icons/toggle_h3.svg';
-import { ReactComponent as ToggleListIcon , ReactComponent as ChevronRight } from '@/assets/icons/toggle_list.svg';
+import { ReactComponent as ChevronRight, ReactComponent as ToggleListIcon } from '@/assets/icons/toggle_list.svg';
 import { ReactComponent as VideoIcon } from '@/assets/icons/video.svg';
 import { notify } from '@/components/_shared/notify';
 import { flattenViews } from '@/components/_shared/outline/utils';
@@ -298,7 +298,7 @@ export function SlashPanel({
       if (newBlockId && isEmbedBlockTypes(type)) {
         const entry = findSlateEntryByBlockId(editor, newBlockId);
 
-        if(!entry) return;
+        if (!entry) return;
 
         const [, path] = entry;
 
@@ -339,41 +339,58 @@ export function SlashPanel({
     setDatabaseLoading(true);
     setDatabaseError(null);
 
-    let relations = databaseRelations;
-
-    if ((!relations || Object.keys(relations).length === 0) && loadViewMeta && viewId) {
-      try {
-        const meta = await loadViewMeta(viewId);
-
-        relations = meta?.database_relations;
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
-    if (!relations || Object.keys(relations).length === 0) {
-      setDatabaseOptions([]);
-      setDatabaseLoading(false);
-      return false;
-    }
-
     try {
       const views = (await loadViews()) || [];
 
       setDatabaseOutline(views);
       const flatViews = flattenViews(views);
-      const options = Object.entries(relations).reduce<DatabaseOption[]>((acc, [databaseId, baseViewId]) => {
-        const view = flatViews.find((item) => item.view_id === baseViewId);
 
-        if (view) {
-          acc.push({
-            databaseId,
-            view,
-          });
+      // Identify databases by their layout type (Grid, Board, Calendar)
+      // This ensures newly created databases appear even if databaseRelations is stale
+      // ViewLayout enum values: Grid=1, Board=2, Calendar=3
+      const databaseLayouts = [ViewLayout.Grid, ViewLayout.Board, ViewLayout.Calendar];
+      const databaseViews = flatViews.filter((view) => {
+        // view.layout is ViewLayout enum, compare directly
+        return databaseLayouts.includes(view.layout);
+      });
+
+      // Use databaseRelations if available to get databaseId, otherwise use view_id
+      let relations = databaseRelations;
+
+      if ((!relations || Object.keys(relations).length === 0) && loadViewMeta && viewId) {
+        try {
+          const meta = await loadViewMeta(viewId);
+          relations = meta?.database_relations;
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      const options: DatabaseOption[] = databaseViews.map((view) => {
+        // Try to find databaseId from relations, otherwise use view_id
+        let databaseId = view.view_id;
+
+        if (relations) {
+          // Find the databaseId that maps to this view_id
+          const relationEntry = Object.entries(relations).find(([_, baseViewId]) => baseViewId === view.view_id);
+          if (relationEntry) {
+            databaseId = relationEntry[0];
+          }
         }
 
-        return acc;
-      }, []);
+        return {
+          databaseId,
+          view,
+        };
+      });
+
+      console.debug('[SlashPanel] loadDatabasesForPicker:', {
+        totalViews: flatViews.length,
+        databaseViews: databaseViews.length,
+        databaseViewNames: databaseViews.map(v => v.name),
+        optionsCount: options.length,
+        usingRelations: !!relations && Object.keys(relations).length > 0,
+      });
 
       setDatabaseOptions(options);
       return options.length > 0;
@@ -1014,9 +1031,9 @@ export function SlashPanel({
         isAlignBottom
           ? origins.transformOrigin
           : {
-              vertical: -30,
-              horizontal: origins.transformOrigin.horizontal,
-            }
+            vertical: -30,
+            horizontal: origins.transformOrigin.horizontal,
+          }
       );
     }
   }, [open, panelPosition]);
@@ -1068,9 +1085,8 @@ export function SlashPanel({
                   handleSelectOption(option.key);
                   option.onClick?.();
                 }}
-                className={`scroll-m-2 justify-start hover:bg-fill-content-hover ${
-                  selectedOption === option.key ? 'bg-fill-content-hover' : ''
-                }`}
+                className={`scroll-m-2 justify-start hover:bg-fill-content-hover ${selectedOption === option.key ? 'bg-fill-content-hover' : ''
+                  }`}
               >
                 {option.label}
               </Button>

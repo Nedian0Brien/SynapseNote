@@ -40,7 +40,12 @@ export function Filters() {
           open={openPropertiesMenu}
           onOpenChange={setOpenPropertiesMenu}
         >
-          <Button variant='ghost' className={'mx-1 whitespace-nowrap'} size='sm'>
+          <Button
+            variant='ghost'
+            className={'mx-1 whitespace-nowrap'}
+            size='sm'
+            data-testid='database-add-filter-button'
+          >
             <AddFilterSvg className={'h-5 w-5'} />
             {t('grid.settings.addFilter')}
           </Button>

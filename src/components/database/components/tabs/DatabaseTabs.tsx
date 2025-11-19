@@ -1,4 +1,4 @@
-import { forwardRef, useCallback, useEffect, useMemo, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
@@ -13,6 +13,11 @@ import { findView } from '@/components/_shared/outline/utils';
 import { AFScroller } from '@/components/_shared/scroller';
 import { ViewIcon } from '@/components/_shared/view-icon';
 import PageIcon from '@/components/_shared/view-icon/PageIcon';
+import {
+  SCROLL_DELAY,
+  SCROLL_FALLBACK_DELAY,
+} from '@/components/app/hooks/constants';
+import { useDatabaseViewSync } from '@/components/app/hooks/useViewSync';
 import RenameModal from '@/components/app/view-actions/RenameModal';
 import { DatabaseActions } from '@/components/database/components/conditions';
 import DeleteViewConfirm from '@/components/database/components/tabs/DeleteViewConfirm';
@@ -52,6 +57,45 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
     const [showScrollRightButton, setShowScrollRightButton] = useState(false);
     const [showScrollLeftButton, setShowScrollLeftButton] = useState(false);
     const [scrollerContainer, setScrollerContainer] = useState<HTMLDivElement | null>(null);
+    const tabRefs = useRef<Map<string, HTMLElement>>(new Map());
+
+    const { waitForViewData } = useDatabaseViewSync(views as any);
+
+    const scrollToView = useCallback(
+      (viewId: string) => {
+        const element = tabRefs.current.get(viewId);
+
+        if (element) {
+          element.scrollIntoView({
+            behavior: 'smooth',
+            block: 'nearest',
+            inline: 'center',
+          });
+          return true;
+        }
+        return false;
+      },
+      []
+    );
+
+    const navigateToView = useCallback(
+      async (viewId: string) => {
+        if (setSelectedViewId) {
+          setSelectedViewId(viewId);
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, SCROLL_DELAY));
+
+        const scrolled = scrollToView(viewId);
+
+        if (!scrolled) {
+          setTimeout(() => {
+            scrollToView(viewId);
+          }, SCROLL_FALLBACK_DELAY);
+        }
+      },
+      [setSelectedViewId, scrollToView]
+    );
 
     const handleObserverScroller = useCallback(() => {
       if (scrollerContainer) {
@@ -165,74 +209,15 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
           const viewId = await onAddView(layout);
 
           // Wait for the view to be synchronized to the local Yjs document
-          // The server creates the view, but there's a small delay before it appears in the local views map
-          const waitForViewSync = async (maxAttempts = 20, delayMs = 100): Promise<boolean> => {
-            for (let i = 0; i < maxAttempts; i++) {
-              const view = views?.get(viewId);
-
-              if (view) {
-                console.debug('[DatabaseTabs] View synced to Yjs', { viewId, attempt: i + 1 });
-                // View exists in Yjs, now wait for DOM element to be rendered
-                // Give React time to re-render with the new view
-                await new Promise((resolve) => setTimeout(resolve, 100));
-
-                // Check if DOM element exists
-                const element = document.getElementById(`view-tab-${viewId}`);
-
-                if (element) {
-                  console.debug('[DatabaseTabs] View DOM element found', { viewId });
-                  return true;
-                }
-
-                console.debug('[DatabaseTabs] View synced but DOM not ready, waiting...', { viewId, attempt: i + 1 });
-              } else {
-                console.debug('[DatabaseTabs] Waiting for view sync...', { viewId, attempt: i + 1 });
-              }
-
-              await new Promise((resolve) => setTimeout(resolve, delayMs));
-            }
-
-            console.warn('[DatabaseTabs] View sync timeout', { viewId });
-            return false;
-          };
-
-          // Wait for Yjs sync first
-          const synced = await waitForViewSync();
+          const synced = await waitForViewData(viewId);
 
           // Reload view metadata to ensure folder structure is updated
           await reloadView();
 
-          // Select the new view - this should trigger the tab to become active
-          if (setSelectedViewId) {
-            console.debug('[DatabaseTabs] Selecting new view', { viewId });
-            setSelectedViewId(viewId);
-          }
-
-          // Wait a bit for React to process the selection update
-          await new Promise((resolve) => setTimeout(resolve, 100));
-
-          // Now scroll to the tab
-          const scrollToView = () => {
-            const element = document.getElementById(`view-tab-${viewId}`);
-
-            if (element) {
-              console.debug('[DatabaseTabs] Scrolling to view', { viewId });
-              element.scrollIntoView({
-                behavior: 'smooth',
-                block: 'nearest',
-                inline: 'center',
-              });
-            } else {
-              console.warn('[DatabaseTabs] Cannot scroll - element not found', { viewId });
-            }
-          };
-
           if (synced) {
-            // Element confirmed to exist, scroll immediately
-            scrollToView();
+            await navigateToView(viewId);
           } else {
-            // Fallback: try scrolling after a delay
-            setTimeout(scrollToView, 500);
+            console.warn('[DatabaseTabs] View sync timeout', { viewId });
           }
 
           // eslint-disable-next-line
@@ -242,7 +227,7 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
           setAddLoading(false);
         }
       },
-      [onAddView, setSelectedViewId, reloadView, views]
+      [onAddView, reloadView, waitForViewData, navigateToView]
     );
 
     useEffect(() => {
@@ -355,7 +340,7 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
                   e.preventDefault();
                 }}
               >
-                <Tabs value={selectedViewId} className='relative flex h-full overflow-hidden'>
+                <Tabs value={selectedViewId || viewIds[0] || iidIndex} className='relative flex h-full overflow-hidden'>
                   <TabsList className={'w-full'}>
                     {viewIds.map((viewId) => {
                       const view = views?.get(viewId) as YDatabaseView | null;
@@ -373,6 +358,13 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
                           id={`view-tab-${viewId}`}
                           data-testid={`view-tab-${viewId}`}
                           className={'min-w-[80px] max-w-[200px]'}
+                          ref={(el) => {
+                            if (el) {
+                              tabRefs.current.set(viewId, el);
+                            } else {
+                              tabRefs.current.delete(viewId);
+                            }
+                          }}
                         >
                           <TabLabel
                             onPointerDown={(e) => {
@@ -401,8 +393,8 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
                                     databaseLayout === DatabaseViewLayout.Board
                                       ? ViewLayout.Board
                                       : databaseLayout === DatabaseViewLayout.Calendar
-                                      ? ViewLayout.Calendar
-                                      : ViewLayout.Grid,
+                                        ? ViewLayout.Calendar
+                                        : ViewLayout.Grid,
                                 }
                               }
                               className={'!h-5 !w-5 text-base leading-[1.3rem]'}
@@ -471,6 +463,7 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
+                    data-testid="add-view-button"
                     size={'icon'}
                     variant={'ghost'}
                     loading={addLoading}
