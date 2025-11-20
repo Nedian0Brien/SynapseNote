@@ -28,9 +28,9 @@ export function AddViewButton({ onViewAdded }: AddViewButtonProps) {
     setAddLoading(true);
     try {
       const viewId = await onAddView(layout);
-
       onViewAdded(viewId);
     } catch (e: any) {
+      console.error('[AddViewButton] Error adding view:', e);
       toast.error(e.message);
     } finally {
       setAddLoading(false);

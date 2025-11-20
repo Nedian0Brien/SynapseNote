@@ -52,6 +52,7 @@ export function DatabaseViewTabs({
   const [tabsContainer, setTabsContainer] = useState<HTMLDivElement | null>(null);
   const tabRefs = useRef<Map<string, HTMLElement>>(new Map());
 
+
   const {
     setScrollerContainer,
     showScrollLeftButton,
@@ -174,7 +175,9 @@ export function DatabaseViewTabs({
               {viewIds.map((viewId) => {
                 const view = views?.get(viewId) as YDatabaseView | null;
 
-                if (!view) return null;
+                if (!view) {
+                  return null;
+                }
 
                 return (
                   <DatabaseTabItem

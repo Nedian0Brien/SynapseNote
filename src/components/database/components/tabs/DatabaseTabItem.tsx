@@ -48,11 +48,46 @@ export const DatabaseTabItem = memo(
         setTabRef,
     }: DatabaseTabItemProps) => {
         const { t } = useTranslation();
-        const databaseLayout = Number(view.get(YjsDatabaseKey.layout)) as DatabaseViewLayout;
+        const rawLayoutValue = view.get(YjsDatabaseKey.layout);
+        const databaseLayout = Number(rawLayoutValue) as DatabaseViewLayout;
         const folderView =
             viewId === iidIndex ? meta : meta?.children?.find((v) => v.view_id === viewId);
 
-        const name = folderView?.name || view.get(YjsDatabaseKey.name) || t('untitled');
+        // Get the default name based on layout if no name is available
+        const getDefaultNameByLayout = () => {
+            switch (databaseLayout) {
+                case DatabaseViewLayout.Grid:
+                    return 'Grid';
+                case DatabaseViewLayout.Board:
+                    return 'Board';
+                case DatabaseViewLayout.Calendar:
+                    return 'Calendar';
+                default:
+                    return t('untitled');
+            }
+        };
+
+        // Always prioritize Yjs name (it's immediately available and always correct)
+        // folderView.name comes from async API and can be stale
+        // Fall back to default name based on layout type
+        const name = view.get(YjsDatabaseKey.name) || getDefaultNameByLayout();
+
+        // Compute the layout that will be passed to PageIcon
+        const computedLayout =
+            databaseLayout === DatabaseViewLayout.Board
+                ? ViewLayout.Board
+                : databaseLayout === DatabaseViewLayout.Calendar
+                    ? ViewLayout.Calendar
+                    : ViewLayout.Grid;
+
+        // Create the view object that will be passed to PageIcon
+        // IMPORTANT: Don't spread the entire folderView to avoid layout conflicts
+        // Only include the icon property (PageIcon doesn't use name)
+        const pageIconView = {
+            icon: folderView?.icon,
+            layout: computedLayout,
+        };
+
 
         const menuView = useMemo(() => {
             if (menuViewId === iidIndex) return meta;
@@ -92,17 +127,9 @@ export const DatabaseTabItem = memo(
                     className={'flex items-center gap-1.5 overflow-hidden'}
                 >
                     <PageIcon
+                        key={`${viewId}-${computedLayout}`}
                         iconSize={16}
-                        view={
-                            folderView || {
-                                layout:
-                                    databaseLayout === DatabaseViewLayout.Board
-                                        ? ViewLayout.Board
-                                        : databaseLayout === DatabaseViewLayout.Calendar
-                                            ? ViewLayout.Calendar
-                                            : ViewLayout.Grid,
-                            }
-                        }
+                        view={pageIconView}
                         className={'!h-5 !w-5 text-base leading-[1.3rem]'}
                     />
 
