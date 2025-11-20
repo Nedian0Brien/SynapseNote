@@ -97,10 +97,10 @@ export function useDatabaseViewsSelector(_iidIndex: string, visibleViewIds?: str
     };
 
     observerEvent();
-    views.observe(observerEvent);
+    views.observeDeep(observerEvent);
 
     return () => {
-      views.unobserve(observerEvent);
+      views.unobserveDeep(observerEvent);
     };
   }, [views, visibleViewIds]);
 

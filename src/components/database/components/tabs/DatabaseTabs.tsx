@@ -340,7 +340,15 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
                   e.preventDefault();
                 }}
               >
-                <Tabs value={selectedViewId || viewIds[0] || iidIndex} className='relative flex h-full overflow-hidden'>
+                <Tabs
+                  value={selectedViewId || viewIds[0] || iidIndex}
+                  onValueChange={(viewId) => {
+                    if (setSelectedViewId) {
+                      setSelectedViewId(viewId);
+                    }
+                  }}
+                  className='relative flex h-full overflow-hidden'
+                >
                   <TabsList className={'w-full'}>
                     {viewIds.map((viewId) => {
                       const view = views?.get(viewId) as YDatabaseView | null;
@@ -368,12 +376,14 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
                         >
                           <TabLabel
                             onPointerDown={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              if (e.button === 0 && selectedViewId !== viewId && setSelectedViewId) {
-                                setSelectedViewId(viewId);
+                              // For left-click, let Radix UI tabs handle it via onValueChange
+                              if (e.button === 0) {
                                 return;
                               }
+
+                              // For right-click and other buttons, prevent default and handle menu
+                              e.preventDefault();
+                              e.stopPropagation();
 
                               if (readOnly) return;
 
