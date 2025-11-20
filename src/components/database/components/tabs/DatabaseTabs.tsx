@@ -1,27 +1,14 @@
-import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { forwardRef, useCallback, useEffect, useMemo, useState } from 'react';
 
 import { APP_EVENTS } from '@/application/constants';
 import { useDatabase, useDatabaseContext } from '@/application/database-yjs';
-import { useAddDatabaseView, useUpdateDatabaseView } from '@/application/database-yjs/dispatch';
-import { DatabaseViewLayout, View, ViewLayout, YDatabaseView, YjsDatabaseKey } from '@/application/types';
-import { ReactComponent as ChevronLeft } from '@/assets/icons/alt_arrow_left.svg';
-import { ReactComponent as ChevronRight } from '@/assets/icons/alt_arrow_right.svg';
-import { ReactComponent as PlusIcon } from '@/assets/icons/plus.svg';
+import { useUpdateDatabaseView } from '@/application/database-yjs/dispatch';
+import { View, YDatabaseView, YjsDatabaseKey } from '@/application/types';
 import { findView } from '@/components/_shared/outline/utils';
-import { AFScroller } from '@/components/_shared/scroller';
-import { ViewIcon } from '@/components/_shared/view-icon';
-import { useDatabaseViewSync } from '@/components/app/hooks/useViewSync';
 import RenameModal from '@/components/app/view-actions/RenameModal';
 import { DatabaseActions } from '@/components/database/components/conditions';
-import { DatabaseTabItem } from '@/components/database/components/tabs/DatabaseTabItem';
+import { DatabaseViewTabs } from '@/components/database/components/tabs/DatabaseViewTabs';
 import DeleteViewConfirm from '@/components/database/components/tabs/DeleteViewConfirm';
-import { useTabScroller } from '@/components/database/components/tabs/useTabScroller';
-import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsList } from '@/components/ui/tabs';
 
 export interface DatabaseTabBarProps {
   viewIds: string[];
@@ -34,87 +21,18 @@ export interface DatabaseTabBarProps {
 
 export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
   ({ viewIds, iidIndex, selectedViewId, setSelectedViewId }, ref) => {
-    const { t } = useTranslation();
     const views = useDatabase()?.get(YjsDatabaseKey.views);
     const context = useDatabaseContext();
-    const onAddView = useAddDatabaseView();
     const { loadViewMeta, readOnly, showActions = true, eventEmitter } = context;
     const updatePage = useUpdateDatabaseView();
     const [meta, setMeta] = useState<View | null>(null);
     const scrollLeftPadding = context.paddingStart;
-    const [addLoading, setAddLoading] = useState(false);
-    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState<string | null>();
-    const [renameViewId, setRenameViewId] = useState<string | null>();
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState<string | null>(null);
+    const [renameViewId, setRenameViewId] = useState<string | null>(null);
     const [menuViewId, setMenuViewId] = useState<string | null>(null);
 
-    const [tabsWidth, setTabsWidth] = useState<number | null>(null);
-    const [tabsContainer, setTabsContainer] = useState<HTMLDivElement | null>(null);
-    const tabRefs = useRef<Map<string, HTMLElement>>(new Map());
-
-    const {
-      setScrollerContainer,
-      showScrollLeftButton,
-      showScrollRightButton,
-      scrollLeft,
-      scrollRight,
-      handleObserverScroller,
-    } = useTabScroller();
-
-    const { waitForViewData } = useDatabaseViewSync(views);
-
-    const scrollToView = useCallback((viewId: string) => {
-      const element = tabRefs.current.get(viewId);
-
-      if (element) {
-        element.scrollIntoView({
-          behavior: 'smooth',
-          block: 'nearest',
-          inline: 'center',
-        });
-        return true;
-      }
-      return false;
-    }, []);
-
+    // Used to trigger a scroll in the child component
     const [pendingScrollToViewId, setPendingScrollToViewId] = useState<string | null>(null);
-
-    useEffect(() => {
-      if (pendingScrollToViewId) {
-        // Once the pending view is rendered and the ref is set, scroll to it
-        // This effect runs whenever the tabRefs or pendingScrollToViewId changes
-        const element = tabRefs.current.get(pendingScrollToViewId);
-
-        if (element) {
-          scrollToView(pendingScrollToViewId);
-          setPendingScrollToViewId(null);
-        }
-      }
-    }, [pendingScrollToViewId, viewIds, scrollToView]);
-
-    useEffect(() => {
-      const onResize = () => {
-        if (tabsContainer) {
-          const clientWidth = tabsContainer.clientWidth;
-
-          setTabsWidth(clientWidth);
-        }
-      };
-
-      // Initial call to set the width
-      onResize();
-
-      const observer = new ResizeObserver(onResize);
-
-      if (tabsContainer) {
-        observer.observe(tabsContainer);
-      }
-
-      return () => {
-        if (tabsContainer) {
-          observer.disconnect();
-        }
-      };
-    }, [tabsContainer]);
 
     const reloadView = useCallback(async () => {
       if (loadViewMeta) {
@@ -162,26 +80,6 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
       });
     }, [viewIds, views]);
 
-    const handleAddView = useCallback(
-      async (layout: DatabaseViewLayout) => {
-        setAddLoading(true);
-        try {
-          const viewId = await onAddView(layout);
-
-          if (setSelectedViewId) {
-            setSelectedViewId(viewId);
-          }
-          setPendingScrollToViewId(viewId);
-
-        } catch (e: any) {
-          toast.error(e.message);
-        } finally {
-          setAddLoading(false);
-        }
-      },
-      [onAddView, reloadView, waitForViewData, setSelectedViewId]
-    );
-
     useEffect(() => {
       void reloadView();
     }, [reloadView]);
@@ -211,14 +109,6 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
       };
     }, [menuViewId]);
 
-    const setTabRef = useCallback((viewId: string, el: HTMLElement | null) => {
-      if (el) {
-        tabRefs.current.set(viewId, el);
-      } else {
-        tabRefs.current.delete(viewId);
-      }
-    }, []);
-
     if (viewIds.length === 0) return null;
     return (
       <div
@@ -232,145 +122,29 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
         <div
           className={`database-tabs flex w-full items-center gap-1.5 overflow-hidden border-b border-border-primary`}
         >
-          <div className='relative flex h-[34px] flex-1 items-end justify-start overflow-hidden'>
-            {showScrollLeftButton && (
-              <Button
-                size={'icon'}
-                style={{
-                  boxShadow: 'var(--surface-primary) 16px 0px 16px',
-                }}
-                className={
-                  'absolute left-0 top-0 z-10 bg-surface-primary text-icon-secondary hover:bg-surface-primary-hover '
-                }
-                variant={'ghost'}
-                onClick={scrollLeft}
-              >
-                <ChevronLeft className={'h-5 w-5'} />
-              </Button>
-            )}
-            {showScrollRightButton && (
-              <div>
-                <Button
-                  size={'icon'}
-                  style={{
-                    boxShadow: 'var(--surface-primary) -16px 0px 16px',
-                  }}
-                  className={
-                    'absolute right-9 top-0 z-10 bg-surface-primary text-icon-secondary hover:bg-surface-primary-hover'
-                  }
-                  variant={'ghost'}
-                  onClick={scrollRight}
-                >
-                  <ChevronRight className={'h-5 w-5'} />
-                </Button>
-              </div>
-            )}
-            <AFScroller
-              hideScrollbars
-              style={{
-                width: tabsWidth || undefined,
-              }}
-              className={'relative flex h-full flex-1'}
-              overflowYHidden
-              ref={setScrollerContainer}
-              onScroll={handleObserverScroller}
-            >
-              <div
-                ref={setTabsContainer}
-                className={'w-fit'}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                }}
-              >
-                <Tabs
-                  value={selectedViewId || viewIds[0] || iidIndex}
-                  onValueChange={(viewId) => {
-                    if (setSelectedViewId) {
-                      setSelectedViewId(viewId);
-                    }
-                  }}
-                  className='relative flex h-full overflow-hidden'
-                >
-                  <TabsList className={'w-full'}>
-                    {viewIds.map((viewId) => {
-                      const view = views?.get(viewId) as YDatabaseView | null;
-
-                      if (!view) return null;
-
-                      return (
-                        <DatabaseTabItem
-                          key={viewId}
-                          viewId={viewId}
-                          view={view}
-                          meta={meta}
-                          iidIndex={iidIndex}
-                          menuViewId={menuViewId}
-                          readOnly={!!readOnly}
-                          visibleViewIds={visibleViewIds}
-                          onSetMenuViewId={setMenuViewId}
-                          onOpenDeleteModal={setDeleteConfirmOpen}
-                          onOpenRenameModal={setRenameViewId}
-                          onReloadView={reloadView}
-                          setTabRef={setTabRef}
-                        />
-                      );
-                    })}
-                  </TabsList>
-                </Tabs>
-              </div>
-            </AFScroller>
-
-            {!readOnly && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    data-testid='add-view-button'
-                    size={'icon'}
-                    variant={'ghost'}
-                    loading={addLoading}
-                    className={'mx-1.5 mb-1.5 text-icon-secondary'}
-                  >
-                    {addLoading ? (
-                      <Progress variant={'inherit'} />
-                    ) : (
-                      <PlusIcon className={'h-5 w-5'} />
-                    )}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  side={'bottom'}
-                  align={'start'}
-                  className={'!min-w-[120px]'}
-                  onCloseAutoFocus={(e) => e.preventDefault()}
-                >
-                  <DropdownMenuItem
-                    onSelect={() => {
-                      void handleAddView(DatabaseViewLayout.Grid);
-                    }}
-                  >
-                    <ViewIcon layout={ViewLayout.Grid} size={'small'} />
-                    {t('grid.menuName')}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onSelect={() => {
-                      void handleAddView(DatabaseViewLayout.Board);
-                    }}
-                  >
-                    <ViewIcon layout={ViewLayout.Board} size={'small'} />
-                    {t('board.menuName')}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onSelect={() => {
-                      void handleAddView(DatabaseViewLayout.Calendar);
-                    }}
-                  >
-                    <ViewIcon layout={ViewLayout.Calendar} size={'small'} />
-                    {t('calendar.menuName')}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </div>
+          <DatabaseViewTabs
+            viewIds={viewIds}
+            selectedViewId={selectedViewId}
+            setSelectedViewId={setSelectedViewId}
+            iidIndex={iidIndex}
+            views={views}
+            meta={meta}
+            readOnly={!!readOnly}
+            visibleViewIds={visibleViewIds}
+            menuViewId={menuViewId}
+            setMenuViewId={setMenuViewId}
+            setDeleteConfirmOpen={setDeleteConfirmOpen}
+            setRenameViewId={setRenameViewId}
+            reloadView={reloadView}
+            pendingScrollToViewId={pendingScrollToViewId}
+            setPendingScrollToViewId={setPendingScrollToViewId}
+            onViewAdded={(viewId) => {
+              if (setSelectedViewId) {
+                setSelectedViewId(viewId);
+              }
+              setPendingScrollToViewId(viewId);
+            }}
+          />
 
           {!readOnly ? (
             <div style={{ opacity: showActions ? 1 : 0 }} className={'mb-1 ml-auto'}>
