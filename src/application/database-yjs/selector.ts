@@ -78,22 +78,15 @@ export function useDatabaseViewsSelector(_iidIndex: string, visibleViewIds?: str
         }
       >;
 
-      const viewsSorted =
-        visibleViewIds ??
-        Object.entries(viewsObj)
-          .sort((a, b) => {
-            const [, viewA] = a;
-            const [, viewB] = b;
+      // Get all views from the database and filter out inline views
+      const allViewIds = Object.keys(viewsObj).filter((viewId) => {
+        const view = views.get(viewId);
+        if (!view) return false;
+        const isInline = view.get(YjsDatabaseKey.is_inline);
+        return !isInline;
+      });
 
-            return Date.parse(viewB.created_at) - Date.parse(viewA.created_at);
-          })
-          .map(([key]) => key);
-
-      setViewIds(
-        viewsSorted.filter((id) => {
-          return !visibleViewIds || visibleViewIds.includes(id);
-        })
-      );
+      setViewIds(allViewIds);
     };
 
     observerEvent();
@@ -102,7 +95,7 @@ export function useDatabaseViewsSelector(_iidIndex: string, visibleViewIds?: str
     return () => {
       views.unobserveDeep(observerEvent);
     };
-  }, [views, visibleViewIds]);
+  }, [views, visibleViewIds, _iidIndex]);
 
   return {
     childViews,
@@ -941,7 +934,7 @@ export function useCalendarEventsSelector() {
     observerEvent();
 
     field?.observeDeep(observerEvent);
-    
+
     const debouncedObserverEvent = debounce(observerEvent, 150);
 
     // for every row

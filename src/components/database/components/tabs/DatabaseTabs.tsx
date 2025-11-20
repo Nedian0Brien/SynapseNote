@@ -177,23 +177,12 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
           const viewId = await onAddView(layout);
 
           // Wait for the view to be synchronized to the local Yjs document
-          const synced = await waitForViewData(viewId);
+          await waitForViewData(viewId);
 
           // Reload view metadata to ensure folder structure is updated
-          const meta = await reloadView();
+          await reloadView();
 
-          // Sometimes the view metadata is not immediately available after creation due to race conditions on the backend/sync
-          // If the new view is not found in the children list, wait a bit and try reloading again
-          if (meta && !meta.children.some((v) => v.view_id === viewId)) {
-            await new Promise((resolve) => setTimeout(resolve, 500));
-            await reloadView();
-          }
-
-          if (synced) {
-            await navigateToView(viewId);
-          } else {
-            console.warn('[DatabaseTabs] View sync timeout', { viewId });
-          }
+          await navigateToView(viewId);
 
           // eslint-disable-next-line
         } catch (e: any) {
