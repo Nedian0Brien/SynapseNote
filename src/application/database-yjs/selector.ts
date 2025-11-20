@@ -63,9 +63,7 @@ export function useDatabaseViewsSelector(_iidIndex: string, visibleViewIds?: str
 
   const views = database?.get(YjsDatabaseKey.views);
   const [viewIds, setViewIds] = useState<string[]>([]);
-  const childViews = useMemo(() => {
-    return viewIds.map((viewId) => views?.get(viewId));
-  }, [viewIds, views]);
+  const [childViews, setChildViews] = useState<ReturnType<typeof views.get>[]>([]);
 
   useEffect(() => {
     if (!views) return;
@@ -87,6 +85,7 @@ export function useDatabaseViewsSelector(_iidIndex: string, visibleViewIds?: str
       });
 
       setViewIds(allViewIds);
+      setChildViews(allViewIds.map((viewId) => views.get(viewId)));
     };
 
     observerEvent();

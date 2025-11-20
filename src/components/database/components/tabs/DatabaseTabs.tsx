@@ -12,10 +12,6 @@ import { ReactComponent as PlusIcon } from '@/assets/icons/plus.svg';
 import { findView } from '@/components/_shared/outline/utils';
 import { AFScroller } from '@/components/_shared/scroller';
 import { ViewIcon } from '@/components/_shared/view-icon';
-import {
-  SCROLL_DELAY,
-  SCROLL_FALLBACK_DELAY,
-} from '@/components/app/hooks/constants';
 import { useDatabaseViewSync } from '@/components/app/hooks/useViewSync';
 import RenameModal from '@/components/app/view-actions/RenameModal';
 import { DatabaseActions } from '@/components/database/components/conditions';
@@ -80,24 +76,20 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
       return false;
     }, []);
 
-    const navigateToView = useCallback(
-      async (viewId: string) => {
-        if (setSelectedViewId) {
-          setSelectedViewId(viewId);
+    const [pendingScrollToViewId, setPendingScrollToViewId] = useState<string | null>(null);
+
+    useEffect(() => {
+      if (pendingScrollToViewId) {
+        // Once the pending view is rendered and the ref is set, scroll to it
+        // This effect runs whenever the tabRefs or pendingScrollToViewId changes
+        const element = tabRefs.current.get(pendingScrollToViewId);
+
+        if (element) {
+          scrollToView(pendingScrollToViewId);
+          setPendingScrollToViewId(null);
         }
-
-        await new Promise((resolve) => setTimeout(resolve, SCROLL_DELAY));
-
-        const scrolled = scrollToView(viewId);
-
-        if (!scrolled) {
-          setTimeout(() => {
-            scrollToView(viewId);
-          }, SCROLL_FALLBACK_DELAY);
-        }
-      },
-      [setSelectedViewId, scrollToView]
-    );
+      }
+    }, [pendingScrollToViewId, viewIds, scrollToView]);
 
     useEffect(() => {
       const onResize = () => {
@@ -176,22 +168,18 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
         try {
           const viewId = await onAddView(layout);
 
-          // Wait for the view to be synchronized to the local Yjs document
-          await waitForViewData(viewId);
+          if (setSelectedViewId) {
+            setSelectedViewId(viewId);
+          }
+          setPendingScrollToViewId(viewId);
 
-          // Reload view metadata to ensure folder structure is updated
-          await reloadView();
-
-          await navigateToView(viewId);
-
-          // eslint-disable-next-line
         } catch (e: any) {
           toast.error(e.message);
         } finally {
           setAddLoading(false);
         }
       },
-      [onAddView, reloadView, waitForViewData, navigateToView]
+      [onAddView, reloadView, waitForViewData, setSelectedViewId]
     );
 
     useEffect(() => {
