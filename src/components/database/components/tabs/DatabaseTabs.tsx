@@ -12,7 +12,6 @@ import { ReactComponent as PlusIcon } from '@/assets/icons/plus.svg';
 import { findView } from '@/components/_shared/outline/utils';
 import { AFScroller } from '@/components/_shared/scroller';
 import { ViewIcon } from '@/components/_shared/view-icon';
-import PageIcon from '@/components/_shared/view-icon/PageIcon';
 import {
   SCROLL_DELAY,
   SCROLL_FALLBACK_DELAY,
@@ -20,13 +19,13 @@ import {
 import { useDatabaseViewSync } from '@/components/app/hooks/useViewSync';
 import RenameModal from '@/components/app/view-actions/RenameModal';
 import { DatabaseActions } from '@/components/database/components/conditions';
+import { DatabaseTabItem } from '@/components/database/components/tabs/DatabaseTabItem';
 import DeleteViewConfirm from '@/components/database/components/tabs/DeleteViewConfirm';
-import { DatabaseViewActions } from '@/components/database/components/tabs/ViewActions';
+import { useTabScroller } from '@/components/database/components/tabs/useTabScroller';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Progress } from '@/components/ui/progress';
-import { TabLabel, Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tabs, TabsList } from '@/components/ui/tabs';
 
 export interface DatabaseTabBarProps {
   viewIds: string[];
@@ -46,7 +45,7 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
     const { loadViewMeta, readOnly, showActions = true, eventEmitter } = context;
     const updatePage = useUpdateDatabaseView();
     const [meta, setMeta] = useState<View | null>(null);
-    const scrollLeft = context.paddingStart;
+    const scrollLeftPadding = context.paddingStart;
     const [addLoading, setAddLoading] = useState(false);
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState<string | null>();
     const [renameViewId, setRenameViewId] = useState<string | null>();
@@ -54,29 +53,32 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
 
     const [tabsWidth, setTabsWidth] = useState<number | null>(null);
     const [tabsContainer, setTabsContainer] = useState<HTMLDivElement | null>(null);
-    const [showScrollRightButton, setShowScrollRightButton] = useState(false);
-    const [showScrollLeftButton, setShowScrollLeftButton] = useState(false);
-    const [scrollerContainer, setScrollerContainer] = useState<HTMLDivElement | null>(null);
     const tabRefs = useRef<Map<string, HTMLElement>>(new Map());
 
-    const { waitForViewData } = useDatabaseViewSync(views as any);
+    const {
+      setScrollerContainer,
+      showScrollLeftButton,
+      showScrollRightButton,
+      scrollLeft,
+      scrollRight,
+      handleObserverScroller,
+    } = useTabScroller();
 
-    const scrollToView = useCallback(
-      (viewId: string) => {
-        const element = tabRefs.current.get(viewId);
+    const { waitForViewData } = useDatabaseViewSync(views);
 
-        if (element) {
-          element.scrollIntoView({
-            behavior: 'smooth',
-            block: 'nearest',
-            inline: 'center',
-          });
-          return true;
-        }
-        return false;
-      },
-      []
-    );
+    const scrollToView = useCallback((viewId: string) => {
+      const element = tabRefs.current.get(viewId);
+
+      if (element) {
+        element.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'center',
+        });
+        return true;
+      }
+      return false;
+    }, []);
 
     const navigateToView = useCallback(
       async (viewId: string) => {
@@ -96,18 +98,6 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
       },
       [setSelectedViewId, scrollToView]
     );
-
-    const handleObserverScroller = useCallback(() => {
-      if (scrollerContainer) {
-        const scrollWidth = scrollerContainer.scrollWidth;
-        const clientWidth = scrollerContainer.clientWidth;
-
-        setShowScrollRightButton(
-          scrollWidth > clientWidth && scrollerContainer.scrollLeft + 1 < scrollWidth - clientWidth
-        );
-        setShowScrollLeftButton(scrollerContainer.scrollLeft > 5);
-      }
-    }, [scrollerContainer]);
 
     useEffect(() => {
       const onResize = () => {
@@ -134,30 +124,13 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
       };
     }, [tabsContainer]);
 
-    useEffect(() => {
-      if (!scrollerContainer) return;
-      const onResize = () => {
-        handleObserverScroller();
-      };
-
-      // Initial call to set the width
-      onResize();
-
-      const observer = new ResizeObserver(onResize);
-
-      observer.observe(scrollerContainer);
-
-      return () => {
-        observer.disconnect();
-      };
-    }, [handleObserverScroller, scrollerContainer]);
-
     const reloadView = useCallback(async () => {
       if (loadViewMeta) {
         try {
           const meta = await loadViewMeta(iidIndex);
 
           setMeta(meta);
+          return meta;
         } catch (e) {
           // do nothing
         }
@@ -189,11 +162,6 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
       return meta?.children.find((v) => v.view_id === renameViewId);
     }, [iidIndex, meta, renameViewId]);
 
-    const menuView = useMemo(() => {
-      if (menuViewId === iidIndex) return meta;
-      return meta?.children.find((v) => v.view_id === menuViewId);
-    }, [iidIndex, menuViewId, meta]);
-
     const visibleViewIds = useMemo(() => {
       return viewIds.filter((viewId) => {
         const databaseView = views?.get(viewId) as YDatabaseView | null;
@@ -212,7 +180,14 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
           const synced = await waitForViewData(viewId);
 
           // Reload view metadata to ensure folder structure is updated
-          await reloadView();
+          const meta = await reloadView();
+
+          // Sometimes the view metadata is not immediately available after creation due to race conditions on the backend/sync
+          // If the new view is not found in the children list, wait a bit and try reloading again
+          if (meta && !meta.children.some((v) => v.view_id === viewId)) {
+            await new Promise((resolve) => setTimeout(resolve, 500));
+            await reloadView();
+          }
 
           if (synced) {
             await navigateToView(viewId);
@@ -258,17 +233,28 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
         document.removeEventListener('contextmenu', preventDefault);
       };
     }, [menuViewId]);
+
+    const setTabRef = useCallback((viewId: string, el: HTMLElement | null) => {
+      if (el) {
+        tabRefs.current.set(viewId, el);
+      } else {
+        tabRefs.current.delete(viewId);
+      }
+    }, []);
+
     if (viewIds.length === 0) return null;
     return (
       <div
         ref={ref}
         className={className}
         style={{
-          paddingLeft: scrollLeft === undefined ? 96 : scrollLeft,
-          paddingRight: scrollLeft === undefined ? 96 : scrollLeft,
+          paddingLeft: scrollLeftPadding === undefined ? 96 : scrollLeftPadding,
+          paddingRight: scrollLeftPadding === undefined ? 96 : scrollLeftPadding,
         }}
       >
-        <div className={`database-tabs flex w-full items-center gap-1.5 overflow-hidden border-b border-border-primary`}>
+        <div
+          className={`database-tabs flex w-full items-center gap-1.5 overflow-hidden border-b border-border-primary`}
+        >
           <div className='relative flex h-[34px] flex-1 items-end justify-start overflow-hidden'>
             {showScrollLeftButton && (
               <Button
@@ -280,15 +266,7 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
                   'absolute left-0 top-0 z-10 bg-surface-primary text-icon-secondary hover:bg-surface-primary-hover '
                 }
                 variant={'ghost'}
-                tabIndex={-1}
-                onClick={() => {
-                  if (scrollerContainer) {
-                    scrollerContainer.scrollTo({
-                      left: scrollerContainer.scrollLeft - 200,
-                      behavior: 'smooth',
-                    });
-                  }
-                }}
+                onClick={scrollLeft}
               >
                 <ChevronLeft className={'h-5 w-5'} />
               </Button>
@@ -304,15 +282,7 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
                     'absolute right-9 top-0 z-10 bg-surface-primary text-icon-secondary hover:bg-surface-primary-hover'
                   }
                   variant={'ghost'}
-                  tabIndex={-1}
-                  onClick={() => {
-                    if (scrollerContainer) {
-                      scrollerContainer.scrollTo({
-                        left: scrollerContainer.scrollLeft + 200,
-                        behavior: 'smooth',
-                      });
-                    }
-                  }}
+                  onClick={scrollRight}
                 >
                   <ChevronRight className={'h-5 w-5'} />
                 </Button>
@@ -325,13 +295,8 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
               }}
               className={'relative flex h-full flex-1'}
               overflowYHidden
-              ref={(el: HTMLDivElement | null) => {
-                setScrollerContainer(el);
-                handleObserverScroller();
-              }}
-              onScroll={() => {
-                handleObserverScroller();
-              }}
+              ref={setScrollerContainer}
+              onScroll={handleObserverScroller}
             >
               <div
                 ref={setTabsContainer}
@@ -354,114 +319,23 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
                       const view = views?.get(viewId) as YDatabaseView | null;
 
                       if (!view) return null;
-                      const databaseLayout = Number(view.get(YjsDatabaseKey.layout)) as DatabaseViewLayout;
-                      const folderView = viewId === iidIndex ? meta : meta?.children?.find((v) => v.view_id === viewId);
-
-                      const name = folderView?.name || view.get(YjsDatabaseKey.name) || t('untitled');
 
                       return (
-                        <TabsTrigger
+                        <DatabaseTabItem
                           key={viewId}
-                          value={viewId}
-                          id={`view-tab-${viewId}`}
-                          data-testid={`view-tab-${viewId}`}
-                          className={'min-w-[80px] max-w-[200px]'}
-                          ref={(el) => {
-                            if (el) {
-                              tabRefs.current.set(viewId, el);
-                            } else {
-                              tabRefs.current.delete(viewId);
-                            }
-                          }}
-                        >
-                          <TabLabel
-                            onPointerDown={(e) => {
-                              // For left-click, let Radix UI tabs handle it via onValueChange
-                              if (e.button === 0) {
-                                return;
-                              }
-
-                              // For right-click and other buttons, prevent default and handle menu
-                              e.preventDefault();
-                              e.stopPropagation();
-
-                              if (readOnly) return;
-
-                              if (viewId !== menuViewId) {
-                                setMenuViewId(viewId);
-                              } else {
-                                setMenuViewId(null);
-                              }
-                            }}
-                            className={'flex items-center gap-1.5 overflow-hidden'}
-                          >
-                            <PageIcon
-                              iconSize={16}
-                              view={
-                                folderView || {
-                                  layout:
-                                    databaseLayout === DatabaseViewLayout.Board
-                                      ? ViewLayout.Board
-                                      : databaseLayout === DatabaseViewLayout.Calendar
-                                        ? ViewLayout.Calendar
-                                        : ViewLayout.Grid,
-                                }
-                              }
-                              className={'!h-5 !w-5 text-base leading-[1.3rem]'}
-                            />
-
-                            <Tooltip delayDuration={500}>
-                              <TooltipTrigger asChild>
-                                <span
-                                  onContextMenu={(e) => {
-                                    e.preventDefault();
-                                  }}
-                                  className={'flex-1 truncate'}
-                                >
-                                  {name || t('grid.title.placeholder')}
-                                </span>
-                              </TooltipTrigger>
-                              <TooltipContent sideOffset={10} side={'right'}>
-                                {name}
-                              </TooltipContent>
-                            </Tooltip>
-                          </TabLabel>
-                          <DropdownMenu
-                            modal
-                            onOpenChange={(open) => {
-                              if (!open) {
-                                setMenuViewId(null);
-                              }
-                            }}
-                            open={menuViewId === viewId}
-                          >
-                            <DropdownMenuTrigger asChild>
-                              <div className={'pointer-events-none absolute bottom-0 left-0 opacity-0'} />
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent
-                              side={'bottom'}
-                              align={'start'}
-                              onCloseAutoFocus={(e) => e.preventDefault()}
-                            >
-                              {menuView && (
-                                <DatabaseViewActions
-                                  onClose={() => {
-                                    setMenuViewId(null);
-                                  }}
-                                  onOpenDeleteModal={(viewId: string) => {
-                                    setDeleteConfirmOpen(viewId);
-                                  }}
-                                  onOpenRenameModal={(viewId: string) => {
-                                    setRenameViewId(viewId);
-                                  }}
-                                  deleteDisabled={viewId === iidIndex && visibleViewIds.length > 1}
-                                  view={menuView}
-                                  onUpdatedIcon={reloadView}
-                                />
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TabsTrigger>
+                          viewId={viewId}
+                          view={view}
+                          meta={meta}
+                          iidIndex={iidIndex}
+                          menuViewId={menuViewId}
+                          readOnly={!!readOnly}
+                          visibleViewIds={visibleViewIds}
+                          onSetMenuViewId={setMenuViewId}
+                          onOpenDeleteModal={setDeleteConfirmOpen}
+                          onOpenRenameModal={setRenameViewId}
+                          onReloadView={reloadView}
+                          setTabRef={setTabRef}
+                        />
                       );
                     })}
                   </TabsList>
@@ -473,13 +347,17 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
-                    data-testid="add-view-button"
+                    data-testid='add-view-button'
                     size={'icon'}
                     variant={'ghost'}
                     loading={addLoading}
                     className={'mx-1.5 mb-1.5 text-icon-secondary'}
                   >
-                    {addLoading ? <Progress variant={'inherit'} /> : <PlusIcon className={'h-5 w-5'} />}
+                    {addLoading ? (
+                      <Progress variant={'inherit'} />
+                    ) : (
+                      <PlusIcon className={'h-5 w-5'} />
+                    )}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
@@ -559,3 +437,5 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
     );
   }
 );
+
+DatabaseTabs.displayName = 'DatabaseTabs';
