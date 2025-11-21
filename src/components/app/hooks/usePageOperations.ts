@@ -253,13 +253,14 @@ export function usePageOperations({ outline, loadOutline }: { outline?: View[], 
       try {
         const res = await service?.createDatabaseView(currentWorkspaceId, viewId, payload);
 
-        // Note: No need to reload outline - server handles Yjs synchronization
+        // Reload outline to include the newly created view
+        await loadOutline?.(currentWorkspaceId, false);
         return res;
       } catch (e) {
         return Promise.reject(e);
       }
     },
-    [currentWorkspaceId, service]
+    [currentWorkspaceId, service, loadOutline]
   );
 
   // Upload file

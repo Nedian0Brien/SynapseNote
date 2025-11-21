@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Awareness } from 'y-protocols/awareness';
 
 import { openCollabDB } from '@/application/db';
-import { AccessLevel, DatabaseId, Types, View, ViewId, ViewLayout, YDoc, YjsEditorKey } from '@/application/types';
+import { AccessLevel, DatabaseId, Types, View, ViewId, ViewLayout, YDoc, YjsEditorKey, YSharedRoot } from '@/application/types';
 import { findView, findViewInShareWithMe } from '@/components/_shared/outline/utils';
 import { getPlatform } from '@/utils/platform';
 
@@ -163,10 +163,34 @@ export function useViewOperations() {
           case ViewLayout.Calendar:
             collabType = Types.Database;
             break;
+          case ViewLayout.AIChat:
+            // AIChat views don't have a collab document type
+            return Promise.reject(new Error('AIChat views cannot be loaded as collab documents'));
         }
 
+        // Fallback: If view not found in outline yet (e.g., newly created view),
+        // try to determine type from the Yjs document itself
         if (collabType === null) {
-          return Promise.reject(new Error('Invalid view layout'));
+          console.warn('[useViewOperations] View not found in outline, checking Yjs document', { viewId: id });
+
+          // Check if the document has a database section (database views)
+          const sharedRoot = res.getMap(YjsEditorKey.data_section) as YSharedRoot;
+          const hasDatabase = sharedRoot?.has(YjsEditorKey.database);
+          const hasDocument = sharedRoot?.has(YjsEditorKey.document);
+
+          if (hasDatabase) {
+            collabType = Types.Database;
+          } else if (hasDocument) {
+            collabType = Types.Document;
+          } else {
+            console.error('[useViewOperations] Could not determine view type', {
+              viewId: id,
+              viewLayout: view?.layout,
+              hasDatabase,
+              hasDocument,
+            });
+            return Promise.reject(new Error(`Invalid view layout: ${view?.layout}`));
+          }
         }
 
         console.debug('[useViewOperations] loadView resolved layout', { viewId: id, layout: view?.layout, collabType });

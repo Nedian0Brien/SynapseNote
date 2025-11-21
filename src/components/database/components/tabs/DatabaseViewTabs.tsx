@@ -9,7 +9,6 @@ import { Tabs, TabsList } from '@/components/ui/tabs';
 import { useEffect, useRef, useState } from 'react';
 import * as Y from 'yjs';
 import { YDatabaseView } from '@/application/types';
-import { View } from '@/application/types';
 
 export interface DatabaseViewTabsProps {
   viewIds: string[];
@@ -17,14 +16,12 @@ export interface DatabaseViewTabsProps {
   setSelectedViewId?: (viewId: string) => void;
   iidIndex: string;
   views: Y.Map<YDatabaseView> | undefined;
-  meta: View | null;
   readOnly: boolean;
   visibleViewIds: string[];
   menuViewId: string | null;
   setMenuViewId: (id: string | null) => void;
   setDeleteConfirmOpen: (id: string | null) => void;
   setRenameViewId: (id: string | null) => void;
-  reloadView: () => void;
   pendingScrollToViewId?: string | null;
   setPendingScrollToViewId?: (id: string | null) => void;
   onViewAdded?: (viewId: string) => void;
@@ -36,14 +33,12 @@ export function DatabaseViewTabs({
   setSelectedViewId,
   iidIndex,
   views,
-  meta,
   readOnly,
   visibleViewIds,
   menuViewId,
   setMenuViewId,
   setDeleteConfirmOpen,
   setRenameViewId,
-  reloadView,
   pendingScrollToViewId,
   setPendingScrollToViewId,
   onViewAdded
@@ -184,7 +179,6 @@ export function DatabaseViewTabs({
                     key={viewId}
                     viewId={viewId}
                     view={view}
-                    meta={meta}
                     iidIndex={iidIndex}
                     menuViewId={menuViewId}
                     readOnly={!!readOnly}
@@ -192,7 +186,6 @@ export function DatabaseViewTabs({
                     onSetMenuViewId={setMenuViewId}
                     onOpenDeleteModal={setDeleteConfirmOpen}
                     onOpenRenameModal={setRenameViewId}
-                    onReloadView={reloadView}
                     setTabRef={setTabRef}
                   />
                 );

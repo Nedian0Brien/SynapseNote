@@ -20,7 +20,6 @@ import { useTranslation } from 'react-i18next';
 export interface DatabaseTabItemProps {
     viewId: string;
     view: YDatabaseView;
-    meta: View | null;
     iidIndex: string;
     menuViewId: string | null;
     readOnly: boolean;
@@ -28,7 +27,6 @@ export interface DatabaseTabItemProps {
     onSetMenuViewId: (id: string | null) => void;
     onOpenDeleteModal: (id: string) => void;
     onOpenRenameModal: (id: string) => void;
-    onReloadView: () => void;
     setTabRef: (id: string, el: HTMLElement | null) => void;
 }
 
@@ -36,7 +34,6 @@ export const DatabaseTabItem = memo(
     ({
         viewId,
         view,
-        meta,
         iidIndex,
         menuViewId,
         readOnly,
@@ -44,14 +41,11 @@ export const DatabaseTabItem = memo(
         onSetMenuViewId,
         onOpenDeleteModal,
         onOpenRenameModal,
-        onReloadView,
         setTabRef,
     }: DatabaseTabItemProps) => {
         const { t } = useTranslation();
         const rawLayoutValue = view.get(YjsDatabaseKey.layout);
         const databaseLayout = Number(rawLayoutValue) as DatabaseViewLayout;
-        const folderView =
-            viewId === iidIndex ? meta : meta?.children?.find((v) => v.view_id === viewId);
 
         // Get the default name based on layout if no name is available
         const getDefaultNameByLayout = () => {
@@ -67,12 +61,10 @@ export const DatabaseTabItem = memo(
             }
         };
 
-        // Always prioritize Yjs name (it's immediately available and always correct)
-        // folderView.name comes from async API and can be stale
-        // Fall back to default name based on layout type
+        // Get name from YDatabaseView (real-time, always correct)
         const name = view.get(YjsDatabaseKey.name) || getDefaultNameByLayout();
 
-        // Compute the layout that will be passed to PageIcon
+        // Compute the layout for PageIcon (icon is based on layout type)
         const computedLayout =
             databaseLayout === DatabaseViewLayout.Board
                 ? ViewLayout.Board
@@ -80,19 +72,18 @@ export const DatabaseTabItem = memo(
                     ? ViewLayout.Calendar
                     : ViewLayout.Grid;
 
-        // Create the view object that will be passed to PageIcon
-        // IMPORTANT: Don't spread the entire folderView to avoid layout conflicts
-        // Only include the icon property (PageIcon doesn't use name)
-        const pageIconView = {
-            icon: folderView?.icon,
-            layout: computedLayout,
-        };
-
-
-        const menuView = useMemo(() => {
-            if (menuViewId === iidIndex) return meta;
-            return meta?.children.find((v) => v.view_id === menuViewId);
-        }, [iidIndex, menuViewId, meta]);
+        // Build minimal View object from YDatabaseView for actions menu
+        // This avoids dependency on meta/folderView for display
+        const viewForActions: View = useMemo(
+            () => ({
+                view_id: viewId,
+                name: name,
+                layout: computedLayout,
+                parent_view_id: iidIndex,
+                children: [],
+            }),
+            [viewId, name, computedLayout, iidIndex]
+        );
 
         return (
             <TabsTrigger
@@ -127,9 +118,8 @@ export const DatabaseTabItem = memo(
                     className={'flex items-center gap-1.5 overflow-hidden'}
                 >
                     <PageIcon
-                        key={`${viewId}-${computedLayout}`}
                         iconSize={16}
-                        view={pageIconView}
+                        view={{ layout: computedLayout }}
                         className={'!h-5 !w-5 text-base leading-[1.3rem]'}
                     />
 
@@ -166,20 +156,12 @@ export const DatabaseTabItem = memo(
                         align={'start'}
                         onCloseAutoFocus={(e) => e.preventDefault()}
                     >
-                        {menuView && (
+                        {menuViewId === viewId && (
                             <DatabaseViewActions
-                                onClose={() => {
-                                    onSetMenuViewId(null);
-                                }}
-                                onOpenDeleteModal={(viewId: string) => {
-                                    onOpenDeleteModal(viewId);
-                                }}
-                                onOpenRenameModal={(viewId: string) => {
-                                    onOpenRenameModal(viewId);
-                                }}
+                                onOpenDeleteModal={onOpenDeleteModal}
+                                onOpenRenameModal={onOpenRenameModal}
                                 deleteDisabled={viewId === iidIndex && visibleViewIds.length > 1}
-                                view={menuView}
-                                onUpdatedIcon={onReloadView}
+                                view={viewForActions}
                             />
                         )}
                     </DropdownMenuContent>

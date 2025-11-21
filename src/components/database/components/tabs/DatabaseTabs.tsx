@@ -128,14 +128,12 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
             setSelectedViewId={setSelectedViewId}
             iidIndex={iidIndex}
             views={views}
-            meta={meta}
             readOnly={!!readOnly}
             visibleViewIds={visibleViewIds}
             menuViewId={menuViewId}
             setMenuViewId={setMenuViewId}
             setDeleteConfirmOpen={setDeleteConfirmOpen}
             setRenameViewId={setRenameViewId}
-            reloadView={reloadView}
             pendingScrollToViewId={pendingScrollToViewId}
             setPendingScrollToViewId={setPendingScrollToViewId}
             onViewAdded={(viewId) => {

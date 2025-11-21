@@ -1138,6 +1138,8 @@ export interface CreateDatabaseViewPayload {
 export interface CreateDatabaseViewResponse {
   view_id: string;
   database_id: string;
+  database_update: number[];  // Yjs update for database structure
+  folder_update: number[];     // Yjs update for folder structure (outline)
 }
 
 export interface CreateSpacePayload {
