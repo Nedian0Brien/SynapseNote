@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
-import { AuthTestUtils } from '../../support/auth-utils';
-import { getSlashMenuItemName } from '../../support/i18n-constants';
+import { AuthTestUtils } from '../../../support/auth-utils';
+import { getSlashMenuItemName } from '../../../support/i18n-constants';
 import {
   AddPageSelectors,
   DatabaseFilterSelectors,
@@ -8,7 +8,7 @@ import {
   EditorSelectors,
   SlashCommandSelectors,
   waitForReactUpdate,
-} from '../../support/selectors';
+} from '../../../support/selectors';
 
 describe('Database Conditions - Filters and Sorts UI', () => {
   const generateRandomEmail = () => `${uuidv4()}@appflowy.io`;
