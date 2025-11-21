@@ -81,6 +81,10 @@ export const DatabaseTabItem = memo(
                 layout: computedLayout,
                 parent_view_id: iidIndex,
                 children: [],
+                icon: null,
+                extra: null,
+                is_published: false,
+                is_private: false,
             }),
             [viewId, name, computedLayout, iidIndex]
         );

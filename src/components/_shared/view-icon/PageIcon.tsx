@@ -106,6 +106,7 @@ function PageIcon({
   if (icon) {
     return icon;
   }
+
   switch (view.layout) {
     case ViewLayout.AIChat:
       return <ChatSvg className={className} />;

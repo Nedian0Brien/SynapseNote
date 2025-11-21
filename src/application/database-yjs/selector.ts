@@ -79,8 +79,10 @@ export function useDatabaseViewsSelector(_iidIndex: string, visibleViewIds?: str
       // Get all views from the database and filter out inline views
       const allViewIds = Object.keys(viewsObj).filter((viewId) => {
         const view = views.get(viewId);
+
         if (!view) return false;
         const isInline = view.get(YjsDatabaseKey.is_inline);
+
         return !isInline;
       });
 

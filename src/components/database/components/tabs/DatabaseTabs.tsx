@@ -38,6 +38,7 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
       if (loadViewMeta) {
         try {
           const meta = await loadViewMeta(iidIndex);
+
           setMeta(meta);
           return meta;
         } catch (e) {
@@ -140,6 +141,7 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
               if (setSelectedViewId) {
                 setSelectedViewId(viewId);
               }
+
               setPendingScrollToViewId(viewId);
             }}
           />

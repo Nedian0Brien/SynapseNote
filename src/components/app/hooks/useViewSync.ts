@@ -10,8 +10,10 @@ export const useDatabaseViewSync = (views: Y.Map<YDatabaseView> | undefined) => 
         if (views?.has(viewId)) {
           return true;
         }
+
         await new Promise((resolve) => setTimeout(resolve, SYNC_POLL_INTERVAL));
       }
+
       return false;
     },
     [views]

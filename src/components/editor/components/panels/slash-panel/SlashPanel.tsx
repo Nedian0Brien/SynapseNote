@@ -360,6 +360,7 @@ export function SlashPanel({
       if ((!relations || Object.keys(relations).length === 0) && loadViewMeta && viewId) {
         try {
           const meta = await loadViewMeta(viewId);
+
           relations = meta?.database_relations;
         } catch (e) {
           console.error(e);
@@ -373,6 +374,7 @@ export function SlashPanel({
         if (relations) {
           // Find the databaseId that maps to this view_id
           const relationEntry = Object.entries(relations).find(([_, baseViewId]) => baseViewId === view.view_id);
+
           if (relationEntry) {
             databaseId = relationEntry[0];
           }

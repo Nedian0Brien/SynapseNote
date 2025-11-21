@@ -17,6 +17,7 @@ export const useDatabaseViewNavigation = (
         });
         return true;
       }
+
       return false;
     },
     [tabRefs]

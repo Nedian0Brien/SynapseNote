@@ -68,12 +68,14 @@ export function DatabaseViewTabs({
       });
       return true;
     }
+
     return false;
   };
 
   useEffect(() => {
     if (pendingScrollToViewId) {
       const element = tabRefs.current.get(pendingScrollToViewId);
+
       if (element) {
         scrollToView(pendingScrollToViewId);
         if (setPendingScrollToViewId) setPendingScrollToViewId(null);
@@ -85,12 +87,14 @@ export function DatabaseViewTabs({
     const onResize = () => {
       if (tabsContainer) {
         const clientWidth = tabsContainer.clientWidth;
+
         setTabsWidth(clientWidth);
       }
     };
 
     onResize();
     const observer = new ResizeObserver(onResize);
+
     if (tabsContainer) observer.observe(tabsContainer);
 
     return () => {
