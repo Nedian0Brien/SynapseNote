@@ -29,7 +29,7 @@ jobs:
             spec: "cypress/e2e/database/**/*.cy.ts"
             description: "Database and grid operations"
           - name: "embedded"
-            spec: "cypress/e2e/embeded_database/**/*.cy.ts"
+            spec: "cypress/e2e/embeded/database/**/*.cy.ts"
             description: "Embedded database operations"
           - name: "page"
             spec: "cypress/e2e/page/**/*.cy.ts"
