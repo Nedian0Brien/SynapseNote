@@ -6,7 +6,7 @@ import { DatabaseTabItem } from '@/components/database/components/tabs/DatabaseT
 import { useTabScroller } from '@/components/database/components/tabs/useTabScroller';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList } from '@/components/ui/tabs';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import * as Y from 'yjs';
 import { YDatabaseView } from '@/application/types';
 
@@ -57,7 +57,7 @@ export function DatabaseViewTabs({
     handleObserverScroller,
   } = useTabScroller();
 
-  const scrollToView = (viewId: string) => {
+  const scrollToView = useCallback((viewId: string) => {
     const element = tabRefs.current.get(viewId);
 
     if (element) {
@@ -70,18 +70,33 @@ export function DatabaseViewTabs({
     }
 
     return false;
-  };
+  }, []);
 
   useEffect(() => {
-    if (pendingScrollToViewId) {
-      const element = tabRefs.current.get(pendingScrollToViewId);
+    if (!pendingScrollToViewId) return;
 
-      if (element) {
+    // Try to scroll immediately if element is already in DOM
+    const element = tabRefs.current.get(pendingScrollToViewId);
+
+    if (element) {
+      scrollToView(pendingScrollToViewId);
+      if (setPendingScrollToViewId) setPendingScrollToViewId(null);
+      return;
+    }
+
+    // If element not found, wait for it to render with a short timeout
+    // This handles the case where the tab is being added and ref hasn't been set yet
+    const timeoutId = setTimeout(() => {
+      const delayedElement = tabRefs.current.get(pendingScrollToViewId);
+
+      if (delayedElement) {
         scrollToView(pendingScrollToViewId);
         if (setPendingScrollToViewId) setPendingScrollToViewId(null);
       }
-    }
-  }, [pendingScrollToViewId, viewIds, setPendingScrollToViewId]);
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, [pendingScrollToViewId, viewIds, setPendingScrollToViewId, scrollToView]);
 
   useEffect(() => {
     const onResize = () => {

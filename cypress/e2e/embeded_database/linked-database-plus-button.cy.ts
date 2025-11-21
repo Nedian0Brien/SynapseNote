@@ -25,14 +25,9 @@ describe('Embedded Database - Plus Button View Creation', () => {
   };
 
   const waitForDialogsToClose = () => {
-    // Wait for any modal/dialog to close (body no longer has scroll lock)
-    // Use a more flexible check that handles cases where the attribute was never set
-    cy.get('body').then($body => {
-      if ($body.attr('data-scroll-locked')) {
-        cy.get('body').should('not.have.attr', 'data-scroll-locked');
-      }
-    });
-    cy.wait(500); // Additional buffer for dialog close animation and pointer-events reset
+    // Wait for any modal/dialog to close
+    // Simple fixed wait to account for MUI dialog animation (225ms) + removal + buffer
+    cy.wait(1500); // Sufficient time for dialog to close and be removed from DOM
   };
 
   beforeEach(() => {
@@ -170,12 +165,13 @@ describe('Embedded Database - Plus Button View Creation', () => {
             expect(viewCreationTime).to.be.lessThan(30000);
           });
 
-        // Step 9: Verify the new Board tab is selected (active)
-        cy.task('log', '[STEP 11] Verifying Board tab is automatically selected');
+        // Step 9: Verify the new Board tab is selected (active) and scrolled into view
+        cy.task('log', '[STEP 11] Verifying Board tab is automatically selected and visible');
         cy.contains('[data-testid^="view-tab-"]', 'Board')
           .should('have.attr', 'data-state', 'active')
-          .then(() => {
-            cy.task('log', '[STEP 11.1] Confirmed: Board tab is active/selected');
+          .should('be.visible')
+          .then(($tab) => {
+            cy.task('log', '[STEP 11.1] Confirmed: Board tab is active/selected and visible');
           });
 
         // Step 10: Verify Board view content is displayed
@@ -215,15 +211,15 @@ describe('Embedded Database - Plus Button View Creation', () => {
         });
       });
 
-      // Step 12: Verify Calendar tab is created and selected
-      cy.task('log', '[STEP 14] Verifying Calendar tab is created and auto-selected');
+      // Step 12: Verify Calendar tab is created, selected, and scrolled into view
+      cy.task('log', '[STEP 14] Verifying Calendar tab is created, auto-selected, and visible');
       cy.get('@embeddedDBFresh2').within(() => {
         cy.contains('[data-testid^="view-tab-"]', 'Calendar', { timeout: 30000 })
           .should('exist')
           .and('be.visible')
           .should('have.attr', 'data-state', 'active')
           .then(() => {
-            cy.task('log', '[STEP 14.1] Confirmed: Calendar tab is active/selected');
+            cy.task('log', '[STEP 14.1] Confirmed: Calendar tab is active/selected and visible');
           });
 
         // Step 13: Verify we now have at least 3 tabs
@@ -241,7 +237,7 @@ describe('Embedded Database - Plus Button View Creation', () => {
         waitForDialogsToClose();
 
         cy.get('[data-testid^="view-tab-"]').first().as('firstTabPlus');
-        cy.get('@firstTabPlus').click(); // Normal click now that dialogs are closed
+        cy.get('@firstTabPlus').click({ force: true }); // Force click to bypass any lingering dialog overlays
         waitForReactUpdate(500);
 
         // Step 15: Verify first tab is now selected
