@@ -46,7 +46,7 @@ export function AddViewButton({ onViewAdded }: AddViewButtonProps) {
           size={'icon'}
           variant={'ghost'}
           loading={addLoading}
-          className={'mx-1.5 mb-1.5 text-icon-secondary'}
+          className={'mx-1.5 p-1.5 text-icon-secondary'}
         >
           {addLoading ? <Progress variant={'inherit'} /> : <PlusIcon className={'h-5 w-5'} />}
         </Button>

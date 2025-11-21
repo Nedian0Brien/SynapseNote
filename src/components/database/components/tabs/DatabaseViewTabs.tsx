@@ -126,7 +126,7 @@ export function DatabaseViewTabs({
   };
 
   return (
-    <div className='relative flex h-[34px] flex-1 items-end justify-start overflow-hidden'>
+    <div className='relative flex h-[34px] flex-1 items-center justify-start overflow-hidden'>
       {showScrollLeftButton && (
         <Button
           size={'icon'}
