@@ -80,7 +80,7 @@ describe('Database Conditions - Filters and Sorts UI', () => {
 
       // Verify embedded database exists
       cy.task('log', '[STEP 7] Verifying embedded database exists');
-      cy.get('[class*="appflowy-database"]', { timeout: 10000 }).should('exist').first().as('embeddedDBTemp');
+      cy.get('[class*="appflowy-database"]', { timeout: 10000 }).should('exist').last().as('embeddedDBTemp');
       cy.get('@embeddedDBTemp').as('embeddedDB');
 
       cy.get('@embeddedDB').within(() => {
@@ -186,7 +186,7 @@ describe('Database Conditions - Filters and Sorts UI', () => {
       SlashCommandSelectors.selectDatabase('New Grid');
       waitForReactUpdate(2000);
 
-      cy.get('[class*="appflowy-database"]', { timeout: 10000 }).should('exist').first().as('embeddedDBTemp1');
+      cy.get('[class*="appflowy-database"]', { timeout: 10000 }).should('exist').last().as('embeddedDBTemp1');
       cy.get('@embeddedDBTemp1').as('embeddedDB');
 
       // Wait for database to fully render
@@ -205,7 +205,7 @@ describe('Database Conditions - Filters and Sorts UI', () => {
       cy.task('log', '[STEP 5] Adding filter');
 
       // Re-query the embedded DB to ensure we have a fresh reference
-      cy.get('[class*="appflowy-database"]').first().as('freshEmbeddedDB1');
+      cy.get('[class*="appflowy-database"]').last().as('freshEmbeddedDB1');
       cy.get('@freshEmbeddedDB1').within(() => {
         DatabaseFilterSelectors.filterButton().should('be.visible').click();
       });
@@ -224,7 +224,7 @@ describe('Database Conditions - Filters and Sorts UI', () => {
 
       // Verify filter condition appears
       cy.task('log', '[STEP 6] Verifying filter condition appears');
-      cy.get('[class*="appflowy-database"]').first().within(() => {
+      cy.get('[class*="appflowy-database"]').last().within(() => {
         DatabaseFilterSelectors.filterCondition().should('exist').and('be.visible');
       });
 
@@ -283,7 +283,7 @@ describe('Database Conditions - Filters and Sorts UI', () => {
       SlashCommandSelectors.selectDatabase('New Grid');
       waitForReactUpdate(2000);
 
-      cy.get('[class*="appflowy-database"]', { timeout: 10000 }).should('exist').first().as('embeddedDBTemp2');
+      cy.get('[class*="appflowy-database"]', { timeout: 10000 }).should('exist').last().as('embeddedDBTemp2');
       cy.get('@embeddedDBTemp2').as('embeddedDB');
 
       // Wait for database to fully render
@@ -311,7 +311,7 @@ describe('Database Conditions - Filters and Sorts UI', () => {
       });
 
       // Re-query the embedded DB to ensure we have a fresh reference
-      cy.get('[class*="appflowy-database"]').first().as('freshEmbeddedDB2');
+      cy.get('[class*="appflowy-database"]').last().as('freshEmbeddedDB2');
       cy.get('@freshEmbeddedDB2').within(() => {
         DatabaseFilterSelectors.filterButton().should('be.visible').click();
       });
@@ -328,7 +328,7 @@ describe('Database Conditions - Filters and Sorts UI', () => {
       waitForReactUpdate(1000);
 
       // Verify filter exists
-      cy.get('[class*="appflowy-database"]').first().within(() => {
+      cy.get('[class*="appflowy-database"]').last().within(() => {
         DatabaseFilterSelectors.filterCondition().should('exist');
       });
 
@@ -336,7 +336,7 @@ describe('Database Conditions - Filters and Sorts UI', () => {
       cy.task('log', '[STEP 3] Removing filter');
 
       // Click the filter condition chip to open the menu
-      cy.get('[class*="appflowy-database"]').first().within(() => {
+      cy.get('[class*="appflowy-database"]').last().within(() => {
         DatabaseFilterSelectors.filterCondition().first().click();
       });
 
@@ -354,7 +354,7 @@ describe('Database Conditions - Filters and Sorts UI', () => {
       waitForReactUpdate(1000);
 
       // Verify filter is removed
-      cy.get('[class*="appflowy-database"]').first().within(() => {
+      cy.get('[class*="appflowy-database"]').last().within(() => {
         DatabaseFilterSelectors.filterCondition().should('not.exist');
       });
 

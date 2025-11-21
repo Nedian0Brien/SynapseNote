@@ -115,7 +115,7 @@ describe('Embedded Database - Slash Menu Creation', () => {
             // Step 5: Verify linked database appears
             cy.get('[class*="appflowy-database"]', { timeout: 10000 })
                 .should('exist')
-                .first()
+                .last()
                 .then(() => {
                     const elapsed = Date.now() - startTime;
                     cy.task('log', `[PERFORMANCE] Linked database appeared in ${elapsed}ms`);
@@ -131,7 +131,7 @@ describe('Embedded Database - Slash Menu Creation', () => {
             // Verify content is displayed
             cy.task('log', '[STEP 10] Verifying database content');
             cy.get('[class*="appflowy-database"]')
-                .first()
+                .last()
                 .within(() => {
                     DatabaseGridSelectors.grid().should('exist');
                 });
@@ -218,7 +218,7 @@ describe('Embedded Database - Slash Menu Creation', () => {
             // Wait for it to load
             cy.get('[class*="appflowy-database"]', { timeout: 10000 })
                 .should('exist')
-                .first();
+                .last();
 
             // Check logs for retry attempts (this is a bit heuristic as we can't easily force a slow network)
             // But we can check if the retry logic code path is at least active/logging

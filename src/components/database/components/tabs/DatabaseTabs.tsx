@@ -110,7 +110,6 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
       };
     }, [menuViewId]);
 
-    if (viewIds.length === 0) return null;
     return (
       <div
         ref={ref}
@@ -143,6 +142,7 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
               }
 
               setPendingScrollToViewId(viewId);
+              void reloadView();
             }}
           />
 

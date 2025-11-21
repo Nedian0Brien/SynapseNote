@@ -77,7 +77,7 @@ export function useDatabaseViewsSelector(_iidIndex: string, visibleViewIds?: str
       >;
 
       // Get all views from the database and filter out inline views
-      const allViewIds = Object.keys(viewsObj).filter((viewId) => {
+      let allViewIds = Object.keys(viewsObj).filter((viewId) => {
         const view = views.get(viewId);
 
         if (!view) return false;
@@ -85,6 +85,12 @@ export function useDatabaseViewsSelector(_iidIndex: string, visibleViewIds?: str
 
         return !isInline;
       });
+
+      // If visibleViewIds is provided (for embedded databases), filter to only show those views
+      // visibleViewIds is undefined for standalone databases, [] for embedded with no child views yet
+      if (visibleViewIds !== undefined) {
+        allViewIds = allViewIds.filter((viewId) => visibleViewIds.includes(viewId));
+      }
 
       setViewIds(allViewIds);
       setChildViews(allViewIds.map((viewId) => views.get(viewId)));
