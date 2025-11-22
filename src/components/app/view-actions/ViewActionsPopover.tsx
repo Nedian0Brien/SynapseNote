@@ -1,9 +1,10 @@
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import React, { useCallback, useMemo } from 'react';
-import AddPageActions from '@/components/app/view-actions/AddPageActions';
-import MoreSpaceActions from '@/components/app/view-actions/MoreSpaceActions';
-import MorePageActions from '@/components/app/view-actions/MorePageActions';
+
 import { View } from '@/application/types';
+import AddPageActions from '@/components/app/view-actions/AddPageActions';
+import MorePageActions from '@/components/app/view-actions/MorePageActions';
+import MoreSpaceActions from '@/components/app/view-actions/MoreSpaceActions';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 function ViewActionsPopover ({
   popoverType,

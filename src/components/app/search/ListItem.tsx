@@ -5,10 +5,10 @@ import { useTranslation } from 'react-i18next';
 import { View } from '@/application/types';
 import { ReactComponent as PrivateIcon } from '@/assets/icons/lock.svg';
 import { ReactComponent as MoreIcon } from '@/assets/icons/more.svg';
-import { useAppHandlers, useAppOutline } from '@/components/app/app.hooks';
 import { findAncestors } from '@/components/_shared/outline/utils';
 import { RichTooltip } from '@/components/_shared/popover';
 import PageIcon from '@/components/_shared/view-icon/PageIcon';
+import { useAppHandlers, useAppOutline } from '@/components/app/app.hooks';
 
 function ListItem({
   selectedView,

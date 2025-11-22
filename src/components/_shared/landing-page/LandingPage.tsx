@@ -3,10 +3,10 @@ import { useTranslation } from 'react-i18next';
 
 import { Workspace } from '@/application/types';
 import { ReactComponent as AppFlowyLogo } from '@/assets/icons/appflowy.svg';
+import LandingFooter from '@/components/_shared/landing-page/LandingFooter';
 import { AFConfigContext, useCurrentUser } from '@/components/main/app.hooks';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import LandingFooter from '@/components/_shared/landing-page/LandingFooter';
 import { openAppFlowySchema } from '@/utils/url';
 
 export default function LandingPage({

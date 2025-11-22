@@ -1,7 +1,8 @@
+import { createContext, useCallback, useContext, useState } from 'react';
 import { toast } from 'sonner';
+
 import { filterDocumentViews } from '@/components/chat/lib/views';
 import { View } from '@/components/chat/types/request';
-import { createContext, useCallback, useContext, useState } from 'react';
 
 interface ViewLoaderProviderProps {
   viewsLoading: boolean;

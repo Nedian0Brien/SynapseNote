@@ -1,7 +1,8 @@
-import AIChatDrawer from '@/components/ai-chat/AIChatDrawer';
-import { useAppViewId } from '@/components/app/app.hooks';
 import { EditorData } from '@appflowyinc/editor';
 import React, { useCallback, useEffect, useState } from 'react';
+
+import AIChatDrawer from '@/components/ai-chat/AIChatDrawer';
+import { useAppViewId } from '@/components/app/app.hooks';
 
 const DEFAULT_WIDTH = 600;
 
@@ -29,6 +30,11 @@ export function useAIChatContext() {
   }
 
   return context;
+}
+
+// Optional version that returns undefined if provider is not available
+export function useAIChatContextOptional() {
+  return React.useContext(AIChatContext);
 }
 
 export function AIChatProvider({

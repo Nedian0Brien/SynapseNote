@@ -1,5 +1,6 @@
-import { initialEditorTest, moveToLineStart } from '@/components/editor/__tests__/mount';
 import { FromBlockJSON } from 'cypress/support/document';
+
+import { initialEditorTest, moveToLineStart } from '@/components/editor/__tests__/mount';
 
 describe('Backspace key behavior', () => {
   beforeEach(() => {

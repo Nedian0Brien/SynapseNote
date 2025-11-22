@@ -1,6 +1,7 @@
+import { FromBlockJSON } from 'cypress/support/document';
+
 import { BlockType } from '@/application/types';
 import { initialEditorTest } from '@/components/editor/__tests__/mount';
-import { FromBlockJSON } from 'cypress/support/document';
 
 const initialData: FromBlockJSON[] = [
   {

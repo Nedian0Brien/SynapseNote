@@ -1,5 +1,8 @@
+import { useMemo } from 'react';
+
 import { Filter } from '@/application/database-yjs';
 import { useUpdateFilter } from '@/application/database-yjs/dispatch';
+import { ReactComponent as ArrowDownSvg } from '@/assets/icons/alt_arrow_down.svg';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -8,8 +11,6 @@ import {
   DropdownMenuItem, DropdownMenuItemTick,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useMemo } from 'react';
-import { ReactComponent as ArrowDownSvg } from '@/assets/icons/alt_arrow_down.svg';
 
 function FilterConditionsSelect ({
   conditions,

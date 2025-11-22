@@ -1,10 +1,12 @@
+import { CSSProperties, useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Editor, Element, Range } from 'slate';
+import { ReactEditor, useFocused, useSelected, useSlate } from 'slate-react';
+
 import { BlockType, ToggleListBlockData } from '@/application/types';
 import { HeadingNode, ToggleListNode } from '@/components/editor/editor.type';
 import { useEditorContext } from '@/components/editor/EditorContext';
-import { CSSProperties, useCallback, useEffect, useMemo, useState } from 'react';
-import { ReactEditor, useFocused, useSelected, useSlate } from 'slate-react';
-import { Editor, Element, Range } from 'slate';
-import { useTranslation } from 'react-i18next';
+
 
 function Placeholder({ node, ...attributes }: { node: Element; className?: string; style?: CSSProperties }) {
   const { t } = useTranslation();

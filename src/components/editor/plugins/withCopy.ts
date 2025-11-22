@@ -1,9 +1,10 @@
+import { Range } from 'slate';
+import { ReactEditor } from 'slate-react';
+
 import { YjsEditor } from '@/application/slate-yjs';
 import { isEmbedBlockTypes } from '@/application/slate-yjs/command/const';
 import { getBlockEntry } from '@/application/slate-yjs/utils/editor';
 import { BlockType } from '@/application/types';
-import { Range } from 'slate';
-import { ReactEditor } from 'slate-react';
 
 export const clipboardFormatKey = 'x-appflowy-fragment';
 

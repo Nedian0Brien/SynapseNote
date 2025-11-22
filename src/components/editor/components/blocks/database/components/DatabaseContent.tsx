@@ -24,6 +24,7 @@ interface DatabaseContentProps {
   visibleViewIds: string[];
   onChangeView: (viewId: string) => void;
   context: DatabaseContextState;
+  fixedHeight?: number;
 }
 
 export const DatabaseContent = ({
@@ -35,7 +36,7 @@ export const DatabaseContent = ({
   width,
   doc,
   workspaceId,
-  viewId,
+  viewId: _viewId,
   createRowDoc,
   loadView,
   navigateToView,
@@ -45,6 +46,7 @@ export const DatabaseContent = ({
   visibleViewIds,
   onChangeView,
   context,
+  fixedHeight,
 }: DatabaseContentProps) => {
   const { t } = useTranslation();
   const isPublishVarient = context?.variant === UIVariant.Publish;
@@ -62,7 +64,7 @@ export const DatabaseContent = ({
           {...context}
           workspaceId={workspaceId}
           doc={doc}
-          iidIndex={viewId}
+          iidIndex={selectedViewId}
           viewId={selectedViewId}
           createRowDoc={createRowDoc}
           loadView={loadView}
@@ -76,6 +78,7 @@ export const DatabaseContent = ({
           paddingStart={paddingStart}
           paddingEnd={paddingEnd}
           isDocumentBlock={true}
+          embeddedHeight={fixedHeight}
         />
       </div>
     );
@@ -85,7 +88,7 @@ export const DatabaseContent = ({
     <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded bg-background-primary px-16 py-10 text-text-secondary max-md:px-4">
       {notFound ? (
         <div className="text-base font-medium">
-          {isPublishVarient ? t('publish.hasNotBeenPublished') : 'Something went wrong'}
+          {isPublishVarient ? t('publish.hasNotBeenPublished') : t('error.generalError')}
         </div>
       ) : (
         <CircularProgress size={20} />

@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { AppError, ErrorType } from '@/application/utils/error-utils';
 import { ReactComponent as ErrorIcon } from '@/assets/icons/error.svg';
 import { ReactComponent as NoAccessIcon } from '@/assets/icons/no_access.svg';
 import { ReactComponent as WarningIcon } from '@/assets/icons/warning.svg';
 import emptyImageSrc from '@/assets/images/empty.png';
-import { AppError, ErrorType } from '@/application/utils/error-utils';
 import LandingPage from '@/components/_shared/landing-page/LandingPage';
-import { Progress } from '@/components/ui/progress';
 import { useCurrentWorkspaceId } from '@/components/app/app.hooks';
 import { RequestAccessContent } from '@/components/app/share/RequestAccessContent';
+import { Progress } from '@/components/ui/progress';
 
 function RecordNotFound({
   viewId,

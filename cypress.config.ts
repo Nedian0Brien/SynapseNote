@@ -22,8 +22,10 @@ export default defineConfig({
     // Set viewport to MacBook Pro screen size
     viewportWidth: 1440,
     viewportHeight: 900,
-    // Disable video in CI for faster execution
-    video: process.env.CI ? false : true,
+    // Disable video recording to save memory
+    video: false,
+    // Enable experimental memory management to prevent OOM
+    experimentalMemoryManagement: true,
     setupNodeEvents(on, config) {
       // Configure browser launch options
       on('before:browser:launch', (browser, launchOptions) => {

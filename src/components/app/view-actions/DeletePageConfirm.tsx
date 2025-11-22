@@ -1,9 +1,10 @@
-import { useAppHandlers, useAppView } from '@/components/app/app.hooks';
-import { NormalModal } from '@/components/_shared/modal';
-import { filterViewsByCondition } from '@/components/_shared/outline/utils';
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+
+import { NormalModal } from '@/components/_shared/modal';
+import { filterViewsByCondition } from '@/components/_shared/outline/utils';
+import { useAppHandlers, useAppView } from '@/components/app/app.hooks';
 
 function DeletePageConfirm({
   open,

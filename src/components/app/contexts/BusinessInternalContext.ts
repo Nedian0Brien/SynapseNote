@@ -13,6 +13,8 @@ import {
   CreateSpacePayload,
   UpdateSpacePayload,
   CreateFolderViewPayload,
+  CreateDatabaseViewPayload,
+  CreateDatabaseViewResponse,
   GenerateAISummaryRowPayload,
   GenerateAITranslateRowPayload,
   LoadDatabasePrompts,
@@ -64,6 +66,7 @@ export interface BusinessInternalContextType {
   createSpace?: (payload: CreateSpacePayload) => Promise<string>;
   updateSpace?: (payload: UpdateSpacePayload) => Promise<void>;
   createFolderView?: (payload: CreateFolderViewPayload) => Promise<string>;
+  createDatabaseView?: (viewId: string, payload: CreateDatabaseViewPayload) => Promise<CreateDatabaseViewResponse>;
 
   // File operations
   uploadFile?: (viewId: string, file: File, onProgress?: (n: number) => void) => Promise<string>;

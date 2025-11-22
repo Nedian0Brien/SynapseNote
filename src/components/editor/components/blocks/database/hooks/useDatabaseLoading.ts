@@ -76,9 +76,12 @@ export const useDatabaseLoading = ({ viewId, loadView, loadViewMeta }: UseDataba
       try {
         const view = await retryLoadView(viewId);
 
+        console.debug('[DatabaseBlock] loaded view doc', { viewId });
+
         setDoc(view);
         setNotFound(false);
       } catch (error) {
+        console.error('[DatabaseBlock] failed to load view doc', { viewId, error });
         setNotFound(true);
       }
     };
@@ -91,15 +94,26 @@ export const useDatabaseLoading = ({ viewId, loadView, loadViewMeta }: UseDataba
   }, [visibleViewIds]);
 
   useLayoutEffect(() => {
-    void loadViewMetaWithCallback(viewId).then(() => {
+    void loadViewMetaWithCallback(viewId).then((meta) => {
       if (!viewIdsRef.current.includes(viewId) && viewIdsRef.current.length > 0) {
         setSelectedViewId(viewIdsRef.current[0]);
+        console.debug('[DatabaseBlock] selected first child view', { viewId, selected: viewIdsRef.current[0] });
       } else {
         setSelectedViewId(viewId);
+        console.debug('[DatabaseBlock] selected requested view', { viewId });
+      }
+
+      if (meta) {
+        console.debug('[DatabaseBlock] loaded view meta', {
+          viewId,
+          children: meta.children?.map((c) => c.view_id),
+          name: meta.name,
+        });
       }
 
       setNotFound(false);
-    }).catch(() => {
+    }).catch((error) => {
+      console.error('[DatabaseBlock] failed to load view meta', { viewId, error });
       setNotFound(true);
     });
   }, [loadViewMetaWithCallback, viewId]);

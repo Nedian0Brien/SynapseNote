@@ -1,8 +1,9 @@
+import React, { useCallback, useEffect, useMemo } from 'react';
+
 import { UpdatePublishConfigPayload } from '@/application/types';
 import { notify } from '@/components/_shared/notify';
 import { useAppView, useUserWorkspaceInfo } from '@/components/app/app.hooks';
 import { useCurrentUser, useService } from '@/components/main/app.hooks';
-import React, { useCallback, useEffect, useMemo } from 'react';
 
 export function useLoadPublishInfo(viewId: string) {
   const view = useAppView(viewId);

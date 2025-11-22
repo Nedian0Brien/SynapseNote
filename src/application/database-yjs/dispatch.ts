@@ -51,6 +51,7 @@ import { getOptionsFromRow, initialDatabaseRow } from '@/application/database-yj
 import { generateRowMeta, getMetaIdMap, getMetaJSON, getRowKey } from '@/application/database-yjs/row_meta';
 import { useBoardLayoutSettings, useCalendarLayoutSetting, useDatabaseViewLayout, useFieldSelector, useFieldType } from '@/application/database-yjs/selector';
 import { executeOperations } from '@/application/slate-yjs/utils/yjs';
+import { applyYDoc } from '@/application/ydoc/apply';
 import {
   DatabaseViewLayout,
   DateFormat,
@@ -77,7 +78,6 @@ import {
   YDatabaseGroups,
   YDatabaseLayoutSettings,
   YDatabaseRow,
-  YDatabaseRowOrders,
   YDatabaseSort,
   YDatabaseSorts,
   YDatabaseView,
@@ -2262,17 +2262,12 @@ function useEnhanceCalendarLayoutByFieldExists() {
 }
 
 export function useAddDatabaseView() {
-  const { iidIndex, createFolderView } = useDatabaseContext();
-  const database = useDatabase();
-  const sharedRoot = useSharedRoot();
-
-  const enhanceCalendarLayoutByFieldExists = useEnhanceCalendarLayoutByFieldExists();
-  const defaultTimeSetting = useDefaultTimeSetting();
+  const { iidIndex, createDatabaseView, databaseDoc } = useDatabaseContext();
 
   return useCallback(
     async (layout: DatabaseViewLayout) => {
-      if (!createFolderView) {
-        throw new Error('createFolderView not found');
+      if (!createDatabaseView) {
+        throw new Error('createDatabaseView not found');
       }
 
       const viewLayout = {
@@ -2285,93 +2280,20 @@ export function useAddDatabaseView() {
         [DatabaseViewLayout.Board]: 'Board',
         [DatabaseViewLayout.Calendar]: 'Calendar',
       }[layout];
-      const databaseId = database.get(YjsDatabaseKey.id);
 
-      const newViewId = await createFolderView({
+      // Call the new API endpoint which handles all Yjs initialization on the server
+      const response = await createDatabaseView(iidIndex, {
         layout: viewLayout,
-        parentViewId: iidIndex,
         name,
-        databaseId,
       });
 
-      const views = database.get(YjsDatabaseKey.views);
-      const refView = database.get(YjsDatabaseKey.views)?.get(iidIndex);
-      const refRowOrders = refView.get(YjsDatabaseKey.row_orders);
-      const refFieldOrders = refView.get(YjsDatabaseKey.field_orders);
+      if (response?.database_update?.length) {
+        applyYDoc(databaseDoc, new Uint8Array(response.database_update));
+      }
 
-      // find date field in all views
-      const dateField: YDatabaseField | undefined = enhanceCalendarLayoutByFieldExists(refFieldOrders);
-
-
-      executeOperations(
-        sharedRoot,
-        [
-          () => {
-            const newView = new Y.Map() as YDatabaseView;
-            const rowOrders = new Y.Array() as YDatabaseRowOrders;
-            const fieldOrders = new Y.Array() as YDatabaseFieldOrders;
-            let fieldSettings = new Y.Map() as YDatabaseFieldSettings;
-            let layoutSettings = new Y.Map() as YDatabaseLayoutSettings;
-            const filters = new Y.Array() as YDatabaseFilters;
-            const sorts = new Y.Array() as YDatabaseSorts;
-            let groups = new Y.Array() as YDatabaseGroups;
-            const calculations = new Y.Array() as YDatabaseCalculations;
-
-            refRowOrders.forEach((rowOrder) => {
-              const newRowOrder = {
-                ...rowOrder,
-              };
-
-              rowOrders.push([newRowOrder]);
-            });
-
-            refFieldOrders.forEach((fieldOrder) => {
-              const newFieldOrder = {
-                ...fieldOrder,
-              };
-
-              fieldOrders.push([newFieldOrder]);
-            });
-
-            if (layout === DatabaseViewLayout.Board) {
-              groups = generateBoardGroup(database, refFieldOrders);
-              fieldSettings = generateBoardSetting(database);
-              layoutSettings = generateBoardLayoutSettings();
-            }
-
-            if (layout === DatabaseViewLayout.Calendar) {
-              const fieldId = dateField?.get(YjsDatabaseKey.id);
-
-              if (!fieldId) {
-                throw new Error(`Date field not found`);
-              }
-
-              layoutSettings = generateCalendarLayoutSettings(fieldId, defaultTimeSetting);
-            }
-
-            newView.set(YjsDatabaseKey.database_id, databaseId);
-            newView.set(YjsDatabaseKey.name, name);
-            newView.set(YjsDatabaseKey.layout, layout);
-            newView.set(YjsDatabaseKey.row_orders, rowOrders);
-            newView.set(YjsDatabaseKey.field_orders, fieldOrders);
-            newView.set(YjsDatabaseKey.created_at, String(dayjs().unix()));
-            newView.set(YjsDatabaseKey.modified_at, String(dayjs().unix()));
-            newView.set(YjsDatabaseKey.field_settings, fieldSettings);
-            newView.set(YjsDatabaseKey.layout_settings, layoutSettings);
-            newView.set(YjsDatabaseKey.filters, filters);
-            newView.set(YjsDatabaseKey.sorts, sorts);
-            newView.set(YjsDatabaseKey.groups, groups);
-            newView.set(YjsDatabaseKey.calculations, calculations);
-            newView.set(YjsDatabaseKey.is_inline, false);
-
-            views.set(newViewId, newView);
-          },
-        ],
-        'addDatabaseView'
-      );
-      return newViewId;
+      return response.view_id;
     },
-    [createFolderView, database, defaultTimeSetting, enhanceCalendarLayoutByFieldExists, iidIndex, sharedRoot]
+    [createDatabaseView, databaseDoc, iidIndex]
   );
 }
 

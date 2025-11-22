@@ -1,14 +1,15 @@
+import React, { useCallback, useContext, useEffect } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
+
 import { PublishContext } from '@/application/publish';
 import { Types, ViewLayout } from '@/application/types';
+import { NormalModal } from '@/components/_shared/modal';
+import { notify } from '@/components/_shared/notify';
 import { AFConfigContext } from '@/components/main/app.hooks';
 import SelectWorkspace from '@/components/publish/header/duplicate/SelectWorkspace';
 import SpaceList from '@/components/publish/header/duplicate/SpaceList';
 import { useLoadWorkspaces } from '@/components/publish/header/duplicate/useDuplicate';
-import { NormalModal } from '@/components/_shared/modal';
-import { notify } from '@/components/_shared/notify';
 import { downloadPage, openAppFlowySchema } from '@/utils/url';
-import React, { useCallback, useContext, useEffect } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
 
 function getCollabTypeFromViewLayout(layout: ViewLayout) {
   switch (layout) {

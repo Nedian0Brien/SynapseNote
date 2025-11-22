@@ -1,12 +1,13 @@
-import { TemplateCategoryFormValues, TemplateCategoryType, TemplateIcon } from '@/application/template.type';
-import { ReactComponent as AddIcon } from '@/assets/icons/plus.svg';
-import CategoryForm from '@/components/as-template/category/CategoryForm';
-import { useService } from '@/components/main/app.hooks';
-import { NormalModal } from '@/components/_shared/modal';
-import { notify } from '@/components/_shared/notify';
 import MenuItem from '@mui/material/MenuItem';
 import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+
+import { TemplateCategoryFormValues, TemplateCategoryType, TemplateIcon } from '@/application/template.type';
+import { ReactComponent as AddIcon } from '@/assets/icons/plus.svg';
+import { NormalModal } from '@/components/_shared/modal';
+import { notify } from '@/components/_shared/notify';
+import CategoryForm from '@/components/as-template/category/CategoryForm';
+import { useService } from '@/components/main/app.hooks';
 
 function AddCategory({ searchText, onCreated }: { searchText: string; onCreated: () => void }) {
   const { t } = useTranslation();

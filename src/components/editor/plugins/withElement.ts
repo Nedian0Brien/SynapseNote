@@ -1,7 +1,8 @@
+import { Element, NodeEntry } from 'slate';
 import { ReactEditor } from 'slate-react';
+
 import { isEmbedBlockTypes } from '@/application/slate-yjs/command/const';
 import { BlockType } from '@/application/types';
-import { Element, NodeEntry } from 'slate';
 
 export const withElement = (editor: ReactEditor) => {
   const {

@@ -11,10 +11,10 @@ import {
 } from '@/application/database-yjs';
 import { useUpdateRowMetaDispatch } from '@/application/database-yjs/dispatch';
 import { AppendBreadcrumb, CoverType, RowCoverType, ViewIconType, ViewLayout, ViewMetaCover } from '@/application/types';
+import ImageRender from '@/components/_shared/image-render/ImageRender';
 import Title from '@/components/database/components/header/Title';
 import { getScrollParent } from '@/components/global-comment/utils';
 import ViewCoverActions from '@/components/view-meta/ViewCoverActions';
-import ImageRender from '@/components/_shared/image-render/ImageRender';
 import { renderColor } from '@/utils/color';
 
 function DatabaseRowHeader({ rowId, appendBreadcrumb }: { rowId: string; appendBreadcrumb?: AppendBreadcrumb }) {

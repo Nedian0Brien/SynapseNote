@@ -1,3 +1,7 @@
+import { CircularProgress, IconButton, InputBase, Tooltip } from '@mui/material';
+import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import { UpdatePublishConfigPayload } from '@/application/types';
 import { ReactComponent as LinkIcon } from '@/assets/icons/link.svg';
 import { ReactComponent as DownIcon } from '@/assets/icons/toggle_list.svg';
@@ -6,9 +10,6 @@ import { notify } from '@/components/_shared/notify';
 import { PublishManage } from '@/components/app/publish-manage';
 import { PublishNameSetting } from '@/components/app/publish-manage/PublishNameSetting';
 import { copyTextToClipboard } from '@/utils/copy';
-import { CircularProgress, IconButton, InputBase, Tooltip } from '@mui/material';
-import React, { useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 
 function PublishLinkPreview({
   viewId,

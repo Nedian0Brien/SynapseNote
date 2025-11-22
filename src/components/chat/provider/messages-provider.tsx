@@ -1,6 +1,7 @@
+import { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
+
 import { useChatContext } from '@/components/chat/chat/context';
 import { ChatMessage, ChatMessageMetadata } from '@/components/chat/types';
-import { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
 
 export interface ChatMessagesContextTypes {
   messageIds: number[];

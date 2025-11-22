@@ -7,6 +7,7 @@
     "dev": "vite",
     "dev:coverage": "cross-env COVERAGE=true vite",
     "build": "vite build",
+    "clean": "rm -rf dist storybook-static coverage .nyc_output node_modules/.vite node_modules/.cache",
     "type-check": "tsc --noEmit --project tsconfig.web.json",
     "type-check:watch": "tsc --build --watch",
     "lint": "pnpm type-check && eslint --quiet --ext .js,.ts,.tsx . --ignore-path .eslintignore.web",

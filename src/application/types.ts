@@ -198,6 +198,7 @@ export interface TableCellBlockData extends BlockData {
 
 export interface DatabaseNodeData extends BlockData {
   view_id: ViewId;
+  parent_id?: ViewId;
 }
 
 export interface SubpageNodeData extends BlockData {
@@ -918,7 +919,7 @@ export interface View {
   publish_timestamp?: string;
   parent_view_id?: string;
   access_level?: AccessLevel;
-  
+
 }
 
 export interface UpdatePublishConfigPayload {
@@ -1061,6 +1062,7 @@ export interface ViewMetaProps {
   workspaceId?: string;
   layout?: ViewLayout;
   visibleViewIds?: string[];
+  database_relations?: DatabaseRelations;
   extra?: ViewExtra | null;
   readOnly?: boolean;
   updatePage?: (viewId: string, data: UpdatePagePayload) => Promise<void>;
@@ -1126,6 +1128,17 @@ export interface CreateFolderViewPayload {
   name?: string;
   viewId?: string;
   databaseId?: string;
+}
+
+export interface CreateDatabaseViewPayload {
+  layout: ViewLayout;
+  name?: string;
+}
+
+export interface CreateDatabaseViewResponse {
+  view_id: string;
+  database_id: string;
+  database_update?: number[];
 }
 
 export interface CreateSpacePayload {

@@ -6,6 +6,7 @@ import { Awareness } from 'y-protocols/awareness';
 
 import { getUserIconUrl } from '@/application/user-metadata';
 import { useCurrentUser, useService } from '@/components/main/app.hooks';
+
 import { AwarenessMetadata, AwarenessState } from './types';
 import { convertSlateSelectionToAwareness, generateUserColors } from './utils';
 

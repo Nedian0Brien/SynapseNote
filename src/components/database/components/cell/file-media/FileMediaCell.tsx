@@ -7,10 +7,10 @@ import {
   FileMediaCellDataItem,
   FileMediaType,
 } from '@/application/database-yjs/cell.type';
+import { GalleryPreview } from '@/components/_shared/gallery-preview';
 import FileMediaCellMenu from '@/components/database/components/cell/file-media/FileMediaCellMenu';
 import PreviewImage from '@/components/database/components/cell/file-media/PreviewImage';
 import UnPreviewFile from '@/components/database/components/cell/file-media/UnPreviewFile';
-import { GalleryPreview } from '@/components/_shared/gallery-preview';
 import { cn } from '@/lib/utils';
 
 export function FileMediaCell({

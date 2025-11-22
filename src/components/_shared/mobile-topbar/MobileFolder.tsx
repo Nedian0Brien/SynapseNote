@@ -1,13 +1,16 @@
+import React, { useContext } from 'react';
+import { useTranslation } from 'react-i18next';
+import SwipeableViews from 'react-swipeable-views';
+
+import MobileMore from '@/components/_shared/mobile-topbar/MobileMore';
+import { AFScroller } from '@/components/_shared/scroller';
+import { ViewTab, ViewTabs } from '@/components/_shared/tabs/ViewTabs';
 import { AppContext, useAppOutline, useAppViewId } from '@/components/app/app.hooks';
 import MobileFavorite from '@/components/app/favorite/MobileFavorite';
 import MobileRecent from '@/components/app/recent/MobileRecent';
 import MobileWorkspaces from '@/components/app/workspaces/MobileWorkspaces';
-import MobileMore from '@/components/_shared/mobile-topbar/MobileMore';
-import { AFScroller } from '@/components/_shared/scroller';
-import { ViewTab, ViewTabs } from '@/components/_shared/tabs/ViewTabs';
-import React, { useContext } from 'react';
-import { useTranslation } from 'react-i18next';
-import SwipeableViews from 'react-swipeable-views';
+
+
 import MobileOutline from 'src/components/_shared/mobile-outline/MobileOutline';
 
 enum ViewTabsKey {

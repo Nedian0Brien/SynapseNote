@@ -1,12 +1,14 @@
+import { useContext, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+
+import { ReactComponent as Logo } from '@/assets/icons/logo.svg';
 import { AFConfigContext } from '@/components/main/app.hooks';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { createHotkey, HOT_KEY_NAME } from '@/utils/hotkeys';
-import { useContext, useState } from 'react';
-import { ReactComponent as Logo } from '@/assets/icons/logo.svg';
-import { useTranslation } from 'react-i18next';
+
 
 function CheckEmail ({ email, redirectTo }: {
   email: string;

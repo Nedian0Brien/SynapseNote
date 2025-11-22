@@ -1,12 +1,13 @@
-import { SubscriptionInterval, SubscriptionPlan } from '@/application/types';
-import { useAppHandlers, useCurrentWorkspaceId } from '@/components/app/app.hooks';
-import { useService } from '@/components/main/app.hooks';
-import { NormalModal } from '@/components/_shared/modal';
-import { notify } from '@/components/_shared/notify';
 import { Button, CircularProgress } from '@mui/material';
 import React, { useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
+
+import { SubscriptionInterval, SubscriptionPlan } from '@/application/types';
+import { NormalModal } from '@/components/_shared/modal';
+import { notify } from '@/components/_shared/notify';
+import { useAppHandlers, useCurrentWorkspaceId } from '@/components/app/app.hooks';
+import { useService } from '@/components/main/app.hooks';
 
 function UpgradeAIMax({ open, onClose, onOpen }: { open: boolean; onClose: () => void; onOpen: () => void }) {
   const { t } = useTranslation();

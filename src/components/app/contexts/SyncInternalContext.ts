@@ -1,5 +1,6 @@
-import { createContext, useContext } from 'react';
 import EventEmitter from 'events';
+
+import { createContext, useContext } from 'react';
 import { Awareness } from 'y-protocols/awareness';
 
 import { YDoc, Types } from '@/application/types';

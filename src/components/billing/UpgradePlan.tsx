@@ -1,3 +1,8 @@
+import { Button } from '@mui/material';
+import React, { useCallback, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
+
 import { Subscription, SubscriptionInterval, SubscriptionPlan } from '@/application/types';
 import { NormalModal } from '@/components/_shared/modal';
 import { notify } from '@/components/_shared/notify';
@@ -6,10 +11,6 @@ import { useAppHandlers, useCurrentWorkspaceId } from '@/components/app/app.hook
 import CancelSubscribe from '@/components/billing/CancelSubscribe';
 import { useService } from '@/components/main/app.hooks';
 import { isOfficialHost } from '@/utils/subscription';
-import { Button } from '@mui/material';
-import React, { useCallback, useEffect, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useSearchParams } from 'react-router-dom';
 
 function UpgradePlan({ open, onClose, onOpen }: { open: boolean; onClose: () => void; onOpen: () => void }) {
   const { t } = useTranslation();

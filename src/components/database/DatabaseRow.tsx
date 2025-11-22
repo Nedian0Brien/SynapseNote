@@ -1,10 +1,10 @@
 import { Suspense } from 'react';
 
 import { AppendBreadcrumb } from '@/application/types';
-import { DatabaseRowProperties, DatabaseRowSubDocument } from '@/components/database/components/database-row';
-import DatabaseRowHeader from '@/components/database/components/header/DatabaseRowHeader';
 import EditorSkeleton from '@/components/_shared/skeleton/EditorSkeleton';
 import TableSkeleton from '@/components/_shared/skeleton/TableSkeleton';
+import { DatabaseRowProperties, DatabaseRowSubDocument } from '@/components/database/components/database-row';
+import DatabaseRowHeader from '@/components/database/components/header/DatabaseRowHeader';
 import { cn } from '@/lib/utils';
 
 import { Separator } from '../ui/separator';

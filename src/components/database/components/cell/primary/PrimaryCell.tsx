@@ -4,9 +4,9 @@ import { RowMetaKey, useDatabaseContext, useRowMetaSelector } from '@/applicatio
 import { CellProps, TextCell as CellType } from '@/application/database-yjs/cell.type';
 import { useUpdateRowMetaDispatch } from '@/application/database-yjs/dispatch';
 import { ReactComponent as DocumentSvg } from '@/assets/icons/doc.svg';
+import { CustomIconPopover } from '@/components/_shared/cutsom-icon';
 import { TextCell } from '@/components/database/components/cell/text';
 import { Button } from '@/components/ui/button';
-import { CustomIconPopover } from '@/components/_shared/cutsom-icon';
 import { cn } from '@/lib/utils';
 import { isFlagEmoji } from '@/utils/emoji';
 import { getPlatform } from '@/utils/platform';

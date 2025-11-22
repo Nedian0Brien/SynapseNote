@@ -1,7 +1,8 @@
-import { useChatContext } from '@/components/chat/chat/context';
-import { ChatSettings } from '@/components/chat/types';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
+
+import { useChatContext } from '@/components/chat/chat/context';
+import { ChatSettings } from '@/components/chat/types';
 
 export function useChatSettingsLoader() {
   const [loading, setLoading] = useState(true);

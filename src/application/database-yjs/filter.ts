@@ -20,6 +20,7 @@ import {
   TextFilter,
   TextFilterCondition,
 } from '@/application/database-yjs/fields';
+import { getChecked } from '@/application/database-yjs/fields/checkbox/utils';
 import { EnhancedBigStats } from '@/application/database-yjs/fields/number/EnhancedBigStats';
 import { Row } from '@/application/database-yjs/selector';
 import {
@@ -34,7 +35,6 @@ import {
   YjsEditorKey,
 } from '@/application/types';
 import { isAfterOneDay, isTimestampBefore, isTimestampBetweenRange, isTimestampInSameDay } from '@/utils/time';
-import { getChecked } from '@/application/database-yjs/fields/checkbox/utils';
 
 export function parseFilter(fieldType: FieldType, filter: YDatabaseFilter) {
   const fieldId = filter.get(YjsDatabaseKey.field_id);

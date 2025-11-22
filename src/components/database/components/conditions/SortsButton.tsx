@@ -1,11 +1,13 @@
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import { useReadOnly, useSortsSelector } from '@/application/database-yjs';
 import { useAddSort } from '@/application/database-yjs/dispatch';
+import { ReactComponent as SortIcon } from '@/assets/icons/sort.svg';
 import PropertiesMenu from '@/components/database/components/conditions/PropertiesMenu';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { useState } from 'react';
-import { ReactComponent as SortIcon } from '@/assets/icons/sort.svg';
-import { useTranslation } from 'react-i18next';
+
 
 function SortsButton ({ toggleExpanded, expanded }: {
   toggleExpanded?: () => void;

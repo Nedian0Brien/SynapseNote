@@ -1,5 +1,7 @@
-import { ReactComponent as AddIcon } from '@/assets/icons/plus.svg';
 import { Editor, EditorData, EditorProvider, FixedToolbar, useEditor } from '@appflowyinc/editor';
+
+import { ReactComponent as AddIcon } from '@/assets/icons/plus.svg';
+
 import '@appflowyinc/editor/style';
 import React, { useCallback, useContext, useEffect, useMemo } from 'react';
 
@@ -9,6 +11,7 @@ import { useService } from '@/components/main/app.hooks';
 import { ThemeModeContext } from '@/components/main/useAppThemeMode';
 import { useAddNode } from '@/components/quick-note/QuickNote.hooks';
 import { getTitle } from '@/components/quick-note/utils';
+
 import { CircularProgress, IconButton, Tooltip } from '@mui/material';
 import dayjs from 'dayjs';
 import { debounce } from 'lodash-es';

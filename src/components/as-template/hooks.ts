@@ -1,7 +1,8 @@
+import { useCallback, useMemo, useState } from 'react';
+
 import { Template, TemplateCategory, TemplateCreator, TemplateSummary } from '@/application/template.type';
 import { notify } from '@/components/_shared/notify';
 import { useService } from '@/components/main/app.hooks';
-import { useCallback, useMemo, useState } from 'react';
 
 export function useLoadCategoryTemplates () {
   const [loading, setLoading] = useState(false);

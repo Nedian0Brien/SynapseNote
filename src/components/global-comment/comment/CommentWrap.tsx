@@ -1,9 +1,11 @@
+import React, { useCallback, useContext, useEffect, useMemo } from 'react';
+import smoothScrollIntoViewIfNeeded from 'smooth-scroll-into-view-if-needed';
+
 import CommentActions from '@/components/global-comment/actions/CommentActions';
 import { useGlobalCommentContext } from '@/components/global-comment/GlobalComment.hooks';
 import ReplyComment from '@/components/global-comment/ReplyComment';
 import { AFConfigContext } from '@/components/main/app.hooks';
-import React, { useCallback, useContext, useEffect, useMemo } from 'react';
-import smoothScrollIntoViewIfNeeded from 'smooth-scroll-into-view-if-needed';
+
 import Comment from './Comment';
 
 export interface CommentWrapProps {

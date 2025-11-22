@@ -23,6 +23,8 @@ import {
   AccessLevel,
   AFWebUser,
   AuthProvider,
+  CreateDatabaseViewPayload,
+  CreateDatabaseViewResponse,
   CreateFolderViewPayload,
   CreatePagePayload,
   CreateSpacePayload,
@@ -1408,6 +1410,21 @@ export async function createFolderView(workspaceId: string, payload: CreateFolde
       database_id: payload.databaseId,
     })
   ).then((data) => data.view_id);
+}
+
+export async function createDatabaseView(
+  workspaceId: string,
+  viewId: string,
+  payload: CreateDatabaseViewPayload
+) {
+  const url = `/api/workspace/${workspaceId}/page-view/${viewId}/database-view`;
+
+  return executeAPIRequest<CreateDatabaseViewResponse>(() =>
+    axiosInstance?.post<APIResponse<CreateDatabaseViewResponse>>(url, {
+      layout: payload.layout,
+      name: payload.name,
+    })
+  );
 }
 
 export async function addAppPage(workspaceId: string, parentViewId: string, { layout, name }: CreatePagePayload) {

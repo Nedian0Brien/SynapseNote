@@ -50,7 +50,14 @@ export const DatabaseBlock = memo(
       if (!sharedRoot) return;
 
       const setStatus = () => {
-        setHasDatabase(!!sharedRoot.get(YjsEditorKey.database));
+        const hasDb = !!sharedRoot.get(YjsEditorKey.database);
+
+        setHasDatabase(hasDb);
+        if (hasDb) {
+          console.debug('[DatabaseBlock] database found in doc', { viewId });
+        } else {
+          console.warn('[DatabaseBlock] database missing in doc', { viewId });
+        }
       };
 
       setStatus();
@@ -59,7 +66,7 @@ export const DatabaseBlock = memo(
       return () => {
         sharedRoot.unobserve(setStatus);
       };
-    }, [doc]);
+    }, [doc, viewId]);
 
     return (
       <div {...attributes} contentEditable={readOnly ? false : undefined} className='relative w-full cursor-pointer'>

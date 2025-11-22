@@ -1,3 +1,10 @@
+import EventEmitter from 'events';
+
+import { AxiosInstance } from 'axios';
+import { createContext, useCallback, useContext, useState } from 'react';
+import { BaseRange, Range } from 'slate';
+import { Awareness } from 'y-protocols/awareness';
+
 import {
   CreateRowDoc,
   FontLayout,
@@ -7,17 +14,16 @@ import {
   UIVariant,
   View,
   CreatePagePayload,
+  CreateFolderViewPayload,
+  CreateDatabaseViewPayload,
+  CreateDatabaseViewResponse,
   TextCount,
   LoadDatabasePrompts,
   TestDatabasePromptConfig,
   Subscription,
   MentionablePerson,
+  DatabaseRelations,
 } from '@/application/types';
-import { AxiosInstance } from 'axios';
-import EventEmitter from 'events';
-import { createContext, useCallback, useContext, useState } from 'react';
-import { BaseRange, Range } from 'slate';
-import { Awareness } from 'y-protocols/awareness';
 
 export interface EditorLayoutStyle {
   fontLayout: FontLayout;
@@ -62,6 +68,8 @@ export interface EditorContextState {
   deletePage?: (viewId: string) => Promise<void>;
   openPageModal?: (viewId: string) => void;
   loadViews?: (variant?: UIVariant) => Promise<View[] | undefined>;
+  createFolderView?: (payload: CreateFolderViewPayload) => Promise<string>;
+  createDatabaseView?: (viewId: string, payload: CreateDatabaseViewPayload) => Promise<CreateDatabaseViewResponse>;
   onWordCountChange?: (viewId: string, props: TextCount) => void;
   uploadFile?: (file: File) => Promise<string>;
   requestInstance?: AxiosInstance | null;
@@ -75,6 +83,8 @@ export interface EditorContextState {
   getDeviceId?: () => string;
   collapsedMap?: Record<string, boolean>;
   toggleCollapsed?: (blockId: string) => void;
+  databaseRelations?: DatabaseRelations;
+  getViewIdFromDatabaseId?: (databaseId: string) => Promise<string | null>;
 }
 
 export const EditorContext = createContext<EditorContextState>({

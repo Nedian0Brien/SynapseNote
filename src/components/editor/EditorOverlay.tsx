@@ -1,21 +1,22 @@
-import { YjsEditor } from '@/application/slate-yjs';
-import { CustomEditor } from '@/application/slate-yjs/command';
-import { isEmbedBlockTypes } from '@/application/slate-yjs/command/const';
-import { findSlateEntryByBlockId, getBlockEntry } from '@/application/slate-yjs/utils/editor';
-import { getBlock, getText } from '@/application/slate-yjs/utils/yjs';
-import { BlockType, YjsEditorKey } from '@/application/types';
-import { insertDataAfterBlock } from '@/components/ai-chat/utils';
-import { useEditorContext } from '@/components/editor/EditorContext';
-import { getScrollParent } from '@/components/global-comment/utils';
-import { notify } from '@/components/_shared/notify';
-
-import { AIAssistantProvider, ContextPlaceholder, PromptModalProvider, WriterRequest } from '@/components/chat';
 import { EditorData } from '@appflowyinc/editor';
 import { Portal } from '@mui/material';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { Range, Text, Transforms } from 'slate';
 import { ReactEditor, useSlate } from 'slate-react';
+
+import { YjsEditor } from '@/application/slate-yjs';
+import { CustomEditor } from '@/application/slate-yjs/command';
+import { isEmbedBlockTypes } from '@/application/slate-yjs/command/const';
+import { findSlateEntryByBlockId, getBlockEntry } from '@/application/slate-yjs/utils/editor';
+import { getBlock, getText } from '@/application/slate-yjs/utils/yjs';
+import { BlockType, YjsEditorKey } from '@/application/types';
+import { notify } from '@/components/_shared/notify';
+import { insertDataAfterBlock } from '@/components/ai-chat/utils';
+import { AIAssistantProvider, ContextPlaceholder, PromptModalProvider, WriterRequest } from '@/components/chat';
+import { useEditorContext } from '@/components/editor/EditorContext';
+import { getScrollParent } from '@/components/global-comment/utils';
+
 
 import BlockPopover from './components/block-popover';
 import Panels from './components/panels';

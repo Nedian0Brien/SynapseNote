@@ -1,6 +1,7 @@
 import { Skeleton } from '@mui/material';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+
 import { ReactComponent as ErrorOutline } from '@/assets/icons/error.svg';
 import { useAuthenticatedImage } from '@/components/_shared/hooks/useAuthenticatedImage';
 

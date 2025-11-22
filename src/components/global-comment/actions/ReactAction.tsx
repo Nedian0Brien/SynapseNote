@@ -1,13 +1,14 @@
-import { GlobalComment } from '@/application/comment.type';
-import { EmojiPicker } from '@/components/_shared/emoji-picker';
-import { Popover } from '@/components/_shared/popover';
-import ComponentLoading from '@/components/_shared/progress/ComponentLoading';
-import { AFConfigContext } from '@/components/main/app.hooks';
-import { useGlobalCommentContext } from '@/components/global-comment/GlobalComment.hooks';
-import { ReactComponent as EmojiIcon } from '@/assets/icons/add_emoji.svg';
 import { IconButton, Tooltip } from '@mui/material';
 import React, { memo, Suspense, useCallback, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
+
+import { GlobalComment } from '@/application/comment.type';
+import { ReactComponent as EmojiIcon } from '@/assets/icons/add_emoji.svg';
+import { EmojiPicker } from '@/components/_shared/emoji-picker';
+import { Popover } from '@/components/_shared/popover';
+import ComponentLoading from '@/components/_shared/progress/ComponentLoading';
+import { useGlobalCommentContext } from '@/components/global-comment/GlobalComment.hooks';
+import { AFConfigContext } from '@/components/main/app.hooks';
 
 function ReactAction ({ comment }: { comment: GlobalComment }) {
   const { toggleReaction } = useGlobalCommentContext();

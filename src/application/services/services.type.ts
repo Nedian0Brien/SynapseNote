@@ -1,4 +1,3 @@
-import { RepeatedChatMessage } from '@/components/chat';
 import { AxiosInstance } from 'axios';
 
 import { GlobalComment, Reaction } from '@/application/comment.type';
@@ -15,6 +14,8 @@ import {
 import {
   AccessLevel,
   AuthProvider,
+  CreateDatabaseViewPayload,
+  CreateDatabaseViewResponse,
   CreateFolderViewPayload,
   CreatePagePayload,
   CreateSpacePayload,
@@ -50,6 +51,7 @@ import {
   WorkspaceMember,
   YDoc,
 } from '@/application/types';
+import { RepeatedChatMessage } from '@/components/chat';
 
 export type AFService = PublishService &
   AppService &
@@ -146,6 +148,7 @@ export interface AppService {
   updateSpace: (workspaceId: string, payload: UpdateSpacePayload) => Promise<void>;
   addAppPage: (workspaceId: string, parentViewId: string, payload: CreatePagePayload) => Promise<string>;
   createFolderView: (workspaceId: string, payload: CreateFolderViewPayload) => Promise<string>;
+  createDatabaseView: (workspaceId: string, viewId: string, payload: CreateDatabaseViewPayload) => Promise<CreateDatabaseViewResponse>;
   updateAppPage: (workspaceId: string, viewId: string, data: UpdatePagePayload) => Promise<void>;
   updateAppPageIcon: (workspaceId: string, viewId: string, icon: { ty: ViewIconType; value: string }) => Promise<void>;
   updateAppPageName: (workspaceId: string, viewId: string, name: string) => Promise<void>;

@@ -63,9 +63,7 @@ export function useDatabaseViewsSelector(_iidIndex: string, visibleViewIds?: str
 
   const views = database?.get(YjsDatabaseKey.views);
   const [viewIds, setViewIds] = useState<string[]>([]);
-  const childViews = useMemo(() => {
-    return viewIds.map((viewId) => views?.get(viewId));
-  }, [viewIds, views]);
+  const [childViews, setChildViews] = useState<ReturnType<typeof views.get>[]>([]);
 
   useEffect(() => {
     if (!views) return;
@@ -78,31 +76,33 @@ export function useDatabaseViewsSelector(_iidIndex: string, visibleViewIds?: str
         }
       >;
 
-      const viewsSorted =
-        visibleViewIds ??
-        Object.entries(viewsObj)
-          .sort((a, b) => {
-            const [, viewA] = a;
-            const [, viewB] = b;
+      // Get all views from the database and filter out inline views
+      let allViewIds = Object.keys(viewsObj).filter((viewId) => {
+        const view = views.get(viewId);
 
-            return Date.parse(viewB.created_at) - Date.parse(viewA.created_at);
-          })
-          .map(([key]) => key);
+        if (!view) return false;
+        const isInline = view.get(YjsDatabaseKey.is_inline);
 
-      setViewIds(
-        viewsSorted.filter((id) => {
-          return !visibleViewIds || visibleViewIds.includes(id);
-        })
-      );
+        return !isInline;
+      });
+
+      // If visibleViewIds is provided (for embedded databases), filter to only show those views
+      // visibleViewIds is undefined for standalone databases, [] for embedded with no child views yet
+      if (visibleViewIds !== undefined) {
+        allViewIds = allViewIds.filter((viewId) => visibleViewIds.includes(viewId));
+      }
+
+      setViewIds(allViewIds);
+      setChildViews(allViewIds.map((viewId) => views.get(viewId)));
     };
 
     observerEvent();
-    views.observe(observerEvent);
+    views.observeDeep(observerEvent);
 
     return () => {
-      views.unobserve(observerEvent);
+      views.unobserveDeep(observerEvent);
     };
-  }, [views, visibleViewIds]);
+  }, [views, visibleViewIds, _iidIndex]);
 
   return {
     childViews,
@@ -941,7 +941,7 @@ export function useCalendarEventsSelector() {
     observerEvent();
 
     field?.observeDeep(observerEvent);
-    
+
     const debouncedObserverEvent = debounce(observerEvent, 150);
 
     // for every row

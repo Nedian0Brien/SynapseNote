@@ -605,19 +605,29 @@ export const CustomEditor = {
     const isExpanded = Range.isExpanded(selection);
 
     if (isExpanded) {
-      const texts = getSelectionTexts(editor);
+      try {
+        const texts = getSelectionTexts(editor);
 
-      return texts.some((node) => {
-        const { text, ...attributes } = node;
+        return texts.some((node) => {
+          const { text, ...attributes } = node;
 
-        if (!text) return true;
-        return Boolean((attributes as Record<string, boolean | string>)[key]);
-      });
+          if (!text) return true;
+          return Boolean((attributes as Record<string, boolean | string>)[key]);
+        });
+      } catch (error) {
+        console.warn('Error checking mark in expanded selection:', error);
+        return false;
+      }
     }
 
-    const marks = Editor.marks(editor) as Record<string, string | boolean> | null;
+    try {
+      const marks = Editor.marks(editor) as Record<string, string | boolean> | null;
 
-    return marks ? !!marks[key] : false;
+      return marks ? !!marks[key] : false;
+    } catch (error) {
+      console.warn('Error checking mark at collapsed selection:', error);
+      return false;
+    }
   },
 
   getAllMarks(editor: ReactEditor) {
@@ -630,19 +640,29 @@ export const CustomEditor = {
     const isExpanded = Range.isExpanded(selection);
 
     if (isExpanded) {
-      const texts = getSelectionTexts(editor);
+      try {
+        const texts = getSelectionTexts(editor);
 
-      return texts.map((node) => {
-        const { text, ...attributes } = node;
+        return texts.map((node) => {
+          const { text, ...attributes } = node;
 
-        if (!text) return {};
-        return attributes as EditorInlineAttributes;
-      });
+          if (!text) return {};
+          return attributes as EditorInlineAttributes;
+        });
+      } catch (error) {
+        console.warn('Error getting all marks:', error);
+        return [];
+      }
     }
 
-    const marks = Editor.marks(editor) as EditorInlineAttributes;
+    try {
+      const marks = Editor.marks(editor) as EditorInlineAttributes;
 
-    return [marks];
+      return [marks];
+    } catch (error) {
+      console.warn('Error getting marks at collapsed selection:', error);
+      return [];
+    }
   },
 
   isMarkActive(editor: ReactEditor, key: string) {

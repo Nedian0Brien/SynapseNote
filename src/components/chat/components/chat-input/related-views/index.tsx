@@ -1,20 +1,24 @@
-import LoadingDots from '@/components/chat/components/ui/loading-dots';
-import { SearchInput } from '@/components/chat/components/ui/search-input';
-import { Spaces } from './spaces';
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { motion } from 'framer-motion';
+import debounce from 'lodash-es/debounce';
+import { useEffect, useMemo, useState } from 'react';
+
 import { ReactComponent as DocIcon } from '@/assets/icons/page.svg';
 import { ReactComponent as ChevronDown } from '@/assets/icons/triangle_down.svg';
-import { Separator } from '@/components/ui/separator';
+import { useViewLoader } from '@/components/chat';
+import LoadingDots from '@/components/chat/components/ui/loading-dots';
+import { SearchInput } from '@/components/chat/components/ui/search-input';
 import { useChatSettingsLoader } from '@/components/chat/hooks/use-chat-settings-loader';
 import { MESSAGE_VARIANTS } from '@/components/chat/lib/animations';
 import { useCheckboxTree } from '@/components/chat/hooks/use-checkbox-tree';
 import { searchViews } from '@/components/chat/lib/views';
 import { View } from '@/components/chat/types';
-import { useEffect, useMemo, useState } from 'react';
-import debounce from 'lodash-es/debounce';
-import { useViewLoader } from '@/components/chat';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Separator } from '@/components/ui/separator';
+
+import { Spaces } from './spaces';
+
+
 
 export function RelatedViews() {
 

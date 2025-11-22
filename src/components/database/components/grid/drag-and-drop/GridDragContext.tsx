@@ -1,7 +1,8 @@
-import { RenderColumn } from '@/components/database/components/grid/grid-column';
-import { RenderRow } from '@/components/database/components/grid/grid-row';
 import { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { createContext, useContext } from 'react';
+
+import { RenderColumn } from '@/components/database/components/grid/grid-column';
+import { RenderRow } from '@/components/database/components/grid/grid-row';
 
 type RowEntry = { rowId: string; element: HTMLElement };
 type ColumnEntry = { fieldId: string; element: HTMLElement };

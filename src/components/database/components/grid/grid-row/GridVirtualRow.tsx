@@ -1,6 +1,6 @@
-import { attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import { attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { VirtualItem } from '@tanstack/react-virtual';
 import { uniqBy } from 'lodash-es';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';

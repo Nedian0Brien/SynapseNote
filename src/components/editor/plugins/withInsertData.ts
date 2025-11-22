@@ -1,11 +1,13 @@
-import { CustomEditor } from '@/application/slate-yjs/command';
-import { YjsEditor } from '@/application/slate-yjs';
-import { findSlateEntryByBlockId, getBlockEntry } from '@/application/slate-yjs/utils/editor';
-import { ReactEditor } from 'slate-react';
-import { BlockType, FieldURLType, FileBlockData, ImageBlockData, ImageType } from '@/application/types';
-import { FileHandler } from '@/utils/file';
-import { convertSlateFragmentTo } from '@/components/editor/utils/fragment';
 import { Node } from 'slate';
+import { ReactEditor } from 'slate-react';
+
+import { YjsEditor } from '@/application/slate-yjs';
+import { CustomEditor } from '@/application/slate-yjs/command';
+import { findSlateEntryByBlockId, getBlockEntry } from '@/application/slate-yjs/utils/editor';
+import { BlockType, FieldURLType, FileBlockData, ImageBlockData, ImageType } from '@/application/types';
+import { convertSlateFragmentTo } from '@/components/editor/utils/fragment';
+import { FileHandler } from '@/utils/file';
+
 
 export const withInsertData = (editor: ReactEditor) => {
   const { insertData } = editor;

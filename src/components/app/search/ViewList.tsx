@@ -1,10 +1,11 @@
+import CircularProgress from '@mui/material/CircularProgress';
+import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import { View } from '@/application/types';
 import { useAppHandlers } from '@/components/app/app.hooks';
 import ListItem from '@/components/app/search/ListItem';
 import { createHotkey, HOT_KEY_NAME } from '@/utils/hotkeys';
-import CircularProgress from '@mui/material/CircularProgress';
-import React, { useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 
 function ViewList({
   title,

@@ -1,9 +1,10 @@
-import { YjsEditor } from '@/application/slate-yjs';
-import { ReactComponent as ImageIcon } from '@/assets/icons/video.svg';
-import { VideoBlockNode } from '@/components/editor/editor.type';
 import { useTranslation } from 'react-i18next';
 import { Element } from 'slate';
 import { useReadOnly, useSlateStatic } from 'slate-react';
+
+import { YjsEditor } from '@/application/slate-yjs';
+import { ReactComponent as ImageIcon } from '@/assets/icons/video.svg';
+import { VideoBlockNode } from '@/components/editor/editor.type';
 
 function VideoEmpty({ node, error }: { node: VideoBlockNode; error?: string }) {
   const { t } = useTranslation();

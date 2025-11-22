@@ -1,5 +1,6 @@
-import { initialEditorTest, moveAndEnter, moveToLineStart } from '@/components/editor/__tests__/mount';
 import { FromBlockJSON } from 'cypress/support/document';
+
+import { initialEditorTest, moveAndEnter, moveToLineStart } from '@/components/editor/__tests__/mount';
 
 describe('Enter key behavior', () => {
   beforeEach(() => {

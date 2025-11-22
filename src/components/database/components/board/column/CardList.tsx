@@ -4,7 +4,6 @@ import { memo, useCallback, useLayoutEffect, useMemo, useRef } from 'react';
 import { PADDING_END } from '@/application/database-yjs';
 import { useBoardContext } from '@/components/database/board/BoardProvider';
 import { Card } from '@/components/database/components/board/card';
-import { getScrollParent } from '@/components/global-comment/utils';
 import { cn } from '@/lib/utils';
 
 export enum CardType {
@@ -21,7 +20,7 @@ function CardList({
   data,
   fieldId,
   columnId,
-  setScrollElement,
+  setScrollElement: _setScrollElement,
 }: {
   columnId: string;
   data: RenderCard[];
@@ -47,25 +46,22 @@ function CardList({
     [columnId, setCreatingColumnId]
   );
 
-  useLayoutEffect(() => {
-    parentOffsetRef.current = parentRef.current?.getBoundingClientRect()?.top ?? 0;
-  }, []);
-
   const getScrollElement = useCallback(() => {
     if (!parentRef.current) return null;
-    const el = (parentRef.current.closest('.appflowy-scroll-container') ||
-      getScrollParent(parentRef.current)) as HTMLDivElement;
+    // Board cards scroll within their local column container, not the document
+    // Return the parent div itself as the scroll container
+    return parentRef.current;
+  }, []);
 
-    if (setScrollElement) {
-      setScrollElement(el);
-    }
-
-    return el;
-  }, [setScrollElement]);
+  // Board columns have local scroll, so scrollMargin should always be 0
+  // No need for RAF measurement like Grid - layout is stable within the column
+  useLayoutEffect(() => {
+    parentOffsetRef.current = 0;
+  }, []);
 
   const virtualizer = useVirtualizer({
     count: data.length,
-    scrollMargin: parentOffsetRef.current,
+    scrollMargin: 0, // Always 0 for Board - items are positioned relative to column top
     overscan: 5,
     getScrollElement,
     estimateSize: () => 36,

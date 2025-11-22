@@ -1,7 +1,9 @@
+import { useMemo } from 'react';
+
 import { DateFilter, FieldType, Filter, PersonFilter, SelectOptionFilter, useFieldSelector } from '@/application/database-yjs';
 import { YjsDatabaseKey } from '@/application/types';
 import DateTimeFilterMenu from '@/components/database/components/filters/filter-menu/DateTimeFilterMenu';
-import { useMemo } from 'react';
+
 import CheckboxFilterMenu from './CheckboxFilterMenu';
 import ChecklistFilterMenu from './ChecklistFilterMenu';
 import MultiSelectOptionFilterMenu from './MultiSelectOptionFilterMenu';

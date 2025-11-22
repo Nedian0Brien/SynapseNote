@@ -1,4 +1,5 @@
 import EventEmitter from 'events';
+
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Awareness } from 'y-protocols/awareness';
 
@@ -7,6 +8,7 @@ import { db } from '@/application/db';
 import { getTokenParsed } from '@/application/session/token';
 import { useAppflowyWebSocket, useBroadcastChannel, useSync } from '@/components/ws';
 import { notification } from '@/proto/messages';
+
 import { useAuthInternal } from '../contexts/AuthInternalContext';
 import { SyncInternalContext, SyncInternalContextType } from '../contexts/SyncInternalContext';
 

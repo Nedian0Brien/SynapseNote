@@ -1,7 +1,8 @@
+import { createContext, useContext } from 'react';
+
 import { AFService, AFServiceConfig } from '@/application/services/services.type';
 import { User } from '@/application/types';
 import { getConfigValue } from '@/utils/runtime-config';
-import { createContext, useContext } from 'react';
 
 const baseURL = getConfigValue('APPFLOWY_BASE_URL', 'https://test.appflowy.cloud');
 const gotrueURL = getConfigValue('APPFLOWY_GOTRUE_BASE_URL', 'https://test.appflowy.cloud/gotrue');

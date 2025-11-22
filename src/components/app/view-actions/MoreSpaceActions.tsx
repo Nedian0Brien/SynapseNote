@@ -1,3 +1,7 @@
+import { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
+
 import { View } from '@/application/types';
 import { ReactComponent as DeleteIcon } from '@/assets/icons/delete.svg';
 import { ReactComponent as DuplicateIcon } from '@/assets/icons/duplicate.svg';
@@ -8,9 +12,6 @@ import { useAppHandlers, useCurrentWorkspaceId } from '@/components/app/app.hook
 import { useService } from '@/components/main/app.hooks';
 import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Progress } from '@/components/ui/progress';
-import { useCallback, useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
 
 function MoreSpaceActions({
   view,

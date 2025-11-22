@@ -1,3 +1,7 @@
+import { debounce } from 'lodash-es';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import smoothScrollIntoViewIfNeeded from 'smooth-scroll-into-view-if-needed';
+
 import { YjsEditor } from '@/application/slate-yjs';
 import { UIVariant, ViewMetaProps, YDoc } from '@/application/types';
 import { useAIChatContext } from '@/components/ai-chat/AIChatProvider';
@@ -6,9 +10,6 @@ import { useAppHandlers, useAppView, useCurrentWorkspaceId } from '@/components/
 import { Document } from '@/components/document';
 import RecordNotFound from '@/components/error/RecordNotFound';
 import { useService } from '@/components/main/app.hooks';
-import { debounce } from 'lodash-es';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import smoothScrollIntoViewIfNeeded from 'smooth-scroll-into-view-if-needed';
 
 function DrawerContent({
   openViewId,

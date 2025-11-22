@@ -1,8 +1,3 @@
-import { EditorMarkFormat } from '@/application/slate-yjs/types';
-import { getNodeAtPath } from '@/application/slate-yjs/utils/editor';
-import { calculateOffsetRelativeToParent } from '@/application/slate-yjs/utils/positions';
-import { getBlock, getText } from '@/application/slate-yjs/utils/yjs';
-import { YjsEditorKey, YSharedRoot } from '@/application/types';
 import {
   Descendant,
   Editor,
@@ -15,6 +10,12 @@ import {
   Text,
 } from 'slate';
 import * as Y from 'yjs';
+
+import { EditorMarkFormat } from '@/application/slate-yjs/types';
+import { getNodeAtPath } from '@/application/slate-yjs/utils/editor';
+import { calculateOffsetRelativeToParent } from '@/application/slate-yjs/utils/positions';
+import { getBlock, getText } from '@/application/slate-yjs/utils/yjs';
+import { YjsEditorKey, YSharedRoot } from '@/application/types';
 
 // transform slate op to yjs op and apply it to ydoc
 export function applyToYjs(ydoc: Y.Doc, editor: Editor, op: Operation, slateContent: Descendant[]) {

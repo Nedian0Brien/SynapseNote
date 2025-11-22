@@ -1,9 +1,10 @@
-import { BlockType } from '@/application/types';
-import { EditorElementProps, SimpleTableNode, SimpleTableRowNode } from '@/components/editor/editor.type';
-import { renderColor } from '@/utils/color';
 import { forwardRef, useMemo } from 'react';
 import { Editor, Element, NodeEntry } from 'slate';
 import { ReactEditor, useSlate } from 'slate-react';
+
+import { BlockType } from '@/application/types';
+import { EditorElementProps, SimpleTableNode, SimpleTableRowNode } from '@/components/editor/editor.type';
+import { renderColor } from '@/utils/color';
 
 const SimpleTableRow =
   forwardRef<HTMLTableRowElement, EditorElementProps<SimpleTableRowNode>>(({

@@ -1,3 +1,6 @@
+import { EditorData } from '@appflowyinc/editor';
+import { AxiosInstance } from 'axios';
+
 import {
   createInitialInstance,
   getAccessToken,
@@ -17,8 +20,6 @@ import {
   ChatMessageMetadata, StreamType,
 } from '@/components/chat/types';
 import { ModelList } from '@/components/chat/types/ai-model';
-import { EditorData } from '@appflowyinc/editor';
-import { AxiosInstance } from 'axios';
 
 export interface ChatSettings {
   name: string;

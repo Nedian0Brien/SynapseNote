@@ -1,10 +1,11 @@
-import { BlockType } from '@/application/types';
-import { EditorElementProps, SimpleTableCellBlockNode, SimpleTableNode } from '@/components/editor/editor.type';
-import { renderColor } from '@/utils/color';
 import { forwardRef, useMemo } from 'react';
 import { Editor, Element, NodeEntry } from 'slate';
 import { ReactEditor, useSlate } from 'slate-react';
+
+import { BlockType } from '@/application/types';
 import { MIN_WIDTH } from '@/components/editor/components/blocks/simple-table/const';
+import { EditorElementProps, SimpleTableCellBlockNode, SimpleTableNode } from '@/components/editor/editor.type';
+import { renderColor } from '@/utils/color';
 
 const SimpleTableCell =
   forwardRef<HTMLTableCellElement, EditorElementProps<SimpleTableCellBlockNode>>(({

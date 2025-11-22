@@ -1,10 +1,3 @@
-import { View } from '@/application/types';
-import { ReactComponent as TrashIcon } from '@/assets/icons/delete.svg';
-import { ReactComponent as RestoreIcon } from '@/assets/icons/restore.svg';
-import { useAppHandlers, useAppTrash, useCurrentWorkspaceId } from '@/components/app/app.hooks';
-import { NormalModal } from '@/components/_shared/modal';
-import { notify } from '@/components/_shared/notify';
-import TableSkeleton from '@/components/_shared/skeleton/TableSkeleton';
 import { Button, IconButton, TableContainer, Tooltip } from '@mui/material';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -14,6 +7,14 @@ import TableRow from '@mui/material/TableRow';
 import dayjs from 'dayjs';
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+
+import { View } from '@/application/types';
+import { ReactComponent as TrashIcon } from '@/assets/icons/delete.svg';
+import { ReactComponent as RestoreIcon } from '@/assets/icons/restore.svg';
+import { NormalModal } from '@/components/_shared/modal';
+import { notify } from '@/components/_shared/notify';
+import TableSkeleton from '@/components/_shared/skeleton/TableSkeleton';
+import { useAppHandlers, useAppTrash, useCurrentWorkspaceId } from '@/components/app/app.hooks';
 
 function TrashPage() {
   const { t } = useTranslation();

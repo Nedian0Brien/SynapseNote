@@ -1,21 +1,25 @@
+import { IconButton, Tooltip } from '@mui/material';
+import React, { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Transforms } from 'slate';
+import { ReactEditor, useSlateStatic } from 'slate-react';
+
 import { YjsEditor } from '@/application/slate-yjs';
 import { CustomEditor } from '@/application/slate-yjs/command';
 import { CONTAINER_BLOCK_TYPES } from '@/application/slate-yjs/command/const';
+import { filterValidNodes, findSlateEntryByBlockId, getSelectedPaths } from '@/application/slate-yjs/utils/editor';
 import { BlockType } from '@/application/types';
+import { ReactComponent as DragSvg } from '@/assets/icons/drag.svg';
+import { ReactComponent as AddSvg } from '@/assets/icons/plus.svg';
 import { usePanelContext } from '@/components/editor/components/panels/Panels.hooks';
 import { PanelType } from '@/components/editor/components/panels/PanelsContext';
 import ControlsMenu from '@/components/editor/components/toolbar/block-controls/ControlsMenu';
 import { getRangeRect } from '@/components/editor/components/toolbar/selection-toolbar/utils';
 import { useEditorContext } from '@/components/editor/EditorContext';
 import { isMac } from '@/utils/hotkeys';
-import { IconButton, Tooltip } from '@mui/material';
-import React, { useCallback, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { ReactComponent as AddSvg } from '@/assets/icons/plus.svg';
-import { ReactComponent as DragSvg } from '@/assets/icons/drag.svg';
-import { Transforms } from 'slate';
-import { ReactEditor, useSlateStatic } from 'slate-react';
-import { filterValidNodes, findSlateEntryByBlockId, getSelectedPaths } from '@/application/slate-yjs/utils/editor';
+
+
+
 
 function ControlActions({ setOpenMenu, blockId }: {
   blockId: string | null;

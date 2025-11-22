@@ -1,7 +1,8 @@
-import { BlockType } from '@/application/types';
 import React, { createContext, useState, useCallback, useContext } from 'react';
 import { ReactEditor } from 'slate-react';
+
 import { findSlateEntryByBlockId } from '@/application/slate-yjs/utils/editor';
+import { BlockType } from '@/application/types';
 
 export interface BlockPopoverContextType {
   type?: BlockType;

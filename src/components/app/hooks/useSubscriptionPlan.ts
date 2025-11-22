@@ -1,6 +1,7 @@
+import { useCallback, useEffect, useState } from 'react';
+
 import { Subscription, SubscriptionPlan } from '@/application/types';
 import { isOfficialHost } from '@/utils/subscription';
-import { useCallback, useEffect, useState } from 'react';
 
 /**
  * Hook to manage subscription plan loading and Pro feature detection

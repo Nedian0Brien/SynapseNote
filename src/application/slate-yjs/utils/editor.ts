@@ -944,22 +944,27 @@ export function getSelectionTexts(editor: ReactEditor) {
     const start = Range.start(selection);
     const end = Range.end(selection);
 
-    Array.from(
-      Editor.nodes(editor, {
-        at: {
-          anchor: start,
-          focus: end,
-        },
-        voids: true,
-        match: (n) => Text.isText(n),
-      })
-    ).forEach((match) => {
-      const node = match[0] as Element;
+    try {
+      Array.from(
+        Editor.nodes(editor, {
+          at: {
+            anchor: start,
+            focus: end,
+          },
+          voids: true,
+          match: (n) => Text.isText(n),
+        })
+      ).forEach((match) => {
+        const node = match[0] as Element;
 
-      if (Text.isText(node)) {
-        texts.push(node);
-      }
-    });
+        if (Text.isText(node)) {
+          texts.push(node);
+        }
+      });
+    } catch (error) {
+      console.warn('Error getting selection texts:', error);
+      return [];
+    }
   }
 
   return texts;

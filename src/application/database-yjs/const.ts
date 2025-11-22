@@ -1,6 +1,7 @@
-import { RowId, YDatabaseRow, YDoc, YjsDatabaseKey, YjsEditorKey } from '@/application/types';
-import { RowMetaKey } from '@/application/database-yjs/database.type';
 import { v5 as uuidv5, parse as uuidParse } from 'uuid';
+
+import { RowMetaKey } from '@/application/database-yjs/database.type';
+import { RowId, YDatabaseRow, YDoc, YjsDatabaseKey, YjsEditorKey } from '@/application/types';
 
 export const DEFAULT_ROW_HEIGHT = 36;
 export const MIN_COLUMN_WIDTH = 150;

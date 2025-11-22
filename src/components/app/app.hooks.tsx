@@ -5,6 +5,8 @@ import { Awareness } from 'y-protocols/awareness';
 
 import {
   AppendBreadcrumb,
+  CreateDatabaseViewPayload,
+  CreateDatabaseViewResponse,
   CreateFolderViewPayload,
   CreatePagePayload,
   CreateRowDoc,
@@ -26,13 +28,13 @@ import {
   View,
   ViewIconType,
 } from '@/application/types';
+import LoadingDots from '@/components/_shared/LoadingDots';
 import { findView } from '@/components/_shared/outline/utils';
 
 import { AuthInternalContext } from './contexts/AuthInternalContext';
 import { AppAuthLayer } from './layers/AppAuthLayer';
 import { AppBusinessLayer } from './layers/AppBusinessLayer';
 import { AppSyncLayer } from './layers/AppSyncLayer';
-import LoadingDots from '@/components/_shared/LoadingDots';
 
 // Main AppContext interface - kept identical to maintain backward compatibility
 export interface AppContextType {
@@ -78,6 +80,7 @@ export interface AppContextType {
   unpublish?: (viewId: string) => Promise<void>;
   refreshOutline?: () => Promise<void>;
   createFolderView?: (payload: CreateFolderViewPayload) => Promise<string>;
+  createDatabaseView?: (viewId: string, payload: CreateDatabaseViewPayload) => Promise<CreateDatabaseViewResponse>;
   generateAISummaryForRow?: (payload: GenerateAISummaryRowPayload) => Promise<string>;
   generateAITranslateForRow?: (payload: GenerateAITranslateRowPayload) => Promise<string>;
   loadDatabaseRelations?: () => Promise<DatabaseRelations | undefined>;
@@ -268,6 +271,7 @@ export function useAppHandlers() {
     unpublish: context.unpublish,
     refreshOutline: context.refreshOutline,
     createFolderView: context.createFolderView,
+    createDatabaseView: context.createDatabaseView,
     generateAISummaryForRow: context.generateAISummaryForRow,
     generateAITranslateForRow: context.generateAITranslateForRow,
     loadDatabaseRelations: context.loadDatabaseRelations,

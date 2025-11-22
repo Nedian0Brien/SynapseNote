@@ -1,10 +1,11 @@
-import { UIVariant, View } from '@/application/types';
-import SpaceIcon from '@/components/_shared/view-icon/SpaceIcon';
-import PublishIcon from '@/components/_shared/view-icon/PublishIcon';
 import { Tooltip } from '@mui/material';
 import React, { memo } from 'react';
 import { useTranslation } from 'react-i18next';
+
+import { UIVariant, View } from '@/application/types';
 import PageIcon from '@/components/_shared/view-icon/PageIcon';
+import PublishIcon from '@/components/_shared/view-icon/PublishIcon';
+import SpaceIcon from '@/components/_shared/view-icon/SpaceIcon';
 
 function OutlineItemContent({
   item,

@@ -1,3 +1,6 @@
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import { ReactEditor, useSlateStatic } from 'slate-react';
+
 import { YjsEditor } from '@/application/slate-yjs';
 import { findSlateEntryByBlockId } from '@/application/slate-yjs/utils/editor';
 import { BlockType } from '@/application/types';
@@ -6,8 +9,7 @@ import { usePopoverContext } from '@/components/editor/components/block-popover/
 import FileBlockPopoverContent from '@/components/editor/components/block-popover/FileBlockPopoverContent';
 import ImageBlockPopoverContent from '@/components/editor/components/block-popover/ImageBlockPopoverContent';
 import { useEditorContext } from '@/components/editor/EditorContext';
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
-import { ReactEditor, useSlateStatic } from 'slate-react';
+
 import MathEquationPopoverContent from './MathEquationPopoverContent';
 import VideoBlockPopoverContent from './VideoBlockPopoverContent';
 

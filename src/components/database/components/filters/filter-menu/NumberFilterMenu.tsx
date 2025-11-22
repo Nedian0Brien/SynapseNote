@@ -1,10 +1,11 @@
+import React, { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import { NumberFilter, NumberFilterCondition, useReadOnly } from '@/application/database-yjs';
 import { useUpdateFilter } from '@/application/database-yjs/dispatch';
 import FieldMenuTitle from '@/components/database/components/filters/filter-menu/FieldMenuTitle';
 import FilterConditionsSelect from '@/components/database/components/filters/filter-menu/FilterConditionsSelect';
 import { Input } from '@/components/ui/input';
-import React, { useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 
 function NumberFilterMenu ({ filter }: { filter: NumberFilter }) {
   const { t } = useTranslation();

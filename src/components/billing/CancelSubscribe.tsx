@@ -1,11 +1,12 @@
-import { SubscriptionPlan } from '@/application/types';
-import { useCurrentWorkspaceId } from '@/components/app/app.hooks';
-import { useService } from '@/components/main/app.hooks';
-import { NormalModal } from '@/components/_shared/modal';
-import { notify } from '@/components/_shared/notify';
 import { Divider } from '@mui/material';
 import React, { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+
+import { SubscriptionPlan } from '@/application/types';
+import { NormalModal } from '@/components/_shared/modal';
+import { notify } from '@/components/_shared/notify';
+import { useCurrentWorkspaceId } from '@/components/app/app.hooks';
+import { useService } from '@/components/main/app.hooks';
 
 function CancelSubscribe({ open, onClose, onCanceled }: { open: boolean; onClose: () => void; onCanceled: () => void }) {
   const { t } = useTranslation();

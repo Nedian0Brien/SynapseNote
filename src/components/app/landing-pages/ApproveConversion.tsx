@@ -5,13 +5,13 @@ import { useSearchParams } from 'react-router-dom';
 import { ERROR_CODE } from '@/application/constants';
 import { Workspace } from '@/application/types';
 import { ReactComponent as SuccessLogo } from '@/assets/icons/success_logo.svg';
-import { useService } from '@/components/main/app.hooks';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Progress } from '@/components/ui/progress';
 import { ErrorPage } from '@/components/_shared/landing-page/ErrorPage';
 import { InvalidLink } from '@/components/_shared/landing-page/InvalidLink';
 import LandingPage from '@/components/_shared/landing-page/LandingPage';
 import { NotInvitationAccount } from '@/components/_shared/landing-page/NotInvitationAccount';
+import { useService } from '@/components/main/app.hooks';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 
 export function ApproveConversion() {

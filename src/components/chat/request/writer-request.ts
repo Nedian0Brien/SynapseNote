@@ -1,3 +1,5 @@
+import { AxiosInstance } from 'axios';
+
 import {
   createInitialInstance,
   getAccessToken,
@@ -14,7 +16,6 @@ import {
   View,
 } from '@/components/chat/types';
 import { AvailableModel } from '@/components/chat/types/ai-model';
-import { AxiosInstance } from 'axios';
 
 export class WriterRequest {
   private axiosInstance: AxiosInstance = createInitialInstance();

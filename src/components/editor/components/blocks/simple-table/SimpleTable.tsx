@@ -1,9 +1,11 @@
-import { useSimpleTable } from '@/components/editor/components/blocks/simple-table/SimpleTable.hooks';
-import { EditorElementProps, SimpleTableNode, SimpleTableRowNode } from '@/components/editor/editor.type';
-import { useEditorContext } from '@/components/editor/EditorContext';
-import TableContainer from '@/components/editor/components/table-container/TableContainer';
 import isEqual from 'lodash-es/isEqual';
 import { forwardRef, memo, useMemo } from 'react';
+
+import { useSimpleTable } from '@/components/editor/components/blocks/simple-table/SimpleTable.hooks';
+import TableContainer from '@/components/editor/components/table-container/TableContainer';
+import { EditorElementProps, SimpleTableNode, SimpleTableRowNode } from '@/components/editor/editor.type';
+import { useEditorContext } from '@/components/editor/EditorContext';
+
 import './simple-table.scss';
 import { MIN_WIDTH } from '@/components/editor/components/blocks/simple-table/const';
 // import { useReadOnly } from 'slate-react';

@@ -12,8 +12,9 @@ import { notify } from '@/components/_shared/notify';
 import { usePopoverContext } from '@/components/editor/components/block-popover/BlockPopoverContext';
 import { EditorElementProps, ImageBlockNode } from '@/components/editor/editor.type';
 import { useEditorContext } from '@/components/editor/EditorContext';
-import { FileHandler } from '@/utils/file';
 import { constructFileUrl } from '@/components/editor/utils/file-url';
+import { FileHandler } from '@/utils/file';
+
 import ImageEmpty from './ImageEmpty';
 import ImageRender from './ImageRender';
 
