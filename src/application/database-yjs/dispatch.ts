@@ -51,6 +51,7 @@ import { getOptionsFromRow, initialDatabaseRow } from '@/application/database-yj
 import { generateRowMeta, getMetaIdMap, getMetaJSON, getRowKey } from '@/application/database-yjs/row_meta';
 import { useBoardLayoutSettings, useCalendarLayoutSetting, useDatabaseViewLayout, useFieldSelector, useFieldType } from '@/application/database-yjs/selector';
 import { executeOperations } from '@/application/slate-yjs/utils/yjs';
+import { applyYDoc } from '@/application/ydoc/apply';
 import {
   DatabaseViewLayout,
   DateFormat,
@@ -2261,7 +2262,7 @@ function useEnhanceCalendarLayoutByFieldExists() {
 }
 
 export function useAddDatabaseView() {
-  const { iidIndex, createDatabaseView } = useDatabaseContext();
+  const { iidIndex, createDatabaseView, databaseDoc } = useDatabaseContext();
 
   return useCallback(
     async (layout: DatabaseViewLayout) => {
@@ -2286,11 +2287,13 @@ export function useAddDatabaseView() {
         name,
       });
 
-      // Server returns both view_id and database_id
-      // The Yjs structure is automatically created and synchronized by the server
+      if (response?.database_update?.length) {
+        applyYDoc(databaseDoc, new Uint8Array(response.database_update));
+      }
+
       return response.view_id;
     },
-    [createDatabaseView, iidIndex]
+    [createDatabaseView, databaseDoc, iidIndex]
   );
 }
 

@@ -253,7 +253,6 @@ export function usePageOperations({ outline, loadOutline }: { outline?: View[], 
       try {
         const res = await service?.createDatabaseView(currentWorkspaceId, viewId, payload);
 
-        // Reload outline to include the newly created view
         await loadOutline?.(currentWorkspaceId, false);
         return res;
       } catch (e) {

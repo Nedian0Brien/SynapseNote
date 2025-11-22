@@ -919,7 +919,7 @@ export interface View {
   publish_timestamp?: string;
   parent_view_id?: string;
   access_level?: AccessLevel;
-  
+
 }
 
 export interface UpdatePublishConfigPayload {
@@ -1138,8 +1138,7 @@ export interface CreateDatabaseViewPayload {
 export interface CreateDatabaseViewResponse {
   view_id: string;
   database_id: string;
-  database_update: number[];  // Yjs update for database structure
-  folder_update: number[];     // Yjs update for folder structure (outline)
+  database_update?: number[];
 }
 
 export interface CreateSpacePayload {
