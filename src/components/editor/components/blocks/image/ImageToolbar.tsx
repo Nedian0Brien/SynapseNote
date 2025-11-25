@@ -15,7 +15,7 @@ import ActionButton from '@/components/editor/components/toolbar/selection-toolb
 import Align from '@/components/editor/components/toolbar/selection-toolbar/actions/Align';
 import { ImageBlockNode } from '@/components/editor/editor.type';
 import { useEditorContext } from '@/components/editor/EditorContext';
-import { copyTextToClipboard } from '@/utils/copy';
+import { fetchImageBlob } from '@/utils/image';
 
 function ImageToolbar({ node }: { node: ImageBlockNode }) {
   const editor = useSlateStatic() as YjsEditor;
@@ -27,9 +27,21 @@ function ImageToolbar({ node }: { node: ImageBlockNode }) {
     setOpenPreview(true);
   };
 
-  const onCopy = async () => {
-    await copyTextToClipboard(node.data.url || '');
-    notify.success(t('document.plugins.image.copiedToPasteBoard'));
+  const onCopyImage = async () => {
+    const blob = await fetchImageBlob(node.data.url || '');
+
+    if (blob) {
+      try {
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            [blob.type]: blob,
+          }),
+        ]);
+        notify.success(t('document.plugins.image.copiedToPasteBoard'));
+      } catch (error) {
+        notify.error('Failed to copy image');
+      }
+    }
   };
 
   const onDelete = () => {
@@ -45,7 +57,7 @@ function ImageToolbar({ node }: { node: ImageBlockNode }) {
           </ActionButton>
         )}
 
-        <ActionButton onClick={onCopy} tooltip={t('button.copyLinkOriginal')}>
+        <ActionButton onClick={onCopyImage} tooltip={t('button.copy')} data-testid="copy-image-button">
           <CopyIcon />
         </ActionButton>
 
