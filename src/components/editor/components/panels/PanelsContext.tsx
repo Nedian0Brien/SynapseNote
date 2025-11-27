@@ -199,8 +199,9 @@ export const PanelProvider = ({ children, editor }: { children: React.ReactNode;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!openRef.current) return;
       const { key } = e;
+
+      if (!openRef.current) return;
 
       switch (key) {
         case 'Escape':
@@ -209,6 +210,12 @@ export const PanelProvider = ({ children, editor }: { children: React.ReactNode;
           break;
         case 'ArrowLeft':
         case 'ArrowRight': {
+          // Allow Shift+Arrow for text selection even when panel is open
+          if (e.shiftKey) {
+            // Let the browser handle Shift+Arrow for text selection
+            return;
+          }
+
           e.preventDefault();
           break;
         }

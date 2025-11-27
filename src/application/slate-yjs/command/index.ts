@@ -755,6 +755,14 @@ export const CustomEditor = {
       return;
     }
 
+    // Skip focus and selection for database blocks (Grid, Board, Calendar)
+    // as they open in a modal and don't need cursor positioning
+    const isDatabaseBlock = [BlockType.GridBlock, BlockType.BoardBlock, BlockType.CalendarBlock].includes(type);
+
+    if (isDatabaseBlock) {
+      return newBlockId;
+    }
+
     try {
       const entry = findSlateEntryByBlockId(editor, newBlockId);
 

@@ -2,6 +2,7 @@ import { Button } from '@mui/material';
 import { PopoverOrigin } from '@mui/material/Popover/Popover';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Transforms } from 'slate';
 import { ReactEditor, useSlateStatic } from 'slate-react';
 
 import { YjsEditor } from '@/application/slate-yjs';
@@ -213,6 +214,7 @@ export function SlashPanel({
   const [transformOrigin, setTransformOrigin] = React.useState<PopoverOrigin | undefined>(undefined);
   const selectedOptionRef = React.useRef<string | null>(null);
   const { openPopover } = usePopoverContext();
+
   const open = useMemo(() => {
     return isPanelOpen(PanelType.Slash);
   }, [isPanelOpen]);
@@ -296,13 +298,21 @@ export function SlashPanel({
       }
 
       if (newBlockId && isEmbedBlockTypes(type)) {
-        const entry = findSlateEntryByBlockId(editor, newBlockId);
+        // Skip selection for database blocks (Grid, Board, Calendar) as they open in a modal
+        // and don't need cursor positioning. Explicitly deselect to prevent Slate from scrolling.
+        const isDatabaseBlock = [BlockType.GridBlock, BlockType.BoardBlock, BlockType.CalendarBlock].includes(type);
 
-        if (!entry) return;
+        if (isDatabaseBlock) {
+          Transforms.deselect(editor);
+        } else {
+          const entry = findSlateEntryByBlockId(editor, newBlockId);
 
-        const [, path] = entry;
+          if (!entry) return;
 
-        editor.select(editor.start(path));
+          const [, path] = entry;
+
+          editor.select(editor.start(path));
+        }
       }
 
       if ([BlockType.FileBlock, BlockType.ImageBlock, BlockType.EquationBlock, BlockType.VideoBlock].includes(type)) {
@@ -711,6 +721,23 @@ export function SlashPanel({
         keywords: ['grid', 'table', 'database'],
         onClick: async () => {
           if (!viewId || !addPage || !openPageModal) return;
+
+          let scrollContainer: Element | null = null;
+
+          try {
+            const domNode = ReactEditor.toDOMNode(editor, editor);
+
+            scrollContainer = domNode.closest('.appflowy-scroll-container');
+          } catch (e) {
+            // Ignore
+          }
+
+          if (!scrollContainer) {
+            scrollContainer = document.querySelector('.appflowy-scroll-container');
+          }
+          
+          const savedScrollTop = scrollContainer?.scrollTop;
+
           try {
             const newViewId = await addPage(viewId, {
               layout: ViewLayout.Grid,
@@ -723,6 +750,18 @@ export function SlashPanel({
             } as DatabaseNodeData);
 
             openPageModal(newViewId);
+
+            if (savedScrollTop !== undefined) {
+              const restoreScroll = () => {
+                const currentContainer = document.querySelector('.appflowy-scroll-container');
+
+                if (currentContainer) {
+                  currentContainer.scrollTop = savedScrollTop;
+                }
+              };
+
+              setTimeout(restoreScroll, 50);
+            }
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } catch (e: any) {
             notify.error(e.message);
@@ -745,6 +784,23 @@ export function SlashPanel({
         keywords: ['board', 'kanban', 'database'],
         onClick: async () => {
           if (!viewId || !addPage || !openPageModal) return;
+
+          let scrollContainer: Element | null = null;
+
+          try {
+            const domNode = ReactEditor.toDOMNode(editor, editor);
+
+            scrollContainer = domNode.closest('.appflowy-scroll-container');
+          } catch (e) {
+            // Ignore
+          }
+
+          if (!scrollContainer) {
+            scrollContainer = document.querySelector('.appflowy-scroll-container');
+          }
+          
+          const savedScrollTop = scrollContainer?.scrollTop;
+
           try {
             const newViewId = await addPage(viewId, {
               layout: ViewLayout.Board,
@@ -757,6 +813,18 @@ export function SlashPanel({
             } as DatabaseNodeData);
 
             openPageModal(newViewId);
+
+            if (savedScrollTop !== undefined) {
+              const restoreScroll = () => {
+                const currentContainer = document.querySelector('.appflowy-scroll-container');
+
+                if (currentContainer) {
+                  currentContainer.scrollTop = savedScrollTop;
+                }
+              };
+
+              setTimeout(restoreScroll, 50);
+            }
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } catch (e: any) {
             notify.error(e.message);
@@ -779,6 +847,23 @@ export function SlashPanel({
         keywords: ['calendar', 'date', 'database'],
         onClick: async () => {
           if (!viewId || !addPage || !openPageModal) return;
+
+          let scrollContainer: Element | null = null;
+
+          try {
+            const domNode = ReactEditor.toDOMNode(editor, editor);
+
+            scrollContainer = domNode.closest('.appflowy-scroll-container');
+          } catch (e) {
+            // Ignore
+          }
+
+          if (!scrollContainer) {
+            scrollContainer = document.querySelector('.appflowy-scroll-container');
+          }
+          
+          const savedScrollTop = scrollContainer?.scrollTop;
+
           try {
             const newViewId = await addPage(viewId, {
               layout: ViewLayout.Calendar,
@@ -791,6 +876,18 @@ export function SlashPanel({
             } as DatabaseNodeData);
 
             openPageModal(newViewId);
+
+            if (savedScrollTop !== undefined) {
+              const restoreScroll = () => {
+                const currentContainer = document.querySelector('.appflowy-scroll-container');
+
+                if (currentContainer) {
+                  currentContainer.scrollTop = savedScrollTop;
+                }
+              };
+
+              setTimeout(restoreScroll, 50);
+            }
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } catch (e: any) {
             notify.error(e.message);
@@ -938,6 +1035,7 @@ export function SlashPanel({
     setEmojiPosition,
     searchText,
     handleOpenLinkedDatabasePicker,
+    editor,
   ]);
 
   const resultLength = options.length;
@@ -947,10 +1045,23 @@ export function SlashPanel({
     if (!selectedOption) return;
     const el = optionsRef.current?.querySelector(`[data-option-key="${selectedOption}"]`) as HTMLButtonElement | null;
 
-    el?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'nearest',
-    });
+    // Scroll the option into view within the menu only, without affecting parent scroll containers
+    if (el && optionsRef.current) {
+      const menu = optionsRef.current;
+      const elOffsetTop = el.offsetTop;
+      const elHeight = el.offsetHeight;
+      const menuScrollTop = menu.scrollTop;
+      const menuHeight = menu.clientHeight;
+
+      // Scroll the menu container (not the entire page) to show the selected option
+      if (elOffsetTop < menuScrollTop) {
+        // Element is above visible area
+        menu.scrollTop = elOffsetTop;
+      } else if (elOffsetTop + elHeight > menuScrollTop + menuHeight) {
+        // Element is below visible area
+        menu.scrollTop = elOffsetTop + elHeight - menuHeight;
+      }
+    }
   }, [selectedOption]);
 
   useEffect(() => {
