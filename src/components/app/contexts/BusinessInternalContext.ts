@@ -8,11 +8,11 @@ import {
   LoadViewMeta,
   CreateRowDoc,
   CreatePagePayload,
+  CreatePageResponse,
   UpdatePagePayload,
   ViewIconType,
   CreateSpacePayload,
   UpdateSpacePayload,
-  CreateFolderViewPayload,
   CreateDatabaseViewPayload,
   CreateDatabaseViewResponse,
   GenerateAISummaryRowPayload,
@@ -51,7 +51,7 @@ export interface BusinessInternalContextType {
   loadViews?: (variant?: UIVariant) => Promise<View[] | undefined>;
 
   // Page operations
-  addPage?: (parentId: string, payload: CreatePagePayload) => Promise<string>;
+  addPage?: (parentId: string, payload: CreatePagePayload) => Promise<CreatePageResponse>;
   deletePage?: (viewId: string) => Promise<void>;
   updatePage?: (viewId: string, payload: UpdatePagePayload) => Promise<void>;
   updatePageIcon?: (viewId: string, icon: { ty: ViewIconType; value: string }) => Promise<void>;
@@ -65,7 +65,6 @@ export interface BusinessInternalContextType {
   // Space operations
   createSpace?: (payload: CreateSpacePayload) => Promise<string>;
   updateSpace?: (payload: UpdateSpacePayload) => Promise<void>;
-  createFolderView?: (payload: CreateFolderViewPayload) => Promise<string>;
   createDatabaseView?: (viewId: string, payload: CreateDatabaseViewPayload) => Promise<CreateDatabaseViewResponse>;
 
   // File operations

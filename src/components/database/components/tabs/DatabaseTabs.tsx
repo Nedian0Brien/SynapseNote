@@ -15,12 +15,26 @@ export interface DatabaseTabBarProps {
   selectedViewId?: string;
   setSelectedViewId?: (viewId: string) => void;
   viewName?: string;
-  iidIndex: string;
+  /**
+   * The database's page ID in the folder/outline structure.
+   * This is the main entry point for the database and remains constant.
+   */
+  databasePageId: string;
   hideConditions?: boolean;
+  /**
+   * Callback when a new view is added to the database.
+   * Used by embedded databases to update state immediately before Yjs sync.
+   */
+  onViewAddedToDatabase?: (viewId: string) => void;
+  /**
+   * Callback when view IDs change (views added or removed).
+   * Used to update the block data in embedded database blocks.
+   */
+  onViewIdsChanged?: (viewIds: string[]) => void;
 }
 
 export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
-  ({ viewIds, iidIndex, selectedViewId, setSelectedViewId }, ref) => {
+  ({ viewIds, databasePageId, selectedViewId, setSelectedViewId, onViewAddedToDatabase, onViewIdsChanged }, ref) => {
     const views = useDatabase()?.get(YjsDatabaseKey.views);
     const context = useDatabaseContext();
     const { loadViewMeta, readOnly, showActions = true, eventEmitter } = context;
@@ -37,7 +51,7 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
     const reloadView = useCallback(async () => {
       if (loadViewMeta) {
         try {
-          const meta = await loadViewMeta(iidIndex);
+          const meta = await loadViewMeta(databasePageId);
 
           setMeta(meta);
           return meta;
@@ -46,11 +60,11 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
           // do nothing
         }
       }
-    }, [iidIndex, loadViewMeta]);
+    }, [databasePageId, loadViewMeta]);
 
     useEffect(() => {
       const handleOutlineLoaded = (outline: View[]) => {
-        const view = findView(outline, iidIndex);
+        const view = findView(outline, databasePageId);
 
         if (view) {
           setMeta(view);
@@ -66,12 +80,12 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
           eventEmitter.off(APP_EVENTS.OUTLINE_LOADED, handleOutlineLoaded);
         }
       };
-    }, [iidIndex, eventEmitter, reloadView]);
+    }, [databasePageId, eventEmitter, reloadView]);
 
     const renameView = useMemo(() => {
-      if (renameViewId === iidIndex) return meta;
+      if (renameViewId === databasePageId) return meta;
       return meta?.children.find((v) => v.view_id === renameViewId);
-    }, [iidIndex, meta, renameViewId]);
+    }, [databasePageId, meta, renameViewId]);
 
     const visibleViewIds = useMemo(() => {
       return viewIds.filter((viewId) => {
@@ -126,7 +140,7 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
             viewIds={viewIds}
             selectedViewId={selectedViewId}
             setSelectedViewId={setSelectedViewId}
-            iidIndex={iidIndex}
+            databasePageId={databasePageId}
             views={views}
             readOnly={!!readOnly}
             visibleViewIds={visibleViewIds}
@@ -137,6 +151,22 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
             pendingScrollToViewId={pendingScrollToViewId}
             setPendingScrollToViewId={setPendingScrollToViewId}
             onViewAdded={(viewId) => {
+              // For embedded databases, first update visibleViewIds immediately
+              // This ensures the tab is rendered before we try to select it
+              if (onViewAddedToDatabase) {
+                onViewAddedToDatabase(viewId);
+              }
+
+              // Update the block data with the new view ID BEFORE selecting
+              // This ensures allowedViewIds includes the new view when selection happens
+              if (onViewIdsChanged) {
+                const newViewIds = [...viewIds, viewId];
+
+                onViewIdsChanged(newViewIds);
+              }
+
+              // Always call setSelectedViewId to trigger the view change flow
+              // This handles both embedded and standalone databases
               if (setSelectedViewId) {
                 setSelectedViewId(viewId);
               }
@@ -182,6 +212,13 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
             }
 
             void reloadView();
+
+            // Update the block data with the view ID removed
+            if (onViewIdsChanged && deleteConfirmOpen) {
+              const newViewIds = viewIds.filter((id) => id !== deleteConfirmOpen);
+
+              onViewIdsChanged(newViewIds);
+            }
           }}
         />
       </div>

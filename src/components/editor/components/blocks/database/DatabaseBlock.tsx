@@ -1,5 +1,5 @@
 import { forwardRef, memo, useCallback, useEffect, useRef, useState } from 'react';
-import { Element } from 'slate';
+import { Element, Transforms } from 'slate';
 import { ReactEditor, useReadOnly, useSlateStatic } from 'slate-react';
 
 import { DatabaseContextState } from '@/application/database-yjs';
@@ -10,10 +10,13 @@ import { useEditorContext } from '@/components/editor/EditorContext';
 import { DatabaseContent } from './components/DatabaseContent';
 import { useDatabaseLoading } from './hooks/useDatabaseLoading';
 import { useResizePositioning } from './hooks/useResizePositioning';
+import { addViewId, getViewIds, removeViewId } from './utils/databaseBlockUtils';
 
 export const DatabaseBlock = memo(
   forwardRef<HTMLDivElement, EditorElementProps<DatabaseNode>>(({ node, children, ...attributes }, ref) => {
-    const viewId = node.data.view_id;
+    const viewIds = getViewIds(node.data);
+    const viewId = viewIds.length > 0 ? viewIds[0] : '';
+    const allowedViewIds = Array.isArray(node.data?.view_ids) ? node.data.view_ids : undefined;
     const context = useEditorContext();
     const workspaceId = context.workspaceId;
     const navigateToView = context?.navigateToView;
@@ -25,8 +28,9 @@ export const DatabaseBlock = memo(
     const editor = useSlateStatic();
     const readOnly = useReadOnly() || editor.isElementReadOnly(node as unknown as Element);
 
-    const { notFound, doc, selectedViewId, visibleViewIds, iidName, onChangeView, loadViewMeta } = useDatabaseLoading({
+    const { notFound, doc, selectedViewId, visibleViewIds, databaseName, onChangeView, onViewAdded, loadViewMeta } = useDatabaseLoading({
       viewId,
+      allowedViewIds,
       loadView,
       loadViewMeta: context?.loadViewMeta,
     });
@@ -112,6 +116,58 @@ export const DatabaseBlock = memo(
       [navigateToView, viewId]
     );
 
+    /**
+     * Callback to update view_ids in the block data when views are added or removed.
+     * Similar to Flutter's onViewIdsChanged callback in database_view_widget.dart.
+     */
+    const handleViewIdsChanged = useCallback(
+      (currentViewIds: string[]) => {
+        if (readOnly) return;
+
+        const existingViewIds = getViewIds(node.data);
+
+        // Find new view IDs (additions)
+        const addedViewIds = currentViewIds.filter((id) => !existingViewIds.includes(id));
+
+        // Find removed view IDs (deletions)
+        const removedViewIds = existingViewIds.filter((id) => !currentViewIds.includes(id));
+
+        if (addedViewIds.length === 0 && removedViewIds.length === 0) return;
+
+        console.debug('[DatabaseBlock] View IDs changed', {
+          addedViewIds,
+          removedViewIds,
+          existingViewIds,
+          currentViewIds,
+        });
+
+        // Build the new data object
+        let updatedData = { ...node.data };
+
+        for (const id of addedViewIds) {
+          updatedData = addViewId(updatedData, id);
+        }
+
+        for (const id of removedViewIds) {
+          updatedData = removeViewId(updatedData, id);
+        }
+
+        // Update the Slate node
+        try {
+          const path = ReactEditor.findPath(editor, node as unknown as Element);
+
+          Transforms.setNodes(
+            editor,
+            { data: updatedData },
+            { at: path }
+          );
+        } catch (e) {
+          console.error('[DatabaseBlock] Error updating view_ids:', e);
+        }
+      },
+      [editor, node, readOnly]
+    );
+
     const { paddingStart, paddingEnd, width } = useResizePositioning({
       editor,
       node: node as unknown as Element,
@@ -147,6 +203,7 @@ export const DatabaseBlock = memo(
           className='container-bg relative my-1 flex w-full select-none flex-col'
         >
           <DatabaseContent
+            baseViewId={viewId}
             selectedViewId={selectedViewId}
             hasDatabase={hasDatabase}
             notFound={notFound}
@@ -155,24 +212,35 @@ export const DatabaseBlock = memo(
             width={width}
             doc={doc}
             workspaceId={workspaceId}
-            viewId={viewId}
             createRowDoc={createRowDoc}
             loadView={loadView}
             navigateToView={navigateToView}
             onOpenRowPage={handleNavigateToRow}
             loadViewMeta={loadViewMeta}
-            iidName={iidName}
+            databaseName={databaseName}
             visibleViewIds={visibleViewIds}
             onChangeView={onChangeView}
+            onViewAdded={onViewAdded}
             onRendered={handleRendered}
-            // eslint-disable-next-line
-            context={context as DatabaseContextState}
+            onViewIdsChanged={handleViewIdsChanged}
+            // EditorContextState shares common fields with DatabaseContextState but not all
+            // The missing fields (databaseDoc, databasePageId, activeViewId, rowDocMap) are
+            // explicitly set by DatabaseContent via baseViewId, selectedViewId, and doc props
+            context={context as unknown as DatabaseContextState}
           />
         </div>
       </div>
     );
   }),
-  (prevProps, nextProps) => prevProps.node.data.view_id === nextProps.node.data.view_id
+  (prevProps, nextProps) => {
+    const prevViewIds = getViewIds(prevProps.node.data);
+    const nextViewIds = getViewIds(nextProps.node.data);
+
+    return (
+      prevViewIds.length === nextViewIds.length &&
+      prevViewIds.every((id, index) => id === nextViewIds[index])
+    );
+  }
 );
 
 export default DatabaseBlock;

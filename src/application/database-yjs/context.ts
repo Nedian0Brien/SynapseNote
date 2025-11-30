@@ -6,7 +6,6 @@ import { createContext, useContext } from 'react';
 import {
   CreateDatabaseViewPayload,
   CreateDatabaseViewResponse,
-  CreateFolderViewPayload,
   CreateRowDoc,
   DatabaseRelations,
   DateFormat,
@@ -36,8 +35,18 @@ import { useCurrentUser } from '@/components/main/app.hooks';
 export interface DatabaseContextState {
   readOnly: boolean;
   databaseDoc: YDoc;
-  iidIndex: string;
-  viewId: string;
+  /**
+   * The database's page ID in the folder/outline structure.
+   * This is the main entry point for the database and remains constant
+   * regardless of which view tab is currently selected.
+   */
+  databasePageId: string;
+  /**
+   * The currently active/selected view tab ID (Grid, Board, or Calendar).
+   * Changes when the user switches between different view tabs.
+   * Defaults to databasePageId when no specific tab is selected via URL.
+   */
+  activeViewId: string;
   rowDocMap: Record<RowId, YDoc> | null;
   isDatabaseRowPage?: boolean;
   paddingStart?: number;
@@ -52,7 +61,6 @@ export interface DatabaseContextState {
   onRendered?: () => void;
   showActions?: boolean;
   workspaceId: string;
-  createFolderView?: (payload: CreateFolderViewPayload) => Promise<string>;
   createDatabaseView?: (viewId: string, payload: CreateDatabaseViewPayload) => Promise<CreateDatabaseViewResponse>;
   updatePage?: (viewId: string, payload: UpdatePagePayload) => Promise<void>;
   deletePage?: (viewId: string) => Promise<void>;
@@ -132,10 +140,14 @@ export const useRowData = (rowId: string) => {
   return useRow(rowId)?.get(YjsEditorKey.database_row) as YDatabaseRow;
 };
 
+/**
+ * Returns the currently active view tab ID.
+ * This is the view that is currently being displayed (Grid, Board, or Calendar).
+ */
 export const useDatabaseViewId = () => {
   const context = useDatabaseContext();
 
-  return context?.viewId;
+  return context?.activeViewId;
 };
 
 export const useReadOnly = () => {

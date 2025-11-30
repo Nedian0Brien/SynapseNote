@@ -14,7 +14,7 @@ import {
   UIVariant,
   View,
   CreatePagePayload,
-  CreateFolderViewPayload,
+  CreatePageResponse,
   CreateDatabaseViewPayload,
   CreateDatabaseViewResponse,
   TextCount,
@@ -64,11 +64,10 @@ export interface EditorContextState {
   removeDecorate?: (type: string) => void;
   selectedBlockIds?: string[];
   setSelectedBlockIds?: React.Dispatch<React.SetStateAction<string[]>>;
-  addPage?: (parentId: string, payload: CreatePagePayload) => Promise<string>;
+  addPage?: (parentId: string, payload: CreatePagePayload) => Promise<CreatePageResponse>;
   deletePage?: (viewId: string) => Promise<void>;
   openPageModal?: (viewId: string) => void;
   loadViews?: (variant?: UIVariant) => Promise<View[] | undefined>;
-  createFolderView?: (payload: CreateFolderViewPayload) => Promise<string>;
   createDatabaseView?: (viewId: string, payload: CreateDatabaseViewPayload) => Promise<CreateDatabaseViewResponse>;
   onWordCountChange?: (viewId: string, props: TextCount) => void;
   uploadFile?: (file: File) => Promise<string>;
@@ -85,6 +84,7 @@ export interface EditorContextState {
   toggleCollapsed?: (blockId: string) => void;
   databaseRelations?: DatabaseRelations;
   getViewIdFromDatabaseId?: (databaseId: string) => Promise<string | null>;
+  loadDatabaseRelations?: () => Promise<DatabaseRelations | undefined>;
 }
 
 export const EditorContext = createContext<EditorContextState>({

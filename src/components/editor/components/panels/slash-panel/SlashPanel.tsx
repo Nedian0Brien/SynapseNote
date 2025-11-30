@@ -14,7 +14,6 @@ import {
   BlockData,
   BlockType,
   CalloutBlockData,
-  DatabaseNodeData,
   HeadingBlockData,
   ImageBlockData,
   SubpageNodeData,
@@ -60,6 +59,7 @@ import PageIcon from '@/components/_shared/view-icon/PageIcon';
 import { useAIWriter } from '@/components/chat';
 import { SearchInput } from '@/components/chat/components/ui/search-input';
 import { usePopoverContext } from '@/components/editor/components/block-popover/BlockPopoverContext';
+import { createDatabaseNodeData } from '@/components/editor/components/blocks/database/utils/databaseBlockUtils';
 import { usePanelContext } from '@/components/editor/components/panels/Panels.hooks';
 import { PanelType } from '@/components/editor/components/panels/PanelsContext';
 import { getRangeRect } from '@/components/editor/components/toolbar/selection-toolbar/utils';
@@ -185,14 +185,12 @@ export function SlashPanel({
   const {
     addPage,
     openPageModal,
-    viewId,
+    viewId: documentId,
     loadViewMeta,
     getMoreAIContext,
-    createFolderView,
     createDatabaseView,
-    getViewIdFromDatabaseId,
     loadViews,
-    databaseRelations,
+    loadDatabaseRelations,
   } = useEditorContext();
   const [viewName, setViewName] = useState('');
   const [linkedPicker, setLinkedPicker] = useState<{
@@ -220,12 +218,14 @@ export function SlashPanel({
   }, [isPanelOpen]);
 
   useEffect(() => {
-    if (viewId && open) {
-      void loadViewMeta?.(viewId).then((view) => {
-        setViewName(view.name);
+    if (documentId && open) {
+      void loadViewMeta?.(documentId).then((view) => {
+        if (view) {
+          setViewName(view.name);
+        }
       });
     }
-  }, [viewId, loadViewMeta, open]);
+  }, [documentId, loadViewMeta, open]);
 
   const getBeforeContent = useCallback(() => {
     const { selection } = editor;
@@ -356,7 +356,6 @@ export function SlashPanel({
       const flatViews = flattenViews(views);
 
       // Identify databases by their layout type (Grid, Board, Calendar)
-      // This ensures newly created databases appear even if databaseRelations is stale
       // ViewLayout enum values: Grid=1, Board=2, Calendar=3
       const databaseLayouts = [ViewLayout.Grid, ViewLayout.Board, ViewLayout.Calendar];
       const databaseViews = flatViews.filter((view) => {
@@ -364,44 +363,17 @@ export function SlashPanel({
         return databaseLayouts.includes(view.layout);
       });
 
-      // Use databaseRelations if available to get databaseId, otherwise use view_id
-      let relations = databaseRelations;
-
-      if ((!relations || Object.keys(relations).length === 0) && loadViewMeta && viewId) {
-        try {
-          const meta = await loadViewMeta(viewId);
-
-          relations = meta?.database_relations;
-        } catch (e) {
-          console.error(e);
-        }
-      }
-
-      const options: DatabaseOption[] = databaseViews.map((view) => {
-        // Try to find databaseId from relations, otherwise use view_id
-        let databaseId = view.view_id;
-
-        if (relations) {
-          // Find the databaseId that maps to this view_id
-          const relationEntry = Object.entries(relations).find(([_, baseViewId]) => baseViewId === view.view_id);
-
-          if (relationEntry) {
-            databaseId = relationEntry[0];
-          }
-        }
-
-        return {
-          databaseId,
-          view,
-        };
-      });
+      // Build options - databaseId will be fetched from viewMeta when user selects
+      // The outline API doesn't include database_relations, so we set empty string here
+      const options: DatabaseOption[] = databaseViews.map((view) => ({
+        databaseId: '', // Will be fetched from loadViewMeta in handleSelectDatabase
+        view,
+      }));
 
       console.debug('[SlashPanel] loadDatabasesForPicker:', {
         totalViews: flatViews.length,
         databaseViews: databaseViews.length,
         databaseViewNames: databaseViews.map(v => v.name),
-        optionsCount: options.length,
-        usingRelations: !!relations && Object.keys(relations).length > 0,
       });
 
       setDatabaseOptions(options);
@@ -417,11 +389,11 @@ export function SlashPanel({
     } finally {
       setDatabaseLoading(false);
     }
-  }, [databaseRelations, loadViewMeta, loadViews, viewId]);
+  }, [loadViews]);
 
   const handleOpenLinkedDatabasePicker = useCallback(
     async (layout: ViewLayout, optionKey: string) => {
-      if (!viewId || !createFolderView) return;
+      if (!documentId || !createDatabaseView) return;
       const rect = getRangeRect();
 
       if (!rect) return;
@@ -448,14 +420,14 @@ export function SlashPanel({
         layout,
       });
     },
-    [createFolderView, handleSelectOption, loadDatabasesForPicker, t, viewId]
+    [createDatabaseView, handleSelectOption, loadDatabasesForPicker, t, documentId]
   );
 
   const handleSelectDatabase = useCallback(
     async (targetViewId: string) => {
       if (!linkedPicker) return;
 
-      if (!createDatabaseView || !viewId) {
+      if (!createDatabaseView || !documentId) {
         notify.error(
           t('document.slashMenu.linkedDatabase.actionUnavailable', {
             defaultValue: 'Linking databases is not available right now',
@@ -473,11 +445,80 @@ export function SlashPanel({
       }
 
       try {
-        const baseViewId =
-          (await getViewIdFromDatabaseId?.(option.databaseId)) || option.view.view_id;
+        const databaseViewId = option.view.view_id;
         const baseName =
           option.view.name ||
           t('document.view.placeholder', { defaultValue: 'Untitled' });
+
+        // Fetch the view's metadata to get the correct database_id
+        // The outline API doesn't include database_relations, so we MUST fetch it here
+        if (!loadViewMeta) {
+          notify.error(t('document.slashMenu.linkedDatabase.actionUnavailable', {
+            defaultValue: 'Unable to fetch database information',
+          }));
+          return;
+        }
+
+        const viewMeta = await loadViewMeta(databaseViewId);
+
+        console.debug('[SlashPanel] viewMeta for database:', {
+          viewId: databaseViewId,
+          viewName: baseName,
+          database_relations: viewMeta?.database_relations,
+          fullMeta: viewMeta,
+        });
+
+        if (!viewMeta?.database_relations) {
+          notify.error(t('document.slashMenu.linkedDatabase.actionUnavailable', {
+            defaultValue: 'Database relations not found',
+          }));
+          return;
+        }
+
+        // database_relations is Record<DatabaseId, ViewId>
+        // Find the entry where the value (base view id) matches this view
+        let relationEntry = Object.entries(viewMeta.database_relations).find(
+          ([_, baseViewId]) => baseViewId === databaseViewId
+        );
+
+        // If not found, try refreshing database relations (for newly created databases)
+        if (!relationEntry && loadDatabaseRelations) {
+          console.debug('[SlashPanel] database_id not found in cache, refreshing relations...', {
+            viewId: databaseViewId,
+          });
+
+          // Refresh and get fresh relations directly (don't rely on React state update)
+          const freshRelations = await loadDatabaseRelations();
+
+          console.debug('[SlashPanel] Fresh relations after refresh:', {
+            viewId: databaseViewId,
+            freshRelations,
+          });
+
+          if (freshRelations) {
+            relationEntry = Object.entries(freshRelations).find(
+              ([_, baseViewId]) => baseViewId === databaseViewId
+            );
+          }
+        }
+
+        if (!relationEntry) {
+          console.error('[SlashPanel] Could not find database_id for view:', {
+            viewId: databaseViewId,
+            database_relations: viewMeta.database_relations,
+          });
+          notify.error(t('document.slashMenu.linkedDatabase.actionUnavailable', {
+            defaultValue: 'Could not find database ID',
+          }));
+          return;
+        }
+
+        const databaseId = relationEntry[0];
+
+        console.debug('[SlashPanel] Found database_id:', {
+          viewId: databaseViewId,
+          databaseId,
+        });
 
         const prefix = (() => {
           switch (linkedPicker.layout) {
@@ -499,24 +540,26 @@ export function SlashPanel({
         })();
         const referencedName = prefix ? `${prefix} ${baseName}` : baseName;
 
-        // Use new createDatabaseView endpoint - server handles all Yjs initialization
-        const response = await createDatabaseView(baseViewId, {
+        const response = await createDatabaseView(documentId, {
+          parent_view_id: documentId,
+          database_id: databaseId,
           layout: linkedPicker.layout,
           name: referencedName,
+          embedded: true,
         });
 
-        console.debug('[SlashPanel] created linked database', {
-          optionKey: linkedPicker.layout,
-          baseViewId,
-          databaseId: option.databaseId,
+        console.debug('[SlashPanel] {} created linked database', {
+          documentId,
+          databaseViewId,
           newViewId: response.view_id,
           referencedName,
         });
 
-        turnInto(blockType, {
-          view_id: response.view_id,
-          parent_id: baseViewId,
-        } as DatabaseNodeData);
+        turnInto(blockType, createDatabaseNodeData({
+          parentId: documentId,
+          viewIds: [response.view_id],
+          databaseId: response.database_id,
+        }));
       } catch (e) {
         const error = e as Error;
 
@@ -528,12 +571,13 @@ export function SlashPanel({
     [
       linkedPicker,
       createDatabaseView,
-      viewId,
+      documentId,
       databaseOptions,
       blockTypeByLayout,
-      getViewIdFromDatabaseId,
       turnInto,
       t,
+      loadViewMeta,
+      loadDatabaseRelations,
     ]
   );
 
@@ -697,17 +741,17 @@ export function SlashPanel({
         icon: <DocumentIcon />,
         keywords: ['document', 'doc', 'page', 'create', 'add'],
         onClick: async () => {
-          if (!viewId || !addPage || !openPageModal) return;
+          if (!documentId || !addPage || !openPageModal) return;
           try {
-            const newViewId = await addPage(viewId, {
+            const response = await addPage(documentId, {
               layout: ViewLayout.Document,
             });
 
             turnInto(BlockType.SubpageBlock, {
-              view_id: newViewId,
+              view_id: response.view_id,
             } as SubpageNodeData);
 
-            openPageModal(newViewId);
+            openPageModal(response.view_id);
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } catch (e: any) {
             notify.error(e.message);
@@ -720,7 +764,7 @@ export function SlashPanel({
         icon: <GridIcon />,
         keywords: ['grid', 'table', 'database'],
         onClick: async () => {
-          if (!viewId || !addPage || !openPageModal) return;
+          if (!documentId || !addPage || !openPageModal) return;
 
           let scrollContainer: Element | null = null;
 
@@ -735,21 +779,27 @@ export function SlashPanel({
           if (!scrollContainer) {
             scrollContainer = document.querySelector('.appflowy-scroll-container');
           }
-          
+
           const savedScrollTop = scrollContainer?.scrollTop;
 
           try {
-            const newViewId = await addPage(viewId, {
+            const response = await addPage(documentId, {
               layout: ViewLayout.Grid,
               name: t('document.slashMenu.name.grid'),
             });
 
-            turnInto(BlockType.GridBlock, {
-              view_id: newViewId,
-              parent_id: viewId,
-            } as DatabaseNodeData);
+            console.debug('[SlashPanel] {} created grid', {
+              documentId,
+              databaseViewId: response.view_id,
+            });
 
-            openPageModal(newViewId);
+            turnInto(BlockType.GridBlock, createDatabaseNodeData({
+              parentId: documentId,
+              viewIds: [response.view_id],
+              databaseId: response.database_id,
+            }));
+
+            openPageModal(response.view_id);
 
             if (savedScrollTop !== undefined) {
               const restoreScroll = () => {
@@ -783,7 +833,7 @@ export function SlashPanel({
         icon: <BoardIcon />,
         keywords: ['board', 'kanban', 'database'],
         onClick: async () => {
-          if (!viewId || !addPage || !openPageModal) return;
+          if (!documentId || !addPage || !openPageModal) return;
 
           let scrollContainer: Element | null = null;
 
@@ -798,21 +848,27 @@ export function SlashPanel({
           if (!scrollContainer) {
             scrollContainer = document.querySelector('.appflowy-scroll-container');
           }
-          
+
           const savedScrollTop = scrollContainer?.scrollTop;
 
           try {
-            const newViewId = await addPage(viewId, {
+            const response = await addPage(documentId, {
               layout: ViewLayout.Board,
               name: t('document.slashMenu.name.kanban'),
             });
 
-            turnInto(BlockType.BoardBlock, {
-              view_id: newViewId,
-              parent_id: viewId,
-            } as DatabaseNodeData);
+            console.debug('[SlashPanel] {} created kanban', {
+              documentId,
+              databaseViewId: response.view_id,
+            });
 
-            openPageModal(newViewId);
+            turnInto(BlockType.BoardBlock, createDatabaseNodeData({
+              parentId: documentId,
+              viewIds: [response.view_id],
+              databaseId: response.database_id,
+            }));
+
+            openPageModal(response.view_id);
 
             if (savedScrollTop !== undefined) {
               const restoreScroll = () => {
@@ -846,7 +902,7 @@ export function SlashPanel({
         icon: <CalendarIcon />,
         keywords: ['calendar', 'date', 'database'],
         onClick: async () => {
-          if (!viewId || !addPage || !openPageModal) return;
+          if (!documentId || !addPage || !openPageModal) return;
 
           let scrollContainer: Element | null = null;
 
@@ -861,21 +917,27 @@ export function SlashPanel({
           if (!scrollContainer) {
             scrollContainer = document.querySelector('.appflowy-scroll-container');
           }
-          
+
           const savedScrollTop = scrollContainer?.scrollTop;
 
           try {
-            const newViewId = await addPage(viewId, {
+            const response = await addPage(documentId, {
               layout: ViewLayout.Calendar,
               name: t('document.slashMenu.name.calendar'),
             });
 
-            turnInto(BlockType.CalendarBlock, {
-              view_id: newViewId,
-              parent_id: viewId,
-            } as DatabaseNodeData);
+            console.debug('[SlashPanel] {} created calendar', {
+              documentId,
+              databaseViewId: response.view_id,
+            });
 
-            openPageModal(newViewId);
+            turnInto(BlockType.CalendarBlock, createDatabaseNodeData({
+              parentId: documentId,
+              viewIds: [response.view_id],
+              databaseId: response.database_id,
+            }));
+
+            openPageModal(response.view_id);
 
             if (savedScrollTop !== undefined) {
               const restoreScroll = () => {
@@ -1029,7 +1091,7 @@ export function SlashPanel({
     continueWriting,
     turnInto,
     openPanel,
-    viewId,
+    documentId,
     addPage,
     openPageModal,
     setEmojiPosition,

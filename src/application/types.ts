@@ -197,8 +197,10 @@ export interface TableCellBlockData extends BlockData {
 }
 
 export interface DatabaseNodeData extends BlockData {
-  view_id: ViewId;
+  view_id?: ViewId;
+  view_ids?: ViewId[];
   parent_id?: ViewId;
+  database_id?: string;
 }
 
 export interface SubpageNodeData extends BlockData {
@@ -797,7 +799,7 @@ export type AppendBreadcrumb = (view?: View) => void;
 export type CreateRowDoc = (rowKey: string) => Promise<YDoc>;
 export type LoadView = (viewId: string, isSubDocument?: boolean, loadAwareness?: boolean) => Promise<YDoc>;
 
-export type LoadViewMeta = (viewId: string, onChange?: (meta: View | null) => void) => Promise<View>;
+export type LoadViewMeta = (viewId: string, onChange?: (meta: View | null) => void) => Promise<View | null>;
 
 export type DatabaseRelations = Record<DatabaseId, ViewId>;
 
@@ -1093,7 +1095,7 @@ export interface ViewComponentProps {
   appendBreadcrumb?: AppendBreadcrumb;
   onRendered?: () => void;
   updatePage?: (viewId: string, data: UpdatePagePayload) => Promise<void>;
-  addPage?: (parentId: string, payload: CreatePagePayload) => Promise<string>;
+  addPage?: (parentId: string, payload: CreatePagePayload) => Promise<CreatePageResponse>;
   deletePage?: (viewId: string) => Promise<void>;
   openPageModal?: (viewId: string) => void;
   variant?: UIVariant;
@@ -1102,7 +1104,6 @@ export interface ViewComponentProps {
   onWordCountChange?: (viewId: string, props: TextCount) => void;
   uploadFile?: (file: File) => Promise<string>;
   requestInstance?: AxiosInstance | null;
-  createFolderView?: (payload: CreateFolderViewPayload) => Promise<string>;
   generateAISummaryForRow?: (payload: GenerateAISummaryRowPayload) => Promise<string>;
   generateAITranslateForRow?: (payload: GenerateAITranslateRowPayload) => Promise<string>;
   loadDatabasePrompts?: (config: PromptDatabaseConfiguration) => Promise<{
@@ -1117,6 +1118,7 @@ export interface ViewComponentProps {
   updatePageName?: (viewId: string, name: string) => Promise<void>;
   currentUser?: User;
   getViewIdFromDatabaseId?: (databaseId: string) => Promise<string | null>;
+  loadDatabaseRelations?: () => Promise<DatabaseRelations | undefined>;
 }
 
 export interface CreatePagePayload {
@@ -1124,17 +1126,18 @@ export interface CreatePagePayload {
   name?: string;
 }
 
-export interface CreateFolderViewPayload {
-  parentViewId: string;
-  layout: ViewLayout;
-  name?: string;
-  viewId?: string;
-  databaseId?: string;
+export interface CreatePageResponse {
+  view_id: string;
+  database_id?: string;
 }
 
 export interface CreateDatabaseViewPayload {
+  parent_view_id: string;
+  database_id: string;
   layout: ViewLayout;
   name?: string;
+  /** Whether this view is embedded inside a document (e.g., database block). Defaults to false. */
+  embedded?: boolean;
 }
 
 export interface CreateDatabaseViewResponse {

@@ -6,7 +6,6 @@ import {
   AppendBreadcrumb,
   CreateDatabaseViewPayload,
   CreateDatabaseViewResponse,
-  CreateFolderViewPayload,
   CreateRowDoc,
   LoadView,
   LoadViewMeta,
@@ -32,37 +31,51 @@ export interface Database2Props {
   loadView?: LoadView;
   navigateToView?: (viewId: string, blockId?: string) => Promise<void>;
   loadViewMeta?: LoadViewMeta;
-  viewId: string;
-  iidName: string;
+  /**
+   * The currently active/selected view tab ID (Grid, Board, or Calendar).
+   * Changes when the user switches between different view tabs.
+   */
+  activeViewId: string;
+  databaseName: string;
   rowId?: string;
   modalRowId?: string;
   appendBreadcrumb?: AppendBreadcrumb;
   onChangeView: (viewId: string) => void;
+  onViewAdded?: (viewId: string) => void;
   onOpenRowPage?: (rowId: string) => void;
   visibleViewIds: string[];
-  iidIndex: string;
+  /**
+   * The database's page ID in the folder/outline structure.
+   * This is the main entry point for the database and remains constant.
+   */
+  databasePageId: string;
   variant?: UIVariant;
   onRendered?: () => void;
   isDocumentBlock?: boolean;
   paddingStart?: number;
   paddingEnd?: number;
   showActions?: boolean;
-  createFolderView?: (payload: CreateFolderViewPayload) => Promise<string>;
   createDatabaseView?: (viewId: string, payload: CreateDatabaseViewPayload) => Promise<CreateDatabaseViewResponse>;
   getViewIdFromDatabaseId?: (databaseId: string) => Promise<string | null>;
   embeddedHeight?: number;
+  /**
+   * Callback when view IDs change (views added or removed).
+   * Used to update the block data in embedded database blocks.
+   */
+  onViewIdsChanged?: (viewIds: string[]) => void;
 }
 
 function Database(props: Database2Props) {
   const {
     doc,
     createRowDoc,
-    viewId,
-    iidIndex,
-    iidName,
+    activeViewId,
+    databasePageId,
+    databaseName,
     visibleViewIds,
     rowId,
     onChangeView,
+    onViewAdded,
     onOpenRowPage,
     appendBreadcrumb,
     readOnly = true,
@@ -71,38 +84,23 @@ function Database(props: Database2Props) {
     modalRowId,
     isDocumentBlock: _isDocumentBlock,
     embeddedHeight,
+    onViewIdsChanged,
   } = props;
 
   const database = doc.getMap(YjsEditorKey.data_section)?.get(YjsEditorKey.database) as YDatabase | null;
   const views = database?.get(YjsDatabaseKey.views);
 
-  // Find view by iid field (views map uses numeric keys like "0", "1", "2")
-  const findViewByIid = useCallback((viewsMap: typeof views, targetIid: string) => {
+  const findDatabaseViewByViewId = useCallback((viewsMap: typeof views, targetViewId: string) => {
     if (!viewsMap) return null;
 
-    // Try direct access first (for standalone databases)
-    const directView = viewsMap.get(targetIid);
+    const directView = viewsMap.get(targetViewId);
 
     if (directView) return directView;
-
-    // Search by iid field (for embedded databases)
-    const viewsData = viewsMap.toJSON();
-    const keys = Object.keys(viewsData);
-
-    for (const key of keys) {
-      const v = viewsMap.get(key);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const viewIid = v?.get?.(YjsDatabaseKey.iid as any);
-
-      if (viewIid === targetIid) {
-        return v;
-      }
-    }
 
     return null;
   }, []);
 
-  const view = findViewByIid(views, iidIndex);
+  const view = findDatabaseViewByViewId(views, databasePageId);
   const rowOrders = view?.get(YjsDatabaseKey.row_orders);
 
   const [rowIds, setRowIds] = useState<RowId[]>([]);
@@ -164,13 +162,13 @@ function Database(props: Database2Props) {
     const ids = rowOrdersData.map(({ id }: { id: string }) => id);
 
     console.debug('[Database] row orders updated', {
-      viewId,
-      iidIndex,
+      activeViewId,
+      databasePageId,
       ids,
       raw: rowOrdersData,
     });
     setRowIds(ids);
-  }, [iidIndex, rowOrders, viewId]);
+  }, [databasePageId, rowOrders, activeViewId]);
 
   useEffect(() => {
     void handleUpdateRowDocMap();
@@ -182,7 +180,7 @@ function Database(props: Database2Props) {
   }, [handleUpdateRowDocMap, rowOrders]);
 
   const [openModalRowId, setOpenModalRowId] = useState<string | null>(() => modalRowId || null);
-  const [openModalViewId, setOpenModalViewId] = useState<string | null>(() => (modalRowId ? viewId : null));
+  const [openModalViewId, setOpenModalViewId] = useState<string | null>(() => (modalRowId ? activeViewId : null));
   const [openModalRowDatabaseDoc, setOpenModalRowDatabaseDoc] = useState<YDoc | null>(null);
   const [openModalRowDocMap, setOpenModalRowDocMap] = useState<Record<RowId, YDoc> | null>(null);
 
@@ -246,7 +244,7 @@ function Database(props: Database2Props) {
     setOpenModalViewId(null);
   }, []);
 
-  if (!rowDocMap || !viewId) {
+  if (!rowDocMap || !activeViewId) {
     return <div className={'min-h-[120px] w-full'} />;
   }
 
@@ -269,11 +267,13 @@ function Database(props: Database2Props) {
           <div className='appflowy-database relative flex w-full flex-1 select-text flex-col overflow-hidden'>
             <DatabaseViews
               visibleViewIds={visibleViewIds}
-              iidIndex={iidIndex}
-              viewName={iidName}
+              databasePageId={databasePageId}
+              viewName={databaseName}
               onChangeView={onChangeView}
-              viewId={viewId}
+              onViewAdded={onViewAdded}
+              activeViewId={activeViewId}
               fixedHeight={embeddedHeight}
+              onViewIdsChanged={onViewIdsChanged}
             />
           </div>
         )}
@@ -281,8 +281,8 @@ function Database(props: Database2Props) {
       {openModalRowId && (
         <DatabaseContextProvider
           {...props}
-          viewId={openModalViewId || viewId}
-          iidIndex={openModalViewId || iidIndex}
+          activeViewId={openModalViewId || activeViewId}
+          databasePageId={openModalViewId || databasePageId}
           databaseDoc={openModalRowDatabaseDoc || doc}
           rowDocMap={openModalRowDocMap || rowDocMap}
           isDatabaseRowPage={false}

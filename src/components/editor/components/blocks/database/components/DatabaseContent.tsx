@@ -6,6 +6,15 @@ import { LoadView, LoadViewMeta, UIVariant, YDoc } from '@/application/types';
 import { Database } from '@/components/database';
 
 interface DatabaseContentProps {
+  /**
+   * The base/primary view ID for the embedded database.
+   * This is the first view that was embedded and remains constant.
+   */
+  baseViewId: string;
+  /**
+   * The currently selected/active view tab ID.
+   * Changes when user switches between different view tabs.
+   */
   selectedViewId: string | null;
   hasDatabase: boolean;
   notFound: boolean;
@@ -14,21 +23,23 @@ interface DatabaseContentProps {
   width: number;
   doc: YDoc | null;
   workspaceId: string;
-  viewId: string;
   createRowDoc?: (rowId: string) => Promise<YDoc>;
   loadView?: LoadView;
   navigateToView?: (viewId: string, rowId?: string) => Promise<void>;
   onOpenRowPage: (rowId: string) => Promise<void>;
   loadViewMeta: LoadViewMeta;
-  iidName: string;
+  databaseName: string;
   visibleViewIds: string[];
   onChangeView: (viewId: string) => void;
+  onViewAdded?: (viewId: string) => void;
+  onViewIdsChanged?: (viewIds: string[]) => void;
   context: DatabaseContextState;
   fixedHeight?: number;
   onRendered?: () => void;
 }
 
 export const DatabaseContent = ({
+  baseViewId,
   selectedViewId,
   hasDatabase,
   notFound,
@@ -37,15 +48,16 @@ export const DatabaseContent = ({
   width,
   doc,
   workspaceId,
-  viewId: _viewId,
   createRowDoc,
   loadView,
   navigateToView,
   onOpenRowPage,
   loadViewMeta,
-  iidName,
+  databaseName,
   visibleViewIds,
   onChangeView,
+  onViewAdded,
+  onViewIdsChanged,
   context,
   fixedHeight,
   onRendered,
@@ -62,27 +74,29 @@ export const DatabaseContent = ({
           width,
         }}
       >
-        <Database
-          {...context}
-          workspaceId={workspaceId}
-          doc={doc}
-          iidIndex={selectedViewId}
-          viewId={selectedViewId}
-          createRowDoc={createRowDoc}
-          loadView={loadView}
-          navigateToView={navigateToView}
-          onOpenRowPage={onOpenRowPage}
-          loadViewMeta={loadViewMeta}
-          iidName={iidName}
-          visibleViewIds={visibleViewIds}
-          onChangeView={onChangeView}
-          showActions={true}
-          paddingStart={paddingStart}
-          paddingEnd={paddingEnd}
-          isDocumentBlock={true}
-          embeddedHeight={fixedHeight}
-          onRendered={onRendered}
-        />
+          <Database
+            {...context}
+            workspaceId={workspaceId}
+            doc={doc}
+            databasePageId={baseViewId}
+            activeViewId={selectedViewId}
+            createRowDoc={createRowDoc}
+            loadView={loadView}
+            navigateToView={navigateToView}
+            onOpenRowPage={onOpenRowPage}
+            loadViewMeta={loadViewMeta}
+            databaseName={databaseName}
+            visibleViewIds={visibleViewIds}
+            onChangeView={onChangeView}
+            onViewAdded={onViewAdded}
+            onViewIdsChanged={onViewIdsChanged}
+            showActions={true}
+            paddingStart={paddingStart}
+            paddingEnd={paddingEnd}
+            isDocumentBlock={true}
+            embeddedHeight={fixedHeight}
+            onRendered={onRendered}
+          />
       </div>
     );
   }

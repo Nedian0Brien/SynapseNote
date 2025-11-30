@@ -25,8 +25,8 @@ import {
   AuthProvider,
   CreateDatabaseViewPayload,
   CreateDatabaseViewResponse,
-  CreateFolderViewPayload,
   CreatePagePayload,
+  CreatePageResponse,
   CreateSpacePayload,
   CreateWorkspacePayload,
   DatabaseId,
@@ -146,7 +146,19 @@ async function executeAPIRequest<TResponseData = unknown>(
       });
     }
 
+    // Get the actual URL that was requested
+    const requestUrl = response.request?.responseURL
+      || (response.config?.baseURL && response.config?.url
+        ? `${response.config.baseURL}${response.config.url}`
+        : response.config?.url)
+      || 'unknown';
+
+    const method = response.config?.method?.toUpperCase() || 'UNKNOWN';
+
+    console.debug('[executeAPIRequest]', { method, url: requestUrl });
+
     if (!response.data) {
+      console.error('[executeAPIRequest] No response data received', response);
       return Promise.reject({
         code: -1,
         message: 'No response data received',
@@ -186,6 +198,7 @@ async function executeAPIVoidRequest(
     const response = await request();
 
     if (!response?.data) {
+      console.error('[executeAPIVoidRequest] No response data received', response);
       return Promise.reject({
         code: -1,
         message: 'No response data received',
@@ -640,6 +653,7 @@ export async function getPublishViewBlob(namespace: string, publishName: string)
     });
 
     if (!response?.data) {
+      console.error('[getPublishViewBlob] No response data received', response);
       const error: APIError = {
         code: -1,
         message: 'No response data received',
@@ -1398,20 +1412,6 @@ export async function uploadImportFile(presignedUrl: string, file: File, onProgr
   });
 }
 
-export async function createFolderView(workspaceId: string, payload: CreateFolderViewPayload) {
-  const url = `/api/workspace/${workspaceId}/folder-view`;
-
-  return executeAPIRequest<{ view_id: string }>(() =>
-    axiosInstance?.post<APIResponse<{ view_id: string }>>(url, {
-      parent_view_id: payload.parentViewId,
-      layout: payload.layout,
-      name: payload.name,
-      view_id: payload.viewId,
-      database_id: payload.databaseId,
-    })
-  ).then((data) => data.view_id);
-}
-
 export async function createDatabaseView(
   workspaceId: string,
   viewId: string,
@@ -1419,10 +1419,15 @@ export async function createDatabaseView(
 ) {
   const url = `/api/workspace/${workspaceId}/page-view/${viewId}/database-view`;
 
+  console.debug('[createDatabaseView]', { url, workspaceId, viewId, payload });
+
   return executeAPIRequest<CreateDatabaseViewResponse>(() =>
     axiosInstance?.post<APIResponse<CreateDatabaseViewResponse>>(url, {
+      parent_view_id: payload.parent_view_id,
+      database_id: payload.database_id,
       layout: payload.layout,
       name: payload.name,
+      embedded: payload.embedded ?? false,
     })
   );
 }
@@ -1430,13 +1435,13 @@ export async function createDatabaseView(
 export async function addAppPage(workspaceId: string, parentViewId: string, { layout, name }: CreatePagePayload) {
   const url = `/api/workspace/${workspaceId}/page-view`;
 
-  return executeAPIRequest<{ view_id: string }>(() =>
-    axiosInstance?.post<APIResponse<{ view_id: string }>>(url, {
+  return executeAPIRequest<CreatePageResponse>(() =>
+    axiosInstance?.post<APIResponse<CreatePageResponse>>(url, {
       parent_view_id: parentViewId,
       layout,
       name,
     })
-  ).then((data) => data.view_id);
+  );
 }
 
 export async function updatePage(workspaceId: string, viewId: string, data: UpdatePagePayload) {

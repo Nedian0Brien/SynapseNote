@@ -7,8 +7,8 @@ import {
   AppendBreadcrumb,
   CreateDatabaseViewPayload,
   CreateDatabaseViewResponse,
-  CreateFolderViewPayload,
   CreatePagePayload,
+  CreatePageResponse,
   CreateRowDoc,
   CreateSpacePayload,
   DatabaseRelations,
@@ -61,7 +61,7 @@ export interface AppContextType {
   onRendered?: () => void;
   notFound?: boolean;
   viewHasBeenDeleted?: boolean;
-  addPage?: (parentId: string, payload: CreatePagePayload) => Promise<string>;
+  addPage?: (parentId: string, payload: CreatePagePayload) => Promise<CreatePageResponse>;
   deletePage?: (viewId: string) => Promise<void>;
   updatePage?: (viewId: string, payload: UpdatePagePayload) => Promise<void>;
   updatePageIcon?: (viewId: string, icon: { ty: ViewIconType; value: string }) => Promise<void>;
@@ -79,7 +79,6 @@ export interface AppContextType {
   publish?: (view: View, publishName?: string, visibleViewIds?: string[]) => Promise<void>;
   unpublish?: (viewId: string) => Promise<void>;
   refreshOutline?: () => Promise<void>;
-  createFolderView?: (payload: CreateFolderViewPayload) => Promise<string>;
   createDatabaseView?: (viewId: string, payload: CreateDatabaseViewPayload) => Promise<CreateDatabaseViewResponse>;
   generateAISummaryForRow?: (payload: GenerateAISummaryRowPayload) => Promise<string>;
   generateAITranslateForRow?: (payload: GenerateAITranslateRowPayload) => Promise<string>;
@@ -270,7 +269,6 @@ export function useAppHandlers() {
     publish: context.publish,
     unpublish: context.unpublish,
     refreshOutline: context.refreshOutline,
-    createFolderView: context.createFolderView,
     createDatabaseView: context.createDatabaseView,
     generateAISummaryForRow: context.generateAISummaryForRow,
     generateAITranslateForRow: context.generateAITranslateForRow,
