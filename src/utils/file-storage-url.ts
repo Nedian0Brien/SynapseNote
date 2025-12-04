@@ -1,5 +1,6 @@
 import isURL from 'validator/lib/isURL';
 
+import { Log } from '@/utils/log';
 import { getConfigValue } from '@/utils/runtime-config';
 
 /**
@@ -39,17 +40,18 @@ function resolveAppflowyOriginAndPathname(): { origin: string | null; pathname: 
 
 
 export function isFileURL(url: string): boolean {
-  if (isURL(url)) {
+  if (isAppFlowyFileStorageUrl(url)) {
     return true;
   }
 
-  // workaround for this case:http://localhost:8000/api/file_storage/06b1b077-1042-4c5f-8bd4-774c71e27a0c/v1/blob/103df21d-c365-4b2c-87f1-80d64e956603/ea47M1S0xOXE5jIti4H3QSHAAZvoF8BOpFzRHApzc4U=
-  // when isURL(url) is false
-  if (url.startsWith('http://localhost')) {
+  // validator/lib/isURL may fail for localhost if strict options are used,
+  // or simply return false for some valid internal URLs.
+  // We specifically allow localhost URLs.
+  if (url.startsWith('http://localhost') || url.startsWith('https://localhost')) {
     return true;
   }
 
-  return false;
+  return isURL(url);
 }
 
 /**
@@ -58,6 +60,8 @@ export function isFileURL(url: string): boolean {
  * @returns true if the URL is an AppFlowy file storage URL
  */
 export function isAppFlowyFileStorageUrl(url: string): boolean {
+  Log.debug('[isAppFlowyFileStorageUrl] url', url);
+
   if (!url) return false;
 
   const { origin, pathname: basePathname } = resolveAppflowyOriginAndPathname();
@@ -90,7 +94,7 @@ export function isAppFlowyFileStorageUrl(url: string): boolean {
  * @param fileId - The file ID
  * @returns Complete file URL
  */
-export function getFileUrl(workspaceId: string, viewId: string, fileId: string): string {
+export function getAppFlowyFileUrl(workspaceId: string, viewId: string, fileId: string): string {
   console.warn("URL should be valid - seeing this indicates a bug")
   return `${getFileStorageBaseUrl()}/${workspaceId}/v1/blob/${viewId}/${fileId}`;
 }
@@ -101,7 +105,7 @@ export function getFileUrl(workspaceId: string, viewId: string, fileId: string):
  * @param viewId - The view ID (used as parent_dir)
  * @returns Complete upload URL
  */
-export function getFileUploadUrl(workspaceId: string, viewId: string): string {
+export function getAppFlowyFileUploadUrl(workspaceId: string, viewId: string): string {
   return `${getFileStorageBaseUrl()}/${workspaceId}/v1/blob/${viewId}`;
 }
 
@@ -132,4 +136,28 @@ export function constructFileStorageUrl(
   }
 
   return base;
+}
+
+/**
+ * Resolves a file URL or ID into a complete accessible URL.
+ * If the input is already a URL (http/https), it returns it as is.
+ * If it's a file ID, it constructs the AppFlowy file storage URL.
+ * 
+ * @param urlOrId - The file URL or ID
+ * @param workspaceId - The workspace ID
+ * @param viewId - The view ID
+ * @returns The resolved complete URL
+ */
+export function resolveFileUrl(
+  urlOrId: string | undefined,
+  workspaceId: string,
+  viewId: string
+): string {
+  if (!urlOrId) return '';
+
+  if (isFileURL(urlOrId)) {
+    return urlOrId;
+  }
+
+  return getAppFlowyFileUrl(workspaceId, viewId, urlOrId);
 }
