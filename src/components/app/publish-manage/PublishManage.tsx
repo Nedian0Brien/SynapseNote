@@ -12,8 +12,9 @@ import PublishedPages from '@/components/app/publish-manage/PublishedPages';
 import PublishPagesSkeleton from '@/components/app/publish-manage/PublishPagesSkeleton';
 import UpdateNamespace from '@/components/app/publish-manage/UpdateNamespace';
 import { useCurrentUser, useService } from '@/components/main/app.hooks';
-import { isOfficialHost } from '@/utils/subscription';
+import { isAppFlowyHosted } from '@/utils/subscription';
 import { openUrl } from '@/utils/url';
+import { validate as uuidValidate } from 'uuid';
 
 export function PublishManage({ onClose }: { onClose?: () => void }) {
   const { t } = useTranslation();
@@ -176,7 +177,7 @@ export function PublishManage({ onClose }: { onClose?: () => void }) {
   const { getSubscriptions } = useAppHandlers();
   const [activeSubscription, setActiveSubscription] = React.useState<SubscriptionPlan | null>(null);
   const loadSubscription = useCallback(async () => {
-    if (!isOfficialHost()) {
+    if (!isAppFlowyHosted()) {
       setActiveSubscription(SubscriptionPlan.Pro);
       return;
     }
@@ -257,20 +258,23 @@ export function PublishManage({ onClose }: { onClose?: () => void }) {
             publishViews={publishViews}
             onRemoveHomePage={handleRemoveHomePage}
             onUpdateHomePage={handleUpdateHomePage}
+            canEdit={!uuidValidate(namespace)}
           />
           <Tooltip
             title={
-              isOwner
-                ? activeSubscription === SubscriptionPlan.Free
+              !isOwner
+                ? t('settings.sites.error.onlyWorkspaceOwnerCanUpdateNamespace')
+                : isAppFlowyHosted() && (activeSubscription === null || activeSubscription === SubscriptionPlan.Free)
                   ? t('settings.sites.error.onlyProCanUpdateNamespace')
                   : undefined
-                : t('settings.sites.error.onlyWorkspaceOwnerCanUpdateNamespace')
             }
           >
             <IconButton
               size={'small'}
+              data-testid="edit-namespace-button"
               onClick={(e) => {
-                if (!isOwner || activeSubscription === SubscriptionPlan.Free) {
+                // Block if not owner, or if on official host with Free/unloaded subscription
+                if (!isOwner || (isAppFlowyHosted() && (activeSubscription === null || activeSubscription === SubscriptionPlan.Free))) {
                   return;
                 }
 
