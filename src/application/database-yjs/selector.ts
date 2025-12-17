@@ -70,8 +70,14 @@ export function useDatabaseViewsSelector(databasePageId: string, visibleViewIds?
   const [viewIds, setViewIds] = useState<string[]>([]);
   const [childViews, setChildViews] = useState<ReturnType<typeof views.get>[]>([]);
 
+  // Stabilize visibleViewIds reference to avoid unnecessary effect re-runs
+  const visibleViewIdsKey = visibleViewIds?.join(',') ?? '';
+
   useEffect(() => {
     if (!views) return;
+
+    // Parse the stabilized key back to array (or undefined)
+    const stableVisibleViewIds = visibleViewIdsKey ? visibleViewIdsKey.split(',') : undefined;
 
     const observerEvent = () => {
       const viewsObj = views.toJSON() as Record<
@@ -81,24 +87,35 @@ export function useDatabaseViewsSelector(databasePageId: string, visibleViewIds?
         }
       >;
 
-      // Get all views from the database and filter out inline views
+      // Step 1: Get all non-inline views from Yjs (don't filter by embedded yet)
+      // See: flowy-database2/src/services/database/database_editor.rs:get_database_view_ids()
       let allViewIds = Object.keys(viewsObj).filter((viewId) => {
         const view = views.get(viewId);
 
         if (!view) return false;
+
         const isInline = view.get(YjsDatabaseKey.is_inline);
 
         return !isInline;
       });
 
-      // If visibleViewIds is provided (for embedded databases), filter to only show those views
-      // visibleViewIds is undefined for standalone databases, [] for embedded with no child views yet
-      if (visibleViewIds !== undefined) {
-        // Preserve the ordering defined by `visibleViewIds` (folder/outline order), not the
-        // internal insertion order of the Yjs `views` map.
-        const availableIds = new Set(allViewIds);
+      // Step 2: Apply context-specific filtering (separate concerns)
+      if (stableVisibleViewIds !== undefined && stableVisibleViewIds.length > 0) {
+        // For embedded databases: show ONLY views in visibleViewIds
+        // This handles views with embedded: true (created via + button)
+        // The visibleViewIds list is the source of truth for what to display
+        const allViewIdsSet = new Set(allViewIds);
 
-        allViewIds = visibleViewIds.filter((viewId) => availableIds.has(viewId));
+        allViewIds = stableVisibleViewIds.filter((viewId) => allViewIdsSet.has(viewId));
+      } else {
+        // For standalone databases: exclude embedded views
+        // Embedded views belong to their respective embedded database blocks
+        allViewIds = allViewIds.filter((viewId) => {
+          const view = views.get(viewId);
+          const isEmbedded = view?.get(YjsDatabaseKey.embedded) === true;
+
+          return !isEmbedded;
+        });
       }
 
       setViewIds(allViewIds);
@@ -111,7 +128,7 @@ export function useDatabaseViewsSelector(databasePageId: string, visibleViewIds?
     return () => {
       views.unobserveDeep(observerEvent);
     };
-  }, [views, visibleViewIds, databasePageId]);
+  }, [views, visibleViewIdsKey]);
 
   return {
     childViews,
