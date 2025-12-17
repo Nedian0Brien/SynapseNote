@@ -3,7 +3,8 @@ import { forwardRef, useCallback, useEffect, useMemo, useState } from 'react';
 import { APP_EVENTS } from '@/application/constants';
 import { useDatabase, useDatabaseContext } from '@/application/database-yjs';
 import { useUpdateDatabaseView } from '@/application/database-yjs/dispatch';
-import { View, YDatabaseView, YjsDatabaseKey } from '@/application/types';
+import { DatabaseViewLayout, View, ViewLayout, YDatabaseView, YjsDatabaseKey } from '@/application/types';
+import { isDatabaseContainer } from '@/application/view-utils';
 import { findView } from '@/components/_shared/outline/utils';
 import RenameModal from '@/components/app/view-actions/RenameModal';
 import { DatabaseActions } from '@/components/database/components/conditions';
@@ -34,10 +35,13 @@ export interface DatabaseTabBarProps {
 }
 
 export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
-  ({ viewIds, databasePageId, selectedViewId, setSelectedViewId, onViewAddedToDatabase, onViewIdsChanged }, ref) => {
+  (
+    { viewIds, databasePageId, selectedViewId, setSelectedViewId, viewName: _viewName, onViewAddedToDatabase, onViewIdsChanged },
+    ref
+  ) => {
     const views = useDatabase()?.get(YjsDatabaseKey.views);
     const context = useDatabaseContext();
-    const { loadViewMeta, readOnly, showActions = true, eventEmitter } = context;
+    const { loadViewMeta, navigateToView, readOnly, showActions = true, eventEmitter } = context;
     const updatePage = useUpdateDatabaseView();
     const [meta, setMeta] = useState<View | null>(null);
     const scrollLeftPadding = context.paddingStart;
@@ -49,26 +53,61 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
     const [pendingScrollToViewId, setPendingScrollToViewId] = useState<string | null>(null);
 
     const reloadView = useCallback(async () => {
-      if (loadViewMeta) {
-        try {
-          const meta = await loadViewMeta(databasePageId);
+      if (!loadViewMeta) return;
 
-          setMeta(meta);
-          return meta;
-        } catch (e) {
-          console.error('[DatabaseTabs] Error loading meta:', e);
-          // do nothing
+      try {
+        const current = await loadViewMeta(databasePageId);
+
+        if (!current) return;
+
+        // Prefer the database container meta when this view is inside a container.
+        if (isDatabaseContainer(current)) {
+          setMeta(current);
+          return current;
         }
+
+        const parentId = current.parent_view_id;
+
+        if (parentId) {
+          const parent = await loadViewMeta(parentId);
+
+          if (isDatabaseContainer(parent)) {
+            setMeta(parent);
+            return parent;
+          }
+        }
+
+        setMeta(current);
+        return current;
+      } catch (e) {
+        console.error('[DatabaseTabs] Error loading meta:', e);
+        // do nothing
       }
     }, [databasePageId, loadViewMeta]);
 
     useEffect(() => {
       const handleOutlineLoaded = (outline: View[]) => {
-        const view = findView(outline, databasePageId);
+        const current = findView(outline, databasePageId);
 
-        if (view) {
-          setMeta(view);
+        if (!current) return;
+
+        if (isDatabaseContainer(current)) {
+          setMeta(current);
+          return;
         }
+
+        const parentId = current.parent_view_id;
+
+        if (parentId) {
+          const parent = findView(outline, parentId);
+
+          if (isDatabaseContainer(parent)) {
+            setMeta(parent);
+            return;
+          }
+        }
+
+        setMeta(current);
       };
 
       if (eventEmitter) {
@@ -83,17 +122,105 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
     }, [databasePageId, eventEmitter, reloadView]);
 
     const renameView = useMemo(() => {
-      if (renameViewId === databasePageId) return meta;
-      return meta?.children.find((v) => v.view_id === renameViewId);
-    }, [databasePageId, meta, renameViewId]);
+      if (!renameViewId) return null;
 
+      const fromMeta = meta?.view_id === renameViewId ? meta : meta?.children.find((v) => v.view_id === renameViewId);
+
+      if (fromMeta) return fromMeta;
+
+      // Fallback: build a minimal view from Yjs so rename still works even when meta
+      // doesn't include siblings (e.g., embedded linked views without a container).
+      const databaseView = views?.get(renameViewId) as YDatabaseView | null;
+
+      if (!databaseView) return null;
+
+      const rawLayoutValue = databaseView.get(YjsDatabaseKey.layout);
+      const databaseLayout = Number(rawLayoutValue) as DatabaseViewLayout;
+      const computedLayout =
+        databaseLayout === DatabaseViewLayout.Board
+          ? ViewLayout.Board
+          : databaseLayout === DatabaseViewLayout.Calendar
+          ? ViewLayout.Calendar
+          : ViewLayout.Grid;
+
+      const name = databaseView.get(YjsDatabaseKey.name) || '';
+
+      return {
+        view_id: renameViewId,
+        name,
+        layout: computedLayout,
+        parent_view_id: meta?.view_id ?? databasePageId,
+        children: [],
+        icon: null,
+        extra: null,
+        is_published: false,
+        is_private: false,
+      } as View;
+    }, [databasePageId, meta, renameViewId, views]);
+
+    // Get visible view IDs, combining viewIds prop with non-embedded views from Yjs.
+    //
+    // Two contexts where this component is used:
+    // 1. Standalone database page: viewIds from outline, should add any non-embedded Yjs views
+    // 2. Embedded database block in document: viewIds from block data, may include embedded views
+    //
+    // The viewIds prop is always trusted (explicitly requested views).
+    // When adding extra views from Yjs, we filter out embedded ones to match Desktop behavior:
+    // embedded views should only appear in the document where they were embedded,
+    // not in the original database's tab bar.
     const visibleViewIds = useMemo(() => {
-      return viewIds.filter((viewId) => {
-        const databaseView = views?.get(viewId) as YDatabaseView | null;
+      if (!views) {
+        return viewIds;
+      }
 
-        return !!databaseView;
+      // Get all view IDs from Yjs database, separating embedded and non-embedded
+      const allYjsViewIds: string[] = [];
+      const nonEmbeddedYjsViewIds: string[] = [];
+
+      views.forEach((view, viewId) => {
+        allYjsViewIds.push(viewId);
+        const databaseView = view;
+        const isEmbedded = databaseView.get(YjsDatabaseKey.embedded) === true;
+
+        if (!isEmbedded) {
+          nonEmbeddedYjsViewIds.push(viewId);
+        }
       });
+
+      // If no viewIds prop provided, use all non-embedded Yjs views (standalone database case)
+      if (!viewIds || viewIds.length === 0) {
+        return nonEmbeddedYjsViewIds.length > 0 ? nonEmbeddedYjsViewIds : allYjsViewIds;
+      }
+
+      // Filter viewIds to only include those that exist in Yjs
+      // This preserves embedded views from viewIds (for embedded database blocks in documents)
+      const validViewIds = viewIds.filter((id) => allYjsViewIds.includes(id));
+
+      // Add any non-embedded Yjs views that aren't in viewIds
+      // This ensures newly created views appear in tabs even if outline hasn't synced yet
+      const extraNonEmbeddedIds = nonEmbeddedYjsViewIds.filter((id) => !viewIds.includes(id));
+
+      return [...validViewIds, ...extraNonEmbeddedIds];
     }, [viewIds, views]);
+
+    const viewNameById = useMemo(() => {
+      if (!meta) return undefined;
+
+      // Prefer container children when available.
+      if (isDatabaseContainer(meta)) {
+        const mapping: Record<string, string> = {};
+
+        for (const child of meta.children ?? []) {
+          mapping[child.view_id] = child.name;
+        }
+
+        return mapping;
+      }
+
+      return {
+        [meta.view_id]: meta.name,
+      };
+    }, [meta]);
 
     useEffect(() => {
       void reloadView();
@@ -141,6 +268,7 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
             selectedViewId={selectedViewId}
             setSelectedViewId={setSelectedViewId}
             databasePageId={databasePageId}
+            viewNameById={viewNameById}
             views={views}
             readOnly={!!readOnly}
             visibleViewIds={visibleViewIds}
@@ -205,20 +333,36 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
             setDeleteConfirmOpen(null);
           }}
           onDeleted={() => {
-            if (!meta) return;
-
-            if (setSelectedViewId) {
-              setSelectedViewId(meta.view_id);
-            }
-
-            void reloadView();
-
             // Update the block data with the view ID removed
             if (onViewIdsChanged && deleteConfirmOpen) {
               const newViewIds = viewIds.filter((id) => id !== deleteConfirmOpen);
 
               onViewIdsChanged(newViewIds);
             }
+
+            if (!deleteConfirmOpen) return;
+
+            const deletedViewId = deleteConfirmOpen;
+            const remainingViewIds = visibleViewIds.filter((id) => id !== deletedViewId);
+            const nextViewId = remainingViewIds[0] || null;
+
+            // If the active tab was deleted, switch to the next available view.
+            if (setSelectedViewId && selectedViewId === deletedViewId && nextViewId) {
+              setSelectedViewId(nextViewId);
+            }
+
+            // If the "page view" in the URL was deleted, navigate to a remaining child view.
+            // Otherwise the route can become a "Page Deleted" placeholder even though the database still has views.
+            if (navigateToView && deletedViewId === databasePageId) {
+              const safeTarget = (selectedViewId && selectedViewId !== deletedViewId ? selectedViewId : nextViewId) || null;
+
+              if (safeTarget) {
+                void navigateToView(safeTarget);
+                return;
+              }
+            }
+
+            void reloadView();
           }}
         />
       </div>

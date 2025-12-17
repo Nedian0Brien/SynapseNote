@@ -2,8 +2,9 @@ import React, { lazy, memo, Suspense, useCallback, useContext, useEffect, useMem
 import { toast } from 'sonner';
 
 import { APP_EVENTS } from '@/application/constants';
-import { UIVariant, ViewLayout, ViewMetaProps, YDoc } from '@/application/types';
+import { UIVariant, View, ViewLayout, ViewMetaProps, YDoc } from '@/application/types';
 import { AppError, determineErrorType, formatErrorForLogging } from '@/application/utils/error-utils';
+import { getFirstChildView, isDatabaseContainer } from '@/application/view-utils';
 import Help from '@/components/_shared/help/Help';
 import { findView } from '@/components/_shared/outline/utils';
 import { AIChat } from '@/components/ai-chat';
@@ -47,10 +48,56 @@ function AppPage() {
   const { getViewReadOnlyStatus } = useViewOperations();
 
   const currentUser = useCurrentUser();
-  const view = useMemo(() => {
+  const service = useService();
+
+  // View from outline (may be undefined if outline hasn't updated yet)
+  const outlineView = useMemo(() => {
     if (!outline || !viewId) return;
     return findView(outline, viewId);
   }, [outline, viewId]);
+
+  // Fallback view fetched from server when not in outline
+  const [fallbackView, setFallbackView] = React.useState<View | null>(null);
+
+  // Fetch view metadata when not found in outline (handles race condition after creating new view)
+  useEffect(() => {
+    if (outlineView || !viewId || !workspaceId || !service) {
+      // Clear fallback when outline has the view
+      if (outlineView && fallbackView?.view_id === viewId) {
+        setFallbackView(null);
+      }
+
+      return;
+    }
+
+    // Already fetched for this viewId.
+    if (fallbackView?.view_id === viewId) {
+      return;
+    }
+
+    // View not in outline - fetch from server directly
+    let cancelled = false;
+
+    service
+      .getAppView(workspaceId, viewId)
+      .then((fetchedView) => {
+        if (!cancelled && fetchedView) {
+          setFallbackView(fetchedView);
+        }
+      })
+      .catch((e) => {
+        console.warn('[AppPage] Failed to fetch view metadata for', viewId, e);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [outlineView, viewId, workspaceId, service, fallbackView?.view_id]);
+
+  // Use outline view if available, otherwise use fallback
+  const view = outlineView ?? fallbackView;
+  const layout = view?.layout;
+
   const rendered = useContext(AppContext)?.rendered;
 
   const helmet = useMemo(() => {
@@ -60,8 +107,6 @@ function AppPage() {
       </Suspense>
     ) : null;
   }, [rendered, view]);
-
-  const layout = view?.layout;
   const [doc, setDoc] = React.useState<YDoc | undefined>(undefined);
   const [error, setError] = React.useState<AppError | null>(null);
   const loadPageDoc = useCallback(
@@ -85,8 +130,27 @@ function AppPage() {
   useEffect(() => {
     if (!viewId || layout === undefined || layout === ViewLayout.AIChat) return;
 
+    if (isDatabaseContainer(view)) {
+      const firstChild = getFirstChildView(view);
+
+      if (firstChild) {
+        // Clear current state to avoid rendering stale content while redirecting
+        setError(null);
+        setDoc(undefined);
+        void toView(firstChild.view_id, undefined, true);
+        return;
+      }
+
+      // If outline doesn't include container children yet, delegate to toView() so it can
+      // resolve the first child (may fetch from server).
+      setError(null);
+      setDoc(undefined);
+      void toView(viewId, undefined, true);
+      return;
+    }
+
     void loadPageDoc(viewId);
-  }, [loadPageDoc, viewId, layout]);
+  }, [loadPageDoc, viewId, layout, toView, view]);
 
   useEffect(() => {
     if (layout === ViewLayout.AIChat) {
@@ -96,32 +160,33 @@ function AppPage() {
   }, [layout]);
 
   const viewMeta: ViewMetaProps | null = useMemo(() => {
-    return view
-      ? {
-          name: view.name,
-          icon: view.icon || undefined,
-          cover: view.extra?.cover || undefined,
-          layout: view.layout,
-          visibleViewIds: [],
-          viewId: view.view_id,
-          extra: view.extra,
-          workspaceId,
-        }
-      : null;
+    if (view) {
+      return {
+        name: view.name,
+        icon: view.icon || undefined,
+        cover: view.extra?.cover || undefined,
+        layout: view.layout,
+        visibleViewIds: [],
+        viewId: view.view_id,
+        extra: view.extra,
+        workspaceId,
+      };
+    }
+
+    return null;
   }, [view, workspaceId]);
 
   const handleUploadFile = useCallback(
     (file: File) => {
-      if (view && uploadFile) {
-        return uploadFile(view.view_id, file);
+      if (viewId && uploadFile) {
+        return uploadFile(viewId, file);
       }
 
       return Promise.reject();
     },
-    [uploadFile, view]
+    [uploadFile, viewId]
   );
 
-  const service = useService();
   const requestInstance = service?.getAxiosInstance();
 
   // Check if view is in shareWithMe and determine readonly status
@@ -131,7 +196,10 @@ function AppPage() {
   }, [getViewReadOnlyStatus, viewId, outline]);
 
   const viewDom = useMemo(() => {
-    if (!doc && layout === ViewLayout.AIChat && viewId) {
+    // Check if doc belongs to current viewId (handles race condition when doc from old view arrives after navigation)
+    const docForCurrentView = doc && doc.object_id === viewId ? doc : undefined;
+
+    if (!docForCurrentView && layout === ViewLayout.AIChat && viewId) {
       return (
         <Suspense>
           <AIChat chatId={viewId} onRendered={onRendered} />
@@ -141,11 +209,11 @@ function AppPage() {
 
     const View = layout === ViewLayout.Document ? Document : DatabaseView;
 
-    return doc && viewMeta && workspaceId && View ? (
+    return docForCurrentView && viewMeta && workspaceId && View ? (
       <View
         requestInstance={requestInstance}
         workspaceId={workspaceId}
-        doc={doc}
+        doc={docForCurrentView}
         readOnly={isReadOnly}
         viewMeta={viewMeta}
         navigateToView={toView}
