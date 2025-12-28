@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Awareness } from 'y-protocols/awareness';
 
-import { Log } from '@/utils/log';
 import { openCollabDB } from '@/application/db';
 import {
   AccessLevel,
@@ -12,11 +11,13 @@ import {
   ViewId,
   ViewLayout,
   YDoc,
+  YjsDatabaseKey,
   YjsEditorKey,
   YSharedRoot,
 } from '@/application/types';
 import { getFirstChildView, isDatabaseContainer } from '@/application/view-utils';
 import { findView, findViewInShareWithMe } from '@/components/_shared/outline/utils';
+import { Log } from '@/utils/log';
 import { getPlatform } from '@/utils/platform';
 
 import { useAuthInternal } from '../contexts/AuthInternalContext';
@@ -107,7 +108,31 @@ export function useViewOperations() {
 
       return new Promise<string | null>((resolve) => {
         const sharedRoot = workspaceDatabaseDocMapRef.current.get(currentWorkspaceId)?.getMap(YjsEditorKey.data_section);
+        let resolved = false;
+        let warningLogged = false;
+        let observerRegistered = false;
+        let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+        const cleanup = () => {
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+            timeoutId = null;
+          }
+
+          if (observerRegistered && sharedRoot) {
+            try {
+              sharedRoot.unobserveDeep(observeEvent);
+            } catch {
+              // Ignore if already unobserved
+            }
+
+            observerRegistered = false;
+          }
+        };
+
         const observeEvent = () => {
+          if (resolved) return;
+
           const databases = sharedRoot?.toJSON()?.databases;
 
           const databaseId = databases?.find((database: { database_id: string; views: string[] }) =>
@@ -115,20 +140,35 @@ export function useViewOperations() {
           )?.database_id;
 
           if (databaseId) {
+            resolved = true;
             Log.debug('[useViewOperations] mapped view to database', { viewId: id, databaseId });
+            cleanup();
             resolve(databaseId);
             return;
           }
 
-          console.warn('[useViewOperations] databaseId not found for view', { viewId: id });
+          // Only log warning once, not on every observe event
+          if (!warningLogged) {
+            warningLogged = true;
+            Log.debug('[useViewOperations] databaseId not found for view yet, waiting for sync', { viewId: id });
+          }
         };
 
         observeEvent();
-        sharedRoot?.observeDeep(observeEvent);
+        if (sharedRoot && !resolved) {
+          sharedRoot.observeDeep(observeEvent);
+          observerRegistered = true;
+        }
 
-        return () => {
-          sharedRoot?.unobserveDeep(observeEvent);
-        };
+        // Add timeout to prevent hanging forever
+        timeoutId = setTimeout(() => {
+          if (!resolved) {
+            resolved = true;
+            cleanup();
+            console.warn('[useViewOperations] databaseId lookup timed out for view', { viewId: id });
+            resolve(null);
+          }
+        }, 10000); // 10 second timeout
       });
     },
     [currentWorkspaceId, databaseStorageId, registerWorkspaceDatabaseDoc]
@@ -277,7 +317,22 @@ export function useViewOperations() {
           return doc;
         }
 
-        const databaseId = await getDatabaseId(id);
+        let databaseId = await getDatabaseId(id);
+
+        if (!databaseId) {
+          const sharedRoot = res.getMap(YjsEditorKey.data_section) as YSharedRoot | undefined;
+          const database = sharedRoot?.get(YjsEditorKey.database);
+          const fallbackDatabaseId = database?.get(YjsDatabaseKey.id);
+
+          if (fallbackDatabaseId) {
+            Log.debug('[useViewOperations] databaseId loaded from Yjs document', {
+              viewId: id,
+              databaseId: fallbackDatabaseId,
+            });
+            databaseId = fallbackDatabaseId;
+            databaseIdViewIdMapRef.current.set(fallbackDatabaseId, id);
+          }
+        }
 
         if (!databaseId) {
           throw new Error('Database not found');

@@ -3,6 +3,9 @@
  * This file encapsulates all data-testid selectors to avoid hardcoding them in tests
  */
 
+// Re-export FieldType from the source to avoid duplication
+export { FieldType } from '../../src/application/database-yjs/database.type';
+
 /**
  * Helper function to create a data-testid selector
  */
@@ -396,9 +399,10 @@ export const DatabaseGridSelectors = {
 
   // Get clickable row cell wrappers for a field (DATA ROWS ONLY)
   // These have data-column-id={fieldId} and contain the onClick handler
-  dataRowCellsForField: (fieldId: string) =>
+  dataRowCellsForField: (fieldId: string, options?: CypressGetOptions) =>
     cy.get(
-      `[data-testid^="grid-row-"]:not([data-testid="grid-row-undefined"]) .grid-row-cell[data-column-id="${fieldId}"]`
+      `[data-testid^="grid-row-"]:not([data-testid="grid-row-undefined"]) .grid-row-cell[data-column-id="${fieldId}"]`,
+      options
     ),
 
   // Get first cell
@@ -744,27 +748,6 @@ export const PropertyMenuSelectors = {
   editPropertyMenuItem: () => cy.get(byTestId('grid-field-edit-property')),
 };
 
-/**
- * Field Types enum for database columns
- */
-export const FieldType = {
-  RichText: 0,
-  Number: 1,
-  DateTime: 2,
-  SingleSelect: 3,
-  MultiSelect: 4,
-  Checkbox: 5,
-  URL: 6,
-  Checklist: 7,
-  LastEditedTime: 8,
-  CreatedTime: 9,
-  Relation: 10,
-  AISummaries: 11,
-  AITranslations: 12,
-  FileMedia: 14,
-  Person: 15,
-  Time: 16,
-};
 
 /**
  * Database Row Controls selectors
