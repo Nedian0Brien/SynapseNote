@@ -1860,7 +1860,6 @@ export function useUpdateRowMetaDispatch(rowId: string) {
       }
 
       const rowSharedRoot = rowDoc.getMap(YjsEditorKey.data_section) as YSharedRoot;
-      const row = rowSharedRoot.get(YjsEditorKey.database_row);
       const meta = rowSharedRoot.get(YjsEditorKey.meta);
 
       const keyId = getMetaIdMap(rowId).get(key);
@@ -1881,8 +1880,6 @@ export function useUpdateRowMetaDispatch(rowId: string) {
         } else {
           meta.set(keyId, value);
         }
-
-        row.set(YjsDatabaseKey.last_modified, String(dayjs().unix()));
       });
     },
     [rowDoc, rowId]
