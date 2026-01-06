@@ -29,6 +29,9 @@ import {
   CreatePageResponse,
   CreateSpacePayload,
   CreateWorkspacePayload,
+  DatabaseCsvImportCreateResponse,
+  DatabaseCsvImportRequest,
+  DatabaseCsvImportStatusResponse,
   DatabaseId,
   FolderView,
   GenerateAISummaryRowPayload,
@@ -65,6 +68,7 @@ import {
 } from '@/application/types';
 import { notify } from '@/components/_shared/notify';
 import { RepeatedChatMessage } from '@/components/chat';
+import { database_blob } from '@/proto/database_blob';
 import { getAppFlowyFileUploadUrl, getAppFlowyFileUrl } from '@/utils/file-storage-url';
 import { Log } from '@/utils/log';
 
@@ -783,6 +787,35 @@ export async function getPageCollab(workspaceId: string, viewId: string) {
   };
 }
 
+export async function databaseBlobDiff(
+  workspaceId: string,
+  databaseId: string,
+  request: database_blob.IDatabaseBlobDiffRequest
+) {
+  if (!axiosInstance) {
+    return Promise.reject({
+      code: -1,
+      message: 'API service not initialized',
+    });
+  }
+
+  const url = `/api/workspace/${workspaceId}/database/${databaseId}/blob/diff`;
+  const payload = database_blob.DatabaseBlobDiffRequest.encode(request).finish();
+
+  const response = await axiosInstance.post<ArrayBuffer>(url, payload, {
+    responseType: 'arraybuffer',
+    headers: {
+      'Content-Type': 'application/octet-stream',
+    },
+    transformRequest: [(data) => data],
+    validateStatus: (status) => status === 200 || status === 202,
+  });
+
+  const bytes = new Uint8Array(response.data);
+
+  return database_blob.DatabaseBlobDiffResponse.decode(bytes);
+}
+
 export async function getPublishView(publishNamespace: string, publishName: string) {
   const meta = await getPublishViewMeta(publishNamespace, publishName);
   const blob = await getPublishViewBlob(publishNamespace, publishName);
@@ -1441,6 +1474,62 @@ export async function uploadImportFile(presignedUrl: string, file: File, onProgr
     code: -1,
     message: `Upload file failed. ${response.statusText}`,
   });
+}
+
+export async function createDatabaseCsvImportTask(
+  workspaceId: string,
+  payload: DatabaseCsvImportRequest
+): Promise<DatabaseCsvImportCreateResponse> {
+  const url = `/api/workspace/${workspaceId}/database/import/csv`;
+
+  return executeAPIRequest<DatabaseCsvImportCreateResponse>(() =>
+    axiosInstance?.post<APIResponse<DatabaseCsvImportCreateResponse>>(url, payload)
+  );
+}
+
+export async function uploadDatabaseCsvImportFile(
+  presignedUrl: string,
+  file: File,
+  onProgress?: (progress: number) => void
+) {
+  const response = await axios.put(presignedUrl, file, {
+    onUploadProgress: (progressEvent) => {
+      if (!onProgress) return;
+      const { progress = 0 } = progressEvent;
+
+      Log.debug(`Upload progress: ${progress * 100}%`);
+      onProgress(progress);
+    },
+    headers: {
+      'Content-Type': 'text/csv',
+    },
+  });
+
+  if (response.status === 200 || response.status === 204) {
+    return;
+  }
+
+  return Promise.reject({
+    code: -1,
+    message: `Upload csv file failed. ${response.statusText}`,
+  });
+}
+
+export async function getDatabaseCsvImportStatus(
+  workspaceId: string,
+  taskId: string
+): Promise<DatabaseCsvImportStatusResponse> {
+  const url = `/api/workspace/${workspaceId}/database/import/csv/${taskId}`;
+
+  return executeAPIRequest<DatabaseCsvImportStatusResponse>(() =>
+    axiosInstance?.get<APIResponse<DatabaseCsvImportStatusResponse>>(url)
+  );
+}
+
+export async function cancelDatabaseCsvImportTask(workspaceId: string, taskId: string): Promise<void> {
+  const url = `/api/workspace/${workspaceId}/database/import/csv/${taskId}/cancel`;
+
+  return executeAPIVoidRequest(() => axiosInstance?.post<APIResponse>(url));
 }
 
 export async function createDatabaseView(
