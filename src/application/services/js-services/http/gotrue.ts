@@ -21,9 +21,16 @@ export function initGrantService(baseURL: string) {
   });
 
   axiosInstance.interceptors.request.use((config) => {
-    Object.assign(config.headers, {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-    });
+    };
+
+    // Skip x-platform header for signup to avoid CORS issues with GoTrue
+    if (!config.url?.includes('/signup')) {
+      headers['x-platform'] = 'web-app';
+    }
+
+    Object.assign(config.headers, headers);
 
     return config;
   });
@@ -63,7 +70,23 @@ export async function signInWithPassword(params: { email: string; password: stri
     const data = response?.data;
 
     if (data) {
-      saveGoTrueAuth(JSON.stringify(data));
+      try {
+        await verifyToken(data.access_token);
+        saveGoTrueAuth(JSON.stringify(data));
+      } catch (error: unknown) {
+        emit(EventType.SESSION_INVALID);
+        const err = error as { message?: string; code?: number };
+        const message =
+          typeof err?.message === 'string'
+            ? err.message.replace(/\s*\[.*\]$/, '')
+            : 'Failed to verify token';
+
+        return Promise.reject({
+          code: err?.code ?? -1,
+          message,
+        });
+      }
+
       emit(EventType.SESSION_VALID);
       afterAuth();
     } else {
@@ -83,6 +106,75 @@ export async function signInWithPassword(params: { email: string; password: stri
       errorDescription: e.response?.data?.error_description || e.response?.data?.msg,
       errorCode: e.response?.status,
       message: e.response?.data?.message || 'Incorrect password. Please try again.',
+    });
+
+    return Promise.reject({
+      code: error.code,
+      message: error.message,
+    });
+  }
+}
+
+export async function signUpWithPassword(params: { email: string; password: string; redirectTo: string }) {
+  try {
+    const response = await axiosInstance?.post<{
+      access_token: string;
+      expires_at: number;
+      refresh_token: string;
+    }>('/signup', {
+      email: params.email,
+      password: params.password,
+    });
+
+    const data = response?.data;
+
+    if (data) {
+      try {
+        await verifyToken(data.access_token);
+      } catch (error: unknown) {
+        emit(EventType.SESSION_INVALID);
+        const err = error as { message?: string; code?: number };
+        const message =
+          typeof err?.message === 'string'
+            ? err.message.replace(/\s*\[.*\]$/, '')
+            : 'Failed to verify token';
+
+        return Promise.reject({
+          code: err?.code ?? -1,
+          message,
+        });
+      }
+
+      try {
+        await refreshToken(data.refresh_token);
+      } catch (error: unknown) {
+        emit(EventType.SESSION_INVALID);
+        const err = error as { message?: string; code?: number };
+
+        return Promise.reject({
+          code: err?.code ?? -1,
+          message: 'Failed to refresh token',
+        });
+      }
+
+      emit(EventType.SESSION_VALID);
+      afterAuth();
+    } else {
+      emit(EventType.SESSION_INVALID);
+      return Promise.reject({
+        code: -1,
+        message: 'Failed to sign up with password',
+      });
+    }
+    // eslint-disable-next-line
+  } catch (e: any) {
+    emit(EventType.SESSION_INVALID);
+
+    const error = parseGoTrueError({
+      error: e.response?.data?.error,
+      errorDescription: e.response?.data?.error_description || e.response?.data?.msg,
+      errorCode: e.response?.status,
+      message: e.response?.data?.message || 'Failed to sign up with password.',
     });
 
     return Promise.reject({

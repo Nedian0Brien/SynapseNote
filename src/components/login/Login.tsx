@@ -7,6 +7,7 @@ import { ReactComponent as Logo } from '@/assets/icons/logo.svg';
 import EmailLogin from '@/components/login/EmailLogin';
 import LoginProvider from '@/components/login/LoginProvider';
 import { AFConfigContext } from '@/components/main/app.hooks';
+import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { getPlatform } from '@/utils/platform';
 
@@ -58,14 +59,6 @@ export function Login({ redirectTo }: { redirectTo: string }) {
           <div className={'text-xl font-semibold'}>{t('welcomeTo')} AppFlowy</div>
         </div>
         <EmailLogin redirectTo={redirectTo} />
-        {hasOAuthProviders && (
-          <div className={'flex w-full items-center justify-center gap-2 text-text-secondary'}>
-            <Separator className={'flex-1'} />
-            {t('web.or')}
-            <Separator className={'flex-1'} />
-          </div>
-        )}
-        <LoginProvider redirectTo={redirectTo} availableProviders={availableProviders} />
         <div
           className={
             'w-[300px] overflow-hidden whitespace-pre-wrap break-words text-center text-[12px] tracking-[0.36px] text-text-secondary'
@@ -90,6 +83,29 @@ export function Login({ redirectTo }: { redirectTo: string }) {
             {t('web.privacyPolicy')}
           </a>
           .
+        </div>
+        {hasOAuthProviders && (
+          <div className={'flex w-full items-center justify-center gap-2 text-text-secondary'}>
+            <Separator className={'flex-1'} />
+            {t('web.or')}
+            <Separator className={'flex-1'} />
+          </div>
+        )}
+        <LoginProvider redirectTo={redirectTo} availableProviders={availableProviders} />
+        <div className={'flex items-center gap-1 text-sm text-text-secondary'}>
+          <span>{t('signIn.dontHaveAnAccount')}</span>
+          <Button
+            variant={'link'}
+            onClick={() => {
+              const encodedRedirect = encodeURIComponent(redirectTo);
+
+              window.location.href = `/login?action=signUpPassword&redirectTo=${encodedRedirect}`;
+            }}
+            className={'px-0 text-text-secondary underline'}
+            data-testid="login-create-account-button"
+          >
+            {t('signIn.createAccount')}
+          </Button>
         </div>
       </div>
 
