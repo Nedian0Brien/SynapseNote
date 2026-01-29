@@ -395,6 +395,13 @@ export enum YjsDatabaseKey {
   auto_fill = 'auto_fill',
   language = 'language',
   number_of_days = 'number_of_days',
+  // Person type option keys
+  is_single_select = 'is_single_select',
+  fill_with_creator = 'fill_with_creator',
+  disable_notification = 'disable_notification',
+  persons = 'persons',
+  // URL type option keys
+  url = 'url',
 }
 
 /**
@@ -779,6 +786,10 @@ export interface YMapFieldTypeOption extends Y.Map<unknown> {
   get(key: YjsDatabaseKey.auto_fill): boolean;
 
   get(key: YjsDatabaseKey.language): bigint;
+
+  // Person
+  // eslint-disable-next-line @typescript-eslint/unified-signatures
+  get(key: YjsDatabaseKey.is_single_select | YjsDatabaseKey.disable_notification): boolean;
 }
 
 export enum Types {
