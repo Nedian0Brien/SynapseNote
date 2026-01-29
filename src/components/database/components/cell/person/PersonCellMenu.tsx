@@ -14,7 +14,6 @@ import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
-import { stringToColor } from '@/utils/color';
 
 import { useMentionableUsersWithAutoFetch } from './useMentionableUsers';
 
@@ -152,8 +151,7 @@ function PersonCellMenu({ open, onOpenChange, fieldId, rowId, selectedUserIds }:
           ) : (
             mentionableUsers.map((user) => {
               const isSelected = selectedUserIds.includes(user.person_id);
-              const displayName = user.name || user.email || '';
-              const bgColor = stringToColor(displayName);
+              const displayName = user.name || user.email || '?';
 
               return (
                 <div
@@ -165,11 +163,9 @@ function PersonCellMenu({ open, onOpenChange, fieldId, rowId, selectedUserIds }:
                   )}
                   onClick={() => handleSelectPerson(user.person_id)}
                 >
-                  <Avatar className={'h-6 w-6 border border-border-primary'}>
-                    <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
-                    <AvatarFallback className={'text-xs text-white'} style={{ backgroundColor: bgColor }}>
-                      {displayName.charAt(0)?.toUpperCase() || '?'}
-                    </AvatarFallback>
+                  <Avatar className={'h-6 w-6'}>
+                    <AvatarImage src={user.avatar_url || undefined} alt={displayName} />
+                    <AvatarFallback className={'text-xs'}>{displayName}</AvatarFallback>
                   </Avatar>
                   <div className={'flex flex-1 flex-col overflow-hidden'}>
                     <span className={'truncate text-sm'}>{user.name || user.email}</span>
