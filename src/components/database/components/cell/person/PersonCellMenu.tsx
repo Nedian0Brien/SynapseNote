@@ -14,6 +14,7 @@ import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
+import { stringToColor } from '@/utils/color';
 
 import { useMentionableUsersWithAutoFetch } from './useMentionableUsers';
 
@@ -124,7 +125,9 @@ function PersonCellMenu({ open, onOpenChange, fieldId, rowId, selectedUserIds }:
             )}
             onClick={handleToggleNotify}
           >
-            <NotificationIcon className={'h-5 w-5 flex-shrink-0 text-icon-primary'} />
+            <NotificationIcon
+              className={cn('h-5 w-5 flex-shrink-0', notifyAssignee ? 'text-fill-default' : 'text-icon-primary')}
+            />
             <span className={'flex-1 text-sm leading-5'}>{t('grid.field.person.notifyAssignee')}</span>
             <Switch
               checked={notifyAssignee}
@@ -149,6 +152,8 @@ function PersonCellMenu({ open, onOpenChange, fieldId, rowId, selectedUserIds }:
           ) : (
             mentionableUsers.map((user) => {
               const isSelected = selectedUserIds.includes(user.person_id);
+              const displayName = user.name || user.email || '';
+              const bgColor = stringToColor(displayName);
 
               return (
                 <div
@@ -162,8 +167,8 @@ function PersonCellMenu({ open, onOpenChange, fieldId, rowId, selectedUserIds }:
                 >
                   <Avatar className={'h-6 w-6 border border-border-primary'}>
                     <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
-                    <AvatarFallback className={'text-xs'}>
-                      {user.name?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase() || '?'}
+                    <AvatarFallback className={'text-xs text-white'} style={{ backgroundColor: bgColor }}>
+                      {displayName.charAt(0)?.toUpperCase() || '?'}
                     </AvatarFallback>
                   </Avatar>
                   <div className={'flex flex-1 flex-col overflow-hidden'}>

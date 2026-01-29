@@ -4,6 +4,7 @@ import { CellProps, PersonCell as PersonCellType } from '@/application/database-
 import { MentionablePerson } from '@/application/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { stringToColor } from '@/utils/color';
 
 import PersonCellMenu from './PersonCellMenu';
 import { useMentionableUsersWithAutoFetch } from './useMentionableUsers';
@@ -47,19 +48,24 @@ export function PersonCell({
   );
 
   const renderedUsers = useMemo(() => {
-    return selectedUsers.map((user) => (
-      <div key={user.person_id} className="min-w-fit max-w-[120px]">
-        <div className="flex items-center gap-1">
-          <Avatar className="h-5 w-5 border border-border-primary">
-            <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
-            <AvatarFallback className="text-xs">
-              {user.name?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase() || '?'}
-            </AvatarFallback>
-          </Avatar>
-          <span className="truncate text-sm">{user.name || user.email}</span>
+    return selectedUsers.map((user) => {
+      const displayName = user.name || user.email || '';
+      const bgColor = stringToColor(displayName);
+
+      return (
+        <div key={user.person_id} className="min-w-fit max-w-[120px]">
+          <div className="flex items-center gap-1">
+            <Avatar className="h-5 w-5 border border-border-primary">
+              <AvatarImage src={user.avatar_url || undefined} alt={user.name || ''} />
+              <AvatarFallback className="text-xs text-white" style={{ backgroundColor: bgColor }}>
+                {displayName.charAt(0)?.toUpperCase() || '?'}
+              </AvatarFallback>
+            </Avatar>
+            <span className="truncate text-sm">{user.name || user.email}</span>
+          </div>
         </div>
-      </div>
-    ));
+      );
+    });
   }, [selectedUsers]);
 
   return (
