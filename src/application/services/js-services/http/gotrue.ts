@@ -4,7 +4,7 @@ import { emit, EventType } from '@/application/session';
 import { afterAuth } from '@/application/session/sign_in';
 import { getTokenParsed, saveGoTrueAuth } from '@/application/session/token';
 
-import { parseGoTrueError } from './gotrue-error';
+import { GoTrueErrorCode, parseGoTrueError } from './gotrue-error';
 import { verifyToken } from './http_api';
 
 export * from './gotrue-error';
@@ -406,4 +406,50 @@ export function signInDiscord(authUrl: string) {
   const url = `${baseURL}/authorize?provider=${provider}&redirect_to=${redirectTo}`;
 
   window.open(url, '_current');
+}
+
+interface AxiosErrorLike {
+  response?: {
+    data?: { message?: string; msg?: string };
+    status?: number;
+  };
+  message?: string;
+}
+
+/**
+ * Initiates SAML SSO login flow
+ * @param authUrl - The callback URL after SSO completes
+ * @param domain - The email domain to identify the SSO provider (e.g., "company.com")
+ */
+export async function signInSaml(authUrl: string, domain: string): Promise<void> {
+  try {
+    // POST to /sso endpoint with skip_http_redirect to get IdP URL in JSON
+    // This avoids CORS issues from automatic redirect following
+    const response = await axiosInstance?.post<{ url: string }>('/sso', {
+      domain,
+      redirect_to: authUrl,
+      skip_http_redirect: true,
+    });
+
+    const idpUrl = response?.data?.url;
+
+    if (idpUrl) {
+      // Redirect to the Identity Provider login page
+      window.location.href = idpUrl;
+      return;
+    }
+
+    return Promise.reject({
+      code: GoTrueErrorCode.UNKNOWN,
+      message: 'No SSO redirect URL returned',
+    });
+  } catch (e: unknown) {
+    const err = e as AxiosErrorLike;
+    const errorMessage = err.response?.data?.message || err.response?.data?.msg || err.message || 'SSO login failed';
+
+    return Promise.reject({
+      code: err.response?.status || GoTrueErrorCode.UNKNOWN,
+      message: errorMessage,
+    });
+  }
 }
