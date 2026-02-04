@@ -1,7 +1,7 @@
 import 'cypress-real-events';
 import { AuthTestUtils } from '../../support/auth-utils';
 import { TestTool } from '../../support/page-utils';
-import { AddPageSelectors, EditorSelectors, PageSelectors, ShareSelectors, SidebarSelectors } from '../../support/selectors';
+import { AddPageSelectors, DatabaseGridSelectors, EditorSelectors, PageSelectors, RowDetailSelectors, ShareSelectors, SidebarSelectors, waitForReactUpdate } from '../../support/selectors';
 import { generateRandomEmail, logAppFlowyEnvironment } from '../../support/test-config';
 import { testLog } from '../../support/test-helpers';
 
@@ -835,6 +835,182 @@ describe('Publish Page Test', () => {
                         });
 
                         testLog.info('✓ Test passed: Row opened in published view without errors');
+                    });
+                });
+            });
+        });
+    });
+
+    it('publish database with row document content and verify content displays in published view', () => {
+        cy.on('uncaught:exception', (err: Error) => {
+            // These are expected/handled errors
+            if (err.message.includes('No workspace or service found') ||
+                err.message.includes('createThemeNoVars_default is not a function') ||
+                err.message.includes('View not found') ||
+                err.message.includes('ResizeObserver loop') ||
+                err.message.includes('Record not found')) {
+                return false;
+            }
+            return true;
+        });
+
+        const rowDocContent = `TestRowDoc-${Date.now()}`;
+
+        cy.visit('/login', { failOnStatusCode: false });
+        cy.wait(1000);
+        const authUtils = new AuthTestUtils();
+        authUtils.signInWithTestUrl(testEmail).then(() => {
+            cy.url().should('include', '/app');
+            testLog.info('Signed in');
+
+            SidebarSelectors.pageHeader().should('be.visible', { timeout: 30000 });
+            PageSelectors.names().should('exist', { timeout: 30000 });
+            cy.wait(2000);
+
+            // Step 1: Create a new Grid database
+            testLog.info('Creating new Grid database');
+            AddPageSelectors.inlineAddButton().first().click({ force: true });
+            cy.wait(1000);
+            AddPageSelectors.addGridButton().should('be.visible').click({ force: true });
+            cy.wait(5000);
+
+            // Verify Grid database loaded
+            cy.get('[data-testid="database-grid"]').should('exist', { timeout: 15000 });
+            testLog.info('Grid database created and loaded');
+            cy.wait(2000);
+
+            // Step 2: Open the first row to add document content
+            testLog.info('Opening first row to add document content');
+            // Hover over the row to reveal the expand button
+            DatabaseGridSelectors.dataRows()
+                .first()
+                .scrollIntoView()
+                .should('be.visible')
+                .realHover();
+            waitForReactUpdate(500);
+
+            // Click the expand button to open row detail modal
+            cy.get('[data-testid="row-expand-button"]', { timeout: 5000 })
+                .should('exist')
+                .first()
+                .should('be.visible')
+                .click({ force: true });
+            waitForReactUpdate(1000);
+
+            // Verify row detail modal opened
+            RowDetailSelectors.modal().should('exist', { timeout: 10000 });
+            testLog.info('Row detail modal opened');
+
+            // Step 3: Type content into the row document
+            testLog.info('Typing content into row document');
+            // Wait longer for document to initialize - new rows may need time
+            waitForReactUpdate(5000);
+
+            // Scroll to the document area
+            cy.get('[role="dialog"]')
+                .find('.appflowy-scroll-container')
+                .scrollTo('bottom', { ensureScrollable: false });
+            waitForReactUpdate(2000);
+
+            // Wait for editor to be ready - new rows need the document to be created
+            // The editor appears after the document is initialized, which can take several seconds
+            cy.get('[role="dialog"]')
+                .find('[data-testid="editor-content"], [role="textbox"][contenteditable="true"]', { timeout: 30000 })
+                .should('exist')
+                .first()
+                .as('editor');
+
+            // Click into the editor and type content
+            cy.get('@editor').click({ force: true });
+            waitForReactUpdate(1000);
+
+            // Type the content - this will create the row document
+            cy.focused().type(rowDocContent, { delay: 50 });
+            waitForReactUpdate(10000); // Wait 10s for content to sync to server
+
+            // Verify content was typed
+            cy.get('[role="dialog"]').should('contain.text', rowDocContent);
+            testLog.info('Row document content added');
+
+            // Step 4: Close the modal
+            testLog.info('Closing row detail modal');
+            // Click outside the editor first to ensure changes are saved
+            RowDetailSelectors.modalTitle().click({ force: true });
+            waitForReactUpdate(1000);
+            cy.get('body').type('{esc}');
+            waitForReactUpdate(2000);
+            RowDetailSelectors.modal().should('not.exist');
+            waitForReactUpdate(10000); // Wait 10s for changes to sync to server before publishing
+
+            // Step 5: Publish the database
+            testLog.info('Publishing database');
+            ShareSelectors.shareButton().should('be.visible', { timeout: 10000 });
+            TestTool.openSharePopover();
+
+            cy.contains('Publish').should('exist').click({ force: true });
+            cy.wait(1000);
+            ShareSelectors.publishConfirmButton().should('be.visible').should('not.be.disabled');
+            ShareSelectors.publishConfirmButton().click({ force: true });
+            testLog.info('Clicked Publish button');
+            cy.wait(5000);
+
+            // Verify published
+            ShareSelectors.publishNamespace().should('be.visible', { timeout: 10000 });
+            testLog.info('Database published successfully');
+
+            // Step 6: Get the published URL and visit
+            cy.window().then((win) => {
+                const origin = win.location.origin;
+
+                ShareSelectors.publishNamespace().invoke('text').then((namespace) => {
+                    ShareSelectors.publishNameInput().invoke('val').then((publishName) => {
+                        const namespaceText = namespace.trim();
+                        const publishNameText = String(publishName).trim();
+                        const publishedUrl = `${origin}/${namespaceText}/${publishNameText}`;
+                        testLog.info(`Published URL: ${publishedUrl}`);
+
+                        // Close the share popover
+                        cy.get('body').type('{esc}');
+                        cy.wait(500);
+
+                        // Visit the published database URL
+                        testLog.info('Opening published database URL');
+                        cy.visit(publishedUrl, { failOnStatusCode: false });
+                        cy.url({ timeout: 10000 }).should('include', `/${namespaceText}/${publishNameText}`);
+                        testLog.info('Published database opened');
+                        cy.wait(5000);
+
+                        // Step 7: Get row ID and navigate to row page in published view
+                        testLog.info('Opening row page in published view');
+
+                        // Get the first row's data-testid to extract the row ID
+                        cy.get('[data-testid^="grid-row-"]:not([data-testid="grid-row-undefined"])')
+                            .first()
+                            .invoke('attr', 'data-testid')
+                            .then((testId) => {
+                                // Extract row ID from data-testid (format: "grid-row-{rowId}")
+                                const rowId = testId?.replace('grid-row-', '');
+                                testLog.info(`Row ID: ${rowId}`);
+
+                                if (!rowId) {
+                                    throw new Error('Could not extract row ID from grid row');
+                                }
+
+                                // Navigate to the row page URL with ?r=rowId parameter
+                                const rowPageUrl = `${publishedUrl}?r=${rowId}`;
+                                testLog.info(`Navigating to row page: ${rowPageUrl}`);
+                                cy.visit(rowPageUrl, { failOnStatusCode: false });
+                                cy.wait(5000);
+
+                                // Step 8: Verify row document content is visible
+                                testLog.info('Verifying row document content in published view');
+
+                                // Wait for the row document content to load
+                                cy.get('body', { timeout: 15000 }).should('contain.text', rowDocContent);
+
+                                testLog.info('✓ Row document content is visible in published view');
+                                testLog.info('✓ Test passed: Row document content displays correctly in published view');
+                            });
                     });
                 });
             });
