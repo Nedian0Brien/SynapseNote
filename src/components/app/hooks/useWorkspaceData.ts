@@ -22,6 +22,85 @@ import { Log } from '@/utils/log';
 import { useAuthInternal } from '../contexts/AuthInternalContext';
 import { useSyncInternal } from '../contexts/SyncInternalContext';
 
+/**
+ * When the outline is replaced with a new shallow tree (from loadOutline or
+ * a diff patch), previously lazy-loaded deep children are lost.  This helper
+ * re-attaches those children so expanded sidebar nodes don't visually collapse.
+ *
+ * For every view that was marked as "loaded" in the *old* tree and had
+ * children, we check if the same view exists in the *new* tree with empty
+ * children.  If so, we graft the old children back in and keep the view in
+ * the returned `loadedIds` set.
+ */
+/**
+ * Build a flat id→View index from a View tree for O(1) lookups.
+ */
+function buildViewIndex(views: View[]): Map<string, View> {
+  const index = new Map<string, View>();
+
+  const walk = (list: View[]) => {
+    for (const v of list) {
+      index.set(v.view_id, v);
+
+      if (v.children && v.children.length > 0) {
+        walk(v.children);
+      }
+    }
+  };
+
+  walk(views);
+  return index;
+}
+
+export function preserveLoadedChildren(
+  newOutline: View[],
+  oldOutline: View[],
+  prevLoadedIds: Set<string>,
+): { outline: View[]; loadedIds: Set<string> } {
+  if (prevLoadedIds.size === 0) {
+    return { outline: newOutline, loadedIds: new Set() };
+  }
+
+  // Pre-index the old outline for O(1) lookups (it doesn't mutate during the loop).
+  const oldIndex = buildViewIndex(oldOutline);
+
+  let finalOutline = newOutline;
+  const nextLoadedIds = new Set<string>();
+
+  for (const loadedId of prevLoadedIds) {
+    const oldView = oldIndex.get(loadedId);
+
+    if (!oldView || !oldView.children || oldView.children.length === 0) continue;
+
+    // finalOutline mutates after each graft, so we must search it each iteration.
+    const newView = findView(finalOutline, loadedId);
+
+    if (!newView) continue; // view was removed from tree
+
+    // If server explicitly marks the node as empty, do not resurrect stale local children.
+    if (newView.has_children === false) {
+      continue;
+    }
+
+    if (newView.children && newView.children.length > 0) {
+      // Children already present (e.g. restored by a parent's graft)
+      nextLoadedIds.add(loadedId);
+      continue;
+    }
+
+    // Graft old children back into the new shallow tree
+    finalOutline = mergeChildrenIntoOutline(
+      finalOutline,
+      loadedId,
+      oldView.children,
+      oldView.has_children,
+    );
+    nextLoadedIds.add(loadedId);
+  }
+
+  return { outline: finalOutline, loadedIds: nextLoadedIds };
+}
+
 const USER_NO_ACCESS_CODE = 1012;
 const USER_UNAUTHORIZED_CODE = 1024;
 
@@ -102,6 +181,29 @@ export function useWorkspaceData() {
   const loadedViewIds = useMemo(() => loadedViewIdsRef.current, [loadedViewIdsRevision]); // eslint-disable-line react-hooks/exhaustive-deps
   const loadingViewIdsRef = useRef<Set<string>>(new Set());
 
+  // Helper: replace the outline tree while preserving previously lazy-loaded
+  // children so expanded sidebar nodes don't collapse.  Used by both
+  // `loadOutline` and `handleFolderOutlineChanged`.
+  // deps: [] is correct — all reads go through stable refs; state setters are
+  // stable by React guarantee.
+  const replaceOutlinePreservingChildren = useCallback((newOutline: View[]) => {
+    const prevOutline = stableOutlineRef.current;
+    const prevLoadedIds = new Set(loadedViewIdsRef.current);
+    const { outline: mergedOutline, loadedIds: nextLoadedIds } = preserveLoadedChildren(
+      newOutline,
+      prevOutline,
+      prevLoadedIds,
+    );
+
+    stableOutlineRef.current = mergedOutline;
+    loadedViewIdsRef.current = nextLoadedIds;
+    setLoadedViewIdsRevision((r) => r + 1);
+    loadingViewIdsRef.current = new Set();
+    setOutline(mergedOutline);
+
+    return mergedOutline;
+  }, []);
+
   // Load application outline
   const updateLastFolderRid = useCallback((next: FolderRid | null) => {
     if (!next) return;
@@ -150,15 +252,10 @@ export function useWorkspaceData() {
           outlineWithShareWithMe = [...res.outline, shareWithMeSpace];
         }
 
-        stableOutlineRef.current = outlineWithShareWithMe;
-        // Full outline replacement invalidates lazy-loaded child cache from previous tree.
-        loadedViewIdsRef.current = new Set();
-        setLoadedViewIdsRevision((r) => r + 1);
-        loadingViewIdsRef.current = new Set();
-        setOutline(outlineWithShareWithMe);
+        const mergedOutline = replaceOutlinePreservingChildren(outlineWithShareWithMe);
 
         if (eventEmitter) {
-          eventEmitter.emit(APP_EVENTS.OUTLINE_LOADED, outlineWithShareWithMe || []);
+          eventEmitter.emit(APP_EVENTS.OUTLINE_LOADED, mergedOutline || []);
         }
 
         if (!force) return;
@@ -272,7 +369,7 @@ export function useWorkspaceData() {
         }
       }
     },
-    [navigate, service, eventEmitter, updateLastFolderRid, userWorkspaceInfo?.userId]
+    [navigate, service, eventEmitter, updateLastFolderRid, userWorkspaceInfo?.userId, replaceOutlinePreservingChildren]
   );
 
   // Load children for a single view (lazy expand)
@@ -448,9 +545,16 @@ export function useWorkspaceData() {
 
     if (!changed) return;
 
+    // Also invalidate the HTTP cache for the root view so the next
+    // loadViewChildren call makes a fresh API request instead of
+    // returning stale cached data.
+    if (service && currentWorkspaceId) {
+      service.invalidateViewCache?.(currentWorkspaceId, viewId);
+    }
+
     Log.debug('[Outline] [cache] Marked view subtree stale', { viewId, clearedIds: subtreeIds.length });
     setLoadedViewIdsRevision((r) => r + 1);
-  }, [stableOutlineRef]);
+  }, [stableOutlineRef, service, currentWorkspaceId]);
 
   useEffect(() => {
     const handleShareViewsChanged = () => {
@@ -553,18 +657,12 @@ export function useWorkspaceData() {
         ? [...patchedOutline, existingShareWithMe]
         : patchedOutline;
 
-      stableOutlineRef.current = nextOutline;
-      // Outline diff patches can replace loaded subtrees. Invalidate lazy-loaded
-      // cache so future expands refetch authoritative children instead of
-      // trusting stale loaded markers.
-      loadedViewIdsRef.current = new Set();
-      setLoadedViewIdsRevision((r) => r + 1);
-      loadingViewIdsRef.current = new Set();
-      setOutline(nextOutline);
+      const mergedOutline = replaceOutlinePreservingChildren(nextOutline);
+
       updateLastFolderRid(patchRid);
 
       if (eventEmitter) {
-        eventEmitter.emit(APP_EVENTS.OUTLINE_LOADED, nextOutline || []);
+        eventEmitter.emit(APP_EVENTS.OUTLINE_LOADED, mergedOutline || []);
       }
     };
 
@@ -577,7 +675,7 @@ export function useWorkspaceData() {
         eventEmitter.off(APP_EVENTS.FOLDER_OUTLINE_CHANGED, handleFolderOutlineChanged);
       }
     };
-  }, [currentWorkspaceId, eventEmitter, loadOutline, stableOutlineRef, updateLastFolderRid]);
+  }, [currentWorkspaceId, eventEmitter, loadOutline, replaceOutlinePreservingChildren, stableOutlineRef, updateLastFolderRid]);
 
   // Handle granular FolderViewChanged notifications
   useEffect(() => {
@@ -636,6 +734,21 @@ export function useWorkspaceData() {
 
           if (parentId) {
             nextOutline = removeViewFromOutline(nextOutline, parentId, childIds);
+
+            // Clean removed children (and their subtrees) from loadedViewIdsRef
+            // so that preserveLoadedChildren won't re-graft them on the next
+            // FOLDER_OUTLINE_CHANGED shallow refresh.
+            for (const childId of childIds) {
+              loadedViewIdsRef.current.delete(childId);
+            }
+
+            // If the parent has no remaining children, remove it from loaded IDs
+            // so we don't re-graft stale children on the next outline refresh.
+            const parentView = findView(nextOutline, parentId);
+
+            if (parentView && (!parentView.children || parentView.children.length === 0)) {
+              loadedViewIdsRef.current.delete(parentId);
+            }
           }
 
           break;
