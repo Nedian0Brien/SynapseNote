@@ -14,6 +14,7 @@ import {
   WorkspaceMemberProfileUpdate,
 } from '@/application/services/services.type';
 import { getTokenParsed, invalidToken } from '@/application/session/token';
+import { getConfigValue } from '@/utils/runtime-config';
 import {
   Template,
   TemplateCategory,
@@ -1619,6 +1620,10 @@ export async function createImportTask(file: File) {
     axiosInstance?.post<APIResponse<{ task_id: string; presigned_url: string }>>(url, {
       workspace_name: fileName,
       content_length: file.size,
+    }, {
+      headers: {
+        'X-Host': getConfigValue('APPFLOWY_BASE_URL', ''),
+      },
     })
   ).then((data) => ({
     taskId: data.task_id,
@@ -1656,7 +1661,11 @@ export async function createDatabaseCsvImportTask(
   const url = `/api/workspace/${workspaceId}/database/import/csv`;
 
   return executeAPIRequest<DatabaseCsvImportCreateResponse>(() =>
-    axiosInstance?.post<APIResponse<DatabaseCsvImportCreateResponse>>(url, payload)
+    axiosInstance?.post<APIResponse<DatabaseCsvImportCreateResponse>>(url, payload, {
+      headers: {
+        'X-Host': getConfigValue('APPFLOWY_BASE_URL', ''),
+      },
+    })
   );
 }
 
