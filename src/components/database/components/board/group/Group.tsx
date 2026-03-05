@@ -232,7 +232,9 @@ export const Group = ({ groupId }: GroupProps) => {
     };
 
     onScroll();
-    verticalScrollContainer.addEventListener('scroll', onScroll);
+    const scrollListenerOptions: AddEventListenerOptions = { passive: true };
+
+    verticalScrollContainer.addEventListener('scroll', onScroll, scrollListenerOptions);
     return () => {
       verticalScrollContainer.removeEventListener('scroll', onScroll);
     };
