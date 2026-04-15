@@ -93,10 +93,57 @@
   color: var(--muted); transition: background var(--dur-fast), color var(--dur-fast);
 }
 .tb-btn:hover { background: var(--primary-dim); color: var(--on-surface); }
+.tb-btn.active { background: var(--primary-dim); color: var(--primary); }
 .tb-btn .icon { font-size: 17px; }
 
 /* ── Stage ────────────────────────────────────────────────────── */
 .stage { flex: 1; position: relative; overflow: hidden; isolation: isolate; min-width: 0; min-height: 0; }
+.editor-pane { display: flex; flex-direction: column; height: 100%; min-width: 0; min-height: 0; }
+.editor-placeholder {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; text-align: center; padding: 24px; color: var(--muted);
+}
+.editor-placeholder .icon { font-size: 34px; color: var(--primary); opacity: 0.85; }
+.editor-placeholder strong { color: var(--on-surface); font-size: 14px; }
+.editor-placeholder p { max-width: 360px; font-size: 12px; line-height: 1.7; }
+
+.tree-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.tree-input {
+  flex: 1; min-width: 0; font-size: 11px; color: var(--on-surface);
+  background: transparent; border-bottom: 1px solid var(--primary);
+}
+.tree-item.draft { color: var(--primary); background: var(--primary-dim); }
+
+.sb-menu-scrim {
+  position: fixed; inset: 0; z-index: 79;
+}
+
+.sb-menu {
+  position: fixed; z-index: 80; min-width: 196px;
+  background: var(--surface); border: 1px solid var(--outline);
+  border-radius: var(--r-lg); box-shadow: var(--shadow-lg); padding: 8px;
+}
+
+.sb-menu.mobile {
+  left: 0 !important; right: 0 !important; top: auto !important; bottom: 0;
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  padding: 14px 14px 18px;
+}
+
+.sb-menu-title {
+  padding: 4px 8px 10px;
+  font-size: 11px; font-weight: 700; color: var(--muted);
+}
+
+.sb-menu-item {
+  width: 100%; display: flex; align-items: center; gap: 8px;
+  padding: 10px 10px; border-radius: var(--r-md); text-align: left;
+  font-size: 12px; font-weight: 600; color: var(--on-surface);
+}
+
+.sb-menu-item:hover {
+  background: var(--primary-dim);
+}
 
 /* ── Mobile Overlay ───────────────────────────────────────────── */
 .mob-overlay {
@@ -123,4 +170,5 @@
   .topbar { padding: 0 10px; gap: 6px; }
   .topbar-bc { font-size: 11px; }
   .topbar-bc .icon { display: none; }
+  .sb-menu.mobile .sb-menu-item { padding: 14px 10px; }
 }

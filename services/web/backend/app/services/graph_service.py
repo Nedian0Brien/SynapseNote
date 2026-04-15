@@ -6,7 +6,7 @@ scanning the filesystem or computing similarity on the fly.
 from __future__ import annotations
 
 from app.db.connection import get_db
-from .node_service import KnowledgeNode, list_nodes
+from .node_service import list_nodes
 
 
 def build_graph(
@@ -76,3 +76,27 @@ def build_graph(
         "edges": edges,
         "stats": stats,
     }
+
+
+def get_backlinks(node_id: str) -> list[dict[str, str]]:
+    """Return wikilink sources that reference the given node."""
+    db = get_db()
+    rows = db.execute(
+        """
+        SELECT nodes.id, nodes.title, edges.edge_type
+        FROM edges
+        JOIN nodes ON nodes.id = edges.source
+        WHERE edges.target = ? AND edges.edge_type = 'wikilink'
+        ORDER BY nodes.id
+        """,
+        (node_id,),
+    ).fetchall()
+
+    return [
+        {
+            "id": row["id"],
+            "title": row["title"],
+            "edge_type": row["edge_type"],
+        }
+        for row in rows
+    ]

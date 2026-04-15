@@ -27,7 +27,66 @@ export function useVaultTree({ onUnauthorized } = {}) {
 
   useEffect(() => { fetch_(); }, [fetch_]);
 
-  return { tree, loading, error, refetch: fetch_ };
+  const createFile = useCallback(async (path, content = '') => {
+    const res = await fetch('/api/documents', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path, content }),
+    });
+    if (res.status === 401) {
+      onUnauthorized?.();
+      return null;
+    }
+    if (!res.ok) throw new Error(`create file failed: ${res.status}`);
+    const json = await res.json();
+    await fetch_();
+    return json.data ?? null;
+  }, [fetch_, onUnauthorized]);
+
+  const renameFile = useCallback(async (oldPath, newPath) => {
+    const resolvedOldPath = oldPath.split('/').map(encodeURIComponent).join('/');
+    const res = await fetch(`/api/documents/${resolvedOldPath}/move`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ new_path: newPath }),
+    });
+    if (res.status === 401) {
+      onUnauthorized?.();
+      return null;
+    }
+    if (!res.ok) throw new Error(`rename file failed: ${res.status}`);
+    const json = await res.json();
+    await fetch_();
+    return json.data ?? null;
+  }, [fetch_, onUnauthorized]);
+
+  const deleteFile = useCallback(async (path) => {
+    const resolvedPath = path.split('/').map(encodeURIComponent).join('/');
+    const res = await fetch(`/api/documents/${resolvedPath}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+    if (res.status === 401) {
+      onUnauthorized?.();
+      return null;
+    }
+    if (!res.ok) throw new Error(`delete file failed: ${res.status}`);
+    const json = await res.json();
+    await fetch_();
+    return json.data ?? null;
+  }, [fetch_, onUnauthorized]);
+
+  return {
+    tree,
+    loading,
+    error,
+    refetch: fetch_,
+    createFile,
+    renameFile,
+    deleteFile,
+  };
 }
 
 function buildTree(flatItems) {

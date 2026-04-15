@@ -11,6 +11,7 @@ export function useFileContent(path, { onUnauthorized } = {}) {
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
   const saveTimer = useRef(null);
+  const pendingContentRef = useRef(null);
 
   const load = useCallback(async () => {
     if (!path) return;
@@ -46,6 +47,7 @@ export function useFileContent(path, { onUnauthorized } = {}) {
       if (res.status === 401) { onUnauthorized?.(); return; }
       if (!res.ok) throw new Error(`document save failed: ${res.status}`);
       setContent(newContent);
+      pendingContentRef.current = null;
     } catch (e) {
       setError(e.message);
     } finally {
@@ -54,13 +56,33 @@ export function useFileContent(path, { onUnauthorized } = {}) {
   }, [path, onUnauthorized]);
 
   const debouncedSave = useCallback((newContent) => {
+    pendingContentRef.current = newContent;
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => save(newContent), 1000);
+    saveTimer.current = setTimeout(() => {
+      saveTimer.current = null;
+      void save(newContent);
+    }, 1000);
+  }, [save]);
+
+  const flush = useCallback(async () => {
+    if (saveTimer.current) {
+      clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+    }
+
+    if (pendingContentRef.current == null) return;
+    await save(pendingContentRef.current);
   }, [save]);
 
   useEffect(() => () => {
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-  }, []);
+    if (saveTimer.current) {
+      clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+    }
+    if (pendingContentRef.current != null) {
+      void save(pendingContentRef.current);
+    }
+  }, [save]);
 
-  return { content, loading, error, saving, save, debouncedSave };
+  return { content, loading, error, saving, save, debouncedSave, flush };
 }

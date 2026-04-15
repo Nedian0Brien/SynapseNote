@@ -1,25 +1,113 @@
-/**
- * Milkdown 위키링크 플러그인
- *
- * [[문서제목]] 및 [[문서제목|표시텍스트]] 형태의 위키링크를
- * 클릭 가능한 링크로 렌더링합니다.
- *
- * ProseMirror Decoration 기반으로 구현:
- * - 마크다운 소스에는 [[...]] 그대로 저장 (round-trip 안전)
- * - 렌더링 시 .wiki-link 클래스 a 태그로 표시
- * - 클릭 시 onNavigate(target) 콜백 호출
- */
 import { Plugin, PluginKey } from '@milkdown/kit/prose/state';
 import { Decoration, DecorationSet } from '@milkdown/kit/prose/view';
 import { $prose } from '@milkdown/kit/utils';
 
 const WIKI_LINK_RE = /\[\[([^\]|#]+)(?:#[^\]|]*)?\|?([^\]]*)\]\]/g;
+const AUTOCOMPLETE_RE = /\[\[([^\]]*)$/;
 
-/**
- * 위키링크 ProseMirror 플러그인 생성
- * @param {(target: string) => void} onNavigate - 링크 클릭 시 호출
- */
-function createWikilinkPlugin(onNavigate) {
+function getAutocompleteMatch(state) {
+  const { selection } = state;
+  if (!selection.empty) return null;
+
+  const { $from, from } = selection;
+  if (!$from.parent.isTextblock) return null;
+
+  const textBefore = $from.parent.textBetween(0, $from.parentOffset, '\0', '\0');
+  const match = textBefore.match(AUTOCOMPLETE_RE);
+  if (!match) return null;
+
+  const query = match[1].split('|')[0].split('#')[0].trim();
+  return {
+    query,
+    from: from - match[0].length,
+    to: from,
+  };
+}
+
+function renderSuggestions(container, items, onSelect) {
+  container.innerHTML = '';
+
+  if (!items.length) {
+    const empty = document.createElement('div');
+    empty.className = 'wiki-suggest-empty';
+    empty.textContent = '일치하는 노트가 없습니다.';
+    container.appendChild(empty);
+    return;
+  }
+
+  items.forEach((item) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'wiki-suggest-item';
+    const strong = document.createElement('strong');
+    strong.textContent = item.title;
+    const small = document.createElement('small');
+    small.textContent = item.id;
+    button.appendChild(strong);
+    button.appendChild(small);
+    button.addEventListener('mousedown', (event) => {
+      event.preventDefault();
+      onSelect(item.id);
+    });
+    container.appendChild(button);
+  });
+}
+
+function createAutocompletePopup(view, onSearch) {
+  const popup = document.createElement('div');
+  popup.className = 'wiki-suggest';
+  popup.hidden = true;
+  document.body.appendChild(popup);
+
+  let activeMatch = null;
+  let requestToken = 0;
+
+  const hide = () => {
+    popup.hidden = true;
+    popup.innerHTML = '';
+    activeMatch = null;
+  };
+
+  const selectSuggestion = (target) => {
+    if (!activeMatch) return;
+    const insertText = `[[${target.replace(/\.md$/, '')}]]`;
+    view.dispatch(view.state.tr.insertText(insertText, activeMatch.from, activeMatch.to));
+    hide();
+  };
+
+  const update = async (match) => {
+    if (!onSearch) {
+      hide();
+      return;
+    }
+    if (!match) {
+      hide();
+      return;
+    }
+
+    activeMatch = match;
+    const coords = view.coordsAtPos(match.to);
+    popup.style.left = `${coords.left}px`;
+    popup.style.top = `${coords.bottom + 8}px`;
+    popup.hidden = false;
+
+    const currentToken = requestToken + 1;
+    requestToken = currentToken;
+    const results = await onSearch(match.query);
+    if (requestToken !== currentToken) return;
+    renderSuggestions(popup, results, selectSuggestion);
+  };
+
+  return {
+    update,
+    hide,
+    destroy() {
+      popup.remove();
+    },
+  };
+}
+
+function createWikilinkPlugin({ onNavigate, onSearch }) {
   const key = new PluginKey('wikilink');
 
   return new Plugin({
@@ -45,7 +133,6 @@ function createWikilinkPlugin(onNavigate) {
               'data-wiki-target': target.trim(),
               title: target.trim(),
               nodeName: 'span',
-              // 내용을 span 내부에 렌더링하기 위한 spec
               contenteditable: 'true',
             });
 
@@ -61,7 +148,6 @@ function createWikilinkPlugin(onNavigate) {
           const target = event.target;
           if (!(target instanceof HTMLElement)) return false;
 
-          // .wiki-link 또는 부모가 .wiki-link인 경우
           const wikiEl = target.closest?.('[data-wiki-target]');
           if (!wikiEl) return false;
 
@@ -71,18 +157,33 @@ function createWikilinkPlugin(onNavigate) {
           event.preventDefault();
           event.stopPropagation();
 
-          if (onNavigate) onNavigate(wikiTarget);
+          onNavigate?.(wikiTarget, {
+            newTab: event.metaKey || event.ctrlKey,
+          });
           return true;
         },
       },
     },
+
+    view(editorView) {
+      const popup = createAutocompletePopup(editorView, onSearch);
+
+      return {
+        update(view, prevState) {
+          if (prevState.doc.eq(view.state.doc) && prevState.selection.eq(view.state.selection)) {
+            return;
+          }
+          const match = getAutocompleteMatch(view.state);
+          void popup.update(match);
+        },
+        destroy() {
+          popup.destroy();
+        },
+      };
+    },
   });
 }
 
-/**
- * Milkdown $prose 유틸리티로 감싼 위키링크 플러그인
- * @param {(target: string) => void} onNavigate
- */
-export function wikilinkPlugin(onNavigate) {
-  return $prose(() => createWikilinkPlugin(onNavigate));
+export function wikilinkPlugin(options) {
+  return $prose(() => createWikilinkPlugin(options));
 }

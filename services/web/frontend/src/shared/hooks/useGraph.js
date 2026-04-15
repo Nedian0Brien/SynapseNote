@@ -22,7 +22,7 @@ function normalizeGraphNode(node) {
  * /api/graph 데이터를 가져오는 훅.
  * 서버에서 spring_layout x/y 좌표가 포함된 노드와 edge_type이 포함된 엣지를 반환한다.
  */
-export function useGraph({ onUnauthorized } = {}) {
+export function useGraph({ onUnauthorized, refreshKey } = {}) {
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
   const [stats, setStats] = useState(null);
@@ -48,7 +48,7 @@ export function useGraph({ onUnauthorized } = {}) {
     }
   }, [onUnauthorized]);
 
-  useEffect(() => { fetchGraph(); }, [fetchGraph]);
+  useEffect(() => { fetchGraph(); }, [fetchGraph, refreshKey]);
 
   return { nodes, edges, stats, loading, error, refetch: fetchGraph };
 }
