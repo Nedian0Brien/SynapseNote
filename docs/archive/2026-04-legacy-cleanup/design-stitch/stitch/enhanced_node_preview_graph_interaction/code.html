@@ -1,0 +1,397 @@
+<html><head></head><body class="dark bg-background text-on-surface font-body selection:bg-primary/30 min-h-screen overflow-hidden">```html
+<meta charset="utf-8"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&amp;family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "outline": "#958da1",
+          "on-tertiary": "#4f2500",
+          "tertiary-container": "#a15100",
+          "surface-container-lowest": "#0e0e0e",
+          "primary-fixed-dim": "#d2bbff",
+          "inverse-primary": "#732ee4",
+          "on-tertiary-container": "#ffe0cd",
+          "on-surface": "#e5e2e1",
+          "tertiary-fixed-dim": "#ffb784",
+          "on-error-container": "#ffdad6",
+          "surface-container-low": "#1c1b1b",
+          "surface-container-highest": "#353534",
+          "tertiary-fixed": "#ffdcc6",
+          "inverse-surface": "#e5e2e1",
+          "on-secondary-fixed-variant": "#004395",
+          "primary-container": "#7c3aed",
+          "surface-dim": "#131313",
+          "on-primary": "#3f008e",
+          "on-secondary-fixed": "#001a42",
+          "secondary": "#adc6ff",
+          "on-primary-fixed": "#25005a",
+          "surface-container": "#201f1f",
+          "surface-container-high": "#2a2a2a",
+          "surface-variant": "#353534",
+          "surface-tint": "#d2bbff",
+          "on-background": "#e5e2e1",
+          "tertiary": "#ffb784",
+          "error": "#ffb4ab",
+          "secondary-fixed": "#d8e2ff",
+          "background": "#131313",
+          "surface": "#131313",
+          "on-secondary-container": "#e6ecff",
+          "on-tertiary-fixed-variant": "#713700",
+          "on-primary-fixed-variant": "#5a00c6",
+          "primary-fixed": "#eaddff",
+          "outline-variant": "#4a4455",
+          "on-tertiary-fixed": "#301400",
+          "error-container": "#93000a",
+          "surface-bright": "#3a3939",
+          "on-surface-variant": "#ccc3d8",
+          "secondary-container": "#0566d9",
+          "on-error": "#690005",
+          "on-primary-container": "#ede0ff",
+          "primary": "#d2bbff",
+          "on-secondary": "#002e6a",
+          "secondary-fixed-dim": "#adc6ff",
+          "inverse-on-surface": "#313030"
+        },
+        fontFamily: {
+          "headline": ["Lexend"],
+          "body": ["Inter"],
+          "label": ["Inter"]
+        },
+        borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+      },
+    },
+  }
+</script>
+<style>
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+  .glass-panel {
+    background: rgba(19, 19, 19, 0.7);
+    backdrop-filter: blur(20px);
+  }
+  .glow-sm {
+    text-shadow: 0 0 10px rgba(210, 187, 255, 0.4);
+  }
+  .neural-grid {
+    background-image: radial-gradient(circle at 2px 2px, rgba(210, 187, 255, 0.05) 1px, transparent 0);
+    background-size: 40px 40px;
+  }
+  .active-node-glow {
+    box-shadow: 0 0 40px 10px rgba(124, 58, 237, 0.25), 0 0 15px 2px rgba(124, 58, 237, 0.4);
+  }
+  @keyframes pulse-slow {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.02); }
+  }
+  .selected-transition {
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+</style>
+<!-- SideNavBar Shell -->
+<aside class="fixed left-0 top-0 h-full flex flex-col py-8 px-4 bg-[#131313]/70 backdrop-blur-xl h-screen w-64 border-r border-[#D2BBFF]/15 shadow-[0_20px_50px_rgba(124,58,237,0.08)] z-50">
+<div class="mb-10 px-2">
+<div class="flex items-center gap-3 mb-1">
+<div class="w-8 h-8 rounded bg-gradient-to-br from-[#7C3AED] to-[#3B82F6] flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-lg" style="font-variation-settings: 'FILL' 1;">account_tree</span>
+</div>
+<div>
+<h1 class="text-2xl font-black tracking-tighter bg-gradient-to-br from-[#7C3AED] to-[#3B82F6] bg-clip-text text-transparent font-headline">Synapse Note</h1>
+<p class="text-[10px] text-primary/60 font-label tracking-widest uppercase">Neural OS v1.0</p>
+</div>
+</div>
+</div>
+<button class="mb-8 mx-2 flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#3B82F6] text-white font-bold text-sm transition-transform active:scale-95 shadow-lg shadow-primary-container/20">
+<span class="material-symbols-outlined text-sm">add</span>
+      New Thought
+    </button>
+<nav class="flex-1 space-y-1 font-lexend tracking-tight text-sm md:text-base">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-[#ADC6FF]/60 hover:text-[#ADC6FF] transition-all duration-500 ease-in-out hover:bg-[#D2BBFF]/10 hover:backdrop-blur-lg" href="#">
+<span class="material-symbols-outlined">forum</span>
+        Chat
+      </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg bg-gradient-to-r from-[#7C3AED]/20 to-transparent border-l-2 border-[#7C3AED] text-[#D2BBFF] font-bold" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">hub</span>
+        Graph
+      </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-[#ADC6FF]/60 hover:text-[#ADC6FF] transition-all duration-500 ease-in-out hover:bg-[#D2BBFF]/10 hover:backdrop-blur-lg" href="#">
+<span class="material-symbols-outlined">auto_stories</span>
+        Library
+      </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-[#ADC6FF]/60 hover:text-[#ADC6FF] transition-all duration-500 ease-in-out hover:bg-[#D2BBFF]/10 hover:backdrop-blur-lg" href="#">
+<span class="material-symbols-outlined">psychology</span>
+        Learn
+      </a>
+</nav>
+<div class="mt-auto space-y-1 pt-4 border-t border-outline-variant/20">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-[#ADC6FF]/60 hover:text-[#ADC6FF] transition-all duration-500 ease-in-out hover:bg-[#D2BBFF]/10" href="#">
+<span class="material-symbols-outlined">sensors</span>
+        Status
+      </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-[#ADC6FF]/60 hover:text-[#ADC6FF] transition-all duration-500 ease-in-out hover:bg-[#D2BBFF]/10" href="#">
+<span class="material-symbols-outlined">settings</span>
+        Settings
+      </a>
+<div class="mt-4 px-4 flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest border border-primary/20 overflow-hidden">
+<img alt="User Neural Profile" class="w-full h-full object-cover" data-alt="close-up portrait of a digital human avatar with glowing neural patterns on their skin, cinematic lighting, deep blue and violet tones" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUlOXlgOJ8imJP5oN_-cxdLXVXvc40b2BKhXnCgp-pnqydlE5DX9gj3jJEm3D8DODO0Rx_OChbPGfyYljMSG0bNF0BiMnvvihI8KCBH-QxSzyfbnZnY--ctq_44u2bpgiwoE00OfyGczTRT4fgXCg9AwB7alkUKcpelshIGAT8VUps8Kwl9iuymqaaWYTPDlfAxGyO5zh0Q7KMBe1x2qPRX2MIE1nkZqKwe4xvsUJLdGRIVzDlR84c0hatd0cC-PuZuhtiRwT_g-s"/>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-xs font-bold truncate">Neural_User_01</p>
+<p class="text-[10px] text-primary/40 truncate">Sync: Active</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Canvas -->
+<main class="ml-64 min-h-screen flex flex-col relative overflow-hidden">
+<!-- TopNavBar -->
+<header class="flex justify-between items-center w-full px-8 h-16 bg-transparent z-40">
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-lg">folder_open</span>
+<span class="font-lexend text-xs uppercase tracking-widest text-primary">Knowledge / Neural_Project_Sigma</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="bg-surface-container-low/50 backdrop-blur-md rounded-full px-4 py-2 flex items-center gap-3 border border-outline-variant/10">
+<span class="material-symbols-outlined text-secondary text-sm">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-[10px] font-headline tracking-widest w-48 text-on-surface-variant" placeholder="QUERY KNOWLEDGE BASE..." type="text"/>
+</div>
+<div class="flex items-center gap-2">
+<button class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-surface-container-high transition-colors text-secondary/60">
+<span class="material-symbols-outlined">bolt</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-surface-container-high transition-colors text-secondary/60">
+<span class="material-symbols-outlined">notifications_paused</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Workspace Layout -->
+<div class="flex-1 flex overflow-hidden">
+<!-- Knowledge Graph Section -->
+<section class="flex-1 relative neural-grid overflow-hidden">
+<!-- SVG Canvas for Lines -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none opacity-20">
+<path d="M400,300 C500,300 500,150 600,150" fill="none" stroke="#7C3AED" stroke-width="1.5"></path>
+<path d="M400,300 C500,300 500,450 600,450" fill="none" stroke="#7C3AED" stroke-width="1.5"></path>
+<path d="M600,150 C700,150 700,100 800,100" fill="none" stroke="#0566D9" stroke-dasharray="4" stroke-width="1"></path>
+<path d="M600,450 C700,450 700,500 800,550" fill="none" stroke="#0566D9" stroke-width="1"></path>
+</svg>
+<!-- Floating Graph Elements -->
+<div class="absolute inset-0 p-12 overflow-auto">
+<!-- Root Node -->
+<div class="absolute left-[50px] top-[260px] group cursor-grab">
+<div class="bg-surface-container-low/80 border border-primary/20 rounded-xl p-4 w-64 shadow-2xl glass-panel">
+<div class="flex items-center gap-3 mb-3">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">folder</span>
+<span class="font-headline text-sm font-bold tracking-tight">Core_Documentation</span>
+</div>
+<div class="space-y-2">
+<div class="flex items-center justify-between text-[10px] text-on-surface-variant uppercase tracking-widest border-b border-outline-variant/10 pb-1">
+<span>Contains</span>
+<span>12 Items</span>
+</div>
+<div class="h-12 bg-surface-container-lowest/50 rounded flex items-center justify-center text-[10px] italic text-primary/40">
+                  Preview Indexing...
+                </div>
+</div>
+</div>
+</div>
+<!-- Chat Node -->
+<div class="absolute left-[400px] top-[120px] group cursor-grab">
+<div class="w-12 h-12 rounded-full bg-secondary/10 border border-secondary/30 flex items-center justify-center hover:scale-110 transition-transform shadow-[0_0_20px_rgba(173,198,255,0.2)]">
+<span class="material-symbols-outlined text-secondary">smart_toy</span>
+</div>
+<div class="absolute top-full mt-2 left-1/2 -translate-x-1/2 whitespace-nowrap bg-surface-container-high/80 px-2 py-1 rounded text-[10px] font-label font-bold tracking-tighter">
+              Chat_History_v2
+            </div>
+</div>
+<!-- Prominent Selected Node (Expanded) -->
+<div class="absolute left-[420px] top-[300px] group cursor-grab selected-transition">
+<div class="active-node-glow rounded-2xl">
+<div class="bg-surface-container-low border border-tertiary/40 rounded-2xl w-[400px] glass-panel overflow-hidden shadow-2xl animate-pulse-slow">
+<!-- Preview Card Header -->
+<div class="p-5 border-b border-outline-variant/20 flex gap-4">
+<div class="w-16 h-16 rounded-xl bg-tertiary/10 flex items-center justify-center border border-tertiary/20 shrink-0">
+<span class="material-symbols-outlined text-tertiary text-4xl">terminal</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-headline text-lg font-black tracking-tight truncate">neural_engine.py</h3>
+<span class="px-2 py-0.5 rounded text-[8px] font-bold bg-tertiary/20 text-tertiary uppercase tracking-tighter">Selected</span>
+</div>
+<div class="flex items-center gap-3 text-[10px] text-on-surface-variant font-medium">
+<span class="flex items-center gap-1"><span class="w-1 h-1 rounded-full bg-tertiary"></span> Python Script</span>
+<span class="flex items-center gap-1"><span class="w-1 h-1 rounded-full bg-outline-variant"></span> AI Generated</span>
+</div>
+</div>
+</div>
+<!-- Snippet State -->
+<div class="p-5 space-y-4">
+<div class="bg-black/40 rounded-xl p-4 border border-outline-variant/10 relative">
+<div class="absolute top-3 right-3 flex gap-2">
+<span class="w-2 h-2 rounded-full bg-red-500/30"></span>
+<span class="w-2 h-2 rounded-full bg-yellow-500/30"></span>
+<span class="w-2 h-2 rounded-full bg-green-500/30"></span>
+</div>
+<code class="text-[11px] font-mono leading-relaxed text-secondary/80">
+<span class="text-tertiary">def</span> <span class="text-primary">process_synapse</span>(node_id):<br/>
+<span class="pl-4 text-on-surface/40"># Initialize local topology</span><br/>
+<span class="pl-4">context = active_context.map(node_id)</span><br/>
+<span class="pl-4 text-tertiary">return</span> context.optimize()
+                  </code>
+</div>
+<!-- Metadata Grid -->
+<div class="grid grid-cols-3 gap-2">
+<div class="bg-surface-container-high/40 p-2 rounded-lg border border-outline-variant/10">
+<p class="text-[8px] uppercase tracking-widest text-on-surface-variant mb-1">File Size</p>
+<p class="text-xs font-bold font-headline">4.2 KB</p>
+</div>
+<div class="bg-surface-container-high/40 p-2 rounded-lg border border-outline-variant/10">
+<p class="text-[8px] uppercase tracking-widest text-on-surface-variant mb-1">Last Mod</p>
+<p class="text-xs font-bold font-headline">2m ago</p>
+</div>
+<div class="bg-surface-container-high/40 p-2 rounded-lg border border-outline-variant/10">
+<p class="text-[8px] uppercase tracking-widest text-on-surface-variant mb-1">Node Type</p>
+<p class="text-xs font-bold font-headline">Neural</p>
+</div>
+</div>
+</div>
+<!-- Quick Actions Row -->
+<div class="bg-tertiary/5 p-3 flex items-center justify-between gap-2 border-t border-outline-variant/20">
+<button class="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-surface-container-highest hover:bg-tertiary/20 transition-colors text-[10px] font-bold uppercase tracking-wider">
+<span class="material-symbols-outlined text-sm">open_in_new</span>
+                    Open Full
+                  </button>
+<button class="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors text-[10px] font-bold uppercase tracking-wider">
+<span class="material-symbols-outlined text-sm">input</span>
+                    Inject
+                  </button>
+<button class="w-10 h-9 flex items-center justify-center rounded-lg bg-surface-container-highest hover:text-tertiary transition-colors">
+<span class="material-symbols-outlined text-sm">push_pin</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- PDF Node -->
+<div class="absolute left-[800px] top-[140px] group cursor-grab">
+<div class="w-10 h-10 rounded-lg bg-red-900/10 border border-red-500/30 flex items-center justify-center hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-red-400 text-lg">picture_as_pdf</span>
+</div>
+<div class="absolute top-full mt-2 left-1/2 -translate-x-1/2 whitespace-nowrap text-[9px] text-on-surface-variant">Whitepaper_09.pdf</div>
+</div>
+<!-- Git Issue Node -->
+<div class="absolute left-[780px] top-[500px] group cursor-grab">
+<div class="bg-surface-container-high/40 border border-outline-variant/30 rounded-full px-4 py-2 flex items-center gap-2 hover:bg-surface-container-high transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-primary text-sm">bug_report</span>
+<span class="text-[10px] font-bold">Issue #442: Context Leak</span>
+</div>
+</div>
+</div>
+<!-- Graph Controls -->
+<div class="absolute bottom-8 left-8 flex items-center gap-2">
+<div class="bg-surface-container-low/80 backdrop-blur-xl border border-outline-variant/10 rounded-full p-1 flex items-center">
+<button class="p-2 hover:text-primary transition-colors"><span class="material-symbols-outlined text-sm">zoom_in</span></button>
+<button class="p-2 hover:text-primary transition-colors"><span class="material-symbols-outlined text-sm">zoom_out</span></button>
+<div class="w-px h-4 bg-outline-variant/20 mx-1"></div>
+<button class="p-2 hover:text-primary transition-colors"><span class="material-symbols-outlined text-sm">center_focus_weak</span></button>
+</div>
+<div class="bg-surface-container-low/80 backdrop-blur-xl border border-outline-variant/10 rounded-full px-4 py-2 text-[10px] font-headline tracking-widest text-on-surface-variant flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+            STABLE_TOPOLOGY
+          </div>
+</div>
+</section>
+<!-- Context Manager Panel (Right) -->
+<section class="w-80 border-l border-outline-variant/10 bg-surface-container-lowest/30 backdrop-blur-2xl flex flex-col">
+<div class="p-6 flex flex-col h-full">
+<div class="flex items-center justify-between mb-8">
+<h2 class="font-headline text-lg font-black tracking-tighter">Active Context</h2>
+<span class="bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded-full">4 NODES</span>
+</div>
+<div class="flex-1 space-y-4 overflow-y-auto">
+<!-- Active Node Item -->
+<div class="bg-surface-container-low border-l-2 border-primary p-4 rounded-r-lg group relative">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-lg">description</span>
+<div>
+<p class="text-xs font-bold leading-none mb-1">Project_Brief_Final</p>
+<p class="text-[9px] text-on-surface-variant">Markdown · 14.2kb</p>
+</div>
+</div>
+<button class="opacity-0 group-hover:opacity-100 text-on-surface-variant hover:text-error transition-all">
+<span class="material-symbols-outlined text-sm">close</span>
+</button>
+</div>
+</div>
+<!-- Active Node Item -->
+<div class="bg-surface-container-low border-l-2 border-secondary p-4 rounded-r-lg group relative">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary text-lg">terminal</span>
+<div>
+<p class="text-xs font-bold leading-none mb-1">api_routes.js</p>
+<p class="text-[9px] text-on-surface-variant">JavaScript · 4.1kb</p>
+</div>
+</div>
+<button class="opacity-0 group-hover:opacity-100 text-on-surface-variant hover:text-error transition-all">
+<span class="material-symbols-outlined text-sm">close</span>
+</button>
+</div>
+</div>
+<!-- Active Node Item -->
+<div class="bg-surface-container-low border-l-2 border-tertiary p-4 rounded-r-lg group relative">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-tertiary text-lg">table_chart</span>
+<div>
+<p class="text-xs font-bold leading-none mb-1">User_Stats_2024</p>
+<p class="text-[9px] text-on-surface-variant">CSV · 1.2mb</p>
+</div>
+</div>
+<button class="opacity-0 group-hover:opacity-100 text-on-surface-variant hover:text-error transition-all">
+<span class="material-symbols-outlined text-sm">close</span>
+</button>
+</div>
+</div>
+<!-- Drop Zone Placeholder -->
+<div class="border-2 border-dashed border-outline-variant/20 rounded-xl py-12 flex flex-col items-center justify-center group hover:border-primary/40 transition-colors">
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors text-3xl mb-2">add_to_photos</span>
+<p class="text-[10px] font-headline tracking-widest text-outline-variant uppercase">Drag Node to Inject</p>
+</div>
+</div>
+<!-- Switch to Chat Action -->
+<div class="mt-8 pt-8 border-t border-outline-variant/10">
+<div class="bg-surface-container-high rounded-2xl p-4 flex flex-col gap-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">bolt</span>
+</div>
+<div class="flex-1">
+<p class="text-xs font-bold">Context Ready</p>
+<p class="text-[10px] text-on-surface-variant">4 Knowledge anchors active</p>
+</div>
+</div>
+<button class="w-full bg-gradient-to-r from-primary to-secondary text-on-primary-container font-headline font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:shadow-[0_0_20px_rgba(124,58,237,0.3)] transition-shadow">
+                Switch to Chat
+                <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Background Elements -->
+<div class="absolute top-1/4 right-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] -z-10 pointer-events-none"></div>
+<div class="absolute bottom-1/4 left-1/4 w-[400px] h-[400px] bg-secondary/5 rounded-full blur-[100px] -z-10 pointer-events-none"></div>
+</main>
+```</body></html>

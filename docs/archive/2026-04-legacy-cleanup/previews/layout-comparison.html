@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SynapseNote — Layout Comparison</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lexend:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════
+   DESIGN TOKENS (from design-system-preview)
+══════════════════════════════════════════ */
+:root, [data-theme="light"] {
+  color-scheme: light;
+  --bg:          #f5f2eb;
+  --surface:     #fffdf7;
+  --surface-low: #ede8d8;
+  --surface-high:#e8e0cc;
+  --on-surface:  #1a1208;
+  --on-variant:  #5a4020;
+  --muted:       #8a7050;
+  --outline:     rgba(60,40,10,0.14);
+  --outline-var: rgba(60,40,10,0.08);
+  --primary:     #2a1c08;
+  --primary-icon:rgba(245,240,228,0.92);
+  --primary-dim: rgba(42,28,8,0.08);
+  --shadow-sm: 0 1px 3px rgba(60,40,10,0.07), 0 1px 2px rgba(60,40,10,0.04);
+  --shadow-md: 0 4px 12px rgba(60,40,10,0.09), 0 2px 5px rgba(60,40,10,0.05);
+  --shadow-lg: 0 10px 28px rgba(60,40,10,0.10), 0 3px 8px rgba(60,40,10,0.06);
+  --g-dir-fill:  #2a1c08; --g-hub-fill:#f0ebe0; --g-hub-stroke:#2a1c08;
+  --g-doc-fill:  #f0ebe0; --g-doc-stroke:#c8b89a;
+  --g-link:      rgba(60,40,10,0.22);
+  --g-dot:       rgba(60,40,10,0.15);
+}
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg:          #100d08;
+  --surface:     #1a1510;
+  --surface-low: #141008;
+  --surface-high:#261e14;
+  --on-surface:  #f0ece2;
+  --on-variant:  #c8a878;
+  --muted:       #907860;
+  --outline:     rgba(200,160,80,0.18);
+  --outline-var: rgba(200,160,80,0.09);
+  --primary:     #d4a850;
+  --primary-icon:rgba(16,13,8,0.92);
+  --primary-dim: rgba(212,168,80,0.10);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.4);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.45);
+  --shadow-lg: 0 10px 28px rgba(0,0,0,0.5);
+  --g-dir-fill:  #d4a850; --g-hub-fill:#261e14; --g-hub-stroke:#d4a850;
+  --g-doc-fill:  #221a12; --g-doc-stroke:#5a4020;
+  --g-link:      rgba(200,160,80,0.22);
+  --g-dot:       rgba(200,160,80,0.12);
+}
+:root {
+  --radius-sm:8px; --radius-md:11px; --radius-lg:14px;
+  --radius-xl:18px; --radius-full:9999px;
+  --font-headline:'Lexend',system-ui,sans-serif;
+  --font-body:'Inter',system-ui,sans-serif;
+  --ease:cubic-bezier(0.4,0,0.2,1);
+  --ease-out:cubic-bezier(0.22,1,0.36,1);
+  --dur:200ms; --dur-slow:320ms;
+}
+
+/* ══════════════════════════════════════════
+   RESET & BASE
+══════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg);color:var(--on-surface);
+  font-family:var(--font-body);font-size:14px;
+  -webkit-font-smoothing:antialiased;
+}
+button{cursor:pointer;border:none;background:none;font:inherit;color:inherit;}
+.icon{
+  font-family:'Material Symbols Outlined';font-size:20px;line-height:1;
+  display:inline-block;user-select:none;vertical-align:middle;
+  font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;
+}
+.icon--fill{font-variation-settings:'FILL' 1,'wght' 600,'GRAD' 0,'opsz' 24;}
+
+/* ══════════════════════════════════════════
+   PAGE LAYOUT
+══════════════════════════════════════════ */
+.page-header{
+  position:sticky;top:0;z-index:100;
+  display:flex;align-items:center;gap:12px;
+  padding:16px 32px;
+  background:color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--outline);
+}
+.page-title{
+  font-family:var(--font-headline);font-weight:800;font-size:18px;
+  color:var(--primary);letter-spacing:-0.03em;flex:1;
+}
+.page-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+.theme-btn{
+  width:34px;height:34px;border-radius:var(--radius-sm);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--muted);transition:background var(--dur),color var(--dur);
+}
+.theme-btn:hover{background:var(--primary-dim);color:var(--on-surface);}
+
+.proposals{
+  display:flex;flex-direction:column;gap:48px;
+  padding:32px;max-width:1400px;margin:0 auto;
+}
+
+/* ── Proposal card ── */
+.proposal{
+  display:flex;flex-direction:column;gap:16px;
+}
+.proposal-header{
+  display:flex;align-items:flex-start;gap:16px;
+}
+.proposal-badge{
+  width:40px;height:40px;border-radius:var(--radius-md);
+  background:var(--primary);color:var(--primary-icon);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-headline);font-weight:900;font-size:16px;
+  flex-shrink:0;
+}
+.proposal-info{flex:1;}
+.proposal-name{
+  font-family:var(--font-headline);font-weight:700;font-size:16px;
+  color:var(--on-surface);letter-spacing:-0.02em;
+}
+.proposal-desc{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.6;}
+.proposal-tags{display:flex;gap:6px;margin-top:6px;}
+.ptag{
+  font-size:10px;font-weight:600;letter-spacing:0.04em;
+  padding:3px 8px;border-radius:var(--radius-full);
+  background:var(--surface-low);color:var(--on-variant);
+  border:1px solid var(--outline-var);
+}
+.ptag.pro{background:color-mix(in srgb, #15803d 10%, transparent);color:#15803d;border-color:color-mix(in srgb, #15803d 20%, transparent);}
+.ptag.con{background:color-mix(in srgb, #b91c1c 8%, transparent);color:#b91c1c;border-color:color-mix(in srgb, #b91c1c 15%, transparent);}
+[data-theme="dark"] .ptag.pro{color:#4ade80;background:rgba(74,222,128,0.1);border-color:rgba(74,222,128,0.2);}
+[data-theme="dark"] .ptag.con{color:#fca5a5;background:rgba(252,165,165,0.1);border-color:rgba(252,165,165,0.2);}
+
+/* ── Preview shell ── */
+.preview-shell{
+  width:100%;height:480px;
+  border-radius:var(--radius-xl);
+  border:1px solid var(--outline);
+  overflow:hidden;
+  box-shadow:var(--shadow-lg);
+  position:relative;
+  background:var(--bg);
+}
+
+/* ══════════════════════════════════════════
+   SHARED MINI-COMPONENTS
+══════════════════════════════════════════ */
+
+/* Mini graph (SVG) */
+.mini-graph{position:absolute;top:0;left:0;width:100%;height:100%;}
+
+/* Mini chat */
+.mini-chat{display:flex;flex-direction:column;height:100%;background:var(--surface);}
+.mc-header{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 12px;border-bottom:1px solid var(--outline);flex-shrink:0;
+}
+.mc-avatar{
+  width:22px;height:22px;border-radius:50%;background:var(--primary);
+  display:flex;align-items:center;justify-content:center;
+}
+.mc-avatar .icon{font-size:12px;color:var(--primary-icon);}
+.mc-name{font-size:11px;font-weight:600;color:var(--on-surface);}
+.mc-msgs{flex:1;padding:10px;display:flex;flex-direction:column;gap:8px;overflow:hidden;}
+.mc-bubble{
+  max-width:80%;padding:7px 10px;border-radius:var(--radius-md);
+  font-size:11px;line-height:1.5;
+}
+.mc-bubble.agent{
+  background:var(--surface-low);color:var(--on-surface);
+  border-bottom-left-radius:3px;align-self:flex-start;
+}
+.mc-bubble.user{
+  background:var(--primary);color:var(--primary-icon);
+  border-bottom-right-radius:3px;align-self:flex-end;
+}
+.mc-input{
+  display:flex;align-items:center;gap:6px;
+  padding:8px 10px;border-top:1px solid var(--outline);flex-shrink:0;
+}
+.mc-input-field{
+  flex:1;padding:6px 10px;border-radius:var(--radius-md);
+  background:var(--bg);border:1px solid var(--outline);
+  font-size:11px;color:var(--on-surface);outline:none;
+  font-family:var(--font-body);
+}
+.mc-send{
+  width:26px;height:26px;border-radius:var(--radius-sm);
+  background:var(--primary);display:flex;align-items:center;justify-content:center;
+}
+.mc-send .icon{font-size:14px;color:var(--primary-icon);}
+
+/* Mini context cards */
+.ctx-card{
+  display:flex;align-items:center;gap:6px;
+  padding:6px 8px;border-radius:var(--radius-sm);
+  background:var(--bg);border:1px solid var(--outline);
+  font-size:10px;color:var(--on-surface);
+}
+.ctx-card+.ctx-card{margin-top:3px;}
+.ctx-card .icon{font-size:13px;color:var(--on-variant);}
+.ctx-card-title{flex:1;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ctx-card-tok{font-size:9px;color:var(--muted);font-variant-numeric:tabular-nums;}
+.ctx-card.pinned{border-left:2px solid color-mix(in srgb,var(--primary) 60%,#a08040);}
+
+/* Context pill (small) */
+.cpill{
+  display:inline-flex;align-items:center;gap:3px;
+  padding:2px 7px;border-radius:var(--radius-full);
+  background:var(--surface-low);border:1px solid var(--outline);
+  font-size:10px;font-weight:500;color:var(--on-variant);
+}
+.cpill .icon{font-size:11px;color:var(--primary);}
+
+/* Token bar (mini) */
+.tok-mini{
+  display:flex;flex-direction:column;gap:3px;
+  padding:6px 8px;background:var(--surface-low);
+  border-radius:var(--radius-sm);
+}
+.tok-mini-row{display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;}
+.tok-mini-track{height:3px;border-radius:var(--radius-full);background:var(--surface-high);overflow:hidden;}
+.tok-mini-fill{height:100%;border-radius:var(--radius-full);background:var(--primary);width:20%;}
+
+/* Dot grid pattern */
+.dotgrid{
+  background-image:radial-gradient(circle, var(--g-dot) 1px, transparent 1px);
+  background-size:24px 24px;
+}
+
+/* ══════════════════════════════════════════
+   PROPOSAL A — "Bottom Tray"
+   그래프+채팅 2분할, 컨텍스트는 하단 트레이
+══════════════════════════════════════════ */
+.shell-a{display:grid;grid-template-columns:1fr 320px;grid-template-rows:1fr;height:100%;}
+.shell-a .graph-area{position:relative;overflow:hidden;}
+.shell-a .chat-area{border-left:1px solid var(--outline);}
+
+/* Bottom tray */
+.tray{
+  position:absolute;bottom:0;left:0;right:0;z-index:10;
+  background:var(--surface);
+  border-top:1px solid var(--outline);
+  border-radius:var(--radius-xl) var(--radius-xl) 0 0;
+  box-shadow:0 -4px 20px rgba(60,40,10,0.08);
+  transition:height var(--dur-slow) var(--ease-out);
+  overflow:hidden;
+}
+.shell-a .tray{height:44px;} /* collapsed */
+.shell-a.tray-open .tray{height:200px;}
+
+.tray-handle{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 14px;cursor:pointer;user-select:none;
+}
+.tray-grip{
+  width:32px;height:3px;border-radius:var(--radius-full);
+  background:var(--outline);margin:0 auto;
+  position:absolute;top:6px;left:50%;transform:translateX(-50%);
+}
+.tray-label{
+  font-size:11px;font-weight:700;color:var(--on-surface);
+  font-family:var(--font-headline);flex:1;
+}
+.tray-pills{display:flex;gap:4px;flex-wrap:wrap;}
+.tray-body{
+  padding:4px 14px 12px;
+  display:grid;grid-template-columns:auto 1fr;gap:8px;
+  overflow:hidden;
+}
+.tray-body .tok-mini{width:100%;}
+.tray-cards{display:flex;flex-direction:column;gap:0;}
+
+/* Context strip in chat (A) */
+.shell-a .ctx-strip-a{
+  display:flex;align-items:center;gap:4px;flex-wrap:wrap;
+  padding:5px 10px;border-bottom:1px solid var(--outline-var);
+  background:var(--surface-low);font-size:10px;
+}
+.ctx-strip-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);flex-shrink:0;}
+
+/* ══════════════════════════════════════════
+   PROPOSAL B — "Bridge Column"
+   그래프 | 좁은 컨텍스트 스트립 | 채팅
+══════════════════════════════════════════ */
+.shell-b{display:grid;grid-template-columns:1fr 52px 320px;height:100%;transition:grid-template-columns var(--dur-slow) var(--ease-out);}
+.shell-b.expanded{grid-template-columns:1fr 220px 320px;}
+.shell-b .graph-area{position:relative;overflow:hidden;}
+.shell-b .chat-area{border-left:1px solid var(--outline);}
+
+/* Bridge strip */
+.bridge{
+  background:var(--surface);
+  border-left:1px solid var(--outline);
+  border-right:1px solid var(--outline);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+  transition:background var(--dur);
+}
+.bridge-collapsed{
+  display:flex;flex-direction:column;align-items:center;
+  padding:10px 0;gap:6px;
+}
+.bridge-collapsed .icon{font-size:17px;color:var(--muted);}
+.bridge-count{
+  font-size:10px;font-weight:700;color:var(--primary);
+  writing-mode:vertical-rl;text-orientation:mixed;
+  letter-spacing:0.05em;margin-top:4px;
+}
+.bridge-dots{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  margin-top:auto;margin-bottom:8px;
+}
+.bridge-dot{
+  width:5px;height:5px;border-radius:50%;
+  background:var(--outline);
+}
+.bridge-dot.active{background:var(--primary);}
+
+/* Expanded bridge */
+.bridge-expanded{
+  display:none;flex-direction:column;height:100%;
+}
+.shell-b.expanded .bridge-collapsed{display:none;}
+.shell-b.expanded .bridge-expanded{display:flex;}
+
+.bridge-head{
+  display:flex;align-items:center;gap:6px;
+  padding:10px 10px 8px;border-bottom:1px solid var(--outline-var);
+  flex-shrink:0;
+}
+.bridge-title{font-size:11px;font-weight:700;color:var(--on-surface);font-family:var(--font-headline);flex:1;}
+.bridge-cards{flex:1;overflow-y:auto;padding:6px 8px;display:flex;flex-direction:column;}
+.bridge-cards::-webkit-scrollbar{width:2px;}
+.bridge-cards::-webkit-scrollbar-thumb{background:var(--outline);border-radius:9px;}
+
+/* Flow arrows */
+.flow-arrow{
+  display:flex;align-items:center;justify-content:center;
+  padding:6px 0;flex-shrink:0;
+}
+.flow-arrow .icon{font-size:14px;color:var(--muted);opacity:0.6;}
+
+/* ══════════════════════════════════════════
+   PROPOSAL C — "Canvas + Floating Cards"
+   전체화면 그래프, 채팅+컨텍스트 플로팅
+══════════════════════════════════════════ */
+.shell-c{position:relative;height:100%;overflow:hidden;}
+.shell-c .graph-area{position:absolute;inset:0;}
+
+/* Floating chat card */
+.float-chat{
+  position:absolute;top:12px;right:12px;bottom:12px;
+  width:320px;
+  background:color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter:blur(20px);
+  border:1px solid var(--outline);
+  border-radius:var(--radius-xl);
+  box-shadow:var(--shadow-lg);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+  z-index:10;
+}
+
+/* Floating context tray (attached to chat bottom-left) */
+.float-ctx{
+  position:absolute;bottom:12px;left:12px;
+  width:240px;
+  background:color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter:blur(20px);
+  border:1px solid var(--outline);
+  border-radius:var(--radius-xl);
+  box-shadow:var(--shadow-lg);
+  z-index:10;
+  overflow:hidden;
+  transition:height var(--dur-slow) var(--ease-out);
+}
+.float-ctx.collapsed{height:40px;}
+.float-ctx.open{height:260px;}
+
+.fctx-handle{
+  display:flex;align-items:center;gap:6px;
+  padding:9px 12px;cursor:pointer;user-select:none;
+}
+.fctx-handle .icon{font-size:16px;color:var(--primary);}
+.fctx-label{font-size:11px;font-weight:700;color:var(--on-surface);font-family:var(--font-headline);flex:1;}
+.fctx-badge{
+  min-width:18px;height:18px;border-radius:var(--radius-full);
+  background:var(--primary);color:var(--primary-icon);
+  font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;
+  padding:0 5px;
+}
+.fctx-body{padding:0 10px 10px;display:flex;flex-direction:column;gap:6px;overflow:hidden;}
+
+/* Selected node indicator (graph) */
+.node-ctx-ring{
+  position:absolute;z-index:5;
+  border:2px dashed var(--primary);border-radius:50%;
+  opacity:0.5;animation:pulse-ring 2s ease infinite;
+}
+@keyframes pulse-ring{0%,100%{opacity:0.3;transform:scale(1);}50%{opacity:0.6;transform:scale(1.08);}}
+
+/* ══════════════════════════════════════════
+   INTERACTIVE OVERLAY (select annotation)
+══════════════════════════════════════════ */
+.annotation{
+  position:absolute;z-index:20;
+  display:flex;align-items:center;gap:4px;
+  padding:4px 8px;border-radius:var(--radius-full);
+  background:var(--primary);color:var(--primary-icon);
+  font-size:9px;font-weight:700;letter-spacing:0.03em;
+  pointer-events:none;white-space:nowrap;
+}
+.annotation::after{
+  content:'';position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);
+  border-left:5px solid transparent;border-right:5px solid transparent;
+  border-top:5px solid var(--primary);
+}
+
+.divider-line{
+  border:none;border-top:1px solid var(--outline-var);
+  margin:0;
+}
+</style>
+</head>
+<body>
+
+<!-- ── Page header ── -->
+<header class="page-header">
+  <div>
+    <div class="page-title">Layout Comparison</div>
+    <div class="page-sub">Graph — Context Manager — Chat 관계를 표현하는 3가지 안</div>
+  </div>
+  <button class="theme-btn" onclick="toggleTheme()">
+    <span class="icon" id="themeIcon">light_mode</span>
+  </button>
+</header>
+
+<div class="proposals">
+
+<!-- ═══════════════════════════════════════════════
+     PROPOSAL A — Bottom Tray
+═══════════════════════════════════════════════ -->
+<div class="proposal">
+  <div class="proposal-header">
+    <div class="proposal-badge">A</div>
+    <div class="proposal-info">
+      <div class="proposal-name">Bottom Tray</div>
+      <div class="proposal-desc">
+        Graph + Chat 2분할이 기본. Context Manager는 그래프 하단에서 올라오는 트레이.
+        노드를 담을수록 트레이가 확장되며, 채팅의 context strip과 트레이 내용이 동기화.
+      </div>
+      <div class="proposal-tags">
+        <span class="ptag pro">깔끔한 기본 화면</span>
+        <span class="ptag pro">점진적 노출</span>
+        <span class="ptag con">트레이 열면 그래프 영역 축소</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="preview-shell" id="shellA">
+    <div class="shell-a" id="shellAInner">
+      <!-- Graph -->
+      <div class="graph-area dotgrid">
+        <svg class="mini-graph" id="graphA"></svg>
+
+        <!-- Tray -->
+        <div class="tray" id="trayA">
+          <div class="tray-grip"></div>
+          <div class="tray-handle" onclick="document.getElementById('shellAInner').classList.toggle('tray-open')">
+            <span class="icon" style="font-size:16px;color:var(--primary)">layers</span>
+            <span class="tray-label">Context</span>
+            <div class="tray-pills">
+              <span class="cpill"><span class="icon">folder</span>ML</span>
+              <span class="cpill"><span class="icon">hub</span>Transformer</span>
+              <span class="cpill"><span class="icon">description</span>Self-Attn</span>
+              <span class="cpill">+2</span>
+            </div>
+            <span class="icon" style="font-size:16px;color:var(--muted);margin-left:auto">expand_less</span>
+          </div>
+          <div class="tray-body">
+            <div>
+              <div class="tok-mini">
+                <div class="tok-mini-row"><span>Context</span><span>6.2k / 32k</span></div>
+                <div class="tok-mini-track"><div class="tok-mini-fill"></div></div>
+              </div>
+            </div>
+            <div class="tray-cards">
+              <div class="ctx-card pinned"><span class="icon">folder</span><span class="ctx-card-title">Machine Learning</span><span class="ctx-card-tok">1,840</span></div>
+              <div class="ctx-card pinned"><span class="icon">description</span><span class="ctx-card-title">Attention Is All You Need</span><span class="ctx-card-tok">960</span></div>
+              <div class="ctx-card"><span class="icon">hub</span><span class="ctx-card-title">Transformer Architecture</span><span class="ctx-card-tok">1,120</span></div>
+              <div class="ctx-card"><span class="icon">description</span><span class="ctx-card-title">Self-Attention Mechanism</span><span class="ctx-card-tok">780</span></div>
+              <div class="ctx-card"><span class="icon">hub</span><span class="ctx-card-title">BERT</span><span class="ctx-card-tok">540</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat -->
+      <div class="chat-area">
+        <div class="mini-chat">
+          <div class="mc-header">
+            <div class="mc-avatar"><span class="icon">psychology</span></div>
+            <span class="mc-name">SynapseNote AI</span>
+          </div>
+          <div class="ctx-strip-a">
+            <span class="ctx-strip-label">Context</span>
+            <span class="cpill"><span class="icon">folder</span>ML</span>
+            <span class="cpill"><span class="icon">hub</span>Transformer</span>
+            <span class="cpill">+3</span>
+          </div>
+          <div class="mc-msgs">
+            <div class="mc-bubble agent">Transformer의 Multi-head Attention에 대해 설명해 드리겠습니다.</div>
+            <div class="mc-bubble user">positional encoding은 왜 필요해?</div>
+            <div class="mc-bubble agent">Transformer는 RNN과 달리 순서 정보가 없기 때문에 위치 인코딩이 필수입니다.</div>
+          </div>
+          <div class="mc-input">
+            <input class="mc-input-field" placeholder="메시지 입력...">
+            <button class="mc-send"><span class="icon">send</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider-line">
+
+<!-- ═══════════════════════════════════════════════
+     PROPOSAL B — Bridge Column
+═══════════════════════════════════════════════ -->
+<div class="proposal">
+  <div class="proposal-header">
+    <div class="proposal-badge">B</div>
+    <div class="proposal-info">
+      <div class="proposal-name">Bridge Column</div>
+      <div class="proposal-desc">
+        그래프와 채팅 사이에 좁은 Context 컬럼이 물리적 다리 역할.
+        평소 아이콘만 보이는 52px, 클릭하면 220px로 확장.
+        흐름이 시각적으로 좌→중→우로 읽힌다.
+      </div>
+      <div class="proposal-tags">
+        <span class="ptag pro">흐름이 직관적</span>
+        <span class="ptag pro">항상 존재감 유지</span>
+        <span class="ptag con">화면 폭 소모</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="preview-shell" id="shellB">
+    <div class="shell-b" id="shellBInner">
+      <!-- Graph -->
+      <div class="graph-area dotgrid">
+        <svg class="mini-graph" id="graphB"></svg>
+      </div>
+
+      <!-- Bridge (collapsed) -->
+      <div class="bridge" onclick="document.getElementById('shellBInner').classList.toggle('expanded')">
+        <div class="bridge-collapsed">
+          <span class="icon" style="font-size:15px;color:var(--primary)">layers</span>
+          <span class="bridge-count">5 items</span>
+          <div class="bridge-dots">
+            <div class="bridge-dot active"></div>
+            <div class="bridge-dot active"></div>
+            <div class="bridge-dot active"></div>
+            <div class="bridge-dot"></div>
+            <div class="bridge-dot"></div>
+          </div>
+          <span class="icon" style="font-size:14px;color:var(--muted)">chevron_right</span>
+        </div>
+        <div class="bridge-expanded">
+          <div class="bridge-head">
+            <span class="icon" style="font-size:15px;color:var(--primary)">layers</span>
+            <span class="bridge-title">Context</span>
+            <span style="font-size:9px;color:var(--muted);font-weight:600">6.2k tok</span>
+          </div>
+          <div class="tok-mini" style="margin:0 8px;">
+            <div class="tok-mini-row"><span>Budget</span><span>20%</span></div>
+            <div class="tok-mini-track"><div class="tok-mini-fill"></div></div>
+          </div>
+          <div class="flow-arrow"><span class="icon">arrow_downward</span></div>
+          <div class="bridge-cards">
+            <div class="ctx-card pinned"><span class="icon">folder</span><span class="ctx-card-title">Machine Learning</span><span class="ctx-card-tok">1,840</span></div>
+            <div class="ctx-card pinned"><span class="icon">description</span><span class="ctx-card-title">Attention Is All You Need</span><span class="ctx-card-tok">960</span></div>
+            <div class="ctx-card"><span class="icon">hub</span><span class="ctx-card-title">Transformer</span><span class="ctx-card-tok">1,120</span></div>
+            <div class="ctx-card"><span class="icon">description</span><span class="ctx-card-title">Self-Attention</span><span class="ctx-card-tok">780</span></div>
+            <div class="ctx-card"><span class="icon">hub</span><span class="ctx-card-title">BERT</span><span class="ctx-card-tok">540</span></div>
+          </div>
+          <div class="flow-arrow"><span class="icon">arrow_downward</span></div>
+        </div>
+      </div>
+
+      <!-- Chat -->
+      <div class="chat-area">
+        <div class="mini-chat">
+          <div class="mc-header">
+            <div class="mc-avatar"><span class="icon">psychology</span></div>
+            <span class="mc-name">SynapseNote AI</span>
+          </div>
+          <div class="mc-msgs">
+            <div class="mc-bubble agent">5개 노드가 컨텍스트에 포함되어 있습니다. 무엇이 궁금하신가요?</div>
+            <div class="mc-bubble user">Transformer와 BERT의 차이점은?</div>
+            <div class="mc-bubble agent">Transformer는 인코더-디코더 구조이고, BERT는 인코더만 사용합니다.</div>
+          </div>
+          <div class="mc-input">
+            <input class="mc-input-field" placeholder="메시지 입력...">
+            <button class="mc-send"><span class="icon">send</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider-line">
+
+<!-- ═══════════════════════════════════════════════
+     PROPOSAL C — Canvas + Floating Cards
+═══════════════════════════════════════════════ -->
+<div class="proposal">
+  <div class="proposal-header">
+    <div class="proposal-badge">C</div>
+    <div class="proposal-info">
+      <div class="proposal-name">Canvas Overlay</div>
+      <div class="proposal-desc">
+        그래프가 전체 화면을 차지하는 캔버스. 채팅은 우측 플로팅 카드,
+        컨텍스트는 좌하단 플로팅 트레이. 그래프 탐색이 1순위인 사용자에게 최적.
+        컨텍스트에 담긴 노드는 그래프 위에서 점선 링으로 표시.
+      </div>
+      <div class="proposal-tags">
+        <span class="ptag pro">그래프 몰입감 최대</span>
+        <span class="ptag pro">모바일 확장 용이</span>
+        <span class="ptag con">오버레이 겹침 주의</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="preview-shell" id="shellC">
+    <div class="shell-c">
+      <!-- Full graph -->
+      <div class="graph-area dotgrid">
+        <svg class="mini-graph" id="graphC"></svg>
+
+        <!-- Context rings on graph nodes (simulated) -->
+        <div class="node-ctx-ring" style="width:52px;height:52px;top:180px;left:38%;"></div>
+        <div class="node-ctx-ring" style="width:40px;height:40px;top:230px;left:28%;"></div>
+      </div>
+
+      <!-- Floating chat -->
+      <div class="float-chat">
+        <div class="mini-chat">
+          <div class="mc-header">
+            <div class="mc-avatar"><span class="icon">psychology</span></div>
+            <span class="mc-name">SynapseNote AI</span>
+            <div style="margin-left:auto;display:flex;gap:3px;">
+              <span class="cpill"><span class="icon">hub</span>Transformer</span>
+              <span class="cpill">+4</span>
+            </div>
+          </div>
+          <div class="mc-msgs">
+            <div class="mc-bubble agent">그래프에서 선택한 노드들을 기반으로 대화합니다.</div>
+            <div class="mc-bubble user">attention mechanism을 쉽게 설명해줘</div>
+            <div class="mc-bubble agent">Attention은 입력 중 어디에 집중할지 학습하는 메커니즘입니다. 문장의 각 단어가 다른 단어들과 얼마나 관련 있는지를 계산합니다.</div>
+          </div>
+          <div class="mc-input">
+            <input class="mc-input-field" placeholder="메시지 입력...">
+            <button class="mc-send"><span class="icon">send</span></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Floating context tray -->
+      <div class="float-ctx open" id="floatCtx">
+        <div class="fctx-handle" onclick="document.getElementById('floatCtx').classList.toggle('open');document.getElementById('floatCtx').classList.toggle('collapsed')">
+          <span class="icon" style="font-size:15px">layers</span>
+          <span class="fctx-label">Context</span>
+          <span class="fctx-badge">5</span>
+          <span class="icon" style="font-size:15px;color:var(--muted)">expand_more</span>
+        </div>
+        <div class="fctx-body">
+          <div class="tok-mini">
+            <div class="tok-mini-row"><span>Context Window</span><span>6.2k / 32k</span></div>
+            <div class="tok-mini-track"><div class="tok-mini-fill"></div></div>
+          </div>
+          <div class="ctx-card pinned"><span class="icon">folder</span><span class="ctx-card-title">Machine Learning</span><span class="ctx-card-tok">1,840</span></div>
+          <div class="ctx-card pinned"><span class="icon">description</span><span class="ctx-card-title">Attention Is All You Need</span><span class="ctx-card-tok">960</span></div>
+          <div class="ctx-card"><span class="icon">hub</span><span class="ctx-card-title">Transformer Architecture</span><span class="ctx-card-tok">1,120</span></div>
+          <div class="ctx-card"><span class="icon">description</span><span class="ctx-card-title">Self-Attention</span><span class="ctx-card-tok">780</span></div>
+          <div class="ctx-card"><span class="icon">hub</span><span class="ctx-card-title">BERT</span><span class="ctx-card-tok">540</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /proposals -->
+
+<script>
+/* ══════════════════════════════════════════
+   THEME
+══════════════════════════════════════════ */
+const themes = ['light','dark'];
+const icons  = {light:'light_mode',dark:'dark_mode'};
+let ti = 0;
+function toggleTheme(){
+  ti = (ti+1)%2;
+  document.documentElement.setAttribute('data-theme', themes[ti]);
+  document.getElementById('themeIcon').textContent = icons[themes[ti]];
+}
+
+/* ══════════════════════════════════════════
+   MINI GRAPHS (D3.js — shared data, 3 instances)
+══════════════════════════════════════════ */
+const N = [
+  {id:'ml',   label:'ML',         type:'dir', r:18},
+  {id:'dl',   label:'DL',         type:'hub', r:13},
+  {id:'trans',label:'Transformer', type:'hub', r:15},
+  {id:'attn', label:'Self-Attn',  type:'doc', r: 9},
+  {id:'bert', label:'BERT',       type:'hub', r:12},
+  {id:'gpt',  label:'GPT',        type:'hub', r:12},
+  {id:'pos',  label:'Pos.Enc',    type:'doc', r: 8},
+  {id:'mha',  label:'MHA',        type:'doc', r: 8},
+  {id:'nlp',  label:'NLP',        type:'hub', r:11},
+  {id:'cv',   label:'CV',         type:'hub', r:10},
+];
+const E = [
+  {s:'ml',t:'dl'},{s:'dl',t:'trans'},{s:'trans',t:'attn'},
+  {s:'trans',t:'pos'},{s:'trans',t:'mha'},{s:'trans',t:'bert'},
+  {s:'trans',t:'gpt'},{s:'ml',t:'nlp'},{s:'nlp',t:'bert'},
+  {s:'ml',t:'cv'},
+];
+
+function makeGraph(svgId){
+  const el = document.getElementById(svgId);
+  const W = el.clientWidth || 600, H = el.clientHeight || 400;
+  const nodes = N.map(d=>({...d}));
+  const links = E.map(d=>({source:d.s,target:d.t}));
+
+  const svg = d3.select('#'+svgId);
+  svg.selectAll('*').remove();
+
+  const g = svg.append('g');
+  const zoom = d3.zoom().scaleExtent([0.3,3])
+    .on('zoom', e=>g.attr('transform',e.transform));
+  svg.call(zoom);
+
+  const link = g.selectAll('line').data(links).join('line')
+    .attr('stroke','var(--g-link)').attr('stroke-width',1.2).attr('opacity',0.5);
+
+  const node = g.selectAll('g').data(nodes,d=>d.id).join('g').attr('cursor','pointer');
+
+  node.filter(d=>d.type==='dir').append('circle').attr('r',d=>d.r)
+    .attr('fill','var(--g-dir-fill)');
+  node.filter(d=>d.type==='dir').append('text')
+    .attr('text-anchor','middle').attr('dominant-baseline','central')
+    .attr('font-family',"'Material Symbols Outlined'").attr('font-size','12px')
+    .attr('fill','var(--g-dir-icon)').text('folder');
+
+  node.filter(d=>d.type==='hub').append('circle').attr('r',d=>d.r)
+    .attr('fill','var(--g-hub-fill)').attr('stroke','var(--g-hub-stroke)').attr('stroke-width',1.5);
+
+  node.filter(d=>d.type==='doc').append('circle').attr('r',d=>d.r)
+    .attr('fill','var(--g-doc-fill)').attr('stroke','var(--g-doc-stroke)').attr('stroke-width',1);
+
+  node.append('text')
+    .attr('text-anchor','middle').attr('dy',d=>d.r+9)
+    .attr('font-family',"'Inter',sans-serif")
+    .attr('font-size',d=>d.type==='dir'?9:8)
+    .attr('font-weight',d=>d.type==='dir'?700:d.type==='hub'?600:400)
+    .attr('fill','var(--muted)').attr('opacity',0.8)
+    .text(d=>d.label);
+
+  const sim = d3.forceSimulation(nodes)
+    .force('link',d3.forceLink(links).id(d=>d.id).distance(55).strength(0.7))
+    .force('charge',d3.forceManyBody().strength(d=>d.type==='dir'?-220:-100))
+    .force('center',d3.forceCenter(W/2,H/2))
+    .force('collide',d3.forceCollide(d=>d.r+12))
+    .on('tick',()=>{
+      link.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y)
+          .attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
+      node.attr('transform',d=>`translate(${d.x},${d.y})`);
+    });
+
+  return sim;
+}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  makeGraph('graphA');
+  makeGraph('graphB');
+  makeGraph('graphC');
+});
+</script>
+</body>
+</html>

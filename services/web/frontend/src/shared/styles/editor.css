@@ -1,0 +1,71 @@
+/* ── Editor View ───────────────────────────────────────────────── */
+.editor-view {
+  display: flex; flex-direction: column;
+  height: 100%; overflow: hidden;
+}
+
+.editor-toolbar {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 16px; flex-shrink: 0;
+  border-bottom: 1px solid var(--outline-var);
+  background: var(--surface);
+}
+
+.editor-toolbar-btn {
+  width: 28px; height: 28px; border-radius: var(--r-sm);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--muted); transition: background var(--dur-fast), color var(--dur-fast);
+}
+.editor-toolbar-btn:hover { background: var(--primary-dim); color: var(--on-surface); }
+.editor-toolbar-btn .icon { font-size: 17px; }
+
+.editor-save-indicator {
+  margin-left: auto; font-size: 10px; color: var(--muted);
+  font-weight: 600; letter-spacing: 0.05em;
+}
+
+.editor-container {
+  flex: 1; overflow-y: auto; padding: 24px 32px 64px;
+  max-width: 760px; margin: 0 auto; width: 100%;
+}
+
+/* Milkdown / ProseMirror styles */
+.editor-container .milkdown { outline: none; }
+.editor-container .ProseMirror { outline: none; min-height: 200px; }
+.editor-container .ProseMirror > * + * { margin-top: 0.5em; }
+
+.editor-container h1 { font-family: var(--font-hl); font-size: var(--text-2xl); font-weight: 800; color: var(--on-surface); margin-top: 1.5em; }
+.editor-container h2 { font-family: var(--font-hl); font-size: var(--text-xl); font-weight: 700; color: var(--on-surface); margin-top: 1.2em; }
+.editor-container h3 { font-family: var(--font-hl); font-size: var(--text-lg); font-weight: 700; color: var(--on-surface); margin-top: 1em; }
+
+.editor-container p { font-size: var(--text-md); line-height: 1.7; color: var(--on-surface); }
+.editor-container a { color: var(--info); text-decoration: underline; }
+.editor-container code {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.85em;
+  background: var(--surface-low); padding: 1px 4px; border-radius: 3px;
+}
+.editor-container pre {
+  background: var(--surface-low); border: 1px solid var(--outline-var);
+  border-radius: var(--r-sm); padding: 12px 16px; overflow-x: auto;
+  font-size: var(--text-sm); line-height: 1.6;
+}
+.editor-container blockquote {
+  border-left: 3px solid var(--primary); padding-left: 16px;
+  color: var(--on-variant); font-style: italic;
+}
+.editor-container ul, .editor-container ol { padding-left: 20px; }
+.editor-container li { margin-bottom: 4px; }
+.editor-container hr { border: none; border-top: 1px solid var(--outline); margin: 24px 0; }
+
+/* Wikilink styling */
+.editor-container .wiki-link {
+  color: var(--primary); font-weight: 600;
+  text-decoration: none; cursor: pointer;
+  border-bottom: 1px dashed var(--outline);
+  transition: border-color var(--dur-fast);
+}
+.editor-container .wiki-link:hover { border-color: var(--primary); }
+
+@media (max-width: 640px) {
+  .editor-container { padding: 16px 16px 48px; }
+}

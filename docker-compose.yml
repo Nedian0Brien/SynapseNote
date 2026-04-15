@@ -1,0 +1,48 @@
+name: synapsenote
+
+services:
+
+  synapsenote-api:
+    build:
+      context: ./services/web/backend
+      dockerfile: Dockerfile
+    container_name: synapsenote-api
+    restart: unless-stopped
+    environment:
+      VAULT_ROOT: /vault
+      SYNAPSENOTE_USER_ID: ${SYNAPSENOTE_USER_ID:-solo}
+      SYNAPSENOTE_USER_PASSWORD: ${SYNAPSENOTE_USER_PASSWORD:-solo}
+      SYNAPSENOTE_SESSION_SECRET: ${SYNAPSENOTE_SESSION_SECRET:-change-me}
+      SYNAPSENOTE_CHAT_STORE: ${SYNAPSENOTE_CHAT_STORE:-file}
+      PORT: 8000
+    volumes:
+      - ${VAULT_ROOT:-/home/ubuntu/obsidian}:/vault
+    ports:
+      - "127.0.0.1:8000:8000"
+
+  synapsenote-web:
+    build:
+      context: ./services/web
+      dockerfile: frontend/Dockerfile
+    container_name: synapsenote-web
+    restart: unless-stopped
+    depends_on:
+      - synapsenote-api
+    ports:
+      - "127.0.0.1:3002:3000"
+
+  backup:
+    build:
+      context: ./services/backup
+    restart: unless-stopped
+    environment:
+      BACKUP_LOCAL_CRON: ${BACKUP_LOCAL_CRON:-0 */6 * * *}
+      BACKUP_GDRIVE_CRON: ${BACKUP_GDRIVE_CRON:-0 3 * * *}
+      BACKUP_RETENTION_BYTES: ${BACKUP_RETENTION_BYTES:-1073741824}
+      RCLONE_REMOTE_NAME: ${RCLONE_REMOTE_NAME}
+      RCLONE_REMOTE_PATH: ${RCLONE_REMOTE_PATH}
+      TZ: ${GENERIC_TIMEZONE:-Asia/Seoul}
+    volumes:
+      - ${VAULT_ROOT:-/home/ubuntu/obsidian}:/vault:ro
+      - ${RUNTIME_ROOT:-/srv/SynapseNote}/backups:/backups/obsidian-vault
+      - ${RUNTIME_ROOT:-/srv/SynapseNote}/rclone/rclone.conf:/root/.config/rclone/rclone.conf:ro

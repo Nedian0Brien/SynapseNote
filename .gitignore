@@ -1,0 +1,29 @@
+.env
+
+# Runtime data (outside repo by policy)
+backups
+rclone.conf
+ops/runtime/*
+!ops/runtime/README.md
+services/couchdb/local.d/private.ini
+
+# Frontend build/dev artifacts
+services/web/frontend/node_modules
+services/web/frontend/dist
+services/web/frontend/.next
+services/web/frontend/public
+services/web/version.txt
+
+# Generated preview/export files
+docs/*preview.html
+docs/hub-node-styles.html
+references/*.zip
+
+# Python cache artifacts
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Local git worktrees
+.worktrees/
+_archives/

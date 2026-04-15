@@ -1,0 +1,452 @@
+<html><head></head><body class="dark bg-background text-on-surface font-body selection:bg-primary/30 min-h-screen overflow-hidden">```html
+
+<meta charset="utf-8"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&amp;family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "outline": "#958da1",
+          "on-tertiary": "#4f2500",
+          "tertiary-container": "#a15100",
+          "surface-container-lowest": "#0e0e0e",
+          "primary-fixed-dim": "#d2bbff",
+          "inverse-primary": "#732ee4",
+          "on-tertiary-container": "#ffe0cd",
+          "on-surface": "#e5e2e1",
+          "tertiary-fixed-dim": "#ffb784",
+          "on-error-container": "#ffdad6",
+          "surface-container-low": "#1c1b1b",
+          "surface-container-highest": "#353534",
+          "tertiary-fixed": "#ffdcc6",
+          "inverse-surface": "#e5e2e1",
+          "on-secondary-fixed-variant": "#004395",
+          "primary-container": "#7c3aed",
+          "surface-dim": "#131313",
+          "on-primary": "#3f008e",
+          "on-secondary-fixed": "#001a42",
+          "secondary": "#adc6ff",
+          "on-primary-fixed": "#25005a",
+          "surface-container": "#201f1f",
+          "surface-container-high": "#2a2a2a",
+          "surface-variant": "#353534",
+          "surface-tint": "#d2bbff",
+          "on-background": "#e5e2e1",
+          "tertiary": "#ffb784",
+          "error": "#ffb4ab",
+          "secondary-fixed": "#d8e2ff",
+          "background": "#131313",
+          "surface": "#131313",
+          "on-secondary-container": "#e6ecff",
+          "on-tertiary-fixed-variant": "#713700",
+          "on-primary-fixed-variant": "#5a00c6",
+          "primary-fixed": "#eaddff",
+          "outline-variant": "#4a4455",
+          "on-tertiary-fixed": "#301400",
+          "error-container": "#93000a",
+          "surface-bright": "#3a3939",
+          "on-surface-variant": "#ccc3d8",
+          "secondary-container": "#0566d9",
+          "on-error": "#690005",
+          "on-primary-container": "#ede0ff",
+          "primary": "#d2bbff",
+          "on-secondary": "#002e6a",
+          "secondary-fixed-dim": "#adc6ff",
+          "inverse-on-surface": "#313030"
+        },
+        fontFamily: {
+          "headline": ["Lexend"],
+          "body": ["Inter"],
+          "label": ["Inter"]
+        },
+        borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+      },
+    },
+  }
+</script>
+<style>
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+  .glass-panel {
+    background: rgba(19, 19, 19, 0.7);
+    backdrop-filter: blur(20px);
+  }
+  .glow-sm {
+    text-shadow: 0 0-10px rgba(210, 187, 255, 0.4);
+  }
+  .neural-grid {
+    background-image: radial-gradient(circle at 1px 1px, rgba(210, 187, 255, 0.08) 1px, transparent 0);
+    background-size: 32px 32px;
+  }
+  .active-node-glow {
+    box-shadow: 0 0 60px 10px rgba(210, 187, 255, 0.15), 0 0 20px 2px rgba(124, 58, 237, 0.3);
+  }
+  @keyframes pulse-slow {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.01); }
+  }
+  @keyframes line-glow {
+    0% { stroke-dashoffset: 100; opacity: 0.3; }
+    50% { opacity: 0.8; }
+    100% { stroke-dashoffset: 0; opacity: 0.3; }
+  }
+  .animate-line {
+    stroke-dasharray: 10, 5;
+    animation: line-glow 4s linear infinite;
+  }
+  .concept-node {
+    width: 12px;
+    height: 12px;
+    border-radius: 9999px;
+    background: #7c3aed;
+    box-shadow: 0 0 15px #7c3aed;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  .concept-node:hover {
+    transform: scale(1.5);
+    background: #d2bbff;
+    box-shadow: 0 0 25px #d2bbff;
+  }
+  .parallax-layer {
+    transition: transform 0.1s ease-out;
+  }
+</style>
+<!-- SideNavBar Shell -->
+<aside class="fixed left-0 top-0 h-full flex flex-col py-8 px-4 bg-[#131313]/70 backdrop-blur-xl h-screen w-64 border-r border-[#D2BBFF]/15 shadow-[0_20px_50px_rgba(124,58,237,0.08)] z-50">
+<div class="mb-10 px-2">
+<div class="flex items-center gap-3 mb-1">
+<div class="w-8 h-8 rounded bg-gradient-to-br from-[#7C3AED] to-[#3B82F6] flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-lg" style="font-variation-settings: 'FILL' 1;">account_tree</span>
+</div>
+<div>
+<h1 class="text-2xl font-black tracking-tighter bg-gradient-to-br from-[#7C3AED] to-[#3B82F6] bg-clip-text text-transparent font-headline">Synapse Note</h1>
+<p class="text-[10px] text-primary/60 font-label tracking-widest uppercase">Neural OS v1.0</p>
+</div>
+</div>
+</div>
+<button class="mb-8 mx-2 flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#3B82F6] text-white font-bold text-sm transition-transform active:scale-95 shadow-lg shadow-primary-container/20">
+<span class="material-symbols-outlined text-sm">add</span>
+      New Thought
+    </button>
+<nav class="flex-1 space-y-1 font-lexend tracking-tight text-sm md:text-base">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-[#ADC6FF]/60 hover:text-[#ADC6FF] transition-all duration-500 ease-in-out hover:bg-[#D2BBFF]/10 hover:backdrop-blur-lg" href="#">
+<span class="material-symbols-outlined">forum</span>
+        Chat
+      </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg bg-gradient-to-r from-[#7C3AED]/20 to-transparent border-l-2 border-[#7C3AED] text-[#D2BBFF] font-bold" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">hub</span>
+        Graph
+      </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-[#ADC6FF]/60 hover:text-[#ADC6FF] transition-all duration-500 ease-in-out hover:bg-[#D2BBFF]/10 hover:backdrop-blur-lg" href="#">
+<span class="material-symbols-outlined">auto_stories</span>
+        Library
+      </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-[#ADC6FF]/60 hover:text-[#ADC6FF] transition-all duration-500 ease-in-out hover:bg-[#D2BBFF]/10 hover:backdrop-blur-lg" href="#">
+<span class="material-symbols-outlined">psychology</span>
+        Learn
+      </a>
+</nav>
+<div class="mt-auto space-y-1 pt-4 border-t border-outline-variant/20">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-[#ADC6FF]/60 hover:text-[#ADC6FF] transition-all duration-500 ease-in-out hover:bg-[#D2BBFF]/10" href="#">
+<span class="material-symbols-outlined">sensors</span>
+        Status
+      </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-[#ADC6FF]/60 hover:text-[#ADC6FF] transition-all duration-500 ease-in-out hover:bg-[#D2BBFF]/10" href="#">
+<span class="material-symbols-outlined">settings</span>
+        Settings
+      </a>
+<div class="mt-4 px-4 flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest border border-primary/20 overflow-hidden">
+<img alt="User Neural Profile" class="w-full h-full object-cover" data-alt="close-up portrait of a digital human avatar with glowing neural patterns on their skin, cinematic lighting, deep blue and violet tones" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUlOXlgOJ8imJP5oN_-cxdLXVXvc40b2BKhXnCgp-pnqydlE5DX9gj3jJEm3D8DODO0Rx_OChbPGfyYljMSG0bNF0BiMnvvihI8KCBH-QxSzyfbnZnY--ctq_44u2bpgiwoE00OfyGczTRT4fgXCg9AwB7alkUKcpelshIGAT8VUps8Kwl9iuymqaaWYTPDlfAxGyO5zh0Q7KMBe1x2qPRX2MIE1nkZqKwe4xvsUJLdGRIVzDlR84c0hatd0cC-PuZuhtiRwT_g-s"/>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-xs font-bold truncate">Neural_User_01</p>
+<p class="text-[10px] text-primary/40 truncate">Sync: Active</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Canvas -->
+<main class="ml-64 min-h-screen flex flex-col relative overflow-hidden bg-background">
+<!-- TopNavBar -->
+<header class="flex justify-between items-center w-full px-8 h-16 bg-transparent z-40">
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-lg">folder_open</span>
+<span class="font-lexend text-xs uppercase tracking-widest text-primary">Knowledge / Neural_Project_Sigma</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="bg-surface-container-low/50 backdrop-blur-md rounded-full px-4 py-2 flex items-center gap-3 border border-outline-variant/10">
+<span class="material-symbols-outlined text-secondary text-sm">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-[10px] font-headline tracking-widest w-48 text-on-surface-variant" placeholder="QUERY KNOWLEDGE BASE..." type="text"/>
+</div>
+<div class="flex items-center gap-2">
+<button class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-surface-container-high transition-colors text-secondary/60">
+<span class="material-symbols-outlined">bolt</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-surface-container-high transition-colors text-secondary/60">
+<span class="material-symbols-outlined">notifications_paused</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Workspace Layout -->
+<div class="flex-1 flex overflow-hidden">
+<!-- Knowledge Graph Section -->
+<section class="flex-1 relative neural-grid overflow-hidden">
+<!-- Parallax Background Grid Layer -->
+<div class="absolute inset-0 pointer-events-none opacity-40 neural-grid"></div>
+<!-- SVG Canvas for Lines -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none overflow-visible">
+<defs>
+<filter id="glow">
+<fegaussianblur result="coloredBlur" stddeviation="3"></fegaussianblur>
+<femerge>
+<femergenode in="coloredBlur"></femergenode>
+<femergenode in="SourceGraphic"></femergenode>
+</femerge>
+</filter>
+<lineargradient id="edgeGradient" x1="0%" x2="100%" y1="0%" y2="0%">
+<stop offset="0%" stop-color="#7C3AED"></stop>
+<stop offset="100%" stop-color="#0566D9"></stop>
+</lineargradient>
+</defs>
+<!-- Curved Organic Connections -->
+<path class="animate-line" d="M150,280 C300,280 300,450 480,450" fill="none" filter="url(#glow)" stroke="url(#edgeGradient)" stroke-width="2"></path>
+<path d="M480,450 C600,450 650,200 780,180" fill="none" opacity="0.4" stroke="#7C3AED" stroke-width="1.5"></path>
+<path d="M480,450 C600,450 700,600 850,580" fill="none" opacity="0.4" stroke="#7C3AED" stroke-width="1.5"></path>
+<path d="M780,180 C850,180 900,100 950,120" fill="none" opacity="0.2" stroke="#0566D9" stroke-dasharray="4" stroke-width="1"></path>
+<path d="M150,280 C200,150 400,100 500,140" fill="none" opacity="0.3" stroke="#7C3AED" stroke-width="1"></path>
+<path d="M500,140 C600,180 750,150 780,180" fill="none" opacity="0.2" stroke="#0566D9" stroke-width="1"></path>
+<!-- Radiating connections from Active Node -->
+<path class="animate-line" d="M480,450 L380,550" fill="none" opacity="0.3" stroke="#D2BBFF" stroke-width="1"></path>
+<path class="animate-line" d="M480,450 L580,350" fill="none" opacity="0.3" stroke="#D2BBFF" stroke-width="1"></path>
+</svg>
+<!-- Floating Graph Elements -->
+<div class="absolute inset-0 p-12 overflow-visible">
+<!-- Content Node 1 (Core Documentation) -->
+<div class="absolute left-[80px] top-[240px] group cursor-grab">
+<div class="bg-surface-container-low/80 border border-primary/20 rounded-xl p-4 w-60 shadow-2xl glass-panel hover:border-primary/50 transition-all">
+<div class="flex items-center gap-3 mb-3">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">folder</span>
+<span class="font-headline text-sm font-bold tracking-tight">Core_Documentation</span>
+</div>
+<div class="space-y-2">
+<div class="flex items-center justify-between text-[10px] text-on-surface-variant uppercase tracking-widest border-b border-outline-variant/10 pb-1">
+<span>Contains</span>
+<span>12 Items</span>
+</div>
+<div class="h-10 bg-surface-container-lowest/50 rounded flex items-center justify-center text-[10px] italic text-primary/40">
+                  Indexing neural net...
+                </div>
+</div>
+</div>
+</div>
+<!-- Concept Node A -->
+<div class="absolute left-[490px] top-[130px] concept-node" title="System Context"></div>
+<!-- Concept Node B -->
+<div class="absolute left-[370px] top-[540px] concept-node" title="Memory Unit"></div>
+<!-- Concept Node C -->
+<div class="absolute left-[940px] top-[110px] concept-node" title="External API"></div>
+<!-- Active Synapse (Prominent Selected Content Node) -->
+<div class="absolute left-[480px] top-[320px] group cursor-grab z-20">
+<div class="active-node-glow rounded-2xl">
+<div class="bg-surface-container-low border border-primary rounded-2xl w-[420px] glass-panel overflow-hidden shadow-[0_0_50px_rgba(124,58,237,0.2)] animate-pulse-slow">
+<!-- Preview Card Header -->
+<div class="p-5 border-b border-outline-variant/20 flex gap-4">
+<div class="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20 shrink-0">
+<span class="material-symbols-outlined text-primary text-4xl">terminal</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-headline text-lg font-black tracking-tight truncate">neural_engine.py</h3>
+<div class="flex items-center gap-1.5 bg-primary/20 px-2 py-0.5 rounded-full">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+<span class="text-[8px] font-bold text-primary uppercase tracking-tighter">Active Synapse</span>
+</div>
+</div>
+<div class="flex items-center gap-3 text-[10px] text-on-surface-variant font-medium">
+<span class="flex items-center gap-1"><span class="w-1 h-1 rounded-full bg-primary"></span> Python Script</span>
+<span class="flex items-center gap-1"><span class="w-1 h-1 rounded-full bg-outline-variant"></span> High Connection</span>
+</div>
+</div>
+</div>
+<!-- Snippet State -->
+<div class="p-5 space-y-4">
+<div class="bg-black/60 rounded-xl p-4 border border-outline-variant/10 relative">
+<div class="absolute top-3 right-3 flex gap-2">
+<span class="w-2 h-2 rounded-full bg-red-500/30"></span>
+<span class="w-2 h-2 rounded-full bg-yellow-500/30"></span>
+<span class="w-2 h-2 rounded-full bg-green-500/30"></span>
+</div>
+<code class="text-[11px] font-mono leading-relaxed text-secondary/80">
+<span class="text-primary">async def</span> <span class="text-primary">process_synapse</span>(node_id):<br/>
+<span class="pl-4 text-on-surface/40"># Dynamic topological re-routing</span><br/>
+<span class="pl-4">context = <span class="text-tertiary">await</span> synapse.map(node_id)</span><br/>
+<span class="pl-4 text-primary">return</span> context.optimize_neural_path()
+                  </code>
+</div>
+<!-- Metadata Grid -->
+<div class="grid grid-cols-3 gap-2">
+<div class="bg-surface-container-high/40 p-2 rounded-lg border border-outline-variant/10">
+<p class="text-[8px] uppercase tracking-widest text-on-surface-variant mb-1">Size</p>
+<p class="text-xs font-bold font-headline">4.2 KB</p>
+</div>
+<div class="bg-surface-container-high/40 p-2 rounded-lg border border-outline-variant/10">
+<p class="text-[8px] uppercase tracking-widest text-on-surface-variant mb-1">Relativity</p>
+<p class="text-xs font-bold font-headline">98%</p>
+</div>
+<div class="bg-surface-container-high/40 p-2 rounded-lg border border-outline-variant/10">
+<p class="text-[8px] uppercase tracking-widest text-on-surface-variant mb-1">Sync</p>
+<p class="text-xs font-bold font-headline">LIVE</p>
+</div>
+</div>
+</div>
+<!-- Quick Actions Row -->
+<div class="bg-primary/5 p-3 flex items-center justify-between gap-2 border-t border-outline-variant/20">
+<button class="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-surface-container-highest hover:bg-primary/20 transition-colors text-[10px] font-bold uppercase tracking-wider">
+<span class="material-symbols-outlined text-sm">open_in_new</span>
+                    Modify Architecture
+                  </button>
+<button class="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-primary text-on-primary hover:bg-primary/90 transition-colors text-[10px] font-bold uppercase tracking-wider shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-sm">bolt</span>
+                    Execute Logic
+                  </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Content Node 2 (PDF) -->
+<div class="absolute left-[770px] top-[150px] group cursor-grab">
+<div class="w-12 h-12 rounded-xl bg-red-900/10 border border-red-500/30 flex items-center justify-center hover:scale-110 transition-transform shadow-[0_0_20px_rgba(239,68,68,0.1)]">
+<span class="material-symbols-outlined text-red-400 text-xl">picture_as_pdf</span>
+</div>
+<div class="absolute top-full mt-2 left-1/2 -translate-x-1/2 whitespace-nowrap text-[9px] font-bold text-on-surface-variant bg-black/40 px-2 py-1 rounded">Whitepaper_09.pdf</div>
+</div>
+<!-- Content Node 3 (Git Issue) -->
+<div class="absolute left-[840px] top-[560px] group cursor-grab">
+<div class="bg-surface-container-high/60 backdrop-blur-md border border-outline-variant/30 rounded-full px-4 py-2 flex items-center gap-2 hover:bg-surface-container-high transition-colors cursor-pointer shadow-xl">
+<span class="material-symbols-outlined text-primary text-sm">bug_report</span>
+<span class="text-[10px] font-bold">Issue #442: Context Leakage</span>
+<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+</div>
+</div>
+</div>
+<!-- Graph Controls -->
+<div class="absolute bottom-8 left-8 flex items-center gap-2 z-30">
+<div class="bg-surface-container-low/80 backdrop-blur-xl border border-outline-variant/10 rounded-full p-1 flex items-center">
+<button class="p-2 hover:text-primary transition-colors"><span class="material-symbols-outlined text-sm">zoom_in</span></button>
+<button class="p-2 hover:text-primary transition-colors"><span class="material-symbols-outlined text-sm">zoom_out</span></button>
+<div class="w-px h-4 bg-outline-variant/20 mx-1"></div>
+<button class="p-2 hover:text-primary transition-colors"><span class="material-symbols-outlined text-sm">center_focus_weak</span></button>
+<button class="p-2 hover:text-primary transition-colors"><span class="material-symbols-outlined text-sm">layers</span></button>
+</div>
+<div class="bg-surface-container-low/80 backdrop-blur-xl border border-outline-variant/10 rounded-full px-4 py-2 text-[10px] font-headline tracking-widest text-on-surface-variant flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+            NEURAL_FLUX_STABLE
+          </div>
+</div>
+</section>
+<!-- Context Manager Panel (Right) -->
+<section class="w-80 border-l border-outline-variant/10 bg-surface-container-lowest/30 backdrop-blur-2xl flex flex-col z-30">
+<div class="p-6 flex flex-col h-full">
+<div class="flex items-center justify-between mb-8">
+<h2 class="font-headline text-lg font-black tracking-tighter">Active Context</h2>
+<span class="bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded-full">4 NODES</span>
+</div>
+<div class="flex-1 space-y-4 overflow-y-auto pr-2 custom-scrollbar">
+<!-- Active Node Item -->
+<div class="bg-surface-container-low border-l-2 border-primary p-4 rounded-r-lg group relative hover:bg-surface-container-high transition-colors">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-lg">description</span>
+<div>
+<p class="text-xs font-bold leading-none mb-1">Project_Brief_Final</p>
+<p class="text-[9px] text-on-surface-variant">Markdown · 14.2kb</p>
+</div>
+</div>
+<button class="opacity-0 group-hover:opacity-100 text-on-surface-variant hover:text-error transition-all">
+<span class="material-symbols-outlined text-sm">close</span>
+</button>
+</div>
+</div>
+<!-- Active Node Item -->
+<div class="bg-surface-container-low border-l-2 border-secondary p-4 rounded-r-lg group relative hover:bg-surface-container-high transition-colors">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary text-lg">terminal</span>
+<div>
+<p class="text-xs font-bold leading-none mb-1">api_routes.js</p>
+<p class="text-[9px] text-on-surface-variant">JavaScript · 4.1kb</p>
+</div>
+</div>
+<button class="opacity-0 group-hover:opacity-100 text-on-surface-variant hover:text-error transition-all">
+<span class="material-symbols-outlined text-sm">close</span>
+</button>
+</div>
+</div>
+<!-- Active Node Item -->
+<div class="bg-surface-container-low border-l-2 border-tertiary p-4 rounded-r-lg group relative hover:bg-surface-container-high transition-colors">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-tertiary text-lg">table_chart</span>
+<div>
+<p class="text-xs font-bold leading-none mb-1">User_Stats_2024</p>
+<p class="text-[9px] text-on-surface-variant">CSV · 1.2mb</p>
+</div>
+</div>
+<button class="opacity-0 group-hover:opacity-100 text-on-surface-variant hover:text-error transition-all">
+<span class="material-symbols-outlined text-sm">close</span>
+</button>
+</div>
+</div>
+<!-- Drop Zone Placeholder -->
+<div class="border-2 border-dashed border-outline-variant/20 rounded-xl py-12 flex flex-col items-center justify-center group hover:border-primary/40 transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors text-3xl mb-2">add_to_photos</span>
+<p class="text-[10px] font-headline tracking-widest text-outline-variant uppercase">Inject Node</p>
+</div>
+</div>
+<!-- Switch to Chat Action -->
+<div class="mt-8 pt-8 border-t border-outline-variant/10">
+<div class="bg-surface-container-high rounded-2xl p-4 flex flex-col gap-4 shadow-inner">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">bolt</span>
+</div>
+<div class="flex-1">
+<p class="text-xs font-bold">Context Ready</p>
+<p class="text-[10px] text-on-surface-variant">4 Knowledge anchors active</p>
+</div>
+</div>
+<button class="w-full bg-gradient-to-r from-primary to-secondary text-on-primary-container font-headline font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:shadow-[0_0_20px_rgba(124,58,237,0.3)] transition-shadow group">
+                Switch to Chat
+                <span class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Background Elements -->
+<div class="absolute top-1/4 right-1/3 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[150px] -z-10 pointer-events-none animate-pulse"></div>
+<div class="absolute bottom-1/4 left-1/4 w-[500px] h-[500px] bg-secondary/5 rounded-full blur-[120px] -z-10 pointer-events-none"></div>
+</main>
+<script>
+  // Simple parallax effect for the graph canvas
+  const canvas = document.querySelector('.neural-grid');
+  document.addEventListener('mousemove', (e) => {
+    const xAxis = (window.innerWidth / 2 - e.pageX) / 50;
+    const yAxis = (window.innerHeight / 2 - e.pageY) / 50;
+    canvas.style.transform = `translate(${xAxis}px, ${yAxis}px)`;
+  });
+</script>
+
+
+```</body></html>

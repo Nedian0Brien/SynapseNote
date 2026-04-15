@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SynapseNote — Base & Graph Hierarchy Concept</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0f1117;
+    --surface: #161b27;
+    --surface-high: #1e2535;
+    --surface-higher: #252d40;
+    --border: #2a3347;
+    --border-bright: #3a4a6a;
+    --text: #e2e8f4;
+    --text-muted: #7a8aaa;
+    --text-dim: #4a5570;
+    --primary: #6c8fff;
+    --primary-dim: #3a52a0;
+    --accent: #a78bfa;
+    --accent-dim: #5b42a0;
+    --green: #4ade80;
+    --green-dim: #1a6640;
+    --orange: #fb923c;
+    --orange-dim: #7a3a10;
+    --pink: #f472b6;
+    --pink-dim: #7a2060;
+    --cyan: #22d3ee;
+    --cyan-dim: #0a5a70;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', -apple-system, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 32px;
+  }
+
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+    letter-spacing: -0.3px;
+  }
+  .subtitle {
+    color: var(--text-muted);
+    font-size: 13px;
+    margin-bottom: 40px;
+  }
+
+  /* ── Section ── */
+  .section {
+    margin-bottom: 48px;
+  }
+  .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ── Hierarchy Diagram ── */
+  .hierarchy {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    max-width: 680px;
+  }
+  .hier-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    margin-bottom: 4px;
+    transition: background 0.15s;
+  }
+  .hier-row:hover { background: var(--surface-high); }
+  .hier-indent-1 { margin-left: 32px; }
+  .hier-indent-2 { margin-left: 64px; }
+  .hier-indent-3 { margin-left: 96px; }
+
+  .hier-connector {
+    color: var(--text-dim);
+    font-size: 18px;
+    margin-left: 8px;
+    user-select: none;
+  }
+
+  .hier-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .icon-globe   { background: var(--primary-dim); color: var(--primary); }
+  .icon-base    { background: var(--accent-dim); color: var(--accent); }
+  .icon-folder  { background: var(--green-dim); color: var(--green); }
+  .icon-doc     { background: var(--surface-higher); color: var(--text-muted); }
+
+  .hier-label {
+    flex: 1;
+  }
+  .hier-name {
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .hier-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 1px;
+  }
+  .hier-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 99px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .badge-graph  { background: var(--primary-dim); color: var(--primary); }
+  .badge-base   { background: var(--accent-dim); color: var(--accent); }
+  .badge-folder { background: var(--green-dim); color: var(--green); }
+  .badge-node   { background: var(--surface-higher); color: var(--text-muted); }
+
+  /* ── Graph View Mockups ── */
+  .views-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  @media (max-width: 900px) {
+    .views-grid { grid-template-columns: 1fr; }
+  }
+
+  .view-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  .view-header {
+    padding: 14px 18px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .view-tag {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+  }
+  .tag-a { background: var(--primary-dim); color: var(--primary); }
+  .tag-b { background: var(--accent-dim); color: var(--accent); }
+  .view-title {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--text);
+  }
+  .view-desc {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 1px;
+  }
+
+  .view-canvas {
+    padding: 24px;
+    position: relative;
+    height: 360px;
+    overflow: hidden;
+  }
+
+  /* ── View A: Base Overview ── */
+  .base-region {
+    position: absolute;
+    border: 2px dashed;
+    border-radius: 16px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .base-region.r1 {
+    border-color: #6c8fff66;
+    background: #6c8fff08;
+    top: 16px; left: 16px;
+    width: 180px; height: 160px;
+  }
+  .base-region.r2 {
+    border-color: #a78bfa66;
+    background: #a78bfa08;
+    top: 16px; right: 16px;
+    width: 160px; height: 140px;
+  }
+  .base-region.r3 {
+    border-color: #4ade8066;
+    background: #4ade8008;
+    bottom: 16px; left: 32px;
+    width: 140px; height: 130px;
+  }
+  .base-region.r4 {
+    border-color: #fb923c66;
+    background: #fb923c08;
+    bottom: 16px; right: 24px;
+    width: 150px; height: 120px;
+  }
+  .base-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .r1 .base-label { color: #6c8fff; }
+  .r2 .base-label { color: #a78bfa; }
+  .r3 .base-label { color: #4ade80; }
+  .r4 .base-label { color: #fb923c; }
+
+  .mini-nodes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .mini-node {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .r1 .mini-node { background: #6c8fff; opacity: 0.9; }
+  .r2 .mini-node { background: #a78bfa; opacity: 0.9; }
+  .r3 .mini-node { background: #4ade80; opacity: 0.9; }
+  .r4 .mini-node { background: #fb923c; opacity: 0.9; }
+
+  /* Cross-base connections (SVG) */
+  .connections-svg {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    width: 100%; height: 100%;
+  }
+
+  /* Center hub node */
+  .hub-node {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--surface-higher);
+    border: 2px solid var(--border-bright);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    color: var(--text-muted);
+    z-index: 2;
+  }
+
+  /* ── View B: Full Graph ── */
+  .full-graph-area {
+    position: relative;
+    width: 100%; height: 100%;
+  }
+  .fn { /* full node */
+    position: absolute;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px;
+    font-weight: 600;
+    color: white;
+    cursor: default;
+  }
+  .fn-label {
+    position: absolute;
+    font-size: 9px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    top: calc(100% + 4px);
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .full-graph-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+  }
+
+  /* ── Sidebar Concept ── */
+  .sidebar-concept {
+    display: flex;
+    gap: 24px;
+    max-width: 900px;
+  }
+  .sidebar-mock {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    width: 260px;
+    flex-shrink: 0;
+  }
+  .sidebar-mock-header {
+    padding: 12px 14px;
+    background: var(--surface-high);
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .sidebar-section {
+    padding: 8px 6px;
+  }
+  .sidebar-item {
+    padding: 7px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+    transition: background 0.12s;
+  }
+  .sidebar-item:hover { background: var(--surface-high); color: var(--text); }
+  .sidebar-item.active { background: var(--surface-higher); color: var(--text); }
+  .sidebar-item-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .sidebar-item-icon {
+    font-size: 14px;
+    width: 18px;
+    text-align: center;
+    flex-shrink: 0;
+    color: var(--text-dim);
+  }
+  .sidebar-item.folder-item {
+    font-weight: 600;
+    color: var(--text);
+  }
+  .sidebar-indent { margin-left: 18px; }
+  .sidebar-base-header {
+    padding: 6px 10px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+  }
+  .base-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+  }
+  .sidebar-description {
+    flex: 1;
+    padding: 16px 20px;
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.8;
+  }
+  .sidebar-description h3 {
+    font-size: 13px;
+    color: var(--text);
+    margin-bottom: 10px;
+    font-weight: 700;
+  }
+  .callout {
+    background: var(--surface-high);
+    border-left: 3px solid var(--primary-dim);
+    border-radius: 0 8px 8px 0;
+    padding: 10px 14px;
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .callout b { color: var(--text); }
+
+  .divider { height: 1px; background: var(--border); margin: 6px 8px; }
+</style>
+</head>
+<body>
+
+<h1>SynapseNote — Base & Graph Hierarchy</h1>
+<p class="subtitle">기획 개념 시각화 / 브레인스토밍 목업 v0.1</p>
+
+<!-- ── 1. Hierarchy ── -->
+<div class="section">
+  <div class="section-title">1. 정보 계층 구조</div>
+  <div class="hierarchy">
+
+    <div class="hier-row">
+      <div class="hier-icon icon-globe">&#9728;</div>
+      <div class="hier-label">
+        <div class="hier-name">전체 그래프</div>
+        <div class="hier-desc">모든 Base와 노드를 포함하는 최상위 공간</div>
+      </div>
+      <span class="hier-badge badge-graph">Global</span>
+    </div>
+
+    <div style="color:var(--text-dim);font-size:18px;margin-left:24px;margin-bottom:2px;">└</div>
+
+    <div class="hier-row hier-indent-1">
+      <div class="hier-icon icon-base">&#9671;</div>
+      <div class="hier-label">
+        <div class="hier-name">Base</div>
+        <div class="hier-desc">사용자가 관련 도메인 폴더들을 묶어 만든 그룹 단위</div>
+      </div>
+      <span class="hier-badge badge-base">Base</span>
+    </div>
+
+    <div style="color:var(--text-dim);font-size:18px;margin-left:56px;margin-bottom:2px;">└</div>
+
+    <div class="hier-row hier-indent-2">
+      <div class="hier-icon icon-folder">&#9642;</div>
+      <div class="hier-label">
+        <div class="hier-name">Folder</div>
+        <div class="hier-desc">파일시스템 폴더. Base 안에 하나 이상 포함</div>
+      </div>
+      <span class="hier-badge badge-folder">Folder</span>
+    </div>
+
+    <div style="color:var(--text-dim);font-size:18px;margin-left:88px;margin-bottom:2px;">└</div>
+
+    <div class="hier-row hier-indent-3">
+      <div class="hier-icon icon-doc">&#9643;</div>
+      <div class="hier-label">
+        <div class="hier-name">Node (Document)</div>
+        <div class="hier-desc">개별 마크다운 문서. 그래프의 기본 단위</div>
+      </div>
+      <span class="hier-badge badge-node">Node</span>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── 2. Graph Views ── -->
+<div class="section">
+  <div class="section-title">2. 전체 그래프 — 두 가지 뷰</div>
+  <div class="views-grid">
+
+    <!-- View A -->
+    <div class="view-card">
+      <div class="view-header">
+        <span class="view-tag tag-a">View A</span>
+        <div>
+          <div class="view-title">Base Overview</div>
+          <div class="view-desc">Base를 독립 영역으로 표시, Base 간 연결만 점선으로</div>
+        </div>
+      </div>
+      <div class="view-canvas">
+
+        <!-- Base regions -->
+        <div class="base-region r1">
+          <div class="base-label">AI / ML</div>
+          <div class="mini-nodes">
+            <div class="mini-node"></div><div class="mini-node"></div>
+            <div class="mini-node"></div><div class="mini-node"></div>
+            <div class="mini-node"></div><div class="mini-node"></div>
+            <div class="mini-node"></div><div class="mini-node"></div>
+          </div>
+        </div>
+        <div class="base-region r2">
+          <div class="base-label">Product</div>
+          <div class="mini-nodes">
+            <div class="mini-node"></div><div class="mini-node"></div>
+            <div class="mini-node"></div><div class="mini-node"></div>
+            <div class="mini-node"></div>
+          </div>
+        </div>
+        <div class="base-region r3">
+          <div class="base-label">Dev</div>
+          <div class="mini-nodes">
+            <div class="mini-node"></div><div class="mini-node"></div>
+            <div class="mini-node"></div><div class="mini-node"></div>
+            <div class="mini-node"></div><div class="mini-node"></div>
+          </div>
+        </div>
+        <div class="base-region r4">
+          <div class="base-label">Research</div>
+          <div class="mini-nodes">
+            <div class="mini-node"></div><div class="mini-node"></div>
+            <div class="mini-node"></div><div class="mini-node"></div>
+          </div>
+        </div>
+
+        <!-- Cross-base dashed connections -->
+        <svg class="connections-svg" viewBox="0 0 400 360">
+          <!-- AI/ML center → Product center -->
+          <line x1="106" y1="96" x2="248" y2="86" stroke="#7a8aaa" stroke-width="1.5" stroke-dasharray="5,4" opacity="0.5"/>
+          <!-- AI/ML center → Dev center -->
+          <line x1="96" y1="176" x2="102" y2="256" stroke="#7a8aaa" stroke-width="1.5" stroke-dasharray="5,4" opacity="0.5"/>
+          <!-- Product → Research -->
+          <line x1="248" y1="156" x2="258" y2="256" stroke="#7a8aaa" stroke-width="1.5" stroke-dasharray="5,4" opacity="0.5"/>
+          <!-- Dev → Research -->
+          <line x1="172" y1="281" x2="251" y2="296" stroke="#7a8aaa" stroke-width="1.5" stroke-dasharray="5,4" opacity="0.5"/>
+        </svg>
+
+      </div>
+    </div>
+
+    <!-- View B -->
+    <div class="view-card">
+      <div class="view-header">
+        <span class="view-tag tag-b">View B</span>
+        <div>
+          <div class="view-title">Full Graph</div>
+          <div class="view-desc">Base 구분 없이 전체 노드를 하나의 그래프로</div>
+        </div>
+      </div>
+      <div class="view-canvas">
+        <div class="full-graph-area">
+
+          <!-- SVG edges -->
+          <svg class="full-graph-svg" viewBox="0 0 360 320">
+            <!-- edges (solid, force-directed feel) -->
+            <line x1="180" y1="160" x2="80" y2="80"   stroke="#3a4a6a" stroke-width="1.2"/>
+            <line x1="180" y1="160" x2="270" y2="70"  stroke="#3a4a6a" stroke-width="1.2"/>
+            <line x1="180" y1="160" x2="60" y2="200"  stroke="#3a4a6a" stroke-width="1.2"/>
+            <line x1="180" y1="160" x2="290" y2="220" stroke="#3a4a6a" stroke-width="1.2"/>
+            <line x1="180" y1="160" x2="180" y2="290" stroke="#3a4a6a" stroke-width="1.2"/>
+            <line x1="80"  y1="80"  x2="40"  y2="130" stroke="#3a4a6a" stroke-width="1"/>
+            <line x1="80"  y1="80"  x2="130" y2="40"  stroke="#3a4a6a" stroke-width="1"/>
+            <line x1="270" y1="70"  x2="320" y2="110" stroke="#3a4a6a" stroke-width="1"/>
+            <line x1="270" y1="70"  x2="230" y2="30"  stroke="#3a4a6a" stroke-width="1"/>
+            <line x1="60"  y1="200" x2="30"  y2="260" stroke="#3a4a6a" stroke-width="1"/>
+            <line x1="290" y1="220" x2="330" y2="270" stroke="#3a4a6a" stroke-width="1"/>
+            <line x1="180" y1="290" x2="130" y2="310" stroke="#3a4a6a" stroke-width="1"/>
+            <line x1="180" y1="290" x2="230" y2="305" stroke="#3a4a6a" stroke-width="1"/>
+            <line x1="40"  y1="130" x2="60"  y2="200" stroke="#3a4a6a" stroke-width="1"/>
+            <line x1="320" y1="110" x2="290" y2="220" stroke="#3a4a6a" stroke-width="1"/>
+          </svg>
+
+          <!-- Nodes -->
+          <!-- Hub -->
+          <div class="fn" style="width:22px;height:22px;background:#4a5a8a;top:149px;left:169px;z-index:3;"></div>
+          <!-- AI/ML cluster (blue) -->
+          <div class="fn" style="width:14px;height:14px;background:#6c8fff;top:73px;left:73px;"></div>
+          <div class="fn" style="width:10px;height:10px;background:#6c8fff;opacity:.8;top:33px;left:123px;"></div>
+          <div class="fn" style="width:10px;height:10px;background:#6c8fff;opacity:.8;top:123px;left:33px;"></div>
+          <!-- Product cluster (purple) -->
+          <div class="fn" style="width:14px;height:14px;background:#a78bfa;top:63px;left:263px;"></div>
+          <div class="fn" style="width:10px;height:10px;background:#a78bfa;opacity:.8;top:23px;left:223px;"></div>
+          <div class="fn" style="width:10px;height:10px;background:#a78bfa;opacity:.8;top:103px;left:313px;"></div>
+          <!-- Dev cluster (green) -->
+          <div class="fn" style="width:14px;height:14px;background:#4ade80;top:193px;left:53px;"></div>
+          <div class="fn" style="width:10px;height:10px;background:#4ade80;opacity:.8;top:253px;left:23px;"></div>
+          <!-- Research cluster (orange) -->
+          <div class="fn" style="width:14px;height:14px;background:#fb923c;top:213px;left:283px;"></div>
+          <div class="fn" style="width:10px;height:10px;background:#fb923c;opacity:.8;top:263px;left:323px;"></div>
+          <!-- Bottom cluster (pink) -->
+          <div class="fn" style="width:14px;height:14px;background:#f472b6;top:283px;left:173px;"></div>
+          <div class="fn" style="width:10px;height:10px;background:#f472b6;opacity:.8;top:303px;left:123px;"></div>
+          <div class="fn" style="width:10px;height:10px;background:#f472b6;opacity:.8;top:298px;left:223px;"></div>
+
+          <!-- Color legend -->
+          <div style="position:absolute;bottom:8px;right:8px;display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end;">
+            <span style="font-size:10px;color:#6c8fff;display:flex;align-items:center;gap:3px;"><span style="width:7px;height:7px;border-radius:50%;background:#6c8fff;display:inline-block;"></span>AI/ML</span>
+            <span style="font-size:10px;color:#a78bfa;display:flex;align-items:center;gap:3px;"><span style="width:7px;height:7px;border-radius:50%;background:#a78bfa;display:inline-block;"></span>Product</span>
+            <span style="font-size:10px;color:#4ade80;display:flex;align-items:center;gap:3px;"><span style="width:7px;height:7px;border-radius:50%;background:#4ade80;display:inline-block;"></span>Dev</span>
+            <span style="font-size:10px;color:#fb923c;display:flex;align-items:center;gap:3px;"><span style="width:7px;height:7px;border-radius:50%;background:#fb923c;display:inline-block;"></span>Research</span>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── 3. Sidebar Concept ── -->
+<div class="section">
+  <div class="section-title">3. 사이드바 탐색 구조 개념</div>
+  <div class="sidebar-concept">
+
+    <div class="sidebar-mock">
+      <div class="sidebar-mock-header">
+        <span>Explorer</span>
+        <span style="font-size:16px;cursor:pointer;color:var(--text-dim);">+</span>
+      </div>
+
+      <!-- All Graphs entry -->
+      <div class="sidebar-section">
+        <div class="sidebar-item active">
+          <span class="sidebar-item-icon">&#9728;</span>
+          <span>전체 그래프</span>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Base 1 -->
+      <div class="sidebar-section">
+        <div class="sidebar-base-header">
+          <div class="base-dot" style="background:#6c8fff;"></div>
+          <span style="color:#6c8fff;">AI / ML Base</span>
+        </div>
+        <div class="sidebar-item folder-item">
+          <span class="sidebar-item-icon" style="color:#4ade80;">&#9642;</span>
+          <span>llm-research</span>
+        </div>
+        <div class="sidebar-item sidebar-indent">
+          <span class="sidebar-item-dot" style="background:#6c8fff;opacity:0.6;"></span>
+          <span>attention-mechanisms</span>
+        </div>
+        <div class="sidebar-item sidebar-indent">
+          <span class="sidebar-item-dot" style="background:#6c8fff;opacity:0.6;"></span>
+          <span>rag-patterns</span>
+        </div>
+        <div class="sidebar-item folder-item">
+          <span class="sidebar-item-icon" style="color:#4ade80;">&#9642;</span>
+          <span>ml-ops</span>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Base 2 -->
+      <div class="sidebar-section">
+        <div class="sidebar-base-header">
+          <div class="base-dot" style="background:#a78bfa;"></div>
+          <span style="color:#a78bfa;">Product Base</span>
+        </div>
+        <div class="sidebar-item folder-item">
+          <span class="sidebar-item-icon" style="color:#4ade80;">&#9642;</span>
+          <span>features</span>
+        </div>
+        <div class="sidebar-item folder-item">
+          <span class="sidebar-item-icon" style="color:#4ade80;">&#9642;</span>
+          <span>user-research</span>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Unassigned -->
+      <div class="sidebar-section">
+        <div class="sidebar-base-header">
+          <div class="base-dot" style="background:var(--text-dim);"></div>
+          <span style="color:var(--text-dim);">미분류 폴더</span>
+        </div>
+        <div class="sidebar-item folder-item">
+          <span class="sidebar-item-icon" style="color:#4ade80;">&#9642;</span>
+          <span>inbox</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="sidebar-description">
+      <h3>사이드바 탐색 구조 개념</h3>
+      <p>
+        현재 <b>ExplorerPanel</b>은 단순 파일트리만 제공합니다.<br>
+        Base 개념 도입 후, 사이드바는 다음 계층을 표현해야 합니다:
+      </p>
+      <div class="callout">
+        <b>전체 그래프</b> 진입점 → 각 <b>Base</b> 섹션 → 소속 <b>폴더</b> → <b>문서</b> 순으로 트리 표시
+      </div>
+      <div class="callout" style="border-left-color:var(--accent-dim);margin-top:8px;">
+        어떤 폴더에도 속하지 않은 폴더는 <b>미분류</b>로 자동 그룹핑
+      </div>
+      <div class="callout" style="border-left-color:var(--green-dim);margin-top:8px;">
+        Base는 사용자가 직접 생성·편집. 폴더를 드래그하거나 우클릭 메뉴로 Base에 추가/제거
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

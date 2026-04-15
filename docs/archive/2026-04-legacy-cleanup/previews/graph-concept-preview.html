@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Graph View — Design Concepts</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lexend:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: #111;
+  color: #e8e6f0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Tab Bar ── */
+.tab-bar {
+  display: flex;
+  align-items: stretch;
+  background: #111118;
+  border-bottom: 1px solid #222230;
+  padding: 0 20px;
+  gap: 4px;
+  flex-shrink: 0;
+  height: 48px;
+}
+.tab-bar-label {
+  display: flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #555570;
+  padding-right: 16px;
+  border-right: 1px solid #222230;
+  margin-right: 8px;
+}
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #666680;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.tab:hover { color: #aaa8c8; background: rgba(255,255,255,0.03); }
+.tab.active { color: #e8e6f0; border-bottom-color: var(--tab-accent, #8b5cf6); }
+.tab .tab-letter {
+  width: 20px; height: 20px;
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700;
+  background: var(--tab-accent, #8b5cf6);
+  color: #fff;
+  flex-shrink: 0;
+}
+
+/* ── Pane ── */
+.concept-pane {
+  display: none;
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+.concept-pane.active { display: block; }
+
+.concept-label {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 18px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.concept-desc {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  text-align: center;
+  font-size: 11px;
+  line-height: 1.65;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* ── SVG fills full pane ── */
+.graph-svg {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+}
+
+/* ── Node Dock ── */
+.node-dock {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(0);
+  z-index: 30;
+  width: min(580px, calc(100vw - 48px));
+  border-radius: 16px;
+  overflow: hidden;
+  transition: transform 0.28s cubic-bezier(0.4,0,0.2,1), opacity 0.28s;
+  pointer-events: auto;
+}
+.node-dock.hidden {
+  transform: translateX(-50%) translateY(16px);
+  opacity: 0;
+  pointer-events: none;
+}
+.dock-main {
+  display: flex; align-items: center; gap: 14px;
+  padding: 13px 16px;
+}
+.dock-icon {
+  width: 36px; height: 36px; flex-shrink: 0;
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+}
+.dock-info { flex: 1; min-width: 0; }
+.dock-type { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 2px; }
+.dock-title { font-family: 'Lexend', sans-serif; font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dock-stats { display: flex; gap: 14px; flex-shrink: 0; }
+.dock-stat { display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 36px; }
+.dock-stat-num { font-family: 'Lexend', sans-serif; font-size: 16px; font-weight: 800; line-height: 1; }
+.dock-stat-label { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.5; }
+.dock-divider { width: 1px; height: 28px; flex-shrink: 0; }
+.dock-actions { display: flex; gap: 5px; flex-shrink: 0; }
+.dock-btn {
+  width: 32px; height: 32px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; border: none;
+  transition: all 0.15s;
+  font-family: "Material Symbols Outlined";
+  font-size: 17px; line-height: 1;
+  font-variation-settings: 'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;
+}
+.dock-btn.fill { font-variation-settings: 'FILL' 1,'wght' 600,'GRAD' 0,'opsz' 24; }
+.dock-tags-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 16px 12px;
+  border-top-style: solid; border-top-width: 1px;
+}
+.dock-tag {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px; border-radius: 100px;
+  font-size: 10px; font-weight: 600; white-space: nowrap;
+}
+
+/* ══════════════════════════════════════
+   CONCEPT C — Editorial Map (갈색 크림)
+══════════════════════════════════════ */
+#pane-c { background: #f5f2eb; }
+#pane-c .concept-label { background: rgba(30,20,8,0.06); border: 1px solid rgba(30,20,8,0.13); color: #4a3318; }
+#pane-c .concept-desc { color: rgba(74,51,24,0.42); }
+#dock-c {
+  background: #fffdf7;
+  border: 1px solid rgba(60,40,10,0.11);
+  box-shadow: 0 2px 16px rgba(60,40,10,0.07), 0 1px 3px rgba(60,40,10,0.04);
+}
+#dock-c .dock-icon { background: #2a1c08; }
+#dock-c .dock-type { color: #8a6030; }
+#dock-c .dock-title { color: #1a1208; }
+#dock-c .dock-stat-num { color: #2d1f08; }
+#dock-c .dock-divider { background: rgba(60,40,10,0.09); }
+#dock-c .dock-btn { background: #ede8d8; color: #4a3820; border: 1px solid rgba(60,40,10,0.09); }
+#dock-c .dock-btn:hover { background: #e0d8c4; }
+#dock-c .dock-btn.primary { background: #2a1c08; color: #f5f0e4; border-color: transparent; }
+#dock-c .dock-btn.primary:hover { background: #3e2a10; }
+#dock-c .dock-tags-row { border-color: rgba(60,40,10,0.07); }
+#dock-c .dock-tag { background: rgba(60,40,10,0.06); color: #5a4020; border: 1px solid rgba(60,40,10,0.1); }
+
+/* ══════════════════════════════════════
+   CONCEPT D — Purple Editorial
+══════════════════════════════════════ */
+#pane-d { background: #f8f7ff; }
+#pane-d.is-dark { background: #0f0f0f; }
+
+#pane-d .concept-label { background: rgba(109,40,217,0.06); border: 1px solid rgba(109,40,217,0.13); color: #5b21b6; }
+#pane-d.is-dark .concept-label { background: rgba(196,181,253,0.07); border-color: rgba(196,181,253,0.13); color: #c4b5fd; }
+#pane-d .concept-desc { color: rgba(91,33,182,0.38); }
+#pane-d.is-dark .concept-desc { color: rgba(196,181,253,0.35); }
+
+#dock-d {
+  background: #ffffff;
+  border: 1px solid rgba(109,40,217,0.11);
+  box-shadow: 0 2px 16px rgba(109,40,217,0.07), 0 1px 3px rgba(0,0,0,0.04);
+}
+#pane-d.is-dark #dock-d {
+  background: #171717;
+  border-color: rgba(196,181,253,0.1);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+#dock-d .dock-icon { background: linear-gradient(135deg,#7c3aed,#5b21b6); }
+#dock-d .dock-type { color: #7c3aed; }
+#pane-d.is-dark #dock-d .dock-type { color: #a78bfa; }
+#dock-d .dock-title { color: #16131f; }
+#pane-d.is-dark #dock-d .dock-title { color: #f0eeee; }
+#dock-d .dock-stat-num { color: #6d28d9; }
+#pane-d.is-dark #dock-d .dock-stat-num { color: #c4b5fd; }
+#dock-d .dock-divider { background: rgba(109,40,217,0.1); }
+#pane-d.is-dark #dock-d .dock-divider { background: rgba(196,181,253,0.1); }
+#dock-d .dock-btn { background: #f3f2f8; color: #6d28d9; border: 1px solid rgba(109,40,217,0.1); }
+#dock-d .dock-btn:hover { background: #ede9fe; }
+#pane-d.is-dark #dock-d .dock-btn { background: #262626; color: #a78bfa; border-color: rgba(196,181,253,0.1); }
+#pane-d.is-dark #dock-d .dock-btn:hover { background: rgba(124,58,237,0.15); }
+#dock-d .dock-btn.primary { background: #7c3aed; color: #fff; border-color: transparent; }
+#dock-d .dock-btn.primary:hover { background: #6d28d9; }
+#dock-d .dock-tags-row { border-color: rgba(109,40,217,0.08); }
+#pane-d.is-dark #dock-d .dock-tags-row { border-color: rgba(196,181,253,0.08); }
+#dock-d .dock-tag { background: #ede9fe; color: #6d28d9; }
+#pane-d.is-dark #dock-d .dock-tag { background: rgba(109,40,217,0.18); color: #a78bfa; }
+
+/* 테마 토글 */
+.d-theme-toggle {
+  position: absolute;
+  top: 16px; right: 16px;
+  z-index: 25;
+  display: flex; gap: 2px; padding: 3px;
+  border-radius: 100px;
+  background: rgba(109,40,217,0.07);
+  border: 1px solid rgba(109,40,217,0.13);
+}
+#pane-d.is-dark .d-theme-toggle {
+  background: rgba(196,181,253,0.06);
+  border-color: rgba(196,181,253,0.12);
+}
+.d-theme-toggle button {
+  padding: 3px 11px;
+  border-radius: 100px;
+  font-size: 11px; font-weight: 600;
+  color: #8b82a8; background: none; border: none;
+  cursor: pointer; font-family: inherit;
+  transition: all 0.18s;
+}
+#pane-d.is-dark .d-theme-toggle button { color: #6b6280; }
+.d-theme-toggle button.active { background: #7c3aed; color: #fff; }
+#pane-d.is-dark .d-theme-toggle button.active { background: rgba(196,181,253,0.14); color: #c4b5fd; }
+</style>
+</head>
+<body>
+
+<div class="tab-bar">
+  <div class="tab-bar-label">Graph Concept</div>
+  <button class="tab active" onclick="switchTab('c')" id="tab-c" style="--tab-accent:#a08050">
+    <span class="tab-letter" style="background:#4a3010">C</span>
+    Editorial Map
+  </button>
+  <button class="tab" onclick="switchTab('d')" id="tab-d" style="--tab-accent:#a78bfa">
+    <span class="tab-letter" style="background:#7c3aed">D</span>
+    Purple Editorial
+  </button>
+</div>
+
+<!-- ═══════════════════════════════════
+     CONCEPT C — Editorial Map
+════════════════════════════════════ -->
+<div class="concept-pane active" id="pane-c">
+  <div class="concept-label">⊞ C — Editorial Map · 갈색 크림 에디토리얼</div>
+  <svg class="graph-svg" id="svg-c">
+    <defs>
+      <pattern id="dotgrid-c" width="24" height="24" patternUnits="userSpaceOnUse">
+        <circle cx="12" cy="12" r="0.85" fill="rgba(60,40,10,0.17)"/>
+      </pattern>
+    </defs>
+  </svg>
+  <div class="node-dock hidden" id="dock-c">
+    <div class="dock-main">
+      <div class="dock-icon"><span style="font-family:'Material Symbols Outlined';font-size:16px;color:#f5f0e4;font-variation-settings:'FILL' 1,'wght' 600,'GRAD' 0,'opsz' 24" id="dc-icon">folder</span></div>
+      <div class="dock-info">
+        <div class="dock-type" id="dc-type">Directory</div>
+        <div class="dock-title" id="dc-title">AI Research Notes</div>
+      </div>
+      <div class="dock-divider"></div>
+      <div class="dock-stats">
+        <div class="dock-stat"><div class="dock-stat-num" id="dc-links">12</div><div class="dock-stat-label">Links</div></div>
+        <div class="dock-stat"><div class="dock-stat-num" id="dc-age">3h</div><div class="dock-stat-label">Updated</div></div>
+        <div class="dock-stat"><div class="dock-stat-num" id="dc-docs">5</div><div class="dock-stat-label">Docs</div></div>
+      </div>
+      <div class="dock-divider"></div>
+      <div class="dock-actions">
+        <button class="dock-btn primary fill">edit_note</button>
+        <button class="dock-btn">add_circle</button>
+        <button class="dock-btn" onclick="closeDock('c')">close</button>
+      </div>
+    </div>
+    <div class="dock-tags-row">
+      <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#8a7050;flex-shrink:0">Tags</span>
+      <div id="dc-tags" style="display:flex;gap:5px;overflow:hidden"></div>
+    </div>
+  </div>
+  <div class="concept-desc">크림 종이 배경 · dot grid · 절제된 단색 노드 · hairline 엣지 · 카탈로그 번호</div>
+</div>
+
+<!-- ═══════════════════════════════════
+     CONCEPT D — Purple Editorial
+════════════════════════════════════ -->
+<div class="concept-pane" id="pane-d">
+  <div class="concept-label">⊞ D — Purple Editorial · 보라 에디토리얼</div>
+  <div class="d-theme-toggle">
+    <button class="active" id="d-btn-light" onclick="setDTheme('light')">Light</button>
+    <button id="d-btn-dark" onclick="setDTheme('dark')">Dark</button>
+  </div>
+  <svg class="graph-svg" id="svg-d">
+    <defs>
+      <pattern id="dotgrid-d" width="24" height="24" patternUnits="userSpaceOnUse">
+        <circle cx="12" cy="12" r="0.85" fill="rgba(109,40,217,0.09)"/>
+      </pattern>
+      <pattern id="dotgrid-d-dark" width="24" height="24" patternUnits="userSpaceOnUse">
+        <circle cx="12" cy="12" r="0.85" fill="rgba(196,181,253,0.07)"/>
+      </pattern>
+      <radialGradient id="bg-d-grad" cx="35%" cy="30%" r="58%">
+        <stop offset="0%" stop-color="rgba(109,40,217,0.04)"/>
+        <stop offset="100%" stop-color="transparent"/>
+      </radialGradient>
+      <radialGradient id="bg-d-dark-grad" cx="35%" cy="30%" r="58%">
+        <stop offset="0%" stop-color="rgba(124,58,237,0.07)"/>
+        <stop offset="100%" stop-color="transparent"/>
+      </radialGradient>
+    </defs>
+  </svg>
+  <div class="node-dock hidden" id="dock-d">
+    <div class="dock-main">
+      <div class="dock-icon"><span style="font-family:'Material Symbols Outlined';font-size:16px;color:#fff;font-variation-settings:'FILL' 1,'wght' 600,'GRAD' 0,'opsz' 24" id="dd-icon">folder</span></div>
+      <div class="dock-info">
+        <div class="dock-type" id="dd-type">Directory</div>
+        <div class="dock-title" id="dd-title">AI Research Notes</div>
+      </div>
+      <div class="dock-divider"></div>
+      <div class="dock-stats">
+        <div class="dock-stat"><div class="dock-stat-num" id="dd-links">12</div><div class="dock-stat-label">Links</div></div>
+        <div class="dock-stat"><div class="dock-stat-num" id="dd-age">3h</div><div class="dock-stat-label">Updated</div></div>
+        <div class="dock-stat"><div class="dock-stat-num" id="dd-docs">5</div><div class="dock-stat-label">Docs</div></div>
+      </div>
+      <div class="dock-divider"></div>
+      <div class="dock-actions">
+        <button class="dock-btn primary fill">edit_note</button>
+        <button class="dock-btn">add_circle</button>
+        <button class="dock-btn" onclick="closeDock('d')">close</button>
+      </div>
+    </div>
+    <div class="dock-tags-row">
+      <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#8b82a8;flex-shrink:0">Tags</span>
+      <div id="dd-tags" style="display:flex;gap:5px;overflow:hidden"></div>
+    </div>
+  </div>
+  <div class="concept-desc" id="desc-d">보라 틴트 배경 · 절제된 단색 노드 · hairline 엣지 · 라이트/다크 동등</div>
+</div>
+
+<script>
+/* ══ 공통 데이터 ══ */
+const NODES = [
+  {id:'n1', title:'AI Research',      type:'Directory'},
+  {id:'n2', title:'Transformer',      type:'Document' },
+  {id:'n3', title:'Attention',        type:'Document' },
+  {id:'n4', title:'GPT vs BERT',      type:'Document' },
+  {id:'n5', title:'Fine-tuning',      type:'Document' },
+  {id:'n6', title:'Embeddings',       type:'Directory'},
+  {id:'n7', title:'Vector DB',        type:'Document' },
+  {id:'n8', title:'RAG Pipeline',     type:'Document' },
+  {id:'n9', title:'Prompt Eng.',      type:'Document' },
+  {id:'n10',title:'LLM Evals',        type:'Document' },
+  {id:'n11',title:'Dataset',          type:'Document' },
+  {id:'n12',title:'RLHF',             type:'Document' },
+  {id:'n13',title:'Safety',           type:'Document' },
+  {id:'n14',title:'Interpretability', type:'Document' },
+  {id:'n15',title:'Benchmarks',       type:'Document' },
+];
+const LINKS = [
+  {source:'n1',target:'n2',ltype:'directory'},
+  {source:'n1',target:'n3',ltype:'directory'},
+  {source:'n1',target:'n4',ltype:'directory'},
+  {source:'n1',target:'n5',ltype:'directory'},
+  {source:'n1',target:'n6',ltype:'directory'},
+  {source:'n6',target:'n7',ltype:'directory'},
+  {source:'n6',target:'n8',ltype:'directory'},
+  {source:'n2',target:'n3',ltype:'wikilink' },
+  {source:'n2',target:'n10',ltype:'wikilink'},
+  {source:'n2',target:'n12',ltype:'wikilink'},
+  {source:'n3',target:'n4',ltype:'wikilink' },
+  {source:'n8',target:'n9',ltype:'wikilink' },
+  {source:'n9',target:'n13',ltype:'wikilink'},
+  {source:'n10',target:'n11',ltype:'wikilink'},
+  {source:'n5',target:'n14',ltype:'wikilink'},
+  {source:'n4',target:'n15',ltype:'wikilink'},
+  {source:'n7',target:'n8',ltype:'ref'      },
+  {source:'n13',target:'n12',ltype:'ref'    },
+];
+const META = {
+  n1: {links:12,age:'3h', docs:5,tags:['#AI','#research','#transformer'],icon:'folder',    type:'Directory'},
+  n2: {links:4, age:'1d', docs:2,tags:['#transformer','#architecture'],  icon:'description',type:'Document'},
+  n3: {links:3, age:'5h', docs:1,tags:['#attention','#NLP'],             icon:'description',type:'Document'},
+  n4: {links:3, age:'2d', docs:2,tags:['#GPT','#BERT'],                  icon:'description',type:'Document'},
+  n5: {links:2, age:'4d', docs:1,tags:['#finetuning'],                   icon:'description',type:'Document'},
+  n6: {links:6, age:'12h',docs:3,tags:['#embeddings','#vectors'],        icon:'folder',    type:'Directory'},
+  n7: {links:3, age:'6h', docs:1,tags:['#vectordb','#retrieval'],        icon:'description',type:'Document'},
+  n8: {links:4, age:'2h', docs:2,tags:['#RAG','#pipeline'],              icon:'description',type:'Document'},
+  n9: {links:2, age:'1d', docs:1,tags:['#prompt'],                       icon:'description',type:'Document'},
+  n10:{links:3, age:'3d', docs:2,tags:['#eval','#benchmark'],            icon:'description',type:'Document'},
+  n11:{links:2, age:'5d', docs:1,tags:['#dataset'],                      icon:'description',type:'Document'},
+  n12:{links:2, age:'1w', docs:1,tags:['#RLHF','#alignment'],            icon:'description',type:'Document'},
+  n13:{links:2, age:'2d', docs:1,tags:['#safety'],                       icon:'description',type:'Document'},
+  n14:{links:2, age:'3d', docs:1,tags:['#interpretability'],             icon:'description',type:'Document'},
+  n15:{links:2, age:'4d', docs:1,tags:['#benchmark'],                    icon:'description',type:'Document'},
+};
+
+const degMap = new Map();
+NODES.forEach(n=>degMap.set(n.id,0));
+LINKS.forEach(l=>{
+  degMap.set(l.source,(degMap.get(l.source)||0)+1);
+  degMap.set(l.target,(degMap.get(l.target)||0)+1);
+});
+
+function nRadius(n) {
+  const d=degMap.get(n.id)||0;
+  if(n.type==='Directory') return Math.max(18,Math.min(27,18+d*0.85));
+  if(d>=4) return Math.max(11,Math.min(18,11+d*0.65));
+  return 7;
+}
+
+/* ══ 탭 ══ */
+const pendingFit = {}; // svgId → fit 함수 (탭이 열릴 때 실행)
+function switchTab(id) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.concept-pane').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  document.getElementById('pane-'+id).classList.add('active');
+  // 탭이 숨겨진 동안 fit이 보류됐으면 지금 실행
+  const svgId = 'svg-'+id;
+  if (pendingFit[svgId]) {
+    requestAnimationFrame(() => { pendingFit[svgId](); delete pendingFit[svgId]; });
+  }
+}
+
+/* ══ 독 ══ */
+function closeDock(k) { document.getElementById('dock-'+k).classList.add('hidden'); }
+function openDock(k, node) {
+  const m = META[node.id]||{links:0,age:'—',docs:0,tags:[],icon:'description',type:'Document'};
+  const pfx = k==='c'?'dc':'dd';
+  document.getElementById(pfx+'-icon').textContent = m.icon;
+  document.getElementById(pfx+'-type').textContent = m.type;
+  document.getElementById(pfx+'-title').textContent = node.title;
+  document.getElementById(pfx+'-links').textContent = m.links;
+  document.getElementById(pfx+'-age').textContent = m.age;
+  document.getElementById(pfx+'-docs').textContent = m.docs;
+  document.getElementById(pfx+'-tags').innerHTML = m.tags
+    .map(t=>`<span class="dock-tag">${t}</span>`).join('');
+  document.getElementById('dock-'+k).classList.remove('hidden');
+}
+
+/* ══ 그래프 빌더 유틸 ══ */
+function buildGraph(svgId, onNodeClick, onBgClick, linkColorFn, nodeFillFn, nodeStrokeFn, labelFillFn) {
+  const svgEl = document.getElementById(svgId);
+  const svg = d3.select(svgEl);
+  const g = svg.append('g').attr('class','graph-root');
+
+  /* 줌 — SVG 레벨에서 처리 */
+  const zoom = d3.zoom()
+    .scaleExtent([0.08, 5])
+    .on('zoom', evt => g.attr('transform', evt.transform));
+  svg.call(zoom).on('dblclick.zoom', null);
+
+  const simNodes = NODES.map(n=>({...n}));
+  const simLinks = LINKS.map(l=>({...l}));
+
+  const sim = d3.forceSimulation(simNodes)
+    .force('link', d3.forceLink(simLinks).id(d=>d.id).distance(95))
+    .force('charge', d3.forceManyBody().strength(-210))
+    .force('center', d3.forceCenter(0,0))
+    .force('collision', d3.forceCollide().radius(d=>nRadius(d)+8))
+    .alphaDecay(0.028);
+
+  /* 링크 */
+  const linkSel = g.append('g').attr('pointer-events','none')
+    .selectAll('line').data(simLinks).join('line')
+    .attr('stroke', d=>linkColorFn(d))
+    .attr('stroke-width', d=>d.ltype==='directory'?1.6:1.1)
+    .attr('stroke-dasharray', d=>d.ltype==='ref'?'4 4':null);
+
+  /* 드래그 */
+  const drag = d3.drag()
+    .on('start',(e,d)=>{ if(!e.active) sim.alphaTarget(0.25).restart(); d.fx=d.x;d.fy=d.y; })
+    .on('drag',(e,d)=>{ d.fx=e.x;d.fy=e.y; })
+    .on('end',(e,d)=>{ if(!e.active) sim.alphaTarget(0); d.fx=null;d.fy=null; });
+
+  /* 노드 그룹 */
+  const nodeG = g.append('g').selectAll('g').data(simNodes).join('g')
+    .attr('cursor','pointer')
+    .call(drag)
+    .on('click',(e,d)=>{ e.stopPropagation(); onNodeClick(d, simLinks, nodeG, linkSel, svgEl, zoom, svg); });
+
+  /* 배경 클릭 — SVG에 직접 */
+  svg.on('click', ()=>{ onBgClick(nodeG, linkSel); });
+
+  /* 선택 링 */
+  nodeG.append('circle').attr('class','sel-ring')
+    .attr('r',d=>nRadius(d)+6).attr('fill','none')
+    .attr('stroke','transparent').attr('stroke-width',1.5)
+    .attr('stroke-dasharray',d=>d.type==='Directory'?null:'3 4');
+
+  /* 메인 원 */
+  nodeG.append('circle').attr('class','main-circle')
+    .attr('r',d=>nRadius(d))
+    .attr('fill',d=>nodeFillFn(d))
+    .attr('stroke',d=>nodeStrokeFn(d))
+    .attr('stroke-width',d=>d.type==='Directory'?1.5:1.2);
+
+  /* Directory 아이콘 */
+  nodeG.filter(d=>d.type==='Directory').append('text')
+    .attr('text-anchor','middle').attr('dominant-baseline','central')
+    .attr('font-family','Material Symbols Outlined').attr('font-size','13px')
+    .attr('font-variation-settings',"'FILL' 1,'wght' 600,'GRAD' 0,'opsz' 24")
+    .attr('pointer-events','none').attr('class','dir-icon')
+    .text('folder');
+
+  /* Document 노드 중앙 — 연결 수 */
+  nodeG.filter(d=>d.type!=='Directory').append('text')
+    .attr('class','doc-num')
+    .attr('text-anchor','middle').attr('dominant-baseline','central')
+    .attr('font-family','Inter,sans-serif').attr('font-size','7px').attr('font-weight','700')
+    .attr('letter-spacing','0.02em').attr('pointer-events','none')
+    .text(d => degMap.get(d.id) || 0);
+
+  /* 라벨 */
+  nodeG.append('text').attr('class','node-lbl')
+    .attr('text-anchor','middle')
+    .attr('dy',d=>nRadius(d)+12)
+    .attr('fill',d=>labelFillFn(d))
+    .attr('font-size',d=>d.type==='Directory'?'10.5px':'9px')
+    .attr('font-weight',d=>d.type==='Directory'?'700':'400')
+    .attr('font-family','Lexend,Inter,sans-serif')
+    .attr('letter-spacing',d=>d.type==='Directory'?'0.02em':'0.01em')
+    .attr('pointer-events','none')
+    .text(d=>d.title.length>16?d.title.slice(0,15)+'…':d.title);
+
+  /* 틱 */
+  sim.on('tick',()=>{
+    linkSel.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y)
+           .attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
+    nodeG.attr('transform',d=>`translate(${d.x},${d.y})`);
+  });
+
+  /* 초기 fit — 탭이 보일 때 실행 */
+  let fitted = false;
+  function doFit() {
+    const cw = svgEl.clientWidth || svgEl.getBoundingClientRect().width;
+    const ch = svgEl.clientHeight || svgEl.getBoundingClientRect().height;
+    if (!cw || !ch) return; // 아직 숨겨진 상태면 skip
+    const xs=simNodes.map(n=>n.x), ys=simNodes.map(n=>n.y);
+    const cx=(Math.min(...xs)+Math.max(...xs))/2, cy=(Math.min(...ys)+Math.max(...ys))/2;
+    const sx=Math.max(...xs)-Math.min(...xs)||1, sy=Math.max(...ys)-Math.min(...ys)||1;
+    const sc=Math.min((cw*0.62)/sx,(ch*0.72)/sy,1.2);
+    svg.transition().duration(650).ease(d3.easeCubicOut)
+      .call(zoom.transform,d3.zoomIdentity.translate(cw/2,ch/2).scale(sc).translate(-cx,-cy));
+  }
+  sim.on('end',()=>{
+    if(fitted) return; fitted=true;
+    const cw = svgEl.clientWidth || svgEl.getBoundingClientRect().width;
+    if (!cw) {
+      // 탭이 숨겨진 상태 — 탭 열릴 때로 보류
+      pendingFit[svgId] = doFit;
+    } else {
+      doFit();
+    }
+  });
+
+  return {svg, g, zoom, nodeG, linkSel, simNodes, simLinks, svgEl};
+}
+
+function focusNode(ref, node, offsetY=55) {
+  const cw=ref.svgEl.clientWidth||ref.svgEl.getBoundingClientRect().width;
+  const ch=ref.svgEl.clientHeight||ref.svgEl.getBoundingClientRect().height;
+  ref.svg.transition().duration(480).ease(d3.easeCubicOut)
+    .call(ref.zoom.transform, d3.zoomIdentity
+      .translate(cw/2,ch/2-offsetY).scale(1.8).translate(-node.x,-node.y));
+}
+
+function highlight(nodeG, linkSel, id, simLinks) {
+  if(!id){
+    nodeG.style('opacity',1);
+    linkSel.attr('stroke-opacity',1);
+    nodeG.selectAll('.sel-ring').attr('stroke','transparent');
+    return;
+  }
+  const nb=new Set([id]);
+  simLinks.forEach(l=>{
+    const s=typeof l.source==='object'?l.source.id:l.source;
+    const t=typeof l.target==='object'?l.target.id:l.target;
+    if(s===id)nb.add(t); if(t===id)nb.add(s);
+  });
+  nodeG.style('opacity',d=>nb.has(d.id)?1:0.1);
+  linkSel.attr('stroke-opacity',d=>{
+    const s=typeof d.source==='object'?d.source.id:d.source;
+    const t=typeof d.target==='object'?d.target.id:d.target;
+    return (s===id||t===id)?1:0.04;
+  });
+}
+
+/* ══════════════════════════════════
+   C — Editorial Map 빌드
+══════════════════════════════════ */
+const cLinkColor  = d => d.ltype==='directory'?'rgba(60,40,10,0.38)':d.ltype==='wikilink'?'rgba(60,40,10,0.22)':'rgba(60,40,10,0.12)';
+const cNodeFill   = d => d.type==='Directory'?'#2a1c08':(degMap.get(d.id)||0)>=4?'#3e2a10':'#f0ebe0';
+const cNodeStroke = d => d.type==='Directory'?'#2a1c08':(degMap.get(d.id)||0)>=4?'#3e2a10':'#c8b89a';
+const cLabelFill  = d => d.type==='Directory'?'rgba(20,12,4,0.9)':(degMap.get(d.id)||0)>=4?'rgba(42,28,8,0.75)':'rgba(60,40,10,0.48)';
+
+const refC = buildGraph('svg-c',
+  (d, simLinks, nodeG, linkSel, svgEl, zoom, svg) => {
+    openDock('c', d);
+    highlight(nodeG, linkSel, d.id, simLinks);
+    nodeG.selectAll('.sel-ring').attr('stroke', n => n.id===d.id ? 'rgba(60,40,10,0.38)' : 'transparent');
+    focusNode({svg,zoom,svgEl}, d);
+  },
+  (nodeG, linkSel) => { closeDock('c'); highlight(nodeG, linkSel, null, []); },
+  cLinkColor, cNodeFill, cNodeStroke, cLabelFill
+);
+
+// C — 배경 dot grid
+refC.svg.insert('rect','.graph-root').attr('width','100%').attr('height','100%').attr('fill','url(#dotgrid-c)').attr('pointer-events','none');
+
+// C — dir icon 색 / doc num 색
+refC.nodeG.selectAll('.dir-icon').attr('fill','rgba(245,240,228,0.9)');
+refC.nodeG.selectAll('.doc-num')
+  .attr('fill',d=>(degMap.get(d.id)||0)>=4?'#f0ebe0':'#a89070');
+
+/* ══════════════════════════════════
+   D — Purple Editorial 빌드
+══════════════════════════════════ */
+let dTheme = 'light';
+
+function dLinkColor(d, dark) {
+  if(d.ltype==='directory') return dark?'rgba(167,139,250,0.3)' :'rgba(109,40,217,0.2)';
+  if(d.ltype==='wikilink')  return dark?'rgba(167,139,250,0.17)':'rgba(109,40,217,0.13)';
+  return dark?'rgba(167,139,250,0.08)':'rgba(109,40,217,0.07)';
+}
+function dNodeFill(d, dark) {
+  if(d.type==='Directory') return dark?'#7c3aed':'#6d28d9';
+  if((degMap.get(d.id)||0)>=4) return dark?'#3b1fa8':'#ede9fe';
+  return dark?'#1c1c1c':'#ffffff';
+}
+function dNodeStroke(d, dark) {
+  if(d.type==='Directory') return dark?'#9d75f5':'#5b21b6';
+  if((degMap.get(d.id)||0)>=4) return dark?'#7c5fea':'#9d75f5';
+  return dark?'#3a3350':'#c4b8f0';
+}
+function dLabelFill(d, dark) {
+  if(d.type==='Directory') return dark?'rgba(237,233,254,0.9)':'rgba(91,33,182,0.9)';
+  if((degMap.get(d.id)||0)>=4) return dark?'rgba(196,181,253,0.75)':'rgba(109,40,217,0.75)';
+  return dark?'rgba(184,175,200,0.5)':'rgba(74,65,101,0.5)';
+}
+function dDocNum(d, dark) {
+  if((degMap.get(d.id)||0)>=4) return dark?'#c4b5fd':'#7c3aed';
+  return dark?'#5a506e':'#b0a4d8';
+}
+function dDirIcon(dark) { return dark?'rgba(237,233,254,0.92)':'rgba(255,255,255,0.95)'; }
+
+const refD = buildGraph('svg-d',
+  (d, simLinks, nodeG, linkSel, svgEl, zoom, svg) => {
+    openDock('d', d);
+    highlight(nodeG, linkSel, d.id, simLinks);
+    const dark = dTheme==='dark';
+    nodeG.selectAll('.sel-ring').attr('stroke', n => n.id===d.id
+      ? (dark?'rgba(196,181,253,0.5)':'rgba(109,40,217,0.4)') : 'transparent');
+    focusNode({svg,zoom,svgEl}, d);
+  },
+  (nodeG, linkSel) => { closeDock('d'); highlight(nodeG, linkSel, null, []); },
+  d => dLinkColor(d, false),
+  d => dNodeFill(d, false),
+  d => dNodeStroke(d, false),
+  d => dLabelFill(d, false)
+);
+
+// D — 배경 레이어 삽입
+refD.svg.insert('rect','.graph-root').attr('id','d-bg-grad').attr('width','100%').attr('height','100%').attr('fill','url(#bg-d-grad)').attr('pointer-events','none');
+refD.svg.insert('rect','.graph-root').attr('id','d-bg-dot').attr('width','100%').attr('height','100%').attr('fill','url(#dotgrid-d)').attr('pointer-events','none');
+
+// D — 초기 아이콘/숫자 색
+refD.nodeG.selectAll('.dir-icon').attr('fill',dDirIcon(false));
+refD.nodeG.selectAll('.doc-num').attr('fill',d=>dDocNum(d,false));
+
+/* D 테마 전환 */
+function setDTheme(t) {
+  dTheme = t;
+  const dark = t==='dark';
+  const pane = document.getElementById('pane-d');
+  pane.classList.toggle('is-dark', dark);
+
+  document.getElementById('d-btn-light').classList.toggle('active', !dark);
+  document.getElementById('d-btn-dark').classList.toggle('active', dark);
+
+  // 배경
+  document.getElementById('d-bg-grad').attr = undefined; // d3 방식으로
+  refD.svg.select('#d-bg-grad').attr('fill', dark?'url(#bg-d-dark-grad)':'url(#bg-d-grad)');
+  refD.svg.select('#d-bg-dot').attr('fill', dark?'url(#dotgrid-d-dark)':'url(#dotgrid-d)');
+
+  // 노드/링크 색상 갱신
+  refD.nodeG.selectAll('.main-circle').attr('fill',d=>dNodeFill(d,dark)).attr('stroke',d=>dNodeStroke(d,dark));
+  refD.nodeG.selectAll('.node-lbl').attr('fill',d=>dLabelFill(d,dark));
+  refD.nodeG.selectAll('.dir-icon').attr('fill',dDirIcon(dark));
+  refD.nodeG.selectAll('.doc-num').attr('fill',d=>dDocNum(d,dark));
+  refD.linkSel.attr('stroke',d=>dLinkColor(d,dark));
+}
+</script>
+</body>
+</html>

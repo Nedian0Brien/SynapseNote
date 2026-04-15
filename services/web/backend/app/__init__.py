@@ -1,0 +1,1 @@
+"""SynapseNote FastAPI backend package."""

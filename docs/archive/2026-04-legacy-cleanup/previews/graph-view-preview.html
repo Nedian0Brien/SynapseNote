@@ -1,0 +1,1369 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SynapseNote — Graph View</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lexend:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+
+/* ── 팔레트 ── */
+:root {
+  --bg:          #f5f2eb;
+  --surface:     #fffdf7;
+  --surface-low: #ede8d8;
+  --surface-high:#e8e0cc;
+  --on-surface:  #1a1208;
+  --on-variant:  #5a4020;
+  --muted:       #8a7050;
+  --outline:     rgba(60,40,10,0.14);
+  --outline-var: rgba(60,40,10,0.08);
+  --shadow-sm:   0 1px 3px rgba(60,40,10,0.07), 0 1px 2px rgba(60,40,10,0.04);
+  --shadow-md:   0 4px 12px rgba(60,40,10,0.09), 0 2px 5px rgba(60,40,10,0.05);
+  --shadow-lg:   0 10px 28px rgba(60,40,10,0.10), 0 3px 8px rgba(60,40,10,0.06);
+
+  /* 그래프 토큰 */
+  --g-bg:         #f5f2eb;
+  --g-dot:        rgba(60,40,10,0.16);
+  --g-dir-fill:   #2a1c08;
+  --g-dir-stroke: #2a1c08;
+  --g-dir-icon:   rgba(245,240,228,0.92);
+  --g-dir-label:  rgba(20,12,4,0.88);
+  --g-hub-fill:   #f0ebe0;
+  --g-hub-stroke: #2a1c08;
+  --g-hub-num:    #2a1c08;
+  --g-hub-label:  rgba(42,28,8,0.85);
+  --g-hub-sel:    rgba(42,28,8,0.55);
+  --g-doc-fill:   #f0ebe0;
+  --g-doc-stroke: #c8b89a;
+  --g-doc-num:    #a89070;
+  --g-doc-label:  rgba(60,40,10,0.48);
+  --g-doc-sel:    rgba(60,40,10,0.4);
+  --g-link-dir:   rgba(60,40,10,0.32);
+  --g-link-wiki:  rgba(60,40,10,0.17);
+  --g-link-ref:   rgba(60,40,10,0.09);
+  --g-dim:        0.1;
+}
+
+.icon {
+  font-family: 'Material Symbols Outlined';
+  font-size: 20px; line-height: 1; display: inline-block;
+  font-variation-settings: 'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;
+  user-select: none; vertical-align: middle;
+}
+.icon--fill { font-variation-settings: 'FILL' 1,'wght' 600,'GRAD' 0,'opsz' 24; }
+
+/* ── 셸 ── */
+.shell {
+  width: 100vw; height: 100vh;
+  background: var(--g-bg);
+  position: relative; overflow: hidden;
+}
+.graph-svg {
+  position: absolute; top: 0; left: 0;
+  width: 100%; height: 100%;
+}
+
+/* ── 플로팅 툴바 — 데스크탑/모바일 동일, 화면 하단 양쪽 ── */
+.toolbar {
+  position: absolute;
+  top: 0; bottom: 0; left: 16px; right: 16px;
+  z-index: 20;
+  display: flex; flex-direction: row;
+  justify-content: space-between; align-items: flex-end;
+  padding-bottom: 130px; /* dock 높이(~92px) + bottom(20px) + 여백(18px) */
+  background: none; border: none; padding-left: 0; padding-right: 0;
+  pointer-events: none;
+}
+.toolbar-side {
+  pointer-events: all;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+
+/* +/- 합쳐진 pill — 총 너비 40px = 독립 원형과 동일 */
+.zoom-pill {
+  display: flex; flex-direction: column; gap: 3px;
+  background: var(--surface);
+  border: 1px solid var(--outline);
+  border-radius: 100px;   /* 40px 폭에서 20px로 clamp → 원형과 동일 반지름 */
+  padding: 2px;           /* 36 + 2×2 = 40px */
+  box-shadow: var(--shadow-md);
+}
+.zoom-pill .tb-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--muted); background: none; border: none; cursor: pointer;
+  box-shadow: none;
+  transition: color 0.18s cubic-bezier(0.4,0,0.2,1),
+              transform 0.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+/* hover 시 배경 없이 색상 + 스케일만 */
+.zoom-pill .tb-btn:hover { background: none; color: var(--on-surface); transform: scale(1.12); }
+.zoom-pill .tb-btn:active { transform: scale(0.9); }
+.tb-divider { height: 1px; background: var(--outline-var); margin: 1px 4px; }
+
+/* 독립 원형 버튼 */
+.tb-btn {
+  width: 40px; height: 40px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface); border: 1px solid var(--outline);
+  color: var(--muted); cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: background 0.18s cubic-bezier(0.4,0,0.2,1),
+              color 0.18s cubic-bezier(0.4,0,0.2,1),
+              transform 0.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+.tb-btn:hover { background: var(--surface-low); color: var(--on-surface); transform: scale(1.1); }
+.tb-btn:active { transform: scale(0.92); }
+
+/* ── 검색바 (상단 중앙) ── */
+.search-bar {
+  position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+  z-index: 20;
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface); border: 1px solid var(--outline);
+  border-radius: 100px; padding: 8px 16px;
+  box-shadow: var(--shadow-md); width: 260px;
+}
+.search-bar .icon { color: var(--muted); font-size: 17px; }
+.search-bar input {
+  flex: 1; background: none; border: none; outline: none;
+  font-size: 13px; color: var(--on-surface); font-family: inherit;
+}
+.search-bar input::placeholder { color: var(--muted); }
+
+/* ── 통계 뱃지 (검색바 하단 중앙) ── */
+.stats {
+  position: absolute; top: 62px; left: 50%; transform: translateX(-50%);
+  z-index: 20; display: flex; gap: 6px; align-items: center;
+  white-space: nowrap;
+  transition: opacity 0.22s ease;
+}
+.stats.merging {
+  opacity: 0;
+  pointer-events: none;
+}
+.stats.merging .stat-chip:first-child {
+  transform: translateX(36px) scale(0.72);
+}
+.stats.merging .stat-chip:last-child {
+  transform: translateX(-36px) scale(0.72);
+}
+.stat-chip {
+  background: var(--surface); border: 1px solid var(--outline);
+  border-radius: 100px; padding: 5px 12px;
+  font-size: 11px; font-weight: 600; color: var(--on-variant);
+  box-shadow: var(--shadow-sm);
+  display: flex; align-items: center; gap: 5px;
+  transition: transform 0.25s cubic-bezier(0.4,0,0.6,1), opacity 0.22s ease;
+}
+.stat-chip .icon { font-size: 13px; color: var(--muted); }
+.stat-chip strong { color: var(--on-surface); }
+
+/* ── 범례 (우상단) ── */
+.legend {
+  position: absolute; top: 16px; right: 16px;
+  z-index: 20;
+  background: var(--surface); border: 1px solid var(--outline);
+  border-radius: 12px; padding: 10px 14px;
+  box-shadow: var(--shadow-md);
+  display: flex; flex-direction: column; gap: 7px;
+}
+.legend-title {
+  font-size: 9px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.12em; color: var(--muted);
+}
+.legend-row { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--on-variant); }
+.legend-swatch { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── 하단 플로팅 독 ── */
+.dock {
+  position: absolute; bottom: 20px; left: 50%;
+  transform: translateX(-50%) translateY(0);
+  z-index: 30;
+  width: min(620px, calc(100vw - 40px));
+  background: var(--surface);
+  border: 1px solid var(--outline);
+  border-radius: 18px;
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  transition: transform 0.5s cubic-bezier(0.34,1.56,0.64,1), opacity 0.32s cubic-bezier(0.4,0,0.2,1);
+}
+.dock.hidden {
+  transform: translateX(-50%) translateY(20px);
+  opacity: 0; pointer-events: none;
+  transition: transform 0.28s cubic-bezier(0.4,0,1,1), opacity 0.22s ease;
+}
+.dock-handle { display: none; }
+.dock-main {
+  display: flex; align-items: center; gap: 14px;
+  padding: 13px 16px;
+}
+.dock-icon {
+  width: 36px; height: 36px; flex-shrink: 0; border-radius: 9px;
+  background: #2a1c08;
+  display: flex; align-items: center; justify-content: center;
+}
+.dock-info { flex: 1; min-width: 0; }
+.dock-type {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--muted); margin-bottom: 2px;
+}
+.dock-title {
+  font-family: 'Lexend', sans-serif; font-size: 14px; font-weight: 700;
+  color: var(--on-surface); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.dock-divider { width: 1px; height: 28px; background: var(--outline); flex-shrink: 0; }
+.dock-stats { display: flex; gap: 14px; flex-shrink: 0; }
+.dock-stat { display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 36px; }
+.dock-stat-num {
+  font-family: 'Lexend', sans-serif; font-size: 16px; font-weight: 800;
+  color: var(--on-surface); line-height: 1;
+}
+.dock-stat-label {
+  font-size: 9px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--muted);
+}
+.dock-actions { display: flex; gap: 5px; flex-shrink: 0; }
+.dock-btn {
+  width: 32px; height: 32px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface-low); border: 1px solid var(--outline);
+  color: var(--on-variant); cursor: pointer;
+  transition: background 0.18s cubic-bezier(0.4,0,0.2,1), color 0.18s, transform 0.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+.dock-btn:hover { background: var(--surface-high); color: var(--on-surface); transform: scale(1.1); }
+.dock-btn:active { transform: scale(0.92); }
+.dock-btn.primary { background: #2a1c08; color: rgba(245,240,228,0.95); border-color: transparent; }
+.dock-btn.primary:hover { background: #3e2a10; }
+.dock-btn.close:hover { background: #fca5a5; color: #7f1d1d; border-color: transparent; }
+.dock-footer {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 16px 12px;
+  border-top: 1px solid var(--outline-var);
+  overflow: hidden;
+}
+.dock-footer-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--muted); flex-shrink: 0;
+}
+.dock-tags { display: flex; gap: 5px; overflow: hidden; }
+.dock-tag {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px; border-radius: 100px;
+  font-size: 10px; font-weight: 600; white-space: nowrap;
+  background: rgba(60,40,10,0.07); color: var(--on-variant);
+  border: 1px solid var(--outline);
+}
+
+/* ── 그래프 뷰 브레드크럼 (검색바 하단 — 통계와 같은 위치) ── */
+.graph-breadcrumb {
+  position: absolute;
+  top: 62px; left: 50%;
+  transform: translateX(-50%) scale(0.82);
+  z-index: 20;
+  display: flex; align-items: center; gap: 4px;
+  background: var(--surface); border: 1px solid var(--outline);
+  border-radius: 100px; padding: 5px 12px;
+  box-shadow: var(--shadow-sm);
+  white-space: nowrap;
+  opacity: 0; pointer-events: none;
+  /* stats 합쳐진 뒤 약간 늦게 나타남 (delay: 0.12s) */
+  transition: opacity 0.28s ease 0.12s,
+              transform 0.32s cubic-bezier(0.34,1.56,0.64,1) 0.12s;
+}
+.graph-breadcrumb.visible {
+  opacity: 1; pointer-events: all;
+  transform: translateX(-50%) scale(1);
+}
+.graph-breadcrumb .crumb {
+  font-size: 11px; color: var(--muted);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.graph-breadcrumb .crumb:hover { color: var(--on-surface); }
+.graph-breadcrumb .crumb.active {
+  color: var(--on-surface); font-weight: 600; cursor: default;
+}
+.graph-breadcrumb .crumb-sep {
+  font-family: 'Material Symbols Outlined'; font-size: 13px;
+  color: var(--outline); line-height: 1;
+  font-variation-settings: 'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 20;
+}
+
+/* ── 카드 뷰 오버레이 ── */
+.card-view {
+  position: absolute; inset: 0; z-index: 40;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  opacity: 1; pointer-events: all;
+  transition: opacity 0.28s ease;
+}
+.card-view.hidden { opacity: 0; pointer-events: none; }
+
+.card-view-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 20px 12px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--outline);
+  box-shadow: var(--shadow-sm); flex-shrink: 0;
+}
+.card-back {
+  width: 34px; height: 34px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface-low); border: 1px solid var(--outline);
+  color: var(--on-variant); cursor: pointer; flex-shrink: 0;
+  transition: background 0.18s, transform 0.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+.card-back:hover { background: var(--surface-high); transform: scale(1.08); }
+.card-back:active { transform: scale(0.93); }
+.card-view-title {
+  font-family: 'Lexend', sans-serif; font-size: 15px; font-weight: 700;
+  color: var(--on-surface); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.card-view-hint { font-size: 11px; color: var(--muted); flex-shrink: 0; }
+
+.card-grid {
+  flex: 1; overflow-y: auto;
+  /* 워터폴 레이아웃 — columns */
+  columns: 3 240px;
+  column-gap: 12px;
+  padding: 16px;
+  /* flex child가 아닌 block이어야 columns 동작 */
+  display: block;
+}
+.card-item {
+  background: var(--surface); border: 1px solid var(--outline);
+  border-radius: 14px; padding: 14px 15px;
+  cursor: pointer; display: flex; flex-direction: column; gap: 8px;
+  break-inside: avoid;          /* 칼럼 경계에서 카드 잘림 방지 */
+  margin-bottom: 12px;
+  will-change: transform;
+}
+.card-item.flip-done {
+  transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease;
+}
+.card-item.flip-done:hover { transform: translateY(-2px) scale(1.01); box-shadow: var(--shadow-md); }
+.card-item.flip-done:active { transform: scale(0.97); }
+.card-item-header { display: flex; align-items: center; gap: 6px; }
+.card-item-icon { font-size: 15px; color: var(--on-variant); }
+.card-item-type {
+  font-size: 9px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--muted);
+}
+.card-item-title {
+  font-family: 'Lexend', sans-serif; font-size: 13px; font-weight: 700;
+  color: var(--on-surface); line-height: 1.35;
+}
+.card-item-meta {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 10px; color: var(--muted);
+}
+.card-item-meta .icon { font-size: 12px; }
+.card-item-preview {
+  font-size: 11.5px; line-height: 1.68; color: var(--on-variant);
+  /* 최대 10줄까지만 표시, 초과 시 말줄임 */
+  display: -webkit-box;
+  -webkit-line-clamp: 10;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.card-item-divider {
+  height: 1px; background: var(--outline-var); flex-shrink: 0;
+}
+.card-item-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.card-item-tag {
+  font-size: 9px; font-weight: 600; padding: 2px 7px;
+  background: rgba(60,40,10,0.07); color: var(--on-variant);
+  border: 1px solid var(--outline); border-radius: 100px;
+}
+/* 카드 뷰 하단 — "스크롤 다운으로 복귀" 힌트 */
+.card-exit-hint {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px; font-size: 11px; color: var(--muted);
+  border-top: 1px solid var(--outline-var); flex-shrink: 0;
+}
+.card-exit-hint .icon { font-size: 14px; }
+
+/* ════════════════════════════════
+   모바일 반응형 (≤ 640px)
+════════════════════════════════ */
+@media (max-width: 640px) {
+
+  /* 범례 — 모바일에서 숨김 (통계는 검색바 아래에 계속 표시) */
+  .legend { display: none; }
+
+  /* 독 — 2행 컴팩트 pill 플로팅 */
+  .dock {
+    bottom: max(20px, env(safe-area-inset-bottom));
+    left: 16px; right: 16px;
+    width: auto;
+    border-radius: 24px;   /* pill 곡률 */
+    transform: translateX(0) translateY(0);
+  }
+  .dock.hidden {
+    transform: translateX(0) translateY(20px);
+    opacity: 0;
+  }
+  /* 드래그 핸들 — pill에서는 불필요 */
+  .dock-handle { display: none; }
+
+  /* 1행: 아이콘 + 제목 + 버튼들 */
+  .dock-main {
+    flex-wrap: nowrap;
+    gap: 8px;
+    padding: 10px 12px;
+    align-items: center;
+  }
+  /* 아이콘 — 작고 원형 */
+  .dock-icon {
+    width: 28px; height: 28px; border-radius: 50%;
+    flex-shrink: 0;
+  }
+  /* 타입 레이블 숨김, 제목 작게 */
+  .dock-type { display: none; }
+  .dock-title { font-size: 13px; }
+
+  /* 스탯 숨김 — 공간 부족 */
+  .dock-divider { display: none; }
+  .dock-stats   { display: none; }
+
+  /* 버튼 — 원형으로 컴팩트 */
+  .dock-btn { width: 32px; height: 32px; border-radius: 50%; }
+
+  /* 2행: 태그 영역 — 가로 스크롤 */
+  .dock-footer {
+    padding: 0 12px 10px;
+    border-top: none;
+    gap: 5px;
+  }
+  .dock-footer-label { display: none; }
+  .dock-tags {
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .dock-tags::-webkit-scrollbar { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="shell" id="shell">
+
+  <svg class="graph-svg" id="graphSvg">
+    <defs>
+      <pattern id="dotgrid" width="24" height="24" patternUnits="userSpaceOnUse">
+        <circle cx="12" cy="12" r="0.85" fill="var(--g-dot)"/>
+      </pattern>
+    </defs>
+  </svg>
+
+  <!-- 툴바 -->
+  <div class="toolbar" id="toolbar">
+    <!-- 좌: 필터 + 레이아웃 (독립 원형) -->
+    <div class="toolbar-side">
+      <button class="tb-btn" title="필터">
+        <span class="icon" style="font-size:17px">filter_list</span>
+      </button>
+      <button class="tb-btn" id="layoutBtn" title="레이아웃: 유기적 (클릭 → 계층형)" onclick="cycleLayout()">
+        <span class="icon" id="layoutIcon" style="font-size:17px">grain</span>
+      </button>
+    </div>
+    <!-- 우: +/- pill + 전체보기 원형 -->
+    <div class="toolbar-side">
+      <div class="zoom-pill">
+        <button class="tb-btn" title="줌 인" onclick="zoomBy(1.3)">
+          <span class="icon" style="font-size:17px">add</span>
+        </button>
+        <div class="tb-divider"></div>
+        <button class="tb-btn" title="줌 아웃" onclick="zoomBy(0.77)">
+          <span class="icon" style="font-size:17px">remove</span>
+        </button>
+      </div>
+      <button class="tb-btn" title="전체 보기" onclick="fitAll()">
+        <span class="icon" style="font-size:17px">fit_screen</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 검색바 -->
+  <div class="search-bar">
+    <span class="icon">search</span>
+    <input type="text" placeholder="노드 검색…" id="searchInput">
+  </div>
+
+  <!-- 그래프 뷰 브레드크럼 (노드 선택 시 동적 생성) -->
+  <div class="graph-breadcrumb" id="graphBreadcrumb"></div>
+
+  <!-- 통계 -->
+  <div class="stats">
+    <div class="stat-chip">
+      <span class="icon">hub</span>
+      <strong id="nodeCount">15</strong> 노드
+    </div>
+    <div class="stat-chip">
+      <span class="icon">share</span>
+      <strong id="linkCount">18</strong> 연결
+    </div>
+  </div>
+
+  <!-- 범례 -->
+  <div class="legend" id="legend">
+    <div class="legend-title">Node Types</div>
+    <div class="legend-row">
+      <div class="legend-swatch" style="background:#2a1c08"></div>
+      Directory
+    </div>
+    <div class="legend-row">
+      <svg width="12" height="12" viewBox="-6 -6 12 12" style="flex-shrink:0">
+        <circle r="5" fill="#f0ebe0" stroke="#2a1c08" stroke-width="1.5"/>
+      </svg>
+      Hub (4+ links)
+    </div>
+    <div class="legend-row">
+      <div class="legend-swatch" style="background:#f0ebe0;border:1.2px solid #c8b89a"></div>
+      Document
+    </div>
+  </div>
+
+  <!-- 독 -->
+  <div class="dock hidden" id="dock">
+    <div class="dock-main">
+      <div class="dock-icon">
+        <span class="icon icon--fill" style="color:rgba(245,240,228,0.92);font-size:17px" id="dockIcon">folder</span>
+      </div>
+      <div class="dock-info">
+        <div class="dock-type" id="dockType">Directory</div>
+        <div class="dock-title" id="dockTitle">AI Research Notes</div>
+      </div>
+      <div class="dock-divider"></div>
+      <div class="dock-stats">
+        <div class="dock-stat">
+          <div class="dock-stat-num" id="dockLinks">12</div>
+          <div class="dock-stat-label">Links</div>
+        </div>
+        <div class="dock-stat">
+          <div class="dock-stat-num" id="dockAge">3h</div>
+          <div class="dock-stat-label">Updated</div>
+        </div>
+        <div class="dock-stat">
+          <div class="dock-stat-num" id="dockDocs">5</div>
+          <div class="dock-stat-label">Docs</div>
+        </div>
+      </div>
+      <div class="dock-divider"></div>
+      <div class="dock-actions">
+        <button class="dock-btn primary">
+          <span class="icon icon--fill" style="font-size:16px">edit_note</span>
+        </button>
+        <button class="dock-btn">
+          <span class="icon" style="font-size:16px">add_circle</span>
+        </button>
+        <button class="dock-btn" title="카드 뷰로 전환" onclick="(function(){if(!selectedId)return;const n=simNodes.find(n=>n.id===selectedId);if(n)enterCardMode(n);})()">
+          <span class="icon" style="font-size:16px">center_focus_strong</span>
+        </button>
+        <button class="dock-btn close" onclick="closeDock()">
+          <span class="icon" style="font-size:16px">close</span>
+        </button>
+      </div>
+    </div>
+    <div class="dock-footer">
+      <span class="dock-footer-label">Tags</span>
+      <div class="dock-tags" id="dockTags"></div>
+    </div>
+  </div>
+
+  <!-- 카드 뷰 오버레이 -->
+  <div class="card-view hidden" id="cardView">
+    <div class="card-view-header">
+      <button class="card-back" onclick="exitCardMode()">
+        <span class="icon" style="font-size:18px">arrow_back</span>
+      </button>
+      <span class="card-view-title" id="cardViewTitle">—</span>
+      <span class="card-view-hint" id="cardViewHint"></span>
+    </div>
+    <div class="card-grid" id="cardGrid"></div>
+    <div class="card-exit-hint">
+      <span class="icon">keyboard_arrow_down</span>
+      스크롤 다운 또는 축소하면 그래프로 복귀
+    </div>
+  </div>
+
+</div><!-- .shell -->
+
+<script>
+/* ── Mock 데이터 ── */
+const NODES = [
+  {id:'n1',  title:'AI Research Notes',      type:'Directory'},
+  {id:'n2',  title:'Transformer Architecture',type:'Document' },
+  {id:'n3',  title:'Attention Mechanism',     type:'Document' },
+  {id:'n4',  title:'GPT vs BERT',             type:'Document' },
+  {id:'n5',  title:'Fine-tuning',             type:'Document' },
+  {id:'n6',  title:'Embeddings',              type:'Directory'},
+  {id:'n7',  title:'Vector DB',               type:'Document' },
+  {id:'n8',  title:'RAG Pipeline',            type:'Document' },
+  {id:'n9',  title:'Prompt Engineering',      type:'Document' },
+  {id:'n10', title:'LLM Evals',               type:'Document' },
+  {id:'n11', title:'Dataset Curation',        type:'Document' },
+  {id:'n12', title:'RLHF Notes',              type:'Document' },
+  {id:'n13', title:'Safety Research',         type:'Document' },
+  {id:'n14', title:'Interpretability',        type:'Document' },
+  {id:'n15', title:'Benchmarks',              type:'Document' },
+];
+const LINKS = [
+  {source:'n1', target:'n2',  ltype:'directory'},
+  {source:'n1', target:'n3',  ltype:'directory'},
+  {source:'n1', target:'n4',  ltype:'directory'},
+  {source:'n1', target:'n5',  ltype:'directory'},
+  {source:'n1', target:'n6',  ltype:'directory'},
+  {source:'n6', target:'n7',  ltype:'directory'},
+  {source:'n6', target:'n8',  ltype:'directory'},
+  {source:'n2', target:'n3',  ltype:'wikilink' },
+  {source:'n2', target:'n10', ltype:'wikilink' },
+  {source:'n2', target:'n12', ltype:'wikilink' },
+  {source:'n3', target:'n4',  ltype:'wikilink' },
+  {source:'n8', target:'n9',  ltype:'wikilink' },
+  {source:'n9', target:'n13', ltype:'wikilink' },
+  {source:'n10',target:'n11', ltype:'wikilink' },
+  {source:'n5', target:'n14', ltype:'wikilink' },
+  {source:'n4', target:'n15', ltype:'wikilink' },
+  {source:'n7', target:'n8',  ltype:'ref'      },
+  {source:'n13',target:'n12', ltype:'ref'      },
+];
+const META = {
+  n1: {links:12,age:'3h', docs:5, tags:['#AI','#research','#transformer'],         icon:'folder',     type:'Directory',
+       preview:'AI 연구 전반을 아우르는 루트 디렉토리. Transformer 아키텍처부터 Safety까지, 현재 진행 중인 모든 리서치 스레드를 여기서 관리한다.'},
+  n2: {links:4, age:'1d', docs:2, tags:['#transformer','#architecture'],            icon:'description',type:'Document',
+       preview:'Transformer는 Attention is All You Need(2017)에서 처음 제안됐다. Encoder-Decoder 구조에서 self-attention을 핵심 메커니즘으로 사용하며, RNN 대비 병렬화가 뛰어나다. BERT는 Encoder만, GPT는 Decoder만 사용.'},
+  n3: {links:3, age:'5h', docs:1, tags:['#attention','#NLP'],                       icon:'description',type:'Document',
+       preview:'Attention(q,k,v) = softmax(QKᵀ/√d)V. Query-Key 내적으로 relevance를 계산하고, Value에 가중 합산. Multi-head attention은 서로 다른 representation subspace를 병렬로 학습한다.'},
+  n4: {links:3, age:'2d', docs:2, tags:['#GPT','#BERT'],                            icon:'description',type:'Document',
+       preview:'GPT는 다음 토큰 예측(autoregressive), BERT는 마스킹된 토큰 예측(MLM)으로 사전학습. GPT는 생성에 강하고 BERT는 분류·NLU 태스크에 유리. GPT-4는 context window 128k.'},
+  n5: {links:2, age:'4d', docs:1, tags:['#finetuning'],                             icon:'description',type:'Document',
+       preview:'Fine-tuning은 사전학습된 모델을 특정 태스크 데이터로 추가 학습하는 것. Full fine-tuning 외에 LoRA, QLoRA, Adapter 등 PEFT 기법으로 파라미터 효율을 높일 수 있다.'},
+  n6: {links:6, age:'12h',docs:3, tags:['#embeddings','#vectors'],                  icon:'folder',     type:'Directory',
+       preview:'텍스트·이미지·오디오를 고차원 벡터로 변환하는 임베딩 기술 모음. Vector DB 연동, RAG 파이프라인 구성, 유사도 검색까지 전 스택을 커버한다.'},
+  n7: {links:3, age:'6h', docs:1, tags:['#vectordb','#retrieval'],                  icon:'description',type:'Document',
+       preview:'Pinecone, Weaviate, Qdrant, pgvector 비교. HNSW 인덱스 기반 ANN 검색이 정확도-속도 트레이드오프에서 현재 가장 실용적. 메타데이터 필터링 지원 여부가 선택 기준.'},
+  n8: {links:4, age:'2h', docs:2, tags:['#RAG','#pipeline'],                        icon:'description',type:'Document',
+       preview:'Retrieval-Augmented Generation: 쿼리 → 벡터 검색 → 컨텍스트 주입 → 생성. Naive RAG의 한계(chunk 품질, reranking 부재)를 극복하기 위해 HyDE, Self-RAG, FLARE 등을 실험 중.'},
+  n9: {links:2, age:'1d', docs:1, tags:['#prompt','#engineering'],                  icon:'description',type:'Document',
+       preview:'System prompt 설계, few-shot 예시 선택, Chain-of-Thought 유도. 모델이 "생각하는 척"하게 만들면 reasoning 성능이 오른다. XML 태그로 구조화하면 파싱이 쉬워진다.'},
+  n10:{links:3, age:'3d', docs:2, tags:['#eval','#benchmark'],                      icon:'description',type:'Document',
+       preview:'MMLU, HumanEval, MT-Bench, HELM 등 주요 벤치마크 정리. 벤치마크 과적합 문제로 실제 능력과 괴리가 생기는 케이스가 많음. 내부 평가 데이터셋 구축 필요성 메모.'},
+  n11:{links:2, age:'5d', docs:1, tags:['#dataset'],                                icon:'description',type:'Document',
+       preview:'고품질 데이터가 모델 성능의 핵심. Common Crawl 필터링, 중복 제거, 독성 콘텐츠 필터링 파이프라인. 합성 데이터(GPT-4 생성)와 실제 데이터 혼합 비율 실험 결과 정리.'},
+  n12:{links:2, age:'1w', docs:1, tags:['#RLHF','#alignment'],                      icon:'description',type:'Document',
+       preview:'Reinforcement Learning from Human Feedback. SFT → Reward Model → PPO 순서. DPO는 reward model 없이 직접 선호도 학습. Constitutional AI는 인간 피드백 의존도를 낮추는 방향.'},
+  n13:{links:2, age:'2d', docs:1, tags:['#safety'],                                 icon:'description',type:'Document',
+       preview:'AI Safety 연구 동향: jailbreak 공격 패턴, 탈옥 방어 기법, red-teaming 방법론. 장기적 AI alignment 문제(mesa-optimizer, 목표 오정렬)와 단기적 misuse 방지는 별개 문제.'},
+  n14:{links:2, age:'3d', docs:1, tags:['#interpretability'],                       icon:'description',type:'Document',
+       preview:'신경망 내부 작동 이해: activation patching, probing classifier, 회로 분석(circuit analysis). Anthropic의 Monosemanticity 연구 - sparse autoencoder로 feature를 분리하는 접근이 흥미롭다.'},
+  n15:{links:2, age:'4d', docs:1, tags:['#benchmark','#eval'],                      icon:'description',type:'Document',
+       preview:'모델 능력 평가 기준 총정리. 코딩(HumanEval, SWE-bench), 수학(MATH, GSM8K), 추론(ARC, HellaSwag). 단일 숫자 score의 한계 - 세부 능력 프로파일링이 더 유의미하다.'},
+};
+
+/* 폴더 계층 parentMap (directory 링크 기준) */
+const parentMap = {};
+LINKS.forEach(l => {
+  if (l.ltype === 'directory') parentMap[l.target] = l.source;
+});
+
+function getNodePath(nodeId) {
+  const path = []; const visited = new Set();
+  let cur = nodeId;
+  while (cur && !visited.has(cur)) {
+    visited.add(cur);
+    const n = NODES.find(n => n.id === cur);
+    if (n) path.unshift(n);
+    cur = parentMap[cur];
+  }
+  return path; // [루트, ..., 리프]
+}
+
+/* degree 계산 */
+const degMap = new Map();
+NODES.forEach(n=>degMap.set(n.id,0));
+LINKS.forEach(l=>{
+  degMap.set(l.source,(degMap.get(l.source)||0)+1);
+  degMap.set(l.target,(degMap.get(l.target)||0)+1);
+});
+
+function nodeType(n) {
+  if(n.type==='Directory') return 'dir';
+  if((degMap.get(n.id)||0)>=4) return 'hub';
+  return 'doc';
+}
+function nR(n) {
+  const t = nodeType(n);
+  if(t==='dir') return Math.max(18, Math.min(26, 18+(degMap.get(n.id)||0)*0.8));
+  if(t==='hub') return Math.max(12, Math.min(18, 12+(degMap.get(n.id)||0)*0.6));
+  return 7;
+}
+
+document.getElementById('nodeCount').textContent = NODES.length;
+document.getElementById('linkCount').textContent = LINKS.length;
+
+/* ── D3 셋업 ── */
+const svgEl = document.getElementById('graphSvg');
+const svg = d3.select(svgEl);
+
+// dot grid 배경
+svg.append('rect').attr('width','100%').attr('height','100%')
+  .attr('fill','url(#dotgrid)').attr('pointer-events','none');
+
+const g = svg.append('g').attr('class','graph-root');
+
+const ZOOM_BLOOM   = 1.75; // 이 배율 이상 → 이웃 노드 bloom 시작
+const ZOOM_CARD_IN = 2.45; // 이 배율 이상 + 노드 선택 시 → 카드 FLIP 진입
+let cardMode        = false;
+let cardModeNode    = null;
+let exitingCard     = false;
+let exitingCardZoom = false; // zoom-out 복귀 중 enterCardMode 재진입 차단
+
+const zoom = d3.zoom().scaleExtent([0.08, 5])
+  .on('zoom', e => {
+    g.attr('transform', e.transform);
+    const k = e.transform.k;
+    if (cardMode || exitingCard || exitingCardZoom) return;
+    if (selectedId) {
+      if (k >= ZOOM_CARD_IN) {
+        const node = simNodes.find(n => n.id === selectedId);
+        if (node) enterCardMode(node);
+      } else if (k >= ZOOM_BLOOM) {
+        updateBloom(k);
+      } else {
+        clearBloom();
+      }
+    } else {
+      clearBloom();
+    }
+  });
+svg.call(zoom).on('dblclick.zoom', null);
+
+const simNodes = NODES.map(n=>({...n}));
+const simLinks = LINKS.map(l=>({...l}));
+
+const sim = d3.forceSimulation(simNodes)
+  .force('link', d3.forceLink(simLinks).id(d=>d.id).distance(95).strength(0.6))
+  .force('charge', d3.forceManyBody().strength(-200))
+  .force('center', d3.forceCenter(0,0).strength(0.04))
+  .force('collision', d3.forceCollide().radius(d=>nR(d)+10).strength(0.7))
+  .alphaDecay(0.022)
+  .velocityDecay(0.38);
+
+/* 링크 */
+const linkSel = g.append('g').attr('pointer-events','none')
+  .selectAll('line').data(simLinks).join('line')
+  .attr('stroke', d=>d.ltype==='directory'?'var(--g-link-dir)':d.ltype==='wikilink'?'var(--g-link-wiki)':'var(--g-link-ref)')
+  .attr('stroke-width', d=>d.ltype==='directory'?1.6:1.1)
+  .attr('stroke-dasharray', d=>d.ltype==='ref'?'4 4':null);
+
+/* 드래그 */
+const drag = d3.drag()
+  .on('start',(e,d)=>{
+    // force 모드에서만 물리엔진 재가동
+    if(currentLayout === 'force' && !e.active) sim.alphaTarget(0.2).restart();
+    d.fx=d.x; d.fy=d.y;
+  })
+  .on('drag',(e,d)=>{d.fx=e.x;d.fy=e.y;})
+  .on('end',(e,d)=>{
+    if(currentLayout === 'force') {
+      // force 모드: 핀 해제 → 물리엔진에 복귀
+      if(!e.active) sim.alphaTarget(0);
+      d.fx=null; d.fy=null;
+    }
+    // tree/radial 모드: 드래그 후 현재 위치에 고정 유지 (fx/fy 그대로)
+  });
+
+let selectedId = null;
+
+const nodeG = g.append('g').selectAll('g').data(simNodes).join('g')
+  .attr('cursor','pointer').call(drag)
+  .on('click',(e,d)=>{
+    e.stopPropagation();
+    selectedId = d.id;
+    openDock(d);
+    applyHighlight(d.id);
+    focusNode(d);
+  });
+
+svg.on('click',()=>{
+  selectedId = null;
+  closeDock();
+  applyHighlight(null);
+  clearBloom();
+});
+
+/* 선택 outer ring */
+nodeG.append('circle').attr('class','sel-ring')
+  .attr('r', d=>nR(d)+7)
+  .attr('fill','none')
+  .attr('stroke','transparent')
+  .attr('stroke-width',1.5)
+  .attr('stroke-dasharray','3 3.5');
+
+/* 메인 원 */
+nodeG.append('circle').attr('class','main-c')
+  .attr('r', d=>nR(d))
+  .attr('fill', d=>{
+    const t=nodeType(d);
+    return t==='dir'?'var(--g-dir-fill)':t==='hub'?'var(--g-hub-fill)':'var(--g-doc-fill)';
+  })
+  .attr('stroke', d=>{
+    const t=nodeType(d);
+    return t==='dir'?'var(--g-dir-stroke)':t==='hub'?'var(--g-hub-stroke)':'var(--g-doc-stroke)';
+  })
+  .attr('stroke-width', d=>nodeType(d)==='dir'?1.5:nodeType(d)==='hub'?1.8:1.2);
+
+/* Directory 폴더 아이콘 */
+nodeG.filter(d=>nodeType(d)==='dir').append('text')
+  .attr('text-anchor','middle').attr('dominant-baseline','central')
+  .attr('font-family','Material Symbols Outlined').attr('font-size','13px')
+  .attr('font-variation-settings',"'FILL' 1,'wght' 600,'GRAD' 0,'opsz' 24")
+  .attr('fill','var(--g-dir-icon)').attr('pointer-events','none')
+  .text('folder');
+
+/* Hub degree 숫자 */
+nodeG.filter(d=>nodeType(d)==='hub').append('text')
+  .attr('text-anchor','middle').attr('dominant-baseline','central')
+  .attr('font-family','Inter,sans-serif').attr('font-size','8px').attr('font-weight','700')
+  .attr('fill','var(--g-hub-num)').attr('pointer-events','none')
+  .text(d=>degMap.get(d.id)||0);
+
+/* Doc degree 숫자 */
+nodeG.filter(d=>nodeType(d)==='doc').append('text')
+  .attr('text-anchor','middle').attr('dominant-baseline','central')
+  .attr('font-family','Inter,sans-serif').attr('font-size','6px').attr('font-weight','700')
+  .attr('fill','var(--g-doc-num)').attr('pointer-events','none')
+  .text(d=>degMap.get(d.id)||0);
+
+/* 라벨 */
+nodeG.append('text').attr('class','node-lbl')
+  .attr('text-anchor','middle')
+  .attr('dy', d=>nR(d)+12)
+  .attr('fill', d=>{
+    const t=nodeType(d);
+    return t==='dir'?'var(--g-dir-label)':t==='hub'?'var(--g-hub-label)':'var(--g-doc-label)';
+  })
+  .attr('font-size', d=>nodeType(d)==='dir'?'10.5px':nodeType(d)==='hub'?'9.5px':'9px')
+  .attr('font-weight', d=>nodeType(d)==='dir'?'700':nodeType(d)==='hub'?'600':'400')
+  .attr('font-family','Lexend,Inter,sans-serif')
+  .attr('pointer-events','none')
+  .text(d=>d.title.length>16?d.title.slice(0,15)+'…':d.title);
+
+/* 틱 */
+sim.on('tick',()=>{
+  linkSel.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y)
+         .attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
+  nodeG.attr('transform',d=>`translate(${d.x},${d.y})`);
+});
+
+/* 초기 fit */
+let fitted = false;
+sim.on('end',()=>{
+  if(fitted)return; fitted=true;
+  fitAll();
+});
+
+/* ── 카메라 함수 ── */
+/* 쫀득한 커스텀 easing — 오버슈트 스프링 */
+const easeSpring = t => {
+  const c = 0.5, d = 0.8;
+  return 1 - Math.pow(d, t * 12) * Math.cos(t * 12 * c);
+};
+const easeSnap = d3.easeCubicInOut;
+
+function fitAll() {
+  const cw=svgEl.clientWidth||svgEl.getBoundingClientRect().width;
+  const ch=svgEl.clientHeight||svgEl.getBoundingClientRect().height;
+  if(!cw||!ch)return;
+  const xs=simNodes.map(n=>n.x), ys=simNodes.map(n=>n.y);
+  const cx=(Math.min(...xs)+Math.max(...xs))/2, cy=(Math.min(...ys)+Math.max(...ys))/2;
+  const sx=Math.max(...xs)-Math.min(...xs)||1, sy=Math.max(...ys)-Math.min(...ys)||1;
+  const sc=Math.min((cw*0.62)/sx,(ch*0.72)/sy,1.2);
+  svg.transition().duration(900).ease(easeSnap)
+    .call(zoom.transform,d3.zoomIdentity.translate(cw/2,ch/2).scale(sc).translate(-cx,-cy));
+}
+
+function focusNode(node) {
+  const cw = svgEl.clientWidth  || svgEl.getBoundingClientRect().width;
+  const ch = svgEl.clientHeight || svgEl.getBoundingClientRect().height;
+
+  /* 선택 노드 + 1-hop 이웃 bbox로 카메라 fit */
+  const ids = new Set([node.id]);
+  simLinks.forEach(l => {
+    const s = typeof l.source==='object'?l.source.id:l.source;
+    const t = typeof l.target==='object'?l.target.id:l.target;
+    if (s===node.id) ids.add(t);
+    if (t===node.id) ids.add(s);
+  });
+  const visible = simNodes.filter(n => ids.has(n.id));
+  if (visible.length === 1) {
+    svg.transition().duration(680).ease(d3.easeCubicInOut)
+      .call(zoom.transform, d3.zoomIdentity
+        .translate(cw/2, ch/2-40).scale(1.8).translate(-node.x, -node.y));
+    return;
+  }
+  const xs = visible.map(n=>n.x), ys = visible.map(n=>n.y);
+  const bx = (Math.min(...xs)+Math.max(...xs))/2;
+  const by = (Math.min(...ys)+Math.max(...ys))/2;
+  const bw = Math.max(...xs)-Math.min(...xs) + 110;
+  const bh = Math.max(...ys)-Math.min(...ys) + 110;
+  const sc = Math.min((cw*0.78)/Math.max(bw,1), ((ch-120)*0.78)/Math.max(bh,1), 1.9);
+  svg.transition().duration(720).ease(d3.easeCubicInOut)
+    .call(zoom.transform, d3.zoomIdentity
+      .translate(cw/2, ch/2-30).scale(Math.max(sc, 0.3)).translate(-bx, -by));
+}
+
+function zoomBy(k) {
+  svg.transition().duration(320).ease(d3.easeCubicOut).call(zoom.scaleBy, k);
+}
+
+/* ── Bloom / 카드 헬퍼 ── */
+function getNeighborIds(nodeId) {
+  const ids = new Set();
+  simLinks.forEach(l => {
+    const s = typeof l.source==='object'?l.source.id:l.source;
+    const t = typeof l.target==='object'?l.target.id:l.target;
+    if (s===nodeId) ids.add(t);
+    if (t===nodeId) ids.add(s);
+  });
+  return ids;
+}
+function getNeighborNodes(nodeId) {
+  return simNodes.filter(n => getNeighborIds(nodeId).has(n.id));
+}
+
+/* Bloom: 이웃 노드가 카드로 변하기 직전 팽창하는 시각 피드백 */
+function updateBloom(k) {
+  if (!selectedId) return;
+  const nbrIds  = getNeighborIds(selectedId);
+  const progress = Math.min(1, (k - ZOOM_BLOOM) / (ZOOM_CARD_IN - ZOOM_BLOOM));
+  nodeG.selectAll('.main-c').attr('r', d => {
+    const base = nR(d);
+    if (d.id === selectedId)   return base * (1 + progress * 0.25);
+    if (nbrIds.has(d.id))      return base * (1 + progress * 0.55);
+    return base;
+  });
+  nodeG.style('opacity', d => {
+    if (d.id === selectedId || nbrIds.has(d.id)) return 1;
+    return Math.max(0.03, 0.1 - progress * 0.07);
+  });
+}
+function clearBloom() {
+  nodeG.selectAll('.main-c').attr('r', d => nR(d));
+  if (selectedId) {
+    const nbrIds = getNeighborIds(selectedId);
+    nodeG.style('opacity', d => (d.id === selectedId || nbrIds.has(d.id)) ? 1 : 0.1);
+  } else {
+    nodeG.style('opacity', 1);
+  }
+}
+
+/* ── 카드 뷰 진입 — FLIP 애니메이션 ── */
+function enterCardMode(node) {
+  if (cardMode || exitingCard) return;
+  cardMode     = true;
+  cardModeNode = node;
+
+  const neighborNodes = getNeighborNodes(node.id);
+
+  /* FLIP Step 1 — First: 이웃 노드 현재 화면 좌표 캡처 */
+  const tr      = d3.zoomTransform(svgEl);
+  const svgRect = svgEl.getBoundingClientRect();
+  const screenPos = {};
+  neighborNodes.forEach(n => {
+    screenPos[n.id] = {
+      x: svgRect.left + tr.applyX(n.x),
+      y: svgRect.top  + tr.applyY(n.y),
+      r: nR(n) * tr.k
+    };
+  });
+
+  /* 헤더 + 그리드 빌드 */
+  document.getElementById('cardViewTitle').textContent = node.title;
+  document.getElementById('cardViewHint').textContent  = `연결된 노드 ${neighborNodes.length}개`;
+  const grid = document.getElementById('cardGrid');
+  grid.innerHTML = neighborNodes.map(n => {
+    const m    = META[n.id] || {};
+    const tags = (m.tags||[]).map(t=>`<span class="card-item-tag">${t}</span>`).join('');
+    return `<div class="card-item" data-nid="${n.id}">
+        <div class="card-item-header">
+          <span class="icon card-item-icon">${m.icon||'description'}</span>
+          <span class="card-item-type">${m.type||'Document'}</span>
+        </div>
+        <div class="card-item-title">${n.title}</div>
+        ${m.preview ? `<div class="card-item-preview">${m.preview}</div>` : ''}
+        <div class="card-item-divider"></div>
+        <div class="card-item-meta">
+          <span class="icon">link</span>&nbsp;${m.links||0}
+          &nbsp;<span class="icon" style="margin-left:6px">schedule</span>&nbsp;${m.age||'—'}
+        </div>
+        <div class="card-item-tags">${tags}</div>
+      </div>`;
+  }).join('');
+
+  /* FLIP Step 2 — Last: 카드 뷰 노출(투명)해서 그리드 위치 측정 */
+  const cvEl = document.getElementById('cardView');
+  cvEl.style.opacity    = '0';
+  cvEl.style.transition = 'none';
+  cvEl.classList.remove('hidden');
+  cvEl.offsetHeight; // reflow
+
+  /* FLIP Step 3 — Invert: 각 카드를 노드 화면 위치로 이동 */
+  const cards = [...grid.querySelectorAll('.card-item')];
+  cards.forEach(card => {
+    const nid  = card.dataset.nid;
+    const sp   = screenPos[nid];
+    if (!sp) return;
+    const cr   = card.getBoundingClientRect();
+    const dx   = sp.x - (cr.left + cr.width  / 2);
+    const dy   = sp.y - (cr.top  + cr.height / 2);
+    const sc   = Math.max((sp.r * 2) / Math.max(cr.width, 1) * 0.9, 0.05);
+    card.style.animation    = 'none';     /* CSS animation 완전 차단 */
+    card.style.transition   = 'none';
+    card.style.transform    = `translate(${dx}px,${dy}px) scale(${sc})`;
+    card.style.borderRadius = '50%';
+    card.style.opacity      = '0';
+    card.style.overflow     = 'hidden';
+  });
+  /* 한 프레임 강제 커밋 후 Play 시작 */
+  grid.offsetHeight;
+
+  /* FLIP Step 4 — Play: 그리드 위치로 애니메이션 */
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    cvEl.style.transition = 'opacity 0.22s ease';
+    cvEl.style.opacity    = '1';
+    cards.forEach((card, i) => {
+      const d = i * 0.05;
+      card.style.transition = [
+        `transform 0.65s cubic-bezier(0.34,1.56,0.64,1) ${d}s`,
+        `border-radius 0.4s ease ${d + 0.05}s`,
+        `opacity 0.32s ease ${d * 0.4}s`
+      ].join(',');
+      card.style.transform    = '';   /* inline 제거 → CSS baseline(identity)으로 복귀 */
+      card.style.borderRadius = '14px';
+      card.style.opacity      = '1';
+      card.style.overflow     = '';
+    });
+    /* 애니메이션 끝나면 hover transition 활성화 */
+    const maxDelay = (cards.length - 1) * 0.05 + 0.65;
+    setTimeout(() => cards.forEach(c => c.classList.add('flip-done')), maxDelay * 1000);
+  }));
+
+  clearBloom();
+}
+
+/* ── 카드 뷰 복귀 — 역방향 FLIP ── */
+function exitCardMode() {
+  if (!cardMode || exitingCard) return;
+  exitingCard = true;
+
+  const tr      = d3.zoomTransform(svgEl);
+  const svgRect = svgEl.getBoundingClientRect();
+  const neighborNodes = getNeighborNodes(cardModeNode.id);
+  const screenPos = {};
+  neighborNodes.forEach(n => {
+    screenPos[n.id] = {
+      x: svgRect.left + tr.applyX(n.x),
+      y: svgRect.top  + tr.applyY(n.y),
+      r: nR(n) * tr.k
+    };
+  });
+
+  const cards = [...document.querySelectorAll('#cardGrid .card-item')];
+  cards.forEach((card, i) => {
+    const sp = screenPos[card.dataset.nid];
+    if (!sp) return;
+    const cr = card.getBoundingClientRect();
+    const dx = sp.x - (cr.left + cr.width  / 2);
+    const dy = sp.y - (cr.top  + cr.height / 2);
+    const sc = Math.max((sp.r * 2) / Math.max(cr.width, 1) * 0.9, 0.05);
+    const d  = i * 0.028;
+    card.style.transition = [
+      `transform 0.42s cubic-bezier(0.4,0,0.6,1) ${d}s`,
+      `border-radius 0.28s ease ${d}s`,
+      `opacity 0.2s ease ${d}s`
+    ].join(',');
+    card.style.transform    = `translate(${dx}px,${dy}px) scale(${sc})`;
+    card.style.borderRadius = '50%';
+    card.style.opacity      = '0';
+  });
+
+  /* 배경도 페이드아웃 */
+  const cvEl = document.getElementById('cardView');
+  cvEl.style.transition = 'opacity 0.28s ease 0.18s';
+  cvEl.style.opacity    = '0';
+
+  setTimeout(() => {
+    cardMode        = false;
+    exitingCard     = false;
+    exitingCardZoom = true; // zoom-out 시작 전 플래그 세팅
+    cardModeNode    = null;
+    cvEl.classList.add('hidden');
+    cvEl.style.opacity = cvEl.style.transition = '';
+    cards.forEach(c => { c.style.cssText = ''; c.classList.remove('flip-done'); });
+    /* 줌 아웃해서 그래프 뷰로 부드럽게 복귀 — 완료 후 플래그 해제 */
+    svg.transition().duration(520).ease(d3.easeCubicOut)
+      .call(zoom.scaleTo, ZOOM_CARD_IN * 0.62)
+      .on('end', () => { exitingCardZoom = false; });
+  }, 480);
+}
+
+/* 카드 뷰: 스크롤 다운 / 스와이프 다운 → 그래프 복귀 */
+(function () {
+  const cv   = document.getElementById('cardView');
+  const grid = document.getElementById('cardGrid');
+  cv.addEventListener('wheel', e => { if (e.deltaY > 0) exitCardMode(); }, { passive: true });
+  let ty0 = 0;
+  cv.addEventListener('touchstart', e => { ty0 = e.touches[0].clientY; }, { passive: true });
+  cv.addEventListener('touchend',   e => {
+    if (e.changedTouches[0].clientY - ty0 > 72 && grid.scrollTop === 0) exitCardMode();
+  }, { passive: true });
+})();
+
+/* ── 하이라이트 ── */
+function applyHighlight(id) {
+  if(!id) {
+    nodeG.style('opacity',1);
+    nodeG.selectAll('.sel-ring').attr('stroke','transparent');
+    linkSel.attr('stroke-opacity',1);
+    return;
+  }
+  const nb=new Set([id]);
+  simLinks.forEach(l=>{
+    const s=typeof l.source==='object'?l.source.id:l.source;
+    const t=typeof l.target==='object'?l.target.id:l.target;
+    if(s===id)nb.add(t); if(t===id)nb.add(s);
+  });
+  nodeG.style('opacity',d=>nb.has(d.id)?1:0.1);
+  nodeG.selectAll('.sel-ring').attr('stroke',d=>{
+    if(d.id!==id)return'transparent';
+    const t=nodeType(d);
+    return t==='dir'?'rgba(42,28,8,0.5)':t==='hub'?'var(--g-hub-sel)':'var(--g-doc-sel)';
+  });
+  linkSel.attr('stroke-opacity',d=>{
+    const s=typeof d.source==='object'?d.source.id:d.source;
+    const t=typeof d.target==='object'?d.target.id:d.target;
+    return (s===id||t===id)?1:0.05;
+  });
+}
+
+/* ── 독 ── */
+function openDock(node) {
+  const m = META[node.id]||{links:0,age:'—',docs:0,tags:[],icon:'description',type:'Document'};
+  document.getElementById('dockIcon').textContent  = m.icon;
+  document.getElementById('dockType').textContent  = m.type;
+  document.getElementById('dockTitle').textContent = node.title;
+  document.getElementById('dockLinks').textContent = m.links;
+  document.getElementById('dockAge').textContent   = m.age;
+  document.getElementById('dockDocs').textContent  = m.docs;
+  document.getElementById('dockTags').innerHTML =
+    m.tags.map(t=>`<span class="dock-tag">${t}</span>`).join('');
+  document.getElementById('dock').classList.remove('hidden');
+  /* 그래프 뷰 브레드크럼 — 폴더 계층 경로 */
+  const path = getNodePath(node.id);
+  const sep  = '<span class="crumb-sep">chevron_right</span>';
+  const root = `<span class="crumb" onclick="deselectNode()">그래프</span>${sep}`;
+  const crumbs = path.map((n, i) => {
+    const isLast = i === path.length - 1;
+    return isLast
+      ? `<span class="crumb active">${n.title}</span>`
+      : `<span class="crumb" onclick="jumpToNode('${n.id}')">${n.title}</span>`;
+  }).join(sep);
+  const bc = document.getElementById('graphBreadcrumb');
+  bc.innerHTML = root + crumbs;
+
+  /* 두 통계 칩이 서로 향해 합쳐지고 → 브레드크럼 pill 등장 */
+  const statsEl = document.querySelector('.stats');
+  statsEl.classList.add('merging');
+  /* stats 애니메이션(220ms) 절반쯤 지났을 때 breadcrumb 나타남 (delay CSS 0.12s) */
+  bc.classList.add('visible');
+}
+function closeDock() {
+  document.getElementById('dock').classList.add('hidden');
+  const bc = document.getElementById('graphBreadcrumb');
+  bc.classList.remove('visible');
+  /* 브레드크럼 fade-out 후 통계 칩 복귀 */
+  setTimeout(() => {
+    document.querySelector('.stats').classList.remove('merging');
+  }, 260);
+}
+/* 브레드크럼 조상 노드 클릭 → 해당 노드로 이동 */
+function jumpToNode(id) {
+  const node = simNodes.find(n => n.id === id);
+  if (!node) return;
+  selectedId = id;
+  openDock(node);
+  applyHighlight(id);
+  focusNode(node);
+}
+/* 브레드크럼 "그래프" 클릭 → 선택 해제 */
+function deselectNode() {
+  selectedId = null;
+  closeDock();
+  applyHighlight(null);
+  clearBloom();
+}
+
+/* ── 레이아웃 ── */
+let currentLayout = 'force';
+const LAYOUTS     = ['force', 'tree', 'radial'];
+const LAYOUT_META = {
+  force:  { icon: 'grain',        label: '유기적' },
+  tree:   { icon: 'account_tree', label: '계층형' },
+  radial: { icon: 'hub',          label: '방사형' },
+};
+
+function updateLayoutBtn() {
+  const next = LAYOUTS[(LAYOUTS.indexOf(currentLayout) + 1) % LAYOUTS.length];
+  document.getElementById('layoutIcon').textContent = LAYOUT_META[currentLayout].icon;
+  document.getElementById('layoutBtn').title =
+    `레이아웃: ${LAYOUT_META[currentLayout].label} (클릭 → ${LAYOUT_META[next].label})`;
+}
+
+function cycleLayout() {
+  const idx = LAYOUTS.indexOf(currentLayout);
+  currentLayout = LAYOUTS[(idx + 1) % LAYOUTS.length];
+  updateLayoutBtn();
+
+  if (currentLayout === 'force') {
+    simNodes.forEach(n => { n.fx = null; n.fy = null; });
+    sim.alpha(0.55).restart();
+    setTimeout(() => fitAll(), 1300);
+  } else {
+    const targets = currentLayout === 'tree'
+      ? computeTreeTargets()
+      : computeRadialTargets();
+    animateToTargets(targets, 700);
+  }
+}
+
+/* BFS 깊이 계산 (공통) — 최고 차수 노드를 루트로 */
+function bfsDepths() {
+  const rootId = simNodes.reduce(
+    (best, n) => (degMap.get(n.id)||0) > (degMap.get(best)||0) ? n.id : best,
+    simNodes[0].id
+  );
+  const depth = new Map([[rootId, 0]]);
+  const queue = [rootId];
+  while (queue.length) {
+    const id = queue.shift();
+    const d  = depth.get(id);
+    simLinks.forEach(l => {
+      const s = typeof l.source==='object' ? l.source.id : l.source;
+      const t = typeof l.target==='object' ? l.target.id : l.target;
+      if (s===id && !depth.has(t)) { depth.set(t, d+1); queue.push(t); }
+      if (t===id && !depth.has(s)) { depth.set(s, d+1); queue.push(s); }
+    });
+  }
+  return depth;
+}
+
+/* 계층형: 깊이별 수평 행 배치 */
+function computeTreeTargets() {
+  const depth  = bfsDepths();
+  const levels = new Map();
+  simNodes.forEach(n => {
+    const d = depth.get(n.id) ?? 0;
+    if (!levels.has(d)) levels.set(d, []);
+    levels.get(d).push(n);
+  });
+
+  const targets  = new Map();
+  const maxDepth = Math.max(...levels.keys());
+  const levelH   = 130;
+  const colW     = 140;
+
+  levels.forEach((nodes, d) => {
+    const rowHalf = (nodes.length - 1) * colW / 2;
+    nodes.forEach((n, i) => {
+      targets.set(n.id, {
+        x: nodes.length === 1 ? 0 : -rowHalf + i * colW,
+        y: -(maxDepth * levelH) / 2 + d * levelH,
+      });
+    });
+  });
+  return targets;
+}
+
+/* 방사형: 깊이별 동심원 배치 */
+function computeRadialTargets() {
+  const depth  = bfsDepths();
+  const levels = new Map();
+  simNodes.forEach(n => {
+    const d = depth.get(n.id) ?? 0;
+    if (!levels.has(d)) levels.set(d, []);
+    levels.get(d).push(n);
+  });
+
+  const targets = new Map();
+  const radii   = [0, 130, 230, 320, 395];
+
+  levels.forEach((nodes, d) => {
+    const R = radii[d] ?? 395;
+    if (d === 0 && nodes.length === 1) {
+      targets.set(nodes[0].id, { x: 0, y: 0 }); // 루트 중앙
+      return;
+    }
+    nodes.forEach((n, i) => {
+      const angle = (2 * Math.PI * i / nodes.length) - Math.PI / 2;
+      targets.set(n.id, { x: R * Math.cos(angle), y: R * Math.sin(angle) });
+    });
+  });
+  return targets;
+}
+
+/* 노드를 목표 위치로 부드럽게 보간 애니메이션 */
+function animateToTargets(targets, duration = 700) {
+  sim.stop();
+  const sx = new Map(simNodes.map(n => [n.id, n.x]));
+  const sy = new Map(simNodes.map(n => [n.id, n.y]));
+  const t0 = performance.now();
+
+  (function frame() {
+    const progress = Math.min((performance.now() - t0) / duration, 1);
+    const eased    = d3.easeCubicInOut(progress);
+
+    simNodes.forEach(n => {
+      const tx = targets.get(n.id)?.x ?? n.x;
+      const ty = targets.get(n.id)?.y ?? n.y;
+      n.x = n.fx = sx.get(n.id) + (tx - sx.get(n.id)) * eased;
+      n.y = n.fy = sy.get(n.id) + (ty - sy.get(n.id)) * eased;
+    });
+
+    nodeG.attr('transform', d => `translate(${d.x},${d.y})`);
+    linkSel
+      .attr('x1', d => d.source.x).attr('y1', d => d.source.y)
+      .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+
+    if (progress < 1) {
+      requestAnimationFrame(frame);
+    } else {
+      setTimeout(() => fitAll(), 60); // 레이아웃 완료 후 뷰 맞춤
+    }
+  })();
+}
+
+/* ── 검색 ── */
+document.getElementById('searchInput').addEventListener('input', e=>{
+  const q = e.target.value.toLowerCase().trim();
+  if(!q){ applyHighlight(selectedId); return; }
+  const matched = simNodes.filter(n=>n.title.toLowerCase().includes(q)).map(n=>n.id);
+  nodeG.style('opacity',d=>matched.includes(d.id)?1:0.08);
+  linkSel.attr('stroke-opacity',d=>{
+    const s=typeof d.source==='object'?d.source.id:d.source;
+    const t=typeof d.target==='object'?d.target.id:d.target;
+    return (matched.includes(s)&&matched.includes(t))?0.8:0.04;
+  });
+});
+</script>
+</body>
+</html>

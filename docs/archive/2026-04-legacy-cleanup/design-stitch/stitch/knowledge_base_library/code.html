@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Synapse Note - Knowledge Base</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-secondary-container": "#e6ecff",
+                        "surface-bright": "#3a3939",
+                        "surface-variant": "#353534",
+                        "error-container": "#93000a",
+                        "on-surface": "#e5e2e1",
+                        "primary-container": "#7c3aed",
+                        "tertiary-fixed": "#ffdcc6",
+                        "tertiary-container": "#a15100",
+                        "on-secondary-fixed-variant": "#004395",
+                        "on-secondary": "#002e6a",
+                        "surface-tint": "#d2bbff",
+                        "error": "#ffb4ab",
+                        "surface-container-highest": "#353534",
+                        "on-surface-variant": "#ccc3d8",
+                        "background": "#131313",
+                        "tertiary-fixed-dim": "#ffb784",
+                        "surface": "#131313",
+                        "on-error": "#690005",
+                        "secondary-fixed": "#d8e2ff",
+                        "secondary-container": "#0566d9",
+                        "inverse-on-surface": "#313030",
+                        "on-tertiary": "#4f2500",
+                        "surface-container-lowest": "#0e0e0e",
+                        "on-primary-fixed": "#25005a",
+                        "surface-dim": "#131313",
+                        "on-tertiary-container": "#ffe0cd",
+                        "on-tertiary-fixed": "#301400",
+                        "on-primary": "#3f008e",
+                        "on-background": "#e5e2e1",
+                        "outline-variant": "#4a4455",
+                        "inverse-surface": "#e5e2e1",
+                        "primary-fixed-dim": "#d2bbff",
+                        "on-error-container": "#ffdad6",
+                        "surface-container": "#201f1f",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "outline": "#958da1",
+                        "surface-container-high": "#2a2a2a",
+                        "surface-container-low": "#1c1b1b",
+                        "tertiary": "#ffb784",
+                        "secondary": "#adc6ff",
+                        "primary": "#d2bbff",
+                        "inverse-primary": "#732ee4",
+                        "on-primary-fixed-variant": "#5a00c6",
+                        "on-primary-container": "#ede0ff",
+                        "on-secondary-fixed": "#001a42",
+                        "primary-fixed": "#eaddff",
+                        "on-tertiary-fixed-variant": "#713700"
+                    },
+                    fontFamily: {
+                        "headline": ["Lexend"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #131313;
+            color: #e5e2e1;
+        }
+        .glass-panel {
+            background: rgba(19, 19, 19, 0.7);
+            backdrop-filter: blur(20px);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #4a4455;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="font-body selection:bg-primary-container selection:text-on-primary-container">
+<!-- SideNavBar (Shared Component) -->
+<aside class="fixed left-0 top-0 h-full z-50 h-screen w-20 flex flex-col items-center py-6 border-r border-[#D2BBFF]/15 bg-[#131313]/70 backdrop-blur-xl shadow-[0_20px_50px_rgba(124,58,237,0.08)]">
+<div class="mb-10 transition-all duration-500 cubic-bezier(0.4,0,0.2,1) hover:scale-105">
+<span class="text-xl font-bold bg-gradient-to-br from-[#7C3AED] to-[#3B82F6] bg-clip-text text-transparent font-headline">SN</span>
+</div>
+<nav class="flex flex-col gap-6 flex-1">
+<a class="text-[#D2BBFF]/60 hover:text-[#D2BBFF] p-3 transition-colors duration-300 hover:bg-[#7C3AED]/10 rounded-xl group relative" href="#">
+<span class="material-symbols-outlined">chat_bubble</span>
+<span class="absolute left-full ml-4 px-2 py-1 bg-surface-container text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity">Chat</span>
+</a>
+<a class="text-[#D2BBFF]/60 hover:text-[#D2BBFF] p-3 transition-colors duration-300 hover:bg-[#7C3AED]/10 rounded-xl group relative" href="#">
+<span class="material-symbols-outlined">account_tree</span>
+<span class="absolute left-full ml-4 px-2 py-1 bg-surface-container text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity">Graph</span>
+</a>
+<a class="bg-[#7C3AED] text-white rounded-xl p-3 shadow-[0_0_15px_rgba(124,58,237,0.4)] group relative" href="#">
+<span class="material-symbols-outlined">auto_stories</span>
+<span class="absolute left-full ml-4 px-2 py-1 bg-surface-container text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity">Library</span>
+</a>
+<a class="text-[#D2BBFF]/60 hover:text-[#D2BBFF] p-3 transition-colors duration-300 hover:bg-[#7C3AED]/10 rounded-xl group relative" href="#">
+<span class="material-symbols-outlined">school</span>
+<span class="absolute left-full ml-4 px-2 py-1 bg-surface-container text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity">Learn</span>
+</a>
+</nav>
+<div class="mt-auto flex flex-col gap-6">
+<button class="bg-gradient-to-br from-[#7C3AED] to-[#3B82F6] text-white p-3 rounded-xl shadow-lg transition-all duration-500 hover:scale-110">
+<span class="material-symbols-outlined">add</span>
+</button>
+<a class="text-[#D2BBFF]/60 hover:text-[#D2BBFF] p-3 transition-colors duration-300 hover:bg-[#7C3AED]/10 rounded-xl" href="#">
+<span class="material-symbols-outlined">settings</span>
+</a>
+</div>
+</aside>
+<!-- TopNavBar (Shared Component) -->
+<header class="fixed top-0 right-0 left-20 z-40 flex justify-between items-center px-8 h-16 bg-[#131313]/70 backdrop-blur-md text-[#D2BBFF] font-lexend text-sm font-medium">
+<div class="flex items-center gap-8">
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-lg">search</span>
+<input class="bg-surface-container-low border-none rounded-full pl-10 pr-4 py-1.5 w-64 focus:ring-1 focus:ring-primary-container transition-all outline-none font-headline tracking-tight text-on-surface" placeholder="Neural Search..." type="text"/>
+</div>
+<nav class="flex gap-6">
+<a class="text-[#D2BBFF]/50 hover:text-[#D2BBFF] transition-all" href="#">Claude</a>
+<a class="text-[#D2BBFF]/50 hover:text-[#D2BBFF] transition-all" href="#">GPT-4</a>
+<a class="text-[#D2BBFF]/50 hover:text-[#D2BBFF] transition-all" href="#">Local Llama</a>
+</nav>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex gap-4">
+<button class="material-symbols-outlined hover:text-[#D2BBFF] cursor-pointer">notifications</button>
+<button class="material-symbols-outlined hover:text-[#D2BBFF] cursor-pointer">memory</button>
+<button class="material-symbols-outlined hover:text-[#D2BBFF] cursor-pointer">Psychology</button>
+</div>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant">
+<img alt="Neural Profile" class="w-full h-full object-cover" data-alt="Portrait of a creative professional in soft blue lighting with a minimalist studio background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA22EbzZDvnRrm9jtjTfiTVk1NXcLQR4cBftpNjhUENXdB5ywseNmqrFWE3r1_wd32loJ4GjdCH-rOYjsXvmKqn3dN_ev2OWMxHcSq1KRdj1-QxLvOCHtlYj7GxTHI35KgQIfrBJfE9_MXGpR9tyncJiVtrN9wkO4h10lkTH2wqvKckntXV3cQ0s3hVx3ycvHh-3e-p9v-kwIBvGW3Kg1cGB8_2rEiOD5O6KoxhkdQCjr3Ibp1S-VfXoQlzc82p8240ts2-hFgpaKM"/>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="ml-20 pt-20 px-8 pb-12 max-w-7xl mx-auto">
+<!-- Dashboard Header & Bulk Actions -->
+<section class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+<div>
+<h1 class="text-4xl font-headline font-bold text-on-surface tracking-tighter mb-2">Library</h1>
+<p class="text-on-surface-variant font-light max-w-lg">Your externalized cognition. Every sync, every note, every insight stored in the neural cloud.</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-2 px-4 py-2 bg-surface-container-high hover:bg-surface-container-highest text-on-surface rounded-xl transition-all text-sm font-medium">
+<span class="material-symbols-outlined text-sm">checklist</span>
+                    Bulk Action
+                </button>
+<button class="flex items-center gap-2 px-4 py-2 bg-primary-container text-on-primary-container rounded-xl transition-all text-sm font-bold shadow-[0_0_15px_rgba(124,58,237,0.3)]">
+<span class="material-symbols-outlined text-sm">ios_share</span>
+                    Export Data
+                </button>
+</div>
+</section>
+<!-- Integrations Section (Bento Style) -->
+<section class="mb-16">
+<div class="flex items-center gap-2 mb-6">
+<span class="w-1.5 h-6 bg-primary rounded-full"></span>
+<h2 class="text-xl font-headline font-semibold text-on-surface">Neural Integrations</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+<!-- Integration Card 1 -->
+<div class="surface-container-low p-5 rounded-2xl glass-panel border border-outline-variant/10 hover:border-primary/30 transition-all group">
+<div class="flex justify-between items-start mb-4">
+<div class="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined" data-weight="fill">chat_bubble</span>
+</div>
+<span class="px-2 py-0.5 bg-secondary-container/20 text-secondary text-[10px] font-bold tracking-widest uppercase rounded">Connected</span>
+</div>
+<h3 class="font-headline font-medium text-on-surface mb-1">ChatGPT</h3>
+<p class="text-xs text-on-surface-variant mb-4">Syncing conversation history</p>
+<div class="flex items-center justify-between">
+<span class="text-[10px] text-outline">Last sync: 2m ago</span>
+<span class="material-symbols-outlined text-outline text-lg cursor-pointer hover:text-primary">settings</span>
+</div>
+</div>
+<!-- Integration Card 2 -->
+<div class="surface-container-low p-5 rounded-2xl glass-panel border border-outline-variant/10 hover:border-primary/30 transition-all group">
+<div class="flex justify-between items-start mb-4">
+<div class="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-secondary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">support_agent</span>
+</div>
+<span class="px-2 py-0.5 bg-secondary-container/20 text-secondary text-[10px] font-bold tracking-widest uppercase rounded">Connected</span>
+</div>
+<h3 class="font-headline font-medium text-on-surface mb-1">Claude</h3>
+<p class="text-xs text-on-surface-variant mb-4">Context retrieval active</p>
+<div class="flex items-center justify-between">
+<span class="text-[10px] text-outline">Last sync: 1h ago</span>
+<span class="material-symbols-outlined text-outline text-lg cursor-pointer hover:text-primary">settings</span>
+</div>
+</div>
+<!-- Integration Card 3 -->
+<div class="surface-container-low p-5 rounded-2xl glass-panel border border-outline-variant/10 hover:border-primary/30 transition-all group opacity-60">
+<div class="flex justify-between items-start mb-4">
+<div class="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined">forum</span>
+</div>
+<span class="px-2 py-0.5 bg-surface-container-highest text-outline text-[10px] font-bold tracking-widest uppercase rounded">Disconnected</span>
+</div>
+<h3 class="font-headline font-medium text-on-surface mb-1 text-on-surface/50">Slack</h3>
+<p class="text-xs text-on-surface-variant mb-4">Indexing workspace threads</p>
+<button class="text-[10px] text-primary font-bold hover:underline">Connect +</button>
+</div>
+<!-- Integration Card 4 -->
+<div class="surface-container-low p-5 rounded-2xl glass-panel border border-outline-variant/10 hover:border-primary/30 transition-all group">
+<div class="flex justify-between items-start mb-4">
+<div class="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-primary-fixed-dim group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">star_half</span>
+</div>
+<span class="px-2 py-0.5 bg-secondary-container/20 text-secondary text-[10px] font-bold tracking-widest uppercase rounded">Connected</span>
+</div>
+<h3 class="font-headline font-medium text-on-surface mb-1">Gemini</h3>
+<p class="text-xs text-on-surface-variant mb-4">Pro features enabled</p>
+<div class="flex items-center justify-between">
+<span class="text-[10px] text-outline">Last sync: 5h ago</span>
+<span class="material-symbols-outlined text-outline text-lg cursor-pointer hover:text-primary">settings</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Search & Filter Bar -->
+<section class="mb-8 sticky top-16 z-30 pt-4 bg-background/80 backdrop-blur-sm pb-4">
+<div class="flex flex-col md:flex-row gap-4 items-center justify-between">
+<div class="w-full md:flex-1 relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">manage_search</span>
+<input class="w-full h-14 bg-surface-container-low border-none rounded-2xl pl-12 pr-4 focus:ring-1 focus:ring-primary transition-all text-on-surface font-headline" placeholder="Filter through 2,450 neural captures..." type="text"/>
+</div>
+<div class="flex gap-2 w-full md:w-auto">
+<button class="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 h-14 bg-surface-container-low text-on-surface rounded-2xl border border-outline-variant/10 hover:bg-surface-container-high transition-all">
+<span class="material-symbols-outlined text-lg">filter_list</span>
+<span class="text-sm font-medium">Filters</span>
+</button>
+<div class="flex bg-surface-container-low rounded-2xl p-1 border border-outline-variant/10">
+<button class="p-3 bg-surface-container-highest text-primary rounded-xl transition-all">
+<span class="material-symbols-outlined">grid_view</span>
+</button>
+<button class="p-3 text-outline hover:text-on-surface transition-all">
+<span class="material-symbols-outlined">list</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Knowledge Captures Grid -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+<!-- Capture Card 1 -->
+<article class="group relative flex flex-col bg-surface-container-lowest rounded-3xl p-6 border border-outline-variant/5 hover:border-primary/20 transition-all duration-500 overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-primary opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-sm">robot_2</span>
+<span class="text-[10px] font-headline font-bold uppercase tracking-widest text-outline">ChatGPT Sync</span>
+</div>
+<span class="text-[10px] text-outline">Oct 12, 2023</span>
+</div>
+<h3 class="text-xl font-headline font-semibold text-on-surface mb-3 leading-tight group-hover:text-primary transition-colors">Architecture of Transformer-based Models</h3>
+<p class="text-sm text-on-surface-variant font-light line-clamp-3 mb-6">Detailed breakdown of self-attention mechanisms and positional encoding techniques used in modern LLMs...</p>
+<div class="mt-auto flex flex-wrap gap-2">
+<span class="px-2 py-1 bg-surface-container-high text-primary-fixed-dim text-[10px] font-medium rounded-lg">#AI</span>
+<span class="px-2 py-1 bg-surface-container-high text-primary-fixed-dim text-[10px] font-medium rounded-lg">#MachineLearning</span>
+<span class="px-2 py-1 bg-surface-container-high text-primary-fixed-dim text-[10px] font-medium rounded-lg">#Study</span>
+</div>
+</article>
+<!-- Capture Card 2 -->
+<article class="group relative flex flex-col bg-surface-container-lowest rounded-3xl p-6 border border-outline-variant/5 hover:border-primary/20 transition-all duration-500 overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-secondary opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-sm">edit_note</span>
+<span class="text-[10px] font-headline font-bold uppercase tracking-widest text-outline">Manual Note</span>
+</div>
+<span class="text-[10px] text-outline">Oct 10, 2023</span>
+</div>
+<h3 class="text-xl font-headline font-semibold text-on-surface mb-3 leading-tight group-hover:text-secondary transition-colors">Quarterly Strategic Roadmap: Project Aurora</h3>
+<p class="text-sm text-on-surface-variant font-light line-clamp-3 mb-6">Defining the key milestones for the UI redesign and the integration of vector databases for semantic retrieval...</p>
+<div class="mt-auto flex flex-wrap gap-2">
+<span class="px-2 py-1 bg-surface-container-high text-secondary-fixed-dim text-[10px] font-medium rounded-lg">#Work</span>
+<span class="px-2 py-1 bg-surface-container-high text-secondary-fixed-dim text-[10px] font-medium rounded-lg">#Roadmap</span>
+</div>
+</article>
+<!-- Capture Card 3 -->
+<article class="group relative flex flex-col bg-surface-container-lowest rounded-3xl p-6 border border-outline-variant/5 hover:border-primary/20 transition-all duration-500 overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-tertiary opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary text-sm">language</span>
+<span class="text-[10px] font-headline font-bold uppercase tracking-widest text-outline">Web Clip</span>
+</div>
+<span class="text-[10px] text-outline">Oct 08, 2023</span>
+</div>
+<h3 class="text-xl font-headline font-semibold text-on-surface mb-3 leading-tight group-hover:text-tertiary transition-colors">Neuroplasticity in the Digital Age</h3>
+<p class="text-sm text-on-surface-variant font-light line-clamp-3 mb-6">Scientific research on how constant interaction with AI tools is reshaping our cognitive pathways and memory structures...</p>
+<div class="mt-auto flex flex-wrap gap-2">
+<span class="px-2 py-1 bg-surface-container-high text-tertiary-fixed-dim text-[10px] font-medium rounded-lg">#Health</span>
+<span class="px-2 py-1 bg-surface-container-high text-tertiary-fixed-dim text-[10px] font-medium rounded-lg">#Science</span>
+</div>
+</article>
+<!-- Capture Card 4 -->
+<article class="group relative flex flex-col bg-surface-container-lowest rounded-3xl p-6 border border-outline-variant/5 hover:border-primary/20 transition-all duration-500 overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-primary opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-sm">support_agent</span>
+<span class="text-[10px] font-headline font-bold uppercase tracking-widest text-outline">Claude Analysis</span>
+</div>
+<span class="text-[10px] text-outline">Oct 05, 2023</span>
+</div>
+<h3 class="text-xl font-headline font-semibold text-on-surface mb-3 leading-tight group-hover:text-primary transition-colors">Summary of 'The Information' by James Gleick</h3>
+<p class="text-sm text-on-surface-variant font-light line-clamp-3 mb-6">High-level summary focusing on the evolution of information theory and its impact on modern data science paradigms...</p>
+<div class="mt-auto flex flex-wrap gap-2">
+<span class="px-2 py-1 bg-surface-container-high text-primary-fixed-dim text-[10px] font-medium rounded-lg">#English</span>
+<span class="px-2 py-1 bg-surface-container-high text-primary-fixed-dim text-[10px] font-medium rounded-lg">#History</span>
+</div>
+</article>
+<!-- Capture Card 5 -->
+<article class="group relative flex flex-col bg-surface-container-lowest rounded-3xl p-6 border border-outline-variant/5 hover:border-primary/20 transition-all duration-500 overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-primary opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-sm">code</span>
+<span class="text-[10px] font-headline font-bold uppercase tracking-widest text-outline">Local Llama</span>
+</div>
+<span class="text-[10px] text-outline">Sep 28, 2023</span>
+</div>
+<h3 class="text-xl font-headline font-semibold text-on-surface mb-3 leading-tight group-hover:text-primary transition-colors">Optimizing Python Vector Processing</h3>
+<p class="text-sm text-on-surface-variant font-light line-clamp-3 mb-6">Snippet library and performance benchmarks for NumPy vs JAX in high-dimensional space calculations...</p>
+<div class="mt-auto flex flex-wrap gap-2">
+<span class="px-2 py-1 bg-surface-container-high text-primary-fixed-dim text-[10px] font-medium rounded-lg">#Code</span>
+<span class="px-2 py-1 bg-surface-container-high text-primary-fixed-dim text-[10px] font-medium rounded-lg">#Python</span>
+</div>
+</article>
+<!-- Capture Card 6 -->
+<article class="group relative flex flex-col bg-surface-container-lowest rounded-3xl p-6 border border-outline-variant/5 hover:border-primary/20 transition-all duration-500 overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-secondary opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-sm">psychology_alt</span>
+<span class="text-[10px] font-headline font-bold uppercase tracking-widest text-outline">Synapse Core</span>
+</div>
+<span class="text-[10px] text-outline">Sep 15, 2023</span>
+</div>
+<h3 class="text-xl font-headline font-semibold text-on-surface mb-3 leading-tight group-hover:text-secondary transition-colors">Personal Philosophy on Digital Minimalism</h3>
+<p class="text-sm text-on-surface-variant font-light line-clamp-3 mb-6">Reflections on maintaining deep focus while surrounded by high-frequency digital noise and algorithmic feeds...</p>
+<div class="mt-auto flex flex-wrap gap-2">
+<span class="px-2 py-1 bg-surface-container-high text-secondary-fixed-dim text-[10px] font-medium rounded-lg">#Journal</span>
+<span class="px-2 py-1 bg-surface-container-high text-secondary-fixed-dim text-[10px] font-medium rounded-lg">#Focus</span>
+</div>
+</article>
+</section>
+<!-- Pagination / Load More -->
+<div class="mt-16 flex justify-center">
+<button class="px-10 py-3 bg-surface-container-low text-on-surface border border-outline-variant/10 rounded-full hover:bg-surface-container-high hover:scale-105 transition-all font-headline font-medium flex items-center gap-2">
+                Sync More Captures
+                <span class="material-symbols-outlined text-sm">refresh</span>
+</button>
+</div>
+</main>
+<!-- Floating Action Button -->
+<div class="fixed bottom-8 right-8 z-50">
+<button class="w-14 h-14 bg-gradient-to-br from-[#7C3AED] to-[#3B82F6] text-white rounded-full flex items-center justify-center shadow-[0_10px_30px_rgba(124,58,237,0.4)] hover:scale-110 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-3xl">add</span>
+</button>
+</div>
+<!-- AI Intelligence Badge (Status) -->
+<div class="fixed bottom-8 left-24 z-50 glass-panel border border-outline-variant/10 rounded-full py-2 px-4 flex items-center gap-3">
+<span class="relative flex h-3 w-3">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+</span>
+<span class="text-xs font-headline font-medium text-on-surface">Neural Engine Synchronized</span>
+</div>
+</body></html>

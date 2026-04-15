@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Synapse Note | Neural OS Knowledge Graph</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-secondary-container": "#e6ecff",
+              "surface-bright": "#3a3939",
+              "surface-variant": "#353534",
+              "error-container": "#93000a",
+              "on-surface": "#e5e2e1",
+              "primary-container": "#7c3aed",
+              "tertiary-fixed": "#ffdcc6",
+              "tertiary-container": "#a15100",
+              "on-secondary-fixed-variant": "#004395",
+              "on-secondary": "#002e6a",
+              "surface-tint": "#d2bbff",
+              "error": "#ffb4ab",
+              "surface-container-highest": "#353534",
+              "on-surface-variant": "#ccc3d8",
+              "background": "#131313",
+              "tertiary-fixed-dim": "#ffb784",
+              "surface": "#131313",
+              "on-error": "#690005",
+              "secondary-fixed": "#d8e2ff",
+              "secondary-container": "#0566d9",
+              "inverse-on-surface": "#313030",
+              "on-tertiary": "#4f2500",
+              "surface-container-lowest": "#0e0e0e",
+              "on-primary-fixed": "#25005a",
+              "surface-dim": "#131313",
+              "on-tertiary-container": "#ffe0cd",
+              "on-tertiary-fixed": "#301400",
+              "on-primary": "#3f008e",
+              "on-background": "#e5e2e1",
+              "outline-variant": "#4a4455",
+              "inverse-surface": "#e5e2e1",
+              "primary-fixed-dim": "#d2bbff",
+              "on-error-container": "#ffdad6",
+              "surface-container": "#201f1f",
+              "secondary-fixed-dim": "#adc6ff",
+              "outline": "#958da1",
+              "surface-container-high": "#2a2a2a",
+              "surface-container-low": "#1c1b1b",
+              "tertiary": "#ffb784",
+              "secondary": "#adc6ff",
+              "primary": "#d2bbff",
+              "inverse-primary": "#732ee4",
+              "on-primary-fixed-variant": "#5a00c6",
+              "on-primary-container": "#ede0ff",
+              "on-secondary-fixed": "#001a42",
+              "primary-fixed": "#eaddff",
+              "on-tertiary-fixed-variant": "#713700"
+            },
+            fontFamily: {
+              "headline": ["Lexend"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .node-pulse {
+            box-shadow: 0 0 20px rgba(124, 58, 237, 0.4);
+        }
+        .glass-panel {
+            background: rgba(19, 19, 19, 0.7);
+            backdrop-filter: blur(20px);
+        }
+        .connection-line {
+            stroke-dasharray: 4;
+            animation: dash 20s linear infinite;
+        }
+        @keyframes dash {
+            to { stroke-dashoffset: -1000; }
+        }
+        .node-expanded {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .drag-indicator {
+            background: radial-gradient(circle, rgba(124, 58, 237, 0.1) 0%, transparent 70%);
+        }
+        .selection-box {
+            border: 1px dashed rgba(210, 187, 255, 0.4);
+            background: rgba(124, 58, 237, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body selection:bg-primary-container selection:text-white overflow-hidden">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-screen w-20 flex flex-col items-center py-6 border-r border-[#D2BBFF]/15 bg-[#131313]/70 backdrop-blur-xl z-50 shadow-[0_20px_50px_rgba(124,58,237,0.08)]">
+<div class="mb-8 group cursor-pointer transition-all duration-500 hover:scale-105">
+<div class="w-12 h-12 flex items-center justify-center rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#3B82F6] shadow-lg">
+<span class="material-symbols-outlined text-white" style="font-variation-settings: 'FILL' 1;">psychology</span>
+</div>
+</div>
+<nav class="flex-1 flex flex-col gap-6">
+<button class="text-[#D2BBFF]/60 hover:text-[#D2BBFF] p-3 transition-colors duration-300 rounded-xl hover:bg-[#7C3AED]/10">
+<span class="material-symbols-outlined" data-icon="chat_bubble">chat_bubble</span>
+</button>
+<button class="bg-[#7C3AED] text-white rounded-xl p-3 shadow-[0_0_15px_rgba(124,58,237,0.4)] transition-all duration-500 hover:scale-105">
+<span class="material-symbols-outlined" data-icon="account_tree" style="font-variation-settings: 'FILL' 1;">account_tree</span>
+</button>
+<button class="text-[#D2BBFF]/60 hover:text-[#D2BBFF] p-3 transition-colors duration-300 rounded-xl hover:bg-[#7C3AED]/10">
+<span class="material-symbols-outlined" data-icon="auto_stories">auto_stories</span>
+</button>
+<button class="text-[#D2BBFF]/60 hover:text-[#D2BBFF] p-3 transition-colors duration-300 rounded-xl hover:bg-[#7C3AED]/10">
+<span class="material-symbols-outlined" data-icon="school">school</span>
+</button>
+</nav>
+<div class="mt-auto flex flex-col gap-4">
+<button class="text-[#D2BBFF]/60 hover:text-[#D2BBFF] p-3 transition-colors duration-300 rounded-xl hover:bg-[#7C3AED]/10">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<div class="w-10 h-10 rounded-full border border-outline-variant p-0.5">
+<img alt="User Synapse Profile" class="w-full h-full rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_wKf8vO1zwNRdtKPC16cyTKJ5oq9SfTx9GhxYB5WEreYuAk_gEs8nZNL0-xcpji4F5KbPIxMr7llAd89dgB2eqRKIu7K0BZSgXDQkdgbEI5rJATNnxR0_AzsCiDfaABb6XHz_MiRYq2rHKN35iDthevD_qmpCef9aW0hXh2oZtYt-4ICK_TGOkbkhkxzZdYAldNNByU9u7JkUs3kS5kisfJ7h5nQVf4AnE3k-0ApNaxc0YxBaUs9ORERcgfIXHKXT2siVjt7Rs6A"/>
+</div>
+</div>
+</aside>
+<!-- TopNavBar -->
+<header class="fixed top-0 right-0 left-20 z-40 h-16 flex justify-between items-center px-8 bg-[#131313]/70 backdrop-blur-md">
+<div class="flex items-center gap-12">
+<div class="flex gap-6 items-center">
+<span class="font-headline text-primary font-bold tracking-tight text-lg">Synapse Graph</span>
+<div class="h-4 w-px bg-outline-variant/30"></div>
+<div class="flex gap-6">
+<button class="text-[#D2BBFF]/50 hover:text-[#D2BBFF] transition-all font-label text-sm uppercase tracking-widest">Claude</button>
+<button class="text-[#7C3AED] border-b-2 border-[#7C3AED] pb-1 font-label text-sm uppercase tracking-widest">GPT-4</button>
+<button class="text-[#D2BBFF]/50 hover:text-[#D2BBFF] transition-all font-label text-sm uppercase tracking-widest">Local Llama</button>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center bg-surface-container-low/50 px-4 py-2 rounded-full border border-outline-variant/10">
+<span class="material-symbols-outlined text-sm text-[#D2BBFF]/50 mr-2">search</span>
+<input class="bg-transparent border-none outline-none text-sm text-on-surface w-48 font-label" placeholder="Search neural pathways..." type="text"/>
+<span class="text-[10px] text-[#D2BBFF]/30 font-bold ml-2">CMD + K</span>
+</div>
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-[#D2BBFF] cursor-pointer hover:text-white transition-all">notifications</span>
+<span class="material-symbols-outlined text-[#D2BBFF] cursor-pointer hover:text-white transition-all">memory</span>
+<span class="material-symbols-outlined text-[#D2BBFF] cursor-pointer hover:text-white transition-all">psychology</span>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-20 mt-16 h-[calc(100vh-64px)] relative overflow-hidden bg-background">
+<!-- Knowledge Graph Simulation -->
+<div class="absolute inset-0 z-0">
+<!-- Hierarchy Lines -->
+<svg class="absolute inset-0 w-full h-full opacity-30 pointer-events-none">
+<path class="connection-line" d="M 50% 10% L 50% 30%" fill="none" stroke="#7C3AED" stroke-width="1.5"></path>
+<path d="M 50% 30% L 30% 50%" fill="none" stroke="#7C3AED" stroke-width="1"></path>
+<path d="M 50% 30% L 70% 50%" fill="none" stroke="#7C3AED" stroke-width="1"></path>
+<path d="M 30% 50% L 20% 75%" fill="none" stroke="#4a4455" stroke-width="0.5"></path>
+<path d="M 30% 50% L 40% 75%" fill="none" stroke="#4a4455" stroke-width="0.5"></path>
+</svg>
+<!-- Root Node: Directory -->
+<div class="absolute top-[10%] left-1/2 -translate-x-1/2 z-20 group">
+<div class="w-14 h-14 bg-surface-container-high rounded-2xl flex items-center justify-center border-2 border-primary/40 shadow-[0_0_15px_rgba(124,58,237,0.2)] cursor-pointer hover:scale-105 transition-all">
+<span class="material-symbols-outlined text-primary text-2xl">folder_open</span>
+</div>
+<span class="absolute top-16 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Root / Projects</span>
+</div>
+<!-- Directory Node: Collapsed -->
+<div class="absolute top-[30%] left-1/2 -translate-x-1/2 z-20 group">
+<div class="w-12 h-12 bg-surface-container-high rounded-xl flex items-center justify-center border border-outline-variant/30 cursor-pointer hover:border-primary/50 transition-all">
+<span class="material-symbols-outlined text-on-surface-variant text-xl">folder</span>
+</div>
+<span class="absolute top-14 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs text-on-surface font-medium">AI Research</span>
+</div>
+<!-- Concept Node: Circular (No content) -->
+<div class="absolute top-[45%] left-[25%] z-20 group cursor-pointer">
+<div class="w-8 h-8 rounded-full bg-secondary/20 border-2 border-secondary/50 flex items-center justify-center hover:scale-110 transition-transform">
+<div class="w-2 h-2 rounded-full bg-secondary"></div>
+</div>
+<span class="absolute top-10 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] text-secondary/70 font-label">Abstract Theory</span>
+</div>
+<!-- Content-rich Node: Expanded (Agent Chat) -->
+<div class="absolute top-[45%] left-[55%] z-30 group">
+<div class="node-expanded w-72 bg-surface-container-high/90 border border-primary/40 rounded-2xl backdrop-blur-xl shadow-2xl p-4 cursor-move">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-lg" style="font-variation-settings: 'FILL' 1;">forum</span>
+</div>
+<div>
+<h4 class="text-xs font-bold text-on-surface">Neural Arch v2</h4>
+<span class="text-[9px] text-primary/70 uppercase font-bold tracking-tighter">Agent Chat</span>
+</div>
+</div>
+<div class="flex gap-1">
+<span class="material-symbols-outlined text-xs text-on-surface-variant hover:text-white cursor-pointer">drag_indicator</span>
+<span class="material-symbols-outlined text-xs text-on-surface-variant hover:text-white cursor-pointer">open_in_full</span>
+</div>
+</div>
+<p class="text-[11px] text-on-surface-variant leading-relaxed line-clamp-2">"Discussing the transition from static embedding vectors to dynamic synaptic weights in the memory module..."</p>
+<div class="mt-3 pt-3 border-t border-outline-variant/10 flex justify-between items-center">
+<div class="flex -space-x-2">
+<div class="w-5 h-5 rounded-full border border-background bg-primary flex items-center justify-center text-[8px] text-white">AI</div>
+<img alt="user" class="w-5 h-5 rounded-full border border-background object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_wKf8vO1zwNRdtKPC16cyTKJ5oq9SfTx9GhxYB5WEreYuAk_gEs8nZNL0-xcpji4F5KbPIxMr7llAd89dgB2eqRKIu7K0BZSgXDQkdgbEI5rJATNnxR0_AzsCiDfaABb6XHz_MiRYq2rHKN35iDthevD_qmpCef9aW0hXh2oZtYt-4ICK_TGOkbkhkxzZdYAldNNByU9u7JkUs3kS5kisfJ7h5nQVf4AnE3k-0ApNaxc0YxBaUs9ORERcgfIXHKXT2siVjt7Rs6A"/>
+</div>
+<span class="text-[9px] text-on-surface-variant">Active 12m ago</span>
+</div>
+</div>
+<!-- Connection point indicator -->
+<div class="absolute -left-1.5 top-1/2 -translate-y-1/2 w-3 h-3 bg-primary rounded-full border-2 border-background z-40"></div>
+</div>
+<!-- Node Type: PDF (Rounded Square) -->
+<div class="absolute top-[75%] left-[20%] z-20 group cursor-pointer">
+<div class="w-12 h-12 bg-red-500/10 border border-red-500/30 rounded-xl flex items-center justify-center hover:bg-red-500/20 transition-all hover:scale-105">
+<span class="material-symbols-outlined text-red-400">picture_as_pdf</span>
+</div>
+<span class="absolute top-14 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] text-on-surface-variant">Whitepaper.pdf</span>
+</div>
+<!-- Node Type: Code Snippet -->
+<div class="absolute top-[75%] left-[40%] z-20 group cursor-pointer">
+<div class="w-12 h-12 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center justify-center hover:bg-amber-500/20 transition-all hover:scale-105">
+<span class="material-symbols-outlined text-amber-400">code</span>
+</div>
+<span class="absolute top-14 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] text-on-surface-variant">transformer.py</span>
+</div>
+<!-- Multi-Selection Visual Indicator -->
+<div class="absolute top-[40%] left-[15%] w-[50%] h-[50%] selection-box rounded-3xl pointer-events-none opacity-50"></div>
+<!-- Selection Lasso Helper (Hidden) -->
+<div class="absolute hidden border border-primary/50 bg-primary/5 z-50" id="selection-lasso"></div>
+</div>
+<!-- UI Overlay: Drag to Context Zone -->
+<div class="absolute top-24 left-4 h-[calc(100%-128px)] w-12 flex items-center justify-center pointer-events-none">
+<div class="h-full w-px bg-gradient-to-b from-transparent via-primary/20 to-transparent"></div>
+<div class="absolute top-1/2 -translate-y-1/2 -left-20 group-hover:left-0 transition-all">
+<div class="p-3 bg-primary/10 border border-primary/20 rounded-r-2xl text-primary flex flex-col items-center gap-1">
+<span class="material-symbols-outlined text-lg">move_to_inbox</span>
+<span class="text-[8px] font-bold uppercase rotate-90 my-6 whitespace-nowrap">Inject Context</span>
+</div>
+</div>
+</div>
+<!-- Filter Bar -->
+<div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-4 glass-panel px-6 py-3 rounded-2xl border border-outline-variant/10 shadow-2xl z-40">
+<div class="flex items-center gap-2 px-3 border-r border-outline-variant/20">
+<span class="text-[10px] uppercase font-bold text-on-surface-variant tracking-tighter">Hierarchy</span>
+<select class="bg-transparent border-none text-xs font-label text-primary focus:ring-0 cursor-pointer">
+<option>Functional</option>
+<option>Directory</option>
+<option>Temporal</option>
+</select>
+</div>
+<div class="flex items-center gap-4 px-3 border-r border-outline-variant/20">
+<span class="text-[10px] uppercase font-bold text-on-surface-variant tracking-tighter">Focus</span>
+<div class="flex gap-2">
+<button class="w-6 h-6 rounded-md bg-surface-container-high border border-outline-variant/20 flex items-center justify-center text-on-surface-variant hover:text-primary">
+<span class="material-symbols-outlined !text-sm">filter_center_focus</span>
+</button>
+<button class="w-6 h-6 rounded-md bg-surface-container-high border border-outline-variant/20 flex items-center justify-center text-on-surface-variant hover:text-primary">
+<span class="material-symbols-outlined !text-sm">rebase_edit</span>
+</button>
+</div>
+</div>
+<div class="flex gap-2">
+<span class="bg-primary/10 text-primary px-3 py-1 rounded-full text-[10px] font-bold border border-primary/20 flex items-center gap-1">
+<span class="w-1 h-1 bg-primary rounded-full"></span> 8 Chats
+            </span>
+<span class="bg-secondary/10 text-secondary px-3 py-1 rounded-full text-[10px] font-bold border border-secondary/20 flex items-center gap-1">
+<span class="w-1 h-1 bg-secondary rounded-full"></span> 24 Docs
+            </span>
+<span class="bg-amber-500/10 text-amber-500 px-3 py-1 rounded-full text-[10px] font-bold border border-amber-500/20 flex items-center gap-1">
+<span class="w-1 h-1 bg-amber-500 rounded-full"></span> 12 PDF
+            </span>
+</div>
+</div>
+<!-- Mini Map -->
+<div class="absolute bottom-8 left-8 w-48 h-32 glass-panel border border-outline-variant/20 rounded-xl overflow-hidden shadow-2xl z-40">
+<div class="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_center,_#7C3AED_0%,_transparent_70%)]"></div>
+<div class="relative w-full h-full p-2">
+<div class="w-full h-full bg-surface-container-lowest/50 rounded-lg border border-outline-variant/5 relative">
+<div class="absolute top-1/3 left-1/2 -translate-x-1/2 w-4 h-4 bg-primary rounded-full blur-[2px]"></div>
+<div class="absolute top-[40%] left-[45%] w-12 h-8 border border-primary/50 bg-primary/5 cursor-move"></div>
+</div>
+</div>
+<div class="absolute top-2 right-2 flex gap-1">
+<button class="p-1 bg-surface-container-high rounded text-[10px] text-on-surface-variant hover:text-white transition-colors">
+<span class="material-symbols-outlined !text-xs">add</span>
+</button>
+<button class="p-1 bg-surface-container-high rounded text-[10px] text-on-surface-variant hover:text-white transition-colors">
+<span class="material-symbols-outlined !text-xs">remove</span>
+</button>
+</div>
+</div>
+<!-- Right Interaction Rail (Quick Chat) -->
+<aside class="absolute top-8 right-8 w-16 h-[calc(100%-128px)] flex flex-col gap-4 z-40">
+<div class="flex-1 flex flex-col gap-4 glass-panel border border-outline-variant/10 rounded-full py-6 items-center">
+<button class="w-10 h-10 rounded-full bg-primary-container text-white shadow-lg flex items-center justify-center hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">add</span>
+</button>
+<div class="w-8 h-px bg-outline-variant/20"></div>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">terminal</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">description</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">link</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">github</span>
+</button>
+<div class="mt-auto">
+<button class="w-10 h-10 rounded-full bg-surface-container-high border border-outline-variant/20 flex items-center justify-center text-primary group">
+<span class="material-symbols-outlined group-hover:rotate-180 transition-transform">auto_awesome</span>
+</button>
+</div>
+</div>
+</aside>
+<!-- Contextual Instruction -->
+<div class="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-3 px-4 py-2 bg-primary-container/20 border border-primary/20 backdrop-blur-xl rounded-full z-40">
+<span class="material-symbols-outlined text-xs text-primary">mouse</span>
+<span class="text-[10px] font-bold text-primary uppercase tracking-wider">Drag nodes to context rail to initiate Agent analysis</span>
+</div>
+</main>
+</body></html>

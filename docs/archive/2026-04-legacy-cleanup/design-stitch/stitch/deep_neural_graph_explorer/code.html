@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Synapse Neural OS | Knowledge Graph Explorer</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800;900&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary-container": "#7c3aed",
+                        "inverse-surface": "#e5e2e1",
+                        "background": "#131313",
+                        "on-primary-container": "#ede0ff",
+                        "on-primary-fixed-variant": "#5a00c6",
+                        "surface-variant": "#353534",
+                        "primary-fixed-dim": "#d2bbff",
+                        "inverse-on-surface": "#313030",
+                        "on-primary": "#3f008e",
+                        "on-background": "#e5e2e1",
+                        "on-secondary-fixed-variant": "#004395",
+                        "on-secondary-container": "#e6ecff",
+                        "surface-container-highest": "#353534",
+                        "tertiary-container": "#a15100",
+                        "on-secondary": "#002e6a",
+                        "error": "#ffb4ab",
+                        "surface-bright": "#3a3939",
+                        "secondary-container": "#0566d9",
+                        "outline-variant": "#4a4455",
+                        "surface-tint": "#d2bbff",
+                        "on-surface-variant": "#ccc3d8",
+                        "surface-container-low": "#1c1b1b",
+                        "on-tertiary-fixed-variant": "#713700",
+                        "surface-dim": "#131313",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "primary": "#d2bbff",
+                        "surface-container-high": "#2a2a2a",
+                        "tertiary-fixed": "#ffdcc6",
+                        "surface": "#131313",
+                        "error-container": "#93000a",
+                        "on-tertiary-container": "#ffe0cd",
+                        "primary-fixed": "#eaddff",
+                        "on-surface": "#e5e2e1",
+                        "on-error-container": "#ffdad6",
+                        "surface-container": "#201f1f",
+                        "secondary-fixed": "#d8e2ff",
+                        "on-tertiary-fixed": "#301400",
+                        "inverse-primary": "#732ee4",
+                        "outline": "#958da1",
+                        "on-secondary-fixed": "#001a42",
+                        "tertiary": "#ffb784",
+                        "secondary": "#adc6ff",
+                        "on-tertiary": "#4f2500",
+                        "on-primary-fixed": "#25005a",
+                        "tertiary-fixed-dim": "#ffb784",
+                        "surface-container-lowest": "#0e0e0e",
+                        "on-error": "#690005"
+                    },
+                    fontFamily: {
+                        "headline": ["Lexend"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .neural-bg {
+            background-image: radial-gradient(circle at 50% 50%, #1a1425 0%, #131313 100%);
+        }
+        .glass-panel {
+            backdrop-filter: blur(20px);
+            background: rgba(19, 19, 19, 0.7);
+        }
+        .synapse-line {
+            background: linear-gradient(90deg, transparent, rgba(210, 187, 255, 0.15), transparent);
+        }
+        .glow-node {
+            box-shadow: 0 0 20px rgba(124, 58, 237, 0.4);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body selection:bg-primary-container selection:text-on-primary-container overflow-hidden h-screen flex">
+<!-- SideNavBar Shell -->
+<aside class="hidden md:flex flex-col h-full py-8 bg-[#131313]/80 backdrop-blur-2xl border-r border-[#D2BBFF]/10 w-64 z-50">
+<div class="px-6 mb-10">
+<h1 class="font-headline font-black text-[#D2BBFF] text-2xl tracking-tighter">Synapse</h1>
+<p class="text-xs text-gray-500 font-label mt-1">Active Session: Neural Core</p>
+</div>
+<nav class="flex-1 space-y-2 px-3">
+<a class="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-[#7C3AED]/20 to-transparent border-l-4 border-[#7C3AED] text-[#D2BBFF] font-medium transition-all group" href="#">
+<span class="material-symbols-outlined" data-icon="hub">hub</span>
+<span class="font-label">Nodes</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-[#ADC6FF] hover:bg-white/5 transition-all font-medium" href="#">
+<span class="material-symbols-outlined" data-icon="smart_toy">smart_toy</span>
+<span class="font-label">Chat</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-[#ADC6FF] hover:bg-white/5 transition-all font-medium" href="#">
+<span class="material-symbols-outlined" data-icon="auto_stories">auto_stories</span>
+<span class="font-label">Library</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-[#ADC6FF] hover:bg-white/5 transition-all font-medium" href="#">
+<span class="material-symbols-outlined" data-icon="sync_alt">sync_alt</span>
+<span class="font-label">Sync</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-[#ADC6FF] hover:bg-white/5 transition-all font-medium" href="#">
+<span class="material-symbols-outlined" data-icon="enhanced_encryption">enhanced_encryption</span>
+<span class="font-label">Vault</span>
+</a>
+</nav>
+<div class="px-4 mb-6">
+<button class="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#7C3AED] to-[#3B82F6] text-white py-3 rounded-xl font-headline font-semibold shadow-lg hover:brightness-110 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+                New Thought
+            </button>
+</div>
+<div class="px-3 pt-6 border-t border-white/5 space-y-1">
+<a class="flex items-center gap-3 px-4 py-2 text-xs text-gray-500 hover:text-[#ADC6FF] transition-all" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="help_outline">help_outline</span>
+                Help
+            </a>
+<a class="flex items-center gap-3 px-4 py-2 text-xs text-gray-500 hover:text-[#ADC6FF] transition-all" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="sensors">sensors</span>
+                Status
+            </a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col relative overflow-hidden">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center w-full px-6 h-16 bg-[#131313]/70 backdrop-blur-xl border-b border-[#D2BBFF]/15 z-40">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold bg-gradient-to-r from-[#7C3AED] to-[#3B82F6] bg-clip-text text-transparent font-headline">Neural OS</span>
+<nav class="hidden lg:flex items-center gap-6 text-sm font-label">
+<a class="text-gray-500 hover:text-[#ADC6FF] transition-colors" href="#">Claude</a>
+<a class="text-gray-500 hover:text-[#ADC6FF] transition-colors" href="#">GPT-4</a>
+<a class="text-gray-500 hover:text-[#ADC6FF] transition-colors" href="#">Llama 3</a>
+<a class="text-gray-500 hover:text-[#ADC6FF] transition-colors" href="#">Gemini</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden sm:block">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-500 text-lg" data-icon="search">search</span>
+<input class="bg-surface-container-low border-none rounded-full pl-10 pr-4 py-1.5 text-sm w-64 focus:ring-1 focus:ring-primary/50 transition-all font-label" placeholder="Search the synapse..." type="text"/>
+</div>
+<button class="p-2 text-gray-400 hover:bg-[#D2BBFF]/10 rounded-full transition-all">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<button class="p-2 text-gray-400 hover:bg-[#D2BBFF]/10 rounded-full transition-all">
+<span class="material-symbols-outlined" data-icon="account_tree">account_tree</span>
+</button>
+<img alt="User neural profile" class="w-8 h-8 rounded-full border border-primary/30" data-alt="Portrait of a person with digital patterns subtly overlaid on their face, professional tech aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBuUKNYKaM498m2LRz0MkUkIXWvFrc6FfmHl5PEEi_SMt2cSZmfK7YTibVsDi4JWWmWgJU2Dq8qPTEgJruyUanpsLg_Dc2rLD0ILX4WdXhDOlGu16yOPfvQhM-QGv8PxCarliRP4dmEpw8mfM-KAxtKp7HKpBkAVm20zda0lmYmO0Xf1tCoXhRXPm9N0UrKEnRXD12DKuQAjt26aX0UKsemyuZqHTqoAngyhYrbKLd4I_U3ZviE11EFM1bRuawsmsSAG5MWQ6lQKDM"/>
+</div>
+</header>
+<!-- Canvas / Knowledge Graph -->
+<div class="flex-1 neural-bg relative overflow-hidden">
+<!-- Background Grid/Network Decoration -->
+<div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(#D2BBFF 1px, transparent 1px); background-size: 40px 40px;"></div>
+<!-- Graph Interaction Layer -->
+<div class="absolute inset-0 flex items-center justify-center">
+<!-- Connections (Simulated with SVGs) -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none">
+<!-- Root to Children -->
+<line opacity="0.3" stroke="#7C3AED" stroke-dasharray="4" stroke-width="1" x1="50%" x2="30%" y1="15%" y2="35%"></line>
+<line opacity="0.3" stroke="#7C3AED" stroke-dasharray="4" stroke-width="1" x1="50%" x2="50%" y1="15%" y2="35%"></line>
+<line opacity="0.3" stroke="#7C3AED" stroke-dasharray="4" stroke-width="1" x1="50%" x2="70%" y1="15%" y2="35%"></line>
+<!-- Selected Node Connections (Active Glow) -->
+<line opacity="0.6" stroke="#D2BBFF" stroke-width="2" x1="50%" x2="35%" y1="50%" y2="65%"></line>
+<line opacity="0.6" stroke="#D2BBFF" stroke-width="2" x1="50%" x2="50%" y1="50%" y2="75%"></line>
+<line opacity="0.6" stroke="#D2BBFF" stroke-width="2" x1="50%" x2="65%" y1="50%" y2="65%"></line>
+</svg>
+<!-- Root Node -->
+<div class="absolute top-[10%] left-1/2 -translate-x-1/2 group cursor-pointer">
+<div class="flex flex-col items-center">
+<div class="w-12 h-12 rounded-xl bg-primary-container/20 border border-primary/40 flex items-center justify-center backdrop-blur-md group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary" data-icon="folder">folder</span>
+</div>
+<span class="mt-2 text-[10px] font-label tracking-widest uppercase text-primary/80">Root</span>
+</div>
+</div>
+<!-- Mid-Level Nodes (Directory Structure) -->
+<div class="absolute top-[35%] left-[30%] -translate-x-1/2 group cursor-pointer">
+<div class="w-10 h-10 rounded-xl bg-surface-container-high border border-outline-variant flex items-center justify-center backdrop-blur-md">
+<span class="material-symbols-outlined text-secondary" data-icon="folder">folder</span>
+</div>
+<span class="absolute top-12 left-1/2 -translate-x-1/2 text-[10px] whitespace-nowrap text-gray-500 font-label">Core_Logics</span>
+</div>
+<div class="absolute top-[35%] left-[50%] -translate-x-1/2 group cursor-pointer">
+<div class="w-10 h-10 rounded-xl bg-surface-container-high border border-outline-variant flex items-center justify-center backdrop-blur-md">
+<span class="material-symbols-outlined text-secondary" data-icon="folder">folder</span>
+</div>
+<span class="absolute top-12 left-1/2 -translate-x-1/2 text-[10px] whitespace-nowrap text-gray-500 font-label">Neural_Assets</span>
+</div>
+<!-- Concept Nodes (Circles) -->
+<div class="absolute top-[55%] left-[20%] w-6 h-6 rounded-full bg-tertiary/20 border border-tertiary/40 group cursor-pointer hover:bg-tertiary/40 transition-colors flex items-center justify-center">
+<div class="w-1 h-1 rounded-full bg-tertiary"></div>
+<span class="absolute -bottom-4 text-[9px] text-gray-600 font-label">Entropy</span>
+</div>
+<!-- THE SELECTED NODE (CENTER) -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
+<div class="glow-node p-1 rounded-2xl bg-gradient-to-br from-primary to-secondary">
+<div class="bg-surface-container-highest rounded-[14px] px-6 py-4 min-w-[320px] backdrop-blur-3xl border border-white/10">
+<div class="flex items-start justify-between mb-4">
+<div class="flex items-center gap-3">
+<div class="p-2 bg-primary/20 rounded-lg">
+<span class="material-symbols-outlined text-primary text-xl" data-icon="smart_toy" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
+</div>
+<div>
+<h3 class="text-on-surface font-headline font-bold text-lg leading-tight">Transformer Architectures</h3>
+<span class="text-[10px] font-label text-primary uppercase tracking-widest">Agent-Generated Doc</span>
+</div>
+</div>
+<button class="text-gray-500 hover:text-white transition-colors">
+<span class="material-symbols-outlined" data-icon="open_in_full">open_in_full</span>
+</button>
+</div>
+<div class="space-y-2">
+<p class="text-sm text-on-surface-variant leading-relaxed font-body">
+                                    Transformer-based LLM architectures rely on <span class="text-secondary font-medium">self-attention mechanisms</span> to weigh the significance of different parts of input data. This allows for massive parallelization...
+                                </p>
+<div class="pt-4 flex items-center gap-2">
+<span class="px-2 py-0.5 rounded bg-white/5 text-[9px] text-gray-400 font-label">NLP</span>
+<span class="px-2 py-0.5 rounded bg-white/5 text-[9px] text-gray-400 font-label">Attention</span>
+<span class="px-2 py-0.5 rounded bg-white/5 text-[9px] text-gray-400 font-label">AI_Core</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Neighboring Nodes (Fanning Out) -->
+<div class="absolute top-[65%] left-[35%] -translate-x-1/2 flex flex-col items-center group cursor-pointer">
+<div class="bg-surface-container-low border border-outline-variant p-2 rounded-lg flex items-center gap-2 hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-sm text-tertiary" data-icon="article">article</span>
+<span class="text-[10px] font-label pr-2">Web_Attention_Paper</span>
+</div>
+</div>
+<div class="absolute top-[75%] left-[50%] -translate-x-1/2 flex flex-col items-center group cursor-pointer">
+<div class="bg-surface-container-low border border-outline-variant p-2 rounded-lg flex items-center gap-2 hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-sm text-secondary" data-icon="code">code</span>
+<span class="text-[10px] font-label pr-2">Self_Attention_Py</span>
+</div>
+</div>
+<div class="absolute top-[65%] left-[65%] -translate-x-1/2 flex flex-col items-center group cursor-pointer">
+<div class="bg-surface-container-low border border-outline-variant p-2 rounded-lg flex items-center gap-2 hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-sm text-error" data-icon="bug_report">bug_report</span>
+<span class="text-[10px] font-label pr-2">Inference_Bug_402</span>
+</div>
+</div>
+<!-- Far Floating Node (Pencil) -->
+<div class="absolute top-[20%] left-[80%] flex flex-col items-center group cursor-pointer opacity-60 hover:opacity-100 transition-opacity">
+<div class="bg-surface-container-low border border-outline-variant p-2 rounded-lg flex items-center gap-2">
+<span class="material-symbols-outlined text-sm text-primary" data-icon="edit">edit</span>
+<span class="text-[10px] font-label pr-2">Draft_Meeting_Notes</span>
+</div>
+</div>
+<!-- Far Floating Node (PDF) -->
+<div class="absolute top-[45%] left-[85%] flex flex-col items-center group cursor-pointer opacity-60 hover:opacity-100 transition-opacity">
+<div class="bg-surface-container-low border border-outline-variant p-2 rounded-lg flex items-center gap-2">
+<span class="material-symbols-outlined text-sm text-red-400" data-icon="picture_as_pdf">picture_as_pdf</span>
+<span class="text-[10px] font-label pr-2">Architecture_Spec.pdf</span>
+</div>
+</div>
+</div>
+<!-- Graph Controls Overlay -->
+<div class="absolute bottom-8 left-8 flex items-center gap-3">
+<div class="flex bg-surface-container-low/80 backdrop-blur-xl border border-white/10 rounded-full p-1 shadow-2xl">
+<button class="p-2 text-gray-400 hover:text-white transition-colors"><span class="material-symbols-outlined" data-icon="add">add</span></button>
+<div class="w-[1px] bg-white/10 my-1 mx-1"></div>
+<button class="p-2 text-gray-400 hover:text-white transition-colors"><span class="material-symbols-outlined" data-icon="remove">remove</span></button>
+<div class="w-[1px] bg-white/10 my-1 mx-1"></div>
+<button class="p-2 text-gray-400 hover:text-white transition-colors"><span class="material-symbols-outlined" data-icon="center_focus_strong">center_focus_strong</span></button>
+</div>
+<div class="bg-surface-container-low/80 backdrop-blur-xl border border-white/10 rounded-full px-4 py-2 flex items-center gap-2 text-[10px] font-label uppercase tracking-widest text-primary/80">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+                    Live Visualization
+                </div>
+</div>
+</div>
+<!-- Selected Nodes List (Context Panel) -->
+<aside class="absolute top-20 right-8 w-72 max-h-[calc(100vh-120px)] overflow-hidden flex flex-col glass-panel border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-40">
+<div class="p-4 border-b border-white/5 flex items-center justify-between">
+<h4 class="font-headline font-semibold text-xs uppercase tracking-widest text-gray-400">Context Stack</h4>
+<span class="px-1.5 py-0.5 bg-primary/20 text-primary text-[10px] rounded font-bold">4</span>
+</div>
+<div class="flex-1 overflow-y-auto p-3 space-y-3">
+<!-- Stack Item 1 -->
+<div class="bg-white/5 p-3 rounded-xl border border-white/5 hover:border-primary/30 transition-all cursor-grab active:cursor-grabbing group">
+<div class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined text-primary text-sm" data-icon="smart_toy">smart_toy</span>
+<span class="text-xs font-medium text-on-surface truncate">Transformer Architectures</span>
+</div>
+<p class="text-[10px] text-gray-500 line-clamp-2 leading-relaxed">Agent-generated overview of attention mechanisms in LLMs.</p>
+</div>
+<!-- Stack Item 2 -->
+<div class="bg-white/5 p-3 rounded-xl border border-white/5 hover:border-primary/30 transition-all cursor-grab active:cursor-grabbing">
+<div class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined text-secondary text-sm" data-icon="code">code</span>
+<span class="text-xs font-medium text-on-surface truncate">Self_Attention_Py</span>
+</div>
+<p class="text-[10px] text-gray-500 line-clamp-2 leading-relaxed">Python implementation of multi-head attention blocks.</p>
+</div>
+<!-- Stack Item 3 -->
+<div class="bg-white/5 p-3 rounded-xl border border-white/5 hover:border-primary/30 transition-all cursor-grab active:cursor-grabbing">
+<div class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined text-tertiary text-sm" data-icon="forum" style="font-variation-settings: 'FILL' 1;">forum</span>
+<span class="text-xs font-medium text-on-surface truncate">Agent Discussion #42</span>
+</div>
+<p class="text-[10px] text-gray-500 line-clamp-2 leading-relaxed">Critique of sequence length limitations in current graph.</p>
+</div>
+<!-- Stack Item 4 -->
+<div class="bg-white/5 p-3 rounded-xl border border-white/5 hover:border-primary/30 transition-all cursor-grab active:cursor-grabbing">
+<div class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined text-error text-sm" data-icon="bug_report">bug_report</span>
+<span class="text-xs font-medium text-on-surface truncate">Inference_Bug_402</span>
+</div>
+<p class="text-[10px] text-gray-500 line-clamp-2 leading-relaxed">Resolved issue regarding memory overflow during training.</p>
+</div>
+</div>
+<div class="p-3 bg-primary/10 border-t border-primary/20">
+<button class="w-full py-2 bg-primary/20 hover:bg-primary/30 text-primary text-[10px] font-headline font-bold uppercase tracking-tighter rounded-lg transition-all">
+                    Merge Into New Thought
+                </button>
+</div>
+</aside>
+<!-- Command Palette Floating Trigger -->
+<div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center justify-center pointer-events-none">
+<div class="pointer-events-auto bg-surface-container-high/90 backdrop-blur-2xl border border-white/10 rounded-2xl px-6 py-3 shadow-[0_30px_60px_rgba(0,0,0,0.6)] flex items-center gap-6">
+<div class="flex items-center gap-3 text-gray-500">
+<span class="material-symbols-outlined" data-icon="command">keyboard_command_key</span>
+<span class="text-xs font-label">K</span>
+</div>
+<div class="h-6 w-[1px] bg-white/10"></div>
+<div class="flex items-center gap-4">
+<button class="flex flex-col items-center gap-1 group">
+<span class="material-symbols-outlined text-gray-400 group-hover:text-primary transition-colors" data-icon="add_circle">add_circle</span>
+<span class="text-[9px] font-label text-gray-500 group-hover:text-gray-300">Node</span>
+</button>
+<button class="flex flex-col items-center gap-1 group">
+<span class="material-symbols-outlined text-gray-400 group-hover:text-primary transition-colors" data-icon="fork_right">fork_right</span>
+<span class="text-[9px] font-label text-gray-500 group-hover:text-gray-300">Link</span>
+</button>
+<button class="flex flex-col items-center gap-1 group">
+<span class="material-symbols-outlined text-gray-400 group-hover:text-primary transition-colors" data-icon="auto_awesome">auto_awesome</span>
+<span class="text-[9px] font-label text-gray-500 group-hover:text-gray-300">Synthesize</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+<!-- Mobile Navigation Shell -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#131313]/90 backdrop-blur-xl border-t border-white/5 flex items-center justify-around px-4 z-50">
+<a class="flex flex-col items-center gap-1 text-[#D2BBFF]" href="#">
+<span class="material-symbols-outlined" data-icon="hub" style="font-variation-settings: 'FILL' 1;">hub</span>
+<span class="text-[10px] font-label">Nodes</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-gray-500" href="#">
+<span class="material-symbols-outlined" data-icon="smart_toy">smart_toy</span>
+<span class="text-[10px] font-label">Chat</span>
+</a>
+<div class="relative -top-6">
+<button class="w-12 h-12 bg-gradient-to-tr from-[#7C3AED] to-[#3B82F6] rounded-full flex items-center justify-center shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-white" data-icon="add">add</span>
+</button>
+</div>
+<a class="flex flex-col items-center gap-1 text-gray-500" href="#">
+<span class="material-symbols-outlined" data-icon="auto_stories">auto_stories</span>
+<span class="text-[10px] font-label">Library</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-gray-500" href="#">
+<span class="material-symbols-outlined" data-icon="sync_alt">sync_alt</span>
+<span class="text-[10px] font-label">Sync</span>
+</a>
+</nav>
+</body></html>

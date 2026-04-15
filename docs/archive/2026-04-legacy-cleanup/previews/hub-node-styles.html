@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hub Node — Inner Ring 방식</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lexend:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: #111118;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── 상단 바 ── */
+.top-bar {
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  height: 44px;
+  background: #111118;
+  border-bottom: 1px solid #222230;
+  flex-shrink: 0;
+  gap: 16px;
+}
+.top-title { font-size: 12px; font-weight: 600; color: #888; }
+.legend {
+  display: flex; gap: 16px; margin-left: 24px;
+  align-items: center;
+}
+.legend-item {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 11px; color: #666680;
+}
+.legend-item svg { overflow: visible; flex-shrink: 0; }
+
+/* ── 헤더 행 ── */
+.row-headers {
+  display: grid;
+  grid-template-columns: 72px 1fr 1fr;
+  flex-shrink: 0;
+  height: 36px;
+  border-bottom: 1px solid #222230;
+}
+.rh-blank { border-right: 1px solid #222230; }
+.rh {
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  color: #555570;
+  border-right: 1px solid #222230;
+  gap: 7px;
+}
+.rh-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+}
+
+/* ── 그리드 ── */
+.grid {
+  display: grid;
+  grid-template-columns: 72px 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  flex: 1;
+  overflow: hidden;
+}
+.row-label {
+  display: flex; align-items: center; justify-content: center;
+  writing-mode: vertical-rl; text-orientation: mixed;
+  transform: rotate(180deg);
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.12em;
+  border-right: 1px solid #222230;
+  border-bottom: 1px solid #222230;
+}
+.row-label.c { background: #f5f2eb; color: #8a7050; border-right-color: rgba(60,40,10,0.15); }
+.row-label.d { background: #0f0f0f; color: #4a4565; border-right-color: #222230; }
+
+.cell {
+  position: relative;
+  border-right: 1px solid #222230;
+  border-bottom: 1px solid #222230;
+  overflow: hidden;
+}
+.cell svg { position: absolute; top:0; left:0; width:100%; height:100%; }
+.cell.c-bg { background: #f5f2eb; }
+.cell.d-bg { background: #0f0f0f; }
+
+/* 셀 오버레이 힌트 */
+.cell-hint {
+  position: absolute;
+  bottom: 10px; left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px; color: rgba(150,140,170,0.5);
+  pointer-events: none; white-space: nowrap; z-index: 5;
+}
+.cell.c-bg .cell-hint { color: rgba(90,70,40,0.35); }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="top-title">Hub Node — Inner Ring 방식</div>
+  <div class="legend">
+    <div class="legend-item">
+      <!-- Directory -->
+      <svg width="16" height="16" viewBox="-8 -8 16 16">
+        <circle r="7" fill="#7c3aed"/>
+      </svg>
+      Directory (채운 원)
+    </div>
+    <div class="legend-item">
+      <!-- Hub: inner ring -->
+      <svg width="20" height="20" viewBox="-10 -10 20 20">
+        <circle r="8" fill="#1c1c1c" stroke="#9d75f5" stroke-width="1.5"/>
+        <circle r="5" fill="none" stroke="#9d75f5" stroke-width="1" stroke-dasharray="2 2"/>
+      </svg>
+      Hub (inner ring 점선)
+    </div>
+    <div class="legend-item">
+      <!-- Doc -->
+      <svg width="14" height="14" viewBox="-7 -7 14 14">
+        <circle r="6" fill="#1c1c1c" stroke="#3a3350" stroke-width="1.2"/>
+      </svg>
+      Document
+    </div>
+    <div class="legend-item" style="border-left:1px solid #2a2a3a;padding-left:16px;margin-left:4px">
+      <!-- 선택 outer ring -->
+      <svg width="22" height="22" viewBox="-11 -11 22 22">
+        <circle r="9" fill="none" stroke="#9d75f5" stroke-width="1.5" stroke-dasharray="3 3"/>
+        <circle r="6" fill="#1c1c1c" stroke="#3a3350" stroke-width="1.2"/>
+      </svg>
+      선택 시 outer ring
+    </div>
+  </div>
+</div>
+
+<!-- 열 헤더 -->
+<div class="row-headers">
+  <div class="rh-blank"></div>
+  <div class="rh">
+    <div class="rh-dot" style="background:#7c3aed"></div>
+    C — Editorial Map
+  </div>
+  <div class="rh">
+    <div class="rh-dot" style="background:#7c3aed"></div>
+    D — Purple Editorial
+  </div>
+</div>
+
+<!-- 그리드 -->
+<div class="grid">
+  <div class="row-label c">일반 상태</div>
+  <div class="cell c-bg" id="cell-c-normal"><svg id="svg-c-normal"></svg><div class="cell-hint">노드를 클릭해 선택 효과 확인</div></div>
+  <div class="cell d-bg" id="cell-d-normal"><svg id="svg-d-normal"></svg><div class="cell-hint">노드를 클릭해 선택 효과 확인</div></div>
+
+  <div class="row-label d">선택 상태</div>
+  <div class="cell c-bg" id="cell-c-sel"><svg id="svg-c-sel"></svg><div class="cell-hint">허브가 선택된 상태 고정</div></div>
+  <div class="cell d-bg" id="cell-d-sel"><svg id="svg-d-sel"></svg><div class="cell-hint">허브가 선택된 상태 고정</div></div>
+</div>
+
+<script>
+const NODES = [
+  {id:'dir1', label:'AI Research',  type:'directory'},
+  {id:'dir2', label:'Embeddings',   type:'directory'},
+  {id:'hub1', label:'Transformer',  type:'hub'      },
+  {id:'hub2', label:'RAG Pipeline', type:'hub'      },
+  {id:'doc1', label:'Attention',    type:'doc'      },
+  {id:'doc2', label:'Fine-tuning',  type:'doc'      },
+  {id:'doc3', label:'Vector DB',    type:'doc'      },
+  {id:'doc4', label:'Safety',       type:'doc'      },
+  {id:'doc5', label:'Benchmarks',   type:'doc'      },
+  {id:'doc6', label:'Dataset',      type:'doc'      },
+];
+const LINKS = [
+  {s:'dir1',t:'hub1'},{s:'dir1',t:'hub2'},{s:'dir1',t:'doc1'},
+  {s:'dir1',t:'doc2'},{s:'dir2',t:'hub1'},{s:'dir2',t:'doc3'},
+  {s:'hub1',t:'doc1'},{s:'hub1',t:'doc4'},{s:'hub2',t:'doc3'},
+  {s:'hub2',t:'doc5'},{s:'hub2',t:'doc6'},{s:'doc1',t:'doc2'},
+];
+const degMap = new Map();
+NODES.forEach(n=>degMap.set(n.id,0));
+LINKS.forEach(l=>{
+  degMap.set(l.s,(degMap.get(l.s)||0)+1);
+  degMap.set(l.t,(degMap.get(l.t)||0)+1);
+});
+
+function nR(n) {
+  if(n.type==='directory') return 20;
+  if(n.type==='hub')       return 14;
+  return 7;
+}
+
+const P = {
+  c: {
+    bg:        '#f5f2eb',
+    dotgrid:   'rgba(60,40,10,0.16)',
+    dirFill:   '#2a1c08', dirStroke:'#2a1c08',
+    dirIcon:   'rgba(245,240,228,0.9)',
+    dirLabel:  'rgba(20,12,4,0.85)',
+    hubFill:   '#f0ebe0', hubStroke:'#2a1c08', hubStrokeW:1.5,
+    hubInner:  'rgba(42,28,8,0.45)',   // inner ring 색
+    hubSelOut: 'rgba(42,28,8,0.55)',   // 선택 outer ring 색
+    hubNum:    '#2a1c08',
+    hubLabel:  'rgba(42,28,8,0.85)',
+    docFill:   '#f0ebe0', docStroke:'#c8b89a',
+    docNum:    '#a89070',
+    docLabel:  'rgba(60,40,10,0.48)',
+    docSelOut: 'rgba(60,40,10,0.4)',
+    linkDir:   'rgba(60,40,10,0.35)',
+    linkWiki:  'rgba(60,40,10,0.18)',
+    dimOpacity: 0.1,
+  },
+  d: {
+    bg:        '#0f0f0f',
+    dotgrid:   'rgba(196,181,253,0.07)',
+    dirFill:   '#7c3aed', dirStroke:'#9d75f5',
+    dirIcon:   'rgba(237,233,254,0.92)',
+    dirLabel:  'rgba(237,233,254,0.9)',
+    hubFill:   '#1c1c1c', hubStroke:'#9d75f5', hubStrokeW:1.5,
+    hubInner:  'rgba(167,139,250,0.55)',  // inner ring 색
+    hubSelOut: 'rgba(167,139,250,0.65)',  // 선택 outer ring 색
+    hubNum:    '#a78bfa',
+    hubLabel:  'rgba(196,181,253,0.85)',
+    docFill:   '#1c1c1c', docStroke:'#3a3350',
+    docNum:    '#5a506e',
+    docLabel:  'rgba(184,175,200,0.5)',
+    docSelOut: 'rgba(167,139,250,0.5)',
+    linkDir:   'rgba(167,139,250,0.28)',
+    linkWiki:  'rgba(167,139,250,0.15)',
+    dimOpacity: 0.1,
+  },
+};
+
+function build(svgId, concept, fixedSelectedId) {
+  const svgEl = document.getElementById(svgId);
+  const svg = d3.select(svgEl);
+  const p = P[concept];
+
+  // dot grid
+  const pid = `dg-${svgId}`;
+  const defs = svg.append('defs');
+  const pat = defs.append('pattern').attr('id',pid)
+    .attr('width',24).attr('height',24).attr('patternUnits','userSpaceOnUse');
+  pat.append('circle').attr('cx',12).attr('cy',12).attr('r',0.85).attr('fill',p.dotgrid);
+  svg.append('rect').attr('width','100%').attr('height','100%')
+    .attr('fill',`url(#${pid})`).attr('pointer-events','none');
+
+  const g = svg.append('g');
+  const zoom = d3.zoom().scaleExtent([0.2,4])
+    .on('zoom',e=>g.attr('transform',e.transform));
+  svg.call(zoom).on('dblclick.zoom',null);
+
+  const simNodes = NODES.map(n=>({...n}));
+  const simLinks = LINKS.map(l=>({source:l.s,target:l.t}));
+
+  const sim = d3.forceSimulation(simNodes)
+    .force('link',d3.forceLink(simLinks).id(d=>d.id).distance(62))
+    .force('charge',d3.forceManyBody().strength(-160))
+    .force('center',d3.forceCenter(0,0))
+    .force('collision',d3.forceCollide().radius(d=>nR(d)+10))
+    .alphaDecay(0.028);
+
+  const linkSel = g.append('g').attr('pointer-events','none')
+    .selectAll('line').data(simLinks).join('line')
+    .attr('stroke',d=>{
+      const s=typeof d.source==='object'?d.source.id:d.source;
+      const t=typeof d.target==='object'?d.target.id:d.target;
+      return (s.startsWith('dir')||t.startsWith('dir'))?p.linkDir:p.linkWiki;
+    })
+    .attr('stroke-width',d=>{
+      const s=typeof d.source==='object'?d.source.id:d.source;
+      const t=typeof d.target==='object'?d.target.id:d.target;
+      return (s.startsWith('dir')||t.startsWith('dir'))?1.6:1.1;
+    });
+
+  const drag = d3.drag()
+    .on('start',(e,d)=>{if(!e.active)sim.alphaTarget(0.2).restart();d.fx=d.x;d.fy=d.y;})
+    .on('drag',(e,d)=>{d.fx=e.x;d.fy=e.y;})
+    .on('end',(e,d)=>{if(!e.active)sim.alphaTarget(0);d.fx=null;d.fy=null;});
+
+  let selectedId = fixedSelectedId || null;
+
+  const nodeG = g.append('g').selectAll('g').data(simNodes).join('g')
+    .attr('cursor','pointer').call(drag);
+
+  // 인터랙티브 셀은 클릭 가능
+  if (!fixedSelectedId) {
+    nodeG.on('click',(e,d)=>{
+      e.stopPropagation();
+      selectedId = selectedId===d.id ? null : d.id;
+      applyHighlight();
+    });
+    svg.on('click',()=>{ selectedId=null; applyHighlight(); });
+  }
+
+  /* ── 선택 outer ring (바깥 — 선택 인디케이터) ── */
+  nodeG.append('circle').attr('class','outer-ring')
+    .attr('r',d=>nR(d)+7)
+    .attr('fill','none')
+    .attr('stroke','transparent')
+    .attr('stroke-width',1.5)
+    .attr('stroke-dasharray','3 3.5');
+
+  /* ── 메인 원 ── */
+  nodeG.append('circle').attr('class','main-c')
+    .attr('r',d=>nR(d))
+    .attr('fill',d=>d.type==='directory'?p.dirFill:d.type==='hub'?p.hubFill:p.docFill)
+    .attr('stroke',d=>d.type==='directory'?p.dirStroke:d.type==='hub'?p.hubStroke:p.docStroke)
+    .attr('stroke-width',d=>d.type==='directory'?1.5:d.type==='hub'?p.hubStrokeW:1.2);
+
+
+  /* ── Directory 아이콘 ── */
+  nodeG.filter(d=>d.type==='directory').append('text')
+    .attr('text-anchor','middle').attr('dominant-baseline','central')
+    .attr('font-family','Material Symbols Outlined').attr('font-size','12px')
+    .attr('font-variation-settings',"'FILL' 1,'wght' 600,'GRAD' 0,'opsz' 24")
+    .attr('fill',p.dirIcon).attr('pointer-events','none').text('folder');
+
+  /* ── Hub degree 숫자 ── */
+  nodeG.filter(d=>d.type==='hub').append('text')
+    .attr('text-anchor','middle').attr('dominant-baseline','central')
+    .attr('font-family','Inter,sans-serif').attr('font-size','8px').attr('font-weight','700')
+    .attr('fill',p.hubNum).attr('pointer-events','none')
+    .text(d=>degMap.get(d.id)||0);
+
+  /* ── Doc degree 숫자 ── */
+  nodeG.filter(d=>d.type==='doc').append('text')
+    .attr('text-anchor','middle').attr('dominant-baseline','central')
+    .attr('font-family','Inter,sans-serif').attr('font-size','6px').attr('font-weight','700')
+    .attr('fill',p.docNum).attr('pointer-events','none')
+    .text(d=>degMap.get(d.id)||0);
+
+  /* ── 라벨 ── */
+  nodeG.append('text')
+    .attr('text-anchor','middle')
+    .attr('dy',d=>nR(d)+11)
+    .attr('fill',d=>d.type==='directory'?p.dirLabel:d.type==='hub'?p.hubLabel:p.docLabel)
+    .attr('font-size',d=>d.type==='directory'?'9.5px':d.type==='hub'?'8.5px':'8px')
+    .attr('font-weight',d=>d.type==='directory'?'700':d.type==='hub'?'600':'400')
+    .attr('font-family','Lexend,Inter,sans-serif')
+    .attr('pointer-events','none')
+    .text(d=>d.label);
+
+  /* ── 하이라이트 함수 ── */
+  function applyHighlight() {
+    const id = selectedId;
+    if (!id) {
+      nodeG.style('opacity', 1);
+      nodeG.selectAll('.outer-ring').attr('stroke','transparent');
+      linkSel.attr('stroke-opacity',1);
+      return;
+    }
+    const nb = new Set([id]);
+    simLinks.forEach(l=>{
+      const s=typeof l.source==='object'?l.source.id:l.source;
+      const t=typeof l.target==='object'?l.target.id:l.target;
+      if(s===id)nb.add(t); if(t===id)nb.add(s);
+    });
+    nodeG.style('opacity',d=>nb.has(d.id)?1:p.dimOpacity);
+    nodeG.selectAll('.outer-ring').attr('stroke',d=>{
+      if(d.id!==id) return 'transparent';
+      return d.type==='hub'?p.hubSelOut:p.docSelOut;
+    });
+    linkSel.attr('stroke-opacity',d=>{
+      const s=typeof d.source==='object'?d.source.id:d.source;
+      const t=typeof d.target==='object'?d.target.id:d.target;
+      return (s===id||t===id)?1:0.05;
+    });
+  }
+
+  // 고정 선택 상태 (하단 행)
+  if (fixedSelectedId) {
+    sim.on('end',()=>{ applyHighlight(); });
+  }
+
+  sim.on('tick',()=>{
+    linkSel.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y)
+           .attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
+    nodeG.attr('transform',d=>`translate(${d.x},${d.y})`);
+  });
+
+  let fitted=false;
+  sim.on('end',()=>{
+    if(fitted)return; fitted=true;
+    const cw=svgEl.clientWidth||svgEl.getBoundingClientRect().width;
+    const ch=svgEl.clientHeight||svgEl.getBoundingClientRect().height;
+    if(!cw||!ch)return;
+    const xs=simNodes.map(n=>n.x),ys=simNodes.map(n=>n.y);
+    const cx=(Math.min(...xs)+Math.max(...xs))/2,cy=(Math.min(...ys)+Math.max(...ys))/2;
+    const sx=Math.max(...xs)-Math.min(...xs)||1,sy=Math.max(...ys)-Math.min(...ys)||1;
+    const sc=Math.min((cw*0.7)/sx,(ch*0.7)/sy,1.5);
+    svg.transition().duration(600).ease(d3.easeCubicOut)
+      .call(zoom.transform,d3.zoomIdentity.translate(cw/2,ch/2).scale(sc).translate(-cx,-cy));
+    if(fixedSelectedId) applyHighlight();
+  });
+}
+
+// 상단 행: 인터랙티브 (클릭해서 선택)
+build('svg-c-normal', 'c', null);
+build('svg-d-normal', 'd', null);
+
+// 하단 행: 허브 선택 고정 상태
+build('svg-c-sel', 'c', 'hub1');
+build('svg-d-sel', 'd', 'hub1');
+</script>
+</body>
+</html>
