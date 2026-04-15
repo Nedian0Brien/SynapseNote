@@ -58,3 +58,12 @@ class ChatCaptureCreatePayload(BaseModel):
 
 class DocumentWritePayload(BaseModel):
     content: str
+
+
+class DocumentCreatePayload(BaseModel):
+    path: str
+    content: str = ""
+
+
+class DocumentMovePayload(BaseModel):
+    new_path: str

@@ -5,16 +5,46 @@ import { history } from '@milkdown/kit/plugin/history';
 import { listener, listenerCtx } from '@milkdown/kit/plugin/listener';
 import { useFileContent } from '../../shared/hooks/useFileContent';
 import { wikilinkPlugin } from '../../shared/plugins/wikilinkPlugin';
+import { BacklinksPanel } from './BacklinksPanel';
 
-export function EditorView({ path, onUnauthorized, onNavigate }) {
-  const { content, loading, error, saving, debouncedSave } = useFileContent(path, { onUnauthorized });
+export function EditorView({ path, onUnauthorized, onNavigate, onClose }) {
+  const {
+    content,
+    loading,
+    error,
+    saving,
+    debouncedSave,
+    flush,
+  } = useFileContent(path, { onUnauthorized });
   const editorRef = useRef(null);
   const containerRef = useRef(null);
   const initRef = useRef(false);
 
-  const handleNavigate = useCallback((target) => {
-    onNavigate?.(target);
-  }, [onNavigate]);
+  const searchLinks = useCallback(async (query) => {
+    const endpoint = query
+      ? `/api/nodes?q=${encodeURIComponent(query)}`
+      : '/api/nodes';
+    const res = await fetch(endpoint, { credentials: 'include' });
+    if (res.status === 401) {
+      onUnauthorized?.();
+      return [];
+    }
+    if (!res.ok) return [];
+    const json = await res.json();
+    return (json.data ?? [])
+      .filter((item) => item.type === 'Document')
+      .slice(0, 8);
+  }, [onUnauthorized]);
+
+  const handleNavigate = useCallback(async (target, options) => {
+    await flush();
+    onNavigate?.(target, options);
+  }, [flush, onNavigate]);
+
+  const handleClose = useCallback(async () => {
+    await flush();
+    onClose?.();
+  }, [flush, onClose]);
 
   useEffect(() => {
     if (loading || !containerRef.current) return;
@@ -34,7 +64,7 @@ export function EditorView({ path, onUnauthorized, onNavigate }) {
       .use(commonmark)
       .use(history)
       .use(listener)
-      .use(wikilinkPlugin(handleNavigate))
+      .use(wikilinkPlugin({ onNavigate: handleNavigate, onSearch: searchLinks }))
       .create()
       .then(editor => { editorRef.current = editor; });
 
@@ -43,7 +73,7 @@ export function EditorView({ path, onUnauthorized, onNavigate }) {
       editorRef.current = null;
       initRef.current = false;
     };
-  }, [loading, content, debouncedSave, handleNavigate]);
+  }, [loading, content, debouncedSave, handleNavigate, searchLinks]);
 
   if (loading) {
     return (
@@ -65,7 +95,7 @@ export function EditorView({ path, onUnauthorized, onNavigate }) {
   return (
     <div className="editor-view">
       <div className="editor-toolbar">
-        <button className="editor-toolbar-btn" title="뒤로">
+        <button className="editor-toolbar-btn" title="뒤로" onClick={() => { void handleClose(); }}>
           <span className="icon">arrow_back</span>
         </button>
         <span style={{
@@ -78,7 +108,14 @@ export function EditorView({ path, onUnauthorized, onNavigate }) {
           {saving ? 'Saving...' : 'Saved'}
         </span>
       </div>
-      <div className="editor-container" ref={containerRef} />
+      <div className="editor-body">
+        <div className="editor-container" ref={containerRef} />
+        <BacklinksPanel
+          path={path}
+          onUnauthorized={onUnauthorized}
+          onNavigate={handleNavigate}
+        />
+      </div>
     </div>
   );
 }

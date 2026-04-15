@@ -476,8 +476,8 @@ function computeRadialTargets(simNodes, simLinks) {
   return targets;
 }
 
-export function GraphView({ onUnauthorized, onOpenNode }) {
-  const { nodes, edges, stats, loading, error, refetch } = useGraph({ onUnauthorized });
+export function GraphView({ onUnauthorized, onOpenNode, refreshKey }) {
+  const { nodes, edges, stats, loading, error, refetch } = useGraph({ onUnauthorized, refreshKey });
   const svgRef = useRef(null);
   const stageCanvasRef = useRef(null);
   const graphRootRef = useRef(null);

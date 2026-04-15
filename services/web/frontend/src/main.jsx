@@ -10,6 +10,8 @@ import './shared/styles/shell.css'
 import './shared/styles/editor.css'
 import './shared/styles/panels.css'
 import './shared/styles/graph.css'
+import './shared/styles/tabs.css'
+import './shared/styles/split.css'
 import App from './App.jsx'
 
 void bootstrapDevTools()

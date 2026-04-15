@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Query, Request
 
+from app.services.graph_service import get_backlinks
 from app.services.node_service import list_nodes
 
 router = APIRouter(prefix="/api")
@@ -22,4 +23,17 @@ async def get_nodes(
         "success": True,
         "data": nodes,
         "meta": {"total": len(nodes), "query": q or "", "nodeType": nodeType or ""},
+    }
+
+
+@router.get("/nodes/{node_id:path}/backlinks")
+async def get_node_backlinks(node_id: str, request: Request) -> dict[str, object]:
+    user_id = request.session.get("user_id")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="unauthorized")
+
+    return {
+        "success": True,
+        "data": get_backlinks(node_id),
+        "meta": {"nodeId": node_id},
     }

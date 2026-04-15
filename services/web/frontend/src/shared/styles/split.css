@@ -1,0 +1,36 @@
+.split-pane {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.split-panel {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.split-divider {
+  position: relative;
+  cursor: col-resize;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in srgb, var(--outline) 70%, transparent) 20%,
+    color-mix(in srgb, var(--outline) 70%, transparent) 80%,
+    transparent 100%
+  );
+}
+
+.split-grip {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 48px;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 40%, var(--outline));
+}
