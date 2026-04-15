@@ -129,6 +129,51 @@ server {
 }
 ```
 
+## `synapse.lawdigest.cloud` (Synapse (dev/preprod) Access)
+
+```nginx
+server {
+    server_name synapse.lawdigest.cloud;
+
+    access_log /var/log/nginx/synapse.lawdigest.cloud.access.log;
+    error_log /var/log/nginx/synapse.lawdigest.cloud.error.log;
+
+    location / {
+        proxy_pass http://127.0.0.1:3002;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Port $server_port;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 3600;
+        proxy_send_timeout 3600;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    ssl_certificate /etc/letsencrypt/live/synapse.lawdigest.cloud/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/synapse.lawdigest.cloud/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+}
+
+server {
+    if ($host = synapse.lawdigest.cloud) {
+        return 301 https://$host$request_uri;
+    }
+
+    listen 80;
+    listen [::]:80;
+    server_name synapse.lawdigest.cloud;
+    return 404;
+}
+```
+
 ## `synapse-dev.lawdigest.cloud` (Vite Dev Server)
 
 ```nginx

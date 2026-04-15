@@ -6,6 +6,8 @@ COPY frontend/package*.json ./
 COPY frontend/start-dev.sh ./
 RUN npm ci --ignore-scripts
 
+COPY frontend ./
+
 EXPOSE 3000
 
 CMD ["sh", "/app/start-dev.sh"]

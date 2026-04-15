@@ -24,8 +24,14 @@ services:
     build:
       context: ./services/web
       dockerfile: frontend/Dockerfile
+      target: ${SYNAPSENOTE_WEB_BUILD_TARGET:-runner}
     container_name: synapsenote-web
     restart: unless-stopped
+    environment:
+      SYNAPSENOTE_DEV_DOMAIN: ${SYNAPSENOTE_DEV_DOMAIN:-synapse-dev.lawdigest.cloud}
+      SYNAPSENOTE_DEV_HOST: ${SYNAPSENOTE_DEV_HOST:-127.0.0.1}
+      SYNAPSENOTE_DEV_PORT: ${SYNAPSENOTE_DEV_PORT:-3000}
+      SYNAPSENOTE_DEV_UPSTREAM: ${SYNAPSENOTE_DEV_UPSTREAM:-http://synapsenote-api:8000}
     depends_on:
       - synapsenote-api
     ports:

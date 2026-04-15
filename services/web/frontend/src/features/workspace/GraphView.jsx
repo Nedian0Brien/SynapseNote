@@ -45,6 +45,7 @@ const HUB_GLYPH_THRESHOLD = 0.48;
 const DIR_GLYPH_THRESHOLD = 0.32;
 const AREA_MODE_THRESHOLD = 0.60;
 const AREA_PHASE2_THRESHOLD = 0.35;
+const MAX_GRAPH_CANVAS_RESOLUTION = 3;
 
 const CLUSTER_PALETTE = [
   0xc8a870, 0xa0b878, 0x90a8c0, 0xc09888,
@@ -113,6 +114,11 @@ function buildDirectoryClusters(nodes, edges) {
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
+}
+
+function getCanvasResolution() {
+  const dpr = Math.max(1, window.devicePixelRatio || 1);
+  return Math.min(dpr * 1.5, MAX_GRAPH_CANVAS_RESOLUTION);
 }
 
 function parseCssColor(input, fallback = { color: 0x000000, alpha: 1 }) {
@@ -568,7 +574,7 @@ export function GraphView({ onUnauthorized, onOpenNode }) {
         preference: 'webgl',
         antialias: true,
         autoDensity: true,
-        resolution: Math.min(window.devicePixelRatio || 1, 2),
+        resolution: getCanvasResolution(),
         backgroundAlpha: 0,
       });
 
@@ -612,9 +618,7 @@ export function GraphView({ onUnauthorized, onOpenNode }) {
         const rect = svgRef.current.getBoundingClientRect();
         const width = Math.max(1, Math.round(rect.width));
         const height = Math.max(1, Math.round(rect.height));
-        const resolution = Math.min(window.devicePixelRatio || 1, 2);
-        stageCanvasRef.current.width = Math.max(1, Math.round(width * resolution));
-        stageCanvasRef.current.height = Math.max(1, Math.round(height * resolution));
+        app.renderer.resolution = getCanvasResolution();
         app.renderer.resize(width, height);
       };
 
@@ -1048,11 +1052,7 @@ export function GraphView({ onUnauthorized, onOpenNode }) {
     if (!app || !viewport || !edgeGraphics || !nodeGraphics || !glyphLayer || !labelLayer || !areaLayer) return undefined;
 
     const hostRect = host.getBoundingClientRect();
-    if (stageCanvasRef.current) {
-      const resolution = Math.min(window.devicePixelRatio || 1, 2);
-      stageCanvasRef.current.width = Math.max(1, Math.round(hostRect.width * resolution));
-      stageCanvasRef.current.height = Math.max(1, Math.round(hostRect.height * resolution));
-    }
+    app.renderer.resolution = getCanvasResolution();
     app.renderer.resize(Math.max(1, Math.round(hostRect.width)), Math.max(1, Math.round(hostRect.height)));
 
     graphRootRef.current = viewport;

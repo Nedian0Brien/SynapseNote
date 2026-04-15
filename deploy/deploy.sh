@@ -5,6 +5,7 @@
 #   bash deploy/deploy.sh              # api + web 전체 배포
 #   bash deploy/deploy.sh api          # 백엔드만 배포
 #   bash deploy/deploy.sh web          # 프론트엔드만 배포
+#   bash deploy/deploy.sh web-dev      # 프론트엔드만 개발모드 배포
 #   bash deploy/deploy.sh api web      # 둘 다 명시적으로 배포
 #
 # 주의: Dockerfile이 소스를 이미지에 COPY하므로 반드시 --no-cache로 빌드해야
@@ -17,6 +18,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 cd "$PROJECT_ROOT"
+DEPLOY_FRONTEND_DEV=false
 
 # ── 배포 대상 결정 ────────────────────────────────────────────────────────────
 if [ $# -eq 0 ]; then
@@ -27,6 +29,10 @@ else
     case "$arg" in
       api) SERVICES+=("synapsenote-api") ;;
       web) SERVICES+=("synapsenote-web") ;;
+      web-dev)
+        SERVICES+=("synapsenote-web")
+        DEPLOY_FRONTEND_DEV=true
+        ;;
       *)   SERVICES+=("$arg") ;;   # 서비스명 직접 지정도 허용
     esac
   done
@@ -74,19 +80,32 @@ SERVICES=("${DEDUPED_SERVICES[@]}")
 echo "=========================================="
 echo "  SynapseNote Deploy"
 echo "  Services: ${SERVICES[*]}"
+echo "  Frontend Mode: $([ "$DEPLOY_FRONTEND_DEV" = true ] && echo dev || echo prod)"
 echo "  Commit : $(git log -1 --pretty='%h %s' 2>/dev/null || echo 'unknown')"
 echo "=========================================="
+
+if [ "$DEPLOY_FRONTEND_DEV" = true ]; then
+  COMPOSE_BUILD_ENV=(
+    "SYNAPSENOTE_WEB_BUILD_TARGET=dev"
+    "SYNAPSENOTE_DEV_HOST=${SYNAPSENOTE_DEV_HOST:-0.0.0.0}"
+    "SYNAPSENOTE_DEV_DOMAIN=${SYNAPSENOTE_DEV_DOMAIN:-synapse.lawdigest.cloud}"
+    "SYNAPSENOTE_DEV_PORT=${SYNAPSENOTE_DEV_PORT:-3000}"
+    "SYNAPSENOTE_DEV_UPSTREAM=${SYNAPSENOTE_DEV_UPSTREAM:-http://synapsenote-api:8000}"
+  )
+else
+  COMPOSE_BUILD_ENV=()
+fi
 
 # ── --no-cache 빌드 ───────────────────────────────────────────────────────────
 # Dockerfile이 소스를 이미지에 COPY하기 때문에 캐시를 무조건 무효화해야 한다.
 echo ""
 echo "▶ Building (--no-cache)..."
-docker compose build --no-cache "${SERVICES[@]}"
+env "${COMPOSE_BUILD_ENV[@]}" docker compose build --no-cache "${SERVICES[@]}"
 
 # ── 컨테이너 교체 (다른 서비스는 유지) ────────────────────────────────────────
 echo ""
 echo "▶ Restarting containers..."
-docker compose up -d --no-deps --force-recreate "${SERVICES[@]}"
+env "${COMPOSE_BUILD_ENV[@]}" docker compose up -d --no-deps --force-recreate "${SERVICES[@]}"
 
 # ── CouchDB 네트워크 연결 (레거시 별도 스택 운영 시) ──────────────────────────
 if docker inspect couchdb >/dev/null 2>&1; then
@@ -110,6 +129,10 @@ docker compose ps "${SERVICES[@]}"
 echo ""
 echo "=========================================="
 echo "  Deploy complete!"
-echo "  Frontend : http://localhost:3002"
+if [ "$DEPLOY_FRONTEND_DEV" = true ] && contains_service "synapsenote-web"; then
+  echo "  Frontend : https://${SYNAPSENOTE_DEV_DOMAIN:-synapse.lawdigest.cloud} (dev)"
+else
+  echo "  Frontend : http://localhost:3002"
+fi
 echo "  API      : http://localhost:8000"
 echo "=========================================="

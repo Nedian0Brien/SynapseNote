@@ -18,7 +18,9 @@ export default defineConfig(() => {
       host: '127.0.0.1',
       port: devPort,
       strictPort: true,
-      allowedHosts: devDomain ? [devDomain] : undefined,
+      allowedHosts: devDomain
+        ? [devDomain, 'localhost', '127.0.0.1', '0.0.0.0']
+        : undefined,
       hmr: devDomain
         ? {
             host: devDomain,
