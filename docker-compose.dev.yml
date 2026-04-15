@@ -1,0 +1,10 @@
+name: synapsenote
+
+services:
+  synapsenote-web:
+    volumes:
+      - ./services/web/frontend:/app
+      - synapsenote-web-node-modules:/app/node_modules
+
+volumes:
+  synapsenote-web-node-modules:

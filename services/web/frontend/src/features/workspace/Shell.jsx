@@ -27,13 +27,60 @@ function findNodeMatch(nodes, target) {
   });
 }
 
+function getInitialRouteState() {
+  if (typeof window === 'undefined') {
+    return { layout: 'graph', docPath: null };
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const docPath = params.get('doc');
+  const view = params.get('view');
+  const layout = view === 'split' || view === 'editor' || view === 'graph'
+    ? view
+    : docPath
+      ? 'editor'
+      : 'graph';
+
+  return { layout, docPath };
+}
+
+function syncRouteState(layout, activePath) {
+  if (typeof window === 'undefined') return;
+
+  const nextUrl = new URL(window.location.href);
+  const hasDoc = Boolean(activePath);
+
+  if (hasDoc) {
+    nextUrl.searchParams.set('view', layout);
+    nextUrl.searchParams.set('doc', activePath);
+  } else {
+    nextUrl.searchParams.delete('doc');
+    if (layout === 'graph') {
+      nextUrl.searchParams.delete('view');
+    } else {
+      nextUrl.searchParams.set('view', layout);
+    }
+  }
+
+  const nextHref = `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`;
+  const currentHref = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  if (nextHref !== currentHref) {
+    window.history.replaceState(null, '', nextHref);
+  }
+}
+
 export function Shell({ onUnauthorized }) {
+  const initialRoute = useMemo(() => getInitialRouteState(), []);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobSidebarOpen, setMobSidebarOpen] = useState(false);
-  const [layout, setLayout] = useState('graph');
-  const [lastSingleView, setLastSingleView] = useState('graph');
-  const [openTabs, setOpenTabs] = useState([]);
-  const [activeTabId, setActiveTabId] = useState(null);
+  const [layout, setLayout] = useState(initialRoute.layout);
+  const [lastSingleView, setLastSingleView] = useState(initialRoute.layout === 'split'
+    ? 'graph'
+    : initialRoute.layout);
+  const [openTabs, setOpenTabs] = useState(() => (
+    initialRoute.docPath ? [{ id: initialRoute.docPath, path: initialRoute.docPath }] : []
+  ));
+  const [activeTabId, setActiveTabId] = useState(initialRoute.docPath);
   const [graphRefreshKey, setGraphRefreshKey] = useState(0);
   const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 640px)').matches);
 
@@ -50,6 +97,10 @@ export function Shell({ onUnauthorized }) {
   );
   const activePath = activeTab?.path ?? null;
   const effectiveLayout = normalizeLayout(layout, isMobile, lastSingleView);
+
+  useEffect(() => {
+    syncRouteState(layout, activePath);
+  }, [activePath, layout]);
 
   const commitTabs = useCallback((nextState) => {
     setOpenTabs(nextState.tabs);

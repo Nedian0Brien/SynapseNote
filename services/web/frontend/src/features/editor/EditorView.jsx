@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
+import { useState } from 'react';
 import { Editor, rootCtx, defaultValueCtx } from '@milkdown/kit/core';
 import { commonmark } from '@milkdown/kit/preset/commonmark';
 import { history } from '@milkdown/kit/plugin/history';
@@ -19,6 +20,41 @@ export function EditorView({ path, onUnauthorized, onNavigate, onClose }) {
   const editorRef = useRef(null);
   const containerRef = useRef(null);
   const initRef = useRef(false);
+  const [editorError, setEditorError] = useState(null);
+
+  const formatErrorLog = useCallback((err) => {
+    const message = err?.message ?? String(err);
+    const stack = err?.stack;
+
+    return {
+      message,
+      stack: stack || message,
+      detail: `${message}${stack ? `\n\n${stack}` : ''}`,
+      time: new Date().toISOString(),
+    };
+  }, []);
+
+  const handleRetry = useCallback(() => {
+    setEditorError(null);
+  }, []);
+
+  const handleCopyLog = useCallback(async () => {
+    if (!editorError) return;
+    try {
+      await navigator.clipboard?.writeText(editorError.detail);
+    } catch (copyErr) {
+      const textarea = document.createElement('textarea');
+      textarea.value = editorError.detail;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      console.warn('[EditorView] Clipboard fallback copy failed', copyErr);
+    }
+  }, [editorError]);
 
   const searchLinks = useCallback(async (query) => {
     const endpoint = query
@@ -47,7 +83,7 @@ export function EditorView({ path, onUnauthorized, onNavigate, onClose }) {
   }, [flush, onClose]);
 
   useEffect(() => {
-    if (loading || !containerRef.current) return;
+    if (loading || !containerRef.current || editorError) return;
     if (initRef.current) return;
     initRef.current = true;
 
@@ -66,14 +102,52 @@ export function EditorView({ path, onUnauthorized, onNavigate, onClose }) {
       .use(listener)
       .use(wikilinkPlugin({ onNavigate: handleNavigate, onSearch: searchLinks }))
       .create()
-      .then(editor => { editorRef.current = editor; });
+      .then((editor) => {
+        editorRef.current = editor;
+      })
+      .catch((error) => {
+        const log = formatErrorLog(error);
+        console.error('[EditorView] Milkdown init failed', log);
+        setEditorError(log);
+      });
 
     return () => {
       editorRef.current?.destroy();
       editorRef.current = null;
       initRef.current = false;
     };
-  }, [loading, content, debouncedSave, handleNavigate, searchLinks]);
+  }, [loading, content, debouncedSave, handleNavigate, searchLinks, editorError, formatErrorLog]);
+
+  if (editorError) {
+    return (
+      <div className="editor-view editor-error-page">
+        <div className="editor-error-head">
+          <span className="icon" style={{ fontSize: 38, color: 'var(--error)' }}>error</span>
+          <h2 className="editor-error-title">에디터를 열지 못했습니다</h2>
+        </div>
+        <p className="editor-error-message">{editorError.message}</p>
+        <div className="editor-error-meta">
+          <span>발생 시각: {editorError.time}</span>
+        </div>
+        <pre className="editor-error-log" role="log" aria-label="에디터 오류 로그">{editorError.stack}</pre>
+        <div className="editor-error-actions">
+          <button
+            className="editor-error-btn"
+            onClick={() => { void handleCopyLog(); }}
+            type="button"
+          >
+            로그 복사
+          </button>
+          <button className="editor-error-btn" onClick={handleRetry} type="button">
+            다시 시도
+          </button>
+          <button className="editor-error-btn" onClick={() => { void onClose?.(); }} type="button">
+            탭 닫기
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

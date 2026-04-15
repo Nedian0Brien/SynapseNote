@@ -1382,9 +1382,22 @@ export function GraphView({ onUnauthorized, onOpenNode, refreshKey }) {
       return null;
     };
 
+    const safeClearGraphics = (graphics) => {
+      if (!graphics) return;
+      try {
+        graphics.clear();
+      } catch {
+        // Graphics may already be destroyed during a layout swap.
+      }
+    };
+
     const zoom = d3.zoom()
       .scaleExtent([0.08, 5])
       .on('zoom', (event) => {
+        if (!viewport?.position?.set || !viewport?.scale?.set) {
+          return;
+        }
+
         viewport.position.set(event.transform.x, event.transform.y);
         viewport.scale.set(event.transform.k);
 
@@ -1585,8 +1598,8 @@ export function GraphView({ onUnauthorized, onOpenNode, refreshKey }) {
       pixiTextObjectsRef.current = new Map();
       pixiAreaObjectsRef.current = [];
       directoryClustersRef.current = [];
-      edgeGraphics.clear();
-      nodeGraphics.clear();
+      safeClearGraphics(edgeGraphics);
+      safeClearGraphics(nodeGraphics);
     };
   }, [
     applyBloom,

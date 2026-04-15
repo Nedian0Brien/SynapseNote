@@ -12,6 +12,10 @@ SynapseNote의 active 런타임은 다음 두 서비스다.
 프론트엔드는 `frontend/Dockerfile`의 `runner` 스테이지에서 빌드한 정적 번들을
 Nginx로 제공합니다. `/api` 및 `/auth` 요청은 `synapsenote-api`로 프록시합니다.
 
+개발모드 배포(`web-dev`)는 `docker-compose.dev.yml`을 추가로 사용해
+`services/web/frontend`를 컨테이너에 bind mount하고, Vite dev server를 띄웁니다.
+이 모드에서는 코드 변경이 HMR로 반영되므로 프론트엔드를 다시 배포할 필요가 없습니다.
+
 ## 공식 배포 명령
 
 ```bash

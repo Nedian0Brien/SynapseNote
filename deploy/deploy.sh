@@ -19,6 +19,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 cd "$PROJECT_ROOT"
 DEPLOY_FRONTEND_DEV=false
+COMPOSE_FILES=(-f docker-compose.yml)
 
 # ── 배포 대상 결정 ────────────────────────────────────────────────────────────
 if [ $# -eq 0 ]; then
@@ -50,7 +51,7 @@ contains_service() {
 # web 배포 시 API가 현재 compose에서 실행 중이 아니면 API도 함께 배포해
 # 웹 컨테이너의 nginx 시작 실패(상위 DNS 해석 실패)를 방지한다.
 if contains_service "synapsenote-web" && ! contains_service "synapsenote-api"; then
-  API_CONTAINER_ID="$(docker compose ps -q synapsenote-api 2>/dev/null || true)"
+  API_CONTAINER_ID="$(docker compose "${COMPOSE_FILES[@]}" ps -q synapsenote-api 2>/dev/null || true)"
   if [ -z "$API_CONTAINER_ID" ]; then
     echo "  - 동기화: synapsenote-web은 synapsenote-api 의존성이 있어 API도 함께 재배포합니다."
     SERVICES+=("synapsenote-api")
@@ -85,6 +86,7 @@ echo "  Commit : $(git log -1 --pretty='%h %s' 2>/dev/null || echo 'unknown')"
 echo "=========================================="
 
 if [ "$DEPLOY_FRONTEND_DEV" = true ]; then
+  COMPOSE_FILES+=(-f docker-compose.dev.yml)
   COMPOSE_BUILD_ENV=(
     "SYNAPSENOTE_WEB_BUILD_TARGET=dev"
     "SYNAPSENOTE_DEV_HOST=${SYNAPSENOTE_DEV_HOST:-0.0.0.0}"
@@ -92,24 +94,27 @@ if [ "$DEPLOY_FRONTEND_DEV" = true ]; then
     "SYNAPSENOTE_DEV_PORT=${SYNAPSENOTE_DEV_PORT:-3000}"
     "SYNAPSENOTE_DEV_UPSTREAM=${SYNAPSENOTE_DEV_UPSTREAM:-http://synapsenote-api:8000}"
   )
+  BUILD_ARGS=()
 else
   COMPOSE_BUILD_ENV=()
+  BUILD_ARGS=(--no-cache)
 fi
 
-# ── --no-cache 빌드 ───────────────────────────────────────────────────────────
-# Dockerfile이 소스를 이미지에 COPY하기 때문에 캐시를 무조건 무효화해야 한다.
+# ── 빌드 ──────────────────────────────────────────────────────────────────────
+# 프로덕션 모드는 소스를 이미지에 COPY하므로 --no-cache가 필요하지만,
+# 개발 모드는 bind mount + HMR을 쓰므로 캐시 빌드로 충분하다.
 echo ""
-echo "▶ Building (--no-cache)..."
-env "${COMPOSE_BUILD_ENV[@]}" docker compose build --no-cache "${SERVICES[@]}"
+echo "▶ Building ($([ "$DEPLOY_FRONTEND_DEV" = true ] && echo cached || echo --no-cache ))..."
+env "${COMPOSE_BUILD_ENV[@]}" docker compose "${COMPOSE_FILES[@]}" build "${BUILD_ARGS[@]}" "${SERVICES[@]}"
 
 # ── 컨테이너 교체 (다른 서비스는 유지) ────────────────────────────────────────
 echo ""
 echo "▶ Restarting containers..."
-env "${COMPOSE_BUILD_ENV[@]}" docker compose up -d --no-deps --force-recreate "${SERVICES[@]}"
+env "${COMPOSE_BUILD_ENV[@]}" docker compose "${COMPOSE_FILES[@]}" up -d --no-deps --force-recreate "${SERVICES[@]}"
 
 # ── CouchDB 네트워크 연결 (레거시 별도 스택 운영 시) ──────────────────────────
 if docker inspect couchdb >/dev/null 2>&1; then
-  API_CONTAINER="$(docker compose ps -q synapsenote-api 2>/dev/null || true)"
+  API_CONTAINER="$(env "${COMPOSE_BUILD_ENV[@]}" docker compose "${COMPOSE_FILES[@]}" ps -q synapsenote-api 2>/dev/null || true)"
   if [ -z "$API_CONTAINER" ]; then
     API_CONTAINER="$(docker ps -q --filter name='synapsenote-synapsenote-api' --filter status=running | head -n 1)"
   fi
@@ -124,7 +129,7 @@ fi
 # ── 완료 확인 ─────────────────────────────────────────────────────────────────
 echo ""
 echo "▶ Container status:"
-docker compose ps "${SERVICES[@]}"
+env "${COMPOSE_BUILD_ENV[@]}" docker compose "${COMPOSE_FILES[@]}" ps "${SERVICES[@]}"
 
 echo ""
 echo "=========================================="
