@@ -27,3 +27,6 @@ __pycache__/
 # Local git worktrees
 .worktrees/
 _archives/
+.codex
+.codesight
+.omc/
