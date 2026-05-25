@@ -1,8 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
-import { GraphView } from './GraphView';
-import { EditorView } from '../editor/EditorView';
 import { TabBar } from './TabBar';
 import { SplitPane } from './SplitPane';
 import { apiRequest } from '../../shared/api/apiClient';
@@ -14,6 +12,18 @@ import {
   renameTabState,
   replaceActiveTabState,
 } from './shellState';
+
+const GraphView = lazy(() => import('./GraphView').then((module) => ({ default: module.GraphView })));
+const EditorView = lazy(() => import('../editor/EditorView').then((module) => ({ default: module.EditorView })));
+
+function PaneLoader() {
+  return (
+    <div className="graph-loading">
+      <div className="graph-loading-spinner" />
+      <span>로딩 중...</span>
+    </div>
+  );
+}
 
 function findNodeMatch(nodes, target) {
   const normalizedTarget = target.trim().replace(/\.md$/, '').toLowerCase();
@@ -220,13 +230,15 @@ export function Shell({ onUnauthorized }) {
         onClose={handleCloseTab}
       />
       {activePath ? (
-        <EditorView
-          key={activePath}
-          path={activePath}
-          onUnauthorized={onUnauthorized}
-          onNavigate={handleWikilinkNavigate}
-          onClose={() => handleCloseTab(activeTabId)}
-        />
+        <Suspense fallback={<PaneLoader />}>
+          <EditorView
+            key={activePath}
+            path={activePath}
+            onUnauthorized={onUnauthorized}
+            onNavigate={handleWikilinkNavigate}
+            onClose={() => handleCloseTab(activeTabId)}
+          />
+        </Suspense>
       ) : (
         <div className="editor-placeholder">
           <span className="icon">edit_note</span>
@@ -264,22 +276,26 @@ export function Shell({ onUnauthorized }) {
 
           <div className="stage">
             {effectiveLayout === 'graph' && (
-              <GraphView
-                onUnauthorized={onUnauthorized}
-                onOpenNode={handleOpenNode}
-                refreshKey={graphRefreshKey}
-              />
+              <Suspense fallback={<PaneLoader />}>
+                <GraphView
+                  onUnauthorized={onUnauthorized}
+                  onOpenNode={handleOpenNode}
+                  refreshKey={graphRefreshKey}
+                />
+              </Suspense>
             )}
             {effectiveLayout === 'editor' && editorPane}
             {effectiveLayout === 'split' && (
               <SplitPane
                 storageKey="sn-split-ratio"
                 left={(
-                  <GraphView
-                    onUnauthorized={onUnauthorized}
-                    onOpenNode={handleOpenNode}
-                    refreshKey={graphRefreshKey}
-                  />
+                  <Suspense fallback={<PaneLoader />}>
+                    <GraphView
+                      onUnauthorized={onUnauthorized}
+                      onOpenNode={handleOpenNode}
+                      refreshKey={graphRefreshKey}
+                    />
+                  </Suspense>
                 )}
                 right={editorPane}
               />
