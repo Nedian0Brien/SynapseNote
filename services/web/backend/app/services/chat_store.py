@@ -51,6 +51,85 @@ class DocumentDatabase(Protocol):
     def find_documents(self, selector: dict[str, Any]) -> list[dict[str, Any]]: ...
 
 
+class ChatStore(Protocol):
+    def create_session(
+        self,
+        *,
+        title: str,
+        selected_agent: str,
+        edit_policy: str,
+        context_node_ids: list[str],
+    ) -> dict[str, Any]: ...
+
+    def get_session(self, session_id: str) -> dict[str, Any] | None: ...
+
+    def list_sessions(self) -> list[dict[str, Any]]: ...
+
+    def add_message(
+        self,
+        *,
+        session_id: str,
+        role: str,
+        content: str,
+        agent: str,
+        block_type: str,
+        context_ids: list[str],
+        context_snapshot: list[dict[str, Any]],
+    ) -> dict[str, Any]: ...
+
+    def list_messages(self, session_id: str) -> list[dict[str, Any]]: ...
+
+    def get_message(self, session_id: str, message_id: str) -> dict[str, Any] | None: ...
+
+    def switch_agent(
+        self,
+        *,
+        session_id: str,
+        to_agent: str,
+        server_summary: str,
+        agent_summary: str | None,
+        recent_message_ids: list[str],
+    ) -> dict[str, Any]: ...
+
+    def list_handoffs(self, session_id: str) -> list[dict[str, Any]]: ...
+
+    def update_edit_policy(self, *, session_id: str, edit_policy: str) -> dict[str, Any]: ...
+
+    def create_run(
+        self,
+        *,
+        session_id: str,
+        message_id: str,
+        agent: str,
+        edit_policy: str,
+        status: str,
+        adapter: str,
+        started_at: str,
+        ended_at: str | None,
+    ) -> dict[str, Any]: ...
+
+    def get_run(self, run_id: str) -> dict[str, Any] | None: ...
+
+    def update_run(
+        self,
+        *,
+        run_id: str,
+        status: str,
+        ended_at: str | None,
+    ) -> dict[str, Any]: ...
+
+    def create_capture(
+        self,
+        *,
+        session_id: str,
+        source_message_ids: list[str],
+        target_node_path: str,
+        status: str,
+    ) -> dict[str, Any]: ...
+
+    def list_captures(self, session_id: str) -> list[dict[str, Any]]: ...
+
+
 @dataclass
 class RequestsCouchDBDatabase:
     base_url: str
@@ -368,6 +447,13 @@ class CouchDBChatStore:
             if stripped is not None
         ]
 
+    def _touch_session(self, session: dict[str, Any], updated_at: str) -> None:
+        self._write_entity(
+            entity_type="session",
+            entity_id=str(session["id"]),
+            payload={**session, "updatedAt": updated_at},
+        )
+
     def create_session(
         self,
         *,
@@ -431,11 +517,7 @@ class CouchDBChatStore:
                 "createdAt": created_at,
             },
         )
-        self._write_entity(
-            entity_type="session",
-            entity_id=session_id,
-            payload={**session, "updatedAt": created_at},
-        )
+        self._touch_session(session, created_at)
         return message
 
     def list_messages(self, session_id: str) -> list[dict[str, Any]]:
@@ -477,15 +559,7 @@ class CouchDBChatStore:
                 "createdAt": created_at,
             },
         )
-        self._write_entity(
-            entity_type="session",
-            entity_id=session_id,
-            payload={
-                **session,
-                "selectedAgent": to_agent,
-                "updatedAt": created_at,
-            },
-        )
+        self._touch_session({**session, "selectedAgent": to_agent}, created_at)
         return handoff
 
     def list_handoffs(self, session_id: str) -> list[dict[str, Any]]:
@@ -540,11 +614,7 @@ class CouchDBChatStore:
                 "endedAt": ended_at,
             },
         )
-        self._write_entity(
-            entity_type="session",
-            entity_id=session_id,
-            payload={**session, "updatedAt": ended_at or started_at},
-        )
+        self._touch_session(session, ended_at or started_at)
         return run
 
     def get_run(self, run_id: str) -> dict[str, Any] | None:
@@ -572,11 +642,7 @@ class CouchDBChatStore:
         )
         session = self.get_session(str(run["sessionId"]))
         if session is not None:
-            self._write_entity(
-                entity_type="session",
-                entity_id=str(run["sessionId"]),
-                payload={**session, "updatedAt": ended_at or session["updatedAt"]},
-            )
+            self._touch_session(session, ended_at or session["updatedAt"])
         return updated_run
 
     def create_capture(
@@ -605,11 +671,7 @@ class CouchDBChatStore:
                 "createdAt": created_at,
             },
         )
-        self._write_entity(
-            entity_type="session",
-            entity_id=session_id,
-            payload={**session, "updatedAt": created_at},
-        )
+        self._touch_session(session, created_at)
         return capture
 
     def list_captures(self, session_id: str) -> list[dict[str, Any]]:
@@ -659,6 +721,24 @@ class FileChatStore:
             finally:
                 fcntl.flock(f, fcntl.LOCK_UN)
 
+    def _read_chat_file(self, path: Path) -> dict[str, Any] | None:
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                fcntl.flock(f, fcntl.LOCK_SH)
+                try:
+                    return json.load(f)
+                finally:
+                    fcntl.flock(f, fcntl.LOCK_UN)
+        except (json.JSONDecodeError, KeyError):
+            return None
+
+    def _find_session_containing_run(self, run_id: str) -> dict[str, Any] | None:
+        for path in self._chat_dir.glob("*.json"):
+            data = self._read_chat_file(path)
+            if data is not None and run_id in data.get("runs", {}):
+                return data
+        return None
+
     def _load_or_init(self, session_id: str) -> dict[str, Any]:
         data = self._read_session_file(session_id)
         if data is None:
@@ -701,16 +781,9 @@ class FileChatStore:
     def list_sessions(self) -> list[dict[str, Any]]:
         sessions = []
         for path in self._chat_dir.glob("*.json"):
-            try:
-                with open(path, "r", encoding="utf-8") as f:
-                    fcntl.flock(f, fcntl.LOCK_SH)
-                    try:
-                        data = json.load(f)
-                    finally:
-                        fcntl.flock(f, fcntl.LOCK_UN)
+            data = self._read_chat_file(path)
+            if data is not None and "session" in data:
                 sessions.append(data["session"])
-            except (json.JSONDecodeError, KeyError):
-                continue
         return _sorted_documents(sessions, sort_key="updatedAt", reverse=True)
 
     def add_message(
@@ -827,20 +900,8 @@ class FileChatStore:
         return run
 
     def get_run(self, run_id: str) -> dict[str, Any] | None:
-        for path in self._chat_dir.glob("*.json"):
-            try:
-                with open(path, "r", encoding="utf-8") as f:
-                    fcntl.flock(f, fcntl.LOCK_SH)
-                    try:
-                        data = json.load(f)
-                    finally:
-                        fcntl.flock(f, fcntl.LOCK_UN)
-                run = data.get("runs", {}).get(run_id)
-                if run is not None:
-                    return run
-            except (json.JSONDecodeError, KeyError):
-                continue
-        return None
+        data = self._find_session_containing_run(run_id)
+        return None if data is None else data.get("runs", {}).get(run_id)
 
     def update_run(
         self,
@@ -849,26 +910,17 @@ class FileChatStore:
         status: str,
         ended_at: str | None,
     ) -> dict[str, Any]:
-        for path in self._chat_dir.glob("*.json"):
-            try:
-                with open(path, "r", encoding="utf-8") as f:
-                    fcntl.flock(f, fcntl.LOCK_SH)
-                    try:
-                        data = json.load(f)
-                    finally:
-                        fcntl.flock(f, fcntl.LOCK_UN)
-                runs = data.get("runs", {})
-                if run_id not in runs:
-                    continue
-                runs[run_id]["status"] = status
-                runs[run_id]["endedAt"] = ended_at
-                session_id = runs[run_id]["sessionId"]
-                data["session"]["updatedAt"] = ended_at or data["session"]["updatedAt"]
-                self._write_session_file(session_id, data)
-                return runs[run_id]
-            except (json.JSONDecodeError, KeyError):
-                continue
-        raise KeyError(f"run_not_found:{run_id}")
+        data = self._find_session_containing_run(run_id)
+        if data is None:
+            raise KeyError(f"run_not_found:{run_id}")
+
+        run = data["runs"][run_id]
+        run["status"] = status
+        run["endedAt"] = ended_at
+        session_id = run["sessionId"]
+        data["session"]["updatedAt"] = ended_at or data["session"]["updatedAt"]
+        self._write_session_file(session_id, data)
+        return run
 
     def create_capture(
         self,

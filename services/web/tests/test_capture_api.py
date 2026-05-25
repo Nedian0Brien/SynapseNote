@@ -83,3 +83,51 @@ def test_capture_creates_vault_node_and_saved_message(monkeypatch, tmp_path: Pat
     messages = messages_response.json()["data"]
     assert messages[-1]["blockType"] == "saved_as_node"
     assert messages[-1]["content"] == "captures/대화 요약.md"
+
+
+def test_capture_rejects_directory_traversal(monkeypatch, tmp_path: Path) -> None:
+    use_in_memory_chat_store(monkeypatch)
+    monkeypatch.setenv("SYNAPSENOTE_USER_ID", "solo")
+    monkeypatch.setenv("SYNAPSENOTE_USER_PASSWORD", "secret-pass")
+    monkeypatch.setenv("VAULT_ROOT", str(tmp_path / "vault"))
+    (tmp_path / "vault").mkdir()
+
+    client = create_test_client()
+    sign_in(client)
+
+    session_response = client.post(
+        "/api/chat/sessions",
+        json={
+            "title": "Capture Session",
+            "selectedAgent": "claude_code",
+            "editPolicy": "approval_required",
+            "contextNodeIds": [],
+        },
+    )
+    session_id = session_response.json()["data"]["id"]
+
+    message_response = client.post(
+        f"/api/chat/sessions/{session_id}/messages",
+        json={
+            "role": "agent",
+            "content": "do not escape",
+            "agent": "claude_code",
+            "blockType": "agent_response",
+            "contextIds": [],
+            "contextSnapshot": [],
+        },
+    )
+    message_id = message_response.json()["data"]["id"]
+
+    capture_response = client.post(
+        "/api/chat/captures",
+        json={
+            "sessionId": session_id,
+            "sourceMessageIds": [message_id],
+            "title": "escape",
+            "directory": "../outside",
+        },
+    )
+
+    assert capture_response.status_code == 400
+    assert not (tmp_path / "outside" / "escape.md").exists()

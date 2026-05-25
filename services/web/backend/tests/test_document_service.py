@@ -109,6 +109,15 @@ class TestWriteDocument:
         with pytest.raises(ValueError, match="traversal"):
             write_document("projects/../../etc/passwd", "malicious")
 
+    def test_absolute_sibling_path_blocked(self, vault):
+        outside = vault.parent / f"{vault.name}_evil" / "escape.md"
+        outside.parent.mkdir()
+
+        with pytest.raises(ValueError, match="traversal"):
+            write_document(str(outside), "malicious")
+
+        assert not outside.exists()
+
     def test_non_markdown_rejected(self, vault):
         with pytest.raises(ValueError, match="markdown"):
             write_document("file.txt", "some text")

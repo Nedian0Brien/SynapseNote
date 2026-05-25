@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { apiRequest, encodePath } from '../api/apiClient';
 
 /**
  * 파일 내용을 읽고 저장하는 훅.
@@ -18,11 +19,12 @@ export function useFileContent(path, { onUnauthorized } = {}) {
     setLoading(true);
     setError(null);
     try {
-      const resolvedPath = path.split('/').map(encodeURIComponent).join('/');
-      const res = await fetch(`/api/documents/${resolvedPath}`, { credentials: 'include' });
-      if (res.status === 401) { onUnauthorized?.(); return; }
-      if (!res.ok) throw new Error(`document load failed: ${res.status}`);
-      const json = await res.json();
+      const resolvedPath = encodePath(path);
+      const json = await apiRequest(`/api/documents/${resolvedPath}`, {
+        onUnauthorized,
+        errorMessage: (status) => `document load failed: ${status}`,
+      });
+      if (!json) return;
       setContent(json.data?.content ?? '');
     } catch (e) {
       setError(e.message);
@@ -37,15 +39,14 @@ export function useFileContent(path, { onUnauthorized } = {}) {
     if (!path) return;
     setSaving(true);
     try {
-      const resolvedPath = path.split('/').map(encodeURIComponent).join('/');
-      const res = await fetch(`/api/documents/${resolvedPath}`, {
+      const resolvedPath = encodePath(path);
+      const json = await apiRequest(`/api/documents/${resolvedPath}`, {
         method: 'PUT',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+        onUnauthorized,
+        errorMessage: (status) => `document save failed: ${status}`,
         body: JSON.stringify({ content: newContent }),
       });
-      if (res.status === 401) { onUnauthorized?.(); return; }
-      if (!res.ok) throw new Error(`document save failed: ${res.status}`);
+      if (!json) return;
       setContent(newContent);
       pendingContentRef.current = null;
     } catch (e) {

@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
 
 from .chat_service import ChatService
-from .node_service import get_vault_root
+from .vault_paths import resolve_vault_path
 
 
 def _safe_stem(value: str) -> str:
@@ -38,8 +37,7 @@ class CaptureService:
         safe_directory = directory.strip().strip("/") if directory.strip() else ""
         relative_path = f"{safe_directory}/{safe_title}.md" if safe_directory else f"{safe_title}.md"
 
-        vault_root = get_vault_root()
-        target_path = vault_root / Path(relative_path)
+        target_path = resolve_vault_path(relative_path, require_markdown=True)
         target_path.parent.mkdir(parents=True, exist_ok=True)
 
         content_lines = [f"# {safe_title}", ""]

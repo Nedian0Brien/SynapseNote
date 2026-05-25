@@ -5,6 +5,7 @@ import { GraphView } from './GraphView';
 import { EditorView } from '../editor/EditorView';
 import { TabBar } from './TabBar';
 import { SplitPane } from './SplitPane';
+import { apiRequest } from '../../shared/api/apiClient';
 import {
   closeTabState,
   deleteTabState,
@@ -189,16 +190,10 @@ export function Shell({ onUnauthorized }) {
 
   const handleWikilinkNavigate = useCallback(async (target, options = {}) => {
     try {
-      const res = await fetch(
-        `/api/nodes?q=${encodeURIComponent(target)}`,
-        { credentials: 'include' },
-      );
-      if (res.status === 401) {
-        onUnauthorized?.();
-        return;
-      }
-      if (!res.ok) return;
-      const json = await res.json();
+      const json = await apiRequest(`/api/nodes?q=${encodeURIComponent(target)}`, {
+        onUnauthorized,
+      });
+      if (!json) return;
       const match = findNodeMatch(json.data ?? [], target);
       if (!match?.id) return;
 

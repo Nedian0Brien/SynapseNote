@@ -204,6 +204,8 @@ def create_chat_router(
                 title=payload.title,
                 directory=payload.directory,
             )
+        except ValueError as error:
+            raise HTTPException(status_code=400, detail=str(error)) from error
         except KeyError as error:
             detail = str(error)
             if detail.startswith("'session_not_found:"):

@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import json
-import os
 from dataclasses import dataclass
-from pathlib import Path
 
 from app.db.connection import get_db
+from app.services.vault_paths import get_vault_root
 
 
 @dataclass
@@ -30,10 +29,6 @@ class KnowledgeNode:
             "x": self.x,
             "y": self.y,
         }
-
-
-def get_vault_root() -> Path:
-    return Path(os.environ.get("VAULT_ROOT", "/vault")).resolve()
 
 
 def list_nodes(query: str | None = None, node_type: str | None = None) -> list[KnowledgeNode]:

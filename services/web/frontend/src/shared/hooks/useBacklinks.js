@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { apiRequest, encodePath } from '../api/apiClient';
 
 export function useBacklinks(path, { onUnauthorized } = {}) {
   const [backlinks, setBacklinks] = useState([]);
@@ -15,16 +16,12 @@ export function useBacklinks(path, { onUnauthorized } = {}) {
     setLoading(true);
     setError(null);
     try {
-      const resolvedPath = path.split('/').map(encodeURIComponent).join('/');
-      const res = await fetch(`/api/nodes/${resolvedPath}/backlinks`, {
-        credentials: 'include',
+      const resolvedPath = encodePath(path);
+      const json = await apiRequest(`/api/nodes/${resolvedPath}/backlinks`, {
+        onUnauthorized,
+        errorMessage: (status) => `backlinks fetch failed: ${status}`,
       });
-      if (res.status === 401) {
-        onUnauthorized?.();
-        return;
-      }
-      if (!res.ok) throw new Error(`backlinks fetch failed: ${res.status}`);
-      const json = await res.json();
+      if (!json) return;
       setBacklinks(json.data ?? []);
     } catch (e) {
       setError(e.message);

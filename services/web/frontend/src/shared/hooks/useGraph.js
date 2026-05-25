@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { apiRequest } from '../api/apiClient';
 
 function normalizeGraphNode(node) {
   const id = String(node.id ?? '');
@@ -33,10 +34,11 @@ export function useGraph({ onUnauthorized, refreshKey } = {}) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/graph', { credentials: 'include' });
-      if (res.status === 401) { onUnauthorized?.(); return; }
-      if (!res.ok) throw new Error(`graph fetch failed: ${res.status}`);
-      const json = await res.json();
+      const json = await apiRequest('/api/graph', {
+        onUnauthorized,
+        errorMessage: (status) => `graph fetch failed: ${status}`,
+      });
+      if (!json) return;
       const payload = json.data ?? json;
       setNodes((payload.nodes ?? []).map(normalizeGraphNode));
       setEdges(payload.edges ?? []);

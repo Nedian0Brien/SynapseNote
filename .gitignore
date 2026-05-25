@@ -28,5 +28,6 @@ __pycache__/
 .worktrees/
 _archives/
 .codex
+.codegraph/
 .codesight
 .omc/

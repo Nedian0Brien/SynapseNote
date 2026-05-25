@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { apiRequest, encodePath } from '../api/apiClient';
 
 /**
  * Vault 파일 트리를 가져오는 훅.
@@ -13,10 +14,11 @@ export function useVaultTree({ onUnauthorized } = {}) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/nodes', { credentials: 'include' });
-      if (res.status === 401) { onUnauthorized?.(); return; }
-      if (!res.ok) throw new Error(`nodes fetch failed: ${res.status}`);
-      const payload = await res.json();
+      const payload = await apiRequest('/api/nodes', {
+        onUnauthorized,
+        errorMessage: (status) => `nodes fetch failed: ${status}`,
+      });
+      if (!payload) return;
       setTree(buildTree(payload.data ?? []));
     } catch (e) {
       setError(e.message);
@@ -28,52 +30,38 @@ export function useVaultTree({ onUnauthorized } = {}) {
   useEffect(() => { fetch_(); }, [fetch_]);
 
   const createFile = useCallback(async (path, content = '') => {
-    const res = await fetch('/api/documents', {
+    const json = await apiRequest('/api/documents', {
       method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
+      onUnauthorized,
+      errorMessage: (status) => `create file failed: ${status}`,
       body: JSON.stringify({ path, content }),
     });
-    if (res.status === 401) {
-      onUnauthorized?.();
-      return null;
-    }
-    if (!res.ok) throw new Error(`create file failed: ${res.status}`);
-    const json = await res.json();
+    if (!json) return null;
     await fetch_();
     return json.data ?? null;
   }, [fetch_, onUnauthorized]);
 
   const renameFile = useCallback(async (oldPath, newPath) => {
-    const resolvedOldPath = oldPath.split('/').map(encodeURIComponent).join('/');
-    const res = await fetch(`/api/documents/${resolvedOldPath}/move`, {
+    const resolvedOldPath = encodePath(oldPath);
+    const json = await apiRequest(`/api/documents/${resolvedOldPath}/move`, {
       method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
+      onUnauthorized,
+      errorMessage: (status) => `rename file failed: ${status}`,
       body: JSON.stringify({ new_path: newPath }),
     });
-    if (res.status === 401) {
-      onUnauthorized?.();
-      return null;
-    }
-    if (!res.ok) throw new Error(`rename file failed: ${res.status}`);
-    const json = await res.json();
+    if (!json) return null;
     await fetch_();
     return json.data ?? null;
   }, [fetch_, onUnauthorized]);
 
   const deleteFile = useCallback(async (path) => {
-    const resolvedPath = path.split('/').map(encodeURIComponent).join('/');
-    const res = await fetch(`/api/documents/${resolvedPath}`, {
+    const resolvedPath = encodePath(path);
+    const json = await apiRequest(`/api/documents/${resolvedPath}`, {
       method: 'DELETE',
-      credentials: 'include',
+      onUnauthorized,
+      errorMessage: (status) => `delete file failed: ${status}`,
     });
-    if (res.status === 401) {
-      onUnauthorized?.();
-      return null;
-    }
-    if (!res.ok) throw new Error(`delete file failed: ${res.status}`);
-    const json = await res.json();
+    if (!json) return null;
     await fetch_();
     return json.data ?? null;
   }, [fetch_, onUnauthorized]);

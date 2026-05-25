@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
 
-from .chat_store import build_chat_store
+from .chat_store import ChatStore, build_chat_store
 
 
 @dataclass
 class ChatService:
-    store: Any = field(default_factory=build_chat_store)
+    store: ChatStore = field(default_factory=build_chat_store)
 
     def create_session(
         self,
