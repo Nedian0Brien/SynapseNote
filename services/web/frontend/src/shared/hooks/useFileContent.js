@@ -11,8 +11,11 @@ export function useFileContent(path, { onUnauthorized } = {}) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [syncStatus, setSyncStatus] = useState('current');
   const saveTimer = useRef(null);
   const pendingContentRef = useRef(null);
+  const currentHashRef = useRef(null);
+  const savingRef = useRef(false);
 
   const load = useCallback(async () => {
     if (!path) return;
@@ -26,6 +29,9 @@ export function useFileContent(path, { onUnauthorized } = {}) {
       });
       if (!json) return;
       setContent(json.data?.content ?? '');
+      currentHashRef.current = json.data?.hash ?? null;
+      pendingContentRef.current = null;
+      setSyncStatus('current');
     } catch (e) {
       setError(e.message);
     } finally {
@@ -38,21 +44,35 @@ export function useFileContent(path, { onUnauthorized } = {}) {
   const save = useCallback(async (newContent) => {
     if (!path) return;
     setSaving(true);
+    setError(null);
+    savingRef.current = true;
     try {
       const resolvedPath = encodePath(path);
+      const body = { content: newContent };
+      if (currentHashRef.current) {
+        body.baseHash = currentHashRef.current;
+      }
       const json = await apiRequest(`/api/documents/${resolvedPath}`, {
         method: 'PUT',
         onUnauthorized,
         errorMessage: (status) => `document save failed: ${status}`,
-        body: JSON.stringify({ content: newContent }),
+        body: JSON.stringify(body),
       });
       if (!json) return;
       setContent(newContent);
+      currentHashRef.current = json.data?.hash ?? currentHashRef.current;
       pendingContentRef.current = null;
+      setSyncStatus('current');
     } catch (e) {
+      if (e.status === 409) {
+        setSyncStatus('conflict');
+        setError('다른 위치에서 먼저 저장된 변경이 있습니다.');
+        return;
+      }
       setError(e.message);
     } finally {
       setSaving(false);
+      savingRef.current = false;
     }
   }, [path, onUnauthorized]);
 
@@ -85,5 +105,67 @@ export function useFileContent(path, { onUnauthorized } = {}) {
     }
   }, [save]);
 
-  return { content, loading, error, saving, save, debouncedSave, flush };
+  useEffect(() => {
+    if (!path || typeof EventSource === 'undefined') return undefined;
+
+    const source = new EventSource('/api/vault/events', { withCredentials: true });
+
+    const handleVaultEvent = (message) => {
+      let event;
+      try {
+        event = JSON.parse(message.data);
+      } catch {
+        return;
+      }
+
+      if (event.type !== 'document_changed') return;
+      if (event.path !== path && event.oldPath !== path) return;
+
+      if (event.action === 'deleted') {
+        if (pendingContentRef.current != null || savingRef.current) {
+          setSyncStatus('conflict');
+          setError('편집 중인 문서가 다른 위치에서 삭제되었습니다.');
+          return;
+        }
+        currentHashRef.current = null;
+        setSyncStatus('deleted');
+        setError('문서가 삭제되었습니다.');
+        return;
+      }
+
+      if (event.action === 'moved' && event.oldPath === path) {
+        setSyncStatus('moved');
+        setError('문서 위치가 변경되었습니다.');
+        return;
+      }
+
+      if (!event.hash || event.hash === currentHashRef.current) {
+        return;
+      }
+
+      if (pendingContentRef.current != null || savingRef.current) {
+        setSyncStatus('remote_changed');
+        setError('편집 중에 다른 위치에서 변경되었습니다.');
+        return;
+      }
+
+      currentHashRef.current = event.hash;
+      void load();
+    };
+
+    const handleError = () => {
+      setSyncStatus((status) => (status === 'current' ? 'disconnected' : status));
+    };
+
+    source.addEventListener('vault', handleVaultEvent);
+    source.addEventListener('error', handleError);
+
+    return () => {
+      source.removeEventListener('vault', handleVaultEvent);
+      source.removeEventListener('error', handleError);
+      source.close();
+    };
+  }, [path, load]);
+
+  return { content, loading, error, saving, syncStatus, save, debouncedSave, flush, reload: load };
 }

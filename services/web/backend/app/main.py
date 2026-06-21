@@ -21,6 +21,7 @@ from app.routers.context_router import router as context_router
 from app.routers.document_router import router as document_router
 from app.routers.graph_router import router as graph_router
 from app.routers.node_router import router as node_router
+from app.routers.vault_events_router import router as vault_events_router
 from app.services.capture_service import CaptureService
 from app.services.chat_runtime import ChatRuntime
 from app.services.chat_service import ChatService
@@ -101,6 +102,7 @@ def create_app() -> FastAPI:
     app.include_router(create_chat_router(chat_service, chat_runtime, capture_service))
     app.include_router(graph_router)
     app.include_router(document_router)
+    app.include_router(vault_events_router)
 
     return app
 

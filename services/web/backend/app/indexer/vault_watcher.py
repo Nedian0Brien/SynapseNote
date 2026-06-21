@@ -8,6 +8,8 @@ from pathlib import Path
 from watchdog.events import FileSystemEventHandler, FileSystemEvent
 from watchdog.observers import Observer
 
+from app.services.vault_events import build_document_event_from_path, vault_event_bus
+
 from .vault_indexer import VaultIndexer
 
 logger = logging.getLogger(__name__)
@@ -58,6 +60,18 @@ class VaultEventHandler(FileSystemEventHandler):
             return True
         return src_path.endswith(".md")
 
+    def _publish_file_event(self, action: str, path: str, old_path: str | None = None) -> None:
+        file_path = Path(path)
+        if file_path.suffix.lower() != ".md":
+            return
+        event = build_document_event_from_path(
+            action=action,
+            file_path=file_path,
+            vault_root=self.indexer.vault_root,
+            old_path=Path(old_path) if old_path else None,
+        )
+        vault_event_bus.publish(event)
+
     # ------------------------------------------------------------------
     # watchdog callbacks
     # ------------------------------------------------------------------
@@ -70,6 +84,7 @@ class VaultEventHandler(FileSystemEventHandler):
         def _handle() -> None:
             logger.debug("on_created: %s", path)
             self.indexer.update_node(Path(path))
+            self._publish_file_event("created", path)
 
         self._debounced(path, _handle)
 
@@ -83,6 +98,7 @@ class VaultEventHandler(FileSystemEventHandler):
         def _handle() -> None:
             logger.debug("on_modified: %s", path)
             self.indexer.update_node(Path(path))
+            self._publish_file_event("modified", path)
 
         self._debounced(path, _handle)
 
@@ -94,6 +110,7 @@ class VaultEventHandler(FileSystemEventHandler):
         def _handle() -> None:
             logger.debug("on_deleted: %s", path)
             self.indexer.delete_node(Path(path))
+            self._publish_file_event("deleted", path)
 
         self._debounced(path, _handle)
 
@@ -112,6 +129,8 @@ class VaultEventHandler(FileSystemEventHandler):
                 self.indexer.delete_node(Path(src))
             if dest_relevant:
                 self.indexer.update_node(Path(dest))
+            if dest_relevant:
+                self._publish_file_event("moved", dest, old_path=src if src_relevant else None)
 
         # 이동은 dest 경로를 키로 디바운스
         self._debounced(dest, _handle)

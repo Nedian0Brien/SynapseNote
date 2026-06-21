@@ -58,6 +58,7 @@ class ChatCaptureCreatePayload(BaseModel):
 
 class DocumentWritePayload(BaseModel):
     content: str
+    baseHash: str | None = None
 
 
 class DocumentCreatePayload(BaseModel):

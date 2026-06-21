@@ -94,6 +94,37 @@ Derived indexes
 - 같은 파일을 오래된 hash로 저장하면 conflict 반환
 - create/read/write/move/delete 후 실제 파일 상태 확인
 
+### 4.1.1 준실시간 편집 동기화
+
+**해야 할 일**
+
+- 문서 응답에 content hash를 포함한다.
+- 저장 요청은 마지막으로 읽은 `baseHash`를 함께 보내고, 서버의 현재 hash와 다르면 `409 document_revision_conflict`를 반환한다.
+- 서버는 문서 생성/수정/삭제/이동 이벤트를 SSE로 방송한다.
+- watcher가 외부 파일 변경, 예를 들어 Obsidian이나 Git sync로 발생한 변경도 같은 이벤트 스트림으로 방송한다.
+- 클라이언트는 현재 열려 있는 문서의 이벤트를 듣고, 편집 중이 아니면 다시 불러오며, 편집 중이면 충돌 상태를 표시한다.
+
+**1차 구현 계약**
+
+```text
+GET /api/vault/events
+event: vault
+data: {
+  "type": "document_changed",
+  "action": "modified",
+  "path": "Notes/example.md",
+  "hash": "...",
+  "updatedAt": "..."
+}
+```
+
+**검증**
+
+- 다른 클라이언트나 외부 프로세스가 파일을 바꾸면 열린 문서가 변경을 감지
+- 같은 문서를 오래된 `baseHash`로 저장하면 409 충돌
+- 삭제/이동 이벤트는 자동 병합하지 않고 사용자에게 상태를 표시
+- 이벤트 스트림은 세션 쿠키 인증을 통과한 사용자에게만 열림
+
 ### 4.2 Markdown 문서 모델
 
 **해야 할 일**

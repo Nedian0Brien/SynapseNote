@@ -4,12 +4,14 @@ from fastapi import APIRouter, HTTPException, Request
 
 from app.schemas import DocumentCreatePayload, DocumentMovePayload, DocumentWritePayload
 from app.services.document_service import (
+    DocumentConflictError,
     create_document,
     delete_document,
     move_document,
     read_document,
     write_document,
 )
+from app.services.vault_events import build_document_event, vault_event_bus
 
 router = APIRouter(prefix="/api")
 
@@ -30,6 +32,12 @@ async def post_document(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+    vault_event_bus.publish(build_document_event(
+        action="created",
+        path=data["id"],
+        hash_value=data.get("hash"),
+        updated_at=data.get("updatedAt"),
+    ))
     return {"success": True, "data": data, "meta": {}}
 
 
@@ -65,6 +73,7 @@ async def delete_document_endpoint(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+    vault_event_bus.publish(build_document_event(action="deleted", path=data["id"]))
     return {"success": True, "data": data, "meta": {}}
 
 
@@ -79,10 +88,18 @@ async def put_document(
         raise HTTPException(status_code=401, detail="unauthorized")
 
     try:
-        data = write_document(node_id, payload.content)
+        data = write_document(node_id, payload.content, payload.baseHash)
+    except DocumentConflictError:
+        raise HTTPException(status_code=409, detail="document_revision_conflict")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+    vault_event_bus.publish(build_document_event(
+        action="modified",
+        path=data["id"],
+        hash_value=data.get("hash"),
+        updated_at=data.get("updatedAt"),
+    ))
     return {"success": True, "data": data, "meta": {}}
 
 
@@ -105,4 +122,11 @@ async def move_document_endpoint(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+    vault_event_bus.publish(build_document_event(
+        action="moved",
+        path=data["id"],
+        old_path=node_id,
+        hash_value=data.get("hash"),
+        updated_at=data.get("updatedAt"),
+    ))
     return {"success": True, "data": data, "meta": {}}

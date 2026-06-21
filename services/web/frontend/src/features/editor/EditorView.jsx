@@ -14,8 +14,10 @@ export function EditorView({ path, onUnauthorized, onNavigate, onClose }) {
     loading,
     error,
     saving,
+    syncStatus,
     debouncedSave,
     flush,
+    reload,
   } = useFileContent(path, { onUnauthorized });
   const editorRef = useRef(null);
   const containerRef = useRef(null);
@@ -179,9 +181,27 @@ export function EditorView({ path, onUnauthorized, onNavigate, onClose }) {
           {path?.split('/').pop()?.replace(/\.md$/, '') ?? ''}
         </span>
         <span className="editor-save-indicator">
-          {saving ? 'Saving...' : 'Saved'}
+          {saving ? '저장 중...' : '저장됨'}
         </span>
       </div>
+      {syncStatus !== 'current' && (
+        <div className="editor-sync-banner" data-status={syncStatus}>
+          <span>
+            {syncStatus === 'remote_changed' || syncStatus === 'conflict'
+              ? '다른 위치에서 변경됨'
+              : syncStatus === 'deleted'
+                ? '문서가 삭제됨'
+                : syncStatus === 'moved'
+                  ? '문서 위치가 변경됨'
+                  : '동기화 연결 대기 중'}
+          </span>
+          {(syncStatus === 'remote_changed' || syncStatus === 'conflict' || syncStatus === 'disconnected') && (
+            <button type="button" onClick={() => { void reload(); }}>
+              다시 불러오기
+            </button>
+          )}
+        </div>
+      )}
       <div className="editor-body">
         <div className="editor-container" ref={containerRef} />
         <BacklinksPanel

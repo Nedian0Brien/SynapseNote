@@ -7,7 +7,8 @@ import pytest
 
 os.environ.setdefault("VAULT_ROOT", "/tmp/test-vault")
 
-from app.services.document_service import read_document, write_document
+from app.services.document_service import DocumentConflictError, read_document, write_document
+from app.services.vault_events import content_hash
 
 
 # ---------------------------------------------------------------------------
@@ -53,6 +54,7 @@ class TestReadDocument:
         assert result["title"] == "Alpha Project"
         assert "alpha project content" in result["content"].lower()
         assert "updatedAt" in result
+        assert result["hash"] == content_hash(result["content"])
 
     def test_read_root_file(self, vault):
         result = read_document("readme.md")
@@ -82,10 +84,26 @@ class TestWriteDocument:
         assert result["id"] == "projects/alpha.md"
         assert result["title"] == "Alpha Project"
         assert "updatedAt" in result
+        assert result["hash"] == content_hash(new_content)
 
         # Verify file was actually written
         actual = (vault / "projects" / "alpha.md").read_text()
         assert actual == new_content
+
+    def test_write_accepts_matching_base_hash(self, vault):
+        original = (vault / "projects" / "alpha.md").read_text()
+        new_content = "# Alpha Project\nUpdated with base hash.\n"
+
+        result = write_document("projects/alpha.md", new_content, content_hash(original))
+
+        assert result["hash"] == content_hash(new_content)
+        assert (vault / "projects" / "alpha.md").read_text() == new_content
+
+    def test_write_rejects_stale_base_hash(self, vault):
+        with pytest.raises(DocumentConflictError):
+            write_document("projects/alpha.md", "# Alpha Project\nStale write.\n", "stale")
+
+        assert "alpha project content" in (vault / "projects" / "alpha.md").read_text().lower()
 
     def test_write_creates_new_file(self, vault):
         new_content = "# New Doc\nNew document content.\n"

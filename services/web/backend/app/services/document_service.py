@@ -1,13 +1,20 @@
 """Document read/write service for vault markdown files."""
 from __future__ import annotations
 
+import os
 import re
 import shutil
+import tempfile
 from datetime import datetime
 
 from .vault_paths import resolve_vault_path
+from .vault_events import content_hash
 
 TITLE_PATTERN = re.compile(r"^#\s+(.+)$", re.MULTILINE)
+
+
+class DocumentConflictError(Exception):
+    """Raised when a write is based on a stale document revision."""
 
 
 def _document_path(node_id: str):
@@ -20,6 +27,34 @@ def _extract_title(content: str, fallback_stem: str) -> str:
     if match:
         return match.group(1).strip()
     return fallback_stem.replace("-", " ").strip() or fallback_stem
+
+
+def _updated_at(file_path) -> str:
+    return datetime.fromtimestamp(file_path.stat().st_mtime).isoformat()
+
+
+def _atomic_write_text(file_path, content: str) -> None:
+    tmp_name = None
+    with tempfile.NamedTemporaryFile(
+        "w",
+        encoding="utf-8",
+        dir=file_path.parent,
+        delete=False,
+    ) as tmp_file:
+        tmp_name = tmp_file.name
+        tmp_file.write(content)
+        tmp_file.flush()
+        os.fsync(tmp_file.fileno())
+
+    try:
+        os.replace(tmp_name, file_path)
+    except Exception:
+        if tmp_name:
+            try:
+                os.unlink(tmp_name)
+            except FileNotFoundError:
+                pass
+        raise
 
 
 def read_document(node_id: str) -> dict[str, str]:
@@ -40,17 +75,18 @@ def read_document(node_id: str) -> dict[str, str]:
     content = file_path.read_text(encoding="utf-8", errors="replace")
     stem = file_path.stem
     title = _extract_title(content, stem)
-    updated_at = datetime.fromtimestamp(file_path.stat().st_mtime).isoformat()
+    updated_at = _updated_at(file_path)
 
     return {
         "id": node_id,
         "title": title,
         "content": content,
         "updatedAt": updated_at,
+        "hash": content_hash(content),
     }
 
 
-def write_document(node_id: str, content: str) -> dict[str, str]:
+def write_document(node_id: str, content: str, base_hash: str | None = None) -> dict[str, str]:
     """Write content to a markdown document in the vault.
 
     Creates parent directories if needed.
@@ -60,15 +96,23 @@ def write_document(node_id: str, content: str) -> dict[str, str]:
     file_path = _document_path(node_id)
 
     file_path.parent.mkdir(parents=True, exist_ok=True)
-    file_path.write_text(content, encoding="utf-8")
+    if base_hash is not None:
+        if not file_path.exists():
+            raise DocumentConflictError(f"document revision conflict: {node_id}")
+        current_content = file_path.read_text(encoding="utf-8", errors="replace")
+        if content_hash(current_content) != base_hash:
+            raise DocumentConflictError(f"document revision conflict: {node_id}")
+
+    _atomic_write_text(file_path, content)
     stem = file_path.stem
     title = _extract_title(content, stem)
-    updated_at = datetime.fromtimestamp(file_path.stat().st_mtime).isoformat()
+    updated_at = _updated_at(file_path)
 
     return {
         "id": node_id,
         "title": title,
         "updatedAt": updated_at,
+        "hash": content_hash(content),
     }
 
 
@@ -80,16 +124,17 @@ def create_document(path: str, content: str = "") -> dict[str, str]:
         raise FileExistsError(f"document already exists: {path}")
 
     file_path.parent.mkdir(parents=True, exist_ok=True)
-    file_path.write_text(content, encoding="utf-8")
+    _atomic_write_text(file_path, content)
 
     stem = file_path.stem
     title = _extract_title(content, stem)
-    updated_at = datetime.fromtimestamp(file_path.stat().st_mtime).isoformat()
+    updated_at = _updated_at(file_path)
 
     return {
         "id": path,
         "title": title,
         "updatedAt": updated_at,
+        "hash": content_hash(content),
     }
 
 
@@ -125,10 +170,11 @@ def move_document(node_id: str, new_path: str) -> dict[str, str]:
     content = dst_path.read_text(encoding="utf-8", errors="replace")
     stem = dst_path.stem
     title = _extract_title(content, stem)
-    updated_at = datetime.fromtimestamp(dst_path.stat().st_mtime).isoformat()
+    updated_at = _updated_at(dst_path)
 
     return {
         "id": new_path,
         "title": title,
         "updatedAt": updated_at,
+        "hash": content_hash(content),
     }

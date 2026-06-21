@@ -43,6 +43,7 @@ def test_create_document_returns_201(tmp_path, monkeypatch):
     data = response.json()["data"]
     assert data["id"] == "notes/hello.md"
     assert data["title"] == "Hello"
+    assert "hash" in data
     assert (tmp_path / "notes" / "hello.md").read_text(encoding="utf-8") == "# Hello\n"
 
 
@@ -213,5 +214,47 @@ def test_move_document_unauthorized_returns_401(tmp_path, monkeypatch):
         "/api/documents/note.md/move",
         json={"new_path": "new.md"},
     )
+
+    assert response.status_code == 401
+
+
+def test_update_document_with_matching_base_hash(tmp_path, monkeypatch):
+    client = create_test_client(tmp_path, monkeypatch)
+    sign_in(client)
+    (tmp_path / "note.md").write_text("# Note\n", encoding="utf-8")
+
+    read_response = client.get("/api/documents/note.md")
+    base_hash = read_response.json()["data"]["hash"]
+
+    response = client.put(
+        "/api/documents/note.md",
+        json={"content": "# Note\nUpdated\n", "baseHash": base_hash},
+    )
+
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["hash"] != base_hash
+    assert (tmp_path / "note.md").read_text(encoding="utf-8") == "# Note\nUpdated\n"
+
+
+def test_update_document_with_stale_base_hash_returns_409(tmp_path, monkeypatch):
+    client = create_test_client(tmp_path, monkeypatch)
+    sign_in(client)
+    (tmp_path / "note.md").write_text("# Note\n", encoding="utf-8")
+
+    response = client.put(
+        "/api/documents/note.md",
+        json={"content": "# Note\nStale\n", "baseHash": "stale"},
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "document_revision_conflict"
+    assert (tmp_path / "note.md").read_text(encoding="utf-8") == "# Note\n"
+
+
+def test_vault_events_requires_authentication(tmp_path, monkeypatch):
+    client = create_test_client(tmp_path, monkeypatch)
+
+    response = client.get("/api/vault/events")
 
     assert response.status_code == 401
