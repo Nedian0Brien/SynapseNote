@@ -18,8 +18,8 @@
   - 검증: `pytest services/web/backend/tests services/web/tests -q`.
 - [x] frontend 베이스라인 테스트가 통과한다.
   - 검증: `npm test` in `services/web/frontend`.
-- [ ] 전환 완료 후 `deploy/deploy.sh`로 배포한다.
-  - 검증: `bash deploy/deploy.sh`, localhost web/api healthcheck.
+- [x] 전환 완료 후 `deploy/deploy.sh`로 배포한다.
+  - 증거: `bash deploy/deploy.sh`, `bash deploy/deploy.sh api`, localhost web/api healthcheck.
 
 ## 2. Vault 저장소
 
@@ -99,8 +99,8 @@
   - 증거: `editor-sync-banner`.
 - [x] source/preview 모드 정책을 확정한다.
   - 증거: `EditorView` mode switch, Markdown source textarea round trip test.
-- [ ] 모바일 Safari 입력/확대/커서 회귀를 실제 브라우저로 확인한다.
-  - 검증: 모바일 viewport 또는 실제 Safari 확인 기록.
+- [x] 모바일 Safari 입력/확대/커서 회귀를 실제 브라우저로 확인한다.
+  - 증거: iPhone 13 Chromium viewport smoke, source textarea focus, font-size 16px, `visualViewport.scale=1`.
 
 ## 7. AI/Context
 
@@ -126,14 +126,14 @@
 
 ## 9. AppFlowy 의존 정리
 
-- [ ] 현재 배포 런타임이 AppFlowy Web인지 레거시 `services/web`인지 확정한다.
-  - 검증: 실행 중 컨테이너, route, image, deploy script 확인.
-- [ ] AppFlowy Cloud collab 저장소가 필수 의존성이 아니게 한다.
-  - 검증: AppFlowy Cloud 서비스를 내려도 core note 기능 통과.
-- [ ] AppFlowy Web에서 가져온 UI 변경 중 필요한 디자인 자산만 선별한다.
-  - 검증: 디자인 토큰/컴포넌트 목록.
-- [ ] 배포 compose/deploy를 Markdown vault web/api 기준으로 단순화한다.
-  - 검증: `deploy/deploy.sh`와 healthcheck.
+- [x] 현재 배포 런타임이 AppFlowy Web인지 레거시 `services/web`인지 확정한다.
+  - 증거: `synapse.lawdigest.kr` nginx upstream `127.0.0.1:3002`, `synapsenote-web` bundle, `docs/runtime-deployment-audit.md`.
+- [x] AppFlowy Cloud collab 저장소가 필수 의존성이 아니게 한다.
+  - 증거: compose/deploy required services are `synapsenote-api`, `synapsenote-web`, `backup`; live Markdown CRUD smoke passed through `services/web`.
+- [x] AppFlowy Web에서 가져온 UI 변경 중 필요한 디자인 자산만 선별한다.
+  - 증거: active 기준은 `services/web/frontend/src/shared/styles/*`, `docs/design-system-preview.html`, `docs/main-ui-preview.html`; AppFlowy Web route removed from active domain.
+- [x] 배포 compose/deploy를 Markdown vault web/api 기준으로 단순화한다.
+  - 증거: `docker-compose.yml`, `deploy/deploy.sh`, `deploy/README.md`, deployed `synapsenote-api`/`synapsenote-web` healthcheck.
 
 ## 10. 백업/운영
 
@@ -143,5 +143,5 @@
   - 증거: `.synapsenote/graph.db` 삭제 후 rebuild test.
 - [x] 운영 healthcheck가 vault read/write 가능성을 확인한다.
   - 증거: `/health` vault readable/writable response test.
-- [ ] 배포 후 `synapse.lawdigest.kr`에서 문서 생성/수정/동기화 smoke를 통과한다.
-  - 검증: live URL 수동/자동 smoke 결과.
+- [x] 배포 후 `synapse.lawdigest.kr`에서 문서 생성/수정/동기화 smoke를 통과한다.
+  - 증거: live login/create/update/read/graph/chunks/SSE smoke, `docs/runtime-deployment-audit.md`.
