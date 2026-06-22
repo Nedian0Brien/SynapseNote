@@ -20,6 +20,7 @@ MARKDOWN_LINK_PATTERN = re.compile(r"(?<!!)\[[^\]]+\]\(([^)#?]+\.md)(?:#[^)]*)?\
 TITLE_PATTERN = re.compile(r"^#\s+(.+)$", re.MULTILINE)
 TAG_PATTERN = re.compile(r"(?<![\w/])#([a-zA-Z0-9][a-zA-Z0-9_-]*)")
 FRONTMATTER_PATTERN = re.compile(r"\A---\s*\n(.*?)\n---\s*(?:\n|\Z)", re.DOTALL)
+CALLOUT_MARKER_PATTERN = re.compile(r"^\[![^\]]+\]\s*")
 
 logger = logging.getLogger(__name__)
 
@@ -82,8 +83,10 @@ class VaultIndexer:
         stem_index: dict[str, list[str]] = {}
         for node in parsed:
             if node["type"] == "Document":
-                stem = Path(node["id"]).stem
-                stem_index.setdefault(stem, []).append(node["id"])
+                self._add_stem_index_entry(stem_index, Path(node["id"]).stem, node["id"])
+                if node["id"].endswith(".md"):
+                    self._add_stem_index_entry(stem_index, node["id"][:-3], node["id"])
+                self._add_stem_index_entry(stem_index, node["id"], node["id"])
 
         # 5. 엣지 계산
         node_id_set = {node["id"] for node in parsed}
@@ -359,11 +362,7 @@ class VaultIndexer:
             else str(frontmatter.get("title") or path.stem.replace("-", " ").strip() or path.stem)
         )
 
-        lines = [
-            line.strip()
-            for line in body.splitlines()
-            if line.strip() and not line.strip().startswith("#")
-        ]
+        lines = self._summary_lines(body)
         summary = lines[0][:180] if lines else ""
 
         frontmatter_tags = frontmatter.get("tags") or []
@@ -424,6 +423,20 @@ class VaultIndexer:
             else:
                 data[key] = value.strip('"\'')
         return data
+
+    def _summary_lines(self, body: str) -> list[str]:
+        lines: list[str] = []
+        for raw_line in body.splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if line.startswith(">"):
+                line = line.lstrip(">").strip()
+                line = CALLOUT_MARKER_PATTERN.sub("", line).strip()
+                if not line:
+                    continue
+            lines.append(line)
+        return lines
 
     def _resolve_wikilink(
         self,
@@ -521,9 +534,17 @@ class VaultIndexer:
         ).fetchall()
         for row in rows:
             node_id: str = row[0]
-            stem = Path(node_id).stem
-            index.setdefault(stem, []).append(node_id)
+            self._add_stem_index_entry(index, Path(node_id).stem, node_id)
+            if node_id.endswith(".md"):
+                self._add_stem_index_entry(index, node_id[:-3], node_id)
+            self._add_stem_index_entry(index, node_id, node_id)
         return index
+
+    @staticmethod
+    def _add_stem_index_entry(index: dict[str, list[str]], key: str, node_id: str) -> None:
+        bucket = index.setdefault(key, [])
+        if node_id not in bucket:
+            bucket.append(node_id)
 
     def _all_node_ids(self, conn: sqlite3.Connection) -> set[str]:
         rows = conn.execute("SELECT id FROM nodes").fetchall()

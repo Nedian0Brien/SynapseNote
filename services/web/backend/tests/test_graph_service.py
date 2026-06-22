@@ -141,3 +141,39 @@ class TestBuildGraph:
 
         assert nodes["notes/diagram.png"]["type"] == "Attachment"
         assert ("notes/with-embed.md", "notes/diagram.png", "attachment") in edges
+
+    def test_wikilink_resolution_prefers_same_directory(self, vault):
+        (vault / "projects" / "same.md").write_text("# Project Same\n", encoding="utf-8")
+        (vault / "notes" / "same.md").write_text("# Note Same\n", encoding="utf-8")
+        (vault / "notes" / "source.md").write_text("[[same]]\n", encoding="utf-8")
+
+        VaultIndexer().full_rebuild()
+        result = build_graph()
+
+        edges = {(edge["source"], edge["target"], edge["edge_type"]) for edge in result["edges"]}
+        assert ("notes/source.md", "notes/same.md", "wikilink") in edges
+        assert ("notes/source.md", "projects/same.md", "wikilink") not in edges
+
+    def test_wikilink_resolution_accepts_vault_relative_paths(self, vault):
+        (vault / "notes" / "path-source.md").write_text("[[projects/alpha]]\n", encoding="utf-8")
+
+        VaultIndexer().full_rebuild()
+        result = build_graph()
+
+        edges = {(edge["source"], edge["target"], edge["edge_type"]) for edge in result["edges"]}
+        assert ("notes/path-source.md", "projects/alpha.md", "wikilink") in edges
+
+    def test_callout_marker_is_not_used_as_summary(self, vault):
+        (vault / "notes" / "callout.md").write_text(
+            textwrap.dedent("""\
+                > [!note] Important
+                > Keep this point visible.
+            """),
+            encoding="utf-8",
+        )
+
+        VaultIndexer().full_rebuild()
+        result = build_graph()
+
+        nodes = {node["id"]: node for node in result["nodes"]}
+        assert nodes["notes/callout.md"]["summary"] == "Important"

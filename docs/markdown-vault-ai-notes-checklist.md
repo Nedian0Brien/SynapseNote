@@ -69,17 +69,17 @@
   - 증거: `[Title](other.md)` graph edge test.
 - [x] Obsidian embed `![[file]]`를 attachment edge로 인덱싱한다.
   - 증거: attachment node/edge graph test.
-- [ ] Obsidian callout `> [!note]`를 깨뜨리지 않고 summary/chunk에서 처리한다.
-  - 검증: callout 포함 문서 파서 테스트.
-- [ ] 중복 제목과 동일 stem wikilink 해석 정책을 문서화하고 테스트한다.
-  - 검증: same-dir 우선, path 기반 fallback 테스트.
+- [x] Obsidian callout `> [!note]`를 노드 summary에서 처리한다.
+  - 증거: callout marker summary test. chunk 처리는 AI chunker 항목에서 별도 추적.
+- [x] 중복 제목과 동일 stem wikilink 해석 정책을 문서화하고 테스트한다.
+  - 증거: same-dir 우선, vault-relative path wikilink tests.
 
 ## 5. Graph/Search
 
 - [x] directory edge와 wikilink edge를 생성한다.
   - 증거: `VaultIndexer.full_rebuild`, graph tests.
-- [~] tag metadata를 node에 저장한다.
-  - 증거: `nodes.tags`; tag edge는 미완료.
+- [x] tag metadata를 node에 저장한다.
+  - 증거: `nodes.tags`, frontmatter/body tag tests.
 - [x] edge type을 `directory`, `wikilink`, `markdown_link`, `tag`, `attachment`로 확장한다.
   - 증거: 각 edge type 구현, graph tests.
 - [ ] 깨진 링크와 미해결 wikilink를 별도 상태로 표시한다.
