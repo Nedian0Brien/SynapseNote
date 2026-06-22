@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from app.indexer.vault_indexer import VaultIndexer
+
 from .chat_service import ChatService
 from .vault_paths import resolve_vault_path
 
@@ -21,6 +23,7 @@ class CaptureService:
         source_message_ids: list[str],
         title: str,
         directory: str,
+        append_to_path: str | None = None,
     ) -> dict[str, object]:
         session = self.chat_service.get_session(session_id)
         if session is None:
@@ -34,17 +37,27 @@ class CaptureService:
             messages.append(message)
 
         safe_title = _safe_stem(title)
-        safe_directory = directory.strip().strip("/") if directory.strip() else ""
-        relative_path = f"{safe_directory}/{safe_title}.md" if safe_directory else f"{safe_title}.md"
+        if append_to_path:
+            relative_path = append_to_path.strip().strip("/")
+        else:
+            safe_directory = directory.strip().strip("/") if directory.strip() else ""
+            relative_path = f"{safe_directory}/{safe_title}.md" if safe_directory else f"{safe_title}.md"
 
         target_path = resolve_vault_path(relative_path, require_markdown=True)
         target_path.parent.mkdir(parents=True, exist_ok=True)
 
-        content_lines = [f"# {safe_title}", ""]
+        content_lines = [f"# {safe_title}", ""] if not append_to_path else ["", f"## {safe_title}", ""]
         for message in messages:
             content_lines.append(str(message["content"]))
             content_lines.append("")
-        target_path.write_text("\n".join(content_lines).strip() + "\n", encoding="utf-8")
+        content = "\n".join(content_lines).strip() + "\n"
+        if append_to_path and target_path.exists():
+            with target_path.open("a", encoding="utf-8") as file:
+                file.write("\n" + content)
+        else:
+            target_path.write_text(content, encoding="utf-8")
+
+        VaultIndexer().update_node(target_path)
 
         capture = self.chat_service.create_capture(
             session_id=session_id,
@@ -69,5 +82,6 @@ class CaptureService:
             "sourceMessageIds": list(source_message_ids),
             "targetNodePath": relative_path,
             "status": "saved",
+            "mode": "append" if append_to_path else "create",
             "createdAt": capture["createdAt"],
         }

@@ -55,6 +55,7 @@ class ChatCaptureCreatePayload(BaseModel):
     sourceMessageIds: list[str]
     title: str
     directory: str = ""
+    appendToPath: str | None = None
 
 
 class DocumentWritePayload(BaseModel):

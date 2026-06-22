@@ -117,12 +117,12 @@
 
 ## 8. Capture
 
-- [~] AI 대화 capture가 Markdown 문서를 생성한다.
-  - 증거: `capture_service.py`; 새 동기화/인덱스 계약과 통합 검증 필요.
-- [ ] capture 저장 위치를 새 노트/현재 노트 append/지정 폴더 중 선택할 수 있다.
-  - 검증: 각 저장 방식별 API/UI 테스트.
-- [ ] capture 결과가 graph/search/context에 즉시 반영된다.
-  - 검증: capture 후 watcher/indexer/event 확인.
+- [x] AI 대화 capture가 Markdown 문서를 생성한다.
+  - 증거: capture API creates Markdown document test.
+- [x] capture 저장 위치를 새 노트/현재 노트 append/지정 폴더 중 선택할 수 있다.
+  - 증거: directory create and `appendToPath` tests.
+- [x] capture 결과가 graph/search/context에 즉시 반영된다.
+  - 증거: capture updates index and `/api/chunks` graph tests.
 
 ## 9. AppFlowy 의존 정리
 

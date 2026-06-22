@@ -15,6 +15,7 @@ from app.schemas import (
 from app.services.chat_service import ChatService
 from app.services.chat_runtime import ChatRuntime
 from app.services.capture_service import CaptureService
+from app.services.vault_events import build_document_event, vault_event_bus
 
 
 def create_chat_router(
@@ -203,6 +204,7 @@ def create_chat_router(
                 source_message_ids=payload.sourceMessageIds,
                 title=payload.title,
                 directory=payload.directory,
+                append_to_path=payload.appendToPath,
             )
         except ValueError as error:
             raise HTTPException(status_code=400, detail=str(error)) from error
@@ -212,6 +214,10 @@ def create_chat_router(
                 raise HTTPException(status_code=404, detail="session_not_found") from error
             raise HTTPException(status_code=404, detail="message_not_found") from error
 
+        vault_event_bus.publish(build_document_event(
+            action="modified" if record["mode"] == "append" else "created",
+            path=str(record["targetNodePath"]),
+        ))
         return {"success": True, "data": record, "meta": {}}
 
     return r
