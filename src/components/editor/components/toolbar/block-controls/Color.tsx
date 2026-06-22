@@ -13,7 +13,7 @@ import { useEditorContext } from '@/components/editor/EditorContext';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ColorEnum, renderColor } from '@/utils/color';
-import { getProAccessPlanFromSubscriptions, isAppFlowyHosted } from '@/utils/subscription';
+import { getProAccessPlanFromSubscriptions, isSynapseHosted } from '@/utils/subscription';
 
 const origins: Origins = {
   anchorOrigin: {
@@ -38,7 +38,7 @@ function Color({ node, onSelectColor }: { node: BlockNode; onSelectColor: () => 
   const selectedColor = originalColor || (hasNonTransparentBg ? ColorEnum.Tint10 : '');
 
   const [activeSubscriptionPlan, setActiveSubscriptionPlan] = useState<SubscriptionPlan | null>(null);
-  const isHosted = useMemo(() => isAppFlowyHosted(), []);
+  const isHosted = useMemo(() => isSynapseHosted(), []);
   const isPro = !isHosted || activeSubscriptionPlan === SubscriptionPlan.Pro;
 
   const loadSubscription = useCallback(async () => {

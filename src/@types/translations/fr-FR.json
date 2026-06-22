@@ -1739,7 +1739,7 @@
       "smartEditCouldNotFetchResult": "Impossible de récupérer le résultat d'AI",
       "smartEditCouldNotFetchKey": "Impossible de récupérer la clé AI",
       "smartEditDisabled": "Connectez AI dans les paramètres",
-      "appflowyAIEditDisabled": "Connectez-vous pour activer les fonctionnalités de l'IA",
+      "synapsenoteAIEditDisabled": "Connectez-vous pour activer les fonctionnalités de l'IA",
       "discardResponse": "Voulez-vous supprimer les réponses de l'IA ?",
       "createInlineMathEquation": "Créer une équation",
       "fonts": "Polices",

@@ -11,7 +11,7 @@ const ProFeatureDemo = ({ hostname, activeSubscriptionPlan }: { hostname: string
 
   // Simulate the logic from TextColor component
   const isOfficialHost = () => {
-    return hostname === 'beta.appflowy.cloud' || hostname === 'test.appflowy.cloud';
+    return hostname === 'beta.synapsenote.cloud' || hostname === 'test.synapsenote.cloud';
   };
 
   const isPro = activeSubscriptionPlan === SubscriptionPlan.Pro || !isOfficialHost();
@@ -76,7 +76,7 @@ type Story = StoryObj<typeof meta>;
 
 export const OfficialHostFreePlan: Story = {
   args: {
-    hostname: 'beta.appflowy.cloud',
+    hostname: 'beta.synapsenote.cloud',
     activeSubscriptionPlan: SubscriptionPlan.Free,
   },
   parameters: {
@@ -90,7 +90,7 @@ export const OfficialHostFreePlan: Story = {
 
 export const OfficialHostProPlan: Story = {
   args: {
-    hostname: 'beta.appflowy.cloud',
+    hostname: 'beta.synapsenote.cloud',
     activeSubscriptionPlan: SubscriptionPlan.Pro,
   },
   parameters: {
@@ -132,7 +132,7 @@ export const SelfHostedProPlan: Story = {
 
 export const TestHostFreePlan: Story = {
   args: {
-    hostname: 'test.appflowy.cloud',
+    hostname: 'test.synapsenote.cloud',
     activeSubscriptionPlan: SubscriptionPlan.Free,
   },
   parameters: {

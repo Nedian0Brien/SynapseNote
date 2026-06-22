@@ -30,10 +30,10 @@ describe('deploy/server', () => {
   const htmlTemplate = `
     <html>
       <head>
-        <title>AppFlowy</title>
+        <title>SynapseNote</title>
         <meta name="description" content="">
         <meta property="og:image" content="">
-        <link rel="icon" href="/appflowy.ico">
+        <link rel="icon" href="/synapsenote.ico">
         <link rel="canonical" href="">
       </head>
       <body><div id="root"></div></body>
@@ -45,9 +45,9 @@ describe('deploy/server', () => {
 
   const makeRequest = (path: string, init: RequestInit = {}) => {
     const headers = new Headers(init.headers);
-    headers.set('host', 'appflowy.test');
+    headers.set('host', 'synapsenote.test');
 
-    return new Request(`https://appflowy.test${path}`, {
+    return new Request(`https://synapsenote.test${path}`, {
       ...init,
       method: init.method ?? 'GET',
       headers,
@@ -58,11 +58,11 @@ describe('deploy/server', () => {
 
   const extractPublishError = (html: string) => {
     const $ = load(html);
-    const scriptContent = $('#appflowy-publish-error').html();
+    const scriptContent = $('#synapsenote-publish-error').html();
 
     if (!scriptContent) return undefined;
 
-    const match = scriptContent.match(/window.__APPFLOWY_PUBLISH_ERROR__ = (.*);/);
+    const match = scriptContent.match(/window.__SYNAPSENOTE_PUBLISH_ERROR__ = (.*);/);
     if (!match) return undefined;
 
     return JSON.parse(match[1]);
@@ -70,7 +70,7 @@ describe('deploy/server', () => {
 
   beforeAll(async () => {
     process.env.NODE_ENV = 'test';
-    process.env.APPFLOWY_BASE_URL = 'https://api.example.com';
+    process.env.SYNAPSENOTE_BASE_URL = 'https://api.example.com';
     const globalAny = global as typeof globalThis & { btoa?: (value: string) => string };
 
     if (!globalAny.btoa) {
@@ -101,8 +101,8 @@ describe('deploy/server', () => {
     const $ = load(html);
 
     expect(response.status).toBe(200);
-    expect($('title').text()).toBe('Login | AppFlowy');
-    expect($('meta[name="description"]').attr('content')).toBe('Login to AppFlowy');
+    expect($('title').text()).toBe('Login | SynapseNote');
+    expect($('meta[name="description"]').attr('content')).toBe('Login to SynapseNote');
     expect(mockBunFetch).not.toHaveBeenCalled();
     expect(mockReadFileSync).toHaveBeenCalled();
   });
@@ -113,8 +113,8 @@ describe('deploy/server', () => {
     const $ = load(html);
 
     expect(response.status).toBe(200);
-    expect($('title').text()).toBe('Payment Success | AppFlowy');
-    expect($('meta[name="description"]').attr('content')).toBe('Payment success on AppFlowy');
+    expect($('title').text()).toBe('Payment Success | SynapseNote');
+    expect($('meta[name="description"]').attr('content')).toBe('Payment success on SynapseNote');
   });
 
   it('renders /app route without custom metadata', async () => {
@@ -123,7 +123,7 @@ describe('deploy/server', () => {
     const $ = load(html);
 
     expect(response.status).toBe(200);
-    expect($('title').text()).toBe('AppFlowy');
+    expect($('title').text()).toBe('SynapseNote');
     expect(mockBunFetch).not.toHaveBeenCalled();
   });
 
@@ -210,7 +210,7 @@ describe('deploy/server', () => {
       namespace: 'foo<bar>',
     });
 
-    const scriptText = load(html)('#appflowy-publish-error').html()!;
+    const scriptText = load(html)('#synapsenote-publish-error').html()!;
     expect(scriptText).toContain('\\u003cbar\\u003e');
     expect(scriptText).not.toContain('<bar>');
   });
@@ -234,7 +234,7 @@ describe('deploy/server', () => {
     const html = await getHtml(response);
     const $ = load(html);
 
-    expect($('title').text()).toContain('Doc | AppFlowy');
+    expect($('title').text()).toContain('Doc | SynapseNote');
     expect(extractPublishError(html)).toBeUndefined();
     expect(mockBunFetch).toHaveBeenCalledWith(
       'https://api.example.com/api/workspace/v1/published/space/doc',
@@ -528,7 +528,7 @@ describe('deploy/server', () => {
     const minimalTemplate = `
       <html>
         <head>
-          <title>AppFlowy</title>
+          <title>SynapseNote</title>
         </head>
         <body><div id="root"></div></body>
       </html>
@@ -549,7 +549,7 @@ describe('deploy/server', () => {
     const html = await getHtml(response);
     const $ = load(html);
 
-    expect($('meta[property="og:title"]').attr('content')).toBe('Doc | AppFlowy');
+    expect($('meta[property="og:title"]').attr('content')).toBe('Doc | SynapseNote');
     expect($('meta[property="og:description"]').length).toBe(1);
     expect($('meta[name="twitter:card"]').attr('content')).toBe('summary_large_image');
   });
@@ -570,7 +570,7 @@ describe('deploy/server', () => {
     const $ = load(html);
 
     expect(response.status).toBe(200);
-    expect($('title').text()).toBe('AppFlowy');
+    expect($('title').text()).toBe('SynapseNote');
   });
 
   it('handles ARGB color without alpha correctly', async () => {
@@ -653,7 +653,7 @@ describe('deploy/server', () => {
     const html = await getHtml(response);
     const $ = load(html);
 
-    expect($('link[rel="canonical"]').attr('href')).toBe('https://appflowy.test/workspace/my-page');
+    expect($('link[rel="canonical"]').attr('href')).toBe('https://synapsenote.test/workspace/my-page');
   });
 
   // OG meta tags tests
@@ -670,10 +670,10 @@ describe('deploy/server', () => {
     const html = await getHtml(response);
     const $ = load(html);
 
-    expect($('meta[property="og:url"]').attr('content')).toBe('https://appflowy.test/workspace/page');
+    expect($('meta[property="og:url"]').attr('content')).toBe('https://synapsenote.test/workspace/page');
   });
 
-  it('sets og:site_name to AppFlowy', async () => {
+  it('sets og:site_name to SynapseNote', async () => {
     mockBunFetch.mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -686,7 +686,7 @@ describe('deploy/server', () => {
     const html = await getHtml(response);
     const $ = load(html);
 
-    expect($('meta[property="og:site_name"]').attr('content')).toBe('AppFlowy');
+    expect($('meta[property="og:site_name"]').attr('content')).toBe('SynapseNote');
   });
 
   it('sets og:type to website', async () => {
@@ -722,7 +722,7 @@ describe('deploy/server', () => {
     expect($('meta[name="twitter:card"]').attr('content')).toBe('summary_large_image');
   });
 
-  it('sets twitter:site to @appflowy', async () => {
+  it('sets twitter:site to SynapseNote', async () => {
     mockBunFetch.mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -735,7 +735,7 @@ describe('deploy/server', () => {
     const html = await getHtml(response);
     const $ = load(html);
 
-    expect($('meta[name="twitter:site"]').attr('content')).toBe('@appflowy');
+    expect($('meta[name="twitter:site"]').attr('content')).toBe('SynapseNote');
   });
 
   // Edge case tests
@@ -766,7 +766,7 @@ describe('deploy/server', () => {
     const $ = load(html);
 
     expect(response.status).toBe(200);
-    expect($('title').text()).toBe('📝 My Notes | AppFlowy');
+    expect($('title').text()).toBe('📝 My Notes | SynapseNote');
   });
 
   it('handles very long page names', async () => {
@@ -785,7 +785,7 @@ describe('deploy/server', () => {
     const $ = load(html);
 
     expect(response.status).toBe(200);
-    expect($('title').text()).toBe(`${longName} | AppFlowy`);
+    expect($('title').text()).toBe(`${longName} | SynapseNote`);
   });
 
   // API endpoint verification

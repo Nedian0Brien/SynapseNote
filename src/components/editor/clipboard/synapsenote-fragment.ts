@@ -2,19 +2,19 @@ import { Element, Node as SlateNode, Text } from 'slate';
 
 import { BlockType, YjsEditorKey } from '@/application/types';
 
-export const APPFLOWY_FRAGMENT_MIME = 'application/x-appflowy-fragment';
-export const APPFLOWY_HTML_FRAGMENT_ATTR = 'data-appflowy-fragment';
+export const SYNAPSENOTE_FRAGMENT_MIME = 'application/x-synapsenote-fragment';
+export const SYNAPSENOTE_HTML_FRAGMENT_ATTR = 'data-synapsenote-fragment';
 
 const DESKTOP_IN_APP_JSON_FORMATS = [
-  'io.appflowy.InAppJsonType',
-  'application/x-private;appId=io.appflowy.InAppJsonType',
-  'application/x-private;appid=io.appflowy.InAppJsonType',
+  'io.synapsenote.InAppJsonType',
+  'application/x-private;appId=io.synapsenote.InAppJsonType',
+  'application/x-private;appid=io.synapsenote.InAppJsonType',
 ];
 
 const DESKTOP_TABLE_JSON_FORMATS = [
-  'io.appflowy.TableJsonType',
-  'application/x-private;appId=io.appflowy.TableJsonType',
-  'application/x-private;appid=io.appflowy.TableJsonType',
+  'io.synapsenote.TableJsonType',
+  'application/x-private;appId=io.synapsenote.TableJsonType',
+  'application/x-private;appid=io.synapsenote.TableJsonType',
 ];
 
 const KNOWN_BLOCK_TYPES = new Set<string>(Object.values(BlockType));
@@ -49,29 +49,29 @@ export interface RichClipboardFragment {
 }
 
 const CLIPBOARD_FRAGMENT_READERS: ClipboardFragmentReader[] = [
-  createFormatReader('appflowy-web-fragment', [APPFLOWY_FRAGMENT_MIME]),
-  createFormatReader('appflowy-desktop-in-app-json', DESKTOP_IN_APP_JSON_FORMATS),
-  createFormatReader('appflowy-desktop-table-json', DESKTOP_TABLE_JSON_FORMATS),
+  createFormatReader('synapsenote-web-fragment', [SYNAPSENOTE_FRAGMENT_MIME]),
+  createFormatReader('synapsenote-desktop-in-app-json', DESKTOP_IN_APP_JSON_FORMATS),
+  createFormatReader('synapsenote-desktop-table-json', DESKTOP_TABLE_JSON_FORMATS),
   createFormatReader(
-    'appflowy-application-json',
+    'synapsenote-application-json',
     [
-      // Generic JSON is shared by many apps, so accept only the full AppFlowy
-      // document envelope here. Trusted AppFlowy-specific formats above can
+      // Generic JSON is shared by many apps, so accept only the full SynapseNote
+      // document envelope here. Trusted SynapseNote-specific formats above can
       // still carry raw node arrays.
       'application/json',
     ],
-    appFlowyDocumentPayloadToSlateFragment
+    synapseNoteDocumentPayloadToSlateFragment
   ),
   {
-    id: 'appflowy-html-fragment',
+    id: 'synapsenote-html-fragment',
     read(data) {
       const html = getClipboardData(data, 'text/html');
-      const value = extractAppFlowyFragmentFromHTML(html);
+      const value = extractSynapseNoteFragmentFromHTML(html);
 
       return value
         ? [
             {
-              source: `text/html:${APPFLOWY_HTML_FRAGMENT_ATTR}`,
+              source: `text/html:${SYNAPSENOTE_HTML_FRAGMENT_ATTR}`,
               value,
             },
           ]
@@ -81,7 +81,7 @@ const CLIPBOARD_FRAGMENT_READERS: ClipboardFragmentReader[] = [
   },
 ];
 
-export function extractAppFlowyClipboardFragment(data: Pick<DataTransfer, 'getData'>): RichClipboardFragment | null {
+export function extractSynapseNoteClipboardFragment(data: Pick<DataTransfer, 'getData'>): RichClipboardFragment | null {
   for (const reader of CLIPBOARD_FRAGMENT_READERS) {
     for (const candidate of reader.read(data)) {
       const fragment = reader.parse(candidate.value);
@@ -111,10 +111,10 @@ export function payloadToSlateFragment(payload: unknown): SlateNode[] | null {
     return normalizeSlateFragment(payload);
   }
 
-  return appFlowyDocumentToSlateFragment(payload);
+  return synapseNoteDocumentToSlateFragment(payload);
 }
 
-export function appFlowyDocumentToSlateFragment(payload: unknown): SlateNode[] | null {
+export function synapseNoteDocumentToSlateFragment(payload: unknown): SlateNode[] | null {
   const nodes = getDesktopTopLevelNodes(payload);
 
   if (!nodes) return null;
@@ -124,12 +124,12 @@ export function appFlowyDocumentToSlateFragment(payload: unknown): SlateNode[] |
   return fragment.length > 0 ? fragment : null;
 }
 
-function appFlowyDocumentPayloadToSlateFragment(raw: string): SlateNode[] | null {
+function synapseNoteDocumentPayloadToSlateFragment(raw: string): SlateNode[] | null {
   const payload = decodeClipboardPayload(raw);
 
-  if (!isAppFlowyDocumentEnvelope(payload)) return null;
+  if (!isSynapseNoteDocumentEnvelope(payload)) return null;
 
-  return appFlowyDocumentToSlateFragment(payload);
+  return synapseNoteDocumentToSlateFragment(payload);
 }
 
 function createFormatReader(
@@ -158,10 +158,10 @@ function getClipboardData(data: Pick<DataTransfer, 'getData'>, type: string): st
   }
 }
 
-export function extractAppFlowyFragmentFromHTML(html: string | undefined): string | undefined {
+export function extractSynapseNoteFragmentFromHTML(html: string | undefined): string | undefined {
   if (!html) return undefined;
 
-  const match = html.match(/\sdata-appflowy-fragment=(["'])(.+?)\1/m);
+  const match = html.match(/\sdata-synapsenote-fragment=(["'])(.+?)\1/m);
 
   return match ? decodeHtmlAttribute(match[2]) : undefined;
 }
@@ -271,7 +271,7 @@ function decodeBinaryUtf8(binary: string): string | null {
   return null;
 }
 
-function isAppFlowyDocumentEnvelope(payload: unknown): boolean {
+function isSynapseNoteDocumentEnvelope(payload: unknown): boolean {
   const document = asRecord(payload)?.document;
 
   return isDesktopNode(document) && document.type === BlockType.Page;

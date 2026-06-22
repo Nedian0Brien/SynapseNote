@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import { ReactComponent as ErrorOutline } from '@/assets/icons/error.svg';
 import LoadingDots from '@/components/_shared/LoadingDots';
-import { isAppFlowyFileStorageUrl } from '@/utils/file-storage-url';
+import { isSynapseFileStorageUrl } from '@/utils/file-storage-url';
 
 import { useImageWithRetry } from './useImageWithRetry';
 
@@ -25,7 +25,7 @@ interface ImgProps {
 /**
  * Derive a human-ish alt label from a URL when none was provided.
  *
- * For AppFlowy storage URLs the trailing path segment is an opaque hash
+ * For SynapseNote storage URLs the trailing path segment is an opaque hash
  * (file_id) — reading "bGTk 4nxVz" aloud is no better than empty alt, so
  * we just use the generic label. For external URLs the trailing filename
  * is usually human-chosen and worth surfacing.
@@ -35,7 +35,7 @@ interface ImgProps {
  */
 function fallbackAltFromUrl(url: string): string {
   if (!url) return GENERIC_ALT;
-  if (isAppFlowyFileStorageUrl(url)) return GENERIC_ALT;
+  if (isSynapseFileStorageUrl(url)) return GENERIC_ALT;
 
   try {
     const parsed = new URL(url, 'http://_');
@@ -44,7 +44,7 @@ function fallbackAltFromUrl(url: string): string {
     const withoutExt = decoded.replace(/\.[a-z0-9]+$/i, '');
     const cleaned = withoutExt.replace(/[-_]+/g, ' ').trim();
 
-    // Reject runs of hex/base64-ish hash output even from non-AppFlowy URLs.
+    // Reject runs of hex/base64-ish hash output even from non-SynapseNote URLs.
     // A reasonable heuristic: needs at least one vowel and 3+ chars to be
     // worth reading aloud. Otherwise fall back to the generic label.
     const looksLikeWord = cleaned.length >= 3 && /[aeiou]/i.test(cleaned);

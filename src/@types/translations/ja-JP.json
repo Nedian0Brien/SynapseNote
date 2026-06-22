@@ -1551,7 +1551,7 @@
       "smartEditCouldNotFetchResult": "AIから結果を取得できませんでした",
       "smartEditCouldNotFetchKey": "AIキーを取得できませんでした",
       "smartEditDisabled": "設定でAIを接続してください",
-      "appflowyAIEditDisabled": "AI機能を有効にするにはサインインしてください",
+      "synapsenoteAIEditDisabled": "AI機能を有効にするにはサインインしてください",
       "discardResponse": "AIの回答を破棄しますか？",
       "createInlineMathEquation": "数式を作成",
       "fonts": "フォント",

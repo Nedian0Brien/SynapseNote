@@ -265,7 +265,7 @@ export function AccountAppPanel() {
           {t('settings.accountPage.accountAndApp')}
         </h2>
       </div>
-      <div className='appflowy-scroller flex-1 overflow-y-auto px-8 py-6'>
+      <div className='synapsenote-scroller flex-1 overflow-y-auto px-8 py-6'>
         <div className='flex flex-col gap-6'>
           <Section title={t('settings.accountPage.email.title')}>
             <div className='text-sm text-text-secondary'>{currentUser.email}</div>

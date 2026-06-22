@@ -3,8 +3,8 @@ export const databasePrefix = 'af_database';
 export const HEADER_HEIGHT = 48;
 
 /**
- * Server error codes from AppFlowy Cloud ErrorCode enum.
- * See: libs/app-error/src/lib.rs in AppFlowy-Cloud
+ * Server error codes from SynapseNote Cloud ErrorCode enum.
+ * See: libs/app-error/src/lib.rs in SynapseNote-Cloud
  *
  * Only codes that the web frontend needs to handle are listed here.
  * The `code` field in API responses uses these values.

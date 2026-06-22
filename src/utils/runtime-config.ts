@@ -1,7 +1,7 @@
 interface RuntimeConfig {
-  APPFLOWY_BASE_URL?: string;
-  APPFLOWY_GOTRUE_BASE_URL?: string;
-  APPFLOWY_WS_BASE_URL?: string;
+  SYNAPSENOTE_BASE_URL?: string;
+  SYNAPSENOTE_GOTRUE_BASE_URL?: string;
+  SYNAPSENOTE_WS_BASE_URL?: string;
 }
 
 declare global {

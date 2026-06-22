@@ -1,7 +1,7 @@
 import { ERROR_CODE } from '@/application/constants';
-import { getAppFlowyFileUploadUrl, getAppFlowyFileUrl } from '@/utils/file-storage-url';
+import { getSynapseFileUploadUrl, getSynapseFileUrl } from '@/utils/file-storage-url';
 import { Log } from '@/utils/log';
-import { isAppFlowyHosted } from '@/utils/subscription';
+import { isSynapseHosted } from '@/utils/subscription';
 
 import { getAxios, handleAPIError } from './core';
 
@@ -16,7 +16,7 @@ export async function uploadFile(
   onProgress?: (progress: number) => void
 ) {
   Log.debug('[UploadFile] starting', { fileName: file.name, fileSize: file.size });
-  const url = getAppFlowyFileUploadUrl(workspaceId, viewId);
+  const url = getSynapseFileUploadUrl(workspaceId, viewId);
 
   const axiosInstance = getAxios();
 
@@ -40,7 +40,7 @@ export async function uploadFile(
 
     if (response?.data.code === 0) {
       Log.debug('[UploadFile] completed', { url });
-      return getAppFlowyFileUrl(workspaceId, viewId, response?.data.data.file_id);
+      return getSynapseFileUrl(workspaceId, viewId, response?.data.data.file_id);
     }
 
     return Promise.reject(response?.data);
@@ -49,7 +49,7 @@ export async function uploadFile(
     if (e.response?.status === 413) {
       return Promise.reject({
         code: ERROR_CODE.PAYLOAD_TOO_LARGE,
-        message: isAppFlowyHosted()
+        message: isSynapseHosted()
           ? 'File size is too large. Please upgrade your plan for unlimited uploads.'
           : 'File size is too large.',
       });

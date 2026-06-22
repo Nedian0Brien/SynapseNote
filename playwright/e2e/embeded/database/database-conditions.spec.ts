@@ -71,7 +71,7 @@ test.describe('Database Conditions - Filters and Sorts UI', () => {
     }
 
     // Verify embedded database exists
-    const embeddedDB = page.locator('[class*="appflowy-database"]').last();
+    const embeddedDB = page.locator('[class*="synapsenote-database"]').last();
     await expect(embeddedDB).toBeVisible({ timeout: 15000 });
     await expect(embeddedDB.locator('[data-testid="database-grid"]')).toBeVisible();
 
@@ -123,11 +123,11 @@ test.describe('Database Conditions - Filters and Sorts UI', () => {
 
     // Verify filter condition appears
     await expect(
-      page.locator('[class*="appflowy-database"]').last().getByTestId('database-filter-condition')
+      page.locator('[class*="synapsenote-database"]').last().getByTestId('database-filter-condition')
     ).toBeVisible();
 
     // Remove filter: click the filter condition chip
-    await page.locator('[class*="appflowy-database"]').last().getByTestId('database-filter-condition').first().click({ force: true });
+    await page.locator('[class*="synapsenote-database"]').last().getByTestId('database-filter-condition').first().click({ force: true });
     await page.waitForTimeout(500);
 
     // Click more options
@@ -140,7 +140,7 @@ test.describe('Database Conditions - Filters and Sorts UI', () => {
 
     // Verify filter is removed
     await expect(
-      page.locator('[class*="appflowy-database"]').last().getByTestId('database-filter-condition')
+      page.locator('[class*="synapsenote-database"]').last().getByTestId('database-filter-condition')
     ).not.toBeAttached();
   });
 });

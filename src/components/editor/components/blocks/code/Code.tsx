@@ -53,7 +53,7 @@ export const CodeBlock = forwardRef<HTMLDivElement, EditorElementProps<CodeNode>
         <div {...attributes} ref={ref} className={`${attributes.className ?? ''} flex w-full`}>
           <pre
             spellCheck={false}
-            className={`appflowy-scroller relative flex w-full flex-col overflow-auto rounded-[8px] border border-border-primary bg-fill-list-active p-5 pt-12`}
+            className={`synapsenote-scroller relative flex w-full flex-col overflow-auto rounded-[8px] border border-border-primary bg-fill-list-active p-5 pt-12`}
           >
             <code
               className={

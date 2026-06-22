@@ -71,7 +71,7 @@ function MobileWorkspaces({ onClose }: { onClose: () => void }) {
     >
       <div
         ref={ref}
-        className={'appflowy-scroller flex w-full flex-col gap-2  overflow-y-auto overflow-x-hidden pb-[60px]'}
+        className={'synapsenote-scroller flex w-full flex-col gap-2  overflow-y-auto overflow-x-hidden pb-[60px]'}
       >
         <div className={'sticky top-0 z-[10] flex flex-col bg-background-primary pt-10'}>
           <div className={'relative p-4'}>

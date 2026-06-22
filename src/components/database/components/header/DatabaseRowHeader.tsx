@@ -147,7 +147,7 @@ function DatabaseRowHeader({ rowId, appendBreadcrumb }: { rowId: string; appendB
 
     if (!el) return;
 
-    const container = el.closest('.appflowy-scroll-container') || getScrollParent(el);
+    const container = el.closest('.synapsenote-scroll-container') || getScrollParent(el);
 
     if (!container) return;
 

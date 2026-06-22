@@ -26,13 +26,13 @@ describe('AI chat initial settings', () => {
     expect(
       buildInitialAIChatSettings({
         parent,
-        query: 'appflowy',
+        query: 'synapsenote',
         sourceIds: ['doc-1', 'doc-2'],
       })
     ).toEqual({
       full_workspace: true,
       rag_ids: [],
-      metadata: { initial_prompt: 'appflowy' },
+      metadata: { initial_prompt: 'synapsenote' },
     });
   });
 

@@ -2,7 +2,7 @@
  * Shared data config for the "relative date filter" feature, kept in lock-step
  * with the desktop integration test fixture:
  *
- *   AppFlowy-Premium/frontend/appflowy_flutter/test/step/
+ *   SynapseNote-Premium/frontend/synapsenote_flutter/test/step/
  *     the_current_grid_has_relative_date_anchor_rows_in_date_field.dart
  *
  * If you change row names or date arithmetic here, mirror the change there

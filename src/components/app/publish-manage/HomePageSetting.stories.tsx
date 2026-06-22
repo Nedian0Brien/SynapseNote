@@ -55,7 +55,7 @@ export const OfficialHostFreePlan: Story = {
   args: {
     activePlan: SubscriptionPlan.Free,
     isOwner: true,
-    hostname: 'beta.appflowy.cloud',
+    hostname: 'beta.synapsenote.cloud',
     homePage: undefined,
     publishViews: mockPublishViews,
     onRemoveHomePage: async () => {
@@ -78,7 +78,7 @@ export const OfficialHostProPlan: Story = {
   args: {
     activePlan: SubscriptionPlan.Pro,
     isOwner: true,
-    hostname: 'beta.appflowy.cloud',
+    hostname: 'beta.synapsenote.cloud',
     homePage: mockView,
     publishViews: mockPublishViews,
     onRemoveHomePage: async () => {
@@ -147,7 +147,7 @@ export const NotOwner: Story = {
   args: {
     activePlan: SubscriptionPlan.Free,
     isOwner: false,
-    hostname: 'beta.appflowy.cloud',
+    hostname: 'beta.synapsenote.cloud',
     homePage: mockView,
     publishViews: mockPublishViews,
     onRemoveHomePage: async () => {

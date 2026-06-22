@@ -1556,7 +1556,7 @@
       "smartEditCouldNotFetchResult": "Не вдалося отримати результат від ШІ",
       "smartEditCouldNotFetchKey": "Не вдалося отримати ключ ШІ",
       "smartEditDisabled": "Підключіть ШІ в Налаштуваннях",
-      "appflowyAIEditDisabled": "Увійдіть, щоб увімкнути функції ШІ",
+      "synapsenoteAIEditDisabled": "Увійдіть, щоб увімкнути функції ШІ",
       "discardResponse": "Ви хочете відкинути відповіді AI?",
       "createInlineMathEquation": "Створити рівняння",
       "fonts": "Шрифти",

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { Subscription, SubscriptionPlan } from '@/application/types';
-import { getProAccessPlanFromSubscriptions, isAppFlowyHosted } from '@/utils/subscription';
+import { getProAccessPlanFromSubscriptions, isSynapseHosted } from '@/utils/subscription';
 
 /**
  * Hook to manage subscription plan loading and Pro feature detection
@@ -18,7 +18,7 @@ export function useSubscriptionPlan(
 } {
     const [activeSubscriptionPlan, setActiveSubscriptionPlan] = useState<SubscriptionPlan | null>(null);
     // Pro features are enabled by default on self-hosted instances
-    const isPro = activeSubscriptionPlan === SubscriptionPlan.Pro || !isAppFlowyHosted();
+    const isPro = activeSubscriptionPlan === SubscriptionPlan.Pro || !isSynapseHosted();
 
     const loadSubscription = useCallback(async () => {
         try {
@@ -55,7 +55,7 @@ export function useSubscriptionPlan(
 
     useEffect(() => {
         // Only load subscription for official host (self-hosted instances have Pro features enabled by default)
-        if (isAppFlowyHosted()) {
+        if (isSynapseHosted()) {
             void loadSubscription();
         }
     }, [loadSubscription]);

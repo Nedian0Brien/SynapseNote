@@ -19,7 +19,7 @@ import {
  * These tests verify the utility functions that implement database container logic
  * matching the Desktop/Flutter implementation.
  *
- * Reference: AppFlowy-Premium/frontend/doc/context/database_container_behavior.md
+ * Reference: SynapseNote-Premium/frontend/doc/context/database_container_behavior.md
  */
 
 // Helper function to create a mock View object

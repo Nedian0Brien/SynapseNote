@@ -94,7 +94,7 @@ function RelationPropertyMenuContent({ fieldId }: { fieldId: string }) {
             )}
           </DropdownMenuSubTrigger>
           <DropdownMenuPortal>
-            <DropdownMenuSubContent className={'appflowy-scroller max-h-[450px] max-w-[240px] overflow-y-auto'}>
+            <DropdownMenuSubContent className={'synapsenote-scroller max-h-[450px] max-w-[240px] overflow-y-auto'}>
               {views.map((view) => (
                 <DropdownMenuItem
                   key={view.view_id}

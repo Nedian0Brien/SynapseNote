@@ -18,7 +18,7 @@ import { generateRandomEmail } from '../../support/test-config';
  *   - "Export to PDF" button (always visible)
  *   - "Include linked pages" switch (Pro-gated; clicking on Free opens upgrade)
  *
- * Self-host (`isAppFlowyHosted()=false`) auto-enables Pro features. To force
+ * Self-host (`isSynapseNoteHosted()=false`) auto-enables Pro features. To force
  * "free cloud user" behavior in tests, we keep the default hosted detection and
  * mock the subscriptions endpoint to return an empty plan list.
  */

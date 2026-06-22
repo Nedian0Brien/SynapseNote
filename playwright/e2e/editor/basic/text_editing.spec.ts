@@ -117,10 +117,10 @@ test.describe('Basic Text Editing', () => {
       await page.keyboard.press(`Shift+${wordJumpKey}+ArrowLeft`);
       await page.waitForTimeout(200);
 
-      await page.keyboard.type('AppFlowy');
+      await page.keyboard.type('SynapseNote');
       await page.waitForTimeout(200);
       const editor = EditorSelectors.slateEditor(page);
-      await expect(editor).toContainText('Hello AppFlowy');
+      await expect(editor).toContainText('Hello SynapseNote');
       await expect(editor).not.toContainText('Hello World');
     });
 

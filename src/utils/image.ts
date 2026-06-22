@@ -1,5 +1,5 @@
 import { getTokenParsed } from '@/application/session/token';
-import { isAppFlowyFileStorageUrl } from '@/utils/file-storage-url';
+import { isSynapseFileStorageUrl } from '@/utils/file-storage-url';
 import { Log } from '@/utils/log';
 import { getConfigValue } from '@/utils/runtime-config';
 
@@ -72,7 +72,7 @@ export const transcodeIfUnsupported = async (blob: Blob, url?: string): Promise<
 
 const resolveImageUrl = (url: string): string => {
   if (!url) return '';
-  return url.startsWith('http') ? url : `${getConfigValue('APPFLOWY_BASE_URL', '')}${url}`;
+  return url.startsWith('http') ? url : `${getConfigValue('SYNAPSENOTE_BASE_URL', '')}${url}`;
 };
 
 
@@ -115,7 +115,7 @@ const classifyHttpStatus = (status: number): CheckImageErrorKind => {
   return 'network';
 };
 
-// Probe a non-AppFlowy URL by attempting to load it via <img>. We can't read
+// Probe an external URL by attempting to load it via <img>. We can't read
 // the HTTP status from a cross-origin <img>, so failures collapse into a
 // generic 'network' error — that's fine for the retry policy because it
 // doesn't try to distinguish 404 vs 5xx for external hosts anyway.
@@ -125,7 +125,7 @@ const validateImageLoad = (imageUrl: string): Promise<CheckImageResult> => {
 
     // Set a timeout to handle very slow loads
     const timeoutId = setTimeout(() => {
-      // External images are never AppFlowy uploads, so a slow load is a network
+      // External images are never SynapseNote uploads, so a slow load is a network
       // timeout — not 'not-ready'. Classifying it as 'network' keeps it out of
       // the "Waiting for upload to finish…" upload-pending state.
       resolve(errorResult(408, 'Request Timeout', 'network', 'Image loading timed out'));
@@ -200,8 +200,8 @@ export const checkImage = async (
   url: string,
   options: CheckImageOptions = {}
 ): Promise<CheckImageResult> => {
-  if (isAppFlowyFileStorageUrl(url)) {
-    return checkAppFlowyImage(url, options);
+  if (isSynapseFileStorageUrl(url)) {
+    return checkSynapseImage(url, options);
   }
 
   // External URL — let the browser do its thing.
@@ -209,11 +209,11 @@ export const checkImage = async (
 };
 
 /**
- * Fetch an AppFlowy-storage image with auth and turn it into a blob URL the
+ * Fetch a SynapseNote-storage image with auth and turn it into a blob URL the
  * <img> can render.
  *
  * Why not fall back to a plain `<img src>` on failure (as we used to):
- *   - AppFlowy storage requires a Bearer token; an unauthenticated <img>
+ *   - SynapseNote storage requires a Bearer token; an unauthenticated <img>
  *     request is guaranteed to fail (401/403). The browser would then cache
  *     that failure under the URL, so subsequent legitimate retries get the
  *     cached error without ever hitting the server.
@@ -223,13 +223,13 @@ export const checkImage = async (
  *
  * Instead, return a typed error so the caller can apply a sensible backoff.
  */
-async function checkAppFlowyImage(
+async function checkSynapseImage(
   url: string,
   options: CheckImageOptions
 ): Promise<CheckImageResult> {
   const fullUrl = resolveImageUrl(url);
 
-  Log.debug('[checkImage] AppFlowy', fullUrl);
+  Log.debug('[checkImage] SynapseNote', fullUrl);
 
   const token = getTokenParsed();
 
@@ -322,7 +322,7 @@ async function attemptFileStorageFetch(
 }
 
 export const fetchImageBlob = async (url: string): Promise<Blob | null> => {
-  if (isAppFlowyFileStorageUrl(url)) {
+  if (isSynapseFileStorageUrl(url)) {
     Log.debug('[fetchImageBlob] url', url);
     const token = getTokenParsed();
 

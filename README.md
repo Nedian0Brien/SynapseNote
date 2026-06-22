@@ -25,9 +25,9 @@ The production web image is built from this worktree and served through the self
 Use `release/synapse` as the deployment branch. See [doc/BRANCHING.md](doc/BRANCHING.md) for branch and remote policy.
 
 ```bash
-docker build -f docker/Dockerfile -t synapsenote/appflowy-web:local .
-cd ../appflowy-cloud
-docker compose up -d --no-deps --force-recreate appflowy_web
+docker build -f docker/Dockerfile -t synapsenote/synapsenote-web:local .
+cd ../synapsenote-cloud
+docker compose up -d --no-deps --force-recreate synapsenote_web
 ```
 
 ## License

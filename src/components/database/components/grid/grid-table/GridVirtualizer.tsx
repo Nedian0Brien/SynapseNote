@@ -177,7 +177,7 @@ function GridVirtualizer({ columns }: { columns: RenderColumn[] }) {
         onMouseLeave={handleMouseLeave}
         ref={parentRef}
         className={cn(
-          'appflowy-custom-scroller appflowy-hidden-horizontal-scrollbar',
+          'synapsenote-custom-scroller synapsenote-hidden-horizontal-scrollbar',
           isDocumentBlock && 'min-h-0 flex-1'
         )}
         style={{

@@ -1,6 +1,6 @@
-# Storybook Guide for AppFlowy Web
+# Storybook Guide for SynapseNote Web
 
-This guide covers how to write Storybook stories for AppFlowy Web components, including common patterns, solutions to frequent issues, and best practices.
+This guide covers how to write Storybook stories for SynapseNote Web components, including common patterns, solutions to frequent issues, and best practices.
 
 ## Table of Contents
 
@@ -238,7 +238,7 @@ const meta = {
 
 ### Required Contexts
 
-Many AppFlowy components require these contexts:
+Many SynapseNote components require these contexts:
 
 1. **AFConfigContext** - Authentication and service configuration
 2. **AppContext** - Workspace and app state
@@ -276,11 +276,11 @@ const customMock = {
 
 ## Hostname Mocking for Different Scenarios
 
-Many components behave differently based on whether they're running on official AppFlowy hosts (`beta.appflowy.cloud`, `test.appflowy.cloud`) or self-hosted instances.
+Many components behave differently based on whether they're running on SynapseNote hosted environments (`beta.synapsenote.cloud`, `test.synapsenote.cloud`) or self-hosted instances.
 
 ### How It Works
 
-The `isAppFlowyHosted()` function in `src/utils/subscription.ts` checks `window.location.hostname`. For Storybook, we mock this using a global variable.
+The `isSynapseNoteHosted()` function in `src/utils/subscription.ts` checks `window.location.hostname`. For Storybook, we mock this using a global variable.
 
 ### Using Shared Hostname Decorators
 
@@ -335,13 +335,13 @@ const meta = {
 ```typescript
 export const OfficialHost: Story = {
   args: {
-    hostname: 'beta.appflowy.cloud',
+    hostname: 'beta.synapsenote.cloud',
     // ... other props
   },
   parameters: {
     docs: {
       description: {
-        story: 'Behavior on official AppFlowy host (beta.appflowy.cloud)',
+        story: 'Behavior on SynapseNote hosted environment (beta.synapsenote.cloud)',
       },
     },
   },
@@ -363,7 +363,7 @@ export const SelfHosted: Story = {
 
 export const TestHost: Story = {
   args: {
-    hostname: 'test.appflowy.cloud',
+    hostname: 'test.synapsenote.cloud',
     // ... other props
   },
 };
@@ -381,7 +381,7 @@ import { hostnameArgType } from '../../../.storybook/argTypes';
 const meta = {
   decorators: [
     (Story, context) => {
-      const hostname = context.args.hostname || 'beta.appflowy.cloud';
+      const hostname = context.args.hostname || 'beta.synapsenote.cloud';
       mockHostname(hostname);
 
       useEffect(() => {
@@ -520,7 +520,7 @@ type Story = StoryObj<typeof meta>;
 export const OfficialHostFreePlan: Story = {
   args: {
     activeSubscriptionPlan: SubscriptionPlan.Free,
-    hostname: 'beta.appflowy.cloud',
+    hostname: 'beta.synapsenote.cloud',
   },
   parameters: {
     docs: {
@@ -627,7 +627,7 @@ const meta = {
   tags: ['autodocs'],
   decorators: [
     (Story, context) => {
-      const hostname = context.args.hostname || 'beta.appflowy.cloud';
+      const hostname = context.args.hostname || 'beta.synapsenote.cloud';
       const [open, setOpen] = useState(context.args.open ?? false);
 
       useHostnameMock(hostname);

@@ -1,4 +1,4 @@
-import { EditorData } from '@appflowyinc/editor';
+import { EditorData } from '@/vendor/synapsenote-editor';
 import { findLast } from 'lodash-es';
 import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -110,7 +110,7 @@ export const AIAssistantProvider = ({
       return;
     }
 
-    const rect = document.getElementById('appflowy-ai-writer')?.getBoundingClientRect();
+    const rect = document.getElementById('synapsenote-ai-writer')?.getBoundingClientRect();
 
     if (rect && rect.top < 100) {
       scrollContainer?.scrollTo({

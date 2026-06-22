@@ -62,7 +62,7 @@ function SpaceList({ loading, spaceList, value, onChange, title }: SpaceListProp
           <CircularProgress size={24} />
         </div>
       ) : (
-        <div className={'appflowy-scroller flex w-full flex-1 flex-col gap-1 overflow-y-auto overflow-x-hidden'}>
+        <div className={'synapsenote-scroller flex w-full flex-1 flex-col gap-1 overflow-y-auto overflow-x-hidden'}>
           {spaceList.map((space) => {
             const isSelected = value === space.id;
 

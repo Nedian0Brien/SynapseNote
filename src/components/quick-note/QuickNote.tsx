@@ -177,7 +177,7 @@ export function QuickNote() {
   };
 
   const resetPosition = useCallback(() => {
-    const main = document.querySelector('.appflowy-layout');
+    const main = document.querySelector('.synapsenote-layout');
 
     if (!main) return;
 

@@ -8,7 +8,7 @@ import { messages } from '@/proto/messages';
 import { Log } from '@/utils/log';
 import { getConfigValue } from '@/utils/runtime-config';
 
-const wsURL = getConfigValue('APPFLOWY_WS_BASE_URL', 'ws://localhost:8000/ws/v2');
+const wsURL = getConfigValue('SYNAPSENOTE_WS_BASE_URL', 'ws://localhost:8000/ws/v2');
 
 // WebSocket close code enum
 enum CloseCode {
@@ -119,7 +119,7 @@ const isAuthRefreshFailure = (error: unknown): boolean => {
   return AUTH_FAILURE_ERROR_MARKERS.some((marker) => message.includes(marker));
 };
 
-export type AppflowyWebSocketType = {
+export type SynapseWebSocketType = {
   /**
    * The last received message from the WebSocket.
    * It is decoded from the binary format to a `messages.Message` object.
@@ -182,7 +182,7 @@ export interface Options {
   token?: string;
 }
 
-export const useAppflowyWebSocket = (options: Options): AppflowyWebSocketType => {
+export const useSynapseWebSocket = (options: Options): SynapseWebSocketType => {
   const wsUrl = options.url || wsURL;
   // The token is captured in state rather than read from the session on every
   // render: a mid-session refresh by the HTTP layer must not change the socket

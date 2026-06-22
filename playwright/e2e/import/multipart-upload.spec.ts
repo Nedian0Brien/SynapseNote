@@ -1,7 +1,7 @@
 /**
  * Integration tests for multipart import upload.
  *
- * These tests run against the local AppFlowy Cloud server and exercise the
+ * These tests run against the local SynapseNote Cloud server and exercise the
  * presigned-URL upload flow end-to-end, including the new multipart path for
  * files that exceed the configurable threshold (default 80 MB).
  *

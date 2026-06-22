@@ -13,12 +13,12 @@ import { testLog } from '../../../support/test-helpers';
  *
  * TODO: This test requires the y-protocols/awareness library to inject
  * remote awareness clients. The test manipulates the internal awareness
- * map (__APPFLOWY_AWARENESS_MAP__) which requires browser-side scripting.
+ * map (__SYNAPSENOTE_AWARENESS_MAP__) which requires browser-side scripting.
  * The core logic is preserved using page.evaluate().
  */
 
 type TestWindow = Window & {
-  __APPFLOWY_AWARENESS_MAP__?: Record<string, unknown>;
+  __SYNAPSENOTE_AWARENESS_MAP__?: Record<string, unknown>;
 };
 
 /**
@@ -100,7 +100,7 @@ test.describe('Avatar Awareness Dedupe', () => {
     testLog.info('Step 1: Open a document and trigger local awareness');
     await openFirstPageAndTriggerAwareness(page);
 
-    const headerAvatars = page.locator('.appflowy-top-bar [data-slot="avatar"]');
+    const headerAvatars = page.locator('.synapsenote-top-bar [data-slot="avatar"]');
     await expect(headerAvatars).toHaveCount(1);
 
     // Get current user UUID from localStorage
@@ -119,7 +119,7 @@ test.describe('Avatar Awareness Dedupe', () => {
     // with the awareness protocol library loaded in the page.
     const awarenessMapExists = await page.evaluate(() => {
       const win = window as unknown as TestWindow;
-      return !!win.__APPFLOWY_AWARENESS_MAP__;
+      return !!win.__SYNAPSENOTE_AWARENESS_MAP__;
     });
 
     expect(awarenessMapExists, 'Awareness map test hook should be exposed').toBeTruthy();

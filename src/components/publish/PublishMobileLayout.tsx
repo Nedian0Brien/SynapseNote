@@ -18,7 +18,7 @@ function PublishMobileLayout ({
     >
       <AFScroller
         overflowXHidden
-        className={'appflowy-layout appflowy-mobile-layout appflowy-scroll-container h-full'}
+        className={'synapsenote-layout synapsenote-mobile-layout synapsenote-scroll-container h-full'}
       >
         <Suspense
           fallback={

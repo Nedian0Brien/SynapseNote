@@ -21,7 +21,7 @@ export interface PublishedDatabaseRenderDocs {
   rowMap: Record<RowId, YDoc>;
 }
 
-const PUBLISHED_DATABASE_RENDER_ROW_MAP_KEY = '__appflowyPublishedDatabaseRenderRowMap';
+const PUBLISHED_DATABASE_RENDER_ROW_MAP_KEY = '__synapsenotePublishedDatabaseRenderRowMap';
 
 type YDocWithPublishedDatabaseRowMap = YDoc & {
   [PUBLISHED_DATABASE_RENDER_ROW_MAP_KEY]?: Record<RowId, YDoc>;

@@ -27,12 +27,12 @@ type Story = StoryObj<typeof meta>;
 export const OfficialHostFreePlan: Story = {
   args: {
     activeSubscriptionPlan: SubscriptionPlan.Free,
-    hostname: 'beta.appflowy.cloud',
+    hostname: 'beta.synapsenote.cloud',
   },
   parameters: {
     docs: {
       description: {
-        story: 'Shows upgrade banner on official host (beta.appflowy.cloud) when user has Free plan',
+        story: 'Shows upgrade banner on official host (beta.synapsenote.cloud) when user has Free plan',
       },
     },
   },
@@ -41,7 +41,7 @@ export const OfficialHostFreePlan: Story = {
 export const OfficialHostProPlan: Story = {
   args: {
     activeSubscriptionPlan: SubscriptionPlan.Pro,
-    hostname: 'beta.appflowy.cloud',
+    hostname: 'beta.synapsenote.cloud',
   },
   parameters: {
     docs: {

@@ -442,8 +442,8 @@ describe('URL field type conversions', () => {
   // RichText -> URL
   it('text URL is preserved as URL', () => {
     const field = createField(FieldType.URL);
-    const cell = createCell('https://appflowy.io', FieldType.URL, FieldType.RichText);
-    expect(getCellDataText(cell, field)).toBe('https://appflowy.io');
+    const cell = createCell('https://synapsenote.io', FieldType.URL, FieldType.RichText);
+    expect(getCellDataText(cell, field)).toBe('https://synapsenote.io');
   });
 
   it('non-URL text is preserved as URL', () => {
@@ -486,7 +486,7 @@ describe('URL field type conversions', () => {
   // URL -> Checklist
   it('URL text to Checklist returns some result', () => {
     const field = createField(FieldType.Checklist);
-    const cell = createCell('https://appflowy.io', FieldType.Checklist, FieldType.URL);
+    const cell = createCell('https://synapsenote.io', FieldType.Checklist, FieldType.URL);
     const result = getCellDataText(cell, field);
     // URL may be preserved, parsed into checklist format, or empty
     expect(result.length >= 0).toBe(true);

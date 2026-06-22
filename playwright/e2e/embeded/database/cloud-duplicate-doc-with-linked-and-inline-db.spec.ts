@@ -18,7 +18,7 @@ import {
 import { currentViewIdFromUrl } from '../../../support/page-utils';
 import { itemDirectChildPageItems } from '../../../support/selectors';
 
-const DUPLICATE_USER_EMAIL = 'duplicate@appflowy.io';
+const DUPLICATE_USER_EMAIL = 'duplicate@synapsenote.io';
 const DUPLICATE_USER_PASSWORD = 'REDACTED_TEST_PASSWORD';
 const DOCUMENT_NAME = 'Document with linked database';
 const INLINE_GRID_TEXT = 'This is inline Grid';

@@ -109,7 +109,7 @@ export function RelatedViews() {
         >
           <SearchInput className='m-2' value={searchValue} onChange={setSearchValue} />
           <Separator />
-          <div className={'appflowy-scrollbar flex-1 overflow-y-auto overflow-x-hidden p-2'}>
+          <div className={'synapsenote-scrollbar flex-1 overflow-y-auto overflow-x-hidden p-2'}>
             <Spaces
               getInitialExpand={getInitialExpand}
               spaces={filteredSpaces}

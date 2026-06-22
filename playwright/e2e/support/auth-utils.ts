@@ -8,7 +8,7 @@ export interface AuthConfig {
 }
 
 const defaultConfig: AuthConfig = {
-  baseUrl: process.env.APPFLOWY_BASE_URL || 'http://localhost:8000',
+  baseUrl: process.env.SYNAPSENOTE_BASE_URL || 'http://localhost:8000',
   gotrueUrl: 'http://localhost:9999',
   adminEmail: process.env.GOTRUE_ADMIN_EMAIL || 'admin@example.com',
   adminPassword: process.env.GOTRUE_ADMIN_PASSWORD || 'password',

@@ -1,6 +1,6 @@
 # SynapseNote Web branch strategy
 
-This worktree is no longer connected to the upstream AppFlowy Web repository as a Git remote.
+This worktree is no longer connected to the upstream SynapseNote Web repository as a Git remote.
 
 ## Branches
 
@@ -10,7 +10,7 @@ This worktree is no longer connected to the upstream AppFlowy Web repository as 
 
 ## Remote policy
 
-Do not use `origin` for the upstream AppFlowy repository.
+Do not use `origin` for the upstream vendor repository.
 
 When a SynapseNote-owned repository is ready, connect it as `origin`:
 
@@ -20,10 +20,10 @@ git push -u origin synapsenote-branding
 git push -u origin release/synapse
 ```
 
-If upstream AppFlowy needs to be referenced later, add it as read-only `upstream`:
+If upstream vendor needs to be referenced later, add it as read-only `upstream`:
 
 ```bash
-git remote add upstream https://github.com/AppFlowy-IO/AppFlowy-Web.git
+git remote add upstream https://github.com/SynapseNote-IO/SynapseNote-Web.git
 git remote set-url --push upstream DISABLED
 ```
 
@@ -47,7 +47,7 @@ git branch -f release/synapse synapsenote-branding
 The Docker image currently keeps the existing image name for compose compatibility:
 
 ```bash
-docker build -f docker/Dockerfile -t synapsenote/appflowy-web:local .
+docker build -f docker/Dockerfile -t synapsenote/synapsenote-web:local .
 ```
 
 ## Current state

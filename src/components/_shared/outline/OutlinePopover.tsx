@@ -29,7 +29,7 @@ export function OutlinePopover({
       <div
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
-        className={'appflowy-scroller flex h-fit max-h-[590px] w-[268px] flex-col overflow-y-auto overflow-x-hidden'}
+        className={'synapsenote-scroller flex h-fit max-h-[590px] w-[268px] flex-col overflow-y-auto overflow-x-hidden'}
       >
         {content}
         {variant === 'publish' && <SynapseNotePower />}

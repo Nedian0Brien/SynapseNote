@@ -46,7 +46,7 @@ function TranslatePropertyMenuContext({ fieldId }: { fieldId: string }) {
             {selectItem?.label}
           </DropdownMenuSubTrigger>
           <DropdownMenuPortal>
-            <DropdownMenuSubContent className={'appflowy-scroller w-[240px] overflow-y-auto'}>
+            <DropdownMenuSubContent className={'synapsenote-scroller w-[240px] overflow-y-auto'}>
               {languageTexts.map((item) => {
                 return (
                   <DropdownMenuItem

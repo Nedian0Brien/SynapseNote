@@ -1495,7 +1495,7 @@
       "smartEditCouldNotFetchResult": "Yapay Zeka'dan yanıt alınamadı",
       "smartEditCouldNotFetchKey": "Yapay Zeka anahtarı alınamadı",
       "smartEditDisabled": "Ayarlar'da Yapay Zeka'yı bağlayın",
-      "appflowyAIEditDisabled": "Yapay zeka özelliklerini kullanmak için oturum açın",
+      "synapsenoteAIEditDisabled": "Yapay zeka özelliklerini kullanmak için oturum açın",
       "discardResponse": "Yapay zeka yanıtlarını silmek ister misiniz?",
       "createInlineMathEquation": "Denklem oluştur",
       "fonts": "Yazı Tipleri",

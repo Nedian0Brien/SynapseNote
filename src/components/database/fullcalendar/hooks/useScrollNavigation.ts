@@ -29,7 +29,7 @@ export function useScrollNavigation(currentView: CalendarViewType, calendarApi: 
    */
   const getScrollElement = useCallback(() => {
     if (!containerRef.current) return null;
-    return containerRef.current.closest('.appflowy-scroll-container') || getScrollParent(containerRef.current);
+    return containerRef.current.closest('.synapsenote-scroll-container') || getScrollParent(containerRef.current);
   }, []);
 
   /**

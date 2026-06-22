@@ -99,7 +99,7 @@ export function PropertySelectTrigger({
           <FieldLabel type={type} />
         </DropdownMenuSubTrigger>
         <DropdownMenuPortal>
-          <DropdownMenuSubContent className="appflowy-scroller max-h-[450px] overflow-y-auto">
+          <DropdownMenuSubContent className="synapsenote-scroller max-h-[450px] overflow-y-auto">
             {selectableProperties.map((property) => {
               const isUnsupported = unsupportedFieldTypes.includes(property);
 

@@ -56,7 +56,7 @@ function Options ({
       <div
         ref={setContainer}
         onScroll={handleScroll}
-        className={'pt-1 w-full overflow-hidden max-h-[260px] appflowy-scroller overflow-y-auto'}
+        className={'pt-1 w-full overflow-hidden max-h-[260px] synapsenote-scroller overflow-y-auto'}
       >
         {options.map((option) => (
           <Option

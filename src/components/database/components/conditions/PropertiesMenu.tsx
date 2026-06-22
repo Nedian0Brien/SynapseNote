@@ -106,7 +106,7 @@ function PropertiesMenu({
               setSearchInput(e.target.value);
             }}
           />
-          <div className={'appflowy-scroller flex max-h-[320px] flex-col overflow-hidden overflow-y-auto '}>
+          <div className={'synapsenote-scroller flex max-h-[320px] flex-col overflow-hidden overflow-y-auto '}>
             {filteredProperties.map((property) => (
               <div
                 data-item-id={property.id}

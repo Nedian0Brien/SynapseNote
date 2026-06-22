@@ -49,7 +49,7 @@ test.describe('Embedded Database - Bottom Scroll Preservation (Simplified)', () 
     await page.waitForTimeout(2000);
 
     // Scroll to bottom
-    const scrollContainer = page.locator('.appflowy-scroll-container').first();
+    const scrollContainer = page.locator('.synapsenote-scroll-container').first();
     const scrollBefore = await scrollContainer.evaluate((el) => {
       const targetScroll = el.scrollHeight - el.clientHeight;
       el.scrollTop = targetScroll;

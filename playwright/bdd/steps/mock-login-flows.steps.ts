@@ -31,7 +31,7 @@ Before(async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
 });
 
-Given('mocked AppFlowy auth APIs are configured for {string} sign in', async ({ page }, methodValue: string) => {
+Given('mocked SynapseNote auth APIs are configured for {string} sign in', async ({ page }, methodValue: string) => {
   const method = parseSignInMethod(methodValue);
   const state = createMockLoginState(method);
 

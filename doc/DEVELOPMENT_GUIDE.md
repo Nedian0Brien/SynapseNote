@@ -1,6 +1,6 @@
 ## 🎯 Overview
 
-AppFlowy Web requires AppFlowy Cloud as its backend. You can set up this pair in two ways:
+SynapseNote Web requires SynapseNote Cloud as its backend. You can set up this pair in two ways:
 
 - **🛠️ Development Mode** (`dev.env`) - For local development and testing
 - **🚀 Production Mode** (`deploy.env`) - For production deployments with Docker
@@ -10,7 +10,7 @@ AppFlowy Web requires AppFlowy Cloud as its backend. You can set up this pair in
 Before you begin, ensure you have:
 
 - **Node.js** ≥18.0.0
-- **pnpm** ≥10.9.0  
+- **pnpm** ≥10.9.0
 - **Docker & Docker Compose** (required for both modes)
 
 ## 🛠️ Development Mode Setup
@@ -19,17 +19,17 @@ Before you begin, ensure you have:
 
 ### Step-by-Step Setup
 
-#### 1. Set Up AppFlowy Cloud (Development)
+#### 1. Set Up SynapseNote Cloud (Development)
 
-> 💡 **Tip**: The `generate_env.sh` script creates a proper `.env` file with all necessary configurations. Check the [AppFlowy Cloud README](https://github.com/AppFlowy-IO/AppFlowy-Cloud/blob/main/README.md) for more details.
+> 💡 **Tip**: The `generate_env.sh` script creates a proper `.env` file with all necessary configurations. Check the [SynapseNote Cloud README](https://github.com/SynapseNote-IO/SynapseNote-Cloud/blob/main/README.md) for more details.
 ```bash
-# Clone AppFlowy Cloud repository
-git clone https://github.com/AppFlowy-IO/AppFlowy-Cloud.git
-cd AppFlowy-Cloud
+# Clone SynapseNote Cloud repository
+git clone https://github.com/SynapseNote-IO/SynapseNote-Cloud.git
+cd SynapseNote-Cloud
 
 # Use development configuration
-# The `generate_env.sh` script creates a proper `.env` file with all necessary configurations. 
-./script/generate_env.sh 
+# The `generate_env.sh` script creates a proper `.env` file with all necessary configurations.
+./script/generate_env.sh
 
 # Start development server
 # For new setup - RECOMMENDED FOR FIRST TIME
@@ -39,11 +39,11 @@ cd AppFlowy-Cloud
 ./script/run_local_server.sh
 ```
 
-#### 2. Set Up AppFlowy Web (Development)
+#### 2. Set Up SynapseNote Web (Development)
 
 ```bash
-# In a new terminal, navigate to your AppFlowy Web directory
-cd /path/to/appflowy-web
+# In a new terminal, navigate to your SynapseNote Web directory
+cd /path/to/synapsenote-web
 cp dev.env .env
 
 # Install dependencies and start
@@ -58,26 +58,26 @@ pnpm run dev
 **Best for:** Production deployments, staging environments, and containerized setups.
 
 
-#### 1. Set Up AppFlowy Cloud (Production)
+#### 1. Set Up SynapseNote Cloud (Production)
 
 ```bash
-# Clone AppFlowy Cloud repository
-git clone https://github.com/AppFlowy-IO/AppFlowy-Cloud.git
-cd AppFlowy-Cloud
+# Clone SynapseNote Cloud repository
+git clone https://github.com/SynapseNote-IO/SynapseNote-Cloud.git
+cd SynapseNote-Cloud
 
 # Use production configuration
-# The `generate_env.sh` script creates a proper `.env` file with all necessary configurations. 
-./script/generate_env.sh 
+# The `generate_env.sh` script creates a proper `.env` file with all necessary configurations.
+./script/generate_env.sh
 
 # Start with Docker Compose
 docker compose up -d
 ```
 
-#### 2. Set Up AppFlowy Web (Production)
+#### 2. Set Up SynapseNote Web (Production)
 
 ```bash
-# In a new terminal, navigate to your AppFlowy Web directory
-cd /path/to/appflowy-web
+# In a new terminal, navigate to your SynapseNote Web directory
+cd /path/to/synapsenote-web
 
 # Use matching production configuration
 cp deploy.env .env
@@ -90,7 +90,7 @@ pnpm run dev
 
 ## 🔗 Additional Resources
 
-- **[AppFlowy Cloud Repository](https://github.com/AppFlowy-IO/AppFlowy-Cloud)** - Backend setup and configuration
-- **[AppFlowy Web README](../README.md)** - Frontend development guide  
-- **[AppFlowy Documentation](https://appflowy.com/docs)** - Official product documentation
-- **[AppFlowy GitHub Discussions](https://github.com/AppFlowy-IO/AppFlowy/discussions)** - Community support
+- **[SynapseNote Cloud Repository](https://github.com/SynapseNote-IO/SynapseNote-Cloud)** - Backend setup and configuration
+- **[SynapseNote Web README](../README.md)** - Frontend development guide
+- **[SynapseNote documentation](https://synapsenote.com/docs)** - Official product documentation
+- **[SynapseNote GitHub Discussions](https://github.com/SynapseNote-IO/SynapseNote/discussions)** - Community support

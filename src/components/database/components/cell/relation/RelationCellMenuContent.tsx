@@ -319,7 +319,7 @@ function RelationCellMenuContent({
   );
 
   const trimmedSearch = searchInput.trim();
-  // Mirrors desktop's `_CreateAndLinkRowAction` (commit c811059939, AppFlowy#8644):
+  // Mirrors desktop's `_CreateAndLinkRowAction` (commit c811059939, SynapseNote#8644):
   // any non-empty query exposes the create affordance, even when the live
   // results already match. The user shouldn't have to clear partial matches
   // to create a new row that happens to share a substring.
@@ -430,7 +430,7 @@ function RelationCellMenuContent({
   return (
     <div
       ref={setElement}
-      className={'appflowy-scroller flex max-h-[450px] w-[320px] flex-col overflow-y-auto'}
+      className={'synapsenote-scroller flex max-h-[450px] w-[320px] flex-col overflow-y-auto'}
       onMouseDown={(e) => e.preventDefault()}
     >
       <TooltipProvider>

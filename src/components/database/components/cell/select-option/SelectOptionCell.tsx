@@ -71,7 +71,7 @@ export function SelectOptionCell({
         isEmpty && placeholder ? 'text-text-tertiary' : '',
         wrap
           ? 'flex-wrap overflow-x-hidden'
-          : 'appflowy-hidden-scroller h-full w-full flex-nowrap overflow-x-auto overflow-y-hidden'
+          : 'synapsenote-hidden-scroller h-full w-full flex-nowrap overflow-x-auto overflow-y-hidden'
       )}
     >
       {isEmpty ? placeholder || null : renderSelectedOptions(selectOptionIds)}

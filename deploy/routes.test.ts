@@ -30,7 +30,7 @@ jest.mock('./html', () => ({
 const testDistDir = '/test/dist';
 jest.mock('./config', () => ({
   distDir: testDistDir,
-  defaultSite: 'https://appflowy.com',
+  defaultSite: 'https://synapsenote.com',
 }));
 
 const mockReadFileSync = jest.fn();
@@ -209,11 +209,11 @@ describe('routes - static file handling', () => {
       expect(response!.headers.get('Content-Type')).toBe('image/png');
     });
 
-    it('serves known static files like /appflowy.ico', async () => {
+    it('serves known static files like /synapsenote.ico', async () => {
       const fileContent = Buffer.from('ICO data');
       mockReadFileSync.mockReturnValue(fileContent);
 
-      const context = createContext('/appflowy.ico');
+      const context = createContext('/synapsenote.ico');
 
       let response: Response | undefined;
       for (const route of routes) {
@@ -226,11 +226,11 @@ describe('routes - static file handling', () => {
       expect(response!.headers.get('Content-Type')).toBe('image/x-icon');
     });
 
-    it('serves /appflowy.svg with correct MIME type', async () => {
+    it('serves /synapsenote.svg with correct MIME type', async () => {
       const fileContent = Buffer.from('<svg></svg>');
       mockReadFileSync.mockReturnValue(fileContent);
 
-      const context = createContext('/appflowy.svg');
+      const context = createContext('/synapsenote.svg');
 
       let response: Response | undefined;
       for (const route of routes) {
@@ -367,7 +367,7 @@ describe('routes - static file handling', () => {
     it('serves non-hashed static files with a short cache lifetime', async () => {
       mockReadFileSync.mockReturnValue(Buffer.from('ICO data'));
 
-      const context = createContext('/appflowy.ico');
+      const context = createContext('/synapsenote.ico');
 
       const staticRoute = routes[0];
       const response = await staticRoute(context);

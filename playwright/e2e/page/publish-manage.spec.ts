@@ -179,7 +179,7 @@ test.describe('Publish Manage - Subscription and Namespace Tests', () => {
     });
 
     // This test simulates a self-hosted environment where subscription checks are skipped.
-    // We use localStorage to override the isAppFlowyHosted() check.
+    // We use localStorage to override the isSynapseNoteHosted() check.
 
     // Set up the override BEFORE visiting the page
     await page.goto('/login', { waitUntil: 'domcontentloaded' });

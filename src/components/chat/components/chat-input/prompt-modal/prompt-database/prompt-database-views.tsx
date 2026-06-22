@@ -34,7 +34,7 @@ export function PromptDatabaseViews({
         <div className='h-fit min-h-[200px] max-h-[360px] w-[300px] flex flex-col'>
           <SearchInput value={searchValue} onChange={setSearchValue} className='m-2' />
           <Separator />
-          <div className='overflow-x-hidden overflow-y-auto flex-1 appflowy-scrollbar p-2'>
+          <div className='overflow-x-hidden overflow-y-auto flex-1 synapsenote-scrollbar p-2'>
             <SpaceList
               searchValue={searchValue}
               onSelectDatabaseView={handleSelectDatabaseView}

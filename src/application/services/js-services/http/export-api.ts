@@ -41,7 +41,7 @@ export async function exportWorkspace(workspaceId: string, includeFileAttachment
       { include_file_attachments: includeFileAttachments },
       {
         headers: {
-          'X-Host': getConfigValue('APPFLOWY_BASE_URL', ''),
+          'X-Host': getConfigValue('SYNAPSENOTE_BASE_URL', ''),
         },
       }
     )

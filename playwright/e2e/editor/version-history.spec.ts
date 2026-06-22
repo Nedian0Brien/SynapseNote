@@ -18,7 +18,7 @@ import { AuthTestUtils } from '../../support/auth-utils';
  * signInWithTestUrl pattern and evaluate() for window access.
  */
 
-const APPFLOWY_BASE_URL = TestConfig.apiUrl;
+const SYNAPSENOTE_BASE_URL = TestConfig.apiUrl;
 
 /**
  * Get access token from localStorage.
@@ -94,7 +94,7 @@ async function revertToVersion(
   versionId: string
 ): Promise<void> {
   await request.post(
-    `${APPFLOWY_BASE_URL}/api/workspace/${workspaceId}/collab/${viewId}/revert`,
+    `${SYNAPSENOTE_BASE_URL}/api/workspace/${workspaceId}/collab/${viewId}/revert`,
     {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -120,7 +120,7 @@ async function postVersion(
   snapshotBase64: string
 ): Promise<void> {
   await request.post(
-    `${APPFLOWY_BASE_URL}/api/workspace/${workspaceId}/collab/${viewId}/history`,
+    `${SYNAPSENOTE_BASE_URL}/api/workspace/${workspaceId}/collab/${viewId}/history`,
     {
       headers: {
         Authorization: `Bearer ${accessToken}`,

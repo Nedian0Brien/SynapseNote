@@ -1,4 +1,4 @@
-import { EditorData } from '@appflowyinc/editor';
+import { EditorData } from '@/vendor/synapsenote-editor';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import AIChatDrawer from '@/components/ai-chat/AIChatDrawer';

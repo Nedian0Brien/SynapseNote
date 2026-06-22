@@ -1,4 +1,4 @@
-import { EditorProvider } from '@appflowyinc/editor';
+import { EditorProvider } from '@/vendor/synapsenote-editor';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 

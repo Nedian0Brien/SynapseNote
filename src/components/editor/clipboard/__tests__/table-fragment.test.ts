@@ -2,12 +2,12 @@ import { Element } from 'slate';
 
 import { BlockType, YjsEditorKey } from '@/application/types';
 
-import { appFlowyDocumentToSlateFragment } from '../appflowy-fragment';
+import { synapseNoteDocumentToSlateFragment } from '../synapsenote-fragment';
 import { containsSimpleTableBlocks, extractTSVFromTableFragment } from '../table-fragment';
 
 describe('table clipboard fragment helpers', () => {
   it('extracts TSV from desktop table fragments without counting text wrappers as rows or cells', () => {
-    const fragment = appFlowyDocumentToSlateFragment({
+    const fragment = synapseNoteDocumentToSlateFragment({
       document: {
         type: BlockType.Page,
         children: [

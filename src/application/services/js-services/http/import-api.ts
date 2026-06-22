@@ -59,7 +59,7 @@ export async function createImportTask(file: File): Promise<ImportUploadTask> {
       },
       {
         headers: {
-          'X-Host': getConfigValue('APPFLOWY_BASE_URL', ''),
+          'X-Host': getConfigValue('SYNAPSENOTE_BASE_URL', ''),
         },
       }
     )
@@ -79,7 +79,7 @@ export async function createNotionImportTask(
         page_id: parentViewId,
       },
       headers: {
-        'X-Host': getConfigValue('APPFLOWY_BASE_URL', ''),
+        'X-Host': getConfigValue('SYNAPSENOTE_BASE_URL', ''),
       },
     })
   ).then(toImportUploadTask);
@@ -216,7 +216,7 @@ export async function createDatabaseCsvImportTask(
   return executeAPIRequest<DatabaseCsvImportCreateResponse>(() =>
     getAxios()?.post<APIResponse<DatabaseCsvImportCreateResponse>>(url, payload, {
       headers: {
-        'X-Host': getConfigValue('APPFLOWY_BASE_URL', ''),
+        'X-Host': getConfigValue('SYNAPSENOTE_BASE_URL', ''),
       },
     })
   );

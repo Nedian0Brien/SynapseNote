@@ -40,9 +40,9 @@ type PublishedSnapshotPayload = {
   };
 };
 
-const existingEmail = process.env.APPFLOWY_E2E_EXISTING_EMAIL ?? 'nathan@appflowy.io';
-const existingPassword = process.env.APPFLOWY_E2E_EXISTING_PASSWORD;
-const targetPageName = process.env.APPFLOWY_E2E_EXISTING_PUBLISH_PAGE ?? 'Project Tracker 2';
+const existingEmail = process.env.SYNAPSENOTE_E2E_EXISTING_EMAIL ?? 'nathan@synapsenote.io';
+const existingPassword = process.env.SYNAPSENOTE_E2E_EXISTING_PASSWORD;
+const targetPageName = process.env.SYNAPSENOTE_E2E_EXISTING_PUBLISH_PAGE ?? 'Project Tracker 2';
 
 function apiUrl(path: string): string {
   return new URL(path, TestConfig.apiUrl).toString();
@@ -332,7 +332,7 @@ async function expectCommentsDoNotOverlapDatabase(page: Page): Promise<void> {
       async () =>
         page.evaluate(() => {
           const comment = document.querySelector('[data-testid="global-comment"]');
-          const database = document.querySelector('[class*="appflowy-database"]');
+          const database = document.querySelector('[class*="synapsenote-database"]');
 
           if (!comment || !database) return false;
 
@@ -405,7 +405,7 @@ async function expectNotPublished(
 }
 
 test.describe('Publish existing document with embedded database', () => {
-  test.skip(!existingPassword, 'Set APPFLOWY_E2E_EXISTING_PASSWORD to run this seeded-workspace regression test.');
+  test.skip(!existingPassword, 'Set SYNAPSENOTE_E2E_EXISTING_PASSWORD to run this seeded-workspace regression test.');
   test.setTimeout(180000);
 
   test.beforeEach(async ({ page }) => {
@@ -470,7 +470,7 @@ test.describe('Publish existing document with embedded database', () => {
 
     await expect(publicPage.locator('body')).toContainText(targetPageName, { timeout: 30000 });
     await expect(publicPage.locator('body')).not.toContainText("This page hasn't been published yet");
-    await expect(publicPage.locator('[class*="appflowy-database"]').last()).toBeVisible({ timeout: 30000 });
+    await expect(publicPage.locator('[class*="synapsenote-database"]').last()).toBeVisible({ timeout: 30000 });
     await expect(publicPage.locator('[data-testid="database-grid"]').last()).toBeVisible({ timeout: 30000 });
     await expectCommentsDoNotOverlapDatabase(publicPage);
 

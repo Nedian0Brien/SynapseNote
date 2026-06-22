@@ -96,7 +96,7 @@ function CardList({
   return (
     <div
       ref={parentRef}
-      className='appflowy-custom-scroller w-full min-h-0 flex-1'
+      className='synapsenote-custom-scroller w-full min-h-0 flex-1'
       style={CARD_LIST_STYLE}
     >
       <div

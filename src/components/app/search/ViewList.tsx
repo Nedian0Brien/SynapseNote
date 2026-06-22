@@ -120,7 +120,7 @@ function ViewList({
           </>
         )}
       </div>
-      <div className={'appflowy-scroller flex max-h-[360px]  min-h-[280px] flex-col overflow-y-auto'}>
+      <div className={'synapsenote-scroller flex max-h-[360px]  min-h-[280px] flex-col overflow-y-auto'}>
         {listItems?.map((item) => (
           <ListItem
             key={item.id}

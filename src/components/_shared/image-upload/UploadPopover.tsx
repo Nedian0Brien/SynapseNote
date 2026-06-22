@@ -111,7 +111,7 @@ export function UploadPopover({
           {extra}
         </div>
 
-        <div ref={ref} className={'appflowy-scroller h-full w-full flex-1 overflow-y-auto overflow-x-hidden'}>
+        <div ref={ref} className={'synapsenote-scroller h-full w-full flex-1 overflow-y-auto overflow-x-hidden'}>
           <SwipeableViews
             slideStyle={{
               overflow: 'hidden',

@@ -3,7 +3,7 @@ import EventEmitter from 'events';
 import { useEffect } from 'react';
 
 import { useCurrentUserOptional } from '@/components/main/app.hooks';
-import { AppflowyWebSocketType } from '@/components/ws/useAppflowyWebSocket';
+import { SynapseWebSocketType } from '@/components/ws/useSynapseWebSocket';
 import { BroadcastChannelType } from '@/components/ws/useBroadcastChannel';
 
 import { useSyncRefs } from './sync/syncRefs';
@@ -146,7 +146,7 @@ export type { RegisterSyncContext, SyncContextType } from './sync/types';
  * @param workspaceId  - Current workspace ID, used by `revertCollabVersion`
  */
 export const useSync = (
-  ws: AppflowyWebSocketType,
+  ws: SynapseWebSocketType,
   bc: BroadcastChannelType,
   eventEmitter: EventEmitter,
   workspaceId: string

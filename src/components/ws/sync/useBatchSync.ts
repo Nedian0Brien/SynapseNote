@@ -29,7 +29,7 @@ const BATCH_SYNC_DELAYS = [30_000, 30_000, 30_000];
 const WS_READY_STATE_OPEN = 1;
 const BACKGROUND_HTTP_SYNC_DELAY_MS = 5_000;
 // Loop-level pauses after withRetry exhausts, matching the desktop client
-// protocol (doc/context/api_collab_sync.md in AppFlowy-Cloud): the server
+// protocol (doc/context/api_collab_sync.md in SynapseNote-Cloud): the server
 // returning 429 means it is shedding load — keep the loop quiet for 10 minutes
 // instead of re-entering the 5s cadence. Other exhausted errors pause 5 minutes.
 const BACKGROUND_HTTP_SYNC_RATE_LIMIT_PAUSE_MS = 10 * 60 * 1000;

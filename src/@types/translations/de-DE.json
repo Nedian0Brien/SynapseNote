@@ -1763,7 +1763,7 @@
       "smartEditCouldNotFetchResult": "Das Ergebnis konnte nicht von AI abgerufen werden",
       "smartEditCouldNotFetchKey": "Der AI-Schlüssel konnte nicht abgerufen werden",
       "smartEditDisabled": "AI in den Einstellungen verbinden",
-      "appflowyAIEditDisabled": "Melde dich an, um KI-Funktionen zu aktivieren",
+      "synapsenoteAIEditDisabled": "Melde dich an, um KI-Funktionen zu aktivieren",
       "discardResponse": "Möchtest du die KI-Antworten verwerfen?",
       "createInlineMathEquation": "Formel erstellen",
       "fonts": "Schriftarten",

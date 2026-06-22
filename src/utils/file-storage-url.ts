@@ -3,20 +3,17 @@ import isURL from 'validator/lib/isURL';
 import { Log } from '@/utils/log';
 import { getConfigValue } from '@/utils/runtime-config';
 
-/**
- * Constructs file storage URLs for the AppFlowy API
- * Centralizes URL construction logic to reduce code duplication
- */
+/** Centralizes SynapseNote file storage URL construction. */
 
 /**
  * Gets the base URL for file storage API
  */
 function getFileStorageBaseUrl(): string {
-  return getConfigValue('APPFLOWY_BASE_URL', '') + '/api/file_storage';
+  return getConfigValue('SYNAPSENOTE_BASE_URL', '') + '/api/file_storage';
 }
 
-function resolveAppflowyOriginAndPathname(): { origin: string | null; pathname: string | null } {
-  const baseUrl = getConfigValue('APPFLOWY_BASE_URL', '').trim();
+function resolveSynapseOriginAndPathname(): { origin: string | null; pathname: string | null } {
+  const baseUrl = getConfigValue('SYNAPSENOTE_BASE_URL', '').trim();
 
   if (baseUrl) {
     try {
@@ -27,7 +24,7 @@ function resolveAppflowyOriginAndPathname(): { origin: string | null; pathname: 
         pathname: `${parsed.pathname.replace(/\/$/, '')}/api/file_storage`,
       };
     } catch (error) {
-      console.warn('Invalid APPFLOWY_BASE_URL provided:', error);
+      console.warn('Invalid SYNAPSENOTE_BASE_URL provided:', error);
     }
   }
 
@@ -40,7 +37,7 @@ function resolveAppflowyOriginAndPathname(): { origin: string | null; pathname: 
 
 
 export function isFileURL(url: string): boolean {
-  if (isAppFlowyFileStorageUrl(url)) {
+  if (isSynapseFileStorageUrl(url)) {
     return true;
   }
 
@@ -55,16 +52,16 @@ export function isFileURL(url: string): boolean {
 }
 
 /**
- * Checks if a URL is an AppFlowy file storage URL that requires authentication
+ * Checks if a URL is a SynapseNote file storage URL that requires authentication.
  * @param url - The URL to check
- * @returns true if the URL is an AppFlowy file storage URL
+ * @returns true if the URL is a SynapseNote file storage URL
  */
-export function isAppFlowyFileStorageUrl(url: string): boolean {
-  Log.debug('[isAppFlowyFileStorageUrl] url', url);
+export function isSynapseFileStorageUrl(url: string): boolean {
+  Log.debug('[isSynapseFileStorageUrl] url', url);
 
   if (!url) return false;
 
-  const { origin, pathname: basePathname } = resolveAppflowyOriginAndPathname();
+  const { origin, pathname: basePathname } = resolveSynapseOriginAndPathname();
 
   if (!origin || !basePathname) {
     return false;
@@ -94,7 +91,7 @@ export function isAppFlowyFileStorageUrl(url: string): boolean {
  * @param fileId - The file ID
  * @returns Complete file URL
  */
-export function getAppFlowyFileUrl(workspaceId: string, viewId: string, fileId: string): string {
+export function getSynapseFileUrl(workspaceId: string, viewId: string, fileId: string): string {
   console.warn("URL should be valid - seeing this indicates a bug")
   return `${getFileStorageBaseUrl()}/${workspaceId}/v1/blob/${viewId}/${fileId}`;
 }
@@ -105,7 +102,7 @@ export function getAppFlowyFileUrl(workspaceId: string, viewId: string, fileId: 
  * @param viewId - The view ID (used as parent_dir)
  * @returns Complete upload URL
  */
-export function getAppFlowyFileUploadUrl(workspaceId: string, viewId: string): string {
+export function getSynapseFileUploadUrl(workspaceId: string, viewId: string): string {
   return `${getFileStorageBaseUrl()}/${workspaceId}/v1/blob/${viewId}`;
 }
 
@@ -202,7 +199,7 @@ export function constructFileStorageUrl(
 /**
  * Resolves a file URL or ID into a complete accessible URL.
  * If the input is already a URL (http/https), it returns it as is.
- * If it's a file ID, it constructs the AppFlowy file storage URL.
+ * If it's a file ID, it constructs the SynapseNote file storage URL.
  * 
  * @param urlOrId - The file URL or ID
  * @param workspaceId - The workspace ID
@@ -220,5 +217,5 @@ export function resolveFileUrl(
     return urlOrId;
   }
 
-  return getAppFlowyFileUrl(workspaceId, viewId, urlOrId);
+  return getSynapseFileUrl(workspaceId, viewId, urlOrId);
 }

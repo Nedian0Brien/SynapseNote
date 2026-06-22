@@ -62,7 +62,7 @@ test.describe('Database File Upload', () => {
     );
 
     await fileInput.setInputFiles([
-      { name: 'appflowy.png', mimeType: 'image/png', buffer: buffer1 },
+      { name: 'synapsenote.png', mimeType: 'image/png', buffer: buffer1 },
       { name: 'test-icon.png', mimeType: 'image/png', buffer: buffer2 },
     ]);
 

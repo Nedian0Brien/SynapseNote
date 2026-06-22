@@ -247,12 +247,12 @@ test.describe('Paste Formatting Tests', () => {
     testLog.info('=== Pasting HTML Link ===');
     await pasteContent(
       page,
-      '<p>Visit <a href="https://appflowy.io">AppFlowy</a> website</p>',
-      'Visit AppFlowy website'
+      '<p>Visit <a href="https://synapsenote.io">SynapseNote</a> website</p>',
+      'Visit SynapseNote website'
     );
     await page.waitForTimeout(500);
     // Then: link is rendered as a clickable underlined span
-    await expect(slateEditor.locator('span.cursor-pointer.underline')).toContainText('AppFlowy');
+    await expect(slateEditor.locator('span.cursor-pointer.underline')).toContainText('SynapseNote');
     testLog.info('✓ HTML link pasted successfully');
 
     await clearEditor(page);
@@ -409,14 +409,14 @@ test.describe('Paste Formatting Tests', () => {
 
     // When: pasting a markdown link
     testLog.info('=== Pasting Markdown Link ===');
-    await pasteContent(page, '', 'Visit [AppFlowy](https://appflowy.io) website');
+    await pasteContent(page, '', 'Visit [SynapseNote](https://synapsenote.io) website');
     await page.waitForTimeout(500);
     // Then: link text is present (as clickable span or plain text)
     const hasLink = await slateEditor.locator('span.cursor-pointer.underline').count();
     if (hasLink > 0) {
-      await expect(slateEditor.locator('span.cursor-pointer.underline').first()).toContainText('AppFlowy');
+      await expect(slateEditor.locator('span.cursor-pointer.underline').first()).toContainText('SynapseNote');
     } else {
-      await expect(slateEditor).toContainText('AppFlowy');
+      await expect(slateEditor).toContainText('SynapseNote');
     }
     testLog.info('✓ Markdown link pasted successfully');
 
@@ -445,10 +445,10 @@ test.describe('Paste Formatting Tests', () => {
 
     // When: pasting a markdown link containing bold formatting
     testLog.info('=== Pasting Markdown Link with Formatting ===');
-    await pasteContent(page, '', 'Visit [**AppFlowy** website](https://appflowy.io) for more');
+    await pasteContent(page, '', 'Visit [**SynapseNote** website](https://synapsenote.io) for more');
     await page.waitForTimeout(500);
     // Then: the link text content is present
-    await expect(slateEditor).toContainText('AppFlowy');
+    await expect(slateEditor).toContainText('SynapseNote');
     testLog.info('✓ Markdown link with formatting pasted successfully');
 
     await clearEditor(page);

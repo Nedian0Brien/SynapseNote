@@ -29,7 +29,7 @@ const DatabaseStickyHorizontalScrollbar = forwardRef<HTMLDivElement, {
 
       onScrollLeft(scrollLeft);
     }}
-    className={'appflowy-visible-scrollbar h-3 w-full overflow-y-hidden overflow-x-auto'}
+    className={'synapsenote-visible-scrollbar h-3 w-full overflow-y-hidden overflow-x-auto'}
   >
     <div
       style={{

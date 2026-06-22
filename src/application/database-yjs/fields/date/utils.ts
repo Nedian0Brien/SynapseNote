@@ -51,7 +51,7 @@ export function getFieldDateTimeFormats(typeOption: YMapFieldTypeOption | undefi
    * Resolve the preferred date/time formats for a field.
    * 1. Read any persisted overrides from the Yjs type option map.
    * 2. Fall back to the signed-in user's preference metadata.
-   * 3. Default to AppFlowy's locale-aware formats as a final safety net.
+   * 3. Default to SynapseNote's locale-aware formats as a final safety net.
    */
   const typeOptionTimeFormat = typeOption?.get(YjsDatabaseKey.time_format);
   const typeOptionDateFormat = typeOption?.get(YjsDatabaseKey.date_format);

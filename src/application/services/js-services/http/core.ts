@@ -14,7 +14,7 @@ export function getAxiosInstance() {
 }
 
 /**
- * Standard API response format from AppFlowy server
+ * Standard API response format from SynapseNote server
  */
 export interface APIResponse<T = unknown> {
   code: number;

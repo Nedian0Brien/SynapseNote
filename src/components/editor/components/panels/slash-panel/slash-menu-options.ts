@@ -1,5 +1,5 @@
 export enum SlashMenuGroupKey {
-  AppFlowyAI = 'appflowyAI',
+  SynapseNoteAI = 'synapsenoteAI',
   BasicBlocks = 'basicBlocks',
   Media = 'media',
   Database = 'database',
@@ -24,7 +24,7 @@ export interface SlashMenuFilterContext {
 }
 
 export const SLASH_MENU_GROUP_ORDER = [
-  SlashMenuGroupKey.AppFlowyAI,
+  SlashMenuGroupKey.SynapseNoteAI,
   SlashMenuGroupKey.BasicBlocks,
   SlashMenuGroupKey.Media,
   SlashMenuGroupKey.Database,

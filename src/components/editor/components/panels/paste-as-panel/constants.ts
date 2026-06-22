@@ -1,6 +1,6 @@
 import type { Range } from 'slate';
 
-export const PASTE_AS_MENU_EVENT = 'appflowy:paste-as-menu';
+export const PASTE_AS_MENU_EVENT = 'synapsenote:paste-as-menu';
 
 export enum PasteAsMenuType {
   Mention = 'mention',

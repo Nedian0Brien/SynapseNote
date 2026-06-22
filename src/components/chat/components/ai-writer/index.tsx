@@ -78,7 +78,7 @@ export function AIAssistant({
   const [width, setWidth] = useState<number>(600);
 
   useEffect(() => {
-    const container = document.getElementById('appflowy-ai-writer');
+    const container = document.getElementById('synapsenote-ai-writer');
 
     if(container && open) {
       setWidth(container.clientWidth);

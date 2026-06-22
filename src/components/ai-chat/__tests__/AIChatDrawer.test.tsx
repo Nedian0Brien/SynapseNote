@@ -44,7 +44,7 @@ function AIChatDrawer() {
         className={'h-full overflow-hidden border-l border-line-border'}
       >
         {openViewId && (
-          <div className={'appflowy-scroller flex h-full flex-col overflow-auto overflow-x-hidden'}>
+          <div className={'synapsenote-scroller flex h-full flex-col overflow-auto overflow-x-hidden'}>
             <MockDrawerHeader />
             <MockDrawerContent openViewId={openViewId} />
           </div>

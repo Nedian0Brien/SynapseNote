@@ -89,11 +89,11 @@ jest.mock('@/utils/runtime-config', () => ({
 }));
 
 jest.mock('@/utils/file-storage-url', () => ({
-    getAppFlowyFileUrl: jest.fn((workspaceId: string, viewId: string, fileId: string) => `mock://${workspaceId}/${viewId}/${fileId}`),
-    getAppFlowyFileUploadUrl: jest.fn((workspaceId: string, viewId: string) => `mock://${workspaceId}/${viewId}/upload`),
+    getSynapseFileUrl: jest.fn((workspaceId: string, viewId: string, fileId: string) => `mock://${workspaceId}/${viewId}/${fileId}`),
+    getSynapseFileUploadUrl: jest.fn((workspaceId: string, viewId: string) => `mock://${workspaceId}/${viewId}/upload`),
     resolveFileUrl: jest.fn((urlOrId: string) => urlOrId),
     isFileURL: jest.fn(() => true),
-    isAppFlowyFileStorageUrl: jest.fn(() => true),
+    isSynapseFileStorageUrl: jest.fn(() => true),
 }));
 
 // Mock the session/token module (not @/application/session!)
@@ -120,12 +120,12 @@ export type EnvConfig = {
 };
 
 export function getEnvConfig(): EnvConfig {
-    const baseURL = process.env.APPFLOWY_BASE_URL;
-    const gotrueURL = process.env.APPFLOWY_GOTRUE_BASE_URL;
-    const wsURL = process.env.APPFLOWY_WS_BASE_URL;
+    const baseURL = process.env.SYNAPSENOTE_BASE_URL;
+    const gotrueURL = process.env.SYNAPSENOTE_GOTRUE_BASE_URL;
+    const wsURL = process.env.SYNAPSENOTE_WS_BASE_URL;
 
     if (!baseURL || !gotrueURL || !wsURL) {
-        throw new Error('Required environment variables (APPFLOWY_BASE_URL, APPFLOWY_GOTRUE_BASE_URL, APPFLOWY_WS_BASE_URL) must be set');
+        throw new Error('Required environment variables (SYNAPSENOTE_BASE_URL, SYNAPSENOTE_GOTRUE_BASE_URL, SYNAPSENOTE_WS_BASE_URL) must be set');
     }
 
     return { baseURL, gotrueURL, wsURL };

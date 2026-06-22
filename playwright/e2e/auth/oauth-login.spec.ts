@@ -15,7 +15,7 @@ test.describe('Real Authentication Login', () => {
   const { gotrueUrl, apiUrl } = TestConfig;
 
   // Test account credentials
-  const testEmail = 'db_blob_user@appflowy.io';
+  const testEmail = 'db_blob_user@synapsenote.io';
   const testPassword = 'REDACTED_TEST_PASSWORD';
 
   test.beforeEach(async ({ page }) => {
@@ -51,7 +51,7 @@ test.describe('Real Authentication Login', () => {
     expect(tokenData.access_token).toBeTruthy();
     expect(tokenData.refresh_token).toBeTruthy();
 
-    // Step 2: Verify user with AppFlowy backend
+    // Step 2: Verify user with SynapseNote backend
     const verifyResponse = await request.get(
       `${apiUrl}/api/user/verify/${tokenData.access_token}`,
       { failOnStatusCode: false, timeout: 30000 }

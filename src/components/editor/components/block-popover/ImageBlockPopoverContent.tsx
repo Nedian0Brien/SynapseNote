@@ -259,7 +259,7 @@ function ImageBlockPopoverContent({ blockId, onClose }: { blockId: string; onClo
           return <ViewTab key={key} iconPosition='start' color='inherit' label={label} value={key} />;
         })}
       </ViewTabs>
-      <div ref={ref} className={'appflowy-scroller max-h-[400px] overflow-y-auto p-2'}>
+      <div ref={ref} className={'synapsenote-scroller max-h-[400px] overflow-y-auto p-2'}>
         {tabOptions.map((tab, index) => {
           const { key, panel } = tab;
 

@@ -115,7 +115,7 @@ export function useCalendarStickyWeekHeader(
    */
   const getScrollElement = useCallback(() => {
     if (!parentRef.current) return null;
-    return parentRef.current.closest('.appflowy-scroll-container') || getScrollParent(parentRef.current);
+    return parentRef.current.closest('.synapsenote-scroll-container') || getScrollParent(parentRef.current);
   }, []);
 
   // Week header sticky state will be managed by parent component

@@ -42,7 +42,7 @@ function FileMediaCellMenu ({ showUpload, open, onOpenChange, cell, fieldId, row
       <PopoverContent
         side={'bottom'}
         align={'start'}
-        className={'overflow-hidden appflowy-scroller overflow-y-auto max-w-[360px] max-h-[376px]'}
+        className={'overflow-hidden synapsenote-scroller overflow-y-auto max-w-[360px] max-h-[376px]'}
       >
         {showUpload ? <FileMediaUpload
           rowId={rowId}

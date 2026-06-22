@@ -106,7 +106,7 @@ export function AddMessageToPageWrapper({
           <Label className={'font-normal px-2 pt-2'}>{t('chat.addMessageToPage.placeholder')}</Label>
           <SearchInput value={searchValue} onChange={setSearchValue} className='m-2'/>
           <Separator />
-          <div className={'appflowy-scrollbar flex-1 overflow-y-auto  overflow-x-hidden p-2'}>
+          <div className={'synapsenote-scrollbar flex-1 overflow-y-auto  overflow-x-hidden p-2'}>
             <SpaceList
               onCreateViewWithContent={handleCreateViewWithContent}
               onInsertContentToView={handleInsertContentToView}

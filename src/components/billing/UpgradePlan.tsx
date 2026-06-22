@@ -10,7 +10,7 @@ import { ViewTab, ViewTabs } from '@/components/_shared/tabs/ViewTabs';
 import { BillingService } from '@/application/services/domains';
 import { useGetSubscriptions, useCurrentWorkspaceId } from '@/components/app/app.hooks';
 import CancelSubscribe from '@/components/billing/CancelSubscribe';
-import { isAppFlowyHosted } from '@/utils/subscription';
+import { isSynapseHosted } from '@/utils/subscription';
 
 function UpgradePlan({ open, onClose, onOpen }: { open: boolean; onClose: () => void; onOpen: () => void }) {
   const { t } = useTranslation();
@@ -85,7 +85,7 @@ function UpgradePlan({ open, onClose, onOpen }: { open: boolean; onClose: () => 
   const handleUpgrade = useCallback(async () => {
     if (!currentWorkspaceId) return;
 
-    if (!isAppFlowyHosted()) {
+    if (!isSynapseHosted()) {
       // Self-hosted instances have Pro features enabled by default
       return;
     }
@@ -148,7 +148,7 @@ function UpgradePlan({ open, onClose, onOpen }: { open: boolean; onClose: () => 
     ];
 
     // Filter out Pro plan if not on official host (self-hosted instances don't need subscription)
-    if (!isAppFlowyHosted()) {
+    if (!isSynapseHosted()) {
       return allPlans.filter((plan) => plan.key !== SubscriptionPlan.Pro);
     }
 

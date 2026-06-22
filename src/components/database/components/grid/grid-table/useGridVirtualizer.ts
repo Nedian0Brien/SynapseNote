@@ -33,7 +33,7 @@ export function useGridVirtualizer({ data, columns }: { columns: RenderColumn[];
     // Using the outer page scroll container would let @tanstack/react-virtual call
     // scrollTo(0) on the document, jumping the user away on view switches.
     if (isDocumentBlock) return parentRef.current;
-    return parentRef.current.closest('.appflowy-scroll-container') || getScrollParent(parentRef.current);
+    return parentRef.current.closest('.synapsenote-scroll-container') || getScrollParent(parentRef.current);
   }, [parentRef, isDocumentBlock]);
 
   const measureParentOffset = useCallback(() => {

@@ -120,7 +120,7 @@ describe('GoTrue login token completion', () => {
   });
 
   it.each<AuthVariant>(['password', 'oauth', 'otp'])(
-    'rejects and skips refresh/save when AppFlowy Cloud verification fails for %s sign-in',
+    'rejects and skips refresh/save when SynapseNote Cloud verification fails for %s sign-in',
     async (variant) => {
       const initialToken = createToken(`${variant}-initial`);
 

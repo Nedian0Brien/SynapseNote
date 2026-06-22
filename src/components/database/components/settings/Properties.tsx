@@ -31,7 +31,7 @@ function Properties () {
       </DropdownMenuSubTrigger>
       <DropdownMenuPortal>
         <DropdownMenuSubContent
-          className={'max-h-[450px] max-w-[240px] appflowy-scroller overflow-y-auto'}
+          className={'max-h-[450px] max-w-[240px] synapsenote-scroller overflow-y-auto'}
           ref={setContainer}
         >
           <PropertyDragContext.Provider value={contextValue}>

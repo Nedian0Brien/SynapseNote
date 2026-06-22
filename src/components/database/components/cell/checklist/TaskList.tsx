@@ -40,7 +40,7 @@ function TaskList({
   return (
     <div
       ref={setContainer}
-      className={cn('flex w-full flex-col', scrollable && 'appflowy-scroller max-h-[300px] overflow-y-auto')}
+      className={cn('flex w-full flex-col', scrollable && 'synapsenote-scroller max-h-[300px] overflow-y-auto')}
     >
       <DragContext.Provider value={contextValue}>
         {tasks.map((task) => {

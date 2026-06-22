@@ -2206,7 +2206,7 @@
       "smartEditCouldNotFetchResult": "Could not fetch result from AI",
       "smartEditCouldNotFetchKey": "Could not fetch AI key",
       "smartEditDisabled": "Connect AI in Settings",
-      "appflowyAIEditDisabled": "Sign in to enable AI features",
+      "synapsenoteAIEditDisabled": "Sign in to enable AI features",
       "discardResponse": "Do you want to discard the AI responses?",
       "createInlineMathEquation": "Create equation",
       "fonts": "Fonts",

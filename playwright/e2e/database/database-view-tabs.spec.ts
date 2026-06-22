@@ -56,7 +56,7 @@ test.describe('Database View Tabs', () => {
   ) {
     await signInAndCreateDatabaseView(page, request, testEmail, 'Grid', {
       verify: async (p) => {
-        await expect(p.locator('[class*="appflowy-database"]')).toBeVisible({ timeout: 15000 });
+        await expect(p.locator('[class*="synapsenote-database"]')).toBeVisible({ timeout: 15000 });
         await expect(DatabaseViewSelectors.viewTab(p).first()).toBeVisible({ timeout: 10000 });
       },
     });

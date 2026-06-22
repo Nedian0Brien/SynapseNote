@@ -34,7 +34,7 @@ export function HiddenItemMenu({ children, getRows }: { children: React.ReactNod
       <PopoverContent>
         <div
           className={
-            'appflowy-hidden-scroller flex max-h-[360px] max-w-[320px] flex-col overflow-y-auto overflow-x-hidden p-2'
+            'synapsenote-hidden-scroller flex max-h-[360px] max-w-[320px] flex-col overflow-y-auto overflow-x-hidden p-2'
           }
         >
           {rows}

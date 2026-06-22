@@ -24,7 +24,7 @@ describe('HTTP API - Invitation & Sharing Operations', () => {
             wsURL: envConfig.wsURL,
         });
 
-        const testEmail = `test-${uuidv4()}@appflowy.io`;
+        const testEmail = `test-${uuidv4()}@synapsenote.io`;
 
         try {
             const authResult = await authHelper.signInUser(testEmail);
@@ -52,7 +52,7 @@ describe('HTTP API - Invitation & Sharing Operations', () => {
     describe('Workspace Invitation Operations', () => {
         it('should invite members', async () => {
             if (!testWorkspaceId) { throw new Error('testWorkspaceId is not available'); }
-            const testEmail = `invite-${uuidv4()}@appflowy.io`;
+            const testEmail = `invite-${uuidv4()}@synapsenote.io`;
             try {
                 await expect(
                     APIService.inviteMembers(testWorkspaceId, [testEmail])
@@ -159,7 +159,7 @@ describe('HTTP API - Invitation & Sharing Operations', () => {
 
         it('should turn guest into member', async () => {
             if (!testWorkspaceId) { throw new Error('testWorkspaceId is not available'); }
-            const testEmail = `guest-${uuidv4()}@appflowy.io`;
+            const testEmail = `guest-${uuidv4()}@synapsenote.io`;
             try {
                 await APIService.turnIntoMember(testWorkspaceId, testEmail);
                 // Function executed successfully
@@ -176,7 +176,7 @@ describe('HTTP API - Invitation & Sharing Operations', () => {
             if (!testWorkspaceId) { throw new Error('testWorkspaceId is not available'); }
             const { outline } = await APIService.getAppOutline(testWorkspaceId);
             if (outline.length > 0) {
-                const testEmail = `share-${uuidv4()}@appflowy.io`;
+                const testEmail = `share-${uuidv4()}@synapsenote.io`;
                 try {
                     await expect(
                         APIService.sharePageTo(testWorkspaceId, outline[0].view_id, [testEmail])
@@ -192,7 +192,7 @@ describe('HTTP API - Invitation & Sharing Operations', () => {
             if (!testWorkspaceId) { throw new Error('testWorkspaceId is not available'); }
             const { outline } = await APIService.getAppOutline(testWorkspaceId);
             if (outline.length > 0) {
-                const testEmail = `revoke-${uuidv4()}@appflowy.io`;
+                const testEmail = `revoke-${uuidv4()}@synapsenote.io`;
                 try {
                     await expect(
                         APIService.revokeAccess(testWorkspaceId, outline[0].view_id, [testEmail])

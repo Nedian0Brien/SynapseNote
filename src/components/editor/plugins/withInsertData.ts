@@ -20,7 +20,7 @@ import {
   ImageType,
   YjsEditorKey,
 } from '@/application/types';
-import { extractAppFlowyClipboardFragment } from '@/components/editor/clipboard/appflowy-fragment';
+import { extractSynapseNoteClipboardFragment } from '@/components/editor/clipboard/synapsenote-fragment';
 import { containsSimpleTableBlocks, extractTSVFromTableFragment } from '@/components/editor/clipboard/table-fragment';
 import { convertSlateFragmentTo } from '@/components/editor/utils/fragment';
 import { FileHandler } from '@/utils/file';
@@ -36,7 +36,7 @@ export const withInsertData = (editor: ReactEditor) => {
   const e = editor as YjsEditor;
 
   editor.insertData = (data: DataTransfer) => {
-    const richFragment = extractAppFlowyClipboardFragment(data);
+    const richFragment = extractSynapseNoteClipboardFragment(data);
 
     // When pasting inside a table cell, check if the fragment contains table blocks
     // and prevent nesting tables. Instead, extract text and fill adjacent cells.

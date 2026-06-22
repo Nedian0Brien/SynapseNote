@@ -1,4 +1,4 @@
-import { EditorData, EditorNode } from '@appflowyinc/editor';
+import { EditorData, EditorNode } from '@/vendor/synapsenote-editor';
 
 import {
   createBlock, executeOperations, getBlockIndex,

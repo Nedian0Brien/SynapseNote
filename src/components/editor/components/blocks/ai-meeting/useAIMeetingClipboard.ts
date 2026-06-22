@@ -10,7 +10,7 @@ import {
   type TabKey,
   documentFragmentToHTML,
   isRangeInsideElement,
-  normalizeAppFlowyClipboardHTML,
+  normalizeSynapseNoteClipboardHTML,
   plainTextToHTML,
   selectionToContextualHTML,
   stripTranscriptReferences,
@@ -79,7 +79,7 @@ export function useAIMeetingClipboard({
 
       range.selectNodeContents(element);
       const rawHTML = documentFragmentToHTML(range.cloneContents()).trim();
-      const html = normalizeAppFlowyClipboardHTML(rawHTML);
+      const html = normalizeSynapseNoteClipboardHTML(rawHTML);
       const rawPlainText = normalizePlainText(element.innerText ?? '').trim();
       const plainText = options?.stripReferences ? stripTranscriptReferences(rawPlainText) : rawPlainText;
 
@@ -96,7 +96,7 @@ export function useAIMeetingClipboard({
       const rawPlainText = normalizePlainText(selection.toString()).trim();
       const plainText = options?.stripReferences ? stripTranscriptReferences(rawPlainText) : rawPlainText;
       const rawHTML = selectionToContextualHTML(selection).trim();
-      const html = normalizeAppFlowyClipboardHTML(rawHTML);
+      const html = normalizeSynapseNoteClipboardHTML(rawHTML);
 
       return {
         plainText,

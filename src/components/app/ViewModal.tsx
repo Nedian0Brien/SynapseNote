@@ -448,7 +448,7 @@ function ViewModal({ viewId, open, onClose }: { viewId?: string; open: boolean; 
       TransitionComponent={Transition}
       PaperProps={{
         ref,
-        className: `max-w-[70vw] appflowy-scroll-container transform relative w-[1188px] flex flex-col h-[80vh] appflowy-scroller`,
+        className: `max-w-[70vw] synapsenote-scroll-container transform relative w-[1188px] flex flex-col h-[80vh] synapsenote-scroller`,
       }}
     >
       {renderModalTitle()}

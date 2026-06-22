@@ -4,7 +4,7 @@ import {
   documentFragmentToHTML,
   formatTimestamp,
   isRangeInsideElement,
-  normalizeAppFlowyClipboardHTML,
+  normalizeSynapseNoteClipboardHTML,
   plainTextToHTML,
   selectionToContextualHTML,
   selectionToHTML,
@@ -211,7 +211,7 @@ describe('HTML copy utils', () => {
       </div>
     `;
 
-    const normalized = normalizeAppFlowyClipboardHTML(html);
+    const normalized = normalizeSynapseNoteClipboardHTML(html);
 
     expect(normalized).toContain('<h2><strong>Title</strong></h2>');
     expect(normalized).toContain('<ul><li>Bullet item</li></ul>');
@@ -228,7 +228,7 @@ describe('HTML copy utils', () => {
       </div>
     `;
 
-    const normalized = normalizeAppFlowyClipboardHTML(html);
+    const normalized = normalizeSynapseNoteClipboardHTML(html);
 
     expect(normalized).not.toContain('ai_meeting_summary');
     expect(normalized).toContain('<p>Inside summary</p>');
@@ -241,7 +241,7 @@ describe('HTML copy utils', () => {
       </div>
     `;
 
-    const normalized = normalizeAppFlowyClipboardHTML(html);
+    const normalized = normalizeSynapseNoteClipboardHTML(html);
 
     expect(normalized).toContain('<h2>Loose heading</h2>');
   });
@@ -254,7 +254,7 @@ describe('HTML copy utils', () => {
       </div>
     `;
 
-    const normalized = normalizeAppFlowyClipboardHTML(html);
+    const normalized = normalizeSynapseNoteClipboardHTML(html);
 
     expect(normalized).not.toContain('ai-meeting-section');
     expect(normalized).toContain('<h2>OVERVIEW</h2>');
@@ -276,7 +276,7 @@ describe('HTML copy utils', () => {
       </div>
     `;
 
-    const normalized = normalizeAppFlowyClipboardHTML(html);
+    const normalized = normalizeSynapseNoteClipboardHTML(html);
 
     expect(normalized).toContain('<p>');
     expect(normalized).toContain('Content line');

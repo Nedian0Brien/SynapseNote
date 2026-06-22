@@ -25,7 +25,7 @@ test.describe('Password Login Flow', () => {
       await visitLoginPage(page, 3000);
 
       // Check for login page title
-      await expect(page.getByText('Welcome to AppFlowy')).toBeVisible();
+      await expect(page.getByText('Welcome to SynapseNote')).toBeVisible();
 
       // Check for email input by placeholder
       await expect(page.locator('input[placeholder*="email"]')).toBeVisible({ timeout: 10000 });
@@ -234,7 +234,7 @@ test.describe('Password Login Flow', () => {
     });
 
     test('should handle incorrect password error', async ({ page }) => {
-      const testEmail = 'test@appflowy.io';
+      const testEmail = 'test@synapsenote.io';
       const wrongPassword = 'WrongPassword123!';
 
       // Mock failed authentication
@@ -270,7 +270,7 @@ test.describe('Password Login Flow', () => {
     });
 
     test('should handle network errors gracefully', async ({ page }) => {
-      const testEmail = 'network-error@appflowy.io';
+      const testEmail = 'network-error@synapsenote.io';
       const testPassword = 'TestPassword123!';
 
       // Mock network error
@@ -313,7 +313,7 @@ test.describe('Password Login Flow', () => {
 
   test.describe('Login Flow Navigation', () => {
     test('should navigate between login steps correctly', async ({ page }) => {
-      const testEmail = 'navigation-test@appflowy.io';
+      const testEmail = 'navigation-test@synapsenote.io';
 
       await visitLoginPage(page);
 

@@ -43,7 +43,7 @@ function ImporterDialogContent({ source, onSuccess }: { source?: string; onSucce
       >
         <ViewTab
           className={'flex flex-row items-center justify-center gap-1.5'}
-          value={'appflowy'}
+          value={'synapsenote'}
           label={t('web.importFromSynapseNote')}
           icon={<SynapseNoteIcon className={'mb-0 h-4 w-4'} />}
         />
@@ -57,7 +57,7 @@ function ImporterDialogContent({ source, onSuccess }: { source?: string; onSucce
       <div className={'p-2 pb-0'}>
         <TabPanel
           className={'flex min-w-[480px] max-w-full flex-col gap-2 overflow-hidden max-sm:w-full max-sm:min-w-[80vw]'}
-          index={'appflowy'}
+          index={'synapsenote'}
           value={value}
         >
           <FileDropzone

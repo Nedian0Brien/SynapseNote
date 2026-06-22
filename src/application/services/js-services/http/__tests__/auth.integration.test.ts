@@ -2,7 +2,7 @@
  * @jest-environment node
  *
  * Integration tests for Authentication and User operations
- * These tests make real HTTP requests against a running AppFlowy backend.
+ * These tests make real HTTP requests against a running SynapseNote backend.
  */
 
 import { describe, it, expect, beforeAll, beforeEach } from '@jest/globals';
@@ -27,7 +27,7 @@ describe('HTTP API - Auth & User Operations', () => {
         });
 
         // Generate a unique test email
-        const testEmail = `test-${uuidv4()}@appflowy.io`;
+        const testEmail = `test-${uuidv4()}@synapsenote.io`;
 
         try {
             // Sign in the test user
@@ -205,7 +205,7 @@ describe('HTTP API - Auth & User Operations', () => {
         it('should handle network errors gracefully', async () => {
             // Temporarily break the base URL
             const originalEnv = getEnvConfig();
-            process.env.APPFLOWY_BASE_URL = 'http://invalid-url-that-does-not-exist:9999';
+            process.env.SYNAPSENOTE_BASE_URL = 'http://invalid-url-that-does-not-exist:9999';
 
             // Reinitialize with invalid URL
             initAPIService({
@@ -224,9 +224,9 @@ describe('HTTP API - Auth & User Operations', () => {
                 expect(error.message).toBeDefined();
             } finally {
                 // Restore original base URL
-                process.env.APPFLOWY_BASE_URL = originalEnv.baseURL;
-                process.env.APPFLOWY_GOTRUE_BASE_URL = originalEnv.gotrueURL;
-                process.env.APPFLOWY_WS_BASE_URL = originalEnv.wsURL;
+                process.env.SYNAPSENOTE_BASE_URL = originalEnv.baseURL;
+                process.env.SYNAPSENOTE_GOTRUE_BASE_URL = originalEnv.gotrueURL;
+                process.env.SYNAPSENOTE_WS_BASE_URL = originalEnv.wsURL;
 
                 initAPIService({
                     baseURL: originalEnv.baseURL,

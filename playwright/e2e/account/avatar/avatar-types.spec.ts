@@ -90,7 +90,7 @@ async function openProfileSettings(page: import('@playwright/test').Page) {
 /** Helper: reload page and open profile settings */
 async function reloadAndOpenProfileSettings(page: import('@playwright/test').Page) {
   await page.reload();
-  await expect(page.locator('.appflowy-top-bar')).toBeVisible();
+  await expect(page.locator('.synapsenote-top-bar')).toBeVisible();
   return openProfileSettings(page);
 }
 

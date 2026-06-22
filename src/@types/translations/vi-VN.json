@@ -1568,7 +1568,7 @@
       "smartEditCouldNotFetchResult": "Không thể lấy kết quả từ AI",
       "smartEditCouldNotFetchKey": "Không thể lấy được khóa AI",
       "smartEditDisabled": "Kết nối AI trong Cài đặt",
-      "appflowyAIEditDisabled": "Đăng nhập để bật tính năng AI",
+      "synapsenoteAIEditDisabled": "Đăng nhập để bật tính năng AI",
       "discardResponse": "Bạn có muốn loại bỏ phản hồi của AI không?",
       "createInlineMathEquation": "Tạo phương trình",
       "fonts": "Phông chữ",

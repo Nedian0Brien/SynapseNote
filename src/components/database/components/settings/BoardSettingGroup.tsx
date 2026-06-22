@@ -48,7 +48,7 @@ function BoardSettingGroup () {
       </DropdownMenuSubTrigger>
       <DropdownMenuPortal>
         <DropdownMenuSubContent
-          className={'max-w-[240px] appflowy-scroller overflow-y-auto'}
+          className={'max-w-[240px] synapsenote-scroller overflow-y-auto'}
         >
           {fieldType !== FieldType.Checkbox && (
             <>

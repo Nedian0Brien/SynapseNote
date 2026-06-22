@@ -153,7 +153,7 @@ test.describe('Avatar Priority', () => {
       .toBe(workspaceAvatar);
 
     await page.reload();
-    await expect(page.locator('.appflowy-top-bar')).toBeVisible();
+    await expect(page.locator('.synapsenote-top-bar')).toBeVisible();
 
     testLog.info('Step 4: Verify workspace avatar is displayed (priority)');
     const dialog = await openProfileSettings(page);

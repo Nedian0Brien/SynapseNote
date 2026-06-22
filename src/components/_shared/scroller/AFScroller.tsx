@@ -48,13 +48,13 @@ export const AFScroller = React.forwardRef(
           <div {...props} style={{
             display: hideScrollbars ? 'none' : undefined,
           }}
-               className={cn('appflowy-scrollbar-thumb-horizontal')}
+               className={cn('synapsenote-scrollbar-thumb-horizontal')}
           />}
         renderThumbVertical={(props) =>
           <div {...props} style={{
             display: hideScrollbars ? 'none' : undefined,
           }}
-               className="appflowy-scrollbar-thumb-vertical"
+               className="synapsenote-scrollbar-thumb-vertical"
           />}
         {...(overflowXHidden && {
           renderTrackHorizontal: (props) => (
@@ -87,7 +87,7 @@ export const AFScroller = React.forwardRef(
               marginRight: 0,
               marginBottom: 0,
             }}
-            className={cn(hideScrollbars ? 'appflowy-hidden-scroller' : 'appflowy-custom-scroller', className)}
+            className={cn(hideScrollbars ? 'synapsenote-hidden-scroller' : 'synapsenote-custom-scroller', className)}
           />
         )}
       >

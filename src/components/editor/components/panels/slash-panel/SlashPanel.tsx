@@ -733,7 +733,7 @@ export function SlashPanel({
 
   const groupLabels = useMemo<Record<SlashMenuGroupKey, string>>(
     () => ({
-      [SlashMenuGroupKey.AppFlowyAI]: t('document.slashMenu.group.appflowyAI', { defaultValue: 'SynapseNote AI' }),
+      [SlashMenuGroupKey.SynapseNoteAI]: t('document.slashMenu.group.synapsenoteAI', { defaultValue: 'SynapseNote AI' }),
       [SlashMenuGroupKey.BasicBlocks]: t('document.slashMenu.group.basicBlocks', { defaultValue: 'Basic blocks' }),
       [SlashMenuGroupKey.Media]: t('document.slashMenu.group.media', { defaultValue: 'Media' }),
       [SlashMenuGroupKey.Database]: t('document.slashMenu.group.database', { defaultValue: 'Database' }),
@@ -756,7 +756,7 @@ export function SlashPanel({
               label: t('document.slashMenu.name.askAIAnything'),
               key: 'askAIAnything',
               icon: <AskAIIcon />,
-              group: SlashMenuGroupKey.AppFlowyAI,
+              group: SlashMenuGroupKey.SynapseNoteAI,
               keywords: ['ai', 'writer', 'ask', 'anything', 'askAIAnything', 'askai'],
               onClick: () => {
                 const content = getBeforeContent();
@@ -769,7 +769,7 @@ export function SlashPanel({
               key: 'continueWriting',
               disabled: chars < 2,
               icon: <ContinueWritingIcon />,
-              group: SlashMenuGroupKey.AppFlowyAI,
+              group: SlashMenuGroupKey.SynapseNoteAI,
               keywords: ['ai', 'writing', 'continue'],
               onClick: () => {
                 const content = getBeforeContent();
@@ -1036,13 +1036,13 @@ export function SlashPanel({
           try {
             const domNode = ReactEditor.toDOMNode(editor, editor);
 
-            scrollContainer = domNode.closest('.appflowy-scroll-container');
+            scrollContainer = domNode.closest('.synapsenote-scroll-container');
           } catch (e) {
             // Ignore
           }
 
           if (!scrollContainer) {
-            scrollContainer = document.querySelector('.appflowy-scroll-container');
+            scrollContainer = document.querySelector('.synapsenote-scroll-container');
           }
 
           const savedScrollTop = scrollContainer?.scrollTop;
@@ -1079,9 +1079,9 @@ export function SlashPanel({
                   try {
                     const domNode = ReactEditor.toDOMNode(editor, editor);
 
-                    currentContainer = domNode.closest('.appflowy-scroll-container');
+                    currentContainer = domNode.closest('.synapsenote-scroll-container');
                   } catch {
-                    currentContainer = document.querySelector('.appflowy-scroll-container');
+                    currentContainer = document.querySelector('.synapsenote-scroll-container');
                   }
                 }
 
@@ -1129,13 +1129,13 @@ export function SlashPanel({
           try {
             const domNode = ReactEditor.toDOMNode(editor, editor);
 
-            scrollContainer = domNode.closest('.appflowy-scroll-container');
+            scrollContainer = domNode.closest('.synapsenote-scroll-container');
           } catch (e) {
             // Ignore
           }
 
           if (!scrollContainer) {
-            scrollContainer = document.querySelector('.appflowy-scroll-container');
+            scrollContainer = document.querySelector('.synapsenote-scroll-container');
           }
 
           const savedScrollTop = scrollContainer?.scrollTop;
@@ -1172,9 +1172,9 @@ export function SlashPanel({
                   try {
                     const domNode = ReactEditor.toDOMNode(editor, editor);
 
-                    currentContainer = domNode.closest('.appflowy-scroll-container');
+                    currentContainer = domNode.closest('.synapsenote-scroll-container');
                   } catch {
-                    currentContainer = document.querySelector('.appflowy-scroll-container');
+                    currentContainer = document.querySelector('.synapsenote-scroll-container');
                   }
                 }
 
@@ -1222,13 +1222,13 @@ export function SlashPanel({
           try {
             const domNode = ReactEditor.toDOMNode(editor, editor);
 
-            scrollContainer = domNode.closest('.appflowy-scroll-container');
+            scrollContainer = domNode.closest('.synapsenote-scroll-container');
           } catch (e) {
             // Ignore
           }
 
           if (!scrollContainer) {
-            scrollContainer = document.querySelector('.appflowy-scroll-container');
+            scrollContainer = document.querySelector('.synapsenote-scroll-container');
           }
 
           const savedScrollTop = scrollContainer?.scrollTop;
@@ -1265,9 +1265,9 @@ export function SlashPanel({
                   try {
                     const domNode = ReactEditor.toDOMNode(editor, editor);
 
-                    currentContainer = domNode.closest('.appflowy-scroll-container');
+                    currentContainer = domNode.closest('.synapsenote-scroll-container');
                   } catch {
-                    currentContainer = document.querySelector('.appflowy-scroll-container');
+                    currentContainer = document.querySelector('.synapsenote-scroll-container');
                   }
                 }
 
@@ -1315,13 +1315,13 @@ export function SlashPanel({
           try {
             const domNode = ReactEditor.toDOMNode(editor, editor);
 
-            scrollContainer = domNode.closest('.appflowy-scroll-container');
+            scrollContainer = domNode.closest('.synapsenote-scroll-container');
           } catch (e) {
             // Ignore
           }
 
           if (!scrollContainer) {
-            scrollContainer = document.querySelector('.appflowy-scroll-container');
+            scrollContainer = document.querySelector('.synapsenote-scroll-container');
           }
 
           const savedScrollTop = scrollContainer?.scrollTop;
@@ -1358,9 +1358,9 @@ export function SlashPanel({
                   try {
                     const domNode = ReactEditor.toDOMNode(editor, editor);
 
-                    currentContainer = domNode.closest('.appflowy-scroll-container');
+                    currentContainer = domNode.closest('.synapsenote-scroll-container');
                   } catch {
-                    currentContainer = document.querySelector('.appflowy-scroll-container');
+                    currentContainer = document.querySelector('.synapsenote-scroll-container');
                   }
                 }
 
@@ -1764,7 +1764,7 @@ export function SlashPanel({
         <div
           ref={optionsRef}
           className={
-            'appflowy-scroller flex max-h-[400px] w-[320px] flex-col gap-2 overflow-y-auto overflow-x-hidden p-2'
+            'synapsenote-scroller flex max-h-[400px] w-[320px] flex-col gap-2 overflow-y-auto overflow-x-hidden p-2'
           }
         >
           {optionGroups.length > 0 ? (
@@ -1818,7 +1818,7 @@ export function SlashPanel({
           </Label>
           <SearchInput value={databaseSearch} onChange={setDatabaseSearch} className='m-2' />
           <Separator />
-          <div className={'appflowy-scrollbar flex-1 overflow-y-auto overflow-x-hidden p-2'}>
+          <div className={'synapsenote-scrollbar flex-1 overflow-y-auto overflow-x-hidden p-2'}>
             {databaseLoading ? (
               <div className={'flex h-full w-full items-center justify-center py-10 opacity-60'}>
                 {t('common.loading', { defaultValue: 'Loading...' })}

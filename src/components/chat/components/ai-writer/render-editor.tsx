@@ -1,5 +1,5 @@
 
-import { Editor, EditorData, useEditor } from '@appflowyinc/editor';
+import { Editor, EditorData, useEditor } from '@/vendor/synapsenote-editor';
 import { useEffect } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 

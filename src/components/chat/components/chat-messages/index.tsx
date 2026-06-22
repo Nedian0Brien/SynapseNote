@@ -115,7 +115,7 @@ export function ChatMessages({ currentUser }: {
         ref={scrollContainerRef}
         style={{ flexDirection: 'column-reverse' }}
         className={cn(
-          "flex px-1 relative pt-8 appflowy-scrollbar overflow-x-hidden gap-4 h-full w-full overflow-auto",
+          "flex px-1 relative pt-8 synapsenote-scrollbar overflow-x-hidden gap-4 h-full w-full overflow-auto",
           selectionMode ? 'pb-9' : 'pb-2',
         )}
       >

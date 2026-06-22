@@ -157,7 +157,7 @@ test.describe('Publish Database with Multiple Views', () => {
     await freshPage.waitForTimeout(8000);
 
     // Then: the published page renders the database
-    const dbContainer = freshPage.locator('.appflowy-database');
+    const dbContainer = freshPage.locator('.synapsenote-database');
 
     await expect(dbContainer).toBeVisible({ timeout: 15000 });
     testLog.info('Database visible on published page');

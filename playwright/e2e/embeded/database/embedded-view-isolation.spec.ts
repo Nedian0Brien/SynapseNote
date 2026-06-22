@@ -94,7 +94,7 @@ test.describe('Embedded Database View Isolation', () => {
     await page.waitForTimeout(3000);
 
     // Step 4: Verify the embedded database appears in the document
-    await expect(page.locator('[class*="appflowy-database"]').last()).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('[class*="synapsenote-database"]').last()).toBeVisible({ timeout: 15000 });
 
     // Step 5: Verify sidebar structure
     await expandSpaceByName(page, spaceName);
@@ -135,7 +135,7 @@ test.describe('Embedded Database View Isolation', () => {
     await page.waitForTimeout(3000);
 
     // Find the embedded database container
-    const embeddedDB = page.locator('[class*="appflowy-database"]').last();
+    const embeddedDB = page.locator('[class*="synapsenote-database"]').last();
     await expect(embeddedDB).toBeVisible({ timeout: 10000 });
 
     // Click the + button to add a new view
@@ -150,7 +150,7 @@ test.describe('Embedded Database View Isolation', () => {
     await page.waitForTimeout(3000);
 
     // Step 12: Verify second view was created (now 2 tabs in the embedded database)
-    const embeddedDBFresh = page.locator('[class*="appflowy-database"]').last();
+    const embeddedDBFresh = page.locator('[class*="synapsenote-database"]').last();
     const viewTabs = embeddedDBFresh.locator('[data-testid^="view-tab-"]');
     await expect(viewTabs).toHaveCount(2, { timeout: 10000 });
 
@@ -177,7 +177,7 @@ test.describe('Embedded Database View Isolation', () => {
     await page.waitForTimeout(3000);
 
     // Step 14: Create a new view directly in the standalone database
-    const standaloneDBView = page.locator('[class*="appflowy-database"]').first();
+    const standaloneDBView = page.locator('[class*="synapsenote-database"]').first();
     await expect(standaloneDBView).toBeVisible({ timeout: 10000 });
 
     await standaloneDBView.getByTestId('add-view-button').scrollIntoViewIfNeeded();
@@ -191,7 +191,7 @@ test.describe('Embedded Database View Isolation', () => {
     await page.waitForTimeout(3000);
 
     // Step 15: Verify tab count in standalone database (at least 2: original Grid + new Board)
-    const standaloneDBFresh = page.locator('[class*="appflowy-database"]').first();
+    const standaloneDBFresh = page.locator('[class*="synapsenote-database"]').first();
     const standaloneTabs = standaloneDBFresh.locator('[data-testid^="view-tab-"]');
     await expect(standaloneTabs).toHaveCount(2, { timeout: 10000 });
 

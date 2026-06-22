@@ -1,7 +1,7 @@
 /**
  * Published Database Rows Visibility Test
  *
- * Reproduces GitHub issue: AppFlowy-IO/AppFlowy#8464
+ * Reproduces GitHub issue: SynapseNote-IO/SynapseNote#8464
  * Bug: Database rows render as blank on published pages.
  *
  * Root cause: The web previously told the server to gather row data from its
@@ -164,7 +164,7 @@ test.describe('Published Database Rows Visibility (issue #8464)', () => {
     await freshPage.waitForTimeout(8000);
 
     // Then: the published page renders the database container
-    const dbContainer = freshPage.locator('.appflowy-database');
+    const dbContainer = freshPage.locator('.synapsenote-database');
 
     await expect(dbContainer).toBeVisible({ timeout: 15000 });
     testLog.info('Database container visible on published page');

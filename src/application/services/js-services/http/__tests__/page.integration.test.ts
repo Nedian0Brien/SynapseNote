@@ -25,7 +25,7 @@ describe('HTTP API - Page Operations', () => {
             wsURL: envConfig.wsURL,
         });
 
-        const testEmail = `test-${uuidv4()}@appflowy.io`;
+        const testEmail = `test-${uuidv4()}@synapsenote.io`;
 
         try {
             const authResult = await authHelper.signInUser(testEmail);

@@ -1,6 +1,6 @@
 /**
- * AI Model types matching the AppFlowy-Cloud-Premium API
- * Based on libs/appflowy-entity/src/ai/dto.rs
+ * AI Model types matching the SynapseNote-Cloud-Premium API
+ * Based on libs/synapsenote-entity/src/ai/dto.rs
  */
 
 export interface ModelMetadata {

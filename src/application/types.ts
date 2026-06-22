@@ -491,7 +491,7 @@ export enum YjsDatabaseKey {
 }
 
 /**
- * YDoc extends Y.Doc with AppFlowy-specific properties.
+ * YDoc extends Y.Doc with SynapseNote-specific properties.
  *
  * Document Identification:
  * - `object_id`: Collab object ID used by sync/persistence routing.
@@ -500,7 +500,7 @@ export enum YjsDatabaseKey {
  * - `view_id`: Host view ID that currently renders this doc.
  *              For database collab, this distinguishes grid/board/calendar layouts that
  *              share the same underlying `object_id`.
- * - `guid`: The Y.Doc globally unique identifier. In AppFlowy, this is typically
+ * - `guid`: The Y.Doc globally unique identifier. In SynapseNote, this is typically
  *           set to the same collab object ID as `object_id`.
  *           The guid is used for sync context registration and WebSocket communication.
  *

@@ -7,7 +7,7 @@ export const useScrollDetection = (containerRef: React.RefObject<HTMLDivElement>
 
   const getScrollElement = useCallback(() => {
     if (!containerRef.current) return null;
-    return containerRef.current.closest('.appflowy-scroll-container') || getScrollParent(containerRef.current);
+    return containerRef.current.closest('.synapsenote-scroll-container') || getScrollParent(containerRef.current);
   }, [containerRef]);
 
 

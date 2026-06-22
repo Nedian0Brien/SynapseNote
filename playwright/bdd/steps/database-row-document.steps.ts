@@ -98,7 +98,7 @@ async function addNewCard(page: Page, cardName: string) {
 
 async function focusRowDocumentEditor(page: Page) {
   const dialog = page.locator('[role="dialog"]');
-  const scrollContainer = dialog.locator('.appflowy-scroll-container');
+  const scrollContainer = dialog.locator('.synapsenote-scroll-container');
 
   if ((await scrollContainer.count()) > 0) {
     await scrollContainer.evaluate((el) => el.scrollTo(0, 9999));

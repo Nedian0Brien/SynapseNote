@@ -37,7 +37,7 @@ function NewCard({
   const scrollToBottom = useCallback(() => {
     if (!container) return;
 
-    const scrollElement = container.closest('.appflowy-scroll-container') as HTMLDivElement;
+    const scrollElement = container.closest('.synapsenote-scroll-container') as HTMLDivElement;
     const rect = container.getBoundingClientRect();
 
     const scrollY = rect.bottom + BOUNDARY_GAP - window.innerHeight;

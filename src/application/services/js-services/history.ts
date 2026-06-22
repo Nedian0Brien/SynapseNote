@@ -15,7 +15,7 @@ export interface CollabVersion {
  *
  * @param workspaceId current workspace UUID.
  * @param viewId view UUID.
- * @param users (optional) information mapping used to correlate session id changes with appflowy user IDs. If provided
+ * @param users (optional) information mapping used to correlate session id changes with synapsenote user IDs. If provided
  *              it will let collab versions fill the information about which users made changes between specific version
  *              and its predecessor.
  */

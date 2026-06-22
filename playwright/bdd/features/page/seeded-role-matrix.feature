@@ -1,6 +1,6 @@
 @seeded-role-matrix
 Feature: Seeded role matrix private page permissions
-  The rm0521 role-matrix fixture already exists in the local AppFlowy Cloud database.
+  The rm0521 role-matrix fixture already exists in the local SynapseNote Cloud database.
   These scenarios verify the web UI behavior for owner, member, guests, and nonmember accounts.
 
   Background:

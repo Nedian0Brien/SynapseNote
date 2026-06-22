@@ -5,13 +5,13 @@ import { APP_EVENTS } from '@/application/constants';
 import { AuthInternalContext, type AuthInternalContextType } from '@/components/app/contexts/AuthInternalContext';
 import { useSyncInternal } from '@/components/app/contexts/SyncInternalContext';
 import { AppSyncLayer } from '@/components/app/layers/AppSyncLayer';
-import { useAppflowyWebSocket, useBroadcastChannel, useSync } from '@/components/ws';
-import type { AppflowyWebSocketType } from '@/components/ws/useAppflowyWebSocket';
+import { useSynapseWebSocket, useBroadcastChannel, useSync } from '@/components/ws';
+import type { SynapseWebSocketType } from '@/components/ws/useSynapseWebSocket';
 import type { BroadcastChannelType } from '@/components/ws/useBroadcastChannel';
 import type { messages } from '@/proto/messages';
 
 jest.mock('@/components/ws', () => ({
-  useAppflowyWebSocket: jest.fn(),
+  useSynapseWebSocket: jest.fn(),
   useBroadcastChannel: jest.fn(),
   useSync: jest.fn(),
 }));
@@ -44,7 +44,7 @@ jest.mock('@/application/db', () => ({
   },
 }));
 
-const mockUseAppflowyWebSocket = useAppflowyWebSocket as jest.Mock;
+const mockUseAppflowyWebSocket = useSynapseWebSocket as jest.Mock;
 const mockUseBroadcastChannel = useBroadcastChannel as jest.Mock;
 const mockUseSync = useSync as jest.Mock;
 
@@ -65,7 +65,7 @@ const stableSyncValue = {
   scheduleDeferredCleanup: jest.fn(),
 };
 
-const createWsValue = (lastMessage: messages.Message | null): AppflowyWebSocketType =>
+const createWsValue = (lastMessage: messages.Message | null): SynapseWebSocketType =>
   ({
     lastMessage,
     sendMessage: stableWsSendMessage,
@@ -73,7 +73,7 @@ const createWsValue = (lastMessage: messages.Message | null): AppflowyWebSocketT
     options: { workspaceId: 'workspace-1' },
     reconnectAttempt: 0,
     reconnect: stableWsReconnect,
-  } as AppflowyWebSocketType);
+  } as SynapseWebSocketType);
 
 const authContextValue = {
   currentWorkspaceId: 'workspace-1',

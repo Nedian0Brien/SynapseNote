@@ -202,18 +202,18 @@ test.describe('Avatar Header Display', () => {
 
       testLog.info('Step 4: Verify avatar appears in header top right corner');
       // Wait for header to be visible
-      await expect(page.locator('.appflowy-top-bar')).toBeVisible();
+      await expect(page.locator('.synapsenote-top-bar')).toBeVisible();
 
       // Check if avatar container exists in header (collaborative users area)
       testLog.info('Header avatar area should be visible');
       const headerAvatarContainer = page
-        .locator('.appflowy-top-bar')
+        .locator('.synapsenote-top-bar')
         .locator('[class*="flex"][class*="-space-x-2"]')
         .first();
       await expect(headerAvatarContainer).toBeAttached();
 
       // Verify avatar image or fallback is present
-      const headerAvatars = page.locator('.appflowy-top-bar [data-slot="avatar"]');
+      const headerAvatars = page.locator('.synapsenote-top-bar [data-slot="avatar"]');
       const avatarCount = await headerAvatars.count();
       expect(avatarCount).toBeGreaterThanOrEqual(1);
     });
@@ -245,23 +245,23 @@ test.describe('Avatar Header Display', () => {
       await openFirstPageAndTriggerAwareness(page);
 
       testLog.info('Step 4: Verify emoji appears in header avatar fallback');
-      await expect(page.locator('.appflowy-top-bar')).toBeVisible();
+      await expect(page.locator('.synapsenote-top-bar')).toBeVisible();
 
       testLog.info('Header should be visible with avatar area');
       const headerAvatarContainer = page
-        .locator('.appflowy-top-bar')
+        .locator('.synapsenote-top-bar')
         .locator('[class*="flex"][class*="-space-x-2"]')
         .first();
       await expect(headerAvatarContainer).toBeAttached();
 
       // Verify avatar appears in header
-      const headerAvatars = page.locator('.appflowy-top-bar [data-slot="avatar"]');
+      const headerAvatars = page.locator('.synapsenote-top-bar [data-slot="avatar"]');
       const avatarCount = await headerAvatars.count();
       expect(avatarCount).toBeGreaterThanOrEqual(1);
 
       // Verify emoji appears in fallback
       const headerAvatarFallback = page
-        .locator('.appflowy-top-bar [data-slot="avatar"]')
+        .locator('.synapsenote-top-bar [data-slot="avatar"]')
         .first()
         .locator('[data-slot="avatar-fallback"]');
       await expect(headerAvatarFallback).toContainText(testEmoji);
@@ -290,9 +290,9 @@ test.describe('Avatar Header Display', () => {
         ({ userUuid, testAvatarUrl }) => {
           const emitter = (
             window as unknown as {
-              __APPFLOWY_EVENT_EMITTER__?: { emit: (...args: unknown[]) => void };
+              __SYNAPSENOTE_EVENT_EMITTER__?: { emit: (...args: unknown[]) => void };
             }
-          ).__APPFLOWY_EVENT_EMITTER__;
+          ).__SYNAPSENOTE_EVENT_EMITTER__;
 
           if (emitter) {
             emitter.emit('workspace-member-profile-changed', {
@@ -316,15 +316,15 @@ test.describe('Avatar Header Display', () => {
       await openFirstPageAndTriggerAwareness(page);
 
       testLog.info('Step 6: Verify header avatar area is visible and updated');
-      await expect(page.locator('.appflowy-top-bar')).toBeVisible();
+      await expect(page.locator('.synapsenote-top-bar')).toBeVisible();
       const headerAvatarContainer = page
-        .locator('.appflowy-top-bar')
+        .locator('.synapsenote-top-bar')
         .locator('[class*="flex"][class*="-space-x-2"]')
         .first();
       await expect(headerAvatarContainer).toBeAttached();
 
       // Verify avatar appears in header
-      const headerAvatars = page.locator('.appflowy-top-bar [data-slot="avatar"]');
+      const headerAvatars = page.locator('.synapsenote-top-bar [data-slot="avatar"]');
       const avatarCount = await headerAvatars.count();
       expect(avatarCount).toBeGreaterThanOrEqual(1);
 

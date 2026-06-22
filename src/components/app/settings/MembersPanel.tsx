@@ -239,7 +239,7 @@ export function MembersPanel() {
           {t('settings.appearance.members.label')}
         </h2>
       </div>
-      <div className='appflowy-scroller flex-1 overflow-y-auto px-8 py-6'>
+      <div className='synapsenote-scroller flex-1 overflow-y-auto px-8 py-6'>
         <div className='flex flex-col gap-6'>
           {isOwner && (
             <>

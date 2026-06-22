@@ -249,7 +249,7 @@ export class PagePage {
 | 4 | `fixtures/database/*.json` (4 files) | Copy as-is |
 | 5 | `fixtures/database/rows/*.json` (4 files) | Copy as-is |
 | 6 | `fixtures/database/csv/*.csv` (8 files) | Copy as-is |
-| 7 | `fixtures/appflowy.png` | Copy as-is |
+| 7 | `fixtures/synapsenote.png` | Copy as-is |
 | 8 | `fixtures/test-icon.png` | Copy as-is |
 
 ---
@@ -550,10 +550,10 @@ export class PagePage {
 
 | Variable | Used In | Notes |
 |----------|---------|-------|
-| `APPFLOWY_BASE_URL` | API calls | Default: `http://localhost` |
-| `APPFLOWY_GOTRUE_BASE_URL` | Auth | Default: `http://localhost/gotrue` |
-| `APPFLOWY_WS_BASE_URL` | WebSocket | Default: `ws://localhost/ws/v2` |
-| `APPFLOWY_ENABLE_RELATION_ROLLUP_EDIT` | Feature flag | Default: `false` |
+| `SYNAPSENOTE_BASE_URL` | API calls | Default: `http://localhost` |
+| `SYNAPSENOTE_GOTRUE_BASE_URL` | Auth | Default: `http://localhost/gotrue` |
+| `SYNAPSENOTE_WS_BASE_URL` | WebSocket | Default: `ws://localhost/ws/v2` |
+| `SYNAPSENOTE_ENABLE_RELATION_ROLLUP_EDIT` | Feature flag | Default: `false` |
 | `GOTRUE_ADMIN_EMAIL` | Auth admin | Default: `admin@example.com` |
 | `GOTRUE_ADMIN_PASSWORD` | Auth admin | Default: `password` |
 | `CYPRESS_BASE_URL` -> `BASE_URL` | Web app URL | Default: `http://localhost:3000` |

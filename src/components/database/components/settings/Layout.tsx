@@ -48,7 +48,7 @@ function Layout({ currentLayout }: { currentLayout: DatabaseViewLayout }) {
         {t('grid.settings.layout')}
       </DropdownMenuSubTrigger>
       <DropdownMenuPortal>
-        <DropdownMenuSubContent className={'appflowy-scroller max-w-[240px] overflow-y-auto'}>
+        <DropdownMenuSubContent className={'synapsenote-scroller max-w-[240px] overflow-y-auto'}>
           {options.map((option) => (
             <DropdownMenuItem
               key={option.value}

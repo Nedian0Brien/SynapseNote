@@ -397,7 +397,7 @@ export function MentionPanel() {
     >
       <div
         ref={ref}
-        className={'appflowy-scroller relative flex max-h-[560px] w-[320px] flex-col gap-2 overflow-y-auto p-2'}
+        className={'synapsenote-scroller relative flex max-h-[560px] w-[320px] flex-col gap-2 overflow-y-auto p-2'}
       >
         <div className={'scroll-my-10 px-1 text-text-secondary'}>{t('inlineActions.recentPages')}</div>
         <div data-option-category={MentionTag.Page} className={'flex flex-col gap-2'}>

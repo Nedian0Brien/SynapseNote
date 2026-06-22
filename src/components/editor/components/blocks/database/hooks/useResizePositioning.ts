@@ -16,7 +16,7 @@ export const useResizePositioning = ({ editor, node }: UseResizePositioningProps
 
   useEffect(() => {
     const dom = ReactEditor.toDOMNode(editor, node);
-    const scrollContainer = dom.closest('.appflowy-scroll-container') || (getScrollParent(dom) as HTMLElement);
+    const scrollContainer = dom.closest('.synapsenote-scroll-container') || (getScrollParent(dom) as HTMLElement);
 
     if (!dom || !scrollContainer) return;
 

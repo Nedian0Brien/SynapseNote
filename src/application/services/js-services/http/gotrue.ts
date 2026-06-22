@@ -114,14 +114,14 @@ export async function verifyAndRefreshGoTrueToken({
   verifyErrorMessage = 'Failed to verify token',
   useVerifyErrorMessage = true,
 }: VerifyAndRefreshGoTrueTokenParams) {
-  // Clear the previous session before AppFlowy Cloud verification so axios
+  // Clear the previous session before SynapseNote Cloud verification so axios
   // interceptors cannot refresh or invalidate an old token during the new login.
   if (localStorage.getItem('token')) {
     Log.info(`[Auth] ${logContext}: clearing old token before auth flow`);
     localStorage.removeItem('token');
   }
 
-  Log.info(`[Auth] ${logContext}: verifying token with AppFlowy Cloud`);
+  Log.info(`[Auth] ${logContext}: verifying token with SynapseNote Cloud`);
   try {
     const result = await verifyToken(accessToken);
 

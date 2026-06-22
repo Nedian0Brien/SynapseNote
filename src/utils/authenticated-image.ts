@@ -1,5 +1,5 @@
 import { getTokenParsed } from '@/application/session/token';
-import { isAppFlowyFileStorageUrl } from '@/utils/file-storage-url';
+import { isSynapseFileStorageUrl } from '@/utils/file-storage-url';
 import { transcodeIfUnsupported } from '@/utils/image';
 import { Log } from '@/utils/log';
 import { getConfigValue } from '@/utils/runtime-config';
@@ -7,12 +7,12 @@ import { getConfigValue } from '@/utils/runtime-config';
 const resolveImageUrl = (url: string): string => {
   if (!url) return '';
 
-  return url.startsWith('http') ? url : `${getConfigValue('APPFLOWY_BASE_URL', '')}${url}`;
+  return url.startsWith('http') ? url : `${getConfigValue('SYNAPSENOTE_BASE_URL', '')}${url}`;
 };
 
 /**
  * Fetches an image with authentication headers and converts it to a blob URL
- * Used for loading AppFlowy file storage images that require authentication
+ * Used for loading SynapseNote file storage images that require authentication
  *
  * @param url - The image URL to fetch
  * @returns A promise that resolves to a blob URL or null if fetch fails
@@ -65,8 +65,8 @@ export async function getImageUrl(url: string | undefined): Promise<string> {
   if (!url) return '';
   Log.debug('[getImageUrl] url', url);
 
-  // If it's an AppFlowy file storage URL, fetch with authentication
-  if (isAppFlowyFileStorageUrl(url)) {
+  // If it's a SynapseNote file storage URL, fetch with authentication
+  if (isSynapseFileStorageUrl(url)) {
     const token = getTokenParsed();
 
     if (!token) {

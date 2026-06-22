@@ -1,8 +1,8 @@
 /**
  * Database Relative Date Filter Tests
  *
- * Mirrors the desktop BDD scenario from AppFlowy-Premium PR #965:
- *   AppFlowy-Premium/frontend/appflowy_flutter/integration_test/desktop/
+ * Mirrors the desktop BDD scenario from SynapseNote-Premium PR #965:
+ *   SynapseNote-Premium/frontend/synapsenote_flutter/integration_test/desktop/
  *     bdd/database/grid/relative_date_filter.feature
  *
  * Both tests use the same row names, date arithmetic, and assertion order

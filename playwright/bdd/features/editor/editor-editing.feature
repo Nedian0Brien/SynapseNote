@@ -1,21 +1,21 @@
 Feature: Editor editing
-  Migrated from appflowy-editor edit, command, IME, shortcut, paste, and undo tests.
+  Migrated from __SYNAPSENOTE_EDITOR_CLASS__ edit, command, IME, shortcut, paste, and undo tests.
 
   Background:
     Given a blank document page is open
 
   Scenario: Basic text input, replacement, and deletion
-    When I type "Hello AppFlowy" in the editor
-    Then the editor contains "Hello AppFlowy"
+    When I type "Hello SynapseNote" in the editor
+    Then the editor contains "Hello SynapseNote"
     When I start a new editor paragraph
     And I type "Hello World" in the editor
     And I select the last word
-    And I type "AppFlowy" in the editor
-    Then the editor contains "Hello AppFlowy"
+    And I type "SynapseNote" in the editor
+    Then the editor contains "Hello SynapseNote"
     And the editor does not contain "Hello World"
     When I type " Test" in the editor
     And I delete the previous word
-    Then the editor does not contain "Hello AppFlowy Test"
+    Then the editor does not contain "Hello SynapseNote Test"
 
   Scenario: Split a paragraph with Enter
     When I type "SplitHere" in the editor
@@ -291,20 +291,20 @@ Feature: Editor editing
     Then editor block 0 has type "quote"
 
   Scenario: Toolbar applies a link to selected text
-    When I type "appflowy" in the editor
+    When I type "synapsenote" in the editor
     And I select all editor content
-    And I apply link "https://appflowy.io" from the toolbar
-    Then link mark "appflowy" has href "https://appflowy.io"
+    And I apply link "https://synapsenote.io" from the toolbar
+    Then link mark "synapsenote" has href "https://synapsenote.io"
 
   Scenario: Paste rich HTML, markdown headings, and plain text
     When I paste html content:
       """
-      <meta charset="utf-8"><h2><strong>User Installation</strong></h2><ul><li><a href="https://appflowy.io/download">Windows/Mac/Linux</a></li><li><a href="https://appflowy.io/docs">Docs</a></li></ul>
+      <meta charset="utf-8"><h2><strong>User Installation</strong></h2><ul><li><a href="https://synapsenote.io/download">Windows/Mac/Linux</a></li><li><a href="https://synapsenote.io/docs">Docs</a></li></ul>
       """
     Then a "heading" block contains "User Installation"
     And "bold" formatting contains "User Installation"
-    And link mark "Windows/Mac/Linux" has href "https://appflowy.io/download"
-    And link mark "Docs" has href "https://appflowy.io/docs"
+    And link mark "Windows/Mac/Linux" has href "https://synapsenote.io/download"
+    And link mark "Docs" has href "https://synapsenote.io/docs"
     When I paste markdown text:
       """
       # I'm h1

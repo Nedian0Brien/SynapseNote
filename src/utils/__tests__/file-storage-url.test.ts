@@ -7,7 +7,7 @@ jest.mock('@/utils/runtime-config', () => ({
 }));
 
 // Import the module under test
-import { isAppFlowyFileStorageUrl, resolveFileUrl } from '../file-storage-url';
+import { isSynapseFileStorageUrl, resolveFileUrl } from '../file-storage-url';
 // Import the mocked module to access the mock function
 import { getConfigValue } from '@/utils/runtime-config';
 
@@ -23,7 +23,7 @@ describe('file-storage-url utils', () => {
     beforeEach(() => {
         // Default mock implementation
         mockGetConfigValue.mockImplementation((key: string) => {
-            if (key === 'APPFLOWY_BASE_URL') return mockBaseUrl;
+            if (key === 'SYNAPSENOTE_BASE_URL') return mockBaseUrl;
             return '';
         });
     });
@@ -48,7 +48,7 @@ describe('file-storage-url utils', () => {
             expect(resolveFileUrl(fullUrl, mockWorkspaceId, mockViewId)).toBe(fullUrl);
         });
 
-        it('should construct a full AppFlowy file storage URL when given a file ID', () => {
+        it('should construct a full SynapseNote file storage URL when given a file ID', () => {
             // When input is just an ID like "file-789"
             // It should construct: BASE_URL/api/file_storage/WORKSPACE_ID/v1/blob/VIEW_ID/FILE_ID
             const expectedUrl = `${mockBaseUrl}/api/file_storage/${mockWorkspaceId}/v1/blob/${mockViewId}/${mockFileId}`;
@@ -64,29 +64,29 @@ describe('file-storage-url utils', () => {
         });
     });
 
-    describe('isAppFlowyFileStorageUrl', () => {
-        it('should return true for URLs matching the configured AppFlowy base path', () => {
+    describe('isSynapseFileStorageUrl', () => {
+        it('should return true for URLs matching the configured SynapseNote base path', () => {
             const url = `${mockBaseUrl}/api/file_storage/some/path`;
-            expect(isAppFlowyFileStorageUrl(url)).toBe(true);
+            expect(isSynapseFileStorageUrl(url)).toBe(true);
         });
 
         it('should return true for relative paths matching the file storage path (when origin matches)', () => {
-            // Note: The implementation of resolveAppflowyOriginAndPathname uses window.location if base url is empty,
+            // Note: The implementation of resolveSynapseOriginAndPathname uses window.location if base url is empty,
             // or parses the configured base url. Since we mocked base url to https://app.flowy.io:
 
             // Test matching origin and path
             const url = `${mockBaseUrl}/api/file_storage/file-id`;
-            expect(isAppFlowyFileStorageUrl(url)).toBe(true);
+            expect(isSynapseFileStorageUrl(url)).toBe(true);
         });
 
         it('should return false for URLs not matching the file storage path', () => {
             const url = `${mockBaseUrl}/api/other_endpoint`;
-            expect(isAppFlowyFileStorageUrl(url)).toBe(false);
+            expect(isSynapseFileStorageUrl(url)).toBe(false);
         });
 
         it('should return false for external URLs that do not match the path', () => {
             const url = 'https://google.com/search';
-            expect(isAppFlowyFileStorageUrl(url)).toBe(false);
+            expect(isSynapseFileStorageUrl(url)).toBe(false);
         });
     });
 });

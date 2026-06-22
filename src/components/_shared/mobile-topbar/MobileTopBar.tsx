@@ -56,7 +56,7 @@ function MobileTopBar({ variant }: { variant?: UIVariant }) {
         minHeight: HEADER_HEIGHT,
       }}
       className={
-        'appflowy-top-bar sticky top-0 z-[100] flex h-[48px] min-h-[48px] w-full transform-gpu items-center justify-between gap-2 px-4'
+        'synapsenote-top-bar sticky top-0 z-[100] flex h-[48px] min-h-[48px] w-full transform-gpu items-center justify-between gap-2 px-4'
       }
     >
       <MobileDrawer

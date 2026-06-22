@@ -101,7 +101,7 @@ function GalleryBlockPopoverContent({ blockId, onClose }: { blockId: string; onC
         <ViewTab iconPosition='start' color='inherit' label={t('document.plugins.file.networkTab')} value='embed' />
         <ViewTab iconPosition='start' color='inherit' label={t('pageStyle.unsplash')} value='unsplash' />
       </ViewTabs>
-      <div className={'appflowy-scroller max-h-[400px] overflow-y-auto p-2'}>
+      <div className={'synapsenote-scroller max-h-[400px] overflow-y-auto p-2'}>
         <TabPanel className={'flex h-full w-full flex-col'} index={0} value={selectedIndex}>
           <FileDropzone
             multiple={true}

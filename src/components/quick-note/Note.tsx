@@ -1,8 +1,8 @@
-import { Editor, EditorData, EditorProvider, FixedToolbar, useEditor } from '@appflowyinc/editor';
+import { Editor, EditorData, EditorProvider, FixedToolbar, useEditor } from '@/vendor/synapsenote-editor';
 
 import { ReactComponent as AddIcon } from '@/assets/icons/plus.svg';
 
-import '@appflowyinc/editor/style';
+import '@/vendor/synapsenote-editor-style';
 import React, { useCallback, useContext, useEffect, useMemo } from 'react';
 
 import { QuickNote, QuickNoteEditorData } from '@/application/types';
@@ -36,7 +36,7 @@ function Note({
     if (!el) return;
 
     setTimeout(() => {
-      const editorDom = el.querySelector('.appflowy-editor div[role="textbox"]') as HTMLElement;
+      const editorDom = el.querySelector('.synapsenote-editor div[role="textbox"]') as HTMLElement;
 
       if (!editorDom) return;
 

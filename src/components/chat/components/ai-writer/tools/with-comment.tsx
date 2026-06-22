@@ -1,4 +1,4 @@
-import { EditorProvider } from '@appflowyinc/editor';
+import { EditorProvider } from '@/vendor/synapsenote-editor';
 import { ReactNode, useCallback, useMemo } from 'react';
 
 import { ApplyingState, useWriterContext } from '@/components/chat/writer/context';
@@ -80,7 +80,7 @@ export function withComment(WrappedComponent: React.ComponentType<{
           className={'flex h-fit select-none gap-2 p-2 py-3 min-h-[48px] border-b border-input flex-col bg-secondary-background overflow-hidden w-full max-w-full'}
         >
           <Label className={'select-text font-semibold px-[6px] text-xs text-foreground/60'}>{title}</Label>
-          <div className={'text-sm leading-[20px] px-[4px] max-h-[238px] appflowy-scrollbar overflow-y-auto w-full font-medium'}>
+          <div className={'text-sm leading-[20px] px-[4px] max-h-[238px] synapsenote-scrollbar overflow-y-auto w-full font-medium'}>
             <EditorProvider>
               <RenderEditor
                 content={comment || ''}

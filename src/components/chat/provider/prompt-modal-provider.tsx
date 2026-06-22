@@ -19,7 +19,7 @@ import {
   RawPromptData,
 } from '@/components/chat/types/prompt';
 
-const STORAGE_KEY = 'appflowy_prompt_db_config';
+const STORAGE_KEY = 'synapsenote_prompt_db_config';
 
 let cachedBuiltInPrompts: AiPrompt[] | null = null;
 

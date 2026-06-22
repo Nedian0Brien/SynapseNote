@@ -1,4 +1,4 @@
-import { EditorData } from '@appflowyinc/editor';
+import { EditorData } from '@/vendor/synapsenote-editor';
 import { useCallback } from 'react';
 
 import { useChatContext } from '@/components/chat/chat/context';

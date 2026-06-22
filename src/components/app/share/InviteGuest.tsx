@@ -34,7 +34,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { isAppFlowyHosted } from '@/utils/subscription';
+import { isSynapseHosted } from '@/utils/subscription';
 
 import { EmailTag, InviteInput } from './InviteInput';
 import { PersonSuggestionItem } from './PersonSuggestionItem';
@@ -409,7 +409,7 @@ export function InviteGuest({
       return;
     }
 
-    if (!isAppFlowyHosted()) {
+    if (!isSynapseHosted()) {
       // Self-hosted instances have Pro features enabled by default
       return;
     }
@@ -450,7 +450,7 @@ export function InviteGuest({
         error.code === ERROR_CODE.FREE_PLAN_GUEST_LIMIT_EXCEEDED ||
         error.code === ERROR_CODE.PAID_PLAN_GUEST_LIMIT_EXCEEDED
       ) {
-        if (isAppFlowyHosted()) {
+        if (isSynapseHosted()) {
           setUpgradeModalOpen(true);
         } else {
           notify.error(error.message);

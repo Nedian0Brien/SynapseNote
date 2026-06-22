@@ -139,7 +139,7 @@ describe('unfurl', () => {
         htmlResponse('<head><meta property="og:title" content="GitHub repo"></head>')
       ) as unknown as typeof fetch;
 
-    await expect(unfurl('https://github.com/AppFlowy-IO/AppFlowy')).resolves.toMatchObject({
+    await expect(unfurl('https://github.com/SynapseNote-IO/SynapseNote')).resolves.toMatchObject({
       title: 'GitHub repo',
       logoDark: { url: 'https://github.githubassets.com/favicons/favicon-dark.png' },
     });

@@ -1,8 +1,8 @@
-# AppFlowy Document Table (SimpleTable) - Complete UI Component Analysis
+# SynapseNote Document Table (SimpleTable) - Complete UI Component Analysis
 
 ## Table of Contents
 
-**Part I: AppFlowy SimpleTable Flutter Implementation**
+**Part I: SynapseNote SimpleTable Flutter Implementation**
 
 1. [Architecture Overview](#1-architecture-overview)
 2. [Node/Data Model](#2-nodedata-model)
@@ -32,7 +32,7 @@
 
 ## 1. Architecture Overview
 
-The document table is called **SimpleTable** internally. It is a block-level editor plugin registered in AppFlowy's `appflowy_editor` system. The table is composed of three nested block types:
+The document table is called **SimpleTable** internally. It is a block-level editor plugin registered in SynapseNote's `synapsenote_editor` system. The table is composed of three nested block types:
 
 ```
 SimpleTableBlockWidget  (type: "simple_table")
@@ -775,13 +775,13 @@ Non-notifier fields:
 
 # Part II: Open-Source React Document Table Research
 
-This section surveys open-source React (and React-compatible) projects that implement a **document table** component -- a table block living inside a rich-text/block editor, similar to AppFlowy's SimpleTable. This is NOT about data grids or spreadsheet libraries.
+This section surveys open-source React (and React-compatible) projects that implement a **document table** component -- a table block living inside a rich-text/block editor, similar to SynapseNote's SimpleTable. This is NOT about data grids or spreadsheet libraries.
 
 ---
 
 ## 12. Research Overview
 
-The following projects were evaluated for feature parity with AppFlowy's SimpleTable. The core features being compared:
+The following projects were evaluated for feature parity with SynapseNote's SimpleTable. The core features being compared:
 
 - **Rich cell content** -- Can cells contain arbitrary block-level content (headings, images, code blocks)?
 - **Add row/column UI** -- Hover buttons or inline controls to insert rows/columns
@@ -842,8 +842,8 @@ Ships with pre-built **shadcn/ui** React components for immediate use.
 
 ### Why Plate is the Closest Match
 
-- Same nested block architecture (Table > Row > Cell > Content) as AppFlowy
-- Operations are editor-level transforms, similar to AppFlowy's `EditorState` extensions
+- Same nested block architecture (Table > Row > Cell > Content) as SynapseNote
+- Operations are editor-level transforms, similar to SynapseNote's `EditorState` extensions
 - Rich cell content (not inline-only)
 - Row/column drag reorder support
 - Active community and npm-installable
@@ -999,7 +999,7 @@ Advanced features (merge/split, colors) are disabled by default and enabled via 
 
 ### Key Limitation
 
-**Cells only support inline content** -- no images, code blocks, headings, or other block-level elements inside a cell. This is a significant gap compared to AppFlowy's SimpleTable, where cells can contain any document block.
+**Cells only support inline content** -- no images, code blocks, headings, or other block-level elements inside a cell. This is a significant gap compared to SynapseNote's SimpleTable, where cells can contain any document block.
 
 ---
 
@@ -1031,7 +1031,7 @@ Advanced features (merge/split, colors) are disabled by default and enabled via 
 
 ### Why It's Listed but with Caveats
 
-BlockSuite uses **Web Components**, not React. It cannot be directly used as a React component without a wrapper layer. It is the editor behind AFFiNE (similar to how Monaco is behind VSCode). Architecturally it's the most similar to AppFlowy's approach (custom framework, block-based, collaborative), but the technology stack differs.
+BlockSuite uses **Web Components**, not React. It cannot be directly used as a React component without a wrapper layer. It is the editor behind AFFiNE (similar to how Monaco is behind VSCode). Architecturally it's the most similar to SynapseNote's approach (custom framework, block-based, collaborative), but the technology stack differs.
 
 ---
 
@@ -1069,9 +1069,9 @@ BlockSuite uses **Web Components**, not React. It cannot be directly used as a R
 | slate-deep-table | github.com/jasonphillips/slate-deep-table | ~112 | Unmaintained | Forked from above, supports nested block content in cells |
 | nlulic/slate-table | github.com/nlulic/slate-table | ~31 | Active (2026) | Modern Slate compatible, merge/split cells, no resize |
 
-### AppFlowy Web Editor
+### SynapseNote Web Editor
 
-- **GitHub:** https://github.com/AppFlowy-IO/AppFlowy-Web-Editor (~10 stars)
+- **GitHub:** https://github.com/SynapseNote-IO/SynapseNote-Web-Editor (~10 stars)
 - **Framework:** Slate.js + React
 - **Status:** Early stage. Has GFM table parsing dependencies but full SimpleTable parity with the Flutter version is not yet implemented.
 
@@ -1079,9 +1079,9 @@ BlockSuite uses **Web Components**, not React. It cannot be directly used as a R
 
 ## 19. Feature Comparison Matrix
 
-### AppFlowy SimpleTable vs All React Projects
+### SynapseNote SimpleTable vs All React Projects
 
-| Feature | AppFlowy (Flutter) | Plate | TipTap | Lexical | BlockNote | AFFiNE | Yoopta | Outline |
+| Feature | SynapseNote (Flutter) | Plate | TipTap | Lexical | BlockNote | AFFiNE | Yoopta | Outline |
 |---------|-------------------|-------|--------|---------|-----------|--------|--------|---------|
 | **Rich block cells** | Yes | Yes | Yes | Yes (no nested tables) | **Inline only** | Yes | Yes | Markdown |
 | **Add row/col buttons** | Hover buttons | Toolbar/context | UI handles | Context menu | Side menu | Inline | Yes | Click/dot indicator |
@@ -1098,7 +1098,7 @@ BlockSuite uses **Web Components**, not React. It cannot be directly used as a R
 | **Set to page width** | Yes | - | - | - | - | - | - | - |
 | **Distribute evenly** | Yes | - | - | - | - | - | - | - |
 
-### Summary Scores (0-3 scale, 3 = full parity with AppFlowy)
+### Summary Scores (0-3 scale, 3 = full parity with SynapseNote)
 
 | Project | Cell Content | CRUD Actions | Styling | Navigation | Reorder | Overall |
 |---------|-------------|--------------|---------|------------|---------|---------|
@@ -1113,9 +1113,9 @@ BlockSuite uses **Web Components**, not React. It cannot be directly used as a R
 
 ## 20. Key Takeaways & Recommendations
 
-### 1. Plate is the closest match to AppFlowy's SimpleTable
+### 1. Plate is the closest match to SynapseNote's SimpleTable
 
-Plate (Slate.js) has the most feature parity: rich block content in cells, drag reorder for rows and columns, column resize, header toggle, per-cell styling, and keyboard navigation. It's MIT licensed and installable via npm. If building an AppFlowy-like table in React, Plate is the strongest starting point.
+Plate (Slate.js) has the most feature parity: rich block content in cells, drag reorder for rows and columns, column resize, header toggle, per-cell styling, and keyboard navigation. It's MIT licensed and installable via npm. If building an SynapseNote-like table in React, Plate is the strongest starting point.
 
 ### 2. TipTap has the most mature and battle-tested table engine
 
@@ -1123,11 +1123,11 @@ Built on `prosemirror-tables` (the gold standard for document tables), TipTap ha
 
 ### 3. BlockNote has the best out-of-box Notion UX but a critical limitation
 
-BlockNote provides the most polished Notion-like editing experience, with per-cell styling, merge/split (opt-in), and collaborative editing via Y.js. However, **cells only support inline content** (no images, code blocks, etc.), which is a significant gap vs AppFlowy.
+BlockNote provides the most polished Notion-like editing experience, with per-cell styling, merge/split (opt-in), and collaborative editing via Y.js. However, **cells only support inline content** (no images, code blocks, etc.), which is a significant gap vs SynapseNote.
 
-### 4. No single project matches ALL of AppFlowy's features
+### 4. No single project matches ALL of SynapseNote's features
 
-The combination of these features is unique to AppFlowy:
+The combination of these features is unique to SynapseNote:
 - Per-**row** and per-**column** styling (background color, text color, bold, alignment)
 - Row/column duplicate and copy/paste to clipboard
 - "Set to page width" and "distribute columns evenly" layout actions
@@ -1141,14 +1141,14 @@ All projects use the same fundamental data model:
 Table Node → Row Node → Cell Node → [Content]
 ```
 
-Operations are implemented as editor-level transforms (Slate transforms, ProseMirror transactions, Lexical commands). This validates AppFlowy's architecture as aligned with industry patterns.
+Operations are implemented as editor-level transforms (Slate transforms, ProseMirror transactions, Lexical commands). This validates SynapseNote's architecture as aligned with industry patterns.
 
 ### 6. Recommended approach for React implementation
 
 | Priority | Recommendation |
 |----------|---------------|
 | **Start from Plate** | Use `@udecode/plate-table` as the base. It covers ~80% of the feature surface. |
-| **Add per-row/col styling** | Plate has cell-level styling; extend with row/column attribute maps similar to AppFlowy's `columnColors`, `rowColors`, `columnAligns`, etc. |
-| **Add AppFlowy-specific actions** | Implement "set to page width", "distribute evenly", "duplicate row/column", "copy/paste row/column" as custom Slate transforms. |
+| **Add per-row/col styling** | Plate has cell-level styling; extend with row/column attribute maps similar to SynapseNote's `columnColors`, `rowColors`, `columnAligns`, etc. |
+| **Add SynapseNote-specific actions** | Implement "set to page width", "distribute evenly", "duplicate row/column", "copy/paste row/column" as custom Slate transforms. |
 | **Reference TipTap for merge/split** | If merge/split is needed later, study TipTap's / prosemirror-tables' implementation. |
 | **Reference BlockNote for UX patterns** | BlockNote's hover UI, color pickers, and inline controls provide good UX inspiration even if the underlying engine differs. |

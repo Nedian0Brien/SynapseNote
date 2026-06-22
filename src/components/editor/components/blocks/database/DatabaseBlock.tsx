@@ -199,13 +199,13 @@ export const DatabaseBlock = memo(
       try {
         const domNode = ReactEditor.toDOMNode(editor, editor);
         
-        scrollContainer = domNode.closest('.appflowy-scroll-container');
+        scrollContainer = domNode.closest('.synapsenote-scroll-container');
       } catch {
         // ignore
       }
 
       if (!scrollContainer) {
-        scrollContainer = document.querySelector('.appflowy-scroll-container');
+        scrollContainer = document.querySelector('.synapsenote-scroll-container');
       }
 
       if (!scrollContainer) return;
@@ -235,13 +235,13 @@ export const DatabaseBlock = memo(
           try {
             const domNode = ReactEditor.toDOMNode(editor, editor);
             
-            scrollContainer = domNode.closest('.appflowy-scroll-container');
+            scrollContainer = domNode.closest('.synapsenote-scroll-container');
           } catch {
             // fallback
           }
 
           if (!scrollContainer) {
-            scrollContainer = document.querySelector('.appflowy-scroll-container');
+            scrollContainer = document.querySelector('.synapsenote-scroll-container');
           }
           
           // Only restore if scroll position was reset to 0 (or close to 0) and we had a previous scroll

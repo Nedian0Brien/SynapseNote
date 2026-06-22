@@ -16,7 +16,7 @@ import {
  * Mock the billing endpoints so `useSubscriptionPlan` resolves `isPro = true`.
  *
  * Why: CI runs against a `localhost` backend, which is in `OFFICIAL_HOSTNAMES`
- * (src/utils/subscription.ts), so `isAppFlowyHosted()` returns true and the
+ * (src/utils/subscription.ts), so `isSynapseNoteHosted()` returns true and the
  * real subscription fetch returns Free. That marks Line / Donut / Horizontal
  * Bar as locked, replacing their accessible name with "<type> (Upgrade
  * Required)" — which makes `getByRole('menuitem', { name: /^Line$/i })` miss.

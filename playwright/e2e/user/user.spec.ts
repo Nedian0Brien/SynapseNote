@@ -14,7 +14,7 @@ test.describe('User Feature Tests', () => {
   });
 
   test.describe('User Login Tests', () => {
-    test('should show AppFlowy Web login page, authenticate, and verify workspace', async ({
+    test('should show SynapseNote Web login page, authenticate, and verify workspace', async ({
       page,
       request,
     }) => {

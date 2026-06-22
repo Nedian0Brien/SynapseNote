@@ -9,7 +9,7 @@ import { CollabService, UserService } from '@/application/services/domains';
 import { getTokenParsed } from '@/application/session/token';
 import { clearDrainConfig, configureDrain, setCurrentSession, startDrainAll } from '@/application/sync-outbox';
 import type { AppEventEmitter } from '@/components/app/contexts/AppEventEmitterContext';
-import { useAppflowyWebSocket, useBroadcastChannel, useSync } from '@/components/ws';
+import { useSynapseWebSocket, useBroadcastChannel, useSync } from '@/components/ws';
 import { notification } from '@/proto/messages';
 
 import { useAuthInternal } from '../contexts/AuthInternalContext';
@@ -42,17 +42,17 @@ export const AppSyncLayer: FC<AppSyncLayerProps> = ({ children }) => {
 
     const globalWindow = window as typeof window & {
       Cypress?: unknown;
-      __APPFLOWY_EVENT_EMITTER__?: EventEmitter;
+      __SYNAPSENOTE_EVENT_EMITTER__?: EventEmitter;
     };
 
     if (globalWindow.Cypress) {
       // Expose event emitter for Cypress so tests can simulate workspace notifications
-      globalWindow.__APPFLOWY_EVENT_EMITTER__ = eventEmitter;
+      globalWindow.__SYNAPSENOTE_EVENT_EMITTER__ = eventEmitter;
     }
   }, [eventEmitter]);
 
   // Initialize WebSocket connection - currentWorkspaceId and service are guaranteed to exist when this component renders
-  const webSocket = useAppflowyWebSocket({
+  const webSocket = useSynapseWebSocket({
     workspaceId: currentWorkspaceId!,
     clientId: CollabService.getClientId(),
     deviceId: CollabService.getDeviceId(),

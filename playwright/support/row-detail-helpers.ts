@@ -181,7 +181,7 @@ export async function assertRowDetailClosed(page: Page): Promise<void> {
  */
 export async function typeInRowDocument(page: Page, text: string): Promise<void> {
   // Scroll the dialog scroll-container to the bottom so the editor is visible
-  const scrollContainer = page.locator('.MuiDialog-paper .appflowy-scroll-container');
+  const scrollContainer = page.locator('.MuiDialog-paper .synapsenote-scroll-container');
   if ((await scrollContainer.count()) > 0) {
     await scrollContainer.evaluate(el => el.scrollTo(0, 9999));
     await page.waitForTimeout(1000);

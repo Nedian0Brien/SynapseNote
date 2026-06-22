@@ -19,7 +19,7 @@ const APP_PATHS = ['/after-payment', '/login', '/auth', '/as-template', '/app', 
 
 // Static file paths that should be served from dist
 const STATIC_PATHS = ['/static/', '/af_icons/', '/covers/', '/.well-known/'];
-const STATIC_FILES = ['/appflowy.ico', '/appflowy.svg', '/og-image.png'];
+const STATIC_FILES = ['/synapsenote.svg', '/synapsenote.ico', '/og-image.png'];
 
 // Vite emits content-hashed filenames under /static/, so they can be cached
 // forever; other assets keep a short lifetime. HTML must always be

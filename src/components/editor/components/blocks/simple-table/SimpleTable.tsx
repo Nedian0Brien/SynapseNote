@@ -84,7 +84,7 @@ const SimpleTable = memo(
       const { isIntersection } = useSimpleTable(node);
 
       const className = useMemo(() => {
-        const classList = ['simple-table', 'appflowy-scroller'];
+        const classList = ['simple-table', 'synapsenote-scroller'];
 
         if (classNameProp) {
           classList.push(classNameProp);

@@ -75,7 +75,7 @@ export function Sorts () {
           </PopoverTrigger>
           <PopoverContent
             onOpenAutoFocus={e => e.preventDefault()}
-            className={'p-2 max-h-[360px] appflowy-scroller overflow-y-auto'}
+            className={'p-2 max-h-[360px] synapsenote-scroller overflow-y-auto'}
             onClick={e => {
               e.stopPropagation();
             }}

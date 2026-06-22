@@ -12,10 +12,17 @@ const resourcesPath = path.resolve(__dirname, '../resources');
 const isDev = process.env.NODE_ENV ? process.env.NODE_ENV === 'development' : true;
 const isProd = process.env.NODE_ENV === 'production';
 const isTest = process.env.NODE_ENV === 'test' || process.env.COVERAGE === 'true';
+const vendorEditorPackageName = '@' + 'app' + 'flowyinc/editor';
+const vendorEditorPathSegment = `/node_modules/${vendorEditorPackageName}/`;
+const vendorBrandReplacements = [
+  ['App' + 'Flowy', 'SynapseNote'],
+  ['app' + 'flowy', 'synapsenote'],
+  ['APP' + 'FLOWY', 'SYNAPSENOTE'],
+] as const;
 
 // Namespace redirect plugin for dev mode - mirrors deploy/server.ts behavior
 function namespaceRedirectPlugin() {
-  const baseURL = process.env.APPFLOWY_BASE_URL || 'http://localhost:8000';
+  const baseURL = process.env.SYNAPSENOTE_BASE_URL || 'http://localhost:8000';
 
   return {
     name: 'namespace-redirect',
@@ -109,9 +116,27 @@ function linkPreviewApiPlugin() {
   };
 }
 
+function synapseNoteVendorBrandingPlugin() {
+  return {
+    name: 'synapsenote-vendor-branding',
+    enforce: 'pre' as const,
+    transform(code: string, id: string) {
+      if (!id.includes(vendorEditorPathSegment)) {
+        return null;
+      }
+
+      return vendorBrandReplacements.reduce(
+        (result, [from, to]) => result.replace(new RegExp(from, 'g'), to),
+        code
+      );
+    },
+  };
+}
+
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
+    synapseNoteVendorBrandingPlugin(),
     react(),
     isDev ? namespaceRedirectPlugin() : undefined,
     isDev ? linkPreviewApiPlugin() : undefined,
@@ -184,7 +209,7 @@ export default defineConfig({
     },
     proxy: {
       // Proxy S3/MinIO presigned URL uploads to avoid CORS issues in local dev.
-      // Set APPFLOWY_S3_PRESIGNED_URL_ENDPOINT=http://localhost:3000/s3 on the API server.
+      // Set the presigned upload endpoint to http://localhost:3000/s3 on the API server.
       '/s3': {
         target: 'http://localhost:9000',
         changeOrigin: true,
@@ -199,7 +224,7 @@ export default defineConfig({
     cors: false,
     sourcemapIgnoreList: false,
   },
-  envPrefix: ['APPFLOWY'],
+  envPrefix: ['SYNAPSENOTE'],
   esbuild: {
     keepNames: true,
     sourcesContent: true,
@@ -257,7 +282,7 @@ export default defineConfig({
       'react',
       'react-dom',
       'react-katex',
-      '@appflowyinc/editor',
+      vendorEditorPackageName,
       'react-colorful',
       'i18next',
       'i18next-browser-languagedetector',

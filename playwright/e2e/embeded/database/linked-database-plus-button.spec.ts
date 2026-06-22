@@ -85,7 +85,7 @@ test.describe('Embedded Database - Plus Button View Creation', () => {
     await popover.getByText(dbName, { exact: false }).first().click({ force: true });
     await page.waitForTimeout(3000);
 
-    return page.locator('[class*="appflowy-database"]').last();
+    return page.locator('[class*="synapsenote-database"]').last();
   }
 
   test('should create new view using + button and auto-select it', async ({ page, request }) => {
@@ -109,7 +109,7 @@ test.describe('Embedded Database - Plus Button View Creation', () => {
     }
 
     // Re-locate embedded database after potential navigation
-    const embeddedDBFresh = page.locator('[class*="appflowy-database"]').last();
+    const embeddedDBFresh = page.locator('[class*="synapsenote-database"]').last();
     await expect(embeddedDBFresh).toBeVisible({ timeout: 15000 });
     const viewTabsFresh = embeddedDBFresh.locator('[data-testid^="view-tab-"]');
     await expect(viewTabsFresh).toHaveCount(1, { timeout: 10000 });

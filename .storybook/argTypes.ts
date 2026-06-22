@@ -14,10 +14,10 @@ import { SubscriptionPlan } from '@/application/types';
 export const hostnameArgType = {
   hostname: {
     control: 'text',
-    description: 'Mock hostname to simulate different hosting scenarios (e.g., "beta.appflowy.cloud" for official host, "self-hosted.example.com" for self-hosted)',
+    description: 'Mock hostname to simulate different hosting scenarios (e.g., "beta.synapsenote.cloud" for official host, "self-hosted.example.com" for self-hosted)',
     table: {
       category: 'Testing',
-      defaultValue: { summary: 'beta.appflowy.cloud' },
+      defaultValue: { summary: 'beta.synapsenote.cloud' },
     },
   },
 };

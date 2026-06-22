@@ -1,6 +1,6 @@
 import { UploadPartInfo } from './multipart-upload.types';
 
-const DB_NAME = 'AppFlowyMultipartUploads';
+const DB_NAME = 'SynapseNoteMultipartUploads';
 const DB_VERSION = 1;
 const STORE_NAME = 'uploads';
 

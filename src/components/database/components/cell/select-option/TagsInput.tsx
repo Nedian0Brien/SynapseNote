@@ -220,7 +220,7 @@ const TagsInput = forwardRef<HTMLDivElement, TagInputProps>(
         data-focused={focused}
         onClick={focusInput}
       >
-        <div ref={containerRef} className={'appflowy-hidden-scroller h-full w-full overflow-x-auto'}>
+        <div ref={containerRef} className={'synapsenote-hidden-scroller h-full w-full overflow-x-auto'}>
           <div className={'flex h-full flex-grow flex-nowrap items-center gap-1'}>
             {/* Render tags */}
             {tags.map((tag) => (

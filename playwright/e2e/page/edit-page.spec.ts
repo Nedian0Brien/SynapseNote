@@ -24,8 +24,8 @@ test.describe('Page Edit Tests', () => {
     testEmail = generateRandomEmail();
     testPageName = 'e2e test-edit page';
     testContent = [
-      'AppFlowy Web',
-      'AppFlowy Web is a modern open-source project management tool that helps you manage your projects and tasks efficiently.',
+      'SynapseNote Web',
+      'SynapseNote Web is a modern open-source project management tool that helps you manage your projects and tasks efficiently.',
     ];
   });
 

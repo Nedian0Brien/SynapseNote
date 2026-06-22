@@ -19,10 +19,10 @@ import { expandSpaceByName, expandPageByName } from '../../support/page/flows';
  */
 
 // Snapshot accounts from backup/README.md
-const OWNER_EMAIL = 'cc_group_owner@appflowy.io';
-const MEMBER_1_EMAIL = 'cc_group_mem_1@appflowy.io';
-const MEMBER_2_EMAIL = 'cc_group_mem_2@appflowy.io';
-const GUEST_EMAIL = 'cc_group_guest@appflowy.io';
+const OWNER_EMAIL = 'cc_group_owner@synapsenote.io';
+const MEMBER_1_EMAIL = 'cc_group_mem_1@synapsenote.io';
+const MEMBER_2_EMAIL = 'cc_group_mem_2@synapsenote.io';
+const GUEST_EMAIL = 'cc_group_guest@synapsenote.io';
 
 /**
  * Asserts that a space with the given name exists in the sidebar.

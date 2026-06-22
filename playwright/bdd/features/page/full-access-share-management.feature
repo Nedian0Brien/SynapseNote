@@ -1,6 +1,6 @@
 @full-access-share-management
 Feature: FullAccess private page share panel controls
-  The fa0522 FullAccess share-management fixture already exists in the local AppFlowy Cloud database.
+  The fa0522 FullAccess share-management fixture already exists in the local SynapseNote Cloud database.
   These scenarios verify the web share panel controls for owner, member, and guest users on private pages.
 
   Background:

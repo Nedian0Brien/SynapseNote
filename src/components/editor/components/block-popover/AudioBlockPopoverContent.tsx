@@ -188,7 +188,7 @@ function AudioBlockPopoverContent({ blockId, onClose }: { blockId: string; onClo
         <ViewTab iconPosition='start' color='inherit' label={t('button.upload')} value='upload' />
         <ViewTab iconPosition='start' color='inherit' label={t('document.plugins.file.networkTab')} value='embed' />
       </ViewTabs>
-      <div className={'appflowy-scroller max-h-[400px] overflow-y-auto p-2'}>
+      <div className={'synapsenote-scroller max-h-[400px] overflow-y-auto p-2'}>
         <TabPanel className={'flex h-full w-full flex-col'} index={0} value={selectedIndex}>
           <FileDropzone
             accept={AUDIO_EXTENSIONS.join(',')}

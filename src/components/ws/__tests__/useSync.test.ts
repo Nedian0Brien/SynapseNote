@@ -18,7 +18,7 @@ import { Log } from '@/utils/log';
 import { useCurrentUserOptional } from '@/components/main/app.hooks';
 
 import { BroadcastChannelType } from '../useBroadcastChannel';
-import { AppflowyWebSocketType } from '../useAppflowyWebSocket';
+import { SynapseWebSocketType } from '../useSynapseWebSocket';
 import { useSync } from '../useSync';
 
 jest.mock('@/application/db', () => {
@@ -133,11 +133,11 @@ jest.mock('@/components/main/app.hooks', () => {
   };
 });
 
-const createWs = (): AppflowyWebSocketType =>
+const createWs = (): SynapseWebSocketType =>
   ({
     sendMessage: jest.fn(),
     lastMessage: null,
-  } as unknown as AppflowyWebSocketType);
+  } as unknown as SynapseWebSocketType);
 
 const createBroadcastChannel = (): BroadcastChannelType =>
   ({
@@ -411,7 +411,7 @@ describe('useSync version-gated message handling', () => {
     };
 
     act(() => {
-      ws.lastMessage = { collabMessage: message } as AppflowyWebSocketType['lastMessage'];
+      ws.lastMessage = { collabMessage: message } as SynapseWebSocketType['lastMessage'];
       rerender();
     });
 
@@ -449,7 +449,7 @@ describe('useSync version-gated message handling', () => {
     };
 
     act(() => {
-      ws.lastMessage = { collabMessage: message } as AppflowyWebSocketType['lastMessage'];
+      ws.lastMessage = { collabMessage: message } as SynapseWebSocketType['lastMessage'];
       rerender();
     });
 
@@ -494,7 +494,7 @@ describe('useSync version-gated message handling', () => {
     };
 
     act(() => {
-      ws.lastMessage = { collabMessage: message } as AppflowyWebSocketType['lastMessage'];
+      ws.lastMessage = { collabMessage: message } as SynapseWebSocketType['lastMessage'];
       rerender();
     });
 
@@ -537,7 +537,7 @@ describe('useSync version-gated message handling', () => {
     };
 
     act(() => {
-      ws.lastMessage = { collabMessage: message } as AppflowyWebSocketType['lastMessage'];
+      ws.lastMessage = { collabMessage: message } as SynapseWebSocketType['lastMessage'];
       rerender();
     });
 
@@ -598,11 +598,11 @@ describe('useSync version-gated message handling', () => {
     };
 
     act(() => {
-      ws.lastMessage = { collabMessage: supersededMessage } as AppflowyWebSocketType['lastMessage'];
+      ws.lastMessage = { collabMessage: supersededMessage } as SynapseWebSocketType['lastMessage'];
       rerender();
     });
     act(() => {
-      ws.lastMessage = { collabMessage: latestMessage } as AppflowyWebSocketType['lastMessage'];
+      ws.lastMessage = { collabMessage: latestMessage } as SynapseWebSocketType['lastMessage'];
       rerender();
     });
 
@@ -669,11 +669,11 @@ describe('useSync version-gated message handling', () => {
     };
 
     act(() => {
-      ws.lastMessage = { collabMessage: resetMessageForA } as AppflowyWebSocketType['lastMessage'];
+      ws.lastMessage = { collabMessage: resetMessageForA } as SynapseWebSocketType['lastMessage'];
       rerender();
     });
     act(() => {
-      ws.lastMessage = { collabMessage: messageForB } as AppflowyWebSocketType['lastMessage'];
+      ws.lastMessage = { collabMessage: messageForB } as SynapseWebSocketType['lastMessage'];
       rerender();
     });
 
@@ -731,7 +731,7 @@ describe('useSync notifications', () => {
     const { rerender } = renderHook(() => useSync(ws, bc, eventEmitter, defaultWorkspaceId));
 
     act(() => {
-      ws.lastMessage = { notification } as AppflowyWebSocketType['lastMessage'];
+      ws.lastMessage = { notification } as SynapseWebSocketType['lastMessage'];
       rerender();
     });
 
@@ -823,7 +823,7 @@ describe('useSync public API', () => {
     };
 
     act(() => {
-      ws.lastMessage = { collabMessage: message } as AppflowyWebSocketType['lastMessage'];
+      ws.lastMessage = { collabMessage: message } as SynapseWebSocketType['lastMessage'];
       rerender();
     });
 
@@ -882,7 +882,7 @@ describe('useSync public API', () => {
       const ws = {
         ...createWs(),
         readyState: 0,
-      } as AppflowyWebSocketType;
+      } as SynapseWebSocketType;
       const bc = createBroadcastChannel();
       const docA = createDoc('abababab-aaaa-4aaa-8aaa-abababababab');
       const docB = createDoc('bcbcbcbc-bbbb-4bbb-8bbb-bcbcbcbcbcbc');
@@ -942,7 +942,7 @@ describe('useSync public API', () => {
       const ws = {
         ...createWs(),
         readyState: 0,
-      } as AppflowyWebSocketType;
+      } as SynapseWebSocketType;
       const bc = createBroadcastChannel();
       const doc = createDoc('dededede-2222-4222-8222-dededededede');
       const { result, unmount } = renderHook(() => useSync(ws, bc, defaultEventEmitter, defaultWorkspaceId));
@@ -1017,7 +1017,7 @@ describe('useSync public API', () => {
       const ws = {
         ...createWs(),
         readyState: 0,
-      } as AppflowyWebSocketType;
+      } as SynapseWebSocketType;
       const bc = createBroadcastChannel();
       const doc = createDoc('efefefef-3333-4333-8333-efefefefefef');
       const { result, unmount } = renderHook(() => useSync(ws, bc, defaultEventEmitter, defaultWorkspaceId));
@@ -1075,7 +1075,7 @@ describe('useSync public API', () => {
       const ws = {
         ...createWs(),
         readyState: 0,
-      } as AppflowyWebSocketType;
+      } as SynapseWebSocketType;
       const bc = createBroadcastChannel();
       const doc = createDoc('cdcdcdcd-1111-4111-8111-cdcdcdcdcdcd');
       const { result, rerender, unmount } = renderHook(() => useSync(ws, bc, defaultEventEmitter, defaultWorkspaceId));
@@ -1128,7 +1128,7 @@ describe('useSync public API', () => {
       const ws = {
         ...createWs(),
         readyState: 1,
-      } as AppflowyWebSocketType;
+      } as SynapseWebSocketType;
       const bc = createBroadcastChannel();
       const doc = createDoc('cececece-2222-4222-8222-cececececece');
       const { result, rerender, unmount } = renderHook(() => useSync(ws, bc, defaultEventEmitter, defaultWorkspaceId));
@@ -1179,7 +1179,7 @@ describe('useSync public API', () => {
       const ws = {
         ...createWs(),
         readyState: 1,
-      } as AppflowyWebSocketType;
+      } as SynapseWebSocketType;
       const bc = createBroadcastChannel();
       const doc = createDoc('cfcfcfcf-3333-4333-8333-cfcfcfcfcfcf');
       const { result, rerender, unmount } = renderHook(() => useSync(ws, bc, defaultEventEmitter, defaultWorkspaceId));
@@ -1328,7 +1328,7 @@ describe('useSync public API', () => {
       const ws = {
         ...createWs(),
         readyState: 1,
-      } as AppflowyWebSocketType;
+      } as SynapseWebSocketType;
       const bc = createBroadcastChannel();
       const localDoc = createDoc('fbfbfbfb-1111-4111-8111-fbfbfbfbfbfb');
       const serverDoc = createDoc(localDoc.guid);
@@ -1532,13 +1532,13 @@ describe('useSync queue guards and dedupe', () => {
 
     act(() => {
       result.current.registerSyncContext({ doc, collabType: Types.Document });
-      ws.lastMessage = { collabMessage: message } as AppflowyWebSocketType['lastMessage'];
+      ws.lastMessage = { collabMessage: message } as SynapseWebSocketType['lastMessage'];
       rerender();
     });
     await waitFor(() => expect(mockedHandleMessage).toHaveBeenCalledTimes(1));
 
     act(() => {
-      ws.lastMessage = { collabMessage: message } as AppflowyWebSocketType['lastMessage'];
+      ws.lastMessage = { collabMessage: message } as SynapseWebSocketType['lastMessage'];
       rerender();
     });
 
@@ -1585,7 +1585,7 @@ describe('useSync queue guards and dedupe', () => {
           collabType: Types.Document,
           update: {},
         },
-      } as AppflowyWebSocketType['lastMessage'];
+      } as SynapseWebSocketType['lastMessage'];
       rerender();
     });
 
@@ -1630,11 +1630,11 @@ describe('useSync queue guards and dedupe', () => {
     };
 
     act(() => {
-      ws.lastMessage = { collabMessage: message1 } as AppflowyWebSocketType['lastMessage'];
+      ws.lastMessage = { collabMessage: message1 } as SynapseWebSocketType['lastMessage'];
       rerender();
     });
     act(() => {
-      ws.lastMessage = { collabMessage: message2 } as AppflowyWebSocketType['lastMessage'];
+      ws.lastMessage = { collabMessage: message2 } as SynapseWebSocketType['lastMessage'];
       rerender();
     });
 
@@ -1806,7 +1806,7 @@ describe('useSync revertCollabVersion', () => {
     };
 
     act(() => {
-      ws.lastMessage = { collabMessage: postFailureMessage } as AppflowyWebSocketType['lastMessage'];
+      ws.lastMessage = { collabMessage: postFailureMessage } as SynapseWebSocketType['lastMessage'];
       rerender();
     });
 
@@ -1850,7 +1850,7 @@ describe('useSync revertCollabVersion', () => {
     });
 
     act(() => {
-      ws.lastMessage = { collabMessage: queuedMessage } as AppflowyWebSocketType['lastMessage'];
+      ws.lastMessage = { collabMessage: queuedMessage } as SynapseWebSocketType['lastMessage'];
       rerender();
     });
 

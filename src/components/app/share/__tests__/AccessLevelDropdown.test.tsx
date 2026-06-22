@@ -67,7 +67,7 @@ jest.mock('@/components/ui/dropdown-menu', () => ({
 const createPerson = (overrides: Partial<IPeopleWithAccessType> = {}): IPeopleWithAccessType => ({
   access_level: AccessLevel.FullAccess,
   avatar_url: '',
-  email: 'collaborator@appflowy.local',
+  email: 'collaborator@synapsenote.local',
   name: 'Collaborator',
   pending_invitation: false,
   role: Role.Member,

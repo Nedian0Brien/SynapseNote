@@ -1,4 +1,4 @@
-import { EditorData, EditorNode } from '@appflowyinc/editor';
+import { EditorData, EditorNode } from '@/vendor/synapsenote-editor';
 
 interface Element {
   type: string;
@@ -10,8 +10,8 @@ interface Text extends Record<string, unknown> {
   text: string;
 }
 
-export function convertToAppFlowyFragment(data: EditorData) {
-  const key = 'application/x-appflowy-fragment';
+export function convertToSynapseNoteFragment(data: EditorData) {
+  const key = 'application/x-synapsenote-fragment';
 
   const traverse = (item: EditorNode) => {
     const data = item.data || {};

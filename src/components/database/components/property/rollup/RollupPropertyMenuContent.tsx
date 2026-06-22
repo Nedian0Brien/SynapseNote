@@ -120,7 +120,7 @@ function RollupPropertyMenuContent({ fieldId }: { fieldId: string }) {
             {loadingRelated ? <Progress variant={'primary'} /> : selectedRelationLabel}
           </DropdownMenuSubTrigger>
           <DropdownMenuPortal>
-            <DropdownMenuSubContent className={'appflowy-scroller max-h-[360px] max-w-[240px] overflow-y-auto'}>
+            <DropdownMenuSubContent className={'synapsenote-scroller max-h-[360px] max-w-[240px] overflow-y-auto'}>
               {relationFields.length === 0 ? (
                 <DropdownMenuItem disabled>
                   {t('grid.rollup.noRelationFields', { defaultValue: 'No relation fields' })}
@@ -152,7 +152,7 @@ function RollupPropertyMenuContent({ fieldId }: { fieldId: string }) {
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>{selectedPropertyLabel}</DropdownMenuSubTrigger>
           <DropdownMenuPortal>
-            <DropdownMenuSubContent className={'appflowy-scroller max-h-[360px] max-w-[240px] overflow-y-auto'}>
+            <DropdownMenuSubContent className={'synapsenote-scroller max-h-[360px] max-w-[240px] overflow-y-auto'}>
               {relatedFields.length === 0 ? (
                 <DropdownMenuItem disabled>
                   {rollupOption.relation_field_id
@@ -185,7 +185,7 @@ function RollupPropertyMenuContent({ fieldId }: { fieldId: string }) {
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>{calculationLabel}</DropdownMenuSubTrigger>
           <DropdownMenuPortal>
-            <DropdownMenuSubContent className={'appflowy-scroller max-h-[360px] max-w-[240px] overflow-y-auto'}>
+            <DropdownMenuSubContent className={'synapsenote-scroller max-h-[360px] max-w-[240px] overflow-y-auto'}>
               {availableCalculations.map((type) => (
                 <DropdownMenuItem
                   key={type}
@@ -210,7 +210,7 @@ function RollupPropertyMenuContent({ fieldId }: { fieldId: string }) {
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>{displayModeLabel}</DropdownMenuSubTrigger>
           <DropdownMenuPortal>
-            <DropdownMenuSubContent className={'appflowy-scroller max-h-[360px] max-w-[240px] overflow-y-auto'}>
+            <DropdownMenuSubContent className={'synapsenote-scroller max-h-[360px] max-w-[240px] overflow-y-auto'}>
               {[RollupDisplayMode.Calculated, RollupDisplayMode.OriginalList, RollupDisplayMode.UniqueList].map(
                 (mode) => (
                   <DropdownMenuItem
@@ -239,7 +239,7 @@ function RollupPropertyMenuContent({ fieldId }: { fieldId: string }) {
                   t('grid.rollup.selectOption', { defaultValue: 'Select option' })}
               </DropdownMenuSubTrigger>
               <DropdownMenuPortal>
-                <DropdownMenuSubContent className={'appflowy-scroller max-h-[360px] max-w-[240px] overflow-y-auto'}>
+                <DropdownMenuSubContent className={'synapsenote-scroller max-h-[360px] max-w-[240px] overflow-y-auto'}>
                   {selectOptions.length === 0 ? (
                     <DropdownMenuItem disabled>
                       {t('grid.rollup.noOptions', { defaultValue: 'No options' })}

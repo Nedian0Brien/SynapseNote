@@ -833,7 +833,7 @@ export function useUpdateRelationTypeOption(fieldId: FieldId) {
 /**
  * Create a new row in a (possibly different) related database with the
  * primary cell pre-filled, then return its row id. Mirrors the desktop
- * `_handleCreateAndLinkRow` flow (see commit c811059939, AppFlowy#8644):
+ * `_handleCreateAndLinkRow` flow (see commit c811059939, SynapseNote#8644):
  *   1. Resolve the target's primary field from its loaded view doc.
  *   2. Create a fresh row doc and seed the primary cell with `primaryText`.
  *   3. Append the row id to every view's `row_orders` in the target db.

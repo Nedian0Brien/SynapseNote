@@ -1,24 +1,24 @@
 #!/bin/bash
 
 ################################################################################
-# AppFlowy E2E Test Environment Setup Script
+# SynapseNote E2E Test Environment Setup Script
 #
-# This script automates the setup of the AppFlowy Web E2E testing environment,
+# This script automates the setup of the SynapseNote Web E2E testing environment,
 # including Docker backend services, the web dev server, and test execution.
 #
 # Prerequisites:
 #   - node & npm (for the web app and tests)
 #   - docker & docker compose (for backend services)
-#   - A local clone of AppFlowy-Cloud (https://github.com/AppFlowy-IO/AppFlowy-Cloud)
+#   - A local clone of SynapseNote-Cloud (https://github.com/SynapseNote-IO/SynapseNote-Cloud)
 #
 # Quick start:
-#   1. Clone AppFlowy-Cloud next to this repo (or set APPFLOWY_CLOUD_DIR)
+#   1. Clone SynapseNote-Cloud next to this repo (or set SYNAPSENOTE_CLOUD_DIR)
 #   2. Run: ./setup-test-environment.sh setup
 #   3. Run: ./setup-test-environment.sh test
 #
 # Configuration:
-#   APPFLOWY_WEB_DIR   - Path to the AppFlowy-Web repo (default: this script's directory)
-#   APPFLOWY_CLOUD_DIR - Path to the AppFlowy-Cloud repo (default: ../AppFlowy-Cloud)
+#   SYNAPSENOTE_WEB_DIR   - Path to the SynapseNote-Web repo (default: this script's directory)
+#   SYNAPSENOTE_CLOUD_DIR - Path to the SynapseNote-Cloud repo (default: ../SynapseNote-Cloud)
 #
 # Usage: ./setup-test-environment.sh [command]
 # Commands:
@@ -44,18 +44,18 @@ NC='\033[0m' # No Color
 
 # Project paths (override via environment variables)
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-APPFLOWY_WEB_DIR="${APPFLOWY_WEB_DIR:-$SCRIPT_DIR}"
-APPFLOWY_CLOUD_DIR="${APPFLOWY_CLOUD_DIR:-$(dirname "$SCRIPT_DIR")/AppFlowy-Cloud}"
+SYNAPSENOTE_WEB_DIR="${SYNAPSENOTE_WEB_DIR:-$SCRIPT_DIR}"
+SYNAPSENOTE_CLOUD_DIR="${SYNAPSENOTE_CLOUD_DIR:-$(dirname "$SCRIPT_DIR")/SynapseNote-Cloud}"
 
 # Environment variables for external/frontend use
-export APPFLOWY_BASE_URL="http://localhost"
-export APPFLOWY_WS_BASE_URL="ws://localhost/ws/v2"
-# Note: APPFLOWY_GOTRUE_BASE_URL is set in .env file for internal Docker communication
-export APPFLOWY_WEB_VERSION="local-$(cd "$APPFLOWY_WEB_DIR" && git rev-parse --short HEAD 2>/dev/null || echo 'unknown')"
+export SYNAPSENOTE_BASE_URL="http://localhost"
+export SYNAPSENOTE_WS_BASE_URL="ws://localhost/ws/v2"
+# Note: SYNAPSENOTE_GOTRUE_BASE_URL is set in .env file for internal Docker communication
+export SYNAPSENOTE_WEB_VERSION="local-$(cd "$SYNAPSENOTE_WEB_DIR" && git rev-parse --short HEAD 2>/dev/null || echo 'unknown')"
 
 # Test configuration
 CYPRESS_BASE_URL="http://localhost:3000"
-WEB_DEV_SERVER_PID_FILE="/tmp/appflowy-web-dev.pid"
+WEB_DEV_SERVER_PID_FILE="/tmp/synapsenote-web-dev.pid"
 
 ################################################################################
 # Helper Functions
@@ -106,25 +106,25 @@ check_prerequisites() {
 check_directories() {
     log_info "Checking project directories..."
 
-    if [ ! -d "$APPFLOWY_WEB_DIR" ]; then
-        log_error "AppFlowy-Web directory not found at: $APPFLOWY_WEB_DIR"
-        log_error "Set APPFLOWY_WEB_DIR to the correct path, e.g.:"
-        log_error "  export APPFLOWY_WEB_DIR=/path/to/AppFlowy-Web"
+    if [ ! -d "$SYNAPSENOTE_WEB_DIR" ]; then
+        log_error "SynapseNote-Web directory not found at: $SYNAPSENOTE_WEB_DIR"
+        log_error "Set SYNAPSENOTE_WEB_DIR to the correct path, e.g.:"
+        log_error "  export SYNAPSENOTE_WEB_DIR=/path/to/SynapseNote-Web"
         exit 1
     fi
 
-    if [ ! -d "$APPFLOWY_CLOUD_DIR" ]; then
-        log_error "AppFlowy-Cloud directory not found at: $APPFLOWY_CLOUD_DIR"
+    if [ ! -d "$SYNAPSENOTE_CLOUD_DIR" ]; then
+        log_error "SynapseNote-Cloud directory not found at: $SYNAPSENOTE_CLOUD_DIR"
         log_error "Either clone it next to this repo:"
-        log_error "  git clone https://github.com/AppFlowy-IO/AppFlowy-Cloud.git $(dirname "$SCRIPT_DIR")/AppFlowy-Cloud"
-        log_error "Or set APPFLOWY_CLOUD_DIR to the correct path, e.g.:"
-        log_error "  export APPFLOWY_CLOUD_DIR=/path/to/AppFlowy-Cloud"
+        log_error "  git clone https://github.com/SynapseNote-IO/SynapseNote-Cloud.git $(dirname "$SCRIPT_DIR")/SynapseNote-Cloud"
+        log_error "Or set SYNAPSENOTE_CLOUD_DIR to the correct path, e.g.:"
+        log_error "  export SYNAPSENOTE_CLOUD_DIR=/path/to/SynapseNote-Cloud"
         exit 1
     fi
 
     log_success "Project directories found"
-    log_info "  Web:   $APPFLOWY_WEB_DIR"
-    log_info "  Cloud: $APPFLOWY_CLOUD_DIR"
+    log_info "  Web:   $SYNAPSENOTE_WEB_DIR"
+    log_info "  Cloud: $SYNAPSENOTE_CLOUD_DIR"
 }
 
 ################################################################################
@@ -134,7 +134,7 @@ check_directories() {
 setup_docker_env() {
     log_info "Setting up Docker environment..."
 
-    cd "$APPFLOWY_CLOUD_DIR"
+    cd "$SYNAPSENOTE_CLOUD_DIR"
 
     # Copy .env.nginx to .env if it doesn't exist
     if [ ! -f .env ]; then
@@ -142,20 +142,20 @@ setup_docker_env() {
             cp .env.nginx .env
             log_success "Created .env from .env.nginx"
         else
-            log_error ".env.nginx not found in $APPFLOWY_CLOUD_DIR"
-            log_error "Make sure you have the correct AppFlowy-Cloud repo checked out."
+            log_error ".env.nginx not found in $SYNAPSENOTE_CLOUD_DIR"
+            log_error "Make sure you have the correct SynapseNote-Cloud repo checked out."
             exit 1
         fi
     fi
 
     # Set required environment variables in .env
-    sed -i.bak "s|APPFLOWY_WEB_VERSION=.*|APPFLOWY_WEB_VERSION=$APPFLOWY_WEB_VERSION|g" .env 2>/dev/null || true
+    sed -i.bak "s|SYNAPSENOTE_WEB_VERSION=.*|SYNAPSENOTE_WEB_VERSION=$SYNAPSENOTE_WEB_VERSION|g" .env 2>/dev/null || true
 }
 
 start_docker_services() {
     log_info "Starting Docker services..."
 
-    cd "$APPFLOWY_CLOUD_DIR"
+    cd "$SYNAPSENOTE_CLOUD_DIR"
 
     # Stop any existing services
     docker compose down 2>/dev/null || true
@@ -199,18 +199,18 @@ start_docker_services() {
 stop_docker_services() {
     log_info "Stopping Docker services..."
 
-    cd "$APPFLOWY_CLOUD_DIR"
+    cd "$SYNAPSENOTE_CLOUD_DIR"
     docker compose down
 
     log_success "Docker services stopped"
 }
 
 clean_docker_environment() {
-    log_warning "This will remove all Docker containers and volumes for AppFlowy"
+    log_warning "This will remove all Docker containers and volumes for SynapseNote"
     read -p "Are you sure? (y/N): " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        cd "$APPFLOWY_CLOUD_DIR"
+        cd "$SYNAPSENOTE_CLOUD_DIR"
         docker compose down -v
         docker system prune -f
         log_success "Docker environment cleaned"
@@ -226,7 +226,7 @@ clean_docker_environment() {
 start_web_dev_server() {
     log_info "Starting web development server..."
 
-    cd "$APPFLOWY_WEB_DIR"
+    cd "$SYNAPSENOTE_WEB_DIR"
 
     # Kill any existing dev server
     stop_web_dev_server
@@ -238,7 +238,7 @@ start_web_dev_server() {
     fi
 
     # Start dev server in background
-    npm run dev > /tmp/appflowy-web-dev.log 2>&1 &
+    npm run dev > /tmp/synapsenote-web-dev.log 2>&1 &
     echo $! > "$WEB_DEV_SERVER_PID_FILE"
 
     # Wait for server to be ready
@@ -253,7 +253,7 @@ start_web_dev_server() {
         retries=$((retries - 1))
     done
 
-    log_error "Web server failed to start. Check /tmp/appflowy-web-dev.log"
+    log_error "Web server failed to start. Check /tmp/synapsenote-web-dev.log"
     return 1
 }
 
@@ -278,7 +278,7 @@ stop_web_dev_server() {
 run_all_tests() {
     log_info "Running all E2E tests..."
 
-    cd "$APPFLOWY_WEB_DIR"
+    cd "$SYNAPSENOTE_WEB_DIR"
 
     # Ensure services are running
     check_services_status || start_all_services
@@ -291,7 +291,7 @@ run_specific_test() {
     local test_spec=$1
     log_info "Running specific test: $test_spec"
 
-    cd "$APPFLOWY_WEB_DIR"
+    cd "$SYNAPSENOTE_WEB_DIR"
 
     # Ensure services are running
     check_services_status || start_all_services
@@ -303,7 +303,7 @@ run_specific_test() {
 run_test_headed() {
     log_info "Opening Cypress Test Runner..."
 
-    cd "$APPFLOWY_WEB_DIR"
+    cd "$SYNAPSENOTE_WEB_DIR"
 
     # Ensure services are running
     check_services_status || start_all_services
@@ -324,7 +324,7 @@ check_services_status() {
     echo "================================"
 
     # Check Docker services
-    cd "$APPFLOWY_CLOUD_DIR"
+    cd "$SYNAPSENOTE_CLOUD_DIR"
     if docker compose ps | grep -q "running"; then
         echo -e "${GREEN}✓${NC} Docker services: Running"
         docker compose ps --format "table {{.Name}}\t{{.Status}}"
@@ -392,7 +392,7 @@ stop_all_services() {
 
 show_help() {
     cat << EOF
-AppFlowy E2E Test Environment Setup Script
+SynapseNote E2E Test Environment Setup Script
 
 Usage: $0 [command] [options]
 
@@ -415,17 +415,17 @@ Examples:
     $0 status                   # Check if everything is running
 
 Configuration (via environment variables):
-    APPFLOWY_WEB_DIR    Path to AppFlowy-Web repo   (current: $APPFLOWY_WEB_DIR)
-    APPFLOWY_CLOUD_DIR  Path to AppFlowy-Cloud repo (current: $APPFLOWY_CLOUD_DIR)
+    SYNAPSENOTE_WEB_DIR    Path to SynapseNote-Web repo   (current: $SYNAPSENOTE_WEB_DIR)
+    SYNAPSENOTE_CLOUD_DIR  Path to SynapseNote-Cloud repo (current: $SYNAPSENOTE_CLOUD_DIR)
 
     Example:
-      APPFLOWY_CLOUD_DIR=/path/to/AppFlowy-Cloud $0 setup
+      SYNAPSENOTE_CLOUD_DIR=/path/to/SynapseNote-Cloud $0 setup
 
 Prerequisites:
     - node, npm        https://nodejs.org/
     - docker           https://docs.docker.com/get-docker/
-    - AppFlowy-Cloud    https://github.com/AppFlowy-IO/AppFlowy-Cloud
-                        Clone it next to this repo, or set APPFLOWY_CLOUD_DIR.
+    - SynapseNote-Cloud    https://github.com/SynapseNote-IO/SynapseNote-Cloud
+                        Clone it next to this repo, or set SYNAPSENOTE_CLOUD_DIR.
 
 Troubleshooting:
     "No space left on device"  ->  docker system prune -a --volumes -f

@@ -132,7 +132,7 @@ test.describe('Person Cell in Published Pages', () => {
     testLog.info('No critical errors detected on page');
 
     // And: the database structure is visible
-    await expect(page.locator('[class*="appflowy-database"]')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('[class*="synapsenote-database"]')).toBeVisible({ timeout: 15000 });
     testLog.info('Database container is visible');
 
     // And: Person cells exist in the published view (rendered as read-only)

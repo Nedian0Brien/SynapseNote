@@ -1,4 +1,4 @@
-import { EditorProvider } from '@appflowyinc/editor';
+import { EditorProvider } from '@/vendor/synapsenote-editor';
 import { XIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -23,7 +23,7 @@ export function ExplainToolbar() {
       <Label className={'select-text px-[6px] text-xs font-semibold text-foreground/60'}>{t('chat.writer.explain')}</Label>
       <div
         className={
-          'appflowy-scrollbar max-h-[238px] w-full select-none overflow-y-auto px-[4px] text-sm font-medium leading-[20px]'
+          'synapsenote-scrollbar max-h-[238px] w-full select-none overflow-y-auto px-[4px] text-sm font-medium leading-[20px]'
         }
       >
         <EditorProvider>

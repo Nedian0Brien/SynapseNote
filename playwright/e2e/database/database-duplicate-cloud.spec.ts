@@ -8,7 +8,7 @@
  *
  * Migrated from: cypress/e2e/database/database-duplicate-cloud.cy.ts
  *
- * NOTE: This test uses a specific pre-existing user (export_user@appflowy.io)
+ * NOTE: This test uses a specific pre-existing user (export_user@synapsenote.io)
  * with password-based login and requires the "Database 1" under
  * General > Getting started to exist.
  */
@@ -23,7 +23,7 @@ import {
 import { expandSpaceByName } from '../../support/page-utils';
 import { testLog } from '../../support/test-helpers';
 
-const _exportUserEmail = 'export_user@appflowy.io';
+const _exportUserEmail = 'export_user@synapsenote.io';
 const _exportUserPassword = 'REDACTED_TEST_PASSWORD';
 const _testDatabaseName = 'Database 1';
 const _spaceName = 'General';

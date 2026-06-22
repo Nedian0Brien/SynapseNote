@@ -109,7 +109,7 @@ describe('ai-meeting.summary-regenerate', () => {
           ],
         },
         speakerInfoMap: {
-          s1: { name: 'Lucas Xu', email: 'lucas.xu@appflowy.io' },
+          s1: { name: 'Lucas Xu', email: 'lucas.xu@synapsenote.io' },
         },
       });
 
@@ -117,7 +117,7 @@ describe('ai-meeting.summary-regenerate', () => {
       expect(prompt).toContain('Detail Instruction: Detail prompt text');
       expect(prompt).toContain('Meeting Type Template Prompt: Template prompt text');
       expect(prompt).toContain('Meeting Participants:');
-      expect(prompt).toContain('- Lucas Xu (email: lucas.xu@appflowy.io)');
+      expect(prompt).toContain('- Lucas Xu (email: lucas.xu@synapsenote.io)');
     });
   });
 

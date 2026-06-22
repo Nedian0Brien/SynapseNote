@@ -143,9 +143,9 @@ async function emitProfileChangedEvent(
     ({ payload }) => {
       const emitter = (
         window as unknown as {
-          __APPFLOWY_EVENT_EMITTER__?: { emit: (...args: unknown[]) => void };
+          __SYNAPSENOTE_EVENT_EMITTER__?: { emit: (...args: unknown[]) => void };
         }
-      ).__APPFLOWY_EVENT_EMITTER__;
+      ).__SYNAPSENOTE_EVENT_EMITTER__;
 
       if (emitter) {
         emitter.emit('workspace-member-profile-changed', payload);
@@ -199,7 +199,7 @@ test.describe('Avatar Notifications', () => {
       expect(profile?.avatar_url).toBe(testAvatarUrl);
 
       testLog.info('Step 5: Verify live header avatar uses updated URL');
-      const headerAvatar = page.locator('.appflowy-top-bar [data-slot="avatar"]').first();
+      const headerAvatar = page.locator('.synapsenote-top-bar [data-slot="avatar"]').first();
       const avatarImage = headerAvatar.getByTestId('avatar-image');
 
       await expect(headerAvatar).toBeAttached();

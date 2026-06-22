@@ -75,7 +75,7 @@ async function runTestWithStrategy (strategy: StrategyType) {
   return getPublishView(
     mockFetcher,
     {
-      namespace: 'appflowy',
+      namespace: 'synapsenote',
       publishName: 'test',
     },
     strategy,
@@ -86,7 +86,7 @@ async function runGetPublishViewMetaWithStrategy (strategy: StrategyType) {
   return getPublishViewMeta(
     mockFetcher,
     {
-      namespace: 'appflowy',
+      namespace: 'synapsenote',
       publishName: 'test',
     },
     strategy,

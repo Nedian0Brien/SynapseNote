@@ -1,4 +1,4 @@
-import { EditorData } from '@appflowyinc/editor';
+import { EditorData } from '@/vendor/synapsenote-editor';
 import { createContext, useContext } from 'react';
 
 import { AIAssistantType, ChatInputMode, ResponseFormat, View } from '@/components/chat/types';

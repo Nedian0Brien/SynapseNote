@@ -40,7 +40,7 @@ function PublishLayout({
           width: drawerOpened ? `calc(100% - ${drawerWidth}px)` : '100%',
           transition: 'width 0.2s ease-in-out, transform 0.2s ease-in-out',
         }}
-        className={'appflowy-layout appflowy-scroll-container h-full'}
+        className={'synapsenote-layout synapsenote-scroll-container h-full'}
       >
         {!isTemplate && (
           <PublishViewHeader

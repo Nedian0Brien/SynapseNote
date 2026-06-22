@@ -7,7 +7,7 @@ jest.mock('axios');
 // Mock the request utilities
 jest.mock('@/components/chat/lib/requets', () => ({
   createInitialInstance: jest.fn(() => ({
-    defaults: { baseURL: 'https://test.appflowy.cloud' },
+    defaults: { baseURL: 'https://test.synapsenote.cloud' },
     interceptors: {
       request: { use: jest.fn() },
     },
@@ -43,7 +43,7 @@ describe('ChatRequest', () => {
 
     // Create mock axios instance
     mockAxiosInstance = {
-      defaults: { baseURL: 'https://test.appflowy.cloud' },
+      defaults: { baseURL: 'https://test.synapsenote.cloud' },
       interceptors: {
         request: { use: jest.fn() },
         response: { use: jest.fn() },

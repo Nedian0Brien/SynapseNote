@@ -1,8 +1,8 @@
 /*
- * AppFlowy IndexedDB export helper.
+ * SynapseNote IndexedDB export helper.
  *
  * Usage:
- * 1. Open https://appflowy.com in the browser profile that has the data.
+ * 1. Open https://synapsenote.com in the browser profile that has the data.
  * 2. Open DevTools Console.
  * 3. Paste this whole file and press Enter.
  *
@@ -10,7 +10,7 @@
  * a zip file. It is self-contained and does not load third-party libraries.
  */
 (async () => {
-  const ZIP_FILE_PREFIX = 'appflowy-indexeddb-export';
+  const ZIP_FILE_PREFIX = 'synapsenote-indexeddb-export';
   const textEncoder = new TextEncoder();
 
   function assertBrowserSupport() {
@@ -248,7 +248,7 @@
       manifest.databases.push(databaseManifest);
 
       for (const storeName of storeNames) {
-        console.info(`[AppFlowy IndexedDB Export] Reading ${dbName}/${storeName}`);
+        console.info(`[SynapseNote IndexedDB Export] Reading ${dbName}/${storeName}`);
         const storePath = `${dbPath}/stores/${safePathSegment(storeName)}.json`;
         const schema = readStoreSchema(db, storeName);
         const records = await readStoreRecords(db, storeName);
@@ -430,7 +430,7 @@
     throw new Error('No IndexedDB databases were found for this origin.');
   }
 
-  console.info(`[AppFlowy IndexedDB Export] Exporting ${databaseInfos.length} database(s).`);
+  console.info(`[SynapseNote IndexedDB Export] Exporting ${databaseInfos.length} database(s).`);
 
   for (const databaseInfo of databaseInfos) {
     await exportDatabase(databaseInfo, files, manifest);
@@ -445,7 +445,7 @@
   const filename = `${ZIP_FILE_PREFIX}-${safePathSegment(location.hostname)}-${timestampForFilename()}.zip`;
 
   downloadBlob(zipBlob, filename);
-  console.info(`[AppFlowy IndexedDB Export] Download started: ${filename}`);
+  console.info(`[SynapseNote IndexedDB Export] Download started: ${filename}`);
 })().catch((error) => {
-  console.error('[AppFlowy IndexedDB Export] Failed to export IndexedDB data:', error);
+  console.error('[SynapseNote IndexedDB Export] Failed to export IndexedDB data:', error);
 });

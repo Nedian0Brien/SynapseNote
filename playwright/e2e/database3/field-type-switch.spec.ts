@@ -56,7 +56,7 @@ async function populateCheckboxField(page: import('@playwright/test').Page, fiel
  * Populate URL field
  */
 async function populateURLField(page: import('@playwright/test').Page, fieldId: string) {
-  const urls = ['https://appflowy.io', 'https://github.com', 'no-url-text'];
+  const urls = ['https://synapsenote.io', 'https://github.com', 'no-url-text'];
   for (let i = 0; i < urls.length; i++) {
     await typeTextIntoCell(page, fieldId, i, urls[i]);
   }

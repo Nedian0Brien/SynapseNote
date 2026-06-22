@@ -4,8 +4,8 @@ import { AFCloudConfig } from '@/application/services/services.type';
 import { User } from '@/application/types';
 import { getConfigValue } from '@/utils/runtime-config';
 
-const baseURL = getConfigValue('APPFLOWY_BASE_URL', 'https://test.appflowy.cloud');
-const gotrueURL = getConfigValue('APPFLOWY_GOTRUE_BASE_URL', 'https://test.appflowy.cloud/gotrue');
+const baseURL = getConfigValue('SYNAPSENOTE_BASE_URL', 'https://synapse.lawdigest.kr');
+const gotrueURL = getConfigValue('SYNAPSENOTE_GOTRUE_BASE_URL', 'https://synapse.lawdigest.kr/gotrue');
 
 export const defaultConfig: AFCloudConfig = {
   baseURL,

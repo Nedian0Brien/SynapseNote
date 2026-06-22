@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 
 import { ReactComponent as CopyIcon } from '@/assets/icons/copy.svg';
 import { useChatContext } from '@/components/chat/chat/context';
-import { convertToAppFlowyFragment } from '@/components/chat/lib/copy';
+import { convertToSynapseNoteFragment } from '@/components/chat/lib/copy';
 import { convertToPageData } from '@/components/chat/lib/utils';
 import { useEditorContext } from '@/components/chat/provider/editor-provider';
 import { useChatMessagesContext } from '@/components/chat/provider/messages-provider';
@@ -64,7 +64,7 @@ export function MessageActions({ id, isHovered }: { id: number; isHovered: boole
           e.clipboardData?.setData('text/plain', message.content);
           e.clipboardData?.setData('application/json', stringifies);
 
-          const { key, value } = convertToAppFlowyFragment(data);
+          const { key, value } = convertToSynapseNoteFragment(data);
 
           e.clipboardData?.setData(key, value);
         },

@@ -1321,7 +1321,7 @@
       "smartEditCouldNotFetchResult": "לא ניתן למשוך את התוצאה מ־OpenAI",
       "smartEditCouldNotFetchKey": "לא ניתן למשוך מפתח OpenAI",
       "smartEditDisabled": "חיבור OpenAI בהגדרות",
-      "appflowyAIEditDisabled": "יש להיכנס כדי להפעיל יכולות בינה מלאכותית",
+      "synapsenoteAIEditDisabled": "יש להיכנס כדי להפעיל יכולות בינה מלאכותית",
       "discardResponse": "להתעלם מתגובות הבינה המלאכותית?",
       "createInlineMathEquation": "יצירת משוואה",
       "fonts": "גופנים",

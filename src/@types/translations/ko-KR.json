@@ -1727,7 +1727,7 @@
       "smartEditCouldNotFetchResult": "AI에서 결과를 가져올 수 없습니다",
       "smartEditCouldNotFetchKey": "AI 키를 가져올 수 없습니다",
       "smartEditDisabled": "설정에서 AI 연결",
-      "appflowyAIEditDisabled": "AI 기능을 활성화하려면 로그인하세요",
+      "synapsenoteAIEditDisabled": "AI 기능을 활성화하려면 로그인하세요",
       "discardResponse": "AI 응답을 버리시겠습니까?",
       "createInlineMathEquation": "수식 생성",
       "fonts": "글꼴",

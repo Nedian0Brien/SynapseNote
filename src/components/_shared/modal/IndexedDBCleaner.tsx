@@ -71,7 +71,7 @@ const IndexedDBCleaner = () => {
 
   if (databases.length === 0) return null;
   return (
-    <div className={'appflowy-scroller max-h-[360px] w-full overflow-y-auto overflow-x-hidden'}>
+    <div className={'synapsenote-scroller max-h-[360px] w-full overflow-y-auto overflow-x-hidden'}>
       <List sx={{ width: '100%' }}>
         {databases.map((dbName) => {
           const labelId = `checkbox-list-label-${dbName}`;

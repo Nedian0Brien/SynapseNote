@@ -87,7 +87,7 @@ test.describe('Database Embedded ↔ Modal Sync', () => {
     await expect(modal).not.toBeVisible({ timeout: 10000 });
 
     // --- Then: The embedded database in the document should display the updated value ---
-    const embeddedDB = page.locator('[class*="appflowy-database"]').last();
+    const embeddedDB = page.locator('[class*="synapsenote-database"]').last();
     await expect(embeddedDB).toBeVisible({ timeout: 15000 });
     await expect(embeddedDB.locator('[data-testid="database-grid"]')).toBeVisible({ timeout: 10000 });
     await expect(embeddedDB).toContainText('Updated Value', { timeout: 15000 });

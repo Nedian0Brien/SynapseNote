@@ -12,8 +12,8 @@ Feature: Custom publish path name is preserved across republish
   Scenario: Republishing keeps the custom publish path name
     When I type "Getting started guide" in the editor
     And I publish the page from the share panel
-    And I change the publish path name to "getting-started-with-appflowy"
-    Then the publish path name is "getting-started-with-appflowy"
+    And I change the publish path name to "getting-started-with-synapsenote"
+    Then the publish path name is "getting-started-with-synapsenote"
     When I unpublish the page from the share panel
     And I publish the page from the share panel
-    Then the publish path name is "getting-started-with-appflowy"
+    Then the publish path name is "getting-started-with-synapsenote"

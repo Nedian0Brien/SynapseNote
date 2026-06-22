@@ -211,8 +211,8 @@ export const SidebarSelectors = {
  * Header selectors (top bar)
  */
 export const HeaderSelectors = {
-  container: (page: Page) => page.locator('.appflowy-top-bar'),
-  moreActionsButton: (page: Page) => page.locator('.appflowy-top-bar').getByTestId('page-more-actions'),
+  container: (page: Page) => page.locator('.synapsenote-top-bar'),
+  moreActionsButton: (page: Page) => page.locator('.synapsenote-top-bar').getByTestId('page-more-actions'),
 };
 
 /**
@@ -611,7 +611,7 @@ export const RowDetailSelectors = {
   modalTitle: (page: Page) => page.locator('.MuiDialogTitle-root'),
   closeButton: (page: Page) => page.locator('.MuiDialogTitle-root button').first(),
   moreActionsButton: (page: Page) => page.locator('.MuiDialogTitle-root button').last(),
-  documentArea: (page: Page) => page.locator('.MuiDialog-paper .appflowy-scroll-container'),
+  documentArea: (page: Page) => page.locator('.MuiDialog-paper .synapsenote-scroll-container'),
   duplicateMenuItem: (page: Page) => page.locator('[role="menuitem"]').filter({ hasText: /duplicate/i }),
   deleteMenuItem: (page: Page) => page.locator('[role="menuitem"]').filter({ hasText: /delete/i }),
   titleInput: (page: Page) => page.getByTestId('row-title-input'),

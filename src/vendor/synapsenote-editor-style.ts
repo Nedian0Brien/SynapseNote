@@ -1,0 +1,1 @@
+import '@appflowyinc/editor/style';

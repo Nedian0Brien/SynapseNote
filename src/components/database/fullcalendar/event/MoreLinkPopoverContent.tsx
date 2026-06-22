@@ -75,7 +75,7 @@ export function MoreLinkPopoverContent({
       </div>
       <div
         ref={dragContainerRef}
-        className='appflowy-scroller  flex max-h-[140px] flex-col gap-0.5 overflow-y-auto px-2 pb-2'
+        className='synapsenote-scroller  flex max-h-[140px] flex-col gap-0.5 overflow-y-auto px-2 pb-2'
       >
         {allSegs.map((seg) => {
           // Construct EventContentArg-like object for EventWithPopover

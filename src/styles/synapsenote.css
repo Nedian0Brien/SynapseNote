@@ -123,8 +123,8 @@ textarea,
 }
 
 .MuiDrawer-paper,
-.appflowy-scroller,
-.appflowy-scroll-container {
+.synapsenote-scroller,
+.synapsenote-scroll-container {
   background: var(--sn-surface);
 }
 
@@ -176,13 +176,13 @@ button[type="submit"]:not(.MuiIconButton-root) {
   font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
 }
 
-.appflowy-layout {
+.synapsenote-layout {
   background:
     radial-gradient(circle at 16% 8%, color-mix(in srgb, var(--sn-primary-dim) 78%, transparent), transparent 30%),
     linear-gradient(180deg, color-mix(in srgb, var(--sn-surface) 82%, transparent), var(--sn-bg));
 }
 
-.appflowy-top-bar {
+.synapsenote-top-bar {
   border-bottom: 1px solid var(--sn-outline-soft);
 }
 

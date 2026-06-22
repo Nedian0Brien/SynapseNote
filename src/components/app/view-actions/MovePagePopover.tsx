@@ -89,7 +89,7 @@ function MovePagePopover({
             autoFocus={true}
             placeholder={t('disclosureAction.movePageTo')}
           />
-          <div className={'appflowy-custom-scroller max-h-[400px] flex-1 overflow-y-auto overflow-x-hidden'}>
+          <div className={'synapsenote-custom-scroller max-h-[400px] flex-1 overflow-y-auto overflow-x-hidden'}>
             {views.map((view) => {
               const isExpanded = expandViewIds.includes(view.view_id);
 

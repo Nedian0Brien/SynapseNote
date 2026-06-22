@@ -1,4 +1,4 @@
-import { EditorProvider } from '@appflowyinc/editor';
+import { EditorProvider } from '@/vendor/synapsenote-editor';
 
 import { AIAssistant } from '@/components/chat/components/ai-writer';
 import { RenderEditor } from '@/components/chat/components/ai-writer/render-editor';
@@ -21,7 +21,7 @@ export function ContextPlaceholder() {
   }
 
   return <div
-    id={'appflowy-ai-writer'}
+    id={'synapsenote-ai-writer'}
     className={'w-full select-none scroll-mb-[48px] relative h-full flex flex-col overflow-hidden'}
   >
     <AIAssistant>

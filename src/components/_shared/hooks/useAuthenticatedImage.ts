@@ -4,7 +4,7 @@ import { getImageUrl, revokeBlobUrl } from '@/utils/authenticated-image';
 import { Log } from '@/utils/log';
 
 /**
- * Hook to handle authenticated image loading for AppFlowy file storage URLs
+ * Hook to handle authenticated image loading for SynapseNote file storage URLs
  * Returns the authenticated blob URL or the original URL if authentication is not needed
  *
  * @param src - The image source URL

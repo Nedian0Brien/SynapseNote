@@ -54,7 +54,7 @@ function ExportPanel({ viewId }: { viewId: string }) {
     }
   }, [workspaceId, viewIdResolved, isPro, includeLinkedPages, t, showBlockingLoader, hideBlockingLoader]);
 
-  // Free users on AppFlowy Cloud get redirected to the Pro upgrade flow when they
+  // Free users on SynapseNote Cloud get redirected to the Pro upgrade flow when they
   // try to enable "Include linked pages". Self-hosted users have isPro=true (set
   // by useSubscriptionPlan) so the toggle works normally without a billing check.
   const handleLinkedPagesChange = useCallback(

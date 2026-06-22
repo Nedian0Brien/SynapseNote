@@ -131,7 +131,7 @@ function SelectLanguage({
               }
             }}
           />
-          <div ref={scrollRef} className={'appflowy-scroller flex-1 overflow-y-auto overflow-x-hidden p-2'}>
+          <div ref={scrollRef} className={'synapsenote-scroller flex-1 overflow-y-auto overflow-x-hidden p-2'}>
             {options.map((item) => (
               <div
                 data-key={item.key}

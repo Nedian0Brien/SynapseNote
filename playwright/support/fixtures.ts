@@ -3,7 +3,7 @@ import { signInTestUser, AuthTestUtils } from './auth-utils';
 import { generateRandomEmail } from './test-config';
 
 /**
- * Custom Playwright fixtures for AppFlowy E2E tests
+ * Custom Playwright fixtures for SynapseNote E2E tests
  * Migrated from: cypress/support/e2e.ts + cypress/support/commands.ts
  *
  * Usage in tests:
@@ -16,7 +16,7 @@ import { generateRandomEmail } from './test-config';
  * ```
  */
 
-type AppFlowyFixtures = {
+type SynapseNoteFixtures = {
   /**
    * A page that is already signed in with a random test user
    */
@@ -33,7 +33,7 @@ type AppFlowyFixtures = {
   clearAllIndexedDB: () => Promise<void>;
 };
 
-export const test = base.extend<AppFlowyFixtures>({
+export const test = base.extend<SynapseNoteFixtures>({
   // Provide a signed-in page fixture
   signedInPage: async ({ page, request }, use) => {
     const email = generateRandomEmail();

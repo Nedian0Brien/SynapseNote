@@ -252,7 +252,7 @@ export function ModelSelector({ className, disabled }: ModelSelectorProps) {
           </div>
 
           {/* Models List */}
-          <div className='appflowy-scrollbar max-h-[380px] overflow-y-auto py-1'>
+          <div className='synapsenote-scrollbar max-h-[380px] overflow-y-auto py-1'>
             {loading ? (
               <div className='px-3 py-8 text-center text-sm text-text-secondary'>Loading models...</div>
             ) : filteredModels.length === 0 ? (

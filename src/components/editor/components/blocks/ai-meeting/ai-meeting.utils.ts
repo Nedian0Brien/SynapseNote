@@ -334,7 +334,7 @@ const removeInlineReferenceArtifacts = (container: HTMLElement) => {
   });
 };
 
-export const normalizeAppFlowyClipboardHTML = (html: string) => {
+export const normalizeSynapseNoteClipboardHTML = (html: string) => {
   if (!html.trim()) return '';
 
   const container = document.createElement('div');

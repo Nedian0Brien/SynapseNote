@@ -20,13 +20,13 @@ const VIEW_LAYOUT_DOCUMENT = 0;
 const modKey = process.platform === 'darwin' ? 'Meta' : 'Control';
 
 const SEEDED_ACCOUNTS = {
-  owner: 'rm0521-own@appflowy.local',
-  'co-owner': 'rm0521-co@appflowy.local',
-  member: 'rm0521-mem@appflowy.local',
-  'guest reader': 'rm0521-r@appflowy.local',
-  'guest writer': 'rm0521-w@appflowy.local',
-  'guest no share': 'rm0521-gst@appflowy.local',
-  nonmember: 'rm0521-out@appflowy.local',
+  owner: 'rm0521-own@synapsenote.local',
+  'co-owner': 'rm0521-co@synapsenote.local',
+  member: 'rm0521-mem@synapsenote.local',
+  'guest reader': 'rm0521-r@synapsenote.local',
+  'guest writer': 'rm0521-w@synapsenote.local',
+  'guest no share': 'rm0521-gst@synapsenote.local',
+  nonmember: 'rm0521-out@synapsenote.local',
 } as const;
 
 const SEEDED_PAGES = {
@@ -98,7 +98,7 @@ After(async ({ page, request }) => {
 
 Given('the seeded rm0521 role matrix fixture exists', async () => {
   // This BDD suite intentionally reuses the local fixture documented in
-  // AppFlowy-Cloud-Premium/backup/README.md instead of creating accounts.
+  // SynapseNote-Cloud-Premium/backup/README.md instead of creating accounts.
 });
 
 Given('I sign in as seeded {string}', async ({ page }, accountAliasValue: string) => {

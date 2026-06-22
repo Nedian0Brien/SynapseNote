@@ -1,4 +1,4 @@
-import { EditorData } from '@appflowyinc/editor';
+import { EditorData } from '@/vendor/synapsenote-editor';
 import { AxiosInstance } from 'axios';
 
 import {
@@ -28,17 +28,17 @@ export type UpdateChatSettingsParams = Partial<ChatSettings>;
 /**
  * ChatRequest class for handling chat-related API requests
  * @class
- * @classdesc ChatRequest class manages chat interactions, particularly designed for AppFlowy cloud services.
- * It handles user information, chat messages, and member details. While primarily integrated with AppFlowy,
+ * @classdesc ChatRequest class manages chat interactions, particularly designed for SynapseNote cloud services.
+ * It handles user information, chat messages, and member details. While primarily integrated with SynapseNote,
  * it can be customized for different backend services by implementing compatible interfaces.
  *
  * @constructor
- * @param {string} workspaceId - Unique identifier for the AppFlowy workspace
+ * @param {string} workspaceId - Unique identifier for the SynapseNote workspace
  * @param {string} chatId - Unique identifier for the specific chat instance
  * @param {AxiosInstance} [axiosInstance] - Optional custom Axios instance for HTTP requests
  *
  * @example
- * // Using with AppFlowy cloud service
+ * // Using with SynapseNote cloud service
  * const chatRequest = new ChatRequest(workspaceId, chatId);
  * const user = await chatRequest.getCurrentUser();
  * const messages = await chatRequest.getChatMessages();
@@ -60,19 +60,19 @@ export type UpdateChatSettingsParams = Partial<ChatSettings>;
  * @throws {AxiosError} On API request failures
  *
  * Implementation Notes:
- * - This class is designed to work with AppFlowy's cloud services by default
- * - Developers not using AppFlowy cloud need to implement their own ChatRequest with compatible interfaces
+ * - This class is designed to work with SynapseNote cloud services by default
+ * - Developers not using SynapseNote cloud need to implement their own ChatRequest with compatible interfaces
  * - Custom axios instances can be provided for specialized request handling (e.g., custom interceptors)
  * - All API methods return Promises and should handle errors appropriately
  *
  * Configuration Notes:
- * - Default endpoint: AppFlowy cloud service
+ * - Default endpoint: SynapseNote cloud service
  * - Authentication: Handled by axios interceptors
- * - Rate limiting: Follows AppFlowy's API guidelines
+ * - Rate limiting: Follows SynapseNote API guidelines
  * - Error handling: Standardized error responses
  *
- * @see {@link https://github.com/AppFlowy-IO/AppFlowy|AppFlowy GitHub}
- * @see {@link https://docs.appflowy.io/docs/guides/appflowy-cloud|AppFlowy Cloud Documentation}
+ * @see {@link https://github.com/SynapseNote-IO/SynapseNote|SynapseNote GitHub}
+ * @see {@link https://docs.synapsenote.io/docs/guides/synapsenote-cloud|SynapseNote Cloud Documentation}
  */
 export class ChatRequest {
   private axiosInstance: AxiosInstance = createInitialInstance();

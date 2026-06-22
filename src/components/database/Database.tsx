@@ -927,7 +927,7 @@ function Database(props: Database2Props) {
         ) : (
           <div
             className={cn(
-              'appflowy-database relative flex w-full select-text flex-col',
+              'synapsenote-database relative flex w-full select-text flex-col',
               shouldUseFixedViewport ? 'min-h-0 flex-1 overflow-hidden' : 'overflow-visible'
             )}
           >

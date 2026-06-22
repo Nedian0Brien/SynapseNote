@@ -1,4 +1,4 @@
-import { EditorData } from '@appflowyinc/editor';
+import { EditorData } from '@/vendor/synapsenote-editor';
 import { Portal } from '@mui/material';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
@@ -171,7 +171,7 @@ function EditorOverlay({ viewId, workspaceId }: { viewId: string; workspaceId: s
 
         setContainer(dom as HTMLDivElement);
 
-        const container = dom.closest('.appflowy-scroll-container') || getScrollParent(dom);
+        const container = dom.closest('.synapsenote-scroll-container') || getScrollParent(dom);
 
         setScrollerContainer(container as HTMLDivElement);
       } catch (e) {

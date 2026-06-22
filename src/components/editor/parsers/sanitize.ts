@@ -4,7 +4,7 @@ import DOMPurify from 'isomorphic-dompurify';
  * Configuration for HTML sanitization
  */
 const SANITIZE_CONFIG: DOMPurify.Config & { [key: string]: unknown } = {
-  // Allowed HTML tags for AppFlowy blocks
+  // Allowed HTML tags for SynapseNote blocks
   ALLOWED_TAGS: [
     // Text blocks
     'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',

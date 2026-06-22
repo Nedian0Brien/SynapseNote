@@ -278,7 +278,7 @@ describe('link preview providers', () => {
 
     cleanupCallbacks.push(cleanup);
 
-    await expect(fetchLinkPreviewData('https://www.figma.com/file/abc/AppFlowy')).resolves.toEqual({
+    await expect(fetchLinkPreviewData('https://www.figma.com/file/abc/SynapseNote')).resolves.toEqual({
       title: 'Figma file',
       description: 'A design preview from a custom provider',
       image: { url: 'https://figma.example/preview.png' },
@@ -293,19 +293,19 @@ describe('link preview providers', () => {
         data: {
           title: 'Issue title from metadata',
           description: 'Issue description from metadata',
-          image: { url: 'https://opengraph.githubassets.com/hash/AppFlowy-IO/AppFlowy-Web/issues/53' },
+          image: { url: 'https://opengraph.githubassets.com/hash/SynapseNote-IO/SynapseNote-Web/issues/53' },
         },
       },
     });
 
-    await expect(fetchLinkPreviewData('https://github.com/AppFlowy-IO/AppFlowy-Web/issues/53')).resolves.toEqual({
+    await expect(fetchLinkPreviewData('https://github.com/SynapseNote-IO/SynapseNote-Web/issues/53')).resolves.toEqual({
       title: 'Issue title from metadata',
       description: 'Issue description from metadata',
-      image: { url: 'https://opengraph.githubassets.com/hash/AppFlowy-IO/AppFlowy-Web/issues/53' },
+      image: { url: 'https://opengraph.githubassets.com/hash/SynapseNote-IO/SynapseNote-Web/issues/53' },
     });
     expect(mockedAxios.get).toHaveBeenCalledTimes(1);
     expect(mockedAxios.get).toHaveBeenCalledWith('https://api.microlink.io/', {
-      params: { url: 'https://github.com/AppFlowy-IO/AppFlowy-Web/issues/53' },
+      params: { url: 'https://github.com/SynapseNote-IO/SynapseNote-Web/issues/53' },
       signal: undefined,
       timeout: 10000,
     });
@@ -316,7 +316,7 @@ describe('link preview providers', () => {
     mockedAxios.get.mockResolvedValueOnce({
       data: {
         body: 'Issue body',
-        html_url: 'https://github.com/AppFlowy-IO/AppFlowy-Web/issues/53',
+        html_url: 'https://github.com/SynapseNote-IO/SynapseNote-Web/issues/53',
         number: 53,
         title: 'Issue title',
         user: {
@@ -325,15 +325,15 @@ describe('link preview providers', () => {
       },
     });
 
-    await expect(fetchLinkPreviewData('https://github.com/AppFlowy-IO/AppFlowy-Web/issues/53')).resolves.toEqual({
-      title: 'Issue title - AppFlowy-IO/AppFlowy-Web#53',
+    await expect(fetchLinkPreviewData('https://github.com/SynapseNote-IO/SynapseNote-Web/issues/53')).resolves.toEqual({
+      title: 'Issue title - SynapseNote-IO/SynapseNote-Web#53',
       description: 'Issue body',
       siteName: 'GitHub',
       image: { url: 'https://avatars.githubusercontent.com/u/1?v=4' },
     });
     expect(mockedAxios.get).toHaveBeenCalledTimes(2);
     expect(mockedAxios.get).toHaveBeenLastCalledWith(
-      'https://api.github.com/repos/AppFlowy-IO/AppFlowy-Web/issues/53',
+      'https://api.github.com/repos/SynapseNote-IO/SynapseNote-Web/issues/53',
       {
         headers: {
           Accept: 'application/vnd.github+json',
@@ -384,20 +384,20 @@ describe('link preview providers', () => {
   });
 
   it('parses GitHub repository, issue, and pull request URLs for provider-specific fallback', () => {
-    expect(parseGitHubPreviewTarget('https://github.com/AppFlowy-IO/AppFlowy-Web')).toEqual({
-      owner: 'AppFlowy-IO',
-      repo: 'AppFlowy-Web',
+    expect(parseGitHubPreviewTarget('https://github.com/SynapseNote-IO/SynapseNote-Web')).toEqual({
+      owner: 'SynapseNote-IO',
+      repo: 'SynapseNote-Web',
       kind: 'repo',
     });
-    expect(parseGitHubPreviewTarget('https://github.com/AppFlowy-IO/AppFlowy-Web/issues/53')).toEqual({
-      owner: 'AppFlowy-IO',
-      repo: 'AppFlowy-Web',
+    expect(parseGitHubPreviewTarget('https://github.com/SynapseNote-IO/SynapseNote-Web/issues/53')).toEqual({
+      owner: 'SynapseNote-IO',
+      repo: 'SynapseNote-Web',
       kind: 'issue',
       number: '53',
     });
-    expect(parseGitHubPreviewTarget('https://github.com/AppFlowy-IO/AppFlowy-Web/pull/100')).toEqual({
-      owner: 'AppFlowy-IO',
-      repo: 'AppFlowy-Web',
+    expect(parseGitHubPreviewTarget('https://github.com/SynapseNote-IO/SynapseNote-Web/pull/100')).toEqual({
+      owner: 'SynapseNote-IO',
+      repo: 'SynapseNote-Web',
       kind: 'pull',
       number: '100',
     });

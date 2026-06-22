@@ -323,7 +323,7 @@ test.describe('Publish Document with Embedded Database', () => {
     await expect(publicPage.locator('body')).toContainText(documentText, { timeout: 30000 });
     await expect(publicPage.locator('body')).not.toContainText("This page hasn't been published yet");
 
-    const publicDatabase = publicPage.locator('[class*="appflowy-database"]').last();
+    const publicDatabase = publicPage.locator('[class*="synapsenote-database"]').last();
 
     await expect(publicDatabase).toBeVisible({ timeout: 30000 });
     await expect(publicDatabase.locator('[data-testid="database-grid"]')).toBeVisible({ timeout: 30000 });

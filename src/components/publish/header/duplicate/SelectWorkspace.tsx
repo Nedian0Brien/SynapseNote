@@ -105,7 +105,7 @@ function SelectWorkspace({ loading, value, onChange, workspaceList }: SelectWork
         <div className={'flex max-h-[340px] w-[360px] flex-col gap-1 p-2 max-sm:w-full'}>
           <div className={'w-full px-3 py-2 text-sm font-medium text-text-secondary'}>{email}</div>
           <Divider />
-          <div className={'appflowy-scroller flex flex-1 flex-col overflow-y-auto overflow-x-hidden'}>
+          <div className={'synapsenote-scroller flex flex-1 flex-col overflow-y-auto overflow-x-hidden'}>
             {workspaceList.map((workspace) => {
               const isSelected = workspace.id === selectedWorkspace?.id;
 

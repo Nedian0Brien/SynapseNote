@@ -61,7 +61,7 @@ async function insertEmbeddedGrid(page: Page, docViewId: string): Promise<void> 
     await expect(modal).not.toBeVisible({ timeout: 10000 });
   }
 
-  const embeddedDB = page.locator('[class*="appflowy-database"]').last();
+  const embeddedDB = page.locator('[class*="synapsenote-database"]').last();
 
   await expect(embeddedDB).toBeVisible({ timeout: 15000 });
   await expect(embeddedDB.locator('[data-testid="database-grid"]')).toBeVisible({ timeout: 10000 });
@@ -109,7 +109,7 @@ async function insertSecondEmbeddedGrid(page: Page, docViewId: string): Promise<
     }
   }
 
-  const gridCount = await page.locator('[class*="appflowy-database"]').count();
+  const gridCount = await page.locator('[class*="synapsenote-database"]').count();
 
   return gridCount >= 2;
 }
@@ -140,7 +140,7 @@ async function expectDatabaseDeleted(page: Page, index = 0): Promise<void> {
 
 /** Assert that an embedded database block at the given index shows a working grid. */
 async function expectDatabaseGrid(page: Page, index = 0): Promise<void> {
-  const embeddedDB = page.locator('[class*="appflowy-database"]').nth(index);
+  const embeddedDB = page.locator('[class*="synapsenote-database"]').nth(index);
 
   await expect(embeddedDB).toBeVisible({ timeout: 15000 });
   await expect(embeddedDB.locator('[data-testid="database-grid"]')).toBeVisible({ timeout: 10000 });

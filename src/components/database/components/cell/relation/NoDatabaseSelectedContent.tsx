@@ -48,7 +48,7 @@ function NoDatabaseSelectedContent ({ views, onSelect, loading }: {
 
   return (
     <div
-      className={'flex flex-col max-h-[450px] max-w-[320px] appflowy-scroller overflow-y-auto outline-none'}
+      className={'flex flex-col max-h-[450px] max-w-[320px] synapsenote-scroller overflow-y-auto outline-none'}
       onMouseDown={(e) => e.preventDefault()}
     >
       <div className={'p-2 flex flex-col gap-2'}>

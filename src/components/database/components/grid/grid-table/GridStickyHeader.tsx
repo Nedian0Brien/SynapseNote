@@ -39,7 +39,7 @@ const GridStickyHeader = forwardRef<HTMLDivElement, {
         scrollBehavior: 'auto',
         ...style,
       }}
-      className={cn('grid-sticky-header flex border-t border-border-primary absolute left-0 right-0 top-0 overflow-x-auto bg-background-primary appflowy-custom-scroller', props.className)}
+      className={cn('grid-sticky-header flex border-t border-border-primary absolute left-0 right-0 top-0 overflow-x-auto bg-background-primary synapsenote-custom-scroller', props.className)}
 
     >
       <GridVirtualRow

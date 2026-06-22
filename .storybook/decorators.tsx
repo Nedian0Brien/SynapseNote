@@ -37,9 +37,9 @@ import {
 declare global {
   interface Window {
     __APP_CONFIG__?: {
-      APPFLOWY_BASE_URL?: string;
-      APPFLOWY_GOTRUE_BASE_URL?: string;
-      APPFLOWY_WS_BASE_URL?: string;
+      SYNAPSENOTE_BASE_URL?: string;
+      SYNAPSENOTE_GOTRUE_BASE_URL?: string;
+      SYNAPSENOTE_WS_BASE_URL?: string;
     };
   }
 }
@@ -81,7 +81,7 @@ export const mockHostname = (hostname: string): CleanupFn => {
 
   window.__APP_CONFIG__ = {
     ...(window.__APP_CONFIG__ ?? {}),
-    APPFLOWY_BASE_URL: baseUrl,
+    SYNAPSENOTE_BASE_URL: baseUrl,
   };
 
   return () => {
@@ -196,7 +196,7 @@ export const withContextsMinimal = (Story: React.ComponentType) => (
  */
 export const withHostnameMocking = () => {
   return (Story: React.ComponentType, context: { args: { hostname?: string } }) => {
-    const hostname = context.args.hostname || 'beta.appflowy.cloud';
+    const hostname = context.args.hostname || 'beta.synapsenote.cloud';
 
     useHostnameMock(hostname);
 
@@ -220,7 +220,7 @@ export const withHostnameAndContexts = (options?: {
   const { padding = '20px', maxWidth, minimalAFConfig = false } = options || {};
 
   return (Story: React.ComponentType, context: { args: { hostname?: string } }) => {
-    const hostname = context.args.hostname || 'beta.appflowy.cloud';
+    const hostname = context.args.hostname || 'beta.synapsenote.cloud';
 
     useHostnameMock(hostname);
 

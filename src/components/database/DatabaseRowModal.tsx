@@ -144,7 +144,7 @@ function DatabaseRowModal({
           </DropdownMenu>
         </DialogTitle>
 
-        <AFScroller overflowXHidden className={'appflowy-scroll-container w-full flex-1'}>
+        <AFScroller overflowXHidden className={'synapsenote-scroll-container w-full flex-1'}>
           <DatabaseRow rowId={rowId} />
         </AFScroller>
       </DialogContent>

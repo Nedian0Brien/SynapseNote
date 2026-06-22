@@ -3,12 +3,12 @@ import { LinkPreviewData, LinkPreviewProvider, registerLinkPreviewProvider } fro
 const REMOTE_PREVIEW_ENDPOINT = '/api/link-preview';
 
 // Run ahead of the microlink (100) and github (110) providers so the
-// AppFlowy-hosted unfurler — which mirrors the desktop scraper — is the primary
+// SynapseNote-hosted unfurler — which mirrors the desktop scraper — is the primary
 // source, leaving those third-party services as graceful fallbacks.
 const REMOTE_PREVIEW_PRIORITY = 60;
 
-export const appflowyLinkPreviewProvider: LinkPreviewProvider = {
-  id: 'appflowy-unfurl',
+export const synapseLinkPreviewProvider: LinkPreviewProvider = {
+  id: 'synapsenote-unfurl',
   priority: REMOTE_PREVIEW_PRIORITY,
   canHandle: (context) => {
     const protocol = context.parsedUrl?.protocol;
@@ -45,12 +45,12 @@ export const appflowyLinkPreviewProvider: LinkPreviewProvider = {
 let registered = false;
 
 /**
- * Registers the AppFlowy-hosted link preview provider. Called once at app
+ * Registers the SynapseNote-hosted link preview provider. Called once at app
  * startup; kept out of the link-preview module itself so unit tests exercise
  * the default providers in isolation.
  */
-export function registerAppflowyLinkPreviewProvider(): void {
+export function registerSynapseLinkPreviewProvider(): void {
   if (registered) return;
   registered = true;
-  registerLinkPreviewProvider(appflowyLinkPreviewProvider);
+  registerLinkPreviewProvider(synapseLinkPreviewProvider);
 }

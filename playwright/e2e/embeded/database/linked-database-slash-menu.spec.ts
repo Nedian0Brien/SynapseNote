@@ -98,7 +98,7 @@ test.describe('Embedded Database - Slash Menu Creation', () => {
 
     // Verify linked database appears
     const startTime = Date.now();
-    await expect(page.locator('[class*="appflowy-database"]').last()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('[class*="synapsenote-database"]').last()).toBeVisible({ timeout: 10000 });
     const elapsed = Date.now() - startTime;
 
     // Allow up to 30s for CI (includes initial load)
@@ -106,7 +106,7 @@ test.describe('Embedded Database - Slash Menu Creation', () => {
 
     // Verify content is displayed
     await expect(
-      page.locator('[class*="appflowy-database"]').last().locator('[data-testid="database-grid"]')
+      page.locator('[class*="synapsenote-database"]').last().locator('[data-testid="database-grid"]')
     ).toBeVisible();
   });
 });

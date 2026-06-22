@@ -105,15 +105,15 @@ describe('Chat Utility Functions', () => {
 
   describe('ColorEnum', () => {
     it('should have all expected color values', () => {
-      expect(ColorEnum.Purple).toBe('appflowy_them_color_tint1');
-      expect(ColorEnum.Pink).toBe('appflowy_them_color_tint2');
-      expect(ColorEnum.LightPink).toBe('appflowy_them_color_tint3');
-      expect(ColorEnum.Orange).toBe('appflowy_them_color_tint4');
-      expect(ColorEnum.Yellow).toBe('appflowy_them_color_tint5');
-      expect(ColorEnum.Lime).toBe('appflowy_them_color_tint6');
-      expect(ColorEnum.Green).toBe('appflowy_them_color_tint7');
-      expect(ColorEnum.Aqua).toBe('appflowy_them_color_tint8');
-      expect(ColorEnum.Blue).toBe('appflowy_them_color_tint9');
+      expect(ColorEnum.Purple).toBe('synapsenote_theme_color_tint1');
+      expect(ColorEnum.Pink).toBe('synapsenote_theme_color_tint2');
+      expect(ColorEnum.LightPink).toBe('synapsenote_theme_color_tint3');
+      expect(ColorEnum.Orange).toBe('synapsenote_theme_color_tint4');
+      expect(ColorEnum.Yellow).toBe('synapsenote_theme_color_tint5');
+      expect(ColorEnum.Lime).toBe('synapsenote_theme_color_tint6');
+      expect(ColorEnum.Green).toBe('synapsenote_theme_color_tint7');
+      expect(ColorEnum.Aqua).toBe('synapsenote_theme_color_tint8');
+      expect(ColorEnum.Blue).toBe('synapsenote_theme_color_tint9');
     });
   });
 

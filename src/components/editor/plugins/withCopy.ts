@@ -6,7 +6,7 @@ import { isEmbedBlockTypes } from '@/application/slate-yjs/command/const';
 import { getBlockEntry } from '@/application/slate-yjs/utils/editor';
 import { BlockType } from '@/application/types';
 
-export const clipboardFormatKey = 'x-appflowy-fragment';
+export const clipboardFormatKey = 'x-synapsenote-fragment';
 
 export const withCopy = (editor: ReactEditor) => {
   const { setFragmentData } = editor;

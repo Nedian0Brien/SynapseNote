@@ -174,7 +174,7 @@ export function Favorite() {
       )}
       <Popover
         {...popoverOrigin}
-        className={'appflowy-scroller'}
+        className={'synapsenote-scroller'}
         sx={{
           maxHeight: '50vh',
         }}

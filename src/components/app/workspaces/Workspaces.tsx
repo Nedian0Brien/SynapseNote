@@ -36,7 +36,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { isAppFlowyHosted } from '@/utils/subscription';
+import { isSynapseHosted } from '@/utils/subscription';
 import { openUrl } from '@/utils/url';
 
 import { SettingsDialog } from '@/components/app/settings';
@@ -47,7 +47,7 @@ export function Workspaces() {
   const currentWorkspaceId = useCurrentWorkspaceId();
   const currentUser = useCurrentUser();
   const aiEnabled = useAIEnabled();
-  const isHosted = isAppFlowyHosted();
+  const isHosted = isSynapseHosted();
   const [openUpgradePlan, setOpenUpgradePlan] = useState(false);
   const [openUpgradeAIMax, setOpenUpgradeAIMax] = useState(false);
   const [open, setOpen] = useState(false);
@@ -86,7 +86,7 @@ export function Workspaces() {
   const [, setSearchParams] = useSearchParams();
 
   const handleOpenImport = useCallback(
-    (source: 'notion' | 'appflowy') => {
+    (source: 'notion' | 'synapsenote') => {
       setSearchParams((prev) => {
         prev.set('action', 'import');
         prev.set('source', source);
@@ -167,7 +167,7 @@ export function Workspaces() {
               <div
                 ref={workspaceListScrollRef}
                 data-testid='workspace-list'
-                className={'appflowy-scroller max-h-[200px] flex-1 overflow-y-auto overflow-x-hidden'}
+                className={'synapsenote-scroller max-h-[200px] flex-1 overflow-y-auto overflow-x-hidden'}
               >
                 <WorkspaceList
                   defaultWorkspaces={userWorkspaceInfo?.workspaces}
@@ -200,8 +200,8 @@ export function Workspaces() {
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
                   <DropdownMenuItem
-                    data-testid='import-from-appflowy'
-                    onSelect={() => handleOpenImport('appflowy')}
+                    data-testid='import-from-synapsenote'
+                    onSelect={() => handleOpenImport('synapsenote')}
                   >
                     <div className={'flex-1 text-left'}>{t('web.importFromSynapseNote')}</div>
                   </DropdownMenuItem>

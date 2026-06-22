@@ -6,12 +6,12 @@ import { useNavigate } from 'react-router-dom';
 import { ReactComponent as TrashIcon } from '@/assets/icons/delete.svg';
 import { ReactComponent as TemplateIcon } from '@/assets/icons/template.svg';
 import { QuickNote } from '@/components/quick-note';
-import { isAppFlowyHosted } from '@/utils/subscription';
+import { isSynapseHosted } from '@/utils/subscription';
 
 function SideBarBottom() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const isOfficial = useMemo(() => isAppFlowyHosted(), []);
+  const isOfficial = useMemo(() => isSynapseHosted(), []);
 
   return (
     <div className={'sticky bottom-0 bg-surface-container-layer-00 px-4'}>

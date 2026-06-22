@@ -60,7 +60,7 @@ export const NoDateButton = memo(
             if (target.closest('.MuiDialog-root')) return;
             setOpen(false);
           }}
-          className='appflowy-scroller max-h-[360px] w-[260px] overflow-y-auto p-2'
+          className='synapsenote-scroller max-h-[360px] w-[260px] overflow-y-auto p-2'
         >
           <div
             style={{

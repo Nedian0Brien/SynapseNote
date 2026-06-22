@@ -59,7 +59,7 @@ export function ShareButton({ viewId }: { viewId: string }) {
           className: 'hidden',
         }}
         classes={{
-          paper: 'w-[700px] appflowy-scroller max-w-[90vw] max-h-[90vh] h-[600px] overflow-hidden',
+          paper: 'w-[700px] synapsenote-scroller max-w-[90vw] max-h-[90vh] h-[600px] overflow-hidden',
         }}
         title={<div className={'flex items-center justify-start'}>{t('settings.sites.title')}</div>}
       >

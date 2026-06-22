@@ -6,7 +6,7 @@ import { createDocumentPageAndNavigate } from '../../../support/page-utils';
 
 /**
  * Code Block Paste Tests
- * Regression test for: https://github.com/AppFlowy-IO/AppFlowy-Web/issues/261
+ * Regression test for: https://github.com/SynapseNote-IO/SynapseNote-Web/issues/261
  *
  * Pasting content into a code block should insert the text inside the block,
  * not below it. The slash menu should also not open when typing "/" inside

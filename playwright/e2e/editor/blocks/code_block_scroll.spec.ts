@@ -6,7 +6,7 @@ import { createDocumentPageAndNavigate } from '../../../support/page-utils';
 
 /**
  * Code Block Scroll Stability Tests
- * Regression test for: https://github.com/AppFlowy-IO/AppFlowy-Web/issues/300
+ * Regression test for: https://github.com/SynapseNote-IO/SynapseNote-Web/issues/300
  *
  * When editing a code block further down on a page, pressing Enter should NOT
  * cause the page to scroll back to the top.
@@ -71,7 +71,7 @@ test.describe('Code Block Scroll Stability', () => {
    */
   async function getScrollTop(page: Page): Promise<number> {
     return page.evaluate(() => {
-      const el = document.querySelector('.appflowy-scroll-container');
+      const el = document.querySelector('.synapsenote-scroll-container');
 
       return el ? el.scrollTop : 0;
     });
@@ -86,7 +86,7 @@ test.describe('Code Block Scroll Stability', () => {
 
     // Scroll to the bottom so the code block is visible
     await page.evaluate(() => {
-      const el = document.querySelector('.appflowy-scroll-container');
+      const el = document.querySelector('.synapsenote-scroll-container');
 
       if (el) el.scrollTop = el.scrollHeight;
     });
@@ -134,7 +134,7 @@ test.describe('Code Block Scroll Stability', () => {
 
     // Scroll to bottom
     await page.evaluate(() => {
-      const el = document.querySelector('.appflowy-scroll-container');
+      const el = document.querySelector('.synapsenote-scroll-container');
 
       if (el) el.scrollTop = el.scrollHeight;
     });

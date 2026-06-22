@@ -2,7 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 
 import { getTokenParsed } from '@/application/session/token';
 
-import { useAppflowyWebSocket, Options } from '../useAppflowyWebSocket';
+import { useSynapseWebSocket, Options } from '../useSynapseWebSocket';
 
 // Stable return value: useWebSocket must hand back the same object/functions
 // across renders, like the real library does for an unchanged connection.
@@ -62,14 +62,14 @@ const baseOptions: Options = {
   deviceId: 'device-1',
 };
 
-describe('useAppflowyWebSocket', () => {
+describe('useSynapseWebSocket', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     setStoredToken('token-A');
   });
 
   it('connects with the session token in the socket URL', () => {
-    renderHook(() => useAppflowyWebSocket(baseOptions));
+    renderHook(() => useSynapseWebSocket(baseOptions));
 
     expect(lastSocketUrl()).toContain('token=token-A');
     expect(lastSocketUrl()).toContain('/workspace-1/');
@@ -80,7 +80,7 @@ describe('useAppflowyWebSocket', () => {
   // makes react-use-websocket tear down and reopen the connection, bypassing
   // the throttled nonce reconnect path entirely.
   it('keeps the socket URL stable when the stored token is refreshed mid-session', () => {
-    const { rerender } = renderHook(() => useAppflowyWebSocket(baseOptions));
+    const { rerender } = renderHook(() => useSynapseWebSocket(baseOptions));
 
     const initialUrl = lastSocketUrl();
 
@@ -94,7 +94,7 @@ describe('useAppflowyWebSocket', () => {
   // reconnect MUST pick up the freshest stored token, since the old one may
   // have been rotated or expired while the socket was down.
   it('uses the freshest stored token when a reconnect is triggered', async () => {
-    const { result } = renderHook(() => useAppflowyWebSocket(baseOptions));
+    const { result } = renderHook(() => useSynapseWebSocket(baseOptions));
 
     setStoredToken('token-B');
 
@@ -110,7 +110,7 @@ describe('useAppflowyWebSocket', () => {
   });
 
   it('uses the freshest stored token when react-use-websocket schedules an automatic retry', async () => {
-    renderHook(() => useAppflowyWebSocket(baseOptions));
+    renderHook(() => useSynapseWebSocket(baseOptions));
 
     setStoredToken('token-B');
 
@@ -129,7 +129,7 @@ describe('useAppflowyWebSocket', () => {
   // object literal every render, so every consumer of the hook value (and the
   // SyncInternalContext built from it) re-rendered even when nothing changed.
   it('returns a referentially stable value across re-renders with equivalent options', () => {
-    const { result, rerender } = renderHook(({ options }) => useAppflowyWebSocket(options), {
+    const { result, rerender } = renderHook(({ options }) => useSynapseWebSocket(options), {
       initialProps: { options: { ...baseOptions } },
     });
 
@@ -143,7 +143,7 @@ describe('useAppflowyWebSocket', () => {
   });
 
   it('keeps sendMessage and reconnect referentially stable across re-renders', () => {
-    const { result, rerender } = renderHook(({ options }) => useAppflowyWebSocket(options), {
+    const { result, rerender } = renderHook(({ options }) => useSynapseWebSocket(options), {
       initialProps: { options: { ...baseOptions } },
     });
 

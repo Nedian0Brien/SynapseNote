@@ -250,7 +250,7 @@ function PublishPanel({
               })}
             </div>
             <Divider />
-            <div className={'appflowy-scroller flex max-h-[300px] flex-col gap-1 overflow-y-auto overflow-x-hidden'}>
+            <div className={'synapsenote-scroller flex max-h-[300px] flex-col gap-1 overflow-y-auto overflow-x-hidden'}>
               {list.map((item) => {
                 const id = item.view_id;
                 const isCurrentView = view.view_id === item.view_id;

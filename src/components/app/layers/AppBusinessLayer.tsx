@@ -138,11 +138,11 @@ export const AppBusinessLayer: FC<AppBusinessLayerProps> = ({ children }) => {
 
     const globalWindow = window as typeof window & {
       Cypress?: unknown;
-      __APPFLOWY_AWARENESS_MAP__?: Record<string, import('y-protocols/awareness').Awareness>;
+      __SYNAPSENOTE_AWARENESS_MAP__?: Record<string, import('y-protocols/awareness').Awareness>;
     };
 
     if (globalWindow.Cypress) {
-      globalWindow.__APPFLOWY_AWARENESS_MAP__ = awarenessMap;
+      globalWindow.__SYNAPSENOTE_AWARENESS_MAP__ = awarenessMap;
     }
   }, [awarenessMap]);
 

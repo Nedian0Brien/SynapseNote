@@ -89,7 +89,7 @@ export function ManageDataPanel() {
         <p className='mt-1 text-sm text-text-secondary'>{t('settings.manageData.description')}</p>
       </div>
 
-      <div className='appflowy-scroller flex-1 overflow-y-auto px-8 py-6'>
+      <div className='synapsenote-scroller flex-1 overflow-y-auto px-8 py-6'>
         {/* Import your workspace */}
         <section className='flex items-center justify-between gap-4 py-4'>
           <div className='min-w-0'>

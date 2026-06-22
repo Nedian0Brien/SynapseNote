@@ -9,7 +9,7 @@ export type PublishErrorPayload = {
 
 declare global {
   interface Window {
-    __APPFLOWY_PUBLISH_ERROR__?: PublishErrorPayload;
+    __SYNAPSENOTE_PUBLISH_ERROR__?: PublishErrorPayload;
   }
 }
 
@@ -18,5 +18,5 @@ export const getPublishError = (): PublishErrorPayload | undefined => {
     return undefined;
   }
 
-  return window.__APPFLOWY_PUBLISH_ERROR__;
+  return window.__SYNAPSENOTE_PUBLISH_ERROR__;
 };

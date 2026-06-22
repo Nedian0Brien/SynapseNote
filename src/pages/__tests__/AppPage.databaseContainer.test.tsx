@@ -43,7 +43,7 @@ jest.mock('@/components/app/hooks/useViewOperations', () => ({
 }));
 
 jest.mock('@/components/main/app.hooks', () => ({
-  useCurrentUser: () => ({ email: 'test@appflowy.io' }),
+  useCurrentUser: () => ({ email: 'test@synapsenote.io' }),
 }));
 
 jest.mock('@/application/services/js-services/cached-api', () => ({

@@ -20,7 +20,7 @@ import { NotInvitationAccount } from '@/components/_shared/landing-page/NotInvit
 import { NormalModal } from '@/components/_shared/modal';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-import { hasProAccessFromPlans, isAppFlowyHosted } from '@/utils/subscription';
+import { hasProAccessFromPlans, isSynapseHosted } from '@/utils/subscription';
 
 function ApproveRequestPage() {
   const [searchParams] = useSearchParams();
@@ -51,7 +51,7 @@ function ApproveRequestPage() {
         return;
       }
 
-      if (!isAppFlowyHosted()) {
+      if (!isSynapseHosted()) {
         setCurrentPlans([]);
         return;
       }
@@ -93,7 +93,7 @@ function ApproveRequestPage() {
       // eslint-disable-next-line
     } catch (e: any) {
       if (e.code === ERROR_CODE.FREE_PLAN_GUEST_LIMIT_EXCEEDED || e.code === ERROR_CODE.PAID_PLAN_GUEST_LIMIT_EXCEEDED) {
-        if (isAppFlowyHosted()) {
+        if (isSynapseHosted()) {
           setUpgradeModalOpen(true);
         } else {
           toast.error(e.message);
@@ -126,7 +126,7 @@ function ApproveRequestPage() {
     }
 
     // This should not be called on self-hosted instances, but adding check as safety
-    if (!isAppFlowyHosted()) {
+    if (!isSynapseHosted()) {
       // Self-hosted instances have Pro features enabled by default
       return;
     }

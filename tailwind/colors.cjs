@@ -1,7 +1,7 @@
 const newColors = require('./new-colors.cjs');
 
 module.exports = {
-  // Existing AppFlowy colors
+  // Existing SynapseNote colors
   'bg': {
     'selection': 'var(--bg-selection)',
     'body': 'var(--bg-body)',

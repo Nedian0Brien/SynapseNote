@@ -215,7 +215,7 @@ describe('initializeDocumentStructure', () => {
     const paragraphBlock = blocks.get(paragraphId);
     const text = textMap.get(paragraphId);
 
-    text.applyDelta([{ insert: 'Hello AppFlowy' }]);
+    text.applyDelta([{ insert: 'Hello SynapseNote' }]);
 
     // No children: this is the safe in-place path. A heading conversion should
     // update the existing block and text entry so undo/redo can restore only
@@ -235,14 +235,14 @@ describe('initializeDocumentStructure', () => {
     expect(paragraphBlock.get(YjsEditorKey.block_type)).toBe(BlockType.HeadingBlock);
     expect(JSON.parse(paragraphBlock.get(YjsEditorKey.block_data))).toEqual({ level: 2 });
     expect(paragraphBlock.get(YjsEditorKey.block_external_id)).toBe(paragraphId);
-    expect(textMap.get(paragraphId).toDelta()).toEqual([{ insert: 'Hello AppFlowy' }]);
+    expect(textMap.get(paragraphId).toDelta()).toEqual([{ insert: 'Hello SynapseNote' }]);
 
     undoManager.undo();
 
     expect(blocks.get(paragraphId)).toBe(paragraphBlock);
     expect(pageChildren.toArray()).toEqual([paragraphId]);
     expect(paragraphBlock.get(YjsEditorKey.block_type)).toBe(BlockType.Paragraph);
-    expect(textMap.get(paragraphId).toDelta()).toEqual([{ insert: 'Hello AppFlowy' }]);
+    expect(textMap.get(paragraphId).toDelta()).toEqual([{ insert: 'Hello SynapseNote' }]);
 
     undoManager.redo();
 
@@ -250,7 +250,7 @@ describe('initializeDocumentStructure', () => {
     expect(pageChildren.toArray()).toEqual([paragraphId]);
     expect(paragraphBlock.get(YjsEditorKey.block_type)).toBe(BlockType.HeadingBlock);
     expect(JSON.parse(paragraphBlock.get(YjsEditorKey.block_data))).toEqual({ level: 2 });
-    expect(textMap.get(paragraphId).toDelta()).toEqual([{ insert: 'Hello AppFlowy' }]);
+    expect(textMap.get(paragraphId).toDelta()).toEqual([{ insert: 'Hello SynapseNote' }]);
   });
 });
 
@@ -364,7 +364,7 @@ describe('turnToBlock', () => {
     const child2Id = child2.get(YjsEditorKey.block_id);
     const pageChildren = childrenMap.get(pageId);
 
-    // Historical AppFlowy PR #6516 covered this corner case: heading blocks
+    // Historical SynapseNote PR #6516 covered this corner case: heading blocks
     // cannot contain children, so nested list children must become siblings
     // below the converted heading instead of staying under the heading.
     const undoManager = new Y.UndoManager(sharedRoot, { trackedOrigins: new Set([LOCAL_ORIGIN]) });

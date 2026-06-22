@@ -9,7 +9,7 @@ import { InviteGuest } from '@/components/app/share/InviteGuest';
 import { PeopleWithAccess } from '@/components/app/share/PeopleWithAccess';
 import { ShareSectionType } from '@/components/app/share/shareSectionType';
 import { UpgradeBanner } from '@/components/app/share/UpgradeBanner';
-import { getProAccessPlanFromSubscriptions, isAppFlowyHosted } from '@/utils/subscription';
+import { getProAccessPlanFromSubscriptions, isSynapseHosted } from '@/utils/subscription';
 
 function SharePanel({
   viewId,
@@ -76,7 +76,7 @@ function SharePanel({
   const getSubscriptions = useGetSubscriptions();
 
   const [activeSubscriptionPlan, setActiveSubscriptionPlan] = useState<SubscriptionPlan | null>(null);
-  const isHosted = useMemo(() => isAppFlowyHosted(), []);
+  const isHosted = useMemo(() => isSynapseHosted(), []);
 
   const loadSubscription = useCallback(async () => {
     try {

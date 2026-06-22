@@ -1424,7 +1424,7 @@
       "smartEditCouldNotFetchResult": "Не могу получить ответ от OpenAI",
       "smartEditCouldNotFetchKey": "Не могу получить токен OpenAI",
       "smartEditDisabled": "OpenAI",
-      "appflowyAIEditDisabled": "Войдите, чтобы включить функции ИИ.",
+      "synapsenoteAIEditDisabled": "Войдите, чтобы включить функции ИИ.",
       "discardResponse": "Хотите убрать ответы ИИ?",
       "createInlineMathEquation": "Создать уравнение",
       "fonts": "Шрифты",

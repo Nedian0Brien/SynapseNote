@@ -1,4 +1,4 @@
-import { EditorData, EditorNode } from '@appflowyinc/editor';
+import { EditorData, EditorNode } from '@/vendor/synapsenote-editor';
 
 import { AiPrompt, AiPromptCategory, RawPromptData } from '@/components/chat/types/prompt';
 
@@ -67,15 +67,15 @@ function argbToRgba(color: string): string {
 }
 
 export enum ColorEnum {
-  Purple = 'appflowy_them_color_tint1',
-  Pink = 'appflowy_them_color_tint2',
-  LightPink = 'appflowy_them_color_tint3',
-  Orange = 'appflowy_them_color_tint4',
-  Yellow = 'appflowy_them_color_tint5',
-  Lime = 'appflowy_them_color_tint6',
-  Green = 'appflowy_them_color_tint7',
-  Aqua = 'appflowy_them_color_tint8',
-  Blue = 'appflowy_them_color_tint9',
+  Purple = 'synapsenote_theme_color_tint1',
+  Pink = 'synapsenote_theme_color_tint2',
+  LightPink = 'synapsenote_theme_color_tint3',
+  Orange = 'synapsenote_theme_color_tint4',
+  Yellow = 'synapsenote_theme_color_tint5',
+  Lime = 'synapsenote_theme_color_tint6',
+  Green = 'synapsenote_theme_color_tint7',
+  Aqua = 'synapsenote_theme_color_tint8',
+  Blue = 'synapsenote_theme_color_tint9',
 }
 
 export const colorMap = {

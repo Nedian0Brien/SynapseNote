@@ -234,7 +234,7 @@ export function RelationCreationDialog({
             onChange={(event) => setQuery(event.target.value)}
             placeholder={t('grid.relation.search', { defaultValue: 'Search' })}
           />
-          <div className='appflowy-scroller flex max-h-[160px] flex-col overflow-y-auto rounded-300 border border-border-primary p-1'>
+          <div className='synapsenote-scroller flex max-h-[160px] flex-col overflow-y-auto rounded-300 border border-border-primary p-1'>
             {loading ? (
               <div className='px-2 py-3 text-sm text-text-tertiary'>{t('loading')}</div>
             ) : filteredCandidates.length === 0 ? (

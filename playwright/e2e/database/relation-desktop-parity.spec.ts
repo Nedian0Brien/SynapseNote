@@ -976,7 +976,7 @@ test.describe('Relation Desktop Parity BDD', () => {
     request,
   }) => {
     // Self-relation parity test for desktop's `relation_picker_create_row`
-    // BDD scenario (commit c811059939, AppFlowy#8644). Typing a name not in
+    // BDD scenario (commit c811059939, SynapseNote#8644). Typing a name not in
     // the target DB exposes a Create action that creates the row and links
     // it in one step — without context-switching to the target database.
     const suffix = Date.now().toString(36);
@@ -1151,7 +1151,7 @@ test.describe('Relation Desktop Parity BDD', () => {
     // Desktop UX rule: the Create footer is rendered whenever the search
     // query is non-empty, even if the live results match. Users shouldn't
     // have to clear partial matches to create a new row that happens to
-    // share a substring (commit c811059939, AppFlowy#8644).
+    // share a substring (commit c811059939, SynapseNote#8644).
     const suffix = Date.now().toString(36);
     let relationFieldId = '';
     let targetPageId = '';

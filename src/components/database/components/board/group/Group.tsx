@@ -86,7 +86,7 @@ export const Group = ({ groupId }: GroupProps) => {
   const handleMouseLeave = useCallback(() => setIsHover(false), []);
   const [verticalScrollContainer, setVerticalScrollContainer] = useState<HTMLElement | null>(null);
   const getVerticalScrollContainer = useCallback((el: HTMLDivElement) => {
-    return (el.closest('.appflowy-scroll-container') || getScrollParent(el)) as HTMLElement;
+    return (el.closest('.synapsenote-scroll-container') || getScrollParent(el)) as HTMLElement;
   }, []);
   const [totalSize, setTotalSize] = useState<number>(0);
   const innerRef = useRef<HTMLDivElement | null>(null);
@@ -228,7 +228,7 @@ export const Group = ({ groupId }: GroupProps) => {
         tabIndex={0}
         onMouseLeave={handleMouseLeave}
         ref={handleRefCallback}
-        className={'appflowy-custom-scroller h-full min-h-0 overflow-x-auto px-24 focus:outline-none max-sm:!px-6'}
+        className={'synapsenote-custom-scroller h-full min-h-0 overflow-x-auto px-24 focus:outline-none max-sm:!px-6'}
         style={{
           paddingLeft: paddingStart,
           paddingRight: paddingEnd,

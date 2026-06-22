@@ -627,9 +627,9 @@ span[data-slate-placeholder="true"]:not(.inline-block-content) {
   background-color: rgba(249, 115, 22, 0.7);
 }
 
-#appflowy-ai-writer {
+#synapsenote-ai-writer {
   @apply bg-background-primary;
-  #appflowy-editor > div {
+  #synapsenote-editor > div {
     padding: 0 !important;
     @apply underline text-writer-placeholder;
 

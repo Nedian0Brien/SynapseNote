@@ -9,19 +9,19 @@ const { Given, When, Then, Before, After } = createBdd();
 
 const PASSWORD = 'REDACTED_TEST_PASSWORD';
 const WORKSPACE_ID = '2b64f8c8-22d2-4e35-8deb-8a7e85bba4d4';
-const INVITE_PROBE_EMAIL = 'fa0522-out@appflowy.local';
+const INVITE_PROBE_EMAIL = 'fa0522-out@synapsenote.local';
 const modKey = process.platform === 'darwin' ? 'Meta' : 'Control';
 
 const FULL_ACCESS_ACCOUNTS = {
-  owner: 'fa0522-own@appflowy.local',
-  'full access member': 'fa0522-fm@appflowy.local',
-  'edit member': 'fa0522-em@appflowy.local',
-  'target member': 'fa0522-tm@appflowy.local',
-  'full access guest': 'fa0522-fg@appflowy.local',
-  'edit guest': 'fa0522-eg@appflowy.local',
-  'read guest': 'fa0522-rg@appflowy.local',
-  'no share guest': 'fa0522-ng@appflowy.local',
-  nonmember: 'fa0522-out@appflowy.local',
+  owner: 'fa0522-own@synapsenote.local',
+  'full access member': 'fa0522-fm@synapsenote.local',
+  'edit member': 'fa0522-em@synapsenote.local',
+  'target member': 'fa0522-tm@synapsenote.local',
+  'full access guest': 'fa0522-fg@synapsenote.local',
+  'edit guest': 'fa0522-eg@synapsenote.local',
+  'read guest': 'fa0522-rg@synapsenote.local',
+  'no share guest': 'fa0522-ng@synapsenote.local',
+  nonmember: 'fa0522-out@synapsenote.local',
 } as const;
 
 const FULL_ACCESS_PAGES = {
@@ -78,7 +78,7 @@ After(async ({ page, request }) => {
 
 Given('the seeded fa0522 full access share-management fixture exists', async () => {
   // This suite intentionally reuses the local fixture documented in
-  // AppFlowy-Cloud-Premium/backup/README.md instead of creating accounts.
+  // SynapseNote-Cloud-Premium/backup/README.md instead of creating accounts.
 });
 
 Given('I sign in as full access seeded {string}', async ({ page }, accountAliasValue: string) => {

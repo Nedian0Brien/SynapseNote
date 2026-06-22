@@ -96,7 +96,7 @@ function EventPopoverContent({
   );
 
   return (
-    <div className={'appflowy-scroller max-h-[560px] w-[360px] overflow-y-auto px-3 py-2'}>
+    <div className={'synapsenote-scroller max-h-[560px] w-[360px] overflow-y-auto px-3 py-2'}>
       <div className={'sticky top-0 flex w-full items-center justify-end gap-1'}>
         {/* Duplicate button */}
         {!readOnly && (

@@ -61,7 +61,7 @@ export function DatabaseRowProperties({ rowId }: { rowId: string }) {
   );
 
   const container = useMemo(() => {
-    return (dom?.closest('.appflowy-scroll-container') as HTMLDivElement) || (getScrollParent(dom) as HTMLDivElement);
+    return (dom?.closest('.synapsenote-scroll-container') as HTMLDivElement) || (getScrollParent(dom) as HTMLDivElement);
   }, [dom]);
 
   const dragContentValue = useDragContextValue({

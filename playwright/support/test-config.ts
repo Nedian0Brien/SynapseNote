@@ -16,23 +16,23 @@ export const TestConfig = {
    * GoTrue authentication service URL
    * Default: http://localhost/gotrue
    */
-  gotrueUrl: process.env.APPFLOWY_GOTRUE_BASE_URL || 'http://localhost/gotrue',
+  gotrueUrl: process.env.SYNAPSENOTE_GOTRUE_BASE_URL || 'http://localhost/gotrue',
 
   /**
-   * AppFlowy Cloud API base URL
+   * SynapseNote Cloud API base URL
    * Default: http://localhost
    */
-  apiUrl: process.env.APPFLOWY_BASE_URL || 'http://localhost',
+  apiUrl: process.env.SYNAPSENOTE_BASE_URL || 'http://localhost',
 
   /**
    * WebSocket base URL
    */
-  wsUrl: process.env.APPFLOWY_WS_BASE_URL || 'ws://localhost/ws/v2',
+  wsUrl: process.env.SYNAPSENOTE_WS_BASE_URL || 'ws://localhost/ws/v2',
 
   /**
    * Feature flags
    */
-  enableRelationRollupEdit: process.env.APPFLOWY_ENABLE_RELATION_ROLLUP_EDIT === 'true',
+  enableRelationRollupEdit: process.env.SYNAPSENOTE_ENABLE_RELATION_ROLLUP_EDIT === 'true',
 
   /**
    * Admin credentials
@@ -57,17 +57,17 @@ export const logTestEnvironment = () => {
 };
 
 /**
- * Quickly fetches the AppFlowy URLs used across specs.
+ * Quickly fetches the SynapseNote URLs used across specs.
  */
 export const getTestEnvironment = () => ({
-  appflowyBaseUrl: TestConfig.apiUrl,
-  appflowyGotrueBaseUrl: TestConfig.gotrueUrl,
+  synapsenoteBaseUrl: TestConfig.apiUrl,
+  synapsenoteGotrueBaseUrl: TestConfig.gotrueUrl,
 });
 
 /**
  * Shared email generator for e2e specs.
  */
-export const generateRandomEmail = (domain = 'appflowy.io') => `${uuidv4()}@${domain}`;
+export const generateRandomEmail = (domain = 'synapsenote.io') => `${uuidv4()}@${domain}`;
 
 /**
  * Known harmless page errors that should be suppressed in E2E tests.

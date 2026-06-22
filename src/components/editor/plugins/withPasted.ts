@@ -91,13 +91,13 @@ export const withPasted = (editor: ReactEditor) => {
 
     // Priority 1: HTML (if available)
     if (html && html.trim().length > 0) {
-      console.log('[AppFlowy] Handling HTML paste', html);
+      console.log('[SynapseNote] Handling HTML paste', html);
       return handleHTMLPaste(editor, html, text);
     }
 
     // Priority 2: Plain text
     if (text && text.trim().length > 0) {
-      console.log('[AppFlowy] Handling Plain Text paste', text);
+      console.log('[SynapseNote] Handling Plain Text paste', text);
       return handlePlainTextPaste(editor, text);
     }
 
@@ -277,7 +277,7 @@ function handleHTMLPaste(editor: ReactEditor, html: string, fallbackText?: strin
     // Parse HTML to structured blocks
     const blocks = parseHTML(html);
 
-    console.log('[AppFlowy] Parsed HTML blocks:', JSON.stringify(blocks, null, 2));
+    console.log('[SynapseNote] Parsed HTML blocks:', JSON.stringify(blocks, null, 2));
 
     if (blocks.length === 0) {
       // If HTML parsing fails, fallback to plain text
@@ -389,18 +389,18 @@ function handleMarkdownPaste(editor: ReactEditor, markdown: string): boolean {
 /**
  * Handles URL paste.
  *
- * Internal AppFlowy links that point at a specific block are inserted as a
+ * Internal SynapseNote links that point at a specific block are inserted as a
  * page-reference mention directly. Every other URL is pasted as an inline link
  * and the "Paste as" menu (Mention / URL / Bookmark / Embed) is shown so the
  * user can choose how to render it — matching the desktop app's behavior.
  */
 function handleURLPaste(editor: ReactEditor, url: string): boolean {
-  // Check for AppFlowy internal links
-  const isAppFlowyLinkUrl = isURL(url, {
+  // Check for SynapseNote internal links
+  const isSynapseNoteLinkUrl = isURL(url, {
     host_whitelist: [window.location.hostname],
   });
 
-  if (isAppFlowyLinkUrl) {
+  if (isSynapseNoteLinkUrl) {
     const urlObj = new URL(url);
     const blockId = urlObj.searchParams.get('blockId');
 

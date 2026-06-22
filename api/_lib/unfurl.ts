@@ -1,7 +1,7 @@
 // Server-side link unfurler.
 //
 // Mirrors the desktop DefaultParser
-// (AppFlowy-Premium/frontend/appflowy_flutter/lib/plugins/document/presentation/
+// (SynapseNote-Premium/frontend/synapsenote_flutter/lib/plugins/document/presentation/
 //  editor_plugins/link_preview/link_parsers/default_parser.dart)
 // so web link mentions reach parity with the desktop app: a browser cannot
 // scrape cross-origin pages (CORS), so the same fetch + metadata extraction
@@ -15,7 +15,7 @@ import { isAllowedHttpUrl } from './url-safety';
 const MAX_HTML_BYTES = 50 * 1024; // the <head> carries all the metadata we read
 const REQUEST_TIMEOUT_MS = 8000;
 const DESCRIPTION_MAX_LENGTH = 240;
-const USER_AGENT = 'Mozilla/5.0 (compatible; AppFlowyBot/1.0; +https://appflowy.io)';
+const USER_AGENT = 'Mozilla/5.0 (compatible; SynapseNoteBot/1.0; +https://synapsenote.io)';
 const MAX_REDIRECTS = 5;
 
 export interface UnfurlImage {

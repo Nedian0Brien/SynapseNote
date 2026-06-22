@@ -8,7 +8,7 @@ const MOD_KEY = process.platform === 'darwin' ? 'Meta' : 'Control';
  * SimpleTable Integration Tests
  *
  * Migrated from Flutter desktop integration tests:
- * appflowy_flutter/integration_test/desktop/document/document_with_simple_table_test.dart
+ * synapsenote_flutter/integration_test/desktop/document/document_with_simple_table_test.dart
  *
  * Test categories:
  * 1. Table creation via slash command
@@ -230,7 +230,7 @@ test.describe('SimpleTable', () => {
     await insertTableViaSlashCommand(page);
 
     const cell = getCell(page, 0, 0);
-    const url = 'https://github.com/AppFlowy-IO/AppFlowy-Web/issues/53';
+    const url = 'https://github.com/SynapseNote-IO/SynapseNote-Web/issues/53';
 
     await cell.click();
     const initialCellWidth = await cell.evaluate(el => el.getBoundingClientRect().width);
@@ -294,7 +294,7 @@ test.describe('SimpleTable', () => {
     expect(layout.titleWhiteSpace).toBe('normal');
 
     const urlCell = getCell(page, 0, 1);
-    const plainUrl = 'https://appflowy.io/simple-table-url-layout';
+    const plainUrl = 'https://synapsenote.io/simple-table-url-layout';
 
     await urlCell.click();
     await pastePlainText(page, plainUrl);
@@ -310,7 +310,7 @@ test.describe('SimpleTable', () => {
     await insertTableViaSlashCommand(page);
 
     const mentionCell = getCell(page, 0, 0);
-    const mentionUrl = 'https://appflowy.io/simple-table-mention-layout';
+    const mentionUrl = 'https://synapsenote.io/simple-table-mention-layout';
 
     await mentionCell.click();
     await pastePlainText(page, mentionUrl);
@@ -326,7 +326,7 @@ test.describe('SimpleTable', () => {
     await insertTableViaSlashCommand(page);
 
     const embedCell = getCell(page, 0, 0);
-    const embedUrl = 'https://appflowy.io/simple-table-embed-layout';
+    const embedUrl = 'https://synapsenote.io/simple-table-embed-layout';
 
     await embedCell.click();
     await pastePlainText(page, embedUrl, `<a href="${embedUrl}">${embedUrl}</a>`);

@@ -1,8 +1,8 @@
 import { expect, describe, it, beforeEach, afterEach } from '@jest/globals';
 
-import { convertToAppFlowyFragment } from '../lib/copy';
+import { convertToSynapseNoteFragment } from '../lib/copy';
 
-describe('convertToAppFlowyFragment', () => {
+describe('convertToSynapseNoteFragment', () => {
   beforeEach(() => {
     // Mock window.btoa
     global.btoa = jest.fn((str) => Buffer.from(str).toString('base64'));
@@ -23,9 +23,9 @@ describe('convertToAppFlowyFragment', () => {
         },
       ];
 
-      const result = convertToAppFlowyFragment(data as any);
+      const result = convertToSynapseNoteFragment(data as any);
 
-      expect(result.key).toBe('application/x-appflowy-fragment');
+      expect(result.key).toBe('application/x-synapsenote-fragment');
     });
 
     it('should return encoded value', () => {
@@ -38,7 +38,7 @@ describe('convertToAppFlowyFragment', () => {
         },
       ];
 
-      const result = convertToAppFlowyFragment(data as any);
+      const result = convertToSynapseNoteFragment(data as any);
 
       expect(result.value).toBeDefined();
       expect(typeof result.value).toBe('string');
@@ -54,7 +54,7 @@ describe('convertToAppFlowyFragment', () => {
         },
       ];
 
-      const result = convertToAppFlowyFragment(data as any);
+      const result = convertToSynapseNoteFragment(data as any);
 
       // Decode the fragment
       const decoded = decodeURIComponent(
@@ -78,7 +78,7 @@ describe('convertToAppFlowyFragment', () => {
         },
       ];
 
-      const result = convertToAppFlowyFragment(data as any);
+      const result = convertToSynapseNoteFragment(data as any);
       const decoded = JSON.parse(
         decodeURIComponent(Buffer.from(result.value, 'base64').toString())
       );
@@ -101,7 +101,7 @@ describe('convertToAppFlowyFragment', () => {
         },
       ];
 
-      const result = convertToAppFlowyFragment(data as any);
+      const result = convertToSynapseNoteFragment(data as any);
       const decoded = JSON.parse(
         decodeURIComponent(Buffer.from(result.value, 'base64').toString())
       );
@@ -123,7 +123,7 @@ describe('convertToAppFlowyFragment', () => {
         },
       ];
 
-      const result = convertToAppFlowyFragment(data as any);
+      const result = convertToSynapseNoteFragment(data as any);
       const decoded = JSON.parse(
         decodeURIComponent(Buffer.from(result.value, 'base64').toString())
       );
@@ -142,7 +142,7 @@ describe('convertToAppFlowyFragment', () => {
         },
       ];
 
-      const result = convertToAppFlowyFragment(data as any);
+      const result = convertToSynapseNoteFragment(data as any);
       const decoded = JSON.parse(
         decodeURIComponent(Buffer.from(result.value, 'base64').toString())
       );
@@ -170,7 +170,7 @@ describe('convertToAppFlowyFragment', () => {
         },
       ];
 
-      const result = convertToAppFlowyFragment(data as any);
+      const result = convertToSynapseNoteFragment(data as any);
       const decoded = JSON.parse(
         decodeURIComponent(Buffer.from(result.value, 'base64').toString())
       );
@@ -205,7 +205,7 @@ describe('convertToAppFlowyFragment', () => {
         },
       ];
 
-      const result = convertToAppFlowyFragment(data as any);
+      const result = convertToSynapseNoteFragment(data as any);
       const decoded = JSON.parse(
         decodeURIComponent(Buffer.from(result.value, 'base64').toString())
       );
@@ -228,7 +228,7 @@ describe('convertToAppFlowyFragment', () => {
         },
       ];
 
-      const result = convertToAppFlowyFragment(data as any);
+      const result = convertToSynapseNoteFragment(data as any);
       const decoded = JSON.parse(
         decodeURIComponent(Buffer.from(result.value, 'base64').toString())
       );
@@ -246,7 +246,7 @@ describe('convertToAppFlowyFragment', () => {
         },
       ];
 
-      const result = convertToAppFlowyFragment(data as any);
+      const result = convertToSynapseNoteFragment(data as any);
       const decoded = JSON.parse(
         decodeURIComponent(Buffer.from(result.value, 'base64').toString())
       );
@@ -278,7 +278,7 @@ describe('convertToAppFlowyFragment', () => {
         },
       ];
 
-      const result = convertToAppFlowyFragment(data as any);
+      const result = convertToSynapseNoteFragment(data as any);
       const decoded = JSON.parse(
         decodeURIComponent(Buffer.from(result.value, 'base64').toString())
       );
@@ -294,7 +294,7 @@ describe('convertToAppFlowyFragment', () => {
     it('should handle empty array', () => {
       const data: any[] = [];
 
-      const result = convertToAppFlowyFragment(data);
+      const result = convertToSynapseNoteFragment(data);
       const decoded = JSON.parse(
         decodeURIComponent(Buffer.from(result.value, 'base64').toString())
       );
@@ -312,7 +312,7 @@ describe('convertToAppFlowyFragment', () => {
         },
       ];
 
-      const result = convertToAppFlowyFragment(data as any);
+      const result = convertToSynapseNoteFragment(data as any);
       const decoded = JSON.parse(
         decodeURIComponent(Buffer.from(result.value, 'base64').toString())
       );
@@ -330,7 +330,7 @@ describe('convertToAppFlowyFragment', () => {
         },
       ];
 
-      const result = convertToAppFlowyFragment(data as any);
+      const result = convertToSynapseNoteFragment(data as any);
       const decoded = JSON.parse(
         decodeURIComponent(Buffer.from(result.value, 'base64').toString())
       );
@@ -359,7 +359,7 @@ describe('convertToAppFlowyFragment', () => {
         },
       ];
 
-      const result = convertToAppFlowyFragment(data as any);
+      const result = convertToSynapseNoteFragment(data as any);
       const decoded = JSON.parse(
         decodeURIComponent(Buffer.from(result.value, 'base64').toString())
       );
@@ -383,7 +383,7 @@ describe('convertToAppFlowyFragment', () => {
         { type: 'code', data: { language: 'javascript' }, delta: [], children: [] },
       ];
 
-      const result = convertToAppFlowyFragment(data as any);
+      const result = convertToSynapseNoteFragment(data as any);
       const decoded = JSON.parse(
         decodeURIComponent(Buffer.from(result.value, 'base64').toString())
       );

@@ -19,7 +19,7 @@ import { RegisterSyncContext } from './types';
  *   without depending on a potentially-unstable `currentUser` object reference.
  * @param sendMessage - Sends a protobuf-encoded `messages.IMessage` to the
  *   **server** over the WebSocket connection. Originates from
- *   `useAppflowyWebSocket`. Called whenever the sync protocol needs to push
+ *   `useSynapseWebSocket`. Called whenever the sync protocol needs to push
  *   data outward — initial sync requests, local Y.js updates, awareness
  *   changes, and sync responses to server-initiated requests.
  * @param postMessage - Broadcasts a protobuf-encoded `messages.IMessage` to

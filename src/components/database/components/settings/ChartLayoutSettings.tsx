@@ -39,7 +39,7 @@ const CHART_TYPES = [
 
 /**
  * Mirrors desktop's `_isPremiumChartType`: only the basic Bar chart is free.
- * On AppFlowy-hosted instances without a Pro plan, the other three are gated
+ * On SynapseNote-hosted instances without a Pro plan, the other three are gated
  * behind an upgrade prompt. Self-hosted instances have all chart types free
  * (handled by `useSubscriptionPlan` returning `isPro = true` for non-official
  * hosts).
@@ -164,7 +164,7 @@ function ChartLayoutSettings() {
         {t('grid.settings.chartSettings', 'Chart settings')}
       </DropdownMenuSubTrigger>
       <DropdownMenuPortal>
-        <DropdownMenuSubContent className={'appflowy-scroller max-w-[260px] overflow-y-auto'}>
+        <DropdownMenuSubContent className={'synapsenote-scroller max-w-[260px] overflow-y-auto'}>
           {/* X-Axis (matches desktop's first section) */}
           <DropdownMenuLabel>{t('chart.xAxis', 'X-Axis')}</DropdownMenuLabel>
           {groupableFields.length === 0 ? (

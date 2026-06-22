@@ -56,7 +56,7 @@ export function parseMarkdown(markdown: string, options: MarkdownParseOptions = 
     const ast = processor.runSync(tree) as MdastRoot;
 
     // Step 2: Convert MDAST to ParsedBlocks
-    const blocks = convertMarkdownASTToAppFlowyBlocks(ast.children as BlockContent[]);
+    const blocks = convertMarkdownASTToSynapseNoteBlocks(ast.children as BlockContent[]);
 
     return blocks;
   } catch (error) {
@@ -66,9 +66,9 @@ export function parseMarkdown(markdown: string, options: MarkdownParseOptions = 
 }
 
 /**
- * Converts Markdown AST nodes to AppFlowy block structures
+ * Converts Markdown AST nodes to SynapseNote block structures
  */
-function convertMarkdownASTToAppFlowyBlocks(nodes: BlockContent[]): ParsedBlock[] {
+function convertMarkdownASTToSynapseNoteBlocks(nodes: BlockContent[]): ParsedBlock[] {
   const blocks: ParsedBlock[] = [];
 
   for (const node of nodes) {
@@ -87,7 +87,7 @@ function convertMarkdownASTToAppFlowyBlocks(nodes: BlockContent[]): ParsedBlock[
 }
 
 /**
- * Converts a single Markdown AST node to AppFlowy ParsedBlock
+ * Converts a single Markdown AST node to SynapseNote ParsedBlock
  */
 function convertMarkdownNode(node: BlockContent): ParsedBlock | ParsedBlock[] | null {
   switch (node.type) {
@@ -130,7 +130,7 @@ function convertMarkdownNode(node: BlockContent): ParsedBlock | ParsedBlock[] | 
 }
 
 /**
- * Builds AppFlowy heading block from Markdown heading node
+ * Builds SynapseNote heading block from Markdown heading node
  */
 function buildHeadingBlock(node: Heading): ParsedBlock {
   return {
@@ -143,7 +143,7 @@ function buildHeadingBlock(node: Heading): ParsedBlock {
 }
 
 /**
- * Builds AppFlowy paragraph block from Markdown paragraph node
+ * Builds SynapseNote paragraph block from Markdown paragraph node
  */
 function buildParagraphBlock(node: Paragraph): ParsedBlock {
   const text = extractTextFromMDAST(node);
@@ -169,7 +169,7 @@ function buildParagraphBlock(node: Paragraph): ParsedBlock {
 }
 
 /**
- * Builds AppFlowy list block from Markdown list node
+ * Builds SynapseNote list block from Markdown list node
  */
 function buildListBlock(node: List): ParsedBlock[] {
   const isOrdered = node.ordered || false;
@@ -205,7 +205,7 @@ function buildListBlock(node: List): ParsedBlock[] {
 }
 
 /**
- * Builds AppFlowy code block from Markdown code node
+ * Builds SynapseNote code block from Markdown code node
  */
 function buildCodeBlock(node: Code): ParsedBlock {
   return {

@@ -41,7 +41,7 @@ body {
   @apply bg-background-primary text-text-primary;
 
   &[data-os="windows"]:not([data-browser="firefox"]) {
-    .appflowy-custom-scroller {
+    .synapsenote-custom-scroller {
       @include mixin.hidden-scrollbar
     }
 
@@ -56,16 +56,16 @@ body {
 }
 
 
-.appflowy-date-picker-calendar {
+.synapsenote-date-picker-calendar {
   width: 100%;
 }
 
 
-.appflowy-scroller {
+.synapsenote-scroller {
   @include mixin.scrollbar-style;
 }
 
-.appflowy-hidden-scroller {
+.synapsenote-hidden-scroller {
   ::-webkit-scrollbar, &::-webkit-scrollbar {
     width: 0px;
     height: 0px;
@@ -82,13 +82,13 @@ body {
 }
 
 
-.appflowy-scrollbar-thumb-horizontal, .appflowy-scrollbar-thumb-vertical {
+.synapsenote-scrollbar-thumb-horizontal, .synapsenote-scrollbar-thumb-vertical {
   background-color: var(--fill-content-hover);
   border-radius: 4px;
   opacity: 100%;
 }
 
-.appflowy-scrollbar-track-horizontal, .appflowy-scrollbar-track-vertical {
+.synapsenote-scrollbar-track-horizontal, .synapsenote-scrollbar-track-vertical {
   background-color: var(--fill-content-hover);
 }
 
@@ -215,11 +215,11 @@ body {
   }
 }
 
-.appflowy-scrollbar {
+.synapsenote-scrollbar {
   @include scrollbar-style;
 }
 
-.appflowy-visible-scrollbar {
+.synapsenote-visible-scrollbar {
   &::-webkit-scrollbar {
     width: 8px;
     height: 8px;
@@ -239,7 +239,7 @@ body {
   scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
-.appflowy-hidden-horizontal-scrollbar {
+.synapsenote-hidden-horizontal-scrollbar {
   // Hide all scrollbars - we use a custom horizontal scrollbar component
   &::-webkit-scrollbar {
     width: 0;
@@ -252,18 +252,18 @@ body {
   -ms-overflow-style: none;
 }
 
-.appflowy-hidden-scrollbar {
+.synapsenote-hidden-scrollbar {
   @include hidden-scrollbar;
 }
 
 
-#appflowy-chat, #ai-assistant {
-  #appflowy-editor > div {
+#synapsenote-chat, #ai-assistant {
+  #synapsenote-editor > div {
     padding-left: 4px;
     padding-right: 4px;
   }
 
-  #appflowy-editor {
+  #synapsenote-editor {
     [data-block-type="bulleted_list"] .h-6 {
       height: 1.25rem;
     }

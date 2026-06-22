@@ -21,7 +21,7 @@ const meta = {
   tags: ['autodocs'],
   decorators: [
     (Story: React.ComponentType, context: { args: { hostname?: string; open?: boolean } }) => {
-      const hostname = context.args.hostname || 'beta.appflowy.cloud';
+      const hostname = context.args.hostname || 'beta.synapsenote.cloud';
       const [open, setOpen] = useState(context.args.open ?? false);
 
       useHostnameMock(hostname);
@@ -65,12 +65,12 @@ type Story = StoryObj<typeof meta>;
 export const OfficialHost: Story = {
   args: {
     open: true,
-    hostname: 'beta.appflowy.cloud',
+    hostname: 'beta.synapsenote.cloud',
   },
   parameters: {
     docs: {
       description: {
-        story: 'Shows both Free and Pro plans on official host (beta.appflowy.cloud). Users can upgrade to Pro plan.',
+        story: 'Shows both Free and Pro plans on official host (beta.synapsenote.cloud). Users can upgrade to Pro plan.',
       },
     },
   },

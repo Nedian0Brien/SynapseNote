@@ -163,7 +163,7 @@ function TrashPage() {
           {!trashList ? (
             <TableSkeleton rows={8} columns={4} />
           ) : (
-            <TableContainer data-testid="trash-table" className={'appflowy-scroller'} sx={{ maxHeight: '100%' }}>
+            <TableContainer data-testid="trash-table" className={'synapsenote-scroller'} sx={{ maxHeight: '100%' }}>
               <Table stickyHeader aria-label='sticky table'>
                 <TableHead>
                   <TableRow>

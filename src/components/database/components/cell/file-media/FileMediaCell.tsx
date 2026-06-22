@@ -97,7 +97,7 @@ export function FileMediaCell({
         'flex items-center gap-1.5',
         readOnly ? 'cursor-text' : 'cursor-pointer',
         !value || (value?.length === 0 && 'text-text-tertiary'),
-        wrap ? 'flex-wrap' : 'appflowy-hidden-scroller w-full flex-nowrap overflow-x-auto overflow-y-hidden'
+        wrap ? 'flex-wrap' : 'synapsenote-hidden-scroller w-full flex-nowrap overflow-x-auto overflow-y-hidden'
       )}
     >
       {renderChildren}

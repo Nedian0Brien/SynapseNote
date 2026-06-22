@@ -30,7 +30,7 @@ const UUID_NAMESPACE_OID = '6ba7b812-9dad-11d1-80b4-00c04fd430c8';
 
 /**
  * Generate a deterministic page_id from document_id.
- * This matches the algorithm used by the server in AppFlowy-Collab:
+ * This matches the algorithm used by the server in SynapseNote-Collab:
  *
  * ```rust
  * pub fn page_id_from_document_id(document_id: &str) -> Option<String> {
@@ -294,7 +294,7 @@ export function appendFirstEmptyParagraph(sharedRoot: YSharedRoot, defaultText: 
 }
 
 /**
- * Initialize a Y.Doc with the standard AppFlowy document structure.
+ * Initialize a Y.Doc with the standard SynapseNote document structure.
  *
  * @param doc - The Y.Doc to initialize
  * @param includeInitialParagraph - If true, adds a Paragraph block as child of Page.

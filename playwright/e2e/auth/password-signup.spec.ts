@@ -251,7 +251,7 @@ test.describe('Password Sign Up Flow', () => {
 
   test.describe('Error Handling', () => {
     test('should handle email already registered error (422)', async ({ page }) => {
-      const testEmail = 'existing@appflowy.io';
+      const testEmail = 'existing@synapsenote.io';
       const validPassword = 'ValidPass1!';
 
       await page.route(`${gotrueUrl}/signup`, (route) =>

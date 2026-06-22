@@ -6,7 +6,7 @@
  * column correctly shows "Related DB content". But after a page reload the
  * cell becomes empty.
  *
- * Uses a pre-seeded account (pdf_db_relation@appflowy.io) with:
+ * Uses a pre-seeded account (pdf_db_relation@synapsenote.io) with:
  *   - General > Getting started > New Database — grid with a Relation column
  *   - General > Getting started > Related DB — grid referenced by that column
  *   - First row of New Database has Relation = "Related DB content"
@@ -20,7 +20,7 @@ import {
 import { setupPageErrorHandling } from '../../support/test-config';
 import { expandSpaceByName, expandPageByName } from '../../support/page-utils';
 
-const TEST_EMAIL = 'pdf_db_relation@appflowy.io';
+const TEST_EMAIL = 'pdf_db_relation@synapsenote.io';
 const TEST_PASSWORD = 'REDACTED_TEST_PASSWORD';
 const DATABASE_NAME = 'New Database';
 const RELATED_DB_NAME = 'Related DB';

@@ -230,7 +230,7 @@ function FileBlockPopoverContent({ blockId, onClose }: { blockId: string; onClos
           return <ViewTab key={key} iconPosition='start' color='inherit' label={label} value={key} />;
         })}
       </ViewTabs>
-      <div className={'appflowy-scroller max-h-[400px] overflow-y-auto p-2'}>
+      <div className={'synapsenote-scroller max-h-[400px] overflow-y-auto p-2'}>
         {tabOptions.map((tab, index) => {
           const { key, panel } = tab;
 

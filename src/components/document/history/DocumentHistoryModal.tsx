@@ -65,7 +65,7 @@ const VersionPreviewBody = memo(function VersionPreviewBody({
   }
 
   return (
-    <div className='appflowy-scroller h-full overflow-y-auto overflow-x-hidden'>
+    <div className='synapsenote-scroller h-full overflow-y-auto overflow-x-hidden'>
       <Editor
         workspaceId={workspaceId || ''}
         viewId={viewId}

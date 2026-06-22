@@ -199,7 +199,7 @@ function PDFBlockPopoverContent({ blockId, onClose }: { blockId: string; onClose
         <ViewTab iconPosition='start' color='inherit' label={uploadLabel} value='upload' />
         <ViewTab iconPosition='start' color='inherit' label={embedLabel} value='embed' />
       </ViewTabs>
-      <div className={'appflowy-scroller max-h-[400px] overflow-y-auto p-2'}>
+      <div className={'synapsenote-scroller max-h-[400px] overflow-y-auto p-2'}>
         <TabPanel className={'flex h-full w-full flex-col'} index={0} value={selectedIndex}>
           <FileDropzone
             accept='application/pdf,.pdf'

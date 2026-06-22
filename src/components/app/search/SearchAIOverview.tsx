@@ -149,7 +149,7 @@ function ReferenceSources({
       <div className='px-2 py-1 text-sm font-medium text-text-secondary'>
         {t('commandPalette.aiOverviewSource', { defaultValue: 'Reference sources' })}
       </div>
-      <div className='appflowy-scroller max-h-[360px] overflow-y-auto'>
+      <div className='synapsenote-scroller max-h-[360px] overflow-y-auto'>
         {sources.map((source) => (
           <button
             key={source.id}

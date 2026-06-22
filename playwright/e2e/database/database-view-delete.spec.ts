@@ -39,7 +39,7 @@ test.describe('Database View Deletion', () => {
   async function createGridAndWait(page: import('@playwright/test').Page, request: import('@playwright/test').APIRequestContext, testEmail: string) {
     await signInAndCreateDatabaseView(page, request, testEmail, 'Grid', {
       verify: async (p) => {
-        await expect(p.locator('[class*="appflowy-database"]')).toBeVisible({ timeout: 15000 });
+        await expect(p.locator('[class*="synapsenote-database"]')).toBeVisible({ timeout: 15000 });
         await expect(DatabaseViewSelectors.viewTab(p).first()).toBeVisible({ timeout: 10000 });
       },
     });
@@ -113,7 +113,7 @@ test.describe('Database View Deletion', () => {
     await expect(DatabaseViewSelectors.activeViewTab(page)).toContainText('Grid');
 
     // Verify database still renders correctly
-    await expect(page.locator('[class*="appflowy-database"]')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('[class*="synapsenote-database"]')).toBeVisible({ timeout: 15000 });
   });
 
   test('deletes one view from three and remaining views persist', async ({ page, request }) => {

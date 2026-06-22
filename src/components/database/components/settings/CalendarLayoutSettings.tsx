@@ -55,7 +55,7 @@ function CalendarLayoutSettings() {
         {t('grid.settings.calendarSettings')}
       </DropdownMenuSubTrigger>
       <DropdownMenuPortal>
-        <DropdownMenuSubContent className={'appflowy-scroller max-w-[240px] overflow-y-auto'}>
+        <DropdownMenuSubContent className={'synapsenote-scroller max-w-[240px] overflow-y-auto'}>
           <DropdownMenuLabel>{t('calendar.settings.layoutDateField')}</DropdownMenuLabel>
           {dateTimeProperties.map((property) => (
             <DropdownMenuItem

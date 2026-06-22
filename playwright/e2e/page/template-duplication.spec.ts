@@ -130,7 +130,7 @@ test.describe('Template Duplication Test - Document with Embedded Database', () 
     await page.waitForTimeout(3000);
 
     // Step 6: Verify embedded database was created
-    await expect(page.locator('[class*="appflowy-database"]').last()).toBeVisible({
+    await expect(page.locator('[class*="synapsenote-database"]').last()).toBeVisible({
       timeout: 15000,
     });
 
@@ -257,11 +257,11 @@ test.describe('Template Duplication Test - Document with Embedded Database', () 
     // After template duplication the embedded database must: resolve the linked view
     // reference → fetch its own Y.Doc from the server → sync → render. This chain
     // involves multiple server round-trips, so use a generous timeout.
-    await expect(page.locator('[class*="appflowy-database"]')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('[class*="synapsenote-database"]')).toBeVisible({ timeout: 60000 });
 
     // Verify database has loaded (has tabs)
     await expect(
-      page.locator('[class*="appflowy-database"]').locator('[role="tab"]')
+      page.locator('[class*="synapsenote-database"]').locator('[role="tab"]')
     ).toBeVisible({ timeout: 15000 });
   });
 });

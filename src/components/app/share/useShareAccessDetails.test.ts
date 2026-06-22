@@ -29,7 +29,7 @@ describe('resolveShareSectionType', () => {
       resolveShareSectionType({
         outline: [createView({ is_private: false })],
         viewId: 'view-1',
-        sharedPeople: [createPerson('owner@appflowy.io'), createPerson('member@appflowy.io')],
+        sharedPeople: [createPerson('owner@synapsenote.io'), createPerson('member@synapsenote.io')],
         workspaceMemberCount: 2,
       })
     ).toBe(ShareSectionType.Public);
@@ -40,7 +40,7 @@ describe('resolveShareSectionType', () => {
       resolveShareSectionType({
         outline: [createView({ is_private: false })],
         viewId: 'view-1',
-        sharedPeople: [createPerson('owner@appflowy.io'), createPerson('guest@example.com', { role: Role.Guest })],
+        sharedPeople: [createPerson('owner@synapsenote.io'), createPerson('guest@example.com', { role: Role.Guest })],
         workspaceMemberCount: 3,
       })
     ).toBe(ShareSectionType.Shared);
@@ -51,7 +51,7 @@ describe('resolveShareSectionType', () => {
       resolveShareSectionType({
         outline: [createView({ is_private: true })],
         viewId: 'view-1',
-        sharedPeople: [createPerson('owner@appflowy.io'), createPerson('guest@example.com')],
+        sharedPeople: [createPerson('owner@synapsenote.io'), createPerson('guest@example.com')],
       })
     ).toBe(ShareSectionType.Shared);
   });
@@ -61,7 +61,7 @@ describe('resolveShareSectionType', () => {
       resolveShareSectionType({
         outline: [createView({ is_private: true })],
         viewId: 'view-1',
-        sharedPeople: [createPerson('owner@appflowy.io')],
+        sharedPeople: [createPerson('owner@synapsenote.io')],
       })
     ).toBe(ShareSectionType.Private);
   });
@@ -81,7 +81,7 @@ describe('resolveShareSectionType', () => {
       resolveShareSectionType({
         outline: [shareWithMeSpace],
         viewId: 'shared-view',
-        sharedPeople: [createPerson('owner@appflowy.io')],
+        sharedPeople: [createPerson('owner@synapsenote.io')],
       })
     ).toBe(ShareSectionType.Shared);
   });

@@ -42,7 +42,7 @@ function NoteList({
         </div>
       )}
       {list && (
-        <div onScroll={onScroll} className={'appflowy-custom-scroller flex h-full flex-col gap-3   overflow-y-auto'}>
+        <div onScroll={onScroll} className={'synapsenote-custom-scroller flex h-full flex-col gap-3   overflow-y-auto'}>
           <div className={'flex flex-col'}>
             {list.map((note, index) => {
               return (

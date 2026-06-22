@@ -55,7 +55,7 @@ test.describe('Board Scroll Stability', () => {
 
     // When: scrolling the board container horizontally
     await page.evaluate(() => {
-      const el = document.querySelector('.appflowy-custom-scroller');
+      const el = document.querySelector('.synapsenote-custom-scroller');
       if (el) {
         el.scrollLeft = 200;
       }
@@ -65,7 +65,7 @@ test.describe('Board Scroll Stability', () => {
 
     // And: scrolling back to the start
     await page.evaluate(() => {
-      const el = document.querySelector('.appflowy-custom-scroller');
+      const el = document.querySelector('.synapsenote-custom-scroller');
       if (el) {
         el.scrollLeft = 0;
       }
@@ -92,7 +92,7 @@ test.describe('Board Scroll Stability', () => {
 
     // When: triggering scroll events on the board's vertical scroll container
     await page.evaluate(() => {
-      const el = document.querySelector('.appflowy-scroll-container');
+      const el = document.querySelector('.synapsenote-scroll-container');
       if (el) {
         for (let i = 0; i < 5; i++) {
           el.scrollTop = i * 30;

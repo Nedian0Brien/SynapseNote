@@ -33,7 +33,7 @@ export function useCalendarStickyHeader(calendarApi: CalendarApi | null, toolbar
    */
   const getScrollElement = useCallback(() => {
     if (!parentRef.current) return null;
-    return parentRef.current.closest('.appflowy-scroll-container') || getScrollParent(parentRef.current);
+    return parentRef.current.closest('.synapsenote-scroll-container') || getScrollParent(parentRef.current);
   }, []);
 
   /**

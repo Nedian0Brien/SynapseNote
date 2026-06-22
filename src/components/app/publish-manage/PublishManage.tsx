@@ -14,7 +14,7 @@ import PublishPagesSkeleton from '@/components/app/publish-manage/PublishPagesSk
 import UpdateNamespace from '@/components/app/publish-manage/UpdateNamespace';
 import { PublishService } from '@/application/services/domains';
 import { useCurrentUser } from '@/components/main/app.hooks';
-import { getProAccessPlanFromSubscriptions, isAppFlowyHosted } from '@/utils/subscription';
+import { getProAccessPlanFromSubscriptions, isSynapseHosted } from '@/utils/subscription';
 import { openUrl } from '@/utils/url';
 
 export function PublishManage({ onClose }: { onClose?: () => void }) {
@@ -144,7 +144,7 @@ export function PublishManage({ onClose }: { onClose?: () => void }) {
 
   const { publish, unpublish } = usePublishing();
   const getSubscriptions = useGetSubscriptions();
-  const isHosted = useMemo(() => isAppFlowyHosted(), []);
+  const isHosted = useMemo(() => isSynapseHosted(), []);
   const handlePublish = useCallback(
     async (view: View, publishName: string) => {
       if (!publish) return;

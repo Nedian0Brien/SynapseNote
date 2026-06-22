@@ -68,7 +68,7 @@ describe('isSafeRedirectUrl', () => {
     });
 
     it('returns false for an absolute URL with a different subdomain', () => {
-      expect(isSafeRedirectUrl('https://phishing.appflowy.com')).toBe(false);
+      expect(isSafeRedirectUrl('https://phishing.synapsenote.com')).toBe(false);
     });
 
     it('returns false for a protocol-relative URL', () => {

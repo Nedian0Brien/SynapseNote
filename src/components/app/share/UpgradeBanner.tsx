@@ -9,7 +9,7 @@ import { BillingService } from '@/application/services/domains';
 import { useUserWorkspaceInfo } from '@/components/app/app.hooks';
 import { useCurrentUser } from '@/components/main/app.hooks';
 import { Button } from '@/components/ui/button';
-import { isAppFlowyHosted } from '@/utils/subscription';
+import { isSynapseHosted } from '@/utils/subscription';
 
 const CLOSE_UPGRADE_LOCAL_STORAGE_KEY = 'close_upgrade_banner';
 
@@ -28,7 +28,7 @@ export function UpgradeBanner({ activeSubscriptionPlan }: { activeSubscriptionPl
   }, [activeSubscriptionPlan]);
 
   const isOfficial = useMemo(() => {
-    return isAppFlowyHosted();
+    return isSynapseHosted();
   }, []);
 
   const handleUpgrade = useCallback(async () => {

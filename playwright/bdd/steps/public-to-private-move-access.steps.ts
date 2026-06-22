@@ -18,10 +18,10 @@ const SEEDED_PRIVATE_SPACE_NAME = 'ptp0527 BDD Seeded Private Space';
 const SEEDED_PRIVATE_TARGET_PAGE_NAME = 'ptp0527 BDD Seeded Private Target Page';
 
 const SEEDED_ACCOUNTS = {
-  owner: 'ptp0527-own@appflowy.local',
-  'member 1': 'ptp0527-m1@appflowy.local',
-  'member 2': 'ptp0527-m2@appflowy.local',
-  'member 3': 'ptp0527-m3@appflowy.local',
+  owner: 'ptp0527-own@synapsenote.local',
+  'member 1': 'ptp0527-m1@synapsenote.local',
+  'member 2': 'ptp0527-m2@synapsenote.local',
+  'member 3': 'ptp0527-m3@synapsenote.local',
 } as const;
 
 type SeededAccountAlias = keyof typeof SEEDED_ACCOUNTS;
@@ -72,7 +72,7 @@ After(async ({ page, request }) => {
 });
 
 Given('the seeded ptp0527 public-to-private fixture exists', async () => {
-  // Created by AppFlowy-Cloud-Premium:
+  // Created by SynapseNote-Cloud-Premium:
   // cargo test --test public_to_private_access_seed seed_public_to_private_move_web_suite -- --ignored
 });
 
@@ -378,7 +378,7 @@ function sharePersonRow(page: Page, email: string) {
 function sharePeopleRows(page: Page) {
   return ShareSelectors.sharePopover(page)
     .locator('.group')
-    .filter({ hasText: /@appflowy\.local/ });
+    .filter({ hasText: /@synapsenote\.local/ });
 }
 
 function parseAccountAliases(aliasesValue: string): SeededAccountAlias[] {

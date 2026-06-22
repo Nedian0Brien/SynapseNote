@@ -82,7 +82,7 @@ test.describe('Row Document Test', () => {
     await page.waitForTimeout(3000);
 
     // Scroll down to make sure editor is visible
-    const scrollContainer = page.locator('[role="dialog"]').locator('.appflowy-scroll-container');
+    const scrollContainer = page.locator('[role="dialog"]').locator('.synapsenote-scroll-container');
     if ((await scrollContainer.count()) > 0) {
       await scrollContainer.evaluate(el => el.scrollTo(0, 9999));
       await page.waitForTimeout(1000);
@@ -142,7 +142,7 @@ test.describe('Row Document Test', () => {
     await openCard(page, cardName);
     await page.waitForTimeout(3000);
 
-    const scrollContainer = page.locator('[role="dialog"]').locator('.appflowy-scroll-container');
+    const scrollContainer = page.locator('[role="dialog"]').locator('.synapsenote-scroll-container');
     if ((await scrollContainer.count()) > 0) {
       await scrollContainer.evaluate(el => el.scrollTo(0, 9999));
       await page.waitForTimeout(1000);
@@ -183,7 +183,7 @@ test.describe('Row Document Test', () => {
     await page.waitForTimeout(3000);
 
     // Scroll down to ensure the editor content area is visible
-    const scrollContainer = page.locator('[role="dialog"]').locator('.appflowy-scroll-container');
+    const scrollContainer = page.locator('[role="dialog"]').locator('.synapsenote-scroll-container');
     if ((await scrollContainer.count()) > 0) {
       await scrollContainer.evaluate(el => el.scrollTo(0, 9999));
       await page.waitForTimeout(1000);
@@ -205,7 +205,7 @@ test.describe('Row Document Test', () => {
   }) => {
     const testEmail = generateRandomEmail();
     const cardName = `Bookmark-${uuidv4().substring(0, 6)}`;
-    const bookmarkUrl = `https://appflowy.io/bookmark-test-${uuidv4().substring(0, 8)}`;
+    const bookmarkUrl = `https://synapsenote.io/bookmark-test-${uuidv4().substring(0, 8)}`;
 
     // Given: a board with a new card and the row document editor focused
     await createBoardAndWait(page, request, testEmail);
@@ -247,7 +247,7 @@ test.describe('Row Document Test', () => {
     await openCard(page, cardName);
     await page.waitForTimeout(2000);
 
-    const scrollContainer = dialog.locator('.appflowy-scroll-container');
+    const scrollContainer = dialog.locator('.synapsenote-scroll-container');
 
     if ((await scrollContainer.count()) > 0) {
       await scrollContainer.evaluate((el) => el.scrollTo(0, 9999));

@@ -6,7 +6,7 @@
  *
  * NOTE: Several tests are skipped in the original Cypress file due to view sync
  * timing issues. The conditional check based on
- * APPFLOWY_ENABLE_RELATION_ROLLUP_EDIT is preserved.
+ * SYNAPSENOTE_ENABLE_RELATION_ROLLUP_EDIT is preserved.
  */
 import { test, expect } from '@playwright/test';
 import {
@@ -17,11 +17,11 @@ import {
 import { generateRandomEmail } from '../../support/test-config';
 import { signInAndCreateDatabaseView, waitForGridReady, addPropertyColumn } from '../../support/database-ui-helpers';
 
-const isRelationRollupEditEnabled = process.env.APPFLOWY_ENABLE_RELATION_ROLLUP_EDIT === 'true';
+const isRelationRollupEditEnabled = process.env.SYNAPSENOTE_ENABLE_RELATION_ROLLUP_EDIT === 'true';
 
 test.describe('Relation Cell Type', () => {
   // Skip entire suite if relation/rollup edit is not enabled (matches Cypress conditional describe)
-  test.skip(!isRelationRollupEditEnabled, 'APPFLOWY_ENABLE_RELATION_ROLLUP_EDIT is not enabled');
+  test.skip(!isRelationRollupEditEnabled, 'SYNAPSENOTE_ENABLE_RELATION_ROLLUP_EDIT is not enabled');
 
   test.beforeEach(async ({ page }) => {
     page.on('pageerror', (err) => {

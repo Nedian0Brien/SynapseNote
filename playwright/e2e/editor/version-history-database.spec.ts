@@ -27,7 +27,7 @@ import { testLog } from '../../support/test-helpers';
  */
 
 // Seeded account + page. Overridable via env so CI can point at its own fixture.
-const SEEDED_USER_EMAIL = process.env.SEEDED_USER_EMAIL || 'nathan@appflowy.io';
+const SEEDED_USER_EMAIL = process.env.SEEDED_USER_EMAIL || 'nathan@synapsenote.io';
 const SEEDED_USER_PASSWORD = process.env.SEEDED_USER_PASSWORD || 'REDACTED_TEST_PASSWORD';
 const SEEDED_WORKSPACE_ID =
   process.env.SEEDED_WORKSPACE_ID || '997c87ed-1667-4a62-8c0a-a74ee1aadb4b';

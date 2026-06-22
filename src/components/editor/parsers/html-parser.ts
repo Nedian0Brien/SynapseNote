@@ -41,7 +41,7 @@ export function parseHTML(html: string, options: HTMLParseOptions = {}): ParsedB
     const tree = deserializeHTMLToAST(safeHTML);
 
     // Step 3: Convert HAST to ParsedBlocks
-    const blocks = convertASTToAppFlowyBlocks(tree.children as HastElement[], options);
+    const blocks = convertASTToSynapseNoteBlocks(tree.children as HastElement[], options);
 
     return blocks;
   } catch (error) {
@@ -64,13 +64,13 @@ function deserializeHTMLToAST(html: string): HastRoot {
 }
 
 /**
- * Converts HTML AST nodes to AppFlowy block structures
+ * Converts HTML AST nodes to SynapseNote block structures
  * @param nodes Array of HAST nodes
  * @param options Parse options
  * @param depth Current depth (for max depth limiting)
  * @returns Array of parsed blocks
  */
-function convertASTToAppFlowyBlocks(nodes: HastElement[], options: HTMLParseOptions, depth = 0): ParsedBlock[] {
+function convertASTToSynapseNoteBlocks(nodes: HastElement[], options: HTMLParseOptions, depth = 0): ParsedBlock[] {
   const maxDepth = options.maxDepth || 20;
 
   if (depth > maxDepth) {
@@ -103,7 +103,7 @@ function convertASTToAppFlowyBlocks(nodes: HastElement[], options: HTMLParseOpti
     } else {
       // If element couldn't be converted, try processing its children
       if (node.children && node.children.length > 0) {
-        const childBlocks = convertASTToAppFlowyBlocks(node.children as HastElement[], options, depth + 1);
+        const childBlocks = convertASTToSynapseNoteBlocks(node.children as HastElement[], options, depth + 1);
 
         blocks.push(...childBlocks);
       }

@@ -17,7 +17,7 @@ const MenuProps = {
   disableRestoreFocus: true,
   disableEnforceFocus: true,
   PaperProps: {
-    className: 'p-2 appflowy-scroller',
+    className: 'p-2 synapsenote-scroller',
   },
 };
 

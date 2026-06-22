@@ -1,4 +1,4 @@
-import { EditorProvider } from '@appflowyinc/editor';
+import { EditorProvider } from '@/vendor/synapsenote-editor';
 
 import { ChatMessageMetadata } from '@/components/chat/types';
 

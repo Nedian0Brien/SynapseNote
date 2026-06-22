@@ -52,7 +52,7 @@ function NumberPropertyMenuContent({ fieldId }: { fieldId: string }) {
             {selectFormatValue?.label}
           </DropdownMenuSubTrigger>
           <DropdownMenuPortal>
-            <DropdownMenuSubContent className={'appflowy-scroller max-h-[450px] max-w-[240px] overflow-y-auto pt-0'}>
+            <DropdownMenuSubContent className={'synapsenote-scroller max-h-[450px] max-w-[240px] overflow-y-auto pt-0'}>
               <div className={'sticky top-0 z-[1] flex flex-col bg-surface-primary pt-2'}>
                 <SearchInput
                   inputRef={(el) => {

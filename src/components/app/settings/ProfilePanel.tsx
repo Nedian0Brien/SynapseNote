@@ -114,7 +114,7 @@ export function ProfilePanel() {
       <div className='border-b border-border-primary px-8 py-5'>
         <h2 className='text-xl font-semibold text-text-primary'>{t('settings.accountPage.profile.title')}</h2>
       </div>
-      <div className='appflowy-scroller flex-1 overflow-y-auto px-8 py-6'>
+      <div className='synapsenote-scroller flex-1 overflow-y-auto px-8 py-6'>
         <div className='flex flex-col gap-6'>
           <div className='flex items-center gap-4'>
             <Avatar size='xl'>

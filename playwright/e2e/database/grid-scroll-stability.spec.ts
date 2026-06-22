@@ -54,7 +54,7 @@ test.describe('Grid Scroll Stability', () => {
 
     // When: rapidly scrolling the grid container
     await page.evaluate(() => {
-      const el = document.querySelector('.appflowy-custom-scroller');
+      const el = document.querySelector('.synapsenote-custom-scroller');
       if (el) {
         for (let i = 0; i < 5; i++) {
           el.scrollTop = i * 20;
@@ -86,7 +86,7 @@ test.describe('Grid Scroll Stability', () => {
 
     // When: rapidly scrolling in multiple cycles to trigger timeout resets
     await page.evaluate(() => {
-      const el = document.querySelector('.appflowy-custom-scroller');
+      const el = document.querySelector('.synapsenote-custom-scroller');
       if (el) {
         for (let cycle = 0; cycle < 3; cycle++) {
           for (let i = 0; i < 5; i++) {

@@ -127,7 +127,7 @@ describe('PromptModalProvider', () => {
 
   it('resets custom prompts when the next workspace has no saved config', async () => {
     localStorage.setItem(
-      'appflowy_prompt_db_config_workspace-a',
+      'synapsenote_prompt_db_config_workspace-a',
       JSON.stringify(configA),
     );
     const { getPromptModalState, rerenderWorkspace } = renderProvider(
@@ -163,11 +163,11 @@ describe('PromptModalProvider', () => {
 
   it('clears stale selected prompts when switching to a workspace with different custom prompts', async () => {
     localStorage.setItem(
-      'appflowy_prompt_db_config_workspace-a',
+      'synapsenote_prompt_db_config_workspace-a',
       JSON.stringify(configA),
     );
     localStorage.setItem(
-      'appflowy_prompt_db_config_workspace-b',
+      'synapsenote_prompt_db_config_workspace-b',
       JSON.stringify(configB),
     );
     loadDatabasePrompts.mockImplementation(async (config) => {
@@ -217,11 +217,11 @@ describe('PromptModalProvider', () => {
     }>();
 
     localStorage.setItem(
-      'appflowy_prompt_db_config_workspace-a',
+      'synapsenote_prompt_db_config_workspace-a',
       JSON.stringify(configA),
     );
     localStorage.setItem(
-      'appflowy_prompt_db_config_workspace-b',
+      'synapsenote_prompt_db_config_workspace-b',
       JSON.stringify(configB),
     );
     loadDatabasePrompts.mockImplementation((config) => {

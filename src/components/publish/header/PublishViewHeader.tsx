@@ -50,7 +50,7 @@ export function PublishViewHeader({
         height: HEADER_HEIGHT,
         minHeight: HEADER_HEIGHT,
       }}
-      className={'appflowy-top-bar sticky top-0 z-[100] flex transform-gpu px-5'}
+      className={'synapsenote-top-bar sticky top-0 z-[100] flex transform-gpu px-5'}
     >
       <div className={'flex w-full items-center justify-between gap-4 overflow-hidden'}>
         {!openDrawer && !isMobile && (

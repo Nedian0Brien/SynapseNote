@@ -5,7 +5,7 @@
  * to ensure consistent behavior across platforms.
  *
  * Database Container behavior reference:
- * - AppFlowy-Premium/frontend/doc/context/database_container_behavior.md
+ * - SynapseNote-Premium/frontend/doc/context/database_container_behavior.md
  * - Scenario 1: Sidebar create → creates container with child view
  * - Scenario 2: New DB in doc → creates container, returns embedded child view
  * - Scenario 3: Link existing DB → NO container, embedded=true

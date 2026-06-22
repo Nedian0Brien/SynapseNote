@@ -1,12 +1,12 @@
 /**
  * Multipart upload implementation for large files (>=5MB)
- * Follows the same API patterns as the desktop AppFlowy implementation
+ * Follows the same API patterns as the desktop implementation
  */
 
 import { v4 as uuidv4 } from 'uuid';
 
 import {
-  getAppFlowyFileUrl,
+  getSynapseFileUrl,
   getMultipartAbortUrl,
   getMultipartCompleteUrl,
   getMultipartCreateUrl,
@@ -237,7 +237,7 @@ async function completeMultipartUpload(
   }
 
   // Return the complete file URL
-  return getAppFlowyFileUrl(workspaceId, parentDir, fileId);
+  return getSynapseFileUrl(workspaceId, parentDir, fileId);
 }
 
 /**
