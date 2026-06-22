@@ -7,7 +7,7 @@ import pytest
 
 os.environ.setdefault("VAULT_ROOT", "/tmp/test-vault")
 
-from app.services.document_service import DocumentConflictError, read_document, write_document
+from app.services.document_service import DocumentConflictError, delete_document, read_document, write_document
 from app.services.vault_events import content_hash
 
 
@@ -145,3 +145,17 @@ class TestWriteDocument:
 
         assert result["id"] == "projects/empty.md"
         assert (vault / "projects" / "empty.md").read_text() == ""
+
+
+class TestDeleteDocument:
+    def test_delete_moves_document_to_trash(self, vault):
+        result = delete_document("projects/alpha.md")
+
+        assert result["id"] == "projects/alpha.md"
+        assert result["trashedPath"].startswith(".synapsenote/trash/")
+        assert not (vault / "projects" / "alpha.md").exists()
+        assert (vault / result["trashedPath"]).read_text() == textwrap.dedent("""\
+            # Alpha Project
+            This is the alpha project content.
+            #ml #rag
+        """)

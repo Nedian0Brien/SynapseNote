@@ -8,7 +8,8 @@ import pytest
 os.environ.setdefault("VAULT_ROOT", "/tmp/test-vault")
 
 from app.indexer.vault_indexer import VaultIndexer
-from app.services.graph_service import build_graph
+from app.services.graph_service import build_graph, get_graph_diagnostics
+from app.db.connection import get_db
 
 
 @pytest.fixture()
@@ -177,3 +178,56 @@ class TestBuildGraph:
 
         nodes = {node["id"]: node for node in result["nodes"]}
         assert nodes["notes/callout.md"]["summary"] == "Important"
+
+    def test_unresolved_links_are_reported_in_diagnostics(self, vault):
+        (vault / "notes" / "broken.md").write_text(
+            "[[missing-note]]\n[Missing](missing.md)\n![[missing.png]]\n",
+            encoding="utf-8",
+        )
+
+        VaultIndexer().full_rebuild()
+        diagnostics = get_graph_diagnostics()
+
+        unresolved = {
+            (item["source"], item["target"], item["linkType"])
+            for item in diagnostics["unresolvedLinks"]
+        }
+        assert ("notes/broken.md", "missing-note", "wikilink") in unresolved
+        assert ("notes/broken.md", "missing.md", "markdown_link") in unresolved
+        assert ("notes/broken.md", "missing.png", "attachment") in unresolved
+        assert diagnostics["stats"]["unresolvedLinks"] >= 3
+
+    def test_incremental_update_matches_full_rebuild_for_changed_document(self, vault):
+        indexer = VaultIndexer()
+        source = vault / "notes" / "changing.md"
+        source.write_text(
+            "[[beta]]\n[Alpha](../projects/alpha.md)\n![[diagram.png]]\n#fresh\n",
+            encoding="utf-8",
+        )
+        (vault / "notes" / "diagram.png").write_bytes(b"png")
+
+        indexer.update_node(vault / "notes" / "diagram.png")
+        indexer.update_node(source)
+        incremental_snapshot = _graph_index_snapshot()
+
+        indexer.full_rebuild()
+        rebuild_snapshot = _graph_index_snapshot()
+
+        assert incremental_snapshot == rebuild_snapshot
+
+
+def _graph_index_snapshot():
+    db = get_db()
+    nodes = {
+        (row["id"], row["type"], row["title"])
+        for row in db.execute("SELECT id, type, title FROM nodes").fetchall()
+    }
+    edges = {
+        (row["source"], row["target"], row["edge_type"])
+        for row in db.execute("SELECT source, target, edge_type FROM edges").fetchall()
+    }
+    unresolved = {
+        (row["source"], row["target"], row["link_type"], row["raw_target"])
+        for row in db.execute("SELECT source, target, link_type, raw_target FROM unresolved_links").fetchall()
+    }
+    return {"nodes": nodes, "edges": edges, "unresolved": unresolved}

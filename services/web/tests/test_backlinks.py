@@ -72,3 +72,38 @@ def test_backlinks_endpoint_requires_auth(tmp_path, monkeypatch):
     response = client.get("/api/nodes/b.md/backlinks")
 
     assert response.status_code == 401
+
+
+def test_graph_diagnostics_endpoint_returns_unresolved_links(tmp_path, monkeypatch):
+    monkeypatch.setenv("VAULT_ROOT", str(tmp_path))
+    (tmp_path / "source.md").write_text("[[missing]]\n", encoding="utf-8")
+    run_vault_index()
+
+    client = create_test_client(tmp_path, monkeypatch)
+    sign_in(client)
+
+    response = client.get("/api/graph/diagnostics")
+
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["unresolvedLinks"] == [
+        {
+            "source": "source.md",
+            "target": "missing",
+            "linkType": "wikilink",
+            "rawTarget": "missing",
+        }
+    ]
+    assert data["stats"]["unresolvedLinks"] == 1
+
+
+def test_graph_diagnostics_endpoint_requires_auth(tmp_path, monkeypatch):
+    monkeypatch.setenv("VAULT_ROOT", str(tmp_path))
+    (tmp_path / "source.md").write_text("[[missing]]\n", encoding="utf-8")
+    run_vault_index()
+
+    client = create_test_client(tmp_path, monkeypatch)
+
+    response = client.get("/api/graph/diagnostics")
+
+    assert response.status_code == 401

@@ -15,6 +15,7 @@ from app.db.connection import get_db
 from app.db.schema import init_schema
 from app.indexer.vault_indexer import VaultIndexer
 from app.indexer.vault_watcher import VaultWatcher
+from app.routers.attachment_router import router as attachment_router
 from app.routers.auth_router import create_auth_router
 from app.routers.chat_router import create_chat_router
 from app.routers.context_router import router as context_router
@@ -102,6 +103,7 @@ def create_app() -> FastAPI:
     app.include_router(create_chat_router(chat_service, chat_runtime, capture_service))
     app.include_router(graph_router)
     app.include_router(document_router)
+    app.include_router(attachment_router)
     app.include_router(vault_events_router)
 
     return app

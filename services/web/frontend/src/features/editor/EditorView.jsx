@@ -18,6 +18,8 @@ export function EditorView({ path, onUnauthorized, onNavigate, onClose }) {
     debouncedSave,
     flush,
     reload,
+    keepLocalVersion,
+    loadRemoteVersion,
   } = useFileContent(path, { onUnauthorized });
   const editorRef = useRef(null);
   const containerRef = useRef(null);
@@ -159,7 +161,9 @@ export function EditorView({ path, onUnauthorized, onNavigate, onClose }) {
     );
   }
 
-  if (error) {
+  const isSyncWarning = ['remote_changed', 'conflict', 'deleted', 'moved'].includes(syncStatus);
+
+  if (error && !isSyncWarning) {
     return (
       <div className="editor-view" style={{ alignItems: 'center', justifyContent: 'center' }}>
         <span className="icon" style={{ fontSize: 28, color: 'var(--error)', opacity: 0.5 }}>error_outline</span>
@@ -195,10 +199,20 @@ export function EditorView({ path, onUnauthorized, onNavigate, onClose }) {
                   ? '문서 위치가 변경됨'
                   : '동기화 연결 대기 중'}
           </span>
-          {(syncStatus === 'remote_changed' || syncStatus === 'conflict' || syncStatus === 'disconnected') && (
+          {syncStatus === 'disconnected' && (
             <button type="button" onClick={() => { void reload(); }}>
               다시 불러오기
             </button>
+          )}
+          {(syncStatus === 'remote_changed' || syncStatus === 'conflict') && (
+            <>
+              <button type="button" onClick={() => { void keepLocalVersion(); }}>
+                내 변경 유지
+              </button>
+              <button type="button" onClick={() => { void loadRemoteVersion(); }}>
+                서버 버전 불러오기
+              </button>
+            </>
           )}
         </div>
       )}

@@ -41,7 +41,7 @@ export function useFileContent(path, { onUnauthorized } = {}) {
 
   useEffect(() => { load(); }, [load]);
 
-  const save = useCallback(async (newContent) => {
+  const save = useCallback(async (newContent, { force = false } = {}) => {
     if (!path) return;
     setSaving(true);
     setError(null);
@@ -49,7 +49,7 @@ export function useFileContent(path, { onUnauthorized } = {}) {
     try {
       const resolvedPath = encodePath(path);
       const body = { content: newContent };
-      if (currentHashRef.current) {
+      if (!force && currentHashRef.current) {
         body.baseHash = currentHashRef.current;
       }
       const json = await apiRequest(`/api/documents/${resolvedPath}`, {
@@ -94,6 +94,25 @@ export function useFileContent(path, { onUnauthorized } = {}) {
     if (pendingContentRef.current == null) return;
     await save(pendingContentRef.current);
   }, [save]);
+
+  const keepLocalVersion = useCallback(async () => {
+    if (saveTimer.current) {
+      clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+    }
+
+    const localContent = pendingContentRef.current ?? content;
+    await save(localContent, { force: true });
+  }, [content, save]);
+
+  const loadRemoteVersion = useCallback(async () => {
+    if (saveTimer.current) {
+      clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+    }
+    pendingContentRef.current = null;
+    await load();
+  }, [load]);
 
   useEffect(() => () => {
     if (saveTimer.current) {
@@ -167,5 +186,17 @@ export function useFileContent(path, { onUnauthorized } = {}) {
     };
   }, [path, load]);
 
-  return { content, loading, error, saving, syncStatus, save, debouncedSave, flush, reload: load };
+  return {
+    content,
+    loading,
+    error,
+    saving,
+    syncStatus,
+    save,
+    debouncedSave,
+    flush,
+    reload: load,
+    keepLocalVersion,
+    loadRemoteVersion,
+  };
 }

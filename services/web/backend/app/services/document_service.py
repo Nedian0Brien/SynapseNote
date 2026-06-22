@@ -5,7 +5,7 @@ import os
 import re
 import shutil
 import tempfile
-from datetime import datetime
+from datetime import datetime, timezone
 
 from .vault_paths import resolve_vault_path
 from .vault_events import content_hash
@@ -139,7 +139,7 @@ def create_document(path: str, content: str = "") -> dict[str, str]:
 
 
 def delete_document(node_id: str) -> dict[str, str]:
-    """Delete a markdown document from the vault."""
+    """Move a markdown document to the vault trash."""
     file_path = _document_path(node_id)
 
     if not file_path.exists():
@@ -148,8 +148,10 @@ def delete_document(node_id: str) -> dict[str, str]:
     if file_path.is_dir():
         raise ValueError(f"not a file: {node_id}")
 
-    file_path.unlink()
-    return {"id": node_id}
+    trash_path = _trash_path(node_id)
+    trash_path.parent.mkdir(parents=True, exist_ok=True)
+    shutil.move(str(file_path), str(trash_path))
+    return {"id": node_id, "trashedPath": trash_path.relative_to(resolve_vault_path(".")).as_posix()}
 
 
 def move_document(node_id: str, new_path: str) -> dict[str, str]:
@@ -178,3 +180,9 @@ def move_document(node_id: str, new_path: str) -> dict[str, str]:
         "updatedAt": updated_at,
         "hash": content_hash(content),
     }
+
+
+def _trash_path(node_id: str):
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+    safe_relative = node_id.strip("/")
+    return resolve_vault_path(f".synapsenote/trash/{timestamp}/{safe_relative}")

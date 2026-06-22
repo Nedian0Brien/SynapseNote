@@ -68,3 +68,8 @@ class DocumentCreatePayload(BaseModel):
 
 class DocumentMovePayload(BaseModel):
     new_path: str
+
+
+class AttachmentWritePayload(BaseModel):
+    path: str
+    contentBase64: str

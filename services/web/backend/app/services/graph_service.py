@@ -100,3 +100,31 @@ def get_backlinks(node_id: str) -> list[dict[str, str]]:
         }
         for row in rows
     ]
+
+
+def get_graph_diagnostics() -> dict[str, object]:
+    db = get_db()
+    rows = db.execute(
+        """
+        SELECT source, target, link_type, raw_target
+        FROM unresolved_links
+        ORDER BY source, link_type, raw_target
+        """
+    ).fetchall()
+
+    unresolved = [
+        {
+            "source": row["source"],
+            "target": row["target"],
+            "linkType": row["link_type"],
+            "rawTarget": row["raw_target"],
+        }
+        for row in rows
+    ]
+
+    return {
+        "unresolvedLinks": unresolved,
+        "stats": {
+            "unresolvedLinks": len(unresolved),
+        },
+    }

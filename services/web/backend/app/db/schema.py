@@ -25,9 +25,18 @@ def init_schema(conn: sqlite3.Connection) -> None:
             PRIMARY KEY (source, target, edge_type)
         );
 
+        CREATE TABLE IF NOT EXISTS unresolved_links (
+            source      TEXT NOT NULL,
+            target      TEXT NOT NULL,
+            link_type   TEXT NOT NULL,
+            raw_target  TEXT NOT NULL,
+            PRIMARY KEY (source, target, link_type, raw_target)
+        );
+
         CREATE INDEX IF NOT EXISTS idx_edges_source ON edges(source);
         CREATE INDEX IF NOT EXISTS idx_edges_target ON edges(target);
         CREATE INDEX IF NOT EXISTS idx_nodes_type   ON nodes(type);
+        CREATE INDEX IF NOT EXISTS idx_unresolved_links_source ON unresolved_links(source);
     """)
 
     # 기존 DB에 x, y 컬럼 없으면 추가 (마이그레이션)

@@ -35,10 +35,10 @@
   - 증거: `hash` 필드, document tests.
 - [x] 오래된 `baseHash` 저장은 409 충돌로 거부한다.
   - 증거: `document_revision_conflict` tests.
-- [ ] 삭제는 즉시 삭제 대신 휴지통 정책을 제공한다.
-  - 검증: 삭제된 파일이 `.synapsenote/trash/` 또는 결정된 휴지통에 보존됨.
-- [ ] attachment read/write/list API를 제공한다.
-  - 검증: vault 내부 attachment 업로드/조회/삭제 테스트.
+- [x] 삭제는 즉시 삭제 대신 휴지통 정책을 제공한다.
+  - 증거: `.synapsenote/trash/` 이동, document service/router tests.
+- [x] attachment read/write/list API를 제공한다.
+  - 증거: attachment create/list/read/delete API tests.
 
 ## 3. 준실시간 동기화
 
@@ -54,8 +54,8 @@
   - 증거: `syncStatus`, hook tests.
 - [x] Graph/Sidebar가 vault 이벤트를 구독해 자동 갱신된다.
   - 증거: `useVaultEvents`, `useGraph`, `useVaultTree`, hook tests.
-- [ ] conflict UI가 “내 변경 유지 / 서버 버전 불러오기”를 명확히 제공한다.
-  - 검증: 충돌 상태에서 사용자 선택별 동작 테스트.
+- [x] conflict UI가 “내 변경 유지 / 서버 버전 불러오기”를 명확히 제공한다.
+  - 증거: `EditorView` sync banner, `useFileContent` conflict action tests.
 
 ## 4. Markdown/Obsidian 호환
 
@@ -82,12 +82,12 @@
   - 증거: `nodes.tags`, frontmatter/body tag tests.
 - [x] edge type을 `directory`, `wikilink`, `markdown_link`, `tag`, `attachment`로 확장한다.
   - 증거: 각 edge type 구현, graph tests.
-- [ ] 깨진 링크와 미해결 wikilink를 별도 상태로 표시한다.
-  - 검증: unresolved edge 또는 diagnostics API.
-- [ ] full rebuild와 incremental update가 같은 graph 결과를 만든다.
-  - 검증: 동일 fixture에서 rebuild/update 비교 테스트.
-- [ ] 1,000개 문서 규모 인덱싱 시간을 측정한다.
-  - 검증: benchmark 또는 성능 smoke 결과.
+- [x] 깨진 링크와 미해결 wikilink를 별도 상태로 표시한다.
+  - 증거: `unresolved_links` index table, `/api/graph/diagnostics`, diagnostics tests.
+- [x] full rebuild와 incremental update가 같은 graph 결과를 만든다.
+  - 증거: changed document fixture parity test.
+- [x] 1,000개 문서 규모 인덱싱 시간을 측정한다.
+  - 증거: `/usr/bin/python3 services/web/backend/tools/benchmark_vault_indexer.py` → `docs=1000 nodes=1002 edges=3001 elapsed_seconds=18.748`.
 
 ## 6. Markdown Editor
 

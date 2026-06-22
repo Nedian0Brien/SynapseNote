@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Query, Request
 
-from app.services.graph_service import build_graph
+from app.services.graph_service import build_graph, get_graph_diagnostics
 
 router = APIRouter(prefix="/api")
 
@@ -19,3 +19,12 @@ async def get_graph(
 
     data = build_graph(query=q, threshold=threshold)
     return {"success": True, "data": data, "meta": {}}
+
+
+@router.get("/graph/diagnostics")
+async def graph_diagnostics(request: Request) -> dict[str, object]:
+    user_id = request.session.get("user_id")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="unauthorized")
+
+    return {"success": True, "data": get_graph_diagnostics(), "meta": {}}

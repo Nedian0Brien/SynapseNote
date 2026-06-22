@@ -104,8 +104,11 @@ def test_delete_document_removes_file(tmp_path, monkeypatch):
     response = client.delete("/api/documents/to-delete.md")
 
     assert response.status_code == 200
-    assert response.json()["data"]["id"] == "to-delete.md"
+    data = response.json()["data"]
+    assert data["id"] == "to-delete.md"
+    assert data["trashedPath"].startswith(".synapsenote/trash/")
     assert not (tmp_path / "to-delete.md").exists()
+    assert (tmp_path / data["trashedPath"]).read_text(encoding="utf-8") == "# Delete me\n"
 
 
 def test_delete_document_not_found_returns_404(tmp_path, monkeypatch):
@@ -256,5 +259,53 @@ def test_vault_events_requires_authentication(tmp_path, monkeypatch):
     client = create_test_client(tmp_path, monkeypatch)
 
     response = client.get("/api/vault/events")
+
+    assert response.status_code == 401
+
+
+def test_attachment_crud_roundtrip(tmp_path, monkeypatch):
+    client = create_test_client(tmp_path, monkeypatch)
+    sign_in(client)
+
+    create_response = client.post(
+        "/api/attachments",
+        json={"path": "Attachments/diagram.png", "contentBase64": "cG5n"},
+    )
+
+    assert create_response.status_code == 201
+    create_data = create_response.json()["data"]
+    assert create_data["path"] == "Attachments/diagram.png"
+    assert create_data["size"] == 3
+    assert (tmp_path / "Attachments" / "diagram.png").read_bytes() == b"png"
+
+    list_response = client.get("/api/attachments")
+    assert list_response.status_code == 200
+    assert [item["path"] for item in list_response.json()["data"]] == ["Attachments/diagram.png"]
+
+    read_response = client.get("/api/attachments/Attachments/diagram.png")
+    assert read_response.status_code == 200
+    assert read_response.json()["data"]["contentBase64"] == "cG5n"
+
+    delete_response = client.delete("/api/attachments/Attachments/diagram.png")
+    assert delete_response.status_code == 200
+    assert not (tmp_path / "Attachments" / "diagram.png").exists()
+
+
+def test_attachment_rejects_markdown_files(tmp_path, monkeypatch):
+    client = create_test_client(tmp_path, monkeypatch)
+    sign_in(client)
+
+    response = client.post(
+        "/api/attachments",
+        json={"path": "note.md", "contentBase64": "IyBOb3RlCg=="},
+    )
+
+    assert response.status_code == 400
+
+
+def test_attachment_requires_authentication(tmp_path, monkeypatch):
+    client = create_test_client(tmp_path, monkeypatch)
+
+    response = client.get("/api/attachments")
 
     assert response.status_code == 401

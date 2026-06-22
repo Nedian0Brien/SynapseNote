@@ -91,6 +91,7 @@ class VaultIndexer:
         # 5. 엣지 계산
         node_id_set = {node["id"] for node in parsed}
         edges: list[tuple[str, str, str, float]] = []
+        unresolved_links: list[tuple[str, str, str, str]] = []
 
         for node in parsed:
             node_id = node["id"]
@@ -115,16 +116,22 @@ class VaultIndexer:
                     if resolved and resolved != node_id and resolved not in seen:
                         seen.add(resolved)
                         edges.append((node_id, resolved, "wikilink", 1.0))
+                    elif not resolved:
+                        unresolved_links.append((node_id, wl_stem, "wikilink", wl_stem))
                 for link_target in node["markdown_links"]:
                     resolved = self._resolve_markdown_link(link_target, source_dir, node_id_set)
                     if resolved and resolved != node_id and resolved not in seen:
                         seen.add(resolved)
                         edges.append((node_id, resolved, "markdown_link", 1.0))
+                    elif not resolved:
+                        unresolved_links.append((node_id, link_target, "markdown_link", link_target))
                 for embed_target in node["embeds"]:
                     resolved = self._resolve_attachment(embed_target, source_dir, node_id_set)
                     if resolved and resolved != node_id and resolved not in seen:
                         seen.add(resolved)
                         edges.append((node_id, resolved, "attachment", 1.0))
+                    elif not resolved:
+                        unresolved_links.append((node_id, embed_target, "attachment", embed_target))
                 for tag in node["tags"]:
                     edges.append((node_id, self._tag_id(tag), "tag", 1.0))
 
@@ -132,6 +139,7 @@ class VaultIndexer:
         conn = get_db()
         with conn:
             conn.execute("DELETE FROM edges")
+            conn.execute("DELETE FROM unresolved_links")
             conn.execute("DELETE FROM nodes")
 
             conn.executemany(
@@ -154,6 +162,11 @@ class VaultIndexer:
                 "INSERT OR REPLACE INTO edges (source, target, edge_type, weight) "
                 "VALUES (?, ?, ?, ?)",
                 edges,
+            )
+            conn.executemany(
+                "INSERT OR REPLACE INTO unresolved_links (source, target, link_type, raw_target) "
+                "VALUES (?, ?, ?, ?)",
+                unresolved_links,
             )
 
         # 7. 레이아웃 계산 후 x, y 저장
@@ -219,6 +232,7 @@ class VaultIndexer:
 
             # outgoing edges 삭제 후 재계산
             conn.execute("DELETE FROM edges WHERE source = ?", (node_id,))
+            conn.execute("DELETE FROM unresolved_links WHERE source = ?", (node_id,))
 
             for tag in node["tags"]:
                 self._upsert_tag_node(conn, tag)
@@ -226,6 +240,7 @@ class VaultIndexer:
             stem_index = self._build_stem_index(conn)
             node_ids = self._all_node_ids(conn)
             new_edges: list[tuple[str, str, str, float]] = []
+            unresolved_links: list[tuple[str, str, str, str]] = []
 
             # directory 엣지: 이 노드의 부모 → 이 노드
             if node_id != ".":
@@ -254,16 +269,22 @@ class VaultIndexer:
                     if resolved and resolved != node_id and resolved not in seen:
                         seen.add(resolved)
                         new_edges.append((node_id, resolved, "wikilink", 1.0))
+                    elif not resolved:
+                        unresolved_links.append((node_id, wl_stem, "wikilink", wl_stem))
                 for link_target in node["markdown_links"]:
                     resolved = self._resolve_markdown_link(link_target, source_dir, node_ids)
                     if resolved and resolved != node_id and resolved not in seen:
                         seen.add(resolved)
                         new_edges.append((node_id, resolved, "markdown_link", 1.0))
+                    elif not resolved:
+                        unresolved_links.append((node_id, link_target, "markdown_link", link_target))
                 for embed_target in node["embeds"]:
                     resolved = self._resolve_attachment(embed_target, source_dir, node_ids)
                     if resolved and resolved != node_id and resolved not in seen:
                         seen.add(resolved)
                         new_edges.append((node_id, resolved, "attachment", 1.0))
+                    elif not resolved:
+                        unresolved_links.append((node_id, embed_target, "attachment", embed_target))
                 for tag in node["tags"]:
                     new_edges.append((node_id, self._tag_id(tag), "tag", 1.0))
 
@@ -272,6 +293,12 @@ class VaultIndexer:
                     "INSERT OR REPLACE INTO edges (source, target, edge_type, weight) "
                     "VALUES (?, ?, ?, ?)",
                     new_edges,
+                )
+            if unresolved_links:
+                conn.executemany(
+                    "INSERT OR REPLACE INTO unresolved_links (source, target, link_type, raw_target) "
+                    "VALUES (?, ?, ?, ?)",
+                    unresolved_links,
                 )
 
             # directory 노드인 경우 자식들의 directory 엣지도 갱신
@@ -308,6 +335,10 @@ class VaultIndexer:
             conn.execute("DELETE FROM nodes WHERE id = ?", (node_id,))
             conn.execute(
                 "DELETE FROM edges WHERE source = ? OR target = ?",
+                (node_id, node_id),
+            )
+            conn.execute(
+                "DELETE FROM unresolved_links WHERE source = ? OR target = ?",
                 (node_id, node_id),
             )
 
@@ -524,6 +555,11 @@ class VaultIndexer:
                 json.dumps(node["tags"], ensure_ascii=False),
                 node["updated_at"],
             ),
+        )
+        conn.execute(
+            "INSERT OR REPLACE INTO edges (source, target, edge_type, weight) "
+            "VALUES (?, ?, ?, ?)",
+            (".", node["id"], "directory", 1.0),
         )
 
     def _build_stem_index(self, conn: sqlite3.Connection) -> dict[str, list[str]]:
