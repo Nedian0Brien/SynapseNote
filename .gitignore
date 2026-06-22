@@ -3,16 +3,16 @@
 # Runtime data (outside repo by policy)
 backups
 rclone.conf
-ops/runtime/*
-!ops/runtime/README.md
-services/couchdb/local.d/private.ini
+legacy/markdown-vault/ops/runtime/*
+!legacy/markdown-vault/ops/runtime/README.md
+legacy/markdown-vault/services/couchdb/local.d/private.ini
 
 # Frontend build/dev artifacts
-services/web/frontend/node_modules
-services/web/frontend/dist
-services/web/frontend/.next
-services/web/frontend/public
-services/web/version.txt
+legacy/markdown-vault/services/web/frontend/node_modules
+legacy/markdown-vault/services/web/frontend/dist
+legacy/markdown-vault/services/web/frontend/.next
+legacy/markdown-vault/services/web/frontend/public
+legacy/markdown-vault/services/web/version.txt
 
 # Generated preview/export files
 docs/*preview.html

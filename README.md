@@ -1,67 +1,52 @@
 # SynapseNote
 
-SynapseNote는 로컬 vault를 탐색하고 편집하는 지식관리용 웹 애플리케이션이다. 현재 active
-런타임은 `FastAPI` 백엔드와 `Vite build + nginx` 프론트엔드로 구성된다.
+SynapseNote의 현재 작업 기준은 AppFlowy Web 기반 구현이다. 루트 저장소는 현행 작업
+위치를 안내하고, 이전 Markdown vault 기반 구현은 `legacy/markdown-vault/`에 보관한다.
 
-## Active 구조
+## 현재 기준
 
 ```txt
 .
-├─ services/
-│  ├─ backup/
-│  └─ web/
-│     ├─ backend/
-│     └─ frontend/
-├─ deploy/
-├─ docs/
-│  ├─ design-system-preview.html
-│  ├─ main-ui-preview.html
-│  └─ archive/
-├─ docker-compose.yml
+├─ .worktrees/
+│  ├─ appflowy-web/     # SynapseNote UI/기능을 이식 중인 AppFlowy Web
+│  └─ appflowy-cloud/   # self-host AppFlowy Cloud compose/runtime
+├─ legacy/
+│  └─ markdown-vault/   # 이전 FastAPI/Vite Markdown vault 구현
+├─ AGENTS.md
 └─ README.md
 ```
 
-## 현재 기준 문서
+## 작업 위치
 
-- `docs/design-system-preview.html`
-- `docs/main-ui-preview.html`
+- 프론트엔드 브랜딩, 그래프 뷰, AppFlowy Web UI 변경:
+  `.worktrees/appflowy-web/`
+- self-host compose, 인증/백엔드 런타임 설정:
+  `.worktrees/appflowy-cloud/`
+- 이전 Markdown vault 앱 참고:
+  `legacy/markdown-vault/`
 
-과거 프리뷰, 진행 로그, 실험 산출물은 `docs/archive/`로 이동 중이며 active 기준 문서가 아니다.
+루트의 `legacy/markdown-vault/`는 현재 배포 기준이 아니다. 예전 기능을 참고할 때만 읽고,
+새 구현은 AppFlowy 기반 워크트리에서 진행한다.
 
-## 실행과 배포
+## 배포 기준
 
-개발/운영용 공식 배포 진입점은 다음 하나다.
+현재 운영 도메인 `https://synapse.lawdigest.kr/`는 AppFlowy Cloud compose의
+`appflowy_web` 서비스를 통해 제공된다.
+
+최근 사용한 웹 배포 절차:
 
 ```bash
-bash deploy/deploy.sh
+cd /home/ubuntu/project/SynapseNote/.worktrees/appflowy-web
+docker build -f docker/Dockerfile -t synapsenote/appflowy-web:local .
+
+cd /home/ubuntu/project/SynapseNote/.worktrees/appflowy-cloud
+docker compose up -d --no-deps --force-recreate appflowy_web
 ```
 
-세부 배포 절차와 검증은 [deploy/README.md](/home/ubuntu/project/SynapseNote/deploy/README.md)를
-따른다.
+배포 확인:
 
-## 환경 변수
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:18080/
+curl -s -o /dev/null -w "%{http_code}\n" https://synapse.lawdigest.kr/
+```
 
-대표 변수:
-
-- `SYNAPSENOTE_USER_ID`
-- `SYNAPSENOTE_USER_PASSWORD`
-- `SYNAPSENOTE_SESSION_SECRET`
-- `SYNAPSENOTE_CHAT_STORE`
-- `VAULT_ROOT`
-- `RUNTIME_ROOT`
-
-## 운영 원칙
-
-- 이 레포는 소스 중심이다.
-- 운영 데이터와 임시 산출물은 레포 밖에 둔다.
-- generated cache, preview 산출물, 폐기 예정 런타임 자산은 active 경로에 두지 않는다.
-
-## 백업/복구
-
-백업은 기본적으로 `${RUNTIME_ROOT}/backups`에 생성된다.
-
-복구 절차:
-
-1. 로컬 아카이브를 해제해 `${VAULT_ROOT}`를 복원한다.
-2. 필요하면 원격 백업을 내려받아 동일 경로로 복원한다.
-3. 애플리케이션 레벨 복구 절차는 해당 기능이 active 경로에서 다시 정리된 뒤 문서화한다.
