@@ -1,0 +1,208 @@
+:root {
+  --sn-bg: #f5f2eb;
+  --sn-surface: #fffdf7;
+  --sn-surface-low: #ede8d8;
+  --sn-surface-high: #e8e0cc;
+  --sn-on-surface: #1a1208;
+  --sn-on-variant: #5a4020;
+  --sn-muted: #8a7050;
+  --sn-outline: rgba(60, 40, 10, 0.14);
+  --sn-outline-soft: rgba(60, 40, 10, 0.08);
+  --sn-primary: #2a1c08;
+  --sn-primary-icon: rgba(245, 240, 228, 0.92);
+  --sn-primary-dim: rgba(42, 28, 8, 0.08);
+  --sn-radius-xs: 4px;
+  --sn-radius-sm: 8px;
+  --sn-radius-md: 11px;
+  --sn-radius-lg: 14px;
+  --sn-radius-xl: 18px;
+  --sn-radius-full: 9999px;
+  --sn-shadow-sm: 0 1px 3px rgba(60, 40, 10, 0.07), 0 1px 2px rgba(60, 40, 10, 0.04);
+  --sn-shadow-md: 0 4px 12px rgba(60, 40, 10, 0.09), 0 2px 5px rgba(60, 40, 10, 0.05);
+  --sn-shadow-lg: 0 10px 28px rgba(60, 40, 10, 0.10), 0 3px 8px rgba(60, 40, 10, 0.06);
+}
+
+:root[data-dark-mode="true"] {
+  --sn-bg: #100d08;
+  --sn-surface: #1a1510;
+  --sn-surface-low: #141008;
+  --sn-surface-high: #261e14;
+  --sn-on-surface: #f0ece2;
+  --sn-on-variant: #c8a878;
+  --sn-muted: #907860;
+  --sn-outline: rgba(200, 160, 80, 0.18);
+  --sn-outline-soft: rgba(200, 160, 80, 0.09);
+  --sn-primary: #d4a850;
+  --sn-primary-icon: rgba(16, 13, 8, 0.92);
+  --sn-primary-dim: rgba(212, 168, 80, 0.10);
+  --sn-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --sn-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45), 0 2px 5px rgba(0, 0, 0, 0.35);
+  --sn-shadow-lg: 0 10px 28px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+:root,
+:root[data-dark-mode="false"] {
+  --bg-body: var(--sn-bg);
+  --bg-header: color-mix(in srgb, var(--sn-surface) 88%, transparent);
+  --bg-body-tertiary: var(--sn-surface-low);
+  --bg-base: var(--sn-surface);
+  --bg-mask: color-mix(in srgb, var(--sn-bg) 70%, transparent);
+  --fill-list-hover: var(--sn-primary-dim);
+  --fill-list-active: var(--sn-primary-dim);
+  --text-title: var(--sn-on-surface);
+  --text-primary: var(--sn-on-surface);
+  --text-secondary: var(--sn-on-variant);
+  --text-caption: var(--sn-muted);
+  --border-primary: var(--sn-outline);
+  --border-secondary: var(--sn-outline-soft);
+  --shadow-menu: var(--sn-shadow-md);
+  --shadow-dialog: var(--sn-shadow-lg);
+  --rounded-100: var(--sn-radius-xs);
+  --rounded-200: var(--sn-radius-sm);
+  --rounded-300: var(--sn-radius-md);
+  --rounded-400: var(--sn-radius-lg);
+  --rounded-500: var(--sn-radius-xl);
+  --brand-skyline: var(--sn-primary);
+  --brand-aqua: var(--sn-muted);
+  --brand-violet: var(--sn-primary);
+  --brand-amethyst: var(--sn-on-variant);
+  --brand-golden: #d4a850;
+  --brand-amber: #c89c46;
+  --brand-lemon: #e0c36a;
+}
+
+body {
+  background: var(--sn-bg);
+  color: var(--sn-on-surface);
+}
+
+.icon {
+  font-family: "Material Symbols Outlined";
+  font-weight: normal;
+  font-style: normal;
+  font-size: 18px;
+  line-height: 1;
+  display: inline-block;
+  text-transform: none;
+  letter-spacing: normal;
+  white-space: nowrap;
+  direction: ltr;
+  -webkit-font-feature-settings: "liga";
+  -webkit-font-smoothing: antialiased;
+}
+
+.icon--fill {
+  font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
+}
+
+.appflowy-layout {
+  background:
+    radial-gradient(circle at 16% 8%, color-mix(in srgb, var(--sn-primary-dim) 78%, transparent), transparent 30%),
+    linear-gradient(180deg, color-mix(in srgb, var(--sn-surface) 82%, transparent), var(--sn-bg));
+}
+
+.appflowy-top-bar {
+  border-bottom: 1px solid var(--sn-outline-soft);
+}
+
+.synapse-graph-toggle {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 80;
+  width: 46px;
+  height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sn-primary-icon);
+  background: var(--sn-primary);
+  border: 1px solid transparent;
+  border-radius: var(--sn-radius-full);
+  box-shadow: var(--sn-shadow-lg);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.synapse-graph-toggle:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 32px rgba(60, 40, 10, 0.16);
+}
+
+.synapse-graph-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  color: var(--on-surface);
+  background: var(--bg);
+  --bg: var(--sn-bg);
+  --surface: var(--sn-surface);
+  --surface-low: var(--sn-surface-low);
+  --surface-high: var(--sn-surface-high);
+  --on-surface: var(--sn-on-surface);
+  --on-variant: var(--sn-on-variant);
+  --muted: var(--sn-muted);
+  --outline: var(--sn-outline);
+  --outline-var: var(--sn-outline-soft);
+  --primary: var(--sn-primary);
+  --primary-icon: var(--sn-primary-icon);
+  --primary-dim: var(--sn-primary-dim);
+  --shadow-sm: var(--sn-shadow-sm);
+  --shadow-md: var(--sn-shadow-md);
+  --shadow-lg: var(--sn-shadow-lg);
+  --r-xs: var(--sn-radius-xs);
+  --r-sm: var(--sn-radius-sm);
+  --r-md: var(--sn-radius-md);
+  --r-lg: var(--sn-radius-lg);
+  --r-xl: var(--sn-radius-xl);
+  --r-full: var(--sn-radius-full);
+  --font-hl: "Lexend", system-ui, sans-serif;
+  --font-bd: Inter, system-ui, sans-serif;
+  --g-bg: var(--sn-bg);
+  --g-dir-fill: var(--sn-primary);
+  --g-dir-icon: var(--sn-primary-icon);
+  --g-hub-fill: var(--sn-surface-low);
+  --g-hub-stroke: var(--sn-primary);
+  --g-doc-fill: var(--sn-surface-low);
+  --g-doc-stroke: #c8b89a;
+  --g-link-dir: rgba(60, 40, 10, 0.32);
+  --g-link-wiki: rgba(60, 40, 10, 0.17);
+  --g-link-ref: rgba(60, 40, 10, 0.09);
+}
+
+:root[data-dark-mode="true"] .synapse-graph-overlay {
+  --g-doc-stroke: #5a4020;
+  --g-link-dir: rgba(200, 160, 80, 0.35);
+  --g-link-wiki: rgba(200, 160, 80, 0.18);
+  --g-link-ref: rgba(200, 160, 80, 0.09);
+}
+
+.synapse-graph-close {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 230;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sn-on-variant);
+  background: color-mix(in srgb, var(--sn-surface) 92%, transparent);
+  border: 1px solid var(--sn-outline);
+  border-radius: var(--sn-radius-full);
+  box-shadow: var(--sn-shadow-md);
+}
+
+@media (max-width: 640px) {
+  .synapse-graph-toggle {
+    right: 16px;
+    bottom: 18px;
+    width: 44px;
+    height: 44px;
+  }
+
+  .synapse-graph-close {
+    top: 12px;
+    right: 12px;
+  }
+}

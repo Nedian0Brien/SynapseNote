@@ -4,6 +4,9 @@
 @import "./variables/semantic.light.css";
 @import "./variables/semantic.dark.css";
 @import "./template.css";
+@import "./synapsenote.css";
+@import "./synapse-graph.css";
+@import "./synapse-panels.css";
 
 :root {
     --shadow-color: rgba(31, 35, 41, 0.10);

@@ -31,6 +31,7 @@ import { RevertedDialog } from '@/components/app/RevertedDialog';
 import { Document } from '@/components/document';
 import RecordNotFound from '@/components/error/RecordNotFound';
 import { useCurrentUser } from '@/components/main/app.hooks';
+import { SynapseGraphWorkspace } from '@/features/synapse-graph/SynapseGraphWorkspace';
 import { ViewService } from '@/application/services/domains';
 import { getAxiosInstance } from '@/application/services/js-services/http';
 import { Log } from '@/utils/log';
@@ -145,6 +146,7 @@ function AppPage() {
   const [syncBound, setSyncBound] = useState(false);
   // Track viewIds that were externally reverted (by another device); show dialog when user opens them
   const [pendingExternalReverts, setPendingExternalReverts] = useState<ReadonlySet<string>>(() => new Set());
+  const [synapseGraphOpen, setSynapseGraphOpen] = useState(false);
   // Derived: show dialog when current view was reverted externally (Vercel rule: derive during render, not in effect)
   const showRevertedDialog = !!viewId && pendingExternalReverts.has(viewId);
 
@@ -696,6 +698,11 @@ function AppPage() {
     });
   }, []);
 
+  const handleOpenGraphNode = useCallback((targetViewId: string) => {
+    setSynapseGraphOpen(false);
+    void toView(targetViewId);
+  }, [toView]);
+
   if (!viewId) return null;
   return (
     <div ref={ref} className={'relative h-full w-full'}>
@@ -712,6 +719,24 @@ function AppPage() {
         </div>
       )}
       {view && <Help />}
+      <button
+        className="synapse-graph-toggle"
+        type="button"
+        title="그래프 열기"
+        aria-label="그래프 열기"
+        onClick={() => setSynapseGraphOpen(true)}
+      >
+        <span className="icon">hub</span>
+      </button>
+      <SynapseGraphWorkspace
+        outline={outline}
+        currentDoc={doc}
+        currentViewId={viewId}
+        open={synapseGraphOpen}
+        refreshKey={viewId}
+        onClose={() => setSynapseGraphOpen(false)}
+        onOpenView={handleOpenGraphNode}
+      />
       <RevertedDialog open={showRevertedDialog} onDismiss={handleDismissRevertedDialog} />
     </div>
   );
