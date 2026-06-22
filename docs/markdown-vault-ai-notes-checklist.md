@@ -97,8 +97,8 @@
   - 증거: `wikilinkPlugin.js`, editor hook.
 - [x] 저장 상태와 동기화 상태를 표시한다.
   - 증거: `editor-sync-banner`.
-- [ ] source/preview 모드 정책을 확정한다.
-  - 검증: 모드 전환 UI와 markdown round trip 테스트.
+- [x] source/preview 모드 정책을 확정한다.
+  - 증거: `EditorView` mode switch, Markdown source textarea round trip test.
 - [ ] 모바일 Safari 입력/확대/커서 회귀를 실제 브라우저로 확인한다.
   - 검증: 모바일 viewport 또는 실제 Safari 확인 기록.
 

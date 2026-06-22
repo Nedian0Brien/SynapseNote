@@ -8,6 +8,11 @@ import { useFileContent } from '../../shared/hooks/useFileContent';
 import { wikilinkPlugin } from '../../shared/plugins/wikilinkPlugin';
 import { BacklinksPanel } from './BacklinksPanel';
 
+const EDITOR_MODE = {
+  PREVIEW: 'preview',
+  SOURCE: 'source',
+};
+
 export function EditorView({ path, onUnauthorized, onNavigate, onClose }) {
   const {
     content,
@@ -24,7 +29,15 @@ export function EditorView({ path, onUnauthorized, onNavigate, onClose }) {
   const editorRef = useRef(null);
   const containerRef = useRef(null);
   const initRef = useRef(false);
+  const draftContentRef = useRef('');
   const [editorError, setEditorError] = useState(null);
+  const [editorMode, setEditorMode] = useState(EDITOR_MODE.PREVIEW);
+  const [draftContent, setDraftContent] = useState('');
+
+  useEffect(() => {
+    draftContentRef.current = content;
+    setDraftContent(content);
+  }, [content, path]);
 
   const formatErrorLog = useCallback((err) => {
     const message = err?.message ?? String(err);
@@ -86,7 +99,19 @@ export function EditorView({ path, onUnauthorized, onNavigate, onClose }) {
     onClose?.();
   }, [flush, onClose]);
 
+  const handleSourceChange = useCallback((event) => {
+    const nextContent = event.target.value;
+    draftContentRef.current = nextContent;
+    setDraftContent(nextContent);
+    debouncedSave(nextContent);
+  }, [debouncedSave]);
+
+  const handleModeChange = useCallback((nextMode) => {
+    setEditorMode(nextMode);
+  }, []);
+
   useEffect(() => {
+    if (editorMode === EDITOR_MODE.SOURCE) return;
     if (loading || !containerRef.current || editorError) return;
     if (initRef.current) return;
     initRef.current = true;
@@ -96,8 +121,10 @@ export function EditorView({ path, onUnauthorized, onNavigate, onClose }) {
     Editor.make()
       .config(ctx => {
         ctx.set(rootCtx, el);
-        ctx.set(defaultValueCtx, content);
+        ctx.set(defaultValueCtx, draftContentRef.current);
         ctx.get(listenerCtx).markdownUpdated((_ctx, md) => {
+          draftContentRef.current = md;
+          setDraftContent(md);
           debouncedSave(md);
         });
       })
@@ -120,7 +147,7 @@ export function EditorView({ path, onUnauthorized, onNavigate, onClose }) {
       editorRef.current = null;
       initRef.current = false;
     };
-  }, [loading, content, debouncedSave, handleNavigate, searchLinks, editorError, formatErrorLog]);
+  }, [loading, debouncedSave, handleNavigate, searchLinks, editorError, formatErrorLog, editorMode]);
 
   if (editorError) {
     return (
@@ -187,6 +214,26 @@ export function EditorView({ path, onUnauthorized, onNavigate, onClose }) {
         <span className="editor-save-indicator">
           {saving ? '저장 중...' : '저장됨'}
         </span>
+        <div className="editor-mode-switch" aria-label="에디터 모드">
+          <button
+            type="button"
+            className="editor-mode-btn"
+            aria-pressed={editorMode === EDITOR_MODE.PREVIEW}
+            title="미리보기 편집"
+            onClick={() => handleModeChange(EDITOR_MODE.PREVIEW)}
+          >
+            <span className="icon">visibility</span>
+          </button>
+          <button
+            type="button"
+            className="editor-mode-btn"
+            aria-pressed={editorMode === EDITOR_MODE.SOURCE}
+            title="Markdown 원본"
+            onClick={() => handleModeChange(EDITOR_MODE.SOURCE)}
+          >
+            <span className="icon">code</span>
+          </button>
+        </div>
       </div>
       {syncStatus !== 'current' && (
         <div className="editor-sync-banner" data-status={syncStatus}>
@@ -217,7 +264,17 @@ export function EditorView({ path, onUnauthorized, onNavigate, onClose }) {
         </div>
       )}
       <div className="editor-body">
-        <div className="editor-container" ref={containerRef} />
+        {editorMode === EDITOR_MODE.SOURCE ? (
+          <textarea
+            className="editor-source"
+            aria-label="Markdown 원본"
+            value={draftContent}
+            onChange={handleSourceChange}
+            spellCheck={false}
+          />
+        ) : (
+          <div className="editor-container" ref={containerRef} />
+        )}
         <BacklinksPanel
           path={path}
           onUnauthorized={onUnauthorized}
