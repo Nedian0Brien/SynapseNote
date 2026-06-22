@@ -8,6 +8,9 @@ RUN npm ci --ignore-scripts
 
 COPY frontend ./
 
+ARG SYNAPSENOTE_BUILD_COMMIT=unknown
+LABEL org.opencontainers.image.revision=$SYNAPSENOTE_BUILD_COMMIT
+
 EXPOSE 3000
 
 CMD ["sh", "/app/start-dev.sh"]
@@ -26,6 +29,9 @@ FROM nginx:1.27-alpine AS runner
 
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
+
+ARG SYNAPSENOTE_BUILD_COMMIT=unknown
+LABEL org.opencontainers.image.revision=$SYNAPSENOTE_BUILD_COMMIT
 
 EXPOSE 3000
 

@@ -24,21 +24,34 @@ bash deploy/deploy.sh          # api + web 전체 배포
 bash deploy/deploy.sh api      # 백엔드만
 bash deploy/deploy.sh web      # 프론트엔드만
 bash deploy/deploy.sh web-dev  # 프론트엔드만 개발모드
+FORCE_REBUILD=1 bash deploy/deploy.sh  # 캐시 없이 강제 재빌드
+bash deploy/deploy.sh --no-cache       # 캐시 없이 강제 재빌드
 ```
 
 `bash deploy/deploy.sh web` 또는 `web-dev` 실행 시, 현재 compose에서 실행 중인 `synapsenote-api`가
 없으면 스크립트가 API도 함께 재배포합니다.
 
-## 왜 `--no-cache`가 필수인가
+## 빌드 캐시 정책
 
-백엔드와 프론트엔드 이미지는 모두 소스 파일을 이미지 내부로 `COPY`해서 빌드한다.
-이 구조에서 캐시 빌드를 허용하면, 소스가 바뀌어도 이전 레이어가 재사용되어 변경사항이
-반영되지 않은 이미지가 다시 떠오를 수 있다.
+기본 배포는 Docker 레이어 캐시를 사용한다. 백엔드와 프론트엔드 Dockerfile은
+`requirements.txt`, `package*.json`, 소스 `COPY`를 분리해 두었기 때문에 의존성이 바뀌지
+않은 배포에서는 캐시를 재사용하는 편이 빠르고 디스크 증가도 적다.
 
-`deploy/deploy.sh`는 항상 `docker compose build --no-cache`를 사용해 이 문제를 막는다.
+캐시가 의심되는 운영 장애, 베이스 이미지 갱신 확인, 의존성 레이어 재생성이 필요한 경우에는
+다음 중 하나로 강제 재빌드한다.
 
-> 절대 하지 말 것: `docker compose build`
-> 항상 사용할 것: `bash deploy/deploy.sh`
+```bash
+FORCE_REBUILD=1 bash deploy/deploy.sh
+bash deploy/deploy.sh --no-cache
+```
+
+배포 스크립트는 빌드 시 현재 git commit을 이미지 라벨
+`org.opencontainers.image.revision`에 기록하고, 컨테이너 교체 후 각 서비스의 revision을
+출력한다. 변경사항이 반영되지 않은 것처럼 보이면 먼저 이 revision이 현재 커밋과 맞는지
+확인한다.
+
+> 직접 `docker compose build`를 실행하지 말 것. 서비스 선택, API 의존성 동기화, revision
+> 확인을 포함한 공식 경로는 `bash deploy/deploy.sh`다.
 
 ## 주요 환경 변수
 
@@ -79,8 +92,13 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/health
 
 ### 변경사항이 반영되지 않을 때
 
-캐시 빌드 가능성이 가장 크다. `docker compose build` 대신 반드시 `bash deploy/deploy.sh`를
-다시 실행한다.
+배포 완료 후 출력되는 `Image revisions`가 현재 git commit과 같은지 먼저 확인한다. revision이
+맞는데도 브라우저에서 이전 화면이 보이면 브라우저·CDN·Nginx 캐시를 확인한다. revision이
+다르면 다음 명령으로 강제 재빌드한다.
+
+```bash
+FORCE_REBUILD=1 bash deploy/deploy.sh
+```
 
 ### CouchDB 연결 오류
 

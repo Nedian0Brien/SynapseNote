@@ -7,10 +7,8 @@
 #   bash deploy/deploy.sh web          # 프론트엔드만 배포
 #   bash deploy/deploy.sh web-dev      # 프론트엔드만 개발모드 배포
 #   bash deploy/deploy.sh api web      # 둘 다 명시적으로 배포
-#
-# 주의: Dockerfile이 소스를 이미지에 COPY하므로 반드시 --no-cache로 빌드해야
-#       코드 변경사항이 컨테이너에 반영된다. --no-cache 없이 build하면 이전
-#       이미지가 그대로 사용되어 배포가 실패한 것처럼 보인다.
+#   FORCE_REBUILD=1 bash deploy/deploy.sh  # 캐시 없이 강제 재빌드
+#   bash deploy/deploy.sh --no-cache       # 캐시 없이 강제 재빌드
 
 set -euo pipefail
 
@@ -19,7 +17,16 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 cd "$PROJECT_ROOT"
 DEPLOY_FRONTEND_DEV=false
+FORCE_REBUILD="${FORCE_REBUILD:-0}"
 COMPOSE_FILES=(-f docker-compose.yml)
+BUILD_COMMIT="$(git rev-parse --short=12 HEAD 2>/dev/null || echo unknown)"
+
+is_truthy() {
+  case "${1:-}" in
+    1|true|TRUE|yes|YES|on|ON) return 0 ;;
+    *) return 1 ;;
+  esac
+}
 
 # ── 배포 대상 결정 ────────────────────────────────────────────────────────────
 if [ $# -eq 0 ]; then
@@ -28,6 +35,8 @@ else
   SERVICES=()
   for arg in "$@"; do
     case "$arg" in
+      --no-cache|--force-rebuild) FORCE_REBUILD=1 ;;
+      --cache) FORCE_REBUILD=0 ;;
       api) SERVICES+=("synapsenote-api") ;;
       web) SERVICES+=("synapsenote-web") ;;
       web-dev)
@@ -37,6 +46,9 @@ else
       *)   SERVICES+=("$arg") ;;   # 서비스명 직접 지정도 허용
     esac
   done
+  if [ "${#SERVICES[@]}" -eq 0 ]; then
+    SERVICES=("synapsenote-api" "synapsenote-web")
+  fi
 fi
 
 contains_service() {
@@ -83,6 +95,7 @@ echo "  SynapseNote Deploy"
 echo "  Services: ${SERVICES[*]}"
 echo "  Frontend Mode: $([ "$DEPLOY_FRONTEND_DEV" = true ] && echo dev || echo prod)"
 echo "  Commit : $(git log -1 --pretty='%h %s' 2>/dev/null || echo 'unknown')"
+echo "  Build Cache: $(is_truthy "$FORCE_REBUILD" && echo disabled || echo enabled)"
 echo "=========================================="
 
 if [ "$DEPLOY_FRONTEND_DEV" = true ]; then
@@ -94,17 +107,20 @@ if [ "$DEPLOY_FRONTEND_DEV" = true ]; then
     "SYNAPSENOTE_DEV_PORT=${SYNAPSENOTE_DEV_PORT:-3000}"
     "SYNAPSENOTE_DEV_UPSTREAM=${SYNAPSENOTE_DEV_UPSTREAM:-http://synapsenote-api:8000}"
   )
-  BUILD_ARGS=()
 else
   COMPOSE_BUILD_ENV=()
-  BUILD_ARGS=(--no-cache)
+fi
+
+BUILD_ARGS=(--build-arg "SYNAPSENOTE_BUILD_COMMIT=$BUILD_COMMIT")
+if is_truthy "$FORCE_REBUILD"; then
+  BUILD_ARGS=(--no-cache "${BUILD_ARGS[@]}")
 fi
 
 # ── 빌드 ──────────────────────────────────────────────────────────────────────
-# 프로덕션 모드는 소스를 이미지에 COPY하므로 --no-cache가 필요하지만,
-# 개발 모드는 bind mount + HMR을 쓰므로 캐시 빌드로 충분하다.
+# 기본은 Docker 레이어 캐시를 사용한다. 캐시가 의심되는 운영 장애나 베이스 이미지
+# 갱신 확인이 필요한 경우에만 FORCE_REBUILD=1 또는 --no-cache를 사용한다.
 echo ""
-echo "▶ Building ($([ "$DEPLOY_FRONTEND_DEV" = true ] && echo cached || echo --no-cache ))..."
+echo "▶ Building ($(is_truthy "$FORCE_REBUILD" && echo --no-cache || echo cached), commit $BUILD_COMMIT)..."
 env "${COMPOSE_BUILD_ENV[@]}" docker compose "${COMPOSE_FILES[@]}" build "${BUILD_ARGS[@]}" "${SERVICES[@]}"
 
 # ── 컨테이너 교체 (다른 서비스는 유지) ────────────────────────────────────────
@@ -130,6 +146,22 @@ fi
 echo ""
 echo "▶ Container status:"
 env "${COMPOSE_BUILD_ENV[@]}" docker compose "${COMPOSE_FILES[@]}" ps "${SERVICES[@]}"
+
+echo ""
+echo "▶ Image revisions:"
+for svc in "${SERVICES[@]}"; do
+  container_id="$(env "${COMPOSE_BUILD_ENV[@]}" docker compose "${COMPOSE_FILES[@]}" ps -q "$svc" 2>/dev/null || true)"
+  if [ -z "$container_id" ]; then
+    echo "  - $svc: container not found"
+    continue
+  fi
+
+  revision="$(docker inspect -f '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "$container_id" 2>/dev/null || true)"
+  if [ -z "$revision" ] || [ "$revision" = "<no value>" ]; then
+    revision="unknown"
+  fi
+  echo "  - $svc: $revision"
+done
 
 echo ""
 echo "=========================================="
