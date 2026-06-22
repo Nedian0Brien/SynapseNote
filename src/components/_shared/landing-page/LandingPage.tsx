@@ -2,12 +2,12 @@ import { HTMLAttributes, ReactNode, useCallback, useEffect, useMemo } from 'reac
 import { useTranslation } from 'react-i18next';
 
 import { Workspace } from '@/application/types';
-import { ReactComponent as AppFlowyLogo } from '@/assets/icons/appflowy.svg';
+import { ReactComponent as SynapseNoteLogo } from '@/assets/icons/synapsenote-wordmark.svg';
 import LandingFooter from '@/components/_shared/landing-page/LandingFooter';
-import { useCurrentUserOptional, useIsAuthenticatedOptional } from '@/components/main/app.hooks';
+import { useIsAuthenticatedOptional } from '@/components/main/app.hooks';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { openAppFlowySchema } from '@/utils/url';
+import { openSynapseNoteUrl } from '@/utils/url';
 
 export default function LandingPage({
   Logo,
@@ -40,7 +40,6 @@ export default function LandingPage({
   const url = useMemo(() => {
     return window.location.href;
   }, []);
-  const currentUser = useCurrentUserOptional();
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -50,16 +49,11 @@ export default function LandingPage({
 
   const openWorkspace = useCallback(() => {
     if (workspace) {
-      window.open(`/app/${workspace.id}`, '_blank');
-      window.open(
-        `appflowy-flutter://invitation-callback?workspace_id=${workspace.id}&email=${currentUser?.email}`,
-        '_self'
-      );
+      window.open(`/app/${workspace.id}`, '_self');
     } else {
-      window.open('/app', '_blank');
-      window.open(openAppFlowySchema, '_self');
+      window.open(openSynapseNoteUrl, '_self');
     }
-  }, [currentUser?.email, workspace]);
+  }, [workspace]);
 
   return (
     <div className={`flex flex-col bg-background-primary ${fitParent ? 'h-full w-full' : 'h-screen w-screen'}`}>
@@ -70,7 +64,7 @@ export default function LandingPage({
           }}
           className='h-full w-[141px] cursor-pointer'
         >
-          <AppFlowyLogo className='h-full w-full' />
+          <SynapseNoteLogo className='h-full w-full' />
         </span>
       </div>
       <div className='flex w-full flex-1  items-center justify-center'>

@@ -8,7 +8,7 @@ function ViewHelmet({ name, icon }: { name?: string; icon?: ViewIcon }) {
   useEffect(() => {
     const setFavicon = async () => {
       try {
-        let url = '/appflowy.svg';
+        let url = '/synapsenote.svg';
         const link = (document.querySelector("link[rel*='icon']") as HTMLLinkElement) || document.createElement('link');
 
         if (icon && icon.value) {
@@ -85,7 +85,7 @@ function ViewHelmet({ name, icon }: { name?: string; icon?: ViewIcon }) {
   if (!name) return null;
   return (
     <Helmet>
-      <title>{name} | AppFlowy</title>
+      <title>{name} | SynapseNote</title>
     </Helmet>
   );
 }

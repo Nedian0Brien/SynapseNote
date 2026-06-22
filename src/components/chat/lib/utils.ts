@@ -32,7 +32,7 @@ export async function getIcon(id: string) {
     return icon.get(id);
   }
 
-  const url = `https://appflowy.com/af_icons/${id}.svg`;
+  const url = `/af_icons/${id}.svg`;
 
   const res = await fetch(url);
 

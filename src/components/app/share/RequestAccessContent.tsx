@@ -86,17 +86,14 @@ export function RequestAccessContent({
 
   useEffect(() => {
     if (isGuest && currentUser) {
-      window.open(
-        `appflowy-flutter://open-page?workspace_id=${workspaceId}&view_id=${viewId}&email=${currentUser.email}`,
-        '_self'
-      );
+      window.open(`/app/${workspaceId}/${viewId}`, '_self');
     }
   }, [isGuest, workspaceId, viewId, currentUser]);
 
   const description = isGuest
     ? `${t(
         'landingPage.noAccess.description'
-      )}\n\n Guests invited to this page can access it via the desktop or mobile app.`
+      )}\n\nGuests invited to this page can open it in SynapseNote.`
     : t('landingPage.noAccess.description');
 
   if (hasSend) {

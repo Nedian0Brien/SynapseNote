@@ -62,7 +62,7 @@ export default function Help() {
             <Button
               component={'a'}
               target='_blank'
-              href={'https://www.appflowy.com/what-is-new'}
+              href={'https://synapse.lawdigest.kr/app'}
               className={'justify-start'}
               color={'inherit'}
               startIcon={<WhatsNewIcon />}
@@ -72,7 +72,7 @@ export default function Help() {
             </Button>
             <Button
               component={'a'}
-              href={'https://appflowy.com/guide/getting-started-with-appflowy'}
+              href={'https://synapse.lawdigest.kr/app'}
               className={'justify-start'}
               target='_blank'
               color={'inherit'}
@@ -83,7 +83,7 @@ export default function Help() {
             </Button>
             <Button
               component={'a'}
-              href={'https://discord.gg/9Q2xaN37tV'}
+              href={'mailto:parkmj9260@gmail.com'}
               className={'justify-start'}
               target='_blank'
               color={'inherit'}
@@ -113,7 +113,7 @@ export default function Help() {
             <Button
               component={'a'}
               target='_blank'
-              href={'https://github.com/AppFlowy-IO/AppFlowy-Web/issues/new/choose'}
+              href={'mailto:parkmj9260@gmail.com'}
               className={'justify-start'}
               color={'inherit'}
               startIcon={<FeedbackIcon />}
@@ -127,34 +127,34 @@ export default function Help() {
               size={'small'}
               target='_blank'
               component={'a'}
-              href={'https://forum.appflowy.io/'}
+              href={'https://synapse.lawdigest.kr/app'}
               className={'justify-start text-text-secondary'}
               color={'inherit'}
               variant={'text'}
             >
-              Community Forum
+              SynapseNote
             </Button>
             <Button
               size={'small'}
               component={'a'}
               target='_blank'
-              href={'https://x.com/appflowy'}
+              href={'https://lawdigest.kr'}
               className={'justify-start text-text-secondary'}
               color={'inherit'}
               variant={'text'}
             >
-              Twitter - @appflowy
+              Lawdigest
             </Button>
             <Button
               size={'small'}
               component={'a'}
               target='_blank'
-              href={'https://www.reddit.com/r/AppFlowy/'}
+              href={'mailto:parkmj9260@gmail.com'}
               className={'justify-start text-text-secondary'}
               color={'inherit'}
               variant={'text'}
             >
-              Reddit - r/appflowy
+              문의하기
             </Button>
           </div>
         </Popover>

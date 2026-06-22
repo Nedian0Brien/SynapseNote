@@ -24,9 +24,9 @@ function AsTemplateButton ({ viewId }: { viewId: string }) {
 
   if (!currentUser) return null;
 
-  const isAppFlowyUser = currentUser.email?.endsWith('@appflowy.io');
+  const isSynapseNoteUser = currentUser.email?.endsWith('@lawdigest.kr');
 
-  if (!isAppFlowyUser) return null;
+  if (!isSynapseNoteUser) return null;
 
   if (!view?.is_published) return null;
   return (

@@ -76,6 +76,56 @@ body {
   color: var(--sn-on-surface);
 }
 
+button,
+input,
+textarea,
+[role="button"],
+.MuiButton-root,
+.MuiIconButton-root,
+.MuiInputBase-root,
+.MuiOutlinedInput-root {
+  border-radius: var(--sn-radius-lg);
+}
+
+.MuiPaper-root,
+.MuiPopover-paper,
+.MuiDialog-paper,
+[data-radix-popper-content-wrapper] > *,
+[role="dialog"],
+[role="menu"],
+[role="listbox"] {
+  border-color: var(--sn-outline);
+  border-radius: var(--sn-radius-xl);
+  box-shadow: var(--sn-shadow-md);
+}
+
+.MuiMenuItem-root,
+[role="menuitem"],
+[cmdk-item=""] {
+  border-radius: var(--sn-radius-md);
+}
+
+.MuiButton-contained,
+button[data-state="open"],
+[data-state="checked"] {
+  background-color: var(--sn-primary);
+  color: var(--sn-primary-icon);
+}
+
+input,
+textarea,
+.MuiInputBase-root,
+.MuiOutlinedInput-root {
+  background: color-mix(in srgb, var(--sn-surface) 92%, transparent);
+  border-color: var(--sn-outline);
+}
+
+.MuiDrawer-paper,
+.appflowy-scroller,
+.appflowy-scroll-container {
+  background: var(--sn-surface);
+}
+
 .icon {
   font-family: "Material Symbols Outlined";
   font-weight: normal;

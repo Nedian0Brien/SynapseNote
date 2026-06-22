@@ -2,7 +2,7 @@ import LinearProgress from '@mui/material/LinearProgress';
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { ReactComponent as AppFlowyIcon } from '@/assets/icons/appflowy.svg';
+import { ReactComponent as SynapseNoteIcon } from '@/assets/icons/synapsenote-wordmark.svg';
 import { ReactComponent as NotionIcon } from '@/assets/icons/notion.svg';
 import { FileService } from '@/application/services/domains';
 import FileDropzone from '@/components/_shared/file-dropzone/FileDropzone';
@@ -44,8 +44,8 @@ function ImporterDialogContent({ source, onSuccess }: { source?: string; onSucce
         <ViewTab
           className={'flex flex-row items-center justify-center gap-1.5'}
           value={'appflowy'}
-          label={t('web.importFromAppFlowy')}
-          icon={<AppFlowyIcon className={'mb-0 h-4 w-4'} />}
+          label={t('web.importFromSynapseNote')}
+          icon={<SynapseNoteIcon className={'mb-0 h-4 w-4'} />}
         />
         <ViewTab
           className={'flex flex-row items-center justify-center gap-1.5'}
@@ -68,7 +68,7 @@ function ImporterDialogContent({ source, onSuccess }: { source?: string; onSucce
               void handleUpload(files[0]);
             }}
             disabled={isUploading}
-            placeholder={t('web.dropAppFlowyFile')}
+            placeholder={t('web.dropSynapseNoteFile')}
             loading={isUploading}
           />
           {progress > 0 && (

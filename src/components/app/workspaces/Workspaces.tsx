@@ -203,7 +203,7 @@ export function Workspaces() {
                     data-testid='import-from-appflowy'
                     onSelect={() => handleOpenImport('appflowy')}
                   >
-                    <div className={'flex-1 text-left'}>{t('web.importFromAppFlowy')}</div>
+                    <div className={'flex-1 text-left'}>{t('web.importFromSynapseNote')}</div>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     data-testid='import-from-notion'
@@ -215,7 +215,7 @@ export function Workspaces() {
                         <span
                           onClick={(e) => {
                             e.stopPropagation();
-                            void openUrl('https://docs.appflowy.io/docs/guides/import-from-notion', '_blank');
+                            void openUrl('https://synapse.lawdigest.kr/app', '_blank');
                           }}
                           className={'ml-auto cursor-pointer text-icon-secondary'}
                         >

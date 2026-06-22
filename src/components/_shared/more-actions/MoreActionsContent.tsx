@@ -70,7 +70,7 @@ function MoreActionsContent({
         Icon: ReportIcon,
         label: t('publish.reportPage'),
         onClick: () => {
-          void openUrl('https://report.appflowy.io/', '_blank');
+          void openUrl('mailto:parkmj9260@gmail.com', '_blank');
         },
       },
       {

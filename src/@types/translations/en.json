@@ -1,5 +1,5 @@
 {
-  "appName": "AppFlowy",
+  "appName": "SynapseNote",
   "defaultUsername": "Me",
   "welcomeText": "Welcome to @:appName",
   "welcomeTo": "Welcome to",
@@ -161,7 +161,7 @@
     "csv": "CSV",
     "copyLink": "Copy link",
     "publishToTheWeb": "Publish to Web",
-    "publishToTheWebHint": "Create a website with AppFlowy",
+    "publishToTheWebHint": "Create a website with SynapseNote",
     "publish": "Publish",
     "unPublish": "Unpublish",
     "visitSite": "Visit site",
@@ -175,7 +175,7 @@
     "exportPdfError": "Failed to export PDF",
     "publishTab": "Publish",
     "shareTab": "Share",
-    "publishOnAppFlowy": "Publish on AppFlowy",
+    "publishOnSynapseNote": "Publish on SynapseNote",
     "shareTabTitle": "Invite to collaborate",
     "shareTabDescription": "For easy collaboration with anyone",
     "copyLinkSuccess": "Copied link to clipboard",
@@ -328,7 +328,7 @@
     "placeholder": "Hi {{name}}, how can I help you today?",
     "dear": "Dear",
     "input": {
-      "placeholder": "Ask AppFlowy AI",
+      "placeholder": "Ask SynapseNote AI",
       "placeholderFormat": "AI response will generate with the format you define above",
       "button": {
         "format": "Format response",
@@ -823,17 +823,17 @@
     "manageData": {
       "menuLabel": "Manage data",
       "title": "Manage data",
-      "description": "Manage your AppFlowy workspace data",
+      "description": "Manage your SynapseNote workspace data",
       "importWorkspace": {
         "title": "Import your workspace",
-        "tooltip": "Import your workspace from an AppFlowy backup ZIP file",
+        "tooltip": "Import your workspace from a SynapseNote backup ZIP file",
         "button": "Import",
         "success": "Import started. We will send a confirmation email once the import is complete.",
         "failed": "Failed to import workspace"
       },
       "backupWorkspace": {
         "title": "Backup your workspace",
-        "tooltip": "Back up your AppFlowy workspace to a ZIP file",
+        "tooltip": "Back up your SynapseNote workspace to a ZIP file",
         "button": "Backup",
         "started": "Backup started. We will send an email with a download link once the export is complete.",
         "failed": "Failed to back up workspace"
@@ -1134,12 +1134,12 @@
       "menuLabel": "AI Settings",
       "keys": {
         "enableAISearchTitle": "AI Search",
-        "aiSettingsDescription": "Choose your preferred model to power AppFlowy AI. Now includes GPT 4-o, Claude 3,5, Llama 3.1, and Mistral 7B",
+        "aiSettingsDescription": "Choose the model SynapseNote should use for AI features.",
         "loginToEnableAIFeature": "AI features are only enabled after logging in with @:appName Cloud. If you don't have an @:appName account, go to 'My Account' to sign up",
         "llmModel": "Language Model",
         "llmModelType": "Language Model Type",
         "downloadLLMPrompt": "Download {}",
-        "downloadAppFlowyOfflineAI": "Downloading AI offline package will enable AI to run on your device. Do you want to continue?",
+        "downloadSynapseNoteOfflineAI": "Downloading AI offline package will enable AI to run on your device. Do you want to continue?",
         "downloadLLMPromptDetail": "Downloading {} local model will take up to {} of storage. Do you want to continue?",
         "downloadBigFilePrompt": "It may take around 10 minutes to complete the download",
         "downloadAIModelButton": "Download",
@@ -1156,7 +1156,7 @@
         "offlineAIInstruction1": "Follow the",
         "offlineAIInstruction2": "instruction",
         "offlineAIInstruction3": "to enable offline AI.",
-        "offlineAIDownload1": "If you have not downloaded the AppFlowy AI, please",
+        "offlineAIDownload1": "If you have not downloaded the SynapseNote AI, please",
         "offlineAIDownload2": "download",
         "offlineAIDownload3": "it first",
         "activeOfflineAI": "Active",
@@ -1403,8 +1403,8 @@
       "cloudServerType": "Cloud server",
       "cloudServerTypeTip": "Please note that it might log out your current account after switching the cloud server",
       "cloudLocal": "Local",
-      "cloudAppFlowy": "@:appName Cloud",
-      "cloudAppFlowySelfHost": "@:appName Cloud Self-hosted",
+      "cloudSynapseNote": "@:appName Cloud",
+      "cloudSynapseNoteSelfHost": "@:appName Cloud Self-hosted",
       "appFlowyCloudUrlCanNotBeEmpty": "The cloud url can't be empty",
       "clickToCopy": "Copy to clipboard",
       "selfHostStart": "If you don't have a server, please refer to the",
@@ -1428,9 +1428,9 @@
       "historicalUserListTooltip": "This list displays your anonymous accounts. You can click on an account to view its details. Anonymous accounts are created by clicking the 'Get Started' button",
       "openHistoricalUser": "Click to open the anonymous account",
       "customPathPrompt": "Storing the @:appName data folder in a cloud-synced folder such as Google Drive can pose risks. If the database within this folder is accessed or modified from multiple locations at the same time, it may result in synchronization conflicts and potential data corruption",
-      "importAppFlowyData": "Import Data from External @:appName Folder",
-      "importingAppFlowyDataTip": "Data import is in progress. Please do not close the app",
-      "importAppFlowyDataDescription": "Copy data from an external @:appName data folder and import it into the current AppFlowy data folder",
+      "importSynapseNoteData": "Import Data from External @:appName Folder",
+      "importingSynapseNoteDataTip": "Data import is in progress. Please do not close the app",
+      "importSynapseNoteDataDescription": "Copy data from an external @:appName data folder and import it into the current SynapseNote data folder",
       "importSuccess": "Successfully imported the @:appName data folder",
       "importFailed": "Importing the @:appName data folder failed",
       "importGuide": "For further details, please check the referenced document"
@@ -1600,7 +1600,7 @@
         "memberLimitExceeded": "Member limit reached, to invite more members, please ",
         "memberLimitExceededUpgrade": "upgrade",
         "memberLimitExceededPro": "Member limit reached, if you require more members contact ",
-        "memberLimitExceededProContact": "support@appflowy.io",
+        "memberLimitExceededProContact": "parkmj9260@gmail.com",
         "failedToAddMember": "Failed to add member",
         "addMemberSuccess": "Member added successfully",
         "removeMember": "Remove Member",
@@ -3187,7 +3187,7 @@
     "reportPage": "Report page",
     "databaseHasNotBeenPublished": "Publishing a database is not supported yet.",
     "createdWith": "Created with",
-    "downloadApp": "Download AppFlowy",
+    "downloadApp": "Open SynapseNote",
     "copy": {
       "codeBlock": "The content of code block has been copied to the clipboard",
       "imageBlock": "The image link has been copied to the clipboard",
@@ -3200,7 +3200,7 @@
     "publishFailed": "Failed to publish",
     "unpublishFailed": "Failed to unpublish",
     "noAccessToVisit": "No access to this page...",
-    "createWithAppFlowy": "Create a website with AppFlowy",
+    "createWithSynapseNote": "Create a website with SynapseNote",
     "fastWithAI": "Fast and easy with AI.",
     "tryItNow": "Try it now",
     "onlyGridViewCanBePublished": "Only Grid view can be published",
@@ -3218,7 +3218,7 @@
     "selectWorkspace": "Select a workspace",
     "addTo": "Add to",
     "duplicateSuccessfully": "Added to your workspace",
-    "duplicateSuccessfullyDescription": "Don't have AppFlowy installed? The download will start automatically after you click 'Download'.",
+    "duplicateSuccessfullyDescription": "Open SynapseNote to continue.",
     "downloadIt": "Download",
     "openApp": "Open in app",
     "duplicateFailed": "Duplicated failed",
@@ -3245,7 +3245,7 @@
     "signingIn": "Signing in...",
     "moreOptions": "More options",
     "collapse": "Collapse",
-    "signInAgreement": "By clicking \"Continue\" above, you agreed to AppFlowy's",
+    "signInAgreement": "By continuing, you agree to SynapseNote's",
     "and": "and",
     "termOfUse": "Terms",
     "privacyPolicy": "Privacy Policy",
@@ -3260,14 +3260,14 @@
     },
     "importNotion": "Import from Notion",
     "importWorkspace": "Import workspace",
-    "importFromAppFlowy": "Import from AppFlowy",
+    "importFromSynapseNote": "Import from SynapseNote",
     "importFromNotion": "Import from Notion",
     "import": "Import",
     "importSuccess": "Uploaded successfully",
     "importSuccessMessage": "We'll notify you when the import is complete. After that, you can view your imported pages in the sidebar.",
     "importFailed": "Import failed, please check the file format",
     "dropNotionFile": "Drop your Notion zip file here to upload, or click to browse",
-    "dropAppFlowyFile": "Drop your AppFlowy zip file here to upload, or click to browse",
+    "dropSynapseNoteFile": "Drop your SynapseNote zip file here to upload, or click to browse",
     "error": {
       "pageNameIsEmpty": "The page name is empty, please try another one"
     },
@@ -3425,7 +3425,7 @@
     "joinWorkspace": "Join workspace",
     "success": "You've successfully joined the workspace",
     "successMessage": "You can now access all the pages and workspaces within it.",
-    "openWorkspace": "Open AppFlowy",
+    "openWorkspace": "Open SynapseNote",
     "alreadyAccepted": "You've already accepted the invitation",
     "errorModal": {
       "title": "Something went wrong",
@@ -3451,7 +3451,7 @@
     "title": "Approve Workspace Join Request",
     "requestSummary": "<user/> requests to join <workspace/> and access <page/>",
     "upgrade": "upgrade",
-    "downloadApp": "Download AppFlowy",
+    "downloadApp": "Open SynapseNote",
     "approveButton": "Approve",
     "approveSuccess": "Approved successfully",
     "approveError": "Failed to approve, ensure the workspace plan limit is not exceeded",
@@ -3472,7 +3472,7 @@
   "upgradePlanModal": {
     "title": "Upgrade to Pro",
     "message": "{{name}} has reached the free member limit. Upgrade to the Pro Plan to invite more members.",
-    "upgradeSteps": "How to upgrade your plan on AppFlowy:",
+    "upgradeSteps": "How to upgrade your plan on SynapseNote:",
     "step1": "1. Go to Settings",
     "step2": "2. Click on 'Plan'",
     "step3": "3. Select 'Change Plan'",
@@ -3624,11 +3624,11 @@
     "cancelPlan": {
       "title": "Sorry to see you go",
       "success": "Your subscription has been canceled successfully",
-      "description": "We're sorry to see you go. We'd love to hear your feedback to help us improve AppFlowy. Please take a moment to answer a few questions.",
+      "description": "We're sorry to see you go. We'd love to hear your feedback to help us improve SynapseNote. Please take a moment to answer a few questions.",
       "commonOther": "Other",
       "otherHint": "Write your answer here",
       "questionOne": {
-        "question": "What prompted you to cancel your AppFlowy Pro subscription?",
+        "question": "What prompted you to cancel your SynapseNote Pro subscription?",
         "answerOne": "Cost too high",
         "answerTwo": "Features did not meet expectations",
         "answerThree": "Found a better alternative",
@@ -3636,7 +3636,7 @@
         "answerFive": "Service issue or technical difficulties"
       },
       "questionTwo": {
-        "question": "How likely are you to consider re-subscribing to AppFlowy Pro in the future?",
+        "question": "How likely are you to consider re-subscribing to SynapseNote Pro in the future?",
         "answerOne": "Very likely",
         "answerTwo": "Somewhat likely",
         "answerThree": "Not sure",
@@ -3651,7 +3651,7 @@
         "answerFour": "Access to local AI models"
       },
       "questionFour": {
-        "question": "How would you describe your overall experience with AppFlowy?",
+        "question": "How would you describe your overall experience with SynapseNote?",
         "answerOne": "Great",
         "answerTwo": "Good",
         "answerThree": "Average",
@@ -3677,7 +3677,7 @@
   "publishSelectedViews": "Publish {{count}} selected views",
   "untitled": "Untitled",
   "addToWorkspace": "Added to your workspace",
-  "downloadTip": "Don't have AppFlowy Apps installed? Download <link/>.",
+  "downloadTip": "Open SynapseNote to continue. <link/>",
   "here": "here",
   "openInBrowser": "Open in browser",
   "openInApp": "Open in app",
@@ -3733,7 +3733,7 @@
       "description": "Congratulations! You just unlocked more workspace members and unlimited AI responses. 🎉"
     },
     "inviteMember": {
-      "title": "Join <workspace /> on AppFlowy",
+      "title": "Join <workspace /> on SynapseNote",
       "description": "You've been invited by <who />\nto join the workspace using this email:\n<email/>\nIf this isn't correct, please ask your collaborators to resend the invite.",
       "joinWorkspace": "Join workspace",
       "invalid": "Unable to open invitation",
@@ -3763,7 +3763,7 @@
     },
     "unauthorized": {
       "title": "Sign in required",
-      "description": "You need to sign in to access this page. Please sign in with your AppFlowy account.",
+      "description": "You need to sign in to access this page. Please sign in with your SynapseNote account.",
       "signIn": "Sign in"
     },
     "forbidden": {
@@ -3778,7 +3778,7 @@
     },
     "networkError": {
       "title": "Connection error",
-      "description": "Unable to connect to AppFlowy. Please check your internet connection and try again.",
+      "description": "Unable to connect to SynapseNote. Please check your internet connection and try again.",
       "retry": "Retry connection"
     },
     "invalidLink": {

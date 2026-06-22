@@ -47,7 +47,7 @@ export const UnSupportedBlockDev = forwardRef<HTMLDivElement, EditorElementProps
           Submit an issue on our{' '}
           <a
             className={'text-text-action underline'}
-            href={'https://github.com/AppFlowy-IO/AppFlowy/issues/new?template=bug_report.yaml'}
+            href={'mailto:parkmj9260@gmail.com'}
           >
             Github
           </a>{' '}

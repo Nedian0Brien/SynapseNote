@@ -30,13 +30,13 @@ function RightMenu() {
 
   const currentUser = useCurrentUser();
 
-  const isAppFlowyUser = currentUser?.email?.endsWith('@appflowy.io');
+  const isSynapseNoteUser = currentUser?.email?.endsWith('@lawdigest.kr');
 
   return (
     <>
       <MoreActions />
       {duplicateEnabled && <Duplicate />}
-      {isAppFlowyUser && (
+      {isSynapseNoteUser && (
         <Tooltip title={t('template.asTemplate')}>
           <IconButton onClick={handleTemplateClick} size={'small'}>
             <TemplateIcon />

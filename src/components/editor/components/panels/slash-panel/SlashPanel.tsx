@@ -733,7 +733,7 @@ export function SlashPanel({
 
   const groupLabels = useMemo<Record<SlashMenuGroupKey, string>>(
     () => ({
-      [SlashMenuGroupKey.AppFlowyAI]: t('document.slashMenu.group.appflowyAI', { defaultValue: 'AppFlowy AI' }),
+      [SlashMenuGroupKey.AppFlowyAI]: t('document.slashMenu.group.appflowyAI', { defaultValue: 'SynapseNote AI' }),
       [SlashMenuGroupKey.BasicBlocks]: t('document.slashMenu.group.basicBlocks', { defaultValue: 'Basic blocks' }),
       [SlashMenuGroupKey.Media]: t('document.slashMenu.group.media', { defaultValue: 'Media' }),
       [SlashMenuGroupKey.Database]: t('document.slashMenu.group.database', { defaultValue: 'Database' }),

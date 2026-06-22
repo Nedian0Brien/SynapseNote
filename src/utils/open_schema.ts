@@ -1,4 +1,4 @@
-import { androidDownloadLink, desktopDownloadLink, openAppFlowySchema } from '@/utils/url';
+import { desktopDownloadLink, openSynapseNoteUrl } from '@/utils/url';
 
 type OS = 'ios' | 'android' | 'other';
 
@@ -104,7 +104,7 @@ export const openAppOrDownload = (config: AppConfig): void => {
 export function openOnly (schema?: string) {
 
   return openAppOrDownload({
-    appScheme: schema || openAppFlowySchema,
+    appScheme: schema || openSynapseNoteUrl,
   });
 }
 
@@ -112,19 +112,14 @@ export function openOrDownload (schema?: string) {
   const os = getOS();
 
   if (os === 'ios' || os === 'android') {
-    const universalLink = 'https://appflowy.com/download';
-    const intentUrl = `intent://appflowy.com/download#Intent;` +
-      'scheme=https;' +
-      'package=io.appflowy.app;' +
-      `S.browser_fallback_url=${encodeURIComponent(androidDownloadLink)};` +
-      'end';
+    const universalLink = 'https://synapse.lawdigest.kr/app';
 
-    window.location.href = os === 'ios' ? universalLink : intentUrl;
+    window.location.href = universalLink;
     return;
   }
 
   return openAppOrDownload({
-    appScheme: schema || openAppFlowySchema,
+    appScheme: schema || openSynapseNoteUrl,
     downloadUrl: desktopDownloadLink,
   });
 }

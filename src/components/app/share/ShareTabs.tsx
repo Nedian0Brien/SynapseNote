@@ -58,7 +58,7 @@ function ShareTabs({
         label: t('shareAction.exportAsTab'),
         Panel: ExportPanel,
       },
-      currentUser?.email?.endsWith('appflowy.io') &&
+      currentUser?.email?.endsWith('lawdigest.kr') &&
         view?.is_published && {
           value: TabKey.TEMPLATE,
           label: t('template.asTemplate'),

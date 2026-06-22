@@ -15,16 +15,16 @@ function SomethingError({ error }: { error: Error }) {
       </Alert>
       <div className={'mt-4 whitespace-pre text-center text-lg text-text-primary opacity-50'}>
         {`We're sorry for inconvenience\n`}
-        Submit an issue on our{' '}
+        문의가 필요하면{' '}
         <a
           className={'text-text-action underline'}
-          href={'https://github.com/AppFlowy-IO/AppFlowy/issues/new?template=bug_report.yaml'}
+          href={'mailto:parkmj9260@gmail.com'}
         >
-          Github
+          이메일
         </a>{' '}
-        page that describes your error
+        로 오류 내용을 보내주세요
       </div>
-      <img src={emptyImageSrc} alt={'AppFlowy'} />
+      <img src={emptyImageSrc} alt={'SynapseNote'} />
     </div>
   );
 }

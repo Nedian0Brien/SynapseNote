@@ -1,4 +1,4 @@
-import { ReactComponent as AppFlowyLogo } from '@/assets/icons/appflowy.svg';
+import { ReactComponent as SynapseNoteLogo } from '@/assets/icons/synapsenote-wordmark.svg';
 import { RequestAccessError } from '@/components/app/hooks/useWorkspaceData';
 import { RequestAccessContent } from '@/components/app/share/RequestAccessContent';
 
@@ -16,7 +16,7 @@ function RequestAccess({ error }: RequestAccessProps) {
           }}
           className='h-full w-[141px] cursor-pointer'
         >
-          <AppFlowyLogo className='h-full w-full' />
+          <SynapseNoteLogo className='h-full w-full' />
         </span>
       </div>
       <div className='flex w-full flex-1 items-center justify-center'>

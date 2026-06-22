@@ -1,5 +1,5 @@
 import { UserWorkspaceInfo, Workspace } from '@/application/types';
-import { ReactComponent as AppFlowyLogo } from '@/assets/icons/appflowy.svg';
+import { ReactComponent as SynapseNoteLogo } from '@/assets/icons/synapsenote-wordmark.svg';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 
@@ -28,7 +28,7 @@ function CurrentWorkspace({
           void onChangeWorkspace(selectedId);
         }}
       >
-        <AppFlowyLogo className='!h-full !w-[118px]' />
+        <SynapseNoteLogo className='!h-full !w-[118px]' />
       </div>
     );
   }

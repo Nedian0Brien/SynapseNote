@@ -112,7 +112,7 @@ export function getLandingPageErrorContent(error: LandingPageError | undefined, 
         'landingPage.unauthorized.title',
         'Sign in required',
         'landingPage.unauthorized.description',
-        'You need to sign in to access this page. Please sign in with your AppFlowy account.'
+        'You need to sign in to access this page. Please sign in with your SynapseNote account.'
       );
     case ErrorType.Forbidden:
       return content(
@@ -133,7 +133,7 @@ export function getLandingPageErrorContent(error: LandingPageError | undefined, 
         'landingPage.networkError.title',
         'Connection error',
         'landingPage.networkError.description',
-        'Unable to connect to AppFlowy. Please check your internet connection and try again.'
+        'Unable to connect to SynapseNote. Please check your internet connection and try again.'
       );
     case ErrorType.InvalidLink:
       return content(

@@ -123,7 +123,7 @@ export function AIChat({ chatId, onRendered }: { chatId: string; onRendered?: ()
             <div className={'mb-2 text-base'}>{`Chat listings only. For full chat features:`}</div>
             <ul className={'px-2 text-text-secondary'}>
               <li>• Use desktop browser</li>
-              <li>{`• Download AppFlowy's mobile app`}</li>
+              <li>{`• Open SynapseNote on a wider screen`}</li>
             </ul>
           </DialogContent>
           <DialogActions className={'flex w-full items-center justify-center gap-2 p-4'}>

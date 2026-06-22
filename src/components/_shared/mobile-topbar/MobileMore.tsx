@@ -20,7 +20,7 @@ function MobileMore({ onClose }: { onClose: () => void }) {
         label: t('template.label'),
         icon: <TemplateIcon />,
         onClick: () => {
-          window.open('https://appflowy.com/templates', '_blank');
+          window.open('/app', '_self');
         },
       },
       {
@@ -33,7 +33,7 @@ function MobileMore({ onClose }: { onClose: () => void }) {
       {
         label: t('questionBubble.help'),
         onClick: () => {
-          window.open('https://discord.gg/9Q2xaN37tV', '_blank');
+          window.open('mailto:parkmj9260@gmail.com', '_blank');
         },
         icon: <SupportIcon />,
       },

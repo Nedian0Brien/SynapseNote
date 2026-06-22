@@ -74,12 +74,7 @@ function OpenClient() {
     }
 
     if (isTabVisible && currentUser && !hasOpenedRef.current) {
-      window.open(
-        `appflowy-flutter://open-page?workspace_id=${currentWorkspaceId}&view_id=${viewId}&email=${currentUser.email}${
-          rowId ? `&row_id=${rowId}` : ''
-        }`,
-        '_self'
-      );
+      window.open(`/app/${currentWorkspaceId}/${viewId}${rowId ? `?row_id=${rowId}` : ''}`, '_self');
       hasOpenedRef.current = true;
     }
   }, [currentWorkspaceId, viewId, currentUser, openClient, rowId, isTabVisible]);

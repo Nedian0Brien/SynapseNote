@@ -9,7 +9,7 @@ import { notify } from '@/components/_shared/notify';
 import SelectWorkspace from '@/components/publish/header/duplicate/SelectWorkspace';
 import SpaceList from '@/components/publish/header/duplicate/SpaceList';
 import { useLoadWorkspaces } from '@/components/publish/header/duplicate/useDuplicate';
-import { downloadPage, openAppFlowySchema } from '@/utils/url';
+import { downloadPage, openSynapseNoteUrl } from '@/utils/url';
 
 function getCollabTypeFromViewLayout(layout: ViewLayout) {
   switch (layout) {
@@ -139,7 +139,7 @@ function DuplicateModal({ open, onClose }: { open: boolean; onClose: () => void 
           window.open(url, '_self');
         }}
         onCancel={() => {
-          window.open(openAppFlowySchema, '_self');
+          window.open(openSynapseNoteUrl, '_self');
         }}
         onClose={() => setSuccessModalOpen(false)}
         open={successModalOpen}
