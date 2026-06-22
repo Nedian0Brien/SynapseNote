@@ -11,11 +11,11 @@
   --sn-primary: #2a1c08;
   --sn-primary-icon: rgba(245, 240, 228, 0.92);
   --sn-primary-dim: rgba(42, 28, 8, 0.08);
-  --sn-radius-xs: 4px;
-  --sn-radius-sm: 8px;
-  --sn-radius-md: 11px;
-  --sn-radius-lg: 14px;
-  --sn-radius-xl: 18px;
+  --sn-radius-xs: 8px;
+  --sn-radius-sm: 12px;
+  --sn-radius-md: 16px;
+  --sn-radius-lg: 22px;
+  --sn-radius-xl: 28px;
   --sn-radius-full: 9999px;
   --sn-shadow-sm: 0 1px 3px rgba(60, 40, 10, 0.07), 0 1px 2px rgba(60, 40, 10, 0.04);
   --sn-shadow-md: 0 4px 12px rgba(60, 40, 10, 0.09), 0 2px 5px rgba(60, 40, 10, 0.05);
@@ -84,7 +84,7 @@ textarea,
 .MuiIconButton-root,
 .MuiInputBase-root,
 .MuiOutlinedInput-root {
-  border-radius: var(--sn-radius-lg);
+  border-radius: var(--sn-radius-full) !important;
 }
 
 .MuiPaper-root,
@@ -95,14 +95,16 @@ textarea,
 [role="menu"],
 [role="listbox"] {
   border-color: var(--sn-outline);
-  border-radius: var(--sn-radius-xl);
+  border-radius: var(--sn-radius-xl) !important;
   box-shadow: var(--sn-shadow-md);
 }
 
 .MuiMenuItem-root,
 [role="menuitem"],
+[role="option"],
+[role="tab"],
 [cmdk-item=""] {
-  border-radius: var(--sn-radius-md);
+  border-radius: var(--sn-radius-lg) !important;
 }
 
 .MuiButton-contained,
@@ -124,6 +126,35 @@ textarea,
 .appflowy-scroller,
 .appflowy-scroll-container {
   background: var(--sn-surface);
+}
+
+.MuiButton-root,
+button[type="button"],
+button[type="submit"] {
+  min-height: 34px;
+}
+
+.MuiButton-root:not(.MuiIconButton-root),
+button[type="button"]:not(.MuiIconButton-root):not(.synapse-graph-toggle):not(.synapse-graph-close),
+button[type="submit"]:not(.MuiIconButton-root) {
+  padding-inline: 14px;
+}
+
+.MuiChip-root,
+.MuiTabs-indicator,
+.MuiLinearProgress-root,
+.MuiSnackbarContent-root,
+[data-slot="badge"] {
+  border-radius: var(--sn-radius-full) !important;
+}
+
+.synapse-help-launcher {
+  z-index: 82;
+}
+
+.synapse-help-launcher > div > div {
+  border-radius: var(--sn-radius-full);
+  box-shadow: var(--sn-shadow-md);
 }
 
 .icon {
@@ -158,7 +189,7 @@ textarea,
 .synapse-graph-toggle {
   position: fixed;
   right: 22px;
-  bottom: 22px;
+  bottom: 88px;
   z-index: 80;
   width: 46px;
   height: 46px;
@@ -246,7 +277,7 @@ textarea,
 @media (max-width: 640px) {
   .synapse-graph-toggle {
     right: 16px;
-    bottom: 18px;
+    bottom: 82px;
     width: 44px;
     height: 44px;
   }

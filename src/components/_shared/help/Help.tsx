@@ -36,7 +36,7 @@ export default function Help() {
 
   return (
     <Portal>
-      <Box className={'fixed bottom-6 right-6'} sx={{ transform: 'translateZ(0px)', flexGrow: 1 }}>
+      <Box className={'synapse-help-launcher fixed bottom-6 right-6'} sx={{ transform: 'translateZ(0px)', flexGrow: 1 }}>
         <Tooltip title={t('questionBubble.help')}>
           <div ref={ref} onClick={() => setOpen(!open)} className={'py-2'}>
             <div
