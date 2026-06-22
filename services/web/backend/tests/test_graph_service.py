@@ -9,7 +9,7 @@ os.environ.setdefault("VAULT_ROOT", "/tmp/test-vault")
 
 from app.indexer.vault_indexer import VaultIndexer
 from app.services.graph_service import build_graph, get_graph_diagnostics
-from app.db.connection import get_db
+from app.db.connection import close_db, get_db
 
 
 @pytest.fixture()
@@ -259,6 +259,24 @@ class TestBuildGraph:
         ).fetchone()
         assert changed_hash_row["embedding"] is None
         assert changed_hash_row["status"] == "pending"
+
+    def test_index_database_can_be_regenerated(self, vault):
+        db_path = vault / ".synapsenote" / "graph.db"
+        close_db()
+        VaultIndexer().full_rebuild()
+        assert db_path.exists()
+
+        close_db()
+        for file_path in db_path.parent.glob("graph.db*"):
+            file_path.unlink()
+
+        VaultIndexer().full_rebuild()
+        result = build_graph()
+        chunks = get_db().execute("SELECT COUNT(*) FROM chunks").fetchone()[0]
+
+        assert db_path.exists()
+        assert result["stats"]["nodes"] > 0
+        assert chunks > 0
 
 
 def _graph_index_snapshot():

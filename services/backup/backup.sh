@@ -21,6 +21,10 @@ if [ "$MODE" = "local" ] || [ "$MODE" = "both" ]; then
         --exclude=".obsidian" \
         --exclude=".obsidian-web-trash" \
         --exclude=".obsidian-web-versions" \
+        --exclude=".synapsenote/graph.db" \
+        --exclude=".synapsenote/graph.db-shm" \
+        --exclude=".synapsenote/graph.db-wal" \
+        --exclude=".synapsenote/healthcheck.tmp" \
         -C "$BACKUP_SOURCE_DIR" .
         
     echo "[$(date)] Local backup created: $ARCHIVE_PATH"

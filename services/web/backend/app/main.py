@@ -4,6 +4,7 @@ import asyncio
 import logging
 import os
 import secrets
+from datetime import datetime, timezone
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 
@@ -27,6 +28,7 @@ from app.routers.vault_events_router import router as vault_events_router
 from app.services.capture_service import CaptureService
 from app.services.chat_runtime import ChatRuntime
 from app.services.chat_service import ChatService
+from app.services.vault_paths import get_vault_root
 
 logger = logging.getLogger(__name__)
 
@@ -91,11 +93,13 @@ def create_app() -> FastAPI:
     )
 
     @app.get("/health")
-    async def healthcheck() -> dict[str, str]:
+    async def healthcheck() -> dict[str, object]:
+        vault = _check_vault_health()
         return {
             "status": "ok",
             "service": "synapsenote-api",
             "version": APP_VERSION,
+            "vault": vault,
         }
 
     app.include_router(create_auth_router(settings.user_id, settings.password))
@@ -112,3 +116,26 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
+
+
+def _check_vault_health() -> dict[str, object]:
+    vault_root = get_vault_root()
+    probe_path = vault_root / ".synapsenote" / "healthcheck.tmp"
+    try:
+        probe_path.parent.mkdir(parents=True, exist_ok=True)
+        payload = datetime.now(timezone.utc).isoformat()
+        probe_path.write_text(payload, encoding="utf-8")
+        readable = probe_path.read_text(encoding="utf-8") == payload
+        probe_path.unlink(missing_ok=True)
+        return {
+            "path": str(vault_root),
+            "readable": readable,
+            "writable": True,
+        }
+    except Exception as exc:
+        return {
+            "path": str(vault_root),
+            "readable": False,
+            "writable": False,
+            "error": str(exc),
+        }

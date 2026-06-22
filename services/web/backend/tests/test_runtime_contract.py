@@ -64,15 +64,17 @@ def _login(client) -> None:
     assert response.status_code == 200
 
 
-def test_runtime_health_contract(client):
+def test_runtime_health_contract(client, vault):
     response = client.get("/health")
 
     assert response.status_code == 200
-    assert response.json() == {
-        "status": "ok",
-        "service": "synapsenote-api",
-        "version": "0.1.0",
-    }
+    payload = response.json()
+    assert payload["status"] == "ok"
+    assert payload["service"] == "synapsenote-api"
+    assert payload["version"] == "0.1.0"
+    assert payload["vault"]["path"] == str(vault.resolve())
+    assert payload["vault"]["readable"] is True
+    assert payload["vault"]["writable"] is True
 
 
 def test_runtime_auth_contract(client):

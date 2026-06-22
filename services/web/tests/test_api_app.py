@@ -29,18 +29,22 @@ def sign_in(client) -> None:
     assert response.status_code == 200
 
 
-def test_health_endpoint_exposes_app_metadata(monkeypatch) -> None:
+def test_health_endpoint_exposes_app_metadata(monkeypatch, tmp_path: Path) -> None:
     use_in_memory_chat_store(monkeypatch)
+    monkeypatch.setenv("VAULT_ROOT", str(tmp_path))
     client = create_test_client()
 
     response = client.get("/health")
 
     assert response.status_code == 200
-    assert response.json() == {
-        "status": "ok",
-        "service": "synapsenote-api",
-        "version": "0.1.0",
-    }
+    payload = response.json()
+    assert payload["status"] == "ok"
+    assert payload["service"] == "synapsenote-api"
+    assert payload["version"] == "0.1.0"
+    assert payload["vault"]["path"] == str(tmp_path.resolve())
+    assert payload["vault"]["readable"] is True
+    assert payload["vault"]["writable"] is True
+    assert not (tmp_path / ".synapsenote" / "healthcheck.tmp").exists()
 
 
 def test_single_user_login_sets_session_cookie(monkeypatch) -> None:

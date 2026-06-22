@@ -137,11 +137,11 @@
 
 ## 10. 백업/운영
 
-- [ ] `VAULT_ROOT`와 `.synapsenote/` 백업 정책을 정한다.
-  - 검증: 백업 산출물에 Markdown/attachment/index 정책 반영.
-- [ ] index DB는 파생 데이터로 재생성 가능해야 한다.
-  - 검증: `.synapsenote/*.db` 삭제 후 rebuild 통과.
-- [ ] 운영 healthcheck가 vault read/write 가능성을 확인한다.
-  - 검증: `/health` 또는 별도 diagnostics endpoint.
+- [x] `VAULT_ROOT`와 `.synapsenote/` 백업 정책을 정한다.
+  - 증거: `docs/backup-policy.md`, backup tar smoke excludes `graph.db` and includes Markdown/attachments/trash.
+- [x] index DB는 파생 데이터로 재생성 가능해야 한다.
+  - 증거: `.synapsenote/graph.db` 삭제 후 rebuild test.
+- [x] 운영 healthcheck가 vault read/write 가능성을 확인한다.
+  - 증거: `/health` vault readable/writable response test.
 - [ ] 배포 후 `synapse.lawdigest.kr`에서 문서 생성/수정/동기화 smoke를 통과한다.
   - 검증: live URL 수동/자동 smoke 결과.
