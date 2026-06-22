@@ -230,6 +230,36 @@ class TestBuildGraph:
         assert initial_chunks == [("First", "Alpha")]
         assert updated_chunks == [("Second", "Beta")]
 
+    def test_chunk_embedding_status_resets_only_when_hash_changes(self, vault):
+        indexer = VaultIndexer()
+        target = vault / "notes" / "embedded.md"
+        target.write_text("# First\nAlpha\n", encoding="utf-8")
+
+        indexer.update_node(target)
+        db = get_db()
+        db.execute(
+            "UPDATE chunk_embeddings SET embedding = ?, status = ? WHERE chunk_id = ?",
+            ("[0.1, 0.2]", "complete", "notes/embedded.md#chunk-0"),
+        )
+        db.commit()
+
+        indexer.update_node(target)
+        same_hash_row = db.execute(
+            "SELECT embedding, status FROM chunk_embeddings WHERE chunk_id = ?",
+            ("notes/embedded.md#chunk-0",),
+        ).fetchone()
+        assert same_hash_row["embedding"] == "[0.1, 0.2]"
+        assert same_hash_row["status"] == "complete"
+
+        target.write_text("# First\nBeta\n", encoding="utf-8")
+        indexer.update_node(target)
+        changed_hash_row = db.execute(
+            "SELECT embedding, status FROM chunk_embeddings WHERE chunk_id = ?",
+            ("notes/embedded.md#chunk-0",),
+        ).fetchone()
+        assert changed_hash_row["embedding"] is None
+        assert changed_hash_row["status"] == "pending"
+
 
 def _graph_index_snapshot():
     db = get_db()

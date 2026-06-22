@@ -108,12 +108,12 @@
   - 증거: heading/callout chunk tests, `/api/chunks`.
 - [x] chunk hash 기반 재색인을 구현한다.
   - 증거: document update chunk replacement test.
-- [~] 검색/임베딩 저장소를 `.synapsenote/` 아래에 둔다.
-  - 증거: `chunks` table in `.synapsenote/graph.db`; embedding vector store는 미완료.
-- [ ] Context Manager가 file path, heading, chunk id를 참조한다.
-  - 검증: 선택한 문서/chunk만 AI 요청에 포함.
-- [ ] AI 응답에 Markdown path 기준 출처가 남는다.
-  - 검증: chat run 결과에 source path/heading 포함.
+- [x] 검색/임베딩 저장소를 `.synapsenote/` 아래에 둔다.
+  - 증거: `chunks` and `chunk_embeddings` tables in `.synapsenote/graph.db`, embedding status/hash tests.
+- [x] Context Manager가 file path, heading, chunk id를 참조한다.
+  - 증거: context chunk add API test.
+- [x] AI 응답에 Markdown path 기준 출처가 남는다.
+  - 증거: chat message `sources` derived from context snapshot test.
 
 ## 8. Capture
 

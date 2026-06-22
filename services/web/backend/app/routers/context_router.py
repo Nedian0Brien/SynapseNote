@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException, Request
 
 from app.schemas import ContextAddPayload
 from app.services.context_service import (
+    add_context_chunks,
     add_context_items,
     list_context_items,
     remove_context_item,
@@ -29,6 +30,7 @@ async def add_context(payload: ContextAddPayload, request: Request) -> dict[str,
         raise HTTPException(status_code=401, detail="unauthorized")
 
     items = add_context_items(request.session, payload.nodeIds)
+    items = add_context_chunks(request.session, payload.chunkIds)
     return {"success": True, "data": items, "meta": {"total": len(items)}}
 
 

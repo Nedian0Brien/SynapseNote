@@ -74,6 +74,39 @@ def test_chat_store_persists_messages_under_session() -> None:
     assert messages[0]["contextIds"] == ["inbox.md"]
 
 
+def test_chat_message_sources_are_derived_from_context_snapshot() -> None:
+    from app.services.chat_store import InMemoryChatStore
+
+    store = InMemoryChatStore()
+    session = store.create_session(
+        title="Session A",
+        selected_agent="codex_cli",
+        edit_policy="auto_apply",
+        context_node_ids=[],
+    )
+
+    message = store.add_message(
+        session_id=str(session["id"]),
+        role="assistant",
+        content="정리했습니다.",
+        agent="codex_cli",
+        block_type="assistant_message",
+        context_ids=["inbox.md#chunk-1"],
+        context_snapshot=[{
+            "id": "inbox.md#chunk-1",
+            "path": "inbox.md",
+            "heading": "Detail",
+            "chunkId": "inbox.md#chunk-1",
+        }],
+    )
+
+    assert message["sources"] == [{
+        "path": "inbox.md",
+        "heading": "Detail",
+        "chunkId": "inbox.md#chunk-1",
+    }]
+
+
 def test_chat_store_records_agent_switch_handoff() -> None:
     from app.services.chat_store import InMemoryChatStore
 

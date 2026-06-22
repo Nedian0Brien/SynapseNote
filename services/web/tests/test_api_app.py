@@ -126,3 +126,30 @@ def test_context_endpoints_add_and_remove_nodes(monkeypatch, tmp_path: Path) -> 
     remove_response = client.delete("/api/context/inbox.md")
     assert remove_response.status_code == 200
     assert remove_response.json()["meta"]["total"] == 0
+
+
+def test_context_endpoint_adds_chunks_with_path_and_heading(monkeypatch, tmp_path: Path) -> None:
+    use_in_memory_chat_store(monkeypatch)
+    monkeypatch.setenv("SYNAPSENOTE_USER_ID", "solo")
+    monkeypatch.setenv("SYNAPSENOTE_USER_PASSWORD", "secret-pass")
+    monkeypatch.setenv("VAULT_ROOT", str(tmp_path))
+
+    (tmp_path / "inbox.md").write_text("# Inbox\n\n첫 메모\n\n## Detail\n두 번째 메모", encoding="utf-8")
+
+    run_vault_index()
+
+    client = create_test_client()
+    sign_in(client)
+
+    add_response = client.post(
+        "/api/context",
+        json={"nodeIds": [], "chunkIds": ["inbox.md#chunk-1"]},
+    )
+
+    assert add_response.status_code == 200
+    item = add_response.json()["data"][0]
+    assert item["id"] == "inbox.md#chunk-1"
+    assert item["type"] == "Chunk"
+    assert item["path"] == "inbox.md"
+    assert item["heading"] == "Detail"
+    assert item["chunkId"] == "inbox.md#chunk-1"

@@ -142,6 +142,7 @@ class VaultIndexer:
             conn.execute("DELETE FROM edges")
             conn.execute("DELETE FROM unresolved_links")
             conn.execute("DELETE FROM chunks")
+            conn.execute("DELETE FROM chunk_embeddings")
             conn.execute("DELETE FROM nodes")
 
             conn.executemany(
@@ -347,6 +348,7 @@ class VaultIndexer:
                 (node_id, node_id),
             )
             conn.execute("DELETE FROM chunks WHERE path = ?", (node_id,))
+            conn.execute("DELETE FROM chunk_embeddings WHERE path = ?", (node_id,))
 
         logger.debug("delete_node: %s removed", node_id)
 
@@ -574,10 +576,13 @@ class VaultIndexer:
 
     def _replace_chunks(self, conn: sqlite3.Connection, nodes: list[dict]) -> None:
         rows = []
+        chunk_ids_by_path: dict[str, list[str]] = {}
         for node in nodes:
             if node["type"] != "Document":
                 continue
+            chunk_ids_by_path[str(node["id"])] = []
             for chunk in node.get("chunks", []):
+                chunk_ids_by_path[str(node["id"])].append(str(chunk["id"]))
                 rows.append((
                     chunk["id"],
                     chunk["path"],
@@ -595,6 +600,37 @@ class VaultIndexer:
                 "(id, path, heading, anchor, ordinal, content, content_hash, updated_at) "
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                 rows,
+            )
+            conn.executemany(
+                """
+                INSERT INTO chunk_embeddings (chunk_id, path, content_hash, embedding, status, updated_at)
+                VALUES (?, ?, ?, NULL, 'pending', ?)
+                ON CONFLICT(chunk_id) DO UPDATE SET
+                    path = excluded.path,
+                    content_hash = excluded.content_hash,
+                    embedding = CASE
+                        WHEN chunk_embeddings.content_hash = excluded.content_hash
+                        THEN chunk_embeddings.embedding
+                        ELSE NULL
+                    END,
+                    status = CASE
+                        WHEN chunk_embeddings.content_hash = excluded.content_hash
+                        THEN chunk_embeddings.status
+                        ELSE 'pending'
+                    END,
+                    updated_at = excluded.updated_at
+                """,
+                [(row[0], row[1], row[6], row[7]) for row in rows],
+            )
+
+        for path, chunk_ids in chunk_ids_by_path.items():
+            if not chunk_ids:
+                conn.execute("DELETE FROM chunk_embeddings WHERE path = ?", (path,))
+                continue
+            placeholders = ",".join("?" * len(chunk_ids))
+            conn.execute(
+                f"DELETE FROM chunk_embeddings WHERE path = ? AND chunk_id NOT IN ({placeholders})",
+                [path, *chunk_ids],
             )
 
     def _build_stem_index(self, conn: sqlite3.Connection) -> dict[str, list[str]]:

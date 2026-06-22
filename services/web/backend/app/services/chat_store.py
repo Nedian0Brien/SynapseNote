@@ -41,6 +41,27 @@ def _sorted_documents(
     )
 
 
+def _build_message_sources(context_snapshot: list[dict[str, Any]]) -> list[dict[str, str]]:
+    sources: list[dict[str, str]] = []
+    seen: set[tuple[str, str, str]] = set()
+    for item in context_snapshot:
+        path = str(item.get("path") or item.get("id") or "")
+        if not path:
+            continue
+        heading = str(item.get("heading") or item.get("title") or "")
+        chunk_id = str(item.get("chunkId") or item.get("id") or "")
+        key = (path, heading, chunk_id)
+        if key in seen:
+            continue
+        seen.add(key)
+        sources.append({
+            "path": path,
+            "heading": heading,
+            "chunkId": chunk_id,
+        })
+    return sources
+
+
 class DocumentDatabase(Protocol):
     def ensure_database(self) -> None: ...
 
@@ -270,6 +291,7 @@ class InMemoryChatStore:
             "blockType": block_type,
             "contextIds": list(context_ids),
             "contextSnapshot": list(context_snapshot),
+            "sources": _build_message_sources(context_snapshot),
             "createdAt": _utc_now(),
         }
         self.messages_by_session.setdefault(session_id, []).append(message)
@@ -514,6 +536,7 @@ class CouchDBChatStore:
                 "blockType": block_type,
                 "contextIds": list(context_ids),
                 "contextSnapshot": list(context_snapshot),
+                "sources": _build_message_sources(context_snapshot),
                 "createdAt": created_at,
             },
         )
@@ -808,6 +831,7 @@ class FileChatStore:
             "blockType": block_type,
             "contextIds": list(context_ids),
             "contextSnapshot": list(context_snapshot),
+            "sources": _build_message_sources(context_snapshot),
             "createdAt": created_at,
         }
         data["messages"].append(message)

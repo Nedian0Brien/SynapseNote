@@ -44,12 +44,23 @@ def init_schema(conn: sqlite3.Connection) -> None:
             updated_at   TEXT NOT NULL
         );
 
+        CREATE TABLE IF NOT EXISTS chunk_embeddings (
+            chunk_id     TEXT PRIMARY KEY,
+            path         TEXT NOT NULL,
+            content_hash TEXT NOT NULL,
+            embedding    TEXT,
+            status       TEXT NOT NULL DEFAULT 'pending',
+            updated_at   TEXT NOT NULL
+        );
+
         CREATE INDEX IF NOT EXISTS idx_edges_source ON edges(source);
         CREATE INDEX IF NOT EXISTS idx_edges_target ON edges(target);
         CREATE INDEX IF NOT EXISTS idx_nodes_type   ON nodes(type);
         CREATE INDEX IF NOT EXISTS idx_unresolved_links_source ON unresolved_links(source);
         CREATE INDEX IF NOT EXISTS idx_chunks_path ON chunks(path);
         CREATE INDEX IF NOT EXISTS idx_chunks_hash ON chunks(content_hash);
+        CREATE INDEX IF NOT EXISTS idx_chunk_embeddings_path ON chunk_embeddings(path);
+        CREATE INDEX IF NOT EXISTS idx_chunk_embeddings_status ON chunk_embeddings(status);
     """)
 
     # 기존 DB에 x, y 컬럼 없으면 추가 (마이그레이션)

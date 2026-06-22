@@ -11,6 +11,7 @@ class LoginPayload(BaseModel):
 
 class ContextAddPayload(BaseModel):
     nodeIds: list[str]
+    chunkIds: list[str] = []
 
 
 class ChatSessionCreatePayload(BaseModel):
