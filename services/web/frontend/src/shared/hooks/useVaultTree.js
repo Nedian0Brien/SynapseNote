@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiRequest, encodePath } from '../api/apiClient';
+import { useVaultEvents } from './useVaultEvents';
 
 /**
  * Vault 파일 트리를 가져오는 훅.
@@ -28,6 +29,12 @@ export function useVaultTree({ onUnauthorized } = {}) {
   }, [onUnauthorized]);
 
   useEffect(() => { fetch_(); }, [fetch_]);
+
+  useVaultEvents(useCallback((event) => {
+    if (event.type === 'document_changed') {
+      void fetch_();
+    }
+  }, [fetch_]));
 
   const createFile = useCallback(async (path, content = '') => {
     const json = await apiRequest('/api/documents', {

@@ -85,3 +85,59 @@ class TestBuildGraph:
 
         root_node = next(node for node in result["nodes"] if node["id"] == ".")
         assert root_node["type"] == "Directory"
+
+    def test_frontmatter_tags_create_tag_nodes_and_edges(self, vault):
+        (vault / "notes" / "frontmatter.md").write_text(
+            textwrap.dedent("""\
+                ---
+                title: Frontmatter Title
+                tags:
+                  - law
+                  - rag
+                ---
+
+                Body without heading.
+            """),
+            encoding="utf-8",
+        )
+
+        VaultIndexer().full_rebuild()
+        result = build_graph()
+
+        nodes = {node["id"]: node for node in result["nodes"]}
+        edges = {(edge["source"], edge["target"], edge["edge_type"]) for edge in result["edges"]}
+
+        assert nodes["notes/frontmatter.md"]["title"] == "Frontmatter Title"
+        assert set(nodes["notes/frontmatter.md"]["tags"]) == {"law", "rag"}
+        assert nodes["tag:law"]["type"] == "Tag"
+        assert ("notes/frontmatter.md", "tag:law", "tag") in edges
+        assert ("notes/frontmatter.md", "tag:rag", "tag") in edges
+
+    def test_markdown_links_create_markdown_link_edges(self, vault):
+        (vault / "notes" / "target.md").write_text("# Target\n", encoding="utf-8")
+        (vault / "notes" / "source.md").write_text(
+            "[Target](target.md)\n[External](https://example.com/out.md)\n",
+            encoding="utf-8",
+        )
+
+        VaultIndexer().full_rebuild()
+        result = build_graph()
+
+        edges = {(edge["source"], edge["target"], edge["edge_type"]) for edge in result["edges"]}
+        assert ("notes/source.md", "notes/target.md", "markdown_link") in edges
+
+    def test_embeds_create_attachment_nodes_and_edges(self, vault):
+        (vault / "notes" / "diagram.png").write_bytes(b"png")
+        (vault / "notes" / "with-embed.md").write_text(
+            "![[diagram.png]]\n",
+            encoding="utf-8",
+        )
+
+        VaultIndexer().full_rebuild()
+        result = build_graph()
+
+        nodes = {node["id"]: node for node in result["nodes"]}
+        edges = {(edge["source"], edge["target"], edge["edge_type"]) for edge in result["edges"]}
+
+        assert nodes["notes/diagram.png"]["type"] == "Attachment"
+        assert ("notes/with-embed.md", "notes/diagram.png", "attachment") in edges

@@ -57,7 +57,7 @@ def build_graph(
     for edge in edges:
         connected_ids.add(str(edge["source"]))
         connected_ids.add(str(edge["target"]))
-        if edge["edge_type"] in ("directory", "wikilink"):
+        if edge["edge_type"] in ("directory", "wikilink", "markdown_link", "tag", "attachment"):
             structural_count += 1
 
     all_ids = {n.id for n in nodes}

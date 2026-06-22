@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import posixpath
 import re
 import sqlite3
 from datetime import datetime
@@ -14,8 +15,11 @@ from app.db.connection import get_db
 
 IGNORED_DIRS = {".git", ".obsidian", "__pycache__", ".pytest_cache", ".synapsenote"}
 WIKILINK_PATTERN = re.compile(r"\[\[([^\]|#]+)(?:#[^\]|]*)?\|?[^\]]*\]\]")
+EMBED_PATTERN = re.compile(r"!\[\[([^\]|#]+)(?:#[^\]|]*)?\|?[^\]]*\]\]")
+MARKDOWN_LINK_PATTERN = re.compile(r"(?<!!)\[[^\]]+\]\(([^)#?]+\.md)(?:#[^)]*)?\)")
 TITLE_PATTERN = re.compile(r"^#\s+(.+)$", re.MULTILINE)
-TAG_PATTERN = re.compile(r"#([a-zA-Z0-9_-]+)")
+TAG_PATTERN = re.compile(r"(?<![\w/])#([a-zA-Z0-9][a-zA-Z0-9_-]*)")
+FRONTMATTER_PATTERN = re.compile(r"\A---\s*\n(.*?)\n---\s*(?:\n|\Z)", re.DOTALL)
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +46,7 @@ class VaultIndexer:
         for path in sorted(self.vault_root.rglob("*")):
             if self._should_ignore(path):
                 continue
-            if path.is_dir() or (path.is_file() and path.suffix.lower() == ".md"):
+            if path.is_dir() or path.is_file():
                 all_paths.append(path)
 
         # 2. 각 파일 1회 읽어 node 정보 파싱
@@ -64,14 +68,24 @@ class VaultIndexer:
             except Exception as exc:
                 logger.warning("Failed to parse %s: %s", path, exc)
 
-        # 3. stem_index 구성 (wikilink 해석용: stem → node id)
+        # 3. tag node 추가
+        tag_names = sorted({
+            tag
+            for node in parsed
+            if node["type"] == "Document"
+            for tag in node["tags"]
+        })
+        for tag in tag_names:
+            parsed.append(self._tag_node(tag))
+
+        # 4. stem_index 구성 (wikilink 해석용: stem → node id)
         stem_index: dict[str, list[str]] = {}
         for node in parsed:
             if node["type"] == "Document":
                 stem = Path(node["id"]).stem
                 stem_index.setdefault(stem, []).append(node["id"])
 
-        # 4. 엣지 계산 (directory + wikilink)
+        # 5. 엣지 계산
         node_id_set = {node["id"] for node in parsed}
         edges: list[tuple[str, str, str, float]] = []
 
@@ -98,8 +112,20 @@ class VaultIndexer:
                     if resolved and resolved != node_id and resolved not in seen:
                         seen.add(resolved)
                         edges.append((node_id, resolved, "wikilink", 1.0))
+                for link_target in node["markdown_links"]:
+                    resolved = self._resolve_markdown_link(link_target, source_dir, node_id_set)
+                    if resolved and resolved != node_id and resolved not in seen:
+                        seen.add(resolved)
+                        edges.append((node_id, resolved, "markdown_link", 1.0))
+                for embed_target in node["embeds"]:
+                    resolved = self._resolve_attachment(embed_target, source_dir, node_id_set)
+                    if resolved and resolved != node_id and resolved not in seen:
+                        seen.add(resolved)
+                        edges.append((node_id, resolved, "attachment", 1.0))
+                for tag in node["tags"]:
+                    edges.append((node_id, self._tag_id(tag), "tag", 1.0))
 
-        # 5. 단일 트랜잭션으로 nodes + edges 전체 교체
+        # 6. 단일 트랜잭션으로 nodes + edges 전체 교체
         conn = get_db()
         with conn:
             conn.execute("DELETE FROM edges")
@@ -127,7 +153,7 @@ class VaultIndexer:
                 edges,
             )
 
-        # 6. 레이아웃 계산 후 x, y 저장
+        # 7. 레이아웃 계산 후 x, y 저장
         positions = self._compute_layout(
             node_ids=[n["id"] for n in parsed],
             edges=edges,
@@ -191,9 +217,12 @@ class VaultIndexer:
             # outgoing edges 삭제 후 재계산
             conn.execute("DELETE FROM edges WHERE source = ?", (node_id,))
 
-            new_edges: list[tuple[str, str, str, float]] = []
+            for tag in node["tags"]:
+                self._upsert_tag_node(conn, tag)
+
             stem_index = self._build_stem_index(conn)
             node_ids = self._all_node_ids(conn)
+            new_edges: list[tuple[str, str, str, float]] = []
 
             # directory 엣지: 이 노드의 부모 → 이 노드
             if node_id != ".":
@@ -222,6 +251,18 @@ class VaultIndexer:
                     if resolved and resolved != node_id and resolved not in seen:
                         seen.add(resolved)
                         new_edges.append((node_id, resolved, "wikilink", 1.0))
+                for link_target in node["markdown_links"]:
+                    resolved = self._resolve_markdown_link(link_target, source_dir, node_ids)
+                    if resolved and resolved != node_id and resolved not in seen:
+                        seen.add(resolved)
+                        new_edges.append((node_id, resolved, "markdown_link", 1.0))
+                for embed_target in node["embeds"]:
+                    resolved = self._resolve_attachment(embed_target, source_dir, node_ids)
+                    if resolved and resolved != node_id and resolved not in seen:
+                        seen.add(resolved)
+                        new_edges.append((node_id, resolved, "attachment", 1.0))
+                for tag in node["tags"]:
+                    new_edges.append((node_id, self._tag_id(tag), "tag", 1.0))
 
             if new_edges:
                 conn.executemany(
@@ -290,28 +331,49 @@ class VaultIndexer:
                 "tags": [],
                 "updated_at": updated_at,
                 "wikilinks": [],
+                "markdown_links": [],
+                "embeds": [],
+            }
+
+        if path.suffix.lower() != ".md":
+            return {
+                "id": node_id,
+                "title": path.name,
+                "type": "Attachment",
+                "summary": "Attachment",
+                "tags": [],
+                "updated_at": updated_at,
+                "wikilinks": [],
+                "markdown_links": [],
+                "embeds": [],
             }
 
         # Markdown 파일 — 1회만 읽기
         content = path.read_text(encoding="utf-8", errors="replace")
+        frontmatter, body = self._split_frontmatter(content)
 
-        title_match = TITLE_PATTERN.search(content)
+        title_match = TITLE_PATTERN.search(body)
         title = (
-            title_match.group(1).strip()
+            str(frontmatter.get("title") or title_match.group(1).strip())
             if title_match
-            else path.stem.replace("-", " ").strip() or path.stem
+            else str(frontmatter.get("title") or path.stem.replace("-", " ").strip() or path.stem)
         )
 
         lines = [
             line.strip()
-            for line in content.splitlines()
+            for line in body.splitlines()
             if line.strip() and not line.strip().startswith("#")
         ]
         summary = lines[0][:180] if lines else ""
 
-        tags = sorted(set(TAG_PATTERN.findall(content)))[:5]
+        frontmatter_tags = frontmatter.get("tags") or []
+        if isinstance(frontmatter_tags, str):
+            frontmatter_tags = [frontmatter_tags]
+        tags = sorted(set([*frontmatter_tags, *TAG_PATTERN.findall(body)]))[:20]
 
-        wikilinks = [m.group(1).strip() for m in WIKILINK_PATTERN.finditer(content)]
+        wikilinks = [m.group(1).strip() for m in WIKILINK_PATTERN.finditer(body)]
+        markdown_links = [m.group(1).strip() for m in MARKDOWN_LINK_PATTERN.finditer(body)]
+        embeds = [m.group(1).strip() for m in EMBED_PATTERN.finditer(body)]
 
         return {
             "id": node_id,
@@ -321,7 +383,47 @@ class VaultIndexer:
             "tags": tags,
             "updated_at": updated_at,
             "wikilinks": wikilinks,
+            "markdown_links": markdown_links,
+            "embeds": embeds,
         }
+
+    def _split_frontmatter(self, content: str) -> tuple[dict[str, object], str]:
+        match = FRONTMATTER_PATTERN.match(content)
+        if not match:
+            return {}, content
+
+        return self._parse_frontmatter(match.group(1)), content[match.end():]
+
+    def _parse_frontmatter(self, raw: str) -> dict[str, object]:
+        data: dict[str, object] = {}
+        current_key: str | None = None
+        for line in raw.splitlines():
+            stripped = line.strip()
+            if not stripped:
+                continue
+            if current_key and stripped.startswith("- "):
+                current = data.setdefault(current_key, [])
+                if isinstance(current, list):
+                    current.append(stripped[2:].strip().strip('"\''))
+                continue
+            if ":" not in line:
+                current_key = None
+                continue
+            key, value = line.split(":", 1)
+            key = key.strip()
+            value = value.strip()
+            current_key = key
+            if not value:
+                data[key] = []
+            elif value.startswith("[") and value.endswith("]"):
+                data[key] = [
+                    item.strip().strip('"\'')
+                    for item in value[1:-1].split(",")
+                    if item.strip()
+                ]
+            else:
+                data[key] = value.strip('"\'')
+        return data
 
     def _resolve_wikilink(
         self,
@@ -347,6 +449,69 @@ class VaultIndexer:
             if cand.rsplit("/", 1)[0] == source_dir:
                 return cand
         return candidates[0]
+
+    def _resolve_markdown_link(self, target: str, source_dir: str, node_ids: set[str]) -> str | None:
+        if "://" in target:
+            return None
+
+        normalized = target.lstrip("/")
+        if not target.startswith("/") and source_dir:
+            normalized = posixpath.normpath(f"{source_dir}/{target}")
+        else:
+            normalized = posixpath.normpath(normalized)
+
+        if normalized in node_ids:
+            return normalized
+        return None
+
+    def _resolve_attachment(self, target: str, source_dir: str, node_ids: set[str]) -> str | None:
+        normalized = target.lstrip("/")
+        candidates = []
+        if not target.startswith("/") and source_dir:
+            candidates.append(posixpath.normpath(f"{source_dir}/{target}"))
+        candidates.append(posixpath.normpath(normalized))
+
+        target_stem = Path(target).stem.lower()
+        for candidate in candidates:
+            if candidate in node_ids:
+                return candidate
+
+        for node_id in node_ids:
+            if Path(node_id).stem.lower() == target_stem:
+                return node_id
+        return None
+
+    @staticmethod
+    def _tag_id(tag: str) -> str:
+        return f"tag:{tag}"
+
+    def _tag_node(self, tag: str) -> dict:
+        return {
+            "id": self._tag_id(tag),
+            "title": f"#{tag}",
+            "type": "Tag",
+            "summary": "Tag",
+            "tags": [],
+            "updated_at": datetime.fromtimestamp(self.vault_root.stat().st_mtime).isoformat(),
+            "wikilinks": [],
+            "markdown_links": [],
+            "embeds": [],
+        }
+
+    def _upsert_tag_node(self, conn: sqlite3.Connection, tag: str) -> None:
+        node = self._tag_node(tag)
+        conn.execute(
+            "INSERT OR IGNORE INTO nodes (id, title, type, summary, tags, updated_at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                node["id"],
+                node["title"],
+                node["type"],
+                node["summary"],
+                json.dumps(node["tags"], ensure_ascii=False),
+                node["updated_at"],
+            ),
+        )
 
     def _build_stem_index(self, conn: sqlite3.Connection) -> dict[str, list[str]]:
         """현재 SQLite에서 stem → [id, ...] 맵 생성."""

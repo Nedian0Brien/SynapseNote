@@ -15,8 +15,37 @@ function HookHarness() {
   );
 }
 
+class MockEventSource {
+  static instances = [];
+
+  constructor(url, options) {
+    this.url = url;
+    this.options = options;
+    this.listeners = new Map();
+    this.closed = false;
+    MockEventSource.instances.push(this);
+  }
+
+  addEventListener(type, listener) {
+    this.listeners.set(type, listener);
+  }
+
+  removeEventListener(type) {
+    this.listeners.delete(type);
+  }
+
+  emit(type, data) {
+    this.listeners.get(type)?.({ data: JSON.stringify(data) });
+  }
+
+  close() {
+    this.closed = true;
+  }
+}
+
 describe('useVaultTree', () => {
   beforeEach(() => {
+    MockEventSource.instances = [];
     globalThis.fetch = vi.fn()
       .mockResolvedValueOnce({
         ok: true,
@@ -26,6 +55,7 @@ describe('useVaultTree', () => {
   });
 
   afterEach(() => {
+    delete globalThis.EventSource;
     vi.restoreAllMocks();
   });
 
@@ -101,6 +131,34 @@ describe('useVaultTree', () => {
         method: 'DELETE',
       }));
       expect(globalThis.fetch).toHaveBeenNthCalledWith(3, '/api/nodes', { credentials: 'include' });
+    });
+  });
+
+  it('vault 이벤트를 받으면 트리를 다시 불러온다', async () => {
+    globalThis.EventSource = MockEventSource;
+    globalThis.fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ data: [{ id: 'changed.md', type: 'Document', title: 'changed' }] }),
+      });
+
+    render(<HookHarness />);
+
+    await waitFor(() => {
+      expect(MockEventSource.instances.length).toBe(1);
+    });
+
+    MockEventSource.instances[0].emit('vault', {
+      type: 'document_changed',
+      action: 'modified',
+      path: 'changed.md',
+      hash: 'new-hash',
+    });
+
+    await waitFor(() => {
+      expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+      expect(globalThis.fetch).toHaveBeenNthCalledWith(2, '/api/nodes', { credentials: 'include' });
     });
   });
 });

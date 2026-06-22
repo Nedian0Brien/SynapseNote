@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiRequest } from '../api/apiClient';
+import { useVaultEvents } from './useVaultEvents';
 
 function normalizeGraphNode(node) {
   const id = String(node.id ?? '');
@@ -51,6 +52,12 @@ export function useGraph({ onUnauthorized, refreshKey } = {}) {
   }, [onUnauthorized]);
 
   useEffect(() => { fetchGraph(); }, [fetchGraph, refreshKey]);
+
+  useVaultEvents(useCallback((event) => {
+    if (event.type === 'document_changed') {
+      void fetchGraph();
+    }
+  }, [fetchGraph]));
 
   return { nodes, edges, stats, loading, error, refetch: fetchGraph };
 }
