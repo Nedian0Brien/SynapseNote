@@ -44,6 +44,9 @@ def test_health_endpoint_exposes_app_metadata(monkeypatch, tmp_path: Path) -> No
     assert payload["vault"]["path"] == str(tmp_path.resolve())
     assert payload["vault"]["readable"] is True
     assert payload["vault"]["writable"] is True
+    assert payload["index"]["ready"] is False
+    assert payload["index"]["running"] is False
+    assert payload["index"]["error"] is None
     assert not (tmp_path / ".synapsenote" / "healthcheck.tmp").exists()
 
 

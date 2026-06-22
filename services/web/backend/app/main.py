@@ -5,7 +5,7 @@ import logging
 import os
 import secrets
 from datetime import datetime, timezone
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass
 
 from fastapi import FastAPI
@@ -57,22 +57,32 @@ async def lifespan(app: FastAPI):
     # 1. DB 스키마 초기화
     init_schema(get_db())
 
-    # 2. 전체 재인덱싱 (thread pool에서 실행해 이벤트 루프 블로킹 방지)
+    # 2. watchdog 파일 감시 시작
     indexer = VaultIndexer()
-    try:
-        result = await asyncio.to_thread(indexer.full_rebuild)
-        logger.info("[indexer] full_rebuild completed: %d nodes, %d edges", result["nodes"], result["edges"])
-    except Exception as exc:
-        logger.error("[indexer] full_rebuild failed: %s", exc, exc_info=True)
-
-    # 3. watchdog 파일 감시 시작
     watcher = VaultWatcher(indexer)
     watcher.start()
 
-    yield
+    # 3. 전체 재인덱싱은 readiness를 막지 않도록 background에서 수행
+    app.state.index_status.update({
+        "ready": False,
+        "running": True,
+        "startedAt": datetime.now(timezone.utc).isoformat(),
+        "completedAt": None,
+        "error": None,
+    })
+    rebuild_task = asyncio.create_task(_run_index_rebuild(app, indexer))
+    app.state.index_rebuild_task = rebuild_task
 
-    # ── 종료 ──────────────────────────────────────────────────────────
-    watcher.stop()
+    try:
+        yield
+    finally:
+        # ── 종료 ──────────────────────────────────────────────────────────
+        watcher.stop()
+
+        if not rebuild_task.done():
+            rebuild_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await rebuild_task
 
 
 def create_app() -> FastAPI:
@@ -82,6 +92,7 @@ def create_app() -> FastAPI:
     capture_service = CaptureService(chat_service=chat_service)
 
     app = FastAPI(title="synapsenote-api", version=APP_VERSION, lifespan=lifespan)
+    app.state.index_status = _initial_index_status()
     app.add_middleware(GZipMiddleware, minimum_size=1024)
     app.add_middleware(
         SessionMiddleware,
@@ -100,6 +111,7 @@ def create_app() -> FastAPI:
             "service": "synapsenote-api",
             "version": APP_VERSION,
             "vault": vault,
+            "index": _check_index_health(app),
         }
 
     app.include_router(create_auth_router(settings.user_id, settings.password))
@@ -114,8 +126,57 @@ def create_app() -> FastAPI:
 
     return app
 
+def _initial_index_status() -> dict[str, object]:
+    return {
+        "ready": False,
+        "running": False,
+        "startedAt": None,
+        "completedAt": None,
+        "lastResult": None,
+        "error": None,
+    }
 
-app = create_app()
+
+async def _run_index_rebuild(app: FastAPI, indexer: VaultIndexer) -> None:
+    status = app.state.index_status
+
+    try:
+        result = await asyncio.to_thread(indexer.full_rebuild)
+        status.update({
+            "ready": True,
+            "running": False,
+            "completedAt": datetime.now(timezone.utc).isoformat(),
+            "lastResult": result,
+            "error": None,
+        })
+        logger.info("[indexer] full_rebuild completed: %d nodes, %d edges", result["nodes"], result["edges"])
+    except asyncio.CancelledError:
+        status.update({
+            "running": False,
+            "completedAt": datetime.now(timezone.utc).isoformat(),
+            "error": "cancelled",
+        })
+        raise
+    except Exception as exc:
+        status.update({
+            "ready": False,
+            "running": False,
+            "completedAt": datetime.now(timezone.utc).isoformat(),
+            "error": str(exc),
+        })
+        logger.error("[indexer] full_rebuild failed: %s", exc, exc_info=True)
+
+
+def _check_index_health(app: FastAPI) -> dict[str, object]:
+    status = getattr(app.state, "index_status", _initial_index_status())
+    return {
+        "ready": bool(status.get("ready")),
+        "running": bool(status.get("running")),
+        "startedAt": status.get("startedAt"),
+        "completedAt": status.get("completedAt"),
+        "lastResult": status.get("lastResult"),
+        "error": status.get("error"),
+    }
 
 
 def _check_vault_health() -> dict[str, object]:
@@ -139,3 +200,6 @@ def _check_vault_health() -> dict[str, object]:
             "writable": False,
             "error": str(exc),
         }
+
+
+app = create_app()

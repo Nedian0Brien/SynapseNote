@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import asyncio
 import os
 import sys
+import threading
 import textwrap
+import time
 from pathlib import Path
 
 import pytest
@@ -75,6 +78,47 @@ def test_runtime_health_contract(client, vault):
     assert payload["vault"]["path"] == str(vault.resolve())
     assert payload["vault"]["readable"] is True
     assert payload["vault"]["writable"] is True
+    assert payload["index"]["ready"] is False
+    assert payload["index"]["running"] is False
+    assert payload["index"]["error"] is None
+
+
+def test_runtime_lifespan_does_not_wait_for_full_rebuild(vault, monkeypatch):
+    from app.indexer.vault_indexer import VaultIndexer
+    from app.indexer.vault_watcher import VaultWatcher
+    from app.main import create_app
+
+    rebuild_can_finish = threading.Event()
+
+    def slow_rebuild(self):
+        rebuild_can_finish.wait(timeout=2)
+        return {"nodes": 2, "edges": 1}
+
+    monkeypatch.setattr(VaultIndexer, "full_rebuild", slow_rebuild)
+    monkeypatch.setattr(VaultWatcher, "start", lambda self: None)
+    monkeypatch.setattr(VaultWatcher, "stop", lambda self: None)
+
+    app = create_app()
+
+    async def run_lifespan_probe():
+        started_at = time.monotonic()
+        async with app.router.lifespan_context(app):
+            elapsed = time.monotonic() - started_at
+            assert elapsed < 0.5
+            assert app.state.index_status["running"] is True
+            assert app.state.index_status["ready"] is False
+
+            rebuild_can_finish.set()
+            for _ in range(20):
+                if app.state.index_status["ready"]:
+                    break
+                await asyncio.sleep(0.05)
+
+            assert app.state.index_status["ready"] is True
+            assert app.state.index_status["lastResult"] == {"nodes": 2, "edges": 1}
+            assert app.state.index_status["error"] is None
+
+    asyncio.run(run_lifespan_probe())
 
 
 def test_runtime_auth_contract(client):
