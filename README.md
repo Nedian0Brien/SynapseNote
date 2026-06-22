@@ -22,6 +22,8 @@ pnpm run build
 
 The production web image is built from this worktree and served through the self-hosted compose stack.
 
+Use `release/synapse` as the deployment branch. See [doc/BRANCHING.md](doc/BRANCHING.md) for branch and remote policy.
+
 ```bash
 docker build -f docker/Dockerfile -t synapsenote/appflowy-web:local .
 cd ../appflowy-cloud
