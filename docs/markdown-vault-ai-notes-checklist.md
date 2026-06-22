@@ -104,12 +104,12 @@
 
 ## 7. AI/Context
 
-- [ ] Markdown chunker를 구현한다.
-  - 검증: heading/list/code/frontmatter fixture별 chunk 테스트.
-- [ ] chunk hash 기반 재색인을 구현한다.
-  - 검증: 문서 일부 수정 시 해당 문서 chunk만 갱신.
-- [ ] 검색/임베딩 저장소를 `.synapsenote/` 아래에 둔다.
-  - 검증: index file 생성과 재생성 가능성 테스트.
+- [x] Markdown chunker를 구현한다.
+  - 증거: heading/callout chunk tests, `/api/chunks`.
+- [x] chunk hash 기반 재색인을 구현한다.
+  - 증거: document update chunk replacement test.
+- [~] 검색/임베딩 저장소를 `.synapsenote/` 아래에 둔다.
+  - 증거: `chunks` table in `.synapsenote/graph.db`; embedding vector store는 미완료.
 - [ ] Context Manager가 file path, heading, chunk id를 참조한다.
   - 검증: 선택한 문서/chunk만 AI 요청에 포함.
 - [ ] AI 응답에 Markdown path 기준 출처가 남는다.

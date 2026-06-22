@@ -107,3 +107,33 @@ def test_graph_diagnostics_endpoint_requires_auth(tmp_path, monkeypatch):
     response = client.get("/api/graph/diagnostics")
 
     assert response.status_code == 401
+
+
+def test_chunks_endpoint_returns_document_chunks(tmp_path, monkeypatch):
+    monkeypatch.setenv("VAULT_ROOT", str(tmp_path))
+    (tmp_path / "note.md").write_text("# One\nAlpha\n\n## Two\nBeta\n", encoding="utf-8")
+    run_vault_index()
+
+    client = create_test_client(tmp_path, monkeypatch)
+    sign_in(client)
+
+    response = client.get("/api/chunks?path=note.md")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["meta"]["total"] == 2
+    assert [chunk["heading"] for chunk in payload["data"]] == ["One", "Two"]
+    assert payload["data"][0]["path"] == "note.md"
+    assert payload["data"][0]["hash"]
+
+
+def test_chunks_endpoint_requires_auth(tmp_path, monkeypatch):
+    monkeypatch.setenv("VAULT_ROOT", str(tmp_path))
+    (tmp_path / "note.md").write_text("# One\nAlpha\n", encoding="utf-8")
+    run_vault_index()
+
+    client = create_test_client(tmp_path, monkeypatch)
+
+    response = client.get("/api/chunks")
+
+    assert response.status_code == 401

@@ -18,6 +18,7 @@ from app.indexer.vault_watcher import VaultWatcher
 from app.routers.attachment_router import router as attachment_router
 from app.routers.auth_router import create_auth_router
 from app.routers.chat_router import create_chat_router
+from app.routers.chunk_router import router as chunk_router
 from app.routers.context_router import router as context_router
 from app.routers.document_router import router as document_router
 from app.routers.graph_router import router as graph_router
@@ -104,6 +105,7 @@ def create_app() -> FastAPI:
     app.include_router(graph_router)
     app.include_router(document_router)
     app.include_router(attachment_router)
+    app.include_router(chunk_router)
     app.include_router(vault_events_router)
 
     return app

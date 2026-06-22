@@ -215,6 +215,21 @@ class TestBuildGraph:
 
         assert incremental_snapshot == rebuild_snapshot
 
+    def test_chunks_are_reindexed_when_document_changes(self, vault):
+        indexer = VaultIndexer()
+        target = vault / "notes" / "chunked.md"
+        target.write_text("# First\nAlpha\n", encoding="utf-8")
+
+        indexer.update_node(target)
+        initial_chunks = _chunk_snapshot("notes/chunked.md")
+
+        target.write_text("# Second\nBeta\n", encoding="utf-8")
+        indexer.update_node(target)
+        updated_chunks = _chunk_snapshot("notes/chunked.md")
+
+        assert initial_chunks == [("First", "Alpha")]
+        assert updated_chunks == [("Second", "Beta")]
+
 
 def _graph_index_snapshot():
     db = get_db()
@@ -231,3 +246,12 @@ def _graph_index_snapshot():
         for row in db.execute("SELECT source, target, link_type, raw_target FROM unresolved_links").fetchall()
     }
     return {"nodes": nodes, "edges": edges, "unresolved": unresolved}
+
+
+def _chunk_snapshot(path: str):
+    db = get_db()
+    rows = db.execute(
+        "SELECT heading, content FROM chunks WHERE path = ? ORDER BY ordinal",
+        (path,),
+    ).fetchall()
+    return [(row["heading"], row["content"].splitlines()[-1]) for row in rows]

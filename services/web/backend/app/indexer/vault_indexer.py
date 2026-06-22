@@ -12,6 +12,7 @@ from pathlib import Path
 import networkx as nx
 
 from app.db.connection import get_db
+from app.services.markdown_chunks import build_markdown_chunks
 
 IGNORED_DIRS = {".git", ".obsidian", "__pycache__", ".pytest_cache", ".synapsenote"}
 WIKILINK_PATTERN = re.compile(r"\[\[([^\]|#]+)(?:#[^\]|]*)?\|?[^\]]*\]\]")
@@ -140,6 +141,7 @@ class VaultIndexer:
         with conn:
             conn.execute("DELETE FROM edges")
             conn.execute("DELETE FROM unresolved_links")
+            conn.execute("DELETE FROM chunks")
             conn.execute("DELETE FROM nodes")
 
             conn.executemany(
@@ -168,6 +170,7 @@ class VaultIndexer:
                 "VALUES (?, ?, ?, ?)",
                 unresolved_links,
             )
+            self._replace_chunks(conn, parsed)
 
         # 7. 레이아웃 계산 후 x, y 저장
         positions = self._compute_layout(
@@ -233,6 +236,7 @@ class VaultIndexer:
             # outgoing edges 삭제 후 재계산
             conn.execute("DELETE FROM edges WHERE source = ?", (node_id,))
             conn.execute("DELETE FROM unresolved_links WHERE source = ?", (node_id,))
+            conn.execute("DELETE FROM chunks WHERE path = ?", (node_id,))
 
             for tag in node["tags"]:
                 self._upsert_tag_node(conn, tag)
@@ -300,6 +304,7 @@ class VaultIndexer:
                     "VALUES (?, ?, ?, ?)",
                     unresolved_links,
                 )
+            self._replace_chunks(conn, [node])
 
             # directory 노드인 경우 자식들의 directory 엣지도 갱신
             if node["type"] == "Directory":
@@ -341,6 +346,7 @@ class VaultIndexer:
                 "DELETE FROM unresolved_links WHERE source = ? OR target = ?",
                 (node_id, node_id),
             )
+            conn.execute("DELETE FROM chunks WHERE path = ?", (node_id,))
 
         logger.debug("delete_node: %s removed", node_id)
 
@@ -367,6 +373,7 @@ class VaultIndexer:
                 "wikilinks": [],
                 "markdown_links": [],
                 "embeds": [],
+                "chunks": [],
             }
 
         if path.suffix.lower() != ".md":
@@ -380,6 +387,7 @@ class VaultIndexer:
                 "wikilinks": [],
                 "markdown_links": [],
                 "embeds": [],
+                "chunks": [],
             }
 
         # Markdown 파일 — 1회만 읽기
@@ -415,6 +423,7 @@ class VaultIndexer:
             "wikilinks": wikilinks,
             "markdown_links": markdown_links,
             "embeds": embeds,
+            "chunks": build_markdown_chunks(node_id, body),
         }
 
     def _split_frontmatter(self, content: str) -> tuple[dict[str, object], str]:
@@ -540,6 +549,7 @@ class VaultIndexer:
             "wikilinks": [],
             "markdown_links": [],
             "embeds": [],
+            "chunks": [],
         }
 
     def _upsert_tag_node(self, conn: sqlite3.Connection, tag: str) -> None:
@@ -561,6 +571,31 @@ class VaultIndexer:
             "VALUES (?, ?, ?, ?)",
             (".", node["id"], "directory", 1.0),
         )
+
+    def _replace_chunks(self, conn: sqlite3.Connection, nodes: list[dict]) -> None:
+        rows = []
+        for node in nodes:
+            if node["type"] != "Document":
+                continue
+            for chunk in node.get("chunks", []):
+                rows.append((
+                    chunk["id"],
+                    chunk["path"],
+                    chunk["heading"],
+                    chunk["anchor"],
+                    chunk["ordinal"],
+                    chunk["content"],
+                    chunk["content_hash"],
+                    node["updated_at"],
+                ))
+
+        if rows:
+            conn.executemany(
+                "INSERT OR REPLACE INTO chunks "
+                "(id, path, heading, anchor, ordinal, content, content_hash, updated_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                rows,
+            )
 
     def _build_stem_index(self, conn: sqlite3.Connection) -> dict[str, list[str]]:
         """현재 SQLite에서 stem → [id, ...] 맵 생성."""
