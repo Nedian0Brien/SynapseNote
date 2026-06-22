@@ -13,10 +13,10 @@ let axiosInstance: AxiosInstance | null = null;
 
 interface VerifyAndRefreshGoTrueTokenParams {
   accessToken: string;
+  expiresAt?: number;
   refreshToken: string;
   logContext: string;
   verifyErrorMessage?: string;
-  refreshErrorMessage?: string;
   useVerifyErrorMessage?: boolean;
 }
 
@@ -108,10 +108,10 @@ function normalizeAuthFlowError(error: unknown, fallbackMessage: string, useErro
 
 export async function verifyAndRefreshGoTrueToken({
   accessToken,
+  expiresAt,
   refreshToken: refresh_token,
   logContext,
   verifyErrorMessage = 'Failed to verify token',
-  refreshErrorMessage = 'Failed to refresh token',
   useVerifyErrorMessage = true,
 }: VerifyAndRefreshGoTrueTokenParams) {
   // Clear the previous session before AppFlowy Cloud verification so axios
@@ -126,20 +126,15 @@ export async function verifyAndRefreshGoTrueToken({
     const result = await verifyToken(accessToken);
 
     Log.info(`[Auth] ${logContext}: verifyToken completed`, { isNewUser: result.is_new });
+    saveGoTrueAuth(JSON.stringify({
+      access_token: accessToken,
+      expires_at: expiresAt,
+      refresh_token,
+    }));
   } catch (error: unknown) {
     const normalized = normalizeAuthFlowError(error, verifyErrorMessage, useVerifyErrorMessage);
 
     Log.error(`[Auth] ${logContext}: verifyToken failed`, normalized);
-    return Promise.reject(normalized);
-  }
-
-  Log.info(`[Auth] ${logContext}: refreshing token`);
-  try {
-    await refreshToken(refresh_token);
-  } catch (error: unknown) {
-    const normalized = normalizeAuthFlowError(error, refreshErrorMessage, false);
-
-    Log.error(`[Auth] ${logContext}: refreshToken failed`, normalized);
     return Promise.reject(normalized);
   }
 }
@@ -162,6 +157,7 @@ export async function signInWithPassword(params: { email: string; password: stri
       Log.info('[Auth] signInWithPassword: GoTrue returned tokens, completing auth flow');
       return verifyAndRefreshGoTrueToken({
         accessToken: data.access_token,
+        expiresAt: data.expires_at,
         refreshToken: data.refresh_token,
         logContext: 'signInWithPassword',
       });
@@ -256,6 +252,7 @@ export async function signUpWithPassword(params: { email: string; password: stri
       Log.info('[Auth] signUpWithPassword: GoTrue returned tokens, completing auth flow');
       return verifyAndRefreshGoTrueToken({
         accessToken: data.access_token as string,
+        expiresAt: data.expires_at,
         refreshToken: data.refresh_token as string,
         logContext: 'signUpWithPassword',
       });
@@ -398,6 +395,7 @@ export async function signInOTP({
         Log.info('[Auth] signInOTP: GoTrue returned tokens, completing auth flow');
         return verifyAndRefreshGoTrueToken({
           accessToken: data.access_token,
+          expiresAt: data.expires_at,
           refreshToken: data.refresh_token,
           logContext: 'signInOTP',
           verifyErrorMessage: 'Failed to create user account',

@@ -18,6 +18,7 @@ export function EnterPassword({ email, redirectTo }: { email: string; redirectTo
 
   const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLInputElement>) => {
     e.preventDefault();
+    if (loading) return;
     setLoading(true);
     setError('');
     try {
@@ -79,7 +80,13 @@ export function EnterPassword({ email, redirectTo }: { email: string; redirectTo
           {t('signIn.forgotPassword')}
         </Button>
       </div>
-      <Button data-testid="password-submit-button" size={'lg'} className={'w-full'} onMouseDown={handleSubmit}>
+      <Button
+        data-testid="password-submit-button"
+        size={'lg'}
+        className={'w-full'}
+        onMouseDown={handleSubmit}
+        disabled={loading}
+      >
         {loading ? (
           <>
             <Progress />

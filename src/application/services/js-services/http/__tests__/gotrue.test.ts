@@ -50,21 +50,14 @@ describe('GoTrue login token completion', () => {
     initGrantService('http://localhost/gotrue');
   });
 
-  it('refreshes and saves the token after AppFlowy Cloud verifies the password login token', async () => {
+  it('saves the verified password login token without immediately refreshing it', async () => {
     const loginToken = {
       access_token: 'login-access-token',
       expires_at: 123,
       refresh_token: 'login-refresh-token',
     };
-    const refreshedToken = {
-      access_token: 'refreshed-access-token',
-      expires_at: 456,
-      refresh_token: 'refreshed-refresh-token',
-    };
 
-    mockGrantClient.post
-      .mockResolvedValueOnce({ data: loginToken })
-      .mockResolvedValueOnce({ data: refreshedToken });
+    mockGrantClient.post.mockResolvedValueOnce({ data: loginToken });
     (verifyToken as jest.Mock).mockResolvedValueOnce({ is_new: false });
 
     await signInWithPassword({
@@ -78,48 +71,36 @@ describe('GoTrue login token completion', () => {
       password: 'password',
     });
     expect(verifyToken).toHaveBeenCalledWith(loginToken.access_token);
-    expect(mockGrantClient.post).toHaveBeenNthCalledWith(2, '/token?grant_type=refresh_token', {
-      refresh_token: loginToken.refresh_token,
-    });
+    expect(refreshTokenCalls()).toHaveLength(0);
     expect(saveGoTrueAuth).toHaveBeenCalledTimes(1);
-    expect(saveGoTrueAuth).toHaveBeenCalledWith(JSON.stringify(refreshedToken));
+    expect(saveGoTrueAuth).toHaveBeenCalledWith(JSON.stringify(loginToken));
   });
 
-  it('uses the same verify-refresh-save flow for OAuth callback tokens', async () => {
-    const refreshedToken = {
-      access_token: 'oauth-refreshed-access-token',
-      expires_at: 456,
-      refresh_token: 'oauth-refreshed-refresh-token',
-    };
-
-    mockGrantClient.post.mockResolvedValueOnce({ data: refreshedToken });
+  it('uses the same verify-save flow for OAuth callback tokens', async () => {
     verifyToken.mockResolvedValueOnce({ is_new: false });
 
-    await signInWithUrl('http://localhost/auth/callback#access_token=oauth-access-token&refresh_token=oauth-refresh-token');
+    await signInWithUrl(
+      'http://localhost/auth/callback#access_token=oauth-access-token&refresh_token=oauth-refresh-token&expires_at=456'
+    );
 
     expect(verifyToken).toHaveBeenCalledWith('oauth-access-token');
-    expect(mockGrantClient.post).toHaveBeenCalledWith('/token?grant_type=refresh_token', {
-      refresh_token: 'oauth-refresh-token',
-    });
+    expect(refreshTokenCalls()).toHaveLength(0);
     expect(saveGoTrueAuth).toHaveBeenCalledTimes(1);
-    expect(saveGoTrueAuth).toHaveBeenCalledWith(JSON.stringify(refreshedToken));
+    expect(saveGoTrueAuth).toHaveBeenCalledWith(JSON.stringify({
+      access_token: 'oauth-access-token',
+      expires_at: 456,
+      refresh_token: 'oauth-refresh-token',
+    }));
   });
 
-  it('uses the same verify-refresh-save flow for email OTP tokens', async () => {
+  it('uses the same verify-save flow for email OTP tokens', async () => {
     const otpToken = {
       access_token: 'otp-access-token',
       expires_at: 123,
       refresh_token: 'otp-refresh-token',
     };
-    const refreshedToken = {
-      access_token: 'otp-refreshed-access-token',
-      expires_at: 456,
-      refresh_token: 'otp-refreshed-refresh-token',
-    };
 
-    mockGrantClient.post
-      .mockResolvedValueOnce({ data: otpToken })
-      .mockResolvedValueOnce({ data: refreshedToken });
+    mockGrantClient.post.mockResolvedValueOnce({ data: otpToken });
     verifyToken.mockResolvedValueOnce({ is_new: false });
 
     await signInOTP({
@@ -133,11 +114,9 @@ describe('GoTrue login token completion', () => {
       type: 'magiclink',
     });
     expect(verifyToken).toHaveBeenCalledWith(otpToken.access_token);
-    expect(mockGrantClient.post).toHaveBeenNthCalledWith(2, '/token?grant_type=refresh_token', {
-      refresh_token: otpToken.refresh_token,
-    });
+    expect(refreshTokenCalls()).toHaveLength(0);
     expect(saveGoTrueAuth).toHaveBeenCalledTimes(1);
-    expect(saveGoTrueAuth).toHaveBeenCalledWith(JSON.stringify(refreshedToken));
+    expect(saveGoTrueAuth).toHaveBeenCalledWith(JSON.stringify(otpToken));
   });
 
   it.each<AuthVariant>(['password', 'oauth', 'otp'])(
@@ -161,12 +140,10 @@ describe('GoTrue login token completion', () => {
     'clears an existing token before verifying %s sign-in',
     async (variant) => {
       const initialToken = createToken(`${variant}-initial`);
-      const refreshedToken = createToken(`${variant}-refreshed`);
       const removeItemSpy = jest.spyOn(Storage.prototype, 'removeItem');
 
       localStorage.setItem('token', 'old-token');
       queueInitialSignInResponse(variant, initialToken);
-      queueRefreshResponse(refreshedToken);
       verifyToken.mockResolvedValueOnce({ is_new: false });
 
       try {
@@ -196,10 +173,6 @@ function queueInitialSignInResponse(variant: AuthVariant, token: ReturnType<type
   if (variant !== 'oauth') {
     mockGrantClient.post.mockResolvedValueOnce({ data: token });
   }
-}
-
-function queueRefreshResponse(token: ReturnType<typeof createToken>) {
-  mockGrantClient.post.mockResolvedValueOnce({ data: token });
 }
 
 function refreshTokenCalls() {

@@ -41,6 +41,7 @@ export async function signInWithUrl(url: string) {
   const params = new URLSearchParams(hash.slice(1));
   const accessToken = params.get('access_token');
   const refresh_token = params.get('refresh_token');
+  const expiresAt = params.get('expires_at');
 
   if (!accessToken || !refresh_token) {
     Log.error('[Auth] signInWithUrl: missing tokens in callback hash', {
@@ -57,10 +58,10 @@ export async function signInWithUrl(url: string) {
 
   return verifyAndRefreshGoTrueToken({
     accessToken,
+    expiresAt: expiresAt ? Number(expiresAt) : undefined,
     refreshToken: refresh_token,
     logContext: 'signInWithUrl',
     verifyErrorMessage: 'Verify token failed',
-    refreshErrorMessage: 'Refresh token failed',
     useVerifyErrorMessage: false,
   });
 }
