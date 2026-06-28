@@ -8,6 +8,7 @@ import GridLoadMoreRow from '@/components/database/components/grid/grid-row/Grid
 import GridNewRow from '@/components/database/components/grid/grid-row/GridNewRow';
 import GridVirtualRow from '@/components/database/components/grid/grid-row/GridVirtualRow';
 import GridStickyHeader from '@/components/database/components/grid/grid-table/GridStickyHeader';
+import { getGridScrollerOverflow } from '@/components/database/components/grid/grid-table/gridScrollerOverflow';
 import { useGridDnd } from '@/components/database/components/grid/grid-table/useGridDnd';
 import { PADDING_INLINE, useGridVirtualizer } from '@/components/database/components/grid/grid-table/useGridVirtualizer';
 import DatabaseStickyBottomOverlay from '@/components/database/components/sticky-overlay/DatabaseStickyBottomOverlay';
@@ -15,6 +16,7 @@ import DatabaseStickyHorizontalScrollbar from '@/components/database/components/
 import DatabaseStickyTopOverlay from '@/components/database/components/sticky-overlay/DatabaseStickyTopOverlay';
 import { useGridContext } from '@/components/database/grid/useGridContext';
 import { cn } from '@/lib/utils';
+import { getPlatform } from '@/utils/platform';
 
 import { useColumnResize } from '../grid-column/useColumnResize';
 
@@ -53,6 +55,10 @@ function GridVirtualizer({ columns }: { columns: RenderColumn[] }) {
   const contextValue = useGridDnd(columns, virtualizer, columnVirtualizer);
   const bottomScrollbarRef = useRef<HTMLDivElement>(null);
   const [isHover, setIsHover] = useState(false);
+  const scrollerOverflow = getGridScrollerOverflow({
+    isDocumentBlock,
+    isMobile: getPlatform().isMobile,
+  });
   const handleMouseEnter = useCallback(() => setIsHover(true), []);
   const handleMouseLeave = useCallback(() => setIsHover(false), []);
   const stickyHeaderRef = useRef<HTMLDivElement>(null);
@@ -181,8 +187,7 @@ function GridVirtualizer({ columns }: { columns: RenderColumn[] }) {
           isDocumentBlock && 'min-h-0 flex-1'
         )}
         style={{
-          overflowY: 'auto',
-          overflowX: 'auto',
+          ...scrollerOverflow,
           scrollBehavior: 'auto',
         }}
         onScroll={handleScroll}
