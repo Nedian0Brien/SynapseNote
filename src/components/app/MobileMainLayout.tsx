@@ -27,6 +27,7 @@ function MobileMainLayout () {
       <AFScroller
         overflowXHidden
         overflowYHidden={false}
+        nativeScrollbars
         className={'synapsenote-layout synapsenote-mobile-layout flex flex-col synapsenote-scroll-container h-full'}
       >
         <React.Suspense

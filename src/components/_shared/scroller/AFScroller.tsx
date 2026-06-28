@@ -12,9 +12,10 @@ export interface AFScrollerProps extends React.HTMLAttributes<HTMLDivElement> {
   onScroll?: (e: React.UIEvent<unknown>) => void;
   setScrollableContainer?: (el: HTMLDivElement | null) => void;
   hideScrollbars?: boolean;
+  nativeScrollbars?: boolean;
 }
 
-export const AFScroller = React.forwardRef(
+export const AFScroller = React.forwardRef<HTMLDivElement, AFScrollerProps>(
   ({
     setScrollableContainer,
     onScroll,
@@ -23,8 +24,34 @@ export const AFScroller = React.forwardRef(
     overflowXHidden,
     overflowYHidden,
     hideScrollbars,
+    nativeScrollbars,
     className,
-  }: AFScrollerProps, ref) => {
+  }, ref) => {
+    if (nativeScrollbars) {
+      return (
+        <div
+          ref={(el) => {
+            setScrollableContainer?.(el);
+
+            if (typeof ref === 'function') {
+              ref(el);
+            } else if (ref) {
+              ref.current = el;
+            }
+          }}
+          onScroll={onScroll}
+          style={{
+            ...style,
+            overflowX: overflowXHidden ? 'hidden' : 'auto',
+            overflowY: overflowYHidden ? 'hidden' : 'auto',
+          }}
+          className={cn(hideScrollbars ? 'synapsenote-hidden-scroller' : 'synapsenote-custom-scroller', className)}
+        >
+          {children}
+        </div>
+      );
+    }
+
     return (
       <Scrollbars
         onScroll={onScroll}
@@ -33,7 +60,7 @@ export const AFScroller = React.forwardRef(
         ref={(el) => {
           if (!el) return;
 
-          const scrollEl = el.container?.firstChild as HTMLElement;
+          const scrollEl = el.container?.firstChild as HTMLDivElement | undefined;
 
           if (!scrollEl) return;
           setScrollableContainer?.(scrollEl as HTMLDivElement);
