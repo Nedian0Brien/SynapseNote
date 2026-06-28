@@ -38,7 +38,7 @@ function getErrorMessage(error: unknown) {
   return 'Something went wrong';
 }
 
-export function Search() {
+export function Search({ mode = 'button' }: { mode?: 'button' | 'page' | 'shortcut' }) {
   const [open, setOpen] = React.useState<boolean>(false);
   const { t } = useTranslation();
   const [searchValue, setSearchValue] = React.useState<string>('');
@@ -136,13 +136,76 @@ export function Search() {
   const [loadingRecentViews, setLoadingRecentViews] = React.useState<boolean>(false);
 
   useEffect(() => {
-    if (!open) return;
+    if (mode !== 'page' && !open) return;
     void (async () => {
       setLoadingRecentViews(true);
       await loadRecentViews?.();
       setLoadingRecentViews(false);
     })();
-  }, [loadRecentViews, open]);
+  }, [loadRecentViews, mode, open]);
+
+  const searchPanel = (
+    <>
+      <div className={'flex w-full gap-2 border-b border-line-default p-4'}>
+        <div className={'flex w-full items-center gap-4'}>
+          <SearchIcon className={'mr-[1px] h-5 w-5 opacity-60'} />
+
+          <InputBase
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+            autoFocus={mode === 'page' || open}
+            className={'flex-1'}
+            fullWidth={true}
+            placeholder={t('searchLabel')}
+          />
+          <span
+            style={{
+              visibility: searchValue ? 'visible' : 'hidden',
+            }}
+            className={'cursor-pointer rounded-full bg-fill-content-hover p-0.5 opacity-60 hover:opacity-100'}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={(e) => {
+              e.preventDefault();
+              setSearchValue('');
+            }}
+          >
+            <CloseIcon className={'h-3 w-3'} />
+          </span>
+        </div>
+      </div>
+      {!searchValue ? (
+        <RecentViews loading={loadingRecentViews} recentViews={recentViews} onClose={handleClose} />
+      ) : (
+        <BestMatch askingAI={askingAI} searchValue={searchValue} onAskAI={handleAskAI} onClose={handleClose} />
+      )}
+    </>
+  );
+
+  if (mode === 'page') {
+    return (
+      <div className='mx-auto flex h-full max-w-3xl flex-col overflow-hidden rounded-300 border border-border-primary bg-surface-container-layer-00'>
+        {searchPanel}
+      </div>
+    );
+  }
+
+  const searchDialog = (
+    <Dialog
+      disableRestoreFocus={true}
+      open={open}
+      onClose={handleClose}
+      classes={{
+        container: 'items-start max-md:mt-auto max-md:items-center mt-[10%]',
+        paper: 'overflow-hidden min-w-[600px] w-[600px] max-w-[70vw]',
+      }}
+    >
+      {searchPanel}
+    </Dialog>
+  );
+
+  if (mode === 'shortcut') {
+    return searchDialog;
+  }
 
   return (
     <>
@@ -167,48 +230,7 @@ export function Search() {
         </TooltipContent>
       </Tooltip>
 
-      <Dialog
-        disableRestoreFocus={true}
-        open={open}
-        onClose={handleClose}
-        classes={{
-          container: 'items-start max-md:mt-auto max-md:items-center mt-[10%]',
-          paper: 'overflow-hidden min-w-[600px] w-[600px] max-w-[70vw]',
-        }}
-      >
-        <div className={'flex w-full gap-2 border-b border-line-default p-4'}>
-          <div className={'flex w-full items-center gap-4'}>
-            <SearchIcon className={'mr-[1px] h-5 w-5 opacity-60'} />
-
-            <InputBase
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
-              autoFocus={true}
-              className={'flex-1'}
-              fullWidth={true}
-              placeholder={t('searchLabel')}
-            />
-            <span
-              style={{
-                visibility: searchValue ? 'visible' : 'hidden',
-              }}
-              className={'cursor-pointer rounded-full bg-fill-content-hover p-0.5 opacity-60 hover:opacity-100'}
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={(e) => {
-                e.preventDefault();
-                setSearchValue('');
-              }}
-            >
-              <CloseIcon className={'h-3 w-3'} />
-            </span>
-          </div>
-        </div>
-        {!searchValue ? (
-          <RecentViews loading={loadingRecentViews} recentViews={recentViews} onClose={handleClose} />
-        ) : (
-          <BestMatch askingAI={askingAI} searchValue={searchValue} onAskAI={handleAskAI} onClose={handleClose} />
-        )}
-      </Dialog>
+      {searchDialog}
     </>
   );
 }

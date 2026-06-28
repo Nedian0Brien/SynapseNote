@@ -17,6 +17,7 @@ import {
   updateViewInOutline,
 } from '@/components/_shared/outline/mergeOutline';
 import { findShareWithMeSpace, findView, findViewByLayout } from '@/components/_shared/outline/utils';
+import { isAppSection } from '@/components/app/navigation/appSections';
 import {
   limitSidebarOutlineExpandedViewIds,
   type SidebarOutlineRevalidationResult,
@@ -504,6 +505,11 @@ export function useWorkspaceData() {
 
           // Skip /app/trash and /app/*other-pages
           if (wId && !uuidValidate(wId)) {
+            return;
+          }
+
+          // Skip /app/:workspaceId/home|library|graph|search
+          if (isAppSection(pageId)) {
             return;
           }
 

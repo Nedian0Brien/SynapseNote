@@ -7,6 +7,7 @@ import ApproveRequestPage from '@/components/app/landing-pages/ApproveRequestPag
 import { AsGuest } from '@/components/app/landing-pages/AsGuest';
 import InviteCode from '@/components/app/landing-pages/InviteCode';
 import AppPage from '@/pages/AppPage';
+import AppSectionPage from '@/pages/AppSectionPage';
 import TrashPage from '@/pages/TrashPage';
 
 function AppRouter() {
@@ -15,6 +16,10 @@ function AppRouter() {
       <Route element={<AuthLayout />}>
         {/* Redirect from /app to /app/:workspaceId after OAuth login */}
         <Route index element={<AppWorkspaceRedirect />} />
+        <Route path={':workspaceId/home'} element={<AppSectionPage section='home' />} />
+        <Route path={':workspaceId/library'} element={<AppSectionPage section='library' />} />
+        <Route path={':workspaceId/graph'} element={<AppSectionPage section='graph' />} />
+        <Route path={':workspaceId/search'} element={<AppSectionPage section='search' />} />
         <Route path={':workspaceId'} element={<AppPage />} />
         <Route path={':workspaceId/:viewId'} element={<AppPage />} />
         <Route path={'trash'} element={<TrashPage />} />

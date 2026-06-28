@@ -11,6 +11,7 @@ type SynapseGraphWorkspaceProps = {
   currentDoc?: YDoc;
   currentViewId?: string;
   open: boolean;
+  presentation?: 'overlay' | 'inline';
   refreshKey?: string | number;
   onClose: () => void;
   onOpenView: (viewId: string) => void;
@@ -21,6 +22,7 @@ export function SynapseGraphWorkspace({
   currentDoc,
   currentViewId,
   open,
+  presentation = 'overlay',
   refreshKey,
   onClose,
   onOpenView,
@@ -34,9 +36,17 @@ export function SynapseGraphWorkspace({
     });
 
     return outlineToGraph(outline, documentEdges);
-  }, [currentDoc, currentViewId, knownViewIds, open, outline]);
+  }, [currentDoc, currentViewId, knownViewIds, outline]);
 
   if (!open) return null;
+
+  if (presentation === 'inline') {
+    return (
+      <div className="synapse-graph-route" role="region" aria-label="SynapseNote Graph">
+        <GraphView graphData={graphData} refreshKey={refreshKey} onOpenNode={onOpenView} />
+      </div>
+    );
+  }
 
   return (
     <div className="synapse-graph-overlay" role="dialog" aria-modal="true" aria-label="SynapseNote Graph">
