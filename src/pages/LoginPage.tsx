@@ -43,12 +43,15 @@ function LoginPage() {
       return;
     }
 
-    if (isAuthenticated && redirectTo) {
+    if (isAuthenticated) {
       const decodedRedirect = safeDecodeRedirectParam(redirectTo);
 
       if (decodedRedirect && isSafeRedirectUrl(decodedRedirect) && decodedRedirect !== window.location.href) {
         window.location.href = decodedRedirect;
+        return;
       }
+
+      window.location.href = '/app';
     }
   }, [action, force, isAuthenticated, redirectTo]);
 

@@ -51,6 +51,21 @@ test.describe('Password Login Flow', () => {
       await page.waitForTimeout(2000);
       await expect(page).toHaveURL(/enterPassword/);
     });
+
+    test('should open password page when password button is keyboard activated', async ({
+      page,
+    }) => {
+      const testEmail = generateRandomEmail();
+
+      await visitLoginPage(page, 3000);
+
+      await AuthSelectors.emailInput(page).fill(testEmail);
+      await AuthSelectors.passwordSignInButton(page).focus();
+      await page.keyboard.press('Enter');
+
+      await expect(page).toHaveURL(/enterPassword/, { timeout: 10000 });
+      await expect(AuthSelectors.passwordInput(page)).toBeVisible({ timeout: 10000 });
+    });
   });
 
   test.describe('Successful Authentication', () => {
@@ -123,7 +138,7 @@ test.describe('Password Login Flow', () => {
       const mockUserId = uuidv4();
 
       // Mock the password authentication endpoint
-      await page.route(`${gotrueUrl}/token?grant_type=password`, (route) =>
+      await page.route('**/token?grant_type=password', (route) =>
         route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -155,7 +170,7 @@ test.describe('Password Login Flow', () => {
       await page.waitForTimeout(500);
 
       // Submit password
-      const loginPromise = page.waitForResponse(`${gotrueUrl}/token?grant_type=password`);
+      const loginPromise = page.waitForResponse('**/token?grant_type=password');
       await AuthSelectors.passwordSubmitButton(page).click();
 
       // Wait for API call
@@ -213,6 +228,47 @@ test.describe('Password Login Flow', () => {
       // Verify successful login
       await expect(page).toHaveURL(/\/app/, { timeout: 10000 });
     });
+
+    for (const key of ['Enter', 'Space']) {
+      test(`should submit password when submit button is activated with ${key}`, async ({ page }) => {
+        const testEmail = generateRandomEmail();
+        const testPassword = 'TestPassword123!';
+        const mockAccessToken = `mock-token-${key.toLowerCase()}-${uuidv4()}`;
+        const mockRefreshToken = `refresh-${mockAccessToken}`;
+        const mockUserId = uuidv4();
+
+        await page.route('**/token?grant_type=password', (route) =>
+          route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              access_token: mockAccessToken,
+              refresh_token: mockRefreshToken,
+              expires_at: Math.floor(Date.now() / 1000) + 3600,
+              user: { id: mockUserId, email: testEmail },
+            }),
+          })
+        );
+
+        await mockSuccessfulLogin(page, testEmail, mockUserId, mockAccessToken, mockRefreshToken);
+
+        await visitAuthPath(
+          page,
+          `/login?action=enterPassword&email=${encodeURIComponent(testEmail)}`,
+          { waitMs: 1000 }
+        );
+
+        await AuthSelectors.passwordInput(page).fill(testPassword);
+        await AuthSelectors.passwordSubmitButton(page).focus();
+
+        const authPromise = page.waitForResponse('**/token?grant_type=password');
+
+        await page.keyboard.press(key);
+        await authPromise;
+
+        await expect(page).toHaveURL(/\/app/, { timeout: 10000 });
+      });
+    }
   });
 
   test.describe('Error Handling', () => {
@@ -238,7 +294,7 @@ test.describe('Password Login Flow', () => {
       const wrongPassword = 'WrongPassword123!';
 
       // Mock failed authentication
-      await page.route(`${gotrueUrl}/token?grant_type=password`, (route) =>
+      await page.route('**/token?grant_type=password', (route) =>
         route.fulfill({
           status: 401,
           contentType: 'application/json',
@@ -257,10 +313,12 @@ test.describe('Password Login Flow', () => {
 
       // Enter wrong password and submit
       await AuthSelectors.passwordInput(page).fill(wrongPassword);
+      const failedAuthPromise = page.waitForResponse('**/token?grant_type=password');
+
       await AuthSelectors.passwordSubmitButton(page).click();
 
       // Wait for failed API call
-      await page.waitForResponse(`${gotrueUrl}/token?grant_type=password`);
+      await failedAuthPromise;
 
       // Verify error message
       await expect(page.getByText('Invalid login credentials')).toBeVisible();
@@ -274,7 +332,7 @@ test.describe('Password Login Flow', () => {
       const testPassword = 'TestPassword123!';
 
       // Mock network error
-      await page.route(`${gotrueUrl}/token?grant_type=password`, (route) =>
+      await page.route('**/token?grant_type=password', (route) =>
         route.fulfill({
           status: 500,
           contentType: 'application/json',
@@ -295,7 +353,7 @@ test.describe('Password Login Flow', () => {
       await AuthSelectors.passwordSubmitButton(page).click();
 
       // Wait for network error
-      await page.waitForResponse(`${gotrueUrl}/token?grant_type=password`);
+      await page.waitForResponse('**/token?grant_type=password');
 
       // Verify error handling - still on password page with error message
       await expect(page).toHaveURL(/action=enterPassword/);

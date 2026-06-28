@@ -84,7 +84,7 @@ export function EnterPassword({ email, redirectTo }: { email: string; redirectTo
         data-testid="password-submit-button"
         size={'lg'}
         className={'w-full'}
-        onMouseDown={handleSubmit}
+        onClick={handleSubmit}
         disabled={loading}
       >
         {loading ? (

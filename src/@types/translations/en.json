@@ -1,7 +1,7 @@
 {
   "appName": "SynapseNote",
   "defaultUsername": "Me",
-  "welcomeText": "Welcome to @:appName",
+  "welcomeText": "Welcome to SynapseNote",
   "welcomeTo": "Welcome to",
   "githubStarText": "Star on GitHub",
   "subscribeNewsletterText": "Subscribe to Newsletter",
@@ -47,7 +47,7 @@
     "forgotPassword": "Forgot password?",
     "emailHint": "Email",
     "passwordHint": "Password",
-    "dontHaveAnAccount": "Prefer to use a password?",
+    "dontHaveAnAccount": "Don't have an account?",
     "createAccount": "Sign up here",
     "repeatPasswordEmptyError": "Repeat password can't be empty",
     "unmatchedPasswordError": "Repeat password is not the same as password",

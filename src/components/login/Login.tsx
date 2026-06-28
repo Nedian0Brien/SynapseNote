@@ -45,9 +45,9 @@ export function Login({ redirectTo }: { redirectTo: string }) {
       style={{
         justifyContent: isMobile ? 'flex-start' : 'between',
       }}
-      className={'flex  h-full flex-col items-center justify-between gap-5 px-4 py-10 text-text-primary'}
+      className={'box-border flex h-full w-full max-w-full flex-col items-center justify-between gap-5 px-4 py-10 text-text-primary'}
     >
-      <div className={'flex w-full flex-1 flex-col items-center justify-center gap-5'}>
+      <div className={'flex w-full min-w-0 flex-1 flex-col items-center justify-center gap-5'}>
         <div
           onClick={() => {
             window.location.href = '/';
@@ -60,7 +60,7 @@ export function Login({ redirectTo }: { redirectTo: string }) {
         <EmailLogin redirectTo={redirectTo} />
         <div
           className={
-            'w-[300px] overflow-hidden whitespace-pre-wrap break-words text-center text-[12px] tracking-[0.36px] text-text-secondary'
+            'w-full max-w-[300px] overflow-hidden whitespace-pre-wrap break-words text-center text-[12px] tracking-[0.36px] text-text-secondary'
           }
         >
           <span>{t('web.signInAgreement')} </span>
@@ -91,7 +91,7 @@ export function Login({ redirectTo }: { redirectTo: string }) {
           </div>
         )}
         <LoginProvider redirectTo={redirectTo} availableProviders={availableProviders} />
-        <div className={'flex items-center gap-1 text-sm text-text-secondary'}>
+        <div className={'flex flex-wrap items-center justify-center gap-1 text-center text-sm text-text-secondary'}>
           <span>{t('signIn.dontHaveAnAccount')}</span>
           <Button
             variant={'link'}
@@ -114,7 +114,7 @@ export function Login({ redirectTo }: { redirectTo: string }) {
         }}
         className={'flex w-full flex-col gap-5'}
       >
-        <Separator className={'w-[320px] max-w-full'} />
+        <Separator className={'w-full max-w-[320px]'} />
         <div
           onClick={() => {
             window.location.href = '/app';
