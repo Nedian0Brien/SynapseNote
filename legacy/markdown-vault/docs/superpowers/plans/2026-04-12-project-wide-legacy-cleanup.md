@@ -547,7 +547,6 @@ git commit -m "refactor: 프론트엔드 구조를 유지 기능 기준으로 �
 
 **Files:**
 - Modify: tracked cache artifacts under `services/web-editor/**/__pycache__*`
-- Modify: tracked cache artifacts under `.codesight/**` only if intentionally part of repo policy
 - Modify: `scripts/verify_legacy_cleanup.sh`
 - Test: `git ls-files`, `pytest`, `npm`, `docker compose config`
 
@@ -572,7 +571,6 @@ services/web-editor/tests/__pycache__/*
 services/web-editor/.pytest_cache/*
 ```
 
-Do not touch user-authored `.codesight/**` content unless the repo policy explicitly treats it as generated and disposable.
 
 - [ ] **Step 3: Make guard script strict enough for final tree**
 

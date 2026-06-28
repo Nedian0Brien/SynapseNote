@@ -16,8 +16,6 @@
 
 ## 작업 규칙
 
-- 코드 작업을 시작할 때는 먼저 `codebase-onboarding` 스킬을 사용하여 코드베이스를 파악할 것
-  (`npx codesight --wiki 실행 → .codesight/wiki/ 문서 참고)
 - 코드 변경 완료 후 커밋·푸시를 자동으로 수행
 - 작업 마무리 시 배포 여부를 사용자에게 질문
 - 원본 AppFlowy upstream으로 푸시하지 않는다.
@@ -40,4 +38,3 @@ docker compose up -d --no-deps --force-recreate appflowy_web
 curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:18080/
 curl -s -o /dev/null -w "%{http_code}\n" https://synapse.lawdigest.kr/
 ```
-
