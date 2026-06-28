@@ -1,25 +1,25 @@
 :root {
-  --sn-bg: #f5f2eb;
-  --sn-surface: #fffdf7;
-  --sn-surface-low: #ede8d8;
-  --sn-surface-high: #e8e0cc;
-  --sn-on-surface: #1a1208;
-  --sn-on-variant: #5a4020;
-  --sn-muted: #8a7050;
-  --sn-outline: rgba(60, 40, 10, 0.14);
-  --sn-outline-soft: rgba(60, 40, 10, 0.08);
-  --sn-primary: #2a1c08;
-  --sn-primary-icon: rgba(245, 240, 228, 0.92);
-  --sn-primary-dim: rgba(42, 28, 8, 0.08);
+  --sn-bg: #fbfbfa;
+  --sn-surface: #ffffff;
+  --sn-surface-low: #f5f5f2;
+  --sn-surface-high: #ececea;
+  --sn-on-surface: #222220;
+  --sn-on-variant: #5f5f58;
+  --sn-muted: #8a8a82;
+  --sn-outline: rgba(36, 36, 32, 0.13);
+  --sn-outline-soft: rgba(36, 36, 32, 0.07);
+  --sn-primary: #242420;
+  --sn-primary-icon: rgba(255, 255, 255, 0.94);
+  --sn-primary-dim: rgba(36, 36, 32, 0.07);
   --sn-radius-xs: 8px;
   --sn-radius-sm: 12px;
   --sn-radius-md: 16px;
   --sn-radius-lg: 22px;
   --sn-radius-xl: 28px;
   --sn-radius-full: 9999px;
-  --sn-shadow-sm: 0 1px 3px rgba(60, 40, 10, 0.07), 0 1px 2px rgba(60, 40, 10, 0.04);
-  --sn-shadow-md: 0 4px 12px rgba(60, 40, 10, 0.09), 0 2px 5px rgba(60, 40, 10, 0.05);
-  --sn-shadow-lg: 0 10px 28px rgba(60, 40, 10, 0.10), 0 3px 8px rgba(60, 40, 10, 0.06);
+  --sn-shadow-sm: 0 1px 3px rgba(36, 36, 32, 0.06), 0 1px 2px rgba(36, 36, 32, 0.04);
+  --sn-shadow-md: 0 4px 14px rgba(36, 36, 32, 0.08), 0 2px 5px rgba(36, 36, 32, 0.04);
+  --sn-shadow-lg: 0 12px 32px rgba(36, 36, 32, 0.10), 0 4px 10px rgba(36, 36, 32, 0.05);
 }
 
 :root[data-dark-mode="true"] {
@@ -178,8 +178,7 @@ button[type="submit"]:not(.MuiIconButton-root) {
 
 .synapsenote-layout {
   background:
-    radial-gradient(circle at 16% 8%, color-mix(in srgb, var(--sn-primary-dim) 78%, transparent), transparent 30%),
-    linear-gradient(180deg, color-mix(in srgb, var(--sn-surface) 82%, transparent), var(--sn-bg));
+    linear-gradient(180deg, var(--sn-surface) 0%, var(--sn-bg) 58%, var(--sn-surface-low) 100%);
 }
 
 .synapsenote-top-bar {
@@ -206,7 +205,7 @@ button[type="submit"]:not(.MuiIconButton-root) {
 
 .synapse-graph-toggle:hover {
   transform: translateY(-1px);
-  box-shadow: 0 14px 32px rgba(60, 40, 10, 0.16);
+  box-shadow: 0 14px 32px rgba(36, 36, 32, 0.14);
 }
 
 .synapse-graph-overlay {
@@ -244,10 +243,10 @@ button[type="submit"]:not(.MuiIconButton-root) {
   --g-hub-fill: var(--sn-surface-low);
   --g-hub-stroke: var(--sn-primary);
   --g-doc-fill: var(--sn-surface-low);
-  --g-doc-stroke: #c8b89a;
-  --g-link-dir: rgba(60, 40, 10, 0.32);
-  --g-link-wiki: rgba(60, 40, 10, 0.17);
-  --g-link-ref: rgba(60, 40, 10, 0.09);
+  --g-doc-stroke: #d6d6d1;
+  --g-link-dir: rgba(36, 36, 32, 0.28);
+  --g-link-wiki: rgba(36, 36, 32, 0.14);
+  --g-link-ref: rgba(36, 36, 32, 0.08);
 }
 
 :root[data-dark-mode="true"] .synapse-graph-overlay {

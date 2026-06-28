@@ -45,25 +45,6 @@ export function useAppThemeMode () {
   }, [onKeyDown]);
 
   useEffect(() => {
-    if (fixedTheme) return;
-
-    function detectColorScheme () {
-      const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-
-      setIsDark(darkModeMediaQuery.matches);
-    }
-
-    if (localStorage.getItem('dark-mode') === null) {
-      detectColorScheme();
-    }
-
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', detectColorScheme);
-    return () => {
-      window.matchMedia('(prefers-color-scheme: dark)').removeEventListener('change', detectColorScheme);
-    };
-  }, [fixedTheme]);
-
-  useEffect(() => {
     document.documentElement.setAttribute('data-dark-mode', isDark ? 'true' : 'false');
     localStorage.setItem('dark-mode', isDark ? 'true' : 'false');
   }, [isDark]);
