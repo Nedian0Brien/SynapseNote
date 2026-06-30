@@ -8,17 +8,22 @@
 
 ## 현재 기준
 
-- 현재 SynapseNote 구현 기준은 AppFlowy Web 기반이다.
+- 현재 SynapseNote 제품 기준은 운영 중인 AppFlowy-derived UI다.
 - AppFlowy Web 작업 위치: `.worktrees/appflowy-web/`
 - AppFlowy Cloud/self-host 작업 위치: `.worktrees/appflowy-cloud/`
 - 이전 FastAPI/Vite Markdown vault 구현은 `legacy/markdown-vault/`에 보관한다.
-- `legacy/markdown-vault/`는 참고용 레거시이며 현재 배포 기준이 아니다.
+- `legacy/markdown-vault/`는 참고용 레거시이며 현재 배포 기준이 아니다. 파일 기반 전환에 필요한 backend, parser, indexer, test 자산만 재사용 후보로 본다.
+- 현재 운영 기준점은 `docs/current-baseline.md`를 우선 확인한다.
+- Markdown vault 전환 기준은 `docs/markdown-vault-transition.md`를 우선 확인한다.
+- 현재 방향은 레거시 UI 복귀가 아니라 현재 배포 UI 유지 + 문서 원본 저장소 전환이다.
 
 ## 작업 규칙
 
 - 코드 변경 완료 후 커밋·푸시를 자동으로 수행
-- 작업 마무리 시 배포 여부를 사용자에게 질문
+- 사용자가 배포를 명시하지 않은 문서/조사 작업은 배포하지 않는다.
+- 운영 UI나 런타임을 바꾸는 작업은 완료 전 배포 여부를 사용자에게 묻거나, 사용자가 이미 배포를 요청한 경우 끝까지 검증한다.
 - 원본 AppFlowy upstream으로 푸시하지 않는다.
+- 미완성 실험 변경은 기준 브랜치에 섞지 않는다. 필요하면 stash 또는 별도 브랜치로 분리하고 완료 보고에 위치를 적는다.
 
 ## 배포
 

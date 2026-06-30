@@ -1,7 +1,6 @@
 # SynapseNote
 
-SynapseNote의 현재 작업 기준은 AppFlowy Web 기반 구현이다. 루트 저장소는 현행 작업
-위치를 안내하고, 이전 Markdown vault 기반 구현은 `legacy/markdown-vault/`에 보관한다.
+SynapseNote의 현재 제품 기준은 운영 중인 AppFlowy-derived SynapseNote UI다. 다음 큰 방향은 이 UI를 유지한 채 문서 원본 저장소를 Markdown vault로 옮기는 것이다.
 
 ## 현재 기준
 
@@ -10,11 +9,20 @@ SynapseNote의 현재 작업 기준은 AppFlowy Web 기반 구현이다. 루트 
 ├─ .worktrees/
 │  ├─ appflowy-web/     # SynapseNote UI/기능을 이식 중인 AppFlowy Web
 │  └─ appflowy-cloud/   # self-host AppFlowy Cloud compose/runtime
+├─ docs/
+│  ├─ current-baseline.md
+│  └─ markdown-vault-transition.md
 ├─ legacy/
 │  └─ markdown-vault/   # 이전 FastAPI/Vite Markdown vault 구현
 ├─ AGENTS.md
 └─ README.md
 ```
+
+## 기준 문서
+
+- 현재 운영 기준점: `docs/current-baseline.md`
+- Markdown vault 전환 기준: `docs/markdown-vault-transition.md`
+- 에이전트 작업 규칙: `AGENTS.md`
 
 ## 작업 위치
 
@@ -25,8 +33,7 @@ SynapseNote의 현재 작업 기준은 AppFlowy Web 기반 구현이다. 루트 
 - 이전 Markdown vault 앱 참고:
   `legacy/markdown-vault/`
 
-루트의 `legacy/markdown-vault/`는 현재 배포 기준이 아니다. 예전 기능을 참고할 때만 읽고,
-새 구현은 AppFlowy 기반 워크트리에서 진행한다.
+루트의 `legacy/markdown-vault/`는 현재 배포 기준이 아니다. 파일 기반 전환에 필요한 backend, indexer, parser, test 자산을 참고할 때만 읽는다. 레거시 UI로 되돌리는 작업은 현재 방향이 아니다.
 
 ## 배포 기준
 
@@ -50,3 +57,9 @@ curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:18080/
 curl -s -o /dev/null -w "%{http_code}\n" https://synapse.lawdigest.kr/
 ```
 
+## 다음 작업 방향
+
+1. 현재 배포 UI를 기준점으로 유지한다.
+2. AppFlowy collab 저장소 의존을 조사한다.
+3. Markdown vault API 계약을 정의한다.
+4. 레거시 vault backend 자산을 현재 UI 뒤에 붙일 수 있는 형태로 승격한다.
