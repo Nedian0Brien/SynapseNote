@@ -12,6 +12,7 @@ export * from './template-api';
 export * from './billing-api';
 export * from './import-api';
 export * from './file-api';
+export * from './vault-api';
 export * from './access-api';
 export * from './misc-api';
 
