@@ -1,14 +1,14 @@
 # SynapseNote
 
-SynapseNote의 현재 제품 기준은 운영 중인 AppFlowy-derived SynapseNote UI다. 다음 큰 방향은 이 UI를 유지한 채 문서 원본 저장소를 Markdown vault로 옮기는 것이다.
+SynapseNote의 현재 제품 기준은 운영 중인 SynapseNote UI다. 다음 큰 방향은 이 UI를 유지한 채 문서 원본 저장소를 Markdown vault로 옮기는 것이다.
 
 ## 현재 기준
 
 ```txt
 .
 ├─ .worktrees/
-│  ├─ appflowy-web/     # SynapseNote UI/기능을 이식 중인 AppFlowy Web
-│  └─ appflowy-cloud/   # self-host AppFlowy Cloud compose/runtime
+│  ├─ appflowy-web/     # SynapseNote Web UI 작업 위치
+│  └─ appflowy-cloud/   # SynapseNote self-host compose/runtime
 ├─ docs/
 │  ├─ current-baseline.md
 │  └─ markdown-vault-transition.md
@@ -26,7 +26,7 @@ SynapseNote의 현재 제품 기준은 운영 중인 AppFlowy-derived SynapseNot
 
 ## 작업 위치
 
-- 프론트엔드 브랜딩, 그래프 뷰, AppFlowy Web UI 변경:
+- 프론트엔드 브랜딩, 그래프 뷰, SynapseNote Web UI 변경:
   `.worktrees/appflowy-web/`
 - self-host compose, 인증/백엔드 런타임 설정:
   `.worktrees/appflowy-cloud/`
@@ -37,14 +37,15 @@ SynapseNote의 현재 제품 기준은 운영 중인 AppFlowy-derived SynapseNot
 
 ## 배포 기준
 
-현재 운영 도메인 `https://synapse.lawdigest.kr/`는 AppFlowy Cloud compose의
-`appflowy_web` 서비스를 통해 제공된다.
+현재 운영 도메인 `https://synapse.lawdigest.kr/`는 SynapseNote compose runtime의
+web 서비스로 제공된다. compose 내부에는 upstream 호환을 위한 service key가 일부 남아 있지만,
+배포 이미지와 실행 컨테이너명은 SynapseNote 이름을 쓴다.
 
 최근 사용한 웹 배포 절차:
 
 ```bash
 cd /home/ubuntu/project/SynapseNote/.worktrees/appflowy-web
-docker build -f docker/Dockerfile -t synapsenote/appflowy-web:local .
+docker build -f docker/Dockerfile -t synapsenote/web:local .
 
 cd /home/ubuntu/project/SynapseNote/.worktrees/appflowy-cloud
 docker compose up -d --no-deps --force-recreate appflowy_web
@@ -60,6 +61,6 @@ curl -s -o /dev/null -w "%{http_code}\n" https://synapse.lawdigest.kr/
 ## 다음 작업 방향
 
 1. 현재 배포 UI를 기준점으로 유지한다.
-2. AppFlowy collab 저장소 의존을 조사한다.
+2. upstream collab 저장소 의존을 조사한다.
 3. Markdown vault API 계약을 정의한다.
 4. 레거시 vault backend 자산을 현재 UI 뒤에 붙일 수 있는 형태로 승격한다.
