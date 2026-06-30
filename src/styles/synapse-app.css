@@ -140,6 +140,7 @@
 .lrow{display:flex;align-items:center;gap:12px;width:100%;padding:11px 15px;cursor:pointer;text-align:left;transition:background var(--dur) var(--ease)}
 .lrow+.lrow{border-top:1px solid var(--outline-var)}
 .lrow:hover{background:var(--primary-dim)}
+.lrow.active{background:var(--primary-dim)}
 .lic{width:28px;height:28px;flex-shrink:0;border-radius:var(--r-xs);background:var(--surface-low);border:1px solid var(--outline-var);display:flex;align-items:center;justify-content:center;color:var(--on-variant)}
 .lic .icon{font-size:16px}
 .lmain{flex:1;min-width:0}

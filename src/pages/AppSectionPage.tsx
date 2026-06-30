@@ -17,7 +17,6 @@ import {
 } from '@/components/app/app.hooks';
 import { getAppSectionPath, type AppSection } from '@/components/app/navigation/appSections';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { SynapseGraphWorkspace } from '@/features/synapse-graph/SynapseGraphWorkspace';
 import { GraphView } from '@/features/synapse-graph/GraphView.jsx';
 import { outlineToGraph } from '@/features/synapse-graph/outlineToGraph';
 import { cn } from '@/lib/utils';
@@ -312,6 +311,7 @@ function AppSectionPage({ section }: AppSectionPageProps) {
   const [vaultNodes, setVaultNodes] = useState<VaultNode[]>([]);
   const [vaultGraph, setVaultGraph] = useState<VaultGraph | null>(null);
   const [vaultLoading, setVaultLoading] = useState(false);
+  const [vaultLoadError, setVaultLoadError] = useState<string | null>(null);
   const [selectedVaultPath, setSelectedVaultPath] = useState<string | null>(null);
   const [selectedVaultDocument, setSelectedVaultDocument] = useState<VaultDocument | null>(null);
   const [vaultDraft, setVaultDraft] = useState('');
@@ -486,7 +486,9 @@ function AppSectionPage({ section }: AppSectionPageProps) {
 
       setVaultNodes(nodes);
       setVaultGraph(graph);
+      setVaultLoadError(null);
     } catch (error) {
+      setVaultLoadError(getErrorMessage(error));
       notify.error(getErrorMessage(error));
     } finally {
       setVaultLoading(false);
@@ -674,6 +676,31 @@ function AppSectionPage({ section }: AppSectionPageProps) {
   }, [agentPrompt, agentTurns]);
 
   if (section === 'graph') {
+    if (vaultLoading && !vaultGraph && !vaultLoadError) {
+      return (
+        <section className='view' id='view-graph'>
+          <div className='graphview'>
+            <LoadingDots />
+          </div>
+        </section>
+      );
+    }
+
+    if (vaultLoadError) {
+      return (
+        <section className='view' id='view-graph'>
+          <div className='graphview'>
+            <MaterialIcon name='warning' />
+            <span>그래프를 불러오지 못했습니다.</span>
+            <button type='button' className='btn' onClick={() => void loadVaultWorkspace()}>
+              <MaterialIcon name='refresh' />
+              다시 시도
+            </button>
+          </div>
+        </section>
+      );
+    }
+
     if (vaultGraphData.nodes.length > 0) {
       return (
         <section className='view' id='view-graph'>
@@ -693,15 +720,12 @@ function AppSectionPage({ section }: AppSectionPageProps) {
     }
 
     return (
-      <SynapseGraphWorkspace
-        presentation='inline'
-        outline={outline}
-        currentViewId={workspaceId}
-        open
-        refreshKey={workspaceId}
-        onClose={() => undefined}
-        onOpenView={openView}
-      />
+      <section className='view' id='view-graph'>
+        <div className='graphview'>
+          <MaterialIcon name='hub' />
+          <span>그래프에 표시할 문서가 없습니다.</span>
+        </div>
+      </section>
     );
   }
 
@@ -765,14 +789,16 @@ function AppSectionPage({ section }: AppSectionPageProps) {
               <MaterialIcon name='swap_vert' />
               {librarySort === 'recent' ? '최근 수정순' : '이름순'}
             </button>
-            <button
-              type='button'
-              className={cn('chip', libraryGrouped && 'dim')}
-              onClick={() => setLibraryGrouped((grouped) => !grouped)}
-            >
-              <MaterialIcon name='workspaces' />
-              {libraryGrouped ? '스페이스별' : '전체'}
-            </button>
+            {libraryMode === 'table' ? (
+              <button
+                type='button'
+                className={cn('chip', libraryGrouped && 'dim')}
+                onClick={() => setLibraryGrouped((grouped) => !grouped)}
+              >
+                <MaterialIcon name='workspaces' />
+                {libraryGrouped ? '스페이스별' : '전체'}
+              </button>
+            ) : null}
           </div>
 
           <div className='vault-library-shell'>
@@ -805,6 +831,35 @@ function AppSectionPage({ section }: AppSectionPageProps) {
                       <div className='hm'>{formatRelative(node.updatedAt)}</div>
                     </div>
                   ))}
+                </div>
+              ) : libraryMode === 'list' ? (
+                <div className='list'>
+                  {filteredVaultDocuments.length > 0 ? (
+                    filteredVaultDocuments.map((node) => (
+                      <button
+                        key={node.id}
+                        type='button'
+                        className={cn('lrow', selectedVaultPath === node.id && 'active')}
+                        onClick={() => void openVaultDocument(node.id)}
+                      >
+                        <span className='lic'>
+                          <MaterialIcon name={vaultDocumentIcon(node)} />
+                        </span>
+                        <div className='lmain'>
+                          <div className='ltitle'>{vaultNodeTitle(node)}</div>
+                          <div className='lmeta'>
+                            {node.id} · 수정 {formatRelative(node.updatedAt)}
+                          </div>
+                        </div>
+                        <span className='tconn'>
+                          <MaterialIcon name='hub' />
+                          {connectionCountByVaultId.get(node.id) ?? 0}
+                        </span>
+                      </button>
+                    ))
+                  ) : (
+                    <div className='lrow'>문서가 없습니다.</div>
+                  )}
                 </div>
               ) : libraryMode === 'board' ? (
                 <div className='spaces'>
@@ -879,7 +934,7 @@ function AppSectionPage({ section }: AppSectionPageProps) {
                                   <span>{vaultNodeTitle(node)}</span>
                                 </div>
                                 <div className='tcell tags c-tags'>
-                                  {(node.tags.length > 0 ? node.tags : ['문서']).map((tag) => (
+                                  {node.tags.map((tag) => (
                                     <span key={tag} className='chip tag'>
                                       {tag}
                                     </span>
@@ -914,7 +969,7 @@ function AppSectionPage({ section }: AppSectionPageProps) {
                             <span>{vaultNodeTitle(node)}</span>
                           </div>
                           <div className='tcell tags c-tags'>
-                            {(node.tags.length > 0 ? node.tags : ['문서']).map((tag) => (
+                            {node.tags.map((tag) => (
                               <span key={tag} className='chip tag'>
                                 {tag}
                               </span>
