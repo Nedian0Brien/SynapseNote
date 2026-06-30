@@ -129,6 +129,7 @@
 @media(max-width:1000px){.hcards{grid-template-columns:repeat(2,1fr)}}
 .hcard{border:1px solid var(--outline);border-radius:var(--r-lg);background:var(--surface);padding:14px;cursor:pointer;text-align:left;transition:transform var(--dur) var(--ease-spring),box-shadow var(--dur) var(--ease),border-color var(--dur) var(--ease)}
 .hcard:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.hcard.active{border-color:var(--sn-primary);background:var(--primary-dim)}
 .hcard .tile{width:38px;height:38px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;margin-bottom:24px}
 .hcard .tile .icon{font-size:21px}
 .tile.a{background:#eaddff;color:#5b3da8}.tile.b{background:#d7ebff;color:#1f6fb2}.tile.c{background:#dcf3e3;color:#2f7d5b}.tile.d{background:#ffe6cc;color:#b5701f}
@@ -154,6 +155,16 @@
 .lib-sub{font-size:13px;color:var(--sn-muted);margin-top:2px}
 .lib-toolbar{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
 .lib-toolbar .field{flex:1;max-width:300px}
+.vault-library-shell{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,420px);gap:16px;align-items:start}
+.vault-library-list{min-width:0}
+.vault-editor{position:sticky;top:18px;display:flex;flex-direction:column;min-height:420px;overflow:hidden;border:1px solid var(--outline);border-radius:var(--r-lg);background:var(--surface)}
+.vault-editor-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px;border-bottom:1px solid var(--outline-var)}
+.vault-editor-meta{min-width:0}
+.vault-editor-title{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vault-editor-path{max-width:260px;margin-top:2px;font-size:12px;color:var(--sn-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vault-markdown-editor{flex:1;width:100%;min-height:360px;padding:14px;border:0;outline:0;resize:vertical;background:transparent;color:var(--sn-text);font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;font-size:13px;line-height:1.65}
+.vault-empty-editor{min-height:420px;display:grid;place-items:center;align-content:center;gap:8px;color:var(--sn-muted);text-align:center}
+.vault-empty-editor .icon{font-size:24px}
 .tbl{border:1px solid var(--outline);border-radius:var(--r-lg);background:var(--surface);overflow:hidden}
 .tgrouph{display:flex;align-items:center;gap:8px;width:100%;padding:9px 16px;background:var(--surface-low);font-size:12px;font-weight:700;color:var(--on-variant);border-bottom:1px solid var(--outline-var);text-align:left}
 .tgrouph .icon{font-size:16px;color:var(--sn-muted)}
@@ -163,6 +174,7 @@
 .trow{height:46px;width:100%;border-bottom:1px solid var(--outline-var);cursor:pointer;text-align:left;transition:background var(--dur) var(--ease)}
 .trow:last-child{border-bottom:none}
 .trow:hover{background:var(--primary-dim)}
+.trow.active{background:var(--primary-dim)}
 .tname{display:flex;align-items:center;gap:10px;min-width:0}
 .tname .icon{font-size:18px;color:var(--on-variant);flex-shrink:0}
 .tname span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13.5px;font-weight:500}
@@ -171,6 +183,7 @@
 .tconn{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--on-variant);font-variant-numeric:tabular-nums}
 .tconn .icon{font-size:14px;color:var(--sn-muted)}
 @media(max-width:840px){.thead,.trow{grid-template-columns:1fr 90px}.thead .h-tags,.trow .c-tags,.thead .h-date,.trow .c-date{display:none}}
+@media(max-width:980px){.vault-library-shell{grid-template-columns:1fr}.vault-editor{position:static}.vault-editor-path{max-width:100%}}
 
 /* ═══════ AGENT (ChatGPT-grade) ═══════ */
 .agent{display:flex;flex-direction:column;height:100%}

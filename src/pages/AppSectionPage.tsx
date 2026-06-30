@@ -2,12 +2,13 @@ import { Fragment, type HTMLAttributes, type KeyboardEvent, useCallback, useEffe
 import { useNavigate } from 'react-router-dom';
 
 import { View, ViewLayout } from '@/application/types';
+import { VaultService } from '@/application/services/domains';
+import type { VaultDocument, VaultGraph, VaultNode } from '@/application/services/domains/vault';
 import LoadingDots from '@/components/_shared/LoadingDots';
 import { notify } from '@/components/_shared/notify';
 import {
   useAIEnabled,
   useAppFavorites,
-  useAppOperations,
   useAppOutline,
   useAppRecent,
   useCurrentWorkspaceId,
@@ -15,13 +16,9 @@ import {
   useUserWorkspaceInfo,
 } from '@/components/app/app.hooks';
 import { getAppSectionPath, type AppSection } from '@/components/app/navigation/appSections';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { SynapseGraphWorkspace } from '@/features/synapse-graph/SynapseGraphWorkspace';
+import { GraphView } from '@/features/synapse-graph/GraphView.jsx';
 import { outlineToGraph } from '@/features/synapse-graph/outlineToGraph';
 import { cn } from '@/lib/utils';
 import { copyTextToClipboard } from '@/utils/copy';
@@ -47,11 +44,6 @@ function viewName(view: View) {
 
 function displayViewName(view: View) {
   return view.extra?.synapse?.displayName || viewName(view);
-}
-
-function viewTags(view: View) {
-  if (view.extra?.synapse?.tags?.length) return view.extra.synapse.tags;
-  return [view.layout === ViewLayout.Grid ? 'DB' : '문서'];
 }
 
 function countDocumentsInSpace(space: View) {
@@ -87,6 +79,28 @@ function formatRelative(value?: string) {
   return formatShortDate(value);
 }
 
+function vaultNodeTitle(node: VaultNode) {
+  return node.title.trim() || node.id.split('/').pop()?.replace(/\.md$/, '') || 'Untitled';
+}
+
+function vaultDocumentIcon(node: VaultNode) {
+  return node.id.includes('/') ? 'article' : 'description';
+}
+
+function vaultDocumentPathForNewDocument(title = '새 문서') {
+  const stamp = new Intl.DateTimeFormat('ko-KR', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+    .format(new Date())
+    .replace(/[^\d]/g, '')
+    .slice(0, 8);
+
+  return `${title}-${stamp}.md`;
+}
+
 function spaceMaterialIcon(space: View) {
   return space.extra?.synapse?.materialIcon || 'folder_open';
 }
@@ -95,16 +109,6 @@ function documentMaterialIcon(view: View, index = 0) {
   if (view.extra?.synapse?.materialIcon) return view.extra.synapse.materialIcon;
   if (view.layout === ViewLayout.Grid) return 'table';
   return index === 0 ? 'hub' : 'description';
-}
-
-function LibraryDocumentIcon({ view }: { view: View }) {
-  const showFavoriteStar = Boolean(view.favorited_at);
-
-  if (showFavoriteStar) {
-    return <MaterialIcon name='star' className='icon--fill' style={{ color: 'var(--sn-favorite)' }} />;
-  }
-
-  return <MaterialIcon name={documentMaterialIcon(view, 1)} />;
 }
 
 function greeting() {
@@ -286,7 +290,6 @@ function AppSectionPage({ section }: AppSectionPageProps) {
   const userWorkspaceInfo = useUserWorkspaceInfo();
   const currentUser = useCurrentUserOptional();
   const aiEnabled = useAIEnabled();
-  const { addPage } = useAppOperations();
   const { recentViews, loadRecentViews } = useAppRecent();
   const { favoriteViews, loadFavoriteViews } = useAppFavorites();
   const [loadingRecent, setLoadingRecent] = useState(false);
@@ -306,6 +309,13 @@ function AppSectionPage({ section }: AppSectionPageProps) {
   const [libraryFilterActive, setLibraryFilterActive] = useState(false);
   const [libraryGrouped, setLibraryGrouped] = useState(true);
   const [collapsedLibrarySpaceIds, setCollapsedLibrarySpaceIds] = useState<string[]>([]);
+  const [vaultNodes, setVaultNodes] = useState<VaultNode[]>([]);
+  const [vaultGraph, setVaultGraph] = useState<VaultGraph | null>(null);
+  const [vaultLoading, setVaultLoading] = useState(false);
+  const [selectedVaultPath, setSelectedVaultPath] = useState<string | null>(null);
+  const [selectedVaultDocument, setSelectedVaultDocument] = useState<VaultDocument | null>(null);
+  const [vaultDraft, setVaultDraft] = useState('');
+  const [vaultSaving, setVaultSaving] = useState(false);
   const workspaceName = userWorkspaceInfo?.selectedWorkspace.name || 'SynapseNote';
   const userDisplayName = currentUser?.name || currentUser?.email?.split('@')[0] || workspaceName;
   const visibleSpaces = useMemo(
@@ -315,27 +325,60 @@ function AppSectionPage({ section }: AppSectionPageProps) {
   const allViews = useMemo(() => flattenViews(outline), [outline]);
   const workspaceSpaces = useMemo(() => allViews.filter((view) => view.extra?.is_space), [allViews]);
   const documentViews = useMemo(
-    () =>
-      allViews.filter(
-        (view) =>
-          isVisibleView(view) &&
-          !view.extra?.is_space &&
-          view.layout !== ViewLayout.AIChat
-      ),
+    () => allViews.filter((view) => isVisibleView(view) && !view.extra?.is_space && view.layout !== ViewLayout.AIChat),
     [allViews]
   );
-  const libraryRows = documentViews;
   const graphData = useMemo(() => outlineToGraph(outline), [outline]);
-  const connectionCountByViewId = useMemo(() => {
+  const vaultDocuments = useMemo(() => vaultNodes.filter((node) => node.nodeType === 'Document'), [vaultNodes]);
+  const vaultDirectories = useMemo(
+    () => vaultNodes.filter((node) => node.nodeType === 'Directory' && node.id !== '.'),
+    [vaultNodes]
+  );
+  const vaultGraphData = useMemo(() => {
+    if (!vaultGraph) {
+      return {
+        nodes: [],
+        edges: [],
+        stats: { nodes: 0, edges: 0 },
+      };
+    }
+
+    return {
+      nodes: vaultGraph.nodes.map((node) => ({
+        id: node.id,
+        name: vaultNodeTitle(node),
+        title: vaultNodeTitle(node),
+        path: node.id,
+        type: node.nodeType === 'Directory' ? ('Directory' as const) : ('Document' as const),
+        directory: node.id.includes('/') ? node.id.split('/').slice(0, -1).join('/') : null,
+        searchTitle: vaultNodeTitle(node).toLowerCase(),
+      })),
+      edges: vaultGraph.edges.map((edge) => ({
+        source: edge.source,
+        target: edge.target,
+        edge_type:
+          edge.edgeType === 'directory'
+            ? ('directory' as const)
+            : edge.edgeType === 'wikilink'
+            ? ('wikilink' as const)
+            : ('reference' as const),
+      })),
+      stats: {
+        nodes: vaultGraph.nodes.length,
+        edges: vaultGraph.edges.length,
+      },
+    };
+  }, [vaultGraph]);
+  const connectionCountByVaultId = useMemo(() => {
     const countById = new Map<string, number>();
 
-    graphData.edges.forEach((edge) => {
+    vaultGraph?.edges.forEach((edge) => {
       countById.set(edge.source, (countById.get(edge.source) ?? 0) + 1);
       countById.set(edge.target, (countById.get(edge.target) ?? 0) + 1);
     });
 
     return countById;
-  }, [graphData]);
+  }, [vaultGraph]);
   const recent = recentViews?.slice(0, 6) ?? [];
   const agentDocumentViews = useMemo(() => {
     const seen = new Set<string>();
@@ -351,19 +394,20 @@ function AppSectionPage({ section }: AppSectionPageProps) {
     const preferred = recent.length > 0 ? [...recent, ...agentDocumentViews] : agentDocumentViews;
     const seen = new Set<string>();
 
-    return preferred.filter((view) => {
-      if (seen.has(view.view_id)) return false;
-      seen.add(view.view_id);
-      return true;
-    }).slice(0, 4);
+    return preferred
+      .filter((view) => {
+        if (seen.has(view.view_id)) return false;
+        seen.add(view.view_id);
+        return true;
+      })
+      .slice(0, 4);
   }, [agentDocumentViews, recent]);
-  const filteredLibraryViews = useMemo(() => {
+  const filteredVaultDocuments = useMemo(() => {
     const query = libraryQuery.trim().toLowerCase();
-    const matches = libraryRows.filter((view) => {
-      if (query && !displayViewName(view).toLowerCase().includes(query)) return false;
+    const matches = vaultDocuments.filter((node) => {
+      if (query && !`${vaultNodeTitle(node)} ${node.id}`.toLowerCase().includes(query)) return false;
       if (!libraryFilterActive) return true;
-      if (!view.last_edited_time) return false;
-      const edited = new Date(view.last_edited_time);
+      const edited = new Date(node.updatedAt);
       const now = new Date();
 
       return (
@@ -374,13 +418,21 @@ function AppSectionPage({ section }: AppSectionPageProps) {
     });
 
     return matches.sort((a, b) => {
-      if (librarySort === 'name') return displayViewName(a).localeCompare(displayViewName(b));
-      const aTime = new Date(a.last_edited_time || a.created_at || 0).getTime();
-      const bTime = new Date(b.last_edited_time || b.created_at || 0).getTime();
-
-      return bTime - aTime;
+      if (librarySort === 'name') return vaultNodeTitle(a).localeCompare(vaultNodeTitle(b));
+      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
     });
-  }, [libraryFilterActive, libraryQuery, libraryRows, librarySort]);
+  }, [libraryFilterActive, libraryQuery, librarySort, vaultDocuments]);
+  const vaultDocumentGroups = useMemo(() => {
+    const groups = new Map<string, VaultNode[]>();
+
+    filteredVaultDocuments.forEach((node) => {
+      const group = node.id.includes('/') ? node.id.split('/').slice(0, -1).join('/') : 'Vault';
+
+      groups.set(group, [...(groups.get(group) ?? []), node]);
+    });
+
+    return Array.from(groups.entries()).sort(([a], [b]) => a.localeCompare(b));
+  }, [filteredVaultDocuments]);
   const continueItems = useMemo(() => {
     return [...documentViews]
       .sort((a, b) => {
@@ -422,6 +474,80 @@ function AppSectionPage({ section }: AppSectionPageProps) {
     };
   }, [loadFavoriteViews, loadRecentViews, section]);
 
+  const loadVaultWorkspace = useCallback(async () => {
+    if (!workspaceId) return;
+
+    setVaultLoading(true);
+    try {
+      const [nodes, graph] = await Promise.all([
+        VaultService.listNodes(workspaceId),
+        VaultService.getGraph(workspaceId),
+      ]);
+
+      setVaultNodes(nodes);
+      setVaultGraph(graph);
+    } catch (error) {
+      notify.error(getErrorMessage(error));
+    } finally {
+      setVaultLoading(false);
+    }
+  }, [workspaceId]);
+
+  useEffect(() => {
+    if (section !== 'library' && section !== 'graph') return;
+    void loadVaultWorkspace();
+  }, [loadVaultWorkspace, section]);
+
+  const openVaultDocument = useCallback(
+    async (path: string) => {
+      if (!workspaceId) return;
+
+      setSelectedVaultPath(path);
+      setVaultLoading(true);
+      try {
+        const document = await VaultService.getDocument(workspaceId, path);
+
+        setSelectedVaultDocument(document);
+        setVaultDraft(document.content);
+      } catch (error) {
+        setSelectedVaultDocument(null);
+        setVaultDraft('');
+        notify.error(getErrorMessage(error));
+      } finally {
+        setVaultLoading(false);
+      }
+    },
+    [workspaceId]
+  );
+
+  const saveVaultDocument = useCallback(async () => {
+    if (!workspaceId || !selectedVaultPath || !selectedVaultDocument) return;
+
+    setVaultSaving(true);
+    try {
+      const meta = await VaultService.writeDocument(
+        workspaceId,
+        selectedVaultPath,
+        vaultDraft,
+        selectedVaultDocument.hash
+      );
+
+      setSelectedVaultDocument({
+        ...selectedVaultDocument,
+        title: meta.title,
+        updatedAt: meta.updatedAt,
+        hash: meta.hash,
+        content: vaultDraft,
+      });
+      await loadVaultWorkspace();
+      notify.success('저장했습니다.');
+    } catch (error) {
+      notify.error(getErrorMessage(error));
+    } finally {
+      setVaultSaving(false);
+    }
+  }, [loadVaultWorkspace, selectedVaultDocument, selectedVaultPath, vaultDraft, workspaceId]);
+
   const openView = useCallback(
     (viewId: string) => {
       void toView(viewId);
@@ -442,22 +568,21 @@ function AppSectionPage({ section }: AppSectionPageProps) {
   }, [navigate, workspaceId]);
 
   const createDocument = useCallback(async () => {
-    const parent = visibleSpaces[0] || outline?.[0];
-
-    if (!parent || !addPage) return;
+    if (!workspaceId) return;
 
     try {
-      const created = await addPage(parent.view_id, {
-        layout: ViewLayout.Document,
-        name: '새 문서',
-        prev_view_id: parent.children?.[parent.children.length - 1]?.view_id,
-      });
+      const path = vaultDocumentPathForNewDocument();
+      const created = await VaultService.createDocument(workspaceId, path, '# 새 문서\n');
 
-      await toView(created.view_id);
+      await loadVaultWorkspace();
+      if (section !== 'library') {
+        navigate(getAppSectionPath(workspaceId, 'library'));
+      }
+      await openVaultDocument(created.id);
     } catch (error) {
       notify.error(getErrorMessage(error));
     }
-  }, [addPage, outline, toView, visibleSpaces]);
+  }, [loadVaultWorkspace, navigate, openVaultDocument, section, workspaceId]);
 
   const submitAgentPrompt = useCallback(
     async (prompt: string) => {
@@ -549,6 +674,24 @@ function AppSectionPage({ section }: AppSectionPageProps) {
   }, [agentPrompt, agentTurns]);
 
   if (section === 'graph') {
+    if (vaultGraphData.nodes.length > 0) {
+      return (
+        <section className='view' id='view-graph'>
+          <div className='synapse-graph-route' role='region' aria-label='SynapseNote Graph'>
+            <GraphView
+              graphData={vaultGraphData}
+              refreshKey={`${workspaceId ?? 'vault'}-${vaultGraphData.stats.nodes}-${vaultGraphData.stats.edges}`}
+              onOpenNode={(nodeId: string) => {
+                if (!nodeId.endsWith('.md')) return;
+                navigate(getAppSectionPath(workspaceId, 'library'));
+                void openVaultDocument(nodeId);
+              }}
+            />
+          </div>
+        </section>
+      );
+    }
+
     return (
       <SynapseGraphWorkspace
         presentation='inline'
@@ -569,11 +712,10 @@ function AppSectionPage({ section }: AppSectionPageProps) {
           <div className='lib-head'>
             <div>
               <div className='lib-title'>Library</div>
-              <div className='lib-sub'>모든 문서 · {documentViews.length}개</div>
+              <div className='lib-sub'>Markdown vault · {vaultDocuments.length}개</div>
             </div>
             <button type='button' className='btn btn-primary' onClick={createDocument}>
-              <MaterialIcon name='add' />
-              새 문서
+              <MaterialIcon name='add' />새 문서
             </button>
           </div>
 
@@ -633,131 +775,198 @@ function AppSectionPage({ section }: AppSectionPageProps) {
             </button>
           </div>
 
-          {libraryMode === 'gallery' ? (
-            <div className='hcards'>
-              {filteredLibraryViews.map((view, index) => (
-                <div
-                  key={view.view_id}
-                  role='button'
-                  tabIndex={0}
-                  className='hcard'
-                  onClick={() => openView(view.view_id)}
-                  onKeyDown={(event) => openViewOnCardKeyDown(view.view_id, event)}
-                >
-                  <div className={`tile ${['a', 'b', 'c', 'd'][index % 4]}`}>
-                    <MaterialIcon name='description' />
+          <div className='vault-library-shell'>
+            <div className='vault-library-list'>
+              {vaultLoading && filteredVaultDocuments.length === 0 ? (
+                <div className='list'>
+                  <div className='lrow'>
+                    <LoadingDots />
                   </div>
-                  <div className='ht'>{displayViewName(view)}</div>
-                  <div className='hm'>{formatRelative(view.last_edited_time || view.last_viewed_at)}</div>
                 </div>
-              ))}
-            </div>
-          ) : libraryMode === 'board' ? (
-            <div className='spaces'>
-              {visibleSpaces.map((space, index) => (
-                <div
-                  key={space.view_id}
-                  role='button'
-                  tabIndex={0}
-                  className='hcard'
-                  onClick={() => openView(space.view_id)}
-                  onKeyDown={(event) => openViewOnCardKeyDown(space.view_id, event)}
-                >
-                  <div className={`tile ${space.extra?.synapse?.tileVariant || ['a', 'b', 'c', 'd'][index % 4]}`}>
-                    <MaterialIcon name={spaceMaterialIcon(space)} />
-                  </div>
-                  <div className='ht'>{viewName(space)}</div>
-                  <div className='hm'>{countDocumentsInSpace(space)}개 문서</div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className='tbl'>
-              <div className='thead'>
-                <div>이름</div>
-                <div className='h-tags'>태그</div>
-                <div>연결</div>
-                <div className='h-date'>수정일</div>
-              </div>
-              {libraryGrouped ? (
-                visibleSpaces.map((space) => {
-                  const allowed = new Set(filteredLibraryViews.map((view) => view.view_id));
-                  const rows = (space.children ?? []).filter((view) => allowed.has(view.view_id));
-                  const collapsed = collapsedLibrarySpaceIds.includes(space.view_id);
-
-                  if (rows.length === 0) return null;
-
-                  return (
-                    <Fragment key={space.view_id}>
-                      <button
-                        type='button'
-                        className='tgrouph'
-                        aria-expanded={!collapsed}
-                        onClick={() =>
-                          setCollapsedLibrarySpaceIds((ids) =>
-                            ids.includes(space.view_id) ? ids.filter((id) => id !== space.view_id) : [...ids, space.view_id]
-                          )
-                        }
-                      >
-                        <MaterialIcon name={spaceMaterialIcon(space)} />
-                        {viewName(space)}
-                        <span className='cnt'>· {countDocumentsInSpace(space)}</span>
-                      </button>
-                      {!collapsed &&
-                        rows.map((view) => (
-                          <button key={view.view_id} type='button' className='trow' onClick={() => openView(view.view_id)}>
-                            <div className='tname'>
-                              <LibraryDocumentIcon view={view} />
-                              <span>{displayViewName(view)}</span>
-                            </div>
-                            <div className='tcell tags c-tags'>
-                              {viewTags(view).map((tag) => (
-                                <span key={tag} className='chip tag'>
-                                  {tag}
-                                </span>
-                              ))}
-                            </div>
-                            <div className='tconn'>
-                              <MaterialIcon name='hub' />
-                              {connectionCountByViewId.get(view.view_id) ?? 0}
-                            </div>
-                            <div className='tcell c-date'>{formatRelative(view.last_edited_time || view.last_viewed_at)}</div>
-                          </button>
-                        ))}
-                    </Fragment>
-                  );
-                })
-              ) : (
-                <>
-                  <div className='tgrouph'>
-                    <MaterialIcon name='article' />
-                    전체
-                    <span className='cnt'>· {filteredLibraryViews.length}</span>
-                  </div>
-                  {filteredLibraryViews.map((view) => (
-                    <button key={view.view_id} type='button' className='trow' onClick={() => openView(view.view_id)}>
-                      <div className='tname'>
-                        <LibraryDocumentIcon view={view} />
-	                      <span>{displayViewName(view)}</span>
-	                    </div>
-	                    <div className='tcell tags c-tags'>
-	                        {viewTags(view).map((tag) => (
-	                          <span key={tag} className='chip tag'>
-	                            {tag}
-	                          </span>
-	                        ))}
-	                    </div>
-		                    <div className='tconn'>
-		                      <MaterialIcon name='hub' />
-		                      {connectionCountByViewId.get(view.view_id) ?? 0}
+              ) : libraryMode === 'gallery' ? (
+                <div className='hcards'>
+                  {filteredVaultDocuments.map((node, index) => (
+                    <div
+                      key={node.id}
+                      role='button'
+                      tabIndex={0}
+                      className={cn('hcard', selectedVaultPath === node.id && 'active')}
+                      onClick={() => void openVaultDocument(node.id)}
+                      onKeyDown={(event) => {
+                        if (event.key !== 'Enter' && event.key !== ' ') return;
+                        event.preventDefault();
+                        void openVaultDocument(node.id);
+                      }}
+                    >
+                      <div className={`tile ${['a', 'b', 'c', 'd'][index % 4]}`}>
+                        <MaterialIcon name={vaultDocumentIcon(node)} />
                       </div>
-                      <div className='tcell c-date'>{formatRelative(view.last_edited_time || view.last_viewed_at)}</div>
-                    </button>
+                      <div className='ht'>{vaultNodeTitle(node)}</div>
+                      <div className='hm'>{formatRelative(node.updatedAt)}</div>
+                    </div>
                   ))}
-                </>
+                </div>
+              ) : libraryMode === 'board' ? (
+                <div className='spaces'>
+                  {vaultDirectories.length > 0
+                    ? vaultDirectories.map((directory, index) => (
+                        <button
+                          key={directory.id}
+                          type='button'
+                          className='hcard'
+                          onClick={() => setLibraryQuery(directory.id)}
+                        >
+                          <div className={`tile ${['a', 'b', 'c', 'd'][index % 4]}`}>
+                            <MaterialIcon name='folder_open' />
+                          </div>
+                          <div className='ht'>{vaultNodeTitle(directory)}</div>
+                          <div className='hm'>{directory.id}</div>
+                        </button>
+                      ))
+                    : vaultDocumentGroups.map(([group, rows], index) => (
+                        <button
+                          key={group}
+                          type='button'
+                          className='hcard'
+                          onClick={() => setLibraryQuery(group === 'Vault' ? '' : group)}
+                        >
+                          <div className={`tile ${['a', 'b', 'c', 'd'][index % 4]}`}>
+                            <MaterialIcon name='folder_open' />
+                          </div>
+                          <div className='ht'>{group}</div>
+                          <div className='hm'>{rows.length}개 문서</div>
+                        </button>
+                      ))}
+                </div>
+              ) : (
+                <div className='tbl'>
+                  <div className='thead'>
+                    <div>이름</div>
+                    <div className='h-tags'>태그</div>
+                    <div>연결</div>
+                    <div className='h-date'>수정일</div>
+                  </div>
+                  {libraryGrouped ? (
+                    vaultDocumentGroups.map(([group, rows]) => {
+                      const collapsed = collapsedLibrarySpaceIds.includes(group);
+
+                      return (
+                        <Fragment key={group}>
+                          <button
+                            type='button'
+                            className='tgrouph'
+                            aria-expanded={!collapsed}
+                            onClick={() =>
+                              setCollapsedLibrarySpaceIds((ids) =>
+                                ids.includes(group) ? ids.filter((id) => id !== group) : [...ids, group]
+                              )
+                            }
+                          >
+                            <MaterialIcon name='folder_open' />
+                            {group}
+                            <span className='cnt'>· {rows.length}</span>
+                          </button>
+                          {!collapsed &&
+                            rows.map((node) => (
+                              <button
+                                key={node.id}
+                                type='button'
+                                className={cn('trow', selectedVaultPath === node.id && 'active')}
+                                onClick={() => void openVaultDocument(node.id)}
+                              >
+                                <div className='tname'>
+                                  <MaterialIcon name={vaultDocumentIcon(node)} />
+                                  <span>{vaultNodeTitle(node)}</span>
+                                </div>
+                                <div className='tcell tags c-tags'>
+                                  {(node.tags.length > 0 ? node.tags : ['문서']).map((tag) => (
+                                    <span key={tag} className='chip tag'>
+                                      {tag}
+                                    </span>
+                                  ))}
+                                </div>
+                                <div className='tconn'>
+                                  <MaterialIcon name='hub' />
+                                  {connectionCountByVaultId.get(node.id) ?? 0}
+                                </div>
+                                <div className='tcell c-date'>{formatRelative(node.updatedAt)}</div>
+                              </button>
+                            ))}
+                        </Fragment>
+                      );
+                    })
+                  ) : (
+                    <>
+                      <div className='tgrouph'>
+                        <MaterialIcon name='article' />
+                        전체
+                        <span className='cnt'>· {filteredVaultDocuments.length}</span>
+                      </div>
+                      {filteredVaultDocuments.map((node) => (
+                        <button
+                          key={node.id}
+                          type='button'
+                          className={cn('trow', selectedVaultPath === node.id && 'active')}
+                          onClick={() => void openVaultDocument(node.id)}
+                        >
+                          <div className='tname'>
+                            <MaterialIcon name={vaultDocumentIcon(node)} />
+                            <span>{vaultNodeTitle(node)}</span>
+                          </div>
+                          <div className='tcell tags c-tags'>
+                            {(node.tags.length > 0 ? node.tags : ['문서']).map((tag) => (
+                              <span key={tag} className='chip tag'>
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                          <div className='tconn'>
+                            <MaterialIcon name='hub' />
+                            {connectionCountByVaultId.get(node.id) ?? 0}
+                          </div>
+                          <div className='tcell c-date'>{formatRelative(node.updatedAt)}</div>
+                        </button>
+                      ))}
+                    </>
+                  )}
+                </div>
               )}
             </div>
-          )}
+
+            <aside className='vault-editor' aria-live='polite'>
+              {selectedVaultDocument ? (
+                <>
+                  <div className='vault-editor-head'>
+                    <div className='vault-editor-meta'>
+                      <div className='vault-editor-title'>{selectedVaultDocument.title}</div>
+                      <div className='vault-editor-path'>{selectedVaultDocument.id}</div>
+                    </div>
+                    <button
+                      type='button'
+                      className='btn btn-primary'
+                      onClick={saveVaultDocument}
+                      disabled={vaultSaving || vaultDraft === selectedVaultDocument.content}
+                    >
+                      <MaterialIcon name='save' />
+                      {vaultSaving ? '저장 중' : '저장'}
+                    </button>
+                  </div>
+                  <textarea
+                    className='vault-markdown-editor'
+                    value={vaultDraft}
+                    onChange={(event) => setVaultDraft(event.target.value)}
+                    spellCheck={false}
+                    aria-label='Markdown 문서'
+                  />
+                </>
+              ) : (
+                <div className='vault-empty-editor'>
+                  <MaterialIcon name='description' />
+                  <span>문서를 선택하세요.</span>
+                </div>
+              )}
+            </aside>
+          </div>
         </div>
       </section>
     );
@@ -776,312 +985,326 @@ function AppSectionPage({ section }: AppSectionPageProps) {
 
     return (
       <section className='view' id='view-agent'>
-      <div className='agent'>
-        <div className='agent-head'>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button type='button' className='model-sel' aria-label='AI 모델'>
-                <span className='icon icon--fill' style={{ color: 'var(--sn-primary)' }}>
-                  auto_awesome
-                </span>
-                {agentModel}
-                <span className='icon dd'>expand_more</span>
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align='start'>
-              {modelOptions.map((model) => (
-                <DropdownMenuItem key={model} onSelect={() => setAgentModel(model)}>
-                  <span className='min-w-0 flex-1 truncate'>{model}</span>
-                  {agentModel === model ? <MaterialIcon name='check' /> : null}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <div className='spacer' />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button type='button' className='iconbtn' aria-label='대화 기록' title='대화 기록'>
-                <MaterialIcon name='history' />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align='end' className='w-[260px]'>
-              {aiChatViews.length > 0 ? (
-                aiChatViews.slice(0, 8).map((view) => (
-                  <DropdownMenuItem key={view.view_id} onSelect={() => openView(view.view_id)}>
-                    <MaterialIcon name='auto_awesome' />
-                    <span className='min-w-0 flex-1 truncate'>{viewName(view)}</span>
+        <div className='agent'>
+          <div className='agent-head'>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button type='button' className='model-sel' aria-label='AI 모델'>
+                  <span className='icon icon--fill' style={{ color: 'var(--sn-primary)' }}>
+                    auto_awesome
+                  </span>
+                  {agentModel}
+                  <span className='icon dd'>expand_more</span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align='start'>
+                {modelOptions.map((model) => (
+                  <DropdownMenuItem key={model} onSelect={() => setAgentModel(model)}>
+                    <span className='min-w-0 flex-1 truncate'>{model}</span>
+                    {agentModel === model ? <MaterialIcon name='check' /> : null}
                   </DropdownMenuItem>
-                ))
-              ) : (
-                <DropdownMenuItem disabled>저장된 대화가 없습니다.</DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <button
-            type='button'
-            className='iconbtn bordered'
-            aria-label='새 대화'
-            title='새 대화'
-            onClick={() => {
-              setAgentPrompt('');
-              setAgentVote(null);
-              setAgentTurns([]);
-              setAgentMode('empty');
-            }}
-          >
-            <MaterialIcon name='edit_square' />
-          </button>
-        </div>
-
-        <div className='agent-scroll'>
-          {!showConversation ? (
-            <section className='empty'>
-              <span className='logo'>
-                <span className='icon icon--fill'>auto_awesome</span>
-              </span>
-              <h2>무엇을 도와드릴까요?</h2>
-              <p>워크스페이스 문서를 검색하거나, 연결된 지식을 바탕으로 답을 받아보세요.</p>
-              <div className='suggest'>
-                {suggestions.map((suggestion) => (
-                  <button
-                    key={suggestion.prompt}
-                    type='button'
-	                    className='scard'
-	                    onClick={() => {
-	                      void submitAgentPrompt(suggestion.prompt);
-	                    }}
-	                  >
-                    <div className='si'>
-                      <span className='icon'>{suggestion.icon}</span>
-                      {suggestion.label}
-                    </div>
-                    <div className='sq'>{suggestion.prompt}</div>
-                  </button>
                 ))}
-              </div>
-            </section>
-	          ) : (
-	            <section className='thread'>
-	              {agentTurns.map((turn, turnIndex) => (
-	                <Fragment key={turn.id}>
-	                  <article className='turn'>
-	                    <div className='turn-head'>
-	                      <span className='av user'>나</span>
-	                      <span className='turn-name'>나</span>
-	                    </div>
-	                    <div className='q-bubble'>{turn.prompt}</div>
-	                  </article>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <div className='spacer' />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button type='button' className='iconbtn' aria-label='대화 기록' title='대화 기록'>
+                  <MaterialIcon name='history' />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align='end' className='w-[260px]'>
+                {aiChatViews.length > 0 ? (
+                  aiChatViews.slice(0, 8).map((view) => (
+                    <DropdownMenuItem key={view.view_id} onSelect={() => openView(view.view_id)}>
+                      <MaterialIcon name='auto_awesome' />
+                      <span className='min-w-0 flex-1 truncate'>{viewName(view)}</span>
+                    </DropdownMenuItem>
+                  ))
+                ) : (
+                  <DropdownMenuItem disabled>저장된 대화가 없습니다.</DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <button
+              type='button'
+              className='iconbtn bordered'
+              aria-label='새 대화'
+              title='새 대화'
+              onClick={() => {
+                setAgentPrompt('');
+                setAgentVote(null);
+                setAgentTurns([]);
+                setAgentMode('empty');
+              }}
+            >
+              <MaterialIcon name='edit_square' />
+            </button>
+          </div>
 
+          <div className='agent-scroll'>
+            {!showConversation ? (
+              <section className='empty'>
+                <span className='logo'>
+                  <span className='icon icon--fill'>auto_awesome</span>
+                </span>
+                <h2>무엇을 도와드릴까요?</h2>
+                <p>워크스페이스 문서를 검색하거나, 연결된 지식을 바탕으로 답을 받아보세요.</p>
+                <div className='suggest'>
+                  {suggestions.map((suggestion) => (
+                    <button
+                      key={suggestion.prompt}
+                      type='button'
+                      className='scard'
+                      onClick={() => {
+                        void submitAgentPrompt(suggestion.prompt);
+                      }}
+                    >
+                      <div className='si'>
+                        <span className='icon'>{suggestion.icon}</span>
+                        {suggestion.label}
+                      </div>
+                      <div className='sq'>{suggestion.prompt}</div>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            ) : (
+              <section className='thread'>
+                {agentTurns.map((turn, turnIndex) => (
+                  <Fragment key={turn.id}>
+                    <article className='turn'>
+                      <div className='turn-head'>
+                        <span className='av user'>나</span>
+                        <span className='turn-name'>나</span>
+                      </div>
+                      <div className='q-bubble'>{turn.prompt}</div>
+                    </article>
+
+                    <article className='turn'>
+                      <div className='turn-head'>
+                        <span className='av ai'>
+                          <span className='icon icon--fill'>auto_awesome</span>
+                        </span>
+                        <span className='turn-name'>Agent</span>
+                        <span className='chip dim' style={{ marginLeft: 4 }}>
+                          <MaterialIcon name={turn.status === 'ready' ? 'hub' : 'sync_problem'} />
+                          {turn.status === 'ready' ? '응답 완료' : '연결 필요'}
+                        </span>
+                      </div>
+                      <div className='turn-body'>
+                        <p>
+                          {turn.answerLead}
+                          {turn.status === 'ready' && turn.sources.length > 0 ? <span className='sup'>1</span> : null}
+                        </p>
+                        <h4>{turn.answerTitle}</h4>
+                        {turn.answerBullets.length > 0 ? (
+                          <ul>
+                            {turn.answerBullets.map((bullet, index) => (
+                              <li key={`${turn.id}-bullet-${index}`}>
+                                <strong>{index === 0 ? turn.answerFocus : '문맥'}</strong> — {bullet}
+                                {turn.status === 'ready' && turn.sources[index] ? (
+                                  <span className='sup'>{index + 1}</span>
+                                ) : null}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : null}
+                        {turn.answerSummary !== turn.answerLead ? (
+                          <p>
+                            <strong>{turn.answerSummary}</strong>
+                          </p>
+                        ) : null}
+
+                        <div className='sources'>
+                          <div className='sources-h'>
+                            <MaterialIcon name='menu_book' />
+                            출처 {turn.sources.length}개
+                          </div>
+                          {turn.sources.length > 0 ? (
+                            turn.sources.map((source, index) => (
+                              <button
+                                key={source.view.view_id}
+                                type='button'
+                                className='src'
+                                onClick={() => openView(source.view.view_id)}
+                              >
+                                <span className='num'>{index + 1}</span>
+                                <span className='icon f'>description</span>
+                                <span className='st'>
+                                  <div className='stt'>{viewName(source.view)}</div>
+                                  {source.excerpt ? <div className='ss'>{source.excerpt}</div> : null}
+                                </span>
+                                {typeof source.relevance === 'number' ? (
+                                  <span className='pct'>{source.relevance}%</span>
+                                ) : null}
+                              </button>
+                            ))
+                          ) : (
+                            <div className='src'>
+                              {turn.status === 'ready'
+                                ? '서버 응답에 인용 정보가 포함되지 않았습니다.'
+                                : 'AI 응답이 완료되지 않아 출처를 표시하지 않습니다.'}
+                            </div>
+                          )}
+                        </div>
+
+                        {turnIndex === agentTurns.length - 1 ? (
+                          <div className='msg-acts'>
+                            <button
+                              type='button'
+                              className='iconbtn'
+                              aria-label='복사'
+                              title='복사'
+                              onClick={copyAgentAnswer}
+                            >
+                              <MaterialIcon name='content_copy' />
+                            </button>
+                            <button
+                              type='button'
+                              className='iconbtn'
+                              aria-label='좋아요'
+                              title='좋아요'
+                              aria-pressed={agentVote === 'up'}
+                              onClick={() => setAgentVote((vote) => (vote === 'up' ? null : 'up'))}
+                            >
+                              <MaterialIcon name='thumb_up' />
+                            </button>
+                            <button
+                              type='button'
+                              className='iconbtn'
+                              aria-label='싫어요'
+                              title='싫어요'
+                              aria-pressed={agentVote === 'down'}
+                              onClick={() => setAgentVote((vote) => (vote === 'down' ? null : 'down'))}
+                            >
+                              <MaterialIcon name='thumb_down' />
+                            </button>
+                            <button
+                              type='button'
+                              className='iconbtn'
+                              aria-label='다시 생성'
+                              title='다시 생성'
+                              onClick={() => {
+                                setAgentDraft((value) => value + 1);
+                                setAgentVote(null);
+                                void submitAgentPrompt(turn.prompt);
+                              }}
+                            >
+                              <MaterialIcon name='refresh' />
+                            </button>
+                            <button
+                              type='button'
+                              className='iconbtn'
+                              aria-label='공유'
+                              title='공유'
+                              onClick={shareAgentAnswer}
+                            >
+                              <MaterialIcon name='ios_share' />
+                            </button>
+                          </div>
+                        ) : null}
+                      </div>
+                    </article>
+                  </Fragment>
+                ))}
+                {agentSending ? (
                   <article className='turn'>
                     <div className='turn-head'>
                       <span className='av ai'>
                         <span className='icon icon--fill'>auto_awesome</span>
                       </span>
                       <span className='turn-name'>Agent</span>
-                      <span className='chip dim' style={{ marginLeft: 4 }}>
-                        <MaterialIcon name={turn.status === 'ready' ? 'hub' : 'sync_problem'} />
-                        {turn.status === 'ready' ? '응답 완료' : '연결 필요'}
-                      </span>
                     </div>
-	                      <div className='turn-body'>
-	                        <p>
-	                          {turn.answerLead}
-	                          {turn.status === 'ready' && turn.sources.length > 0 ? <span className='sup'>1</span> : null}
-	                        </p>
-	                        <h4>{turn.answerTitle}</h4>
-	                        {turn.answerBullets.length > 0 ? (
-	                          <ul>
-	                            {turn.answerBullets.map((bullet, index) => (
-	                              <li key={`${turn.id}-bullet-${index}`}>
-	                                <strong>{index === 0 ? turn.answerFocus : '문맥'}</strong> — {bullet}
-	                                {turn.status === 'ready' && turn.sources[index] ? <span className='sup'>{index + 1}</span> : null}
-	                              </li>
-	                            ))}
-	                          </ul>
-	                        ) : null}
-	                        {turn.answerSummary !== turn.answerLead ? (
-	                          <p>
-	                            <strong>{turn.answerSummary}</strong>
-	                          </p>
-	                        ) : null}
-
-		                      <div className='sources'>
-		                        <div className='sources-h'>
-		                          <MaterialIcon name='menu_book' />
-		                          출처 {turn.sources.length}개
-	                        </div>
-	                        {turn.sources.length > 0 ? (
-	                          turn.sources.map((source, index) => (
-	                            <button
-	                              key={source.view.view_id}
-	                              type='button'
-	                              className='src'
-	                              onClick={() => openView(source.view.view_id)}
-	                            >
-	                              <span className='num'>{index + 1}</span>
-	                              <span className='icon f'>description</span>
-                              <span className='st'>
-	                                <div className='stt'>{viewName(source.view)}</div>
-	                                {source.excerpt ? <div className='ss'>{source.excerpt}</div> : null}
-	                              </span>
-	                              {typeof source.relevance === 'number' ? <span className='pct'>{source.relevance}%</span> : null}
-	                            </button>
-	                          ))
-	                        ) : (
-	                          <div className='src'>
-	                            {turn.status === 'ready'
-	                              ? '서버 응답에 인용 정보가 포함되지 않았습니다.'
-	                              : 'AI 응답이 완료되지 않아 출처를 표시하지 않습니다.'}
-	                          </div>
-	                        )}
-	                      </div>
-
-                      {turnIndex === agentTurns.length - 1 ? (
-                        <div className='msg-acts'>
-                          <button type='button' className='iconbtn' aria-label='복사' title='복사' onClick={copyAgentAnswer}>
-                            <MaterialIcon name='content_copy' />
-                          </button>
-                          <button
-                            type='button'
-                            className='iconbtn'
-                            aria-label='좋아요'
-                            title='좋아요'
-                            aria-pressed={agentVote === 'up'}
-                            onClick={() => setAgentVote((vote) => (vote === 'up' ? null : 'up'))}
-                          >
-                            <MaterialIcon name='thumb_up' />
-                          </button>
-                          <button
-                            type='button'
-                            className='iconbtn'
-                            aria-label='싫어요'
-                            title='싫어요'
-                            aria-pressed={agentVote === 'down'}
-                            onClick={() => setAgentVote((vote) => (vote === 'down' ? null : 'down'))}
-                          >
-                            <MaterialIcon name='thumb_down' />
-                          </button>
-                          <button
-                            type='button'
-                            className='iconbtn'
-                            aria-label='다시 생성'
-                            title='다시 생성'
-                            onClick={() => {
-                              setAgentDraft((value) => value + 1);
-                              setAgentVote(null);
-                              void submitAgentPrompt(turn.prompt);
-                            }}
-                          >
-                            <MaterialIcon name='refresh' />
-                          </button>
-                          <button type='button' className='iconbtn' aria-label='공유' title='공유' onClick={shareAgentAnswer}>
-                            <MaterialIcon name='ios_share' />
-                          </button>
-                        </div>
-                      ) : null}
+                    <div className='turn-body'>
+                      <LoadingDots />
                     </div>
                   </article>
-                </Fragment>
-              ))}
-	              {agentSending ? (
-	                <article className='turn'>
-	                  <div className='turn-head'>
-	                    <span className='av ai'>
-	                      <span className='icon icon--fill'>auto_awesome</span>
-	                    </span>
-	                    <span className='turn-name'>Agent</span>
-	                  </div>
-	                  <div className='turn-body'>
-	                    <LoadingDots />
-	                  </div>
-	                </article>
-	              ) : null}
-	            </section>
-	          )}
-        </div>
+                ) : null}
+              </section>
+            )}
+          </div>
 
-        <div className='composer-wrap'>
-          <div className='composer'>
-            <textarea
-              rows={1}
-              value={agentPrompt}
-              onChange={(event) => setAgentPrompt(event.target.value)}
-              placeholder='무엇이든 물어보세요. 워크스페이스 문서를 검색해 답합니다…'
-            />
-            <div className='composer-bar'>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button type='button' className='tool' aria-label='추가'>
-                    <MaterialIcon name='add' />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align='start'>
-                  <DropdownMenuItem onSelect={createDocument}>
-                    <MaterialIcon name='note_add' />
-                    새 문서
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={openLibrary}>
-                    <MaterialIcon name='folder_open' />
-                    라이브러리 열기
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onSelect={() => {
-                      setMentionContextEnabled(true);
-                      notify.success('문서 멘션을 켰습니다.');
-                    }}
-                  >
-                    <MaterialIcon name='alternate_email' />
-                    문서 멘션 켜기
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <button
-                type='button'
-                className={cn('tool', graphContextEnabled && 'on')}
-                aria-pressed={graphContextEnabled}
-                onClick={() => setGraphContextEnabled((enabled) => !enabled)}
-              >
-                <MaterialIcon name='hub' />
-                그래프 컨텍스트
-              </button>
-              <button
-                type='button'
-                className={cn('tool', webContextEnabled && 'on')}
-                aria-pressed={webContextEnabled}
-                onClick={() => setWebContextEnabled((enabled) => !enabled)}
-              >
-                <MaterialIcon name='language' />
-                웹
-              </button>
-              <button
-                type='button'
-                className={cn('tool', mentionContextEnabled && 'on')}
-                aria-pressed={mentionContextEnabled}
-                onClick={() => setMentionContextEnabled((enabled) => !enabled)}
-              >
-                <MaterialIcon name='alternate_email' />
-                문서 멘션
-              </button>
-              <button
-	                type='button'
-	                className='send'
-	                aria-label='보내기'
-	                title='보내기'
-	                disabled={!aiEnabled || !agentPrompt.trim() || agentSending}
-	                onClick={() => {
-	                  void submitAgentPrompt(agentPrompt);
-	                }}
-	              >
-	                {agentSending ? <LoadingDots /> : <MaterialIcon name='arrow_upward' />}
-	              </button>
+          <div className='composer-wrap'>
+            <div className='composer'>
+              <textarea
+                rows={1}
+                value={agentPrompt}
+                onChange={(event) => setAgentPrompt(event.target.value)}
+                placeholder='무엇이든 물어보세요. 워크스페이스 문서를 검색해 답합니다…'
+              />
+              <div className='composer-bar'>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button type='button' className='tool' aria-label='추가'>
+                      <MaterialIcon name='add' />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align='start'>
+                    <DropdownMenuItem onSelect={createDocument}>
+                      <MaterialIcon name='note_add' />새 문서
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={openLibrary}>
+                      <MaterialIcon name='folder_open' />
+                      라이브러리 열기
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onSelect={() => {
+                        setMentionContextEnabled(true);
+                        notify.success('문서 멘션을 켰습니다.');
+                      }}
+                    >
+                      <MaterialIcon name='alternate_email' />
+                      문서 멘션 켜기
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <button
+                  type='button'
+                  className={cn('tool', graphContextEnabled && 'on')}
+                  aria-pressed={graphContextEnabled}
+                  onClick={() => setGraphContextEnabled((enabled) => !enabled)}
+                >
+                  <MaterialIcon name='hub' />
+                  그래프 컨텍스트
+                </button>
+                <button
+                  type='button'
+                  className={cn('tool', webContextEnabled && 'on')}
+                  aria-pressed={webContextEnabled}
+                  onClick={() => setWebContextEnabled((enabled) => !enabled)}
+                >
+                  <MaterialIcon name='language' />웹
+                </button>
+                <button
+                  type='button'
+                  className={cn('tool', mentionContextEnabled && 'on')}
+                  aria-pressed={mentionContextEnabled}
+                  onClick={() => setMentionContextEnabled((enabled) => !enabled)}
+                >
+                  <MaterialIcon name='alternate_email' />
+                  문서 멘션
+                </button>
+                <button
+                  type='button'
+                  className='send'
+                  aria-label='보내기'
+                  title='보내기'
+                  disabled={!aiEnabled || !agentPrompt.trim() || agentSending}
+                  onClick={() => {
+                    void submitAgentPrompt(agentPrompt);
+                  }}
+                >
+                  {agentSending ? <LoadingDots /> : <MaterialIcon name='arrow_upward' />}
+                </button>
+              </div>
+            </div>
+            <div className='composer-hint'>
+              Agent는 실수할 수 있습니다. 중요한 정보는 출처를 확인하세요.
+              {!aiEnabled ? ' 이 워크스페이스에서는 AI 기능을 사용할 수 없습니다.' : ''}
             </div>
           </div>
-          <div className='composer-hint'>
-            Agent는 실수할 수 있습니다. 중요한 정보는 출처를 확인하세요.
-            {!aiEnabled ? ' 이 워크스페이스에서는 AI 기능을 사용할 수 없습니다.' : ''}
-          </div>
         </div>
-      </div>
       </section>
     );
   }
