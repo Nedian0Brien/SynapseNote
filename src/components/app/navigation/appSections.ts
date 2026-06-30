@@ -1,4 +1,4 @@
-export const APP_SECTIONS = ['home', 'library', 'graph', 'search'] as const;
+export const APP_SECTIONS = ['home', 'library', 'graph', 'agent'] as const;
 
 export type AppSection = (typeof APP_SECTIONS)[number];
 

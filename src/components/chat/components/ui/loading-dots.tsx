@@ -1,6 +1,6 @@
 export default function LoadingDots({
   className,
-  colors = ['#00b5ff', '#e3006d', '#f7931e'],
+  colors = ['var(--sn-primary)', 'var(--sn-on-variant)', 'var(--sn-muted)'],
   size = 30,
   ...props
 }: {

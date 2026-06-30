@@ -1,4 +1,4 @@
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 
 import AppWorkspaceRedirect from '@/components/app/AppWorkspaceRedirect';
 import { AuthLayout } from '@/components/app/AuthLayout';
@@ -19,7 +19,8 @@ function AppRouter() {
         <Route path={':workspaceId/home'} element={<AppSectionPage section='home' />} />
         <Route path={':workspaceId/library'} element={<AppSectionPage section='library' />} />
         <Route path={':workspaceId/graph'} element={<AppSectionPage section='graph' />} />
-        <Route path={':workspaceId/search'} element={<AppSectionPage section='search' />} />
+        <Route path={':workspaceId/agent'} element={<AppSectionPage section='agent' />} />
+        <Route path={':workspaceId/search'} element={<Navigate to='../agent' replace />} />
         <Route path={':workspaceId'} element={<AppPage />} />
         <Route path={':workspaceId/:viewId'} element={<AppPage />} />
         <Route path={'trash'} element={<TrashPage />} />

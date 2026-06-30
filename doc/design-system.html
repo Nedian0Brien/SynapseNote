@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SynapseNote · Design System (제안)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lexend:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0..1,0&display=swap" rel="stylesheet" />
+<style>
+/* ══════════════════════════════════════════════════════════════════
+ * Layer 1 — Brand primitives (mirror of src/styles/synapsenote.css)
+ * ════════════════════════════════════════════════════════════════ */
+:root, [data-theme="light"] {
+  --sn-bg: #fbfbfa;
+  --sn-surface: #ffffff;
+  --sn-surface-low: #f5f5f2;
+  --sn-surface-high: #ececea;
+  --sn-on-surface: #222220;
+  --sn-on-variant: #5f5f58;
+  --sn-muted: #8a8a82;
+  --sn-outline: rgba(36, 36, 32, 0.13);
+  --sn-outline-soft: rgba(36, 36, 32, 0.07);
+  --sn-primary: #242420;
+  --sn-primary-icon: rgba(255, 255, 255, 0.94);
+  --sn-primary-dim: rgba(36, 36, 32, 0.07);
+  --sn-error: #d24a3a;
+  --sn-dot: rgba(36, 36, 32, 0.10);
+  --sn-shadow-sm: 0 1px 3px rgba(36,36,32,0.06), 0 1px 2px rgba(36,36,32,0.04);
+  --sn-shadow-md: 0 4px 14px rgba(36,36,32,0.08), 0 2px 5px rgba(36,36,32,0.04);
+  --sn-shadow-lg: 0 12px 32px rgba(36,36,32,0.10), 0 4px 10px rgba(36,36,32,0.05);
+}
+[data-theme="dark"] {
+  --sn-bg: #1a1a18;
+  --sn-surface: #242422;
+  --sn-surface-low: #1f1f1d;
+  --sn-surface-high: #2e2e2b;
+  --sn-on-surface: #ededea;
+  --sn-on-variant: #a6a6a0;
+  --sn-muted: #73736d;
+  --sn-outline: rgba(255, 255, 255, 0.11);
+  --sn-outline-soft: rgba(255, 255, 255, 0.06);
+  --sn-primary: #d0a85e;
+  --sn-primary-icon: rgba(20, 18, 12, 0.95);
+  --sn-primary-dim: rgba(255, 255, 255, 0.07);
+  --sn-error: #e6705e;
+  --sn-dot: rgba(255, 255, 255, 0.08);
+  --sn-shadow-sm: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
+  --sn-shadow-md: 0 4px 12px rgba(0,0,0,0.45), 0 2px 5px rgba(0,0,0,0.35);
+  --sn-shadow-lg: 0 10px 28px rgba(0,0,0,0.5), 0 4px 12px rgba(0,0,0,0.4);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+ * Layer 2 — Semantic tokens (promoted to :root globally in the app)
+ * ════════════════════════════════════════════════════════════════ */
+:root {
+  --bg: var(--sn-bg);
+  --surface: var(--sn-surface);
+  --surface-low: var(--sn-surface-low);
+  --surface-high: var(--sn-surface-high);
+  --on-surface: var(--sn-on-surface);
+  --on-variant: var(--sn-on-variant);
+  --muted: var(--sn-muted);
+  --outline: var(--sn-outline);
+  --outline-var: var(--sn-outline-soft);
+  --primary: var(--sn-primary);
+  --primary-icon: var(--sn-primary-icon);
+  --primary-dim: var(--sn-primary-dim);
+  --error: var(--sn-error);
+  --shadow-sm: var(--sn-shadow-sm);
+  --shadow-md: var(--sn-shadow-md);
+  --shadow-lg: var(--sn-shadow-lg);
+
+  --r-xs: 8px; --r-sm: 12px; --r-md: 16px; --r-lg: 22px; --r-xl: 28px; --r-full: 9999px;
+
+  --font-hl: "Lexend", system-ui, sans-serif;
+  --font-bd: "Inter", system-ui, sans-serif;
+
+  --dur-fast: 120ms; --dur: 180ms; --dur-slow: 320ms;
+  --ease: cubic-bezier(0.4,0,0.2,1);
+  --ease-out: cubic-bezier(0.22,1,0.36,1);
+  --ease-spring: cubic-bezier(0.34,1.56,0.64,1);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+ * Page chrome (this style-guide document only)
+ * ════════════════════════════════════════════════════════════════ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font-bd);
+  background: var(--bg);
+  color: var(--on-surface);
+  -webkit-font-smoothing: antialiased;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.icon {
+  font-family: "Material Symbols Outlined";
+  font-weight: normal; font-style: normal; line-height: 1;
+  display: inline-block; vertical-align: middle;
+  -webkit-font-smoothing: antialiased;
+}
+.icon--fill { font-variation-settings: "FILL" 1, "wght" 500; }
+a { color: inherit; }
+
+/* Top bar */
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 28px;
+  background: color-mix(in srgb, var(--surface) 86%, transparent);
+  backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--outline-var);
+}
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand-mark {
+  width: 30px; height: 30px; border-radius: var(--r-sm);
+  background: var(--primary); color: var(--primary-icon);
+  display: flex; align-items: center; justify-content: center;
+}
+.brand-mark .icon { font-size: 19px; }
+.brand-name { font-family: var(--font-hl); font-weight: 800; font-size: 16px; letter-spacing: -0.01em; }
+.brand-sub { font-size: 13px; color: var(--muted); }
+.tag {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--on-variant); background: var(--primary-dim);
+  border: 1px solid var(--outline); border-radius: var(--r-full);
+  padding: 3px 9px;
+}
+.spacer { flex: 1; }
+
+/* segmented light/dark toggle */
+.seg { display: inline-flex; background: var(--surface-low); border: 1px solid var(--outline); border-radius: var(--r-full); padding: 3px; }
+.seg button {
+  font: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+  border: none; background: transparent; color: var(--muted);
+  padding: 6px 14px; border-radius: var(--r-full);
+  display: inline-flex; align-items: center; gap: 5px;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.seg button .icon { font-size: 15px; }
+.seg button[aria-pressed="true"] { background: var(--primary); color: var(--primary-icon); }
+
+/* Layout */
+.wrap { max-width: 1080px; margin: 0 auto; padding: 40px 28px 120px; }
+.hero {
+  position: relative; overflow: hidden;
+  border: 1px solid var(--outline); border-radius: var(--r-xl);
+  background: var(--surface); box-shadow: var(--shadow-md);
+  padding: 40px 36px; margin-bottom: 44px;
+}
+.hero::before {
+  content: ""; position: absolute; inset: 0; z-index: 0;
+  background-image: radial-gradient(circle at 12px 12px, var(--sn-dot) 0.9px, transparent 1.2px);
+  background-size: 24px 24px; opacity: 0.9;
+  -webkit-mask-image: linear-gradient(180deg, #000, transparent 80%);
+  mask-image: linear-gradient(180deg, #000, transparent 80%);
+}
+.hero > * { position: relative; z-index: 1; }
+.hero h1 { font-family: var(--font-hl); font-weight: 800; font-size: 34px; letter-spacing: -0.02em; margin-bottom: 10px; }
+.hero p { font-size: 15px; line-height: 1.7; color: var(--on-variant); max-width: 64ch; }
+.hero .principles { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+
+section.block { margin-top: 56px; }
+.sec-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 8px; }
+.sec-head h2 { font-family: var(--font-hl); font-weight: 700; font-size: 22px; letter-spacing: -0.01em; }
+.sec-head .sec-no { font-family: var(--font-hl); font-size: 13px; font-weight: 700; color: var(--muted); }
+.sec-desc { font-size: 14px; color: var(--on-variant); line-height: 1.6; margin-bottom: 22px; max-width: 70ch; }
+
+/* signature: tiny uppercase tracking label */
+.label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--muted);
+}
+.sub-label { margin: 26px 0 12px; }
+
+.grid { display: grid; gap: 14px; }
+.cols-2 { grid-template-columns: repeat(2, 1fr); }
+.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.cols-4 { grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 760px) { .cols-2,.cols-3,.cols-4 { grid-template-columns: 1fr 1fr; } }
+
+/* ── swatches ── */
+.swatch { border: 1px solid var(--outline); border-radius: var(--r-md); overflow: hidden; background: var(--surface); }
+.swatch .chip { height: 64px; }
+.swatch .meta { padding: 9px 11px; }
+.swatch .nm { font-size: 12px; font-weight: 600; }
+.swatch .val { font-size: 10.5px; color: var(--muted); font-family: var(--font-bd); margin-top: 1px; }
+.bordered { box-shadow: inset 0 0 0 1px var(--outline); }
+
+/* ── demo surface ── */
+.panel {
+  border: 1px solid var(--outline); border-radius: var(--r-lg);
+  background: var(--surface); padding: 22px;
+}
+.demo-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+
+/* ════ Components ════ */
+/* Buttons — pill = command/action */
+.btn {
+  font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 36px; padding: 0 16px; border-radius: var(--r-full);
+  border: 1px solid transparent;
+  transition: filter var(--dur) var(--ease), background var(--dur) var(--ease), transform var(--dur) var(--ease-spring);
+}
+.btn .icon { font-size: 17px; }
+.btn-primary { background: var(--primary); color: var(--primary-icon); }
+.btn-primary:hover { filter: brightness(1.12); }
+.btn-secondary { background: var(--surface); color: var(--on-surface); border-color: var(--outline); }
+.btn-secondary:hover { background: var(--surface-low); }
+.btn-ghost { background: transparent; color: var(--on-variant); }
+.btn-ghost:hover { background: var(--primary-dim); color: var(--on-surface); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Icon buttons — square hit area (default); circle = graph overlay only */
+.iconbtn {
+  cursor: pointer; border: 1px solid var(--outline); background: var(--surface);
+  color: var(--on-variant); width: 36px; height: 36px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--r-sm);
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease), transform var(--dur) var(--ease-spring);
+}
+.iconbtn:hover { background: var(--surface-low); color: var(--on-surface); }
+.iconbtn .icon { font-size: 19px; }
+.iconbtn.circle { border-radius: var(--r-full); box-shadow: var(--shadow-md); }
+.iconbtn.circle:hover { transform: scale(1.08); }
+.iconbtn.primary { background: var(--primary); color: var(--primary-icon); border-color: transparent; }
+
+/* Inputs */
+.field {
+  display: flex; align-items: center; gap: 9px;
+  height: 40px; padding: 0 15px; border-radius: var(--r-full);
+  background: var(--surface); border: 1px solid var(--outline);
+  transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+.field:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-dim); }
+.field .icon { color: var(--muted); font-size: 19px; }
+.field input { flex: 1; border: none; background: transparent; outline: none; font: inherit; font-size: 14px; color: var(--on-surface); }
+.field input::placeholder { color: var(--muted); }
+.field.plain { border-radius: var(--r-sm); }
+
+/* Chips / tags */
+.chip-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; font-weight: 500; color: var(--on-variant);
+  background: var(--surface); border: 1px solid var(--outline);
+  border-radius: var(--r-full); padding: 3px 10px;
+}
+.chip-tag .icon { font-size: 13px; color: var(--primary); }
+.chip-tag.dim { background: var(--primary-dim); }
+.chip-tag.dashed { border-style: dashed; color: var(--muted); }
+.chip-tag.solid { background: var(--primary); color: var(--primary-icon); border-color: transparent; }
+.chip-tag.solid .icon { color: var(--primary-icon); }
+
+/* stat chip / toolbar pill */
+.stat-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 600; color: var(--on-variant);
+  background: var(--surface); border: 1px solid var(--outline);
+  border-radius: var(--r-full); padding: 5px 11px; box-shadow: var(--shadow-sm);
+}
+.stat-chip .icon { font-size: 13px; color: var(--muted); }
+.stat-chip strong { color: var(--on-surface); }
+.pill-group { display: inline-flex; gap: 3px; background: var(--surface); border: 1px solid var(--outline); border-radius: var(--r-full); padding: 3px; box-shadow: var(--shadow-sm); }
+
+/* cards */
+.card {
+  border: 1px solid var(--outline); border-radius: var(--r-lg);
+  background: var(--surface); padding: 16px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.card.interactive { cursor: pointer; transition: transform var(--dur) var(--ease-spring), box-shadow var(--dur) var(--ease); }
+.card.interactive:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.card .c-title { font-family: var(--font-hl); font-weight: 700; font-size: 14px; }
+.card .c-body { font-size: 12.5px; line-height: 1.6; color: var(--on-variant); }
+.floating {
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--outline); border-radius: var(--r-xl);
+  box-shadow: var(--shadow-lg); padding: 16px;
+}
+
+/* stat block */
+.stat { display: flex; flex-direction: column; gap: 2px; }
+.stat-num { font-family: var(--font-hl); font-weight: 800; font-size: 26px; line-height: 1; }
+.stat-lbl { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+
+/* list rows */
+.list { border: 1px solid var(--outline); border-radius: var(--r-lg); background: var(--surface); overflow: hidden; }
+.row {
+  display: flex; align-items: center; gap: 12px; padding: 12px 15px; cursor: pointer;
+  transition: background var(--dur) var(--ease);
+}
+.row + .row { border-top: 1px solid var(--outline-var); }
+.row:hover { background: var(--primary-dim); }
+.row-ic { width: 30px; height: 30px; flex-shrink: 0; border-radius: var(--r-sm); background: var(--surface-low); border: 1px solid var(--outline-var); display: flex; align-items: center; justify-content: center; color: var(--on-variant); }
+.row-ic .icon { font-size: 17px; }
+.row-main { flex: 1; min-width: 0; }
+.row-title { font-size: 13.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row-meta { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.row-chev { color: var(--muted); font-size: 18px; }
+
+/* chat bubbles */
+.msg { display: flex; gap: 9px; align-items: flex-start; margin-bottom: 12px; }
+.msg.user { flex-direction: row-reverse; }
+.msg-av { width: 24px; height: 24px; border-radius: var(--r-full); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; }
+.msg.user .msg-av { background: var(--surface-high); color: var(--on-variant); }
+.msg.agent .msg-av { background: var(--primary); color: var(--primary-icon); }
+.msg.agent .msg-av .icon { font-size: 14px; }
+.bubble { max-width: 80%; border-radius: var(--r-md); padding: 10px 13px; font-size: 13px; line-height: 1.6; }
+.msg.user .bubble { background: var(--primary); color: var(--primary-icon); border-bottom-right-radius: 4px; }
+.msg.agent .bubble { background: var(--surface-low); color: var(--on-surface); border: 1px solid var(--outline-var); border-bottom-left-radius: 4px; }
+.cites { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
+
+/* radius + elevation demos */
+.r-demo { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.r-box { width: 100%; height: 70px; background: var(--primary-dim); border: 1px solid var(--outline); }
+.e-box { height: 84px; background: var(--surface); border: 1px solid var(--outline-var); border-radius: var(--r-md); display: flex; align-items: flex-end; padding: 10px; font-size: 11px; color: var(--muted); }
+
+/* type specimens */
+.spec { padding: 12px 0; border-bottom: 1px solid var(--outline-var); display: flex; align-items: baseline; gap: 16px; }
+.spec .meta { font-size: 11px; color: var(--muted); width: 150px; flex-shrink: 0; }
+.t-display { font-family: var(--font-hl); font-weight: 800; font-size: 28px; letter-spacing: -0.02em; }
+.t-title { font-family: var(--font-hl); font-weight: 700; font-size: 20px; letter-spacing: -0.01em; }
+.t-heading { font-family: var(--font-hl); font-weight: 600; font-size: 16px; }
+.t-body { font-family: var(--font-bd); font-size: 14px; line-height: 1.55; }
+.t-sm { font-family: var(--font-bd); font-size: 12px; color: var(--on-variant); }
+
+/* app mockup frame */
+.mock { border: 1px solid var(--outline); border-radius: var(--r-xl); overflow: hidden; box-shadow: var(--shadow-md); background: var(--bg); }
+.mock-bar { display: flex; align-items: center; gap: 7px; padding: 10px 14px; background: var(--surface); border-bottom: 1px solid var(--outline-var); }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--surface-high); }
+.mock-body { display: flex; min-height: 360px; }
+.mock-side { width: 200px; flex-shrink: 0; background: var(--surface-low); border-right: 1px solid var(--outline-var); padding: 12px 10px; display: flex; flex-direction: column; gap: 4px; }
+.nav-item { display: flex; align-items: center; gap: 9px; padding: 8px 11px; border-radius: var(--r-sm); font-size: 13px; color: var(--on-variant); cursor: pointer; }
+.nav-item .icon { font-size: 18px; }
+.nav-item:hover { background: var(--primary-dim); color: var(--on-surface); }
+.nav-item.active { background: var(--primary-dim); color: var(--on-surface); font-weight: 600; }
+.mock-main { flex: 1; padding: 24px 26px; overflow: hidden; }
+.page-head { display: flex; flex-direction: column; gap: 3px; padding-bottom: 16px; border-bottom: 1px solid var(--outline-var); margin-bottom: 18px; }
+.page-title { font-family: var(--font-hl); font-weight: 800; font-size: 22px; letter-spacing: -0.01em; }
+.page-sub { font-size: 13px; color: var(--muted); }
+.note { font-size: 12px; color: var(--muted); margin-top: 10px; }
+@media (max-width: 760px) { .mock-side { display: none; } .hero h1 { font-size: 26px; } }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark"><span class="icon icon--fill">hub</span></span>
+    <span class="brand-name">SynapseNote</span>
+    <span class="brand-sub">Design System</span>
+  </div>
+  <span class="tag">제안 v0.1</span>
+  <div class="spacer"></div>
+  <div class="seg" role="group" aria-label="Theme">
+    <button id="t-light" aria-pressed="true" onclick="setTheme('light')"><span class="icon">light_mode</span>Light</button>
+    <button id="t-dark" aria-pressed="false" onclick="setTheme('dark')"><span class="icon">dark_mode</span>Dark</button>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <h1>하나의 조용하고 정교한 언어로 통합</h1>
+    <p>
+      SynapseNote는 기존 SynapseNote(Graph)와 AppFlowy, 두 디자인이 섞여 있었습니다. 이 시스템은
+      <strong>Graph 탭의 SynapseNote 방향성</strong>을 원천으로 삼아 전체를 하나로 묶습니다.
+      흰색 surface를 기본으로 두고, 색은 상태와 선택에만 쓰며, 알약(pill)과 둥근 모서리를 정체성으로
+      유지하되 기계적으로 강제하지 않습니다. 매일 오래 써도 피로하지 않은 문서 도구가 목표입니다.
+    </p>
+    <div class="principles">
+      <span class="chip-tag dim"><span class="icon">circle</span>White-first surface</span>
+      <span class="chip-tag dim"><span class="icon">pill</span>Pill = 명령 action</span>
+      <span class="chip-tag dim"><span class="icon">crop_square</span>Icon = 정사각형 히트</span>
+      <span class="chip-tag dim"><span class="icon">bolt</span>120–180ms 모션</span>
+      <span class="chip-tag dim"><span class="icon">light_mode</span>Light 기본</span>
+    </div>
+  </div>
+
+  <!-- 1. COLOR -->
+  <section class="block">
+    <div class="sec-head"><span class="sec-no">01</span><h2>색 (Color)</h2></div>
+    <p class="sec-desc">3계층 토큰: 브랜드 프리미티브 <code>--sn-*</code> → 전역 시맨틱 → AppFlowy 재매핑. 라이트는 웜 뉴트럴 잉크, 다크는 골든. 우상단 토글로 두 테마를 확인하세요.</p>
+
+    <div class="label sub-label">Surface</div>
+    <div class="grid cols-4">
+      <div class="swatch"><div class="chip bordered" style="background:var(--sn-bg)"></div><div class="meta"><div class="nm">bg</div><div class="val">--sn-bg</div></div></div>
+      <div class="swatch"><div class="chip bordered" style="background:var(--sn-surface)"></div><div class="meta"><div class="nm">surface</div><div class="val">--sn-surface</div></div></div>
+      <div class="swatch"><div class="chip" style="background:var(--sn-surface-low)"></div><div class="meta"><div class="nm">surface-low</div><div class="val">--sn-surface-low</div></div></div>
+      <div class="swatch"><div class="chip" style="background:var(--sn-surface-high)"></div><div class="meta"><div class="nm">surface-high</div><div class="val">--sn-surface-high</div></div></div>
+    </div>
+
+    <div class="label sub-label">Text & Ink</div>
+    <div class="grid cols-4">
+      <div class="swatch"><div class="chip" style="background:var(--sn-on-surface)"></div><div class="meta"><div class="nm">on-surface</div><div class="val">제목·본문</div></div></div>
+      <div class="swatch"><div class="chip" style="background:var(--sn-on-variant)"></div><div class="meta"><div class="nm">on-variant</div><div class="val">보조 텍스트</div></div></div>
+      <div class="swatch"><div class="chip" style="background:var(--sn-muted)"></div><div class="meta"><div class="nm">muted</div><div class="val">캡션·placeholder</div></div></div>
+      <div class="swatch"><div class="chip" style="background:var(--sn-error)"></div><div class="meta"><div class="nm">error</div><div class="val">상태 전용</div></div></div>
+    </div>
+
+    <div class="label sub-label">Primary (브랜드 액센트 = 잉크/골드)</div>
+    <div class="grid cols-3">
+      <div class="swatch"><div class="chip" style="background:var(--sn-primary)"></div><div class="meta"><div class="nm">primary</div><div class="val">버튼·선택·링크</div></div></div>
+      <div class="swatch"><div class="chip bordered" style="background:var(--sn-primary-dim)"></div><div class="meta"><div class="nm">primary-dim</div><div class="val">hover·선택 배경 (alpha 7%)</div></div></div>
+      <div class="swatch"><div class="chip bordered" style="background:var(--sn-primary);"><span style="display:flex;height:100%;align-items:center;justify-content:center;color:var(--sn-primary-icon);font-size:12px;font-weight:600">Aa 텍스트</span></div><div class="meta"><div class="nm">primary-icon</div><div class="val">primary 위 전경</div></div></div>
+    </div>
+    <p class="note">AppFlowy의 시안블루(<code>#00b5ff</code>/<code>#0092d6</code>/<code>#f8faff</code>)는 모두 위 primary·surface로 재매핑되어 제거됩니다. 상태색(success/warning/error)만 별도 유지.</p>
+  </section>
+
+  <!-- 2. TYPOGRAPHY -->
+  <section class="block">
+    <div class="sec-head"><span class="sec-no">02</span><h2>타이포그래피 (Typography)</h2></div>
+    <p class="sec-desc"><strong>Lexend</strong>는 디스플레이·제목·통계 숫자에, <strong>Inter</strong>는 본문·UI에 사용합니다. 라벨은 초소형 대문자 트래킹이 시그니처입니다.</p>
+    <div class="panel">
+      <div class="spec"><div class="meta">Display · Lexend 800 / 28</div><div class="t-display">생각을 연결하다</div></div>
+      <div class="spec"><div class="meta">Title · Lexend 700 / 20</div><div class="t-title">Library</div></div>
+      <div class="spec"><div class="meta">Heading · Lexend 600 / 16</div><div class="t-heading">최근 문서</div></div>
+      <div class="spec"><div class="meta">Body · Inter 400 / 14</div><div class="t-body">문서 본문과 UI 텍스트는 Inter를 사용해 긴 글에서도 가독성을 유지합니다.</div></div>
+      <div class="spec"><div class="meta">Small · Inter 400 / 12</div><div class="t-sm">보조 설명과 메타데이터에 사용하는 작은 텍스트입니다.</div></div>
+      <div class="spec" style="border:none"><div class="meta">Label · 11 / caps</div><div class="label">SECTION LABEL · 섹션 라벨</div></div>
+    </div>
+  </section>
+
+  <!-- 3. RADIUS / ELEVATION / MOTION -->
+  <section class="block">
+    <div class="sec-head"><span class="sec-no">03</span><h2>형태 · 깊이 · 모션</h2></div>
+    <p class="sec-desc">둥근 모서리 스케일, 그림자는 사이드바·떠있는 메뉴에 집중, 모션은 120–180ms opacity/scale 위주.</p>
+
+    <div class="label sub-label">Radius</div>
+    <div class="grid cols-3" style="gap:20px">
+      <div class="r-demo"><div class="r-box" style="border-radius:var(--r-xs)"></div><div class="t-sm">xs · 8px</div></div>
+      <div class="r-demo"><div class="r-box" style="border-radius:var(--r-sm)"></div><div class="t-sm">sm · 12px</div></div>
+      <div class="r-demo"><div class="r-box" style="border-radius:var(--r-md)"></div><div class="t-sm">md · 16px</div></div>
+      <div class="r-demo"><div class="r-box" style="border-radius:var(--r-lg)"></div><div class="t-sm">lg · 22px</div></div>
+      <div class="r-demo"><div class="r-box" style="border-radius:var(--r-xl)"></div><div class="t-sm">xl · 28px</div></div>
+      <div class="r-demo"><div class="r-box" style="border-radius:var(--r-full)"></div><div class="t-sm">full · pill</div></div>
+    </div>
+
+    <div class="label sub-label">Elevation</div>
+    <div class="grid cols-3">
+      <div class="e-box" style="box-shadow:var(--shadow-sm)">shadow-sm</div>
+      <div class="e-box" style="box-shadow:var(--shadow-md)">shadow-md</div>
+      <div class="e-box" style="box-shadow:var(--shadow-lg)">shadow-lg</div>
+    </div>
+
+    <div class="label sub-label">Motion — hover 해보세요</div>
+    <div class="demo-row">
+      <div class="card interactive" style="width:200px"><div class="c-title">Interactive Card</div><div class="c-body">translateY + spring</div></div>
+      <button class="iconbtn circle"><span class="icon">add</span></button>
+      <span class="t-sm">circle icon-btn: scale(1.08)</span>
+    </div>
+  </section>
+
+  <!-- 4. COMPONENTS -->
+  <section class="block">
+    <div class="sec-head"><span class="sec-no">04</span><h2>컴포넌트 (Primitives)</h2></div>
+    <p class="sec-desc">Graph DNA에서 추출한 시그니처 패턴. 이들이 React 프리미티브로 만들어져 Home·Library·Agent 전반에 재사용됩니다.</p>
+
+    <div class="label sub-label">Buttons · pill = 명령형 action</div>
+    <div class="panel demo-row">
+      <button class="btn btn-primary"><span class="icon">add</span>새 문서</button>
+      <button class="btn btn-secondary"><span class="icon">ios_share</span>공유</button>
+      <button class="btn btn-ghost">취소</button>
+      <button class="btn btn-primary" disabled>비활성</button>
+    </div>
+
+    <div class="label sub-label">Icon buttons · 정사각형 기본 / 원형은 Graph 오버레이</div>
+    <div class="panel demo-row">
+      <button class="iconbtn"><span class="icon">more_horiz</span></button>
+      <button class="iconbtn"><span class="icon">edit</span></button>
+      <button class="iconbtn primary"><span class="icon">add</span></button>
+      <span class="t-sm" style="margin:0 8px">·</span>
+      <div class="pill-group">
+        <button class="iconbtn circle" style="border:none;box-shadow:none;width:34px;height:34px"><span class="icon">add</span></button>
+        <button class="iconbtn circle" style="border:none;box-shadow:none;width:34px;height:34px"><span class="icon">remove</span></button>
+      </div>
+      <span class="t-sm">graph zoom-pill</span>
+    </div>
+
+    <div class="label sub-label">Inputs</div>
+    <div class="panel" style="display:flex;flex-direction:column;gap:12px">
+      <div class="field"><span class="icon">search</span><input placeholder="검색 또는 질문…" /><span class="chip-tag dim"><span class="icon">auto_awesome</span>AI</span></div>
+      <div class="field plain"><span class="icon">edit</span><input placeholder="제목 없음" /></div>
+    </div>
+
+    <div class="label sub-label">Chips / Tags</div>
+    <div class="panel demo-row">
+      <span class="chip-tag">기본 태그</span>
+      <span class="chip-tag dim"><span class="icon">tag</span>research</span>
+      <span class="chip-tag solid"><span class="icon">check</span>선택됨</span>
+      <span class="chip-tag dashed"><span class="icon">add</span>추가</span>
+      <span class="stat-chip"><span class="icon">description</span><strong>128</strong>&nbsp;문서</span>
+      <span class="stat-chip"><span class="icon">hub</span><strong>342</strong>&nbsp;연결</span>
+    </div>
+
+    <div class="label sub-label">Cards & Surfaces</div>
+    <div class="grid cols-3">
+      <div class="card"><div class="c-title">Surface Card</div><div class="c-body">기본 카드. outline + surface.</div></div>
+      <div class="card interactive"><div class="c-title">Interactive</div><div class="c-body">hover 시 살짝 떠오름.</div></div>
+      <div class="floating"><div class="c-title">Floating Panel</div><div class="c-body" style="margin-top:6px">blur + shadow-lg. 떠있는 메뉴·도크.</div></div>
+    </div>
+
+    <div class="label sub-label">Stats</div>
+    <div class="panel demo-row" style="gap:36px">
+      <div class="stat"><span class="stat-num">128</span><span class="stat-lbl">Documents</span></div>
+      <div class="stat"><span class="stat-num">342</span><span class="stat-lbl">Connections</span></div>
+      <div class="stat"><span class="stat-num">17</span><span class="stat-lbl">Spaces</span></div>
+    </div>
+
+    <div class="label sub-label">List rows</div>
+    <div class="list" style="max-width:520px">
+      <div class="row"><span class="row-ic"><span class="icon">description</span></span><div class="row-main"><div class="row-title">Research notes</div><div class="row-meta">2일 전 · 3개 연결</div></div><span class="icon row-chev">chevron_right</span></div>
+      <div class="row"><span class="row-ic"><span class="icon">hub</span></span><div class="row-main"><div class="row-title">Synapse roadmap</div><div class="row-meta">어제 · 8개 연결</div></div><span class="icon row-chev">chevron_right</span></div>
+      <div class="row"><span class="row-ic"><span class="icon">event_note</span></span><div class="row-main"><div class="row-title">Meeting log</div><div class="row-meta">방금 전</div></div><span class="icon row-chev">chevron_right</span></div>
+    </div>
+
+    <div class="label sub-label">Agent · chat bubbles</div>
+    <div class="panel" style="max-width:560px">
+      <div class="msg user"><span class="msg-av">나</span><div class="bubble">시냅스 로드맵에서 이번 분기 목표가 뭐였지?</div></div>
+      <div class="msg agent"><span class="msg-av"><span class="icon icon--fill">auto_awesome</span></span><div><div class="bubble">이번 분기 목표는 <strong>그래프 기반 검색</strong>과 <strong>Agent 탭 통합</strong>입니다. 두 문서에서 관련 내용을 찾았어요.
+        <div class="cites"><span class="chip-tag"><span class="icon">description</span>Synapse roadmap</span><span class="chip-tag"><span class="icon">description</span>Q2 planning</span></div>
+      </div></div></div>
+    </div>
+  </section>
+
+  <!-- 5. APP MOCKUPS -->
+  <section class="block">
+    <div class="sec-head"><span class="sec-no">05</span><h2>적용: Home · Library · Agent</h2></div>
+    <p class="sec-desc">위 프리미티브로 구성한 통합 후 화면. 사이드바는 Home · Library · Graph · <strong>Agent</strong>(Search에서 변경) 4탭입니다.</p>
+
+    <!-- HOME -->
+    <div class="label sub-label">Home</div>
+    <div class="mock">
+      <div class="mock-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+      <div class="mock-body">
+        <aside class="mock-side">
+          <div class="field plain" style="height:34px;margin-bottom:8px"><span class="icon" style="font-size:17px">search</span><input placeholder="검색" style="font-size:13px"/></div>
+          <div class="nav-item active"><span class="icon icon--fill">home</span>Home</div>
+          <div class="nav-item"><span class="icon">folder_open</span>Library</div>
+          <div class="nav-item"><span class="icon">hub</span>Graph</div>
+          <div class="nav-item"><span class="icon">auto_awesome</span>Agent</div>
+        </aside>
+        <div class="mock-main">
+          <div class="page-head"><div class="page-title">내 워크스페이스</div><div class="page-sub">Home</div></div>
+          <div class="demo-row" style="gap:30px;margin-bottom:22px">
+            <div class="stat"><span class="stat-num">128</span><span class="stat-lbl">Documents</span></div>
+            <div class="stat"><span class="stat-num">342</span><span class="stat-lbl">Connections</span></div>
+            <div class="stat"><span class="stat-num">17</span><span class="stat-lbl">Spaces</span></div>
+          </div>
+          <div class="label" style="margin-bottom:10px">최근</div>
+          <div class="list">
+            <div class="row"><span class="row-ic"><span class="icon">description</span></span><div class="row-main"><div class="row-title">Research notes</div><div class="row-meta">2일 전</div></div><span class="icon row-chev">chevron_right</span></div>
+            <div class="row"><span class="row-ic"><span class="icon">hub</span></span><div class="row-main"><div class="row-title">Synapse roadmap</div><div class="row-meta">어제</div></div><span class="icon row-chev">chevron_right</span></div>
+          </div>
+          <div class="label" style="margin:18px 0 10px">스페이스</div>
+          <div class="grid cols-3">
+            <div class="card interactive"><span class="icon" style="font-size:20px;color:var(--on-variant)">workspaces</span><div class="c-title">Product</div><div class="c-body">24 docs</div></div>
+            <div class="card interactive"><span class="icon" style="font-size:20px;color:var(--on-variant)">science</span><div class="c-title">Research</div><div class="c-body">51 docs</div></div>
+            <div class="card interactive"><span class="icon" style="font-size:20px;color:var(--on-variant)">person</span><div class="c-title">Personal</div><div class="c-body">12 docs</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LIBRARY -->
+    <div class="label sub-label">Library</div>
+    <div class="mock">
+      <div class="mock-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+      <div class="mock-body">
+        <aside class="mock-side">
+          <div class="nav-item"><span class="icon">home</span>Home</div>
+          <div class="nav-item active"><span class="icon icon--fill">folder_open</span>Library</div>
+          <div class="nav-item"><span class="icon">hub</span>Graph</div>
+          <div class="nav-item"><span class="icon">auto_awesome</span>Agent</div>
+        </aside>
+        <div class="mock-main">
+          <div class="page-head" style="flex-direction:row;align-items:flex-end;justify-content:space-between">
+            <div><div class="page-title">Library</div><div class="page-sub">모든 문서 · 128</div></div>
+            <button class="btn btn-primary"><span class="icon">add</span>새 문서</button>
+          </div>
+          <div class="demo-row" style="margin-bottom:16px">
+            <div class="field" style="flex:1;max-width:320px"><span class="icon">search</span><input placeholder="라이브러리 검색"/></div>
+            <span class="chip-tag dim"><span class="icon">sort</span>최근</span>
+            <span class="chip-tag"><span class="icon">filter_list</span>필터</span>
+          </div>
+          <div class="list">
+            <div class="row"><span class="row-ic"><span class="icon">folder</span></span><div class="row-main"><div class="row-title">Product</div><div class="row-meta">24개 항목</div></div><span class="icon row-chev">expand_more</span></div>
+            <div class="row" style="padding-left:38px"><span class="row-ic"><span class="icon">description</span></span><div class="row-main"><div class="row-title">Roadmap 2026</div><div class="row-meta">8개 연결</div></div><span class="icon row-chev">chevron_right</span></div>
+            <div class="row" style="padding-left:38px"><span class="row-ic"><span class="icon">description</span></span><div class="row-main"><div class="row-title">Release notes</div><div class="row-meta">3개 연결</div></div><span class="icon row-chev">chevron_right</span></div>
+            <div class="row"><span class="row-ic"><span class="icon">folder</span></span><div class="row-main"><div class="row-title">Research</div><div class="row-meta">51개 항목</div></div><span class="icon row-chev">expand_more</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AGENT -->
+    <div class="label sub-label">Agent · 하이브리드 (검색 + AI)</div>
+    <div class="mock">
+      <div class="mock-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+      <div class="mock-body">
+        <aside class="mock-side">
+          <div class="nav-item"><span class="icon">home</span>Home</div>
+          <div class="nav-item"><span class="icon">folder_open</span>Library</div>
+          <div class="nav-item"><span class="icon">hub</span>Graph</div>
+          <div class="nav-item active"><span class="icon icon--fill">auto_awesome</span>Agent</div>
+        </aside>
+        <div class="mock-main">
+          <div class="page-head"><div class="page-title">Agent</div><div class="page-sub">워크스페이스에 질문하거나 검색하세요</div></div>
+          <div class="field" style="height:46px;margin-bottom:20px"><span class="icon icon--fill" style="color:var(--primary)">auto_awesome</span><input placeholder="이번 분기 목표가 뭐였지?" /><button class="iconbtn primary" style="width:32px;height:32px"><span class="icon">arrow_upward</span></button></div>
+
+          <div class="floating" style="margin-bottom:18px">
+            <div class="label" style="margin-bottom:8px">답변</div>
+            <div class="t-body">이번 분기 핵심 목표는 <strong>그래프 기반 검색</strong>과 <strong>Agent 탭 통합</strong>입니다. 로드맵 문서에 따르면 두 작업 모두 Q2 내 출시를 목표로 합니다.</div>
+            <div class="cites"><span class="chip-tag"><span class="icon">description</span>Synapse roadmap · 2</span><span class="chip-tag"><span class="icon">description</span>Q2 planning</span></div>
+          </div>
+
+          <div class="label" style="margin-bottom:10px">관련 문서 · 검색 결과</div>
+          <div class="list">
+            <div class="row"><span class="row-ic"><span class="icon">description</span></span><div class="row-main"><div class="row-title">Synapse roadmap</div><div class="row-meta">"…그래프 기반 검색을 Q2에…"</div></div><span class="chip-tag dim">92%</span></div>
+            <div class="row"><span class="row-ic"><span class="icon">description</span></span><div class="row-main"><div class="row-title">Q2 planning</div><div class="row-meta">"…Agent 탭 통합 작업 착수…"</div></div><span class="chip-tag dim">87%</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <p class="note" style="margin-top:48px;text-align:center">
+    SynapseNote Design System · 제안 v0.1 · 토큰 출처: <code>src/styles/synapsenote.css</code> · 이 페이지는 실제 토큰 값으로 렌더됩니다.
+  </p>
+</main>
+
+<script>
+function setTheme(t){
+  document.documentElement.setAttribute('data-theme', t);
+  document.getElementById('t-light').setAttribute('aria-pressed', String(t==='light'));
+  document.getElementById('t-dark').setAttribute('aria-pressed', String(t==='dark'));
+}
+</script>
+</body>
+</html>

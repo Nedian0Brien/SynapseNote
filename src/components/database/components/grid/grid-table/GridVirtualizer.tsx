@@ -20,7 +20,7 @@ import { getPlatform } from '@/utils/platform';
 
 import { useColumnResize } from '../grid-column/useColumnResize';
 
-const GRID_LOADING_DOT_COLORS = ['#00b5ff', '#e3006d', '#f7931e'] as const;
+const GRID_LOADING_DOT_COLORS = ['var(--sn-primary)', 'var(--sn-on-variant)', 'var(--sn-muted)'] as const;
 
 const gridLoadingDots = (
   <div className={'flex h-full items-center gap-1.5'}>

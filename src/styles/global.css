@@ -7,6 +7,7 @@
 @import "./synapsenote.css";
 @import "./synapse-graph.css";
 @import "./synapse-panels.css";
+@import "./synapse-app.css";
 
 :root {
     --shadow-color: rgba(31, 35, 41, 0.10);

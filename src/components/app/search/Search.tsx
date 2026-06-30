@@ -19,9 +19,8 @@ import {
 } from '@/components/app/app.hooks';
 import BestMatch from '@/components/app/search/BestMatch';
 import RecentViews from '@/components/app/search/RecentViews';
-import { dropdownMenuItemVariants } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { createHotkey, createHotKeyLabel, HOT_KEY_NAME } from '@/utils/hotkeys';
+import { createHotkey, createHotKeyLabel, getModifier, HOT_KEY_NAME } from '@/utils/hotkeys';
 
 function getAIChatParent(outline: View[] | undefined, currentViewId: string | undefined) {
   if (!outline?.length) return;
@@ -211,16 +210,18 @@ export function Search({ mode = 'button' }: { mode?: 'button' | 'page' | 'shortc
     <>
       <Tooltip delayDuration={1000}>
         <TooltipTrigger asChild>
-          <div
+          <button
+            type='button'
             onClick={(e) => {
               e.currentTarget.blur();
               setOpen(true);
             }}
-            className={dropdownMenuItemVariants()}
+            className='sb-item'
           >
-            <SearchIcon />
-            {t('button.search')}
-          </div>
+            <span className='icon'>search</span>
+            검색
+            <span className='kbd sb-trail'>{`${getModifier()}K`}</span>
+          </button>
         </TooltipTrigger>
         <TooltipContent side='right'>
           <div className={'flex flex-col gap-1'}>

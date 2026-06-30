@@ -16,7 +16,7 @@ function AIChatDrawer() {
         style={{
           width: drawerOpen ? drawerWidth : 0,
         }}
-        className={'h-full overflow-hidden border-l border-line-border'}
+        className={drawerOpen ? 'h-full overflow-hidden border-l border-line-border' : 'h-full overflow-hidden'}
       >
         {openViewId && (
           <div className={'synapsenote-scroller flex h-full flex-col overflow-auto overflow-x-hidden'}>
@@ -25,7 +25,7 @@ function AIChatDrawer() {
           </div>
         )}
 
-        <Resizer drawerWidth={drawerWidth} onResize={onSetDrawerWidth} />
+        {drawerOpen && <Resizer drawerWidth={drawerWidth} onResize={onSetDrawerWidth} />}
       </div>
 
       {!drawerOpen && openViewId && <Pinned />}

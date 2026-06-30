@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
+import { useLocation } from 'react-router-dom';
 
 import { useOutlineDrawer } from '@/components/_shared/outline/outline.hooks';
 import { AFScroller } from '@/components/_shared/scroller';
@@ -8,13 +9,16 @@ import { useOpenModalViewId, useAppViewId, useViewErrorStatus } from '@/componen
 import { ConnectBanner } from '@/components/app/ConnectBanner';
 import { AppHeader } from '@/components/app/header';
 import Main from '@/components/app/Main';
+import { isAppSection } from '@/components/app/navigation/appSections';
 import SideBar from '@/components/app/SideBar';
 import DeletedPageComponent from '@/components/error/PageHasBeenDeleted';
 import RecordNotFound from '@/components/error/RecordNotFound';
 import SomethingError from '@/components/error/SomethingError';
 
 function MainLayout() {
+  const location = useLocation();
   const { drawerOpened, drawerWidth, setDrawerWidth, toggleOpenDrawer } = useOutlineDrawer();
+  const [compactLayout, setCompactLayout] = useState(() => window.innerWidth - drawerWidth <= 768);
   const aiChatContext = useAIChatContextOptional();
   const chatViewDrawerOpen = aiChatContext?.drawerOpen ?? false;
   const openViewDrawerWidth = aiChatContext?.drawerWidth ?? 0;
@@ -22,6 +26,30 @@ function MainLayout() {
   const openPageModalViewId = useOpenModalViewId();
   const viewId = useAppViewId();
   const { notFound, deleted } = useViewErrorStatus();
+  const openedSectionPathRef = useRef<string | null>(null);
+  const routeSection = location.pathname.split('/')[3];
+  const isAppSectionRoute = isAppSection(routeSection);
+
+  useEffect(() => {
+    const onResize = () => setCompactLayout(window.innerWidth - drawerWidth <= 768);
+
+    onResize();
+    window.addEventListener('resize', onResize);
+
+    return () => window.removeEventListener('resize', onResize);
+  }, [drawerWidth]);
+
+  useEffect(() => {
+    if (isAppSectionRoute && drawerOpened) {
+      openedSectionPathRef.current = location.pathname;
+      return;
+    }
+
+    if (isAppSectionRoute && !compactLayout && openedSectionPathRef.current !== location.pathname && !drawerOpened) {
+      openedSectionPathRef.current = location.pathname;
+      toggleOpenDrawer(true);
+    }
+  }, [compactLayout, drawerOpened, isAppSectionRoute, location.pathname, toggleOpenDrawer]);
 
   const main = useMemo(() => {
     if (deleted) {
@@ -34,7 +62,7 @@ function MainLayout() {
   const width = useMemo(() => {
     let diff = 0;
 
-    if (drawerOpened) {
+    if (drawerOpened && !compactLayout) {
       diff = drawerWidth;
     }
 
@@ -43,7 +71,7 @@ function MainLayout() {
     }
 
     return `calc(100% - ${diff}px)`;
-  }, [drawerOpened, drawerWidth, openViewDrawerWidth, chatViewDrawerOpen]);
+  }, [compactLayout, drawerOpened, drawerWidth, openViewDrawerWidth, chatViewDrawerOpen]);
 
   return (
     <div className={'h-screen w-screen'}>
@@ -51,7 +79,7 @@ function MainLayout() {
         overflowXHidden
         overflowYHidden={false}
         style={{
-          transform: drawerOpened ? `translateX(${drawerWidth}px)` : 'none',
+          transform: drawerOpened && !compactLayout ? `translateX(${drawerWidth}px)` : 'none',
           width,
           transition: 'width 0.2s ease-in-out, transform 0.2s ease-in-out',
         }}
@@ -67,7 +95,7 @@ function MainLayout() {
           }}
           openDrawer={drawerOpened}
         />
-        <ConnectBanner />
+        {!isAppSectionRoute && <ConnectBanner />}
 
         {!openPageModalViewId && (
           <div
@@ -89,6 +117,7 @@ function MainLayout() {
         onResizeDrawerWidth={setDrawerWidth}
         drawerWidth={drawerWidth}
         drawerOpened={drawerOpened}
+        temporary={compactLayout}
         toggleOpenDrawer={toggleOpenDrawer}
       />
     </div>

@@ -1189,6 +1189,14 @@ export interface ViewExtra extends SpaceInfo, DatabaseViewExtra {
 
   /** The view's cover image/color configuration. */
   cover?: ViewCover;
+
+  /** Optional SynapseNote display metadata stored with a view. */
+  synapse?: {
+    displayName?: string;
+    materialIcon?: string;
+    tileVariant?: 'a' | 'b' | 'c' | 'd';
+    tags?: string[];
+  };
 }
 
 export interface View {

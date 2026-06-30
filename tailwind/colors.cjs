@@ -1,6 +1,25 @@
 const newColors = require('./new-colors.cjs');
 
 module.exports = {
+  // SynapseNote design-system semantic palette (single source of truth lives
+  // in src/styles/synapsenote.css). Use these utilities (bg-sn-surface,
+  // text-sn-ink, border-sn-outline, …) in design-system primitives and pages.
+  'sn': {
+    'bg': 'var(--sn-bg)',
+    'surface': 'var(--sn-surface)',
+    'surface-low': 'var(--sn-surface-low)',
+    'surface-high': 'var(--sn-surface-high)',
+    'ink': 'var(--sn-on-surface)',
+    'variant': 'var(--sn-on-variant)',
+    'muted': 'var(--sn-muted)',
+    'outline': 'var(--sn-outline)',
+    'outline-soft': 'var(--sn-outline-soft)',
+    'primary': 'var(--sn-primary)',
+    'primary-icon': 'var(--sn-primary-icon)',
+    'primary-dim': 'var(--sn-primary-dim)',
+    'error': 'var(--sn-error)',
+    'favorite': 'var(--sn-favorite)',
+  },
   // Existing SynapseNote colors
   'bg': {
     'selection': 'var(--bg-selection)',

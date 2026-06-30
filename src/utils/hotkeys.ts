@@ -125,7 +125,7 @@ const defaultHotKeys = {
   [HOT_KEY_NAME.MOVE_CURSOR_TO_TOP]: ['mod+up'],
   [HOT_KEY_NAME.ENTER]: ['enter'],
   [HOT_KEY_NAME.QUICK_NOTE]: ['mod+/'],
-  [HOT_KEY_NAME.SEARCH]: ['mod+p'],
+  [HOT_KEY_NAME.SEARCH]: ['mod+k'],
   [HOT_KEY_NAME.TAB]: ['tab'],
   [HOT_KEY_NAME.SHIFT_TAB]: ['shift+tab'],
   [HOT_KEY_NAME.CREATE_CARD_AFTER]: ['shift+enter'],

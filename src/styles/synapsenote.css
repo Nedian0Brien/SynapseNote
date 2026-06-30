@@ -10,7 +10,7 @@
   --sn-outline-soft: rgba(36, 36, 32, 0.07);
   --sn-primary: #242420;
   --sn-primary-icon: rgba(255, 255, 255, 0.94);
-  --sn-primary-dim: rgba(36, 36, 32, 0.07);
+  --sn-primary-dim: rgba(36, 36, 32, 0.06);
   --sn-radius-xs: 8px;
   --sn-radius-sm: 12px;
   --sn-radius-md: 16px;
@@ -20,28 +20,121 @@
   --sn-shadow-sm: 0 1px 3px rgba(36, 36, 32, 0.06), 0 1px 2px rgba(36, 36, 32, 0.04);
   --sn-shadow-md: 0 4px 14px rgba(36, 36, 32, 0.08), 0 2px 5px rgba(36, 36, 32, 0.04);
   --sn-shadow-lg: 0 12px 32px rgba(36, 36, 32, 0.10), 0 4px 10px rgba(36, 36, 32, 0.05);
+  --sn-error: #d24a3a;
+  --sn-dot: rgba(36, 36, 32, 0.10);
+  --sn-favorite: #e0a93a;
 }
 
 :root[data-dark-mode="true"] {
-  --sn-bg: #100d08;
-  --sn-surface: #1a1510;
-  --sn-surface-low: #141008;
-  --sn-surface-high: #261e14;
-  --sn-on-surface: #f0ece2;
-  --sn-on-variant: #c8a878;
-  --sn-muted: #907860;
-  --sn-outline: rgba(200, 160, 80, 0.18);
-  --sn-outline-soft: rgba(200, 160, 80, 0.09);
-  --sn-primary: #d4a850;
-  --sn-primary-icon: rgba(16, 13, 8, 0.92);
-  --sn-primary-dim: rgba(212, 168, 80, 0.10);
+  /* Neutral warm-gray dark. The amber identity is isolated to --sn-primary
+   * (used only as an action / selection accent). Text, borders, surfaces and
+   * hover fills are neutral so the UI does not read as "all gold". */
+  --sn-bg: #1a1a18;
+  --sn-surface: #242422;
+  --sn-surface-low: #1f1f1d;
+  --sn-surface-high: #2e2e2b;
+  --sn-on-surface: #ededea;
+  --sn-on-variant: #a6a6a0;
+  --sn-muted: #73736d;
+  --sn-outline: rgba(255, 255, 255, 0.11);
+  --sn-outline-soft: rgba(255, 255, 255, 0.06);
+  --sn-primary: #d0a85e;
+  --sn-primary-icon: rgba(20, 18, 12, 0.95);
+  --sn-primary-dim: rgba(255, 255, 255, 0.07);
   --sn-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
   --sn-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45), 0 2px 5px rgba(0, 0, 0, 0.35);
   --sn-shadow-lg: 0 10px 28px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.4);
+  --sn-error: #e6705e;
+  --sn-dot: rgba(255, 255, 255, 0.08);
+  --sn-favorite: #e0c36a;
 }
 
+/* ──────────────────────────────────────────────────────────────────
+ * SynapseNote Design System — Layer 2: Global semantic tokens
+ * Promoted from the Graph-tab scope (.synapse-graph-route) to :root so
+ * the whole app shares one language. All reference the --sn-* primitives
+ * above, so they re-theme automatically in light/dark.
+ * ────────────────────────────────────────────────────────────────── */
+:root {
+  /* Surfaces & text.
+   * NOTE: --primary and --muted are intentionally NOT declared here. They
+   * are shadcn HSL-triplet tokens consumed as hsl(var(--primary)); shadowing
+   * them with a hex value would break every shadcn component. Primitives that
+   * need the brand ink/muted reference --sn-primary / --sn-muted directly,
+   * and the shadcn tokens themselves are re-tinted to brand further below. */
+  --bg: var(--sn-bg);
+  --surface: var(--sn-surface);
+  --surface-low: var(--sn-surface-low);
+  --surface-high: var(--sn-surface-high);
+  --on-surface: var(--sn-on-surface);
+  --on-variant: var(--sn-on-variant);
+  --outline: var(--sn-outline);
+  --outline-var: var(--sn-outline-soft);
+  --primary-icon: var(--sn-primary-icon);
+  --primary-dim: var(--sn-primary-dim);
+  --error: var(--sn-error);
+
+  /* Radii (semantic aliases of the --sn-radius-* scale) */
+  --r-xs: var(--sn-radius-xs);
+  --r-sm: var(--sn-radius-sm);
+  --r-md: var(--sn-radius-md);
+  --r-lg: var(--sn-radius-lg);
+  --r-xl: var(--sn-radius-xl);
+  --r-full: var(--sn-radius-full);
+
+  /* Elevation */
+  --shadow-sm: var(--sn-shadow-sm);
+  --shadow-md: var(--sn-shadow-md);
+  --shadow-lg: var(--sn-shadow-lg);
+
+  /* Typography */
+  --font-hl: "Lexend", system-ui, sans-serif;
+  --font-bd: Inter, system-ui, sans-serif;
+  --fs-display: 28px;
+  --fs-title: 20px;
+  --fs-heading: 16px;
+  --fs-body: 14px;
+  --fs-sm: 12px;
+  --fs-label: 11px;
+  --fs-micro: 9px;
+  --lh-tight: 1.2;
+  --lh-body: 1.55;
+  --tracking-label: 0.08em;
+  --tracking-caps: 0.12em;
+
+  /* Spacing scale (4px base) */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+
+  /* Motion — previously USED across graph/panels CSS but never defined.
+   * Defining them here restores the Graph tab's transitions globally. */
+  --dur-fast: 120ms;
+  --dur: 180ms;
+  --dur-slow: 320ms;
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Graph texture (dotted-grid background) — was undefined → grid invisible */
+  --g-dot: var(--sn-dot);
+}
+
+/* ──────────────────────────────────────────────────────────────────
+ * SynapseNote Design System — Layer 3: AppFlowy token remap
+ * Selector :root[data-dark-mode] (specificity 0,2,0) matches BOTH light
+ * (attr "false") and dark (attr "true"), so it ties semantic.dark.css and
+ * wins on source order (synapsenote.css loads later). The bare :root covers
+ * the brief pre-hydration window where the attribute is not yet set.
+ * Every value resolves through --sn-*, which already re-themes per mode.
+ * ────────────────────────────────────────────────────────────────── */
 :root,
-:root[data-dark-mode="false"] {
+:root[data-dark-mode] {
   --bg-body: var(--sn-bg);
   --bg-header: color-mix(in srgb, var(--sn-surface) 88%, transparent);
   --bg-body-tertiary: var(--sn-surface-low);
@@ -69,22 +162,54 @@
   --brand-golden: #d4a850;
   --brand-amber: #c89c46;
   --brand-lemon: #e0c36a;
+
+  /* ── Unify AppFlowy accent / theme tokens onto the SynapseNote primary.
+   * These were AppFlowy's blue (#00b5ff / #0092d6 / #f8faff) — the root
+   * cause of the "two designs" split. Status colors (success/warning/
+   * error) are intentionally left untouched. ── */
+  --text-action: var(--sn-primary);
+  --text-action-hover: var(--sn-on-surface);
+  --text-link-default: var(--sn-primary);
+  --text-link-hover: var(--sn-on-surface);
+  --ai-primary: var(--sn-primary);
+  --fill-theme-thick: var(--sn-primary);
+  --fill-theme-thick-hover: color-mix(in srgb, var(--sn-primary) 88%, #000);
+  --fill-theme-select: var(--sn-primary-dim);
+  --fill-theme-select-hover: var(--sn-primary-dim);
+  --fill-primary: var(--sn-surface-low);
+  --fill-primary-hover: var(--sn-surface-high);
+  --border-theme-thick: var(--sn-primary);
+  --border-theme-thick-hover: var(--sn-on-surface);
+  --surface-primary: var(--sn-surface);
+  --surface-primary-hover: var(--sn-surface-low);
+  --surface-container-layer-00: var(--sn-surface);
+  --surface-container-layer-01: var(--sn-surface);
+  --surface-container-layer-02: var(--sn-surface-low);
+  --surface-container-layer-03: var(--sn-surface-high);
+  --background-primary: var(--sn-surface);
+}
+
+/* shadcn HSL theme tokens → SynapseNote brand.
+ * These are consumed as hsl(var(--primary)); they must stay HSL triplets,
+ * so they are expressed as HSL of --sn-primary (ink #242420 / gold #d4a850)
+ * rather than var(--sn-*). This removes AppFlowy's cyan from every shadcn
+ * Button / focus ring. Dark uses 0,2,0 specificity to beat dark.variables.css. */
+:root,
+:root[data-dark-mode="false"] {
+  --primary: 60 6% 13%;
+  --primary-foreground: 0 0% 98%;
+  --ring: 60 6% 13%;
+}
+
+:root[data-dark-mode="true"] {
+  --primary: 39 55% 59%;
+  --primary-foreground: 40 25% 6%;
+  --ring: 39 55% 59%;
 }
 
 body {
   background: var(--sn-bg);
   color: var(--sn-on-surface);
-}
-
-button,
-input,
-textarea,
-[role="button"],
-.MuiButton-root,
-.MuiIconButton-root,
-.MuiInputBase-root,
-.MuiOutlinedInput-root {
-  border-radius: var(--sn-radius-full) !important;
 }
 
 .MuiPaper-root,
@@ -129,14 +254,14 @@ textarea,
 }
 
 .MuiButton-root,
-button[type="button"],
-button[type="submit"] {
+button[type="button"]:not(:where(.app *)):not(:where(.sb *)):not(:where(.synapsenote-layout *)),
+button[type="submit"]:not(:where(.app *)):not(:where(.sb *)):not(:where(.synapsenote-layout *)) {
   min-height: 34px;
 }
 
 .MuiButton-root:not(.MuiIconButton-root),
-button[type="button"]:not(.MuiIconButton-root):not(.synapse-graph-toggle):not(.synapse-graph-close),
-button[type="submit"]:not(.MuiIconButton-root) {
+button[type="button"]:not(.MuiIconButton-root):not(.synapse-graph-toggle):not(.synapse-graph-close):not(:where(.app *)):not(:where(.sb *)):not(:where(.synapsenote-layout *)),
+button[type="submit"]:not(.MuiIconButton-root):not(:where(.app *)):not(:where(.sb *)):not(:where(.synapsenote-layout *)) {
   padding-inline: 14px;
 }
 
@@ -161,19 +286,15 @@ button[type="submit"]:not(.MuiIconButton-root) {
   font-family: "Material Symbols Outlined";
   font-weight: normal;
   font-style: normal;
-  font-size: 18px;
   line-height: 1;
   display: inline-block;
-  text-transform: none;
-  letter-spacing: normal;
-  white-space: nowrap;
-  direction: ltr;
-  -webkit-font-feature-settings: "liga";
+  vertical-align: middle;
   -webkit-font-smoothing: antialiased;
+  user-select: none;
 }
 
 .icon--fill {
-  font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
+  font-variation-settings: "FILL" 1, "wght" 500;
 }
 
 .synapsenote-layout {

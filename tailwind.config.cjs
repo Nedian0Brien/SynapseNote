@@ -13,7 +13,26 @@ module.exports = {
   theme: {
     extend: {
       colors,
-      boxShadow,
+      boxShadow: {
+        ...boxShadow,
+        'sn-sm': 'var(--shadow-sm)',
+        'sn-md': 'var(--shadow-md)',
+        'sn-lg': 'var(--shadow-lg)',
+      },
+      fontFamily: {
+        hl: ['Lexend', 'system-ui', 'sans-serif'],
+        bd: ['Inter', 'system-ui', 'sans-serif'],
+      },
+      transitionTimingFunction: {
+        sn: 'var(--ease)',
+        'sn-out': 'var(--ease-out)',
+        'sn-spring': 'var(--ease-spring)',
+      },
+      transitionDuration: {
+        'sn-fast': 'var(--dur-fast)',
+        sn: 'var(--dur)',
+        'sn-slow': 'var(--dur-slow)',
+      },
       borderRadius: {
         100: '4px',
         200: '6px',
@@ -21,6 +40,12 @@ module.exports = {
         400: '12px',
         500: '16px',
         600: '20px',
+        'sn-xs': 'var(--r-xs)',
+        'sn-sm': 'var(--r-sm)',
+        'sn-md': 'var(--r-md)',
+        'sn-lg': 'var(--r-lg)',
+        'sn-xl': 'var(--r-xl)',
+        'sn-full': 'var(--r-full)',
       },
       padding: {
         100: '4px',

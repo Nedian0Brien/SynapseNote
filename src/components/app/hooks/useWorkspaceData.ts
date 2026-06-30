@@ -508,8 +508,8 @@ export function useWorkspaceData() {
             return;
           }
 
-          // Skip /app/:workspaceId/home|library|graph|search
-          if (isAppSection(pageId)) {
+          // Skip /app/:workspaceId/home|library|graph|agent and legacy /search alias.
+          if (isAppSection(pageId) || pageId === 'search') {
             return;
           }
 
