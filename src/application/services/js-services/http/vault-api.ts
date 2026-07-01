@@ -1,4 +1,4 @@
-import { APIResponse, executeAPIRequest, getAxios } from './core';
+import { APIResponse, executeAPIRequest, getAxios, handleAPIError } from './core';
 
 export type VaultDocument = {
   id: string;
@@ -104,6 +104,27 @@ export function deleteVaultDocument(workspaceId: string, path: string) {
       `/api/workspace/${workspaceId}/vault/documents/${encodeVaultPath(path)}`
     )
   );
+}
+
+export async function getVaultFile(workspaceId: string, path: string) {
+  try {
+    const axios = getAxios();
+
+    if (!axios) {
+      return Promise.reject({
+        code: -1,
+        message: 'API service not initialized',
+      });
+    }
+
+    const response = await axios.get<Blob>(`/api/workspace/${workspaceId}/vault/files/${encodeVaultPath(path)}`, {
+      responseType: 'blob',
+    });
+
+    return response.data;
+  } catch (error) {
+    return Promise.reject(handleAPIError(error));
+  }
 }
 
 export function getVaultObject(workspaceId: string, objectId: string) {

@@ -100,6 +100,59 @@ function vaultDocumentPathForNewDocument(title = '새 문서') {
   return `${title}-${stamp}.md`;
 }
 
+function normalizeVaultPath(path: string) {
+  const parts: string[] = [];
+
+  path
+    .replace(/^\/+/, '')
+    .split('/')
+    .forEach((part) => {
+      if (!part || part === '.') return;
+      if (part === '..') {
+        parts.pop();
+        return;
+      }
+      parts.push(part);
+    });
+
+  return parts.join('/');
+}
+
+function resolveVaultFilePath(target: string, documentPath: string) {
+  const cleanTarget = target.trim().replace(/^<|>$/g, '');
+
+  if (!cleanTarget || /^https?:\/\//i.test(cleanTarget)) return null;
+
+  const decodedTarget = cleanTarget.replace(/%20/g, ' ');
+  if (decodedTarget.startsWith('Papers/')) return normalizeVaultPath(decodedTarget);
+  if (decodedTarget.startsWith('raw/')) return normalizeVaultPath(`Papers/${decodedTarget}`);
+
+  const parentPath = documentPath.split('/').slice(0, -1).join('/');
+  return normalizeVaultPath(parentPath ? `${parentPath}/${decodedTarget}` : decodedTarget);
+}
+
+function firstPdfPathForDocument(document: VaultDocument) {
+  const patterns = [
+    /\[\[([^\]|#]+\.pdf)(?:#[^\]|]*)?(?:\|[^\]]*)?\]\]/gi,
+    /\[[^\]]+\]\(([^)]+\.pdf)\)/gi,
+    /(?:^|\s)([^\s()[\]]+\.pdf)(?=\s|$)/gi,
+  ];
+
+  for (const pattern of patterns) {
+    let match: RegExpExecArray | null;
+
+    while ((match = pattern.exec(document.content))) {
+      const target = match[1];
+      if (!target) continue;
+      const resolved = resolveVaultFilePath(target, document.id);
+
+      if (resolved) return resolved;
+    }
+  }
+
+  return null;
+}
+
 function spaceMaterialIcon(space: View) {
   return space.extra?.synapse?.materialIcon || 'folder_open';
 }
@@ -433,6 +486,10 @@ function AppSectionPage({ section }: AppSectionPageProps) {
 
     return Array.from(groups.entries()).sort(([a], [b]) => a.localeCompare(b));
   }, [filteredVaultDocuments]);
+  const selectedVaultPdfPath = useMemo(
+    () => (selectedVaultDocument ? firstPdfPathForDocument(selectedVaultDocument) : null),
+    [selectedVaultDocument]
+  );
   const continueItems = useMemo(() => {
     return [...documentViews]
       .sort((a, b) => {
@@ -549,6 +606,23 @@ function AppSectionPage({ section }: AppSectionPageProps) {
       setVaultSaving(false);
     }
   }, [loadVaultWorkspace, selectedVaultDocument, selectedVaultPath, vaultDraft, workspaceId]);
+
+  const openVaultFile = useCallback(
+    async (path: string) => {
+      if (!workspaceId) return;
+
+      try {
+        const blob = await VaultService.getFile(workspaceId, path);
+        const url = URL.createObjectURL(blob);
+
+        window.open(url, '_blank', 'noopener,noreferrer');
+        window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      } catch (error) {
+        notify.error(getErrorMessage(error));
+      }
+    },
+    [workspaceId]
+  );
 
   const openView = useCallback(
     (viewId: string) => {
@@ -996,15 +1070,28 @@ function AppSectionPage({ section }: AppSectionPageProps) {
                       <div className='vault-editor-title'>{selectedVaultDocument.title}</div>
                       <div className='vault-editor-path'>{selectedVaultDocument.id}</div>
                     </div>
-                    <button
-                      type='button'
-                      className='btn btn-primary'
-                      onClick={saveVaultDocument}
-                      disabled={vaultSaving || vaultDraft === selectedVaultDocument.content}
-                    >
-                      <MaterialIcon name='save' />
-                      {vaultSaving ? '저장 중' : '저장'}
-                    </button>
+                    <div className='vault-editor-actions'>
+                      {selectedVaultPdfPath ? (
+                        <button
+                          type='button'
+                          className='btn btn-secondary'
+                          aria-label='PDF 열기'
+                          onClick={() => void openVaultFile(selectedVaultPdfPath)}
+                        >
+                          <MaterialIcon name='picture_as_pdf' />
+                          PDF 열기
+                        </button>
+                      ) : null}
+                      <button
+                        type='button'
+                        className='btn btn-primary'
+                        onClick={saveVaultDocument}
+                        disabled={vaultSaving || vaultDraft === selectedVaultDocument.content}
+                      >
+                        <MaterialIcon name='save' />
+                        {vaultSaving ? '저장 중' : '저장'}
+                      </button>
+                    </div>
                   </div>
                   <textarea
                     className='vault-markdown-editor'

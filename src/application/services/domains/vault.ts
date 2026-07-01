@@ -2,6 +2,7 @@ export {
   createVaultDocument as createDocument,
   deleteVaultDocument as deleteDocument,
   getVaultDocument as getDocument,
+  getVaultFile as getFile,
   getVaultGraph as getGraph,
   getVaultObject as getObject,
   listVaultNodes as listNodes,

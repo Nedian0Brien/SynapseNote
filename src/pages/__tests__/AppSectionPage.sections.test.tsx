@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ComponentProps } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 
+import { VaultService } from '@/application/services/domains';
 import { ViewLayout } from '@/application/types';
 import AppSectionPage from '@/pages/AppSectionPage';
 
@@ -86,8 +87,48 @@ jest.mock('@/features/synapse-graph/SynapseGraphWorkspace', () => ({
   SynapseGraphWorkspace: () => <div data-testid='graph-workspace' />,
 }));
 
+jest.mock('@/features/synapse-graph/GraphView.jsx', () => ({
+  GraphView: () => <div data-testid='graph-view' />,
+}));
+
 jest.mock('@/application/services/js-services/http', () => ({
   getAxiosInstance: () => ({}),
+}));
+
+jest.mock('@/application/services/domains', () => ({
+  VaultService: {
+    createDocument: jest.fn(),
+    getDocument: jest.fn(async () => ({
+      id: 'Papers/summary/MT-RAIG.md',
+      title: 'MT-RAIG',
+      content: '# MT-RAIG\n\nsource: [[raw/ingested/dli-lab-papers-2026/MT_RAIG_acl2025.pdf|MT_RAIG_acl2025.pdf]]',
+      updatedAt: '2026-07-01T12:00:00Z',
+      hash: 'hash-1',
+    })),
+    getFile: jest.fn(async () => new Blob(['pdf'], { type: 'application/pdf' })),
+    getGraph: jest.fn(async () => ({
+      nodes: [
+        {
+          id: 'Papers/summary/MT-RAIG.md',
+          title: 'MT-RAIG',
+          nodeType: 'Document',
+          tags: [],
+          updatedAt: '2026-07-01T12:00:00Z',
+        },
+      ],
+      edges: [],
+    })),
+    listNodes: jest.fn(async () => [
+      {
+        id: 'Papers/summary/MT-RAIG.md',
+        title: 'MT-RAIG',
+        nodeType: 'Document',
+        tags: [],
+        updatedAt: '2026-07-01T12:00:00Z',
+      },
+    ]),
+    writeDocument: jest.fn(),
+  },
 }));
 
 jest.mock('@/components/chat/request', () => ({
@@ -99,6 +140,9 @@ jest.mock('@/components/chat/request', () => ({
 describe('AppSectionPage sections', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    URL.createObjectURL = jest.fn(() => 'blob:papers-pdf');
+    URL.revokeObjectURL = jest.fn();
+    window.open = jest.fn();
   });
 
   it('renders the Agent workspace and opens prototype empty-state controls from new chat', async () => {
@@ -133,8 +177,23 @@ describe('AppSectionPage sections', () => {
   it('renders Home from workspace outline and recent data', async () => {
     renderSection('home');
 
-    expect(await screen.findByText(/좋은 .*예요, Synapse Workspace/)).toBeTruthy();
+    expect(await screen.findByText(/좋은 .*요, Synapse Workspace/)).toBeTruthy();
     expect(screen.getByText('Research Space')).toBeTruthy();
     expect(screen.getAllByText('Attention Notes').length).toBeGreaterThan(0);
+  });
+
+  it('opens the first Papers PDF linked from a selected vault document', async () => {
+    renderSection('library');
+
+    fireEvent.click(await screen.findByText('MT-RAIG'));
+    fireEvent.click(await screen.findByRole('button', { name: 'PDF 열기' }));
+
+    await waitFor(() => {
+      expect(VaultService.getFile).toHaveBeenCalledWith(
+        'workspace-id',
+        'Papers/raw/ingested/dli-lab-papers-2026/MT_RAIG_acl2025.pdf'
+      );
+      expect(window.open).toHaveBeenCalledWith('blob:papers-pdf', '_blank', 'noopener,noreferrer');
+    });
   });
 });
