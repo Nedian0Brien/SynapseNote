@@ -548,14 +548,18 @@ function SynapseTreeRow({
   const levelClass = level === 1 ? 'lvl-1' : level >= 2 ? 'lvl-2' : undefined;
   const showFavoriteStar = Boolean(view.favorited_at && view.icon?.ty !== ViewIconType.Emoji);
 
+  // Spaces are containers, not documents — clicking one should expand it
+  // (Notion-style explorer), not navigate. Pages navigate to open.
+  const activate = category === 'space' && hasChildren && onToggle ? () => void onToggle() : onOpen;
+
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (event.key === 'Enter') {
-      onOpen();
+      activate();
     }
 
     if (event.key === ' ') {
       event.preventDefault();
-      onOpen();
+      activate();
     }
   };
 
@@ -566,7 +570,7 @@ function SynapseTreeRow({
       aria-current={isActive ? 'page' : undefined}
       aria-expanded={hasChildren ? expanded : undefined}
       className={cn('tree-row', levelClass, expanded && 'open', isActive && 'active')}
-      onClick={onOpen}
+      onClick={activate}
       onKeyDown={handleKeyDown}
     >
       <span

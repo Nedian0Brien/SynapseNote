@@ -355,7 +355,7 @@ function AppSectionPage({ section }: AppSectionPageProps) {
   const [graphContextEnabled, setGraphContextEnabled] = useState(true);
   const [webContextEnabled, setWebContextEnabled] = useState(false);
   const [mentionContextEnabled, setMentionContextEnabled] = useState(false);
-  const [libraryMode, setLibraryMode] = useState<'list' | 'table' | 'board' | 'gallery'>('list');
+  const [libraryMode, setLibraryMode] = useState<'list' | 'table' | 'board' | 'gallery'>('table');
   const [libraryQuery, setLibraryQuery] = useState('');
   const [librarySort, setLibrarySort] = useState<'recent' | 'name'>('recent');
   const [libraryFilterActive, setLibraryFilterActive] = useState(false);
@@ -804,13 +804,75 @@ function AppSectionPage({ section }: AppSectionPageProps) {
   }
 
   if (section === 'library') {
+    if (selectedVaultDocument) {
+      return (
+        <section className='view' id='view-library'>
+          <div className='page' style={{ maxWidth: 900 }}>
+            <div className='lib-head'>
+              <button
+                type='button'
+                className='btn btn-secondary'
+                onClick={() => {
+                  setSelectedVaultPath(null);
+                  setSelectedVaultDocument(null);
+                  setVaultDraft('');
+                }}
+              >
+                <MaterialIcon name='arrow_back' />
+                라이브러리
+              </button>
+              <div className='vault-editor-actions'>
+                {selectedVaultPdfPath ? (
+                  <button
+                    type='button'
+                    className='btn btn-secondary'
+                    aria-label='PDF 열기'
+                    onClick={() => void openVaultFile(selectedVaultPdfPath)}
+                  >
+                    <MaterialIcon name='picture_as_pdf' />
+                    PDF 열기
+                  </button>
+                ) : null}
+                <button
+                  type='button'
+                  className='btn btn-primary'
+                  onClick={saveVaultDocument}
+                  disabled={vaultSaving || vaultDraft === selectedVaultDocument.content}
+                >
+                  <MaterialIcon name='save' />
+                  {vaultSaving ? '저장 중' : '저장'}
+                </button>
+              </div>
+            </div>
+            <div className='vault-editor' style={{ position: 'static', minHeight: '68vh' }}>
+              <div className='vault-editor-head'>
+                <div className='vault-editor-meta'>
+                  <div className='vault-editor-title'>{selectedVaultDocument.title}</div>
+                  <div className='vault-editor-path' style={{ maxWidth: '100%' }}>
+                    {selectedVaultDocument.id}
+                  </div>
+                </div>
+              </div>
+              <textarea
+                className='vault-markdown-editor'
+                value={vaultDraft}
+                onChange={(event) => setVaultDraft(event.target.value)}
+                spellCheck={false}
+                aria-label='Markdown 문서'
+              />
+            </div>
+          </div>
+        </section>
+      );
+    }
+
     return (
       <section className='view' id='view-library'>
         <div className='page' style={{ maxWidth: 1040 }}>
           <div className='lib-head'>
             <div>
               <div className='lib-title'>Library</div>
-              <div className='lib-sub'>Markdown vault · {vaultDocuments.length}개</div>
+              <div className='lib-sub'>모든 문서 · {vaultDocuments.length}개</div>
             </div>
             <button type='button' className='btn btn-primary' onClick={createDocument}>
               <MaterialIcon name='add' />새 문서
@@ -863,21 +925,17 @@ function AppSectionPage({ section }: AppSectionPageProps) {
               <MaterialIcon name='swap_vert' />
               {librarySort === 'recent' ? '최근 수정순' : '이름순'}
             </button>
-            {libraryMode === 'table' ? (
-              <button
-                type='button'
-                className={cn('chip', libraryGrouped && 'dim')}
-                onClick={() => setLibraryGrouped((grouped) => !grouped)}
-              >
-                <MaterialIcon name='workspaces' />
-                {libraryGrouped ? '스페이스별' : '전체'}
-              </button>
-            ) : null}
+            <button
+              type='button'
+              className={cn('chip', libraryGrouped && 'dim')}
+              onClick={() => setLibraryGrouped((grouped) => !grouped)}
+            >
+              <MaterialIcon name='workspaces' />
+              {libraryGrouped ? '스페이스별' : '전체'}
+            </button>
           </div>
 
-          <div className='vault-library-shell'>
-            <div className='vault-library-list'>
-              {vaultLoading && filteredVaultDocuments.length === 0 ? (
+          {vaultLoading && filteredVaultDocuments.length === 0 ? (
                 <div className='list'>
                   <div className='lrow'>
                     <LoadingDots />
@@ -1060,55 +1118,6 @@ function AppSectionPage({ section }: AppSectionPageProps) {
                   )}
                 </div>
               )}
-            </div>
-
-            <aside className='vault-editor' aria-live='polite'>
-              {selectedVaultDocument ? (
-                <>
-                  <div className='vault-editor-head'>
-                    <div className='vault-editor-meta'>
-                      <div className='vault-editor-title'>{selectedVaultDocument.title}</div>
-                      <div className='vault-editor-path'>{selectedVaultDocument.id}</div>
-                    </div>
-                    <div className='vault-editor-actions'>
-                      {selectedVaultPdfPath ? (
-                        <button
-                          type='button'
-                          className='btn btn-secondary'
-                          aria-label='PDF 열기'
-                          onClick={() => void openVaultFile(selectedVaultPdfPath)}
-                        >
-                          <MaterialIcon name='picture_as_pdf' />
-                          PDF 열기
-                        </button>
-                      ) : null}
-                      <button
-                        type='button'
-                        className='btn btn-primary'
-                        onClick={saveVaultDocument}
-                        disabled={vaultSaving || vaultDraft === selectedVaultDocument.content}
-                      >
-                        <MaterialIcon name='save' />
-                        {vaultSaving ? '저장 중' : '저장'}
-                      </button>
-                    </div>
-                  </div>
-                  <textarea
-                    className='vault-markdown-editor'
-                    value={vaultDraft}
-                    onChange={(event) => setVaultDraft(event.target.value)}
-                    spellCheck={false}
-                    aria-label='Markdown 문서'
-                  />
-                </>
-              ) : (
-                <div className='vault-empty-editor'>
-                  <MaterialIcon name='description' />
-                  <span>문서를 선택하세요.</span>
-                </div>
-              )}
-            </aside>
-          </div>
         </div>
       </section>
     );
