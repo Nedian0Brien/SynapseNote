@@ -21,7 +21,7 @@ interface GoToPasswordStepOptions {
   assertEmailInUrl?: boolean;
 }
 
-const DEFAULT_TEST_PASSWORD = 'REDACTED_TEST_PASSWORD';
+const DEFAULT_TEST_PASSWORD = `synapsenote-e2e-${process.pid}-${Date.now()}-A1!`;
 
 /**
  * Visit an auth route and wait for the UI to stabilize.

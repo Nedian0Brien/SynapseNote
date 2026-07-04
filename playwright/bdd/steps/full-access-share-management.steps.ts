@@ -7,7 +7,7 @@ import { setupPageErrorHandling, TestConfig } from '../../support/test-config';
 
 const { Given, When, Then, Before, After } = createBdd();
 
-const PASSWORD = 'REDACTED_TEST_PASSWORD';
+const PASSWORD = process.env.SYNAPSENOTE_E2E_SEEDED_PASSWORD ?? '';
 const WORKSPACE_ID = '2b64f8c8-22d2-4e35-8deb-8a7e85bba4d4';
 const INVITE_PROBE_EMAIL = 'fa0522-out@synapsenote.local';
 const modKey = process.platform === 'darwin' ? 'Meta' : 'Control';
@@ -63,6 +63,9 @@ type ScenarioState = {
 const stateByPage = new WeakMap<Page, ScenarioState>();
 
 Before(async ({ page }) => {
+  if (!PASSWORD) {
+    throw new Error('Set SYNAPSENOTE_E2E_SEEDED_PASSWORD to run seeded share-access BDD tests.');
+  }
   setupPageErrorHandling(page);
   await page.setViewportSize({ width: 1440, height: 900 });
   stateByPage.set(page, { pagesToRestore: [] });

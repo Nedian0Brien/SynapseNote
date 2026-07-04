@@ -24,7 +24,7 @@ import { expandSpaceByName } from '../../support/page-utils';
 import { testLog } from '../../support/test-helpers';
 
 const _exportUserEmail = 'export_user@synapsenote.io';
-const _exportUserPassword = 'REDACTED_TEST_PASSWORD';
+const _exportUserPassword = process.env.SYNAPSENOTE_E2E_SEEDED_PASSWORD ?? '';
 const _testDatabaseName = 'Database 1';
 const _spaceName = 'General';
 const _gettingStartedPageName = 'Getting started';
@@ -74,6 +74,8 @@ async function expandPageAndWaitForChildren(
 }
 
 test.describe('Cloud Database Duplication', () => {
+  test.skip(!_exportUserPassword, 'Set SYNAPSENOTE_E2E_SEEDED_PASSWORD to run seeded database duplication tests.');
+
   test.beforeEach(async ({ page }) => {
     page.on('pageerror', (err) => {
       if (

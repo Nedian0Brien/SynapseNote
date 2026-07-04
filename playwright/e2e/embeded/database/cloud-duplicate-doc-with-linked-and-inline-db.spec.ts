@@ -19,7 +19,7 @@ import { currentViewIdFromUrl } from '../../../support/page-utils';
 import { itemDirectChildPageItems } from '../../../support/selectors';
 
 const DUPLICATE_USER_EMAIL = 'duplicate@synapsenote.io';
-const DUPLICATE_USER_PASSWORD = 'REDACTED_TEST_PASSWORD';
+const DUPLICATE_USER_PASSWORD = process.env.SYNAPSENOTE_E2E_SEEDED_PASSWORD ?? '';
 const DOCUMENT_NAME = 'Document with linked database';
 const INLINE_GRID_TEXT = 'This is inline Grid';
 
@@ -37,6 +37,8 @@ async function expectFirstGridCellToContain(
 }
 
 test.describe('Cloud Duplicate Document With Linked And Inline Database', () => {
+  test.skip(!DUPLICATE_USER_PASSWORD, 'Set SYNAPSENOTE_E2E_SEEDED_PASSWORD to run seeded duplicate-document tests.');
+
   test.beforeEach(async ({ page }) => {
     setupPageErrorHandling(page);
     await page.setViewportSize({ width: 1440, height: 900 });

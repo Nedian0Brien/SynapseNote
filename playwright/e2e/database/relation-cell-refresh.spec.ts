@@ -21,13 +21,15 @@ import { setupPageErrorHandling } from '../../support/test-config';
 import { expandSpaceByName, expandPageByName } from '../../support/page-utils';
 
 const TEST_EMAIL = 'pdf_db_relation@synapsenote.io';
-const TEST_PASSWORD = 'REDACTED_TEST_PASSWORD';
+const TEST_PASSWORD = process.env.SYNAPSENOTE_E2E_SEEDED_PASSWORD ?? '';
 const DATABASE_NAME = 'New Database';
 const RELATED_DB_NAME = 'Related DB';
 const GETTING_STARTED = 'Getting started';
 const RELATION_CONTENT = 'Related DB content';
 
 test.describe('Relation Cell Refresh', () => {
+  test.skip(!TEST_PASSWORD, 'Set SYNAPSENOTE_E2E_SEEDED_PASSWORD to run seeded relation-cell tests.');
+
   test.beforeEach(async ({ page }) => {
     setupPageErrorHandling(page);
     await page.setViewportSize({ width: 1600, height: 900 });

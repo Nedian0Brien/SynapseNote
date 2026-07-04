@@ -16,7 +16,8 @@ test.describe('Real Authentication Login', () => {
 
   // Test account credentials
   const testEmail = 'db_blob_user@synapsenote.io';
-  const testPassword = 'REDACTED_TEST_PASSWORD';
+  const testPassword = process.env.SYNAPSENOTE_E2E_SEEDED_PASSWORD ?? '';
+  test.skip(!testPassword, 'Set SYNAPSENOTE_E2E_SEEDED_PASSWORD to run seeded auth tests.');
 
   test.beforeEach(async ({ page }) => {
     page.on('pageerror', (err) => {
@@ -141,7 +142,7 @@ test.describe('Real Authentication Login', () => {
     request,
   }) => {
     const originalPassword = testPassword;
-    const newPassword = 'REDACTED_TEST_PASSWORD';
+    const newPassword = `${originalPassword}-rotation`;
     let passwordChanged = false;
     let latestAccessToken = '';
 
