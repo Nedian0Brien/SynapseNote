@@ -8897,9 +8897,55 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
         // are intentionally absent from INLINE_RENDERABLE_EXTENSIONS so no other
         // branch serves them as a plain same-origin document.
         const isSandboxedHtml = SANDBOXED_HTML_EXTENSIONS.has(assetExt);
+        const rangeHeader = req.headers.range;
+        let rangeStart = 0;
+        let rangeEnd = Math.max(0, stat.size - 1);
+        let responseStatus = 200;
+        if (rangeHeader !== undefined) {
+          const match = /^bytes=(\d*)-(\d*)$/.exec(rangeHeader.trim());
+          let valid = match !== null && stat.size > 0;
+          if (valid && match) {
+            const startToken = match[1] ?? '';
+            const endToken = match[2] ?? '';
+            if (startToken === '' && endToken === '') {
+              valid = false;
+            } else if (startToken === '') {
+              const suffixLength = Number(endToken);
+              valid = Number.isSafeInteger(suffixLength) && suffixLength > 0;
+              if (valid) {
+                rangeStart = Math.max(0, stat.size - suffixLength);
+                rangeEnd = stat.size - 1;
+              }
+            } else {
+              rangeStart = Number(startToken);
+              rangeEnd = endToken === '' ? stat.size - 1 : Number(endToken);
+              valid =
+                Number.isSafeInteger(rangeStart) &&
+                Number.isSafeInteger(rangeEnd) &&
+                rangeStart >= 0 &&
+                rangeStart < stat.size &&
+                rangeEnd >= rangeStart;
+              if (valid) rangeEnd = Math.min(rangeEnd, stat.size - 1);
+            }
+          }
+          if (!valid) {
+            res.writeHead(416, {
+              'Accept-Ranges': 'bytes',
+              'Content-Range': `bytes */${stat.size}`,
+              'Cache-Control': 'no-store',
+              'Access-Control-Expose-Headers': 'Accept-Ranges, Content-Range, Content-Length',
+            });
+            res.end();
+            return;
+          }
+          responseStatus = 206;
+        }
+        const contentLength = responseStatus === 206 ? rangeEnd - rangeStart + 1 : stat.size;
         const headers: Record<string, string> = {
           'Content-Type': contentType,
-          'Content-Length': String(stat.size),
+          'Content-Length': String(contentLength),
+          'Accept-Ranges': 'bytes',
+          'Access-Control-Expose-Headers': 'Accept-Ranges, Content-Range, Content-Length',
           'X-Content-Type-Options': 'nosniff',
           'Content-Disposition':
             INLINE_RENDERABLE_EXTENSIONS.has(assetExt) || isSandboxedHtml ? 'inline' : 'attachment',
@@ -8915,11 +8961,20 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           // `SANDBOXED_HTML_CSP`. Mirrors the serve middleware.
           headers['Content-Security-Policy'] = SANDBOXED_HTML_CSP;
         }
-        res.writeHead(200, headers);
+        if (responseStatus === 206) {
+          headers['Content-Range'] = `bytes ${rangeStart}-${rangeEnd}/${stat.size}`;
+        }
+        res.writeHead(responseStatus, headers);
         try {
-          await pipeline(createReadStream(canonicalPath), res);
+          await pipeline(
+            createReadStream(
+              canonicalPath,
+              responseStatus === 206 ? { start: rangeStart, end: rangeEnd } : undefined,
+            ),
+            res,
+          );
         } catch (streamError) {
-          // `writeHead(200)` ran above so `res.headersSent` is always true
+          // `writeHead(...)` ran above so `res.headersSent` is always true
           // here — the only correct cleanup is to destroy the socket so
           // the client sees a connection-level failure rather than a
           // truncated 200 with no error signal. Log structured before

@@ -29,11 +29,11 @@ import { computeSelectionStats, type DocumentStats } from '@/lib/document-stats'
  */
 export const SELECTION_STATS_DEBOUNCE_MS = 120;
 
-/** The edit surfaces that can hold a selection for a given doc. `wysiwyg` and
- *  `source` are the two body editors; `frontmatter` is the property panel, which
- *  publishes a selection-context snapshot (not stats) when the user highlights
- *  property text so the composer treats it like a body selection. */
-export type EditorSurface = 'wysiwyg' | 'source' | 'frontmatter';
+/** The surfaces that can hold a selection for a given document or asset.
+ *  `wysiwyg` and `source` are the two body editors; `frontmatter` is the
+ *  property panel; `pdf` is the selectable PDF geometry layer. The latter two
+ *  publish selection-context snapshots only (not footer stats). */
+export type EditorSurface = 'wysiwyg' | 'source' | 'frontmatter' | 'pdf';
 
 const statsByDocSurface = new Map<string, DocumentStats>();
 const listeners = new Set<() => void>();

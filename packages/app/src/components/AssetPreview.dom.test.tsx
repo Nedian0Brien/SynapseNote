@@ -41,7 +41,7 @@ mock.module('@/lib/config-provider', () => ({
   }),
 }));
 
-// `<Pdf>` lazy-loads pdfjs-dist via `await import()` inside an effect and
+// `<Pdf>` lazy-loads the EmbedPDF/PDFium implementation and
 // uses `ResizeObserver` synchronously during render to compute fit-width /
 // fit-height base scale. jsdom provides neither, and booting pdfjs in a
 // node test is gratuitous when the contract being tested is
@@ -51,8 +51,18 @@ mock.module('@/lib/config-provider', () => ({
 // component. Sibling `Pdf.dom.test.tsx` (per `bun run test:dom`'s
 // substrate) is the right place for Pdf's internal coverage.
 mock.module('@/editor/components/Pdf', () => ({
-  Pdf: (props: { src?: string; title?: string; fillContainer?: boolean }) => (
-    <div data-testid="pdf-stub" data-src={props.src} data-fill={String(!!props.fillContainer)}>
+  Pdf: (props: {
+    src?: string;
+    title?: string;
+    fillContainer?: boolean;
+    selectionDocumentName?: string;
+  }) => (
+    <div
+      data-testid="pdf-stub"
+      data-src={props.src}
+      data-fill={String(!!props.fillContainer)}
+      data-selection-document={props.selectionDocumentName}
+    >
       pdf:{props.title ?? ''}
     </div>
   ),
@@ -141,6 +151,7 @@ describe('AssetPreview — image loading-state placeholder (PRD-6638)', () => {
     expect(pdf).not.toBeNull();
     expect(pdf?.dataset.src).toContain('paper.pdf');
     expect(pdf?.dataset.fill).toBe('true');
+    expect(pdf?.dataset.selectionDocument).toBe('assets/paper.pdf');
     expect(container.querySelector('img')).toBeNull();
     expect(container.querySelector('video')).toBeNull();
     expect(container.querySelector('audio')).toBeNull();

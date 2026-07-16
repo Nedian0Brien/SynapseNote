@@ -9,6 +9,11 @@ import { subscribeToActiveTerminalInput } from './handoff/terminal-input-events'
 
 // The doc the mocked DocumentContext reports (see the useDocumentContext mock).
 const TEST_DOC = 'docs/notes';
+let mockActiveDocName: string | null = TEST_DOC;
+let mockActiveTarget: Record<string, unknown> | null = {
+  kind: 'doc',
+  docName: TEST_DOC,
+};
 
 // Controls what the mocked TerminalSessionsHost reports via
 // `onActiveSessionCliChange` — i.e. whether the active terminal tab is a running
@@ -84,7 +89,18 @@ mock.module('@/lib/use-workspace', () => ({
 }));
 
 mock.module('@/editor/DocumentContext', () => ({
-  useDocumentContext: () => ({ activeDocName: 'docs/notes', collabUrl: 'ws://test' }),
+  useDocumentContext: () => ({
+    activeDocName: mockActiveDocName,
+    activeTarget: mockActiveTarget,
+    collabUrl: 'ws://test',
+  }),
+}));
+
+mock.module('./PageListContext', () => ({
+  usePageList: () => ({
+    pageMeta: new Map([[TEST_DOC, { docExt: '.md' }]]),
+    pageTitles: new Map([[TEST_DOC, 'Notes']]),
+  }),
 }));
 
 mock.module('@/editor/use-editor-mode', () => ({
@@ -109,10 +125,12 @@ mock.module('./TerminalSessionsHost', () => ({
     visible,
     launch,
     onActiveSessionCliChange,
+    selectionContext,
   }: {
     visible?: boolean;
     launch?: { nonce: number; stagePaste?: string } | null;
     onActiveSessionCliChange?: (isCli: boolean) => void;
+    selectionContext?: { documentPath: string; markdown: string } | null;
   }) => {
     // Report the test-controlled CLI-active state up, as the real host does from
     // its active session's launch descriptor.
@@ -125,6 +143,8 @@ mock.module('./TerminalSessionsHost', () => ({
         data-visible={String(visible)}
         data-launch-nonce={launch ? String(launch.nonce) : 'none'}
         data-launch-stage={launch?.stagePaste ?? 'none'}
+        data-selection-path={selectionContext?.documentPath ?? 'none'}
+        data-selection-text={selectionContext?.markdown ?? 'none'}
       />
     );
   },
@@ -165,6 +185,42 @@ async function renderEditorPane() {
   // deterministically before assertions read viewMenuPushes / data-visible.
   await act(async () => {});
 }
+
+describe('EditorPane chat selection context', () => {
+  afterEach(() => {
+    cleanup();
+    delete (window as { okDesktop?: unknown }).okDesktop;
+    publishSelectionContext('assets/report.pdf', 'pdf', null);
+    mockActiveDocName = TEST_DOC;
+    mockActiveTarget = { kind: 'doc', docName: TEST_DOC };
+  });
+
+  test('threads a standalone PDF drag to the chat composer with its asset identity', async () => {
+    (window as { okDesktop?: unknown }).okDesktop = makeOkDesktopStub().stub;
+    mockActiveDocName = null;
+    mockActiveTarget = {
+      kind: 'asset',
+      assetPath: 'assets/report.pdf',
+      mediaKind: 'pdf',
+    };
+    publishSelectionContext('assets/report.pdf', 'pdf', {
+      surface: 'pdf',
+      docName: 'assets/report.pdf',
+      markdown: 'Selected annual revenue',
+      charLen: 23,
+      lineCount: 1,
+    });
+
+    await renderEditorPane();
+
+    expect(screen.getByTestId('terminal-dock').getAttribute('data-selection-path')).toBe(
+      'assets/report.pdf',
+    );
+    expect(screen.getByTestId('terminal-dock').getAttribute('data-selection-text')).toBe(
+      'Selected annual revenue',
+    );
+  });
+});
 
 describe('EditorPane auto-sync onboarding gate', () => {
   afterEach(() => {

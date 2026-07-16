@@ -84,7 +84,7 @@ function AssetPreviewBody({ assetPath, mediaKind }: AssetPreviewProps) {
     return (
       <main className="flex h-full min-h-0 flex-col bg-background" aria-label={fileName}>
         <div className="min-h-0 flex-1 overflow-hidden">
-          <Pdf src={src} title={fileName} fillContainer />
+          <Pdf src={src} title={fileName} fillContainer selectionDocumentName={assetPath} />
         </div>
       </main>
     );

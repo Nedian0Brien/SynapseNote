@@ -9,6 +9,7 @@ import { type EditorModeValue, useEditorMode } from '@/editor/use-editor-mode';
 import { useGitSyncStatus } from '@/hooks/use-git-sync-status';
 import { useInstalledClis } from '@/hooks/use-installed-clis';
 import { useNoPushPermissionToast } from '@/hooks/use-no-push-permission-toast';
+import { useSelectionContext } from '@/hooks/use-selection-context';
 import { useWorktreeAutoSyncNotice } from '@/hooks/use-worktree-autosync-notice';
 import { useConfigContext } from '@/lib/config-provider';
 import { resolveDefaultCli } from '@/lib/default-cli-resolver';
@@ -24,12 +25,14 @@ import { loadStickyAgent } from '@/lib/unified-agent-store';
 import { AuthModal } from './AuthModal';
 import { AutoSyncOnboardingDialog } from './AutoSyncOnboardingDialog';
 import { shouldShowAutoSyncOnboarding } from './auto-sync-onboarding-gate';
+import type { ChatContextChip, CliChatSelectionContext } from './chat/cli-chat-types';
 import { type PanelTab, TABS } from './DocPanel';
 import { EditorArea, type TerminalPlacement } from './EditorArea';
 import { EditorHeader } from './EditorHeader';
 import { composeTerminalSelectionPaste } from './handoff/compose-terminal-selection';
 import { requestActiveTerminalInput } from './handoff/terminal-input-events';
 import { subscribeToTerminalLaunchRequests } from './handoff/terminal-launch-events';
+import { usePageList } from './PageListContext';
 import { TerminalSessionsHost } from './TerminalSessionsHost';
 
 /**
@@ -44,6 +47,12 @@ export interface TerminalLaunchIntent {
   readonly prompt: string | null;
   readonly cli: TerminalCli;
   readonly nonce: number;
+  /** Human-sized text shown in the user bubble; `prompt` remains the full agent contract. */
+  readonly displayPrompt?: string;
+  /** Existing Ask AI context rendered as chips above the conversation. */
+  readonly context?: readonly ChatContextChip[];
+  /** CLI-native conversation id restored after a renderer reload. */
+  readonly resumeSessionId?: string;
   /** Text to write into the launched CLI's input once it is up — NOT submitted.
    *  Used by the ⌘J/⇧⌘J selection-send so the passage is staged for the user to
    *  add to and send themselves. `prompt` stays null so nothing auto-runs.
@@ -173,7 +182,40 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
   const { projectConfig, projectLocalConfig, projectLocalSynced, projectSynced } =
     useConfigContext();
 
-  const { activeDocName } = useDocumentContext();
+  const { activeDocName, activeTarget } = useDocumentContext();
+  const { pageMeta, pageTitles } = usePageList();
+  const activeBodySelection = useSelectionContext(activeDocName, editorMode);
+  // Inline PDFs publish under their owning doc name; a standalone PDF asset
+  // publishes under its asset path. Both feed the same chat attachment model.
+  const activePdfSelectionName =
+    activeTarget?.kind === 'asset' && activeTarget.mediaKind === 'pdf'
+      ? activeTarget.assetPath
+      : activeDocName;
+  const activePdfSelection = useSelectionContext(activePdfSelectionName, 'pdf');
+  const activeSelection = activeBodySelection ?? activePdfSelection;
+  const chatSelectionContext: CliChatSelectionContext | null = (() => {
+    if (activeSelection === null) return null;
+    const basename = activeSelection.docName.split('/').at(-1) ?? activeSelection.docName;
+    const documentTitle = pageTitles.get(activeSelection.docName) ?? basename;
+    const isPdfAsset =
+      activeTarget?.kind === 'asset' && activeTarget.assetPath === activeSelection.docName;
+    const documentPath =
+      isPdfAsset || /\.(md|mdx)$/i.test(activeSelection.docName)
+        ? activeSelection.docName
+        : `${activeSelection.docName}${pageMeta.get(activeSelection.docName)?.docExt ?? '.md'}`;
+    return {
+      documentTitle,
+      documentPath,
+      markdown: activeSelection.markdown,
+      lineCount: activeSelection.lineCount,
+      ...(activeSelection.sourceLineStart === undefined
+        ? {}
+        : { startLine: activeSelection.sourceLineStart }),
+      ...(activeSelection.sourceLineEnd === undefined
+        ? {}
+        : { endLine: activeSelection.sourceLineEnd }),
+    };
+  })();
 
   // Onboarding modal: open once per machine per project when every gate
   // input aligns. Decision logic lives in `shouldShowAutoSyncOnboarding`
@@ -303,10 +345,10 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
   // its own tab and the dock can dedup re-renders by nonce without dropping a
   // genuinely new launch. Desktop-only; the web host never renders the entry point.
   useEffect(() => {
-    return subscribeToTerminalLaunchRequests((prompt, cli) => {
+    return subscribeToTerminalLaunchRequests((prompt, cli, options) => {
       setTerminalVisible(true);
       launchNonceRef.current += 1;
-      setTerminalLaunch({ prompt, cli, nonce: launchNonceRef.current });
+      setTerminalLaunch({ prompt, cli, nonce: launchNonceRef.current, ...options });
     });
   }, []);
 
@@ -458,6 +500,7 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
           onActiveSessionCliChange={(isCli) => {
             activeSessionIsCliRef.current = isCli;
           }}
+          selectionContext={chatSelectionContext}
         />
       ) : null}
       <AuthModal

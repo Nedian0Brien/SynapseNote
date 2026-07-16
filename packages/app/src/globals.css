@@ -225,6 +225,91 @@
   --animate-agent-breathing: agent-breathing 2.4s ease-in-out infinite;
   --animate-undo-ready: undo-ready 600ms var(--ease-out-strong) forwards;
 
+  /* Chat motion — entry movement communicates execution order without moving
+     already-settled history. Short one-shot transitions keep streaming text
+     readable; only active work indicators repeat. */
+  @keyframes chat-send-in {
+    0% {
+      opacity: 0.35;
+      transform: translate3d(0, 22px, 0) scale(0.94);
+    }
+    68% {
+      opacity: 1;
+      transform: translate3d(0, -2px, 0) scale(1.01);
+    }
+    100% {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+  }
+
+  @keyframes chat-assistant-in {
+    0% {
+      opacity: 0;
+      transform: translate3d(0, 8px, 0) scale(0.985);
+    }
+    100% {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+  }
+
+  @keyframes chat-activity-in {
+    0% {
+      opacity: 0;
+      transform: translate3d(-4px, 5px, 0);
+    }
+    100% {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  @keyframes chat-tool-working {
+    0%,
+    100% {
+      transform: translateY(0) rotate(-7deg);
+    }
+    50% {
+      transform: translateY(-1px) rotate(8deg);
+    }
+  }
+
+  @keyframes chat-tool-complete {
+    0% {
+      opacity: 0.4;
+      transform: scale(0.65);
+    }
+    65% {
+      opacity: 1;
+      transform: scale(1.16);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes chat-generation-dot {
+    0%,
+    60%,
+    100% {
+      opacity: 0.3;
+      transform: translateY(0);
+    }
+    30% {
+      opacity: 1;
+      transform: translateY(-2px);
+    }
+  }
+
+  --animate-chat-send: chat-send-in 320ms var(--ease-out-strong) both;
+  --animate-chat-assistant: chat-assistant-in 220ms var(--ease-out-strong) both;
+  --animate-chat-activity: chat-activity-in 180ms var(--ease-out-strong) both;
+  --animate-chat-tool-working: chat-tool-working 900ms ease-in-out infinite;
+  --animate-chat-tool-complete: chat-tool-complete 260ms var(--ease-out-strong) both;
+  --animate-chat-generation-dot: chat-generation-dot 900ms ease-in-out infinite;
+
   @keyframes sidebar-push-pulse {
     0% {
       box-shadow: inset 4px 0 0 0 hsl(var(--primary) / 0);
@@ -3668,12 +3753,10 @@ html.electron-mode [data-slot="sidebar-inner"] {
   border: 0;
 }
 
-/* 7c-bis. PDF (Obsidian-parity `![[doc.pdf]]` — Pdf.tsx renders pages
- * to canvas via pdfjs-dist, no iframe). Three regions: toolbar (title +
- * page-nav controls), pages container (scrollable canvas list), and the
- * canvas pages themselves. Container height is set inline by Pdf.tsx
- * from the `height=N` anchor parameter (default 600px); per-page width
- * is computed at render time so the viewer fits the prose column.
+/* 7c-bis. PDF (Obsidian-parity `![[doc.pdf]]` — EmbedPDF/PDFium, no
+ * iframe). The scroll plugin virtualizes page render layers; its selection
+ * plugin draws geometry-backed highlight rectangles instead of mounting a
+ * transparent DOM text layer over every cached page.
  */
 .ok-pdf {
   display: flex;
@@ -3844,16 +3927,16 @@ html.electron-mode [data-slot="sidebar-inner"] {
 .ok-pdf-sidebar {
   flex: 0 0 auto;
   width: 9rem;
-  overflow-y: auto;
-  padding: 0.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
+  overflow-x: hidden;
+  padding-inline: 0.5rem;
   border-right: 1px solid var(--border);
   background: var(--background);
 }
 
 .ok-pdf-thumb {
+  position: absolute;
+  left: 0;
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -3871,9 +3954,10 @@ html.electron-mode [data-slot="sidebar-inner"] {
   border-color: var(--ring, var(--foreground));
   background-color: var(--muted);
 }
-.ok-pdf-thumb-canvas {
+.ok-pdf-thumb-image {
   display: block;
   max-width: 100%;
+  object-fit: contain;
   background: white;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   border-radius: 1px;
@@ -3884,52 +3968,35 @@ html.electron-mode [data-slot="sidebar-inner"] {
   font-variant-numeric: tabular-nums;
 }
 
-/* Pages container — default vertical column. Two-page modes flip the
- * layout to a 2-column grid via the `data-layout` selector below. */
+/* EmbedPDF owns the scrollport and virtual page geometry. This wrapper only
+ * gives the viewport the remaining flex space and clips nested scrollbars. */
 .ok-pdf-pages {
   flex: 1;
-  overflow: auto;
-  display: flex;
-  flex-direction: column;
-  /* `align-items: safe center` keeps narrow canvases centered horizontally
-   * but falls back to `start` once a page (post-zoom) is wider than the
-   * container — without `safe`, an oversized item gets centered by the
-   * flex layout, which prevents the user from scrolling all the way to
-   * its left edge. */
-  align-items: safe center;
-  gap: 0.5rem;
-  padding: 0.75rem;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
   background-color: color-mix(in oklab, var(--muted) 70%, transparent);
 }
 
-.ok-pdf-pages[data-layout="two-odd"],
-.ok-pdf-pages[data-layout="two-even"] {
-  display: grid;
-  grid-template-columns: repeat(2, max-content);
-  justify-content: center;
-  column-gap: 0.75rem;
-  row-gap: 0.5rem;
-  align-items: start;
+.ok-pdf-viewport {
+  overscroll-behavior: contain;
+  background-color: color-mix(in oklab, var(--muted) 70%, transparent);
 }
 
-/* Two-page (even) — page 1 is a "cover" alone on the right, then pairs
- * (2,3) (4,5) … Achieved by shifting the first canvas to grid column 2;
- * subsequent pages flow normally starting at column 1. */
-.ok-pdf-pages[data-layout="two-even"] > .ok-pdf-page:first-child {
-  grid-column-start: 2;
+.ok-pdf-page-container {
+  direction: ltr;
+  flex-shrink: 0;
+  overflow: hidden;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  border-radius: 2px;
 }
 
 .ok-pdf-page {
   display: block;
-  /* No `max-width: 100%` — the inline `style.width` set by `Pdf.tsx` is
-   * authoritative. At zoom > 1× the canvas is intentionally wider than
-   * its parent and the container's `overflow: auto` (above) handles the
-   * horizontal scroll. Clamping to 100% would silently re-floor zoom
-   * to whichever fit-* base scale the parent's width can hold. */
-  flex-shrink: 0;
-  background: white;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-  border-radius: 2px;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
 }
 
 .ok-pdf-loading,

@@ -106,6 +106,8 @@ interface TerminalCreateRequest {
    * Omitted for a plain terminal tab. Forwarded verbatim to the host's create.
    */
   launchCommand?: string;
+  /** Disable persistent history for app-generated structured chat commands. */
+  privateHistory?: boolean;
 }
 
 interface TerminalAddressedRequest {
@@ -159,6 +161,8 @@ interface SessionState {
   /** Sticky per-session tab number the renderer assigns and pushes via set-meta;
    *  echoed back on reload so the tab keeps its number. Null until reported. */
   ordinal: number | null;
+  chatCli: 'codex' | 'claude' | null;
+  chatSessionId: string | null;
   /** Display position, ascending. Defaults to creation order; the renderer
    *  overwrites it via set-order on a drag / keyboard reorder, and `listSessions`
    *  sorts by it so a reload restores the user's arrangement. */
@@ -244,7 +248,12 @@ export interface TerminalManager {
    * window/ptyId is a no-op (the session may have exited).
    */
   setSessionMeta(
-    req: TerminalAddressedRequest & { customLabel?: string | null; ordinal?: number },
+    req: TerminalAddressedRequest & {
+      customLabel?: string | null;
+      ordinal?: number;
+      chatCli?: 'codex' | 'claude' | null;
+      chatSessionId?: string | null;
+    },
   ): void;
   /**
    * Persist the tab display order (`orderedPtyIds` in visual order) so a reorder
@@ -517,6 +526,8 @@ export function createTerminalManager(deps: TerminalManagerDeps): TerminalManage
         commandRan: false,
         customLabel: null,
         ordinal: null,
+        chatCli: null,
+        chatSessionId: null,
         order: nextOrder,
       });
       // Record the concurrency reached by this open (1 for a solo tab, N for the
@@ -529,7 +540,8 @@ export function createTerminalManager(deps: TerminalManagerDeps): TerminalManage
         cwd: req.projectRoot,
         cols: req.cols,
         rows: req.rows,
-        launchCommand: req.launchCommand,
+        ...(req.launchCommand === undefined ? {} : { launchCommand: req.launchCommand }),
+        ...(req.privateHistory ? { privateHistory: true } : {}),
       });
       return { ok: true, ptyId };
     },
@@ -585,6 +597,8 @@ export function createTerminalManager(deps: TerminalManagerDeps): TerminalManage
           ptyId,
           customLabel: session.customLabel,
           ordinal: session.ordinal,
+          ...(session.chatCli === null ? {} : { chatCli: session.chatCli }),
+          ...(session.chatSessionId === null ? {} : { chatSessionId: session.chatSessionId }),
         }));
     },
 
@@ -593,6 +607,8 @@ export function createTerminalManager(deps: TerminalManagerDeps): TerminalManage
       if (!session) return;
       if (req.customLabel !== undefined) session.customLabel = req.customLabel;
       if (req.ordinal !== undefined) session.ordinal = req.ordinal;
+      if (req.chatCli !== undefined) session.chatCli = req.chatCli;
+      if (req.chatSessionId !== undefined) session.chatSessionId = req.chatSessionId;
     },
 
     setSessionOrder(req): void {

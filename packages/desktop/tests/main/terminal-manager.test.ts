@@ -1049,6 +1049,27 @@ describe('createTerminalManager — reload-survival metadata (label + order)', (
     expect(h.mgr.listSessions(1)).toEqual([{ ptyId: 'pty-1', customLabel: null, ordinal: 5 }]);
   });
 
+  test('retains the structured chat CLI and native session id across reload', () => {
+    const h = makeManager();
+    const wc = makeWebContents();
+    h.mgr.create({ windowId: 1, webContents: wc, projectRoot: PROJECT, cols: 80, rows: 24 });
+    h.mgr.setSessionMeta({
+      windowId: 1,
+      ptyId: 'pty-1',
+      chatCli: 'codex',
+      chatSessionId: 'thread-1',
+    });
+    expect(h.mgr.listSessions(1)).toEqual([
+      {
+        ptyId: 'pty-1',
+        customLabel: null,
+        ordinal: null,
+        chatCli: 'codex',
+        chatSessionId: 'thread-1',
+      },
+    ]);
+  });
+
   test('a session created after a reorder appends after the reordered block', () => {
     const h = makeManager();
     const wc = makeWebContents();

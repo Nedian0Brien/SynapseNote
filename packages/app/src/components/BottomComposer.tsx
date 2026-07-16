@@ -445,11 +445,12 @@ export function BottomComposer({
   // Capture the document's live selection as a removable snapshot pill. Every
   // fresh non-empty selection replaces the pill; collapsing the selection leaves
   // it pinned (the user can keep typing or remove it with the ×). Two live
-  // sources feed it: the active body surface (wysiwyg / source) AND the
-  // frontmatter property panel — a highlight in either pins the same pill, so a
-  // property-value selection feeds the composer exactly like a body selection.
+  // sources feed it: the active body surface (wysiwyg / source), the frontmatter
+  // property panel, and an inline PDF selection layer. A highlight in any of them
+  // pins the same pill, so PDF passages need no copy/paste step.
   const liveSelection = useSelectionContext(activeDocOrNull, effectiveSurface);
   const liveFrontmatterSelection = useSelectionContext(activeDocOrNull, 'frontmatter');
+  const livePdfSelection = useSelectionContext(activeDocOrNull, 'pdf');
   const [pinnedSelection, setPinnedSelection] = useState<SelectionSnapshot | null>(null);
   const [selectionExpanded, setSelectionExpanded] = useState(false);
   useEffect(() => {
@@ -458,6 +459,9 @@ export function BottomComposer({
   useEffect(() => {
     if (liveFrontmatterSelection) setPinnedSelection(liveFrontmatterSelection);
   }, [liveFrontmatterSelection]);
+  useEffect(() => {
+    if (livePdfSelection) setPinnedSelection(livePdfSelection);
+  }, [livePdfSelection]);
 
   // Explicit pick this session wins; otherwise the sticky preference; otherwise
   // first-installed. `selectedId` stays null until the user picks so a

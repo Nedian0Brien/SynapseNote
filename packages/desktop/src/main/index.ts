@@ -167,6 +167,7 @@ import {
   resolveCliOnPath,
   runLoginShellProbe,
 } from './claude-readiness.ts';
+import { buildCliChatCommand, isCliChatLaunchInput } from './cli-chat-command.ts';
 import { requestUserConsent, walkExceedsCap } from './consent-dialog.ts';
 import {
   type CrashDetection,
@@ -3195,12 +3196,23 @@ function registerIpcHandlers() {
       projectRoot: projectPath,
       cols: clampPtyDimension(opts.cols, DEFAULT_PTY_COLS),
       rows: clampPtyDimension(opts.rows, DEFAULT_PTY_ROWS),
-      launchCommand: opts.launchCommand,
+      ...(opts.launchCommand === undefined ? {} : { launchCommand: opts.launchCommand }),
+      ...(opts.privateHistory ? { privateHistory: true } : {}),
     });
   });
   handle('ok:pty:input', async (event, req) => {
     const win = BrowserWindow.fromWebContents(event.sender);
-    if (win) terminalManager.input({ windowId: win.id, ptyId: req.ptyId, data: req.data });
+    if (win) {
+      if (isCliChatLaunchInput(req.chat)) {
+        terminalManager.input({
+          windowId: win.id,
+          ptyId: req.ptyId,
+          data: `${buildCliChatCommand(req.chat)}\r`,
+        });
+      } else if (typeof req.data === 'string') {
+        terminalManager.input({ windowId: win.id, ptyId: req.ptyId, data: req.data });
+      }
+    }
     return undefined;
   });
   handle('ok:pty:resize', async (event, req) => {

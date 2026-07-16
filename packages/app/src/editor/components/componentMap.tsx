@@ -16,13 +16,13 @@
  * placeholder stub deleted; the descriptor
  * is named `MermaidFence` so `<Mermaid />` JSX falls through to the
  * wildcard, enforcing fence-only authoring), Pdf is a
- * `pdfjs-dist`-backed multi-page canvas viewer with our own toolbar
+ * EmbedPDF/PDFium-backed virtualized viewer with our own toolbar
  * (3-prop shape at `./Pdf`; `anchor`-string parsed at render time for
  * `#page=N` / `#height=N` viewer parameters), and File is a generic
  * file-attachment row (1-prop canonical at `./File`; styled `<a>`
  * link with icon + filename + optional dim size — Notion-style inline
- * row, no card chrome). The pdfjs library is dynamic-imported via a
- * module-level singleton so it stays out of the main app bundle.
+ * row, no card chrome). PDFium and the viewer plugins are lazy-loaded and the
+ * WASM engine is shared across mounted PDF views.
  *
  * Compound-component machinery (Tabs/Tab + Accordions/Accordion)
  * was cut along with the Context Bridge Registry. Tabs/Tab
@@ -41,6 +41,7 @@
  *
  * '*' maps to UnregisteredBadgeRender for the wildcard fallback.
  */
+import { useDocumentContext } from '@/editor/DocumentContext';
 import { Accordion } from './Accordion.tsx';
 import { Audio } from './Audio.tsx';
 import { Callout } from './Callout.tsx';
@@ -60,6 +61,14 @@ function UnregisteredBadgeRender(props: { children?: React.ReactNode }) {
   return <div className="prose-no-margin">{props.children}</div>;
 }
 
+/** Inline PDFs belong to the active markdown document. Supplying that identity
+ * lets their geometry-backed selection publish directly into both Ask AI composer
+ * variants without adding document-context coupling to the reusable Pdf view. */
+function DocumentPdf(props: React.ComponentProps<typeof Pdf>) {
+  const { activeDocName } = useDocumentContext();
+  return <Pdf {...props} selectionDocumentName={activeDocName ?? undefined} />;
+}
+
 // biome-ignore lint/suspicious/noExplicitAny: Component props are heterogeneous across the canonical pack + transitional shim imports; no single prop type covers all
 export const componentMap: Record<string, React.ComponentType<any>> = {
   Callout,
@@ -73,12 +82,12 @@ export const componentMap: Record<string, React.ComponentType<any>> = {
   // `Pdf` is capitalized because there is NO `<pdf>` HTML element — it
   // follows the same React JSX convention as `Callout` and `Accordion`
   // (capital for non-native components). Same dispatch shape as the
-  // media canonicals. Renders via pdfjs-dist (lazy-loaded).
-  Pdf,
+  // media canonicals. Renders via lazily loaded EmbedPDF/PDFium.
+  Pdf: DocumentPdf,
   // `File` is capitalized for the same reason — no `<file>` HTML element.
   // Renders as a styled `<a>` inline row; covers every dropped attachment
   // including PDF (the wikilink form `![[doc.pdf]]` routes here too —
-  // explicit `<Pdf>` JSX is the opt-in path for the pdfjs canvas viewer).
+  // explicit `<Pdf>` JSX is the opt-in path for the bundled PDF viewer).
   File,
   // `Embed` is capitalized — no `<embed>` semantic match (HTML's
   // `<embed>` is for legacy plugin objects, not the iframe pattern).

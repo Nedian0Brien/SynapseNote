@@ -1435,11 +1435,34 @@ export interface RequestChannels {
    * `ok:pty:exit`).
    */
   'ok:pty:create': {
-    args: [opts: { cols: number; rows: number; launchCommand?: string }];
+    args: [opts: { cols: number; rows: number; launchCommand?: string; privateHistory?: boolean }];
     result: OkPtyCreateResult;
   };
   'ok:pty:input': {
-    args: [req: { ptyId: string; data: string }];
+    args: [
+      req: {
+        ptyId: string;
+        data?: string;
+        chat?: {
+          cli: 'codex' | 'claude';
+          prompt: string;
+          sessionId: string | null;
+          permissionMode: 'read-only' | 'workspace-write' | 'full-access';
+          modelSettings: {
+            model:
+              | 'gpt-5.6-sol'
+              | 'gpt-5.6-terra'
+              | 'gpt-5.6-luna'
+              | 'gpt-5.3-codex-spark'
+              | 'fable'
+              | 'opus'
+              | 'sonnet';
+            effort: 'low' | 'medium' | 'high' | 'xhigh' | 'ultra' | 'max';
+            speed: 'default' | 'fast';
+          };
+        };
+      },
+    ];
     result: undefined;
   };
   'ok:pty:resize': {
@@ -1482,7 +1505,15 @@ export interface RequestChannels {
    * reads it back). Fire-and-forget; a field omitted is left unchanged.
    */
   'ok:pty:set-meta': {
-    args: [req: { ptyId: string; customLabel?: string | null; ordinal?: number }];
+    args: [
+      req: {
+        ptyId: string;
+        customLabel?: string | null;
+        ordinal?: number;
+        chatCli?: 'codex' | 'claude' | null;
+        chatSessionId?: string | null;
+      },
+    ];
     result: undefined;
   };
   /**

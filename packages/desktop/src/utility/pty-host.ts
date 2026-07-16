@@ -35,6 +35,8 @@ export interface PtyCreateMessage {
    * exits. Omitted for a plain terminal tab (spawned as the bare `$SHELL -l -i`).
    */
   launchCommand?: string;
+  /** Disable persistent shell history for app-generated chat command lines. */
+  privateHistory?: boolean;
 }
 interface PtyInputMessage {
   type: 'input';
@@ -153,7 +155,8 @@ function asIncomingMessage(raw: unknown): PtyHostIncomingMessage | null {
       return typeof m.cwd === 'string' &&
         typeof m.cols === 'number' &&
         typeof m.rows === 'number' &&
-        (m.launchCommand === undefined || typeof m.launchCommand === 'string')
+        (m.launchCommand === undefined || typeof m.launchCommand === 'string') &&
+        (m.privateHistory === undefined || typeof m.privateHistory === 'boolean')
         ? (raw as PtyHostIncomingMessage)
         : null;
     case 'input':
@@ -287,7 +290,10 @@ export function setupPtyHost(deps: SetupPtyHostDeps): PtyHostHandle {
       sessions.delete(ptyId);
     }
     const shell = resolveShell(env, message.shell);
-    const shellEnv = buildShellEnv(env);
+    const shellEnv = {
+      ...buildShellEnv(env),
+      ...(message.privateHistory ? { HISTFILE: '/dev/null', SAVEHIST: '0' } : {}),
+    };
     let pty: PtyProcessLike;
     try {
       pty = deps.spawn(shell, buildShellArgs(shell, message.launchCommand), {

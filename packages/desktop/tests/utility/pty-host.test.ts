@@ -184,6 +184,16 @@ describe('setupPtyHost — create', () => {
     expect(env.PATH).toBe('/usr/bin');
   });
 
+  test('uses a non-persistent history environment for structured chat sessions', () => {
+    const h = makeHarness({
+      env: { SHELL: '/bin/zsh', PATH: '/usr/bin', HISTFILE: '/tmp/history' },
+    });
+    h.fire(CREATE({ privateHistory: true }));
+    const env = h.spawnCalls[0]?.options.env ?? {};
+    expect(env.HISTFILE).toBe('/dev/null');
+    expect(env.SAVEHIST).toBe('0');
+  });
+
   test('marks the shell as the OK Desktop terminal (OK_DESKTOP_TERMINAL=1)', () => {
     // Positive identity the project skill keys off to pick `ok open` over a
     // preview URL. Set even when the parent tries to clear it.

@@ -229,6 +229,27 @@ export function selectionSnapshotFromFrontmatter(
 }
 
 /**
+ * Capture text selected through the PDF viewer's glyph-geometry layer. PDFs
+ * have no stable source-line coordinates, so they follow the rich-text
+ * transport path: a short single line may inline, while larger passages carry
+ * the selected text as an anchor-style context payload.
+ */
+export function selectionSnapshotFromPdf(
+  text: string,
+  documentPath: string,
+): SelectionSnapshot | null {
+  const normalized = text.replace(/\r\n?/g, '\n').trim();
+  if (normalized === '') return null;
+  return {
+    surface: 'pdf',
+    docName: documentPath,
+    markdown: normalized,
+    charLen: normalized.length,
+    lineCount: (normalized.match(/\n/g)?.length ?? 0) + 1,
+  };
+}
+
+/**
  * Capture the source-mode (CodeMirror) selection: the sliced markdown plus the
  * real line range spanning all non-empty ranges, or `null` when nothing is
  * selected.

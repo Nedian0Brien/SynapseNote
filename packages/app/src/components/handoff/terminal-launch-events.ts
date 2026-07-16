@@ -15,28 +15,44 @@
  */
 
 import type { TerminalCli } from '@inkeep/open-knowledge-core';
+import type { ChatContextChip } from '../chat/cli-chat-types';
 
 const TERMINAL_LAUNCH_EVENT = 'open-knowledge:terminal-launch';
 
 interface TerminalLaunchDetail {
   readonly prompt: string;
   readonly cli: TerminalCli;
+  readonly displayPrompt?: string;
+  readonly context?: readonly ChatContextChip[];
 }
 
 export function requestTerminalLaunch(
   prompt: string,
   cli: TerminalCli,
-  target: Pick<Window, 'dispatchEvent'> | EventTarget = typeof window === 'undefined'
-    ? new EventTarget()
-    : window,
+  optionsOrTarget:
+    | { readonly displayPrompt?: string; readonly context?: readonly ChatContextChip[] }
+    | Pick<Window, 'dispatchEvent'>
+    | EventTarget = {},
+  explicitTarget?: Pick<Window, 'dispatchEvent'> | EventTarget,
 ): void {
+  const optionsIsTarget = 'dispatchEvent' in optionsOrTarget;
+  const options = optionsIsTarget ? {} : optionsOrTarget;
+  const target =
+    (optionsIsTarget ? optionsOrTarget : explicitTarget) ??
+    (typeof window === 'undefined' ? new EventTarget() : window);
   target.dispatchEvent(
-    new CustomEvent<TerminalLaunchDetail>(TERMINAL_LAUNCH_EVENT, { detail: { prompt, cli } }),
+    new CustomEvent<TerminalLaunchDetail>(TERMINAL_LAUNCH_EVENT, {
+      detail: { prompt, cli, ...options },
+    }),
   );
 }
 
 export function subscribeToTerminalLaunchRequests(
-  onRequest: (prompt: string, cli: TerminalCli) => void,
+  onRequest: (
+    prompt: string,
+    cli: TerminalCli,
+    options: { readonly displayPrompt?: string; readonly context?: readonly ChatContextChip[] },
+  ) => void,
   target: Pick<Window, 'addEventListener' | 'removeEventListener'> | EventTarget = typeof window ===
   'undefined'
     ? new EventTarget()
@@ -47,7 +63,12 @@ export function subscribeToTerminalLaunchRequests(
       event instanceof CustomEvent
         ? (event as CustomEvent<TerminalLaunchDetail>).detail
         : undefined;
-    if (detail && typeof detail.prompt === 'string') onRequest(detail.prompt, detail.cli);
+    if (detail && typeof detail.prompt === 'string') {
+      onRequest(detail.prompt, detail.cli, {
+        ...(detail.displayPrompt === undefined ? {} : { displayPrompt: detail.displayPrompt }),
+        ...(detail.context === undefined ? {} : { context: detail.context }),
+      });
+    }
   };
   target.addEventListener(TERMINAL_LAUNCH_EVENT, listener as EventListener);
   return () => target.removeEventListener(TERMINAL_LAUNCH_EVENT, listener as EventListener);

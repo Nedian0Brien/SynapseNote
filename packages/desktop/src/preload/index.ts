@@ -723,6 +723,9 @@ const bridge: OkDesktopBridge = {
     input: (ptyId, data) => {
       invoke('ok:pty:input', { ptyId, data }).catch(() => {});
     },
+    chatSend: (ptyId, input) => {
+      invoke('ok:pty:input', { ptyId, chat: input }).catch(() => {});
+    },
     resize: (ptyId, cols, rows) => {
       invoke('ok:pty:resize', { ptyId, cols, rows }).catch(() => {});
     },

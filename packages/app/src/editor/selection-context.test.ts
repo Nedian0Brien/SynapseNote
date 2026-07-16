@@ -16,6 +16,7 @@ import {
   type SelectionSnapshot,
   selectionChipLabel,
   selectionSnapshotFromFrontmatter,
+  selectionSnapshotFromPdf,
   selectionSnapshotFromSource,
   selectionSnapshotToCompose,
   subscribeSelectionContext,
@@ -32,7 +33,7 @@ function sourceView(doc: string, anchor: number, head: number): EditorView {
 
 afterEach(() => {
   // Clear any entries this test left behind (the store is module-global).
-  for (const surface of ['wysiwyg', 'source', 'frontmatter'] as const) {
+  for (const surface of ['wysiwyg', 'source', 'frontmatter', 'pdf'] as const) {
     publishSelectionContext('d', surface, null);
     publishSelectionContext('notes', surface, null);
   }
@@ -246,5 +247,24 @@ describe('selectionSnapshotFromFrontmatter', () => {
 
   test('counts lines across a multi-line property selection', () => {
     expect(selectionSnapshotFromFrontmatter('a\nb\nc', 'notes')?.lineCount).toBe(3);
+  });
+});
+
+describe('selectionSnapshotFromPdf', () => {
+  test('builds a PDF-surface snapshot with the asset path', () => {
+    expect(selectionSnapshotFromPdf('First line\nSecond line', 'assets/report.pdf')).toEqual({
+      surface: 'pdf',
+      docName: 'assets/report.pdf',
+      markdown: 'First line\nSecond line',
+      charLen: 22,
+      lineCount: 2,
+    });
+  });
+
+  test('normalizes CRLF and ignores whitespace-only selections', () => {
+    expect(selectionSnapshotFromPdf('  First\r\nSecond  ', 'report.pdf')?.markdown).toBe(
+      'First\nSecond',
+    );
+    expect(selectionSnapshotFromPdf(' \n ', 'report.pdf')).toBeNull();
   });
 });

@@ -149,10 +149,10 @@ test.describe('asset-click dispatcher — P9 E2E scenarios (SPEC 2026-04-23)', (
     // the `WikiEmbedPdf` compat was removed and PDF
     // wikilinks now route through `WikiEmbedFile` for visual parity
     // with .docx / .zip / etc. (the dropped-attachment chrome is
-    // uniform). The pdfjs canvas viewer is opt-in via the explicit
+    // uniform). The bundled PDF viewer is opt-in via the explicit
     // `<Pdf>` JSX form. This test pins that PDF wikilinks render as a
     // File row (`.ok-file-attachment`) — NOT as the prior `.ok-pdf`
-    // canvas viewer wrapper, and NOT as the link-mark chip fallback.
+    // PDF viewer wrapper, and NOT as the link-mark chip fallback.
     //
     // Asset-click dispatcher coverage for PDFs is preserved via P9.10
     // (hand-authored `[spec](./file.pdf)` markdown link still classifies
@@ -163,7 +163,7 @@ test.describe('asset-click dispatcher — P9 E2E scenarios (SPEC 2026-04-23)', (
     await page.waitForSelector('.ProseMirror:not(.composer-prosemirror)');
 
     // File row renders synchronously via componentMap['File'] —
-    // no async pdfjs-dist worker boot, no canvas allocation.
+    // no async PDF engine boot or page-render allocation.
     const fileRow = page.locator('.ok-file-attachment').first();
     await fileRow.waitFor({ state: 'visible', timeout: 5_000 });
 
@@ -173,7 +173,7 @@ test.describe('asset-click dispatcher — P9 E2E scenarios (SPEC 2026-04-23)', (
     const pdfChip = page.locator('span[data-link]').filter({ hasText: 'meeting.pdf' });
     await expect(pdfChip).toHaveCount(0);
 
-    // Also: no `.ok-pdf` canvas viewer wrapper — that would indicate a
+    // Also: no `.ok-pdf` bundled viewer wrapper — that would indicate a
     // regression where PDF auto-routing back to the pdfjs viewer was
     // re-introduced.
     const pdfWrapper = page.locator('.ok-pdf');

@@ -12,6 +12,8 @@ import {
 } from '@/lib/terminal-new-tab-store';
 import { loadStickyAgent, saveStickyAgent, terminalCliId } from '@/lib/unified-agent-store';
 import { cn } from '@/lib/utils';
+import { CliChatSession } from './chat/CliChatSession';
+import { type CliChatSelectionContext, isCliChatId } from './chat/cli-chat-types';
 import type { TerminalLaunchIntent } from './EditorPane';
 import { visibleTerminalClis } from './handoff/terminal-cli-display';
 import { subscribeToActiveTerminalInput } from './handoff/terminal-input-events';
@@ -127,6 +129,8 @@ interface TerminalSessionsHostProps {
    *  session's launch descriptor — a bare shell the user manually `claude`'d into
    *  reads as non-CLI, which is fine (it just starts a fresh CLI tab). */
   readonly onActiveSessionCliChange?: (isCli: boolean) => void;
+  /** Live editor passage offered to chat composers as a removable attachment. */
+  readonly selectionContext?: CliChatSelectionContext | null;
 }
 
 /**
@@ -151,6 +155,7 @@ export function TerminalSessionsHost({
   onToggleDock,
   onHasSessionsChange,
   onActiveSessionCliChange,
+  selectionContext = null,
 }: TerminalSessionsHostProps) {
   const { t } = useLingui();
 
@@ -245,9 +250,17 @@ export function TerminalSessionsHost({
     // shell spawned. Main outlives a renderer reload, so `list` reads it back.
     const session = sessionsRef.current.find((s) => s.id === id);
     if (session != null) {
+      const chatCli =
+        session.launch != null &&
+        session.launch.stagePaste === undefined &&
+        isCliChatId(session.launch.cli)
+          ? session.launch.cli
+          : null;
       bridge.terminal?.setMeta?.(ptyId, {
         ordinal: session.ordinal,
         customLabel: session.customLabel,
+        chatCli,
+        chatSessionId: session.launch?.resumeSessionId ?? null,
       });
     }
   }
@@ -502,6 +515,8 @@ export function TerminalSessionsHost({
         ptyId: string;
         customLabel: string | null;
         ordinal: number | null;
+        chatCli?: 'codex' | 'claude' | null;
+        chatSessionId?: string | null;
       }[] = [];
       try {
         survivors = (await bridge.terminal.list()) ?? [];
@@ -516,7 +531,15 @@ export function TerminalSessionsHost({
       if (survivors.length > 0) {
         const recovered = survivors.map((entry, index) => ({
           id: makeSessionId(index + 1),
-          launch: null,
+          launch:
+            entry.chatCli === 'codex' || entry.chatCli === 'claude'
+              ? {
+                  prompt: null,
+                  cli: entry.chatCli,
+                  nonce: 0,
+                  ...(entry.chatSessionId == null ? {} : { resumeSessionId: entry.chatSessionId }),
+                }
+              : null,
           title: null,
           // Restored from main so a rename + reorder survive a renderer reload;
           // ordinal falls back to positional for a session main never received one
@@ -763,24 +786,39 @@ export function TerminalSessionsHost({
               variant === 'window' && 'px-[22px] pb-[22px]',
             )}
           >
-            <TerminalGate
-              bridge={bridge}
-              launch={session.launch}
-              // On a renderer reload the session adopts its surviving PTY (live
-              // shell + replay) instead of spawning a fresh one; null for new tabs.
-              adoptPtyId={session.adoptPtyId}
-              // Track this session's live PTY id so the selection-bubble "Ask AI"
-              // input can reuse the open terminal (write into the live shell)
-              // rather than fall back to the composer. Adopted sessions report
-              // their id too, so reuse works for reload survivors.
-              onPtyId={(ptyId) => setSessionPtyId(session.id, ptyId)}
-              // OSC 0/2 title from the running program → this session's tab label.
-              onTitleChange={(title) => setSessionTitle(session.id, title)}
-              // The session's "Close terminal" affordance (shown on a refusal/exit
-              // notice) closes that tab — hiding the terminal only when it is the
-              // last one. The keyboard exit stays ⌘J.
-              onClose={() => closeSession(session.id)}
-            />
+            {session.launch != null &&
+            session.launch.stagePaste === undefined &&
+            isCliChatId(session.launch.cli) ? (
+              <CliChatSession
+                bridge={bridge}
+                cli={session.launch.cli}
+                launch={session.launch}
+                adoptPtyId={session.adoptPtyId}
+                onPtyId={(ptyId) => setSessionPtyId(session.id, ptyId)}
+                onTitleChange={(title) => setSessionTitle(session.id, title)}
+                onClose={() => closeSession(session.id)}
+                selectionContext={selectionContext}
+              />
+            ) : (
+              <TerminalGate
+                bridge={bridge}
+                launch={session.launch}
+                // On a renderer reload the session adopts its surviving PTY (live
+                // shell + replay) instead of spawning a fresh one; null for new tabs.
+                adoptPtyId={session.adoptPtyId}
+                // Track this session's live PTY id so the selection-bubble "Ask AI"
+                // input can reuse the open terminal (write into the live shell)
+                // rather than fall back to the composer. Adopted sessions report
+                // their id too, so reuse works for reload survivors.
+                onPtyId={(ptyId) => setSessionPtyId(session.id, ptyId)}
+                // OSC 0/2 title from the running program → this session's tab label.
+                onTitleChange={(title) => setSessionTitle(session.id, title)}
+                // The session's "Close terminal" affordance (shown on a refusal/exit
+                // notice) closes that tab — hiding the terminal only when it is the
+                // last one. The keyboard exit stays ⌘J.
+                onClose={() => closeSession(session.id)}
+              />
+            )}
           </TabsContent>
         ))}
       </TerminalTabStrip>

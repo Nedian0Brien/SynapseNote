@@ -45,7 +45,7 @@ import videoPreview from './preview-assets/video-preview.png';
  *
  *   - `render` — a hand-built React element that REPLACES the live render.
  *     Use this when the live component would be too heavy in a hover
- *     preview (PDF.js worker fetch, Mermaid lib load, cross-origin iframe),
+ *     preview (PDF engine worker fetch, Mermaid lib load, cross-origin iframe),
  *     OR depends on editor-rendered children that don't exist outside a PM
  *     mount (Tabs reads `data-tab-label` off children's DOM), OR depends
  *     on CSS scoped to `.ProseMirror` ancestors (File row's flex+gap).
@@ -118,7 +118,7 @@ const PREVIEW_CONFIG: Record<string, PreviewConfig> = {
     description: msg`Multi-page PDF viewer with toolbar controls (thumbnails, page nav, zoom).`,
     // Hand-built viewer mockup: toolbar (thumbnail toggle / page nav /
     // zoom) + thumbnail strip + page content. Live `<Pdf>` would fetch
-    // `pdfjs-dist` worker bytes and a sample PDF over the network on
+    // PDF engine worker bytes and a sample PDF over the network on
     // every menu open.
     render: () => (
       <div className="flex h-full w-full flex-col overflow-hidden rounded-md border border-border bg-background">

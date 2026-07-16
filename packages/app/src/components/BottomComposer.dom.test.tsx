@@ -156,10 +156,15 @@ mock.module('@/lib/use-workspace', () => ({
 // is a no-op here (the publishing path is covered in use-selection-context tests).
 let liveSelection: unknown = null;
 let liveFrontmatterSelection: unknown = null;
+let livePdfSelection: unknown = null;
 let pageMeta: ReadonlyMap<string, { docExt?: string }> = new Map();
 mock.module('@/hooks/use-selection-context', () => ({
   useSelectionContext: (_docName: string | null, surface: string) =>
-    surface === 'frontmatter' ? liveFrontmatterSelection : liveSelection,
+    surface === 'frontmatter'
+      ? liveFrontmatterSelection
+      : surface === 'pdf'
+        ? livePdfSelection
+        : liveSelection,
   usePublishFrontmatterSelection: () => {},
 }));
 
@@ -353,6 +358,7 @@ beforeEach(() => {
   builderReturnsNull = false;
   liveSelection = null;
   liveFrontmatterSelection = null;
+  livePdfSelection = null;
   pageMeta = new Map();
   mockInlineMentions = [];
   emitMentions = null;
@@ -1095,6 +1101,13 @@ describe('BottomComposer (compact selection chip + preview)', () => {
     charLen: 24,
     lineCount: 1,
   };
+  const pdfSel = {
+    surface: 'pdf',
+    docName: 'notes',
+    markdown: 'Passage selected from an inline PDF',
+    charLen: 35,
+    lineCount: 1,
+  };
 
   test('the chip label is compact (name + range), never raw markdown', async () => {
     liveSelection = headingSel;
@@ -1136,6 +1149,18 @@ describe('BottomComposer (compact selection chip + preview)', () => {
     fireEvent.click(screen.getByTestId('ask-ai-send'));
     await waitFor(() => expect(dispatchCalls).toHaveLength(1));
     expect(buildArgs[0]?.selection).toMatchObject({ kind: 'inline' });
+  });
+
+  test('an inline PDF selection pins and dispatches through the same selection pill', async () => {
+    livePdfSelection = pdfSel;
+    await renderComposer('notes');
+    expect(screen.getByTestId('composer-selection-pill')).toBeTruthy();
+    fireEvent.click(screen.getByTestId('ask-ai-send'));
+    await waitFor(() => expect(dispatchCalls).toHaveLength(1));
+    expect(buildArgs[0]?.selection).toMatchObject({
+      kind: 'inline',
+      markdown: 'Passage selected from an inline PDF',
+    });
   });
 });
 

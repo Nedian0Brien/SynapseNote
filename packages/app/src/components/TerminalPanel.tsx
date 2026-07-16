@@ -99,6 +99,8 @@ interface TerminalPanelProps {
    * panel would respawn and kill the running session.
    */
   readonly onPtyId?: (ptyId: string | null) => void;
+  /** Prevent app-generated chat commands from being persisted by the shell. */
+  readonly privateHistory?: boolean;
 }
 
 export function TerminalPanel({
@@ -110,6 +112,7 @@ export function TerminalPanel({
   launch = null,
   adoptPtyId = null,
   onPtyId,
+  privateHistory = false,
 }: TerminalPanelProps) {
   const { t } = useLingui();
   // Paint the panel chrome (the kill strip) with the exact xterm canvas color so
@@ -145,6 +148,7 @@ export function TerminalPanel({
           launch={launch}
           adoptPtyId={adoptForThisMount}
           onPtyId={onPtyId}
+          privateHistory={privateHistory}
         />
       </div>
     </section>
@@ -170,6 +174,7 @@ interface TerminalSessionProps {
   /** Reports the live PTY id up (or `null` on teardown) — see
    *  {@link TerminalPanelProps.onPtyId}. */
   readonly onPtyId?: (ptyId: string | null) => void;
+  readonly privateHistory?: boolean;
 }
 
 function TerminalSession({
@@ -181,6 +186,7 @@ function TerminalSession({
   launch = null,
   adoptPtyId = null,
   onPtyId,
+  privateHistory = false,
 }: TerminalSessionProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const onExitRef = useRef(onExit);
@@ -785,7 +791,12 @@ function TerminalSession({
 
       let result: Awaited<ReturnType<typeof bridge.terminal.create>>;
       try {
-        result = await bridge.terminal.create({ cols: term.cols, rows: term.rows, launchCommand });
+        result = await bridge.terminal.create({
+          cols: term.cols,
+          rows: term.rows,
+          ...(launchCommand === undefined ? {} : { launchCommand }),
+          ...(privateHistory ? { privateHistory: true } : {}),
+        });
       } catch (err) {
         // Surface for diagnostics: with multi-session a create() failure in one
         // tab is less visible (other tabs keep streaming), so log it like the
@@ -877,7 +888,7 @@ function TerminalSession({
     // adoptPtyId is stable for a session instance (a restart remounts via the
     // parent key rather than changing it), so listing it never re-runs this
     // mount/adopt effect — it only satisfies the exhaustive-deps check.
-  }, [bridge, adoptPtyId, launch]);
+  }, [bridge, adoptPtyId, launch, privateHistory]);
 
   // Re-skin the live terminal when the app theme changes. Mutating
   // `term.options.theme` re-paints in place, so an open session follows

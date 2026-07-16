@@ -3,6 +3,7 @@ import { lazy, type ReactNode, Suspense, useEffect, useRef, useState } from 'rea
 import { CommandPalette } from '@/components/CommandPalette';
 import { ConnectingBanner } from '@/components/ConnectingBanner';
 import { CreateProjectMenuTrigger } from '@/components/CreateProjectMenuTrigger';
+import type { ChatContextChip } from '@/components/chat/cli-chat-types';
 import { EditorPane } from '@/components/EditorPane';
 import { FileSidebar } from '@/components/FileSidebar';
 import { defaultInitialDir } from '@/components/file-tree-utils';
@@ -11,7 +12,10 @@ import {
   TerminalLaunchProvider,
 } from '@/components/handoff/TerminalLaunchContext';
 import { requestTerminalLaunch } from '@/components/handoff/terminal-launch-events';
-import { composeTerminalLaunchPrompt } from '@/components/handoff/useHandoffDispatch';
+import {
+  composeTerminalLaunchPrompt,
+  type HandoffDispatchInput,
+} from '@/components/handoff/useHandoffDispatch';
 import { InstallInClaudeDesktopDialog } from '@/components/InstallInClaudeDesktopDialog';
 import { McpConsentDialog } from '@/components/McpConsentDialog';
 import { isNewItemShortcut, NewItemDialog } from '@/components/NewItemDialog';
@@ -457,6 +461,53 @@ export function App() {
  * Settings) here while the editor itself (`EditorPane` → `EditorArea`) stays
  * fully editable.
  */
+function terminalChatContext(input: HandoffDispatchInput): readonly ChatContextChip[] {
+  if (input.compose?.scope === 'doc') {
+    return [
+      { kind: 'document', label: input.compose.docRelativePath },
+      ...(input.compose.selection === undefined
+        ? []
+        : [{ kind: 'selection' as const, label: 'Selection' }]),
+      ...input.compose.mentions.map((label) => ({ kind: 'mention' as const, label })),
+    ];
+  }
+  if (input.compose?.scope === 'folder') {
+    return [
+      { kind: 'folder', label: input.compose.folderRelativePath },
+      ...input.compose.mentions.map((label) => ({ kind: 'mention' as const, label })),
+    ];
+  }
+  if (input.compose?.scope === 'project') {
+    return [
+      { kind: 'project', label: 'Project' },
+      ...input.compose.mentions.map((label) => ({ kind: 'mention' as const, label })),
+    ];
+  }
+  if (input.selection !== undefined) {
+    return [
+      { kind: 'document', label: input.selection.relativePath },
+      { kind: 'selection', label: 'Selection' },
+    ];
+  }
+  if (input.ask !== undefined) return [{ kind: 'document', label: input.ask.relativePath }];
+  if (input.docContext !== null) {
+    return [{ kind: 'document', label: input.docContext.relativePath }];
+  }
+  if (input.folderRelativePath) return [{ kind: 'folder', label: input.folderRelativePath }];
+  return [{ kind: 'project', label: 'Project' }];
+}
+
+function terminalChatDisplayPrompt(input: HandoffDispatchInput): string {
+  return (
+    input.compose?.instruction ??
+    input.selection?.instruction ??
+    input.ask?.instruction ??
+    input.createDescription ??
+    input.instruction ??
+    'Open the current context'
+  );
+}
+
 function AppBody() {
   // Workspace omnibar: shared across web and Electron for file/folder
   // navigation and command dispatch. Electron additionally surfaces
@@ -481,7 +532,10 @@ function AppBody() {
   const terminalLaunch: TerminalLaunchContextValue | null = desktopBridge
     ? {
         launchInTerminal: (input, cli) => {
-          requestTerminalLaunch(composeTerminalLaunchPrompt(input, cli), cli);
+          requestTerminalLaunch(composeTerminalLaunchPrompt(input, cli), cli, {
+            displayPrompt: terminalChatDisplayPrompt(input),
+            context: terminalChatContext(input),
+          });
         },
         installedClis,
       }

@@ -909,6 +909,9 @@ export interface OkPtyListEntry {
   /** Sticky per-session tab number, preserved across a renderer reload; null
    *  until the renderer has reported it for a just-created session. */
   readonly ordinal: number | null;
+  /** Structured chat identity retained by main across a renderer reload. */
+  readonly chatCli?: 'codex' | 'claude' | null;
+  readonly chatSessionId?: string | null;
 }
 
 /**
@@ -1935,8 +1938,31 @@ export interface OkDesktopBridge {
       cols: number;
       rows: number;
       launchCommand?: string;
+      privateHistory?: boolean;
     }): Promise<OkPtyCreateResult>;
     input(ptyId: string, data: string): void;
+    /** Send validated structured chat input; main owns executable construction. */
+    chatSend(
+      ptyId: string,
+      input: {
+        cli: 'codex' | 'claude';
+        prompt: string;
+        sessionId: string | null;
+        permissionMode: 'read-only' | 'workspace-write' | 'full-access';
+        modelSettings: {
+          model:
+            | 'gpt-5.6-sol'
+            | 'gpt-5.6-terra'
+            | 'gpt-5.6-luna'
+            | 'gpt-5.3-codex-spark'
+            | 'fable'
+            | 'opus'
+            | 'sonnet';
+          effort: 'low' | 'medium' | 'high' | 'xhigh' | 'ultra' | 'max';
+          speed: 'default' | 'fast';
+        };
+      },
+    ): void;
     resize(ptyId: string, cols: number, rows: number): void;
     kill(ptyId: string): Promise<void>;
     drain(ptyId: string, bytes: number): void;
@@ -1959,7 +1985,15 @@ export interface OkDesktopBridge {
      * it survives a renderer reload — main outlives the reload, so a reloaded dock
      * reads it back via `list`. Fire-and-forget; omit a field to leave it unchanged.
      */
-    setMeta(ptyId: string, meta: { customLabel?: string | null; ordinal?: number }): void;
+    setMeta(
+      ptyId: string,
+      meta: {
+        customLabel?: string | null;
+        ordinal?: number;
+        chatCli?: 'codex' | 'claude' | null;
+        chatSessionId?: string | null;
+      },
+    ): void;
     /**
      * Persist the tab display order in main (ptyIds in visual order) so a reorder
      * survives a renderer reload. Fire-and-forget.

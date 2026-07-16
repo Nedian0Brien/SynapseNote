@@ -313,6 +313,10 @@ dmg:
       path: /Applications
   iconSize: 100
 
+# Fail closed before packaging when workspace source or generated runtime
+# artifacts changed after `build:desktop`. This prevents electron-builder from
+# silently embedding stale server/CLI/app dist output when invoked directly.
+beforePack: scripts/beforePack.mjs
 # Flip fuses (D17 LOCKED, spec §8.9) on the packed .app before code signing.
 afterPack: scripts/afterPack.mjs
 # Post-sign: @electron/notarize → stapler validate → @electron/fuses read verify.

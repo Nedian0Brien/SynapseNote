@@ -45,6 +45,8 @@ interface TerminalGateProps {
   /** Reports the session's live PTY id up to the host — see
    *  {@link TerminalPanelProps.onPtyId}. */
   readonly onPtyId?: (ptyId: string | null) => void;
+  /** Prevent app-generated chat commands from being persisted by the shell. */
+  readonly privateHistory?: boolean;
 }
 
 export function TerminalGate({
@@ -54,6 +56,7 @@ export function TerminalGate({
   launch = null,
   adoptPtyId = null,
   onPtyId,
+  privateHistory = false,
 }: TerminalGateProps) {
   const { enabled, synced } = useTerminalConsentState();
   const writer = useTerminalEnabledWriter();
@@ -98,6 +101,7 @@ export function TerminalGate({
             launch={launch}
             adoptPtyId={adoptPtyId}
             onPtyId={onPtyId}
+            privateHistory={privateHistory}
           />
         </Suspense>
       </ErrorBoundary>

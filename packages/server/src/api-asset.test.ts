@@ -103,6 +103,35 @@ describe('GET /api/asset', () => {
     expect(await res.text()).toBe('fake-pdf-bytes');
   });
 
+  test('serves byte ranges for PDF.js incremental loading', async () => {
+    const fixed = await fetch(assetUrl(harness.baseURL, 'docs/paper.pdf'), {
+      headers: { Range: 'bytes=5-7' },
+    });
+    expect(fixed.status).toBe(206);
+    expect(fixed.headers.get('accept-ranges')).toBe('bytes');
+    expect(fixed.headers.get('content-range')).toBe('bytes 5-7/14');
+    expect(fixed.headers.get('content-length')).toBe('3');
+    expect(fixed.headers.get('access-control-expose-headers')).toContain('Content-Range');
+    expect(await fixed.text()).toBe('pdf');
+
+    const suffix = await fetch(assetUrl(harness.baseURL, 'docs/paper.pdf'), {
+      headers: { Range: 'bytes=-5' },
+    });
+    expect(suffix.status).toBe(206);
+    expect(suffix.headers.get('content-range')).toBe('bytes 9-13/14');
+    expect(await suffix.text()).toBe('bytes');
+  });
+
+  test('rejects unsatisfiable and multiple asset ranges', async () => {
+    for (const range of ['bytes=99-', 'bytes=0-1,3-4', 'items=0-1']) {
+      const res = await fetch(assetUrl(harness.baseURL, 'docs/paper.pdf'), {
+        headers: { Range: range },
+      });
+      expect(res.status).toBe(416);
+      expect(res.headers.get('content-range')).toBe('bytes */14');
+    }
+  });
+
   test('serves SVG with a CSP sandbox for direct navigation', async () => {
     const res = await fetch(assetUrl(harness.baseURL, 'docs/scripted.svg'));
 

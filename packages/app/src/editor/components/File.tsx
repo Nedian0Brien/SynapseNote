@@ -3,7 +3,7 @@
  *
  * Generic file attachment surface for every dropped attachment, including
  * PDFs (the wikilink form `![[doc.pdf]]` routes here too — explicit
- * `<Pdf>` JSX is the opt-in path for the pdfjs canvas viewer). Renders
+ * `<Pdf>` JSX is the opt-in path for the bundled virtualized viewer). Renders
  * as a Notion-style inline row: small file-up icon + filename + optional
  * dim size, wrapped in a styled `<a>` link. No card chrome, no border —
  * the row reads as a structural element of the doc, not a callout-shaped
