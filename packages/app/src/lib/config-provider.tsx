@@ -37,7 +37,7 @@ import {
   mergeLayered,
   type OkignoreBinding,
   type WriteScope,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { type ReactNode, useEffect, useState } from 'react';
 import * as Y from 'yjs';
 import { useThemeBridge } from '@/hooks/use-theme-bridge';

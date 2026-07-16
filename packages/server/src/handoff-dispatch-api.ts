@@ -55,7 +55,7 @@
  */
 
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import type { HandoffTarget } from '@inkeep/open-knowledge-core';
+import type { HandoffTarget } from '@nedian0brien/synapsenote-core';
 import { z } from 'zod';
 import { createOsProbe, type InstalledAgentScheme } from './handoff-api.ts';
 import { errorResponse } from './http/error-response.ts';

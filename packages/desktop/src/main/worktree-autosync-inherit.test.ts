@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test';
 import { existsSync, mkdtempSync, readFileSync, realpathSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
-import { resolveConfigPath, writeConfigPatch } from '@inkeep/open-knowledge-core/server';
+import { resolveConfigPath, writeConfigPatch } from '@nedian0brien/synapsenote-core/server';
 import { parse as parseYaml } from 'yaml';
 import { resolveRootAutoSync, seedWorktreeAutoSync } from './worktree-autosync-inherit.ts';
 

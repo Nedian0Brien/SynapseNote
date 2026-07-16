@@ -46,15 +46,15 @@ import { dirname, join } from 'node:path';
  * binary inspects its own basename via `_NSGetExecutablePath()` early in
  * boot and only accepts the canonical generic-helper name (or the variant
  * forms `Helper (Renderer)` / `Helper (GPU)` / `Helper (Plugin)`). Any
- * other basename — including descriptive choices like "OpenKnowledge
+ * other basename — including descriptive choices like "SynapseNote
  * Server" or invented variants like "Helper (Server)" — silently SIGTRAPs
  * with no stderr before `ELECTRON_RUN_AS_NODE` is consulted. We use the
  * generic-helper name and disambiguate from the existing utility helper
- * via the bundle directory (`.../OpenKnowledge Server.app/...`) rather
+ * via the bundle directory (`.../SynapseNote Server.app/...`) rather
  * than via the executable filename.
  */
-export const HELPER_BUNDLE_NAME = 'OpenKnowledge Server.app';
-export const HELPER_EXECUTABLE_NAME = 'OpenKnowledge Helper';
+export const HELPER_BUNDLE_NAME = 'SynapseNote Server.app';
+export const HELPER_EXECUTABLE_NAME = 'SynapseNote Helper';
 
 /**
  * Given the parent app's main-binary path

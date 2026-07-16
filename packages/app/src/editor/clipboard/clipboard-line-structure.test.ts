@@ -50,7 +50,7 @@
  */
 
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } from 'bun:test';
-import { MarkdownManager } from '@inkeep/open-knowledge-core';
+import { MarkdownManager } from '@nedian0brien/synapsenote-core';
 import { getSchema } from '@tiptap/core';
 import type { Node as PmNode } from '@tiptap/pm/model';
 import { AllSelection, EditorState, type TextSelection } from '@tiptap/pm/state';

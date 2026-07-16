@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
 /**
- * Generate one MDX page per canonical OpenKnowledge JSX component under
+ * Generate one MDX page per canonical SynapseNote JSX component under
  * `content/reference/components/`. Reads `builtInComponents` from
- * `@inkeep/open-knowledge-core` so the docs stay in lockstep with the
+ * `@nedian0brien/synapsenote-core` so the docs stay in lockstep with the
  * runtime manifest.
  *
  * Compat descriptors (GfmCallout, CommonMarkImage, WikiEmbed*) are skipped
@@ -14,8 +14,8 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { PropDef } from '@inkeep/open-knowledge-core';
-import { builtInComponents } from '@inkeep/open-knowledge-core';
+import type { PropDef } from '@nedian0brien/synapsenote-core';
+import { builtInComponents } from '@nedian0brien/synapsenote-core';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = path.resolve(HERE, '../content/reference/components');
@@ -276,7 +276,7 @@ const PREVIEWS: Partial<Record<string, string>> = {
   Tabs: `<ComponentPreview>
   <TabsPreview>
     <TabPreview label="Install">
-      Run \`npm install @inkeep/open-knowledge\` to add the CLI to your project.
+      Run \`npm install @nedian0brien/synapsenote\` to add the CLI to your project.
     </TabPreview>
     <TabPreview label="Configure">
       Point \`.ok/config.yml\` at your content directory. Frontmatter, ignore
@@ -337,8 +337,8 @@ const PREVIEWS: Partial<Record<string, string>> = {
 </ComponentPreview>`,
   Embed: `<ComponentPreview>
   <EmbedPreview
-    src="https://openknowledge.ai/"
-    title="OpenKnowledge marketing site"
+    src="https://synapse.lawdigest.kr/"
+    title="SynapseNote marketing site"
   />
 </ComponentPreview>`,
   Mirror: `<ComponentPreview>

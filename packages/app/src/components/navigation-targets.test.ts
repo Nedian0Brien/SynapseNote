@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { DOCUMENT_OPEN_BYTE_LIMIT } from '@inkeep/open-knowledge-core';
+import { DOCUMENT_OPEN_BYTE_LIMIT } from '@nedian0brien/synapsenote-core';
 import {
   deriveKnownFolderPaths,
   docNameForNavigationTarget,
@@ -81,7 +81,7 @@ describe('resolveNavigationTarget', () => {
   test('resolves a skill file-path link as content and a template link to its artifact', () => {
     // Project skills are content docs now: a link to a skill file resolves
     // through the normal page index, NOT to a synthetic __skill__ artifact doc.
-    const skillDoc = '.ok/skills/open-knowledge-pack-knowledge-base/SKILL';
+    const skillDoc = '.ok/skills/synapsenote-pack-knowledge-base/SKILL';
     expect(resolveNavigationTarget(skillDoc, { pages: new Set([skillDoc]) })).toEqual({
       kind: 'doc',
       target: skillDoc,

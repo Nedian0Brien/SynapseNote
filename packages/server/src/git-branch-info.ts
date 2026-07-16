@@ -7,7 +7,7 @@
  * `Promise.all` to keep the dialog dependency under the P99 budget.
  */
 
-import { isValidBranchName } from '@inkeep/open-knowledge-core';
+import { isValidBranchName } from '@nedian0brien/synapsenote-core';
 import { truncateError } from './error-format.ts';
 import { type DirtyOverlapResult, dirtyFilesOverlapWith } from './git-dirty.ts';
 import { createGitInstance } from './git-handle.ts';

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Wrapper script shipped inside the OpenKnowledge.app bundle. Re-uses the bundled Electron runtime as
+# Wrapper script shipped inside the SynapseNote.app bundle. Re-uses the bundled Electron runtime as
 # a Node host via ELECTRON_RUN_AS_NODE=1 — no separate Node install
 # required on the user machine. Derived from VS Code's code.sh
 # (github.com/microsoft/vscode/blob/main/resources/darwin/bin/code.sh).
@@ -43,13 +43,13 @@ if [ -z "$APP_PATH" ]; then
   # stderr (human-readable + machine-readable JSON) and exit 69 so MCP
   # clients can surface this distinctly from generic failures, and
   # operators have a structured signal in the diagnostic JSONL.
-  echo "OpenKnowledge CLI cannot find its app bundle. Reinstall from the OpenKnowledge DMG." >&2
-  echo "{\"error\":\"ok-wrapper-resolution-failed\",\"hint\":\"The ok.sh wrapper could not resolve its enclosing .app bundle. Reinstall OpenKnowledge from the DMG, or npm install -g @inkeep/open-knowledge for terminal access.\",\"source\":\"${BASH_SOURCE[0]}\"}" >&2
+  echo "SynapseNote CLI cannot find its app bundle. Reinstall from the SynapseNote DMG." >&2
+  echo "{\"error\":\"ok-wrapper-resolution-failed\",\"hint\":\"The ok.sh wrapper could not resolve its enclosing .app bundle. Reinstall SynapseNote from the DMG, or npm install -g @nedian0brien/synapsenote for terminal access.\",\"source\":\"${BASH_SOURCE[0]}\"}" >&2
   exit 69
 fi
 
 CONTENTS="$APP_PATH/Contents"
-ELECTRON="$CONTENTS/MacOS/OpenKnowledge"
+ELECTRON="$CONTENTS/MacOS/SynapseNote"
 CLI="$CONTENTS/Resources/cli/dist/cli.mjs"
 
 # Self-diagnose the drag-to-Trash lifecycle (D-M6-R6 / AC2.12): if
@@ -60,8 +60,8 @@ CLI="$CONTENTS/Resources/cli/dist/cli.mjs"
 # JSON for clients that parse it — and exit 69 (EX_UNAVAILABLE) so
 # MCP clients surface the state distinctly from generic failures.
 if [ ! -f "$CLI" ] || [ ! -x "$ELECTRON" ]; then
-  echo "OpenKnowledge has been removed. Reinstall from the OpenKnowledge DMG." >&2
-  echo '{"error":"ok-bundle-missing","hint":"OpenKnowledge app appears to have been removed. Reinstall from the DMG, or remove OK entries from your MCP config and rerun ok init."}' >&2
+  echo "SynapseNote has been removed. Reinstall from the SynapseNote DMG." >&2
+  echo '{"error":"ok-bundle-missing","hint":"SynapseNote app appears to have been removed. Reinstall from the DMG, or remove OK entries from your MCP config and rerun ok init."}' >&2
   exit 69
 fi
 
@@ -80,13 +80,13 @@ fi
 # executable basename and MUST stay in sync with HELPER_BUNDLE_NAME /
 # HELPER_EXECUTABLE_NAME in packages/core/src/helper-bundle.ts
 # (helper-bundle-name-agreement.test.ts pins the agreement). The executable
-# basename MUST remain "OpenKnowledge Helper": Electron's
+# basename MUST remain "SynapseNote Helper": Electron's
 # ELECTRON_RUN_AS_NODE boot reads its own basename via _NSGetExecutablePath()
 # and SIGTRAPs on any other name.
 RUNTIME="$ELECTRON"
 case "$1" in
   mcp|start)
-    HELPER="$CONTENTS/Frameworks/OpenKnowledge Server.app/Contents/MacOS/OpenKnowledge Helper"
+    HELPER="$CONTENTS/Frameworks/SynapseNote Server.app/Contents/MacOS/SynapseNote Helper"
     if [ -x "$HELPER" ]; then
       RUNTIME="$HELPER"
     fi

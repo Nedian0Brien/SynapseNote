@@ -24,7 +24,7 @@ import { describe, expect, test } from 'bun:test';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { OK_GATED_TOOL_NAMES } from '@inkeep/open-knowledge-core';
+import { OK_GATED_TOOL_NAMES } from '@nedian0brien/synapsenote-core';
 import { type Config, ConfigSchema } from '../../config/schema.ts';
 import { registerAllTools } from './index.ts';
 import type { ServerInstance } from './shared.ts';

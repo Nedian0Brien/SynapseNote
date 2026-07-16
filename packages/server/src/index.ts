@@ -1,8 +1,8 @@
-export type { Principal } from '@inkeep/open-knowledge-core';
+export type { Principal } from '@nedian0brien/synapsenote-core';
 export {
   GitDirAccessError,
   MalformedGitPointerError,
-} from '@inkeep/open-knowledge-core/shadow-repo-layout';
+} from '@nedian0brien/synapsenote-core/shadow-repo-layout';
 export { AgentFocusBroadcaster } from './agent-focus.ts';
 export { AGENT_ID_MAX_LEN, AGENT_ID_RE, toBroadcasterKey, validateAgentId } from './agent-id.ts';
 export { AgentPresenceBroadcaster } from './agent-presence.ts';

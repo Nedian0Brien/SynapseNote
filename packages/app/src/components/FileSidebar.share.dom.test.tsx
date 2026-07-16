@@ -208,7 +208,7 @@ mock.module('@/lib/config-provider', () => ({
 }));
 
 mock.module('@/lib/use-workspace', () => ({
-  useWorkspace: () => ({ contentDir: '/tmp/open-knowledge', pathSeparator: '/' }),
+  useWorkspace: () => ({ contentDir: '/tmp/synapsenote', pathSeparator: '/' }),
 }));
 
 mock.module('sonner', () => ({
@@ -232,7 +232,7 @@ describe('FileSidebar project-root Share', () => {
 
   test('the project-root header is marked so right-clicks open the project menu', async () => {
     render(<FileSidebar onOpenSearch={() => {}} />);
-    const header = await screen.findByText('open-knowledge');
+    const header = await screen.findByText('synapsenote');
     // The header (or an ancestor) carries the right-click-exemption marker.
     expect(header.closest('[data-sidebar-root-context]')).not.toBeNull();
   });

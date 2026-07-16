@@ -1,6 +1,6 @@
 /**
  * `ok diagnose process <pid>` — capture a diagnostic bundle for a running
- * open-knowledge server process without modifying production code or killing
+ * synapsenote server process without modifying production code or killing
  * the process.
  *
  * Captures by default:
@@ -17,7 +17,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { createInterface } from 'node:readline/promises';
-import { withHiddenWindowsConsole } from '@inkeep/open-knowledge-server';
+import { withHiddenWindowsConsole } from '@nedian0brien/synapsenote-server';
 import { Command } from 'commander';
 import pc from 'picocolors';
 import {
@@ -667,7 +667,7 @@ export async function runDiagnoseBundle(
 
 export function diagnoseCommand(): Command {
   const root = new Command('diagnose').description(
-    'Diagnostic utilities for open-knowledge processes',
+    'Diagnostic utilities for synapsenote processes',
   );
 
   root
@@ -723,7 +723,7 @@ export function diagnoseCommand(): Command {
       }
       try {
         const { loadConfig } = await import('../config/loader.ts');
-        const { resolveContentDir } = await import('@inkeep/open-knowledge-server');
+        const { resolveContentDir } = await import('@nedian0brien/synapsenote-server');
         const cwd = process.cwd();
         const { config } = loadConfig(cwd);
         const contentDir = resolveContentDir(config, cwd);

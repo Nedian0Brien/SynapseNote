@@ -15,7 +15,7 @@
  *   HEAD SHA, migrate refs.
  */
 
-import { parseWriterId } from '@inkeep/open-knowledge-core/shadow-repo-layout';
+import { parseWriterId } from '@nedian0brien/synapsenote-core/shadow-repo-layout';
 import simpleGit from 'simple-git';
 import { getLogger } from './logger.ts';
 import { gcRenameLog, getOrLoadRenameLogIndex } from './rename-log.ts';
@@ -300,7 +300,7 @@ export async function gcShadowBranches(
   // their refs) — never bare-deleted, which would orphan their commits. The
   // checkpoint is tagged `auto-consolidation` so it stays hidden and
   // bounded. Classified writers (file-system, git-upstream,
-  // openknowledge-service) are never reaped; park-tipped refs hold branch-switch
+  // synapsenote-service) are never reaped; park-tipped refs hold branch-switch
   // state and are never folded; unknown writers are preserved with a warning.
   const now = Date.now();
   for (const branch of projectBranches) {
@@ -311,7 +311,7 @@ export async function gcShadowBranches(
         c.classification === 'classified-file-system' ||
         c.classification === 'classified-git-upstream' ||
         c.classification === 'classified-git-author' ||
-        c.classification === 'classified-openknowledge-service'
+        c.classification === 'classified-synapsenote-service'
       ) {
         continue;
       }
@@ -328,7 +328,7 @@ export async function gcShadowBranches(
           aged.push({
             id: c.writerId,
             name: c.writerId,
-            email: `${c.writerId}@openknowledge.local`,
+            email: `${c.writerId}@synapsenote.local`,
           });
         }
       }

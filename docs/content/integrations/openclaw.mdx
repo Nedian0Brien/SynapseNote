@@ -1,12 +1,12 @@
 ---
 title: OpenClaw
-description: Use OpenKnowledge with OpenClaw agents over MCP.
+description: Use SynapseNote with OpenClaw agents over MCP.
 icon: custom/OpenClaw
 ---
 
-[OpenClaw](https://openclaw.ai) is an agent gateway: it runs agents that connect to MCP servers. Once OpenKnowledge is registered as one of them, every agent OpenClaw runs can read, search, and write your knowledge base through OK's tools — with full attribution, link-awareness, conflict-awareness, and a live browser preview. Inside an OK project, agents work markdown through those tools rather than native file access, so every edit stays attributed and previewable.
+[OpenClaw](https://openclaw.ai) is an agent gateway: it runs agents that connect to MCP servers. Once SynapseNote is registered as one of them, every agent OpenClaw runs can read, search, and write your knowledge base through OK's tools — with full attribution, link-awareness, conflict-awareness, and a live browser preview. Inside an OK project, agents work markdown through those tools rather than native file access, so every edit stays attributed and previewable.
 
-**Auto-sync your meetings.** The gateway has a built-in scheduler and a webhook listener, so once OpenKnowledge is registered it can run tasks against your knowledge base unattended. The headline example is keeping meeting notes flowing in on their own. See [Ingest meetings](../workflows/meeting-ingestion.mdx) for the cron recipe and the recorder list. The webhook mechanics, for running an agent the moment a meeting event fires, are documented below.
+**Auto-sync your meetings.** The gateway has a built-in scheduler and a webhook listener, so once SynapseNote is registered it can run tasks against your knowledge base unattended. The headline example is keeping meeting notes flowing in on their own. See [Ingest meetings](../workflows/meeting-ingestion.mdx) for the cron recipe and the recorder list. The webhook mechanics, for running an agent the moment a meeting event fires, are documented below.
 
 ## Install
 
@@ -16,7 +16,7 @@ icon: custom/OpenClaw
   here, since OpenClaw manages its own server lifecycle.
 </McpInstall>
 
-`ok init` writes the OpenKnowledge server into `~/.openclaw/openclaw.json` under `mcp.servers`, using the same resilient launcher every other editor gets — it finds `ok` whether you installed the desktop app or the npm CLI, so there's no PATH to configure.
+`ok init` writes the SynapseNote server into `~/.openclaw/openclaw.json` under `mcp.servers`, using the same resilient launcher every other editor gets — it finds `ok` whether you installed the desktop app or the npm CLI, so there's no PATH to configure.
 
 <Callout type="info">
   The managed entry doesn't pin a project. Each OK tool call takes a `cwd` argument to target a specific knowledge base — pass it once and it sticks for that session — so one registration serves every project (and git worktree) an agent visits. If you previously hand-wrote an entry with a `cwd` pinned, `ok init` replaces it with the managed launcher; pass `cwd` per tool call instead.
@@ -29,11 +29,11 @@ Two complementary checks — the probe confirms the gateway can reach the server
 **Server-side** — confirm OpenClaw launched the server and its tools enumerate:
 
 ```bash
-openclaw mcp doctor --probe         # -> open-knowledge: ok
-openclaw mcp probe open-knowledge   # -> open-knowledge: 19 tools
+openclaw mcp doctor --probe         # -> synapsenote: ok
+openclaw mcp probe synapsenote   # -> synapsenote: 19 tools
 ```
 
-Unrelated config-health or plugin-version warnings for *other* servers don't block OpenKnowledge from probing.
+Unrelated config-health or plugin-version warnings for *other* servers don't block SynapseNote from probing.
 
 **Agent-side** — open the project with an OpenClaw agent and ask:
 
@@ -58,9 +58,9 @@ cd /path/to/your/knowledge-base && ok init
 Point an OpenClaw agent at a fresh knowledge base and have it do the following steps:
 
 ```text
-Smoke-test the current OpenKnowledge project, one step at a time:
+Smoke-test the current SynapseNote project, one step at a time:
 
-1. Discover your tools — if the open-knowledge tools aren't listed yet, run tool discovery.
+1. Discover your tools — if the synapsenote tools aren't listed yet, run tool discovery.
 2. Read the resolved config and list the project root, to confirm you're pointed at the right project.
 3. Write a notes folder, a README, and a note linking to a second doc you'll create next (its broken-link warning is expected).
 4. Create that second doc, so the link resolves.
@@ -121,7 +121,7 @@ Write and edit responses include a route-only preview path like `/#/notes/mcp-ro
 
 ## Agent contract
 
-The **OpenKnowledge skill** — the authoritative agent contract for tool use, grounding, and linking — is project-scoped, written for Claude, Cursor, Codex, and OpenCode; OpenClaw has no project skill directory to receive it. The bundles OpenKnowledge installs to `~/.agents/skills/` (which OpenClaw loads) cover discovery and skill authoring, not tool use — so for OpenClaw agents, the contract is these two reminders:
+The **SynapseNote skill** — the authoritative agent contract for tool use, grounding, and linking — is project-scoped, written for Claude, Cursor, Codex, and OpenCode; OpenClaw has no project skill directory to receive it. The bundles SynapseNote installs to `~/.agents/skills/` (which OpenClaw loads) cover discovery and skill authoring, not tool use — so for OpenClaw agents, the contract is these two reminders:
 
 - **Markdown is MCP-owned.** Inside an OK project, read and write `.md` / `.mdx` through OK's tools (`exec`, `search`, `write`, `edit`, `links`), not native shell or file tools — native access loses attribution and skips the frontmatter, backlinks, and history OK returns.
 - **Discover before concluding the MCP is missing.** Not seeing `exec` in the initial tool list isn't the escape hatch; run tool discovery first.
@@ -133,12 +133,12 @@ For the complete tool surface, see the [MCP reference](/docs/reference/mcp).
 | Symptom | Cause | Fix |
 | --- | --- | --- |
 | `ok init` showed OpenClaw as `config root missing; skipped` | `~/.openclaw/` doesn't exist yet, so OpenClaw wasn't detected | Launch OpenClaw once (it creates its home directory), then re-run `ok init` |
-| `ok init` reported the config was `left unchanged` | OpenKnowledge declined to edit `~/.openclaw/openclaw.json` for the reason shown in parentheses | Fix what the reason names (invalid JSON, a duplicated server block, an oversize config), then re-run `ok init` |
-| `openclaw mcp probe` shows 0 tools | server couldn't launch, or the folder isn't a KB yet | Confirm `ok` is installed (desktop app or `npm i -g @inkeep/open-knowledge`), and `ok init` the folder |
-| Agent doesn't see the `open-knowledge` tools | MCP tools lazy-loaded, or the agent's process predates the entry | Run tool discovery, then restart the gateway |
+| `ok init` reported the config was `left unchanged` | SynapseNote declined to edit `~/.openclaw/openclaw.json` for the reason shown in parentheses | Fix what the reason names (invalid JSON, a duplicated server block, an oversize config), then re-run `ok init` |
+| `openclaw mcp probe` shows 0 tools | server couldn't launch, or the folder isn't a KB yet | Confirm `ok` is installed (desktop app or `npm i -g @nedian0brien/synapsenote`), and `ok init` the folder |
+| Agent doesn't see the `synapsenote` tools | MCP tools lazy-loaded, or the agent's process predates the entry | Run tool discovery, then restart the gateway |
 | `ok init` "refreshed" a parent project, no new KB | upward project resolution | Run `ok init` outside any existing `.ok` tree |
 | Broken-link warning on a just-written doc | forward link to a not-yet-created target | Create the target, then re-check `links({ kind: "dead" })` |
 | `write` / `edit` -> "Hocuspocus server is not running" | OK server not started | Run `ok start` (or leave the desktop app running) and retry |
 | Preview "doesn't open" | used the route-only `/#/…` path in a browser | Call `preview_url` for the full URL |
 
-New to OpenKnowledge itself? Start with the [quickstart](/docs/get-started/quickstart) for `ok init` and `ok start`.
+New to SynapseNote itself? Start with the [quickstart](/docs/get-started/quickstart) for `ok init` and `ok start`.

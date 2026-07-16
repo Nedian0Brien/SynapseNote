@@ -37,7 +37,7 @@
  *
  * Detection scans every editor's skills root AND the generic `.agents/skills`
  * broadcast dir, since a foreign skill can pre-exist in any of them. OK's own
- * shipped bundle (`open-knowledge` / `open-knowledge-discovery`) is a copy
+ * shipped bundle (`synapsenote` / `synapsenote-discovery`) is a copy
  * exception and is left untouched.
  *
  * Adopt moves a foreign source into `.ok/skills`, making it a managed
@@ -56,7 +56,7 @@ import {
   SKILL_NAME_REGEX,
   stripFrontmatter,
   unwrapFrontmatterFences,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { parse as parseYaml } from 'yaml';
 import {
   tracedCpSync,
@@ -73,7 +73,7 @@ import { hostSkillsRootEscapes, validateSkillForInstall } from './skill-projecti
 const logger = getLogger('skill-reconcile');
 
 /** OK's shipped bundles — copy-installed, excluded from the reconcile invariant. */
-const SHIPPED_BUNDLE_NAMES = new Set(['open-knowledge', 'open-knowledge-discovery']);
+const SHIPPED_BUNDLE_NAMES = new Set(['synapsenote', 'synapsenote-discovery']);
 
 /** Per-editor action recorded for one reconciled entry. */
 interface ReconcileAction {

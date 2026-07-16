@@ -242,7 +242,7 @@ describe('SeedDialog runtime behavior', () => {
       ok: true,
       plan: {
         ...plainNotesPlan,
-        packSkill: { name: 'open-knowledge-pack-plain-notes', pending: true },
+        packSkill: { name: 'synapsenote-pack-plain-notes', pending: true },
       },
     });
 
@@ -251,7 +251,7 @@ describe('SeedDialog runtime behavior', () => {
     // The skill card surfaces the pack name (prefix-stripped for legibility)
     // with the full skill name preserved on hover, so users know what installs.
     const skillName = await screen.findByText('plain-notes');
-    expect(skillName.getAttribute('title')).toBe('open-knowledge-pack-plain-notes');
+    expect(skillName.getAttribute('title')).toBe('synapsenote-pack-plain-notes');
     // The old free-standing "will be (re)installed" line is gone.
     expect(screen.queryByText(/will be \(re\)installed/)).toBeNull();
   });

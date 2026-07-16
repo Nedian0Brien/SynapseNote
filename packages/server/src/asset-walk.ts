@@ -28,7 +28,7 @@ import {
   ASSET_EXTENSIONS,
   type BasenameIndex,
   LINKABLE_ASSET_EXTENSIONS,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import type { ContentFilter } from './content-filter.ts';
 import { isSupportedAssetFile } from './doc-extensions.ts';
 import { isWithinDir, toPosix } from './path-utils.ts';

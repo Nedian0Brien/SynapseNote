@@ -8,7 +8,7 @@
  */
 
 import { describe, expect, test } from 'bun:test';
-import { isPathWithinDir } from '@inkeep/open-knowledge-server';
+import { isPathWithinDir } from '@nedian0brien/synapsenote-server';
 import { isPathWithinProject, validateSpawnPath } from './path-containment.ts';
 
 describe('validateSpawnPath — posix', () => {

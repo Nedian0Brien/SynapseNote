@@ -13,7 +13,7 @@
  * Pure — no DOM, no React, no navigation. Exported for unit testing.
  */
 
-import { parseWikiLink } from '@inkeep/open-knowledge-core';
+import { parseWikiLink } from '@nedian0brien/synapsenote-core';
 
 export type PropertyInlineSegment =
   | { type: 'text'; value: string }

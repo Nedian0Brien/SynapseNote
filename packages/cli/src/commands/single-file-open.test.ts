@@ -3,7 +3,7 @@ import {
   SingleFileNotFoundError,
   SingleFileNotMarkdownError,
   type SingleFileOpenPlan,
-} from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-server';
 import { runSingleFileOpen, type SingleFileOpenDeps } from './single-file-open.ts';
 
 interface Recorder {
@@ -72,12 +72,12 @@ describe('runSingleFileOpen', () => {
   test('ephemeral mode with a desktop bundle deep-links the file to the app', async () => {
     const { deps, rec } = makeDeps({
       plan: ephemeralPlan,
-      detectBundlePath: () => '/Applications/OpenKnowledge.app',
+      detectBundlePath: () => '/Applications/SynapseNote.app',
     });
     const code = await runSingleFileOpen('/Users/me/notes/todo.md', deps);
     expect(code).toBe(0);
     expect(rec.openTargets).toEqual([
-      `openknowledge://open?file=${encodeURIComponent('/Users/me/notes/todo.md')}`,
+      `synapsenote://open?file=${encodeURIComponent('/Users/me/notes/todo.md')}`,
     ]);
     expect(rec.browserOpens).toHaveLength(0);
   });

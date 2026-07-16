@@ -3,8 +3,8 @@
  * must remove — the exact reverse of the installer's fan-out in
  * `repair-skills.ts`'s `installUserBundleToHostDirs`.
  *
- * OK force-installs its user-global bundles (`open-knowledge-discovery` +
- * `open-knowledge-write-skill`) into:
+ * OK force-installs its user-global bundles (`synapsenote-discovery` +
+ * `synapsenote-write-skill`) into:
  *   - the central store  `~/.agents/skills/<name>/`, and
  *   - each per-host dir  `~/<hostDir>/skills/<name>/`  (claude / cursor / codex /
  *     opencode).
@@ -13,14 +13,14 @@
  * loops over — `USER_GLOBAL_BUNDLE_IDS`, `BUNDLE_SKILL_NAME`, and
  * `HOSTS_WITH_USER_SKILL_DIR` — so the teardown can never remove more or less
  * than what was installed (a new user-global bundle or host flows to both sides
- * automatically). Only the specific `open-knowledge-*` bundle dirs are targeted,
+ * automatically). Only the specific `synapsenote-*` bundle dirs are targeted,
  * never the shared `~/.agents/skills/` root, so a user's other skills survive.
  *
  * Pure enumeration — no filesystem access. The removal engine turns each target
  * into a whole-dir removal (tolerant of an already-absent dir).
  *
  * NOT included (user content, preserved by default): `~/.ok/skills/<name>/`
- * (OK-authored global skills) and `~/Downloads/openknowledge.skill`.
+ * (OK-authored global skills) and `~/Downloads/synapsenote.skill`.
  */
 
 import { rmSync } from 'node:fs';
@@ -29,7 +29,7 @@ import {
   BUNDLE_SKILL_NAME,
   type BundleId,
   USER_GLOBAL_BUNDLE_IDS,
-} from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-server';
 import { HOSTS_WITH_USER_SKILL_DIR } from '../commands/editors.ts';
 
 export interface SkillBundleTarget {
@@ -74,7 +74,7 @@ export function userGlobalSkillBundleTargets(home: string): SkillBundleTarget[] 
  * from disk. Used by the opt-out paths (dialog decline, `ok init --no-skills`,
  * the reclaim/sweep gate) so an unchecked bundle actually leaves — the exact
  * reverse of `installUserBundleToHostDirs`. Tolerant of already-absent dirs
- * (`rmSync` with `force`). Only the specific `open-knowledge-*` dirs, never the
+ * (`rmSync` with `force`). Only the specific `synapsenote-*` dirs, never the
  * shared `~/.agents/skills` root.
  */
 export function removeUserGlobalSkillBundle(home: string, bundleId: BundleId): void {

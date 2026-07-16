@@ -16,7 +16,7 @@
  * zero egress. A null return means "no key → degrade to lexical search".
  */
 
-import { checkEmbeddingsBaseUrl } from '@inkeep/open-knowledge-core';
+import { checkEmbeddingsBaseUrl } from '@nedian0brien/synapsenote-core';
 import {
   type EmbeddingErrorReason,
   recordEmbeddingProviderError,

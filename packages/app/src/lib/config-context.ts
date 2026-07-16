@@ -1,4 +1,4 @@
-import type { Config, ConfigBinding, OkignoreBinding } from '@inkeep/open-knowledge-core';
+import type { Config, ConfigBinding, OkignoreBinding } from '@nedian0brien/synapsenote-core';
 import { createContext, use } from 'react';
 
 export interface ConfigContextValue {

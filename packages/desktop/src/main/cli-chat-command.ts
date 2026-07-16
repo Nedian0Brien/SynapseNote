@@ -1,4 +1,4 @@
-import { shellSingleQuote, TERMINAL_CLIS } from '@inkeep/open-knowledge-core';
+import { shellSingleQuote, TERMINAL_CLIS } from '@nedian0brien/synapsenote-core';
 
 export interface CliChatLaunchInput {
   readonly cli: 'codex' | 'claude';
@@ -19,16 +19,16 @@ export interface CliChatLaunchInput {
   };
 }
 
-// Reuse the same registry-fixed OpenKnowledge MCP approval policy as the
+// Reuse the same registry-fixed SynapseNote MCP approval policy as the
 // interactive Codex handoff instead of maintaining a second config string.
-const codexOpenKnowledgeApproval = ` ${TERMINAL_CLIS.codex.autoApproveArg}`;
+const codexSynapseNoteApproval = ` ${TERMINAL_CLIS.codex.autoApproveArg}`;
 
 function codexPermissionArgs(mode: CliChatLaunchInput['permissionMode']): string {
   if (mode === 'full-access') {
-    return ` --dangerously-bypass-approvals-and-sandbox${codexOpenKnowledgeApproval}`;
+    return ` --dangerously-bypass-approvals-and-sandbox${codexSynapseNoteApproval}`;
   }
   const sandboxMode = mode === 'read-only' ? 'read-only' : 'workspace-write';
-  const mcpApproval = mode === 'workspace-write' ? codexOpenKnowledgeApproval : '';
+  const mcpApproval = mode === 'workspace-write' ? codexSynapseNoteApproval : '';
   return ` -c 'approval_policy="never"' -c 'sandbox_mode="${sandboxMode}"'${mcpApproval}`;
 }
 

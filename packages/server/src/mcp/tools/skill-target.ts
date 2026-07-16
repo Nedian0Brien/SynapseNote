@@ -16,7 +16,7 @@
 
 // Imported from core (the single source of the project/global union) and
 // re-exported so the verb tools keep importing `SkillScope` from here.
-import type { SkillScope } from '@inkeep/open-knowledge-core';
+import type { SkillScope } from '@nedian0brien/synapsenote-core';
 import type { AgentIdentity } from '../agent-identity.ts';
 import { resolveSkillPreviewUrl } from './preview-url.ts';
 import {

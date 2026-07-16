@@ -29,7 +29,7 @@ export interface TokenStore {
   clear(host: string): Promise<void>;
 }
 
-const KEYRING_SERVICE = 'open-knowledge';
+const KEYRING_SERVICE = 'synapsenote';
 
 /**
  * Run a diagnostic callback so a throwing observer can never break the
@@ -171,7 +171,7 @@ export class FileBackend implements TokenStore {
   private write(data: Record<string, TokenEntry>): void {
     const dir = dirname(this.authFile);
     // 0o700 keeps the directory unreadable by other local users — matches the
-    // 0o600 file mode below and prevents listing "you have OpenKnowledge
+    // 0o600 file mode below and prevents listing "you have SynapseNote
     // credentials" from a shared-host account.
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true, mode: 0o700 });
     writeFileSync(this.authFile, yamlStringify(data), { mode: 0o600 });

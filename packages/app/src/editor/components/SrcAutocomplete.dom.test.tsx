@@ -25,7 +25,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
-import { ALLOWED_IMAGE_MIME_TYPES } from '@inkeep/open-knowledge-core';
+import { ALLOWED_IMAGE_MIME_TYPES } from '@nedian0brien/synapsenote-core';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 
 // Radix Popover focus-trap reaches for these jsdom-missing pieces.

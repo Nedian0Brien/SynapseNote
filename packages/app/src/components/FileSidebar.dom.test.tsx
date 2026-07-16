@@ -60,7 +60,7 @@ type FolderState = { folderCount: number; expandedCount: number };
 
 let sidebarState: 'expanded' | 'collapsed' = 'expanded';
 let workspace: { contentDir: string; pathSeparator: string } | null = {
-  contentDir: '/tmp/open-knowledge',
+  contentDir: '/tmp/synapsenote',
   pathSeparator: '/',
 };
 let activeDocName: string | null = 'docs/current';
@@ -204,7 +204,7 @@ mock.module('@/components/handoff/useHandoffDispatch', () => ({
     docPath: 'docs/current.md',
   }),
   buildProjectScopedHandoffInput: ({ workspace: inputWorkspace }: { workspace: unknown }) =>
-    inputWorkspace ? { docContext: null, docPath: '', projectDir: '/tmp/open-knowledge' } : null,
+    inputWorkspace ? { docContext: null, docPath: '', projectDir: '/tmp/synapsenote' } : null,
   useHandoffDispatch: () => ({ dispatch: mock(() => Promise.resolve({ ok: true })) }),
 }));
 
@@ -429,7 +429,7 @@ describe('FileSidebar runtime behavior', () => {
   beforeEach(() => {
     cleanup();
     sidebarState = 'expanded';
-    workspace = { contentDir: '/tmp/open-knowledge', pathSeparator: '/' };
+    workspace = { contentDir: '/tmp/synapsenote', pathSeparator: '/' };
     activeDocName = 'docs/current';
     activeTarget = { kind: 'folder', folderPath: 'docs' };
     folderState = { folderCount: 2, expandedCount: 1 };
@@ -762,11 +762,11 @@ describe('FileSidebar runtime behavior', () => {
     expect(treeCalls.startCreating).toHaveBeenCalledWith('folder', '');
 
     fireEvent.click(screen.getByTestId('empty-space-menu-reveal-in-finder'));
-    expect(showItemInFolderMock).toHaveBeenCalledWith('/tmp/open-knowledge');
+    expect(showItemInFolderMock).toHaveBeenCalledWith('/tmp/synapsenote');
 
     fireEvent.click(screen.getByTestId('empty-space-menu-copy-full-path'));
     await waitFor(() =>
-      expect(navigator.clipboard.writeText).toHaveBeenCalledWith('/tmp/open-knowledge'),
+      expect(navigator.clipboard.writeText).toHaveBeenCalledWith('/tmp/synapsenote'),
     );
     expect(toastSuccesses[0]?.[0]).toBe('Copied full path');
 
@@ -778,7 +778,7 @@ describe('FileSidebar runtime behavior', () => {
     expect(openInAgentSubmenuProps.at(-1)?.input).toEqual({
       docContext: null,
       docPath: '',
-      projectDir: '/tmp/open-knowledge',
+      projectDir: '/tmp/synapsenote',
     });
   });
 

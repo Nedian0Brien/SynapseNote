@@ -56,7 +56,7 @@ describe('toBroadcasterKey', () => {
 describe('resolveAgentType', () => {
   test('classifies known clients; unknown → bot', () => {
     expect(resolveAgentType('claude-code')).toBe('claude');
-    expect(resolveAgentType('local-agent-mode-open-knowledge')).toBe('claude');
+    expect(resolveAgentType('local-agent-mode-synapsenote')).toBe('claude');
     expect(resolveAgentType('local-agent-mode')).toBe('bot');
     expect(resolveAgentType('Cursor IDE')).toBe('cursor');
     expect(resolveAgentType('codex-cli')).toBe('codex');

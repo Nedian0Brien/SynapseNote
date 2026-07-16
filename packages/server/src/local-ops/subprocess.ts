@@ -28,7 +28,7 @@ interface ParsedLine {
 }
 
 interface SubprocessRunOptions {
-  /** Command + base argv prefix, e.g. ['open-knowledge'] or [process.execPath, scriptPath]. */
+  /** Command + base argv prefix, e.g. ['synapsenote'] or [process.execPath, scriptPath]. */
   cliArgs: readonly string[];
   /** Args appended after `cliArgs` (e.g. ['auth', 'login', '--json']). */
   trailingArgs: readonly string[];

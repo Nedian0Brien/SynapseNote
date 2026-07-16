@@ -1,13 +1,13 @@
-// Public surface consumed by `@inkeep/open-knowledge-desktop` from Electron
+// Public surface consumed by `@nedian0brien/synapsenote-desktop` from Electron
 // main. Lifted from CLI internals so desktop can import via the package
-// name (`@inkeep/open-knowledge`) instead of reaching into
+// name (`@nedian0brien/synapsenote`) instead of reaching into
 // `../../../cli/src/commands/...`. The workspace-dep declaration on
 // desktop's package.json makes turbo's `^build` topology key on these
 // symbols — a CLI internal refactor now correctly invalidates desktop's
 // cache.
 
 // `makeLazyEmbeddingsKeyStore` is NOT re-exported here — it now lives in
-// `@inkeep/open-knowledge-server` (alongside the secrets-store), and desktop
+// `@nedian0brien/synapsenote-server` (alongside the secrets-store), and desktop
 // imports it straight from there. Re-exporting an external package's symbol
 // through this bundled public surface breaks the .d.ts bundler.
 export { detectGh, type GhDetectResult } from './auth/gh-detect.ts';

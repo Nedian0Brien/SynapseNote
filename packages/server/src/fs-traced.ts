@@ -30,7 +30,7 @@ import {
 } from 'node:fs';
 import { mkdir, rename, writeFile } from 'node:fs/promises';
 import { basename, sep } from 'node:path';
-import type { AtomicWriteFsAdapter } from '@inkeep/open-knowledge-core/server';
+import type { AtomicWriteFsAdapter } from '@nedian0brien/synapsenote-core/server';
 import type { Attributes } from '@opentelemetry/api';
 import { withSpan, withSpanSync } from './telemetry.ts';
 

@@ -73,7 +73,7 @@ interface RegisterAllToolsOptions {
    * Hocuspocus URL. Accept a string (explicit override, e.g. `--port`), or a
    * lazy resolver that re-discovers per-call from the effective project cwd.
    * The resolver variant is what lets one MCP stdio process route different
-   * tool calls to different OpenKnowledge projects.
+   * tool calls to different SynapseNote projects.
    */
   serverUrl?: ServerUrlOrResolver;
   /** Resolves the cwd for a given tool call (see `ResolveCwd` docs). */

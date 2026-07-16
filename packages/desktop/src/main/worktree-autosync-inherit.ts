@@ -25,7 +25,7 @@
 
 import { existsSync, readFileSync } from 'node:fs';
 import { basename } from 'node:path';
-import { resolveConfigPath, writeConfigPatch } from '@inkeep/open-knowledge-core/server';
+import { resolveConfigPath, writeConfigPatch } from '@nedian0brien/synapsenote-core/server';
 import { parse as parseYaml } from 'yaml';
 import { getLogger } from './desktop-logger.ts';
 

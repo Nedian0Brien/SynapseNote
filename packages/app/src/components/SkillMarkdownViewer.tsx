@@ -17,7 +17,7 @@
  * `useViewerText` hook (also backing `TextViewer`), wired by `SkillFileViewer`.
  * This component renders already-loaded text.
  */
-import { stripFrontmatter } from '@inkeep/open-knowledge-core';
+import { stripFrontmatter } from '@nedian0brien/synapsenote-core';
 import { EditorContent, useEditor } from '@tiptap/react';
 import { useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';

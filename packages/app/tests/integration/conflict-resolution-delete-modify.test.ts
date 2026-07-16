@@ -54,7 +54,7 @@ import { existsSync, mkdtempSync, readFileSync, realpathSync, writeFileSync } fr
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
-import { ProblemDetailsSchema } from '@inkeep/open-knowledge-core';
+import { ProblemDetailsSchema } from '@nedian0brien/synapsenote-core';
 import { HARNESS_BOOT_TIMEOUT_MS } from './harness-boot-timeout';
 import { createTestServer, pollUntil, type TestServer } from './test-harness';
 
@@ -158,7 +158,7 @@ async function setupUDConflict(
  * conflict-content gate admit the request.
  */
 async function registerConflict(contentDir: string, file: string): Promise<void> {
-  const { LOCAL_DIR } = await import('@inkeep/open-knowledge-core');
+  const { LOCAL_DIR } = await import('@nedian0brien/synapsenote-core');
   const { mkdirSync } = await import('node:fs');
   const okLocal = join(contentDir, '.ok', LOCAL_DIR);
   mkdirSync(okLocal, { recursive: true });

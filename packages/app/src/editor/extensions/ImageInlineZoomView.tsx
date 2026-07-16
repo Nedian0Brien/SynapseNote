@@ -30,7 +30,7 @@
  * non-server-baked path).
  */
 
-import { normalizeDocRelativeAssetUrl, toDesktopAssetHref } from '@inkeep/open-knowledge-core';
+import { normalizeDocRelativeAssetUrl, toDesktopAssetHref } from '@nedian0brien/synapsenote-core';
 import type { NodeViewProps } from '@tiptap/core';
 import { NodeViewWrapper } from '@tiptap/react';
 import Zoom from 'react-medium-image-zoom';

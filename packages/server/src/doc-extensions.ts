@@ -31,7 +31,7 @@ import {
   type DocExtension,
   isMermaidDocFile,
   SUPPORTED_DOC_EXTENSIONS,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 
 // Re-export the canonical core list so existing server-side importers
 // (`./doc-extensions.ts`) keep working unchanged; core is the single source.

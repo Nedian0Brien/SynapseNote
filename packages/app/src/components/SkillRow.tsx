@@ -1,5 +1,5 @@
-import type { SkillsListEntry } from '@inkeep/open-knowledge-core';
 import { Trans, useLingui } from '@lingui/react/macro';
+import type { SkillsListEntry } from '@nedian0brien/synapsenote-core';
 import { DownloadCloud, MoreVertical } from 'lucide-react';
 import { OpenInAgentMenu } from '@/components/handoff/OpenInAgentMenu';
 import { buildSkillHandoffInput } from '@/components/handoff/useHandoffDispatch';
@@ -45,7 +45,7 @@ export function SkillRow({
   const { t } = useLingui();
   const workspace = useWorkspace();
   // "Open with AI" (author-with-AI): hand the skill to an installed agent so it
-  // writes/edits it via the open-knowledge-write-skill meta-skill. Reuses the
+  // writes/edits it via the synapsenote-write-skill meta-skill. Reuses the
   // shared handoff menu (config-gated on installed agents); `null` input
   // disables its trigger until the workspace is loaded.
   const handoffInput = buildSkillHandoffInput({

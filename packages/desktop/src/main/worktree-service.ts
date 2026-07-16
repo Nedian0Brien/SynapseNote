@@ -36,7 +36,7 @@ import {
   type WorktreeCreateResult,
   type WorktreeListResult,
   worktreeRelativeDir,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { listGitWorktrees } from './list-git-worktrees.ts';
 import { seedWorktreeAutoSync } from './worktree-autosync-inherit.ts';
 import { clearRecentGitCache } from './worktree-recents.ts';
@@ -192,7 +192,7 @@ export async function createWorktree(args: CreateWorktreeArgs): Promise<Worktree
     // normal onboarding prompt).
   }
   // Inherit the root project's OK setup (`.ok/` scaffold + editor/MCP wiring)
-  // so the worktree window opens `managed` — no "Setup OpenKnowledge in this
+  // so the worktree window opens `managed` — no "Setup SynapseNote in this
   // folder?" consent dialog — with full parity. `seedWorktreeProjectSetup` is
   // internally fail-soft; the try/catch is belt-and-braces so a seed error can
   // never flip the (already-captured) successful create.
@@ -474,7 +474,7 @@ async function computeBehindCounts(
  * doesn't block worktree creation (the untracked-dir noise is cosmetic).
  *
  * The committed `.ok/.gitignore` (OK_GITIGNORE_CONTENT in
- * @inkeep/open-knowledge-server) now carries the same `worktrees/` rule as the
+ * @nedian0brien/synapsenote-server) now carries the same `worktrees/` rule as the
  * universal, shared-on-clone exclusion; this per-clone write is the immediate,
  * on-create fallback for projects whose committed rule predates the selector.
  */

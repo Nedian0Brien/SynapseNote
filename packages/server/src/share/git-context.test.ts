@@ -47,7 +47,7 @@ function seedRepo(
 
 const CANONICAL_HEAD = 'ref: refs/heads/main\n';
 const CANONICAL_CONFIG_HTTPS =
-  '[remote "origin"]\n\turl = https://github.com/inkeep/open-knowledge.git\n\tfetch = +refs/heads/*:refs/remotes/origin/*\n';
+  '[remote "origin"]\n\turl = https://github.com/Nedian0Brien/SynapseNote.git\n\tfetch = +refs/heads/*:refs/remotes/origin/*\n';
 
 describe('readGitHeadBranch', () => {
   let dir: string;
@@ -113,54 +113,55 @@ describe('readOriginGitHubRepo', () => {
     seedRepo(dir, { config: CANONICAL_CONFIG_HTTPS });
     expect(readOriginGitHubRepo(dir)).toEqual({
       kind: 'ok',
-      owner: 'inkeep',
-      repo: 'open-knowledge',
+      owner: 'Nedian0Brien',
+      repo: 'SynapseNote',
     });
   });
 
   test('parses SSH SCP-style github.com origin URL', () => {
     seedRepo(dir, {
-      config: '[remote "origin"]\n\turl = git@github.com:inkeep/open-knowledge.git\n',
+      config: '[remote "origin"]\n\turl = git@github.com:Nedian0Brien/SynapseNote.git\n',
     });
     expect(readOriginGitHubRepo(dir)).toEqual({
       kind: 'ok',
-      owner: 'inkeep',
-      repo: 'open-knowledge',
+      owner: 'Nedian0Brien',
+      repo: 'SynapseNote',
     });
   });
 
   test('parses ssh:// github.com origin URL', () => {
     seedRepo(dir, {
-      config: '[remote "origin"]\n\turl = ssh://git@github.com/inkeep/open-knowledge.git\n',
+      config: '[remote "origin"]\n\turl = ssh://git@github.com/Nedian0Brien/SynapseNote.git\n',
     });
     expect(readOriginGitHubRepo(dir)).toEqual({
       kind: 'ok',
-      owner: 'inkeep',
-      repo: 'open-knowledge',
+      owner: 'Nedian0Brien',
+      repo: 'SynapseNote',
     });
   });
 
   test('returns ok when repo URL omits the .git suffix', () => {
     seedRepo(dir, {
-      config: '[remote "origin"]\n\turl = https://github.com/inkeep/open-knowledge\n',
+      config: '[remote "origin"]\n\turl = https://github.com/Nedian0Brien/SynapseNote\n',
     });
     expect(readOriginGitHubRepo(dir)).toEqual({
       kind: 'ok',
-      owner: 'inkeep',
-      repo: 'open-knowledge',
+      owner: 'Nedian0Brien',
+      repo: 'SynapseNote',
     });
   });
 
   test('returns non-github for gitlab origin URL', () => {
     seedRepo(dir, {
-      config: '[remote "origin"]\n\turl = git@gitlab.com:inkeep/open-knowledge.git\n',
+      config: '[remote "origin"]\n\turl = git@gitlab.com:Nedian0Brien/SynapseNote.git\n',
     });
     expect(readOriginGitHubRepo(dir)).toEqual({ kind: 'non-github' });
   });
 
   test('returns non-github for HTTPS gitlab URL', () => {
     seedRepo(dir, {
-      config: '[remote "origin"]\n\turl = https://gitlab.example.com/inkeep/open-knowledge.git\n',
+      config:
+        '[remote "origin"]\n\turl = https://gitlab.example.com/Nedian0Brien/SynapseNote.git\n',
     });
     expect(readOriginGitHubRepo(dir)).toEqual({ kind: 'non-github' });
   });
@@ -192,24 +193,24 @@ describe('readOriginGitHubRepo', () => {
   test('uses the first url= line and ignores subsequent ones', () => {
     seedRepo(dir, {
       config:
-        '[remote "origin"]\n\turl = https://github.com/inkeep/open-knowledge.git\n\turl = https://gitlab.com/x/y.git\n',
+        '[remote "origin"]\n\turl = https://github.com/Nedian0Brien/SynapseNote.git\n\turl = https://gitlab.com/x/y.git\n',
     });
     expect(readOriginGitHubRepo(dir)).toEqual({
       kind: 'ok',
-      owner: 'inkeep',
-      repo: 'open-knowledge',
+      owner: 'Nedian0Brien',
+      repo: 'SynapseNote',
     });
   });
 
   test('ignores url lines from other remote sections', () => {
     seedRepo(dir, {
       config:
-        '[remote "upstream"]\n\turl = https://github.com/upstream/foo.git\n[remote "origin"]\n\turl = https://github.com/inkeep/open-knowledge.git\n',
+        '[remote "upstream"]\n\turl = https://github.com/upstream/foo.git\n[remote "origin"]\n\turl = https://github.com/Nedian0Brien/SynapseNote.git\n',
     });
     expect(readOriginGitHubRepo(dir)).toEqual({
       kind: 'ok',
-      owner: 'inkeep',
-      repo: 'open-knowledge',
+      owner: 'Nedian0Brien',
+      repo: 'SynapseNote',
     });
   });
 });
@@ -289,18 +290,18 @@ describe('readSyncRemoteInfo', () => {
   test('GitHub https origin yields owner/repo label + browsable webUrl', () => {
     seedRepo(dir, { config: CANONICAL_CONFIG_HTTPS });
     expect(readSyncRemoteInfo(dir)).toEqual({
-      label: 'inkeep/open-knowledge',
-      webUrl: 'https://github.com/inkeep/open-knowledge',
+      label: 'Nedian0Brien/SynapseNote',
+      webUrl: 'https://github.com/Nedian0Brien/SynapseNote',
     });
   });
 
   test('GitHub scp-style ssh origin yields the same github webUrl', () => {
     seedRepo(dir, {
-      config: '[remote "origin"]\n\turl = git@github.com:inkeep/open-knowledge.git\n',
+      config: '[remote "origin"]\n\turl = git@github.com:Nedian0Brien/SynapseNote.git\n',
     });
     expect(readSyncRemoteInfo(dir)).toEqual({
-      label: 'inkeep/open-knowledge',
-      webUrl: 'https://github.com/inkeep/open-knowledge',
+      label: 'Nedian0Brien/SynapseNote',
+      webUrl: 'https://github.com/Nedian0Brien/SynapseNote',
     });
   });
 
@@ -374,15 +375,15 @@ describe('linked-worktree common-dir resolution', () => {
   test('reads origin config via commondir (regression: worktree reported no-remote)', () => {
     expect(readOriginGitHubRepo(project)).toEqual({
       kind: 'ok',
-      owner: 'inkeep',
-      repo: 'open-knowledge',
+      owner: 'Nedian0Brien',
+      repo: 'SynapseNote',
     });
   });
 
   test('readSyncRemoteInfo resolves the common-dir origin for a worktree', () => {
     expect(readSyncRemoteInfo(project)).toEqual({
-      label: 'inkeep/open-knowledge',
-      webUrl: 'https://github.com/inkeep/open-knowledge',
+      label: 'Nedian0Brien/SynapseNote',
+      webUrl: 'https://github.com/Nedian0Brien/SynapseNote',
     });
   });
 

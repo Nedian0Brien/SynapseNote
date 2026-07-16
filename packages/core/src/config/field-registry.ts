@@ -21,7 +21,7 @@ export interface FieldMeta {
 // `globalThis.__zod_globalRegistry` discipline. Two copies of this module
 // loaded under different file paths (e.g. workspace vs node_modules) still
 // share the same WeakMap of registered schemas.
-const SINGLETON_KEY = Symbol.for('@inkeep/open-knowledge/field-registry');
+const SINGLETON_KEY = Symbol.for('@nedian0brien/synapsenote/field-registry');
 
 interface SingletonGlobal {
   [SINGLETON_KEY]?: z.core.$ZodRegistry<FieldMeta>;

@@ -94,7 +94,7 @@ export default function staleBuildGuard(): void {
         '',
         ...stale,
         '',
-        'Run `bun run build:desktop` from public/open-knowledge before re-running smoke tests.',
+        'Run `bun run build:desktop` from public/synapsenote before re-running smoke tests.',
         '',
         'Why this matters: the smoke harness launches `out/main/index.js` directly.',
         'If `out/` is older than `src/`, tests run against a phantom version of the app',

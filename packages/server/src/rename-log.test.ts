@@ -230,11 +230,11 @@ describe('appendRenameLogEntry', () => {
   test('survives anonymous-actor entry (FR13 service-writer)', () => {
     const index = createEmptyIndex();
     const e = entry({
-      actor: { writerId: 'openknowledge-service', displayName: 'OpenKnowledge (service)' },
+      actor: { writerId: 'synapsenote-service', displayName: 'SynapseNote (service)' },
     });
     appendRenameLogEntry(shadowDir, e, index);
     const reloaded = loadRenameLogIndex(shadowDir);
-    expect(reloaded.byTo.get('essays/auth')?.actor.writerId).toBe('openknowledge-service');
+    expect(reloaded.byTo.get('essays/auth')?.actor.writerId).toBe('synapsenote-service');
   });
 
   test('handles folder-rename siblings sharing a groupId', () => {
@@ -1326,8 +1326,8 @@ describe('gcRenameLog (US-008 reachability + rebuild)', () => {
           GIT_DIR: shadow.gitDir,
           GIT_AUTHOR_NAME: 'Rebuilder',
           GIT_AUTHOR_EMAIL: 'r@example.com',
-          GIT_COMMITTER_NAME: 'openknowledge',
-          GIT_COMMITTER_EMAIL: 'service@openknowledge.local',
+          GIT_COMMITTER_NAME: 'synapsenote',
+          GIT_COMMITTER_EMAIL: 'service@synapsenote.local',
         })
         .raw('commit-tree', builtTree, '-m', message)
     ).trim();
@@ -1376,8 +1376,8 @@ describe('gcRenameLog (US-008 reachability + rebuild)', () => {
           GIT_DIR: shadow.gitDir,
           GIT_AUTHOR_NAME: 'Featured',
           GIT_AUTHOR_EMAIL: 'f@example.com',
-          GIT_COMMITTER_NAME: 'openknowledge',
-          GIT_COMMITTER_EMAIL: 'service@openknowledge.local',
+          GIT_COMMITTER_NAME: 'synapsenote',
+          GIT_COMMITTER_EMAIL: 'service@synapsenote.local',
         })
         .raw('commit-tree', builtTree, '-m', message)
     ).trim();
@@ -1425,8 +1425,8 @@ describe('gcRenameLog (US-008 reachability + rebuild)', () => {
           GIT_DIR: shadow.gitDir,
           GIT_AUTHOR_NAME: 'Fallback',
           GIT_AUTHOR_EMAIL: 'fb@example.com',
-          GIT_COMMITTER_NAME: 'openknowledge',
-          GIT_COMMITTER_EMAIL: 'service@openknowledge.local',
+          GIT_COMMITTER_NAME: 'synapsenote',
+          GIT_COMMITTER_EMAIL: 'service@synapsenote.local',
         })
         .raw('commit-tree', builtTree, '-m', message)
     ).trim();
@@ -1474,8 +1474,8 @@ describe('gcRenameLog (US-008 reachability + rebuild)', () => {
           GIT_DIR: shadow.gitDir,
           GIT_AUTHOR_NAME: 'Rebuilder',
           GIT_AUTHOR_EMAIL: 'r@example.com',
-          GIT_COMMITTER_NAME: 'openknowledge',
-          GIT_COMMITTER_EMAIL: 'service@openknowledge.local',
+          GIT_COMMITTER_NAME: 'synapsenote',
+          GIT_COMMITTER_EMAIL: 'service@synapsenote.local',
         })
         .raw('commit-tree', builtTree, '-m', message)
     ).trim();

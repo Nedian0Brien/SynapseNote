@@ -19,7 +19,7 @@
  * false alarm. The sentinel is itself valid semver, so it MUST be screened out
  * before `semver.compare`, which would otherwise rank it as the oldest version.
  */
-import { CLIENT_RUNTIME_VERSION_FALLBACK } from '@inkeep/open-knowledge-core';
+import { CLIENT_RUNTIME_VERSION_FALLBACK } from '@nedian0brien/synapsenote-core';
 import semver from 'semver';
 
 /**

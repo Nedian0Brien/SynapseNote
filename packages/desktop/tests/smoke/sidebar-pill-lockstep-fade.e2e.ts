@@ -81,7 +81,7 @@ test.describe('sidebar search pill — Electron lockstep-fade smoke', () => {
     expect(firstWindow).toBeDefined();
 
     // Open editor via deep-link.
-    const deepLink = `openknowledge://open?project=${encodeURIComponent(projectDir)}&doc=${encodeURIComponent(docName)}`;
+    const deepLink = `synapsenote://open?project=${encodeURIComponent(projectDir)}&doc=${encodeURIComponent(docName)}`;
     execSync(`open -g "${deepLink}"`, { stdio: 'pipe' });
 
     let editorPage: import('@playwright/test').Page | undefined;

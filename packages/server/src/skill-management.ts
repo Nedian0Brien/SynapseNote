@@ -17,7 +17,7 @@
 
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { atomicWriteFile } from '@inkeep/open-knowledge-core/server';
+import { atomicWriteFile } from '@nedian0brien/synapsenote-core/server';
 import { tracedAtomicFs, tracedMkdir } from './fs-traced.ts';
 import { getLogger } from './logger.ts';
 

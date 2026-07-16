@@ -16,7 +16,7 @@ import {
   type ClientVersionTokenFields,
   clientVersionHeaders,
   clientVersionTokenFields,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 
 const importMetaEnv = (import.meta as unknown as { env?: Record<string, string | undefined> }).env;
 

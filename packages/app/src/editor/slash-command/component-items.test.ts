@@ -27,7 +27,7 @@ import {
   builtInComponents,
   getAgentCanonicalDescriptors,
   getCanonicalDescriptors,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import {
   _resetPendingLinkEditForTest,
   consumePendingLinkEdit,

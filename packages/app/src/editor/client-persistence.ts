@@ -37,7 +37,7 @@
  * origin it passes to `Y.transact` during hydration.
  */
 
-import { LINEAGE_EPOCH_KEY } from '@inkeep/open-knowledge-core';
+import { LINEAGE_EPOCH_KEY } from '@nedian0brien/synapsenote-core';
 import { IndexeddbPersistence } from 'y-indexeddb';
 import * as Y from 'yjs';
 import { mark } from '@/lib/perf';

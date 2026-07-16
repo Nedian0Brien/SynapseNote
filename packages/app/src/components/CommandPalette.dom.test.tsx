@@ -196,7 +196,7 @@ mock.module('@/components/command-palette-tag-search', () => ({
 // The cached worktree model is read via useWorktrees (backed by window.okDesktop,
 // not the bridge prop). Default null so the existing suite sees no Worktrees
 // group; the dedicated test sets a model.
-let worktreeModelMock: import('@inkeep/open-knowledge-core').WorktreeSelectorModel | null = null;
+let worktreeModelMock: import('@nedian0brien/synapsenote-core').WorktreeSelectorModel | null = null;
 mock.module('@/hooks/use-worktrees', () => ({
   useWorktrees: () => worktreeModelMock,
 }));

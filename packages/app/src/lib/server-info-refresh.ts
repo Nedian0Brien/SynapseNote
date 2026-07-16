@@ -30,7 +30,7 @@
  * connect, CC1 broadcasts when reachable).
  */
 
-import { ServerInfoSuccessSchema } from '@inkeep/open-knowledge-core';
+import { ServerInfoSuccessSchema } from '@nedian0brien/synapsenote-core';
 import { handleBranchSwitched } from '../editor/branch-invalidation';
 import type { ProviderPool } from '../editor/provider-pool';
 import { emitBranchChanged } from './documents-events';

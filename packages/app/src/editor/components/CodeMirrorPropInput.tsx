@@ -95,8 +95,8 @@ import {
 import { stex } from '@codemirror/legacy-modes/mode/stex';
 import { Compartment, EditorState, type Extension } from '@codemirror/state';
 import { EditorView, keymap, lineNumbers } from '@codemirror/view';
-import type { PropDefString } from '@inkeep/open-knowledge-core';
 import { tags } from '@lezer/highlight';
+import type { PropDefString } from '@nedian0brien/synapsenote-core';
 import { mermaid } from 'codemirror-lang-mermaid';
 import { useEffect, useRef } from 'react';
 import { computeChange } from '../extensions/RawMdxFallbackCMView';

@@ -35,7 +35,7 @@
  * real `MarkdownManager.parse`) — they run in `bun run check`.
  */
 
-import { SAFE_URL_SCHEMES } from '@inkeep/open-knowledge-core';
+import { SAFE_URL_SCHEMES } from '@nedian0brien/synapsenote-core';
 
 export type GfmLinkToken = {
   /** Resolved link target: scheme-prepended for www/email, verbatim otherwise. */

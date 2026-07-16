@@ -1,12 +1,12 @@
 ---
-name: open-knowledge-pack-writing-pipeline
+name: synapsenote-pack-writing-pipeline
 version: "0.18.0"
-description: "How to work in a Writing Pipeline project (the `writing-pipeline` starter pack): a three-stage drafting flow, ideas → drafts → published. Read when the project has these folders. Carries the stage flow and review behaviors so that guidance does not live inside template bodies or folder descriptions. Complements the platform `open-knowledge` skill; does not replace it."
-compatibility: "Claude Code, Claude Desktop, Claude Cowork, Claude.ai web. Requires OpenKnowledge MCP server. Installed project-local by `ok seed --pack writing-pipeline`."
+description: "How to work in a Writing Pipeline project (the `writing-pipeline` starter pack): a three-stage drafting flow, ideas → drafts → published. Read when the project has these folders. Carries the stage flow and review behaviors so that guidance does not live inside template bodies or folder descriptions. Complements the platform `synapsenote` skill; does not replace it."
+compatibility: "Claude Code, Claude Desktop, Claude Cowork, Claude.ai web. Requires SynapseNote MCP server. Installed project-local by `ok seed --pack writing-pipeline`."
 metadata:
   pack: "writing-pipeline"
-  author: "Inkeep"
-  repository: "https://github.com/inkeep/open-knowledge"
+  author: "SynapseNote"
+  repository: "https://github.com/Nedian0Brien/SynapseNote"
 ---
 # Writing Pipeline pack — how to work here
 

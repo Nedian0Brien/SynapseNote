@@ -24,7 +24,7 @@ import {
   setToleranceTelemetryHook,
   sharedExtensions,
   type ToleranceFireRecord,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import {
   __getSplitBrainRateTupleCountForTests,
   __getViolationRateTupleCountForTests,
@@ -52,7 +52,7 @@ afterEach(() => {
 
 describe('shouldThrowOnBridgeInvariantViolation (affirmative gate polarity)', () => {
   // Mirrors the rationale documented on `shouldRethrowBridgeMergeLoss` — Bun
-  // leaves NODE_ENV undefined for `bun run` and `open-knowledge start`, so
+  // leaves NODE_ENV undefined for `bun run` and `synapsenote start`, so
   // an inverted gate (`!== 'production'`) re-throws in production at the
   // exact moment the watchdog detects a real bug. Affirmative gate flips
   // the default so production stays in the soft-recovery path.

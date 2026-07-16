@@ -11,13 +11,13 @@ const CMD_WORKAROUND = {
   command: 'cmd',
   args: ['/c', 'C:\\Users\\me\\AppData\\Roaming\\npm\\ok.cmd', 'mcp'],
 };
-const LEGACY_BARE = { command: 'npx', args: ['@inkeep/open-knowledge', 'mcp'] };
+const LEGACY_BARE = { command: 'npx', args: ['@nedian0brien/synapsenote', 'mcp'] };
 const LEGACY_NPX_AT_LATEST = {
   command: 'npx',
-  args: ['-y', '@inkeep/open-knowledge@latest', 'mcp'],
+  args: ['-y', '@nedian0brien/synapsenote@latest', 'mcp'],
 };
 const BUNDLE_ABSOLUTE = {
-  command: '/Applications/OpenKnowledge.app/Contents/Resources/cli/bin/ok.sh',
+  command: '/Applications/SynapseNote.app/Contents/Resources/cli/bin/ok.sh',
   args: ['mcp'],
 };
 const SYMLINK = { command: '/usr/local/bin/ok', args: ['mcp'] };
@@ -49,7 +49,7 @@ describe('repairMcpConfigs', () => {
 
   function writeClaude(entry: Record<string, unknown>): string {
     const path = resolveClaudeCodeConfigPath({ home: fakeHome });
-    writeFileSync(path, JSON.stringify({ mcpServers: { 'open-knowledge': entry } }, null, 2));
+    writeFileSync(path, JSON.stringify({ mcpServers: { synapsenote: entry } }, null, 2));
     return path;
   }
 
@@ -67,7 +67,7 @@ describe('repairMcpConfigs', () => {
       expect(result.repairedCount).toBe(1);
       expect(result.outcomes.find((o) => o.editorId === 'claude')?.outcome).toBe('repaired');
       const written = JSON.parse(readFileSync(configPath, 'utf-8'));
-      expect(written.mcpServers['open-knowledge']).toEqual(CHAIN_ENTRY);
+      expect(written.mcpServers.synapsenote).toEqual(CHAIN_ENTRY);
       // Structured `mcp-config-migrate` event carries prior command/args
       // before the rewrite — operators get "intent to migrate" counters
       // even on writes that subsequently fail.
@@ -124,10 +124,10 @@ describe('repairMcpConfigs', () => {
 
     expect(result.repairedCount).toBe(1);
     const written = JSON.parse(readFileSync(configPath, 'utf-8'));
-    expect(written.mcpServers['open-knowledge']).toEqual(CHAIN_ENTRY);
+    expect(written.mcpServers.synapsenote).toEqual(CHAIN_ENTRY);
   });
 
-  it('leaves configs without an open-knowledge entry untouched', () => {
+  it('leaves configs without an synapsenote entry untouched', () => {
     const configPath = resolveClaudeCodeConfigPath({ home: fakeHome });
     writeFileSync(configPath, JSON.stringify({ mcpServers: { other: { command: 'x' } } }));
 

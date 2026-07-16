@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { CLIENT_RUNTIME_VERSION_FALLBACK } from '@inkeep/open-knowledge-core';
+import { CLIENT_RUNTIME_VERSION_FALLBACK } from '@nedian0brien/synapsenote-core';
 import { classifyServerVersion, type DesktopVersion } from './version-drift.ts';
 
 const SELF: DesktopVersion = { protocolVersion: 1, runtimeVersion: '0.8.2' };

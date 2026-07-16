@@ -35,12 +35,12 @@ import {
   SKILL_CONTENT_ROOT,
   SKILL_NAME_REGEX,
   TEMPLATE_NAME_REGEX,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import {
   atomicWriteFile,
   FileLockTimeoutError,
   withFileLock,
-} from '@inkeep/open-knowledge-core/server';
+} from '@nedian0brien/synapsenote-core/server';
 import type * as Y from 'yjs';
 import { applyDiskContentToDoc, FILE_WATCHER_ORIGIN } from './external-change.ts';
 import { tracedAtomicFs, tracedMkdir } from './fs-traced.ts';

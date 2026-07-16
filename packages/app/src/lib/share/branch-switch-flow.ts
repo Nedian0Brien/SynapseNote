@@ -35,7 +35,7 @@ import type {
   CheckoutResponse,
   ShareTargetStatusResponse,
   WorktreeCreateResult,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 
 /**
  * Discriminated outcome of `selectBranchSwitchVariant` — the four cells of

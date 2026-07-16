@@ -105,7 +105,7 @@ const TargetEntrySchema = z.looseObject({
 
 /**
  * Per-bundle opt-in decision. Keyed by a bundle's install NAME (e.g.
- * `open-knowledge-discovery`), NOT the install target. `enabled: false` is an
+ * `synapsenote-discovery`), NOT the install target. `enabled: false` is an
  * explicit decline recorded via the first-launch consent dialog or `ok init
  * --no-skills`; an absent key means "no recorded decision" (grandfather: the
  * gate falls back to disk presence). Each leaf `.register()` BEFORE wrappers

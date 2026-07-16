@@ -56,7 +56,7 @@
 
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { extname } from 'node:path';
-import { SANDBOXED_HTML_CSP, SANDBOXED_HTML_EXTENSIONS } from '@inkeep/open-knowledge-core';
+import { SANDBOXED_HTML_CSP, SANDBOXED_HTML_EXTENSIONS } from '@nedian0brien/synapsenote-core';
 import { mimes } from 'mrmime';
 
 /**
@@ -145,7 +145,7 @@ export function assetContentTypeForPath(path: string): string | null {
 
 /**
  * Minimal contract the middleware depends on. The real
- * `@inkeep/open-knowledge-server` ContentFilter satisfies this; tests can
+ * `@nedian0brien/synapsenote-server` ContentFilter satisfies this; tests can
  * pass a stub.
  *
  * `isPathIgnored` (not `isExcluded`) is the right predicate — it is the

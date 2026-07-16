@@ -1,4 +1,4 @@
-// biome-ignore-all lint/plugin/no-raw-html-interactive-element: pre-rule backlog — file uses raw <button>/<input>/<textarea> awaiting shadcn migration; tracked at https://github.com/inkeep/open-knowledge/blob/main/biome-plugins/README.md#no-raw-html-interactive-elementgrit
+// biome-ignore-all lint/plugin/no-raw-html-interactive-element: pre-rule backlog — file uses raw <button>/<input>/<textarea> awaiting shadcn migration; tracked at https://github.com/Nedian0Brien/SynapseNote/blob/main/biome-plugins/README.md#no-raw-html-interactive-elementgrit
 /**
  * Per-project consent dialog implementation — split from
  * `ConsentDialog.tsx` so that file can lazy-load this module via
@@ -56,11 +56,11 @@ const PROBE_THROTTLE_MS = 750;
 // MessageDescriptors resolved per-render via `useLingui()._`.
 const WARNING_COPY: Record<OkOnboardingWarningKind, MessageDescriptor> = {
   root: msg`You picked the filesystem root (/). Scaffolding here will scan every file on this machine — make sure that's what you want.`,
-  home: msg`You picked your home directory. OpenKnowledge will index everything in your home tree — large and may surface personal files.`,
-  'home-documents': msg`You picked ~/Documents. OpenKnowledge will index every markdown file under it. If you only want to manage a sub-folder, choose a smaller scope.`,
-  'home-desktop': msg`You picked ~/Desktop. OpenKnowledge will index everything on your desktop.`,
+  home: msg`You picked your home directory. SynapseNote will index everything in your home tree — large and may surface personal files.`,
+  'home-documents': msg`You picked ~/Documents. SynapseNote will index every markdown file under it. If you only want to manage a sub-folder, choose a smaller scope.`,
+  'home-desktop': msg`You picked ~/Desktop. SynapseNote will index everything on your desktop.`,
   'home-downloads': msg`You picked ~/Downloads. Files there are usually transient — consider a stable folder instead.`,
-  'volumes-mount': msg`This path is on an external volume (/Volumes/...). OpenKnowledge will lose track of files when the drive ejects.`,
+  'volumes-mount': msg`This path is on an external volume (/Volumes/...). SynapseNote will lose track of files when the drive ejects.`,
   'drive-root': msg`This looks like a drive root (e.g., C:\\). Scaffolding here will scan an entire drive.`,
 };
 
@@ -250,11 +250,11 @@ function ConsentDialogForm({ payload, store, toast }: ConsentDialogFormProps) {
       >
         <DialogHeader>
           <DialogTitle>
-            <Trans>Setup OpenKnowledge in this folder?</Trans>
+            <Trans>Setup SynapseNote in this folder?</Trans>
           </DialogTitle>
           <DialogDescription>
             <Trans>
-              OpenKnowledge stores its configuration and internal files inside a newly created{' '}
+              SynapseNote stores its configuration and internal files inside a newly created{' '}
               <code>.ok</code> directory in your project root folder.
             </Trans>
           </DialogDescription>
@@ -264,7 +264,7 @@ function ConsentDialogForm({ payload, store, toast }: ConsentDialogFormProps) {
           {payload.gitRootPromoted ? (
             <p className="text-1sm text-muted-foreground">
               <Trans>
-                OpenKnowledge initializes at <code>{projectDir}</code> — the parent of{' '}
+                SynapseNote initializes at <code>{projectDir}</code> — the parent of{' '}
                 <code>{pickedRelative}</code> because it contains a <code>.git</code> folder (one
                 .ok/ per git repo). <code>Content directory</code> defaults to <code>.</code> (the
                 whole repo); type a sub-folder to narrow it.

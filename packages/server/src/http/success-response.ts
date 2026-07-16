@@ -72,7 +72,7 @@ interface SuccessResponseOptions {
  *   narrower type makes structurally impossible. Adding a new 2xx
  *   (`203`, `206`, etc.) is a single-edit extension here.
  * @param schema - Per-handler `XyzSuccessSchema` from
- *   `@inkeep/open-knowledge-core`. Runs `.safeParse()` on the body for
+ *   `@nedian0brien/synapsenote-core`. Runs `.safeParse()` on the body for
  *   defense-in-depth — a schema-vs-server divergence surfaces at the wire
  *   boundary instead of leaking malformed data to clients.
  * @param body - The success body. Typed as `unknown` to mirror `safeParse`'s

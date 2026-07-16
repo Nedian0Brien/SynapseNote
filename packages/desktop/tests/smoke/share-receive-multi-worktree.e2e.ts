@@ -91,7 +91,7 @@ function setupMultiWorktree(): MultiWorktreeFixture {
   gitSync(mainRepo, 'init', '--initial-branch=main', '.');
   gitSync(mainRepo, 'config', 'user.email', 'test@example.com');
   gitSync(mainRepo, 'config', 'user.name', 'Test');
-  gitSync(mainRepo, 'remote', 'add', 'origin', 'https://github.com/inkeep/open-knowledge.git');
+  gitSync(mainRepo, 'remote', 'add', 'origin', 'https://github.com/Nedian0Brien/SynapseNote.git');
   writeFileSync(join(mainRepo, 'README.md'), '# main\n');
   gitSync(mainRepo, 'add', 'README.md');
   gitSync(mainRepo, 'commit', '-m', 'initial');
@@ -135,7 +135,7 @@ test.describe('share-receive multi-worktree smoke (US-014 / J1 silent dispatch)'
   // Deferred (same harness limitation as the J2/J5 cases below and
   // deep-link.e2e.ts's cold-start path): the share-receive dispatch never
   // reaches a new project window under an unpackaged dev Electron — the
-  // `open -g openknowledge://share?...` URL does not drive a new-window
+  // `open -g synapsenote://share?...` URL does not drive a new-window
   // dispatch the way the warm-start doc-open deep-links do, so the poll for a
   // window reporting the feat-bar worktree path times out. Verifying this
   // end-to-end needs a signed packaged build (Launch Services binding) plus a
@@ -163,13 +163,13 @@ test.describe('share-receive multi-worktree smoke (US-014 / J1 silent dispatch)'
           path: fixture.mainRepo,
           name: 'main',
           lastOpenedAt: new Date().toISOString(),
-          gitRemoteUrl: 'https://github.com/inkeep/open-knowledge.git',
+          gitRemoteUrl: 'https://github.com/Nedian0Brien/SynapseNote.git',
         },
         {
           path: fixture.featBarWorktree,
           name: 'feat-bar',
           lastOpenedAt: new Date(Date.now() - 1000).toISOString(),
-          gitRemoteUrl: 'https://github.com/inkeep/open-knowledge.git',
+          gitRemoteUrl: 'https://github.com/Nedian0Brien/SynapseNote.git',
         },
       ],
       projectSessions: {},
@@ -198,8 +198,8 @@ test.describe('share-receive multi-worktree smoke (US-014 / J1 silent dispatch)'
     // owner/repo/branch/target. The branch is feat-bar — only the
     // featBarWorktree has feat-bar checked out, so selectCandidate MUST pick
     // it over main even though main is the most-recent Recent.
-    const githubBlobUrl = 'https://github.com/inkeep/open-knowledge/blob/feat-bar/docs/x.md';
-    const shareUrl = `openknowledge://share?url=${encodeURIComponent(githubBlobUrl)}`;
+    const githubBlobUrl = 'https://github.com/Nedian0Brien/SynapseNote/blob/feat-bar/docs/x.md';
+    const shareUrl = `synapsenote://share?url=${encodeURIComponent(githubBlobUrl)}`;
     execSync(`open -g "${shareUrl}"`, { stdio: 'pipe' });
 
     // The dispatched window should land on the featBarWorktree project,

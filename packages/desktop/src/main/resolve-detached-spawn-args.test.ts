@@ -4,9 +4,9 @@ import {
   resolveDetachedSpawnArgs,
 } from './resolve-detached-spawn-args.ts';
 
-const PARENT_APP = '/Applications/OpenKnowledge.app';
-const PARENT_EXEC = `${PARENT_APP}/Contents/MacOS/OpenKnowledge`;
-const HELPER_BINARY = `${PARENT_APP}/Contents/Frameworks/OpenKnowledge Server.app/Contents/MacOS/OpenKnowledge Helper`;
+const PARENT_APP = '/Applications/SynapseNote.app';
+const PARENT_EXEC = `${PARENT_APP}/Contents/MacOS/SynapseNote`;
+const HELPER_BINARY = `${PARENT_APP}/Contents/Frameworks/SynapseNote Server.app/Contents/MacOS/SynapseNote Helper`;
 
 function makeInput(
   overrides: Partial<ResolveDetachedSpawnArgsInput> = {},

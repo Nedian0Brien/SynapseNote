@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as wait } from 'node:timers/promises';
 import { MessageType } from '@hocuspocus/server';
-import { OK_DIR } from '@inkeep/open-knowledge-core';
+import { OK_DIR } from '@nedian0brien/synapsenote-core';
 import * as encoding from 'lib0/encoding';
 import { WebSocket as WsClient } from 'ws';
 import { messageYjsUpdate } from 'y-protocols/sync';

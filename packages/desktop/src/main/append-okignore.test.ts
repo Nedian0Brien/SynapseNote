@@ -77,7 +77,7 @@ describe('appendOkIgnoreSync', () => {
     // duplicate, so `toAppend.length === 0` early-returns and the file is
     // left byte-identical — never even rewritten.
     const seed = [
-      '# .okignore — paths to exclude from the OpenKnowledge document index.',
+      '# .okignore — paths to exclude from the SynapseNote document index.',
       '# Uses gitignore syntax (parsed by the `ignore` npm library), evaluated',
       '# alongside .gitignore in a single ignore-lib instance.',
       '#',
@@ -104,7 +104,7 @@ describe('appendOkIgnoreSync', () => {
     // survives and gets appended with the standard `\n` separator (file
     // ends with `\n`, so single-newline separator).
     const seed = [
-      '# .okignore — paths to exclude from the OpenKnowledge document index.',
+      '# .okignore — paths to exclude from the SynapseNote document index.',
       '# Uses gitignore syntax (parsed by the `ignore` npm library), evaluated',
       '# alongside .gitignore in a single ignore-lib instance.',
       '#',

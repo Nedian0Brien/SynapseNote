@@ -32,7 +32,7 @@ import {
   searchWorkspaceCorpus,
   type WorkspaceSearchCorpus,
   type WorkspaceSearchDocument,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { chunkDocument } from '../chunking.ts';
 import { cosineSimilarity, type Embedder, loadOpenAiEmbedder } from '../embedder.ts';
 

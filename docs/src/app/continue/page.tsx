@@ -23,7 +23,7 @@ function firstParam(value: string | string[] | undefined): string | null {
 }
 
 /**
- * `/continue` — redeem-or-welcome. OpenKnowledge opens this on its true first
+ * `/continue` — redeem-or-welcome. SynapseNote opens this on its true first
  * launch with `port`/`nonce` for the loopback handshake. When a pairing cookie
  * is present and the params are well-formed, redirect the pending share token
  * to the desktop's localhost listener (cookie retained — `/continue/done`
@@ -51,13 +51,13 @@ export default async function ContinuePage({ searchParams }: ContinuePageProps) 
   return (
     <SlidePageShell>
       <div className="max-w-3xl">
-        <SlideEyebrow>Welcome to OpenKnowledge</SlideEyebrow>
+        <SlideEyebrow>Welcome to SynapseNote</SlideEyebrow>
 
         <SlideHeading>You&rsquo;re all set.</SlideHeading>
 
         <SlideLead className="mt-8">
-          OpenKnowledge is a local-first, markdown-native knowledge base where you and your AI
-          agents co-create. Open the app to create your first project, or connect an existing GitHub
+          SynapseNote is a local-first, markdown-native knowledge base where you and your AI agents
+          co-create. Open the app to create your first project, or connect an existing GitHub
           repository.
         </SlideLead>
 
@@ -75,8 +75,8 @@ export default async function ContinuePage({ searchParams }: ContinuePageProps) 
         <div className="max-w-3xl">
           <p className="text-sm font-medium text-slide-text">Were you sent a share link?</p>
           <p className="mt-2 text-sm leading-relaxed text-slide-muted">
-            Click the link again and choose{' '}
-            <span className="font-medium">Open in OpenKnowledge</span> to jump straight to it.
+            Click the link again and choose <span className="font-medium">Open in SynapseNote</span>{' '}
+            to jump straight to it.
             <br />
             Don&rsquo;t have the app yet?{' '}
             <a

@@ -15,7 +15,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
-import type { TerminalCli } from '@inkeep/open-knowledge-core';
+import type { TerminalCli } from '@nedian0brien/synapsenote-core';
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { ConfigContext, type ConfigContextValue } from '@/lib/config-context';
@@ -86,10 +86,10 @@ mock.module('@xterm/addon-unicode11', () => ({ Unicode11Addon: MockUnicode11Addo
 mock.module('@xterm/xterm/css/xterm.css', () => ({}));
 
 /** Fully ready: claude on PATH, OK tools wired, AND the project's own
- *  `open-knowledge` entry verified as OK's canonical server (mcpPreApprovable),
+ *  `synapsenote` entry verified as OK's canonical server (mcpPreApprovable),
  *  so the launch pre-approves it. */
 const WIRED: ClaudeReadiness = { claude: 'present', mcp: 'wired', mcpPreApprovable: true };
-/** Claude ready, but the project's `open-knowledge` entry is NOT OK's own (a
+/** Claude ready, but the project's `synapsenote` entry is NOT OK's own (a
  *  foreign/tampered shared-project entry) — pre-approval must be withheld. */
 const WIRED_FOREIGN_PROJECT: ClaudeReadiness = {
   claude: 'present',
@@ -97,7 +97,7 @@ const WIRED_FOREIGN_PROJECT: ClaudeReadiness = {
   mcpPreApprovable: false,
 };
 const ON_PATH: CliReadiness = { onPath: 'present' };
-/** Codex on PATH AND OK's `open-knowledge` server already in the codex config —
+/** Codex on PATH AND OK's `synapsenote` server already in the codex config —
  *  the gate that lets the launch add the `-c` tool-auto-approve override. */
 const CODEX_OK_CONFIGURED: CliReadiness = { onPath: 'present', okServerConfigured: true };
 
@@ -169,13 +169,13 @@ function launchInputWrites(inputMock: ReturnType<typeof mock>): string[] {
  * foreign/unverified entry bakes neither (the "bare" tests below). Codex/Cursor
  * never carry it, so this prefix is claude-only.
  */
-const CLAUDE_PRE = `--settings '{"enabledMcpjsonServers":["open-knowledge"],"permissions":{"allow":["mcp__open-knowledge","Bash(ok open:*)"],"deny":["mcp__open-knowledge__delete","mcp__open-knowledge__move","mcp__open-knowledge__share_link","mcp__open-knowledge__install"]}}'`;
+const CLAUDE_PRE = `--settings '{"enabledMcpjsonServers":["synapsenote"],"permissions":{"allow":["mcp__synapsenote","Bash(ok open:*)"],"deny":["mcp__synapsenote__delete","mcp__synapsenote__move","mcp__synapsenote__share_link","mcp__synapsenote__install"]}}'`;
 
 /** What a WIRED Claude launch bakes once the user turns the auto-approve toggle
  *  OFF: server trust survives (it is a separate opt-in), the permissions block
  *  does not. The contrast against {@link CLAUDE_PRE} is what makes the default-on
  *  assertions above meaningful. */
-const CLAUDE_TRUST_ONLY = `--settings '{"enabledMcpjsonServers":["open-knowledge"]}'`;
+const CLAUDE_TRUST_ONLY = `--settings '{"enabledMcpjsonServers":["synapsenote"]}'`;
 
 /**
  * Render under a ConfigContext whose user scope has `agents.autoApproveOkTools`
@@ -211,7 +211,7 @@ describe('TerminalPanel "Open in terminal" launch (baked into the PTY spawn)', (
 
   test("bakes `claude --settings '<json>' '<escaped prompt>'` into create — no `\\r`, never via input", async () => {
     const { bridge, terminal } = makeBridge(WIRED);
-    const prompt = "Let's work on `foo.md` using OpenKnowledge.";
+    const prompt = "Let's work on `foo.md` using SynapseNote.";
     render(<TerminalPanel bridge={bridge} launch={{ prompt, cli: 'claude', nonce: 1 }} />);
 
     await waitFor(() => expect(terminal.create).toHaveBeenCalledTimes(1));
@@ -220,7 +220,7 @@ describe('TerminalPanel "Open in terminal" launch (baked into the PTY spawn)', (
     // POSIX close-escape-reopen idiom. Crucially: NO trailing carriage return
     // (that's a typed-into-the-shell artifact; a baked `-c` arg has none).
     expect(bakedLaunch(terminal.create)).toBe(
-      `claude ${CLAUDE_PRE} 'Let'\\''s work on \`foo.md\` using OpenKnowledge.'`,
+      `claude ${CLAUDE_PRE} 'Let'\\''s work on \`foo.md\` using SynapseNote.'`,
     );
     expect(bakedLaunch(terminal.create)).not.toContain('\r');
     // The launch is never typed into the live shell (the history-pollution fix).
@@ -289,7 +289,7 @@ describe('TerminalPanel "Open in terminal" launch (baked into the PTY spawn)', (
   });
 
   test("does NOT pre-approve when the project MCP entry is not OK's own (mcpPreApprovable false)", async () => {
-    // Supply-chain gate: a shared/cloned project whose `open-knowledge` entry is
+    // Supply-chain gate: a shared/cloned project whose `synapsenote` entry is
     // foreign yields mcpPreApprovable:false, so the bake is bare and Claude's own
     // trust prompt still fires at launch.
     const { bridge, terminal } = makeBridge(WIRED_FOREIGN_PROJECT);
@@ -366,7 +366,7 @@ describe('TerminalPanel "Open in terminal" launch (baked into the PTY spawn)', (
 
     await waitFor(() => expect(terminal.create).toHaveBeenCalledTimes(1));
     expect(bakedLaunch(terminal.create)).toBe(
-      `codex -c 'mcp_servers.open-knowledge.default_tools_approval_mode="approve"' 'hi'`,
+      `codex -c 'mcp_servers.synapsenote.default_tools_approval_mode="approve"' 'hi'`,
     );
   });
 

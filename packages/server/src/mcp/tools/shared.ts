@@ -10,12 +10,12 @@
 
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import {
   AdvisoryWarningSchema,
   BrokenLinkSchema,
   validateDocName,
-} from '@inkeep/open-knowledge-core';
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+} from '@nedian0brien/synapsenote-core';
 import { z } from 'zod';
 import type { Config } from '../../config/schema.ts';
 import { SUPPORTED_DOC_EXTENSIONS } from '../../doc-extensions.ts';
@@ -42,7 +42,7 @@ export function agentIdentityFields(identity: AgentIdentity | undefined): Record
     : {};
 }
 export const ROUTED_CWD_DESCRIPTION =
-  'Absolute host path inside the target OpenKnowledge project. Required when the MCP server is registered globally (e.g. `npx @inkeep/open-knowledge mcp` once at the host level, routing per call), unless the MCP client advertises exactly one root via the `roots` capability — that single root is then used as the implicit `cwd`. Optional when the server is anchored to a single project (the per-project HTTP MCP server defaults to its configured project root).';
+  'Absolute host path inside the target SynapseNote project. Required when the MCP server is registered globally (e.g. `npx @nedian0brien/synapsenote mcp` once at the host level, routing per call), unless the MCP client advertises exactly one root via the `roots` capability — that single root is then used as the implicit `cwd`. Optional when the server is anchored to a single project (the per-project HTTP MCP server defaults to its configured project root).';
 
 // ─── Agent-write summary schema (shared across the MCP write tools) ─────
 //
@@ -388,7 +388,7 @@ const ROLE_AFTER: Record<WorkflowRole, string> = {
 function buildWorkflowFrame(role: WorkflowRole): string {
   return `## Where this fits
 
-OpenKnowledge accretes a persistent wiki through three workflow tools, mapped to [Karpathy's three-layer knowledge-base pattern](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f):
+SynapseNote accretes a persistent wiki through three workflow tools, mapped to [Karpathy's three-layer knowledge-base pattern](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f):
 
 - **Raw sources** (immutable) — \`ingest\`
 - **Wiki, provisional** — \`research\`
@@ -467,7 +467,7 @@ export function buildWorkflowHandler(
  * Either an eagerly-known server URL, an absent URL, or a lazy resolver that
  * computes the URL per-call. The lazy resolver receives the effective cwd of
  * the current tool invocation when available so one MCP process can route
- * different tool calls to different OpenKnowledge project servers.
+ * different tool calls to different SynapseNote project servers.
  *
  * See `packages/cli/src/mcp/server.ts` for the resolver wired in at startup.
  */
@@ -596,7 +596,7 @@ export function okReservedPathRedirect(path: string): string | null {
   const p = path.replace(/^\/+/, '');
   if (p !== '.ok' && !p.startsWith('.ok/')) return null;
   if (p.startsWith('.ok/skills/')) {
-    return 'Skills are authored with the `skill` target, not a raw document path: `write({ skill: { name, description, body?, scope? } })` writes `.ok/skills/<name>/SKILL.md`. To author or improve a skill, use the `open-knowledge-write-skill` skill.';
+    return 'Skills are authored with the `skill` target, not a raw document path: `write({ skill: { name, description, body?, scope? } })` writes `.ok/skills/<name>/SKILL.md`. To author or improve a skill, use the `synapsenote-write-skill` skill.';
   }
   if (p.startsWith('.ok/templates/')) {
     return 'Templates are authored with the `template` target (`write({ template: { … } })`), not a raw document path.';

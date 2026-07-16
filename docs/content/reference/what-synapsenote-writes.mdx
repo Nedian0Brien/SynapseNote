@@ -1,11 +1,11 @@
 ---
-title: What OpenKnowledge writes to your system
+title: What SynapseNote writes to your system
 sidebarTitle: Installation details
 icon: LuHardDrive
-description: Every file OpenKnowledge creates or changes — when, where, in-project vs. your home directory — plus the opt-outs and what leaves your machine (nothing by default).
+description: Every file SynapseNote creates or changes — when, where, in-project vs. your home directory — plus the opt-outs and what leaves your machine (nothing by default).
 ---
 
-OpenKnowledge keeps your knowledge base as plain markdown in your own project directory, but the tooling around it — the CLI, the MCP server, and the desktop app — also writes a handful of supporting files, some of them **outside the project**, in your home directory, your shell startup files, your editors' configs, and the OS credential store.
+SynapseNote keeps your knowledge base as plain markdown in your own project directory, but the tooling around it — the CLI, the MCP server, and the desktop app — also writes a handful of supporting files, some of them **outside the project**, in your home directory, your shell startup files, your editors' configs, and the OS credential store.
 
 This page lists every one of them: **when** each write happens, **what** it is, and **where** it is written.
 
@@ -20,7 +20,7 @@ Writes fall into two buckets, and each table's **Scope** column tells you which:
 - **In-project** — inside your project folder. Either **committed** (shared through git with your team) or **gitignored** (this machine only, under `.ok/local/` or `.git/`).
 - **Outside-project** — your **home directory** (`~/.ok/`, `~/Library/...`), your **shell startup files** (`~/.zshrc` and friends), your editors' **user-level configs**, or the OS credential store.
 
-OpenKnowledge installs one of two ways, and the footprint differs a little between them. Pick yours below — each tab lists the complete set of writes for that path. The [opt-outs](#opt-outs-in-one-place) and [what leaves your machine](#what-leaves-your-machine) at the end apply to both.
+SynapseNote installs one of two ways, and the footprint differs a little between them. Pick yours below — each tab lists the complete set of writes for that path. The [opt-outs](#opt-outs-in-one-place) and [what leaves your machine](#what-leaves-your-machine) at the end apply to both.
 
 <Tabs groupId="ok-install" persist className="ok-flush-tabs ok-tabs-h2" items={['macOS app', 'CLI']}>
 
@@ -32,54 +32,54 @@ The macOS app ships as a signed `.dmg` you drag into `/Applications`. On launch 
 
 | Path | What it is | Scope |
 | --- | --- | --- |
-| `~/Library/Application Support/OpenKnowledge/state.json` | Recent projects, window/view state, update channel | Outside-project (home dir) |
-| `~/Library/Application Support/OpenKnowledge/path-install.json` | Records the `PATH`/shell changes it made and your `PATH`-consent choice, so they can be reverted | Outside-project (home dir) |
+| `~/Library/Application Support/SynapseNote/state.json` | Recent projects, window/view state, update channel | Outside-project (home dir) |
+| `~/Library/Application Support/SynapseNote/path-install.json` | Records the `PATH`/shell changes it made and your `PATH`-consent choice, so they can be reverted | Outside-project (home dir) |
 | `~/.ok/logs/desktop.<date>.log` | Desktop app + renderer log | Outside-project (home dir) |
 | `~/.ok/mcp-status.json` | Records your first-launch MCP-setup consent choice | Outside-project (home dir) |
-| `~/Library/Caches/OpenKnowledge-updater/` | Staged auto-update downloads (electron-updater) | Outside-project (home dir) |
-| `~/Library/Application Support/OpenKnowledge/Crashpad/` | Native crash minidumps, written by the OS crash handler (Electron's Crashpad) if the app ever crashes. Local-only: the crash reporter runs with `uploadToServer: false`, so no dump is ever uploaded automatically | Outside-project (home dir) |
-| `~/Library/Application Support/OpenKnowledge/bug-report-dirty-shutdown.json` | Dirty-shutdown sentinel — written on **every** launch and removed on a clean quit, so the next launch can tell whether the previous session crashed | Outside-project (home dir) |
-| `~/Library/Application Support/OpenKnowledge/bug-report-crash-acks.json` | Records which crash-report invitations you already answered or dismissed, so the same crash never re-prompts | Outside-project (home dir) |
+| `~/Library/Caches/SynapseNote-updater/` | Staged auto-update downloads (electron-updater) | Outside-project (home dir) |
+| `~/Library/Application Support/SynapseNote/Crashpad/` | Native crash minidumps, written by the OS crash handler (Electron's Crashpad) if the app ever crashes. Local-only: the crash reporter runs with `uploadToServer: false`, so no dump is ever uploaded automatically | Outside-project (home dir) |
+| `~/Library/Application Support/SynapseNote/bug-report-dirty-shutdown.json` | Dirty-shutdown sentinel — written on **every** launch and removed on a clean quit, so the next launch can tell whether the previous session crashed | Outside-project (home dir) |
+| `~/Library/Application Support/SynapseNote/bug-report-crash-acks.json` | Records which crash-report invitations you already answered or dismissed, so the same crash never re-prompts | Outside-project (home dir) |
 
-The app registers the `openknowledge://` URL scheme (for deep links) and checks for updates — on launch and periodically while it runs — against the OpenKnowledge update service at `openknowledge.ai/updates`, which redirects to the GitHub release asset and counts the update per version and channel (falling back to GitHub directly if it's unreachable). An update on your channel downloads in the background and installs on the next quit; you can also check on demand from **Check for updates…** in the app and Help menus. The channel (stable or beta) is fixed by the build you installed — switch by reinstalling the other from `openknowledge.ai/download/stable` or `/download/beta`. Override the feed with `OK_UPDATER_FEED_URL`.
+The app registers the `synapsenote://` URL scheme (for deep links) and checks for updates — on launch and periodically while it runs — against the SynapseNote update service at `synapse.lawdigest.kr/updates`, which redirects to the GitHub release asset and counts the update per version and channel (falling back to GitHub directly if it's unreachable). An update on your channel downloads in the background and installs on the next quit; you can also check on demand from **Check for updates…** in the app and Help menus. The channel (stable or beta) is fixed by the build you installed — switch by reinstalling the other from `synapse.lawdigest.kr/download/stable` or `/download/beta`. Override the feed with `OK_UPDATER_FEED_URL`.
 
-On its first launch the app also opens your default browser once to `openknowledge.ai/continue`, to check whether you installed from a share link and redeem it if so; the exchange completes over a short-lived local loopback listener.
+On its first launch the app also opens your default browser once to `synapse.lawdigest.kr/continue`, to check whether you installed from a share link and redeem it if so; the exchange completes over a short-lived local loopback listener.
 
 ### Shell and `PATH`
 
 So `ok` can work in your terminal too, the packaged app manages a `PATH` shim. **This is macOS-only, packaged-build-only, and disabled by `OK_RECLAIM_DISABLE=1`.** It never uses `sudo`, never runs an admin prompt, and never installs a login item.
 
-The first two rows below live in OpenKnowledge's own `~/.ok/` directory and are maintained automatically. The third — the only write into files OpenKnowledge doesn't own — happens **only with your consent**: the first-launch dialog has an "Add the `ok` command to your terminal" toggle (checked by default), and nothing is written to your shell config if you uncheck it.
+The first two rows below live in SynapseNote's own `~/.ok/` directory and are maintained automatically. The third — the only write into files SynapseNote doesn't own — happens **only with your consent**: the first-launch dialog has an "Add the `ok` command to your terminal" toggle (checked by default), and nothing is written to your shell config if you uncheck it.
 
 | Path | What it is | Scope |
 | --- | --- | --- |
-| `~/.ok/bin/ok`, `~/.ok/bin/open-knowledge` | Symlinks to the CLI bundled inside the app | Outside-project (home dir) |
+| `~/.ok/bin/ok`, `~/.ok/bin/synapsenote` | Symlinks to the CLI bundled inside the app | Outside-project (home dir) |
 | `~/.ok/env.sh` | A managed shim that prepends `~/.ok/bin` to your `PATH` | Outside-project (home dir) |
-| `~/.zshrc`, `~/.bash_profile`, `~/.config/fish/conf.d/open-knowledge.fish` | A **fenced managed block** that sources `~/.ok/env.sh` — written **only if you consent** in the first-launch dialog | Outside-project (shell config) |
+| `~/.zshrc`, `~/.bash_profile`, `~/.config/fish/conf.d/synapsenote.fish` | A **fenced managed block** that sources `~/.ok/env.sh` — written **only if you consent** in the first-launch dialog | Outside-project (shell config) |
 
-If you decline, only `ok` typed in an *external* terminal (Terminal, iTerm) is affected — the app's built-in terminal, the MCP server, and the "Open with AI" launches all work without it. You can add it later from **File → Set up OpenKnowledge integrations…**. Machines that already had the block from a version before the consent dialog are treated as consented: the block is left in place and maintained.
+If you decline, only `ok` typed in an *external* terminal (Terminal, iTerm) is affected — the app's built-in terminal, the MCP server, and the "Open with AI" launches all work without it. You can add it later from **File → Set up SynapseNote integrations…**. Machines that already had the block from a version before the consent dialog are treated as consented: the block is left in place and maintained.
 
 The managed block is clearly fenced so you can see and remove it:
 
 ```bash
-# >>> open-knowledge cli >>>
-# ! Contents within this block are managed by OpenKnowledge. Do not edit.
-# ! Delete this whole block to opt out — OpenKnowledge will not re-add it.
+# >>> synapsenote cli >>>
+# ! Contents within this block are managed by SynapseNote. Do not edit.
+# ! Delete this whole block to opt out — SynapseNote will not re-add it.
 [ -f "$HOME/.ok/env.sh" ] && . "$HOME/.ok/env.sh"
-# <<< open-knowledge cli <<<
+# <<< synapsenote cli <<<
 ```
 
 Delete the block and the app **won't re-add it** — the removal is recorded and respected. Or set `OK_RECLAIM_DISABLE=1` to disable all of this before first launch.
 
 ### User-global Agent Skills
 
-OpenKnowledge ships two user-global [Agent Skills](/docs/features/skills) — `open-knowledge-discovery` (helps your coding agent recognize and route through OpenKnowledge projects) and `open-knowledge-write-skill` (a workflow for authoring new skills). They install into each detected editor's global skill folder (`~/.claude/skills/`, `~/.cursor/skills/`, `~/.codex/skills/`, `~/.opencode/skills/`) plus the shared `~/.agents/skills/` hub.
+SynapseNote ships two user-global [Agent Skills](/docs/features/skills) — `synapsenote-discovery` (helps your coding agent recognize and route through SynapseNote projects) and `synapsenote-write-skill` (a workflow for authoring new skills). They install into each detected editor's global skill folder (`~/.claude/skills/`, `~/.cursor/skills/`, `~/.codex/skills/`, `~/.opencode/skills/`) plus the shared `~/.agents/skills/` hub.
 
-These are **consent-gated**, one checkbox per skill in the same first-launch dialog (both checked by default). Uncheck one and it is never installed; uncheck an already-installed one and its copies are **removed**. The choice is recorded in `~/.ok/skill-state.yml` and honored by every install path — the desktop app, `ok init`, and `ok start` — so a skill you declined is never re-added. Machines that already had the skills before the consent dialog are treated as consented (left in place). Re-enable later from **File → Set up OpenKnowledge integrations…**.
+These are **consent-gated**, one checkbox per skill in the same first-launch dialog (both checked by default). Uncheck one and it is never installed; uncheck an already-installed one and its copies are **removed**. The choice is recorded in `~/.ok/skill-state.yml` and honored by every install path — the desktop app, `ok init`, and `ok start` — so a skill you declined is never re-added. Machines that already had the skills before the consent dialog are treated as consented (left in place). Re-enable later from **File → Set up SynapseNote integrations…**.
 
 ### Setting up a project
 
-When you initialize or open a project, the app scaffolds the same project files the CLI's `ok init` creates, and registers the `open-knowledge` MCP server with the AI editors it detects. The MCP registration is **surgical** — it adds only its own entry and leaves your other settings, comments, and formatting byte-for-byte intact.
+When you initialize or open a project, the app scaffolds the same project files the CLI's `ok init` creates, and registers the `synapsenote` MCP server with the AI editors it detects. The MCP registration is **surgical** — it adds only its own entry and leaves your other settings, comments, and formatting byte-for-byte intact.
 
 | Path | What it is | Scope |
 | --- | --- | --- |
@@ -87,10 +87,10 @@ When you initialize or open a project, the app scaffolds the same project files 
 | `.ok/.gitignore` | Keeps machine-local runtime state (`local/`, `principal.json`, `server.lock`, …) out of git | In-project, committed |
 | `.okignore` | Paths excluded from the editor, search, and agents — see [Ignore patterns](/docs/features/ignore-patterns) | In-project, committed |
 | `.mcp.json`, `.cursor/mcp.json`, `.codex/config.toml`, `opencode.json` | Project-scoped MCP registration for the four MCP-capable project editors (Claude, Cursor, Codex, OpenCode), written regardless of what's installed so the repo is ready for teammates | In-project, committed |
-| `.pi/extensions/open-knowledge.ts` | Managed bridge extension connecting [Pi](/docs/integrations/pi) (which has no MCP support) to the project | In-project, committed |
-| `.claude/skills/`, `.cursor/skills/`, `.codex/skills/`, `.opencode/skills/`, `.pi/skills/` | Project-local "rich" OpenKnowledge skill (`SKILL.md`) for the same five editors | In-project, committed |
+| `.pi/extensions/synapsenote.ts` | Managed bridge extension connecting [Pi](/docs/integrations/pi) (which has no MCP support) to the project | In-project, committed |
+| `.claude/skills/`, `.cursor/skills/`, `.codex/skills/`, `.opencode/skills/`, `.pi/skills/` | Project-local "rich" SynapseNote skill (`SKILL.md`) for the same five editors | In-project, committed |
 | `.ok/skill-targets.json` | Committed list of which editors receive skills, written when you customize the targets | In-project, committed |
-| `~/.claude.json`, `~/Library/Application Support/Claude/claude_desktop_config.json`, `~/.cursor/mcp.json`, `~/.codex/config.toml`, `~/.config/opencode/opencode.json`, `~/.openclaw/openclaw.json`, `~/.gemini/config/mcp_config.json`, `~/.lmstudio/mcp.json`, `~/.hermes/config.yaml` | User-level `open-knowledge` MCP registration, one per detected editor, so it's available in every project (`~/.openclaw/openclaw.json` only when `~/.openclaw/` exists; `~/.gemini/config/mcp_config.json` is Antigravity's shared IDE + `agy` config, only when `~/.gemini/` exists; `~/.lmstudio/mcp.json` and `~/.hermes/config.yaml` only when those apps are installed) | Outside-project (editor config) |
+| `~/.claude.json`, `~/Library/Application Support/Claude/claude_desktop_config.json`, `~/.cursor/mcp.json`, `~/.codex/config.toml`, `~/.config/opencode/opencode.json`, `~/.openclaw/openclaw.json`, `~/.gemini/config/mcp_config.json`, `~/.lmstudio/mcp.json`, `~/.hermes/config.yaml` | User-level `synapsenote` MCP registration, one per detected editor, so it's available in every project (`~/.openclaw/openclaw.json` only when `~/.openclaw/` exists; `~/.gemini/config/mcp_config.json` is Antigravity's shared IDE + `agy` config, only when `~/.gemini/` exists; `~/.lmstudio/mcp.json` and `~/.hermes/config.yaml` only when those apps are installed) | Outside-project (editor config) |
 
 ### While a project is open
 
@@ -111,7 +111,7 @@ The app runs a collaboration server for the open project. It writes runtime stat
 
 Diagnostic logs and telemetry are **on by default but local-only** — credential-bearing attributes are redacted (`[REDACTED]`) before anything is written, the files rotate at the size caps above, and nothing leaves the machine until you explicitly run `ok diagnose bundle`. Turn the local sink off with `telemetry.localSink.enabled: false`; see [Configuration](/docs/reference/configuration).
 
-On each launch and project open, the app also runs **repair sweeps**: it rewrites *existing* `open-knowledge` MCP entries (in the editor configs above) and the OpenKnowledge skill bundles (`open-knowledge-discovery` and `open-knowledge-write-skill`, in `~/.agents/skills/` and each detected editor's `~/.claude/skills/`, `~/.cursor/skills/`, `~/.codex/skills/`, `~/.opencode/skills/`) to the current canonical form — a no-op when nothing has drifted. It also removes any stale `open-knowledge-ui` entry left in `.claude/launch.json` by an older OK version. It **never adds** an MCP entry to an editor that doesn't already have one; and when you turn on skill management for a project, it also adopts your existing editor skills into `.ok/skills/`. Same `OK_RECLAIM_DISABLE=1` opt-out.
+On each launch and project open, the app also runs **repair sweeps**: it rewrites *existing* `synapsenote` MCP entries (in the editor configs above) and the SynapseNote skill bundles (`synapsenote-discovery` and `synapsenote-write-skill`, in `~/.agents/skills/` and each detected editor's `~/.claude/skills/`, `~/.cursor/skills/`, `~/.codex/skills/`, `~/.opencode/skills/`) to the current canonical form — a no-op when nothing has drifted. It also removes any stale `synapsenote-ui` entry left in `.claude/launch.json` by an older OK version. It **never adds** an MCP entry to an editor that doesn't already have one; and when you turn on skill management for a project, it also adopts your existing editor skills into `.ok/skills/`. Same `OK_RECLAIM_DISABLE=1` opt-out.
 
 ### Home directory and credentials (`~/.ok/`)
 
@@ -127,9 +127,9 @@ On each launch and project open, the app also runs **repair sweeps**: it rewrite
 | `~/.ok/logs/`, `~/.ok/bug-reports/` | Desktop and CLI logs, and bug-report bundles from `ok bug-report` and the app's **Help → Report a Bug…** dialog (`ok diagnose bundle` writes into the project, under `.ok/local/diagnostics/`) | No |
 | `~/.ok/bin/`, `~/.ok/env.sh` | `PATH` shim (see [Shell and `PATH`](#shell-and-path) above) | No |
 
-**Auth tokens** (for GitHub sync, sharing, and cloning) are stored in the macOS **Keychain** under the service name `open-knowledge`. The `~/.ok/auth.yml` file is only a fallback for headless environments where the Keychain isn't reachable; when the Keychain becomes available, the token is migrated into it and the file copy is removed.
+**Auth tokens** (for GitHub sync, sharing, and cloning) are stored in the macOS **Keychain** under the service name `synapsenote`. The `~/.ok/auth.yml` file is only a fallback for headless environments where the Keychain isn't reachable; when the Keychain becomes available, the token is migrated into it and the file copy is removed.
 
-The **Install for Claude Chat & Cowork** command (command palette or Help menu) builds `~/Downloads/openknowledge.skill` on demand and hands it to Claude Desktop for upload; the build is version-gated via `~/.ok/skill-state.yml`.
+The **Install for Claude Chat & Cowork** command (command palette or Help menu) builds `~/Downloads/synapsenote.skill` on demand and hands it to Claude Desktop for upload; the build is version-gated via `~/.ok/skill-state.yml`.
 
 </Tab>
 
@@ -137,13 +137,13 @@ The **Install for Claude Chat & Cowork** command (command palette or Help menu) 
 
 ### Installing the package
 
-Installing `@inkeep/open-knowledge` from npm (or invoking it with `npx`) drops the two CLI binaries plus a bundled native addon, and runs a `postinstall` step that registers a small "discovery" skill so the AI editors on your machine know OpenKnowledge exists.
+Installing `@nedian0brien/synapsenote` from npm (or invoking it with `npx`) drops the two CLI binaries plus a bundled native addon, and runs a `postinstall` step that registers a small "discovery" skill so the AI editors on your machine know SynapseNote exists.
 
 | Path | What it is | Scope |
 | --- | --- | --- |
-| `ok`, `open-knowledge` (on your `PATH`) | The two CLI binaries (identical entry point) | Outside-project (npm global/bin) |
+| `ok`, `synapsenote` (on your `PATH`) | The two CLI binaries (identical entry point) | Outside-project (npm global/bin) |
 | `<pkg>/dist/native/` | Bundled native TOML-editing addon, shipped inside the package | Outside-project (package dir) |
-| `~/.agents/skills/open-knowledge-discovery/` | The **discovery skill** — a short instruction file that teaches any agent host how to find and initialize OpenKnowledge. Installed via `npx skills add … --agent '*' -g` | Outside-project (home dir) |
+| `~/.agents/skills/synapsenote-discovery/` | The **discovery skill** — a short instruction file that teaches any agent host how to find and initialize SynapseNote. Installed via `npx skills add … --agent '*' -g` | Outside-project (home dir) |
 | `~/.ok/skill-state.yml` | Records which skill version is installed, so the step is skipped next time | Outside-project (home dir) |
 | `~/.ok/skill-install-events.jsonl` | Append-only local log of skill-install attempts | Outside-project (home dir) |
 
@@ -155,7 +155,7 @@ The `postinstall` step is **non-fatal** (install always succeeds even if it fail
 
 ### `ok init`
 
-`ok init` turns a folder into an OpenKnowledge project. It scaffolds the project's `.ok/` directory, and — unless you pass `--no-mcp` — registers the `open-knowledge` MCP server with the AI editors it detects. The MCP registration is **surgical**: it adds only its own entry and leaves your other settings, comments, and formatting byte-for-byte intact (if a config can't be parsed safely, it's left untouched and reported).
+`ok init` turns a folder into an SynapseNote project. It scaffolds the project's `.ok/` directory, and — unless you pass `--no-mcp` — registers the `synapsenote` MCP server with the AI editors it detects. The MCP registration is **surgical**: it adds only its own entry and leaves your other settings, comments, and formatting byte-for-byte intact (if a config can't be parsed safely, it's left untouched and reported).
 
 | Path | What it is | Scope |
 | --- | --- | --- |
@@ -164,11 +164,11 @@ The `postinstall` step is **non-fatal** (install always succeeds even if it fail
 | `.okignore` | Paths excluded from the editor, search, and agents — see [Ignore patterns](/docs/features/ignore-patterns) | In-project, committed |
 | `.gitignore` (project root) | Seeded (with `.DS_Store`) **only** when `ok init` creates a new git repo | In-project, committed |
 | `.mcp.json`, `.cursor/mcp.json`, `.codex/config.toml`, `opencode.json` | Project-scoped MCP registration for the four MCP-capable project editors (Claude, Cursor, Codex, OpenCode) regardless of what's installed — prepares the repo for teammates (with `--scope project` or `both`) | In-project, committed |
-| `.pi/extensions/open-knowledge.ts` | Managed bridge extension connecting [Pi](/docs/integrations/pi) (which has no MCP support) to the project | In-project, committed |
-| `.claude/skills/`, `.cursor/skills/`, `.codex/skills/`, `.opencode/skills/`, `.pi/skills/` | Project-local "rich" OpenKnowledge skill (`SKILL.md`) for the same five editors | In-project, committed |
+| `.pi/extensions/synapsenote.ts` | Managed bridge extension connecting [Pi](/docs/integrations/pi) (which has no MCP support) to the project | In-project, committed |
+| `.claude/skills/`, `.cursor/skills/`, `.codex/skills/`, `.opencode/skills/`, `.pi/skills/` | Project-local "rich" SynapseNote skill (`SKILL.md`) for the same five editors | In-project, committed |
 | `.ok/skill-targets.json` | Committed list of which editors receive skills, written when you customize the targets | In-project, committed |
 
-With `--scope user` or `both` (the default), `ok init` also registers the `open-knowledge` MCP server in each detected editor's **user-level** config, so it's available in every project:
+With `--scope user` or `both` (the default), `ok init` also registers the `synapsenote` MCP server in each detected editor's **user-level** config, so it's available in every project:
 
 | Path | Editor | Scope |
 | --- | --- | --- |
@@ -186,7 +186,7 @@ Pi is the exception: it has no user-level MCP config (it has no MCP support at a
 
 On Windows, Claude Desktop and OpenCode configs live under `%APPDATA%\Claude\` and `%APPDATA%\opencode\`, and the MCP entry is a PowerShell launcher.
 
-`ok init` also installs the two user-global skills (`open-knowledge-discovery` and `open-knowledge-write-skill`), honoring any prior consent choice, and, if you choose **local-only** sharing, adds the OpenKnowledge paths to `.git/info/exclude` so `.ok/` stays off your remote. Switch modes later with `ok config-sharing share` / `unshare` (`unshare` refuses if an OK config file is already tracked); `ok config-sharing status` prints the current mode and the excluded paths.
+`ok init` also installs the two user-global skills (`synapsenote-discovery` and `synapsenote-write-skill`), honoring any prior consent choice, and, if you choose **local-only** sharing, adds the SynapseNote paths to `.git/info/exclude` so `.ok/` stays off your remote. Switch modes later with `ok config-sharing share` / `unshare` (`unshare` refuses if an OK config file is already tracked); `ok config-sharing status` prints the current mode and the excluded paths.
 
 <Callout type="info" title="Controlling it">
   - `--no-mcp` — scaffold `.ok/` only; register nothing with any editor.
@@ -213,13 +213,13 @@ On Windows, Claude Desktop and OpenCode configs live under `%APPDATA%\Claude\` a
 
 Diagnostic logs and telemetry are **on by default but local-only** — credential-bearing attributes are redacted (`[REDACTED]`) before anything is written, the files rotate at the size caps above, and nothing leaves the machine until you explicitly run `ok diagnose bundle`. Turn the local sink off with `telemetry.localSink.enabled: false`; see [Configuration](/docs/reference/configuration).
 
-On each boot, `ok start` also runs **repair sweeps**: it re-checks a few things that drift as OpenKnowledge updates and rewrites any that have fallen out of the current canonical form — a no-op when nothing has changed, and it **never adds** an entry that isn't already there.
+On each boot, `ok start` also runs **repair sweeps**: it re-checks a few things that drift as SynapseNote updates and rewrites any that have fallen out of the current canonical form — a no-op when nothing has changed, and it **never adds** an entry that isn't already there.
 
 | What it re-checks | Where | Scope |
 | --- | --- | --- |
-| Existing `open-knowledge` MCP entries | The same editor configs `ok init` writes — **both** user-level (`~/.claude.json`, `~/.cursor/mcp.json`, …) and project-level | Outside-project (editor config) **and** in-project |
-| OpenKnowledge skill bundles (`open-knowledge-discovery`, `open-knowledge-write-skill`) | Project (`.claude/skills/…`) and user-global — `~/.agents/skills/` plus each detected editor's `~/.claude/skills/`, `~/.cursor/skills/`, `~/.codex/skills/`, `~/.opencode/skills/` | In-project **and** outside-project (home dir) |
-| Stale `open-knowledge-ui` entry in `.claude/launch.json` | Project | Removed if present — OK no longer writes launch.json |
+| Existing `synapsenote` MCP entries | The same editor configs `ok init` writes — **both** user-level (`~/.claude.json`, `~/.cursor/mcp.json`, …) and project-level | Outside-project (editor config) **and** in-project |
+| SynapseNote skill bundles (`synapsenote-discovery`, `synapsenote-write-skill`) | Project (`.claude/skills/…`) and user-global — `~/.agents/skills/` plus each detected editor's `~/.claude/skills/`, `~/.cursor/skills/`, `~/.codex/skills/`, `~/.opencode/skills/` | In-project **and** outside-project (home dir) |
+| Stale `synapsenote-ui` entry in `.claude/launch.json` | Project | Removed if present — OK no longer writes launch.json |
 
 Disable all three with `OK_RECLAIM_DISABLE=1`.
 
@@ -240,7 +240,7 @@ Disable all three with `OK_RECLAIM_DISABLE=1`.
 | `~/.ok/logs/` | CLI logs (`cli.<date>.log`), size- and age-capped | No |
 | `~/.ok/bug-reports/` | Bug-report bundles from `ok bug-report` — the desktop app's **Help → Report a Bug…** dialog writes here too (`ok diagnose bundle` writes into the project, under `.ok/local/diagnostics/`) | No |
 
-**Auth tokens** (for GitHub sync, sharing, and cloning) are stored in your operating system's secure credential store when one is available — the macOS **Keychain** (service `open-knowledge`), or the platform equivalent (Windows Credential Manager, Linux Secret Service) — falling back to a `0600` `~/.ok/auth.yml` file on headless systems (a Linux server, CI) where none is reachable.
+**Auth tokens** (for GitHub sync, sharing, and cloning) are stored in your operating system's secure credential store when one is available — the macOS **Keychain** (service `synapsenote`), or the platform equivalent (Windows Credential Manager, Linux Secret Service) — falling back to a `0600` `~/.ok/auth.yml` file on headless systems (a Linux server, CI) where none is reachable.
 
 </Tab>
 
@@ -259,9 +259,9 @@ Disable all three with `OK_RECLAIM_DISABLE=1`.
 | Local diagnostic logs and telemetry | `telemetry.localSink.enabled: false` in config |
 | Auto-starting the MCP server | `OK_MCP_AUTOSTART=0` |
 
-To review the footprint after the fact, `ok diagnose` reports what's on disk (and the desktop `path-install.json` records exactly which shell/`PATH` changes were made). To reverse it, `ok deinit` removes OpenKnowledge from one project and `ok uninstall` removes it from the whole machine — both keep your markdown content (and your authored `~/.ok/skills`) unless you pass `--purge-content`, and both take `--dry-run` to preview. See the [CLI reference](/docs/reference/cli) for the full semantics.
+To review the footprint after the fact, `ok diagnose` reports what's on disk (and the desktop `path-install.json` records exactly which shell/`PATH` changes were made). To reverse it, `ok deinit` removes SynapseNote from one project and `ok uninstall` removes it from the whole machine — both keep your markdown content (and your authored `~/.ok/skills`) unless you pass `--purge-content`, and both take `--dry-run` to preview. See the [CLI reference](/docs/reference/cli) for the full semantics.
 
-In the desktop app you don't need the CLI for finer control. **Settings → AI tools & CLI** (under User) lists every global component OpenKnowledge manages — each editor's `open-knowledge` MCP entry, the `ok` PATH command, and the user-global skills — with a checkbox reflecting its live installed state; toggling a row installs or removes just that one component. **Settings → This project → AI tools** does the same for the open project's local footprint — its project-scoped MCP configs and the project skill. Removal keeps the same guest discipline as install: only entries OpenKnowledge recognizably wrote are removed, and anything you customized is left intact.
+In the desktop app you don't need the CLI for finer control. **Settings → AI tools & CLI** (under User) lists every global component SynapseNote manages — each editor's `synapsenote` MCP entry, the `ok` PATH command, and the user-global skills — with a checkbox reflecting its live installed state; toggling a row installs or removes just that one component. **Settings → This project → AI tools** does the same for the open project's local footprint — its project-scoped MCP configs and the project skill. Removal keeps the same guest discipline as install: only entries SynapseNote recognizably wrote are removed, and anything you customized is left intact.
 
 ## What leaves your machine
 
@@ -270,11 +270,11 @@ By default, **nothing.** Everything above is written to your own disk. The only 
 | What | When | Where it goes |
 | --- | --- | --- |
 | Diagnostic bundle | Only when you run `ok diagnose bundle` (you can inspect it first) | Wherever you send it |
-| In-app bug report | Only when you click **Send** in the desktop app's **Help → Report a Bug…** dialog — it builds a secret-redacted zip you can reveal and inspect first, and nothing is sent without that explicit click. After a crash, the same dialog adds an **off-by-default** "Include crash dump" checkbox: a crash dump is a memory snapshot that can contain document content and can't be redacted, and it is only ever attached when you check that box | By default, Send makes no network request — it opens a prefilled email draft to support@inkeep.com that you send yourself, naming the zip to attach. Only when an operator has configured a bug-report intake endpoint ([`OK_BUG_REPORT_INTAKE_URL`](/docs/reference/configuration#environment-variables)) does Send upload the zip there, falling back to the same email draft if the upload fails |
+| In-app bug report | Only when you click **Send** in the desktop app's **Help → Report a Bug…** dialog — it builds a secret-redacted zip you can reveal and inspect first, and nothing is sent without that explicit click. After a crash, the same dialog adds an **off-by-default** "Include crash dump" checkbox: a crash dump is a memory snapshot that can contain document content and can't be redacted, and it is only ever attached when you check that box | By default, Send makes no network request — it opens a prefilled email draft to support@lawdigest.kr that you send yourself, naming the zip to attach. Only when an operator has configured a bug-report intake endpoint ([`OK_BUG_REPORT_INTAKE_URL`](/docs/reference/configuration#environment-variables)) does Send upload the zip there, falling back to the same email draft if the upload fails |
 | Semantic search embeddings | Only when you enable [semantic search](/docs/reference/configuration#semantic-search) **and** set a key — off by default | Your configured embeddings provider (OpenAI by default) |
 | GitHub sync / share | When you sync, clone, publish, or share | GitHub |
-| Update check | Automatically — on launch and periodically while the desktop app runs | OpenKnowledge update service (`openknowledge.ai/updates`), which redirects to GitHub; sends the app version and channel |
-| First-launch share check | Once, automatically, on the desktop app's first launch | `openknowledge.ai/continue` — redeems a share link if you installed from one |
+| Update check | Automatically — on launch and periodically while the desktop app runs | SynapseNote update service (`synapse.lawdigest.kr/updates`), which redirects to GitHub; sends the app version and channel |
+| First-launch share check | Once, automatically, on the desktop app's first launch | `synapse.lawdigest.kr/continue` — redeems a share link if you installed from one |
 | npm/`npx` fetch | During install (CLI) | The npm registry |
 
 Local diagnostic logs and telemetry are scrubbed of credential-bearing attributes and never sent anywhere on their own.

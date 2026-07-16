@@ -17,7 +17,7 @@ interface NativeSymlinkBinding {
 }
 
 const require = createRequire(import.meta.url);
-const nativeBinding = require('@inkeep/open-knowledge-native-config') as NativeSymlinkBinding;
+const nativeBinding = require('@nedian0brien/synapsenote-native-config') as NativeSymlinkBinding;
 
 const unix = process.platform !== 'win32';
 

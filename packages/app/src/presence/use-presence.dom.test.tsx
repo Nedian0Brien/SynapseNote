@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test';
 import type { HocuspocusProvider } from '@hocuspocus/provider';
-import type { AgentPresenceEntry } from '@inkeep/open-knowledge-core';
+import type { AgentPresenceEntry } from '@nedian0brien/synapsenote-core';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import type { AwarenessUser } from './identity';
 import { usePresence } from './use-presence';

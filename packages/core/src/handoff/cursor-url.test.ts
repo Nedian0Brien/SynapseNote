@@ -72,16 +72,16 @@ test('buildCursorUrl doc-scoped double-encodes & in prompt — DC8.5', () => {
 });
 
 test('buildCursorUrl takes basename of POSIX projectDir for workspace=', () => {
-  const url = buildCursorUrl(payload({ projectDir: '/Users/who/projects/open-knowledge' }));
+  const url = buildCursorUrl(payload({ projectDir: '/Users/who/projects/synapsenote' }));
   expect(url).toBe(
-    'cursor://anysphere.cursor-deeplink/prompt?text=open%2520this&workspace=open-knowledge&mode=agent',
+    'cursor://anysphere.cursor-deeplink/prompt?text=open%2520this&workspace=synapsenote&mode=agent',
   );
 });
 
 test('buildCursorUrl takes basename of Windows projectDir for workspace= — DC8.5', () => {
-  const url = buildCursorUrl(payload({ projectDir: 'C:\\Users\\who\\projects\\open-knowledge' }));
+  const url = buildCursorUrl(payload({ projectDir: 'C:\\Users\\who\\projects\\synapsenote' }));
   expect(url).toBe(
-    'cursor://anysphere.cursor-deeplink/prompt?text=open%2520this&workspace=open-knowledge&mode=agent',
+    'cursor://anysphere.cursor-deeplink/prompt?text=open%2520this&workspace=synapsenote&mode=agent',
   );
 });
 

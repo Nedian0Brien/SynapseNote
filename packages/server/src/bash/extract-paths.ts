@@ -19,7 +19,7 @@
  *
  * Returns deduped project-relative paths. Each is stripped of `./` prefix
  * and trailing `/`. Extension filter is `.md` or `.mdx` only — other file
- * types aren't OpenKnowledge markdown and aren't enriched.
+ * types aren't SynapseNote markdown and aren't enriched.
  */
 import type { Stage } from './parse-command.ts';
 

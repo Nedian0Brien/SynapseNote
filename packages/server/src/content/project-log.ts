@@ -6,7 +6,7 @@
  *
  * Shadow-repo captures external project-git commits as `upstream` imports,
  * but lossily (message becomes `upstream: import from <o>..<n>`, author
- * becomes "openknowledge"). Reading the project's own `git log` preserves
+ * becomes "synapsenote"). Reading the project's own `git log` preserves
  * the original human-authored commit messages and author names.
  *
  * Uses simple-git against the project's `.git/`, not the shadow repo.

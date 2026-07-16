@@ -29,7 +29,7 @@ import {
   stripFrontmatter,
   unwrapFrontmatterFences,
   withFences,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { z } from 'zod';
 import { resolveContentDir, resolveLockDir } from '../../config/paths.ts';
 import { mergePatch } from '../../content/frontmatter-merge.ts';

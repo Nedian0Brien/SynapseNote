@@ -8,7 +8,7 @@
  * encoded here would round-trip to a different key than the tab/provider uses.
  *
  * Parsing the other direction is `parseManagedArtifactName` from
- * `@inkeep/open-knowledge-core` (shared with the server). Skill/template names
+ * `@nedian0brien/synapsenote-core` (shared with the server). Skill/template names
  * are slash-free by grammar; template folders carry their own `/` separators,
  * which are structural and belong in the doc name verbatim.
  */
@@ -18,7 +18,7 @@ import {
   projectSkillContentDocName,
   SKILL_CONTENT_ROOT,
   skillLiveDocName,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 
 // `projectSkillContentDocName` + `skillLiveDocName` (and the `.ok/skills` root,
 // `SKILL_CONTENT_ROOT`) are the SINGLE source of truth in core, shared with the

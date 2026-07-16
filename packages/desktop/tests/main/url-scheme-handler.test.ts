@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, mock, test } from 'bun:test';
-import type { Candidate, CandidateSelection } from '@inkeep/open-knowledge-core';
-import { encodeShareUrl } from '@inkeep/open-knowledge-core';
+import type { Candidate, CandidateSelection } from '@nedian0brien/synapsenote-core';
+import { encodeShareUrl } from '@nedian0brien/synapsenote-core';
 import type {
   ScreenTarget,
   ShareDeepLinkPayload,
   ShareNavigatorPayload,
   ShareUrlPayload,
 } from '../../src/main/url-scheme.ts';
-import { parseOpenKnowledgeFileUrl, registerProtocolHandler } from '../../src/main/url-scheme.ts';
+import { parseSynapseNoteFileUrl, registerProtocolHandler } from '../../src/main/url-scheme.ts';
 
 /**
  * Unit tests for `registerProtocolHandler`'s queue-then-flush behavior.
@@ -173,7 +173,7 @@ describe('registerProtocolHandler — setAsDefaultProtocolClient', () => {
       getAnyReadyWindow: env.getAnyReadyWindow,
       setTimeout: (cb, ms) => env.timers.push({ cb, ms }),
     });
-    expect(env.app.setAsDefaultProtocolClient).toHaveBeenCalledWith('openknowledge');
+    expect(env.app.setAsDefaultProtocolClient).toHaveBeenCalledWith('synapsenote');
   });
 
   test('does NOT call setAsDefaultProtocolClient in packaged builds', () => {
@@ -225,7 +225,7 @@ describe('registerProtocolHandler — before-quit Launch Services cleanup', () =
     // should have been registered. Firing it calls `removeAsDefaultProtocolClient`
     // so Launch Services doesn't leave a stale binding pointing at this worktree.
     env.app.fireBeforeQuit();
-    expect(env.app.removeAsDefaultProtocolClient).toHaveBeenCalledWith('openknowledge');
+    expect(env.app.removeAsDefaultProtocolClient).toHaveBeenCalledWith('synapsenote');
   });
 
   test('does NOT register before-quit handler in packaged builds', () => {
@@ -313,7 +313,7 @@ describe('registerProtocolHandler — deferred-share routeUrl + dedup', () => {
     await flushPromises();
 
     const token = encodeShareUrl('https://github.com/inkeep/tech-ipos/blob/main/README.md');
-    const url = `https://openknowledge.ai/d/${token}`;
+    const url = `https://synapse.lawdigest.kr/d/${token}`;
 
     control.routeUrl(url);
     await flushPromises();
@@ -321,7 +321,7 @@ describe('registerProtocolHandler — deferred-share routeUrl + dedup', () => {
     expect(resolveShareTarget).toHaveBeenCalledTimes(1);
     expect(routeShareToNavigator).toHaveBeenCalledTimes(1); // miss → launcher-miss
 
-    // A splash "Open in OpenKnowledge" re-click for the SAME share, 2s later,
+    // A splash "Open in SynapseNote" re-click for the SAME share, 2s later,
     // is suppressed — the share routes exactly once.
     clock += 2_000;
     control.routeUrl(url);
@@ -356,7 +356,7 @@ describe('registerProtocolHandler — queue-then-flush', () => {
       setTimeout: (cb, ms) => env.timers.push({ cb, ms }),
     });
 
-    env.app.fireOpenUrl('openknowledge://open?project=/tmp/p&doc=a.md');
+    env.app.fireOpenUrl('synapsenote://open?project=/tmp/p&doc=a.md');
     // Not yet flushed — routing should not have happened.
     expect(env.openProject).not.toHaveBeenCalled();
     expect(env.sendDeepLink).not.toHaveBeenCalled();
@@ -372,7 +372,7 @@ describe('registerProtocolHandler — queue-then-flush', () => {
       getAnyReadyWindow: env.getAnyReadyWindow,
       setTimeout: (cb, ms) => env.timers.push({ cb, ms }),
     });
-    env.app.fireOpenUrl('openknowledge://open?project=/tmp/p&doc=a.md');
+    env.app.fireOpenUrl('synapsenote://open?project=/tmp/p&doc=a.md');
     env.app.resolveReady();
     await flushPromises();
 
@@ -403,8 +403,8 @@ describe('registerProtocolHandler — queue-then-flush', () => {
       getAnyReadyWindow: env.getAnyReadyWindow,
       setTimeout: (cb, ms) => env.timers.push({ cb, ms }),
     });
-    env.app.fireOpenUrl('openknowledge://open?project=/tmp/p1&doc=a.md');
-    env.app.fireOpenUrl('openknowledge://open?project=/tmp/p2&doc=b.md');
+    env.app.fireOpenUrl('synapsenote://open?project=/tmp/p1&doc=a.md');
+    env.app.fireOpenUrl('synapsenote://open?project=/tmp/p2&doc=b.md');
 
     // Pre-ready: neither routed.
     expect(env.openProject).not.toHaveBeenCalled();
@@ -440,7 +440,7 @@ describe('registerProtocolHandler — queue-then-flush', () => {
       // platform-independent; the grace behavior is covered by the settle suite.
       platform: 'linux',
     });
-    env.app.fireOpenUrl('openknowledge://open?project=/tmp/p&doc=a.md');
+    env.app.fireOpenUrl('synapsenote://open?project=/tmp/p&doc=a.md');
     env.app.resolveReady();
     await flushPromises();
 
@@ -489,7 +489,7 @@ describe('registerProtocolHandler — queue-then-flush', () => {
         warn: (obj, msg) => warnLog.push({ obj, msg }),
       },
     });
-    env.app.fireOpenUrl('openknowledge://open?doc=a.md'); // missing project
+    env.app.fireOpenUrl('synapsenote://open?doc=a.md'); // missing project
     env.app.resolveReady();
     await flushPromises();
 
@@ -515,7 +515,7 @@ describe('registerProtocolHandler — queue-then-flush', () => {
     env.app.resolveReady();
     await flushPromises();
 
-    env.app.fireOpenUrl('openknowledge://open?project=/tmp/p&doc=b.md');
+    env.app.fireOpenUrl('synapsenote://open?project=/tmp/p&doc=b.md');
     await flushPromises();
 
     expect(env.focusWindowForProject).toHaveBeenCalledWith('/tmp/p');
@@ -538,7 +538,7 @@ describe('registerProtocolHandler — queue-then-flush', () => {
     env.app.resolveReady();
     await flushPromises();
 
-    env.app.fireOpenUrl('openknowledge://open?project=/tmp/B&doc=x.md');
+    env.app.fireOpenUrl('synapsenote://open?project=/tmp/B&doc=x.md');
     await flushPromises();
     await flushPromises();
 
@@ -575,7 +575,7 @@ describe('registerProtocolHandler — queue-then-flush', () => {
     env.app.resolveReady();
     await flushPromises();
 
-    env.app.fireOpenUrl('openknowledge://open?project=/tmp/broken&doc=x.md');
+    env.app.fireOpenUrl('synapsenote://open?project=/tmp/broken&doc=x.md');
     await flushPromises();
     await flushPromises();
 
@@ -588,7 +588,7 @@ describe('registerProtocolHandler — queue-then-flush', () => {
 
 describe('registerProtocolHandler — single-file launch control', () => {
   let env: TestEnv;
-  const FILE_URL = `openknowledge://open?file=${encodeURIComponent('/Users/me/notes/todo.md')}`;
+  const FILE_URL = `synapsenote://open?file=${encodeURIComponent('/Users/me/notes/todo.md')}`;
 
   beforeEach(() => {
     env = makeEnv();
@@ -605,7 +605,7 @@ describe('registerProtocolHandler — single-file launch control', () => {
       setTimeout: (cb, ms) => env.timers.push({ cb, ms }),
     });
     expect(control.singleFileLaunch()).toBe(false);
-    env.app.fireOpenUrl('openknowledge://open?project=/tmp/p&doc=a.md');
+    env.app.fireOpenUrl('synapsenote://open?project=/tmp/p&doc=a.md');
     // A project deep-link does NOT claim a single-file launch — the boot path
     // still restores the previous project (unchanged behavior).
     expect(control.singleFileLaunch()).toBe(false);
@@ -667,11 +667,11 @@ describe('registerProtocolHandler — single-file launch control', () => {
 
 describe('registerProtocolHandler — urlLaunchOwnsWindow (boot-restore suppression)', () => {
   let env: TestEnv;
-  // A valid universal-link share: `openknowledge.ai/d/<base64url(github-blob-url)>`.
-  const SHARE_URL = `https://openknowledge.ai/d/${encodeShareUrl(
+  // A valid universal-link share: `synapse.lawdigest.kr/d/<base64url(github-blob-url)>`.
+  const SHARE_URL = `https://synapse.lawdigest.kr/d/${encodeShareUrl(
     'https://github.com/inkeep/notes/blob/main/welcome.md',
   )}`;
-  const FILE_URL = `openknowledge://open?file=${encodeURIComponent('/Users/me/notes/todo.md')}`;
+  const FILE_URL = `synapsenote://open?file=${encodeURIComponent('/Users/me/notes/todo.md')}`;
 
   beforeEach(() => {
     env = makeEnv();
@@ -702,7 +702,7 @@ describe('registerProtocolHandler — urlLaunchOwnsWindow (boot-restore suppress
     expect(control.urlLaunchOwnsWindow()).toBe(true);
   });
 
-  // The splash-page "Open in OpenKnowledge" button fires the custom-scheme
+  // The splash-page "Open in SynapseNote" button fires the custom-scheme
   // share form, which `parseShareUrl` routes through a separate
   // `parseShareCustomScheme` branch than the universal link above. Cover it so a
   // regression there can't silently reintroduce the cold-start wrong-target bug
@@ -710,7 +710,7 @@ describe('registerProtocolHandler — urlLaunchOwnsWindow (boot-restore suppress
   test('becomes true after a valid custom-scheme share URL', () => {
     const control = makeControl();
     const blobUrl = 'https://github.com/inkeep/notes/blob/main/welcome.md';
-    env.app.fireOpenUrl(`openknowledge://share?url=${encodeURIComponent(blobUrl)}`);
+    env.app.fireOpenUrl(`synapsenote://share?url=${encodeURIComponent(blobUrl)}`);
     expect(control.urlLaunchOwnsWindow()).toBe(true);
   });
 
@@ -727,7 +727,7 @@ describe('registerProtocolHandler — urlLaunchOwnsWindow (boot-restore suppress
   // land. So an invalid share must NOT claim the launch.
   test('stays false for an invalid share URL — its toast needs an existing window', () => {
     const control = makeControl();
-    env.app.fireOpenUrl('https://openknowledge.ai/d/!!!not-base64!!!');
+    env.app.fireOpenUrl('https://synapse.lawdigest.kr/d/!!!not-base64!!!');
     expect(control.urlLaunchOwnsWindow()).toBe(false);
   });
 
@@ -735,7 +735,7 @@ describe('registerProtocolHandler — urlLaunchOwnsWindow (boot-restore suppress
   // window of its own, so suppressing the default window would drop it.
   test('stays false after a screen deep-link — it targets an existing window', () => {
     const control = makeControl();
-    env.app.fireOpenUrl('openknowledge://screen?name=settings');
+    env.app.fireOpenUrl('synapsenote://screen?name=settings');
     expect(control.urlLaunchOwnsWindow()).toBe(false);
   });
 
@@ -743,13 +743,13 @@ describe('registerProtocolHandler — urlLaunchOwnsWindow (boot-restore suppress
   // behavior is unchanged (the boot path still restores the previous project).
   test('stays false after a legacy project deep-link (unchanged scope)', () => {
     const control = makeControl();
-    env.app.fireOpenUrl('openknowledge://open?project=/tmp/p&doc=a.md');
+    env.app.fireOpenUrl('synapsenote://open?project=/tmp/p&doc=a.md');
     expect(control.urlLaunchOwnsWindow()).toBe(false);
   });
 });
 
 describe('registerProtocolHandler — second-instance argv parsing', () => {
-  test('extracts openknowledge:// entries from second-instance argv', async () => {
+  test('extracts synapsenote:// entries from second-instance argv', async () => {
     const env = makeEnv();
     env.readyWindow = { id: 'primary' };
     registerProtocolHandler({
@@ -764,8 +764,8 @@ describe('registerProtocolHandler — second-instance argv parsing', () => {
     await flushPromises();
 
     env.app.fireSecondInstance([
-      '/Applications/OpenKnowledge.app/Contents/MacOS/OpenKnowledge',
-      'openknowledge://open?project=/tmp/si&doc=readme.md',
+      '/Applications/SynapseNote.app/Contents/MacOS/SynapseNote',
+      'synapsenote://open?project=/tmp/si&doc=readme.md',
     ]);
     await flushPromises();
     await flushPromises();
@@ -775,7 +775,7 @@ describe('registerProtocolHandler — second-instance argv parsing', () => {
     });
   });
 
-  test('ignores argv entries that are not openknowledge:// URLs', async () => {
+  test('ignores argv entries that are not synapsenote:// URLs', async () => {
     const env = makeEnv();
     env.readyWindow = { id: 'primary' };
     registerProtocolHandler({
@@ -798,9 +798,9 @@ describe('registerProtocolHandler — second-instance argv parsing', () => {
 });
 
 describe('registerProtocolHandler — cold-start process.argv scan', () => {
-  test('queues openknowledge:// URL from process.argv on cold-start CLI launch', async () => {
+  test('queues synapsenote:// URL from process.argv on cold-start CLI launch', async () => {
     // Simulates: `OK.app/Contents/MacOS/Open\ Knowledge
-    // openknowledge://open?project=/tmp/cs&doc=a.md` — primary-instance boot
+    // synapsenote://open?project=/tmp/cs&doc=a.md` — primary-instance boot
     // where no prior app is running, so no Apple Event fires and no
     // `second-instance` dispatch. The URL lives in `process.argv`.
     const env = makeEnv();
@@ -813,8 +813,8 @@ describe('registerProtocolHandler — cold-start process.argv scan', () => {
       getAnyReadyWindow: env.getAnyReadyWindow,
       setTimeout: (cb, ms) => env.timers.push({ cb, ms }),
       getInitialArgv: () => [
-        '/Applications/OpenKnowledge.app/Contents/MacOS/OpenKnowledge',
-        'openknowledge://open?project=/tmp/cs&doc=a.md',
+        '/Applications/SynapseNote.app/Contents/MacOS/SynapseNote',
+        'synapsenote://open?project=/tmp/cs&doc=a.md',
       ],
     });
     env.app.resolveReady();
@@ -826,7 +826,7 @@ describe('registerProtocolHandler — cold-start process.argv scan', () => {
     });
   });
 
-  test('no-op when no openknowledge:// URLs in initial argv', async () => {
+  test('no-op when no synapsenote:// URLs in initial argv', async () => {
     const env = makeEnv();
     registerProtocolHandler({
       app: env.app,
@@ -871,7 +871,7 @@ describe('registerProtocolHandler — cold-start process.argv scan', () => {
  * tests above continuing to pass).
  */
 describe('registerProtocolHandler — share-flow routing', () => {
-  test('routes custom-scheme share URLs (openknowledge://share?url=...) through resolution', async () => {
+  test('routes custom-scheme share URLs (synapsenote://share?url=...) through resolution', async () => {
     const env = makeEnv();
     const focusedWin: FakeWindowHandle = { id: 'focused' };
     env.readyWindow = focusedWin;
@@ -891,7 +891,7 @@ describe('registerProtocolHandler — share-flow routing', () => {
     await flushPromises();
 
     const blobUrl = 'https://github.com/inkeep/playbooks/blob/main/x.md';
-    env.app.fireOpenUrl(`openknowledge://share?url=${encodeURIComponent(blobUrl)}`);
+    env.app.fireOpenUrl(`synapsenote://share?url=${encodeURIComponent(blobUrl)}`);
     await flushPromises();
 
     // The custom-scheme URL is parsed and reaches main-side resolution.
@@ -937,7 +937,7 @@ describe('registerProtocolHandler — share-flow routing', () => {
     let raw = '';
     for (const b of v2) raw += String.fromCharCode(b);
     const encoded = btoa(raw).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-    env.app.fireOpenUrl(`https://openknowledge.ai/d/${encoded}`);
+    env.app.fireOpenUrl(`https://synapse.lawdigest.kr/d/${encoded}`);
     await flushPromises();
 
     expect(sendShareDeepLink).toHaveBeenCalledWith(focusedWin, { kind: 'unsupported-version' });
@@ -971,7 +971,7 @@ describe('registerProtocolHandler — share-flow routing', () => {
     env.app.resolveReady();
     await flushPromises();
 
-    env.app.fireOpenUrl('https://openknowledge.ai/d/!!!not-base64!!!');
+    env.app.fireOpenUrl('https://synapse.lawdigest.kr/d/!!!not-base64!!!');
     await flushPromises();
 
     expect(sendShareDeepLink).toHaveBeenCalledWith(focusedWin, { kind: 'invalid' });
@@ -1009,7 +1009,7 @@ describe('registerProtocolHandler — share-flow routing', () => {
     await flushPromises();
 
     const encoded = encodeShareUrl('https://github.com/o/r/blob/main/x.md');
-    env.app.fireOpenUrl(`https://openknowledge.ai/d/${encoded}`);
+    env.app.fireOpenUrl(`https://synapse.lawdigest.kr/d/${encoded}`);
     await flushPromises();
 
     expect(sendShareDeepLink).not.toHaveBeenCalled();
@@ -1040,7 +1040,7 @@ describe('registerProtocolHandler — share-flow routing', () => {
     env.app.resolveReady();
     await flushPromises();
 
-    env.app.fireOpenUrl('openknowledge://open?project=/tmp/p&doc=a.md');
+    env.app.fireOpenUrl('synapsenote://open?project=/tmp/p&doc=a.md');
     await flushPromises();
 
     expect(env.sendDeepLink).toHaveBeenCalledWith(focusedWin, { doc: 'a.md', kind: 'doc' });
@@ -1067,7 +1067,7 @@ describe('registerProtocolHandler — share-flow routing', () => {
  */
 describe('registerProtocolHandler — resolved share routing (US-003)', () => {
   function makeShareUrl(blobUrl: string): string {
-    return `openknowledge://share?url=${encodeURIComponent(blobUrl)}`;
+    return `synapsenote://share?url=${encodeURIComponent(blobUrl)}`;
   }
 
   function expectedSharePayload(): ShareUrlPayload {
@@ -1716,7 +1716,7 @@ describe('registerProtocolHandler — resolved share routing (US-003)', () => {
   });
 
   test('share URL via second-instance argv reaches resolution', async () => {
-    // A warm CLI launch (`open-knowledge openknowledge://share?url=...`) arrives
+    // A warm CLI launch (`synapsenote synapsenote://share?url=...`) arrives
     // via second-instance argv, not an Apple Event. Share resolution must run.
     const env = makeEnv();
     env.readyWindow = { id: 'primary' };
@@ -1735,7 +1735,7 @@ describe('registerProtocolHandler — resolved share routing (US-003)', () => {
     await flushPromises();
 
     env.app.fireSecondInstance([
-      '/Applications/OpenKnowledge.app/Contents/MacOS/OpenKnowledge',
+      '/Applications/SynapseNote.app/Contents/MacOS/SynapseNote',
       makeShareUrl(sharedBlobUrl),
     ]);
     await flushPromises();
@@ -1761,7 +1761,7 @@ describe('registerProtocolHandler — resolved share routing (US-003)', () => {
       resolveShareTarget,
       setTimeout: (cb, ms) => env.timers.push({ cb, ms }),
       getInitialArgv: () => [
-        '/Applications/OpenKnowledge.app/Contents/MacOS/OpenKnowledge',
+        '/Applications/SynapseNote.app/Contents/MacOS/SynapseNote',
         makeShareUrl(sharedBlobUrl),
       ],
     });
@@ -1842,7 +1842,7 @@ describe('registerProtocolHandler — resolved share routing (US-003)', () => {
 
 /**
  * Screen-flow routing tests — verifies `routeScreen` dispatches
- * `openknowledge://screen?name=<id>` deep links through the injected
+ * `synapsenote://screen?name=<id>` deep links through the injected
  * `openScreen` dep, with the same focused-vs-ready window resolution and
  * silent-drop branches as the share flow, without disturbing the `open` path.
  */
@@ -1866,7 +1866,7 @@ describe('registerProtocolHandler — screen-flow routing', () => {
     env.app.resolveReady();
     await flushPromises();
 
-    env.app.fireOpenUrl('openknowledge://screen?name=settings');
+    env.app.fireOpenUrl('synapsenote://screen?name=settings');
     await flushPromises();
 
     expect(openScreen).toHaveBeenCalledTimes(1);
@@ -1895,7 +1895,7 @@ describe('registerProtocolHandler — screen-flow routing', () => {
     env.app.resolveReady();
     await flushPromises();
 
-    env.app.fireOpenUrl('openknowledge://screen?name=install-claude');
+    env.app.fireOpenUrl('synapsenote://screen?name=install-claude');
     await flushPromises();
 
     expect(openScreen).toHaveBeenCalledWith(focusedWin, 'install-claude');
@@ -1924,7 +1924,7 @@ describe('registerProtocolHandler — screen-flow routing', () => {
     env.app.resolveReady();
     await flushPromises();
 
-    env.app.fireOpenUrl('openknowledge://screen?name=settings');
+    env.app.fireOpenUrl('synapsenote://screen?name=settings');
     await flushPromises();
 
     expect(openScreen).toHaveBeenCalledTimes(1);
@@ -1950,7 +1950,7 @@ describe('registerProtocolHandler — screen-flow routing', () => {
     env.app.resolveReady();
     await flushPromises();
 
-    env.app.fireOpenUrl('openknowledge://screen?name=settings');
+    env.app.fireOpenUrl('synapsenote://screen?name=settings');
     await flushPromises();
 
     expect(warnLog.some((e) => e.msg.includes('openScreen dep missing'))).toBe(true);
@@ -1979,7 +1979,7 @@ describe('registerProtocolHandler — screen-flow routing', () => {
     env.app.resolveReady();
     await flushPromises();
 
-    env.app.fireOpenUrl('openknowledge://screen?name=settings');
+    env.app.fireOpenUrl('synapsenote://screen?name=settings');
     await flushPromises();
 
     expect(openScreen).not.toHaveBeenCalled();
@@ -1989,7 +1989,7 @@ describe('registerProtocolHandler — screen-flow routing', () => {
 
 /**
  * `continue-activity` Handoff path — macOS Universal Links. The event fires
- * when a user taps `https://openknowledge.ai/d/<encoded>` on a paired device
+ * when a user taps `https://synapse.lawdigest.kr/d/<encoded>` on a paired device
  * (or, post-AASA-activation, in Slack/iMessage/Notes on this device). The
  * handler:
  *   1. Filters for `NSUserActivityTypeBrowsingWeb` only — other activity
@@ -1997,7 +1997,7 @@ describe('registerProtocolHandler — screen-flow routing', () => {
  *      additions).
  *   2. Reads `webpageURL` from `details` first, then `userInfo` (defensive
  *      against API drift).
- *   3. Host-gates to `openknowledge.ai` / `www.openknowledge.ai` so a
+ *   3. Host-gates to `synapse.lawdigest.kr` / `synapse.lawdigest.kr` so a
  *      malicious `NSUserActivityTypeBrowsingWeb` referencing a third-party
  *      URL can never poison the queue.
  *   4. Routes the URL through the same `enqueueOrRoute` plumbing as the
@@ -2024,7 +2024,7 @@ describe('registerProtocolHandler — continue-activity Handoff path', () => {
     await flushPromises();
 
     const encoded = encodeShareUrl('https://github.com/inkeep/playbooks/blob/main/x.md');
-    const url = `https://openknowledge.ai/d/${encoded}`;
+    const url = `https://synapse.lawdigest.kr/d/${encoded}`;
     const event = env.app.fireContinueActivity('NSUserActivityTypeBrowsingWeb', null, {
       webpageURL: url,
     });
@@ -2044,7 +2044,7 @@ describe('registerProtocolHandler — continue-activity Handoff path', () => {
     });
   });
 
-  test('accepts www.openknowledge.ai host (dual-host AASA discipline)', async () => {
+  test('accepts synapse.lawdigest.kr host (dual-host AASA discipline)', async () => {
     const env = makeEnv();
     const focusedWin: FakeWindowHandle = { id: 'focused' };
     env.readyWindow = focusedWin;
@@ -2065,7 +2065,7 @@ describe('registerProtocolHandler — continue-activity Handoff path', () => {
 
     const encoded = encodeShareUrl('https://github.com/o/r/blob/main/x.md');
     env.app.fireContinueActivity('NSUserActivityTypeBrowsingWeb', null, {
-      webpageURL: `https://www.openknowledge.ai/d/${encoded}`,
+      webpageURL: `https://synapse.lawdigest.kr/d/${encoded}`,
     });
     await flushPromises();
 
@@ -2098,7 +2098,7 @@ describe('registerProtocolHandler — continue-activity Handoff path', () => {
     const encoded = encodeShareUrl('https://github.com/o/r/blob/main/x.md');
     env.app.fireContinueActivity(
       'NSUserActivityTypeBrowsingWeb',
-      { webpageURL: `https://openknowledge.ai/d/${encoded}` },
+      { webpageURL: `https://synapse.lawdigest.kr/d/${encoded}` },
       undefined,
     );
     await flushPromises();
@@ -2129,8 +2129,8 @@ describe('registerProtocolHandler — continue-activity Handoff path', () => {
 
     const event = env.app.fireContinueActivity(
       'com.example.unrelated.activity',
-      { webpageURL: 'https://openknowledge.ai/d/x' },
-      { webpageURL: 'https://openknowledge.ai/d/x' },
+      { webpageURL: 'https://synapse.lawdigest.kr/d/x' },
+      { webpageURL: 'https://synapse.lawdigest.kr/d/x' },
     );
     await flushPromises();
 
@@ -2250,7 +2250,7 @@ describe('registerProtocolHandler — continue-activity Handoff path', () => {
 
     const encoded = encodeShareUrl('https://github.com/o/r/blob/main/x.md');
     env.app.fireContinueActivity('NSUserActivityTypeBrowsingWeb', null, {
-      webpageURL: `https://openknowledge.ai/d/${encoded}`,
+      webpageURL: `https://synapse.lawdigest.kr/d/${encoded}`,
     });
     await flushPromises();
 
@@ -2258,7 +2258,7 @@ describe('registerProtocolHandler — continue-activity Handoff path', () => {
     expect(entry).toBeDefined();
     expect(entry?.obj).toMatchObject({
       type: 'NSUserActivityTypeBrowsingWeb',
-      urlHost: 'openknowledge.ai',
+      urlHost: 'synapse.lawdigest.kr',
     });
   });
 
@@ -2287,7 +2287,7 @@ describe('registerProtocolHandler — continue-activity Handoff path', () => {
     // pushes into the queue (flushed=false). No dispatch yet.
     const encoded = encodeShareUrl('https://github.com/o/r/blob/main/x.md');
     env.app.fireContinueActivity('NSUserActivityTypeBrowsingWeb', null, {
-      webpageURL: `https://openknowledge.ai/d/${encoded}`,
+      webpageURL: `https://synapse.lawdigest.kr/d/${encoded}`,
     });
     expect(resolveShareTarget).not.toHaveBeenCalled();
 
@@ -2322,42 +2322,42 @@ describe('registerProtocolHandler — continue-activity Handoff path', () => {
     await flushPromises();
 
     // Legacy open
-    env.app.fireOpenUrl('openknowledge://open?project=/tmp/p&doc=a.md');
+    env.app.fireOpenUrl('synapsenote://open?project=/tmp/p&doc=a.md');
     await flushPromises();
     expect(env.sendDeepLink).toHaveBeenCalledWith(focusedWin, { doc: 'a.md', kind: 'doc' });
 
     // Custom-scheme share routes through resolution, not the open path.
     const blobUrl = 'https://github.com/o/r/blob/main/x.md';
-    env.app.fireOpenUrl(`openknowledge://share?url=${encodeURIComponent(blobUrl)}`);
+    env.app.fireOpenUrl(`synapsenote://share?url=${encodeURIComponent(blobUrl)}`);
     await flushPromises();
     expect(resolveShareTarget).toHaveBeenCalledTimes(1);
   });
 });
 
-describe('parseOpenKnowledgeFileUrl', () => {
+describe('parseSynapseNoteFileUrl', () => {
   test('parses a well-formed file= URL to an absolute resolved path', () => {
-    const parsed = parseOpenKnowledgeFileUrl(
-      `openknowledge://open?file=${encodeURIComponent('/Users/me/notes/todo.md')}`,
+    const parsed = parseSynapseNoteFileUrl(
+      `synapsenote://open?file=${encodeURIComponent('/Users/me/notes/todo.md')}`,
     );
     expect(parsed).toEqual({ host: 'open', file: '/Users/me/notes/todo.md' });
   });
 
   test('rejects a relative path, `..` traversal, null bytes, and a missing param', () => {
-    expect(parseOpenKnowledgeFileUrl('openknowledge://open?file=notes/todo.md')).toBeNull();
+    expect(parseSynapseNoteFileUrl('synapsenote://open?file=notes/todo.md')).toBeNull();
     expect(
-      parseOpenKnowledgeFileUrl(
-        `openknowledge://open?file=${encodeURIComponent('/Users/me/../etc/passwd')}`,
+      parseSynapseNoteFileUrl(
+        `synapsenote://open?file=${encodeURIComponent('/Users/me/../etc/passwd')}`,
       ),
     ).toBeNull();
-    expect(parseOpenKnowledgeFileUrl('openknowledge://open?file=%00/x.md')).toBeNull();
+    expect(parseSynapseNoteFileUrl('synapsenote://open?file=%00/x.md')).toBeNull();
     // No `file` param → not a single-file URL (the project-doc parser handles it).
-    expect(parseOpenKnowledgeFileUrl('openknowledge://open?project=/tmp/p&doc=a.md')).toBeNull();
+    expect(parseSynapseNoteFileUrl('synapsenote://open?project=/tmp/p&doc=a.md')).toBeNull();
   });
 
   test('rejects a foreign protocol / host', () => {
-    expect(parseOpenKnowledgeFileUrl('https://open/?file=/x.md')).toBeNull();
+    expect(parseSynapseNoteFileUrl('https://open/?file=/x.md')).toBeNull();
     expect(
-      parseOpenKnowledgeFileUrl(`openknowledge://share?file=${encodeURIComponent('/x.md')}`),
+      parseSynapseNoteFileUrl(`synapsenote://share?file=${encodeURIComponent('/x.md')}`),
     ).toBeNull();
   });
 });
@@ -2383,9 +2383,7 @@ describe('registerProtocolHandler — single-file open (file=)', () => {
     env.app.resolveReady();
     await flushPromises();
 
-    env.app.fireOpenUrl(
-      `openknowledge://open?file=${encodeURIComponent('/Users/me/notes/todo.md')}`,
-    );
+    env.app.fireOpenUrl(`synapsenote://open?file=${encodeURIComponent('/Users/me/notes/todo.md')}`);
     await flushPromises();
 
     expect(env.openEphemeralFile).toHaveBeenCalledWith('/Users/me/notes/todo.md');
@@ -2406,7 +2404,7 @@ describe('registerProtocolHandler — single-file open (file=)', () => {
     env.app.resolveReady();
     await flushPromises();
 
-    env.app.fireOpenUrl('openknowledge://open?project=/tmp/p&doc=a.md');
+    env.app.fireOpenUrl('synapsenote://open?project=/tmp/p&doc=a.md');
     await flushPromises();
 
     expect(env.openProject).toHaveBeenCalledWith('/tmp/p', {
@@ -2430,7 +2428,7 @@ describe('registerProtocolHandler — single-file open (file=)', () => {
     await flushPromises();
 
     expect(() =>
-      env.app.fireOpenUrl(`openknowledge://open?file=${encodeURIComponent('/Users/me/x.md')}`),
+      env.app.fireOpenUrl(`synapsenote://open?file=${encodeURIComponent('/Users/me/x.md')}`),
     ).not.toThrow();
     await flushPromises();
     expect(env.openProject).not.toHaveBeenCalled();

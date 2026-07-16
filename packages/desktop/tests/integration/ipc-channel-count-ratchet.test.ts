@@ -182,7 +182,7 @@ const CHANNELS_SRC = readFileSync(SRC_PATH, 'utf-8');
  *
  *   - `ok:terminal:claude-assist` — a SINGLE discriminated channel carrying
  *     both the `preflight` read (is `claude` on the login-shell PATH; is the
- *     `open-knowledge` MCP server wired into `~/.claude.json`) and the `rewire`
+ *     `synapsenote` MCP server wired into `~/.claude.json`) and the `rewire`
  *     action (show the MCP consent dialog so the user can wire it). Folded into
  *     one channel via the `ok:sharing:dispatch` discriminated-args precedent
  *     (+1, not +2). It is NOT an arbitrary-exec channel and so does NOT belong

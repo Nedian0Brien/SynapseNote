@@ -63,8 +63,8 @@
  * string.
  */
 
-import type { MarkdownManager } from '@inkeep/open-knowledge-core';
-import { htmlToMdast, mdastToMarkdown } from '@inkeep/open-knowledge-core';
+import type { MarkdownManager } from '@nedian0brien/synapsenote-core';
+import { htmlToMdast, mdastToMarkdown } from '@nedian0brien/synapsenote-core';
 import type { JSONContent } from '@tiptap/core';
 import { Fragment, type Node as ProseMirrorNode } from '@tiptap/pm/model';
 import { type EditorState, TextSelection, type Transaction } from '@tiptap/pm/state';

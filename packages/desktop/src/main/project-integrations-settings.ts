@@ -1,8 +1,8 @@
 /**
  * Settings → This project → AI tools — persistent IPC surface for per-component
- * install/uninstall of OpenKnowledge's PROJECT-LOCAL footprint: the per-editor
+ * install/uninstall of SynapseNote's PROJECT-LOCAL footprint: the per-editor
  * project MCP config files (`.mcp.json`, `.cursor/mcp.json`, `.codex/config.toml`,
- * …) and the project runtime skill (`.claude/skills/open-knowledge/`, …), all
+ * …) and the project runtime skill (`.claude/skills/synapsenote/`, …), all
  * scoped to the project the requesting window has open.
  *
  * The project-scoped sibling of `integrations-settings.ts` (which owns the
@@ -34,7 +34,7 @@ import type {
   McpDeclineReason,
   McpEntryClassification,
   McpRemoveOutcome,
-} from '@inkeep/open-knowledge';
+} from '@nedian0brien/synapsenote';
 import type { IpcMain, IpcMainInvokeEvent } from 'electron';
 import type {
   IntegrationsEditorState,
@@ -66,7 +66,7 @@ function followUpFor(id: McpWiringEditorId): ProjectIntegrationsFollowUp {
   return EDITOR_FOLLOW_UP[id] ?? 'none';
 }
 
-/** CLI-side surface (backed by `@inkeep/open-knowledge` project primitives). */
+/** CLI-side surface (backed by `@nedian0brien/synapsenote` project primitives). */
 export interface ProjectIntegrationsCliSurface {
   allEditorIds: readonly McpWiringEditorId[];
   editorLabel(id: McpWiringEditorId): string;
@@ -96,7 +96,7 @@ export interface ProjectIntegrationsCliSurface {
     projectDir: string,
     projectPath: string,
   ): McpRemoveOutcome;
-  /** The canonical project runtime skill (`.claude/skills/open-knowledge`) is
+  /** The canonical project runtime skill (`.claude/skills/synapsenote`) is
    *  on disk — the single row's checked state. */
   isProjectSkillInstalled(projectDir: string): boolean;
   writeProjectSkill(
@@ -254,7 +254,7 @@ export function registerProjectIntegrationsSettings(
         default:
           return {
             ok: false,
-            error: `Couldn't add OpenKnowledge to ${label}${result.error ? ` (${result.error})` : ''}.`,
+            error: `Couldn't add SynapseNote to ${label}${result.error ? ` (${result.error})` : ''}.`,
           };
       }
     }
@@ -276,7 +276,7 @@ export function registerProjectIntegrationsSettings(
       case 'left-foreign':
         return {
           ok: false,
-          error: `The open-knowledge entry in ${label}'s project config isn't one OpenKnowledge wrote — it was left unchanged. Remove it manually if you no longer want it.`,
+          error: `The synapsenote entry in ${label}'s project config isn't one SynapseNote wrote — it was left unchanged. Remove it manually if you no longer want it.`,
         };
       case 'declined':
         return {

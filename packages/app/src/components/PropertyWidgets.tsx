@@ -1,4 +1,4 @@
-// biome-ignore-all lint/plugin/no-raw-html-interactive-element: pre-rule backlog — file uses raw <button>/<input>/<textarea> awaiting shadcn migration; tracked at https://github.com/inkeep/open-knowledge/blob/main/biome-plugins/README.md#no-raw-html-interactive-elementgrit
+// biome-ignore-all lint/plugin/no-raw-html-interactive-element: pre-rule backlog — file uses raw <button>/<input>/<textarea> awaiting shadcn migration; tracked at https://github.com/Nedian0Brien/SynapseNote/blob/main/biome-plugins/README.md#no-raw-html-interactive-elementgrit
 /**
  * Property widgets — controlled inputs for the five frontmatter types.
  *
@@ -18,16 +18,16 @@
  * regardless of declared type — value shape wins for rendering.
  */
 
+import type { MessageDescriptor } from '@lingui/core';
+import { msg } from '@lingui/core/macro';
+import { Trans, useLingui } from '@lingui/react/macro';
 import {
   FRONTMATTER_TAG_GRAMMAR_HINT,
   FRONTMATTER_TAG_VALUE_RE,
   type FrontmatterType,
   type FrontmatterValue,
   isValidFrontmatterTagValue,
-} from '@inkeep/open-knowledge-core';
-import type { MessageDescriptor } from '@lingui/core';
-import { msg } from '@lingui/core/macro';
-import { Trans, useLingui } from '@lingui/react/macro';
+} from '@nedian0brien/synapsenote-core';
 import { format, parse, parseISO } from 'date-fns';
 import {
   Braces,

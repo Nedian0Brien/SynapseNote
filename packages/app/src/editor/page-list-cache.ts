@@ -171,7 +171,7 @@ function pageIconsEqual(
  * Build the slug-keyed index from a pages set. First-wins on slug collision
  * (Map insertion order preserved; iteration order of a Set follows insertion
  * order per ES spec). Accepts the slug function as a parameter so this
- * module stays free of a `@inkeep/open-knowledge-core` import (the actual
+ * module stays free of a `@nedian0brien/synapsenote-core` import (the actual
  * slugger lives there); callers pass `toWikiLinkSlug`.
  *
  * Tie-break is deliberately insertion-order, not alphabetical — the slug

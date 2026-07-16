@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, test } from 'bun:test';
-import type { BrokenLink, RenderWarning, WriteWarning } from '@inkeep/open-knowledge-core';
+import type { BrokenLink, RenderWarning, WriteWarning } from '@nedian0brien/synapsenote-core';
 import {
   formatAdvisoryBriefs,
   formatAdvisoryLines,

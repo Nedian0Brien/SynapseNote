@@ -44,8 +44,8 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as wait } from 'node:timers/promises';
-import { chunkedYTextInsert } from '@inkeep/open-knowledge-core';
-import { applyExternalChange, isPairedWriteOrigin } from '@inkeep/open-knowledge-server';
+import { chunkedYTextInsert } from '@nedian0brien/synapsenote-core';
+import { applyExternalChange, isPairedWriteOrigin } from '@nedian0brien/synapsenote-server';
 import * as Y from 'yjs';
 
 import {

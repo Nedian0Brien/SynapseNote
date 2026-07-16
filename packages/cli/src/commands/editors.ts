@@ -13,10 +13,10 @@ import {
   EDITOR_LABELS as CORE_EDITOR_LABELS,
   HOSTS_WITH_USER_SKILL_DIR as CORE_HOSTS_WITH_USER_SKILL_DIR,
   type EditorId as CoreEditorId,
-} from '@inkeep/open-knowledge-core';
-import { MCP_SERVER_NAME } from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-core';
+import { MCP_SERVER_NAME } from '@nedian0brien/synapsenote-server';
 
-// Re-export the canonical surface so existing CLI consumers can import via the package name (`@inkeep/open-knowledge`)
+// Re-export the canonical surface so existing CLI consumers can import via the package name (`@nedian0brien/synapsenote`)
 export type EditorId = CoreEditorId;
 export const ALL_EDITOR_IDS: readonly EditorId[] = CORE_ALL_EDITOR_IDS;
 export const EDITOR_LABELS: Record<EditorId, string> = CORE_EDITOR_LABELS;
@@ -69,7 +69,7 @@ const DEV_MCP_ENV = {
  *      "$BUNDLE"` succeeds. Silently retrying via npx would hide install
  *      corruption.
  *   7. `@latest` on the package spec is load-bearing: without it,
- *      `npa('@inkeep/open-knowledge')` parses as `type: 'range', spec: '*'`,
+ *      `npa('@nedian0brien/synapsenote')` parses as `type: 'range', spec: '*'`,
  *      which routes through `npm-pick-manifest`'s engine-aware sort. Users
  *      on a Node version older than the package's `engines.node` get
  *      silently downgraded to the highest engine-compatible version (often
@@ -93,15 +93,15 @@ export const CHAIN_VERSION_SENTINEL = '# ok-mcp-v1';
 
 /** @internal */
 export const CHAIN_V1 = `# ok-mcp-v1
-USER_BUNDLE="$HOME/Applications/OpenKnowledge.app/Contents/Resources/cli/bin/ok.sh"
+USER_BUNDLE="$HOME/Applications/SynapseNote.app/Contents/Resources/cli/bin/ok.sh"
 [ -f "$USER_BUNDLE" ] && [ -x "$USER_BUNDLE" ] && exec "$USER_BUNDLE" mcp
-BUNDLE="/Applications/OpenKnowledge.app/Contents/Resources/cli/bin/ok.sh"
+BUNDLE="/Applications/SynapseNote.app/Contents/Resources/cli/bin/ok.sh"
 [ -f "$BUNDLE" ] && [ -x "$BUNDLE" ] && exec "$BUNDLE" mcp
-command -v npx >/dev/null 2>&1 && exec npx -y @inkeep/open-knowledge@latest mcp
+command -v npx >/dev/null 2>&1 && exec npx -y @nedian0brien/synapsenote@latest mcp
 for d in "$HOME/.nvm/versions/node"/*/bin "$HOME/.fnm/node-versions"/*/installation/bin "$HOME/.asdf/installs/nodejs"/*/bin /opt/homebrew/bin /usr/local/bin "$HOME/.local/bin" "$HOME/.volta/bin"; do
-  [ -f "$d/npx" ] && [ -x "$d/npx" ] && exec "$d/npx" -y @inkeep/open-knowledge@latest mcp
+  [ -f "$d/npx" ] && [ -x "$d/npx" ] && exec "$d/npx" -y @nedian0brien/synapsenote@latest mcp
 done
-echo "OpenKnowledge: install OK Desktop or Node.js 24+, then restart your editor" >&2
+echo "SynapseNote: install OK Desktop or Node.js 24+, then restart your editor" >&2
 exit 127`;
 
 /** @internal */
@@ -113,7 +113,7 @@ export const CHAIN_WIN_VERSION_SENTINEL = '# ok-mcp-win-v1';
  * a runtime at MCP-host spawn time: the npm-global `ok.cmd` shim first, then
  * `npx.cmd` from PATH, then explicit version-manager/installer dirs. No
  * bundle branches — OK Desktop does not ship on Windows, so `npm i -g
- * @inkeep/open-knowledge` is the primary install persona. That is also why
+ * @nedian0brien/synapsenote` is the primary install persona. That is also why
  * the pinned global shim outranks `npx @latest`: the MCP server and the `ok`
  * CLI the user runs by hand must resolve to the SAME installed version
  * (`@latest`-first would let them silently diverge).
@@ -181,7 +181,7 @@ if ($env:APPDATA) {
 $ok = Get-Command ok.cmd -CommandType Application -ErrorAction SilentlyContinue
 if ($ok) { & $ok.Source mcp; exit $LASTEXITCODE }
 $npx = Get-Command npx.cmd -CommandType Application -ErrorAction SilentlyContinue
-if ($npx) { & $npx.Source -y '@inkeep/open-knowledge@latest' mcp; exit $LASTEXITCODE }
+if ($npx) { & $npx.Source -y '@nedian0brien/synapsenote@latest' mcp; exit $LASTEXITCODE }
 $dirs = @()
 if ($env:ProgramFiles) { $dirs += Join-Path $env:ProgramFiles 'nodejs' }
 if ($env:NVM_SYMLINK) { $dirs += $env:NVM_SYMLINK }
@@ -193,14 +193,14 @@ if ($env:LOCALAPPDATA) {
 if ($env:USERPROFILE) { $dirs += Join-Path $env:USERPROFILE 'scoop\\shims' }
 foreach ($d in $dirs) {
   $probe = Join-Path $d 'npx.cmd'
-  if (Test-Path -LiteralPath $probe -PathType Leaf) { & $probe -y '@inkeep/open-knowledge@latest' mcp; exit $LASTEXITCODE }
+  if (Test-Path -LiteralPath $probe -PathType Leaf) { & $probe -y '@nedian0brien/synapsenote@latest' mcp; exit $LASTEXITCODE }
 }
-[Console]::Error.WriteLine('OpenKnowledge: install Node.js 24+ (npm i -g @inkeep/open-knowledge), then restart your editor')
+[Console]::Error.WriteLine('SynapseNote: install Node.js 24+ (npm i -g @nedian0brien/synapsenote), then restart your editor')
 exit 127`;
 
 /**
  * Version + ownership markers for Pi's managed bridge-extension file
- * (`.pi/extensions/open-knowledge.ts`) — the `format: 'file'` sibling of the
+ * (`.pi/extensions/synapsenote.ts`) — the `format: 'file'` sibling of the
  * chain-entry sentinels above. The version sentinel is the whole first line of
  * a published drop; the ownership marker is its version-agnostic prefix, so
  * removal recognizes stale AND dev drops while the up-to-date check only
@@ -334,7 +334,7 @@ export function isEntryUpToDate(entry: unknown): boolean {
 
   // Pi managed-file shape (synthesized by `classifyExistingMcpEntry` for
   // `format: 'file'` targets): `args[0]` carries the raw text of
-  // `.pi/extensions/open-knowledge.ts`. Up-to-date iff the file's FIRST LINE
+  // `.pi/extensions/synapsenote.ts`. Up-to-date iff the file's FIRST LINE
   // is the current version sentinel — first-line strict so a foreign file that
   // merely mentions the marker in its body is never classified current, while
   // body drift below line one keeps the same leave-alone tolerance as the
@@ -453,7 +453,7 @@ function buildOpenCodeEntry(options: McpInstallOptions = {}): Record<string, unk
  * (an injected `env` on either shape, a different `command`, an appended
  * chain line). Unlike {@link isEntryUpToDate} — deliberately permissive (sentinel
  * substring) for the reclaim flow — this is an EXACT match, so it is sound
- * as a trust boundary: a same-named `mcpServers["open-knowledge"]` entry in
+ * as a trust boundary: a same-named `mcpServers["synapsenote"]` entry in
  * a shared/cloned project's `.mcp.json` that points anywhere else (RCE via
  * `command`, tool-poisoning via a URL) fails this and is NOT pre-approved,
  * leaving Claude Code's own "trust this MCP server?" prompt in place.
@@ -757,7 +757,7 @@ export const EDITOR_TARGETS: Record<EditorId, EditorMcpTarget> = {
     scope: 'global',
     detectPath: (_cwd, home) => join(home ?? homedir(), '.claude'),
     projectConfigPath: (cwd) => join(cwd, '.mcp.json'),
-    projectSkillPath: (cwd) => join(cwd, '.claude', 'skills', 'open-knowledge', 'SKILL.md'),
+    projectSkillPath: (cwd) => join(cwd, '.claude', 'skills', 'synapsenote', 'SKILL.md'),
   },
   'claude-desktop': {
     id: 'claude-desktop',
@@ -781,7 +781,7 @@ export const EDITOR_TARGETS: Record<EditorId, EditorMcpTarget> = {
     scope: 'global',
     detectPath: (_cwd, home) => dirname(resolveCursorConfigPath({ home })),
     projectConfigPath: (cwd) => join(cwd, '.cursor', 'mcp.json'),
-    projectSkillPath: (cwd) => join(cwd, '.cursor', 'skills', 'open-knowledge', 'SKILL.md'),
+    projectSkillPath: (cwd) => join(cwd, '.cursor', 'skills', 'synapsenote', 'SKILL.md'),
   },
   codex: {
     id: 'codex',
@@ -801,7 +801,7 @@ export const EDITOR_TARGETS: Record<EditorId, EditorMcpTarget> = {
     // only" is honest. This is the second source for core's
     // `EDITOR_PROJECT_SKILL_ROOT` (codex) and must match it. Codex also reads
     // `.agents/skills/` as a generic store, but OK writes the primary dir.
-    projectSkillPath: (cwd) => join(cwd, '.codex', 'skills', 'open-knowledge', 'SKILL.md'),
+    projectSkillPath: (cwd) => join(cwd, '.codex', 'skills', 'synapsenote', 'SKILL.md'),
   },
   opencode: {
     id: 'opencode',
@@ -821,7 +821,7 @@ export const EDITOR_TARGETS: Record<EditorId, EditorMcpTarget> = {
     // natively, alongside `.agents/skills/` and `.claude/skills/`), so "install
     // on OpenCode only" is honest — no shared write with Codex. Second source
     // for core's `EDITOR_PROJECT_SKILL_ROOT` (opencode) and must match it.
-    projectSkillPath: (cwd) => join(cwd, '.opencode', 'skills', 'open-knowledge', 'SKILL.md'),
+    projectSkillPath: (cwd) => join(cwd, '.opencode', 'skills', 'synapsenote', 'SKILL.md'),
   },
   openclaw: {
     id: 'openclaw',
@@ -853,7 +853,7 @@ export const EDITOR_TARGETS: Record<EditorId, EditorMcpTarget> = {
     // every generic consumer treats it as "no user-global surface to sweep".
     configPath: () => {
       throw new Error(
-        "Pi has no user-global MCP config; OK's integration is the project-scoped bridge extension at .pi/extensions/open-knowledge.ts (run `ok init` in the project).",
+        "Pi has no user-global MCP config; OK's integration is the project-scoped bridge extension at .pi/extensions/synapsenote.ts (run `ok init` in the project).",
       );
     },
     format: 'file',
@@ -874,11 +874,11 @@ export const EDITOR_TARGETS: Record<EditorId, EditorMcpTarget> = {
     // reclaim, sharing-mode exclude, deinit) at OK's own artifact. Second
     // source for core's `EDITOR_PROJECT_CONFIG_PATH.pi` and must match it.
     // OK never reads or writes `.pi/settings.json` — that file is the user's.
-    projectConfigPath: (cwd) => join(cwd, '.pi', 'extensions', 'open-knowledge.ts'),
+    projectConfigPath: (cwd) => join(cwd, '.pi', 'extensions', 'synapsenote.ts'),
     // Pi scans `.pi/skills` natively (alongside `.agents/skills`), trust-gated
     // like its extensions. Second source for core's
     // `EDITOR_PROJECT_SKILL_ROOT.pi` and must match it.
-    projectSkillPath: (cwd) => join(cwd, '.pi', 'skills', 'open-knowledge', 'SKILL.md'),
+    projectSkillPath: (cwd) => join(cwd, '.pi', 'skills', 'synapsenote', 'SKILL.md'),
   },
   antigravity: {
     id: 'antigravity',
@@ -925,7 +925,7 @@ export const EDITOR_TARGETS: Record<EditorId, EditorMcpTarget> = {
     id: 'hermes',
     label: EDITOR_LABELS.hermes,
     configPath: (_cwd, home) => resolveHermesConfigPath({ home }),
-    // YAML config: OK edits only its own `mcp_servers.open-knowledge` entry via
+    // YAML config: OK edits only its own `mcp_servers.synapsenote` entry via
     // the format-preserving `yaml` document writer, so the user's model +
     // tool-filter config and comments in the same file are untouched.
     format: 'yaml',

@@ -1,6 +1,6 @@
 /**
- * RED regression tests for inkeep/open-knowledge#617 — WYSIWYG external-link
- * chips must reach the OS default browser, not a child OpenKnowledge window.
+ * RED regression tests for Nedian0Brien/SynapseNote#617 — WYSIWYG external-link
+ * chips must reach the OS default browser, not a child SynapseNote window.
  *
  * Contract under test: activating an external (`http(s)://`) link chip routes
  * through the desktop bridge (`window.okDesktop.shell.openExternal`) when it is

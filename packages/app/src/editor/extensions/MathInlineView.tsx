@@ -33,8 +33,8 @@
  * inline with its own red-underline styling.
  */
 
-import { incrementJsxRenderFailure } from '@inkeep/open-knowledge-core';
 import { Trans } from '@lingui/react/macro';
+import { incrementJsxRenderFailure } from '@nedian0brien/synapsenote-core';
 import type { NodeViewProps } from '@tiptap/core';
 import { NodeSelection } from '@tiptap/pm/state';
 import { NodeViewWrapper } from '@tiptap/react';

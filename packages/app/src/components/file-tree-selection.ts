@@ -1,4 +1,4 @@
-import type { InlineAssetMediaKind } from '@inkeep/open-knowledge-core';
+import type { InlineAssetMediaKind } from '@nedian0brien/synapsenote-core';
 import { hashFromAssetPath } from '@/lib/doc-hash';
 import {
   fileEntryToTreePath,

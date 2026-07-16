@@ -1,16 +1,16 @@
 ---
-name: open-knowledge-bug-report
-description: "Use when the user reports a problem with OpenKnowledge, asks for help debugging OK, or wants to file a bug report. This skill guides the agent to capture diagnostic information via the ok bug-report CLI command."
-compatibility: "Any MCP host (Claude Code, Cursor, Codex, Windsurf) with OpenKnowledge MCP server registered."
+name: synapsenote-bug-report
+description: "Use when the user reports a problem with SynapseNote, asks for help debugging OK, or wants to file a bug report. This skill guides the agent to capture diagnostic information via the ok bug-report CLI command."
+compatibility: "Any MCP host (Claude Code, Cursor, Codex, Windsurf) with SynapseNote MCP server registered."
 metadata:
   version: "0.6.0"
-  author: "Inkeep"
-  repository: "https://github.com/inkeep/open-knowledge"
+  author: "SynapseNote"
+  repository: "https://github.com/Nedian0Brien/SynapseNote"
 ---
 
 # Bug Report — agent guidance
 
-When a user reports a problem with OpenKnowledge or asks for debugging help, use the `ok bug-report` command to capture a structured diagnostic bundle.
+When a user reports a problem with SynapseNote or asks for debugging help, use the `ok bug-report` command to capture a structured diagnostic bundle.
 
 ## Quick path
 
@@ -56,10 +56,10 @@ The `--no-reveal` flag suppresses the Finder reveal (use it when running as an a
 
 ## If the command is not available
 
-The `ok bug-report` command ships with `@inkeep/open-knowledge` >= 0.7.0. If the user's version is older:
+The `ok bug-report` command ships with `@nedian0brien/synapsenote` >= 0.7.0. If the user's version is older:
 
 1. Check version: `ok --version`
-2. If < 0.7.0: suggest `npm install -g @inkeep/open-knowledge@latest` to update
+2. If < 0.7.0: suggest `npm install -g @nedian0brien/synapsenote@latest` to update
 3. Fallback: manually inspect `~/.ok/logs/` for recent `.log` files (NDJSON format, greppable)
 
 ## Privacy

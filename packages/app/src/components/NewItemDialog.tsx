@@ -1,7 +1,7 @@
-import { CreatePageSuccessSchema } from '@inkeep/open-knowledge-core';
 import type { MessageDescriptor } from '@lingui/core';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react/macro';
+import { CreatePageSuccessSchema } from '@nedian0brien/synapsenote-core';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useEffect, useId, useRef, useState } from 'react';

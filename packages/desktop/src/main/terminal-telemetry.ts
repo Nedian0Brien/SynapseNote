@@ -12,10 +12,10 @@
  * terminal-session marker (the manager is the single point that sees both shell
  * input and session end). The two renderer-originated signals (terminal-opened,
  * shell-consent-granted) emit from the renderer tracer in
- * `@inkeep/open-knowledge/app`'s `lib/terminal-telemetry.ts`.
+ * `@nedian0brien/synapsenote/app`'s `lib/terminal-telemetry.ts`.
  */
 
-import { withSpanSync } from '@inkeep/open-knowledge-server';
+import { withSpanSync } from '@nedian0brien/synapsenote-server';
 
 /**
  * Emit one `ok.desktop.shellExit` span. `crashed` distinguishes a PTY/host

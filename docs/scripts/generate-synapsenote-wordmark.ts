@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
-// Regenerates src/lib/ok-wordmark.data.ts from public/ok-wordmark.svg.
+// Regenerates src/lib/synapsenote-wordmark.data.ts from public/synapsenote-wordmark.svg.
 //
 // The OG-image renderer (src/lib/og-card.tsx) needs the wordmark as inline
 // bytes for satori. Reading it at runtime via process.cwd()+readFileSync
@@ -9,23 +9,23 @@ import path from 'node:path';
 // drops the .next/package.json CJS marker, which breaks require() of
 // on-demand routes on Vercel — ERR_REQUIRE_ESM). Inlining the asset as a
 // module-graph constant removes the runtime read entirely. Run this whenever
-// public/ok-wordmark.svg changes.
+// public/synapsenote-wordmark.svg changes.
 
 const root = path.resolve(import.meta.dirname, '..');
-const svg = readFileSync(path.join(root, 'public', 'ok-wordmark.svg'));
+const svg = readFileSync(path.join(root, 'public', 'synapsenote-wordmark.svg'));
 const dataUrl = `data:image/svg+xml;base64,${svg.toString('base64')}`;
 
 const header = [
-  '// Generated from public/ok-wordmark.svg — do not hand-edit.',
+  '// Generated from public/synapsenote-wordmark.svg — do not hand-edit.',
   '// Inlined as a module-graph constant so OG-image rendering needs no runtime',
   '// filesystem read (a process.cwd()+readFileSync read defeats the Next/',
   '// Turbopack file tracer and breaks require() of on-demand routes on Vercel).',
-  '// Regenerate with: bun run generate:og-wordmark',
+  '// Regenerate with: bun run generate:synapsenote-wordmark',
   '',
 ].join('\n');
 
-const out = `${header}export const OK_WORDMARK_DATA_URL = ${JSON.stringify(dataUrl)};\n`;
-writeFileSync(path.join(root, 'src', 'lib', 'ok-wordmark.data.ts'), out);
+const out = `${header}export const SYNAPSENOTE_WORDMARK_DATA_URL = ${JSON.stringify(dataUrl)};\n`;
+writeFileSync(path.join(root, 'src', 'lib', 'synapsenote-wordmark.data.ts'), out);
 console.log(
-  `wrote src/lib/ok-wordmark.data.ts (${dataUrl.length} chars from ${svg.length} svg bytes)`,
+  `wrote src/lib/synapsenote-wordmark.data.ts (${dataUrl.length} chars from ${svg.length} svg bytes)`,
 );

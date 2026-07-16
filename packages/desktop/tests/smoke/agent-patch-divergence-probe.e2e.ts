@@ -305,7 +305,7 @@ async function setupElectron(
   writeFileSync(join(contentDir, '.ok', 'config.yml'), 'content:\n  dir: .\n');
   writeFileSync(join(contentDir, `${docName}.md`), initialContent);
 
-  const deepLink = `openknowledge://open?project=${encodeURIComponent(contentDir)}&doc=${encodeURIComponent(docName)}`;
+  const deepLink = `synapsenote://open?project=${encodeURIComponent(contentDir)}&doc=${encodeURIComponent(docName)}`;
 
   const app = await electron.launch({
     args: [MAIN_ENTRY, `--user-data-dir=${userDataDir}`, deepLink],

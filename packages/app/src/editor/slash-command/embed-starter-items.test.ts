@@ -9,7 +9,7 @@
  */
 
 import { describe, expect, test } from 'bun:test';
-import { PREVIEW_EMBED_STARTERS } from '@inkeep/open-knowledge-core';
+import { PREVIEW_EMBED_STARTERS } from '@nedian0brien/synapsenote-core';
 import type { Editor } from '@tiptap/react';
 import { getEmbedStarterItems } from './embed-starter-items';
 

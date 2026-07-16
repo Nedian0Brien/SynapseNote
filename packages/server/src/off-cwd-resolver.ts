@@ -23,7 +23,7 @@
 
 import { realpath as fsRealpath } from 'node:fs/promises';
 import { dirname, relative, resolve, sep } from 'node:path';
-import { readConfigSafely, resolveConfigPath } from '@inkeep/open-knowledge-core/server';
+import { readConfigSafely, resolveConfigPath } from '@nedian0brien/synapsenote-core/server';
 import { isProcessAlive } from './process-alive.ts';
 import { discoverLockDirs } from './process-scan.ts';
 import { readUiLock } from './ui-lock.ts';

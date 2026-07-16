@@ -8,7 +8,7 @@
  * admission via `ASSET_EXTENSIONS`), with magic-byte sniffing + path-escape
  * + symlink-realpath as the security boundary.
  */
-import { ProblemDetailsSchema, UploadAssetSuccessSchema } from '@inkeep/open-knowledge-core';
+import { ProblemDetailsSchema, UploadAssetSuccessSchema } from '@nedian0brien/synapsenote-core';
 import { HttpResponseParseError } from '../http-client.ts';
 import { getCurrentDocName } from './current-doc-name.ts';
 

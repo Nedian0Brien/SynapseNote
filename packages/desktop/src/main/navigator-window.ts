@@ -87,7 +87,7 @@ export function createNavigatorWindow(deps: NavigatorDeps): BrowserWindowLike {
     ],
     // Static launcher title — no project bound, so branded app name works
     // here. Editor windows override with their own `projectName` title.
-    title: 'OpenKnowledge',
+    title: 'SynapseNote',
   });
   // Defer OS-level window display until both first-paint AND chrome-theme
   // signals arrive — same dual-signal gate as editor windows. The Navigator

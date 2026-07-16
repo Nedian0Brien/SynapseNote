@@ -29,8 +29,8 @@ export function findBundledOkPath(
 ): string | null {
   if (platform !== 'darwin') return null;
   const candidates = [
-    join(home, 'Applications', 'OpenKnowledge.app', BUNDLE_RELATIVE_OK),
-    join('/Applications', 'OpenKnowledge.app', BUNDLE_RELATIVE_OK),
+    join(home, 'Applications', 'SynapseNote.app', BUNDLE_RELATIVE_OK),
+    join('/Applications', 'SynapseNote.app', BUNDLE_RELATIVE_OK),
   ];
   return candidates.find((candidate) => fs.existsSync(candidate)) ?? null;
 }

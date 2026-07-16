@@ -42,7 +42,7 @@
  * button when the row is NodeSelected).
  */
 
-import { toDesktopAssetHref } from '@inkeep/open-knowledge-core';
+import { toDesktopAssetHref } from '@nedian0brien/synapsenote-core';
 import { FileUp } from 'lucide-react';
 
 interface FileProps {

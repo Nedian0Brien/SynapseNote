@@ -67,7 +67,7 @@ function createFakeServer() {
 function successBody() {
   return {
     ok: true,
-    shareUrl: 'https://openknowledge.ai/d/encoded',
+    shareUrl: 'https://synapse.lawdigest.kr/d/encoded',
     sharedUrl: 'https://github.com/o/r/blob/main/notes.md',
     branch: 'main',
   };
@@ -236,7 +236,7 @@ describe('share_link — target resolution (FR9 matrix)', () => {
       status: 200,
       body: {
         ok: true,
-        shareUrl: 'https://openknowledge.ai/d/root',
+        shareUrl: 'https://synapse.lawdigest.kr/d/root',
         sharedUrl: 'https://github.com/o/r/tree/main',
         branch: 'main',
       },
@@ -336,7 +336,7 @@ describe('share_link — happy path', () => {
       status: 200,
       body: {
         ok: true,
-        shareUrl: 'https://openknowledge.ai/d/encoded',
+        shareUrl: 'https://synapse.lawdigest.kr/d/encoded',
         sharedUrl: 'https://github.com/inkeep/wiki/blob/main/meeting.md',
         branch: 'main',
       },
@@ -347,12 +347,12 @@ describe('share_link — happy path', () => {
     expect(result.isError).toBeUndefined();
     expect(result.structuredContent).toMatchObject({
       ok: true,
-      shareUrl: 'https://openknowledge.ai/d/encoded',
+      shareUrl: 'https://synapse.lawdigest.kr/d/encoded',
       sharedUrl: 'https://github.com/inkeep/wiki/blob/main/meeting.md',
       branch: 'main',
       resolvedKind: 'doc',
     });
-    expect(result.content[0]?.text).toContain('https://openknowledge.ai/d/encoded');
+    expect(result.content[0]?.text).toContain('https://synapse.lawdigest.kr/d/encoded');
     expect(result.content[0]?.text).toContain('main');
     expect(result.content[0]?.text).toContain('doc');
     expect(result.content[0]?.text).toContain('meeting');
@@ -364,7 +364,7 @@ describe('share_link — happy path', () => {
       status: 200,
       body: {
         ok: true,
-        shareUrl: 'https://openknowledge.ai/d/folder',
+        shareUrl: 'https://synapse.lawdigest.kr/d/folder',
         sharedUrl: 'https://github.com/o/r/tree/main/guides',
         branch: 'main',
       },
@@ -399,7 +399,7 @@ describe('share_link — happy path', () => {
       status: 200,
       body: {
         ok: true,
-        shareUrl: 'https://openknowledge.ai/d/folder',
+        shareUrl: 'https://synapse.lawdigest.kr/d/folder',
         sharedUrl: 'https://github.com/o/r/tree/main/guides',
         branch: 'main',
       },
@@ -421,7 +421,7 @@ describe('share_link — happy path', () => {
       status: 200,
       body: {
         ok: true,
-        shareUrl: 'https://openknowledge.ai/d/root',
+        shareUrl: 'https://synapse.lawdigest.kr/d/root',
         sharedUrl: 'https://github.com/o/r/tree/main',
         branch: 'main',
       },
@@ -444,7 +444,7 @@ describe('share_link — happy path', () => {
       status: 200,
       body: {
         ok: true,
-        shareUrl: 'https://openknowledge.ai/d/nested',
+        shareUrl: 'https://synapse.lawdigest.kr/d/nested',
         sharedUrl: 'https://github.com/o/r/tree/main/docs/api%20guide',
         branch: 'main',
       },
@@ -466,7 +466,7 @@ describe('share_link — happy path', () => {
       status: 200,
       body: {
         ok: true,
-        shareUrl: 'https://openknowledge.ai/d/folder',
+        shareUrl: 'https://synapse.lawdigest.kr/d/folder',
         sharedUrl: 'https://github.com/o/r/tree/main/guides',
         branch: 'main',
       },

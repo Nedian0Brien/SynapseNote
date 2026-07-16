@@ -28,8 +28,8 @@ describe('migrateLegacyUserDataDir', () => {
   beforeEach(() => {
     // Stand in for `~/Library/Application Support`.
     appSupport = mkdtempSync(join(tmpdir(), 'ok-userdata-migrate-'));
-    targetDir = join(appSupport, 'OpenKnowledge');
-    legacyDir = join(appSupport, 'Open Knowledge');
+    targetDir = join(appSupport, 'SynapseNote');
+    legacyDir = join(appSupport, 'OpenKnowledge');
   });
 
   afterEach(() => {
@@ -57,7 +57,7 @@ describe('migrateLegacyUserDataDir', () => {
   });
 
   test('is dormant until the userData basename is the new name', async () => {
-    // Pre-rename build: userData is still ".../Open Knowledge".
+    // Pre-rename build: userData is still ".../OpenKnowledge".
     seedLegacy(ourStateJson('/p'));
     const result = await migrateLegacyUserDataDir({
       userDataDir: legacyDir,
@@ -95,7 +95,7 @@ describe('migrateLegacyUserDataDir', () => {
   });
 
   test('does NOT adopt a foreign dir whose state.json is not our shape', async () => {
-    // Another vendor's app named "Open Knowledge" wrote a non-OK state.json.
+    // Another vendor's app named "OpenKnowledge" wrote a non-OK state.json.
     const foreign = JSON.stringify({ theirApp: true, windows: [1, 2, 3] });
     seedLegacy(foreign);
     const result = await migrateLegacyUserDataDir({
@@ -140,7 +140,7 @@ describe('migrateLegacyUserDataDir', () => {
 
   test('preserves a pre-existing target file (path-install.json gotcha)', async () => {
     // The target dir already exists pre-migration because path-install.ts wrote
-    // OpenKnowledge/path-install.json on a pre-rename build. That file MUST win.
+    // SynapseNote/path-install.json on a pre-rename build. That file MUST win.
     mkdirSync(targetDir, { recursive: true });
     writeFileSync(join(targetDir, 'path-install.json'), '{"version":1,"keep":"me"}');
     seedLegacy(ourStateJson('/p'), { 'path-install.json': '{"version":1,"stale":"legacy"}' });

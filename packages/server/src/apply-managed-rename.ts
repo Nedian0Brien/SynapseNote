@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { prependFrontmatter, stripFrontmatter } from '@inkeep/open-knowledge-core';
+import { prependFrontmatter, stripFrontmatter } from '@nedian0brien/synapsenote-core';
 import {
   rewriteMarkdownLinksForDocumentRename,
   rewriteMirrorSrcForDocumentRename,

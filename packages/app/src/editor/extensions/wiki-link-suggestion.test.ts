@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
-import type { HeadingEntry } from '@inkeep/open-knowledge-core';
+import type { HeadingEntry } from '@nedian0brien/synapsenote-core';
 import { __resetDocumentListInflightForTests } from '@/lib/documents-fetch';
 import {
   autocompleteBoost,
@@ -458,7 +458,7 @@ describe('isSkillFolderDoc', () => {
     expect(isSkillFolderDoc('.claude/skills/foo/SKILL')).toBe(true);
     expect(isSkillFolderDoc('.agents/rules/bar')).toBe(true);
     expect(isSkillFolderDoc('.cursor/rules/baz')).toBe(true);
-    expect(isSkillFolderDoc('public/open-knowledge/.claude/skills/x')).toBe(true);
+    expect(isSkillFolderDoc('public/synapsenote/.claude/skills/x')).toBe(true);
   });
 
   test('does not match ordinary docs or look-alike folder names', () => {

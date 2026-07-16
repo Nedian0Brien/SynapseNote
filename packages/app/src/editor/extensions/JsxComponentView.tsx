@@ -34,6 +34,7 @@
  * Per Precedent #30: NodeViewContent is ALWAYS rendered, never display:none.
  */
 
+import { Trans, useLingui } from '@lingui/react/macro';
 import {
   incrementJsxAutoConvertFailed,
   incrementJsxAutoConvertSucceeded,
@@ -43,8 +44,7 @@ import {
   incrementJsxRenderFailure,
   incrementJsxStuckCopyFailed,
   incrementJsxStuckDeleteFailed,
-} from '@inkeep/open-knowledge-core';
-import { Trans, useLingui } from '@lingui/react/macro';
+} from '@nedian0brien/synapsenote-core';
 import type { NodeViewProps } from '@tiptap/core';
 import { TextSelection } from '@tiptap/pm/state';
 import { NodeViewContent, NodeViewWrapper } from '@tiptap/react';

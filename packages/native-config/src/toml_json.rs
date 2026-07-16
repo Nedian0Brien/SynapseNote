@@ -96,10 +96,10 @@ mod tests {
 
     #[test]
     fn projects_nested_tables_and_arrays() {
-        let toml = "[mcp_servers.open-knowledge]\ncommand = \"/bin/sh\"\nargs = [\"-l\", \"-c\"]\n";
+        let toml = "[mcp_servers.synapsenote]\ncommand = \"/bin/sh\"\nargs = [\"-l\", \"-c\"]\n";
         let json = parse_toml_to_json(toml).unwrap();
         let parsed: JsonValue = serde_json::from_str(&json).unwrap();
-        let entry = &parsed["mcp_servers"]["open-knowledge"];
+        let entry = &parsed["mcp_servers"]["synapsenote"];
         assert_eq!(entry["command"], JsonValue::String("/bin/sh".into()));
         assert_eq!(entry["args"][0], JsonValue::String("-l".into()));
         assert_eq!(entry["args"][1], JsonValue::String("-c".into()));
@@ -107,11 +107,11 @@ mod tests {
 
     #[test]
     fn projects_inline_table_entry() {
-        let toml = "mcp_servers = { \"open-knowledge\" = { command = \"npx\" } }\n";
+        let toml = "mcp_servers = { \"synapsenote\" = { command = \"npx\" } }\n";
         let json = parse_toml_to_json(toml).unwrap();
         let parsed: JsonValue = serde_json::from_str(&json).unwrap();
         assert_eq!(
-            parsed["mcp_servers"]["open-knowledge"]["command"],
+            parsed["mcp_servers"]["synapsenote"]["command"],
             JsonValue::String("npx".into())
         );
     }

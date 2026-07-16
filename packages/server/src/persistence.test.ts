@@ -237,7 +237,7 @@ describe('resolveWriterFromOrigin', () => {
     const writer = resolveWriterFromOrigin(origin);
     expect(writer).not.toBeNull();
     expect(writer?.id).toBe('agent-conn-abc123');
-    expect(writer?.email).toBe('agent-conn-abc123@openknowledge.local');
+    expect(writer?.email).toBe('agent-conn-abc123@synapsenote.local');
   });
 
   test('local undo origin with session_id → agent-<sessionId> writer', () => {
@@ -288,7 +288,7 @@ describe('resolveWriterFromOrigin', () => {
     const writer = resolveWriterFromOrigin(origin);
     expect(writer).not.toBeNull();
     expect(writer?.id).toBe(principalId);
-    expect(writer?.email).toBe(`${principalId}@openknowledge.local`);
+    expect(writer?.email).toBe(`${principalId}@synapsenote.local`);
   });
 
   test('connection origin without principalId → SERVICE_WRITER', () => {

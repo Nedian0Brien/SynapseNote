@@ -1,7 +1,7 @@
 /**
- * Inline stdio MCP server for `open-knowledge mcp`.
+ * Inline stdio MCP server for `synapsenote mcp`.
  *
- * One stdio process can serve many OpenKnowledge projects: each tool call
+ * One stdio process can serve many SynapseNote projects: each tool call
  * resolves its own cwd by walking up to the nearest `.ok/config.yml`, loads
  * the matching config, and routes HTTP traffic to the running `ok start` for
  * that project (auto-spawning if `OK_MCP_AUTOSTART` is unset or non-zero).
@@ -31,8 +31,10 @@ import { realpathSync, statSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
-import { OK_PROJECT_MARKER } from '@inkeep/open-knowledge-core';
-import { type KeepaliveHandle, startKeepalive } from '@inkeep/open-knowledge-core/keepalive';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { OK_PROJECT_MARKER } from '@nedian0brien/synapsenote-core';
+import { type KeepaliveHandle, startKeepalive } from '@nedian0brien/synapsenote-core/keepalive';
 import {
   type AgentIdentity,
   type Config,
@@ -45,9 +47,7 @@ import {
   resolveContentDir,
   sanitizeClientName,
   withHiddenWindowsConsole,
-} from '@inkeep/open-knowledge-server';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+} from '@nedian0brien/synapsenote-server';
 import { createProjectConfigResolver } from '../config/loader.ts';
 import {
   type BundleIdentityWatcherHandle,
@@ -124,7 +124,7 @@ export function findProjectDir(startCwd: string): string {
     const parent = dirname(dir);
     if (parent === dir) {
       throw new Error(
-        `No OpenKnowledge project found at or above ${startCwd}. Pass an explicit \`cwd\` argument that points inside an OK project (a directory with a \`${OK_PROJECT_MARKER}\`).`,
+        `No SynapseNote project found at or above ${startCwd}. Pass an explicit \`cwd\` argument that points inside an OK project (a directory with a \`${OK_PROJECT_MARKER}\`).`,
       );
     }
     dir = parent;
@@ -238,7 +238,7 @@ export async function resolveStickyProjectDir(
 
 /** Directive thrown by `resolveCwd` when no project can be resolved for a call. */
 const CWD_REQUIRED_MESSAGE =
-  '`cwd` is required for tool calls against the global MCP server. Pass an absolute path inside an OpenKnowledge project, or have the MCP client advertise a single root.';
+  '`cwd` is required for tool calls against the global MCP server. Pass an absolute path inside an SynapseNote project, or have the MCP client advertise a single root.';
 
 /**
  * Boot an inline stdio MCP server that routes per-call to whatever OK project

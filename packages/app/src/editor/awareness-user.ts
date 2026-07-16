@@ -5,7 +5,7 @@ import {
   HUMAN_COLORS,
   type Identity,
   type Principal,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 
 /**
  * The shape `setLocalStateField('user', ...)` expects on the per-doc

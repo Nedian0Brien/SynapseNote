@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from 'bun:test';
-import { parseContributors } from '@inkeep/open-knowledge-core/shadow-repo-layout';
+import { parseContributors } from '@nedian0brien/synapsenote-core/shadow-repo-layout';
 import {
   contributorCount,
   __formatContributorsForTests as formatContributorsForTest,

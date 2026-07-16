@@ -27,47 +27,47 @@ describe('validateLocalFolderForShare', () => {
   test('returns ok with canonical https URL when origin matches expected (https clone)', async () => {
     const folder = resolve(tmpDir, 'repo');
     mkdirSync(folder);
-    seedRepo(folder, 'https://github.com/inkeep/open-knowledge.git');
+    seedRepo(folder, 'https://github.com/Nedian0Brien/SynapseNote.git');
 
     const result = await validateLocalFolderForShare(folder, {
-      owner: 'inkeep',
-      repo: 'open-knowledge',
+      owner: 'Nedian0Brien',
+      repo: 'SynapseNote',
     });
     expect(result).toEqual({
       kind: 'ok',
-      gitRemoteUrl: 'https://github.com/inkeep/open-knowledge.git',
+      gitRemoteUrl: 'https://github.com/Nedian0Brien/SynapseNote.git',
     });
   });
 
   test('returns ok and normalizes to https for ssh clones', async () => {
     const folder = resolve(tmpDir, 'repo');
     mkdirSync(folder);
-    seedRepo(folder, 'git@github.com:inkeep/open-knowledge.git');
+    seedRepo(folder, 'git@github.com:Nedian0Brien/SynapseNote.git');
 
     const result = await validateLocalFolderForShare(folder, {
-      owner: 'inkeep',
-      repo: 'open-knowledge',
+      owner: 'Nedian0Brien',
+      repo: 'SynapseNote',
     });
     expect(result).toEqual({
       kind: 'ok',
-      gitRemoteUrl: 'https://github.com/inkeep/open-knowledge.git',
+      gitRemoteUrl: 'https://github.com/Nedian0Brien/SynapseNote.git',
     });
   });
 
   test('owner / repo comparison is case-insensitive', async () => {
     const folder = resolve(tmpDir, 'repo');
     mkdirSync(folder);
-    seedRepo(folder, 'https://github.com/Inkeep/Open-Knowledge.git');
+    seedRepo(folder, 'https://github.com/NEDIAN0BRIEN/synapsenote.git');
 
     const result = await validateLocalFolderForShare(folder, {
-      owner: 'inkeep',
-      repo: 'open-knowledge',
+      owner: 'Nedian0Brien',
+      repo: 'SynapseNote',
     });
     expect(result.kind).toBe('ok');
     if (result.kind === 'ok') {
       // Re-emitted URL preserves the origin-config casing — receiver's
       // RecentProject lookup also normalizes case so this stays a hit.
-      expect(result.gitRemoteUrl).toBe('https://github.com/Inkeep/Open-Knowledge.git');
+      expect(result.gitRemoteUrl).toBe('https://github.com/NEDIAN0BRIEN/synapsenote.git');
     }
   });
 
@@ -76,8 +76,8 @@ describe('validateLocalFolderForShare', () => {
     mkdirSync(folder);
 
     const result = await validateLocalFolderForShare(folder, {
-      owner: 'inkeep',
-      repo: 'open-knowledge',
+      owner: 'Nedian0Brien',
+      repo: 'SynapseNote',
     });
     expect(result).toEqual({ kind: 'not-git' });
   });
@@ -86,8 +86,8 @@ describe('validateLocalFolderForShare', () => {
     const folder = resolve(tmpDir, 'does-not-exist');
 
     const result = await validateLocalFolderForShare(folder, {
-      owner: 'inkeep',
-      repo: 'open-knowledge',
+      owner: 'Nedian0Brien',
+      repo: 'SynapseNote',
     });
     expect(result).toEqual({ kind: 'not-git' });
   });
@@ -98,8 +98,8 @@ describe('validateLocalFolderForShare', () => {
     // No config file at all — the "shell-only" git state.
 
     const result = await validateLocalFolderForShare(folder, {
-      owner: 'inkeep',
-      repo: 'open-knowledge',
+      owner: 'Nedian0Brien',
+      repo: 'SynapseNote',
     });
     expect(result).toEqual({ kind: 'not-git' });
   });
@@ -110,8 +110,8 @@ describe('validateLocalFolderForShare', () => {
     seedRepo(folder, null);
 
     const result = await validateLocalFolderForShare(folder, {
-      owner: 'inkeep',
-      repo: 'open-knowledge',
+      owner: 'Nedian0Brien',
+      repo: 'SynapseNote',
     });
     expect(result).toEqual({ kind: 'no-origin' });
   });
@@ -122,7 +122,7 @@ describe('validateLocalFolderForShare', () => {
     mkdirSync(primaryGitDir, { recursive: true });
     writeFileSync(
       resolve(primaryGitDir, 'config'),
-      '[core]\n\trepositoryformatversion = 0\n[remote "origin"]\n\turl = https://github.com/inkeep/open-knowledge.git\n',
+      '[core]\n\trepositoryformatversion = 0\n[remote "origin"]\n\turl = https://github.com/Nedian0Brien/SynapseNote.git\n',
       'utf-8',
     );
     // Worktree-pointer: gitdir under <primary>/.git/worktrees/<name>, but we
@@ -132,12 +132,12 @@ describe('validateLocalFolderForShare', () => {
     writeFileSync(resolve(worktreeFolder, '.git'), `gitdir: ${primaryGitDir}\n`, 'utf-8');
 
     const result = await validateLocalFolderForShare(worktreeFolder, {
-      owner: 'inkeep',
-      repo: 'open-knowledge',
+      owner: 'Nedian0Brien',
+      repo: 'SynapseNote',
     });
     expect(result).toEqual({
       kind: 'ok',
-      gitRemoteUrl: 'https://github.com/inkeep/open-knowledge.git',
+      gitRemoteUrl: 'https://github.com/Nedian0Brien/SynapseNote.git',
     });
   });
 
@@ -151,7 +151,7 @@ describe('validateLocalFolderForShare', () => {
     mkdirSync(primaryGitDir, { recursive: true });
     writeFileSync(
       resolve(primaryGitDir, 'config'),
-      '[remote "origin"]\n\turl = https://github.com/inkeep/open-knowledge.git\n',
+      '[remote "origin"]\n\turl = https://github.com/Nedian0Brien/SynapseNote.git\n',
       'utf-8',
     );
     const worktreeGitDir = resolve(primaryGitDir, 'worktrees', 'feature');
@@ -164,12 +164,12 @@ describe('validateLocalFolderForShare', () => {
     writeFileSync(resolve(worktreeFolder, '.git'), `gitdir: ${worktreeGitDir}\n`, 'utf-8');
 
     const result = await validateLocalFolderForShare(worktreeFolder, {
-      owner: 'inkeep',
-      repo: 'open-knowledge',
+      owner: 'Nedian0Brien',
+      repo: 'SynapseNote',
     });
     expect(result).toEqual({
       kind: 'ok',
-      gitRemoteUrl: 'https://github.com/inkeep/open-knowledge.git',
+      gitRemoteUrl: 'https://github.com/Nedian0Brien/SynapseNote.git',
     });
   });
 
@@ -179,8 +179,8 @@ describe('validateLocalFolderForShare', () => {
     writeFileSync(resolve(folder, '.git'), 'this is not a worktree pointer\n', 'utf-8');
 
     const result = await validateLocalFolderForShare(folder, {
-      owner: 'inkeep',
-      repo: 'open-knowledge',
+      owner: 'Nedian0Brien',
+      repo: 'SynapseNote',
     });
     expect(result).toEqual({ kind: 'not-git' });
   });
@@ -191,8 +191,8 @@ describe('validateLocalFolderForShare', () => {
     writeFileSync(resolve(folder, '.git'), `gitdir: ${resolve(tmpDir, 'no-such-dir')}\n`, 'utf-8');
 
     const result = await validateLocalFolderForShare(folder, {
-      owner: 'inkeep',
-      repo: 'open-knowledge',
+      owner: 'Nedian0Brien',
+      repo: 'SynapseNote',
     });
     expect(result).toEqual({ kind: 'not-git' });
   });
@@ -200,11 +200,11 @@ describe('validateLocalFolderForShare', () => {
   test('returns non-github when origin points at gitlab', async () => {
     const folder = resolve(tmpDir, 'repo');
     mkdirSync(folder);
-    seedRepo(folder, 'git@gitlab.com:inkeep/open-knowledge.git');
+    seedRepo(folder, 'git@gitlab.com:Nedian0Brien/SynapseNote.git');
 
     const result = await validateLocalFolderForShare(folder, {
-      owner: 'inkeep',
-      repo: 'open-knowledge',
+      owner: 'Nedian0Brien',
+      repo: 'SynapseNote',
     });
     expect(result).toEqual({ kind: 'non-github' });
   });
@@ -215,8 +215,8 @@ describe('validateLocalFolderForShare', () => {
     seedRepo(folder, 'this-is-not-a-url');
 
     const result = await validateLocalFolderForShare(folder, {
-      owner: 'inkeep',
-      repo: 'open-knowledge',
+      owner: 'Nedian0Brien',
+      repo: 'SynapseNote',
     });
     expect(result).toEqual({ kind: 'non-github' });
   });
@@ -224,16 +224,16 @@ describe('validateLocalFolderForShare', () => {
   test('returns wrong-repo with the actual owner when only owner differs', async () => {
     const folder = resolve(tmpDir, 'repo');
     mkdirSync(folder);
-    seedRepo(folder, 'https://github.com/someone-else/open-knowledge.git');
+    seedRepo(folder, 'https://github.com/someone-else/synapsenote.git');
 
     const result = await validateLocalFolderForShare(folder, {
-      owner: 'inkeep',
-      repo: 'open-knowledge',
+      owner: 'Nedian0Brien',
+      repo: 'SynapseNote',
     });
     expect(result).toEqual({
       kind: 'wrong-repo',
       actualOwner: 'someone-else',
-      actualRepo: 'open-knowledge',
+      actualRepo: 'synapsenote',
     });
   });
 
@@ -243,8 +243,8 @@ describe('validateLocalFolderForShare', () => {
     seedRepo(folder, 'https://github.com/inkeep/different-repo.git');
 
     const result = await validateLocalFolderForShare(folder, {
-      owner: 'inkeep',
-      repo: 'open-knowledge',
+      owner: 'Nedian0Brien',
+      repo: 'SynapseNote',
     });
     expect(result).toEqual({
       kind: 'wrong-repo',
@@ -266,8 +266,8 @@ describe('validateLocalFolderForShare', () => {
     symlinkSync(escapeTarget, picked);
 
     const result = await validateLocalFolderForShare(picked, {
-      owner: 'inkeep',
-      repo: 'open-knowledge',
+      owner: 'Nedian0Brien',
+      repo: 'SynapseNote',
     });
     expect(result).toEqual({ kind: 'symlink-escape' });
   });
@@ -279,7 +279,7 @@ describe('validateLocalFolderForShare', () => {
     mkdirSync(elsewhere);
     writeFileSync(
       resolve(elsewhere, 'config'),
-      '[remote "origin"]\n\turl = https://github.com/inkeep/open-knowledge.git\n',
+      '[remote "origin"]\n\turl = https://github.com/Nedian0Brien/SynapseNote.git\n',
       'utf-8',
     );
 
@@ -289,8 +289,8 @@ describe('validateLocalFolderForShare', () => {
     symlinkSync(elsewhere, resolve(folder, '.git'));
 
     const result = await validateLocalFolderForShare(folder, {
-      owner: 'inkeep',
-      repo: 'open-knowledge',
+      owner: 'Nedian0Brien',
+      repo: 'SynapseNote',
     });
     expect(result).toEqual({ kind: 'symlink-escape' });
   });
@@ -300,14 +300,14 @@ describe('validateLocalFolderForShare', () => {
     // the same parent. Should validate normally.
     const realFolder = resolve(tmpDir, 'real-folder');
     mkdirSync(realFolder);
-    seedRepo(realFolder, 'https://github.com/inkeep/open-knowledge.git');
+    seedRepo(realFolder, 'https://github.com/Nedian0Brien/SynapseNote.git');
 
     const linkFolder = resolve(tmpDir, 'link-folder');
     symlinkSync(realFolder, linkFolder);
 
     const result = await validateLocalFolderForShare(linkFolder, {
-      owner: 'inkeep',
-      repo: 'open-knowledge',
+      owner: 'Nedian0Brien',
+      repo: 'SynapseNote',
     });
     expect(result.kind).toBe('ok');
   });
@@ -321,18 +321,18 @@ describe('validateLocalFolderForShare', () => {
       '; comment line with semicolon',
       '\trepositoryformatversion = 0',
       '[remote "origin"]',
-      '\turl = https://github.com/inkeep/open-knowledge.git # trailing comment',
+      '\turl = https://github.com/Nedian0Brien/SynapseNote.git # trailing comment',
       '\tfetch = +refs/heads/*:refs/remotes/origin/*',
     ].join('\r\n');
     writeFileSync(resolve(folder, '.git', 'config'), config, 'utf-8');
 
     const result = await validateLocalFolderForShare(folder, {
-      owner: 'inkeep',
-      repo: 'open-knowledge',
+      owner: 'Nedian0Brien',
+      repo: 'SynapseNote',
     });
     expect(result).toEqual({
       kind: 'ok',
-      gitRemoteUrl: 'https://github.com/inkeep/open-knowledge.git',
+      gitRemoteUrl: 'https://github.com/Nedian0Brien/SynapseNote.git',
     });
   });
 });

@@ -3,9 +3,9 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { setTimeout as wait } from 'node:timers/promises';
-import { LOCAL_DIR, OK_DIR } from '@inkeep/open-knowledge-core';
-import { AutoStartDisabledError, type ServerLockMetadata } from '@inkeep/open-knowledge-server';
 import type { JSONRPCMessage } from '@modelcontextprotocol/sdk/types.js';
+import { LOCAL_DIR, OK_DIR } from '@nedian0brien/synapsenote-core';
+import { AutoStartDisabledError, type ServerLockMetadata } from '@nedian0brien/synapsenote-server';
 import {
   bridgeStdioToHttpMcp,
   parseSpawnTimeoutEnv,
@@ -476,7 +476,7 @@ describe('startMcpShim lifecycle', () => {
             keepaliveClosed = true;
           },
           isConnected: () => false,
-        })) as unknown as typeof import('@inkeep/open-knowledge-core/keepalive').startKeepalive,
+        })) as unknown as typeof import('@nedian0brien/synapsenote-core/keepalive').startKeepalive,
         bridgeFn: async () => {
           throw bridgeError;
         },

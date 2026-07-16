@@ -20,7 +20,7 @@
  *     regardless of HOME. Every edit the app writes lands under the tmpdir —
  *     the developer's real `~/.claude.json` is never touched.
  *
- *   - **Cold-start `openknowledge://` deep-link with dialog firing in the
+ *   - **Cold-start `synapsenote://` deep-link with dialog firing in the
  *     deep-link-opened editor** is deferred — same reason as the cold-start
  *     skip: macOS Launch Services needs a signed + notarized DMG to bind the
  *     scheme to this bundle instead of generic Electron, and there's no way
@@ -170,13 +170,13 @@ test.describe('M6b first-launch MCP-wiring smoke (US-010)', () => {
     `Main build missing at ${MAIN_ENTRY} — run "bun run build:desktop" first.`,
   );
 
-  // Cold-start `openknowledge://` delivery to a deep-link-opened editor
+  // Cold-start `synapsenote://` delivery to a deep-link-opened editor
   // window as the FIRST window. Deferred until signed DMG enables Launch
   // Services binding; parallels the same skip in `deep-link.e2e.ts`.
   test.skip('F2 (cold-start deep-link) — deferred until signed DMG enables Launch Services binding', () => {
     // Intentionally empty. Implementation requires:
-    //   1. Signed + notarized DMG so `openknowledge://` binds to this bundle.
-    //   2. A harness that fires `open openknowledge://...` against a
+    //   1. Signed + notarized DMG so `synapsenote://` binds to this bundle.
+    //   2. A harness that fires `open synapsenote://...` against a
     //      not-yet-running installed .app (no `_electron.launch` pre-boot)
     //      and asserts both the deep-link editor and the consent dialog
     //      arrive in that same window.
@@ -219,13 +219,13 @@ test.describe('M6b first-launch MCP-wiring smoke (US-010)', () => {
       expect((marker as { editors: string[] }).editors).toContain('claude');
 
       // Claude config lives at `~/.claude.json` with top-level
-      // `mcpServers['open-knowledge']`.
+      // `mcpServers['synapsenote']`.
       const claudeConfigPath = join(tmpHome, '.claude.json');
       expect(existsSync(claudeConfigPath)).toBe(true);
       const claudeConfig = JSON.parse(readFileSync(claudeConfigPath, 'utf8')) as {
-        mcpServers?: { 'open-knowledge'?: { command?: string; args?: string[] } };
+        mcpServers?: { synapsenote?: { command?: string; args?: string[] } };
       };
-      const okEntry = claudeConfig.mcpServers?.['open-knowledge'];
+      const okEntry = claudeConfig.mcpServers?.synapsenote;
       expect(okEntry).toBeDefined();
       expect(okEntry?.command).toBe('/bin/sh');
       expect(okEntry?.args?.slice(0, 2)).toEqual(['-l', '-c']);

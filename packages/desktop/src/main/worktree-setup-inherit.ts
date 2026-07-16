@@ -1,7 +1,7 @@
 /**
- * Seed a freshly-created worktree's OpenKnowledge project setup from the root
+ * Seed a freshly-created worktree's SynapseNote project setup from the root
  * project, so opening a worktree window doesn't re-prompt the
- * "Setup OpenKnowledge in this folder?" (Shared vs Local) consent dialog. The
+ * "Setup SynapseNote in this folder?" (Shared vs Local) consent dialog. The
  * worktree inherits the root's setup SILENTLY: the same `.ok/` scaffold and
  * editor/MCP wiring a fresh setup writes, carrying the root's `content.dir` and
  * its wired-editor set, so agents/editors work in the worktree out of the box.
@@ -26,7 +26,7 @@
  *
  * ## What is seeded, and the writers reused (no reinvention)
  *   1. `initContent(worktree, { contentDir })` — the SAME writer the consent /
- *      create-new flows use (`@inkeep/open-knowledge-server`). Writes
+ *      create-new flows use (`@nedian0brien/synapsenote-server`). Writes
  *      `.ok/config.yml` + `.ok/.gitignore` + `.okignore`. `writeIfMissing`
  *      semantics mean a config.yml already checked out by the branch (shared +
  *      committed root) is NOT clobbered. `contentDir` is read from the root's
@@ -56,9 +56,9 @@
  */
 
 import { existsSync, readFileSync } from 'node:fs';
-import { EDITOR_TARGETS, writeProjectAiIntegrations } from '@inkeep/open-knowledge';
-import { ALL_EDITOR_IDS, type EditorId } from '@inkeep/open-knowledge-core';
-import { initContent } from '@inkeep/open-knowledge-server';
+import { EDITOR_TARGETS, writeProjectAiIntegrations } from '@nedian0brien/synapsenote';
+import { ALL_EDITOR_IDS, type EditorId } from '@nedian0brien/synapsenote-core';
+import { initContent } from '@nedian0brien/synapsenote-server';
 import { parse as parseYaml } from 'yaml';
 import { getLogger } from './desktop-logger.ts';
 

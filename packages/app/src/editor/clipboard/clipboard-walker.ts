@@ -34,7 +34,7 @@
  * PM-internal markers so destinations don't see editor-only state.
  */
 
-import { normalizeNullableString, wikiLinkHref } from '@inkeep/open-knowledge-core';
+import { normalizeNullableString, wikiLinkHref } from '@nedian0brien/synapsenote-core';
 import type { Node as PmNode, Slice } from '@tiptap/pm/model';
 import type { EditorView } from '@tiptap/pm/view';
 import {
@@ -765,7 +765,7 @@ function walkPair(live: Element, clone: Element, env: WalkerEnv): void {
 //      headings/bold/etc.).
 //
 // The slug is computed via `wikiLinkHref(target, anchor)` from
-// `@inkeep/open-knowledge-core` — the EXACT helper that
+// `@nedian0brien/synapsenote-core` — the EXACT helper that
 // `mdast-to-hast-handlers.ts:wikiLinkHandler` uses, so cross-pipeline
 // emission is byte-identical. The fragment href evaluates as portable
 // (fragment-only ref), so the URL classifier preserves the new anchor

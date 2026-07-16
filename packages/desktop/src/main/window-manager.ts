@@ -1,7 +1,7 @@
 /**
  * Main-process window manager — spawns BrowserWindow + utilityProcess pairs
  * per project, with an attach branch that reuses an existing live same-host
- * OpenKnowledge server (CLI sibling, another Electron instance, or any
+ * SynapseNote server (CLI sibling, another Electron instance, or any
  * bootServer caller).
  *
  * Each project window either:
@@ -31,9 +31,9 @@ import {
   DEFAULT_SIGTERM_GRACE_MS,
   DEFAULT_SIGTERM_POLL_MS,
   SPAWN_ERROR_LOG,
-} from '@inkeep/open-knowledge-core';
-import type { KeepaliveHandle } from '@inkeep/open-knowledge-core/keepalive';
-import { getLocalDir } from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-core';
+import type { KeepaliveHandle } from '@nedian0brien/synapsenote-core/keepalive';
+import { getLocalDir } from '@nedian0brien/synapsenote-server';
 import type { OkServerRestartOutcome } from '../shared/bridge-contract.ts';
 import { registerPendingDelivery } from '../shared/ipc-send.ts';
 import type { AssetOpenResult } from './asset-allowlist.ts';
@@ -52,7 +52,7 @@ import { classifyServerVersion } from './version-drift.ts';
 const RESTART_SIGTERM_GRACE_MS = 3_000;
 
 /**
- * Local mirror of `isValidLockPid` from `@inkeep/open-knowledge-server`. Same
+ * Local mirror of `isValidLockPid` from `@nedian0brien/synapsenote-server`. Same
  * import-surface rationale as `isProcessAliveLocal` above.
  *
  * Range-check a value parsed from `<lockDir>/server.lock`'s `pid` field
@@ -92,18 +92,18 @@ export function setWindowInstanceLabel(label: string | null): void {
 }
 
 /**
- * Editor window title format — `<projectName> — OpenKnowledge`, plus a
+ * Editor window title format — `<projectName> — SynapseNote`, plus a
  * ` (<instance>)` suffix when this is a named parallel instance. The em dash
  * + app-name suffix follows the macOS/VS Code/Cursor convention: the project
  * name leads so users can scan the Dock / Cmd-Tab switcher by content, and
  * the app branding is retained as a recognizable tail.
  *
- * Navigator windows use a static "OpenKnowledge" title set in
+ * Navigator windows use a static "SynapseNote" title set in
  * `navigator-window.ts` — no project context there to prepend.
  */
 function formatEditorTitle(projectName: string): string {
   const suffix = windowInstanceLabel ? ` (${windowInstanceLabel})` : '';
-  return `${projectName} — OpenKnowledge${suffix}`;
+  return `${projectName} — SynapseNote${suffix}`;
 }
 
 /** Subset of `electron.BrowserWindow` we use — keeps tests Electron-free. */
@@ -209,7 +209,7 @@ export interface UtilityProcessLike {
 
 /**
  * Minimal shape of `server.lock` metadata that the attach probe consumes.
- * Intentionally structural (not imported from `@inkeep/open-knowledge-server`)
+ * Intentionally structural (not imported from `@nedian0brien/synapsenote-server`)
  * to keep this module runtime-independent of the server package — the real
  * shape is `ServerLockMetadata` from process-lock.ts and is type-compatible.
  *
@@ -306,7 +306,7 @@ interface CreateProjectWindowOpts {
   projectPath: string;
   /**
    * Optional kind-discriminated deep-link target to deliver to the renderer
-   * after window mount. Used by the `openknowledge://` URL scheme handler +
+   * after window mount. Used by the `synapsenote://` URL scheme handler +
    * the share-receive flow so the send is registered BEFORE `await loadURL`
    * and fires via `webContents.once('dom-ready', ...)`. Delivery ordering is
    * load-bearing: registering after loadURL resolves silently misses
@@ -321,7 +321,7 @@ interface CreateProjectWindowOpts {
    * into the same `dom-ready` deep-link IPC so the renderer's deep-link
    * listener can surface it. Null / undefined / absent are treated
    * identically — back-compat with non-share deep-link sources (the
-   * `openknowledge://open?project=&doc=` MCP path has no branch).
+   * `synapsenote://open?project=&doc=` MCP path has no branch).
    */
   pendingBranch?: string | null;
   /**
@@ -367,11 +367,11 @@ interface CreateProjectWindowOpts {
   /**
    * Bundled CLI invocation to thread to the utility's API server so that
    * `/api/local-op/*` (auth/login, clone, etc.) can spawn the CLI without
-   * relying on `open-knowledge` being on PATH. Caller (main) supplies this
+   * relying on `synapsenote` being on PATH. Caller (main) supplies this
    * derived from `app.isPackaged`, mirroring the IPC-side
    * `LocalOpDeps.resolveCliArgs` so HTTP and IPC paths resolve consistently.
    * Optional: when omitted, the utility falls back to `createApiExtension`'s
-   * default `['open-knowledge']`, which is correct for dev / Vite plugin
+   * default `['synapsenote']`, which is correct for dev / Vite plugin
    * contexts where PATH resolution succeeds.
    */
   localOpCliArgs?: string[];
@@ -402,7 +402,7 @@ export interface WindowManagerDeps {
      * `new BrowserWindow({ title })` so users can distinguish open windows
      * at the OS level (Dock, Mission Control, ⌘-` switcher, Cmd+Tab).
      * Main-process also hooks `page-title-updated` to prevent the renderer's
-     * `<title>OpenKnowledge</title>` from overwriting this after load.
+     * `<title>SynapseNote</title>` from overwriting this after load.
      */
     title: string;
     /**
@@ -435,7 +435,7 @@ export interface WindowManagerDeps {
   /** Path to the bundled utility-entry script (electron-vite output). */
   utilityEntryPath: string;
   /**
-   * Production spawn primitive: detach the OpenKnowledge server from
+   * Production spawn primitive: detach the SynapseNote server from
    * Electron's process tree by spawning `dist/cli.mjs start` as a
    * fully-detached `child_process.spawn` of `process.execPath` under
    * `ELECTRON_RUN_AS_NODE=1`. The server then survives Electron parent
@@ -475,7 +475,7 @@ export interface WindowManagerDeps {
    * Create the throwaway `projectDir` for an ephemeral single-file session
    * (`os.tmpdir()/ok-ephemeral-*` carrying a synthesized `.ok/config.yml`).
    * Production wires `createEphemeralProjectDir` from
-   * `@inkeep/open-knowledge-server`; tests inject a stub that records the call
+   * `@nedian0brien/synapsenote-server`; tests inject a stub that records the call
    * (so the dedup-before-create invariant — one temp dir per distinct file — is
    * directly assertable). Only consulted by `createEphemeralWindow`; absent on
    * the project-open path.
@@ -515,7 +515,7 @@ export interface WindowManagerDeps {
    * desktop "IS" the user; it's redundant to render itself as a peer in
    * the agent-presence bar.
    *
-   * Production wiring uses `startKeepalive` from `@inkeep/open-knowledge-
+   * Production wiring uses `startKeepalive` from `@nedian0brien/synapsenote-
    * core` with `resolveWsUrl` that re-reads `<lockDir>/server.lock` on
    * each connect attempt (so a server restart on a different port is
    * picked up transparently). Tests inject a stub that records open/close
@@ -605,9 +605,9 @@ export interface WindowManagerDeps {
    */
   activateApp?(): void;
   /**
-   * Read the OpenKnowledge server lock at `<lockDir>/server.lock`. Returns
+   * Read the SynapseNote server lock at `<lockDir>/server.lock`. Returns
    * null if absent or corrupt. Production: `readServerLock` from
-   * `@inkeep/open-knowledge-server`. Tests inject a stub.
+   * `@nedian0brien/synapsenote-server`. Tests inject a stub.
    *
    * When omitted (back-compat with existing tests), the attach branch is
    * effectively disabled and every call spawns a fresh utility.
@@ -616,7 +616,7 @@ export interface WindowManagerDeps {
   /**
    * Check whether a pid is alive on this host (EPERM counts as alive per the
    * `process.kill(pid, 0)` semantics in `isProcessAlive`). Production:
-   * `isProcessAlive` from `@inkeep/open-knowledge-server`.
+   * `isProcessAlive` from `@nedian0brien/synapsenote-server`.
    */
   isProcessAlive?(pid: number): boolean;
   /**
@@ -826,7 +826,7 @@ export class WindowManager {
 
   /**
    * Canonicalize a project path to its realpath. Dereferences symlinks so the
-   * map key matches what `preview-url.ts` emits in `openknowledge://` URLs.
+   * map key matches what `preview-url.ts` emits in `synapsenote://` URLs.
    * Falls back to `resolve(projectPath)` on ENOENT / EACCES so unreadable
    * paths don't throw past the call site.
    */
@@ -853,7 +853,7 @@ export class WindowManager {
   }
 
   /**
-   * Narrow focus-only lookup used by the `openknowledge://` URL scheme
+   * Narrow focus-only lookup used by the `synapsenote://` URL scheme
    * router. If a window already owns `projectPath`, surface it (restore if
    * minimized, show if hidden) + return it for the caller to push a deep-
    * link event to. Returns `null` when no window matches.
@@ -878,7 +878,7 @@ export class WindowManager {
    * focus from app activation: a backgrounded app will NOT come to the front
    * on `win.focus()` alone (electron/electron#19920) — so an agent-driven
    * "focus this page" that lands on an already-open window would silently
-   * leave OpenKnowledge behind whatever app the user is in. The recipe is
+   * leave SynapseNote behind whatever app the user is in. The recipe is
    * restore → show → moveTop → focus → app-level steal. We skip the steal when
    * the window is already the key window (e.g. the built-in terminal focusing
    * a doc in its own active window) so we never yank focus from a window that
@@ -1531,7 +1531,7 @@ export class WindowManager {
         } catch {
           // Best-effort: the spawn might have died before opening the fd.
         }
-        const messageBase = `OpenKnowledge server did not bind a port within ${POLL_DEADLINE_MS}ms after spawn (pid=${handle.pid}).`;
+        const messageBase = `SynapseNote server did not bind a port within ${POLL_DEADLINE_MS}ms after spawn (pid=${handle.pid}).`;
         const err = Object.assign(
           new Error(stderrTail ? `${messageBase}\n--- stderr ---\n${stderrTail}` : messageBase),
           {
@@ -1987,7 +1987,7 @@ export class WindowManager {
       } catch {
         // Best-effort: the spawn might have died before opening the fd.
       }
-      const messageBase = `OpenKnowledge server did not bind a port within ${POLL_DEADLINE_MS}ms after ephemeral spawn (pid=${handle.pid}).`;
+      const messageBase = `SynapseNote server did not bind a port within ${POLL_DEADLINE_MS}ms after ephemeral spawn (pid=${handle.pid}).`;
       throw Object.assign(
         new Error(stderrTail ? `${messageBase}\n--- stderr ---\n${stderrTail}` : messageBase),
         {
@@ -2347,7 +2347,7 @@ export class WindowManager {
 
     this.deps.log?.info(
       { projectPath, holderPid: lock.pid, port, startedAt: lock.startedAt },
-      'attaching to existing OpenKnowledge server',
+      'attaching to existing SynapseNote server',
     );
 
     // Startup waterfall: the lock is readable on entry — record its `startedAt`.

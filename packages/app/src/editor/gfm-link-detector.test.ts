@@ -1,5 +1,9 @@
 import { describe, expect, test } from 'bun:test';
-import { MarkdownManager, SAFE_URL_SCHEMES, sharedExtensions } from '@inkeep/open-knowledge-core';
+import {
+  MarkdownManager,
+  SAFE_URL_SCHEMES,
+  sharedExtensions,
+} from '@nedian0brien/synapsenote-core';
 import type { JSONContent } from '@tiptap/core';
 import { detectGfmLinkToken, type GfmLinkToken } from './gfm-link-detector';
 

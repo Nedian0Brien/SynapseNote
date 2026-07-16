@@ -3,7 +3,7 @@
  * a config snapshot, without spinning up the server.
  *
  * `previewContent()` is the load-bearing helper: it builds a `ContentFilter`
- * from `@inkeep/open-knowledge-server` and walks `contentDir` mirroring the
+ * from `@nedian0brien/synapsenote-server` and walks `contentDir` mirroring the
  * file-watcher's startup walk (`file-watcher.ts:seedLastKnownHashes`). Reusing
  * the same filter is the invariant that keeps the preview's count matching
  * what the watcher will actually index, including nested `.gitignore` +
@@ -11,12 +11,12 @@
  *
  * Returns warnings rather than throwing — preview failure must never block
  * init. `formatPreviewBlock()` renders the result for both the `init`
- * post-scaffold output and the standalone `open-knowledge preview` verb;
+ * post-scaffold output and the standalone `synapsenote preview` verb;
  * keeping the formatter here ensures both surfaces stay byte-identical.
  */
 import { existsSync, lstatSync, readdirSync, realpathSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
-import { createContentFilter } from '@inkeep/open-knowledge-server';
+import { createContentFilter } from '@nedian0brien/synapsenote-server';
 import { OK_DIR } from '../constants.ts';
 
 interface PreviewOptions {
@@ -158,11 +158,11 @@ export function formatPreviewBlock(result: PreviewResult, cwd: string): string {
     lines.push('  To adjust scope, add patterns to .okignore at the project root.');
     lines.push(`  To change the content root, edit ${OK_DIR}/config.yml → content.dir.`);
   } else {
-    lines.push('  Run `open-knowledge init` to scaffold config + .okignore.');
+    lines.push('  Run `synapsenote init` to scaffold config + .okignore.');
   }
 
   lines.push('');
-  lines.push('  Re-check anytime: open-knowledge preview');
+  lines.push('  Re-check anytime: synapsenote preview');
 
   return lines.join('\n');
 }

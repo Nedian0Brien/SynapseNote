@@ -46,7 +46,7 @@ or {
         },
         register_diagnostic(
             span = $assertion,
-            message = "Byte-fidelity round-trip oracle in a public test: `serialize(parse(x))` asserted equal to the same input `x`. This general round-trip-identity check belongs to the engine's fidelity suite (packages/app/tests/fidelity or packages/core/src/markdown); a public test should assert a fixed expected literal for a specific contract instead. See https://github.com/inkeep/open-knowledge/blob/main/biome-plugins/README.md#no-roundtrip-identity-oraclegrit"
+            message = "Byte-fidelity round-trip oracle in a public test: `serialize(parse(x))` asserted equal to the same input `x`. This general round-trip-identity check belongs to the engine's fidelity suite (packages/app/tests/fidelity or packages/core/src/markdown); a public test should assert a fixed expected literal for a specific contract instead. See https://github.com/Nedian0Brien/SynapseNote/blob/main/biome-plugins/README.md#no-roundtrip-identity-oraclegrit"
         )
     },
     // serialize(parse($x)) === $x in either operand order (covers `assert(...)`,
@@ -71,7 +71,7 @@ or {
         },
         register_diagnostic(
             span = $cmp,
-            message = "Byte-fidelity round-trip oracle in a public test: `serialize(parse(x))` asserted equal to the same input `x`. This general round-trip-identity check belongs to the engine's fidelity suite (packages/app/tests/fidelity or packages/core/src/markdown); a public test should assert a fixed expected literal for a specific contract instead. See https://github.com/inkeep/open-knowledge/blob/main/biome-plugins/README.md#no-roundtrip-identity-oraclegrit"
+            message = "Byte-fidelity round-trip oracle in a public test: `serialize(parse(x))` asserted equal to the same input `x`. This general round-trip-identity check belongs to the engine's fidelity suite (packages/app/tests/fidelity or packages/core/src/markdown); a public test should assert a fixed expected literal for a specific contract instead. See https://github.com/Nedian0Brien/SynapseNote/blob/main/biome-plugins/README.md#no-roundtrip-identity-oraclegrit"
         )
     }
 }

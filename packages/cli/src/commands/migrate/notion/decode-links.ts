@@ -1,6 +1,6 @@
 /**
  * Normalize internal markdown link targets so they both RENDER and RESOLVE
- * in Open Knowledge.
+ * in SynapseNote.
  *
  * Notion percent-encodes link targets (`[x](Foo%20Bar%20<id>.md)`) and its
  * targets frequently contain literal parentheses (`(EnterpriseDB)`) and, once

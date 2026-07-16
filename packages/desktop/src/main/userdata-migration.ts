@@ -1,12 +1,12 @@
 /**
- * One-time userData relocation for the "Open Knowledge" → "OpenKnowledge"
+ * One-time userData relocation for the "OpenKnowledge" → "SynapseNote"
  * product rename.
  *
  * The desktop app stores app-level state (`state.json`: recent projects, window
  * restore, auto-update gates, …) under Electron's default userData dir, which
  * is derived from the packaged `productName` / CFBundleName:
  *   ~/Library/Application Support/<productName>/
- * When `productName` flips from "Open Knowledge" to "OpenKnowledge", that path
+ * When `productName` flips from "SynapseNote" to "SynapseNote", that path
  * changes and orphans every existing user's state (and makes first-run
  * detection re-fire). This shim carries the legacy dir forward exactly once.
  *
@@ -15,8 +15,8 @@
  * exists AND it is verifiably ours AND we have not migrated yet." That handles
  * users who skip many releases and is a no-op for fresh installs.
  *
- * Safety — other vendors may ship an app literally named "Open Knowledge", so
- * `~/Library/Application Support/Open Knowledge/` is a generic path we do not
+ * Safety — other vendors may ship an app literally named "OpenKnowledge", so
+ * `~/Library/Application Support/OpenKnowledge/` is a generic path we do not
  * own by name alone:
  *   - Identity gate: the legacy dir is adopted ONLY if its `state.json` parses
  *     as our `AppState` shape (reuses `parseAppState`). A foreign or junk dir
@@ -39,10 +39,10 @@ import { cp } from 'node:fs/promises';
 import { basename, dirname, join } from 'node:path';
 import { parseAppState } from './state-store.ts';
 
-/** userData dir basename for pre-rename builds (CFBundleName "Open Knowledge"). */
-const LEGACY_DIR_NAME = 'Open Knowledge';
-/** userData dir basename for post-rename builds (CFBundleName "OpenKnowledge"). */
-const TARGET_DIR_NAME = 'OpenKnowledge';
+/** userData dir basename for pre-rename builds (CFBundleName "OpenKnowledge"). */
+const LEGACY_DIR_NAME = 'OpenKnowledge';
+/** userData dir basename for post-rename builds (CFBundleName "SynapseNote"). */
+const TARGET_DIR_NAME = 'SynapseNote';
 const STATE_FILE = 'state.json';
 
 type UserDataMigrationStatus =
@@ -123,7 +123,7 @@ export async function migrateLegacyUserDataDir(
 
   // One-time guard keyed on `state.json`, NOT dir existence: the target dir can
   // already exist on a pre-rename build because `path-install.ts` writes
-  // `OpenKnowledge/path-install.json` independent of `productName`. Only a
+  // `SynapseNote/path-install.json` independent of `productName`. Only a
   // present `state.json` means a post-rename build already initialized here.
   if (existsSync(join(targetDir, STATE_FILE))) {
     return { status: 'skipped-already-initialized', targetDir };

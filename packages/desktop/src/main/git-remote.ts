@@ -18,7 +18,7 @@
 
 import { readFileSync, statSync } from 'node:fs';
 import { isAbsolute, join, resolve } from 'node:path';
-import { parseGitUrl } from '@inkeep/open-knowledge';
+import { parseGitUrl } from '@nedian0brien/synapsenote';
 
 /**
  * Best-effort: returns the canonical GitHub remote URL for the project

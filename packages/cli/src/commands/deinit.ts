@@ -1,5 +1,5 @@
 /**
- * `ok deinit` — remove OpenKnowledge from ONE project, leaving the user's
+ * `ok deinit` — remove SynapseNote from ONE project, leaving the user's
  * markdown content untouched. The per-project ring of the shared removal engine
  * (`deinitOps`), reused by `ok uninstall`'s recent-projects sweep.
  *
@@ -44,13 +44,13 @@ export async function runDeinit(opts: DeinitOptions = {}): Promise<DeinitResult>
   const projectRoot = resolve(opts.cwd ?? process.cwd());
   const home = opts.home ?? homedir();
 
-  // `.ok/` is the project marker; without it there is no OpenKnowledge footprint
+  // `.ok/` is the project marker; without it there is no SynapseNote footprint
   // to remove here (a stray editor-config entry would be handled by uninstall's
   // global sweep, not a per-project deinit).
   if (!existsSync(join(projectRoot, '.ok'))) {
     return {
       status: 'no-op',
-      message: dim(`No OpenKnowledge project found at ${projectRoot}. Nothing to remove.`),
+      message: dim(`No SynapseNote project found at ${projectRoot}. Nothing to remove.`),
       exitCode: 0,
     };
   }
@@ -77,7 +77,7 @@ export async function runDeinit(opts: DeinitOptions = {}): Promise<DeinitResult>
 
   if (!opts.yes) {
     process.stderr.write(
-      `${accent(`Remove OpenKnowledge from ${projectRoot}:`)}\n\n${formatRemovalPlan(plan)}\n\n`,
+      `${accent(`Remove SynapseNote from ${projectRoot}:`)}\n\n${formatRemovalPlan(plan)}\n\n`,
     );
     const confirmed = await confirmDestructive(
       `${accent('Remove these?')} ${dim('[y/N] ')}`,
@@ -101,7 +101,7 @@ export async function runDeinit(opts: DeinitOptions = {}): Promise<DeinitResult>
 export function deinitCommand(): Command {
   return new Command('deinit')
     .description(
-      'Remove OpenKnowledge from this project (its .ok/, editor MCP entries, git-exclude lines, shadow repo) while leaving your markdown content untouched. Re-run `ok start` to re-scaffold.',
+      'Remove SynapseNote from this project (its .ok/, editor MCP entries, git-exclude lines, shadow repo) while leaving your markdown content untouched. Re-run `ok start` to re-scaffold.',
     )
     .argument('[path]', 'Project directory (defaults to the current project)')
     .option('-y, --yes', 'Skip the confirmation prompt')

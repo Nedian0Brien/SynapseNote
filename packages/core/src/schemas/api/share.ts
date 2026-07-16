@@ -4,7 +4,7 @@
  *
  * `handleShareConstructUrl` reads the project's local git state — HEAD branch,
  * `[remote "origin"] url`, and `refs/remotes/origin/<branch>` — and emits a
- * marketing-safe share URL (`https://openknowledge.ai/d/<base64url>`). The
+ * marketing-safe share URL (`https://synapse.lawdigest.kr/d/<base64url>`). The
  * endpoint is read-only against the local working tree and uses local refs
  * only (no `git ls-remote`) to keep the click-to-clipboard path under the
  * 100ms p95 budget.
@@ -257,7 +257,7 @@ export type SharePublishRequest = z.infer<typeof SharePublishRequestSchema>;
  * - `name-conflict` — `<owner>/<name>` already exists; reopen the form
  *   with the Name field focused.
  * - `saml-sso` — GitHub denied with a SAML/SSO marker; banner is the
- *   generic "Authorize OpenKnowledge for <org>" path.
+ *   generic "Authorize SynapseNote for <org>" path.
  * - `auth-required` — Token is missing/invalid; bounce through the
  *   existing Device Flow modal.
  * - `push-failed` — Repo was created but the initial push failed;

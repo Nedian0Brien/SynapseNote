@@ -20,7 +20,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, mock, spyOn, test } from 'bun:test';
-import type { ConfigBinding, OkignoreBinding, WriteScope } from '@inkeep/open-knowledge-core';
+import type { ConfigBinding, OkignoreBinding, WriteScope } from '@nedian0brien/synapsenote-core';
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import { __resetServerInstanceStoreForTests, setServerInstanceId } from './server-instance-store';
 
@@ -173,7 +173,7 @@ mock.module('@/lib/auth-token', () => ({
 // calls to produce the binding objects it then subscribes to. The fakes
 // return ConfigBindings whose `subscribeSynced` listener is captured per
 // scope so the test can trigger the false→true transition by hand.
-mock.module('@inkeep/open-knowledge-core', () => ({
+mock.module('@nedian0brien/synapsenote-core', () => ({
   bindConfigDoc: (_provider: unknown, scope: WriteScope) =>
     makeFakeConfigBinding(scope, scope === 'user' ? userHasSyncedSeed : false),
   bindOkignoreDoc: () => makeFakeOkignoreBinding(),

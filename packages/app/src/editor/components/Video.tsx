@@ -138,7 +138,7 @@ import {
   parseLoomUrl,
   parseYouTubeUrl,
   toDesktopAssetHref,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import Vimeo from '@u-wave/react-vimeo';
 import { type CSSProperties, useEffect, useRef } from 'react';
 import LiteYouTubeEmbed from 'react-lite-youtube-embed';

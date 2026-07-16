@@ -303,9 +303,9 @@ describe('repo assets — production guard', () => {
     // skill would shadow the project-scope one in the host hierarchy.
     const { skillsDir } = defaultPaths();
     const expected: Record<(typeof BUNDLE_IDS)[number], string> = {
-      discovery: 'open-knowledge-discovery',
-      project: 'open-knowledge',
-      'write-skill': 'open-knowledge-write-skill',
+      discovery: 'synapsenote-discovery',
+      project: 'synapsenote',
+      'write-skill': 'synapsenote-write-skill',
     };
     const names = new Set<string>();
     for (const bundle of BUNDLE_IDS) {

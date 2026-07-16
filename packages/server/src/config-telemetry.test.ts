@@ -18,8 +18,8 @@ import {
   CONFIG_DOC_NAME_PROJECT,
   type ConfigDocProvider,
   type ConfigPatch,
-} from '@inkeep/open-knowledge-core';
-import { writeConfigPatch } from '@inkeep/open-knowledge-core/server';
+} from '@nedian0brien/synapsenote-core';
+import { writeConfigPatch } from '@nedian0brien/synapsenote-core/server';
 import { context, metrics, trace } from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {

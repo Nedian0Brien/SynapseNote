@@ -1,5 +1,5 @@
-import { DocumentListSuccessSchema } from '@inkeep/open-knowledge-core';
 import { Trans, useLingui } from '@lingui/react/macro';
+import { DocumentListSuccessSchema } from '@nedian0brien/synapsenote-core';
 import { Info } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { CopyablePromptList } from '@/components/empty-state/CopyablePromptList';

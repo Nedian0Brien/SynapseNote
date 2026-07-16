@@ -8,7 +8,7 @@
  * SystemDocSubscriber emits for every CC1 frame on this channel.
  */
 
-import type { CC1ConfigIgnoreNestedErrorPayload } from '@inkeep/open-knowledge-core';
+import type { CC1ConfigIgnoreNestedErrorPayload } from '@nedian0brien/synapsenote-core';
 
 type Listener = (event: CC1ConfigIgnoreNestedErrorPayload) => void;
 

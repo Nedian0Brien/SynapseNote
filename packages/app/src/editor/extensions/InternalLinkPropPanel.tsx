@@ -22,12 +22,12 @@
  * dismissal; the layer's hover state machine owns the open/close decision.
  */
 
+import { Trans, useLingui } from '@lingui/react/macro';
 import {
   type ClassifiedLinkTarget,
   classifyMarkdownHref,
   isExternalHref,
-} from '@inkeep/open-knowledge-core';
-import { Trans, useLingui } from '@lingui/react/macro';
+} from '@nedian0brien/synapsenote-core';
 import type { Editor } from '@tiptap/core';
 import { posToDOMRect } from '@tiptap/core';
 import { CircleAlert, File, FolderOpen, Globe, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';

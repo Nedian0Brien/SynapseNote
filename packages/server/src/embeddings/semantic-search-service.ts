@@ -25,7 +25,7 @@
  * server lock).
  */
 
-import type { WorkspaceSearchDocument } from '@inkeep/open-knowledge-core';
+import type { WorkspaceSearchDocument } from '@nedian0brien/synapsenote-core';
 import { getLogger } from '../logger.ts';
 import { CHUNK_CONFIG_ID, chunkDocument } from './chunking.ts';
 import { cosineSimilarity, type Embedder } from './embedder.ts';

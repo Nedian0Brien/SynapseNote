@@ -58,7 +58,7 @@ describe('mcpConfigWriter', () => {
     writeFileSync(
       cursorMcp,
       JSON.stringify({
-        mcpServers: { 'open-knowledge': { command: 'old', args: ['mcp'] } },
+        mcpServers: { synapsenote: { command: 'old', args: ['mcp'] } },
       }),
     );
 
@@ -67,9 +67,9 @@ describe('mcpConfigWriter', () => {
     expect(outcome.action).toBe('overwritten');
     expect(outcome.path).toBe(cursorMcp);
     const written = JSON.parse(readFileSync(cursorMcp, 'utf-8'));
-    expect(written.mcpServers['open-knowledge'].command).toBe('/bin/sh');
-    expect(written.mcpServers['open-knowledge'].args.slice(0, 2)).toEqual(['-l', '-c']);
-    expect(written.mcpServers['open-knowledge'].args[2]).toContain('# ok-mcp-v1');
+    expect(written.mcpServers.synapsenote.command).toBe('/bin/sh');
+    expect(written.mcpServers.synapsenote.args.slice(0, 2)).toEqual(['-l', '-c']);
+    expect(written.mcpServers.synapsenote.args[2]).toContain('# ok-mcp-v1');
   });
 
   test('reports "skipped-unsupported" for an editor without projectConfigPath', () => {
@@ -105,7 +105,7 @@ describe('mcpConfigWriter', () => {
     // integration failure.
     const cursorMcp = join(projectDir, '.cursor', 'mcp.json');
     mkdirSync(join(projectDir, '.cursor'), { recursive: true });
-    const malformed = '{ "mcpServers": { "open-knowledge": ';
+    const malformed = '{ "mcpServers": { "synapsenote": ';
     writeFileSync(cursorMcp, malformed);
 
     const outcome = mcpConfigWriter.write(EDITOR_TARGETS.cursor, projectDir, {});
@@ -147,24 +147,24 @@ describe('projectSkillWriter', () => {
     expect(outcome.integration).toBe('project-skill');
     expect(outcome.editorId).toBe('claude');
     expect(outcome.action).toBe('written');
-    expect(outcome.path).toBe(join(projectDir, '.claude', 'skills', 'open-knowledge', 'SKILL.md'));
+    expect(outcome.path).toBe(join(projectDir, '.claude', 'skills', 'synapsenote', 'SKILL.md'));
     expect(outcome.error).toBeUndefined();
     expect(existsSync(outcome.path ?? '')).toBe(true);
   });
 
-  test('writes for cursor (.cursor/skills/open-knowledge/SKILL.md)', () => {
+  test('writes for cursor (.cursor/skills/synapsenote/SKILL.md)', () => {
     const outcome = projectSkillWriter.write(EDITOR_TARGETS.cursor, projectDir, {});
 
     expect(outcome.action).toBe('written');
-    expect(outcome.path).toBe(join(projectDir, '.cursor', 'skills', 'open-knowledge', 'SKILL.md'));
+    expect(outcome.path).toBe(join(projectDir, '.cursor', 'skills', 'synapsenote', 'SKILL.md'));
     expect(existsSync(outcome.path ?? '')).toBe(true);
   });
 
-  test('writes for codex (.codex/skills/open-knowledge/SKILL.md)', () => {
+  test('writes for codex (.codex/skills/synapsenote/SKILL.md)', () => {
     const outcome = projectSkillWriter.write(EDITOR_TARGETS.codex, projectDir, {});
 
     expect(outcome.action).toBe('written');
-    expect(outcome.path).toBe(join(projectDir, '.codex', 'skills', 'open-knowledge', 'SKILL.md'));
+    expect(outcome.path).toBe(join(projectDir, '.codex', 'skills', 'synapsenote', 'SKILL.md'));
     expect(existsSync(outcome.path ?? '')).toBe(true);
   });
 
@@ -202,7 +202,7 @@ describe('projectSkillWriter', () => {
     expect(outcome.action).toBe('failed');
     expect(outcome.error).toBeDefined();
     expect(outcome.error?.length ?? 0).toBeGreaterThan(0);
-    expect(outcome.path).toBe(join(projectDir, '.claude', 'skills', 'open-knowledge', 'SKILL.md'));
+    expect(outcome.path).toBe(join(projectDir, '.claude', 'skills', 'synapsenote', 'SKILL.md'));
   });
 
   test('never throws even when the target path environment is hostile', () => {
@@ -268,17 +268,11 @@ describe('applyProjectIntegrations', () => {
 
     // Sanity: all six landed on disk as the expected files.
     expect(existsSync(join(projectDir, '.mcp.json'))).toBe(true);
-    expect(existsSync(join(projectDir, '.claude', 'skills', 'open-knowledge', 'SKILL.md'))).toBe(
-      true,
-    );
+    expect(existsSync(join(projectDir, '.claude', 'skills', 'synapsenote', 'SKILL.md'))).toBe(true);
     expect(existsSync(join(projectDir, '.cursor', 'mcp.json'))).toBe(true);
-    expect(existsSync(join(projectDir, '.cursor', 'skills', 'open-knowledge', 'SKILL.md'))).toBe(
-      true,
-    );
+    expect(existsSync(join(projectDir, '.cursor', 'skills', 'synapsenote', 'SKILL.md'))).toBe(true);
     expect(existsSync(join(projectDir, '.codex', 'config.toml'))).toBe(true);
-    expect(existsSync(join(projectDir, '.codex', 'skills', 'open-knowledge', 'SKILL.md'))).toBe(
-      true,
-    );
+    expect(existsSync(join(projectDir, '.codex', 'skills', 'synapsenote', 'SKILL.md'))).toBe(true);
   });
 
   test('returns an empty array for an empty editorIds selection', () => {
@@ -345,6 +339,6 @@ describe('applyProjectIntegrations', () => {
     expect(mcpOutcome?.action).toBe('written');
     const written = JSON.parse(readFileSync(join(projectDir, '.mcp.json'), 'utf-8'));
     // dev mode resolves the local CLI dist; the command becomes 'node'.
-    expect(written.mcpServers['open-knowledge'].command).toBe('node');
+    expect(written.mcpServers.synapsenote.command).toBe('node');
   });
 });

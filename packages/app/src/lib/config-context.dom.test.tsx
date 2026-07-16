@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test';
-import type { Config } from '@inkeep/open-knowledge-core';
+import type { Config } from '@nedian0brien/synapsenote-core';
 import { cleanup, render, screen } from '@testing-library/react';
 import { ConfigContext, type ConfigContextValue, useConfigContext } from './config-context';
 

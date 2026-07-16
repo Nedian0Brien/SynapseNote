@@ -4,7 +4,7 @@
  * The Claude Code CLI (and any pure-stdio agent host — Codex CLI, Cursor CLI,
  * OpenCode) has no preview pane and no in-app browser, so it is on rung 3 of the
  * skill's preview capability ladder. This verb is that rung's action: it
- * focus-or-launches the desktop app via an `openknowledge://open` deep link,
+ * focus-or-launches the desktop app via an `synapsenote://open` deep link,
  * falling back to the browser UI (`ok ui`) when no desktop bundle is installed.
  *
  * `<name>` is auto-classified against the project on disk — a directory opens as
@@ -14,7 +14,7 @@
  * addressed by name + scope, not a content path, so they can't be auto-detected
  * from a bare name).
  *
- * Deep-link shapes (all `openknowledge://open?project=<abs>&...`):
+ * Deep-link shapes (all `synapsenote://open?project=<abs>&...`):
  *   - doc    → `&doc=<name>`                        → `#/<name>`
  *   - folder → `&folder=<path>`                     → `#/<path>/`
  *   - skill  → `&doc=__skill__/<scope>/<name>`      → `#/__skill__/<scope>/<name>`
@@ -30,7 +30,7 @@
 import { spawn as nodeSpawn } from 'node:child_process';
 import { statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { MANAGED_ARTIFACT_SCOPES, type SkillScope } from '@inkeep/open-knowledge-core';
+import { MANAGED_ARTIFACT_SCOPES, type SkillScope } from '@nedian0brien/synapsenote-core';
 import {
   encodeDocName,
   encodeFolderRoute,
@@ -38,7 +38,7 @@ import {
   resolveLockDir,
   resolveUiInfo,
   withHiddenWindowsConsole,
-} from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-server';
 import { Command } from 'commander';
 import { createRealDetectDeps, type DetectResult, detectDesktop } from './desktop-dispatch.ts';
 
@@ -66,7 +66,7 @@ export interface OpenDeps {
    * This is what lets `ok open <name>` route correctly without `--folder`.
    */
   classifyName: (projectDir: string, name: string) => 'doc' | 'folder';
-  /** Hand a URL or `openknowledge://` deep link to the OS to open. */
+  /** Hand a URL or `synapsenote://` deep link to the OS to open. */
   openTarget: (target: string) => void;
   log: (message: string) => void;
   error: (message: string) => void;
@@ -75,7 +75,7 @@ export interface OpenDeps {
 /**
  * Copy `process.env` minus `ELECTRON_RUN_AS_NODE`. The CLI wrapper sets that
  * var so the bundled Electron binary runs as a Node host; if the
- * LaunchServices-spawned target (the desktop app for `openknowledge://`, or the
+ * LaunchServices-spawned target (the desktop app for `synapsenote://`, or the
  * browser for http) inherited it, it would start as a headless Node host with
  * no script and exit immediately. Mirrors `launchDesktop`.
  */
@@ -140,20 +140,20 @@ function isUnsafeName(name: string): boolean {
 /** Shared exit when neither the desktop app nor a running UI can be reached. */
 function noTargetError(deps: OpenDeps): number {
   deps.error(
-    'No OpenKnowledge desktop app found and no UI is running. ' +
+    'No SynapseNote desktop app found and no UI is running. ' +
       'Install OK Desktop, or start a UI with `ok ui`, then retry.',
   );
   return 1;
 }
 
-/** Build + open an `openknowledge://open` deep link to the desktop app. */
+/** Build + open an `synapsenote://open` deep link to the desktop app. */
 function openDesktopDeepLink(
   projectDir: string,
   param: 'doc' | 'folder',
   target: string,
   deps: OpenDeps,
 ): void {
-  const deepLink = `openknowledge://open?project=${encodeURIComponent(
+  const deepLink = `synapsenote://open?project=${encodeURIComponent(
     projectDir,
   )}&${param}=${encodeURIComponent(target)}`;
   deps.openTarget(deepLink);
@@ -204,7 +204,7 @@ export function runOpen(name: string, options: OpenOptions, deps: OpenDeps): num
     const bundlePath = deps.detectBundlePath();
     if (bundlePath) {
       openDesktopDeepLink(projectDir, 'doc', `__skill__/${scope}/${cleanName}`, deps);
-      deps.log(`Opening skill ${cleanName} (${scope}) in the OpenKnowledge desktop app.`);
+      deps.log(`Opening skill ${cleanName} (${scope}) in the SynapseNote desktop app.`);
       return 0;
     }
     const baseUrl = deps.resolveBaseUrl(projectDir);
@@ -224,7 +224,7 @@ export function runOpen(name: string, options: OpenOptions, deps: OpenDeps): num
   if (isFolder) {
     if (bundlePath) {
       openDesktopDeepLink(projectDir, 'folder', cleanName, deps);
-      deps.log(`Opening folder ${cleanName} in the OpenKnowledge desktop app.`);
+      deps.log(`Opening folder ${cleanName} in the SynapseNote desktop app.`);
       return 0;
     }
     const baseUrl = deps.resolveBaseUrl(projectDir);
@@ -240,7 +240,7 @@ export function runOpen(name: string, options: OpenOptions, deps: OpenDeps): num
   // Doc.
   if (bundlePath) {
     openDesktopDeepLink(projectDir, 'doc', cleanName, deps);
-    deps.log(`Opening ${cleanName} in the OpenKnowledge desktop app.`);
+    deps.log(`Opening ${cleanName} in the SynapseNote desktop app.`);
     return 0;
   }
   const baseUrl = deps.resolveBaseUrl(projectDir);

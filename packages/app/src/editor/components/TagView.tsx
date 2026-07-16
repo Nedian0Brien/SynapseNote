@@ -29,8 +29,8 @@
  * gate on keystrokes) is borrowed from there.
  */
 
-import { INLINE_TAG_VALUE_RE } from '@inkeep/open-knowledge-core';
 import { useLingui } from '@lingui/react/macro';
+import { INLINE_TAG_VALUE_RE } from '@nedian0brien/synapsenote-core';
 import type { NodeViewProps } from '@tiptap/core';
 import { TextSelection } from '@tiptap/pm/state';
 import { NodeViewWrapper } from '@tiptap/react';

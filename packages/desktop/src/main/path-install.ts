@@ -24,7 +24,7 @@ import {
   type PathInstallConsent,
   type PathInstallMarker,
   pathInstallMarkerPath,
-} from '@inkeep/open-knowledge';
+} from '@nedian0brien/synapsenote';
 import type { McpWiringPathInstallDescriptor } from '../shared/ipc-channels.ts';
 import { wrapperPathInBundle } from './bundle-paths.ts';
 
@@ -32,7 +32,7 @@ import { wrapperPathInBundle } from './bundle-paths.ts';
 // `from './path-install.ts'` path even though the definition now lives in cli.
 export { pathInstallMarkerPath };
 
-const NAMES = ['ok', 'open-knowledge'] as const;
+const NAMES = ['ok', 'synapsenote'] as const;
 
 interface PathInstallFsOps {
   existsSync(path: string): boolean;
@@ -192,7 +192,7 @@ function envShim(home: string): string {
 }
 
 const MANAGED_HINT =
-  '# ! Contents within this block are managed by OpenKnowledge. Do not edit.\n# ! Delete this whole block to opt out — OpenKnowledge will not re-add it.';
+  '# ! Contents within this block are managed by SynapseNote. Do not edit.\n# ! Delete this whole block to opt out — SynapseNote will not re-add it.';
 
 function block(): string {
   return `${BEGIN}\n${MANAGED_HINT}\n[ -f "$HOME/.ok/env.sh" ] && . "$HOME/.ok/env.sh"\n${END}\n`;
@@ -211,7 +211,7 @@ function rcTargets(
     { path: join(home, '.zshrc'), create: shell?.endsWith('/zsh') ?? false, content: block() },
     { path: join(home, '.bash_profile'), create: false, content: block() },
     {
-      path: join(home, '.config', 'fish', 'conf.d', 'open-knowledge.fish'),
+      path: join(home, '.config', 'fish', 'conf.d', 'synapsenote.fish'),
       create: true,
       content: fishBlock(),
     },
@@ -395,7 +395,7 @@ async function discoverRealInteractivePath(
 }
 
 /**
- * Earlier Desktop builds also seeded `ok` / `open-knowledge` symlinks into
+ * Earlier Desktop builds also seeded `ok` / `synapsenote` symlinks into
  * every writable non-system PATH directory so already-open shells picked up
  * the CLI without a restart. That surprised users (an `ok` appearing in
  * `~/.cargo/bin`, opam switches, etc.), so we no longer create them — this
@@ -527,7 +527,7 @@ export async function ensureCliOnPath(opts: EnsureCliOnPathOpts): Promise<Ensure
     fs.mkdirSync(dirname(shim), { recursive: true });
     fs.writeFileSync(
       shim,
-      '# OpenKnowledge CLI environment — managed file, do not edit.\ncase ":$' +
+      '# SynapseNote CLI environment — managed file, do not edit.\ncase ":$' +
         '{PATH}:" in\n  *:"$' +
         '{HOME}/.ok/bin":*) ;;\n  *) export PATH="$' +
         '{HOME}/.ok/bin:$' +
@@ -637,7 +637,7 @@ export async function ensureCliOnPath(opts: EnsureCliOnPathOpts): Promise<Ensure
       );
     if (newOptOuts.length > 0)
       parts.push(
-        `You removed the OpenKnowledge block from ${newOptOuts.map((p) => tildify(p, home)).join(', ')} — it won't be re-added.`,
+        `You removed the SynapseNote block from ${newOptOuts.map((p) => tildify(p, home)).join(', ')} — it won't be re-added.`,
       );
     if (cleanup.removedCount > 0)
       parts.push(
@@ -745,7 +745,7 @@ export function removePathShimFromRcFiles(opts: {
     ...rcTargets(home, (opts.env ?? process.env).SHELL, fs).map((target) => target.path),
     ...(marker?.rcFiles ?? []),
   ]);
-  const okOwnedFishConf = join(home, '.config', 'fish', 'conf.d', 'open-knowledge.fish');
+  const okOwnedFishConf = join(home, '.config', 'fish', 'conf.d', 'synapsenote.fish');
   const strippedFiles: string[] = [];
   try {
     for (const path of candidates) {

@@ -3,8 +3,8 @@ import type {
   ShareConstructUrlRequest,
   ShareConstructUrlResponse,
   ShareFreshness,
-} from '@inkeep/open-knowledge-core';
-import { ShareConstructUrlResponseSchema } from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
+import { ShareConstructUrlResponseSchema } from '@nedian0brien/synapsenote-core';
 import { docNameToMarkdownPath } from '@/lib/doc-paths';
 
 const SHARE_CONSTRUCT_URL_PATH = '/api/share/construct-url';

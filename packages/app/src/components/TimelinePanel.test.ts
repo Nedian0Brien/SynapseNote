@@ -6,15 +6,15 @@
  * a browser.
  */
 import { describe, expect, test } from 'bun:test';
-import type { TimelineEntry } from '@inkeep/open-knowledge-core';
+import type { TimelineEntry } from '@nedian0brien/synapsenote-core';
 import { allSummariesFor } from './TimelinePanel.tsx';
 
 function baseEntry(overrides: Partial<TimelineEntry>): TimelineEntry {
   return {
     sha: '0'.repeat(40),
     timestamp: '2026-04-17T00:00:00Z',
-    author: 'openknowledge',
-    authorEmail: 'noreply@openknowledge.local',
+    author: 'synapsenote',
+    authorEmail: 'noreply@synapsenote.local',
     type: 'wip',
     message: 'wip: edits',
     contributors: [],

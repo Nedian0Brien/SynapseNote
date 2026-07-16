@@ -2,16 +2,16 @@
  * Runtime guard for the detached-server helper binary in a packaged build.
  *
  * Bug class this test catches. The helper bundle at
- * `Contents/Frameworks/OpenKnowledge Server.app/Contents/MacOS/<exec>`
+ * `Contents/Frameworks/SynapseNote Server.app/Contents/MacOS/<exec>`
  * is populated by `scripts/afterPack.mjs` cloning the Electron Helper
  * Mach-O. Electron's helper stub inspects its own basename via
  * `_NSGetExecutablePath()` early in boot and silently SIGTRAPs (exit 133,
  * empty stderr) for any basename outside its hardcoded
  * `{generic, Renderer, GPU, Plugin}` type set. The original PR
- * shipped the cloned binary as `OpenKnowledge Server` — a descriptive
+ * shipped the cloned binary as `SynapseNote Server` — a descriptive
  * name that is NOT in Electron's set — so every detached-server spawn
  * died before `ELECTRON_RUN_AS_NODE=1` was consulted. Symptom in the
- * field: "OpenKnowledge server did not bind a port within 15000ms
+ * field: "SynapseNote server did not bind a port within 15000ms
  * after spawn (pid=N)" with no stderr tail (because the child crashed
  * before writing anything to its stderr fd).
  *
@@ -37,8 +37,8 @@
  * `dist-desktop/mac-x64/`, `dist-desktop/mac-universal/` after the
  * staged universal-binary flip). We
  * enumerate `mac-` prefixed children and pick the first whose
- * `OpenKnowledge.app/Contents/Frameworks/OpenKnowledge Server.app/
- * Contents/MacOS/OpenKnowledge Helper` exists, so the test follows
+ * `SynapseNote.app/Contents/Frameworks/SynapseNote Server.app/
+ * Contents/MacOS/SynapseNote Helper` exists, so the test follows
  * the build output across the arch transition without a manual rename
  * here.
  *
@@ -57,7 +57,7 @@ import { fileURLToPath } from 'node:url';
 import {
   HELPER_BUNDLE_NAME,
   HELPER_EXECUTABLE_NAME,
-} from '@inkeep/open-knowledge-core/helper-bundle';
+} from '@nedian0brien/synapsenote-core/helper-bundle';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const desktopRoot = resolve(HERE, '../..');
@@ -82,7 +82,7 @@ function findPackagedHelperBinary(): string | null {
     const candidate = join(
       distDesktopDir,
       subdir,
-      'OpenKnowledge.app',
+      'SynapseNote.app',
       'Contents/Frameworks',
       HELPER_BUNDLE_NAME,
       'Contents/MacOS',
@@ -111,7 +111,7 @@ describe('packaged helper binary runs under ELECTRON_RUN_AS_NODE=1', () => {
     if (!havePackagedBuild) {
       console.log(
         `[packaged-helper-runs-as-node] no packaged helper binary found under ` +
-          `${distDesktopDir}/mac-<arch>/OpenKnowledge.app/... — run ` +
+          `${distDesktopDir}/mac-<arch>/SynapseNote.app/... — run ` +
           `\`bunx electron-builder --dir --publish never\` (or \`okdesk\`) to enable this test`,
       );
       return;

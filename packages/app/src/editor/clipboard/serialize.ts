@@ -29,8 +29,8 @@
  *     rich-HTML fidelity is lost.
  */
 
-import type { MarkdownManager } from '@inkeep/open-knowledge-core';
-import { markdownToHtml } from '@inkeep/open-knowledge-core';
+import type { MarkdownManager } from '@nedian0brien/synapsenote-core';
+import { markdownToHtml } from '@nedian0brien/synapsenote-core';
 import type { JSONContent } from '@tiptap/core';
 import type { Node, Schema, Slice } from '@tiptap/pm/model';
 import { DOMSerializer, Fragment, Slice as SliceCtor } from '@tiptap/pm/model';

@@ -23,7 +23,7 @@ function makeInput(
   overrides: Partial<BundleReplaceDetectorInput> = {},
 ): BundleReplaceDetectorInput {
   return {
-    infoPlistPath: '/Applications/OpenKnowledge.app/Contents/Info.plist',
+    infoPlistPath: '/Applications/SynapseNote.app/Contents/Info.plist',
     processStartTimeMs: 1_000_000,
     currentVersion: '0.4.1',
     statSync: () => ({ mtimeMs: 500_000 }),
@@ -116,7 +116,7 @@ describe('extractShortVersionFromPlist', () => {
 <plist version="1.0">
 <dict>
   <key>CFBundleName</key>
-  <string>OpenKnowledge</string>
+  <string>SynapseNote</string>
   <key>CFBundleShortVersionString</key>
   <string>0.5.0-beta.3</string>
   <key>CFBundleVersion</key>

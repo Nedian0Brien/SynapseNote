@@ -21,7 +21,7 @@
  * peers through here too.
  */
 
-import { UA_PATTERNS } from '@inkeep/open-knowledge-core';
+import { UA_PATTERNS } from '@nedian0brien/synapsenote-core';
 
 /**
  * One captured request observation. All header fields are best-effort
@@ -137,7 +137,7 @@ export function recordEmbedProbe(entry: EmbedProbeEntry): void {
 // ---------------------------------------------------------------------------
 
 // Per-app UA regexes come from the SINGLE definition in core
-// (`UA_PATTERNS` in `@inkeep/open-knowledge-core`) that the client-side
+// (`UA_PATTERNS` in `@nedian0brien/synapsenote-core`) that the client-side
 // `detectEmbeddedHostFromBrowser` also consumes — so the two detectors
 // cannot drift on what a Cursor / Codex / Claude UA looks like. The
 // `(?:\([^)]+\))?` parenthetical absorbs Dev/Beta/Canary flavor builds
@@ -159,7 +159,7 @@ const CURSOR_REFERER_STRATEGY_LITERAL = '?strategy=C_iframe';
 // ---------------------------------------------------------------------------
 // Detection verdict — eager OR-of-globally-unique.
 //
-// Wire shape exported from `@inkeep/open-knowledge-core` as
+// Wire shape exported from `@nedian0brien/synapsenote-core` as
 // `EmbedDetection` (z.infer of the schema); this local alias stays
 // in-file for the handler to consume without a circular import.
 // ---------------------------------------------------------------------------

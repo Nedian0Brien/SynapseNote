@@ -18,7 +18,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Readable } from 'node:stream';
 import { Hocuspocus } from '@hocuspocus/server';
-import { readFmMap, stripFrontmatter } from '@inkeep/open-knowledge-core';
+import { readFmMap, stripFrontmatter } from '@nedian0brien/synapsenote-core';
 import {
   AGENT_WRITE_ORIGIN,
   AgentSessionManager,

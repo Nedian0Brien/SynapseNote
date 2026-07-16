@@ -3,8 +3,8 @@
 //! whole table and prunes any server not in its input), this engine touches
 //! only the named entry: it inserts a fresh explicit table when absent and
 //! reconciles per key in place when present, so sibling servers, surrounding
-//! comments, value types, and any keys a user hand-added to OpenKnowledge's own
-//! entry are all preserved. The whole document is the user's; OpenKnowledge owns
+//! comments, value types, and any keys a user hand-added to SynapseNote's own
+//! entry are all preserved. The whole document is the user's; SynapseNote owns
 //! only its one entry's managed keys.
 //!
 //! N-API-free so it stays unit-testable under a plain `cargo test`; `lib.rs`
@@ -17,7 +17,7 @@ use toml_writer::ToTomlValue as _;
 use crate::document_helpers::{ensure_table_for_write, new_implicit_table, preserve_decor};
 
 /// Result of an edit: the serialized document, whether it actually changed, and
-/// whether OpenKnowledge's entry already existed before the edit. `changed` is
+/// whether SynapseNote's entry already existed before the edit. `changed` is
 /// computed by comparing the serialized document before and after, so an entry
 /// that already matches (or a remove of an absent entry) reports `false` and the
 /// caller can skip the write. `existed` lets the write spine label the result
@@ -204,7 +204,7 @@ fn json_object_to_table(entry_json: &str) -> Result<Table, String> {
 
 fn json_to_toml_value(value: &JsonValue) -> TomlValue {
     match value {
-        // TOML has no null; OpenKnowledge's entry never carries one, so the
+        // TOML has no null; SynapseNote's entry never carries one, so the
         // empty-string projection is a safe last resort, not a real path.
         JsonValue::Null => TomlValue::from(""),
         JsonValue::Bool(b) => TomlValue::from(*b),
@@ -231,7 +231,7 @@ fn json_to_toml_value(value: &JsonValue) -> TomlValue {
 ///
 /// toml_edit's default serializes a string that contains newlines as a
 /// multi-line basic string (`"""…"""`) with real newlines in the output.
-/// OpenKnowledge's own entry carries a multi-line resolver chain; rendering it
+/// SynapseNote's own entry carries a multi-line resolver chain; rendering it
 /// single-line-escaped (matching the prior smol-toml writer) keeps every newline
 /// in the serialized document *structural*, so the JS write wrapper can re-apply
 /// a file's CRLF convention without rewriting the line endings inside the chain
@@ -275,13 +275,13 @@ mod tests {
 
     #[test]
     fn inserts_fresh_entry_into_empty_document() {
-        let out = upsert_mcp_server("", "open-knowledge", ENTRY).unwrap();
+        let out = upsert_mcp_server("", "synapsenote", ENTRY).unwrap();
         assert!(out.changed);
         assert!(!out.existed);
-        assert!(out.text.contains("[mcp_servers.open-knowledge]"));
+        assert!(out.text.contains("[mcp_servers.synapsenote]"));
         let doc = parse(&out.text);
         assert_eq!(
-            doc["mcp_servers"]["open-knowledge"]["command"].as_str(),
+            doc["mcp_servers"]["synapsenote"]["command"].as_str(),
             Some("/bin/sh")
         );
     }
@@ -289,12 +289,12 @@ mod tests {
     #[test]
     fn fresh_insert_preserves_existing_content_and_comments() {
         let input = "# my config\nmodel = \"gpt-5\"\n\n[mcp_servers.other]\ncommand = \"other\"  # keep\n";
-        let out = upsert_mcp_server(input, "open-knowledge", ENTRY).unwrap();
+        let out = upsert_mcp_server(input, "synapsenote", ENTRY).unwrap();
         assert!(out.changed);
         assert!(out.text.starts_with("# my config\nmodel = \"gpt-5\"\n"));
         assert!(out.text.contains("[mcp_servers.other]"));
         assert!(out.text.contains("command = \"other\"  # keep"));
-        assert!(out.text.contains("[mcp_servers.open-knowledge]"));
+        assert!(out.text.contains("[mcp_servers.synapsenote]"));
     }
 
     #[test]
@@ -302,13 +302,13 @@ mod tests {
         let input = r#"[mcp_servers.other]
 command = "other-cmd"
 
-[mcp_servers.open-knowledge]
+[mcp_servers.synapsenote]
 # interior note
 command = "/bin/sh"
 args = ["-l", "-c", "OLD"]
 enabled = false
 "#;
-        let out = upsert_mcp_server(input, "open-knowledge", ENTRY).unwrap();
+        let out = upsert_mcp_server(input, "synapsenote", ENTRY).unwrap();
         assert!(out.changed);
         assert!(out.existed);
         assert!(out.text.contains("[mcp_servers.other]"));
@@ -321,10 +321,10 @@ enabled = false
 
     #[test]
     fn reupsert_of_canonical_entry_is_byte_identical_noop() {
-        let first = upsert_mcp_server("[other]\nx = 1\n", "open-knowledge", ENTRY)
+        let first = upsert_mcp_server("[other]\nx = 1\n", "synapsenote", ENTRY)
             .unwrap()
             .text;
-        let second = upsert_mcp_server(&first, "open-knowledge", ENTRY).unwrap();
+        let second = upsert_mcp_server(&first, "synapsenote", ENTRY).unwrap();
         assert!(!second.changed);
         assert_eq!(second.text, first);
     }
@@ -337,11 +337,11 @@ ratio = 1.0
 server.host = "localhost"
 inline = { a = 1, b = 2 }
 
-[mcp_servers.open-knowledge]
+[mcp_servers.synapsenote]
 command = "/old/sh"
 args = ["-l", "-c", "run-ok"]
 "#;
-        let out = upsert_mcp_server(input, "open-knowledge", ENTRY).unwrap();
+        let out = upsert_mcp_server(input, "synapsenote", ENTRY).unwrap();
         let expected = input.replace("/old/sh", "/bin/sh");
         assert_eq!(out.text, expected);
         assert!(out.changed);
@@ -354,14 +354,14 @@ args = ["-l", "-c", "run-ok"]
         let input = r#"[mcp_servers.other]
 command = "other-cmd"  # sibling
 
-[mcp_servers.open-knowledge]
+[mcp_servers.synapsenote]
 command = "/bin/sh"
 args = ["-l", "-c", "run-ok"]
 "#;
-        let out = remove_mcp_server(input, "open-knowledge").unwrap();
+        let out = remove_mcp_server(input, "synapsenote").unwrap();
         assert!(out.changed);
         assert!(out.existed);
-        assert!(!out.text.contains("[mcp_servers.open-knowledge]"));
+        assert!(!out.text.contains("[mcp_servers.synapsenote]"));
         assert!(out.text.contains("[mcp_servers.other]"));
         assert!(out.text.contains("command = \"other-cmd\"  # sibling"));
     }
@@ -369,7 +369,7 @@ args = ["-l", "-c", "run-ok"]
     #[test]
     fn remove_absent_entry_is_byte_identical_noop() {
         let input = "[mcp_servers.other]\ncommand = \"other\"\n";
-        let out = remove_mcp_server(input, "open-knowledge").unwrap();
+        let out = remove_mcp_server(input, "synapsenote").unwrap();
         assert!(!out.changed);
         assert!(!out.existed);
         assert_eq!(out.text, input);
@@ -378,15 +378,15 @@ args = ["-l", "-c", "run-ok"]
     #[test]
     fn migrates_inline_ok_entry_to_explicit_table_preserving_siblings() {
         let input = r#"mcp_servers.other = { command = "other-cmd" }
-mcp_servers.open-knowledge = { command = "/old/sh" }
+mcp_servers.synapsenote = { command = "/old/sh" }
 "#;
-        let out = upsert_mcp_server(input, "open-knowledge", ENTRY).unwrap();
+        let out = upsert_mcp_server(input, "synapsenote", ENTRY).unwrap();
         assert!(out.changed);
-        assert!(out.text.contains("[mcp_servers.open-knowledge]"));
+        assert!(out.text.contains("[mcp_servers.synapsenote]"));
         assert!(out.text.contains("mcp_servers.other = { command = \"other-cmd\" }"));
         let doc = parse(&out.text);
         assert_eq!(
-            doc["mcp_servers"]["open-knowledge"]["command"].as_str(),
+            doc["mcp_servers"]["synapsenote"]["command"].as_str(),
             Some("/bin/sh")
         );
         assert!(out.text.contains("run-ok"));
@@ -395,7 +395,7 @@ mcp_servers.open-knowledge = { command = "/old/sh" }
     #[test]
     fn upsert_into_whole_inline_mcp_servers_preserves_siblings_inline() {
         let input = "mcp_servers = { other = { command = \"other-cmd\" } }\n";
-        let out = upsert_mcp_server(input, "open-knowledge", ENTRY).unwrap();
+        let out = upsert_mcp_server(input, "synapsenote", ENTRY).unwrap();
         assert!(out.changed);
         let doc = parse(&out.text);
         assert_eq!(
@@ -403,7 +403,7 @@ mcp_servers.open-knowledge = { command = "/old/sh" }
             Some("other-cmd")
         );
         assert_eq!(
-            doc["mcp_servers"]["open-knowledge"]["command"].as_str(),
+            doc["mcp_servers"]["synapsenote"]["command"].as_str(),
             Some("/bin/sh")
         );
         assert!(out.text.contains("mcp_servers = {"));
@@ -417,12 +417,12 @@ mcp_servers.open-knowledge = { command = "/old/sh" }
         // with real interior newlines would be corrupted by that conversion.
         let entry =
             r##"{"command":"/bin/sh","args":["-l","-c","# ok-mcp-v1\nexec npx mcp\nexit 127"]}"##;
-        let out = upsert_mcp_server("", "open-knowledge", entry).unwrap();
+        let out = upsert_mcp_server("", "synapsenote", entry).unwrap();
         assert!(!out.text.contains("\"\"\""));
         assert!(out.text.contains(r##""# ok-mcp-v1\nexec npx mcp\nexit 127""##));
         // The decoded value still round-trips with its real newlines intact.
         let doc = parse(&out.text);
-        let body = doc["mcp_servers"]["open-knowledge"]["args"][2]
+        let body = doc["mcp_servers"]["synapsenote"]["args"][2]
             .as_str()
             .expect("third arg is a string");
         assert_eq!(body, "# ok-mcp-v1\nexec npx mcp\nexit 127");
@@ -430,14 +430,14 @@ mcp_servers.open-knowledge = { command = "/old/sh" }
 
     #[test]
     fn rejects_non_object_entry_json() {
-        assert!(upsert_mcp_server("", "open-knowledge", "[1,2,3]").is_err());
-        assert!(upsert_mcp_server("", "open-knowledge", "not json").is_err());
+        assert!(upsert_mcp_server("", "synapsenote", "[1,2,3]").is_err());
+        assert!(upsert_mcp_server("", "synapsenote", "not json").is_err());
     }
 
     #[test]
     fn rejects_malformed_toml() {
-        assert!(upsert_mcp_server("not = valid = toml", "open-knowledge", ENTRY).is_err());
-        assert!(remove_mcp_server("not = valid = toml", "open-knowledge").is_err());
+        assert!(upsert_mcp_server("not = valid = toml", "synapsenote", ENTRY).is_err());
+        assert!(remove_mcp_server("not = valid = toml", "synapsenote").is_err());
     }
 }
 

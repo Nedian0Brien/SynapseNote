@@ -7,7 +7,7 @@
  */
 import { existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { MANAGED_ARTIFACT_SCOPES } from '@inkeep/open-knowledge-core';
+import { MANAGED_ARTIFACT_SCOPES } from '@nedian0brien/synapsenote-core';
 import { z } from 'zod';
 import { SUPPORTED_DOC_EXTENSIONS } from '../../doc-extensions.ts';
 import type { AgentIdentity } from '../agent-identity.ts';

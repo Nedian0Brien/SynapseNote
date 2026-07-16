@@ -1,6 +1,6 @@
 import type { HocuspocusProvider } from '@hocuspocus/provider';
-import { TEMPLATE_NAME_REGEX } from '@inkeep/open-knowledge-core';
 import { Trans, useLingui } from '@lingui/react/macro';
+import { TEMPLATE_NAME_REGEX } from '@nedian0brien/synapsenote-core';
 import { FolderGit2, Type } from 'lucide-react';
 import { type ReactNode, useEffect, useId, useState } from 'react';
 import { PropertyDisclosure } from '@/components/PropertyDisclosure';

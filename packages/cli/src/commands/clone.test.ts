@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import type { Config } from '@inkeep/open-knowledge-server';
+import type { Config } from '@nedian0brien/synapsenote-server';
 import simpleGit, { type SimpleGitOptions } from 'simple-git';
 import type { TokenStore } from '../auth/token-store.ts';
 import { OK_DIR } from '../constants.ts';
@@ -838,7 +838,7 @@ describe('runClone git preflight', () => {
       configurable: true,
     });
     try {
-      const { GitNotAvailableError } = await import('@inkeep/open-knowledge-server');
+      const { GitNotAvailableError } = await import('@nedian0brien/synapsenote-server');
       // Nonexistent cwd + default dir → targetDir is absent, so the non-empty-dir
       // check is skipped and runClone reaches the preflight, which throws before
       // any network probe or keyring init. `_config` is unused by runClone.

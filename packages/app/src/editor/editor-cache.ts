@@ -47,7 +47,7 @@
 import type { Compartment } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
 import type { HocuspocusProvider } from '@hocuspocus/provider';
-import type { RenamedDocMapping } from '@inkeep/open-knowledge-core';
+import type { RenamedDocMapping } from '@nedian0brien/synapsenote-core';
 import type { Editor } from '@tiptap/core';
 import { NodeSelection, TextSelection } from '@tiptap/pm/state';
 import { yUndoPluginKey } from '@tiptap/y-tiptap';

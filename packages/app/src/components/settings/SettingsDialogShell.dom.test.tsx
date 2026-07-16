@@ -21,7 +21,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, mock, spyOn, test } from 'bun:test';
-import type { ConfigBinding, OkignoreBinding } from '@inkeep/open-knowledge-core';
+import type { ConfigBinding, OkignoreBinding } from '@nedian0brien/synapsenote-core';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -88,7 +88,7 @@ let mockDesktopPresent = false;
 let mockBodyMode: BodyMode = 'probe';
 let mockShowInstallSkill = true;
 
-mock.module('@inkeep/open-knowledge-core', () => ({
+mock.module('@nedian0brien/synapsenote-core', () => ({
   get SHOW_INSTALL_SKILL() {
     return mockShowInstallSkill;
   },

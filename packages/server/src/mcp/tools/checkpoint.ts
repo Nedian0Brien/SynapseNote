@@ -77,7 +77,7 @@ export function register(server: ServerInstance, deps: CheckpointDeps): void {
                 {
                   id: `agent-${identity.connectionId}`,
                   name: identity.displayName,
-                  email: `agent-${identity.connectionId}@openknowledge.local`,
+                  email: `agent-${identity.connectionId}@synapsenote.local`,
                 },
               ],
             }

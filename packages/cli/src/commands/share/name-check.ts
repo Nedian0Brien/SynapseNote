@@ -1,5 +1,5 @@
 /**
- * `open-knowledge share name-check` — probe whether `<owner>/<name>` already
+ * `synapsenote share name-check` — probe whether `<owner>/<name>` already
  * exists on GitHub so the wizard can surface inline conflicts before submit
  *. 200 OK → name is taken; 404 → name is available; anything else is
  * network.

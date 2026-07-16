@@ -16,7 +16,7 @@
  * `/collab*` client. Closing the tab drops it automatically.
  */
 
-import { startKeepalive as defaultStartKeepalive } from '@inkeep/open-knowledge-core/keepalive';
+import { startKeepalive as defaultStartKeepalive } from '@nedian0brien/synapsenote-core/keepalive';
 import { useEffect, useRef } from 'react';
 import { tryElectronBridge } from '@/lib/use-collab-url';
 

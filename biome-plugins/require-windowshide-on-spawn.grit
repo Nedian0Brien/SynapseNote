@@ -19,7 +19,7 @@
 // on EVERY spawn regardless of the command's target platform — uniform
 // application is what makes the rule enforceable. `withHiddenWindowsConsole`
 // lives in `packages/server/src/child-process-windows-hide.ts` and is
-// re-exported from `@inkeep/open-knowledge-server`.
+// re-exported from `@nedian0brien/synapsenote-server`.
 //
 // `simple-git` already sets `windowsHide: true` internally, so git routed
 // through it (shadow repo, share, conflicts) is unaffected — this rule is only
@@ -72,6 +72,6 @@ or {
     not $call <: contains `withHiddenWindowsConsole($...)`,
     register_diagnostic(
         span = $call,
-        message = "child_process spawn without a hidden Windows console — wrap the options in `withHiddenWindowsConsole(...)` (from @inkeep/open-knowledge-server) or add `windowsHide: true`. On Windows a console-less parent (MCP-spawned/detached OK server) flashes a terminal window on every spawn; the flag is a no-op on macOS/Linux, so add it unconditionally. macOS/Linux-only spawn, or a same-named wrapper (not node:child_process)? suppress with `// biome-ignore lint/plugin/require-windowshide-on-spawn: <reason>`. See https://github.com/inkeep/open-knowledge/blob/main/biome-plugins/README.md#require-windowshide-on-spawngrit"
+        message = "child_process spawn without a hidden Windows console — wrap the options in `withHiddenWindowsConsole(...)` (from @nedian0brien/synapsenote-server) or add `windowsHide: true`. On Windows a console-less parent (MCP-spawned/detached OK server) flashes a terminal window on every spawn; the flag is a no-op on macOS/Linux, so add it unconditionally. macOS/Linux-only spawn, or a same-named wrapper (not node:child_process)? suppress with `// biome-ignore lint/plugin/require-windowshide-on-spawn: <reason>`. See https://github.com/Nedian0Brien/SynapseNote/blob/main/biome-plugins/README.md#require-windowshide-on-spawngrit"
     )
 }

@@ -27,11 +27,11 @@
  * path a live keypress takes — so the assertions cover the actual
  * registered keymap-plugin precedence, not a single command in isolation.
  *
- * Test scenarios credited to inkeep/open-knowledge#613 by @blokboy.
+ * Test scenarios credited to Nedian0Brien/SynapseNote#613 by @blokboy.
  */
 
 import { afterAll, afterEach, beforeAll, describe, expect, test } from 'bun:test';
-import { MarkdownManager, sharedExtensions } from '@inkeep/open-knowledge-core';
+import { MarkdownManager, sharedExtensions } from '@nedian0brien/synapsenote-core';
 import { Editor, Extension, type JSONContent } from '@tiptap/core';
 import { Plugin, TextSelection } from '@tiptap/pm/state';
 import { installDomGlobals } from './walk-currency-test-harness';

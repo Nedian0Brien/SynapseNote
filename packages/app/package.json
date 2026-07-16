@@ -1,11 +1,11 @@
 {
-  "name": "@inkeep/open-knowledge-app",
+  "name": "@nedian0brien/synapsenote-app",
   "version": "0.30.1",
   "license": "GPL-3.0-or-later",
   "private": true,
   "type": "module",
   "scripts": {
-    "predev": "turbo run build --filter=@inkeep/open-knowledge-core --filter=@inkeep/open-knowledge-server && sh scripts/i18n-compile-unless-skipped.sh",
+    "predev": "turbo run build --filter=@nedian0brien/synapsenote-core --filter=@nedian0brien/synapsenote-server && sh scripts/i18n-compile-unless-skipped.sh",
     "dev": "vite",
     "build": "bun run i18n && tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
@@ -38,7 +38,7 @@
     "probe:tiptap-leak": "bun run tests/perf/probes/tiptap-destroy-leak.ts",
     "audit:strings": "bun run scripts/audit-strings/extract.ts",
     "audit:strings:casing": "bun run scripts/audit-strings/check-casing.ts",
-    "size": "turbo run build --filter=@inkeep/open-knowledge-app && size-limit"
+    "size": "turbo run build --filter=@nedian0brien/synapsenote-app && size-limit"
   },
   "size-limit": [
     {
@@ -100,8 +100,8 @@
     "@fontsource-variable/jetbrains-mono": "^5.2.8",
     "@hocuspocus/provider": "4.0.0-rc.1",
     "@hookform/resolvers": "^5.0.0",
-    "@inkeep/open-knowledge-core": "workspace:*",
-    "@inkeep/open-knowledge-server": "workspace:*",
+    "@nedian0brien/synapsenote-core": "workspace:*",
+    "@nedian0brien/synapsenote-server": "workspace:*",
     "@lezer/highlight": "^1.2.3",
     "@lezer/markdown": "^1.6.3",
     "@lingui/core": "^6.0.1",

@@ -37,15 +37,15 @@ import type {
   BranchInfoResponse,
   CheckoutResponse,
   ShareTargetStatusResponse,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import {
   BranchInfoResponseSchema,
   CheckoutResponseSchema,
   clientVersionHeaders,
   ServerInfoSuccessSchema,
   ShareTargetStatusResponseSchema,
-} from '@inkeep/open-knowledge-core';
-import { RUNTIME_VERSION } from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-core';
+import { RUNTIME_VERSION } from '@nedian0brien/synapsenote-server';
 
 // Client version metadata on every main-process /api request (v1 wire contract).
 const DESKTOP_MAIN_VERSION_HEADERS = clientVersionHeaders({

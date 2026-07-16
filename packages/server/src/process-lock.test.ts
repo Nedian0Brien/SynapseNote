@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { hostname, tmpdir } from 'node:os';
 import { resolve } from 'node:path';
-import { LOCAL_DIR } from '@inkeep/open-knowledge-core';
+import { LOCAL_DIR } from '@nedian0brien/synapsenote-core';
 import { getMachineId } from './machine-id';
 import {
   acquireProcessLock,
@@ -733,7 +733,7 @@ describe('readProcessLockDetailed', () => {
 
 describe('lock-pid security validation', () => {
   // Hostile-lock cases: a `<lockDir>/server.lock` whose `pid` field cannot
-  // refer to a real OpenKnowledge holder must NEVER feed signal-sending
+  // refer to a real SynapseNote holder must NEVER feed signal-sending
   // code paths. acquireProcessLock + readProcessLock + readProcessLockDetailed
   // all classify these as corrupt/incompatible so the desktop's auto-kill
   // path cannot trust the pid value.

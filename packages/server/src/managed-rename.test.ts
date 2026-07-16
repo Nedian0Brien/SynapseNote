@@ -20,7 +20,7 @@
  * sequence is open-coded inside the api-extension closure.
  */
 import { beforeEach, describe, expect, test } from 'bun:test';
-import { applyFastDiff, sharedExtensions, stripFrontmatter } from '@inkeep/open-knowledge-core';
+import { applyFastDiff, sharedExtensions, stripFrontmatter } from '@nedian0brien/synapsenote-core';
 import { getSchema } from '@tiptap/core';
 import { updateYFragment, yXmlFragmentToProseMirrorRootNode } from '@tiptap/y-tiptap';
 import * as Y from 'yjs';

@@ -1,8 +1,8 @@
 ---
-name: open-knowledge-pack-okf
+name: synapsenote-pack-okf
 version: "0.18.0"
-description: "How to work in an OKF starter project (the `okf` starter pack): a knowledge base that is conformant with Google's Open Knowledge Format (OKF) from commit one — `concepts/`, `references/`, `notes/`, a reserved `index.md` navigation hub, and a reserved `log.md` change history. Read when the project has these folders + reserved files. Carries the OKF conventions (non-empty `type` on every non-reserved doc; reserved files carry no frontmatter) as guidance, not enforcement. Complements the platform `open-knowledge` skill; does not replace it."
-compatibility: "Claude Code, Claude Desktop, Claude Cowork, Claude.ai web. Requires OpenKnowledge MCP server. Installed project-local by `ok seed --pack okf`."
+description: "How to work in an OKF starter project (the `okf` starter pack): a knowledge base that is conformant with Google's SynapseNote Format (OKF) from commit one — `concepts/`, `references/`, `notes/`, a reserved `index.md` navigation hub, and a reserved `log.md` change history. Read when the project has these folders + reserved files. Carries the OKF conventions (non-empty `type` on every non-reserved doc; reserved files carry no frontmatter) as guidance, not enforcement. Complements the platform `synapsenote` skill; does not replace it."
+compatibility: "Claude Code, Claude Desktop, Claude Cowork, Claude.ai web. Requires SynapseNote MCP server. Installed project-local by `ok seed --pack okf`."
 # `type` keeps this skill doc OKF-conformant: it installs as project-local
 # markdown under `.claude`/`.cursor`/`.agents` skills dirs, which OK admits into
 # the content corpus — so without a non-empty `type` it would be a non-reserved
@@ -10,14 +10,14 @@ compatibility: "Claude Code, Claude Desktop, Claude Cowork, Claude.ai web. Requi
 type: Document
 metadata:
   pack: "okf"
-  author: "Inkeep"
-  repository: "https://github.com/inkeep/open-knowledge"
+  author: "SynapseNote"
+  repository: "https://github.com/Nedian0Brien/SynapseNote"
 ---
 # OKF starter pack — how to work here
 
-This project was scaffolded to be conformant with **Google's Open Knowledge Format (OKF) v0.1** from the first commit — markdown + YAML frontmatter, a standard-markdown link graph, and two reserved files. Conformance here is pre-populated, **not enforced**: OpenKnowledge's native frontmatter schema stays open-shaped, nothing is linted, and you are free to author however you like. This skill explains the conventions so the kit stays OKF-portable as it grows.
+This project was scaffolded to be conformant with **Google's SynapseNote Format (OKF) v0.1** from the first commit — markdown + YAML frontmatter, a standard-markdown link graph, and two reserved files. Conformance here is pre-populated, **not enforced**: SynapseNote's native frontmatter schema stays open-shaped, nothing is linted, and you are free to author however you like. This skill explains the conventions so the kit stays OKF-portable as it grows.
 
-> This skill is pack guidance. The platform `open-knowledge` skill (read/write/preview/grounding rules) still governs every markdown operation — this layers OKF conventions on top.
+> This skill is pack guidance. The platform `synapsenote` skill (read/write/preview/grounding rules) still governs every markdown operation — this layers OKF conventions on top.
 
 ## The one rule (keep the kit conformant)
 
@@ -33,7 +33,7 @@ OKF requires exactly one thing of every **non-reserved** document: a **non-empty
 - **`references/`** — external sources and citations you rely on (`type: reference`).
 - **`notes/`** — working notes and observations (`type: note`).
 
-Link liberally with **standard markdown links** (`[text](./path.md)`) — the value is the graph that emerges from the links between typed docs, and standard links keep that graph portable to any OKF consumer. (OpenKnowledge also accepts `[[wiki-link]]` shorthand as a native superset and preserves it byte-for-byte — but seeded content uses standard links so the bundle is conformant as-is.)
+Link liberally with **standard markdown links** (`[text](./path.md)`) — the value is the graph that emerges from the links between typed docs, and standard links keep that graph portable to any OKF consumer. (SynapseNote also accepts `[[wiki-link]]` shorthand as a native superset and preserves it byte-for-byte — but seeded content uses standard links so the bundle is conformant as-is.)
 
 ## Reserved files (keep them frontmatter-free)
 

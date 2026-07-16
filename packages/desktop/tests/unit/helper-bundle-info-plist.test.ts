@@ -14,14 +14,14 @@ import { fileURLToPath } from 'node:url';
  * binary's `.app` association causes `coreservicesd` to register a Dock
  * tile that never resolves (the "exec" placeholder bug).
  *
- * `CFBundleIdentifier=com.inkeep.open-knowledge.server` namespaces the
- * helper under the parent's `com.inkeep.open-knowledge` bundle ID so
+ * `CFBundleIdentifier=kr.lawdigest.synapsenote.server` namespaces the
+ * helper under the parent's `kr.lawdigest.synapsenote` bundle ID so
  * LaunchServices treats it as a distinct application registration.
  *
  * Drift between this plist and the spawn target in
  * `resolve-detached-spawn-args.ts` would reintroduce the Dock leak. The
  * file is shipped via electron-builder.yml `extraFiles` to
- * `Frameworks/OpenKnowledge Server.app/Contents/Info.plist`; the
+ * `Frameworks/SynapseNote Server.app/Contents/Info.plist`; the
  * matching MacOS binary is dropped into place by `scripts/afterPack.mjs`.
  */
 
@@ -61,19 +61,19 @@ describe('helper-bundle Info.plist (detached-server Dock-leak regression guard)'
   test('CFBundleIdentifier is namespaced under the parent bundle ID', () => {
     const content = readFileSync(helperPlistPath, 'utf8');
     expect(extractStringValue(content, 'CFBundleIdentifier')).toBe(
-      'com.inkeep.open-knowledge.server',
+      'kr.lawdigest.synapsenote.server',
     );
   });
 
-  test('CFBundleExecutable is "OpenKnowledge Helper" — Electron canonical generic-helper name', () => {
+  test('CFBundleExecutable is "SynapseNote Helper" — Electron canonical generic-helper name', () => {
     // Electron's helper stub inspects its own `_NSGetExecutablePath()` basename
     // early in boot and silently SIGTRAPs (exit 133, empty stderr) for any
     // name outside its hardcoded {generic, Renderer, GPU, Plugin} type set.
-    // The bundle directory name `OpenKnowledge Server.app` is descriptive;
+    // The bundle directory name `SynapseNote Server.app` is descriptive;
     // the executable basename has to be the canonical `<productName> Helper`.
     // Runtime guard: tests/integration/packaged-helper-runs-as-node.test.ts.
     const content = readFileSync(helperPlistPath, 'utf8');
-    expect(extractStringValue(content, 'CFBundleExecutable')).toBe('OpenKnowledge Helper');
+    expect(extractStringValue(content, 'CFBundleExecutable')).toBe('SynapseNote Helper');
   });
 
   test('CFBundlePackageType=APPL (canonical .app bundle marker)', () => {

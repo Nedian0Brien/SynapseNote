@@ -4,7 +4,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 
-import { emitToleranceFire } from '@inkeep/open-knowledge-core';
+import { emitToleranceFire } from '@nedian0brien/synapsenote-core';
 
 import {
   initToleranceTelemetryWriter,

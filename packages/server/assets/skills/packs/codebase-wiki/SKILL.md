@@ -1,18 +1,18 @@
 ---
-name: open-knowledge-pack-codebase-wiki
+name: synapsenote-pack-codebase-wiki
 version: "0.18.0"
-description: "How to work in a Codebase Wiki project (the `codebase-wiki` starter pack): an agent-authored, source-grounded wiki of the surrounding codebase. Read when the project has a `wiki/` knowledge base with `architecture/`, `modules/`, `flows/`, `concepts/`, and `guides/` sections plus `wiki/OVERVIEW.md`. Carries the per-folder rules and freshness + log discipline, summarizes the audience/depth knobs and source-reference convention, and points to the `workflow({ kind: 'wiki' })` guide for the full generate/refresh procedure. Complements the platform `open-knowledge` skill; does not replace it."
-compatibility: "Claude Code, Claude Desktop, Claude Cowork, Claude.ai web. Requires OpenKnowledge MCP server. Installed project-local by `ok seed --pack codebase-wiki`."
+description: "How to work in a Codebase Wiki project (the `codebase-wiki` starter pack): an agent-authored, source-grounded wiki of the surrounding codebase. Read when the project has a `wiki/` knowledge base with `architecture/`, `modules/`, `flows/`, `concepts/`, and `guides/` sections plus `wiki/OVERVIEW.md`. Carries the per-folder rules and freshness + log discipline, summarizes the audience/depth knobs and source-reference convention, and points to the `workflow({ kind: 'wiki' })` guide for the full generate/refresh procedure. Complements the platform `synapsenote` skill; does not replace it."
+compatibility: "Claude Code, Claude Desktop, Claude Cowork, Claude.ai web. Requires SynapseNote MCP server. Installed project-local by `ok seed --pack codebase-wiki`."
 metadata:
   pack: "codebase-wiki"
-  author: "Inkeep"
-  repository: "https://github.com/inkeep/open-knowledge"
+  author: "SynapseNote"
+  repository: "https://github.com/Nedian0Brien/SynapseNote"
 ---
 # Codebase Wiki pack — how to work here
 
 This project holds an **agent-authored wiki of a codebase** — DeepWiki, but living in the repo. A coding agent reads the source and writes a navigable, diagram-rich, source-grounded wiki as markdown under `wiki/`. It is version-controlled and diffable, private by default, human+agent co-editable, renders in OK's live preview, and doubles as durable grounding context for future agent sessions. There is no separate Q&A surface — Q&A is "the OK-grounded agent + `search`".
 
-> This is pack guidance. The platform `open-knowledge` skill still governs every markdown operation (read/write/preview/linking/grounding). This layers the wiki workflow on top.
+> This is pack guidance. The platform `synapsenote` skill still governs every markdown operation (read/write/preview/linking/grounding). This layers the wiki workflow on top.
 
 ## The shape
 

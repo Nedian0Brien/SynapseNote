@@ -7,8 +7,8 @@
  * both inline document embeds and the route-level asset preview.
  */
 
-import { parsePdfAnchor } from '@inkeep/open-knowledge-core';
 import { Trans } from '@lingui/react/macro';
+import { parsePdfAnchor } from '@nedian0brien/synapsenote-core';
 import { lazy, Suspense } from 'react';
 
 export interface PdfProps {

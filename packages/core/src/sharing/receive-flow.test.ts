@@ -10,20 +10,20 @@ import {
 
 describe('canonicalGitHubRemoteUrl', () => {
   test('emits https github.git form for plain owner/repo', () => {
-    expect(canonicalGitHubRemoteUrl({ owner: 'inkeep', repo: 'open-knowledge' })).toBe(
-      'https://github.com/inkeep/open-knowledge.git',
+    expect(canonicalGitHubRemoteUrl({ owner: 'Nedian0Brien', repo: 'SynapseNote' })).toBe(
+      'https://github.com/Nedian0Brien/SynapseNote.git',
     );
   });
 
   test('preserves casing in the canonical form', () => {
-    expect(canonicalGitHubRemoteUrl({ owner: 'Inkeep', repo: 'Open-Knowledge' })).toBe(
-      'https://github.com/Inkeep/Open-Knowledge.git',
+    expect(canonicalGitHubRemoteUrl({ owner: 'NEDIAN0BRIEN', repo: 'synapsenote' })).toBe(
+      'https://github.com/NEDIAN0BRIEN/synapsenote.git',
     );
   });
 });
 
 describe('findRecentProjectsForRepo', () => {
-  const expected = { owner: 'inkeep', repo: 'open-knowledge' };
+  const expected = { owner: 'Nedian0Brien', repo: 'SynapseNote' };
 
   function recent(overrides: Partial<RecentProjectEntry> = {}): RecentProjectEntry {
     return {
@@ -42,11 +42,11 @@ describe('findRecentProjectsForRepo', () => {
     const a = recent({ path: '/a', gitRemoteUrl: 'https://github.com/other/repo.git' });
     const b = recent({
       path: '/b',
-      gitRemoteUrl: 'https://github.com/inkeep/open-knowledge.git',
+      gitRemoteUrl: 'https://github.com/Nedian0Brien/SynapseNote.git',
     });
     const c = recent({
       path: '/c',
-      gitRemoteUrl: 'https://github.com/inkeep/open-knowledge.git',
+      gitRemoteUrl: 'https://github.com/Nedian0Brien/SynapseNote.git',
     });
     const result = findRecentProjectsForRepo([a, b, c], expected);
     expect(result.map((r) => r.path)).toEqual(['/b', '/c']);
@@ -55,18 +55,18 @@ describe('findRecentProjectsForRepo', () => {
   test('matches case-insensitively on owner and repo segments', () => {
     const r = recent({
       path: '/x',
-      gitRemoteUrl: 'https://github.com/Inkeep/Open-Knowledge.git',
+      gitRemoteUrl: 'https://github.com/NEDIAN0BRIEN/synapsenote.git',
     });
     expect(findRecentProjectsForRepo([r], expected).map((m) => m.path)).toEqual(['/x']);
   });
 
   test('matches when the stored URL omits the .git suffix', () => {
-    const r = recent({ path: '/x', gitRemoteUrl: 'https://github.com/inkeep/open-knowledge' });
+    const r = recent({ path: '/x', gitRemoteUrl: 'https://github.com/Nedian0Brien/SynapseNote' });
     expect(findRecentProjectsForRepo([r], expected).map((m) => m.path)).toEqual(['/x']);
   });
 
   test('matches when the stored URL has a trailing slash', () => {
-    const r = recent({ path: '/x', gitRemoteUrl: 'https://github.com/inkeep/open-knowledge/' });
+    const r = recent({ path: '/x', gitRemoteUrl: 'https://github.com/Nedian0Brien/SynapseNote/' });
     expect(findRecentProjectsForRepo([r], expected).map((m) => m.path)).toEqual(['/x']);
   });
 
@@ -78,7 +78,7 @@ describe('findRecentProjectsForRepo', () => {
   test('skips entries marked missing even when the URL matches', () => {
     const r = recent({
       path: '/x',
-      gitRemoteUrl: 'https://github.com/inkeep/open-knowledge.git',
+      gitRemoteUrl: 'https://github.com/Nedian0Brien/SynapseNote.git',
       missing: true,
     });
     expect(findRecentProjectsForRepo([r], expected)).toEqual([]);
@@ -92,12 +92,12 @@ describe('findRecentProjectsForRepo', () => {
   test('all matching entries marked missing yields [] (graceful degradation anchor)', () => {
     const a = recent({
       path: '/a',
-      gitRemoteUrl: 'https://github.com/inkeep/open-knowledge.git',
+      gitRemoteUrl: 'https://github.com/Nedian0Brien/SynapseNote.git',
       missing: true,
     });
     const b = recent({
       path: '/b',
-      gitRemoteUrl: 'https://github.com/inkeep/open-knowledge.git',
+      gitRemoteUrl: 'https://github.com/Nedian0Brien/SynapseNote.git',
       missing: true,
     });
     expect(findRecentProjectsForRepo([a, b], expected)).toEqual([]);
@@ -106,12 +106,12 @@ describe('findRecentProjectsForRepo', () => {
   test('mixed missing + present matches returns only the present matches', () => {
     const missing = recent({
       path: '/missing',
-      gitRemoteUrl: 'https://github.com/inkeep/open-knowledge.git',
+      gitRemoteUrl: 'https://github.com/Nedian0Brien/SynapseNote.git',
       missing: true,
     });
     const present = recent({
       path: '/present',
-      gitRemoteUrl: 'https://github.com/inkeep/open-knowledge.git',
+      gitRemoteUrl: 'https://github.com/Nedian0Brien/SynapseNote.git',
     });
     expect(findRecentProjectsForRepo([missing, present], expected).map((m) => m.path)).toEqual([
       '/present',
@@ -127,7 +127,7 @@ describe('findRecentProjectsForRepo', () => {
     // compare misses. Pin the silent fall-through behavior.
     const r = recent({
       path: '/x',
-      gitRemoteUrl: 'git@github.com:inkeep/open-knowledge.git',
+      gitRemoteUrl: 'git@github.com:Nedian0Brien/SynapseNote.git',
     });
     expect(findRecentProjectsForRepo([r], expected)).toEqual([]);
   });

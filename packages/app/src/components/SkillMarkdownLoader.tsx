@@ -7,7 +7,7 @@
  * so loading spinners and error messages are identical — only the loaded branch
  * differs (rendered markdown instead of CodeMirror source).
  */
-import type { SkillScope } from '@inkeep/open-knowledge-core';
+import type { SkillScope } from '@nedian0brien/synapsenote-core';
 import { SkillMarkdownViewer } from '@/components/SkillMarkdownViewer';
 import { ViewerErrorPane, ViewerLoadingPane } from '@/components/ViewerStatusPane';
 import { loadSkillFileText } from '@/lib/skills-api';

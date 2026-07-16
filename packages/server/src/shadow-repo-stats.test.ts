@@ -78,7 +78,7 @@ describe('countStaleAgentWipRefs (diagnose dead-agent-chain proxy)', () => {
   test('non-session writers (file-system, git-upstream, service) are excluded', async () => {
     await createRefAt('refs/wip/main/file-system', OLD, 'wip: fs');
     await createRefAt('refs/wip/main/git-upstream', OLD, 'wip: upstream');
-    await createRefAt('refs/wip/main/openknowledge-service', OLD, 'wip: svc');
+    await createRefAt('refs/wip/main/synapsenote-service', OLD, 'wip: svc');
     expect(await countStaleAgentWipRefs(shadow, cutoff())).toBe(0);
   });
 

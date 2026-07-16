@@ -21,8 +21,8 @@
  * current branch.
  */
 
-import type { WorktreeCreateResult } from '@inkeep/open-knowledge-core';
 import { Trans, useLingui } from '@lingui/react/macro';
+import type { WorktreeCreateResult } from '@nedian0brien/synapsenote-core';
 import { AppWindow, GitBranch, Loader2, MapPin } from 'lucide-react';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { toast } from 'sonner';

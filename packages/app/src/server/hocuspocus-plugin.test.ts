@@ -3,7 +3,7 @@ import { EventEmitter } from 'node:events';
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import * as actualServerPkg from '@inkeep/open-knowledge-server';
+import * as actualServerPkg from '@nedian0brien/synapsenote-server';
 import { resolveContentConfig } from './hocuspocus-plugin.ts';
 
 const createdDirs: string[] = [];
@@ -77,7 +77,7 @@ describe('hocuspocusPlugin.configureServer middleware ordering', () => {
     // document the leak explicitly (`server-factory.test.ts`,
     // `agent-presence.test.ts`, `provider-pool.test.ts`,
     // `local-op-security.test.ts`). Restore to keep the global module table
-    // clean for any test that may later import `@inkeep/open-knowledge-server`.
+    // clean for any test that may later import `@nedian0brien/synapsenote-server`.
     mock.restore();
   });
 
@@ -98,7 +98,7 @@ describe('hocuspocusPlugin.configureServer middleware ordering', () => {
     };
     const createAssetServeMiddlewareSpy = mock(() => innerAssetFn);
 
-    mock.module('@inkeep/open-knowledge-server', () => ({
+    mock.module('@nedian0brien/synapsenote-server', () => ({
       ...actualServerPkg,
       createAssetServeMiddleware: createAssetServeMiddlewareSpy,
       createServer: () => ({

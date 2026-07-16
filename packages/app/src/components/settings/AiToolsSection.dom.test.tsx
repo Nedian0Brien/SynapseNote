@@ -41,7 +41,7 @@ const baseStatus: OkIntegrationsStatus = {
       detected: true,
       state: 'installed',
       configPath: '~/.claude.json',
-      entryLocator: 'mcpServers.open-knowledge',
+      entryLocator: 'mcpServers.synapsenote',
     },
     {
       id: 'cursor',
@@ -49,7 +49,7 @@ const baseStatus: OkIntegrationsStatus = {
       detected: false,
       state: 'not-installed',
       configPath: '~/.cursor/mcp.json',
-      entryLocator: 'mcpServers.open-knowledge',
+      entryLocator: 'mcpServers.synapsenote',
     },
     {
       id: 'codex',
@@ -57,7 +57,7 @@ const baseStatus: OkIntegrationsStatus = {
       detected: true,
       state: 'foreign',
       configPath: '~/.codex/config.toml',
-      entryLocator: '[mcp_servers.open-knowledge]',
+      entryLocator: '[mcp_servers.synapsenote]',
     },
     {
       id: 'opencode',
@@ -65,25 +65,22 @@ const baseStatus: OkIntegrationsStatus = {
       detected: false,
       state: 'unmanageable',
       configPath: null,
-      entryLocator: 'mcp.open-knowledge',
+      entryLocator: 'mcp.synapsenote',
     },
   ],
   path: { shellDetected: true, rcFilesToTouch: ['~/.zshrc'], installed: false },
   skills: [
     {
       id: 'discovery',
-      name: 'open-knowledge-discovery',
+      name: 'synapsenote-discovery',
       installed: true,
-      paths: [
-        '~/.agents/skills/open-knowledge-discovery',
-        '~/.claude/skills/open-knowledge-discovery',
-      ],
+      paths: ['~/.agents/skills/synapsenote-discovery', '~/.claude/skills/synapsenote-discovery'],
     },
     {
       id: 'write-skill',
-      name: 'open-knowledge-write-skill',
+      name: 'synapsenote-write-skill',
       installed: false,
-      paths: ['~/.agents/skills/open-knowledge-write-skill'],
+      paths: ['~/.agents/skills/synapsenote-write-skill'],
     },
   ],
 };
@@ -141,14 +138,14 @@ describe('AiToolsSection', () => {
       'checked',
     );
     expect(screen.getByTestId('ai-tools-editor-status-codex').textContent).toContain(
-      'not managed by OpenKnowledge',
+      'not managed by SynapseNote',
     );
     // Undetected, never-configured tools link to their setup guide instead of
     // a dead-end "Not detected" — same contract as the first-launch dialog.
     const cursorLink = screen.getByTestId('ai-tools-editor-status-cursor');
     expect(cursorLink.tagName).toBe('A');
     expect(cursorLink.getAttribute('href')).toBe(
-      'https://openknowledge.ai/docs/integrations/cursor',
+      'https://synapse.lawdigest.kr/docs/integrations/cursor',
     );
     // Unmanageable rows render disabled and keep their status text (no link).
     expect(screen.getByTestId('ai-tools-editor-checkbox-opencode').hasAttribute('disabled')).toBe(
@@ -261,7 +258,7 @@ describe('AiToolsSection', () => {
     screen.getByTestId('ai-tools-editor-info-claude').focus();
     const paths = await screen.findAllByText('~/.claude.json');
     expect(paths.length).toBeGreaterThan(0);
-    const locators = await screen.findAllByText('mcpServers.open-knowledge');
+    const locators = await screen.findAllByText('mcpServers.synapsenote');
     expect(locators.length).toBeGreaterThan(0);
   });
 });

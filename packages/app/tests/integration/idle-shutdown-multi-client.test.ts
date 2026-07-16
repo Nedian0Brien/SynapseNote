@@ -20,13 +20,13 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { setTimeout as wait } from 'node:timers/promises';
 import { HocuspocusProvider } from '@hocuspocus/provider';
-import { LOCAL_DIR, OK_DIR } from '@inkeep/open-knowledge-core';
+import { LOCAL_DIR, OK_DIR } from '@nedian0brien/synapsenote-core';
 import {
   type BootedServer,
   bootServer,
   ConfigSchema,
   ensureProjectGit,
-} from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-server';
 import * as Y from 'yjs';
 import { HARNESS_BOOT_TIMEOUT_MS } from './harness-boot-timeout';
 import { waitForSync } from './test-harness.ts';

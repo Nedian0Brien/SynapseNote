@@ -182,9 +182,9 @@ test('TipTap find navigation does not show table controls inside table matches',
         '',
         '| Project | Command |',
         '| --- | --- |',
-        '| open-knowledge clean | ok clean |',
-        '| open-knowledge stop | ok stop |',
-        '| open-knowledge ui | ok ui |',
+        '| synapsenote clean | ok clean |',
+        '| synapsenote stop | ok stop |',
+        '| synapsenote ui | ok ui |',
       ].join('\n'),
     },
   ]);
@@ -198,7 +198,7 @@ test('TipTap find navigation does not show table controls inside table matches',
   await expect(bar).toBeVisible();
 
   const findInput = bar.getByRole('textbox', { name: 'Find' });
-  await findInput.fill('open-knowledge');
+  await findInput.fill('synapsenote');
   await expect(bar).toContainText('1 / 3');
 
   await page.keyboard.press('Enter');

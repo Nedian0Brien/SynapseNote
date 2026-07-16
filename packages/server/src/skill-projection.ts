@@ -34,7 +34,7 @@ import {
   EDITOR_PROJECT_SKILL_ROOT,
   type EditorId,
   PROJECT_SKILL_EDITOR_IDS,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { parse as parseYaml } from 'yaml';
 import { resolveBundledSkillDir } from './build-skill-zip.ts';
 import { tracedCpSync, tracedMkdirSync, tracedRmSync, tracedSymlinkSync } from './fs-traced.ts';
@@ -51,19 +51,19 @@ export function resolvedHosts(hosts: readonly string[]): EditorId[] {
 }
 
 /** Reserved skill-name prefix — OK's own shipped skills. */
-const RESERVED_SKILL_PREFIX = 'open-knowledge';
+const RESERVED_SKILL_PREFIX = 'synapsenote';
 
 /**
- * Starter-pack project skills (`open-knowledge-pack-<packId>`, seeded by
+ * Starter-pack project skills (`synapsenote-pack-<packId>`, seeded by
  * `installPackSkill`). They sit under the reserved prefix but are OK's own
  * shipped content, so they're exempt from the reserved-name install block —
  * otherwise a pack skill couldn't be re-installed after a user uninstalls it
  * (the seed copies it in directly, but a user-triggered reinstall re-validates).
  */
-export const PACK_SKILL_PREFIX = 'open-knowledge-pack-';
+export const PACK_SKILL_PREFIX = 'synapsenote-pack-';
 
-/** OK's shipped project-skill bundle name (lives at `.{host}/skills/open-knowledge/`). */
-const SHIPPED_SKILL_NAME = 'open-knowledge';
+/** OK's shipped project-skill bundle name (lives at `.{host}/skills/synapsenote/`). */
+const SHIPPED_SKILL_NAME = 'synapsenote';
 
 // Intentionally NOT core's `stripFrontmatter` (used by skill-reconcile): this is
 // a validity GATE, not a comparison parse. It requires a leading `---` block and
@@ -98,7 +98,7 @@ export interface SkillValidity {
  * Pre-install validity gate. A source that fails MUST NOT be projected —
  * a conflicted or malformed SKILL.md landing verbatim in an agent's live
  * context is the failure mode this guards. `allowReservedName` is set only for
- * OK's own shipped `open-knowledge` bundle; `open-knowledge-pack-*` skills are
+ * OK's own shipped `synapsenote` bundle; `synapsenote-pack-*` skills are
  * exempt by name (they're shipped pack content, installable + reinstallable).
  */
 export function validateSkillForInstall(
@@ -288,7 +288,7 @@ export function reverseProjectSkill(
 }
 
 /**
- * Project OK's shipped `open-knowledge` bundle into each target editor's host
+ * Project OK's shipped `synapsenote` bundle into each target editor's host
  * dir, so OK's own project skill follows the same `skill_targets` set as
  * authored skills. Source is the bundled asset (`resolveBundledSkillDir`),
  * NOT a `.ok/skills/` dir. Returns the editor ids written; `[]` when the

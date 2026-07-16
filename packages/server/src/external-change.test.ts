@@ -15,7 +15,7 @@ import {
   BridgeInvariantViolationError,
   BridgeMergeContentLossError,
   stripFrontmatter,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import type * as Y from 'yjs';
 import { applyExternalChange, createExternalChangeHandler } from './external-change.ts';
 import { getReconciledBase, setReconciledBase } from './persistence.ts';

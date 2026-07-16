@@ -11,7 +11,7 @@
  * Web / CLI distribution: `bridge` is undefined and `install` is a no-op.
  */
 
-import type { OkBugReportCrashDetectedEvent } from '@inkeep/open-knowledge-core';
+import type { OkBugReportCrashDetectedEvent } from '@nedian0brien/synapsenote-core';
 import type { OkDesktopBridge } from '@/lib/desktop-bridge-types';
 
 export interface CrashInviteStore {

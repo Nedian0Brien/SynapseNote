@@ -167,7 +167,7 @@ export function iconFromClientName(name?: string): string {
  * Used at the MCP-identity boundary (`AgentIdentity.displayName`) so the
  * presence bar, timeline, and agent-activity panel render a clean brand
  * name instead of the raw `clientInfo.name` (e.g. `claude-code` or
- * `local-agent-mode-open-knowledge`).
+ * `local-agent-mode-synapsenote`).
  */
 const BRAND_NAME: Record<string, string> = {
   claude: 'Claude',

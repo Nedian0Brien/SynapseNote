@@ -1,12 +1,13 @@
-// biome-ignore-all lint/plugin/no-raw-html-interactive-element: pre-rule backlog — file uses raw <button>/<input>/<textarea> awaiting shadcn migration; tracked at https://github.com/inkeep/open-knowledge/blob/main/biome-plugins/README.md#no-raw-html-interactive-elementgrit
+// biome-ignore-all lint/plugin/no-raw-html-interactive-element: pre-rule backlog — file uses raw <button>/<input>/<textarea> awaiting shadcn migration; tracked at https://github.com/Nedian0Brien/SynapseNote/blob/main/biome-plugins/README.md#no-raw-html-interactive-elementgrit
+
+import { t } from '@lingui/core/macro';
+import { Trans, useLingui } from '@lingui/react/macro';
 import {
   type HeadingEntry,
   isManagedArtifactDocName,
   PageHeadingsSuccessSchema,
   ProblemDetailsSchema,
-} from '@inkeep/open-knowledge-core';
-import { t } from '@lingui/core/macro';
-import { Trans, useLingui } from '@lingui/react/macro';
+} from '@nedian0brien/synapsenote-core';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { usePageList } from '@/components/PageListContext';
@@ -75,7 +76,7 @@ export interface OutlineNavDetail {
   mode: 'wysiwyg' | 'source';
 }
 
-export const OUTLINE_NAV_EVENT = 'open-knowledge:outline-nav';
+export const OUTLINE_NAV_EVENT = 'synapsenote:outline-nav';
 
 export function OutlinePanel(props: {
   docName: string;

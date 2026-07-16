@@ -99,7 +99,7 @@ function SplashWindowsNotice({ githubUrl }: { githubUrl: string }) {
         className="text-base leading-relaxed text-slide-text"
         data-testid="splash-windows-notice-text"
       >
-        OpenKnowledge isn&rsquo;t supported on Windows yet.
+        SynapseNote isn&rsquo;t supported on Windows yet.
       </p>
       <SplashGithubLink githubUrl={githubUrl} />
     </div>

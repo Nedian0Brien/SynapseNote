@@ -17,7 +17,7 @@
  * handleCloneCancel.
  */
 import { beforeEach, describe, expect, mock, test } from 'bun:test';
-import type { AuthEvent, CloneEvent } from '@inkeep/open-knowledge-server';
+import type { AuthEvent, CloneEvent } from '@nedian0brien/synapsenote-server';
 
 interface DeviceFlowEntry {
   resolve: () => void;
@@ -33,7 +33,7 @@ interface CloneEntry {
 const deviceFlowControllers: DeviceFlowEntry[] = [];
 const cloneControllers: CloneEntry[] = [];
 
-mock.module('@inkeep/open-knowledge-server', () => ({
+mock.module('@nedian0brien/synapsenote-server', () => ({
   runAuthStatusSubprocess: () => Promise.resolve({ authenticated: false, host: 'github.com' }),
   runAuthReposSubprocess: () => Promise.resolve({ ok: false, error: 'unused' }),
   runDeviceFlowSubprocess: ({ onEvent }: { onEvent: (event: AuthEvent) => void }) => {
@@ -95,7 +95,7 @@ function makeSender() {
 
 function makeDeps() {
   return {
-    resolveCliArgs: () => ['open-knowledge'],
+    resolveCliArgs: () => ['synapsenote'],
     state: createLocalOpState(),
   };
 }

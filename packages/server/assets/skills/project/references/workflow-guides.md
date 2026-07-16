@@ -25,6 +25,6 @@ Typical day-2 flow: user shares a URL → `ingest` (preserve) → user asks "now
 - `worldbuilding` — fiction story wiki
 - `writing-pipeline` — drafts → published
 - `entity-vault` — people / companies / meetings (personal CRM)
-- `okf` — Open Knowledge Format–conformant base
+- `okf` — SynapseNote Format–conformant base
 
 To reference one **without installing it**: `ok seed --list-packs` (the menu) → `ok seed --pack <name> --dry-run` (its folders + the *why* of each folder + templates; writes nothing). Then either adapt the ideas into your own folders (`write({ folder })` + a template) or adopt the pack as-is by re-running without `--dry-run`. Reach for this when a user wants structure and an archetype fits — propose a tailored variant, not a verbatim copy.

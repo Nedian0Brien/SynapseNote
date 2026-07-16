@@ -26,8 +26,8 @@
  * unit-testable without React.
  */
 
-import type { ShareFreshness } from '@inkeep/open-knowledge-core';
 import { Trans, useLingui } from '@lingui/react/macro';
+import type { ShareFreshness } from '@nedian0brien/synapsenote-core';
 import { CircleHelp, Share2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -47,7 +47,7 @@ import { cn } from '@/lib/utils';
 import { ShareFreshnessWarning, shareFreshnessRowVisible } from './ShareFreshnessWarning';
 
 /** Docs page explaining the share flow (links out of the popover). */
-const SHARE_DOCS_URL = 'https://openknowledge.ai/docs/features/share';
+const SHARE_DOCS_URL = 'https://synapse.lawdigest.kr/docs/features/share';
 
 export interface ShareButtonProps {
   /**

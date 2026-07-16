@@ -9,7 +9,7 @@
 
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { resolveLockDir } from '@inkeep/open-knowledge-server';
+import { resolveLockDir } from '@nedian0brien/synapsenote-server';
 import { inspectLock, type LockState } from '../lock-state.ts';
 import type { CheckContext, CheckDefinition, CheckResult } from './types.ts';
 
@@ -43,7 +43,7 @@ export function makeServerLockCheck(deps: ServerLockCheckDeps = {}): CheckDefini
             name: 'server-lock',
             status: 'fail',
             summary: `server lock held by pid ${state.lock.pid} on this host`,
-            remediation: 'Stop the other OpenKnowledge process or run `ok stop`.',
+            remediation: 'Stop the other SynapseNote process or run `ok stop`.',
             detail: `lockPath: ${state.lockPath}; port: ${state.lock.port}; started: ${state.lock.startedAt}`,
           };
         case 'foreign-host':

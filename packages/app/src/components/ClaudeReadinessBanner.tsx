@@ -3,7 +3,7 @@
  * running, the panel probes Claude Code readiness and renders this strip when
  * something blocks the `type claude and it works` flow:
  *   - `claude` not on PATH → a help affordance (open the Claude Code docs).
- *   - `claude` present but the `open-knowledge` MCP server missing from
+ *   - `claude` present but the `synapsenote` MCP server missing from
  *     `~/.claude.json` → a re-wire affordance (re-arms MCP consent).
  *
  * Renders nothing when claude is present + wired, or when the probe verdict is
@@ -53,7 +53,7 @@ export function ClaudeReadinessBanner({
   const isClaudeMissing = kind === 'claude-missing';
   const message = isClaudeMissing
     ? t`Claude Code (claude) isn't installed or on your PATH.`
-    : t`Claude Code is installed, but OpenKnowledge tools aren't connected to it yet.`;
+    : t`Claude Code is installed, but SynapseNote tools aren't connected to it yet.`;
   const actionLabel = isClaudeMissing ? t`Get Claude Code` : t`Connect tools`;
 
   function handleAction() {
@@ -68,14 +68,14 @@ export function ClaudeReadinessBanner({
       .rewireClaudeMcp()
       .then((result) => {
         if (result.rewireError != null) {
-          toast.error(t`Couldn't connect OpenKnowledge tools to Claude Code. Please try again.`);
+          toast.error(t`Couldn't connect SynapseNote tools to Claude Code. Please try again.`);
           return;
         }
         onDismiss();
       })
       .catch((err) => {
         console.warn('[terminal] rewireClaudeMcp failed:', err);
-        toast.error(t`Couldn't connect OpenKnowledge tools to Claude Code. Please try again.`);
+        toast.error(t`Couldn't connect SynapseNote tools to Claude Code. Please try again.`);
       });
   }
 

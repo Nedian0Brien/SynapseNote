@@ -7,7 +7,7 @@
  * is a one-call graph audit. All six are reads → single-risk-level.
  */
 
-import { ORPHAN_MODES, type OrphanMode } from '@inkeep/open-knowledge-core';
+import { ORPHAN_MODES, type OrphanMode } from '@nedian0brien/synapsenote-core';
 import { z } from 'zod';
 import { buildListResolver, type PreviewUrlDeps, resolvePreviewUrlForTool } from './preview-url.ts';
 import type { ConfigOrResolver, ServerInstance, ServerUrlOrResolver } from './shared.ts';

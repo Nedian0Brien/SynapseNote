@@ -5,7 +5,7 @@ import {
   type InlineAssetMediaKind,
   isHiddenDocName,
   isManagedArtifactDocName,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 
 export interface DocumentEntry {
   kind: 'document';

@@ -1,5 +1,5 @@
 /**
- * `open-knowledge share owners` — list GitHub owners (user + orgs filtered by
+ * `synapsenote share owners` — list GitHub owners (user + orgs filtered by
  * can_create_repository) eligible to host a new repo via the Publish-to-GitHub
  * wizard. JSON-only output; emits exactly one event line on stdout and exits
  * 0 so the server-side subprocess wrapper can parse without method ambiguity.

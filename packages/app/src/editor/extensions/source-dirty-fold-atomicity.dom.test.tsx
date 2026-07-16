@@ -25,8 +25,11 @@
  *
  */
 import { afterEach, describe, expect, test } from 'bun:test';
-import { sharedExtensions as coreExtensions, MarkdownManager } from '@inkeep/open-knowledge-core';
-import { type ObserverDispatchKind, setupServerObservers } from '@inkeep/open-knowledge-server';
+import {
+  sharedExtensions as coreExtensions,
+  MarkdownManager,
+} from '@nedian0brien/synapsenote-core';
+import { type ObserverDispatchKind, setupServerObservers } from '@nedian0brien/synapsenote-server';
 import { cleanup } from '@testing-library/react';
 import { Editor, getSchema, type JSONContent } from '@tiptap/core';
 import Collaboration from '@tiptap/extension-collaboration';

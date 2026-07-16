@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { encodeShareUrl } from '@inkeep/open-knowledge-core';
+import { encodeShareUrl } from '@nedian0brien/synapsenote-core';
 import { STABLE_DMG_URL } from './download-links.ts';
 import {
   buildCloneCommand,
@@ -16,7 +16,7 @@ import { SITE_NAME } from './site.ts';
 
 /**
  * Encode a shared GitHub URL (a blob URL for a doc, a tree URL for a folder)
- * via the CANONICAL production encoder (`@inkeep/open-knowledge-core`
+ * via the CANONICAL production encoder (`@nedian0brien/synapsenote-core`
  * `encodeShareUrl`). The splash duplicates the decoder locally to avoid
  * pulling the CRDT dep tree into the static marketing build — producer/consumer
  * parity is what we want to guarantee, so the happy-path tests MUST drive the
@@ -62,7 +62,7 @@ describe('buildSplashViewModel', () => {
       branch: 'main',
       isDefaultBranch: true,
       sharedUrl: blobUrl,
-      customSchemeUrl: `openknowledge://share?url=${encodeURIComponent(blobUrl)}`,
+      customSchemeUrl: `synapsenote://share?url=${encodeURIComponent(blobUrl)}`,
       githubUrl: blobUrl,
     });
   });
@@ -83,7 +83,7 @@ describe('buildSplashViewModel', () => {
       branch: 'main',
       isDefaultBranch: true,
       sharedUrl: treeUrl,
-      customSchemeUrl: `openknowledge://share?url=${encodeURIComponent(treeUrl)}`,
+      customSchemeUrl: `synapsenote://share?url=${encodeURIComponent(treeUrl)}`,
       githubUrl: treeUrl,
     });
   });
@@ -365,23 +365,23 @@ describe('buildSplashViewModel — shell-injection guard', () => {
 });
 
 describe('buildCustomSchemeUrl', () => {
-  test('produces the openknowledge://share?url=... custom-scheme handoff URL', () => {
+  test('produces the synapsenote://share?url=... custom-scheme handoff URL', () => {
     const blobUrl = 'https://github.com/o/r/blob/main/file with space.md';
     expect(buildCustomSchemeUrl(blobUrl)).toBe(
-      `openknowledge://share?url=${encodeURIComponent(blobUrl)}`,
+      `synapsenote://share?url=${encodeURIComponent(blobUrl)}`,
     );
   });
 });
 
 describe('SPLASH_DOWNLOAD_URL', () => {
-  test('points at the open-knowledge releases latest DMG asset', () => {
+  test('points at the synapsenote releases latest DMG asset', () => {
     expect(SPLASH_DOWNLOAD_URL).toBe(STABLE_DMG_URL);
   });
 });
 
 describe('SPLASH_INSTALL_COMMAND', () => {
   test('is the published CLI install command (global npm install)', () => {
-    expect(SPLASH_INSTALL_COMMAND).toBe('npm install -g @inkeep/open-knowledge');
+    expect(SPLASH_INSTALL_COMMAND).toBe('npm install -g @nedian0brien/synapsenote');
   });
 });
 
@@ -601,17 +601,17 @@ describe('buildShareDescription', () => {
 
   test('folder on the default branch — uses "folder" noun', () => {
     const d = buildShareDescription(
-      okView('https://github.com/inkeep/open-knowledge/tree/main/docs'),
+      okView('https://github.com/Nedian0Brien/SynapseNote/tree/main/docs'),
     );
-    expect(d).toBe(`Open docs with ${SITE_NAME} — a shared folder from inkeep/open-knowledge.`);
+    expect(d).toBe(`Open docs with ${SITE_NAME} — a shared folder from Nedian0Brien/SynapseNote.`);
   });
 
   test('folder on a non-default branch — folder noun + branch suffix', () => {
     const d = buildShareDescription(
-      okView('https://github.com/inkeep/open-knowledge/tree/feature/docs'),
+      okView('https://github.com/Nedian0Brien/SynapseNote/tree/feature/docs'),
     );
     expect(d).toBe(
-      `Open docs with ${SITE_NAME} — a shared folder from inkeep/open-knowledge (on feature).`,
+      `Open docs with ${SITE_NAME} — a shared folder from Nedian0Brien/SynapseNote (on feature).`,
     );
   });
 

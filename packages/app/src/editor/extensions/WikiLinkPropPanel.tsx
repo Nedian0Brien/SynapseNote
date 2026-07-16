@@ -15,12 +15,12 @@
  * Create-page action for unresolved ones.
  */
 
+import { Trans, useLingui } from '@lingui/react/macro';
 import {
   classifyWikiLinkTarget,
   getWikiLinkText,
   normalizeNullableString,
-} from '@inkeep/open-knowledge-core';
-import { Trans, useLingui } from '@lingui/react/macro';
+} from '@nedian0brien/synapsenote-core';
 import type { Editor } from '@tiptap/core';
 import { posToDOMRect } from '@tiptap/core';
 import {

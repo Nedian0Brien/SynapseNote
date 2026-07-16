@@ -57,21 +57,17 @@ describe('validateSkillForInstall', () => {
     expect(v.errors.some((e) => e.includes('conflict markers'))).toBe(true);
   });
 
-  test('rejects reserved open-knowledge* prefix unless allowed', () => {
-    const dir = makeSkill(
-      'open-knowledge-mine',
-      '# x',
-      'name: open-knowledge-mine\ndescription: d',
-    );
-    expect(validateSkillForInstall(dir, 'open-knowledge-mine').ok).toBe(false);
+  test('rejects reserved synapsenote* prefix unless allowed', () => {
+    const dir = makeSkill('synapsenote-mine', '# x', 'name: synapsenote-mine\ndescription: d');
+    expect(validateSkillForInstall(dir, 'synapsenote-mine').ok).toBe(false);
     // OK's own shipped bundle opts in.
-    expect(
-      validateSkillForInstall(dir, 'open-knowledge-mine', { allowReservedName: true }).ok,
-    ).toBe(true);
+    expect(validateSkillForInstall(dir, 'synapsenote-mine', { allowReservedName: true }).ok).toBe(
+      true,
+    );
   });
 
-  test('allows open-knowledge-pack-* (shipped pack skills) to reinstall', () => {
-    const name = 'open-knowledge-pack-knowledge-base';
+  test('allows synapsenote-pack-* (shipped pack skills) to reinstall', () => {
+    const name = 'synapsenote-pack-knowledge-base';
     const dir = makeSkill(name, '# x', `name: ${name}\ndescription: d`);
     // Pack skills sit under the reserved prefix but are OK's own shipped content,
     // so a user-triggered (re)install must not be blocked by the reserved guard.

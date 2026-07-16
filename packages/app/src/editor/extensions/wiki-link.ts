@@ -17,7 +17,7 @@
  * wikiLink suggestion popover is closed remain orthogonal to the chip
  * rendering.
  */
-import { WikiLink as BaseWikiLink, classifyWikiLinkTarget } from '@inkeep/open-knowledge-core';
+import { WikiLink as BaseWikiLink, classifyWikiLinkTarget } from '@nedian0brien/synapsenote-core';
 import { createElement } from 'react';
 import { openExternalUrl } from '@/lib/external-link';
 import { resolveLinkTargetIntent } from '../../components/link-target-intent';

@@ -56,7 +56,7 @@ describe('smoke-mock-update.mjs — self-test round-trip', () => {
     expect(result.stdout).toMatch(/\[mock-updater\] port=\d+/);
     expect(result.stdout).toContain('[mock-updater] event=served path=/latest-mac.yml status=200');
     expect(result.stdout).toContain(
-      '[mock-updater] event=served path=/open-knowledge-mock.zip status=200',
+      '[mock-updater] event=served path=/synapsenote-mock.zip status=200',
     );
     expect(result.stdout).toContain('[mock-updater] event=self-test-ok');
     expect(result.stdout).toContain('[mock-updater] event=shutdown reason=done');

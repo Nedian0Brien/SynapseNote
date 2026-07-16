@@ -52,11 +52,11 @@ The difference from a folder of notes or a RAG app is who maintains it, and how 
 
 The structure you and the agent author (folders, titles, backlinks, a one-line purpose per folder) *is* the index. No second copy, nothing to keep in sync. The agent retrieves across it with [agentic search](../reference/agentic-search.mdx) — searching, grepping, and following backlinks over your live files, no vector database — and you teach it conventions with [skills](../features/skills.mdx) authored in the same editor as your docs.
 
-The rest of this guide builds one end to end. The pattern is Andrej Karpathy's, from [his April 2026 gist on LLM-curated wikis](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f). OpenKnowledge ships the **Knowledge base** starter pack as a direct implementation, with one extension Karpathy doesn't formalize: **the wiki layer is split** into `research/` (status: provisional) and `articles/` (status: canonical), with the `consolidate` workflow as the explicit promotion step, so premature canonicalization becomes a thing you opt into rather than something that drifts in.
+The rest of this guide builds one end to end. The pattern is Andrej Karpathy's, from [his April 2026 gist on LLM-curated wikis](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f). SynapseNote ships the **Knowledge base** starter pack as a direct implementation, with one extension Karpathy doesn't formalize: **the wiki layer is split** into `research/` (status: provisional) and `articles/` (status: canonical), with the `consolidate` workflow as the explicit promotion step, so premature canonicalization becomes a thing you opt into rather than something that drifts in.
 
-The point of this guide is to show how **OpenKnowledge's features compose** to make the pattern feel native: the starter-pack picker scaffolds the layout in one click; per-folder templates + agent-readable folder frontmatter teach the LLM the conventions (Karpathy's centralized `CLAUDE.md` / `AGENTS.md` schema, distributed per-folder); the `workflow` tool's `ingest`, `research`, and `consolidate` kinds cover the sources → provisional → canonical pipeline; the WYSIWYG editor + CRDT keep editing frictionless; the activity panel attributes every write; the `links` tool keeps the source graph clean. Every step uses three or four of these together. That's the product.
+The point of this guide is to show how **SynapseNote's features compose** to make the pattern feel native: the starter-pack picker scaffolds the layout in one click; per-folder templates + agent-readable folder frontmatter teach the LLM the conventions (Karpathy's centralized `CLAUDE.md` / `AGENTS.md` schema, distributed per-folder); the `workflow` tool's `ingest`, `research`, and `consolidate` kinds cover the sources → provisional → canonical pipeline; the WYSIWYG editor + CRDT keep editing frictionless; the activity panel attributes every write; the `links` tool keeps the source graph clean. Every step uses three or four of these together. That's the product.
 
-If you're new to LLM-curated PKM, the draw is an agent that remembers your context without the vault turning into a junk drawer of unprocessed clips — notes that compound instead of rotting. If you're already practicing Karpathy's pattern in Obsidian, plain folders, or Claude projects, the question is what OpenKnowledge does differently and what carries over.
+If you're new to LLM-curated PKM, the draw is an agent that remembers your context without the vault turning into a junk drawer of unprocessed clips — notes that compound instead of rotting. If you're already practicing Karpathy's pattern in Obsidian, plain folders, or Claude projects, the question is what SynapseNote does differently and what carries over.
 
 Either way, by the end of this guide you'll have a working source-grounded knowledge base, a routine for adding sources, and a daily-driver agent setup that interrogates the vault on your behalf.
 
@@ -64,7 +64,7 @@ Either way, by the end of this guide you'll have a working source-grounded knowl
 
 You need:
 
-- **The OpenKnowledge desktop app.** The native macOS app is the canonical surface: WYSIWYG editor, file sidebar, agent activity panel, version timeline, and the starter-pack picker all live there. Install it from the [Quickstart](../get-started/quickstart.mdx).
+- **The SynapseNote desktop app.** The native macOS app is the canonical surface: WYSIWYG editor, file sidebar, agent activity panel, version timeline, and the starter-pack picker all live there. Install it from the [Quickstart](../get-started/quickstart.mdx).
 - **An MCP-capable agent assistant.** [Claude Code](../integrations/claude-code.mdx), [Cursor](../integrations/cursor.mdx), [Codex](../integrations/codex.mdx), [OpenCode](../integrations/opencode.mdx), or [OpenClaw](../integrations/openclaw.mdx). The OK desktop app's first-launch flow detects them and wires them up.
 - **A read of the source pattern.** Andrej Karpathy's [LLM wiki gist](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) is the canonical description of what we're implementing here. It's a 10-minute read and worth doing first; this guide builds on it directly.
 
@@ -82,7 +82,7 @@ You're evaluating a new agent framework for an upcoming architecture decision. Y
 
 By the end of the afternoon you can ask your agent "what does the framework do when two sub-agents race on the same write?" and get an answer that cites the specific paragraph in the architecture doc, contextualized with the maintainer's clarification on Twitter, without re-reading any of the five sources yourself.
 
-That's the payoff. Below is how you get there in OpenKnowledge.
+That's the payoff. Below is how you get there in SynapseNote.
 
 ## What's in your vault after one afternoon
 
@@ -128,11 +128,11 @@ Karpathy's framing of why this matters:
 
 > the wiki is a persistent, compounding artifact. The cross-references are already there.
 
-## How OpenKnowledge implements (and extends) this
+## How SynapseNote implements (and extends) this
 
 The **Knowledge base** pack scaffolds Karpathy's pattern with one significant addition: **the wiki layer is split** into `research/` (provisional) and `articles/` (canonical), with `consolidate` as the explicit promotion ritual.
 
-| Karpathy | OpenKnowledge |
+| Karpathy | SynapseNote |
 |---|---|
 | Raw sources (verbatim, immutable) | `external-sources/` + `clip` template + `ingest` workflow |
 | The wiki (single LLM-owned layer) | **Split**: `research/` (provisional, status:`provisional`, sources cited) + `articles/` (canonical, status:`canonical`, supersedes chain); `consolidate` promotes |
@@ -147,7 +147,7 @@ When your agent lists `external-sources/`, it reads the folder description telli
 
 ### 1. Open the desktop app and pick a project folder
 
-Launch **OpenKnowledge** (the macOS app). Either drag-and-drop a folder, click **Open folder on disk**, or click **Create new project** to start a new vault. The first-launch consent dialog scaffolds `.ok/` and offers to wire up any MCP-capable editors it detects (Claude Code, Cursor, Codex, OpenCode, OpenClaw).
+Launch **SynapseNote** (the macOS app). Either drag-and-drop a folder, click **Open folder on disk**, or click **Create new project** to start a new vault. The first-launch consent dialog scaffolds `.ok/` and offers to wire up any MCP-capable editors it detects (Claude Code, Cursor, Codex, OpenCode, OpenClaw).
 
 Don't have the desktop app yet? See the [Quickstart](../get-started/quickstart.mdx).
 
@@ -160,7 +160,7 @@ You'll get `external-sources/`, `research/`, `articles/`, the three matching tem
 The starter-pack picker is idempotent (safe to re-run on the same project).
 
 <Callout type="info" title="Seeding also installs a skill">
-  `ok seed --pack knowledge-base` (or the desktop starter-pack picker) installs the **Knowledge base** project skill into your agent editors (Claude Code, Cursor, Codex, OpenCode). It's the "how to work here" guidance behind the layer discipline described below — the `ingest` / `research` / `consolidate` conventions and the provisional-to-canonical promotion — read automatically, and editable like any other doc. It lands as a single `SKILL.md` in your repo under `.ok/skills/`, symlinked into the skills folder of each editor already set up for the project. See [Skills](../features/skills.mdx) and [what OpenKnowledge writes to disk](../reference/what-open-knowledge-writes.mdx).
+  `ok seed --pack knowledge-base` (or the desktop starter-pack picker) installs the **Knowledge base** project skill into your agent editors (Claude Code, Cursor, Codex, OpenCode). It's the "how to work here" guidance behind the layer discipline described below — the `ingest` / `research` / `consolidate` conventions and the provisional-to-canonical promotion — read automatically, and editable like any other doc. It lands as a single `SKILL.md` in your repo under `.ok/skills/`, symlinked into the skills folder of each editor already set up for the project. See [Skills](../features/skills.mdx) and [what SynapseNote writes to disk](../reference/what-synapsenote-writes.mdx).
 </Callout>
 
 ### 3. Confirm your agent host is wired
@@ -169,7 +169,7 @@ If you accepted the desktop app's first-launch offer to wire up your agent assis
 
 <CopyPrompt>list the workflow tools available</CopyPrompt>
 
-You should see `mcp__open-knowledge__workflow` (its `kind` covers `ingest` / `research` / `consolidate` / `discover` / `wiki`), alongside the standard reads/writes (`exec`, `search`, `write`, `links`, etc.). The workflow guides cover the sources → provisional → canonical pipeline described in the mapping table above.
+You should see `mcp__synapsenote__workflow` (its `kind` covers `ingest` / `research` / `consolidate` / `discover` / `wiki`), alongside the standard reads/writes (`exec`, `search`, `write`, `links`, etc.). The workflow guides cover the sources → provisional → canonical pipeline described in the mapping table above.
 
 ### 4. Ingest the five sources
 
@@ -205,7 +205,7 @@ Each folder gets a `.ok/frontmatter.yml` (the agent reads it on every `exec` dir
 
 > Raw sources saved verbatim — the fetched text of URLs, extracted PDFs, and copied files, each with the original URL and access date in frontmatter. Produced by `ingest`. Immutable after capture; no analysis here (that goes in `research/`).
 
-Result: the agent learns each layer's discipline without a separate prompt or skills file. `research/` and `articles/` carry analogous descriptions. This is Karpathy's centralized `CLAUDE.md` schema, distributed per-folder, so schema lives closest to the agent action. Customize via `mcp__open-knowledge__edit` (with a `folder` target).
+Result: the agent learns each layer's discipline without a separate prompt or skills file. `research/` and `articles/` carry analogous descriptions. This is Karpathy's centralized `CLAUDE.md` schema, distributed per-folder, so schema lives closest to the agent action. Customize via `mcp__synapsenote__edit` (with a `folder` target).
 
 ## The consolidate step, deferred
 
@@ -253,7 +253,7 @@ The compounding move: end each ingest session with one synthesis query. The answ
 
 ## Looking for entity tracking instead?
 
-This guide is the **source-grounded** posture: bring sources, the LLM curates the wiki. If what you actually want is to track *people, companies, and meetings* (who's in your network, what was said, what changes over time), the [Entity vault (GBrain-compatible) workflow guide](./entity-vault.mdx) is the better starting point. Different pattern, same OpenKnowledge editor.
+This guide is the **source-grounded** posture: bring sources, the LLM curates the wiki. If what you actually want is to track *people, companies, and meetings* (who's in your network, what was said, what changes over time), the [Entity vault (GBrain-compatible) workflow guide](./entity-vault.mdx) is the better starting point. Different pattern, same SynapseNote editor.
 
 ## Further reading
 
@@ -261,12 +261,12 @@ This guide is the **source-grounded** posture: bring sources, the LLM curates th
 
 - **[Karpathy's LLM wiki gist](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f).** The original three-layer pattern, in his words. Read this before or alongside this guide.
 
-### OpenKnowledge internals that support this workflow
+### SynapseNote internals that support this workflow
 
 - **[Agent activity](../features/agent-activity.mdx).** How every agent edit lands in the shadow repo with attribution.
 - **[Claude Code](../integrations/claude-code.mdx)**, **[Cursor](../integrations/cursor.mdx)**, **[Codex](../integrations/codex.mdx)**, **[OpenCode](../integrations/opencode.mdx)**, **[OpenClaw](../integrations/openclaw.mdx).** Agent-assistant integrations.
-- **[`STARTER_PACKS` registry](https://github.com/inkeep/open-knowledge/blob/main/packages/server/src/seed/starter.ts).** Canonical source for the Knowledge base pack content.
+- **[`STARTER_PACKS` registry](https://github.com/Nedian0Brien/SynapseNote/blob/main/packages/server/src/seed/starter.ts).** Canonical source for the Knowledge base pack content.
 
 ### Adjacent OK workflow
 
-- **[Entity vault (GBrain-compatible) workflow in OpenKnowledge](./entity-vault.mdx).** Entity-vault counterpart, if the source-grounded posture isn't your fit.
+- **[Entity vault (GBrain-compatible) workflow in SynapseNote](./entity-vault.mdx).** Entity-vault counterpart, if the source-grounded posture isn't your fit.

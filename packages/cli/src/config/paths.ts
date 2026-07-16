@@ -7,7 +7,7 @@
  */
 
 import { resolve } from 'node:path';
-import { getLocalDir } from '@inkeep/open-knowledge-server';
+import { getLocalDir } from '@nedian0brien/synapsenote-server';
 import type { Config } from './schema.ts';
 
 /**

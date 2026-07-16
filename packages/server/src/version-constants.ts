@@ -3,11 +3,11 @@
  *
  * The server's import surface for the three version dimensions:
  *
- * - `RUNTIME_VERSION` — semver of `@inkeep/open-knowledge-server`. Read from
+ * - `RUNTIME_VERSION` — semver of `@nedian0brien/synapsenote-server`. Read from
  *   the package's own `package.json` at module load. Used in lock metadata
  *   and state-manifest diagnostic fields. Changes every release.
  * - `PROTOCOL_VERSION` — integer, re-exported from
- *   `@inkeep/open-knowledge-core` (its canonical, browser-safe home). Used by
+ *   `@nedian0brien/synapsenote-core` (its canonical, browser-safe home). Used by
  *   the MCP protocol gate to refuse incompatible spawns. See its docblock for
  *   bump semantics.
  * - `STATE_SCHEMA_VERSION` — integer. Bumped whenever on-disk durable state
@@ -25,10 +25,10 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 // The cross-process contract version is a pure integer with no fs dependency,
-// so its canonical home is `@inkeep/open-knowledge-core` (importable by the
+// so its canonical home is `@nedian0brien/synapsenote-core` (importable by the
 // browser bundle). Re-exported here so server-side call sites keep importing
 // the version trio from one module. See its docblock for bump semantics.
-export { PROTOCOL_VERSION } from '@inkeep/open-knowledge-core';
+export { PROTOCOL_VERSION } from '@nedian0brien/synapsenote-core';
 
 function readRuntimeVersion(): string {
   try {

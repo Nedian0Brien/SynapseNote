@@ -14,7 +14,7 @@ function recent(overrides: Partial<RecentProjectEntry> & { path: string }): Rece
     path: overrides.path,
     name: overrides.name ?? overrides.path.split('/').filter(Boolean).pop() ?? 'project',
     lastOpenedAt: overrides.lastOpenedAt ?? '2026-05-15T00:00:00.000Z',
-    gitRemoteUrl: 'https://github.com/inkeep/open-knowledge.git',
+    gitRemoteUrl: 'https://github.com/Nedian0Brien/SynapseNote.git',
     ...overrides,
   };
 }
@@ -81,8 +81,8 @@ function makeBridge(opts: StubOptions): CandidateBridgeDeps {
 }
 
 const PAYLOAD: CandidateSelectionPayload = {
-  owner: 'inkeep',
-  repo: 'open-knowledge',
+  owner: 'Nedian0Brien',
+  repo: 'SynapseNote',
   branch: 'feat-bar',
 };
 

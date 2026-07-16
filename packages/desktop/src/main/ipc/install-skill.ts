@@ -9,14 +9,14 @@
  *                                        `~/.ok/skill-state.yml`
  *
  * Builds the `.skill` artifact from the bundled skill source via
- * `buildSkillZip` in `@inkeep/open-knowledge-server`. No network round-trip,
+ * `buildSkillZip` in `@nedian0brien/synapsenote-server`. No network round-trip,
  * no GitHub Releases dependency — the same SKILL.md that ships with the
  * Electron app's bundled CLI becomes the `.skill` file we hand off. Version
  * is guaranteed to match whatever the user has installed.
  *
  * The install-state gate covers the Cowork double-prompt bug across the web
  * tab + Electron app. Both surfaces share the `claude-cowork` entry in
- * `~/.ok/skill-state.yml` via the helpers in `@inkeep/open-knowledge-server`.
+ * `~/.ok/skill-state.yml` via the helpers in `@nedian0brien/synapsenote-server`.
  *
  * The download-and-open handler is what unlocks the 2-click install UX:
  *   User clicks Install → gate check → if stale, build .skill →
@@ -35,7 +35,7 @@ import {
   recordSkillInstallEvent,
   type SkillInstallEventOutcome,
   writeTargetVersion,
-} from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-server';
 import type { App, Shell } from 'electron';
 
 export type BuildAndOpenResult =
@@ -59,13 +59,13 @@ interface InstallSkillIpcDeps {
   force?: boolean;
 }
 
-export { detectClaudeDesktopPresence as handleDetectClaudeDesktop } from '@inkeep/open-knowledge-server';
+export { detectClaudeDesktopPresence as handleDetectClaudeDesktop } from '@nedian0brien/synapsenote-server';
 
 /**
  * `ok:skill:build-and-open` handler — gates against the `claude-cowork`
  * entry in `~/.ok/skill-state.yml`; if the recorded version matches the
  * current bundled skill, returns `{ ok: true, skipped: true }` without
- * rebuilding. Otherwise builds `openknowledge.skill` from the bundled
+ * rebuilding. Otherwise builds `synapsenote.skill` from the bundled
  * SKILL.md source, writes it to the user's Downloads folder, invokes the OS
  * file association, and records the new version on success.
  *
@@ -111,7 +111,7 @@ export async function handleBuildAndOpen(deps: InstallSkillIpcDeps): Promise<Bui
     };
   }
 
-  const outputPath = join(downloadsDir, 'openknowledge.skill');
+  const outputPath = join(downloadsDir, 'synapsenote.skill');
 
   // Install-state gate. Skip when `force: false` (default) AND the recorded
   // version matches the current bundled skill version. Read errors fall

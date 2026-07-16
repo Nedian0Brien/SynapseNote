@@ -7,7 +7,7 @@
  */
 
 import { describe, expect, test } from 'bun:test';
-import { MarkdownManager, sharedExtensions } from '@inkeep/open-knowledge-core';
+import { MarkdownManager, sharedExtensions } from '@nedian0brien/synapsenote-core';
 import type { JSONContent } from '@tiptap/core';
 import { computeMapDrivenBodySplice } from './map-driven-splice.ts';
 

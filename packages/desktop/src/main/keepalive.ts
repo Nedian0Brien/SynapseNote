@@ -25,7 +25,7 @@ import {
   type KeepaliveHandle,
   type KeepaliveLogger,
   startKeepalive,
-} from '@inkeep/open-knowledge-core/keepalive';
+} from '@nedian0brien/synapsenote-core/keepalive';
 import type { DesktopLogger } from './desktop-logger.ts';
 import type { ServerLockMetadataLike } from './window-manager.ts';
 

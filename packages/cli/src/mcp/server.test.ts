@@ -3,7 +3,7 @@ import { mkdirSync, symlinkSync, writeFileSync } from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
-import { sanitizeClientName } from '@inkeep/open-knowledge-server';
+import { sanitizeClientName } from '@nedian0brien/synapsenote-server';
 import {
   countWorktrees,
   findProjectDir,
@@ -41,25 +41,25 @@ describe('findProjectDir', () => {
   });
 
   test('throws with a clear message when no `.ok/config.yml` ancestor exists', () => {
-    expect(() => findProjectDir(tmpDir)).toThrow(/No OpenKnowledge project found/);
+    expect(() => findProjectDir(tmpDir)).toThrow(/No SynapseNote project found/);
   });
 
   test('rejects a regular file named `.ok` and keeps walking up', () => {
     // Sibling stray `.ok` file in tmpDir should NOT be treated as a project root.
     writeFileSync(resolve(tmpDir, '.ok'), 'oops');
-    expect(() => findProjectDir(tmpDir)).toThrow(/No OpenKnowledge project found/);
+    expect(() => findProjectDir(tmpDir)).toThrow(/No SynapseNote project found/);
   });
 
   test('rejects a dangling symlink at `.ok` and keeps walking up', () => {
     symlinkSync(resolve(tmpDir, 'does-not-exist'), resolve(tmpDir, '.ok'));
-    expect(() => findProjectDir(tmpDir)).toThrow(/No OpenKnowledge project found/);
+    expect(() => findProjectDir(tmpDir)).toThrow(/No SynapseNote project found/);
   });
 
   test('rejects an empty `.ok/` directory with no config.yml and keeps walking up', () => {
     // Bare .ok/ — looks like a nested folder-rule sidecar would. The walk
     // must NOT stop here, otherwise tool calls bind to the wrong project root.
     mkdirSync(resolve(tmpDir, '.ok'), { recursive: true });
-    expect(() => findProjectDir(tmpDir)).toThrow(/No OpenKnowledge project found/);
+    expect(() => findProjectDir(tmpDir)).toThrow(/No SynapseNote project found/);
   });
 
   test('rejects a folder-rule-style `.ok/frontmatter.yml` without config.yml', () => {
@@ -67,14 +67,14 @@ describe('findProjectDir', () => {
     // metadata that must not register as a project marker.
     mkdirSync(resolve(tmpDir, '.ok'), { recursive: true });
     writeFileSync(resolve(tmpDir, '.ok', 'frontmatter.yml'), 'title: oops\n', 'utf-8');
-    expect(() => findProjectDir(tmpDir)).toThrow(/No OpenKnowledge project found/);
+    expect(() => findProjectDir(tmpDir)).toThrow(/No SynapseNote project found/);
   });
 
   test('rejects a directory at `.ok/config.yml` (not a file) and keeps walking up', () => {
     // Pathological: someone created config.yml as a directory. The marker
     // must be a regular file.
     mkdirSync(resolve(tmpDir, '.ok', 'config.yml'), { recursive: true });
-    expect(() => findProjectDir(tmpDir)).toThrow(/No OpenKnowledge project found/);
+    expect(() => findProjectDir(tmpDir)).toThrow(/No SynapseNote project found/);
   });
 
   test('walks past a folder-rule `.ok/` sidecar to the real project root above', () => {
@@ -323,7 +323,7 @@ describe('resolveStickyProjectDir', () => {
     try {
       await expect(
         resolveStickyProjectDir(noOkDir, undefined, async () => undefined),
-      ).rejects.toThrow(/No OpenKnowledge project found/);
+      ).rejects.toThrow(/No SynapseNote project found/);
     } finally {
       await rm(noOkDir, { recursive: true, force: true });
     }
@@ -337,7 +337,7 @@ describe('resolveStickyProjectDir', () => {
     try {
       await expect(
         resolveStickyProjectDir(undefined, undefined, async () => noOkDir),
-      ).rejects.toThrow(/No OpenKnowledge project found/);
+      ).rejects.toThrow(/No SynapseNote project found/);
     } finally {
       await rm(noOkDir, { recursive: true, force: true });
     }
@@ -352,7 +352,7 @@ describe('resolveStickyProjectDir', () => {
     await rm(goneDir, { recursive: true, force: true });
     await expect(
       resolveStickyProjectDir(undefined, goneDir, async () => undefined),
-    ).rejects.toThrow(/No OpenKnowledge project found/);
+    ).rejects.toThrow(/No SynapseNote project found/);
   });
 });
 

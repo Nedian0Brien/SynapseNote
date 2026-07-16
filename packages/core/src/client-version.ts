@@ -1,7 +1,7 @@
 /**
  * Client→server version metadata — the v1 wire contract.
  *
- * Every OpenKnowledge client (web app, MCP shim, desktop main process, CLI
+ * Every SynapseNote client (web app, MCP shim, desktop main process, CLI
  * commands) stamps its own version onto every request to the local server, so
  * a future server can refuse an incompatible peer and tell it to update or
  * respawn. The server does not read these today; "send now, read later" is
@@ -30,7 +30,7 @@
  * install's semver — distinct from protocol so the server can validate them
  * independently). `runtimeVersion` is supplied by the caller because its source
  * differs per environment: Node clients read `RUNTIME_VERSION` from the adjacent
- * `@inkeep/open-knowledge-server` install; the browser reads a build-time-
+ * `@nedian0brien/synapsenote-server` install; the browser reads a build-time-
  * injected value (it cannot read its own `package.json` at runtime).
  */
 import { PROTOCOL_VERSION } from './protocol-version.ts';

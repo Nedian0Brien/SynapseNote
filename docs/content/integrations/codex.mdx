@@ -1,10 +1,10 @@
 ---
 title: Codex
-description: Use OpenKnowledge with OpenAI Codex.
+description: Use SynapseNote with OpenAI Codex.
 icon: custom/Codex
 ---
 
-OpenKnowledge plugs into Codex through MCP.
+SynapseNote plugs into Codex through MCP.
 
 ## Install
 
@@ -14,7 +14,7 @@ OpenKnowledge plugs into Codex through MCP.
 
 From the editor, **Open with AI ▸ Codex** dispatches the current file, folder, or project to Codex in one click. Entry points include the sidebar's right-click menu (file / folder / empty space), the macOS **File → Open with AI** menu, and the Command Palette. You can also hand the current doc to Codex from the bottom **Ask AI** composer.
 
-Codex receives a short prompt asking it to open the target in OpenKnowledge's web preview. The agent then grounds the rest of the conversation through MCP. See [Editor → Open with AI](/docs/features/editor#open-with-ai) for the full UX.
+Codex receives a short prompt asking it to open the target in SynapseNote's web preview. The agent then grounds the rest of the conversation through MCP. See [Editor → Open with AI](/docs/features/editor#open-with-ai) for the full UX.
 
 ## Verify
 
@@ -22,4 +22,4 @@ Open the project in Codex and ask:
 
 <VerifyExec />
 
-If you don't see the tool, restart Codex. If it's still missing and `ok init` reported your config was `left unchanged`, the reason in parentheses says why `~/.codex/config.toml` (or `$CODEX_HOME/config.toml` if set) was left untouched. For config problems, fix the file and re-run `ok init`; for `no format-preserving writer available`, your config isn't the problem — OpenKnowledge can't rewrite the file safely on this platform, so add an `open-knowledge` entry to `mcp_servers` by hand (command: `ok mcp`).
+If you don't see the tool, restart Codex. If it's still missing and `ok init` reported your config was `left unchanged`, the reason in parentheses says why `~/.codex/config.toml` (or `$CODEX_HOME/config.toml` if set) was left untouched. For config problems, fix the file and re-run `ok init`; for `no format-preserving writer available`, your config isn't the problem — SynapseNote can't rewrite the file safely on this platform, so add an `synapsenote` entry to `mcp_servers` by hand (command: `ok mcp`).

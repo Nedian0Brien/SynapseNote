@@ -18,7 +18,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
-import { ChunkedInsertError } from '@inkeep/open-knowledge-core';
+import { ChunkedInsertError } from '@nedian0brien/synapsenote-core';
 import * as actualSonner from 'sonner';
 
 type ToastFn = { error: ReturnType<typeof mock> };

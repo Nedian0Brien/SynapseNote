@@ -1,6 +1,6 @@
 import { spawn as childSpawn } from 'node:child_process';
 import { platform } from 'node:os';
-import { withHiddenWindowsConsole } from '@inkeep/open-knowledge-server';
+import { withHiddenWindowsConsole } from '@nedian0brien/synapsenote-server';
 import { Command } from 'commander';
 import { getCliLogger } from '../cli.ts';
 import { collectReportBundle } from '../report-bundle.ts';

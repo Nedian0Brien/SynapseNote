@@ -2,8 +2,8 @@ import { createBetaResolver, toRedirectResponse } from '@/lib/download-links';
 import { attribution, captureServerEvent, isPrefetchRequest, resolveDistinctId } from '@/lib/track';
 
 /**
- * Perennial beta-channel download URL: openknowledge.ai/download/beta
- * 302s to the newest published `-beta.N` DMG on inkeep/open-knowledge,
+ * Perennial beta-channel download URL: synapse.lawdigest.kr/download/beta
+ * 302s to the newest published `-beta.N` DMG on Nedian0Brien/SynapseNote,
  * degrading to the releases page when resolution fails (never an error
  * page — shared links must land somewhere actionable).
  *

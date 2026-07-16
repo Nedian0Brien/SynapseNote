@@ -18,14 +18,14 @@
 
 import { existsSync, lstatSync, readdirSync, readFileSync, rmSync, unlinkSync } from 'node:fs';
 import { basename, join, relative, sep } from 'node:path';
-import { atomicWriteFileSync } from '@inkeep/open-knowledge-core/server';
+import { atomicWriteFileSync } from '@nedian0brien/synapsenote-core/server';
 // `resolveShadowDir` (resolves `<gitdir>/ok/`, worktree-aware; throws on a
 // malformed/inaccessible .git pointer) lives in the node:fs-importing subpath
 // the core barrel omits. Used over `getShadowRepoPath` so a shadow dir that
 // exists WITHOUT a HEAD (a torn init) is still swept — the executor's own
 // existsSync gates the actual removal.
-import { resolveShadowDir } from '@inkeep/open-knowledge-core/shadow-repo-layout';
-import { resolveLockDir } from '@inkeep/open-knowledge-server';
+import { resolveShadowDir } from '@nedian0brien/synapsenote-core/shadow-repo-layout';
+import { resolveLockDir } from '@nedian0brien/synapsenote-server';
 import { clearEmbeddingsKeyFromAllBackends } from '../auth/embeddings-key-store.ts';
 import { clearTokenFromAllBackends } from '../auth/token-store.ts';
 import {
@@ -352,7 +352,7 @@ function standardRcFiles(home: string): string[] {
   return [
     join(home, '.zshrc'),
     join(home, '.bash_profile'),
-    join(home, '.config', 'fish', 'conf.d', 'open-knowledge.fish'),
+    join(home, '.config', 'fish', 'conf.d', 'synapsenote.fish'),
   ];
 }
 
@@ -361,10 +361,10 @@ function standardRcFiles(home: string): string[] {
  *
  * The managed rc block is stripped from the standard rc locations AND any
  * marker-recorded rc file — NOT only the marker's list. The block is
- * self-identifying (`# >>> open-knowledge cli >>>` … `<<<`), so it can be found
+ * self-identifying (`# >>> synapsenote cli >>>` … `<<<`), so it can be found
  * and removed WITHOUT the manifest; relying on the marker alone left the block
  * behind whenever the manifest was absent (a prior partial uninstall that
- * already removed `~/Library/.../OpenKnowledge`, an older install, or an
+ * already removed `~/Library/.../SynapseNote`, an older install, or an
  * unreadable manifest) — the exact "won't fully leave" failure this exists to
  * prevent. Only rc files that exist are listed; the executor additionally
  * no-ops any file that turns out to hold no OK block.
@@ -410,10 +410,10 @@ function applicationDataOps(
   const options = { home, platformName: platform, env };
 
   const current = desktopUserDataDir(options);
-  // The legacy dir name is generic ("Open Knowledge") — another vendor could own
+  // The legacy dir name is generic ("OpenKnowledge") — another vendor could own
   // it — so it is ONLY removed when its state.json proves it is ours.
   const legacy = desktopUserDataDir({ ...options, productName: DESKTOP_LEGACY_PRODUCT_NAME });
-  const updaterCache = join(home, 'Library', 'Caches', 'OpenKnowledge-updater');
+  const updaterCache = join(home, 'Library', 'Caches', 'SynapseNote-updater');
 
   return [
     {
@@ -425,7 +425,7 @@ function applicationDataOps(
     {
       kind: 'remove-path',
       group: 'Application data',
-      label: `Remove ${tildify(legacy, home)} (only if it is OpenKnowledge's)`,
+      label: `Remove ${tildify(legacy, home)} (only if it is SynapseNote's)`,
       path: legacy,
       requireOurState: true,
     },
@@ -530,7 +530,7 @@ async function executeOp(op: RemovalOp, deps: ResolvedDeps): Promise<RemovalOpRe
         return {
           op,
           status: 'failed',
-          detail: `keychain unreachable (${keychainError}); remove manually: Keychain Access → service "open-knowledge"`,
+          detail: `keychain unreachable (${keychainError}); remove manually: Keychain Access → service "synapsenote"`,
         };
       }
       return { op, status: touched.length > 0 ? 'removed' : 'not-present' };
@@ -626,7 +626,7 @@ async function executeOp(op: RemovalOp, deps: ResolvedDeps): Promise<RemovalOpRe
 
 function executeRemovePath(op: Extract<RemovalOp, { kind: 'remove-path' }>): RemovalOpResult {
   if (op.requireOurState && !stateDirIsOurs(op.path)) {
-    return { op, status: 'skipped', detail: 'not verified as OpenKnowledge — left untouched' };
+    return { op, status: 'skipped', detail: 'not verified as SynapseNote — left untouched' };
   }
   // For project-scoped removals, refuse to rmSync through a symlinked ANCESTOR
   // that escapes the project (a planted `.claude -> /etc`). Throws on escape →

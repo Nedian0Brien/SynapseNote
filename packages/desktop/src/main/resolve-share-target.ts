@@ -4,7 +4,7 @@
  * `selectCandidate` natively — no IPC round-trip, no renderer required.
  *
  * Same algorithm the renderer's `ShareReceiveDialog` runs (the algorithm
- * itself lives in `@inkeep/open-knowledge-core` so both sides share one
+ * itself lives in `@nedian0brien/synapsenote-core` so both sides share one
  * implementation). This module is the bridge wiring main needs so the share
  * target can be resolved BEFORE any window opens — eliminating the
  * "launcher flash" and replacing the focused-window dispatch in `routeShare`
@@ -37,8 +37,8 @@ import {
   type CandidateSelectionPayload,
   type RecentProjectEntry,
   selectCandidate,
-} from '@inkeep/open-knowledge-core';
-import { isProjectRoot } from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-core';
+import { isProjectRoot } from '@nedian0brien/synapsenote-server';
 import { listGitWorktrees } from './list-git-worktrees.ts';
 import { readGitDirKind } from './read-git-dir-kind.ts';
 import { readHeadBranch } from './read-head-branch.ts';

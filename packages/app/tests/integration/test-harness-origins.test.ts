@@ -8,7 +8,7 @@
 
 import { describe, expect, test } from 'bun:test';
 import type { LocalTransactionOrigin } from '@hocuspocus/server';
-import { isPairedWriteOrigin } from '@inkeep/open-knowledge-server';
+import { isPairedWriteOrigin } from '@nedian0brien/synapsenote-server';
 import * as Y from 'yjs';
 
 import { attachBridgeInvariantWatcher } from './test-harness';

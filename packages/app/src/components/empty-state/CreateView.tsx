@@ -1,5 +1,5 @@
-import type { TemplatesListEntry } from '@inkeep/open-knowledge-core';
 import { Trans, useLingui } from '@lingui/react/macro';
+import type { TemplatesListEntry } from '@nedian0brien/synapsenote-core';
 import { ArrowRightIcon, Plus } from 'lucide-react';
 import { CopyablePromptList } from '@/components/empty-state/CopyablePromptList';
 import { CreatePromptComposer } from '@/components/empty-state/CreatePromptComposer';

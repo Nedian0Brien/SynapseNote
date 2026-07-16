@@ -1,5 +1,5 @@
 /**
- * CloneDialog — dialog for cloning a GitHub repo into a new OpenKnowledge project.
+ * CloneDialog — dialog for cloning a GitHub repo into a new SynapseNote project.
  *
  * Supports:
  *   - Editable combobox input: paste URL, type owner/repo shorthand, or — when

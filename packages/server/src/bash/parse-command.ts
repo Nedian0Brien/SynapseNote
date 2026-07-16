@@ -23,7 +23,7 @@
  * next-step, not a wall of allowlist text.
  */
 
-import { OK_DIR } from '@inkeep/open-knowledge-core';
+import { OK_DIR } from '@nedian0brien/synapsenote-core';
 import shellQuote from 'shell-quote';
 import { shellEscape } from './shell-escape.ts';
 

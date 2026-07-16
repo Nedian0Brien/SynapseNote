@@ -216,7 +216,7 @@ describe('runPublishFlow (error branches)', () => {
       }),
       token: 'tok',
       projectDir: tmpDir,
-      body: { owner: 'inkeep', name: 'open-knowledge', visibility: 'public' },
+      body: { owner: 'inkeep', name: 'synapsenote', visibility: 'public' },
       ownerKind: 'org',
       deps: {
         ensureOkScaffold: () => {},
@@ -274,7 +274,7 @@ describe('runPublishFlow (error branches)', () => {
         }),
         token: 'gho_fake',
         projectDir: tmpDir,
-        body: { owner: 'alice', name: 'open-knowledge', visibility: 'private' },
+        body: { owner: 'alice', name: 'synapsenote', visibility: 'private' },
         ownerKind: 'user',
         deps: { ensureOkScaffold: () => {} },
       });
@@ -374,7 +374,7 @@ describe('runPublishFlow (e2e against bare repo)', () => {
       body: { owner: 'alice', name: 'demo', visibility: 'private' },
       ownerKind: 'user',
       // Skip the real `initContent` so the test doesn't need the @inkeep/
-      // open-knowledge-core dist build. The flow still mkdirs the project
+      // synapsenote-core dist build. The flow still mkdirs the project
       // path because beforeEach already created it.
       deps: {
         ensureOkScaffold: (dir) => {

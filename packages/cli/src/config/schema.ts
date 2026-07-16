@@ -1,6 +1,6 @@
 /**
  * Re-export shim — `ConfigSchema` and friends live in
- * `@inkeep/open-knowledge-core`. Existing importers continue to work via this
+ * `@nedian0brien/synapsenote-core`. Existing importers continue to work via this
  * shim during the gradual move; a follow-up updates them to import
  * from core directly and removes this file.
  *
@@ -9,8 +9,8 @@
  * trace bare re-exports across workspace package boundaries.
  */
 
-import type { Config as CoreConfig } from '@inkeep/open-knowledge-core';
-import { ConfigSchema as CoreConfigSchema } from '@inkeep/open-knowledge-core';
+import type { Config as CoreConfig } from '@nedian0brien/synapsenote-core';
+import { ConfigSchema as CoreConfigSchema } from '@nedian0brien/synapsenote-core';
 
 export type Config = CoreConfig;
 export const ConfigSchema = CoreConfigSchema;

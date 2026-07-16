@@ -57,7 +57,7 @@
  * size survives reload and travels through the markdown round-trip.
  */
 
-import { rewriteEmbedUrl } from '@inkeep/open-knowledge-core';
+import { rewriteEmbedUrl } from '@nedian0brien/synapsenote-core';
 import { useEffect, useRef } from 'react';
 import { useJsxComponentHost } from './jsx-host-context.tsx';
 import { ResizeHandles } from './ResizeHandles.tsx';

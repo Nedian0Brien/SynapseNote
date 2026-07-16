@@ -1,5 +1,5 @@
-import type { HandoffTarget, TargetData, TerminalCli } from '@inkeep/open-knowledge-core';
 import { Trans, useLingui } from '@lingui/react/macro';
+import type { HandoffTarget, TargetData, TerminalCli } from '@nedian0brien/synapsenote-core';
 import { Check, ChevronDown } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { TargetIcon } from '@/components/handoff/OpenInAgentMenuItem';

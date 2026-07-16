@@ -33,8 +33,8 @@
  */
 
 import { isAbsolute } from 'node:path';
-import { MANAGED_ARTIFACT_SCOPES, SKILL_NAME_REGEX } from '@inkeep/open-knowledge-core';
-import { readConfigSafely, resolveConfigPath } from '@inkeep/open-knowledge-core/server';
+import { MANAGED_ARTIFACT_SCOPES, SKILL_NAME_REGEX } from '@nedian0brien/synapsenote-core';
+import { readConfigSafely, resolveConfigPath } from '@nedian0brien/synapsenote-core/server';
 import { z } from 'zod';
 import { AutoStartDisabledError } from '../../autostart.ts';
 import { resolveLockDir } from '../../config/paths.ts';
@@ -63,7 +63,7 @@ import {
 } from './shared.ts';
 
 const DESCRIPTION = [
-  'Resolve the browser-reachable preview URL for an OpenKnowledge project (optionally for a specific doc). Opening a preview counts as demand: when no OK server is running for the project, this call auto-starts one (same `OK_MCP_AUTOSTART` gate and spawn timeout as the read/write tools) and waits briefly for the preview UI to bind — a cold first call can take a few seconds; calls against a running system answer immediately.',
+  'Resolve the browser-reachable preview URL for an SynapseNote project (optionally for a specific doc). Opening a preview counts as demand: when no OK server is running for the project, this call auto-starts one (same `OK_MCP_AUTOSTART` gate and spawn timeout as the read/write tools) and waits briefly for the preview UI to bind — a cold first call can take a few seconds; calls against a running system answer immediately.',
   '',
   'Per-response `previewUrl` fields on read/write tools are ROUTE-ONLY (`/#/<doc>`, no host:port) — they identify which doc to preview, not a URL to open by itself. Call this tool to get the full, openable URL.',
   '',
@@ -71,7 +71,7 @@ const DESCRIPTION = [
   '',
   'Returns `{ url: null, baseUrl: null, running: false, autoOpen }` + a recovery hint only when no UI could be reached (auto-start disabled via `OK_MCP_AUTOSTART=0`, no spawn authority in this registration, or the UI did not bind in time) — the hint names the right command for the actual state.',
   '',
-  'To open a single markdown file that may live OUTSIDE any Open Knowledge project (a loose file, or a doc in a different git worktree), pass `file` with an absolute path: the tool finds the running session whose content directory contains it and returns that session’s URL, then navigate your in-app browser there. `document`/`folder` are for a doc in the current project; `file` is the out-of-project form.',
+  'To open a single markdown file that may live OUTSIDE any SynapseNote project (a loose file, or a doc in a different git worktree), pass `file` with an absolute path: the tool finds the running session whose content directory contains it and returns that session’s URL, then navigate your in-app browser there. `document`/`folder` are for a doc in the current project; `file` is the out-of-project form.',
   '',
   '**Parameters:**',
   '- `document` (optional) — Extension-less doc path in the current project (e.g. `specs/foo/SPEC`). Omit for the UI root URL.',
@@ -164,7 +164,7 @@ const InputSchema = {
     .string()
     .optional()
     .describe(
-      'Absolute path to a single markdown file to open, including one OUTSIDE any Open Knowledge project. Resolves to the running single-file (or worktree) session whose content directory contains it and returns that session’s `url`. Mutually exclusive with `document` / `folder` / `skill`. When `file` is set, `cwd` is ignored.',
+      'Absolute path to a single markdown file to open, including one OUTSIDE any SynapseNote project. Resolves to the running single-file (or worktree) session whose content directory contains it and returns that session’s `url`. Mutually exclusive with `document` / `folder` / `skill`. When `file` is set, `cwd` is ignored.',
     ),
   cwd: z.string().optional().describe(ROUTED_CWD_DESCRIPTION),
 } as const;
@@ -207,7 +207,7 @@ const OutputSchema = outputSchemaWithText({
 const NO_UI_SERVER_RUNNING_MESSAGE =
   'The OK server is running but no UI has bound for this project yet. Retry in a few seconds, or start one: `ok ui` (terminal) or open the project in OK Electron.';
 const NO_SERVER_MESSAGE =
-  'No OpenKnowledge server is running for this project. Start it with `ok start` (also starts the preview UI), or open the project in OK Electron.';
+  'No SynapseNote server is running for this project. Start it with `ok start` (also starts the preview UI), or open the project in OK Electron.';
 const AUTOSTART_DISABLED_NOTE = ' Auto-start is disabled (OK_MCP_AUTOSTART=0).';
 /**
  * Resolve `appearance.preview.autoOpen` for the out-of-project `file` branch.
@@ -236,7 +236,7 @@ function readUserAutoOpen(): boolean {
 
 /** No running session serves the requested out-of-project `file`. */
 function noSingleFileSessionMessage(file: string): string {
-  return `No Open Knowledge session is serving ${file} yet. On a host with a terminal, \`ok open ${file}\` starts one; otherwise open ${file} in the OK Desktop app. Then retry.`;
+  return `No SynapseNote session is serving ${file} yet. On a host with a terminal, \`ok open ${file}\` starts one; otherwise open ${file} in the OK Desktop app. Then retry.`;
 }
 
 /** Live server check — same lock+liveness criteria the MCP shim uses. */

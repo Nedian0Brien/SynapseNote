@@ -25,13 +25,13 @@ describe('desktop self-uninstall helpers', () => {
   test('resolves only packaged macOS .app exec paths', () => {
     expect(
       resolveAppBundleFromExecPath(
-        '/Applications/OpenKnowledge.app/Contents/MacOS/OpenKnowledge',
+        '/Applications/SynapseNote.app/Contents/MacOS/SynapseNote',
         'darwin',
       ),
-    ).toBe('/Applications/OpenKnowledge.app');
+    ).toBe('/Applications/SynapseNote.app');
     expect(
       resolveAppBundleFromExecPath(
-        '/Applications/OpenKnowledge.app/Contents/MacOS/OpenKnowledge',
+        '/Applications/SynapseNote.app/Contents/MacOS/SynapseNote',
         'linux',
       ),
     ).toBeNull();
@@ -39,17 +39,17 @@ describe('desktop self-uninstall helpers', () => {
   });
 
   test('allows only the canonical Applications install locations', () => {
-    expect(isSupportedApplicationsBundle('/Applications/OpenKnowledge.app', '/Users/alice')).toBe(
+    expect(isSupportedApplicationsBundle('/Applications/SynapseNote.app', '/Users/alice')).toBe(
       true,
     );
     expect(
-      isSupportedApplicationsBundle('/Users/alice/Applications/OpenKnowledge.app', '/Users/alice'),
+      isSupportedApplicationsBundle('/Users/alice/Applications/SynapseNote.app', '/Users/alice'),
     ).toBe(true);
     expect(
-      isSupportedApplicationsBundle('/Volumes/OpenKnowledge/OpenKnowledge.app', '/Users/alice'),
+      isSupportedApplicationsBundle('/Volumes/SynapseNote/SynapseNote.app', '/Users/alice'),
     ).toBe(false);
     expect(
-      isSupportedApplicationsBundle('/Applications/OpenKnowledge Beta.app', '/Users/alice'),
+      isSupportedApplicationsBundle('/Applications/SynapseNote Beta.app', '/Users/alice'),
     ).toBe(false);
   });
 
@@ -100,7 +100,7 @@ describe('desktop self-uninstall helpers', () => {
 
   test('builds a progress page with a loading indicator', () => {
     const html = buildDesktopUninstallProgressHtml();
-    expect(html).toContain('Removing OpenKnowledge files…');
+    expect(html).toContain('Removing SynapseNote files…');
     expect(html).toContain('class="spinner"');
     expect(html).toContain('role="status"');
   });
@@ -146,9 +146,9 @@ describe('desktop self-uninstall helpers', () => {
 
   test('builds a cleanup script that deinitializes selected projects before global uninstall', () => {
     const script = buildDesktopUninstallCleanupScript({
-      cliPath: "/Applications/OpenKnowledge.app/Contents/Resources/cli/bin/ok's.sh",
+      cliPath: "/Applications/SynapseNote.app/Contents/Resources/cli/bin/ok's.sh",
       projectPaths: ['/work/a', "/work/quote's"],
-      logPath: '/Users/alice/Library/Logs/OpenKnowledge/uninstall.log',
+      logPath: '/Users/alice/Library/Logs/SynapseNote/uninstall.log',
     });
 
     expect(script).toContain("set -- '/work/a' '/work/quote'\\''s'");
@@ -157,15 +157,15 @@ describe('desktop self-uninstall helpers', () => {
     expect(script).not.toContain('osascript');
     expect(script).not.toContain('Finder');
     expect(script).toContain(
-      "OK_CLI='/Applications/OpenKnowledge.app/Contents/Resources/cli/bin/ok'\\''s.sh'",
+      "OK_CLI='/Applications/SynapseNote.app/Contents/Resources/cli/bin/ok'\\''s.sh'",
     );
   });
 
   test('a zero-project cleanup script skips deinit but still uninstalls globally', () => {
     const script = buildDesktopUninstallCleanupScript({
-      cliPath: '/Applications/OpenKnowledge.app/Contents/Resources/cli/bin/ok.sh',
+      cliPath: '/Applications/SynapseNote.app/Contents/Resources/cli/bin/ok.sh',
       projectPaths: [],
-      logPath: '/Users/alice/Library/Logs/OpenKnowledge/uninstall.log',
+      logPath: '/Users/alice/Library/Logs/SynapseNote/uninstall.log',
     });
 
     expect(script).toContain('No project deinit paths selected.');
@@ -176,7 +176,7 @@ describe('desktop self-uninstall helpers', () => {
   test('default log path lives outside app data and is timestamped safely', () => {
     expect(
       defaultDesktopUninstallLogPath('/Users/alice', new Date('2026-07-08T01:02:03.004Z')),
-    ).toBe('/Users/alice/Library/Logs/OpenKnowledge/uninstall-2026-07-08T01-02-03-004Z.log');
+    ).toBe('/Users/alice/Library/Logs/SynapseNote/uninstall-2026-07-08T01-02-03-004Z.log');
   });
 
   test('reads the cleanup log for display, tail-truncating oversized logs', () => {
@@ -203,11 +203,11 @@ describe('desktop self-uninstall helpers', () => {
   test('failure notice embeds the log and still names the saved file', () => {
     const notice = desktopUninstallFailureNotice({
       error: 'cleanup process exited with code 1',
-      logPath: '/Users/alice/Library/Logs/OpenKnowledge/uninstall.log',
+      logPath: '/Users/alice/Library/Logs/SynapseNote/uninstall.log',
       logText: 'Could not remove:\n  ✗ Remove .claude/skills/pack/',
     });
     expect(notice.log).toContain('✗ Remove .claude/skills/pack/');
-    expect(notice.footnote).toContain('/Users/alice/Library/Logs/OpenKnowledge/uninstall.log');
+    expect(notice.footnote).toContain('/Users/alice/Library/Logs/SynapseNote/uninstall.log');
 
     // Unreadable log → the raw error + a path-only hint, no log block.
     const noLog = desktopUninstallFailureNotice({
@@ -227,7 +227,7 @@ describe('desktop self-uninstall helpers', () => {
     expect(confirm.paragraphs.join(' ')).not.toContain('Trash');
 
     const done = desktopUninstallCompletionNotice({ projectCount: 0, logPath: '/log' });
-    expect(done.paragraphs.join(' ')).toContain('move OpenKnowledge.app to the Trash');
+    expect(done.paragraphs.join(' ')).toContain('move SynapseNote.app to the Trash');
     // Projects were off by default — silence beats "No projects were deinitialized."
     expect(done.paragraphs.join(' ')).not.toContain('project');
     expect(done.footnote).toBe('Cleanup log: /log');
@@ -275,7 +275,7 @@ describe('desktop self-uninstall helpers', () => {
     const spawn = mock(() => child);
     const resultPromise = runDesktopUninstallCleanup(
       {
-        cliPath: '/Applications/OpenKnowledge.app/Contents/Resources/cli/bin/ok.sh',
+        cliPath: '/Applications/SynapseNote.app/Contents/Resources/cli/bin/ok.sh',
         projectPaths: [],
         logPath: '/tmp/ok-uninstall.log',
       },
@@ -292,7 +292,7 @@ describe('desktop self-uninstall helpers', () => {
 
   test('runDesktopUninstallCleanup surfaces spawn errors, exit codes, and signals', async () => {
     const input = {
-      cliPath: '/Applications/OpenKnowledge.app/Contents/Resources/cli/bin/ok.sh',
+      cliPath: '/Applications/SynapseNote.app/Contents/Resources/cli/bin/ok.sh',
       projectPaths: [],
       logPath: '/tmp/ok-uninstall.log',
     };

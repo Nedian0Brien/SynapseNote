@@ -1,4 +1,4 @@
-// biome-ignore-all lint/plugin/no-raw-html-interactive-element: pre-rule backlog — file uses raw <button>/<input>/<textarea> awaiting shadcn migration; tracked at https://github.com/inkeep/open-knowledge/blob/main/biome-plugins/README.md#no-raw-html-interactive-elementgrit
+// biome-ignore-all lint/plugin/no-raw-html-interactive-element: pre-rule backlog — file uses raw <button>/<input>/<textarea> awaiting shadcn migration; tracked at https://github.com/Nedian0Brien/SynapseNote/blob/main/biome-plugins/README.md#no-raw-html-interactive-elementgrit
 /**
  * Ignore-patterns section.
  *
@@ -35,14 +35,14 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { Plural, Trans, useLingui } from '@lingui/react/macro';
 import {
   CONFIG_DOC_NAME_OKIGNORE,
   type ConfigValidationError,
   humanFormat,
   isKnownConfigError,
   type OkignoreBinding,
-} from '@inkeep/open-knowledge-core';
-import { Plural, Trans, useLingui } from '@lingui/react/macro';
+} from '@nedian0brien/synapsenote-core';
 import { AlertTriangle, Check, GripVertical, X } from 'lucide-react';
 import { type CSSProperties, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -73,7 +73,7 @@ interface OkignoreSectionProps {
   synced: boolean;
 }
 
-const PRIMER_HREF = 'https://openknowledge.ai/docs/features/ignore-patterns';
+const PRIMER_HREF = 'https://synapse.lawdigest.kr/docs/features/ignore-patterns';
 const SAVED_FLASH_MS = 1200;
 const HEURISTIC_DEBOUNCE_MS = 150;
 const PREVIEW_DEBOUNCE_MS = 150;

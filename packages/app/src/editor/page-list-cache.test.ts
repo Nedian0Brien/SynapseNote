@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, mock } from 'bun:test';
-import { toWikiLinkSlug } from '@inkeep/open-knowledge-core';
+import { toWikiLinkSlug } from '@nedian0brien/synapsenote-core';
 import {
   __resetPageListCacheForTests,
   buildPageIconsIndex,

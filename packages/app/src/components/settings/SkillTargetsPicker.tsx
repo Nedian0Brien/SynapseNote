@@ -1,9 +1,9 @@
+import { Trans, useLingui } from '@lingui/react/macro';
 import {
   EDITOR_LABELS,
   PROJECT_SKILL_EDITOR_IDS,
   type SkillTargetEditor,
-} from '@inkeep/open-knowledge-core';
-import { Trans, useLingui } from '@lingui/react/macro';
+} from '@nedian0brien/synapsenote-core';
 import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -13,7 +13,7 @@ import { useSkillTargets } from '@/hooks/use-skill-targets';
 /**
  * Project-wide picker for the skill-target editor set (`.ok/skill-targets.json`).
  * Toggling an editor persists the new set and re-projects every managed skill
- * (authored + OK's shipped `open-knowledge` bundle) into / out of that editor's
+ * (authored + OK's shipped `synapsenote` bundle) into / out of that editor's
  * skill folder. Lives at the top of the Skills manager because it governs where
  * *every* skill in the project installs, not any single one.
  *

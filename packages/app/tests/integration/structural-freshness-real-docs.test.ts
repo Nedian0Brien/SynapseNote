@@ -17,7 +17,7 @@
 import { describe, expect, test } from 'bun:test';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { createStructuralFreshnessChecker, stripFrontmatter } from '@inkeep/open-knowledge-core';
+import { createStructuralFreshnessChecker, stripFrontmatter } from '@nedian0brien/synapsenote-core';
 import { mdManager } from './test-harness';
 
 type PmNodeJson = {

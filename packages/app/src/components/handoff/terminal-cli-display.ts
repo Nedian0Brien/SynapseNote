@@ -10,7 +10,7 @@ import {
   TERMINAL_CLI_IDS,
   TERMINAL_CLIS,
   type TerminalCli,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 
 /** CLIs shown under the "Terminal" section, in launch order — the full set,
  *  before PATH-detection gating. Callers pass the installed-CLI map through

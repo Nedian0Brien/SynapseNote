@@ -2,7 +2,7 @@ import { STABLE_DMG_URL } from '@/lib/download-links';
 import { attribution, captureServerEvent, isPrefetchRequest, resolveDistinctId } from '@/lib/track';
 
 /**
- * Perennial stable-channel download URL: openknowledge.ai/download/stable
+ * Perennial stable-channel download URL: synapse.lawdigest.kr/download/stable
  * Constant 302 to GitHub's `releases/latest` alias — GitHub resolves the
  * newest stable at request time, so no API call or state is needed here.
  * `force-dynamic` keeps Next.js from prerendering the 302 and keeps request

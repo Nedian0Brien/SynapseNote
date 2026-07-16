@@ -2,7 +2,7 @@
  * Docked-terminal adoption telemetry — the renderer-side half.
  *
  * Emits the two renderer-originated signals as frontend OTel spans on the
- * `open-knowledge-app` tracer: the panel opening (adoption) and the user
+ * `synapsenote-app` tracer: the panel opening (adoption) and the user
  * granting shell consent (intent to run Claude Code in-app). Span names share
  * the `ok.desktop.*` convention with the main-side lifecycle spans
  * (`packages/desktop/src/main/terminal-telemetry.ts`) so the four terminal
@@ -14,7 +14,7 @@
  */
 import { trace } from '@opentelemetry/api';
 
-const TRACER_NAME = 'open-knowledge-app';
+const TRACER_NAME = 'synapsenote-app';
 
 /**
  * Emit a single zero-duration marker span. Wrapped so an opt-in OTel SDK fault

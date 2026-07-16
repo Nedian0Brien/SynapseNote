@@ -28,7 +28,7 @@
  * with the caller window's `ProjectContext.projectPath`.
  */
 
-import { ASSET_EXTENSIONS } from '@inkeep/open-knowledge-core';
+import { ASSET_EXTENSIONS } from '@nedian0brien/synapsenote-core';
 import type { AssetOpenResult } from './asset-allowlist.ts';
 
 /**

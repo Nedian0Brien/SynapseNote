@@ -1,7 +1,7 @@
 /**
  * Settings → Account — shows the GitHub connection state and lets the user
  * connect (opens the existing AuthModal) or disconnect. Disconnect clears
- * OpenKnowledge's own token through the same relay used for status/repos.
+ * SynapseNote's own token through the same relay used for status/repos.
  *
  * Transports are caller-injected and default to the HTTP path (editor window
  * + web distribution). The Project Navigator window, which has no backing API
@@ -120,7 +120,7 @@ export function AccountSection({ authQueryTransport, authTransport }: AccountSec
         </h3>
         <p className="text-sm text-muted-foreground">
           <Trans>
-            Manage the GitHub account OpenKnowledge uses to browse and sync your repositories.
+            Manage the GitHub account SynapseNote uses to browse and sync your repositories.
           </Trans>
         </p>
       </div>
@@ -153,7 +153,7 @@ export function AccountSection({ authQueryTransport, authTransport }: AccountSec
         </div>
       ) : status.result.authenticated ? (
         status.result.tier === 'A' ? (
-          // Tier A means the credential is delegated from the gh CLI. OpenKnowledge
+          // Tier A means the credential is delegated from the gh CLI. SynapseNote
           // stored no token of its own, so there is nothing for it to disconnect.
           <GhCliRow login={status.result.login} />
         ) : (
@@ -199,7 +199,7 @@ function ConnectedRow({
             <Trans>Connected as @{login}</Trans>
           </div>
           <p className="text-muted-foreground text-1sm">
-            <Trans>OpenKnowledge is using this GitHub account.</Trans>
+            <Trans>SynapseNote is using this GitHub account.</Trans>
           </p>
         </div>
         <Button
@@ -244,8 +244,8 @@ function GhCliRow({ login }: { login: string }) {
         </div>
         <p className="text-muted-foreground text-1sm">
           <Trans>
-            OpenKnowledge is using a GitHub account provided by the gh CLI. There's no separate
-            OpenKnowledge credential to disconnect.
+            SynapseNote is using a GitHub account provided by the gh CLI. There's no separate
+            SynapseNote credential to disconnect.
           </Trans>
         </p>
       </div>

@@ -1,5 +1,5 @@
-import { SKILL_NAME_REGEX, type SkillsListEntry } from '@inkeep/open-knowledge-core';
 import { Trans, useLingui } from '@lingui/react/macro';
+import { SKILL_NAME_REGEX, type SkillsListEntry } from '@nedian0brien/synapsenote-core';
 import { useEffect, useId, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';

@@ -1,6 +1,6 @@
-appId: com.inkeep.open-knowledge
-productName: OpenKnowledge
-copyright: Copyright © 2026 Inkeep
+appId: kr.lawdigest.synapsenote
+productName: SynapseNote
+copyright: Copyright © 2026 SynapseNote contributors
 
 # Pin the Electron version explicitly — bun's workspace hoisting puts
 # node_modules/electron at repo root (not in packages/desktop/node_modules),
@@ -57,7 +57,7 @@ extraResources:
       - "!**/*.d.ts.map"
   - from: "resources/cli/bin/ok.sh"
     to: "cli/bin/ok.sh"
-  # `@inkeep/open-knowledge-server`'s `version-constants.ts` reads its
+  # `@nedian0brien/synapsenote-server`'s `version-constants.ts` reads its
   # neighbouring `package.json` at module load to populate `RUNTIME_VERSION`
   # (the value written into `server.lock`'s `runtimeVersion`). The CLI bundles
   # the server source into `cli/dist/`, so the resolution walks `dist/../` and
@@ -77,7 +77,7 @@ extraResources:
   # The project's own GPLv3 license text at the Resources root, alongside the
   # third-party notices, so the About panel and license reviewers can find it.
   # electron-builder places Electron's own LICENSE separately; that covers
-  # Electron + Chromium only, not OpenKnowledge itself.
+  # Electron + Chromium only, not SynapseNote itself.
   - from: "../../LICENSE"
     to: "LICENSE"
   # The bundled CLI (`cli/dist/cli.mjs`) keeps `@napi-rs/keyring` EXTERNAL
@@ -99,7 +99,7 @@ extraResources:
     to: "cli/node_modules/@napi-rs/keyring-darwin-arm64"
     filter: ["**/*"]
   # The bundled CLI AND the desktop main process both load
-  # `@inkeep/open-knowledge-native-config` at runtime — the Codex TOML
+  # `@nedian0brien/synapsenote-native-config` at runtime — the Codex TOML
   # harness-config write routes through its toml_edit addon. Like
   # `@napi-rs/keyring` above, the bundled CLI's ESM resolver walks
   # `cli/dist → cli → Resources → …` and never reaches
@@ -112,7 +112,7 @@ extraResources:
   # to a non-destructive decline, never a lossy write.
   # Coverage: tests/unit/electron-builder-cli-native-deps.test.ts.
   - from: "../native-config"
-    to: "cli/node_modules/@inkeep/open-knowledge-native-config"
+    to: "cli/node_modules/@nedian0brien/synapsenote-native-config"
     filter:
       - "index.js"
       - "index.d.ts"
@@ -144,7 +144,7 @@ asarUnpack:
   # relatively co-located on the real filesystem — a loader left inside
   # app.asar resolving `require('./native-config.<platform>.node')` against an
   # unpacked sibling is the fragile path; unpack the whole package dir instead.
-  - "**/@inkeep/open-knowledge-native-config/**"
+  - "**/@nedian0brien/synapsenote-native-config/**"
   - "**/simple-git/**"
   # node-pty ships its native pty.node addon AND an extensionless `spawn-helper`
   # binary under prebuilds/<platform>-<arch>/. The `**/*.node` rule above unpacks
@@ -170,7 +170,7 @@ mac:
   # Dev-mode `app.dock.setIcon()` still needs a flat PNG fallback
   # (`build/icon.png`) because Electron's runtime nativeImage API can't
   # consume `.icon` bundles yet — tracked in electron/electron#48476.
-  icon: build/okglass.icon
+  icon: build/synapsenote.icon
   # Apple-Silicon-only target (TEMPORARY). The previous Universal config
   # (`arch: [universal]`) tripped @electron/universal's lipo merger on
   # @napi-rs/keyring's per-arch native binary — the arm64 prebuild
@@ -182,7 +182,7 @@ mac:
   #     that's the same in both x64 and arm64 builds and not covered by the
   #     x64ArchFiles rule: "undefined"
   #
-  # Failed run: 25479422451 on inkeep/open-knowledge-legacy.
+  # The upstream build failed while this path was still Universal.
   #
   # Restore Universal once the arch-filter rule is in place — the proper
   # fix is either (a) an `x64ArchFiles` glob that names the keyring module
@@ -214,28 +214,9 @@ mac:
   # `build/entitlements.mac.inherit.plist` for the full contract +
   # `tests/unit/entitlements-helper-split.test.ts` for the drift guard.
   entitlementsInherit: build/entitlements.mac.inherit.plist
-  # Developer-ID provisioning profile that grants the
-  # `com.apple.developer.associated-domains` entitlement at codesign time.
-  # Apple-Silicon-only Developer-ID build (NOT Mac App Store), so the profile
-  # lives at the top-level `mac.provisioningProfile` key (not `mac.mas.*`).
-  # The profile binary is committed at `build/embedded.provisionprofile`
-  # (12,497 bytes, CMS-signed) — Developer-ID provisioning profiles are NOT
-  # secrets per Apple convention (every signed Electron app on macOS commits
-  # one — VS Code, Zed, Notion all follow the same pattern).
-  #
-  # Profile metadata (verify via `security cms -D -i build/embedded.provisionprofile | plutil -p -`):
-  #   AppIDName: Open Knowledge
-  #   TeamIdentifier: 6NZGSG335T
-  #   application-identifier: 6NZGSG335T.com.inkeep.open-knowledge
-  #   com.apple.developer.associated-domains: *  (wildcard — accepts any
-  #     applinks: declaration in the binary's entitlements plist)
-  #   ExpirationDate: 2044-05-10
-  #   ProvisionsAllDevices: true
-  #
-  # Without this profile, codesign rejects the embedded
-  # `com.apple.developer.associated-domains` entitlement at notarize time
-  # ("not authorized to use restricted entitlement").
-  provisioningProfile: build/embedded.provisionprofile
+  # Universal Links remain disabled until a SynapseNote Developer ID profile
+  # is issued for `kr.lawdigest.synapsenote`. The custom `synapsenote://`
+  # protocol continues to provide the share-link fallback in the meantime.
   # `NSUserActivityTypes` declares which Handoff/Universal Link activity
   # types the app handles. Without this key in Info.plist, macOS silently
   # drops `continue-activity` events for inbound Universal Link clicks even
@@ -259,14 +240,14 @@ mac:
   # re-exec into the parent's MacOS binary triggers LaunchServices to
   # pin a stuck "exec" Dock placeholder for the child's lifetime. The
   # MacOS binary slot at
-  # `Frameworks/OpenKnowledge Server.app/Contents/MacOS/OpenKnowledge Helper`
+  # `Frameworks/SynapseNote Server.app/Contents/MacOS/SynapseNote Helper`
   # is populated by `scripts/afterPack.mjs` (clones the Electron Helper
   # stub for its correct rpath). The executable basename MUST stay
-  # `OpenKnowledge Helper` (Electron's canonical generic-helper name) —
+  # `SynapseNote Helper` (Electron's canonical generic-helper name) —
   # see `src/main/resolve-detached-spawn-args.ts` for the SIGTRAP cause.
   extraFiles:
     - from: build/helper-bundle/Info.plist
-      to: Frameworks/OpenKnowledge Server.app/Contents/Info.plist
+      to: Frameworks/SynapseNote Server.app/Contents/Info.plist
 
 dmg:
   # `dmg.sign: true` is already the electron-builder default — kept explicit to
@@ -282,8 +263,8 @@ dmg:
   # Stable, version-less asset name so the share-splash `releases/latest/
   # download/...` URL resolves across releases. electron-builder's default
   # (`${productName}-${version}-${arch}.${ext}`) embeds the version in the
-  # filename, which makes `latest/download/OpenKnowledge.dmg` 404 — the
-  # actual asset is `OpenKnowledge-0.4.1-arm64.dmg`. The arch suffix stays
+  # filename, which makes `latest/download/SynapseNote.dmg` 404 — the
+  # actual asset is `SynapseNote-0.4.1-arm64.dmg`. The arch suffix stays
   # because we only ship arm64 today; an x64 / universal build would need
   # a parallel artifactName + a splash decision rule.
   # The docs site's /download/beta and /download/stable redirects also
@@ -323,14 +304,14 @@ afterPack: scripts/afterPack.mjs
 afterSign: scripts/afterSign.mjs
 
 protocols:
-  - name: OpenKnowledge URL
-    schemes: [openknowledge]
+  - name: SynapseNote URL
+    schemes: [synapsenote]
     role: Editor
 
 publish:
   - provider: github
-    owner: inkeep
-    repo: open-knowledge
+    owner: Nedian0Brien
+    repo: SynapseNote
     # Explicit default — beta builds override at the CLI via
     # `--config.publish.channel=beta`, which routes the manifest to
     # `beta-mac.yml` instead of `latest-mac.yml`. Keeping this explicit so

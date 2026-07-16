@@ -17,10 +17,10 @@ import { registerProtocolHandler } from './url-scheme.ts';
 
 // A valid share for a repo NOT held locally. Parses to a launch-claiming
 // `kind:'ok'` share, so delivering it flips `urlLaunchOwnsWindow` to true.
-const SHARE_URL = 'openknowledge://share?url=https://github.com/inkeep/not-cloned-repo/tree/main';
-// A single-file deep-link (`ok <file>` -> `openknowledge://open?file=<abs>`).
+const SHARE_URL = 'synapsenote://share?url=https://github.com/inkeep/not-cloned-repo/tree/main';
+// A single-file deep-link (`ok <file>` -> `synapsenote://open?file=<abs>`).
 // The single-file path is the OTHER launch-claiming kind that flips the flag.
-const SINGLE_FILE_URL = 'openknowledge://open?file=/Users/me/notes/scratch.md';
+const SINGLE_FILE_URL = 'synapsenote://open?file=/Users/me/notes/scratch.md';
 
 // Drain the microtask queue so any settle `.then` callbacks run. Every settle
 // resolution in these tests is driven by an explicit event we trigger (deliver /

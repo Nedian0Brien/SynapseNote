@@ -80,7 +80,7 @@ export type TagsForNameSuccess = z.infer<typeof TagsForNameSuccessSchema>;
 /**
  * Success body for `GET /api/folder-config?path=<rel>`. `folder` is the
  * directory-metadata payload returned by `enrichDirectory` from
- * `@inkeep/open-knowledge-server` (typed `unknown`; callers consume it
+ * `@nedian0brien/synapsenote-server` (typed `unknown`; callers consume it
  * through the in-process `EnrichedDirectory` type). `frontmatter_local` is
  * this folder's own `<folder>/.ok/frontmatter.yml` map (open-shape, like a
  * doc's; when present), or `null` if no local file exists / the YAML is
@@ -431,7 +431,7 @@ export const SkillsListEntrySchema = z
     installed: z.boolean(),
     hosts: z.array(z.string()),
     // Starter-pack update detection. Present only for
-    // `open-knowledge-pack-*` skills: `installedVersion` is the `version`
+    // `synapsenote-pack-*` skills: `installedVersion` is the `version`
     // frontmatter of the user's copy (undefined when the copy predates
     // versioning — treated as v0); `bundledVersion` is the version OK currently
     // ships; `updateAvailable` is the server's semver verdict
@@ -485,7 +485,7 @@ export type SkillPutSuccess = z.infer<typeof SkillPutSuccessSchema>;
 
 /**
  * Request body for `POST /api/skill/update` — refresh an installed starter-pack
- * skill (`open-knowledge-pack-*`) from OK's currently-bundled source. The handler
+ * skill (`synapsenote-pack-*`) from OK's currently-bundled source. The handler
  * checkpoints the current doc first (reversible), then overwrites it verbatim
  * from the bundle (preserving the bundled `version`). `scope` defaults to
  * `project` (pack skills are project-scope). Identity drives the timeline.
@@ -717,7 +717,7 @@ export type SkillTargetsPutRequest = z.infer<typeof SkillTargetsPutRequestSchema
 /**
  * Success body for `PUT /api/skill-targets`. `reprojected` lists each managed
  * skill and the hosts it now lives in; `bundleHosts` is where OK's shipped
- * `open-knowledge` bundle now lives. `removedFrom` are the editors dropped
+ * `synapsenote` bundle now lives. `removedFrom` are the editors dropped
  * from the set (reverse-projected away).
  */
 export const SkillTargetsPutSuccessSchema = z
@@ -913,7 +913,7 @@ export type SearchSuccess = z.infer<typeof SearchSuccessSchema>;
  * Single per-target install state entry on
  * `SkillInstallStateSuccessSchema.targets`. Mirrors the in-process
  * `{ version: string; recordedAt: string }` shape from
- * `@inkeep/open-knowledge-server`'s `SkillInstallStateSnapshot.targets`.
+ * `@nedian0brien/synapsenote-server`'s `SkillInstallStateSnapshot.targets`.
  *
  * `version` is the marker-file's recorded version. `recordedAt` is the
  * ISO-8601 timestamp the install marker was written. The full record-value

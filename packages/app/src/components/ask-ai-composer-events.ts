@@ -12,7 +12,7 @@
  * lifting ownership. The signal is intent-only — no payload.
  */
 
-const OPEN_ASK_AI_COMPOSER_EVENT = 'open-knowledge:open-ask-ai-composer';
+const OPEN_ASK_AI_COMPOSER_EVENT = 'synapsenote:open-ask-ai-composer';
 
 export function emitOpenAskAiComposer(
   target: Pick<Window, 'dispatchEvent'> | EventTarget = typeof window === 'undefined'

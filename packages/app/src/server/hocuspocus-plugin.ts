@@ -1,6 +1,6 @@
 /**
  * Vite plugin that integrates Hocuspocus for dev mode. Delegates server
- * construction to `createServer()` from @inkeep/open-knowledge-server; the
+ * construction to `createServer()` from @nedian0brien/synapsenote-server; the
  * plugin only adapts that ServerInstance to Vite's lifecycle (config.yml
  * resolution, `OK_TEST_CONTENT_DIR` override, `/api/config` synthesis, sirv
  * content serving, `/collab` + `/collab/keepalive` upgrade routing).
@@ -18,7 +18,7 @@ import {
   ASSET_EXTENSIONS,
   EXECUTABLE_BLOCKLIST_EXTENSIONS,
   INLINE_RENDERABLE_EXTENSIONS,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import {
   createAssetServeMiddleware,
   createServer,
@@ -28,7 +28,7 @@ import {
   releaseServerLock,
   toBroadcasterKey,
   updateServerLockPort,
-} from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-server';
 import sirv from 'sirv';
 import type { Plugin } from 'vite';
 import { WebSocketServer } from 'ws';

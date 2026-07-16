@@ -1,4 +1,4 @@
-// biome-ignore-all lint/plugin/no-raw-html-interactive-element: pre-rule backlog — file uses raw <button> awaiting shadcn Button migration; tracked at https://github.com/inkeep/open-knowledge/blob/main/biome-plugins/README.md#no-raw-html-interactive-elementgrit
+// biome-ignore-all lint/plugin/no-raw-html-interactive-element: pre-rule backlog — file uses raw <button> awaiting shadcn Button migration; tracked at https://github.com/Nedian0Brien/SynapseNote/blob/main/biome-plugins/README.md#no-raw-html-interactive-elementgrit
 /**
  * Synchronous shell for the Settings modal — bundled in the main chunk.
  *
@@ -25,8 +25,8 @@
  *   INTEGRATIONS → Claude Desktop (hidden when desktopPresent === false)
  */
 
-import { SHOW_INSTALL_SKILL } from '@inkeep/open-knowledge-core';
 import { Trans, useLingui } from '@lingui/react/macro';
+import { SHOW_INSTALL_SKILL } from '@nedian0brien/synapsenote-core';
 import { ArrowUpRight } from 'lucide-react';
 import { Suspense, useEffect, useState } from 'react';
 import { SettingsDialogBodyLazy } from '@/components/settings/SettingsDialogBodyLazy';
@@ -47,7 +47,7 @@ import { cn } from '@/lib/utils';
  * malformed version producing a path-confusion URL.
  */
 function releaseNotesUrl(version: string): string {
-  return `https://github.com/inkeep/open-knowledge/releases/tag/v${encodeURIComponent(version)}`;
+  return `https://github.com/Nedian0Brien/SynapseNote/releases/tag/v${encodeURIComponent(version)}`;
 }
 
 interface SidebarItem {

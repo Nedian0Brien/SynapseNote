@@ -1,5 +1,5 @@
 import type { HocuspocusProvider } from '@hocuspocus/provider';
-import type { AgentPresenceEntry } from '@inkeep/open-knowledge-core';
+import type { AgentPresenceEntry } from '@nedian0brien/synapsenote-core';
 import { useEffect, useState } from 'react';
 import {
   type AgentPresenceAwareness,

@@ -12,7 +12,7 @@
  * `rendersAs`/`translateProps`. An `interface extends` clause cannot extend a
  * union, so this MUST stay a `type` alias.
  */
-import type { JsxComponentMeta } from '@inkeep/open-knowledge-core';
+import type { JsxComponentMeta } from '@nedian0brien/synapsenote-core';
 
 interface JsxComponentDecoration {
   // biome-ignore lint/suspicious/noExplicitAny: Component props are heterogeneous across 18+ built-ins; no single prop type covers all

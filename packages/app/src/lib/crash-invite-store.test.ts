@@ -1,6 +1,6 @@
 import { describe, expect, mock, test } from 'bun:test';
 
-import type { OkBugReportCrashDetectedEvent } from '@inkeep/open-knowledge-core';
+import type { OkBugReportCrashDetectedEvent } from '@nedian0brien/synapsenote-core';
 
 import type { OkDesktopBridge } from '@/lib/desktop-bridge-types';
 

@@ -3,11 +3,11 @@ import {
   HELPER_BUNDLE_NAME,
   HELPER_EXECUTABLE_NAME,
   resolveHelperBundleBinary,
-} from '@inkeep/open-knowledge-core/helper-bundle';
+} from '@nedian0brien/synapsenote-core/helper-bundle';
 import { maybeRedirectToHelperBundle, resolveSelfSpawn } from './self-spawn.ts';
 
-const PACKAGED_APP = '/Applications/OpenKnowledge.app';
-const PACKAGED_EXEC = `${PACKAGED_APP}/Contents/MacOS/OpenKnowledge`;
+const PACKAGED_APP = '/Applications/SynapseNote.app';
+const PACKAGED_EXEC = `${PACKAGED_APP}/Contents/MacOS/SynapseNote`;
 const PACKAGED_ENTRY = `${PACKAGED_APP}/Contents/Resources/app.asar.unpacked/dist/cli.mjs`;
 const HELPER_BINARY = `${PACKAGED_APP}/Contents/Frameworks/${HELPER_BUNDLE_NAME}/Contents/MacOS/${HELPER_EXECUTABLE_NAME}`;
 
@@ -38,8 +38,8 @@ describe('maybeRedirectToHelperBundle', () => {
   });
 
   test.each([
-    ['linux', '/Applications/OpenKnowledge.app/Contents/MacOS/OpenKnowledge'],
-    ['win32', 'C:\\Program Files\\OpenKnowledge\\OpenKnowledge.exe'],
+    ['linux', '/Applications/SynapseNote.app/Contents/MacOS/SynapseNote'],
+    ['win32', 'C:\\Program Files\\SynapseNote\\SynapseNote.exe'],
   ] as const)('non-darwin (%s) → null even if exists() would pass', (platform, execPath) => {
     expect(
       maybeRedirectToHelperBundle({
@@ -55,9 +55,9 @@ describe('maybeRedirectToHelperBundle', () => {
     '/usr/local/bin/node',
     '/opt/homebrew/bin/bun',
     // npm global install
-    '/usr/local/lib/node_modules/@inkeep/open-knowledge/dist/cli.mjs',
+    '/usr/local/lib/node_modules/@nedian0brien/synapsenote/dist/cli.mjs',
     // Looks like an .app path but not at the MacOS slot
-    '/Applications/OpenKnowledge.app/Contents/Resources/app/cli.mjs',
+    '/Applications/SynapseNote.app/Contents/Resources/app/cli.mjs',
     // Substring `.app` but no `Contents/MacOS` slot
     '/tmp/scratch.app.backup/cli',
   ])('darwin + non-bundle execPath (%s) → null', (execPath) => {
@@ -104,14 +104,14 @@ describe('resolveSelfSpawn', () => {
     expect(warnSpy).not.toHaveBeenCalled();
   });
 
-  it('falls back to npx -y @inkeep/open-knowledge@latest when argv[1] is empty', () => {
+  it('falls back to npx -y @nedian0brien/synapsenote@latest when argv[1] is empty', () => {
     // The unreachable-in-practice fallback (exotic install shapes that
     // strip argv[1]). Pinning `@latest` here closes the silent-downgrade
     // half of the bug — without this test, a future revert to the bare
-    // form (`['@inkeep/open-knowledge']`) would land green.
+    // form (`['@nedian0brien/synapsenote']`) would land green.
     const result = resolveSelfSpawn({ argv: ['runtime', ''] });
     expect(result.command).toBe('npx');
-    expect(result.prefixArgs).toEqual(['-y', '@inkeep/open-knowledge@latest']);
+    expect(result.prefixArgs).toEqual(['-y', '@nedian0brien/synapsenote@latest']);
     expect(warnSpy).toHaveBeenCalled();
   });
 
@@ -148,7 +148,7 @@ describe('resolveSelfSpawn', () => {
 
   it.each([
     ['linux', PACKAGED_EXEC],
-    ['win32', 'C:\\Program Files\\OpenKnowledge\\OpenKnowledge.exe'],
+    ['win32', 'C:\\Program Files\\SynapseNote\\SynapseNote.exe'],
   ] as const)('non-darwin (%s) → command stays execPath (no LaunchServices)', (platform, execPath) => {
     const result = resolveSelfSpawn({
       execPath,
@@ -165,7 +165,7 @@ describe('resolveSelfSpawn', () => {
     '/usr/local/bin/node',
     '/opt/homebrew/bin/bun',
     // npm global install (CLI dist outside any .app bundle)
-    '/usr/local/lib/node_modules/@inkeep/open-knowledge/dist/cli.mjs',
+    '/usr/local/lib/node_modules/@nedian0brien/synapsenote/dist/cli.mjs',
   ])('darwin + non-bundle execPath (%s) → command stays execPath', (execPath) => {
     const result = resolveSelfSpawn({
       execPath,

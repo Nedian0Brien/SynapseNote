@@ -16,7 +16,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
-import { ChunkedInsertError, HtmlPayloadTooLargeError } from '@inkeep/open-knowledge-core';
+import { ChunkedInsertError, HtmlPayloadTooLargeError } from '@nedian0brien/synapsenote-core';
 
 import {
   classifyError,
@@ -92,7 +92,7 @@ describe('classifyError — taxonomy classifier for `errorClass` telemetry field
 
   test('ChunkedInsertError instance returns its name', () => {
     // ChunkedInsertError requires partial-progress fields — see types in
-    // @inkeep/open-knowledge-core. Construct with realistic shape.
+    // @nedian0brien/synapsenote-core. Construct with realistic shape.
     const err = new ChunkedInsertError('insert failed', {
       chunksCompleted: 1,
       totalChunks: 5,

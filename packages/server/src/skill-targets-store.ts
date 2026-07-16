@@ -17,8 +17,8 @@ import {
   SKILL_TARGETS_SCHEMA_VERSION,
   type SkillTargetEditor,
   SkillTargetsSchema,
-} from '@inkeep/open-knowledge-core';
-import { atomicWriteFile } from '@inkeep/open-knowledge-core/server';
+} from '@nedian0brien/synapsenote-core';
+import { atomicWriteFile } from '@nedian0brien/synapsenote-core/server';
 import { tracedAtomicFs, tracedMkdir } from './fs-traced.ts';
 import { getLogger } from './logger.ts';
 

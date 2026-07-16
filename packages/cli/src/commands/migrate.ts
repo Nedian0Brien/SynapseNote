@@ -1,6 +1,6 @@
 /**
- * `open-knowledge migrate notion [dir]` — normalize a raw Notion `Markdown & CSV`
- * export into clean Open Knowledge content, in place.
+ * `synapsenote migrate notion [dir]` — normalize a raw Notion `Markdown & CSV`
+ * export into clean SynapseNote content, in place.
  *
  * Filesystem-only (no server): run it on the unzipped export before or instead
  * of `ok start`. Dry-run by default — it prints what it would change and writes
@@ -45,7 +45,7 @@ interface NotionOptions {
 
 export function migrateCommand(): Command {
   const migrate = new Command('migrate').description(
-    'Migrate content from other tools into Open Knowledge',
+    'Migrate content from other tools into SynapseNote',
   );
 
   migrate

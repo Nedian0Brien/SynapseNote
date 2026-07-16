@@ -202,9 +202,9 @@ describe('parseWriterId (D34 taxonomy)', () => {
     expect(p.isAgent).toBe(null);
   });
 
-  test('"openknowledge-service" → classified-openknowledge-service, isAgent null', () => {
-    const p = parseWriterId('openknowledge-service');
-    expect(p.classification).toBe('classified-openknowledge-service');
+  test('"synapsenote-service" → classified-synapsenote-service, isAgent null', () => {
+    const p = parseWriterId('synapsenote-service');
+    expect(p.classification).toBe('classified-synapsenote-service');
     expect(p.isAgent).toBe(null);
   });
 
@@ -237,7 +237,7 @@ describe('parseWriterId (D34 taxonomy)', () => {
     expect(p.isAgent).toBe(null);
   });
 
-  test('legacy "server" → unknown (D34: replaced by openknowledge-service)', () => {
+  test('legacy "server" → unknown (D34: replaced by synapsenote-service)', () => {
     const p = parseWriterId('server');
     expect(p.classification).toBe('unknown');
     expect(p.isAgent).toBe(null);
@@ -615,21 +615,21 @@ describe('getShadowRepoPath', () => {
     expect(getShadowRepoPath(project)).toBe(resolve(project, '.git/ok'));
   });
 
-  test('never returns legacy .git/openknowledge/ path (single-mode layout)', () => {
+  test('never returns legacy .git/synapsenote/ path (single-mode layout)', () => {
     const project = resolve(tmp, 'project');
     // Simulate old integrated-mode location — layout helper does NOT see it
-    mkdirSync(resolve(project, '.git/openknowledge'), { recursive: true });
-    writeFileSync(resolve(project, '.git/openknowledge/HEAD'), 'ref: refs/heads/main\n');
+    mkdirSync(resolve(project, '.git/synapsenote'), { recursive: true });
+    writeFileSync(resolve(project, '.git/synapsenote/HEAD'), 'ref: refs/heads/main\n');
     // Legacy path is ignored — getShadowRepoPath reads through resolveShadowDir
     // which always returns .git/ok/. The rename shim in
     // initShadowRepo handles the on-disk migration at server start.
     expect(getShadowRepoPath(project)).toBe(null);
   });
 
-  test('never returns .openknowledge/ (standalone path deleted)', () => {
+  test('never returns .synapsenote/ (standalone path deleted)', () => {
     const project = resolve(tmp, 'project');
-    mkdirSync(resolve(project, '.openknowledge'), { recursive: true });
-    writeFileSync(resolve(project, '.openknowledge/HEAD'), 'ref: refs/heads/main\n');
+    mkdirSync(resolve(project, '.synapsenote'), { recursive: true });
+    writeFileSync(resolve(project, '.synapsenote/HEAD'), 'ref: refs/heads/main\n');
     expect(getShadowRepoPath(project)).toBe(null);
   });
 
@@ -957,21 +957,21 @@ describe('parseOkActor / formatOkActor (US-015, FR-8, D13)', () => {
   test('round-trips an entry with all nullable fields null', () => {
     const sparse: OkActorEntry = {
       v: 1,
-      writer_id: 'openknowledge-service',
+      writer_id: 'synapsenote-service',
       principal: null,
       agent_session: null,
       agent_type: null,
       client_name: null,
       client_version: null,
       label: null,
-      display_name: 'OpenKnowledge (service)',
-      color_seed: 'openknowledge-service',
+      display_name: 'SynapseNote (service)',
+      color_seed: 'synapsenote-service',
       docs: [],
     };
     const line = formatOkActor(sparse);
     const parsed = parseOkActor(`wip: auto-save\n\n${line}`);
     expect(parsed).not.toBeNull();
-    expect(parsed?.writer_id).toBe('openknowledge-service');
+    expect(parsed?.writer_id).toBe('synapsenote-service');
     expect(parsed?.agent_session).toBeNull();
     expect(parsed?.docs).toEqual([]);
   });
@@ -1073,10 +1073,10 @@ describe('OkActorEntry writer_id field + derivation back-compat', () => {
     expect(parsed?.writer_id).toBe('git-upstream');
   });
 
-  test('parseOkActor falls back to openknowledge-service for unknown classified display_name', () => {
-    const line = 'ok-actor: {"v":1,"display_name":"OpenKnowledge (service)","docs":[]}';
+  test('parseOkActor falls back to synapsenote-service for unknown classified display_name', () => {
+    const line = 'ok-actor: {"v":1,"display_name":"SynapseNote (service)","docs":[]}';
     const parsed = parseOkActor(line);
-    expect(parsed?.writer_id).toBe('openknowledge-service');
+    expect(parsed?.writer_id).toBe('synapsenote-service');
   });
 
   test('explicit writer_id in stored JSON wins over any derivation', () => {
@@ -1308,7 +1308,7 @@ describe('OkActorEntry previous_paths field (timeline rename-history mitigation)
   test('byte-identity: format(parse(legacyBody)) === legacyBody for a corpus of pre-spec lines', () => {
     const corpus = [
       'ok-actor: {"v":1,"writer_id":"agent-conn-abc123","principal":null,"agent_session":"conn-abc123","agent_type":"claude-3-5-sonnet","client_name":"claude-code","client_version":"1.0.0","label":"My agent","display_name":"Claude (abc1)","color_seed":"conn-abc123","docs":["notes.md","ideas.md"]}',
-      'ok-actor: {"v":1,"writer_id":"openknowledge-service","principal":null,"agent_session":null,"agent_type":null,"client_name":null,"client_version":null,"label":null,"display_name":"OpenKnowledge (service)","color_seed":"openknowledge-service","docs":[]}',
+      'ok-actor: {"v":1,"writer_id":"synapsenote-service","principal":null,"agent_session":null,"agent_type":null,"client_name":null,"client_version":null,"label":null,"display_name":"SynapseNote (service)","color_seed":"synapsenote-service","docs":[]}',
       'ok-actor: {"v":1,"writer_id":"agent-a","principal":null,"agent_session":"a","agent_type":null,"client_name":null,"client_version":null,"label":null,"display_name":"Claude","color_seed":"claude","docs":["a.md"],"summaries":["one","two"]}',
     ];
     for (const legacyLine of corpus) {

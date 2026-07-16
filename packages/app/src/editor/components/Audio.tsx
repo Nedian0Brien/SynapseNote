@@ -38,7 +38,7 @@
  * boundary (it is in `URL_PROP_NAMES`).
  */
 
-import { toDesktopAssetHref } from '@inkeep/open-knowledge-core';
+import { toDesktopAssetHref } from '@nedian0brien/synapsenote-core';
 
 interface AudioProps {
   src?: string;

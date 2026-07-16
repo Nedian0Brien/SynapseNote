@@ -20,7 +20,7 @@
  *     the template's `source_folder` (where the new doc lands).
  */
 
-const CREATE_TOP_LEVEL_FILE_EVENT = 'open-knowledge:create-top-level-file';
+const CREATE_TOP_LEVEL_FILE_EVENT = 'synapsenote:create-top-level-file';
 
 export interface CreateFileRequest {
   /** Folder to create the file in. Empty string = project root. */

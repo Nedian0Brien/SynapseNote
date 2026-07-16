@@ -3,7 +3,7 @@
  * on a renderer-supplied filesystem path (`spawnCursor`, `showItemInFolder`,
  * `trashItem`, asset opens, bug-report send). Lives in its own leaf module —
  * importing only `node:path` — so validation-only consumers don't drag in the
- * rest of the handler surface (and its `@inkeep/open-knowledge-server`
+ * rest of the handler surface (and its `@nedian0brien/synapsenote-server`
  * dependency, which several sibling test suites replace via `mock.module`).
  */
 
@@ -41,7 +41,7 @@ export function validateSpawnPath(path: string, platform: NodeJS.Platform): bool
  * `projectPath` that targets a path outside (e.g. `<proj>/notes -> /etc`)
  * passes this check; the OS will follow it at use time.
  *
- * **Logical sibling of `isPathWithinDir` in `@inkeep/open-knowledge-server`.**
+ * **Logical sibling of `isPathWithinDir` in `@nedian0brien/synapsenote-server`.**
  * Both implement the same containment algorithm; the desktop version is
  * retained because its test suite exercises edge cases this file uniquely
  * cares about (Electron `showItemInFolder` UNC + device-namespace handling).
@@ -86,7 +86,7 @@ export function isPathWithinProject(
     // Node-internals regression). Warn so an engineer debugging an
     // unexplained containment refusal sees the root cause instead of
     // investigating a phantom path-escape — same semantics as
-    // `isPathWithinDir` in `@inkeep/open-knowledge-server`.
+    // `isPathWithinDir` in `@nedian0brien/synapsenote-server`.
     // Deliberate `console.warn` rather than the pino desktop logger (the
     // AGENTS.md default): this is a dependency-free leaf containment util
     // shared with contexts that inject no logger, mirroring the logger-free

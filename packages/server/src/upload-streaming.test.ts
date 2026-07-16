@@ -19,7 +19,7 @@ import { join, resolve } from 'node:path';
 import { Readable, Writable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 
-import { LOCAL_DIR } from '@inkeep/open-knowledge-core';
+import { LOCAL_DIR } from '@nedian0brien/synapsenote-core';
 import { UploadWriteError } from './upload-errors.ts';
 import {
   cleanupOrphanUploadTempfiles,

@@ -21,7 +21,7 @@
  */
 import { describe, expect, test } from 'bun:test';
 import { join, relative, resolve } from 'node:path';
-import { ProblemTypeSchema } from '@inkeep/open-knowledge-core';
+import { ProblemTypeSchema } from '@nedian0brien/synapsenote-core';
 import { Glob } from 'bun';
 import {
   type Expression,

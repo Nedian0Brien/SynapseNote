@@ -19,7 +19,7 @@ export const ALLOWED_SCHEMES: ReadonlySet<string> = new Set([
   'https:',
   'http:',
   'mailto:',
-  'openknowledge:',
+  'synapsenote:',
 
   /**
    * Claude Desktop unified app (Chat + Cowork + Code).

@@ -7,7 +7,7 @@
  * editors}` on Add, or `{configured: false, skippedAt}` on Skip. `null` return
  * means "no prior decision" — run the consent flow.
  *
- * Editor-entry overwrite policy: the desktop owns the `open-knowledge` MCP
+ * Editor-entry overwrite policy: the desktop owns the `synapsenote` MCP
  * server namespace once that token exists. First-launch confirm rewrites every
  * selected existing entry under that name, and startup repair scans all supported
  * editors on every packaged boot, rewriting incompatible existing entries to the
@@ -43,7 +43,7 @@ import {
   isEntryUpToDate,
   type McpDeclineReason,
   type McpEntryClassification,
-} from '@inkeep/open-knowledge';
+} from '@nedian0brien/synapsenote';
 import type { IpcMain, IpcMainInvokeEvent } from 'electron';
 import type {
   McpWiringConfirmRequest,
@@ -270,7 +270,7 @@ export interface McpWiringDispatchTarget extends SendableWebContents {
 }
 
 /**
- * Shape consumed from the CLI side (`@inkeep/open-knowledge`). Injected so
+ * Shape consumed from the CLI side (`@nedian0brien/synapsenote`). Injected so
  * tests can stub without spinning up a real CLI, and main/index.ts can
  * hand the real functions in at boot time. Member-set intentionally minimal:
  * every helper we need to classify + write per-editor configs.
@@ -317,7 +317,7 @@ export interface McpWiringCliSurface {
   /** Full `ALL_EDITOR_IDS` — used to build the dialog-payload detection list. */
   allEditorIds: readonly McpWiringEditorId[];
   /** `EDITOR_TARGETS[id]` keyed by editor. Imported directly from
-   *  `@inkeep/open-knowledge` so drift with the CLI's authoritative
+   *  `@nedian0brien/synapsenote` so drift with the CLI's authoritative
    *  `EditorMcpTarget` shape is a compile error, not a runtime surprise. */
   editorTargets: Record<McpWiringEditorId, EditorMcpTarget>;
 }
@@ -400,7 +400,7 @@ interface RunMcpWiringOpts {
   reclaimDisableEnv?: string | null | undefined;
   /**
    * Ignore a pre-existing marker and re-arm the dialog. Wired to the File
-   * menu's "Set up OpenKnowledge integrations…" item so a user who has
+   * menu's "Set up SynapseNote integrations…" item so a user who has
    * Skip'd (or declined the PATH toggle, or wants to add an editor that
    * wasn't installed at consent time) can re-trigger from the GUI instead
    * of hand-deleting `~/.ok/mcp-status.json`.
@@ -508,7 +508,7 @@ export function checkAndRepairMcpWiringOnStartup(
     }
 
     if (classification.kind === 'decline') {
-      // OpenKnowledge is a guest in another tool's config: a present, non-empty
+      // SynapseNote is a guest in another tool's config: a present, non-empty
       // file it cannot fully parse is left byte-untouched — never renamed aside
       // or overwritten — and registration is skipped. The bounded decline
       // signal is the only operator-facing trace; the user sees OK's server
@@ -676,7 +676,7 @@ export function runMcpWiringOnFirstLaunch(opts: RunMcpWiringFirstLaunchOpts): Ru
 
   // Idempotent — marker present means prior decision recorded; never
   // re-fire UNLESS the caller asked for forceShow (the "Set up
-  // OpenKnowledge integrations…" File-menu path). On forceShow we
+  // SynapseNote integrations…" File-menu path). On forceShow we
   // log-and-continue; on first-launch-only (default) the prior decision
   // is respected as a one-way gate.
   const marker = readMcpStatusMarker(home, fs);
@@ -713,7 +713,7 @@ export function runMcpWiringOnFirstLaunch(opts: RunMcpWiringFirstLaunchOpts): Ru
         throw new Error(`editorTargets missing entry for id=${id}`);
       }
       // Compute `willReplace` at arming time — the dialog surfaces "Will
-      // replace" for any editor with an existing `open-knowledge` entry.
+      // replace" for any editor with an existing `synapsenote` entry.
       // Namespace ownership means we ALWAYS overwrite that token under the
       // user's consent, regardless of whether the existing entry matches
       // today's chain shape or a foreign customization. The sentinel-based

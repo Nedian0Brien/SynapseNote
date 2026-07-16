@@ -1,5 +1,5 @@
-import type { TerminalCli } from '@inkeep/open-knowledge-core';
 import { useLingui } from '@lingui/react/macro';
+import type { TerminalCli } from '@nedian0brien/synapsenote-core';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { TabsContent } from '@/components/ui/tabs';

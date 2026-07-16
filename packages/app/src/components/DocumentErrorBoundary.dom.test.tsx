@@ -6,7 +6,7 @@
  * documented in precedent #43(d).
  */
 import { afterEach, beforeEach, describe, expect, mock, spyOn, test } from 'bun:test';
-import type { OkBugReportCreateResult } from '@inkeep/open-knowledge-core';
+import type { OkBugReportCreateResult } from '@nedian0brien/synapsenote-core';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as syncPromiseModule from '@/editor/sync-promise';

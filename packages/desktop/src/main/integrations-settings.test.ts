@@ -94,7 +94,7 @@ function makeCli(overrides: CliOverrides = {}): IntegrationsCliSurface & {
       overrides.classifications?.[id] ?? { kind: 'no-entry' as const },
     isOwnEntry: (entry) => entry === OWN_ENTRY,
     editorConfigPath: (id) => `~/.${id}.json`,
-    editorEntryLocator: () => 'mcpServers.open-knowledge',
+    editorEntryLocator: () => 'mcpServers.synapsenote',
     writeUserMcpConfigs: async (opts) => {
       writes.push([...opts.editors]);
       return opts.editors.map((editorId) => ({
@@ -143,15 +143,15 @@ function makeSkills(
     computeStatuses: () => [
       {
         id: 'discovery',
-        name: 'open-knowledge-discovery',
+        name: 'synapsenote-discovery',
         installed: installed.has('discovery'),
-        paths: ['~/.agents/skills/open-knowledge-discovery'],
+        paths: ['~/.agents/skills/synapsenote-discovery'],
       },
       {
         id: 'write-skill',
-        name: 'open-knowledge-write-skill',
+        name: 'synapsenote-write-skill',
         installed: installed.has('write-skill'),
-        paths: ['~/.agents/skills/open-knowledge-write-skill'],
+        paths: ['~/.agents/skills/synapsenote-write-skill'],
       },
     ],
     setEnabled: async (bundleId, enabled) => {
@@ -219,7 +219,7 @@ describe('ok:integrations:dispatch — status', () => {
         detected: true,
         state: 'installed',
         configPath: '~/.claude.json',
-        entryLocator: 'mcpServers.open-knowledge',
+        entryLocator: 'mcpServers.synapsenote',
       },
       {
         id: 'cursor',
@@ -227,7 +227,7 @@ describe('ok:integrations:dispatch — status', () => {
         detected: false,
         state: 'not-installed',
         configPath: '~/.cursor.json',
-        entryLocator: 'mcpServers.open-knowledge',
+        entryLocator: 'mcpServers.synapsenote',
       },
     ]);
     expect(snapshot.path).toEqual({
@@ -238,15 +238,15 @@ describe('ok:integrations:dispatch — status', () => {
     expect(snapshot.skills).toEqual([
       {
         id: 'discovery',
-        name: 'open-knowledge-discovery',
+        name: 'synapsenote-discovery',
         installed: true,
-        paths: ['~/.agents/skills/open-knowledge-discovery'],
+        paths: ['~/.agents/skills/synapsenote-discovery'],
       },
       {
         id: 'write-skill',
-        name: 'open-knowledge-write-skill',
+        name: 'synapsenote-write-skill',
         installed: false,
-        paths: ['~/.agents/skills/open-knowledge-write-skill'],
+        paths: ['~/.agents/skills/synapsenote-write-skill'],
       },
     ]);
   });
@@ -293,7 +293,7 @@ describe('ok:integrations:dispatch — set editor', () => {
     const { set } = setup({ cli });
     const result = await set({ component: { kind: 'editor', id: 'claude' }, enabled: false });
     expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error).toContain("isn't one OpenKnowledge wrote");
+    if (!result.ok) expect(result.error).toContain("isn't one SynapseNote wrote");
     expect(cli.removals).toEqual(['claude']);
   });
 

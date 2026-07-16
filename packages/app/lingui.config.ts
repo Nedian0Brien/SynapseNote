@@ -2,7 +2,7 @@ import { defineConfig } from '@lingui/cli';
 import { formatter } from '@lingui/format-po';
 
 /**
- * Lingui i18n configuration for the OpenKnowledge editor frontend.
+ * Lingui i18n configuration for the SynapseNote editor frontend.
  *
  * `pseudo` is a generated pseudolocalization locale — `lingui extract` derives
  * it from `en` with no translation step. Activating it at runtime visually

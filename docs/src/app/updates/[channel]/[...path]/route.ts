@@ -2,7 +2,7 @@ import { createBetaResolver } from '@/lib/download-links';
 import { captureServerEvent, resolveDistinctId, userAgentProperties } from '@/lib/track';
 
 /**
- * Update-feed proxy: openknowledge.ai/updates/{stable,beta}/<asset>
+ * Update-feed proxy: synapse.lawdigest.kr/updates/{stable,beta}/<asset>
  *
  * electron-updater's feed points here instead of at GitHub directly (wired in
  * the desktop app's auto-updater), so updates can be counted per version.
@@ -17,7 +17,7 @@ import { captureServerEvent, resolveDistinctId, userAgentProperties } from '@/li
  */
 export const dynamic = 'force-dynamic';
 
-const RELEASES_BASE = 'https://github.com/inkeep/open-knowledge/releases';
+const RELEASES_BASE = 'https://github.com/Nedian0Brien/SynapseNote/releases';
 const VALID_CHANNELS = new Set(['stable', 'beta']);
 const SAFE_FILENAME = /^[A-Za-z0-9._-]+$/;
 // electron-builder's mac update zip: `<productName>-<version>-<arch>-mac.zip`

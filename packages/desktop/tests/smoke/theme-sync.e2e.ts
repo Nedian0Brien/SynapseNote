@@ -105,7 +105,7 @@ test.describe('chrome-modernization theme-sync smoke', () => {
     // Fire the deep-link to open an editor window for our tmp project.
     // The editor renders `<App>` → `<ConfigProvider>` → the sibling effect
     // chain that pushes `setThemeSource` and emits `signalThemeApplied`.
-    const deepLink = `openknowledge://open?project=${encodeURIComponent(projectDir)}&doc=${encodeURIComponent(docName)}`;
+    const deepLink = `synapsenote://open?project=${encodeURIComponent(projectDir)}&doc=${encodeURIComponent(docName)}`;
     execSync(`open -g "${deepLink}"`, { stdio: 'pipe' });
 
     // Resolve the editor page by matching the renderer hash. Polls all
@@ -218,7 +218,7 @@ test.describe('chrome-modernization theme-sync smoke', () => {
     captureStderrFor(app, { cleanupDirs: [projectDir] });
 
     await app.firstWindow({ timeout: 15_000 });
-    const deepLink = `openknowledge://open?project=${encodeURIComponent(projectDir)}&doc=${encodeURIComponent(docName)}`;
+    const deepLink = `synapsenote://open?project=${encodeURIComponent(projectDir)}&doc=${encodeURIComponent(docName)}`;
     execSync(`open -g "${deepLink}"`, { stdio: 'pipe' });
 
     let editorPage: import('@playwright/test').Page | undefined;
@@ -417,7 +417,7 @@ test.describe('chrome-modernization theme-sync smoke', () => {
     captureStderrFor(app, { cleanupDirs: [projectDir] });
 
     await app.firstWindow({ timeout: 15_000 });
-    const deepLink = `openknowledge://open?project=${encodeURIComponent(projectDir)}&doc=${encodeURIComponent(docName)}`;
+    const deepLink = `synapsenote://open?project=${encodeURIComponent(projectDir)}&doc=${encodeURIComponent(docName)}`;
     execSync(`open -g "${deepLink}"`, { stdio: 'pipe' });
 
     let editorPage: import('@playwright/test').Page | undefined;

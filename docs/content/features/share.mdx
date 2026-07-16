@@ -1,10 +1,10 @@
 ---
 title: Share links
 icon: LuShare2
-description: Copy a link to any doc or folder and send it to a teammate. OpenKnowledge handles the GitHub round-trip, the deep link, and the branch on the other end.
+description: Copy a link to any doc or folder and send it to a teammate. SynapseNote handles the GitHub round-trip, the deep link, and the branch on the other end.
 ---
 
-OpenKnowledge has a Share button in the editor toolbar. Click it and the app copies a `https://openknowledge.ai/d/…` URL to your clipboard. Anyone you send it to lands on a splash page that knows the project and target, and a single click opens it in their copy of OpenKnowledge.
+SynapseNote has a Share button in the editor toolbar. Click it and the app copies a `https://synapse.lawdigest.kr/d/…` URL to your clipboard. Anyone you send it to lands on a splash page that knows the project and target, and a single click opens it in their copy of SynapseNote.
 
 ## Sending a share link
 
@@ -23,7 +23,7 @@ If the push fails after the repo was created (auth lost mid-flow, network blip),
 
 ### Freshness warnings
 
-A share link points at GitHub, but your local edits only reach GitHub through auto-sync (off by default) or a manual push. When you click Share, OpenKnowledge checks the shared doc or folder against its last-known state on GitHub and, if the link won't yet show what you're looking at, adds a non-blocking warning row to the popover:
+A share link points at GitHub, but your local edits only reach GitHub through auto-sync (off by default) or a manual push. When you click Share, SynapseNote checks the shared doc or folder against its last-known state on GitHub and, if the link won't yet show what you're looking at, adds a non-blocking warning row to the popover:
 
 - **Not on GitHub yet.** The target has never been pushed, so the link won't resolve until it is. With auto-sync off, the row offers **Enable auto-sync** and **How to push manually**; with auto-sync on, it offers **Sync now** and clears itself once the push lands.
 - **Unpushed changes.** The target is on GitHub but has local edits that aren't, so recipients see the last pushed version. With auto-sync on this stays silent — the next sync closes the gap.
@@ -36,8 +36,8 @@ The recipient clicks the URL and lands on a splash page showing the target (file
 
 The splash offers two ways to receive:
 
-- **Desktop app (macOS).** Click **Open in macOS app** to fire the deep link into the OpenKnowledge desktop app — on the shared doc, folder overview, or project root depending on what was shared. **Download the app** ships the arm64 DMG for recipients who don't yet have the app; the download remembers the share (a first-party cookie, valid for seven days), and the app opens the shared target on its first launch.
-- **CLI (macOS and Linux).** Copy the pre-filled `npm install -g @inkeep/open-knowledge` then `ok clone <owner/repo> -b <branch>` from the splash to clone the repo locally and open the editor. The clone command is always branch-pinned, but if the feature branch has been deleted, it will fall back to the default branch. See the [CLI reference](/docs/reference/cli#clone-from-github) for `ok clone` and related commands.
+- **Desktop app (macOS).** Click **Open in macOS app** to fire the deep link into the SynapseNote desktop app — on the shared doc, folder overview, or project root depending on what was shared. **Download the app** ships the arm64 DMG for recipients who don't yet have the app; the download remembers the share (a first-party cookie, valid for seven days), and the app opens the shared target on its first launch.
+- **CLI (macOS and Linux).** Copy the pre-filled `npm install -g @nedian0brien/synapsenote` then `ok clone <owner/repo> -b <branch>` from the splash to clone the repo locally and open the editor. The clone command is always branch-pinned, but if the feature branch has been deleted, it will fall back to the default branch. See the [CLI reference](/docs/reference/cli#clone-from-github) for `ok clone` and related commands.
 
 ## What the desktop app does when it receives the link
 
@@ -58,14 +58,14 @@ If you have the repo open locally but on a different branch, the app opens a bra
 
 If uncommitted changes conflict with the switch, switching is disabled until you commit or stash them; if the share's branch is already checked out in another worktree, the dialog offers to open that worktree instead.
 
-If OpenKnowledge can't reach GitHub to make this call, the dialog falls back to the plain switch; the "pull the latest changes, then open the link again" guidance appears only if the target is still missing after the switch.
+If SynapseNote can't reach GitHub to make this call, the dialog falls back to the plain switch; the "pull the latest changes, then open the link again" guidance appears only if the target is still missing after the switch.
 
 ### When the shared target has moved or been removed
 
-Even on the right branch, a doc or folder can be renamed or deleted after a link is minted. Rather than opening an empty editor at the old path — where you could unknowingly start a divergent copy — OpenKnowledge shows a dialog before navigating (or an in-tab panel, if the miss is only discovered after a tab opens) with the same verdict-driven copy as the branch-switch dialog: an offer to open a renamed target at its new path, a plain "removed from this branch" message with a link back to the parent folder, or "not pushed yet" when the path never existed. A target you moved, renamed, or deleted in your own local copy gets a fourth verdict: commit your changes or enable auto-sync. If the check can't reach GitHub, it falls back to the usual pull-and-retry guidance.
+Even on the right branch, a doc or folder can be renamed or deleted after a link is minted. Rather than opening an empty editor at the old path — where you could unknowingly start a divergent copy — SynapseNote shows a dialog before navigating (or an in-tab panel, if the miss is only discovered after a tab opens) with the same verdict-driven copy as the branch-switch dialog: an offer to open a renamed target at its new path, a plain "removed from this branch" message with a link back to the parent folder, or "not pushed yet" when the path never existed. A target you moved, renamed, or deleted in your own local copy gets a fourth verdict: commit your changes or enable auto-sync. If the check can't reach GitHub, it falls back to the usual pull-and-retry guidance.
 
 ### Receiving without push permission
 
-If the shared repo is one your GitHub account can't push to (you're not a collaborator on a public repo, or you have read-only access on a private one), OpenKnowledge skips the usual "Enable auto-sync?" prompt. Sync is also disabled for the same reason in **Settings → Sync**. If the project owner grants you write access later, push permission is re-checked the next time the project's server starts. See [GitHub sync: GitHub-side blockers](/docs/features/github-sync#github-side-blockers) for the full set of permission shapes the sync UI handles.
+If the shared repo is one your GitHub account can't push to (you're not a collaborator on a public repo, or you have read-only access on a private one), SynapseNote skips the usual "Enable auto-sync?" prompt. Sync is also disabled for the same reason in **Settings → Sync**. If the project owner grants you write access later, push permission is re-checked the next time the project's server starts. See [GitHub sync: GitHub-side blockers](/docs/features/github-sync#github-side-blockers) for the full set of permission shapes the sync UI handles.
 
 See [GitHub sync](/docs/features/github-sync) for how to automatically sync changes to GitHub, and [Timeline and recovery](/docs/features/timeline-and-recovery) for per-doc history once the doc is open.

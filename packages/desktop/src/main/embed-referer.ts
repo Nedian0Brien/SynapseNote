@@ -27,7 +27,7 @@
  * production Electron apps (Notion, Obsidian, Logseq) use for the same
  * YouTube-in-`file://` problem.
  *
- * ── Why \`https://inkeep.com/\` ──────────────────────────────────────────
+ * ── Why \`https://synapse.lawdigest.kr/\` ─────────────────────────────────
  *
  * The header value needs to be:
  *   - A real `https://` origin (YouTube rejects `file://`, `app://`,
@@ -39,7 +39,7 @@
  *     `https://www.google.com/` would be dishonest signal-noise for
  *     creators).
  *
- * \`https://inkeep.com/\` is the canonical Inkeep-controlled domain — a
+ * \`https://synapse.lawdigest.kr/\` is the canonical SynapseNote domain — a
  * real, stable, attributable origin.
  *
  * ── Scope ───────────────────────────────────────────────────────────────
@@ -52,7 +52,7 @@
  * test — the rewrite logic is provider-agnostic.
  */
 
-const EMBED_REFERER = 'https://inkeep.com/';
+const EMBED_REFERER = 'https://synapse.lawdigest.kr/';
 
 /**
  * Electron \`webRequest\` URL patterns matching the third-party embed

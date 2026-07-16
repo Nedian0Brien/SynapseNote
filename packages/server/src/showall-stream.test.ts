@@ -17,7 +17,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { ASSET_EXTENSIONS, type DocumentListEntry } from '@inkeep/open-knowledge-core';
+import { ASSET_EXTENSIONS, type DocumentListEntry } from '@nedian0brien/synapsenote-core';
 import {
   __getShowAllWalkStatsForTesting,
   __resetShowAllWalkStatsForTesting,

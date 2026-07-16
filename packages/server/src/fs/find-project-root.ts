@@ -19,7 +19,7 @@
 
 import { statSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { OK_PROJECT_MARKER } from '@inkeep/open-knowledge-core';
+import { OK_PROJECT_MARKER } from '@nedian0brien/synapsenote-core';
 
 /**
  * Maximum ancestor levels traversed before giving up. Realistic project

@@ -10,7 +10,7 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { resolveGitDir } from '@inkeep/open-knowledge-core/shadow-repo-layout';
+import { resolveGitDir } from '@nedian0brien/synapsenote-core/shadow-repo-layout';
 import { getLogger } from './logger.ts';
 
 // ─── Types ───────────────────────────────────────────────────────────────────

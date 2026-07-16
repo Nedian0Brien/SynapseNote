@@ -11,7 +11,7 @@
  */
 
 import type { HocuspocusProvider } from '@hocuspocus/provider';
-import { bindFrontmatterDoc } from '@inkeep/open-knowledge-core';
+import { bindFrontmatterDoc } from '@nedian0brien/synapsenote-core';
 import { useEffect, useRef, useState } from 'react';
 
 export interface FrontmatterFieldBinding {

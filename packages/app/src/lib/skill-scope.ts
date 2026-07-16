@@ -1,5 +1,5 @@
-import type { SkillScope, SkillsListEntry } from '@inkeep/open-knowledge-core';
 import { useLingui } from '@lingui/react/macro';
+import type { SkillScope, SkillsListEntry } from '@nedian0brien/synapsenote-core';
 
 /** Scope render order — global above project (broadest reach first). Shared by
  *  the Settings skills list and the sidebar Skills section. */
@@ -18,12 +18,12 @@ export function skillNameSetsByScope(
   };
 }
 
-/** Shared prefix on OK's shipped pack skills (`open-knowledge-pack-<pack>`). */
-const PACK_SKILL_DISPLAY_PREFIX = 'open-knowledge-pack-';
+/** Shared prefix on OK's shipped pack skills (`synapsenote-pack-<pack>`). */
+const PACK_SKILL_DISPLAY_PREFIX = 'synapsenote-pack-';
 
 /**
  * Browse-surface display name for a skill: drops the shared
- * `open-knowledge-pack-` prefix so e.g. `open-knowledge-pack-software-lifecycle`
+ * `synapsenote-pack-` prefix so e.g. `synapsenote-pack-software-lifecycle`
  * (the longest shipped default) reads as `software-lifecycle` and fits a normal
  * sidebar width. DISPLAY-ONLY — the full name stays the identity (rename field,
  * doc path, tooltips); user-authored skills (no prefix) are unchanged.

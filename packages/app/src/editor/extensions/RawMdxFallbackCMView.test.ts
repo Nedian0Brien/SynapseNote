@@ -11,7 +11,7 @@
 import { describe, expect, test } from 'bun:test';
 import { EditorState as CMEditorState } from '@codemirror/state';
 import type { EditorView as CMEditorView } from '@codemirror/view';
-import { sharedExtensions } from '@inkeep/open-knowledge-core';
+import { sharedExtensions } from '@nedian0brien/synapsenote-core';
 import { getSchema } from '@tiptap/core';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { NodeSelection, TextSelection } from '@tiptap/pm/state';

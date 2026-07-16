@@ -1,6 +1,6 @@
 import { HocuspocusProvider } from '@hocuspocus/provider';
-import { LINEAGE_EPOCH_KEY, MarkdownManager } from '@inkeep/open-knowledge-core';
-import type { HocuspocusAuthRejectionReason } from '@inkeep/open-knowledge-server';
+import { LINEAGE_EPOCH_KEY, MarkdownManager } from '@nedian0brien/synapsenote-core';
+import type { HocuspocusAuthRejectionReason } from '@nedian0brien/synapsenote-server';
 import { getSchema } from '@tiptap/core';
 import * as Y from 'yjs';
 import { buildAuthToken } from '../lib/auth-token';

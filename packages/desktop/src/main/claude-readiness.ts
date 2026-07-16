@@ -4,7 +4,7 @@
  * Two facts make typing `claude` "just work" inside the terminal:
  *   1. `claude` resolves on the login shell's PATH (so the user gets a real
  *      Claude Code, not "command not found").
- *   2. `~/.claude.json` carries the `open-knowledge` MCP server (so that
+ *   2. `~/.claude.json` carries the `synapsenote` MCP server (so that
  *      `claude` already sees OK tools — the once-per-Mac MCP consent may have
  *      been skipped or raced, leaving a `claude` with no tools).
  *
@@ -20,8 +20,8 @@
  * `~/.claude.json` read are the runtime e2e rung (a built terminal).
  */
 
-import type { McpEntryClassification } from '@inkeep/open-knowledge';
-import { TERMINAL_CLI_IDS, type TerminalCli } from '@inkeep/open-knowledge-core';
+import type { McpEntryClassification } from '@nedian0brien/synapsenote';
+import { TERMINAL_CLI_IDS, type TerminalCli } from '@nedian0brien/synapsenote-core';
 import type { ClaudeReadiness, CliReadiness } from '../shared/bridge-contract.ts';
 import { getLogger } from './desktop-logger.ts';
 
@@ -114,7 +114,7 @@ export function interpretClaudeProbe(code: number | null): ClaudeOnPath {
   return code === 0 ? 'present' : 'not-found';
 }
 
-/** Only an actually-present `open-knowledge` entry counts as wired; absent /
+/** Only an actually-present `synapsenote` entry counts as wired; absent /
  *  no-entry / decline all mean the terminal's `claude` would see no OK tools. */
 export function mcpStatusFromClassification(kind: McpEntryKind): McpWiringStatus {
   return kind === 'present' ? 'wired' : 'needs-rewire';
@@ -125,7 +125,7 @@ export interface ResolveClaudeReadinessDeps {
   probeClaude(): Promise<number | null>;
   /** `classifyExistingMcpEntry('claude', home).kind` over `~/.claude.json`. */
   classifyMcpEntry(): McpEntryKind;
-  /** Whether the project's OWN `open-knowledge` `.mcp.json` entry is OK's
+  /** Whether the project's OWN `synapsenote` `.mcp.json` entry is OK's
    *  canonical managed server (cli `isOwnManagedEntry`) — gates the docked
    *  terminal's Claude MCP pre-approval. Project-scoped, distinct from the
    *  user-global `classifyMcpEntry` read above. */

@@ -413,7 +413,7 @@ test.describe('non-embedded UA', () => {
     await page.keyboard.press('ControlOrMeta+KeyK');
     // Search for "install"
     await page.keyboard.type('install');
-    // No "Install for Claude" / "Install OpenKnowledge" should appear
+    // No "Install for Claude" / "Install SynapseNote" should appear
     const installResults = await page
       .locator('[role="option"], [role="menuitem"], [role="listbox"] *')
       .filter({ hasText: /install (for )?claude/i })

@@ -4,7 +4,7 @@
  * `shell.openExternal`, the post-publish call to `runShareAction` — is
  * injected so the wizard's decision tree is unit-testable without React.
  *
- * Wire contract: matches `Share*` schemas in @inkeep/open-knowledge-core.
+ * Wire contract: matches `Share*` schemas in @nedian0brien/synapsenote-core.
  * Endpoints: GET /api/share/publish/owners,
  * GET /api/share/publish/name-check, POST /api/share/publish.
  */
@@ -17,12 +17,12 @@ import type {
   SharePublishRequest,
   SharePublishResponse,
   SharePublishVisibility,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import {
   SharePublishNameCheckResponseSchema,
   SharePublishOwnersResponseSchema,
   SharePublishResponseSchema,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 
 const SHARE_PUBLISH_OWNERS_PATH = '/api/share/publish/owners';
 const SHARE_PUBLISH_NAME_CHECK_PATH = '/api/share/publish/name-check';
@@ -74,7 +74,7 @@ export function pickDefaultOwner(owners: SharePublishOwner[]): string {
 }
 
 /**
- * GitHub's "Authorize OpenKnowledge for <org>" surface. The Publish wizard
+ * GitHub's "Authorize SynapseNote for <org>" surface. The Publish wizard
  * surfaces this on the SAML SSO 403 branch (generic SAML SSO branch) — receivers
  * click out into the system browser, complete the org authorization, then
  * retry the publish.
@@ -123,7 +123,7 @@ export function presentPublishError(
       };
     case 'saml-sso':
       return {
-        banner: `GitHub denied the request. You may need to authorize OpenKnowledge for ${owner} in your browser.`,
+        banner: `GitHub denied the request. You may need to authorize SynapseNote for ${owner} in your browser.`,
         next: { kind: 'authorize-org', authorizeUrl: buildSamlSsoAuthorizeUrl(owner) },
       };
     case 'push-failed':

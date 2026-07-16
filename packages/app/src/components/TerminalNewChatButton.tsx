@@ -1,5 +1,5 @@
-import { TERMINAL_CLIS, type TerminalCli } from '@inkeep/open-knowledge-core';
 import { Trans, useLingui } from '@lingui/react/macro';
+import { TERMINAL_CLIS, type TerminalCli } from '@nedian0brien/synapsenote-core';
 import { CheckIcon, ChevronDownIcon, PlusIcon, SquareTerminalIcon } from 'lucide-react';
 import { TargetIcon } from '@/components/handoff/OpenInAgentMenuItem';
 import { cliIconTargetId, VISIBLE_CLIS } from '@/components/handoff/terminal-cli-display';

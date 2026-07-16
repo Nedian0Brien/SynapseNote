@@ -1,4 +1,4 @@
-// biome-ignore-all lint/plugin/no-raw-html-interactive-element: pre-rule backlog — file uses raw <button>/<input>/<textarea> awaiting shadcn migration; tracked at https://github.com/inkeep/open-knowledge/blob/main/biome-plugins/README.md#no-raw-html-interactive-elementgrit
+// biome-ignore-all lint/plugin/no-raw-html-interactive-element: pre-rule backlog — file uses raw <button>/<input>/<textarea> awaiting shadcn migration; tracked at https://github.com/Nedian0Brien/SynapseNote/blob/main/biome-plugins/README.md#no-raw-html-interactive-elementgrit
 /**
  * TimelinePanel — document edit history content for the DocPanel timeline tab.
  *
@@ -33,6 +33,9 @@
  *     actually expands a Timeline entry — matching the AgentActivityPanel
  *     burst-row precedent.
  */
+
+import { plural, t } from '@lingui/core/macro';
+import { Trans, useLingui } from '@lingui/react/macro';
 import {
   AGENT_ICON_COLORS,
   AGENT_ICON_COLORS_DARK,
@@ -40,9 +43,7 @@ import {
   iconFromClientName,
   ProblemDetailsSchema,
   type TimelineEntry,
-} from '@inkeep/open-knowledge-core';
-import { plural, t } from '@lingui/core/macro';
-import { Trans, useLingui } from '@lingui/react/macro';
+} from '@nedian0brien/synapsenote-core';
 import type { LucideProps } from 'lucide-react';
 import {
   ArrowDownToLine,
@@ -198,7 +199,7 @@ function displayAuthor(entry: TimelineEntry): string {
   if (entry.contributors.length === 1) return entry.contributors[0].name;
   if (entry.contributors.length > 1) return entry.contributors.map((c) => c.name).join(', ');
   // Pre-attribution fallback
-  if (entry.author === 'openknowledge-server' || entry.author === 'server') return t`Auto-save`;
+  if (entry.author === 'synapsenote-server' || entry.author === 'server') return t`Auto-save`;
   return entry.author;
 }
 
@@ -236,7 +237,7 @@ function ContributorIcon({ entry, isDark }: { entry: TimelineEntry; isDark: bool
 
     // Classified system writers
     if (c.name === 'File System') return <HardDrive className={iconClass} />;
-    if (c.name === 'OpenKnowledge (service)' || c.name === 'Git (upstream)') {
+    if (c.name === 'SynapseNote (service)' || c.name === 'Git (upstream)') {
       return <ArrowDownToLine className={iconClass} />;
     }
 
@@ -253,7 +254,7 @@ function ContributorIcon({ entry, isDark }: { entry: TimelineEntry; isDark: bool
   ) {
     return <Sparkles className={iconClass} />;
   }
-  if (entry.author === 'openknowledge-server' || entry.author === 'server') {
+  if (entry.author === 'synapsenote-server' || entry.author === 'server') {
     return <ArrowDownToLine className={iconClass} />;
   }
   return <User className={iconClass} />;

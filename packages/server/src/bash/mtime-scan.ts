@@ -16,7 +16,7 @@
 import type { Dirent } from 'node:fs';
 import { readdir, stat } from 'node:fs/promises';
 import { relative, resolve } from 'node:path';
-import { OK_DIR } from '@inkeep/open-knowledge-core';
+import { OK_DIR } from '@nedian0brien/synapsenote-core';
 
 /** Upper bound on the number of files we scan. Typical content dirs are well under 500. */
 const SCAN_CAP = 1000;

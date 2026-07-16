@@ -1,9 +1,9 @@
 {
-  "name": "@inkeep/open-knowledge-native-config",
+  "name": "@nedian0brien/synapsenote-native-config",
   "version": "0.0.0",
   "license": "GPL-3.0-or-later",
   "private": true,
-  "description": "Native toml_edit parse/classify + format-preserving edit engine for OpenKnowledge harness MCP-config writes.",
+  "description": "Native toml_edit parse/classify + format-preserving edit engine for SynapseNote harness MCP-config writes.",
   "main": "index.js",
   "types": "index.d.ts",
   "napi": {

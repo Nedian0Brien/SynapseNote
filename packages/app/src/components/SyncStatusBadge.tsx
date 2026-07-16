@@ -7,9 +7,9 @@
  * Click opens a popover with last-sync details and action buttons.
  */
 
-import type { PushPermissionWire, SyncErrorCode } from '@inkeep/open-knowledge-core';
 import { plural, t } from '@lingui/core/macro';
 import { Plural, Trans, useLingui } from '@lingui/react/macro';
+import type { PushPermissionWire, SyncErrorCode } from '@nedian0brien/synapsenote-core';
 import {
   AlertTriangle,
   ArrowUpRight,
@@ -196,7 +196,7 @@ export function formatPushPermissionDenied(
 /**
  * Map a server-emitted `errorCode` to a Lingui-localized string. The server
  * never carries English in `errorCode`; the wire payload is the bounded
- * `SyncErrorCode` enum (single-sourced in `@inkeep/open-knowledge-core`).
+ * `SyncErrorCode` enum (single-sourced in `@nedian0brien/synapsenote-core`).
  * Callers fall back to `status.pushError` (developer-facing raw message) when
  * `pushErrorCode` is undefined.
  */

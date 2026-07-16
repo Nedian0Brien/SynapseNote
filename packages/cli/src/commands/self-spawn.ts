@@ -1,9 +1,9 @@
 /**
  * Re-exec the currently-running CLI binary, rather than shelling out through
- * `npx @inkeep/open-knowledge <subcommand>`.
+ * `npx @nedian0brien/synapsenote <subcommand>`.
  *
- * Rationale: an MCP client running `@inkeep/open-knowledge@0.X` must NOT
- * auto-spawn `@inkeep/open-knowledge@0.Y` as its sibling — that would mix
+ * Rationale: an MCP client running `@nedian0brien/synapsenote@0.X` must NOT
+ * auto-spawn `@nedian0brien/synapsenote@0.Y` as its sibling — that would mix
  * lockfile ABIs across the new dual-process contract. `npx` with an unpinned
  * spec also carries a live-registry-fetch on first-invocation path and a
  * supply-chain surface (the sibling gets resolved via a mechanism the user
@@ -29,7 +29,7 @@
  */
 
 import { existsSync } from 'node:fs';
-import { resolveHelperBundleBinary } from '@inkeep/open-knowledge-core/helper-bundle';
+import { resolveHelperBundleBinary } from '@nedian0brien/synapsenote-core/helper-bundle';
 
 const APP_CONTENTS_MACOS_RE = /\/[^/]+\.app\/Contents\/MacOS\/[^/]+$/;
 
@@ -122,11 +122,11 @@ export function resolveSelfSpawn(deps: ResolveSelfSpawnDeps = {}): {
     // pinning only closes the silent-downgrade half, the registry round-trip
     // remains.
     console.warn(
-      '[self-spawn] process.argv[1] is empty — falling back to `npx -y @inkeep/open-knowledge@latest`. ' +
+      '[self-spawn] process.argv[1] is empty — falling back to `npx -y @nedian0brien/synapsenote@latest`. ' +
         'This re-introduces the registry-fetch surface that re-exec was fixing. ' +
         `Observed argv: ${JSON.stringify(argv)}`,
     );
-    return { command: 'npx', prefixArgs: ['-y', '@inkeep/open-knowledge@latest'] };
+    return { command: 'npx', prefixArgs: ['-y', '@nedian0brien/synapsenote@latest'] };
   }
 
   const redirected = maybeRedirectToHelperBundle({ execPath, platform, exists });

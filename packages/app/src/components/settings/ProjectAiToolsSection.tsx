@@ -88,7 +88,7 @@ function FollowUpHint({
       {followUp === 'approve-once' ? (
         <Trans comment="Next step for a Claude Code project MCP row">
           One more step: run <code className="inline-code">claude</code> in this project and approve
-          OpenKnowledge once.
+          SynapseNote once.
         </Trans>
       ) : followUp === 'enable-manually' ? (
         <Trans comment="Next step for a Cursor project MCP row — Cursor leaves project servers disabled">
@@ -164,7 +164,7 @@ export function ProjectAiToolsSection() {
         {header}
         <p className="text-sm text-muted-foreground" data-testid="project-ai-tools-unavailable">
           <Trans>
-            Project AI tool management is only available in the OpenKnowledge desktop app.
+            Project AI tool management is only available in the SynapseNote desktop app.
           </Trans>
         </p>
       </section>
@@ -252,11 +252,11 @@ export function ProjectAiToolsSection() {
                 />
                 <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <span className="text-sm font-medium text-foreground">
-                    <code>open-knowledge</code>
+                    <code>synapsenote</code>
                   </span>
                   <span className="text-xs text-muted-foreground">
                     <Trans comment="Subtext for the project runtime-skill row">
-                      Teaches coding agents in this project to read and write through OpenKnowledge.
+                      Teaches coding agents in this project to read and write through SynapseNote.
                     </Trans>
                   </span>
                 </span>
@@ -295,7 +295,7 @@ function EditorRowItem({
     editor.state === 'installed'
       ? t`Installed`
       : editor.state === 'foreign'
-        ? t`Custom open-knowledge entry — not managed by OpenKnowledge`
+        ? t`Custom synapsenote entry — not managed by SynapseNote`
         : editor.state === 'unmanageable'
           ? t`Can't safely edit this project config`
           : null;

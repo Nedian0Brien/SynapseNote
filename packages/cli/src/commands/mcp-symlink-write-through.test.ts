@@ -68,7 +68,7 @@ describe('symlink write-through on the harness write path', () => {
     const after = readFileSync(target, 'utf-8');
     expect(after).toContain('// dotfiles-managed cursor config');
     expect(after).toContain('"existing"');
-    expect(after).toContain('open-knowledge');
+    expect(after).toContain('synapsenote');
   });
 
   it.skipIf(!unix)(
@@ -102,7 +102,7 @@ describe('symlink write-through on the harness write path', () => {
       const after = readFileSync(target, 'utf-8');
       expect(after).toContain('# dotfiles-managed codex config');
       expect(after).toContain('command = "other-cmd"  # keep');
-      expect(after).toContain('[mcp_servers.open-knowledge]');
+      expect(after).toContain('[mcp_servers.synapsenote]');
     },
   );
 
@@ -120,6 +120,6 @@ describe('symlink write-through on the harness write path', () => {
 
     // The cyclic symlink collapsed to a regular file rather than looping forever.
     expect(lstatSync(config).isSymbolicLink()).toBe(false);
-    expect(readFileSync(config, 'utf-8')).toContain('open-knowledge');
+    expect(readFileSync(config, 'utf-8')).toContain('synapsenote');
   });
 });

@@ -35,7 +35,7 @@
 import { realpathSync, statSync } from 'node:fs';
 import * as pathPosix from 'node:path/posix';
 import * as pathWin32 from 'node:path/win32';
-import { EXECUTABLE_BLOCKLIST_EXTENSIONS } from '@inkeep/open-knowledge-core';
+import { EXECUTABLE_BLOCKLIST_EXTENSIONS } from '@nedian0brien/synapsenote-core';
 import { isPathWithinProject } from './ipc-handlers.ts';
 
 export type AssetOpenResult =

@@ -3,7 +3,7 @@
  *
  * Scenario: the browser tab had never opened this doc before (IDB empty for
  * `ok-ydoc:test-doc`) AND the server has already restarted at least once
- * (new serverInstanceId). This is the common "user opens OpenKnowledge for
+ * (new serverInstanceId). This is the common "user opens SynapseNote for
  * the first time after a server restart" path — nothing pre-existing on the
  * client, fresh server identity.
  *

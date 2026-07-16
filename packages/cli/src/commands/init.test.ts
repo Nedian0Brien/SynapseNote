@@ -13,7 +13,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
-import { readBundleDecision } from '@inkeep/open-knowledge-server';
+import { readBundleDecision } from '@nedian0brien/synapsenote-server';
 import { parse as parseYaml } from 'yaml';
 import { loadConfig } from '../config/loader.ts';
 import { OK_DIR } from '../constants.ts';
@@ -87,7 +87,7 @@ describe('runInit', () => {
   const codexConfigPath = () => resolveCodexConfigPath({ home: fakeHome, env: {} });
   const opencodeConfigPath = () => resolveOpenCodeConfigPath({ home: fakeHome, env: {} });
   const lmStudioConfigPath = () => resolveLmStudioConfigPath({ home: fakeHome });
-  const devRepoRoot = () => join(testDir, 'local-open-knowledge');
+  const devRepoRoot = () => join(testDir, 'local-synapsenote');
   // `--dev-mcp` resolves the worktree's `dist/cli.mjs` from `process.argv[1]`.
   // Tests stub argv[1] via `enableDevMcp()` so resolution lands at a
   // deterministic path inside `testDir` regardless of the host's bun-test argv.
@@ -190,7 +190,7 @@ describe('runInit', () => {
     expect(result.editors[0].action).toBe('written');
   });
 
-  it('preserves other mcpServers entries when adding open-knowledge', async () => {
+  it('preserves other mcpServers entries when adding synapsenote', async () => {
     writeFileSync(
       claudeConfigPath(),
       JSON.stringify(
@@ -228,13 +228,13 @@ describe('runInit', () => {
     expect(config.mcpServers[result.editors[0].serverName]).toEqual(expectedDevMcpEntry());
   });
 
-  it('overwrites a differing open-knowledge entry by default', async () => {
+  it('overwrites a differing synapsenote entry by default', async () => {
     writeFileSync(
       claudeConfigPath(),
       JSON.stringify(
         {
           mcpServers: {
-            'open-knowledge': {
+            synapsenote: {
               command: 'node',
               args: ['./packages/cli/dist/cli.mjs', 'mcp'],
             },
@@ -250,7 +250,7 @@ describe('runInit', () => {
     expect(result.editors[0].action).toBe('overwritten');
 
     const config = JSON.parse(readFileSync(claudeConfigPath(), 'utf-8'));
-    expect(config.mcpServers['open-knowledge']).toEqual(PUBLISHED_CHAIN_ENTRY);
+    expect(config.mcpServers.synapsenote).toEqual(PUBLISHED_CHAIN_ENTRY);
   });
 
   it('replaces user-added fields instead of merging them', async () => {
@@ -259,9 +259,9 @@ describe('runInit', () => {
       JSON.stringify(
         {
           mcpServers: {
-            'open-knowledge': {
+            synapsenote: {
               command: 'npx',
-              args: ['-y', '@inkeep/open-knowledge@latest', 'mcp'],
+              args: ['-y', '@nedian0brien/synapsenote@latest', 'mcp'],
               cwd: testDir,
               env: { OK_MODE: 'local' },
             },
@@ -277,7 +277,7 @@ describe('runInit', () => {
     expect(result.editors[0].action).toBe('overwritten');
 
     const config = JSON.parse(readFileSync(claudeConfigPath(), 'utf-8'));
-    expect(config.mcpServers['open-knowledge']).toEqual(PUBLISHED_CHAIN_ENTRY);
+    expect(config.mcpServers.synapsenote).toEqual(PUBLISHED_CHAIN_ENTRY);
   });
 
   it('overwrites a published MCP entry in dev mode', async () => {
@@ -286,9 +286,9 @@ describe('runInit', () => {
       JSON.stringify(
         {
           mcpServers: {
-            'open-knowledge': {
+            synapsenote: {
               command: 'npx',
-              args: ['-y', '@inkeep/open-knowledge@latest', 'mcp'],
+              args: ['-y', '@nedian0brien/synapsenote@latest', 'mcp'],
             },
           },
         },
@@ -303,7 +303,7 @@ describe('runInit', () => {
     expect(result.editors[0].action).toBe('overwritten');
 
     const config = JSON.parse(readFileSync(claudeConfigPath(), 'utf-8'));
-    expect(config.mcpServers['open-knowledge']).toEqual(expectedDevMcpEntry());
+    expect(config.mcpServers.synapsenote).toEqual(expectedDevMcpEntry());
   });
 
   it('does not touch ~/.claude.json when --no-mcp is passed', async () => {
@@ -469,7 +469,7 @@ describe('runInit', () => {
       expect(existsSync(projectConfigPath)).toBe(true);
 
       const config = JSON.parse(readFileSync(projectConfigPath, 'utf-8'));
-      expect(config.mcp['open-knowledge']).toEqual(PUBLISHED_OPENCODE_ENTRY);
+      expect(config.mcp.synapsenote).toEqual(PUBLISHED_OPENCODE_ENTRY);
     });
 
     it('writes the dev MCP entry with an environment block', async () => {
@@ -506,8 +506,8 @@ describe('runInit', () => {
 
     it('writes a distinct project skill for Codex and OpenCode in their own dirs', async () => {
       const result = await runInitForTest({ editors: ['codex', 'opencode'], scope: 'project' });
-      const codexSkill = join(testDir, '.codex', 'skills', 'open-knowledge', 'SKILL.md');
-      const opencodeSkill = join(testDir, '.opencode', 'skills', 'open-knowledge', 'SKILL.md');
+      const codexSkill = join(testDir, '.codex', 'skills', 'synapsenote', 'SKILL.md');
+      const opencodeSkill = join(testDir, '.opencode', 'skills', 'synapsenote', 'SKILL.md');
       // Codex and OpenCode resolve to their OWN per-editor dirs (`.codex/skills`,
       // `.opencode/skills`) — not a shared `.agents/skills/` — so each writes a
       // distinct project-skill bundle (the resolved-path de-dupe is a no-op here).
@@ -515,16 +515,14 @@ describe('runInit', () => {
       expect(result.projectSkills.some((s) => s.path === opencodeSkill)).toBe(true);
       expect(existsSync(codexSkill)).toBe(true);
       expect(existsSync(opencodeSkill)).toBe(true);
-      expect(existsSync(join(testDir, '.agents', 'skills', 'open-knowledge', 'SKILL.md'))).toBe(
-        false,
-      );
+      expect(existsSync(join(testDir, '.agents', 'skills', 'synapsenote', 'SKILL.md'))).toBe(false);
     });
   });
 
   describe('Pi (project-scope file drop)', () => {
-    const piBridgePath = () => join(testDir, '.pi', 'extensions', 'open-knowledge.ts');
+    const piBridgePath = () => join(testDir, '.pi', 'extensions', 'synapsenote.ts');
 
-    it('drops the managed bridge extension at .pi/extensions/open-knowledge.ts', async () => {
+    it('drops the managed bridge extension at .pi/extensions/synapsenote.ts', async () => {
       const result = await runInitForTest({ editors: ['pi'], scope: 'project' });
 
       const projResult = result.editors.find(
@@ -551,7 +549,7 @@ describe('runInit', () => {
 
     it('writes the Pi project skill into .pi/skills/', async () => {
       const result = await runInitForTest({ editors: ['pi'], scope: 'project' });
-      const piSkill = join(testDir, '.pi', 'skills', 'open-knowledge', 'SKILL.md');
+      const piSkill = join(testDir, '.pi', 'skills', 'synapsenote', 'SKILL.md');
       expect(result.projectSkills.some((s) => s.path === piSkill)).toBe(true);
       expect(existsSync(piSkill)).toBe(true);
     });
@@ -586,7 +584,7 @@ describe('runInit', () => {
   });
 
   describe('Claude Desktop', () => {
-    it('writes the same simple global open-knowledge entry as the local editors', async () => {
+    it('writes the same simple global synapsenote entry as the local editors', async () => {
       const fakeHome = join(testDir, 'fakehome');
       mkdirSync(fakeHome, { recursive: true });
       mkdirSync(dirname(resolveClaudeDesktopConfigPath({ home: fakeHome })), { recursive: true });
@@ -596,7 +594,7 @@ describe('runInit', () => {
       expect(result.editors).toHaveLength(1);
       expect(result.editors[0].editorId).toBe('claude-desktop');
       expect(result.editors[0].action).toBe('written');
-      expect(result.editors[0].serverName).toBe('open-knowledge');
+      expect(result.editors[0].serverName).toBe('synapsenote');
 
       const configPath = resolveClaudeDesktopConfigPath({ home: fakeHome });
       expect(existsSync(configPath)).toBe(true);
@@ -619,7 +617,7 @@ describe('runInit', () => {
         JSON.stringify(
           {
             mcpServers: {
-              'open-knowledge': {
+              synapsenote: {
                 command: 'npx',
                 args: ['some-old-package', 'mcp'],
               },
@@ -666,7 +664,7 @@ describe('runInit', () => {
     // escape hatch: `ok init` must NEVER push a hint toward it, even when the
     // Claude Desktop App is present. (The old `claudeDesktopDetected` result
     // field + its probe were removed with the hint — discovery is pull-only via
-    // the Open Knowledge skill.)
+    // the SynapseNote skill.)
     it('does NOT advertise the Cowork bundle, even when Claude Desktop is present', async () => {
       mkdirSync(dirname(resolveClaudeDesktopConfigPath({ home: fakeHome })), { recursive: true });
 
@@ -675,7 +673,7 @@ describe('runInit', () => {
 
       expect(output).not.toContain('ok cowork');
       expect(output).not.toContain('Claude Chat & Cowork');
-      expect(output).not.toContain('openknowledge.skill');
+      expect(output).not.toContain('synapsenote.skill');
     });
   });
 
@@ -732,18 +730,18 @@ describe('runInit', () => {
       const openclawConfig = JSON.parse(
         readFileSync(join(fakeHome, '.openclaw', 'openclaw.json'), 'utf-8'),
       );
-      expect(openclawConfig.mcp.servers['open-knowledge']).toEqual(PUBLISHED_CHAIN_ENTRY);
+      expect(openclawConfig.mcp.servers.synapsenote).toEqual(PUBLISHED_CHAIN_ENTRY);
       // Antigravity writes the standard `mcpServers` map at
       // `~/.gemini/config/mcp_config.json`.
       const antigravityConfig = JSON.parse(
         readFileSync(join(fakeHome, '.gemini', 'config', 'mcp_config.json'), 'utf-8'),
       );
-      expect(antigravityConfig.mcpServers['open-knowledge']).toEqual(PUBLISHED_CHAIN_ENTRY);
+      expect(antigravityConfig.mcpServers.synapsenote).toEqual(PUBLISHED_CHAIN_ENTRY);
       // Hermes is YAML under `mcp_servers` — verify the entry landed there.
       const hermesConfig = parseYaml(
         readFileSync(join(fakeHome, '.hermes', 'config.yaml'), 'utf-8'),
       );
-      expect(hermesConfig.mcp_servers['open-knowledge']).toEqual(PUBLISHED_CHAIN_ENTRY);
+      expect(hermesConfig.mcp_servers.synapsenote).toEqual(PUBLISHED_CHAIN_ENTRY);
     });
 
     it('overwrites across all targeted editors', async () => {
@@ -751,14 +749,14 @@ describe('runInit', () => {
       writeFileSync(
         claudeConfigPath(),
         JSON.stringify({
-          mcpServers: { 'open-knowledge': { command: 'old', args: [] } },
+          mcpServers: { synapsenote: { command: 'old', args: [] } },
         }),
       );
       mkdirSync(dirname(cursorConfigPath()), { recursive: true });
       writeFileSync(
         cursorConfigPath(),
         JSON.stringify({
-          mcpServers: { 'open-knowledge': { command: 'old', args: [] } },
+          mcpServers: { synapsenote: { command: 'old', args: [] } },
         }),
       );
 
@@ -862,7 +860,7 @@ describe('runInit', () => {
 
       expect(existsSync(join(testDir, 'AGENTS.md'))).toBe(false);
       expect(existsSync(join(testDir, '.cursorrules'))).toBe(false);
-      expect(existsSync(join(testDir, '.cursor', 'rules', 'open-knowledge.mdc'))).toBe(false);
+      expect(existsSync(join(testDir, '.cursor', 'rules', 'synapsenote.mdc'))).toBe(false);
     });
 
     it('does not create any root-level agent files for claude + cursor combined', async () => {
@@ -873,7 +871,7 @@ describe('runInit', () => {
 
       expect(existsSync(join(testDir, 'AGENTS.md'))).toBe(false);
       expect(existsSync(join(testDir, 'CLAUDE.md'))).toBe(false);
-      expect(existsSync(join(testDir, '.cursor', 'rules', 'open-knowledge.mdc'))).toBe(false);
+      expect(existsSync(join(testDir, '.cursor', 'rules', 'synapsenote.mdc'))).toBe(false);
       expect(existsSync(join(testDir, '.cursorrules'))).toBe(false);
     });
   });
@@ -883,24 +881,24 @@ describe('runInit', () => {
   // -----------------------------------------------------------------------
 
   describe('legacy-injection non-interference', () => {
-    it('leaves pre-existing open-knowledge marker blocks byte-identical in CLAUDE.md and AGENTS.md', async () => {
+    it('leaves pre-existing synapsenote marker blocks byte-identical in CLAUDE.md and AGENTS.md', async () => {
       const legacyClaudeBody = [
         '# My Project',
         '',
         'Some pre-existing content the user wrote themselves.',
         '',
-        '<!-- open-knowledge:begin -->',
-        '## Legacy OpenKnowledge section',
+        '<!-- synapsenote:begin -->',
+        '## Legacy SynapseNote section',
         'Pretend this was injected by an older ok init version.',
-        '<!-- open-knowledge:end -->',
+        '<!-- synapsenote:end -->',
         '',
         'Post-section notes.',
         '',
       ].join('\n');
       const legacyAgentsBody = [
-        '<!-- open-knowledge:begin -->',
+        '<!-- synapsenote:begin -->',
         '## Legacy section in AGENTS.md',
-        '<!-- open-knowledge:end -->',
+        '<!-- synapsenote:end -->',
         '',
         '# Project agents notes',
         '',
@@ -982,8 +980,8 @@ describe('runInit', () => {
       });
       expect(installed.sort()).toEqual(['discovery', 'write-skill']);
       // Decisions persisted so the desktop / start reclaim gates agree.
-      expect(await readBundleDecision(fakeHome, 'open-knowledge-discovery')).toBe(true);
-      expect(await readBundleDecision(fakeHome, 'open-knowledge-write-skill')).toBe(true);
+      expect(await readBundleDecision(fakeHome, 'synapsenote-discovery')).toBe(true);
+      expect(await readBundleDecision(fakeHome, 'synapsenote-write-skill')).toBe(true);
     });
 
     it('--no-skills installs nothing and records both declined', async () => {
@@ -996,8 +994,8 @@ describe('runInit', () => {
         },
       });
       expect(installed).toEqual([]);
-      expect(await readBundleDecision(fakeHome, 'open-knowledge-discovery')).toBe(false);
-      expect(await readBundleDecision(fakeHome, 'open-knowledge-write-skill')).toBe(false);
+      expect(await readBundleDecision(fakeHome, 'synapsenote-discovery')).toBe(false);
+      expect(await readBundleDecision(fakeHome, 'synapsenote-write-skill')).toBe(false);
     });
 
     it('--skills discovery installs only discovery', async () => {
@@ -1010,8 +1008,8 @@ describe('runInit', () => {
         },
       });
       expect(installed).toEqual(['discovery']);
-      expect(await readBundleDecision(fakeHome, 'open-knowledge-discovery')).toBe(true);
-      expect(await readBundleDecision(fakeHome, 'open-knowledge-write-skill')).toBe(false);
+      expect(await readBundleDecision(fakeHome, 'synapsenote-discovery')).toBe(true);
+      expect(await readBundleDecision(fakeHome, 'synapsenote-write-skill')).toBe(false);
     });
 
     it('installs every enabled bundle with force so the shared cli-hosts version key cannot skip the second', async () => {
@@ -1070,7 +1068,7 @@ describe('runInit', () => {
       const output = formatInitResult(result, testDir);
       expect(output).toContain('Content:');
       expect(output).toContain(`Found ${preview.totalCount} markdown files`);
-      expect(output).toContain('Re-check anytime: open-knowledge preview');
+      expect(output).toContain('Re-check anytime: synapsenote preview');
     });
 
     it('renders warning line when preview is undefined with previewWarning', async () => {
@@ -1103,7 +1101,7 @@ describe('runInit', () => {
         JSON.stringify(
           {
             mcpServers: {
-              'open-knowledge': {
+              synapsenote: {
                 command: 'node',
                 args: ['./packages/cli/dist/cli.mjs', 'mcp'],
               },
@@ -1270,7 +1268,7 @@ describe('runInit', () => {
       try {
         // Import the server error type lazily to keep the import surface minimal
         // for other tests in this file.
-        const { GitNotAvailableError } = await import('@inkeep/open-knowledge-server');
+        const { GitNotAvailableError } = await import('@nedian0brien/synapsenote-server');
         await expect(runInitForTest({ editors: ['claude'] })).rejects.toBeInstanceOf(
           GitNotAvailableError,
         );
@@ -1310,9 +1308,7 @@ describe('runInit', () => {
       expect(existsSync(join(testDir, '.mcp.json'))).toBe(false);
       const claudeSkill = result.projectSkills.find((s) => s.editorId === 'claude');
       expect(claudeSkill?.action).toBe('written');
-      expect(existsSync(join(testDir, '.claude', 'skills', 'open-knowledge', 'SKILL.md'))).toBe(
-        true,
-      );
+      expect(existsSync(join(testDir, '.claude', 'skills', 'synapsenote', 'SKILL.md'))).toBe(true);
     });
 
     it('scope=project writes only project-level config for Claude', async () => {
@@ -1331,11 +1327,9 @@ describe('runInit', () => {
       expect(result.projectSkills[0]).toMatchObject({
         editorId: 'claude',
         action: 'written',
-        path: join(testDir, '.claude', 'skills', 'open-knowledge', 'SKILL.md'),
+        path: join(testDir, '.claude', 'skills', 'synapsenote', 'SKILL.md'),
       });
-      expect(existsSync(join(testDir, '.claude', 'skills', 'open-knowledge', 'SKILL.md'))).toBe(
-        true,
-      );
+      expect(existsSync(join(testDir, '.claude', 'skills', 'synapsenote', 'SKILL.md'))).toBe(true);
     });
 
     it('scope=project writes project-level configs for claude, cursor, codex', async () => {
@@ -1356,26 +1350,22 @@ describe('runInit', () => {
           expect.objectContaining({
             editorId: 'claude',
             action: 'written',
-            path: join(testDir, '.claude', 'skills', 'open-knowledge', 'SKILL.md'),
+            path: join(testDir, '.claude', 'skills', 'synapsenote', 'SKILL.md'),
           }),
           expect.objectContaining({
             editorId: 'cursor',
             action: 'written',
-            path: join(testDir, '.cursor', 'skills', 'open-knowledge', 'SKILL.md'),
+            path: join(testDir, '.cursor', 'skills', 'synapsenote', 'SKILL.md'),
           }),
           expect.objectContaining({
             editorId: 'codex',
             action: 'written',
-            path: join(testDir, '.codex', 'skills', 'open-knowledge', 'SKILL.md'),
+            path: join(testDir, '.codex', 'skills', 'synapsenote', 'SKILL.md'),
           }),
         ]),
       );
-      expect(existsSync(join(testDir, '.cursor', 'skills', 'open-knowledge', 'SKILL.md'))).toBe(
-        true,
-      );
-      expect(existsSync(join(testDir, '.codex', 'skills', 'open-knowledge', 'SKILL.md'))).toBe(
-        true,
-      );
+      expect(existsSync(join(testDir, '.cursor', 'skills', 'synapsenote', 'SKILL.md'))).toBe(true);
+      expect(existsSync(join(testDir, '.codex', 'skills', 'synapsenote', 'SKILL.md'))).toBe(true);
     });
 
     it('scope=project silently skips editors without projectConfigPath (claude-desktop)', async () => {
@@ -1398,9 +1388,7 @@ describe('runInit', () => {
       expect(projResult?.action).toBe('written');
       expect(existsSync(claudeConfigPath())).toBe(true);
       expect(existsSync(join(testDir, '.mcp.json'))).toBe(true);
-      expect(existsSync(join(testDir, '.claude', 'skills', 'open-knowledge', 'SKILL.md'))).toBe(
-        true,
-      );
+      expect(existsSync(join(testDir, '.claude', 'skills', 'synapsenote', 'SKILL.md'))).toBe(true);
     });
 
     it('scope=both suppresses project-config notice for paths just written', async () => {
@@ -1416,7 +1404,7 @@ describe('runInit', () => {
       const output = formatInitResult(result, testDir);
       expect(output).toContain('Claude (project)');
       expect(output).toContain('Project-local skills:');
-      expect(output).toContain('.claude/skills/open-knowledge/SKILL.md');
+      expect(output).toContain('.claude/skills/synapsenote/SKILL.md');
     });
 
     it('--no-mcp skips all MCP writes regardless of scope', async () => {
@@ -1435,9 +1423,7 @@ describe('runInit', () => {
       expect(existsSync(join(testDir, '.mcp.json'))).toBe(false);
       const claudeSkill = result.projectSkills.find((s) => s.editorId === 'claude');
       expect(claudeSkill?.action).toBe('written');
-      expect(existsSync(join(testDir, '.claude', 'skills', 'open-knowledge', 'SKILL.md'))).toBe(
-        true,
-      );
+      expect(existsSync(join(testDir, '.claude', 'skills', 'synapsenote', 'SKILL.md'))).toBe(true);
     });
 
     it('scope=both "Next steps" deduplicates editor labels (no double-count)', async () => {
@@ -2204,12 +2190,12 @@ describe('writeUserMcpConfigs', () => {
     const claudeConfig = JSON.parse(
       readFileSync(resolveClaudeCodeConfigPath({ home: fakeHome }), 'utf-8'),
     );
-    expect(claudeConfig.mcpServers['open-knowledge']).toEqual(CANONICAL);
+    expect(claudeConfig.mcpServers.synapsenote).toEqual(CANONICAL);
 
     const cursorConfig = JSON.parse(
       readFileSync(resolveCursorConfigPath({ home: fakeHome }), 'utf-8'),
     );
-    expect(cursorConfig.mcpServers['open-knowledge']).toEqual(CANONICAL);
+    expect(cursorConfig.mcpServers.synapsenote).toEqual(CANONICAL);
   });
 
   it('creates OK entry into a blank config with no .broken sidecar', async () => {
@@ -2226,7 +2212,7 @@ describe('writeUserMcpConfigs', () => {
     expect(results[0]?.action).toBe('written');
 
     const config = JSON.parse(readFileSync(claudePath, 'utf-8'));
-    expect(config.mcpServers['open-knowledge']).toEqual(CANONICAL);
+    expect(config.mcpServers.synapsenote).toEqual(CANONICAL);
 
     // No `.broken-*` sidecar was produced next to the config.
     expect(readdirSync(dirname(claudePath)).some((name) => name.includes('.broken-'))).toBe(false);
@@ -2249,7 +2235,7 @@ describe('writeUserMcpConfigs', () => {
     writeFileSync(
       claudePath,
       JSON.stringify(
-        { mcpServers: { 'open-knowledge': { command: 'custom', args: ['old'] } } },
+        { mcpServers: { synapsenote: { command: 'custom', args: ['old'] } } },
         null,
         2,
       ),
@@ -2259,7 +2245,7 @@ describe('writeUserMcpConfigs', () => {
 
     expect(results[0].action).toBe('overwritten');
     const config = JSON.parse(readFileSync(claudePath, 'utf-8'));
-    expect(config.mcpServers['open-knowledge']).toEqual(CANONICAL);
+    expect(config.mcpServers.synapsenote).toEqual(CANONICAL);
   });
 
   it('caller controls which editors get overwritten by omitting them from the editors array', async () => {
@@ -2269,21 +2255,19 @@ describe('writeUserMcpConfigs', () => {
     mkdirSync(dirname(cursorPath), { recursive: true });
     writeFileSync(
       claudePath,
-      JSON.stringify({ mcpServers: { 'open-knowledge': { command: 'custom', args: ['a'] } } }),
+      JSON.stringify({ mcpServers: { synapsenote: { command: 'custom', args: ['a'] } } }),
     );
     writeFileSync(
       cursorPath,
-      JSON.stringify({ mcpServers: { 'open-knowledge': { command: 'custom', args: ['b'] } } }),
+      JSON.stringify({ mcpServers: { synapsenote: { command: 'custom', args: ['b'] } } }),
     );
 
     const results = await writeUserMcpConfigs({ editors: ['claude'], home: fakeHome });
 
     expect(results).toHaveLength(1);
     expect(results[0]?.action).toBe('overwritten');
-    expect(JSON.parse(readFileSync(claudePath, 'utf-8')).mcpServers['open-knowledge']).toEqual(
-      CANONICAL,
-    );
-    expect(JSON.parse(readFileSync(cursorPath, 'utf-8')).mcpServers['open-knowledge']).toEqual({
+    expect(JSON.parse(readFileSync(claudePath, 'utf-8')).mcpServers.synapsenote).toEqual(CANONICAL);
+    expect(JSON.parse(readFileSync(cursorPath, 'utf-8')).mcpServers.synapsenote).toEqual({
       command: 'custom',
       args: ['b'],
     });
@@ -2301,7 +2285,7 @@ describe('writeUserMcpConfigs', () => {
 
     const config = JSON.parse(readFileSync(claudePath, 'utf-8'));
     expect(config.mcpServers.other).toEqual({ command: 'node', args: ['x.js'] });
-    expect(config.mcpServers['open-knowledge']).toEqual(CANONICAL);
+    expect(config.mcpServers.synapsenote).toEqual(CANONICAL);
   });
 
   it('reports action:failed for unsupported editors without throwing', async () => {
@@ -2386,7 +2370,7 @@ describe('writeEditorMcpConfig — TOML fallback declines a present config', () 
     expect(result.action).toBe('written');
     const written = readFileSync(path, 'utf-8');
     expect(written).toContain('mcp_servers');
-    expect(written).toContain('open-knowledge');
+    expect(written).toContain('synapsenote');
   });
 });
 
@@ -2457,37 +2441,33 @@ describe('readExistingMcpEntry (Pass 0 Major #13)', () => {
   it('returns null when the server entry exists but is not an object', () => {
     const path = resolveCursorConfigPath({ home: fakeHome });
     mkdirSync(dirname(path), { recursive: true });
-    writeFileSync(
-      path,
-      JSON.stringify({ mcpServers: { 'open-knowledge': 'not-an-object' } }),
-      'utf-8',
-    );
+    writeFileSync(path, JSON.stringify({ mcpServers: { synapsenote: 'not-an-object' } }), 'utf-8');
     expect(readExistingMcpEntry(EDITOR_TARGETS.cursor, '', fakeHome)).toBeNull();
   });
 
   it('returns the parsed entry when JSON config is well-formed', () => {
     const path = resolveCursorConfigPath({ home: fakeHome });
     mkdirSync(dirname(path), { recursive: true });
-    const entry = { command: 'npx', args: ['-y', '@inkeep/open-knowledge@latest', 'mcp'] };
-    writeFileSync(path, JSON.stringify({ mcpServers: { 'open-knowledge': entry } }), 'utf-8');
+    const entry = { command: 'npx', args: ['-y', '@nedian0brien/synapsenote@latest', 'mcp'] };
+    writeFileSync(path, JSON.stringify({ mcpServers: { synapsenote: entry } }), 'utf-8');
     expect(readExistingMcpEntry(EDITOR_TARGETS.cursor, '', fakeHome)).toEqual(entry);
   });
 
   it('returns the parsed entry when TOML config (Codex) is well-formed', () => {
     const path = resolveCodexConfigPath({ home: fakeHome, env: {} });
     mkdirSync(dirname(path), { recursive: true });
-    // Codex's `mcp_servers."open-knowledge"` table — quoted key form so the
+    // Codex's `mcp_servers."synapsenote"` table — quoted key form so the
     // TOML parser keeps the dash-bearing name as one identifier (per
     // smol-toml grammar). Same shape Codex itself writes via `ok init`.
     writeFileSync(
       path,
-      '[mcp_servers."open-knowledge"]\ncommand = "npx"\nargs = ["-y", "@inkeep/open-knowledge@latest", "mcp"]\n',
+      '[mcp_servers."synapsenote"]\ncommand = "npx"\nargs = ["-y", "@nedian0brien/synapsenote@latest", "mcp"]\n',
       'utf-8',
     );
     const result = readExistingMcpEntry(EDITOR_TARGETS.codex, '', fakeHome);
     expect(result).toEqual({
       command: 'npx',
-      args: ['-y', '@inkeep/open-knowledge@latest', 'mcp'],
+      args: ['-y', '@nedian0brien/synapsenote@latest', 'mcp'],
     });
   });
 
@@ -2623,7 +2603,7 @@ describe('classifyExistingMcpEntry', () => {
     mkdirSync(dirname(path), { recursive: true });
     writeFileSync(
       path,
-      'last_seen = 2026-06-26T12:34:56.123456Z\n[mcp_servers."open-knowledge"]\ncommand = "npx"\nargs = ["-y", "@inkeep/open-knowledge@latest", "mcp"]\n',
+      'last_seen = 2026-06-26T12:34:56.123456Z\n[mcp_servers."synapsenote"]\ncommand = "npx"\nargs = ["-y", "@nedian0brien/synapsenote@latest", "mcp"]\n',
       'utf-8',
     );
     const result = classifyExistingMcpEntry(EDITOR_TARGETS.codex, '', fakeHome);
@@ -2655,8 +2635,8 @@ describe('classifyExistingMcpEntry', () => {
   it('present with the parsed entry when our server entry exists', () => {
     const path = resolveCursorConfigPath({ home: fakeHome });
     mkdirSync(dirname(path), { recursive: true });
-    const entry = { command: 'npx', args: ['-y', '@inkeep/open-knowledge@latest', 'mcp'] };
-    writeFileSync(path, JSON.stringify({ mcpServers: { 'open-knowledge': entry } }), 'utf-8');
+    const entry = { command: 'npx', args: ['-y', '@nedian0brien/synapsenote@latest', 'mcp'] };
+    writeFileSync(path, JSON.stringify({ mcpServers: { synapsenote: entry } }), 'utf-8');
     const result = classifyExistingMcpEntry(EDITOR_TARGETS.cursor, '', fakeHome);
     expect(result).toEqual({ kind: 'present', entry });
   });
@@ -2669,7 +2649,7 @@ describe('classifyExistingMcpEntry', () => {
     mkdirSync(dirname(path), { recursive: true });
     writeFileSync(
       path,
-      '{\n  "mcpServers": {\n    "open-knowledge": {\n      "command": "np',
+      '{\n  "mcpServers": {\n    "synapsenote": {\n      "command": "np',
       'utf-8',
     );
     expect(classifyExistingMcpEntry(EDITOR_TARGETS.cursor, '', fakeHome).kind).toBe('decline');
@@ -2678,7 +2658,7 @@ describe('classifyExistingMcpEntry', () => {
   it('decline (not creatable-blank) on a half-written / truncated TOML config', () => {
     const path = resolveCodexConfigPath({ home: fakeHome, env: {} });
     mkdirSync(dirname(path), { recursive: true });
-    writeFileSync(path, '[mcp_servers."open-knowledge"]\ncommand = "np', 'utf-8');
+    writeFileSync(path, '[mcp_servers."synapsenote"]\ncommand = "np', 'utf-8');
     expect(classifyExistingMcpEntry(EDITOR_TARGETS.codex, '', fakeHome).kind).toBe('decline');
   });
 
@@ -2713,10 +2693,10 @@ describe('classifyExistingMcpEntry', () => {
   it('present on a JSONC config whose comments and trailing commas surround our entry', () => {
     const path = resolveCursorConfigPath({ home: fakeHome });
     mkdirSync(dirname(path), { recursive: true });
-    const entry = { command: 'npx', args: ['-y', '@inkeep/open-knowledge@latest', 'mcp'] };
+    const entry = { command: 'npx', args: ['-y', '@nedian0brien/synapsenote@latest', 'mcp'] };
     writeFileSync(
       path,
-      `{\n  // managed by ok\n  "mcpServers": {\n    "open-knowledge": ${JSON.stringify(entry)}, // ours\n  },\n}`,
+      `{\n  // managed by ok\n  "mcpServers": {\n    "synapsenote": ${JSON.stringify(entry)}, // ours\n  },\n}`,
       'utf-8',
     );
     expect(classifyExistingMcpEntry(EDITOR_TARGETS.cursor, '', fakeHome)).toEqual({
@@ -2728,12 +2708,8 @@ describe('classifyExistingMcpEntry', () => {
   it('present on a config with a leading UTF-8 BOM (InvalidSymbol@0 is not corruption)', () => {
     const path = resolveCursorConfigPath({ home: fakeHome });
     mkdirSync(dirname(path), { recursive: true });
-    const entry = { command: 'npx', args: ['-y', '@inkeep/open-knowledge@latest', 'mcp'] };
-    writeFileSync(
-      path,
-      `\uFEFF${JSON.stringify({ mcpServers: { 'open-knowledge': entry } })}`,
-      'utf-8',
-    );
+    const entry = { command: 'npx', args: ['-y', '@nedian0brien/synapsenote@latest', 'mcp'] };
+    writeFileSync(path, `\uFEFF${JSON.stringify({ mcpServers: { synapsenote: entry } })}`, 'utf-8');
     expect(classifyExistingMcpEntry(EDITOR_TARGETS.cursor, '', fakeHome)).toEqual({
       kind: 'present',
       entry,

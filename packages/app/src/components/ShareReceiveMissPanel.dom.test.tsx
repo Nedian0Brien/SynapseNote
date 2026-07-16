@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
-import type { ShareTargetStatusResponse } from '@inkeep/open-knowledge-core';
+import type { ShareTargetStatusResponse } from '@nedian0brien/synapsenote-core';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { GitSyncStatus } from '@/hooks/use-git-sync-status';
 import { pendingReceiveNavStore } from '@/lib/share/pending-receive-nav-store';

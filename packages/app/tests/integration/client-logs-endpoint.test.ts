@@ -11,7 +11,7 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
-import { RENDERER_LOG_MAX_ENTRIES } from '@inkeep/open-knowledge-core';
+import { RENDERER_LOG_MAX_ENTRIES } from '@nedian0brien/synapsenote-core';
 import { HARNESS_BOOT_TIMEOUT_MS } from './harness-boot-timeout';
 import { createTestServer, type TestServer } from './test-harness';
 

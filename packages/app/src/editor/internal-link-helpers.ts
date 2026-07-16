@@ -3,7 +3,7 @@ import {
   type ClassifiedLinkTarget,
   classifyMarkdownHref,
   type DocLinkTarget,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { hashFromAssetPath, hashFromDocName } from '../lib/doc-hash';
 import { openExternalUrl } from '../lib/external-link';
 import { dispatchAssetClick } from './asset-dispatch';

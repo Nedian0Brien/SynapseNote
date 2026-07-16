@@ -12,10 +12,10 @@
  * dispatch -> the real target-status fetch against the receiver's server).
  *
  * **Delivery: argv cold-start, not `open -g`.** The sibling smokes shell out to
- * `open -g "openknowledge://..."` for true Apple-Event delivery, and that is the
+ * `open -g "synapsenote://..."` for true Apple-Event delivery, and that is the
  * right channel on a CI runner where no app owns the scheme. But on any host with
- * OpenKnowledge.app installed (every dev machine, this one included), macOS Launch
- * Services binds `openknowledge://` to that signed bundle, so `open -g` routes the
+ * SynapseNote.app installed (every dev machine, this one included), macOS Launch
+ * Services binds `synapsenote://` to that signed bundle, so `open -g` routes the
  * event there and the Playwright-launched dev Electron never receives it — the
  * poll then times out. Passing the URL as an argv entry drives the app's
  * documented cold-start CLI-launch scan (`registerProtocolHandler`'s initial-argv
@@ -124,15 +124,15 @@ test.describe('share-receive miss terminal smoke', () => {
             path: fixture.receiver,
             name: 'receiver',
             lastOpenedAt: new Date().toISOString(),
-            gitRemoteUrl: 'https://github.com/inkeep/open-knowledge.git',
+            gitRemoteUrl: 'https://github.com/Nedian0Brien/SynapseNote.git',
           },
         ],
         projectSessions: {},
       }),
     );
 
-    const githubBlobUrl = `https://github.com/inkeep/open-knowledge/blob/main/${fixture.docPath}`;
-    const shareUrl = `openknowledge://share?url=${encodeURIComponent(githubBlobUrl)}`;
+    const githubBlobUrl = `https://github.com/Nedian0Brien/SynapseNote/blob/main/${fixture.docPath}`;
+    const shareUrl = `synapsenote://share?url=${encodeURIComponent(githubBlobUrl)}`;
 
     const app = await electron.launch({
       args: [MAIN_ENTRY, `--user-data-dir=${userData}`, shareUrl],

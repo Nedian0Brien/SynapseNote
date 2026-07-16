@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import type { AgentPresenceEntry } from '@inkeep/open-knowledge-core';
+import type { AgentPresenceEntry } from '@nedian0brien/synapsenote-core';
 import {
   AGENT_PRESENCE_STALE_MS,
   type AgentPresenceAwareness,

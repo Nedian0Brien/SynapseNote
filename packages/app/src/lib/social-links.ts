@@ -5,6 +5,6 @@
  * single-line edit rather than a grep-and-replace across components.
  */
 
-export const GITHUB_REPO_URL = 'https://github.com/inkeep/open-knowledge';
+export const GITHUB_REPO_URL = 'https://github.com/Nedian0Brien/SynapseNote';
 export const DISCORD_INVITE_URL = 'https://discord.gg/VRKk2EaGHN';
-export const X_PROFILE_URL = 'https://x.com/OpenKnowledge';
+export const X_PROFILE_URL = 'https://x.com/SynapseNote';

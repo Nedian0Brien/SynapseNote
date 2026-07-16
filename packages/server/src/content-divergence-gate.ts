@@ -20,7 +20,7 @@
 import type {
   ContentDivergenceCurrentState,
   ContentDivergenceWarning,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 
 /**
  * Soft cap for the inline `currentState` payload. Matches the `exec` tool's

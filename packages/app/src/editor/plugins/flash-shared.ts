@@ -6,4 +6,4 @@ export {
   FLASH_DEBOUNCE_MS,
   FLASH_DURATION_MS,
   hasNewEntries,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';

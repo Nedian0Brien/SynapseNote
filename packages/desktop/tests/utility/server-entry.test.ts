@@ -4,7 +4,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { setTimeout as wait } from 'node:timers/promises';
-import { ConfigSchema } from '@inkeep/open-knowledge-server';
+import { ConfigSchema } from '@nedian0brien/synapsenote-server';
 import type { KeyringSmokeResult } from '../../src/utility/keyring-smoke.ts';
 import {
   type PreparedBootEnvironment,
@@ -99,7 +99,9 @@ describe('setupUtility (IPC handshake + lifecycle)', () => {
     };
     const bootServer = mock(() => Promise.resolve(fakeBooted));
     const importServer = mock(() =>
-      Promise.resolve({ bootServer } as unknown as typeof import('@inkeep/open-knowledge-server')),
+      Promise.resolve({
+        bootServer,
+      } as unknown as typeof import('@nedian0brien/synapsenote-server')),
     );
     const prepared = makeFakePrepared({ contentDir: '/fake/test-project', contentRoot: undefined });
 
@@ -186,7 +188,7 @@ describe('setupUtility (IPC handshake + lifecycle)', () => {
       importServer: () =>
         Promise.resolve({
           bootServer,
-        } as unknown as typeof import('@inkeep/open-knowledge-server')),
+        } as unknown as typeof import('@nedian0brien/synapsenote-server')),
       exit: env.exit,
       parentPid: 99999,
       killProbe: () => {
@@ -225,7 +227,7 @@ describe('setupUtility (IPC handshake + lifecycle)', () => {
       importServer: () =>
         Promise.resolve({
           bootServer,
-        } as unknown as typeof import('@inkeep/open-knowledge-server')),
+        } as unknown as typeof import('@nedian0brien/synapsenote-server')),
       exit: env.exit,
       parentPid: 99999,
       killProbe: env.killProbe,
@@ -264,7 +266,7 @@ describe('setupUtility (IPC handshake + lifecycle)', () => {
       importServer: () =>
         Promise.resolve({
           bootServer,
-        } as unknown as typeof import('@inkeep/open-knowledge-server')),
+        } as unknown as typeof import('@nedian0brien/synapsenote-server')),
       exit: env.exit,
       parentPid: 99999,
       killProbe: env.killProbe,
@@ -301,7 +303,7 @@ describe('setupUtility (IPC handshake + lifecycle)', () => {
       importServer: () =>
         Promise.resolve({
           bootServer,
-        } as unknown as typeof import('@inkeep/open-knowledge-server')),
+        } as unknown as typeof import('@nedian0brien/synapsenote-server')),
       exit: env.exit,
       parentPid: 99999,
       killProbe: env.killProbe,
@@ -337,7 +339,7 @@ describe('setupUtility (IPC handshake + lifecycle)', () => {
     setupUtility({
       parentPort: env.parentPort,
       importServer: () =>
-        Promise.resolve({} as unknown as typeof import('@inkeep/open-knowledge-server')),
+        Promise.resolve({} as unknown as typeof import('@nedian0brien/synapsenote-server')),
       exit: env.exit,
       parentPid: 99999,
       killProbe: env.killProbe,
@@ -381,7 +383,7 @@ describe('setupUtility (IPC handshake + lifecycle)', () => {
     setupUtility({
       parentPort: env.parentPort,
       importServer: () =>
-        Promise.resolve({} as unknown as typeof import('@inkeep/open-knowledge-server')),
+        Promise.resolve({} as unknown as typeof import('@nedian0brien/synapsenote-server')),
       exit: env.exit,
       parentPid: 99999,
       killProbe: env.killProbe,
@@ -422,7 +424,7 @@ describe('setupUtility (IPC handshake + lifecycle)', () => {
     setupUtility({
       parentPort: env.parentPort,
       importServer: () =>
-        Promise.resolve({} as unknown as typeof import('@inkeep/open-knowledge-server')),
+        Promise.resolve({} as unknown as typeof import('@nedian0brien/synapsenote-server')),
       exit: env.exit,
       parentPid: 99999,
       killProbe: env.killProbe,
@@ -459,7 +461,7 @@ describe('setupUtility (IPC handshake + lifecycle)', () => {
     setupUtility({
       parentPort: env.parentPort,
       importServer: () =>
-        Promise.resolve({} as unknown as typeof import('@inkeep/open-knowledge-server')),
+        Promise.resolve({} as unknown as typeof import('@nedian0brien/synapsenote-server')),
       exit: env.exit,
       parentPid: 99999,
       killProbe: env.killProbe,
@@ -491,7 +493,7 @@ describe('setupUtility (IPC handshake + lifecycle)', () => {
     setupUtility({
       parentPort: env.parentPort,
       importServer: () =>
-        Promise.resolve({} as unknown as typeof import('@inkeep/open-knowledge-server')),
+        Promise.resolve({} as unknown as typeof import('@nedian0brien/synapsenote-server')),
       exit: env.exit,
       parentPid: 99999,
       killProbe: env.killProbe,
@@ -533,7 +535,7 @@ describe('setupUtility (IPC handshake + lifecycle)', () => {
       importServer: () =>
         Promise.resolve({
           bootServer: mock(() => Promise.resolve({})),
-        } as unknown as typeof import('@inkeep/open-knowledge-server')),
+        } as unknown as typeof import('@nedian0brien/synapsenote-server')),
       exit: env.exit,
       parentPid: 99999,
       killProbe: env.killProbe,
@@ -569,7 +571,7 @@ describe('setupUtility (IPC handshake + lifecycle)', () => {
       importServer: () =>
         Promise.resolve({
           bootServer,
-        } as unknown as typeof import('@inkeep/open-knowledge-server')),
+        } as unknown as typeof import('@nedian0brien/synapsenote-server')),
       exit: env.exit,
       parentPid: 99999,
       killProbe: env.killProbe,
@@ -620,7 +622,7 @@ describe('handleInit boot prelude (FR-16/17/18/19/22/24)', () => {
       importServer: () =>
         Promise.resolve({
           bootServer,
-        } as unknown as typeof import('@inkeep/open-knowledge-server')),
+        } as unknown as typeof import('@nedian0brien/synapsenote-server')),
       exit: env.exit,
       parentPid: 99999,
       killProbe: env.killProbe,
@@ -663,7 +665,7 @@ describe('handleInit boot prelude (FR-16/17/18/19/22/24)', () => {
       importServer: () =>
         Promise.resolve({
           bootServer,
-        } as unknown as typeof import('@inkeep/open-knowledge-server')),
+        } as unknown as typeof import('@nedian0brien/synapsenote-server')),
       exit: env.exit,
       parentPid: 99999,
       killProbe: env.killProbe,
@@ -710,7 +712,7 @@ describe('handleInit boot prelude (FR-16/17/18/19/22/24)', () => {
         importServer: () =>
           Promise.resolve({
             bootServer,
-          } as unknown as typeof import('@inkeep/open-knowledge-server')),
+          } as unknown as typeof import('@nedian0brien/synapsenote-server')),
         exit: env.exit,
         parentPid: 99999,
         killProbe: env.killProbe,
@@ -769,7 +771,7 @@ describe('handleInit boot prelude (FR-16/17/18/19/22/24)', () => {
       importServer: () =>
         Promise.resolve({
           bootServer,
-        } as unknown as typeof import('@inkeep/open-knowledge-server')),
+        } as unknown as typeof import('@nedian0brien/synapsenote-server')),
       exit: env.exit,
       parentPid: 99999,
       killProbe: env.killProbe,
@@ -900,7 +902,7 @@ describe('handleInit defaultPrepareBootEnvironment (integration)', () => {
       importServer: () =>
         Promise.resolve({
           bootServer,
-        } as unknown as typeof import('@inkeep/open-knowledge-server')),
+        } as unknown as typeof import('@nedian0brien/synapsenote-server')),
       exit: env.exit,
       parentPid: 99999,
       killProbe: env.killProbe,
@@ -946,7 +948,7 @@ describe('handleInit defaultPrepareBootEnvironment (integration)', () => {
       importServer: () =>
         Promise.resolve({
           bootServer,
-        } as unknown as typeof import('@inkeep/open-knowledge-server')),
+        } as unknown as typeof import('@nedian0brien/synapsenote-server')),
       exit: env.exit,
       parentPid: 99999,
       killProbe: env.killProbe,
@@ -1005,7 +1007,7 @@ describe('handleInit defaultPrepareBootEnvironment (integration)', () => {
         importServer: () =>
           Promise.resolve({
             bootServer,
-          } as unknown as typeof import('@inkeep/open-knowledge-server')),
+          } as unknown as typeof import('@nedian0brien/synapsenote-server')),
         exit: env.exit,
         parentPid: 99999,
         killProbe: env.killProbe,
@@ -1066,7 +1068,7 @@ describe('handleInit defaultPrepareBootEnvironment (integration)', () => {
       importServer: () =>
         Promise.resolve({
           bootServer,
-        } as unknown as typeof import('@inkeep/open-knowledge-server')),
+        } as unknown as typeof import('@nedian0brien/synapsenote-server')),
       exit: env.exit,
       parentPid: 99999,
       killProbe: env.killProbe,

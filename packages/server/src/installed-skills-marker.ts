@@ -23,8 +23,8 @@ import {
   type InstalledSkills,
   InstalledSkillsSchema,
   parseInstalledSkills,
-} from '@inkeep/open-knowledge-core';
-import { atomicWriteFile } from '@inkeep/open-knowledge-core/server';
+} from '@nedian0brien/synapsenote-core';
+import { atomicWriteFile } from '@nedian0brien/synapsenote-core/server';
 import { tracedMkdir, tracedRename, tracedWriteFile } from './fs-traced.ts';
 import { getLogger } from './logger.ts';
 

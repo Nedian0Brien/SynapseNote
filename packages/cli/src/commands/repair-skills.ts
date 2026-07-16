@@ -5,7 +5,7 @@
  *     only ever runs inside a confirmed `.ok/` project)
  *   - `reclaimUserSkillsOnLaunch` (force-write user-global central + per-host)
  *
- * Why this exists: a teammate using only `@inkeep/open-knowledge` (no
+ * Why this exists: a teammate using only `@nedian0brien/synapsenote` (no
  * Desktop install) sees `SKILL.md` written once by `ok init` and never
  * refreshed. The Desktop already has these two sweeps; this is the CLI
  * port. Wired into `bootStartServer` and exposed as `ok repair-skills` for
@@ -42,7 +42,7 @@ import {
   USER_GLOBAL_BUNDLE_IDS,
   writeBundleDecision,
   writeTargetVersion,
-} from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-server';
 import { Command } from 'commander';
 import { removeUserGlobalSkillBundle } from '../integrations/skill-teardown.ts';
 import { assertProjectPathSafe } from '../integrations/write-project-skill.ts';
@@ -59,9 +59,9 @@ import {
 // `skill-reclaim` sweep — no longer a per-module literal that can drift.
 
 /** Slim discovery bundle — user-global central + per-host installs. */
-const USER_SKILL_DIR_NAME = 'open-knowledge-discovery';
-/** Rich project bundle — project-local installs (keeps `name: open-knowledge`). */
-const PROJECT_SKILL_DIR_NAME = 'open-knowledge';
+const USER_SKILL_DIR_NAME = 'synapsenote-discovery';
+/** Rich project bundle — project-local installs (keeps `name: synapsenote`). */
+const PROJECT_SKILL_DIR_NAME = 'synapsenote';
 const CENTRAL_USER_SKILL_REL = ['.agents', 'skills', USER_SKILL_DIR_NAME] as const;
 
 export interface RepairSkillsLogEvent {

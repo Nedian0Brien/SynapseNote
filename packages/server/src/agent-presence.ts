@@ -32,7 +32,7 @@
  *     (parity with `CC1Broadcaster.destroy()`; called during server shutdown).
  */
 import type { Hocuspocus } from '@hocuspocus/server';
-import { type AgentPresenceEntry, SYSTEM_DOC_NAME } from '@inkeep/open-knowledge-core';
+import { type AgentPresenceEntry, SYSTEM_DOC_NAME } from '@nedian0brien/synapsenote-core';
 import { isPresenceEligibleAgentId } from './agent-id.ts';
 import { getLogger } from './logger.ts';
 import { incrementAgentPresenceMutationError } from './metrics.ts';

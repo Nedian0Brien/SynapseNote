@@ -1,5 +1,5 @@
 /**
- * `open-knowledge stop` — SIGTERM live server + ui processes; leave stale
+ * `synapsenote stop` — SIGTERM live server + ui processes; leave stale
  * locks untouched (they belong to `ok clean`).
  *
  * Single-responsibility split from lock pruning. Exits 0 when there's
@@ -7,7 +7,7 @@
  */
 
 import { resolve } from 'node:path';
-import { type Config, isProcessAlive, resolveLockDir } from '@inkeep/open-knowledge-server';
+import { type Config, isProcessAlive, resolveLockDir } from '@nedian0brien/synapsenote-server';
 import { Command } from 'commander';
 import { getInvocationCwd } from '../project-anchor.ts';
 import { discoverLockDirs } from '../utils/process-scan.ts';
@@ -90,7 +90,7 @@ export function runStop(deps: RunStopDeps): StopOutcome {
   const plan = buildStopPlan(serverState, uiState, { isAlive: deps.isAlive });
 
   if (plan.targets.length === 0) {
-    log('No running open-knowledge processes.');
+    log('No running synapsenote processes.');
     return { stopped: [], failed: [], hadTargets: false };
   }
 
@@ -167,7 +167,7 @@ function executeStop(lockDir: string): StopOutcome {
 export function stopCommand(getConfig: () => Config): Command {
   return new Command('stop')
     .description(
-      'Stop open-knowledge server(s). With no argument: stops the server for the current directory. ' +
+      'Stop synapsenote server(s). With no argument: stops the server for the current directory. ' +
         'Pass a port number, a directory path, or "all" to target globally.',
     )
     .argument('[target...]', 'port number, directory path (spaces OK), or "all"')
@@ -204,7 +204,7 @@ export function stopCommand(getConfig: () => Config): Command {
       if (target === 'all') {
         const lockDirs = await discoverLockDirs();
         if (lockDirs.length === 0) {
-          console.log('No running open-knowledge servers found.');
+          console.log('No running synapsenote servers found.');
           return;
         }
         let stopped = 0;
@@ -218,7 +218,7 @@ export function stopCommand(getConfig: () => Config): Command {
           executeStop(lockDir);
           stopped++;
         }
-        if (stopped === 0) console.log('No running open-knowledge servers found.');
+        if (stopped === 0) console.log('No running synapsenote servers found.');
         return;
       }
 
@@ -227,7 +227,7 @@ export function stopCommand(getConfig: () => Config): Command {
         const n = Number.parseInt(target, 10);
         const lockDir = await findLockDirByNumber(n);
         if (lockDir === null) {
-          console.log(`No running open-knowledge server found with port or PID ${n}.`);
+          console.log(`No running synapsenote server found with port or PID ${n}.`);
           return;
         }
         executeStop(lockDir);

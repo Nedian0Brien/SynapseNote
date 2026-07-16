@@ -349,7 +349,7 @@ export class MaintenanceCoordinator {
       .map((c) => ({
         id: c.writerId,
         name: c.writerId,
-        email: `${c.writerId}@openknowledge.local`,
+        email: `${c.writerId}@synapsenote.local`,
       }));
   }
 

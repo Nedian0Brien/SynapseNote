@@ -181,7 +181,7 @@ rl.on("line", (line) => {
   }
 
   it('handshakes, registers prefixed tools, forwards calls, maps isError to a throw', async () => {
-    const extensionPath = join(dir, 'open-knowledge.ts');
+    const extensionPath = join(dir, 'synapsenote.ts');
     writeFileSync(extensionPath, buildPiExtensionSource({ mode: 'dev' }), 'utf-8');
 
     const handlers = new Map<string, (event: unknown, ctx: unknown) => unknown>();

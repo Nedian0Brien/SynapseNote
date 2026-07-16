@@ -69,12 +69,12 @@ describe('tokenizePropertyInlineLinks — wiki-links', () => {
     // wikilink at the head, followed by free-form description that
     // happens to include literal parens.
     const input =
-      '[[public/open-knowledge/specs/2026-06-12-showall-truncation-ux/SPEC]] — which entries appear (cap), NOT horizontal density';
+      '[[public/synapsenote/specs/2026-06-12-showall-truncation-ux/SPEC]] — which entries appear (cap), NOT horizontal density';
     const segs = tokenizePropertyInlineLinks(input);
     expect(segs[0]).toEqual({
       type: 'wikilink',
-      raw: '[[public/open-knowledge/specs/2026-06-12-showall-truncation-ux/SPEC]]',
-      target: 'public/open-knowledge/specs/2026-06-12-showall-truncation-ux/SPEC',
+      raw: '[[public/synapsenote/specs/2026-06-12-showall-truncation-ux/SPEC]]',
+      target: 'public/synapsenote/specs/2026-06-12-showall-truncation-ux/SPEC',
       alias: null,
       anchor: null,
     });

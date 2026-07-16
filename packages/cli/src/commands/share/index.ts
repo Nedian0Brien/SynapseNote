@@ -1,5 +1,5 @@
 /**
- * `open-knowledge share` — subcommand group driving the Publish-to-GitHub
+ * `synapsenote share` — subcommand group driving the Publish-to-GitHub
  * flow used by the editor's Share button when a project has no remote
  *. All three subcommands emit single-line JSON events when
  * `--json` is passed so the server-side spawner can parse without

@@ -14,7 +14,7 @@
  * wrapper files by a lint rule.
  */
 
-import type { OkBugReportCrashDetectedEvent } from '@inkeep/open-knowledge-core';
+import type { OkBugReportCrashDetectedEvent } from '@nedian0brien/synapsenote-core';
 import type {
   OkDesktopConfig,
   OkLocalOpAuthEvent,
@@ -94,7 +94,7 @@ export interface EventChannels {
    */
   'ok:update:stuck-hint': { payload: { downloadUrl: string } };
   /**
-   * Main → renderer on an `openknowledge://open?project=…&doc=<name>` URL
+   * Main → renderer on an `synapsenote://open?project=…&doc=<name>` URL
    * that routed to this window. Renderer updates `location.hash` to open
    * the target doc — the existing hash-route listener handles the rest.
    *
@@ -134,7 +134,7 @@ export interface EventChannels {
    * Main → renderer on a share URL routed to this window. Carries the
    * discriminated parse result so the renderer can dispatch:
    *   - `kind: 'ok'` → `ShareReceiveDialog` opens with Q1/Q2/Q3 tree
-   *   - `kind: 'unsupported-version'` → toast "Update OpenKnowledge to open this share."
+   *   - `kind: 'unsupported-version'` → toast "Update SynapseNote to open this share."
    *   - `kind: 'invalid'` → toast "Invalid share URL."
    *
    * Main routes via `getFocusedWindow() ?? getAllWindows()[0]`. Source

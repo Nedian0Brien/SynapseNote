@@ -13,8 +13,9 @@
  * Fail-open: no desktop bridge, no branch, or a failed fetch resolves to
  * `unknown` (the honest "your checkout is behind — pull" guidance).
  */
-import type { ShareTargetStatusResponse } from '@inkeep/open-knowledge-core';
+
 import { Trans, useLingui } from '@lingui/react/macro';
+import type { ShareTargetStatusResponse } from '@nedian0brien/synapsenote-core';
 import {
   ArrowDownToLine,
   FilePen,

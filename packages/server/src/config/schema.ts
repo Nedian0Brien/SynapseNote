@@ -1,6 +1,6 @@
 /**
  * Re-export shim — `ConfigSchema` and friends live in
- * `@inkeep/open-knowledge-core`. Existing importers continue to work via
+ * `@nedian0brien/synapsenote-core`. Existing importers continue to work via
  * this shim during a gradual migration.
  *
  * Re-aliased rather than `export {} from '@inkeep/...'` so tsdown's dts
@@ -8,8 +8,8 @@
  * trace bare re-exports across workspace package boundaries.
  */
 
-import type { Config as CoreConfig } from '@inkeep/open-knowledge-core';
-import { ConfigSchema as CoreConfigSchema } from '@inkeep/open-knowledge-core';
+import type { Config as CoreConfig } from '@nedian0brien/synapsenote-core';
+import { ConfigSchema as CoreConfigSchema } from '@nedian0brien/synapsenote-core';
 
 export type Config = CoreConfig;
 export const ConfigSchema = CoreConfigSchema;

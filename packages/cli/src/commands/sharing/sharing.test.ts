@@ -90,7 +90,7 @@ describe('ok config-sharing unshare → share round-trip', () => {
     const exclude = readExclude(dir);
     expect(exclude).toContain('.ok/');
     expect(exclude).toContain('.mcp.json');
-    expect(exclude).toContain('.claude/skills/open-knowledge/');
+    expect(exclude).toContain('.claude/skills/synapsenote/');
     expect(exclude).toContain('.claude/launch.json');
     expect(process.exitCode).not.toBe(1);
   });
@@ -155,7 +155,7 @@ describe('ok config-sharing unshare — §5.5 tracked-files refusal', () => {
       await sharingUnshareCommand().parseAsync(['node', 'unshare', '--project', dir]);
     });
     expect(process.exitCode).toBe(1);
-    expect(stderr).toContain('Cannot switch OpenKnowledge to local-only');
+    expect(stderr).toContain('Cannot switch SynapseNote to local-only');
     expect(stderr).toContain('git rm --cached .mcp.json');
     expect(stderr).toContain('your teammates will see a deletion on their next pull');
 

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test';
-import { getParseHealth, resetParseHealth } from '@inkeep/open-knowledge-core';
+import { getParseHealth, resetParseHealth } from '@nedian0brien/synapsenote-core';
 import { onPillRenderError } from './SidebarSearchBar';
 
 describe('SidebarSearchBar module', () => {

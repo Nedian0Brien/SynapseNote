@@ -33,7 +33,7 @@
 import type { Attributes, Span } from '@opentelemetry/api';
 import { context, trace } from '@opentelemetry/api';
 
-const TRACER_NAME = 'open-knowledge-app';
+const TRACER_NAME = 'synapsenote-app';
 
 interface ColdMountEntry {
   span: Span;

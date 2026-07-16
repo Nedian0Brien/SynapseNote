@@ -5,7 +5,7 @@
  * Covered surfaces:
  *   (a) Electron host: forwards to `okDesktop.shell.openExternal`, NEVER opens
  *       a new in-app window via `window.open` (the bug this fixes — external
- *       graph links were opening inside Open Knowledge instead of the OS
+ *       graph links were opening inside SynapseNote instead of the OS
  *       default browser).
  *   (b) Web host (no bridge): falls through to
  *       `window.open(url, '_blank', 'noopener,noreferrer')`.

@@ -38,7 +38,7 @@
  * undo on a gesture that asked for a link.
  */
 
-import { isAllowedLinkUri } from '@inkeep/open-knowledge-core';
+import { isAllowedLinkUri } from '@nedian0brien/synapsenote-core';
 import { detectGfmLinkToken } from '../gfm-link-detector.ts';
 
 // RFC 3986 scheme grammar. Note the collision with host:port shorthand:

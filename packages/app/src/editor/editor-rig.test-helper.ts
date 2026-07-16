@@ -10,7 +10,7 @@
  * test.
  */
 
-import { LinkFidelity } from '@inkeep/open-knowledge-core';
+import { LinkFidelity } from '@nedian0brien/synapsenote-core';
 import { Editor, type Extensions } from '@tiptap/core';
 import Collaboration from '@tiptap/extension-collaboration';
 import StarterKit from '@tiptap/starter-kit';

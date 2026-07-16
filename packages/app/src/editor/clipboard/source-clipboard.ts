@@ -38,13 +38,13 @@
 
 import type { Extension } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
+import { t } from '@lingui/core/macro';
 import {
   ChunkedInsertError,
   chunkedYTextInsert,
   htmlToMdast,
   mdastToMarkdown,
-} from '@inkeep/open-knowledge-core';
-import { t } from '@lingui/core/macro';
+} from '@nedian0brien/synapsenote-core';
 import { toast } from 'sonner';
 import * as Y from 'yjs';
 import { type ClipboardSource, detectSource } from './detect-source.ts';

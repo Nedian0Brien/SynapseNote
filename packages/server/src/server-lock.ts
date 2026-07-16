@@ -2,7 +2,7 @@
  * Server-level process lock — exclusive per-project server ownership.
  *
  * Thin adapter around `acquireProcessLock` in `process-lock.ts`. Only one
- * OpenKnowledge server process may own a given contentDir at a time. The
+ * SynapseNote server process may own a given contentDir at a time. The
  * lock file at `<lockDir>/server.lock` contains JSON metadata used for
  * stale detection and for MCP port discovery.
  *

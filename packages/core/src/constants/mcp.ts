@@ -11,11 +11,11 @@ export const READ_DOCUMENT_HISTORY_DEPTH = 5;
 export const GREP_MAX_RESULTS = 50;
 
 /**
- * Wire-level identity the OpenKnowledge MCP server advertises and the key
+ * Wire-level identity the SynapseNote MCP server advertises and the key
  * editor configs use to register the entry (e.g. Claude Code's `.mcp.json`
- * `mcpServers["open-knowledge"]`). Single source of truth — browser-safe so
+ * `mcpServers["synapsenote"]`). Single source of truth — browser-safe so
  * `core` consumers (the in-app-terminal launch in
- * `handoff/terminal-launch.ts`) and `@inkeep/open-knowledge-server` (which
+ * `handoff/terminal-launch.ts`) and `@nedian0brien/synapsenote-server` (which
  * re-exports it) stay in lockstep with the value editor wiring writes.
  */
-export const MCP_SERVER_NAME = 'open-knowledge';
+export const MCP_SERVER_NAME = 'synapsenote';

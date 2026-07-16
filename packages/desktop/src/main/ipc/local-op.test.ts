@@ -6,19 +6,19 @@
  * wall-clock timeout), exhausting file descriptors / PIDs / memory.
  *
  * The handlers route subprocess spawns through `runAuthStatusSubprocess` /
- * `runAuthReposSubprocess` from `@inkeep/open-knowledge-server`, which we
+ * `runAuthReposSubprocess` from `@nedian0brien/synapsenote-server`, which we
  * mock at the module boundary so these tests never touch the real CLI. The
  * factories surface a `resolve` hook so the test can hold each "subprocess"
  * mid-flight while it asserts coalescing behavior.
  */
 import { describe, expect, mock, test } from 'bun:test';
-import type { AuthReposResponse, AuthStatusResponse } from '@inkeep/open-knowledge-server';
+import type { AuthReposResponse, AuthStatusResponse } from '@nedian0brien/synapsenote-server';
 
 const statusCalls: Array<{ host: string | undefined; resolve: (r: AuthStatusResponse) => void }> =
   [];
 const reposCalls: Array<{ host: string | undefined; resolve: (r: AuthReposResponse) => void }> = [];
 
-mock.module('@inkeep/open-knowledge-server', () => ({
+mock.module('@nedian0brien/synapsenote-server', () => ({
   runAuthStatusSubprocess: ({ host }: { host?: string }) =>
     new Promise<AuthStatusResponse>((resolve) => {
       statusCalls.push({ host, resolve });
@@ -37,7 +37,7 @@ const { createLocalOpState, handleAuthRepos, handleAuthStatus } = await import('
 
 function makeDeps() {
   return {
-    resolveCliArgs: () => ['open-knowledge'],
+    resolveCliArgs: () => ['synapsenote'],
     state: createLocalOpState(),
   };
 }

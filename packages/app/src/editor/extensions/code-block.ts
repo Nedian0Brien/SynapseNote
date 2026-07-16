@@ -8,7 +8,7 @@
  * layer is browser-render-only and never reaches the server schema.
  */
 
-import { CodeBlockFidelity as BaseCodeBlockFidelity } from '@inkeep/open-knowledge-core';
+import { CodeBlockFidelity as BaseCodeBlockFidelity } from '@nedian0brien/synapsenote-core';
 import { textblockTypeInputRule } from '@tiptap/core';
 import { ReactNodeViewRenderer } from '@tiptap/react';
 import { common, createLowlight } from 'lowlight';

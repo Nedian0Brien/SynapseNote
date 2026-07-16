@@ -2,7 +2,7 @@
  * Branch switch while tab open with dirty content.
  *
  * When a user runs `git checkout <branch>` on a project directory that the
- * OpenKnowledge server is watching, the head-watcher detects the HEAD move,
+ * SynapseNote server is watching, the head-watcher detects the HEAD move,
  * fires BatchBegin (park WIP to shadow refs) → BatchEnd (reset Y.Docs from
  * disk via applyExternalChange → updateYFragment).
  *
@@ -26,7 +26,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as wait } from 'node:timers/promises';
 import { HocuspocusProvider } from '@hocuspocus/provider';
-import { ensureProjectGit } from '@inkeep/open-knowledge-server';
+import { ensureProjectGit } from '@nedian0brien/synapsenote-server';
 import * as Y from 'yjs';
 import { handleBranchSwitched } from '../../src/editor/branch-invalidation';
 import { ProviderPool } from '../../src/editor/provider-pool';

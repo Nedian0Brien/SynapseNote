@@ -9,7 +9,7 @@ function fakePage(data: Partial<Page['data']> = {}, url = '/docs/get-started/ove
     url,
     data: {
       title: 'Overview',
-      description: 'What OpenKnowledge is.',
+      description: 'What SynapseNote is.',
       getText: async (type: 'raw' | 'processed') => `BODY(${type})`,
       ...data,
     },
@@ -22,7 +22,7 @@ describe('getLLMText', () => {
     expect(md).toBe(
       `# Overview (/docs/get-started/overview)
 
-What OpenKnowledge is.
+What SynapseNote is.
 
 BODY(processed)`,
     );

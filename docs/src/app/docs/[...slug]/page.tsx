@@ -4,7 +4,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { PageMarkdownActions } from '@/components/page-markdown-actions';
 import { ProductUpdatesForm } from '@/components/product-updates-form';
-import { metaDescription, SITE_NAME, SITE_URL, TWITTER_HANDLE } from '@/lib/site';
+import { metaDescription, SITE_NAME, SITE_URL } from '@/lib/site';
 import { source } from '@/lib/source';
 import { getMDXComponents } from '@/mdx-components';
 
@@ -84,8 +84,6 @@ export async function generateMetadata(props: PageProps<'/docs/[...slug]'>): Pro
     },
     twitter: {
       card: 'summary_large_image',
-      site: TWITTER_HANDLE,
-      creator: TWITTER_HANDLE,
       title: page.data.title,
       description,
       images: [ogImageUrl],

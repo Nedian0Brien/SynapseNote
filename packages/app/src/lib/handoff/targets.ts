@@ -17,7 +17,7 @@
  * it also clears that allow-list filter.
  */
 
-import type { TargetData } from '@inkeep/open-knowledge-core';
+import type { TargetData } from '@nedian0brien/synapsenote-core';
 
 export const KNOWN_TARGETS = [
   {

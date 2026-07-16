@@ -5,7 +5,7 @@
  *
  * Three are **directive** composers — file, folder, and empty-space / project.
  * Each emits a short sentence naming a path (or none, for project scope) and
- * telling the agent to open the target in OpenKnowledge's web preview. They
+ * telling the agent to open the target in SynapseNote's web preview. They
  * never carry file content, so the precedent #25 invariant ("agent grounds
  * via OK MCP, not native attach") holds by virtue of the URL never carrying
  * `file=` attach data.
@@ -25,7 +25,7 @@
  * directive so the receiving agent opens the project's preview UI on first
  * turn. When `false`, the directive trailer is dropped so the receiving agent
  * does not contradict the user's "agent does not open my preview" preference.
- * The legacy " in web view" suffix is dropped in both modes — OpenKnowledge
+ * The legacy " in web view" suffix is dropped in both modes — SynapseNote
  * is now distributed as both a desktop app and a web preview, so the prompt
  * stays surface-neutral.
  *
@@ -129,13 +129,13 @@ function sanitizePathForAtMention(path: string): string {
  * targets (Claude Code / Codex / Cursor), no per-host flag mechanics.
  *
  * The selection scope (`composeSelectionPrompt`) deliberately does NOT get it:
- * it already ends with an explicit "read the passage via the OpenKnowledge MCP
+ * it already ends with an explicit "read the passage via the SynapseNote MCP
  * server" directive, and it is the most URL-budget-constrained prompt, so
  * adding the pointer there would buy little and risk pushing selections into
  * locus mode sooner.
  */
 export const OK_PROJECT_SKILL_POINTER =
-  "This is an OpenKnowledge project: load the `open-knowledge` skill and use the OpenKnowledge MCP tools for all markdown — don't probe for `.ok/` or use native file tools on `.md` / `.mdx`.";
+  "This is an SynapseNote project: load the `synapsenote` skill and use the SynapseNote MCP tools for all markdown — don't probe for `.ok/` or use native file tools on `.md` / `.mdx`.";
 
 /** Prepend the standing skill pointer to a directive prompt body. */
 export function withSkillPointer(directive: string): string {
@@ -144,7 +144,7 @@ export function withSkillPointer(directive: string): string {
 
 /**
  * One-sentence surface note prepended to the docked-terminal *bare*-launch
- * prompt. Tells the agent it was spawned inside the OpenKnowledge desktop
+ * prompt. Tells the agent it was spawned inside the SynapseNote desktop
  * app's terminal panel — not a bare shell the user opened themselves — so it
  * reads the launch as an OK context handoff rather than a generic CLI session.
  *
@@ -152,7 +152,7 @@ export function withSkillPointer(directive: string): string {
  * not "in the desktop app's terminal").
  */
 export const OK_TERMINAL_SURFACE_PREAMBLE =
-  "You're running in the terminal of the OpenKnowledge desktop app.";
+  "You're running in the terminal of the SynapseNote desktop app.";
 
 /**
  * Docked-terminal *bare*-launch prompt — what lands when the user opens a
@@ -176,7 +176,7 @@ export function composeTerminalBareLaunchPrompt(relativePath: string | null): st
   const tail =
     relativePath === null
       ? 'Then stop.'
-      : `Read \`${sanitizePathForPrompt(relativePath)}\` via the OpenKnowledge MCP server, then stop.`;
+      : `Read \`${sanitizePathForPrompt(relativePath)}\` via the SynapseNote MCP server, then stop.`;
   return `${OK_TERMINAL_SURFACE_PREAMBLE} ${OK_PROJECT_SKILL_POINTER} ${tail}`;
 }
 
@@ -203,14 +203,14 @@ export function composeFilePrompt(
   instruction?: string,
 ): string {
   const safe = sanitizePathForPrompt(relativePath);
-  const base = `Let's work on \`${safe}\` using OpenKnowledge.`;
+  const base = `Let's work on \`${safe}\` using SynapseNote.`;
   const directive = autoOpen ? `${base} Open the OK editor in web view.` : base;
   return appendInstruction(directive, instruction);
 }
 
 /**
  * Skill-authoring directive — instructs the receiving agent to use Open
- * Knowledge's `open-knowledge-write-skill` meta-skill to author the named
+ * Knowledge's `synapsenote-write-skill` meta-skill to author the named
  * skill. `skillName` is the skill's identity (== directory, `[a-z0-9-]`),
  * backtick-wrapped + sanitized like a path token. `scope` tells the agent
  * which surface to edit via OK MCP: a `project` skill (`.ok/skills/`, shared)
@@ -226,7 +226,7 @@ export function composeSkillPrompt(
   autoOpen: boolean,
 ): string {
   const safe = sanitizePathForPrompt(skillName);
-  const base = `Use your open-knowledge-write-skill skill to author the ${scope} Open Knowledge skill \`${safe}\`. Edit it with the Open Knowledge tools.`;
+  const base = `Use your synapsenote-write-skill skill to author the ${scope} SynapseNote skill \`${safe}\`. Edit it with the SynapseNote tools.`;
   return autoOpen ? `${base} Open the OK editor in web view.` : base;
 }
 
@@ -243,7 +243,7 @@ export function composeFolderPrompt(
   instruction?: string,
 ): string {
   const safe = sanitizePathForPrompt(relativeFolderPath);
-  const base = `Let's work on the \`${safe}\` folder using OpenKnowledge.`;
+  const base = `Let's work on the \`${safe}\` folder using SynapseNote.`;
   const directive = autoOpen ? `${base} Open the OK editor in web view.` : base;
   return appendInstruction(directive, instruction);
 }
@@ -256,7 +256,7 @@ export function composeFolderPrompt(
  * as `composeFilePrompt`.
  */
 export function composeEmptySpacePrompt(autoOpen: boolean, instruction?: string): string {
-  const base = `Let's work on this project using OpenKnowledge.`;
+  const base = `Let's work on this project using SynapseNote.`;
   const directive = autoOpen ? `${base} Open the OK editor in web view.` : base;
   return appendInstruction(directive, instruction);
 }
@@ -321,9 +321,9 @@ export function composeCreatePrompt(
     if (scenario === 'existing-repo') {
       const briefPart =
         trimmed === ''
-          ? `Let's work on this project using OpenKnowledge.`
+          ? `Let's work on this project using SynapseNote.`
           : [
-              "Here's what I'd like to do in this OpenKnowledge project:",
+              "Here's what I'd like to do in this SynapseNote project:",
               '',
               blockquote(trimmed),
             ].join('\n');
@@ -332,14 +332,14 @@ export function composeCreatePrompt(
     }
 
     const scaffold =
-      'Scaffold the folders, templates, and AI-readable rules to match, using OpenKnowledge.';
+      'Scaffold the folders, templates, and AI-readable rules to match, using SynapseNote.';
     const base =
       trimmed === ''
         ? mentionBlock === ''
-          ? `Let's set up a new OpenKnowledge project. ${scaffold}`
-          : [`Let's set up a new OpenKnowledge project. ${scaffold}`, '', mentionBlock].join('\n')
+          ? `Let's set up a new SynapseNote project. ${scaffold}`
+          : [`Let's set up a new SynapseNote project. ${scaffold}`, '', mentionBlock].join('\n')
         : [
-            "I'm setting up a new OpenKnowledge project. Here's what I want to create:",
+            "I'm setting up a new SynapseNote project. Here's what I want to create:",
             '',
             blockquote(trimmed),
             ...(mentionBlock === '' ? [] : ['', mentionBlock]),
@@ -492,7 +492,7 @@ function encodedPromptLength(prompt: string, target: HandoffTarget): number {
 
 /** Opening sentence — names the doc with the agent CLIs' `@`-mention token. */
 function selectionLead(safePath: string): string {
-  return `Let's work on the selected passage in @${safePath} using OpenKnowledge.`;
+  return `Let's work on the selected passage in @${safePath} using SynapseNote.`;
 }
 
 /**
@@ -627,7 +627,7 @@ function composeLocus(safePath: string, instruction: string, selectionMarkdown: 
     anchor,
     fence,
     '',
-    `Read the full passage from @${safePath} via the OpenKnowledge MCP server before editing.`,
+    `Read the full passage from @${safePath} via the SynapseNote MCP server before editing.`,
   ].join('\n');
 }
 
@@ -696,7 +696,7 @@ export function composeSelectionPrompt(input: SelectionPromptInput): string {
  * fusing onto the user's last line.
  */
 function composeAskBody(safePath: string, instruction: string, autoOpen: boolean): string {
-  const lead = `Let's work on @${safePath} using OpenKnowledge.`;
+  const lead = `Let's work on @${safePath} using SynapseNote.`;
   const trailer = autoOpen ? 'Open the OK editor in web view.' : '';
   const trimmed = instruction.trim();
   if (trimmed === '') {
@@ -860,7 +860,7 @@ function locusSelectionSegment(selectionMarkdown: string, safeDocPath: string): 
     anchor,
     fence,
     '',
-    `Read the full passage from @${safeDocPath} via the OpenKnowledge MCP server before editing.`,
+    `Read the full passage from @${safeDocPath} via the SynapseNote MCP server before editing.`,
   ].join('\n');
 }
 
@@ -871,7 +871,7 @@ function locusSelectionSegment(selectionMarkdown: string, safeDocPath: string): 
  */
 function linesSelectionSegment(startLine: number, endLine: number, safeDocPath: string): string {
   const range = startLine === endLine ? `line ${startLine}` : `lines ${startLine}-${endLine}`;
-  return `The selected passage is ${range} of @${safeDocPath}. Read it from @${safeDocPath} via the OpenKnowledge MCP server before editing.`;
+  return `The selected passage is ${range} of @${safeDocPath}. Read it from @${safeDocPath} via the SynapseNote MCP server before editing.`;
 }
 
 /**
@@ -892,12 +892,12 @@ function mentionsSegment(mentions: readonly string[]): string {
  *  it as a real reference. */
 function scopeLead(input: AssembleHandoffPromptInput): string {
   if (input.scope === 'doc') {
-    return `Let's work on @${sanitizePathForAtMention(input.docRelativePath)} using OpenKnowledge.`;
+    return `Let's work on @${sanitizePathForAtMention(input.docRelativePath)} using SynapseNote.`;
   }
   if (input.scope === 'folder') {
-    return `Let's work on the @${sanitizePathForAtMention(input.folderRelativePath)} folder using OpenKnowledge.`;
+    return `Let's work on the @${sanitizePathForAtMention(input.folderRelativePath)} folder using SynapseNote.`;
   }
-  return `Let's work on this project using OpenKnowledge.`;
+  return `Let's work on this project using SynapseNote.`;
 }
 
 /**
@@ -973,7 +973,7 @@ function assembleDocSelectionPrompt(
 ): string {
   const { target } = input;
   const safeDocPath = sanitizePathForAtMention(input.docRelativePath);
-  const lead = `Let's work on @${safeDocPath} using OpenKnowledge.`;
+  const lead = `Let's work on @${safeDocPath} using SynapseNote.`;
   const selectionSegment = selectionSegmentFor(
     selection,
     lead,

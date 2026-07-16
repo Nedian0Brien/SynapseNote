@@ -17,7 +17,7 @@
  *     XmlFragment YEvent through its prosemirror-binding).
  */
 import { describe, expect, test } from 'bun:test';
-import { MarkdownManager, sharedExtensions } from '@inkeep/open-knowledge-core';
+import { MarkdownManager, sharedExtensions } from '@nedian0brien/synapsenote-core';
 import { getSchema } from '@tiptap/core';
 import { yXmlFragmentToProseMirrorRootNode } from '@tiptap/y-tiptap';
 import * as Y from 'yjs';

@@ -44,8 +44,8 @@ import {
   type ProblemDetails,
   ProblemDetailsSchema,
   type ProblemType,
-} from '@inkeep/open-knowledge-core';
-import type { HttpErrorStatus } from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-core';
+import type { HttpErrorStatus } from '@nedian0brien/synapsenote-server';
 
 export function emitProblem(
   res: ServerResponse,

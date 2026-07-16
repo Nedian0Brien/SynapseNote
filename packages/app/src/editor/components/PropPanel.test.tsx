@@ -18,7 +18,7 @@
  */
 
 import { describe, expect, test } from 'bun:test';
-import { builtInComponents, type PropDef } from '@inkeep/open-knowledge-core';
+import { builtInComponents, type PropDef } from '@nedian0brien/synapsenote-core';
 import { renderToString } from 'react-dom/server';
 import type { JsxComponentDescriptor } from '../registry/types.ts';
 

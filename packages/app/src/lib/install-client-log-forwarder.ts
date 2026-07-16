@@ -27,7 +27,7 @@ import {
   RENDERER_LOG_MAX_ENTRIES,
   RENDERER_LOG_MAX_MESSAGE_BYTES,
   truncateLogMessage,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 
 const FORWARDER_MARKER = Symbol.for('ok.client.logForwarder');
 

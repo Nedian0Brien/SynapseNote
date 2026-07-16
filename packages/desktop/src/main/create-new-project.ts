@@ -19,13 +19,13 @@ import {
   getOkArtifactPaths,
   type ProjectAiIntegrationsResult,
   writeProjectAiIntegrations,
-} from '@inkeep/open-knowledge';
+} from '@nedian0brien/synapsenote';
 import {
   ALL_EDITOR_IDS,
   type EditorId,
   type OkFolderState,
   sanitizeFolderName,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import {
   applySeed,
   coercePackId,
@@ -37,7 +37,7 @@ import {
   resolvePack,
   tracedMkdirSync,
   writeRootGitignoreForNewRepo,
-} from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-server';
 import {
   type DiscoverProjectOptions,
   type DiscoverProjectResult,
@@ -81,12 +81,12 @@ export function folderState(path: string): OkFolderState {
  * Re-export `sanitizeFolderName` from core so existing main-process callers
  * (the IPC handler in `index.ts` and the integration tests) keep their
  * existing import path. The renderer's `CreateProjectDialog` imports the
- * same function directly from `@inkeep/open-knowledge-core` — there is no
+ * same function directly from `@nedian0brien/synapsenote-core` — there is no
  * second copy.
  */
 export { sanitizeFolderName };
 
-import type { CreateNewProjectFailureReason } from '@inkeep/open-knowledge-core';
+import type { CreateNewProjectFailureReason } from '@nedian0brien/synapsenote-core';
 
 export class CreateNewProjectError extends Error {
   readonly reason: CreateNewProjectFailureReason;
@@ -509,7 +509,7 @@ export async function runCreateNew(
 /**
  * Resolve the default parent location for the Create-new-project dialog.
  * Returns the persisted last-used parent when set and still on disk; falls
- * back to `<documents>/OpenKnowledge` otherwise. The fallback path is NOT
+ * back to `<documents>/SynapseNote` otherwise. The fallback path is NOT
  * created here — the dialog's "Create" submit is the only write path.
  *
  * `documentsDir` + `existsCheck` are injectable so tests don't depend on
@@ -529,5 +529,5 @@ export function resolveDefaultProjectsRoot(
       console.warn('[create-new-project] persisted lastUsedProjectParent existsCheck failed:', err);
     }
   }
-  return resolve(documentsDir, 'OpenKnowledge');
+  return resolve(documentsDir, 'SynapseNote');
 }

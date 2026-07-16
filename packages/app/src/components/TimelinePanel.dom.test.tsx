@@ -18,7 +18,7 @@ mock.module('next-themes', () => ({
   useTheme: () => ({ resolvedTheme: 'light' }),
 }));
 
-import type { TimelineEntry } from '@inkeep/open-knowledge-core';
+import type { TimelineEntry } from '@nedian0brien/synapsenote-core';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { TimelineContent } from './TimelinePanel';
 
@@ -39,8 +39,8 @@ function checkpointEntry(sha: string): TimelineEntry {
   return {
     sha,
     timestamp: '2026-04-17T00:00:00Z',
-    author: 'openknowledge-service',
-    authorEmail: 'service@openknowledge.local',
+    author: 'synapsenote-service',
+    authorEmail: 'service@synapsenote.local',
     type: 'checkpoint',
     message: 'checkpoint: cleanup',
     contributors: [],
@@ -53,7 +53,7 @@ function upstreamEntry(sha: string): TimelineEntry {
     sha,
     timestamp: '2026-04-17T00:00:00Z',
     author: 'git-upstream',
-    authorEmail: 'upstream@openknowledge.local',
+    authorEmail: 'upstream@synapsenote.local',
     type: 'upstream',
     message: 'import: upstream sync',
     contributors: [],

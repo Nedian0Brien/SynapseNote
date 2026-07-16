@@ -15,8 +15,8 @@ const cliDist = resolve(__dirname, '../../../cli/dist');
 
 describe('parseArgs', () => {
   test('accepts a single positional', () => {
-    expect(parseArgs(['node', 'script', '/Applications/OpenKnowledge.app']).inputPath).toBe(
-      '/Applications/OpenKnowledge.app',
+    expect(parseArgs(['node', 'script', '/Applications/SynapseNote.app']).inputPath).toBe(
+      '/Applications/SynapseNote.app',
     );
   });
 
@@ -68,7 +68,7 @@ describe('loadAndRoundTrip', () => {
     const fakeBinding = {
       parseTomlToJson: () => '{"probe":1}',
       upsertMcpServer: () => ({
-        text: '[mcp_servers.open-knowledge]\n',
+        text: '[mcp_servers.synapsenote]\n',
         changed: true,
         existed: false,
       }),
@@ -152,7 +152,7 @@ describe('runDriver (full orchestration)', () => {
         return true;
       },
     });
-    expect(await runDriver(['node', 'script', '/Applications/OpenKnowledge.app'], deps)).toBe(0);
+    expect(await runDriver(['node', 'script', '/Applications/SynapseNote.app'], deps)).toBe(0);
     expect(probed).toContain('Contents/Resources/cli/dist/native/index.js');
   });
 
@@ -164,7 +164,7 @@ describe('runDriver (full orchestration)', () => {
       cp: cpMock,
       mkdtemp: mock(async () => '/tmp/ok-nc-fake'),
       rm: mock(async () => {}),
-      listAppsInMount: mock(async () => ['OpenKnowledge.app']),
+      listAppsInMount: mock(async () => ['SynapseNote.app']),
       existsSync: () => true,
     });
     expect(await runDriver(['node', 'script', '/tmp/build.dmg'], deps)).toBe(0);

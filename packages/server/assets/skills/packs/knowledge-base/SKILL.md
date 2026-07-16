@@ -1,18 +1,18 @@
 ---
-name: open-knowledge-pack-knowledge-base
+name: synapsenote-pack-knowledge-base
 version: "0.18.0"
-description: "How to work in a Knowledge Base project (the `knowledge-base` starter pack). Read when the project has the three-layer source-grounded layout — `external-sources/` → `research/` → `articles/` — wired to the `workflow` MCP tool's ingest / research / consolidate kinds. Carries the pack's workflow, per-folder rules, status flows, and log discipline so this guidance does NOT live inside template bodies or log.md. Complements the platform `open-knowledge` skill; does not replace it."
-compatibility: "Claude Code, Claude Desktop, Claude Cowork, Claude.ai web. Requires OpenKnowledge MCP server. Installed project-local by `ok seed --pack knowledge-base`."
+description: "How to work in a Knowledge Base project (the `knowledge-base` starter pack). Read when the project has the three-layer source-grounded layout — `external-sources/` → `research/` → `articles/` — wired to the `workflow` MCP tool's ingest / research / consolidate kinds. Carries the pack's workflow, per-folder rules, status flows, and log discipline so this guidance does NOT live inside template bodies or log.md. Complements the platform `synapsenote` skill; does not replace it."
+compatibility: "Claude Code, Claude Desktop, Claude Cowork, Claude.ai web. Requires SynapseNote MCP server. Installed project-local by `ok seed --pack knowledge-base`."
 metadata:
   pack: "knowledge-base"
-  author: "Inkeep"
-  repository: "https://github.com/inkeep/open-knowledge"
+  author: "SynapseNote"
+  repository: "https://github.com/Nedian0Brien/SynapseNote"
 ---
 # Knowledge Base pack — how to work here
 
 This project uses the **source-grounded knowledge-base** layout. The whole point is a closed evidence loop: nothing canonical exists without a traceable chain back to a preserved source. This skill holds the workflow so the templates and `log.md` can stay clean — when you create a doc from a template you get structure, and the *how* lives here.
 
-> This skill is pack guidance. The platform `open-knowledge` skill (read/write/preview/grounding rules) still governs every markdown operation — this layers the KB workflow on top.
+> This skill is pack guidance. The platform `synapsenote` skill (read/write/preview/grounding rules) still governs every markdown operation — this layers the KB workflow on top.
 
 ## The three layers
 

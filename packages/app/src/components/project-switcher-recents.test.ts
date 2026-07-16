@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import type { WorktreeSelectorModel } from '@inkeep/open-knowledge-core';
+import type { WorktreeSelectorModel } from '@nedian0brien/synapsenote-core';
 import type { RecentProjectEntry } from '@/lib/desktop-bridge-types';
 import {
   basenameOf,

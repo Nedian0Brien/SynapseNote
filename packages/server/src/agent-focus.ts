@@ -18,7 +18,7 @@
  *     uses it today; Path B session-end logic will.
  */
 import type { Hocuspocus } from '@hocuspocus/server';
-import { type AgentFocusEntry, SYSTEM_DOC_NAME } from '@inkeep/open-knowledge-core';
+import { type AgentFocusEntry, SYSTEM_DOC_NAME } from '@nedian0brien/synapsenote-core';
 import { isPresenceEligibleAgentId } from './agent-id.ts';
 import { getLogger } from './logger.ts';
 

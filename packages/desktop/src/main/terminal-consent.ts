@@ -22,7 +22,7 @@
  */
 
 import { existsSync, readFileSync } from 'node:fs';
-import { resolveConfigPath } from '@inkeep/open-knowledge-core/server';
+import { resolveConfigPath } from '@nedian0brien/synapsenote-core/server';
 import { parse as parseYaml } from 'yaml';
 import { getLogger } from './desktop-logger.ts';
 

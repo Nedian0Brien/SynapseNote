@@ -13,6 +13,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import type { HocuspocusProvider } from '@hocuspocus/provider';
+import { Trans, useLingui } from '@lingui/react/macro';
 import {
   bindFrontmatterDoc,
   type FrontmatterBinding,
@@ -26,8 +27,7 @@ import {
   isFrontmatterValueEmpty,
   readFmKeys,
   readFmRegionWithError,
-} from '@inkeep/open-knowledge-core';
-import { Trans, useLingui } from '@lingui/react/macro';
+} from '@nedian0brien/synapsenote-core';
 import { AlertTriangle, Plus } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { FrontmatterBindingProvider } from '@/components/FrontmatterBindingContext';

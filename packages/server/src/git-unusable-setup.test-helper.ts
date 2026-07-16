@@ -1,6 +1,6 @@
 /**
  * Shared test harness for the "git-preflight at the project-setup boundary"
- * regression (inkeep/open-knowledge#356).
+ * regression (Nedian0Brien/SynapseNote#356).
  *
  * Reproduces the reporter's macOS Apple-Silicon state, where the host `git`
  * exists and is executable but every invocation exits non-zero (the
@@ -137,8 +137,8 @@ export function isRecoverableGitSignal(value: unknown): boolean {
   return (
     msg.includes('GIT_NOT_AVAILABLE') ||
     msg.includes('GIT_TOO_OLD') ||
-    msg.includes('OpenKnowledge needs Git') ||
-    msg.includes('OpenKnowledge requires Git') ||
+    msg.includes('SynapseNote needs Git') ||
+    msg.includes('SynapseNote requires Git') ||
     msg.includes('ok diagnose health')
   );
 }

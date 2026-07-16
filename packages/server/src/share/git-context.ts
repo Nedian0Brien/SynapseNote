@@ -14,7 +14,7 @@
  * non-github remotes return `non-github` so the caller can surface the
  * matching toast. Widening the cli's regex is a STOP rule
  * ; keeping a narrow server-local parser avoids the temptation
- * and stays decoupled from the cli (which depends on `@inkeep/open-knowledge-server`
+ * and stays decoupled from the cli (which depends on `@nedian0brien/synapsenote-server`
  * — adding the reverse dependency would create a cycle).
  */
 

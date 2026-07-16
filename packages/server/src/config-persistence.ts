@@ -33,12 +33,12 @@ import {
   type WriteScope,
   withConfigSpan,
   withConfigSpanSync,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import {
   FileLockTimeoutError,
   resolveConfigPath,
   withFileLock,
-} from '@inkeep/open-knowledge-core/server';
+} from '@nedian0brien/synapsenote-core/server';
 import type { Counter } from '@opentelemetry/api';
 import { parseDocument, stringify } from 'yaml';
 import type * as Y from 'yjs';

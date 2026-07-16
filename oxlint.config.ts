@@ -2,7 +2,7 @@ import { defineConfig } from 'oxlint';
 
 export default defineConfig({
   // The .agents/skills, .codex/skills entries under
-  // public/open-knowledge/ are real directories of per-skill symlinks back
+  // public/synapsenote/ are real directories of per-skill symlinks back
   // to the repo-root canonical at ../../../.agents/skills/<skill>. Without
   // these excludes oxlint traverses through the symlinks and lints files
   // owned by inkeep/team-skills upstream (e.g. SSEClientTransport usage in

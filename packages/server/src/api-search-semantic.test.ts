@@ -12,7 +12,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Readable } from 'node:stream';
-import { createWorkspaceSearchDocument } from '@inkeep/open-knowledge-core';
+import { createWorkspaceSearchDocument } from '@nedian0brien/synapsenote-core';
 import { createApiExtension } from './api-extension.ts';
 import { createConceptEmbedder, type Embedder, SemanticSearchService } from './embeddings/index.ts';
 import type { FileIndexEntry } from './file-watcher.ts';

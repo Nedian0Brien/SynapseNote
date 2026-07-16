@@ -15,7 +15,7 @@ import {
   type ExecStructuredResult,
   initShadowRepo,
   type WriterIdentity,
-} from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-server';
 import simpleGit from 'simple-git';
 
 const root = resolve(tmpdir(), `ok-exec-probe-${Date.now()}`);

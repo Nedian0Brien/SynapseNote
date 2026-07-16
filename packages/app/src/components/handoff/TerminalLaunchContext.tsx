@@ -14,7 +14,7 @@
  * real OS shell) `useTerminalLaunch()` returns `null`, and the menu rows that
  * consume it render nothing.
  */
-import type { TerminalCli } from '@inkeep/open-knowledge-core';
+import type { TerminalCli } from '@nedian0brien/synapsenote-core';
 import { createContext, type ReactNode, use } from 'react';
 import type { HandoffDispatchInput } from './useHandoffDispatch';
 

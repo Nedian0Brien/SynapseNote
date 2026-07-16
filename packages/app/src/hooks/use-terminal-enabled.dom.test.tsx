@@ -8,7 +8,7 @@
  * binding's `patch` (the human-only write path).
  */
 import { afterEach, beforeAll, describe, expect, mock, test } from 'bun:test';
-import type { Config, ConfigBinding, ConfigPatch } from '@inkeep/open-knowledge-core';
+import type { Config, ConfigBinding, ConfigPatch } from '@nedian0brien/synapsenote-core';
 import { cleanup, render } from '@testing-library/react';
 import { ConfigContext, type ConfigContextValue } from '@/lib/config-context';
 import type { TerminalConsentState, TerminalEnabledWriter } from './use-terminal-enabled';

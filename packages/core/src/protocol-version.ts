@@ -3,7 +3,7 @@
  * client stamp onto the wire so a future server can refuse an incompatible
  * peer.
  *
- * Lives in `@inkeep/open-knowledge-core` (not the server package) so the
+ * Lives in `@nedian0brien/synapsenote-core` (not the server package) so the
  * browser bundle can import it: it is a pure integer literal with no `node:fs`
  * dependency, unlike the server's `RUNTIME_VERSION`, which is read from disk at
  * module load. The server re-exports this constant from `version-constants.ts`

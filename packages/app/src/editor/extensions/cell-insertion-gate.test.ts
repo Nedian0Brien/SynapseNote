@@ -15,7 +15,10 @@
  */
 
 import { afterAll, afterEach, beforeAll, describe, expect, mock, test } from 'bun:test';
-import { sharedExtensions as coreExtensions, MarkdownManager } from '@inkeep/open-knowledge-core';
+import {
+  sharedExtensions as coreExtensions,
+  MarkdownManager,
+} from '@nedian0brien/synapsenote-core';
 import { Editor, type JSONContent } from '@tiptap/core';
 import { Fragment, type Node as ProseMirrorNode, Slice } from '@tiptap/pm/model';
 import { dropPoint, ReplaceAroundStep } from '@tiptap/pm/transform';

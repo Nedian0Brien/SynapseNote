@@ -15,7 +15,7 @@
 
 import { afterEach, describe, expect, test } from 'bun:test';
 import { HocuspocusProvider } from '@hocuspocus/provider';
-import { readFmMap } from '@inkeep/open-knowledge-core';
+import { readFmMap } from '@nedian0brien/synapsenote-core';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TooltipProvider } from '@/components/ui/tooltip';

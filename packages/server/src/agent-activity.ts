@@ -19,7 +19,11 @@
  * + `Item.right` — both are publicly typed in `node_modules/yjs/dist/src/**`
  * and are the documented way to walk a Y.Text's Item chain.
  */
-import { AGENT_ICON_COLORS, colorFromSeed, iconFromClientName } from '@inkeep/open-knowledge-core';
+import {
+  AGENT_ICON_COLORS,
+  colorFromSeed,
+  iconFromClientName,
+} from '@nedian0brien/synapsenote-core';
 import { createPatch } from 'diff';
 import type * as Y from 'yjs';
 import { ContentString, Item, iterateDeletedStructs } from 'yjs';

@@ -5,9 +5,9 @@
  * On the app's true first launch, a receiver who downloaded via a share link
  * has a first-party `ok_pending_share` cookie in their browser. This module
  * binds a one-shot localhost listener, opens the default browser to
- * `https://openknowledge.ai/continue?port&nonce`, and the web `/continue` route
+ * `https://synapse.lawdigest.kr/continue?port&nonce`, and the web `/continue` route
  * 302s the pending share token back to the listener. The redeemed token is
- * reconstructed into a `https://openknowledge.ai/d/<token>` universal-link URL
+ * reconstructed into a `https://synapse.lawdigest.kr/d/<token>` universal-link URL
  * and fed through the SAME validated receive spine an Apple Event would use —
  * no new trust surface.
  *
@@ -32,7 +32,7 @@
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 
 /** Mirror of `docs/src/lib/deferred-share.ts` — keep in lock-step. */
-const PROD_BASE = 'https://openknowledge.ai';
+const PROD_BASE = 'https://synapse.lawdigest.kr';
 const REDEEM_PATH = '/redeem';
 const REDEEM_TOKEN_PARAM = 'token';
 const REDEEM_NONCE_PARAM = 'nonce';
@@ -40,7 +40,7 @@ const REDEEM_NONCE_PARAM = 'nonce';
 /**
  * Universal-link prefix the redeemed token is reconstructed onto. ALWAYS the
  * production host — this URL is fed back through `parseShareUrl`, whose host
- * allowlist only accepts `openknowledge.ai`. It is internal routing, never a
+ * allowlist only accepts `synapse.lawdigest.kr`. It is internal routing, never a
  * browser URL, so the dev base override below must NOT touch it.
  */
 const SHARE_LINK_PREFIX = `${PROD_BASE}/d/`;

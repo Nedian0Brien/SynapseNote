@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
  * Electron app placed the cli's dist in app.asar.unpacked/ and Node's module
  * resolver couldn't reach sibling node_modules inside the asar archive,
  * surfacing as `ERR_MODULE_NOT_FOUND: Cannot find package 'pino'` at server
- * boot. The packaged Electron app also installs `@inkeep/open-knowledge-server`
+ * boot. The packaged Electron app also installs `@nedian0brien/synapsenote-server`
  * into node_modules and would hit the same bug class if a future native dep
  * makes electron-builder relocate the server package the same way. Pre-empt
  * by inlining the same logger deps here.

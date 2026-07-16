@@ -19,7 +19,7 @@
  * `conflicts.json` is written and the per-doc Y.Map `lifecycle.status`
  * propagates to the client — it closes inside one provider sync round-trip.
  */
-import type { ConflictEntryWire } from '@inkeep/open-knowledge-core';
+import type { ConflictEntryWire } from '@nedian0brien/synapsenote-core';
 import { useEffect, useRef, useState } from 'react';
 import { subscribeToDocumentsChanged } from '@/lib/documents-events';
 

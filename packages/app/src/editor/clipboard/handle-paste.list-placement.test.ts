@@ -17,7 +17,7 @@
  */
 
 import { afterAll, afterEach, beforeAll, describe, expect, mock, test } from 'bun:test';
-import { MarkdownManager, sharedExtensions } from '@inkeep/open-knowledge-core';
+import { MarkdownManager, sharedExtensions } from '@nedian0brien/synapsenote-core';
 import { Editor, type JSONContent } from '@tiptap/core';
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
 import { TextSelection } from '@tiptap/pm/state';

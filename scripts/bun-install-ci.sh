@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # bun-install-ci.sh — retry wrapper around `bun install --frozen-lockfile`
-# for use in Open Knowledge CI workflows.
+# for use in SynapseNote CI workflows.
 #
 # WHY THIS EXISTS
 #   Bun has no built-in retry for tarball-fetch / tarball-extract failures
@@ -49,7 +49,7 @@
 #     fail faster but still only CANCELS (red, no retry). The point is to
 #     self-heal, so the bound lives here where a retry can follow it.
 #   - Inline retry at each call site: 11 call sites in total — 5 in
-#     public-open-knowledge-validation.yml, 3 in root .github/workflows/
+#     public-synapsenote-validation.yml, 3 in root .github/workflows/
 #     (beta-cut, main-reset, mirror-sync), and 3 in OK-mirrored workflows
 #     (release.yml, desktop-release.yml, desktop-build.yml). Centralizing
 #     keeps the retry knobs in one place.
@@ -234,7 +234,7 @@ while true; do
   fi
   sleep_for=$((BUN_INSTALL_RETRY_SLEEP_BASE * (1 << (attempt - 1))))
   # Annotation format mirrors .github/scripts/gh-retry.sh and the inline
-  # gh-api retry in public-open-knowledge-validation.yml (`(attempt N/M)`
+  # gh-api retry in public-synapsenote-validation.yml (`(attempt N/M)`
   # parenthetical) so operators scanning the Annotations panel see a
   # uniform shape across CI jobs.
   echo "::warning::bun install --frozen-lockfile ${reason} (attempt ${attempt}/${BUN_INSTALL_MAX_ATTEMPTS}); retrying in ${sleep_for}s"

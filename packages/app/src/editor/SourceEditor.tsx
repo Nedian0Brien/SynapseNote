@@ -3,7 +3,7 @@ import { search } from '@codemirror/search';
 import { Compartment, EditorSelection, EditorState } from '@codemirror/state';
 import { placeholder as cmPlaceholder, EditorView, keymap } from '@codemirror/view';
 import type { HocuspocusProvider } from '@hocuspocus/provider';
-import { createCodeFenceTracker } from '@inkeep/open-knowledge-core';
+import { createCodeFenceTracker } from '@nedian0brien/synapsenote-core';
 import { isMacOS } from '@tiptap/core';
 import { basicSetup } from 'codemirror';
 import { useTheme } from 'next-themes';

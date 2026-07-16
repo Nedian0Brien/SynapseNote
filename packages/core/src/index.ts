@@ -956,7 +956,7 @@ export {
 
 // Shadow-repo layout helpers are NOT re-exported here — they import `node:fs`
 // and would contaminate core's browser-compatibility contract. Import via the
-// subpath: `import { parseWriterId } from '@inkeep/open-knowledge-core/shadow-repo-layout'`.
+// subpath: `import { parseWriterId } from '@nedian0brien/synapsenote-core/shadow-repo-layout'`.
 // CLI read path and server write path are the only consumers.
 
 // Bridge — observer/CRDT-bridge shared utilities (precedent #14)
@@ -1050,7 +1050,7 @@ export {
 // update teardown. Calibrated against Hocuspocus's destroyTimeoutMs.
 //
 // The client ↔ collab keep-alive WebSocket primitive (`startKeepalive` and
-// related types) lives at `@inkeep/open-knowledge-core/keepalive` rather
+// related types) lives at `@nedian0brien/synapsenote-core/keepalive` rather
 // than this barrel. It depends on `process.pid` (Node-only) and would
 // erode this barrel's browser-safety contract if exported here — the same
 // reason `./server` and `./shadow-repo-layout` are subpath-exported.
@@ -1209,7 +1209,7 @@ export type {
 } from './types/timeline.ts';
 // `atomic-yaml-write` is NOT re-exported here — it imports `node:fs` and
 // would contaminate core's browser-compatibility contract. Import via the
-// server sub-barrel: `import { atomicWriteFile } from '@inkeep/open-knowledge-core/server'`.
+// server sub-barrel: `import { atomicWriteFile } from '@nedian0brien/synapsenote-core/server'`.
 // Utils
 export { applyByPrefixSuffix } from './utils/apply-by-prefix-suffix.ts';
 export { ChunkedInsertError, chunkedYTextInsert } from './utils/chunked-insert.ts';

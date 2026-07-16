@@ -1,4 +1,4 @@
-import { detectEmbeddedHostFromBrowser } from '@inkeep/open-knowledge-core';
+import { detectEmbeddedHostFromBrowser } from '@nedian0brien/synapsenote-core';
 import { useState } from 'react';
 
 export function useIsEmbedded(): boolean {

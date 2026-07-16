@@ -22,7 +22,7 @@ import {
   BrokenLinkSchema,
   type RenderWarning,
   type WriteWarning,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 
 /**
  * Parse the server's `warnings` field, or undefined when absent/empty.

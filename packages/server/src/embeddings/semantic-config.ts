@@ -8,8 +8,11 @@
  * opposite of what the server actually ran.
  */
 
-import { DEFAULT_EMBEDDINGS_BASE_URL, DEFAULT_EMBEDDINGS_MODEL } from '@inkeep/open-knowledge-core';
-import { readConfigSafely, resolveConfigPath } from '@inkeep/open-knowledge-core/server';
+import {
+  DEFAULT_EMBEDDINGS_BASE_URL,
+  DEFAULT_EMBEDDINGS_MODEL,
+} from '@nedian0brien/synapsenote-core';
+import { readConfigSafely, resolveConfigPath } from '@nedian0brien/synapsenote-core/server';
 
 export interface ResolvedSemanticConfig {
   enabled: boolean;

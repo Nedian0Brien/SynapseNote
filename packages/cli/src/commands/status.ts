@@ -1,12 +1,12 @@
 /**
- * `open-knowledge status` — human-readable inspection of the server / ui
+ * `synapsenote status` — human-readable inspection of the server / ui
  * lockfile state.
  *
  * Exits 0 regardless of whether processes are live; this is a pure query
  * command. Prints formatted text by default, JSON with `--json`.
  */
 
-import { type Config, resolveLockDir } from '@inkeep/open-knowledge-server';
+import { type Config, resolveLockDir } from '@nedian0brien/synapsenote-server';
 import { Command } from 'commander';
 import { inspectLock, type LockState } from './lock-state.ts';
 

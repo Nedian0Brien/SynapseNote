@@ -1,4 +1,7 @@
-import { type FrontmatterValidationError, fieldErrorsFromError } from '@inkeep/open-knowledge-core';
+import {
+  type FrontmatterValidationError,
+  fieldErrorsFromError,
+} from '@nedian0brien/synapsenote-core';
 
 /**
  * Resolve a human-readable message for a frontmatter edit failure, keyed to the

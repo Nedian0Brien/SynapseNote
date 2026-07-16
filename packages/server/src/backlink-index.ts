@@ -18,7 +18,7 @@ import {
   resolveSkillBundleWikiTarget,
   skillLiveDocName,
   stripFrontmatter,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { isLinkIndexExcludedDoc } from './cc1-broadcast.ts';
 import { getLocalDir } from './config/paths.ts';
 import type { ContentFilter } from './content-filter.ts';

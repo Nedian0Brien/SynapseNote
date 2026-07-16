@@ -5,7 +5,7 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { LOCAL_DIR } from '@inkeep/open-knowledge-core';
+import { LOCAL_DIR } from '@nedian0brien/synapsenote-core';
 import { type ConflictEntry, ConflictStore } from './conflict-storage.ts';
 
 // ─── Test helpers ─────────────────────────────────────────────────────────────

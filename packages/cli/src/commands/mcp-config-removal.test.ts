@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { MCP_SERVER_NAME } from '@inkeep/open-knowledge-server';
+import { MCP_SERVER_NAME } from '@nedian0brien/synapsenote-server';
 import { buildPiExtensionSource } from '../integrations/pi-extension.ts';
 import {
   createTomlConfigEngine,
@@ -67,7 +67,7 @@ describe('removeOwnMcpEntry — JSON', () => {
     }
   });
 
-  test('leaves a FOREIGN server that shares the open-knowledge key untouched', () => {
+  test('leaves a FOREIGN server that shares the synapsenote key untouched', () => {
     const dir = tmp();
     try {
       const configPath = join(dir, 'config.json');
@@ -153,7 +153,7 @@ describe('removeOwnMcpEntry — JSON', () => {
     }
   });
 
-  test('removes OpenClaw’s nested entry at mcp.servers.open-knowledge (3-level path)', () => {
+  test('removes OpenClaw’s nested entry at mcp.servers.synapsenote (3-level path)', () => {
     const dir = tmp();
     try {
       const configPath = join(dir, 'openclaw.json');

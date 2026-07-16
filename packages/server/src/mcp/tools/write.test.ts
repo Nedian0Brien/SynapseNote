@@ -9,7 +9,7 @@
  * merges the embedded block with the param (param wins) into a single block.
  */
 import { describe, expect, it } from 'bun:test';
-import { stripFrontmatter } from '@inkeep/open-knowledge-core';
+import { stripFrontmatter } from '@nedian0brien/synapsenote-core';
 import { composeWithFrontmatter } from './write.ts';
 
 /** Count leading-or-anywhere `---` fence lines that open a frontmatter block. */

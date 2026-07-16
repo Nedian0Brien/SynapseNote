@@ -5,7 +5,7 @@
  * Returns timeline entries from the shadow repo with commit SHAs
  * that can be passed to `restore_version({ document, version })`.
  */
-import { projectSkillContentDocName } from '@inkeep/open-knowledge-core';
+import { projectSkillContentDocName } from '@nedian0brien/synapsenote-core';
 import { z } from 'zod';
 import { resolvePreviewUrlForTool } from './preview-url.ts';
 import type { ConfigOrResolver, ServerInstance, ServerUrlOrResolver } from './shared.ts';

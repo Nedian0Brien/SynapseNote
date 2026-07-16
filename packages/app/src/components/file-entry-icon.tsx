@@ -1,4 +1,4 @@
-import { mediaKindForSidebarAssetExtension } from '@inkeep/open-knowledge-core';
+import { mediaKindForSidebarAssetExtension } from '@nedian0brien/synapsenote-core';
 import { File, Film, FolderOpen, ImageIcon, Volume2 } from 'lucide-react';
 import type { ComponentProps } from 'react';
 import { getFileExtension } from '@/components/file-tree-rename-validation';

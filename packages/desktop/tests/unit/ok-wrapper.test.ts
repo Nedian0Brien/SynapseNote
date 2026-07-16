@@ -22,22 +22,22 @@ describe('ok.sh wrapper', () => {
     expect(result.status).toBe(69);
     const lines = result.stderr.trimEnd().split('\n');
     expect(lines).toHaveLength(2);
-    expect(lines[0]).toBe('OpenKnowledge has been removed. Reinstall from the OpenKnowledge DMG.');
+    expect(lines[0]).toBe('SynapseNote has been removed. Reinstall from the SynapseNote DMG.');
     const parsed = JSON.parse(lines[1] ?? '');
     expect(parsed).toEqual({
       error: 'ok-bundle-missing',
-      hint: 'OpenKnowledge app appears to have been removed. Reinstall from the DMG, or remove OK entries from your MCP config and rerun ok init.',
+      hint: 'SynapseNote app appears to have been removed. Reinstall from the DMG, or remove OK entries from your MCP config and rerun ok init.',
     });
   });
 
   test('missing Electron binary but present CLI also diagnoses missing-bundle', async () => {
     // Build a fixture where Contents/Resources/cli/dist/cli.mjs exists
-    // but Contents/MacOS/OpenKnowledge does not — the `-x` check on
+    // but Contents/MacOS/SynapseNote does not — the `-x` check on
     // ELECTRON should fail and short-circuit to exit 69.
     const { mkdtempSync, mkdirSync, writeFileSync } = await import('node:fs');
     const { tmpdir } = await import('node:os');
     const fixture = mkdtempSync(join(tmpdir(), 'ok-wrapper-'));
-    const appRoot = join(fixture, 'OpenKnowledge.app');
+    const appRoot = join(fixture, 'SynapseNote.app');
     mkdirSync(join(appRoot, 'Contents', 'Resources', 'cli', 'dist'), { recursive: true });
     writeFileSync(join(appRoot, 'Contents', 'Resources', 'cli', 'dist', 'cli.mjs'), '// stub');
 
@@ -71,7 +71,7 @@ describe('ok.sh wrapper', () => {
     const lines = result.stderr.trimEnd().split('\n');
     expect(lines).toHaveLength(2);
     expect(lines[0]).toBe(
-      'OpenKnowledge CLI cannot find its app bundle. Reinstall from the OpenKnowledge DMG.',
+      'SynapseNote CLI cannot find its app bundle. Reinstall from the SynapseNote DMG.',
     );
     const parsed = JSON.parse(lines[1] ?? '');
     expect(parsed.error).toBe('ok-wrapper-resolution-failed');

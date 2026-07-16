@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, mock, test } from 'bun:test';
 import { setTimeout as wait } from 'node:timers/promises';
-import { getLocalDir } from '@inkeep/open-knowledge-server';
+import { getLocalDir } from '@nedian0brien/synapsenote-server';
 import type { ShowGateRegistry } from '../../src/main/show-gate.ts';
 import {
   type BrowserWindowLike,
@@ -215,7 +215,7 @@ describe('createEphemeralWindow', () => {
 
     // Window built against the bound port; title from the file's basename.
     expect(ctx.port).toBe(52001);
-    expect(env.createWindowOpts[0]?.title).toBe('todo.md — OpenKnowledge');
+    expect(env.createWindowOpts[0]?.title).toBe('todo.md — SynapseNote');
     expect(env.createWindowOpts[0]?.additionalArguments).toContain(
       '--ok-collab-url=ws://localhost:52001/collab',
     );

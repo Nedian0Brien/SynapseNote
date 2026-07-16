@@ -1,5 +1,5 @@
-import { parseManagedArtifactName } from '@inkeep/open-knowledge-core';
 import { Trans, useLingui } from '@lingui/react/macro';
+import { parseManagedArtifactName } from '@nedian0brien/synapsenote-core';
 import { Search } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';

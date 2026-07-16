@@ -8,7 +8,7 @@
  * metric — only counts, durations, and enum outcomes. That is what makes the
  * "tokens embedded / spend" counter legible without leaking what was embedded.
  */
-import type { SearchSource } from '@inkeep/open-knowledge-core';
+import type { SearchSource } from '@nedian0brien/synapsenote-core';
 import type { Counter, Histogram } from '@opentelemetry/api';
 import { getLogger } from '../logger.ts';
 import { getMeter } from '../telemetry.ts';

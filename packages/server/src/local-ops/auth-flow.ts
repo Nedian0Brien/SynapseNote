@@ -19,7 +19,7 @@ import { runSubprocess } from './subprocess.ts';
 import type { AuthEvent } from './types.ts';
 
 export interface RunDeviceFlowOptions {
-  /** Command + base argv prefix; e.g. `['open-knowledge']` or `[process.execPath, scriptPath]`. */
+  /** Command + base argv prefix; e.g. `['synapsenote']` or `[process.execPath, scriptPath]`. */
   cliArgs: readonly string[];
   /** GitHub host. Defaults to `'github.com'`. */
   host?: string;

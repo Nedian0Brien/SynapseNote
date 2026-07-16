@@ -1,13 +1,13 @@
 ---
-title: Supporting the Open Knowledge Format
-sidebarTitle: Open Knowledge Format
+title: Supporting the SynapseNote Format
+sidebarTitle: SynapseNote Format
 icon: LuFileCode
-description: "Start a knowledge base that already follows Google's Open Knowledge Format, so any OKF tool can read it later. You get the right setup out of the box, and you're still free to write however you like."
+description: "Start a knowledge base that already follows Google's SynapseNote Format, so any OKF tool can read it later. You get the right setup out of the box, and you're still free to write however you like."
 ---
-OpenKnowledge ships a starter pack named **`okf`** that scaffolds a knowledge base **conformant with Google's [Open Knowledge Format (OKF)](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) from the first commit** — without enforcing anything. You get a portable, OKF-ready bundle out of the box, and you stay free to author however you like.
+SynapseNote ships a starter pack named **`okf`** that scaffolds a knowledge base **conformant with Google's [SynapseNote Format (OKF)](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) from the first commit** — without enforcing anything. You get a portable, OKF-ready bundle out of the box, and you stay free to author however you like.
 
 <Callout type="info">
-  **OKF here means Google's Open Knowledge _Format_** — a vendor-neutral file-format spec (a directory of markdown files with YAML frontmatter), announced by Google Cloud in June 2026. Read the [OKF v0.1 spec](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md).
+  **OKF here means Google's SynapseNote _Format_** — a vendor-neutral file-format spec (a directory of markdown files with YAML frontmatter), announced by Google Cloud in June 2026. Read the [OKF v0.1 spec](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md).
 </Callout>
 
 ```html preview
@@ -36,11 +36,11 @@ if(!matchMedia("(prefers-reduced-motion:reduce)").matches){setInterval(function(
 </script>
 ```
 
-The point is portability from day one: a knowledge base you can hand to any tool that reads Google's Open Knowledge Format, already conformant so indexing, exporting, or sharing with an OKF-aware consumer later is never a migration project. And the discipline is **pre-populated, not enforced** — you get conformance without the editor linting or blocking you.
+The point is portability from day one: a knowledge base you can hand to any tool that reads Google's SynapseNote Format, already conformant so indexing, exporting, or sharing with an OKF-aware consumer later is never a migration project. And the discipline is **pre-populated, not enforced** — you get conformance without the editor linting or blocking you.
 
 ## What the pack seeds
 
-In an initialized project (`ok init` first), pick **Open Knowledge Format** in the starter-pack picker (behind **Show more**), or run `ok seed --pack okf`. It scaffolds:
+In an initialized project (`ok init` first), pick **SynapseNote Format** in the starter-pack picker (behind **Show more**), or run `ok seed --pack okf`. It scaffolds:
 
 | Path | Purpose | Template |
 |---|---|---|
@@ -51,15 +51,15 @@ In an initialized project (`ok init` first), pick **Open Knowledge Format** in t
 | `index.md` | Reserved OKF navigation hub | — (reserved) |
 | `log.md` | Reserved OKF change history | — (reserved) |
 
-Each of the three content folders (`concepts/`, `references/`, `notes/`) ships its **own template**, so new docs start with the right `type` and section skeleton already in place — you never hand-set the frontmatter. The conventions also ship as a project-local skill (`open-knowledge-pack-okf`) installed alongside the seed, so your agent learns the pack's discipline without a hand-written `CLAUDE.md`. Like every seeded file, that `SKILL.md` is committed to your repo and editable; see [Skills](../features/skills.mdx) and [what OpenKnowledge writes to disk](../reference/what-open-knowledge-writes.mdx).
+Each of the three content folders (`concepts/`, `references/`, `notes/`) ships its **own template**, so new docs start with the right `type` and section skeleton already in place — you never hand-set the frontmatter. The conventions also ship as a project-local skill (`synapsenote-pack-okf`) installed alongside the seed, so your agent learns the pack's discipline without a hand-written `CLAUDE.md`. Like every seeded file, that `SKILL.md` is committed to your repo and editable; see [Skills](../features/skills.mdx) and [what SynapseNote writes to disk](../reference/what-synapsenote-writes.mdx).
 
 ## Conformance is pre-populated, not enforced
 
 This is the key design decision. OKF asks exactly one thing of every **non-reserved** document: a **non-empty `type`** in its frontmatter. Reserved `index.md` / `log.md` stay frontmatter-free, and links are standard markdown.
 
-The pack bakes those habits into the seeded content and documents them — but it changes nothing about how OpenKnowledge itself behaves:
+The pack bakes those habits into the seeded content and documents them — but it changes nothing about how SynapseNote itself behaves:
 
-- OpenKnowledge's native frontmatter schema stays **open-shaped**.
+- SynapseNote's native frontmatter schema stays **open-shaped**.
 - Nothing is **linted** for OKF conformance.
 
 So three habits are all it takes to keep the KB handable to a strict OKF consumer as it grows:
@@ -68,7 +68,7 @@ So three habits are all it takes to keep the KB handable to a strict OKF consume
 2. `index.md` / `log.md` stay lowercase and frontmatter-free.
 3. Links use standard markdown (`[text](./path.md)`).
 
-OpenKnowledge also accepts `[[wiki-link]]` shorthand as a native superset, but nothing normalizes it to standard links — seeded content uses standard links so the bundle is conformant as-is.
+SynapseNote also accepts `[[wiki-link]]` shorthand as a native superset, but nothing normalizes it to standard links — seeded content uses standard links so the bundle is conformant as-is.
 
 ## Cadence
 
@@ -83,6 +83,6 @@ Three habits keep the bundle handable to a strict OKF consumer as it grows. The 
 
 ## Further reading
 
-- **[Open Knowledge Format spec](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)** — the canonical OKF v0.1 specification (Google Cloud).
-- **[`STARTER_PACKS` registry](https://github.com/inkeep/open-knowledge/blob/main/packages/server/src/seed/starter.ts)** — canonical source for the `okf` pack content.
-- **[Karpathy's LLM wiki workflow](./karpathy-llm-wiki.mdx)** and **[Entity vault workflow](./entity-vault.mdx)** — other starter-pack-driven workflows in OpenKnowledge.
+- **[SynapseNote Format spec](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)** — the canonical OKF v0.1 specification (Google Cloud).
+- **[`STARTER_PACKS` registry](https://github.com/Nedian0Brien/SynapseNote/blob/main/packages/server/src/seed/starter.ts)** — canonical source for the `okf` pack content.
+- **[Karpathy's LLM wiki workflow](./karpathy-llm-wiki.mdx)** and **[Entity vault workflow](./entity-vault.mdx)** — other starter-pack-driven workflows in SynapseNote.

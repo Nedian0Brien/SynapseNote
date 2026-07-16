@@ -290,7 +290,7 @@ describe('Notice A cross-window relaunch — ok:update:relaunching', () => {
     attachUpdateSubscribers(castBridge(bridge), addNotice);
     bridge._relaunchFailed?.({
       version: '0.16.0-beta.3',
-      downloadUrl: 'https://github.com/inkeep/open-knowledge/releases',
+      downloadUrl: 'https://github.com/Nedian0Brien/SynapseNote/releases',
     });
     const notice = addNotice.mock.calls.at(-1)?.[0] as UpdateNotice;
     expect(notice.id).toBe('install-failed-0.16.0-beta.3');
@@ -304,7 +304,7 @@ describe('Notice A cross-window relaunch — ok:update:relaunching', () => {
     const bridge = makeFakeBridge();
     const addNotice = mock<(notice: UpdateNotice) => void>(() => {});
     attachUpdateSubscribers(castBridge(bridge), addNotice);
-    const url = 'https://github.com/inkeep/open-knowledge/releases';
+    const url = 'https://github.com/Nedian0Brien/SynapseNote/releases';
     bridge._relaunchFailed?.({ version: '0.16.0-beta.3', downloadUrl: url });
     const notice = addNotice.mock.calls.at(-1)?.[0] as UpdateNotice;
     notice.action?.onClick();
@@ -541,7 +541,7 @@ describe('Notice B — ok:update:whats-new', () => {
     const bridge = makeFakeBridge();
     const addNotice = mock<(notice: UpdateNotice) => void>(() => {});
     attachUpdateSubscribers(castBridge(bridge), addNotice);
-    const releaseUrl = 'https://github.com/inkeep/open-knowledge/releases/tag/v0.3.1';
+    const releaseUrl = 'https://github.com/Nedian0Brien/SynapseNote/releases/tag/v0.3.1';
     bridge._whatsNew?.({ version: '0.3.1', releaseUrl });
     expect(addNotice).toHaveBeenCalledTimes(1);
     const notice = addNotice.mock.calls[0]?.[0] as UpdateNotice;
@@ -701,7 +701,7 @@ describe('Notice C — ok:update:stuck-hint', () => {
     const bridge = makeFakeBridge();
     const addNotice = mock<(notice: UpdateNotice) => void>(() => {});
     attachUpdateSubscribers(castBridge(bridge), addNotice);
-    const downloadUrl = 'https://github.com/inkeep/open-knowledge/releases';
+    const downloadUrl = 'https://github.com/Nedian0Brien/SynapseNote/releases';
     bridge._stuckHint?.({ downloadUrl });
     expect(addNotice).toHaveBeenCalledTimes(1);
     const notice = addNotice.mock.calls[0]?.[0] as UpdateNotice;

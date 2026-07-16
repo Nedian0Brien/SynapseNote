@@ -2,7 +2,7 @@ import {
   stripFrontmatter,
   toWikiLinkSlug,
   unwrapFrontmatterFences,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 
 export interface PageIdentity {
   docName: string;

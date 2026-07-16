@@ -1,4 +1,4 @@
-import { type SkillsListEntry, SkillsListSuccessSchema } from '@inkeep/open-knowledge-core';
+import { type SkillsListEntry, SkillsListSuccessSchema } from '@nedian0brien/synapsenote-core';
 import { useEffect, useState } from 'react';
 import { subscribeToDocumentsChanged, subscribeToSkillsChanged } from '@/lib/documents-events';
 import { parseApiError } from '@/lib/parse-api-error';

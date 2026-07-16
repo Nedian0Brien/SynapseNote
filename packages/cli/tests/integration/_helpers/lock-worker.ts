@@ -14,7 +14,7 @@
  *   READY {"pid":12345,"serverPort":52001,"uiPort":3001}
  */
 
-import { acquireProcessLock } from '@inkeep/open-knowledge-server';
+import { acquireProcessLock } from '@nedian0brien/synapsenote-server';
 
 const [, , lockDirArg, serverPortArg, uiPortArg] = process.argv;
 

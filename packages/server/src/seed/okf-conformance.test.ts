@@ -2,7 +2,7 @@
  * OKF starter pack — conformance test.
  *
  * The `okf` pack's whole value is that its scaffolded content is conformant
- * with Google's Open Knowledge Format (OKF) v0.1 BY CONSTRUCTION — there is no
+ * with Google's SynapseNote Format (OKF) v0.1 BY CONSTRUCTION — there is no
  * shipped validator, so this test IS the verification surface. It runs the real
  * pack-agnostic seed pipeline (`planSeed` → `applySeed`) into a temp project and
  * asserts the three OKF §9 conformance rules over the bytes actually written:
@@ -33,7 +33,7 @@ import {
   parseFrontmatterYaml,
   stripFrontmatter,
   unwrapFrontmatterFences,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { parse as parseYaml } from 'yaml';
 import { applySubstitution } from '../content/substitution.ts';
 import { applySeed } from './apply.ts';
@@ -240,13 +240,9 @@ describe('okf pack — OKF §9 conformance by construction', () => {
       mkdirSync(join(projectDir, '.ok'), { recursive: true });
       writeFileSync(join(projectDir, '.ok', 'config.yml'), '', 'utf-8');
       // Platform skill present → installPackSkill installs the pack skill beside it.
-      const platformSkillDir = join(projectDir, '.claude', 'skills', 'open-knowledge');
+      const platformSkillDir = join(projectDir, '.claude', 'skills', 'synapsenote');
       mkdirSync(platformSkillDir, { recursive: true });
-      writeFileSync(
-        join(platformSkillDir, 'SKILL.md'),
-        '---\nname: open-knowledge\n---\n',
-        'utf-8',
-      );
+      writeFileSync(join(platformSkillDir, 'SKILL.md'), '---\nname: synapsenote\n---\n', 'utf-8');
 
       const plan = await planSeed({ projectDir, packId: 'okf' });
       const result = await applySeed(plan, { projectDir, packId: 'okf' });
@@ -254,7 +250,7 @@ describe('okf pack — OKF §9 conformance by construction', () => {
       expect(result.packSkillsInstalled).toContain('Claude Code');
 
       // Every `.md` the pack installed under its skill dir must carry a non-empty `type`.
-      const packSkillDir = join(projectDir, '.claude', 'skills', 'open-knowledge-pack-okf');
+      const packSkillDir = join(projectDir, '.claude', 'skills', 'synapsenote-pack-okf');
       const skillDocs = collectMarkdown(packSkillDir).map((p) => join(packSkillDir, p));
       expect(skillDocs.length).toBeGreaterThanOrEqual(1);
       for (const abs of skillDocs) {

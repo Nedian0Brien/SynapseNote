@@ -3,15 +3,15 @@ title: GitHub sync
 icon: custom/GitHub
 description: Clone repos from GitHub, auto-sync changes with your team, and resolve conflicts.
 ---
-OpenKnowledge can connect a project to a GitHub remote repository and keep it synced over time. When GitHub sync is enabled, OpenKnowledge actively pulls commits from the remote and pushes commits back.
+SynapseNote can connect a project to a GitHub remote repository and keep it synced over time. When GitHub sync is enabled, SynapseNote actively pulls commits from the remote and pushes commits back.
 
 <Callout type="warn">
-  Only enable GitHub sync for repositories where you are comfortable with OpenKnowledge writing commits to the remote history. If you are worried about automated commits cluttering your Git history, do not enable sync for that repository.
+  Only enable GitHub sync for repositories where you are comfortable with SynapseNote writing commits to the remote history. If you are worried about automated commits cluttering your Git history, do not enable sync for that repository.
 </Callout>
 
 ## What GitHub sync is for
 
-Use GitHub sync when you want to collaborate with your team on an OpenKnowledge project.
+Use GitHub sync when you want to collaborate with your team on an SynapseNote project.
 
 It helps you:
 
@@ -33,7 +33,7 @@ These steps use the desktop app; from a terminal, [`ok clone`](/docs/reference/c
 <Step>
     ### Sign into GitHub
 
-    If you are already signed in with the GitHub CLI, OpenKnowledge will use those credentials by default. If not, click **Connect GitHub** and complete the device authentication flow.
+    If you are already signed in with the GitHub CLI, SynapseNote will use those credentials by default. If not, click **Connect GitHub** and complete the device authentication flow.
 </Step>
 
 <Step>
@@ -51,7 +51,7 @@ These steps use the desktop app; from a terminal, [`ok clone`](/docs/reference/c
 
 ## Publish a local project
 
-You can publish your local project to GitHub directly from the OpenKnowledge app by opening a folder or file and clicking the **Share** button in the top right of the editor.
+You can publish your local project to GitHub directly from the SynapseNote app by opening a folder or file and clicking the **Share** button in the top right of the editor.
 
 This will open a dialog where you can choose an owner and repository name. You can also choose to make the repository public or private.
 
@@ -59,13 +59,13 @@ This will open a dialog where you can choose an owner and repository name. You c
 
 When you open a freshly cloned project, you will be prompted to enable sync. You can also toggle it from the project settings page at any time.
 
-While sync is active, OpenKnowledge:
+While sync is active, SynapseNote:
 
 - Fetches commits from the remote
 - Commits your edits locally using the configured Git identity
 - Pushes those commits back to the remote so collaborators see your changes
 
-If your Git identity isn't set, sync still commits under a default "OpenKnowledge" author; the sync status indicator reminds you to set one so teammates see your name.
+If your Git identity isn't set, sync still commits under a default "SynapseNote" author; the sync status indicator reminds you to set one so teammates see your name.
 
 Pulls can overwrite uncommitted local file changes, so commit or discard work-in-progress before you enable sync.
 
@@ -73,9 +73,9 @@ If you want to set a default auto-sync setting for future collaborators, go to t
 
 ## Authentication
 
-If you are logged in with the GitHub CLI, OpenKnowledge will use those credentials for GitHub operations. If not, you can complete device authentication to generate an OAuth token. OpenKnowledge stores this token in the keychain and reuses it for syncing, cloning, and publishing.
+If you are logged in with the GitHub CLI, SynapseNote will use those credentials for GitHub operations. If not, you can complete device authentication to generate an OAuth token. SynapseNote stores this token in the keychain and reuses it for syncing, cloning, and publishing.
 
-Manage the connection from **Settings → Account**. **Connect GitHub** authorizes OpenKnowledge to browse and sync your repositories; **Disconnect** clears OpenKnowledge's GitHub token only. From a terminal, the [`ok auth`](/docs/reference/cli) subcommands manage the same credentials: `ok auth signout` matches **Disconnect**, `ok auth pat` stores a Personal Access Token when device authentication isn't an option, and `--host` targets GitHub Enterprise.
+Manage the connection from **Settings → Account**. **Connect GitHub** authorizes SynapseNote to browse and sync your repositories; **Disconnect** clears SynapseNote's GitHub token only. From a terminal, the [`ok auth`](/docs/reference/cli) subcommands manage the same credentials: `ok auth signout` matches **Disconnect**, `ok auth pat` stores a Personal Access Token when device authentication isn't an option, and `--host` targets GitHub Enterprise.
 
 The sync status indicator surfaces an auth-error state when stored credentials stop working, and sync pauses until you reconnect.
 
@@ -85,7 +85,7 @@ The sync status indicator in the editor shows the current state of the connectio
 
 ## Resolving a conflict
 
-When a remote update conflicts with your local edits, OpenKnowledge surfaces the conflict in three places at once: the conflicted file gains a `⚠` badge on its tab, a pinned **Conflicts** section appears at the top of the file tree listing every conflicted file, and the editor area swaps from the normal editor to a unified diff view.
+When a remote update conflicts with your local edits, SynapseNote surfaces the conflict in three places at once: the conflicted file gains a `⚠` badge on its tab, a pinned **Conflicts** section appears at the top of the file tree listing every conflicted file, and the editor area swaps from the normal editor to a unified diff view.
 
 Click the badged tab or any row in the Conflicts section to focus the conflict.
 
@@ -103,20 +103,20 @@ A few situations stop sync from completing successfully. In each case the sync s
 
 - **Unresolved conflicts.** If even one file has a conflict between your edits and your team's, sync waits. You can keep working on every other doc; only the conflicted files are frozen until you choose a side from the diff view. See [Resolving a conflict](#resolving-a-conflict) above.
 - **Local changes would be overwritten by an incoming update.** A teammate's update is ready to pull, but a file it touches has uncommitted local changes. Doc edits are committed automatically before merging, so this usually means other tracked files, like configs. Sync pauses rather than clobber your work; commit, stash, or discard those changes from a terminal and sync resumes.
-- **Edits made outside the app aren't ready yet.** If you (or another tool) edited a file directly on disk while sync wanted to merge, OpenKnowledge waits until those external edits settle before merging. Usually this clears in a second or two on its own.
+- **Edits made outside the app aren't ready yet.** If you (or another tool) edited a file directly on disk while sync wanted to merge, SynapseNote waits until those external edits settle before merging. Usually this clears in a second or two on its own.
 
 ### Project isn't on a normal branch
 
 - **The project is parked on a specific commit, not a branch.** This usually means someone checked out an older commit from the terminal to look around. There's no branch to push to, so sync pauses. Switch back to your normal branch (`main`, your working branch, whichever) and sync resumes.
-- **Diverged history.** When the remote has been rewritten (force-push, rebase, branch reset) in a way OpenKnowledge can't reconcile automatically, sync stops and shows the error. This one usually needs a fix from the command line. Ask whoever rewrote the history, or restore from the [Timeline](/docs/features/timeline-and-recovery).
+- **Diverged history.** When the remote has been rewritten (force-push, rebase, branch reset) in a way SynapseNote can't reconcile automatically, sync stops and shows the error. This one usually needs a fix from the command line. Ask whoever rewrote the history, or restore from the [Timeline](/docs/features/timeline-and-recovery).
 
 ### GitHub-side blockers
 
 - **Authentication errors.** Your stored credentials expired, were revoked, or don't have access to this repository anymore. Reconnect from the sync indicator (or from **Settings → Account**) to clear the error.
-- **You don't have permission to push to this repo.** Someone shared a project backed by a GitHub repo where your account isn't a collaborator (or has read-only access on a private repo). OpenKnowledge checks this up front: instead of prompting you to enable sync that would just fail, the toggle is disabled with an inline "You don't have permission to push to this repo" message in both the sync indicator popover and **Settings → Sync**. If you had sync enabled on a different repo and switch to one you can't push to, OpenKnowledge pauses sync in-memory rather than mutating your preference; your `Auto-sync: on` setting is preserved for the next repo you have full access to. Ask the project owner for write access, then click sync to re-check.
-- **Protected branches and rejected pushes.** If the target branch requires reviews, signed commits, or status checks, GitHub rejects the push. OpenKnowledge turns sync off automatically so it stops retrying, and it stays off until you turn it back on from the sync indicator or **Settings → Sync**. Switch to a branch you can push to, or use a pull request for the protected branch instead.
+- **You don't have permission to push to this repo.** Someone shared a project backed by a GitHub repo where your account isn't a collaborator (or has read-only access on a private repo). SynapseNote checks this up front: instead of prompting you to enable sync that would just fail, the toggle is disabled with an inline "You don't have permission to push to this repo" message in both the sync indicator popover and **Settings → Sync**. If you had sync enabled on a different repo and switch to one you can't push to, SynapseNote pauses sync in-memory rather than mutating your preference; your `Auto-sync: on` setting is preserved for the next repo you have full access to. Ask the project owner for write access, then click sync to re-check.
+- **Protected branches and rejected pushes.** If the target branch requires reviews, signed commits, or status checks, GitHub rejects the push. SynapseNote turns sync off automatically so it stops retrying, and it stays off until you turn it back on from the sync indicator or **Settings → Sync**. Switch to a branch you can push to, or use a pull request for the protected branch instead.
 
 ### Temporary problems
 
-- **Network or service hiccups.** Flaky Wi-Fi, a VPN drop, or a brief GitHub outage. OpenKnowledge keeps retrying in the background; no action needed unless the issue lasts long enough that you want to manually trigger a sync from the indicator.
+- **Network or service hiccups.** Flaky Wi-Fi, a VPN drop, or a brief GitHub outage. SynapseNote keeps retrying in the background; no action needed unless the issue lasts long enough that you want to manually trigger a sync from the indicator.
 

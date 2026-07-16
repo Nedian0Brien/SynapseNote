@@ -124,7 +124,7 @@ describe('readWorktreeBranch', () => {
     handle = await makeRepoWithWorktree();
     // A nested dir with no `.git` of its own — the raw `<path>/.git/HEAD` reader
     // fails here, but git walks up to the worktree's real gitdir.
-    const subdir = join(handle.worktree, 'public', 'open-knowledge');
+    const subdir = join(handle.worktree, 'public', 'synapsenote');
     mkdirSync(subdir, { recursive: true });
     expect(readWorktreeBranch(subdir)).toBe('feature');
   });
@@ -233,7 +233,7 @@ describe('readWorktreeBranchAsync', () => {
 
   test('resolves up from a SUBDIRECTORY of a worktree (the OK-subtree case)', async () => {
     handle = await makeRepoWithWorktree();
-    const subdir = join(handle.worktree, 'public', 'open-knowledge');
+    const subdir = join(handle.worktree, 'public', 'synapsenote');
     mkdirSync(subdir, { recursive: true });
     expect(await readWorktreeBranchAsync(subdir)).toBe('feature');
   });

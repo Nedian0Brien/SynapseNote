@@ -1,11 +1,11 @@
 import '@xterm/xterm/css/xterm.css';
 
+import { useLingui } from '@lingui/react/macro';
 import {
   buildCliLaunchArgString,
   shellSingleQuote,
   type TerminalCli,
-} from '@inkeep/open-knowledge-core';
-import { useLingui } from '@lingui/react/macro';
+} from '@nedian0brien/synapsenote-core';
 import { FitAddon } from '@xterm/addon-fit';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { WebLinksAddon } from '@xterm/addon-web-links';

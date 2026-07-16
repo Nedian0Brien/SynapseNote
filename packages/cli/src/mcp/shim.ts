@@ -26,12 +26,15 @@ import { closeSync, existsSync, mkdirSync, openSync, readFileSync } from 'node:f
 import { join } from 'node:path';
 import type { Readable, Writable } from 'node:stream';
 import { setTimeout as wait } from 'node:timers/promises';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import type { JSONRPCMessage, RequestId } from '@modelcontextprotocol/sdk/types.js';
 import {
   clientVersionHeaders,
   DEFAULT_SERVER_HOST,
   SPAWN_ERROR_LOG,
-} from '@inkeep/open-knowledge-core';
-import { startKeepalive as defaultStartKeepalive } from '@inkeep/open-knowledge-core/keepalive';
+} from '@nedian0brien/synapsenote-core';
+import { startKeepalive as defaultStartKeepalive } from '@nedian0brien/synapsenote-core/keepalive';
 import {
   AutoStartDisabledError,
   isProcessAlive as defaultIsProcessAlive,
@@ -39,10 +42,7 @@ import {
   RUNTIME_VERSION,
   readServerLock,
   type ServerLockMetadata,
-} from '@inkeep/open-knowledge-server';
-import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import type { JSONRPCMessage, RequestId } from '@modelcontextprotocol/sdk/types.js';
+} from '@nedian0brien/synapsenote-server';
 import { resolveSelfSpawn } from '../commands/self-spawn.ts';
 
 const DEFAULT_SPAWN_TIMEOUT_MS = 5000;
@@ -269,7 +269,7 @@ export async function resolveMcpHttpUrl(opts: ResolveMcpHttpUrlOptions): Promise
 
   if (opts.envAutoStart === '0') {
     throw new AutoStartDisabledError(
-      'OpenKnowledge server is not running and OK_MCP_AUTOSTART=0 disables auto-start.',
+      'SynapseNote server is not running and OK_MCP_AUTOSTART=0 disables auto-start.',
     );
   }
 

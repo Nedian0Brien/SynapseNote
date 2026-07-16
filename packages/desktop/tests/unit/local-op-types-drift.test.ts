@@ -27,7 +27,7 @@ import type {
   AuthReposResponse,
   AuthStatusResponse,
   RawCloneEvent,
-} from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-server';
 import type {
   OkLocalOpAuthEvent,
   OkLocalOpAuthReposResponse,

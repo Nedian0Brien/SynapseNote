@@ -18,7 +18,7 @@ import {
   isManagedArtifactDocName,
   isMermaidDocFile,
   SYSTEM_DOC_NAME,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { getLogger } from './logger.ts';
 import {
   incrementCC1Broadcast,

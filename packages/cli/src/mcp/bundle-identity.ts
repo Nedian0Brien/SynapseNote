@@ -1,13 +1,13 @@
 /**
  * Detect when the `ok mcp` child process's mapped image diverges from the
  * on-disk binary at its `process.execPath` — i.e., the user drag-replaced
- * the OpenKnowledge bundle while this MCP child kept running off the
+ * the SynapseNote bundle while this MCP child kept running off the
  * previous inode.
  *
  * Why this exists. When a host (Claude Desktop / Cursor / Codex / Windsurf
  * / VS Code) spawns `ok mcp`, the kernel maps the Electron Mach-O binary
  * (and its `Frameworks/*.framework/Versions/A/*` dylibs) into the child's
- * virtual memory. A subsequent Finder drag-replace of `OpenKnowledge.app`
+ * virtual memory. A subsequent Finder drag-replace of `SynapseNote.app`
  * swaps the bundle's directory entries; on-disk inodes are fresh. The
  * still-running child keeps its `txt` mappings to the unlinked previous
  * inodes (POSIX preserves the inode while any FD/mapping holds it). The

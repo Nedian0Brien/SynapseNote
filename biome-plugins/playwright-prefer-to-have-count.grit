@@ -30,6 +30,6 @@ language js
 `expect(await $x.count())` as $probe where {
     register_diagnostic(
         span = $probe,
-        message = "One-shot count read never retries — use the web-first `await expect(locator).toHaveCount(n)` so the assertion polls the live DOM. See https://github.com/inkeep/open-knowledge/blob/main/biome-plugins/README.md#playwright-prefer-to-have-countgrit"
+        message = "One-shot count read never retries — use the web-first `await expect(locator).toHaveCount(n)` so the assertion polls the live DOM. See https://github.com/Nedian0Brien/SynapseNote/blob/main/biome-plugins/README.md#playwright-prefer-to-have-countgrit"
     )
 }

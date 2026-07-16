@@ -15,7 +15,10 @@
  * reverting only that term turns this test red.
  */
 import { afterEach, describe, expect, test } from 'bun:test';
-import { sharedExtensions as coreExtensions, MarkdownManager } from '@inkeep/open-knowledge-core';
+import {
+  sharedExtensions as coreExtensions,
+  MarkdownManager,
+} from '@nedian0brien/synapsenote-core';
 import { cleanup } from '@testing-library/react';
 import { Editor, type JSONContent } from '@tiptap/core';
 // The app extensions carry the SourceDirtyObserver plugin + jsxComponent

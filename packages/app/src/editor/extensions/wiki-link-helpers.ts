@@ -1,4 +1,4 @@
-import { getHeadingSlug, toWikiLinkSlug } from '@inkeep/open-knowledge-core';
+import { getHeadingSlug, toWikiLinkSlug } from '@nedian0brien/synapsenote-core';
 import type { PageListCacheSnapshot } from '../page-list-cache';
 
 export { getHeadingSlug, toWikiLinkSlug };

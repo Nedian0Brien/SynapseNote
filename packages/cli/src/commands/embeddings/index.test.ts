@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { DEFAULT_EMBEDDINGS_BASE_URL } from '@inkeep/open-knowledge-core';
+import { DEFAULT_EMBEDDINGS_BASE_URL } from '@nedian0brien/synapsenote-core';
 import { embeddingsCommand } from './index.ts';
 
 function readLocalConfig(dir: string): string {

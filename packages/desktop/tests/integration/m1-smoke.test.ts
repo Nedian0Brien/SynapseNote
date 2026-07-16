@@ -89,7 +89,7 @@ describe('M1 smoke', () => {
       return;
     }
 
-    const entry = new Entry('open-knowledge-m1-smoke', 'test-user');
+    const entry = new Entry('synapsenote-m1-smoke', 'test-user');
     try {
       entry.setPassword('secret-from-test');
       const got = entry.getPassword();
@@ -315,9 +315,9 @@ describe('M1 smoke', () => {
   });
 
   test('M1 invariant: literal unions consolidated in core; mirrors re-export or alias without the inline shape', async () => {
-    // Three literal-union types are consolidated into `@inkeep/open-knowledge-
+    // Three literal-union types are consolidated into `@nedian0brien/synapsenote-
     // core`'s `constants/` directory. Each mirror file MUST reach the type
-    // through `@inkeep/open-knowledge-core` (or, when the mirror is itself
+    // through `@nedian0brien/synapsenote-core` (or, when the mirror is itself
     // inside core, through the canonical sibling module). A direct TS import
     // enforces drift via type errors, so this test only guarantees no copy
     // re-introduces the inline literal-union substring.
@@ -477,11 +477,11 @@ describe('M1 smoke', () => {
         // knowledge-core` (or the sibling `./constants/*.ts` module for the
         // in-core mirror).
         const importsFromCore =
-          /from\s+['"]@inkeep\/open-knowledge-core['"]/.test(src) ||
+          /from\s+['"]@nedian0brien\/synapsenote-core['"]/.test(src) ||
           /from\s+['"]\.\/constants\/[\w-]+\.ts['"]/.test(src);
         if (!importsFromCore) {
           offenders.push(
-            `  [${pin.typeName}] ${label} does not import from @inkeep/open-knowledge-core`,
+            `  [${pin.typeName}] ${label} does not import from @nedian0brien/synapsenote-core`,
           );
         }
         const typeRe = new RegExp(`\\b${pin.typeName}\\b`);
@@ -499,7 +499,7 @@ describe('M1 smoke', () => {
           'Literal-union consolidation regression:',
           ...offenders,
           '',
-          'Fix: import or re-export the canonical type from @inkeep/open-knowledge-core.',
+          'Fix: import or re-export the canonical type from @nedian0brien/synapsenote-core.',
           'See packages/core/src/constants/{editors,folder-state,create-new-banner}.ts for the',
           'canonical declarations.',
         ].join('\n'),

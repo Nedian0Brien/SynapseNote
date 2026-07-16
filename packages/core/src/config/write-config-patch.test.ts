@@ -51,7 +51,7 @@ describe('writeConfigPatch — project scope', () => {
     // project per-scope schema under the schema-major path (autocomplete
     // only suggests project fields here).
     expect(onDisk).toMatch(
-      /^# yaml-language-server: \$schema=https:\/\/unpkg\.com\/@inkeep\/open-knowledge@latest\/dist\/schemas\/v\d+\/config\.project\.schema\.json/,
+      /^# yaml-language-server: \$schema=https:\/\/unpkg\.com\/@nedian0brien\/synapsenote@latest\/dist\/schemas\/v\d+\/config\.project\.schema\.json/,
     );
     expect(onDisk).toContain('content:');
     expect(onDisk).toContain('dir: docs');
@@ -152,7 +152,7 @@ describe('writeConfigPatch — project-local scope', () => {
     const onDisk = readFileSync(projectLocalConfigPath(), 'utf-8');
     // Magic-comment header points at the project-local per-scope schema.
     expect(onDisk).toMatch(
-      /^# yaml-language-server: \$schema=https:\/\/unpkg\.com\/@inkeep\/open-knowledge@latest\/dist\/schemas\/v\d+\/config\.project-local\.schema\.json/,
+      /^# yaml-language-server: \$schema=https:\/\/unpkg\.com\/@nedian0brien\/synapsenote@latest\/dist\/schemas\/v\d+\/config\.project-local\.schema\.json/,
     );
     expect(onDisk).toContain('autoSync:');
     expect(onDisk).toContain('enabled: true');

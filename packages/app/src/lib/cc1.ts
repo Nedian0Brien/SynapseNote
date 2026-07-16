@@ -35,7 +35,7 @@ import {
   CC1ServerInfoPayloadSchema,
   type DerivedViewChannel,
   SYSTEM_DOC_NAME,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import type { z } from 'zod';
 
 export {

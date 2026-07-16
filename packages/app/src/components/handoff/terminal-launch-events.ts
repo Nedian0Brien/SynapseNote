@@ -14,10 +14,10 @@
  * never carries an executable command.
  */
 
-import type { TerminalCli } from '@inkeep/open-knowledge-core';
+import type { TerminalCli } from '@nedian0brien/synapsenote-core';
 import type { ChatContextChip } from '../chat/cli-chat-types';
 
-const TERMINAL_LAUNCH_EVENT = 'open-knowledge:terminal-launch';
+const TERMINAL_LAUNCH_EVENT = 'synapsenote:terminal-launch';
 
 interface TerminalLaunchDetail {
   readonly prompt: string;

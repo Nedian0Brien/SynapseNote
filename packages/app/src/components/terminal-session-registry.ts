@@ -21,7 +21,7 @@
  * load-bearing: "not idle" routes to the safe new-tab path.
  */
 
-import type { TerminalCli } from '@inkeep/open-knowledge-core';
+import type { TerminalCli } from '@nedian0brien/synapsenote-core';
 
 /**
  * No PTY output for this long ⇒ the session's shell prompt is treated as settled

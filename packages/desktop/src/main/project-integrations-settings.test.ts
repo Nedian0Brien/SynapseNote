@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import type { McpEntryClassification } from '@inkeep/open-knowledge';
+import type { McpEntryClassification } from '@nedian0brien/synapsenote';
 import type { IpcMainInvokeEvent } from 'electron';
 import type {
   McpWiringEditorId,
@@ -56,8 +56,8 @@ function makeCli(overrides: CliOverrides = {}): ProjectIntegrationsCliSurface & 
     codex: '.codex/config.toml',
   };
   const SKILL: Partial<Record<string, string>> = {
-    claude: '.claude/skills/open-knowledge/SKILL.md',
-    codex: '.codex/skills/open-knowledge/SKILL.md',
+    claude: '.claude/skills/synapsenote/SKILL.md',
+    codex: '.codex/skills/synapsenote/SKILL.md',
   };
   return {
     writes,
@@ -68,8 +68,7 @@ function makeCli(overrides: CliOverrides = {}): ProjectIntegrationsCliSurface & 
     editorLabel: (id) => id,
     projectConfigPath: (id, projectDir) => (CONFIG[id] ? `${projectDir}/${CONFIG[id]}` : null),
     projectSkillPath: (id, projectDir) => (SKILL[id] ? `${projectDir}/${SKILL[id]}` : null),
-    entryLocator: (id) =>
-      id === 'codex' ? '[mcp_servers.open-knowledge]' : 'mcpServers.open-knowledge',
+    entryLocator: (id) => (id === 'codex' ? '[mcp_servers.synapsenote]' : 'mcpServers.synapsenote'),
     classifyExistingProjectMcpConfig: (id) =>
       overrides.classifications?.[id] ?? ({ kind: 'no-entry' } as McpEntryClassification),
     isOwnEntry: (entry) => entry === OWN_ENTRY,
@@ -156,8 +155,8 @@ describe('registerProjectIntegrationsSettings — status', () => {
     const s = await status();
     expect(s.skill?.installed).toBe(true);
     expect(s.skill?.paths).toEqual([
-      '.claude/skills/open-knowledge/SKILL.md',
-      '.codex/skills/open-knowledge/SKILL.md',
+      '.claude/skills/synapsenote/SKILL.md',
+      '.codex/skills/synapsenote/SKILL.md',
     ]);
   });
 

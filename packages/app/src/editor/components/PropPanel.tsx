@@ -15,9 +15,9 @@
  * Change handlers call updateAttributes with sourceDirty:true.
  */
 
-import type { PropDef } from '@inkeep/open-knowledge-core';
 import { t } from '@lingui/core/macro';
 import { Trans } from '@lingui/react/macro';
+import type { PropDef } from '@nedian0brien/synapsenote-core';
 import { ChevronDown, Loader2, Upload } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';

@@ -34,8 +34,8 @@ import { type SendableWebContents, sendToRenderer } from '../shared/ipc-send.ts'
 import type { AppState, UpdateChannel } from './state-store.ts';
 
 /** GitHub provider coordinates — must match `electron-builder.yml` `publish:`. */
-const GITHUB_OWNER = 'inkeep';
-const GITHUB_REPO = 'open-knowledge';
+const GITHUB_OWNER = 'Nedian0Brien';
+const GITHUB_REPO = 'SynapseNote';
 
 // ————————————————————————————————————————————————————————
 // Types + injection seams
@@ -78,7 +78,7 @@ export interface UpdaterLike {
   /**
    * Per-request headers electron-updater attaches to every feed + artifact
    * request. Set to tag update fetches with the current version + channel
-   * when the feed is pointed at the openknowledge.ai proxy; reset to null on
+   * when the feed is pointed at the synapse.lawdigest.kr proxy; reset to null on
    * the GitHub fallback.
    */
   requestHeaders: OutgoingHttpHeaders | null;
@@ -181,7 +181,7 @@ interface StartAutoUpdaterOpts {
    */
   feedUrl?: string;
   /**
-   * Point electron-updater's feed at the openknowledge.ai update proxy (a thin
+   * Point electron-updater's feed at the synapse.lawdigest.kr update proxy (a thin
    * 302 to GitHub) so updates are counted per version, tagging each request
    * with the current version + channel. Active only when the build's channel is
    * in `channels`; default-off — production passes an empty set until the proxy
@@ -383,7 +383,7 @@ export const INSTALL_FAILURE_MAX_SURFACES = 3;
  * the latest download at the top, so the manual-download escape hatch can never
  * itself 404.
  */
-export const STUCK_HINT_DOWNLOAD_URL = 'https://github.com/inkeep/open-knowledge/releases';
+export const STUCK_HINT_DOWNLOAD_URL = 'https://github.com/Nedian0Brien/SynapseNote/releases';
 
 /**
  * How long the release-notes (what's-new) notice stays "live" for late-opened
@@ -402,7 +402,7 @@ const WHATS_NEW_LIVE_WINDOW_MS = 60_000;
  * `..`) cannot produce a path-confusion URL.
  */
 export function releaseUrlFor(version: string): string {
-  return `https://github.com/inkeep/open-knowledge/releases/tag/v${encodeURIComponent(version)}`;
+  return `https://github.com/Nedian0Brien/SynapseNote/releases/tag/v${encodeURIComponent(version)}`;
 }
 
 /** Classified `err.code` prefixes. */
@@ -621,7 +621,7 @@ export function startAutoUpdater(opts: StartAutoUpdaterOpts): StartAutoUpdaterHa
   // leaves both unset — `isPackaged` + `publish: github` in `app-update.yml`
   // drives the real update path.
   updater.forceDevUpdateConfig = forceDevBypass;
-  // Whether the openknowledge.ai proxy feed is active this session, so a feed
+  // Whether the synapse.lawdigest.kr proxy feed is active this session, so a feed
   // failure can revert to GitHub exactly once (see the first-check below).
   let usingProxyFeed = false;
   let proxyFallbackTried = false;
@@ -640,7 +640,7 @@ export function startAutoUpdater(opts: StartAutoUpdaterOpts): StartAutoUpdaterHa
       'x-ok-channel': channelPath,
     };
     usingProxyFeed = true;
-    logger.info('setFeedURL (proxy) — updater feed pointed at the openknowledge.ai proxy', {
+    logger.info('setFeedURL (proxy) — updater feed pointed at the synapse.lawdigest.kr proxy', {
       channel: channelPath,
     });
   }
@@ -1401,7 +1401,7 @@ export function startAutoUpdater(opts: StartAutoUpdaterOpts): StartAutoUpdaterHa
       // by `appId`/`productName`, both identical for the stable and beta builds,
       // so the two channels share one state file. A build on one channel that
       // armed `attemptedInstall` before the user switched to the other channel's
-      // build (they overwrite the same `/Applications/OpenKnowledge.app`) leaves
+      // build (they overwrite the same `/Applications/SynapseNote.app`) leaves
       // a record the running channel can NEVER reconcile: it only downloads its
       // own channel's versions, and the `update-available` cross-channel veto
       // blocks the other channel's version outright — so `installReached` stays

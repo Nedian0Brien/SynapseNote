@@ -1,5 +1,5 @@
 /**
- * `ok config` command — inspect and maintain OpenKnowledge config files.
+ * `ok config` command — inspect and maintain SynapseNote config files.
  *
  * Subcommands:
  *   - `validate` — load merged config (defaults → user → project) and report
@@ -14,8 +14,8 @@
  */
 
 import { existsSync, readFileSync } from 'node:fs';
-import { type ConfigPatch, humanFormat, REMOVED_KEYS } from '@inkeep/open-knowledge-core';
-import { resolveConfigPath, writeConfigPatch } from '@inkeep/open-knowledge-core/server';
+import { type ConfigPatch, humanFormat, REMOVED_KEYS } from '@nedian0brien/synapsenote-core';
+import { resolveConfigPath, writeConfigPatch } from '@nedian0brien/synapsenote-core/server';
 import { Command } from 'commander';
 import { parseDocument } from 'yaml';
 import { loadConfig } from '../config/loader.ts';
@@ -248,7 +248,7 @@ export async function runMigrate(opts: MigrateRunOpts = {}): Promise<MigrateOutc
 
 export function configCommand(): Command {
   const cmd = new Command('config').description(
-    'Inspect and maintain OpenKnowledge configuration files',
+    'Inspect and maintain SynapseNote configuration files',
   );
 
   cmd

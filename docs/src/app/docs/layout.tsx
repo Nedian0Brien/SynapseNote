@@ -1,4 +1,4 @@
-import { getGitHubStars } from '@inkeep/open-knowledge-core';
+import { getGitHubStars } from '@nedian0brien/synapsenote-core';
 import { DocsLayout } from 'fumadocs-ui/layouts/docs';
 import { DocsSidebarCta } from '@/components/docs-sidebar-cta';
 import { DocsSidebarSeparator } from '@/components/docs-sidebar-separator';

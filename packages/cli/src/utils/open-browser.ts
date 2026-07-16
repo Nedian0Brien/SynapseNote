@@ -1,5 +1,5 @@
 /**
- * Cross-platform browser launcher used by `open-knowledge start --open`.
+ * Cross-platform browser launcher used by `synapsenote start --open`.
  *
  * Picks the platform-native launcher (`open` on macOS, `xdg-open` on Linux,
  * `cmd /c start` on Windows) and shells out via `execFile`. Failure is
@@ -16,7 +16,7 @@
  * scheme allowlist and a metacharacter denylist before spawning.
  */
 import { execFile } from 'node:child_process';
-import { withHiddenWindowsConsole } from '@inkeep/open-knowledge-server';
+import { withHiddenWindowsConsole } from '@nedian0brien/synapsenote-server';
 
 const ALLOWED_PROTOCOLS = new Set(['http:', 'https:']);
 

@@ -1,7 +1,7 @@
 ---
 title: Editor
 icon: LuPenLine
-description: The OpenKnowledge editor. WYSIWYG markdown, source toggle, content blocks, link authoring, inline frontmatter, and the file sidebar.
+description: The SynapseNote editor. WYSIWYG markdown, source toggle, content blocks, link authoring, inline frontmatter, and the file sidebar.
 ---
 The editor is where you read, write, and collaborate on your docs, and where AI agents land when they edit. WYSIWYG by default with a source-mode toggle, a frontmatter properties pane, real-time CRDT collaboration, and a file sidebar that organizes the project.
 
@@ -14,7 +14,7 @@ ok notes.md            # open a single file in the editor
 ok ./specs/foo/SPEC.md # a file inside a project opens that project, focused on the doc
 ```
 
-When the file is inside an existing OpenKnowledge project, this opens that project focused on the doc. When it's a loose file, it opens an **ephemeral single-file session**: a throwaway editor scoped to just that one file, with no project scaffolding, no agents, and no git. Your edits save straight back to the original file, and **nothing is written into the file's directory** — all session state lives in a temporary directory that's removed when you close the window. Opening a file you don't edit leaves it byte-for-byte unchanged.
+When the file is inside an existing SynapseNote project, this opens that project focused on the doc. When it's a loose file, it opens an **ephemeral single-file session**: a throwaway editor scoped to just that one file, with no project scaffolding, no agents, and no git. Your edits save straight back to the original file, and **nothing is written into the file's directory** — all session state lives in a temporary directory that's removed when you close the window. Opening a file you don't edit leaves it byte-for-byte unchanged.
 
 It opens in the desktop app when it's installed, and falls back to your browser otherwise (press Ctrl-C in the terminal to end a browser session). Single-file sessions show just the file and the editor — no sidebar, tabs, or project switcher. Discover it any time with `ok --help`.
 
@@ -93,7 +93,7 @@ The shells run at full user privilege. To turn the terminal off for a project on
 
 ## Properties
 
-Every doc can carry a bit of structured information at the top: a `status`, an `owner`, a `tags` list, a date. OpenKnowledge calls these its **properties**.
+Every doc can carry a bit of structured information at the top: a `status`, an `owner`, a `tags` list, a date. SynapseNote calls these its **properties**.
 
 In the raw markdown file, these properties live in a fenced block at the very top of the file, between two `---` lines. Markdown tools call that block *frontmatter*: it's just a small chunk of YAML, the doc's "labels." You never have to write it by hand: the **Properties** panel on the right of the editor shows each field as an ordinary form input (text, number, checkbox, date, or list) and saves your changes back into the file. Edit the panel or the raw block in source mode; changes propagate live either way.
 
@@ -153,15 +153,15 @@ On very large trees the disk walk is capped per level, and the sidebar shows a n
 
 ### Open with AI
 
-**Open with AI ▸** dispatches the project, the folder, or the file to one of your installed agents. The agent receives a short text prompt asking it to open the target in the OpenKnowledge web preview, then grounds the rest of the conversation via the [OpenKnowledge MCP](/docs/reference/mcp). Three scopes, three prompt shapes:
+**Open with AI ▸** dispatches the project, the folder, or the file to one of your installed agents. The agent receives a short text prompt asking it to open the target in the SynapseNote web preview, then grounds the rest of the conversation via the [SynapseNote MCP](/docs/reference/mcp). Three scopes, three prompt shapes:
 
 | Scope | Triggered from | Prompt template |
 | --- | --- | --- |
-| Project | Empty-space menu (no doc / folder active) | `Let's work on this project using OpenKnowledge. Open the OK editor in web view.` |
-| Folder | Folder row menu (folder view active) | ``Let's work on the `<folder>` folder using OpenKnowledge. Open the OK editor in web view.`` |
-| File | File row menu (doc active) | ``Let's work on `<path>` using OpenKnowledge. Open the OK editor in web view.`` |
+| Project | Empty-space menu (no doc / folder active) | `Let's work on this project using SynapseNote. Open the OK editor in web view.` |
+| Folder | Folder row menu (folder view active) | ``Let's work on the `<folder>` folder using SynapseNote. Open the OK editor in web view.`` |
+| File | File row menu (doc active) | ``Let's work on `<path>` using SynapseNote. Open the OK editor in web view.`` |
 
-The trailing `Open the OK editor in web view.` directive is dropped when the [`appearance.preview.autoOpen`](/docs/reference/configuration) preference is off, so the receiving agent honors the same "leave my preview alone" choice on its first turn; only the `Let's work on … using OpenKnowledge.` opener is sent.
+The trailing `Open the OK editor in web view.` directive is dropped when the [`appearance.preview.autoOpen`](/docs/reference/configuration) preference is off, so the receiving agent honors the same "leave my preview alone" choice on its first turn; only the `Let's work on … using SynapseNote.` opener is sent.
 
 To send your own freetext instruction along with the handoff, use the bottom [Ask AI](#ask-ai) composer (or the empty-state create composer on a fresh project) rather than these one-click submenus.
 
@@ -169,15 +169,15 @@ To send your own freetext instruction along with the handoff, use the bottom [As
 
 See the [per-integration pages](/docs/integrations/claude-code) for what each agent receives once dispatched.
 
-The menu is organized into two sections. **Terminal** (desktop app only) leads: a row for each agent CLI — **Claude**, **Codex**, **OpenCode**, **Cursor**, and **Pi** — that runs the corresponding CLI (`claude`, `codex`, `opencode`, `pi`; Cursor's is `cursor-agent`) in OpenKnowledge's [docked terminal](#terminal) with the same scoped prompt. **Desktop** follows, listing the installed agent apps (Claude, Codex, Cursor); selecting one launches it via its deep link. Because both sections can list the same name, a Terminal **Claude** (the CLI) and a Desktop **Claude** (the app) can appear together; screen readers tell them apart by the Terminal row's "Claude CLI" accessible name. Each section renders only when it has something to launch, so on the web build — which has no docked terminal — the Terminal section is absent and a CLI pick falls back to the first installed Desktop app target.
+The menu is organized into two sections. **Terminal** (desktop app only) leads: a row for each agent CLI — **Claude**, **Codex**, **OpenCode**, **Cursor**, and **Pi** — that runs the corresponding CLI (`claude`, `codex`, `opencode`, `pi`; Cursor's is `cursor-agent`) in SynapseNote's [docked terminal](#terminal) with the same scoped prompt. **Desktop** follows, listing the installed agent apps (Claude, Codex, Cursor); selecting one launches it via its deep link. Because both sections can list the same name, a Terminal **Claude** (the CLI) and a Desktop **Claude** (the app) can appear together; screen readers tell them apart by the Terminal row's "Claude CLI" accessible name. Each section renders only when it has something to launch, so on the web build — which has no docked terminal — the Terminal section is absent and a CLI pick falls back to the first installed Desktop app target.
 
 The empty-state create composer on a fresh project carries the same Desktop / Terminal split: its Desktop rows pick the default agent the **Create** button uses, while its Terminal rows (desktop only, disabled until the workspace resolves) launch any of the five CLIs with the brief you typed.
 
-When Claude or Codex launches from the docked terminal, OpenKnowledge auto-approves its own MCP tools, so the agent searches, reads, and edits the knowledge base without a per-call approval prompt. Claude additionally auto-approves the `ok open` command. OpenCode, Cursor, and Pi launch unchanged.
+When Claude or Codex launches from the docked terminal, SynapseNote auto-approves its own MCP tools, so the agent searches, reads, and edits the knowledge base without a per-call approval prompt. Claude additionally auto-approves the `ok open` command. OpenCode, Cursor, and Pi launch unchanged.
 
-Four tools stay gated: `delete` and `move` (knowledge-base-wide blast radius), `share_link` (publishes content), and `install` (writes executable skill scripts into the agent's own config directory). For Claude, everything outside OpenKnowledge still prompts too, including shell commands and non-OK file edits. The guarantee is best-effort per agent: Claude uses an explicit allow/deny list, while Codex uses its own **approve** mode (auto-approve except potentially-unsafe actions) and only gets it once its OpenKnowledge entry is already configured, so run `ok init` for Codex if it keeps asking.
+Four tools stay gated: `delete` and `move` (knowledge-base-wide blast radius), `share_link` (publishes content), and `install` (writes executable skill scripts into the agent's own config directory). For Claude, everything outside SynapseNote still prompts too, including shell commands and non-OK file edits. The guarantee is best-effort per agent: Claude uses an explicit allow/deny list, while Codex uses its own **approve** mode (auto-approve except potentially-unsafe actions) and only gets it once its SynapseNote entry is already configured, so run `ok init` for Codex if it keeps asking.
 
-Turn it off in **Settings → Terminal → “Let agents use OpenKnowledge without asking”** ([`agents.autoApproveOkTools`](/docs/reference/configuration)). It applies to every project on this machine and defaults on.
+Turn it off in **Settings → Terminal → “Let agents use SynapseNote without asking”** ([`agents.autoApproveOkTools`](/docs/reference/configuration)). It applies to every project on this machine and defaults on.
 
 ## Command palette
 
@@ -192,9 +192,9 @@ The editor has two sidebars: the file sidebar on the left and the document panel
 - At comfortable widths (1280px and up) both sidebars open by default.
 - Between 1024px and 1279px the document panel defaults to collapsed so the editor keeps its breathing room; the file sidebar stays open.
 - Below 1024px both default to collapsed so the editor canvas isn't squeezed off-screen.
-- When OpenKnowledge is opened inside an AI editor's webview (Cursor, Codex, Claude Desktop), both sidebars start collapsed regardless of width; the embedded view is for reading the content you were sent, not for file management.
+- When SynapseNote is opened inside an AI editor's webview (Cursor, Codex, Claude Desktop), both sidebars start collapsed regardless of width; the embedded view is for reading the content you were sent, not for file management.
 
-The defaults only apply until you toggle. OpenKnowledge remembers your most recent Show / Hide for each sidebar in your browser and survives reloads. When you come back to the same layout context (narrow window, comfortable window, or embedded view) you used last, your toggle is what you'll see. Toggling in a different context replaces that memory; only your most recent choice sticks, so a stale preference from a wide-monitor session can't quietly override what you just chose on a narrow screen.
+The defaults only apply until you toggle. SynapseNote remembers your most recent Show / Hide for each sidebar in your browser and survives reloads. When you come back to the same layout context (narrow window, comfortable window, or embedded view) you used last, your toggle is what you'll see. Toggling in a different context replaces that memory; only your most recent choice sticks, so a stale preference from a wide-monitor session can't quietly override what you just chose on a narrow screen.
 
 Keyboard shortcuts (use `Ctrl` on Windows / Linux in place of `Cmd`, unless the shortcut already uses `Ctrl`):
 
@@ -219,15 +219,15 @@ Keyboard shortcuts (use `Ctrl` on Windows / Linux in place of `Cmd`, unless the 
 
 In the desktop app the sidebar and terminal toggles also live in the **View** menu (see below), where each label flips between **Show …** and **Hide …** based on current state, matching Finder.
 
-Inside an AI editor's embedded view, the **Open with AI** menus, the bottom Ask AI composer, and the empty-state agent grid are hidden; you're already inside an agent, so the handoff would loop back into the same surface. OpenKnowledge's MCP tools and the document itself stay fully available; only the launchers are gone.
+Inside an AI editor's embedded view, the **Open with AI** menus, the bottom Ask AI composer, and the empty-state agent grid are hidden; you're already inside an agent, so the handoff would loop back into the same surface. SynapseNote's MCP tools and the document itself stay fully available; only the launchers are gone.
 
 ## macOS application menus
 
-The OpenKnowledge desktop app keeps its menu bar in sync with the active editor target: File menu items enable / disable based on whether a doc, folder, or nothing is currently selected.
+The SynapseNote desktop app keeps its menu bar in sync with the active editor target: File menu items enable / disable based on whether a doc, folder, or nothing is currently selected.
 
 ### File menu
 
-Alongside the project items (Recent project, New project…, Switch Project… `Cmd+Shift+P`, Open Folder… `Cmd+O`), the worktree pair (New worktree…, Switch worktree…), **Set up OpenKnowledge integrations…** (re-runs the first-launch integrations setup), and Close tab, the File menu surfaces the most-used sidebar affordances so they're reachable from the keyboard:
+Alongside the project items (Recent project, New project…, Switch Project… `Cmd+Shift+P`, Open Folder… `Cmd+O`), the worktree pair (New worktree…, Switch worktree…), **Set up SynapseNote integrations…** (re-runs the first-launch integrations setup), and Close tab, the File menu surfaces the most-used sidebar affordances so they're reachable from the keyboard:
 
 | Item | Accelerator | Behavior |
 | --- | --- | --- |

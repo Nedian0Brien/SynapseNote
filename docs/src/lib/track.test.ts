@@ -18,7 +18,7 @@ afterEach(() => {
 });
 
 function req(headers: Record<string, string> = {}): Request {
-  return new Request('https://openknowledge.ai/download/stable', { headers });
+  return new Request('https://synapse.lawdigest.kr/download/stable', { headers });
 }
 
 describe('buildCapturePayload', () => {
@@ -90,7 +90,7 @@ function reqUrl(url: string, headers: Record<string, string> = {}): Request {
 describe('attribution', () => {
   test('captures utm_content from our own CTA links', () => {
     const a = attribution(
-      reqUrl('https://openknowledge.ai/download/stable?utm_content=landing-hero'),
+      reqUrl('https://synapse.lawdigest.kr/download/stable?utm_content=landing-hero'),
     );
     expect(a.utm_content).toBe('landing-hero');
   });
@@ -98,7 +98,7 @@ describe('attribution', () => {
   test('captures the full standard UTM set from external campaign links', () => {
     const a = attribution(
       reqUrl(
-        'https://openknowledge.ai/download/stable?utm_source=newsletter&utm_medium=email&utm_campaign=Launch%20Week&utm_content=header-button&utm_term=knowledge%20base',
+        'https://synapse.lawdigest.kr/download/stable?utm_source=newsletter&utm_medium=email&utm_campaign=Launch%20Week&utm_content=header-button&utm_term=knowledge%20base',
       ),
     );
     expect(a.utm_source).toBe('newsletter');
@@ -111,7 +111,7 @@ describe('attribution', () => {
   test('sanitizes utm values: control chars stripped, length capped, empty dropped', () => {
     const a = attribution(
       reqUrl(
-        `https://openknowledge.ai/download/stable?utm_content=${'a'.repeat(150)}&utm_source=%00%01ok%7f&utm_medium=%20%20`,
+        `https://synapse.lawdigest.kr/download/stable?utm_content=${'a'.repeat(150)}&utm_source=%00%01ok%7f&utm_medium=%20%20`,
       ),
     );
     expect(a.utm_content).toBe('a'.repeat(100));
@@ -121,7 +121,7 @@ describe('attribution', () => {
 
   test('external referrer: hostname only, no path', () => {
     const a = attribution(
-      reqUrl('https://openknowledge.ai/download/stable', {
+      reqUrl('https://synapse.lawdigest.kr/download/stable', {
         referer: 'https://news.ycombinator.com/item?id=1',
       }),
     );
@@ -131,10 +131,10 @@ describe('attribution', () => {
 
   test('missing or unparseable referer: no referrer properties', () => {
     expect(
-      attribution(reqUrl('https://openknowledge.ai/download/stable')).referrer,
+      attribution(reqUrl('https://synapse.lawdigest.kr/download/stable')).referrer,
     ).toBeUndefined();
     const a = attribution(
-      reqUrl('https://openknowledge.ai/download/stable', { referer: 'not a url' }),
+      reqUrl('https://synapse.lawdigest.kr/download/stable', { referer: 'not a url' }),
     );
     expect(a.referrer).toBeUndefined();
     expect(a.referrer_path).toBeUndefined();
@@ -142,18 +142,18 @@ describe('attribution', () => {
 
   test('own-site referrer: hostname plus page path, never the query string', () => {
     const a = attribution(
-      reqUrl('https://openknowledge.ai/download/stable', {
-        referer: 'https://openknowledge.ai/docs/get-started/quickstart?token=secret',
+      reqUrl('https://synapse.lawdigest.kr/download/stable', {
+        referer: 'https://synapse.lawdigest.kr/docs/get-started/quickstart?token=secret',
       }),
     );
-    expect(a.referrer).toBe('openknowledge.ai');
+    expect(a.referrer).toBe('synapse.lawdigest.kr');
     expect(a.referrer_path).toBe('/docs/get-started/quickstart');
   });
 
   test('own-site subdomain referrer also gets a path', () => {
     const a = attribution(
-      reqUrl('https://openknowledge.ai/download/stable', {
-        referer: 'https://www.openknowledge.ai/',
+      reqUrl('https://synapse.lawdigest.kr/download/stable', {
+        referer: 'https://synapse.lawdigest.kr/',
       }),
     );
     expect(a.referrer_path).toBe('/');
@@ -161,18 +161,18 @@ describe('attribution', () => {
 
   test('own-site /d/<encoded> share referrer: hostname only, path suppressed', () => {
     const a = attribution(
-      reqUrl('https://openknowledge.ai/download/stable', {
-        referer: 'https://openknowledge.ai/d/aHR0cHM6Ly9naXRodWIuY29t',
+      reqUrl('https://synapse.lawdigest.kr/download/stable', {
+        referer: 'https://synapse.lawdigest.kr/d/aHR0cHM6Ly9naXRodWIuY29t',
       }),
     );
-    expect(a.referrer).toBe('openknowledge.ai');
+    expect(a.referrer).toBe('synapse.lawdigest.kr');
     expect(a.referrer_path).toBeUndefined();
   });
 
   test('own-site referrer path is capped at 200 chars', () => {
     const a = attribution(
-      reqUrl('https://openknowledge.ai/download/stable', {
-        referer: `https://openknowledge.ai/docs/${'x'.repeat(400)}`,
+      reqUrl('https://synapse.lawdigest.kr/download/stable', {
+        referer: `https://synapse.lawdigest.kr/docs/${'x'.repeat(400)}`,
       }),
     );
     expect(a.referrer_path?.length).toBe(200);
@@ -180,31 +180,31 @@ describe('attribution', () => {
 
   test('a lookalike domain is treated as external', () => {
     const a = attribution(
-      reqUrl('https://openknowledge.ai/download/stable', {
-        referer: 'https://notopenknowledge.ai/phish',
+      reqUrl('https://synapse.lawdigest.kr/download/stable', {
+        referer: 'https://notsynapse.lawdigest.kr/phish',
       }),
     );
-    expect(a.referrer).toBe('notopenknowledge.ai');
+    expect(a.referrer).toBe('notsynapse.lawdigest.kr');
     expect(a.referrer_path).toBeUndefined();
   });
 
   test('sec-fetch-site passes through only known values', () => {
     const ok = attribution(
-      reqUrl('https://openknowledge.ai/download/stable', { 'sec-fetch-site': 'cross-site' }),
+      reqUrl('https://synapse.lawdigest.kr/download/stable', { 'sec-fetch-site': 'cross-site' }),
     );
     expect(ok.sec_fetch_site).toBe('cross-site');
     const junk = attribution(
-      reqUrl('https://openknowledge.ai/download/stable', { 'sec-fetch-site': 'evil' }),
+      reqUrl('https://synapse.lawdigest.kr/download/stable', { 'sec-fetch-site': 'evil' }),
     );
     expect(junk.sec_fetch_site).toBeUndefined();
     expect(
-      attribution(reqUrl('https://openknowledge.ai/download/stable')).sec_fetch_site,
+      attribution(reqUrl('https://synapse.lawdigest.kr/download/stable')).sec_fetch_site,
     ).toBeUndefined();
   });
 
   test('includes the user-agent properties', () => {
     const a = attribution(
-      reqUrl('https://openknowledge.ai/download/stable', {
+      reqUrl('https://synapse.lawdigest.kr/download/stable', {
         'user-agent': 'Mozilla/5.0 (Macintosh) Safari/605.1.15',
       }),
     );
@@ -214,7 +214,7 @@ describe('attribution', () => {
 });
 
 describe('userAgentProperties', () => {
-  const UA_URL = 'https://openknowledge.ai/download/stable';
+  const UA_URL = 'https://synapse.lawdigest.kr/download/stable';
   function classify(ua: string): string | undefined {
     return userAgentProperties(reqUrl(UA_URL, { 'user-agent': ua })).ua_class;
   }
@@ -229,7 +229,7 @@ describe('userAgentProperties', () => {
     expect(classify('Wget/1.21')).toBe('cli');
     expect(classify('electron-updater/6.3.0')).toBe('electron');
     expect(
-      classify('Mozilla/5.0 OpenKnowledge/0.24.0 Chrome/128.0.0.0 Electron/32.1.0 Safari/537.36'),
+      classify('Mozilla/5.0 SynapseNote/0.24.0 Chrome/128.0.0.0 Electron/32.1.0 Safari/537.36'),
     ).toBe('electron');
     expect(classify('SomethingUnrecognized/1.0')).toBe('other');
   });
@@ -247,7 +247,7 @@ describe('userAgentProperties', () => {
 });
 
 describe('isPrefetchRequest', () => {
-  const ROUTE_URL = 'https://openknowledge.ai/download/stable';
+  const ROUTE_URL = 'https://synapse.lawdigest.kr/download/stable';
   test('true for browser and framework prefetch signals', () => {
     expect(isPrefetchRequest(reqUrl(ROUTE_URL, { 'sec-purpose': 'prefetch' }))).toBe(true);
     expect(isPrefetchRequest(reqUrl(ROUTE_URL, { 'sec-purpose': 'prefetch;prerender' }))).toBe(

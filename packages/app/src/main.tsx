@@ -127,7 +127,7 @@ installSubscribeCardStore();
 installRelaunchStateBridge();
 
 // Desktop-only: subscribe to the `ok:deep-link` bridge event so an
-// `openknowledge://` URL routed to this window updates the hash to open the
+// `synapsenote://` URL routed to this window updates the hash to open the
 // target doc. Registered at module-init so the listener is in
 // place before the event can fire.
 if (typeof window !== 'undefined') {

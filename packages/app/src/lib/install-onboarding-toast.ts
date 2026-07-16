@@ -12,7 +12,7 @@
  * Web / CLI distribution: `bridge` is undefined and `install` is a no-op.
  */
 
-import { EDITOR_LABELS } from '@inkeep/open-knowledge-core';
+import { EDITOR_LABELS } from '@nedian0brien/synapsenote-core';
 import { toast as sonnerToast } from 'sonner';
 import type { OkDesktopBridge } from '@/lib/desktop-bridge-types';
 import { relativeToProject } from '@/lib/project-paths';
@@ -21,7 +21,7 @@ const TOAST_DURATION_MS = 4000;
 /** "Sticky" toast — large finite duration in lieu of `Infinity`. Used for
  *  failure outcomes that surface an action item the user must see, and for
  *  PATH/rc-file edit disclosures — the user must get a real chance to notice
- *  that OpenKnowledge touched their shell config (and how to undo it).
+ *  that SynapseNote touched their shell config (and how to undo it).
  *  24h is long enough to span typical user idle windows; the close button
  *  on the Toaster gives an immediate-dismiss escape hatch. */
 const STICKY_TOAST_DURATION_MS = 24 * 60 * 60 * 1000;
@@ -38,7 +38,7 @@ export function installOnboardingToastListener(opts: {
   if (!bridge.onboarding) return undefined;
   return bridge.onboarding.onToast((payload) => {
     if (payload.kind === 'ancestor-promote') {
-      sonnerToast.success(`Opened existing OpenKnowledge project at ${payload.ancestorPath}`, {
+      sonnerToast.success(`Opened existing SynapseNote project at ${payload.ancestorPath}`, {
         duration: TOAST_DURATION_MS,
       });
       return;
@@ -56,7 +56,7 @@ export function installOnboardingToastListener(opts: {
       if (payload.path.status === 'installed') parts.push(payload.path.summary);
       if (payload.path.status === 'failed')
         parts.push(`PATH install failed: ${payload.path.summary}`);
-      const message = parts.length > 0 ? parts.join('; ') : 'OpenKnowledge integrations checked.';
+      const message = parts.length > 0 ? parts.join('; ') : 'SynapseNote integrations checked.';
       const hasFailure = payload.mcp.status === 'failed' || payload.path.status === 'failed';
       const pathTouched = payload.path.status !== 'none';
       sonnerToast[hasFailure ? 'error' : 'success'](message, {
@@ -98,7 +98,7 @@ export function installOnboardingToastListener(opts: {
     // trees are worth surviving without losing the toast).
     const subPath = relativeToProject(payload.gitRoot, payload.pickedPath) ?? payload.pickedPath;
     sonnerToast.success(
-      `Initialized OpenKnowledge at ${payload.gitRoot} — opened parent of ${subPath} because it contains a .git folder`,
+      `Initialized SynapseNote at ${payload.gitRoot} — opened parent of ${subPath} because it contains a .git folder`,
       { duration: TOAST_DURATION_MS },
     );
   });

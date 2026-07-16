@@ -24,7 +24,7 @@ import {
   type HandoffOutcome,
   type HandoffPayload,
   type HandoffTarget,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 
 interface DispatchHandoffDeps {
   /** Test seam — defaults to `globalThis.fetch`. */

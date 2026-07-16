@@ -8,7 +8,7 @@ import { parse } from 'yaml';
  * Regression guard: the packaged `.app` must ship `cli/package.json` next to
  * `cli/dist/`.
  *
- * `@inkeep/open-knowledge-server`'s `version-constants.ts` reads its
+ * `@nedian0brien/synapsenote-server`'s `version-constants.ts` reads its
  * neighbouring `package.json` at module load to populate `RUNTIME_VERSION`
  * — the value written into `server.lock`'s `runtimeVersion` field. The CLI
  * bundles the server source into `cli/dist/`, so the resolution walks

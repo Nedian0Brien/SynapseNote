@@ -15,7 +15,7 @@ import type { OkDesktopBridge } from '@/lib/desktop-bridge-types';
 /** Map a failed `restartServer` outcome reason to a user-facing message. */
 export function restartServerFailureMessage(reason: 'eperm' | 'other'): string {
   return reason === 'eperm'
-    ? t`Couldn't restart the server — another process owns it. Quit other OpenKnowledge windows for this project, then try again.`
+    ? t`Couldn't restart the server — another process owns it. Quit other SynapseNote windows for this project, then try again.`
     : t`Couldn't restart the server. Try \`ok start\` in this folder.`;
 }
 

@@ -16,7 +16,7 @@
  * a sibling context (see {@link PropertyContext} for the cross-tree signal
  * bus), not here.
  */
-import type { FrontmatterBinding } from '@inkeep/open-knowledge-core';
+import type { FrontmatterBinding } from '@nedian0brien/synapsenote-core';
 import { createContext, type ReactNode, use } from 'react';
 
 const FrontmatterBindingContext = createContext<FrontmatterBinding | null>(null);

@@ -22,7 +22,7 @@
 
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, posix } from 'node:path';
-import { parseTemplateFile } from '@inkeep/open-knowledge-core';
+import { parseTemplateFile } from '@nedian0brien/synapsenote-core';
 
 type TemplateScope = 'local' | 'inherited';
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Launch one or more isolated OpenKnowledge desktop instances in parallel (macOS).
+ * Launch one or more isolated SynapseNote desktop instances in parallel (macOS).
  *
  * A bare second launch of the app can't run: Electron keys its single-instance
  * lock on the `userData` directory (and Chromium storage + recents live there),
@@ -12,7 +12,7 @@
  *
  * Each instance opens its named project by pre-seeding that instance's own
  * `state.json` `lastOpenedProject` — the cold-start restore opens it. (An
- * `openknowledge://` URL in argv only routes via the second-instance path, so it
+ * `synapsenote://` URL in argv only routes via the second-instance path, so it
  * is NOT honored by a fresh primary instance; pre-seeding is the per-instance
  * targetable path. The `state.json` shape mirrors `AppState` in
  * `src/main/state-store.ts` — keep in sync if that schema changes.)
@@ -27,7 +27,7 @@
  *
  * Flags / env:
  *   --app <path>  (or OK_DESKTOP_APP)  path to the built .app
- *                 default: dist-desktop/mac-arm64/OpenKnowledge.app (run `bun run build:dir` first)
+ *                 default: dist-desktop/mac-arm64/SynapseNote.app (run `bun run build:dir` first)
  *   --user-data-root <dir>  base dir for per-instance userData (default: ~/.ok/instances)
  */
 
@@ -38,7 +38,7 @@ import { isAbsolute, join, resolve } from 'node:path';
 
 if (process.platform !== 'darwin') {
   console.error(
-    'launch-instances: macOS only (uses `open`). The OpenKnowledge desktop is macOS-only.',
+    'launch-instances: macOS only (uses `open`). The SynapseNote desktop is macOS-only.',
   );
   process.exit(1);
 }
@@ -79,7 +79,7 @@ function resolveAppPath(flagPath) {
   }
   // Default: the unsigned local build output, relative to this package.
   const pkgRoot = resolve(import.meta.dirname, '..');
-  const candidate = join(pkgRoot, 'dist-desktop', 'mac-arm64', 'OpenKnowledge.app');
+  const candidate = join(pkgRoot, 'dist-desktop', 'mac-arm64', 'SynapseNote.app');
   if (!existsSync(candidate)) {
     throw new Error(
       `No built app at ${candidate}.\n` +

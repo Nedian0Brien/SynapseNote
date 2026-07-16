@@ -7,8 +7,8 @@ import {
   type CC1DerivedViewPayload,
   CC1DerivedViewPayloadSchema,
   SYSTEM_DOC_NAME,
-} from '@inkeep/open-knowledge-core';
-import { applyExternalChange, BacklinkIndex, reconcile } from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-core';
+import { applyExternalChange, BacklinkIndex, reconcile } from '@nedian0brien/synapsenote-server';
 import * as encoding from 'lib0/encoding';
 import * as Y from 'yjs';
 import { HARNESS_BOOT_TIMEOUT_MS } from './harness-boot-timeout';

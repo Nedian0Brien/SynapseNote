@@ -85,7 +85,7 @@ describe('runStop', () => {
     expect(outcome.stopped).toEqual([]);
     expect(outcome.failed).toEqual([]);
     expect(killed).toEqual([]);
-    expect(logs).toEqual(['No running open-knowledge processes.']);
+    expect(logs).toEqual(['No running synapsenote processes.']);
   });
 
   test('both alive → SIGTERM both, log stopped summary', () => {

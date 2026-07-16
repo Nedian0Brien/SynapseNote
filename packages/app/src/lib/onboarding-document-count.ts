@@ -6,7 +6,10 @@
  * fetch + counting rule lives in one place.
  */
 
-import { type DocumentListSuccess, DocumentListSuccessSchema } from '@inkeep/open-knowledge-core';
+import {
+  type DocumentListSuccess,
+  DocumentListSuccessSchema,
+} from '@nedian0brien/synapsenote-core';
 import { filterVisibleEntries } from '@/components/file-tree-utils';
 
 /**

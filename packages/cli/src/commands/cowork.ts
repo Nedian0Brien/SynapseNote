@@ -1,19 +1,19 @@
 /**
- * `ok cowork` — build the `openknowledge.skill` bundle and open the Claude
+ * `ok cowork` — build the `synapsenote.skill` bundle and open the Claude
  * Desktop App so you can upload it for Claude Chat & Cowork.
  *
  * DELIBERATELY HIDDEN + UNADVERTISED. This is a power-user escape hatch for the
  * one niche Claude Chat/Cowork needs (a separate, isolated Skills list inside
  * the Desktop App that `ok init`'s editor wiring can't reach). It is registered
  * as a hidden command (absent from `ok --help`) and `ok init` does NOT push a
- * hint toward it — discovery is pull-only, via the Open Knowledge skill when a
+ * hint toward it — discovery is pull-only, via the SynapseNote skill when a
  * user explicitly asks about Claude Cowork. Renamed from the misleading
  * `ok install-skill` (which built a bundle, never auto-installed) — do NOT
  * re-advertise it or restore the init-time hint.
  *
  * Flow:
- *   1. Build `openknowledge.skill` from the bundled SKILL.md source.
- *   2. Write to ~/Downloads/openknowledge.skill (or `--out <path>`).
+ *   1. Build `synapsenote.skill` from the bundled SKILL.md source.
+ *   2. Write to ~/Downloads/synapsenote.skill (or `--out <path>`).
  *   3. Invoke the OS file association (`open` / `start` / `xdg-open`) —
  *      this opens the Claude Desktop App but does NOT auto-install.
  *   4. User completes the manual upload inside the Claude Desktop App:
@@ -23,7 +23,7 @@
  * add`, but that flow doesn't reach Claude Chat or Cowork modes (they read from
  * a separate, isolated Skills list inside the Claude Desktop App).
  *
- * The underlying `buildAndOpenSkill` lives in `@inkeep/open-knowledge-server`
+ * The underlying `buildAndOpenSkill` lives in `@nedian0brien/synapsenote-server`
  * (alongside `buildSkillZip`). The `POST /api/install-skill` endpoint and the
  * Electron main-process skill bridge delegate to the same primitive. All call
  * sites read/write the shared `~/.ok/skill-state/claude-cowork` install-state
@@ -35,12 +35,12 @@ import {
   type BuildAndOpenSkillResult,
   buildAndOpenSkill,
   type SpawnLike,
-} from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-server';
 import { Command } from 'commander';
 import { accent, dim, error as errorColor, info, success, warning } from '../ui/colors.ts';
 
 interface BuildDesktopSkillOptions {
-  /** Output file path. Defaults to ~/Downloads/openknowledge.skill. */
+  /** Output file path. Defaults to ~/Downloads/synapsenote.skill. */
   out?: string;
   /** Skip the OS file-association invocation. Just emit the file. */
   noOpen?: boolean;
@@ -71,7 +71,7 @@ const UPLOAD_STEPS = [
   `    2. Click the ${accent('+')} button`,
   `    3. Click ${accent('Create skill')}`,
   `    4. Click ${accent('Upload skill')}`,
-  `    5. Pick ${accent('openknowledge.skill')} from Downloads`,
+  `    5. Pick ${accent('synapsenote.skill')} from Downloads`,
 ];
 
 const MANUAL_UPLOAD_HINT = info(
@@ -94,7 +94,7 @@ function formatSkipCurrentMessage(result: BuildAndOpenSkillResult): string {
   const version = result.skillVersion ?? 'unknown';
   const recordedAt = result.recordedAt ?? 'unknown';
   return [
-    info(`OpenKnowledge skill ${accent(`v${version}`)} already delivered to Claude Desktop.`),
+    info(`SynapseNote skill ${accent(`v${version}`)} already delivered to Claude Desktop.`),
     dim(`  Recorded at ${recordedAt} in ~/.ok/skill-state.yml`),
     dim(`  Use ${accent('--force')} to rebuild and re-open the install dialog.`),
   ].join('\n');
@@ -150,9 +150,9 @@ export async function runCoworkSkill(
 export function coworkCommand(): Command {
   return new Command('cowork')
     .description(
-      'Build openknowledge.skill and open the Claude Desktop App so you can upload it for Claude Chat & Cowork. (Advanced/rarely needed — `ok init` already wires Claude.)',
+      'Build synapsenote.skill and open the Claude Desktop App so you can upload it for Claude Chat & Cowork. (Advanced/rarely needed — `ok init` already wires Claude.)',
     )
-    .option('--out <path>', 'Custom output path (default: ~/Downloads/openknowledge.skill)')
+    .option('--out <path>', 'Custom output path (default: ~/Downloads/synapsenote.skill)')
     .option('--no-open', 'Build the file but skip the OS file-association handoff')
     .option('--force', 'Bypass the install-state gate and rebuild unconditionally')
     .action(async (cliOpts: { out?: string; open: boolean; force?: boolean }) => {

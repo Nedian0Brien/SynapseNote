@@ -402,12 +402,9 @@ describe('ContentFilter', () => {
 
   describe('dot-dir scope symmetry', () => {
     test('admits user-tracked markdown in non-built-in dot dirs and rejects built-in/internal dirs', () => {
-      mkdirSync(join(projectDir, '.cursor', 'skills', 'open-knowledge'), { recursive: true });
-      writeFileSync(
-        join(projectDir, '.cursor', 'skills', 'open-knowledge', 'SKILL.md'),
-        '# Skill\n',
-      );
-      writeFileSync(join(projectDir, '.cursor', 'skills', 'open-knowledge', 'diagram.png'), 'png');
+      mkdirSync(join(projectDir, '.cursor', 'skills', 'synapsenote'), { recursive: true });
+      writeFileSync(join(projectDir, '.cursor', 'skills', 'synapsenote', 'SKILL.md'), '# Skill\n');
+      writeFileSync(join(projectDir, '.cursor', 'skills', 'synapsenote', 'diagram.png'), 'png');
       mkdirSync(join(projectDir, '.claude', 'skills'), { recursive: true });
       writeFileSync(join(projectDir, '.claude', 'skills', 'foo.md'), '# Claude\n');
       mkdirSync(join(projectDir, '.agents', 'skills'), { recursive: true });
@@ -433,7 +430,7 @@ describe('ContentFilter', () => {
       expect(filter.isExcluded('.codex/skills/foo.md')).toBe(true);
       expect(filter.isExcluded('.opencode/skills/foo.md')).toBe(true);
       expect(filter.isExcluded('packages/.cursor/skills/SKILL.md')).toBe(true);
-      expect(filter.isExcluded('.cursor/skills/open-knowledge/diagram.png')).toBe(true);
+      expect(filter.isExcluded('.cursor/skills/synapsenote/diagram.png')).toBe(true);
 
       // Non-editor dot dirs that may hold user-authored markdown stay admitted.
       expect(filter.isExcluded('.github/PULL_REQUEST_TEMPLATE.md')).toBe(false);
@@ -617,14 +614,14 @@ describe('ContentFilter', () => {
       // walk is the only path that descends it to reach `.ok/skills`).
       expect(filter.isDirExcluded('.ok', BYPASS)).toBe(true);
       expect(filter.isDirExcluded('.ok/local', BYPASS)).toBe(true);
-      expect(filter.isDirExcluded('.open-knowledge', BYPASS)).toBe(true);
-      expect(filter.isDirExcluded('.openknowledge', BYPASS)).toBe(true);
+      expect(filter.isDirExcluded('.synapsenote', BYPASS)).toBe(true);
+      expect(filter.isDirExcluded('.synapsenote', BYPASS)).toBe(true);
       // Floor segments at any depth, not just the top.
       expect(filter.isDirExcluded('packages/foo/node_modules', BYPASS)).toBe(true);
       expect(filter.isDirExcluded('a/b/.git/c', BYPASS)).toBe(true);
       expect(filter.isDirExcluded('meetings/.ok/templates', BYPASS)).toBe(true);
-      expect(filter.isDirExcluded('a/b/.open-knowledge/c', BYPASS)).toBe(true);
-      expect(filter.isDirExcluded('a/b/.openknowledge', BYPASS)).toBe(true);
+      expect(filter.isDirExcluded('a/b/.synapsenote/c', BYPASS)).toBe(true);
+      expect(filter.isDirExcluded('a/b/.synapsenote', BYPASS)).toBe(true);
 
       // Files inside the floor are excluded under bypass too (defense-in-depth
       // for any caller that enumerates files without first gating the dir).
@@ -854,8 +851,8 @@ describe('ContentFilter', () => {
       // when nested inside a revealed `.ok` subtree.
       expect(filter.isDirExcluded('.git', REVEAL)).toBe(true);
       expect(filter.isDirExcluded('node_modules', REVEAL)).toBe(true);
-      expect(filter.isDirExcluded('.open-knowledge', REVEAL)).toBe(true);
-      expect(filter.isDirExcluded('.openknowledge', REVEAL)).toBe(true);
+      expect(filter.isDirExcluded('.synapsenote', REVEAL)).toBe(true);
+      expect(filter.isDirExcluded('.synapsenote', REVEAL)).toBe(true);
       expect(filter.isExcluded('.git/objects/x.md', REVEAL)).toBe(true);
       expect(filter.isExcluded('node_modules/pkg/README.md', REVEAL)).toBe(true);
       expect(filter.isDirExcluded('.ok/templates/node_modules', REVEAL)).toBe(true);

@@ -21,7 +21,7 @@
 import { afterAll, beforeAll, expect, test } from 'bun:test';
 import { randomUUID } from 'node:crypto';
 import { setTimeout as wait } from 'node:timers/promises';
-import { toBroadcasterKey } from '@inkeep/open-knowledge-server';
+import { toBroadcasterKey } from '@nedian0brien/synapsenote-server';
 import type { EffectValue } from '../../../../packages/server/src/activity-log.ts';
 import { HARNESS_BOOT_TIMEOUT_MS } from './harness-boot-timeout';
 import { createTestClient, createTestServer, type TestServer } from './test-harness.ts';

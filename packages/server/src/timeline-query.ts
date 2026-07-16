@@ -17,12 +17,12 @@
  */
 
 import { existsSync } from 'node:fs';
-import type { EntryType, TimelineEntry } from '@inkeep/open-knowledge-core';
+import type { EntryType, TimelineEntry } from '@nedian0brien/synapsenote-core';
 import {
   parseCheckpoint,
   parseOkActors,
   readContributors,
-} from '@inkeep/open-knowledge-core/shadow-repo-layout';
+} from '@nedian0brien/synapsenote-core/shadow-repo-layout';
 import { getDocExtension } from './doc-extensions.ts';
 import { managedArtifactTimelinePaths } from './managed-artifact-persistence.ts';
 import {

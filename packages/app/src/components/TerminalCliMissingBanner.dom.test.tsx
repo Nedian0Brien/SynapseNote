@@ -7,7 +7,7 @@
  */
 
 import { afterEach, describe, expect, mock, test } from 'bun:test';
-import { TERMINAL_CLIS } from '@inkeep/open-knowledge-core';
+import { TERMINAL_CLIS } from '@nedian0brien/synapsenote-core';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';

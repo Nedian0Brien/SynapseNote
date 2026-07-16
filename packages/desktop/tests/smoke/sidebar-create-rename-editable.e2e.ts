@@ -18,10 +18,10 @@ const PACKAGED_EXECUTABLE = resolve(
   '..',
   'dist-desktop',
   'mac-arm64',
-  'OpenKnowledge.app',
+  'SynapseNote.app',
   'Contents',
   'MacOS',
-  'OpenKnowledge',
+  'SynapseNote',
 );
 
 const SMOKE_ENABLED = process.env.OK_DESKTOP_E2E_SMOKE === '1';
@@ -69,7 +69,7 @@ function seedProject(prefix: string): SeededProject {
 }
 
 async function launchApp(seed: SeededProject): Promise<ElectronApplication> {
-  const deepLink = `openknowledge://open?project=${encodeURIComponent(seed.projectDir)}&doc=start`;
+  const deepLink = `synapsenote://open?project=${encodeURIComponent(seed.projectDir)}&doc=start`;
   const args = [`--user-data-dir=${seed.userDataDir}`, deepLink];
   return electron.launch({
     executablePath: PACKAGED_EXECUTABLE,

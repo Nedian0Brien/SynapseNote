@@ -558,7 +558,7 @@ function hasChoco(): boolean {
 function buildMissingMessage(g: InstallGuidance): string {
   const lines: string[] = [];
   lines.push(
-    `OpenKnowledge needs ${g.product} to track changes to your knowledge base, but it isn't installed (or isn't on PATH).`,
+    `SynapseNote needs ${g.product} to track changes to your knowledge base, but it isn't installed (or isn't on PATH).`,
   );
   lines.push('');
   if (g.options.length > 0) {
@@ -572,7 +572,7 @@ function buildMissingMessage(g: InstallGuidance): string {
   }
   lines.push(`Or download from: ${g.url}`);
   lines.push('');
-  lines.push('After installing, re-run OpenKnowledge.');
+  lines.push('After installing, re-run SynapseNote.');
   lines.push('Run `ok diagnose health --check git` to verify your installation.');
   return lines.join('\n');
 }
@@ -585,7 +585,7 @@ function buildTooOldMessage(
 ): string {
   const lines: string[] = [];
   lines.push(
-    `OpenKnowledge requires ${g.product} ${required} or newer (detected ${detected} at ${resolvedPath}).`,
+    `SynapseNote requires ${g.product} ${required} or newer (detected ${detected} at ${resolvedPath}).`,
   );
   lines.push('');
   if (g.options.length > 0) {
@@ -599,7 +599,7 @@ function buildTooOldMessage(
   }
   lines.push(`Or download from: ${g.url}`);
   lines.push('');
-  lines.push('After updating, re-run OpenKnowledge.');
+  lines.push('After updating, re-run SynapseNote.');
   lines.push('Run `ok diagnose health --check git` to verify your installation.');
   return lines.join('\n');
 }

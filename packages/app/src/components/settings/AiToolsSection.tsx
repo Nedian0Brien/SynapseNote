@@ -1,6 +1,6 @@
 /**
  * Settings → User → AI tools & CLI — the persistent, stateful sibling of the
- * first-launch "Connect your AI tools to OpenKnowledge" consent dialog
+ * first-launch "Connect your AI tools to SynapseNote" consent dialog
  * (`McpConsentDialogBody.tsx`). Same three component groups (shell-PATH shim,
  * per-editor MCP entries, user-global Agent Skills), but checkboxes reflect
  * LIVE installed state and each click applies immediately: check = install,
@@ -12,8 +12,8 @@
  * this component renders a fallback if mounted without it.
  */
 
-import { EDITOR_SETUP_DOC_SLUG } from '@inkeep/open-knowledge-core';
 import { Trans, useLingui } from '@lingui/react/macro';
+import { EDITOR_SETUP_DOC_SLUG } from '@nedian0brien/synapsenote-core';
 import { ArrowUpRight, Info } from 'lucide-react';
 import { type ReactNode, useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -123,7 +123,7 @@ export function AiToolsSection() {
       <section aria-labelledby="settings-ai-tools-title" className="space-y-4">
         {header}
         <p className="text-sm text-muted-foreground" data-testid="ai-tools-unavailable">
-          <Trans>AI tool management is only available in the OpenKnowledge desktop app.</Trans>
+          <Trans>AI tool management is only available in the SynapseNote desktop app.</Trans>
         </p>
       </section>
     );
@@ -185,7 +185,7 @@ export function AiToolsSection() {
                 </span>
                 <span className="text-xs text-muted-foreground" data-testid="ai-tools-path-status">
                   {status.path.installed
-                    ? t`Installed — ok is available in external terminals. Unchecking removes it; OpenKnowledge's built-in terminal and AI tools keep working.`
+                    ? t`Installed — ok is available in external terminals. Unchecking removes it; SynapseNote's built-in terminal and AI tools keep working.`
                     : t`Adds a managed block to ${status.path.rcFilesToTouch.join(', ')}`}
                 </span>
               </span>
@@ -212,7 +212,7 @@ export function AiToolsSection() {
 
       <div className="flex flex-col gap-1.5">
         <span className="text-xs font-medium text-muted-foreground">
-          <Trans comment="Group label above the per-editor MCP list in Settings → AI tools & CLI — each row wires OpenKnowledge's MCP server into that tool">
+          <Trans comment="Group label above the per-editor MCP list in Settings → AI tools & CLI — each row wires SynapseNote's MCP server into that tool">
             MCP connections
           </Trans>
         </span>
@@ -224,12 +224,12 @@ export function AiToolsSection() {
             // of a dead-end "Not detected" — same contract as the first-launch
             // consent dialog.
             const showSetupLink = editor.state === 'not-installed' && !editor.detected;
-            const setupUrl = `https://openknowledge.ai/docs/integrations/${EDITOR_SETUP_DOC_SLUG[editor.id]}`;
+            const setupUrl = `https://synapse.lawdigest.kr/docs/integrations/${EDITOR_SETUP_DOC_SLUG[editor.id]}`;
             const statusLabel =
               editor.state === 'installed'
                 ? t`Installed`
                 : editor.state === 'foreign'
-                  ? t`Custom open-knowledge entry — not managed by OpenKnowledge`
+                  ? t`Custom synapsenote entry — not managed by SynapseNote`
                   : editor.state === 'unmanageable'
                     ? t`Can't safely edit this tool's config`
                     : editor.detected
@@ -287,7 +287,7 @@ export function AiToolsSection() {
                     className="flex shrink-0 items-center gap-0.5 px-2 py-2.5 text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
                     data-testid={`ai-tools-editor-status-${editor.id}`}
                   >
-                    <Trans comment="Link on an undetected tool row to its OpenKnowledge setup guide">
+                    <Trans comment="Link on an undetected tool row to its SynapseNote setup guide">
                       How to set up
                     </Trans>
                     <ArrowUpRight className="size-3" aria-hidden />
@@ -348,12 +348,12 @@ export function AiToolsSection() {
                       data-testid={`ai-tools-skill-status-${skill.id}`}
                     >
                       {skill.id === 'discovery' ? (
-                        <Trans comment="Subtext for the open-knowledge-discovery skill row">
-                          Helps your coding agent recognize OpenKnowledge projects and route reads
-                          and writes through it.
+                        <Trans comment="Subtext for the synapsenote-discovery skill row">
+                          Helps your coding agent recognize SynapseNote projects and route reads and
+                          writes through it.
                         </Trans>
                       ) : (
-                        <Trans comment="Subtext for the open-knowledge-write-skill skill row">
+                        <Trans comment="Subtext for the synapsenote-write-skill skill row">
                           Adds a guided workflow for authoring new Agent Skills.
                         </Trans>
                       )}

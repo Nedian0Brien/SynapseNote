@@ -103,10 +103,10 @@ export type InstallUserSkillResult = 'installed' | 'skip-current' | 'failed';
  * `LEGACY_SKILL_DIR_NAME` in `packages/desktop/src/main/skill-reclaim.ts`
  * (kept separate so the desktop module stays free of server imports).
  */
-const LEGACY_USER_SKILL_NAME = 'open-knowledge';
+const LEGACY_USER_SKILL_NAME = 'synapsenote';
 
 /**
- * Host dirs that may carry a pre-split `open-knowledge` user-global skill —
+ * Host dirs that may carry a pre-split `synapsenote` user-global skill —
  * the `--copy`-mode install targets. Mirrors the desktop reclaim's host set.
  */
 const LEGACY_USER_SKILL_HOST_DIRS = ['.claude', '.cursor', '.agents'] as const;
@@ -215,7 +215,7 @@ function runSpawn(
 }
 
 /**
- * True when any pre-split `open-knowledge` user-global skill dir is on disk.
+ * True when any pre-split `synapsenote` user-global skill dir is on disk.
  * Gates the subprocess-spawning `npx skills remove` so a fresh machine with
  * nothing to migrate pays no `npx` cost — mirrors the desktop reclaim's
  * `existsSync` gate in `skill-reclaim.ts`.
@@ -233,7 +233,7 @@ async function anyLegacyUserSkillExists(home: string): Promise<boolean> {
 }
 
 /**
- * Legacy migration: remove any pre-split user-global `open-knowledge` skill
+ * Legacy migration: remove any pre-split user-global `synapsenote` skill
  * install before the new `discovery` bundle lands. No-op (no subprocess) when
  * no legacy dir is on disk — a fresh machine pays no `npx` cost. Fail-soft:
  * `npx skills remove` of an absent skill is expected to exit 0, but the
@@ -259,25 +259,25 @@ async function removeLegacyUserSkill(
         exitCode: outcome.exitCode,
         stderr: outcome.stderr,
       },
-      'Legacy `open-knowledge` skill removal did not exit cleanly; continuing with install.',
+      'Legacy `synapsenote` skill removal did not exit cleanly; continuing with install.',
     );
   }
 }
 
 /**
- * Install OpenKnowledge's user-global Agent Skill to every detected agent host.
+ * Install SynapseNote's user-global Agent Skill to every detected agent host.
  *
  * Installs the SLIM `discovery` bundle only — the rich `project` bundle never
  * lands at user scope; it ships project-local via `ok init`'s
  * `writeProjectSkill`. Each invocation first removes any pre-split
- * `open-knowledge` user-global install (fail-soft) then runs
+ * `synapsenote` user-global install (fail-soft) then runs
  * `npx skills@~1.5.0 add <discovery-dir> --agent '*' -g -y --copy`.
  *
  * Idempotency: the `cli-hosts` entry in `${home}/.ok/skill-state.yml` gates
  * re-install. The subprocess is NOT invoked (and `'skip-current'` is returned)
  * only when BOTH the recorded version matches the current
- * `@inkeep/open-knowledge-server` package version AND the central skill
- * directory at `${home}/.agents/skills/open-knowledge-discovery` is still on
+ * `@nedian0brien/synapsenote-server` package version AND the central skill
+ * directory at `${home}/.agents/skills/synapsenote-discovery` is still on
  * disk. The disk-presence check exists because a manual `npx skills remove -g`
  * (or equivalent rm) leaves the state file untouched, which would otherwise
  * wedge the next `ok init` into a no-op despite the skill being gone.
@@ -326,7 +326,7 @@ export async function installUserSkill(
   } catch (err) {
     logger.warn(
       { event: 'skill-install.failed', reason: 'version-read-failed', error: String(err) },
-      'Skill install aborted — could not read @inkeep/open-knowledge-server version.',
+      'Skill install aborted — could not read @nedian0brien/synapsenote-server version.',
     );
     await report('failed', undefined, 'version-read-failed');
     return 'failed';
@@ -347,7 +347,7 @@ export async function installUserSkill(
     if (await centralSkillExists(home, bundleName)) {
       logger.info?.(
         { event: 'skill-install.skip-current', version: currentVersion },
-        'OpenKnowledge skill already installed at current version; skipping.',
+        'SynapseNote skill already installed at current version; skipping.',
       );
       await report('skip-current', currentVersion);
       return 'skip-current';
@@ -381,7 +381,7 @@ export async function installUserSkill(
   }
   const env: NodeJS.ProcessEnv = { ...process.env, HOME: home };
 
-  // Drop any pre-split `open-knowledge` user-global install first (no-op on a
+  // Drop any pre-split `synapsenote` user-global install first (no-op on a
   // fresh machine). Fail-soft — the `add` below is what the install gates on.
   await removeLegacyUserSkill(home, spawnFn, env, timeoutMs, logger, platform);
 
@@ -402,7 +402,7 @@ export async function installUserSkill(
     }
     logger.info?.(
       { event: 'skill-install.installed', version: currentVersion },
-      'OpenKnowledge skill installed to detected agent hosts.',
+      'SynapseNote skill installed to detected agent hosts.',
     );
     await report('installed', currentVersion);
     return 'installed';
@@ -452,7 +452,7 @@ export async function installUserSkill(
 //
 // Distinct surface from `installUserSkill` above (which targets Claude
 // CLI / Cursor / Codex via `npx skills add`). This path produces an
-// `openknowledge.skill` zip and hands it to the OS so Claude Desktop's native
+// `synapsenote.skill` zip and hands it to the OS so Claude Desktop's native
 // install dialog takes over. Shared consumers: `ok install-skill` CLI,
 // `POST /api/install-skill`. The Electron `okDesktop.skill.buildAndOpen`
 // bridge has its OWN implementation in
@@ -463,10 +463,10 @@ export async function installUserSkill(
 // click-time gate covers both surfaces.
 
 const DOWNLOADS_DIR = 'Downloads';
-const SKILL_FILENAME = 'openknowledge.skill';
+const SKILL_FILENAME = 'synapsenote.skill';
 
 export interface BuildAndOpenSkillOptions {
-  /** Output path for the built skill file. Defaults to `~/Downloads/openknowledge.skill`. */
+  /** Output path for the built skill file. Defaults to `~/Downloads/synapsenote.skill`. */
   out?: string;
   /** Build only — skip the OS file-association invocation. */
   noOpen?: boolean;
@@ -601,7 +601,7 @@ export async function buildAndOpenSkill(
     } catch (err) {
       logger?.warn?.(
         { event: 'skill-install.gate.version-read-failed', error: String(err) },
-        'Could not read @inkeep/open-knowledge-server version for gate check; rebuilding.',
+        'Could not read @nedian0brien/synapsenote-server version for gate check; rebuilding.',
       );
     }
 
@@ -627,7 +627,7 @@ export async function buildAndOpenSkill(
             target: 'claude-cowork',
             version: currentVersion,
           },
-          'OpenKnowledge skill already delivered at current version; skipping rebuild.',
+          'SynapseNote skill already delivered at current version; skipping rebuild.',
         );
         await report('skip-current', currentVersion);
         return {

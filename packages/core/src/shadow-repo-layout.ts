@@ -11,7 +11,7 @@
  *
  * Main-worktree path is bit-identical to pre-worktree-support behavior, so
  * existing main-worktree shadows do not migrate. Pre-rename integrated shadows
- * at `.git/openknowledge/` (legacy path) are silently rename-migrated in-place
+ * at `.git/synapsenote/` (legacy path) are silently rename-migrated in-place
  * once per repo via `initShadowRepo()`. Its on-disk layout is a documented
  * invariant:
  *
@@ -23,7 +23,7 @@
  *   - `principal-<UUID>`         — a browser-tab principal wrote the commit
  *   - `file-system`              — classified: disk reconcile (file-watcher)
  *   - `git-upstream`             — classified: HEAD-move commit import
- *   - `openknowledge-service`    — classified: service-level fallback (park, etc.)
+ *   - `synapsenote-service`    — classified: service-level fallback (park, etc.)
  *
  * Legacy ref names (`server`, `human-<*>`, `upstream`) classify as `'unknown'`
  * so the allowlist sweep in `initShadowRepo()` can safely delete them on
@@ -53,7 +53,7 @@ import { fnv1aDigest } from './bridge/hash-util.ts';
  *   git-author-<hash>          → 'classified-git-author'            (upstream commit author)
  *   file-system                → 'classified-file-system'           (disk reconcile)
  *   git-upstream               → 'classified-git-upstream'          (HEAD-move import boundary)
- *   openknowledge-service      → 'classified-openknowledge-service' (park / service)
+ *   synapsenote-service      → 'classified-synapsenote-service' (park / service)
  *   server, human-*, upstream  → 'unknown'                          (legacy, swept on GC)
  *
  * `git-author-<hash>` gives each distinct upstream commit author their own WIP
@@ -68,7 +68,7 @@ export type WriterClassification =
   | 'classified-git-author'
   | 'classified-file-system'
   | 'classified-git-upstream'
-  | 'classified-openknowledge-service'
+  | 'classified-synapsenote-service'
   | 'unknown';
 
 /** Prefix for per-author upstream-import writer ids: `git-author-<fnv1a(email)>`. */
@@ -104,12 +104,12 @@ export interface ParsedWriter {
  * should flow through `parseWriterId`.
  *
  * Recognized ids — `agent-<uuid>`, `principal-<uuid>`, `git-author-<hash>`,
- * `file-system`, `git-upstream`, `openknowledge-service`.
+ * `file-system`, `git-upstream`, `synapsenote-service`.
  * Legacy ids (`human-*`, `upstream`, `server`) do NOT match → 'unknown',
  * so they are eligible for GC by the allowlist sweep.
  */
 const WRITER_ID_RE =
-  /^(agent-[^/]+|principal-[^/]+|git-author-[^/]+|file-system|git-upstream|openknowledge-service)$/;
+  /^(agent-[^/]+|principal-[^/]+|git-author-[^/]+|file-system|git-upstream|synapsenote-service)$/;
 
 /**
  * Classification of `<projectRoot>/.git`. Centralizes the single
@@ -791,7 +791,7 @@ export interface OkActorEntry {
    * The writer id — the ref-name this commit was authored under:
    *   - `agent-<connectionId>`    — MCP agent session
    *   - `principal-<UUID>`        — browser-tab principal
-   *   - `file-system` | `git-upstream` | `openknowledge-service` — classified
+   *   - `file-system` | `git-upstream` | `synapsenote-service` — classified
    *
    * Carries the identity that `ok-contributors.id` used to carry pre-consolidation,
    * so a commit body is self-describing (`git show -s <sha>` → full attribution
@@ -866,7 +866,7 @@ export function formatOkActor(entry: OkActorEntry): string {
  *   - `principal` set → `<principal>`  (principal ids already include the
  *     `principal-` prefix)
  *   - otherwise → derive from `display_name` for the three classified writers;
- *     fall back to `'openknowledge-service'` as the safest non-attributed
+ *     fall back to `'synapsenote-service'` as the safest non-attributed
  *     classified writer if display_name doesn't match.
  */
 function parseOkActorObject(obj: Record<string, unknown>): OkActorEntry | null {
@@ -893,7 +893,7 @@ function parseOkActorObject(obj: Record<string, unknown>): OkActorEntry | null {
         writer_id = 'git-upstream';
         break;
       default:
-        writer_id = 'openknowledge-service';
+        writer_id = 'synapsenote-service';
     }
   }
   const summaries =
@@ -1171,8 +1171,8 @@ export function parseWriterId(id: string): ParsedWriter {
   if (id === 'file-system') return { id, classification: 'classified-file-system', isAgent: null };
   if (id === 'git-upstream')
     return { id, classification: 'classified-git-upstream', isAgent: null };
-  if (id === 'openknowledge-service')
-    return { id, classification: 'classified-openknowledge-service', isAgent: null };
+  if (id === 'synapsenote-service')
+    return { id, classification: 'classified-synapsenote-service', isAgent: null };
   // Unreachable given the regex, but keeps the type narrowing honest.
   return { id, classification: 'unknown', isAgent: null };
 }

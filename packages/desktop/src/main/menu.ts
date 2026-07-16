@@ -31,7 +31,7 @@
  * free of runtime electron bindings.
  */
 
-import { MENU_LABELS, SHOW_INSTALL_SKILL } from '@inkeep/open-knowledge-core';
+import { MENU_LABELS, SHOW_INSTALL_SKILL } from '@nedian0brien/synapsenote-core';
 import type { Dialog, MenuItemConstructorOptions } from 'electron';
 import type { EntryPoint } from '../shared/entry-point.ts';
 import type { EditorActiveTargetSnapshot } from '../shared/ipc-channels.ts';
@@ -67,7 +67,7 @@ export interface MenuDeps {
   openExternalUrl(url: string): void;
   /**
    * Re-trigger the first-launch consent dialog from the File menu. Invoked
-   * by "Set up OpenKnowledge integrations…" — a user who Skip'd
+   * by "Set up SynapseNote integrations…" — a user who Skip'd
    * first-launch (or declined the shell-PATH toggle, or added a new editor
    * afterwards) can re-open the dialog without hand-deleting
    * `~/.ok/mcp-status.json`. The dialog covers both MCP wiring and the
@@ -120,7 +120,7 @@ export interface MenuDeps {
    */
   onCheckForUpdates?(): void;
   /**
-   * macOS App menu → Uninstall OpenKnowledge… click handler. Optional so the
+   * macOS App menu → Uninstall SynapseNote… click handler. Optional so the
    * row is hidden in dev, non-packaged, non-macOS, or unsupported install
    * locations; the handler owns the destructive confirmation dialog.
    */
@@ -391,7 +391,7 @@ export function buildMenuTemplate(deps: MenuDeps): MenuItemConstructorOptions[] 
               ...(deps.onUninstall
                 ? ([
                     {
-                      label: 'Uninstall OpenKnowledge…',
+                      label: 'Uninstall SynapseNote…',
                       click: () => deps.onUninstall?.(),
                     },
                     { type: 'separator' as const },
@@ -543,7 +543,7 @@ export function buildMenuTemplate(deps: MenuDeps): MenuItemConstructorOptions[] 
         ...(deps.reconfigureMcpWiring
           ? ([
               {
-                label: 'Set up OpenKnowledge integrations…',
+                label: 'Set up SynapseNote integrations…',
                 click: () => {
                   void deps.reconfigureMcpWiring?.();
                 },
@@ -771,8 +771,8 @@ export function buildMenuTemplate(deps: MenuDeps): MenuItemConstructorOptions[] 
             ] satisfies MenuItemConstructorOptions[])
           : []),
         {
-          label: 'OpenKnowledge on GitHub',
-          click: () => deps.openExternalUrl('https://github.com/inkeep/open-knowledge'),
+          label: 'SynapseNote on GitHub',
+          click: () => deps.openExternalUrl('https://github.com/Nedian0Brien/SynapseNote'),
         },
         {
           label: 'Report a Bug…',

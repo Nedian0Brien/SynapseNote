@@ -17,7 +17,7 @@ import {
   CONFIG_DOC_NAME_USER,
   type ConfigValidationError,
   isKnownConfigError,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import * as Y from 'yjs';
 import {
   CONFIG_FILE_WATCHER_ORIGIN,

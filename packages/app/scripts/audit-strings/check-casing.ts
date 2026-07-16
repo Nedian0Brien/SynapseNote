@@ -16,7 +16,7 @@ const OUT_PATH = join(OUT_DIR, 'casing-violations.json');
 // Words allowed to retain a capital when they appear at position ≥1.
 // Three buckets: brand tokens, product names, common dev-tool nouns.
 const PROPER_NOUNS = new Set([
-  // OpenKnowledge brand
+  // SynapseNote brand
   'Knowledge',
   'OK',
   'Inkeep',
@@ -97,7 +97,7 @@ const PROPER_NOUNS = new Set([
 // these phrases, every token inside the phrase is treated as allowed (even though
 // "Open" or "Knowledge" alone wouldn't pass the PROPER_NOUNS check).
 const BRAND_PHRASES: string[] = [
-  'OpenKnowledge',
+  'SynapseNote',
   'Claude Code',
   'Claude Desktop',
   'Claude Skill',

@@ -24,14 +24,14 @@
  * so unit tests cover the logic without rendering.
  */
 
+import { t } from '@lingui/core/macro';
+import { useLingui } from '@lingui/react/macro';
 import {
   AGENT_ICON_COLORS,
   AGENT_ICON_COLORS_DARK,
   type InstallState,
   type TargetData,
-} from '@inkeep/open-knowledge-core';
-import { t } from '@lingui/core/macro';
-import { useLingui } from '@lingui/react/macro';
+} from '@nedian0brien/synapsenote-core';
 import { useTheme } from 'next-themes';
 import type { CSSProperties, ReactNode, SVGProps } from 'react';
 import { AntigravityIcon } from '@/components/icons/antigravity';
@@ -113,11 +113,11 @@ export function TargetIcon({
 }
 
 /**
- * Stable URL for the "Install the OpenKnowledge desktop app →" affordance
+ * Stable URL for the "Install the SynapseNote desktop app →" affordance
  * shown only in the web-host Cursor submenu. Points at the releases page so
  * users land directly on installers rather than a source-code README.
  */
-export const OK_DESKTOP_INSTALL_URL = 'https://github.com/inkeep/open-knowledge/releases';
+export const OK_DESKTOP_INSTALL_URL = 'https://github.com/Nedian0Brien/SynapseNote/releases';
 
 /** A clickable affordance shown inside the disabled-row submenu. */
 interface RowAffordance {

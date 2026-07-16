@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { REMOVED_KEYS } from '@inkeep/open-knowledge-core';
+import { REMOVED_KEYS } from '@nedian0brien/synapsenote-core';
 import { CONFIG_FILENAME, OK_DIR } from '../constants.ts';
 import { buildClearPatchForTest, DROPPED_FIELD_PATHS, runMigrate, runValidate } from './config.ts';
 

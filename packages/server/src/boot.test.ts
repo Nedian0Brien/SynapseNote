@@ -10,7 +10,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { hostname, tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { promisify } from 'node:util';
-import { emitToleranceFire, OK_DIR } from '@inkeep/open-knowledge-core';
+import { emitToleranceFire, OK_DIR } from '@nedian0brien/synapsenote-core';
 import { context, metrics, propagation, trace } from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import { W3CTraceContextPropagator } from '@opentelemetry/core';
@@ -77,7 +77,7 @@ describe('bootServer — MissingOkConfigError pre-listen check', () => {
     expect(e.name).toBe('MissingOkConfigError');
     expect(e.kind).toBe('okdir');
     expect(e.projectDir).toBe(contentDir);
-    expect(e.message).toContain('OpenKnowledge config not found at .ok/config.yml');
+    expect(e.message).toContain('SynapseNote config not found at .ok/config.yml');
     expect(e.message).toContain('Run ok init');
     // No shadow dir created (no partial state on fail-fast).
     expect(existsSync(resolve(contentDir, '.git/ok'))).toBe(false);
@@ -110,7 +110,7 @@ describe('bootServer — MissingOkConfigError pre-listen check', () => {
     const e = caught as Error & { kind?: string };
     expect(e.name).toBe('MissingOkConfigError');
     expect(e.kind).toBe('config');
-    expect(e.message).toContain('OpenKnowledge config not found at .ok/config.yml');
+    expect(e.message).toContain('SynapseNote config not found at .ok/config.yml');
     expect(existsSync(resolve(contentDir, '.git/ok'))).toBe(false);
   });
 

@@ -14,7 +14,7 @@ import {
   isVimeoUrl,
   parseYouTubeUrl,
   VIDEO_EXTENSIONS,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 
 type MediaKind = 'video' | 'audio' | 'image';
 
@@ -27,7 +27,7 @@ type MediaUrlValidationResult =
   | { valid: false; reason: 'data-uri' }
   | { valid: false; reason: 'wrong-extension'; extension: string };
 
-// Single source of truth: the canonical sets in @inkeep/open-knowledge-core
+// Single source of truth: the canonical sets in @nedian0brien/synapsenote-core
 // already declare what the rest of the pipeline accepts as renderable in
 // each media kind. Adding a new extension upstream (e.g. .mkv → video,
 // .flac → audio) propagates here automatically.

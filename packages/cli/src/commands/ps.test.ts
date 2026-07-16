@@ -168,7 +168,7 @@ describe('runPs default (alive + foreign-host)', () => {
     });
 
     const output = lines.join('\n');
-    expect(output).toBe('No open-knowledge servers found.');
+    expect(output).toBe('No synapsenote servers found.');
   });
 
   test('prints empty state message when no servers discovered at all', async () => {
@@ -180,7 +180,7 @@ describe('runPs default (alive + foreign-host)', () => {
     });
 
     const output = lines.join('\n');
-    expect(output).toBe('No open-knowledge servers found.');
+    expect(output).toBe('No synapsenote servers found.');
   });
 });
 
@@ -242,7 +242,7 @@ describe('isDesktopCommand', () => {
 
   test('returns false for CLI start command', () => {
     expect(
-      isDesktopCommand('/usr/local/bin/node /opt/open-knowledge/packages/cli/dist/cli.mjs start'),
+      isDesktopCommand('/usr/local/bin/node /opt/synapsenote/packages/cli/dist/cli.mjs start'),
     ).toBe(false);
   });
 
@@ -311,8 +311,7 @@ describe('runPs desktop labeling', () => {
     await runPs({
       discover: async () => ['/tmp/notes/.ok'],
       inspect: (_lockDir, name) => (name === 'server' ? aliveServerState : missingLock),
-      resolveCommand: () =>
-        '/usr/local/bin/node /opt/open-knowledge/packages/cli/dist/cli.mjs start',
+      resolveCommand: () => '/usr/local/bin/node /opt/synapsenote/packages/cli/dist/cli.mjs start',
       log: (msg) => lines.push(msg),
     });
 
@@ -411,7 +410,7 @@ describe('runPs --json', () => {
     await runPs({
       discover: async () => ['/tmp/notes/.ok'],
       inspect: (_lockDir, name) => (name === 'server' ? aliveServerState : aliveUiState),
-      resolveCommand: () => '/usr/local/bin/node /tmp/open-knowledge/packages/cli/src/cli.ts start',
+      resolveCommand: () => '/usr/local/bin/node /tmp/synapsenote/packages/cli/src/cli.ts start',
       resolveUsage: (pid) =>
         pid === 12345 ? { cpuPercent: 1.2, memPercent: 3.4 } : { cpuPercent: 5.6, memPercent: 7.8 },
       json: true,
@@ -458,9 +457,9 @@ describe('runPs --json', () => {
     expect(entry.ui?.usage).toEqual({ cpuPercent: 5.6, memPercent: 7.8 });
     expect(entry.hostname).toBe('test-host');
     expect(typeof entry.lockPath).toBe('string');
-    expect(entry.binary).toBe('/tmp/open-knowledge/packages/cli/src/cli.ts');
+    expect(entry.binary).toBe('/tmp/synapsenote/packages/cli/src/cli.ts');
     expect(entry.command).toBe(
-      '/usr/local/bin/node /tmp/open-knowledge/packages/cli/src/cli.ts start',
+      '/usr/local/bin/node /tmp/synapsenote/packages/cli/src/cli.ts start',
     );
     expect(entry.isDesktop).toBe(false);
     expect(entry.displayStatus).toBe('running');
@@ -723,7 +722,7 @@ describe('server lock missing/corrupt discards entry', () => {
     });
 
     const output = lines.join('\n');
-    expect(output).toBe('No open-knowledge servers found.');
+    expect(output).toBe('No synapsenote servers found.');
   });
 
   test('corrupt server lock: entry discarded', async () => {
@@ -735,7 +734,7 @@ describe('server lock missing/corrupt discards entry', () => {
     });
 
     const output = lines.join('\n');
-    expect(output).toBe('No open-knowledge servers found.');
+    expect(output).toBe('No synapsenote servers found.');
   });
 });
 
@@ -746,7 +745,7 @@ describe('server lock missing/corrupt discards entry', () => {
 describe('renderTable', () => {
   test('renders header row', () => {
     const output = renderTable([]);
-    expect(output).toBe('No open-knowledge servers found.');
+    expect(output).toBe('No synapsenote servers found.');
   });
 
   test('table has DIRECTORY, PORTS, CPU/MEM, STATUS, PID, STARTED, BINARY header columns', () => {
@@ -762,8 +761,8 @@ describe('renderTable', () => {
       ui: null,
       hostname: 'test-host',
       lockPath: '/tmp/notes/.ok/server.lock',
-      binary: '/tmp/open-knowledge/packages/cli/src/cli.ts',
-      command: '/usr/local/bin/node /tmp/open-knowledge/packages/cli/src/cli.ts start',
+      binary: '/tmp/synapsenote/packages/cli/src/cli.ts',
+      command: '/usr/local/bin/node /tmp/synapsenote/packages/cli/src/cli.ts start',
       isDesktop: false,
     };
 
@@ -777,7 +776,7 @@ describe('renderTable', () => {
     expect(firstLine).toContain('STARTED');
     expect(firstLine).toContain('BINARY');
     expect(output).toContain('1.2% / 3.4% | —');
-    expect(output).toContain('/tmp/open-knowledge/packages/cli/src/cli.ts');
+    expect(output).toContain('/tmp/synapsenote/packages/cli/src/cli.ts');
   });
 });
 
@@ -789,20 +788,22 @@ describe('extractOkBinaryPath', () => {
   test('extracts source cli path from node invocation', () => {
     expect(
       extractOkBinaryPath(
-        'node /Users/mike/src/agents-private/public/open-knowledge/packages/cli/src/cli.ts start',
+        'node /Users/mike/src/agents-private/public/synapsenote/packages/cli/src/cli.ts start',
       ),
-    ).toBe('/Users/mike/src/agents-private/public/open-knowledge/packages/cli/src/cli.ts');
+    ).toBe('/Users/mike/src/agents-private/public/synapsenote/packages/cli/src/cli.ts');
   });
 
-  test('extracts npx-installed open-knowledge bin path', () => {
+  test('extracts npx-installed synapsenote bin path', () => {
     expect(
       extractOkBinaryPath(
-        '/usr/local/bin/node /Users/mike/.npm/_npx/64e3e56af53daa3b/node_modules/.bin/open-knowledge start',
+        '/usr/local/bin/node /Users/mike/.npm/_npx/64e3e56af53daa3b/node_modules/.bin/synapsenote start',
       ),
-    ).toBe('/Users/mike/.npm/_npx/64e3e56af53daa3b/node_modules/.bin/open-knowledge');
+    ).toBe('/Users/mike/.npm/_npx/64e3e56af53daa3b/node_modules/.bin/synapsenote');
   });
 
   test('ignores package specifier in npm exec parent command', () => {
-    expect(extractOkBinaryPath('npm exec @inkeep/open-knowledge mcp HOME=/Users/mike')).toBeNull();
+    expect(
+      extractOkBinaryPath('npm exec @nedian0brien/synapsenote mcp HOME=/Users/mike'),
+    ).toBeNull();
   });
 });

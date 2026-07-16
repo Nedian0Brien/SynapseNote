@@ -13,7 +13,7 @@ import {
   MCP_SERVER_NAME,
   type McpHttpHandler,
   RUNTIME_VERSION,
-} from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-server';
 import { bridgeStdioToHttpMcp } from './shim.ts';
 
 const MCP_PROTOCOL_VERSION = '2025-06-18';

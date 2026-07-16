@@ -19,7 +19,7 @@
  * whole session. The last snapshot is retained while suspended, so re-enabling
  * shows it instantly (no flash) before the refresh lands. Defaults to enabled.
  */
-import type { SemanticIndexStatus } from '@inkeep/open-knowledge-core';
+import type { SemanticIndexStatus } from '@nedian0brien/synapsenote-core';
 import { useEffect, useState } from 'react';
 import { subscribeToDocumentsChanged } from '@/lib/documents-events';
 

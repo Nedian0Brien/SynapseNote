@@ -1,7 +1,7 @@
 /**
  * Process-scan discovery utility for `ok ps`.
  *
- * Finds all running open-knowledge server lock dirs by:
+ * Finds all running synapsenote server lock dirs by:
  *   1. Enumerating candidate PIDs via pgrep (falls back to ps)
  *   2. Resolving each PID's CWD via lsof
  *   3. Checking whether <cwd>/.ok/local or legacy lock dirs exist
@@ -24,23 +24,22 @@ const LOCK_SCAN_MAX_ENTRIES = 2000;
 const OK_LOCK_DIR_ARG_PREFIX = '--ok-lock-dir-b64=';
 const OK_PROJECT_PATH_ARG_PREFIX = '--ok-project-path=';
 const OK_PROCESS_PGREP_QUERY =
-  'cli\\.mjs|open-knowledge|Open ?Knowledge(\\.app| Helper)|--ok-lock-dir-b64=|--ok-project-path=|(^|[ /])ok[ ]+(start|mcp|ui)([ ]|$)|packages/(cli|app)|hocuspocus|vite';
+  'cli\\.mjs|synapsenote|SynapseNote(\\.app| Helper)|Open ?Knowledge(\\.app| Helper)|--ok-lock-dir-b64=|--ok-project-path=|(^|[ /])ok[ ]+(start|mcp|ui)([ ]|$)|packages/(cli|app)|hocuspocus|vite';
 
 /**
- * Patterns that identify an open-knowledge process in a command string.
+ * Patterns that identify an synapsenote process in a command string.
  * Mirrors the `filter_process_lines` patterns in diagnose-server-processes.sh.
  */
 const OK_PROCESS_PATTERNS: RegExp[] = [
   // The compiled CLI entry point
   /cli\.mjs/,
   // Installed bin commands with subcommands
-  /(^|[\s/])(open-knowledge|ok)\s+(start|mcp|ui)(\s|$)/,
+  /(^|[\s/])(synapsenote|ok)\s+(start|mcp|ui)(\s|$)/,
   // Packaged Electron desktop helpers. Older builds did not include the
   // explicit lock-dir marker, but their argv still identifies the OK helper.
-  // The optional space matches both the legacy "Open Knowledge" bundle and the
-  // renamed "OpenKnowledge" bundle, so `ok ps`/`ok stop` keep finding processes
-  // from a still-running pre-rename build.
-  /Open ?Knowledge(?:\.app| Helper)/,
+  // Match both the renamed bundle and the legacy bundle so `ok ps`/`ok stop`
+  // keep finding processes from a still-running pre-rename build.
+  /(?:SynapseNote|Open ?Knowledge)(?:\.app| Helper)/,
   // Bun dev-server patterns
   /(^|[\s/])bun([\s/]).*?(run dev|packages\/app|vite|hocuspocus)/,
   // Node dev-server patterns
@@ -54,7 +53,7 @@ const OK_PROCESS_PATTERNS: RegExp[] = [
 ];
 
 /**
- * Returns true if the given command string looks like an open-knowledge process.
+ * Returns true if the given command string looks like an synapsenote process.
  */
 function isOkProcess(command: string): boolean {
   return OK_PROCESS_PATTERNS.some((re) => re.test(command));
@@ -137,7 +136,7 @@ function parsePsOutput(output: string): OkProcessEntry[] {
 }
 
 /**
- * Find open-knowledge processes, returning both PID and command string.
+ * Find synapsenote processes, returning both PID and command string.
  *
  * Tries `pgrep -a -f` first — it reads kernel argv directly and is not subject
  * to the column-width truncation that `ps -p PID -o command=` has on macOS BSD.
@@ -185,7 +184,7 @@ async function findOkProcessEntries(): Promise<OkProcessEntry[]> {
 }
 
 /**
- * Find PIDs of open-knowledge processes.
+ * Find PIDs of synapsenote processes.
  */
 export async function findOkProcessPids(): Promise<number[]> {
   return (await findOkProcessEntries()).map((e) => e.pid);
@@ -204,7 +203,7 @@ export function extractOkBinaryPath(command: string): string | null {
   for (const token of tokens) {
     if (token.startsWith('@')) continue;
     const base = basename(token);
-    if (base === 'open-knowledge' || base === 'ok') return token;
+    if (base === 'synapsenote' || base === 'ok') return token;
     if (
       token.endsWith('/packages/cli/src/cli.ts') ||
       token.endsWith('/packages/cli/dist/cli.mjs')
@@ -302,7 +301,7 @@ function parseListeningPids(output: string): number[] {
 
 /**
  * Full discovery pipeline: finds all `.ok/local/` lock dirs for running
- * open-knowledge servers.
+ * synapsenote servers.
  *
  * Returns unique canonical directory paths (each is the lock dir,
  * i.e. `<contentDir>/.ok/local`).

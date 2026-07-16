@@ -6,7 +6,7 @@ import {
   LINKABLE_ASSET_EXTENSIONS,
   mediaKindForSidebarAssetExtension,
   resolveAssetProjectPath,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import type { FileIndexEntry } from './file-watcher.ts';
 import { isWithinContentDir } from './persistence.ts';
 

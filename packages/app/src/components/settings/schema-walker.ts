@@ -1,6 +1,6 @@
 /**
  * Helpers for walking the published `ConfigSchema` from
- * `@inkeep/open-knowledge-core` into form metadata. Uses the same
+ * `@nedian0brien/synapsenote-core` into form metadata. Uses the same
  * `_zod.def.innerType` descent pattern as `getFieldMeta` so wrappers
  * (`.default()`, `.optional()`, `.nullable()`) are transparent.
  *
@@ -9,7 +9,7 @@
  * `getEnumOptions`; `resolveLeafSchema` is re-exported from core.
  */
 
-import { resolveLeafSchema } from '@inkeep/open-knowledge-core';
+import { resolveLeafSchema } from '@nedian0brien/synapsenote-core';
 import type { z } from 'zod';
 
 export { resolveLeafSchema };
@@ -37,7 +37,7 @@ export function buildPatch(
   return { [String(head)]: buildPatch(rest, value) };
 }
 
-// resolveLeafSchema lives in `@inkeep/open-knowledge-core/config/schema-leaf`
+// resolveLeafSchema lives in `@nedian0brien/synapsenote-core/config/schema-leaf`
 // and is re-exported above so existing imports (`./schema-walker`) keep
 // working without churn. Other consumers (`write`/`edit` folder, validators)
 // import it from core directly.

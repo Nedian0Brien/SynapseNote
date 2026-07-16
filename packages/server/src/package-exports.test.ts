@@ -1,6 +1,6 @@
 /**
  * Pins the dev-boot mechanism: a `predev` hook in `packages/app/package.json`
- * builds `@inkeep/open-knowledge-core` and `@inkeep/open-knowledge-server`
+ * builds `@nedian0brien/synapsenote-core` and `@nedian0brien/synapsenote-server`
  * before Vite starts, so the config bundler can resolve their `default →
  * ./dist/*.mjs` entries on a fresh checkout.
  *
@@ -11,14 +11,14 @@
  *   'module-sync']`. It does NOT see `development` (runtime-only). A fresh
  *   checkout has no `dist/`, so resolution falls through to `default → dist`
  *   → ENOENT → vite-plugin-externalize-deps throws "Failed to resolve entry
- *   for package @inkeep/open-knowledge-server".
+ *   for package @nedian0brien/synapsenote-server".
  *
  * Why predev (not a `node` exports condition).
  *
  *   A `node → ./src/index.ts` entry IS read by Vite's bundler — but it is
  *   ALSO read at packaged-Electron-main runtime. `electron.vite.config.ts`
  *   sets `main.build.externalizeDeps: true`, so packaged main ships
- *   `import '@inkeep/open-knowledge-server'` verbatim. Node 22 (Electron 41
+ *   `import '@nedian0brien/synapsenote-server'` verbatim. Node 22 (Electron 41
  *   main) matches the `node` condition first and returns `./src/index.ts`,
  *   which it cannot load → `ERR_UNKNOWN_FILE_EXTENSION` on app startup. The
  *   predev hook side-steps the conflict by ensuring `dist/` exists; the
@@ -62,12 +62,12 @@ describe('dev-boot mechanism — predev hook + dist exports', () => {
   test('packages/app has predev hook that builds core + server workspace deps', () => {
     const { scripts } = readPkg('app');
     expect(scripts.predev, 'packages/app/package.json missing `predev` script').toBeDefined();
-    expect(scripts.predev).toContain('@inkeep/open-knowledge-core');
-    expect(scripts.predev).toContain('@inkeep/open-knowledge-server');
+    expect(scripts.predev).toContain('@nedian0brien/synapsenote-core');
+    expect(scripts.predev).toContain('@nedian0brien/synapsenote-server');
   });
 
   for (const pkgName of ['core', 'server']) {
-    describe(`@inkeep/open-knowledge-${pkgName}`, () => {
+    describe(`@nedian0brien/synapsenote-${pkgName}`, () => {
       test('"." exports has default → ./dist/*.mjs', () => {
         const pkgExports = readPkg(pkgName).exports;
         const dot = pkgExports['.'];

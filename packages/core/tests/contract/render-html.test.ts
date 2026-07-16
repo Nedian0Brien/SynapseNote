@@ -1,5 +1,5 @@
 /**
- * Public render contract for `@inkeep/open-knowledge-core`: the markdown -> HTML
+ * Public render contract for `@nedian0brien/synapsenote-core`: the markdown -> HTML
  * surface (`markdownToHtml` / `mdastToHtml`) that external consumers import from
  * the package barrel. Pins the documented-construct rendering and the outbound
  * URL-scheme sanitization that runs at the OK -> external-destination boundary.

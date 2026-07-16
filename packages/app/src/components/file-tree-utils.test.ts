@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { type DocumentListEntry, DocumentListEntrySchema } from '@inkeep/open-knowledge-core';
+import { type DocumentListEntry, DocumentListEntrySchema } from '@nedian0brien/synapsenote-core';
 import {
   attributeTreeHiddenAxes,
   classifyEmptyTree,

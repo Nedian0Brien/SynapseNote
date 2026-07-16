@@ -2,7 +2,7 @@ import {
   type SkillTargetEditor,
   type SkillTargetsGetSuccess,
   SkillTargetsGetSuccessSchema,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { useEffect, useState } from 'react';
 import { emitSkillsChanged } from '@/lib/documents-events';
 import { parseApiError } from '@/lib/parse-api-error';

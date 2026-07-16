@@ -7,7 +7,7 @@ import { afterEach, describe, expect, test } from 'bun:test';
 import { existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import type { ProcessLockMetadata } from '@inkeep/open-knowledge-server';
+import type { ProcessLockMetadata } from '@nedian0brien/synapsenote-server';
 import type { LockState } from '../lock-state.ts';
 import { makeServerLockCheck } from './server-lock.ts';
 

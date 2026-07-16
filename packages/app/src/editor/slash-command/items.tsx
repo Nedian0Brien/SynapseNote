@@ -1,10 +1,10 @@
+import { t } from '@lingui/core/macro';
+import { Trans } from '@lingui/react/macro';
 import {
   collectFootnoteIdentifiers,
   findFootnoteDefinitionInsertPos,
   nextFootnoteIdentifier,
-} from '@inkeep/open-knowledge-core';
-import { t } from '@lingui/core/macro';
-import { Trans } from '@lingui/react/macro';
+} from '@nedian0brien/synapsenote-core';
 import type { Editor } from '@tiptap/react';
 import {
   Code2,

@@ -276,7 +276,7 @@ export function SeedDialog({ open, onOpenChange, onSeedApplied, initialPackId }:
     'software-lifecycle': t`Keep a written record of how your product gets built. A home for proposing ideas, recording decisions, writing specs, and capturing what you learned after something broke.`,
     'codebase-wiki': t`Explain how your codebase works so teammates and AI agents can find their way around. Good for documenting the architecture, the main parts, and the questions new contributors always ask.`,
     'plain-notes': t`A simple place to write, with one file per topic and a daily journal. Pick this if you just want to start writing and let the links between notes build up over time.`,
-    okf: t`A knowledge base that follows Google's Open Knowledge Format, a shared way of organizing what you know. Pick this if you want your notes to work well with other tools that understand the format.`,
+    okf: t`A knowledge base that follows Google's SynapseNote Format, a shared way of organizing what you know. Pick this if you want your notes to work well with other tools that understand the format.`,
     'writing-pipeline': t`Take a piece of writing from a rough idea to a finished draft to something you're ready to share. Good for blog posts, essays, or anything you want to move through clear stages.`,
     'entity-vault': t`Keep track of the people and companies you work with and the meetings you have with them. Good for remembering who someone is, how you know them, and what you last talked about.`,
     worldbuilding: t`Build and keep track of the world behind your story. A home for your characters, places, factions, and the lore that ties them together, so details stay consistent as you write.`,

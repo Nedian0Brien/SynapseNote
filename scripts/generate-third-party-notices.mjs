@@ -40,7 +40,7 @@ const SHIPPING_WORKSPACES = [
   'packages/desktop',
 ];
 
-const WORKSPACE_NAME_PREFIX = '@inkeep/open-knowledge';
+const WORKSPACE_NAME_PREFIX = '@nedian0brien/synapsenote';
 
 const LICENSE_FILENAMES = [
   'LICENSE',
@@ -539,7 +539,7 @@ function vendoredCodexEntry() {
 // completeness check in `bundledRustCratesSection` fails the build if a Cargo.lock
 // crate is classified zero or multiple times, so a dependency bump that adds a
 // crate forces a maintainer decision rather than a silent omission.
-const NATIVE_CONFIG_CRATE = 'open-knowledge-native-config';
+const NATIVE_CONFIG_CRATE = 'synapsenote-native-config';
 const NATIVE_CONFIG_CARGO_LOCK = join(REPO_ROOT, 'packages', 'native-config', 'Cargo.lock');
 
 // Effective license + upstream for each crate that links into the shipped
@@ -672,7 +672,7 @@ function bundledRustCratesSection() {
     .sort((a, b) => byteCompare(a.name, b.name) || byteCompare(a.version, b.version));
 
   const lines = [
-    "The native harness-config addon's `.node` binaries statically link the Rust crates below. Each is redistributed under the license shown; every license here is MIT, Apache-2.0, or ISC, whose full texts are reproduced elsewhere in this document (for dual- or multi-licensed crates OpenKnowledge elects a reproduced license). Compile-time-only crates (proc-macros, build scripts) and test-only dev-dependencies are not listed — their code is not present in the distributed binary. Versions track `packages/native-config/Cargo.lock`.",
+    "The native harness-config addon's `.node` binaries statically link the Rust crates below. Each is redistributed under the license shown; every license here is MIT, Apache-2.0, or ISC, whose full texts are reproduced elsewhere in this document (for dual- or multi-licensed crates SynapseNote elects a reproduced license). Compile-time-only crates (proc-macros, build scripts) and test-only dev-dependencies are not listed — their code is not present in the distributed binary. Versions track `packages/native-config/Cargo.lock`.",
     '',
   ];
   for (const { name, version } of runtime) {
@@ -717,7 +717,7 @@ function build() {
 
   push('# Third-Party Notices', '');
   push(
-    '`@inkeep/open-knowledge` (npm CLI) and `@inkeep/open-knowledge-desktop` (Electron app) bundle source code from the third-party packages listed below. Each package is redistributed under its own license; the relevant copyright notice and license text are reproduced here as required.',
+    '`@nedian0brien/synapsenote` (npm CLI) and `@nedian0brien/synapsenote-desktop` (Electron app) bundle source code from the third-party packages listed below. Each package is redistributed under its own license; the relevant copyright notice and license text are reproduced here as required.',
     '',
   );
   push(
@@ -752,7 +752,7 @@ function build() {
   push(
     `\`node-liblzma\`${
       lgplResolved ? `@${lgplResolved.pkg.version}` : ''
-    } is an **optional** transitive dependency of \`just-bash\`, used by \`@inkeep/open-knowledge\` for sandboxed shell execution. The package is licensed under LGPL-3.0. For the npm CLI tarball, \`node-liblzma\` is not bundled — it is resolved from the public npm registry at install time on platforms where the native build succeeds. For the Electron desktop \`.app\`, whether the binary lands in \`Resources/app.asar.unpacked/\` depends on the build host's toolchain at packaging time; if present, the binary ships subject to LGPL-3.0 obligations. Upstream source: https://github.com/Manawyrm/node-liblzma. Corresponding source can be obtained from upstream per LGPL §6.`,
+    } is an **optional** transitive dependency of \`just-bash\`, used by \`@nedian0brien/synapsenote\` for sandboxed shell execution. The package is licensed under LGPL-3.0. For the npm CLI tarball, \`node-liblzma\` is not bundled — it is resolved from the public npm registry at install time on platforms where the native build succeeds. For the Electron desktop \`.app\`, whether the binary lands in \`Resources/app.asar.unpacked/\` depends on the build host's toolchain at packaging time; if present, the binary ships subject to LGPL-3.0 obligations. Upstream source: https://github.com/Manawyrm/node-liblzma. Corresponding source can be obtained from upstream per LGPL §6.`,
     '',
   );
   push('The full text of the GNU Lesser General Public License v3.0 follows.', '');
@@ -762,7 +762,7 @@ function build() {
   // Apache-2.0 — full LICENSE text per §4(a) ("give any other recipients of
   // the Work or Derivative Works a copy of this License"). Per-package NOTICE
   // content is reproduced inline below per §4(d).
-  // Rendered unconditionally: OpenKnowledge vendors Apache-2.0 Codex-derived
+  // Rendered unconditionally: SynapseNote vendors Apache-2.0 Codex-derived
   // source into `packages/native-config`, so this section always carries at
   // least that entry even if no npm dependency is Apache-2.0.
   push('## Apache License, Version 2.0', '');

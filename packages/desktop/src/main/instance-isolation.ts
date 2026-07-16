@@ -34,7 +34,7 @@ export function sanitizeInstanceName(raw: string): string {
 /**
  * Derive the relocated `userData` directory for a named parallel instance —
  * a sibling of the base dir suffixed with the sanitized name, e.g.
- * `.../OpenKnowledge` + `b` → `.../OpenKnowledge (b)`. Returns null when the
+ * `.../SynapseNote` + `b` → `.../SynapseNote (b)`. Returns null when the
  * name sanitizes to empty, signalling the caller to leave `userData` as-is.
  */
 export function deriveInstanceUserDataDir(

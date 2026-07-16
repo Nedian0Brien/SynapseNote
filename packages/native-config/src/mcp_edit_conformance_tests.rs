@@ -1,11 +1,11 @@
 //! Conformance suite ported from Codex's `core/src/config/edit_tests.rs`
-//! (Apache-2.0). Codex's own edit tests are OpenKnowledge's invariant floor:
+//! (Apache-2.0). Codex's own edit tests are SynapseNote's invariant floor:
 //! the TOML-generic cases (comment/decor preservation, implicit-parent
 //! rendering, auto-quoting, int-vs-float and large-integer fidelity, no-op and
 //! byte-stability) are the "cases we are not thinking about." Codex's
-//! schema-specific cases are re-expressed against OpenKnowledge's single
-//! `[mcp_servers.open-knowledge]` entry (register / deregister / prune-only-our
-//! -keys) rather than copied verbatim, since OpenKnowledge inserts one entry
+//! schema-specific cases are re-expressed against SynapseNote's single
+//! `[mcp_servers.synapsenote]` entry (register / deregister / prune-only-our
+//! -keys) rather than copied verbatim, since SynapseNote inserts one entry
 //! instead of regenerating the whole table.
 //!
 //! BOM and CRLF are deliberately NOT asserted here: `toml_edit` strips a leading
@@ -23,7 +23,7 @@ fn parse(text: &str) -> DocumentMut {
 }
 
 fn upsert(text: &str, entry: &str) -> UpsertOutcome {
-    upsert_mcp_server(text, "open-knowledge", entry).expect("upsert must succeed")
+    upsert_mcp_server(text, "synapsenote", entry).expect("upsert must succeed")
 }
 
 // ─── TOML-generic invariants ─────────────────────────────────────────────────
@@ -31,7 +31,7 @@ fn upsert(text: &str, entry: &str) -> UpsertOutcome {
 #[test]
 fn fresh_insert_renders_implicit_parent_header_not_bare_table() {
     let out = upsert("", PUBLISHED_ENTRY);
-    assert!(out.text.contains("[mcp_servers.open-knowledge]"));
+    assert!(out.text.contains("[mcp_servers.synapsenote]"));
     // The parent must stay implicit — a bare `[mcp_servers]` header would be a
     // spurious empty table we never asked for.
     assert!(!out.text.contains("[mcp_servers]"));
@@ -81,7 +81,7 @@ fn preserves_inline_sibling_and_its_comment_on_register() {
     assert!(out.changed);
     assert!(out.text.contains("# keep me"));
     assert!(out.text.contains("other = { command = \"cmd\" }"));
-    assert!(out.text.contains("[mcp_servers.open-knowledge]"));
+    assert!(out.text.contains("[mcp_servers.synapsenote]"));
     let doc = parse(&out.text);
     assert_eq!(doc["mcp_servers"]["other"]["command"].as_str(), Some("cmd"));
 }
@@ -100,20 +100,20 @@ fn round_trips_a_to_b_to_a_byte_stably() {
 
 #[test]
 fn removing_only_entry_keeps_an_explicit_mcp_servers_table() {
-    // Unlike Codex's clears-empty-table behavior, OpenKnowledge owns only its
+    // Unlike Codex's clears-empty-table behavior, SynapseNote owns only its
     // own entry, never the surrounding table, so an explicit `[mcp_servers]`
     // survives even after the last managed server is removed.
-    let input = "[mcp_servers]\nopen-knowledge = { command = \"x\" }\n";
-    let out = remove_mcp_server(input, "open-knowledge").expect("remove");
+    let input = "[mcp_servers]\nsynapsenote = { command = \"x\" }\n";
+    let out = remove_mcp_server(input, "synapsenote").expect("remove");
     assert!(out.changed);
     assert!(out.text.contains("[mcp_servers]"));
-    assert!(!out.text.contains("open-knowledge"));
+    assert!(!out.text.contains("synapsenote"));
 }
 
 #[test]
 fn remove_on_a_config_without_the_table_is_a_noop_and_creates_nothing() {
     let input = "model = \"gpt-5\"\n";
-    let out = remove_mcp_server(input, "open-knowledge").expect("remove");
+    let out = remove_mcp_server(input, "synapsenote").expect("remove");
     assert!(!out.changed);
     assert_eq!(out.text, input);
     assert!(!out.text.contains("mcp_servers"));
@@ -123,7 +123,7 @@ fn remove_on_a_config_without_the_table_is_a_noop_and_creates_nothing() {
 fn single_element_args_array_stays_an_array() {
     let out = upsert("", r#"{"command":"x","args":["only"]}"#);
     let doc = parse(&out.text);
-    let args = doc["mcp_servers"]["open-knowledge"]["args"]
+    let args = doc["mcp_servers"]["synapsenote"]["args"]
         .as_array()
         .expect("args must serialize as an array");
     assert_eq!(args.len(), 1);
@@ -137,13 +137,13 @@ fn preserves_a_dotted_root_key_on_register() {
     assert!(out.text.starts_with("server.host = \"localhost\"\n"));
 }
 
-// ─── OpenKnowledge-schema register / deregister / prune ──────────────────────
+// ─── SynapseNote-schema register / deregister / prune ──────────────────────
 
 #[test]
 fn registers_the_published_chain_shape_round_tripping_a_multiline_arg() {
     // The real published entry's third arg is a multi-line resolver script; it
     // must survive the document round-trip with its content intact.
-    let chain = "# ok-mcp-v1\nexec npx -y @inkeep/open-knowledge@latest mcp";
+    let chain = "# ok-mcp-v1\nexec npx -y @nedian0brien/synapsenote@latest mcp";
     let entry = serde_json::json!({
         "command": "/bin/sh",
         "args": ["-l", "-c", chain],
@@ -151,12 +151,12 @@ fn registers_the_published_chain_shape_round_tripping_a_multiline_arg() {
     .to_string();
     let out = upsert("", &entry);
     let doc = parse(&out.text);
-    let server = &doc["mcp_servers"]["open-knowledge"];
+    let server = &doc["mcp_servers"]["synapsenote"];
     assert_eq!(server["command"].as_str(), Some("/bin/sh"));
     assert_eq!(server["args"][0].as_str(), Some("-l"));
     let body = server["args"][2].as_str().expect("third arg is a string");
     assert!(body.contains("# ok-mcp-v1"));
-    assert!(body.contains("@inkeep/open-knowledge@latest mcp"));
+    assert!(body.contains("@nedian0brien/synapsenote@latest mcp"));
 }
 
 #[test]
@@ -164,7 +164,7 @@ fn registers_into_an_existing_config_preserving_root_keys() {
     let input = "model = \"gpt-5\"\napproval_policy = \"never\"\n";
     let out = upsert(input, PUBLISHED_ENTRY);
     assert!(out.text.starts_with("model = \"gpt-5\"\napproval_policy = \"never\"\n"));
-    assert!(out.text.contains("[mcp_servers.open-knowledge]"));
+    assert!(out.text.contains("[mcp_servers.synapsenote]"));
 }
 
 #[test]
@@ -178,7 +178,7 @@ url = "https://linear.example"
     assert!(out.text.contains("[mcp_servers.linear]"));
     assert!(out.text.contains("# keep this note"));
     assert!(out.text.contains("url = \"https://linear.example\""));
-    assert!(out.text.contains("[mcp_servers.open-knowledge]"));
+    assert!(out.text.contains("[mcp_servers.synapsenote]"));
 }
 
 #[test]
@@ -187,14 +187,14 @@ fn registers_an_entry_carrying_an_env_subtable() {
     let out = upsert("", entry);
     let doc = parse(&out.text);
     assert_eq!(
-        doc["mcp_servers"]["open-knowledge"]["env"]["OK_TOKEN"].as_str(),
+        doc["mcp_servers"]["synapsenote"]["env"]["OK_TOKEN"].as_str(),
         Some("abc")
     );
 }
 
 #[test]
 fn update_reconciles_managed_keys_but_never_prunes_hand_added_keys() {
-    let input = r#"[mcp_servers.open-knowledge]
+    let input = r#"[mcp_servers.synapsenote]
 command = "/bin/sh"
 args = ["-l", "-c", "OLD"]
 enabled = false
@@ -212,13 +212,13 @@ fn deregisters_keeping_table_siblings_and_their_comments() {
     let input = r#"[mcp_servers.other]
 command = "other-cmd"  # sibling note
 
-[mcp_servers.open-knowledge]
+[mcp_servers.synapsenote]
 command = "/bin/sh"
 args = ["-l", "-c", "run-ok"]
 "#;
-    let out = remove_mcp_server(input, "open-knowledge").expect("remove");
+    let out = remove_mcp_server(input, "synapsenote").expect("remove");
     assert!(out.changed);
-    assert!(!out.text.contains("[mcp_servers.open-knowledge]"));
+    assert!(!out.text.contains("[mcp_servers.synapsenote]"));
     assert!(out.text.contains("[mcp_servers.other]"));
     assert!(out.text.contains("command = \"other-cmd\"  # sibling note"));
 }

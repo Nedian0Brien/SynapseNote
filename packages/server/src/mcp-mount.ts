@@ -31,7 +31,11 @@
 import type { Server as HttpServer, IncomingMessage, ServerResponse } from 'node:http';
 import type { Duplex } from 'node:stream';
 import type { Hocuspocus } from '@hocuspocus/server';
-import { AGENT_ICON_COLORS, colorFromSeed, iconFromClientName } from '@inkeep/open-knowledge-core';
+import {
+  AGENT_ICON_COLORS,
+  colorFromSeed,
+  iconFromClientName,
+} from '@nedian0brien/synapsenote-core';
 import { WebSocketServer } from 'ws';
 import type { AgentFocusBroadcaster } from './agent-focus.ts';
 import { toBroadcasterKey, validateAgentId } from './agent-id.ts';

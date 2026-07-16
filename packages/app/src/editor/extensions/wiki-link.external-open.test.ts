@@ -1,5 +1,5 @@
 /**
- * Regression pins for inkeep/open-knowledge#617 — the WYSIWYG `[[wikilink]]`
+ * Regression pins for Nedian0Brien/SynapseNote#617 — the WYSIWYG `[[wikilink]]`
  * external branch must reach the OS default browser, symmetric with the
  * markdown-link chip (`internal-link.external-open.test.ts`).
  *

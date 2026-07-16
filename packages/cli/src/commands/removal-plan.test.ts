@@ -12,7 +12,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { MCP_SERVER_NAME } from '@inkeep/open-knowledge-server';
+import { MCP_SERVER_NAME } from '@nedian0brien/synapsenote-server';
 import { readPathInstallMarker } from '../integrations/path-shim.ts';
 import { buildManagedServerEntry } from './editors.ts';
 import {
@@ -49,20 +49,20 @@ function seedHome(home: string): void {
   write(join(home, '.ok', 'skills', 'my-note-skill', 'SKILL.md'), '# mine\n');
   // Desktop userData (current) + a FOREIGN legacy dir + updater cache.
   write(
-    join(home, 'Library', 'Application Support', 'OpenKnowledge', 'state.json'),
+    join(home, 'Library', 'Application Support', 'SynapseNote', 'state.json'),
     JSON.stringify({ recentProjects: [] }),
   );
-  write(join(home, 'Library', 'Application Support', 'OpenKnowledge', 'path-install.json'), '{}');
+  write(join(home, 'Library', 'Application Support', 'SynapseNote', 'path-install.json'), '{}');
   write(
-    // A different vendor's app literally named "Open Knowledge" — no recentProjects.
-    join(home, 'Library', 'Application Support', 'Open Knowledge', 'state.json'),
+    // A different vendor's app literally named "OpenKnowledge" — no recentProjects.
+    join(home, 'Library', 'Application Support', 'OpenKnowledge', 'state.json'),
     JSON.stringify({ theirData: true }),
   );
-  write(join(home, 'Library', 'Caches', 'OpenKnowledge-updater', 'pending.zip'), 'x');
+  write(join(home, 'Library', 'Caches', 'SynapseNote-updater', 'pending.zip'), 'x');
   // Skill bundles (central + one host).
-  write(join(home, '.agents', 'skills', 'open-knowledge-discovery', 'SKILL.md'), '# d\n');
-  write(join(home, '.claude', 'skills', 'open-knowledge-discovery', 'SKILL.md'), '# d\n');
-  write(join(home, '.agents', 'skills', 'open-knowledge-write-skill', 'SKILL.md'), '# w\n');
+  write(join(home, '.agents', 'skills', 'synapsenote-discovery', 'SKILL.md'), '# d\n');
+  write(join(home, '.claude', 'skills', 'synapsenote-discovery', 'SKILL.md'), '# d\n');
+  write(join(home, '.agents', 'skills', 'synapsenote-write-skill', 'SKILL.md'), '# w\n');
   // A foreign non-OK skill in the shared store — must survive.
   write(join(home, '.agents', 'skills', 'someone-elses-skill', 'SKILL.md'), '# theirs\n');
   // Editor MCP config with OK's entry + a foreign server.
@@ -73,11 +73,11 @@ function seedHome(home: string): void {
   // Shell rc: a user file with OK's block + user lines, and an OK-owned fish conf.
   write(
     join(home, '.zshrc'),
-    `export EDITOR=vim\n\n# >>> open-knowledge cli >>>\n[ -f "$HOME/.ok/env.sh" ] && . "$HOME/.ok/env.sh"\n# <<< open-knowledge cli <<<\n\nalias ll='ls -la'\n`,
+    `export EDITOR=vim\n\n# >>> synapsenote cli >>>\n[ -f "$HOME/.ok/env.sh" ] && . "$HOME/.ok/env.sh"\n# <<< synapsenote cli <<<\n\nalias ll='ls -la'\n`,
   );
   write(
-    join(home, '.config', 'fish', 'conf.d', 'open-knowledge.fish'),
-    `# >>> open-knowledge cli >>>\nset -gx PATH "$HOME/.ok/bin" $PATH\n# <<< open-knowledge cli <<<\n`,
+    join(home, '.config', 'fish', 'conf.d', 'synapsenote.fish'),
+    `# >>> synapsenote cli >>>\nset -gx PATH "$HOME/.ok/bin" $PATH\n# <<< synapsenote cli <<<\n`,
   );
 }
 
@@ -98,7 +98,7 @@ function markerFor(home: string): UninstallPlanInput['marker'] {
     bundleWrapperPath: '/w',
     binDir: join(home, '.ok', 'bin'),
     envShimPath: join(home, '.ok', 'env.sh'),
-    rcFiles: [join(home, '.zshrc'), join(home, '.config', 'fish', 'conf.d', 'open-knowledge.fish')],
+    rcFiles: [join(home, '.zshrc'), join(home, '.config', 'fish', 'conf.d', 'synapsenote.fish')],
     rcOptOuts: [],
     pathDiscovery: null,
     extraSymlinks: [{ path: extraLink, target: extraTarget, createdAt: 'x', kind: 'created' }],
@@ -181,7 +181,7 @@ describe('buildUninstallPlan ordering', () => {
       const zshrc = join(home, '.zshrc');
       writeFileSync(
         zshrc,
-        `export EDITOR=vim\n\n# >>> open-knowledge cli >>>\n[ -f "$HOME/.ok/env.sh" ] && . "$HOME/.ok/env.sh"\n# <<< open-knowledge cli <<<\n\nalias ll='ls -la'\n`,
+        `export EDITOR=vim\n\n# >>> synapsenote cli >>>\n[ -f "$HOME/.ok/env.sh" ] && . "$HOME/.ok/env.sh"\n# <<< synapsenote cli <<<\n\nalias ll='ls -la'\n`,
       );
       const plan = buildUninstallPlan(baseInput(home, { marker: null }));
       const shellOps = plan.ops.filter((o) => o.kind === 'shell-block');
@@ -189,7 +189,7 @@ describe('buildUninstallPlan ordering', () => {
 
       await runRemoval(plan, stubDeps());
       const after = readFileSync(zshrc, 'utf-8');
-      expect(after).not.toContain('open-knowledge cli');
+      expect(after).not.toContain('synapsenote cli');
       expect(after).toContain('export EDITOR=vim');
       expect(after).toContain("alias ll='ls -la'");
     } finally {
@@ -242,8 +242,8 @@ describe('runRemoval — project path containment guard', () => {
       const escaping = {
         kind: 'remove-path' as const,
         group: 'test',
-        label: 'Remove .claude/skills/open-knowledge/',
-        path: join(projectRoot, '.claude', 'skills', 'open-knowledge'),
+        label: 'Remove .claude/skills/synapsenote/',
+        path: join(projectRoot, '.claude', 'skills', 'synapsenote'),
         containWithin: projectRoot,
       };
       const outcome = await runRemoval({ scope: 'deinit', ops: [escaping] }, stubDeps());
@@ -359,14 +359,14 @@ describe('runRemoval — uninstall end to end', () => {
 
       // Desktop userData gone; FOREIGN legacy dir UNTOUCHED (identity gate);
       // updater cache gone.
-      expect(existsSync(join(home, 'Library', 'Application Support', 'OpenKnowledge'))).toBe(false);
-      expect(existsSync(join(home, 'Library', 'Application Support', 'Open Knowledge'))).toBe(true);
-      expect(existsSync(join(home, 'Library', 'Caches', 'OpenKnowledge-updater'))).toBe(false);
+      expect(existsSync(join(home, 'Library', 'Application Support', 'SynapseNote'))).toBe(false);
+      expect(existsSync(join(home, 'Library', 'Application Support', 'OpenKnowledge'))).toBe(true);
+      expect(existsSync(join(home, 'Library', 'Caches', 'SynapseNote-updater'))).toBe(false);
 
       // Skill bundles gone; a foreign skill in the shared store survives.
-      expect(existsSync(join(home, '.agents', 'skills', 'open-knowledge-discovery'))).toBe(false);
-      expect(existsSync(join(home, '.claude', 'skills', 'open-knowledge-discovery'))).toBe(false);
-      expect(existsSync(join(home, '.agents', 'skills', 'open-knowledge-write-skill'))).toBe(false);
+      expect(existsSync(join(home, '.agents', 'skills', 'synapsenote-discovery'))).toBe(false);
+      expect(existsSync(join(home, '.claude', 'skills', 'synapsenote-discovery'))).toBe(false);
+      expect(existsSync(join(home, '.agents', 'skills', 'synapsenote-write-skill'))).toBe(false);
       expect(existsSync(join(home, '.agents', 'skills', 'someone-elses-skill'))).toBe(true);
 
       // Editor config: OK entry gone, foreign server preserved.
@@ -378,10 +378,8 @@ describe('runRemoval — uninstall end to end', () => {
       const zshrc = readFileSync(join(home, '.zshrc'), 'utf-8');
       expect(zshrc).toContain('export EDITOR=vim');
       expect(zshrc).toContain("alias ll='ls -la'");
-      expect(zshrc).not.toContain('open-knowledge cli');
-      expect(existsSync(join(home, '.config', 'fish', 'conf.d', 'open-knowledge.fish'))).toBe(
-        false,
-      );
+      expect(zshrc).not.toContain('synapsenote cli');
+      expect(existsSync(join(home, '.config', 'fish', 'conf.d', 'synapsenote.fish'))).toBe(false);
 
       // Extra recorded symlink removed.
       expect(existsSync(join(home, '.local', 'bin', 'ok'))).toBe(false);

@@ -1,6 +1,6 @@
 /**
  * Unit tests for the shared skill install-state helpers + the build-time
- * version invariant between `@inkeep/open-knowledge-server`'s `package.json`
+ * version invariant between `@nedian0brien/synapsenote-server`'s `package.json`
  * and the bundled SKILL.md frontmatter.
  *
  * On-disk state lives at `~/.ok/skill-state.yml`, replacing the legacy
@@ -44,7 +44,7 @@ describe('per-bundle opt-in decisions', () => {
 
   test('readBundleDecision returns null when the file / entry is absent', async () => {
     const home = freshHome();
-    expect(await readBundleDecision(home, 'open-knowledge-discovery')).toBeNull();
+    expect(await readBundleDecision(home, 'synapsenote-discovery')).toBeNull();
   });
 
   test('writeBundleDecision round-trips and preserves other bundles + targets', async () => {
@@ -52,23 +52,23 @@ describe('per-bundle opt-in decisions', () => {
     // Seed an unrelated target so we can assert it survives the RMW.
     await writeTargetVersion(home, 'cli-hosts', '1.2.3', 'cli-start');
 
-    await writeBundleDecision(home, 'open-knowledge-discovery', true);
-    await writeBundleDecision(home, 'open-knowledge-write-skill', false);
+    await writeBundleDecision(home, 'synapsenote-discovery', true);
+    await writeBundleDecision(home, 'synapsenote-write-skill', false);
 
-    expect(await readBundleDecision(home, 'open-knowledge-discovery')).toBe(true);
-    expect(await readBundleDecision(home, 'open-knowledge-write-skill')).toBe(false);
+    expect(await readBundleDecision(home, 'synapsenote-discovery')).toBe(true);
+    expect(await readBundleDecision(home, 'synapsenote-write-skill')).toBe(false);
     // The version target is untouched by bundle writes.
     expect(await readTargetVersion(home, 'cli-hosts')).toBe('1.2.3');
 
     // A later flip of one bundle leaves the other intact.
-    await writeBundleDecision(home, 'open-knowledge-discovery', false);
-    expect(await readBundleDecision(home, 'open-knowledge-discovery')).toBe(false);
-    expect(await readBundleDecision(home, 'open-knowledge-write-skill')).toBe(false);
+    await writeBundleDecision(home, 'synapsenote-discovery', false);
+    expect(await readBundleDecision(home, 'synapsenote-discovery')).toBe(false);
+    expect(await readBundleDecision(home, 'synapsenote-write-skill')).toBe(false);
   });
 });
 
 describe('readServerPackageVersion', () => {
-  test('reads the version field from `@inkeep/open-knowledge-server`/package.json', async () => {
+  test('reads the version field from `@nedian0brien/synapsenote-server`/package.json', async () => {
     const version = await readServerPackageVersion();
     expect(typeof version).toBe('string');
     expect(version).toMatch(/^\d+\.\d+\.\d+(?:[-+][\w.-]+)?$/);

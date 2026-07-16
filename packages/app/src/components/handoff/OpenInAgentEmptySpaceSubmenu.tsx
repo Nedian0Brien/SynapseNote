@@ -19,14 +19,14 @@
  * flyout.
  */
 
+import { t } from '@lingui/core/macro';
+import { Trans, useLingui } from '@lingui/react/macro';
 import {
   type HandoffOutcome,
   type HandoffTarget,
   type InstallState,
   TERMINAL_CLIS,
-} from '@inkeep/open-knowledge-core';
-import { t } from '@lingui/core/macro';
-import { Trans, useLingui } from '@lingui/react/macro';
+} from '@nedian0brien/synapsenote-core';
 import { Sparkles } from 'lucide-react';
 import type { ReactNode } from 'react';
 import {

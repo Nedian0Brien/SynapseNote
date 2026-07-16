@@ -21,7 +21,7 @@ import {
   GitNotAvailableError,
   GitTooOldError,
   type InstallGuidance,
-} from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-server';
 import { ensureGitAvailable, type MessageBoxOptions } from './git-preflight-handler.ts';
 
 const LINUX_GUIDANCE: InstallGuidance = {
@@ -224,7 +224,7 @@ describe('ensureGitAvailable', () => {
 
     expect(outcome).toBe('aborted');
     expect(boxCalls[0]?.title).toBe('Git too old');
-    expect(boxCalls[0]?.message).toBe('OpenKnowledge requires Git 2.31.0 or newer.');
+    expect(boxCalls[0]?.message).toBe('SynapseNote requires Git 2.31.0 or newer.');
     // Detail carries the full err.message which includes the resolvedPath
     // for support's debugging.
     expect(boxCalls[0]?.detail).toContain('detected 2.20.0 at /usr/bin/git');
@@ -255,7 +255,7 @@ describe('ensureGitAvailable', () => {
     expect(boxCalls).toHaveLength(1);
     expect(boxCalls[0]?.type).toBe('error');
     expect(boxCalls[0]?.buttons).toEqual(['Quit']);
-    expect(boxCalls[0]?.title).toBe('OpenKnowledge could not start');
+    expect(boxCalls[0]?.title).toBe('SynapseNote could not start');
     expect(boxCalls[0]?.detail).toContain('something completely different');
     expect(openExternal).not.toHaveBeenCalled();
     expect(warn).toHaveBeenCalledTimes(1);

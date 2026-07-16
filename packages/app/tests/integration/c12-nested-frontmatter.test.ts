@@ -30,7 +30,7 @@ import {
   prependFrontmatter,
   readFmMap,
   stripFrontmatter,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import * as Y from 'yjs';
 import { HARNESS_BOOT_TIMEOUT_MS } from './harness-boot-timeout';
 import {

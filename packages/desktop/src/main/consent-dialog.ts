@@ -66,7 +66,7 @@ interface RequestUserConsentDeps {
    * `openProject` runs). The renderer-ready handshake remains as a fallback
    * for cases where the navigator is mid-reload. */
   navigator: ConsentNavigatorWebContents;
-  /** `previewContent` from `@inkeep/open-knowledge` — bounded by `runProbe`. */
+  /** `previewContent` from `@nedian0brien/synapsenote` — bounded by `runProbe`. */
   previewContent: PreviewContentFn;
   logger?: ConsentDialogLogger;
 }

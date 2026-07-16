@@ -18,7 +18,7 @@ import {
 import { tmpdir } from 'node:os';
 import { join, relative, resolve } from 'node:path';
 import { setTimeout as wait } from 'node:timers/promises';
-import { resolveGitDir } from '@inkeep/open-knowledge-core/shadow-repo-layout';
+import { resolveGitDir } from '@nedian0brien/synapsenote-core/shadow-repo-layout';
 import type { CC1Broadcaster } from './cc1-broadcast.ts';
 import { getLocalDir } from './config/paths.ts';
 import { ConflictStore } from './conflict-storage.ts';
@@ -145,7 +145,7 @@ interface SyncStatus {
   syncEnabled: boolean;
   /**
    * Soft signal: `resolveGitIdentity()` returned null on the last probe.
-   * The push cycle still commits under the "OpenKnowledge" default — this flag
+   * The push cycle still commits under the "SynapseNote" default — this flag
    * tells the UI to surface a non-blocking nudge to set a real identity.
    */
   identityUnresolved: boolean;
@@ -1472,7 +1472,7 @@ export class SyncEngine {
 
         // ── 9. Author identity (resolveGitIdentity chain, soft fallback) ─
         // Chain: repo-local → global → (OAuth profile, when tokenStore plumbed) →
-        // hard-coded "OpenKnowledge" default. We never error on unresolved
+        // hard-coded "SynapseNote" default. We never error on unresolved
         // identity — attribution silently degrades to the default and the UI
         // surfaces a non-blocking nudge via `status.identityUnresolved`.
         const identity = await resolveGitIdentity(this.projectDir);
@@ -1481,8 +1481,8 @@ export class SyncEngine {
           this.identityUnresolved = nextUnresolved;
           this.cc1Broadcaster?.signal('sync-status');
         }
-        const authorName = identity?.name ?? 'OpenKnowledge';
-        const authorEmail = identity?.email ?? 'sync@open-knowledge.local';
+        const authorName = identity?.name ?? 'SynapseNote';
+        const authorEmail = identity?.email ?? 'sync@synapsenote.local';
 
         // Set author/committer env vars on the handle for commit-tree
         applyGitEnv(handle, {
@@ -1676,8 +1676,8 @@ export class SyncEngine {
       }
 
       const identity = await resolveGitIdentity(this.projectDir);
-      const authorName = identity?.name ?? 'OpenKnowledge';
-      const authorEmail = identity?.email ?? 'sync@open-knowledge.local';
+      const authorName = identity?.name ?? 'SynapseNote';
+      const authorEmail = identity?.email ?? 'sync@synapsenote.local';
       applyGitEnv(isoHandle, {
         GIT_AUTHOR_NAME: authorName,
         GIT_AUTHOR_EMAIL: authorEmail,

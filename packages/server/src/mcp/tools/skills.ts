@@ -37,8 +37,8 @@ function bundleFileKind(path: string): 'reference' | 'script' {
 }
 
 /**
- * OK's own shipped bundle skills (`open-knowledge`, `open-knowledge-discovery`,
- * `open-knowledge-write-skill`) are runtime agent skills projected into editor
+ * OK's own shipped bundle skills (`synapsenote`, `synapsenote-discovery`,
+ * `synapsenote-write-skill`) are runtime agent skills projected into editor
  * host dirs — they have no `.ok/skills` source and can never be authored as
  * content skills (the reserved-name gate blocks it), so this tool can never
  * READ them. They are addressed by `BUNDLE_SKILL_NAME` here so the set tracks
@@ -48,16 +48,16 @@ const INTERNAL_BUNDLE_SKILL_NAMES = new Set<string>(Object.values(BUNDLE_SKILL_N
 
 /**
  * Teaching error for a READ aimed at one of OK's built-in skills. Without it,
- * an agent told to "load the open-knowledge skill" calls
- * `skills({ name: "open-knowledge" })`, hits a bare `Skill not found.` 404, and
+ * an agent told to "load the synapsenote skill" calls
+ * `skills({ name: "synapsenote" })`, hits a bare `Skill not found.` 404, and
  * falls back to cat-ing the bundled SKILL.md — a confusing dead end. The skill
  * is already in the agent's loaded skill list; it must not be fetched here.
  */
 function internalSkillHint(name: string): string {
   return [
-    `"${name}" is one of OpenKnowledge's built-in agent skills — it is NOT managed by this tool and cannot be read or listed here.`,
+    `"${name}" is one of SynapseNote's built-in agent skills — it is NOT managed by this tool and cannot be read or listed here.`,
     "It is already provided to you in your loaded skill list (a hidden runtime skill projected into your editor); don't fetch or re-load it — just follow the skill you already have.",
-    'The `skills` tool only covers skills authored as KB content (`.ok/skills` = project, `~/.ok/skills` = global). Built-in `open-knowledge*` skills never appear in either scope.',
+    'The `skills` tool only covers skills authored as KB content (`.ok/skills` = project, `~/.ok/skills` = global). Built-in `synapsenote*` skills never appear in either scope.',
   ].join(' ');
 }
 
@@ -110,7 +110,7 @@ const DESCRIPTION = [
   '',
   'This is how you find and read skills. Skills are addressed by `name` + `scope`, NOT by path — do NOT `ls`/`cat` `.ok/skills/` or pass raw `.ok/...` paths; `.ok/` is opaque internal state.',
   '',
-  "Covers only skills authored as KB content. OpenKnowledge's own built-in `open-knowledge*` skills (e.g. the `open-knowledge` project skill) are runtime skills already loaded in your skill list — they are NOT here, and you never fetch them through this tool.",
+  "Covers only skills authored as KB content. SynapseNote's own built-in `synapsenote*` skills (e.g. the `synapsenote` project skill) are runtime skills already loaded in your skill list — they are NOT here, and you never fetch them through this tool.",
   '',
   '**Three modes:**',
   '- **List** (omit `name`): every skill across BOTH levels — Project (this KB) and Global (user-level). Returns name, scope, description, installed/hosts, and (for starter packs) `updateAvailable`.',

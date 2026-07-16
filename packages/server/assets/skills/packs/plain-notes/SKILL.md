@@ -1,12 +1,12 @@
 ---
-name: open-knowledge-pack-plain-notes
+name: synapsenote-pack-plain-notes
 version: "0.18.0"
-description: "How to work in a Plain Notes project (the `plain-notes` starter pack): a flat notes/ folder plus a daily/ journal. The 'I just want to write' layout. Read when the project has these folders. Carries the linking habit and daily-entry behavior so templates and folder descriptions stay minimal. Complements the platform `open-knowledge` skill; does not replace it."
-compatibility: "Claude Code, Claude Desktop, Claude Cowork, Claude.ai web. Requires OpenKnowledge MCP server. Installed project-local by `ok seed --pack plain-notes`."
+description: "How to work in a Plain Notes project (the `plain-notes` starter pack): a flat notes/ folder plus a daily/ journal. The 'I just want to write' layout. Read when the project has these folders. Carries the linking habit and daily-entry behavior so templates and folder descriptions stay minimal. Complements the platform `synapsenote` skill; does not replace it."
+compatibility: "Claude Code, Claude Desktop, Claude Cowork, Claude.ai web. Requires SynapseNote MCP server. Installed project-local by `ok seed --pack plain-notes`."
 metadata:
   pack: "plain-notes"
-  author: "Inkeep"
-  repository: "https://github.com/inkeep/open-knowledge"
+  author: "SynapseNote"
+  repository: "https://github.com/Nedian0Brien/SynapseNote"
 ---
 # Plain Notes pack — how to work here
 

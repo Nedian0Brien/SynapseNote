@@ -1,4 +1,7 @@
-import { mediaKindForSidebarAssetExtension, SHOW_INSTALL_SKILL } from '@inkeep/open-knowledge-core';
+import {
+  mediaKindForSidebarAssetExtension,
+  SHOW_INSTALL_SKILL,
+} from '@nedian0brien/synapsenote-core';
 import { lazy, type ReactNode, Suspense, useEffect, useRef, useState } from 'react';
 import { CommandPalette } from '@/components/CommandPalette';
 import { ConnectingBanner } from '@/components/ConnectingBanner';

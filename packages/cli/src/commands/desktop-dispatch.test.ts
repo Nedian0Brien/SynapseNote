@@ -26,8 +26,8 @@ function statForFile(path: string): DetectDeps['statSync'] {
   return (p) => (p === path ? { isFile: () => true, isDirectory: () => false } : null);
 }
 
-const APP_EXEC = '/Applications/OpenKnowledge.app/Contents/MacOS/OpenKnowledge';
-const HOME_EXEC = '/Users/andrew/Applications/OpenKnowledge.app/Contents/MacOS/OpenKnowledge';
+const APP_EXEC = '/Applications/SynapseNote.app/Contents/MacOS/SynapseNote';
+const HOME_EXEC = '/Users/andrew/Applications/SynapseNote.app/Contents/MacOS/SynapseNote';
 
 describe('detectDesktop — platform gate (FR10)', () => {
   test('linux → darwin-only', () => {
@@ -46,13 +46,13 @@ describe('detectDesktop — bundle resolution (FR10 D2 a/b/c)', () => {
     const result = detectDesktop(baseDeps({ statSync: statForFile(APP_EXEC) }));
     expect(result.available).toBe(true);
     expect(result.reason).toBe('available');
-    expect(result.bundlePath).toBe('/Applications/OpenKnowledge.app');
+    expect(result.bundlePath).toBe('/Applications/SynapseNote.app');
   });
 
   test('darwin + bundle only in ~/Applications → available, home path', () => {
     const result = detectDesktop(baseDeps({ statSync: statForFile(HOME_EXEC) }));
     expect(result.available).toBe(true);
-    expect(result.bundlePath).toBe('/Users/andrew/Applications/OpenKnowledge.app');
+    expect(result.bundlePath).toBe('/Users/andrew/Applications/SynapseNote.app');
   });
 
   test('darwin + no bundle → no-bundle', () => {
@@ -64,13 +64,13 @@ describe('detectDesktop — bundle resolution (FR10 D2 a/b/c)', () => {
     const result = detectDesktop(
       baseDeps({
         env: { ELECTRON_RUN_AS_NODE: '1' },
-        execPath: '/Applications/OpenKnowledge.app/Contents/MacOS/OpenKnowledge',
+        execPath: '/Applications/SynapseNote.app/Contents/MacOS/SynapseNote',
         // Even if statSync returns null, introspection branch wins.
         statSync: () => null,
       }),
     );
     expect(result.available).toBe(true);
-    expect(result.bundlePath).toBe('/Applications/OpenKnowledge.app');
+    expect(result.bundlePath).toBe('/Applications/SynapseNote.app');
   });
 
   test('bundled-CLI introspection — execPath outside .app falls through to stat probes', () => {
@@ -82,7 +82,7 @@ describe('detectDesktop — bundle resolution (FR10 D2 a/b/c)', () => {
       }),
     );
     expect(result.available).toBe(true);
-    expect(result.bundlePath).toBe('/Applications/OpenKnowledge.app');
+    expect(result.bundlePath).toBe('/Applications/SynapseNote.app');
   });
 
   test('stat throws unexpectedly → no-bundle (probeBundle catches before reason can bubble)', () => {
@@ -153,7 +153,7 @@ describe('detectDesktop — headless gate (FR9 — CI is intentionally NOT a tri
     const result = detectDesktop(baseDeps({ isTTY: false, statSync: statForFile(APP_EXEC) }));
     expect(result.available).toBe(false);
     expect(result.reason).toBe('headless');
-    expect(result.bundlePath).toBe('/Applications/OpenKnowledge.app');
+    expect(result.bundlePath).toBe('/Applications/SynapseNote.app');
   });
 
   test('isTTY=undefined → headless (treated as false)', () => {
@@ -228,7 +228,7 @@ describe('launchDesktop — spawn shape (FR11)', () => {
     expect(captured.opts?.detached).toBe(true);
     expect(captured.opts?.stdio).toBe('ignore');
     expect(unrefCalled).toBe(true);
-    expect(logged).toContain('Launching OpenKnowledge desktop');
+    expect(logged).toContain('Launching SynapseNote desktop');
     expect(logged).toContain('OK_FORCE_BROWSER=1');
     expect(logged).toContain('ok start');
   });
@@ -258,15 +258,15 @@ describe('launchDesktop — spawn shape (FR11)', () => {
     }
   });
 
-  test('uses bundle ID com.inkeep.open-knowledge (matches electron-builder appId)', () => {
-    expect(DESKTOP_BUNDLE_ID).toBe('com.inkeep.open-knowledge');
+  test('uses bundle ID kr.lawdigest.synapsenote (matches electron-builder appId)', () => {
+    expect(DESKTOP_BUNDLE_ID).toBe('kr.lawdigest.synapsenote');
   });
 });
 
 describe('UX message helpers — FR5 contextual notFoundMessage(reason)', () => {
   test('default (no-bundle) names the install path + omit-mode hint', () => {
     const msg = notFoundMessage();
-    expect(msg).toContain('/Applications/OpenKnowledge.app');
+    expect(msg).toContain('/Applications/SynapseNote.app');
     expect(msg).toContain('--mode');
   });
 
@@ -292,7 +292,7 @@ describe('UX message helpers — FR5 contextual notFoundMessage(reason)', () => 
 
   test('stat-error reason mentions filesystem error + bundle path', () => {
     const msg = notFoundMessage('stat-error');
-    expect(msg).toContain('/Applications/OpenKnowledge.app');
+    expect(msg).toContain('/Applications/SynapseNote.app');
     expect(msg).toMatch(/filesystem|permission/i);
   });
 

@@ -17,7 +17,7 @@
  * overlay.
  */
 
-import { type FrontmatterValue, isFrontmatterValueEmpty } from '@inkeep/open-knowledge-core';
+import { type FrontmatterValue, isFrontmatterValueEmpty } from '@nedian0brien/synapsenote-core';
 
 export type FrontmatterRecord = Record<string, unknown>;
 

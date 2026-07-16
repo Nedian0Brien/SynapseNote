@@ -13,8 +13,8 @@
  * and has different reliability characteristics.
  */
 import type { ReactNode } from 'react';
-import { OK_WORDMARK_DATA_URL } from './ok-wordmark.data';
 import { SITE_HEADLINE } from './site';
+import { SYNAPSENOTE_WORDMARK_DATA_URL } from './synapsenote-wordmark.data';
 
 export const OG_SIZE = { width: 1200, height: 630 } as const;
 export const OG_CONTENT_TYPE = 'image/png';
@@ -56,7 +56,7 @@ const WORDMARK_NATURAL_H = 252;
 const WORDMARK_HEIGHT = 44;
 const WORDMARK_WIDTH = Math.round((WORDMARK_HEIGHT * WORDMARK_NATURAL_W) / WORDMARK_NATURAL_H);
 
-const wordmarkDataUrl = OK_WORDMARK_DATA_URL;
+const wordmarkDataUrl = SYNAPSENOTE_WORDMARK_DATA_URL;
 
 interface MaskEllipse {
   cx: number;
@@ -123,7 +123,7 @@ function Wordmark() {
         src={wordmarkDataUrl}
         width={WORDMARK_WIDTH}
         height={WORDMARK_HEIGHT}
-        alt="OpenKnowledge"
+        alt="SynapseNote"
       />
     </div>
   );

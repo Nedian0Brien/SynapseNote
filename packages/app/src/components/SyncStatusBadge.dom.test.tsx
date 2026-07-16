@@ -58,7 +58,10 @@ const baseStatus: GitSyncStatus = {
   conflictCount: 0,
   hasRemote: true,
   syncEnabled: true,
-  remote: { label: 'inkeep/open-knowledge', webUrl: 'https://github.com/inkeep/open-knowledge' },
+  remote: {
+    label: 'Nedian0Brien/SynapseNote',
+    webUrl: 'https://github.com/Nedian0Brien/SynapseNote',
+  },
 };
 
 async function renderBadge() {

@@ -16,7 +16,7 @@
  */
 
 import { describe, expect, test } from 'bun:test';
-import { SYSTEM_DOC_NAME } from '@inkeep/open-knowledge-core';
+import { SYSTEM_DOC_NAME } from '@nedian0brien/synapsenote-core';
 import {
   ACTIVITY_MOUNT_LIMIT,
   computeActivityMountList,

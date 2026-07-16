@@ -11,7 +11,7 @@
  */
 
 import { spawnSync } from 'node:child_process';
-import { withHiddenWindowsConsole } from '@inkeep/open-knowledge-server';
+import { withHiddenWindowsConsole } from '@nedian0brien/synapsenote-server';
 import type { CheckDefinition, CheckResult } from './types.ts';
 
 interface BunCheckDeps {

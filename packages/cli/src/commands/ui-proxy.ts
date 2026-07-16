@@ -29,7 +29,7 @@ import {
   isAllowedApiOrigin,
   isAllowedWorkspaceHostHeader,
   isLoopbackAddress,
-} from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-server';
 import { emitProblem } from './ui-problem.ts';
 
 export interface ProxyServerHandle {

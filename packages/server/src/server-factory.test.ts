@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { LOCAL_DIR } from '@inkeep/open-knowledge-core';
+import { LOCAL_DIR } from '@nedian0brien/synapsenote-core';
 import shellQuote from 'shell-quote';
 import simpleGit from 'simple-git';
 import * as Y from 'yjs';
@@ -2566,7 +2566,7 @@ describe('createServer() — push-permission auth wiring', () => {
     writeFileSync(join(tmpDir, 'README.md'), 'seed\n', 'utf-8');
     await git.add('.');
     await git.commit('seed');
-    await git.addRemote('origin', 'https://github.com/inkeep/open-knowledge.git');
+    await git.addRemote('origin', 'https://github.com/Nedian0Brien/SynapseNote.git');
   });
 
   afterEach(async () => {
@@ -2621,8 +2621,8 @@ describe('createServer() — push-permission auth wiring', () => {
       expect(firstCall.detectGh).toBe(detectGhStub);
       expect(firstCall.tokenStore).toBe(tokenStoreStub);
       // The probe call shape must also carry owner/repo parsed from origin.
-      expect(firstCall.owner).toBe('inkeep');
-      expect(firstCall.repo).toBe('open-knowledge');
+      expect(firstCall.owner).toBe('Nedian0Brien');
+      expect(firstCall.repo).toBe('SynapseNote');
     } finally {
       await server.destroy();
     }
@@ -2677,23 +2677,23 @@ describe('buildSyncCredentialArgs()', () => {
   };
 
   test('packaged macOS bundle path survives the shell as one intact token', () => {
-    // Regression: the bundled CLI lives under "/Applications/OpenKnowledge.app/…".
+    // Regression: the bundled CLI lives under "/Applications/SynapseNote.app/…".
     // Unquoted, the shell split at the space, tried to exec "/Applications/Open",
     // returned no credentials, and git failed with "could not read Username …
     // Device not configured". The path must round-trip as a single argv element.
-    const bundlePath = '/Applications/OpenKnowledge.app/Contents/Resources/cli/bin/ok.sh';
+    const bundlePath = '/Applications/SynapseNote.app/Contents/Resources/cli/bin/ok.sh';
     const args = buildSyncCredentialArgs([bundlePath]);
     expect(argvFromHelper(args)).toEqual([bundlePath, 'auth', 'git-credential']);
   });
 
   test('bare command (dev default) stays unquoted', () => {
-    const args = buildSyncCredentialArgs(['open-knowledge']);
-    expect(args).toEqual(['-c', 'credential.helper=!open-knowledge auth git-credential']);
-    expect(argvFromHelper(args)).toEqual(['open-knowledge', 'auth', 'git-credential']);
+    const args = buildSyncCredentialArgs(['synapsenote']);
+    expect(args).toEqual(['-c', 'credential.helper=!synapsenote auth git-credential']);
+    expect(argvFromHelper(args)).toEqual(['synapsenote', 'auth', 'git-credential']);
   });
 
   test('undefined / empty argv falls back to the bare CLI name', () => {
-    const expected = ['-c', 'credential.helper=!open-knowledge auth git-credential'];
+    const expected = ['-c', 'credential.helper=!synapsenote auth git-credential'];
     expect(buildSyncCredentialArgs(undefined)).toEqual(expected);
     expect(buildSyncCredentialArgs([])).toEqual(expected);
   });
@@ -2705,7 +2705,7 @@ describe('buildSyncCredentialArgs()', () => {
   });
 
   test('embedded single quote in the path round-trips safely', () => {
-    const argv = ["/Users/o'brien/OpenKnowledge.app/cli.sh"];
+    const argv = ["/Users/o'brien/SynapseNote.app/cli.sh"];
     const args = buildSyncCredentialArgs(argv);
     expect(argvFromHelper(args)).toEqual([...argv, 'auth', 'git-credential']);
   });

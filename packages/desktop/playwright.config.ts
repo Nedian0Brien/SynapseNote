@@ -42,7 +42,7 @@ export default defineConfig({
   // resolution, slow window show under vibrancy + transparent: true) get
   // retried up to twice. Local dev runs (CI=undefined) get 0 retries to
   // surface real regressions immediately. This mirrors the precedent set
-  // by `OpenKnowledge Validation`'s playwright job — CLAUDE.md
+  // by `SynapseNote Validation`'s playwright job — CLAUDE.md
   // documents `failOnFlakyTests: false` for it explicitly because Electron
   // smoke on macos-latest has inherent latency variance the Playwright
   // engine itself can't eliminate. Retries are a structural acknowledgment

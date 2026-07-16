@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, test } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { Hocuspocus } from '@hocuspocus/server';
-import { type AgentPresenceEntry, SYSTEM_DOC_NAME } from '@inkeep/open-knowledge-core';
+import { type AgentPresenceEntry, SYSTEM_DOC_NAME } from '@nedian0brien/synapsenote-core';
 import { AgentPresenceBroadcaster } from './agent-presence.ts';
 import { getMetrics, resetMetrics } from './metrics.ts';
 

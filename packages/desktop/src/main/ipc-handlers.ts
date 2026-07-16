@@ -18,7 +18,7 @@ import {
   type InstalledAgentScheme,
   resolveCursorBinaryDefault,
   resolveCursorSpawnInvocation,
-} from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-server';
 import type { HandoffStatsLine, SpawnOutcome } from '../shared/ipc-channels.ts';
 import { isPathWithinProject, validateSpawnPath } from './path-containment.ts';
 
@@ -197,13 +197,13 @@ interface SpawnCursorDeps {
 }
 
 // `resolveSpawnInvocation` (the macOS `.app` → `/usr/bin/open -a` redirect) is
-// now imported from `@inkeep/open-knowledge-server` as
+// now imported from `@nedian0brien/synapsenote-server` as
 // `resolveCursorSpawnInvocation`. Single source of truth across both
 // transports — same redirect logic runs in `POST /api/spawn-cursor` and in
 // this Electron IPC `spawnCursor`, so a future fix only needs one edit.
 
 // Cursor binary discovery (`whichCursorReal`) is now imported from
-// `@inkeep/open-knowledge-server` as `resolveCursorBinaryDefault`. Both
+// `@nedian0brien/synapsenote-server` as `resolveCursorBinaryDefault`. Both
 // transports — this file's Electron IPC and the server's
 // `POST /api/spawn-cursor` endpoint — share one canonical implementation
 // so adding a new bundle path or fixing the discovery logic only needs

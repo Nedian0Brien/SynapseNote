@@ -8,7 +8,7 @@ interface SkillStateFieldMeta {
 // Symbol-keyed globalThis singleton — same discipline as `config/field-registry.ts`.
 // Two copies of this module loaded under different file paths still share one
 // registry of registered schemas.
-const SINGLETON_KEY = Symbol.for('@inkeep/open-knowledge/skill-state-field-registry');
+const SINGLETON_KEY = Symbol.for('@nedian0brien/synapsenote/skill-state-field-registry');
 
 interface SingletonGlobal {
   [SINGLETON_KEY]?: z.core.$ZodRegistry<SkillStateFieldMeta>;

@@ -1,5 +1,5 @@
-import { parseManagedArtifactName, type SkillScope } from '@inkeep/open-knowledge-core';
 import { Trans, useLingui } from '@lingui/react/macro';
+import { parseManagedArtifactName, type SkillScope } from '@nedian0brien/synapsenote-core';
 import { ListPlus, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { lazy, Suspense } from 'react';
 import { Button } from '@/components/ui/button.tsx';

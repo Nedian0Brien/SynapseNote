@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 
-import { type BranchInfoResponse, BranchInfoResponseSchema } from '@inkeep/open-knowledge-core';
+import { type BranchInfoResponse, BranchInfoResponseSchema } from '@nedian0brien/synapsenote-core';
 
 import {
   applyBranchInfo,

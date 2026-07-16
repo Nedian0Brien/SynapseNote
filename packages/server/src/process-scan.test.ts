@@ -33,8 +33,7 @@ describe('findOkProcessPids', () => {
   it('returns PIDs parsed from pgrep output when pgrep is available', async () => {
     spawnSyncSpy.mockReturnValue(
       makeSpawnResult({
-        stdout:
-          '12345 /usr/local/bin/bun /path/to/open-knowledge/packages/cli/dist/cli.mjs start\n',
+        stdout: '12345 /usr/local/bin/bun /path/to/synapsenote/packages/cli/dist/cli.mjs start\n',
         status: 0,
       }),
     );
@@ -44,14 +43,14 @@ describe('findOkProcessPids', () => {
     // Confirms pgrep was called (not ps)
     const [cmd, args] = spawnSyncSpy.mock.calls[0] as [string, string[]];
     expect(cmd).toBe('pgrep');
-    expect(args.join(' ')).toContain('open-knowledge');
+    expect(args.join(' ')).toContain('synapsenote');
   });
 
-  it('finds npx-installed open-knowledge bin processes', async () => {
+  it('finds npx-installed synapsenote bin processes', async () => {
     spawnSyncSpy.mockReturnValue(
       makeSpawnResult({
         stdout:
-          '54321 /usr/local/bin/node /Users/mike/.npm/_npx/64e3e56af53daa3b/node_modules/.bin/open-knowledge start\n',
+          '54321 /usr/local/bin/node /Users/mike/.npm/_npx/64e3e56af53daa3b/node_modules/.bin/synapsenote start\n',
         status: 0,
       }),
     );
@@ -64,7 +63,7 @@ describe('findOkProcessPids', () => {
     const encoded = Buffer.from('/Users/mike/notes/.ok/local', 'utf8').toString('base64url');
     spawnSyncSpy.mockReturnValue(
       makeSpawnResult({
-        stdout: `24680 /Applications/OpenKnowledge.app/Contents/Frameworks/OpenKnowledge Helper --type=utility --ok-lock-dir-b64=${encoded}\n`,
+        stdout: `24680 /Applications/SynapseNote.app/Contents/Frameworks/SynapseNote Helper --type=utility --ok-lock-dir-b64=${encoded}\n`,
         status: 0,
       }),
     );
@@ -73,11 +72,11 @@ describe('findOkProcessPids', () => {
     expect(pids).toEqual([24680]);
   });
 
-  it('finds packaged OpenKnowledge Helper processes without lock-dir marker', async () => {
+  it('finds packaged SynapseNote Helper processes without lock-dir marker', async () => {
     spawnSyncSpy.mockReturnValue(
       makeSpawnResult({
         stdout:
-          '5816 /Applications/OpenKnowledge.app/Contents/Frameworks/OpenKnowledge Helper.app/Contents/MacOS/OpenKnowledge Helper --type=utility --utility-sub-type=node.mojom.NodeService\n',
+          '5816 /Applications/SynapseNote.app/Contents/Frameworks/SynapseNote Helper.app/Contents/MacOS/SynapseNote Helper --type=utility --utility-sub-type=node.mojom.NodeService\n',
         status: 0,
       }),
     );
@@ -86,7 +85,7 @@ describe('findOkProcessPids', () => {
     expect(pids).toEqual([5816]);
   });
 
-  it('still finds a pre-rename "Open Knowledge" packaged Helper (backward-compat regex)', async () => {
+  it('still finds a pre-rename "OpenKnowledge" packaged Helper (backward-compat regex)', async () => {
     // A user mid-migration may have an OLD build running. The `Open ?Knowledge`
     // matcher must keep finding its spaced bundle name so `ok ps`/`ok stop` work
     // across the rename. With no lock-dir marker, only the bundle-name pattern
@@ -94,7 +93,7 @@ describe('findOkProcessPids', () => {
     spawnSyncSpy.mockReturnValue(
       makeSpawnResult({
         stdout:
-          '5817 /Applications/Open Knowledge.app/Contents/Frameworks/Open Knowledge Helper.app/Contents/MacOS/Open Knowledge Helper --type=utility --utility-sub-type=node.mojom.NodeService\n',
+          '5817 /Applications/OpenKnowledge.app/Contents/Frameworks/OpenKnowledge Helper.app/Contents/MacOS/OpenKnowledge Helper --type=utility --utility-sub-type=node.mojom.NodeService\n',
         status: 0,
       }),
     );
@@ -114,7 +113,7 @@ describe('findOkProcessPids', () => {
         makeSpawnResult({
           stdout:
             'PID COMMAND\n' +
-            ' 99999 /usr/local/bin/open-knowledge start\n' +
+            ' 99999 /usr/local/bin/synapsenote start\n' +
             '   123 some-other-process\n',
           status: 0,
         }),
@@ -143,7 +142,7 @@ describe('findOkProcessPids', () => {
       .mockReturnValueOnce(
         makeSpawnResult({
           stdout:
-            'PID COMMAND\n 12345 /usr/local/bin/node /path/node_modules/.bin/open-knowledge start\n',
+            'PID COMMAND\n 12345 /usr/local/bin/node /path/node_modules/.bin/synapsenote start\n',
           status: 0,
         }),
       );
@@ -308,14 +307,14 @@ describe('discoverLockDirs', () => {
     spawnSyncSpy
       .mockReturnValueOnce(
         makeSpawnResult({
-          stdout: `77 /Applications/OpenKnowledge.app/Contents/Frameworks/OpenKnowledge Helper --type=utility --ok-lock-dir-b64=${encoded}\n`,
+          stdout: `77 /Applications/SynapseNote.app/Contents/Frameworks/SynapseNote Helper --type=utility --ok-lock-dir-b64=${encoded}\n`,
           status: 0,
         }),
       )
       // pidCwd for PID 77 (Electron utility cwd is inside the app bundle, not the project)
       .mockReturnValueOnce(
         makeSpawnResult({
-          stdout: 'p77\nfcwd\nn/Applications/OpenKnowledge.app/Contents/Resources\n',
+          stdout: 'p77\nfcwd\nn/Applications/SynapseNote.app/Contents/Resources\n',
           status: 0,
         }),
       )
@@ -334,13 +333,13 @@ describe('discoverLockDirs', () => {
   });
 
   it('discovers desktop project locks from renderer --ok-project-path argv', async () => {
-    const projectPath = '/Users/mike/Documents/OpenKnowledge/garth_nix';
+    const projectPath = '/Users/mike/Documents/SynapseNote/garth_nix';
     const lockDir = `${projectPath}/.ok/local`;
 
     spawnSyncSpy
       .mockReturnValueOnce(
         makeSpawnResult({
-          stdout: `93943 /Applications/OpenKnowledge.app/Contents/Frameworks/OpenKnowledge Helper (Renderer).app/Contents/MacOS/OpenKnowledge Helper (Renderer) --type=renderer --ok-collab-url=ws://localhost:51473/collab --ok-project-path=${projectPath} --ok-project-name=garth_nix --seatbelt-client=53\n`,
+          stdout: `93943 /Applications/SynapseNote.app/Contents/Frameworks/SynapseNote Helper (Renderer).app/Contents/MacOS/SynapseNote Helper (Renderer) --type=renderer --ok-collab-url=ws://localhost:51473/collab --ok-project-path=${projectPath} --ok-project-name=garth_nix --seatbelt-client=53\n`,
           status: 0,
         }),
       )
@@ -360,7 +359,7 @@ describe('discoverLockDirs', () => {
       .mockReturnValueOnce(
         makeSpawnResult({
           stdout:
-            '93943 /Applications/OpenKnowledge Helper (Renderer) --type=renderer --ok-project-path=relative/notes --ok-project-name=notes\n',
+            '93943 /Applications/SynapseNote Helper (Renderer) --type=renderer --ok-project-path=relative/notes --ok-project-name=notes\n',
           status: 0,
         }),
       )
@@ -399,7 +398,7 @@ describe('discoverLockDirs', () => {
       .mockReturnValueOnce(
         makeSpawnResult({
           stdout:
-            '42 /Applications/OpenKnowledge.app/Contents/Frameworks/Helper --ok-lock-dir-b64=\n',
+            '42 /Applications/SynapseNote.app/Contents/Frameworks/Helper --ok-lock-dir-b64=\n',
           status: 0,
         }),
       )
@@ -437,7 +436,7 @@ describe('discoverLockDirs', () => {
 
   it('discovers child project locks from the current-directory subtree fallback', async () => {
     const cwdSpy = spyOn(process, 'cwd');
-    const parent = '/Users/mike/Documents/OpenKnowledge';
+    const parent = '/Users/mike/Documents/SynapseNote';
     const child = `${parent}/garth_nix`;
     const lockDir = `${child}/.ok/local`;
 
@@ -445,7 +444,7 @@ describe('discoverLockDirs', () => {
       .mockReturnValueOnce(
         makeSpawnResult({
           stdout:
-            '5816 /Applications/OpenKnowledge.app/Contents/Frameworks/OpenKnowledge Helper.app/Contents/MacOS/OpenKnowledge Helper --type=utility --utility-sub-type=node.mojom.NodeService\n',
+            '5816 /Applications/SynapseNote.app/Contents/Frameworks/SynapseNote Helper.app/Contents/MacOS/SynapseNote Helper --type=utility --utility-sub-type=node.mojom.NodeService\n',
           status: 0,
         }),
       )
@@ -473,7 +472,7 @@ describe('discoverLockDirs', () => {
 
   it('runs subtree fallback for slash-cwd helpers even when another candidate was found', async () => {
     const cwdSpy = spyOn(process, 'cwd');
-    const parent = '/Users/mike/Documents/OpenKnowledge';
+    const parent = '/Users/mike/Documents/SynapseNote';
     const directProject = '/Users/mike/direct-notes';
     const directLockDir = `${directProject}/.ok/local`;
     const childProject = `${parent}/garth_nix`;
@@ -484,7 +483,7 @@ describe('discoverLockDirs', () => {
         makeSpawnResult({
           stdout:
             '11 /usr/local/bin/ok start\n' +
-            '22 /Applications/OpenKnowledge.app/Contents/Frameworks/OpenKnowledge Helper.app/Contents/MacOS/OpenKnowledge Helper --type=utility --utility-sub-type=node.mojom.NodeService\n',
+            '22 /Applications/SynapseNote.app/Contents/Frameworks/SynapseNote Helper.app/Contents/MacOS/SynapseNote Helper --type=utility --utility-sub-type=node.mojom.NodeService\n',
           status: 0,
         }),
       )

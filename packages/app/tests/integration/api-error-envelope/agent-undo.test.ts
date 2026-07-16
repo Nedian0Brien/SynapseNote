@@ -11,7 +11,7 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
-import { AgentUndoSuccessSchema, ProblemDetailsSchema } from '@inkeep/open-knowledge-core';
+import { AgentUndoSuccessSchema, ProblemDetailsSchema } from '@nedian0brien/synapsenote-core';
 import { HARNESS_BOOT_TIMEOUT_MS } from '../harness-boot-timeout';
 import { agentWriteMd, createTestServer, type TestServer } from '../test-harness';
 

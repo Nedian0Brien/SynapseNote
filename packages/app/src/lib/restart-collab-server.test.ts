@@ -5,7 +5,7 @@ import { restartCollabServer, restartServerFailureMessage } from './restart-coll
 describe('restartServerFailureMessage', () => {
   test('eperm names the ownership conflict', () => {
     expect(restartServerFailureMessage('eperm')).toBe(
-      "Couldn't restart the server — another process owns it. Quit other OpenKnowledge windows for this project, then try again.",
+      "Couldn't restart the server — another process owns it. Quit other SynapseNote windows for this project, then try again.",
     );
   });
 

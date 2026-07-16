@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { MENU_LABELS } from '@inkeep/open-knowledge-core';
+import { MENU_LABELS } from '@nedian0brien/synapsenote-core';
 
 /**
  * Parity guard for the file/tree labels that appear in BOTH the native Electron

@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
-import { LOCAL_DIR } from '@inkeep/open-knowledge-core';
+import { LOCAL_DIR } from '@nedian0brien/synapsenote-core';
 import { loadPrincipal } from './principal.ts';
 
 let tmpDir: string;
@@ -81,11 +81,11 @@ describe('loadPrincipal — display field refresh', () => {
     expect(typeof principal.display_email).toBe('string');
   });
 
-  test('synthesized email has principal-<shortId>@openknowledge.local shape', async () => {
+  test('synthesized email has principal-<shortId>@synapsenote.local shape', async () => {
     // In a bare tmpDir with no git config, the email may be synthesized
     const principal = await loadPrincipal(tmpDir);
     if (principal.source === 'synthesized') {
-      expect(principal.display_email).toMatch(/@openknowledge\.local$/);
+      expect(principal.display_email).toMatch(/@synapsenote\.local$/);
     }
   });
 });

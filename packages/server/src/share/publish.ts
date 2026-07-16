@@ -5,7 +5,7 @@
  *   GET  /api/share/publish/name-check    — pre-flight a repo name for conflict
  *   POST /api/share/publish               — git init + create repo + push
  *
- * Each handler spawns the `open-knowledge share <sub>` CLI subprocess
+ * Each handler spawns the `synapsenote share <sub>` CLI subprocess
  * (mirroring `handleLocalOpAuthStatus` / `handleLocalOpAuthRepos`) and
  * parses one JSON event line from stdout. This file owns the parsing and
  * code-mapping logic; the orchestrator (spawning + lifetime) is inlined in
@@ -24,7 +24,7 @@ import type {
   SharePublishOwnersErrorCode,
   SharePublishOwnersResponse,
   SharePublishResponse,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { getLogger } from '../logger.ts';
 
 // ─── Handler tags + URL keys ─────────────────────────────────────────────────

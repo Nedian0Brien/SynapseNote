@@ -1,5 +1,5 @@
 /**
- * Main-process entry for `@inkeep/open-knowledge-desktop`.
+ * Main-process entry for `@nedian0brien/synapsenote-desktop`.
  *
  * Boot sequence (the prefix of `app.whenReady()` is owned by `runBootstrap`
  * in `./bootstrap.ts`):
@@ -67,7 +67,7 @@ import {
   writeProjectAiIntegrations,
   writeProjectSkill,
   writeUserMcpConfigs,
-} from '@inkeep/open-knowledge';
+} from '@nedian0brien/synapsenote';
 import {
   CLIENT_VERSION_HEADER,
   PROTOCOL_VERSION,
@@ -75,7 +75,7 @@ import {
   SPAWN_ERROR_LOG,
   TERMINAL_CLIS,
   type TerminalCli,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import {
   assertGitAvailable,
   BUNDLE_SKILL_NAME,
@@ -102,7 +102,7 @@ import {
   withSpan,
   writeBundleDecision,
   writeTargetVersion,
-} from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-server';
 import type { BrowserWindowConstructorOptions, MessageBoxOptions } from 'electron';
 import {
   app,
@@ -970,14 +970,14 @@ function isDebugKeyringSmokeAllowed(): boolean {
  * and the editor window's utility-process API server (threaded via
  * `UtilityInitMessage.opts.localOpCliArgs`) — call this so they stay in
  * lockstep. Packaged: bundled wrapper at
- * `<bundle>/Contents/Resources/cli/bin/ok.sh`. Dev: `open-knowledge` from
+ * `<bundle>/Contents/Resources/cli/bin/ok.sh`. Dev: `synapsenote` from
  * PATH, matching `createApiExtension`'s default.
  */
 function resolveLocalOpCliArgs(): string[] {
   if (app.isPackaged) {
     return [wrapperPathInBundle(app.getPath('exe'))];
   }
-  return ['open-knowledge'];
+  return ['synapsenote'];
 }
 
 function runDriverBootSmokeInProduction(): void {
@@ -1056,7 +1056,7 @@ function ensureWindowManager() {
   // Detached-spawn wiring — packaged builds only (dev keeps the
   // utility-fork path for HMR / log-capture ergonomics). The bundled CLI
   // lives at `<.app>/Contents/Resources/app.asar.unpacked/node_modules/
-  // @inkeep/open-knowledge/dist/cli.mjs`. We spawn it via the running
+  // @nedian0brien/synapsenote/dist/cli.mjs`. We spawn it via the running
   // Electron binary with `ELECTRON_RUN_AS_NODE=1` so the helper runs as
   // pure Node — no separate Node binary to bundle. The child detaches
   // from Electron's process group (`detached: true`, `stdio: 'ignore'`,
@@ -1068,8 +1068,8 @@ function ensureWindowManager() {
         process.resourcesPath,
         'app.asar.unpacked',
         'node_modules',
-        '@inkeep',
-        'open-knowledge',
+        '@nedian0brien',
+        'synapsenote',
         'dist',
         'cli.mjs',
       )
@@ -1090,7 +1090,7 @@ function ensureWindowManager() {
       });
       // Electron defaults to updating the window title from the renderer's
       // `<title>` tag after page load — that would clobber our per-project
-      // title with `packages/app/index.html`'s static "OpenKnowledge" on
+      // title with `packages/app/index.html`'s static "SynapseNote" on
       // every navigation. `preventDefault()` in the event handler keeps our
       // title, while still letting the renderer read `document.title` for
       // its own purposes if it wants to.
@@ -1124,7 +1124,7 @@ function ensureWindowManager() {
     },
     forkUtility: (entry, args, opts) => {
       // Inject OK_ELECTRON_PROTOCOL_HOST=1 so the `preview-url.ts` helper
-      // running inside this utility emits `openknowledge://` URLs for MCP
+      // running inside this utility emits `synapsenote://` URLs for MCP
       // consumers instead of `http://localhost:...`. CLI / bunx invocations
       // don't fork through here, so the flag never bleeds into those
       // consumers. Also carry the startup traceparent (Plan A) + the shared
@@ -1618,7 +1618,7 @@ async function openProject(
       cancelId: 0,
       defaultId: 0,
       title: 'Open existing project?',
-      message: `OpenKnowledge wants to open the existing project at ${discovery.projectDir} (because it contains an .ok/ config). The folder you picked, ${pickedName}, is inside that project. Open ${ancestorName}?`,
+      message: `SynapseNote wants to open the existing project at ${discovery.projectDir} (because it contains an .ok/ config). The folder you picked, ${pickedName}, is inside that project. Open ${ancestorName}?`,
     });
     if (response === 0) {
       recordOnboardingFlow({
@@ -1944,9 +1944,9 @@ async function openProjectOrFallbackToNavigator(
         `${projectPath}\n\n` +
         `Another process${typeof holderPid === 'number' ? ` (pid ${holderPid})` : ''} ` +
         `is holding the server lock and didn't release it after a SIGTERM. ` +
-        `Quit it manually and try again, or restart OpenKnowledge.`;
+        `Quit it manually and try again, or restart SynapseNote.`;
     } else if (kind === 'lock-collision') {
-      dialogTitle = 'OpenKnowledge is already running for this project';
+      dialogTitle = 'SynapseNote is already running for this project';
       dialogBody = `${projectPath}\n\n${errorMessage}`;
     }
     // A spawn that timed out because a holder is in the way (fail-closed
@@ -1963,7 +1963,7 @@ async function openProjectOrFallbackToNavigator(
         message: dialogTitle,
         detail:
           `${dialogBody}\n\n` +
-          `OpenKnowledge can stop the conflicting server process and retry opening the project.`,
+          `SynapseNote can stop the conflicting server process and retry opening the project.`,
         buttons: ['Stop Server & Retry', 'Cancel'],
         defaultId: 0,
         cancelId: 1,
@@ -2011,7 +2011,7 @@ async function openProjectOrFallbackToNavigator(
 
 /**
  * Open a no-project file in an ephemeral single-file editing session (the
- * desktop side of `ok <file>`, reached via the `openknowledge://open?file=`
+ * desktop side of `ok <file>`, reached via the `synapsenote://open?file=`
  * deep-link). Re-runs the shared `prepareSingleFileOpen` main-side — the
  * safety net: a `file=` whose realpath sits inside a project (a symlink, a
  * hand-crafted URL) routes to the normal project-open flow rather than spinning
@@ -2142,12 +2142,12 @@ async function runApplicationMenuRefresh(): Promise<void> {
       refreshApplicationMenu();
     },
     // The scheme allowlist is enforced in the renderer IPC path (shell-allowlist.ts).
-    // Help-menu URLs are hardcoded in menu.ts (always `https://github.com/inkeep/…`),
+    // Help-menu URLs are hardcoded in menu.ts under the SynapseNote repository,
     // so they're trusted at build time — direct shell.openExternal is fine here.
     openExternalUrl: (url: string) => {
       void shell.openExternal(url);
     },
-    // File → "Set up OpenKnowledge integrations…" re-trigger for the
+    // File → "Set up SynapseNote integrations…" re-trigger for the
     // first-launch consent dialog (MCP wiring + shell-PATH install). Only
     // plumb the dep on darwin + packaged builds; non-macOS has no MCP
     // wiring, and dev-mode explicitly contaminates the developer's real
@@ -2173,8 +2173,8 @@ async function runApplicationMenuRefresh(): Promise<void> {
               const message = err instanceof Error ? err.message : String(err);
               console.error('[main] reconfigureMcpWiring failed', { err: message });
               dialog.showErrorBox(
-                'Set up OpenKnowledge integrations failed',
-                `OpenKnowledge couldn't re-arm the MCP consent dialog:\n\n${message}`,
+                'Set up SynapseNote integrations failed',
+                `SynapseNote couldn't re-arm the MCP consent dialog:\n\n${message}`,
               );
             }
           }
@@ -2402,7 +2402,7 @@ async function showDesktopUninstallProjectPicker(
       height,
       minWidth: 560,
       minHeight: 420,
-      title: 'Uninstall OpenKnowledge',
+      title: 'Uninstall SynapseNote',
     });
 
     let settled = false;
@@ -2459,7 +2459,7 @@ async function withDesktopUninstallProgress<T>(work: () => Promise<T>): Promise<
     parent,
     width: 420,
     height: 220,
-    title: 'Uninstalling OpenKnowledge',
+    title: 'Uninstalling SynapseNote',
     modal: parent != null,
     resizable: false,
   });
@@ -2499,9 +2499,9 @@ async function startDesktopSelfUninstallFlow(): Promise<void> {
   if (appBundlePath === null || !isSupportedApplicationsBundle(appBundlePath, osHomedir())) {
     await showMessageBoxAttached({
       type: 'error',
-      message: 'OpenKnowledge cannot uninstall itself from this location.',
+      message: 'SynapseNote cannot uninstall itself from this location.',
       detail:
-        'Self-uninstall only works when OpenKnowledge.app is in Applications. Move this copy to the Trash manually.',
+        'Self-uninstall only works when SynapseNote.app is in Applications. Move this copy to the Trash manually.',
     });
     return;
   }
@@ -2644,9 +2644,9 @@ function openTerminalWindow(): void {
 /**
  * Arm first-launch MCP consent. Extracted as a helper so both the
  * `app.whenReady()` path (once-per-boot marker-respecting) AND the
- * "Set up OpenKnowledge integrations…" File menu path (forceShow, ignores
+ * "Set up SynapseNote integrations…" File menu path (forceShow, ignores
  * prior marker) share one wiring definition. The cli surface is
- * imported via the published-package name `@inkeep/open-knowledge` so
+ * imported via the published-package name `@nedian0brien/synapsenote` so
  * turbo's `^build` topology correctly invalidates desktop's cache when
  * CLI internals change.
  */
@@ -2906,7 +2906,7 @@ function probeLoginShellOnPath(args?: readonly string[]): Promise<number | null>
 }
 
 /**
- * Whether the project's OWN `open-knowledge` `.mcp.json` entry is OK's canonical
+ * Whether the project's OWN `synapsenote` `.mcp.json` entry is OK's canonical
  * managed server. The trust gate for the docked-terminal Claude MCP pre-approval
  * (see core `terminal-launch.ts` + cli `isOwnManagedEntry`): a foreign,
  * tampered, or missing same-named entry — the supply-chain risk in a
@@ -2926,8 +2926,8 @@ function isProjectClaudeMcpOwn(projectRoot: string | undefined): boolean {
 
 /**
  * Resolve docked-terminal Claude Code readiness: probe `claude` on the
- * login-shell PATH, classify the user-global `open-knowledge` entry in
- * `~/.claude.json`, and verify the PROJECT's `.mcp.json` `open-knowledge` entry
+ * login-shell PATH, classify the user-global `synapsenote` entry in
+ * `~/.claude.json`, and verify the PROJECT's `.mcp.json` `synapsenote` entry
  * is OK's own (gates MCP pre-approval). The real subprocess + config reads are
  * the runtime e2e rung (a built terminal).
  */
@@ -2949,7 +2949,7 @@ function resolveTerminalClaudeReadiness(projectRoot: string | undefined): Promis
 function resolveTerminalCliOnPath(cli: TerminalCli): Promise<CliReadiness> {
   return resolveCliOnPath({
     probe: () => probeLoginShellOnPath(cliProbeArgs(TERMINAL_CLIS[cli].bin)),
-    // Codex-only: report whether OK's `open-knowledge` server is already in the
+    // Codex-only: report whether OK's `synapsenote` server is already in the
     // user's codex config, so the launch site adds the `-c` tool-auto-approve
     // override only when it won't break config load (a `-c` under an undefined
     // server id makes codex fail to load its config). `classifyExistingMcpEntry`
@@ -3279,8 +3279,8 @@ function registerIpcHandlers() {
     let rewireError: string | undefined;
     if (req.action === 'rewire' && process.platform === 'darwin' && app.isPackaged) {
       // Re-arm MCP wiring: the same forceShow consent path as
-      // File -> Set up OpenKnowledge integrations, so the user can wire
-      // `open-knowledge` into Claude Code. Fires ONLY from the renderer's
+      // File -> Set up SynapseNote integrations, so the user can wire
+      // `synapsenote` into Claude Code. Fires ONLY from the renderer's
       // re-wire button — agents have no ok:terminal:* surface, and the consent
       // dialog itself is human-only.
       const win = BrowserWindow.fromWebContents(event.sender);
@@ -4654,7 +4654,7 @@ function registerProjectIntegrationsSettingsIpc(): void {
       const target = EDITOR_TARGETS[id];
       // `format: 'file'` targets (Pi) own a whole managed file, not a keyed
       // entry — there is no dotted/table locator to show.
-      if (target.format === 'file') return 'open-knowledge (managed extension file)';
+      if (target.format === 'file') return 'synapsenote (managed extension file)';
       const server = target.serverName('');
       return target.format === 'toml'
         ? `[${target.topLevelKey}.${server}]`
@@ -4804,7 +4804,7 @@ function installLocalhostCorsInjector() {
  *
  * The rewrite logic itself lives in `embed-referer.ts` so the
  * behavior is unit-testable without touching `session.defaultSession`.
- * Full rationale (why Error 153 happens, why `https://inkeep.com/`,
+ * Full rationale (why Error 153 happens, why `https://synapse.lawdigest.kr/`,
  * why YouTube-only) is in that module's docstring.
  */
 function installEmbedRefererRewriter() {
@@ -4821,8 +4821,8 @@ function installEmbedRefererRewriter() {
 // Single-instance lock — required for `app.on('second-instance')` to fire
 // AND to prevent a duplicate OK.app launch from racing state.json +
 // server.lock with the primary. A duplicate launch that carries an
-// `openknowledge://` URL in argv (`OK.app/Contents/MacOS/OpenKnowledge
-// openknowledge://...`) relinquishes the lock; Electron then dispatches its
+// `synapsenote://` URL in argv (`OK.app/Contents/MacOS/SynapseNote
+// synapsenote://...`) relinquishes the lock; Electron then dispatches its
 // argv to the primary via the `second-instance` listener registered below.
 // If we fail to acquire the lock we ARE the duplicate — exit without
 // registering any of the boot-time handlers below.
@@ -5036,7 +5036,7 @@ function bootPrimaryInstance(): void {
       }
       return ctx.window as unknown as object;
     },
-    // `openknowledge://open?file=<abs>` — the desktop side of `ok <file>`.
+    // `synapsenote://open?file=<abs>` — the desktop side of `ok <file>`.
     // `openEphemeralFile` re-derives the plan and routes project-vs-
     // ephemeral itself, so the url-scheme layer just hands off the path.
     openEphemeralFile: (filePath) => openEphemeralFile(filePath),
@@ -5108,10 +5108,10 @@ function bootPrimaryInstance(): void {
       // its return tells the waterfall whether main spans are live.
       startupWaterfall.mark('appReady');
       startupWaterfall.otelEnabled = beginRoot();
-      // One-time userData migration for the "Open Knowledge" → "OpenKnowledge"
+      // One-time userData migration for the "SynapseNote" → "SynapseNote"
       // rename. Dormant until the packaged productName flips the userData
-      // basename to "OpenKnowledge"; then it relocates a verified-ours legacy
-      // "Open Knowledge" dir and cleans it up. Runs BEFORE the first-run probe
+      // basename to "SynapseNote"; then it relocates a verified-ours legacy
+      // "SynapseNote" dir and cleans it up. Runs BEFORE the first-run probe
       // + loadAppState below so the migrated state is loaded, not treated as a
       // fresh first run. Routes events to the pino file logger so a failed
       // migration is visible in production logs, not just on the console.
@@ -5200,7 +5200,7 @@ function bootPrimaryInstance(): void {
       // platform is non-darwin, the app is in dev mode without
       // `OK_M6B_FORCE=1`, the user-scoped marker is present, or
       // `app.getPath('exe')` doesn't match the bundle shape. The cli surface
-      // is imported via the published-package name `@inkeep/open-knowledge`
+      // is imported via the published-package name `@nedian0brien/synapsenote`
       // so turbo's `^build` topology correctly invalidates desktop's cache
       // when CLI internals change. Rollup tree-shakes unused CLI code at
       // electron-vite build time, keeping the DMG bundle size bounded.
@@ -5487,7 +5487,7 @@ function bootPrimaryInstance(): void {
         // build. See `packages/desktop/scripts/smoke-mock-update.mjs --keep-alive`
         // for the server side.
         feedUrl: process.env.OK_UPDATER_FEED_URL || undefined,
-        // Point the updater feed at the openknowledge.ai proxy so updates are
+        // Point the updater feed at the synapse.lawdigest.kr proxy so updates are
         // counted per version. The proxy 302s to the byte-identical GitHub
         // asset, preserving the manifest sha512 and the macOS signature; a feed
         // failure reverts to the GitHub provider for the session. Both channels
@@ -5495,7 +5495,7 @@ function bootPrimaryInstance(): void {
         // has been confirmed through the proxy; the `latest` (stable) path
         // resolves via GitHub's authoritative `releases/latest` alias.
         proxyFeed: {
-          base: 'https://openknowledge.ai/updates',
+          base: 'https://synapse.lawdigest.kr/updates',
           channels: new Set<UpdateChannel>(['beta', 'latest']),
         },
         // Toast B renderer-mount race —
@@ -5615,8 +5615,8 @@ function bootPrimaryInstance(): void {
               buttons: ['OK'],
               defaultId: 0,
               title: 'Up to Date',
-              message: "You're on the latest version of OpenKnowledge.",
-              detail: `OpenKnowledge ${result.currentVersion} is the most current version available.`,
+              message: "You're on the latest version of SynapseNote.",
+              detail: `SynapseNote ${result.currentVersion} is the most current version available.`,
             });
           } else if (result.kind === 'available') {
             void dialog.showMessageBox(target, {
@@ -5624,7 +5624,7 @@ function bootPrimaryInstance(): void {
               buttons: ['OK'],
               defaultId: 0,
               title: 'Update Available',
-              message: `OpenKnowledge ${result.latestVersion} is available.`,
+              message: `SynapseNote ${result.latestVersion} is available.`,
               detail: `It's downloading in the background. You'll be prompted to relaunch when the install is ready.`,
             });
           } else {
@@ -5633,7 +5633,7 @@ function bootPrimaryInstance(): void {
               buttons: ['OK'],
               defaultId: 0,
               title: "Couldn't Check for Updates",
-              message: "OpenKnowledge couldn't check for updates right now.",
+              message: "SynapseNote couldn't check for updates right now.",
               detail: result.message,
             });
           }
@@ -5645,7 +5645,7 @@ function bootPrimaryInstance(): void {
 
       // Mid-session drag-replace detector. AppKit caches `Info.plist` at
       // process launch (`NSBundle.mainBundle`); when a user drags a new
-      // `.app` over `/Applications/OpenKnowledge.app` while the app is
+      // `.app` over `/Applications/SynapseNote.app` while the app is
       // running, every in-process reader (About panel, telemetry, Activity
       // Monitor Get Info) keeps serving the OLD version until the user
       // quits and relaunches. The auto-updater's `quitAndInstall` doesn't
@@ -5656,7 +5656,7 @@ function bootPrimaryInstance(): void {
       // `.app/Contents/Info.plist` to compare against `app.getVersion()`.
       if (process.platform === 'darwin' && app.isPackaged) {
         const exePath = app.getPath('exe');
-        // `<exe>` resolves to `<…>/OpenKnowledge.app/Contents/MacOS/OpenKnowledge`,
+        // `<exe>` resolves to `<…>/SynapseNote.app/Contents/MacOS/SynapseNote`,
         // so the Info.plist sits two dirnames up.
         const infoPlistPath = join(dirname(dirname(exePath)), 'Info.plist');
         bundleReplaceWatcherHandle = startBundleReplaceWatcher({

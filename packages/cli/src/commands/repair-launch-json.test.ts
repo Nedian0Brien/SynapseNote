@@ -5,7 +5,7 @@ import { join, resolve } from 'node:path';
 import { type LaunchJsonRepairLogEvent, repairLaunchJson } from './repair-launch-json.ts';
 
 // OK no longer scaffolds `.claude/launch.json`; the `ok start` repair sweep now
-// REMOVES any `open-knowledge-ui` entry a prior OK version left behind. The
+// REMOVES any `synapsenote-ui` entry a prior OK version left behind. The
 // surgical removal itself is covered in launch-json-removal.test.ts; here we
 // pin the sweep wrapper's outcomes, its structured event, and the reclaim gate.
 describe('repairLaunchJson (remove sweep)', () => {
@@ -39,7 +39,7 @@ describe('repairLaunchJson (remove sweep)', () => {
   }
 
   const OK_ENTRY = {
-    name: 'open-knowledge-ui',
+    name: 'synapsenote-ui',
     runtimeExecutable: '/bin/sh',
     runtimeArgs: ['-l', '-c', '# ok-ui-v1\nexec ok start'],
     port: 39848,
@@ -85,7 +85,7 @@ describe('repairLaunchJson (remove sweep)', () => {
     expect(logEvents).toHaveLength(0);
   });
 
-  it('reports not-present when launch.json has no open-knowledge-ui entry', () => {
+  it('reports not-present when launch.json has no synapsenote-ui entry', () => {
     const configPath = writeLaunchJson({ version: '0.0.1', configurations: [FOREIGN] });
     const before = readFileSync(configPath, 'utf-8');
 

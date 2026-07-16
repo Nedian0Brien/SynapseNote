@@ -13,7 +13,7 @@
  *     on blur to upgrade `rawMdxFallback` → `jsxComponent` when the user
  *     fixes broken MDX.
  */
-import { MarkdownManager, sharedExtensions } from '@inkeep/open-knowledge-core';
+import { MarkdownManager, sharedExtensions } from '@nedian0brien/synapsenote-core';
 
 let manager: MarkdownManager | null = null;
 

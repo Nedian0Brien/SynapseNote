@@ -1,10 +1,10 @@
 ---
 title: Cursor
-description: Use OpenKnowledge with Cursor.
+description: Use SynapseNote with Cursor.
 icon: custom/Cursor
 ---
 
-OpenKnowledge plugs into Cursor through MCP plus an installed skill that teaches the agent how to use the tools.
+SynapseNote plugs into Cursor through MCP plus an installed skill that teaches the agent how to use the tools.
 
 ## Install
 
@@ -12,13 +12,13 @@ OpenKnowledge plugs into Cursor through MCP plus an installed skill that teaches
 
 ## Approve the server
 
-Cursor prompts you to approve a new MCP server when you next open the project. Approve `open-knowledge`. Until you do, the agent can't see the tools.
+Cursor prompts you to approve a new MCP server when you next open the project. Approve `synapsenote`. Until you do, the agent can't see the tools.
 
 ## Open with AI
 
 From the editor, **Open with AI ▸ Cursor** dispatches the current file, folder, or project to Cursor. Entry points: the sidebar's right-click menu (file / folder / empty space), the command palette, and the macOS **File → Open with AI** menu. You can also hand the current doc to Cursor from the bottom **Ask AI** composer.
 
-Cursor uses a two-step handoff: OpenKnowledge spawns `cursor <projectDir>` to open the workspace first, then fires the `cursor://` URL with a short prompt asking Cursor to open the target in OpenKnowledge's web preview. The agent then grounds the rest of the conversation through MCP. See [Editor → Open with AI](/docs/features/editor#open-with-ai) for the full UX.
+Cursor uses a two-step handoff: SynapseNote spawns `cursor <projectDir>` to open the workspace first, then fires the `cursor://` URL with a short prompt asking Cursor to open the target in SynapseNote's web preview. The agent then grounds the rest of the conversation through MCP. See [Editor → Open with AI](/docs/features/editor#open-with-ai) for the full UX.
 
 Both steps run through the local server's `POST /api/handoff`, the same path in the web app and the desktop app — so the **Open with AI ▸ Cursor** row works in both.
 
@@ -28,4 +28,4 @@ Ask the agent:
 
 <VerifyExec />
 
-If it still doesn't see the tool after approval, restart Cursor so it picks up the new MCP entry. If it's still missing and `ok init` reported your config was `left unchanged`, OpenKnowledge couldn't safely edit `~/.cursor/mcp.json` for the reason shown in parentheses (unreadable, too large, or a duplicate server block) — fix the config and re-run `ok init`.
+If it still doesn't see the tool after approval, restart Cursor so it picks up the new MCP entry. If it's still missing and `ok init` reported your config was `left unchanged`, SynapseNote couldn't safely edit `~/.cursor/mcp.json` for the reason shown in parentheses (unreadable, too large, or a duplicate server block) — fix the config and re-run `ok init`.

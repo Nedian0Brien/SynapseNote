@@ -1,4 +1,4 @@
-import { toWikiLinkSlug } from '@inkeep/open-knowledge-core';
+import { toWikiLinkSlug } from '@nedian0brien/synapsenote-core';
 import { createContext, type ReactNode, use, useEffect, useRef, useState } from 'react';
 import {
   buildPageIconsIndex,

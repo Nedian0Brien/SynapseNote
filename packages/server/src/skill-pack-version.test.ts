@@ -15,16 +15,16 @@ import {
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PACKS_DIR = join(HERE, '..', 'assets', 'skills', 'packs');
 // A real shipped pack so the bundled-source paths are exercised end-to-end.
-const SAMPLE_PACK = 'open-knowledge-pack-plain-notes';
+const SAMPLE_PACK = 'synapsenote-pack-plain-notes';
 
 describe('pack-name helpers', () => {
   test('isPackSkillName matches only the reserved pack prefix', () => {
-    expect(isPackSkillName('open-knowledge-pack-plain-notes')).toBe(true);
-    expect(isPackSkillName('open-knowledge')).toBe(false);
+    expect(isPackSkillName('synapsenote-pack-plain-notes')).toBe(true);
+    expect(isPackSkillName('synapsenote')).toBe(false);
     expect(isPackSkillName('my-skill')).toBe(false);
   });
   test('packIdFromSkillName strips the prefix, null for non-pack', () => {
-    expect(packIdFromSkillName('open-knowledge-pack-plain-notes')).toBe('plain-notes');
+    expect(packIdFromSkillName('synapsenote-pack-plain-notes')).toBe('plain-notes');
     expect(packIdFromSkillName('my-skill')).toBeNull();
   });
 });
@@ -64,7 +64,7 @@ describe('bundled pack source (reads the server bundle; needs a built dist OR so
   test('readBundledPackSkill returns verbatim content (+ version when stamped)', () => {
     const bundled = readBundledPackSkill(SAMPLE_PACK);
     expect(bundled).not.toBeNull();
-    expect(bundled?.content).toContain('name: open-knowledge-pack-plain-notes');
+    expect(bundled?.content).toContain('name: synapsenote-pack-plain-notes');
     // Version is present once dist carries the stamp; tolerate an unbuilt/stale
     // dist locally (CI builds before tests) — assert format only when present.
     if (bundled?.version !== undefined) expect(bundled.version).toMatch(/^\d+\.\d+\.\d+$/);
@@ -72,7 +72,7 @@ describe('bundled pack source (reads the server bundle; needs a built dist OR so
   test('null / undefined for non-pack or unknown pack', () => {
     expect(bundledPackVersion('my-skill')).toBeUndefined();
     expect(readBundledPackSkill('my-skill')).toBeNull();
-    expect(readBundledPackSkill('open-knowledge-pack-does-not-exist')).toBeNull();
+    expect(readBundledPackSkill('synapsenote-pack-does-not-exist')).toBeNull();
   });
 });
 

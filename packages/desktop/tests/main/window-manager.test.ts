@@ -205,12 +205,12 @@ describe('WindowManager', () => {
     env = buildEnv();
   });
 
-  test('createProjectWindow sets BrowserWindow title to "<projectName> — OpenKnowledge" (spawn path)', async () => {
+  test('createProjectWindow sets BrowserWindow title to "<projectName> — SynapseNote" (spawn path)', async () => {
     const wm = new WindowManager(env.deps);
     const promise = wm.createProjectWindow({ projectPath: '/tmp/dragon-wiki' });
     env.utilities[0]?.fire({ type: 'ready', port: 52010, apiOrigin: 'http://localhost:52010' });
     await promise;
-    expect(env.createWindowOpts[0]?.title).toBe('dragon-wiki — OpenKnowledge');
+    expect(env.createWindowOpts[0]?.title).toBe('dragon-wiki — SynapseNote');
   });
 
   test('createProjectWindow threads project identity to the window seam (spawn path)', async () => {
@@ -290,11 +290,11 @@ describe('WindowManager', () => {
 
   test('createProjectWindow forwards localOpCliArgs into the utility init IPC payload', async () => {
     // localOpCliArgs must reach the utility init payload so
-    // the API server can spawn the CLI in packaged builds (where open-knowledge
+    // the API server can spawn the CLI in packaged builds (where synapsenote
     // is not on PATH). Without this, /api/local-op/auth/login falls back to
-    // createApiExtension's default ['open-knowledge'] and fails.
+    // createApiExtension's default ['synapsenote'] and fails.
     const wm = new WindowManager(env.deps);
-    const expectedCliArgs = ['/Applications/OpenKnowledge.app/Contents/Resources/cli/bin/ok.sh'];
+    const expectedCliArgs = ['/Applications/SynapseNote.app/Contents/Resources/cli/bin/ok.sh'];
     const promise = wm.createProjectWindow({
       projectPath: '/tmp/cli-args-plumbed',
       localOpCliArgs: expectedCliArgs,
@@ -731,7 +731,7 @@ describe('WindowManager', () => {
       expect(ctx.apiOrigin).toBe('http://localhost:59534');
       expect(env.windows.length).toBe(1);
       // Title is set from projectName in the attach path too.
-      expect(env.createWindowOpts[0]?.title).toBe('dragon — OpenKnowledge');
+      expect(env.createWindowOpts[0]?.title).toBe('dragon — SynapseNote');
       // Project identity for bounds/focus memory rides the attach path too —
       // it's the production path, so omitting it here would silently disable
       // window-position restore in packaged builds.
@@ -1276,7 +1276,7 @@ describe('WindowManager', () => {
         expect(ctx.port).toBe(60111);
         expect(ctx.apiOrigin).toBe('http://localhost:60111');
         expect(env.windows.length).toBe(1);
-        expect(env.createWindowOpts[0]?.title).toBe('spawned-project — OpenKnowledge');
+        expect(env.createWindowOpts[0]?.title).toBe('spawned-project — SynapseNote');
       });
 
       test('spawned pid is tracked for stopAllOwnedServers (US-008)', async () => {

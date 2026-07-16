@@ -17,7 +17,7 @@ import {
   type LockName,
   lockFilePath,
   type ProcessLockMetadata,
-} from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-server';
 
 export type LockState =
   | { status: 'missing'; lockPath: string }

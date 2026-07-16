@@ -39,7 +39,7 @@ import {
   ServerInfoSuccessSchema,
   sharedExtensions,
   stripFrontmatter,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 
 export { type BridgeInvariantViolation, BridgeInvariantViolationError, type InvariantViolation };
 
@@ -54,7 +54,7 @@ import {
   OBSERVER_SYNC_ORIGIN,
   type ServerInstance,
   type ServerOptions,
-} from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-server';
 import { getSchema } from '@tiptap/core';
 import { yXmlFragmentToProseMirrorRootNode } from '@tiptap/y-tiptap';
 import * as Y from 'yjs';
@@ -147,7 +147,7 @@ export interface CreateTestServerOptions {
   commitDebounceMs?: number;
   /**
    * CLI argv prefix for `/api/local-op/*` relay endpoints. Production default
-   * is `['open-knowledge']` (CLI on PATH). Tests can pass a deterministic
+   * is `['synapsenote']` (CLI on PATH). Tests can pass a deterministic
    * non-existent binary to force `child.on('error', ENOENT)` and exercise
    * the mid-stream error path without requiring a real CLI install.
    */
@@ -709,7 +709,7 @@ export function assertBridgeInvariant(ytext: Y.Text, fragment: Y.XmlFragment): v
   }
 }
 
-// normalizeBridge imported from @inkeep/open-knowledge-core (precedent #4:
+// normalizeBridge imported from @nedian0brien/synapsenote-core (precedent #4:
 // shared computation, per-surface rendering).
 
 export type FinalStateOutcome =

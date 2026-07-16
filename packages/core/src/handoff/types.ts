@@ -21,7 +21,7 @@ export type HandoffTarget =
 
 /**
  * Data carried from the UI to the URL builder. Minimal by construction: only
- * path + prompt. The target agent grounds via the OpenKnowledge MCP server
+ * path + prompt. The target agent grounds via the SynapseNote MCP server
  * (precedent #25 writer-ID taxonomy); the
  * URL never carries file content / a `file=` attach param — only a short
  * directive `prompt` and the project / folder path.

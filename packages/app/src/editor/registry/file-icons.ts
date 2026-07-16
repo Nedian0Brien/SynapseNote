@@ -20,7 +20,7 @@
  * icons — a `import * as` would bundle all ~1800 lucide icons and blow the
  * bundle-size gate (same discipline as `registry/icons.ts`).
  */
-import type { InlineAssetMediaKind } from '@inkeep/open-knowledge-core';
+import type { InlineAssetMediaKind } from '@nedian0brien/synapsenote-core';
 import { FileText, Film, FolderOpen, Image, type LucideIcon, Volume2 } from 'lucide-react';
 
 /**

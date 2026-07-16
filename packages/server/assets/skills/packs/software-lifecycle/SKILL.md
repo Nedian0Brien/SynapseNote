@@ -1,18 +1,18 @@
 ---
-name: open-knowledge-pack-software-lifecycle
+name: synapsenote-pack-software-lifecycle
 version: "0.18.0"
-description: "How to work in a Software Lifecycle project (the `software-lifecycle` starter pack): proposals → decisions → specs → postmortems, plus guides. Read when the project has these folders. Carries the doc lifecycle, status flows, and per-folder agent behaviors so that guidance does not live inside template bodies or folder descriptions. Complements the platform `open-knowledge` skill; does not replace it."
-compatibility: "Claude Code, Claude Desktop, Claude Cowork, Claude.ai web. Requires OpenKnowledge MCP server. Installed project-local by `ok seed --pack software-lifecycle`."
+description: "How to work in a Software Lifecycle project (the `software-lifecycle` starter pack): proposals → decisions → specs → postmortems, plus guides. Read when the project has these folders. Carries the doc lifecycle, status flows, and per-folder agent behaviors so that guidance does not live inside template bodies or folder descriptions. Complements the platform `synapsenote` skill; does not replace it."
+compatibility: "Claude Code, Claude Desktop, Claude Cowork, Claude.ai web. Requires SynapseNote MCP server. Installed project-local by `ok seed --pack software-lifecycle`."
 metadata:
   pack: "software-lifecycle"
-  author: "Inkeep"
-  repository: "https://github.com/inkeep/open-knowledge"
+  author: "SynapseNote"
+  repository: "https://github.com/Nedian0Brien/SynapseNote"
 ---
 # Software Lifecycle pack — how to work here
 
 This project holds the doc lifecycle for an engineering team or OSS project. The flow is **proposals → decisions → specs → postmortems**, with **guides** as the how-to bucket. This skill holds the workflow so templates and folder descriptions stay clean.
 
-> This is pack guidance. The platform `open-knowledge` skill still governs every markdown operation.
+> This is pack guidance. The platform `synapsenote` skill still governs every markdown operation.
 
 ## The flow
 

@@ -30,7 +30,7 @@ import { execFileSync } from 'node:child_process';
 import { realpathSync } from 'node:fs';
 import { homedir as nodeHomedir } from 'node:os';
 import { dirname, isAbsolute, relative, resolve } from 'node:path';
-import { isProjectRoot, withHiddenWindowsConsole } from '@inkeep/open-knowledge-server';
+import { isProjectRoot, withHiddenWindowsConsole } from '@nedian0brien/synapsenote-server';
 
 const ANCESTOR_WALK_DEPTH_LIMIT = 30;
 

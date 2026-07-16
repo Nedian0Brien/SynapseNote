@@ -6,7 +6,7 @@
  * tree SHA. Also verifies file-system writer and concurrent writer scenarios.
  *
  * Mirrors packages/server/src/persistence-fan-out.test.ts but imports from
- * @inkeep/open-knowledge-server (the published package) so regressions in the
+ * @nedian0brien/synapsenote-server (the published package) so regressions in the
  * compiled artifact surface at integration tier (not just server unit tier).
  */
 
@@ -22,7 +22,7 @@ import {
   recordContributor,
   shadowGit,
   swapContributors,
-} from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-server';
 import * as Y from 'yjs';
 
 describe('persistence L2 fan-out integration (US-014, FR-7)', () => {

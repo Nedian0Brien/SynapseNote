@@ -64,7 +64,7 @@ describe('opengraph-image route metadata', () => {
   test('exports the OG-image segment metadata Next.js requires', () => {
     expect(size).toEqual({ width: 1200, height: 630 });
     expect(contentType).toBe('image/png');
-    expect(alt).toBe('Open in OpenKnowledge');
+    expect(alt).toBe('Open in SynapseNote');
     expect(dynamic).toBe('force-static');
   });
 

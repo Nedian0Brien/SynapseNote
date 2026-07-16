@@ -1,9 +1,9 @@
+import { Trans, useLingui } from '@lingui/react/macro';
 import {
   EDITOR_LABELS,
   type SkillInstallWarningCode,
   type SkillsListEntry,
-} from '@inkeep/open-knowledge-core';
-import { Trans, useLingui } from '@lingui/react/macro';
+} from '@nedian0brien/synapsenote-core';
 import {
   Copy,
   CopyPlus,

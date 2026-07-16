@@ -20,7 +20,7 @@ const payload: OkMcpWiringShowPayload = {
   ],
   pathInstall: {
     shellDetected: true,
-    rcFilesToTouch: ['~/.zshrc', '~/.config/fish/conf.d/open-knowledge.fish'],
+    rcFilesToTouch: ['~/.zshrc', '~/.config/fish/conf.d/synapsenote.fish'],
     alreadyInstalled: false,
   },
   globalSkills: [],
@@ -54,12 +54,12 @@ const skillsPayload: OkMcpWiringShowPayload = {
   globalSkills: [
     {
       id: 'discovery',
-      name: 'open-knowledge-discovery',
+      name: 'synapsenote-discovery',
       alreadyInstalled: false,
     },
     {
       id: 'write-skill',
-      name: 'open-knowledge-write-skill',
+      name: 'synapsenote-write-skill',
       alreadyInstalled: true,
     },
   ],
@@ -116,19 +116,19 @@ describe('McpConsentDialog runtime behavior', () => {
     await renderDialog();
 
     expect(
-      screen.getByRole('dialog', { name: 'Connect your AI tools to OpenKnowledge' }),
+      screen.getByRole('dialog', { name: 'Connect your AI tools to SynapseNote' }),
     ).toBeTruthy();
     expect(screen.getByTestId('mcp-consent-status-claude').textContent).toBe(
-      'Will replace existing OpenKnowledge entry',
+      'Will replace existing SynapseNote entry',
     );
     // Detected tools carry no status line — the checked box conveys it.
     expect(screen.queryByTestId('mcp-consent-status-cursor')).toBeNull();
-    // Undetected tools link to their OpenKnowledge setup guide instead.
+    // Undetected tools link to their SynapseNote setup guide instead.
     const codexStatus = screen.getByTestId('mcp-consent-status-codex');
     expect(codexStatus.tagName).toBe('A');
     expect(codexStatus.textContent).toContain('How to set up');
     expect(codexStatus.getAttribute('href')).toBe(
-      'https://openknowledge.ai/docs/integrations/codex',
+      'https://synapse.lawdigest.kr/docs/integrations/codex',
     );
     expect(screen.getByTestId('mcp-consent-checkbox-claude').getAttribute('aria-checked')).toBe(
       'true',
@@ -159,7 +159,7 @@ describe('McpConsentDialog runtime behavior', () => {
     const status = screen.getByTestId('mcp-consent-status-claude-desktop');
     expect(status.tagName).toBe('A');
     expect(status.getAttribute('href')).toBe(
-      'https://openknowledge.ai/docs/integrations/claude-code',
+      'https://synapse.lawdigest.kr/docs/integrations/claude-code',
     );
   });
 
@@ -252,7 +252,7 @@ describe('McpConsentDialog PATH consent row', () => {
     await waitFor(() => {
       const [status] = screen.getAllByTestId('mcp-consent-path-status');
       expect(status?.textContent).toBe(
-        'Adds a managed block to ~/.zshrc, ~/.config/fish/conf.d/open-knowledge.fish',
+        'Adds a managed block to ~/.zshrc, ~/.config/fish/conf.d/synapsenote.fish',
       );
     });
     // Warning is uncheck-scoped: it names the real degradation (external

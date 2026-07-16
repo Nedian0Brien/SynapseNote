@@ -12,7 +12,7 @@
  * The helpers here intentionally do NOT inflect user-supplied nouns.
  */
 
-import type { PropDef } from '@inkeep/open-knowledge-core';
+import type { PropDef } from '@nedian0brien/synapsenote-core';
 
 const pluralRules = new Intl.PluralRules('en-US');
 

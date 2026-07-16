@@ -18,7 +18,7 @@
  * Prints a `[mock-updater] port=<N>` line on stdout, then serves two routes:
  *
  *     GET /<channel>-mac.yml         → hand-crafted YAML manifest
- *     GET /open-knowledge-mock.zip   → fake zip bytes matching yml's sha512
+ *     GET /synapsenote-mock.zip   → fake zip bytes matching yml's sha512
  *
  * Exits 0 after observing a successful GET of both routes, OR after 30s
  * timeout (exit 1). Set `MOCK_UPDATE_TIMEOUT_MS` to override the timeout.
@@ -35,7 +35,7 @@
  *
  *   1. Terminal A: `bun run --cwd packages/desktop smoke:mock-update -- --keep-alive`
  *      Note the port printed — the server keeps serving until Ctrl+C.
- *   2. Terminal B: `OK_UPDATER_FORCE_DEV=1 OK_UPDATER_FEED_URL=http://127.0.0.1:<N> bun run --filter=@inkeep/open-knowledge-desktop dev`
+ *   2. Terminal B: `OK_UPDATER_FORCE_DEV=1 OK_UPDATER_FEED_URL=http://127.0.0.1:<N> bun run --filter=@nedian0brien/synapsenote-desktop dev`
  *   3. Electron's main-process auto-updater hits the local server, downloads
  *      the fake zip, and fires `update-downloaded`. Renderer Toast A renders
  *      ("Update downloaded" + "Relaunch now") within 2-3 seconds of boot.
@@ -53,14 +53,14 @@
  * `require('electron').autoUpdater` at construction time — fails under plain
  * node/bun. The Tier-2 round-trip therefore splits into two processes: the
  * local HTTP server (this script, node/bun) and the Electron dev build
- * (normal `bun run dev --filter=@inkeep/open-knowledge-desktop`).
+ * (normal `bun run dev --filter=@nedian0brien/synapsenote-desktop`).
  *
  * ## Structured log shape
  *
  *     [mock-updater] port=<N>
  *     [mock-updater] event=start channel=<latest|beta> version=<V>
  *     [mock-updater] event=served path=/<channel>-mac.yml status=200
- *     [mock-updater] event=served path=/open-knowledge-mock.zip status=200 bytes=<len>
+ *     [mock-updater] event=served path=/synapsenote-mock.zip status=200 bytes=<len>
  *     [mock-updater] event=manifest-and-zip-served — Electron dev build can verify update-downloaded
  *     [mock-updater] event=shutdown reason=<timeout|signal|done>
  */
@@ -119,7 +119,7 @@ const DEV_APP_UPDATE_YML = resolve(DESKTOP_ROOT, 'dev-app-update.yml');
 function buildMinimalZip() {
   const filename = 'payload.txt';
   const contents = Buffer.from(
-    `OpenKnowledge M3 mock update payload\nversion=${VERSION}\ntimestamp=${new Date().toISOString()}\n`,
+    `SynapseNote M3 mock update payload\nversion=${VERSION}\ntimestamp=${new Date().toISOString()}\n`,
     'utf-8',
   );
   const compressed = deflateRawSync(contents);
@@ -226,7 +226,7 @@ function buildMacYml({ version, channel, zipName, zipBytes, releaseDate }) {
 
 async function main() {
   const zipBytes = buildMinimalZip();
-  const zipName = 'open-knowledge-mock.zip';
+  const zipName = 'synapsenote-mock.zip';
   const manifest = buildMacYml({
     version: VERSION,
     channel: CHANNEL,
@@ -346,13 +346,13 @@ async function main() {
       const channelLine = CHANNEL === 'latest' ? '' : `channel: ${CHANNEL}\n`;
       writeFileSync(
         DEV_APP_UPDATE_YML,
-        `provider: generic\nurl: http://127.0.0.1:${port}\n${channelLine}updaterCacheDirName: open-knowledge-updater-dev\n`,
+        `provider: generic\nurl: http://127.0.0.1:${port}\n${channelLine}updaterCacheDirName: synapsenote-updater-dev\n`,
       );
       console.log(
         `[mock-updater] event=dev-config-written path=${DEV_APP_UPDATE_YML} channel=${CHANNEL}`,
       );
       console.log(
-        '[mock-updater] event=keep-alive — server will stay up until Ctrl+C. Pair with: OK_UPDATER_FORCE_DEV=1 bun run --filter=@inkeep/open-knowledge-desktop dev',
+        '[mock-updater] event=keep-alive — server will stay up until Ctrl+C. Pair with: OK_UPDATER_FORCE_DEV=1 bun run --filter=@nedian0brien/synapsenote-desktop dev',
       );
       return;
     }

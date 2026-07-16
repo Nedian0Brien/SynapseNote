@@ -26,7 +26,7 @@
  * one — keeps the storage value unambiguous across moves / renames.
  */
 
-import { IMAGE_EXTENSIONS, isSafeUrl, toDesktopAssetHref } from '@inkeep/open-knowledge-core';
+import { IMAGE_EXTENSIONS, isSafeUrl, toDesktopAssetHref } from '@nedian0brien/synapsenote-core';
 
 /** Hard cap on raw frontmatter value length we'll classify — anything
  * longer is rejected. Guards against pathological pastes that could

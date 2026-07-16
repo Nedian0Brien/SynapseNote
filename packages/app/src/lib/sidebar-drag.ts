@@ -1,11 +1,11 @@
-import type { InlineAssetMediaKind } from '@inkeep/open-knowledge-core';
+import type { InlineAssetMediaKind } from '@nedian0brien/synapsenote-core';
 import {
   largeFileNavigationTarget,
   type ResolvedNavigationTarget,
 } from '@/components/navigation-targets';
 import { hashFromAssetPath, hashFromDocName, hashFromFolderPath } from '@/lib/doc-hash';
 
-export const OK_SIDEBAR_DRAG_MIME = 'application/x-open-knowledge-sidebar-item+json';
+export const OK_SIDEBAR_DRAG_MIME = 'application/x-synapsenote-sidebar-item+json';
 
 export type SidebarDragPayload =
   | { v: 1; kind: 'doc'; docName: string; size: number | null }

@@ -5,7 +5,7 @@
  *   1. The `dist/config-schema.json` artifact exists (so npm publish ships it
  *      via `package.json` `files: ['dist']`).
  *   2. The artifact compiles cleanly under ajv (so the URL the magic comment
- *      points at — `https://unpkg.com/@inkeep/open-knowledge@<MAJOR.MINOR>/dist/config-schema.json`
+ *      points at — `https://unpkg.com/@nedian0brien/synapsenote@<MAJOR.MINOR>/dist/config-schema.json`
  *      — resolves to a working JSON Schema draft-07 doc that any LSP-aware
  *      editor can consume).
  *   3. A fixture matching the runtime `ConfigSchema` is accepted by the
@@ -15,7 +15,7 @@
  * the same inputs across a fixture matrix) lives in
  * `packages/core/src/config/schema-jsonschema.test.ts`. THIS test only proves
  * the published artifact is current + ajv-compilable. If it goes stale,
- * `bun run --filter=@inkeep/open-knowledge build:schema` regenerates it.
+ * `bun run --filter=@nedian0brien/synapsenote build:schema` regenerates it.
  */
 import { beforeEach, describe, expect, test } from 'bun:test';
 import { existsSync, readFileSync } from 'node:fs';

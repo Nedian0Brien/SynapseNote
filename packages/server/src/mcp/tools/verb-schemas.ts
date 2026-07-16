@@ -23,7 +23,7 @@ import {
   MANAGED_ARTIFACT_SCOPES,
   SKILL_NAME_REGEX,
   TEMPLATE_NAME_REGEX,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { z } from 'zod';
 import { SUPPORTED_DOC_EXTENSIONS } from '../../doc-extensions.ts';
 

@@ -39,13 +39,13 @@ import type {
 /**
  * Shared agent-disruption warning shown as the toast description. Names MCP
  * explicitly because that is how connected harnesses surface the drop
- * ("OpenKnowledge MCP connection closed unexpectedly"); the remedy mirrors
+ * ("SynapseNote MCP connection closed unexpectedly"); the remedy mirrors
  * what those clients expose (restart the agent, or toggle the MCP off/on). A
  * function (not a const) so the `t` macro resolves at call time. Pure given the
  * active locale — exported for tests.
  */
 export function restartDisruptionWarning(): string {
-  return t`Restarting closes this project's server. Connected agents (Claude Code, Codex, Cursor) will see their OpenKnowledge MCP connection close unexpectedly — you may need to restart the agent, or toggle its OpenKnowledge MCP server off and on, to reconnect.`;
+  return t`Restarting closes this project's server. Connected agents (Claude Code, Codex, Cursor) will see their SynapseNote MCP connection close unexpectedly — you may need to restart the agent, or toggle its SynapseNote MCP server off and on, to reconnect.`;
 }
 
 /** Direction-aware lead sentence for the drift toast. Pure — exported for tests. */
@@ -55,10 +55,10 @@ export function driftToastBody(info: OkServerVersionDriftInfo): string {
   // confusing "older version (v0.8.2) than this app (v0.8.2)" by not citing
   // identical numbers in that case.
   if (info.serverRuntime === info.appRuntime) {
-    return t`This project is running a different, incompatible build of OpenKnowledge than this app (v${info.appRuntime}).`;
+    return t`This project is running a different, incompatible build of SynapseNote than this app (v${info.appRuntime}).`;
   }
   return info.relation === 'older'
-    ? t`This project is running an older version of OpenKnowledge (v${info.serverRuntime}) than this app (v${info.appRuntime}).`
+    ? t`This project is running an older version of SynapseNote (v${info.serverRuntime}) than this app (v${info.appRuntime}).`
     : t`This project's server (v${info.serverRuntime}) is newer than this app (v${info.appRuntime}).`;
 }
 
@@ -76,7 +76,7 @@ export function restartSuccessMessage(appRuntime: string): string {
  * Pure — exported for tests.
  */
 export function reclaimNoticeMessage(appRuntime: string): string {
-  return t`Started a fresh OpenKnowledge server (v${appRuntime}) for this dev session — the server already running for this project was terminated. Connected agents (Claude Code, Codex, Cursor) just lost their OpenKnowledge MCP connection; restart the agent, or toggle its OpenKnowledge MCP server off and on, to reconnect.`;
+  return t`Started a fresh SynapseNote server (v${appRuntime}) for this dev session — the server already running for this project was terminated. Connected agents (Claude Code, Codex, Cursor) just lost their SynapseNote MCP connection; restart the agent, or toggle its SynapseNote MCP server off and on, to reconnect.`;
 }
 
 /**

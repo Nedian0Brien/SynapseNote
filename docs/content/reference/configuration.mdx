@@ -4,7 +4,7 @@ icon: LuSettings
 description: The .ok/config.yml schema and environment variables.
 ---
 
-OpenKnowledge reads YAML config from three places:
+SynapseNote reads YAML config from three places:
 
 - **Project**: `./.ok/config.yml` (this project, committed to git)
 - **User**: `~/.ok/global.yml` (every project on your machine)
@@ -38,9 +38,9 @@ A key set in a file more specific than its scope (a user-scope key in `.ok/confi
 | `autoSync.enabled` | `boolean \| null` | `null` | project-local | Per-machine git auto-sync toggle. `null` means "unanswered"; the editor's onboarding modal triggers on first remote-detected open. |
 | `autoSync.default` | `boolean \| null` | `null` | project | Committed seed for each machine's first-open auto-sync choice: `true` = on, `false` = off, `null` = ask. Lets a maintainer pre-answer the onboarding prompt for everyone who clones; a per-machine `autoSync.enabled` overrides it. |
 | `editor.wordWrap` | boolean | `true` | user | Soft-wrap long lines in the source-mode CodeMirror editor. A personal preference, not project-shared. Toggle from the Settings pane. |
-| `appearance.preview.autoOpen` | boolean | `true` | user | Whether the agent should open or refresh the OpenKnowledge preview when it edits a doc through the MCP. Default `true` lets the agent route the preview by host capability: the host's in-app browser (Cursor preview pane, Codex's built-in browser, Claude Code Desktop) when one exists, the system browser otherwise. Set `false` to keep the agent's hands off your preview window. This is useful when you're already viewing the doc in OK Desktop, a browser tab on a second display, a non-default browser, or any flow where your extensions / accessibility tooling only work in your own browser. The agent then surfaces the URL on request but does not navigate. The change takes effect on the next preview-related tool call. Toggle from **Settings → Preferences → "Open preview when agent edits"**. |
+| `appearance.preview.autoOpen` | boolean | `true` | user | Whether the agent should open or refresh the SynapseNote preview when it edits a doc through the MCP. Default `true` lets the agent route the preview by host capability: the host's in-app browser (Cursor preview pane, Codex's built-in browser, Claude Code Desktop) when one exists, the system browser otherwise. Set `false` to keep the agent's hands off your preview window. This is useful when you're already viewing the doc in OK Desktop, a browser tab on a second display, a non-default browser, or any flow where your extensions / accessibility tooling only work in your own browser. The agent then surfaces the URL on request but does not navigate. The change takes effect on the next preview-related tool call. Toggle from **Settings → Preferences → "Open preview when agent edits"**. |
 | `terminal.enabled` | `boolean \| null` | `null` | project-local | Opt-out for the in-app terminal (a real OS shell at full user privilege). On by default; set `false` to disable it for this project on this machine. |
-| `agents.autoApproveOkTools` | boolean | `true` | user | Auto-approve OpenKnowledge's own MCP tools (and the `ok open` command on Claude) for agents launched from the built-in [docked terminal](/docs/features/editor#terminal), so reading and writing the knowledge base runs without a per-call approval prompt. Destructive tools (`delete`, `move`, `share_link`, `install`) still prompt; other shell commands and non-OpenKnowledge file edits are untouched. Per-machine preference; toggle from **Settings → Terminal**. Best-effort per agent — Claude uses an allow/deny list, Codex uses its per-server `approve` mode (and only when its OpenKnowledge entry is already configured). |
+| `agents.autoApproveOkTools` | boolean | `true` | user | Auto-approve SynapseNote's own MCP tools (and the `ok open` command on Claude) for agents launched from the built-in [docked terminal](/docs/features/editor#terminal), so reading and writing the knowledge base runs without a per-call approval prompt. Destructive tools (`delete`, `move`, `share_link`, `install`) still prompt; other shell commands and non-SynapseNote file edits are untouched. Per-machine preference; toggle from **Settings → Terminal**. Best-effort per agent — Claude uses an allow/deny list, Codex uses its per-server `approve` mode (and only when its SynapseNote entry is already configured). |
 | `telemetry.localSink.enabled` | boolean | `true` | project | Write local diagnostic spans + logs under `.ok/local/` for `ok diagnose bundle` to collect. Local-only: nothing leaves the machine until you run `bundle`. Set `false` for sensitive workspaces. |
 | `telemetry.localSink.spans.maxBytes` | number | `52428800` (~50 MB) | project | Max size of the local diagnostic spans file before it rotates. |
 | `telemetry.localSink.logs.maxBytes` | number | `26214400` (~25 MB) | project | Max size of the local diagnostic logs file before it rotates. |
@@ -75,18 +75,18 @@ Most users never set these — the schema settings above cover the common cases.
 | --- | --- |
 | `HOST` | Server bind host. The `--host` flag wins over this. |
 | `PORT` | Server bind port. The `--port` flag wins over this. |
-| `OK_MCP_AUTOSTART` | Set to `0` to stop MCP tool calls from auto-starting the project's OpenKnowledge server; tools error until you run `ok start` |
+| `OK_MCP_AUTOSTART` | Set to `0` to stop MCP tool calls from auto-starting the project's SynapseNote server; tools error until you run `ok start` |
 | `OK_LOG_LEVEL` | Log verbosity (`info`, `debug`, `trace`). Falls back to `LOG_LEVEL` if unset. |
 
 **Advanced / operator:**
 
 | Variable | Sets |
 | --- | --- |
-| `OPEN_KNOWLEDGE_GITHUB_CLIENT_ID` | Override the GitHub OAuth App client ID |
+| `SYNAPSENOTE_GITHUB_CLIENT_ID` | Override the GitHub OAuth App client ID |
 | `OK_SHOWALL_MAX_ENTRIES` | Max entries the sidebar's disk-walk listing returns per level before it stops and marks the list truncated (default `50000`) |
 | `OK_BRIDGE_TOLERANCE_TELEMETRY` | Set to `1` to record each bridge-tolerance-class fire as a JSONL line in `<project>/.ok/local/tolerance-telemetry.jsonl` (opt-in, local-only, off by default; unstable diagnostic for triaging markdown-fidelity incidents). **Records doc paths in cleartext** — independent of `telemetry.localSink`'s `attributeDenylist`, which redacts span/log attributes, not this file. Deliberately outside the `.ok/local/telemetry/` subtree `ok diagnose bundle` harvests, so the unredacted paths never ship in a bug bundle. |
 | `OTEL_SDK_DISABLED` | OpenTelemetry OTLP push gate. Inverted sense: set to `false` to **enable** push (it is off by default). |
-| `OK_BUG_REPORT_INTAKE_URL` | Base URL of the bug-report intake the desktop app's **Help → Report a Bug…** upload posts to (e.g. `https://openknowledge.ai`). Must be `https:` — plain `http:` is accepted only for loopback hosts (local testing). Unset (the default), Send makes no network request — it opens a prefilled email draft to support@inkeep.com that you send yourself. |
+| `OK_BUG_REPORT_INTAKE_URL` | Base URL of the bug-report intake the desktop app's **Help → Report a Bug…** upload posts to (e.g. `https://synapse.lawdigest.kr`). Must be `https:` — plain `http:` is accepted only for loopback hosts (local testing). Unset (the default), Send makes no network request — it opens a prefilled email draft to support@lawdigest.kr that you send yourself. |
 | `OK_EMBEDDINGS_API_KEY` | Fallback embeddings provider API key for [semantic search](#semantic-search), used when none is stored on disk. Prefer `ok embeddings set-key` (writes `~/.ok/secrets.yml`) for normal use; the env var is convenient for CI / scripted runs. |
 
 ## Semantic search

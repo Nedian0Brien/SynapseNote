@@ -15,7 +15,7 @@ const HARNESS = new URL('./pty-host.real-io-harness.ts', import.meta.url).pathna
 // PTY-fd reads are libuv-driven and the interactive-shell echo timing differs),
 // which made it fail deterministically there while passing on macOS. The seam's
 // CI coverage lives on the macOS `preflight` cell instead (see
-// .github/workflows/public-open-knowledge-validation.yml). Runs unconditionally
+// .github/workflows/public-synapsenote-validation.yml). Runs unconditionally
 // in local macOS dev.
 const IS_DARWIN = process.platform === 'darwin';
 

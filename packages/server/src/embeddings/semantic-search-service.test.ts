@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import {
   createWorkspaceSearchDocument,
   type WorkspaceSearchDocument,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { CHUNK_CONFIG_ID } from './chunking.ts';
 import { createConceptEmbedder } from './concept-embedder.ts';
 import type { Embedder } from './embedder.ts';

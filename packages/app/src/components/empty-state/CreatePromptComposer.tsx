@@ -1,5 +1,9 @@
-import { type HandoffTarget, TERMINAL_CLIS, type TerminalCli } from '@inkeep/open-knowledge-core';
 import { Trans, useLingui } from '@lingui/react/macro';
+import {
+  type HandoffTarget,
+  TERMINAL_CLIS,
+  type TerminalCli,
+} from '@nedian0brien/synapsenote-core';
 import { ArrowUpRight, Check, ChevronDown, Sparkles } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import {

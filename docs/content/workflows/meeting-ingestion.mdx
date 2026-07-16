@@ -1,10 +1,10 @@
 ---
 title: Ingest meetings
 icon: LuMic
-description: "Get meeting transcripts into your knowledge base as markdown, where they are searchable, linkable, and answerable. OpenKnowledge does not record meetings. You bring a recorder, OK holds the result."
+description: "Get meeting transcripts into your knowledge base as markdown, where they are searchable, linkable, and answerable. SynapseNote does not record meetings. You bring a recorder, OK holds the result."
 ---
 
-OpenKnowledge does not capture audio. It is the knowledge layer: the moment a meeting lands as a markdown doc it is searchable, linkable, and answerable like everything else in your knowledge base. Capture is bring-your-own, so any recorder that speaks MCP can feed OK.
+SynapseNote does not capture audio. It is the knowledge layer: the moment a meeting lands as a markdown doc it is searchable, linkable, and answerable like everything else in your knowledge base. Capture is bring-your-own, so any recorder that speaks MCP can feed OK.
 
 Meetings live in a `meetings/` folder. Any project can have one. The [Entity vault](./entity-vault.mdx) pack sets one up already and feeds each meeting into per-person dossiers.
 
@@ -37,7 +37,7 @@ Keep the transcript verbatim. Notes and summaries are yours to edit; the transcr
 
 ## On demand
 
-1. Add your recorder's MCP server to your **editor's** config, next to `open-knowledge`. OK has no MCP client of its own, so this is editor config, not OK config.
+1. Add your recorder's MCP server to your **editor's** config, next to `synapsenote`. OK has no MCP client of its own, so this is editor config, not OK config.
 2. Ask your agent to write recent meetings into `meetings/`.
 
 The agent pulls the transcript, notes, attendees, and date from the recorder and writes one doc per meeting through OK's `write` tool. Indexing, backlinks, and the live preview all happen on write. Nothing new to install in OK.
@@ -59,7 +59,7 @@ Otter, Avoma, Teams (MS Graph), and Google Meet expose an API but no official MC
 
 ## Automatically, on a schedule
 
-The [OpenClaw](../integrations/openclaw.mdx) gateway has a built-in scheduler. Register both MCP servers with it, `open-knowledge` via `ok init` and your recorder's MCP per the vendor's install guide, then create one cron job that wakes an agent to run the on-demand flow for you:
+The [OpenClaw](../integrations/openclaw.mdx) gateway has a built-in scheduler. Register both MCP servers with it, `synapsenote` via `ok init` and your recorder's MCP per the vendor's install guide, then create one cron job that wakes an agent to run the on-demand flow for you:
 
 ```bash
 openclaw cron create "*/30 * * * *" \

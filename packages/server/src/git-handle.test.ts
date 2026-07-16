@@ -134,7 +134,7 @@ describe('createGitInstance (credential.helper config)', () => {
 
   test('accepts credential.helper config without throwing', async () => {
     const handle = createGitInstance(tmpDir, {
-      credentialArgs: ['-c', 'credential.helper=!open-knowledge auth git-credential'],
+      credentialArgs: ['-c', 'credential.helper=!synapsenote auth git-credential'],
     });
     // Any command triggers simple-git's block-unsafe-operations plugin, which
     // scans argv synchronously before spawning git. `--version` is the lightest

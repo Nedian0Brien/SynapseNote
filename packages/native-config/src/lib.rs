@@ -1,8 +1,8 @@
-//! N-API surface for OpenKnowledge's native harness-config engine.
+//! N-API surface for SynapseNote's native harness-config engine.
 //!
 //! This crate exists because every maintained JavaScript TOML library destroys
-//! comments and reflows formatting on a round-trip, and OpenKnowledge must add
-//! only its own `[mcp_servers.open-knowledge]` entry to a user's Codex config
+//! comments and reflows formatting on a round-trip, and SynapseNote must add
+//! only its own `[mcp_servers.synapsenote]` entry to a user's Codex config
 //! without touching anything else. `toml_edit` is a format-preserving document
 //! model; this addon wraps the slice of it the write/classify spine needs.
 //!

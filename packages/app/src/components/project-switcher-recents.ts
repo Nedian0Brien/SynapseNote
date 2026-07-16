@@ -10,7 +10,7 @@
  * its first-seen member; worktrees within a group keep their recency order.
  */
 
-import type { WorktreeSelectorModel } from '@inkeep/open-knowledge-core';
+import type { WorktreeSelectorModel } from '@nedian0brien/synapsenote-core';
 import type { RecentProjectEntry } from '@/lib/desktop-bridge-types';
 
 export interface RecentRepoGroup {

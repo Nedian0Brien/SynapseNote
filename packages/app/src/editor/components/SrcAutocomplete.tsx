@@ -37,7 +37,7 @@ import {
   createWorkspaceSearchDocument,
   searchWorkspaceCorpus,
   type WorkspaceSearchCorpus,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import type { ReactNode } from 'react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { useOptionalPageList } from '@/components/PageListContext';

@@ -253,7 +253,7 @@ export async function runDriver(argv, deps = {}) {
   // SIGINT; external orchestration (CI timeout, `kill <pid>`) sends SIGTERM.
   // Node's default behavior on both is to exit the process synchronously —
   // the `finally` block below never runs. That leaves the hdiutil mount
-  // attached at `/Volumes/Open Knowledge` (requires manual `hdiutil detach`
+  // attached at `/Volumes/SynapseNote` (requires manual `hdiutil detach`
   // or reboot) and the tmp OUT dir on disk. Running cleanup from the signal
   // handler eliminates the orphan.
   let signalHandled = false;

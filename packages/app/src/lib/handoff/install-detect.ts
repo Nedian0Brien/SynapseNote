@@ -18,7 +18,7 @@
  * `not-installed` outcome from the server probe and the row stays disabled.
  */
 
-import type { HandoffTarget, InstallState } from '@inkeep/open-knowledge-core';
+import type { HandoffTarget, InstallState } from '@nedian0brien/synapsenote-core';
 import { KNOWN_TARGETS } from './targets.ts';
 
 /** Unique URL schemes across all known targets. Computed once at module init. */

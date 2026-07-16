@@ -1,5 +1,5 @@
 /**
- * Deep-link smoke test — proves that an `openknowledge://` URL arriving
+ * Deep-link smoke test — proves that an `synapsenote://` URL arriving
  * after the desktop app is already running (warm-start) routes through the
  * main-process handler → `ok:deep-link` IPC event → renderer hash navigation.
  *
@@ -8,7 +8,7 @@
  * `process.argv`, NOT via the `open-url` Apple Event. This means
  * `_electron.launch` args can exercise the `second-instance` argv parsing
  * path but cannot exercise the cold-start Apple Event path. For the
- * Apple-Event path, `execSync('open openknowledge://...')` is the canonical
+ * Apple-Event path, `execSync('open synapsenote://...')` is the canonical
  * driver because it dispatches through macOS Launch Services just like a
  * real user click. That's what this test uses.
  *
@@ -72,9 +72,9 @@ test.describe('deep-link warm-start smoke (M4 US-009 / AC7)', () => {
   test.skip('cold-start Apple-Event delivery — deferred until signed DMG enables Launch Services binding', () => {
     // Intentionally empty. Implementation requires:
     //   1. Signed + notarized DMG so macOS Launch Services binds
-    //      `openknowledge://` to this bundle instead of the generic
+    //      `synapsenote://` to this bundle instead of the generic
     //      Electron shell.
-    //   2. A harness that fires `open openknowledge://...` against a
+    //   2. A harness that fires `open synapsenote://...` against a
     //      not-yet-running installed .app (i.e. no `_electron.launch`
     //      pre-boot) and asserts the queue-then-flush path catches the
     //      Apple Event that fires before `whenReady`.
@@ -115,7 +115,7 @@ test.describe('deep-link warm-start smoke (M4 US-009 / AC7)', () => {
     // Fire the deep-link via `open(1)` — dispatches through macOS Launch
     // Services → Apple Event → the app's `open-url` listener.  `-g` keeps
     // focus off to reduce flake under CI display servers.
-    const deepLink = `openknowledge://open?project=${encodeURIComponent(projectDir)}&doc=target`;
+    const deepLink = `synapsenote://open?project=${encodeURIComponent(projectDir)}&doc=target`;
     execSync(`open -g "${deepLink}"`, { stdio: 'pipe' });
 
     // Wait up to 5s for SOME window in the app to have a hash ending in
@@ -164,7 +164,7 @@ test.describe('deep-link warm-start smoke (M4 US-009 / AC7)', () => {
 
     // Nested docName — `/` encoded as `%2F` on the wire. Matches what
     // `preview-url.ts` emits via `encodeURIComponent(docName)`.
-    const deepLink = `openknowledge://open?project=${encodeURIComponent(projectDir)}&doc=notes%2Fmeeting`;
+    const deepLink = `synapsenote://open?project=${encodeURIComponent(projectDir)}&doc=notes%2Fmeeting`;
     execSync(`open -g "${deepLink}"`, { stdio: 'pipe' });
 
     // Renderer encodes via `encodeURIComponent(doc)` before setting hash,

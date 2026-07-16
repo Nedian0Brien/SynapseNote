@@ -1,5 +1,5 @@
 /**
- * Node-only sub-export for `@inkeep/open-knowledge-core`.
+ * Node-only sub-export for `@nedian0brien/synapsenote-core`.
  *
  * The exports in here statically import `node:fs`, `node:fs/promises`,
  * `node:os`, and `node:path` — bundling them into a browser build via Vite
@@ -7,8 +7,8 @@
  * as a stub property is accessed.
  *
  * Browser consumers (`packages/app`) keep importing from the main barrel
- * (`@inkeep/open-knowledge-core`); server / cli / desktop main consumers
- * import from `@inkeep/open-knowledge-core/server` to reach the writers.
+ * (`@nedian0brien/synapsenote-core`); server / cli / desktop main consumers
+ * import from `@nedian0brien/synapsenote-core/server` to reach the writers.
  *
  * STOP rule: never re-export anything from this file via `src/index.ts` —
  * the split is the contract.

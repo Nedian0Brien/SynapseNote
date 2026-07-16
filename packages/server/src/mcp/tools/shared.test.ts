@@ -799,7 +799,7 @@ describe('okReservedPathRedirect', () => {
     const msg = okReservedPathRedirect('.ok/skills/research/SKILL');
     expect(msg).not.toBeNull();
     expect(msg).toContain('`skill` target');
-    expect(msg).toContain('open-knowledge-write-skill');
+    expect(msg).toContain('synapsenote-write-skill');
   });
 
   test('leading slash is tolerated', () => {

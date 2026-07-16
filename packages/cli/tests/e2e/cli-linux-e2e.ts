@@ -1,5 +1,5 @@
 /**
- * Black-box end-to-end smoke for the published `@inkeep/open-knowledge` CLI on
+ * Black-box end-to-end smoke for the published `@nedian0brien/synapsenote` CLI on
  * Linux. Proves the user journey a `npm install -g` user follows — install →
  * init → start (HTTP serve) → MCP stdio round-trip → headless-keyring fallback
  * → teardown — against the **packed tarball running under Node**, which is the
@@ -136,7 +136,7 @@ beforeAll(async () => {
   // A built dist/ is a precondition — the CI job runs `bun run build` first.
   if (!existsSync(WORKSPACE_DIST_CLI)) {
     throw new Error(
-      `Missing ${WORKSPACE_DIST_CLI}. Run \`bun run build --filter=@inkeep/open-knowledge\` before this smoke.`,
+      `Missing ${WORKSPACE_DIST_CLI}. Run \`bun run build --filter=@nedian0brien/synapsenote\` before this smoke.`,
     );
   }
 
@@ -159,7 +159,7 @@ beforeAll(async () => {
       encoding: 'utf8',
       timeout: 180_000,
     });
-    const installed = join(H.installPrefix, 'node_modules', '@inkeep', 'open-knowledge');
+    const installed = join(H.installPrefix, 'node_modules', '@inkeep', 'synapsenote');
     H.cliPath = join(installed, 'dist', 'cli.mjs');
     H.binShim = join(H.installPrefix, 'node_modules', '.bin', 'ok');
   } else {
@@ -190,7 +190,7 @@ describe(`CLI Linux e2e (${SUT_MODE} SUT)`, () => {
     expect(v.stdout.trim()).toMatch(/\d+\.\d+\.\d+/);
 
     if (SUT_MODE === 'packed') {
-      const installed = dirname(dirname(H.cliPath)); // .../@inkeep/open-knowledge
+      const installed = dirname(dirname(H.cliPath)); // .../@nedian0brien/synapsenote
       // `files` allowlist must ship the built UI bundle + skill assets.
       expect(existsSync(join(installed, 'dist', 'public'))).toBe(true);
       expect(existsSync(join(installed, 'dist', 'assets', 'skills'))).toBe(true);

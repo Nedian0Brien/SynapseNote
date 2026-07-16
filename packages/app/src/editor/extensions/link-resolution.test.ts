@@ -13,7 +13,7 @@
  */
 
 import { describe, expect, test } from 'bun:test';
-import { toWikiLinkSlug } from '@inkeep/open-knowledge-core';
+import { toWikiLinkSlug } from '@nedian0brien/synapsenote-core';
 import { buildPagesBySlugIndex, type PageListCacheSnapshot } from '../page-list-cache';
 import {
   computeLinkResolutionAttrs,

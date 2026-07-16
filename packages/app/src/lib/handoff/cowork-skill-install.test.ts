@@ -44,7 +44,7 @@ function deps(overrides: Partial<EnsureCoworkSkillDeps> = {}): EnsureCoworkSkill
     // a real snapshot to exercise the server-check path.
     fetchSnapshot: async () => null,
     fallbackSkillVersion: '1.2.3',
-    installer: fakeInstaller({ ok: true, path: '/tmp/openknowledge.skill' }),
+    installer: fakeInstaller({ ok: true, path: '/tmp/synapsenote.skill' }),
     storage: memoryStorage(),
     ...overrides,
   };
@@ -60,13 +60,13 @@ describe('buildCoworkSkillGuardKey', () => {
 describe('ensureCoworkSkillInstalled — first run', () => {
   test('installer present + ok: invokes it, sets guard, returns installed-now', async () => {
     const storage = memoryStorage();
-    const installer = fakeInstaller({ ok: true, path: '/tmp/openknowledge.skill' });
+    const installer = fakeInstaller({ ok: true, path: '/tmp/synapsenote.skill' });
 
     const result = await ensureCoworkSkillInstalled(deps({ storage, installer }));
 
     expect(result).toEqual({
       kind: 'installed-now',
-      path: '/tmp/openknowledge.skill',
+      path: '/tmp/synapsenote.skill',
       handoffWarning: undefined,
     });
     expect(installer.install).toHaveBeenCalledTimes(1);
@@ -77,7 +77,7 @@ describe('ensureCoworkSkillInstalled — first run', () => {
     const storage = memoryStorage();
     const installer = fakeInstaller({
       ok: true,
-      path: '/tmp/openknowledge.skill',
+      path: '/tmp/synapsenote.skill',
       handoffWarning: "Couldn't open in Claude Desktop",
     });
 
@@ -85,7 +85,7 @@ describe('ensureCoworkSkillInstalled — first run', () => {
 
     expect(result).toEqual({
       kind: 'installed-now',
-      path: '/tmp/openknowledge.skill',
+      path: '/tmp/synapsenote.skill',
       handoffWarning: "Couldn't open in Claude Desktop",
     });
     expect(storage.snapshot()).toEqual({ 'ok:skill:cowork:installed:v1.2.3': '1' });

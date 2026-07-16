@@ -167,7 +167,7 @@ export type UaClass = 'browser' | 'bot' | 'cli' | 'electron' | 'none' | 'other';
  * referrers stay hostname-only.
  */
 function isOwnSiteHostname(hostname: string): boolean {
-  return hostname === 'openknowledge.ai' || hostname.endsWith('.openknowledge.ai');
+  return hostname === 'synapse.lawdigest.kr' || hostname.endsWith('.synapse.lawdigest.kr');
 }
 
 export interface AttributionProperties {

@@ -86,7 +86,7 @@ Plugin: [`biome-plugins/no-unportaled-editor-content.grit`](no-unportaled-editor
 
 ### `path-conditional-map-driven-origin.grit`
 
-Observer A origin discipline. Inside `packages/server/src/server-observers.ts`, every `Y.Doc.transact()` call MUST pass the sanctioned origin `OBSERVER_SYNC_ORIGIN` as its second argument (`doc.transact(fn, OBSERVER_SYNC_ORIGIN)`). Bare `doc.transact(fn)` - or a wrong origin - routes the write to `openknowledge-service` and breaks per-session UndoManager attribution (the `trackedOrigins` Set-identity match skips the transaction).
+Observer A origin discipline. Inside `packages/server/src/server-observers.ts`, every `Y.Doc.transact()` call MUST pass the sanctioned origin `OBSERVER_SYNC_ORIGIN` as its second argument (`doc.transact(fn, OBSERVER_SYNC_ORIGIN)`). Bare `doc.transact(fn)` - or a wrong origin - routes the write to `synapsenote-service` and breaks per-session UndoManager attribution (the `trackedOrigins` Set-identity match skips the transaction).
 
 **Scoped via `overrides[].plugins`** to `packages/server/src/server-observers.ts`. Other server files routing through `session.dc.document.transact(fn, session.origin)` are out of scope - that contract is enforced by `paired-write-enforcement.test.ts`.
 
@@ -186,7 +186,7 @@ Plugin: [`biome-plugins/no-inline-tolerance-class.grit`](no-inline-tolerance-cla
 
 ### `require-windowshide-on-spawn.grit`
 
-Windows console-flash prevention. Every hand-rolled `node:child_process` process-spawn (`spawn` / `spawnSync` / `execSync` / `execFile` / `execFileSync`, plus the repo aliases `nodeSpawn` and `execFileAsync`) must hide the Windows console it would otherwise pop — either by wrapping its options in `withHiddenWindowsConsole(...)` (from `@inkeep/open-knowledge-server`, the preferred form shared with the server package) or by an inline `windowsHide: true`.
+Windows console-flash prevention. Every hand-rolled `node:child_process` process-spawn (`spawn` / `spawnSync` / `execSync` / `execFile` / `execFileSync`, plus the repo aliases `nodeSpawn` and `execFileAsync`) must hide the Windows console it would otherwise pop — either by wrapping its options in `withHiddenWindowsConsole(...)` (from `@nedian0brien/synapsenote-server`, the preferred form shared with the server package) or by an inline `windowsHide: true`.
 
 **Why.** On Windows, `windowsHide` defaults to `false`. When a console-LESS parent — the OK server auto-started by an MCP host with `stdio: 'ignore'`, or spawned detached — spawns a console-subsystem binary like `git.exe`, Windows creates a new console window that flashes on screen and vanishes, once per spawn. During an editing / agent-write session the per-edit `git` reads produce a steady stream of these. Hiding the console fixes it. The flag is a **no-op on both macOS and Linux** (neither allocates a console for child processes), so it is applied uniformly regardless of the command's target platform.
 
@@ -249,7 +249,7 @@ language js
 `some-pattern($args)` as $node where {
     register_diagnostic(
         span = $node,
-        message = "<problem>. <fix-noun naming the action>. See https://github.com/inkeep/open-knowledge/blob/main/biome-plugins/README.md#<rule-name>grit"
+        message = "<problem>. <fix-noun naming the action>. See https://github.com/Nedian0Brien/SynapseNote/blob/main/biome-plugins/README.md#<rule-name>grit"
     )
 }
 ```
@@ -324,7 +324,7 @@ The "plugin is registered" test catches the failure mode where a `.grit` file is
 ### 5. Verify
 
 ```bash
-cd public/open-knowledge
+cd public/synapsenote
 
 # 1. Plugin loads + lint stays clean (after suppression comments at legitimate sites):
 bun run lint

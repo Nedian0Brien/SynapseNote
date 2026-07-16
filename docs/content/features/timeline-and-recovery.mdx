@@ -16,7 +16,7 @@ Timeline entries include:
 
 - **Agent and human edits** with contributor attribution and change summaries
 - **Upstream sync** entries from Git
-- **File system** changes made outside of OpenKnowledge
+- **File system** changes made outside of SynapseNote
 
 Project-wide checkpoints saved by agents via the [`checkpoint` MCP tool](/docs/reference/mcp#tools) do not appear on the timeline; agents find and restore them with the `history` and `restore_version` tools.
 
@@ -24,7 +24,7 @@ The timeline is per branch: it shows the branch's own edits, plus history from b
 
 ## Review changes
 
-Click a timeline entry to expand it. OpenKnowledge shows an inline diff so you can compare that version with the current document. If that version has the same body as the current document ([properties](/docs/features/editor#properties) are not part of the diff), you will see `No changes`.
+Click a timeline entry to expand it. SynapseNote shows an inline diff so you can compare that version with the current document. If that version has the same body as the current document ([properties](/docs/features/editor#properties) are not part of the diff), you will see `No changes`.
 
 You can switch between unified and split diff layouts from the toggle at the top of the timeline panel (shown once the timeline has entries).
 
@@ -32,4 +32,4 @@ You can switch between unified and split diff layouts from the toggle at the top
 
 ## Restore a previous version
 
-Use the restore button <Undo2 role="img" aria-label="Restore" className="inline size-4 align-text-bottom" /> on a timeline entry to restore the document to the selected version. Restoring is append-only: OpenKnowledge creates a new change with the old content instead of deleting history.
+Use the restore button <Undo2 role="img" aria-label="Restore" className="inline size-4 align-text-bottom" /> on a timeline entry to restore the document to the selected version. Restoring is append-only: SynapseNote creates a new change with the old content instead of deleting history.

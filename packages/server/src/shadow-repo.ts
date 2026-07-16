@@ -20,7 +20,7 @@
  *     shell-repair branch on the next boot.
  *   - Projects without `.git/` get auto-init'd by `ensureProjectGit` before
  *     `initShadowRepo` runs (fail-fast).
- *   - Pre-spec integrated shadows at `.git/openknowledge/` (legacy path) are
+ *   - Pre-spec integrated shadows at `.git/synapsenote/` (legacy path) are
  *     silently rename-migrated in-place once per repo (legacy-rename shim below).
  */
 
@@ -40,7 +40,7 @@ import {
   parseWriterId,
   resolveShadowDir,
   type WriterClassification,
-} from '@inkeep/open-knowledge-core/shadow-repo-layout';
+} from '@nedian0brien/synapsenote-core/shadow-repo-layout';
 import simpleGit from 'simple-git';
 import { tracedMkdirSync, tracedRenameSync, tracedWriteFileSync } from './fs-traced.ts';
 import { listTreeLongEntries } from './git-paths.ts';
@@ -197,13 +197,13 @@ export async function enumerateWipChains(
  * Initialize the shadow bare repo at `<gitdir>/ok/` — worktree-aware. The
  * exact path resolves to `<projectRoot>/.git/ok/` for a main checkout and to
  * `<repo>/.git/worktrees/<name>/ok/` for a linked worktree. Path resolution
- * lives in `@inkeep/open-knowledge-core/shadow-repo-layout` so the CLI read
+ * lives in `@nedian0brien/synapsenote-core/shadow-repo-layout` so the CLI read
  * path and this server write path follow the same rule.
  *
  * Assumes the project already has a `.git/` (file or directory) —
  * `ensureProjectGit` is responsible for that guarantee upstream.
  *
- * Legacy migration: if a pre-rename `<projectRoot>/.git/openknowledge/` dir
+ * Legacy migration: if a pre-rename `<projectRoot>/.git/synapsenote/` dir
  * exists from a pre-spec integrated-mode install, silently `renameSync` it to
  * the canonical `<gitdir>/ok/` path. One-shot, lossless — preserves all refs
  * and commits. Defensive: if BOTH directories are present (shouldn't happen),
@@ -212,12 +212,12 @@ export async function enumerateWipChains(
  * common-dir location until the user next boots OK in the main worktree.
  */
 export async function initShadowRepo(projectRoot: string): Promise<ShadowHandle> {
-  // Path resolution lives in @inkeep/open-knowledge-core so the CLI read path
+  // Path resolution lives in @nedian0brien/synapsenote-core so the CLI read path
   // and this server write path use exactly the same rule.
   const shadowDir = resolveShadowDir(projectRoot);
 
   // legacy-rename shim — runs before any other shadow op.
-  const legacyDir = resolve(projectRoot, '.git/openknowledge');
+  const legacyDir = resolve(projectRoot, '.git/synapsenote');
   const legacyExists = existsSync(legacyDir);
   const newExists = existsSync(shadowDir);
   if (legacyExists && !newExists) {
@@ -237,8 +237,8 @@ export async function initShadowRepo(projectRoot: string): Promise<ShadowHandle>
     const sg = simpleGit({ timeout: { block: GIT_TIMEOUT_MS } }).env({ GIT_DIR: shadowDir });
     await sg.raw('config', '--unset', 'core.bare');
     await sg.raw('config', 'core.worktree', projectRoot);
-    await sg.raw('config', 'user.name', 'openknowledge');
-    await sg.raw('config', 'user.email', 'noreply@openknowledge.local');
+    await sg.raw('config', 'user.name', 'synapsenote');
+    await sg.raw('config', 'user.email', 'noreply@synapsenote.local');
   }
 
   const handle: ShadowHandle = { gitDir: shadowDir, workTree: projectRoot };
@@ -280,7 +280,7 @@ export function destroyShadowRepo(shadow: ShadowHandle): void {
  * Enumerates refs/wip/*\/\* and deletes ONLY refs whose writer-ID segment
  * matches the known-legacy patterns: exact `server`, prefix `human-`, exact
  * `upstream`. New-taxonomy refs (agent-*, principal-*, file-system,
- * git-upstream, openknowledge-service) are preserved unchanged.
+ * git-upstream, synapsenote-service) are preserved unchanged.
  *
  * Idempotent: running twice is a no-op once legacy refs are gone.
  */
@@ -448,8 +448,8 @@ async function commitWipInner(
       GIT_DIR: shadow.gitDir,
       GIT_AUTHOR_NAME: writer.name,
       GIT_AUTHOR_EMAIL: writer.email,
-      GIT_COMMITTER_NAME: 'openknowledge',
-      GIT_COMMITTER_EMAIL: 'noreply@openknowledge.local',
+      GIT_COMMITTER_NAME: 'synapsenote',
+      GIT_COMMITTER_EMAIL: 'noreply@synapsenote.local',
     };
     if (date) {
       commitEnv.GIT_AUTHOR_DATE = date;
@@ -580,8 +580,8 @@ async function commitWipFromTreeInner(
         GIT_DIR: shadow.gitDir,
         GIT_AUTHOR_NAME: writer.name,
         GIT_AUTHOR_EMAIL: writer.email,
-        GIT_COMMITTER_NAME: 'openknowledge',
-        GIT_COMMITTER_EMAIL: 'noreply@openknowledge.local',
+        GIT_COMMITTER_NAME: 'synapsenote',
+        GIT_COMMITTER_EMAIL: 'noreply@synapsenote.local',
       })
       .raw(...args)
   ).trim();
@@ -596,21 +596,21 @@ async function commitWipFromTreeInner(
 export const FILE_SYSTEM_WRITER: WriterIdentity = {
   id: 'file-system',
   name: 'File System',
-  email: 'file-system@openknowledge.local',
+  email: 'file-system@synapsenote.local',
 };
 
 /** Non-attributable upstream git-pull imports. */
 export const GIT_UPSTREAM_WRITER: WriterIdentity = {
   id: 'git-upstream',
   name: 'Git (upstream)',
-  email: 'git@openknowledge.local',
+  email: 'git@synapsenote.local',
 };
 
 /** Non-attributable internal service bookkeeping. */
 export const SERVICE_WRITER: WriterIdentity = {
-  id: 'openknowledge-service',
-  name: 'OpenKnowledge (service)',
-  email: 'service@openknowledge.local',
+  id: 'synapsenote-service',
+  name: 'SynapseNote (service)',
+  email: 'service@synapsenote.local',
 };
 
 // ─── Upstream import ─────────────────────────────────────────────────────────
@@ -714,7 +714,7 @@ export async function safetyCheckpoint(
 /**
  * Kind-discriminated parameters for {@link saveInMemoryCheckpoint}. Each
  * kind carries typed metadata that `parseCheckpoint` in
- * `@inkeep/open-knowledge-core/shadow-repo-layout` can round-trip.
+ * `@nedian0brien/synapsenote-core/shadow-repo-layout` can round-trip.
  *
  * - `bridge-merge-loss` — Observer A Path B fired `mergeThreeWay`, the
  *   content-preservation post-condition flagged the result, and we want a
@@ -865,10 +865,10 @@ export async function saveInMemoryCheckpoint(
       await sg
         .env({
           GIT_DIR: shadow.gitDir,
-          GIT_AUTHOR_NAME: 'openknowledge',
-          GIT_AUTHOR_EMAIL: 'noreply@openknowledge.local',
-          GIT_COMMITTER_NAME: 'openknowledge',
-          GIT_COMMITTER_EMAIL: 'noreply@openknowledge.local',
+          GIT_AUTHOR_NAME: 'synapsenote',
+          GIT_AUTHOR_EMAIL: 'noreply@synapsenote.local',
+          GIT_COMMITTER_NAME: 'synapsenote',
+          GIT_COMMITTER_EMAIL: 'noreply@synapsenote.local',
         })
         .raw('commit-tree', treeSha, '-m', message)
     ).trim();
@@ -1360,10 +1360,10 @@ async function parkBranchInner(
       await sg
         .env({
           GIT_DIR: shadow.gitDir,
-          GIT_AUTHOR_NAME: 'openknowledge',
-          GIT_AUTHOR_EMAIL: 'noreply@openknowledge.local',
-          GIT_COMMITTER_NAME: 'openknowledge',
-          GIT_COMMITTER_EMAIL: 'noreply@openknowledge.local',
+          GIT_AUTHOR_NAME: 'synapsenote',
+          GIT_AUTHOR_EMAIL: 'noreply@synapsenote.local',
+          GIT_COMMITTER_NAME: 'synapsenote',
+          GIT_COMMITTER_EMAIL: 'noreply@synapsenote.local',
         })
         .raw(...args)
     ).trim();
@@ -1608,10 +1608,10 @@ async function saveVersionInner(
 
     const checkpointEnv: Record<string, string> = {
       GIT_DIR: shadow.gitDir,
-      GIT_AUTHOR_NAME: 'openknowledge',
-      GIT_AUTHOR_EMAIL: 'noreply@openknowledge.local',
-      GIT_COMMITTER_NAME: 'openknowledge',
-      GIT_COMMITTER_EMAIL: 'noreply@openknowledge.local',
+      GIT_AUTHOR_NAME: 'synapsenote',
+      GIT_AUTHOR_EMAIL: 'noreply@synapsenote.local',
+      GIT_COMMITTER_NAME: 'synapsenote',
+      GIT_COMMITTER_EMAIL: 'noreply@synapsenote.local',
     };
     if (options?.date) {
       checkpointEnv.GIT_AUTHOR_DATE = options.date;

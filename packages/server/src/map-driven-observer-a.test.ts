@@ -10,7 +10,7 @@
  * Y.Text delta to assert splice shape directly.
  */
 import { describe, expect, spyOn, test } from 'bun:test';
-import { MarkdownManager, sharedExtensions } from '@inkeep/open-knowledge-core';
+import { MarkdownManager, sharedExtensions } from '@nedian0brien/synapsenote-core';
 import { getSchema } from '@tiptap/core';
 import { updateYFragment } from '@tiptap/y-tiptap';
 import * as Y from 'yjs';

@@ -109,12 +109,12 @@ function instrumentChain(opts: InstrumentOpts = {}): string {
   chain = replaceOrThrow(chain, 'exec "$BUNDLE" mcp', 'echo "HIT:bundle:$BUNDLE" && exit 0');
   chain = replaceOrThrow(
     chain,
-    'exec npx -y @inkeep/open-knowledge@latest mcp',
+    'exec npx -y @nedian0brien/synapsenote@latest mcp',
     'echo "HIT:npx:$(command -v npx)" && exit 0',
   );
   chain = replaceOrThrow(
     chain,
-    'exec "$d/npx" -y @inkeep/open-knowledge@latest mcp',
+    'exec "$d/npx" -y @nedian0brien/synapsenote@latest mcp',
     'echo "HIT:glob:$d/npx" && exit 0',
   );
   if (opts.suppressNpxPath) {
@@ -150,12 +150,12 @@ function instrumentChain(opts: InstrumentOpts = {}): string {
     // suffix so collisions with the override path are impossible.
     chain = replaceOrThrow(
       chain,
-      'USER_BUNDLE="$HOME/Applications/OpenKnowledge.app/Contents/Resources/cli/bin/ok.sh"',
+      'USER_BUNDLE="$HOME/Applications/SynapseNote.app/Contents/Resources/cli/bin/ok.sh"',
       `USER_BUNDLE="${opts.bundleOverride}__user_bundle__"`,
     );
     chain = replaceOrThrow(
       chain,
-      'BUNDLE="/Applications/OpenKnowledge.app/Contents/Resources/cli/bin/ok.sh"',
+      'BUNDLE="/Applications/SynapseNote.app/Contents/Resources/cli/bin/ok.sh"',
       `BUNDLE="${opts.bundleOverride}"`,
     );
   }
@@ -216,7 +216,7 @@ describe('CHAIN_V1 POSIX shell grammar (cross-platform)', () => {
         chainOverride: chain,
       });
       expect(status).toBe(127);
-      expect(stderr).toContain('OpenKnowledge: install OK Desktop or Node.js 24+');
+      expect(stderr).toContain('SynapseNote: install OK Desktop or Node.js 24+');
     } finally {
       rmSync(tmpHome, { recursive: true, force: true });
     }
@@ -273,7 +273,7 @@ describe('CHAIN_V1 POSIX shell grammar (cross-platform)', () => {
         chainOverride: chain,
       });
       expect(status).toBe(127);
-      expect(stderr).toContain('OpenKnowledge: install OK Desktop or Node.js 24+');
+      expect(stderr).toContain('SynapseNote: install OK Desktop or Node.js 24+');
       expect(stderr).not.toContain('no matches found');
     } finally {
       rmSync(tmpHome, { recursive: true, force: true });
@@ -298,12 +298,12 @@ describe('CHAIN_V1 POSIX shell grammar (cross-platform)', () => {
       // would shadow this test.
       let chain = replaceOrThrow(
         CHAIN_V1,
-        'USER_BUNDLE="$HOME/Applications/OpenKnowledge.app/Contents/Resources/cli/bin/ok.sh"',
+        'USER_BUNDLE="$HOME/Applications/SynapseNote.app/Contents/Resources/cli/bin/ok.sh"',
         `USER_BUNDLE="${join(tmpHome, 'no-such-user-bundle.sh')}"`,
       );
       chain = replaceOrThrow(
         chain,
-        'BUNDLE="/Applications/OpenKnowledge.app/Contents/Resources/cli/bin/ok.sh"',
+        'BUNDLE="/Applications/SynapseNote.app/Contents/Resources/cli/bin/ok.sh"',
         `BUNDLE="${crashBundle}"`,
       );
       const { stdout, status } = runChain({

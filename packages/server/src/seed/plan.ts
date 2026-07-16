@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { OK_PROJECT_MARKER } from '@inkeep/open-knowledge-core';
+import { OK_PROJECT_MARKER } from '@nedian0brien/synapsenote-core';
 import { isProjectRoot } from '../fs/find-project-root.ts';
 import { resolvePackSkillSource } from './install-pack-skill.ts';
 import { assertEntryPathInProject } from './path-safety.ts';

@@ -15,12 +15,12 @@
  */
 
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
-import * as actualCore from '@inkeep/open-knowledge-core';
+import * as actualCore from '@nedian0brien/synapsenote-core';
 import * as actualSonner from 'sonner';
 
 import { createHandleDrop } from './handle-paste.ts';
 
-mock.module('@inkeep/open-knowledge-core', () => {
+mock.module('@nedian0brien/synapsenote-core', () => {
   return {
     ...actualCore,
     htmlToMdast: mock((_html: string) => ({ type: 'root', children: [] })),

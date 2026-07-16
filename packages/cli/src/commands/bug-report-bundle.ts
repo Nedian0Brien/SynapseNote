@@ -15,8 +15,8 @@ import { createHash } from 'node:crypto';
 import { createWriteStream, existsSync, mkdirSync, readdirSync, readFileSync } from 'node:fs';
 import { freemem, homedir, type as osType, platform, release, totalmem, uptime } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
-import type { BundleManifest, BundleRedaction } from '@inkeep/open-knowledge-core';
-import { withHiddenWindowsConsole } from '@inkeep/open-knowledge-server';
+import type { BundleManifest, BundleRedaction } from '@nedian0brien/synapsenote-core';
+import { withHiddenWindowsConsole } from '@nedian0brien/synapsenote-server';
 import type { ZipFile } from 'yazl';
 // Keep this import type-only: `diagnose/bundle.ts` imports from this module
 // too, so a value import in either direction would form a runtime cycle.
@@ -361,7 +361,7 @@ export async function collectStandardBundle(
     projectSlug,
     files: bundleFiles,
     redactions,
-    sysinfo: sysinfo as Record<string, import('@inkeep/open-knowledge-core').Loggable>,
+    sysinfo: sysinfo as Record<string, import('@nedian0brien/synapsenote-core').Loggable>,
   };
   zipfile.addBuffer(Buffer.from(JSON.stringify(manifest, null, 2), 'utf8'), 'MANIFEST.json');
 

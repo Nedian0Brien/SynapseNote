@@ -1,5 +1,5 @@
 /**
- * Share URL codec for the `https://openknowledge.ai/d/<base64url>` link form.
+ * Share URL codec for the `https://synapse.lawdigest.kr/d/<base64url>` link form.
  *
  * Payload shape (by contract, 1-way once shipped):
  *   v1 = [0x01] || utf-8 bytes of the github blob URL
@@ -23,7 +23,7 @@ export interface DecodedShare {
 /**
  * Thrown when `decodeShareUrl` finds a version byte the current build does
  * not understand. Carries the observed numeric byte so the UI layer can
- * render a meaningful "Update OpenKnowledge" toast.
+ * render a meaningful "Update SynapseNote" toast.
  */
 export class UnsupportedShareVersionError extends Error {
   readonly version: number;

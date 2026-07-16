@@ -140,7 +140,7 @@ describe('NavigatorApp launcher runtime behavior', () => {
     const bridge = createBridge();
     await renderNavigator(bridge);
 
-    expect(screen.getByRole('heading', { name: 'OpenKnowledge' })).not.toBeNull();
+    expect(screen.getByRole('heading', { name: 'SynapseNote' })).not.toBeNull();
     expect(screen.getByTestId('beta-badge').textContent).toBe('Beta');
     expect(document.body.textContent).not.toContain('Stable');
 

@@ -2,15 +2,16 @@
  * Settings → Terminal: two desktop-only toggles.
  *  1. The per-project opt-out for the in-app real OS shell (`terminal.enabled`,
  *     project-local — reads/writes via `use-terminal-enabled`).
- *  2. A per-machine (user-scope) toggle to auto-approve OpenKnowledge's OWN tools
+ *  2. A per-machine (user-scope) toggle to auto-approve SynapseNote's OWN tools
  *     for agents launched from the docked terminal (`agents.autoApproveOkTools`).
  *     Default on; only an explicit `false` reads as off. Written through the
  *     user ConfigBinding (`~/.ok/global.yml`), so it spans every project on this
  *     machine — distinct from the per-project shell toggle above. Carries an
  *     inline note when codex is installed but cannot honor the toggle.
  */
-import { humanFormat } from '@inkeep/open-knowledge-core';
+
 import { useLingui } from '@lingui/react/macro';
+import { humanFormat } from '@nedian0brien/synapsenote-core';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
@@ -88,7 +89,7 @@ export function TerminalSection() {
           {t`Terminal`}
         </h3>
         <p className="text-sm text-muted-foreground">
-          {t`Run a real terminal docked inside OpenKnowledge, starting in this project's folder.`}
+          {t`Run a real terminal docked inside SynapseNote, starting in this project's folder.`}
         </p>
       </div>
 
@@ -116,13 +117,13 @@ export function TerminalSection() {
       <div className="flex items-center justify-between gap-3 rounded-md border p-3">
         <div className="space-y-0.5">
           <label htmlFor="settings-terminal-autoapprove-toggle" className="text-sm font-medium">
-            {t`Let agents use OpenKnowledge without asking`}
+            {t`Let agents use SynapseNote without asking`}
           </label>
           <p
             className="text-1sm text-muted-foreground"
             data-testid="settings-terminal-autoapprove-body"
           >
-            {t`Applies to all projects on this machine. Claude and Codex, started from the built-in terminal, auto-approve OpenKnowledge's read and write tools (Claude also auto-runs "ok open"). Deleting, moving, sharing, installing skills, other commands, and non-OpenKnowledge file edits still ask. Cursor, OpenCode, and Pi are unaffected. Best-effort per agent.`}
+            {t`Applies to all projects on this machine. Claude and Codex, started from the built-in terminal, auto-approve SynapseNote's read and write tools (Claude also auto-runs "ok open"). Deleting, moving, sharing, installing skills, other commands, and non-SynapseNote file edits still ask. Cursor, OpenCode, and Pi are unaffected. Best-effort per agent.`}
           </p>
           {autoApproveOn && codexNeedsInit ? (
             <p
@@ -138,7 +139,7 @@ export function TerminalSection() {
           checked={autoApproveOn}
           onCheckedChange={applyAutoApprove}
           disabled={!userSynced || userBinding === null}
-          aria-label={t`Let agents use OpenKnowledge without asking`}
+          aria-label={t`Let agents use SynapseNote without asking`}
           data-testid="settings-terminal-autoapprove-toggle"
         />
       </div>

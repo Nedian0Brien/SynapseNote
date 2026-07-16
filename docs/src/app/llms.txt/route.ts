@@ -7,7 +7,7 @@ export async function GET() {
   const pages = source.getPages();
   return new Response(
     [
-      '# OpenKnowledge',
+      '# SynapseNote',
       '## Docs',
       // Link to the per-page `.md` so an agent following this index fetches
       // clean Markdown directly instead of the HTML shell. The `…/<slug>.md`

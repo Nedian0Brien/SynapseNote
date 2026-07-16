@@ -75,15 +75,15 @@ describe('classifyRedeemRequest', () => {
     });
     expect(decision).toEqual({
       kind: 'redeem',
-      shareUrl: `https://openknowledge.ai/d/${TOKEN}`,
-      doneLocation: 'https://openknowledge.ai/continue/done',
+      shareUrl: `https://synapse.lawdigest.kr/d/${TOKEN}`,
+      doneLocation: 'https://synapse.lawdigest.kr/continue/done',
     });
   });
 });
 
 describe('resolveContinueBase (dev override, loopback-pinned)', () => {
   test('defaults to production when the env var is unset', () => {
-    expect(resolveContinueBase({})).toBe('https://openknowledge.ai');
+    expect(resolveContinueBase({})).toBe('https://synapse.lawdigest.kr');
   });
 
   test.each([
@@ -98,19 +98,21 @@ describe('resolveContinueBase (dev override, loopback-pinned)', () => {
   test.each([
     ['https://evil.example.com'],
     ['http://192.168.1.5:3010'],
-    ['http://openknowledge.ai.evil.com'],
+    ['http://synapse.lawdigest.kr.evil.com'],
     ['ftp://localhost'],
     ['not a url'],
     [''],
   ])('rejects non-loopback / malformed %s → falls back to production', (input) => {
-    expect(resolveContinueBase({ OK_CONTINUE_URL_BASE: input })).toBe('https://openknowledge.ai');
+    expect(resolveContinueBase({ OK_CONTINUE_URL_BASE: input })).toBe(
+      'https://synapse.lawdigest.kr',
+    );
   });
 });
 
 describe('url helpers', () => {
   test('buildContinueUrl targets the apex continue route with port+nonce', () => {
-    expect(buildContinueUrl(52431, NONCE, 'https://openknowledge.ai')).toBe(
-      `https://openknowledge.ai/continue?port=52431&nonce=${NONCE}`,
+    expect(buildContinueUrl(52431, NONCE, 'https://synapse.lawdigest.kr')).toBe(
+      `https://synapse.lawdigest.kr/continue?port=52431&nonce=${NONCE}`,
     );
   });
 
@@ -132,7 +134,7 @@ describe('url helpers', () => {
       kind: 'redeem',
       // The reconstructed share URL MUST stay on the apex — parseShareUrl's host
       // allowlist rejects localhost.
-      shareUrl: `https://openknowledge.ai/d/${TOKEN}`,
+      shareUrl: `https://synapse.lawdigest.kr/d/${TOKEN}`,
       doneLocation: 'http://localhost:3010/continue/done',
     });
   });
@@ -227,7 +229,7 @@ describe('startFirstRunHandshake', () => {
 
   test('arms a loopback listener and opens the continue URL with the nonce', () => {
     const h = harness();
-    expect(h.opened).toEqual([`https://openknowledge.ai/continue?port=52431&nonce=${NONCE}`]);
+    expect(h.opened).toEqual([`https://synapse.lawdigest.kr/continue?port=52431&nonce=${NONCE}`]);
     expect(h.outcomes).toEqual([]);
   });
 
@@ -235,8 +237,8 @@ describe('startFirstRunHandshake', () => {
     const h = harness();
     const res = h.getServer().request(`/redeem?token=${TOKEN}&nonce=${NONCE}`);
     expect(res.statusCode).toBe(302);
-    expect(res.headers.Location).toBe('https://openknowledge.ai/continue/done');
-    expect(h.routed).toEqual([`https://openknowledge.ai/d/${TOKEN}`]);
+    expect(res.headers.Location).toBe('https://synapse.lawdigest.kr/continue/done');
+    expect(h.routed).toEqual([`https://synapse.lawdigest.kr/d/${TOKEN}`]);
     expect(h.outcomes).toEqual(['redeemed']);
     expect(h.getServer().closed).toBe(true);
   });

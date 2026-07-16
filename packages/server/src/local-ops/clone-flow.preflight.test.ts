@@ -1,5 +1,5 @@
 /**
- * RED regression test for inkeep/open-knowledge#356 — the Clone-from-GitHub
+ * RED regression test for Nedian0Brien/SynapseNote#356 — the Clone-from-GitHub
  * project-setup flow under a present-but-broken host git.
  *
  * Pins the project-setup git-preflight invariant at the clone spine

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import type { TerminalCli } from '@inkeep/open-knowledge-core';
+import type { TerminalCli } from '@nedian0brien/synapsenote-core';
 import { requestTerminalLaunch, subscribeToTerminalLaunchRequests } from './terminal-launch-events';
 
 describe('terminal-launch-events', () => {
@@ -11,9 +11,9 @@ describe('terminal-launch-events', () => {
       target,
     );
 
-    requestTerminalLaunch("Let's work on `foo.md` using OpenKnowledge.", 'codex', target);
+    requestTerminalLaunch("Let's work on `foo.md` using SynapseNote.", 'codex', target);
     expect(received).toEqual([
-      { prompt: "Let's work on `foo.md` using OpenKnowledge.", cli: 'codex' },
+      { prompt: "Let's work on `foo.md` using SynapseNote.", cli: 'codex' },
     ]);
 
     unsub();

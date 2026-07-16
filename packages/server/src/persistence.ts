@@ -20,7 +20,7 @@ import { existsSync, lstatSync, readFileSync, realpathSync, statSync } from 'nod
 import { realpath } from 'node:fs/promises';
 import { dirname, relative, resolve } from 'node:path';
 import type { Extension } from '@hocuspocus/server';
-import type { MarkdownManager } from '@inkeep/open-knowledge-core';
+import type { MarkdownManager } from '@nedian0brien/synapsenote-core';
 import {
   BridgeInvariantViolationError,
   type ConfigValidationError,
@@ -31,13 +31,13 @@ import {
   type Principal,
   prependFrontmatter,
   stripFrontmatter,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import {
   composeCommitSubject,
   formatOkActor,
   formatWipSubject,
   type OkActorEntry,
-} from '@inkeep/open-knowledge-core/shadow-repo-layout';
+} from '@nedian0brien/synapsenote-core/shadow-repo-layout';
 import type { JSONContent } from '@tiptap/core';
 import { updateYFragment, yXmlFragmentToProseMirrorRootNode } from '@tiptap/y-tiptap';
 import * as Y from 'yjs';
@@ -109,7 +109,7 @@ export class DocumentOpenSizeLimitError extends Error {
 
   constructor(docName: string, size: number, limit = DOCUMENT_OPEN_BYTE_LIMIT) {
     super(
-      `Document "${docName}" is ${formatFileSize(size)}; OpenKnowledge opens documents up to ${formatFileSize(limit)}.`,
+      `Document "${docName}" is ${formatFileSize(size)}; SynapseNote opens documents up to ${formatFileSize(limit)}.`,
     );
     this.name = 'DocumentOpenSizeLimitError';
     this.docName = docName;
@@ -147,7 +147,7 @@ export function resolveWriterFromOrigin(
       return {
         id: `agent-${sessionId}`,
         name: `Agent (${sessionId.slice(0, 8)})`,
-        email: `agent-${sessionId}@openknowledge.local`,
+        email: `agent-${sessionId}@synapsenote.local`,
       };
     }
 
@@ -182,7 +182,7 @@ export function resolveWriterFromOrigin(
       return {
         id: principalId,
         name: 'Local User',
-        email: `${principalId}@openknowledge.local`,
+        email: `${principalId}@synapsenote.local`,
       };
     }
     return SERVICE_WRITER;
@@ -824,7 +824,7 @@ export function createPersistenceExtension(options?: PersistenceOptions): Persis
             `[persistence] Shadow WIP commit: ${sha.slice(0, 8)} on refs/wip/${SERVICE_WRITER.id}`,
           );
           // Service-writer backfill fallback. Anonymous rename → log entry
-          // attributed to `openknowledge-service` → empty contributor map →
+          // attributed to `synapsenote-service` → empty contributor map →
           // service-writer commit closes the lazy-pop window for those
           // entries.
           try {
@@ -857,7 +857,7 @@ export function createPersistenceExtension(options?: PersistenceOptions): Persis
       // Per-writer fan-out (precedent #25): build tree once, commit per writer.
       // All per-writer commits share the same tree SHA for this drain cycle.
       // Writer IDs follow the taxonomy in parseWriterId (shadow-repo-layout.ts): agent-<connId>,
-      // principal-<UUID>, file-system, git-upstream, openknowledge-service.
+      // principal-<UUID>, file-system, git-upstream, synapsenote-service.
       let treeSha: string;
       try {
         treeSha = await buildWipTree(shadow, contentRoot);
@@ -878,7 +878,7 @@ export function createPersistenceExtension(options?: PersistenceOptions): Persis
         const writer: WriterIdentity = {
           id: writerId,
           name: entry.displayName,
-          email: `${writerId}@openknowledge.local`,
+          email: `${writerId}@synapsenote.local`,
         };
         const docs = [...entry.docs];
         // Consolidated write path: emit ONLY `ok-actor:` (retires the legacy
@@ -889,7 +889,7 @@ export function createPersistenceExtension(options?: PersistenceOptions): Persis
         // on-disk commits — both surfaces keep rendering without migration.
         const a = entry.actor;
         // Populate full actor tuple from ContributorEntry.actor when present.
-        // Classified writers (file-system, git-upstream, openknowledge-service)
+        // Classified writers (file-system, git-upstream, synapsenote-service)
         // leave these null because they have no principal/agent attribution at
         // record time.
         const summaries = [...entry.summaries];

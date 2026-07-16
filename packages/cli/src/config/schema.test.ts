@@ -132,7 +132,7 @@ describe('ConfigSchema (upload surface removed per 2026-04-24 amendment)', () =>
   test('legacy upload.* keys parse cleanly without throwing', () => {
     // The `upload.*` user-facing config surface was removed entirely
     // (zero user-facing upload config; all values are
-    // module-level constants in `@inkeep/open-knowledge-core`). Legacy
+    // module-level constants in `@nedian0brien/synapsenote-core`). Legacy
     // configs still carrying any `upload.*` shape parse cleanly because the
     // schema is `z.looseObject` — unknown
     // keys are preserved on the parsed result rather than stripped, but

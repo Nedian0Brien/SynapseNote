@@ -22,8 +22,8 @@ import {
   removePathShimFromRcFiles,
 } from './path-install.ts';
 
-const EXE = '/Applications/OpenKnowledge.app/Contents/MacOS/OpenKnowledge';
-const WRAPPER = '/Applications/OpenKnowledge.app/Contents/Resources/cli/bin/ok.sh';
+const EXE = '/Applications/SynapseNote.app/Contents/MacOS/SynapseNote';
+const WRAPPER = '/Applications/SynapseNote.app/Contents/Resources/cli/bin/ok.sh';
 
 const GRANTED = { status: 'granted', at: '2026-07-02T00:00:00.000Z' } as const;
 const DECLINED = { status: 'declined', at: '2026-07-02T00:00:00.000Z' } as const;
@@ -62,14 +62,14 @@ describe('ensureCliOnPath — consent gate (rc files are never written without a
     // namespace, so no toast-worthy disclosure either.
     expect(result.status).toBe('installed-silent');
     expect(readlinkSync(join(h, '.ok', 'bin', 'ok'))).toBe(WRAPPER);
-    expect(readlinkSync(join(h, '.ok', 'bin', 'open-knowledge'))).toBe(WRAPPER);
+    expect(readlinkSync(join(h, '.ok', 'bin', 'synapsenote'))).toBe(WRAPPER);
     expect(readFileSync(join(h, '.ok', 'env.sh'), 'utf8')).toContain(
       'export PATH="$' + '{HOME}/.ok/bin:$' + '{PATH}"',
     );
     // The sensitive step: no shell startup file is created or edited.
     expect(existsSync(join(h, '.zshrc'))).toBe(false);
     expect(existsSync(join(h, '.bash_profile'))).toBe(false);
-    expect(existsSync(join(h, '.config', 'fish', 'conf.d', 'open-knowledge.fish'))).toBe(false);
+    expect(existsSync(join(h, '.config', 'fish', 'conf.d', 'synapsenote.fish'))).toBe(false);
     const marker = readMarkerFile(h);
     expect(marker.rcFiles).toEqual([]);
     expect(marker.consent).toBeUndefined();
@@ -92,7 +92,7 @@ describe('ensureCliOnPath — consent gate (rc files are never written without a
     expect(result.status).toBe('installed');
     if (result.status === 'installed') expect(result.summary).toContain('~/.zshrc');
     const zshrc = readFileSync(join(h, '.zshrc'), 'utf8');
-    expect(zshrc).toContain('# >>> open-knowledge cli >>>');
+    expect(zshrc).toContain('# >>> synapsenote cli >>>');
     expect(zshrc).toContain('Delete this whole block to opt out');
     const marker = readMarkerFile(h);
     expect(marker.consent).toEqual({ status: 'granted', at: GRANTED.at });
@@ -108,7 +108,7 @@ describe('ensureCliOnPath — consent gate (rc files are never written without a
     // grant (the marker is fully healthy with rcFiles: []).
     const granted = await ensureCliOnPath(baseOpts(h, { consentDecision: GRANTED }));
     expect(granted.status).toBe('installed');
-    expect(readFileSync(join(h, '.zshrc'), 'utf8')).toContain('# >>> open-knowledge cli >>>');
+    expect(readFileSync(join(h, '.zshrc'), 'utf8')).toContain('# >>> synapsenote cli >>>');
     // Boot 2: recorded grant + healthy state → silent fast-path.
     const relaunch = await ensureCliOnPath(baseOpts(h));
     expect(relaunch.status).toBe('healthy-current');
@@ -143,13 +143,11 @@ describe('ensureCliOnPath — consent gate (rc files are never written without a
     expect(fastPath.status).toBe('healthy-current');
     expect(readFileSync(join(h, '.bash_profile'), 'utf8')).toBe('export BAR=1\n');
 
-    const newExe = '/Users/someone/Applications/OpenKnowledge.app/Contents/MacOS/OpenKnowledge';
+    const newExe = '/Users/someone/Applications/SynapseNote.app/Contents/MacOS/SynapseNote';
     const result = await ensureCliOnPath(baseOpts(h, { executablePath: newExe }));
     expect(result.status).toBe('installed');
     if (result.status === 'installed') expect(result.summary).toContain('~/.bash_profile');
-    expect(readFileSync(join(h, '.bash_profile'), 'utf8')).toContain(
-      '# >>> open-knowledge cli >>>',
-    );
+    expect(readFileSync(join(h, '.bash_profile'), 'utf8')).toContain('# >>> synapsenote cli >>>');
   });
 
   test('grandfather via healthy fast-path: pre-consent marker + healthy block ⇒ consent stamped, no rc write', async () => {
@@ -182,7 +180,7 @@ describe('ensureCliOnPath — consent gate (rc files are never written without a
     // never run here (no marker, no symlinks).
     writeFileSync(
       join(h, '.zshrc'),
-      '# >>> open-knowledge cli >>>\nstale contents\n# <<< open-knowledge cli <<<\n',
+      '# >>> synapsenote cli >>>\nstale contents\n# <<< synapsenote cli <<<\n',
     );
     const events: Array<Record<string, unknown>> = [];
     const result = await ensureCliOnPath(baseOpts(h, { logger: { event: (e) => events.push(e) } }));
@@ -248,7 +246,7 @@ describe('ensureCliOnPath', () => {
       );
     const first = await run({ consentDecision: GRANTED });
     expect(first.status).toBe('installed');
-    expect(readFileSync(join(h, '.zshrc'), 'utf8')).toContain('# >>> open-knowledge cli >>>');
+    expect(readFileSync(join(h, '.zshrc'), 'utf8')).toContain('# >>> synapsenote cli >>>');
     if (first.status === 'installed') expect(first.summary).toContain('~/.zshrc');
 
     // The user strips the block — the strongest opt-out signal. Consent
@@ -256,14 +254,14 @@ describe('ensureCliOnPath', () => {
     writeFileSync(join(h, '.zshrc'), 'export FOO=1\n');
     const second = await run();
     expect(second.status).toBe('installed');
-    expect(readFileSync(join(h, '.zshrc'), 'utf8')).not.toContain('# >>> open-knowledge cli >>>');
+    expect(readFileSync(join(h, '.zshrc'), 'utf8')).not.toContain('# >>> synapsenote cli >>>');
     if (second.status === 'installed') expect(second.summary).toContain("won't be re-added");
     const marker = readMarkerFile(h);
     expect(marker.rcOptOuts).toEqual([join(h, '.zshrc')]);
 
     const third = await run();
     expect(third.status).toBe('healthy-current');
-    expect(readFileSync(join(h, '.zshrc'), 'utf8')).not.toContain('# >>> open-knowledge cli >>>');
+    expect(readFileSync(join(h, '.zshrc'), 'utf8')).not.toContain('# >>> synapsenote cli >>>');
   });
 
   test('does not seed symlinks into other PATH dirs and pads the zshrc block with blank lines', async () => {
@@ -281,10 +279,10 @@ describe('ensureCliOnPath', () => {
     // `bin` is a writable non-system PATH dir without `~/.ok/bin` on PATH —
     // the strongest temptation for the retired seeding behavior.
     expect(() => lstatSync(join(bin, 'ok'))).toThrow();
-    expect(() => lstatSync(join(bin, 'open-knowledge'))).toThrow();
+    expect(() => lstatSync(join(bin, 'synapsenote'))).toThrow();
     const zshrc = readFileSync(join(h, '.zshrc'), 'utf8');
-    expect(zshrc).toContain('export FOO=1\n\n# >>> open-knowledge cli >>>');
-    expect(zshrc.endsWith('# <<< open-knowledge cli <<<\n\n')).toBe(true);
+    expect(zshrc).toContain('export FOO=1\n\n# >>> synapsenote cli >>>');
+    expect(zshrc.endsWith('# <<< synapsenote cli <<<\n\n')).toBe(true);
   });
 
   test('removes legacy marker-recorded extra symlinks, leaves re-pointed ones, retries failures', async () => {
@@ -292,7 +290,7 @@ describe('ensureCliOnPath', () => {
     const bin = join(h, 'bin');
     mkdirSync(bin);
     symlinkSync(WRAPPER, join(bin, 'ok'));
-    symlinkSync('/elsewhere/ok.sh', join(bin, 'open-knowledge'));
+    symlinkSync('/elsewhere/ok.sh', join(bin, 'synapsenote'));
     const markerPath = pathInstallMarkerPath(h);
     mkdirSync(dirname(markerPath), { recursive: true });
     const entry = (path: string) => ({
@@ -314,7 +312,7 @@ describe('ensureCliOnPath', () => {
         pathDiscovery: null,
         extraSymlinks: [
           entry(join(bin, 'ok')),
-          entry(join(bin, 'open-knowledge')),
+          entry(join(bin, 'synapsenote')),
           entry(join(bin, 'gone')),
         ],
       }),
@@ -331,7 +329,7 @@ describe('ensureCliOnPath', () => {
     if (result.status === 'installed') expect(result.summary).toContain('leftover ok symlink');
     // Still ours → removed; re-pointed → left on disk; missing → forgotten.
     expect(() => lstatSync(join(bin, 'ok'))).toThrow();
-    expect(readlinkSync(join(bin, 'open-knowledge'))).toBe('/elsewhere/ok.sh');
+    expect(readlinkSync(join(bin, 'synapsenote'))).toBe('/elsewhere/ok.sh');
     const marker = readMarkerFile(h);
     expect(marker.extraSymlinks).toEqual([]);
     expect(events.some((e) => e.event === 'path-install-extra-symlink-removed')).toBe(true);
@@ -392,8 +390,8 @@ describe('ensureCliOnPath', () => {
   test('fish conf.d block uses fish syntax, not POSIX export', async () => {
     const h = home();
     await ensureCliOnPath(baseOpts(h, { consentDecision: GRANTED }));
-    const fish = readFileSync(join(h, '.config', 'fish', 'conf.d', 'open-knowledge.fish'), 'utf8');
-    expect(fish).toContain('# >>> open-knowledge cli >>>');
+    const fish = readFileSync(join(h, '.config', 'fish', 'conf.d', 'synapsenote.fish'), 'utf8');
+    expect(fish).toContain('# >>> synapsenote cli >>>');
     expect(fish).toContain('set -gx PATH');
     expect(fish).not.toContain('export PATH');
   });
@@ -401,16 +399,16 @@ describe('ensureCliOnPath', () => {
   test('app update repoints canonical symlinks to the new bundle wrapper', async () => {
     const h = home();
     await ensureCliOnPath(baseOpts(h));
-    const newExe = '/Users/someone/Applications/OpenKnowledge.app/Contents/MacOS/OpenKnowledge';
+    const newExe = '/Users/someone/Applications/SynapseNote.app/Contents/MacOS/SynapseNote';
     const newWrapper =
-      '/Users/someone/Applications/OpenKnowledge.app/Contents/Resources/cli/bin/ok.sh';
+      '/Users/someone/Applications/SynapseNote.app/Contents/Resources/cli/bin/ok.sh';
     const result = await ensureCliOnPath(baseOpts(h, { executablePath: newExe }));
     // A pure symlink repoint touches nothing the user can see → installed-silent
     // so the startup toast stays silent instead of firing a sticky no-op on
     // every upgrade.
     expect(result.status).toBe('installed-silent');
     expect(readlinkSync(join(h, '.ok', 'bin', 'ok'))).toBe(newWrapper);
-    expect(readlinkSync(join(h, '.ok', 'bin', 'open-knowledge'))).toBe(newWrapper);
+    expect(readlinkSync(join(h, '.ok', 'bin', 'synapsenote'))).toBe(newWrapper);
   });
 });
 
@@ -420,7 +418,7 @@ describe('computePathInstallDescriptor', () => {
     const descriptor = computePathInstallDescriptor({ home: h, env: { SHELL: '/bin/zsh' } });
     expect(descriptor).toEqual({
       shellDetected: true,
-      rcFilesToTouch: ['~/.zshrc', '~/.config/fish/conf.d/open-knowledge.fish'],
+      rcFilesToTouch: ['~/.zshrc', '~/.config/fish/conf.d/synapsenote.fish'],
       alreadyInstalled: false,
     });
   });
@@ -431,7 +429,7 @@ describe('computePathInstallDescriptor', () => {
     const descriptor = computePathInstallDescriptor({ home: h, env: { SHELL: '/bin/bash' } });
     expect(descriptor.rcFilesToTouch).toEqual([
       '~/.bash_profile',
-      '~/.config/fish/conf.d/open-knowledge.fish',
+      '~/.config/fish/conf.d/synapsenote.fish',
     ]);
   });
 
@@ -456,7 +454,7 @@ describe('computePathInstallDescriptor', () => {
         spawn: async () => ({ code: 0, stdout: `${h}/.ok/bin:/usr/bin`, stderr: '' }),
       }),
     );
-    expect(readFileSync(join(h, '.zshrc'), 'utf8')).toContain('# >>> open-knowledge cli >>>');
+    expect(readFileSync(join(h, '.zshrc'), 'utf8')).toContain('# >>> synapsenote cli >>>');
     const descriptor = computePathInstallDescriptor({ home: h, env: { SHELL: '/bin/zsh' } });
     expect(descriptor.alreadyInstalled).toBe(true);
   });
@@ -466,11 +464,11 @@ describe('computePathInstallDescriptor', () => {
     await ensureCliOnPath(baseOpts(h, { consentDecision: GRANTED }));
     // User strips the block → opt-out recorded on the next boot.
     writeFileSync(join(h, '.zshrc'), 'export FOO=1\n');
-    unlinkSync(join(h, '.config', 'fish', 'conf.d', 'open-knowledge.fish'));
+    unlinkSync(join(h, '.config', 'fish', 'conf.d', 'synapsenote.fish'));
     await ensureCliOnPath(baseOpts(h));
     const descriptor = computePathInstallDescriptor({ home: h, env: { SHELL: '/bin/zsh' } });
     expect(descriptor.rcFilesToTouch).not.toContain('~/.zshrc');
-    expect(descriptor.rcFilesToTouch).not.toContain('~/.config/fish/conf.d/open-knowledge.fish');
+    expect(descriptor.rcFilesToTouch).not.toContain('~/.config/fish/conf.d/synapsenote.fish');
     expect(descriptor.shellDetected).toBe(false);
   });
 });
@@ -513,10 +511,10 @@ describe('isPathShimInstalled / removePathShimFromRcFiles — the Settings → A
     const result = removePathShimFromRcFiles({ home: h, env });
     expect(result.status).toBe('removed');
     // The user's own lines survive; only the managed block is gone.
-    expect(readFileSync(join(h, '.zshrc'), 'utf8')).not.toContain('# >>> open-knowledge cli >>>');
+    expect(readFileSync(join(h, '.zshrc'), 'utf8')).not.toContain('# >>> synapsenote cli >>>');
     expect(readFileSync(join(h, '.zshrc'), 'utf8')).toContain('export FOO=1');
     // The fish conf file held nothing but the block — removed outright.
-    expect(existsSync(join(h, '.config', 'fish', 'conf.d', 'open-knowledge.fish'))).toBe(false);
+    expect(existsSync(join(h, '.config', 'fish', 'conf.d', 'synapsenote.fish'))).toBe(false);
     const marker = readMarkerFile(h);
     expect(marker.rcFiles).toEqual([]);
     expect((marker.consent as { status: string }).status).toBe('declined');
@@ -533,12 +531,12 @@ describe('isPathShimInstalled / removePathShimFromRcFiles — the Settings → A
 
     // Undecided startup run: recorded decline wins — rc files stay clean.
     await ensureCliOnPath(baseOpts(h));
-    expect(readFileSync(join(h, '.zshrc'), 'utf8')).not.toContain('# >>> open-knowledge cli >>>');
+    expect(readFileSync(join(h, '.zshrc'), 'utf8')).not.toContain('# >>> synapsenote cli >>>');
 
     // Settings re-install: a fresh grant re-appends (no opt-out poisoning).
     const regrant = await ensureCliOnPath(baseOpts(h, { consentDecision: GRANTED }));
     expect(regrant.status).toBe('installed');
-    expect(readFileSync(join(h, '.zshrc'), 'utf8')).toContain('# >>> open-knowledge cli >>>');
+    expect(readFileSync(join(h, '.zshrc'), 'utf8')).toContain('# >>> synapsenote cli >>>');
     expect(isPathShimInstalled({ home: h, env: { SHELL: '/bin/zsh' } })).toBe(true);
   });
 
@@ -560,7 +558,7 @@ describe('isPathShimInstalled / removePathShimFromRcFiles — the Settings → A
       baseOpts(h, { consentDecision: GRANTED, spawn: stalePathSpawn }),
     );
     expect(regrant.status).toBe('installed');
-    expect(readFileSync(join(h, '.zshrc'), 'utf8')).toContain('# >>> open-knowledge cli >>>');
+    expect(readFileSync(join(h, '.zshrc'), 'utf8')).toContain('# >>> synapsenote cli >>>');
     expect(isPathShimInstalled({ home: h, env: { SHELL: '/bin/zsh' } })).toBe(true);
   });
 
@@ -580,7 +578,7 @@ describe('isPathShimInstalled / removePathShimFromRcFiles — the Settings → A
 
     const regrant = await ensureCliOnPath(baseOpts(h, { consentDecision: GRANTED }));
     expect(regrant.status).toBe('installed');
-    expect(readFileSync(join(h, '.zshrc'), 'utf8')).toContain('# >>> open-knowledge cli >>>');
+    expect(readFileSync(join(h, '.zshrc'), 'utf8')).toContain('# >>> synapsenote cli >>>');
   });
 
   test('nothing installed and no marker → not-installed no-op', () => {
@@ -596,12 +594,12 @@ describe('isPathShimInstalled / removePathShimFromRcFiles — the Settings → A
     const zshrc = join(h, '.zshrc');
     const withBlock = readFileSync(zshrc, 'utf8');
     const block = withBlock.slice(
-      withBlock.indexOf('# >>> open-knowledge cli >>>'),
-      withBlock.indexOf('# <<< open-knowledge cli <<<') + '# <<< open-knowledge cli <<<\n'.length,
+      withBlock.indexOf('# >>> synapsenote cli >>>'),
+      withBlock.indexOf('# <<< synapsenote cli <<<') + '# <<< synapsenote cli <<<\n'.length,
     );
     writeFileSync(zshrc, `${withBlock}\n${block}`);
     const result = removePathShimFromRcFiles({ home: h, env: { SHELL: '/bin/zsh' } });
     expect(result.status).toBe('removed');
-    expect(readFileSync(zshrc, 'utf8')).not.toContain('open-knowledge cli');
+    expect(readFileSync(zshrc, 'utf8')).not.toContain('synapsenote cli');
   });
 });

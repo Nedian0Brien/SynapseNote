@@ -28,7 +28,7 @@ import {
   IMAGE_EXTENSIONS,
   resolveAssetProjectPath,
   toDesktopAssetHref,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { getInteractionLayer } from '../interaction-layer-host';
 import { activateAssetLink } from '../internal-link-helpers';
 

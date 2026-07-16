@@ -12,7 +12,7 @@ describe('desktop packaging freshness contract', () => {
       scripts: Record<string, string>;
     };
     expect(pkg.scripts['build:packaging-inputs']).toContain(
-      'build --filter=@inkeep/open-knowledge-desktop^...',
+      'build --filter=@nedian0brien/synapsenote-desktop^...',
     );
     expect(pkg.scripts['build:desktop']).toContain('bun run build:packaging-inputs');
     expect(pkg.scripts['build:desktop']).toContain('write-packaging-stamp.mjs');

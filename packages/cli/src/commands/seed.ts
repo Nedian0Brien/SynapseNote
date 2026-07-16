@@ -20,7 +20,7 @@ import {
   SeedPrerequisiteError,
   STARTER_PACK_IDS,
   STARTER_PACKS,
-} from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-server';
 import { Command } from 'commander';
 import { accent, dim, error as errorColor, info, success, warning } from '../ui/colors.ts';
 

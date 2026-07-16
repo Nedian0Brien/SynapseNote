@@ -1,6 +1,6 @@
 /**
  * Project-local MCP config reclaim on project open. Both Desktop and CLI
- * sweeps apply the same namespace-ownership rule: if an `open-knowledge`
+ * sweeps apply the same namespace-ownership rule: if an `synapsenote`
  * entry exists and does not pass the chain-sentinel check, rewrite it.
  */
 
@@ -13,7 +13,7 @@ import {
   type McpDeclineReason,
   type McpEntryClassification,
   truncatePriorEntry,
-} from '@inkeep/open-knowledge';
+} from '@nedian0brien/synapsenote';
 import type { McpWiringEditorId } from '../shared/ipc-channels.ts';
 
 interface ProjectMcpReclaimLogger {
@@ -164,7 +164,7 @@ export async function checkAndRepairProjectMcpOnProjectOpen(
     }
 
     if (classification.kind === 'decline') {
-      // OpenKnowledge is a guest in another tool's config: a present, non-empty
+      // SynapseNote is a guest in another tool's config: a present, non-empty
       // file it cannot fully parse is left byte-untouched — never renamed aside
       // or overwritten — and registration is skipped. The bounded decline
       // signal is the only operator-facing trace; the user sees OK's server

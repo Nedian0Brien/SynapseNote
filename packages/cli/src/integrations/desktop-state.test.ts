@@ -13,7 +13,7 @@ import {
 describe('desktopUserDataDir', () => {
   test('resolves the Electron userData path per platform', () => {
     expect(desktopUserDataDir({ home: '/Users/x', platformName: 'darwin' })).toBe(
-      '/Users/x/Library/Application Support/OpenKnowledge',
+      '/Users/x/Library/Application Support/SynapseNote',
     );
     expect(
       desktopUserDataDir({
@@ -21,24 +21,24 @@ describe('desktopUserDataDir', () => {
         platformName: 'linux',
         env: { XDG_CONFIG_HOME: '/home/x/.config' },
       }),
-    ).toBe('/home/x/.config/OpenKnowledge');
+    ).toBe('/home/x/.config/SynapseNote');
     expect(
       desktopUserDataDir({
         home: 'C:\\Users\\x',
         platformName: 'win32',
         env: { APPDATA: 'C:\\Users\\x\\AppData\\Roaming' },
       }),
-    ).toContain('OpenKnowledge');
+    ).toContain('SynapseNote');
   });
 
-  test('the legacy product name resolves the space-named macOS dir', () => {
+  test('the legacy product name resolves the old macOS dir', () => {
     expect(
       desktopUserDataDir({
         home: '/Users/x',
         platformName: 'darwin',
         productName: DESKTOP_LEGACY_PRODUCT_NAME,
       }),
-    ).toBe('/Users/x/Library/Application Support/Open Knowledge');
+    ).toBe('/Users/x/Library/Application Support/OpenKnowledge');
     // Sanity: the two product names differ.
     expect(DESKTOP_PRODUCT_NAME).not.toBe(DESKTOP_LEGACY_PRODUCT_NAME);
   });
@@ -101,7 +101,7 @@ describe('stateDirIsOurs', () => {
   test('false for a FOREIGN vendor’s same-named dir (no recentProjects array)', () => {
     const dir = mkdtempSync(join(tmpdir(), 'ok-state-'));
     try {
-      // Another app literally named "Open Knowledge" with its own state format.
+      // Another app literally named "SynapseNote" with its own state format.
       writeState(dir, { windows: [], preferences: { theme: 'dark' } });
       expect(stateDirIsOurs(dir)).toBe(false);
       writeFileSync(join(dir, 'state.json'), '{ broken json');

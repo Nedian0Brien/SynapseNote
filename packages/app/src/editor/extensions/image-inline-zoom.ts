@@ -8,7 +8,7 @@
  * the swap site — `configure()` is instance-scoped and lost across
  * `.extend()`, and the PM image node group depends on it.
  */
-import { ImageSrcFidelity } from '@inkeep/open-knowledge-core';
+import { ImageSrcFidelity } from '@nedian0brien/synapsenote-core';
 import { ReactNodeViewRenderer } from '@tiptap/react';
 import { ImageInlineZoomView } from './ImageInlineZoomView';
 

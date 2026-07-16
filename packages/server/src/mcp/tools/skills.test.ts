@@ -79,17 +79,17 @@ describe('skills read tool — server-required', () => {
 describe('skills read tool — built-in OK skills short-circuit before the network', () => {
   // No server URL at all: reaching the teaching error proves the built-in guard
   // fires before any cwd/server resolution. This is the exact collision from the
-  // field — an agent told to "load the open-knowledge skill" calls
-  // skills({ name: "open-knowledge" }) and must be taught, not 404'd.
-  test('READ open-knowledge teaches instead of looking it up', async () => {
+  // field — an agent told to "load the synapsenote skill" calls
+  // skills({ name: "synapsenote" }) and must be taught, not 404'd.
+  test('READ synapsenote teaches instead of looking it up', async () => {
     const handler = captureSkills(undefined);
-    const r = await handler({ name: 'open-knowledge', scope: 'project' });
+    const r = await handler({ name: 'synapsenote', scope: 'project' });
     expect(r.isError).toBe(true);
     expect(text(r)).toContain('built-in agent skills');
     expect(text(r)).toContain('already provided to you in your loaded skill list');
   });
 
-  test('every shipped bundle name short-circuits (not just open-knowledge)', async () => {
+  test('every shipped bundle name short-circuits (not just synapsenote)', async () => {
     const handler = captureSkills(undefined);
     for (const name of Object.values(BUNDLE_SKILL_NAME)) {
       const r = await handler({ name });
@@ -100,16 +100,16 @@ describe('skills read tool — built-in OK skills short-circuit before the netwo
 
   test('READ-file on a built-in skill is short-circuited too', async () => {
     const handler = captureSkills(undefined);
-    const r = await handler({ name: 'open-knowledge', file: 'references/x.md' });
+    const r = await handler({ name: 'synapsenote', file: 'references/x.md' });
     expect(r.isError).toBe(true);
     expect(text(r)).toContain('built-in agent skills');
   });
 
   test('a user-authored pack skill is NOT treated as built-in', async () => {
-    // `open-knowledge-pack-*` lives under the reserved prefix but is real KB
+    // `synapsenote-pack-*` lives under the reserved prefix but is real KB
     // content, so it must fall through to the normal (server-required) path.
     const handler = captureSkills(undefined);
-    const r = await handler({ name: 'open-knowledge-pack-fishing' });
+    const r = await handler({ name: 'synapsenote-pack-fishing' });
     expect(r.isError).toBe(true);
     expect(text(r)).toContain(HOCUSPOCUS_NOT_RUNNING_ERROR);
   });

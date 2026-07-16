@@ -1,8 +1,8 @@
 /**
- * Scaffold writer for a new OpenKnowledge project. Creates `.ok/config.yml`,
+ * Scaffold writer for a new SynapseNote project. Creates `.ok/config.yml`,
  * `.ok/.gitignore`, and the project-root `.okignore` with safe defaults.
  *
- * Lives in `@inkeep/open-knowledge-server` because BOTH the CLI's `ok init`
+ * Lives in `@nedian0brien/synapsenote-server` because BOTH the CLI's `ok init`
  * command and the server's `POST /api/local-op/ok-init` HTTP endpoint need to
  * call it. Server is the lower layer (no CLI deps), so the impl lives here and
  * CLI consumes it; the inverse would invert the package dependency direction.
@@ -15,7 +15,7 @@
 
 import { existsSync, lstatSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { CONFIG_SCHEMA_MAJOR_PATH, LOCAL_DIR, OK_DIR } from '@inkeep/open-knowledge-core';
+import { CONFIG_SCHEMA_MAJOR_PATH, LOCAL_DIR, OK_DIR } from '@nedian0brien/synapsenote-core';
 import { tracedMkdirSync, tracedWriteFileSync } from './fs-traced.ts';
 
 /**
@@ -106,8 +106,8 @@ export interface BuildConfigYmlOptions {
  * major (from `CONFIG_SCHEMA_MAJOR_PATH`) and `@latest` of the package.
  */
 export function buildConfigYmlContent(_version: string, options?: BuildConfigYmlOptions): string {
-  const template = `# yaml-language-server: $schema=https://unpkg.com/@inkeep/open-knowledge@latest/dist/schemas/${CONFIG_SCHEMA_MAJOR_PATH}/config.project.schema.json
-# OpenKnowledge — project configuration
+  const template = `# yaml-language-server: $schema=https://unpkg.com/@nedian0brien/synapsenote@latest/dist/schemas/${CONFIG_SCHEMA_MAJOR_PATH}/config.project.schema.json
+# SynapseNote — project configuration
 #
 # This file overrides built-in defaults for this project. Every key below
 # is commented out and shows its current default value. Uncomment any key
@@ -238,7 +238,7 @@ ${LOCAL_DIR}/
 
 # .ok/worktrees/ holds git worktrees created from the desktop worktree
 # selector — per-machine checkouts, never committed (WORKTREES_PARENT_DIR in
-# @inkeep/open-knowledge-core). Worktree creation also appends this path to
+# @nedian0brien/synapsenote-core). Worktree creation also appends this path to
 # .git/info/exclude so projects whose committed rule predates it stay clean.
 worktrees/
 
@@ -262,7 +262,7 @@ last-spawn-error.log
  * `.okignore` strictly more expressive than the previous YAML
  * `content.exclude` block.
  */
-export const OK_OKIGNORE_TEMPLATE = `# .okignore — paths to exclude from the OpenKnowledge document index.
+export const OK_OKIGNORE_TEMPLATE = `# .okignore — paths to exclude from the SynapseNote document index.
 # Uses gitignore syntax (parsed by the \`ignore\` npm library), evaluated
 # alongside .gitignore in a single ignore-lib instance.
 #
@@ -279,7 +279,7 @@ export const OK_OKIGNORE_TEMPLATE = `# .okignore — paths to exclude from the O
 /**
  * Single source of truth for the seeded project-root `.gitignore`.
  *
- * OpenKnowledge is macOS-only today, so every project will accumulate
+ * SynapseNote is macOS-only today, so every project will accumulate
  * `.DS_Store` Finder-metadata files. Without an ignore entry the user's
  * first `git status` lists them as untracked — confusing for users new to
  * git, noisy for everyone else. The leading comment is attribution so a
@@ -290,7 +290,7 @@ export const OK_OKIGNORE_TEMPLATE = `# .okignore — paths to exclude from the O
  * becomes user-owned the moment it lands (writeIfMissing semantics), so
  * additional patterns are the user's call.
  */
-export const ROOT_GITIGNORE_TEMPLATE = `# Seeded by OpenKnowledge when this project was created. Edit freely.
+export const ROOT_GITIGNORE_TEMPLATE = `# Seeded by SynapseNote when this project was created. Edit freely.
 .DS_Store
 `;
 

@@ -7,7 +7,7 @@
  * mode by checking whether any OK artifact appears in the exclude file.
  *
  * Worktree-aware: every read/write resolves the gitdir via
- * `resolveGitDirDetailed` from `@inkeep/open-knowledge-core` so linked
+ * `resolveGitDirDetailed` from `@nedian0brien/synapsenote-core` so linked
  * worktrees (where `<projectRoot>/.git` is a pointer file) write to the
  * correct `<repo>/.git/worktrees/<name>/info/exclude`, not a non-existent
  * `<projectRoot>/.git/info/exclude`.
@@ -30,12 +30,12 @@ import {
   INSTALLED_SKILLS_REL,
   OK_DIR,
   parseInstalledSkills,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 // `resolveGitDirDetailed` is in the `node:fs`-importing subpath of core —
 // the barrel deliberately omits it to keep the main entry browser-safe
 // (see `packages/core/src/index.ts`).
-import { resolveGitDirDetailed } from '@inkeep/open-knowledge-core/shadow-repo-layout';
-import { withHiddenWindowsConsole } from '@inkeep/open-knowledge-server';
+import { resolveGitDirDetailed } from '@nedian0brien/synapsenote-core/shadow-repo-layout';
+import { withHiddenWindowsConsole } from '@nedian0brien/synapsenote-server';
 import { ALL_EDITOR_IDS, EDITOR_TARGETS } from '../commands/editors.ts';
 
 /**
@@ -93,9 +93,9 @@ export type SharingMode = 'shared' | 'local-only' | 'no-git';
  *  - `.mcp.json`                        — Claude Code project MCP (merged file)
  *  - `.cursor/mcp.json`                 — Cursor project MCP (merged file)
  *  - `.codex/config.toml`               — Codex project MCP (merged file)
- *  - `.claude/skills/open-knowledge/`   — Claude project SKILL.md bundle (whole-tree)
- *  - `.cursor/skills/open-knowledge/`   — Cursor project SKILL.md bundle (whole-tree)
- *  - `.codex/skills/open-knowledge/`    — Codex project SKILL.md bundle (whole-tree)
+ *  - `.claude/skills/synapsenote/`   — Claude project SKILL.md bundle (whole-tree)
+ *  - `.cursor/skills/synapsenote/`   — Cursor project SKILL.md bundle (whole-tree)
+ *  - `.codex/skills/synapsenote/`    — Codex project SKILL.md bundle (whole-tree)
  *  - `.claude/launch.json`              — Claude launcher entry (merged file)
  *
  * `.ok/` and `.okignore` are emitted UNANCHORED (slash-free). gitignore
@@ -138,7 +138,7 @@ export function getOkArtifactPaths(projectRoot: string): readonly string[] {
   paths.push(CLAUDE_LAUNCH_JSON);
 
   // The loop above only excludes the single
-  // hardcoded `open-knowledge` bundle per editor — authored skills
+  // hardcoded `synapsenote` bundle per editor — authored skills
   // (`.{host}/skills/<name>/`) and pack skills would still leak in
   // local-only mode. Enumerate the installed-skill set and
   // exclude each skill's projection per the hosts it was installed to. A
@@ -417,7 +417,7 @@ export function probeTrackedOkPaths(
  */
 export function formatTrackedRemediation(tracked: readonly string[]): string {
   const lines: string[] = [];
-  lines.push('Cannot switch OpenKnowledge to local-only — these OK files are tracked upstream:');
+  lines.push('Cannot switch SynapseNote to local-only — these OK files are tracked upstream:');
   lines.push('');
   for (const p of tracked) lines.push(`  ${p}`);
   lines.push('');

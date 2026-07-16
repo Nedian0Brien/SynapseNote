@@ -194,7 +194,7 @@ export function CreatedItemsList({
         {
           key: `skill:${skill.name}`,
           icon: Hexagon,
-          // Drop the shared `open-knowledge-pack-` prefix (identical across
+          // Drop the shared `synapsenote-pack-` prefix (identical across
           // packs, non-distinguishing) so the name reads + fits; full name
           // stays on hover.
           name: skillDisplayName(skill.name),

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { join } from 'node:path';
-import { BUNDLE_SKILL_NAME, USER_GLOBAL_BUNDLE_IDS } from '@inkeep/open-knowledge-server';
+import { BUNDLE_SKILL_NAME, USER_GLOBAL_BUNDLE_IDS } from '@nedian0brien/synapsenote-server';
 import { HOSTS_WITH_USER_SKILL_DIR } from '../commands/editors.ts';
 import { userGlobalSkillBundleTargets } from './skill-teardown.ts';
 
@@ -35,8 +35,8 @@ describe('userGlobalSkillBundleTargets', () => {
 
   test('includes both built-in bundles by name (discovery + write-skill)', () => {
     const paths = userGlobalSkillBundleTargets(HOME).map((t) => t.path);
-    expect(paths.some((p) => p.endsWith('/open-knowledge-discovery'))).toBe(true);
-    expect(paths.some((p) => p.endsWith('/open-knowledge-write-skill'))).toBe(true);
+    expect(paths.some((p) => p.endsWith('/synapsenote-discovery'))).toBe(true);
+    expect(paths.some((p) => p.endsWith('/synapsenote-write-skill'))).toBe(true);
   });
 
   test('never targets the shared ~/.agents/skills root itself', () => {

@@ -25,8 +25,8 @@
  * shell is exclusively the selection-bubble path).
  */
 
-import { type TargetData, TERMINAL_CLIS, type TerminalCli } from '@inkeep/open-knowledge-core';
 import { Trans, useLingui } from '@lingui/react/macro';
+import { type TargetData, TERMINAL_CLIS, type TerminalCli } from '@nedian0brien/synapsenote-core';
 import { ChevronDown, Loader2, TextQuote, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';

@@ -1,4 +1,4 @@
-/** Root directory name for open-knowledge inside a project. */
+/** Root directory name for synapsenote inside a project. */
 export const OK_DIR = '.ok';
 
 /**
@@ -8,7 +8,7 @@ export const OK_DIR = '.ok';
  * for "the project" must check this file, not just the `.ok/` directory:
  * `write`/`edit` (folder/template) creates nested `<folder>/.ok/` dirs
  * with no `config.yml`, and a looser gate would mistake them for project
- * roots. Use `isProjectRoot(dir)` from `@inkeep/open-knowledge-server`'s
+ * roots. Use `isProjectRoot(dir)` from `@nedian0brien/synapsenote-server`'s
  * `find-project-root.ts` (Node-only) for the canonical "is this a project
  * root?" check that pairs with this marker.
  */

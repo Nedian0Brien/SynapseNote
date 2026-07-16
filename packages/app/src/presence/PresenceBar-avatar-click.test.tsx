@@ -12,7 +12,7 @@
  */
 
 import { afterEach, describe, expect, mock, test } from 'bun:test';
-import type { AgentPresenceEntry } from '@inkeep/open-knowledge-core';
+import type { AgentPresenceEntry } from '@nedian0brien/synapsenote-core';
 import { renderToString } from 'react-dom/server';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import * as actualDocumentContext from '@/editor/DocumentContext';

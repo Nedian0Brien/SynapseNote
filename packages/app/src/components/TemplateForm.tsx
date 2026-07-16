@@ -1,6 +1,6 @@
-import { stripFrontmatter, unwrapFrontmatterFences } from '@inkeep/open-knowledge-core';
 import { t } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react/macro';
+import { stripFrontmatter, unwrapFrontmatterFences } from '@nedian0brien/synapsenote-core';
 import { X } from 'lucide-react';
 import { useId, useState } from 'react';
 import { toast } from 'sonner';
@@ -20,7 +20,7 @@ const NAME_RE = /^[A-Za-z0-9_-]+$/;
  * trimmed. The result satisfies NAME_RE, or is empty when the name has no
  * alphanumeric content — callers treat empty as invalid.
  *
- * Distinct from `toWikiLinkSlug` in `@inkeep/open-knowledge-core`, which
+ * Distinct from `toWikiLinkSlug` in `@nedian0brien/synapsenote-core`, which
  * preserves Unicode letters and digits; this is ASCII-only on purpose so
  * the derived filename always satisfies NAME_RE.
  */
@@ -451,8 +451,8 @@ export function TemplateFormFields({
         <FieldDescription>
           <Trans>
             The <code className="font-mono">type</code> every document created from this template
-            gets (e.g. <code className="font-mono">research-note</code>). Keeps new docs Open
-            Knowledge Format–conformant.
+            gets (e.g. <code className="font-mono">research-note</code>). Keeps new docs SynapseNote
+            Format–conformant.
           </Trans>
         </FieldDescription>
       </Field>

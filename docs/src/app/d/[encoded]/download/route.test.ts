@@ -1,7 +1,7 @@
 import { describe, expect, mock, test } from 'bun:test';
 
 const SPLASH_URL =
-  'https://github.com/inkeep/open-knowledge/releases/latest/download/OpenKnowledge-arm64.dmg';
+  'https://github.com/Nedian0Brien/SynapseNote/releases/latest/download/SynapseNote-arm64.dmg';
 
 type CaptureOpts = {
   event: string;
@@ -15,7 +15,7 @@ mock.module('../../../../lib/track.ts', () => ({
     _lastCapture = opts;
   },
   resolveDistinctId: () => 'splash-1',
-  attribution: () => ({ referrer: 'openknowledge.ai', utm_content: 'should-be-overridden' }),
+  attribution: () => ({ referrer: 'synapse.lawdigest.kr', utm_content: 'should-be-overridden' }),
   isPrefetchRequest: () => _isPrefetch,
 }));
 
@@ -33,7 +33,7 @@ mock.module('../../../../lib/deferred-share.ts', () => ({
 const { GET } = await import('./route.ts');
 
 function call(encoded: string): Promise<Response> {
-  return GET(new Request(`https://openknowledge.ai/d/${encoded}/download`), {
+  return GET(new Request(`https://synapse.lawdigest.kr/d/${encoded}/download`), {
     params: Promise.resolve({ encoded }),
   });
 }

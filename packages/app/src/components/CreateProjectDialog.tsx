@@ -63,6 +63,9 @@
  * is per-dialog-open per banner.
  */
 
+import type { MessageDescriptor } from '@lingui/core';
+import { msg } from '@lingui/core/macro';
+import { Plural, Trans, useLingui } from '@lingui/react/macro';
 import {
   ALL_EDITOR_IDS,
   CREATE_NEW_PROJECT_FAILURE_REASONS,
@@ -70,10 +73,7 @@ import {
   type CreateNewProjectFailureReason,
   EDITOR_LABELS,
   sanitizeFolderName,
-} from '@inkeep/open-knowledge-core';
-import type { MessageDescriptor } from '@lingui/core';
-import { msg } from '@lingui/core/macro';
-import { Plural, Trans, useLingui } from '@lingui/react/macro';
+} from '@nedian0brien/synapsenote-core';
 import { ChevronRight } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -313,7 +313,7 @@ export function CreateProjectDialog({
   const nameErrorId = useId();
   // Parent directory the new project will be created under. Hydrated on open
   // from `bridge.fs.defaultProjectsRoot()` (last-used parent, else
-  // `~/Documents/OpenKnowledge`); displayed read-only. Browse picks a fresh
+  // `~/Documents/SynapseNote`); displayed read-only. Browse picks a fresh
   // parent; the path is never user-edited as free text.
   const [location, setLocation] = useState('');
   // Whether the on-open `defaultProjectsRoot()` probe is still in flight. Lets
@@ -807,13 +807,13 @@ export function CreateProjectDialog({
           <DialogDescription>
             {selectedPack ? (
               <Trans>
-                Create a new OpenKnowledge project from the <strong>{selectedPack.name}</strong>{' '}
+                Create a new SynapseNote project from the <strong>{selectedPack.name}</strong>{' '}
                 starter pack (
                 <Plural value={selectedPack.entryCounts.folders} one="# folder" other="# folders" />{' '}
                 and starter templates) in the folder of your choice.
               </Trans>
             ) : (
-              <Trans>Create a new OpenKnowledge project in the folder of your choice.</Trans>
+              <Trans>Create a new SynapseNote project in the folder of your choice.</Trans>
             )}
           </DialogDescription>
         </DialogHeader>
@@ -962,7 +962,7 @@ export function CreateProjectDialog({
                     <Trans>Connect to AI tools</Trans>
                   </legend>
                   <p className="text-1sm text-muted-foreground">
-                    <Trans>Each selected tool gets an OpenKnowledge MCP entry.</Trans>
+                    <Trans>Each selected tool gets an SynapseNote MCP entry.</Trans>
                   </p>
                   {ALL_EDITOR_IDS.map((id) => {
                     const inputId = `create-editor-${id}`;
@@ -1057,7 +1057,7 @@ function CascadeBanner({
       >
         <p className="mb-2">
           <Trans>
-            Can't nest projects. An OpenKnowledge project already exists at{' '}
+            Can't nest projects. An SynapseNote project already exists at{' '}
             <code className="font-mono break-all">{rootPath}</code>. Choose a location outside it,
             or open that project instead.
           </Trans>
@@ -1089,7 +1089,7 @@ function CascadeBanner({
       >
         <p>
           <Trans>
-            OpenKnowledge will be initialized at <code>{gitRoot}</code> — the parent of your new
+            SynapseNote will be initialized at <code>{gitRoot}</code> — the parent of your new
             folder, because it contains a <code>.git</code> folder (one project per git repo).
           </Trans>
         </p>

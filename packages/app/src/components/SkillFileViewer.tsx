@@ -1,4 +1,4 @@
-import type { SkillScope } from '@inkeep/open-knowledge-core';
+import type { SkillScope } from '@nedian0brien/synapsenote-core';
 import { SkillMarkdownLoader } from '@/components/SkillMarkdownLoader';
 import { TextViewer } from '@/components/TextViewer';
 import { loadSkillFileText } from '@/lib/skills-api';

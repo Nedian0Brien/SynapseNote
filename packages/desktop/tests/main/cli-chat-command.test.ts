@@ -19,7 +19,7 @@ describe('CLI chat command boundary', () => {
         modelSettings: codexModelSettings,
       }),
     ).toBe(
-      "codex exec --json --color never -c 'approval_policy=\"never\"' -c 'sandbox_mode=\"workspace-write\"' -c 'mcp_servers.open-knowledge.default_tools_approval_mode=\"approve\"' -m 'gpt-5.6-sol' -c 'model_reasoning_effort=\"medium\"' 'don'\\''t run $(oops)'",
+      "codex exec --json --color never -c 'approval_policy=\"never\"' -c 'sandbox_mode=\"workspace-write\"' -c 'mcp_servers.synapsenote.default_tools_approval_mode=\"approve\"' -m 'gpt-5.6-sol' -c 'model_reasoning_effort=\"medium\"' 'don'\\''t run $(oops)'",
     );
     expect(
       buildCliChatCommand({
@@ -63,7 +63,7 @@ describe('CLI chat command boundary', () => {
       'codex exec resume --json --dangerously-bypass-approvals-and-sandbox',
     );
     expect(codexCommand).toContain(
-      '-c \'mcp_servers.open-knowledge.default_tools_approval_mode="approve"\'',
+      '-c \'mcp_servers.synapsenote.default_tools_approval_mode="approve"\'',
     );
     expect(
       buildCliChatCommand({
@@ -76,7 +76,7 @@ describe('CLI chat command boundary', () => {
     ).toContain('--dangerously-skip-permissions');
   });
 
-  test('keeps write-capable OpenKnowledge MCP tools unavailable in read-only mode', () => {
+  test('keeps write-capable SynapseNote MCP tools unavailable in read-only mode', () => {
     const command = buildCliChatCommand({
       cli: 'codex',
       prompt: 'inspect',

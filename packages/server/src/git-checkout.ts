@@ -15,7 +15,10 @@
  */
 
 import { realpathSync } from 'node:fs';
-import { type CheckoutFailureReason, isBranchNotFoundGitError } from '@inkeep/open-knowledge-core';
+import {
+  type CheckoutFailureReason,
+  isBranchNotFoundGitError,
+} from '@nedian0brien/synapsenote-core';
 import { truncateError } from './error-format.ts';
 import { dirtyFilesOverlapWith } from './git-dirty.ts';
 import { createGitInstance } from './git-handle.ts';
@@ -106,7 +109,7 @@ export const CHECKOUT_HANDLER_TAG = 'git-checkout';
  * Returns true when `error` is a simple-git / git CLI failure whose message
  * indicates the requested branch does not exist on the remote.
  *
- * Thin re-export of `isBranchNotFoundGitError` from `@inkeep/open-knowledge-core`
+ * Thin re-export of `isBranchNotFoundGitError` from `@nedian0brien/synapsenote-core`
  * — see that function for the canonical pattern. The wrapper here preserves
  * the named export so existing imports (`api-extension.ts`, this module) keep
  * their paths; the implementation is centralized so the cli-side

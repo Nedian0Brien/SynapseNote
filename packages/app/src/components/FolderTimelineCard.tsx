@@ -1,6 +1,6 @@
-import type { TimelineEntry } from '@inkeep/open-knowledge-core';
 import { t } from '@lingui/core/macro';
 import { Trans } from '@lingui/react/macro';
+import type { TimelineEntry } from '@nedian0brien/synapsenote-core';
 import {
   ArrowLeftRight,
   FilePlus,
@@ -81,7 +81,7 @@ function describeEntry(entry: TimelineEntry): { Icon: LucideIcon; label: string;
 
 function authorName(entry: TimelineEntry): string {
   if (entry.contributors.length > 0) return entry.contributors[0].name;
-  if (entry.author === 'openknowledge-service' || entry.author === 'server') return t`Auto-save`;
+  if (entry.author === 'synapsenote-service' || entry.author === 'server') return t`Auto-save`;
   return entry.author || t`Unknown`;
 }
 

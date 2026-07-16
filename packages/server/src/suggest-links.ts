@@ -1,6 +1,10 @@
 import { readFile } from 'node:fs/promises';
 import type { Document, Hocuspocus } from '@hocuspocus/server';
-import { resolveInternalHref, stripFrontmatter, toWikiLinkSlug } from '@inkeep/open-knowledge-core';
+import {
+  resolveInternalHref,
+  stripFrontmatter,
+  toWikiLinkSlug,
+} from '@nedian0brien/synapsenote-core';
 import type { FileIndexEntry } from './file-watcher.ts';
 import { getLogger } from './logger.ts';
 import { extractPageIdentity, type PageIdentity } from './page-identity.ts';

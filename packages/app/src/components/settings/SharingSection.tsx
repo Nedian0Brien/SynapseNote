@@ -45,7 +45,7 @@ function SharingSectionUnsupported() {
         </h3>
         <p className="text-1sm text-muted-foreground">
           <Trans>
-            Available in the OpenKnowledge desktop app. From a terminal, use
+            Available in the SynapseNote desktop app. From a terminal, use
             <code> ok config-sharing status</code> / <code>share</code> / <code>unshare</code>.
           </Trans>
         </p>
@@ -154,7 +154,7 @@ function SharingSectionBody() {
         </div>
         <p className="text-1sm text-muted-foreground">
           <Trans>
-            Choose whether this project's OpenKnowledge setup, including its AI-tool connections, is
+            Choose whether this project's SynapseNote setup, including its AI-tool connections, is
             saved with the project so teammates get it too, or kept only on your computer.
           </Trans>
         </p>

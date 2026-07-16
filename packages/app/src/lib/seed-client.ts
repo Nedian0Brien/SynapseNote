@@ -1,4 +1,4 @@
-import { ProblemDetailsSchema } from '@inkeep/open-knowledge-core';
+import { ProblemDetailsSchema } from '@nedian0brien/synapsenote-core';
 import type {
   OkPackId,
   OkScaffoldApplyResult,
@@ -67,7 +67,7 @@ interface SeedClientShape {
  * Runtime adapter that returns the right transport for plan/apply/list-packs —
  * Electron IPC when the desktop bridge is populated, otherwise HTTP fetch to
  * the Hocuspocus `/api/seed/*` endpoints. Either path hits the same underlying
- * functions in `@inkeep/open-knowledge-server`. The HTTP path emits flat
+ * functions in `@nedian0brien/synapsenote-server`. The HTTP path emits flat
  * `{plan}` / `{result}` / `{packs}` on success and RFC 9457 problem+json on
  * error; this adapter translates either back to the in-process discriminated
  * union so all three transports surface identical types.

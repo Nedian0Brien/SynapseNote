@@ -12,7 +12,7 @@
  * first lets a later `cat-file` rejection mean "path absent" rather than "git
  * broke"; the broken-git case throws past the probes and omits freshness.
  */
-import type { ShareFreshness } from '@inkeep/open-knowledge-core';
+import type { ShareFreshness } from '@nedian0brien/synapsenote-core';
 import { truncateError } from '../error-format.ts';
 import { createGitInstance } from '../git-handle.ts';
 import { getLogger } from '../logger.ts';

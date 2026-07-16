@@ -3,7 +3,7 @@
  *
  * `.claude/launch.json` is a SHARED file: OK owns exactly one entry in the
  * `configurations[]` array — the one named `LAUNCH_CONFIG_NAME`
- * (`open-knowledge-ui`) — and Claude Code / the user may keep others alongside
+ * (`synapsenote-ui`) — and Claude Code / the user may keep others alongside
  * it (`repair-launch-json.ts` preserves them). So deinit must NOT delete the
  * whole file; it surgically removes only OK's array element, byte-preserving
  * every other configuration, comment, and formatting token.
@@ -17,7 +17,7 @@
 
 import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { atomicWriteFileSync } from '@inkeep/open-knowledge-core/server';
+import { atomicWriteFileSync } from '@nedian0brien/synapsenote-core/server';
 import {
   getNodeValue,
   type Node as JsoncNode,
@@ -46,7 +46,7 @@ function isBenignBomError(error: JsoncParseError, raw: string): boolean {
 }
 
 /**
- * Remove OK's `open-knowledge-ui` entry from `<projectRoot>/.claude/launch.json`.
+ * Remove OK's `synapsenote-ui` entry from `<projectRoot>/.claude/launch.json`.
  * A missing file, a file with no OK entry, or a malformed file all map to a
  * structured outcome (`not-present` / `declined`), leaving the file untouched.
  * The one exception is the final `atomicWriteFileSync` (and the `rmSync` for the

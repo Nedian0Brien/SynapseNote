@@ -4,7 +4,10 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
-import { formatOkActor, type OkActorEntry } from '@inkeep/open-knowledge-core/shadow-repo-layout';
+import {
+  formatOkActor,
+  type OkActorEntry,
+} from '@nedian0brien/synapsenote-core/shadow-repo-layout';
 import simpleGit from 'simple-git';
 import {
   appendRenameLogEntry,
@@ -67,7 +70,7 @@ const human: WriterIdentity = {
 const agent: WriterIdentity = {
   id: 'agent-cursor',
   name: 'cursor-agent',
-  email: 'cursor@openknowledge.local',
+  email: 'cursor@synapsenote.local',
 };
 
 /**
@@ -291,7 +294,7 @@ describe('getDocumentHistory', () => {
   test('hides park commits even when their tree-deletion shadows the doc path', async () => {
     const { contentDir, shadow } = await setup();
 
-    // Seed a service-writer WIP commit on refs/wip/main/openknowledge-service —
+    // Seed a service-writer WIP commit on refs/wip/main/synapsenote-service —
     // its tree contains content/docs/intro.md, so the next park (whose tree
     // omits that path) registers a "deletion" diff and would surface via
     // git log pathspec without explicit filtering.
@@ -339,12 +342,12 @@ describe('getDocumentHistory', () => {
     const writerA: WriterIdentity = {
       id: 'agent-aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',
       name: 'codex-mcp-client',
-      email: 'agent-aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa@openknowledge.local',
+      email: 'agent-aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa@synapsenote.local',
     };
     const writerB: WriterIdentity = {
       id: 'agent-bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb',
       name: 'claude-code',
-      email: 'agent-bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb@openknowledge.local',
+      email: 'agent-bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb@synapsenote.local',
     };
 
     const commitWriter = async (writer: WriterIdentity, docs: string[], subject: string) => {
@@ -406,7 +409,7 @@ describe('getDocumentHistory', () => {
     const writer: WriterIdentity = {
       id: 'agent-cccccccc-cccc-4ccc-cccc-cccccccccccc',
       name: 'claude-code',
-      email: 'agent-cccccccc-cccc-4ccc-cccc-cccccccccccc@openknowledge.local',
+      email: 'agent-cccccccc-cccc-4ccc-cccc-cccccccccccc@synapsenote.local',
     };
 
     // A project skill is versioned under its `.ok/skills/<name>` artifact key:

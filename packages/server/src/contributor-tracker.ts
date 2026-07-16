@@ -13,7 +13,7 @@
 /**
  * Optional actor-tuple metadata, populated at the API-boundary for agent/principal
  * writes and left empty for classified service writers (file-system, git-upstream,
- * openknowledge-service). Threads through to `OkActorEntry` in the L2-drain commit
+ * synapsenote-service). Threads through to `OkActorEntry` in the L2-drain commit
  * body so the full actor tuple is recoverable from git history without a
  * session-registry lookup.
  */

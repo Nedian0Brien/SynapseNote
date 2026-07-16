@@ -15,7 +15,7 @@
  * (nearest) hit, so a subtree that is its own project after `ok init` stops
  * the walk there — nested projects compose like git submodules.
  */
-import { findEnclosingProjectRoot } from '@inkeep/open-knowledge-server';
+import { findEnclosingProjectRoot } from '@nedian0brien/synapsenote-server';
 
 /**
  * Top-level subcommands that operate on an existing project and therefore

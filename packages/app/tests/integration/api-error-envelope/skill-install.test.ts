@@ -13,7 +13,7 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { ProblemDetailsSchema, SkillInstallSuccessSchema } from '@inkeep/open-knowledge-core';
+import { ProblemDetailsSchema, SkillInstallSuccessSchema } from '@nedian0brien/synapsenote-core';
 import { HARNESS_BOOT_TIMEOUT_MS } from '../harness-boot-timeout';
 import { createTestServer, type TestServer } from '../test-harness';
 
@@ -123,9 +123,9 @@ describe('skill install-projection lifecycle', () => {
     expect(res.status).toBe(404);
   });
 
-  test('install refuses the reserved open-knowledge* prefix → 400', async () => {
-    expect((await putSkill('open-knowledge-mine')).status).toBe(200);
-    const res = await installSkill({ name: 'open-knowledge-mine', targets: ['claude'] });
+  test('install refuses the reserved synapsenote* prefix → 400', async () => {
+    expect((await putSkill('synapsenote-mine')).status).toBe(200);
+    const res = await installSkill({ name: 'synapsenote-mine', targets: ['claude'] });
     expect(res.status).toBe(400);
     const parsed = ProblemDetailsSchema.safeParse(await res.json());
     expect(parsed.success && parsed.data.title.includes('reserved')).toBe(true);

@@ -63,7 +63,7 @@ describe('surgical JSON write through the bundled CLI', () => {
       expect(after.charCodeAt(0)).toBe(0xfeff);
       expect(after).toContain('// user comment');
       expect(after).toContain('"existing"');
-      expect(after).toContain('open-knowledge');
+      expect(after).toContain('synapsenote');
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

@@ -8,8 +8,8 @@
  * (precedent #30) so codeblocks compose visually with other rich blocks.
  */
 
-import { composeSelectionPrompt } from '@inkeep/open-knowledge-core';
 import { Trans, useLingui } from '@lingui/react/macro';
+import { composeSelectionPrompt } from '@nedian0brien/synapsenote-core';
 import type { NodeViewProps } from '@tiptap/core';
 import { NodeViewContent, NodeViewWrapper } from '@tiptap/react';
 import {

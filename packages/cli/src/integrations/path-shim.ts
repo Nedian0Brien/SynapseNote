@@ -3,12 +3,12 @@
  * shim) and the CLI reverter (which removes it for `ok uninstall`).
  *
  * The desktop app (macOS packaged only) puts `ok` on the user's PATH by:
- *   - symlinking `~/.ok/bin/{ok,open-knowledge}` at the app's CLI wrapper,
+ *   - symlinking `~/.ok/bin/{ok,synapsenote}` at the app's CLI wrapper,
  *   - writing `~/.ok/env.sh` (prepends `~/.ok/bin` to PATH),
  *   - injecting a fenced managed block into each shell rc file that sources
  *     `~/.ok/env.sh`, and
  *   - recording every change in a manifest at
- *     `~/Library/Application Support/OpenKnowledge/path-install.json`.
+ *     `~/Library/Application Support/SynapseNote/path-install.json`.
  *
  * The install side lives in the desktop package (`main/path-install.ts`), which
  * imports the fence markers + marker path + marker shape FROM HERE so the
@@ -32,9 +32,9 @@ import {
 import { join } from 'node:path';
 
 /** Fence opening the managed block in a shell rc file. */
-export const PATH_SHIM_BEGIN = '# >>> open-knowledge cli >>>';
+export const PATH_SHIM_BEGIN = '# >>> synapsenote cli >>>';
 /** Fence closing the managed block. */
-export const PATH_SHIM_END = '# <<< open-knowledge cli <<<';
+export const PATH_SHIM_END = '# <<< synapsenote cli <<<';
 /**
  * Matches the whole fenced managed block (fence-to-fence, incl. its trailing
  * newline). Multiline + non-greedy so a file with the block anywhere — and only
@@ -42,7 +42,7 @@ export const PATH_SHIM_END = '# <<< open-knowledge cli <<<';
  * MUST stay in lock-step, which is why both sides import this one constant.
  */
 export const PATH_SHIM_BLOCK_RE =
-  /^# >>> open-knowledge cli >>>\n[\s\S]*?^# <<< open-knowledge cli <<<\n?/m;
+  /^# >>> synapsenote cli >>>\n[\s\S]*?^# <<< synapsenote cli <<<\n?/m;
 
 /** Diagnostic snapshot of the interactive PATH captured at install time. */
 export interface PathDiscovery {
@@ -68,7 +68,7 @@ export interface PathInstallConsent {
 
 /**
  * The install manifest — the complete record of every PATH change, written to
- * `~/Library/Application Support/OpenKnowledge/path-install.json`. The revert
+ * `~/Library/Application Support/SynapseNote/path-install.json`. The revert
  * reads `rcFiles` (blocks to strip) and `extraSymlinks` (guarded removals);
  * `binDir` + `envShimPath` live under `~/.ok/` and are swept by the whole-dir
  * removal.
@@ -98,7 +98,7 @@ export interface PathInstallMarker {
 /** Absolute path to the PATH-install manifest (macOS layout — the shim is
  *  macOS-packaged-desktop only, so this path is where it is ever written). */
 export function pathInstallMarkerPath(home: string): string {
-  return join(home, 'Library', 'Application Support', 'OpenKnowledge', 'path-install.json');
+  return join(home, 'Library', 'Application Support', 'SynapseNote', 'path-install.json');
 }
 
 /** Minimal fs surface the revert reads through (injectable for tests). */
@@ -142,7 +142,7 @@ export function readPathInstallMarker(
  *
  * `emptyAfter` is true when nothing but whitespace remains: the caller deletes
  * the file outright rather than leave a blank one. This is what removes the
- * OK-OWNED fish conf file (`~/.config/fish/conf.d/open-knowledge.fish`, whose
+ * OK-OWNED fish conf file (`~/.config/fish/conf.d/synapsenote.fish`, whose
  * entire contents are the block) while a user's own `~/.zshrc` — which keeps
  * its other lines — is written back with only the block gone.
  */

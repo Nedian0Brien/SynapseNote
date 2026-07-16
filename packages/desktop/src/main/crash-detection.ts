@@ -37,7 +37,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { dirname, join } from 'node:path';
-import type { OkBugReportCrashDetectedEvent } from '@inkeep/open-knowledge-core';
+import type { OkBugReportCrashDetectedEvent } from '@nedian0brien/synapsenote-core';
 
 /**
  * Process-gone reasons that read as genuine crashes. `clean-exit` and

@@ -107,14 +107,14 @@ describe('PropertyInlineLinks — plain-text fast path', () => {
 describe('PropertyInlineLinks — mixed content', () => {
   test('PRD-7111 reported shape — wikilink + em-dash + parenthetical text', () => {
     const input =
-      '[[public/open-knowledge/specs/2026-06-12-showall-truncation-ux/SPEC]] — which entries appear (cap), NOT horizontal density';
+      '[[public/synapsenote/specs/2026-06-12-showall-truncation-ux/SPEC]] — which entries appear (cap), NOT horizontal density';
     render(<PropertyInlineLinks text={input} />);
     const a = screen.getByTestId('property-inline-wikilink');
-    expect(a.textContent).toBe('public/open-knowledge/specs/2026-06-12-showall-truncation-ux/SPEC');
+    expect(a.textContent).toBe('public/synapsenote/specs/2026-06-12-showall-truncation-ux/SPEC');
     // The rest of the chip renders as plain text — visible label is the
     // wikilink target followed by the trailing prose.
     expect(screen.getByTestId('property-inline-links').textContent).toBe(
-      'public/open-knowledge/specs/2026-06-12-showall-truncation-ux/SPEC — which entries appear (cap), NOT horizontal density',
+      'public/synapsenote/specs/2026-06-12-showall-truncation-ux/SPEC — which entries appear (cap), NOT horizontal density',
     );
   });
 

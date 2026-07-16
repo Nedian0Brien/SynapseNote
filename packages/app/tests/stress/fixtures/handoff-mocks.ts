@@ -450,7 +450,7 @@ export async function installHandoffMocks(page: Page, cfg: HandoffMockConfig): P
           send: async () => ({
             ok: false as const,
             reason: 'send-failed' as const,
-            fallback: { mailtoUrl: 'mailto:support@inkeep.com' },
+            fallback: { mailtoUrl: 'mailto:support@lawdigest.kr' },
           }),
           crashAck: async () => ({ ok: true as const }),
           onCrashDetected: () => () => {},
@@ -634,7 +634,7 @@ export async function installHandoffMocks(page: Page, cfg: HandoffMockConfig): P
     //
     // Once the server-check Step 1 was introduced, the gate's lookup key for
     // Step 2 uses `snapshot.currentVersion` from the server response — which
-    // on the real server is `@inkeep/open-knowledge-server`'s package.json
+    // on the real server is `@nedian0brien/synapsenote-server`'s package.json
     // version (e.g. `0.4.0-beta.6`), NOT the `'unknown'` literal this seed
     // writes. The load-bearing short-circuit is now the
     // `/api/skill/install-state` route mock above (returns a snapshot whose

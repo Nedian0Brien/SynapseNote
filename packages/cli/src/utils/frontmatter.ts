@@ -15,7 +15,7 @@
  * matching elsewhere.
  */
 
-import { stripFrontmatter, unwrapFrontmatterFences } from '@inkeep/open-knowledge-core';
+import { stripFrontmatter, unwrapFrontmatterFences } from '@nedian0brien/synapsenote-core';
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import type { output, ZodType } from 'zod';
 import { isObject } from './is-object.ts';

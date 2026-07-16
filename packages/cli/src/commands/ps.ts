@@ -1,5 +1,5 @@
 /**
- * `ok ps` — list all running open-knowledge servers across all directories.
+ * `ok ps` — list all running synapsenote servers across all directories.
  *
  * Config-independent global query: discovers servers by process scan rather
  * than looking at the cwd project. Uses `inspectLock` (pure read — no
@@ -231,7 +231,7 @@ function formatPorts(entry: PsEntry): string {
  */
 export function renderTable(entries: PsEntry[]): string {
   if (entries.length === 0) {
-    return 'No open-knowledge servers found.';
+    return 'No synapsenote servers found.';
   }
 
   // Compute column widths dynamically
@@ -368,7 +368,7 @@ export async function runPs(deps: RunPsDeps = {}): Promise<void> {
 
 export function psCommand(): Command {
   return new Command('ps')
-    .description('List all running open-knowledge servers')
+    .description('List all running synapsenote servers')
     .argument('[modifier]', '"all" to include stale (dead-pid) entries')
     .option('--all', 'Include stale (dead-pid) entries (foreign-host shows by default)')
     .option('--json', 'Emit structured JSON (always includes all statuses)')

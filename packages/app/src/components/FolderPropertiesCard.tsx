@@ -1,10 +1,10 @@
+import { Trans, useLingui } from '@lingui/react/macro';
 import {
   type FrontmatterType,
   type FrontmatterValue,
   inferType,
   isFrontmatterValueEmpty,
-} from '@inkeep/open-knowledge-core';
-import { Trans, useLingui } from '@lingui/react/macro';
+} from '@nedian0brien/synapsenote-core';
 import { ChevronRight, FolderCog, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';

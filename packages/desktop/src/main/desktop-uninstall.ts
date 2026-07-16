@@ -5,7 +5,7 @@
  * main shows the confirmation UI, runs the bundled CLI cleanup while displaying
  * progress (`ok deinit` for explicitly selected projects, then
  * `ok uninstall --yes` for the global footprint), and finally reveals
- * OpenKnowledge.app in Finder so the user can drag it to the Trash.
+ * SynapseNote.app in Finder so the user can drag it to the Trash.
  *
  * Electron-free + dependency-injected so the path predicates and generated
  * helper script are unit-testable without an Electron runtime.
@@ -17,7 +17,7 @@ import { homedir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 
 const APP_BUNDLE_FROM_EXEC_RE = /^(.*\.app)\/Contents\/MacOS\/[^/]+$/;
-const SUPPORTED_APP_BUNDLE_NAME = 'OpenKnowledge.app';
+const SUPPORTED_APP_BUNDLE_NAME = 'SynapseNote.app';
 
 export interface DesktopUninstallProjectCandidate {
   path: string;
@@ -56,7 +56,7 @@ export type RunDesktopUninstallCleanupResult =
   | { ok: true }
   | { ok: false; error: string; exitCode?: number | null };
 
-/** Resolve `/Applications/OpenKnowledge.app` from Electron's main execPath. */
+/** Resolve `/Applications/SynapseNote.app` from Electron's main execPath. */
 export function resolveAppBundleFromExecPath(
   execPath: string,
   platform: NodeJS.Platform = process.platform,
@@ -68,7 +68,7 @@ export function resolveAppBundleFromExecPath(
 
 /**
  * True only for the two install locations we are willing to remove from inside
- * the app: `/Applications/OpenKnowledge.app` and `~/Applications/OpenKnowledge.app`.
+ * the app: `/Applications/SynapseNote.app` and `~/Applications/SynapseNote.app`.
  * This intentionally refuses DMG-mounted, Downloads, dev, and renamed bundles.
  */
 export function isSupportedApplicationsBundle(
@@ -137,7 +137,7 @@ export function formatDesktopUninstallProjectList(
   candidates: readonly DesktopUninstallProjectCandidate[],
   maxRows = 8,
 ): string {
-  if (candidates.length === 0) return 'No recent, open, or running OpenKnowledge projects found.';
+  if (candidates.length === 0) return 'No recent, open, or running SynapseNote projects found.';
 
   const rows = candidates.slice(0, maxRows).map((candidate) => {
     const tags = desktopUninstallProjectSourceTags(candidate);
@@ -172,7 +172,7 @@ function buildDesktopUninstallProjectRows(
   candidates: readonly DesktopUninstallProjectCandidate[],
 ): string {
   if (candidates.length === 0) {
-    return '<div class="empty-list">No recent, open, or running OpenKnowledge projects were found.</div>';
+    return '<div class="empty-list">No recent, open, or running SynapseNote projects were found.</div>';
   }
 
   return candidates
@@ -182,7 +182,7 @@ function buildDesktopUninstallProjectRows(
         .map((tag) => `<span class="tag">${htmlEscape(tag)}</span>`)
         .join('');
       return `<label class="project-row">
-  <input type="checkbox" data-index="${index}" aria-label="Remove OpenKnowledge from ${htmlEscape(candidate.path)}" />
+  <input type="checkbox" data-index="${index}" aria-label="Remove SynapseNote from ${htmlEscape(candidate.path)}" />
   <span class="project-main">
     <span class="project-name">${htmlEscape(name)}</span>
     <span class="project-path">${htmlEscape(candidate.path)}</span>
@@ -214,7 +214,7 @@ export function buildDesktopUninstallProjectPickerHtml(
   content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:;"
 />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Uninstall OpenKnowledge</title>
+<title>Uninstall SynapseNote</title>
 <style>
   :root { color-scheme: light dark; }
   * { box-sizing: border-box; }
@@ -355,9 +355,9 @@ export function buildDesktopUninstallProjectPickerHtml(
 <body>
   <main class="dialog" role="dialog" aria-labelledby="title" aria-describedby="description">
     <section class="header">
-      <h1 id="title">Uninstall OpenKnowledge?</h1>
-      <p id="description">This removes OpenKnowledge’s settings and integrations from your Mac. Your markdown content and authored skills are kept.</p>
-      <p class="muted">Optionally select projects to also remove OpenKnowledge from. None are selected by default.</p>
+      <h1 id="title">Uninstall SynapseNote?</h1>
+      <p id="description">This removes SynapseNote’s settings and integrations from your Mac. Your markdown content and authored skills are kept.</p>
+      <p class="muted">Optionally select projects to also remove SynapseNote from. None are selected by default.</p>
       <div class="controls">
         <strong>${projectCount} detected ${projectWord}</strong>
         <div class="control-buttons" aria-label="Project selection controls">
@@ -366,7 +366,7 @@ export function buildDesktopUninstallProjectPickerHtml(
         </div>
       </div>
     </section>
-    <section class="list-region" aria-label="Detected OpenKnowledge projects">
+    <section class="list-region" aria-label="Detected SynapseNote projects">
       <p class="scroll-hint">Scrollable list — review all ${projectCount} ${projectWord} before uninstalling.</p>
       <div class="project-list" id="project-list">
 ${buildDesktopUninstallProjectRows(candidates)}
@@ -376,7 +376,7 @@ ${buildDesktopUninstallProjectRows(candidates)}
       <div class="selected-count" id="selected-count">0 projects selected.</div>
       <div class="footer-buttons">
         <button id="cancel" type="button" autofocus>Cancel</button>
-        <button id="confirm" class="danger" type="button">Uninstall OpenKnowledge</button>
+        <button id="confirm" class="danger" type="button">Uninstall SynapseNote</button>
       </div>
     </section>
   </main>
@@ -468,7 +468,7 @@ export function buildDesktopUninstallProgressHtml(): string {
   content="default-src 'none'; style-src 'unsafe-inline';"
 />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Uninstalling OpenKnowledge</title>
+<title>Uninstalling SynapseNote</title>
 <style>
   :root { color-scheme: light dark; }
   * { box-sizing: border-box; }
@@ -499,7 +499,7 @@ export function buildDesktopUninstallProgressHtml(): string {
 <body>
   <main class="wrap" role="status" aria-live="polite">
     <div class="spinner" aria-hidden="true"></div>
-    <h1>Removing OpenKnowledge files…</h1>
+    <h1>Removing SynapseNote files…</h1>
     <p>This may take a moment. Your markdown content is kept.</p>
   </main>
 </body>
@@ -511,7 +511,7 @@ export function defaultDesktopUninstallLogPath(
   now: Date = new Date(),
 ): string {
   const stamp = now.toISOString().replace(/[:.]/g, '-');
-  return join(home, 'Library', 'Logs', 'OpenKnowledge', `uninstall-${stamp}.log`);
+  return join(home, 'Library', 'Logs', 'SynapseNote', `uninstall-${stamp}.log`);
 }
 
 /** Keeps the failure dialog a readable height; the full log stays on disk. */
@@ -564,12 +564,12 @@ export interface DesktopUninstallNoticeSpec {
 /** Confirmation shown when no projects were found (the picker otherwise confirms). */
 export function desktopUninstallConfirmNotice(): DesktopUninstallNoticeSpec {
   return {
-    title: 'Uninstall OpenKnowledge?',
+    title: 'Uninstall SynapseNote?',
     paragraphs: [
-      'This removes OpenKnowledge’s settings and integrations from your Mac. Your markdown content and authored skills are kept.',
-      'When cleanup finishes, OpenKnowledge will help you remove the app itself, then quit.',
+      'This removes SynapseNote’s settings and integrations from your Mac. Your markdown content and authored skills are kept.',
+      'When cleanup finishes, SynapseNote will help you remove the app itself, then quit.',
     ],
-    confirmLabel: 'Uninstall OpenKnowledge',
+    confirmLabel: 'Uninstall SynapseNote',
     cancelLabel: 'Cancel',
     danger: true,
   };
@@ -582,15 +582,15 @@ export function desktopUninstallCompletionNotice(opts: {
   const paragraphs = ['Your markdown content and authored skills were kept.'];
   if (opts.projectCount > 0) {
     paragraphs.push(
-      `OpenKnowledge was also removed from ${opts.projectCount} project${opts.projectCount === 1 ? '' : 's'}.`,
+      `SynapseNote was also removed from ${opts.projectCount} project${opts.projectCount === 1 ? '' : 's'}.`,
     );
   }
   paragraphs.push(
-    'One step left: move OpenKnowledge.app to the Trash.',
-    'Click Continue to show the app in Finder. OpenKnowledge will then quit.',
+    'One step left: move SynapseNote.app to the Trash.',
+    'Click Continue to show the app in Finder. SynapseNote will then quit.',
   );
   return {
-    title: 'OpenKnowledge files were removed',
+    title: 'SynapseNote files were removed',
     paragraphs,
     footnote: `Cleanup log: ${opts.logPath}`,
     confirmLabel: 'Continue',
@@ -625,8 +625,8 @@ export function desktopUninstallFinalStepNotice(): DesktopUninstallNoticeSpec {
   return {
     title: 'One more step',
     paragraphs: [
-      'Move OpenKnowledge.app to the Trash to finish.',
-      'Click Continue to show the app in Finder. OpenKnowledge will then quit.',
+      'Move SynapseNote.app to the Trash to finish.',
+      'Click Continue to show the app in Finder. SynapseNote will then quit.',
     ],
     confirmLabel: 'Continue',
   };
@@ -808,7 +808,7 @@ for project in "$@"; do
 done`;
 
   return `#!/bin/sh
-# Generated by OpenKnowledge Desktop. Intentionally no set -e: every cleanup
+# Generated by SynapseNote Desktop. Intentionally no set -e: every cleanup
 # stage should run, and failures are captured in LOG for manual follow-up.
 OK_CLI=${shellQuote(input.cliPath)}
 LOG=${shellQuote(input.logPath)}
@@ -817,7 +817,7 @@ EXIT_CODE=0
 
 mkdir -p "$LOG_DIR"
 {
-  echo "OpenKnowledge uninstall cleanup started at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  echo "SynapseNote uninstall cleanup started at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
   echo "Log: $LOG"
 
   GLOBAL_EXIT=0
@@ -827,7 +827,7 @@ ${projectBlock
   .split('\n')
   .map((line) => `    ${line}`)
   .join('\n')}
-    echo "Removing global OpenKnowledge footprint."
+    echo "Removing global SynapseNote footprint."
     "$OK_CLI" uninstall --yes
     GLOBAL_EXIT=$?
     if [ "$GLOBAL_EXIT" -ne 0 ]; then
@@ -842,7 +842,7 @@ ${projectBlock
     EXIT_CODE=1
   fi
 
-  echo "OpenKnowledge uninstall cleanup finished at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  echo "SynapseNote uninstall cleanup finished at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
   echo "deinit=$DEINIT_EXIT global=$GLOBAL_EXIT"
 } >> "$LOG" 2>&1
 exit "$EXIT_CODE"

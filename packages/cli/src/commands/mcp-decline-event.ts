@@ -1,7 +1,7 @@
 /**
  * Single-source builder for the `mcp-config-decline` structured event.
  *
- * OpenKnowledge is a guest in another tool's config: when it meets a present,
+ * SynapseNote is a guest in another tool's config: when it meets a present,
  * non-empty config it cannot fully parse, it leaves the file untouched and
  * declines to register rather than renaming it aside or overwriting it. This
  * event is the only operator-facing signal of that decision — "OK couldn't

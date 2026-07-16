@@ -7,7 +7,7 @@
  */
 import { cpSync, existsSync, lstatSync, mkdirSync, realpathSync, rmSync } from 'node:fs';
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
-import { resolveBundledSkillDir } from '@inkeep/open-knowledge-server';
+import { resolveBundledSkillDir } from '@nedian0brien/synapsenote-server';
 import type { EditorId, EditorMcpTarget } from '../commands/editors.ts';
 
 // ---------------------------------------------------------------------------
@@ -58,7 +58,7 @@ export function assertProjectPathSafe(targetPath: string, cwd: string): void {
  * The removal-side counterpart of `assertProjectPathSafe`. A symlink AT the
  * target path is fine here — removal unlinks the link itself and never touches
  * what it points to, and OK's own skill projections are installed as symlinks
- * (see `projectSkill` in `@inkeep/open-knowledge-server`), so refusing leaf
+ * (see `projectSkill` in `@nedian0brien/synapsenote-server`), so refusing leaf
  * symlinks would strand OK's own footprint on `ok deinit`. The ancestor check
  * still applies: a symlinked parent (`.claude -> /etc`) would route a recursive
  * removal outside the project tree.
@@ -121,7 +121,7 @@ export function writeProjectSkill(target: EditorMcpTarget, cwd: string): Project
   }
 
   try {
-    // The rich `project` bundle — `name: open-knowledge` — installs
+    // The rich `project` bundle — `name: synapsenote` — installs
     // project-local. checkDesktop:true so a co-installed OK Desktop's
     // (possibly newer) bundled assets win.
     const sourceDir = resolveBundledSkillDir('project', { checkDesktop: true });
@@ -167,7 +167,7 @@ export interface ProjectSkillRemoveResult {
  * Targeted uninstall of the project-local runtime skill — the reverse of
  * `writeProjectSkill`, for the Settings-driven per-component toggle.
  *
- * OpenKnowledge owns the whole `<host>/skills/open-knowledge/` directory (the
+ * SynapseNote owns the whole `<host>/skills/synapsenote/` directory (the
  * write path `cpSync`s the bundle into it wholesale), so removal is
  * whole-directory. The presence of the managed `SKILL.md` at
  * `projectSkillPath` is the ownership marker: a directory at the managed path

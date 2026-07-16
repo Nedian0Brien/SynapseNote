@@ -1,11 +1,11 @@
 /**
- * `open-knowledge init` — one-shot terminal setup command.
+ * `synapsenote init` — one-shot terminal setup command.
  *
  * Does two things:
  *   1. Scaffolds `.ok/` in the current directory via initContent()
  *      (same logic the MCP server's init flow used to call — now factored out).
- *   2. Writes OpenKnowledge MCP server entries into every detected editor's
- *      config file. The CLI owns the `open-knowledge` / `open-knowledge-ui`
+ *   2. Writes SynapseNote MCP server entries into every detected editor's
+ *      config file. The CLI owns the `synapsenote` / `synapsenote-ui`
  *      entries and rewrites them to the current defaults on every run.
  *
  * Supports Claude, Claude Desktop, Cursor, Codex, and OpenCode.
@@ -16,12 +16,14 @@ import { existsSync, mkdirSync, readFileSync, realpathSync, statSync } from 'nod
 import { homedir } from 'node:os';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { inspect } from 'node:util';
-import { atomicWriteFileSync, withFileLockSync } from '@inkeep/open-knowledge-core/server';
+import checkbox from '@inquirer/checkbox';
+import select from '@inquirer/select';
+import { atomicWriteFileSync, withFileLockSync } from '@nedian0brien/synapsenote-core/server';
 import type {
   BundleId,
   InstallUserSkillOptions,
   InstallUserSkillResult,
-} from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-server';
 import {
   BUNDLE_SKILL_NAME,
   ensureProjectGit,
@@ -34,9 +36,7 @@ import {
   USER_GLOBAL_BUNDLE_IDS,
   writeBundleDecision,
   writeRootGitignoreForNewRepo,
-} from '@inkeep/open-knowledge-server';
-import checkbox from '@inquirer/checkbox';
-import select from '@inquirer/select';
+} from '@nedian0brien/synapsenote-server';
 import { Command, Option } from 'commander';
 import {
   applyEdits as applyJsoncEdits,
@@ -145,7 +145,7 @@ function countTopLevelKey(objectNode: JsoncNode, key: string): number {
 /**
  * Write the config to disk as pretty-printed JSON with a trailing newline.
  * Atomic from the POV of external readers (Claude Desktop, Cursor, Codex)
- * via the shared `atomicWriteFileSync` in `@inkeep/open-knowledge-core/
+ * via the shared `atomicWriteFileSync` in `@nedian0brien/synapsenote-core/
  * server` — `rename(2)` is atomic on the same filesystem. The
  * `withFileLockSync` in `writeEditorMcpConfig` serializes OK writers
  * across processes so only one rename lands per logical update. Parent
@@ -603,7 +603,7 @@ async function promptSharingMode(
 ): Promise<'shared' | 'local-only'> {
   return select<'shared' | 'local-only'>({
     message:
-      'How do you want to handle OpenKnowledge config files (.ok/, .mcp.json, project skills)?',
+      'How do you want to handle SynapseNote config files (.ok/, .mcp.json, project skills)?',
     default: defaultMode,
     choices: [
       {
@@ -691,7 +691,7 @@ interface InitCommandOptions {
   /**
    * Inject a pre-fabricated `installUserSkill` implementation (test hook).
    * Production callers omit this and hit the real `installUserSkill` from
-   * `@inkeep/open-knowledge-server`.
+   * `@nedian0brien/synapsenote-server`.
    */
   installUserSkill?: (opts?: InstallUserSkillOptions) => Promise<InstallUserSkillResult>;
   /**
@@ -932,7 +932,7 @@ export type SharingOutcome =
 // remove any pre-existing entry from a shared `.claude/launch.json`.
 // ---------------------------------------------------------------------------
 
-export const LAUNCH_CONFIG_NAME = 'open-knowledge-ui';
+export const LAUNCH_CONFIG_NAME = 'synapsenote-ui';
 
 // ---------------------------------------------------------------------------
 // Per-editor write logic
@@ -948,7 +948,7 @@ function isEditorTargetAvailable(target: EditorMcpTarget, cwd: string, home?: st
 }
 
 /**
- * Per-editor MCP config writer. Exported so `@inkeep/open-knowledge`
+ * Per-editor MCP config writer. Exported so `@nedian0brien/synapsenote`
  * consumers — specifically Electron main's first-launch consent flow via
  * `writeUserMcpConfigs` — can invoke the same write logic that the
  * terminal-origin `ok init` command uses. The
@@ -1206,7 +1206,7 @@ export const MANAGED_FILE_BUILDERS: Partial<
  * skipping the write on byte equality so idempotent `ok init` re-runs never
  * churn the file. A foreign file squatting OK's managed path is overwritten —
  * the same namespace-ownership rule the entry upserts apply to a foreign
- * server under OK's `open-knowledge` key. Serialized under the same advisory
+ * server under OK's `synapsenote` key. Serialized under the same advisory
  * lock the entry writers use so concurrent OK writers can't interleave.
  */
 function writeManagedEditorFile(
@@ -1309,7 +1309,7 @@ function collectProjectConfig(
 export interface UserMcpConfigsOptions {
   /**
    * Editors whose MCP config to write. Caller (mcp-wiring.ts confirmHandler)
-   * owns user disclosure for any existing `open-knowledge` namespace entry
+   * owns user disclosure for any existing `synapsenote` namespace entry
    * before calling this writer. This function unconditionally overwrites every
    * editor it receives (aligning with `writeEditorMcpConfig`'s always-rewrite
    * semantic — installs stay aligned with current defaults).
@@ -1394,7 +1394,7 @@ export function readExistingMcpEntry(
 }
 
 /**
- * Bounded set of reasons OpenKnowledge declines to register into a present,
+ * Bounded set of reasons SynapseNote declines to register into a present,
  * non-empty config. Kept to a closed enum (never raw parser text or a config
  * path) so a decline is observable in telemetry without logging the user's
  * config contents. `unparseable` covers a genuinely-malformed file, one OK's
@@ -1418,7 +1418,7 @@ export type McpDeclineReason =
  * `readExistingMcpEntry` collapses every state into `Record | null`, this
  * surface distinguishes them so callers can act differently per state.
  *
- * OpenKnowledge is a guest in another tool's config — its write authority is
+ * SynapseNote is a guest in another tool's config — its write authority is
  * scoped to its own entry. A present, non-empty file it cannot parse is
  * therefore `'decline'`: left untouched, never renamed or overwritten, so a
  * config OK's parser merely can't read is never mistaken for one to reset.
@@ -1504,7 +1504,7 @@ export function classifyExistingMcpEntry(
   // `format: 'file'` targets (Pi): the raw text IS the classify unit — no
   // server map to parse. Any non-blank file at the managed path classifies
   // `present` (namespace ownership: the path is OK's, like the
-  // `open-knowledge` key in a shared config); `isEntryUpToDate` /
+  // `synapsenote` key in a shared config); `isEntryUpToDate` /
   // `isOwnPiManagedFileEntry` then decide rewrite vs remove vs leave-foreign
   // from the synthesized entry.
   if (target.format === 'file') {
@@ -1770,7 +1770,7 @@ export async function runInit(options: InitCommandOptions = {}): Promise<InitCom
   // `ok init` does not write to root AGENTS.md / CLAUDE.md. Behavioral
   // guidance ships via (1) per-tool MCP tool descriptions and (2) the
   // user-global Agent Skill installed via `installUserSkill` from
-  // @inkeep/open-knowledge-server.
+  // @nedian0brien/synapsenote-server.
 
   // 4. Install the enabled user-global Agent Skills. Per-bundle opt-in
   // (`--skills` / `--no-skills`); the decision is recorded so the desktop /
@@ -2137,7 +2137,7 @@ export function formatInitResult(result: InitCommandResult, cwd: string): string
   if (anyFailed) {
     lines.push('');
     lines.push('For failed editors, add the MCP server entry or project skill manually. See:');
-    lines.push('  https://github.com/inkeep/open-knowledge#mcp-setup');
+    lines.push('  https://github.com/Nedian0Brien/SynapseNote#mcp-setup');
   }
 
   if (result.legacyProjectConfigs.length > 0) {
@@ -2158,18 +2158,18 @@ export function formatInitResult(result: InitCommandResult, cwd: string): string
     switch (result.skillInstall) {
       case 'installed':
         lines.push(
-          `  open-knowledge  ${success('installed to detected agent hosts')} via \`npx skills\``,
+          `  synapsenote  ${success('installed to detected agent hosts')} via \`npx skills\``,
         );
         break;
       case 'skip-current':
-        lines.push(`  open-knowledge  ${success('already installed at current version')}`);
+        lines.push(`  synapsenote  ${success('already installed at current version')}`);
         break;
       case 'declined':
-        lines.push(`  open-knowledge  ${dim('skipped (opted out via --no-skills)')}`);
+        lines.push(`  synapsenote  ${dim('skipped (opted out via --no-skills)')}`);
         break;
       case 'failed':
         lines.push(
-          `  ${warning('open-knowledge  install failed — MCP still configured; run manually:')}`,
+          `  ${warning('synapsenote  install failed — MCP still configured; run manually:')}`,
         );
         lines.push(
           `  ${warning("  npx skills@~1.5.0 add <bundled-path> --agent '*' -g -y --copy")}`,
@@ -2181,7 +2181,7 @@ export function formatInitResult(result: InitCommandResult, cwd: string): string
   // No Chat & Cowork hint here by design: the `ok cowork` bundle build is a
   // deliberately unadvertised power-user escape hatch (see cowork.ts). `ok init`
   // wires Claude directly; Chat/Cowork is niche and discovered pull-only via the
-  // Open Knowledge skill, never pushed from the init summary.
+  // SynapseNote skill, never pushed from the init summary.
 
   // Content-scope disclosures — rendered immediately before the Content
   // preview so scope info sits next to the file count the user reads (the
@@ -2262,15 +2262,15 @@ export function formatInitResult(result: InitCommandResult, cwd: string): string
       `     - ${info('ok seed')}                              — empty repo, Karpathy 3-layer`,
     );
     lines.push(
-      `     - ${info('mcp__open-knowledge__discover')}      — existing repo, extract conventions`,
+      `     - ${info('mcp__synapsenote__discover')}      — existing repo, extract conventions`,
     );
     lines.push('  4. Use the MCP workflow tools as you build the wiki:');
-    lines.push(`     - ${info('mcp__open-knowledge__ingest')}        — capture an external source`);
+    lines.push(`     - ${info('mcp__synapsenote__ingest')}        — capture an external source`);
     lines.push(
-      `     - ${info('mcp__open-knowledge__research')}      — gather sources and write findings`,
+      `     - ${info('mcp__synapsenote__research')}      — gather sources and write findings`,
     );
     lines.push(
-      `     - ${info('mcp__open-knowledge__consolidate')}   — promote research to canonical articles`,
+      `     - ${info('mcp__synapsenote__consolidate')}   — promote research to canonical articles`,
     );
   }
 
@@ -2490,7 +2490,7 @@ export function initCommand(): Command {
               // genuine `git init` failure (spawn error, or a partial init that
               // left `.git/HEAD` absent), not a missing-git case.
               process.stderr.write(
-                "open-knowledge could not initialize a git repo for this project. Re-run, or run 'git init' yourself in the project folder.\n",
+                "synapsenote could not initialize a git repo for this project. Re-run, or run 'git init' yourself in the project folder.\n",
               );
               if (err.stderr) process.stderr.write(`${err.stderr.trim()}\n`);
               process.exitCode = 1;
@@ -2506,7 +2506,7 @@ export function initCommand(): Command {
           let effectiveContentDir = result.contentDir ?? '.';
           let contentFileCount: number | null = null;
           const { loadConfig } = await import('../config/loader.ts');
-          const { resolveContentDir } = await import('@inkeep/open-knowledge-server');
+          const { resolveContentDir } = await import('@nedian0brien/synapsenote-server');
           // Read the on-disk scope in its OWN try, independent of the preview
           // walk. Otherwise a preview failure on a narrowed re-init would leave
           // `effectiveContentDir` at the `result.contentDir ?? '.'` seed and the

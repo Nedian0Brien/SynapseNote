@@ -11,7 +11,7 @@
  * lockstep with the visible launch-row order rather than duplicating a list.
  */
 
-import { TERMINAL_CLI_IDS, type TerminalCli } from '@inkeep/open-knowledge-core';
+import { TERMINAL_CLI_IDS, type TerminalCli } from '@nedian0brien/synapsenote-core';
 import { parseStickyCliId } from './unified-agent-store';
 
 /**

@@ -20,12 +20,12 @@
  *
  * Both CLI (`ok ui`) and OK Electron write `ui.lock`, so the lock branch
  * fires universally whenever any UI is running for the project. The
- * `openknowledge://` URL scheme stays load-bearing for OS-level deep-linking
+ * `synapsenote://` URL scheme stays load-bearing for OS-level deep-linking
  * (URL-scheme handler, dock drag, sidebar pills) — but is no longer emitted
  * as an MCP `previewUrl`, because external agent in-app browsers (Claude
  * Desktop, Cursor, Codex) cannot render custom URL schemes.
  *
- * Two further base sources — `env` (OPEN_KNOWLEDGE_PREVIEW_BASE_URL) and
+ * Two further base sources — `env` (SYNAPSENOTE_PREVIEW_BASE_URL) and
  * `config` (preview.baseUrl) — existed for production-deployed-wiki use
  * cases. Both came out when the schema field went away; reintroduce them
  * together (in `resolveUiInfo`) if a deployed-wiki configuration knob is

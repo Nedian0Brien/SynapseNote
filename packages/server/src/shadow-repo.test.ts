@@ -8,7 +8,7 @@ import {
   formatCheckpointBodyLine,
   parseCheckpoint,
   parseOkActor,
-} from '@inkeep/open-knowledge-core/shadow-repo-layout';
+} from '@nedian0brien/synapsenote-core/shadow-repo-layout';
 import simpleGit from 'simple-git';
 import {
   buildWipTree,
@@ -66,7 +66,7 @@ describe('initShadowRepo', () => {
     expect(worktree).toBe(projectRoot);
 
     const userName = (await sg.raw('config', 'user.name')).trim();
-    expect(userName).toBe('openknowledge');
+    expect(userName).toBe('synapsenote');
   });
 
   test('does not modify .gitignore (shadow is inside .git/ already)', async () => {
@@ -101,17 +101,17 @@ describe('initShadowRepo', () => {
     expect(existsSync(resolve(shadow2.gitDir, 'HEAD'))).toBe(true);
   });
 
-  test('R9 rename shim: legacy .git/openknowledge/ is renamed to .git/ok/', async () => {
+  test('R9 rename shim: legacy .git/synapsenote/ is renamed to .git/ok/', async () => {
     const projectRoot = resolve(tmpDir, 'legacy');
     mkdirSync(projectRoot, { recursive: true });
 
-    // Seed a legacy integrated-mode shadow at .git/openknowledge/
+    // Seed a legacy integrated-mode shadow at .git/synapsenote/
     const git = simpleGit(projectRoot);
     await git.init();
     await git.raw('config', 'user.name', 'Test');
     await git.raw('config', 'user.email', 'test@test.com');
 
-    const legacyDir = resolve(projectRoot, '.git/openknowledge');
+    const legacyDir = resolve(projectRoot, '.git/synapsenote');
     mkdirSync(legacyDir, { recursive: true });
     await git.raw('init', '--bare', legacyDir);
     const sg = simpleGit({ timeout: { block: 30_000 } }).env({ GIT_DIR: legacyDir });
@@ -138,7 +138,7 @@ describe('initShadowRepo', () => {
     await git.raw('config', 'user.email', 'test@test.com');
 
     // Seed BOTH locations so the shim hits the defensive branch
-    const legacyDir = resolve(projectRoot, '.git/openknowledge');
+    const legacyDir = resolve(projectRoot, '.git/synapsenote');
     const newDir = resolve(projectRoot, '.git/ok');
     mkdirSync(legacyDir, { recursive: true });
     mkdirSync(newDir, { recursive: true });
@@ -238,9 +238,9 @@ describe('commitWip', () => {
     expect(authorName).toBe(writer.name);
     expect(authorEmail).toBe(writer.email);
 
-    // Committer is always openknowledge
+    // Committer is always synapsenote
     const committerName = (await sg.raw('log', '-1', '--format=%cn', sha)).trim();
-    expect(committerName).toBe('openknowledge');
+    expect(committerName).toBe('synapsenote');
   });
 
   test('second commit parents the first', async () => {
@@ -261,7 +261,7 @@ describe('commitWip', () => {
     const agent: WriterIdentity = {
       id: 'agent-cursor',
       name: 'cursor-agent',
-      email: 'cursor@openknowledge.local',
+      email: 'cursor@synapsenote.local',
     };
 
     writeFileSync(resolve(contentDir, 'intro.md'), '# Hello from human\n');
@@ -421,7 +421,7 @@ describe('safetyCheckpoint', () => {
     const actor = parseOkActor(body);
     expect(actor).not.toBeNull();
     expect(actor?.v).toBe(1);
-    expect(actor?.display_name).toBe('OpenKnowledge (service)');
+    expect(actor?.display_name).toBe('SynapseNote (service)');
   });
 });
 
@@ -489,7 +489,7 @@ describe('parkBranch', () => {
     const actor = parseOkActor(body);
     expect(actor).not.toBeNull();
     expect(actor?.v).toBe(1);
-    expect(actor?.display_name).toBe('OpenKnowledge (service)');
+    expect(actor?.display_name).toBe('SynapseNote (service)');
     expect(actor?.docs).toContain('intro');
   });
 
@@ -552,7 +552,7 @@ describe('saveVersion', () => {
   const agent: WriterIdentity = {
     id: 'agent-cursor',
     name: 'cursor-agent',
-    email: 'cursor@openknowledge.local',
+    email: 'cursor@synapsenote.local',
   };
 
   beforeEach(async () => {
@@ -661,7 +661,7 @@ describe('saveVersion', () => {
     const actor = parseOkActor(body);
     expect(actor).not.toBeNull();
     expect(actor?.v).toBe(1);
-    expect(actor?.display_name).toBe('OpenKnowledge (service)');
+    expect(actor?.display_name).toBe('SynapseNote (service)');
   });
 
   test('checkpoint falls back to latest checkpoint when no WIP activity', async () => {
@@ -969,10 +969,10 @@ describe('saveInMemoryCheckpoint (bridge-correctness SPEC §6 R7a)', () => {
         await sg
           .env({
             GIT_DIR: shadow.gitDir,
-            GIT_AUTHOR_NAME: 'openknowledge',
-            GIT_AUTHOR_EMAIL: 'noreply@openknowledge.local',
-            GIT_COMMITTER_NAME: 'openknowledge',
-            GIT_COMMITTER_EMAIL: 'noreply@openknowledge.local',
+            GIT_AUTHOR_NAME: 'synapsenote',
+            GIT_AUTHOR_EMAIL: 'noreply@synapsenote.local',
+            GIT_COMMITTER_NAME: 'synapsenote',
+            GIT_COMMITTER_EMAIL: 'noreply@synapsenote.local',
           })
           .raw('commit-tree', treeSha, '-m', body)
       ).trim();
@@ -1053,7 +1053,7 @@ describe('saveInMemoryCheckpoint (bridge-correctness SPEC §6 R7a)', () => {
     ].join('\n');
 
     // parseContributors must still pick up Alice
-    const { parseContributors } = await import('@inkeep/open-knowledge-core/shadow-repo-layout');
+    const { parseContributors } = await import('@nedian0brien/synapsenote-core/shadow-repo-layout');
     const contributors = parseContributors(body);
     expect(contributors).toHaveLength(1);
     expect(contributors[0]?.id).toBe('human-a');
@@ -1270,11 +1270,11 @@ describe('gcCheckpointRefs (bridge-correctness SPEC §6 R7 + review iteration 5)
       await sg
         .env({
           GIT_DIR: s.gitDir,
-          GIT_AUTHOR_NAME: 'openknowledge-service',
-          GIT_AUTHOR_EMAIL: 'service@openknowledge.local',
+          GIT_AUTHOR_NAME: 'synapsenote-service',
+          GIT_AUTHOR_EMAIL: 'service@synapsenote.local',
           GIT_AUTHOR_DATE: date,
-          GIT_COMMITTER_NAME: 'openknowledge-service',
-          GIT_COMMITTER_EMAIL: 'service@openknowledge.local',
+          GIT_COMMITTER_NAME: 'synapsenote-service',
+          GIT_COMMITTER_EMAIL: 'service@synapsenote.local',
           GIT_COMMITTER_DATE: date,
         })
         .raw('commit-tree', emptyTreeSha, '-m', body)
@@ -1392,7 +1392,7 @@ describe('sweepLegacyShadowRefs (US-018, D35, NFR-6)', () => {
     await createRef('refs/wip/main/principal-def');
     await createRef('refs/wip/main/file-system');
     await createRef('refs/wip/main/git-upstream');
-    await createRef('refs/wip/main/openknowledge-service');
+    await createRef('refs/wip/main/synapsenote-service');
 
     const deleted = await sweepLegacyShadowRefs(shadow);
     expect(deleted).toBe(4); // server + human-abc + human-def123 + upstream
@@ -1414,7 +1414,7 @@ describe('sweepLegacyShadowRefs (US-018, D35, NFR-6)', () => {
     expect(remaining).toContain('refs/wip/main/principal-def');
     expect(remaining).toContain('refs/wip/main/file-system');
     expect(remaining).toContain('refs/wip/main/git-upstream');
-    expect(remaining).toContain('refs/wip/main/openknowledge-service');
+    expect(remaining).toContain('refs/wip/main/synapsenote-service');
   });
 
   test('idempotent — second sweep deletes nothing (US-018)', async () => {

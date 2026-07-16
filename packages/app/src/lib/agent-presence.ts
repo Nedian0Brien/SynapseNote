@@ -9,7 +9,7 @@
  * + entries with `currentDoc === null`, and expose helpers for the
  * presence bar's sectioned layout + the nav consumer.
  */
-import type { AgentPresenceEntry } from '@inkeep/open-knowledge-core';
+import type { AgentPresenceEntry } from '@nedian0brien/synapsenote-core';
 
 /** Awareness entries older than this are filtered out. */
 export const AGENT_PRESENCE_STALE_MS = 5_000;

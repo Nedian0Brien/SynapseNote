@@ -23,14 +23,14 @@ import {
   collectReportBundle,
   defaultBugReportZipPath,
   redactContent,
-} from '@inkeep/open-knowledge';
+} from '@nedian0brien/synapsenote';
 import type {
   OkBugReportCrashAckResult,
   OkBugReportCreateResult,
   OkBugReportSendMetadata,
   OkBugReportSendResult,
   ReportBundleLevel,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { logIpcError } from '../ipc-log.ts';
 import { isPathWithinProject } from '../path-containment.ts';
 import type { UpdateChannel } from '../state-store.ts';
@@ -188,11 +188,11 @@ export async function handleBugReportCreate(
   }
 }
 
-const SUPPORT_EMAIL = 'support@inkeep.com';
+const SUPPORT_EMAIL = 'support@lawdigest.kr';
 
 export interface BugReportSendDeps {
   /**
-   * Intake endpoint origin (e.g. `https://openknowledge.ai`), from
+   * Intake endpoint origin (e.g. `https://synapse.lawdigest.kr`), from
    * `OK_BUG_REPORT_INTAKE_URL`. Absent means the endpoint is not deployed or
    * not configured — the designed default: send makes no network attempt and
    * resolves to the email fallback with `reason: 'email-draft'`, which the
@@ -291,7 +291,7 @@ function buildBugReportMailto(args: {
   metadata?: OkBugReportSendMetadata;
   zipPath?: string;
 }): string {
-  const subject = `OpenKnowledge bug report (v${args.appVersion})`;
+  const subject = `SynapseNote bug report (v${args.appVersion})`;
   const lines: string[] = [];
   if (args.metadata?.note) lines.push(args.metadata.note, '');
   if (args.zipPath) lines.push('Please attach the report file saved at:', args.zipPath, '');

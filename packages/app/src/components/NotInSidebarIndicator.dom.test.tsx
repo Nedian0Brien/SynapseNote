@@ -7,7 +7,7 @@
  * Runs under `bun run test:dom` (jsdom substrate per precedent #43).
  */
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
-import type { Config } from '@inkeep/open-knowledge-core';
+import type { Config } from '@nedian0brien/synapsenote-core';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { renderLinguiTemplate } from '@/test-utils/lingui-mock';
 

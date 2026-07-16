@@ -28,8 +28,8 @@
  * Device Flow surface; on success it retries the owners fetch automatically.
  */
 
-import type { SharePublishOwner } from '@inkeep/open-knowledge-core';
 import { Trans, useLingui } from '@lingui/react/macro';
+import type { SharePublishOwner } from '@nedian0brien/synapsenote-core';
 import { CheckCircle2, Copy, ExternalLink, Loader2, XCircle } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';

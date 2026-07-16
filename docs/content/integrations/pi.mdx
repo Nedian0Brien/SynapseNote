@@ -1,23 +1,23 @@
 ---
 title: Pi
-description: Use OpenKnowledge with Pi — a minimal, extensible terminal coding agent — via OpenKnowledge's managed bridge extension.
+description: Use SynapseNote with Pi — a minimal, extensible terminal coding agent — via SynapseNote's managed bridge extension.
 icon: custom/Pi
 ---
 
-OpenKnowledge plugs into [Pi](https://pi.dev) through a managed **bridge extension**. Pi is a minimal terminal coding agent that deliberately ships without MCP support — its extension point is TypeScript extensions — so instead of an MCP config entry, OpenKnowledge drops a small extension into your project that connects Pi to your knowledge base.
+SynapseNote plugs into [Pi](https://pi.dev) through a managed **bridge extension**. Pi is a minimal terminal coding agent that deliberately ships without MCP support — its extension point is TypeScript extensions — so instead of an MCP config entry, SynapseNote drops a small extension into your project that connects Pi to your knowledge base.
 
 ## Install
 
-Run `ok init` in your project (or open the project in the OpenKnowledge desktop app — project setup writes the same files). Two things land in the project's `.pi/` directory:
+Run `ok init` in your project (or open the project in the SynapseNote desktop app — project setup writes the same files). Two things land in the project's `.pi/` directory:
 
-- **`.pi/extensions/open-knowledge.ts`** — the bridge extension. On session start it launches OpenKnowledge's MCP server with the same resilient launcher every other editor uses, then registers each OpenKnowledge tool as a native Pi tool under an `ok_` prefix (`ok_exec`, `ok_search`, `ok_write`, …). The prefix keeps OpenKnowledge's `edit` / `write` from shadowing Pi's built-in file tools.
-- **`.pi/skills/open-knowledge/`** — the OpenKnowledge skill, in the [Agent Skills](https://pi.dev/docs/latest) format Pi reads natively from `.pi/skills/`.
+- **`.pi/extensions/synapsenote.ts`** — the bridge extension. On session start it launches SynapseNote's MCP server with the same resilient launcher every other editor uses, then registers each SynapseNote tool as a native Pi tool under an `ok_` prefix (`ok_exec`, `ok_search`, `ok_write`, …). The prefix keeps SynapseNote's `edit` / `write` from shadowing Pi's built-in file tools.
+- **`.pi/skills/synapsenote/`** — the SynapseNote skill, in the [Agent Skills](https://pi.dev/docs/latest) format Pi reads natively from `.pi/skills/`.
 
-Both files are OpenKnowledge-managed: `ok init` re-runs refresh them in place, and `ok deinit` removes them. Don't hand-edit the bridge — your changes are overwritten on the next sync.
+Both files are SynapseNote-managed: `ok init` re-runs refresh them in place, and `ok deinit` removes them. Don't hand-edit the bridge — your changes are overwritten on the next sync.
 
 ## Trust the project
 
-Pi loads project-local extensions and skills **only after you trust the folder**. The first time you run `pi` in the project (and on fresh clones), Pi shows a trust prompt — accept it, or OpenKnowledge's tools and skill won't load. Your decision is remembered in `~/.pi/agent/trust.json`. Context files like `AGENTS.md` load regardless of trust.
+Pi loads project-local extensions and skills **only after you trust the folder**. The first time you run `pi` in the project (and on fresh clones), Pi shows a trust prompt — accept it, or SynapseNote's tools and skill won't load. Your decision is remembered in `~/.pi/agent/trust.json`. Context files like `AGENTS.md` load regardless of trust.
 
 ## Verify
 
@@ -25,6 +25,6 @@ Run `pi` in the project, trust it if prompted, and ask:
 
 <CopyPrompt>List the first 5 documents you come across in this project.</CopyPrompt>
 
-Pi should call the OpenKnowledge `ok_exec` tool and respond with some of your documents.
+Pi should call the SynapseNote `ok_exec` tool and respond with some of your documents.
 
-If the `ok_` tools are missing: make sure you trusted the folder, then `/reload` (or restart `pi`). The first tool call can take a moment on a fresh machine — the launcher may be installing the OpenKnowledge CLI via `npx`. If Pi shows an "Open Knowledge tools unavailable" notice, install [Node.js 24+](https://nodejs.org) or the OpenKnowledge desktop app and reload.
+If the `ok_` tools are missing: make sure you trusted the folder, then `/reload` (or restart `pi`). The first tool call can take a moment on a fresh machine — the launcher may be installing the SynapseNote CLI via `npx`. If Pi shows an "SynapseNote tools unavailable" notice, install [Node.js 24+](https://nodejs.org) or the SynapseNote desktop app and reload.

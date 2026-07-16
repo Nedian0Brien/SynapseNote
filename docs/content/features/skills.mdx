@@ -1,10 +1,10 @@
 ---
 title: Skills
 icon: LuGraduationCap
-description: "What's different about skills in OpenKnowledge: you edit them in the WYSIWYG editor like any doc, version them with your base, and symlink one skill into every editor you use."
+description: "What's different about skills in SynapseNote: you edit them in the WYSIWYG editor like any doc, version them with your base, and symlink one skill into every editor you use."
 ---
 
-A skill in OpenKnowledge is content, not a config file: authored in the WYSIWYG editor, versioned with your base, and symlinked into every editor from one source.
+A skill in SynapseNote is content, not a config file: authored in the WYSIWYG editor, versioned with your base, and symlinked into every editor from one source.
 
 ```html preview
 <div style="padding:18px">
@@ -75,13 +75,13 @@ A new skill starts as a **Draft**: authored but installed nowhere. Install it fr
 - **Project** skills live in the base, versioned and shared with it like any other content.
 - **Global** skills live in `~/.ok/skills` and follow you across every project on your machine. Outside any base, they carry no version history.
 
-The skill that makes an agent behave well the moment you connect it (read and write through the tools, cite sources, keep the link graph healthy) is neither: `open-knowledge` is built into the product and never appears in your skills list.
+The skill that makes an agent behave well the moment you connect it (read and write through the tools, cite sources, keep the link graph healthy) is neither: `synapsenote` is built into the product and never appears in your skills list.
 
 Moving a skill between scopes re-creates it in the destination scope: history does not transfer, and it lands as a Draft you install again.
 
 ## Import existing editor skills
 
-By default, OpenKnowledge manages only the skills under `.ok/skills`: anything you already keep in `.claude/skills`, `.cursor/skills`, and the like is left alone. When the app finds editor skills it could manage, it offers to import them, moving each one into `.ok/skills` and replacing the editor copy with a symlink.
+By default, SynapseNote manages only the skills under `.ok/skills`: anything you already keep in `.claude/skills`, `.cursor/skills`, and the like is left alone. When the app finds editor skills it could manage, it offers to import them, moving each one into `.ok/skills` and replacing the editor copy with a symlink.
 
 The same switch is available from the CLI:
 

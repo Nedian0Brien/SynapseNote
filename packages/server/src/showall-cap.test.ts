@@ -11,7 +11,7 @@ import { afterEach, describe, expect, test } from 'bun:test';
 import { mkdirSync, mkdtempSync, realpathSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import type { DocumentListEntry } from '@inkeep/open-knowledge-core';
+import type { DocumentListEntry } from '@nedian0brien/synapsenote-core';
 import {
   __getShowAllWalkStatsForTesting,
   __resetShowAllWalkStatsForTesting,

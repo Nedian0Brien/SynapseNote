@@ -68,7 +68,7 @@ describe('runKeyringSmoke', () => {
 
     expect(calls.constructed).toHaveLength(1);
     expect(calls.constructed[0]).toEqual({
-      service: 'open-knowledge-smoke',
+      service: 'synapsenote-smoke',
       account: 'test-user',
     });
     expect(calls.setPassword).toHaveLength(1);

@@ -18,7 +18,7 @@ import {
   CONFIG_DOC_NAME_USER,
   CONFIG_DOC_NAMES,
   SYSTEM_DOC_NAME,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import {
   CC1Broadcaster,
   isConfigDoc,

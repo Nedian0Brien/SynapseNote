@@ -1,3 +1,5 @@
+import { plural, t } from '@lingui/core/macro';
+import { Trans, useLingui } from '@lingui/react/macro';
 import {
   CreateFolderSuccessSchema,
   CreatePageSuccessSchema,
@@ -13,9 +15,7 @@ import {
   TrashCleanupSuccessSchema,
   UploadAssetSuccessSchema,
   WorkspaceSuccessSchema,
-} from '@inkeep/open-knowledge-core';
-import { plural, t } from '@lingui/core/macro';
-import { Trans, useLingui } from '@lingui/react/macro';
+} from '@nedian0brien/synapsenote-core';
 import {
   type ContextMenuItem,
   type ContextMenuOpenContext,

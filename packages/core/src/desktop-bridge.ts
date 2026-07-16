@@ -160,7 +160,7 @@ interface OkProjectOpenRequest {
    * opens it directly. Threaded through to `wm.createProjectWindow`'s
    * `pendingDeepLinkTarget` (cold spawn → `dom-ready` deep-link IPC) and to
    * `sendDeepLink` for the warm-focus path. Mirrors the existing
-   * `openknowledge://open?project=&doc=` flow.
+   * `synapsenote://open?project=&doc=` flow.
    */
   pendingDeepLinkTarget?: { kind: 'doc' | 'folder'; path: string };
   /**
@@ -256,7 +256,7 @@ interface OkWhatsNewInfo {
  * Payload delivered to `onUpdateStuckHint` subscribers. Fires at most once
  * per installation after 7 consecutive calendar days of failed update
  * checks. `downloadUrl` is the manual-download page (inkeep.com's
- * OpenKnowledge download CTA); renderer opens it via
+ * SynapseNote download CTA); renderer opens it via
  * `bridge.shell.openExternal`.
  */
 interface OkUpdateStuckHintInfo {
@@ -270,7 +270,7 @@ interface OkUpdateStuckHintInfo {
  *
  *   - `kind: 'project-branch-switch'` — editor-shell branch-switch surface
  *   - `kind: 'launcher-consent'` / `launcher-miss` — Navigator surfaces
- *   - `kind: 'unsupported-version'` — sonner toast "Update OpenKnowledge"
+ *   - `kind: 'unsupported-version'` — sonner toast "Update SynapseNote"
  *   - `kind: 'invalid'` — sonner toast "Invalid share URL"
  *
  * Mirrored across the three bridge-contract copies (desktop, core, app). Source
@@ -325,7 +325,7 @@ type OkShareReceivedPayload =
 
 /**
  * Renderer-facing mirror of `ShareFolderValidationResult` from
- * `@inkeep/open-knowledge`'s `validateLocalFolderForShare`. Carried
+ * `@nedian0brien/synapsenote`'s `validateLocalFolderForShare`. Carried
  * by the `share.validateLocalFolder` IPC. Mirrored across the three bridge-
  * contract copies (desktop, core, app) so the drift tests catch divergent copies.
  */
@@ -601,7 +601,7 @@ interface OkKeyringSmokeResult {
  * Seed scaffolder shapes duplicated structurally (same rationale as
  * `OkKeyringSmokeResult` above — avoids pulling the server package into
  * core's compilation tree). Structural shape tracks
- * `@inkeep/open-knowledge-server`'s `ScaffoldPlan` / `ApplyResult` /
+ * `@nedian0brien/synapsenote-server`'s `ScaffoldPlan` / `ApplyResult` /
  * `ApplyError` / `FileEntry` / `SkipEntry`.
  *
  * Folder defaults moved out of `config.yml` `folders:` and into nested
@@ -696,7 +696,7 @@ interface OkSeedPackInfo {
   entryCounts: OkSeedPackEntryCounts;
 }
 
-/** Pure-fs upward-walk result types mirrored from `@inkeep/open-knowledge-server`'s
+/** Pure-fs upward-walk result types mirrored from `@nedian0brien/synapsenote-server`'s
  *  `fs/` module. Structurally duplicated for the same reason as the seed shapes
  *  above (core has no dep on server). */
 interface OkFindEnclosingProjectRootResult {
@@ -915,7 +915,7 @@ export interface OkPtyExit {
 export interface ClaudeReadiness {
   readonly claude: 'present' | 'not-found' | 'unknown';
   readonly mcp: 'wired' | 'needs-rewire';
-  /** True when the project's own `open-knowledge` `.mcp.json` entry is verified
+  /** True when the project's own `synapsenote` `.mcp.json` entry is verified
    *  to be OK's canonical managed server (cli `isOwnManagedEntry`), so the docked
    *  terminal may pre-approve it on Claude launch instead of re-showing Claude's
    *  trust prompt. False/absent for a foreign, tampered, or missing entry (the
@@ -933,14 +933,14 @@ export interface ClaudeReadiness {
  *  contract + the app renderer copy (drift-tested). */
 export interface CliReadiness {
   readonly onPath: 'present' | 'not-found' | 'unknown';
-  /** Codex-only: whether OK's `open-knowledge` MCP server is already configured
+  /** Codex-only: whether OK's `synapsenote` MCP server is already configured
    *  in the user's codex config. Gates the per-launch `-c` tool-auto-approve
    *  override — codex fails to load its config if `-c` targets a server that is
    *  not defined, so the launch site adds the override only when this is true.
    *  Absent for CLIs where it does not apply.
    *
    *  DELIBERATELY WEAKER THAN CLAUDE'S GATE, and not its security equivalent.
-   *  This is existence-by-name (any object under `mcp_servers.open-knowledge`),
+   *  This is existence-by-name (any object under `mcp_servers.synapsenote`),
    *  whereas claude's `mcpPreApprovable` runs `isOwnManagedEntry` to verify the
    *  entry is byte-exactly OK's own. The asymmetry is sound because the two read
    *  different files: claude's is a PROJECT-scoped `.mcp.json` that travels in a
@@ -997,7 +997,7 @@ export interface OkDesktopBridge {
   onUpdateStuckHint(cb: (info: OkUpdateStuckHintInfo) => void): OkUnsubscribe;
   /**
    * Subscribe to `ok:deep-link` — fired when an
-   * `openknowledge://open?project=…&doc=<name>` URL is routed to this
+   * `synapsenote://open?project=…&doc=<name>` URL is routed to this
    * window. Renderer updates `location.hash` to open the target doc via
    * the existing hash-route listener. Returns unsubscribe.
    */
@@ -1012,8 +1012,8 @@ export interface OkDesktopBridge {
   ): OkUnsubscribe;
   /**
    * Subscribe to `ok:share-received` — fired when a share URL (universal
-   * link `https://openknowledge.ai/d/<encoded>` or custom scheme
-   * `openknowledge://share?url=<blob-url>`) routes to this window. The
+   * link `https://synapse.lawdigest.kr/d/<encoded>` or custom scheme
+   * `synapsenote://share?url=<blob-url>`) routes to this window. The
    * discriminated payload tells the renderer to mount the receive dialog
    * (kind `ok`) or surface a toast (kind `unsupported-version` / `invalid`).
    */
@@ -1037,7 +1037,7 @@ export interface OkDesktopBridge {
    * this (dev-only) session auto-terminated a foreign server already running on
    * the project's contentDir and started its own in its place. The renderer
    * surfaces an informational notice naming the side effect: connected agents'
-   * OpenKnowledge MCP connections were dropped. Unlike `onServerRestarted` no
+   * SynapseNote MCP connections were dropped. Unlike `onServerRestarted` no
    * user action initiated this (act-then-inform), so it is a disruption notice,
    * not a success confirmation.
    */
@@ -1087,7 +1087,7 @@ export interface OkDesktopBridge {
   /**
    * IPC-relayed wrappers around Electron's `shell` module. Main-process
    * handlers enforce the outbound-scheme allowlist (`https`, `http`,
-   * `mailto`, `openknowledge`, plus `claude`, `codex`, `cursor` for the
+   * `mailto`, `synapsenote`, plus `claude`, `codex`, `cursor` for the
    * "Open in Agent Desktop" dropdown) before delegating. Unauthorized
    * schemes reject.
    */
@@ -1415,7 +1415,7 @@ export interface OkDesktopBridge {
     /** True when Claude Desktop's config dir exists on this machine. */
     detectClaudeDesktop(): Promise<boolean>;
     /**
-     * Build `openknowledge.skill` from the bundled source, save to
+     * Build `synapsenote.skill` from the bundled source, save to
      * Downloads, invoke the OS file association (`.skill` → Claude
      * Desktop). Local build; no network.
      *

@@ -87,8 +87,8 @@ describe('shellSingleQuote', () => {
 
 describe('buildClaudeLaunchCommand', () => {
   it("defaults to a bare `claude '<prompt>'` — no MCP pre-approval unless opted in", () => {
-    expect(buildClaudeLaunchCommand("Let's work on `foo.md` using OpenKnowledge.")).toBe(
-      "claude 'Let'\\''s work on `foo.md` using OpenKnowledge.'\r",
+    expect(buildClaudeLaunchCommand("Let's work on `foo.md` using SynapseNote.")).toBe(
+      "claude 'Let'\\''s work on `foo.md` using SynapseNote.'\r",
     );
   });
 
@@ -96,11 +96,11 @@ describe('buildClaudeLaunchCommand', () => {
     // Exact bytes (not built via the helper) so the literal `--settings` flag,
     // the pre-approval JSON, and the prompt escaping all stay pinned.
     expect(
-      buildClaudeLaunchCommand("Let's work on `foo.md` using OpenKnowledge.", {
+      buildClaudeLaunchCommand("Let's work on `foo.md` using SynapseNote.", {
         mcpPreApprove: true,
       }),
     ).toBe(
-      "claude --settings '{\"enabledMcpjsonServers\":[\"open-knowledge\"]}' 'Let'\\''s work on `foo.md` using OpenKnowledge.'\r",
+      "claude --settings '{\"enabledMcpjsonServers\":[\"synapsenote\"]}' 'Let'\\''s work on `foo.md` using SynapseNote.'\r",
     );
   });
 

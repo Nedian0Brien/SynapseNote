@@ -203,13 +203,13 @@ export interface AppState {
    * Last parent directory the user picked in the Create-new-project dialog.
    * Persists across launches so the Location field defaults to the user's
    * working pattern (e.g., `~/Notes/`) instead of resetting to
-   * `~/Documents/OpenKnowledge/` every session. The IPC handler
+   * `~/Documents/SynapseNote/` every session. The IPC handler
    * `ok:project:create-new` writes this on successful create; the read-only
    * `ok:fs:default-projects-root` reads it. Stores the user-picked PARENT
    * (not the resolved project dir — `ensureProjectGit` may promote to an
    * ancestor git root inside the scaffold spine, but the user's intent is
    * the parent they chose). `null` (or a path that no longer exists) falls
-   * back to `~/Documents/OpenKnowledge/`.
+   * back to `~/Documents/SynapseNote/`.
    */
   lastUsedProjectParent: string | null;
   /**

@@ -68,21 +68,21 @@ describe('formatCloneErrorMessage', () => {
 
 describe('buildCloneUrl', () => {
   test('matches the canonical .git form (the clone wizard accepts both forms equally)', () => {
-    expect(buildCloneUrl({ owner: 'inkeep', repo: 'open-knowledge' })).toBe(
-      'https://github.com/inkeep/open-knowledge.git',
+    expect(buildCloneUrl({ owner: 'Nedian0Brien', repo: 'SynapseNote' })).toBe(
+      'https://github.com/Nedian0Brien/SynapseNote.git',
     );
   });
 });
 
 describe('mapValidationToToast', () => {
-  const expected = { owner: 'inkeep', repo: 'open-knowledge' };
+  const expected = { owner: 'Nedian0Brien', repo: 'SynapseNote' };
 
   function withKind<K extends ShareFolderValidationResult['kind']>(
     kind: K,
     extras: Partial<ShareFolderValidationResult> = {},
   ): ShareFolderValidationResult {
     if (kind === 'ok') {
-      return { kind: 'ok', gitRemoteUrl: 'https://github.com/inkeep/open-knowledge.git' };
+      return { kind: 'ok', gitRemoteUrl: 'https://github.com/Nedian0Brien/SynapseNote.git' };
     }
     if (kind === 'wrong-repo') {
       return {
@@ -107,19 +107,19 @@ describe('mapValidationToToast', () => {
   test('wrong-repo surfaces the actual vs expected owner/repo per the spec AC', () => {
     const result = withKind('wrong-repo', { actualOwner: 'forky', actualRepo: 'spoon' });
     expect(mapValidationToToast(result, expected)).toBe(
-      'This folder is a clone of forky/spoon, not inkeep/open-knowledge. Pick a different folder?',
+      'This folder is a clone of forky/spoon, not Nedian0Brien/SynapseNote. Pick a different folder?',
     );
   });
 
   test('non-github + symlink-escape + no-origin all surface the wrong-repo generic prompt (Q-A9 v1 simplification)', () => {
     expect(mapValidationToToast(withKind('non-github'), expected)).toBe(
-      "This folder isn't a clone of inkeep/open-knowledge. Pick a different folder?",
+      "This folder isn't a clone of Nedian0Brien/SynapseNote. Pick a different folder?",
     );
     expect(mapValidationToToast(withKind('symlink-escape'), expected)).toBe(
-      "This folder isn't a clone of inkeep/open-knowledge. Pick a different folder?",
+      "This folder isn't a clone of Nedian0Brien/SynapseNote. Pick a different folder?",
     );
     expect(mapValidationToToast(withKind('no-origin'), expected)).toBe(
-      "This folder isn't a clone of inkeep/open-knowledge. Pick a different folder?",
+      "This folder isn't a clone of Nedian0Brien/SynapseNote. Pick a different folder?",
     );
   });
 });
@@ -158,7 +158,7 @@ describe('presentReceiveError', () => {
   test('unsupported-version payload returns the update prompt', () => {
     expect(presentReceiveError({ kind: 'unsupported-version' })).toEqual({
       kind: 'unsupported-version',
-      message: 'Update OpenKnowledge to open this share.',
+      message: 'Update SynapseNote to open this share.',
     });
   });
 

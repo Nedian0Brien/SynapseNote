@@ -1,4 +1,4 @@
-// biome-ignore-all lint/plugin/no-raw-html-interactive-element: pre-rule backlog — Q2 card grid uses raw <button> awaiting shadcn migration; tracked at https://github.com/inkeep/open-knowledge/blob/main/biome-plugins/README.md#no-raw-html-interactive-elementgrit
+// biome-ignore-all lint/plugin/no-raw-html-interactive-element: pre-rule backlog — Q2 card grid uses raw <button> awaiting shadcn migration; tracked at https://github.com/Nedian0Brien/SynapseNote/blob/main/biome-plugins/README.md#no-raw-html-interactive-elementgrit
 /**
  * Launcher-scoped share receive dialog. Mounted only in NavigatorApp and
  * gated on the main-resolved share payloads `'launcher-consent'` (a
@@ -21,8 +21,8 @@
  *     (folder picker + `bridge.share.validateLocalFolder`).
  */
 
-import { classifyBranchMatch } from '@inkeep/open-knowledge-core';
 import { Trans, useLingui } from '@lingui/react/macro';
+import { classifyBranchMatch } from '@nedian0brien/synapsenote-core';
 import { Loader2 } from 'lucide-react';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { toast } from 'sonner';
@@ -554,7 +554,7 @@ function ShareReceiveDialogInner({
               </p>
             ) : null}
             <p className="mt-3 text-sm text-muted-foreground">
-              <Trans>That folder isn't an OpenKnowledge project yet. Initialize it and open?</Trans>
+              <Trans>That folder isn't an SynapseNote project yet. Initialize it and open?</Trans>
             </p>
             {consentState.phase === 'error' ? (
               <p

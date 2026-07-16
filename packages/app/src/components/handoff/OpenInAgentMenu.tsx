@@ -26,14 +26,14 @@
  * active doc / workspace not loaded), the trigger is disabled.
  */
 
+import { Trans, useLingui } from '@lingui/react/macro';
 import {
   type HandoffTarget,
   type InstallState,
   type TargetData,
   TERMINAL_CLIS,
   type TerminalCli,
-} from '@inkeep/open-knowledge-core';
-import { Trans, useLingui } from '@lingui/react/macro';
+} from '@nedian0brien/synapsenote-core';
 import { Sparkles } from 'lucide-react';
 import { type ReactNode, useEffect, useEffectEvent, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';

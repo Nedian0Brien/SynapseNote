@@ -24,7 +24,7 @@
  * then deletes on the second press), which surprises authors used to
  * text editors. Mirrors the wiki-link extension override.
  */
-import { Tag as BaseTag } from '@inkeep/open-knowledge-core';
+import { Tag as BaseTag } from '@nedian0brien/synapsenote-core';
 import { ReactNodeViewRenderer } from '@tiptap/react';
 import { TagView } from '../components/TagView.tsx';
 import { configureTagSuggestion, tagSuggestionKey } from './tag-suggestion.ts';

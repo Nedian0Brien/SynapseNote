@@ -4,7 +4,7 @@
  * OK no longer scaffolds a launch.json — Claude Code Desktop's in-app Browser
  * pane opens the preview URL directly. This sweep, run from `bootStartServer`
  * (CLI `ok start`) alongside `repairMcpConfigs`, surgically removes any
- * `open-knowledge-ui` entry a prior OK version left in a (possibly shared)
+ * `synapsenote-ui` entry a prior OK version left in a (possibly shared)
  * `.claude/launch.json`, preserving every other configuration. Fail-soft: IO
  * failures inside `removeOwnLaunchEntry` surface as its executor's `failed`
  * op; the reclaim gate short-circuits with a structured event.
@@ -53,7 +53,7 @@ export interface LaunchJsonRepairContext {
 }
 
 /**
- * Remove OK's `open-knowledge-ui` entry from `<projectDir>/.claude/launch.json`
+ * Remove OK's `synapsenote-ui` entry from `<projectDir>/.claude/launch.json`
  * if present. Single-file sweep; no fan-out and no user-scope analogue.
  * Fail-soft — never throws.
  */

@@ -7,7 +7,7 @@ import {
   SUCCESS_CACHE_CONTROL,
 } from '../../../lib/download-links.ts';
 
-const TEST_DMG_URL = `https://github.com/inkeep/open-knowledge/releases/download/v0.1.0-beta.1/${DMG_ASSET_NAME}`;
+const TEST_DMG_URL = `https://github.com/Nedian0Brien/SynapseNote/releases/download/v0.1.0-beta.1/${DMG_ASSET_NAME}`;
 
 // Mutable reference — each test sets this before calling GET so the injected
 // resolver reflects the scenario under test.
@@ -46,7 +46,7 @@ mock.module('../../../lib/track.ts', () => ({
 const { GET } = await import('./route.ts');
 
 function call(): Promise<Response> {
-  return GET(new Request('https://openknowledge.ai/download/beta'));
+  return GET(new Request('https://synapse.lawdigest.kr/download/beta'));
 }
 
 describe('GET /download/beta', () => {
@@ -86,7 +86,7 @@ describe('GET /download/beta', () => {
     _redirect = { kind: 'fresh', url: TEST_DMG_URL };
     _lastCapture = null;
     const res = await GET(
-      new Request('https://openknowledge.ai/download/beta', {
+      new Request('https://synapse.lawdigest.kr/download/beta', {
         headers: { 'sec-purpose': 'prefetch' },
       }),
     );

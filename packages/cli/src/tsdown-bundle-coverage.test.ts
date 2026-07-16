@@ -77,7 +77,7 @@ describe('tsdown alwaysBundle covers every cli runtime dep', () => {
 /**
  * The loop above only covers the cli's OWN `package.json` dependencies. The
  * same ERR_MODULE_NOT_FOUND class also bites TRANSITIVE runtime deps that
- * enter the bundle through the inlined `@inkeep/open-knowledge-server` source.
+ * enter the bundle through the inlined `@nedian0brien/synapsenote-server` source.
  */
 describe('tsdown alwaysBundle covers the file-type transitive closure', () => {
   const fileTypeClosure = [

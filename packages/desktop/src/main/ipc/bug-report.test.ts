@@ -496,7 +496,7 @@ describe('handleBugReportSend — zip path containment', () => {
     expect(result.reason).toBe('send-failed');
     // Generic fallback only — the refused path must not be echoed into the draft.
     expect(result.fallback.mailtoUrl).not.toContain(encodeURIComponent(outsideZip));
-    expect(result.fallback.mailtoUrl.startsWith('mailto:support@inkeep.com?')).toBe(true);
+    expect(result.fallback.mailtoUrl.startsWith('mailto:support@lawdigest.kr?')).toBe(true);
     expect(stub.requests).toHaveLength(0);
   });
 
@@ -562,7 +562,7 @@ describe('handleBugReportSend — transport hardening', () => {
 
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error('expected fallback');
-    expect(result.fallback.mailtoUrl.startsWith('mailto:support@inkeep.com?')).toBe(true);
+    expect(result.fallback.mailtoUrl.startsWith('mailto:support@lawdigest.kr?')).toBe(true);
     expect(stub.requests.map((r) => `${r.method} ${r.path}`)).toEqual(['POST /api/bug-report']);
   });
 
@@ -694,17 +694,17 @@ describe('handleBugReportSend — transport hardening', () => {
     if (result.ok) throw new Error('expected refusal');
     // The renderer sees the ordinary failure screen with the email fallback.
     expect(result.reason).toBe('send-failed');
-    expect(result.fallback.mailtoUrl.startsWith('mailto:support@inkeep.com?')).toBe(true);
+    expect(result.fallback.mailtoUrl.startsWith('mailto:support@lawdigest.kr?')).toBe(true);
     expect(stub.requests).toHaveLength(0);
   });
 
   test('parseTransportSafeUrl admits https anywhere and http only on loopback', () => {
-    expect(parseTransportSafeUrl('https://openknowledge.ai')).not.toBeNull();
+    expect(parseTransportSafeUrl('https://synapse.lawdigest.kr')).not.toBeNull();
     expect(parseTransportSafeUrl('http://127.0.0.1:8080')).not.toBeNull();
     expect(parseTransportSafeUrl('http://localhost:8080')).not.toBeNull();
     expect(parseTransportSafeUrl('http://[::1]:8080')).not.toBeNull();
     expect(parseTransportSafeUrl('http://intake.example.com')).toBeNull();
-    expect(parseTransportSafeUrl('ftp://openknowledge.ai')).toBeNull();
+    expect(parseTransportSafeUrl('ftp://synapse.lawdigest.kr')).toBeNull();
     expect(parseTransportSafeUrl('not a url')).toBeNull();
   });
 });
@@ -772,8 +772,8 @@ describe('handleBugReportSend — email fallback', () => {
       'Project: ipc-proj',
       'Detail level: standard',
     ].join('\n');
-    const expectedMailto = `mailto:support@inkeep.com?subject=${encodeURIComponent(
-      'OpenKnowledge bug report (v0.9.9-test.1)',
+    const expectedMailto = `mailto:support@lawdigest.kr?subject=${encodeURIComponent(
+      'SynapseNote bug report (v0.9.9-test.1)',
     )}&body=${encodeURIComponent(expectedBody)}`;
     // `email-draft`, not `send-failed`: no intake is configured, so this is
     // the designed transport, and the dialog must not render a failure.
@@ -825,7 +825,7 @@ describe('handleBugReportSend — email fallback', () => {
 
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error('expected fallback');
-    expect(result.fallback.mailtoUrl.startsWith('mailto:support@inkeep.com?')).toBe(true);
+    expect(result.fallback.mailtoUrl.startsWith('mailto:support@lawdigest.kr?')).toBe(true);
   });
 
   test('a failed PUT falls back and never fires the completion call', async () => {
@@ -890,8 +890,8 @@ describe('handleBugReportSend — email fallback', () => {
       ok: false,
       reason: 'send-failed',
       fallback: {
-        mailtoUrl: `mailto:support@inkeep.com?subject=${encodeURIComponent(
-          'OpenKnowledge bug report (v0.9.9-test.1)',
+        mailtoUrl: `mailto:support@lawdigest.kr?subject=${encodeURIComponent(
+          'SynapseNote bug report (v0.9.9-test.1)',
         )}&body=${encodeURIComponent(degenerateBody)}`,
       },
     });

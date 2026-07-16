@@ -37,7 +37,7 @@ import {
   MarkdownManager,
   type SerializeCallOptions,
   sharedExtensions,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { getSchema } from '@tiptap/core';
 import { updateYFragment } from '@tiptap/y-tiptap';
 import * as Y from 'yjs';

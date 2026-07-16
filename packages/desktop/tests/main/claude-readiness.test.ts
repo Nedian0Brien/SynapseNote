@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { TERMINAL_CLI_IDS, type TerminalCli } from '@inkeep/open-knowledge-core';
+import { TERMINAL_CLI_IDS, type TerminalCli } from '@nedian0brien/synapsenote-core';
 import {
   CLAUDE_PROBE_ARGS,
   cliProbeArgs,
@@ -204,7 +204,7 @@ describe('resolveClaudeReadiness', () => {
 
   test('project pre-approval is independent of global wiring (foreign project entry → false)', async () => {
     // The supply-chain case: global ~/.claude.json is wired, but the PROJECT's
-    // own `open-knowledge` entry is foreign, so pre-approval is withheld and
+    // own `synapsenote` entry is foreign, so pre-approval is withheld and
     // Claude's trust prompt stays in place.
     const r = await resolveClaudeReadiness({
       probeClaude: () => Promise.resolve(0),

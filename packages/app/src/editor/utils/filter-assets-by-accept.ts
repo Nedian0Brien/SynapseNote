@@ -20,7 +20,7 @@
 import {
   type InlineAssetMediaKind,
   mediaKindForSidebarAssetExtension,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 
 /** Map a MIME pattern to the asset kind the server tags matching files with. */
 function mediaKindForMime(mime: string): InlineAssetMediaKind | null {

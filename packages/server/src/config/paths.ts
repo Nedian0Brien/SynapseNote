@@ -7,7 +7,7 @@
  */
 
 import { resolve } from 'node:path';
-import { LOCAL_DIR, OK_DIR } from '@inkeep/open-knowledge-core';
+import { LOCAL_DIR, OK_DIR } from '@nedian0brien/synapsenote-core';
 import type { Config } from './schema.ts';
 
 /**
@@ -37,7 +37,7 @@ export function resolveContentDir(config: Config, cwd: string): string {
  * `last-spawn-error.log`, `cache/<branch>/...`, and `tmp/upload-<uuid>` all
  * resolve under here.
  *
- * Lives in `@inkeep/open-knowledge-server` (Node-only) — not in `-core` —
+ * Lives in `@nedian0brien/synapsenote-server` (Node-only) — not in `-core` —
  * because it imports `node:path`. Frontend bundles (Vite) externalize
  * `node:path` and the destructured import would crash at module load even
  * if no caller invoked the function. Frontend code that needs to format a

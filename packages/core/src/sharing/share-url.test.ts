@@ -33,7 +33,7 @@ describe('decodeShareUrl', () => {
 
   test('round-trips a long real-world GitHub blob URL with deep path', () => {
     const sharedUrl =
-      'https://github.com/inkeep/open-knowledge/blob/feat%2Fsharing-virality-flow/packages/core/src/sharing/share-url.ts';
+      'https://github.com/Nedian0Brien/SynapseNote/blob/feat%2Fsharing-virality-flow/packages/core/src/sharing/share-url.ts';
     expect(decodeShareUrl(encodeShareUrl(sharedUrl))).toEqual({ version: 1, sharedUrl });
   });
 

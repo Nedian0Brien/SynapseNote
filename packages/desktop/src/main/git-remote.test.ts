@@ -10,18 +10,19 @@ describe('extractOriginUrl', () => {
       '[core]',
       '\trepositoryformatversion = 0',
       '[remote "origin"]',
-      '\turl = https://github.com/inkeep/open-knowledge.git',
+      '\turl = https://github.com/Nedian0Brien/SynapseNote.git',
       '\tfetch = +refs/heads/*:refs/remotes/origin/*',
       '',
     ].join('\n');
-    expect(extractOriginUrl(config)).toBe('https://github.com/inkeep/open-knowledge.git');
+    expect(extractOriginUrl(config)).toBe('https://github.com/Nedian0Brien/SynapseNote.git');
   });
 
   test("returns the SSH form unchanged (canonicalization is the caller's job)", () => {
-    const config = ['[remote "origin"]', '\turl = git@github.com:inkeep/open-knowledge.git'].join(
-      '\n',
-    );
-    expect(extractOriginUrl(config)).toBe('git@github.com:inkeep/open-knowledge.git');
+    const config = [
+      '[remote "origin"]',
+      '\turl = git@github.com:Nedian0Brien/SynapseNote.git',
+    ].join('\n');
+    expect(extractOriginUrl(config)).toBe('git@github.com:Nedian0Brien/SynapseNote.git');
   });
 
   test('ignores [remote "upstream"] when origin is also present', () => {
@@ -29,9 +30,9 @@ describe('extractOriginUrl', () => {
       '[remote "upstream"]',
       '\turl = https://github.com/some/fork.git',
       '[remote "origin"]',
-      '\turl = https://github.com/inkeep/open-knowledge.git',
+      '\turl = https://github.com/Nedian0Brien/SynapseNote.git',
     ].join('\n');
-    expect(extractOriginUrl(config)).toBe('https://github.com/inkeep/open-knowledge.git');
+    expect(extractOriginUrl(config)).toBe('https://github.com/Nedian0Brien/SynapseNote.git');
   });
 
   test('returns null when no origin section is present', () => {
@@ -51,25 +52,25 @@ describe('extractOriginUrl', () => {
       '[core]\r',
       '\trepositoryformatversion = 0\r',
       '[remote "origin"]\r',
-      '\turl = https://github.com/inkeep/open-knowledge.git\r',
+      '\turl = https://github.com/Nedian0Brien/SynapseNote.git\r',
     ].join('\n');
-    expect(extractOriginUrl(config)).toBe('https://github.com/inkeep/open-knowledge.git');
+    expect(extractOriginUrl(config)).toBe('https://github.com/Nedian0Brien/SynapseNote.git');
   });
 
   test('handles quoted url values', () => {
     const config = [
       '[remote "origin"]',
-      '\turl = "https://github.com/inkeep/open-knowledge.git"',
+      '\turl = "https://github.com/Nedian0Brien/SynapseNote.git"',
     ].join('\n');
-    expect(extractOriginUrl(config)).toBe('https://github.com/inkeep/open-knowledge.git');
+    expect(extractOriginUrl(config)).toBe('https://github.com/Nedian0Brien/SynapseNote.git');
   });
 
   test('strips trailing semicolon and hash comments', () => {
     const config = [
       '[remote "origin"]',
-      '\turl = https://github.com/inkeep/open-knowledge.git ; was example/old.git',
+      '\turl = https://github.com/Nedian0Brien/SynapseNote.git ; was example/old.git',
     ].join('\n');
-    expect(extractOriginUrl(config)).toBe('https://github.com/inkeep/open-knowledge.git');
+    expect(extractOriginUrl(config)).toBe('https://github.com/Nedian0Brien/SynapseNote.git');
   });
 });
 
@@ -89,10 +90,10 @@ describe('readCanonicalGitHubRemoteUrl (filesystem round-trip)', () => {
       mkdirSync(join(projectDir, '.git'));
       writeFileSync(
         join(projectDir, '.git', 'config'),
-        '[remote "origin"]\n\turl = https://github.com/inkeep/open-knowledge.git\n',
+        '[remote "origin"]\n\turl = https://github.com/Nedian0Brien/SynapseNote.git\n',
       );
     });
-    expect(result).toBe('https://github.com/inkeep/open-knowledge.git');
+    expect(result).toBe('https://github.com/Nedian0Brien/SynapseNote.git');
   });
 
   test('canonicalizes an SSH origin to the https form', () => {
@@ -100,10 +101,10 @@ describe('readCanonicalGitHubRemoteUrl (filesystem round-trip)', () => {
       mkdirSync(join(projectDir, '.git'));
       writeFileSync(
         join(projectDir, '.git', 'config'),
-        '[remote "origin"]\n\turl = git@github.com:inkeep/open-knowledge.git\n',
+        '[remote "origin"]\n\turl = git@github.com:Nedian0Brien/SynapseNote.git\n',
       );
     });
-    expect(result).toBe('https://github.com/inkeep/open-knowledge.git');
+    expect(result).toBe('https://github.com/Nedian0Brien/SynapseNote.git');
   });
 
   test('returns null when .git/config is absent (not a git repo)', () => {
@@ -118,7 +119,7 @@ describe('readCanonicalGitHubRemoteUrl (filesystem round-trip)', () => {
       mkdirSync(join(projectDir, '.git'));
       writeFileSync(
         join(projectDir, '.git', 'config'),
-        '[remote "origin"]\n\turl = https://gitlab.com/inkeep/open-knowledge.git\n',
+        '[remote "origin"]\n\turl = https://gitlab.com/Nedian0Brien/SynapseNote.git\n',
       );
     });
     expect(result).toBeNull();
@@ -150,12 +151,12 @@ describe('readCanonicalGitHubRemoteUrl (filesystem round-trip)', () => {
       mkdirSync(primaryGitDir, { recursive: true });
       writeFileSync(
         join(primaryGitDir, 'config'),
-        '[remote "origin"]\n\turl = https://github.com/inkeep/open-knowledge.git\n',
+        '[remote "origin"]\n\turl = https://github.com/Nedian0Brien/SynapseNote.git\n',
       );
       // Worktree's `.git` is a FILE containing `gitdir: <path>`, not a dir.
       writeFileSync(join(projectDir, '.git'), `gitdir: ${primaryGitDir}\n`);
     });
-    expect(result).toBe('https://github.com/inkeep/open-knowledge.git');
+    expect(result).toBe('https://github.com/Nedian0Brien/SynapseNote.git');
   });
 
   test('returns null when worktree pointer file targets a missing gitdir', () => {

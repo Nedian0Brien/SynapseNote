@@ -36,7 +36,11 @@
  * Callers MUST treat the registry as read-only at runtime —
  * `coreRegistry.set` exists for module-init seeding only.
  */
-import { createRegistry, type JsxComponentMeta, type PropDef } from '@inkeep/open-knowledge-core';
+import {
+  createRegistry,
+  type JsxComponentMeta,
+  type PropDef,
+} from '@nedian0brien/synapsenote-core';
 import { componentMap } from '../components/componentMap.tsx';
 import type { JsxComponentDescriptor } from './types.ts';
 

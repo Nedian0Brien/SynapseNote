@@ -1,7 +1,7 @@
 /**
  * Deferred-share carry: the web half of the install-boundary handoff.
  *
- * A receiver who clicks a share link without OpenKnowledge installed
+ * A receiver who clicks a share link without SynapseNote installed
  * downloads the DMG through `/d/<encoded>/download`, which drops a first-party
  * cookie holding the `<encoded>` share token and 302s to the unchanged GitHub
  * asset. On the app's true first launch it opens a localhost listener and

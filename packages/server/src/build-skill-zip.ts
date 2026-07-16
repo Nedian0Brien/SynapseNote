@@ -1,5 +1,5 @@
 /**
- * Build + validate the `openknowledge.skill` artifact.
+ * Build + validate the `synapsenote.skill` artifact.
  *
  * ZIPs a bundled SKILL.md source as `<skill-name>/SKILL.md` (wrapper-folder-
  * at-root — Claude Desktop's upload silently rejects flat ZIPs) and runs
@@ -7,9 +7,9 @@
  * `metadata.version:` match against caller-supplied `expectedSkillVersion`.
  *
  * Two skill bundles ship side by side:
- *   - `discovery` (`name: open-knowledge-discovery`) — slim, install/share
+ *   - `discovery` (`name: synapsenote-discovery`) — slim, install/share
  *     guidance, no behavioral runtime rules. User-global install only.
- *   - `project`   (`name: open-knowledge`)           — the rich agent-runtime
+ *   - `project`   (`name: synapsenote`)           — the rich agent-runtime
  *     contract. Project-local install + the `.skill` ZIP (Cowork) only.
  *
  * This module is a pure ZIP-builder. Version provenance is the caller's
@@ -31,7 +31,7 @@ import { readdir, readFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { basename, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { stripFrontmatter, unwrapFrontmatterFences } from '@inkeep/open-knowledge-core';
+import { stripFrontmatter, unwrapFrontmatterFences } from '@nedian0brien/synapsenote-core';
 import yazl from 'yazl';
 import { BUNDLE_SKILL_NAME, type BundleId } from './skill-bundles.ts';
 
@@ -57,7 +57,7 @@ export interface BuildSkillZipOptions {
   bundle?: BundleId;
   /** Override the source directory. Defaults to the resolved bundle dir. */
   sourceDir?: string;
-  /** Output file path. Defaults to `./openknowledge.skill` in cwd. */
+  /** Output file path. Defaults to `./synapsenote.skill` in cwd. */
   outputPath?: string;
   /**
    * When set, validate that SKILL.md's `metadata.version` matches this value.
@@ -96,7 +96,7 @@ export interface BuildSkillZipResult {
 }
 
 export interface ResolveBundledSkillDirOptions {
-  /** Override `$HOME` — probes `~/Applications/OpenKnowledge.app`. Tests pin. */
+  /** Override `$HOME` — probes `~/Applications/SynapseNote.app`. Tests pin. */
   home?: string;
   /** Override the platform tag. Defaults to `process.platform`. */
   platform?: NodeJS.Platform;
@@ -114,12 +114,12 @@ export interface ResolveBundledSkillDirOptions {
 }
 
 /** macOS OK Desktop bundles its CLI assets under this path inside the `.app`. */
-const DESKTOP_SKILLS_REL = 'OpenKnowledge.app/Contents/Resources/cli/dist/assets/skills';
+const DESKTOP_SKILLS_REL = 'SynapseNote.app/Contents/Resources/cli/dist/assets/skills';
 
 /**
  * Resolve the source directory for one skill bundle. Probe order:
- *   1. `/Applications/OpenKnowledge.app/.../assets/skills/<which>` (macOS)
- *   2. `~/Applications/OpenKnowledge.app/.../assets/skills/<which>` (macOS)
+ *   1. `/Applications/SynapseNote.app/.../assets/skills/<which>` (macOS)
+ *   2. `~/Applications/SynapseNote.app/.../assets/skills/<which>` (macOS)
  *   3. `<server-src>/../dist/assets/skills/<which>` — composed dev output
  *      (`buildSkillBundles()` writes here; preferred so `{{> _shared/… }}`
  *      placeholders are resolved).
@@ -183,14 +183,14 @@ async function* walkFiles(dir: string, base: string = dir): AsyncGenerator<strin
  * Compute the wrapper folder name for the ZIP root from a source directory.
  * Pure / cross-platform: uses `basename` (handles `\` and `/` correctly via
  * the runtime's path module — on Windows that's `path.win32`). The previous
- * `split('/').pop()` form treated `C:\foo\open-knowledge` as a single segment
+ * `split('/').pop()` form treated `C:\foo\synapsenote` as a single segment
  * and leaked the entire absolute path into the ZIP root.
  */
 function computeWrapperFolderName(
   sourceDir: string,
   pathBasename: (p: string) => string = basename,
 ): string {
-  return pathBasename(sourceDir) || 'open-knowledge';
+  return pathBasename(sourceDir) || 'synapsenote';
 }
 
 /**
@@ -279,7 +279,7 @@ function extractMetadataVersion(markdown: string): string | undefined {
  * in-memory blob, so callers need not load the ZIP twice.
  *
  * `opts.bundle` selects which `name:` value the frontmatter must carry
- * (`open-knowledge-discovery` vs `open-knowledge`); defaults to `'project'`.
+ * (`synapsenote-discovery` vs `synapsenote`); defaults to `'project'`.
  * `opts.sourceDir` short-circuits re-resolution when the caller already has
  * the source dir in hand.
  */
@@ -335,7 +335,7 @@ export async function validateSkillZip(
 
 /**
  * Build the `.skill` artifact + run validation. Default output is
- * `./openknowledge.skill` in cwd; default bundle is `'project'` (the rich
+ * `./synapsenote.skill` in cwd; default bundle is `'project'` (the rich
  * bundle — Track 2 ships rich-only).
  *
  * Pass `expectedSkillVersion` only from release-build paths that need to
@@ -346,10 +346,10 @@ export async function buildSkillZip(opts: BuildSkillZipOptions = {}): Promise<Bu
   const bundle: BundleId = opts.bundle ?? 'project';
   const sourceDir =
     opts.sourceDir ?? resolveBundledSkillDir(bundle, { checkDesktop: opts.checkDesktop ?? false });
-  const outputPath = opts.outputPath ?? join(process.cwd(), 'openknowledge.skill');
+  const outputPath = opts.outputPath ?? join(process.cwd(), 'synapsenote.skill');
 
   // Wrapper folder = the bundle's canonical skill name, NOT the source dir's
-  // basename — keeps the archive root stable (`open-knowledge/`) regardless of
+  // basename — keeps the archive root stable (`synapsenote/`) regardless of
   // the `discovery/` | `project/` source-tree directory name.
   await zipDirectory(sourceDir, outputPath, BUNDLE_SKILL_NAME[bundle]);
   const { size, sha256, skillVersion } = await validateSkillZip(

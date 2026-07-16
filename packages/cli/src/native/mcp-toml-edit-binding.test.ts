@@ -32,9 +32,9 @@ interface NativeMcpEditBinding {
 }
 
 const require = createRequire(import.meta.url);
-const binding = require('@inkeep/open-knowledge-native-config') as NativeMcpEditBinding;
+const binding = require('@nedian0brien/synapsenote-native-config') as NativeMcpEditBinding;
 
-const SERVER = 'open-knowledge';
+const SERVER = 'synapsenote';
 const ENTRY = JSON.stringify({ command: '/bin/sh', args: ['-l', '-c', 'run-ok'] });
 
 describe('native mcp toml-edit binding', () => {
@@ -44,12 +44,12 @@ describe('native mcp toml-edit binding', () => {
     expect(result.changed).toBe(true);
     expect(result.existed).toBe(false);
     expect(typeof result.text).toBe('string');
-    expect(result.text).toContain('[mcp_servers.open-knowledge]');
+    expect(result.text).toContain('[mcp_servers.synapsenote]');
     expect(result.text).toContain('command = "other"  # keep');
   });
 
   test('reports existed=true when updating an entry that is already present', () => {
-    const input = '[mcp_servers.open-knowledge]\ncommand = "/old"\n';
+    const input = '[mcp_servers.synapsenote]\ncommand = "/old"\n';
     const result = binding.upsertMcpServer(input, SERVER, ENTRY);
     expect(result.existed).toBe(true);
     expect(result.changed).toBe(true);
@@ -64,10 +64,10 @@ describe('native mcp toml-edit binding', () => {
   });
 
   test('remove deletes only our entry and reports the change', () => {
-    const input = `[mcp_servers.other]\ncommand = "other"\n\n[mcp_servers.open-knowledge]\ncommand = "/bin/sh"\n`;
+    const input = `[mcp_servers.other]\ncommand = "other"\n\n[mcp_servers.synapsenote]\ncommand = "/bin/sh"\n`;
     const result = binding.removeMcpServer(input, SERVER);
     expect(result.changed).toBe(true);
-    expect(result.text).not.toContain('[mcp_servers.open-knowledge]');
+    expect(result.text).not.toContain('[mcp_servers.synapsenote]');
     expect(result.text).toContain('[mcp_servers.other]');
   });
 

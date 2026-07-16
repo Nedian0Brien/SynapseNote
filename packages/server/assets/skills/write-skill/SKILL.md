@@ -1,18 +1,18 @@
 ---
-name: open-knowledge-write-skill
-description: "Use when the user wants to create, author, write, or design a new Agent Skill (a SKILL.md) — for OpenKnowledge or for their editors — including requests like 'help me write a skill', 'make a skill that…', 'turn this workflow into a skill', or improving an existing skill's triggering and discipline. Also use when capturing reusable agent guidance that should live as an installable skill rather than a one-off prompt. Covers choosing scope (project vs global), the SKILL.md frontmatter contract, progressive-disclosure structure, evaluating the skill, and installing it into the user's editors."
-compatibility: "OpenKnowledge project recommended (uses the `write` / `edit` / `install` MCP verbs). Authoring + validation are pure file ops; live preview + eval want a running server (`ok start`)."
+name: synapsenote-write-skill
+description: "Use when the user wants to create, author, write, or design a new Agent Skill (a SKILL.md) — for SynapseNote or for their editors — including requests like 'help me write a skill', 'make a skill that…', 'turn this workflow into a skill', or improving an existing skill's triggering and discipline. Also use when capturing reusable agent guidance that should live as an installable skill rather than a one-off prompt. Covers choosing scope (project vs global), the SKILL.md frontmatter contract, progressive-disclosure structure, evaluating the skill, and installing it into the user's editors."
+compatibility: "SynapseNote project recommended (uses the `write` / `edit` / `install` MCP verbs). Authoring + validation are pure file ops; live preview + eval want a running server (`ok start`)."
 metadata:
   version: "0.30.1"
-  author: "Inkeep"
-  repository: "https://github.com/inkeep/open-knowledge"
+  author: "SynapseNote"
+  repository: "https://github.com/Nedian0Brien/SynapseNote"
 ---
 
-# Writing an OpenKnowledge skill
+# Writing an SynapseNote skill
 
 You are helping the user author an **Agent Skill** — a `SKILL.md` file (plus
 optional `references/` and `scripts/`) that teaches an AI agent how to do a
-recurring task. In OpenKnowledge a skill is a first-class, versioned,
+recurring task. In SynapseNote a skill is a first-class, versioned,
 installable artifact: you author it with the `write` / `edit` skill verbs, then
 `install` it into the user's editors.
 
@@ -168,7 +168,7 @@ build, so they have no history to restore.
 ## Reminders
 
 - Prefer ONE good skill over many overlapping ones; split only when triggers diverge. (The Stage 1 gate is where you ENFORCE this — don't leave overlap to discover later.)
-- Scope is the only placement decision — don't fold harness/format/toolchain assumptions into it, and don't bake one into the scope question's wording. You are authoring an OpenKnowledge skill: write it with `write({ skill })` and project it with `install`; never hand-write skill files into editor dirs (`.claude/skills/`, `.cursor/skills/`, `.codex/skills/`) — `install` owns those and overwrites them. If you load this flow, author through it.
+- Scope is the only placement decision — don't fold harness/format/toolchain assumptions into it, and don't bake one into the scope question's wording. You are authoring an SynapseNote skill: write it with `write({ skill })` and project it with `install`; never hand-write skill files into editor dirs (`.claude/skills/`, `.cursor/skills/`, `.codex/skills/`) — `install` owns those and overwrites them. If you load this flow, author through it.
 - Ground claims about how skills behave (versioning, install targets, scope semantics) in this guide or the tool descriptions — don't assert system facts from assumption.
 - Avoid blanket ALWAYS/NEVER rules without a stated reason — they read as noise and
   get ignored. Explain the why.

@@ -2,7 +2,7 @@ import type { PanelTab } from './DocPanel';
 
 type DocPanelTab = PanelTab;
 
-const DOC_PANEL_TAB_EVENT = 'open-knowledge:doc-panel-tab';
+const DOC_PANEL_TAB_EVENT = 'synapsenote:doc-panel-tab';
 let pendingRequestedTab: DocPanelTab | null = null;
 
 interface DocPanelTabDetail {

@@ -1,5 +1,5 @@
 /**
- * Per-host install gate for the OpenKnowledge Agent Skill in Claude Cowork
+ * Per-host install gate for the SynapseNote Agent Skill in Claude Cowork
  * (the Cowork tab of Claude Desktop). Sits between the renderer's "Open in
  * Cowork" click and the actual `.skill` build + upload prompt.
  *
@@ -43,7 +43,7 @@ export interface SkillInstallStorage {
 }
 
 /** Shape of `GET /api/skill/install-state` response. Mirrors the server's
- * `SkillInstallStateSnapshot` (in `@inkeep/open-knowledge-server`). */
+ * `SkillInstallStateSnapshot` (in `@nedian0brien/synapsenote-server`). */
 interface SkillInstallStateSnapshotShape {
   currentVersion: string;
   targets: Partial<

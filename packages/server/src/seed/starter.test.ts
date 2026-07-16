@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { parseTemplateFile } from '@inkeep/open-knowledge-core';
+import { parseTemplateFile } from '@nedian0brien/synapsenote-core';
 import {
   extractMarkdownLinksFromMarkdown,
   extractWikiLinksFromMarkdown,

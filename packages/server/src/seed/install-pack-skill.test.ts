@@ -14,7 +14,7 @@ import { installPackSkill } from './install-pack-skill.ts';
 
 /** Simulate `ok init` having installed the platform skill for an editor dir. */
 function setUpEditor(proj: string, editorDir: string): void {
-  const platformDir = join(proj, editorDir, 'skills', 'open-knowledge');
+  const platformDir = join(proj, editorDir, 'skills', 'synapsenote');
   mkdirSync(platformDir, { recursive: true });
   writeFileSync(join(platformDir, 'SKILL.md'), '# platform\n');
 }
@@ -32,15 +32,15 @@ describe('installPackSkill', () => {
     // (1) Source under `.ok/skills/` — this is what makes it show in the Skills
     // list + be editable (the fork model).
     expect(
-      existsSync(join(proj, '.ok', 'skills', 'open-knowledge-pack-knowledge-base', 'SKILL.md')),
+      existsSync(join(proj, '.ok', 'skills', 'synapsenote-pack-knowledge-base', 'SKILL.md')),
     ).toBe(true);
     // (2) Projected into the editor host dir.
     expect(
-      existsSync(join(proj, '.claude', 'skills', 'open-knowledge-pack-knowledge-base', 'SKILL.md')),
+      existsSync(join(proj, '.claude', 'skills', 'synapsenote-pack-knowledge-base', 'SKILL.md')),
     ).toBe(true);
     // (3) marker records it Installed with its hosts — so the list badges
     // it Installed and the Uninstall action can demote it back to a Draft.
-    const marker = readInstalledSkills(proj).skills['open-knowledge-pack-knowledge-base'];
+    const marker = readInstalledSkills(proj).skills['synapsenote-pack-knowledge-base'];
     expect(marker).toBeDefined();
     expect(marker?.scope).toBe('project');
     expect(marker?.hosts).toEqual(['claude']);
@@ -56,7 +56,7 @@ describe('installPackSkill', () => {
       'Codex',
       'Cursor',
     ]);
-    const marker = readInstalledSkills(proj).skills['open-knowledge-pack-entity-vault'];
+    const marker = readInstalledSkills(proj).skills['synapsenote-pack-entity-vault'];
     expect(marker?.hosts.sort()).toEqual(['claude', 'codex', 'cursor']);
   });
 
@@ -67,7 +67,7 @@ describe('installPackSkill', () => {
     setUpEditor(proj, '.claude');
     expect(await installPackSkill(proj, 'codebase-wiki')).toEqual(['Claude Code']);
     expect(
-      existsSync(join(proj, '.claude', 'skills', 'open-knowledge-pack-codebase-wiki', 'SKILL.md')),
+      existsSync(join(proj, '.claude', 'skills', 'synapsenote-pack-codebase-wiki', 'SKILL.md')),
     ).toBe(true);
   });
 
@@ -76,7 +76,7 @@ describe('installPackSkill', () => {
     // The source is still authored (so it lists), but no editor → no install,
     // no marker. It shows as a Draft.
     expect(await installPackSkill(proj, 'knowledge-base')).toEqual([]);
-    expect(readInstalledSkills(proj).skills['open-knowledge-pack-knowledge-base']).toBeUndefined();
+    expect(readInstalledSkills(proj).skills['synapsenote-pack-knowledge-base']).toBeUndefined();
   });
 
   test('no-op for a pack that ships no skill', async () => {
@@ -84,7 +84,7 @@ describe('installPackSkill', () => {
     setUpEditor(proj, '.claude');
     expect(await installPackSkill(proj, 'no-such-pack')).toEqual([]);
     // Ships no skill → nothing authored.
-    expect(existsSync(join(proj, '.ok', 'skills', 'open-knowledge-pack-no-such-pack'))).toBe(false);
+    expect(existsSync(join(proj, '.ok', 'skills', 'synapsenote-pack-no-such-pack'))).toBe(false);
   });
 
   test('re-seed preserves a user-edited pack skill (no rm+cp clobber)', async () => {
@@ -92,18 +92,11 @@ describe('installPackSkill', () => {
     setUpEditor(proj, '.claude');
     // First install authors the shipped source.
     await installPackSkill(proj, 'knowledge-base');
-    const sourcePath = join(
-      proj,
-      '.ok',
-      'skills',
-      'open-knowledge-pack-knowledge-base',
-      'SKILL.md',
-    );
+    const sourcePath = join(proj, '.ok', 'skills', 'synapsenote-pack-knowledge-base', 'SKILL.md');
     expect(existsSync(sourcePath)).toBe(true);
 
     // The pack skill is now the user's fork — they edit it.
-    const edited =
-      '---\nname: open-knowledge-pack-knowledge-base\ndescription: my edit\n---\nmine\n';
+    const edited = '---\nname: synapsenote-pack-knowledge-base\ndescription: my edit\n---\nmine\n';
     writeFileSync(sourcePath, edited, 'utf-8');
 
     // Re-running seed (CLI / desktop IPC / HTTP all funnel here) must NOT reset
@@ -112,7 +105,7 @@ describe('installPackSkill', () => {
     expect(installed).toEqual(['Claude Code']);
     expect(readFileSync(sourcePath, 'utf-8')).toBe(edited);
     expect(
-      existsSync(join(proj, '.claude', 'skills', 'open-knowledge-pack-knowledge-base', 'SKILL.md')),
+      existsSync(join(proj, '.claude', 'skills', 'synapsenote-pack-knowledge-base', 'SKILL.md')),
     ).toBe(true);
   });
 
@@ -122,12 +115,12 @@ describe('installPackSkill', () => {
     // `.claude` resolves outside the project; the platform skill is present
     // there, so we reach (and must be stopped by) the symlink-escape guard.
     symlinkSync(outside, join(proj, '.claude'));
-    mkdirSync(join(outside, 'skills', 'open-knowledge'), { recursive: true });
-    writeFileSync(join(outside, 'skills', 'open-knowledge', 'SKILL.md'), '# platform\n');
+    mkdirSync(join(outside, 'skills', 'synapsenote'), { recursive: true });
+    writeFileSync(join(outside, 'skills', 'synapsenote', 'SKILL.md'), '# platform\n');
     expect(await installPackSkill(proj, 'knowledge-base')).toEqual([]);
-    expect(existsSync(join(outside, 'skills', 'open-knowledge-pack-knowledge-base'))).toBe(false);
+    expect(existsSync(join(outside, 'skills', 'synapsenote-pack-knowledge-base'))).toBe(false);
     // No editor projection happened, so no marker — but the source was still
     // authored into the project's own `.ok/skills/`.
-    expect(readInstalledSkills(proj).skills['open-knowledge-pack-knowledge-base']).toBeUndefined();
+    expect(readInstalledSkills(proj).skills['synapsenote-pack-knowledge-base']).toBeUndefined();
   });
 });

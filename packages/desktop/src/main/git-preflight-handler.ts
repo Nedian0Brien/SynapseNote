@@ -25,7 +25,7 @@ import {
   type GitDetected,
   GitNotAvailableError,
   GitTooOldError,
-} from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-server';
 
 /** Outcome the caller acts on. */
 export type EnsureGitOutcome = 'ok' | 'recovered' | 'aborted';
@@ -54,7 +54,7 @@ export interface MessageBoxReturnValue {
 export interface EnsureGitDeps {
   /**
    * The preflight primitive. Production passes `assertGitAvailable` from
-   * `@inkeep/open-knowledge-server`. Test injection lets us deterministically
+   * `@nedian0brien/synapsenote-server`. Test injection lets us deterministically
    * exercise the dialog/retry loop without manipulating the test process's
    * PATH or filesystem.
    */
@@ -109,7 +109,7 @@ async function showUnknownErrorDialog(deps: EnsureGitDeps, err: Error): Promise<
       buttons: ['Quit'],
       defaultId: 0,
       cancelId: 0,
-      title: 'OpenKnowledge could not start',
+      title: 'SynapseNote could not start',
       message: 'An unexpected error occurred during startup.',
       detail: err.message,
     });
@@ -178,8 +178,8 @@ export async function ensureGitAvailable(deps: EnsureGitDeps): Promise<EnsureGit
     const title = currentErr instanceof GitTooOldError ? 'Git too old' : 'Git not found';
     const message =
       currentErr instanceof GitTooOldError
-        ? `OpenKnowledge requires ${currentErr.guidance.product} ${currentErr.required} or newer.`
-        : `OpenKnowledge needs ${currentErr.guidance.product} to track changes to your knowledge base.`;
+        ? `SynapseNote requires ${currentErr.guidance.product} ${currentErr.required} or newer.`
+        : `SynapseNote needs ${currentErr.guidance.product} to track changes to your knowledge base.`;
     const detail =
       failedInstallUrl === null
         ? currentErr.message

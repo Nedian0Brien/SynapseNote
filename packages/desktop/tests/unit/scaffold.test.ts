@@ -2,12 +2,12 @@ import { describe, expect, test } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { OK_DIR } from '@inkeep/open-knowledge-core';
+import { OK_DIR } from '@nedian0brien/synapsenote-core';
 
 /**
  * Scaffold placeholder test. Validates that the desktop package can
- * import from both workspace deps it declared (`@inkeep/open-knowledge-core`
- * + `@inkeep/open-knowledge-server`) without module-resolution errors.
+ * import from both workspace deps it declared (`@nedian0brien/synapsenote-core`
+ * + `@nedian0brien/synapsenote-server`) without module-resolution errors.
  *
  * Expands with real preload-bridge / main-window / utility-entry
  * unit tests. Keeps this test so `bun test` never runs zero-files.
@@ -18,7 +18,7 @@ describe('desktop scaffold', () => {
   });
 
   test('server package is importable', async () => {
-    const server = await import('@inkeep/open-knowledge-server');
+    const server = await import('@nedian0brien/synapsenote-server');
     expect(typeof server.bootServer).toBe('function');
     expect(typeof server.createServer).toBe('function');
   });
@@ -26,7 +26,7 @@ describe('desktop scaffold', () => {
   /**
    * Desktop tests MUST resolve workspace deps to their built `dist/` bundle, not
    * the `development`-condition `src` barrel. With `--conditions=development`,
-   * `@inkeep/open-knowledge-server` resolves to its large multi-file
+   * `@nedian0brien/synapsenote-server` resolves to its large multi-file
    * `src/index.ts` re-export barrel, and Bun's loader intermittently fails to
    * link all of those re-exports under `bun test` — throwing
    * `SyntaxError: Export named '<x>' not found in module '.../src/index.ts'` and
@@ -41,8 +41,8 @@ describe('desktop scaffold', () => {
     // Anchor to the package entry tail: an absolute repo path can itself
     // contain `/src/` (e.g. a `~/src/` checkout), so match only the resolved
     // module's own `dist/<entry>.mjs` suffix, never the `src/<entry>.ts` barrel.
-    expect(import.meta.resolve('@inkeep/open-knowledge-server')).toMatch(/\/dist\/index\.mjs$/);
-    expect(import.meta.resolve('@inkeep/open-knowledge-core')).toMatch(/\/dist\/index\.mjs$/);
+    expect(import.meta.resolve('@nedian0brien/synapsenote-server')).toMatch(/\/dist\/index\.mjs$/);
+    expect(import.meta.resolve('@nedian0brien/synapsenote-core')).toMatch(/\/dist\/index\.mjs$/);
   });
 });
 

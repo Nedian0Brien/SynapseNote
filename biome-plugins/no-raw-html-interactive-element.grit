@@ -45,6 +45,6 @@ or {
 } where {
     register_diagnostic(
         span = $node,
-        message = "Raw HTML interactive primitive — use shadcn Button/Input/Textarea/Select from @/components/ui/* (install missing via `bunx --bun shadcn@latest add <name>`). See https://github.com/inkeep/open-knowledge/blob/main/biome-plugins/README.md#no-raw-html-interactive-elementgrit"
+        message = "Raw HTML interactive primitive — use shadcn Button/Input/Textarea/Select from @/components/ui/* (install missing via `bunx --bun shadcn@latest add <name>`). See https://github.com/Nedian0Brien/SynapseNote/blob/main/biome-plugins/README.md#no-raw-html-interactive-elementgrit"
     )
 }

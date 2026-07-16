@@ -1,5 +1,5 @@
-import { humanFormat } from '@inkeep/open-knowledge-core';
 import { Trans, useLingui } from '@lingui/react/macro';
+import { humanFormat } from '@nedian0brien/synapsenote-core';
 import {
   ChevronRight,
   Copy,

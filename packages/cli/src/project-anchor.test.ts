@@ -176,7 +176,7 @@ describe('CLI preAction project anchoring (cold spawn)', () => {
     expect(exitCode).toBe(0);
     // `--cwd` goes through process.chdir, which canonicalizes symlinks
     // (macOS `/var` → `/private/var`), so compare against the realpath.
-    expect(stderr).toContain(`[ok] Using OpenKnowledge project at ${realpathSync(root)}`);
+    expect(stderr).toContain(`[ok] Using SynapseNote project at ${realpathSync(root)}`);
     const report = JSON.parse(stdout);
     expect(report).toHaveProperty('server');
   }, 30_000);
@@ -192,7 +192,7 @@ describe('CLI preAction project anchoring (cold spawn)', () => {
     const { exitCode, stdout, stderr } = spawnCli(['--cwd', sub, 'preview']);
 
     expect(exitCode).toBe(0);
-    expect(stderr).toContain(`[ok] Using OpenKnowledge project at ${realpathSync(root)}`);
+    expect(stderr).toContain(`[ok] Using SynapseNote project at ${realpathSync(root)}`);
     // Scope resolved from the root's `content.dir: docs` — proves loadConfig
     // ran against the anchored root rather than the literal cwd's defaults.
     expect(stdout).toContain('hello.md');
@@ -205,7 +205,7 @@ describe('CLI preAction project anchoring (cold spawn)', () => {
     const { exitCode, stderr } = spawnCli(['--cwd', root, 'status', '--json']);
 
     expect(exitCode).toBe(0);
-    expect(stderr).not.toContain('Using OpenKnowledge project at');
+    expect(stderr).not.toContain('Using SynapseNote project at');
   }, 30_000);
 
   test('`ok stop <relative-dir>` resolves the target against the invocation cwd, not the anchored root', () => {
@@ -215,7 +215,7 @@ describe('CLI preAction project anchoring (cold spawn)', () => {
     // The live lock sits at <sub>/target — only reachable when the relative
     // target resolves against the invocation cwd. A regression that resolves
     // against the post-anchor root would look in <root>/target and report
-    // "No running open-knowledge processes." instead of stopping the pid.
+    // "No running synapsenote processes." instead of stopping the pid.
     const targetDir = join(sub, 'target');
     mkdirSync(join(targetDir, '.ok', 'local'), { recursive: true });
 
@@ -229,7 +229,7 @@ describe('CLI preAction project anchoring (cold spawn)', () => {
       const { exitCode, stdout, stderr } = spawnCli(['--cwd', sub, 'stop', './target']);
 
       expect(exitCode).toBe(0);
-      expect(stderr).toContain(`[ok] Using OpenKnowledge project at ${realpathSync(root)}`);
+      expect(stderr).toContain(`[ok] Using SynapseNote project at ${realpathSync(root)}`);
       expect(stdout).toContain(`Stopped: server (pid=${sleeper.pid}, port=4242)`);
     } finally {
       sleeper.kill();
@@ -247,7 +247,7 @@ describe('CLI preAction project anchoring (cold spawn)', () => {
     const { exitCode, stdout, stderr } = spawnCli(['--cwd', sub, 'mcp']);
 
     expect(exitCode).toBe(0);
-    expect(stderr).toContain(`[ok] Using OpenKnowledge project at ${realpathSync(root)}`);
+    expect(stderr).toContain(`[ok] Using SynapseNote project at ${realpathSync(root)}`);
     // Binary guarantee: stdout is the JSON-RPC channel — the disclosure line
     // (and any other diagnostics) must never land there.
     expect(stdout).toBe('');
@@ -262,6 +262,6 @@ describe('CLI preAction project anchoring (cold spawn)', () => {
     const { exitCode, stderr } = spawnCli(['--cwd', sub, 'ps', '--json']);
 
     expect(exitCode).toBe(0);
-    expect(stderr).not.toContain('Using OpenKnowledge project at');
+    expect(stderr).not.toContain('Using SynapseNote project at');
   }, 30_000);
 });

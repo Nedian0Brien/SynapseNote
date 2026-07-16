@@ -25,7 +25,7 @@
  * the async arrival fills that region without reflowing the primary list.
  */
 
-import type { WorktreeSelectorModel } from '@inkeep/open-knowledge-core';
+import type { WorktreeSelectorModel } from '@nedian0brien/synapsenote-core';
 
 export interface WorktreeStore {
   getSnapshot(): WorktreeSelectorModel | null;

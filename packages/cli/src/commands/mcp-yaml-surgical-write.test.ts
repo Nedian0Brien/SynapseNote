@@ -53,7 +53,7 @@ describe('surgical YAML MCP write', () => {
     expect(result.action).toBe('written');
 
     const parsed = parseYaml(readFileSync(configPath, 'utf-8'));
-    expect(parsed.mcp_servers['open-knowledge']).toEqual(PUBLISHED_CHAIN_ENTRY);
+    expect(parsed.mcp_servers.synapsenote).toEqual(PUBLISHED_CHAIN_ENTRY);
   });
 
   it('inserts only our entry, preserving comments, siblings, and key order', () => {
@@ -93,7 +93,7 @@ describe('surgical YAML MCP write', () => {
       command: 'npx',
       args: ['-y', '@modelcontextprotocol/server-github'],
     });
-    expect(parsed.mcp_servers['open-knowledge']).toEqual(PUBLISHED_CHAIN_ENTRY);
+    expect(parsed.mcp_servers.synapsenote).toEqual(PUBLISHED_CHAIN_ENTRY);
   });
 
   it('creates the mcp_servers map when the file has none, keeping the prefix', () => {
@@ -106,7 +106,7 @@ describe('surgical YAML MCP write', () => {
     // Everything the user wrote survives verbatim; the new map is appended.
     expect(after).toContain('# my config');
     expect(after).toContain('model: hermes-4');
-    expect(parseYaml(after).mcp_servers['open-knowledge']).toEqual(PUBLISHED_CHAIN_ENTRY);
+    expect(parseYaml(after).mcp_servers.synapsenote).toEqual(PUBLISHED_CHAIN_ENTRY);
   });
 
   it('handles an empty `mcp_servers:` scalar (null) without throwing', () => {
@@ -119,16 +119,16 @@ describe('surgical YAML MCP write', () => {
     expect(result.action).toBe('written');
     const parsed = parseYaml(readFileSync(configPath, 'utf-8'));
     expect(parsed.model).toBe('hermes-4');
-    expect(parsed.mcp_servers['open-knowledge']).toEqual(PUBLISHED_CHAIN_ENTRY);
+    expect(parsed.mcp_servers.synapsenote).toEqual(PUBLISHED_CHAIN_ENTRY);
   });
 
   it('labels an existing OK entry update as overwritten', () => {
     const configPath = tempFile('config.yaml');
-    writeFileSync(configPath, 'mcp_servers:\n  open-knowledge:\n    command: old\n    args: []\n');
+    writeFileSync(configPath, 'mcp_servers:\n  synapsenote:\n    command: old\n    args: []\n');
 
     const result = writeHermes(configPath);
     expect(result.action).toBe('overwritten');
-    expect(parseYaml(readFileSync(configPath, 'utf-8')).mcp_servers['open-knowledge']).toEqual(
+    expect(parseYaml(readFileSync(configPath, 'utf-8')).mcp_servers.synapsenote).toEqual(
       PUBLISHED_CHAIN_ENTRY,
     );
   });
@@ -155,7 +155,7 @@ describe('surgical YAML MCP write', () => {
     const after = readFileSync(configPath, 'utf-8');
     expect(after.charCodeAt(0)).toBe(0xfeff);
     expect(after).toContain('# bom config');
-    expect(parseYaml(after).mcp_servers['open-knowledge']).toEqual(PUBLISHED_CHAIN_ENTRY);
+    expect(parseYaml(after).mcp_servers.synapsenote).toEqual(PUBLISHED_CHAIN_ENTRY);
   });
 
   it('preserves CRLF line endings elsewhere', () => {
@@ -170,7 +170,7 @@ describe('surgical YAML MCP write', () => {
     // Every newline in the file is CRLF — no lone LF leaked in.
     expect(after.replace(/\r\n/g, '')).not.toContain('\n');
     expect(after).toContain('# crlf config');
-    expect(parseYaml(after).mcp_servers['open-knowledge']).toEqual(PUBLISHED_CHAIN_ENTRY);
+    expect(parseYaml(after).mcp_servers.synapsenote).toEqual(PUBLISHED_CHAIN_ENTRY);
   });
 
   it.skipIf(process.platform === 'win32')(
@@ -219,7 +219,7 @@ describe('surgical YAML MCP write', () => {
 
     const parsed = parseYaml(readFileSync(configPath, 'utf-8'));
     // OK's entry is gone; the user's sibling + comment survive.
-    expect(parsed.mcp_servers['open-knowledge']).toBeUndefined();
+    expect(parsed.mcp_servers.synapsenote).toBeUndefined();
     expect(parsed.mcp_servers.github).toEqual({
       command: 'npx',
       args: ['-y', '@modelcontextprotocol/server-github'],
@@ -229,16 +229,16 @@ describe('surgical YAML MCP write', () => {
 
   it('leaves a foreign server sharing our key untouched on removal', () => {
     const configPath = tempFile('config.yaml');
-    // A server squatting on the `open-knowledge` name that is NOT OK's managed
+    // A server squatting on the `synapsenote` name that is NOT OK's managed
     // chain shape must be preserved, never deleted.
     writeFileSync(
       configPath,
-      'mcp_servers:\n  open-knowledge:\n    command: not-ok\n    args: [evil]\n',
+      'mcp_servers:\n  synapsenote:\n    command: not-ok\n    args: [evil]\n',
     );
 
     const outcome = removeOwnMcpEntry(hermesTargetForFile(configPath), '', undefined, configPath);
     expect(outcome.kind).toBe('left-foreign');
-    expect(parseYaml(readFileSync(configPath, 'utf-8')).mcp_servers['open-knowledge']).toEqual({
+    expect(parseYaml(readFileSync(configPath, 'utf-8')).mcp_servers.synapsenote).toEqual({
       command: 'not-ok',
       args: ['evil'],
     });

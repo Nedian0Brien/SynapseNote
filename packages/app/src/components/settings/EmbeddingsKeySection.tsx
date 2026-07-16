@@ -88,7 +88,7 @@ export function EmbeddingsKeySection({ transport }: { transport?: EmbeddingsKeyT
               <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">
                 OK_EMBEDDINGS_API_KEY
               </code>{' '}
-              environment variable (managed outside OpenKnowledge).
+              environment variable (managed outside SynapseNote).
             </Trans>
           </p>
         ) : (

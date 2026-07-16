@@ -4,7 +4,7 @@ export function OkIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
       role="img"
-      aria-label="OpenKnowledge icon"
+      aria-label="SynapseNote icon"
       fill="none"
       height={24}
       width={24}
@@ -12,7 +12,7 @@ export function OkIcon(props: SVGProps<SVGSVGElement>) {
       xmlns="http://www.w3.org/2000/svg"
       {...props}
     >
-      <title>OpenKnowledge icon</title>
+      <title>SynapseNote icon</title>
       <g filter="url(#filter0_d_ok)">
         <path
           d="M66.8902 16.1017C58.2694 3.86669 46.1739 -0.690239 29.9182 2.17749C21.3995 3.67813 13.4602 9.555 8.67934 17.9009C3.93974 26.1701 2.98514 35.6533 6.05714 43.9166C9.31574 52.6868 16.7168 58.4752 24.2299 63.4231C25.7973 64.4562 26.1351 65.7172 26.3551 68.9896C26.5221 71.4625 26.799 75.6011 30.6842 77.7204C31.8176 78.3372 33.0648 78.6515 34.3946 78.6515C37.0796 78.6515 39.4033 77.3649 40.5189 76.7482C47.1049 73.1046 68.8878 59.7147 72.6453 40.4027C74.3444 31.6679 70.9797 21.9019 66.8922 16.1017H66.8902Z"

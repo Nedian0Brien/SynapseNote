@@ -7,13 +7,13 @@
  * constructor-failure, and read-mismatch without touching the real native
  * binding (Bun's ABI is not Electron's Node-ABI).
  *
- * Key isolation: uses service='open-knowledge-smoke', account='test-user' —
- * distinct from the real auth substrate's service='open-knowledge',
+ * Key isolation: uses service='synapsenote-smoke', account='test-user' —
+ * distinct from the real auth substrate's service='synapsenote',
  * account=<host>. Collision-free by construction even if cleanup fails
  * mid-run.
  */
 
-const SMOKE_SERVICE = 'open-knowledge-smoke';
+const SMOKE_SERVICE = 'synapsenote-smoke';
 const SMOKE_ACCOUNT = 'test-user';
 
 export interface KeyringSmokeResult {

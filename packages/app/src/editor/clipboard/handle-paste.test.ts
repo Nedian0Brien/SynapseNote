@@ -26,8 +26,8 @@
  */
 
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, mock, test } from 'bun:test';
-import * as actualCore from '@inkeep/open-knowledge-core';
-import { LinkFidelity, MarkdownManager, sharedExtensions } from '@inkeep/open-knowledge-core';
+import * as actualCore from '@nedian0brien/synapsenote-core';
+import { LinkFidelity, MarkdownManager, sharedExtensions } from '@nedian0brien/synapsenote-core';
 import { Editor, type Extensions } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import * as actualSonner from 'sonner';
@@ -37,7 +37,7 @@ import { flushMicrotasksAndTimers, installDomGlobals } from '../walk-currency-te
 import { createHandlePaste } from './handle-paste.ts';
 
 // Mock the shared pipeline so tests don't exercise the full rehype stack.
-mock.module('@inkeep/open-knowledge-core', () => {
+mock.module('@nedian0brien/synapsenote-core', () => {
   return {
     ...actualCore,
     htmlToMdast: mock((_html: string) => ({ type: 'root', children: [] })),

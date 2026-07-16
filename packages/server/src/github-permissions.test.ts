@@ -98,7 +98,7 @@ describe('checkPushPermission — classification', () => {
     {
       name: '200 without permissions field (authed, schema drift) → unknown/malformed-response',
       status: 200,
-      body: { full_name: 'inkeep/open-knowledge' },
+      body: { full_name: 'Nedian0Brien/SynapseNote' },
       withToken: true,
       expected: { kind: 'unknown', error: 'malformed-response' },
     },
@@ -146,7 +146,7 @@ describe('checkPushPermission — classification', () => {
       const { fetch } = mockFetch(() => jsonResponse(c.status, c.body));
       const result = await checkPushPermission({
         owner: 'inkeep',
-        repo: 'open-knowledge',
+        repo: 'synapsenote',
         detectGh: c.withToken ? ghAvailable() : ghUnavailable(),
         _fetchFn: fetch,
       });
@@ -164,7 +164,7 @@ describe('checkPushPermission — classification', () => {
     );
     const result = await checkPushPermission({
       owner: 'inkeep',
-      repo: 'open-knowledge',
+      repo: 'synapsenote',
       detectGh: ghAvailable(),
       _fetchFn: fetch,
     });
@@ -175,7 +175,7 @@ describe('checkPushPermission — classification', () => {
     const { fetch } = mockFetch(() => new Response('<!doctype html>', { status: 200 }));
     const result = await checkPushPermission({
       owner: 'inkeep',
-      repo: 'open-knowledge',
+      repo: 'synapsenote',
       detectGh: ghAvailable(),
       _fetchFn: fetch,
     });
@@ -186,7 +186,7 @@ describe('checkPushPermission — classification', () => {
     const fetchFn: FetchFn = () => Promise.reject(new Error('ENETUNREACH'));
     const result = await checkPushPermission({
       owner: 'inkeep',
-      repo: 'open-knowledge',
+      repo: 'synapsenote',
       detectGh: ghAvailable(),
       _fetchFn: fetchFn,
     });
@@ -207,7 +207,7 @@ describe('checkPushPermission — classification', () => {
       );
     const result = await checkPushPermission({
       owner: 'inkeep',
-      repo: 'open-knowledge',
+      repo: 'synapsenote',
       detectGh: ghAvailable(),
       _fetchFn: fetchFn,
     });
@@ -233,7 +233,7 @@ describe('checkPushPermission — classification', () => {
       });
     const result = await checkPushPermission({
       owner: 'inkeep',
-      repo: 'open-knowledge',
+      repo: 'synapsenote',
       detectGh: ghAvailable(),
       _fetchFn: fetchFn,
       _timeoutMs: 20,
@@ -250,7 +250,7 @@ describe('checkPushPermission — token resolution', () => {
     const { store, hosts } = fakeStore('gho_tier_b_token');
     await checkPushPermission({
       owner: 'inkeep',
-      repo: 'open-knowledge',
+      repo: 'synapsenote',
       detectGh: ghAvailable('ghs_tier_a_token'),
       tokenStore: store,
       _fetchFn: fetch,
@@ -264,7 +264,7 @@ describe('checkPushPermission — token resolution', () => {
     const { store, hosts } = fakeStore('gho_tier_b_token');
     await checkPushPermission({
       owner: 'inkeep',
-      repo: 'open-knowledge',
+      repo: 'synapsenote',
       host: 'github.com',
       detectGh: ghUnavailable(),
       tokenStore: store,
@@ -279,7 +279,7 @@ describe('checkPushPermission — token resolution', () => {
     const { store } = fakeStore(null);
     const result = await checkPushPermission({
       owner: 'inkeep',
-      repo: 'open-knowledge',
+      repo: 'synapsenote',
       detectGh: ghUnavailable(),
       tokenStore: store,
       _fetchFn: fetch,
@@ -292,7 +292,7 @@ describe('checkPushPermission — token resolution', () => {
     const { fetch, calls } = mockFetch(() => jsonResponse(200, {}));
     const result = await checkPushPermission({
       owner: 'inkeep',
-      repo: 'open-knowledge',
+      repo: 'synapsenote',
       _fetchFn: fetch,
     });
     expect(result).toEqual({ kind: 'denied', reason: 'no-collaborator' });
@@ -308,7 +308,7 @@ describe('checkPushPermission — token resolution', () => {
     const { fetch } = mockFetch(() => jsonResponse(200, {}));
     await checkPushPermission({
       owner: 'inkeep',
-      repo: 'open-knowledge',
+      repo: 'synapsenote',
       host: 'github.example.com',
       detectGh,
       _fetchFn: fetch,
@@ -323,15 +323,15 @@ describe('checkPushPermission — request shape', () => {
   test('hits api.github.com/repos/OWNER/REPO with the GitHub user-agent + accept', async () => {
     const { fetch, calls } = mockFetch(() => jsonResponse(200, { permissions: { push: true } }));
     await checkPushPermission({
-      owner: 'inkeep',
-      repo: 'open-knowledge',
+      owner: 'Nedian0Brien',
+      repo: 'SynapseNote',
       detectGh: ghAvailable(),
       _fetchFn: fetch,
     });
     expect(calls).toHaveLength(1);
-    expect(calls[0]?.url).toBe('https://api.github.com/repos/inkeep/open-knowledge');
+    expect(calls[0]?.url).toBe('https://api.github.com/repos/Nedian0Brien/SynapseNote');
     const headers = calls[0]?.init?.headers as Record<string, string> | undefined;
-    expect(headers?.['User-Agent']).toBe('open-knowledge-server');
+    expect(headers?.['User-Agent']).toBe('synapsenote-server');
     expect(headers?.Accept).toBe('application/vnd.github+json');
   });
 
@@ -364,7 +364,7 @@ describe('checkPushPermission — request shape', () => {
     const { fetch, calls } = mockFetch(() => jsonResponse(200, { permissions: { push: true } }));
     await checkPushPermission({
       owner: 'inkeep',
-      repo: 'open-knowledge',
+      repo: 'synapsenote',
       detectGh: ghAvailable(),
       _fetchFn: fetch,
     });
@@ -375,7 +375,7 @@ describe('checkPushPermission — request shape', () => {
     const { fetch, calls } = mockFetch(() => jsonResponse(200, { permissions: { push: true } }));
     await checkPushPermission({
       owner: 'inkeep',
-      repo: 'open-knowledge',
+      repo: 'synapsenote',
       detectGh: ghAvailable(),
       _fetchFn: fetch,
     });
@@ -438,7 +438,7 @@ describe('checkPushPermission — telemetry', () => {
     const { fetch } = mockFetch(() => jsonResponse(200, { permissions: { push: true } }));
     await checkPushPermission({
       owner: 'inkeep',
-      repo: 'open-knowledge',
+      repo: 'synapsenote',
       detectGh: ghAvailable(),
       _fetchFn: fetch,
     });
@@ -462,7 +462,7 @@ describe('checkPushPermission — telemetry', () => {
     const { fetch } = mockFetch(() => jsonResponse(200, { permissions: { push: false } }));
     await checkPushPermission({
       owner: 'inkeep',
-      repo: 'open-knowledge',
+      repo: 'synapsenote',
       detectGh: ghAvailable(),
       _fetchFn: fetch,
     });
@@ -480,7 +480,7 @@ describe('checkPushPermission — telemetry', () => {
     const { fetch } = mockFetch(() => jsonResponse(401));
     await checkPushPermission({
       owner: 'inkeep',
-      repo: 'open-knowledge',
+      repo: 'synapsenote',
       detectGh: ghAvailable(),
       _fetchFn: fetch,
     });

@@ -11,24 +11,9 @@
  */
 import { STABLE_DMG_URL } from './download-links';
 
-export const SITE_URL = 'https://openknowledge.ai';
-export const SITE_NAME = 'OpenKnowledge';
-/** Official X/Twitter handle, used for `twitter:site` card attribution. */
-export const TWITTER_HANDLE = '@OpenKnowledge';
-
-/**
- * Single source for the public social/community links surfaced in the nav,
- * footer, JSON-LD `sameAs`, and the search widget's "get help" options. Edit
- * here; don't re-introduce the literal URLs at call sites.
- *
- * `X_URL` derives from {@link TWITTER_HANDLE} so the handle stays the one place
- * the account name lives. The GitHub *repo* link is the community/source entry
- * point — release-asset and releases-page URLs are a separate concern owned by
- * `download-links.ts`.
- */
-export const GITHUB_URL = 'https://github.com/inkeep/open-knowledge';
-export const DISCORD_URL = 'https://discord.gg/VRKk2EaGHN';
-export const X_URL = `https://x.com/${TWITTER_HANDLE.slice(1)}`;
+export const SITE_URL = 'https://synapse.lawdigest.kr';
+export const SITE_NAME = 'SynapseNote';
+export const GITHUB_URL = 'https://github.com/Nedian0Brien/SynapseNote';
 export const SITE_DESCRIPTION =
   'Beautiful, AI-native markdown editor for humans and agents. Build knowledge bases, LLM wikis, and agent 2nd brains.';
 
@@ -74,7 +59,7 @@ export function metaDescription(
 export const DOWNLOAD_URL = STABLE_DMG_URL;
 
 /**
- * Tracked stable-download route (`openknowledge.ai/download/stable`). Marketing
+ * Tracked stable-download route (`synapse.lawdigest.kr/download/stable`). Marketing
  * CTAs and the `DownloadButton` link here so every download fires a
  * `dmg_downloaded` event before the 302 to GitHub.
  */

@@ -4,11 +4,11 @@
  * Reads the bare shadow repo at `.git/ok/` via simple-git — NO
  * HTTP endpoint. The on-disk layout
  * (`refs/wip/<project-branch>/<writer-id>`) is shared with the server writer
- * through `@inkeep/open-knowledge-core`'s `shadow-repo-layout` helpers,
+ * through `@nedian0brien/synapsenote-core`'s `shadow-repo-layout` helpers,
  * so a CLI reader never hand-rolls the regex or path rules.
  */
 import { resolve } from 'node:path';
-import type { ShadowContributor } from '@inkeep/open-knowledge-core';
+import type { ShadowContributor } from '@nedian0brien/synapsenote-core';
 import {
   getShadowRepoPath,
   getWipRefPattern,
@@ -16,7 +16,7 @@ import {
   parseWriterId,
   readContributors,
   type WriterClassification,
-} from '@inkeep/open-knowledge-core/shadow-repo-layout';
+} from '@nedian0brien/synapsenote-core/shadow-repo-layout';
 import simpleGit, { type SimpleGit } from 'simple-git';
 
 export interface ShadowCommit {

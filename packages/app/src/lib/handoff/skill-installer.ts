@@ -83,7 +83,7 @@ export function electronSkillInstaller(bridge: ElectronSkillBridge): SkillInstal
 /**
  * Server-side `BuildAndOpenSkillResult` (as returned by `POST /api/install-skill`).
  * Mirrored locally — typed only for parsing. Source of truth lives in
- * `@inkeep/open-knowledge-server`'s `skill-install.ts`. Keep `status` +
+ * `@nedian0brien/synapsenote-server`'s `skill-install.ts`. Keep `status` +
  * the relevant optional fields aligned with that file.
  */
 interface ServerSkillInstallResponse {

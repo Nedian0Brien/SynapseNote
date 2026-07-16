@@ -30,7 +30,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { setTimeout as wait } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
-import { createEphemeralProjectDir, isProcessAlive } from '@inkeep/open-knowledge-server';
+import { createEphemeralProjectDir, isProcessAlive } from '@nedian0brien/synapsenote-server';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const CLI_MJS_PATH = resolve(HERE, '../../../cli/dist/cli.mjs');

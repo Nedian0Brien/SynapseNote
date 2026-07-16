@@ -1,18 +1,18 @@
 ---
-name: open-knowledge-pack-worldbuilding
+name: synapsenote-pack-worldbuilding
 version: "0.18.0"
-description: "How to work in a Worldbuilding project (the `worldbuilding` starter pack): a fiction encyclopedia of characters, settings, themes, factions, and lore. Read when the project has these folders. Carries the auto-stub and consistency behaviors so that guidance does not live inside template bodies or folder descriptions. Complements the platform `open-knowledge` skill; does not replace it."
-compatibility: "Claude Code, Claude Desktop, Claude Cowork, Claude.ai web. Requires OpenKnowledge MCP server. Installed project-local by `ok seed --pack worldbuilding`."
+description: "How to work in a Worldbuilding project (the `worldbuilding` starter pack): a fiction encyclopedia of characters, settings, themes, factions, and lore. Read when the project has these folders. Carries the auto-stub and consistency behaviors so that guidance does not live inside template bodies or folder descriptions. Complements the platform `synapsenote` skill; does not replace it."
+compatibility: "Claude Code, Claude Desktop, Claude Cowork, Claude.ai web. Requires SynapseNote MCP server. Installed project-local by `ok seed --pack worldbuilding`."
 metadata:
   pack: "worldbuilding"
-  author: "Inkeep"
-  repository: "https://github.com/inkeep/open-knowledge"
+  author: "SynapseNote"
+  repository: "https://github.com/Nedian0Brien/SynapseNote"
 ---
 # Worldbuilding pack — how to work here
 
 This project is a fiction encyclopedia. The graph is the product: characters, settings, themes, factions, and lore that link to each other. The agent's main jobs are auto-stubbing new entities as they're mentioned and flagging contradictions. This skill holds those behaviors so templates and folder descriptions stay clean.
 
-> Pack guidance. The platform `open-knowledge` skill still governs every markdown operation.
+> Pack guidance. The platform `synapsenote` skill still governs every markdown operation.
 
 ## Folders
 

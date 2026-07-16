@@ -5,7 +5,7 @@ import {
   type WorkspaceSearchCorpus,
   type WorkspaceSearchDocument,
   workspaceSearchBasename,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { parseApiError } from '@/lib/parse-api-error';
 import type { PageMeta } from './PageListContext';
 

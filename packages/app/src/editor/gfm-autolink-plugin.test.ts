@@ -270,7 +270,7 @@ describe('typed autolink — exclusions', () => {
     // the word scan can never see inside it. This pins that structural
     // property — if WikiLink ever stops being an atom, this fails instead of
     // the plugin silently starting to linkify wikilink internals.
-    const { WikiLink } = await import('@inkeep/open-knowledge-core');
+    const { WikiLink } = await import('@nedian0brien/synapsenote-core');
     const editor = mountLightEditor({
       extensions: [WikiLink, GfmAutolink.configure({ isActiveEditor: () => true })],
     });

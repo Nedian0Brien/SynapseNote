@@ -17,7 +17,7 @@ import { createHash } from 'node:crypto';
 import { type Dirent, lstatSync, readdirSync, realpathSync, type Stats, statSync } from 'node:fs';
 import { lstat, readdir, readFile, realpath, stat } from 'node:fs/promises';
 import { dirname, extname, join, relative } from 'node:path';
-import { LINKABLE_ASSET_EXTENSIONS } from '@inkeep/open-knowledge-core';
+import { LINKABLE_ASSET_EXTENSIONS } from '@nedian0brien/synapsenote-core';
 import { isConfigDoc, isReservedForUserTree, isSystemDoc } from './cc1-broadcast.ts';
 import type { ContentFilter } from './content-filter.ts';
 import {

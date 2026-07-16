@@ -17,14 +17,14 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 // children via simple-git — not the long-lived spawn+kill pattern from the
 // bun issue — and the bare-remote fixtures pin their branch explicitly, so
 // the suite passes under CI's `master`-default git
-// (inkeep/open-knowledge#361). If this file ever flakes or hangs in CI,
+// (Nedian0Brien/SynapseNote#361). If this file ever flakes or hangs in CI,
 // narrow to a targeted skip of the specific live-git describe blocks —
 // do not restore a blanket process.env.CI gate.
 
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { LOCAL_DIR } from '@inkeep/open-knowledge-core';
+import { LOCAL_DIR } from '@nedian0brien/synapsenote-core';
 import simpleGit from 'simple-git';
 import { classifyGitError } from './error-classification.ts';
 import { listNames } from './git-paths.ts';
@@ -77,7 +77,7 @@ function makeEngine(opts: { syncEnabled?: boolean; onStateChange?: (s: SyncState
  * `simpleGit` handle for further setup. Used by the push-permission probe
  * tests below.
  */
-async function initGitWithOrigin(originUrl = 'https://github.com/inkeep/open-knowledge.git') {
+async function initGitWithOrigin(originUrl = 'https://github.com/Nedian0Brien/SynapseNote.git') {
   const git = simpleGit(projectDir);
   await git.init(['--initial-branch=main']);
   await git.raw('config', 'user.name', 'Test');

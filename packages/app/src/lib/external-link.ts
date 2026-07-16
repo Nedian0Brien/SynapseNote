@@ -39,7 +39,7 @@ interface OpenExternalUrlDeps {
  * `window.okDesktop.shell.openExternal` so the URL lands in the OS default
  * browser: a raw `window.open` is turned into a new in-app BrowserWindow
  * (the main-process new-window safety net is not a reliable substitute, and
- * relying on it left external graph links opening inside Open Knowledge).
+ * relying on it left external graph links opening inside SynapseNote).
  * On web there's no bridge, so it falls through to the original
  * `window.open(url, '_blank', 'noopener,noreferrer')` new-tab behavior.
  */

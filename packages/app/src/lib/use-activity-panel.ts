@@ -25,7 +25,7 @@ import {
   AgentActivitySuccessSchema,
   AgentBurstDiffSuccessSchema,
   ProblemDetailsSchema,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { useEffect, useRef, useState } from 'react';
 import { useDocumentContext } from '@/editor/DocumentContext';
 import { HttpResponseParseError } from '@/editor/http-client';

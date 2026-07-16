@@ -35,7 +35,7 @@ function ensureSharedEngine(): Promise<SharedPdfiumEngine> {
     .then(({ createPdfiumEngine }) => {
       const engine = createPdfiumEngine(pdfiumWasmUrl, {
         encoderPoolSize: 2,
-        // OpenKnowledge is local-first. Embedded PDF fonts are sufficient for
+        // SynapseNote is local-first. Embedded PDF fonts are sufficient for
         // normal documents; disabling fallback prevents silent CDN requests.
         fontFallback: null,
       });

@@ -91,7 +91,7 @@ describe('surgical JSON MCP write', () => {
       const parsed = parseConfig(after);
       const servers = parsed.mcpServers as Record<string, unknown>;
       expect(servers['existing-server']).toEqual({ command: 'node', args: ['./srv.js'] });
-      expect(servers['open-knowledge']).toEqual(PUBLISHED_CHAIN_ENTRY);
+      expect(servers.synapsenote).toEqual(PUBLISHED_CHAIN_ENTRY);
       expect(parsed.otherTopKey).toBe(42);
     });
   }
@@ -124,13 +124,11 @@ describe('surgical JSON MCP write', () => {
     const after = readFileSync(configPath, 'utf-8');
     // Our entry's key lands at the same indentation as the existing sibling —
     // both depth-2 keys, so both 8 spaces in a 4-space file.
-    expect(indentOfKeyLine(after, 'open-knowledge')).toBe(
-      indentOfKeyLine(after, 'existing-server'),
-    );
-    expect(indentOfKeyLine(after, 'open-knowledge')).toBe('        ');
+    expect(indentOfKeyLine(after, 'synapsenote')).toBe(indentOfKeyLine(after, 'existing-server'));
+    expect(indentOfKeyLine(after, 'synapsenote')).toBe('        ');
     const servers = parseConfig(after).mcpServers as Record<string, unknown>;
     expect(servers['existing-server']).toEqual({ command: 'node' });
-    expect(servers['open-knowledge']).toEqual(PUBLISHED_CHAIN_ENTRY);
+    expect(servers.synapsenote).toEqual(PUBLISHED_CHAIN_ENTRY);
   });
 
   it('matches a tab-indented config (does not force spaces on our entry)', () => {
@@ -145,15 +143,13 @@ describe('surgical JSON MCP write', () => {
 
     const after = readFileSync(configPath, 'utf-8');
     // Our entry's key is tab-indented to match the sibling (depth-2 → two tabs).
-    expect(indentOfKeyLine(after, 'open-knowledge')).toBe(
-      indentOfKeyLine(after, 'existing-server'),
-    );
-    expect(indentOfKeyLine(after, 'open-knowledge')).toBe('\t\t');
+    expect(indentOfKeyLine(after, 'synapsenote')).toBe(indentOfKeyLine(after, 'existing-server'));
+    expect(indentOfKeyLine(after, 'synapsenote')).toBe('\t\t');
     // Only-additive: the sibling's own tab indentation is left byte-unchanged —
     // a mismatched indent unit would make jsonc-parser retype it to spaces.
     expect(after).toContain('\t\t"existing-server"');
     const servers = parseConfig(after).mcpServers as Record<string, unknown>;
-    expect(servers['open-knowledge']).toEqual(PUBLISHED_CHAIN_ENTRY);
+    expect(servers.synapsenote).toEqual(PUBLISHED_CHAIN_ENTRY);
   });
 
   it.skipIf(process.platform === 'win32')(
@@ -189,7 +185,7 @@ describe('surgical JSON MCP write', () => {
     expect(after.charCodeAt(0)).toBe(0xfeff);
     expect(after).toContain('// keep me');
     const parsed = parseConfig(after);
-    expect((parsed.mcpServers as Record<string, unknown>)['open-knowledge']).toEqual(
+    expect((parsed.mcpServers as Record<string, unknown>).synapsenote).toEqual(
       PUBLISHED_CHAIN_ENTRY,
     );
   });
@@ -211,7 +207,7 @@ describe('surgical JSON MCP write', () => {
 
     const servers = parseConfig(after).mcpServers as Record<string, unknown>;
     expect(servers['existing-server']).toEqual({ command: 'node', args: ['./srv.js'] });
-    expect(servers['open-knowledge']).toEqual(PUBLISHED_CHAIN_ENTRY);
+    expect(servers.synapsenote).toEqual(PUBLISHED_CHAIN_ENTRY);
   });
 
   it('opencode: inserts the array-command entry under `mcp`, preserving comments + siblings', () => {
@@ -233,7 +229,7 @@ describe('surgical JSON MCP write', () => {
     const parsed = parseConfig(after);
     const mcp = parsed.mcp as Record<string, unknown>;
     expect(mcp.other).toEqual({ type: 'local', enabled: true, command: ['node', 'x.js'] });
-    expect(mcp['open-knowledge']).toEqual(OPENCODE_ENTRY);
+    expect(mcp.synapsenote).toEqual(OPENCODE_ENTRY);
   });
 
   it('openclaw: inserts the nested entry under `mcp.servers`, preserving comments + siblings', () => {
@@ -260,7 +256,7 @@ describe('surgical JSON MCP write', () => {
     const mcp = parsed.mcp as Record<string, Record<string, unknown>>;
     // Sibling under `mcp.servers` untouched, our entry added alongside it.
     expect(mcp.servers.other).toEqual({ command: 'node', args: ['x.js'] });
-    expect(mcp.servers['open-knowledge']).toEqual(PUBLISHED_CHAIN_ENTRY);
+    expect(mcp.servers.synapsenote).toEqual(PUBLISHED_CHAIN_ENTRY);
     expect(parsed.gateway).toEqual({ port: 8080 });
   });
 
@@ -272,7 +268,7 @@ describe('surgical JSON MCP write', () => {
       string,
       Record<string, unknown>
     >;
-    expect(mcp.servers['open-knowledge']).toEqual(PUBLISHED_CHAIN_ENTRY);
+    expect(mcp.servers.synapsenote).toEqual(PUBLISHED_CHAIN_ENTRY);
   });
 
   it('openclaw: classify reads our nested entry back, and is no-entry when `servers` is absent', () => {
@@ -312,7 +308,7 @@ describe('surgical JSON MCP write', () => {
   "mcp": {
     "servers": {
       "keep": { "command": "node", "args": ["keep.js"] },
-      "open-knowledge": { "command": "stale", "args": ["old"] }
+      "synapsenote": { "command": "stale", "args": ["old"] }
     }
   }
 }
@@ -325,7 +321,7 @@ describe('surgical JSON MCP write', () => {
       Record<string, unknown>
     >;
     expect(mcp.servers.keep).toEqual({ command: 'node', args: ['keep.js'] });
-    expect(mcp.servers['open-knowledge']).toEqual(PUBLISHED_CHAIN_ENTRY);
+    expect(mcp.servers.synapsenote).toEqual(PUBLISHED_CHAIN_ENTRY);
   });
 
   it('updating an existing entry rewrites only our slot, leaving siblings intact', () => {
@@ -334,7 +330,7 @@ describe('surgical JSON MCP write', () => {
   // header
   "mcpServers": {
     "existing-server": { "command": "node", "args": ["./srv.js"] },
-    "open-knowledge": { "command": "stale", "args": ["old"] }
+    "synapsenote": { "command": "stale", "args": ["old"] }
   }
 }
 `;
@@ -347,7 +343,7 @@ describe('surgical JSON MCP write', () => {
     expect(after).toContain('// header');
     const servers = parseConfig(after).mcpServers as Record<string, unknown>;
     expect(servers['existing-server']).toEqual({ command: 'node', args: ['./srv.js'] });
-    expect(servers['open-knowledge']).toEqual(PUBLISHED_CHAIN_ENTRY);
+    expect(servers.synapsenote).toEqual(PUBLISHED_CHAIN_ENTRY);
   });
 
   it('is a byte-identical no-op when our entry is already current', () => {
@@ -423,6 +419,6 @@ describe('surgical JSON MCP write', () => {
       string,
       unknown
     >;
-    expect(servers['open-knowledge']).toEqual(PUBLISHED_CHAIN_ENTRY);
+    expect(servers.synapsenote).toEqual(PUBLISHED_CHAIN_ENTRY);
   });
 });

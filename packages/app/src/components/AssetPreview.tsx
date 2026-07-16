@@ -1,5 +1,5 @@
-import { type InlineAssetMediaKind, toDesktopAssetHref } from '@inkeep/open-knowledge-core';
 import { Trans } from '@lingui/react/macro';
+import { type InlineAssetMediaKind, toDesktopAssetHref } from '@nedian0brien/synapsenote-core';
 import { useState } from 'react';
 import { MermaidFileViewer } from '@/components/MermaidFileViewer';
 import { NotInSidebarIndicator } from '@/components/NotInSidebarIndicator';

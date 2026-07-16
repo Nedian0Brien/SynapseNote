@@ -35,12 +35,12 @@ import type {
   WorktreeCreateRequest,
   WorktreeCreateResult,
   WorktreeListResult,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 
 export type { OkFolderState, RecentProjectEntry };
 
 /** Seed scaffolder shapes — structurally duplicated from
- * `@inkeep/open-knowledge-server`'s seed module. See core's desktop-bridge.ts
+ * `@nedian0brien/synapsenote-server`'s seed module. See core's desktop-bridge.ts
  * for rationale (avoids pulling server into the app compilation tree).
  *
  * Folder defaults moved out of `config.yml` `folders:` and into nested
@@ -130,7 +130,7 @@ export type OkSeedListPacksResult =
   | { ok: false; error: { kind: 'internal'; message: string } };
 
 /** Pure-fs upward-walk result types mirrored from
- *  `@inkeep/open-knowledge-server`'s `fs/` module. Structurally duplicated
+ *  `@nedian0brien/synapsenote-server`'s `fs/` module. Structurally duplicated
  *  for the same reason as the seed shapes above. */
 export interface OkFindEnclosingProjectRootResult {
   readonly rootPath: string;
@@ -336,7 +336,7 @@ interface OkUpdateStuckHintInfo {
  *
  *   - `kind: 'project-branch-switch'` — editor-shell branch-switch surface
  *   - `kind: 'launcher-consent'` / `launcher-miss` — Navigator surfaces
- *   - `kind: 'unsupported-version'` — sonner toast "Update OpenKnowledge"
+ *   - `kind: 'unsupported-version'` — sonner toast "Update SynapseNote"
  *   - `kind: 'invalid'` — sonner toast "Invalid share URL"
  */
 /** Local copy — see canonical `OkSharePayloadFields` in
@@ -380,7 +380,7 @@ export type OkShareReceivedPayload =
 
 /**
  * Renderer-facing mirror of `ShareFolderValidationResult` from
- * `@inkeep/open-knowledge`'s `validateLocalFolderForShare`. Carried
+ * `@nedian0brien/synapsenote`'s `validateLocalFolderForShare`. Carried
  * by the `share.validateLocalFolder` IPC. Mirrored across the three bridge-
  * contract copies (desktop, core, app) so the bridge-contract drift tests catch divergent copies.
  */
@@ -425,7 +425,7 @@ interface OkStateSnapshot {
 
 /**
  * Editor IDs surfaced through the first-launch MCP consent bridge.
- * Aliased to the canonical `EditorId` from `@inkeep/open-knowledge-core` —
+ * Aliased to the canonical `EditorId` from `@nedian0brien/synapsenote-core` —
  * single source of truth. Local name preserved so renderer call sites keep
  * importing `OkMcpWiringEditorId` from this module.
  */
@@ -816,7 +816,7 @@ export interface OkPtyExit {
 export interface ClaudeReadiness {
   readonly claude: 'present' | 'not-found' | 'unknown';
   readonly mcp: 'wired' | 'needs-rewire';
-  /** True when the project's own `open-knowledge` `.mcp.json` entry is verified
+  /** True when the project's own `synapsenote` `.mcp.json` entry is verified
    *  to be OK's canonical managed server (cli `isOwnManagedEntry`), so the docked
    *  terminal may pre-approve it on Claude launch instead of re-showing Claude's
    *  trust prompt. False/absent for a foreign, tampered, or missing entry (the
@@ -834,14 +834,14 @@ export interface ClaudeReadiness {
  *  mirrored verbatim here (drift-tested). */
 export interface CliReadiness {
   readonly onPath: 'present' | 'not-found' | 'unknown';
-  /** Codex-only: whether OK's `open-knowledge` MCP server is already configured
+  /** Codex-only: whether OK's `synapsenote` MCP server is already configured
    *  in the user's codex config. Gates the per-launch `-c` tool-auto-approve
    *  override — codex fails to load its config if `-c` targets a server that is
    *  not defined, so the launch site adds the override only when this is true.
    *  Absent for CLIs where it does not apply.
    *
    *  DELIBERATELY WEAKER THAN CLAUDE'S GATE, and not its security equivalent.
-   *  This is existence-by-name (any object under `mcp_servers.open-knowledge`),
+   *  This is existence-by-name (any object under `mcp_servers.synapsenote`),
    *  whereas claude's `mcpPreApprovable` runs `isOwnManagedEntry` to verify the
    *  entry is byte-exactly OK's own. The asymmetry is sound because the two read
    *  different files: claude's is a PROJECT-scoped `.mcp.json` that travels in a
@@ -1022,7 +1022,7 @@ export interface OkDesktopBridge {
        * path) so the editor opens it directly. Threaded through to
        * `wm.createProjectWindow`'s `pendingDeepLinkTarget` (cold spawn →
        * `dom-ready` deep-link IPC) and to `sendDeepLink` for the warm-focus
-       * path. Mirrors the existing `openknowledge://open?project=&doc=` plumbing.
+       * path. Mirrors the existing `synapsenote://open?project=&doc=` plumbing.
        */
       pendingDeepLinkTarget?: { kind: 'doc' | 'folder'; path: string };
       /**
@@ -1212,7 +1212,7 @@ export interface OkDesktopBridge {
     /** True when Claude Desktop's config dir exists on this machine. */
     detectClaudeDesktop(): Promise<boolean>;
     /**
-     * Build `openknowledge.skill` from the bundled source, save to
+     * Build `synapsenote.skill` from the bundled source, save to
      * Downloads, invoke the OS file association (`.skill` → Claude
      * Desktop). Local build; no network.
      *

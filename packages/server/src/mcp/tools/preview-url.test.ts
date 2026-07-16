@@ -10,7 +10,7 @@ const describe = process.env.CI ? _bunDescribe.skip : _bunDescribe;
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
-import { LOCAL_DIR, OK_DIR } from '@inkeep/open-knowledge-core';
+import { LOCAL_DIR, OK_DIR } from '@nedian0brien/synapsenote-core';
 import { acquireUiLock, updateUiLockPort } from '../../ui-lock.ts';
 import { encodeSkillRoute, resolvePreviewUrl, resolveSkillPreviewUrl } from './preview-url.ts';
 
@@ -60,7 +60,7 @@ describe('resolvePreviewUrl — lock edges', () => {
     expect(result).toBeNull();
   });
 
-  test('never emits openknowledge:// scheme — the url is a bare route', () => {
+  test('never emits synapsenote:// scheme — the url is a bare route', () => {
     // Regression pin: the OK_ELECTRON_PROTOCOL_HOST short-circuit was dropped
     // because external agent in-app browsers can only render http(s) URLs.
     // Setting the env var here MUST NOT change resolver output — the resolved
@@ -73,7 +73,7 @@ describe('resolvePreviewUrl — lock edges', () => {
       const result = resolvePreviewUrl('docs/a', { lockDir });
       expect(result?.source).toBe('lock');
       expect(result?.url.startsWith('/#/')).toBe(true);
-      expect(result?.url.startsWith('openknowledge://')).toBe(false);
+      expect(result?.url.startsWith('synapsenote://')).toBe(false);
     } finally {
       if (prior === undefined) delete process.env.OK_ELECTRON_PROTOCOL_HOST;
       else process.env.OK_ELECTRON_PROTOCOL_HOST = prior;

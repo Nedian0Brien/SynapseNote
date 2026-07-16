@@ -85,21 +85,21 @@ describe('HelpPopover runtime behavior', () => {
     expect(links.map(linkShape)).toEqual([
       {
         label: 'Docs',
-        href: 'https://openknowledge.ai/docs',
+        href: 'https://synapse.lawdigest.kr/docs',
         target: '_blank',
         rel: 'noopener noreferrer',
         hasIcon: true,
       },
       {
         label: 'File an issue',
-        href: 'https://github.com/inkeep/open-knowledge/issues/new',
+        href: 'https://github.com/Nedian0Brien/SynapseNote/issues/new',
         target: '_blank',
         rel: 'noopener noreferrer',
         hasIcon: true,
       },
       {
         label: 'Website',
-        href: 'https://openknowledge.ai/',
+        href: 'https://synapse.lawdigest.kr/',
         target: '_blank',
         rel: 'noopener noreferrer',
         hasIcon: true,
@@ -122,14 +122,14 @@ describe('HelpPopover runtime behavior', () => {
       },
       {
         label: 'X (Twitter)',
-        href: 'https://x.com/OpenKnowledge',
+        href: 'https://x.com/SynapseNote',
         target: '_blank',
         rel: 'noopener noreferrer',
         hasIcon: true,
       },
       {
         label: 'GitHub',
-        href: 'https://github.com/inkeep/open-knowledge',
+        href: 'https://github.com/Nedian0Brien/SynapseNote',
         target: '_blank',
         rel: 'noopener noreferrer',
         hasIcon: true,
@@ -150,7 +150,9 @@ describe('HelpPopover runtime behavior', () => {
 
     const nav = screen.getByRole('navigation', { name: 'Product updates' });
     const whatsNew = within(nav).getByRole('link', { name: "What's new" });
-    expect(whatsNew.getAttribute('href')).toBe('https://github.com/inkeep/open-knowledge/releases');
+    expect(whatsNew.getAttribute('href')).toBe(
+      'https://github.com/Nedian0Brien/SynapseNote/releases',
+    );
 
     const subscribe = within(nav).getByRole('button', { name: 'Subscribe' });
     expect(subscribe).not.toBeNull();

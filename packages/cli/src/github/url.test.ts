@@ -243,13 +243,13 @@ describe('parseGitUrl', () => {
       });
     });
 
-    test('inkeep/open-knowledge shorthand', () => {
-      const result = parseGitUrl('inkeep/open-knowledge');
+    test('Nedian0Brien/SynapseNote shorthand', () => {
+      const result = parseGitUrl('Nedian0Brien/SynapseNote');
       expect(result).toEqual({
         protocol: 'https',
         hostname: 'github.com',
-        owner: 'inkeep',
-        name: 'open-knowledge',
+        owner: 'Nedian0Brien',
+        name: 'SynapseNote',
       });
     });
   });
@@ -292,11 +292,11 @@ describe('parseGitUrl', () => {
 describe('parseGitHubBlobUrl', () => {
   test('happy path: simple branch + top-level file', () => {
     const result = parseGitHubBlobUrl(
-      'https://github.com/inkeep/open-knowledge/blob/main/README.md',
+      'https://github.com/Nedian0Brien/SynapseNote/blob/main/README.md',
     );
     expect(result).toEqual({
-      owner: 'inkeep',
-      repo: 'open-knowledge',
+      owner: 'Nedian0Brien',
+      repo: 'SynapseNote',
       branch: 'main',
       path: 'README.md',
     });
@@ -304,11 +304,11 @@ describe('parseGitHubBlobUrl', () => {
 
   test('happy path: nested doc path', () => {
     const result = parseGitHubBlobUrl(
-      'https://github.com/inkeep/open-knowledge/blob/feat-x/docs/sub/page.md',
+      'https://github.com/Nedian0Brien/SynapseNote/blob/feat-x/docs/sub/page.md',
     );
     expect(result).toEqual({
-      owner: 'inkeep',
-      repo: 'open-knowledge',
+      owner: 'Nedian0Brien',
+      repo: 'SynapseNote',
       branch: 'feat-x',
       path: 'docs/sub/page.md',
     });
@@ -316,11 +316,11 @@ describe('parseGitHubBlobUrl', () => {
 
   test('happy path: branch containing slash (percent-encoded)', () => {
     const result = parseGitHubBlobUrl(
-      'https://github.com/inkeep/open-knowledge/blob/feat%2Ffoo/docs/page.md',
+      'https://github.com/Nedian0Brien/SynapseNote/blob/feat%2Ffoo/docs/page.md',
     );
     expect(result).toEqual({
-      owner: 'inkeep',
-      repo: 'open-knowledge',
+      owner: 'Nedian0Brien',
+      repo: 'SynapseNote',
       branch: 'feat/foo',
       path: 'docs/page.md',
     });
@@ -437,11 +437,11 @@ describe('parseGitHubBlobUrl', () => {
 describe('parseGitHubTreeUrl', () => {
   test('happy path: tree URL with a folder path', () => {
     const result = parseGitHubTreeUrl(
-      'https://github.com/inkeep/open-knowledge/tree/main/docs/sub',
+      'https://github.com/Nedian0Brien/SynapseNote/tree/main/docs/sub',
     );
     expect(result).toEqual({
-      owner: 'inkeep',
-      repo: 'open-knowledge',
+      owner: 'Nedian0Brien',
+      repo: 'SynapseNote',
       branch: 'main',
       path: 'docs/sub',
     });
@@ -459,11 +459,11 @@ describe('parseGitHubTreeUrl', () => {
 
   test('branch containing slash (percent-encoded) round-trips', () => {
     const result = parseGitHubTreeUrl(
-      'https://github.com/inkeep/open-knowledge/tree/feat%2Ffoo/docs',
+      'https://github.com/Nedian0Brien/SynapseNote/tree/feat%2Ffoo/docs',
     );
     expect(result).toEqual({
-      owner: 'inkeep',
-      repo: 'open-knowledge',
+      owner: 'Nedian0Brien',
+      repo: 'SynapseNote',
       branch: 'feat/foo',
       path: 'docs',
     });
@@ -530,12 +530,12 @@ describe('parseGitHubTreeUrl', () => {
 describe('parseGitHubShareUrl (dispatcher)', () => {
   test('blob URL dispatches to kind:"doc"', () => {
     const result = parseGitHubShareUrl(
-      'https://github.com/inkeep/open-knowledge/blob/main/README.md',
+      'https://github.com/Nedian0Brien/SynapseNote/blob/main/README.md',
     );
     expect(result).toEqual({
       kind: 'doc',
-      owner: 'inkeep',
-      repo: 'open-knowledge',
+      owner: 'Nedian0Brien',
+      repo: 'SynapseNote',
       branch: 'main',
       path: 'README.md',
     });

@@ -8,7 +8,7 @@
 
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { type EditorId, PROJECT_SKILL_EDITOR_IDS } from '@inkeep/open-knowledge-core';
+import { type EditorId, PROJECT_SKILL_EDITOR_IDS } from '@nedian0brien/synapsenote-core';
 import { readInstalledSkills, recordSkillInstall } from './installed-skills-marker.ts';
 import { getLogger } from './logger.ts';
 import {
@@ -30,7 +30,7 @@ const SKILL_SURFACE_EDITORS: readonly EditorId[] = PROJECT_SKILL_EDITOR_IDS;
 export interface ReprojectResult {
   /** Per authored skill: the editor ids it now lives in after re-projection. */
   reprojected: Array<{ name: string; hosts: string[] }>;
-  /** Editor ids OK's shipped `open-knowledge` bundle now lives in. */
+  /** Editor ids OK's shipped `synapsenote` bundle now lives in. */
   bundleHosts: EditorId[];
 }
 

@@ -3,8 +3,8 @@ import { formatInstanceAppName, resolveInstanceLabel } from './instance-identity
 
 describe('resolveInstanceLabel', () => {
   test('returns null for the default install userData names', () => {
-    expect(resolveInstanceLabel('/Users/me/Library/Application Support/OpenKnowledge')).toBeNull();
-    expect(resolveInstanceLabel('/Users/me/Library/Application Support/Open Knowledge')).toBeNull();
+    expect(resolveInstanceLabel('/Users/me/Library/Application Support/SynapseNote')).toBeNull();
+    expect(resolveInstanceLabel('/Users/me/Library/Application Support/SynapseNote')).toBeNull();
     expect(resolveInstanceLabel('/tmp/Electron')).toBeNull();
   });
 
@@ -14,10 +14,8 @@ describe('resolveInstanceLabel', () => {
   });
 
   test('unwraps the dev OK_INSTANCE sibling-dir form to the bare name', () => {
-    expect(resolveInstanceLabel('/Users/me/Library/Application Support/OpenKnowledge (a)')).toBe(
-      'a',
-    );
-    expect(resolveInstanceLabel('/data/Open Knowledge (feature-x)')).toBe('feature-x');
+    expect(resolveInstanceLabel('/Users/me/Library/Application Support/SynapseNote (a)')).toBe('a');
+    expect(resolveInstanceLabel('/data/SynapseNote (feature-x)')).toBe('feature-x');
   });
 
   test('returns null when the basename trims to empty', () => {
@@ -27,6 +25,6 @@ describe('resolveInstanceLabel', () => {
 
 describe('formatInstanceAppName', () => {
   test('suffixes the app name with the label', () => {
-    expect(formatInstanceAppName('OpenKnowledge', 'work')).toBe('OpenKnowledge (work)');
+    expect(formatInstanceAppName('SynapseNote', 'work')).toBe('SynapseNote (work)');
   });
 });

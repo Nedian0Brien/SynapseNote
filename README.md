@@ -1,93 +1,61 @@
-<p>
-  <a  href="https://openknowledge.ai"><picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/ok-wordmark-dark.svg">
-    <img src="assets/ok-wordmark.svg" alt="OpenKnowledge" width="260">
-  </picture></a>
-</p>
+# SynapseNote
 
-<p>
-<b>OpenKnowledge</b> is a beautiful markdown editor with integrations with Claude, Codex, and other harnesses. For knowledge bases, LLM wikis, specs, and notes. Private, local, and free.
+SynapseNote is a local-first Markdown and MDX workspace with a WYSIWYG editor, graph navigation, GitHub sync, and side-by-side AI collaboration through Claude, Codex, OpenCode, Pi, and other agent harnesses.
 
-</p>
+The hosted SynapseNote service is available at [synapse.lawdigest.kr](https://synapse.lawdigest.kr), and this repository contains the web editor, CLI, collaboration server, and macOS desktop app.
 
-<div >
-  <a href="https://openknowledge.ai">website</a>
-  <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
-  <a href="https://openknowledge.ai/download/stable">macOS app</a>
-  <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
-  <a href="https://openknowledge.ai/docs/get-started/quickstart#ok-install-web-app-linux-windows-intel-mac">web UI + cli</a>
-  <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
-  <a href="https://x.com/OpenKnowledge">𝕏</a>
-  <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
-  <a href="https://discord.gg/VRKk2EaGHN">discord</a>
-</div>
+![SynapseNote editor with an AI agent drafting a launch recap](assets/hero.webp)
 
-<br/>
+## Features
 
-<img
-  src="assets/hero.webp"
-  alt="OpenKnowledge editor with an AI agent drafting a launch recap"
-  width="100%"
-  style="border-radius: 10px"
-/>
+- WYSIWYG Markdown and MDX editing
+- macOS desktop app and local web UI
+- File navigation, search, tabs, backlinks, and graph view
+- Side-by-side AI chat and editing
+- MCP, skills, and agentic search for knowledge bases
+- Git and GitHub based sync and sharing
+- Embeddable HTML and rich document components
 
-# Features
+## Develop locally
 
-Highlights:
-- Full true **WYSIWYG** so that editing markdown files feels like editing a Google Doc or Notion page. 
-- **macOS app** and **web UI** with file navigator, search, tabs, graph wiki link viewer, and more. 
-- Integrated **side-by-side AI-editing** with **Claude, Codex, OpenCode, Pi and others**. Can be used with any harness/agent via MCP/CLI.
-- Out-of-the-box **MCP**, **skills**, and **agentic search** for LLM Wikis, second brains, and knowledge graphs.
-- No-code **Team sharing** and **Auto-sync** powered by git/GitHub under the hood.
-- **Embeddable HTML** and rich components for writing engineering specs and visualized reports.
-
-## Install
-
-**macOS:** download the desktop app — open the DMG, drag **OpenKnowledge** to **Applications**, and launch it. [Latest release](https://github.com/inkeep/open-knowledge/releases/latest).
-
-**Linux, Windows, Intel Mac:** run the same editor as a local web app via the CLI ([Node.js 24+](https://nodejs.org) and git required):
+SynapseNote requires Bun 1.3.13 or newer and Node.js 24 or newer.
 
 ```bash
-npm install -g @inkeep/open-knowledge
-cd your-project
-ok init          # scaffold the project + wire up your AI editors (Claude Code, Claude Desktop, Cursor, Codex, OpenCode, OpenClaw)
-ok start --open  # serve the web editor and open it in your browser
+git clone https://github.com/Nedian0Brien/SynapseNote.git
+cd SynapseNote
+bun install
+bun run check
 ```
 
-## Usage
+Run the web editor:
 
-Use OpenKnowledge by opening any existing folder on your computer that contains markdown or mdx files. The app can be used with existing codebases, wikis, Obsidian vaults, etc. 
+```bash
+bun run --filter @nedian0brien/synapsenote-app dev
+```
 
-Think of it as Notion meets VS Code. 
+Build the CLI and use the new command name:
 
-You can use it simply as a rich, WYSIWYG markdown editor to start. For existing files or plain notes/docs.
+```bash
+bun run --filter @nedian0brien/synapsenote build
+node packages/cli/dist/cli.mjs init
+```
 
-To get more complex, you can use the starter packs to create LLM Wikis, second brains, or more structured knowledge bases.
+The packaged CLI exposes `synapsenote`. The legacy `ok` command and `.ok` project metadata remain supported so existing workspaces continue to open without migration.
 
-Either way, the app will walk you through installing the MCP and skills for agent harnesses detected on your computer. These are designed to help agents with enriched search + authoring of documents.
+## Repository layout
 
-Git/GitHub based sync and sharing can optionally be enabled. 
-
-Docs for general usage: <https://openknowledge.ai/docs>.
+- `packages/app` - web app and editor UI
+- `packages/cli` - CLI and package entrypoint
+- `packages/core` - shared domain logic
+- `packages/desktop` - Electron desktop app
+- `packages/plugin` - agent integration package
+- `packages/server` - local collaboration server
+- `docs` - documentation site
 
 ## Contributions
 
-Public pull requests or issues are welcome!
+Issues and pull requests are welcome. See [CONTRIBUTING.md](./CONTRIBUTING.md) before making changes.
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for details.
+## License and upstream
 
-## License
-
-OpenKnowledge is licensed under [GNU General Public License v3.0 or later](./LICENSE), an OSI-Approved open source license.
-
-## Community & Support
-
-Feel free to <a href="https://github.com/inkeep/open-knowledge/issues/new/choose">file an issue</a> or ask questions on the <a href="https://discord.gg/VRKk2EaGHN">Discord</a> community. We're always looking for ideas and requests.
-
-<p>
-  ⭐️ If you'd like to support this project, consider <a href="https://github.com/inkeep/open-knowledge">starring the repo</a> ⭐️
-</p>
-
-<p>
-  🔔 Follow us on <a href="https://x.com/OpenKnowledge">𝕏</a> for product updates. 🔔
-</p>
+SynapseNote is licensed under the [GNU General Public License v3.0 or later](./LICENSE). It is derived from the OpenKnowledge project; upstream copyright and third-party attribution are preserved in the repository history and [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md).

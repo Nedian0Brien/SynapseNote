@@ -25,13 +25,13 @@ function makeDeps(overrides: Partial<OpenDeps> = {}): {
 }
 
 describe('runOpen', () => {
-  test('doc with a desktop bundle → openknowledge:// deep link, exit 0', () => {
+  test('doc with a desktop bundle → synapsenote:// deep link, exit 0', () => {
     const { deps, opened } = makeDeps({
-      detectBundlePath: () => '/Applications/OpenKnowledge.app',
+      detectBundlePath: () => '/Applications/SynapseNote.app',
     });
     const code = runOpen('bim-brain/log', { project: '/abs/proj' }, deps);
     expect(code).toBe(0);
-    expect(opened).toEqual(['openknowledge://open?project=%2Fabs%2Fproj&doc=bim-brain%2Flog']);
+    expect(opened).toEqual(['synapsenote://open?project=%2Fabs%2Fproj&doc=bim-brain%2Flog']);
   });
 
   test('doc, no bundle but UI running → browser route, exit 0', () => {
@@ -54,11 +54,11 @@ describe('runOpen', () => {
 
   test('folder with a desktop bundle → folder= deep link, exit 0', () => {
     const { deps, opened } = makeDeps({
-      detectBundlePath: () => '/Applications/OpenKnowledge.app',
+      detectBundlePath: () => '/Applications/SynapseNote.app',
     });
     const code = runOpen('specs/foo/', { project: '/p' }, deps);
     expect(code).toBe(0);
-    expect(opened).toEqual(['openknowledge://open?project=%2Fp&folder=specs%2Ffoo']);
+    expect(opened).toEqual(['synapsenote://open?project=%2Fp&folder=specs%2Ffoo']);
   });
 
   test('folder, no bundle but UI running → browser folder route, exit 0', () => {
@@ -73,12 +73,12 @@ describe('runOpen', () => {
 
   test('auto-detects a folder from disk (no trailing slash needed)', () => {
     const { deps, opened } = makeDeps({
-      detectBundlePath: () => '/Applications/OpenKnowledge.app',
+      detectBundlePath: () => '/Applications/SynapseNote.app',
       classifyName: () => 'folder',
     });
     const code = runOpen('specs/foo', { project: '/p' }, deps);
     expect(code).toBe(0);
-    expect(opened).toEqual(['openknowledge://open?project=%2Fp&folder=specs%2Ffoo']);
+    expect(opened).toEqual(['synapsenote://open?project=%2Fp&folder=specs%2Ffoo']);
   });
 
   test('trailing slash infers folder intent even when disk classify says doc', () => {
@@ -93,13 +93,11 @@ describe('runOpen', () => {
 
   test('skill with a desktop bundle → rides doc=__skill__/<scope>/<name> deep link', () => {
     const { deps, opened } = makeDeps({
-      detectBundlePath: () => '/Applications/OpenKnowledge.app',
+      detectBundlePath: () => '/Applications/SynapseNote.app',
     });
     const code = runOpen('trip-log', { skill: true, project: '/p' }, deps);
     expect(code).toBe(0);
-    expect(opened).toEqual([
-      'openknowledge://open?project=%2Fp&doc=__skill__%2Fproject%2Ftrip-log',
-    ]);
+    expect(opened).toEqual(['synapsenote://open?project=%2Fp&doc=__skill__%2Fproject%2Ftrip-log']);
   });
 
   test('skill --scope global, no bundle but UI running → browser skill route', () => {
@@ -111,7 +109,7 @@ describe('runOpen', () => {
 
   test('skill with an invalid --scope → error, exit 1', () => {
     const { deps, errors } = makeDeps({
-      detectBundlePath: () => '/Applications/OpenKnowledge.app',
+      detectBundlePath: () => '/Applications/SynapseNote.app',
     });
     const code = runOpen('trip-log', { skill: true, scope: 'nonsense', project: '/p' }, deps);
     expect(code).toBe(1);
@@ -130,7 +128,7 @@ describe('runOpen', () => {
     // The unsafe-name guard runs before the skill branch, so a malicious skill
     // name can't slip into the synthetic `__skill__/<scope>/<name>` target.
     const { deps, opened, errors } = makeDeps({
-      detectBundlePath: () => '/Applications/OpenKnowledge.app',
+      detectBundlePath: () => '/Applications/SynapseNote.app',
     });
     for (const bad of ['../../etc', '/abs', 'a\\b']) {
       const code = runOpen(bad, { skill: true, project: '/p' }, deps);
@@ -161,7 +159,7 @@ describe('runOpen', () => {
     ['backslash', 'a\\b'],
   ])('rejects names the desktop parser would drop (%s) instead of false success', (_label, name) => {
     const { deps, opened, errors } = makeDeps({
-      detectBundlePath: () => '/Applications/OpenKnowledge.app',
+      detectBundlePath: () => '/Applications/SynapseNote.app',
     });
     const code = runOpen(name, { project: '/p' }, deps);
     expect(code).toBe(1);
@@ -182,11 +180,11 @@ describe('runOpen', () => {
   // encodes it to %2F, the browser route preserves it as a path separator.
   test('doc deep link encodes the whole name including the slash (%2F)', () => {
     const { deps, opened } = makeDeps({
-      detectBundlePath: () => '/Applications/OpenKnowledge.app',
+      detectBundlePath: () => '/Applications/SynapseNote.app',
     });
     const code = runOpen('notes/My Doc#1', { project: '/p' }, deps);
     expect(code).toBe(0);
-    expect(opened).toEqual(['openknowledge://open?project=%2Fp&doc=notes%2FMy%20Doc%231']);
+    expect(opened).toEqual(['synapsenote://open?project=%2Fp&doc=notes%2FMy%20Doc%231']);
   });
 
   test('browser route encodes per-segment, preserving the slash', () => {
@@ -207,9 +205,9 @@ describe('createRealOpenDeps wiring', () => {
     const deps = createRealOpenDeps(() => ({
       available: true,
       reason: 'available',
-      bundlePath: '/Applications/OpenKnowledge.app',
+      bundlePath: '/Applications/SynapseNote.app',
     }));
-    expect(deps.detectBundlePath()).toBe('/Applications/OpenKnowledge.app');
+    expect(deps.detectBundlePath()).toBe('/Applications/SynapseNote.app');
   });
 
   // The headless-agent contract: a bundle is present but `available` is false
@@ -219,9 +217,9 @@ describe('createRealOpenDeps wiring', () => {
     const deps = createRealOpenDeps(() => ({
       available: false,
       reason: 'headless',
-      bundlePath: '/Applications/OpenKnowledge.app',
+      bundlePath: '/Applications/SynapseNote.app',
     }));
-    expect(deps.detectBundlePath()).toBe('/Applications/OpenKnowledge.app');
+    expect(deps.detectBundlePath()).toBe('/Applications/SynapseNote.app');
   });
 });
 

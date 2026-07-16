@@ -10,7 +10,7 @@
  */
 
 import type { EditorView } from '@codemirror/view';
-import type { ComposeSelection } from '@inkeep/open-knowledge-core';
+import type { ComposeSelection } from '@nedian0brien/synapsenote-core';
 import type { Editor } from '@tiptap/core';
 import { serializeWysiwygSelection } from './edit-with-ai-selection';
 import type { EditorSurface } from './selection-stats';

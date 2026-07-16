@@ -1,5 +1,5 @@
 /**
- * Embeddings provider API-key storage — re-exported from `@inkeep/open-knowledge-server`.
+ * Embeddings provider API-key storage — re-exported from `@nedian0brien/synapsenote-server`.
  *
  * The implementation lives in `packages/server/src/embeddings/secrets-store.ts`
  * so the server's loopback-gated set/clear HTTP handlers and the CLI
@@ -12,4 +12,4 @@ export {
   createEmbeddingsSecretStore,
   describeStoredEmbeddingsKey,
   makeLazyEmbeddingsKeyStore,
-} from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-server';

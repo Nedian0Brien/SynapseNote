@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Readable } from 'node:stream';
-import { STARTER_PACKS } from '@inkeep/open-knowledge-server';
+import { STARTER_PACKS } from '@nedian0brien/synapsenote-server';
 import { CONFIG_FILENAME, OK_DIR } from '../constants.ts';
 import { runSeed } from './seed.ts';
 

@@ -184,7 +184,7 @@ function makeFetchMock() {
     if (url.startsWith('/api/documents')) return jsonResponse({ documents: DOCUMENTS });
     if (url === '/api/workspace') {
       return jsonResponse({
-        contentDir: '/tmp/open-knowledge',
+        contentDir: '/tmp/synapsenote',
         pathSeparator: '/',
         symlinkResolved: true,
       });

@@ -59,7 +59,7 @@
       // observer-cross-CRDT transact spine. Inside this file every
       // `doc.transact(fn, origin)` must pass `OBSERVER_SYNC_ORIGIN` as the
       // second argument; bare `doc.transact(fn)` (or a wrong origin) routes the
-      // write to `openknowledge-service` and breaks per-session UndoManager
+      // write to `synapsenote-service` and breaks per-session UndoManager
       // attribution. Other server files routing through
       // `session.dc.document.transact(fn, session.origin)` are out of scope -
       // that contract is enforced by `paired-write-enforcement.test.ts`.
@@ -274,7 +274,7 @@
       "!**/playwright-report",
       "!**/next-env.d.ts",
       "!.claude",
-      // .agents/skills, .codex/skills under public/open-knowledge/
+      // .agents/skills, .codex/skills under public/synapsenote/
       // are real dirs of per-skill symlinks back to the repo-root canonical
       // at ../../../.agents/skills/<skill>. Without these excludes biome
       // traverses through the symlinks and lints files outside this subtree's

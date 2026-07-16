@@ -14,7 +14,7 @@ import {
   type SkillScope,
   type SkillTargetEditor,
   SkillTargetEditorSchema,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { z } from 'zod';
 import type { AgentIdentity } from '../agent-identity.ts';
 import type { ConfigOrResolver, ServerInstance, ServerUrlOrResolver } from './shared.ts';
@@ -34,7 +34,7 @@ import { resolveSkillName, SKILL_NAME_DESCRIBE, SkillScopeArg } from './verb-sch
 const DESCRIPTION = [
   '[Requires: Hocuspocus server] Install an authored SKILL into your editors — the deliberate Draft → Installed step.',
   '',
-  'Projects the skill source at `.ok/skills/<name>/` verbatim into the editor host dirs your project is configured for (`.claude/skills/<name>/`, `.cursor/skills/<name>/`, `.codex/skills/<name>/`, `.opencode/skills/<name>/`, `.pi/skills/<name>/`). The source is validated FIRST — a SKILL.md with git conflict markers, missing/invalid frontmatter, XML tags in name/description, or a reserved `open-knowledge*` name is refused (never projected into your agent context). Records the install so it survives a relaunch.',
+  'Projects the skill source at `.ok/skills/<name>/` verbatim into the editor host dirs your project is configured for (`.claude/skills/<name>/`, `.cursor/skills/<name>/`, `.codex/skills/<name>/`, `.opencode/skills/<name>/`, `.pi/skills/<name>/`). The source is validated FIRST — a SKILL.md with git conflict markers, missing/invalid frontmatter, XML tags in name/description, or a reserved `synapsenote*` name is refused (never projected into your agent context). Records the install so it survives a relaunch.',
   '',
   '**Parameters:**',
   `- \`name\` — ${SKILL_NAME_DESCRIBE}`,

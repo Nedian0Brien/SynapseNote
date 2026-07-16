@@ -123,7 +123,7 @@ const CODEX_OK_AUTO_APPROVE_ARG = `-c ${shellSingleQuote(
  * one settings object. `mcpPreApprove` adds server trust (`enabledMcpjsonServers`)
  * so the launch skips the one-time "New MCP server found" prompt — set by the
  * launch site only after `isOwnManagedEntry` verifies the project's
- * `open-knowledge` `.mcp.json` entry is OK's OWN (a committed, cloned `.mcp.json`
+ * `synapsenote` `.mcp.json` entry is OK's OWN (a committed, cloned `.mcp.json`
  * could carry a foreign same-named server; RCE otherwise). `autoApproveOkTools`
  * adds the OK-tool + `ok open` allow-list and the destructive-tool deny-list.
  * `--settings` takes an inline JSON string the CLI layers on the user's settings,
@@ -229,7 +229,7 @@ export interface BuildCliLaunchOptions {
   /**
    * Include Claude's MCP server-trust pre-approval (`enabledMcpjsonServers`).
    * Honored only for `claude`. Defaults to false — the SAFE default. The launch
-   * site sets it true only after confirming the project's `open-knowledge`
+   * site sets it true only after confirming the project's `synapsenote`
    * `.mcp.json` entry is OK's own (desktop preflight `mcpPreApprovable` ←
    * `isOwnManagedEntry`); a bare launch lets Claude show its trust prompt.
    */

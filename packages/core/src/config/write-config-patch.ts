@@ -56,7 +56,7 @@ export const USER_CONFIG_FILENAME = 'global.yml';
  * `ok init` scaffolds its own header for project files; this helper covers
  * the user-global lazy-write path.
  *
- * URL shape: `unpkg.com/@inkeep/open-knowledge@latest/dist/schemas/v<N>/config.<scope>.schema.json`.
+ * URL shape: `unpkg.com/@nedian0brien/synapsenote@latest/dist/schemas/v<N>/config.<scope>.schema.json`.
  *   - `@latest` is the npm dist-tag — additive schema changes (new optional
  *     fields, new enum values) reach existing users automatically as soon
  *     as unpkg's `@latest` cache refreshes (typically <1h).
@@ -75,7 +75,7 @@ function schemaUrl(scope: WriteScope): string {
       : scope === 'project-local'
         ? 'config.project-local.schema.json'
         : 'config.project.schema.json';
-  return `https://unpkg.com/@inkeep/open-knowledge@latest/dist/schemas/${CONFIG_SCHEMA_MAJOR_PATH}/${filename}`;
+  return `https://unpkg.com/@nedian0brien/synapsenote@latest/dist/schemas/${CONFIG_SCHEMA_MAJOR_PATH}/${filename}`;
 }
 
 function defaultFirstWriteHeader(scope: WriteScope): string {

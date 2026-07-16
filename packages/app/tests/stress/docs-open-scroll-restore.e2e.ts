@@ -45,7 +45,7 @@
  * restore (250 ms patch defer + next rAF tick).
  *
  * Invocation (bug-specific gate):
- *   cd public/open-knowledge/packages/app && \
+ *   cd public/synapsenote/packages/app && \
  *     bunx playwright test tests/stress/docs-open-scroll-restore.e2e.ts \
  *       --workers=1 --retries=0
  */

@@ -10,7 +10,7 @@
  */
 
 import { describe, expect, test } from 'bun:test';
-import type { AgentPresenceEntry } from '@inkeep/open-knowledge-core';
+import type { AgentPresenceEntry } from '@nedian0brien/synapsenote-core';
 import { computeWritingDocs } from './use-activity-panel';
 
 type AgentPresenceMap = Record<string, AgentPresenceEntry>;

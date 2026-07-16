@@ -377,7 +377,7 @@ test.describe('OQ1: Tab/Shift-Tab scoping by cursor context', () => {
 // packages/core/src/extensions/list-boundary-merge.ts. Unit-tier coverage:
 // packages/app/src/editor/list-boundary-merge.test.ts. These pins assert the
 // persisted Y.Text bytes through the full CRDT bridge.
-// Test scenarios credited to inkeep/open-knowledge#613 by @blokboy.
+// Test scenarios credited to Nedian0Brien/SynapseNote#613 by @blokboy.
 test.describe('Nested list-item boundary merges (Backspace/Delete)', () => {
   test('Backspace merging into a previous item with a nested sublist does not orphan the merged item', async ({
     page,

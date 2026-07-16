@@ -42,7 +42,7 @@ import {
   TEMPLATE_NAME_REGEX,
   type TemplateIdentity,
   unwrapFrontmatterFences,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { validateSubstitution } from './substitution.ts';
 
 type TemplateWriteResult =

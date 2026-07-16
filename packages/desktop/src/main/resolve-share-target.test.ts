@@ -4,7 +4,7 @@ import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
-import type { RecentProjectEntry } from '@inkeep/open-knowledge-core';
+import type { RecentProjectEntry } from '@nedian0brien/synapsenote-core';
 import { resolveShareTarget } from './resolve-share-target.ts';
 
 const execFileAsync = promisify(execFile);

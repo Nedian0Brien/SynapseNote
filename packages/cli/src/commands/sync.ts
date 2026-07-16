@@ -1,17 +1,17 @@
 /**
- * `open-knowledge sync` — commit + pull + push.
+ * `synapsenote sync` — commit + pull + push.
  *
  * Server-first: discovers a running Hocuspocus server via server.lock and
  * delegates to POST /api/sync/trigger { op: 'sync' }. Falls back to a
  * one-shot simple-git workflow when no live server is found.
  */
-import { clientVersionHeaders } from '@inkeep/open-knowledge-core';
+import { clientVersionHeaders } from '@nedian0brien/synapsenote-core';
 import {
   type Config,
   RUNTIME_VERSION,
   readServerLock,
   resolveLockDir,
-} from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-server';
 import { Command } from 'commander';
 import simpleGit from 'simple-git';
 

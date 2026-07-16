@@ -1,5 +1,5 @@
 {
-  "name": "@inkeep/open-knowledge-docs",
+  "name": "@nedian0brien/synapsenote-docs",
   "version": "0.0.19",
   "license": "GPL-3.0-or-later",
   "private": true,
@@ -12,7 +12,7 @@
     "test": "bun test --timeout 30000 src",
     "typecheck": "next typegen && fumadocs-mdx && tsc --noEmit",
     "validate-link": "bun scripts/validate-link.ts",
-    "generate:og-wordmark": "bun scripts/generate-og-wordmark.ts",
+    "generate:synapsenote-wordmark": "bun scripts/generate-synapsenote-wordmark.ts",
     "generate:brand-assets": "bun scripts/generate-brand-assets.ts",
     "generate:component-docs": "bun scripts/generate-component-docs.ts",
     "postinstall": "fumadocs-mdx"
@@ -20,7 +20,7 @@
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
     "@inkeep/cxkit-react": "^0.5.117",
-    "@inkeep/open-knowledge-core": "workspace:*",
+    "@nedian0brien/synapsenote-core": "workspace:*",
     "@radix-ui/react-popover": "^1.1.17",
     "@types/mdx": "^2.0.13",
     "@vercel/microfrontends": "^2.3.6",

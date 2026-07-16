@@ -10,7 +10,7 @@ import {
   GitNotAvailableError,
   GitTooOldError,
   MIN_GIT_VERSION,
-} from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-server';
 import type { CheckDefinition, CheckResult } from './types.ts';
 
 interface GitCheckDeps {

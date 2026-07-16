@@ -8,18 +8,18 @@
  * Walk counting uses the server's `__getShowAllWalkStatsForTesting()` seam:
  * `invocations` counts how many times the walk actually ran, `aborts` counts
  * walks that bailed on their signal. The integration server and this test share
- * one `@inkeep/open-knowledge-server` module instance, so the counter is the
+ * one `@nedian0brien/synapsenote-server` module instance, so the counter is the
  * same object the handler increments.
  */
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
 import { mkdirSync, mkdtempSync, realpathSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { DocumentListSuccessSchema } from '@inkeep/open-knowledge-core';
+import { DocumentListSuccessSchema } from '@nedian0brien/synapsenote-core';
 import {
   __getShowAllWalkStatsForTesting,
   __resetShowAllWalkStatsForTesting,
-} from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-server';
 import { createTestServer, pollUntil, type TestServer } from './test-harness';
 
 // The fixture is intentionally large AND deep so one walk spans many event-loop

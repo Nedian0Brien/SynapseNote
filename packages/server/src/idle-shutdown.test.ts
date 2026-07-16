@@ -2,7 +2,7 @@ import { describe, expect, mock, test } from 'bun:test';
 import { EventEmitter } from 'node:events';
 import type { Server as HttpServer, IncomingMessage } from 'node:http';
 import type { Duplex } from 'node:stream';
-import type { Scheduler } from '@inkeep/open-knowledge-core';
+import type { Scheduler } from '@nedian0brien/synapsenote-core';
 import { attachIdleShutdown } from './idle-shutdown';
 
 // ─────────────────────────────────────────────────────────────

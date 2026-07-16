@@ -16,7 +16,7 @@ import type {
   BranchInfoResponse,
   CheckoutResponse,
   WorktreeCreateResult,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import type { OkDesktopBridge, OkShareReceivedPayload } from '@/lib/desktop-bridge-types';
@@ -165,12 +165,12 @@ function projectBranchSwitchPayload(): Extract<
     kind: 'project-branch-switch',
     share: {
       owner: 'inkeep',
-      repo: 'open-knowledge',
+      repo: 'synapsenote',
       branch: 'feat/branch-x',
-      sharedUrl: 'https://github.com/inkeep/open-knowledge/blob/feat/branch-x/docs/notes.md',
+      sharedUrl: 'https://github.com/Nedian0Brien/SynapseNote/blob/feat/branch-x/docs/notes.md',
       target: { kind: 'doc', docPath: 'docs/notes.md' },
     },
-    projectPath: '/Users/alice/projects/open-knowledge',
+    projectPath: '/Users/alice/projects/synapsenote',
     currentBranch: 'main',
   };
 }
@@ -197,9 +197,9 @@ describe('ShareBranchSwitchDialog — payload gating', () => {
           kind: 'launcher-miss',
           share: {
             owner: 'inkeep',
-            repo: 'open-knowledge',
+            repo: 'synapsenote',
             branch: 'main',
-            sharedUrl: 'https://github.com/inkeep/open-knowledge/blob/main/docs/x.md',
+            sharedUrl: 'https://github.com/Nedian0Brien/SynapseNote/blob/main/docs/x.md',
             target: { kind: 'doc', docPath: 'docs/x.md' },
           },
         });
@@ -957,7 +957,7 @@ describe('ShareBranchSwitchDialog — worktree leg', () => {
 
   test('a checkout that locates an existing worktree (created:false) still opens that window', async () => {
     const store = createShareReceiveStore();
-    const existingPath = '/Users/alice/projects/open-knowledge/.ok/worktrees/feat-branch-x';
+    const existingPath = '/Users/alice/projects/synapsenote/.ok/worktrees/feat-branch-x';
     const { bridge, calls } = makeBridge({
       checkout: mock(async () => ({ ok: true as const, path: existingPath, created: false })),
     });
@@ -980,7 +980,7 @@ describe('ShareBranchSwitchDialog — worktree leg', () => {
 
   test('an open() rejection after a successful create surfaces the toast; the worktree persists in the switcher', async () => {
     const store = createShareReceiveStore();
-    const worktreePath = '/Users/alice/projects/open-knowledge/.ok/worktrees/feat-branch-x';
+    const worktreePath = '/Users/alice/projects/synapsenote/.ok/worktrees/feat-branch-x';
     const { bridge, calls } = makeBridge({
       checkout: mock(async () => ({ ok: true as const, path: worktreePath, created: true })),
       open: mock(async () => {
@@ -1038,7 +1038,7 @@ describe('ShareBranchSwitchDialog — worktree leg', () => {
 
   test('Open in worktree checks out the share branch and opens its window at the shared target — no CC1 wait', async () => {
     const store = createShareReceiveStore();
-    const worktreePath = '/Users/alice/projects/open-knowledge/.ok/worktrees/feat-branch-x';
+    const worktreePath = '/Users/alice/projects/synapsenote/.ok/worktrees/feat-branch-x';
     const { bridge, calls } = makeBridge({
       checkout: mock(async () => ({ ok: true as const, path: worktreePath, created: true })),
     });

@@ -1,4 +1,4 @@
-import { WorkspaceSuccessSchema } from '@inkeep/open-knowledge-core';
+import { WorkspaceSuccessSchema } from '@nedian0brien/synapsenote-core';
 import { useEffect, useState } from 'react';
 import type { Workspace } from './workspace-paths';
 

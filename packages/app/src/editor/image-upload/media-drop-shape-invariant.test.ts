@@ -32,7 +32,7 @@
  */
 
 import { describe, expect, test } from 'bun:test';
-import { MarkdownManager } from '@inkeep/open-knowledge-core';
+import { MarkdownManager } from '@nedian0brien/synapsenote-core';
 import { sharedExtensions } from '../extensions/shared';
 import { buildMediaJsxNodeData } from './index.ts';
 

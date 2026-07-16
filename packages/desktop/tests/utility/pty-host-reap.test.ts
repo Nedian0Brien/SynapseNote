@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { isProcessAlive } from '@inkeep/open-knowledge-server';
+import { isProcessAlive } from '@nedian0brien/synapsenote-server';
 
 /**
  * No-orphan OUTCOME seam. Verifies the system property the feature requires:

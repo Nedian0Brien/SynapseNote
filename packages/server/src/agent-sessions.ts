@@ -23,9 +23,9 @@ import {
   prependFrontmatter,
   stripFrontmatter,
   unwrapFrontmatterFences,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 
-export { colorFromSeed } from '@inkeep/open-knowledge-core';
+export { colorFromSeed } from '@nedian0brien/synapsenote-core';
 
 import * as Y from 'yjs';
 import {
@@ -90,12 +90,12 @@ export const AGENT_WRITE_ORIGIN = {
   context: { origin: 'agent-write', paired: true },
 } as const satisfies PairedWriteOrigin;
 
-// `iconFromClientName` lives in `@inkeep/open-knowledge-core` so both the
+// `iconFromClientName` lives in `@nedian0brien/synapsenote-core` so both the
 // server (presence bar, api-extension) and the app (TimelinePanel dot-color
 // derivation) share the identical mapping — drift between the two is how
 // brand colors become inconsistent between surfaces. Re-exported here for
 // backwards compat with existing server-side import sites.
-export { iconFromClientName } from '@inkeep/open-knowledge-core';
+export { iconFromClientName } from '@nedian0brien/synapsenote-core';
 
 /**
  * Map a `docName` (extension-less, the Y.Doc key) back to the on-disk

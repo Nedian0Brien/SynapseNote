@@ -10,11 +10,11 @@
 # Release & CI pipelines — App-token force-push, npm OIDC trusted
 # publishing, signed-DMG dispatch. Changes here can publish or sign
 # artifacts on behalf of the org.
-/.github/workflows/          @nick-inkeep
-/.github/CODEOWNERS          @nick-inkeep
+/.github/workflows/          @Nedian0Brien
+/.github/CODEOWNERS          @Nedian0Brien
 
 # Apple Developer ID signing, notarization, DMG build. Secrets flow
 # through electron-builder hooks; a malicious edit here could exfiltrate
 # the signing identity or ship an unsigned bundle.
-/packages/desktop/scripts/   @nick-inkeep
-/packages/desktop/build/     @nick-inkeep
+/packages/desktop/scripts/   @Nedian0Brien
+/packages/desktop/build/     @Nedian0Brien

@@ -16,12 +16,13 @@
  */
 
 import { resolve } from 'node:path';
+import password from '@inquirer/password';
 import {
   checkEmbeddingsBaseUrl,
   DEFAULT_EMBEDDINGS_BASE_URL,
   humanFormat,
-} from '@inkeep/open-knowledge-core';
-import { writeConfigPatch } from '@inkeep/open-knowledge-core/server';
+} from '@nedian0brien/synapsenote-core';
+import { writeConfigPatch } from '@nedian0brien/synapsenote-core/server';
 import {
   DEFAULT_EMBEDDINGS_DIMENSIONS,
   EMBEDDINGS_API_KEY_ENV,
@@ -29,8 +30,7 @@ import {
   readProjectLocalSemanticConfig,
   readServerLock,
   resolveLockDir,
-} from '@inkeep/open-knowledge-server';
-import password from '@inquirer/password';
+} from '@nedian0brien/synapsenote-server';
 import { Command } from 'commander';
 import {
   clearEmbeddingsKeyFromAllBackends,

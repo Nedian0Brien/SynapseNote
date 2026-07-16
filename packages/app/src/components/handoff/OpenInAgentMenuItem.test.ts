@@ -9,7 +9,7 @@
  */
 
 import { describe, expect, test } from 'bun:test';
-import type { InstallState, TargetData } from '@inkeep/open-knowledge-core';
+import type { InstallState, TargetData } from '@nedian0brien/synapsenote-core';
 import { KNOWN_TARGETS } from '@/lib/handoff/targets';
 
 function targetById(id: TargetData['id']): TargetData {

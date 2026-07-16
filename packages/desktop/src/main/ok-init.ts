@@ -45,9 +45,9 @@
 import { realpathSync } from 'node:fs';
 import { basename, isAbsolute } from 'node:path';
 
-import type { LocalOpOkInitResponse } from '@inkeep/open-knowledge-core';
-import { resolveGitDirDetailed } from '@inkeep/open-knowledge-core/shadow-repo-layout';
-import { initContent, isProjectRoot } from '@inkeep/open-knowledge-server';
+import type { LocalOpOkInitResponse } from '@nedian0brien/synapsenote-core';
+import { resolveGitDirDetailed } from '@nedian0brien/synapsenote-core/shadow-repo-layout';
+import { initContent, isProjectRoot } from '@nedian0brien/synapsenote-server';
 
 /**
  * Per-path mutex. The user can't realistically race a Navigator-window

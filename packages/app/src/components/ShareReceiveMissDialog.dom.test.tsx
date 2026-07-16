@@ -8,7 +8,7 @@
  * Substrate: jsdom via `bun run test:dom`.
  */
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
-import type { ShareTargetStatusResponse } from '@inkeep/open-knowledge-core';
+import type { ShareTargetStatusResponse } from '@nedian0brien/synapsenote-core';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { useSyncExternalStore } from 'react';
 import type { GitSyncStatus } from '@/hooks/use-git-sync-status';

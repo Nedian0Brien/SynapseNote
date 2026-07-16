@@ -19,8 +19,8 @@
 import { mkdirSync, mkdtempSync, realpathSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, relative, resolve, sep } from 'node:path';
-import { OK_DIR } from '@inkeep/open-knowledge-core';
-import { readConfigSafely, resolveConfigPath } from '@inkeep/open-knowledge-core/server';
+import { OK_DIR } from '@nedian0brien/synapsenote-core';
+import { readConfigSafely, resolveConfigPath } from '@nedian0brien/synapsenote-core/server';
 import { isSupportedDocFile, stripDocExtension } from './doc-extensions.ts';
 import { findEnclosingProjectRoot } from './fs/find-project-root.ts';
 
@@ -43,7 +43,7 @@ export class SingleFileNotAFileError extends Error {
 /** The file passed to `ok <file>` is not a supported markdown file (.md/.mdx). */
 export class SingleFileNotMarkdownError extends Error {
   constructor(readonly filePath: string) {
-    super(`OpenKnowledge edits markdown files (.md / .mdx): ${filePath}`);
+    super(`SynapseNote edits markdown files (.md / .mdx): ${filePath}`);
     this.name = 'SingleFileNotMarkdownError';
   }
 }

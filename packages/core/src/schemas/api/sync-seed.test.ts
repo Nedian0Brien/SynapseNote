@@ -106,8 +106,8 @@ describe('SyncStatusSchema', () => {
         ...validStatus,
         hasRemote: true,
         remote: {
-          label: 'inkeep/open-knowledge',
-          webUrl: 'https://github.com/inkeep/open-knowledge',
+          label: 'Nedian0Brien/SynapseNote',
+          webUrl: 'https://github.com/Nedian0Brien/SynapseNote',
         },
       }).success,
     ).toBe(true);
@@ -127,8 +127,8 @@ describe('SyncRemoteSchema', () => {
   test('accepts a github remote with label + https webUrl', () => {
     expect(
       SyncRemoteSchema.safeParse({
-        label: 'inkeep/open-knowledge',
-        webUrl: 'https://github.com/inkeep/open-knowledge',
+        label: 'Nedian0Brien/SynapseNote',
+        webUrl: 'https://github.com/Nedian0Brien/SynapseNote',
       }).success,
     ).toBe(true);
   });

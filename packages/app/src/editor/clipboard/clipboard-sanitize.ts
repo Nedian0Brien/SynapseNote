@@ -12,7 +12,7 @@
  * conflated concern: the security helpers are a distinct responsibility
  * from DOM walking.
  *
- * This file is a leaf — it imports only from `@inkeep/open-knowledge-core`
+ * This file is a leaf — it imports only from `@nedian0brien/synapsenote-core`
  * (`SAFE_URL_SCHEME_RE`, `isRelativeUrl`). Both walker and palette import
  * from here, eliminating the cycle.
  *
@@ -30,7 +30,7 @@
  *     navigation schemes, and bare fragments classify as portable.
  */
 
-import { isRelativeUrl, SAFE_URL_SCHEME_RE } from '@inkeep/open-knowledge-core';
+import { isRelativeUrl, SAFE_URL_SCHEME_RE } from '@nedian0brien/synapsenote-core';
 import * as ipaddr from 'ipaddr.js';
 
 /**
@@ -133,7 +133,7 @@ export const OPT_OUT_ATTR = 'data-clipboard-omit' as const;
  * bypass (`" javascript:..."`) cannot evade the regex.
  *
  * Relative-URL detection delegated to the canonical `isRelativeUrl` helper
- * in `@inkeep/open-knowledge-core` — `sanitize-url.ts` reuses the same
+ * in `@nedian0brien/synapsenote-core` — `sanitize-url.ts` reuses the same
  * helper, so a future refinement of relative-URL semantics propagates to
  * both sites by construction.
  *

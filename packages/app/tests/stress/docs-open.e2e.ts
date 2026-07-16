@@ -8,7 +8,7 @@
  * fixture resolves `page.goto('/…')` against it.
  */
 
-import { DOCUMENT_OPEN_BYTE_LIMIT } from '@inkeep/open-knowledge-core';
+import { DOCUMENT_OPEN_BYTE_LIMIT } from '@nedian0brien/synapsenote-core';
 import type { Page } from '@playwright/test';
 import { expect, test, waitForActiveProviderSynced } from './_helpers';
 

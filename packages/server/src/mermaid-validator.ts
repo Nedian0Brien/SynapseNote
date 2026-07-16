@@ -22,7 +22,7 @@
  * production runtime (npm CLI bin, desktop ELECTRON_RUN_AS_NODE spawn).
  */
 
-import { detectFmRegion, type RenderWarning } from '@inkeep/open-knowledge-core';
+import { detectFmRegion, type RenderWarning } from '@nedian0brien/synapsenote-core';
 import { getLogger } from './logger.ts';
 
 const log = getLogger('mermaid-validator');

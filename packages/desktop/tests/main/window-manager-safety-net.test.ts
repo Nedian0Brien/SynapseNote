@@ -1,6 +1,6 @@
 /**
- * Regression tests for inkeep/open-knowledge#617 — the external-link safety net
- * is attached by the WINDOW FACTORY, so every editor window OpenKnowledge
+ * Regression tests for Nedian0Brien/SynapseNote#617 — the external-link safety net
+ * is attached by the WINDOW FACTORY, so every editor window SynapseNote
  * creates denies an external `window.open` and delegates it to the OS browser.
  *
  * Before the factory owned this, `attachAssetSafetyNet` was wired per-call-site
@@ -26,7 +26,7 @@
  */
 
 import { describe, expect, mock, test } from 'bun:test';
-import { getLocalDir } from '@inkeep/open-knowledge-server';
+import { getLocalDir } from '@nedian0brien/synapsenote-server';
 import type { AssetOpenResult } from '../../src/main/asset-allowlist.ts';
 import type { ShowGateRegistry } from '../../src/main/show-gate.ts';
 import {
@@ -223,7 +223,7 @@ async function expectExternalSafetyNet(
   if (!handler) throw new Error('unreachable — asserted non-null above');
 
   const result = handler({ url: EXTERNAL_URL });
-  // An external new-window request must NOT open a child OpenKnowledge window.
+  // An external new-window request must NOT open a child SynapseNote window.
   expect(result).toEqual({ action: 'deny' });
 
   // openExternal fires async inside the handler; let the microtask settle.

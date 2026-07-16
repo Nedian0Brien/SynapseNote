@@ -149,7 +149,7 @@ describe('bundled CLI can resolve tsdown neverBundle native addons', () => {
 });
 
 /**
- * `@inkeep/open-knowledge-native-config` is the toml_edit addon. It differs from
+ * `@nedian0brien/synapsenote-native-config` is the toml_edit addon. It differs from
  * `@napi-rs/keyring` in two ways that need their own guards: it is a workspace
  * package (not a published one with a separate per-arch binary package), so its
  * napi loader AND its `.node` live in one directory and must ship together; and
@@ -159,8 +159,8 @@ describe('bundled CLI can resolve tsdown neverBundle native addons', () => {
  * non-destructive decline rather than corrupting a config — but that silently
  * removes Codex registration, so keep these shipping.
  */
-describe('@inkeep/open-knowledge-native-config ships its napi loader + platform binary', () => {
-  const NATIVE_CONFIG = '@inkeep/open-knowledge-native-config';
+describe('@nedian0brien/synapsenote-native-config ships its napi loader + platform binary', () => {
+  const NATIVE_CONFIG = '@nedian0brien/synapsenote-native-config';
   const nativeConfigDir = resolve(desktopRoot, '..', 'native-config');
 
   test('an extraResources rule copies the addon into cli/node_modules shipping loader AND binary', () => {
@@ -235,7 +235,7 @@ describe('@inkeep/open-knowledge-native-config ships its napi loader + platform 
  * The per-package `cli/node_modules` copy + asarUnpack (above) remain for the
  * desktop MAIN process's in-process load.
  */
-describe('@inkeep/open-knowledge-native-config ships bundled in cli/dist/native', () => {
+describe('@nedian0brien/synapsenote-native-config ships bundled in cli/dist/native', () => {
   const cliDist = resolve(desktopRoot, '..', 'cli', 'dist');
 
   test('the cli/dist extraResources rule does not filter out the native bundle', () => {

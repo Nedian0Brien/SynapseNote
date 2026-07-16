@@ -22,8 +22,8 @@
 
 import { rename, writeFile } from 'node:fs/promises';
 import { isAbsolute, relative, resolve } from 'node:path';
-import { detectGh, makeLazyProbeTokenStore } from '@inkeep/open-knowledge';
-import { readConfigSafely, resolveConfigPath } from '@inkeep/open-knowledge-core/server';
+import { detectGh, makeLazyProbeTokenStore } from '@nedian0brien/synapsenote';
+import { readConfigSafely, resolveConfigPath } from '@nedian0brien/synapsenote-core/server';
 import {
   type BootedServer,
   type BootServerOptions,
@@ -32,7 +32,7 @@ import {
   ensureProjectGit,
   initContent,
   makeLazyEmbeddingsKeyStore,
-} from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-server';
 import { type KeyringSmokeResult, runKeyringSmoke } from './keyring-smoke.ts';
 
 export type { KeyringSmokeResult } from './keyring-smoke.ts';
@@ -145,8 +145,8 @@ export interface SetupUtilityDeps {
     on(event: 'message', handler: (event: { data: unknown }) => void): void;
     postMessage(value: UtilityOutgoingMessage): void;
   } | null;
-  /** Function to import @inkeep/open-knowledge-server (injected so tests can mock). */
-  importServer: () => Promise<typeof import('@inkeep/open-knowledge-server')>;
+  /** Function to import @nedian0brien/synapsenote-server (injected so tests can mock). */
+  importServer: () => Promise<typeof import('@nedian0brien/synapsenote-server')>;
   /** `process.exit` injection for tests. */
   exit: (code: number) => void;
   /** Initial parent pid to monitor. Pass `process.ppid` from real entry. */
@@ -619,7 +619,7 @@ if ((process as NodeJS.Process & { parentPort?: unknown }).parentPort) {
   setupUtility({
     parentPort: (process as NodeJS.Process & { parentPort: SetupUtilityDeps['parentPort'] })
       .parentPort,
-    importServer: () => import('@inkeep/open-knowledge-server'),
+    importServer: () => import('@nedian0brien/synapsenote-server'),
     exit: (code) => process.exit(code),
     parentPid: process.ppid,
     killProbe: (pid, signal) => {

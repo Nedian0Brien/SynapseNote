@@ -2,7 +2,7 @@ import { describe, expect, mock, test } from 'bun:test';
 // Test-only cross-package import. Main-process runtime bundle does NOT include
 // app-layer code (tree-shaken since no production handler imports from app).
 // Relative path over workspace ref
-// (prefer direct relative imports over `@inkeep/open-knowledge-core` for tests).
+// (prefer direct relative imports over `@nedian0brien/synapsenote-core` for tests).
 import { KNOWN_TARGETS } from '../../../app/src/lib/handoff/targets.ts';
 import {
   ALLOWED_SCHEMES,
@@ -23,8 +23,8 @@ describe('checkOutboundUrl (D47 outbound scheme allowlist)', () => {
     expect(checkOutboundUrl('mailto:hello@example.com')).toEqual({ ok: true });
   });
 
-  test('allows openknowledge: (our own deep-link scheme)', () => {
-    expect(checkOutboundUrl('openknowledge://open?project=/tmp')).toEqual({ ok: true });
+  test('allows synapsenote: (our own deep-link scheme)', () => {
+    expect(checkOutboundUrl('synapsenote://open?project=/tmp')).toEqual({ ok: true });
   });
 
   test('rejects ms-msdt: (Shabarkin 2022 RCE class)', () => {
@@ -68,7 +68,7 @@ describe('checkOutboundUrl (D47 outbound scheme allowlist)', () => {
       ['https://example.com', true],
       ['http://example.com', true],
       ['mailto:hi@example.com', true],
-      ['openknowledge://open?project=/tmp&doc=x', true],
+      ['synapsenote://open?project=/tmp&doc=x', true],
       ['file:///etc/passwd', false],
       ['javascript:alert(1)', false],
       ['data:text/html,x', false],
@@ -87,11 +87,11 @@ describe('handleShellOpenExternal (preload → main bridge enforcement)', () => 
     expect(openExternal).toHaveBeenCalledWith('https://example.com');
   });
 
-  test('delegates to openExternal for openknowledge:// (our own scheme)', async () => {
+  test('delegates to openExternal for synapsenote:// (our own scheme)', async () => {
     const openExternal = mock(() => Promise.resolve());
     const handle = handleShellOpenExternal({ openExternal });
-    await handle('openknowledge://open?project=/tmp&doc=x');
-    expect(openExternal).toHaveBeenCalledWith('openknowledge://open?project=/tmp&doc=x');
+    await handle('synapsenote://open?project=/tmp&doc=x');
+    expect(openExternal).toHaveBeenCalledWith('synapsenote://open?project=/tmp&doc=x');
   });
 
   test('rejects file:// with a scheme-not-allowed error (no openExternal call)', async () => {
@@ -135,7 +135,7 @@ describe('ALLOWED_SCHEMES exact-set contract (D47 + handoff extension)', () => {
       'http:',
       'https:',
       'mailto:',
-      'openknowledge:',
+      'synapsenote:',
     ]);
   });
 });

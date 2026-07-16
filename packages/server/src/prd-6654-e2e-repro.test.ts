@@ -18,7 +18,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Readable } from 'node:stream';
 import { Hocuspocus } from '@hocuspocus/server';
-import { MarkdownManager, sharedExtensions } from '@inkeep/open-knowledge-core';
+import { MarkdownManager, sharedExtensions } from '@nedian0brien/synapsenote-core';
 import { getSchema } from '@tiptap/core';
 import * as Y from 'yjs';
 import { AGENT_WRITE_ORIGIN, AgentSessionManager } from './agent-sessions.ts';

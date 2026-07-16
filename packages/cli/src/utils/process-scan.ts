@@ -1,6 +1,6 @@
 /**
  * Re-export shim. The process-scan utilities (`discoverLockDirs` + helpers)
- * moved to `@inkeep/open-knowledge-server` so the MCP preview resolver (which
+ * moved to `@nedian0brien/synapsenote-server` so the MCP preview resolver (which
  * lives in `server`) can consume off-cwd discovery directly — `cli` depends on
  * `server`, not the reverse, so the discovery primitive has to live in the
  * lower layer. CLI consumers (`ok ps` / `ok stop` / `ok diagnose`) keep their
@@ -16,4 +16,4 @@ export {
   type ProcessUsage,
   processCommand,
   processUsage,
-} from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-server';

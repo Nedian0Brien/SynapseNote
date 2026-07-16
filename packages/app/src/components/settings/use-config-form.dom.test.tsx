@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
-import type { Config, ConfigBinding, ConfigPatch } from '@inkeep/open-knowledge-core';
+import type { Config, ConfigBinding, ConfigPatch } from '@nedian0brien/synapsenote-core';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useConfigForm } from './use-config-form';
 

@@ -1,5 +1,5 @@
-import type { CreateScenario } from '@inkeep/open-knowledge-core';
 import { useLingui } from '@lingui/react/macro';
+import type { CreateScenario } from '@nedian0brien/synapsenote-core';
 import { Bird, FileCode2, ListTree, Network, Telescope } from 'lucide-react';
 import type { ComponentType } from 'react';
 

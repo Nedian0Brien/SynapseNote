@@ -3,7 +3,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
-import { commitWip, initShadowRepo, type WriterIdentity } from '@inkeep/open-knowledge-server';
+import { commitWip, initShadowRepo, type WriterIdentity } from '@nedian0brien/synapsenote-server';
 import simpleGit from 'simple-git';
 import { computeGraphRole, enrichDirectory, enrichPath } from './enrichment.ts';
 

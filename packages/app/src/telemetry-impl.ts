@@ -28,7 +28,7 @@ import { BatchSpanProcessor, WebTracerProvider } from '@opentelemetry/sdk-trace-
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
 import { ATTR_DEPLOYMENT_ENVIRONMENT_NAME } from '@opentelemetry/semantic-conventions/incubating';
 
-const TRACER_NAME = 'open-knowledge-app';
+const TRACER_NAME = 'synapsenote-app';
 
 let installed = false;
 
@@ -56,7 +56,7 @@ export function install(): void {
     const env = (import.meta as unknown as { env?: Record<string, string | undefined> }).env;
     provider = new WebTracerProvider({
       resource: resourceFromAttributes({
-        [ATTR_SERVICE_NAME]: 'open-knowledge-app',
+        [ATTR_SERVICE_NAME]: 'synapsenote-app',
         [ATTR_SERVICE_VERSION]: env?.VITE_APP_VERSION ?? 'dev',
         [ATTR_DEPLOYMENT_ENVIRONMENT_NAME]: env?.MODE ?? 'dev',
       }),

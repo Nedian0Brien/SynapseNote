@@ -33,7 +33,7 @@ if ! git diff --quiet -- "$LOCALES_DIR"; then
   echo "  diff under $LOCALES_DIR." >&2
   echo "" >&2
   echo "  Fix:" >&2
-  echo "    cd public/open-knowledge/packages/app && bun run i18n" >&2
+  echo "    cd public/synapsenote/packages/app && bun run i18n" >&2
   echo "  then commit the updated catalog files." >&2
   echo "" >&2
   echo "  Drift summary:" >&2

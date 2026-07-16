@@ -27,7 +27,7 @@ import type {
   MarkdownManager,
   PmStructuralNode,
   StructuralDivergenceReason,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import {
   applyFastDiff,
   applyIncrementalDiff,
@@ -44,7 +44,7 @@ import {
   reattachLeadingDocBoundary,
   splitLeadingDocBoundary,
   stripFrontmatter,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import type { Schema } from '@tiptap/pm/model';
 import { updateYFragment, yXmlFragmentToProseMirrorRootNode } from '@tiptap/y-tiptap';
 // Value import (not `import type`): `carrierKind` uses `instanceof Y.XmlElement`
@@ -169,7 +169,7 @@ export const isPairedWriteOrigin = (origin: unknown): origin is PairedWriteOrigi
  *
  * The check is affirmative rather than `NODE_ENV !== 'production'` because
  * Bun leaves `NODE_ENV` undefined when the runtime is `bun run` or
- * `open-knowledge start` — the negative form inverted the contract and
+ * `synapsenote start` — the negative form inverted the contract and
  * re-threw in production. `bun test`
  * auto-populates `NODE_ENV=test`, which is the primary signal; callers that
  * want loud failures outside `bun test` (integration harnesses launched via
@@ -326,7 +326,7 @@ function applyMapDrivenSplice(ytext: Y.Text, splice: YTextMapDrivenSplice): void
 
 // Bridge utilities (applyIncrementalDiff, applyFastDiff, mergeThreeWay,
 // diffLinesFast, getFrontmatter, normalizeBridge) are imported from
-// `@inkeep/open-knowledge-core` so they live in one place shared with the
+// `@nedian0brien/synapsenote-core` so they live in one place shared with the
 // client observer (precedent #4: shared computation, per-surface rendering).
 
 // ─────────────────────────────────────────────────────────────

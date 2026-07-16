@@ -46,7 +46,7 @@ const BUILD_EXISTS = existsSync(MAIN_ENTRY);
 // Quarantine gate — see the header. Allowlisted in the CI no-skip guard so the
 // skip stays gate-visible.
 const IS_CI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
-const DESKTOP_PRODUCT_NAME = '@inkeep/open-knowledge-desktop';
+const DESKTOP_PRODUCT_NAME = '@nedian0brien/synapsenote-desktop';
 
 interface SeedOpts {
   /** Pre-grant consent by seeding .ok/local/config.yml terminal.enabled: true. */
@@ -163,7 +163,7 @@ interface LaunchOpts {
 }
 
 async function launchApp(s: Seed, opts: LaunchOpts = {}): Promise<ElectronApplication> {
-  const deepLink = `openknowledge://open?project=${encodeURIComponent(s.projectDir)}&doc=start`;
+  const deepLink = `synapsenote://open?project=${encodeURIComponent(s.projectDir)}&doc=start`;
   // A clean, system-only PATH so the readiness probe's `command -v claude`
   // verdict is determined solely by the test's fakebin (not the dev's
   // ~/.local/bin). The fake-claude prefix, when present, is prepended.
@@ -764,7 +764,7 @@ test.describe('Docked terminal — live Electron', () => {
     const s = seed('mcp-rewire', {
       consent: true,
       fakeClaudeOnPath: true,
-      // ~/.claude.json present but WITHOUT an open-knowledge MCP server entry.
+      // ~/.claude.json present but WITHOUT an synapsenote MCP server entry.
       claudeJson: { mcpServers: { 'some-other': { command: 'noop' } } },
     });
     track(s.tmpHome, s.projectDir);
@@ -778,7 +778,7 @@ test.describe('Docked terminal — live Electron', () => {
     await expect(banner).toBeVisible({ timeout: 15_000 });
     // Apostrophe-free substring (same rationale as the not-found banner) — distinctive
     // to the MCP-rewire banner variant, which the 'Connect tools' affordance below confirms.
-    await expect(banner).toContainText('OpenKnowledge tools');
+    await expect(banner).toContainText('SynapseNote tools');
     await expect(page.getByRole('button', { name: 'Connect tools' })).toBeVisible();
   });
 

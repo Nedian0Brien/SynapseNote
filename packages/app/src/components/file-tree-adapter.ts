@@ -2,7 +2,7 @@ import {
   isMermaidDocFile,
   mediaKindForSidebarAssetExtension,
   type UploadAssetSuccess,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import type { ContextMenuItem, FileTreeDropTarget } from '@pierre/trees';
 import { getFileExtension } from '@/components/file-tree-rename-validation';
 import {

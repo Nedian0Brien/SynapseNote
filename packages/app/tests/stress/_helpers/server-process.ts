@@ -31,7 +31,7 @@ import { dirname, join, resolve } from 'node:path';
 import { setTimeout as wait } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 import { HocuspocusProvider } from '@hocuspocus/provider';
-import { SYSTEM_DOC_NAME } from '@inkeep/open-knowledge-core';
+import { SYSTEM_DOC_NAME } from '@nedian0brien/synapsenote-core';
 import * as Y from 'yjs';
 
 const HELPERS_DIR = dirname(fileURLToPath(import.meta.url));

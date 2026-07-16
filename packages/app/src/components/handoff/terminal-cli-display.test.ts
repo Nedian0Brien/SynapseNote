@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { TERMINAL_CLI_IDS } from '@inkeep/open-knowledge-core';
+import { TERMINAL_CLI_IDS } from '@nedian0brien/synapsenote-core';
 import { visibleTerminalClis } from './terminal-cli-display';
 
 /** A complete resolved probe map (every CLI keyed), all reported absent. Matches

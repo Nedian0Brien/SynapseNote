@@ -1,6 +1,6 @@
 name: native-config prebuild
 
-# Cross-platform prebuild matrix for the `@inkeep/open-knowledge-native-config`
+# Cross-platform prebuild matrix for the `@nedian0brien/synapsenote-native-config`
 # napi-rs addon (the toml_edit parse + format-preserving Codex TOML edit engine).
 # Builds one `.node` per target so the published CLI can bundle all of them into
 # `packages/cli/dist/native/` (Option 3 — bundle into the CLI tarball; see

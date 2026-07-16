@@ -12,7 +12,7 @@
  * means "unanswered" from the cold-start default before the project-local doc
  * hydrates.
  */
-import { humanFormat } from '@inkeep/open-knowledge-core';
+import { humanFormat } from '@nedian0brien/synapsenote-core';
 import { useConfigContext } from '@/lib/config-provider';
 import { recordShellConsentGranted } from '@/lib/terminal-telemetry';
 

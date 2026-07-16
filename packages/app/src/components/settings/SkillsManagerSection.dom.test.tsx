@@ -12,7 +12,7 @@
  */
 
 import { afterEach, describe, expect, mock, test } from 'bun:test';
-import type { SkillsListSuccess } from '@inkeep/open-knowledge-core';
+import type { SkillsListSuccess } from '@nedian0brien/synapsenote-core';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 

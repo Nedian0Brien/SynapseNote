@@ -22,7 +22,7 @@ describe('removeProjectSkill', () => {
     const skillPath = CLAUDE.projectSkillPath?.(dir);
     if (!skillPath) throw new Error('claude has no projectSkillPath');
     mkdirSync(dirname(skillPath), { recursive: true });
-    writeFileSync(skillPath, '# open-knowledge\n');
+    writeFileSync(skillPath, '# synapsenote\n');
     return skillPath;
   }
 
@@ -66,9 +66,9 @@ describe('removeProjectSkill', () => {
     // but removal must refuse rather than route rmSync outside the project.
     const outside = mkdtempSync(join(tmpdir(), 'ok-remove-project-skill-outside-'));
     try {
-      const managed = join(outside, 'skills', 'open-knowledge');
+      const managed = join(outside, 'skills', 'synapsenote');
       mkdirSync(managed, { recursive: true });
-      writeFileSync(join(managed, 'SKILL.md'), '# open-knowledge\n');
+      writeFileSync(join(managed, 'SKILL.md'), '# synapsenote\n');
       symlinkSync(outside, join(dir, '.claude'), 'dir');
 
       const result = removeProjectSkill(CLAUDE, dir);
@@ -86,9 +86,9 @@ describe('removeProjectSkill', () => {
     const skillPath = CLAUDE.projectSkillPath?.(dir);
     if (!skillPath) throw new Error('claude has no projectSkillPath');
     const skillDir = dirname(skillPath);
-    const source = join(dir, '.ok', 'skills', 'open-knowledge');
+    const source = join(dir, '.ok', 'skills', 'synapsenote');
     mkdirSync(source, { recursive: true });
-    writeFileSync(join(source, 'SKILL.md'), '# open-knowledge\n');
+    writeFileSync(join(source, 'SKILL.md'), '# synapsenote\n');
     mkdirSync(dirname(skillDir), { recursive: true });
     symlinkSync(source, skillDir, 'dir');
 

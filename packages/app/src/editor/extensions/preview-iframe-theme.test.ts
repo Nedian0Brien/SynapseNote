@@ -12,7 +12,7 @@
  * per-theme headers differing by exactly the baked initial-class statement.
  */
 import { describe, expect, test } from 'bun:test';
-import { PREVIEW_THEME_TOKENS } from '@inkeep/open-knowledge-core';
+import { PREVIEW_THEME_TOKENS } from '@nedian0brien/synapsenote-core';
 import {
   buildPreviewIframeHeader,
   buildPreviewThemeMessage,

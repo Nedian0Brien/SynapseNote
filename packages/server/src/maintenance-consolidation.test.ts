@@ -3,7 +3,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
-import { parseCheckpoint } from '@inkeep/open-knowledge-core/shadow-repo-layout';
+import { parseCheckpoint } from '@nedian0brien/synapsenote-core/shadow-repo-layout';
 import simpleGit from 'simple-git';
 import { createMaintenanceCoordinator } from './maintenance-coordinator.ts';
 import { commitWip, initShadowRepo, type ShadowHandle, shadowGit } from './shadow-repo.ts';
@@ -44,7 +44,7 @@ async function commitAs(writerId: string, content: string) {
   writeFileSync(resolve(contentDir, 'intro.md'), content);
   await commitWip(
     shadow,
-    { id: writerId, name: writerId, email: `${writerId}@openknowledge.local` },
+    { id: writerId, name: writerId, email: `${writerId}@synapsenote.local` },
     'content/docs',
     `wip: ${writerId}`,
   );

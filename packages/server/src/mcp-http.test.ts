@@ -151,7 +151,7 @@ afterEach(async () => {
 // `mcp.tools.grep.maxResults` (renamed from `search.maxResults`) and
 // `mcp.tools.read_document.historyDepth` were removed from ConfigSchema;
 // their values now live as constants (`GREP_MAX_RESULTS`,
-// `READ_DOCUMENT_HISTORY_DEPTH`) in `@inkeep/open-knowledge-core`. The
+// `READ_DOCUMENT_HISTORY_DEPTH`) in `@nedian0brien/synapsenote-core`. The
 // end-to-end "configured value reaches the tool" tests that previously lived
 // here are no longer applicable — there is no user-facing configuration
 // surface to verify. Per-tool unit tests guard the constant being applied at

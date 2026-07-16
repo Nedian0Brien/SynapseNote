@@ -33,8 +33,8 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { FrontmatterValue } from '@inkeep/open-knowledge-core';
 import { Plural, Trans, useLingui } from '@lingui/react/macro';
+import type { FrontmatterValue } from '@nedian0brien/synapsenote-core';
 import { ChevronRight, GripVertical, Plus, Trash2 } from 'lucide-react';
 import { type CSSProperties, useState } from 'react';
 import { useFrontmatterBinding } from '@/components/FrontmatterBindingContext';

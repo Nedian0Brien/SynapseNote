@@ -5,8 +5,8 @@ import {
   SortableContext,
   useSortable,
 } from '@dnd-kit/sortable';
-import type { TerminalCli } from '@inkeep/open-knowledge-core';
 import { Trans, useLingui } from '@lingui/react/macro';
+import type { TerminalCli } from '@nedian0brien/synapsenote-core';
 import {
   ChevronDownIcon,
   ChevronRightIcon,

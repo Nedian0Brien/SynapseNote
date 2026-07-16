@@ -1,8 +1,8 @@
 /**
- * `open-knowledge mcp` command.
+ * `synapsenote mcp` command.
  *
  * Default mode: an inline stdio MCP server that routes per tool call to
- * whatever OpenKnowledge project the caller's `cwd` argument resolves into.
+ * whatever SynapseNote project the caller's `cwd` argument resolves into.
  * This makes the binary safe to register globally in MCP hosts (Claude,
  * etc.) — one registration covers every project on the machine.
  *
@@ -13,7 +13,7 @@
 
 import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
-import type { Config } from '@inkeep/open-knowledge-server';
+import type { Config } from '@nedian0brien/synapsenote-server';
 import { Command } from 'commander';
 import {
   emitBundleProxyEvent,
@@ -77,7 +77,7 @@ export function mcpCommand(getConfig: () => Config): Command {
               stderr: process.stderr,
               mode: 'fallback-absent',
               bundlePath: null,
-              reason: 'no installed OpenKnowledge.app bundle found',
+              reason: 'no installed SynapseNote.app bundle found',
             });
           } else {
             try {

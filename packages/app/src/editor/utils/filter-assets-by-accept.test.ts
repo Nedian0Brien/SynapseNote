@@ -4,7 +4,7 @@ import {
   ALLOWED_IMAGE_MIME_TYPES,
   ALLOWED_PDF_MIME_TYPES,
   ALLOWED_VIDEO_MIME_TYPES,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { filterAssetsByAccept } from './filter-assets-by-accept.ts';
 
 const PATHS = [

@@ -55,6 +55,6 @@ or {
 } where {
     register_diagnostic(
         span = $lit,
-        message = "Inline bridge normalization-class value in a public test. Assert observable `normalizeBridge` equivalence between inputs instead of hard-coding a BRIDGE_TOLERANCE_CLASSES label as a string literal. See https://github.com/inkeep/open-knowledge/blob/main/biome-plugins/README.md#no-inline-tolerance-classgrit"
+        message = "Inline bridge normalization-class value in a public test. Assert observable `normalizeBridge` equivalence between inputs instead of hard-coding a BRIDGE_TOLERANCE_CLASSES label as a string literal. See https://github.com/Nedian0Brien/SynapseNote/blob/main/biome-plugins/README.md#no-inline-tolerance-classgrit"
     )
 }

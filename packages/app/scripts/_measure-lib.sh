@@ -188,7 +188,7 @@ require_jq() {
 # (packages/app/scripts → three levels up). git's toplevel is the wrong
 # oracle here: it coincides with the workspace root only in a standalone
 # clone — inside the agents-private monorepo the toplevel is the monorepo
-# root, one level above public/open-knowledge. Marker validation fails
+# root, one level above public/synapsenote. Marker validation fails
 # loud if the derived directory is not an OK workspace (e.g. the lib was
 # copied somewhere with a different shape). The walk is physical
 # (`cd -P`/`pwd -P`) so a symlinked invocation path — including macOS's

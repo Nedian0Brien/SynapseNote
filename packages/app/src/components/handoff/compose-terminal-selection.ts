@@ -1,4 +1,4 @@
-import { composeSelectionPrompt } from '@inkeep/open-knowledge-core';
+import { composeSelectionPrompt } from '@nedian0brien/synapsenote-core';
 import { docNameToRelativePath } from '@/lib/workspace-paths';
 
 /**

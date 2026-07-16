@@ -7,7 +7,7 @@ import { resolvePackageVersion } from './resolve-package-version.ts';
 
 describe('resolvePackageVersion', () => {
   test('resolves the server package via its own import.meta.url', async () => {
-    const v = await resolvePackageVersion('@inkeep/open-knowledge-server', import.meta.url);
+    const v = await resolvePackageVersion('@nedian0brien/synapsenote-server', import.meta.url);
     expect(v).toMatch(/^\d+\.\d+\.\d+/);
   });
 
@@ -57,7 +57,7 @@ describe('resolvePackageVersion', () => {
     // createRequire. The function must not silently return undefined.
     let threw = false;
     try {
-      await resolvePackageVersion('@inkeep/open-knowledge-server', 42 as unknown as string);
+      await resolvePackageVersion('@nedian0brien/synapsenote-server', 42 as unknown as string);
     } catch {
       threw = true;
     }

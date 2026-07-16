@@ -255,7 +255,7 @@ describe('GitNotAvailableError', () => {
   test('message includes product name and install URL', () => {
     const guidance = buildGuidance('darwin');
     const err = new GitNotAvailableError('darwin', guidance);
-    expect(err.message).toContain('OpenKnowledge needs Git');
+    expect(err.message).toContain('SynapseNote needs Git');
     expect(err.message).toContain(guidance.url);
     expect(err.message).toContain('After installing');
   });

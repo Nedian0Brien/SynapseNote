@@ -141,7 +141,7 @@ describe('iconFromClientName', () => {
     expect(iconFromClientName('codex-mcp-client')).toBe('openai');
   });
   test('maps Claude Cowork local-agent-mode-* to claude', () => {
-    expect(iconFromClientName('local-agent-mode-open-knowledge')).toBe('claude');
+    expect(iconFromClientName('local-agent-mode-synapsenote')).toBe('claude');
     expect(iconFromClientName('local-agent-mode-some-other-server')).toBe('claude');
   });
   test('unknown or absent → bot', () => {
@@ -155,7 +155,7 @@ describe('iconFromClientName', () => {
 describe('displayNameFromClientName', () => {
   test('known clients → brand name', () => {
     expect(displayNameFromClientName('claude-code')).toBe('Claude');
-    expect(displayNameFromClientName('local-agent-mode-open-knowledge')).toBe('Claude');
+    expect(displayNameFromClientName('local-agent-mode-synapsenote')).toBe('Claude');
     expect(displayNameFromClientName('cursor')).toBe('Cursor');
     expect(displayNameFromClientName('codex-mcp-client')).toBe('Codex');
   });

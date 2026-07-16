@@ -10,7 +10,7 @@ import { dirname, join, resolve } from 'node:path';
 import type {
   ReportBundleLevel as CoreReportBundleLevel,
   ReportBundleSummary as CoreReportBundleSummary,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { parse as parseYaml } from 'yaml';
 import {
   type BundleExtraFile,

@@ -16,7 +16,7 @@ import {
   mapConsoleLevel,
   parseStructuredConsoleMessage,
   truncateLogMessage,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { getLogger } from './desktop-logger.ts';
 
 /**

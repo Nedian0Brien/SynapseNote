@@ -69,7 +69,7 @@ describe('requireNativeConfigModule resolution order', () => {
     const mod = requireNativeConfigModule({
       moduleUrl: BUNDLED_MODULE_URL,
       requireModule: (id) => {
-        if (id === '@inkeep/open-knowledge-native-config') return SENTINEL_WORKSPACE;
+        if (id === '@nedian0brien/synapsenote-native-config') return SENTINEL_WORKSPACE;
         throw new Error(`MODULE_NOT_FOUND: ${id}`);
       },
     });

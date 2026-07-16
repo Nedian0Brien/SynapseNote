@@ -10,7 +10,7 @@ import { describe, expect, test } from 'bun:test';
 import type {
   ShareConstructUrlErrorCode,
   ShareConstructUrlResponse,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { mapShareErrorToToast, requestShareConstructUrl, runShareAction } from './run-share-action';
 
 interface MockDeps {
@@ -128,7 +128,7 @@ describe('requestShareConstructUrl', () => {
         status: 200,
         json: async () => ({
           ok: true,
-          shareUrl: 'https://openknowledge.ai/d/AaaXX',
+          shareUrl: 'https://synapse.lawdigest.kr/d/AaaXX',
           sharedUrl: 'https://github.com/o/r/blob/main/a.md',
           branch: 'main',
         }),
@@ -144,7 +144,7 @@ describe('requestShareConstructUrl', () => {
     expect(JSON.parse(String(calls[0].init?.body))).toEqual({ kind: 'doc', docPath: 'a.md' });
     expect(result).toEqual({
       ok: true,
-      shareUrl: 'https://openknowledge.ai/d/AaaXX',
+      shareUrl: 'https://synapse.lawdigest.kr/d/AaaXX',
       sharedUrl: 'https://github.com/o/r/blob/main/a.md',
       branch: 'main',
     });
@@ -159,7 +159,7 @@ describe('requestShareConstructUrl', () => {
         status: 200,
         json: async () => ({
           ok: true,
-          shareUrl: 'https://openknowledge.ai/d/BbbYY',
+          shareUrl: 'https://synapse.lawdigest.kr/d/BbbYY',
           sharedUrl: 'https://github.com/o/r/tree/main/guides',
           branch: 'main',
         }),
@@ -225,7 +225,7 @@ describe('runShareAction — happy path', () => {
   test('hasRemote=true + 200 ok response → clipboard write + success toast + log', async () => {
     const okResponse: ShareConstructUrlResponse = {
       ok: true,
-      shareUrl: 'https://openknowledge.ai/d/Aaa',
+      shareUrl: 'https://synapse.lawdigest.kr/d/Aaa',
       sharedUrl: 'https://github.com/o/r/blob/main/a.md',
       branch: 'main',
     };
@@ -246,10 +246,10 @@ describe('runShareAction — happy path', () => {
 
     expect(result).toEqual({
       kind: 'copied',
-      shareUrl: 'https://openknowledge.ai/d/Aaa',
+      shareUrl: 'https://synapse.lawdigest.kr/d/Aaa',
       branch: 'main',
     });
-    expect(deps.clipboardTexts).toEqual(['https://openknowledge.ai/d/Aaa']);
+    expect(deps.clipboardTexts).toEqual(['https://synapse.lawdigest.kr/d/Aaa']);
     expect(deps.successToasts).toEqual(['Link copied.']);
     expect(deps.errorToasts).toEqual([]);
     expect(deps.logs).toEqual(['[share] action=link-construct']);
@@ -259,7 +259,7 @@ describe('runShareAction — happy path', () => {
   test('converts docName "foo" to docPath "foo.md" before calling the endpoint', async () => {
     const okResponse: ShareConstructUrlResponse = {
       ok: true,
-      shareUrl: 'https://openknowledge.ai/d/Aaa',
+      shareUrl: 'https://synapse.lawdigest.kr/d/Aaa',
       sharedUrl: 'https://github.com/o/r/blob/main/foo.md',
       branch: 'main',
     };
@@ -277,7 +277,7 @@ describe('runShareAction — happy path', () => {
   test('nested docName "docs/sub/page" maps to docPath "docs/sub/page.md"', async () => {
     const okResponse: ShareConstructUrlResponse = {
       ok: true,
-      shareUrl: 'https://openknowledge.ai/d/Aaa',
+      shareUrl: 'https://synapse.lawdigest.kr/d/Aaa',
       sharedUrl: 'https://github.com/o/r/blob/main/docs/sub/page.md',
       branch: 'main',
     };
@@ -294,7 +294,7 @@ describe('runShareAction — happy path', () => {
   test('extension-qualified mdx docName maps to matching docPath', async () => {
     const okResponse: ShareConstructUrlResponse = {
       ok: true,
-      shareUrl: 'https://openknowledge.ai/d/Aaa',
+      shareUrl: 'https://synapse.lawdigest.kr/d/Aaa',
       sharedUrl: 'https://github.com/o/r/blob/main/docs/page.mdx',
       branch: 'main',
     };
@@ -311,7 +311,7 @@ describe('runShareAction — happy path', () => {
   test('folder input POSTs {kind:folder, folderPath} verbatim + folder-specific success toast', async () => {
     const okResponse: ShareConstructUrlResponse = {
       ok: true,
-      shareUrl: 'https://openknowledge.ai/d/Fff',
+      shareUrl: 'https://synapse.lawdigest.kr/d/Fff',
       sharedUrl: 'https://github.com/o/r/tree/main/guides/onboarding',
       branch: 'main',
     };
@@ -329,20 +329,20 @@ describe('runShareAction — happy path', () => {
 
     expect(result).toEqual({
       kind: 'copied',
-      shareUrl: 'https://openknowledge.ai/d/Fff',
+      shareUrl: 'https://synapse.lawdigest.kr/d/Fff',
       branch: 'main',
     });
     // folderRelativePath is content-relative wire semantics — passed through
     // unchanged (NOT run through docNameToMarkdownPath).
     expect(deps.fetchCalls[0].body).toEqual({ kind: 'folder', folderPath: 'guides/onboarding' });
     expect(deps.successToasts).toEqual(['Folder share link copied.']);
-    expect(deps.clipboardTexts).toEqual(['https://openknowledge.ai/d/Fff']);
+    expect(deps.clipboardTexts).toEqual(['https://synapse.lawdigest.kr/d/Fff']);
   });
 
   test('content-root folder input POSTs the empty folderPath sentinel', async () => {
     const okResponse: ShareConstructUrlResponse = {
       ok: true,
-      shareUrl: 'https://openknowledge.ai/d/Root',
+      shareUrl: 'https://synapse.lawdigest.kr/d/Root',
       sharedUrl: 'https://github.com/o/r/tree/main',
       branch: 'main',
     };
@@ -501,7 +501,7 @@ describe('runShareAction — transport / clipboard failures', () => {
   test('clipboard write failure surfaces clipboard-failed kind + distinct toast (URL was constructed)', async () => {
     const okResponse: ShareConstructUrlResponse = {
       ok: true,
-      shareUrl: 'https://openknowledge.ai/d/Aaa',
+      shareUrl: 'https://synapse.lawdigest.kr/d/Aaa',
       sharedUrl: 'https://github.com/o/r/blob/main/a.md',
       branch: 'main',
     };
@@ -517,7 +517,7 @@ describe('runShareAction — transport / clipboard failures', () => {
 
     expect(result).toEqual({
       kind: 'clipboard-failed',
-      shareUrl: 'https://openknowledge.ai/d/Aaa',
+      shareUrl: 'https://synapse.lawdigest.kr/d/Aaa',
     });
     expect(deps.successToasts).toEqual([]);
     expect(deps.errorToasts).toEqual(['Link ready but could not copy to clipboard.']);

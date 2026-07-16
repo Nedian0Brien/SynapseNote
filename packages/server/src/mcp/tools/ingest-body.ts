@@ -10,7 +10,7 @@
  * tool + the existing `![[file.ext]]` asset-embed surface.
  */
 
-import { OK_DIR } from '@inkeep/open-knowledge-core';
+import { OK_DIR } from '@nedian0brien/synapsenote-core';
 
 export function buildIngestBody(source: string, contentDir: string): string {
   return `Capture this external source into the project knowledge base as raw reference material. The KB is **closed-loop**: external sources are pulled INTO the knowledge base here so downstream docs cite local paths, never bare web URLs. This applies whether a user shared the source OR you fetched it yourself to ground a knowledge-base claim — agent-initiated fetches are not exempt. **Raw preservation only** — no summary, no analysis, no interpretation. Summarizing is the job of the \`research\` tool later.

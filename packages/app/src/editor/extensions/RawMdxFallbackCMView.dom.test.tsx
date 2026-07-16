@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
-import type { Config } from '@inkeep/open-knowledge-core';
+import type { Config } from '@nedian0brien/synapsenote-core';
 import { cleanup, render, waitFor } from '@testing-library/react';
 import type { NodeViewProps } from '@tiptap/core';
 import { ConfigContext, type ConfigContextValue } from '@/lib/config-context';

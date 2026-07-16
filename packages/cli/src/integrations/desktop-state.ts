@@ -29,14 +29,14 @@ import { join } from 'node:path';
 import { type AppSupportOptions, resolveAppSupportPath } from '../commands/editors.ts';
 
 /** Post-rename Electron `productName` — the userData basename on every platform. */
-export const DESKTOP_PRODUCT_NAME = 'OpenKnowledge';
-/** Pre-rename `productName` (macOS legacy `Open Knowledge`, with a space). A
+export const DESKTOP_PRODUCT_NAME = 'SynapseNote';
+/** Pre-rename `productName` (macOS legacy `SynapseNote`, with a space). A
  *  generic name we don't own by name alone — always identity-gate before
  *  deleting its dir. */
-export const DESKTOP_LEGACY_PRODUCT_NAME = 'Open Knowledge';
+export const DESKTOP_LEGACY_PRODUCT_NAME = 'OpenKnowledge';
 
 interface DesktopUserDataOptions extends AppSupportOptions {
-  /** Override the product-name basename (defaults to `OpenKnowledge`). */
+  /** Override the product-name basename (defaults to `SynapseNote`). */
   productName?: string;
 }
 
@@ -101,7 +101,7 @@ export function readDesktopRecentProjects(userDataDir: string): DesktopRecentPro
  * `<dir>/state.json` exists and parses as OUR `AppState` shape (recentProjects
  * is an array). A foreign vendor's same-named dir, a junk dir, or an absent
  * state.json all return false — so `ok uninstall` never deletes a directory it
- * can't prove is OpenKnowledge's, matching the desktop rename migration's
+ * can't prove is SynapseNote's, matching the desktop rename migration's
  * `dirHasOurState` guard.
  *
  * An OS-level read error (EACCES on a present file) is treated as NOT-ours here

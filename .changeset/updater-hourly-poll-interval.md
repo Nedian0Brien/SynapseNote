@@ -1,5 +1,5 @@
 ---
-"@inkeep/open-knowledge": patch
+"@nedian0brien/synapsenote": patch
 ---
 
 The desktop app now checks for updates hourly instead of every 5 minutes. The

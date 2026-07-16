@@ -1,5 +1,5 @@
 /**
- * `open-knowledge share publish` — drive a no-remote project to first share.
+ * `synapsenote share publish` — drive a no-remote project to first share.
  *
  * Sequence (publish scaffold, first commit, and remote push):
  *   1. Ensure `.ok/` scaffold exists (calls `initContent` if missing) so the
@@ -29,7 +29,7 @@
 import { execSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { initContent, withHiddenWindowsConsole } from '@inkeep/open-knowledge-server';
+import { initContent, withHiddenWindowsConsole } from '@nedian0brien/synapsenote-server';
 import { Octokit } from '@octokit/rest';
 import { Command } from 'commander';
 import simpleGit, { type SimpleGit, type SimpleGitOptions } from 'simple-git';
@@ -476,9 +476,9 @@ async function runSharePublish(opts: PublishOptions, tokenStore: TokenStore): Pr
       withHiddenWindowsConsole({ cwd: projectDir, stdio: 'ignore' }),
     );
   } catch {
-    process.env.GIT_AUTHOR_NAME ??= 'OpenKnowledge';
+    process.env.GIT_AUTHOR_NAME ??= 'SynapseNote';
     process.env.GIT_AUTHOR_EMAIL ??= 'noreply@inkeep.com';
-    process.env.GIT_COMMITTER_NAME ??= 'OpenKnowledge';
+    process.env.GIT_COMMITTER_NAME ??= 'SynapseNote';
     process.env.GIT_COMMITTER_EMAIL ??= 'noreply@inkeep.com';
   }
 

@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { displayNameFromClientName } from '@inkeep/open-knowledge-core';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+import { displayNameFromClientName } from '@nedian0brien/synapsenote-core';
 import { validateAgentId } from './agent-id.ts';
 import type { Config } from './config/schema.ts';
 import { MCP_SERVER_NAME } from './constants.ts';

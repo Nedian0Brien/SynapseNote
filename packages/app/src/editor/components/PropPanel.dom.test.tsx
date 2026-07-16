@@ -14,7 +14,7 @@
  */
 
 import { afterEach, describe, expect, mock, test } from 'bun:test';
-import { ALLOWED_IMAGE_MIME_TYPES, type PropDef } from '@inkeep/open-knowledge-core';
+import { ALLOWED_IMAGE_MIME_TYPES, type PropDef } from '@nedian0brien/synapsenote-core';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import type { JsxComponentDescriptor } from '../registry/types.ts';
 

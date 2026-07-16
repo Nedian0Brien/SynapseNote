@@ -24,7 +24,7 @@
 
 import { describe, expect, test } from 'bun:test';
 import { setTimeout } from 'node:timers/promises';
-import { MarkdownManager } from '@inkeep/open-knowledge-core';
+import { MarkdownManager } from '@nedian0brien/synapsenote-core';
 import { getSchema } from '@tiptap/core';
 import { updateYFragment, yXmlFragmentToProseMirrorRootNode } from '@tiptap/y-tiptap';
 import * as Y from 'yjs';

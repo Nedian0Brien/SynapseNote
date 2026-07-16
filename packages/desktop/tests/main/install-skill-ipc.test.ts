@@ -11,7 +11,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { readTargetVersion, writeTargetVersion } from '@inkeep/open-knowledge-server';
+import { readTargetVersion, writeTargetVersion } from '@nedian0brien/synapsenote-server';
 import { handleBuildAndOpen } from '../../src/main/ipc/install-skill.ts';
 
 interface FakeApp {
@@ -96,7 +96,7 @@ describe('handleBuildAndOpen — install-state gate', () => {
 
     expect(result.ok).toBe(true);
     if (result.ok && !result.skipped) {
-      expect(result.path).toContain('openknowledge.skill');
+      expect(result.path).toContain('synapsenote.skill');
     }
     expect(shell.openPath).toHaveBeenCalledTimes(1);
     // State file populated with the freshly-built skill version.
@@ -116,7 +116,7 @@ describe('handleBuildAndOpen — install-state gate', () => {
 
     expect(result.ok).toBe(true);
     if (result.ok && !result.skipped) {
-      expect(result.path).toContain('openknowledge.skill');
+      expect(result.path).toContain('synapsenote.skill');
     }
     expect(shell.openPath).toHaveBeenCalledTimes(1);
     expect(await readTargetVersion(home, 'claude-cowork')).toBe(currentVersion);

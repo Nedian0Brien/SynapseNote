@@ -1,5 +1,5 @@
 /**
- * RED regression tests for inkeep/open-knowledge#356 — "Unable to set up a
+ * RED regression tests for Nedian0Brien/SynapseNote#356 — "Unable to set up a
  * project for the first time" when the host git is present-but-broken.
  *
  * Pins the project-setup git-preflight invariant at the `ensureProjectGit`

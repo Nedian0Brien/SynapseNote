@@ -16,7 +16,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
-import { sharedExtensions } from '@inkeep/open-knowledge-core';
+import { sharedExtensions } from '@nedian0brien/synapsenote-core';
 import type { JSONContent } from '@tiptap/core';
 import { getSchema } from '@tiptap/core';
 import type { Fragment } from '@tiptap/pm/model';

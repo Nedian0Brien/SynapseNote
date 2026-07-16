@@ -6,13 +6,13 @@ import {
   isBranchNotFoundGitError,
   isLoginFixableGitAuthError,
   shellSingleQuote,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import {
   assertGitAvailable,
   type Config,
   GitNotAvailableError,
   GitTooOldError,
-} from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-server';
 import { Command } from 'commander';
 import simpleGit, { type SimpleGitOptions } from 'simple-git';
 import { resolveAuth } from '../auth/resolve-auth.ts';
@@ -102,7 +102,7 @@ export function buildCloneArgs(branch: string | null | undefined): string[] {
  * failure shapes (auth, network, fs) must NOT be classified as branch-missing
  * — those errors are re-thrown so the existing error handling stays in place.
  *
- * Thin re-export of `isBranchNotFoundGitError` from `@inkeep/open-knowledge-core`
+ * Thin re-export of `isBranchNotFoundGitError` from `@nedian0brien/synapsenote-core`
  * — see that function for the canonical pattern (covers both
  * "Remote branch X not found" and "couldn't find remote ref" variants).
  */

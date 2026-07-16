@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import type { Principal } from '@inkeep/open-knowledge-core';
+import type { Principal } from '@nedian0brien/synapsenote-core';
 import { extractActorIdentity } from './extract-actor-identity.ts';
 
 const fixturePrincipal: Principal = {

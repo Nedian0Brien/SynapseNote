@@ -43,7 +43,7 @@
  * next non-paired ytext mutation would re-derive fragment from the STALE
  * ytext bytes, silently reverting the write.
  */
-import { applyFastDiff, stripFrontmatter } from '@inkeep/open-knowledge-core';
+import { applyFastDiff, stripFrontmatter } from '@nedian0brien/synapsenote-core';
 import { updateYFragment } from '@tiptap/y-tiptap';
 import type * as Y from 'yjs';
 import { mdManager, schema } from './md-manager.ts';

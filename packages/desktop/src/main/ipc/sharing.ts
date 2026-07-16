@@ -23,7 +23,7 @@ import {
   readSharingMode,
   removeOkPathsFromGitExclude,
   type SharingMode,
-} from '@inkeep/open-knowledge';
+} from '@nedian0brien/synapsenote';
 
 export interface SharingStatusResult {
   /** Discriminant for the single `ok:sharing:dispatch` channel (see ipc-channels.ts).

@@ -13,7 +13,7 @@ import {
   type ConfigBinding,
   DEFAULT_EMBEDDINGS_BASE_URL,
   type SemanticIndexStatus,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 

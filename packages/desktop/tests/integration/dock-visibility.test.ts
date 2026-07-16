@@ -5,7 +5,7 @@
  * the parent `.app` bundle.
  *
  * Symptom (per the field report). On a packaged launch the parent
- * OpenKnowledge Dock icon is joined by a second tile labeled "exec" with
+ * SynapseNote Dock icon is joined by a second tile labeled "exec" with
  * the macOS launching-bobble animation that never resolves. The tile
  * persists for the lifetime of the spawned server child.
  *
@@ -127,9 +127,9 @@ describe('detached-server spawn: macOS Dock visibility regression guard', () => 
     // top of this file fails at compile time — a clearer signal.
 
     // Simulate the packaged-darwin context that produces the bug.
-    const parentAppPath = '/Applications/OpenKnowledge.app';
-    const parentExecPath = `${parentAppPath}/Contents/MacOS/OpenKnowledge`;
-    const bundleCliMjsPath = `${parentAppPath}/Contents/Resources/app.asar.unpacked/node_modules/@inkeep/open-knowledge/dist/cli.mjs`;
+    const parentAppPath = '/Applications/SynapseNote.app';
+    const parentExecPath = `${parentAppPath}/Contents/MacOS/SynapseNote`;
+    const bundleCliMjsPath = `${parentAppPath}/Contents/Resources/app.asar.unpacked/node_modules/@nedian0brien/synapsenote/dist/cli.mjs`;
     const reactShellDistDir = `${parentAppPath}/Contents/Resources/app`;
 
     const result = resolveDetachedSpawnArgs({

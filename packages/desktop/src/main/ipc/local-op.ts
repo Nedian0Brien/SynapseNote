@@ -12,7 +12,7 @@
  * because the IPC handlers are gated to renderer-driven IPC invocations
  * only (the HTTP handler in `api-extension.ts` is untouched).
  *
- * Subprocess shape comes from `@inkeep/open-knowledge-server`'s
+ * Subprocess shape comes from `@nedian0brien/synapsenote-server`'s
  * `local-ops` module — the same runners power both the HTTP and IPC
  * paths so they can't drift.
  */
@@ -28,7 +28,7 @@ import {
   runCloneSubprocess,
   runDeviceFlowSubprocess,
   validateCloneInputs,
-} from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-server';
 import type { SendableWebContents } from '../../shared/ipc-send.ts';
 import { sendToRenderer } from '../../shared/ipc-send.ts';
 

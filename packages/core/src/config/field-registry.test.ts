@@ -5,7 +5,7 @@ import { ConfigSchema } from './schema.ts';
 
 describe('fieldRegistry singleton', () => {
   test('is reachable via the public globalThis Symbol key', () => {
-    const SINGLETON_KEY = Symbol.for('@inkeep/open-knowledge/field-registry');
+    const SINGLETON_KEY = Symbol.for('@nedian0brien/synapsenote/field-registry');
     const fromGlobal = (globalThis as Record<symbol, unknown>)[SINGLETON_KEY];
     expect(fromGlobal).toBe(fieldRegistry as unknown as typeof fromGlobal);
   });
@@ -132,7 +132,7 @@ describe('ConfigSchema coverage (NR3 — every leaf has fieldRegistry metadata)'
   test('no fields are agent-settable in the current schema', () => {
     // The two MCP-tool tuning fields that used to be agent-settable were
     // removed alongside the rest of the either-scope surface; their values
-    // now live as constants in `@inkeep/open-knowledge-core`. Re-introduce
+    // now live as constants in `@nedian0brien/synapsenote-core`. Re-introduce
     // an entry here when an agent-tunable field actually returns.
     const leaves: { path: string[]; schema: unknown }[] = [];
     walkLeaves(ConfigSchema, [], leaves);

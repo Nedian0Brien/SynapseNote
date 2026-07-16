@@ -1,5 +1,5 @@
-import { humanFormat } from '@inkeep/open-knowledge-core';
 import { useLingui } from '@lingui/react/macro';
+import { humanFormat } from '@nedian0brien/synapsenote-core';
 import { EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';

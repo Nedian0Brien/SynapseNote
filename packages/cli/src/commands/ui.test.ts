@@ -15,7 +15,7 @@ import {
 } from 'node:http';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
-import { ProblemDetailsSchema, type Scheduler } from '@inkeep/open-knowledge-core';
+import { ProblemDetailsSchema, type Scheduler } from '@nedian0brien/synapsenote-core';
 import {
   acquireServerLock,
   ConfigSchema,
@@ -23,7 +23,7 @@ import {
   readUiLock,
   type UiLockMetadata,
   updateServerLockPort,
-} from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-server';
 import {
   closeHttpServers,
   DEFAULT_UI_PORT,

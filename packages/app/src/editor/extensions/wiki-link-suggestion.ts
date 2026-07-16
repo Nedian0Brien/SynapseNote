@@ -12,7 +12,7 @@ import {
   searchWorkspaceCorpus,
   type WorkspaceSearchCorpus,
   type WorkspaceSearchKind,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import type { Editor } from '@tiptap/core';
 import type { ResolvedPos } from '@tiptap/pm/model';
 import { PluginKey } from '@tiptap/pm/state';

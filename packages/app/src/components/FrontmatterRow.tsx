@@ -19,12 +19,12 @@
 
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { Trans, useLingui } from '@lingui/react/macro';
 import {
   type FrontmatterType,
   type FrontmatterValue,
   isFrontmatterValueEmpty,
-} from '@inkeep/open-knowledge-core';
-import { Trans, useLingui } from '@lingui/react/macro';
+} from '@nedian0brien/synapsenote-core';
 import { AlertTriangle, GripVertical, Trash2, X } from 'lucide-react';
 import type { CSSProperties, ReactNode } from 'react';
 import { useRef } from 'react';

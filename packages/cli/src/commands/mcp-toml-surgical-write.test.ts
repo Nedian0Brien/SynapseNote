@@ -117,7 +117,7 @@ describe('surgical TOML MCP write', () => {
     expect(after).toContain('startup_timeout_ms = 9223372036854775807');
     expect(after).toContain('last_seen = 2026-06-26T12:34:56.123456Z');
     expect(after).toContain('server.host = "localhost"');
-    expect(after).toContain('[mcp_servers.open-knowledge]');
+    expect(after).toContain('[mcp_servers.synapsenote]');
 
     // Independent parse confirms data-equality: the sibling is untouched and our
     // entry is added with the published chain shape.
@@ -128,7 +128,7 @@ describe('surgical TOML MCP write', () => {
       command: 'linear-cmd',
       url: 'https://linear.example',
     });
-    expect(parsed.mcp_servers['open-knowledge']).toEqual(PUBLISHED_CHAIN_ENTRY);
+    expect(parsed.mcp_servers.synapsenote).toEqual(PUBLISHED_CHAIN_ENTRY);
   });
 
   it('appends our entry with the rest of the file byte-identical (only-additive)', () => {
@@ -141,7 +141,7 @@ describe('surgical TOML MCP write', () => {
     writeCodex(configPath);
     const after = readFileSync(configPath, 'utf-8');
     expect(after.startsWith(original)).toBe(true);
-    expect(after.slice(original.length)).toContain('[mcp_servers.open-knowledge]');
+    expect(after.slice(original.length)).toContain('[mcp_servers.synapsenote]');
   });
 
   it('preserves a leading UTF-8 BOM byte-for-byte', () => {
@@ -156,7 +156,7 @@ describe('surgical TOML MCP write', () => {
     const after = readFileSync(configPath, 'utf-8');
     expect(after.charCodeAt(0)).toBe(0xfeff);
     expect(after).toContain('# bom config');
-    expect(parseToml(after).mcp_servers['open-knowledge']).toEqual(PUBLISHED_CHAIN_ENTRY);
+    expect(parseToml(after).mcp_servers.synapsenote).toEqual(PUBLISHED_CHAIN_ENTRY);
   });
 
   it('preserves CRLF line endings elsewhere and keeps our chain LF-internal', () => {
@@ -177,8 +177,8 @@ describe('surgical TOML MCP write', () => {
     // values serialize single-line-escaped, so the `\n` escapes stay LF.
     const parsed = parseToml(after);
     expect(parsed.mcp_servers.other).toEqual({ command: 'node' });
-    expect(parsed.mcp_servers['open-knowledge']).toEqual(PUBLISHED_CHAIN_ENTRY);
-    const body = parsed.mcp_servers['open-knowledge'].args[2] as string;
+    expect(parsed.mcp_servers.synapsenote).toEqual(PUBLISHED_CHAIN_ENTRY);
+    const body = parsed.mcp_servers.synapsenote.args[2] as string;
     expect(body).toBe(CHAIN_V1);
     expect(body).not.toContain('\r');
   });
@@ -220,7 +220,7 @@ describe('surgical TOML MCP write', () => {
     const after = readFileSync(configPath, 'utf-8');
     // The structural newlines OK emits stay LF — no blanket CRLF conversion.
     expect(after).not.toContain('\r');
-    expect(parseToml(after).mcp_servers['open-knowledge']).toEqual(PUBLISHED_CHAIN_ENTRY);
+    expect(parseToml(after).mcp_servers.synapsenote).toEqual(PUBLISHED_CHAIN_ENTRY);
   });
 
   it('preserves a config that lacks a trailing newline', () => {
@@ -232,7 +232,7 @@ describe('surgical TOML MCP write', () => {
     const after = readFileSync(configPath, 'utf-8');
     expect(after.endsWith('\n')).toBe(false);
     expect(after).toContain('# no trailing newline');
-    expect(parseToml(after).mcp_servers['open-knowledge']).toEqual(PUBLISHED_CHAIN_ENTRY);
+    expect(parseToml(after).mcp_servers.synapsenote).toEqual(PUBLISHED_CHAIN_ENTRY);
   });
 
   it('never writes a backup sidecar beside a present, parseable config', () => {
@@ -253,7 +253,7 @@ describe('surgical TOML MCP write', () => {
       '[mcp_servers.other]',
       'command = "other-cmd"  # sibling note',
       '',
-      '[mcp_servers.open-knowledge]',
+      '[mcp_servers.synapsenote]',
       '# interior note',
       'command = "/bin/sh"',
       'args = ["-l", "-c", "STALE"]',
@@ -272,7 +272,7 @@ describe('surgical TOML MCP write', () => {
     expect(after).not.toContain('STALE');
     const parsed = parseToml(after);
     expect(parsed.mcp_servers.other).toEqual({ command: 'other-cmd' });
-    expect(parsed.mcp_servers['open-knowledge'].args).toEqual(['-l', '-c', CHAIN_V1]);
+    expect(parsed.mcp_servers.synapsenote.args).toEqual(['-l', '-c', CHAIN_V1]);
   });
 
   it('is a byte-identical no-op on an unchanged config (idempotent)', () => {
@@ -293,7 +293,7 @@ describe('surgical TOML MCP write', () => {
     expect(result.action).toBe('written');
     const after = readFileSync(configPath, 'utf-8');
     expect(after.endsWith('\n')).toBe(true);
-    expect(parseToml(after).mcp_servers['open-knowledge']).toEqual(PUBLISHED_CHAIN_ENTRY);
+    expect(parseToml(after).mcp_servers.synapsenote).toEqual(PUBLISHED_CHAIN_ENTRY);
     // No backup on a fresh create — there was nothing to preserve.
     expect(existsSync(`${configPath}.ok-backup`)).toBe(false);
   });

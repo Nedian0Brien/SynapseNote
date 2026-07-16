@@ -1,7 +1,7 @@
 /**
  * Transport abstraction for one-shot auth queries — `auth status` (is the
  * user signed in?), `auth repos` (list of accessible repositories), and
- * `auth signout` (clear OpenKnowledge's own stored credential).
+ * `auth signout` (clear SynapseNote's own stored credential).
  *
  * Two implementations:
  *   - `httpAuthQueryTransport` — wraps `fetch('/api/local-op/auth/...')`.
@@ -14,7 +14,7 @@
  * list; signout: success/failure), so no streaming surface is needed.
  */
 
-import { ProblemDetailsSchema } from '@inkeep/open-knowledge-core';
+import { ProblemDetailsSchema } from '@nedian0brien/synapsenote-core';
 import type {
   OkDesktopBridge,
   OkLocalOpAuthReposResponse,

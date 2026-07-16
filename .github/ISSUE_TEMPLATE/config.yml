@@ -1,11 +1,11 @@
 blank_issues_enabled: false
 contact_links:
   - name: Questions & community help
-    url: https://discord.gg/VRKk2EaGHN
-    about: Setup help, "how do I…" questions, and general discussion. Please ask here rather than opening an issue.
+    url: https://github.com/Nedian0Brien/SynapseNote/discussions
+    about: Setup help, "how do I…" questions, and general discussion.
   - name: Documentation
-    url: https://openknowledge.ai
+    url: https://synapse.lawdigest.kr
     about: Guides, CLI reference, MCP, and editor integrations.
   - name: Report a security vulnerability
-    url: https://github.com/inkeep/open-knowledge/security/advisories/new
+    url: https://github.com/Nedian0Brien/SynapseNote/security/advisories/new
     about: Report security issues privately via GitHub's security advisories, never as a public issue.

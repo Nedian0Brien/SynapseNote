@@ -10,7 +10,7 @@ import {
 
 /**
  * The `ok mcp` self-check detects a mid-session drag-replace upgrade of the
- * OpenKnowledge bundle. The detection function classifies identity at the
+ * SynapseNote bundle. The detection function classifies identity at the
  * inode level — path equality is insufficient because the drag-replace UX
  * swaps the inode while the path stays the same.
  *
@@ -23,8 +23,8 @@ import {
  */
 
 const DARWIN: NodeJS.Platform = 'darwin';
-const ANCHOR_PATH = '/Applications/OpenKnowledge.app/Contents/MacOS/OpenKnowledge';
-const REAL_ANCHOR_PATH = '/Applications/OpenKnowledge.app/Contents/MacOS/OpenKnowledge';
+const ANCHOR_PATH = '/Applications/SynapseNote.app/Contents/MacOS/SynapseNote';
+const REAL_ANCHOR_PATH = '/Applications/SynapseNote.app/Contents/MacOS/SynapseNote';
 
 function input(overrides: Partial<BundleIdentityCheckInput> = {}): BundleIdentityCheckInput {
   return {
@@ -167,7 +167,7 @@ describe('detectBundleIdentity', () => {
 
   test('returns `unchanged` when realpath path string differs but inode is identical', () => {
     // Edge case: symlink swap with no inode change. E.g., user renamed
-    // and recreated `/Applications/OpenKnowledge.app` via a script that
+    // and recreated `/Applications/SynapseNote.app` via a script that
     // preserved the underlying inode, OR `process.execPath` is a symlink
     // whose target was rewritten to a different path resolving to the
     // SAME on-disk inode. The function classifies identity by inode, not
@@ -537,16 +537,13 @@ describe('captureBootIdentity', () => {
 
   test('returns { resolvedPath, inode } when both fs probes succeed', () => {
     const logs: string[] = [];
-    const result = captureBootIdentity(
-      '/Applications/OpenKnowledge.app/Contents/MacOS/OpenKnowledge',
-      {
-        realpathSync: () => '/Applications/OpenKnowledge.app/Contents/MacOS/OpenKnowledge',
-        statInoSync: () => 299_520_753,
-        log: (m) => logs.push(m),
-      },
-    );
+    const result = captureBootIdentity('/Applications/SynapseNote.app/Contents/MacOS/SynapseNote', {
+      realpathSync: () => '/Applications/SynapseNote.app/Contents/MacOS/SynapseNote',
+      statInoSync: () => 299_520_753,
+      log: (m) => logs.push(m),
+    });
     expect(result).toEqual({
-      resolvedPath: '/Applications/OpenKnowledge.app/Contents/MacOS/OpenKnowledge',
+      resolvedPath: '/Applications/SynapseNote.app/Contents/MacOS/SynapseNote',
       inode: 299_520_753,
     });
     // Happy path stays silent — operators only see boot-time noise on failure.
@@ -577,16 +574,13 @@ describe('captureBootIdentity', () => {
 
   test('returns undefined and logs underlying error when statInoSync throws', () => {
     const logs: string[] = [];
-    const result = captureBootIdentity(
-      '/Applications/OpenKnowledge.app/Contents/MacOS/OpenKnowledge',
-      {
-        realpathSync: () => '/Applications/OpenKnowledge.app/Contents/MacOS/OpenKnowledge',
-        statInoSync: () => {
-          throw new Error("EACCES: permission denied, stat '/path/to/bundle'");
-        },
-        log: (m) => logs.push(m),
+    const result = captureBootIdentity('/Applications/SynapseNote.app/Contents/MacOS/SynapseNote', {
+      realpathSync: () => '/Applications/SynapseNote.app/Contents/MacOS/SynapseNote',
+      statInoSync: () => {
+        throw new Error("EACCES: permission denied, stat '/path/to/bundle'");
       },
-    );
+      log: (m) => logs.push(m),
+    });
     expect(result).toBeUndefined();
     // Same content contract as the realpath failure path: operators get
     // the underlying error text so they can distinguish failure modes.

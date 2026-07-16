@@ -17,7 +17,7 @@
  */
 
 import { describe, expect, test } from 'bun:test';
-import { searchWorkspaceCorpus } from '@inkeep/open-knowledge-core';
+import { searchWorkspaceCorpus } from '@nedian0brien/synapsenote-core';
 import { loadEvalEmbedder, loadEvalSet, prepareEval, runHeldOutEval } from './semantic-eval.ts';
 
 const ENABLED = process.env.OK_EMBED_SMOKE === '1';

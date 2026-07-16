@@ -29,7 +29,7 @@
  * those via separate render branches (ExternalLinkChip + plain-anchor).
  */
 
-import { classifyMarkdownHref, resolveAssetProjectPath } from '@inkeep/open-knowledge-core';
+import { classifyMarkdownHref, resolveAssetProjectPath } from '@nedian0brien/synapsenote-core';
 import { resolveLinkTargetIntent } from '../../components/link-target-intent';
 import type { PageListCacheSnapshot } from '../page-list-cache';
 import type { MarkInfo } from './mark-identity';

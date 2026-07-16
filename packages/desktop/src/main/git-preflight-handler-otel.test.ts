@@ -3,7 +3,7 @@
  *
  * The desktop package has no direct `@opentelemetry/*` deps and cannot
  * mount an `InMemorySpanExporter`. We use bun's `mock.module` to intercept
- * `emitPreflightFailureSpan` at the `@inkeep/open-knowledge-server`
+ * `emitPreflightFailureSpan` at the `@nedian0brien/synapsenote-server`
  * boundary — capturing every call without touching the real OTel SDK.
  * Mirrors the precedent set by `onboarding-telemetry.test.ts`.
  *
@@ -17,7 +17,7 @@ import { beforeEach, describe, expect, mock, test } from 'bun:test';
 
 // Pull the real server module first so we can re-export everything except
 // `emitPreflightFailureSpan`. Top-level await is supported in bun ESM.
-const actual = await import('@inkeep/open-knowledge-server');
+const actual = await import('@nedian0brien/synapsenote-server');
 
 interface EmittedError {
   name: string;
@@ -27,7 +27,7 @@ interface EmittedError {
 
 const emissions: EmittedError[] = [];
 
-mock.module('@inkeep/open-knowledge-server', () => ({
+mock.module('@nedian0brien/synapsenote-server', () => ({
   ...actual,
   emitPreflightFailureSpan: (err: unknown) => {
     const e = err as Error & { platform?: string; detected?: string };
@@ -40,7 +40,7 @@ mock.module('@inkeep/open-knowledge-server', () => ({
 }));
 
 // IMPORTANT: import the handler AFTER the module mock so its
-// `import { emitPreflightFailureSpan } from '@inkeep/open-knowledge-server'`
+// `import { emitPreflightFailureSpan } from '@nedian0brien/synapsenote-server'`
 // resolves to the spy above.
 const { ensureGitAvailable } = await import('./git-preflight-handler.ts');
 const { GitNotAvailableError, GitTooOldError } = actual;

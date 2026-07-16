@@ -11,13 +11,13 @@
  */
 
 import { describe, expect, mock, test } from 'bun:test';
-import type { HandoffPayload, HandoffTarget } from '@inkeep/open-knowledge-core';
+import type { HandoffPayload, HandoffTarget } from '@nedian0brien/synapsenote-core';
 import { dispatchHandoff } from './dispatch.ts';
 
 const BASE_PAYLOAD = {
-  projectDir: '/Users/andrew/Documents/code/open-knowledge',
-  docPath: '/Users/andrew/Documents/code/open-knowledge/specs/foo/SPEC.md',
-  prompt: 'OpenKnowledge doc: specs/foo/SPEC.md.',
+  projectDir: '/Users/andrew/Documents/code/synapsenote',
+  docPath: '/Users/andrew/Documents/code/synapsenote/specs/foo/SPEC.md',
+  prompt: 'SynapseNote doc: specs/foo/SPEC.md.',
 } as const;
 
 function makeFetch(status: number, bodyJson?: unknown) {

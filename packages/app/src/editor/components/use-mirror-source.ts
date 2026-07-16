@@ -44,7 +44,7 @@
  */
 
 import { HocuspocusProvider } from '@hocuspocus/provider';
-import { mdastToHtml } from '@inkeep/open-knowledge-core';
+import { mdastToHtml } from '@nedian0brien/synapsenote-core';
 import { useEffect, useRef, useState } from 'react';
 import * as Y from 'yjs';
 import { useCollabUrl } from '@/lib/use-collab-url';

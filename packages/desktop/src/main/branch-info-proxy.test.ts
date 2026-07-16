@@ -4,8 +4,8 @@ import type {
   BranchInfoResponse,
   CheckoutResponse,
   ShareTargetStatusResponse,
-} from '@inkeep/open-knowledge-core';
-import { RUNTIME_VERSION } from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-core';
+import { RUNTIME_VERSION } from '@nedian0brien/synapsenote-server';
 
 import {
   type BranchInfoProxyDeps,

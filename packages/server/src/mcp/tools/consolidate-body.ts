@@ -13,7 +13,7 @@
  *   - `consolidate` — promotes research + sources into canonical articles (analysis, decided)
  */
 
-import { OK_DIR } from '@inkeep/open-knowledge-core';
+import { OK_DIR } from '@nedian0brien/synapsenote-core';
 
 export function buildConsolidateBody(topic: string, contentDir: string): string {
   return `Promote existing research on this topic into a canonical article inside the project content directory. **Canonical, not provisional** — the output is the source of truth for future agents.

@@ -1,5 +1,5 @@
 /**
- * `open-knowledge ui` — serves the React editor UI as a sibling to `ok start`.
+ * `synapsenote ui` — serves the React editor UI as a sibling to `ok start`.
  *
  * Default port `DEFAULT_UI_PORT` (39847 — quirky, IANA-unassigned, unlikely to
  * collide with other dev servers); `PORT` env and `--port` flag override. When the
@@ -41,8 +41,8 @@ import {
   EXECUTABLE_BLOCKLIST_EXTENSIONS,
   INLINE_RENDERABLE_EXTENSIONS,
   type Scheduler,
-} from '@inkeep/open-knowledge-core';
-import type { Config } from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-core';
+import type { Config } from '@nedian0brien/synapsenote-server';
 import { Command } from 'commander';
 import { emitProblem } from './ui-problem.ts';
 import {
@@ -166,9 +166,9 @@ export async function startUiServer(opts: StartUiServerOptions): Promise<UiServe
     readServerLock,
     releaseUiLock,
     updateUiLockPort,
-  } = await import('@inkeep/open-knowledge-server');
+  } = await import('@nedian0brien/synapsenote-server');
   const { default: sirv } = await import('sirv');
-  const { resolveContentDir, resolveLockDir } = await import('@inkeep/open-knowledge-server');
+  const { resolveContentDir, resolveLockDir } = await import('@nedian0brien/synapsenote-server');
 
   const contentDir = resolveContentDir(opts.config, opts.cwd);
   // Lock anchor is the project root (cwd), not contentDir — must match
@@ -726,9 +726,9 @@ interface ResolveUiLockCollisionOptions {
   lockDir: string;
   /** Override for tests. Defaults to `readUiLock` from the server package. */
   readLock?: () =>
-    | import('@inkeep/open-knowledge-server').UiLockMetadata
+    | import('@nedian0brien/synapsenote-server').UiLockMetadata
     | null
-    | Promise<import('@inkeep/open-knowledge-server').UiLockMetadata | null>;
+    | Promise<import('@nedian0brien/synapsenote-server').UiLockMetadata | null>;
   pollIntervalMs?: number;
   pollDeadlineMs?: number;
 }
@@ -739,7 +739,7 @@ export async function resolveUiLockCollision(
   const readLock =
     opts.readLock ??
     (async () => {
-      const { readUiLock } = await import('@inkeep/open-knowledge-server');
+      const { readUiLock } = await import('@nedian0brien/synapsenote-server');
       return readUiLock(opts.lockDir);
     });
 
@@ -787,7 +787,7 @@ export async function resolveUiLockCollision(
 
 export function uiCommand(getConfig: () => Config): Command {
   return new Command('ui')
-    .description('Serve the OpenKnowledge React editor UI')
+    .description('Serve the SynapseNote React editor UI')
     .option(
       '-p, --port <port>',
       `UI port (default: $PORT env or ${DEFAULT_UI_PORT}, kernel-allocated fallback if busy)`,
@@ -798,8 +798,8 @@ export function uiCommand(getConfig: () => Config): Command {
     )
     .action(async (opts: { port?: string; host?: string }) => {
       const { dim } = await import('../ui/colors.ts');
-      const { UiLockCollisionError } = await import('@inkeep/open-knowledge-server');
-      const { resolveLockDir } = await import('@inkeep/open-knowledge-server');
+      const { UiLockCollisionError } = await import('@nedian0brien/synapsenote-server');
+      const { resolveLockDir } = await import('@nedian0brien/synapsenote-server');
       const config = getConfig();
       // Undefined `host` triggers the default two-socket loopback mode in
       // startUiServer. Callers who pass `-H` get single-socket bind as-is.

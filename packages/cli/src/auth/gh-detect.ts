@@ -11,7 +11,7 @@ type FileExistsFn = (path: string) => boolean;
 
 /**
  * Standard install locations for `gh` on macOS + Linux. Checked when the bare
- * `gh` lookup via `PATH` fails — which happens whenever OpenKnowledge runs
+ * `gh` lookup via `PATH` fails — which happens whenever SynapseNote runs
  * from a context that doesn't inherit the user's shell PATH. The macOS GUI
  * launch path (`launchd` → Electron → utility fork → spawned CLI) is the
  * load-bearing case: `launchd` provides only `/usr/bin:/bin:/usr/sbin:/sbin`,

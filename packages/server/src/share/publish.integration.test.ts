@@ -298,7 +298,7 @@ describe('POST /api/share/publish', () => {
     });
     const { status, body } = await postJson(rig.port, '/api/share/publish', {
       owner: 'inkeep',
-      name: 'open-knowledge',
+      name: 'synapsenote',
       visibility: 'public',
     });
     expect(status).toBe(200);

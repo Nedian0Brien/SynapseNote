@@ -36,7 +36,7 @@
  *    or vanished in the gap.
  */
 
-import type { LinkStyle } from '@inkeep/open-knowledge-core';
+import type { LinkStyle } from '@nedian0brien/synapsenote-core';
 import {
   combineTransactionSteps,
   Extension,

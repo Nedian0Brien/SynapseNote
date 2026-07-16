@@ -3,7 +3,7 @@ import {
   parseManagedArtifactName,
   type SkillsListEntry,
   skillLiveDocName,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { useEffect, useRef } from 'react';
 import { useDocumentContext } from '@/editor/DocumentContext';
 import { parseProjectSkillContentDocName } from '@/lib/managed-artifact-doc-name';

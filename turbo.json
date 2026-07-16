@@ -6,7 +6,7 @@
       "outputs": ["dist/**", ".next/**"]
     },
     "build:desktop": {
-      "dependsOn": ["^build", "@inkeep/open-knowledge#build"],
+      "dependsOn": ["^build", "@nedian0brien/synapsenote#build"],
       "outputs": ["out/**"]
     },
     "dev:electron": {

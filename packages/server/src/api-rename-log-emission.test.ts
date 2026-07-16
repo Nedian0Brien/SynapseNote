@@ -198,8 +198,8 @@ describe('rename log emission inside withManagedRenameRecovery (US-006)', () => 
 
     const entries = loadEntries();
     expect(entries).toHaveLength(1);
-    expect(entries[0].actor.writerId).toBe('openknowledge-service');
-    expect(entries[0].actor.displayName).toBe('OpenKnowledge (service)');
+    expect(entries[0].actor.writerId).toBe('synapsenote-service');
+    expect(entries[0].actor.displayName).toBe('SynapseNote (service)');
   });
 
   test('folder rename of 3 docs produces 3 entries with shared groupId (FR5)', async () => {
@@ -258,7 +258,7 @@ describe('rename log emission inside withManagedRenameRecovery (US-006)', () => 
     // agent write fires per-writer fan-out (no service-writer commit ⇒ no
     // backfill ⇒ next-boot sweepLazyPopOrphans drops it). This test
     // simulates the concurrent-agent scenario and asserts
-    // `openknowledge-service` is in the pending snapshot.
+    // `synapsenote-service` is in the pending snapshot.
     writeFileSync(resolve(contentDir, 'a.md'), '# A\n');
     // Pre-existing agent activity in this drain window (a write to some doc).
     recordContributor('unrelated-doc', 'agent-claude-x', 'Claude');
@@ -272,7 +272,7 @@ describe('rename log emission inside withManagedRenameRecovery (US-006)', () => 
     expect(response.status).toBe(200);
 
     const snapshot = swapContributors();
-    const serviceEntry = snapshot.get('openknowledge-service');
+    const serviceEntry = snapshot.get('synapsenote-service');
     expect(serviceEntry).toBeDefined();
     expect(serviceEntry?.previousPaths).toEqual([{ from: 'a', to: 'b' }]);
     expect(serviceEntry?.subjectOverride).toBe('rename: a -> b');

@@ -16,7 +16,7 @@
  * worktree folder.
  *
  * Owner / repo comparison is case-insensitive: GitHub URLs accept any case
- * combination (`/Inkeep/Open-Knowledge` and `/inkeep/open-knowledge` resolve
+ * combination (`/Inkeep/Open-Knowledge` and `/Nedian0Brien/SynapseNote` resolve
  * to the same repo), so a clone whose origin uses different case from the
  * share URL must still match.
  */

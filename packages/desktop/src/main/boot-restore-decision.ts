@@ -5,7 +5,7 @@ export interface BootRestoreInput {
   pathExists: (p: string) => boolean;
   /**
    * `true` when a launch-claiming URL that opens its own window has been seen
-   * this run — a single-file deep-link (`ok <file>` → `openknowledge://open?file=`)
+   * this run — a single-file deep-link (`ok <file>` → `synapsenote://open?file=`)
    * OR a valid share. The URL flush owns the initial window, so the boot path
    * opens NO default window — restoring the previous project / Navigator
    * alongside the URL-driven window both clutters the launch and races it for

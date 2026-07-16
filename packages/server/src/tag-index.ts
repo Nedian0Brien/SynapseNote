@@ -37,7 +37,7 @@ import {
   stripFrontmatter,
   tagsMatchingPrefix,
   unwrapFrontmatterFences,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { isLinkIndexExcludedDoc } from './cc1-broadcast.ts';
 import type { ContentFilter } from './content-filter.ts';
 import { isSupportedDocFile, stripDocExtension } from './doc-extensions.ts';

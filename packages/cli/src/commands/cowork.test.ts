@@ -14,7 +14,7 @@ import { runCoworkSkill } from './cowork.ts';
  *   - --no-open produces `status: 'built'` without spawning anything
  *   - File-association invocation spawns `open`/`start`/`xdg-open` per platform
  *   - Unsupported platform falls back to `built` with a helpful message
- *   - Output file is a valid ZIP wrapping `open-knowledge/SKILL.md`
+ *   - Output file is a valid ZIP wrapping `synapsenote/SKILL.md`
  */
 
 // Minimal ChildProcess-like stub for spawnFn tests. We only use `unref()`

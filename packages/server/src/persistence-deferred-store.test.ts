@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { BridgeInvariantViolationError } from '@inkeep/open-knowledge-core';
+import { BridgeInvariantViolationError } from '@nedian0brien/synapsenote-core';
 import * as Y from 'yjs';
 import { composeAndWriteRawBody } from './bridge-intake.ts';
 import { __setQuiescentOverrideForTests } from './bridge-quiescence.ts';

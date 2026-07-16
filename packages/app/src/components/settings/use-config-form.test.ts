@@ -22,7 +22,7 @@ import type {
   ConfigBindingPatchResult,
   ConfigPatch,
   ConfigValidationError,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import {
   type ApplyExternalUpdateForm,
   applyExternalUpdate,

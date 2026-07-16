@@ -1,5 +1,5 @@
-import type { SkillsListEntry } from '@inkeep/open-knowledge-core';
 import { Trans, useLingui } from '@lingui/react/macro';
+import type { SkillsListEntry } from '@nedian0brien/synapsenote-core';
 import {
   ChevronRight,
   FileCode,
@@ -221,7 +221,7 @@ function SkillFolderItem({
           >
             <ChevronRight className="size-3 shrink-0 text-muted-foreground transition-transform group-data-[state=open]/skill:rotate-90" />
             <Hexagon className="size-3 shrink-0 text-muted-foreground" />
-            {/* Display the prefix-stripped name (`open-knowledge-pack-X` → `X`) so
+            {/* Display the prefix-stripped name (`synapsenote-pack-X` → `X`) so
                 even the longest shipped skill fits a normal width; the badge is
                 shrink-0 so it shows fully ("Installed"/"Draft"). `title` keeps the
                 full identity on hover. */}
@@ -517,9 +517,9 @@ function SkillImportPrompt() {
     <div className="mx-2 mb-1 rounded-md border border-border/60 bg-muted/40 p-2 text-xs">
       <p className="mb-2 text-muted-foreground">
         <Trans>
-          Open Knowledge can manage {state.importable} editor skill(s) for this project. Import
-          moves them into .ok/skills and replaces the .claude, .codex, etc. copies with symlinks —
-          one place to edit, in sync everywhere. If those folders are committed to git, review the
+          SynapseNote can manage {state.importable} editor skill(s) for this project. Import moves
+          them into .ok/skills and replaces the .claude, .codex, etc. copies with symlinks — one
+          place to edit, in sync everywhere. If those folders are committed to git, review the
           change first; symlinks can behave differently on some editors and on Windows.
         </Trans>
       </p>

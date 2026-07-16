@@ -1,4 +1,4 @@
-import { PREVIEW_THEME_TOKENS } from '@inkeep/open-knowledge-core';
+import { PREVIEW_THEME_TOKENS } from '@nedian0brien/synapsenote-core';
 
 /** The reader's resolved app theme, baked into a preview iframe's `srcDoc`. */
 export type PreviewTheme = 'light' | 'dark';

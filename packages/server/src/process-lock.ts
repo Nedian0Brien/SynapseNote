@@ -1,7 +1,7 @@
 /**
  * Process lock factory — shared primitive for per-project process ownership.
  *
- * Only one OpenKnowledge process with a given `lockName` may own a lockDir
+ * Only one SynapseNote process with a given `lockName` may own a lockDir
  * at a time. `lockDir` is `<contentDir>/.ok/local` by convention; the
  * lock file sits at `<lockDir>/<lockName>.lock` and contains JSON metadata
  * used for stale detection and port discovery.
@@ -111,7 +111,7 @@ export class ProcessLockCollisionError extends Error {
   readonly lockName: LockName;
   constructor(existing: ProcessLockMetadata, lockPath: string, lockName: LockName) {
     super(
-      `OpenKnowledge ${lockName} already running on port ${existing.port} ` +
+      `SynapseNote ${lockName} already running on port ${existing.port} ` +
         `(pid ${existing.pid}, started ${existing.startedAt}). ` +
         `Stop it first or use a different directory. Lock: ${lockPath}`,
     );

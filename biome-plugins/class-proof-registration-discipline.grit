@@ -37,7 +37,7 @@ or {
         },
         register_diagnostic(
             span = $call,
-            message = "Class-proof registration missing `predicate` or `proof` option — both are required by `ClassProofOptions<M>`. Provide all three of `{ enumerate, predicate, proof }` to `defineClassProof()`. See https://github.com/inkeep/open-knowledge/blob/main/biome-plugins/README.md#class-proof-registration-disciplinegrit"
+            message = "Class-proof registration missing `predicate` or `proof` option — both are required by `ClassProofOptions<M>`. Provide all three of `{ enumerate, predicate, proof }` to `defineClassProof()`. See https://github.com/Nedian0Brien/SynapseNote/blob/main/biome-plugins/README.md#class-proof-registration-disciplinegrit"
         )
     },
     // Pattern B: any `defineClassProof` call at all. The override scope
@@ -46,7 +46,7 @@ or {
     `defineClassProof($_, $_)` as $call where {
         register_diagnostic(
             span = $call,
-            message = "Class-proof registered outside the canonical dir. Move the `defineClassProof(...)` call to `packages/md-conformance/src/class-proofs/proofs/<name>.ts` and export it from `run-all.ts` so it participates in the orchestrator manifest. See https://github.com/inkeep/open-knowledge/blob/main/biome-plugins/README.md#class-proof-registration-disciplinegrit"
+            message = "Class-proof registered outside the canonical dir. Move the `defineClassProof(...)` call to `packages/md-conformance/src/class-proofs/proofs/<name>.ts` and export it from `run-all.ts` so it participates in the orchestrator manifest. See https://github.com/Nedian0Brien/SynapseNote/blob/main/biome-plugins/README.md#class-proof-registration-disciplinegrit"
         )
     }
 }

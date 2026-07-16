@@ -2,7 +2,7 @@ import type {
   SkillFrontmatter,
   SkillInstallWarningCode,
   SkillScope,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { emitSkillsChanged } from '@/lib/documents-events';
 import { parseApiError } from '@/lib/parse-api-error';
 

@@ -5,7 +5,7 @@
  * route is served centrally at the apex (by the marketing app), so we POST
  * cross-origin to it (the route answers CORS + preflight for this reason).
  */
-const SUBSCRIBE_ENDPOINT = 'https://openknowledge.ai/api/subscribe';
+const SUBSCRIBE_ENDPOINT = 'https://synapse.lawdigest.kr/api/subscribe';
 
 // Which in-app surface a signup came from, sent to the newsletter route so
 // PostHog can attribute signups per surface. A cross-deploy contract with the

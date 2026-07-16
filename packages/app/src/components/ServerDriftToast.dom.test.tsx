@@ -5,9 +5,9 @@ import { ServerDriftToast } from '@/components/ServerDriftToast';
 afterEach(cleanup);
 
 const baseProps = {
-  body: 'This project is running an older version of OpenKnowledge (v0.8.0) than this app (v0.8.2).',
+  body: 'This project is running an older version of SynapseNote (v0.8.0) than this app (v0.8.2).',
   warning:
-    'Restarting closes this project server. Connected agents will see their OpenKnowledge MCP connection close unexpectedly.',
+    'Restarting closes this project server. Connected agents will see their SynapseNote MCP connection close unexpectedly.',
   restartLabel: "Restart with this app's version",
   cancelLabel: 'Not now',
 };

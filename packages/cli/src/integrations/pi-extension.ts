@@ -5,7 +5,7 @@
  * surface at all — its only extension point is a TypeScript extension module
  * auto-discovered from the project's `.pi/extensions/` dir (loaded after the
  * user trusts the folder). OK's integration is therefore a whole managed FILE,
- * not a config entry: `ok init` drops `.pi/extensions/open-knowledge.ts`,
+ * not a config entry: `ok init` drops `.pi/extensions/synapsenote.ts`,
  * whose runtime spawns OK's MCP stdio server through the same resilient
  * launcher every other editor's config embeds (`buildManagedServerEntry`),
  * hand-rolls the newline-delimited JSON-RPC MCP handshake, and registers each
@@ -83,7 +83,7 @@ export function makePiManagedFileEntry(text: string): Record<string, unknown> {
 }
 
 /**
- * Build the full contents of `.pi/extensions/open-knowledge.ts`.
+ * Build the full contents of `.pi/extensions/synapsenote.ts`.
  *
  * Byte-deterministic for a given `options` value, so idempotent `ok init`
  * re-runs skip the write on content equality. Published mode embeds BOTH
@@ -106,11 +106,11 @@ export function buildPiExtensionSource(options: McpInstallOptions = {}): string 
   };
   return `${header}
 /**
- * Open Knowledge bridge for Pi — MANAGED FILE, written by \`ok init\`.
+ * SynapseNote bridge for Pi — MANAGED FILE, written by \`ok init\`.
  * Hand edits are overwritten whenever OK re-syncs this project; remove it
  * with \`ok deinit\` (or delete the file) to disconnect Pi from OK.
  *
- * On session start it spawns Open Knowledge's MCP stdio server via OK's
+ * On session start it spawns SynapseNote's MCP stdio server via OK's
  * resilient launcher (bundle, then npx, then version-manager probes), performs
  * the MCP handshake, and registers each MCP tool as a Pi tool under an
  * \`ok_\` prefix (Pi has no MCP namespacing; the prefix keeps OK's \`edit\` /
@@ -178,7 +178,7 @@ class OkMcpClient {
       if (!this.alive) return;
       this.alive = false;
       const err = new Error(
-        "Open Knowledge MCP server exited" +
+        "SynapseNote MCP server exited" +
           (this.stderrTail ? ": " + this.stderrTail.trim() : ""),
       );
       for (const p of this.pending.values()) p.reject(err);
@@ -226,7 +226,7 @@ class OkMcpClient {
     this.pending.delete(id);
     const error = msg.error as { message?: string } | undefined;
     if (error) {
-      pending.reject(new Error(error.message || "Open Knowledge MCP error"));
+      pending.reject(new Error(error.message || "SynapseNote MCP error"));
       return;
     }
     pending.resolve((msg.result ?? {}) as Record<string, unknown>);
@@ -244,7 +244,7 @@ class OkMcpClient {
     params: Record<string, unknown>,
     opts: { timeoutMs?: number; signal?: AbortSignal } = {},
   ): Promise<Record<string, unknown>> {
-    if (!this.alive) return Promise.reject(new Error("Open Knowledge MCP server is not running"));
+    if (!this.alive) return Promise.reject(new Error("SynapseNote MCP server is not running"));
     const id = this.nextId++;
     return new Promise<Record<string, unknown>>((resolve, reject) => {
       let timer: ReturnType<typeof setTimeout> | undefined;
@@ -293,7 +293,7 @@ class OkMcpClient {
   close(): void {
     this.alive = false;
     for (const p of this.pending.values()) {
-      p.reject(new Error("Open Knowledge MCP client closed"));
+      p.reject(new Error("SynapseNote MCP client closed"));
     }
     this.pending.clear();
     // ok mcp exits on stdin EOF; the delayed kill is a backstop.
@@ -385,7 +385,7 @@ export default function okBridge(pi: {
       pi.registerTool({
         name,
         label: "OK " + tool.name,
-        description: tool.description || "Open Knowledge " + tool.name + " tool.",
+        description: tool.description || "SynapseNote " + tool.name + " tool.",
         parameters: toParameters(tool.inputSchema),
         execute: async (
           _toolCallId: string,
@@ -400,7 +400,7 @@ export default function okBridge(pi: {
           );
           const text = contentText(result.content);
           if (result.isError) {
-            throw new Error(text || "Open Knowledge tool " + tool.name + " failed");
+            throw new Error(text || "SynapseNote tool " + tool.name + " failed");
           }
           return {
             content: [{ type: "text", text }],
@@ -421,7 +421,7 @@ export default function okBridge(pi: {
       const ui = (ctx as { ui?: { notify?: (m: string, level: string) => void } } | undefined)?.ui;
       try {
         ui?.notify?.(
-          "Open Knowledge tools unavailable: " + (err instanceof Error ? err.message : String(err)),
+          "SynapseNote tools unavailable: " + (err instanceof Error ? err.message : String(err)),
           "warning",
         );
       } catch {

@@ -74,7 +74,7 @@ import {
   bindConfigDoc,
   CONFIG_DOC_NAME_PROJECT_LOCAL,
   type ConfigBinding,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import * as Y from 'yjs';
 import { createTestServer, pollUntil, type TestServer, wait } from './test-harness';
 

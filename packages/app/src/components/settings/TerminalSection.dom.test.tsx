@@ -1,6 +1,6 @@
 /**
  * Behavioral tests for the Settings → Terminal section: the per-project shell
- * opt-out toggle and the per-machine "auto-approve OpenKnowledge tools" toggle.
+ * opt-out toggle and the per-machine "auto-approve SynapseNote tools" toggle.
  *
  * The system boundaries (the CRDT-backed consent hook, the user ConfigBinding)
  * are mocked; the real shadcn Switch is rendered. Two switches now exist, so
@@ -117,7 +117,7 @@ describe('TerminalSection (Settings opt-out toggle)', () => {
   });
 });
 
-describe('TerminalSection (auto-approve OpenKnowledge tools toggle)', () => {
+describe('TerminalSection (auto-approve SynapseNote tools toggle)', () => {
   beforeEach(() => {
     consentState = { enabled: true, synced: true };
     writerImpl = () => ({ ok: true });

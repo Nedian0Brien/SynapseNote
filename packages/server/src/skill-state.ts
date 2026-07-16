@@ -41,8 +41,8 @@ import {
   SkillStateSchema,
   type SkillStateSurface,
   type SkillStateTarget,
-} from '@inkeep/open-knowledge-core';
-import { atomicWriteFile, withFileLock } from '@inkeep/open-knowledge-core/server';
+} from '@nedian0brien/synapsenote-core';
+import { atomicWriteFile, withFileLock } from '@nedian0brien/synapsenote-core/server';
 import { type ParsedNode, parseDocument } from 'yaml';
 import { tracedAtomicFs, tracedMkdir } from './fs-traced.ts';
 
@@ -55,7 +55,7 @@ export {
   SKILL_STATE_TARGETS,
   type SkillStateSurface,
   type SkillStateTarget,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 
 /** Path to the skill-state YAML file under `$home`. */
 export function skillStateYamlPath(home: string): string {
@@ -296,8 +296,8 @@ export async function writeTargetVersion(
 
 // ─── Per-bundle opt-in decisions ───────────────────────────────────────────
 //
-// The two user-global bundles (`open-knowledge-discovery`,
-// `open-knowledge-write-skill`) are opt-out-able via the first-launch consent
+// The two user-global bundles (`synapsenote-discovery`,
+// `synapsenote-write-skill`) are opt-out-able via the first-launch consent
 // dialog and `ok init --skills`. The decision lives under the top-level
 // `bundles` map keyed by install NAME, separate from the version-keyed
 // `targets`. Every install actor (desktop reclaim, CLI sweep, `ok init`,
@@ -344,7 +344,7 @@ export async function writeBundleDecision(
 
 /**
  * Canonical skill version: the `version` field of
- * `@inkeep/open-knowledge-server`'s `package.json`. Exposed to the renderer
+ * `@nedian0brien/synapsenote-server`'s `package.json`. Exposed to the renderer
  * via `GET /api/skill/install-state` so callers don't have to worry about
  * which version namespace to compare against.
  */
@@ -353,7 +353,7 @@ export async function readServerPackageVersion(): Promise<string> {
   const raw = await readFileAsync(fileURLToPath(pkgUrl), 'utf-8');
   const parsed = JSON.parse(raw) as { version?: unknown };
   if (typeof parsed.version !== 'string' || parsed.version.length === 0) {
-    throw new Error('@inkeep/open-knowledge-server/package.json missing version field');
+    throw new Error('@nedian0brien/synapsenote-server/package.json missing version field');
   }
   return parsed.version;
 }

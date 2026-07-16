@@ -402,7 +402,7 @@ describe('startAutoUpdater — initial configuration (parent §8.10 LOCKED)', ()
     expect(beta.rig.updater.allowPrerelease).toBe(true);
   });
 
-  const PROXY_BASE = 'https://openknowledge.ai/updates';
+  const PROXY_BASE = 'https://synapse.lawdigest.kr/updates';
 
   test('proxyFeed: beta build with beta enabled → generic feed + version/channel headers', () => {
     const { rig } = makeRig({
@@ -473,8 +473,8 @@ describe('startAutoUpdater — initial configuration (parent §8.10 LOCKED)', ()
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(rig.updater.setFeedURL).toHaveBeenCalledWith({
       provider: 'github',
-      owner: 'inkeep',
-      repo: 'open-knowledge',
+      owner: 'Nedian0Brien',
+      repo: 'SynapseNote',
     });
     expect(rig.updater.requestHeaders).toBeNull();
     // The boot .catch() that reverts the feed must still arm the periodic
@@ -506,8 +506,8 @@ describe('startAutoUpdater — initial configuration (parent §8.10 LOCKED)', ()
 
     expect(rig.updater.setFeedURL).toHaveBeenCalledWith({
       provider: 'github',
-      owner: 'inkeep',
-      repo: 'open-knowledge',
+      owner: 'Nedian0Brien',
+      repo: 'SynapseNote',
     });
     expect(rig.updater.requestHeaders).toBeNull();
   });
@@ -1061,16 +1061,16 @@ describe('first-launch version notice (Toast B — AC7, D9)', () => {
 
   test('releaseUrlFor produces the GitHub tag URL', () => {
     expect(releaseUrlFor('1.2.3')).toBe(
-      'https://github.com/inkeep/open-knowledge/releases/tag/v1.2.3',
+      'https://github.com/Nedian0Brien/SynapseNote/releases/tag/v1.2.3',
     );
   });
 
   test('releaseUrlFor percent-encodes path-traversal chars (Finding #11)', () => {
     expect(releaseUrlFor('../../../etc/passwd')).toBe(
-      'https://github.com/inkeep/open-knowledge/releases/tag/v..%2F..%2F..%2Fetc%2Fpasswd',
+      'https://github.com/Nedian0Brien/SynapseNote/releases/tag/v..%2F..%2F..%2Fetc%2Fpasswd',
     );
     expect(releaseUrlFor('1.2.3/..')).toBe(
-      'https://github.com/inkeep/open-knowledge/releases/tag/v1.2.3%2F..',
+      'https://github.com/Nedian0Brien/SynapseNote/releases/tag/v1.2.3%2F..',
     );
   });
 });
@@ -2381,7 +2381,7 @@ describe('check-now → showCheckNowResult feedback dispatch', () => {
     rig.ipc.invoke('ok:update:check-now');
     const err = Object.assign(
       new Error(
-        'Cannot find latest-mac.yml in the latest release artifacts (https://github.com/inkeep/open-knowledge/releases/download/v0.5.0-beta.22/latest-mac.yml): HttpError: 404',
+        'Cannot find latest-mac.yml in the latest release artifacts (https://github.com/Nedian0Brien/SynapseNote/releases/download/v0.5.0-beta.22/latest-mac.yml): HttpError: 404',
       ),
       { code: 'ERR_UPDATER_CHANNEL_FILE_NOT_FOUND' },
     );

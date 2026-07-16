@@ -15,7 +15,7 @@
  * The canonical IDs match `CODE_BLOCK_LANGUAGES` in
  * `packages/app/src/editor/extensions/code-block-languages.ts` and the
  * `codeLanguageForExtension` lookup in
- * `@inkeep/open-knowledge-core`'s code-languages module.
+ * `@nedian0brien/synapsenote-core`'s code-languages module.
  */
 
 import type { Language } from '@codemirror/language';

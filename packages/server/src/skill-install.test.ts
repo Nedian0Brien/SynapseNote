@@ -120,8 +120,8 @@ function yamlPathFor(home: string): string {
 }
 
 // Track-1 installs the slim discovery bundle; the disk-presence gate probes
-// its install dir, NOT the pre-split `open-knowledge` dir.
-const CENTRAL_SKILL_REL = ['.agents', 'skills', 'open-knowledge-discovery'] as const;
+// its install dir, NOT the pre-split `synapsenote` dir.
+const CENTRAL_SKILL_REL = ['.agents', 'skills', 'synapsenote-discovery'] as const;
 function centralSkillDirFor(home: string): string {
   return join(home, ...CENTRAL_SKILL_REL);
 }
@@ -143,12 +143,12 @@ function findWarn(records: RecordedLog[], event: string): RecordedLog | undefine
 }
 
 /**
- * Pretend a pre-split `open-knowledge` user-global skill dir exists at one
+ * Pretend a pre-split `synapsenote` user-global skill dir exists at one
  * host. `installUserSkill` only spawns the legacy `npx skills remove` when
  * such a dir is on disk — a fresh machine skips the subprocess entirely.
  */
 function writeLegacyUserSkill(home: string, hostDir = '.claude'): void {
-  const dir = join(home, hostDir, 'skills', 'open-knowledge');
+  const dir = join(home, hostDir, 'skills', 'synapsenote');
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, 'SKILL.md'), '# legacy\n', 'utf-8');
 }
@@ -266,7 +266,7 @@ describe('installUserSkill — fresh install', () => {
     const result = await installUserSkill({ home, logger, spawn });
 
     expect(result).toBe('installed');
-    // Fresh machine — no legacy `open-knowledge` dir — so one spawn: the `add`.
+    // Fresh machine — no legacy `synapsenote` dir — so one spawn: the `add`.
     expect(calls.length).toBe(1);
     expect(calls[0]?.command).toBe('npx');
     expect(calls[0]?.args).toEqual([
@@ -310,7 +310,7 @@ describe('installUserSkill — fresh install', () => {
 });
 
 describe('installUserSkill — legacy migration', () => {
-  test('pre-split open-knowledge dir present → npx skills remove runs before the add', async () => {
+  test('pre-split synapsenote dir present → npx skills remove runs before the add', async () => {
     const home = freshHome();
     writeLegacyUserSkill(home, '.claude');
     const { spawn, calls } = makeSpawnFake({ outcome: { kind: 'exit', code: 0 } });
@@ -327,7 +327,7 @@ describe('installUserSkill — legacy migration', () => {
       '--agent',
       '*',
       '-g',
-      'open-knowledge',
+      'synapsenote',
     ]);
     expect(calls[1]?.args).toContain('add');
   });
@@ -542,7 +542,7 @@ function host(calls: ReadonlyArray<{ opts: { env?: NodeJS.ProcessEnv } }>): Node
 
 // ─── buildAndOpenSkill ─────────────────────────────────────────────────────
 //
-// Shared primitive that produces `openknowledge.skill` and hands it to the OS
+// Shared primitive that produces `synapsenote.skill` and hands it to the OS
 // file association. Consumed by the `ok install-skill` CLI, the
 // `POST /api/install-skill` endpoint, and (in principle) the Electron skill
 // bridge — every test here protects all three call sites at once.

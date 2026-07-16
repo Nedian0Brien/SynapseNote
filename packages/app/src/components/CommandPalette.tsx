@@ -1,4 +1,4 @@
-// biome-ignore-all lint/plugin/no-raw-html-interactive-element: pre-rule backlog — file uses raw <button>/<input>/<textarea> awaiting shadcn migration; tracked at https://github.com/inkeep/open-knowledge/blob/main/biome-plugins/README.md#no-raw-html-interactive-elementgrit
+// biome-ignore-all lint/plugin/no-raw-html-interactive-element: pre-rule backlog — file uses raw <button>/<input>/<textarea> awaiting shadcn migration; tracked at https://github.com/Nedian0Brien/SynapseNote/blob/main/biome-plugins/README.md#no-raw-html-interactive-elementgrit
 /**
  * CommandPalette — workspace omnibar opened by Cmd+K / Ctrl+K.
  *
@@ -8,8 +8,8 @@
  * bridge is available.
  */
 
-import { SHOW_INSTALL_SKILL, type WorktreeSelectorEntry } from '@inkeep/open-knowledge-core';
 import { Plural, Trans, useLingui } from '@lingui/react/macro';
+import { SHOW_INSTALL_SKILL, type WorktreeSelectorEntry } from '@nedian0brien/synapsenote-core';
 import {
   Bug,
   Download,

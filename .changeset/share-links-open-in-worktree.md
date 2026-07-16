@@ -1,5 +1,5 @@
 ---
-"@inkeep/open-knowledge": minor
+"@nedian0brien/synapsenote": minor
 ---
 
 Share links for a branch you don't have checked out now default to opening in a worktree. The branch-mismatch dialog's primary action, "Open in worktree", creates (or reuses) the branch's worktree under `.ok/worktrees/<branch>` and opens it in its own window at the shared doc or folder — your current checkout, branch, and uncommitted changes stay exactly where they were. Switching the current window's branch is still available as "Switch to `<branch>`", with unchanged behavior including the post-checkout navigation gate.

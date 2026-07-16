@@ -20,7 +20,7 @@ type RecentRow = { path: string; name: string };
 
 function makeDeps(overrides: Partial<MenuDeps> = {}): MenuDeps {
   return {
-    appName: 'OpenKnowledge',
+    appName: 'SynapseNote',
     showDevToolsMenu: true,
     dialog: {} as MenuDeps['dialog'],
     openNavigator: mock(() => {}),
@@ -406,10 +406,10 @@ describe('buildMenuTemplate', () => {
     });
   });
 
-  describe('Uninstall OpenKnowledge… menu item', () => {
+  describe('Uninstall SynapseNote… menu item', () => {
     test('omitted entirely when onUninstall dep is undefined', () => {
       const template = buildMenuTemplate(makeDeps());
-      expect(findByLabel(template, 'Uninstall OpenKnowledge…')).toBeUndefined();
+      expect(findByLabel(template, 'Uninstall SynapseNote…')).toBeUndefined();
     });
 
     if (process.platform === 'darwin') {
@@ -420,7 +420,7 @@ describe('buildMenuTemplate', () => {
         const appMenu = template.find((t) => t.label === deps.appName);
         const sub = appMenu?.submenu as MenuItemConstructorOptions[] | undefined;
         if (!sub) throw new Error('App submenu missing');
-        const uninstallIdx = sub.findIndex((i) => i.label === 'Uninstall OpenKnowledge…');
+        const uninstallIdx = sub.findIndex((i) => i.label === 'Uninstall SynapseNote…');
         const quitIdx = sub.findIndex((i) => i.role === 'quit');
         expect(uninstallIdx).toBeGreaterThanOrEqual(0);
         expect(uninstallIdx).toBeLessThan(quitIdx);
@@ -431,7 +431,7 @@ describe('buildMenuTemplate', () => {
       const onUninstall = mock(() => {});
       const item = findByLabel(
         buildMenuTemplate(makeDeps({ onUninstall })),
-        'Uninstall OpenKnowledge…',
+        'Uninstall SynapseNote…',
       );
       if (process.platform !== 'darwin') {
         expect(item).toBeUndefined();

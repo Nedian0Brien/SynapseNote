@@ -29,7 +29,7 @@
  *     ytext writes)
  */
 import { beforeEach, describe, expect, test } from 'bun:test';
-import { normalizeBridge, stripFrontmatter } from '@inkeep/open-knowledge-core';
+import { normalizeBridge, stripFrontmatter } from '@nedian0brien/synapsenote-core';
 import { yXmlFragmentToProseMirrorRootNode } from '@tiptap/y-tiptap';
 import * as Y from 'yjs';
 import { ROLLBACK_ORIGIN } from './api-extension.ts';

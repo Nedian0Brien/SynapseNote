@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import type { HandoffTarget, InstallState } from '@inkeep/open-knowledge-core';
+import type { HandoffTarget, InstallState } from '@nedian0brien/synapsenote-core';
 import {
   PREFERRED_AGENT_KEY,
   type PreferredAgentStorage,

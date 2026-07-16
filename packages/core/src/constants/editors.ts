@@ -54,7 +54,7 @@ export const EDITOR_LABELS = {
  * Project-relative skills root per editor (POSIX, `cwd`-relative), or `null`
  * for an editor with no project skill surface (Claude Desktop reads
  * user-global skills only). Authored skills project to `<root>/<name>/`; OK's
- * shipped bundle lives at `<root>/open-knowledge/`. Single source for the
+ * shipped bundle lives at `<root>/synapsenote/`. Single source for the
  * install-projection fan-out (`skill-projection.ts`) AND the sharing-mode
  * exclude (`getOkArtifactPaths`), so both stay in lock-step.
  *
@@ -150,8 +150,8 @@ export const HOSTS_WITH_USER_SKILL_DIR: ReadonlyArray<{
 }));
 
 /**
- * OpenKnowledge integration-doc slug per editor — the setup guide at
- * `https://openknowledge.ai/docs/integrations/<slug>`. Consumed by the
+ * SynapseNote integration-doc slug per editor — the setup guide at
+ * `https://synapse.lawdigest.kr/docs/integrations/<slug>`. Consumed by the
  * first-launch consent dialog to link an undetected tool to its setup guide.
  * Claude Code and Claude Desktop share one page (`claude-code` covers both).
  */
@@ -186,12 +186,12 @@ export const EDITOR_PROJECT_CONFIG_PATH = {
   // project-local variant, so it is never detected as "project-configured".
   openclaw: null,
   // Pi has no MCP config at all — OK's integration is a managed bridge
-  // EXTENSION file dropped at `.pi/extensions/open-knowledge.ts` (Pi loads
+  // EXTENSION file dropped at `.pi/extensions/synapsenote.ts` (Pi loads
   // project extensions after the user trusts the folder). That file is the
   // project-configured signal AND the artifact every generic consumer
   // (sharing-mode exclude, deinit, reclaim) must target, so it is the
   // project-config path. OK never reads or writes `.pi/settings.json`.
-  pi: '.pi/extensions/open-knowledge.ts',
+  pi: '.pi/extensions/synapsenote.ts',
   // Antigravity has NO project-scoped MCP config — the IDE, app, and `agy` CLI
   // all share one user-global file at `~/.gemini/config/mcp_config.json`
   // (per-project you can only filter which global servers are allowed). So it

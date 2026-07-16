@@ -30,7 +30,7 @@
  *    stack and nothing to split.
  */
 
-import { isAllowedLinkUri } from '@inkeep/open-knowledge-core';
+import { isAllowedLinkUri } from '@nedian0brien/synapsenote-core';
 import { Extension, InputRule } from '@tiptap/core';
 import type { EditorView } from '@tiptap/pm/view';
 import { dispatchAsOwnUndoStep } from './undo-isolation';

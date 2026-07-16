@@ -23,7 +23,7 @@ import {
   ViewPlugin,
   type ViewUpdate,
 } from '@codemirror/view';
-import { classifyWikiLinkTarget, type HeadingEntry } from '@inkeep/open-knowledge-core';
+import { classifyWikiLinkTarget, type HeadingEntry } from '@nedian0brien/synapsenote-core';
 import { openExternalUrl } from '@/lib/external-link';
 import { hashFromAssetPath, hashFromDocName } from '../../lib/doc-hash';
 import { resolveWikiLinkAssetTarget } from '../extensions/wiki-link-helpers';

@@ -3,7 +3,7 @@
  * (`GET` / `PUT /api/skill-targets`).
  *
  * Proves the headline requirement: changing the target set re-projects EVERY
- * managed skill — the authored skill AND OK's shipped `open-knowledge` bundle —
+ * managed skill — the authored skill AND OK's shipped `synapsenote` bundle —
  * to the new editors, and reverse-projects from dropped ones, against a real
  * server (`projectDir === contentDir`).
  */
@@ -14,7 +14,7 @@ import { join } from 'node:path';
 import {
   SkillTargetsGetSuccessSchema,
   SkillTargetsPutSuccessSchema,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { HARNESS_BOOT_TIMEOUT_MS } from '../harness-boot-timeout';
 import { createTestServer, type TestServer } from '../test-harness';
 
@@ -80,8 +80,8 @@ describe('skill-targets — change set re-projects authored skills + OK bundle',
     expect(existsSync(hostSkill('.cursor', 'trip-log'))).toBe(false);
 
     // Shipped bundle: present in claude, gone from cursor.
-    expect(existsSync(join(hostSkill('.claude', 'open-knowledge'), 'SKILL.md'))).toBe(true);
-    expect(existsSync(hostSkill('.cursor', 'open-knowledge'))).toBe(false);
+    expect(existsSync(join(hostSkill('.claude', 'synapsenote'), 'SKILL.md'))).toBe(true);
+    expect(existsSync(hostSkill('.cursor', 'synapsenote'))).toBe(false);
 
     // Marker host set synced to the new targets.
     const marker = JSON.parse(readFileSync(markerPath(), 'utf-8')) as {
@@ -108,7 +108,7 @@ describe('skill-targets — change set re-projects authored skills + OK bundle',
     });
     expect(res.status).toBe(200);
     expect(existsSync(join(hostSkill('.cursor', 'trip-log'), 'SKILL.md'))).toBe(true);
-    expect(existsSync(join(hostSkill('.cursor', 'open-knowledge'), 'SKILL.md'))).toBe(true);
+    expect(existsSync(join(hostSkill('.cursor', 'synapsenote'), 'SKILL.md'))).toBe(true);
   });
 
   test('PUT rejects an unknown editor id (.strict enum) → 400', async () => {

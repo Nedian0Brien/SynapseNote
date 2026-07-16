@@ -17,7 +17,7 @@
  * `bun run test:dom` from `packages/app/`.
  */
 import { afterEach, describe, expect, test } from 'bun:test';
-import type { FrontmatterType } from '@inkeep/open-knowledge-core';
+import type { FrontmatterType } from '@nedian0brien/synapsenote-core';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';

@@ -1,5 +1,5 @@
 import { posix } from 'node:path';
-import { resolveAssetProjectPath, resolveInternalHref } from '@inkeep/open-knowledge-core';
+import { resolveAssetProjectPath, resolveInternalHref } from '@nedian0brien/synapsenote-core';
 
 interface FenceState {
   char: '`' | '~';

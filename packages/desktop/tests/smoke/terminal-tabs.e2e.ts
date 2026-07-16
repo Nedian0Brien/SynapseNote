@@ -40,7 +40,7 @@ const SMOKE_ENABLED = process.env.OK_DESKTOP_E2E_SMOKE === '1';
 const DARWIN = process.platform === 'darwin';
 const BUILD_EXISTS = existsSync(MAIN_ENTRY);
 const IS_CI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
-const DESKTOP_PRODUCT_NAME = '@inkeep/open-knowledge-desktop';
+const DESKTOP_PRODUCT_NAME = '@nedian0brien/synapsenote-desktop';
 
 interface Seed {
   tmpHome: string;
@@ -76,7 +76,7 @@ function seed(prefix: string): Seed {
 }
 
 async function launchApp(s: Seed): Promise<ElectronApplication> {
-  const deepLink = `openknowledge://open?project=${encodeURIComponent(s.projectDir)}&doc=start`;
+  const deepLink = `synapsenote://open?project=${encodeURIComponent(s.projectDir)}&doc=start`;
   // Restricted, system-only PATH: the New-chat carat opens a BARE shell (the
   // "Terminal" pick) so no `claude` install is needed to spawn a live PTY.
   const PATH = '/usr/bin:/bin:/usr/sbin:/sbin';

@@ -3,7 +3,7 @@ import {
   type AwarenessUser,
   getIdentity,
   type Identity,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { useState } from 'react';
 
 // Re-export types for backwards compatibility

@@ -18,7 +18,7 @@ const { computeWrapperFolderName, extractMetadataVersion, toPosixZipPath } = __t
 function desktopSkillDir(appsRoot: string, which: 'discovery' | 'project'): string {
   return join(
     appsRoot,
-    'OpenKnowledge.app',
+    'SynapseNote.app',
     'Contents',
     'Resources',
     'cli',
@@ -30,7 +30,7 @@ function desktopSkillDir(appsRoot: string, which: 'discovery' | 'project'): stri
 }
 
 describe('extractMetadataVersion', () => {
-  const FM_BODY = 'name: open-knowledge\nmetadata:\n  version: "1.2.3"\n';
+  const FM_BODY = 'name: synapsenote\nmetadata:\n  version: "1.2.3"\n';
 
   test('reads metadata.version from a bare-fence SKILL.md', () => {
     expect(extractMetadataVersion(`---\n${FM_BODY}---\n\n# Skill\n`)).toBe('1.2.3');
@@ -43,40 +43,38 @@ describe('extractMetadataVersion', () => {
 
   test('returns undefined when frontmatter or metadata.version is absent', () => {
     expect(extractMetadataVersion('# No frontmatter\n')).toBeUndefined();
-    expect(extractMetadataVersion('---\nname: open-knowledge\n---\n')).toBeUndefined();
+    expect(extractMetadataVersion('---\nname: synapsenote\n---\n')).toBeUndefined();
   });
 });
 
 describe('computeWrapperFolderName', () => {
   test('POSIX: returns last segment', () => {
-    expect(computeWrapperFolderName('/usr/local/lib/skills/open-knowledge', posix.basename)).toBe(
-      'open-knowledge',
+    expect(computeWrapperFolderName('/usr/local/lib/skills/synapsenote', posix.basename)).toBe(
+      'synapsenote',
     );
   });
 
   test('POSIX: handles trailing slash', () => {
-    expect(computeWrapperFolderName('/usr/local/lib/skills/open-knowledge/', posix.basename)).toBe(
-      'open-knowledge',
+    expect(computeWrapperFolderName('/usr/local/lib/skills/synapsenote/', posix.basename)).toBe(
+      'synapsenote',
     );
   });
 
   test('Windows: backslash-separated absolute path returns last segment', () => {
     expect(
       computeWrapperFolderName(
-        'C:\\Users\\dev\\AppData\\Roaming\\npm\\node_modules\\@inkeep\\open-knowledge\\dist\\assets\\skills\\open-knowledge',
+        'C:\\Users\\dev\\AppData\\Roaming\\npm\\node_modules\\@inkeep\\synapsenote\\dist\\assets\\skills\\synapsenote',
         win32.basename,
       ),
-    ).toBe('open-knowledge');
+    ).toBe('synapsenote');
   });
 
   test('Windows: forward-slash absolute path returns last segment (UNC, mixed)', () => {
-    expect(computeWrapperFolderName('C:/foo/bar/open-knowledge', win32.basename)).toBe(
-      'open-knowledge',
-    );
+    expect(computeWrapperFolderName('C:/foo/bar/synapsenote', win32.basename)).toBe('synapsenote');
   });
 
-  test('falls back to "open-knowledge" when basename is empty', () => {
-    expect(computeWrapperFolderName('', posix.basename)).toBe('open-knowledge');
+  test('falls back to "synapsenote" when basename is empty', () => {
+    expect(computeWrapperFolderName('', posix.basename)).toBe('synapsenote');
   });
 });
 
@@ -126,7 +124,7 @@ describe('resolveBundledSkillDir', () => {
         checkDesktop: true,
       });
       // The Desktop probe fired — the resolved path is inside an `.app` bundle.
-      expect(dir).toContain('OpenKnowledge.app');
+      expect(dir).toContain('SynapseNote.app');
     } finally {
       rmSync(home, { recursive: true, force: true });
     }
@@ -141,7 +139,7 @@ describe('resolveBundledSkillDir', () => {
         platform: 'darwin',
         checkDesktop: true,
       });
-      expect(dir).toContain('OpenKnowledge.app');
+      expect(dir).toContain('SynapseNote.app');
       expect(dir.endsWith('project')).toBe(true);
     } finally {
       rmSync(home, { recursive: true, force: true });
@@ -157,7 +155,7 @@ describe('resolveBundledSkillDir', () => {
         platform: 'darwin',
         checkDesktop: false,
       });
-      expect(dir).not.toContain('OpenKnowledge.app');
+      expect(dir).not.toContain('SynapseNote.app');
     } finally {
       rmSync(home, { recursive: true, force: true });
     }
@@ -172,7 +170,7 @@ describe('resolveBundledSkillDir', () => {
         platform: 'linux',
         checkDesktop: true,
       });
-      expect(dir).not.toContain('OpenKnowledge.app');
+      expect(dir).not.toContain('SynapseNote.app');
     } finally {
       rmSync(home, { recursive: true, force: true });
     }
@@ -180,7 +178,7 @@ describe('resolveBundledSkillDir', () => {
 
   // Pins the load-bearing invariant: when
   // `checkDesktop` is OMITTED, the resolver must default to `false` and skip
-  // the `/Applications/OpenKnowledge.app` probe — not silently fall back to
+  // the `/Applications/SynapseNote.app` probe — not silently fall back to
   // `true`. An accidental revert of `?? false` to `?? true`
   // would pass every other test on every platform;
   // this one fails.
@@ -193,7 +191,7 @@ describe('resolveBundledSkillDir', () => {
         platform: 'darwin',
         // checkDesktop intentionally omitted — relying on the default.
       });
-      expect(dir).not.toContain('OpenKnowledge.app');
+      expect(dir).not.toContain('SynapseNote.app');
     } finally {
       rmSync(home, { recursive: true, force: true });
     }

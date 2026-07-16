@@ -27,7 +27,7 @@ import {
   readFmMap,
   sharedExtensions,
   stripFrontmatter,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { getSchema } from '@tiptap/core';
 import { updateYFragment, yXmlFragmentToProseMirrorRootNode } from '@tiptap/y-tiptap';
 import * as Y from 'yjs';
@@ -776,7 +776,7 @@ describe('Origin-guard truth table (§7d)', () => {
 describe('shouldRethrowBridgeMergeLoss (D3-LOCKED polarity)', () => {
   // Regression guard for bridge-correctness. The gate
   // used to be `process.env.NODE_ENV !== 'production'`, which inverted
-  // under Bun because `bun run` / `open-knowledge start` leave
+  // under Bun because `bun run` / `synapsenote start` leave
   // NODE_ENV undefined — production users would have seen the loud-throw
   // path at the exact moment a merge dropped content. These tests pin the
   // affirmative contract: only `NODE_ENV=test` or the explicit

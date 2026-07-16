@@ -36,7 +36,7 @@
  * paragraph 2 unchanged) still collapses to one over-wide splice covering
  * all three — block-granular degradation in that narrow case.
  */
-import type { MarkdownManager } from '@inkeep/open-knowledge-core';
+import type { MarkdownManager } from '@nedian0brien/synapsenote-core';
 import type { JSONContent } from '@tiptap/core';
 import type { RootContent } from 'mdast';
 

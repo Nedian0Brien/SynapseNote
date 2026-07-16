@@ -9,7 +9,7 @@
  * translation table to drift).
  */
 
-import { assertNeverProblemType, type ProblemType } from '@inkeep/open-knowledge-core';
+import { assertNeverProblemType, type ProblemType } from '@nedian0brien/synapsenote-core';
 import type { HttpErrorStatus } from './http/error-response.ts';
 
 /**

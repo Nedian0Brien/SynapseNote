@@ -12,7 +12,7 @@
  */
 
 import { resolve } from 'node:path';
-import { LOCAL_DIR, OK_DIR } from '@inkeep/open-knowledge-core';
+import { LOCAL_DIR, OK_DIR } from '@nedian0brien/synapsenote-core';
 import { acquireServerLock, updateServerLockPort } from '../../server-lock.ts';
 import { acquireUiLock, updateUiLockPort } from '../../ui-lock.ts';
 

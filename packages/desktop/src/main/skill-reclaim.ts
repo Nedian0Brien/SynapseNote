@@ -21,16 +21,16 @@
  * bundle. The two take different dir names so they cannot shadow each other.
  *
  * On-disk layout this mirrors (user scope — slim `discovery` bundle):
- *   - `<home>/.agents/skills/open-knowledge-discovery/` — central store;
+ *   - `<home>/.agents/skills/synapsenote-discovery/` — central store;
  *     `centralSkillExists` in `skill-install.ts` keys off this dir.
- *   - `<home>/.<host>/skills/open-knowledge-discovery/` — per-host copy.
+ *   - `<home>/.<host>/skills/synapsenote-discovery/` — per-host copy.
  *     Today's set is {claude, cursor, codex(`.codex`)}.
- * Any pre-split `<home>/.<host>/skills/open-knowledge/` dir is removed first
+ * Any pre-split `<home>/.<host>/skills/synapsenote/` dir is removed first
  * (legacy migration).
  *
  * Project-scope variant: same primitive, scoped to `<projectDir>/.<host>/
- * skills/open-knowledge/` — the rich `project` bundle keeps `name:
- * open-knowledge` so the dir name is unchanged. Per-host gate: always refresh
+ * skills/synapsenote/` — the rich `project` bundle keeps `name:
+ * synapsenote` so the dir name is unchanged. Per-host gate: always refresh
  * a host whose `SKILL.md` already exists; additionally, when `createIfWired`
  * is set (managed-project opens only), CREATE the skill for any host whose
  * project MCP config already carries the OK marker. This heals the cohort of
@@ -56,8 +56,8 @@ import {
   assertProjectPathSafe,
   EDITOR_TARGETS,
   HOSTS_WITH_USER_SKILL_DIR,
-} from '@inkeep/open-knowledge';
-import { resolveBundleEnabled } from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote';
+import { resolveBundleEnabled } from '@nedian0brien/synapsenote-core';
 
 interface SkillReclaimLogger {
   event(payload: { event: string; [key: string]: unknown }): void;
@@ -84,7 +84,7 @@ const DEFAULT_LOGGER: SkillReclaimLogger = {
  * presence in an editor's project config as proof the editor is wired for this
  * OK project. Same string as `CHAIN_VERSION_SENTINEL` in the CLI's `editors.ts`,
  * kept as a local copy because that sentinel is `@internal` and deliberately
- * not re-exported from `@inkeep/open-knowledge`; if it ever bumps (`v2`, …),
+ * not re-exported from `@nedian0brien/synapsenote`; if it ever bumps (`v2`, …),
  * update this copy in the same change.
  */
 const OK_MCP_MARKER = '# ok-mcp-v1';
@@ -99,10 +99,10 @@ const OK_MCP_WIN_MARKER = '# ok-mcp-win-v1';
 
 /**
  * Project-local install dir name. The rich `project` bundle keeps
- * `name: open-knowledge`, so the project-scope dir stays `open-knowledge` —
+ * `name: synapsenote`, so the project-scope dir stays `synapsenote` —
  * only the user-global dir takes the `-discovery` suffix.
  */
-const PROJECT_SKILL_DIR_NAME = 'open-knowledge';
+const PROJECT_SKILL_DIR_NAME = 'synapsenote';
 /**
  * Pre-split skill dir name. The legacy migration removes any user-global
  * install under this name before the `discovery` bundle lands. Sibling
@@ -110,7 +110,7 @@ const PROJECT_SKILL_DIR_NAME = 'open-knowledge';
  * `packages/server/src/skill-install.ts` (kept separate so this desktop
  * module stays free of server imports).
  */
-const LEGACY_SKILL_DIR_NAME = 'open-knowledge';
+const LEGACY_SKILL_DIR_NAME = 'synapsenote';
 
 interface SkillFsOps {
   existsSync(path: string): boolean;
@@ -181,16 +181,16 @@ function copyDirContents(sourceDir: string, destDir: string, fs: SkillFsOps): vo
 }
 
 /**
- * Legacy migration: remove any pre-split user-global `open-knowledge` skill
- * dir (`~/.{claude,cursor,agents}/skills/open-knowledge/`) before the new
- * `open-knowledge-discovery` bundle lands. Direct `rmSync` — PATH-independent,
+ * Legacy migration: remove any pre-split user-global `synapsenote` skill
+ * dir (`~/.{claude,cursor,agents}/skills/synapsenote/`) before the new
+ * `synapsenote-discovery` bundle lands. Direct `rmSync` — PATH-independent,
  * no `npx` shell-out. Idempotent: a no-op when the dir is already absent.
  * Failures are logged + swallowed.
  */
 function removeLegacyUserSkillDirs(home: string, fs: SkillFsOps, logger: SkillReclaimLogger): void {
   // Sweep each install host PLUS `.agents` — the central store's parent, and
   // codex's former home before it moved to `.codex`. A pre-split
-  // `~/.agents/skills/open-knowledge` (the central store's old name) must
+  // `~/.agents/skills/synapsenote` (the central store's old name) must
   // still be cleaned even though `.agents` is no longer a per-host install dir.
   const legacyHostDirs = [...HOSTS_WITH_USER_SKILL_DIR.map((h) => h.hostDir), '.agents'];
   for (const hostDir of legacyHostDirs) {
@@ -455,8 +455,8 @@ export async function reclaimUserSkillsOnLaunch(
     return { status: 'skipped', reason: 'version-read-failed' };
   }
 
-  // Drop any pre-split `open-knowledge` user-global install before the new
-  // `open-knowledge-discovery` bundle lands. Fail-soft.
+  // Drop any pre-split `synapsenote` user-global install before the new
+  // `synapsenote-discovery` bundle lands. Fail-soft.
   removeLegacyUserSkillDirs(home, fs, logger);
 
   // Per-bundle opt-in gate. Explicit decline (`enabled: false`) is removed and
@@ -630,7 +630,7 @@ function editorWiredForOk(configPath: string | undefined, fs: SkillFsOps): boole
 
 /**
  * Project-scope SKILL reclaim. Per-host gate: write
- * `<projectDir>/.<host>/skills/open-knowledge/` when `SKILL.md` already exists
+ * `<projectDir>/.<host>/skills/synapsenote/` when `SKILL.md` already exists
  * (refresh, always) OR — when `createIfWired` is set — when that editor's
  * project MCP config carries `OK_MCP_MARKER` (create; heals the managed
  * MCP-but-no-skill cohort). Without `createIfWired` this stays no-create:

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Fail if any changeset declares a `major` bump. Open Knowledge is pre-1.0:
+# Fail if any changeset declares a `major` bump. SynapseNote is pre-1.0:
 # breaking changes ride as `minor`, and going to 1.0.0 is a deliberate team
 # decision — not something a single changeset should trigger. The release
 # math (scripts/compute-next-beta.mjs) would otherwise happily emit 1.0.0
@@ -32,7 +32,7 @@ done
 
 if (( ${#violations[@]} > 0 )); then
   echo "::error::Forbidden 'major' bump in changeset(s): ${violations[*]}" >&2
-  echo "Open Knowledge is pre-1.0 — declare 'minor' for breaking changes, 'patch' for fixes." >&2
+  echo "SynapseNote is pre-1.0 — declare 'minor' for breaking changes, 'patch' for fixes." >&2
   echo "See .changeset/README.md. 1.0.0 is a deliberate team decision, not a single changeset." >&2
   exit 1
 fi

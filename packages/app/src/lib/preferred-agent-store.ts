@@ -15,7 +15,7 @@
  * probe and only ever returns an installed agent (or `null` when none are).
  */
 
-import type { HandoffTarget, InstallState } from '@inkeep/open-knowledge-core';
+import type { HandoffTarget, InstallState } from '@nedian0brien/synapsenote-core';
 import { VISIBLE_TARGETS } from '@/lib/handoff/targets';
 import {
   loadStickyAgent,

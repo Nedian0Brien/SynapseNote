@@ -13,13 +13,13 @@
  * body above the editor list, driven by `payload.pathInstall`. Hidden when no rc file is
  * touchable; informational when the managed block is already on disk /
  * consent already granted. Unchecking degrades only `ok` in EXTERNAL
- * terminals — OpenKnowledge's built-in terminal injects `~/.ok/bin` itself
+ * terminals — SynapseNote's built-in terminal injects `~/.ok/bin` itself
  * and MCP wiring runs over npx, so the warning copy is scoped to exactly
  * that.
  */
 
-import { EDITOR_SETUP_DOC_SLUG } from '@inkeep/open-knowledge-core';
 import { Trans, useLingui } from '@lingui/react/macro';
+import { EDITOR_SETUP_DOC_SLUG } from '@nedian0brien/synapsenote-core';
 import { ArrowUpRight, Info } from 'lucide-react';
 import { useId, useState } from 'react';
 import { toast as sonnerToast } from 'sonner';
@@ -252,7 +252,7 @@ function McpConsentDialogForm({ payload, store, toast }: McpConsentDialogFormPro
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            <Trans>Connect your AI tools to OpenKnowledge</Trans>
+            <Trans>Connect your AI tools to SynapseNote</Trans>
           </DialogTitle>
           <DialogDescription>
             <Trans>
@@ -351,7 +351,7 @@ function McpConsentDialogForm({ payload, store, toast }: McpConsentDialogFormPro
                     >
                       <Trans comment="Warning shown when the user unchecks the PATH toggle — only external terminals degrade">
                         <code className="inline-code">ok</code> won't run in external terminals
-                        until you add it later from the File menu. OpenKnowledge's built-in terminal
+                        until you add it later from the File menu. SynapseNote's built-in terminal
                         and AI tools keep working.
                       </Trans>
                     </span>
@@ -365,7 +365,7 @@ function McpConsentDialogForm({ payload, store, toast }: McpConsentDialogFormPro
               with a single group there is nothing to distinguish. */}
             {pathInstall.shellDetected && (
               <div className="text-xs font-medium text-muted-foreground">
-                <Trans comment="Section label above the editor checkbox list in the first-launch dialog — each row wires OpenKnowledge's MCP server into that tool">
+                <Trans comment="Section label above the editor checkbox list in the first-launch dialog — each row wires SynapseNote's MCP server into that tool">
                   MCP connections
                 </Trans>
               </div>
@@ -374,7 +374,7 @@ function McpConsentDialogForm({ payload, store, toast }: McpConsentDialogFormPro
               {detectedEditors.map((editor) => {
                 const checked = selection.has(editor.id);
                 const checkboxId = `${idPrefix}-${editor.id}`;
-                const setupUrl = `https://openknowledge.ai/docs/integrations/${EDITOR_SETUP_DOC_SLUG[editor.id]}`;
+                const setupUrl = `https://synapse.lawdigest.kr/docs/integrations/${EDITOR_SETUP_DOC_SLUG[editor.id]}`;
                 return (
                   // Padding lives on the interactive children, not the <li>, so the
                   // <Label> owns the full row width (flex-1) and height (py-2.5) —
@@ -410,8 +410,8 @@ function McpConsentDialogForm({ payload, store, toast }: McpConsentDialogFormPro
                         className="ms-6.5 basis-full px-3 pb-2.5 text-xs text-amber-600 dark:text-amber-400"
                         data-testid={`mcp-consent-status-${editor.id}`}
                       >
-                        <Trans comment="Disclosure that Add will overwrite the tool's existing OpenKnowledge MCP entry">
-                          Will replace existing OpenKnowledge entry
+                        <Trans comment="Disclosure that Add will overwrite the tool's existing SynapseNote MCP entry">
+                          Will replace existing SynapseNote entry
                         </Trans>
                       </span>
                     ) : editor.detected ? null : (
@@ -428,7 +428,7 @@ function McpConsentDialogForm({ payload, store, toast }: McpConsentDialogFormPro
                         className="flex items-center gap-0.5 px-3 py-2.5 text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
                         data-testid={`mcp-consent-status-${editor.id}`}
                       >
-                        <Trans comment="Link on an undetected tool row to its OpenKnowledge setup guide">
+                        <Trans comment="Link on an undetected tool row to its SynapseNote setup guide">
                           How to set up
                         </Trans>
                         <ArrowUpRight className="size-3" aria-hidden />
@@ -482,12 +482,12 @@ function McpConsentDialogForm({ payload, store, toast }: McpConsentDialogFormPro
                             data-testid={`mcp-consent-skill-status-${skill.id}`}
                           >
                             {skill.id === 'discovery' ? (
-                              <Trans comment="Subtext for the open-knowledge-discovery skill row">
-                                Helps your coding agent recognize OpenKnowledge projects and route
+                              <Trans comment="Subtext for the synapsenote-discovery skill row">
+                                Helps your coding agent recognize SynapseNote projects and route
                                 reads and writes through it.
                               </Trans>
                             ) : (
-                              <Trans comment="Subtext for the open-knowledge-write-skill skill row">
+                              <Trans comment="Subtext for the synapsenote-write-skill skill row">
                                 Adds a guided workflow for authoring new Agent Skills.
                               </Trans>
                             )}

@@ -73,7 +73,7 @@ export function buildMcpConfigMigrateEvent(input: McpConfigMigrateInput): McpCon
  *
  * Re-exported via `packages/cli/src/index.ts` for workspace-only
  * consumption — the Desktop `project-mcp-reclaim` sibling event applies
- * identical bounds. External consumers of `@inkeep/open-knowledge` should
+ * identical bounds. External consumers of `@nedian0brien/synapsenote` should
  * reach for `buildMcpConfigMigrateEvent` instead; this helper is the
  * inner mechanism, not a stable surface.
  *

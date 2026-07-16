@@ -24,7 +24,11 @@ import { readdir, readFile as readFileAsync } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { dirname, extname, join, relative, resolve } from 'node:path';
 import { promisify } from 'node:util';
-import { LINKABLE_ASSET_EXTENSIONS, OK_DIR, SKILL_CONTENT_ROOT } from '@inkeep/open-knowledge-core';
+import {
+  LINKABLE_ASSET_EXTENSIONS,
+  OK_DIR,
+  SKILL_CONTENT_ROOT,
+} from '@nedian0brien/synapsenote-core';
 import ignore, { type Ignore } from 'ignore';
 import { isReservedForUserTree } from './cc1-broadcast.ts';
 import { withHiddenWindowsConsole } from './child-process-windows-hide.ts';
@@ -59,7 +63,7 @@ const execFileAsync = promisify(execFileCb);
  *   .ok  — per-project state dir; the committed `.ok/.gitignore` already
  *          self-ignores its contents for git, but adding it here lets the
  *          walker skip the descent entirely
- *   .open-knowledge / .openknowledge — legacy per-project state dirs from
+ *   .synapsenote / .synapsenote — legacy per-project state dirs from
  *          pre-rename OK versions (≤v0.3.0). Kept in the skip set so any
  *          residue left on disk in user content dirs stays out of the
  *          sidebar even though the codebase no longer writes to them.
@@ -94,8 +98,8 @@ const BUILTIN_SKIP_DIRS = new Set([
   // VCS / per-project state
   '.git',
   '.ok',
-  '.open-knowledge',
-  '.openknowledge',
+  '.synapsenote',
+  '.synapsenote',
   // Editor host dirs — hold OK's skill PROJECTIONS (`.{editor}/skills/<name>/`)
   // plus MCP config / launch.json. OK-managed tool artifacts, never KB content,
   // so skill projections stay out of the note/content index.
@@ -127,8 +131,8 @@ const ALWAYS_SKIP_DIRS = new Set<string>([
   '.git',
   'node_modules',
   '.ok',
-  '.open-knowledge',
-  '.openknowledge',
+  '.synapsenote',
+  '.synapsenote',
   // Editor host dirs hold OK's skill projections — OK-managed tool artifacts,
   // never user content, kept out of even the Show All Files walk.
   '.claude',

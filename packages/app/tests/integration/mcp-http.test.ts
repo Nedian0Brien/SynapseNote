@@ -33,7 +33,7 @@ test('POST /mcp serves MCP JSON-RPC over Streamable HTTP', async () => {
       id: number;
       result?: { serverInfo?: { name?: string }; protocolVersion?: string };
     };
-    expect(initBody.result?.serverInfo?.name).toBe('open-knowledge');
+    expect(initBody.result?.serverInfo?.name).toBe('synapsenote');
     expect(initBody.result?.protocolVersion).toBeTruthy();
 
     const initialized = await fetch(`http://127.0.0.1:${server.port}/mcp`, {

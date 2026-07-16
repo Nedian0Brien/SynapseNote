@@ -18,11 +18,11 @@
  * presence; without it, create degrades to the in-dialog error state.
  */
 
+import { Plural, Trans, useLingui } from '@lingui/react/macro';
 import type {
   OkBugReportCrashDetectedEvent,
   ReportBundleSummary,
-} from '@inkeep/open-knowledge-core';
-import { Plural, Trans, useLingui } from '@lingui/react/macro';
+} from '@nedian0brien/synapsenote-core';
 import {
   AlertCircleIcon,
   ArchiveIcon,
@@ -47,7 +47,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { scheduleClipboardWrite } from '@/lib/share/clipboard-adapter';
 
-const GITHUB_NEW_ISSUE_URL = 'https://github.com/inkeep/open-knowledge/issues/new';
+const GITHUB_NEW_ISSUE_URL = 'https://github.com/Nedian0Brien/SynapseNote/issues/new';
 
 export interface ReportBugCrashContext {
   /** Surface the error escaped from, e.g. 'document view' or 'app shell'. */
@@ -230,7 +230,7 @@ function ReportBugDialog({
       setPhase({
         step: 'compose',
         creating: false,
-        createError: t`Bug reporting needs the OpenKnowledge desktop app.`,
+        createError: t`Bug reporting needs the SynapseNote desktop app.`,
       });
       return;
     }
@@ -337,7 +337,7 @@ function ReportBugDialog({
                 <DialogDescription>
                   <Trans>
                     Package logs and system info into a report you can review, then send it
-                    privately to the OpenKnowledge team.
+                    privately to the SynapseNote team.
                   </Trans>
                 </DialogDescription>
               )}
@@ -351,7 +351,7 @@ function ReportBugDialog({
                   />
                   <div>
                     <p className="font-medium">
-                      <Trans>OpenKnowledge quit unexpectedly last time.</Trans>
+                      <Trans>SynapseNote quit unexpectedly last time.</Trans>
                     </p>
                     {/* Rendered as the dialog's Description so the banner's
                         reassurance line is what screen readers announce for
@@ -543,7 +543,7 @@ function ReportBugDialog({
                 <ShieldIcon className="mt-0.5 size-3.5 shrink-0 text-chart-2" aria-hidden="true" />
                 <span>
                   <Trans>
-                    Sent privately to the OpenKnowledge team, along with your note and app version.
+                    Sent privately to the SynapseNote team, along with your note and app version.
                     Never posted publicly.
                   </Trans>
                 </span>
@@ -659,7 +659,7 @@ function ReportBugDialog({
                 <p className="text-sm text-muted-foreground">
                   <Trans>
                     Or write to{' '}
-                    <code className="font-mono text-xs text-foreground">support@inkeep.com</code>
+                    <code className="font-mono text-xs text-foreground">support@lawdigest.kr</code>
                   </Trans>
                 </p>
               </div>
@@ -705,7 +705,7 @@ function ReportBugDialog({
               <p className="text-sm text-muted-foreground">
                 <Trans>
                   Attach the file in an email to{' '}
-                  <code className="font-mono text-xs text-foreground">support@inkeep.com</code>
+                  <code className="font-mono text-xs text-foreground">support@lawdigest.kr</code>
                 </Trans>
               </p>
             </DialogBody>
@@ -765,7 +765,7 @@ function ReportBugDialog({
               <p className="text-sm text-muted-foreground">
                 <Trans>
                   Attach the file in an email to{' '}
-                  <code className="font-mono text-xs text-foreground">support@inkeep.com</code>
+                  <code className="font-mono text-xs text-foreground">support@lawdigest.kr</code>
                 </Trans>
               </p>
             </DialogBody>

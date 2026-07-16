@@ -1,5 +1,5 @@
 import { describe, expect, mock, test } from 'bun:test';
-import type { WorktreeSelectorModel } from '@inkeep/open-knowledge-core';
+import type { WorktreeSelectorModel } from '@nedian0brien/synapsenote-core';
 import { createWorktreeStore } from './worktree-store.ts';
 
 function model(mainRoot: string): WorktreeSelectorModel {

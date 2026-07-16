@@ -3,7 +3,7 @@ import {
   MANAGED_ARTIFACT_SCOPES,
   type RenamedAssetMapping,
   type SkillScope,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { parseProjectSkillContentDocName } from '@/lib/managed-artifact-doc-name';
 import { skillDisplayName } from '@/lib/skill-scope';
 
@@ -137,7 +137,7 @@ export function tabParts(
   // the name) — not the literal "SKILL" filename or the `.ok/skills/` path.
   const projectSkill = parseProjectSkillContentDocName(docName);
   if (projectSkill) {
-    // Prefix-stripped display (`open-knowledge-pack-X` → `X`), matching the sidebar.
+    // Prefix-stripped display (`synapsenote-pack-X` → `X`), matching the sidebar.
     const display = skillDisplayName(projectSkill);
     return { baseName: display, extension: '', label: display, prefix: '' };
   }

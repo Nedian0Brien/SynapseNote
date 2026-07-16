@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createContentFilter } from '@inkeep/open-knowledge-server';
+import { createContentFilter } from '@nedian0brien/synapsenote-server';
 import { SyncEngine } from '../../../server/src/sync-engine.ts';
 
 const tmpRoots: string[] = [];
@@ -22,10 +22,10 @@ function makeRepo(): { projectDir: string; originDir: string } {
   git(projectDir, ['config', 'user.email', 'test@example.com']);
   mkdirSync(join(projectDir, '.ok'), { recursive: true });
   writeFileSync(join(projectDir, '.ok', 'config.yml'), '', 'utf-8');
-  mkdirSync(join(projectDir, '.cursor', 'skills', 'open-knowledge'), { recursive: true });
+  mkdirSync(join(projectDir, '.cursor', 'skills', 'synapsenote'), { recursive: true });
   writeFileSync(
-    join(projectDir, '.cursor', 'skills', 'open-knowledge', 'SKILL.md'),
-    '# OpenKnowledge Skill\n',
+    join(projectDir, '.cursor', 'skills', 'synapsenote', 'SKILL.md'),
+    '# SynapseNote Skill\n',
     'utf-8',
   );
   writeFileSync(join(projectDir, 'regular.md'), '# Regular\n', 'utf-8');
@@ -46,7 +46,7 @@ describe('sync-engine dot-dir filter symmetry', () => {
   test('push cycle does not commit a deletion for tracked markdown under .cursor/skills', async () => {
     const { projectDir } = makeRepo();
     const headBefore = git(projectDir, ['rev-parse', 'HEAD']);
-    const skillPath = '.cursor/skills/open-knowledge/SKILL.md';
+    const skillPath = '.cursor/skills/synapsenote/SKILL.md';
 
     const engine = new SyncEngine({
       projectDir,

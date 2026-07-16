@@ -14,7 +14,7 @@
  */
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import type { ShareTargetStatusResponse } from '@inkeep/open-knowledge-core';
+import type { ShareTargetStatusResponse } from '@nedian0brien/synapsenote-core';
 import { truncateError } from '../error-format.ts';
 import { createGitInstance } from '../git-handle.ts';
 import { listNameStatus, type NameStatusRow } from '../git-paths.ts';

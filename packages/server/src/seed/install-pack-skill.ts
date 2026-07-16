@@ -1,5 +1,5 @@
 /**
- * Install a starter pack's project-local skill (`open-knowledge-pack-<packId>`).
+ * Install a starter pack's project-local skill (`synapsenote-pack-<packId>`).
  *
  * Two parts, so a pack skill behaves like any other authored project skill
  * (the editable-fork model — a pack initializes a skill once, then it's yours):
@@ -8,7 +8,7 @@
  *      and be editable. Without this the pack skill was invisible — projected
  *      into editor host dirs but absent from the library.
  *   2. Project that source into each editor already set up for this project
- *      (its platform `open-knowledge` skill is present), and record the
+ *      (its platform `synapsenote` skill is present), and record the
  *      install marker so the row badges Installed + names its hosts.
  *
  * Single install site for ALL seed entry points — `ok seed` (CLI), the desktop
@@ -23,7 +23,7 @@ import {
   EDITOR_PROJECT_SKILL_ROOT,
   type EditorId,
   PROJECT_SKILL_EDITOR_IDS,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { resolveBundledSkillDir } from '../build-skill-zip.ts';
 import { tracedCpSync, tracedMkdirSync, tracedRmSync } from '../fs-traced.ts';
 import { recordSkillInstall } from '../installed-skills-marker.ts';
@@ -47,7 +47,7 @@ const PROJECT_SKILL_EDITOR_LABELS: Partial<Record<EditorId, string>> = {
 const PLATFORM_SKILL_NAME = BUNDLE_SKILL_NAME.project;
 
 /**
- * Resolve a pack's project-local skill — its `open-knowledge-pack-<id>` name and
+ * Resolve a pack's project-local skill — its `synapsenote-pack-<id>` name and
  * the bundled source dir — or `null` when the pack ships no skill. Single source
  * for the naming convention + the "does this pack ship a skill?" probe, shared by
  * the installer (below) and the scaffold planner (`planSeed`, which reports a
@@ -62,7 +62,7 @@ export function resolvePackSkillSource(packId: string): { name: string; sourceDi
   } catch {
     return null;
   }
-  return { name: `open-knowledge-pack-${packId}`, sourceDir };
+  return { name: `synapsenote-pack-${packId}`, sourceDir };
 }
 
 /**
@@ -113,7 +113,7 @@ export async function installPackSkill(projectDir: string, packId: string): Prom
   // owns the symlink-escape guard + host-dir resolution) — NOT a copy, so the
   // boot-time reconcile doesn't immediately rewrite a copied dir to a symlink
   // (the write-then-undo churn this used to cause). "Set up" = the editor's
-  // platform `open-knowledge` skill is present.
+  // platform `synapsenote` skill is present.
   const setUpHosts = PROJECT_SKILL_EDITOR_IDS.filter((id) => {
     const rel = EDITOR_PROJECT_SKILL_ROOT[id];
     if (rel === null) return false;

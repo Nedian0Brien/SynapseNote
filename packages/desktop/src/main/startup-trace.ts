@@ -19,7 +19,7 @@
  * method here is a cheap no-op over the OTel API's NoopTracer.
  */
 
-import { getTracer, initTelemetry } from '@inkeep/open-knowledge-server';
+import { getTracer, initTelemetry } from '@nedian0brien/synapsenote-server';
 import { type Context, context, propagation, type Span, trace } from '@opentelemetry/api';
 import { getLogger } from './desktop-logger.ts';
 

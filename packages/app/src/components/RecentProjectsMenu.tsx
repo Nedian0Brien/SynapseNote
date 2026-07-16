@@ -30,8 +30,8 @@
  * neutralizes the Electron open-click fall-through on every row.
  */
 
-import type { WorktreeSelectorEntry, WorktreeSelectorModel } from '@inkeep/open-knowledge-core';
 import { Plural, Trans, useLingui } from '@lingui/react/macro';
+import type { WorktreeSelectorEntry, WorktreeSelectorModel } from '@nedian0brien/synapsenote-core';
 import { Check, GitBranch, Plus, Search } from 'lucide-react';
 import type * as React from 'react';
 import { useEffect, useRef, useState } from 'react';

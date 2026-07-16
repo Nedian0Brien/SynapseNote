@@ -18,12 +18,13 @@
  * Account (stored in `~/.ok/secrets.yml`); this section only points there when a
  * key is missing.
  */
+
+import { Trans, useLingui } from '@lingui/react/macro';
 import {
   checkEmbeddingsBaseUrl,
   DEFAULT_EMBEDDINGS_BASE_URL,
   humanFormat,
-} from '@inkeep/open-knowledge-core';
-import { Trans, useLingui } from '@lingui/react/macro';
+} from '@nedian0brien/synapsenote-core';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';

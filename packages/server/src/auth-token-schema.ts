@@ -59,11 +59,11 @@
  *   are accepted (legacy clients; post-recovery reopens).
  * - `clientProtocolVersion` / `clientRuntimeVersion` / `clientKind` — the
  *   connecting client's own version metadata (the WS carrier of the v1 wire
- *   contract; see `@inkeep/open-knowledge-core` `clientVersionTokenFields`).
+ *   contract; see `@nedian0brien/synapsenote-core` `clientVersionTokenFields`).
  *   Present on every browser/desktop-renderer connect. The server does not
  *   read them today; a future spec validates them in `onAuthenticate`.
  */
-import { LINEAGE_EPOCH_KEY } from '@inkeep/open-knowledge-core';
+import { LINEAGE_EPOCH_KEY } from '@nedian0brien/synapsenote-core';
 import { z } from 'zod';
 
 export const HocuspocusAuthTokenSchema = z
@@ -92,7 +92,7 @@ export const HocuspocusAuthTokenSchema = z
 
 export type HocuspocusAuthToken = z.infer<typeof HocuspocusAuthTokenSchema>;
 
-// Re-exported from `@inkeep/open-knowledge-core` so `./auth-token-schema.ts`
+// Re-exported from `@nedian0brien/synapsenote-core` so `./auth-token-schema.ts`
 // consumers (persistence.ts, doc-lineage-guard.ts) and the server barrel keep
 // their import paths. Canonical definition lives in core's browser+Node
 // constants module — the client provider-pool imports it from there directly,

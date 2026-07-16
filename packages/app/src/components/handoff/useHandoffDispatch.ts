@@ -38,7 +38,7 @@ import {
   TERMINAL_CLIS,
   type TerminalCli,
   withSkillPointer,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { toast as sonnerToast } from 'sonner';
 // Import from `config-context` (the lightweight context module) rather than
 // `config-provider` so unit tests can `await import('./useHandoffDispatch')`
@@ -208,7 +208,7 @@ export interface HandoffDispatchInput {
   /** Skill-scope payload — the skill's identity + which store it lives in.
    *  Set by `buildSkillHandoffInput`; absent for every other scope. Routes
    *  `selectScopedPrompt` to `composeSkillPrompt` (author-with-AI: hand the
-   *  draft to an agent to write via the `open-knowledge-write-skill` skill). */
+   *  draft to an agent to write via the `synapsenote-write-skill` skill). */
   readonly skill?: { readonly name: string; readonly scope: SkillScope };
   /** Ask-scope payload — the active doc's relative path plus the user's typed
    *  instruction, with NO selection. Set for the bottom "Ask AI" composer
@@ -440,7 +440,7 @@ export function buildSelectionHandoffInput(args: {
 /**
  * Skill-scoped variant — for the Skills manager's "Open with AI" affordance
  * (author-with-AI). Hands the named skill to an installed agent so it authors
- * it via the `open-knowledge-write-skill` meta-skill. The skill is addressed by
+ * it via the `synapsenote-write-skill` meta-skill. The skill is addressed by
  * name + scope (the agent reaches it through OK MCP), so there is no doc/folder
  * path: `docContext` is null and `docPath` empty, exactly like project scope.
  * `projectDir` is the launched agent's cwd (always `workspace.contentDir`, even
@@ -810,7 +810,7 @@ export function selectScopedPrompt(
   if (input.selection) {
     return composeSelectionPrompt({ ...input.selection, target });
   }
-  // Skill scope (author-with-AI) carries its own `open-knowledge-write-skill`
+  // Skill scope (author-with-AI) carries its own `synapsenote-write-skill`
   // directive, so it is excluded from the standing project skill pointer just
   // like selection scope.
   if (input.skill) {
@@ -926,18 +926,18 @@ export async function runHandoffDispatch(
       installOutcome = await deps.ensureCoworkSkillInstalled();
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      deps.toast.error(`Couldn't install OpenKnowledge skill — ${message}`);
+      deps.toast.error(`Couldn't install SynapseNote skill — ${message}`);
       return { ok: false, reason: 'dispatch-error', detail: `install-error: ${message}` };
     }
     if (installOutcome.kind === 'installed-now') {
       deps.toast.success(
-        'OpenKnowledge skill saved. Upload it in Claude Desktop, then click Cowork again.',
+        'SynapseNote skill saved. Upload it in Claude Desktop, then click Cowork again.',
       );
       return { ok: true };
     }
     if (installOutcome.kind === 'install-failed') {
       const detail = installOutcome.message ?? installOutcome.reason;
-      deps.toast.error(`Couldn't install OpenKnowledge skill — ${detail}`);
+      deps.toast.error(`Couldn't install SynapseNote skill — ${detail}`);
       return { ok: false, reason: 'dispatch-error', detail: `install-failed: ${detail}` };
     }
   }

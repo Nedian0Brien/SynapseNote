@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { OK_DIR } from '@inkeep/open-knowledge-core';
+import { OK_DIR } from '@nedian0brien/synapsenote-core';
 import {
   addOkPathsToGitExclude,
   formatTrackedRemediation,
@@ -56,17 +56,17 @@ describe('getOkArtifactPaths', () => {
     expect(paths).toContain('.cursor/mcp.json');
     expect(paths).toContain('.codex/config.toml');
     expect(paths).toContain('opencode.json');
-    expect(paths).toContain('.claude/skills/open-knowledge/');
-    expect(paths).toContain('.cursor/skills/open-knowledge/');
-    expect(paths).toContain('.codex/skills/open-knowledge/');
+    expect(paths).toContain('.claude/skills/synapsenote/');
+    expect(paths).toContain('.cursor/skills/synapsenote/');
+    expect(paths).toContain('.codex/skills/synapsenote/');
     // OpenCode installs into its own `.opencode/skills/` (its own primary dir,
     // not a shared `.agents/skills/` write), so it adds a distinct skill path on
     // top of its `opencode.json` config.
-    expect(paths).toContain('.opencode/skills/open-knowledge/');
+    expect(paths).toContain('.opencode/skills/synapsenote/');
     // Pi has no MCP config — its project artifact is the managed bridge
     // extension, plus its own `.pi/skills/` primary dir.
-    expect(paths).toContain('.pi/extensions/open-knowledge.ts');
-    expect(paths).toContain('.pi/skills/open-knowledge/');
+    expect(paths).toContain('.pi/extensions/synapsenote.ts');
+    expect(paths).toContain('.pi/skills/synapsenote/');
     expect(paths).toContain('.claude/launch.json');
     expect(paths).toHaveLength(13);
   });
@@ -97,7 +97,7 @@ describe('getOkArtifactPaths', () => {
   });
 
   it('excludes each installed skill projection per the OF3 marker (PRD-6934 C9 fix)', () => {
-    // The pre-fix set covered only the single hardcoded `open-knowledge`
+    // The pre-fix set covered only the single hardcoded `synapsenote`
     // bundle, so authored + pack skills leaked in local-only mode. With an
     // installed-skills marker present, every projection `.{host}/skills/<name>/`
     // is excluded per the hosts it was installed to.
@@ -130,7 +130,7 @@ describe('getOkArtifactPaths', () => {
     expect(paths).toContain('.cursor/skills/trip-log/');
     expect(paths).toContain('.codex/skills/fishing-pack/'); // codex → .codex
     // The shipped bundle excludes remain alongside the authored ones.
-    expect(paths).toContain('.claude/skills/open-knowledge/');
+    expect(paths).toContain('.claude/skills/synapsenote/');
   });
 
   it('falls back to the bundle-only set when the marker is absent or corrupt', () => {
@@ -260,13 +260,13 @@ describe('addOkPathsToGitExclude', () => {
     const result = addOkPathsToGitExclude(dir, [
       '.ok/',
       '.mcp.json',
-      '.claude/skills/open-knowledge/',
+      '.claude/skills/synapsenote/',
     ]);
     expect(result.kind).toBe('updated');
     if (result.kind !== 'updated') throw new Error('unreachable');
     expect(result.alreadyPresent).toEqual(['.ok/']);
-    expect(result.appended).toEqual(['.mcp.json', '.claude/skills/open-knowledge/']);
-    expect(readExclude(dir)).toBe('.ok/\n.mcp.json\n.claude/skills/open-knowledge/\n');
+    expect(result.appended).toEqual(['.mcp.json', '.claude/skills/synapsenote/']);
+    expect(readExclude(dir)).toBe('.ok/\n.mcp.json\n.claude/skills/synapsenote/\n');
   });
 
   it('refuses when a candidate path is tracked upstream and does not write', () => {
@@ -282,7 +282,7 @@ describe('addOkPathsToGitExclude', () => {
     expect(result.kind).toBe('refused-tracked');
     if (result.kind !== 'refused-tracked') throw new Error('unreachable');
     expect(result.tracked).toEqual(['.mcp.json']);
-    expect(result.remediation).toContain('Cannot switch OpenKnowledge to local-only');
+    expect(result.remediation).toContain('Cannot switch SynapseNote to local-only');
     expect(result.remediation).toContain('git rm --cached .mcp.json');
     // Untouched: the exclude file was not written.
     expect(readExclude(dir)).toBe('');
@@ -514,9 +514,9 @@ describe('probeTrackedOkPaths', () => {
 
   it('returns the tracked subset, skipping paths absent on disk', () => {
     writeFileSync(join(dir, '.mcp.json'), '{}', 'utf-8');
-    mkdirSync(join(dir, '.claude', 'skills', 'open-knowledge'), { recursive: true });
-    writeFileSync(join(dir, '.claude', 'skills', 'open-knowledge', 'SKILL.md'), 'x', 'utf-8');
-    execFileSync('git', ['add', '.mcp.json', '.claude/skills/open-knowledge/SKILL.md'], {
+    mkdirSync(join(dir, '.claude', 'skills', 'synapsenote'), { recursive: true });
+    writeFileSync(join(dir, '.claude', 'skills', 'synapsenote', 'SKILL.md'), 'x', 'utf-8');
+    execFileSync('git', ['add', '.mcp.json', '.claude/skills/synapsenote/SKILL.md'], {
       cwd: dir,
     });
     execFileSync('git', ['commit', '-m', 'add'], {
@@ -527,9 +527,9 @@ describe('probeTrackedOkPaths', () => {
     const result = probeTrackedOkPaths(dir, [
       '.mcp.json',
       '.cursor/mcp.json', // absent on disk
-      '.claude/skills/open-knowledge/', // dir form
+      '.claude/skills/synapsenote/', // dir form
     ]);
-    expect(result.tracked.sort()).toEqual(['.claude/skills/open-knowledge/', '.mcp.json']);
+    expect(result.tracked.sort()).toEqual(['.claude/skills/synapsenote/', '.mcp.json']);
   });
 
   it('returns an empty list when no candidate is tracked', () => {
@@ -545,13 +545,13 @@ describe('probeTrackedOkPaths', () => {
 
 describe('formatTrackedRemediation', () => {
   it('lists tracked paths and emits a `git rm --cached` for each — `-r` for dirs', () => {
-    const out = formatTrackedRemediation(['.mcp.json', '.claude/skills/open-knowledge/']);
+    const out = formatTrackedRemediation(['.mcp.json', '.claude/skills/synapsenote/']);
     expect(out).toContain('  .mcp.json');
-    expect(out).toContain('  .claude/skills/open-knowledge/');
+    expect(out).toContain('  .claude/skills/synapsenote/');
     expect(out).toContain('git rm --cached .mcp.json');
     // Dir form: `-r` AND trailing-slash stripped (git rm cares about the
     // path token, not the gitignore-style trailing slash).
-    expect(out).toContain('git rm --cached -r .claude/skills/open-knowledge');
+    expect(out).toContain('git rm --cached -r .claude/skills/synapsenote');
   });
 
   it('warns about the teammate-side-effect of `git rm --cached`', () => {

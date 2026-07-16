@@ -22,7 +22,7 @@
  * api-extension closure.
  */
 import { beforeEach, describe, expect, test } from 'bun:test';
-import { sharedExtensions, stripFrontmatter } from '@inkeep/open-knowledge-core';
+import { sharedExtensions, stripFrontmatter } from '@nedian0brien/synapsenote-core';
 import { getSchema } from '@tiptap/core';
 import { updateYFragment, yXmlFragmentToProseMirrorRootNode } from '@tiptap/y-tiptap';
 import * as Y from 'yjs';

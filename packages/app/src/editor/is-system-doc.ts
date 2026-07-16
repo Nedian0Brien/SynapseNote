@@ -6,7 +6,7 @@
  *
  */
 
-import { SYSTEM_DOC_NAME } from '@inkeep/open-knowledge-core';
+import { SYSTEM_DOC_NAME } from '@nedian0brien/synapsenote-core';
 
 export function isSystemDoc(docName: string): boolean {
   return docName === SYSTEM_DOC_NAME;

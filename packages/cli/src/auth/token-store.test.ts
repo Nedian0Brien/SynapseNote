@@ -295,7 +295,7 @@ describe('createTokenStore diagnostics', () => {
     // appear in the emitted diagnostic — a JSON.parse SyntaxError message would
     // echo ~20 chars of the raw value otherwise.
     const TOKEN_BYTES = 'gho_corrupt_secret_value_xyz';
-    keyringMockState.getPasswordReturns.set(`open-knowledge:github.com`, TOKEN_BYTES);
+    keyringMockState.getPasswordReturns.set(`synapsenote:github.com`, TOKEN_BYTES);
     const { createTokenStore } = await import('./token-store.ts');
     const reads: Array<{ kind: string; host: string; error?: string }> = [];
     const store = await createTokenStore(join(tmpDir, 'auth.yml'), {
@@ -373,7 +373,7 @@ describe('KeyringBackend upsert semantics', () => {
 
     expect(keyringMockState.setPasswordCalls).toHaveLength(1);
     const [call] = keyringMockState.setPasswordCalls;
-    expect(call?.service).toBe('open-knowledge');
+    expect(call?.service).toBe('synapsenote');
     expect(call?.account).toBe('github.com');
     const parsed = JSON.parse(call?.value ?? '{}') as Record<string, unknown>;
     expect(parsed).toMatchObject({ login: 'alice', token: 'gho_token_1' });
@@ -412,7 +412,7 @@ describe('KeyringBackend upsert semantics', () => {
     await store.clear('github.com');
     expect(keyringMockState.deletePasswordCalls).toHaveLength(1);
     expect(keyringMockState.deletePasswordCalls[0]).toMatchObject({
-      service: 'open-knowledge',
+      service: 'synapsenote',
       account: 'github.com',
     });
   });
@@ -525,7 +525,7 @@ describe('clearTokenFromAllBackends', () => {
 
   test('clears keychain entry and reports touched:["keychain"]', async () => {
     keyringMockState.getPasswordReturns.set(
-      'open-knowledge:github.com',
+      'synapsenote:github.com',
       JSON.stringify({ login: 'alice', token: 'gho_keychain_only' }),
     );
     const { clearTokenFromAllBackends } = await import('./token-store.ts');
@@ -542,7 +542,7 @@ describe('clearTokenFromAllBackends', () => {
     const { FileBackend, clearTokenFromAllBackends } = await import('./token-store.ts');
     await new FileBackend(authFile).set('github.com', 'alice', 'gho_file');
     keyringMockState.getPasswordReturns.set(
-      'open-knowledge:github.com',
+      'synapsenote:github.com',
       JSON.stringify({ login: 'alice', token: 'gho_keychain' }),
     );
 
@@ -651,9 +651,9 @@ describe('createTokenStore cross-backend read fallback', () => {
     const store = await createTokenStore(authFile);
     await store.get('github.com');
 
-    // Migrated into the keychain (service 'open-knowledge', account host) ...
+    // Migrated into the keychain (service 'synapsenote', account host) ...
     const migrated = keyringMockState.setPasswordCalls.find(
-      (c) => c.service === 'open-knowledge' && c.account === 'github.com',
+      (c) => c.service === 'synapsenote' && c.account === 'github.com',
     );
     expect(migrated).toBeDefined();
     const payload = JSON.parse(migrated?.value ?? '{}') as { token?: string; email?: string };
@@ -667,7 +667,7 @@ describe('createTokenStore cross-backend read fallback', () => {
   test('keychain hit short-circuits — no file read, no migration', async () => {
     const { createTokenStore } = await import('./token-store.ts');
     keyringMockState.getPasswordReturns.set(
-      'open-knowledge:github.com',
+      'synapsenote:github.com',
       JSON.stringify({ login: 'octocat', token: 'gho_keychain', gitProtocol: 'https' }),
     );
 

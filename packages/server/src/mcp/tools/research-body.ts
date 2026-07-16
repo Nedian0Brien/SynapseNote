@@ -8,10 +8,10 @@
  * articles via the `consolidate` tool only when decisions solidify.
  */
 
-import { OK_DIR } from '@inkeep/open-knowledge-core';
+import { OK_DIR } from '@nedian0brien/synapsenote-core';
 
 export function buildResearchBody(topic: string, contentDir: string): string {
-  return `Conduct **evidence-driven research** on this topic and produce a provisional research article in the OpenKnowledge content directory. This workflow mirrors the discipline of the \`eng:research\` skill, scoped to OpenKnowledge's wiki-provisional layer.
+  return `Conduct **evidence-driven research** on this topic and produce a provisional research article in the SynapseNote content directory. This workflow mirrors the discipline of the \`eng:research\` skill, scoped to SynapseNote's wiki-provisional layer.
 
 Topic: ${topic}
 Content directory: \`${contentDir}\` (from \`${OK_DIR}/config.yml\`)
@@ -203,7 +203,7 @@ For each relevant URL, paper, or document in the confirmed rubric, invoke the \`
 Read each ingested source carefully. Also load:
 
 - **Existing canonical articles** on the topic — \`exec("cat <path>")\` (returns frontmatter + backlinks + shadow-repo activity).
-- **Prior research** on adjacent topics — same: \`exec("cat <path>")\` for OpenKnowledge markdown.
+- **Prior research** on adjacent topics — same: \`exec("cat <path>")\` for SynapseNote markdown.
 - **Relevant source code** — ONLY if the user asked for 1P analysis. Use native \`Read\` for \`.ts\` / \`.js\` / etc.; \`exec\` for in-scope \`.md\` / \`.mdx\`.
 - **Project context** — \`specs/\`, \`reports/\`, or wherever the project keeps design material.
 

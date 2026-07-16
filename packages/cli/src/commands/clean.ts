@@ -1,5 +1,5 @@
 /**
- * `open-knowledge clean` — prune stale / corrupt lock files; never touch live
+ * `synapsenote clean` — prune stale / corrupt lock files; never touch live
  * or foreign-host locks.
  *
  * Split from `ok stop` so lock-hygiene is a distinct step. "Stale" here means
@@ -10,7 +10,7 @@
  */
 
 import { unlinkSync } from 'node:fs';
-import { type Config, resolveLockDir } from '@inkeep/open-knowledge-server';
+import { type Config, resolveLockDir } from '@nedian0brien/synapsenote-server';
 import { Command } from 'commander';
 import { inspectLock, type LockState } from './lock-state.ts';
 
@@ -91,7 +91,7 @@ export function runClean(deps: RunCleanDeps): CleanOutcome {
 
 export function cleanCommand(getConfig: () => Config): Command {
   return new Command('clean')
-    .description('Prune stale / corrupt open-knowledge lock files (never touches live locks)')
+    .description('Prune stale / corrupt synapsenote lock files (never touches live locks)')
     .action(() => {
       // Lock anchor is the project root (cwd), not contentDir — see
       // server-factory.ts. Loading config still surfaces project-config errors.

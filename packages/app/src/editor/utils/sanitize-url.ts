@@ -57,7 +57,7 @@ import {
   incrementJsxPropDropped,
   isRelativeUrl,
   SAFE_URL_SCHEMES,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 
 // Derived from the canonical `SAFE_URL_SCHEMES` array so the JSX-prop
 // sanitizer, the markdown pipeline (`isSafeUrl`), and the clipboard
@@ -215,7 +215,7 @@ export function sanitizeUrlValue(raw: unknown): unknown {
   if (value.startsWith('//')) return raw;
 
   // Relative paths (no scheme, no leading `//`) — defer to the canonical
-  // `isRelativeUrl` helper from @inkeep/open-knowledge-core. The clipboard
+  // `isRelativeUrl` helper from @nedian0brien/synapsenote-core. The clipboard
   // walker shares the same helper, so a future refinement of relative-URL
   // semantics propagates to both sites by construction.
   if (isRelativeUrl(value)) return raw;

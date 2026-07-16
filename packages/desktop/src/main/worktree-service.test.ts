@@ -12,8 +12,8 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
-import { addOkPathsToGitExclude, getOkArtifactPaths } from '@inkeep/open-knowledge';
-import { initContent } from '@inkeep/open-knowledge-server';
+import { addOkPathsToGitExclude, getOkArtifactPaths } from '@nedian0brien/synapsenote';
+import { initContent } from '@nedian0brien/synapsenote-server';
 import { discoverProject } from './folder-admission.ts';
 import { clearRecentGitCache } from './worktree-recents.ts';
 import {
@@ -776,7 +776,7 @@ async function makeLocalOnlyRepo(): Promise<Handle> {
     join(mainRepo, '.mcp.json'),
     JSON.stringify({
       mcpServers: {
-        'open-knowledge': { command: '/bin/sh', args: ['-l', '-c', '# ok-mcp-v1\nexec ok mcp'] },
+        synapsenote: { command: '/bin/sh', args: ['-l', '-c', '# ok-mcp-v1\nexec ok mcp'] },
       },
     }),
   );

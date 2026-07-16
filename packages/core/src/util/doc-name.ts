@@ -63,7 +63,7 @@ export function isValidDocName(name: string): boolean {
  * Well-known agent/editor config files that are treated as hidden even though
  * their basename is NOT dot-prefixed. The dotfile agent configs (`.mcp.json`,
  * `.cursor/mcp.json`, `.codex/config.toml`, `.claude/launch.json`) are already
- * caught by the dot-segment branch of {@link isHiddenDocName}. OpenKnowledge
+ * caught by the dot-segment branch of {@link isHiddenDocName}. SynapseNote
  * also seeds `opencode.json` at the project root so OpenCode's MCP wiring
  * works, and OpenCode's project config filename is fixed (it cannot be a
  * dotfile), so the dot-segment convention misses it. This allowlist closes the

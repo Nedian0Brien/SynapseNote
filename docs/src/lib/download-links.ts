@@ -4,7 +4,7 @@ import { z } from 'zod';
  * Perennial download-URL resolution for both release channels.
  *
  * GitHub's `releases/latest/download/...` alias deliberately skips
- * prereleases, and every OpenKnowledge beta is published as a prerelease,
+ * prereleases, and every SynapseNote beta is published as a prerelease,
  * so the beta channel has no GitHub-native perennial URL. A rolling `beta`
  * tag on the repo is not an option either: the desktop auto-updater walks
  * `releases.atom`, and a permanent non-semver tag in that feed breaks
@@ -12,7 +12,8 @@ import { z } from 'zod';
  * docs-site redirect routes under /download/* are the perennial URLs
  * instead; this module owns their resolution and response shapes.
  */
-const RELEASES_API_URL = 'https://api.github.com/repos/inkeep/open-knowledge/releases?per_page=15';
+const RELEASES_API_URL =
+  'https://api.github.com/repos/Nedian0Brien/SynapseNote/releases?per_page=15';
 
 /**
  * Both channels upload the DMG under this version-less name — pinned by
@@ -20,16 +21,16 @@ const RELEASES_API_URL = 'https://api.github.com/repos/inkeep/open-knowledge/rel
  * cross-references this file. Changing either side breaks the other.
  *
  * MUST match the asset name on whatever `releases/latest` (the stable alias)
- * and the beta resolver point at. The OpenKnowledge rename flipped `productName`,
- * so the build now emits `OpenKnowledge-arm64.dmg` — this was flipped to match.
+ * and the beta resolver point at. The SynapseNote rename flipped `productName`,
+ * so the build now emits `SynapseNote-arm64.dmg` — this was flipped to match.
  * Only flip this in lockstep with the release that first publishes the new name
  * as the `latest` *stable*, or `/download/stable` + the marketing/quickstart
  * links 404. Every in-repo download link derives from this constant; the lone
  * exception is the public overlay README
- * (`copybara/public-open-knowledge-overlay/README.md`), a static markdown file
+ * (`copybara/public-synapsenote-overlay/README.md`), a static markdown file
  * that can't import it — flipped in the same pass.
  */
-export const DMG_ASSET_NAME = 'OpenKnowledge-arm64.dmg';
+export const DMG_ASSET_NAME = 'SynapseNote-arm64.dmg';
 
 /**
  * Stable channel needs no API call: GitHub resolves `releases/latest` to
@@ -40,20 +41,20 @@ export const DMG_ASSET_NAME = 'OpenKnowledge-arm64.dmg';
  * the asset name lives only in {@link DMG_ASSET_NAME} (which tracks the
  * `artifactName` invariant in packages/desktop/electron-builder.yml).
  */
-export const STABLE_DMG_URL = `https://github.com/inkeep/open-knowledge/releases/latest/download/${DMG_ASSET_NAME}`;
+export const STABLE_DMG_URL = `https://github.com/Nedian0Brien/SynapseNote/releases/latest/download/${DMG_ASSET_NAME}`;
 
 /**
  * Degraded-path target: a human clicking a shared link during a GitHub API
  * failure still lands somewhere actionable.
  */
-export const RELEASES_PAGE_URL = 'https://github.com/inkeep/open-knowledge/releases';
+export const RELEASES_PAGE_URL = 'https://github.com/Nedian0Brien/SynapseNote/releases';
 
 /**
  * Redirect targets must point at our own release assets. The API response
  * is the only untrusted-ish input in this module; any asset URL outside
  * this prefix is treated as no-match rather than followed.
  */
-const ASSET_URL_PREFIX = 'https://github.com/inkeep/open-knowledge/releases/download/';
+const ASSET_URL_PREFIX = 'https://github.com/Nedian0Brien/SynapseNote/releases/download/';
 
 /**
  * The release pipeline only ever cuts `-beta.N` prereleases
@@ -185,7 +186,7 @@ export function createBetaResolver(
           accept: 'application/vnd.github+json',
           // GitHub's API rejects requests without a User-Agent, and undici
           // (Next's fetch) does not set one by default.
-          'user-agent': 'openknowledge.ai download redirect',
+          'user-agent': 'synapse.lawdigest.kr download redirect',
         },
       });
       if (!res.ok) {

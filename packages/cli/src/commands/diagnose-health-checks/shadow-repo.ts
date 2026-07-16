@@ -8,8 +8,8 @@
 
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { resolveShadowDir } from '@inkeep/open-knowledge-core/shadow-repo-layout';
-import { GitDirAccessError, MalformedGitPointerError } from '@inkeep/open-knowledge-server';
+import { resolveShadowDir } from '@nedian0brien/synapsenote-core/shadow-repo-layout';
+import { GitDirAccessError, MalformedGitPointerError } from '@nedian0brien/synapsenote-server';
 import type { CheckContext, CheckDefinition, CheckResult } from './types.ts';
 
 interface ShadowRepoCheckDeps {

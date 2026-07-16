@@ -35,7 +35,7 @@ import {
   getLocalDir,
   getLogger,
   restoreLifecycleFromConflictsJson,
-} from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-server';
 import { createTestClient, createTestServer, pollUntil, type TestServer } from './test-harness';
 
 const execFileAsync = promisify(execFile);

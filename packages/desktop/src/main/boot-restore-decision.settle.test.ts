@@ -12,11 +12,11 @@ import { registerProtocolHandler } from './url-scheme.ts';
 // A valid share for a repo NOT held locally (the reported clone flow). It parses
 // to a launch-claiming `kind:'ok'` share, so delivering it flips
 // `urlLaunchOwnsWindow` to true.
-const SHARE_URL = 'openknowledge://share?url=https://github.com/inkeep/not-cloned-repo/tree/main';
-// A single-file deep-link (`ok <file>` → `openknowledge://open?file=<abs>`). The
+const SHARE_URL = 'synapsenote://share?url=https://github.com/inkeep/not-cloned-repo/tree/main';
+// A single-file deep-link (`ok <file>` → `synapsenote://open?file=<abs>`). The
 // single-file path rides the SAME `urlLaunchOwnsWindow` read at the same seam,
 // so one settle barrier covers both share and single-file cold-start URLs.
-const SINGLE_FILE_URL = 'openknowledge://open?file=/Users/me/notes/scratch.md';
+const SINGLE_FILE_URL = 'synapsenote://open?file=/Users/me/notes/scratch.md';
 
 // Spin a REAL `registerProtocolHandler` and capture its `open-url` listener so a
 // test controls the exact moment the macOS Apple Event is "delivered" relative

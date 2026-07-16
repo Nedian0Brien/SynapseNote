@@ -42,7 +42,7 @@ export function resolveAppVersion(): string {
     // Fall through to sentinel.
   }
   // Keep in sync with `CLIENT_RUNTIME_VERSION_FALLBACK` in
-  // `@inkeep/open-knowledge-core` and the server's `readRuntimeVersion()`
+  // `@nedian0brien/synapsenote-core` and the server's `readRuntimeVersion()`
   // sentinel. Not imported from core: this runs at Vite config-load time and
   // must not pull the core barrel (and its unrelated modules) into the build.
   return '0.0.0-unknown';

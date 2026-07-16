@@ -406,7 +406,7 @@ describe('discoverProject — linked-worktree carveout scoping', () => {
     // short-circuit to in-place Setup — scaffolding `.ok/` inside the subdir
     // instead of promoting to the git root.
     const worktree = resolve(fakeHome, 'wt');
-    const sub = resolve(worktree, 'public/open-knowledge');
+    const sub = resolve(worktree, 'public/synapsenote');
     mkdirSync(sub, { recursive: true });
     writeFileSync(resolve(worktree, '.git'), 'gitdir: /main/.git/worktrees/wt\n');
 

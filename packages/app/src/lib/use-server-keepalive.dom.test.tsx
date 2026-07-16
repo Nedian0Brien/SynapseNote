@@ -7,7 +7,7 @@
  * never its source text.
  */
 import { afterEach, describe, expect, test } from 'bun:test';
-import type { KeepaliveHandle, KeepaliveOptions } from '@inkeep/open-knowledge-core/keepalive';
+import type { KeepaliveHandle, KeepaliveOptions } from '@nedian0brien/synapsenote-core/keepalive';
 import { act, cleanup, render, waitFor } from '@testing-library/react';
 import { type UseServerKeepaliveOptions, useServerKeepalive } from './use-server-keepalive';
 

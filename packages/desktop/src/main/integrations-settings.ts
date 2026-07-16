@@ -1,6 +1,6 @@
 /**
  * Settings → AI tools — persistent IPC surface for per-component
- * install/uninstall of OpenKnowledge's GLOBAL footprint: per-editor user-scope
+ * install/uninstall of SynapseNote's GLOBAL footprint: per-editor user-scope
  * MCP entries, the shell-PATH shim, and the user-global skill bundles.
  *
  * Sibling of the one-shot first-launch consent flow (`mcp-wiring.ts`): the
@@ -46,7 +46,7 @@ interface IntegrationsRemoveOutcome {
   kind: 'removed' | 'not-present' | 'left-foreign' | 'declined';
 }
 
-/** CLI-side surface (backed by `@inkeep/open-knowledge`). */
+/** CLI-side surface (backed by `@nedian0brien/synapsenote`). */
 export interface IntegrationsCliSurface {
   allEditorIds: readonly McpWiringEditorId[];
   editorLabel(editorId: McpWiringEditorId): string;
@@ -263,7 +263,7 @@ export function registerIntegrationsSettings(
         default:
           return {
             ok: false,
-            error: `Couldn't add OpenKnowledge to ${label}${result.error ? ` (${result.error})` : ''}.`,
+            error: `Couldn't add SynapseNote to ${label}${result.error ? ` (${result.error})` : ''}.`,
           };
       }
     }
@@ -282,7 +282,7 @@ export function registerIntegrationsSettings(
       case 'left-foreign':
         return {
           ok: false,
-          error: `The open-knowledge entry in ${label} isn't one OpenKnowledge wrote — it was left unchanged. Remove it manually if you no longer want it.`,
+          error: `The synapsenote entry in ${label} isn't one SynapseNote wrote — it was left unchanged. Remove it manually if you no longer want it.`,
         };
       case 'declined':
         return {

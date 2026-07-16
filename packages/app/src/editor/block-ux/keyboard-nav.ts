@@ -30,7 +30,7 @@
  * boundary; L2 fires on NodeSelection). Same for ArrowLeft/Right (L0 only).
  */
 
-import { incrementJsxArrowNodeSelectFailed } from '@inkeep/open-knowledge-core';
+import { incrementJsxArrowNodeSelectFailed } from '@nedian0brien/synapsenote-core';
 import type { Editor } from '@tiptap/core';
 import { Extension } from '@tiptap/core';
 import { NodeSelection, Selection, TextSelection } from '@tiptap/pm/state';

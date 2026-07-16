@@ -9,7 +9,7 @@
  *   - `worldbuilding`      — Fiction encyclopedia (characters / settings / themes / factions / lore)
  *   - `writing-pipeline`   — ideas → drafts → published, lean three-stage
  *   - `entity-vault`       — Personal CRM (people / companies / meetings / concepts / originals / media)
- *   - `okf`                — Open Knowledge Format conformant-by-construction mini-KB
+ *   - `okf`                — SynapseNote Format conformant-by-construction mini-KB
  *
  * `codebase-wiki` is the only pack whose folder paths nest (`wiki/architecture`,
  * …) and whose rootFiles keys carry a folder prefix (`wiki/OVERVIEW.md`); the
@@ -1452,7 +1452,7 @@ description: "When the agent does scheduled work: daily briefings, end-of-day do
 
 `;
 
-// ─── Pack 7: OKF starter (Open Knowledge Format conformant-by-construction) ─
+// ─── Pack 7: OKF starter (SynapseNote Format conformant-by-construction) ─
 //
 // A small mini-KB whose seeded content is conformant with Google's Open
 // Knowledge Format (OKF) v0.1 from commit one — WITHOUT enforcing anything.
@@ -1581,7 +1581,7 @@ tags: [welcome]
 
 # Welcome
 
-This knowledge base was scaffolded with the **OKF starter pack**, so it is conformant with the Open Knowledge Format (OKF) from the first commit.
+This knowledge base was scaffolded with the **OKF starter pack**, so it is conformant with the SynapseNote Format (OKF) from the first commit.
 
 ## How it is organized
 
@@ -1674,8 +1674,8 @@ export const STARTER_PACKS: Readonly<Record<PackId, StarterPack>> = {
   },
   okf: {
     id: 'okf',
-    name: 'Open Knowledge Format',
-    description: "Wiki using Google's Open Knowledge Format.",
+    name: 'SynapseNote Format',
+    description: "Wiki using Google's SynapseNote Format.",
     // Root scaffold: OKF reserved files (index.md / log.md) belong at the
     // bundle root, so the project root IS the OKF bundle (no subfolder).
     defaultSubfolder: undefined,

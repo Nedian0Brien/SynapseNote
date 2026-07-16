@@ -14,9 +14,9 @@ describe('detectInstallMethods', () => {
   test('detects an app bundle, npm-global, and npx', () => {
     const home = mkdtempSync(join(tmpdir(), 'ok-detect-'));
     try {
-      const userApp = join(home, 'Applications', 'OpenKnowledge.app');
+      const userApp = join(home, 'Applications', 'SynapseNote.app');
       const npmStub = (args: string[]) =>
-        args.includes('@inkeep/open-knowledge') ? '@inkeep/open-knowledge@1.2.3\n' : null;
+        args.includes('@nedian0brien/synapsenote') ? '@nedian0brien/synapsenote@1.2.3\n' : null;
       const methods = detectInstallMethods(
         home,
         '/Users/x/.npm/_npx/abcd/node_modules/.bin/ok',
@@ -266,7 +266,7 @@ describe('runUninstall', () => {
     const home = mkdtempSync(join(tmpdir(), 'ok-uninst-cmd-'));
     try {
       write(join(home, '.ok', 'auth.yml'), 'x\n');
-      write(join(home, '.agents', 'skills', 'open-knowledge-discovery', 'SKILL.md'), '# d\n');
+      write(join(home, '.agents', 'skills', 'synapsenote-discovery', 'SKILL.md'), '# d\n');
       const result = await runUninstall({
         home,
         platform: 'darwin',
@@ -290,7 +290,7 @@ describe('runUninstall', () => {
       // The machinery is gone (the ~/.ok dir itself is kept in non-purge mode
       // for the skills carve-out, but its contents are removed).
       expect(existsSync(join(home, '.ok', 'auth.yml'))).toBe(false);
-      expect(existsSync(join(home, '.agents', 'skills', 'open-knowledge-discovery'))).toBe(false);
+      expect(existsSync(join(home, '.agents', 'skills', 'synapsenote-discovery'))).toBe(false);
     } finally {
       rmSync(home, { recursive: true, force: true });
     }

@@ -139,7 +139,7 @@ export default {
     'packages/cli': {
       entry: ['src/**/*.test.ts', 'scripts/*.ts', 'tests/**/*.ts'],
       ignoreDependencies: [
-        '@inkeep/open-knowledge-app', // the CLI's `build:assets` script runs `cp -r ../app/dist dist/public`
+        '@nedian0brien/synapsenote-app', // the CLI's `build:assets` script runs `cp -r ../app/dist dist/public`
       ],
     },
     'packages/desktop': {
@@ -155,7 +155,7 @@ export default {
         'tests/**/*.test.mjs',
       ],
       ignoreUnresolved: [/utility\/pty-host\.js$/],
-      ignoreDependencies: ['@inkeep/open-knowledge-native-config'],
+      ignoreDependencies: ['@nedian0brien/synapsenote-native-config'],
       project: 'src/**',
     },
   },

@@ -12,7 +12,7 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
-import { AgentPatchSuccessSchema, ProblemDetailsSchema } from '@inkeep/open-knowledge-core';
+import { AgentPatchSuccessSchema, ProblemDetailsSchema } from '@nedian0brien/synapsenote-core';
 import { HARNESS_BOOT_TIMEOUT_MS } from '../harness-boot-timeout';
 import { agentWriteMd, createTestServer, type TestServer } from '../test-harness';
 

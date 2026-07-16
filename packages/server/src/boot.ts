@@ -29,11 +29,11 @@ import {
   INLINE_RENDERABLE_EXTENSIONS,
   LOCAL_DIR,
   OK_DIR,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import {
   resolveGitDir,
   resolveGitDirDetailed,
-} from '@inkeep/open-knowledge-core/shadow-repo-layout';
+} from '@nedian0brien/synapsenote-core/shadow-repo-layout';
 import { context, propagation } from '@opentelemetry/api';
 import { simpleGit } from 'simple-git';
 import sirv from 'sirv';

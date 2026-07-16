@@ -16,9 +16,9 @@ if (process.argv.includes('--no-color')) {
 
 import { spawn } from 'node:child_process';
 import { resolve } from 'node:path';
-import { type Config, ConfigSchema } from '@inkeep/open-knowledge-server';
+import { type Config, ConfigSchema } from '@nedian0brien/synapsenote-server';
 /**
- * CLI entry point for @inkeep/open-knowledge.
+ * CLI entry point for @nedian0brien/synapsenote.
  *
  * Commander.js v14. `ok` (no positional args) auto-detects whether the
  * desktop Electron app is available + interactive on macOS — when both
@@ -70,7 +70,7 @@ import { buildVersionNotice } from './version-notice.ts';
 
 const program = new Command();
 
-import { createFileLogger } from '@inkeep/open-knowledge-server';
+import { createFileLogger } from '@nedian0brien/synapsenote-server';
 
 import type { Logger as PinoLoggerInstance } from 'pino';
 
@@ -83,7 +83,7 @@ export function getCliLogger(): PinoLoggerInstance | undefined {
 }
 
 program
-  .name('open-knowledge')
+  .name('synapsenote')
   .description('Local-first knowledge base with CRDT collaboration')
   // Surface the two zero-subcommand entry points in the usage line: bare `ok`
   // (desktop launch / `ok start` fallback) and `ok <file>` (open a markdown
@@ -132,7 +132,7 @@ program
       // The resolved root can be a large surprise (e.g. a monorepo root with
       // `content.dir: .`) — disclose it so it's visible and correctable.
       // stderr keeps `ok mcp`'s stdout JSON-RPC stream clean.
-      console.error(`[ok] Using OpenKnowledge project at ${anchorRoot}`);
+      console.error(`[ok] Using SynapseNote project at ${anchorRoot}`);
     }
 
     // The removal verbs must run even when the project config is broken — an
@@ -203,7 +203,7 @@ program.addCommand(seedCommand());
 program.addCommand(migrateCommand());
 
 // cowork command — HIDDEN + unadvertised power-user escape hatch. Builds the
-// openknowledge.skill bundle and opens Claude Desktop for the manual upload
+// synapsenote.skill bundle and opens Claude Desktop for the manual upload
 // (Chat & Cowork read a separate, isolated Skills list `ok init` can't reach).
 // Registered `{ hidden: true }` so it never shows in `ok --help`, and `ok init`
 // does NOT hint toward it — discovery is pull-only via the OK skill. Renamed

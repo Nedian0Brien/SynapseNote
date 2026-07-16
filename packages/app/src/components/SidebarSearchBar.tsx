@@ -31,8 +31,8 @@
  * fixable here without touching the design-token system.
  */
 
-import { incrementJsxRenderFailure } from '@inkeep/open-knowledge-core';
 import { Trans } from '@lingui/react/macro';
+import { incrementJsxRenderFailure } from '@nedian0brien/synapsenote-core';
 import { Search } from 'lucide-react';
 import type { ErrorInfo } from 'react';
 import { Button } from '@/components/ui/button';

@@ -14,7 +14,7 @@ import type {
   OkBugReportSendMetadata,
   OkBugReportSendResult,
   ReportBundleSummary,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { act, cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
@@ -186,7 +186,7 @@ describe('ReportBugDialog', () => {
     expect(screen.getByRole('heading', { name: 'Report a bug' })).not.toBeNull();
     expect(
       screen.getByText(
-        'Package logs and system info into a report you can review, then send it privately to the OpenKnowledge team.',
+        'Package logs and system info into a report you can review, then send it privately to the SynapseNote team.',
       ),
     ).not.toBeNull();
 
@@ -241,7 +241,7 @@ describe('ReportBugDialog', () => {
     expect(screen.getByText(/6\.8 MB · secrets redacted · 2 files/)).not.toBeNull();
     expect(
       screen.getByText(
-        'Sent privately to the OpenKnowledge team, along with your note and app version. Never posted publicly.',
+        'Sent privately to the SynapseNote team, along with your note and app version. Never posted publicly.',
       ),
     ).not.toBeNull();
 
@@ -316,7 +316,7 @@ describe('ReportBugDialog', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Open GitHub issue' }));
     expect(log.opened).toHaveLength(1);
-    expect(log.opened[0]).toContain('https://github.com/inkeep/open-knowledge/issues/new?');
+    expect(log.opened[0]).toContain('https://github.com/Nedian0Brien/SynapseNote/issues/new?');
     expect(log.opened[0]).toContain('OK-8H3KQD');
     // Privacy pin: the public GitHub prefill carries the reference in title
     // and body only — no diagnostics, bundle-path, or attachment params may
@@ -337,7 +337,7 @@ describe('ReportBugDialog', () => {
           ? Promise.resolve({
               ok: false,
               reason: 'send-failed',
-              fallback: { mailtoUrl: 'mailto:support@inkeep.com?subject=OpenKnowledge%20bug' },
+              fallback: { mailtoUrl: 'mailto:support@lawdigest.kr?subject=SynapseNote%20bug' },
             })
           : Promise.resolve({ ok: true, reference: 'OK-RETRY1' });
       },
@@ -362,7 +362,7 @@ describe('ReportBugDialog', () => {
     expect(log.revealed).toEqual([ZIP_PATH]);
 
     await userEvent.click(screen.getByRole('button', { name: 'Open email draft' }));
-    expect(log.opened).toEqual(['mailto:support@inkeep.com?subject=OpenKnowledge%20bug']);
+    expect(log.opened).toEqual(['mailto:support@lawdigest.kr?subject=SynapseNote%20bug']);
 
     await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
     await screen.findByRole('heading', { name: 'Report sent — thank you' });
@@ -377,7 +377,7 @@ describe('ReportBugDialog', () => {
         Promise.resolve({
           ok: false,
           reason: 'email-draft',
-          fallback: { mailtoUrl: 'mailto:support@inkeep.com?subject=OpenKnowledge%20bug' },
+          fallback: { mailtoUrl: 'mailto:support@lawdigest.kr?subject=SynapseNote%20bug' },
         }),
     });
     await renderDialog();
@@ -402,7 +402,7 @@ describe('ReportBugDialog', () => {
     expect(log.revealed).toEqual([ZIP_PATH]);
 
     await userEvent.click(screen.getByRole('button', { name: 'Open email draft' }));
-    expect(log.opened).toEqual(['mailto:support@inkeep.com?subject=OpenKnowledge%20bug']);
+    expect(log.opened).toEqual(['mailto:support@lawdigest.kr?subject=SynapseNote%20bug']);
   });
 
   test('cancel during sending returns to review and the late result is ignored', async () => {
@@ -484,7 +484,7 @@ describe('ReportBugDialog', () => {
     installBridge();
     await renderDialog({ crashInvite: BOOT_INVITE });
 
-    expect(screen.getByText('OpenKnowledge quit unexpectedly last time.')).not.toBeNull();
+    expect(screen.getByText('SynapseNote quit unexpectedly last time.')).not.toBeNull();
     expect(
       screen.getByText('A report helps us find the cause. Nothing is sent until you review it.'),
     ).not.toBeNull();

@@ -44,7 +44,7 @@ const MAIN_ENTRY = resolve(__dirname, '..', '..', 'out', 'main', 'index.js');
 const SMOKE_ENABLED = process.env.OK_DESKTOP_E2E_SMOKE === '1';
 const DARWIN = process.platform === 'darwin';
 const BUILD_EXISTS = existsSync(MAIN_ENTRY);
-const DESKTOP_PRODUCT_NAME = '@inkeep/open-knowledge-desktop';
+const DESKTOP_PRODUCT_NAME = '@nedian0brien/synapsenote-desktop';
 
 /**
  * Editor controls live inside the collapsed "Advanced settings" section (Radix
@@ -238,7 +238,7 @@ test.describe('QA extended create-new-project', () => {
     await expect(navigator.locator('[data-testid="create-name"]')).toBeFocused();
 
     // The Location display hydrates from defaultProjectsRoot() — the
-    // persisted last-used parent, else ~/Documents/OpenKnowledge.
+    // persisted last-used parent, else ~/Documents/SynapseNote.
     // It never sits empty for long.
     const locationDisplay = navigator.locator('[data-testid="create-location-display"]');
     await expect(locationDisplay).toBeVisible();

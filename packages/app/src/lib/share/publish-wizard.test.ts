@@ -7,7 +7,7 @@
  */
 
 import { describe, expect, mock, test } from 'bun:test';
-import type { SharePublishOwner } from '@inkeep/open-knowledge-core';
+import type { SharePublishOwner } from '@nedian0brien/synapsenote-core';
 import {
   buildSamlSsoAuthorizeUrl,
   canSubmitPublish,
@@ -122,7 +122,7 @@ describe('presentPublishError', () => {
       kind: 'authorize-org',
       authorizeUrl: 'https://github.com/orgs/inkeep/policies/applications',
     });
-    expect(r.banner).toContain('authorize OpenKnowledge for inkeep');
+    expect(r.banner).toContain('authorize SynapseNote for inkeep');
   });
 
   test('push-failed routes to retry-push + interpolates owner/name', () => {

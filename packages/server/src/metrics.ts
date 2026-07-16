@@ -4,7 +4,7 @@
  * Exposed via GET /api/metrics/reconciliation.
  */
 
-import type { BridgeToleranceSignal, CC1Channel } from '@inkeep/open-knowledge-core';
+import type { BridgeToleranceSignal, CC1Channel } from '@nedian0brien/synapsenote-core';
 
 /**
  * Why an Observer A drain could not be served by the map-driven splice.
@@ -586,7 +586,7 @@ export function incrementAgentPatchFindMismatches(): void {
  * Increment the bridge-tolerance-applied counter for a specific tolerance
  * class. Bounded cardinality: the enumerated labels in
  * `BRIDGE_TOLERANCE_CLASSES` plus the check-layer parse-equivalence
- * fallback (`BridgeToleranceSignal` in `@inkeep/open-knowledge-core`).
+ * fallback (`BridgeToleranceSignal` in `@nedian0brien/synapsenote-core`).
  * Tightening from `string` is a compile-time guard against
  * typos at call sites that would otherwise silently pollute the metrics map
  * with arbitrary keys and drop those counters from operator dashboards.

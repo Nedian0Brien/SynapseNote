@@ -4,7 +4,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import type { Server } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { decodeShareUrl } from '@inkeep/open-knowledge-core';
+import { decodeShareUrl } from '@nedian0brien/synapsenote-core';
 import { loggerFactory, PinoLogger } from '../logger.ts';
 import {
   buildGitHubBlobUrl,
@@ -133,7 +133,7 @@ describe('POST /api/share/construct-url', () => {
     rig = await bootRig((projectDir) => {
       seedRemoteAndHead(projectDir, {
         head: 'ref: refs/heads/main\n',
-        originUrl: 'https://github.com/inkeep/open-knowledge.git',
+        originUrl: 'https://github.com/Nedian0Brien/SynapseNote.git',
         branchesOnOrigin: ['main'],
       });
     });
@@ -142,14 +142,16 @@ describe('POST /api/share/construct-url', () => {
     const json = (await res.json()) as Record<string, unknown>;
     expect(json.ok).toBe(true);
     expect(json.branch).toBe('main');
-    expect(json.sharedUrl).toBe('https://github.com/inkeep/open-knowledge/blob/main/docs/guide.md');
+    expect(json.sharedUrl).toBe(
+      'https://github.com/Nedian0Brien/SynapseNote/blob/main/docs/guide.md',
+    );
     expect(typeof json.shareUrl).toBe('string');
-    expect(json.shareUrl).toMatch(/^https:\/\/openknowledge\.ai\/d\/[A-Za-z0-9_-]+$/);
-    const encoded = (json.shareUrl as string).replace('https://openknowledge.ai/d/', '');
+    expect(json.shareUrl).toMatch(/^https:\/\/synapse\.lawdigest\.kr\/d\/[A-Za-z0-9_-]+$/);
+    const encoded = (json.shareUrl as string).replace('https://synapse.lawdigest.kr/d/', '');
     const decoded = decodeShareUrl(encoded);
     expect(decoded.version).toBe(1);
     expect(decoded.sharedUrl).toBe(
-      'https://github.com/inkeep/open-knowledge/blob/main/docs/guide.md',
+      'https://github.com/Nedian0Brien/SynapseNote/blob/main/docs/guide.md',
     );
   });
 
@@ -170,7 +172,7 @@ describe('POST /api/share/construct-url', () => {
     rig = await bootRig((projectDir) => {
       seedRemoteAndHead(projectDir, {
         head: '0123456789abcdef0123456789abcdef01234567\n',
-        originUrl: 'https://github.com/inkeep/open-knowledge.git',
+        originUrl: 'https://github.com/Nedian0Brien/SynapseNote.git',
         branchesOnOrigin: ['main'],
       });
     });
@@ -184,7 +186,7 @@ describe('POST /api/share/construct-url', () => {
     rig = await bootRig((projectDir) => {
       seedRemoteAndHead(projectDir, {
         head: 'ref: refs/heads/feature-not-pushed\n',
-        originUrl: 'https://github.com/inkeep/open-knowledge.git',
+        originUrl: 'https://github.com/Nedian0Brien/SynapseNote.git',
         branchesOnOrigin: ['main'],
       });
     });
@@ -204,7 +206,7 @@ describe('POST /api/share/construct-url', () => {
     rig = await bootRig((projectDir) => {
       seedRemoteAndHead(projectDir, {
         head: 'ref: refs/heads/main\n',
-        originUrl: 'git@gitlab.com:inkeep/open-knowledge.git',
+        originUrl: 'git@gitlab.com:Nedian0Brien/SynapseNote.git',
         branchesOnOrigin: ['main'],
       });
     });
@@ -218,7 +220,7 @@ describe('POST /api/share/construct-url', () => {
     rig = await bootRig((projectDir) => {
       seedRemoteAndHead(projectDir, {
         head: 'ref: refs/heads/main\n',
-        originUrl: 'https://github.com/inkeep/open-knowledge.git',
+        originUrl: 'https://github.com/Nedian0Brien/SynapseNote.git',
         branchesOnOrigin: ['main'],
       });
     });
@@ -232,7 +234,7 @@ describe('POST /api/share/construct-url', () => {
     rig = await bootRig((projectDir) => {
       seedRemoteAndHead(projectDir, {
         head: 'ref: refs/heads/main\n',
-        originUrl: 'https://github.com/inkeep/open-knowledge.git',
+        originUrl: 'https://github.com/Nedian0Brien/SynapseNote.git',
         branchesOnOrigin: ['main'],
       });
     });
@@ -246,7 +248,7 @@ describe('POST /api/share/construct-url', () => {
     rig = await bootRig((projectDir) => {
       seedRemoteAndHead(projectDir, {
         head: 'ref: refs/heads/main\n',
-        originUrl: 'https://github.com/inkeep/open-knowledge.git',
+        originUrl: 'https://github.com/Nedian0Brien/SynapseNote.git',
         branchesOnOrigin: ['main'],
       });
     });
@@ -260,7 +262,7 @@ describe('POST /api/share/construct-url', () => {
     rig = await bootRig((projectDir) => {
       seedRemoteAndHead(projectDir, {
         head: 'ref: refs/heads/main\n',
-        originUrl: 'https://github.com/inkeep/open-knowledge.git',
+        originUrl: 'https://github.com/Nedian0Brien/SynapseNote.git',
         branchesOnOrigin: ['main'],
       });
     });
@@ -270,14 +272,14 @@ describe('POST /api/share/construct-url', () => {
     const json = (await res.json()) as Record<string, unknown>;
     expect(json.ok).toBe(true);
     expect(json.sharedUrl).toBe(
-      `https://github.com/inkeep/open-knowledge/blob/main/${encodeURIComponent('Q4 OKRs — Marketing.md').replace(/^/, 'docs/')}`,
+      `https://github.com/Nedian0Brien/SynapseNote/blob/main/${encodeURIComponent('Q4 OKRs — Marketing.md').replace(/^/, 'docs/')}`,
     );
-    const encoded = (json.shareUrl as string).replace('https://openknowledge.ai/d/', '');
+    const encoded = (json.shareUrl as string).replace('https://synapse.lawdigest.kr/d/', '');
     const decoded = decodeShareUrl(encoded);
     const decodedUrl = new URL(decoded.sharedUrl);
     const segments = decodedUrl.pathname.split('/');
     // [/, owner, repo, blob, branch, ...path]
-    expect(segments.slice(0, 5)).toEqual(['', 'inkeep', 'open-knowledge', 'blob', 'main']);
+    expect(segments.slice(0, 5)).toEqual(['', 'Nedian0Brien', 'SynapseNote', 'blob', 'main']);
     const decodedDocPath = segments
       .slice(5)
       .map((s) => decodeURIComponent(s))
@@ -289,7 +291,7 @@ describe('POST /api/share/construct-url', () => {
     rig = await bootRig((projectDir) => {
       seedRemoteAndHead(projectDir, {
         head: 'ref: refs/heads/feat/sharing-virality-flow\n',
-        originUrl: 'git@github.com:inkeep/open-knowledge.git',
+        originUrl: 'git@github.com:Nedian0Brien/SynapseNote.git',
         branchesOnOrigin: ['feat/sharing-virality-flow'],
       });
     });
@@ -299,7 +301,7 @@ describe('POST /api/share/construct-url', () => {
     expect(json.ok).toBe(true);
     expect(json.branch).toBe('feat/sharing-virality-flow');
     expect(json.sharedUrl).toBe(
-      'https://github.com/inkeep/open-knowledge/blob/feat%2Fsharing-virality-flow/docs/guide.md',
+      'https://github.com/Nedian0Brien/SynapseNote/blob/feat%2Fsharing-virality-flow/docs/guide.md',
     );
     const sharedUrl = new URL(json.sharedUrl as string);
     const segments = sharedUrl.pathname.split('/').filter(Boolean);
@@ -311,7 +313,7 @@ describe('POST /api/share/construct-url', () => {
     rig = await bootRig((projectDir) => {
       seedRemoteAndHead(projectDir, {
         head: 'ref: refs/heads/main\n',
-        originUrl: 'https://github.com/inkeep/open-knowledge.git',
+        originUrl: 'https://github.com/Nedian0Brien/SynapseNote.git',
         branchesOnOrigin: ['main'],
       });
     });
@@ -323,7 +325,7 @@ describe('POST /api/share/construct-url', () => {
     rig = await bootRig((projectDir) => {
       seedRemoteAndHead(projectDir, {
         head: 'ref: refs/heads/main\n',
-        originUrl: 'https://github.com/inkeep/open-knowledge.git',
+        originUrl: 'https://github.com/Nedian0Brien/SynapseNote.git',
         branchesOnOrigin: ['main'],
       });
     });
@@ -335,7 +337,7 @@ describe('POST /api/share/construct-url', () => {
     rig = await bootRig((projectDir) => {
       seedRemoteAndHead(projectDir, {
         head: 'ref: refs/heads/main\n',
-        originUrl: 'https://github.com/inkeep/open-knowledge.git',
+        originUrl: 'https://github.com/Nedian0Brien/SynapseNote.git',
         branchesOnOrigin: ['main'],
       });
     });
@@ -347,7 +349,7 @@ describe('POST /api/share/construct-url', () => {
     rig = await bootRig((projectDir) => {
       seedRemoteAndHead(projectDir, {
         head: 'ref: refs/heads/main\n',
-        originUrl: 'https://github.com/inkeep/open-knowledge.git',
+        originUrl: 'https://github.com/Nedian0Brien/SynapseNote.git',
         branchesOnOrigin: ['main'],
       });
     });
@@ -360,7 +362,7 @@ describe('POST /api/share/construct-url', () => {
     rig = await bootRig((projectDir) => {
       seedRemoteAndHead(projectDir, {
         head: 'ref: refs/heads/main\n',
-        originUrl: 'https://github.com/inkeep/open-knowledge.git',
+        originUrl: 'https://github.com/Nedian0Brien/SynapseNote.git',
         branchesOnOrigin: ['main'],
       });
     });
@@ -369,11 +371,13 @@ describe('POST /api/share/construct-url', () => {
     const json = (await res.json()) as Record<string, unknown>;
     expect(json.ok).toBe(true);
     expect(json.branch).toBe('main');
-    expect(json.sharedUrl).toBe('https://github.com/inkeep/open-knowledge/tree/main/docs/guides');
-    const encoded = (json.shareUrl as string).replace('https://openknowledge.ai/d/', '');
+    expect(json.sharedUrl).toBe(
+      'https://github.com/Nedian0Brien/SynapseNote/tree/main/docs/guides',
+    );
+    const encoded = (json.shareUrl as string).replace('https://synapse.lawdigest.kr/d/', '');
     const decoded = decodeShareUrl(encoded);
     expect(decoded.sharedUrl).toBe(
-      'https://github.com/inkeep/open-knowledge/tree/main/docs/guides',
+      'https://github.com/Nedian0Brien/SynapseNote/tree/main/docs/guides',
     );
   });
 
@@ -382,7 +386,7 @@ describe('POST /api/share/construct-url', () => {
       (projectDir) => {
         seedRemoteAndHead(projectDir, {
           head: 'ref: refs/heads/main\n',
-          originUrl: 'https://github.com/inkeep/open-knowledge.git',
+          originUrl: 'https://github.com/Nedian0Brien/SynapseNote.git',
           branchesOnOrigin: ['main'],
         });
       },
@@ -392,7 +396,7 @@ describe('POST /api/share/construct-url', () => {
     expect(res.status).toBe(200);
     const json = (await res.json()) as Record<string, unknown>;
     expect(json.ok).toBe(true);
-    expect(json.sharedUrl).toBe('https://github.com/inkeep/open-knowledge/tree/main');
+    expect(json.sharedUrl).toBe('https://github.com/Nedian0Brien/SynapseNote/tree/main');
   });
 
   test('folder ROOT (folderPath: "") with content.dir subdir maps to tree/<branch>/<content.dir>', async () => {
@@ -400,7 +404,7 @@ describe('POST /api/share/construct-url', () => {
     rig = await bootRig((projectDir) => {
       seedRemoteAndHead(projectDir, {
         head: 'ref: refs/heads/main\n',
-        originUrl: 'https://github.com/inkeep/open-knowledge.git',
+        originUrl: 'https://github.com/Nedian0Brien/SynapseNote.git',
         branchesOnOrigin: ['main'],
       });
     });
@@ -408,7 +412,7 @@ describe('POST /api/share/construct-url', () => {
     expect(res.status).toBe(200);
     const json = (await res.json()) as Record<string, unknown>;
     expect(json.ok).toBe(true);
-    expect(json.sharedUrl).toBe('https://github.com/inkeep/open-knowledge/tree/main/content');
+    expect(json.sharedUrl).toBe('https://github.com/Nedian0Brien/SynapseNote/tree/main/content');
   });
 
   test('folder ROOT (folderPath: "") with contentDir escaping projectDir fails loud (500), not a repo-root link', async () => {
@@ -416,7 +420,7 @@ describe('POST /api/share/construct-url', () => {
       (projectDir) => {
         seedRemoteAndHead(projectDir, {
           head: 'ref: refs/heads/main\n',
-          originUrl: 'https://github.com/inkeep/open-knowledge.git',
+          originUrl: 'https://github.com/Nedian0Brien/SynapseNote.git',
           branchesOnOrigin: ['main'],
         });
       },

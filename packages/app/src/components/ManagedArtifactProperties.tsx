@@ -1,6 +1,6 @@
 import type { HocuspocusProvider } from '@hocuspocus/provider';
-import { parseManagedArtifactName, type SkillScope } from '@inkeep/open-knowledge-core';
 import { useLingui } from '@lingui/react/macro';
+import { parseManagedArtifactName, type SkillScope } from '@nedian0brien/synapsenote-core';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { SkillProperties } from '@/components/SkillProperties';

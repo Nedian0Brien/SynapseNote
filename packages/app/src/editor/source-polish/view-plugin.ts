@@ -53,7 +53,7 @@ function countLeadingIndent(text: string): number {
 // region the user sees styled as YAML matches what the bridge recognizes by
 // construction (no local regex copy to drift). Re-exported for
 // SourceEditor's outline-navigation FM skip.
-import { FM_FENCE_LINE_RE } from '@inkeep/open-knowledge-core';
+import { FM_FENCE_LINE_RE } from '@nedian0brien/synapsenote-core';
 
 export { FM_FENCE_LINE_RE };
 

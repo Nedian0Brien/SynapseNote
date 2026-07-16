@@ -1,18 +1,18 @@
 ---
-name: open-knowledge-pack-entity-vault
+name: synapsenote-pack-entity-vault
 version: "0.18.0"
-description: "How to work in a Personal CRM project (the `entity-vault` starter pack, GBrain-compatible): a typed-entity vault of people, companies, meetings, and concepts, each a dossier with a rewritable summary plus an append-only timeline. Read when the project has these folders. Carries the dossier convention and entity-extraction behaviors so that guidance does not live inside template bodies or folder descriptions. Complements the platform `open-knowledge` skill; does not replace it."
-compatibility: "Claude Code, Claude Desktop, Claude Cowork, Claude.ai web. Requires OpenKnowledge MCP server. Installed project-local by `ok seed --pack entity-vault`."
+description: "How to work in a Personal CRM project (the `entity-vault` starter pack, GBrain-compatible): a typed-entity vault of people, companies, meetings, and concepts, each a dossier with a rewritable summary plus an append-only timeline. Read when the project has these folders. Carries the dossier convention and entity-extraction behaviors so that guidance does not live inside template bodies or folder descriptions. Complements the platform `synapsenote` skill; does not replace it."
+compatibility: "Claude Code, Claude Desktop, Claude Cowork, Claude.ai web. Requires SynapseNote MCP server. Installed project-local by `ok seed --pack entity-vault`."
 metadata:
   pack: "entity-vault"
-  author: "Inkeep"
-  repository: "https://github.com/inkeep/open-knowledge"
+  author: "SynapseNote"
+  repository: "https://github.com/Nedian0Brien/SynapseNote"
 ---
 # Personal CRM (GBrain-compatible) — how to work here
 
 A Personal CRM built as a typed-entity vault, inspired by Garry Tan's gbrain. Each entity is a dossier; the agent keeps dossiers current by extracting entities from meeting notes and original thinking. This skill holds those behaviors so templates and folder descriptions stay clean. The Markdown shape is **GBrain-compatible**: if the external `gbrain` CLI is installed, it can import/sync the same vault.
 
-> Pack guidance. The platform `open-knowledge` skill still governs every markdown operation.
+> Pack guidance. The platform `synapsenote` skill still governs every markdown operation.
 
 ## The dossier convention (the load-bearing rule)
 
@@ -41,7 +41,7 @@ Two deltas from the platform default, both GBrain-specific:
 
 ## Agent behaviors
 
-- **Ingest from a meeting recorder.** If a meeting-recorder MCP (Granola, Fireflies, Circleback, tl;dv, Fathom, …) is registered alongside `open-knowledge`, pull recent meetings and write each into `meetings/`. Address each as `meetings/<source>-<source_meeting_id>` so re-syncing a meeting updates it in place instead of creating a duplicate. Normalize whatever the recorder returns (Granola's Me/Them streams, a bot's speaker turns) into notes plus the verbatim transcript; do NOT rewrite the transcript. This works the same on demand (you ask) or unattended (a scheduler asks) — the recorder is bring-your-own and interchangeable.
+- **Ingest from a meeting recorder.** If a meeting-recorder MCP (Granola, Fireflies, Circleback, tl;dv, Fathom, …) is registered alongside `synapsenote`, pull recent meetings and write each into `meetings/`. Address each as `meetings/<source>-<source_meeting_id>` so re-syncing a meeting updates it in place instead of creating a duplicate. Normalize whatever the recorder returns (Granola's Me/Them streams, a bot's speaker turns) into notes plus the verbatim transcript; do NOT rewrite the transcript. This works the same on demand (you ask) or unattended (a scheduler asks) — the recorder is bring-your-own and interchangeable.
 - After a meeting note lands, extract entity mentions and append timeline bullets to each referenced dossier (cite the meeting by markdown link). Stub any mentioned entity not yet captured.
 - Treat `originals/` as authoritative (the user's own words, not inferences).
 - Surface entity-to-entity edges (person ↔ company, concept hubs) when both ends exist.

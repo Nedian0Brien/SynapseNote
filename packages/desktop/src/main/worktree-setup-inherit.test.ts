@@ -44,7 +44,7 @@ function wireEditorAtRoot(dir: string, relPath: string, sentinel = '# ok-mcp-v1'
     abs,
     JSON.stringify({
       mcpServers: {
-        'open-knowledge': { command: '/bin/sh', args: ['-l', '-c', `${sentinel}\nexec ok mcp`] },
+        synapsenote: { command: '/bin/sh', args: ['-l', '-c', `${sentinel}\nexec ok mcp`] },
       },
     }),
   );

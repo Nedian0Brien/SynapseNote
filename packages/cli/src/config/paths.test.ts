@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { getLocalDir } from '@inkeep/open-knowledge-server';
+import { getLocalDir } from '@nedian0brien/synapsenote-server';
 import { resolveContentDir, resolveLockDir } from './paths.ts';
 import type { Config } from './schema.ts';
 

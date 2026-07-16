@@ -10,7 +10,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
-import { OK_DIR } from '@inkeep/open-knowledge-core';
+import { OK_DIR } from '@nedian0brien/synapsenote-core';
 import {
   buildConfigYmlContent,
   initContent,
@@ -98,7 +98,7 @@ describe('initContent', () => {
     // config.yml is the fully-commented starter — every section header
     // present, every key commented out so the file parses to a no-op.
     const configYml = readFileSync(join(okDir, 'config.yml'), 'utf-8');
-    expect(configYml).toContain('OpenKnowledge — project configuration');
+    expect(configYml).toContain('SynapseNote — project configuration');
     expect(configYml).toContain('# content:');
     expect(configYml).toContain('# appearance:');
     // No uncommented top-level keys — every non-empty, non-comment line
@@ -115,9 +115,9 @@ describe('initContent', () => {
     const configYml = readFileSync(join(testDir, OK_DIR, 'config.yml'), 'utf-8');
     const firstLine = configYml.split('\n')[0];
     expect(firstLine).toMatch(
-      /^# yaml-language-server: \$schema=https:\/\/unpkg\.com\/@inkeep\/open-knowledge@latest\/dist\/schemas\/v\d+\/config\.project\.schema\.json$/,
+      /^# yaml-language-server: \$schema=https:\/\/unpkg\.com\/@nedian0brien\/synapsenote@latest\/dist\/schemas\/v\d+\/config\.project\.schema\.json$/,
     );
-    expect(configYml.split('\n')[1]).toBe('# OpenKnowledge — project configuration');
+    expect(configYml.split('\n')[1]).toBe('# SynapseNote — project configuration');
     expect(configYml).toContain('# Schema reference: packages/core/src/config/schema.ts');
   });
 
@@ -387,7 +387,7 @@ describe('buildConfigYmlContent', () => {
   it('templates the magic comment with @latest + schema-major path', () => {
     const out = buildConfigYmlContent('3.5.0');
     expect(out.split('\n')[0]).toMatch(
-      /^# yaml-language-server: \$schema=https:\/\/unpkg\.com\/@inkeep\/open-knowledge@latest\/dist\/schemas\/v\d+\/config\.project\.schema\.json$/,
+      /^# yaml-language-server: \$schema=https:\/\/unpkg\.com\/@nedian0brien\/synapsenote@latest\/dist\/schemas\/v\d+\/config\.project\.schema\.json$/,
     );
   });
 

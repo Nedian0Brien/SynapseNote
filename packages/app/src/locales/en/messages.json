@@ -22,9 +22,6 @@
     "-gdcIo": ["Auto-sync is on — your commits push and remote changes pull on intervals."],
     "-i7ik4": ["Collapse burst ", ["burstNumber"], " diff"],
     "-lCAuQ": ["Loading graph"],
-    "-o5XAG": [
-      "Sent privately to the OpenKnowledge team, along with your note and app version. Never posted publicly."
-    ],
     "-q4abP": [
       "Results capped — this workspace has more files than search can index. A missing file may be a cap artifact, not a typo."
     ],
@@ -70,9 +67,6 @@
     ],
     "0eHrMb": ["Could not complete delete"],
     "0g7rCZ": ["Duplicated to \"", ["0"], "\""],
-    "0inVGS": [
-      "Helps your coding agent recognize OpenKnowledge projects and route reads and writes through it."
-    ],
     "0jD-Gn": ["A team knowledge base, a personal wiki, project docs..."],
     "0kTAXe": ["Open source: ", ["mirrorSrc"]],
     "0rwwOn": ["By tag"],
@@ -80,9 +74,9 @@
       "Select, enter, or leave block components and fallback source blocks from keyboard boundaries."
     ],
     "0t0bbC": ["Could not save sync preference: ", ["detail"]],
-    "0uTHCg": ["Start a new OpenKnowledge project."],
     "0wswKc": ["Horizontal rule that divides sections."],
     "0xnmlQ": ["Repository name"],
+    "0y22ix": ["Attach the file in an email to <0>support@lawdigest.kr</0>"],
     "0yL--g": ["Review conflicts"],
     "10g8I_": ["Turn off Only markdown files"],
     "12F9WL": ["(no id)"],
@@ -100,6 +94,7 @@
       "Switching to <0>local-only</0> will refuse until they're untracked via<1> git rm --cached</1>."
     ],
     "1YJ4Yg": ["Update available", ["0"]],
+    "1Z9rdS": ["Bug reporting needs the SynapseNote desktop app."],
     "1ZpfyB": ["Open with AI ", ["displayName"], ", ", ["hint"]],
     "1bDVu5": ["Workspace Command Palette"],
     "1d1F11": ["Select all files and folders"],
@@ -115,6 +110,9 @@
     "29VNqC": ["Unknown error"],
     "29XZXN": ["Set git identity"],
     "2AIVbm": ["Review your report"],
+    "2AuoIl": [
+      "Sent privately to the SynapseNote team, along with your note and app version. Never posted publicly."
+    ],
     "2B6eYX": ["What this checkbox changes"],
     "2BBAbc": ["List"],
     "2FYpfJ": ["More"],
@@ -137,12 +135,12 @@
       " results."
     ],
     "2q_Q7x": ["Visibility"],
-    "2rQ8G4": ["Or write to <0>support@inkeep.com</0>"],
     "2ryd91": ["Failed to rename property"],
     "2tgFCe": ["Starting clone"],
     "2vIPtm": ["Open link in new tab"],
     "2wxgft": ["Rename"],
     "322lyb": ["Highlight tips, warnings, and notes."],
+    "327pND": ["Custom synapsenote entry — not managed by SynapseNote"],
     "33vs1O": ["Fast speed: Off"],
     "34qyH5": ["Could not reach server"],
     "36WXSC": ["Couldn't delete template: ", ["error"]],
@@ -173,10 +171,14 @@
     "3VbwPp": ["Open ", ["keyName"], " in browser"],
     "3VsNTI": ["Loading document"],
     "3YvS-c": ["New tab"],
+    "3ZDX3B": [
+      "We'll build <0>synapsenote.skill</0>, save it to <1>~/Downloads</1>, and open the Claude Desktop App for you."
+    ],
     "3_6U6f": ["Connect to GitHub"],
     "3__SjS": ["breadcrumb"],
     "3a_Bd7": ["Open source doc: ", ["mirrorSrc"]],
     "3aeN7X": ["All files"],
+    "3bo-ET": ["Couldn't connect SynapseNote tools to Claude Code. Please try again."],
     "3cOo2C": ["Create a folder from the current document or folder context."],
     "3ePd3I": ["What's new"],
     "3h5zMp": ["Something went wrong loading the settings panel."],
@@ -255,10 +257,10 @@
     "5Ajb15": ["The formula <0>c = √(a² + b²)</0> renders inline."],
     "5ClEAu": ["Inline hashtag for cross-doc grouping."],
     "5D3Ior": ["Hide folder"],
-    "5DFPDh": [
-      "Started a fresh OpenKnowledge server (v",
-      ["appRuntime"],
-      ") for this dev session — the server already running for this project was terminated. Connected agents (Claude Code, Codex, Cursor) just lost their OpenKnowledge MCP connection; restart the agent, or toggle its OpenKnowledge MCP server off and on, to reconnect."
+    "5D6ZiF": [
+      "SynapseNote can manage ",
+      ["0"],
+      " editor skill(s) for this project. Import moves them into .ok/skills and replaces the .claude, .codex, etc. copies with symlinks — one place to edit, in sync everywhere. If those folders are committed to git, review the change first; symlinks can behave differently on some editors and on Windows."
     ],
     "5DpQ29": ["Expand attached context"],
     "5F5HYj": [["ahead"], " ahead, ", ["behind"], " behind"],
@@ -278,6 +280,9 @@
     "5WDhAk": ["Link to a page or external URL."],
     "5ZB7XC": ["File drop zone"],
     "5e1Dri": ["The menu label agents pick this template by (required)."],
+    "5fKAvQ": [
+      "<0>ok</0> won't run in external terminals until you add it later from the File menu. SynapseNote's built-in terminal and AI tools keep working."
+    ],
     "5gr_ev": [
       "Becomes the document's content when someone creates a doc from this template. Type <0>",
       ["dateToken"],
@@ -365,13 +370,8 @@
     "7Ongq0": ["Condense my AGENTS.md file to less than 40k characters"],
     "7OwvEL": ["Show HTML preview"],
     "7PNNNs": ["This sends content off your machine"],
-    "7PXYaF": [
-      "<0>ok</0> won't run in external terminals until you add it later from the File menu. OpenKnowledge's built-in terminal and AI tools keep working."
-    ],
     "7PzzBU": ["User"],
-    "7YRrJ9": [
-      "Available in the OpenKnowledge desktop app. From a terminal, use<0> ok config-sharing status</0> / <1>share</1> / <2>unshare</2>."
-    ],
+    "7ZQi8G": ["You picked ~/Desktop. SynapseNote will index everything on your desktop."],
     "7_bFEL": ["Drag ", ["patternText"], " to reorder"],
     "7apDiJ": [
       "A folder named <0>",
@@ -403,7 +403,6 @@
       ]
     ],
     "8Gzz2G": ["worktree of ", ["worktreeOf"]],
-    "8IP5jY": ["Each selected tool gets an OpenKnowledge MCP entry."],
     "8Jm2EP": ["Toggle heading levels 1 through 6."],
     "8OGgNM": ["Open or close visual-editor find."],
     "8OxKZy": ["Move succeeded but the sidebar may be out of date — refresh to resync"],
@@ -413,6 +412,7 @@
     "8RtNI0": ["Failed to load documents"],
     "8XQRON": ["Loading repositories"],
     "8_brI5": ["Name is required"],
+    "8ac4GO": ["Connect your AI tools to SynapseNote"],
     "8cS0nH": ["Config sharing unavailable: ", ["0"], "."],
     "8cpOa8": ["Couldn't disconnect — please try again."],
     "8cpeU3": ["Shared repositories"],
@@ -434,10 +434,8 @@
     "9OIqw4": ["You don't have write access to this repo."],
     "9PQysm": ["Hide advanced"],
     "9R7pRC": ["No tags match \"", ["trimmed"], "\". Continue typing to create one."],
+    "9TCWZH": ["Claude Code is installed, but SynapseNote tools aren't connected to it yet."],
     "9UQ730": ["Clone"],
-    "9V0W-R": [
-      "Adds the OpenKnowledge skill to the <0>Claude Desktop App</0> so it's available in Chat and Cowork sessions."
-    ],
     "9bCiQ8": ["No pages are missing incoming graph links."],
     "9clcD5": ["Open documents tagged #", ["chip"]],
     "9dw5bW": ["Create with ", ["0"]],
@@ -459,6 +457,7 @@
     "9npOH9": ["Open file"],
     "9o1bIV": [["behind"], " behind"],
     "9oE4C3": ["Browse your repos:"],
+    "9r8Ac9": ["Connect SynapseNote to other tools you use."],
     "9sBe85": ["Follow us on"],
     "9tJX8r": ["By meaning"],
     "9zb2WA": ["Connecting"],
@@ -468,6 +467,13 @@
     "A5hiCy": ["Create template"],
     "A67Uwj": ["Still loading"],
     "A6h5b-": ["File duplicated"],
+    "A70S7P": [
+      "SynapseNote initializes at <0>",
+      ["projectDir"],
+      "</0> — the parent of <1>",
+      ["pickedRelative"],
+      "</1> because it contains a <2>.git</2> folder (one .ok/ per git repo). <3>Content directory</3> defaults to <4>.</4> (the whole repo); type a sub-folder to narrow it."
+    ],
     "AAlr5Y": [
       "No collab server for this worktree — run <0>ok start</0> here, or reopen the project."
     ],
@@ -484,6 +490,9 @@
       "Commands run with the full access of your macOS user account on this machine. Turn this off to disable the shell."
     ],
     "ATGYL1": ["Email address"],
+    "AUNzsj": [
+      "Adds the SynapseNote skill to the <0>Claude Desktop App</0> so it's available in Chat and Cowork sessions."
+    ],
     "AVW-K9": ["Failed to load orphan pages"],
     "AWOSPo": ["Zoom in"],
     "AaaESH": [
@@ -492,7 +501,6 @@
       ". Change it in Settings → Sync."
     ],
     "AcK_r0": ["Claude CLI"],
-    "AczYxH": ["Custom open-knowledge entry — not managed by OpenKnowledge"],
     "AdcGcG": ["Applying your change"],
     "AddR83": ["Could not create project. Try again or pick a different location."],
     "AeHuzT": ["# One pattern per line.\n# Examples:\n#   drafts/\n#   *.draft.md\n#   !keep.md"],
@@ -519,7 +527,6 @@
         { "one": ["#", " file conflicted"], "other": ["#", " files conflicted"] }
       ]
     ],
-    "B7XVXd": ["Attach the file in an email to <0>support@inkeep.com</0>"],
     "BAH4qX": ["Selected graph item"],
     "BBqGS9": ["Desktop"],
     "BD0XSC": ["Failed to load project templates"],
@@ -554,9 +561,6 @@
     "CFnavk": ["This project isn't a git repository, so worktrees aren't available."],
     "CKyk7Q": ["Go back"],
     "CMtN5P": ["Collapse attached context"],
-    "COr1Y7": [
-      "Pick <0>openknowledge.skill</0> from your <1>Downloads</1> folder. It enables automatically."
-    ],
     "CSIkhP": ["Take a look if you'd like — this exact file is what we receive."],
     "CSL0l1": ["Couldn't clear the key — please try again."],
     "CTJLpz": ["\"", ["trimmed"], "\" already exists here"],
@@ -570,6 +574,7 @@
       "This file is too large to open in the built-in text editor (1 MB limit). Use Open file below to open it in another app."
     ],
     "C_cPoW": ["Your GitHub session expired — sign in again to verify push access."],
+    "CaGmxt": ["SynapseNote is using this GitHub account."],
     "ChAtFg": ["You don't have permission to push to this repo"],
     "CifUuG": ["Update available"],
     "Ck9XRt": ["Couldn't save the key — please try again."],
@@ -581,13 +586,6 @@
     "CvsD6Y": ["via ", ["viaTags"]],
     "D-Oh1s": ["How to set up ", ["0"], " (opens in browser)"],
     "D12vtS": ["(detached)"],
-    "D2CwBE": [
-      "Create a new OpenKnowledge project from the <0>",
-      ["0"],
-      "</0> starter pack (",
-      ["1", "plural", { "one": ["#", " folder"], "other": ["#", " folders"] }],
-      " and starter templates) in the folder of your choice."
-    ],
     "D4H2N6": ["Remove ", ["tag"]],
     "D8OV7J": ["Only collaborators"],
     "DDTdLl": ["Code block settings"],
@@ -640,9 +638,6 @@
     "E2Mv-X": ["Copy source"],
     "E4XYYH": ["Enable terminal for this project"],
     "E5WeIy": ["Reopen the most recently closed editor tab."],
-    "E6lrpp": [
-      "Manage the GitHub account OpenKnowledge uses to browse and sync your repositories."
-    ],
     "E7BhZn": ["Blank note"],
     "E9bKSA": ["Creating"],
     "EBVbtP": ["Could not duplicate item"],
@@ -687,6 +682,7 @@
     "EoaQyO": ["Append-only log of what changed."],
     "EqrC_R": ["Undo failed: ", ["message"]],
     "EqtBXb": ["Visual editor find open"],
+    "EqzcIG": ["Building <0>synapsenote.skill</0> and opening the Claude Desktop App"],
     "ErRi6L": ["Template \"", ["label"], "\" deleted"],
     "Es-eZU": ["Remove from recent projects"],
     "Ev2r9A": ["No results"],
@@ -700,17 +696,15 @@
     "F1T9y_": ["Showing top matches — keep typing to narrow"],
     "F4IYWe": ["Share doc"],
     "F4vEsL": ["Sync status: ", ["syncStateLabel"]],
+    "F6MhhC": [
+      "Using the <0>OK_EMBEDDINGS_API_KEY</0> environment variable (managed outside SynapseNote)."
+    ],
     "F6pfE9": ["Active"],
+    "F9h_1R": [
+      "SynapseNote will create commits and push them to your remote automatically. If you do not want automatic commits in your git history, you should not enable auto-sync."
+    ],
     "FBknns": ["HTML"],
-    "FCAcjR": [
-      "Run a real terminal docked inside OpenKnowledge, starting in this project's folder."
-    ],
     "FCxvG5": ["First item"],
-    "FEK4oC": [
-      "OpenKnowledge will be initialized at <0>",
-      ["gitRoot"],
-      "</0> — the parent of your new folder, because it contains a <1>.git</1> folder (one project per git repo)."
-    ],
     "FEqWFL": ["Guides your AI agents on how to work here."],
     "FEr96N": ["Theme"],
     "FNTx6u": ["Search \"", ["semanticSubmitQuery"], "\" by meaning"],
@@ -719,11 +713,6 @@
     "FRqZ9v": ["Couldn't update skill: ", ["0"]],
     "FTUGgh": ["Enter a repository URL or owner/repo"],
     "FUMerq": ["Could not enable sync: ", ["detail"]],
-    "FWQuPE": [
-      "This project is running a different, incompatible build of OpenKnowledge than this app (v",
-      ["0"],
-      ")."
-    ],
     "FXk_zY": ["Adds a guided workflow for authoring new Agent Skills."],
     "FjkaiT": ["Zoom out"],
     "FnMkli": ["Sync disabled — you don't have permission to push"],
@@ -755,14 +744,6 @@
     ],
     "GGsM4y": ["Selected in graph"],
     "GHsJb8": ["Show .ok folders"],
-    "GJH-AT": [
-      ["docName"],
-      " is ",
-      ["0"],
-      ". OpenKnowledge currently opens files up to ",
-      ["1"],
-      "."
-    ],
     "GK-IRZ": ["Undo buttons are disabled — per-session state has been garbage-collected."],
     "GLxIKR": ["How to push manually"],
     "GN6L5F": ["Filename"],
@@ -795,7 +776,6 @@
     "HM56Bx": ["Creating..."],
     "HPTPGr": ["Create a new spec file for my user story"],
     "HSh8u_": ["Folders"],
-    "HTW0Zw": ["One more step: run <0>claude</0> in this project and approve OpenKnowledge once."],
     "HXFyWD": ["Split diff"],
     "HdkSiO": ["New file"],
     "HfI1dR": ["I already have it locally →"],
@@ -812,12 +792,16 @@
     "Hp1l6f": ["Current"],
     "HpK_8d": ["Reload"],
     "HptUxX": ["Number"],
-    "HqiZvw": [
-      "OpenKnowledge stores its configuration and internal files inside a newly created <0>.ok</0> directory in your project root folder."
-    ],
     "Hrz9NY": ["Wiki link"],
     "HyvSqq": ["Project Skill"],
     "I1gRhX": ["Failed to rename"],
+    "I2qoLR": [
+      "Create a new SynapseNote project from the <0>",
+      ["0"],
+      "</0> starter pack (",
+      ["1", "plural", { "one": ["#", " folder"], "other": ["#", " folders"] }],
+      " and starter templates) in the folder of your choice."
+    ],
     "I5685_": ["Try a prompt"],
     "I5AfhE": ["Sync status unavailable — server unreachable."],
     "I7Exsw": ["Follow us on X"],
@@ -846,6 +830,9 @@
     "It9ARY": ["Toggle the right document panel."],
     "Itp02R": ["Effort: ", ["label"]],
     "Ix0K8o": ["Hide external URL nodes"],
+    "Ixxhlr": [
+      "SynapseNote stores its configuration and internal files inside a newly created <0>.ok</0> directory in your project root folder."
+    ],
     "J2MgzQ": ["Undo all edits on ", ["docName"]],
     "J2Mv98": ["Name (e.g. ", ["login"], ")"],
     "J2eKUI": ["File"],
@@ -886,12 +873,6 @@
     "KDuPiY": ["Uploading ", ["fileName"]],
     "KDw4GX": ["Try again"],
     "KFdXwz": ["Show panel (", ["panelShortcut"], ")"],
-    "KH5bQi": [
-      "Using the <0>OK_EMBEDDINGS_API_KEY</0> environment variable (managed outside OpenKnowledge)."
-    ],
-    "KIIamL": [
-      "OpenKnowledge will create commits and push them to your remote automatically. If you do not want automatic commits in your git history, you should not enable auto-sync."
-    ],
     "KOZud0": [
       "Build a competitor research knowledge base. Start with an overview page, then add cross-linked pages for each competitor, their products and pricing, and the sources behind every claim."
     ],
@@ -907,6 +888,9 @@
     "KaFCD3": ["Open this link in a new tab and collapse the graph."],
     "Kf7GG5": ["Restarting the server…"],
     "Kgdbkt": ["Switch to local-only refused"],
+    "Kgsk80": [
+      "A knowledge base that follows Google's SynapseNote Format, a shared way of organizing what you know. Pick this if you want your notes to work well with other tools that understand the format."
+    ],
     "Kh1n4a": [
       "<",
       ["componentName"],
@@ -916,6 +900,7 @@
     "KkEAud": ["Create a file from the current document or folder context."],
     "KmydK6": ["Bold"],
     "KnoB--": ["Will be saved as <0>", ["sanitized"], "</0>."],
+    "KokOi-": ["Setup SynapseNote in this folder?"],
     "Kr3VPS": ["Codex will still ask until you run \"ok init\" in a terminal for this project."],
     "KsAPaB": ["This branch is checked out in:"],
     "KszKI_": ["Skill level"],
@@ -944,13 +929,6 @@
     "Lcehxn": ["Save resolution"],
     "LdABLa": ["Could not open ", ["target"], ". Try opening it manually."],
     "LdKIHS": ["Draft a spec"],
-    "LhQlGR": [
-      "This project is running an older version of OpenKnowledge (v",
-      ["0"],
-      ") than this app (v",
-      ["1"],
-      ")."
-    ],
     "LhWYpm": ["Other OK paths are tracked upstream:"],
     "LiAw2k": ["What this changes"],
     "LlHqdU": ["Initializing project"],
@@ -975,6 +953,9 @@
     ],
     "LwMxXg": ["Failed to open worktree."],
     "M1OfV9": ["Next source diagnostic"],
+    "M26Y1g": [
+      "Package logs and system info into a report you can review, then send it privately to the SynapseNote team."
+    ],
     "M3ytY_": [
       "This looks like a drive root (e.g., C:\\). Scaffolding here will scan an entire drive."
     ],
@@ -987,6 +968,7 @@
     "MGb89P": [
       "Insert, delete, move, copy, and indent source editor lines through CodeMirror's default keymap."
     ],
+    "MHcDPm": ["SynapseNote quit unexpectedly last time."],
     "MHrjPM": ["Title"],
     "MJqRO6": ["Your report is being sent."],
     "MKOVhz": ["Enable git auto-sync"],
@@ -1012,6 +994,11 @@
     "MqQoV-": ["Describe what you want to build, start a blank file, or scaffold from a template."],
     "MrwYIK": ["Toggle a source comment through CodeMirror."],
     "MsuXaI": ["Hide panel (", ["panelShortcut"], ")"],
+    "Mt8xTa": [
+      "SynapseNote will be initialized at <0>",
+      ["gitRoot"],
+      "</0> — the parent of your new folder, because it contains a <1>.git</1> folder (one project per git repo)."
+    ],
     "My9uXI": [
       "Updated \"",
       ["display"],
@@ -1027,8 +1014,8 @@
     "N2S1rs": ["Empty"],
     "N2eHWq": ["Code Block"],
     "N3_ozB": ["Hubs"],
-    "N55YNr": [
-      "Choose whether this project's OpenKnowledge setup, including its AI-tool connections, is saved with the project so teammates get it too, or kept only on your computer."
+    "NBpHVb": [
+      "Helps your coding agent recognize SynapseNote projects and route reads and writes through it."
     ],
     "NEzPEh": ["Create a new branch, or check out an existing one, in its own window."],
     "NF_Wcg": ["Show skills section"],
@@ -1068,8 +1055,6 @@
     "O0Z2Xr": ["Outgoing"],
     "O2UpM1": ["Browse"],
     "O3oNi5": ["Email"],
-    "O4PnDd": ["AI tool management is only available in the OpenKnowledge desktop app."],
-    "O6yEPk": ["Create a new OpenKnowledge project in the folder of your choice."],
     "O7_W_a": ["Open with AI"],
     "O9oQJS": ["Send report"],
     "OD0FCX": ["Hidden “", ["basename"], "”"],
@@ -1083,8 +1068,8 @@
     "OJeiSH": ["Failed to add property"],
     "OLBz-_": ["Mermaid diagram failed to render."],
     "OLIKgw": ["Drag item ", ["0"], " to reorder"],
-    "OLt6sc": [
-      "Package logs and system info into a report you can review, then send it privately to the OpenKnowledge team."
+    "ONKmYs": [
+      "This project's running server doesn't support live editing. Restart SynapseNote to fix."
     ],
     "ONPvOb": ["Loading agent activity"],
     "ONgEZF": ["Loading headings for ", ["pageTarget"]],
@@ -1110,12 +1095,16 @@
     "Oos8fo": ["Copy command"],
     "OplnBG": ["Managing AI tools is unavailable in this build."],
     "OuY8t9": ["Open in current branch"],
+    "Oux0hh": ["Or write to <0>support@lawdigest.kr</0>"],
     "OvEjsP": ["Copying..."],
     "OxplNM": ["Updated \"", ["0"], "\": added ", ["1"], ", removed ", ["2"]],
     "Oxyd5f": ["Pick a name"],
     "OyIC0Q": ["Project name"],
     "P-ye9o": ["Could not open folder picker"],
     "P0HC30": ["This ", ["targetNoun"], " moved to <0>", ["0"], "</0>. Open it there?"],
+    "P21nap": [
+      "You picked ~/Documents. SynapseNote will index every markdown file under it. If you only want to manage a sub-folder, choose a smaller scope."
+    ],
     "P3NS4G": ["Pattern syntax error (line ", ["lineNumber"], "): ", ["message"]],
     "P3hnm0": ["File too large to open"],
     "P47EWZ": ["Could not update sidebar settings"],
@@ -1202,9 +1191,6 @@
     "RGCCrg": ["Copy share link"],
     "RGkNeJ": ["Initialize a starter pack"],
     "RJ3a8Z": ["Looking for <0>", ["lookingForUrl"], "</0>."],
-    "RN62Q8": [
-      "We'll build <0>openknowledge.skill</0>, save it to <1>~/Downloads</1>, and open the Claude Desktop App for you."
-    ],
     "RSqaSd": ["Project root"],
     "RVZJWQ": ["Search projects..."],
     "RXNu_r": ["Shared via git with everyone working on this project."],
@@ -1229,10 +1215,20 @@
       ["targetNoun"],
       " has been moved, renamed, or deleted in your local copy, and that change hasn't synced yet."
     ],
+    "S-fr80": [
+      "Available in the SynapseNote desktop app. From a terminal, use<0> ok config-sharing status</0> / <1>share</1> / <2>unshare</2>."
+    ],
     "S33tz3": ["Not connected"],
     "S34Vju": ["Have something else in mind?"],
     "S6l5dv": ["Could not start creating a new item"],
     "S9Vnum": ["Remove ", ["patternText"]],
+    "SAqVW4": [
+      "This project is running an older version of SynapseNote (v",
+      ["0"],
+      ") than this app (v",
+      ["1"],
+      ")."
+    ],
     "SCoBBH": ["Tag suggestions"],
     "SCzAbA": [["phase"], " — ", ["pct"], "%"],
     "SEYWYq": ["Undo all edits on this file?"],
@@ -1246,6 +1242,9 @@
       "Local collaboration data for \"",
       ["docName"],
       "\" could not be cleared in time. Reload to retry."
+    ],
+    "ScPN4F": [
+      "The <0>type</0> every document created from this template gets (e.g. <1>research-note</1>). Keeps new docs SynapseNote Format–conformant."
     ],
     "ScwcF2": ["A project already exists at this location. Pick a different parent folder."],
     "SfxQX8": ["Writes a project-MCP config for each selected tool."],
@@ -1263,7 +1262,6 @@
     "T67A0Y": [
       "Auto-sync pushes/pulls commits to your git remote on intervals and on save. Toggling on requires confirmation."
     ],
-    "TEEPPF": ["Will replace existing OpenKnowledge entry"],
     "TJnkyf": ["ok ui responded but server.lock has no port yet"],
     "TKQ7K-": ["Install"],
     "TLIO3j": ["Toggle italic formatting."],
@@ -1274,6 +1272,7 @@
     "Tjc1pH": ["Section <0>(optional heading anchor)</0>"],
     "TsZmgr": ["The file on disk, and the id agents use."],
     "TwYboS": ["Navigate CodeMirror source search results or dismiss the search panel."],
+    "TwaC7g": ["Project AI tool management is only available in the SynapseNote desktop app."],
     "Tz0i8g": ["Settings"],
     "Tz9pJB": ["Clone stream ended unexpectedly — check if the clone completed"],
     "U2Kx6T": ["Close all unpinned"],
@@ -1295,9 +1294,6 @@
     "UTNVyS": ["Select the full source document."],
     "UTZ97u": ["Selection must be inside the project"],
     "UVLlMV": ["Couldn't reach GitHub. Try again?"],
-    "UW2Fg3": [
-      "This project's running server doesn't support live editing. Restart OpenKnowledge to fix."
-    ],
     "UW93oq": ["Replace key"],
     "UYcGIW": ["Connecting — waiting for collab server"],
     "Ua78MH": ["no response"],
@@ -1321,6 +1317,11 @@
     "UhpfxY": ["Pan left"],
     "UkQGhd": ["Hide replace"],
     "Up2_7p": ["Copy full path"],
+    "Utjflc": [
+      "Started a fresh SynapseNote server (v",
+      ["appRuntime"],
+      ") for this dev session — the server already running for this project was terminated. Connected agents (Claude Code, Codex, Cursor) just lost their SynapseNote MCP connection; restart the agent, or toggle its SynapseNote MCP server off and on, to reconnect."
+    ],
     "UuYo7g": [
       "This ",
       ["targetNoun"],
@@ -1350,6 +1351,7 @@
     "VbqhBI": ["Already at ", ["assetContentPath"], " — reusing."],
     "VcqWBy": ["Upload may have succeeded but the sidebar is out of date — refresh to resync"],
     "VdXv4D": ["Clone from GitHub"],
+    "Vi7_mN": ["Will replace existing SynapseNote entry"],
     "Vlc75q": ["Keep file deleted"],
     "VsaI0G": [["folderCount", "plural", { "one": ["folder"], "other": ["folders"] }]],
     "VuxVSP": ["Start source completion"],
@@ -1364,11 +1366,6 @@
     ],
     "W5A0Ly": ["An unexpected error occurred."],
     "W6240X": ["Fast on"],
-    "W7XJN4": [
-      "Can't nest projects. An OpenKnowledge project already exists at <0>",
-      ["rootPath"],
-      "</0>. Choose a location outside it, or open that project instead."
-    ],
     "W8vpBM": ["starter pack"],
     "W9_Bub": ["Local changes overlap with incoming sync"],
     "WALN45": ["Switch to ", ["shareBranch"]],
@@ -1431,12 +1428,12 @@
     "Xl-UUg": ["guides/install or https://example.com"],
     "XmJfZT": ["name"],
     "XnlF3W": ["Add the next matching source selection."],
+    "XoArjI": [
+      "Applies to all projects on this machine. Claude and Codex, started from the built-in terminal, auto-approve SynapseNote's read and write tools (Claude also auto-runs \"ok open\"). Deleting, moving, sharing, installing skills, other commands, and non-SynapseNote file edits still ask. Cursor, OpenCode, and Pi are unaffected. Best-effort per agent."
+    ],
     "XopE_I": ["Failed to parse backlinks error response (HTTP ", ["status"], ")"],
     "XpIZmv": ["Fenced code block with monospace text."],
     "XqNHcm": ["Couldn't update skill targets: ", ["0"]],
-    "XuQzrk": [
-      "Couldn't restart the server — another process owns it. Quit other OpenKnowledge windows for this project, then try again."
-    ],
     "XvPJaT": ["Diff layout"],
     "Xv_ijG": ["https://github.com/owner/repo or owner/repo"],
     "Xw_maT": ["Type a query, then press ↵ to search your pages by meaning."],
@@ -1444,13 +1441,6 @@
     "Xzy0s0": ["Remove ", ["fullLabel"], " from context"],
     "Y-Urt2": ["Block math equation rendered with KaTeX from a LaTeX source string."],
     "Y1QMlM": ["Get set up"],
-    "Y1kX2z": [
-      "OpenKnowledge initializes at <0>",
-      ["projectDir"],
-      "</0> — the parent of <1>",
-      ["pickedRelative"],
-      "</1> because it contains a <2>.git</2> folder (one .ok/ per git repo). <3>Content directory</3> defaults to <4>.</4> (the whole repo); type a sub-folder to narrow it."
-    ],
     "Y6SK9K": ["Show source"],
     "Y8ViJx": ["A newer version may have been deployed since this tab opened."],
     "YC6_wP": ["Edit ", ["keyName"]],
@@ -1525,7 +1515,6 @@
     "ZvzbDF": ["Add it directly to this project."],
     "ZxXhLY": ["Hide Files (", ["sidebarShortcut"], ")"],
     "Zz25kq": ["Show Files (", ["sidebarShortcut"], ")"],
-    "_0JUKX": ["Bug reporting needs the OpenKnowledge desktop app."],
     "_5qBNl": ["AI tools & CLI"],
     "_6FVBz": ["Jump to tab 1-8"],
     "_7UQ7y": ["Whole word"],
@@ -1541,14 +1530,10 @@
     ],
     "_BWVsb": ["Agent permissions"],
     "_FLBbi": [["sizeText"], " · secrets redacted · crash dump not redacted"],
-    "_IGfXZ": ["OpenKnowledge quit unexpectedly last time."],
     "_NX6gG": ["Managing project AI tools is unavailable in this build."],
     "_PACVa": ["Release notes"],
     "_PBJRl": ["Add at least one letter or number."],
     "_QwkMu": ["No matching paths"],
-    "_RcqUM": [
-      "You picked your home directory. OpenKnowledge will index everything in your home tree — large and may surface personal files."
-    ],
     "_TDESN": ["Network error - ", ["kind"], " \"", ["createdPath"], "\" still exists on disk"],
     "_VRtd7": ["Couldn't send the selection — please try again."],
     "_W-elG": ["(inline)"],
@@ -1556,13 +1541,10 @@
       "Read-only copy of a MirrorSource block from another doc. Edit at the source and it updates live."
     ],
     "_XWY2J": ["Terminal disabled"],
-    "_ayOfA": [
-      "A knowledge base that follows Google's Open Knowledge Format, a shared way of organizing what you know. Pick this if you want your notes to work well with other tools that understand the format."
-    ],
-    "_bth6g": ["Claude Code is installed, but OpenKnowledge tools aren't connected to it yet."],
     "_eguJc": ["Uploading"],
     "_gkGSK": ["deleted template"],
     "_hPpdX": ["Skill renamed"],
+    "_lc6JP": ["That folder isn't an SynapseNote project yet. Initialize it and open?"],
     "_pY_Vq": ["The repository was moved, renamed, or deleted."],
     "_qD6mn": ["Pick the folder where you've cloned it."],
     "_rP3HI": [["minutes"], "m ago"],
@@ -1624,16 +1606,23 @@
     "bV6DJA": ["Who you are, so the agent has your context."],
     "bWLmRK": ["Could not fetch branch. Check your connection."],
     "ba3vIW": [["templateCount", "plural", { "one": ["template"], "other": ["templates"] }]],
+    "baHsV3": [
+      "Can't nest projects. An SynapseNote project already exists at <0>",
+      ["rootPath"],
+      "</0>. Choose a location outside it, or open that project instead."
+    ],
     "bcDHUM": [["descriptorLabel"], " — render error, source editable below"],
     "bcjYUA": ["Fold or unfold source"],
     "bkQRMh": ["Paragraph"],
     "blFttG": ["Search projects"],
     "bmC18N": ["Clearing local collaboration data for \"", ["docName"], "\" before reconnecting."],
     "brCtGB": ["History unavailable"],
+    "bsFQMd": [
+      "Restarting closes this project's server. Connected agents (Claude Code, Codex, Cursor) will see their SynapseNote MCP connection close unexpectedly — you may need to restart the agent, or toggle its SynapseNote MCP server off and on, to reconnect."
+    ],
     "bultyE": [
       "When enabled, the agent opens or refreshes the preview after each edit. Disable if you manage your own preview window (OK Desktop, a browser tab on another display, etc.)."
     ],
-    "bwil08": ["Building <0>openknowledge.skill</0> and opening the Claude Desktop App"],
     "c1LZZH": ["Link copied."],
     "c5f7sm": ["Code block language: ", ["currentLabel"], ". Click to change."],
     "c5rF4v": ["What is this knowledge base for?"],
@@ -1662,7 +1651,6 @@
     "cdmk8A": ["Uncommitted changes"],
     "chL5IG": ["Community"],
     "cklVjM": ["Timeline"],
-    "cn1sLi": ["Couldn't connect OpenKnowledge tools to Claude Code. Please try again."],
     "cnGeoo": ["Delete"],
     "cqQyPB": ["Folder name"],
     "crqzW5": ["AI tools"],
@@ -1731,6 +1719,7 @@
     "eG8Jsg": ["Toggle source tab focus mode"],
     "eGUbmF": ["Copy selected file or folder"],
     "eJitUk": ["Upload from computer"],
+    "eKSPHL": ["Run a real terminal docked inside SynapseNote, starting in this project's folder."],
     "eKThTQ": ["Failed to reorder"],
     "eLl1VX": ["Failed to update the embeddings endpoint — ", ["detail"]],
     "eNQGRb": ["Inline LaTeX math rendered with KaTeX."],
@@ -1763,8 +1752,8 @@
     "fWsBTs": ["Something went wrong. Please try again."],
     "fYKgzG": ["Failed to load recent projects."],
     "fYjgXu": ["Unordered list of items."],
-    "f_PkYv": [
-      "Restarting closes this project's server. Connected agents (Claude Code, Codex, Cursor) will see their OpenKnowledge MCP connection close unexpectedly — you may need to restart the agent, or toggle its OpenKnowledge MCP server off and on, to reconnect."
+    "f_Zqzo": [
+      "Pick <0>synapsenote.skill</0> from your <1>Downloads</1> folder. It enables automatically."
     ],
     "fbdLmk": ["Toggle bold formatting."],
     "fbsiBw": ["Something went wrong starting the terminal."],
@@ -1778,7 +1767,6 @@
     "fwhX-N": ["Indent or outdent source"],
     "fxbCNQ": ["Synced. The link is up to date."],
     "g3UF2V": ["Accept"],
-    "g4WlQK": ["Project AI tool management is only available in the OpenKnowledge desktop app."],
     "g4XBm0": ["Small section heading."],
     "g58Kwy": [
       "<",
@@ -1803,6 +1791,9 @@
       "Pick a starter pack to scaffold your project with ready-made folders and templates."
     ],
     "gYz2ep": ["Expires in ", ["timeLabel"]],
+    "gb5Lni": [
+      "Saves the file to <0>~/Downloads/synapsenote.skill</0> and opens the Claude Desktop App. Requires Node.js or Bun on your PATH."
+    ],
     "gbHcbI": ["Failed to delete property"],
     "gfdqcY": ["Couldn't apply the change: ", ["0"]],
     "gfohmY": ["Connect tools"],
@@ -1847,7 +1838,6 @@
     "hCOLSd": [
       "Keep a written record of how your product gets built. A home for proposing ideas, recording decisions, writing specs, and capturing what you learned after something broke."
     ],
-    "hDEaQu": ["Connect OpenKnowledge to other tools you use."],
     "hDKtoF": [["diffHrs"], "h ago"],
     "hDoLrm": ["Remove ", ["projectName"], " from recent projects"],
     "hGmuTc": ["Docs tagged #", ["tagDocsName"]],
@@ -1866,6 +1856,7 @@
     "hZoBHK": ["Empty starting content"],
     "haHgQj": ["Copied relative path"],
     "habOU_": ["Failed to update the auto-approve setting — ", ["detail"]],
+    "hchgKp": ["Each selected tool gets an SynapseNote MCP entry."],
     "he3ygx": ["Copy"],
     "hjO0Mq": ["Add tab"],
     "hmYd9H": [
@@ -1918,10 +1909,6 @@
     "ii5mVn": ["Report this error"],
     "iilQXA": ["Folder duplicated"],
     "ijLc3m": ["Bullet list"],
-    "ilodsp": ["Let agents use OpenKnowledge without asking"],
-    "ipn17C": [
-      "The <0>type</0> every document created from this template gets (e.g. <1>research-note</1>). Keeps new docs Open Knowledge Format–conformant."
-    ],
     "iqIDv4": ["Sync status unavailable"],
     "iqugog": ["Initialize failed: ", ["errorDetail"]],
     "irFGwu": ["Template list"],
@@ -1993,11 +1980,13 @@
     ],
     "kWJmRL": ["You"],
     "kYL1lH": ["Agent activity"],
+    "k_60h_": [
+      "You picked your home directory. SynapseNote will index everything in your home tree — large and may surface personal files."
+    ],
     "k_pade": ["Config sharing is now shared. Commit the OK files to share with your team."],
     "k_yIIc": ["Will be created at: <0>", ["targetPreview"], "</0>"],
     "kdzzOK": ["Off — search ranks by keyword only. No content leaves this computer."],
     "keNFEd": ["Set identity"],
-    "khCa4M": ["Teaches coding agents in this project to read and write through OpenKnowledge."],
     "kj9pAE": ["Creating page"],
     "kknhfj": ["No changes"],
     "kmKqZg": ["Clusters"],
@@ -2032,10 +2021,13 @@
     "lPzyrU": ["All hunks resolved"],
     "lVWEIL": ["Indexed ", ["embedded"], " of ", ["total"], " pages."],
     "lWNpNB": ["Add cursors or select matching occurrences through CodeMirror."],
+    "lWrKCi": ["Start a new SynapseNote project."],
+    "lX6S2C": ["Let agents use SynapseNote without asking"],
     "lXKZGw": ["Heading 1"],
     "lZAiSP": ["Backlinks response did not match expected shape."],
     "l_FAT6": ["Use letters, digits, <0>-</0> or <1>_</1> only."],
     "l_UFPv": ["Properties"],
+    "laNjJs": ["One more step: run <0>claude</0> in this project and approve SynapseNote once."],
     "lb_UU4": ["Sync now"],
     "lbkOif": ["Undo or redo visual-editor changes through TipTap collaboration history."],
     "lhjq3G": ["Reset ", ["labelText"], " to default"],
@@ -2086,15 +2078,11 @@
       ["src"],
       "</2>."
     ],
+    "mr__Fb": ["AI tool management is only available in the SynapseNote desktop app."],
     "msOK6I": [
       "Repositories you've already cloned may keep syncing through git's own saved credentials, even after you disconnect."
     ],
     "msqUNq": ["Ready-made folders and templates to get you started quickly."],
-    "mu1O0q": [
-      "Open Knowledge can manage ",
-      ["0"],
-      " editor skill(s) for this project. Import moves them into .ok/skills and replaces the .claude, .codex, etc. copies with symlinks — one place to edit, in sync everywhere. If those folders are committed to git, review the change first; symlinks can behave differently on some editors and on Windows."
-    ],
     "mwMF9u": ["Open CodeMirror search in source editor mode."],
     "mxY24F": ["Duplicate the focused file-tree item when focus is in the Files sidebar."],
     "n2lRue": ["Commit or stash changes to switch:"],
@@ -2114,14 +2102,8 @@
     ],
     "nDT8qt": ["Initialized ", ["0"], " but could not open it."],
     "nJq7et": ["Couldn't uninstall skill: ", ["0"]],
-    "nMSYz5": [
-      "This path is on an external volume (/Volumes/...). OpenKnowledge will lose track of files when the drive ejects."
-    ],
     "nNYV3Y": ["and ", ["remaining"], " more"],
     "nP-KFo": ["New ", ["0"], " chat"],
-    "nP76lk": [
-      "Applies to all projects on this machine. Claude and Codex, started from the built-in terminal, auto-approve OpenKnowledge's read and write tools (Claude also auto-runs \"ok open\"). Deleting, moving, sharing, installing skills, other commands, and non-OpenKnowledge file edits still ask. Cursor, OpenCode, and Pi are unaffected. Best-effort per agent."
-    ],
     "nTwL53": ["Open a doc to share its URL."],
     "nUNZL4": ["Ask ", ["0"]],
     "nWv1ja": ["Manage hidden files in Settings → Ignore patterns."],
@@ -2151,10 +2133,6 @@
     ],
     "nskygk": ["Choose agent"],
     "nwtY4N": ["Something went wrong"],
-    "nxlOpL": ["OpenKnowledge is using this GitHub account."],
-    "ny6vNn": [
-      "OpenKnowledge is using a GitHub account provided by the gh CLI. There's no separate OpenKnowledge credential to disconnect."
-    ],
     "nzHlj8": ["Close ", ["0"]],
     "nzaV6Q": ["Page thumbnails"],
     "o2yoFu": ["Reveal in Finder, No workspace"],
@@ -2178,6 +2156,7 @@
       "Toggle the bottom terminal panel. With text selected, stage it in the terminal's AI input instead."
     ],
     "oCZkaG": ["Copy path"],
+    "oDxt8i": ["Teaches coding agents in this project to read and write through SynapseNote."],
     "oEgEn_": [
       "A key is set, but the embeddings provider rejected it or was unreachable — search fell back to keyword matching. Check the key in <0>Settings → Account</0> and the embeddings endpoint setting."
     ],
@@ -2188,9 +2167,6 @@
     "oXKEsy": ["Delete an adjacent wiki-link or tag chip."],
     "oYepHb": [
       "The terminal is turned off for this project. Turn it back on to run commands here."
-    ],
-    "of3tF-": [
-      "You picked ~/Documents. OpenKnowledge will index every markdown file under it. If you only want to manage a sub-folder, choose a smaller scope."
     ],
     "ogAuyr": ["Back to document view"],
     "olTIwK": [
@@ -2214,9 +2190,15 @@
     "p9sdCy": ["New ignore pattern"],
     "pAgkuZ": ["Reopening \"", ["docName"], "\" with a fresh local collaboration cache."],
     "pBROkv": ["Thanks for subscribing. Watch your inbox for product updates."],
+    "pDaD8G": [
+      "Choose whether this project's SynapseNote setup, including its AI-tool connections, is saved with the project so teammates get it too, or kept only on your computer."
+    ],
     "pEQFsW": ["No matching projects."],
     "pFagOn": ["Source editing"],
     "pHYP6v": ["Open <0>Customize</0> in the sidebar <1/> <2>Skills</2>."],
+    "pOrdK6": [
+      "Couldn't restart the server — another process owns it. Quit other SynapseNote windows for this project, then try again."
+    ],
     "pRc-Im": ["Undone all edits on ", ["docName"]],
     "pTPqMK": ["Toggle a fenced code block."],
     "pWT04I": ["Checking..."],
@@ -2260,7 +2242,6 @@
     "qSKu2v": ["Source navigation and selection"],
     "qSxaOz": ["Accept their deletion"],
     "qUB_o_": ["Auto-sync is off — your edits stay local until you commit and push manually."],
-    "qXg5W9": ["File saves to <0>~/Downloads/openknowledge.skill</0>."],
     "qXsafh": ["Publish to GitHub"],
     "qZv5ZR": ["Config sharing toggle failed"],
     "q_9EcE": ["Enable git auto-sync?"],
@@ -2268,10 +2249,21 @@
     "qaHyRJ": [["linkCount", "plural", { "one": ["#", " link"], "other": ["#", " links"] }]],
     "qbfj1f": ["Receiving objects"],
     "qdBUHP": ["Couldn't load ", ["fileName"]],
+    "qdMhpH": [
+      "This path is on an external volume (/Volumes/...). SynapseNote will lose track of files when the drive ejects."
+    ],
     "qi1F96": ["Reveal in File Explorer"],
     "qiRoLb": ["Summarize everything I changed this week"],
     "qioCwA": ["Jump to page ", ["pageNumber"]],
     "qjHMHf": ["Failed to disable sync — ", ["detail"]],
+    "qkkwRG": [
+      ["docName"],
+      " is ",
+      ["0"],
+      ". SynapseNote currently opens files up to ",
+      ["1"],
+      "."
+    ],
     "qmL1UG": ["Uploading securely"],
     "qo4zCg": ["Path cannot contain backslashes"],
     "qpQwGC": ["Describe what you're working on and the agent sets it up for you."],
@@ -2344,10 +2336,15 @@
       ["currentLabel"],
       "</1>)."
     ],
+    "sZK2xC": [
+      "This project is running a different, incompatible build of SynapseNote than this app (v",
+      ["0"],
+      ")."
+    ],
     "saIASg": ["Second item"],
     "saYiIO": ["Path cannot contain null bytes"],
     "scmRyR": ["Full access"],
-    "seeS6l": ["Setup OpenKnowledge in this folder?"],
+    "sffi0T": ["File saves to <0>~/Downloads/synapsenote.skill</0>."],
     "shNd9t": ["Slash command menu"],
     "si3L24": [
       "Open an additional terminal tab. With text selected, stage it in the new tab's AI input."
@@ -2378,6 +2375,7 @@
     ],
     "t6w1cq": ["Open a blank editor tab."],
     "tAPZEx": ["Below"],
+    "tCHy2K": ["Manage the GitHub account SynapseNote uses to browse and sync your repositories."],
     "tHKQ6j": ["Renaming"],
     "tP5DDk": ["Apply link"],
     "tUvUfp": ["Use a folder you already have."],
@@ -2393,8 +2391,10 @@
     "tiWX6q": ["Source editor"],
     "tjXez2": ["blog-post"],
     "toyw51": ["Mermaid diagram controls"],
+    "tp6sN0": [
+      "SynapseNote is using a GitHub account provided by the gh CLI. There's no separate SynapseNote credential to disconnect."
+    ],
     "tsiTqO": ["Paste your API key"],
-    "tsyExA": ["Connect your AI tools to OpenKnowledge"],
     "u-9fWA": ["See <0>Architecture</0> for the system overview."],
     "u3BOHd": [["fileCount", "plural", { "one": ["#", " file"], "other": ["#", " files"] }]],
     "u3YnKw": ["Could not construct share URL."],
@@ -2412,6 +2412,7 @@
       "No project skills yet. Author one to teach agents a repeatable task scoped to this knowledge base."
     ],
     "uFQbYd": ["Home page and entry point."],
+    "uFtOB_": ["Create a new SynapseNote project in the folder of your choice."],
     "uGaIIS": ["Check out worktree"],
     "uH_S-u": [["loadErrorTitle"], ": ", ["message"]],
     "uKRYiW": ["Sync status unavailable — server error."],
@@ -2470,7 +2471,6 @@
     "vbK_ZG": ["Files sidebar"],
     "ve8vEM": ["Code expired — please try again"],
     "vfRlCI": ["Could not copy full path"],
-    "vfWA_g": ["You picked ~/Desktop. OpenKnowledge will index everything on your desktop."],
     "vhAnzJ": ["Turn on semantic search?"],
     "viwC-K": ["Failed to remove project."],
     "vppAju": ["Where newly added attachments are placed."],
@@ -2482,7 +2482,6 @@
       "Could not read branch state for this project. Close this dialog and open the share link again."
     ],
     "w6sBjd": ["Terminal settings not yet loaded — try again in a moment"],
-    "w7SsvI": ["That folder isn't an OpenKnowledge project yet. Initialize it and open?"],
     "w7nm4K": ["Indented blockquote for citations."],
     "wDgmsr": ["\"", ["0"], "\" install refreshed (", ["1"], ")"],
     "wGSHzy": ["Activate one of the first eight editor tabs."],
@@ -2533,6 +2532,9 @@
     "xNyj3h": ["Reinstall for Claude Chat & Cowork"],
     "xOTzt5": ["just now"],
     "xSVO3J": ["What gets created"],
+    "xVX_DF": [
+      "Installed — ok is available in external terminals. Unchecking removes it; SynapseNote's built-in terminal and AI tools keep working."
+    ],
     "xWEvuo": ["Ask AI"],
     "xXo8FT": ["Save failed: ", ["error"]],
     "xYMPyY": [
@@ -2598,9 +2600,6 @@
       " (inherited from folder properties; not editable here)"
     ],
     "ygCKqB": ["Stop"],
-    "yhdqox": [
-      "Installed — ok is available in external terminals. Unchecking removes it; OpenKnowledge's built-in terminal and AI tools keep working."
-    ],
     "yitgD9": ["Failed to load skill targets: ", ["0"]],
     "yjExfe": ["Branch <0>", ["shareBranch"], "</0> is checked out in:"],
     "ylXj1N": ["Selected"],
@@ -2620,9 +2619,6 @@
     "z2JdQ-": ["Config sharing unchanged — see details below."],
     "z2funE": ["Full Path"],
     "z5pqI8": ["Cannot upload: no document is open"],
-    "z60Lgn": [
-      "Saves the file to <0>~/Downloads/openknowledge.skill</0> and opens the Claude Desktop App. Requires Node.js or Bun on your PATH."
-    ],
     "zAsDLY": ["Graph visualization of document links"],
     "zKxoPm": ["Couldn't rename \"", ["0"], "\": ", ["1"]],
     "zL0LPh": ["Global outside text fields"],

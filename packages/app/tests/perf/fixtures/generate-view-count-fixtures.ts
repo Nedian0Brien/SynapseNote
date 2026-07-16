@@ -41,7 +41,7 @@
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { MarkdownManager, OK_DIR, sharedExtensions } from '@inkeep/open-knowledge-core';
+import { MarkdownManager, OK_DIR, sharedExtensions } from '@nedian0brien/synapsenote-core';
 
 // ---------------------------------------------------------------------------
 // Config

@@ -88,7 +88,7 @@ const fetchMock = mock(async (input: RequestInfo | URL) => {
   if (url === '/api/workspace') {
     return new Response(
       JSON.stringify({
-        contentDir: '/tmp/open-knowledge',
+        contentDir: '/tmp/synapsenote',
         pathSeparator: '/',
         symlinkResolved: true,
       }),

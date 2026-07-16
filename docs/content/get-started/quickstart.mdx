@@ -9,7 +9,7 @@ description: Set up your agent-maintained knowledge base in less than five minut
 
 <Callout type="info" title="Prerequisites">
   - **macOS on Apple Silicon** (M1 or later).
-  - **`git`.** OpenKnowledge initializes a git repo for your project (used for the timeline and recovery features). Install from [git-scm.com](https://git-scm.com/install/mac).
+  - **`git`.** SynapseNote initializes a git repo for your project (used for the timeline and recovery features). Install from [git-scm.com](https://git-scm.com/install/mac).
 </Callout>
 
 <Steps>
@@ -18,7 +18,7 @@ description: Set up your agent-maintained knowledge base in less than five minut
 
 ### Install the desktop app
 
-Download the latest version of the OpenKnowledge desktop app for macOS.
+Download the latest version of the SynapseNote desktop app for macOS.
 
 <DownloadButton label="Download for macOS" />
 
@@ -28,7 +28,7 @@ Download the latest version of the OpenKnowledge desktop app for macOS.
 
 ### Create a new project
 
-- Open the OpenKnowledge app. On first launch, approve the **Connect your AI tools to OpenKnowledge** dialog — it wires up your AI editors and can add the `ok` command to your terminal. If you skip it, re-open it later from **File → Set up OpenKnowledge integrations…**.
+- Open the SynapseNote app. On first launch, approve the **Connect your AI tools to SynapseNote** dialog — it wires up your AI editors and can add the `ok` command to your terminal. If you skip it, re-open it later from **File → Set up SynapseNote integrations…**.
 - You'll then land on the starter-pack picker ("What do you want to build?"). To follow this guide, choose **Blank project** under "Have something else in mind?" — or pick a starter pack (for example **Knowledge base**) to scaffold ready-made folders and templates up front and skip the Initialize step below.
 - Type a name for your project (for example, *Team Wiki*).
 - Optionally click **Browse** to change where the project is saved, then click **Create**.
@@ -42,7 +42,7 @@ Download the latest version of the OpenKnowledge desktop app for macOS.
 From your newly created project, select **Knowledge base** from the landing page, leave **Project root** selected, and click **Initialize**.
 
 <Callout type="info">
-  Curious what the app writes to your machine — including the shell and `PATH` changes it manages on macOS? See [What OpenKnowledge writes to your system](/docs/reference/what-open-knowledge-writes).
+  Curious what the app writes to your machine — including the shell and `PATH` changes it manages on macOS? See [What SynapseNote writes to your system](/docs/reference/what-synapsenote-writes).
 </Callout>
 
 </Step>
@@ -58,11 +58,11 @@ Not sure what to write? Paste this into the input box (or use a topic of your ch
 <CopyPrompt>Create a knowledge base about Large Language Models. Include an overview page and separate pages for three key concepts.</CopyPrompt>
 
 <Callout type="info">
-  To avoid having to approve all OpenKnowledge tool calls, set your agent to auto-mode, full-access, or an equivalent setting.
+  To avoid having to approve all SynapseNote tool calls, set your agent to auto-mode, full-access, or an equivalent setting.
 </Callout>
 
 <Callout type="info">
-  If your agent prompts you to approve a new MCP server (Cursor does this), approve `open-knowledge`.
+  If your agent prompts you to approve a new MCP server (Cursor does this), approve `synapsenote`.
 </Callout>
 
 </Step>
@@ -71,7 +71,7 @@ Not sure what to write? Paste this into the input box (or use a topic of your ch
 
 ### Watch your agent work
 
-If you are working with Cursor, Codex, or Claude Desktop, your agent will open the OpenKnowledge editor in an embedded window.
+If you are working with Cursor, Codex, or Claude Desktop, your agent will open the SynapseNote editor in an embedded window.
 
 You will see your agent's icon in the top right of the editor window. Click on the icon to see the agent's [activity](/docs/features/agent-activity) across files in the knowledge base.
 
@@ -105,8 +105,8 @@ Right-click anywhere in the sidebar (empty space, a folder, or a file) to create
 <Tab>
 
 <Callout type="info" title="Prerequisites">
-  - **Node.js 24+.** OpenKnowledge requires Node.js 24 or higher. Download from [nodejs.org](https://nodejs.org/en/download/).
-  - **`git`.** OpenKnowledge initializes a git repo for your project (used for the timeline and recovery features). Install it from [git-scm.com](https://git-scm.com) or your package manager.
+  - **Node.js 24+.** SynapseNote requires Node.js 24 or higher. Download from [nodejs.org](https://nodejs.org/en/download/).
+  - **`git`.** SynapseNote initializes a git repo for your project (used for the timeline and recovery features). Install it from [git-scm.com](https://git-scm.com) or your package manager.
 </Callout>
 
 <Steps>
@@ -119,7 +119,7 @@ Install the CLI from npm, initialize a project, and start the editor in your bro
 
 ```bash
 # Install the CLI globally
-npm install -g @inkeep/open-knowledge
+npm install -g @nedian0brien/synapsenote
 
 # Create (or enter) a project folder, then initialize a knowledge base.
 # `ok init` scaffolds .ok/ and wires up Claude Code, Claude Desktop, Cursor, Codex, OpenCode, OpenClaw, Pi, Antigravity, LM Studio, and Hermes.
@@ -131,7 +131,7 @@ ok start --open
 ```
 
 <Callout type="info">
-  Want to know exactly what these commands write to your machine — in your project, your home directory, and your editors' configs? See [What OpenKnowledge writes to your system](/docs/reference/what-open-knowledge-writes).
+  Want to know exactly what these commands write to your machine — in your project, your home directory, and your editors' configs? See [What SynapseNote writes to your system](/docs/reference/what-synapsenote-writes).
 </Callout>
 
 </Step>
@@ -140,18 +140,18 @@ ok start --open
 
 ### Open the knowledge base in your AI agent
 
-`ok init` already registered OpenKnowledge with the AI editors it could configure, so your agent can use the OpenKnowledge tools right away. Open your project in your agent — or, from the editor, right-click the project in the sidebar, choose **Open with AI ▸**, and pick one. (With a document open, the bottom **Ask AI** field hands a prompt to your agent too.) If a tool's MCP entry didn't appear, see [registration outcomes](/docs/reference/cli#set-up-a-project).
+`ok init` already registered SynapseNote with the AI editors it could configure, so your agent can use the SynapseNote tools right away. Open your project in your agent — or, from the editor, right-click the project in the sidebar, choose **Open with AI ▸**, and pick one. (With a document open, the bottom **Ask AI** field hands a prompt to your agent too.) If a tool's MCP entry didn't appear, see [registration outcomes](/docs/reference/cli#set-up-a-project).
 
 In the agent's chat window, add the following to get started or use a topic of your choice:
 
 <CopyPrompt>Create a knowledge base about Large Language Models. Include an overview page and separate pages for three key concepts.</CopyPrompt>
 
 <Callout type="info">
-  To avoid having to approve all OpenKnowledge tool calls, set your agent to auto-mode, full-access, or an equivalent setting.
+  To avoid having to approve all SynapseNote tool calls, set your agent to auto-mode, full-access, or an equivalent setting.
 </Callout>
 
 <Callout type="info">
-  If your agent prompts you to approve a new MCP server (Cursor does this), approve `open-knowledge`.
+  If your agent prompts you to approve a new MCP server (Cursor does this), approve `synapsenote`.
 </Callout>
 
 </Step>
@@ -195,4 +195,4 @@ Right-click anywhere in the sidebar (empty space, a folder, or a file) to create
 
 - Syncing your knowledge base to GitHub: [Syncing](/docs/features/github-sync)
 - Learn more about the editor: [Editor](/docs/features/editor)
-- Configure OpenKnowledge: [Configuration](/docs/reference/configuration)
+- Configure SynapseNote: [Configuration](/docs/reference/configuration)

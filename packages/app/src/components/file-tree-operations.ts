@@ -2,8 +2,8 @@ import type {
   DuplicatePathSuccess,
   RenamedAssetMapping,
   RenamedDocMapping,
-} from '@inkeep/open-knowledge-core';
-import { mediaKindForSidebarAssetExtension } from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
+import { mediaKindForSidebarAssetExtension } from '@nedian0brien/synapsenote-core';
 import {
   docNameToTreePath,
   resolveExtensionlessAssetPath,
@@ -22,7 +22,7 @@ import {
 } from '@/components/file-tree-utils';
 import { joinWorkspacePath, type Workspace } from '@/lib/workspace-paths';
 
-// `RenamedDocMapping` is canonical in `@inkeep/open-knowledge-core` (mirrors
+// `RenamedDocMapping` is canonical in `@nedian0brien/synapsenote-core` (mirrors
 // `RenamedDocMappingSchema` for the `/api/rename-path` success body).
 // `RenamedFolderMapping` is the parallel folder-rename mapping; it stays
 // local for now until a core schema is added (future cleanup — pair with a

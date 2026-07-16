@@ -2,7 +2,7 @@ import { afterEach, describe, expect, mock, test } from 'bun:test';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 
-mock.module('@inkeep/open-knowledge-core', () => ({
+mock.module('@nedian0brien/synapsenote-core', () => ({
   SHOW_INSTALL_SKILL: false,
 }));
 

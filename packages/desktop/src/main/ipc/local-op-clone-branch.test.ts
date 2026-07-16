@@ -19,7 +19,7 @@
  * assert both the spawn-time wire and the runtime event forwarding.
  */
 import { describe, expect, mock, test } from 'bun:test';
-import type { CloneEvent } from '@inkeep/open-knowledge-server';
+import type { CloneEvent } from '@nedian0brien/synapsenote-server';
 
 interface CloneSpawn {
   url: string;
@@ -30,7 +30,7 @@ interface CloneSpawn {
 
 const cloneSpawns: CloneSpawn[] = [];
 
-mock.module('@inkeep/open-knowledge-server', () => ({
+mock.module('@nedian0brien/synapsenote-server', () => ({
   runAuthStatusSubprocess: () => Promise.resolve({ authenticated: false, host: 'github.com' }),
   runAuthReposSubprocess: () => Promise.resolve({ ok: false, error: 'unused' }),
   runDeviceFlowSubprocess: () => ({ done: Promise.resolve(), cancel: () => {} }),
@@ -69,7 +69,7 @@ function makeSender(captured: CapturedSend[]) {
 
 function makeDeps() {
   return {
-    resolveCliArgs: () => ['open-knowledge'],
+    resolveCliArgs: () => ['synapsenote'],
     state: createLocalOpState(),
   };
 }

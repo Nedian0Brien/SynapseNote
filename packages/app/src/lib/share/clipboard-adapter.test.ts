@@ -67,8 +67,8 @@ describe('scheduleClipboardWrite — Electron IPC bridge path (preferred when av
       navigatorClipboardWriteText: undefined,
     });
 
-    await scheduleClipboardWrite('https://openknowledge.ai/d/AAA');
-    expect(calls).toEqual(['https://openknowledge.ai/d/AAA']);
+    await scheduleClipboardWrite('https://synapse.lawdigest.kr/d/AAA');
+    expect(calls).toEqual(['https://synapse.lawdigest.kr/d/AAA']);
   });
 
   test('does NOT touch navigator.clipboard when okDesktop bridge is available', async () => {
@@ -80,7 +80,7 @@ describe('scheduleClipboardWrite — Electron IPC bridge path (preferred when av
       navigatorClipboardWriteText: navWriteText,
     });
 
-    await scheduleClipboardWrite('https://openknowledge.ai/d/AAA');
+    await scheduleClipboardWrite('https://synapse.lawdigest.kr/d/AAA');
     expect(navWriteText).not.toHaveBeenCalled();
   });
 
@@ -96,7 +96,7 @@ describe('scheduleClipboardWrite — Electron IPC bridge path (preferred when av
       navigatorClipboardWriteText: undefined,
     });
 
-    await expect(scheduleClipboardWrite('https://openknowledge.ai/d/AAA')).rejects.toThrow(
+    await expect(scheduleClipboardWrite('https://synapse.lawdigest.kr/d/AAA')).rejects.toThrow(
       /ipc-channel-closed/,
     );
   });
@@ -112,8 +112,8 @@ describe('scheduleClipboardWrite — navigator.clipboard.writeText fallback', ()
       },
     });
 
-    await scheduleClipboardWrite('https://openknowledge.ai/d/BBB');
-    expect(calls).toEqual(['https://openknowledge.ai/d/BBB']);
+    await scheduleClipboardWrite('https://synapse.lawdigest.kr/d/BBB');
+    expect(calls).toEqual(['https://synapse.lawdigest.kr/d/BBB']);
   });
 
   test('propagates the writeText rejection (e.g. NotAllowedError)', async () => {
@@ -124,7 +124,7 @@ describe('scheduleClipboardWrite — navigator.clipboard.writeText fallback', ()
       },
     });
 
-    await expect(scheduleClipboardWrite('https://openknowledge.ai/d/BBB')).rejects.toThrow(
+    await expect(scheduleClipboardWrite('https://synapse.lawdigest.kr/d/BBB')).rejects.toThrow(
       /NotAllowedError|clipboard denied/,
     );
   });
@@ -174,7 +174,7 @@ describe('scheduleClipboardWrite — no clipboard API available', () => {
       navigatorClipboardWriteText: undefined,
     });
 
-    await expect(scheduleClipboardWrite('https://openknowledge.ai/d/ZZZ')).rejects.toThrow(
+    await expect(scheduleClipboardWrite('https://synapse.lawdigest.kr/d/ZZZ')).rejects.toThrow(
       /clipboard API unavailable/,
     );
   });
@@ -278,11 +278,11 @@ describe('scheduleClipboardWrite — document.execCommand("copy") fallback', () 
       },
     });
 
-    await scheduleClipboardWrite('https://openknowledge.ai/d/CCC');
+    await scheduleClipboardWrite('https://synapse.lawdigest.kr/d/CCC');
 
     expect(execCalls).toEqual(['copy']);
     expect(created).toHaveLength(1);
-    expect(created[0]?.value).toBe('https://openknowledge.ai/d/CCC');
+    expect(created[0]?.value).toBe('https://synapse.lawdigest.kr/d/CCC');
     expect(created[0]?.selected).toBe(true);
     expect(created[0]?.removed).toBe(true);
   });
@@ -295,7 +295,7 @@ describe('scheduleClipboardWrite — document.execCommand("copy") fallback', () 
       navigatorClipboardWriteText: undefined,
     });
 
-    await scheduleClipboardWrite('https://openknowledge.ai/d/DDD');
+    await scheduleClipboardWrite('https://synapse.lawdigest.kr/d/DDD');
     expect(execCalls).toEqual(['copy']);
   });
 
@@ -309,7 +309,7 @@ describe('scheduleClipboardWrite — document.execCommand("copy") fallback', () 
       },
     });
 
-    await expect(scheduleClipboardWrite('https://openknowledge.ai/d/EEE')).rejects.toThrow(
+    await expect(scheduleClipboardWrite('https://synapse.lawdigest.kr/d/EEE')).rejects.toThrow(
       /permissions policy/,
     );
   });
@@ -324,7 +324,7 @@ describe('scheduleClipboardWrite — document.execCommand("copy") fallback', () 
       },
     });
 
-    await expect(scheduleClipboardWrite('https://openknowledge.ai/d/FFF')).rejects.toThrow(
+    await expect(scheduleClipboardWrite('https://synapse.lawdigest.kr/d/FFF')).rejects.toThrow(
       /permissions policy/,
     );
     // The throwing path must still clean up the scratch textarea.
@@ -340,7 +340,7 @@ describe('scheduleClipboardWrite — document.execCommand("copy") fallback', () 
       },
     });
 
-    await expect(scheduleClipboardWrite('https://openknowledge.ai/d/GGG')).rejects.toThrow(
+    await expect(scheduleClipboardWrite('https://synapse.lawdigest.kr/d/GGG')).rejects.toThrow(
       /permissions policy/,
     );
   });
@@ -353,7 +353,7 @@ describe('scheduleClipboardWrite — document.execCommand("copy") fallback', () 
       navigatorClipboardWriteText: undefined,
     });
 
-    await scheduleClipboardWrite('https://openknowledge.ai/d/HHH');
+    await scheduleClipboardWrite('https://synapse.lawdigest.kr/d/HHH');
     expect(execCalls).toEqual([]);
   });
 });

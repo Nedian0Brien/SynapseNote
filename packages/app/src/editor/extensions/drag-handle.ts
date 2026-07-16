@@ -31,7 +31,7 @@
  * Keyboard alternative: Mod+Shift+↑/↓ via BlockMover extension.
  */
 import { offset } from '@floating-ui/dom';
-import { incrementBlockGripClickSelectFailed } from '@inkeep/open-knowledge-core';
+import { incrementBlockGripClickSelectFailed } from '@nedian0brien/synapsenote-core';
 import { type Editor, Extension } from '@tiptap/core';
 import { DragHandlePlugin, normalizeNestedOptions } from '@tiptap/extension-drag-handle';
 import type { Node as PmNode } from '@tiptap/pm/model';

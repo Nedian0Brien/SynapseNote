@@ -18,7 +18,7 @@ export { withParentLock } from './git-mutex.ts';
 /**
  * A GitHub token resolved in the server process (where `gh` is reachable) and
  * relayed to the credential helper through the curated git env. The helper
- * (`open-knowledge auth git-credential`) has no `gh` shell-out of its own — it
+ * (`synapsenote auth git-credential`) has no `gh` shell-out of its own — it
  * returns this relayed token, else falls back to OK's stored token — so the
  * relay is the only path by which a gh-resolved token reaches sync. Resolving
  * server-side, in the full env where gh and its config are reachable, is what
@@ -99,7 +99,7 @@ const GIT_AUTH_ENV_KEYS = [
  *   classifiers (`error-classification.ts`, `isBranchNotFoundFetchError`)
  *   match across host locales. Matches `packages/cli/src/commands/clone.ts`.
  * - `PATH`: so git resolves its subprocesses, and a credential helper given as
- *   a bare command (`!open-knowledge auth git-credential` — the dev /
+ *   a bare command (`!synapsenote auth git-credential` — the dev /
  *   CLI-on-PATH path) is found instead of failing "command not found".
  * - The `GIT_AUTH_ENV_KEYS` allowlist (`HOME`, `SSH_AUTH_SOCK`, the Windows
  *   home/profile vars, etc.): so the SSH transport finds `~/.ssh` and the

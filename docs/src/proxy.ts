@@ -1,16 +1,15 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
-const APEX_HOST = 'openknowledge.ai';
+const APEX_HOST = 'synapse.lawdigest.kr';
 const WWW_HOST = `www.${APEX_HOST}`;
 
 /**
- * Canonicalize `www.openknowledge.ai` -> `openknowledge.ai`, EXCEPT for
+ * Canonicalize `www.synapse.lawdigest.kr` -> `synapse.lawdigest.kr`, EXCEPT for
  * `/.well-known/*`.
  *
- * The desktop entitlement declares Universal Links for both `applinks:openknowledge.ai`
- * and `applinks:www.openknowledge.ai`, so BOTH hosts must serve
+ * When Universal Links are enabled, both hosts must serve
  * `/.well-known/apple-app-site-association` as a direct 200. Apple's `swcd`
- * fetches the AASA without following redirects and negative-caches a failure
+ * Apple's `swcd` fetches the AASA without following redirects and negative-caches a failure
  * for ~8 days, so any redirect on the www AASA path silently breaks
  * Universal-Link auto-open for every share link on www.
  *

@@ -4,8 +4,9 @@
  * doc first, so the pre-update version is recoverable from version history. The
  * confirmation names both (replaces edits / restorable) so the choice is informed.
  */
-import type { SkillsListEntry } from '@inkeep/open-knowledge-core';
+
 import { Trans, useLingui } from '@lingui/react/macro';
+import type { SkillsListEntry } from '@nedian0brien/synapsenote-core';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';

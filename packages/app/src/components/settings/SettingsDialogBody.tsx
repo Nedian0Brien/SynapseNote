@@ -1,4 +1,4 @@
-// biome-ignore-all lint/plugin/no-raw-html-interactive-element: pre-rule backlog — file uses raw <button>/<input>/<textarea> awaiting shadcn migration; tracked at https://github.com/inkeep/open-knowledge/blob/main/biome-plugins/README.md#no-raw-html-interactive-elementgrit
+// biome-ignore-all lint/plugin/no-raw-html-interactive-element: pre-rule backlog — file uses raw <button>/<input>/<textarea> awaiting shadcn migration; tracked at https://github.com/Nedian0Brien/SynapseNote/blob/main/biome-plugins/README.md#no-raw-html-interactive-elementgrit
 /**
  * Lazy body for the Settings modal — pulled in as a separate chunk by
  * `SettingsDialogShell.tsx` via `React.lazy`. Receives the active
@@ -29,6 +29,9 @@
  * `<InstallInClaudeDesktopDialog>` (its own internal Dialog).
  */
 
+import type { MessageDescriptor } from '@lingui/core';
+import { msg } from '@lingui/core/macro';
+import { Trans, useLingui } from '@lingui/react/macro';
 import {
   CONFIG_DOC_NAME_PROJECT,
   CONFIG_DOC_NAME_USER,
@@ -43,10 +46,7 @@ import {
   normalizeAttachmentFolderPath,
   type OkignoreBinding,
   SHOW_INSTALL_SKILL,
-} from '@inkeep/open-knowledge-core';
-import type { MessageDescriptor } from '@lingui/core';
-import { msg } from '@lingui/core/macro';
-import { Trans, useLingui } from '@lingui/react/macro';
+} from '@nedian0brien/synapsenote-core';
 import { ArrowUpRight, Check, ChevronRight, RotateCcw } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useEffect, useRef, useState } from 'react';
@@ -1515,7 +1515,7 @@ function IntegrationsSection() {
           <Trans>Integrations</Trans>
         </h3>
         <p className="text-sm text-muted-foreground">
-          <Trans>Connect OpenKnowledge to other tools you use.</Trans>
+          <Trans>Connect SynapseNote to other tools you use.</Trans>
         </p>
       </div>
       <div className="rounded-md border p-3">

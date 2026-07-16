@@ -11,7 +11,7 @@
  * composer (the same surface a caret-only Ask AI opens).
  */
 
-const ACTIVE_TERMINAL_INPUT_EVENT = 'open-knowledge:active-terminal-input';
+const ACTIVE_TERMINAL_INPUT_EVENT = 'synapsenote:active-terminal-input';
 
 export function requestActiveTerminalInput(
   text: string,

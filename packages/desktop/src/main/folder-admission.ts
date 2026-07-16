@@ -1,7 +1,7 @@
 /**
  * Folder-pick admission helpers — classifiers the desktop main process runs
  * against a path the user picked (system folder dialog, drag-drop from Finder,
- * Recents click, or `openknowledge://` deep-link) BEFORE spawning a project
+ * Recents click, or `synapsenote://` deep-link) BEFORE spawning a project
  * window. `validateFolderPick` is pure and surfaces "this looks like an
  * unusual choice" warnings without ever blocking (warn, never refuse).
  * `discoverProject` walks the filesystem to decide whether the picked path
@@ -18,8 +18,8 @@ import { existsSync, realpathSync, statSync } from 'node:fs';
 import { homedir as nodeHomedir } from 'node:os';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { promisify } from 'node:util';
-import { resolveGitDirDetailed } from '@inkeep/open-knowledge-core/shadow-repo-layout';
-import { isProjectRoot } from '@inkeep/open-knowledge-server';
+import { resolveGitDirDetailed } from '@nedian0brien/synapsenote-core/shadow-repo-layout';
+import { isProjectRoot } from '@nedian0brien/synapsenote-server';
 
 const execFileAsync = promisify(execFile);
 

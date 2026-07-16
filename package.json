@@ -1,5 +1,5 @@
 {
-  "name": "open-knowledge",
+  "name": "synapsenote",
   "license": "GPL-3.0-or-later",
   "private": true,
   "type": "module",
@@ -13,13 +13,13 @@
     "docs"
   ],
   "scripts": {
-    "knip": "turbo run build --filter=@inkeep/open-knowledge-server --filter=@inkeep/open-knowledge-core --output-logs=errors-only && knip",
+    "knip": "turbo run build --filter=@nedian0brien/synapsenote-server --filter=@nedian0brien/synapsenote-core --output-logs=errors-only && knip",
     "notices": "bun scripts/generate-third-party-notices.mjs",
     "schema:dump": "bun packages/core/scripts/dump-schema.ts",
     "build": "turbo run build",
     "build:desktop": "turbo run build:desktop",
     "build:desktop:dir": "turbo run build:desktop:dir",
-    "check:desktop": "turbo run lint typecheck test --filter=@inkeep/open-knowledge-desktop",
+    "check:desktop": "turbo run lint typecheck test --filter=@nedian0brien/synapsenote-desktop",
     "check:fast": "bun run typecheck",
     "check:doc-links": "bun run --cwd docs validate-link",
     "check:drift": "bash scripts/check-husky-prepare-guard.sh && bash scripts/check-knip-clean.sh && bash scripts/check-notices-clean.sh && bash scripts/check-schema-snapshot-clean.sh && bash scripts/check-i18n-drift.sh && bash scripts/check-no-major-changeset.sh && bun test scripts/",

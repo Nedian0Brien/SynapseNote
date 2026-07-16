@@ -3,7 +3,7 @@ import nextConfig from '../next.config.ts';
 
 /**
  * Chrome blocks a download when ANY hop in its redirect chain is plain http,
- * so a visit starting at http://openknowledge.ai/download/beta gets
+ * so a visit starting at http://synapse.lawdigest.kr/download/beta gets
  * "Insecure download blocked" for the DMG even though Vercel upgrades to
  * https immediately. The durable fix is HSTS preload-list membership
  * (hstspreload.org), which rewrites navigations to https before the first

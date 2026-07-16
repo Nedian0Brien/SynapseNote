@@ -1,10 +1,10 @@
 [package]
-name = "open-knowledge-native-config"
+name = "synapsenote-native-config"
 version = "0.0.0"
 edition = "2021"
 license = "GPL-3.0-or-later"
 publish = false
-description = "Native (toml_edit) parse/classify and format-preserving edit engine for OpenKnowledge harness MCP-config writes."
+description = "Native (toml_edit) parse/classify and format-preserving edit engine for SynapseNote harness MCP-config writes."
 
 [lib]
 crate-type = ["cdylib", "lib"]

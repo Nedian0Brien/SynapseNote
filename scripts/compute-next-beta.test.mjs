@@ -107,7 +107,7 @@ describe('parseSection', () => {
     const section = `### Patch Changes
 
 - Updated dependencies [abc1234]
-  - @inkeep/open-knowledge-core@0.5.0
+  - @nedian0brien/synapsenote-core@0.5.0
 `;
     const groups = parseSection(section);
     expect(groups['Patch Changes']).toHaveLength(1);
@@ -152,7 +152,7 @@ describe('renderNotes', () => {
   body
 
 - Updated dependencies [abc1234]
-  - @inkeep/open-knowledge-core@0.5.0
+  - @nedian0brien/synapsenote-core@0.5.0
 `,
     };
     const notes = renderNotes({ ...baseInput, packageDeltas });
@@ -169,11 +169,11 @@ describe('renderNotes', () => {
     const packageDeltas = {
       core: `### Patch Changes
 
-- @inkeep/open-knowledge-core@0.5.0-beta.6
+- @nedian0brien/synapsenote-core@0.5.0-beta.6
 `,
       server: `### Patch Changes
 
-- @inkeep/open-knowledge-server@0.5.0-beta.6
+- @nedian0brien/synapsenote-server@0.5.0-beta.6
 `,
       cli: `### Patch Changes
 
@@ -181,8 +181,8 @@ describe('renderNotes', () => {
 `,
     };
     const notes = renderNotes({ ...baseInput, packageDeltas });
-    expect(notes).not.toContain('@inkeep/open-knowledge-core@');
-    expect(notes).not.toContain('@inkeep/open-knowledge-server@');
+    expect(notes).not.toContain('@nedian0brien/synapsenote-core@');
+    expect(notes).not.toContain('@nedian0brien/synapsenote-server@');
     expect(notes).toContain('real narrative change');
   });
 
@@ -257,7 +257,7 @@ describe('renderNotes', () => {
 
 describe('round-trip: extractDeltaSection → parseSection → renderNotes', () => {
   test('multi-package CHANGELOG harvest produces a single deduplicated note', () => {
-    const cliChangelog = `# @inkeep/open-knowledge
+    const cliChangelog = `# @nedian0brien/synapsenote
 
 ## 0.5.0-beta.7
 
@@ -269,7 +269,7 @@ describe('round-trip: extractDeltaSection → parseSection → renderNotes', () 
   span paragraphs.
 
 - Updated dependencies [abc1234]
-  - @inkeep/open-knowledge-core@0.5.0-beta.7
+  - @nedian0brien/synapsenote-core@0.5.0-beta.7
 
 ## 0.5.0-beta.6
 
@@ -277,7 +277,7 @@ describe('round-trip: extractDeltaSection → parseSection → renderNotes', () 
 
 - old: prior beta entry
 `;
-    const appChangelog = `# @inkeep/open-knowledge-app
+    const appChangelog = `# @nedian0brien/synapsenote-app
 
 ## 0.5.0-beta.7
 
@@ -398,12 +398,12 @@ describe('computeBaseVersion — normative cadence vectors', () => {
 
 describe('parseFrontmatterBumpType', () => {
   test('returns the max bump declared across the frontmatter block', () => {
-    const cs = `---\n"@inkeep/open-knowledge": minor\n"@inkeep/open-knowledge-app": patch\n---\n\nbody`;
+    const cs = `---\n"@nedian0brien/synapsenote": minor\n"@nedian0brien/synapsenote-app": patch\n---\n\nbody`;
     expect(parseFrontmatterBumpType(cs)).toBe('minor');
   });
 
   test('returns major when a changeset declares a major bump', () => {
-    const cs = `---\n"@inkeep/open-knowledge": major\n---\n\nbody`;
+    const cs = `---\n"@nedian0brien/synapsenote": major\n---\n\nbody`;
     expect(parseFrontmatterBumpType(cs)).toBe('major');
   });
 

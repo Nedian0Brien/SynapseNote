@@ -12,7 +12,7 @@
  * it with a stub — the same pattern as `AuthQueryTransport`.
  */
 
-import { ProblemDetailsSchema } from '@inkeep/open-knowledge-core';
+import { ProblemDetailsSchema } from '@nedian0brien/synapsenote-core';
 
 export interface EmbeddingsKeyTransport {
   /** Store the key in the secrets file. */

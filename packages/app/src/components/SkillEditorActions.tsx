@@ -1,6 +1,10 @@
-import type { SkillScope, SkillsListEntry, SkillTargetEditor } from '@inkeep/open-knowledge-core';
-import { EDITOR_LABELS, SkillTargetEditorSchema } from '@inkeep/open-knowledge-core';
 import { Trans } from '@lingui/react/macro';
+import type {
+  SkillScope,
+  SkillsListEntry,
+  SkillTargetEditor,
+} from '@nedian0brien/synapsenote-core';
+import { EDITOR_LABELS, SkillTargetEditorSchema } from '@nedian0brien/synapsenote-core';
 import { ChevronDown } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useSkillActions } from '@/components/skill-actions';

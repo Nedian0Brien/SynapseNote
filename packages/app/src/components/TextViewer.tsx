@@ -23,7 +23,7 @@
 
 import { EditorState } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
-import { codeLanguageForExtension } from '@inkeep/open-knowledge-core';
+import { codeLanguageForExtension } from '@nedian0brien/synapsenote-core';
 import { basicDarkInit, basicLightInit } from '@uiw/codemirror-theme-basic';
 import { basicSetup } from 'codemirror';
 import { useTheme } from 'next-themes';

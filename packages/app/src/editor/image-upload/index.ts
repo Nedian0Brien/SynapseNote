@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro';
 import {
   AUDIO_EXTENSIONS,
   DEFAULT_DEDUP_UI,
@@ -11,8 +12,7 @@ import {
   UploadAssetSuccessSchema,
   VIDEO_EXTENSIONS,
   WIKI_EMBED_EXTENSIONS,
-} from '@inkeep/open-knowledge-core';
-import { t } from '@lingui/core/macro';
+} from '@nedian0brien/synapsenote-core';
 import type { Editor } from '@tiptap/core';
 import { NodeSelection, Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';

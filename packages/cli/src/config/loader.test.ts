@@ -121,7 +121,7 @@ describe('loadConfig', () => {
     // Redirect hints name the replacement knob.
     expect(msg).toContain('--host');
     expect(msg).toContain('HOST');
-    expect(msg).toContain('OPEN_KNOWLEDGE_GITHUB_CLIENT_ID');
+    expect(msg).toContain('SYNAPSENOTE_GITHUB_CLIENT_ID');
     expect(msg).toContain('OK_MCP_AUTOSTART');
     expect(msg).toContain('streaming uploads have no user-facing cap');
     // Source-located: file:line:col points inside the fixture.

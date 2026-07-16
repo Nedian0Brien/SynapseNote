@@ -39,7 +39,7 @@ import {
   sharedExtensions,
   splitLeadingDocBoundary,
   stripFrontmatter,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { getSchema } from '@tiptap/core';
 import * as Y from 'yjs';
 import { composeAndWriteRawBody } from './bridge-intake.ts';

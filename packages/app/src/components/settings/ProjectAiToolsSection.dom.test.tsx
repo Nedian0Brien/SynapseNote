@@ -40,7 +40,7 @@ const baseStatus: OkProjectIntegrationsStatus = {
       label: 'Claude Code',
       state: 'installed',
       configPath: '.mcp.json',
-      entryLocator: 'mcpServers.open-knowledge',
+      entryLocator: 'mcpServers.synapsenote',
       followUp: 'approve-once',
     },
     {
@@ -48,7 +48,7 @@ const baseStatus: OkProjectIntegrationsStatus = {
       label: 'Cursor',
       state: 'not-installed',
       configPath: '.cursor/mcp.json',
-      entryLocator: 'mcpServers.open-knowledge',
+      entryLocator: 'mcpServers.synapsenote',
       followUp: 'enable-manually',
     },
     {
@@ -56,13 +56,13 @@ const baseStatus: OkProjectIntegrationsStatus = {
       label: 'Codex',
       state: 'foreign',
       configPath: '.codex/config.toml',
-      entryLocator: '[mcp_servers.open-knowledge]',
+      entryLocator: '[mcp_servers.synapsenote]',
       followUp: 'auto-connect',
     },
   ],
   skill: {
     installed: true,
-    paths: ['.claude/skills/open-knowledge/SKILL.md', '.codex/skills/open-knowledge/SKILL.md'],
+    paths: ['.claude/skills/synapsenote/SKILL.md', '.codex/skills/synapsenote/SKILL.md'],
   },
 };
 

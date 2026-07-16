@@ -10,7 +10,7 @@ import {
   classifyGitAuthError,
   type GitAuthFailureSubclass,
   type SyncErrorCode,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -45,7 +45,7 @@ type LocalSubclass = 'index-lock' | 'dirty-tree' | 'disk-full' | 'unknown-local'
  * code travels server-to-client; the UI looks up the user-visible copy.
  *
  * Codes mirror the `<class>/<subclass>` taxonomy. The literals are single-
- * sourced as `SYNC_ERROR_CODES` in `@inkeep/open-knowledge-core` (the wire
+ * sourced as `SYNC_ERROR_CODES` in `@nedian0brien/synapsenote-core` (the wire
  * schema lives there too); this is the server-facing alias. Add a new code by
  * extending that tuple, then map the new `(class, subclass)` case in
  * `deriveUserFacingCode` below. The mapping is not compiler-enforced — the
@@ -129,7 +129,7 @@ function matchesAny(haystack: string, patterns: RegExp[]): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// Class 2 (Auth) — regex banks live in @inkeep/open-knowledge-core
+// Class 2 (Auth) — regex banks live in @nedian0brien/synapsenote-core
 // (`classifyGitAuthError`); this module delegates to keep one source of
 // truth for the auth patterns the CLI's `ok clone` catch and the server
 // share.
@@ -343,7 +343,7 @@ function classifyGitErrorBase(error: Error | unknown): ClassifiedErrorBase {
     };
   }
 
-  // --- Class 2 (Auth) — delegated to @inkeep/open-knowledge-core. A 403
+  // --- Class 2 (Auth) — delegated to @nedian0brien/synapsenote-core. A 403
   // that matches a protected-branch pattern is reclassified to semantic
   // here so push-rejected-by-branch-policy doesn't get rendered as a
   // generic access denial.

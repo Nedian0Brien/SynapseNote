@@ -11,8 +11,9 @@
  * `role="status"` (announced when it appears) and dismissible so a user who
  * meant to use the shell for something else isn't nagged.
  */
-import { TERMINAL_CLIS, type TerminalCli } from '@inkeep/open-knowledge-core';
+
 import { useLingui } from '@lingui/react/macro';
+import { TERMINAL_CLIS, type TerminalCli } from '@nedian0brien/synapsenote-core';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { OkDesktopBridge } from '@/lib/desktop-bridge-types';

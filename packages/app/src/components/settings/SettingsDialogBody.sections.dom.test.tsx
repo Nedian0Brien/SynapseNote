@@ -45,9 +45,9 @@ let publishDialogProps: Array<{ open: boolean }> = [];
 let claudeRefreshCalls = 0;
 let claudeSkillInstalled = false;
 
-const actualCore = await import('@inkeep/open-knowledge-core');
+const actualCore = await import('@nedian0brien/synapsenote-core');
 
-mock.module('@inkeep/open-knowledge-core', () => ({
+mock.module('@nedian0brien/synapsenote-core', () => ({
   ...actualCore,
   SHOW_INSTALL_SKILL: true,
 }));
@@ -514,8 +514,8 @@ describe('SettingsDialogBody section runtime dispatch', () => {
       hasRemote: true,
       syncEnabled: false,
       remote: {
-        label: 'inkeep/open-knowledge',
-        webUrl: 'https://github.com/inkeep/open-knowledge',
+        label: 'Nedian0Brien/SynapseNote',
+        webUrl: 'https://github.com/Nedian0Brien/SynapseNote',
       },
     };
     projectLocalConfig = { autoSync: { enabled: true } };
@@ -525,7 +525,7 @@ describe('SettingsDialogBody section runtime dispatch', () => {
     const toggle = screen.getByTestId('settings-sync-toggle');
     expect(toggle.getAttribute('aria-checked')).toBe('true');
     expect(screen.getByTestId('settings-sync-remote-link').getAttribute('href')).toBe(
-      'https://github.com/inkeep/open-knowledge',
+      'https://github.com/Nedian0Brien/SynapseNote',
     );
     expect(screen.getByTestId('settings-sync-remote-link').getAttribute('rel')).toBe(
       'noopener noreferrer',
@@ -559,8 +559,8 @@ describe('SettingsDialogBody section runtime dispatch', () => {
       hasRemote: true,
       syncEnabled: false,
       remote: {
-        label: 'inkeep/open-knowledge',
-        webUrl: 'https://github.com/inkeep/open-knowledge',
+        label: 'Nedian0Brien/SynapseNote',
+        webUrl: 'https://github.com/Nedian0Brien/SynapseNote',
       },
     };
     // Maintainer has committed "off by default".
@@ -589,8 +589,8 @@ describe('SettingsDialogBody section runtime dispatch', () => {
       hasRemote: true,
       syncEnabled: false,
       remote: {
-        label: 'inkeep/open-knowledge',
-        webUrl: 'https://github.com/inkeep/open-knowledge',
+        label: 'Nedian0Brien/SynapseNote',
+        webUrl: 'https://github.com/Nedian0Brien/SynapseNote',
       },
     };
     projectConfig = { autoSync: { default: null } };
@@ -613,8 +613,8 @@ describe('SettingsDialogBody section runtime dispatch', () => {
       syncEnabled: false,
       pushPermission: { checkStatus: 'denied', deniedReason: 'no-collaborator' },
       remote: {
-        label: 'inkeep/open-knowledge',
-        webUrl: 'https://github.com/inkeep/open-knowledge',
+        label: 'Nedian0Brien/SynapseNote',
+        webUrl: 'https://github.com/Nedian0Brien/SynapseNote',
       },
     };
     projectLocalConfig = { autoSync: { enabled: false } };
@@ -640,8 +640,8 @@ describe('SettingsDialogBody section runtime dispatch', () => {
       pausedReason: 'protected-branch',
       syncEnabled: false,
       remote: {
-        label: 'inkeep/open-knowledge',
-        webUrl: 'https://github.com/inkeep/open-knowledge',
+        label: 'Nedian0Brien/SynapseNote',
+        webUrl: 'https://github.com/Nedian0Brien/SynapseNote',
       },
     };
     projectLocalConfig = { autoSync: { enabled: false } };

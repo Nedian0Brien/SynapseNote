@@ -16,7 +16,7 @@ import type {
   HandoffFailureReason,
   HandoffScope,
   HandoffTarget,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 
 /** Host the dispatch came from. Used to scope dogfood signal. */
 export type HandoffHost = 'electron' | 'web';

@@ -1,7 +1,7 @@
 /**
  * Starter-pack skill version + update-detection helpers.
  *
- * A starter-pack skill (`open-knowledge-pack-<id>`) is installed once as
+ * A starter-pack skill (`synapsenote-pack-<id>`) is installed once as
  * editable content, then never refreshed. To surface an opt-in "update
  * available" signal we compare the `version` frontmatter of the user's installed
  * copy against the version OK currently bundles. Pure detection — never writes;
@@ -19,12 +19,12 @@ import {
   parseFrontmatterYaml,
   stripFrontmatter,
   unwrapFrontmatterFences,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { resolveBundledSkillDir } from './build-skill-zip.ts';
 import { compareSemver } from './git-preflight.ts';
 import { PACK_SKILL_PREFIX } from './skill-projection.ts';
 
-/** True for the reserved starter-pack skill names (`open-knowledge-pack-*`). */
+/** True for the reserved starter-pack skill names (`synapsenote-pack-*`). */
 export function isPackSkillName(name: string): boolean {
   return name.startsWith(PACK_SKILL_PREFIX);
 }

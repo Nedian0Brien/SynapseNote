@@ -19,7 +19,7 @@
  * incremental.
  */
 
-import { type DocumentListEntry, DocumentListEntrySchema } from '@inkeep/open-knowledge-core';
+import { type DocumentListEntry, DocumentListEntrySchema } from '@nedian0brien/synapsenote-core';
 
 /** `Accept` header that opts a showAll request into the NDJSON stream. */
 export const SHOW_ALL_NDJSON_ACCEPT = { Accept: 'application/x-ndjson, application/json' } as const;

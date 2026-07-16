@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import type { Principal } from '@inkeep/open-knowledge-core';
+import type { Principal } from '@nedian0brien/synapsenote-core';
 import simpleGit from 'simple-git';
 import { getLocalDir } from './config/paths.ts';
 import { sanitizeGitIdentity } from './git-identity-sanitize.ts';
@@ -67,7 +67,7 @@ export async function loadPrincipal(projectDir: string): Promise<Principal> {
       ? sanitizeGitIdentity(gitEmail)
       : typeof existing.display_email === 'string'
         ? existing.display_email
-        : `principal-${shortId}@openknowledge.local`;
+        : `principal-${shortId}@synapsenote.local`;
 
     const source: Principal['source'] = gitName || gitEmail ? 'git-config' : 'synthesized';
 
@@ -89,7 +89,7 @@ export async function loadPrincipal(projectDir: string): Promise<Principal> {
   const displayName = gitName ? sanitizeGitIdentity(gitName) : 'Local User';
   const displayEmail = gitEmail
     ? sanitizeGitIdentity(gitEmail)
-    : `principal-${shortId}@openknowledge.local`;
+    : `principal-${shortId}@synapsenote.local`;
   const source: Principal['source'] = gitName || gitEmail ? 'git-config' : 'synthesized';
 
   const principal: Principal = {

@@ -94,7 +94,7 @@ export default async function afterPack(context) {
   console.log('[afterPack] fuses flipped successfully; electron-builder will re-sign next');
 
   // Detached-server helper bundle: clone the Electron Helper stub binary
-  // into our `OpenKnowledge Server.app/Contents/MacOS/` slot. electron-
+  // into our `SynapseNote Server.app/Contents/MacOS/` slot. electron-
   // builder's `extraFiles` (in electron-builder.yml) lands the Info.plist
   // alongside but cannot reference output-only artifacts, so the MacOS
   // binary itself is populated here. We source from Electron's own helper
@@ -110,14 +110,14 @@ export default async function afterPack(context) {
   // it, LaunchServices treats the re-exec as a duplicate `.app` launch
   // and pins a stuck "exec" Dock placeholder for the child's lifetime.
   //
-  // The cloned binary inside `OpenKnowledge Server.app` MUST be named
+  // The cloned binary inside `SynapseNote Server.app` MUST be named
   // `<productName> Helper` (matching the canonical Electron generic-helper
   // basename). Electron's helper stub inspects its own `_NSGetExecutablePath()`
   // basename early in boot and SIGTRAPs silently (exit 133, empty stderr)
-  // for any other name — including descriptive variants like "OpenKnowledge
+  // for any other name — including descriptive variants like "SynapseNote
   // Server" or invented suffixes like "Helper (Server)" not in Electron's
   // hardcoded {generic, Renderer, GPU, Plugin} type set. The bundle directory
-  // name (`OpenKnowledge Server.app`) is free to be descriptive — only the
+  // name (`SynapseNote Server.app`) is free to be descriptive — only the
   // executable basename is load-bearing.
   const electronHelperStub = join(
     appOutDir,
@@ -134,13 +134,13 @@ export default async function afterPack(context) {
     `${appName}.app`,
     'Contents',
     'Frameworks',
-    'OpenKnowledge Server.app',
+    'SynapseNote Server.app',
   );
   const serverHelperBinary = join(serverHelperBundleDir, 'Contents', 'MacOS', `${appName} Helper`);
   if (!existsSync(electronHelperStub)) {
     throw new Error(
       `[afterPack] Electron Helper stub not found at ${electronHelperStub}. ` +
-        `Cannot clone it into the OpenKnowledge Server helper bundle.`,
+        `Cannot clone it into the SynapseNote Server helper bundle.`,
     );
   }
   const serverHelperMacOsDir = dirname(serverHelperBinary);
@@ -205,7 +205,7 @@ export default async function afterPack(context) {
     );
   }
   console.log(
-    `[afterPack] cloned Electron Helper stub into OpenKnowledge Server.app MacOS slot at ${serverHelperBinary}`,
+    `[afterPack] cloned Electron Helper stub into SynapseNote Server.app MacOS slot at ${serverHelperBinary}`,
   );
 
   // node-pty's prebuilt spawn-helper ships 0644 (node-pty#850); the

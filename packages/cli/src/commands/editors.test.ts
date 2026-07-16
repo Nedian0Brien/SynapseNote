@@ -310,8 +310,8 @@ describe('EDITOR_TARGETS.pi', () => {
   });
 
   it('project paths target OK-owned artifacts under .pi/', () => {
-    expect(t.projectConfigPath?.('/proj')).toBe('/proj/.pi/extensions/open-knowledge.ts');
-    expect(t.projectSkillPath?.('/proj')).toBe('/proj/.pi/skills/open-knowledge/SKILL.md');
+    expect(t.projectConfigPath?.('/proj')).toBe('/proj/.pi/extensions/synapsenote.ts');
+    expect(t.projectSkillPath?.('/proj')).toBe('/proj/.pi/skills/synapsenote/SKILL.md');
     expect(t.detectPath?.('', '/Users/alice')).toBe('/Users/alice/.pi/agent');
   });
 });
@@ -360,10 +360,10 @@ describe('CHAIN_V1', () => {
     // `~/Applications/...` over `/Applications/...`. Order is load-bearing:
     // a user with both installs hits the user-local one first.
     const userIdx = CHAIN_V1.indexOf(
-      'USER_BUNDLE="$HOME/Applications/OpenKnowledge.app/Contents/Resources/cli/bin/ok.sh"',
+      'USER_BUNDLE="$HOME/Applications/SynapseNote.app/Contents/Resources/cli/bin/ok.sh"',
     );
     const sysIdx = CHAIN_V1.indexOf(
-      'BUNDLE="/Applications/OpenKnowledge.app/Contents/Resources/cli/bin/ok.sh"',
+      'BUNDLE="/Applications/SynapseNote.app/Contents/Resources/cli/bin/ok.sh"',
     );
     expect(userIdx).toBeGreaterThanOrEqual(0);
     expect(sysIdx).toBeGreaterThan(userIdx);
@@ -395,7 +395,7 @@ describe('CHAIN_V1', () => {
 
   it('emits the documented stderr message and exit 127 on miss', () => {
     expect(CHAIN_V1).toContain(
-      '"OpenKnowledge: install OK Desktop or Node.js 24+, then restart your editor"',
+      '"SynapseNote: install OK Desktop or Node.js 24+, then restart your editor"',
     );
     expect(CHAIN_V1).toContain('>&2');
     expect(CHAIN_V1.trimEnd().endsWith('exit 127')).toBe(true);
@@ -490,7 +490,7 @@ describe('isEntryUpToDate', () => {
     expect(
       isEntryUpToDate({
         command: 'npx',
-        args: ['-y', '@inkeep/open-knowledge@latest', 'mcp'],
+        args: ['-y', '@nedian0brien/synapsenote@latest', 'mcp'],
       }),
     ).toBe(false);
   });
@@ -498,7 +498,7 @@ describe('isEntryUpToDate', () => {
   it('false for the bundle-direct shape', () => {
     expect(
       isEntryUpToDate({
-        command: '/Applications/OpenKnowledge.app/Contents/Resources/cli/bin/ok.sh',
+        command: '/Applications/SynapseNote.app/Contents/Resources/cli/bin/ok.sh',
         args: ['mcp'],
       }),
     ).toBe(false);
@@ -681,10 +681,10 @@ describe('CHAIN_WIN_V1', () => {
   });
 
   it('single-quotes the npx package spec (a bare leading @ is the splat operator)', () => {
-    const quoted = CHAIN_WIN_V1.match(/'@inkeep\/open-knowledge@latest'/g);
+    const quoted = CHAIN_WIN_V1.match(/'@nedian0brien\/synapsenote@latest'/g);
     expect(quoted?.length).toBe(2);
     // No unquoted occurrence anywhere.
-    expect(CHAIN_WIN_V1.match(/@inkeep\/open-knowledge@latest/g)?.length).toBe(2);
+    expect(CHAIN_WIN_V1.match(/@nedian0brien\/synapsenote@latest/g)?.length).toBe(2);
   });
 
   it('probes installer / nvm-windows / fnm / Volta / Scoop / pnpm locations, null-guarded', () => {
@@ -727,7 +727,7 @@ describe('CHAIN_WIN_V1', () => {
   it('emits the documented stderr message and exit 127 on miss', () => {
     expect(CHAIN_WIN_V1).toContain('[Console]::Error.WriteLine(');
     expect(CHAIN_WIN_V1).toContain(
-      'OpenKnowledge: install Node.js 24+ (npm i -g @inkeep/open-knowledge), then restart your editor',
+      'SynapseNote: install Node.js 24+ (npm i -g @nedian0brien/synapsenote), then restart your editor',
     );
     expect(CHAIN_WIN_V1.trimEnd().endsWith('exit 127')).toBe(true);
   });

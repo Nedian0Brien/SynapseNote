@@ -39,7 +39,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
-import { OK_DIR } from '@inkeep/open-knowledge-core';
+import { OK_DIR } from '@nedian0brien/synapsenote-core';
 
 /**
  * Path of the server-package root (where `package.json` lives). The
@@ -147,7 +147,7 @@ describe('bootServer() preflight survives the subprocess boundary (FR6 / US-005)
       // the main process branches on. Sentinel exits 96/97/99 in the
       // driver surface specific failure modes if the wiring drifts.
       expect(result.exitCode).toBe(78);
-      expect(stderr).toContain('OpenKnowledge needs Git');
+      expect(stderr).toContain('SynapseNote needs Git');
       expect(stderr).toContain('sudo apt install git');
       expect(stderr).not.toContain('UNEXPECTED-CATCH');
       expect(stderr).not.toContain('PREFLIGHT-DID-NOT-FIRE');
@@ -229,7 +229,7 @@ describe('bootServer() preflight survives the subprocess boundary (FR6 / US-005)
       const stderr = result.stderr.toString();
 
       expect(result.exitCode).toBe(78);
-      expect(stderr).toContain('OpenKnowledge requires Git 2.31.0 or newer');
+      expect(stderr).toContain('SynapseNote requires Git 2.31.0 or newer');
       expect(stderr).toContain('detected 2.20.0 at /usr/bin/git');
       expect(stderr).not.toContain('UNEXPECTED-CATCH');
       expect(stderr).not.toContain('PREFLIGHT-DID-NOT-FIRE');

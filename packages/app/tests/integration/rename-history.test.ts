@@ -18,7 +18,7 @@
 import { afterEach, describe, expect, test } from 'bun:test';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { resolveShadowDir } from '@inkeep/open-knowledge-core/shadow-repo-layout';
+import { resolveShadowDir } from '@nedian0brien/synapsenote-core/shadow-repo-layout';
 import {
   loadRenameLogIndex,
   type RenameLogEntry,

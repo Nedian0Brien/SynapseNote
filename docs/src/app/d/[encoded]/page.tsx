@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { buildShareDescription, buildSplashViewModel } from '@/lib/share-splash';
-import { metaDescription, SITE_NAME, SITE_URL, TWITTER_HANDLE } from '@/lib/site';
+import { metaDescription, SITE_NAME, SITE_URL } from '@/lib/site';
 import { SplashFallback, SplashShareView } from './splash-share-view';
 
 export const dynamic = 'force-static';
@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: SplashPageProps): Promise<Met
 
   if (view.kind !== 'ok') {
     const fallbackDescription = metaDescription(
-      'Open shared documents and folders with OpenKnowledge, the AI-native markdown IDE and LLM wiki.',
+      'Open shared documents and folders with SynapseNote, the AI-native markdown IDE and LLM wiki.',
     );
     return {
       title: { absolute: SITE_NAME },
@@ -30,8 +30,6 @@ export async function generateMetadata({ params }: SplashPageProps): Promise<Met
       },
       twitter: {
         card: 'summary_large_image',
-        site: TWITTER_HANDLE,
-        creator: TWITTER_HANDLE,
         title: SITE_NAME,
         description: fallbackDescription,
       },
@@ -53,8 +51,6 @@ export async function generateMetadata({ params }: SplashPageProps): Promise<Met
     },
     twitter: {
       card: 'summary_large_image',
-      site: TWITTER_HANDLE,
-      creator: TWITTER_HANDLE,
       title: view.filename,
       description,
     },
@@ -66,7 +62,7 @@ export default async function SplashPage({ params }: SplashPageProps) {
   const view = buildSplashViewModel(encoded);
 
   if (view.kind === 'unsupported-version') {
-    return <SplashFallback heading="Update OpenKnowledge to open this share." />;
+    return <SplashFallback heading="Update SynapseNote to open this share." />;
   }
 
   if (view.kind === 'invalid') {

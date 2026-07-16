@@ -55,7 +55,7 @@ const nextConfig: NextConfig = {
   // HSTS with `includeSubDomains; preload` (Vercel's injected default is
   // max-age only). Chrome blocks a download when ANY hop in its redirect
   // chain is plain http — so a visit starting at
-  // http://openknowledge.ai/download/beta gets "Insecure download blocked"
+  // http://synapse.lawdigest.kr/download/beta gets "Insecure download blocked"
   // for the DMG even though Vercel 308s to https immediately. Preload-list
   // membership (hstspreload.org) makes browsers rewrite to https before the
   // first request, removing the http hop entirely; the directives below are

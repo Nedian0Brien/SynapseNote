@@ -1,7 +1,7 @@
 /**
  * Normalize a filesystem path to POSIX (`/`) separators.
  *
- * Logical identifiers in OpenKnowledge — docNames, relative content paths,
+ * Logical identifiers in SynapseNote — docNames, relative content paths,
  * and response `path` / `targetPath` fields — are ALWAYS POSIX. `path.relative`
  * (and prefix-stripping of absolute paths) emit `\` on Windows, so any such
  * result that becomes a docName, map key, or wire field MUST pass through here

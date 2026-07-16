@@ -31,7 +31,7 @@ import {
   type FrontmatterSnapshot,
   readFmKeys,
   readFmRegionWithError,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { useEffect, useState } from 'react';
 import {
   type ResolvedPageCover,

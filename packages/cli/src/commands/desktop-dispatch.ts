@@ -2,9 +2,9 @@
  * `ok` (no args) → desktop-app dispatch helpers.
  *
  * Pure-function detection + launch for the macOS desktop Electron app
- * (`@inkeep/open-knowledge-desktop`). When the desktop is detected as
+ * (`@nedian0brien/synapsenote-desktop`). When the desktop is detected as
  * available + interactive, the CLI hands off to it via `open -b
- * com.inkeep.open-knowledge` (LaunchServices by bundle ID — fires Apple
+ * kr.lawdigest.synapsenote` (LaunchServices by bundle ID — fires Apple
  * Events, respects `requestSingleInstanceLock()`, preserves Gatekeeper
  * paths). Otherwise the dispatch returns false with a specific reason
  * and the caller falls through to the existing `ok start` flow.
@@ -20,9 +20,9 @@ import { join } from 'node:path';
  * handler registration and `open -b` LaunchServices dispatch — single
  * identity surface. Source of truth: packages/desktop/electron-builder.yml.
  */
-export const DESKTOP_BUNDLE_ID = 'com.inkeep.open-knowledge';
+export const DESKTOP_BUNDLE_ID = 'kr.lawdigest.synapsenote';
 
-const DESKTOP_BUNDLE_NAME = 'OpenKnowledge.app';
+const DESKTOP_BUNDLE_NAME = 'SynapseNote.app';
 
 /** Standard install location probed first. */
 const APPLICATIONS_BUNDLE_PATH = `/Applications/${DESKTOP_BUNDLE_NAME}`;
@@ -103,11 +103,11 @@ export function createRealDetectDeps(): DetectDeps {
  *   (a) Bundled-CLI introspection — when `ELECTRON_RUN_AS_NODE === '1'`
  *       AND `execPath` matches `/.app/Contents/MacOS/`, walk up to the
  *       `.app` ancestor.
- *   (b) `/Applications/OpenKnowledge.app/Contents/MacOS/OpenKnowledge`
- *   (c) `~/Applications/OpenKnowledge.app/Contents/MacOS/OpenKnowledge`
+ *   (b) `/Applications/SynapseNote.app/Contents/MacOS/SynapseNote`
+ *   (c) `~/Applications/SynapseNote.app/Contents/MacOS/SynapseNote`
  *
  * Note: We probe the executable file inside the bundle, not just the
- * `.app` directory — a directory named `OpenKnowledge.app` could exist
+ * `.app` directory — a directory named `SynapseNote.app` could exist
  * without a real bundle. Verifying the executable rules out false
  * positives.
  */
@@ -137,13 +137,13 @@ function resolveBundlePath(deps: DetectDeps): string | null {
 }
 
 /**
- * Verify `<bundlePath>/Contents/MacOS/OpenKnowledge` exists. Returns
+ * Verify `<bundlePath>/Contents/MacOS/SynapseNote` exists. Returns
  * true on a real bundle, false otherwise. Stat errors are caught and
  * treated as "not present" — the dispatch path must never throw.
  */
 function probeBundle(deps: DetectDeps, bundlePath: string): boolean {
   try {
-    const exec = join(bundlePath, 'Contents', 'MacOS', 'OpenKnowledge');
+    const exec = join(bundlePath, 'Contents', 'MacOS', 'SynapseNote');
     const meta = deps.statSync(exec);
     if (!meta) return false;
     return typeof meta.isFile === 'function' ? meta.isFile() : false;
@@ -208,7 +208,7 @@ interface LaunchDeps {
 /**
  * Spawn the desktop app via LaunchServices by bundle ID.
  *
- * `open -b com.inkeep.open-knowledge` routes through LaunchServices,
+ * `open -b kr.lawdigest.synapsenote` routes through LaunchServices,
  * fires Apple Events, respects `requestSingleInstanceLock()`, and
  * keeps Gatekeeper paths intact. The spawn is detached + stdio:'ignore'
  * + `unref()` so the CLI process can exit cleanly while the desktop
@@ -220,7 +220,7 @@ export function launchDesktop(deps: LaunchDeps): void {
   // (first time after installing the desktop) see immediately how to
   // override — Homebrew-style "what just happened, how to undo it".
   log(
-    'Launching OpenKnowledge desktop (use `ok start` for the browser server, or `OK_FORCE_BROWSER=1` to always skip)',
+    'Launching SynapseNote desktop (use `ok start` for the browser server, or `OK_FORCE_BROWSER=1` to always skip)',
   );
   // Scrub `ELECTRON_RUN_AS_NODE` from the spawned `open`'s env. The CLI
   // wrapper (`Contents/Resources/cli/bin/ok.sh`) sets it to 1 so the bundled
@@ -228,7 +228,7 @@ export function launchDesktop(deps: LaunchDeps): void {
   // caller's env into the desktop process it spawns, and the desktop
   // Electron main process sees `ELECTRON_RUN_AS_NODE=1`, runs as a headless
   // Node host with no script, and exits immediately. Symptom: the
-  // "Launching OpenKnowledge desktop" line prints but no GUI appears.
+  // "Launching SynapseNote desktop" line prints but no GUI appears.
   const env = { ...process.env };
   delete env.ELECTRON_RUN_AS_NODE;
   const child = deps.spawn('open', ['-b', DESKTOP_BUNDLE_ID], {

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, mock, test } from 'bun:test';
-import type { SharePublishOwner } from '@inkeep/open-knowledge-core';
+import type { SharePublishOwner } from '@nedian0brien/synapsenote-core';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
@@ -44,7 +44,7 @@ let shareConstructUrlResponse:
   | { ok: true; shareUrl: string; sharedUrl: string; branch: string }
   | { ok: false; error: string; branch?: string } = {
   ok: true,
-  shareUrl: 'https://openknowledge.ai/d/Published123',
+  shareUrl: 'https://synapse.lawdigest.kr/d/Published123',
   sharedUrl: 'https://github.com/alice/my-project/blob/main/docs/intro.md',
   branch: 'main',
 };
@@ -187,7 +187,7 @@ describe('PublishToGitHubDialog runtime behavior', () => {
     windowOpenCalls = [];
     shareConstructUrlResponse = {
       ok: true,
-      shareUrl: 'https://openknowledge.ai/d/Published123',
+      shareUrl: 'https://synapse.lawdigest.kr/d/Published123',
       sharedUrl: 'https://github.com/alice/my-project/blob/main/docs/intro.md',
       branch: 'main',
     };
@@ -301,11 +301,11 @@ describe('PublishToGitHubDialog runtime behavior', () => {
       }),
     );
     const shareUrl = (await screen.findByTestId('publish-share-url')) as HTMLInputElement;
-    expect(shareUrl.value).toBe('https://openknowledge.ai/d/Published123');
+    expect(shareUrl.value).toBe('https://synapse.lawdigest.kr/d/Published123');
 
     await userEvent.click(screen.getByTestId('publish-copy-link'));
 
-    expect(clipboardCalls).toEqual(['https://openknowledge.ai/d/Published123']);
+    expect(clipboardCalls).toEqual(['https://synapse.lawdigest.kr/d/Published123']);
     await waitFor(() => expect(toastMock.success).toHaveBeenCalledWith('Link copied.'));
     expect(onOpenChange).toHaveBeenCalledWith(false);
 
@@ -350,7 +350,7 @@ describe('PublishToGitHubDialog runtime behavior', () => {
       );
     });
     expect((screen.getByTestId('publish-share-url') as HTMLInputElement).value).toBe(
-      'https://openknowledge.ai/d/Published123',
+      'https://synapse.lawdigest.kr/d/Published123',
     );
   });
 

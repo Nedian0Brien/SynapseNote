@@ -3,7 +3,7 @@
  *
  * Used to serialize concurrent writers to shared `~/.ok/global.yml` (and
  * `<project>/.ok/config.yml` / `.ok/local/config.yml`) across multiple
- * OpenKnowledge processes — every project window runs its own Hocuspocus
+ * SynapseNote processes — every project window runs its own Hocuspocus
  * server, so two windows toggling Settings simultaneously can otherwise
  * clobber each other on disk.
  *

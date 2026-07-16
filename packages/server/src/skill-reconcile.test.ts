@@ -331,12 +331,12 @@ describe('reconcileSkillInstalls', () => {
     expect(readInstalledSkills(root).skills.shared).toBeUndefined();
   });
 
-  test('leaves the shipped open-knowledge bundle copy untouched', async () => {
-    const bundle = makeEditorCopy('.claude/skills', 'open-knowledge', '# Shipped');
+  test('leaves the shipped synapsenote bundle copy untouched', async () => {
+    const bundle = makeEditorCopy('.claude/skills', 'synapsenote', '# Shipped');
 
     const r = await reconcileSkillInstalls({ projectDir: root, skillsRoot });
     const all = [...r.adopted, ...r.replaced, ...r.collided, ...r.healed];
-    expect(all.find((a) => a.name === 'open-knowledge')).toBeUndefined();
+    expect(all.find((a) => a.name === 'synapsenote')).toBeUndefined();
     // Still a real dir (copy), not a symlink.
     expect(lstatSync(bundle).isSymbolicLink()).toBe(false);
   });

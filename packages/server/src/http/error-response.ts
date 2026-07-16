@@ -44,7 +44,7 @@ import {
   type ProblemType,
   type StreamingProblemEvent,
   StreamingProblemEventSchema,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import type { Counter } from '@opentelemetry/api';
 import { getLogger } from '../logger.ts';
 import { getMeter } from '../telemetry.ts';

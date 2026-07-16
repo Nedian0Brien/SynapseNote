@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * `@inkeep/open-knowledge` postinstall hook.
+ * `@nedian0brien/synapsenote` postinstall hook.
  *
  * Fires `installUserSkill()` once per `npm install` / `bun install` / `npx`
  * cache population. Non-fatal: any failure is swallowed so the host install
@@ -13,7 +13,7 @@ async function run() {
   try {
     // Relative import resolves inside the published npm tarball at
     // <pkg-root>/dist/index.mjs — the tsdown-bundled entry that re-exports
-    // `installUserSkill` from @inkeep/open-knowledge-server.
+    // `installUserSkill` from @nedian0brien/synapsenote-server.
     const mod = await import('../dist/index.mjs');
     installUserSkill = mod.installUserSkill;
   } catch {
@@ -35,10 +35,10 @@ async function run() {
   }
 
   if (result === 'installed') {
-    process.stdout.write('[open-knowledge] Agent Skill installed to detected agent hosts.\n');
+    process.stdout.write('[synapsenote] Agent Skill installed to detected agent hosts.\n');
   } else if (result === 'failed') {
     process.stderr.write(
-      '[open-knowledge] Agent Skill auto-install failed; run manually: ' +
+      '[synapsenote] Agent Skill auto-install failed; run manually: ' +
         "npx skills@~1.5.0 add <bundled-path> --agent '*' -g -y --copy\n",
     );
   }

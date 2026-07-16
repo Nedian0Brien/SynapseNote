@@ -1,7 +1,7 @@
-import { getGitHubStars } from '@inkeep/open-knowledge-core';
 import type { MessageDescriptor } from '@lingui/core';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react/macro';
+import { getGitHubStars } from '@nedian0brien/synapsenote-core';
 import { BookOpen, CircleDot, CircleHelp, Globe, Mail, Megaphone, Star } from 'lucide-react';
 import type { ComponentProps, FC, ReactNode } from 'react';
 import { useEffect, useState } from 'react';
@@ -37,9 +37,9 @@ const sections: ResourceSection[] = [
     key: 'resources',
     heading: msg`Resources`,
     links: [
-      { label: msg`Docs`, href: 'https://openknowledge.ai/docs', icon: BookOpen },
+      { label: msg`Docs`, href: 'https://synapse.lawdigest.kr/docs', icon: BookOpen },
       { label: msg`File an issue`, href: `${GITHUB_REPO_URL}/issues/new`, icon: CircleDot },
-      { label: msg`Website`, href: 'https://openknowledge.ai/', icon: Globe },
+      { label: msg`Website`, href: 'https://synapse.lawdigest.kr/', icon: Globe },
     ],
   },
   {

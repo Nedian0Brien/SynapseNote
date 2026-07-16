@@ -89,8 +89,8 @@ describe('ShareButton', () => {
         new Response(
           JSON.stringify({
             ok: true,
-            shareUrl: 'https://openknowledge.ai/d/Share123',
-            sharedUrl: 'https://github.com/inkeep/open-knowledge/blob/main/docs/readme.md',
+            shareUrl: 'https://synapse.lawdigest.kr/d/Share123',
+            sharedUrl: 'https://github.com/Nedian0Brien/SynapseNote/blob/main/docs/readme.md',
             branch: 'main',
           }),
           { status: 200 },
@@ -143,7 +143,7 @@ describe('ShareButton', () => {
       expect(screen.getByTestId('share-button-popover')).not.toBeNull();
     });
     const input = screen.getByLabelText('Share URL') as HTMLInputElement;
-    expect(input.value).toBe('https://openknowledge.ai/d/Share123');
+    expect(input.value).toBe('https://synapse.lawdigest.kr/d/Share123');
     // The copy button opens in the just-copied (check) state, reflecting the
     // auto-copy that already happened at click time.
     expect(screen.getByRole('button', { name: 'Copied!' })).not.toBeNull();
@@ -158,7 +158,7 @@ describe('ShareButton', () => {
       expect(screen.getByTestId('share-button-popover')).not.toBeNull();
     });
     const input = screen.getByLabelText('Share URL') as HTMLInputElement;
-    expect(input.value).toBe('https://openknowledge.ai/d/Share123');
+    expect(input.value).toBe('https://synapse.lawdigest.kr/d/Share123');
     // The auto-copy was refused, so nothing was copied — the copy button must
     // open in the "Copy" state, not "Copied!". Guards against an inverted
     // `initialCopied` (which keys off `autoCopyFailed`).
@@ -177,8 +177,8 @@ describe('ShareButton', () => {
         new Response(
           JSON.stringify({
             ok: true,
-            shareUrl: 'https://openknowledge.ai/d/Share123',
-            sharedUrl: 'https://github.com/inkeep/open-knowledge/blob/main/docs/readme.md',
+            shareUrl: 'https://synapse.lawdigest.kr/d/Share123',
+            sharedUrl: 'https://github.com/Nedian0Brien/SynapseNote/blob/main/docs/readme.md',
             branch: 'main',
             freshness: 'absent',
           }),
@@ -206,8 +206,8 @@ describe('ShareButton', () => {
         new Response(
           JSON.stringify({
             ok: true,
-            shareUrl: 'https://openknowledge.ai/d/Share123',
-            sharedUrl: 'https://github.com/inkeep/open-knowledge/blob/main/docs/readme.md',
+            shareUrl: 'https://synapse.lawdigest.kr/d/Share123',
+            sharedUrl: 'https://github.com/Nedian0Brien/SynapseNote/blob/main/docs/readme.md',
             branch: 'main',
             freshness: 'current',
           }),

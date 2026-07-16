@@ -17,8 +17,8 @@ import {
   classifyExistingMcpEntry,
   type EditorMcpTarget,
   type McpEntryClassification,
-} from '@inkeep/open-knowledge';
-// Imported from cli source, not the @inkeep/open-knowledge build: the classify
+} from '@nedian0brien/synapsenote';
+// Imported from cli source, not the @nedian0brien/synapsenote build: the classify
 // the fallback test drives must read the TOML engine it overrides, and only the
 // in-repo source shares the engine singleton with setTomlConfigEngineForTesting.
 // The built package bundles its own engine instance the override can't reach.
@@ -71,7 +71,7 @@ function memoryFs(
   };
 }
 
-const PACKAGED_EXE = '/Applications/OpenKnowledge.app/Contents/MacOS/OpenKnowledge';
+const PACKAGED_EXE = '/Applications/SynapseNote.app/Contents/MacOS/SynapseNote';
 
 function fakeTarget(id: McpWiringEditorId): EditorMcpTarget {
   return {
@@ -79,7 +79,7 @@ function fakeTarget(id: McpWiringEditorId): EditorMcpTarget {
     label: id,
     format: 'json',
     topLevelKey: 'mcpServers',
-    serverName: () => 'open-knowledge',
+    serverName: () => 'synapsenote',
     configPath: (_cwd, home) => `${home}/.config-for-${id}.json`,
     buildEntry: () => buildManagedServerEntry({ mode: 'published' }),
     scope: 'global',
@@ -113,7 +113,7 @@ function buildStartupCli(opts: BuildStartupCliOptions): {
         label: editorId,
         action: opts.writeOutcome ?? 'overwritten',
         configPath: target.configPath('', '/home'),
-        serverName: 'open-knowledge',
+        serverName: 'synapsenote',
         ...(opts.writeError ? { error: opts.writeError } : {}),
       }));
     },
@@ -126,7 +126,7 @@ describe('checkAndRepairMcpWiringOnStartup — migrate event ordering', () => {
     const { cli, events, order } = buildStartupCli({
       classify: {
         kind: 'present',
-        entry: { command: 'npx', args: ['-y', '@inkeep/open-knowledge', 'mcp'] },
+        entry: { command: 'npx', args: ['-y', '@nedian0brien/synapsenote', 'mcp'] },
       },
     });
     const result = await checkAndRepairMcpWiringOnStartup({
@@ -158,7 +158,7 @@ describe('checkAndRepairMcpWiringOnStartup — migrate event ordering', () => {
       editorId: 'claude',
       configPath: '/home/.config-for-claude.json',
       priorCommand: 'npx',
-      priorArgs: ['-y', '@inkeep/open-knowledge', 'mcp'],
+      priorArgs: ['-y', '@nedian0brien/synapsenote', 'mcp'],
     });
   });
 
@@ -241,7 +241,7 @@ describe('checkAndRepairMcpWiringOnStartup — non-destructive decline', () => {
     const { cli } = buildStartupCli({
       classify: {
         kind: 'present',
-        entry: { command: 'npx', args: ['-y', '@inkeep/open-knowledge', 'mcp'] },
+        entry: { command: 'npx', args: ['-y', '@nedian0brien/synapsenote', 'mcp'] },
       },
       writeOutcome: 'declined',
     });
@@ -288,7 +288,7 @@ describe('checkAndRepairMcpWiringOnStartup — non-destructive decline', () => {
           label: 'Codex',
           format: 'toml',
           topLevelKey: 'mcp_servers',
-          serverName: () => 'open-knowledge',
+          serverName: () => 'synapsenote',
           configPath: () => tomlPath,
           buildEntry: () => buildManagedServerEntry({ mode: 'published' }),
           scope: 'global',
@@ -325,13 +325,13 @@ describe('checkAndRepairMcpWiringOnStartup — non-destructive decline', () => {
           editorTargets: { codex: target } as Record<McpWiringEditorId, EditorMcpTarget>,
           writeUserMcpConfigs: async ({ editors }) => {
             writes.push([...editors]);
-            fsWriteFileSync(tomlPath, '{"mcp_servers":{"open-knowledge":{}}}');
+            fsWriteFileSync(tomlPath, '{"mcp_servers":{"synapsenote":{}}}');
             return editors.map((editorId) => ({
               editorId,
               label: editorId,
               action: 'written' as const,
               configPath: tomlPath,
-              serverName: 'open-knowledge',
+              serverName: 'synapsenote',
             }));
           },
         };
@@ -378,7 +378,7 @@ describe('checkAndRepairMcpWiringOnStartup — non-destructive decline', () => {
         label: 'Codex',
         format: 'toml',
         topLevelKey: 'mcp_servers',
-        serverName: () => 'open-knowledge',
+        serverName: () => 'synapsenote',
         configPath: () => tomlPath,
         buildEntry: () => buildManagedServerEntry({ mode: 'published' }),
         scope: 'global',
@@ -410,13 +410,13 @@ describe('checkAndRepairMcpWiringOnStartup — non-destructive decline', () => {
         editorTargets: { codex: target } as Record<McpWiringEditorId, EditorMcpTarget>,
         writeUserMcpConfigs: async ({ editors }) => {
           writes.push([...editors]);
-          fsWriteFileSync(tomlPath, '{"mcp_servers":{"open-knowledge":{}}}');
+          fsWriteFileSync(tomlPath, '{"mcp_servers":{"synapsenote":{}}}');
           return editors.map((editorId) => ({
             editorId,
             label: editorId,
             action: 'written' as const,
             configPath: tomlPath,
-            serverName: 'open-knowledge',
+            serverName: 'synapsenote',
           }));
         },
       };
@@ -477,7 +477,7 @@ describe('checkAndRepairMcpWiringOnStartup — non-destructive decline', () => {
         label: 'Codex',
         format: 'toml',
         topLevelKey: 'mcp_servers',
-        serverName: () => 'open-knowledge',
+        serverName: () => 'synapsenote',
         configPath: () => tomlPath,
         buildEntry: () => buildManagedServerEntry({ mode: 'published' }),
         scope: 'global',
@@ -503,13 +503,13 @@ describe('checkAndRepairMcpWiringOnStartup — non-destructive decline', () => {
         editorTargets: { codex: target } as Record<McpWiringEditorId, EditorMcpTarget>,
         writeUserMcpConfigs: async ({ editors }) => {
           writes.push([...editors]);
-          fsWriteFileSync(tomlPath, '{"mcp_servers":{"open-knowledge":{}}}');
+          fsWriteFileSync(tomlPath, '{"mcp_servers":{"synapsenote":{}}}');
           return editors.map((editorId) => ({
             editorId,
             label: editorId,
             action: 'written' as const,
             configPath: tomlPath,
-            serverName: 'open-knowledge',
+            serverName: 'synapsenote',
           }));
         },
       };
@@ -645,7 +645,7 @@ function buildFirstLaunchCli(): { cli: McpWiringCliSurface; writes: McpWiringEdi
         label: editorId,
         action: 'written' as const,
         configPath: target.configPath('', '/home/u'),
-        serverName: 'open-knowledge',
+        serverName: 'synapsenote',
       }));
     },
   };
@@ -717,12 +717,12 @@ describe('runMcpWiringOnFirstLaunch — skills consent leg', () => {
   const TWO_SKILLS = [
     {
       id: 'discovery',
-      name: 'open-knowledge-discovery',
+      name: 'synapsenote-discovery',
       alreadyInstalled: false,
     },
     {
       id: 'write-skill',
-      name: 'open-knowledge-write-skill',
+      name: 'synapsenote-write-skill',
       alreadyInstalled: true,
     },
   ];
@@ -851,7 +851,7 @@ describe('runMcpWiringOnFirstLaunch — mid-session immediate dispatch', () => {
                 label: editorId,
                 action: 'declined' as const,
                 configPath: '/home/u/.cursor/mcp.json',
-                serverName: 'open-knowledge',
+                serverName: 'synapsenote',
                 declineReason: 'unparseable' as const,
               }
             : {
@@ -859,7 +859,7 @@ describe('runMcpWiringOnFirstLaunch — mid-session immediate dispatch', () => {
                 label: editorId,
                 action: 'written' as const,
                 configPath: '/home/u/.claude.json',
-                serverName: 'open-knowledge',
+                serverName: 'synapsenote',
               },
         ),
     };

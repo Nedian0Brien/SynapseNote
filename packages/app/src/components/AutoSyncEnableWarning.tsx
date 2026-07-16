@@ -53,7 +53,7 @@ export function AutoSyncEnableWarning() {
             </p>
             <p className="text-muted-foreground">
               <Trans>
-                OpenKnowledge will create commits and push them to your remote automatically. If you
+                SynapseNote will create commits and push them to your remote automatically. If you
                 do not want automatic commits in your git history, you should not enable auto-sync.
               </Trans>
             </p>

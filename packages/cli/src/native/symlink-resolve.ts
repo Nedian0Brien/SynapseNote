@@ -1,6 +1,6 @@
 /**
  * Resolves the real write target behind a (possibly symlinked) harness config
- * path, so OpenKnowledge writes *through* a dotfile-managed symlink to its real
+ * path, so SynapseNote writes *through* a dotfile-managed symlink to its real
  * target instead of replacing the symlink with a regular file and orphaning the
  * stow/chezmoi/dotfiles-repo copy. The atomic tmp+rename stays on the existing
  * write spine; this module only decides *where* to write.

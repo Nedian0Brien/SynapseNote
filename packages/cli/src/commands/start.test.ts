@@ -6,8 +6,8 @@ import { request as httpRequest } from 'node:http';
 import { hostname, tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { setTimeout as wait } from 'node:timers/promises';
-import { LOCAL_DIR } from '@inkeep/open-knowledge-core';
-import { type Config, ConfigSchema } from '@inkeep/open-knowledge-server';
+import { LOCAL_DIR } from '@nedian0brien/synapsenote-core';
+import { type Config, ConfigSchema } from '@nedian0brien/synapsenote-server';
 import {
   awaitUiSiblingPort,
   type BootedStartServer,
@@ -58,14 +58,14 @@ describe('resolveHost', () => {
 describe('formatShutdownNotice', () => {
   test('SIGINT includes the headline, the wait notice, and the force-quit hint', () => {
     const lines = formatShutdownNotice('SIGINT');
-    expect(lines[0]).toContain('Stopping OpenKnowledge');
+    expect(lines[0]).toContain('Stopping SynapseNote');
     expect(lines.some((l) => l.includes('few seconds'))).toBe(true);
     expect(lines.some((l) => l.includes('force quit'))).toBe(true);
   });
 
   test('SIGTERM omits the force-quit hint (no interactive second-press path)', () => {
     const lines = formatShutdownNotice('SIGTERM');
-    expect(lines[0]).toContain('Stopping OpenKnowledge');
+    expect(lines[0]).toContain('Stopping SynapseNote');
     expect(lines.some((l) => l.includes('few seconds'))).toBe(true);
     expect(lines.some((l) => l.includes('force quit'))).toBe(false);
   });
@@ -87,32 +87,30 @@ describe('resolveStartConsoleLevel', () => {
 });
 
 describe('deriveServerProcessTitle', () => {
-  test('returns "open-knowledge-server <basename>" for a typical project path', () => {
+  test('returns "synapsenote-server <basename>" for a typical project path', () => {
     expect(deriveServerProcessTitle('/Users/alice/projects/my-notes')).toBe(
-      'open-knowledge-server my-notes',
+      'synapsenote-server my-notes',
     );
   });
 
   test('strips non-printable bytes from the project name', () => {
     // Embedded control byte + DEL: both must be stripped.
-    expect(deriveServerProcessTitle('/path/to/bad\x07name\x7F')).toBe(
-      'open-knowledge-server badname',
-    );
+    expect(deriveServerProcessTitle('/path/to/bad\x07name\x7F')).toBe('synapsenote-server badname');
   });
 
   test('falls back to "unknown" when basename is empty or all non-printable', () => {
-    expect(deriveServerProcessTitle('/')).toBe('open-knowledge-server unknown');
-    expect(deriveServerProcessTitle('/path/to/\x00\x01\x02')).toBe('open-knowledge-server unknown');
+    expect(deriveServerProcessTitle('/')).toBe('synapsenote-server unknown');
+    expect(deriveServerProcessTitle('/path/to/\x00\x01\x02')).toBe('synapsenote-server unknown');
   });
 
   test('truncates long project names to keep ps lines readable', () => {
     const longName = 'a'.repeat(200);
     const result = deriveServerProcessTitle(`/parent/${longName}`);
-    // Prefix length is 'open-knowledge-server '.length = 22; truncated suffix
-    // capped at 64 chars → total ≤ 22 + 64 = 86.
-    expect(result.length).toBeLessThanOrEqual(86);
-    expect(result.startsWith('open-knowledge-server ')).toBe(true);
-    expect(result.length).toBe(22 + 64);
+    const prefixLength = 'synapsenote-server '.length;
+    // The project suffix is capped at 64 chars after the product prefix.
+    expect(result.length).toBeLessThanOrEqual(prefixLength + 64);
+    expect(result.startsWith('synapsenote-server ')).toBe(true);
+    expect(result.length).toBe(prefixLength + 64);
   });
 
   test('trims leading/trailing whitespace from the project name', () => {
@@ -123,14 +121,14 @@ describe('deriveServerProcessTitle', () => {
     // but unusual filesystems (case-insensitive HFS+, FAT trailing-space
     // tolerance) make this defensive guard worthwhile.
     expect(deriveServerProcessTitle('/parent/   leading-trailing   ')).toBe(
-      'open-knowledge-server leading-trailing',
+      'synapsenote-server leading-trailing',
     );
   });
 
   test('preserves typical kebab-case, snake_case, and dotted names', () => {
-    expect(deriveServerProcessTitle('/x/my-project')).toBe('open-knowledge-server my-project');
-    expect(deriveServerProcessTitle('/x/my_project')).toBe('open-knowledge-server my_project');
-    expect(deriveServerProcessTitle('/x/v1.2.3')).toBe('open-knowledge-server v1.2.3');
+    expect(deriveServerProcessTitle('/x/my-project')).toBe('synapsenote-server my-project');
+    expect(deriveServerProcessTitle('/x/my_project')).toBe('synapsenote-server my_project');
+    expect(deriveServerProcessTitle('/x/v1.2.3')).toBe('synapsenote-server v1.2.3');
   });
 });
 
@@ -611,7 +609,7 @@ describe('isServerLockCollision (D1/C3 gate)', () => {
   class FakeServerLockErr extends Error {}
   const fakeModule = {
     ServerLockCollisionError: FakeServerLockErr,
-  } as unknown as typeof import('@inkeep/open-knowledge-server');
+  } as unknown as typeof import('@nedian0brien/synapsenote-server');
 
   test('true for a ServerLockCollisionError instance', () => {
     expect(isServerLockCollision(new FakeServerLockErr('held'), fakeModule)).toBe(true);
@@ -621,7 +619,7 @@ describe('isServerLockCollision (D1/C3 gate)', () => {
     expect(isServerLockCollision('not-an-error', fakeModule)).toBe(false);
   });
   test('false (never throws) when the module lacks the class export', () => {
-    const empty = {} as unknown as typeof import('@inkeep/open-knowledge-server');
+    const empty = {} as unknown as typeof import('@nedian0brien/synapsenote-server');
     expect(isServerLockCollision(new Error('boom'), empty)).toBe(false);
   });
 });
@@ -1961,7 +1959,7 @@ describe('tryDescribeLockCollision', () => {
         return opts.meta;
       },
       // Stub the rest of the public surface to satisfy the type cast.
-    } as unknown as typeof import('@inkeep/open-knowledge-server');
+    } as unknown as typeof import('@nedian0brien/synapsenote-server');
   }
 
   test('non-lock-collision error → null (caller falls back to generic)', () => {
@@ -2013,7 +2011,7 @@ describe('tryDescribeLockCollision', () => {
   test('serverModule.ServerLockCollisionError missing → null (back-compat)', () => {
     const fm = {
       readServerLock: () => null,
-    } as unknown as typeof import('@inkeep/open-knowledge-server');
+    } as unknown as typeof import('@nedian0brien/synapsenote-server');
     const err = new Error('any');
     const result = tryDescribeLockCollision(err, '/tmp/proj', fm);
     expect(result).toBeNull();

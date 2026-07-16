@@ -83,7 +83,7 @@ async function runProbe(
   writeFileSync(join(contentDir, '.ok', 'config.yml'), 'content:\n  dir: .\n');
   writeFileSync(join(contentDir, `${sourceDocName}.md`), sourceContent);
 
-  const deepLink = `openknowledge://open?project=${encodeURIComponent(
+  const deepLink = `synapsenote://open?project=${encodeURIComponent(
     contentDir,
   )}&doc=${encodeURIComponent(sourceDocName)}`;
 

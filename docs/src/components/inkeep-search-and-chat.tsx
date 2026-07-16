@@ -28,7 +28,7 @@ const InkeepSearchAndChat: FC<SharedProps> = ({ open, onOpenChange }) => {
     baseSettings: {
       apiKey,
       primaryBrandColor: '#D5E5FF',
-      organizationDisplayName: 'OpenKnowledge',
+      organizationDisplayName: 'SynapseNote',
       colorMode: {
         sync: {
           target: document.documentElement,
@@ -67,7 +67,7 @@ const InkeepSearchAndChat: FC<SharedProps> = ({ open, onOpenChange }) => {
       },
       // transformSource: (source) => {
       //   const tabs = source.tabs || [];
-      //   if (source.url.includes('openknowledge.ai/docs')) {
+      //   if (source.url.includes('synapse.lawdigest.kr/docs')) {
       //     tabs.push('Docs');
       //   }
       //   return {
@@ -78,10 +78,10 @@ const InkeepSearchAndChat: FC<SharedProps> = ({ open, onOpenChange }) => {
     },
     aiChatSettings: {
       prompts: [`The user is currently viewing page ${url}.`],
-      aiAssistantAvatar: '/ok-logo.png',
+      aiAssistantAvatar: '/synapsenote-logo.png',
       exampleQuestions: [
-        'How do I get started with OpenKnowledge?',
-        'How do I connect OpenKnowledge to Claude Code, Cursor, or Codex?',
+        'How do I get started with SynapseNote?',
+        'How do I connect SynapseNote to Claude Code, Cursor, or Codex?',
         'How do I share my knowledge base with my team?',
       ],
       getHelpOptions: [

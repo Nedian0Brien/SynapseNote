@@ -373,7 +373,7 @@ describe('share_link outputSchema admits the freshness success payloads (S3)', (
 
   const base = {
     ok: true,
-    shareUrl: 'https://openknowledge.ai/d/enc',
+    shareUrl: 'https://synapse.lawdigest.kr/d/enc',
     sharedUrl: 'https://github.com/o/r/blob/main/notes.md',
     branch: 'main',
     resolvedKind: 'doc',
@@ -382,11 +382,11 @@ describe('share_link outputSchema admits the freshness success payloads (S3)', (
   const withFreshness = {
     ...base,
     freshness: 'stale',
-    text: 'This doc has unpushed changes. Recipients will see the last pushed version.\n\nShare link for doc `notes` on branch `main`:\nhttps://openknowledge.ai/d/enc',
+    text: 'This doc has unpushed changes. Recipients will see the last pushed version.\n\nShare link for doc `notes` on branch `main`:\nhttps://synapse.lawdigest.kr/d/enc',
   };
   const withoutFreshness = {
     ...base,
-    text: 'Share link for doc `notes` on branch `main`:\nhttps://openknowledge.ai/d/enc',
+    text: 'Share link for doc `notes` on branch `main`:\nhttps://synapse.lawdigest.kr/d/enc',
   };
 
   for (const [label, payload] of [

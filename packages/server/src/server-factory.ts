@@ -19,18 +19,18 @@ import {
   type MarkdownManager,
   type Principal,
   parseGlobalSkillBundleDoc,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import {
   readConfigSafely,
   resolveConfigPath,
   writeConfigPatch,
-} from '@inkeep/open-knowledge-core/server';
+} from '@nedian0brien/synapsenote-core/server';
 import {
   formatReconcileSubject,
   gitAuthorWriterId,
   resolveGitDir,
   resolveShadowDir,
-} from '@inkeep/open-knowledge-core/shadow-repo-layout';
+} from '@nedian0brien/synapsenote-core/shadow-repo-layout';
 import simpleGit from 'simple-git';
 import { AgentFocusBroadcaster } from './agent-focus.ts';
 import { AgentPresenceBroadcaster } from './agent-presence.ts';
@@ -209,7 +209,7 @@ export interface ServerOptions {
   onAgentWrite?: () => void;
   /**
    * CLI argv prefix for /api/local-op/* relay endpoints.
-   * Defaults to ['open-knowledge'] (CLI on PATH).
+   * Defaults to ['synapsenote'] (CLI on PATH).
    * Pass [process.execPath, process.argv[1]] from start.ts to use the exact
    * runtime that launched this server — necessary in dev (bun + .ts entry).
    */
@@ -388,13 +388,13 @@ const PARK_SNAPSHOT_ORIGIN = (() => {
  *
  * Git runs a `!`-prefixed credential helper through the shell, so every argv
  * element must be shell-quoted. The packaged macOS CLI path lives under
- * `/Applications/OpenKnowledge.app/…` — the space splits unquoted, the shell
+ * `/Applications/SynapseNote.app/…` — the space splits unquoted, the shell
  * fails to exec, the helper returns no credentials, and git falls back to an
  * interactive username prompt with no TTY ("could not read Username … Device
  * not configured"). `shellEscape` per argv element is the fix.
  */
 export function buildSyncCredentialArgs(localOpCliArgs?: string[]): string[] {
-  const argv = localOpCliArgs && localOpCliArgs.length > 0 ? localOpCliArgs : ['open-knowledge'];
+  const argv = localOpCliArgs && localOpCliArgs.length > 0 ? localOpCliArgs : ['synapsenote'];
   const cliPrefix = argv.map(shellEscape).join(' ');
   return ['-c', `credential.helper=!${cliPrefix} auth git-credential`];
 }

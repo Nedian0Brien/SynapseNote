@@ -3,7 +3,7 @@
  * JsxComponent for the React-enabled version with NodeView, and adds
  * app-only extensions (slash command menu, etc.).
  */
-import { sharedExtensions as coreExtensions } from '@inkeep/open-knowledge-core';
+import { sharedExtensions as coreExtensions } from '@nedian0brien/synapsenote-core';
 import { Extension } from '@tiptap/core';
 import FileHandler from '@tiptap/extension-file-handler';
 import { KeyboardNav } from '../block-ux/keyboard-nav';

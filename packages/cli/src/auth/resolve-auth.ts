@@ -24,7 +24,7 @@ interface ResolveAuthOptions {
  *   credentialArgs = ['-c', "credential.helper=!gh auth git-credential"]
  *
  * Tier B/C — token stored in TokenStore (keyring or file):
- *   credentialArgs = ['-c', "credential.helper=!open-knowledge auth git-credential"]
+ *   credentialArgs = ['-c', "credential.helper=!synapsenote auth git-credential"]
  *
  * none — no auth available:
  *   credentialArgs = []
@@ -54,7 +54,7 @@ export async function resolveAuth(
     const tier: AuthTier = entry.gitProtocol === 'ssh' ? 'C' : 'B';
     return {
       tier,
-      credentialArgs: ['-c', 'credential.helper=!open-knowledge auth git-credential'],
+      credentialArgs: ['-c', 'credential.helper=!synapsenote auth git-credential'],
     };
   }
 

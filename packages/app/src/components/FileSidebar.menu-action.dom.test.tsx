@@ -190,12 +190,12 @@ mock.module('@/components/handoff/useHandoffDispatch', () => ({
   buildHandoffInput: () => ({
     docContext: { docName: 'notes/source' },
     docPath: 'notes/source.md',
-    projectDir: '/tmp/open-knowledge',
+    projectDir: '/tmp/synapsenote',
   }),
   buildProjectScopedHandoffInput: () => ({
     docContext: null,
     docPath: '',
-    projectDir: '/tmp/open-knowledge',
+    projectDir: '/tmp/synapsenote',
   }),
   useHandoffDispatch: () => ({ dispatch: handoffDispatchMock }),
 }));
@@ -247,7 +247,7 @@ mock.module('@/lib/config-provider', () => ({
 // Stable for the same reason as `installedAgentStates` — `workspace` is a
 // dep of the menu-action effect.
 const workspaceStub = {
-  contentDir: '/tmp/open-knowledge',
+  contentDir: '/tmp/synapsenote',
   pathSeparator: '/',
 };
 mock.module('@/lib/use-workspace', () => ({
@@ -474,7 +474,7 @@ describe('FileSidebar menu-action runtime routing', () => {
     await waitFor(() => expect(menuActionCallback).not.toBeNull());
 
     menuActionCallback?.('reveal-in-finder' as MenuAction);
-    expect(showItemInFolderMock).toHaveBeenCalledWith('/tmp/open-knowledge/notes/source.md');
+    expect(showItemInFolderMock).toHaveBeenCalledWith('/tmp/synapsenote/notes/source.md');
 
     menuActionCallback?.('send-to-ai' as MenuAction);
     expect(handoffDispatchMock).toHaveBeenCalledWith(
@@ -485,7 +485,7 @@ describe('FileSidebar menu-action runtime routing', () => {
     menuActionCallback?.('copy-full-path' as MenuAction);
     await waitFor(() =>
       expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
-        '/tmp/open-knowledge/notes/source.md',
+        '/tmp/synapsenote/notes/source.md',
       ),
     );
 

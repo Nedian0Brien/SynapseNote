@@ -5,7 +5,7 @@
  * Computes a project-aware plan via the shared `prepareSingleFileOpen` (realpath
  * BEFORE detection), then delivers:
  *   - **Project mode** — reuse the existing `ok open` deep-link/browser path.
- *   - **No-project mode** — desktop deep-link (`openknowledge://open?file=…`,
+ *   - **No-project mode** — desktop deep-link (`synapsenote://open?file=…`,
  *     desktop owns the ephemeral server + temp dir for deterministic close
  *     teardown) when a bundle is installed; otherwise a browser fallback that
  *     boots an ephemeral single-file server IN THIS process (so Ctrl-C /
@@ -25,7 +25,7 @@ import {
   SingleFileNotMarkdownError,
   type SingleFileOpenPlan,
   withHiddenWindowsConsole,
-} from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-server';
 import { createRealDetectDeps, type DetectResult, detectDesktop } from './desktop-dispatch.ts';
 import { createRealOpenDeps, runOpen } from './open.ts';
 
@@ -43,7 +43,7 @@ export interface SingleFileOpenDeps {
   prepare: (filePath: string) => SingleFileOpenPlan;
   /** Absolute desktop bundle path when one is installed, else null. */
   detectBundlePath: () => string | null;
-  /** Hand a URL / `openknowledge://` deep link to the OS to open. */
+  /** Hand a URL / `synapsenote://` deep link to the OS to open. */
   openTarget: (target: string) => void;
   /** Reuse `ok open`'s project-mode deep-link/browser path. Returns exit code. */
   runProjectOpen: (docName: string, projectRoot: string) => number;
@@ -129,9 +129,9 @@ export async function runSingleFileOpen(
   // `prepareSingleFileOpen` on its side — idempotent — the safety net).
   const bundlePath = deps.detectBundlePath();
   if (bundlePath) {
-    const deepLink = `openknowledge://open?file=${encodeURIComponent(plan.canonicalFilePath)}`;
+    const deepLink = `synapsenote://open?file=${encodeURIComponent(plan.canonicalFilePath)}`;
     deps.openTarget(deepLink);
-    deps.log(`Opening ${plan.singleDocRelPath} in the OpenKnowledge desktop app.`);
+    deps.log(`Opening ${plan.singleDocRelPath} in the SynapseNote desktop app.`);
     return 0;
   }
 
@@ -169,7 +169,7 @@ function resolveReactShellDistDir(): string | undefined {
 async function runSingleFileBrowserOpen(
   plan: Extract<SingleFileOpenPlan, { mode: 'ephemeral' }>,
 ): Promise<void> {
-  const { createEphemeralProjectDir } = await import('@inkeep/open-knowledge-server');
+  const { createEphemeralProjectDir } = await import('@nedian0brien/synapsenote-server');
   const { loadConfig } = await import('../index.ts');
   const { bootStartServer, resolveHost } = await import('./start.ts');
   const { openBrowser } = await import('../utils/open-browser.ts');
@@ -177,7 +177,7 @@ async function runSingleFileBrowserOpen(
   const reactShellDistDir = resolveReactShellDistDir();
   if (!reactShellDistDir) {
     process.stderr.write(
-      'OpenKnowledge UI assets were not found. Reinstall @inkeep/open-knowledge, or build the app (`bun run build`) in a monorepo checkout.\n',
+      'SynapseNote UI assets were not found. Reinstall @nedian0brien/synapsenote, or build the app (`bun run build`) in a monorepo checkout.\n',
     );
     process.exit(1);
   }

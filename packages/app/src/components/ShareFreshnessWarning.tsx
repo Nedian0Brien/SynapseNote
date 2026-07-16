@@ -11,8 +11,8 @@
  * push error would make those CTAs wrong.
  */
 
-import type { ShareFreshness } from '@inkeep/open-knowledge-core';
 import { Trans, useLingui } from '@lingui/react/macro';
+import type { ShareFreshness } from '@nedian0brien/synapsenote-core';
 import { ArrowUpRight, Check, Info, RefreshCw, TriangleAlert } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';

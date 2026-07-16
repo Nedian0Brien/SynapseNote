@@ -52,7 +52,7 @@ function seedHome(prefix: string): { tmpHome: string; projectDir: string } {
   const now = Date.now();
   const recentProjects = [
     'agents-private',
-    'open-knowledge',
+    'synapsenote',
     'dragon-wiki',
     'claude-config',
     'ship-loop-rewrite',

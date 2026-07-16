@@ -4,14 +4,14 @@ import {
   type EditorMcpTarget,
   type McpDeclineReason,
   type McpEntryClassification,
-} from '@inkeep/open-knowledge';
+} from '@nedian0brien/synapsenote';
 import type { McpWiringEditorId } from '../shared/ipc-channels.ts';
 import {
   checkAndRepairProjectMcpOnProjectOpen,
   type ProjectMcpReclaimCliSurface,
 } from './project-mcp-reclaim.ts';
 
-const EXE = '/Applications/OpenKnowledge.app/Contents/MacOS/OpenKnowledge';
+const EXE = '/Applications/SynapseNote.app/Contents/MacOS/SynapseNote';
 const CHAIN_ENTRY = buildManagedServerEntry({ mode: 'published' });
 
 function fakeTarget(id: McpWiringEditorId, projectConfigPath?: string): EditorMcpTarget {
@@ -20,7 +20,7 @@ function fakeTarget(id: McpWiringEditorId, projectConfigPath?: string): EditorMc
     label: id,
     format: 'json',
     topLevelKey: 'mcpServers',
-    serverName: () => 'open-knowledge',
+    serverName: () => 'synapsenote',
     configPath: () => `/home/${id}/config.json`,
     buildEntry: () => CHAIN_ENTRY,
     scope: 'global',
@@ -181,7 +181,7 @@ describe('checkAndRepairProjectMcpOnProjectOpen', () => {
         target: fakeTarget('claude' as McpWiringEditorId, '/p/.mcp.json'),
         classification: {
           kind: 'present',
-          entry: { command: 'npx', args: ['-y', '@inkeep/open-knowledge', 'mcp'] },
+          entry: { command: 'npx', args: ['-y', '@nedian0brien/synapsenote', 'mcp'] },
         },
       },
     });
@@ -207,7 +207,7 @@ describe('checkAndRepairProjectMcpOnProjectOpen', () => {
         target: fakeTarget('claude' as McpWiringEditorId, '/p/.mcp.json'),
         classification: {
           kind: 'present',
-          entry: { command: 'npx', args: ['-y', '@inkeep/open-knowledge', 'mcp'] },
+          entry: { command: 'npx', args: ['-y', '@nedian0brien/synapsenote', 'mcp'] },
         },
         writeOutcome: { action: 'declined', reason: 'unparseable' },
       },
@@ -252,7 +252,7 @@ describe('checkAndRepairProjectMcpOnProjectOpen', () => {
       allEditorIds: ['claude' as McpWiringEditorId],
       classifyExistingProjectMcpConfig: () => ({
         kind: 'present',
-        entry: { command: 'npx', args: ['-y', '@inkeep/open-knowledge', 'mcp'] },
+        entry: { command: 'npx', args: ['-y', '@nedian0brien/synapsenote', 'mcp'] },
       }),
       writeProjectMcpConfig: () => {
         order.push('write');
@@ -285,7 +285,7 @@ describe('checkAndRepairProjectMcpOnProjectOpen', () => {
       editorId: 'claude',
       configPath: '/p/.mcp.json',
       priorCommand: 'npx',
-      priorArgs: ['-y', '@inkeep/open-knowledge', 'mcp'],
+      priorArgs: ['-y', '@nedian0brien/synapsenote', 'mcp'],
     });
   });
 

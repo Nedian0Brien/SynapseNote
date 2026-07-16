@@ -1,4 +1,4 @@
-import { normalizeDocRelativeAssetUrl } from '@inkeep/open-knowledge-core';
+import { normalizeDocRelativeAssetUrl } from '@nedian0brien/synapsenote-core';
 
 const DOC_RELATIVE_SRC_COMPONENTS = new Set([
   'img',

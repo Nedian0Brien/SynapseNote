@@ -34,7 +34,7 @@ import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Hocuspocus } from '@hocuspocus/server';
-import { normalizeBridge } from '@inkeep/open-knowledge-core';
+import { normalizeBridge } from '@nedian0brien/synapsenote-core';
 import * as Y from 'yjs';
 import { isDocInConflict } from './conflict-errors.ts';
 import {

@@ -18,9 +18,9 @@
  *
  * Import from here anywhere in `packages/server/`. Tests that need an isolated
  * instance may still construct their own (the class is re-exported from
- * `@inkeep/open-knowledge-core`); this module is the production singleton.
+ * `@nedian0brien/synapsenote-core`); this module is the production singleton.
  */
-import { MarkdownManager, sharedExtensions } from '@inkeep/open-knowledge-core';
+import { MarkdownManager, sharedExtensions } from '@nedian0brien/synapsenote-core';
 import { getSchema } from '@tiptap/core';
 
 /**

@@ -1,4 +1,4 @@
-import { parseManagedArtifactName } from '@inkeep/open-knowledge-core';
+import { parseManagedArtifactName } from '@nedian0brien/synapsenote-core';
 import { MoreHorizontalIcon } from 'lucide-react';
 import { Fragment } from 'react';
 import {

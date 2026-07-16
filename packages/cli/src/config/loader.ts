@@ -30,9 +30,9 @@ import {
   detectRemovedKeys,
   humanFormat,
   locateIssue,
-} from '@inkeep/open-knowledge-core';
-import { readConfigSafely, resolveConfigPath } from '@inkeep/open-knowledge-core/server';
-import { type Config, ConfigSchema } from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-core';
+import { readConfigSafely, resolveConfigPath } from '@nedian0brien/synapsenote-core/server';
+import { type Config, ConfigSchema } from '@nedian0brien/synapsenote-server';
 import { type Document, parseDocument } from 'yaml';
 import { CONFIG_FILENAME, OK_DIR } from '../constants.ts';
 import { isObject } from '../utils/is-object.ts';

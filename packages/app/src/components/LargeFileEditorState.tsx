@@ -1,5 +1,5 @@
-import { formatFileSize } from '@inkeep/open-knowledge-core';
 import { Trans } from '@lingui/react/macro';
+import { formatFileSize } from '@nedian0brien/synapsenote-core';
 import { ArrowLeft, FileWarning } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
@@ -48,7 +48,7 @@ export function LargeFileEditorState({ docName, size, limit, backNav }: LargeFil
         </h2>
         <p className="max-w-md text-sm text-muted-foreground">
           <Trans>
-            {docName} is {formatFileSize(size)}. OpenKnowledge currently opens files up to{' '}
+            {docName} is {formatFileSize(size)}. SynapseNote currently opens files up to{' '}
             {formatFileSize(limit)}.
           </Trans>
         </p>

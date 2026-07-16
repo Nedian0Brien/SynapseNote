@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import type { DocumentListSuccess } from '@inkeep/open-knowledge-core';
+import type { DocumentListSuccess } from '@nedian0brien/synapsenote-core';
 import { countVisibleEntries } from './onboarding-document-count';
 
 type Entry = DocumentListSuccess['documents'][number];

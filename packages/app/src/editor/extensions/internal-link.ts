@@ -40,7 +40,7 @@ import {
   extractAssetExtension,
   LinkFidelity,
   resolveAssetProjectPath,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { type Editor, mergeAttributes } from '@tiptap/core';
 import { createElement } from 'react';
 import { openExternalUrl } from '@/lib/external-link';

@@ -2,13 +2,13 @@
 //! `utils/path-utils/src/lib.rs` `resolve_symlink_write_paths` (Apache-2.0).
 //!
 //! A dotfile-managed harness config is often a symlink into a stow/chezmoi
-//! repo. OpenKnowledge's current write replaces that symlink with a regular
+//! repo. SynapseNote's current write replaces that symlink with a regular
 //! file and orphans the repo copy; this resolves the chain to its real target
 //! so the caller writes *through* the symlink instead. The actual atomic
-//! tmp+rename stays on OpenKnowledge's existing write spine — this module only
+//! tmp+rename stays on SynapseNote's existing write spine — this module only
 //! decides *where* to write.
 //!
-//! Codex's version normalizes the root through its `AbsolutePathBuf`; OpenKnowledge
+//! Codex's version normalizes the root through its `AbsolutePathBuf`; SynapseNote
 //! always passes an absolute config path, so that step is dropped. Relative
 //! symlink targets are still resolved against the link's parent, and a chain
 //! that cycles (or whose metadata can't be read) falls back to the original
@@ -89,7 +89,7 @@ mod tests {
     use std::fs;
     use tempfile::tempdir;
 
-    /// Mirror of OpenKnowledge's tmp+rename atomic write so the symlink tests
+    /// Mirror of SynapseNote's tmp+rename atomic write so the symlink tests
     /// exercise the same replace-vs-write-through behavior the real spine does:
     /// renaming a fresh file onto a path replaces a symlink there, but renaming
     /// onto a resolved real target leaves the original symlink intact.

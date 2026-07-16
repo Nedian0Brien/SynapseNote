@@ -16,10 +16,10 @@
  * mode-aware caption, Cancel + confirm footer.
  */
 
-import { stripRemotePrefix } from '@inkeep/open-knowledge-core';
 import type { MessageDescriptor } from '@lingui/core';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react/macro';
+import { stripRemotePrefix } from '@nedian0brien/synapsenote-core';
 import { Check, ChevronsUpDown, Cloud, FolderOpen, GitBranch, Plus, Search } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { toast } from 'sonner';

@@ -9,7 +9,7 @@
  * config docs are Y.Text-only).
  */
 import type { Extension } from '@hocuspocus/server';
-import type { MarkdownManager } from '@inkeep/open-knowledge-core';
+import type { MarkdownManager } from '@nedian0brien/synapsenote-core';
 import type { Schema } from '@tiptap/pm/model';
 import type * as Y from 'yjs';
 import { isConfigDoc, isMermaidDoc, isSystemDoc } from './cc1-broadcast.ts';

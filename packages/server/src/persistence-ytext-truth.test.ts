@@ -49,7 +49,7 @@ const describe = process.env.CI ? _bunDescribe.skip : _bunDescribe;
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { MarkdownManager, sharedExtensions } from '@inkeep/open-knowledge-core';
+import { MarkdownManager, sharedExtensions } from '@nedian0brien/synapsenote-core';
 import simpleGit from 'simple-git';
 import { __resetQuiescenceForTests, __setQuiescentOverrideForTests } from './bridge-quiescence.ts';
 import { __resetBridgeWatchdogForTests } from './bridge-watchdog.ts';

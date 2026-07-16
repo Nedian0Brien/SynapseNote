@@ -9,8 +9,6 @@ import {
   SITE_HEADLINE,
   SITE_NAME,
   SITE_URL,
-  TWITTER_HANDLE,
-  X_URL,
 } from '@/lib/site';
 import './global.css';
 import { Provider } from './provider';
@@ -36,20 +34,18 @@ const inter = Inter({
 const orgLd = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
-  name: 'Inkeep',
-  url: 'https://inkeep.com',
-  logo: 'https://inkeep.com/images/logos/logo-with-text-black.svg',
-  description:
-    'Ship Agent-powered assistants and automations that boost customer experience and 10x your teams.',
-  foundingDate: '2023',
-  sameAs: [X_URL, GITHUB_URL],
+  name: 'SynapseNote contributors',
+  url: SITE_URL,
+  logo: `${SITE_URL}/synapsenote-logo.png`,
+  description: SITE_DESCRIPTION,
+  sameAs: [GITHUB_URL],
 } satisfies WithContext<Organization>;
 
 const siteLd = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
   name: SITE_NAME,
-  alternateName: 'OpenKnowledge Docs',
+  alternateName: 'SynapseNote Docs',
   url: SITE_URL,
   description: SITE_DESCRIPTION,
 } satisfies WithContext<WebSite>;
@@ -62,13 +58,13 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
     default: `${SITE_NAME} — ${SITE_HEADLINE}`,
-    template: '%s · OpenKnowledge',
+    template: '%s · SynapseNote',
   },
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
   icons: {
-    icon: '/ok-logo.png',
-    apple: '/ok-logo.png',
+    icon: '/synapsenote-logo.png',
+    apple: '/synapsenote-logo.png',
   },
   openGraph: {
     type: 'website',
@@ -80,8 +76,6 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    site: TWITTER_HANDLE,
-    creator: TWITTER_HANDLE,
     title: `${SITE_NAME} — ${SITE_HEADLINE}`,
     description: SITE_META_DESCRIPTION,
   },

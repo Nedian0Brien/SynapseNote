@@ -3,7 +3,7 @@
  * primitive behind OK's config REMOVAL paths (MCP-entry removal + launch.json
  * entry removal for `ok uninstall` / `ok deinit`).
  *
- * OpenKnowledge is a guest in every config it touches: it owns one node and
+ * SynapseNote is a guest in every config it touches: it owns one node and
  * must leave every other token — sibling entries, comments, key order,
  * indentation, a leading BOM, CRLF endings — byte-identical. jsonc-parser's
  * `modify(text, path, undefined, …)` deletes exactly one node and reflows only

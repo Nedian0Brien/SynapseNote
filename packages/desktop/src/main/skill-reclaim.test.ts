@@ -12,13 +12,13 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { reclaimProjectSkillsOnProjectOpen, reclaimUserSkillsOnLaunch } from './skill-reclaim.ts';
 
-const EXE = '/Applications/OpenKnowledge.app/Contents/MacOS/OpenKnowledge';
+const EXE = '/Applications/SynapseNote.app/Contents/MacOS/SynapseNote';
 
 /** A `.mcp.json` body carrying the `# ok-mcp-v1` chain sentinel — the
  *  `createIfWired` signal the project sweep keys off. */
 const OK_WIRED_MCP_JSON = JSON.stringify({
   mcpServers: {
-    'open-knowledge': { command: '/bin/sh', args: ['-l', '-c', '# ok-mcp-v1\nexec ok mcp'] },
+    synapsenote: { command: '/bin/sh', args: ['-l', '-c', '# ok-mcp-v1\nexec ok mcp'] },
   },
 });
 /** A `.mcp.json` with an unrelated server and no OK marker. */
@@ -27,7 +27,7 @@ const UNWIRED_MCP_JSON = JSON.stringify({ mcpServers: { other: { command: 'node'
  *  teammate into a shared repo; must still count as wired here. */
 const OK_WIRED_MCP_JSON_WIN = JSON.stringify({
   mcpServers: {
-    'open-knowledge': {
+    synapsenote: {
       command: 'powershell',
       args: ['-NoProfile', '-NonInteractive', '-Command', '# ok-mcp-win-v1\nexit 127'],
     },
@@ -51,7 +51,7 @@ afterEach(() => {
 function setupBundle(): string {
   const bundle = mkdtempSync(join(tmpdir(), 'ok-skill-bundle-'));
   cleanupPaths.push(bundle);
-  writeFileSync(join(bundle, 'SKILL.md'), '---\nname: open-knowledge\n---\n# v-new\n');
+  writeFileSync(join(bundle, 'SKILL.md'), '---\nname: synapsenote\n---\n# v-new\n');
   writeFileSync(join(bundle, 'extra.md'), 'extra-new');
   return bundle;
 }
@@ -103,7 +103,7 @@ interface FakeDeps {
 
 /** Default test bundle set — discovery only, so existing single-bundle
  *  assertions hold; multi-bundle tests pass an explicit list. */
-const DISCOVERY_ONLY_BUNDLES = [{ id: 'discovery', name: 'open-knowledge-discovery' }] as const;
+const DISCOVERY_ONLY_BUNDLES = [{ id: 'discovery', name: 'synapsenote-discovery' }] as const;
 
 function makeDeps(opts: {
   bundle: string;
@@ -191,7 +191,7 @@ describe('reclaimUserSkillsOnLaunch', () => {
       deps,
     });
     expect(r.status).toBe('done');
-    const central = join(home, '.agents', 'skills', 'open-knowledge-discovery', 'SKILL.md');
+    const central = join(home, '.agents', 'skills', 'synapsenote-discovery', 'SKILL.md');
     expect(existsSync(central)).toBe(true);
     expect(readFileSync(central, 'utf8')).toContain('v-new');
     expect(deps.stateWrites).toEqual([{ home, version: '0.5.0-beta.41' }]);
@@ -213,8 +213,8 @@ describe('reclaimUserSkillsOnLaunch', () => {
     const deps = {
       ...makeDeps({ bundle, version: '1.0.0' }),
       userGlobalBundles: [
-        { id: 'discovery', name: 'open-knowledge-discovery' },
-        { id: 'write-skill', name: 'open-knowledge-write-skill' },
+        { id: 'discovery', name: 'synapsenote-discovery' },
+        { id: 'write-skill', name: 'synapsenote-write-skill' },
       ],
     };
     const r = await reclaimUserSkillsOnLaunch({
@@ -226,7 +226,7 @@ describe('reclaimUserSkillsOnLaunch', () => {
     });
     expect(r.status).toBe('done');
     // Both bundles landed in the central store and the `.claude` host.
-    for (const name of ['open-knowledge-discovery', 'open-knowledge-write-skill']) {
+    for (const name of ['synapsenote-discovery', 'synapsenote-write-skill']) {
       expect(existsSync(join(home, '.agents', 'skills', name, 'SKILL.md'))).toBe(true);
       expect(existsSync(join(home, '.claude', 'skills', name, 'SKILL.md'))).toBe(true);
     }
@@ -239,9 +239,9 @@ describe('reclaimUserSkillsOnLaunch', () => {
   test('central store overwrites existing files even when same path is present', async () => {
     const home = makeHome();
     const bundle = setupBundle();
-    const central = join(home, '.agents', 'skills', 'open-knowledge-discovery');
+    const central = join(home, '.agents', 'skills', 'synapsenote-discovery');
     mkdirSync(central, { recursive: true });
-    writeFileSync(join(central, 'SKILL.md'), '---\nname: open-knowledge\n---\n# v-old\n');
+    writeFileSync(join(central, 'SKILL.md'), '---\nname: synapsenote\n---\n# v-old\n');
     writeFileSync(join(central, 'orphan.md'), 'stale');
     const deps = makeDeps({ bundle, version: '0.5.0-beta.41' });
     const r = await reclaimUserSkillsOnLaunch({
@@ -278,15 +278,15 @@ describe('reclaimUserSkillsOnLaunch', () => {
       expect(claude?.status).toBe('written');
       expect(cursor?.status).toBe('skipped-host-absent');
     }
-    expect(
-      existsSync(join(home, '.claude', 'skills', 'open-knowledge-discovery', 'SKILL.md')),
-    ).toBe(true);
-    expect(existsSync(join(home, '.cursor', 'skills', 'open-knowledge-discovery'))).toBe(false);
+    expect(existsSync(join(home, '.claude', 'skills', 'synapsenote-discovery', 'SKILL.md'))).toBe(
+      true,
+    );
+    expect(existsSync(join(home, '.cursor', 'skills', 'synapsenote-discovery'))).toBe(false);
   });
 
   test('codex installs to its own .codex host dir, distinct from the .agents central store', async () => {
     // Codex's per-host skills dir is now `.codex/skills` (not the shared
-    // `.agents`). The all-agents central `.agents/skills/open-knowledge-discovery`
+    // `.agents`). The all-agents central `.agents/skills/synapsenote-discovery`
     // store and codex's per-host copy are distinct paths — both get written,
     // no collapse.
     const home = makeHome();
@@ -325,9 +325,9 @@ describe('reclaimUserSkillsOnLaunch', () => {
 
   test('per-host overwrite when SKILL.md already exists (force-write)', async () => {
     const home = makeHome();
-    const dest = join(home, '.claude', 'skills', 'open-knowledge-discovery');
+    const dest = join(home, '.claude', 'skills', 'synapsenote-discovery');
     mkdirSync(dest, { recursive: true });
-    writeFileSync(join(dest, 'SKILL.md'), '---\nname: open-knowledge\n---\n# v-old\n');
+    writeFileSync(join(dest, 'SKILL.md'), '---\nname: synapsenote\n---\n# v-old\n');
     const bundle = setupBundle();
     const deps = makeDeps({ bundle, version: '1.2.3' });
     const r = await reclaimUserSkillsOnLaunch({
@@ -345,14 +345,14 @@ describe('reclaimUserSkillsOnLaunch', () => {
     expect(readFileSync(join(dest, 'SKILL.md'), 'utf8')).toContain('v-new');
   });
 
-  test('pre-split open-knowledge dirs are removed at every host before the discovery bundle lands', async () => {
+  test('pre-split synapsenote dirs are removed at every host before the discovery bundle lands', async () => {
     const home = makeHome();
     const legacyHosts = ['.claude', '.cursor', '.agents'] as const;
     // Plant a stale pre-split install at all three host locations.
     for (const hostDir of legacyHosts) {
-      const legacy = join(home, hostDir, 'skills', 'open-knowledge');
+      const legacy = join(home, hostDir, 'skills', 'synapsenote');
       mkdirSync(legacy, { recursive: true });
-      writeFileSync(join(legacy, 'SKILL.md'), '---\nname: open-knowledge\n---\n# legacy\n');
+      writeFileSync(join(legacy, 'SKILL.md'), '---\nname: synapsenote\n---\n# legacy\n');
     }
     const bundle = setupBundle();
     const deps = makeDeps({ bundle, version: '1.2.3' });
@@ -366,10 +366,10 @@ describe('reclaimUserSkillsOnLaunch', () => {
     expect(r.status).toBe('done');
     for (const hostDir of legacyHosts) {
       // Legacy dir gone; the new discovery dir is present in its place.
-      expect(existsSync(join(home, hostDir, 'skills', 'open-knowledge'))).toBe(false);
-      expect(
-        existsSync(join(home, hostDir, 'skills', 'open-knowledge-discovery', 'SKILL.md')),
-      ).toBe(true);
+      expect(existsSync(join(home, hostDir, 'skills', 'synapsenote'))).toBe(false);
+      expect(existsSync(join(home, hostDir, 'skills', 'synapsenote-discovery', 'SKILL.md'))).toBe(
+        true,
+      );
     }
   });
 
@@ -469,7 +469,7 @@ describe('reclaimUserSkillsOnLaunch', () => {
 });
 
 describe('reclaimUserSkillsOnLaunch — per-bundle opt-in gate', () => {
-  const DISCOVERY_DIR = ['.agents', 'skills', 'open-knowledge-discovery'] as const;
+  const DISCOVERY_DIR = ['.agents', 'skills', 'synapsenote-discovery'] as const;
 
   function seedCentral(home: string): void {
     const dir = join(home, ...DISCOVERY_DIR);
@@ -525,16 +525,14 @@ describe('reclaimUserSkillsOnLaunch — per-bundle opt-in gate', () => {
     expect(r.status).toBe('done');
     // Force-written (grandfathered install stays) + decision materialized.
     expect(existsSync(join(home, ...DISCOVERY_DIR, 'SKILL.md'))).toBe(true);
-    expect(deps.decisionWrites).toEqual([
-      { bundleName: 'open-knowledge-discovery', enabled: true },
-    ]);
+    expect(deps.decisionWrites).toEqual([{ bundleName: 'synapsenote-discovery', enabled: true }]);
     expect(deps.removals).toEqual([]);
   });
 
   test('mixed decision: declined bundle is removed while the enabled bundle installs', async () => {
     const home = makeHome();
     // Seed both bundles on disk, then decline ONLY write-skill.
-    for (const name of ['open-knowledge-discovery', 'open-knowledge-write-skill']) {
+    for (const name of ['synapsenote-discovery', 'synapsenote-write-skill']) {
       const dir = join(home, '.agents', 'skills', name);
       mkdirSync(dir, { recursive: true });
       writeFileSync(join(dir, 'SKILL.md'), 'preexisting');
@@ -544,13 +542,13 @@ describe('reclaimUserSkillsOnLaunch — per-bundle opt-in gate', () => {
         bundle: setupBundle(),
         version: '1.0.0',
         bundleDecision: {
-          'open-knowledge-discovery': true,
-          'open-knowledge-write-skill': false,
+          'synapsenote-discovery': true,
+          'synapsenote-write-skill': false,
         },
       }),
       userGlobalBundles: [
-        { id: 'discovery', name: 'open-knowledge-discovery' },
-        { id: 'write-skill', name: 'open-knowledge-write-skill' },
+        { id: 'discovery', name: 'synapsenote-discovery' },
+        { id: 'write-skill', name: 'synapsenote-write-skill' },
       ],
     };
     const r = await reclaimUserSkillsOnLaunch({
@@ -601,12 +599,12 @@ describe('reclaimProjectSkillsOnProjectOpen', () => {
     expect(existsSync(join(projectDir, '.agents'))).toBe(false);
   });
 
-  test('codex project skill at .codex/skills/open-knowledge is reclaimed when present', async () => {
+  test('codex project skill at .codex/skills/synapsenote is reclaimed when present', async () => {
     const projectDir = mkdtempSync(join(tmpdir(), 'ok-proj-'));
     cleanupPaths.push(projectDir);
-    const codexSkill = join(projectDir, '.codex', 'skills', 'open-knowledge');
+    const codexSkill = join(projectDir, '.codex', 'skills', 'synapsenote');
     mkdirSync(codexSkill, { recursive: true });
-    writeFileSync(join(codexSkill, 'SKILL.md'), '---\nname: open-knowledge\n---\n# v-old\n');
+    writeFileSync(join(codexSkill, 'SKILL.md'), '---\nname: synapsenote\n---\n# v-old\n');
     const bundle = setupBundle();
     const r = await reclaimProjectSkillsOnProjectOpen({
       projectDir,
@@ -627,9 +625,9 @@ describe('reclaimProjectSkillsOnProjectOpen', () => {
   test('existing SKILL.md is reclaimed with latest content', async () => {
     const projectDir = mkdtempSync(join(tmpdir(), 'ok-proj-'));
     cleanupPaths.push(projectDir);
-    const claudeSkill = join(projectDir, '.claude', 'skills', 'open-knowledge');
+    const claudeSkill = join(projectDir, '.claude', 'skills', 'synapsenote');
     mkdirSync(claudeSkill, { recursive: true });
-    writeFileSync(join(claudeSkill, 'SKILL.md'), '---\nname: open-knowledge\n---\n# v-old\n');
+    writeFileSync(join(claudeSkill, 'SKILL.md'), '---\nname: synapsenote\n---\n# v-old\n');
     const bundle = setupBundle();
     const r = await reclaimProjectSkillsOnProjectOpen({
       projectDir,
@@ -651,9 +649,9 @@ describe('reclaimProjectSkillsOnProjectOpen', () => {
   test('a host whose replaceDir throws is reported failed, not crashed', async () => {
     const projectDir = mkdtempSync(join(tmpdir(), 'ok-proj-'));
     cleanupPaths.push(projectDir);
-    const claudeSkill = join(projectDir, '.claude', 'skills', 'open-knowledge');
+    const claudeSkill = join(projectDir, '.claude', 'skills', 'synapsenote');
     mkdirSync(claudeSkill, { recursive: true });
-    writeFileSync(join(claudeSkill, 'SKILL.md'), '---\nname: open-knowledge\n---\n# v-old\n');
+    writeFileSync(join(claudeSkill, 'SKILL.md'), '---\nname: synapsenote\n---\n# v-old\n');
     const r = await reclaimProjectSkillsOnProjectOpen({
       projectDir,
       executablePath: EXE,
@@ -724,7 +722,7 @@ describe('reclaimProjectSkillsOnProjectOpen — createIfWired (managed heal path
       expect(r.entries.find((e) => e.editorId === 'cursor')?.status).toBe('no-token');
       expect(r.entries.find((e) => e.editorId === 'codex')?.status).toBe('no-token');
     }
-    const skillFile = join(projectDir, '.claude', 'skills', 'open-knowledge', 'SKILL.md');
+    const skillFile = join(projectDir, '.claude', 'skills', 'synapsenote', 'SKILL.md');
     expect(existsSync(skillFile)).toBe(true);
     expect(readFileSync(skillFile, 'utf8')).toContain('v-new');
     expect(
@@ -748,9 +746,7 @@ describe('reclaimProjectSkillsOnProjectOpen — createIfWired (managed heal path
     if (r.status === 'done') {
       expect(r.entries.find((e) => e.editorId === 'claude')?.status).toBe('created');
     }
-    expect(existsSync(join(projectDir, '.claude', 'skills', 'open-knowledge', 'SKILL.md'))).toBe(
-      true,
-    );
+    expect(existsSync(join(projectDir, '.claude', 'skills', 'synapsenote', 'SKILL.md'))).toBe(true);
   });
 
   test('creates SKILL.md for cursor host wired via .cursor/mcp.json', async () => {
@@ -771,14 +767,12 @@ describe('reclaimProjectSkillsOnProjectOpen — createIfWired (managed heal path
       expect(r.entries.find((e) => e.editorId === 'cursor')?.status).toBe('created');
       expect(r.entries.find((e) => e.editorId === 'claude')?.status).toBe('no-token');
     }
-    expect(existsSync(join(projectDir, '.cursor', 'skills', 'open-knowledge', 'SKILL.md'))).toBe(
-      true,
-    );
+    expect(existsSync(join(projectDir, '.cursor', 'skills', 'synapsenote', 'SKILL.md'))).toBe(true);
   });
 
   test('creates SKILL.md for codex host wired via .codex/config.toml (TOML, marker substring)', async () => {
     // Codex's wired signal lives in `.codex/config.toml` (TOML), and its skill
-    // installs to `.codex/skills/open-knowledge/` — the config-path → skill-path
+    // installs to `.codex/skills/synapsenote/` — the config-path → skill-path
     // mapping a typo could silently break. The marker is a substring of the TOML
     // bytes, so the format-agnostic `includes` check detects it.
     const projectDir = mkdtempSync(join(tmpdir(), 'ok-proj-'));
@@ -786,7 +780,7 @@ describe('reclaimProjectSkillsOnProjectOpen — createIfWired (managed heal path
     mkdirSync(join(projectDir, '.codex'), { recursive: true });
     writeFileSync(
       join(projectDir, '.codex', 'config.toml'),
-      '[mcp_servers.open-knowledge]\ncommand = "/bin/sh"\nargs = ["-l", "-c", "# ok-mcp-v1\\nexec ok mcp"]\n',
+      '[mcp_servers.synapsenote]\ncommand = "/bin/sh"\nargs = ["-l", "-c", "# ok-mcp-v1\\nexec ok mcp"]\n',
     );
     const r = await reclaimProjectSkillsOnProjectOpen({
       projectDir,
@@ -801,9 +795,7 @@ describe('reclaimProjectSkillsOnProjectOpen — createIfWired (managed heal path
       expect(r.entries.find((e) => e.editorId === 'codex')?.status).toBe('created');
       expect(r.entries.find((e) => e.editorId === 'claude')?.status).toBe('no-token');
     }
-    expect(existsSync(join(projectDir, '.codex', 'skills', 'open-knowledge', 'SKILL.md'))).toBe(
-      true,
-    );
+    expect(existsSync(join(projectDir, '.codex', 'skills', 'synapsenote', 'SKILL.md'))).toBe(true);
   });
 
   test('does NOT create when a host config exists but has no OK marker', async () => {
@@ -850,9 +842,9 @@ describe('reclaimProjectSkillsOnProjectOpen — createIfWired (managed heal path
   test('existing SKILL.md is refreshed (reclaimed), not re-created, even when wired', async () => {
     const projectDir = mkdtempSync(join(tmpdir(), 'ok-proj-'));
     cleanupPaths.push(projectDir);
-    const claudeSkill = join(projectDir, '.claude', 'skills', 'open-knowledge');
+    const claudeSkill = join(projectDir, '.claude', 'skills', 'synapsenote');
     mkdirSync(claudeSkill, { recursive: true });
-    writeFileSync(join(claudeSkill, 'SKILL.md'), '---\nname: open-knowledge\n---\n# v-old\n');
+    writeFileSync(join(claudeSkill, 'SKILL.md'), '---\nname: synapsenote\n---\n# v-old\n');
     writeFileSync(join(projectDir, '.mcp.json'), OK_WIRED_MCP_JSON);
     const r = await reclaimProjectSkillsOnProjectOpen({
       projectDir,

@@ -1,9 +1,9 @@
 /**
- * `openknowledge://` deep-link URL scheme — parser + runtime handler.
+ * `synapsenote://` deep-link URL scheme — parser + runtime handler.
  *
  * Public surfaces in this module:
- *   - Pure parsers — `parseOpenKnowledgeUrl` (`open` host, document deep
- *     links), `parseShareUrl` (`share` host + `openknowledge.ai` universal
+ *   - Pure parsers — `parseSynapseNoteUrl` (`open` host, document deep
+ *     links), `parseShareUrl` (`share` host + `synapse.lawdigest.kr` universal
  *     links), `parseScreenUrl` (`screen` host, named-screen deep links). No
  *     Electron import at module top, so unit tests exercise them without a real
  *     Electron runtime (precedent #4 — shared computation, per-surface render).
@@ -21,9 +21,9 @@
  * current call site is `packages/desktop/src/main/index.ts`, gated on
  * `GOT_SINGLE_INSTANCE_LOCK`.
  *
- * Validation layers (URL shape: `openknowledge://open?project=<abs>&doc=<name>`):
+ * Validation layers (URL shape: `synapsenote://open?project=<abs>&doc=<name>`):
  *   1. Reject null bytes anywhere in the raw input (`\x00`, `%00`).
- *   2. Protocol must be `openknowledge:`; host must be `open`.
+ *   2. Protocol must be `synapsenote:`; host must be `open`.
  *   3. `project` + `doc` required; each URL-decoded before path checks.
  *   4. `project` must be absolute AND must not contain `..` segments after
  *      `path.normalize()` — `path.resolve` would silently flatten `../../etc/x`
@@ -41,13 +41,13 @@
  */
 
 import { isAbsolute, resolve } from 'node:path';
-import { parseGitHubShareUrl } from '@inkeep/open-knowledge';
+import { parseGitHubShareUrl } from '@nedian0brien/synapsenote';
 import {
   type CandidateSelection,
   decodeShareUrl,
   InvalidShareUrlError,
   UnsupportedShareVersionError,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import type {
   OkSharePayloadFields,
   OkShareReceivedPayload,
@@ -73,7 +73,7 @@ function shareTargetPath(target: ShareTarget): string {
  * branches on `kind`). Skills need no kind here: they ride `doc=__skill__/…`
  * and resolve as ordinary editor tabs via `docNameFromHash`.
  */
-interface ParsedOpenKnowledgeUrl {
+interface ParsedSynapseNoteUrl {
   readonly host: 'open';
   readonly project: string;
   readonly kind: 'doc' | 'folder';
@@ -85,7 +85,7 @@ interface ParsedOpenKnowledgeUrl {
  * lists both apex + www from the first shipped version — the decoder must accept
  * both or AASA-routed clicks from one host silently drop.
  */
-const SHARE_UNIVERSAL_LINK_HOSTS = new Set(['openknowledge.ai', 'www.openknowledge.ai']);
+const SHARE_UNIVERSAL_LINK_HOSTS = new Set(['synapse.lawdigest.kr', 'synapse.lawdigest.kr']);
 
 /** Universal-link path prefix that carries the v1 base64url-encoded payload. */
 const SHARE_UNIVERSAL_LINK_PATH_PREFIX = '/d/';
@@ -111,7 +111,7 @@ export type ShareUrlPayload = OkSharePayloadFields;
 /**
  * Tagged source-of-input so the [receive] structured log can distinguish
  * Slack/iMessage-unfurled clicks (`universal-link`) from the splash page's
- * "Open in OpenKnowledge" button (`custom-scheme`). Renderer doesn't need
+ * "Open in SynapseNote" button (`custom-scheme`). Renderer doesn't need
  * this — it's main-process diagnostics only.
  */
 export type ShareUrlSource = 'universal-link' | 'custom-scheme';
@@ -119,12 +119,12 @@ export type ShareUrlSource = 'universal-link' | 'custom-scheme';
 /**
  * Discriminated parse result for a share URL. Three terminal kinds:
  *   - `ok` — caller dispatches the receive dialog
- *   - `unsupported-version` — caller surfaces an "Update OpenKnowledge" toast
+ *   - `unsupported-version` — caller surfaces an "Update SynapseNote" toast
  *   - `invalid` — caller surfaces an "Invalid share URL" toast
  *
  * `parseShareUrl` returns `null` (the discriminant-free signal) ONLY when the
- * URL is neither a recognized universal-link nor an `openknowledge://share`
- * URL — the caller MUST then fall through to `parseOpenKnowledgeUrl` for the
+ * URL is neither a recognized universal-link nor an `synapsenote://share`
+ * URL — the caller MUST then fall through to `parseSynapseNoteUrl` for the
  * legacy `open` action.
  */
 export type ShareParseResult =
@@ -179,22 +179,22 @@ export type ShareNavigatorPayload = Extract<
 
 /**
  * Parse + validate a share URL. Handles both shapes:
- *   - Universal link: `https://openknowledge.ai/d/<base64url([0x01]||blob-url)>`
- *     (and `www.openknowledge.ai`) — base64url-decode, version-byte dispatch,
+ *   - Universal link: `https://synapse.lawdigest.kr/d/<base64url([0x01]||blob-url)>`
+ *     (and `synapse.lawdigest.kr`) — base64url-decode, version-byte dispatch,
  *     blob-URL shape check. Tolerates unknown query params and fragments for
  *     forward-compatible payload extensibility.
- *   - Custom scheme: `openknowledge://share?url=<urlencoded(<blob-url>)>` —
+ *   - Custom scheme: `synapsenote://share?url=<urlencoded(<blob-url>)>` —
  *     URL-decode the `url` param directly (no version byte; the custom-scheme
  *     path is the immediate-handoff path, never persisted to marketing copy).
  *
  * Returns `null` if the input is neither shape — caller falls through to
- * `parseOpenKnowledgeUrl` for the legacy `open` action.
+ * `parseSynapseNoteUrl` for the legacy `open` action.
  *
  * Never throws.
  */
 export function parseShareUrl(input: string): ShareParseResult | null {
   if (typeof input !== 'string' || input.length === 0) return null;
-  // Null-byte defense mirrors `parseOpenKnowledgeUrl`. Reject before `new URL`
+  // Null-byte defense mirrors `parseSynapseNoteUrl`. Reject before `new URL`
   // because `decodeURIComponent('%00')` produces `'\x00'`, which can truncate
   // paths in downstream C libraries.
   if (input.includes('\x00') || /%00/i.test(input)) return null;
@@ -206,7 +206,7 @@ export function parseShareUrl(input: string): ShareParseResult | null {
     return null;
   }
 
-  if (url.protocol === 'openknowledge:' && url.hostname === 'share') {
+  if (url.protocol === 'synapsenote:' && url.hostname === 'share') {
     return parseShareCustomScheme(url);
   }
   if (
@@ -310,11 +310,11 @@ function finalizeShareResult(sharedUrl: string, source: ShareUrlSource): SharePa
 }
 
 /**
- * Parse + validate an `openknowledge://...` URL. Returns `null` on any
+ * Parse + validate an `synapsenote://...` URL. Returns `null` on any
  * validation failure (unknown protocol, unknown host, missing params, path
  * traversal, null bytes, ...). Never throws.
  */
-export function parseOpenKnowledgeUrl(input: string): ParsedOpenKnowledgeUrl | null {
+export function parseSynapseNoteUrl(input: string): ParsedSynapseNoteUrl | null {
   if (typeof input !== 'string' || input.length === 0) return null;
   // Reject null bytes BEFORE URL parsing. `new URL()` happily keeps `%00`
   // around, and `decodeURIComponent('%00')` produces `'\x00'` which can
@@ -327,7 +327,7 @@ export function parseOpenKnowledgeUrl(input: string): ParsedOpenKnowledgeUrl | n
   } catch {
     return null;
   }
-  if (parsed.protocol !== 'openknowledge:') return null;
+  if (parsed.protocol !== 'synapsenote:') return null;
   if (parsed.hostname !== 'open') return null;
 
   const rawProject = parsed.searchParams.get('project');
@@ -379,8 +379,8 @@ export function parseOpenKnowledgeUrl(input: string): ParsedOpenKnowledgeUrl | n
   };
 }
 
-/** Parsed `openknowledge://open?file=<abs>` — the single-file open deep-link. */
-interface ParsedOpenKnowledgeFileUrl {
+/** Parsed `synapsenote://open?file=<abs>` — the single-file open deep-link. */
+interface ParsedSynapseNoteFileUrl {
   readonly host: 'open';
   /** Absolute, resolved path of the file to open. */
   readonly file: string;
@@ -388,17 +388,17 @@ interface ParsedOpenKnowledgeFileUrl {
 
 /**
  * Parse + validate the single-file-open deep-link
- * `openknowledge://open?file=<abs>` (the desktop side of `ok <file>`). Distinct
- * from `parseOpenKnowledgeUrl` (`project=&doc=`) by the `file` param — both use
+ * `synapsenote://open?file=<abs>` (the desktop side of `ok <file>`). Distinct
+ * from `parseSynapseNoteUrl` (`project=&doc=`) by the `file` param — both use
  * the `open` host, so `routeUrl` tries this parser first and falls through to
  * the project-doc parser when `file` is absent. Returns `null` on any validation
  * failure (missing param, null bytes, relative path, `..` traversal); never
  * throws. The receiver (`openEphemeralFile`) re-derives the project-vs-ephemeral
  * decision via `prepareSingleFileOpen`, so this only enforces the URL shape.
  */
-export function parseOpenKnowledgeFileUrl(input: string): ParsedOpenKnowledgeFileUrl | null {
+export function parseSynapseNoteFileUrl(input: string): ParsedSynapseNoteFileUrl | null {
   if (typeof input !== 'string' || input.length === 0) return null;
-  // Null-byte defense mirrors `parseOpenKnowledgeUrl`.
+  // Null-byte defense mirrors `parseSynapseNoteUrl`.
   if (input.includes('\x00') || /%00/i.test(input)) return null;
 
   let parsed: URL;
@@ -407,7 +407,7 @@ export function parseOpenKnowledgeFileUrl(input: string): ParsedOpenKnowledgeFil
   } catch {
     return null;
   }
-  if (parsed.protocol !== 'openknowledge:') return null;
+  if (parsed.protocol !== 'synapsenote:') return null;
   if (parsed.hostname !== 'open') return null;
 
   const rawFile = parsed.searchParams.get('file');
@@ -434,11 +434,11 @@ export function parseOpenKnowledgeFileUrl(input: string): ParsedOpenKnowledgeFil
 }
 
 /**
- * Named app screens reachable via `openknowledge://screen?name=<id>`. Each maps
+ * Named app screens reachable via `synapsenote://screen?name=<id>`. Each maps
  * to a renderer URL-hash route (`window.location.hash`, handled in `App.tsx`)
  * for a surface with a stable address — today Settings and the Install-in-Claude
  * dialog, the same two hashes the app menu drives. Document opens use
- * `openknowledge://open` (see `parseOpenKnowledgeUrl`); most other UI is
+ * `synapsenote://open` (see `parseSynapseNoteUrl`); most other UI is
  * conditional runtime state (toasts, error views, action-triggered dialogs)
  * with no addressable route. Extend this allowlist as the renderer gains hashes.
  */
@@ -455,7 +455,7 @@ function isScreenTarget(value: string): value is ScreenTarget {
 }
 
 /**
- * Parse + validate an `openknowledge://screen?name=<id>` URL. Returns `null` on
+ * Parse + validate an `synapsenote://screen?name=<id>` URL. Returns `null` on
  * any failure (wrong protocol/host, missing or unknown `name`, null bytes).
  * Never throws. `name` is matched against the fixed `SCREEN_TARGETS` allowlist,
  * so there are no path/filesystem semantics to defend — but the null-byte guard
@@ -471,7 +471,7 @@ export function parseScreenUrl(input: string): ParsedScreenUrl | null {
   } catch {
     return null;
   }
-  if (parsed.protocol !== 'openknowledge:') return null;
+  if (parsed.protocol !== 'synapsenote:') return null;
   if (parsed.hostname !== 'screen') return null;
 
   const rawName = parsed.searchParams.get('name');
@@ -519,9 +519,9 @@ interface ProtocolHandlerDeps {
     setAsDefaultProtocolClient(scheme: string): boolean;
     /**
      * Remove the runtime Launch Services binding for this scheme. Called in
-     * dev mode on `before-quit` to avoid "openknowledge:// sometimes opens
+     * dev mode on `before-quit` to avoid "synapsenote:// sometimes opens
      * the wrong build" when developers switch worktrees — without this,
-     * Launch Services routes subsequent `open openknowledge://...` calls
+     * Launch Services routes subsequent `open synapsenote://...` calls
      * to the last-registered binary path until another app claims the
      * scheme.
      */
@@ -571,7 +571,7 @@ interface ProtocolHandlerDeps {
   ): Promise<BrowserWindowHandle | null>;
   /**
    * Open a no-project file in an ephemeral single-file session (the
-   * `openknowledge://open?file=` deep-link, desktop side of `ok <file>`). The
+   * `synapsenote://open?file=` deep-link, desktop side of `ok <file>`). The
    * implementation re-derives the plan via `prepareSingleFileOpen` and
    * routes project-vs-ephemeral itself, so this dep just hands off the validated
    * absolute path. Optional — when omitted (tests not exercising single-file
@@ -661,10 +661,10 @@ interface ProtocolHandlerDeps {
   getAnyReadyWindow(): BrowserWindowHandle | null;
   /**
    * Initial `process.argv` snapshot for cold-start CLI-launch delivery. The
-   * handler scans argv once at registration time for `openknowledge://`
+   * handler scans argv once at registration time for `synapsenote://`
    * entries; macOS packaged builds receive URLs via the `open-url` Apple
-   * Event, but direct-binary launches (`OK.app/Contents/MacOS/OpenKnowledge
-   * openknowledge://...`) and dev-mode electron-vite launches deliver via
+   * Event, but direct-binary launches (`OK.app/Contents/MacOS/SynapseNote
+   * synapsenote://...`) and dev-mode electron-vite launches deliver via
    * argv. Defaults to `process.argv` when omitted; tests inject a stub.
    */
   getInitialArgv?: () => readonly string[];
@@ -703,7 +703,7 @@ interface BrowserWindowHandle {}
  */
 interface ProtocolHandlerControl {
   /**
-   * `true` once a `openknowledge://open?file=` (`ok <file>`) URL has been seen
+   * `true` once a `synapsenote://open?file=` (`ok <file>`) URL has been seen
    * this run — cold-start queued OR routed. Distinct from `urlLaunchOwnsWindow`:
    * the single-file launch opens a git-OFF ephemeral server, so the boot path
    * also skips the git preflight for it. Share launches do NOT set this (they
@@ -713,7 +713,7 @@ interface ProtocolHandlerControl {
   /**
    * `true` once a launch-claiming URL that opens its OWN window has been seen
    * this run (cold-start queued OR routed) — a single-file open (`ok <file>`)
-   * OR a VALID share (`openknowledge.ai/d/...` / `openknowledge://share?url=...`
+   * OR a VALID share (`synapse.lawdigest.kr/d/...` / `synapsenote://share?url=...`
    * that parses to an `ok` target and dispatches to a project window or the
    * Navigator). The boot path reads it once, post-bootstrap, to suppress the
    * default boot-restore window so the URL flush owns the launch's initial
@@ -734,7 +734,7 @@ interface ProtocolHandlerControl {
   /**
    * Route a URL through the same queue-then-flush + parse + resolve spine as an
    * inbound Apple Event. Used by the first-run deferred-share handshake to feed
-   * a redeemed `https://openknowledge.ai/d/<token>` universal-link URL into the
+   * a redeemed `https://synapse.lawdigest.kr/d/<token>` universal-link URL into the
    * existing validated receive path — no new trust, no parallel routing.
    * Subject to the same near-simultaneous-duplicate dedup as every other share.
    */
@@ -827,7 +827,7 @@ export function registerProtocolHandler(deps: ProtocolHandlerDeps): ProtocolHand
   // Dev-mode registration — unpackaged Electron's Info.plist belongs to the
   // Electron.app shell, not this app, so Launch Services has no binding.
   // `setAsDefaultProtocolClient` writes a runtime binding so `open
-  // openknowledge://...` targets the dev instance during development. Packaged
+  // synapsenote://...` targets the dev instance during development. Packaged
   // builds rely on `CFBundleURLTypes` from electron-builder.yml.
   if (!deps.app.isPackaged) {
     try {
@@ -836,7 +836,7 @@ export function registerProtocolHandler(deps: ProtocolHandlerDeps): ProtocolHand
       // the scheme, sandboxing, permissions). Surface `false` as a warn —
       // without it the only symptom is "dev deep-links silently reach the
       // wrong instance," which burns hours to diagnose.
-      const ok = deps.app.setAsDefaultProtocolClient('openknowledge');
+      const ok = deps.app.setAsDefaultProtocolClient('synapsenote');
       if (!ok) {
         deps.log?.warn(
           {},
@@ -844,7 +844,7 @@ export function registerProtocolHandler(deps: ProtocolHandlerDeps): ProtocolHand
         );
       } else {
         // Unregister on dev-exit so a stale Launch Services binding doesn't
-        // route subsequent `open openknowledge://...` to a moved/deleted
+        // route subsequent `open synapsenote://...` to a moved/deleted
         // worktree — a developer-UX footgun when switching between checkouts.
         // Hard exits (SIGKILL) skip `before-quit`, so the guarantee is
         // best-effort: the next successful dev-exit re-registers cleanly.
@@ -853,7 +853,7 @@ export function registerProtocolHandler(deps: ProtocolHandlerDeps): ProtocolHand
         // Launch Services, not by us.
         deps.app.on('before-quit', () => {
           try {
-            deps.app.removeAsDefaultProtocolClient('openknowledge');
+            deps.app.removeAsDefaultProtocolClient('synapsenote');
           } catch (err) {
             deps.log?.warn(
               { err: (err as Error).message },
@@ -1182,10 +1182,10 @@ export function registerProtocolHandler(deps: ProtocolHandlerDeps): ProtocolHand
       routeScreen(url, screen.name);
       return;
     }
-    // Single-file open (`openknowledge://open?file=<abs>`). Checked before the
+    // Single-file open (`synapsenote://open?file=<abs>`). Checked before the
     // project-doc parser: both use the `open` host, distinguished by `file` vs
     // `project=&doc=`. The receiver re-derives project-vs-ephemeral (C6).
-    const fileOpen = parseOpenKnowledgeFileUrl(url);
+    const fileOpen = parseSynapseNoteFileUrl(url);
     if (fileOpen !== null) {
       const open = deps.openEphemeralFile;
       if (!open) {
@@ -1203,7 +1203,7 @@ export function registerProtocolHandler(deps: ProtocolHandlerDeps): ProtocolHand
       });
       return;
     }
-    const parsed = parseOpenKnowledgeUrl(url);
+    const parsed = parseSynapseNoteUrl(url);
     if (!parsed) {
       // Silent-drop → single warn log line. No error dialog.
       deps.log?.warn({ url }, '[url-scheme] dropped malformed URL');
@@ -1255,13 +1255,13 @@ export function registerProtocolHandler(deps: ProtocolHandlerDeps): ProtocolHand
   };
 
   const enqueueOrRoute = (url: string): void => {
-    // A single-file open (`ok <file>` → `openknowledge://open?file=`) claims this
+    // A single-file open (`ok <file>` → `synapsenote://open?file=`) claims this
     // launch — record it (queued OR routed) so the cold-start boot path opens
     // ONLY the file window, not the previous-project / Navigator default that
     // would race it for focus and surface the empty-state splash. Mirrors
     // routeUrl's file-branch parser; a malformed file URL (null parse) doesn't
     // claim the launch (it routes to a warn-drop, default window stays).
-    const isSingleFile = parseOpenKnowledgeFileUrl(url) !== null;
+    const isSingleFile = parseSynapseNoteFileUrl(url) !== null;
     if (isSingleFile) {
       singleFileLaunch = true;
     }
@@ -1296,7 +1296,7 @@ export function registerProtocolHandler(deps: ProtocolHandlerDeps): ProtocolHand
   });
 
   // `continue-activity` — macOS Handoff path for Universal Links. Fires when
-  // the user taps `https://openknowledge.ai/d/<encoded>` in Slack/iMessage
+  // the user taps `https://synapse.lawdigest.kr/d/<encoded>` in Slack/iMessage
   // (or any AASA-eligible surface) and the OS routes the activity into OK.
   // The activity type for tapped-link Handoff is always
   // `NSUserActivityTypeBrowsingWeb`; the URL lives on `details.webpageURL`
@@ -1337,7 +1337,7 @@ export function registerProtocolHandler(deps: ProtocolHandlerDeps): ProtocolHand
   // the URL in argv rather than firing an Apple Event.
   deps.app.on('second-instance', (_event, argv) => {
     for (const arg of argv) {
-      if (typeof arg === 'string' && arg.startsWith('openknowledge://')) {
+      if (typeof arg === 'string' && arg.startsWith('synapsenote://')) {
         enqueueOrRoute(arg);
       }
     }
@@ -1347,13 +1347,13 @@ export function registerProtocolHandler(deps: ProtocolHandlerDeps): ProtocolHand
   // `process.argv` is the delivery surface for direct-binary launches (the
   // `second-instance` handler above only catches SECOND invocations). We
   // scan argv once here, synchronously, so a user running
-  // `./OK.app/Contents/MacOS/Open\ Knowledge openknowledge://...` on a
+  // `./OK.app/Contents/MacOS/Open\ Knowledge synapsenote://...` on a
   // not-yet-running app gets the URL queued alongside any Apple-Event
   // deliveries. Electron shell launches with no URL (the normal case)
   // produce zero matches.
   const initialArgv = deps.getInitialArgv ? deps.getInitialArgv() : [];
   for (const arg of initialArgv) {
-    if (typeof arg === 'string' && arg.startsWith('openknowledge://')) {
+    if (typeof arg === 'string' && arg.startsWith('synapsenote://')) {
       enqueueOrRoute(arg);
     }
   }

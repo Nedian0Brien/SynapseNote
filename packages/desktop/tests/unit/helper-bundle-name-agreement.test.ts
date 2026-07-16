@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import {
   HELPER_BUNDLE_NAME,
   HELPER_EXECUTABLE_NAME,
-} from '@inkeep/open-knowledge-core/helper-bundle';
+} from '@nedian0brien/synapsenote-core/helper-bundle';
 
 /**
  * Cross-reference regression guard: the FIVE independent sites that all
@@ -37,7 +37,7 @@ import {
  *      executable names as string literals.
  *
  * Bundle directory name vs executable basename: these are now distinct.
- * The bundle dir stays descriptive (`OpenKnowledge Server.app`) so
+ * The bundle dir stays descriptive (`SynapseNote Server.app`) so
  * operators inspecting `Contents/Frameworks/` can tell what each helper
  * does. The executable basename is constrained to `<productName> Helper`
  * — Electron's helper stub inspects its own basename via
@@ -75,10 +75,10 @@ function extractPlistString(content: string, key: string): string | null {
  * rename of productName drift-fails here before producing a broken
  * packaged build.
  */
-const ELECTRON_BUILDER_PRODUCT_NAME = 'OpenKnowledge';
+const ELECTRON_BUILDER_PRODUCT_NAME = 'SynapseNote';
 
 describe('helper-bundle name agreement across spawn site / Info.plist / afterPack', () => {
-  test('CFBundleExecutable in Info.plist matches HELPER_EXECUTABLE_NAME in @inkeep/open-knowledge-core', () => {
+  test('CFBundleExecutable in Info.plist matches HELPER_EXECUTABLE_NAME in @nedian0brien/synapsenote-core', () => {
     const plist = readFileSync(helperPlistPath, 'utf8');
     const cfBundleExecutable = extractPlistString(plist, 'CFBundleExecutable');
     expect(cfBundleExecutable).toBe(HELPER_EXECUTABLE_NAME);
@@ -103,7 +103,7 @@ describe('helper-bundle name agreement across spawn site / Info.plist / afterPac
 
   test('HELPER_BUNDLE_NAME is a .app and is distinct from `<executable>.app`', () => {
     // The bundle directory name and executable basename are intentionally
-    // distinct: the dir name is descriptive (`OpenKnowledge Server.app`),
+    // distinct: the dir name is descriptive (`SynapseNote Server.app`),
     // the executable matches Electron's canonical pattern. An earlier
     // draft of this contract asserted `HELPER_BUNDLE_NAME ===
     // \`${HELPER_EXECUTABLE_NAME}.app\``; that invariant turned out to

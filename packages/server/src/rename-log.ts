@@ -17,7 +17,7 @@ import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { parseOkActors } from '@inkeep/open-knowledge-core/shadow-repo-layout';
+import { parseOkActors } from '@nedian0brien/synapsenote-core/shadow-repo-layout';
 import { withHiddenWindowsConsole } from './child-process-windows-hide.ts';
 import {
   tracedAppendFileSync,

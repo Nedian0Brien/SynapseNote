@@ -23,7 +23,7 @@ import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
 // from the server package rather than re-declaring it locally keeps this
 // test aligned with the production `extractAgentIdentity` contract. If
 // the server ever changes the prefix, this test follows automatically.
-import { toBroadcasterKey } from '@inkeep/open-knowledge-server';
+import { toBroadcasterKey } from '@nedian0brien/synapsenote-server';
 import { HARNESS_BOOT_TIMEOUT_MS } from './harness-boot-timeout';
 import { agentWriteMd, createTestServer, type TestServer } from './test-harness';
 

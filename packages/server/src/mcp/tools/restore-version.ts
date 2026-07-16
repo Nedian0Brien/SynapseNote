@@ -9,7 +9,7 @@
  * Split from the former `version` tool (its `action: "rollback"` branch);
  * `checkpoint` is the project-wide snapshot counterpart.
  */
-import { AdvisoryWarningSchema } from '@inkeep/open-knowledge-core';
+import { AdvisoryWarningSchema } from '@nedian0brien/synapsenote-core';
 import { z } from 'zod';
 import type { AgentIdentity } from '../agent-identity.ts';
 import { formatAdvisoryLines, parseAdvisoryWarnings } from './advisory-warnings.ts';

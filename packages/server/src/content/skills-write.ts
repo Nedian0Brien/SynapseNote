@@ -39,7 +39,7 @@ import {
   containsXmlTag,
   SKILL_NAME_REGEX,
   type SkillFrontmatter,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { stringify as stringifyYaml } from 'yaml';
 
 // ── Schema constants (Agent Skills standard) ──────────────────────────────

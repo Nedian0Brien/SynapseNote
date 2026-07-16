@@ -25,8 +25,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { LocalTransactionOrigin } from '@hocuspocus/server';
-import { LINEAGE_EPOCH_KEY } from '@inkeep/open-knowledge-core';
-import { atomicWriteFile } from '@inkeep/open-knowledge-core/server';
+import { LINEAGE_EPOCH_KEY } from '@nedian0brien/synapsenote-core';
+import { atomicWriteFile } from '@nedian0brien/synapsenote-core/server';
 import type * as Y from 'yjs';
 import { docNameToRelativePath } from './doc-extensions.ts';
 import { tracedAtomicFs, tracedMkdir } from './fs-traced.ts';

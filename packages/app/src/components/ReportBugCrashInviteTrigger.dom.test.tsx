@@ -12,7 +12,7 @@
  * Invocation: `bun run test:dom` from `packages/app/`.
  */
 import { afterEach, describe, expect, test } from 'bun:test';
-import type { OkBugReportCrashDetectedEvent } from '@inkeep/open-knowledge-core';
+import type { OkBugReportCrashDetectedEvent } from '@nedian0brien/synapsenote-core';
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { crashInviteStore } from '@/lib/crash-invite-store';
@@ -116,7 +116,7 @@ describe('ReportBugCrashInviteTrigger', () => {
       },
       { timeout: ASYNC_TIMEOUT_MS },
     );
-    expect(screen.getByText('OpenKnowledge quit unexpectedly last time.')).not.toBeNull();
+    expect(screen.getByText('SynapseNote quit unexpectedly last time.')).not.toBeNull();
   });
 
   test('an invitation delivered before the component mounts is buffered, not dropped', async () => {

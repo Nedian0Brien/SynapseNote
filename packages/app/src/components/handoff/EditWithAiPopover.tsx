@@ -17,8 +17,8 @@
  * against the passage captured for that interaction.
  */
 
-import type { HandoffTarget, InstallState, TargetData } from '@inkeep/open-knowledge-core';
 import { Trans, useLingui } from '@lingui/react/macro';
+import type { HandoffTarget, InstallState, TargetData } from '@nedian0brien/synapsenote-core';
 import { type ReactNode, useEffect, useEffectEvent, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';

@@ -10,7 +10,7 @@ import { afterEach, describe, expect, test } from 'bun:test';
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { bootServer, ConfigSchema } from '@inkeep/open-knowledge-server';
+import { bootServer, ConfigSchema } from '@nedian0brien/synapsenote-server';
 import { createLinkedWorktree, type LinkedWorktreeHandle } from './worktree-test-harness.ts';
 
 const TEST_CONFIG = ConfigSchema.parse({});

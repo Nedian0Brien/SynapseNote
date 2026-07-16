@@ -11,7 +11,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { ALL_EDITOR_IDS } from '@inkeep/open-knowledge-core';
+import { ALL_EDITOR_IDS } from '@nedian0brien/synapsenote-core';
 import {
   CreateNewProjectError,
   folderState,
@@ -128,9 +128,9 @@ describe('CreateNewProjectError — IPC-parseable message format', () => {
 });
 
 describe('resolveDefaultProjectsRoot', () => {
-  test('falls back to <documents>/OpenKnowledge on first call', () => {
+  test('falls back to <documents>/SynapseNote on first call', () => {
     const got = resolveDefaultProjectsRoot(null, '/Users/alice/Documents');
-    expect(got).toBe('/Users/alice/Documents/OpenKnowledge');
+    expect(got).toBe('/Users/alice/Documents/SynapseNote');
   });
 
   test('returns the persisted parent when it still exists', () => {
@@ -142,7 +142,7 @@ describe('resolveDefaultProjectsRoot', () => {
   test('falls back when the persisted parent no longer exists', () => {
     const persisted = join(tmpRoot, 'deleted');
     expect(resolveDefaultProjectsRoot(persisted, '/Users/alice/Documents')).toBe(
-      '/Users/alice/Documents/OpenKnowledge',
+      '/Users/alice/Documents/SynapseNote',
     );
   });
 
@@ -151,7 +151,7 @@ describe('resolveDefaultProjectsRoot', () => {
     const got = resolveDefaultProjectsRoot(persisted, '/Users/alice/Documents', () => {
       throw new Error('boom');
     });
-    expect(got).toBe('/Users/alice/Documents/OpenKnowledge');
+    expect(got).toBe('/Users/alice/Documents/SynapseNote');
   });
 });
 
@@ -225,7 +225,7 @@ describe('runCreateNew — happy paths', () => {
   });
 
   test('seeds project-root .gitignore with .DS_Store on fresh git init', async () => {
-    // OpenKnowledge is macOS-only today, so a fresh project gets a one-line
+    // SynapseNote is macOS-only today, so a fresh project gets a one-line
     // .gitignore that hides Finder's per-folder metadata. The seed only runs
     // when ensureProjectGit actually ran `git init` — confirmed in this case
     // by the absence of `.git/` before the call. See also the git-root-
@@ -546,12 +546,12 @@ describe('runCreateNew — idempotency', () => {
 describe('runCreateNew — installs the project-local skill (PRD-6733)', () => {
   // Regression pin: the desktop project-setup path
   // (`writeProjectAiIntegrations`) previously wired MCP config ONLY — the
-  // project-local runtime `open-knowledge` skill was never created, so a
+  // project-local runtime `synapsenote` skill was never created, so a
   // Desktop-primary user got a project with no agent behavioral contract.
   // `writeProjectAiIntegrations` now routes through `applyProjectIntegrations`
   // (the same orchestrator the onboarding-consent path uses), so both desktop
   // project-setup entry points install the skill.
-  test('installs the open-knowledge project skill for claude, cursor, and codex', async () => {
+  test('installs the synapsenote project skill for claude, cursor, and codex', async () => {
     const result = await runCreateNew({
       parent: tmpRoot,
       name: 'Skill Install',
@@ -559,18 +559,18 @@ describe('runCreateNew — installs the project-local skill (PRD-6733)', () => {
     });
 
     expect(
-      existsSync(join(result.projectDir, '.claude', 'skills', 'open-knowledge', 'SKILL.md')),
+      existsSync(join(result.projectDir, '.claude', 'skills', 'synapsenote', 'SKILL.md')),
     ).toBe(true);
     expect(
-      existsSync(join(result.projectDir, '.cursor', 'skills', 'open-knowledge', 'SKILL.md')),
+      existsSync(join(result.projectDir, '.cursor', 'skills', 'synapsenote', 'SKILL.md')),
     ).toBe(true);
+    expect(existsSync(join(result.projectDir, '.codex', 'skills', 'synapsenote', 'SKILL.md'))).toBe(
+      true,
+    );
     expect(
-      existsSync(join(result.projectDir, '.codex', 'skills', 'open-knowledge', 'SKILL.md')),
+      existsSync(join(result.projectDir, '.opencode', 'skills', 'synapsenote', 'SKILL.md')),
     ).toBe(true);
-    expect(
-      existsSync(join(result.projectDir, '.opencode', 'skills', 'open-knowledge', 'SKILL.md')),
-    ).toBe(true);
-    expect(existsSync(join(result.projectDir, '.pi', 'skills', 'open-knowledge', 'SKILL.md'))).toBe(
+    expect(existsSync(join(result.projectDir, '.pi', 'skills', 'synapsenote', 'SKILL.md'))).toBe(
       true,
     );
 

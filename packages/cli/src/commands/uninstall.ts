@@ -1,5 +1,5 @@
 /**
- * `ok uninstall` — reverse OpenKnowledge's whole outside-project footprint as
+ * `ok uninstall` — reverse SynapseNote's whole outside-project footprint as
  * completely as it can find it: credentials, PATH shim, editor MCP configs,
  * skill bundles, application data, stale locks, and the `~/.ok` machinery dir —
  * plus an offer to `deinit` recent projects. Leaves the user's markdown content
@@ -17,8 +17,11 @@ import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { findEnclosingProjectRoot, withHiddenWindowsConsole } from '@inkeep/open-knowledge-server';
 import checkbox from '@inquirer/checkbox';
+import {
+  findEnclosingProjectRoot,
+  withHiddenWindowsConsole,
+} from '@nedian0brien/synapsenote-server';
 import { Command } from 'commander';
 import { desktopUserDataDir, readDesktopRecentProjects } from '../integrations/desktop-state.ts';
 import { readPathInstallMarker } from '../integrations/path-shim.ts';
@@ -58,8 +61,8 @@ export function detectInstallMethods(
   const methods: InstallMethod[] = [];
 
   for (const app of [
-    '/Applications/OpenKnowledge.app',
-    join(home, 'Applications', 'OpenKnowledge.app'),
+    '/Applications/SynapseNote.app',
+    join(home, 'Applications', 'SynapseNote.app'),
   ]) {
     if (exists(app)) {
       methods.push({
@@ -70,12 +73,12 @@ export function detectInstallMethods(
     }
   }
 
-  const npmOut = runNpmLs(['ls', '-g', '--depth=0', '@inkeep/open-knowledge']);
-  if (npmOut?.includes('@inkeep/open-knowledge@')) {
+  const npmOut = runNpmLs(['ls', '-g', '--depth=0', '@nedian0brien/synapsenote']);
+  if (npmOut?.includes('@nedian0brien/synapsenote@')) {
     methods.push({
       method: 'npm-global',
       label: 'npm global install',
-      instruction: 'npm uninstall -g @inkeep/open-knowledge',
+      instruction: 'npm uninstall -g @nedian0brien/synapsenote',
     });
   }
 
@@ -121,14 +124,14 @@ const CALLOUT_RULE = '━'.repeat(64);
 function formatInstallInstructions(methods: InstallMethod[]): string {
   const lines: string[] = [
     warning(CALLOUT_RULE),
-    accent('  One more step — remove the OpenKnowledge app itself'),
-    dim("  (OpenKnowledge can't delete its own running binary — do this by hand.)"),
+    accent('  One more step — remove the SynapseNote app itself'),
+    dim("  (SynapseNote can't delete its own running binary — do this by hand.)"),
     '',
   ];
   if (methods.length === 0) {
     lines.push(dim('  Install method not detected. If you installed it, remove it via:'));
-    lines.push(`    ${info('OK Desktop')} — move /Applications/OpenKnowledge.app to the Trash`);
-    lines.push(`    ${info('npm global')} — npm uninstall -g @inkeep/open-knowledge`);
+    lines.push(`    ${info('OK Desktop')} — move /Applications/SynapseNote.app to the Trash`);
+    lines.push(`    ${info('npm global')} — npm uninstall -g @nedian0brien/synapsenote`);
     lines.push(`    ${info('npx')} — nothing to remove (runs from a temporary cache)`);
   } else {
     for (const m of methods) {
@@ -239,7 +242,7 @@ export async function resolveRecentDeinitProjects(
 async function defaultProjectCheckbox(candidates: ProjectCandidate[]): Promise<string[]> {
   return checkbox({
     message:
-      'Also remove OpenKnowledge from these projects? (space to toggle; none selected by default)\n' +
+      'Also remove SynapseNote from these projects? (space to toggle; none selected by default)\n' +
       "  Removes each project's .ok/ config, editor MCP entries, and OK edit-history\n" +
       '  (.git/ok/). Your markdown content is kept — `ok start` re-adds OK later.\n',
     required: false,
@@ -294,7 +297,7 @@ export interface UninstallResult {
 }
 
 const URL_SCHEME_NOTE = dim(
-  'The openknowledge:// URL scheme deregisters itself once the app is removed — no action needed.',
+  'The synapsenote:// URL scheme deregisters itself once the app is removed — no action needed.',
 );
 
 export async function runUninstall(opts: UninstallOptions = {}): Promise<UninstallResult> {
@@ -336,7 +339,7 @@ export async function runUninstall(opts: UninstallOptions = {}): Promise<Uninsta
 
   const fallbackNote = dim(
     'Individual projects are only removed when you select them (or pass --all-projects). ' +
-      'To remove OpenKnowledge from one project, run `ok deinit` inside it.',
+      'To remove SynapseNote from one project, run `ok deinit` inside it.',
   );
   // Detection runs `npm ls -g` — compute it only on the paths that render it
   // (dry-run + a confirmed run), never on a cancel/refuse.
@@ -377,7 +380,7 @@ export async function runUninstall(opts: UninstallOptions = {}): Promise<Uninsta
       };
     }
     process.stderr.write(
-      `${accent('This will remove OpenKnowledge from your machine:')}\n\n${formatRemovalPlan(plan)}\n\n${warning('This cannot be undone.')}\n\n`,
+      `${accent('This will remove SynapseNote from your machine:')}\n\n${formatRemovalPlan(plan)}\n\n${warning('This cannot be undone.')}\n\n`,
     );
     const confirmed = await confirmDestructive(
       `${accent('Remove all of the above?')} ${dim('[y/N] ')}`,
@@ -400,7 +403,7 @@ export async function runUninstall(opts: UninstallOptions = {}): Promise<Uninsta
     // LAST so the one manual step is the final, most-visible thing on screen.
     parts.push('', fallbackNote, URL_SCHEME_NOTE);
     if (outcome.failed.length === 0) {
-      parts.push('', success("OpenKnowledge's files have been removed from this machine."));
+      parts.push('', success("SynapseNote's files have been removed from this machine."));
     }
     parts.push('', binaryBlock());
   }
@@ -415,7 +418,7 @@ export async function runUninstall(opts: UninstallOptions = {}): Promise<Uninsta
 export function uninstallCommand(): Command {
   return new Command('uninstall')
     .description(
-      'Remove OpenKnowledge from your machine — credentials, PATH entries, editor MCP configs, skill bundles, app data, and ~/.ok. Keeps your markdown content and your authored skills (~/.ok/skills) unless --purge-content. Detects the app install and prints how to remove it; never self-deletes.',
+      'Remove SynapseNote from your machine — credentials, PATH entries, editor MCP configs, skill bundles, app data, and ~/.ok. Keeps your markdown content and your authored skills (~/.ok/skills) unless --purge-content. Detects the app install and prints how to remove it; never self-deletes.',
     )
     .option(
       '-y, --yes',

@@ -1,8 +1,8 @@
-# Setting up OpenKnowledge
+# Setting up SynapseNote
 
-This repository is an OpenKnowledge (OK) project: its `.md` / `.mdx` files are CRDT documents, and agents work with them through the OpenKnowledge MCP server. If your agent's `mcp__open-knowledge__*` tools aren't available, the project just isn't connected on this machine yet. Connect it at whatever depth you need — each rung adds capability, and you can stop at the first one that covers your task.
+This repository is an SynapseNote (OK) project: its `.md` / `.mdx` files are CRDT documents, and agents work with them through the SynapseNote MCP server. If your agent's `mcp__synapsenote__*` tools aren't available, the project just isn't connected on this machine yet. Connect it at whatever depth you need — each rung adds capability, and you can stop at the first one that covers your task.
 
-**Canonical, always-current instructions:** <https://openknowledge.ai/docs/get-started/quickstart>. The rungs below are a quick orientation; the docs are authoritative (release channels and download links move, so this file deliberately points there rather than pinning them).
+**Canonical, always-current instructions:** <https://synapse.lawdigest.kr/docs/get-started/quickstart>. The rungs below are a quick orientation; the docs are authoritative (release channels and download links move, so this file deliberately points there rather than pinning them).
 
 ## Rung 1 — Agent tooling, no install
 
@@ -15,7 +15,7 @@ This rung does **not** start a collaboration server, so it does not give you liv
 Install the OK CLI and start a local server:
 
 ```bash
-npm install -g @inkeep/open-knowledge   # or run it ad hoc with: npx @inkeep/open-knowledge
+npm install -g @nedian0brien/synapsenote   # or run it ad hoc with: npx @nedian0brien/synapsenote
 ok start
 ```
 

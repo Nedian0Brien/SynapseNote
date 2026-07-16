@@ -15,7 +15,7 @@
 import type { Dirent } from 'node:fs';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { basename, relative, resolve } from 'node:path';
-import { OK_DIR, stripFrontmatter, unwrapFrontmatterFences } from '@inkeep/open-knowledge-core';
+import { OK_DIR, stripFrontmatter, unwrapFrontmatterFences } from '@nedian0brien/synapsenote-core';
 import { parse as parseYaml } from 'yaml';
 import { resolveWithinRoot } from '../mcp/tools/path-safety.ts';
 import { httpGet } from '../mcp/tools/shared.ts';

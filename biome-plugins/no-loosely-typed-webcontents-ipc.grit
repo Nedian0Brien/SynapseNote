@@ -22,6 +22,6 @@ or {
 } where {
     register_diagnostic(
         span = $call,
-        message = "Direct electron IPC primitive — route through createInvoker / createHandler / sendToRenderer from packages/desktop/src/shared/ipc-*.ts. See https://github.com/inkeep/open-knowledge/blob/main/biome-plugins/README.md#no-loosely-typed-webcontents-ipcgrit"
+        message = "Direct electron IPC primitive — route through createInvoker / createHandler / sendToRenderer from packages/desktop/src/shared/ipc-*.ts. See https://github.com/Nedian0Brien/SynapseNote/blob/main/biome-plugins/README.md#no-loosely-typed-webcontents-ipcgrit"
     )
 }

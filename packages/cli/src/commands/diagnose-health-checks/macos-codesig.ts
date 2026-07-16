@@ -67,7 +67,7 @@ export function makeMacosCodesigCheck(deps: MacosCodesigCheckDeps = {}): CheckDe
           name: 'macos-codesig',
           status: 'fail',
           summary: 'app is running translocated (quarantine sandbox)',
-          remediation: 'Drag OpenKnowledge.app to /Applications/ and re-launch.',
+          remediation: 'Drag SynapseNote.app to /Applications/ and re-launch.',
           detail: `bundlePath: ${bundlePath}`,
         };
       }
@@ -77,7 +77,7 @@ export function makeMacosCodesigCheck(deps: MacosCodesigCheckDeps = {}): CheckDe
           name: 'macos-codesig',
           status: 'fail',
           summary: 'codesign --verify failed',
-          remediation: 'Re-download OpenKnowledge from the official releases page.',
+          remediation: 'Re-download SynapseNote from the official releases page.',
           detail: `bundlePath: ${bundlePath}\n${verify.stderr}`,
         };
       }

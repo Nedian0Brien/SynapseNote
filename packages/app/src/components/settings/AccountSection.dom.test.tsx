@@ -45,7 +45,7 @@ const CONNECTED: OkLocalOpAuthStatusResponse = {
   login: 'octocat',
   tier: 'B',
 };
-// Tier A: the credential is delegated from the gh CLI, so OpenKnowledge holds
+// Tier A: the credential is delegated from the gh CLI, so SynapseNote holds
 // no token of its own to disconnect.
 const CONNECTED_GH_CLI: OkLocalOpAuthStatusResponse = {
   authenticated: true,
@@ -287,7 +287,7 @@ describe('AccountSection', () => {
 
     const ghRow = await screen.findByTestId('settings-account-gh-cli');
     expect(within(ghRow).getByText('Connected as @octocat')).toBeDefined();
-    expect(ghRow.textContent).toContain('no separate OpenKnowledge credential to disconnect');
+    expect(ghRow.textContent).toContain('no separate SynapseNote credential to disconnect');
     expect(screen.queryByTestId('settings-account-disconnect')).toBeNull();
   });
 

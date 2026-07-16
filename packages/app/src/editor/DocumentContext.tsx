@@ -1,9 +1,9 @@
 import type { HocuspocusProvider } from '@hocuspocus/provider';
-import type { Principal } from '@inkeep/open-knowledge-core';
+import type { Principal } from '@nedian0brien/synapsenote-core';
 import {
   mediaKindForSidebarAssetExtension,
   PrincipalSuccessSchema,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { createContext, type ReactNode, use, useEffect, useRef, useState } from 'react';
 import type { ResolvedNavigationTarget } from '@/components/navigation-targets';
 import { docNameForNavigationTarget } from '@/components/navigation-targets';

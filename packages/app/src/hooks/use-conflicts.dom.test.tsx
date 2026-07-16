@@ -94,7 +94,7 @@ describe('useConflicts', () => {
 
     act(() => {
       window.dispatchEvent(
-        new CustomEvent('open-knowledge:documents-changed', {
+        new CustomEvent('synapsenote:documents-changed', {
           detail: { channels: ['sync-status'] },
         }),
       );
@@ -115,7 +115,7 @@ describe('useConflicts', () => {
 
     act(() => {
       window.dispatchEvent(
-        new CustomEvent('open-knowledge:documents-changed', {
+        new CustomEvent('synapsenote:documents-changed', {
           detail: { channels: ['files'] },
         }),
       );

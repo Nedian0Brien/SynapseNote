@@ -40,7 +40,7 @@
  * @see packages/core/src/bridge/bridge-invariant.ts (error type)
  */
 
-import type { MarkdownManager } from '@inkeep/open-knowledge-core';
+import type { MarkdownManager } from '@nedian0brien/synapsenote-core';
 import {
   type BridgeInvariantSite,
   type BridgeInvariantViolation,
@@ -52,7 +52,7 @@ import {
   normalizeBridge,
   PARSE_EQUIVALENCE_TOLERANCE,
   toBridgeInvariantLog,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import {
   incrementBridgeInvariantViolations,
   incrementBridgeInvariantViolationsSuppressed,
@@ -406,7 +406,7 @@ export function __getSplitBrainRateTupleCountForTests(): number {
 /**
  * Decide whether to throw `BridgeInvariantViolationError`. Affirmative gate
  * (NOT `!== 'production'`) — Bun leaves `NODE_ENV` undefined for `bun run`
- * and `open-knowledge start`; an inverted gate would re-throw in production.
+ * and `synapsenote start`; an inverted gate would re-throw in production.
  * Test runners (`bun test`) auto-populate `NODE_ENV=test`; integration
  * harnesses launched outside `bun test` opt in via
  * `OK_BRIDGE_THROW_ON_VIOLATION=1`.

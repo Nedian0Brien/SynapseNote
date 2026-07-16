@@ -1,6 +1,6 @@
 /**
  * Install a subscriber for the Desktop `ok:deep-link` bridge event. When
- * an `openknowledge://` URL routes to this window, main fires the bridge
+ * an `synapsenote://` URL routes to this window, main fires the bridge
  * event with `{ doc, kind, branch? }`; this installer updates
  * `window.location.hash` so the existing hash-route listener in App opens
  * the target.

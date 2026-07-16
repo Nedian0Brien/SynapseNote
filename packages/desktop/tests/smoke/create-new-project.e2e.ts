@@ -63,7 +63,7 @@ const SMOKE_ENABLED = process.env.OK_DESKTOP_E2E_SMOKE === '1';
 const DARWIN = process.platform === 'darwin';
 const BUILD_EXISTS = existsSync(MAIN_ENTRY);
 
-const DESKTOP_PRODUCT_NAME = '@inkeep/open-knowledge-desktop';
+const DESKTOP_PRODUCT_NAME = '@nedian0brien/synapsenote-desktop';
 
 function seedTmpHome(prefix: string): string {
   // Realpath: macOS's tmpdir() resolves /var/folders → /private/var/folders.

@@ -7,7 +7,7 @@
  * dispatchers on real switches). `null` = no git checkout, detached HEAD,
  * unreached fetch, or pre-bootstrap state.
  */
-import { ServerInfoSuccessSchema } from '@inkeep/open-knowledge-core';
+import { ServerInfoSuccessSchema } from '@nedian0brien/synapsenote-core';
 import { subscribeToBranchChanged } from '@/lib/documents-events';
 
 export interface BranchStore {

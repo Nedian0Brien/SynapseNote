@@ -16,7 +16,7 @@ mock.module('../../../../lib/track.ts', () => ({
 }));
 
 const BETA_DMG_URL =
-  'https://github.com/inkeep/open-knowledge/releases/download/v0.20.0-beta.4/OpenKnowledge-arm64.dmg';
+  'https://github.com/Nedian0Brien/SynapseNote/releases/download/v0.20.0-beta.4/SynapseNote-arm64.dmg';
 // Mutable so a test can flip the beta resolver from a fresh tag to a fallback.
 type BetaRedirect = { kind: string; url: string; cause?: string };
 let _betaRedirect: BetaRedirect = { kind: 'fresh', url: BETA_DMG_URL };
@@ -25,7 +25,7 @@ mock.module('../../../../lib/download-links.ts', () => ({
 }));
 
 const { GET } = await import('./route.ts');
-const REL = 'https://github.com/inkeep/open-knowledge/releases';
+const REL = 'https://github.com/Nedian0Brien/SynapseNote/releases';
 
 function call(
   channel: string,
@@ -33,7 +33,7 @@ function call(
   headers: Record<string, string> = {},
 ): Promise<Response> {
   return GET(
-    new Request(`https://openknowledge.ai/updates/${channel}/${path.join('/')}`, { headers }),
+    new Request(`https://synapse.lawdigest.kr/updates/${channel}/${path.join('/')}`, { headers }),
     {
       params: Promise.resolve({ channel, path }),
     },
@@ -60,7 +60,7 @@ describe('GET /updates/[channel]/[...path]', () => {
 
   test('stable zip 302s to the tagged release and counts app_update_downloaded', async () => {
     _lastCapture = null;
-    const file = 'OpenKnowledge-0.20.0-arm64-mac.zip';
+    const file = 'SynapseNote-0.20.0-arm64-mac.zip';
     const res = await call('stable', [file], { 'x-ok-from-version': '0.19.1' });
     expect(res.status).toBe(302);
     expect(res.headers.get('location')).toBe(`${REL}/download/v0.20.0/${file}`);
@@ -75,7 +75,7 @@ describe('GET /updates/[channel]/[...path]', () => {
 
   test('beta zip parses the prerelease version and counts (no from_version header)', async () => {
     _lastCapture = null;
-    const file = 'OpenKnowledge-0.20.0-beta.4-arm64-mac.zip';
+    const file = 'SynapseNote-0.20.0-beta.4-arm64-mac.zip';
     const res = await call('beta', [file]);
     expect(res.status).toBe(302);
     expect(res.headers.get('location')).toBe(`${REL}/download/v0.20.0-beta.4/${file}`);
@@ -85,7 +85,7 @@ describe('GET /updates/[channel]/[...path]', () => {
 
   test('an ill-formed x-ok-from-version header is dropped, not forwarded to analytics', async () => {
     _lastCapture = null;
-    const file = 'OpenKnowledge-0.20.0-arm64-mac.zip';
+    const file = 'SynapseNote-0.20.0-arm64-mac.zip';
     const res = await call('stable', [file], { 'x-ok-from-version': '../etc; rm -rf' });
     expect(res.status).toBe(302);
     expect(_lastCapture?.event).toBe('app_update_downloaded');
@@ -94,7 +94,7 @@ describe('GET /updates/[channel]/[...path]', () => {
 
   test('blockmap 302s but is NOT counted', async () => {
     _lastCapture = null;
-    const file = 'OpenKnowledge-0.20.0-arm64-mac.zip.blockmap';
+    const file = 'SynapseNote-0.20.0-arm64-mac.zip.blockmap';
     const res = await call('stable', [file]);
     expect(res.status).toBe(302);
     expect(res.headers.get('location')).toBe(`${REL}/download/v0.20.0/${file}`);
@@ -103,15 +103,15 @@ describe('GET /updates/[channel]/[...path]', () => {
 
   test('human dmg 302s (latest alias) but is NOT counted', async () => {
     _lastCapture = null;
-    const res = await call('stable', ['OpenKnowledge-arm64.dmg']);
+    const res = await call('stable', ['SynapseNote-arm64.dmg']);
     expect(res.status).toBe(302);
-    expect(res.headers.get('location')).toBe(`${REL}/latest/download/OpenKnowledge-arm64.dmg`);
+    expect(res.headers.get('location')).toBe(`${REL}/latest/download/SynapseNote-arm64.dmg`);
     expect(_lastCapture).toBeNull();
   });
 
   test('dmg blockmap 302s (latest alias) but is NOT counted', async () => {
     _lastCapture = null;
-    const file = 'OpenKnowledge-arm64.dmg.blockmap';
+    const file = 'SynapseNote-arm64.dmg.blockmap';
     const res = await call('stable', [file]);
     expect(res.status).toBe(302);
     expect(res.headers.get('location')).toBe(`${REL}/latest/download/${file}`);
@@ -132,7 +132,7 @@ describe('GET /updates/[channel]/[...path]', () => {
 
   test('x64 zip parses the version and counts', async () => {
     _lastCapture = null;
-    const file = 'OpenKnowledge-0.20.0-x64-mac.zip';
+    const file = 'SynapseNote-0.20.0-x64-mac.zip';
     const res = await call('stable', [file]);
     expect(res.status).toBe(302);
     expect(res.headers.get('location')).toBe(`${REL}/download/v0.20.0/${file}`);

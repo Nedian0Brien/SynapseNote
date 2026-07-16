@@ -10,7 +10,7 @@
  */
 
 import { describe, expect, test } from 'bun:test';
-import { ALL_EDITOR_IDS, EDITOR_PROJECT_SKILL_ROOT } from '@inkeep/open-knowledge-core';
+import { ALL_EDITOR_IDS, EDITOR_PROJECT_SKILL_ROOT } from '@nedian0brien/synapsenote-core';
 import { EDITOR_TARGETS } from './editors.ts';
 
 describe('EDITOR_TARGETS project-skill path lockstep with core root', () => {

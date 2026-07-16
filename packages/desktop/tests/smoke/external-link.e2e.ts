@@ -80,7 +80,7 @@ test.describe('external-link safety-net delegation', () => {
     // link test uses — fire the deep link to navigate the project window.
     const _firstWindow = await app.firstWindow({ timeout: 15_000 });
     const { execSync } = await import('node:child_process');
-    const deepLink = `openknowledge://open?project=${encodeURIComponent(projectDir)}&doc=doc`;
+    const deepLink = `synapsenote://open?project=${encodeURIComponent(projectDir)}&doc=doc`;
     execSync(`open -g "${deepLink}"`, { stdio: 'pipe' });
 
     // Wait for the editor window to load the doc.
@@ -103,7 +103,7 @@ test.describe('external-link safety-net delegation', () => {
     // does. Must run in the editor page where attachAssetSafetyNet is
     // wired.
     await editorPage.evaluate(() => {
-      window.open('https://github.com/inkeep/open-knowledge', '_blank', 'noopener,noreferrer');
+      window.open('https://github.com/Nedian0Brien/SynapseNote', '_blank', 'noopener,noreferrer');
     });
 
     // Poll the main-process recorder until the IPC fire-and-forget path
@@ -114,7 +114,7 @@ test.describe('external-link safety-net delegation', () => {
         const g = globalThis as unknown as { __okExternalCalls?: string[] };
         return g.__okExternalCalls ?? [];
       });
-      expect(calls).toContain('https://github.com/inkeep/open-knowledge');
+      expect(calls).toContain('https://github.com/Nedian0Brien/SynapseNote');
     }).toPass({ timeout: 15_000 });
 
     // Second scenario — emulate the HelpPopover path: an `<a target="_blank">`

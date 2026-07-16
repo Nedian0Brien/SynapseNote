@@ -1,5 +1,5 @@
 /**
- * `open-knowledge start` — collab server only (Hocuspocus + /api/*).
+ * `synapsenote start` — collab server only (Hocuspocus + /api/*).
  *
  * Lifecycle split:
  * - `ok start` owns the WebSocket (/collab) + HTTP API (/api/*) and advertises
@@ -30,14 +30,14 @@ import {
   DEFAULT_SIGTERM_GRACE_MS as SHARED_DEFAULT_SIGTERM_GRACE_MS,
   DEFAULT_SIGTERM_POLL_MS as SHARED_DEFAULT_SIGTERM_POLL_MS,
   SPAWN_ERROR_LOG,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import {
   type BootedServer,
   type Config,
   isProjectRoot,
   type PinoLogger,
   prepareSingleFileOpen,
-} from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-server';
 import { Command, InvalidArgumentError } from 'commander';
 import { makeLazyEmbeddingsKeyStore } from '../auth/embeddings-key-store.ts';
 import { detectGh } from '../auth/gh-detect.ts';
@@ -71,8 +71,8 @@ const PROCESS_TITLE_PROJECT_NAME_MAX = 64;
 
 /**
  * Derive the `process.title` for a running `ok start` server. The shape is
- * `open-knowledge-server <projectName>` so users can find running servers
- * in Activity Monitor / `ps -ax | grep open-knowledge-server` — the primary
+ * `synapsenote-server <projectName>` so users can find running servers
+ * in Activity Monitor / `ps -ax | grep synapsenote-server` — the primary
  * surface for orphan management (no in-app stop
  * UX; rely on the OS process list).
  *
@@ -93,7 +93,7 @@ export function deriveServerProcessTitle(cwd: string): string {
     .trim()
     .slice(0, PROCESS_TITLE_PROJECT_NAME_MAX);
   const projectName = sanitized.length > 0 ? sanitized : 'unknown';
-  return `open-knowledge-server ${projectName}`;
+  return `synapsenote-server ${projectName}`;
 }
 
 /**
@@ -150,7 +150,7 @@ interface SpawnOkUiOptions {
  * template so the same log consumer can surface failures.
  *
  * Re-execs the current CLI binary rather than shelling out via
- * `npx @inkeep/open-knowledge` to avoid cross-version lockfile-ABI drift and
+ * `npx @nedian0brien/synapsenote` to avoid cross-version lockfile-ABI drift and
  * the live-registry-fetch / supply-chain surface. See `self-spawn.ts`.
  *
  * **PORT env hygiene:** the child `ok ui` resolves its bind port via
@@ -704,7 +704,7 @@ interface BootStartServerOptions {
   serveContentAssets?: boolean;
   /**
    * Absolute path to a bundled React shell directory (Vite's `build.outDir`
-   * for `@inkeep/open-knowledge-app`). When set, the server serves the
+   * for `@nedian0brien/synapsenote-app`). When set, the server serves the
    * shell on `/` (and `/assets/*` etc.) via sirv's SPA fallback, AND the
    * `ok ui` sibling is auto-suppressed (the server is now self-sufficient
    * — no second process required). The desktop passes its bundled shell
@@ -776,7 +776,7 @@ export interface BootedStartServer {
  * tests can drive it directly. The Commander action layers signals + UX on top.
  *
  * The HTTP + WebSocket + listen + lock + idle-shutdown plumbing lives in
- * `@inkeep/open-knowledge-server`'s `bootServer()`; this wrapper adds
+ * `@nedian0brien/synapsenote-server`'s `bootServer()`; this wrapper adds
  * CLI-specific concerns (init-required guard, resolveContentDir, UI-sibling
  * spawn via `spawnOkUi`, open-browser-on-first-agent-edit).
  */
@@ -796,7 +796,7 @@ export async function bootStartServer(opts: BootStartServerOptions): Promise<Boo
     resolveContentDir,
     resolveLockDir,
     waitForServerLockDrain,
-  } = await import('@inkeep/open-knowledge-server');
+  } = await import('@nedian0brien/synapsenote-server');
 
   const log = opts.log ?? getLogger('start');
 
@@ -868,7 +868,7 @@ export async function bootStartServer(opts: BootStartServerOptions): Promise<Boo
     }
 
     // Sibling sweep for `.claude/launch.json` — OK no longer scaffolds one,
-    // so this removes any stale `open-knowledge-ui` entry a prior OK version
+    // so this removes any stale `synapsenote-ui` entry a prior OK version
     // left behind (co-located user configs are preserved).
     try {
       const repair =
@@ -1019,7 +1019,7 @@ export async function bootStartServer(opts: BootStartServerOptions): Promise<Boo
         }
       : {}),
     // Pass the exact runtime that started this server so /api/local-op/* can
-    // spawn additional CLI processes without needing open-knowledge on PATH.
+    // spawn additional CLI processes without needing synapsenote on PATH.
     localOpCliArgs: [process.execPath, process.argv[1]],
     // CLI-specific opt-ins
     attachUiSibling,
@@ -1191,7 +1191,7 @@ export function resolveStartConsoleLevel(env: {
  */
 export function formatShutdownNotice(signal: NodeJS.Signals): string[] {
   const lines = [
-    'Stopping OpenKnowledge…',
+    'Stopping SynapseNote…',
     'Saving pending changes and releasing the server lock — this can take a few seconds.',
   ];
   if (signal === 'SIGINT') {
@@ -1222,7 +1222,7 @@ export async function runStartCommand(config: Config, opts: StartCommandOptions)
   const activeConfig = config;
 
   // Set the process title as early as possible so Activity Monitor and
-  // `ps -ax | grep open-knowledge-server` show each running server by
+  // `ps -ax | grep synapsenote-server` show each running server by
   // project name. This is the primary user-facing surface for orphan
   // management — there's no in-app "Stop server"
   // action; the OS process list is the discovery path.
@@ -1252,7 +1252,7 @@ export async function runStartCommand(config: Config, opts: StartCommandOptions)
   // The post-boot catch below is the TOCTOU backstop for the narrow race where
   // a server appears between this check and bootServer's lock acquisition.
   if (requestedUiPort !== undefined) {
-    const { readServerLock, resolveLockDir } = await import('@inkeep/open-knowledge-server');
+    const { readServerLock, resolveLockDir } = await import('@nedian0brien/synapsenote-server');
     const liveServer = readServerLock(resolveLockDir(cwd));
     if (shouldConnectToExistingServer(requestedUiPort, liveServer)) {
       await connectUiSibling({ cwd, uiPort: requestedUiPort });
@@ -1286,7 +1286,7 @@ export async function runStartCommand(config: Config, opts: StartCommandOptions)
     // event, wrote install guidance to stderr, and flushed the OTel exporter
     // before re-throwing the typed error. The CLI just maps it to EX_CONFIG
     // (78), the stable scriptable signal callers can branch on.
-    const serverModule = await import('@inkeep/open-knowledge-server');
+    const serverModule = await import('@nedian0brien/synapsenote-server');
     if (
       err instanceof serverModule.GitNotAvailableError ||
       err instanceof serverModule.GitTooOldError
@@ -1381,7 +1381,7 @@ export async function runStartCommand(config: Config, opts: StartCommandOptions)
 
   console.log(
     renderBanner({
-      name: 'open-knowledge',
+      name: 'synapsenote',
       version: PACKAGE_VERSION,
       localUrl,
       apiUrl: localUrl !== apiUrl ? apiUrl : undefined,
@@ -1428,7 +1428,7 @@ export async function runStartCommand(config: Config, opts: StartCommandOptions)
  */
 export function isServerLockCollision(
   err: unknown,
-  serverModule: typeof import('@inkeep/open-knowledge-server'),
+  serverModule: typeof import('@nedian0brien/synapsenote-server'),
 ): boolean {
   const lockErr = serverModule.ServerLockCollisionError;
   return lockErr !== undefined && err instanceof lockErr;
@@ -1444,7 +1444,7 @@ export function isServerLockCollision(
 export function tryDescribeLockCollision(
   err: unknown,
   cwd: string,
-  serverModule: typeof import('@inkeep/open-knowledge-server'),
+  serverModule: typeof import('@nedian0brien/synapsenote-server'),
 ): string | null {
   const lockErr = serverModule.ServerLockCollisionError;
   if (lockErr === undefined || !(err instanceof lockErr)) return null;
@@ -1453,15 +1453,15 @@ export function tryDescribeLockCollision(
     const lockDir = join(cwd, OK_DIR);
     const meta = serverModule.readServerLock(lockDir);
     if (!meta) {
-      return 'OpenKnowledge server is already running on this project — check `ok status` or `ok stop`.';
+      return 'SynapseNote server is already running on this project — check `ok status` or `ok stop`.';
     }
     if (meta.kind === 'interactive') {
-      return 'OpenKnowledge desktop is currently running on this project. Quit it or use --cwd to point elsewhere.';
+      return 'SynapseNote desktop is currently running on this project. Quit it or use --cwd to point elsewhere.';
     }
     if (meta.kind === 'mcp-spawned') {
       return 'An MCP-spawned server holds this lock; it should release on idle-shutdown (~30 min). Or run `ok stop`.';
     }
-    return 'OpenKnowledge server is already running on this project — check `ok status` or `ok stop`.';
+    return 'SynapseNote server is already running on this project — check `ok status` or `ok stop`.';
   } catch {
     // Generic fallback so a metadata-read failure never escalates the
     // user-visible error path beyond what they'd see today.

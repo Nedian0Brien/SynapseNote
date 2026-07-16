@@ -19,7 +19,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
-import type { CreateScenario, InstallState } from '@inkeep/open-knowledge-core';
+import type { CreateScenario, InstallState } from '@nedian0brien/synapsenote-core';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { JSONContent } from '@tiptap/core';
 import { type ReactNode, type Ref, useImperativeHandle, useRef, useState } from 'react';

@@ -1,5 +1,5 @@
 /**
- * Convert Notion `<aside>` callouts to Open Knowledge `> [!note]` callouts.
+ * Convert Notion `<aside>` callouts to SynapseNote `> [!note]` callouts.
  *
  * Notion exports callouts as raw `<aside>...</aside>` HTML (often led by an emoji
  * icon). OK does not style raw `<aside>`, so we rewrite each block to a native

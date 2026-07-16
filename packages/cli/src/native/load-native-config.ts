@@ -1,5 +1,5 @@
 /**
- * Locates the native-config addon at runtime across the shapes OpenKnowledge
+ * Locates the native-config addon at runtime across the shapes SynapseNote
  * ships it in, returning the loaded module or null when no binary is available
  * for this platform — the normal no-prebuilt-binary case, where each consumer
  * keeps a non-destructive fallback (smol-toml parse / JS symlink mirror).
@@ -17,7 +17,7 @@
  *      so its spawned `ok` subprocess resolves here too — this is the path that
  *      makes the format-preserving Codex write run for npm users off-macOS
  *      instead of silently degrading to the fallback.
- *  (b) the `@inkeep/open-knowledge-native-config` workspace package — dev, tests,
+ *  (b) the `@nedian0brien/synapsenote-native-config` workspace package — dev, tests,
  *      and the desktop main process, whose declared dependency + asarUnpack place
  *      the addon on the module-resolution tree.
  *
@@ -28,7 +28,7 @@ import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const NATIVE_CONFIG_PACKAGE = '@inkeep/open-knowledge-native-config';
+const NATIVE_CONFIG_PACKAGE = '@nedian0brien/synapsenote-native-config';
 
 /** A `require` that failed because the module simply isn't there for this platform. */
 function isModuleNotFound(err: unknown): boolean {

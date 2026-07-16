@@ -12,7 +12,7 @@
  * `normalizeBridge` (canonical bridge-invariant normalization) and
  * `stripFrontmatter` from the shared markdown pipeline.
  */
-import { normalizeBridge, stripFrontmatter } from '@inkeep/open-knowledge-core';
+import { normalizeBridge, stripFrontmatter } from '@nedian0brien/synapsenote-core';
 
 type DuplicationReason =
   | 'empty-base'

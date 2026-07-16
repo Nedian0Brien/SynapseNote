@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import type { SkillInstallEvent } from '@inkeep/open-knowledge-server';
+import type { SkillInstallEvent } from '@nedian0brien/synapsenote-server';
 import { EDITOR_TARGETS } from './editors.ts';
 import {
   __testing,
@@ -39,7 +39,7 @@ function writeBundledSkill(dir: string, version: string): void {
   mkdirSync(dir, { recursive: true });
   writeFileSync(
     join(dir, 'SKILL.md'),
-    `---\nname: open-knowledge\nmetadata:\n  version: "${version}"\n---\nbundled-${version}-content\n`,
+    `---\nname: synapsenote\nmetadata:\n  version: "${version}"\n---\nbundled-${version}-content\n`,
   );
   writeFileSync(join(dir, 'references.md'), `bundled-${version}-references`);
 }
@@ -239,7 +239,7 @@ describe('repairSkills — project sweep create-if-wired gate', () => {
   // A `.mcp.json` carrying the `# ok-mcp-v1` chain sentinel — the wired signal.
   const OK_WIRED_MCP_JSON = JSON.stringify({
     mcpServers: {
-      'open-knowledge': { command: '/bin/sh', args: ['-l', '-c', '# ok-mcp-v1\nexec ok mcp'] },
+      synapsenote: { command: '/bin/sh', args: ['-l', '-c', '# ok-mcp-v1\nexec ok mcp'] },
     },
   });
   const UNWIRED_MCP_JSON = JSON.stringify({ mcpServers: { other: { command: 'node' } } });
@@ -247,7 +247,7 @@ describe('repairSkills — project sweep create-if-wired gate', () => {
   // Windows (or a shared repo initialized there) must still get skills.
   const OK_WIRED_MCP_JSON_WIN = JSON.stringify({
     mcpServers: {
-      'open-knowledge': {
+      synapsenote: {
         command: 'powershell',
         args: ['-NoProfile', '-NonInteractive', '-Command', '# ok-mcp-win-v1\nexit 127'],
       },
@@ -359,12 +359,12 @@ describe('repairSkills — project sweep create-if-wired gate', () => {
 
   it('creates a project SKILL.md for codex wired via .codex/config.toml (TOML, marker substring)', async () => {
     // Codex's wired signal is TOML and its skill installs to
-    // `.codex/skills/open-knowledge/` — the config-path → skill-path mapping a
+    // `.codex/skills/synapsenote/` — the config-path → skill-path mapping a
     // typo could silently break. The marker is a substring of the TOML bytes.
     mkdirSync(join(scratch.project, '.codex'), { recursive: true });
     writeFileSync(
       join(scratch.project, '.codex', 'config.toml'),
-      '[mcp_servers.open-knowledge]\ncommand = "/bin/sh"\nargs = ["-l", "-c", "# ok-mcp-v1\\nexec ok mcp"]\n',
+      '[mcp_servers.synapsenote]\ncommand = "/bin/sh"\nargs = ["-l", "-c", "# ok-mcp-v1\\nexec ok mcp"]\n',
     );
 
     const written: Array<{ home: string; version: string }> = [];
@@ -505,7 +505,7 @@ describe('repairSkills — user sweep version gate (AC-B1, AC-B2, AC-B3, AC-B4)'
     // The version-current fast-path requires every ENABLED bundle already on
     // disk (a missing bundle self-heals via reinstall — parity with
     // installUserSkill). Seed both central dirs so the skip path is exercised.
-    for (const name of ['open-knowledge-discovery', 'open-knowledge-write-skill']) {
+    for (const name of ['synapsenote-discovery', 'synapsenote-write-skill']) {
       const dir = join(scratch.home, '.agents', 'skills', name);
       mkdirSync(dir, { recursive: true });
       writeFileSync(join(dir, 'SKILL.md'), 'preexisting');
@@ -547,7 +547,7 @@ describe('repairSkills — user sweep version gate (AC-B1, AC-B2, AC-B3, AC-B4)'
     // Seed both bundles on disk, then decline them. The sweep must remove them
     // and NOT re-install — the CLI half of the invariant that stops `ok start`
     // from re-adding what the desktop dialog removed.
-    for (const name of ['open-knowledge-discovery', 'open-knowledge-write-skill']) {
+    for (const name of ['synapsenote-discovery', 'synapsenote-write-skill']) {
       const dir = join(scratch.home, '.agents', 'skills', name);
       mkdirSync(dir, { recursive: true });
       writeFileSync(join(dir, 'SKILL.md'), 'preexisting');
@@ -581,7 +581,7 @@ describe('repairSkills — user sweep version gate (AC-B1, AC-B2, AC-B3, AC-B4)'
     // Seed both on disk, then decline ONLY write-skill. discovery must install
     // (version mismatch) and write-skill must be torn down — the two gates run
     // independently per bundle.
-    for (const name of ['open-knowledge-discovery', 'open-knowledge-write-skill']) {
+    for (const name of ['synapsenote-discovery', 'synapsenote-write-skill']) {
       const dir = join(scratch.home, '.agents', 'skills', name);
       mkdirSync(dir, { recursive: true });
       writeFileSync(join(dir, 'SKILL.md'), 'preexisting');
@@ -599,7 +599,7 @@ describe('repairSkills — user sweep version gate (AC-B1, AC-B2, AC-B3, AC-B4)'
       writtenVersions: written,
       removals,
     });
-    deps.readBundleDecision = async (_home, name) => name !== 'open-knowledge-write-skill';
+    deps.readBundleDecision = async (_home, name) => name !== 'synapsenote-write-skill';
 
     const result = await repairSkills({
       projectDir: scratch.project,
@@ -707,7 +707,7 @@ describe('repairSkills — user sweep version gate (AC-B1, AC-B2, AC-B3, AC-B4)'
       readFileSync: (p) => realFs.readFileSync(p),
       writeFileSync: (p, c) => {
         // Fail only on writes whose path leads into the central store
-        // (`~/.agents/skills/open-knowledge-discovery/`). Host writes
+        // (`~/.agents/skills/synapsenote-discovery/`). Host writes
         // under `~/.claude/skills/...` succeed.
         if (p.includes('.agents/skills')) {
           throw new Error('synthetic: central path unwritable');
@@ -1121,7 +1121,7 @@ describe('repairSkills — JSONL telemetry parity with Desktop', () => {
   it('emits NO event on the version-current fast-path', async () => {
     // Seed both enabled bundles on disk so the version-current fast-path fires
     // (a missing bundle self-heals via reinstall, which would emit events).
-    for (const name of ['open-knowledge-discovery', 'open-knowledge-write-skill']) {
+    for (const name of ['synapsenote-discovery', 'synapsenote-write-skill']) {
       const dir = join(scratch.home, '.agents', 'skills', name);
       mkdirSync(dir, { recursive: true });
       writeFileSync(join(dir, 'SKILL.md'), 'preexisting');

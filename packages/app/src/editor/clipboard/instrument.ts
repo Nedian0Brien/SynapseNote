@@ -1,4 +1,4 @@
-import { ChunkedInsertError, HtmlPayloadTooLargeError } from '@inkeep/open-knowledge-core';
+import { ChunkedInsertError, HtmlPayloadTooLargeError } from '@nedian0brien/synapsenote-core';
 import type { UrlPortabilityReason } from './clipboard-sanitize.ts';
 import type { ClipboardSource } from './detect-source.ts';
 

@@ -7,7 +7,7 @@
 import type {
   PushPermissionWire as GitPushPermission,
   SyncErrorCode,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { useEffect, useState } from 'react';
 import { subscribeToDocumentsChanged } from '@/lib/documents-events';
 
@@ -24,7 +24,7 @@ type GitSyncState =
 
 /**
  * Push-permission probe outcome carried in the sync-status payload. Type is
- * imported from `@inkeep/open-knowledge-core` (single source of truth — wire
+ * imported from `@nedian0brien/synapsenote-core` (single source of truth — wire
  * schema `PushPermissionSchema`); absent (`undefined`) when the engine hasn't
  * completed a probe for this project (no remote, non-github origin, or probe
  * in flight). UI consumers treat absent as "no gate" and render current

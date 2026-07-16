@@ -24,7 +24,7 @@ const { GET } = await import('./route.ts');
 describe('GET /download/stable', () => {
   test('302 to the stable DMG URL, uncached, and fires dmg_downloaded', () => {
     _lastCapture = null;
-    const res = GET(new Request('https://openknowledge.ai/download/stable'));
+    const res = GET(new Request('https://synapse.lawdigest.kr/download/stable'));
     expect(res.status).toBe(302);
     expect(res.headers.get('location')).toBe(STABLE_DMG_URL);
     // no-store so every download re-invokes the function and is counted.
@@ -39,7 +39,7 @@ describe('GET /download/stable', () => {
   test('a prefetch still redirects but is NOT counted', () => {
     _lastCapture = null;
     const res = GET(
-      new Request('https://openknowledge.ai/download/stable', {
+      new Request('https://synapse.lawdigest.kr/download/stable', {
         headers: { 'sec-purpose': 'prefetch' },
       }),
     );

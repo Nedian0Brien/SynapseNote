@@ -5,7 +5,7 @@
  * Why this exists. AppKit caches `Info.plist` values at process launch via
  * `CFBundleGetValueForInfoDictionaryKey`. The cache is per-process and is
  * NOT invalidated when the underlying file changes on disk. When a user
- * drag-replaces `/Applications/OpenKnowledge.app` over an existing running
+ * drag-replaces `/Applications/SynapseNote.app` over an existing running
  * build, the still-running process keeps serving the OLD bundle's metadata
  * — the About panel (`role: 'about'` delegates to `orderFrontStandardAboutPanel:`,
  * which reads from `NSBundle.mainBundle`), Activity Monitor's Get Info, and
@@ -213,7 +213,7 @@ export function startBundleReplaceWatcher(
         type: 'info',
         message: 'An update was installed.',
         detail:
-          `OpenKnowledge ${state.onDiskVersion} is installed on disk, but this window is still ` +
+          `SynapseNote ${state.onDiskVersion} is installed on disk, but this window is still ` +
           `running ${state.currentVersion}. Restart to finish the upgrade.`,
         buttons: ['Restart now', 'Later'],
         defaultId: 0,

@@ -21,9 +21,9 @@
 # What it does (precedent #22 shell-script conventions):
 #   1. Runs `bun run build` from repo root (turbo-cached; no-op when clean).
 #   2. Starts TWO CLI processes on kernel-assigned ports:
-#        a. `open-knowledge start --port 0` — collab server (Hocuspocus +
+#        a. `synapsenote start --port 0` — collab server (Hocuspocus +
 #           /api/*). Polls `.ok/server.lock` for bound port.
-#        b. `open-knowledge ui --port 0` — React asset server + /api/config
+#        b. `synapsenote ui --port 0` — React asset server + /api/config
 #           proxy. Reads server.lock to derive collab URL for the SPA.
 #           Polls `.ok/ui.lock` for bound port.
 #      Post-2026-04-16 CLI split: `ok start` is collab-only (no static
@@ -174,7 +174,7 @@ if [[ -d "$REPO_ROOT/tmp" ]]; then
   fi
 fi
 
-echo "[perf-prod] Starting open-knowledge (collab server) on kernel-assigned port…"
+echo "[perf-prod] Starting synapsenote (collab server) on kernel-assigned port…"
 node "$CLI_BIN" start --port 0 >"$SERVER_LOG" 2>&1 &
 SERVER_PID=$!
 
@@ -257,7 +257,7 @@ COLLAB_PORT="$(wait_for_lock "$SERVER_LOCK" "$SERVER_PID" "collab server" "$SERV
 # Now start the UI server. It reads server.lock (already populated) to derive
 # /api/config's collabUrl. Use port 0 for kernel-assigned; respects
 # resolveUiLockCollision (US-005 lock handling).
-echo "[perf-prod] Starting open-knowledge ui (React asset server) on kernel-assigned port…"
+echo "[perf-prod] Starting synapsenote ui (React asset server) on kernel-assigned port…"
 node "$CLI_BIN" ui --port 0 >"$UI_LOG" 2>&1 &
 UI_PID=$!
 

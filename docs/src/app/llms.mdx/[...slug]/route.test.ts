@@ -4,7 +4,7 @@ const overviewPage = {
   url: '/docs/get-started/overview',
   data: {
     title: 'Overview',
-    description: 'What OpenKnowledge is.',
+    description: 'What SynapseNote is.',
     getText: async () => 'PROCESSED BODY',
   },
 };
@@ -35,9 +35,12 @@ function props(slug: string[]) {
 
 describe('GET /docs/<slug>.md (markdown route handler)', () => {
   test('serves text/markdown with the page rendered by getLLMText', async () => {
-    const res = await GET(new Request('https://openknowledge.ai/docs/get-started/overview.md'), {
-      ...props(['get-started', 'overview']),
-    });
+    const res = await GET(
+      new Request('https://synapse.lawdigest.kr/docs/get-started/overview.md'),
+      {
+        ...props(['get-started', 'overview']),
+      },
+    );
     expect(res.status).toBe(200);
     expect(res.headers.get('content-type')).toBe('text/markdown; charset=utf-8');
 
@@ -48,7 +51,7 @@ describe('GET /docs/<slug>.md (markdown route handler)', () => {
 
   test('calls notFound() for an unknown page', async () => {
     await expect(
-      GET(new Request('https://openknowledge.ai/docs/nope.md'), { ...props(['nope']) }),
+      GET(new Request('https://synapse.lawdigest.kr/docs/nope.md'), { ...props(['nope']) }),
     ).rejects.toThrow('404');
   });
 

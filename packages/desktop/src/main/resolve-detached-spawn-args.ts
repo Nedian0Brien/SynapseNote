@@ -1,7 +1,7 @@
 import type { SpawnOptions } from 'node:child_process';
 import { posix as pathPosix, win32 as pathWin32 } from 'node:path';
-import { resolveHelperBundleBinary } from '@inkeep/open-knowledge-core/helper-bundle';
-import { fallbackPaths } from '@inkeep/open-knowledge-server';
+import { resolveHelperBundleBinary } from '@nedian0brien/synapsenote-core/helper-bundle';
+import { fallbackPaths } from '@nedian0brien/synapsenote-server';
 
 /**
  * Inputs that determine the detached-server spawn shape. The caller
@@ -17,7 +17,7 @@ import { fallbackPaths } from '@inkeep/open-knowledge-server';
  * duplicate `.app` launch, which `coreservicesd` displays as a stuck
  * "exec" Dock placeholder for the lifetime of the child. To avoid that,
  * we redirect the spawn to a helper bundle at
- * `<parent .app>/Contents/Frameworks/OpenKnowledge Server.app/Contents/MacOS/OpenKnowledge Helper`.
+ * `<parent .app>/Contents/Frameworks/SynapseNote Server.app/Contents/MacOS/SynapseNote Helper`.
  * The helper bundle's `Info.plist` declares `LSUIElement=true`, telling
  * LaunchServices to launch the process without a Dock tile (the canonical
  * Apple convention used by Electron's own `Electron Helper.app`). Off
@@ -26,7 +26,7 @@ import { fallbackPaths } from '@inkeep/open-knowledge-server';
  *
  * The bundle name + executable basename + path arithmetic
  * (`resolveHelperBundleBinary`) live in
- * `@inkeep/open-knowledge-core/helper-bundle.ts` so the CLI self-spawn
+ * `@nedian0brien/synapsenote-core/helper-bundle.ts` so the CLI self-spawn
  * site (`packages/cli/src/commands/self-spawn.ts`, covering the
  * `ok mcp → ok start` and `ok start → ok ui` auto-spawn paths) shares the
  * same path-arithmetic source of truth as this resolver. The CLI's
@@ -80,7 +80,7 @@ function platformPathDelimiter(platform: NodeJS.Platform): string {
 
 /**
  * Likely git install directories per platform. Derived mechanically from
- * `fallbackPaths(platform)` in `@inkeep/open-knowledge-server` (the same set
+ * `fallbackPaths(platform)` in `@nedian0brien/synapsenote-server` (the same set
  * the two-stage probe in `git-preflight.ts` Stage 2 walks). Stays in lockstep
  * with the fallback path list by construction — if a new path lands in
  * `fallbackPaths`, this picks it up without a second edit site.

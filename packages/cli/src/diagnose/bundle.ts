@@ -28,13 +28,13 @@ import {
 } from 'node:fs';
 import { arch as osArch, platform as osPlatform, tmpdir } from 'node:os';
 import { basename, dirname, join, relative, resolve, sep } from 'node:path';
-import type { BundleRedaction as SecretScrubEntry } from '@inkeep/open-knowledge-core';
+import type { BundleRedaction as SecretScrubEntry } from '@nedian0brien/synapsenote-core';
 import {
   DEFAULT_LOGS_MAX_BYTES,
   DEFAULT_SPANS_MAX_BYTES,
   resolveConfigPath,
-} from '@inkeep/open-knowledge-core/server';
-import { withHiddenWindowsConsole } from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-core/server';
+import { withHiddenWindowsConsole } from '@nedian0brien/synapsenote-server';
 import { parse as parseYaml } from 'yaml';
 import { ZipFile } from 'yazl';
 import type { BundleExtraFile, BundleLogger } from '../commands/bug-report-bundle.ts';

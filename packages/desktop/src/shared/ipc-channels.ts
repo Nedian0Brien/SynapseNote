@@ -68,13 +68,13 @@ import type {
   WorktreeCreateRequest,
   WorktreeCreateResult,
   WorktreeListResult,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import type {
   FindEnclosingGitRootResult,
   FindEnclosingProjectRootResult,
   PackId,
   ScaffoldPlan,
-} from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-server';
 import type { OkBugReportRequest } from '../main/ipc/bug-report.ts';
 import type { BuildAndOpenResult } from '../main/ipc/install-skill.ts';
 import type { SeedApplyResult, SeedListPacksResult, SeedPlanResult } from '../main/ipc/seed.ts';
@@ -177,7 +177,7 @@ interface ProjectOpenRequest {
    * the share's target (a `doc` path or a `folder` path) so the editor opens
    * it directly. Threaded through to `wm.createProjectWindow`'s
    * `pendingDeepLinkTarget` (cold spawn) and `sendDeepLink` (warm-focus).
-   * Mirrors the `openknowledge://open?project=&doc=` plumbing.
+   * Mirrors the `synapsenote://open?project=&doc=` plumbing.
    */
   pendingDeepLinkTarget?: { kind: 'doc' | 'folder'; path: string };
   /**
@@ -251,7 +251,7 @@ export type SpawnOutcome =
  * file gives target / outcome / reason history without any network egress.
  *
  * Literal-union fields mirror `HandoffTarget`, `HandoffFailureReason`, and
- * `HandoffScope` from `@inkeep/open-knowledge-core/handoff/types.ts`. Duplication is deliberate
+ * `HandoffScope` from `@nedian0brien/synapsenote-core/handoff/types.ts`. Duplication is deliberate
  * — shared/ipc-channels.ts deliberately has no app-package dependencies
  * (same pattern as `SpawnOutcome` above and the `bridge-contract.ts`
  * mirroring).
@@ -276,7 +276,7 @@ export interface HandoffStatsLine {
 }
 
 /** Editor IDs known to the first-launch MCP consent flow. Aliased to
- *  `EditorId` from `@inkeep/open-knowledge-core` — single source of truth for
+ *  `EditorId` from `@nedian0brien/synapsenote-core` — single source of truth for
  *  the literal union. The alias preserves the local name so existing
  *  consumers (renderer + main) keep importing `McpWiringEditorId` from this
  *  module while the actual type is structurally identical to the canonical
@@ -378,7 +378,7 @@ export type OnboardingProbeContentResult =
 /** Single entry in the consent dialog — one per editor in `ALL_EDITOR_IDS`.
  *  `detected: true` preselects the checkbox.
  *  `willReplace: true` signals that this editor has an existing
- *  `open-knowledge` entry that clicking Add would overwrite to the canonical
+ *  `synapsenote` entry that clicking Add would overwrite to the canonical
  *  npx MCP shape — surfaced per-row in the dialog so long-time CLI users who
  *  ran `ok init` months ago aren't surprised by namespace reclamation. */
 export interface McpWiringEditorDetection {
@@ -457,7 +457,7 @@ export interface IntegrationsEditorStatus {
    *  produce one on this platform. Disclosure only — writes re-resolve. */
   readonly configPath: string | null;
   /** Technical locator of OK's entry inside the config, e.g.
-   *  `mcpServers.open-knowledge` or `[mcp_servers.open-knowledge]`. */
+   *  `mcpServers.synapsenote` or `[mcp_servers.synapsenote]`. */
   readonly entryLocator: string;
 }
 
@@ -541,7 +541,7 @@ export interface ProjectIntegrationsEditorStatus {
 /** The single project runtime-skill row. A toggle installs/removes the skill
  *  across every project-skill-capable editor at once; `paths` lists each
  *  project-relative dir it touches. `installed` reflects the canonical
- *  `.claude/skills/open-knowledge` copy being on disk. */
+ *  `.claude/skills/synapsenote` copy being on disk. */
 export interface ProjectIntegrationsSkillStatus {
   readonly installed: boolean;
   readonly paths: readonly string[];
@@ -1033,7 +1033,7 @@ export interface RequestChannels {
     result: undefined;
   };
   /** Persisted last-used parent directory, or a platform-sensible default
-   *  (`~/Documents/OpenKnowledge/`) on first launch. */
+   *  (`~/Documents/SynapseNote/`) on first launch. */
   'ok:fs:default-projects-root': { args: []; result: string };
   /** Classify the candidate path: missing (`free`), present but empty,
    *  or present with entries. Stat errors fall through to `free`. */
@@ -1250,7 +1250,7 @@ export interface RequestChannels {
    * pattern). Per-editor failures emit `mcp-wiring-write-failed` structured
    * logs; a failed PATH leg emits `mcp-wiring-path-consent-failed` — either
    * leaves the marker absent so the dialog re-fires next launch. Existing
-   * entries under the `open-knowledge` namespace are desktop-owned and
+   * entries under the `synapsenote` namespace are desktop-owned and
    * overwritten.
    */
   'ok:mcp-wiring:confirm': {
@@ -1340,7 +1340,7 @@ export interface RequestChannels {
   'ok:skill:detect-claude-desktop': { args: []; result: boolean };
 
   /**
-   * Build `openknowledge.skill` locally from the bundled SKILL.md source,
+   * Build `synapsenote.skill` locally from the bundled SKILL.md source,
    * write it to the user's Downloads folder, then invoke `shell.openPath`
    * to route it to Claude Desktop via the `.skill` CFBundleDocumentType
    * association. Renderer treats any `ok: true` response as "Claude Desktop
@@ -1527,7 +1527,7 @@ export interface RequestChannels {
   /**
    * Docked-terminal Claude Code readiness + re-arm. One discriminated
    * channel folds the `preflight` read (is `claude` on PATH, is the
-   * `open-knowledge` MCP server wired into `~/.claude.json`) and the `rewire`
+   * `synapsenote` MCP server wired into `~/.claude.json`) and the `rewire`
    * action (show the MCP consent dialog) — the `ok:sharing:dispatch`
    * single-channel precedent, +1 rather than +2. NOT an exec channel: the
    * renderer supplies only the action discriminant; main runs a fixed

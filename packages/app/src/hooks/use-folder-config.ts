@@ -1,4 +1,7 @@
-import { type TemplatesListEntry, TemplatesListSuccessSchema } from '@inkeep/open-knowledge-core';
+import {
+  type TemplatesListEntry,
+  TemplatesListSuccessSchema,
+} from '@nedian0brien/synapsenote-core';
 import { useEffect, useState } from 'react';
 import { subscribeToTemplatesChanged } from '@/lib/documents-events';
 import { parseApiError } from '@/lib/parse-api-error';

@@ -13,7 +13,7 @@ import {
   HistorySuccessSchema,
   SkillGetSuccessSchema,
   SkillRestoreSuccessSchema,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 
 // Project skills are content docs, so their version history comes from the
 // unified document-history path (`/api/history?docName=.ok/skills/<name>/SKILL`),

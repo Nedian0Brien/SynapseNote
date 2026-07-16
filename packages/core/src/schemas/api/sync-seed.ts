@@ -251,7 +251,7 @@ export type SyncConflictContentSuccess = z.infer<typeof SyncConflictContentSucce
 
 /**
  * Success body for `GET /api/seed/plan`. The `plan` field is the in-process
- * `ScaffoldPlan` shape from `@inkeep/open-knowledge-server` — deliberately
+ * `ScaffoldPlan` shape from `@nedian0brien/synapsenote-server` — deliberately
  * unconstrained here (typed `unknown`) to avoid a parallel maintenance source
  * for the rich nested structure. Consumers re-cast via `OkScaffoldPlan` (the
  * canonical desktop-bridge type). The translation shim in `seedClient()`

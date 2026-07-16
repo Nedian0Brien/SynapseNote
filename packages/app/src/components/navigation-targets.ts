@@ -11,7 +11,7 @@ import {
   projectSkillContentDocName,
   type SkillScope,
   toWikiLinkSlug,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { normalizeDocNameInput } from '@/lib/doc-paths';
 import { computeAncestors, hasOkPathSegment } from './file-tree-utils';
 

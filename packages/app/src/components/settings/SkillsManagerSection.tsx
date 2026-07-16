@@ -1,5 +1,5 @@
-import type { SkillScope, SkillsListEntry } from '@inkeep/open-knowledge-core';
 import { Trans, useLingui } from '@lingui/react/macro';
+import type { SkillScope, SkillsListEntry } from '@nedian0brien/synapsenote-core';
 import { Plus } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 import { NewSkillDialog } from '@/components/NewSkillDialog';

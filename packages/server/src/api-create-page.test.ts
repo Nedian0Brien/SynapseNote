@@ -12,7 +12,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Readable } from 'node:stream';
-import type { Principal } from '@inkeep/open-knowledge-core';
+import type { Principal } from '@nedian0brien/synapsenote-core';
 import { createApiExtension } from './api-extension.ts';
 import { BacklinkIndex } from './backlink-index.ts';
 import { contributorCount, hasContributor, swapContributors } from './contributor-tracker.ts';

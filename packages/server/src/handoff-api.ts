@@ -22,7 +22,7 @@
 
 import { execFile } from 'node:child_process';
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { InstalledAgentsSuccessSchema } from '@inkeep/open-knowledge-core';
+import { InstalledAgentsSuccessSchema } from '@nedian0brien/synapsenote-core';
 import { withHiddenWindowsConsole } from './child-process-windows-hide.ts';
 import { errorResponse } from './http/error-response.ts';
 import { successResponse } from './http/success-response.ts';

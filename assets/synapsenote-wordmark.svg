@@ -1,0 +1,13 @@
+<svg width="900" height="180" viewBox="0 0 900 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img">
+  <title>SynapseNote</title>
+  <g stroke="#0F172A" stroke-width="8" stroke-linecap="round" opacity="0.7">
+    <path d="M42 90 82 46 126 72 98 126 50 118Z"/>
+    <path d="m82 46 16 80M42 90l84-18M50 118l76-46"/>
+  </g>
+  <g fill="#69A3FF" stroke="white" stroke-width="5">
+    <circle cx="42" cy="90" r="15"/><circle cx="82" cy="46" r="15"/>
+    <circle cx="126" cy="72" r="15"/><circle cx="98" cy="126" r="15"/>
+    <circle cx="50" cy="118" r="15"/>
+  </g>
+  <text x="175" y="117" fill="#0F172A" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="82" font-weight="650" letter-spacing="-3">SynapseNote</text>
+</svg>

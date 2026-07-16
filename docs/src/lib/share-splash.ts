@@ -12,7 +12,7 @@
  *     root). Branch slashes must be percent-encoded.
  *
  * These stay copy-local instead of importing from
- * `@inkeep/open-knowledge-core` / `@inkeep/open-knowledge` so the static docs
+ * `@nedian0brien/synapsenote-core` / `@nedian0brien/synapsenote` so the static docs
  * build does NOT pull in the CRDT/markdown/Tiptap/CLI dependency tree. The
  * duplication is bounded and pinned by `share-splash.test.ts`. Any wire change
  * to the source modules (codec field names, URL-parser shapes) must be
@@ -275,26 +275,26 @@ function parseGitHubShareUrl(input: string): ParsedGitHubShareTarget | null {
 export { DOWNLOAD_URL as SPLASH_DOWNLOAD_URL } from './site';
 
 /**
- * Build the custom-scheme handoff URL the splash's "Open in OpenKnowledge"
+ * Build the custom-scheme handoff URL the splash's "Open in SynapseNote"
  * button fires. Custom-scheme path carries the shared URL (a blob URL for a
  * doc, a tree URL for a folder) directly without the version byte — that path
  * is the immediate-handoff channel, not the marketing-safe persisted-link
  * channel.
  */
 export function buildCustomSchemeUrl(sharedUrl: string): string {
-  return `openknowledge://share?url=${encodeURIComponent(sharedUrl)}`;
+  return `synapsenote://share?url=${encodeURIComponent(sharedUrl)}`;
 }
 
 /**
  * Install command for the cross-platform CLI receive path. The published
- * package is `@inkeep/open-knowledge`; the two binaries it installs are
- * `open-knowledge` and `ok`.
+ * package is `@nedian0brien/synapsenote`; the two binaries it installs are
+ * `synapsenote` and `ok`.
  */
-export const SPLASH_INSTALL_COMMAND = 'npm install -g @inkeep/open-knowledge';
+export const SPLASH_INSTALL_COMMAND = 'npm install -g @nedian0brien/synapsenote';
 
 /**
  * POSIX-single-quote a string so it is safe as one shell argument (mirrors
- * `shellSingleQuote` in `@inkeep/open-knowledge-core`; kept copy-local so the
+ * `shellSingleQuote` in `@nedian0brien/synapsenote-core`; kept copy-local so the
  * static docs build doesn't pull in the workspace dep tree — see file header).
  */
 function shellSingleQuoteShareArg(s: string): string {

@@ -3,7 +3,7 @@
  *
  * `bundle.ts` inlines path constants for `<contentDir>/.ok/local/telemetry/*`
  * and `<contentDir>/.ok/local/logs/*` rather than importing them from
- * `@inkeep/open-knowledge-server` — the on-disk layout is a stable
+ * `@nedian0brien/synapsenote-server` — the on-disk layout is a stable
  * contract and the CLI should not reach into server internals for runtime
  * code (see the block comment near `bundle.ts`'s path-helper region). The
  * trade-off: if a filename or subdirectory changes in `telemetry-file-sink.ts`,
@@ -18,7 +18,7 @@ import {
   logsPreviousPath as serverLogsPreviousPath,
   spansCurrentPath as serverSpansCurrentPath,
   spansPreviousPath as serverSpansPreviousPath,
-} from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-server';
 import { _pathHelpersForTests } from './bundle.ts';
 
 describe('CLI bundle path helpers — parity with server telemetry-file-sink', () => {

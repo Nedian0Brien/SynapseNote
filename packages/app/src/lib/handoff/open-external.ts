@@ -7,7 +7,7 @@
  * `window.location.href` triggers.
  */
 
-import type { HandoffOutcome } from '@inkeep/open-knowledge-core';
+import type { HandoffOutcome } from '@nedian0brien/synapsenote-core';
 
 interface OpenExternalDeps {
   /** Populated by the Electron preload. `undefined` on web / CLI. */

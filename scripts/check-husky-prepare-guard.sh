@@ -4,7 +4,7 @@
 # agents-private monorepo context, and only invokes husky in the former.
 #
 # Background: OK's `prepare` script invokes `husky` to install git hooks.
-# In a standalone clone (inkeep/open-knowledge), `.git` lives at OK root
+# In a standalone clone (Nedian0Brien/SynapseNote), `.git` lives at OK root
 # and husky writes core.hooksPath there — correct. Inside the
 # agents-private monorepo, OK has no own `.git`, so husky walks up,
 # finds the parent's `.git`, and writes core.hooksPath there with a path
@@ -105,7 +105,7 @@ run_scenario "standalone-worktree" "$SCENARIO_B" "yes"
 
 # Scenario C: monorepo — `.git` is in a parent dir, NOT at cwd
 SCENARIO_C_PARENT="$TEST_TMPDIR/monorepo"
-SCENARIO_C="$SCENARIO_C_PARENT/public/open-knowledge"
+SCENARIO_C="$SCENARIO_C_PARENT/public/synapsenote"
 mkdir -p "$SCENARIO_C_PARENT/.git" "$SCENARIO_C/.husky"
 touch "$SCENARIO_C/.husky/pre-commit" "$SCENARIO_C/.husky/pre-push"
 run_scenario "monorepo-subdirectory" "$SCENARIO_C" "no"

@@ -39,8 +39,8 @@ import {
 } from '@embedpdf/plugin-thumbnail/react';
 import { Viewport, ViewportPluginPackage } from '@embedpdf/plugin-viewport/react';
 import { useZoom, ZoomMode, ZoomPluginPackage } from '@embedpdf/plugin-zoom/react';
-import { toDesktopAssetHref } from '@inkeep/open-knowledge-core';
 import { Trans, useLingui } from '@lingui/react/macro';
+import { toDesktopAssetHref } from '@nedian0brien/synapsenote-core';
 import { Check, ChevronDown, PanelLeft, ZoomIn, ZoomOut } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { publishSelectionContext, selectionSnapshotFromPdf } from '@/editor/selection-context';

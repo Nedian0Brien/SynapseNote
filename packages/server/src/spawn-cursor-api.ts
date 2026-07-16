@@ -5,7 +5,7 @@
  * have to invoke the `cursor` CLI to spawn the workspace window, then fire
  * `cursor://anysphere.cursor-deeplink/prompt?...` to seed the prompt. Browsers
  * can't spawn processes, so the OK web UI defers step 1 to the server (which
- * runs on the user's machine via `open-knowledge start` and has filesystem +
+ * runs on the user's machine via `synapsenote start` and has filesystem +
  * `child_process` access).
  *
  * Sibling of:
@@ -50,7 +50,7 @@ import { access, constants as fsConstants } from 'node:fs/promises';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { homedir } from 'node:os';
 import { posix as pathPosix, win32 as pathWin32 } from 'node:path';
-import { SpawnCursorSuccessSchema } from '@inkeep/open-knowledge-core';
+import { SpawnCursorSuccessSchema } from '@nedian0brien/synapsenote-core';
 import { withHiddenWindowsConsole } from './child-process-windows-hide.ts';
 import { errorResponse } from './http/error-response.ts';
 import {

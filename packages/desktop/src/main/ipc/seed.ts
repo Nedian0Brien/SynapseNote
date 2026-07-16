@@ -15,7 +15,7 @@
  * module. `list-packs` is a thin wrapper over `STARTER_PACKS` so the picker UI
  * fetches metadata once on mount.
  *
- * Rationale: logic lives in `@inkeep/open-knowledge-server`'s seed module.
+ * Rationale: logic lives in `@nedian0brien/synapsenote-server`'s seed module.
  * The IPC layer is a thin wrapper that scopes the call to the current
  * window's project root — no business logic here.
  */
@@ -29,7 +29,7 @@ import {
   type ScaffoldPlan,
   SeedPrerequisiteError,
   SeedRootDirError,
-} from '@inkeep/open-knowledge-server';
+} from '@nedian0brien/synapsenote-server';
 import type {
   OkSeedApplyResult,
   OkSeedListPacksResult,

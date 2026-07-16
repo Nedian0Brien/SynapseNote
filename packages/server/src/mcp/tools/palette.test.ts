@@ -10,7 +10,7 @@ import {
   getAgentCanonicalDescriptors,
   PREVIEW_EMBED_STARTERS,
   PREVIEW_THEME_TOKENS,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { type Config, ConfigSchema } from '../../config/schema.ts';
 import { register } from './palette.ts';
 import type { ServerInstance } from './shared.ts';

@@ -14,8 +14,8 @@ import {
   normalizeBridge,
   prependFrontmatter,
   stripFrontmatter,
-} from '@inkeep/open-knowledge-core';
-import { formatReconcileSubject } from '@inkeep/open-knowledge-core/shadow-repo-layout';
+} from '@nedian0brien/synapsenote-core';
+import { formatReconcileSubject } from '@nedian0brien/synapsenote-core/shadow-repo-layout';
 import type * as Y from 'yjs';
 import { composeAndWriteRawBody } from './bridge-intake.ts';
 import { isConfigDoc, isMermaidDoc, isSystemDoc } from './cc1-broadcast.ts';

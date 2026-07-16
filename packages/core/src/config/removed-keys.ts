@@ -2,7 +2,7 @@
  * Single source of truth for config keys that have been removed from the
  * schema and are no longer read by the engine.
  *
- * OpenKnowledge config is loose at every layer (`ConfigSchema` is a
+ * SynapseNote config is loose at every layer (`ConfigSchema` is a
  * `looseObject`; the published JSON schema is open), so a stale key neither
  * fails Zod validation nor autocompletes-as-invalid. Without an explicit
  * registry a removed key is a silent no-op — the worst failure mode for a
@@ -83,14 +83,14 @@ export const REMOVED_KEYS: readonly RemovedKey[] = [
   {
     path: ['upload', 'maxBytes'],
     redirect: [
-      'streaming uploads have no user-facing cap; the value is hardcoded in @inkeep/open-knowledge-core.',
+      'streaming uploads have no user-facing cap; the value is hardcoded in @nedian0brien/synapsenote-core.',
       MIGRATE_HINT,
     ].join(' '),
   },
   {
     path: ['github', 'oauthAppClientId'],
     redirect: [
-      'Use the OPEN_KNOWLEDGE_GITHUB_CLIENT_ID environment variable instead.',
+      'Use the SYNAPSENOTE_GITHUB_CLIENT_ID environment variable instead.',
       MIGRATE_HINT,
     ].join(' '),
   },
@@ -111,11 +111,15 @@ export const REMOVED_KEYS: readonly RemovedKey[] = [
   },
   {
     path: ['mcp', 'tools', 'read_document', 'historyDepth'],
-    redirect: ['This value is hardcoded in @inkeep/open-knowledge-core.', MIGRATE_HINT].join(' '),
+    redirect: ['This value is hardcoded in @nedian0brien/synapsenote-core.', MIGRATE_HINT].join(
+      ' ',
+    ),
   },
   {
     path: ['mcp', 'tools', 'grep', 'maxResults'],
-    redirect: ['This value is hardcoded in @inkeep/open-knowledge-core.', MIGRATE_HINT].join(' '),
+    redirect: ['This value is hardcoded in @nedian0brien/synapsenote-core.', MIGRATE_HINT].join(
+      ' ',
+    ),
   },
   {
     // Older name of this result-cap config key; configs untouched since the
@@ -123,7 +127,7 @@ export const REMOVED_KEYS: readonly RemovedKey[] = [
     // regardless of which name their config used.
     path: ['mcp', 'tools', 'search', 'maxResults'],
     redirect: [
-      'The search result cap is hardcoded in @inkeep/open-knowledge-core; this config key was removed.',
+      'The search result cap is hardcoded in @nedian0brien/synapsenote-core; this config key was removed.',
       MIGRATE_HINT,
     ].join(' '),
   },

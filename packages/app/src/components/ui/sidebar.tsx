@@ -1,5 +1,5 @@
-import { detectEmbeddedHostFromBrowser } from '@inkeep/open-knowledge-core';
 import { useLingui } from '@lingui/react/macro';
+import { detectEmbeddedHostFromBrowser } from '@nedian0brien/synapsenote-core';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { PanelLeft, PanelLeftOpen } from 'lucide-react';
 import { Slot } from 'radix-ui';

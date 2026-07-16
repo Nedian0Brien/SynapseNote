@@ -188,10 +188,10 @@ describe('state-store (gitRemoteUrl field on RecentProject)', () => {
       emptyState(),
       '/tmp/p1',
       'p1',
-      'https://github.com/inkeep/open-knowledge.git',
+      'https://github.com/Nedian0Brien/SynapseNote.git',
     );
     expect(next.recentProjects[0]?.gitRemoteUrl).toBe(
-      'https://github.com/inkeep/open-knowledge.git',
+      'https://github.com/Nedian0Brien/SynapseNote.git',
     );
   });
 
@@ -206,12 +206,14 @@ describe('state-store (gitRemoteUrl field on RecentProject)', () => {
       emptyState(),
       '/tmp/p1',
       'p1',
-      'https://github.com/inkeep/open-knowledge.git',
+      'https://github.com/Nedian0Brien/SynapseNote.git',
     );
     // Re-open without the 4th arg (e.g. a transient `.git/config` read miss
     // — a network share briefly unmounted, an antivirus lock).
     s = addRecentProject(s, '/tmp/p1', 'p1');
-    expect(s.recentProjects[0]?.gitRemoteUrl).toBe('https://github.com/inkeep/open-knowledge.git');
+    expect(s.recentProjects[0]?.gitRemoteUrl).toBe(
+      'https://github.com/Nedian0Brien/SynapseNote.git',
+    );
   });
 
   test('addRecentProject updates gitRemoteUrl when a fresh value is supplied', () => {
@@ -238,11 +240,11 @@ describe('state-store (gitRemoteUrl field on RecentProject)', () => {
       emptyState(),
       '/tmp/p1',
       'p1',
-      'https://github.com/inkeep/open-knowledge.git',
+      'https://github.com/Nedian0Brien/SynapseNote.git',
     );
     const reparsed = parseAppState(JSON.parse(JSON.stringify(state)));
     expect(reparsed?.recentProjects[0]?.gitRemoteUrl).toBe(
-      'https://github.com/inkeep/open-knowledge.git',
+      'https://github.com/Nedian0Brien/SynapseNote.git',
     );
   });
 

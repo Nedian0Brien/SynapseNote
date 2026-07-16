@@ -1,4 +1,4 @@
-import { MANAGED_ARTIFACT_SCOPES, type SkillScope } from '@inkeep/open-knowledge-core';
+import { MANAGED_ARTIFACT_SCOPES, type SkillScope } from '@nedian0brien/synapsenote-core';
 
 /** Narrow a free string to a known skill scope (`project` | `global`). */
 function isSkillScope(value: string): value is SkillScope {

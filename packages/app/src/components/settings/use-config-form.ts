@@ -26,7 +26,7 @@ import {
   type ConfigValidationError,
   humanFormat,
   isKnownConfigError,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { useEffect } from 'react';
 import { type FieldPath, type UseFormReturn, useForm } from 'react-hook-form';
 import { buildPatch } from './schema-walker';

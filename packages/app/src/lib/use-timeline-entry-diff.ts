@@ -33,7 +33,7 @@
  * navigation (no `key={docName}` on the parent today), a hit is always for
  * the right document.
  */
-import { stripFrontmatter } from '@inkeep/open-knowledge-core';
+import { stripFrontmatter } from '@nedian0brien/synapsenote-core';
 import { createPatch } from 'diff';
 import { useEffect, useRef, useState } from 'react';
 import { useDocumentContext } from '@/editor/DocumentContext';

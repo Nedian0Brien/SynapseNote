@@ -1,6 +1,9 @@
 import { resolve } from 'node:path';
 
-import { setToleranceTelemetryHook, type ToleranceFireRecord } from '@inkeep/open-knowledge-core';
+import {
+  setToleranceTelemetryHook,
+  type ToleranceFireRecord,
+} from '@nedian0brien/synapsenote-core';
 
 import { getLocalDir } from './config/paths.ts';
 import { RotatingAppender } from './telemetry-file-sink.ts';

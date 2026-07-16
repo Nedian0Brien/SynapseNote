@@ -191,8 +191,8 @@ describe('cross-harness FR1 acceptance matrix', () => {
       const afterData = parseFor(c.id, after);
       const key = EDITOR_TARGETS[c.id].topLevelKey;
       const container = afterData[key] as Record<string, unknown>;
-      expect(container['open-knowledge']).toEqual(c.expectedEntry);
-      delete container['open-knowledge'];
+      expect(container.synapsenote).toEqual(c.expectedEntry);
+      delete container.synapsenote;
       expect(afterData).toEqual(beforeData);
 
       // No destructive sidecar is ever produced on the write path.
@@ -220,7 +220,7 @@ describe('cross-harness FR1 acceptance matrix', () => {
 
     const parsed = parseFor('codex', after);
     expect(parsed.mcp_servers.other).toEqual({ command: 'node' });
-    expect(parsed.mcp_servers['open-knowledge']).toEqual(PUBLISHED_CHAIN_ENTRY);
+    expect(parsed.mcp_servers.synapsenote).toEqual(PUBLISHED_CHAIN_ENTRY);
   });
 
   it('claude: preserves a leading BOM on a JSON harness', () => {
@@ -234,9 +234,9 @@ describe('cross-harness FR1 acceptance matrix', () => {
     const after = readFileSync(configPath, 'utf-8');
     expect(after.charCodeAt(0)).toBe(0xfeff);
     expect(after).toContain('// keep me');
-    expect(
-      (parseFor('claude', after).mcpServers as Record<string, unknown>)['open-knowledge'],
-    ).toEqual(PUBLISHED_CHAIN_ENTRY);
+    expect((parseFor('claude', after).mcpServers as Record<string, unknown>).synapsenote).toEqual(
+      PUBLISHED_CHAIN_ENTRY,
+    );
   });
 });
 
@@ -264,13 +264,13 @@ describe('surgical-text-splice counterfactual guard', () => {
   it('inline-table own-entry: updates in place, never appends a duplicate header', () => {
     const configPath = tempFile('config.toml');
     // OK's own entry pre-exists as a dotted-inline table. A text splice looks for
-    // a `[mcp_servers.open-knowledge]` header, fails to find one, and appends a
+    // a `[mcp_servers.synapsenote]` header, fails to find one, and appends a
     // fresh header block — producing two definitions of the same key, the exact
     // duplicate-key file that the capable parser rejects (the reported reset).
     const original = [
       '# codex with an inline OK entry',
       'model = "gpt-5"',
-      'mcp_servers.open-knowledge = { command = "STALE", args = ["old"] }',
+      'mcp_servers.synapsenote = { command = "STALE", args = ["old"] }',
       '',
       '[mcp_servers.linear]',
       'command = "linear-cmd"  # keep',
@@ -289,7 +289,7 @@ describe('surgical-text-splice counterfactual guard', () => {
     const parsed = engine.parseToObject(after) as { mcp_servers: Record<string, unknown> };
     // Updated in place — the stale value is gone and the sibling survives.
     expect(after).not.toContain('STALE');
-    expect(parsed.mcp_servers['open-knowledge']).toEqual(PUBLISHED_CHAIN_ENTRY);
+    expect(parsed.mcp_servers.synapsenote).toEqual(PUBLISHED_CHAIN_ENTRY);
     expect(parsed.mcp_servers.linear).toEqual({ command: 'linear-cmd' });
   });
 
@@ -319,7 +319,7 @@ describe('surgical-text-splice counterfactual guard', () => {
     expect(parsed.profile).toEqual({ name: 'default' });
     expect(parsed.mcp_servers.linear).toEqual({ command: 'linear-cmd', args: ['--stdio'] });
     expect(parsed.mcp_servers.github).toEqual({ command: 'gh-cmd' });
-    expect(parsed.mcp_servers['open-knowledge']).toEqual(PUBLISHED_CHAIN_ENTRY);
+    expect(parsed.mcp_servers.synapsenote).toEqual(PUBLISHED_CHAIN_ENTRY);
   });
 });
 

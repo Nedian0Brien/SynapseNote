@@ -8,17 +8,17 @@ const VERSION = '0.0.1';
 describe('renderBanner', () => {
   test('contains product name and version', () => {
     const output = renderBanner({
-      name: 'open-knowledge',
+      name: 'synapsenote',
       version: VERSION,
       localUrl: 'http://localhost:3000',
     });
-    expect(output).toContain('open-knowledge');
+    expect(output).toContain('synapsenote');
     expect(output).toContain(VERSION);
   });
 
   test('contains local URL', () => {
     const output = renderBanner({
-      name: 'open-knowledge',
+      name: 'synapsenote',
       version: VERSION,
       localUrl: 'http://localhost:3000',
     });
@@ -28,7 +28,7 @@ describe('renderBanner', () => {
 
   test('contains network URL when provided', () => {
     const output = renderBanner({
-      name: 'open-knowledge',
+      name: 'synapsenote',
       version: VERSION,
       localUrl: 'http://localhost:3000',
       networkUrl: 'http://0.0.0.0:3000',
@@ -39,7 +39,7 @@ describe('renderBanner', () => {
 
   test('omits network line when not provided', () => {
     const output = renderBanner({
-      name: 'open-knowledge',
+      name: 'synapsenote',
       version: VERSION,
       localUrl: 'http://localhost:3000',
     });
@@ -48,7 +48,7 @@ describe('renderBanner', () => {
 
   test('labels primary URL as "Editor:" and shows API URL when both are provided', () => {
     const output = renderBanner({
-      name: 'open-knowledge',
+      name: 'synapsenote',
       version: VERSION,
       localUrl: 'http://localhost:3000',
       apiUrl: 'http://localhost:52345',
@@ -61,7 +61,7 @@ describe('renderBanner', () => {
 
   test('keeps "Local:" label when only localUrl is provided', () => {
     const output = renderBanner({
-      name: 'open-knowledge',
+      name: 'synapsenote',
       version: VERSION,
       localUrl: 'http://localhost:3000',
     });
@@ -72,7 +72,7 @@ describe('renderBanner', () => {
 
   test('contains Ctrl+C hint', () => {
     const output = renderBanner({
-      name: 'open-knowledge',
+      name: 'synapsenote',
       version: VERSION,
       localUrl: 'http://localhost:3000',
     });
@@ -81,7 +81,7 @@ describe('renderBanner', () => {
 
   test('renders next-steps lines when provided', () => {
     const output = renderBanner({
-      name: 'open-knowledge',
+      name: 'synapsenote',
       version: VERSION,
       localUrl: 'http://localhost:3000',
       nextSteps: ['Open the Editor URL in your browser to start editing.'],
@@ -93,7 +93,7 @@ describe('renderBanner', () => {
 
   test('omits next-steps section when not provided', () => {
     const output = renderBanner({
-      name: 'open-knowledge',
+      name: 'synapsenote',
       version: VERSION,
       localUrl: 'http://localhost:3000',
     });
@@ -102,7 +102,7 @@ describe('renderBanner', () => {
 
   test('box lines stay consistent width with next-steps lines', () => {
     const output = renderBanner({
-      name: 'open-knowledge',
+      name: 'synapsenote',
       version: VERSION,
       localUrl: 'http://localhost:3000',
       apiUrl: 'http://localhost:52345',
@@ -120,7 +120,7 @@ describe('renderBanner', () => {
 
   test('uses box-drawing characters', () => {
     const output = renderBanner({
-      name: 'open-knowledge',
+      name: 'synapsenote',
       version: VERSION,
       localUrl: 'http://localhost:3000',
     });
@@ -133,7 +133,7 @@ describe('renderBanner', () => {
 
   test('box lines have consistent width', () => {
     const output = renderBanner({
-      name: 'open-knowledge',
+      name: 'synapsenote',
       version: VERSION,
       localUrl: 'http://localhost:3000',
       networkUrl: 'http://0.0.0.0:3000',
@@ -163,7 +163,7 @@ describe('banner NO_COLOR behavior', () => {
         delete process.env.FORCE_COLOR;
         const { renderBanner } = require('./src/ui/banner.ts');
         console.log(renderBanner({
-          name: 'open-knowledge',
+          name: 'synapsenote',
           version: '0.0.1',
           localUrl: 'http://localhost:3000',
           networkUrl: 'http://0.0.0.0:3000',
@@ -177,7 +177,7 @@ describe('banner NO_COLOR behavior', () => {
     expect(output).not.toMatch(ANSI_RE);
     // Box characters should still be present
     expect(output).toContain('╭');
-    expect(output).toContain('open-knowledge');
+    expect(output).toContain('synapsenote');
     expect(output).toContain('http://localhost:3000');
   });
 });

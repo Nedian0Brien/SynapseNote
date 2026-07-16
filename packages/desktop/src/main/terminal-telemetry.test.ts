@@ -15,7 +15,7 @@ interface CapturedSpanCall {
 
 const capturedCalls: CapturedSpanCall[] = [];
 
-mock.module('@inkeep/open-knowledge-server', () => ({
+mock.module('@nedian0brien/synapsenote-server', () => ({
   withSpanSync: <T>(
     name: string,
     options: { attributes?: Record<string, unknown> } | undefined,

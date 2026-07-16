@@ -12,7 +12,7 @@ const jsoncParserEsmEntry = createRequire(import.meta.url).resolve('jsonc-parser
 // rolldown-plugin-dts emits this advisory via raw `console.warn` (not through
 // rolldown's log pipeline, so `inputOptions.onLog` can't filter it) when tsc
 // emit-skips a cross-package source file. The cli's dts entries import from
-// `@inkeep/open-knowledge-server` / `-core` whose .ts sources are not in the
+// `@nedian0brien/synapsenote-server` / `-core` whose .ts sources are not in the
 // cli's tsconfig include — tsc skips them, the plugin falls back to a
 // different emit path, and emits a correct final dist/index.d.mts. The
 // recommended fix (`dts.eager`) forces tsc over the full tsconfig graph and
@@ -87,7 +87,7 @@ export default defineConfig({
   deps: {
     // Native addons stay external — they ship .node binaries resolved at runtime
     // and the desktop bundle places them under app.asar.unpacked/node_modules/.
-    neverBundle: ['@parcel/watcher', '@napi-rs/keyring', '@inkeep/open-knowledge-native-config'],
+    neverBundle: ['@parcel/watcher', '@napi-rs/keyring', '@nedian0brien/synapsenote-native-config'],
     // tsdown defaults to externalizing entries in `dependencies`, but the
     // desktop install ships no node_modules/ next to dist/cli.mjs, so bare
     // specifiers crash on resolve. Force-inline every pure-JS runtime dep.

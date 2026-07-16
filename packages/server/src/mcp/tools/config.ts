@@ -28,13 +28,13 @@ import {
 } from './shared.ts';
 
 const DESCRIPTION = [
-  '[Operates on disk; no running OK server required] Read the effective merged OpenKnowledge config (defaults → user → project).',
+  '[Operates on disk; no running OK server required] Read the effective merged SynapseNote config (defaults → user → project).',
   '',
   'Use this when you need to inspect the config mid-session — e.g., after a write that may have changed disk state, or to re-confirm the value of a field before reading it again.',
   '',
   'Read returns the FULL merged config or a sub-tree when `key` is provided. There is no allowlist on reads — every field is readable.',
   '',
-  'Note: the `server.*`, `mcp.*`, and `github.*` config sub-trees, plus `preview.baseUrl` and `preview.scriptSrc`, were removed; their values are now built-in constants in `@inkeep/open-knowledge-core` (or, for the preview iframe, a fixed open network policy). Reading those keys returns `exists: false`. (`appearance.preview.autoOpen` is still a live key.)',
+  'Note: the `server.*`, `mcp.*`, and `github.*` config sub-trees, plus `preview.baseUrl` and `preview.scriptSrc`, were removed; their values are now built-in constants in `@nedian0brien/synapsenote-core` (or, for the preview iframe, a fixed open network policy). Reading those keys returns `exists: false`. (`appearance.preview.autoOpen` is still a live key.)',
   '',
   '**Parameters:**',
   '- `key` (optional) — Dotted config key. `"content"` returns the content sub-tree; `"appearance.theme"` returns just that leaf. Omit for full config.',

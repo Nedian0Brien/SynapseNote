@@ -1,4 +1,4 @@
-import type { EmbeddedHost } from '@inkeep/open-knowledge-core';
+import type { EmbeddedHost } from '@nedian0brien/synapsenote-core';
 
 export type Partition = 'above' | 'below' | 'embedded';
 export type SidebarState = 'open' | 'collapsed';

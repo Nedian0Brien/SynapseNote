@@ -41,18 +41,18 @@
  * the public release repo resolves it within the ok-release-cadence
  * concurrency slot from existing vX.Y.Z-beta.* tags.
  *
- * Run from cwd public/open-knowledge:
+ * Run from cwd public/synapsenote:
  *   node scripts/compute-next-beta.mjs
  */
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 
-const FIXED_GROUP_ANCHOR = '@inkeep/open-knowledge';
+const FIXED_GROUP_ANCHOR = '@nedian0brien/synapsenote';
 const PRE_PATH = '.changeset/pre.json';
 const CHANGESET_DIR = '.changeset';
 // Repo this release runs against; derived from the workflow env so it follows
 // whatever repo the release executes on. Fallback is for local runs only.
-const PUBLIC_REPO = process.env.GITHUB_REPOSITORY || 'inkeep/open-knowledge';
+const PUBLIC_REPO = process.env.GITHUB_REPOSITORY || 'Nedian0Brien/SynapseNote';
 const CHANGELOG_PKGS = ['cli', 'core', 'server', 'app', 'desktop'];
 const CONSUMED_MARKER_RE = /<!--\s*ok-consumed-set:\s*(\[[^\]]*\])\s*-->/;
 const BUMP_RANK = { patch: 1, minor: 2, major: 3 };
@@ -93,8 +93,8 @@ export function parseFrontmatterBumpType(content) {
   // Returns the max bump type ('patch'|'minor'|'major'|null) declared in a
   // changeset's frontmatter, e.g.:
   //   ---
-  //   '@inkeep/open-knowledge': minor
-  //   '@inkeep/open-knowledge-app': patch
+  //   '@nedian0brien/synapsenote': minor
+  //   '@nedian0brien/synapsenote-app': patch
   //   ---
   const fmMatch = /^---\r?\n([\s\S]*?)\r?\n---\r?\n/.exec(content);
   if (!fmMatch) return null;
@@ -170,7 +170,7 @@ function readChangelogs() {
 
 export function extractDeltaSection(content) {
   // CHANGELOG.md shape after `bun changeset version`:
-  //   # @inkeep/foo
+  //   # @nedian0brien/foo
   //
   //   ## NEW-VERSION
   //   <-- new content (what we want) -->
@@ -246,12 +246,12 @@ export function renderNotes({ packageDeltas, newConsumedSet, prevBetaTag, newCou
         const trimmed = entry.body.trim();
         if (!trimmed) continue;
         if (trimmed.startsWith('Updated dependencies')) continue;
-        // Fixed-group sibling-bump bullets (`- @inkeep/<pkg>@<version>`) carry
+        // Fixed-group sibling-bump bullets (`- @nedian0brien/<pkg>@<version>`) carry
         // the changesets pre-mode-bump version (e.g., `-beta.6`), which is
         // unrelated to the workflow-resolved `-beta.N` tag the release will
         // ship as. They're boilerplate cross-references, not user-facing
         // narrative — drop them.
-        if (/^@inkeep\/[\w-]+@\d/.test(trimmed)) continue;
+        if (/^@nedian0brien\/[\w-]+@\d/.test(trimmed)) continue;
         if (entry.hash) {
           if (seenHashes.has(entry.hash)) continue;
           seenHashes.add(entry.hash);

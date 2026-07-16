@@ -24,7 +24,7 @@ export const SKILL_INSTALL_EVENTS_FILE_REL = ['.ok', 'skill-install-events.jsonl
 
 /**
  * What kind of install path observed the event. Vocabulary mirrors
- * `SkillStateSurface` in `@inkeep/open-knowledge-core` so readers across the
+ * `SkillStateSurface` in `@nedian0brien/synapsenote-core` so readers across the
  * event log and the state file see one set of surfaces.
  */
 export type SkillInstallEventSurface =

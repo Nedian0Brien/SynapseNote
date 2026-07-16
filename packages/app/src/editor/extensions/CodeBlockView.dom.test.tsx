@@ -10,7 +10,7 @@
  */
 
 import { afterEach, describe, expect, mock, test } from 'bun:test';
-import type { Config } from '@inkeep/open-knowledge-core';
+import type { Config } from '@nedian0brien/synapsenote-core';
 import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react';
 import type { NodeViewProps } from '@tiptap/core';
 import { subscribeToOpenAskAiComposer } from '@/components/ask-ai-composer-events';

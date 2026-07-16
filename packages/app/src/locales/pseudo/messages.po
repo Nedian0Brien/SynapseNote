@@ -307,7 +307,7 @@ msgstr ""
 #. placeholder {0}: formatFileSize(size)
 #. placeholder {1}: formatFileSize(limit)
 #: src/components/LargeFileEditorState.tsx
-msgid "{docName} is {0}. OpenKnowledge currently opens files up to {1}."
+msgid "{docName} is {0}. SynapseNote currently opens files up to {1}."
 msgstr ""
 
 #: src/components/FileTree.tsx
@@ -528,7 +528,7 @@ msgstr ""
 
 #. Warning shown when the user unchecks the PATH toggle — only external terminals degrade
 #: src/components/McpConsentDialogBody.tsx
-msgid "<0>ok</0> won't run in external terminals until you add it later from the File menu. OpenKnowledge's built-in terminal and AI tools keep working."
+msgid "<0>ok</0> won't run in external terminals until you add it later from the File menu. SynapseNote's built-in terminal and AI tools keep working."
 msgstr ""
 
 #: src/components/PageHeaderWidgets.tsx
@@ -561,7 +561,7 @@ msgid "A key is set, but the embeddings provider rejected it or was unreachable 
 msgstr ""
 
 #: src/components/SeedDialog.tsx
-msgid "A knowledge base that follows Google's Open Knowledge Format, a shared way of organizing what you know. Pick this if you want your notes to work well with other tools that understand the format."
+msgid "A knowledge base that follows Google's SynapseNote Format, a shared way of organizing what you know. Pick this if you want your notes to work well with other tools that understand the format."
 msgstr ""
 
 #: src/editor/slash-command/items.tsx
@@ -786,8 +786,8 @@ msgstr ""
 msgid "Add the next matching source selection."
 msgstr ""
 
-#. Subtext for the open-knowledge-write-skill skill row
-#. Subtext for the open-knowledge-write-skill skill row
+#. Subtext for the synapsenote-write-skill skill row
+#. Subtext for the synapsenote-write-skill skill row
 #: src/components/McpConsentDialogBody.tsx
 #: src/components/settings/AiToolsSection.tsx
 msgid "Adds a guided workflow for authoring new Agent Skills."
@@ -809,7 +809,7 @@ msgid "Adds telemetry, server state, and runtime info when available. Document n
 msgstr ""
 
 #: src/components/InstallInClaudeDesktopDialog.tsx
-msgid "Adds the OpenKnowledge skill to the <0>Claude Desktop App</0> so it's available in Chat and Cowork sessions."
+msgid "Adds the SynapseNote skill to the <0>Claude Desktop App</0> so it's available in Chat and Cowork sessions."
 msgstr ""
 
 #: src/editor/components/PropPanel.tsx
@@ -845,7 +845,7 @@ msgid "Agent Skills"
 msgstr ""
 
 #: src/components/settings/AiToolsSection.tsx
-msgid "AI tool management is only available in the OpenKnowledge desktop app."
+msgid "AI tool management is only available in the SynapseNote desktop app."
 msgstr ""
 
 #: src/components/settings/ProjectAiToolsSection.tsx
@@ -928,7 +928,7 @@ msgid "Append-only log of what changed."
 msgstr ""
 
 #: src/components/settings/TerminalSection.tsx
-msgid "Applies to all projects on this machine. Claude and Codex, started from the built-in terminal, auto-approve OpenKnowledge's read and write tools (Claude also auto-runs \"ok open\"). Deleting, moving, sharing, installing skills, other commands, and non-OpenKnowledge file edits still ask. Cursor, OpenCode, and Pi are unaffected. Best-effort per agent."
+msgid "Applies to all projects on this machine. Claude and Codex, started from the built-in terminal, auto-approve SynapseNote's read and write tools (Claude also auto-runs \"ok open\"). Deleting, moving, sharing, installing skills, other commands, and non-SynapseNote file edits still ask. Cursor, OpenCode, and Pi are unaffected. Best-effort per agent."
 msgstr ""
 
 #: src/editor/bubble-menu/LinkEditPopover.tsx
@@ -1003,7 +1003,7 @@ msgid "Assistant"
 msgstr ""
 
 #: src/components/ReportBugDialogBody.tsx
-msgid "Attach the file in an email to <0>support@inkeep.com</0>"
+msgid "Attach the file in an email to <0>support@lawdigest.kr</0>"
 msgstr ""
 
 #. placeholder {0}: selection.documentTitle
@@ -1074,7 +1074,7 @@ msgid "Available in every project on this computer."
 msgstr ""
 
 #: src/components/settings/SharingSection.tsx
-msgid "Available in the OpenKnowledge desktop app. From a terminal, use<0> ok config-sharing status</0> / <1>share</1> / <2>unshare</2>."
+msgid "Available in the SynapseNote desktop app. From a terminal, use<0> ok config-sharing status</0> / <1>share</1> / <2>unshare</2>."
 msgstr ""
 
 #: src/components/ReportBugDialogBody.tsx
@@ -1221,7 +1221,7 @@ msgid "Bug report {reference}"
 msgstr ""
 
 #: src/components/ReportBugDialogBody.tsx
-msgid "Bug reporting needs the OpenKnowledge desktop app."
+msgid "Bug reporting needs the SynapseNote desktop app."
 msgstr ""
 
 #: src/components/empty-state/use-create-suggestions.ts
@@ -1237,7 +1237,7 @@ msgid "Build and keep track of the world behind your story. A home for your char
 msgstr ""
 
 #: src/components/InstallInClaudeDesktopDialog.tsx
-msgid "Building <0>openknowledge.skill</0> and opening the Claude Desktop App"
+msgid "Building <0>synapsenote.skill</0> and opening the Claude Desktop App"
 msgstr ""
 
 #: src/lib/keyboard-shortcuts.ts
@@ -1257,7 +1257,7 @@ msgid "By tag"
 msgstr ""
 
 #: src/components/CreateProjectDialog.tsx
-msgid "Can't nest projects. An OpenKnowledge project already exists at <0>{rootPath}</0>. Choose a location outside it, or open that project instead."
+msgid "Can't nest projects. An SynapseNote project already exists at <0>{rootPath}</0>. Choose a location outside it, or open that project instead."
 msgstr ""
 
 #: src/components/settings/ProjectAiToolsSection.tsx
@@ -1369,7 +1369,7 @@ msgid "Choose CLI for new chat"
 msgstr ""
 
 #: src/components/settings/SharingSection.tsx
-msgid "Choose whether this project's OpenKnowledge setup, including its AI-tool connections, is saved with the project so teammates get it too, or kept only on your computer."
+msgid "Choose whether this project's SynapseNote setup, including its AI-tool connections, is saved with the project so teammates get it too, or kept only on your computer."
 msgstr ""
 
 #: src/components/settings/SkillTargetsPicker.tsx
@@ -1389,7 +1389,7 @@ msgid "Claude Code (claude) isn't installed or on your PATH."
 msgstr ""
 
 #: src/components/ClaudeReadinessBanner.tsx
-msgid "Claude Code is installed, but OpenKnowledge tools aren't connected to it yet."
+msgid "Claude Code is installed, but SynapseNote tools aren't connected to it yet."
 msgstr ""
 
 #: src/components/settings/SettingsDialogShell.tsx
@@ -1711,7 +1711,7 @@ msgid "Connect GitHub to continue."
 msgstr ""
 
 #: src/components/settings/SettingsDialogBody.tsx
-msgid "Connect OpenKnowledge to other tools you use."
+msgid "Connect SynapseNote to other tools you use."
 msgstr ""
 
 #: src/components/settings/ProjectAiToolsSection.tsx
@@ -1737,7 +1737,7 @@ msgid "Connect tools"
 msgstr ""
 
 #: src/components/McpConsentDialogBody.tsx
-msgid "Connect your AI tools to OpenKnowledge"
+msgid "Connect your AI tools to SynapseNote"
 msgstr ""
 
 #: src/components/AuthModal.tsx
@@ -2038,7 +2038,7 @@ msgid "Couldn't clear the key — please try again."
 msgstr ""
 
 #: src/components/ClaudeReadinessBanner.tsx
-msgid "Couldn't connect OpenKnowledge tools to Claude Code. Please try again."
+msgid "Couldn't connect SynapseNote tools to Claude Code. Please try again."
 msgstr ""
 
 #: src/components/PublishToGitHubDialog.tsx
@@ -2195,7 +2195,7 @@ msgid "Couldn't resolve the conflict for {filePath}."
 msgstr ""
 
 #: src/lib/restart-collab-server.ts
-msgid "Couldn't restart the server — another process owns it. Quit other OpenKnowledge windows for this project, then try again."
+msgid "Couldn't restart the server — another process owns it. Quit other SynapseNote windows for this project, then try again."
 msgstr ""
 
 #: src/lib/install-server-drift-listener.ts
@@ -2280,18 +2280,18 @@ msgstr ""
 msgid "Create a new list item from the current list item."
 msgstr ""
 
+#: src/components/BottomComposer.tsx
+msgid "Create a new spec file for my user story"
+msgstr ""
+
 #. placeholder {0}: selectedPack.name
 #. placeholder {1}: selectedPack.entryCounts.folders
 #: src/components/CreateProjectDialog.tsx
-msgid "Create a new OpenKnowledge project from the <0>{0}</0> starter pack ({1, plural, one {# folder} other {# folders}} and starter templates) in the folder of your choice."
+msgid "Create a new SynapseNote project from the <0>{0}</0> starter pack ({1, plural, one {# folder} other {# folders}} and starter templates) in the folder of your choice."
 msgstr ""
 
 #: src/components/CreateProjectDialog.tsx
-msgid "Create a new OpenKnowledge project in the folder of your choice."
-msgstr ""
-
-#: src/components/BottomComposer.tsx
-msgid "Create a new spec file for my user story"
+msgid "Create a new SynapseNote project in the folder of your choice."
 msgstr ""
 
 #: src/components/RecentProjectsMenu.tsx
@@ -2411,7 +2411,7 @@ msgstr ""
 
 #: src/components/settings/AiToolsSection.tsx
 #: src/components/settings/ProjectAiToolsSection.tsx
-msgid "Custom open-knowledge entry — not managed by OpenKnowledge"
+msgid "Custom synapsenote entry — not managed by SynapseNote"
 msgstr ""
 
 #: src/components/settings/SettingsDialogBody.tsx
@@ -2784,7 +2784,7 @@ msgid "e.g. The editor froze after I pasted a large table"
 msgstr ""
 
 #: src/components/CreateProjectDialog.tsx
-msgid "Each selected tool gets an OpenKnowledge MCP entry."
+msgid "Each selected tool gets an SynapseNote MCP entry."
 msgstr ""
 
 #: src/components/skill-actions.tsx
@@ -3348,7 +3348,7 @@ msgid "File saved & Claude Desktop App opened"
 msgstr ""
 
 #: src/components/InstallInClaudeDesktopDialog.tsx
-msgid "File saves to <0>~/Downloads/openknowledge.skill</0>."
+msgid "File saves to <0>~/Downloads/synapsenote.skill</0>."
 msgstr ""
 
 #: src/components/ui/sidebar.tsx
@@ -3653,11 +3653,11 @@ msgstr ""
 msgid "Hello, world!"
 msgstr ""
 
-#. Subtext for the open-knowledge-discovery skill row
-#. Subtext for the open-knowledge-discovery skill row
+#. Subtext for the synapsenote-discovery skill row
+#. Subtext for the synapsenote-discovery skill row
 #: src/components/McpConsentDialogBody.tsx
 #: src/components/settings/AiToolsSection.tsx
-msgid "Helps your coding agent recognize OpenKnowledge projects and route reads and writes through it."
+msgid "Helps your coding agent recognize SynapseNote projects and route reads and writes through it."
 msgstr ""
 
 #: src/components/FileTree.tsx
@@ -3774,8 +3774,8 @@ msgstr ""
 msgid "How to push manually"
 msgstr ""
 
-#. Link on an undetected tool row to its OpenKnowledge setup guide
-#. Link on an undetected tool row to its OpenKnowledge setup guide
+#. Link on an undetected tool row to its SynapseNote setup guide
+#. Link on an undetected tool row to its SynapseNote setup guide
 #: src/components/McpConsentDialogBody.tsx
 #: src/components/settings/AiToolsSection.tsx
 msgid "How to set up"
@@ -3973,7 +3973,7 @@ msgstr ""
 msgid "Install an AI agent to create with AI"
 msgstr ""
 
-#. Dialog title — installing the OpenKnowledge skill into the Claude Desktop App
+#. Dialog title — installing the SynapseNote skill into the Claude Desktop App
 #: src/components/InstallInClaudeDesktopDialog.tsx
 msgid "Install for Claude Chat & Cowork"
 msgstr ""
@@ -4011,7 +4011,7 @@ msgid "Installed"
 msgstr ""
 
 #: src/components/settings/AiToolsSection.tsx
-msgid "Installed — ok is available in external terminals. Unchecking removes it; OpenKnowledge's built-in terminal and AI tools keep working."
+msgid "Installed — ok is available in external terminals. Unchecking removes it; SynapseNote's built-in terminal and AI tools keep working."
 msgstr ""
 
 #. placeholder {0}: skill.name
@@ -4127,7 +4127,7 @@ msgid "Layout options"
 msgstr ""
 
 #: src/components/settings/TerminalSection.tsx
-msgid "Let agents use OpenKnowledge without asking"
+msgid "Let agents use SynapseNote without asking"
 msgstr ""
 
 #: src/lib/keyboard-shortcuts.ts
@@ -4336,7 +4336,7 @@ msgid "Manage hidden files in Settings → Ignore patterns."
 msgstr ""
 
 #: src/components/settings/AccountSection.tsx
-msgid "Manage the GitHub account OpenKnowledge uses to browse and sync your repositories."
+msgid "Manage the GitHub account SynapseNote uses to browse and sync your repositories."
 msgstr ""
 
 #: src/components/settings/AiToolsSection.tsx
@@ -4367,9 +4367,9 @@ msgstr ""
 msgid "Match case"
 msgstr ""
 
-#. Group label above the per-editor MCP list in Settings → AI tools & CLI — each row wires OpenKnowledge's MCP server into that tool
+#. Group label above the per-editor MCP list in Settings → AI tools & CLI — each row wires SynapseNote's MCP server into that tool
 #. Group label above the per-editor project MCP list in Settings → This project → AI tools
-#. Section label above the editor checkbox list in the first-launch dialog — each row wires OpenKnowledge's MCP server into that tool
+#. Section label above the editor checkbox list in the first-launch dialog — each row wires SynapseNote's MCP server into that tool
 #: src/components/McpConsentDialogBody.tsx
 #: src/components/settings/AiToolsSection.tsx
 #: src/components/settings/ProjectAiToolsSection.tsx
@@ -5066,7 +5066,7 @@ msgstr ""
 
 #. Next step for a Claude Code project MCP row
 #: src/components/settings/ProjectAiToolsSection.tsx
-msgid "One more step: run <0>claude</0> in this project and approve OpenKnowledge once."
+msgid "One more step: run <0>claude</0> in this project and approve SynapseNote once."
 msgstr ""
 
 #: src/components/ConsentDialogBody.tsx
@@ -5233,11 +5233,6 @@ msgstr ""
 msgid "Open it there"
 msgstr ""
 
-#. placeholder {0}: state.importable
-#: src/components/SkillsSidebarSection.tsx
-msgid "Open Knowledge can manage {0} editor skill(s) for this project. Import moves them into .ok/skills and replaces the .claude, .codex, etc. copies with symlinks — one place to edit, in sync everywhere. If those folders are committed to git, review the change first; symlinks can behave differently on some editors and on Windows."
-msgstr ""
-
 #: src/components/GraphPanel.tsx
 msgid "Open link"
 msgstr ""
@@ -5359,34 +5354,6 @@ msgstr ""
 msgid "Opening..."
 msgstr ""
 
-#: src/components/ConsentDialogBody.tsx
-msgid "OpenKnowledge initializes at <0>{projectDir}</0> — the parent of <1>{pickedRelative}</1> because it contains a <2>.git</2> folder (one .ok/ per git repo). <3>Content directory</3> defaults to <4>.</4> (the whole repo); type a sub-folder to narrow it."
-msgstr ""
-
-#: src/components/settings/AccountSection.tsx
-msgid "OpenKnowledge is using a GitHub account provided by the gh CLI. There's no separate OpenKnowledge credential to disconnect."
-msgstr ""
-
-#: src/components/settings/AccountSection.tsx
-msgid "OpenKnowledge is using this GitHub account."
-msgstr ""
-
-#: src/components/ReportBugDialogBody.tsx
-msgid "OpenKnowledge quit unexpectedly last time."
-msgstr ""
-
-#: src/components/ConsentDialogBody.tsx
-msgid "OpenKnowledge stores its configuration and internal files inside a newly created <0>.ok</0> directory in your project root folder."
-msgstr ""
-
-#: src/components/CreateProjectDialog.tsx
-msgid "OpenKnowledge will be initialized at <0>{gitRoot}</0> — the parent of your new folder, because it contains a <1>.git</1> folder (one project per git repo)."
-msgstr ""
-
-#: src/components/AutoSyncEnableWarning.tsx
-msgid "OpenKnowledge will create commits and push them to your remote automatically. If you do not want automatic commits in your git history, you should not enable auto-sync."
-msgstr ""
-
 #: src/components/CloneDialog.tsx
 msgid "Opens a folder picker to choose where to clone the repository."
 msgstr ""
@@ -5405,7 +5372,7 @@ msgid "Or use a starter pack"
 msgstr ""
 
 #: src/components/ReportBugDialogBody.tsx
-msgid "Or write to <0>support@inkeep.com</0>"
+msgid "Or write to <0>support@lawdigest.kr</0>"
 msgstr ""
 
 #: src/lib/keyboard-shortcuts.ts
@@ -5450,7 +5417,7 @@ msgid "Owner"
 msgstr ""
 
 #: src/components/ReportBugDialogBody.tsx
-msgid "Package logs and system info into a report you can review, then send it privately to the OpenKnowledge team."
+msgid "Package logs and system info into a report you can review, then send it privately to the SynapseNote team."
 msgstr ""
 
 #: src/editor/extensions/InternalLinkPropPanel.tsx
@@ -5613,7 +5580,7 @@ msgid "Permissions: {label}"
 msgstr ""
 
 #: src/components/InstallInClaudeDesktopDialog.tsx
-msgid "Pick <0>openknowledge.skill</0> from your <1>Downloads</1> folder. It enables automatically."
+msgid "Pick <0>synapsenote.skill</0> from your <1>Downloads</1> folder. It enables automatically."
 msgstr ""
 
 #: src/components/PublishToGitHubDialog.tsx
@@ -5699,7 +5666,7 @@ msgid "Project"
 msgstr ""
 
 #: src/components/settings/ProjectAiToolsSection.tsx
-msgid "Project AI tool management is only available in the OpenKnowledge desktop app."
+msgid "Project AI tool management is only available in the SynapseNote desktop app."
 msgstr ""
 
 #: src/components/CreateProjectDialog.tsx
@@ -5896,7 +5863,7 @@ msgstr ""
 msgid "Reinstall"
 msgstr ""
 
-#. Dialog title — installing the OpenKnowledge skill into the Claude Desktop App
+#. Dialog title — installing the SynapseNote skill into the Claude Desktop App
 #: src/components/InstallInClaudeDesktopDialog.tsx
 msgid "Reinstall for Claude Chat & Cowork"
 msgstr ""
@@ -6210,7 +6177,7 @@ msgid "Restarting"
 msgstr ""
 
 #: src/lib/install-server-drift-listener.ts
-msgid "Restarting closes this project's server. Connected agents (Claude Code, Codex, Cursor) will see their OpenKnowledge MCP connection close unexpectedly — you may need to restart the agent, or toggle its OpenKnowledge MCP server off and on, to reconnect."
+msgid "Restarting closes this project's server. Connected agents (Claude Code, Codex, Cursor) will see their SynapseNote MCP connection close unexpectedly — you may need to restart the agent, or toggle its SynapseNote MCP server off and on, to reconnect."
 msgstr ""
 
 #: src/lib/install-server-drift-listener.ts
@@ -6309,7 +6276,7 @@ msgid "root"
 msgstr ""
 
 #: src/components/settings/TerminalSection.tsx
-msgid "Run a real terminal docked inside OpenKnowledge, starting in this project's folder."
+msgid "Run a real terminal docked inside SynapseNote, starting in this project's folder."
 msgstr ""
 
 #: src/components/InstallInClaudeDesktopDialog.tsx
@@ -6359,7 +6326,7 @@ msgid "Saved with the project for your team."
 msgstr ""
 
 #: src/components/InstallInClaudeDesktopDialog.tsx
-msgid "Saves the file to <0>~/Downloads/openknowledge.skill</0> and opens the Claude Desktop App. Requires Node.js or Bun on your PATH."
+msgid "Saves the file to <0>~/Downloads/synapsenote.skill</0> and opens the Claude Desktop App. Requires Node.js or Bun on your PATH."
 msgstr ""
 
 #: src/components/settings/EmbeddingsKeySection.tsx
@@ -6576,7 +6543,7 @@ msgid "Sending report"
 msgstr ""
 
 #: src/components/ReportBugDialogBody.tsx
-msgid "Sent privately to the OpenKnowledge team, along with your note and app version. Never posted publicly."
+msgid "Sent privately to the SynapseNote team, along with your note and app version. Never posted publicly."
 msgstr ""
 
 #: src/editor/slash-command/items.tsx
@@ -6665,7 +6632,7 @@ msgid "Setup files include: <0>.ok/</0>, AI-tool MCP configs (<1>.mcp.json</1> a
 msgstr ""
 
 #: src/components/ConsentDialogBody.tsx
-msgid "Setup OpenKnowledge in this folder?"
+msgid "Setup SynapseNote in this folder?"
 msgstr ""
 
 #: src/components/FileSidebar.tsx
@@ -6994,7 +6961,7 @@ msgid "Star us on GitHub"
 msgstr ""
 
 #: src/components/NavigatorApp.tsx
-msgid "Start a new OpenKnowledge project."
+msgid "Start a new SynapseNote project."
 msgstr ""
 
 #: src/components/NewItemDialog.tsx
@@ -7014,7 +6981,7 @@ msgid "Start writing to create this page"
 msgstr ""
 
 #: src/lib/install-server-drift-listener.ts
-msgid "Started a fresh OpenKnowledge server (v{appRuntime}) for this dev session — the server already running for this project was terminated. Connected agents (Claude Code, Codex, Cursor) just lost their OpenKnowledge MCP connection; restart the agent, or toggle its OpenKnowledge MCP server off and on, to reconnect."
+msgid "Started a fresh SynapseNote server (v{appRuntime}) for this dev session — the server already running for this project was terminated. Connected agents (Claude Code, Codex, Cursor) just lost their SynapseNote MCP connection; restart the agent, or toggle its SynapseNote MCP server off and on, to reconnect."
 msgstr ""
 
 #: src/components/TemplateBody.tsx
@@ -7132,6 +7099,39 @@ msgstr ""
 
 #: src/components/FileTree.tsx
 msgid "Symlink to {targetPath}"
+msgstr ""
+
+#. placeholder {0}: state.importable
+#: src/components/SkillsSidebarSection.tsx
+msgid "SynapseNote can manage {0} editor skill(s) for this project. Import moves them into .ok/skills and replaces the .claude, .codex, etc. copies with symlinks — one place to edit, in sync everywhere. If those folders are committed to git, review the change first; symlinks can behave differently on some editors and on Windows."
+msgstr ""
+
+#: src/components/ConsentDialogBody.tsx
+msgid "SynapseNote initializes at <0>{projectDir}</0> — the parent of <1>{pickedRelative}</1> because it contains a <2>.git</2> folder (one .ok/ per git repo). <3>Content directory</3> defaults to <4>.</4> (the whole repo); type a sub-folder to narrow it."
+msgstr ""
+
+#: src/components/settings/AccountSection.tsx
+msgid "SynapseNote is using a GitHub account provided by the gh CLI. There's no separate SynapseNote credential to disconnect."
+msgstr ""
+
+#: src/components/settings/AccountSection.tsx
+msgid "SynapseNote is using this GitHub account."
+msgstr ""
+
+#: src/components/ReportBugDialogBody.tsx
+msgid "SynapseNote quit unexpectedly last time."
+msgstr ""
+
+#: src/components/ConsentDialogBody.tsx
+msgid "SynapseNote stores its configuration and internal files inside a newly created <0>.ok</0> directory in your project root folder."
+msgstr ""
+
+#: src/components/CreateProjectDialog.tsx
+msgid "SynapseNote will be initialized at <0>{gitRoot}</0> — the parent of your new folder, because it contains a <1>.git</1> folder (one project per git repo)."
+msgstr ""
+
+#: src/components/AutoSyncEnableWarning.tsx
+msgid "SynapseNote will create commits and push them to your remote automatically. If you do not want automatic commits in your git history, you should not enable auto-sync."
 msgstr ""
 
 #: src/components/settings/SettingsDialogBody.tsx
@@ -7271,7 +7271,7 @@ msgstr ""
 
 #. Subtext for the project runtime-skill row
 #: src/components/settings/ProjectAiToolsSection.tsx
-msgid "Teaches coding agents in this project to read and write through OpenKnowledge."
+msgid "Teaches coding agents in this project to read and write through SynapseNote."
 msgstr ""
 
 #: src/components/CreateProjectDialog.tsx
@@ -7371,7 +7371,7 @@ msgid "That branch is already open in another worktree."
 msgstr ""
 
 #: src/components/ShareReceiveDialog.tsx
-msgid "That folder isn't an OpenKnowledge project yet. Initialize it and open?"
+msgid "That folder isn't an SynapseNote project yet. Initialize it and open?"
 msgstr ""
 
 #: src/components/ShareBranchSwitchDialog.tsx
@@ -7379,7 +7379,7 @@ msgid "The {targetNoun} could not be opened — try navigating to it manually."
 msgstr ""
 
 #: src/components/TemplateForm.tsx
-msgid "The <0>type</0> every document created from this template gets (e.g. <1>research-note</1>). Keeps new docs Open Knowledge Format–conformant."
+msgid "The <0>type</0> every document created from this template gets (e.g. <1>research-note</1>). Keeps new docs SynapseNote Format–conformant."
 msgstr ""
 
 #: src/components/CreatedItemsList.tsx
@@ -7601,7 +7601,7 @@ msgid "This page doesn't link to anything yet."
 msgstr ""
 
 #: src/components/ConsentDialogBody.tsx
-msgid "This path is on an external volume (/Volumes/...). OpenKnowledge will lose track of files when the drive ejects."
+msgid "This path is on an external volume (/Volumes/...). SynapseNote will lose track of files when the drive ejects."
 msgstr ""
 
 #. placeholder {0}: skill.path
@@ -7623,13 +7623,13 @@ msgstr ""
 
 #. placeholder {0}: info.appRuntime
 #: src/lib/install-server-drift-listener.ts
-msgid "This project is running a different, incompatible build of OpenKnowledge than this app (v{0})."
+msgid "This project is running a different, incompatible build of SynapseNote than this app (v{0})."
 msgstr ""
 
 #. placeholder {0}: info.serverRuntime
 #. placeholder {1}: info.appRuntime
 #: src/lib/install-server-drift-listener.ts
-msgid "This project is running an older version of OpenKnowledge (v{0}) than this app (v{1})."
+msgid "This project is running an older version of SynapseNote (v{0}) than this app (v{1})."
 msgstr ""
 
 #: src/components/NewWorktreeDialog.tsx
@@ -7642,7 +7642,7 @@ msgid "This project lives only on this computer. Connect it to GitHub to back it
 msgstr ""
 
 #: src/components/DocumentErrorBoundary.tsx
-msgid "This project's running server doesn't support live editing. Restart OpenKnowledge to fix."
+msgid "This project's running server doesn't support live editing. Restart SynapseNote to fix."
 msgstr ""
 
 #. placeholder {0}: info.serverRuntime
@@ -8096,7 +8096,7 @@ msgid "User"
 msgstr ""
 
 #: src/components/settings/EmbeddingsKeySection.tsx
-msgid "Using the <0>OK_EMBEDDINGS_API_KEY</0> environment variable (managed outside OpenKnowledge)."
+msgid "Using the <0>OK_EMBEDDINGS_API_KEY</0> environment variable (managed outside SynapseNote)."
 msgstr ""
 
 #: src/components/FolderPropertiesCard.tsx
@@ -8170,7 +8170,7 @@ msgid "We couldn't clone this repository."
 msgstr ""
 
 #: src/components/InstallInClaudeDesktopDialog.tsx
-msgid "We'll build <0>openknowledge.skill</0>, save it to <1>~/Downloads</1>, and open the Claude Desktop App for you."
+msgid "We'll build <0>synapsenote.skill</0>, save it to <1>~/Downloads</1>, and open the Claude Desktop App for you."
 msgstr ""
 
 #: src/components/settings/SettingsDialogBody.tsx
@@ -8287,9 +8287,9 @@ msgstr ""
 msgid "Will be saved as <0>{sanitized}</0>."
 msgstr ""
 
-#. Disclosure that Add will overwrite the tool's existing OpenKnowledge MCP entry
+#. Disclosure that Add will overwrite the tool's existing SynapseNote MCP entry
 #: src/components/McpConsentDialogBody.tsx
-msgid "Will replace existing OpenKnowledge entry"
+msgid "Will replace existing SynapseNote entry"
 msgstr ""
 
 #: src/components/settings/SettingsDialogBody.tsx
@@ -8391,11 +8391,11 @@ msgid "You modified <0>{filePath}</0> locally, but it was deleted upstream."
 msgstr ""
 
 #: src/components/ConsentDialogBody.tsx
-msgid "You picked ~/Desktop. OpenKnowledge will index everything on your desktop."
+msgid "You picked ~/Desktop. SynapseNote will index everything on your desktop."
 msgstr ""
 
 #: src/components/ConsentDialogBody.tsx
-msgid "You picked ~/Documents. OpenKnowledge will index every markdown file under it. If you only want to manage a sub-folder, choose a smaller scope."
+msgid "You picked ~/Documents. SynapseNote will index every markdown file under it. If you only want to manage a sub-folder, choose a smaller scope."
 msgstr ""
 
 #: src/components/ConsentDialogBody.tsx
@@ -8407,7 +8407,7 @@ msgid "You picked the filesystem root (/). Scaffolding here will scan every file
 msgstr ""
 
 #: src/components/ConsentDialogBody.tsx
-msgid "You picked your home directory. OpenKnowledge will index everything in your home tree — large and may surface personal files."
+msgid "You picked your home directory. SynapseNote will index everything in your home tree — large and may surface personal files."
 msgstr ""
 
 #: src/components/OnboardingCard.tsx

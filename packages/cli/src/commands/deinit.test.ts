@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { Readable } from 'node:stream';
-import { MCP_SERVER_NAME } from '@inkeep/open-knowledge-server';
+import { MCP_SERVER_NAME } from '@nedian0brien/synapsenote-server';
 import { runDeinit } from './deinit.ts';
 import { buildManagedServerEntry } from './editors.ts';
 
@@ -24,7 +24,7 @@ function seedProject(): string {
     join(dir, '.mcp.json'),
     `${JSON.stringify({ mcpServers: { mine: { command: 'x' }, [MCP_SERVER_NAME]: OWN_ENTRY } }, null, 2)}\n`,
   );
-  write(join(dir, '.claude', 'skills', 'open-knowledge', 'SKILL.md'), '# ok\n');
+  write(join(dir, '.claude', 'skills', 'synapsenote', 'SKILL.md'), '# ok\n');
   // The user's actual content — must survive.
   write(join(dir, 'notes.md'), '# my notes\n');
   return dir;
@@ -78,7 +78,7 @@ describe('runDeinit', () => {
       // OK footprint gone.
       expect(existsSync(join(dir, '.ok'))).toBe(false);
       expect(existsSync(join(dir, '.okignore'))).toBe(false);
-      expect(existsSync(join(dir, '.claude', 'skills', 'open-knowledge'))).toBe(false);
+      expect(existsSync(join(dir, '.claude', 'skills', 'synapsenote'))).toBe(false);
       // .mcp.json: OK entry surgically removed, the user's other server kept.
       const mcp = JSON.parse(readFileSync(join(dir, '.mcp.json'), 'utf-8'));
       expect(mcp.mcpServers[MCP_SERVER_NAME]).toBeUndefined();

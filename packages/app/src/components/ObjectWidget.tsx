@@ -33,14 +33,14 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
+import { Plural, Trans, useLingui } from '@lingui/react/macro';
 import {
   type FrontmatterType,
   type FrontmatterValue,
   frontmatterValuesEqual,
   inferType,
   RESERVED_FRONTMATTER_KEY,
-} from '@inkeep/open-knowledge-core';
-import { Plural, Trans, useLingui } from '@lingui/react/macro';
+} from '@nedian0brien/synapsenote-core';
 import { ChevronRight, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { useFrontmatterBinding } from '@/components/FrontmatterBindingContext';

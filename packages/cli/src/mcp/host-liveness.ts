@@ -1,7 +1,7 @@
 /**
  * Host-liveness watch for the `ok mcp` stdio server.
  *
- * The keepalive WS (`@inkeep/open-knowledge-core/keepalive`) keeps the Node
+ * The keepalive WS (`@nedian0brien/synapsenote-core/keepalive`) keeps the Node
  * event loop alive, which disables the passive "stdin EOF -> loop drains ->
  * exit" path the MCP server otherwise relies on for host-disconnect. Without
  * an active signal, an `ok mcp` whose launching host dies keeps running — it is

@@ -35,7 +35,7 @@ interface PierreRowInit {
   includeAction?: boolean;
   /**
    * Override the two truncate-segment texts. Pierre center-splits a dot-less
-   * name (`open-knowledge` → `open-kn` + `owledge`); `filename`'s
+   * name (`synapsenote` → `open-kn` + `owledge`); `filename`'s
    * extension-split heuristic can't model that, so folder cases pass the halves
    * explicitly.
    */
@@ -357,15 +357,15 @@ describe('applyExtensionBadges — extension badge injection', () => {
   });
 
   test('folder row: recomposes Pierre center-split into a single end-truncating full name', () => {
-    // Pierre center-splits a dot-less folder name (`open-knowledge` →
+    // Pierre center-splits a dot-less folder name (`synapsenote` →
     // `open-kn` + `owledge`), which reads as middle-truncation. The recompose
     // writes the FULL name into the first segment and marks the row so CSS
     // hides the second segment — so it ellipsizes at the end like files do.
     const root = document.createElement('div');
     root.appendChild(
       buildPierreRow({
-        path: 'projects/open-knowledge/',
-        filename: 'open-knowledge',
+        path: 'projects/synapsenote/',
+        filename: 'synapsenote',
         centerSplit: ['open-kn', 'owledge'],
         includeAction: true,
       }),
@@ -378,15 +378,15 @@ describe('applyExtensionBadges — extension badge injection', () => {
     expect(row.hasAttribute(OK_EXT_ROW_ATTR)).toBe(false);
     expect(badgeOf(row)).toBeNull();
     // First segment now carries the full folder name (visible + overflow copies).
-    expect(basenameTextOf(row)).toBe('open-knowledge');
+    expect(basenameTextOf(row)).toBe('synapsenote');
   });
 
   test('folder recompose is idempotent (repeat call leaves the same text node)', () => {
     const root = document.createElement('div');
     root.appendChild(
       buildPierreRow({
-        path: 'projects/open-knowledge/',
-        filename: 'open-knowledge',
+        path: 'projects/synapsenote/',
+        filename: 'synapsenote',
         centerSplit: ['open-kn', 'owledge'],
         includeAction: true,
       }),
@@ -397,8 +397,8 @@ describe('applyExtensionBadges — extension badge injection', () => {
     applyExtensionBadges(root);
     const second = basenameTextOf(root.firstElementChild as HTMLElement);
 
-    expect(first).toBe('open-knowledge');
-    expect(second).toBe('open-knowledge');
+    expect(first).toBe('synapsenote');
+    expect(second).toBe('synapsenote');
   });
 
   test('flattened breadcrumb row (no middle truncate group) is left untouched', () => {
@@ -409,12 +409,12 @@ describe('applyExtensionBadges — extension badge injection', () => {
     const root = document.createElement('div');
     const row = document.createElement('div');
     row.setAttribute('data-type', 'item');
-    row.setAttribute('data-item-path', 'public/open-knowledge/docs/');
+    row.setAttribute('data-item-path', 'public/synapsenote/docs/');
     const content = document.createElement('div');
     content.setAttribute('data-item-section', 'content');
     const flattened = document.createElement('div');
     flattened.setAttribute('data-item-flattened-subitems', '');
-    for (const seg of ['public', 'open-knowledge', 'docs']) {
+    for (const seg of ['public', 'synapsenote', 'docs']) {
       const sub = document.createElement('span');
       sub.setAttribute('data-item-flattened-subitem', seg);
       sub.textContent = seg;

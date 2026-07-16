@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test } from 'bun:test';
 import type { Hocuspocus } from '@hocuspocus/server';
-import { SYSTEM_DOC_NAME } from '@inkeep/open-knowledge-core';
+import { SYSTEM_DOC_NAME } from '@nedian0brien/synapsenote-core';
 import { AgentFocusBroadcaster } from './agent-focus.ts';
 
 function makeMockAwareness() {

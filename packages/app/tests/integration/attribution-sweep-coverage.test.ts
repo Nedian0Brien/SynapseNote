@@ -70,7 +70,7 @@ const REQUIRED_HANDLERS = [
  * local-op handlers whose callers are not agents, and sync orchestrator
  * handlers where the HTTP boundary is control-plane only — the actual commits
  * they produce come from the SyncEngine internally and are already attributed
- * via classified writers (git-upstream, file-system, openknowledge-service).
+ * via classified writers (git-upstream, file-system, synapsenote-service).
  */
 const EXEMPT_HANDLERS = new Set([
   'handleDocumentRead',
@@ -207,7 +207,7 @@ const EXEMPT_HANDLERS = new Set([
   'handleAgentActivity',
   'handleAgentBurstDiff',
   // `/api/install-skill` — local-op style endpoint guarded by
-  // `checkLocalOpSecurity`. Builds `openknowledge.skill` and hands off to
+  // `checkLocalOpSecurity`. Builds `synapsenote.skill` and hands off to
   // the OS file association (Claude Desktop). Operates on the user's
   // ~/Downloads folder on behalf of the local user, not agent content —
   // same rationale as sync/local-op/seed handlers.
@@ -239,7 +239,7 @@ const EXEMPT_HANDLERS = new Set([
   // `packages/server/src/share/construct-url.ts`.
   'handleShareConstructUrl',
   // `/api/share/publish/*` — loopback-only Publish-to-GitHub wizard endpoints.
-  // All three spawn the `open-knowledge share <sub>`
+  // All three spawn the `synapsenote share <sub>`
   // CLI subprocess; the heavy lifting (Octokit + simple-git) lives in the
   // CLI workspace where the token-store lives. Security boundary is
   // `checkLocalOpSecurity`; no agent identity threading required (the

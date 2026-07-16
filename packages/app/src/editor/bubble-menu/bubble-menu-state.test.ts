@@ -8,7 +8,7 @@
  */
 
 import { afterAll, afterEach, beforeAll, describe, expect, test } from 'bun:test';
-import { LinkFidelity } from '@inkeep/open-knowledge-core';
+import { LinkFidelity } from '@nedian0brien/synapsenote-core';
 import { Editor, Extension } from '@tiptap/core';
 import { TextSelection } from '@tiptap/pm/state';
 import StarterKit from '@tiptap/starter-kit';

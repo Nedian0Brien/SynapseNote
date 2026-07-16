@@ -24,7 +24,7 @@ blob-report/
 .cursor/mcp.json
 .claude/
 .codex/
-.open-knowledge/
+.synapsenote/
 .mirror-output/
 /test-doc.md
 

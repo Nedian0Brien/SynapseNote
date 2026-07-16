@@ -29,7 +29,7 @@ import type {
   WorktreeCreateRequest,
   WorktreeCreateResult,
   WorktreeListResult,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { contextBridge, type IpcRendererEvent, ipcRenderer, webUtils } from 'electron';
 import type {
   OkDesktopBridge,

@@ -1,7 +1,7 @@
 export const dynamic = 'force-static';
 
-const APPLE_TEAM_ID = '6NZGSG335T';
-const APP_BUNDLE_ID = 'com.inkeep.open-knowledge';
+const APPLE_TEAM_ID = process.env.SYNAPSENOTE_APPLE_TEAM_ID;
+const APP_BUNDLE_ID = 'kr.lawdigest.synapsenote';
 
 // Path-prefix scope `/d/*` is the share-splash route.
 // Reserve `/s/*`, `/p/*`, etc. for future share surfaces —
@@ -10,12 +10,14 @@ const APP_BUNDLE_ID = 'com.inkeep.open-knowledge';
 // previously listed leaves stale receivers intercepting it until cache expiry.
 const AASA_MANIFEST = {
   applinks: {
-    details: [
-      {
-        appIDs: [`${APPLE_TEAM_ID}.${APP_BUNDLE_ID}`],
-        components: [{ '/': '/d/*', comment: 'Share splash routes' }],
-      },
-    ],
+    details: APPLE_TEAM_ID
+      ? [
+          {
+            appIDs: [`${APPLE_TEAM_ID}.${APP_BUNDLE_ID}`],
+            components: [{ '/': '/d/*', comment: 'Share splash routes' }],
+          },
+        ]
+      : [],
   },
 } as const;
 

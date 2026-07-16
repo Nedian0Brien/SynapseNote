@@ -40,7 +40,7 @@ export const STRINGIFY_OPTIONS: ToStringOptions = {
  * Result of a parse attempt — `null` map when the YAML is malformed or fails
  * `FrontmatterMapSchema`. `parseError` carries a short human-readable reason
  * when `map === null` so server-side callers can include the cause in their
- * log output (this module is in `@inkeep/open-knowledge-core` so it's
+ * log output (this module is in `@nedian0brien/synapsenote-core` so it's
  * browser+Node and can't depend on a logger directly). On success
  * `parseError` is `undefined`.
  */

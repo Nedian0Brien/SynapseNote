@@ -12,14 +12,12 @@
  */
 
 import { resolve as resolvePath } from 'node:path';
-import { isProjectSkillManaged, writeSkillManagement } from '@inkeep/open-knowledge-server';
+import { isProjectSkillManaged, writeSkillManagement } from '@nedian0brien/synapsenote-server';
 import { Command } from 'commander';
 import { accent, dim, error as errorColor, info, success } from '../ui/colors.ts';
 
 export function skillsCommand(): Command {
-  const skills = new Command('skills').description(
-    'Manage Open Knowledge skills for this project.',
-  );
+  const skills = new Command('skills').description('Manage SynapseNote skills for this project.');
 
   skills
     .command('manage')

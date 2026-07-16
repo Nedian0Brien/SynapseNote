@@ -8,7 +8,7 @@
  * focused unit tests in the integration suite at `./construct-url.test.ts`.
  */
 
-import type { ShareConstructUrlErrorCode, ShareFreshness } from '@inkeep/open-knowledge-core';
+import type { ShareConstructUrlErrorCode, ShareFreshness } from '@nedian0brien/synapsenote-core';
 import { getLogger } from '../logger.ts';
 
 /**
@@ -16,7 +16,7 @@ import { getLogger } from '../logger.ts';
  * for GitHub-substrate shares; future cloud / project shares (`/s/`, `/p/`)
  * land via separate path prefixes so old clients don't silently mis-decode.
  */
-export const SHARE_BASE_URL = 'https://openknowledge.ai/d/';
+export const SHARE_BASE_URL = 'https://synapse.lawdigest.kr/d/';
 
 /** Single source of truth for the handler tag used in logs + telemetry. */
 export const SHARE_CONSTRUCT_URL_HANDLER_TAG = 'share-construct-url';

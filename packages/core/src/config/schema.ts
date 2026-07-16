@@ -95,7 +95,7 @@ export const ConfigSchema = z.looseObject({
           agentSettable: false,
           defaultScope: 'project',
           description:
-            'Folder OpenKnowledge reads and writes documents under, relative to the project root (the folder that contains .ok/). Defaults to the project root. Exclude paths with .okignore.',
+            'Folder SynapseNote reads and writes documents under, relative to the project root (the folder that contains .ok/). Defaults to the project root. Exclude paths with .okignore.',
         })
         .default('.'),
       attachmentFolderPath: z
@@ -239,7 +239,7 @@ export const ConfigSchema = z.looseObject({
               agentSettable: false,
               defaultScope: 'project-local',
               description:
-                'Show .ok folders (skills, templates, and other OpenKnowledge-managed state) in the file tree as read-only entries. .ok/worktrees and .ok/local never appear. Per-machine (project-local) — not shared with collaborators.',
+                'Show .ok folders (skills, templates, and other SynapseNote-managed state) in the file tree as read-only entries. .ok/worktrees and .ok/local never appear. Per-machine (project-local) — not shared with collaborators.',
             })
             .default(false),
         })
@@ -263,7 +263,7 @@ export const ConfigSchema = z.looseObject({
         .default(true),
     })
     .default({ wordWrap: true }),
-  // USER-scope: auto-approve OpenKnowledge's OWN MCP tools (and, on Claude, the
+  // USER-scope: auto-approve SynapseNote's OWN MCP tools (and, on Claude, the
   // `ok open` verb) for agents launched from the docked terminal, so the KB
   // read/write loop runs without a per-call approval wall. Destructive/exfil OK
   // tools stay gated (Claude deny-list); other shell + non-OK edits are
@@ -284,7 +284,7 @@ export const ConfigSchema = z.looseObject({
           agentSettable: false,
           defaultScope: 'user',
           description:
-            "Auto-approve OpenKnowledge's own tools (and `ok open` on Claude) for agents launched from the built-in terminal. Destructive tools (delete/move/share/install) still prompt. Per-machine personal preference (user scope).",
+            "Auto-approve SynapseNote's own tools (and `ok open` on Claude) for agents launched from the built-in terminal. Destructive tools (delete/move/share/install) still prompt. Per-machine personal preference (user scope).",
         })
         .default(true),
     })

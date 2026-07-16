@@ -1,5 +1,5 @@
-import type { SkillsListEntry } from '@inkeep/open-knowledge-core';
 import { useLingui } from '@lingui/react/macro';
+import type { SkillsListEntry } from '@nedian0brien/synapsenote-core';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { DeleteConfirmationDialog } from '@/components/DeleteConfirmationDialog';

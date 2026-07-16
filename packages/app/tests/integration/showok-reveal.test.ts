@@ -10,7 +10,7 @@ import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
 import { mkdirSync, mkdtempSync, realpathSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { DocumentListSuccessSchema, SearchSuccessSchema } from '@inkeep/open-knowledge-core';
+import { DocumentListSuccessSchema, SearchSuccessSchema } from '@nedian0brien/synapsenote-core';
 import { createTestServer, type TestServer } from './test-harness';
 
 // Unique body/name tokens so the search-corpus assertions can't false-pass on

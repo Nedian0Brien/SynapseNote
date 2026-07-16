@@ -5,11 +5,11 @@
   "commit": false,
   "fixed": [
     [
-      "@inkeep/open-knowledge",
-      "@inkeep/open-knowledge-core",
-      "@inkeep/open-knowledge-server",
-      "@inkeep/open-knowledge-app",
-      "@inkeep/open-knowledge-desktop"
+      "@nedian0brien/synapsenote",
+      "@nedian0brien/synapsenote-core",
+      "@nedian0brien/synapsenote-server",
+      "@nedian0brien/synapsenote-app",
+      "@nedian0brien/synapsenote-desktop"
     ]
   ],
   "linked": [],

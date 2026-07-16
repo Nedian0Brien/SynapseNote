@@ -5,7 +5,7 @@ import { proxy } from './proxy.ts';
 /**
  * Apple's `swcd` fetches the App Site Association file WITHOUT following
  * redirects and negative-caches a failure for ~8 days. The desktop entitlement
- * declares `applinks:openknowledge.ai` AND `applinks:www.openknowledge.ai`, so
+ * may request both `synapse.lawdigest.kr` and `www.synapse.lawdigest.kr`, so
  * BOTH hosts must serve `/.well-known/apple-app-site-association` as a direct
  * 200 — never a redirect. These tests pin that carve-out alongside the
  * www -> apex canonicalization that applies to every other path.
@@ -15,8 +15,8 @@ function run(host: string, pathAndQuery: string) {
   return proxy(req);
 }
 
-const APEX = 'openknowledge.ai';
-const WWW = 'www.openknowledge.ai';
+const APEX = 'synapse.lawdigest.kr';
+const WWW = 'www.synapse.lawdigest.kr';
 const AASA = '/.well-known/apple-app-site-association';
 
 describe('proxy: www -> apex canonicalization', () => {
@@ -63,7 +63,7 @@ describe('proxy: www -> apex canonicalization', () => {
   });
 
   test('preview/other hosts are not canonicalized to apex', () => {
-    const res = run('open-knowledge-git-feat.vercel.app', '/docs');
+    const res = run('synapsenote-git-feat.vercel.app', '/docs');
     expect(res.headers.get('location')).toBeNull();
     expect(res.status).toBe(200);
   });

@@ -226,12 +226,12 @@ import {
   type WorkspaceSearchScope,
   type WorkspaceSemanticInput,
   WorkspaceSuccessSchema,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import {
   formatRenameSubject,
   formatRollbackSubject,
   resolveGitDirDetailed,
-} from '@inkeep/open-knowledge-core/shadow-repo-layout';
+} from '@nedian0brien/synapsenote-core/shadow-repo-layout';
 import busboy from 'busboy';
 import { fileTypeFromBuffer } from 'file-type';
 import { parse as parseYaml } from 'yaml';
@@ -2627,12 +2627,12 @@ export interface ApiExtensionOptions {
   getSyncEngine?: () => SyncEngine | null;
   /**
    * CLI argv prefix used to spawn subprocesses for /api/local-op/* relay endpoints.
-   * Defaults to ['open-knowledge'] (assumes CLI is on PATH).
+   * Defaults to ['synapsenote'] (assumes CLI is on PATH).
    * Pass [process.execPath, process.argv[1]] from the CLI start command to use
    * the exact runtime that started this server.
    *
    * Example: ['bun', '/path/to/packages/cli/src/cli.ts'] in dev,
-   *          ['open-knowledge'] in production.
+   *          ['synapsenote'] in production.
    */
   localOpCliArgs?: string[];
   /**
@@ -2851,7 +2851,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     agentPresenceBroadcaster,
     onAgentWrite,
     getSyncEngine,
-    localOpCliArgs = ['open-knowledge'],
+    localOpCliArgs = ['synapsenote'],
     projectDir,
     getPrincipal,
     homeDirOverride,
@@ -4462,7 +4462,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
             // journal as the rollback authority. `commitSha: ''` enters the
             // lazy-population window — `commitToWipRefInner`'s post-success
             // hook backfills it from this drain's writer commit. Anonymous
-            // renames attribute to the openknowledge-service writer.
+            // renames attribute to the synapsenote-service writer.
             if (shadowRef?.current) {
               const shadow = shadowRef.current;
               // Extension-only renames change disk state while preserving the logical docName.
@@ -4524,7 +4524,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
                       // Anonymous renames MUST also record a contributor entry
                       // attributed to the service writer. Without it,
                       // `pendingContributors` won't include
-                      // `openknowledge-service`, so when the drain also has
+                      // `synapsenote-service`, so when the drain also has
                       // agent activity the per-writer fan-out commits only the
                       // agent and the service-writer backfill never runs — the
                       // empty-`commitSha` log entry becomes an orphan that the
@@ -5461,7 +5461,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
         // atomically (no Y.Doc mutation on failure). Compute the next fenced
         // bytes INSIDE the transact so a concurrent body edit between read
         // and write is captured by the splice's byte-range delete/insert.
-        let editError: import('@inkeep/open-knowledge-core').FmEditError | undefined;
+        let editError: import('@nedian0brien/synapsenote-core').FmEditError | undefined;
         let applied = false;
         let bodyMutated = false;
         const appliedKeys: string[] = [];
@@ -7756,7 +7756,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
         // Thread agent identity FIRST so the attribution-sweep ordering check
         // is satisfied: any errorResponse below this point is post-identity.
         // Shadow availability + writer-id validation are semantic checks that
-        // would otherwise route through `openknowledge-service` attribution.
+        // would otherwise route through `synapsenote-service` attribution.
         const saveVersionBody = body as unknown as Record<string, unknown>;
         const {
           rawAgentId: svRawAgentId,
@@ -7802,7 +7802,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
               return {
                 id,
                 name: (w.name ?? 'unknown').replace(/[\r\n]/g, ''),
-                email: (w.email ?? 'noreply@openknowledge.local').replace(/[\r\n]/g, ''),
+                email: (w.email ?? 'noreply@synapsenote.local').replace(/[\r\n]/g, ''),
               };
             });
           } catch (e) {
@@ -7826,7 +7826,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
             // Explicit agentId path (MCP checkpoint tool) — scoped to that agent.
             const displayName = svClientName ? `${svAgentName} (${svClientName})` : svAgentName;
             writers = [
-              { id: svAgentId, name: displayName, email: `${svAgentId}@openknowledge.local` },
+              { id: svAgentId, name: displayName, email: `${svAgentId}@synapsenote.local` },
             ];
           } else {
             // A true empty-body Save Version (the UI button) consolidates ALL
@@ -7842,7 +7842,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
                 ? foldable.map((c) => ({
                     id: c.writerId,
                     name: c.writerId,
-                    email: `${c.writerId}@openknowledge.local`,
+                    email: `${c.writerId}@synapsenote.local`,
                   }))
                 : [SERVICE_WRITER];
             foldEnumeratedAll = true;
@@ -11120,7 +11120,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
    * POST /api/local-op/clone
    *
    * Body: { url: string, dir: string }
-   * Spawns: open-knowledge clone --json --dir <dir> <url>
+   * Spawns: synapsenote clone --json --dir <dir> <url>
    * Streams: NDJSON lines via chunked HTTP.
    *
    * Pre-stream errors (security gate, method, body shape, URL/path safety,
@@ -11328,7 +11328,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
   }
 
   /**
-   * Spawn a detached OpenKnowledge server at `dir` and poll the server.lock
+   * Spawn a detached SynapseNote server at `dir` and poll the server.lock
    * until a real port appears. Used by the clone handler to chain
    * clone → server-start → redirect.
    *
@@ -12879,7 +12879,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
   }
 
   /**
-   * `POST /api/install-skill` — build `openknowledge.skill` and open it via
+   * `POST /api/install-skill` — build `synapsenote.skill` and open it via
    * the OS file association so Claude Desktop's native install dialog takes
    * over. Web-host counterpart of the Electron `okDesktop.skill.buildAndOpen`
    * bridge — both delegate to `buildAndOpenSkill` in `skill-install.ts`.
@@ -15263,7 +15263,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
         // replace. The success response reports the accurate resulting host set.
         if (validity.hasScripts) {
           warnings.push(
-            'This skill includes executable `scripts/`. After you install it, the AI agent in your editor (Claude, Cursor, Codex) can run them — Open Knowledge itself never runs anything. Review the scripts before sharing.',
+            'This skill includes executable `scripts/`. After you install it, the AI agent in your editor (Claude, Cursor, Codex) can run them — SynapseNote itself never runs anything. Review the scripts before sharing.',
           );
           warningCodes.push('scripts-present');
         }
@@ -15357,7 +15357,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
   // `/api/skill-targets` — the editable project skill-target set
   // (`.ok/skill-targets.json`, committed). GET reads the effective set; PUT
   // writes a new set and re-projects EVERY managed skill — authored skills
-  // (from the marker) AND OK's shipped `open-knowledge` bundle — to the new
+  // (from the marker) AND OK's shipped `synapsenote` bundle — to the new
   // editors, reverse-projecting from dropped ones. A user/UI action (the set
   // is project-config with teammate-wide blast radius), not agent-attributed.
   async function handleSkillTargets(req: IncomingMessage, res: ServerResponse): Promise<void> {
@@ -15562,7 +15562,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
   );
 
   // `POST /api/skill/update` — refresh an installed starter-pack skill
-  // (`open-knowledge-pack-*`) from OK's currently-bundled source. Opt-in (the UI
+  // (`synapsenote-pack-*`) from OK's currently-bundled source. Opt-in (the UI
   // surfaces it only when `updateAvailable`); never auto-invoked. Checkpoints the
   // current doc FIRST (reversible via version history), then overwrites the
   // content doc VERBATIM from the bundle (preserving the bundled `version`),
@@ -15588,7 +15588,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
             res,
             400,
             'urn:ok:error:invalid-request',
-            'Only starter-pack skills (`open-knowledge-pack-*`) can be updated from the bundle.',
+            'Only starter-pack skills (`synapsenote-pack-*`) can be updated from the bundle.',
             { handler: 'skill-update', detail: 'NOT_A_PACK_SKILL' },
           );
           return;
@@ -16536,7 +16536,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
 
   /**
    * `POST /api/share/construct-url` — read the project's local git state and
-   * emit a marketing-safe share URL (`https://openknowledge.ai/d/<base64url>`)
+   * emit a marketing-safe share URL (`https://synapse.lawdigest.kr/d/<base64url>`)
    * pinned to HEAD branch + the focused doc. Read-only against the working
    * tree: no commits, no pushes, no fetches, no `git ls-remote`.
    * Branch-existence is checked locally against `refs/remotes/origin/<branch>`;
@@ -16995,7 +16995,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
 
   /**
    * GET /api/share/publish/owners — list GitHub owners the user can host a
-   * new repo under (owner eligibility). Spawns `open-knowledge share owners --json` and
+   * new repo under (owner eligibility). Spawns `synapsenote share owners --json` and
    * returns one of:
    *   { ok: true, owners: [...] }
    *   { ok: false, error: 'auth-required' | 'network' }
@@ -17049,7 +17049,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
 
   /**
    * GET /api/share/publish/name-check?owner=<o>&name=<n> — pre-flight a repo
-   * name for conflict. Spawns `open-knowledge share name-check --json
+   * name for conflict. Spawns `synapsenote share name-check --json
    * --owner X --name Y` and returns one of:
    *   { ok: true, available: boolean }
    *   { ok: false, error: 'auth-required' | 'network' }
@@ -17125,7 +17125,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
 
   /**
    * POST /api/share/publish — drive a no-remote project to first share (publish flow).
-   * Spawns `open-knowledge share publish --json --owner ... --name ...
+   * Spawns `synapsenote share publish --json --owner ... --name ...
    * --visibility ... [--description ...] --project-dir <projectDir>` and
    * returns one of:
    *   { ok: true, ownerLogin, repoName, cloneUrl, defaultBranch }

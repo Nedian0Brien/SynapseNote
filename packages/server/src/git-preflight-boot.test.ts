@@ -3,7 +3,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
-import { OK_DIR } from '@inkeep/open-knowledge-core';
+import { OK_DIR } from '@nedian0brien/synapsenote-core';
 import { context, metrics, trace } from '@opentelemetry/api';
 import {
   BasicTracerProvider,
@@ -140,7 +140,7 @@ describe('bootServer git-preflight', () => {
 
     // stderr received the typed error's `.message` (which contains the
     // install guidance composed by `buildMissingMessage`).
-    expect(capturedStderr).toContain('OpenKnowledge needs Git');
+    expect(capturedStderr).toContain('SynapseNote needs Git');
     expect(capturedStderr).toContain('sudo apt install git');
 
     // Structured log emitted BEFORE the re-throw.
@@ -192,7 +192,7 @@ describe('bootServer git-preflight', () => {
     expect(caught).toBe(thrown);
     expect(caught).toBeInstanceOf(GitTooOldError);
 
-    expect(capturedStderr).toContain('OpenKnowledge requires Git 2.31.0 or newer');
+    expect(capturedStderr).toContain('SynapseNote requires Git 2.31.0 or newer');
     expect(capturedStderr).toContain('detected 2.20.0');
     expect(capturedStderr).toContain('/usr/bin/git');
 

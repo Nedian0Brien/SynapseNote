@@ -23,7 +23,7 @@ import {
   type TargetData,
   TERMINAL_CLI_IDS,
   type TerminalCli,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import { VISIBLE_TARGETS } from '@/lib/handoff/targets';
 
 /** The unified key both placements read and write. */

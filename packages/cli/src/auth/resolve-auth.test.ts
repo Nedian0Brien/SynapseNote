@@ -56,7 +56,7 @@ describe('resolveAuth', () => {
     expect(result.tier).toBe('B');
     expect(result.credentialArgs).toEqual([
       '-c',
-      'credential.helper=!open-knowledge auth git-credential',
+      'credential.helper=!synapsenote auth git-credential',
     ]);
   });
 
@@ -78,7 +78,7 @@ describe('resolveAuth', () => {
     expect(result.tier).toBe('C');
     expect(result.credentialArgs).toEqual([
       '-c',
-      'credential.helper=!open-knowledge auth git-credential',
+      'credential.helper=!synapsenote auth git-credential',
     ]);
   });
 

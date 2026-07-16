@@ -19,8 +19,9 @@
  * surfaces (CLI, Tauri IPC) can supply their own without touching this
  * hook.
  */
-import { humanFormat } from '@inkeep/open-knowledge-core';
+
 import { useLingui } from '@lingui/react/macro';
+import { humanFormat } from '@nedian0brien/synapsenote-core';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useConfigContext } from '@/lib/config-provider';

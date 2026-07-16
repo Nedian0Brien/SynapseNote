@@ -1,7 +1,7 @@
 /**
  * Renderer-side share-receive helpers: error/toast mappers, clone URL
  * builder, and the [receive] log formatter. The decision primitives
- * (`selectCandidate` and friends) live in `@inkeep/open-knowledge-core`
+ * (`selectCandidate` and friends) live in `@nedian0brien/synapsenote-core`
  * and now run main-side as part of share-target resolution; this module
  * only re-exports the few core symbols renderer call sites still consume.
  */
@@ -9,7 +9,7 @@
 import {
   canonicalGitHubRemoteUrl as _canonicalGitHubRemoteUrl,
   type ExpectedShareRepo,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 import type {
   CheckTargetExistsResult,
   OkShareReceivedPayload,
@@ -21,7 +21,7 @@ export {
   type BranchMatchOutcome,
   canonicalGitHubRemoteUrl,
   type ExpectedShareRepo,
-} from '@inkeep/open-knowledge-core';
+} from '@nedian0brien/synapsenote-core';
 
 /**
  * Construct the GitHub HTTPS clone URL for the clone path. The Clone wizard's
@@ -69,7 +69,7 @@ export function presentReceiveError(payload: OkShareReceivedPayload): ReceiveErr
   if (payload.kind === 'unsupported-version') {
     return {
       kind: 'unsupported-version',
-      message: 'Update OpenKnowledge to open this share.',
+      message: 'Update SynapseNote to open this share.',
     };
   }
   if (payload.kind === 'invalid') {

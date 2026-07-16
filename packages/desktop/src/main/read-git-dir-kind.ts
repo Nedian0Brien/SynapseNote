@@ -20,7 +20,7 @@
  */
 
 import { isAbsolute } from 'node:path';
-import { resolveGitDirDetailed } from '@inkeep/open-knowledge-core/shadow-repo-layout';
+import { resolveGitDirDetailed } from '@nedian0brien/synapsenote-core/shadow-repo-layout';
 
 /**
  * Discriminator-only projection of `ResolvedGitDir.kind`. Mirrors the source

@@ -8,8 +8,8 @@
  * no-op so this path adds zero overhead.
  */
 
-import type { CreateNewBannerKind } from '@inkeep/open-knowledge-core';
-import { withSpanSync } from '@inkeep/open-knowledge-server';
+import type { CreateNewBannerKind } from '@nedian0brien/synapsenote-core';
+import { withSpanSync } from '@nedian0brien/synapsenote-server';
 import type { EntryPoint } from '../shared/entry-point.ts';
 import type { HandoffOutcome } from './share-handoff.ts';
 

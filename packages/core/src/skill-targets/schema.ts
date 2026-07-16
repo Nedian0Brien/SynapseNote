@@ -5,7 +5,7 @@
  * The editable set of editor host dirs OK projects skills into. Unlike the
  * installed-skills marker (`.ok/local/`, per-machine), this lives at `.ok/`
  * root — COMMITTED, so teammates inherit one target set. Changing it
- * re-projects every managed skill (authored + OK's shipped `open-knowledge`
+ * re-projects every managed skill (authored + OK's shipped `synapsenote`
  * bundle) to the new set and reverse-projects from dropped editors.
  *
  * Kept out of `config.yml` deliberately: config is a CRDT Y.Text doc with no

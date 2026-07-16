@@ -1,7 +1,7 @@
-const REPO_API_URL = 'https://api.github.com/repos/inkeep/open-knowledge';
+const REPO_API_URL = 'https://api.github.com/repos/Nedian0Brien/SynapseNote';
 
 /**
- * Public star count for the inkeep/open-knowledge repo. Shared by the docs
+ * Public star count for the Nedian0Brien/SynapseNote repo. Shared by the docs
  * site nav (server-rendered) and the editor app's Resources menu (client
  * fetch). A missing count is benign — callers fall back to a plain "GitHub"
  * link — so every failure path (network error, timeout, non-200, schema drift)
@@ -27,7 +27,7 @@ export async function getGitHubStars(init?: RequestInit): Promise<number | null>
         // (Next's server fetch) does not set one by default. Browsers send
         // their own UA and silently drop this forbidden header, so it's inert
         // there.
-        'user-agent': 'openknowledge.ai',
+        'user-agent': 'synapse.lawdigest.kr',
       },
       ...restInit,
       signal,

@@ -23,7 +23,7 @@ export const docs = defineDocs({
 
 /**
  * Turn ` ```html preview ` fences into a live <HtmlPreview> iframe, matching
- * OpenKnowledge's own editor: the block renders as an interactive sandboxed
+ * SynapseNote's own editor: the block renders as an interactive sandboxed
  * preview on both surfaces (native in the OK editor, this plugin on the docs
  * site). Raw HTML is base64'd onto the JSX attribute so nothing in the block
  * (quotes, braces, `<`) collides with MDX parsing.

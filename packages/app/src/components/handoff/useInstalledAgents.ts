@@ -20,7 +20,7 @@
  * React wrapper; its tests assert shape + pure host-classifier semantics.
  */
 
-import type { HandoffTarget, InstallState } from '@inkeep/open-knowledge-core';
+import type { HandoffTarget, InstallState } from '@nedian0brien/synapsenote-core';
 import { useEffect, useRef, useState } from 'react';
 import {
   createProbeCoordinator,

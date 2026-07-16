@@ -19,14 +19,14 @@ export type BundleId = 'discovery' | 'project' | 'write-skill';
 /**
  * Frontmatter `name:` each bundle must carry — also its install dir name. The
  * `discovery` + `write-skill` bundles take distinct names so a global-scope
- * skill named `open-knowledge` can't SHADOW the rich project bundle (Anthropic
+ * skill named `synapsenote` can't SHADOW the rich project bundle (Anthropic
  * same-name hierarchy is enterprise > global > project). Reserved
- * `open-knowledge*` prefixes keep authored skills from shadowing built-ins.
+ * `synapsenote*` prefixes keep authored skills from shadowing built-ins.
  */
 export const BUNDLE_SKILL_NAME: Record<BundleId, string> = {
-  discovery: 'open-knowledge-discovery',
-  project: 'open-knowledge',
-  'write-skill': 'open-knowledge-write-skill',
+  discovery: 'synapsenote-discovery',
+  project: 'synapsenote',
+  'write-skill': 'synapsenote-write-skill',
 };
 
 /** Canonical ordered bundle id list (= the keys of `BUNDLE_SKILL_NAME`). */

@@ -12,7 +12,7 @@ import { type RawCloneEvent, runCloneSubprocess, validateCloneInputs } from './c
 // `validateCloneInputs` confines the target to the user's home directory.
 // All clone fixtures use a path under home so the runner-level tests don't
 // trip on the path allowlist.
-const HOME_PATH = join(homedir(), 'open-knowledge-test-clone');
+const HOME_PATH = join(homedir(), 'synapsenote-test-clone');
 
 const fixtureCli = (script: string): readonly string[] => [process.execPath, '-e', script];
 

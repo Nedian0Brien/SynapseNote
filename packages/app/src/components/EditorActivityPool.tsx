@@ -34,8 +34,8 @@
  *   (invalidate + nav), or (c) Activity eviction from the MRU mount list.
  */
 
-import { isManagedArtifactDocName, isMermaidDocFile } from '@inkeep/open-knowledge-core';
 import { t } from '@lingui/core/macro';
+import { isManagedArtifactDocName, isMermaidDocFile } from '@nedian0brien/synapsenote-core';
 import { Loader2, RefreshCw } from 'lucide-react';
 import {
   Activity,

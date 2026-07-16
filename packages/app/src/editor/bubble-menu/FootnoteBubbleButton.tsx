@@ -35,12 +35,12 @@
  * cause, side="bottom"-anchored tooltip away from the page chrome above).
  */
 
+import { useLingui } from '@lingui/react/macro';
 import {
   collectFootnoteIdentifiers,
   findFootnoteDefinitionInsertPos,
   nextFootnoteIdentifier,
-} from '@inkeep/open-knowledge-core';
-import { useLingui } from '@lingui/react/macro';
+} from '@nedian0brien/synapsenote-core';
 import type { Editor } from '@tiptap/react';
 import { useEditorState } from '@tiptap/react';
 import { Superscript } from 'lucide-react';

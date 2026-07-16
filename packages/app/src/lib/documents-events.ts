@@ -1,7 +1,7 @@
-import { DerivedViewChannelSchema } from '@inkeep/open-knowledge-core';
+import { DerivedViewChannelSchema } from '@nedian0brien/synapsenote-core';
 import type { DerivedViewChannel } from '@/lib/cc1';
 
-const DOCUMENTS_CHANGED_EVENT = 'open-knowledge:documents-changed';
+const DOCUMENTS_CHANGED_EVENT = 'synapsenote:documents-changed';
 const DERIVED_VIEW_CHANNELS = new Set(DerivedViewChannelSchema.options);
 
 interface DocumentsChangedDetail {
@@ -47,7 +47,7 @@ export function subscribeToDocumentsChanged(
 // which centralize every branch-source path (boot fetch, CC1
 // `server-info`, CC1 `branch-switched`, reconnect refresh). `null` means
 // no git checkout or detached HEAD — UI consumers hide the row.
-const BRANCH_CHANGED_EVENT = 'open-knowledge:branch-changed';
+const BRANCH_CHANGED_EVENT = 'synapsenote:branch-changed';
 
 interface BranchChangedDetail {
   branch: string | null;
@@ -78,7 +78,7 @@ export function subscribeToBranchChanged(onChange: (branch: string | null) => vo
 // request resolves is sufficient to fan out re-fetches across all
 // `useFolderConfig` instances. Avoids touching `DerivedViewChannelSchema`
 // (shared with the server CC1 surface) for a purely-client concern.
-const TEMPLATES_CHANGED_EVENT = 'open-knowledge:templates-changed';
+const TEMPLATES_CHANGED_EVENT = 'synapsenote:templates-changed';
 
 export function emitTemplatesChanged(): void {
   window.dispatchEvent(new CustomEvent(TEMPLATES_CHANGED_EVENT));
@@ -98,7 +98,7 @@ export function subscribeToTemplatesChanged(onChange: () => void): () => void {
 // `signalChannel('files')`, which reaches other clients via SystemDocSubscriber
 // → `emitDocumentsChanged(['files'])`, and `useSkills` subscribes to BOTH. So a
 // delete in one client updates the list everywhere without a reload.
-const SKILLS_CHANGED_EVENT = 'open-knowledge:skills-changed';
+const SKILLS_CHANGED_EVENT = 'synapsenote:skills-changed';
 
 export function emitSkillsChanged(): void {
   window.dispatchEvent(new CustomEvent(SKILLS_CHANGED_EVENT));

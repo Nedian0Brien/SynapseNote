@@ -25,12 +25,12 @@ import { cn } from '@/lib/utils';
  *   - Electron: calls `window.okDesktop.skill.buildAndOpen()` — main process
  *     builds + saves to ~/Downloads + invokes `shell.openPath`. Claude
  *     Desktop's native install dialog takes over.
- *   - Web: shows the `npx @inkeep/open-knowledge cowork` command
+ *   - Web: shows the `npx @nedian0brien/synapsenote cowork` command
  *     with a copy button. User runs it in their terminal.
  */
 
-const INSTALL_COMMAND = 'npx @inkeep/open-knowledge cowork';
-const DOCS_URL = 'https://openknowledge.ai/docs/integrations/claude-code';
+const INSTALL_COMMAND = 'npx @nedian0brien/synapsenote cowork';
+const DOCS_URL = 'https://synapse.lawdigest.kr/docs/integrations/claude-code';
 
 interface InstallInClaudeDesktopDialogProps {
   open: boolean;
@@ -83,7 +83,7 @@ function StepNumber({ n }: { n: number }) {
 /**
  * The Claude Desktop App upload path — shared across Electron and web
  * modes. This is the MANUAL click-sequence inside the Claude Desktop App
- * that the user has to do after we've put `openknowledge.skill` in their
+ * that the user has to do after we've put `synapsenote.skill` in their
  * Downloads folder. Double-clicking the `.skill` file opens the Claude
  * Desktop App but does NOT auto-install; users upload via the Customize
  * → Skills UI.
@@ -124,7 +124,7 @@ function UploadStepsSection() {
           <StepNumber n={3} />
           <span>
             <Trans>
-              Pick <InlineCode>openknowledge.skill</InlineCode> from your{' '}
+              Pick <InlineCode>synapsenote.skill</InlineCode> from your{' '}
               <strong className="font-medium">Downloads</strong> folder. It enables automatically.
             </Trans>
           </span>
@@ -209,18 +209,18 @@ export function InstallInClaudeDesktopDialog({
           <DialogTitle className="flex items-center gap-2">
             <Download aria-hidden="true" className="h-4 w-4" />
             {reinstall ? (
-              <Trans comment="Dialog title — installing the OpenKnowledge skill into the Claude Desktop App">
+              <Trans comment="Dialog title — installing the SynapseNote skill into the Claude Desktop App">
                 Reinstall for Claude Chat & Cowork
               </Trans>
             ) : (
-              <Trans comment="Dialog title — installing the OpenKnowledge skill into the Claude Desktop App">
+              <Trans comment="Dialog title — installing the SynapseNote skill into the Claude Desktop App">
                 Install for Claude Chat & Cowork
               </Trans>
             )}
           </DialogTitle>
           <DialogDescription>
             <Trans>
-              Adds the OpenKnowledge skill to the{' '}
+              Adds the SynapseNote skill to the{' '}
               <strong className="font-medium text-foreground">Claude Desktop App</strong> so it's
               available in Chat and Cowork sessions.
             </Trans>
@@ -240,7 +240,7 @@ export function InstallInClaudeDesktopDialog({
                   </SectionLabel>
                   <p className="text-1sm text-muted-foreground">
                     <Trans>
-                      We'll build <InlineCode>openknowledge.skill</InlineCode>, save it to{' '}
+                      We'll build <InlineCode>synapsenote.skill</InlineCode>, save it to{' '}
                       <InlineCode>~/Downloads</InlineCode>, and open the Claude Desktop App for you.
                     </Trans>
                   </p>
@@ -280,7 +280,7 @@ export function InstallInClaudeDesktopDialog({
                   </div>
                   <p className="text-1sm text-muted-foreground">
                     <Trans>
-                      Saves the file to <InlineCode>~/Downloads/openknowledge.skill</InlineCode> and
+                      Saves the file to <InlineCode>~/Downloads/synapsenote.skill</InlineCode> and
                       opens the Claude Desktop App. Requires Node.js or Bun on your PATH.
                     </Trans>
                   </p>
@@ -294,8 +294,8 @@ export function InstallInClaudeDesktopDialog({
               <div className="flex items-center gap-2 text-sm">
                 <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
                 <Trans>
-                  Building <InlineCode>openknowledge.skill</InlineCode> and opening the Claude
-                  Desktop App
+                  Building <InlineCode>synapsenote.skill</InlineCode> and opening the Claude Desktop
+                  App
                 </Trans>
               </div>
             )}
@@ -310,7 +310,7 @@ export function InstallInClaudeDesktopDialog({
                       <Trans>File saved & Claude Desktop App opened</Trans>
                     </span>
                     <code className="font-mono text-xs text-muted-foreground">
-                      {phase.path ?? '~/Downloads/openknowledge.skill'}
+                      {phase.path ?? '~/Downloads/synapsenote.skill'}
                     </code>
                   </div>
                 </div>
@@ -329,7 +329,7 @@ export function InstallInClaudeDesktopDialog({
                     </span>
                     <span className="text-1sm text-muted-foreground">
                       <Trans>
-                        File saves to <InlineCode>~/Downloads/openknowledge.skill</InlineCode>.
+                        File saves to <InlineCode>~/Downloads/synapsenote.skill</InlineCode>.
                       </Trans>
                     </span>
                   </div>

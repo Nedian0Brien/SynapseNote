@@ -3,7 +3,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
-import { parseCheckpoint } from '@inkeep/open-knowledge-core/shadow-repo-layout';
+import { parseCheckpoint } from '@nedian0brien/synapsenote-core/shadow-repo-layout';
 import simpleGit from 'simple-git';
 import { gcShadowBranches } from './shadow-branch-gc';
 import { commitWip, initShadowRepo, shadowGit, type WriterIdentity } from './shadow-repo';
@@ -83,8 +83,8 @@ describe('gcShadowBranches', () => {
           GIT_AUTHOR_NAME: writer.name,
           GIT_AUTHOR_EMAIL: writer.email,
           GIT_AUTHOR_DATE: twoDaysAgo,
-          GIT_COMMITTER_NAME: 'openknowledge',
-          GIT_COMMITTER_EMAIL: 'noreply@openknowledge.local',
+          GIT_COMMITTER_NAME: 'synapsenote',
+          GIT_COMMITTER_EMAIL: 'noreply@synapsenote.local',
           GIT_COMMITTER_DATE: twoDaysAgo,
         })
         .raw('commit-tree', treeSha, '-m', 'WIP: old feature')
@@ -244,7 +244,7 @@ describe('per-writer 30-day TTL GC on active branches (US-019, D54, FR-18)', () 
     // Classified writers (any age) — NEVER GC'd
     await createRefWithDate(shadow, `refs/wip/${activeBranch}/file-system`, staleDate);
     await createRefWithDate(shadow, `refs/wip/${activeBranch}/git-upstream`, staleDate);
-    await createRefWithDate(shadow, `refs/wip/${activeBranch}/openknowledge-service`, staleDate);
+    await createRefWithDate(shadow, `refs/wip/${activeBranch}/synapsenote-service`, staleDate);
 
     const result = await gcShadowBranches(shadow, resolve(projectRoot, '.git'));
 
@@ -263,7 +263,7 @@ describe('per-writer 30-day TTL GC on active branches (US-019, D54, FR-18)', () 
     expect(remaining).toContain(`refs/wip/${activeBranch}/agent-S2`);
     expect(remaining).toContain(`refs/wip/${activeBranch}/file-system`);
     expect(remaining).toContain(`refs/wip/${activeBranch}/git-upstream`);
-    expect(remaining).toContain(`refs/wip/${activeBranch}/openknowledge-service`);
+    expect(remaining).toContain(`refs/wip/${activeBranch}/synapsenote-service`);
   });
 
   test('preserves fresh session refs (<30d) on active branches (US-019)', async () => {

@@ -34,7 +34,7 @@
  */
 
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, mock, test } from 'bun:test';
-import { sharedExtensions } from '@inkeep/open-knowledge-core';
+import { sharedExtensions } from '@nedian0brien/synapsenote-core';
 import { Editor, type JSONContent } from '@tiptap/core';
 import type { Node as PmNode } from '@tiptap/pm/model';
 import { createHandlePaste } from '../../src/editor/clipboard/handle-paste';

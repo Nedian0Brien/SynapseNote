@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, mock, test } from 'bun:test';
-import type { WorktreeSelectorModel } from '@inkeep/open-knowledge-core';
+import type { WorktreeSelectorModel } from '@nedian0brien/synapsenote-core';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { createContext, type ReactNode, use, useState } from 'react';
 import type { RecentProjectEntry } from '@/lib/desktop-bridge-types';
