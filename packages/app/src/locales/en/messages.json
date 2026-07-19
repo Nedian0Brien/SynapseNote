@@ -21,6 +21,7 @@
     "-g6KIS": ["Unrecognized link"],
     "-gdcIo": ["Auto-sync is on — your commits push and remote changes pull on intervals."],
     "-i7ik4": ["Collapse burst ", ["burstNumber"], " diff"],
+    "-lAGrG": ["Expand original text"],
     "-lCAuQ": ["Loading graph"],
     "-q4abP": [
       "Results capped — this workspace has more files than search can index. A missing file may be a cap artifact, not a typo."
@@ -53,7 +54,6 @@
     "0Gd0NU": ["Shared"],
     "0LBDjY": ["\"", ["0"], "\" uninstalled — back to a draft"],
     "0NA4b3": ["Keep my version"],
-    "0SBTff": ["Show terminal"],
     "0TnCvC": ["Rename ", ["0"]],
     "0YEbfk": ["Connect to AI tools"],
     "0YUS3Q": ["Subfolder under current folder"],
@@ -81,6 +81,8 @@
     "10g8I_": ["Turn off Only markdown files"],
     "12F9WL": ["(no id)"],
     "16D5Zj": ["Are you sure you want to delete ", ["itemName"], "? This action cannot be undone."],
+    "170Js2": ["Hide panel"],
+    "1A3EXy": ["Expand"],
     "1AumWo": ["Push failed — check the server logs for details."],
     "1EcCom": [["keyName"], " value"],
     "1FLarN": ["Describe what you want to create to continue"],
@@ -101,7 +103,9 @@
     "1di5fu": ["Document not found"],
     "1hvhf0": ["The folder on disk and the id agents use to invoke this skill."],
     "1nke1r": ["Open ", ["0"], " on GitHub (opens in a new tab)"],
+    "1oHl_w": ["No previous chats"],
     "1t_NnN": ["Reject"],
+    "1vaMx1": ["Default Codex chat model"],
     "2277Tu": ["Collapse graph"],
     "237hSL": ["Ended"],
     "25Pw6a": ["Cloning"],
@@ -126,7 +130,6 @@
     "2bVHbB": ["Available in every project on this computer."],
     "2fkdnR": ["Nothing to undo on this file"],
     "2hYmUH": ["my@email.com"],
-    "2hpdRq": ["Hide panel (", ["panelShortcutLabel"], ")"],
     "2j1kfc": ["Enter a valid URL (for example https://api.openai.com/v1)."],
     "2myNzt": ["We've filed it with the team and attached your logs."],
     "2n3oDU": [
@@ -196,6 +199,7 @@
     "44DSl0": [
       "Already have a git repository? Add it with <0>git remote add origin <url></0> in this project's folder. This page updates automatically once a remote is detected."
     ],
+    "45KtD1": ["Lines ", ["0"], "–", ["1"]],
     "45MZFs": ["Commands"],
     "47EXvY": [
       "This replaces the current skill content with the bundled version ",
@@ -256,6 +260,7 @@
     "5ALjdr": ["Move through visual-editor find results from the find field."],
     "5Ajb15": ["The formula <0>c = √(a² + b²)</0> renders inline."],
     "5ClEAu": ["Inline hashtag for cross-doc grouping."],
+    "5Cywg6": ["Keep a private reading note or attach a passage you want to revisit."],
     "5D3Ior": ["Hide folder"],
     "5D6ZiF": [
       "SynapseNote can manage ",
@@ -292,6 +297,7 @@
     ],
     "5kWklo": ["(some may already be hidden by other rules)"],
     "5lWFkC": ["Sign in"],
+    "5lrAsI": ["Collapse original text"],
     "5mksg0": ["Failed to disable semantic search — ", ["detail"]],
     "5qNxOe": [
       [
@@ -311,6 +317,7 @@
     ],
     "5wV2qQ": ["and more"],
     "5y_9lO": ["Waiting for authorization"],
+    "6-w63Z": ["Line ", ["0"]],
     "6-wLTJ": [["behind"], " behind origin"],
     "60vpJN": ["What were you doing?"],
     "62Pc08": ["Install for Claude Chat & Cowork (Desktop App)"],
@@ -321,6 +328,7 @@
     "6HCOwA": ["Failed to open."],
     "6KCH4m": ["Hidden files"],
     "6LbUG7": ["The repository is private and your GitHub account doesn't have access to it."],
+    "6MBQXo": ["PDF links"],
     "6MnZEC": ["Terminal failed to load"],
     "6O626z": ["No headings match \"", ["trimmedAnchorQuery"], "\""],
     "6Pxqwv": [
@@ -344,6 +352,7 @@
     "6gRgw8": ["Retry"],
     "6h4zVU": ["What would you like to create?"],
     "6hfDJr": ["Server error: ", ["status"]],
+    "6iDEWA": ["Show panel"],
     "6ibbCg": ["Create your first file"],
     "6ki7F2": [["0", "plural", { "one": ["#", " item"], "other": ["#", " items"] }]],
     "6lGV3K": ["Show less"],
@@ -364,6 +373,7 @@
     "7FamGZ": ["Go to line"],
     "7Fkcej": ["+ Add ", ["addChildName"]],
     "7H4UHD": ["Documents tagged <0>#", ["tagName"], "</0>"],
+    "7Hl5YS": ["Download PDF copy"],
     "7JtSLi": ["Failed to delete path"],
     "7KeV5F": ["Undo all failed: ", ["message"]],
     "7OhaRy": ["Source search"],
@@ -425,6 +435,7 @@
       "This template lives in a parent folder — deleting it affects every folder beneath it that doesn't define its own version."
     ],
     "8vETh9": ["Show"],
+    "8zYFj7": ["Unsupported link"],
     "92rbk2": ["Mirror loading <0>", ["mirrorRef"], "</0>"],
     "96G6Re": ["New folder"],
     "96w9hU": ["Something went wrong opening this file (HTTP ", ["status"], ")."],
@@ -452,6 +463,7 @@
     "9fhQRL": ["Beta channel"],
     "9fvog2": ["Preview unavailable: ", ["errorDetail"]],
     "9i21pa": ["Commits happen automatically"],
+    "9jLt6q": ["PDF outline"],
     "9jnjV0": ["Embed an audio file with native player controls."],
     "9mEZeD": [["name"], " CLI"],
     "9npOH9": ["Open file"],
@@ -516,6 +528,7 @@
     "ArBWJf": ["Undo last edit"],
     "AsqRE_": ["Default location for new attachments"],
     "AtBdnD": ["Couldn't delete skill: ", ["error"]],
+    "AwEQaN": ["Markdown formatting"],
     "B11p-O": ["Edit markdown link"],
     "B2DrPb": ["Auto-save"],
     "B2Srgd": [["packName"], " skill installed."],
@@ -530,6 +543,7 @@
     "BAH4qX": ["Selected graph item"],
     "BBqGS9": ["Desktop"],
     "BD0XSC": ["Failed to load project templates"],
+    "BE6eVB": [["label"], " on page ", ["0"]],
     "BEkF-P": [
       ["userName"],
       ", ",
@@ -563,6 +577,9 @@
     "CMtN5P": ["Collapse attached context"],
     "CSIkhP": ["Take a look if you'd like — this exact file is what we receive."],
     "CSL0l1": ["Couldn't clear the key — please try again."],
+    "CSW8j0": [
+      "Used when you start a new Claude chat. You can still change the model in the chat composer."
+    ],
     "CTJLpz": ["\"", ["trimmed"], "\" already exists here"],
     "CU3AiE": ["Switching branches"],
     "CWzc2T": [
@@ -586,6 +603,7 @@
     "CvsD6Y": ["via ", ["viaTags"]],
     "D-Oh1s": ["How to set up ", ["0"], " (opens in browser)"],
     "D12vtS": ["(detached)"],
+    "D1CRlg": ["No pages link to this PDF yet."],
     "D4H2N6": ["Remove ", ["tag"]],
     "D8OV7J": ["Only collaborators"],
     "DDTdLl": ["Code block settings"],
@@ -742,6 +760,7 @@
     "GF51cw": [
       "Give the AI tools you use access to read and update your projects. Pick what to set up below, and change it anytime."
     ],
+    "GGq0nf": ["Earlier memo"],
     "GGsM4y": ["Selected in graph"],
     "GHsJb8": ["Show .ok folders"],
     "GK-IRZ": ["Undo buttons are disabled — per-session state has been garbage-collected."],
@@ -776,6 +795,7 @@
     "HM56Bx": ["Creating..."],
     "HPTPGr": ["Create a new spec file for my user story"],
     "HSh8u_": ["Folders"],
+    "HWAICJ": ["Open ", ["0"]],
     "HXFyWD": ["Split diff"],
     "HdkSiO": ["New file"],
     "HfI1dR": ["I already have it locally →"],
@@ -833,6 +853,7 @@
     "Ixxhlr": [
       "SynapseNote stores its configuration and internal files inside a newly created <0>.ok</0> directory in your project root folder."
     ],
+    "IyLOqi": ["No memos have been created from this PDF yet."],
     "J2MgzQ": ["Undo all edits on ", ["docName"]],
     "J2Mv98": ["Name (e.g. ", ["login"], ")"],
     "J2eKUI": ["File"],
@@ -872,7 +893,6 @@
     "K9J00P": ["Clone failed — connection error"],
     "KDuPiY": ["Uploading ", ["fileName"]],
     "KDw4GX": ["Try again"],
-    "KFdXwz": ["Show panel (", ["panelShortcut"], ")"],
     "KOZud0": [
       "Build a competitor research knowledge base. Start with an overview page, then add cross-linked pages for each competitor, their products and pricing, and the sources behind every claim."
     ],
@@ -886,6 +906,7 @@
     "KZLdgR": ["See <0>#design-docs</0> for the latest specs."],
     "K_vT1F": ["Upstream sync"],
     "KaFCD3": ["Open this link in a new tab and collapse the graph."],
+    "Kbwvno": ["Memo"],
     "Kf7GG5": ["Restarting the server…"],
     "Kgdbkt": ["Switch to local-only refused"],
     "Kgsk80": [
@@ -993,7 +1014,6 @@
     "Mnavhe": [["propPanelDescriptorLabel"], " Properties"],
     "MqQoV-": ["Describe what you want to build, start a blank file, or scaffold from a template."],
     "MrwYIK": ["Toggle a source comment through CodeMirror."],
-    "MsuXaI": ["Hide panel (", ["panelShortcut"], ")"],
     "Mt8xTa": [
       "SynapseNote will be initialized at <0>",
       ["gitRoot"],
@@ -1036,6 +1056,7 @@
       "Read through this codebase and draft a technical spec for the most complex module: an overview, the architecture, key files, and open questions, all linked from a specs index page."
     ],
     "NcurBF": ["Pan down"],
+    "Ndl4nx": ["This PDF does not contain external links."],
     "NjrIak": ["File: <0>", ["fixedName"], ".md</0>"],
     "NkXEFS": ["Restore failed — document unchanged"],
     "NmPNJJ": ["Copy code"],
@@ -1045,6 +1066,7 @@
     "Nu4DdT": ["Sync"],
     "Nu4oKW": ["Description"],
     "NuH1jp": ["Public repository"],
+    "NuQ3BF": ["PDF copy downloaded"],
     "Nv3mUj": ["Show advanced"],
     "NvOvTi": ["Create in <0>", ["dirDisplay"], "</0>"],
     "Nx7BWE": ["Git auto-sync"],
@@ -1066,6 +1088,7 @@
     ],
     "OJTOUj": ["Requires ", ["brand"], "."],
     "OJeiSH": ["Failed to add property"],
+    "OL7Cmu": ["Memos"],
     "OLBz-_": ["Mermaid diagram failed to render."],
     "OLIKgw": ["Drag item ", ["0"], " to reorder"],
     "ONKmYs": [
@@ -1191,8 +1214,10 @@
     "RGCCrg": ["Copy share link"],
     "RGkNeJ": ["Initialize a starter pack"],
     "RJ3a8Z": ["Looking for <0>", ["lookingForUrl"], "</0>."],
+    "RQYR3_": ["PDF memo"],
     "RSqaSd": ["Project root"],
     "RVZJWQ": ["Search projects..."],
+    "RVd45A": ["Cancel memo"],
     "RXNu_r": ["Shared via git with everyone working on this project."],
     "RY6Bq1": ["Open shared ", ["targetNoun"]],
     "RaPMZv": ["Keyboard shortcuts available in the editor and workspace."],
@@ -1317,6 +1342,7 @@
     "UhpfxY": ["Pan left"],
     "UkQGhd": ["Hide replace"],
     "Up2_7p": ["Copy full path"],
+    "UrMR0L": ["This removes the memo from this device and cannot be undone."],
     "Utjflc": [
       "Started a fresh SynapseNote server (v",
       ["appRuntime"],
@@ -1339,6 +1365,7 @@
     "VIwCaD": ["Entry"],
     "VM7H66": ["This file is binary and can't be shown as text."],
     "VNgKZz": ["Advanced settings"],
+    "VQzVGk": ["Attach selection"],
     "VTulZj": ["Open in worktree"],
     "VU3Nrn": ["Missing"],
     "VUijjF": ["Embed an image with optional alt text."],
@@ -1367,9 +1394,11 @@
     "W5A0Ly": ["An unexpected error occurred."],
     "W6240X": ["Fast on"],
     "W8vpBM": ["starter pack"],
+    "W91Kbn": ["Saved memos"],
     "W9_Bub": ["Local changes overlap with incoming sync"],
     "WALN45": ["Switch to ", ["shareBranch"]],
     "WHPvOb": ["All files are hidden by view filters."],
+    "WI0cPZ": ["Previous chats"],
     "WL6puM": ["Path resolves outside project"],
     "WM-NnH": ["Your report couldn't be sent — try again or email it instead."],
     "WMIKXK": [
@@ -1380,6 +1409,7 @@
     "WPwDin": ["Open folder on disk"],
     "WR0y2O": ["Share folder"],
     "WRNXKp": ["Searching"],
+    "WVYfmP": ["Delete highlight"],
     "WWcqsG": ["Start here: what this is and how it's organized."],
     "WZ-vBy": [
       "Permanently deletes <0>",
@@ -1391,6 +1421,7 @@
     "Wcv-Zi": ["Make this knowledge base available as a Claude Skill."],
     "We7h2I": ["📝 or assets/icon.png"],
     "Weq9zb": ["General"],
+    "WfSttw": ["Saving PDF"],
     "Wgmlsw": ["Fetching"],
     "Wh0im4": ["editing [[", ["realCurrentDoc"], "]]"],
     "WhOsNE": ["Strikethrough"],
@@ -1408,6 +1439,7 @@
     "X7u0xR": [["0"], " templates available"],
     "X8kjQX": ["Re-authenticate with GitHub"],
     "X9VpsP": ["Loading folder contents"],
+    "XAb5o5": ["Claude chat"],
     "XAyxsa": ["Check out remote branch"],
     "XDzAnp": ["Opens in a new tab"],
     "XH30C4": ["document"],
@@ -1473,6 +1505,7 @@
     "Z5h97D": [
       "Hide files and folders from your knowledge base. Hidden items don’t appear in the file tree, search, or AI tools. <0>Learn more about patterns</0>."
     ],
+    "Z6ypoX": ["Write a note, question, or takeaway"],
     "Z8KDox": ["Enter a folder name (e.g. brain)."],
     "Z8lGw6": ["Share"],
     "ZARuZJ": ["Couldn't load files"],
@@ -1550,6 +1583,7 @@
     "_rP3HI": [["minutes"], "m ago"],
     "_tekeB": ["updated folder properties"],
     "_tjopj": ["Paste duplicate"],
+    "_zMH_i": ["No annotation text"],
     "a-cKXz": ["Select all source"],
     "a3H_MR": ["Open and focus the Ask AI composer for the current editor selection."],
     "a5Gha5": ["Local changes blocked the merge"],
@@ -1595,6 +1629,7 @@
     "bBE5tC": ["Detected on this machine"],
     "bBcFK_": ["Open emoji picker for ", ["keyName"]],
     "bD8I7O": ["Complete"],
+    "bEdci0": ["This PDF does not contain document bookmarks."],
     "bGa3Fk": ["Uploading file"],
     "bH382I": ["Edit this HTML — the preview updates live."],
     "bJKq1H": [
@@ -1616,10 +1651,12 @@
     "bkQRMh": ["Paragraph"],
     "blFttG": ["Search projects"],
     "bmC18N": ["Clearing local collaboration data for \"", ["docName"], "\" before reconnecting."],
+    "bpz7Pp": ["Annotations"],
     "brCtGB": ["History unavailable"],
     "bsFQMd": [
       "Restarting closes this project's server. Connected agents (Claude Code, Codex, Cursor) will see their SynapseNote MCP connection close unexpectedly — you may need to restart the agent, or toggle its SynapseNote MCP server off and on, to reconnect."
     ],
+    "btjbu7": ["Original text"],
     "bultyE": [
       "When enabled, the agent opens or refreshes the preview after each edit. Disable if you manage your own preview window (OK Desktop, a browser tab on another display, etc.)."
     ],
@@ -1652,6 +1689,7 @@
     "chL5IG": ["Community"],
     "cklVjM": ["Timeline"],
     "cnGeoo": ["Delete"],
+    "co4atP": ["Default Claude chat model"],
     "cqQyPB": ["Folder name"],
     "crqzW5": ["AI tools"],
     "cs4mps": ["Config sharing"],
@@ -1676,6 +1714,7 @@
       ["currentBaseLabel"],
       "</1>, in its own worktree under <2>.ok/worktrees/</2>."
     ],
+    "dGhNXs": ["New Codex chat"],
     "dIYSqk": ["remote"],
     "dJw2_7": ["Saved with the project for your team."],
     "dMsx3p": ["Home page and navigation hub."],
@@ -1742,6 +1781,7 @@
     "f8jU-L": [["0"], "/", ["1"], " — ", ["2"]],
     "f9lQNJ": ["Adds a managed block to"],
     "fBHvBn": ["There's no project folder for this window, so a terminal can't start here."],
+    "fFIK1D": ["Codex chat"],
     "fG0X0e": ["Install ", ["brand"], " →"],
     "fIgqfQ": ["Reinstalling"],
     "fJgQHX": ["Failed to create file"],
@@ -1781,6 +1821,7 @@
     ],
     "gJR87V": ["Could not create the project folder. Pick a different folder."],
     "gKi-a_": ["New project"],
+    "gPWqiV": ["Edit memo"],
     "gQV-9w": [
       "Branch switched but the ",
       ["targetNoun"],
@@ -1805,6 +1846,7 @@
     "gk_-qj": ["Couldn't rename template: ", ["0"]],
     "gljvbT": [["words", "plural", { "one": ["word"], "other": ["words"] }]],
     "glzsS_": ["Pan right"],
+    "gmC_fw": ["New Claude chat"],
     "gmJ0An": ["Failed to open folder."],
     "goO4Ll": ["Editor status bar"],
     "gp3I7-": ["Before syncing, set your identity for git commits:"],
@@ -1890,12 +1932,14 @@
     "iGCs04": ["No templates available"],
     "iH8pgl": ["Back"],
     "iHAJDj": ["Resolving default location"],
+    "iJy9qW": ["Private to this device"],
     "iKSP5j": ["Word wrap"],
     "iKZkk1": ["Property value"],
     "iMkWoF": ["Turn on"],
     "iNFKkm": ["No diff."],
     "iO8V-7": ["Create worktree"],
     "iOHg1t": ["Open embedded URL in new tab"],
+    "iPZdZP": ["Document memos"],
     "iSLIjg": ["Connect"],
     "iSQTsg": ["Ordered list"],
     "iSnkwB": ["Failed to open cloned project."],
@@ -1939,7 +1983,9 @@
     "jdGUeI": ["Couldn't create template: ", ["error"]],
     "jerqF0": ["Loading branch state"],
     "jhtG3I": [" Your selection has been restored."],
+    "jjkiiq": ["Delete this memo?"],
     "jjtmV_": ["First file name"],
+    "jkZFIw": ["No memo text"],
     "jol95m": ["Failed to open Project Navigator."],
     "jtg_8-": [
       "Build a knowledge wiki about the different types of flightless birds. Start with an overview page, then add cross-linked pages for each major group (ratites like ostriches, emus, and kiwis; penguins; and flightless rails), the regions they live in, and a timeline of how flightlessness evolved."
@@ -1966,6 +2012,7 @@
     ],
     "kCqCyf": ["Open CodeMirror's lint diagnostics panel."],
     "kFLlsI": ["Insert a footnote reference + matching definition stub."],
+    "kFT0E0": ["Add a memo"],
     "kLv8d3": [
       "Your copy of branch <0>",
       ["shareBranch"],
@@ -2019,6 +2066,7 @@
     "lI0Td2": ["Use letters, digits, <0>_</0> and <1>-</1> only."],
     "lIn9L9": ["Disable sync"],
     "lPzyrU": ["All hunks resolved"],
+    "lQrfWj": ["Load previous chat"],
     "lVWEIL": ["Indexed ", ["embedded"], " of ", ["total"], " pages."],
     "lWNpNB": ["Add cursors or select matching occurrences through CodeMirror."],
     "lWrKCi": ["Start a new SynapseNote project."],
@@ -2040,6 +2088,7 @@
     "lyWa43": ["Project-level disconnected pages"],
     "lzmtKp": ["Failed to load folder properties: ", ["message"]],
     "lzwo7p": ["Could not open GitHub sign-in. Please try again."],
+    "m-l4Ir": ["Remove attached selection"],
     "m16xKo": ["Add"],
     "m2T1Xj": ["Tag #", ["tagValue"], ", ", ["uses"]],
     "m4v3XT": ["Undo last edit on ", ["docName"]],
@@ -2101,9 +2150,11 @@
       ". Any local edits will be replaced — your current version is saved to history first, so you can restore it."
     ],
     "nDT8qt": ["Initialized ", ["0"], " but could not open it."],
+    "nG_uo_": ["External links"],
     "nJq7et": ["Couldn't uninstall skill: ", ["0"]],
     "nNYV3Y": ["and ", ["remaining"], " more"],
     "nP-KFo": ["New ", ["0"], " chat"],
+    "nSS8yS": ["New memo"],
     "nTwL53": ["Open a doc to share its URL."],
     "nUNZL4": ["Ask ", ["0"]],
     "nWv1ja": ["Manage hidden files in Settings → Ignore patterns."],
@@ -2121,6 +2172,7 @@
     "nh3wwx": ["Embeddings provider key"],
     "njBeMm": ["Both"],
     "njU86j": ["Property \"", ["trimmed"], "\" already exists"],
+    "nm_e2c": ["PDF saved"],
     "noH1JX": [
       "Couldn't reach collab server — ",
       ["errorDetail"],
@@ -2235,6 +2287,7 @@
     ],
     "qAx7xG": ["Fixed folder in content root"],
     "qEIFZu": ["Key ending in ", ["keyHint"]],
+    "qEb0iT": ["Delete memo"],
     "qEue6Q": [" or "],
     "qFWMl-": ["View as text"],
     "qNOgUu": ["Edits at the source land here — no copy-paste drift."],
@@ -2270,6 +2323,7 @@
     "qurSX8": ["Model settings"],
     "qvWGzP": ["Collapse all"],
     "qyLmWw": ["Source editor search panel"],
+    "qzsXzo": ["Not saved"],
     "r-OJYm": ["Enter a valid branch name (no spaces, no leading dot, no \"..\")."],
     "r2huLx": ["Undo, redo, or undo selection changes through CodeMirror history."],
     "r4R7AZ": ["Network error during cleanup"],
@@ -2304,6 +2358,7 @@
     "roiUQQ": ["This page doesn't link to anything yet."],
     "rppgXF": ["Disconnecting"],
     "rssK8c": ["Ignore patterns (raw text)"],
+    "rtJdiz": ["Save PDF"],
     "rtdR4v": ["Show or hide Files"],
     "rwrPbS": ["Component boundary navigation"],
     "s-MGs7": ["Resources"],
@@ -2314,6 +2369,7 @@
     "s0_GnA": ["Opening ", ["openingLabel"], "…"],
     "s1c0ja": ["Bullet List"],
     "s3caR3": ["Deleting"],
+    "sBJ5MF": ["Sources"],
     "sE7R19": [
       "Could not load templates: ",
       ["templatesError"],
@@ -2400,7 +2456,6 @@
     "u3YnKw": ["Could not construct share URL."],
     "u3wRF-": ["Published"],
     "u6Hp4N": ["Markdown"],
-    "u7H-Wn": ["Show panel (", ["panelShortcutLabel"], ")"],
     "u7U_Ij": ["Link the selected text, or edit the link under the caret."],
     "uA_jXp": ["Switch and update branch"],
     "uCaIdy": ["GitHub sign-in is missing or expired. Reconnect to resume syncing."],
@@ -2464,6 +2519,8 @@
     "vEJDlt": ["The file is in your Trash; the file-watcher will reconcile."],
     "vGeNNQ": ["Copy a prompt and paste it into your agent to set up your project."],
     "vIxrEk": ["Fit width"],
+    "vKBvJI": ["Web sources"],
+    "vKC52t": ["No annotations"],
     "vLyv1R": ["Hide"],
     "vQIVHc": ["Folder properties"],
     "vWc9a0": ["Type to edit; <0>⌘ Enter</0> saves, <1>Esc</1> cancels."],
@@ -2474,6 +2531,8 @@
     "vhAnzJ": ["Turn on semantic search?"],
     "viwC-K": ["Failed to remove project."],
     "vppAju": ["Where newly added attachments are placed."],
+    "vqzE_e": ["No memos yet"],
+    "vrbCmk": ["Add memo"],
     "vv7kpg": ["Cancelled"],
     "vvWZnu": ["Diff unavailable"],
     "w3tVpc": ["No links yet. Add wiki links or markdown links to build a graph."],
@@ -2488,6 +2547,7 @@
     "wJijgU": ["Location"],
     "wJo9oS": ["Close find"],
     "wQp1V3": ["Mirror of <0>", ["src"], "</0>"],
+    "wRR604": ["Pages"],
     "wT4iQr": ["Open visual-editor find with replace controls expanded."],
     "wTcjov": ["No workspace"],
     "wVa83H": ["Couldn't create the report"],
@@ -2521,6 +2581,7 @@
       ")"
     ],
     "x57cJf": ["Open link"],
+    "xADcr8": ["Saved on this device"],
     "xCJdfg": ["Clear"],
     "xCdTnb": ["Close new tab"],
     "xDAtGP": ["Message"],
@@ -2552,6 +2613,7 @@
     "xeiujy": ["Text"],
     "xhlFsx": ["Inherited — set a value here to replace it."],
     "xiv-dW": ["No files yet."],
+    "xlD-bU": ["Select PDF text to add a highlight or memo."],
     "xloBjn": ["Relative Path"],
     "xnP32l": ["No description yet — add one so agents know when to use this skill."],
     "xrVr_k": ["Couldn't create skill: ", ["0"]],
@@ -2589,6 +2651,9 @@
     "yWSvcf": ["Content root"],
     "yWWThY": ["Asset reference"],
     "yYR6za": ["Display text"],
+    "yYrP5d": [
+      "Used when you start a new Codex chat. You can still change the model in the chat composer."
+    ],
     "yZmvQ4": ["This project's server (v", ["0"], ") is newer than this app (v", ["1"], ")."],
     "y_5CE8": ["Item ", ["0"]],
     "y_K0Dz": ["What happened?"],
@@ -2603,6 +2668,7 @@
     "yitgD9": ["Failed to load skill targets: ", ["0"]],
     "yjExfe": ["Branch <0>", ["shareBranch"], "</0> is checked out in:"],
     "ylXj1N": ["Selected"],
+    "ylocBd": ["Edit PDF memo"],
     "ymWJLd": ["Show ", ["0"], " more"],
     "ynIa4S": ["Visual editor list item"],
     "ypw6My": ["Showing top ", ["0"], " headings — keep typing to narrow"],
@@ -2626,11 +2692,13 @@
     "zLak8b": ["Activate new tab"],
     "zQBg2C": ["Move the current block up or down one position."],
     "zUhPuR": ["Open containing folder, ", ["hint"]],
+    "zVzslF": ["PDF save failed. Retry"],
     "zXj1rA": ["Search by meaning"],
     "zZ_I5K": ["Open project menu"],
     "zaXlhf": [
       "The properties block at the top of this doc has a formatting error. Switch to source mode to fix it."
     ],
+    "zbYWsV": ["Save memo"],
     "zbymaY": [["0"], "m ago"],
     "zd00pH": ["Copy Path"],
     "zgSFyG": ["External link"],

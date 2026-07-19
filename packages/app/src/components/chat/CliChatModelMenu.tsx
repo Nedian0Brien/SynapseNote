@@ -27,6 +27,7 @@ interface CliChatModelMenuProps {
   readonly value: CliChatModelSettings;
   readonly onValueChange: (value: CliChatModelSettings) => void;
   readonly disabled?: boolean;
+  readonly onClose?: () => void;
 }
 
 const CODEX_MODELS: readonly CliChatModel[] = [
@@ -89,6 +90,7 @@ export function CliChatModelMenu({
   value,
   onValueChange,
   disabled = false,
+  onClose,
 }: CliChatModelMenuProps) {
   const { t } = useLingui();
   const models = cli === 'codex' ? CODEX_MODELS : CLAUDE_MODELS;
@@ -149,7 +151,14 @@ export function CliChatModelMenu({
           <ChevronDownIcon aria-hidden="true" className="size-3" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-72">
+      <DropdownMenuContent
+        align="start"
+        className="w-72"
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          onClose?.();
+        }}
+      >
         <DropdownMenuLabel>{t`Model settings`}</DropdownMenuLabel>
         <DropdownMenuRadioGroup
           value={value.model}

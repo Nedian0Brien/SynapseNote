@@ -6,6 +6,7 @@ import {
   AgentActivitySuccessSchema,
   AgentBurstDiffSuccessSchema,
   AgentPresenceEntrySchema,
+  CurrentDocumentSuccessSchema,
   InstalledAgentsSuccessSchema,
   MetricsAgentPresenceSuccessSchema,
   MetricsParseHealthSuccessSchema,
@@ -309,6 +310,27 @@ describe('MetricsAgentPresenceSuccessSchema', () => {
   });
   test('rejects body missing presence field', () => {
     expect(MetricsAgentPresenceSuccessSchema.safeParse({}).success).toBe(false);
+  });
+});
+
+describe('CurrentDocumentSuccessSchema', () => {
+  test('parses a focused current viewer and the connected viewer list', () => {
+    const viewer = {
+      clientId: 42,
+      document: 'notes/active',
+      focused: true,
+      visible: true,
+      updatedAt: 1714512345000,
+    };
+    expect(
+      CurrentDocumentSuccessSchema.safeParse({ current: viewer, viewers: [viewer] }).success,
+    ).toBe(true);
+  });
+
+  test('parses the no-connected-editor state', () => {
+    expect(CurrentDocumentSuccessSchema.safeParse({ current: null, viewers: [] }).success).toBe(
+      true,
+    );
   });
 });
 

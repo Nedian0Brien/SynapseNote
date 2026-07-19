@@ -58,9 +58,10 @@ export const MathInline = Node.create({
       // Forward-compat — reserved for future MathJax / Typst / AsciiMath
       // substrates. KaTeX-only at ship.
       language: { default: 'latex' },
-      // Source `$` delimiter run captured at parse ('$' | '$$' | longer).
-      // Fidelity hint only: not rendered to HTML, so clipboard copies
-      // degrade to the `$$…$$` default. null = WYSIWYG-inserted.
+      // Source delimiter captured at parse (`$` runs, `\\(`, or the
+      // `implicit-parens` compatibility marker). Fidelity hint only: not
+      // rendered to HTML, so clipboard copies degrade to the `$$…$$`
+      // default. null = WYSIWYG-inserted or edited after promotion.
       sourceDelimiter: { default: null, rendered: false },
     };
   },

@@ -135,8 +135,20 @@ interface FieldDef {
   path: string[];
   label: MessageDescriptor;
   description?: MessageDescriptor;
-  /** Optional override: 'enum-toggle' renders enum as a ToggleGroup; default is select-style toggle. */
-  control?: 'enum-toggle';
+  /** Optional override for enum presentation. Short enums default to a ToggleGroup. */
+  control?: 'enum-toggle' | 'enum-select';
+  formatOption?: (value: string) => string;
+}
+
+function chatModelLabel(value: string): string {
+  if (value === 'gpt-5.6-sol') return 'GPT-5.6 Sol';
+  if (value === 'gpt-5.6-terra') return 'GPT-5.6 Terra';
+  if (value === 'gpt-5.6-luna') return 'GPT-5.6 Luna';
+  if (value === 'gpt-5.3-codex-spark') return 'GPT-5.3 Codex Spark';
+  if (value === 'fable') return 'Fable';
+  if (value === 'opus') return 'Opus';
+  if (value === 'sonnet') return 'Sonnet';
+  return value;
 }
 
 const FIELDS_USER_PREFERENCES: FieldDef[] = [
@@ -155,6 +167,20 @@ const FIELDS_USER_PREFERENCES: FieldDef[] = [
     path: ['appearance', 'preview', 'autoOpen'],
     label: msg`Open preview when agent edits`,
     description: msg`When enabled, the agent opens or refreshes the preview after each edit. Disable if you manage your own preview window (OK Desktop, a browser tab on another display, etc.).`,
+  },
+  {
+    path: ['agents', 'chat', 'codexModel'],
+    label: msg`Default Codex chat model`,
+    description: msg`Used when you start a new Codex chat. You can still change the model in the chat composer.`,
+    control: 'enum-select',
+    formatOption: chatModelLabel,
+  },
+  {
+    path: ['agents', 'chat', 'claudeModel'],
+    label: msg`Default Claude chat model`,
+    description: msg`Used when you start a new Claude chat. You can still change the model in the chat composer.`,
+    control: 'enum-select',
+    formatOption: chatModelLabel,
   },
 ];
 
@@ -1273,7 +1299,10 @@ function FieldControlBody({
     );
   }
   if (typeTag === 'enum' && enumOptions && enumOptions.length > 0) {
-    if (field.control === 'enum-toggle' || enumOptions.length <= 4) {
+    if (
+      field.control === 'enum-toggle' ||
+      (field.control !== 'enum-select' && enumOptions.length <= 4)
+    ) {
       // Slot.Root forwards `id` onto its child; ToggleGroup root renders a
       // <div>, which is not a labelable element — `<label htmlFor>` on a
       // div doesn't focus its descendants on click. Pluck the id and put
@@ -1319,12 +1348,32 @@ function FieldControlBody({
               id={idx === 0 ? forwardedId : undefined}
               className="text-1sm capitalize"
             >
-              {opt}
+              {field.formatOption?.(opt) ?? opt}
             </ToggleGroupItem>
           ))}
         </ToggleGroup>
       );
     }
+    return (
+      <Select
+        value={typeof ctl.value === 'string' ? ctl.value : undefined}
+        onValueChange={(next) => {
+          ctl.onChange(next);
+          onCommit();
+        }}
+      >
+        <SelectTrigger {...slotForwarded} ref={ctl.ref} onBlur={ctl.onBlur} className="max-w-sm">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {enumOptions.map((opt) => (
+            <SelectItem key={opt} value={opt}>
+              {field.formatOption?.(opt) ?? opt}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    );
   }
   if (typeTag === 'number' || typeTag === 'int') {
     return <NumberControlBody ctl={ctl} onCommit={onCommit} {...slotForwarded} />;

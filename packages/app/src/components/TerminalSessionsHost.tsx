@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { TabsContent } from '@/components/ui/tabs';
 import { resolveDefaultCli } from '@/lib/default-cli-resolver';
-import type { OkDesktopBridge } from '@/lib/desktop-bridge-types';
+import type { OkCliChatSession, OkDesktopBridge } from '@/lib/desktop-bridge-types';
 import type { TerminalDockPosition } from '@/lib/terminal-dock-store';
 import {
   getInitialPreferBareTerminal,
@@ -12,7 +12,7 @@ import {
 } from '@/lib/terminal-new-tab-store';
 import { loadStickyAgent, saveStickyAgent, terminalCliId } from '@/lib/unified-agent-store';
 import { cn } from '@/lib/utils';
-import { CliChatSession } from './chat/CliChatSession';
+import { type CliChatHeaderSession, CliChatSession } from './chat/CliChatSession';
 import { type CliChatSelectionContext, isCliChatId } from './chat/cli-chat-types';
 import type { TerminalLaunchIntent } from './EditorPane';
 import { visibleTerminalClis } from './handoff/terminal-cli-display';
@@ -43,6 +43,20 @@ interface TerminalSessionDescriptor {
   readonly customLabel: string | null;
   readonly ordinal: number;
   readonly adoptPtyId: string | null;
+  readonly chatSessionId: string | null;
+}
+
+function loadNativeChatSessions(
+  bridge: OkDesktopBridge,
+  onLoaded: (sessions: readonly OkCliChatSession[]) => void,
+) {
+  if (typeof bridge.terminal?.listChatSessions !== 'function') return;
+  void bridge.terminal
+    .listChatSessions()
+    .then(onLoaded)
+    .catch((error: unknown) => {
+      console.error('[terminal] native CLI session discovery failed:', error);
+    });
 }
 
 function makeSessionId(counter: number): string {
@@ -54,9 +68,11 @@ function makeSessionId(counter: number): string {
  *  the textarea has not mounted yet (xterm mounts asynchronously). */
 function focusTerminalSession(id: string) {
   if (id === '') return;
-  document
-    .querySelector<HTMLElement>(`[data-terminal-session="${id}"] .xterm-helper-textarea`)
-    ?.focus();
+  const session = document.querySelector<HTMLElement>(`[data-terminal-session="${id}"]`);
+  const target =
+    session?.querySelector<HTMLElement>('[data-chat-composer="true"] textarea') ??
+    session?.querySelector<HTMLElement>('.xterm-helper-textarea');
+  target?.focus();
 }
 
 /** True when keyboard focus currently sits inside the stable host div. */
@@ -204,6 +220,7 @@ export function TerminalSessionsHost({
             customLabel: null,
             ordinal: 1,
             adoptPtyId: null,
+            chatSessionId: launch?.resumeSessionId ?? null,
           },
         ]
       : [],
@@ -215,6 +232,15 @@ export function TerminalSessionsHost({
   // open/launch effect's seed so a transient visibility flip during the in-flight
   // inventory query can't spawn a shell the adopted set would then replace.
   const [rehydrationSettled, setRehydrationSettled] = useState(!canRehydrate);
+  const [nativeChatSessions, setNativeChatSessions] = useState<readonly OkCliChatSession[]>([]);
+
+  function reloadNativeChatSessions() {
+    loadNativeChatSessions(bridge, setNativeChatSessions);
+  }
+
+  useEffect(() => {
+    loadNativeChatSessions(bridge, setNativeChatSessions);
+  }, [bridge]);
   const rehydratedRef = useRef(false);
   // Mirror so the reveal-focus effect can target the active session without
   // re-running on every tab switch (which would steal focus during arrow-key nav).
@@ -260,7 +286,7 @@ export function TerminalSessionsHost({
         ordinal: session.ordinal,
         customLabel: session.customLabel,
         chatCli,
-        chatSessionId: session.launch?.resumeSessionId ?? null,
+        chatSessionId: session.chatSessionId,
       });
     }
   }
@@ -270,7 +296,10 @@ export function TerminalSessionsHost({
   // so this just keeps each strip launch a distinct, never-reused intent.
   const stripLaunchNonceRef = useRef(0);
 
-  function openSession(launchForSession: TerminalLaunchIntent | null) {
+  function openSession(
+    launchForSession: TerminalLaunchIntent | null,
+    initialTitle: string | null = null,
+  ) {
     sessionCounterRef.current += 1;
     const id = makeSessionId(sessionCounterRef.current);
     setSessions((prev) => [
@@ -278,10 +307,11 @@ export function TerminalSessionsHost({
       {
         id,
         launch: launchForSession,
-        title: null,
+        title: initialTitle,
         customLabel: null,
         ordinal: sessionCounterRef.current,
         adoptPtyId: null,
+        chatSessionId: launchForSession?.resumeSessionId ?? null,
       },
     ]);
     setActiveSessionId(id);
@@ -306,9 +336,23 @@ export function TerminalSessionsHost({
   const newChatVisibleClis = visibleTerminalClis(installedClis ?? {}, newChatDefaultCli);
 
   // Tab-strip New-chat primary: open a promptless session running `cli`.
-  function openNewChatSession(cli: TerminalCli) {
+  function openNewChatSession(cli: TerminalCli, resumeSessionId?: string) {
     stripLaunchNonceRef.current += 1;
-    openSession({ prompt: null, cli, nonce: stripLaunchNonceRef.current });
+    const previousTitle =
+      resumeSessionId === undefined
+        ? null
+        : (nativeChatSessions.find(
+            (entry) => entry.cli === cli && entry.sessionId === resumeSessionId,
+          )?.title ?? null);
+    openSession(
+      {
+        prompt: null,
+        cli,
+        nonce: stripLaunchNonceRef.current,
+        ...(resumeSessionId === undefined ? {} : { resumeSessionId }),
+      },
+      previousTitle,
+    );
   }
 
   // Primary click: launch the current pick — a bare shell when Terminal is the
@@ -351,6 +395,15 @@ export function TerminalSessionsHost({
     });
   }
 
+  function setSessionChatSessionId(id: string, chatSessionId: string) {
+    setSessions((prev) => {
+      if (!prev.some((session) => session.id === id && session.chatSessionId !== chatSessionId)) {
+        return prev;
+      }
+      return prev.map((session) => (session.id === id ? { ...session, chatSessionId } : session));
+    });
+  }
+
   // Commit a manual tab rename. A trimmed-empty value clears the custom label
   // (revert to OSC title / positional default). Same same-reference bailout as
   // setSessionTitle so an unchanged value causes no re-render.
@@ -370,7 +423,17 @@ export function TerminalSessionsHost({
   // Display label precedence, shared by the tab list and the reorder announcer:
   // a manual name pins over the OSC title, which pins over the sticky ordinal.
   function sessionLabel(session: TerminalSessionDescriptor): string {
-    return session.customLabel ?? session.title ?? t`Terminal ${session.ordinal}`;
+    if (session.customLabel != null) return session.customLabel;
+    if (session.title != null) return session.title;
+    const chatCli =
+      session.launch != null &&
+      session.launch.stagePaste === undefined &&
+      isCliChatId(session.launch.cli)
+        ? session.launch.cli
+        : null;
+    if (chatCli === 'codex') return t`Codex chat`;
+    if (chatCli === 'claude') return t`Claude chat`;
+    return t`Terminal ${session.ordinal}`;
   }
 
   // True while a pointer drag is lifted (reported by the strip); the ⌘⇧←/→ chord
@@ -547,6 +610,7 @@ export function TerminalSessionsHost({
           customLabel: entry.customLabel ?? null,
           ordinal: entry.ordinal ?? index + 1,
           adoptPtyId: entry.ptyId,
+          chatSessionId: entry.chatSessionId ?? null,
         }));
         // Continue numbering above the highest restored ordinal so a new tab can't
         // collide with a survivor's sticky number.
@@ -721,8 +785,49 @@ export function TerminalSessionsHost({
     // A user-set custom name pins over the program's OSC title, which pins over
     // the sticky positional default. The default uses the session's immutable
     // ordinal (not its render index) so a reorder never renumbers untitled tabs.
-    label: session.customLabel ?? session.title ?? t`Terminal ${session.ordinal}`,
+    label: sessionLabel(session),
+    cli: session.launch?.cli ?? null,
   }));
+
+  const openChatHeaderSessions: readonly CliChatHeaderSession[] = sessions.flatMap((session) => {
+    const cli =
+      session.launch != null &&
+      session.launch.stagePaste === undefined &&
+      isCliChatId(session.launch.cli)
+        ? session.launch.cli
+        : null;
+    return cli === null
+      ? []
+      : [
+          {
+            id: session.id,
+            cli,
+            title: sessionLabel(session),
+            openSessionId: session.id,
+            ...(session.chatSessionId === null ? {} : { resumeSessionId: session.chatSessionId }),
+          },
+        ];
+  });
+  const openNativeSessionIds = new Set(
+    openChatHeaderSessions.flatMap((session) =>
+      session.resumeSessionId === undefined ? [] : [session.resumeSessionId],
+    ),
+  );
+  const chatHeaderSessions: readonly CliChatHeaderSession[] = [
+    ...openChatHeaderSessions,
+    ...nativeChatSessions.flatMap((entry) =>
+      openNativeSessionIds.has(entry.sessionId)
+        ? []
+        : [
+            {
+              id: `history-${entry.cli}-${entry.sessionId}`,
+              cli: entry.cli,
+              title: entry.title,
+              resumeSessionId: entry.sessionId,
+            },
+          ],
+    ),
+  ];
 
   // Panels render in a STABLE order (by immutable ordinal), deliberately
   // decoupled from the tab order. A reorder must not move a panel's DOM node:
@@ -795,9 +900,26 @@ export function TerminalSessionsHost({
                 launch={session.launch}
                 adoptPtyId={session.adoptPtyId}
                 onPtyId={(ptyId) => setSessionPtyId(session.id, ptyId)}
-                onTitleChange={(title) => setSessionTitle(session.id, title)}
                 onClose={() => closeSession(session.id)}
                 selectionContext={selectionContext}
+                sessionId={session.id}
+                title={sessionLabel(session)}
+                sessions={chatHeaderSessions}
+                onReloadSessions={reloadNativeChatSessions}
+                onSelectSession={(id) => {
+                  const target = chatHeaderSessions.find((entry) => entry.id === id);
+                  if (target?.openSessionId != null) {
+                    setActiveSessionId(target.openSessionId);
+                    queueMicrotask(() => focusTerminalSession(target.openSessionId ?? ''));
+                  } else if (target?.resumeSessionId != null) {
+                    openNewChatSession(target.cli, target.resumeSessionId);
+                  }
+                }}
+                onNewChat={openNewChatSession}
+                onTitleChange={(title) => setSessionTitle(session.id, title)}
+                onNativeSessionId={(chatSessionId) =>
+                  setSessionChatSessionId(session.id, chatSessionId)
+                }
               />
             ) : (
               <TerminalGate

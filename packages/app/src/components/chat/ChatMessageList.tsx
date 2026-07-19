@@ -9,13 +9,17 @@ import {
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import type { OkDesktopBridge } from '@/lib/desktop-bridge-types';
 import { cn } from '@/lib/utils';
 import { ChatMarkdown } from './ChatMarkdown';
 import type { ChatActivity, ChatTimelineEntry, CliChatSelectionContext } from './cli-chat-types';
+import { WebPreviewCards } from './WebPreviewCards';
+import { extractWebPreviewLinks } from './web-preview-links';
 
 interface ChatMessageListProps {
   readonly timeline: readonly ChatTimelineEntry[];
   readonly running: boolean;
+  readonly bridge: OkDesktopBridge;
 }
 
 type ActivityVisualState = 'working' | 'completed' | 'failed' | 'idle';
@@ -49,6 +53,143 @@ function GenerationDots() {
       <span className="size-1 animate-chat-generation-dot rounded-full bg-current [animation-delay:-300ms] motion-reduce:animate-none" />
       <span className="size-1 animate-chat-generation-dot rounded-full bg-current [animation-delay:-150ms] motion-reduce:animate-none" />
     </span>
+  );
+}
+
+function ActivityIcon({
+  entry,
+  visualState,
+}: {
+  entry: ChatActivity;
+  visualState: ActivityVisualState;
+}) {
+  if (entry.kind === 'tool') {
+    if (visualState === 'completed') {
+      return (
+        <CheckIcon
+          data-chat-tool-icon="completed"
+          className="mt-0.5 size-3 shrink-0 animate-chat-tool-complete text-primary motion-reduce:animate-none"
+        />
+      );
+    }
+    if (visualState === 'failed') {
+      return <CircleAlertIcon data-chat-tool-icon="failed" className="mt-0.5 size-3 shrink-0" />;
+    }
+    return (
+      <WrenchIcon
+        data-chat-tool-icon={visualState}
+        className={cn(
+          'mt-0.5 size-3 shrink-0',
+          visualState === 'working' && 'animate-chat-tool-working motion-reduce:animate-none',
+        )}
+      />
+    );
+  }
+  if (entry.kind === 'error') {
+    return <CircleAlertIcon className="mt-0.5 size-3 shrink-0" />;
+  }
+  return (
+    <LoaderCircleIcon
+      className={cn(
+        'mt-0.5 size-3 shrink-0',
+        visualState === 'working' && 'animate-spin motion-reduce:animate-none',
+      )}
+    />
+  );
+}
+
+function ActivityLabel({
+  entry,
+  visualState,
+}: {
+  entry: ChatActivity;
+  visualState: ActivityVisualState;
+}) {
+  const label = `${entry.label}${entry.detail ? ` · ${entry.detail}` : ''}`;
+  return (
+    <span className="block min-w-0 truncate" title={label}>
+      {label}
+      {entry.kind === 'status' && visualState === 'working' ? (
+        <span className="ml-1.5 text-primary/70">
+          <GenerationDots />
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
+function ChatActivityEntry({
+  entry,
+  visualState,
+}: {
+  entry: ChatActivity;
+  visualState: ActivityVisualState;
+}) {
+  const activityClassName = cn(
+    'mr-auto min-w-0 max-w-[88%] animate-chat-activity border-l border-border py-0.5 pl-2 text-xs text-muted-foreground transition-[border-color,color,opacity] duration-200 motion-reduce:animate-none motion-reduce:transition-none',
+    visualState === 'working' && 'border-primary/50 text-foreground/80',
+    visualState === 'failed' && 'border-destructive/60 text-destructive',
+  );
+  const expandable =
+    (visualState === 'completed' || visualState === 'failed') && entry.fullDetail !== undefined;
+
+  if (expandable && entry.fullDetail !== undefined) {
+    return (
+      <details
+        data-chat-entry="activity"
+        data-chat-activity-state={visualState}
+        data-chat-tool-expandable="true"
+        data-chat-error-expandable={visualState === 'failed' ? 'true' : undefined}
+        className={cn(activityClassName, 'group w-full')}
+      >
+        <summary className="flex cursor-pointer list-none items-start gap-1.5 pr-1 outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+          <ActivityIcon entry={entry} visualState={visualState} />
+          <span className="min-w-0 flex-1">
+            <ActivityLabel entry={entry} visualState={visualState} />
+            {entry.summary !== undefined ? (
+              <span
+                data-chat-tool-summary="true"
+                data-chat-error-summary={visualState === 'failed' ? 'true' : undefined}
+                className={cn(
+                  'mt-0.5 block truncate text-[11px]',
+                  visualState === 'failed' ? 'text-destructive/80' : 'text-muted-foreground/80',
+                )}
+                title={entry.summary}
+              >
+                {entry.summary}
+              </span>
+            ) : null}
+          </span>
+          <ChevronDownIcon
+            aria-hidden="true"
+            className="mt-0.5 size-3 shrink-0 transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none"
+          />
+        </summary>
+        <pre
+          data-chat-tool-details="true"
+          data-chat-error-details={visualState === 'failed' ? 'true' : undefined}
+          className={cn(
+            'mt-1.5 max-h-56 overflow-auto whitespace-pre-wrap rounded-md px-2 py-1.5 font-mono text-[11px] leading-relaxed [overflow-wrap:anywhere]',
+            visualState === 'failed'
+              ? 'bg-destructive/5 text-destructive'
+              : 'bg-muted/50 text-foreground/80',
+          )}
+        >
+          {entry.fullDetail}
+        </pre>
+      </details>
+    );
+  }
+
+  return (
+    <div
+      data-chat-entry="activity"
+      data-chat-activity-state={visualState}
+      className={cn(activityClassName, 'flex items-start gap-1.5')}
+    >
+      <ActivityIcon entry={entry} visualState={visualState} />
+      <ActivityLabel entry={entry} visualState={visualState} />
+    </div>
   );
 }
 
@@ -150,7 +291,7 @@ function SentSelectionContext({ selection }: { selection: CliChatSelectionContex
   );
 }
 
-export function ChatMessageList({ timeline, running }: ChatMessageListProps) {
+export function ChatMessageList({ timeline, running, bridge }: ChatMessageListProps) {
   const { t } = useLingui();
   const endRef = useRef<HTMLDivElement | null>(null);
   const lastEntry = timeline.at(-1);
@@ -184,6 +325,18 @@ export function ChatMessageList({ timeline, running }: ChatMessageListProps) {
       <div className="mx-auto flex min-w-0 w-full max-w-3xl flex-col gap-3">
         {timeline.map((entry, index) => {
           if (entry.type === 'message') {
+            let followsWebSearch = false;
+            if (entry.role === 'assistant') {
+              for (let cursor = index - 1; cursor >= 0; cursor -= 1) {
+                const prior = timeline[cursor];
+                if (prior?.type === 'message' && prior.role === 'user') break;
+                if (prior?.type === 'activity' && prior.category === 'web_search') {
+                  followsWebSearch = true;
+                  break;
+                }
+              }
+            }
+            const previewLinks = followsWebSearch ? extractWebPreviewLinks(entry.text) : [];
             const generating =
               entry.role === 'assistant' && running && index === timeline.length - 1;
             const messageBubble = (
@@ -199,7 +352,7 @@ export function ChatMessageList({ timeline, running }: ChatMessageListProps) {
                     : 'mr-auto origin-bottom-left animate-chat-assistant border border-border bg-muted/40 text-foreground',
                 )}
               >
-                <ChatMarkdown text={entry.text} />
+                <ChatMarkdown text={entry.text} bridge={bridge} />
                 {generating ? (
                   <span className="mt-2 flex text-primary/70">
                     <GenerationDots />
@@ -221,63 +374,23 @@ export function ChatMessageList({ timeline, running }: ChatMessageListProps) {
                 </div>
               );
             }
+            if (entry.role === 'assistant' && previewLinks.length > 0) {
+              return (
+                <div
+                  key={entry.id}
+                  data-chat-message-group="assistant-with-sources"
+                  className="mr-auto flex w-full max-w-[88%] flex-col items-start gap-1"
+                >
+                  {messageBubble}
+                  <WebPreviewCards links={previewLinks} bridge={bridge} />
+                </div>
+              );
+            }
             return <div key={entry.id}>{messageBubble}</div>;
           }
 
           const visualState = activityVisualState(entry, index, timeline.length, running);
-          return (
-            <div
-              key={entry.id}
-              data-chat-entry="activity"
-              data-chat-activity-state={visualState}
-              className={cn(
-                'mr-auto flex min-w-0 max-w-[88%] animate-chat-activity items-start gap-1.5 border-l border-border py-0.5 pl-2 text-xs text-muted-foreground transition-[border-color,color,opacity] duration-200 motion-reduce:animate-none motion-reduce:transition-none',
-                visualState === 'working' && 'border-primary/50 text-foreground/80',
-                visualState === 'failed' && 'border-destructive/60 text-destructive',
-              )}
-            >
-              {entry.kind === 'tool' ? (
-                visualState === 'completed' ? (
-                  <CheckIcon
-                    data-chat-tool-icon="completed"
-                    className="mt-0.5 size-3 shrink-0 animate-chat-tool-complete text-primary motion-reduce:animate-none"
-                  />
-                ) : visualState === 'failed' ? (
-                  <CircleAlertIcon
-                    data-chat-tool-icon="failed"
-                    className="mt-0.5 size-3 shrink-0"
-                  />
-                ) : (
-                  <WrenchIcon
-                    data-chat-tool-icon={visualState}
-                    className={cn(
-                      'mt-0.5 size-3 shrink-0',
-                      visualState === 'working' &&
-                        'animate-chat-tool-working motion-reduce:animate-none',
-                    )}
-                  />
-                )
-              ) : entry.kind === 'error' ? (
-                <CircleAlertIcon className="mt-0.5 size-3 shrink-0" />
-              ) : (
-                <LoaderCircleIcon
-                  className={cn(
-                    'mt-0.5 size-3 shrink-0',
-                    visualState === 'working' && 'animate-spin motion-reduce:animate-none',
-                  )}
-                />
-              )}
-              <span className="min-w-0 [overflow-wrap:anywhere]">
-                {entry.label}
-                {entry.detail ? ` · ${entry.detail}` : ''}
-                {entry.kind === 'status' && visualState === 'working' ? (
-                  <span className="ml-1.5 text-primary/70">
-                    <GenerationDots />
-                  </span>
-                ) : null}
-              </span>
-            </div>
-          );
+          return <ChatActivityEntry key={entry.id} entry={entry} visualState={visualState} />;
         })}
         <div ref={endRef} />
       </div>

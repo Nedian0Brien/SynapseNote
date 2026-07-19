@@ -889,6 +889,14 @@ export interface OkPtyListEntry {
   readonly chatSessionId?: string | null;
 }
 
+/** Native Codex/Claude conversation that can be resumed in the active project. */
+export interface OkCliChatSession {
+  readonly cli: 'codex' | 'claude';
+  readonly sessionId: string;
+  readonly title: string;
+  readonly updatedAt: number;
+}
+
 /** Result of `terminal.adopt`. Canonical JSDoc in `bridge-contract.ts`; mirrored verbatim (drift-tested). */
 export type OkPtyAdoptResult =
   | { readonly ok: true; readonly replay: string }
@@ -952,6 +960,15 @@ export interface CliReadiness {
    *  extra codex key, silently disabling auto-approve for real users. This gate's
    *  job is availability (don't break codex's config load), not authorization. */
   readonly okServerConfigured?: boolean;
+}
+
+export interface OkWebPreviewMetadata {
+  readonly url: string;
+  readonly title?: string;
+  readonly description?: string;
+  readonly siteName?: string;
+  readonly imageDataUrl?: string;
+  readonly faviconDataUrl?: string;
 }
 
 export interface OkDesktopBridge {
@@ -1093,6 +1110,7 @@ export interface OkDesktopBridge {
    */
   shell: {
     openExternal(url: string): Promise<void>;
+    fetchWebPreview(url: string): Promise<OkWebPreviewMetadata | null>;
     /**
      * Probe whether a URL scheme has a registered handler on this OS.
      * Used by the "Open in Agent Desktop" dropdown to render disabled-
@@ -1164,6 +1182,25 @@ export interface OkDesktopBridge {
     revealAsset(
       relPath: string,
     ): Promise<{ ok: true } | { ok: false; reason: 'path-escape' | 'not-found' | 'resolve-error' }>;
+
+    /** Atomically replace an existing project PDF with viewer-exported bytes. */
+    savePdf(
+      relPath: string,
+      bytes: Uint8Array,
+    ): Promise<
+      | { ok: true }
+      | {
+          ok: false;
+          reason:
+            | 'invalid-path'
+            | 'not-found'
+            | 'not-pdf'
+            | 'invalid-pdf'
+            | 'too-large'
+            | 'permission-denied'
+            | 'write-error';
+        }
+    >;
 
     /**
      * Reveal an ABSOLUTE path outside the caller window's project — the
@@ -1656,6 +1693,8 @@ export interface OkDesktopBridge {
         };
       },
     ): void;
+    /** List native Codex/Claude sessions whose working directory is this project. */
+    listChatSessions(): Promise<OkCliChatSession[]>;
     resize(ptyId: string, cols: number, rows: number): void;
     kill(ptyId: string): Promise<void>;
     drain(ptyId: string, bytes: number): void;

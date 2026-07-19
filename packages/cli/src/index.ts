@@ -68,6 +68,15 @@ export {
   // consumers should use `buildMcpConfigMigrateEvent` instead.
   truncatePriorEntry,
 } from './commands/mcp-migrate-event.ts';
+export {
+  type RepairContext as McpRepairContext,
+  type RepairResult as McpRepairResult,
+  repairMcpConfigs,
+} from './commands/repair-mcp-configs.ts';
+export {
+  removeLegacyProjectRuntimeSkills,
+  removeLegacyUserSkills,
+} from './commands/repair-skills.ts';
 // `runStop` is the path-addressable stop primitive (SIGTERM the server + ui
 // pids recorded in `<lockDir>/{server,ui}.lock`). Desktop's
 // `ok:fs:remove-git-folder` IPC reuses it to deterministically tear down a

@@ -1,27 +1,54 @@
 import { t } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react/macro';
-import { Clock, Link2, ListTree, Network } from 'lucide-react';
-import { lazy, Suspense, useState } from 'react';
+import {
+  Clock,
+  Files,
+  Highlighter,
+  Link2,
+  ListTree,
+  MessageSquare,
+  Network,
+  StickyNote,
+} from 'lucide-react';
+import { lazy, type ReactNode, Suspense, useState } from 'react';
 import type { DiffLayout } from '@/components/DiffView';
 import { LinksPanel } from '@/components/LinksPanel';
+import { MemoPanel } from '@/components/MemoPanel';
 import { OutlinePanel } from '@/components/OutlinePanel';
 import { TimelineContent } from '@/components/TimelinePanel';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSingleFileMode } from '@/lib/single-file-mode';
 
-export type PanelTab = 'outline' | 'links' | 'graph' | 'timeline';
+export type DocumentPanelTab = 'outline' | 'memo' | 'links' | 'graph' | 'timeline';
+export type PdfPanelTab = 'pages' | 'annotations' | 'outline' | 'links';
+export type PanelTab = 'chat' | DocumentPanelTab | PdfPanelTab;
+export type PanelSurface = 'document' | 'pdf';
 
-export const TABS: { id: PanelTab; icon: typeof ListTree }[] = [
+export const DOCUMENT_TABS: { id: PanelTab; icon: typeof ListTree }[] = [
+  { id: 'chat', icon: MessageSquare },
   { id: 'outline', icon: ListTree },
+  { id: 'memo', icon: StickyNote },
   { id: 'links', icon: Link2 },
   { id: 'graph', icon: Network },
   { id: 'timeline', icon: Clock },
 ];
 
+export const PDF_TABS: { id: PanelTab; icon: typeof ListTree }[] = [
+  { id: 'chat', icon: MessageSquare },
+  { id: 'pages', icon: Files },
+  { id: 'annotations', icon: Highlighter },
+  { id: 'outline', icon: ListTree },
+  { id: 'links', icon: Link2 },
+];
+
 /** Localized display label for a doc-panel tab. */
 function tabLabel(id: PanelTab): string {
+  if (id === 'chat') return t`Chat`;
+  if (id === 'pages') return t`Pages`;
+  if (id === 'annotations') return t`Annotations`;
   if (id === 'outline') return t`Outline`;
+  if (id === 'memo') return t`Memo`;
   if (id === 'links') return t`Links`;
   if (id === 'graph') return t`Graph`;
   return t`Timeline`;
@@ -53,12 +80,21 @@ const LazyActivityModeContent = lazy(async () => {
 });
 
 interface DocPanelProps {
-  docName: string;
+  /** Active Markdown document. Null on viewer-only surfaces such as a PDF asset. */
+  docName: string | null;
   isSourceMode: boolean;
   activeTab: PanelTab;
   onActiveTabChange: (tab: PanelTab) => void;
   /** Active mode — controlled by presence-bar avatar clicks + the back arrow. */
   mode: DocPanelMode;
+  /** Exposes Chat as the first rail tab when the desktop chat host is available. */
+  showChatTab?: boolean;
+  /** Stable mount slot for the portaled chat/terminal session host. */
+  chatContent?: ReactNode;
+  /** Selects the tab set while preserving the shared icon-only rail chrome. */
+  surface?: PanelSurface;
+  /** PDF-engine-owned content portaled into the active PDF rail tab. */
+  pdfContent?: ReactNode;
 }
 
 export function DocPanel({
@@ -67,20 +103,33 @@ export function DocPanel({
   activeTab,
   onActiveTabChange,
   mode,
+  showChatTab = false,
+  chatContent = null,
+  surface = 'document',
+  pdfContent = null,
 }: DocPanelProps) {
   // Lifted from TimelineContent so the choice survives sub-tab switches —
   // TimelineContent unmounts when activeTab leaves 'timeline'.
   const { t } = useLingui();
   const [diffLayout, setDiffLayout] = useState<DiffLayout>('unified');
-  // Single-file `ok <file>` keeps only the Outline tab. Links/Graph need a
+  // Single-file `ok <file>` keeps Outline and the device-local Memo. Links/Graph need a
   // multi-doc knowledge base, and Timeline is git history — all empty or inert
   // for a lone git-off file. Coerce a persisted links/graph/timeline selection
   // back to outline so the rail never renders a now-hidden panel, and drop the
   // one-item tab strip entirely.
   const singleFile = useSingleFileMode();
-  const tabs = singleFile ? TABS.filter((tab) => tab.id === 'outline') : TABS;
-  const effectiveTab: PanelTab = tabs.some((tab) => tab.id === activeTab) ? activeTab : 'outline';
-  const showTabStrip = mode === 'doc' && tabs.length > 1;
+  const sourceTabs = surface === 'pdf' ? PDF_TABS : DOCUMENT_TABS;
+  const tabs = sourceTabs.filter((tab) => {
+    if (tab.id === 'chat') return showChatTab;
+    if (surface === 'pdf') return true;
+    if (docName === null) return false;
+    return !singleFile || tab.id === 'outline' || tab.id === 'memo';
+  });
+  const effectiveTab: PanelTab = tabs.some((tab) => tab.id === activeTab)
+    ? activeTab
+    : (tabs[0]?.id ?? 'outline');
+  const viewerOnlyChat = docName === null && tabs.length === 1 && tabs[0]?.id === 'chat';
+  const showTabStrip = mode === 'doc' && (tabs.length > 1 || viewerOnlyChat);
   return (
     <>
       {/* In `'doc'` mode: the info sub-tabs render as the panel header.
@@ -88,32 +137,41 @@ export function DocPanel({
           own header (avatar + back-arrow), which eliminates the empty-row
           footprint the standalone back-arrow used to have. */}
       {showTabStrip ? (
-        <div className="flex flex-row items-center justify-center gap-3 p-2">
+        <div className="flex h-10 shrink-0 flex-row items-center justify-center bg-background">
           <ToggleGroup
             type="single"
             variant="outline"
+            size="sm"
             value={effectiveTab}
             onValueChange={(value: PanelTab) => {
               if (value) onActiveTabChange(value);
             }}
             aria-label={t`Document panels`}
+            role="tablist"
+            className="justify-center"
           >
             {tabs.map(({ id, icon: Icon }) => {
               const label = tabLabel(id);
-              return (
+              const item = (
+                <ToggleGroupItem
+                  key={id}
+                  value={id}
+                  role="tab"
+                  id={`tab-${id}`}
+                  aria-controls={`panel-${id}`}
+                  aria-label={label}
+                  className="size-8 shrink-0 p-0"
+                >
+                  <Icon className="size-4" />
+                </ToggleGroupItem>
+              );
+              return tabs.length === 1 ? (
+                <span key={id} className="contents">
+                  {item}
+                </span>
+              ) : (
                 <Tooltip key={id}>
-                  <ToggleGroupItem
-                    value={id}
-                    role="tab"
-                    id={`tab-${id}`}
-                    aria-controls={`panel-${id}`}
-                    aria-label={label}
-                    asChild
-                  >
-                    <TooltipTrigger>
-                      <Icon />
-                    </TooltipTrigger>
-                  </ToggleGroupItem>
+                  <TooltipTrigger asChild>{item}</TooltipTrigger>
                   <TooltipContent side="bottom">{label}</TooltipContent>
                 </Tooltip>
               );
@@ -136,11 +194,18 @@ export function DocPanel({
             : {})}
           className="min-h-0 flex-1"
         >
-          {effectiveTab === 'outline' && (
+          {effectiveTab === 'chat' && chatContent}
+          {surface === 'pdf' && effectiveTab !== 'chat' && pdfContent}
+          {surface === 'document' && effectiveTab === 'outline' && docName !== null && (
             <OutlinePanel docName={docName} isSourceMode={isSourceMode} />
           )}
-          {effectiveTab === 'links' && <LinksPanel docName={docName} />}
-          {effectiveTab === 'graph' && (
+          {surface === 'document' && effectiveTab === 'memo' && docName !== null && (
+            <MemoPanel key={docName} docName={docName} isSourceMode={isSourceMode} />
+          )}
+          {surface === 'document' && effectiveTab === 'links' && docName !== null && (
+            <LinksPanel docName={docName} />
+          )}
+          {surface === 'document' && effectiveTab === 'graph' && docName !== null && (
             <Suspense
               fallback={
                 <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
@@ -151,7 +216,7 @@ export function DocPanel({
               <LazyGraphPanel activeDocName={docName} />
             </Suspense>
           )}
-          {effectiveTab === 'timeline' && (
+          {surface === 'document' && effectiveTab === 'timeline' && docName !== null && (
             <TimelineContent
               docName={docName}
               diffLayout={diffLayout}

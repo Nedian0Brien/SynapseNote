@@ -23,9 +23,20 @@ export interface CliChatModelSettings {
   readonly speed: CliChatSpeed;
 }
 
-export function defaultCliChatModelSettings(cli: CliChatId): CliChatModelSettings {
+export function defaultCliChatModelSettings(
+  cli: CliChatId,
+  preferredModel?: CliChatModel,
+): CliChatModelSettings {
+  const model =
+    preferredModel !== undefined &&
+    ((cli === 'codex' && preferredModel.startsWith('gpt-')) ||
+      (cli === 'claude' && !preferredModel.startsWith('gpt-')))
+      ? preferredModel
+      : cli === 'codex'
+        ? 'gpt-5.6-sol'
+        : 'sonnet';
   return {
-    model: cli === 'codex' ? 'gpt-5.6-sol' : 'sonnet',
+    model,
     effort: 'medium',
     speed: 'default',
   };
@@ -81,11 +92,15 @@ export type ChatEvent =
   | {
       readonly type: 'tool';
       readonly sourceId?: string;
+      readonly category?: 'web_search';
       readonly name: string;
       readonly detail?: string;
+      readonly summary?: string;
+      readonly fullDetail?: string;
     }
   | { readonly type: 'error'; readonly message: string }
   | { readonly type: 'session'; readonly sessionId: string }
+  | { readonly type: 'command_exit'; readonly exitCode: number }
   | { readonly type: 'done'; readonly exitCode: number | null };
 
 export interface ParserState {
@@ -110,8 +125,11 @@ export interface ChatActivity {
   readonly type: 'activity';
   readonly kind: 'status' | 'tool' | 'error';
   readonly sourceId?: string;
+  readonly category?: 'web_search';
   readonly label: string;
   readonly detail?: string;
+  readonly summary?: string;
+  readonly fullDetail?: string;
 }
 
 export type ChatTimelineEntry = ChatMessage | ChatActivity;

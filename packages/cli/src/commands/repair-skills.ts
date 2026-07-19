@@ -45,7 +45,10 @@ import {
 } from '@nedian0brien/synapsenote-server';
 import { Command } from 'commander';
 import { removeUserGlobalSkillBundle } from '../integrations/skill-teardown.ts';
-import { assertProjectPathSafe } from '../integrations/write-project-skill.ts';
+import {
+  assertProjectPathSafe,
+  assertProjectRemovalSafe,
+} from '../integrations/write-project-skill.ts';
 import {
   CHAIN_VERSION_SENTINEL,
   CHAIN_WIN_VERSION_SENTINEL,
@@ -63,6 +66,18 @@ const USER_SKILL_DIR_NAME = 'synapsenote-discovery';
 /** Rich project bundle — project-local installs (keeps `name: synapsenote`). */
 const PROJECT_SKILL_DIR_NAME = 'synapsenote';
 const CENTRAL_USER_SKILL_REL = ['.agents', 'skills', USER_SKILL_DIR_NAME] as const;
+const LEGACY_PROJECT_SKILL_DIR_NAMES = [
+  'open-knowledge',
+  'open-knowledge-claude',
+  'open-knowledge-codex',
+  'open-knowledge-cursor',
+  'open-knowledge-opencode',
+  'open-knowledge-pi',
+] as const;
+const LEGACY_USER_SKILL_DIR_NAMES = [
+  'open-knowledge-discovery',
+  'open-knowledge-write-skill',
+] as const;
 
 export interface RepairSkillsLogEvent {
   event: string;
@@ -114,6 +129,95 @@ const defaultFsOps: RepairSkillsFsOps = {
     fsRmSync(path, options);
   },
 };
+
+/**
+ * Remove only the old product-owned runtime skill and its host-specific copies.
+ * A same-named user skill is preserved unless its frontmatter and metadata both
+ * identify the retired Inkeep/OpenKnowledge bundle.
+ */
+export function removeLegacyProjectRuntimeSkills(
+  projectDir: string,
+  fs: RepairSkillsFsOps = defaultFsOps,
+  logger: (event: RepairSkillsLogEvent) => void = defaultLogger,
+): void {
+  const roots = [
+    join(projectDir, '.ok', 'skills'),
+    ...HOSTS_WITH_USER_SKILL_DIR.map((host) => join(projectDir, host.hostDir, 'skills')),
+  ];
+  for (const root of roots) {
+    for (const dirName of LEGACY_PROJECT_SKILL_DIR_NAMES) {
+      const dir = join(root, dirName);
+      const skillPath = join(dir, 'SKILL.md');
+      if (!fs.existsSync(skillPath)) continue;
+      let raw: string;
+      try {
+        raw = fs.readFileSync(skillPath).toString('utf8');
+      } catch (err) {
+        logger({
+          event: 'project-skill-legacy-remove-failed',
+          scope: 'project',
+          path: dir,
+          error: err instanceof Error ? err.message : String(err),
+        });
+        continue;
+      }
+      const owned =
+        /^name:\s*["']?open-knowledge["']?\s*$/m.test(raw) &&
+        (raw.includes('@inkeep/open-knowledge') ||
+          (/author:\s*["']?Inkeep["']?/m.test(raw) && raw.includes('OpenKnowledge')));
+      if (!owned) continue;
+      try {
+        assertProjectRemovalSafe(dir, projectDir);
+        fs.rmSync(dir, { recursive: true, force: true });
+        logger({ event: 'project-skill-legacy-removed', scope: 'project', path: dir });
+      } catch (err) {
+        logger({
+          event: 'project-skill-legacy-remove-failed',
+          scope: 'project',
+          path: dir,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+  }
+}
+
+/** Remove retired product-owned user-global skill bundles from every install root. */
+export function removeLegacyUserSkills(
+  home: string,
+  fs: RepairSkillsFsOps = defaultFsOps,
+  logger: (event: RepairSkillsLogEvent) => void = defaultLogger,
+): void {
+  const roots = [
+    join(home, '.agents', 'skills'),
+    ...HOSTS_WITH_USER_SKILL_DIR.map((host) => join(home, host.hostDir, 'skills')),
+  ];
+  for (const root of roots) {
+    for (const dirName of LEGACY_USER_SKILL_DIR_NAMES) {
+      const dir = join(root, dirName);
+      const skillPath = join(dir, 'SKILL.md');
+      if (!fs.existsSync(skillPath)) continue;
+      try {
+        const raw = fs.readFileSync(skillPath).toString('utf8');
+        const owned =
+          new RegExp(`^name:\\s*["']?${dirName}["']?\\s*$`, 'm').test(raw) &&
+          (raw.includes('@inkeep/open-knowledge') ||
+            raw.includes('github.com/inkeep/open-knowledge')) &&
+          /author:\s*["']?Inkeep["']?/m.test(raw);
+        if (!owned) continue;
+        fs.rmSync(dir, { recursive: true, force: true });
+        logger({ event: 'user-skill-legacy-removed', scope: 'user', path: dir });
+      } catch (err) {
+        logger({
+          event: 'user-skill-legacy-remove-failed',
+          scope: 'user',
+          path: dir,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+  }
+}
 
 export interface RepairSkillsDeps {
   /** Override for `resolveBundledSkillDir('project')`. */
@@ -747,7 +851,9 @@ export async function repairSkills(ctx: RepairSkillsContext): Promise<RepairSkil
     return { status: 'skipped', reason: 'reclaim-disabled' };
   }
 
+  removeLegacyProjectRuntimeSkills(ctx.projectDir, fs, logger);
   const project = runProjectSweep(ctx.projectDir, deps, fs, logger);
+  removeLegacyUserSkills(home, fs, logger);
   const user = await runUserSweep(home, deps, fs, logger);
 
   return { status: 'done', project, user };

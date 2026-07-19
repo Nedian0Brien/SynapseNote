@@ -11,7 +11,10 @@ import {
   isEntryUpToDate,
 } from './editors.ts';
 import { readExistingMcpEntry, writeEditorMcpConfig } from './init.ts';
+import { removeOwnMcpEntry } from './mcp-config-removal.ts';
 import { buildMcpConfigMigrateEvent } from './mcp-migrate-event.ts';
+
+const LEGACY_MCP_SERVER_NAME = 'open-knowledge';
 
 export interface RepairOutcome {
   scope: 'user' | 'project';
@@ -160,12 +163,27 @@ function repairOne(opts: RepairOneOptions): RepairOutcome {
   // unreachable code; defense-in-depth lives in the caller's outer try/catch
   // wrap (in `bootStartServer`).
   const existing = readExistingMcpEntry(opts.target, opts.cwd, opts.home, opts.configPathOverride);
+  const legacyTarget = withServerName(opts.target, LEGACY_MCP_SERVER_NAME);
+  const legacy =
+    opts.target.format === 'file'
+      ? null
+      : readExistingMcpEntry(legacyTarget, opts.cwd, opts.home, opts.configPathOverride);
+  const managedLegacy = isManagedLegacyEntry(legacy) ? legacy : null;
 
   if (existing === null) {
+    if (managedLegacy !== null) {
+      return migrateLegacyEntry(opts, base, legacyTarget, managedLegacy);
+    }
     return { ...base, outcome: 'no-entry' };
   }
 
-  if (isEntryUpToDate(existing)) return { ...base, outcome: 'canonical' };
+  if (isEntryUpToDate(existing)) {
+    if (managedLegacy !== null) {
+      const error = removeManagedLegacyEntry(opts, legacyTarget, managedLegacy);
+      if (error !== null) return { ...base, outcome: 'write-failed', error };
+    }
+    return { ...base, outcome: 'canonical' };
+  }
 
   // Emit migrate event BEFORE the rewrite so field observability captures
   // every attempted migration — including writes that subsequently fail with
@@ -215,7 +233,127 @@ function repairOne(opts: RepairOneOptions): RepairOutcome {
     return { ...base, outcome: 'declined' };
   }
 
+  if (managedLegacy !== null) {
+    const error = removeManagedLegacyEntry(opts, legacyTarget, managedLegacy);
+    if (error !== null) return { ...base, outcome: 'write-failed', error };
+  }
+
   return { ...base, outcome: 'repaired' };
+}
+
+function withServerName(target: EditorMcpTarget, serverName: string): EditorMcpTarget {
+  return { ...target, serverName: () => serverName };
+}
+
+/**
+ * Recognize only old SynapseNote-owned entries. Older releases wrote both the
+ * resolver chain and direct npx/app launches, so the retired official identity
+ * plus the MCP subcommand is the stable ownership signal across those versions.
+ */
+function isManagedLegacyEntry(
+  entry: Record<string, unknown> | null,
+): entry is Record<string, unknown> {
+  if (entry === null) return false;
+  const serialized = JSON.stringify(entry);
+  const hasOfficialIdentity =
+    serialized.includes('@inkeep/open-knowledge') ||
+    serialized.includes('OpenKnowledge.app') ||
+    serialized.includes('@nedian0brien/synapsenote') ||
+    serialized.includes('SynapseNote.app');
+  return hasOfficialIdentity && /(?:^|[^a-z])mcp(?:[^a-z]|$)/i.test(serialized);
+}
+
+function migrateLegacyEntry(
+  opts: RepairOneOptions,
+  base: Pick<RepairOutcome, 'scope' | 'editorId' | 'configPath'>,
+  legacyTarget: EditorMcpTarget,
+  legacyEntry: Record<string, unknown>,
+): RepairOutcome {
+  opts.logger(
+    buildMcpConfigMigrateEvent({
+      scope: opts.scope,
+      surface: 'cli-repair-legacy-name',
+      editorId: opts.editorId,
+      configPath: opts.configPath,
+      priorEntry: legacyEntry,
+    }),
+  );
+
+  const written = writeEditorMcpConfig(
+    opts.target,
+    opts.cwd,
+    { mode: 'published', skipAvailabilityCheck: true },
+    opts.home,
+    opts.configPathOverride,
+  );
+  if (written.action === 'failed' || written.action === 'declined') {
+    const error =
+      written.action === 'failed'
+        ? (written.error ?? 'unknown write failure')
+        : `write declined (${written.declineReason ?? 'unknown'})`;
+    return { ...base, outcome: written.action === 'declined' ? 'declined' : 'write-failed', error };
+  }
+
+  // Write-first is deliberate: a crash may temporarily leave both entries,
+  // but can never strand the user with neither server configured.
+  const error = removeManagedLegacyEntry(opts, legacyTarget, legacyEntry);
+  if (error !== null) {
+    return { ...base, outcome: 'write-failed', error };
+  }
+  return { ...base, outcome: 'repaired' };
+}
+
+function removeManagedLegacyEntry(
+  opts: RepairOneOptions,
+  legacyTarget: EditorMcpTarget,
+  legacyEntry: Record<string, unknown>,
+): string | null {
+  // The shared removal primitive deliberately accepts only current managed
+  // shapes. Normalize older direct launches in place first, then use that
+  // byte-preserving removal path for JSON, TOML, and YAML alike.
+  if (!isEntryUpToDate(legacyEntry)) {
+    const normalized = writeEditorMcpConfig(
+      legacyTarget,
+      opts.cwd,
+      { mode: 'published', skipAvailabilityCheck: true },
+      opts.home,
+      opts.configPathOverride,
+    );
+    if (normalized.action === 'failed' || normalized.action === 'declined') {
+      const error =
+        normalized.action === 'failed'
+          ? (normalized.error ?? 'unknown legacy normalization failure')
+          : `legacy normalization declined (${normalized.declineReason ?? 'unknown'})`;
+      opts.logger({
+        event: 'mcp-config-legacy-remove-failed',
+        scope: opts.scope,
+        editorId: opts.editorId,
+        configPath: opts.configPath,
+        error,
+      });
+      return error;
+    }
+  }
+
+  const removed = removeOwnMcpEntry(legacyTarget, opts.cwd, opts.home, opts.configPathOverride);
+  if (removed.kind !== 'removed' && removed.kind !== 'not-present') {
+    const error = `legacy ${LEGACY_MCP_SERVER_NAME} entry could not be removed (${removed.kind})`;
+    opts.logger({
+      event: 'mcp-config-legacy-remove-failed',
+      scope: opts.scope,
+      editorId: opts.editorId,
+      configPath: opts.configPath,
+      error,
+    });
+    return error;
+  }
+  opts.logger({
+    event: 'mcp-config-legacy-removed',
+    scope: opts.scope,
+    editorId: opts.editorId,
+    configPath: opts.configPath,
+  });
+  return null;
 }
 
 function defaultLogger(event: RepairLogEvent): void {

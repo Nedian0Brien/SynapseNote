@@ -10,6 +10,8 @@
 import { Trans } from '@lingui/react/macro';
 import { parsePdfAnchor } from '@nedian0brien/synapsenote-core';
 import { lazy, Suspense } from 'react';
+import type { PdfPanelTab } from '@/components/DocPanel';
+import { DocumentViewerHeader, viewerTitleFromPath } from '@/components/DocumentViewerHeader';
 
 export interface PdfProps {
   src?: string;
@@ -20,6 +22,12 @@ export interface PdfProps {
   fillContainer?: boolean;
   /** Asset identity used when publishing a dragged passage to chat. */
   selectionDocumentName?: string;
+  /** Route-level viewer control for the shared Chat right rail. */
+  rightPanelOpen?: boolean;
+  onToggleRightPanel?: () => void;
+  /** Right-rail mount owned by the route-level viewer shell. */
+  panelContainer?: HTMLElement | null;
+  activePanelTab?: PdfPanelTab;
 }
 
 const DEFAULT_HEIGHT_PX = 600;
@@ -37,30 +45,58 @@ export function Pdf(props: PdfProps) {
       : props.fillContainer
         ? '100%'
         : `${DEFAULT_HEIGHT_PX}px`;
+  const documentPath = props.selectionDocumentName ?? props.title ?? 'PDF';
+  const title = viewerTitleFromPath(props.title ?? documentPath);
+  const standaloneViewer = Boolean(props.fillContainer || props.onToggleRightPanel);
 
   return (
-    <div className="ok-pdf" style={{ height: heightStyle }}>
-      {props.src ? (
-        <Suspense
-          fallback={
-            <div className="ok-pdf-loading">
-              <Trans>Loading PDF</Trans>
-            </div>
+    <div
+      className="ok-pdf"
+      style={{ height: heightStyle }}
+      data-standalone={standaloneViewer || undefined}
+    >
+      {standaloneViewer ? (
+        <DocumentViewerHeader
+          documentPath={documentPath}
+          title={title}
+          fileType="PDF"
+          panelToggle={
+            props.onToggleRightPanel
+              ? {
+                  open: Boolean(props.rightPanelOpen),
+                  onToggle: props.onToggleRightPanel,
+                  controlsId: 'terminal-column',
+                }
+              : undefined
           }
-        >
-          <LazyPdfEmbed
-            key={props.src}
-            src={props.src}
-            title={props.title}
-            targetPage={parseTargetPage(viewerFragment)}
-            selectionDocumentName={props.selectionDocumentName}
-          />
-        </Suspense>
-      ) : (
-        <div className="ok-pdf-error">
-          <Trans>Failed to load PDF: Missing PDF source</Trans>
-        </div>
-      )}
+        />
+      ) : null}
+      <div className="ok-pdf-content flex min-h-0 flex-1 flex-col">
+        {props.src ? (
+          <Suspense
+            fallback={
+              <div className="ok-pdf-loading">
+                <Trans>Loading PDF</Trans>
+              </div>
+            }
+          >
+            <LazyPdfEmbed
+              key={props.src}
+              src={props.src}
+              title={props.title}
+              targetPage={parseTargetPage(viewerFragment)}
+              selectionDocumentName={props.selectionDocumentName}
+              standaloneViewer={standaloneViewer}
+              panelContainer={props.panelContainer}
+              activePanelTab={props.activePanelTab}
+            />
+          </Suspense>
+        ) : (
+          <div className="ok-pdf-error">
+            <Trans>Failed to load PDF: Missing PDF source</Trans>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

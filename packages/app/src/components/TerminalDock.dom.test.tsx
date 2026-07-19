@@ -217,7 +217,6 @@ function DockHarness({
   l,
   onVisibleChange,
   bridge,
-  onReveal,
   dock = 'bottom',
   onActiveSessionCliChange,
   // biome-ignore lint/suspicious/noExplicitAny: test harness props
@@ -232,7 +231,6 @@ function DockHarness({
         dockPosition={dock}
         onBottomContainer={setBottomContainer}
         onEditorRegion={setEditorRegionEl}
-        onReveal={onReveal}
       >
         <div data-testid="editor-child" />
       </TerminalDock>
@@ -255,7 +253,6 @@ function DockHarness({
 function renderDock(
   visible: boolean,
   launch?: TestLaunch | null,
-  onReveal?: () => void,
   onActiveSessionCliChange?: (isCli: boolean) => void,
 ) {
   const onVisibleChange = mock((_v: boolean) => {});
@@ -266,7 +263,6 @@ function renderDock(
       l={l ?? null}
       onVisibleChange={onVisibleChange}
       bridge={bridge}
-      onReveal={onReveal}
       dock={dock ?? 'bottom'}
       onActiveSessionCliChange={onActiveSessionCliChange}
     />
@@ -869,18 +865,15 @@ describe('TerminalDock multi-session', () => {
   test('reports whether the active tab is a CLI session (drives ⌘J inject-vs-launch)', () => {
     // Seeded from a CLI launch → active tab is a CLI session.
     const cliReports: boolean[] = [];
-    const { unmount } = renderDock(
-      true,
-      { prompt: 'work', cli: 'claude', nonce: 1 },
-      undefined,
-      (isCli) => cliReports.push(isCli),
+    const { unmount } = renderDock(true, { prompt: 'work', cli: 'claude', nonce: 1 }, (isCli) =>
+      cliReports.push(isCli),
     );
     expect(cliReports.at(-1)).toBe(true);
     unmount();
     cliReports.length = 0;
 
     // A bare-shell seed (no launch) → active tab is NOT a CLI session.
-    renderDock(true, null, undefined, (isCli) => cliReports.push(isCli));
+    renderDock(true, null, (isCli) => cliReports.push(isCli));
     expect(cliReports.at(-1)).toBe(false);
   });
 
@@ -891,7 +884,7 @@ describe('TerminalDock multi-session', () => {
     // decision exists to avoid.
     const user = userEvent.setup();
     const cliReports: boolean[] = [];
-    renderDock(true, { prompt: 'work', cli: 'claude', nonce: 1 }, undefined, (isCli) =>
+    renderDock(true, { prompt: 'work', cli: 'claude', nonce: 1 }, (isCli) =>
       cliReports.push(isCli),
     );
     expect(cliReports.at(-1)).toBe(true);
@@ -1171,39 +1164,14 @@ describe('TerminalDock multi-session', () => {
     expect(document.activeElement).toBe(session);
   });
 
-  test('shows the bottom-edge "Show terminal" tab only while hidden, inside the editor column', () => {
-    const onReveal = mock(() => {});
-    const view = renderDock(false, null, onReveal);
-
-    // Hidden → the reveal tab is present, and lives inside the editor region (not
-    // the doc panel), since a bottom-docked terminal slides up from there.
-    const reveal = screen.getByRole('button', { name: 'Show terminal' });
-    expect(editorRegion().contains(reveal)).toBe(true);
-
-    // Visible → the reveal tab is gone (the tab strip's collapse control is the
-    // hide affordance while open).
-    act(() => view.rerender(true));
-    expect(screen.queryByRole('button', { name: 'Show terminal' })).toBeNull();
-  });
-
-  test('clicking the reveal tab requests a reveal', async () => {
-    const user = userEvent.setup();
-    const onReveal = mock(() => {});
-    renderDock(false, null, onReveal);
-
-    await user.click(screen.getByRole('button', { name: 'Show terminal' }));
-
-    expect(onReveal).toHaveBeenCalledTimes(1);
-  });
-
-  test('renders no reveal tab when no reveal handler is wired (web host)', () => {
+  test('renders no standalone "Show terminal" control while hidden', () => {
     renderDock(false);
     expect(screen.queryByRole('button', { name: 'Show terminal' })).toBeNull();
   });
 
   test('disables the resize handle while hidden so there is no drag-to-open', () => {
     const view = renderDock(false);
-    // Hidden: dragging up to open is gone (the reveal tab is the single way in).
+    // Hidden: dragging up to open is gone; viewer right-panel controls reopen Chat.
     expect(screen.getByTestId('terminal-resize-handle').getAttribute('data-disabled')).toBe('true');
 
     // Open: the handle is live again — resize + drag-all-the-way-down-to-collapse.

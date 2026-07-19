@@ -1,5 +1,5 @@
 /**
- * Registry assertion — pins the 17-tool surface of `registerAllTools`.
+ * Registry assertion — pins the consolidated tool surface of `registerAllTools`.
  *
  * The OK MCP redesign collapsed the original surface to 17 native
  * CRUD verbs + discriminated reads:
@@ -42,6 +42,7 @@ const EXPECTED_TOOLS = [
   'palette',
   'preview_url',
   'share_link',
+  'current_document',
   // Writes — CRUD verbs + version
   'write',
   'edit',
@@ -123,13 +124,13 @@ function captureRegistered(): string[] {
   return names;
 }
 
-describe('registerAllTools — 19-tool surface (SPEC.md §9.1 / AC8 + PRD-6935 install + skills read)', () => {
-  test('registers exactly 19 tools', () => {
+describe('registerAllTools — 20-tool surface', () => {
+  test('registers exactly 20 tools', () => {
     const names = captureRegistered();
-    expect(names.length).toBe(19);
+    expect(names.length).toBe(20);
   });
 
-  test('the 19 expected tool names are all present', () => {
+  test('the 20 expected tool names are all present', () => {
     const names = new Set(captureRegistered());
     for (const expected of EXPECTED_TOOLS) {
       expect(names).toContain(expected);
@@ -180,6 +181,7 @@ const OK_AUTO_APPROVED_TOOLS = [
   'config',
   'palette',
   'preview_url',
+  'current_document',
   'write',
   'edit',
   'checkpoint',

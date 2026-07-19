@@ -6,12 +6,14 @@ import { useDocumentContext } from '@/editor/DocumentContext';
 import { dispatchCC1Stateless, SYSTEM_DOC_NAME } from '@/lib/cc1';
 import { emitConfigIgnoreNestedError } from '@/lib/config-ignore-nested-error-events';
 import { emitConfigValidationRejected } from '@/lib/config-validation-events';
+import { currentViewSnapshot, publishCurrentView } from '@/lib/current-view-awareness';
 import { emitDocumentsChanged, subscribeToDocumentsChanged } from '@/lib/documents-events';
 import { createSyncedReconnectGate } from '@/lib/server-info-refresh';
 
 export function SystemDocSubscriber() {
   const queryClient = useQueryClient();
   const {
+    activeDocName,
     collabUrl,
     setSystemProvider,
     updateServerInstanceId,
@@ -20,6 +22,13 @@ export function SystemDocSubscriber() {
     observeDiskAck,
     refreshServerInfo,
   } = useDocumentContext();
+  const providerRef = useRef<HocuspocusProvider | null>(null);
+  const activeDocNameRef = useRef(activeDocName);
+
+  useEffect(() => {
+    activeDocNameRef.current = activeDocName;
+    publishCurrentView(providerRef.current?.awareness, currentViewSnapshot(activeDocName));
+  }, [activeDocName]);
 
   // Ref pattern: dispatchers are re-created per-render in DocumentContext's `value`
   // literal. Capturing them by closure inside `onStateless` would tie the main
@@ -88,6 +97,15 @@ export function SystemDocSubscriber() {
         console.warn('[CC1] __system__ disconnected - derived views may be stale');
       },
     });
+    providerRef.current = provider;
+
+    const publishView = (): void => {
+      publishCurrentView(provider.awareness, currentViewSnapshot(activeDocNameRef.current));
+    };
+    publishView();
+    window.addEventListener('focus', publishView);
+    window.addEventListener('blur', publishView);
+    document.addEventListener('visibilitychange', publishView);
 
     const unsubscribe = subscribeToDocumentsChanged((channels) => {
       if (channels.includes('files') || channels.includes('backlinks')) {
@@ -113,6 +131,7 @@ export function SystemDocSubscriber() {
       void handlersRef.current.refreshServerInfo();
     });
     provider.on('synced', () => {
+      publishView();
       emitDocumentsChanged(['files', 'backlinks', 'graph']);
       onReconnectSynced();
     });
@@ -143,8 +162,12 @@ export function SystemDocSubscriber() {
 
     return () => {
       unsubscribe();
+      window.removeEventListener('focus', publishView);
+      window.removeEventListener('blur', publishView);
+      document.removeEventListener('visibilitychange', publishView);
       provider.awareness?.off('change', handleAwarenessChange);
       setSystemProvider(null);
+      if (providerRef.current === provider) providerRef.current = null;
       provider.destroy();
       doc.destroy();
     };

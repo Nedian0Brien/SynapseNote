@@ -57,6 +57,26 @@ export interface AwarenessState {
    * close event with the 5s TTL as a belt-and-suspenders fallback.
    */
   agentPresence?: Record<string, AgentPresenceEntry>;
+  /**
+   * The document selected in this SynapseNote window. Published on the
+   * `__system__` document so local MCP clients can answer "what am I looking
+   * at?" without inspecting the desktop UI. Unlike `user`/`mode`, this field
+   * is valid on the system provider even when those per-document awareness
+   * fields are absent.
+   */
+  currentView?: CurrentViewState;
+}
+
+/** One connected SynapseNote window's current view on `__system__` awareness. */
+export interface CurrentViewState {
+  /** Active document's canonical docName, or null for a non-document tab/view. */
+  document: string | null;
+  /** Whether this browser/Electron window currently owns keyboard focus. */
+  focused: boolean;
+  /** Whether the renderer document is visible (not a background browser tab). */
+  visible: boolean;
+  /** `Date.now()` when any field in this view snapshot last changed. */
+  updatedAt: number;
 }
 
 /**

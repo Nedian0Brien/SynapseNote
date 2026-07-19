@@ -357,6 +357,11 @@ msgstr "{keyName} type: complex value (nested; read-only)"
 msgid "{keyName} value"
 msgstr "{keyName} value"
 
+#. placeholder {0}: entry.pageIndex + 1
+#: src/editor/components/PdfEmbed.tsx
+msgid "{label} on page {0}"
+msgstr "{label} on page {0}"
+
 #: src/components/GraphPanel.tsx
 msgid "{linkCount, plural, one {# link} other {# links}}"
 msgstr "{linkCount, plural, one {# link} other {# links}}"
@@ -715,6 +720,10 @@ msgstr "Add"
 msgid "Add a key"
 msgstr "Add a key"
 
+#: src/editor/components/PdfSelectionMenu.tsx
+msgid "Add a memo"
+msgstr "Add a memo"
+
 #: src/components/FolderPropertiesCard.tsx
 msgid "Add a property"
 msgstr "Add a property"
@@ -754,6 +763,10 @@ msgstr "Add link"
 #: src/components/settings/SearchSection.tsx
 msgid "Add meaning-based ranking to search so conceptually-related pages surface even when they share no keywords. This setting applies only to this computer."
 msgstr "Add meaning-based ranking to search so conceptually-related pages surface even when they share no keywords. This setting applies only to this computer."
+
+#: src/components/MemoPanel.tsx
+msgid "Add memo"
+msgstr "Add memo"
 
 #: src/components/settings/OkignoreSection.tsx
 msgid "Add pattern"
@@ -912,6 +925,11 @@ msgstr "and {remaining} more"
 msgid "and more"
 msgstr "and more"
 
+#: src/components/DocPanel.tsx
+#: src/editor/components/PdfEmbed.tsx
+msgid "Annotations"
+msgstr "Annotations"
+
 #: src/components/PublishToGitHubDialog.tsx
 msgid "Anyone can see"
 msgstr "Anyone can see"
@@ -978,6 +996,7 @@ msgstr "Ask about your current document or project."
 #: src/components/EditorFooter.tsx
 #: src/components/OnboardingCard.tsx
 #: src/editor/bubble-menu/EditWithAiBubbleButton.tsx
+#: src/editor/components/PdfSelectionMenu.tsx
 #: src/lib/keyboard-shortcuts.ts
 msgid "Ask AI"
 msgstr "Ask AI"
@@ -1006,6 +1025,10 @@ msgstr "Asset: {title}"
 #: src/components/chat/ChatMessageList.tsx
 msgid "Assistant"
 msgstr "Assistant"
+
+#: src/components/MemoPanel.tsx
+msgid "Attach selection"
+msgstr "Attach selection"
 
 #: src/components/ReportBugDialogBody.tsx
 msgid "Attach the file in an email to <0>support@lawdigest.kr</0>"
@@ -1092,6 +1115,7 @@ msgid "Back to document view"
 msgstr "Back to document view"
 
 #: src/components/LinksPanel.tsx
+#: src/editor/components/PdfEmbed.tsx
 msgid "Backlinks"
 msgstr "Backlinks"
 
@@ -1151,6 +1175,7 @@ msgstr "Blog post"
 msgid "blog-post"
 msgstr "blog-post"
 
+#: src/components/MarkdownFormatToolbar.tsx
 #: src/lib/keyboard-shortcuts.ts
 msgid "Bold"
 msgstr "Bold"
@@ -1249,6 +1274,7 @@ msgstr "Building <0>synapsenote.skill</0> and opening the Claude Desktop App"
 msgid "Bullet list"
 msgstr "Bullet list"
 
+#: src/components/MarkdownFormatToolbar.tsx
 #: src/editor/slash-command/items.tsx
 msgid "Bullet List"
 msgstr "Bullet List"
@@ -1282,6 +1308,7 @@ msgstr "Can't safely edit this tool's config"
 #: src/components/EnableSyncConfirmDialog.tsx
 #: src/components/FrontmatterRow.tsx
 #: src/components/InstallInClaudeDesktopDialog.tsx
+#: src/components/MemoPanel.tsx
 #: src/components/MountStalledAffordance.tsx
 #: src/components/NewItemDialog.tsx
 #: src/components/NewSkillDialog.tsx
@@ -1303,6 +1330,10 @@ msgstr "Can't safely edit this tool's config"
 msgid "Cancel"
 msgstr "Cancel"
 
+#: src/editor/components/PdfSelectionMenu.tsx
+msgid "Cancel memo"
+msgstr "Cancel memo"
+
 #: src/components/DocumentErrorBoundary.tsx
 msgid "Cancelled"
 msgstr "Cancelled"
@@ -1312,7 +1343,7 @@ msgid "Cannot upload: no document is open"
 msgstr "Cannot upload: no document is open"
 
 #: src/components/chat/CliChatPanel.tsx
-#: src/components/chat/CliChatSession.tsx
+#: src/components/DocPanel.tsx
 msgid "Chat"
 msgstr "Chat"
 
@@ -1384,6 +1415,12 @@ msgstr "Choose which editors every skill in this project installs into."
 #: src/components/handoff/AgentSplitButton.tsx
 msgid "Claude"
 msgstr "Claude"
+
+#: src/components/chat/CliChatPanel.tsx
+#: src/components/chat/CliChatSession.tsx
+#: src/components/TerminalSessionsHost.tsx
+msgid "Claude chat"
+msgstr "Claude chat"
 
 #: src/components/handoff/AgentSplitButton.tsx
 msgid "Claude CLI"
@@ -1554,6 +1591,12 @@ msgstr "Code copied to clipboard"
 msgid "Code expired — please try again"
 msgstr "Code expired — please try again"
 
+#: src/components/chat/CliChatPanel.tsx
+#: src/components/chat/CliChatSession.tsx
+#: src/components/TerminalSessionsHost.tsx
+msgid "Codex chat"
+msgstr "Codex chat"
+
 #: src/components/settings/TerminalSection.tsx
 msgid "Codex will still ask until you run \"ok init\" in a terminal for this project."
 msgstr "Codex will still ask until you run \"ok init\" in a terminal for this project."
@@ -1563,6 +1606,7 @@ msgid "Collaborators see your in-progress edits as soon as they sync."
 msgstr "Collaborators see your in-progress edits as soon as they sync."
 
 #: src/components/GraphPanel.tsx
+#: src/components/MemoPanel.tsx
 msgid "Collapse"
 msgstr "Collapse"
 
@@ -1595,6 +1639,10 @@ msgstr "Collapse burst {burstNumber} diff"
 #: src/components/GraphPanel.tsx
 msgid "Collapse graph"
 msgstr "Collapse graph"
+
+#: src/components/MemoPanel.tsx
+msgid "Collapse original text"
+msgstr "Collapse original text"
 
 #: src/components/TerminalTabStrip.tsx
 msgid "Collapse terminal"
@@ -2432,6 +2480,14 @@ msgid "default"
 msgstr "default"
 
 #: src/components/settings/SettingsDialogBody.tsx
+msgid "Default Claude chat model"
+msgstr "Default Claude chat model"
+
+#: src/components/settings/SettingsDialogBody.tsx
+msgid "Default Codex chat model"
+msgstr "Default Codex chat model"
+
+#: src/components/settings/SettingsDialogBody.tsx
 msgid "Default location for new attachments"
 msgstr "Default location for new attachments"
 
@@ -2478,6 +2534,15 @@ msgstr "Delete block"
 msgid "Delete code block"
 msgstr "Delete code block"
 
+#: src/editor/components/PdfSelectionMenu.tsx
+msgid "Delete highlight"
+msgstr "Delete highlight"
+
+#: src/components/MemoPanel.tsx
+#: src/editor/components/PdfSelectionMenu.tsx
+msgid "Delete memo"
+msgstr "Delete memo"
+
 #: src/components/TrashFailureModal.tsx
 msgid "Delete Permanently"
 msgstr "Delete Permanently"
@@ -2493,6 +2558,10 @@ msgstr "Delete selected items"
 #: src/lib/keyboard-shortcuts.ts
 msgid "Delete selected table"
 msgstr "Delete selected table"
+
+#: src/components/MemoPanel.tsx
+msgid "Delete this memo?"
+msgstr "Delete this memo?"
 
 #: src/components/FolderTimelineCard.tsx
 msgid "deleted template"
@@ -2660,6 +2729,10 @@ msgstr "Docs tagged #{tagDocsName}"
 msgid "document"
 msgstr "document"
 
+#: src/components/MemoPanel.tsx
+msgid "Document memos"
+msgstr "Document memos"
+
 #: src/components/DocumentErrorBoundary.tsx
 msgid "Document not found"
 msgstr "Document not found"
@@ -2703,6 +2776,10 @@ msgstr "Done"
 #: src/editor/bubble-menu/FileBubbleButtons.tsx
 msgid "Download file"
 msgstr "Download file"
+
+#: src/editor/components/PdfEmbed.tsx
+msgid "Download PDF copy"
+msgstr "Download PDF copy"
 
 #: src/components/InstallInClaudeDesktopDialog.tsx
 msgid "Download started"
@@ -2792,6 +2869,10 @@ msgstr "e.g. The editor froze after I pasted a large table"
 msgid "Each selected tool gets an SynapseNote MCP entry."
 msgstr "Each selected tool gets an SynapseNote MCP entry."
 
+#: src/components/MemoPanel.tsx
+msgid "Earlier memo"
+msgstr "Earlier memo"
+
 #: src/components/skill-actions.tsx
 #: src/components/TemplateForm.tsx
 #: src/components/TemplateRow.tsx
@@ -2812,6 +2893,14 @@ msgstr "Edit {keyName}"
 #: src/editor/extensions/InternalLinkPropPanel.tsx
 msgid "Edit markdown link"
 msgstr "Edit markdown link"
+
+#: src/components/MemoPanel.tsx
+msgid "Edit memo"
+msgstr "Edit memo"
+
+#: src/editor/components/PdfSelectionMenu.tsx
+msgid "Edit PDF memo"
+msgstr "Edit PDF memo"
 
 #: src/editor/extensions/CodeBlockView.tsx
 msgid "Edit source"
@@ -3002,6 +3091,10 @@ msgstr "Existing branch <0>{trimmed}</0> will be checked out into its own window
 msgid "Exit merge"
 msgstr "Exit merge"
 
+#: src/components/MemoPanel.tsx
+msgid "Expand"
+msgstr "Expand"
+
 #: src/components/ActivityPanelFileRow.tsx
 msgid "Expand {docName}"
 msgstr "Expand {docName}"
@@ -3028,6 +3121,10 @@ msgstr "Expand burst {burstNumber} diff"
 msgid "Expand graph"
 msgstr "Expand graph"
 
+#: src/components/MemoPanel.tsx
+msgid "Expand original text"
+msgstr "Expand original text"
+
 #: src/components/GraphPanel.tsx
 msgid "Expanded graph mode"
 msgstr "Expanded graph mode"
@@ -3047,6 +3144,10 @@ msgstr "Explore"
 #: src/editor/extensions/InternalLinkPropPanel.tsx
 msgid "External link"
 msgstr "External link"
+
+#: src/editor/components/PdfEmbed.tsx
+msgid "External links"
+msgstr "External links"
 
 #: src/editor/extensions/WikiLinkPropPanel.tsx
 msgid "External wiki link"
@@ -3122,6 +3223,7 @@ msgid "Failed to load activity"
 msgstr "Failed to load activity"
 
 #: src/components/LinksPanel.tsx
+#: src/editor/components/PdfEmbed.tsx
 msgid "Failed to load backlinks"
 msgstr "Failed to load backlinks"
 
@@ -3621,14 +3723,17 @@ msgstr "Hard break"
 msgid "Have something else in mind?"
 msgstr "Have something else in mind?"
 
+#: src/components/MarkdownFormatToolbar.tsx
 #: src/editor/slash-command/items.tsx
 msgid "Heading 1"
 msgstr "Heading 1"
 
+#: src/components/MarkdownFormatToolbar.tsx
 #: src/editor/slash-command/items.tsx
 msgid "Heading 2"
 msgstr "Heading 2"
 
+#: src/components/MarkdownFormatToolbar.tsx
 #: src/editor/slash-command/items.tsx
 msgid "Heading 3"
 msgstr "Heading 3"
@@ -3714,13 +3819,9 @@ msgstr "Hide folder"
 msgid "Hide HTML preview"
 msgstr "Hide HTML preview"
 
-#: src/components/EditorToolbar.tsx
-msgid "Hide panel ({panelShortcut})"
-msgstr "Hide panel ({panelShortcut})"
-
-#: src/components/EditorToolbar.tsx
-msgid "Hide panel ({panelShortcutLabel})"
-msgstr "Hide panel ({panelShortcutLabel})"
+#: src/components/DocumentViewerHeader.tsx
+msgid "Hide panel"
+msgstr "Hide panel"
 
 #: src/editor/find-replace/FindReplaceBar.tsx
 msgid "Hide replace"
@@ -3738,6 +3839,8 @@ msgstr "Hide this file"
 msgid "Hide thumbnails"
 msgstr "Hide thumbnails"
 
+#: src/editor/components/PdfEmbed.tsx
+#: src/editor/components/PdfSelectionMenu.tsx
 #: src/lib/keyboard-shortcuts.ts
 msgid "Highlight"
 msgstr "Highlight"
@@ -4051,6 +4154,7 @@ msgstr "Invalid input — pick a different folder."
 msgid "Invalid patch payload"
 msgstr "Invalid patch payload"
 
+#: src/components/MarkdownFormatToolbar.tsx
 #: src/lib/keyboard-shortcuts.ts
 msgid "Italic"
 msgstr "Italic"
@@ -4082,6 +4186,10 @@ msgstr "Jump to tab 1-8"
 #: src/components/TimelinePanel.tsx
 msgid "just now"
 msgstr "just now"
+
+#: src/components/MemoPanel.tsx
+msgid "Keep a private reading note or attach a passage you want to revisit."
+msgstr "Keep a private reading note or attach a passage you want to revisit."
 
 #: src/components/SeedDialog.tsx
 msgid "Keep a written record of how your product gets built. A home for proposing ideas, recording decisions, writing specs, and capturing what you learned after something broke."
@@ -4147,6 +4255,17 @@ msgstr "Level"
 msgid "Light, dark, or follow the OS."
 msgstr "Light, dark, or follow the OS."
 
+#. placeholder {0}: quote.sourceLineStart
+#: src/components/MemoPanel.tsx
+msgid "Line {0}"
+msgstr "Line {0}"
+
+#. placeholder {0}: quote.sourceLineStart
+#. placeholder {1}: quote.sourceLineEnd
+#: src/components/MemoPanel.tsx
+msgid "Lines {0}–{1}"
+msgstr "Lines {0}–{1}"
+
 #: src/editor/bubble-menu/LinkEditPopover.tsx
 #: src/editor/slash-command/component-items.tsx
 msgid "Link"
@@ -4183,6 +4302,10 @@ msgstr "Links"
 #: src/components/PropertyWidgets.tsx
 msgid "List"
 msgstr "List"
+
+#: src/components/chat/CliChatSession.tsx
+msgid "Load previous chat"
+msgstr "Load previous chat"
 
 #: src/components/PageHeaderWidgets.tsx
 #: src/components/SkillsSidebarSection.tsx
@@ -4364,7 +4487,12 @@ msgstr "Mark a block as the source of truth. Mirrors elsewhere update live as yo
 msgid "Markdown"
 msgstr "Markdown"
 
+#: src/components/MarkdownFormatToolbar.tsx
+msgid "Markdown formatting"
+msgstr "Markdown formatting"
+
 #: src/components/EditorModeToggle.tsx
+#: src/components/MarkdownFormatToolbar.tsx
 msgid "Markdown source"
 msgstr "Markdown source"
 
@@ -4384,6 +4512,18 @@ msgstr "MCP connections"
 #: src/editor/slash-command/items.tsx
 msgid "Medium section heading."
 msgstr "Medium section heading."
+
+#: src/components/DocPanel.tsx
+#: src/editor/bubble-menu/MemoBubbleButton.tsx
+#: src/editor/components/PdfEmbed.tsx
+#: src/editor/components/PdfSelectionMenu.tsx
+msgid "Memo"
+msgstr "Memo"
+
+#: src/components/MemoPanel.tsx
+#: src/editor/components/PdfEmbed.tsx
+msgid "Memos"
+msgstr "Memos"
 
 #: src/components/MermaidDocEditor.tsx
 msgid "Mermaid diagram"
@@ -4647,6 +4787,14 @@ msgstr "New branch <0>{trimmed}</0> will be created from the current commit, in 
 msgid "New chat"
 msgstr "New chat"
 
+#: src/components/chat/CliChatSession.tsx
+msgid "New Claude chat"
+msgstr "New Claude chat"
+
+#: src/components/chat/CliChatSession.tsx
+msgid "New Codex chat"
+msgstr "New Codex chat"
+
 #: src/components/CommandPalette.tsx
 #: src/components/FileSidebar.tsx
 #: src/components/FileTree.tsx
@@ -4679,6 +4827,10 @@ msgstr "New from template"
 #: src/components/settings/OkignoreSection.tsx
 msgid "New ignore pattern"
 msgstr "New ignore pattern"
+
+#: src/components/MemoPanel.tsx
+msgid "New memo"
+msgstr "New memo"
 
 #: src/components/CommandPalette.tsx
 #: src/components/ProjectSwitcher.tsx
@@ -4734,6 +4886,14 @@ msgstr "Next tab"
 #: src/components/FileSidebar.tsx
 msgid "No AI agents installed"
 msgstr "No AI agents installed"
+
+#: src/editor/components/PdfEmbed.tsx
+msgid "No annotation text"
+msgstr "No annotation text"
+
+#: src/editor/components/PdfEmbed.tsx
+msgid "No annotations"
+msgstr "No annotations"
 
 #: src/components/ActivityPanelDiffView.tsx
 msgid "No changes"
@@ -4866,6 +5026,18 @@ msgstr "No matching repositories."
 msgid "No matching worktrees or branches."
 msgstr "No matching worktrees or branches."
 
+#: src/editor/components/PdfEmbed.tsx
+msgid "No memo text"
+msgstr "No memo text"
+
+#: src/editor/components/PdfEmbed.tsx
+msgid "No memos have been created from this PDF yet."
+msgstr "No memos have been created from this PDF yet."
+
+#: src/components/MemoPanel.tsx
+msgid "No memos yet"
+msgstr "No memos yet"
+
 #: src/components/GraphPanel.tsx
 msgid "No Outgoing"
 msgstr "No Outgoing"
@@ -4890,6 +5062,10 @@ msgstr "No pages found for \"{trimmedQuery}\""
 msgid "No pages link here yet."
 msgstr "No pages link here yet."
 
+#: src/editor/components/PdfEmbed.tsx
+msgid "No pages link to this PDF yet."
+msgstr "No pages link to this PDF yet."
+
 #: src/components/CommandPalette.tsx
 msgid "No pages matched \"{semanticQueryText}\" by meaning."
 msgstr "No pages matched \"{semanticQueryText}\" by meaning."
@@ -4897,6 +5073,10 @@ msgstr "No pages matched \"{semanticQueryText}\" by meaning."
 #: src/components/settings/OkignoreSection.tsx
 msgid "No patterns yet. Type a folder or file name below to start hiding files."
 msgstr "No patterns yet. Type a folder or file name below to start hiding files."
+
+#: src/components/chat/CliChatSession.tsx
+msgid "No previous chats"
+msgstr "No previous chats"
 
 #: src/components/settings/SkillsManagerSection.tsx
 msgid "No project skills yet. Author one to teach agents a repeatable task scoped to this knowledge base."
@@ -5001,6 +5181,10 @@ msgstr "Not installed"
 msgid "Not now"
 msgstr "Not now"
 
+#: src/components/MemoPanel.tsx
+msgid "Not saved"
+msgstr "Not saved"
+
 #: src/components/FolderPropertiesCard.tsx
 msgid "Nothing set yet."
 msgstr "Nothing set yet."
@@ -5094,6 +5278,11 @@ msgstr "Only the current document uses <0>#{tag}</0>."
 #: src/components/GraphPanel.tsx
 msgid "Open"
 msgstr "Open"
+
+#. placeholder {0}: link.title
+#: src/components/chat/WebPreviewCards.tsx
+msgid "Open {0}"
+msgstr "Open {0}"
 
 #. placeholder {0}: status.remote.label
 #: src/components/settings/SettingsDialogBody.tsx
@@ -5384,6 +5573,7 @@ msgstr "Or write to <0>support@lawdigest.kr</0>"
 msgid "Ordered list"
 msgstr "Ordered list"
 
+#: src/components/MarkdownFormatToolbar.tsx
 #: src/editor/slash-command/items.tsx
 msgid "Ordered List"
 msgstr "Ordered List"
@@ -5395,6 +5585,10 @@ msgstr "Organize my existing specs into a linked index grouped by area, and flag
 #: src/components/empty-state/use-create-suggestions.ts
 msgid "Organize specs"
 msgstr "Organize specs"
+
+#: src/components/MemoPanel.tsx
+msgid "Original text"
+msgstr "Original text"
 
 #: src/components/GraphPanel.tsx
 msgid "Orphan mode"
@@ -5414,6 +5608,7 @@ msgstr "Outgoing"
 
 #: src/components/DocPanel.tsx
 #: src/components/OutlinePanel.tsx
+#: src/editor/components/PdfEmbed.tsx
 msgid "Outline"
 msgstr "Outline"
 
@@ -5430,7 +5625,9 @@ msgstr "Package logs and system info into a report you can review, then send it 
 msgid "Page"
 msgstr "Page"
 
+#. placeholder {0}: entry.pageIndex + 1
 #. placeholder {0}: pageIndex + 1
+#. placeholder {0}: targetInfo.page
 #: src/editor/components/PdfEmbed.tsx
 msgid "Page {0}"
 msgstr "Page {0}"
@@ -5471,6 +5668,11 @@ msgstr "Page thumbnails"
 #: src/editor/extensions/WikiLinkPropPanel.tsx
 msgid "page-name"
 msgstr "page-name"
+
+#: src/components/DocPanel.tsx
+#: src/editor/components/PdfEmbed.tsx
+msgid "Pages"
+msgstr "Pages"
 
 #: src/components/settings/SearchSection.tsx
 msgid "Pages are embedded the first time a search needs them."
@@ -5568,6 +5770,30 @@ msgstr "Pattern syntax error: {message}"
 msgid "Pattern warnings: {summary}"
 msgstr "Pattern warnings: {summary}"
 
+#: src/editor/components/PdfEmbed.tsx
+msgid "PDF copy downloaded"
+msgstr "PDF copy downloaded"
+
+#: src/editor/components/PdfEmbed.tsx
+msgid "PDF links"
+msgstr "PDF links"
+
+#: src/editor/components/PdfSelectionMenu.tsx
+msgid "PDF memo"
+msgstr "PDF memo"
+
+#: src/editor/components/PdfEmbed.tsx
+msgid "PDF outline"
+msgstr "PDF outline"
+
+#: src/editor/components/PdfEmbed.tsx
+msgid "PDF save failed. Retry"
+msgstr "PDF save failed. Retry"
+
+#: src/editor/components/PdfEmbed.tsx
+msgid "PDF saved"
+msgstr "PDF saved"
+
 #: src/components/chat/ChatMessageList.tsx
 msgid "PDF selection"
 msgstr "PDF selection"
@@ -5633,6 +5859,10 @@ msgstr "Preview browsers can't auto-copy. Use Cmd/Ctrl+C on the URL above, or op
 msgid "Preview unavailable: {errorDetail}"
 msgstr "Preview unavailable: {errorDetail}"
 
+#: src/components/chat/CliChatSession.tsx
+msgid "Previous chats"
+msgstr "Previous chats"
+
 #: src/editor/find-replace/FindReplaceBar.tsx
 msgid "Previous match"
 msgstr "Previous match"
@@ -5648,6 +5878,10 @@ msgstr "Private"
 #: src/components/CloneDialog.tsx
 msgid "Private repository"
 msgstr "Private repository"
+
+#: src/components/MemoPanel.tsx
+msgid "Private to this device"
+msgstr "Private to this device"
 
 #: src/components/ConsentDialogBody.tsx
 msgid "probe failed"
@@ -5795,6 +6029,7 @@ msgstr "Push failed — check the server logs for details."
 msgid "Pushing"
 msgstr "Pushing"
 
+#: src/components/MarkdownFormatToolbar.tsx
 #: src/editor/slash-command/items.tsx
 msgid "Quote"
 msgstr "Quote"
@@ -5944,6 +6179,10 @@ msgstr "Remove {projectName} from recent projects"
 #: src/components/ui/tag-pill-input.tsx
 msgid "Remove {tag}"
 msgstr "Remove {tag}"
+
+#: src/components/MemoPanel.tsx
+msgid "Remove attached selection"
+msgstr "Remove attached selection"
 
 #: src/components/FolderPropertiesCard.tsx
 msgid "Remove failed: {error}"
@@ -6297,6 +6536,7 @@ msgid "Sandboxed HTML embed — write HTML, see the rendered preview live."
 msgstr "Sandboxed HTML embed — write HTML, see the rendered preview live."
 
 #: src/components/AuthModal.tsx
+#: src/components/MemoPanel.tsx
 #: src/components/settings/EmbeddingsKeySection.tsx
 #: src/editor/components/CodePreviewEditModal.tsx
 #: src/editor/extensions/InternalLinkPropPanel.tsx
@@ -6312,10 +6552,19 @@ msgstr "Save changes"
 msgid "Save failed: {error}"
 msgstr "Save failed: {error}"
 
+#: src/editor/components/PdfSelectionMenu.tsx
+msgid "Save memo"
+msgstr "Save memo"
+
+#: src/editor/components/PdfEmbed.tsx
+msgid "Save PDF"
+msgstr "Save PDF"
+
 #: src/components/DiffView.tsx
 msgid "Save resolution"
 msgstr "Save resolution"
 
+#: src/components/MemoPanel.tsx
 #: src/components/settings/OkignoreSection.tsx
 #: src/components/settings/SettingsDialogBody.tsx
 msgid "Saved"
@@ -6324,6 +6573,14 @@ msgstr "Saved"
 #: src/components/TemplateForm.tsx
 msgid "Saved as <0>{slug}.md</0>"
 msgstr "Saved as <0>{slug}.md</0>"
+
+#: src/components/MemoPanel.tsx
+msgid "Saved memos"
+msgstr "Saved memos"
+
+#: src/components/MemoPanel.tsx
+msgid "Saved on this device"
+msgstr "Saved on this device"
 
 #: src/components/settings/SharingSection.tsx
 #: src/components/SharingModeField.tsx
@@ -6337,6 +6594,10 @@ msgstr "Saves the file to <0>~/Downloads/synapsenote.skill</0> and opens the Cla
 #: src/components/settings/EmbeddingsKeySection.tsx
 msgid "Saving"
 msgstr "Saving"
+
+#: src/editor/components/PdfEmbed.tsx
+msgid "Saving PDF"
+msgstr "Saving PDF"
 
 #: src/components/NewSkillDialog.tsx
 msgid "Scope"
@@ -6474,6 +6735,10 @@ msgstr "Select every visible file-tree row when focus is in the Files sidebar."
 msgid "Select next occurrence"
 msgstr "Select next occurrence"
 
+#: src/editor/components/PdfEmbed.tsx
+msgid "Select PDF text to add a highlight or memo."
+msgstr "Select PDF text to add a highlight or memo."
+
 #: src/lib/keyboard-shortcuts.ts
 msgid "Select the full source document."
 msgstr "Select the full source document."
@@ -6495,6 +6760,7 @@ msgid "Selected in graph"
 msgstr "Selected in graph"
 
 #: src/components/chat/ChatMessageList.tsx
+#: src/components/MemoPanel.tsx
 msgid "Selected passage"
 msgstr "Selected passage"
 
@@ -6763,13 +7029,9 @@ msgstr "Show or hide Files"
 msgid "Show or hide terminal"
 msgstr "Show or hide terminal"
 
-#: src/components/EditorToolbar.tsx
-msgid "Show panel ({panelShortcut})"
-msgstr "Show panel ({panelShortcut})"
-
-#: src/components/EditorToolbar.tsx
-msgid "Show panel ({panelShortcutLabel})"
-msgstr "Show panel ({panelShortcutLabel})"
+#: src/components/DocumentViewerHeader.tsx
+msgid "Show panel"
+msgstr "Show panel"
 
 #: src/editor/find-replace/FindReplaceBar.tsx
 msgid "Show replace"
@@ -6786,10 +7048,6 @@ msgstr "Show skills section"
 #: src/components/MermaidFileViewer.tsx
 msgid "Show source"
 msgstr "Show source"
-
-#: src/components/TerminalRevealTab.tsx
-msgid "Show terminal"
-msgstr "Show terminal"
 
 #: src/editor/components/PdfEmbed.tsx
 msgid "Show thumbnails"
@@ -6948,6 +7206,10 @@ msgstr "Source search"
 #: src/lib/keyboard-shortcuts.ts
 msgid "Source undo or redo"
 msgstr "Source undo or redo"
+
+#: src/components/chat/WebPreviewCards.tsx
+msgid "Sources"
+msgstr "Sources"
 
 #: src/components/chat/CliChatModelMenu.tsx
 msgid "Speed"
@@ -7226,6 +7488,7 @@ msgstr "Syncing"
 msgid "System error"
 msgstr "System error"
 
+#: src/components/MarkdownFormatToolbar.tsx
 #: src/editor/slash-command/items.tsx
 msgid "Table"
 msgstr "Table"
@@ -7266,6 +7529,7 @@ msgstr "Take a piece of writing from a rough idea to a finished draft to somethi
 msgid "Task list"
 msgstr "Task list"
 
+#: src/components/MarkdownFormatToolbar.tsx
 #: src/editor/slash-command/items.tsx
 msgid "Task List"
 msgstr "Task List"
@@ -7318,7 +7582,6 @@ msgstr "Templates available"
 
 #. Group label above the shell-PATH row in Settings → AI tools & CLI
 #. Section label above the shell-PATH toggle in the first-launch dialog
-#: src/components/chat/CliChatSession.tsx
 #: src/components/empty-state/CreatePromptComposer.tsx
 #: src/components/handoff/AgentSplitButton.tsx
 #: src/components/handoff/OpenInAgentContextSubmenu.tsx
@@ -7609,6 +7872,14 @@ msgstr "This page doesn't link to anything yet."
 msgid "This path is on an external volume (/Volumes/...). SynapseNote will lose track of files when the drive ejects."
 msgstr "This path is on an external volume (/Volumes/...). SynapseNote will lose track of files when the drive ejects."
 
+#: src/editor/components/PdfEmbed.tsx
+msgid "This PDF does not contain document bookmarks."
+msgstr "This PDF does not contain document bookmarks."
+
+#: src/editor/components/PdfEmbed.tsx
+msgid "This PDF does not contain external links."
+msgstr "This PDF does not contain external links."
+
 #. placeholder {0}: skill.path
 #: src/components/SkillDeleteDialog.tsx
 msgid "This permanently removes {0}. Agents that invoke this skill by name will fail until it's recreated."
@@ -7655,6 +7926,10 @@ msgstr "This project's running server doesn't support live editing. Restart Syna
 #: src/lib/install-server-drift-listener.ts
 msgid "This project's server (v{0}) is newer than this app (v{1})."
 msgstr "This project's server (v{0}) is newer than this app (v{1})."
+
+#: src/components/MemoPanel.tsx
+msgid "This removes the memo from this device and cannot be undone."
+msgstr "This removes the memo from this device and cannot be undone."
 
 #. placeholder {0}: skill.bundledVersion ?? ''
 #. placeholder {1}: skill.installedVersion
@@ -7956,6 +8231,10 @@ msgstr "Unrecognized link"
 msgid "Unrecognized wiki link"
 msgstr "Unrecognized wiki link"
 
+#: src/editor/components/PdfEmbed.tsx
+msgid "Unsupported link"
+msgstr "Unsupported link"
+
 #: src/components/SkillUpdateDialog.tsx
 msgid "Update"
 msgstr "Update"
@@ -8096,6 +8375,14 @@ msgstr "Use lowercase letters, digits, and hyphens only."
 msgid "Use the default OpenAI endpoint or override it with an OpenAI-compatible base URL for Azure or a self-hosted provider."
 msgstr "Use the default OpenAI endpoint or override it with an OpenAI-compatible base URL for Azure or a self-hosted provider."
 
+#: src/components/settings/SettingsDialogBody.tsx
+msgid "Used when you start a new Claude chat. You can still change the model in the chat composer."
+msgstr "Used when you start a new Claude chat. You can still change the model in the chat composer."
+
+#: src/components/settings/SettingsDialogBody.tsx
+msgid "Used when you start a new Codex chat. You can still change the model in the chat composer."
+msgstr "Used when you start a new Codex chat. You can still change the model in the chat composer."
+
 #: src/components/settings/SettingsDialogShell.tsx
 msgid "User"
 msgstr "User"
@@ -8185,6 +8472,10 @@ msgstr "We'll create a repository and start syncing — no terminal needed."
 #: src/components/ReportBugDialogBody.tsx
 msgid "We've filed it with the team and attached your logs."
 msgstr "We've filed it with the team and attached your logs."
+
+#: src/components/chat/WebPreviewCards.tsx
+msgid "Web sources"
+msgstr "Web sources"
 
 #: src/components/HelpPopover.tsx
 msgid "Website"
@@ -8334,6 +8625,10 @@ msgstr "Worktrees"
 #: src/components/settings/SettingsDialogBody.tsx
 msgid "Wrap long lines in the markdown source editor."
 msgstr "Wrap long lines in the markdown source editor."
+
+#: src/components/MemoPanel.tsx
+msgid "Write a note, question, or takeaway"
+msgstr "Write a note, question, or takeaway"
 
 #: src/components/ConsentDialogBody.tsx
 msgid "Writes a project-MCP config for each selected tool."

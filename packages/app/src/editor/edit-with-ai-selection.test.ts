@@ -42,6 +42,15 @@ describe('serializeWysiwygSelection', () => {
     );
   });
 
+  test('serializes only the dragged text inside a paragraph', () => {
+    const doc = docOf('Heading context. This is the selected sentence. Trailing context.');
+    const selected = 'This is the selected sentence.';
+    const from = doc.textContent.indexOf(selected) + 1;
+    expect(serializeWysiwygSelection(editorSelecting(doc, from, from + selected.length))).toBe(
+      selected,
+    );
+  });
+
   test('preserves block structure across a multi-paragraph selection', () => {
     const doc = docOf('First paragraph.', 'Second paragraph.');
     expect(serializeWysiwygSelection(editorSelecting(doc, 0, doc.content.size))).toBe(

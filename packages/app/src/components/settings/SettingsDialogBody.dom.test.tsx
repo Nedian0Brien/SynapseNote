@@ -7,7 +7,7 @@ import {
   type ConfigPatch,
   ConfigSchema,
 } from '@nedian0brien/synapsenote-core';
-import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ThemeProvider, useTheme } from 'next-themes';
 import type { ReactNode } from 'react';
@@ -147,6 +147,23 @@ describe('SettingsDialogBody preferences runtime', () => {
       ]);
     });
     expect(autoOpenSwitch.getAttribute('aria-checked')).toBe('true');
+  });
+
+  test('commits default chat model changes through binding.patch', async () => {
+    const { binding, patches } = makeBinding();
+    renderPreferences(binding);
+
+    expect(screen.getByText('Default Codex chat model')).toBeDefined();
+    expect(screen.getByText('Default Claude chat model')).toBeDefined();
+
+    fireEvent.keyDown(screen.getByRole('combobox', { name: 'Default Codex chat model' }), {
+      key: 'ArrowDown',
+    });
+    fireEvent.click(await screen.findByRole('option', { name: 'GPT-5.6 Terra' }));
+
+    await waitFor(() => {
+      expect(patches).toContainEqual({ agents: { chat: { codexModel: 'gpt-5.6-terra' } } });
+    });
   });
 
   test('surfaces L3 config-validation rejections on the matching user field', async () => {

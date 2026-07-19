@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { type ReactNode, useEffect } from 'react';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 type SettingsDialogShellProps = {
   open: boolean;
@@ -57,6 +58,10 @@ const ASSET_DOC_CTX = {
   docPanelAgentId: null,
   docPanelExpandSignal: 0,
 };
+const PDF_ASSET_DOC_CTX = {
+  ...ASSET_DOC_CTX,
+  activeTarget: { kind: 'asset', assetPath: 'reading/report.pdf', mediaKind: 'pdf' },
+};
 // A live-provider folder view: drives the EditorArea `everHadProvider` latch
 // true (the effect only needs a non-null provider) through an already-mocked
 // branch, so a later provider-null render counts as a mid-session navigation
@@ -81,6 +86,7 @@ let docCtx:
   | typeof EMPTY_DOC_CTX
   | typeof LARGE_FILE_DOC_CTX
   | typeof ASSET_DOC_CTX
+  | typeof PDF_ASSET_DOC_CTX
   | typeof DOC_COLD_CTX = FOLDER_DOC_CTX;
 mock.module('@/editor/DocumentContext', () => ({
   useDocumentContext: () => docCtx,
@@ -194,8 +200,23 @@ mock.module('./BottomComposer', () => ({
 }));
 
 mock.module('@/components/AssetPreview', () => ({
-  AssetPreview: ({ assetPath }: { assetPath: string }) => (
-    <div data-testid="asset-preview">{assetPath}</div>
+  AssetPreview: ({
+    assetPath,
+    rightPanelOpen,
+    onToggleRightPanel,
+  }: {
+    assetPath: string;
+    rightPanelOpen?: boolean;
+    onToggleRightPanel?: () => void;
+  }) => (
+    <div data-testid="asset-preview" data-right-panel-open={rightPanelOpen ? 'true' : 'false'}>
+      {assetPath}
+      {onToggleRightPanel ? (
+        <button type="button" onClick={onToggleRightPanel}>
+          Toggle PDF panel
+        </button>
+      ) : null}
+    </div>
   ),
 }));
 
@@ -271,16 +292,18 @@ describe('EditorArea empty-state terminal host', () => {
   // used to render only in the open-doc branch, so the launch silently no-opped.
   test('hosts the docked terminal on the empty state when a terminal bridge is present', () => {
     render(
-      <EditorArea
-        editorMode="wysiwyg"
-        onModeChange={() => {}}
-        activeTab="timeline"
-        onActiveTabChange={() => {}}
-        terminalBridge={{} as never}
-        terminalVisible
-        onTerminalVisibleChange={() => {}}
-        terminalDock="bottom"
-      />,
+      <TooltipProvider>
+        <EditorArea
+          editorMode="wysiwyg"
+          onModeChange={() => {}}
+          activeTab="timeline"
+          onActiveTabChange={() => {}}
+          terminalBridge={{} as never}
+          terminalVisible
+          onTerminalVisibleChange={() => {}}
+          terminalDock="bottom"
+        />
+      </TooltipProvider>,
     );
 
     const dock = screen.getByTestId('terminal-dock');
@@ -294,19 +317,21 @@ describe('EditorArea empty-state terminal host', () => {
 
   test('collapses the empty state to the header-only view when the terminal is right-docked', () => {
     render(
-      <EditorArea
-        editorMode="wysiwyg"
-        onModeChange={() => {}}
-        activeTab="timeline"
-        onActiveTabChange={() => {}}
-        terminalBridge={{} as never}
-        terminalVisible
-        onTerminalVisibleChange={() => {}}
-        // Right is the default dock. Either dock position collapses the empty
-        // state — the open terminal is its own AI entry point, so the composer
-        // bubble must not compete with it.
-        terminalDock="right"
-      />,
+      <TooltipProvider>
+        <EditorArea
+          editorMode="wysiwyg"
+          onModeChange={() => {}}
+          activeTab="timeline"
+          onActiveTabChange={() => {}}
+          terminalBridge={{} as never}
+          terminalVisible
+          onTerminalVisibleChange={() => {}}
+          // Right is the default dock. Either dock position collapses the empty
+          // state — the open terminal is its own AI entry point, so the composer
+          // bubble must not compete with it.
+          terminalDock="right"
+        />
+      </TooltipProvider>,
     );
 
     const dock = screen.getByTestId('terminal-dock');
@@ -404,12 +429,11 @@ describe('EditorArea right-rail layout assert on terminal-column mount/unmount',
     await act(async () => {});
     const corrected = groupSetLayoutCalls.at(-1);
     expect(corrected).toBeDefined();
-    // Exact pins against the mock's deterministic basis: doc panel at its
-    // persisted default (320px), terminal at its persisted default (480px),
-    // editor absorbing the remainder.
+    // Chat and document tools are states of one right rail, so both columns
+    // restore the same persisted 320px width and the editor absorbs the rest.
     expect(corrected?.['doc-panel']).toBeCloseTo(pctOf(320), 3);
-    expect(corrected?.['terminal-column']).toBeCloseTo(pctOf(480), 3);
-    expect(corrected?.['editor-main']).toBeCloseTo(100 - pctOf(320) - pctOf(480), 3);
+    expect(corrected?.['terminal-column']).toBeCloseTo(pctOf(320), 3);
+    expect(corrected?.['editor-main']).toBeCloseTo(100 - pctOf(320) - pctOf(320), 3);
   });
 
   test('releasing a terminal-handle drag with the column snapped shut hides the terminal', async () => {
@@ -557,6 +581,7 @@ describe('EditorArea asset-view terminal host', () => {
     const dock = screen.getByTestId('terminal-dock');
     expect(dock.getAttribute('data-visible')).toBe('true');
     expect(dock.querySelector('[data-testid="asset-preview"]')).not.toBeNull();
+    expect(screen.getByTestId('right-chat-host')).toBeTruthy();
   });
 
   test('renders the asset view with no terminal dock on the web host (no bridge)', () => {
@@ -564,6 +589,57 @@ describe('EditorArea asset-view terminal host', () => {
 
     expect(screen.queryByTestId('terminal-dock')).toBeNull();
     expect(screen.getByTestId('asset-preview')).toBeTruthy();
+  });
+
+  test('renders the five PDF rail tabs and opens Chat from its first tab', () => {
+    docCtx = PDF_ASSET_DOC_CTX;
+    const requestedTabs: string[] = [];
+    render(
+      <TooltipProvider>
+        <EditorArea
+          editorMode="wysiwyg"
+          onModeChange={() => {}}
+          activeTab="pages"
+          onActiveTabChange={(tab) => requestedTabs.push(tab)}
+          terminalBridge={{} as never}
+          terminalVisible={false}
+          onTerminalVisibleChange={() => {}}
+        />
+      </TooltipProvider>,
+    );
+
+    expect(screen.getAllByRole('tab').map((tab) => tab.getAttribute('aria-label'))).toEqual([
+      'Chat',
+      'Pages',
+      'Annotations',
+      'Outline',
+      'Links',
+    ]);
+    expect(screen.getByTestId('pdf-panel-host')).toBeTruthy();
+    fireEvent.click(screen.getByRole('tab', { name: 'Chat' }));
+    expect(requestedTabs).toEqual(['chat']);
+  });
+
+  test('closes the open PDF Chat rail from the same control', () => {
+    docCtx = PDF_ASSET_DOC_CTX;
+    const visibility: boolean[] = [];
+    render(
+      <TooltipProvider>
+        <EditorArea
+          editorMode="wysiwyg"
+          onModeChange={() => {}}
+          activeTab="chat"
+          onActiveTabChange={() => {}}
+          terminalBridge={{} as never}
+          terminalVisible
+          onTerminalVisibleChange={(visible) => visibility.push(visible)}
+        />
+      </TooltipProvider>,
+    );
+
+    expect(screen.getByTestId('asset-preview').getAttribute('data-right-panel-open')).toBe('true');
+    fireEvent.click(screen.getByRole('button', { name: 'Toggle PDF panel' }));
+    expect(visibility).toEqual([false]);
   });
 });
 

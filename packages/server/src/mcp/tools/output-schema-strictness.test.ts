@@ -218,6 +218,7 @@ describe('MCP outputSchema strictness — auto-discovered registerTool sweep (no
     'resolve_conflict',
     'search',
     'share_link',
+    'current_document',
     // Version flow — output schemas added so the `version` field is
     // machine-visible (history surfaces `entries[].version`).
     'history',

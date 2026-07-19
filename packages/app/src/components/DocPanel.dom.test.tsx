@@ -48,21 +48,30 @@ mock.module('@/components/OutlinePanel', () => ({
 mock.module('@/components/LinksPanel', () => ({
   LinksPanel: () => <div data-testid="links-panel" />,
 }));
+mock.module('@/components/MemoPanel', () => ({
+  MemoPanel: () => <div data-testid="memo-panel" />,
+}));
 mock.module('@/components/TimelinePanel', () => ({
   TimelineContent: () => <div data-testid="timeline-panel" />,
 }));
 
 const { DocPanel } = await import('./DocPanel');
+type PanelTab = import('./DocPanel').PanelTab;
 
-function renderPanel(activeTab: 'outline' | 'links' | 'graph' | 'timeline') {
+function renderPanel(
+  activeTab: PanelTab,
+  options: { showChatTab?: boolean; docName?: string | null } = {},
+) {
   return render(
     <TooltipProvider>
       <DocPanel
-        docName="notes"
+        docName={options.docName === undefined ? 'notes' : options.docName}
         isSourceMode={false}
         activeTab={activeTab}
         onActiveTabChange={() => {}}
         mode="doc"
+        showChatTab={options.showChatTab}
+        chatContent={<div data-testid="chat-panel" />}
       />
     </TooltipProvider>,
   );
@@ -74,19 +83,80 @@ afterEach(() => {
 });
 
 describe('DocPanel — single-file tab gating', () => {
-  test('project mode renders the full tab strip (outline + links + graph + timeline)', () => {
+  test('project mode renders the full tab strip (outline + memo + links + graph + timeline)', () => {
     singleFileValue = false;
     renderPanel('outline');
-    expect(screen.getAllByRole('tab')).toHaveLength(4);
+    expect(screen.getAllByRole('tab')).toHaveLength(5);
     expect(screen.getByTestId('outline-panel')).toBeTruthy();
   });
 
-  test('single-file mode drops the tab strip and shows only the Outline', () => {
+  test('single-file mode keeps Outline and Memo while dropping project-only tabs', () => {
     singleFileValue = true;
     // Persisted selection is 'graph' — it must coerce back to Outline rather
     // than render a now-hidden panel.
     renderPanel('graph');
-    expect(screen.queryAllByRole('tab')).toHaveLength(0);
+    expect(screen.getAllByRole('tab').map((tab) => tab.getAttribute('aria-label'))).toEqual([
+      'Outline',
+      'Memo',
+    ]);
     expect(screen.getByTestId('outline-panel')).toBeTruthy();
+  });
+
+  test('renders the active document memo panel', () => {
+    renderPanel('memo');
+    expect(screen.getByTestId('memo-panel')).toBeTruthy();
+  });
+
+  test('desktop project mode places Chat before the document tabs', () => {
+    renderPanel('outline', { showChatTab: true });
+    expect(screen.getAllByRole('tab').map((tab) => tab.getAttribute('aria-label'))).toEqual([
+      'Chat',
+      'Outline',
+      'Memo',
+      'Links',
+      'Graph',
+      'Timeline',
+    ]);
+  });
+
+  test('viewer-only surfaces render the icon-only Chat tab without unavailable document tabs', () => {
+    renderPanel('chat', { showChatTab: true, docName: null });
+    expect(screen.getAllByRole('tab')).toHaveLength(1);
+    const chatTab = screen.getByRole('tab', { name: 'Chat' });
+    expect(chatTab).toBeTruthy();
+    expect(chatTab.textContent).toBe('');
+    expect(screen.getByTestId('chat-panel')).toBeTruthy();
+    expect(screen.queryByTestId('outline-panel')).toBeNull();
+  });
+
+  test('PDF surfaces order Chat, Pages, Annotations, Outline, and Links', () => {
+    render(
+      <TooltipProvider>
+        <DocPanel
+          docName={null}
+          isSourceMode={false}
+          activeTab="pages"
+          onActiveTabChange={() => {}}
+          mode="doc"
+          surface="pdf"
+          showChatTab
+          pdfContent={<div data-testid="pdf-panel-content" />}
+        />
+      </TooltipProvider>,
+    );
+    expect(screen.getAllByRole('tab').map((tab) => tab.getAttribute('aria-label'))).toEqual([
+      'Chat',
+      'Pages',
+      'Annotations',
+      'Outline',
+      'Links',
+    ]);
+    expect(screen.getByTestId('pdf-panel-content')).toBeTruthy();
+  });
+
+  test('does not reserve an empty row or add a divider around the rail tabs', () => {
+    renderPanel('outline', { showChatTab: true });
+    expect(screen.queryByTestId('document-right-rail-header')).toBeNull();
+    expect(screen.getByRole('tablist').parentElement?.classList.contains('border-b')).toBe(false);
   });
 });

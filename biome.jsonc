@@ -294,6 +294,9 @@
       "!**/tests/perf/playwright-results",
       "!packages/desktop/out",
       "!packages/desktop/dist-desktop",
+      "!packages/desktop/dist-desktop-local",
+      "!packages/desktop/dist-desktop-local-staging-*",
+      "!packages/desktop/dist-desktop-local-previous-*",
       // Self-contained internal unit with its own tsconfig, conventions, and
       // test entry points; never OK-biome-formatted, so it stays out of the
       // format scan.

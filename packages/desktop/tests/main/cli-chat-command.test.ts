@@ -19,7 +19,7 @@ describe('CLI chat command boundary', () => {
         modelSettings: codexModelSettings,
       }),
     ).toBe(
-      "codex exec --json --color never -c 'approval_policy=\"never\"' -c 'sandbox_mode=\"workspace-write\"' -c 'mcp_servers.synapsenote.default_tools_approval_mode=\"approve\"' -m 'gpt-5.6-sol' -c 'model_reasoning_effort=\"medium\"' 'don'\\''t run $(oops)'",
+      "codex exec --json --color never -c 'approval_policy=\"never\"' -c 'sandbox_mode=\"workspace-write\"' -m 'gpt-5.6-sol' -c 'model_reasoning_effort=\"medium\"' 'don'\\''t run $(oops)'",
     );
     expect(
       buildCliChatCommand({
@@ -62,9 +62,19 @@ describe('CLI chat command boundary', () => {
     expect(codexCommand).toContain(
       'codex exec resume --json --dangerously-bypass-approvals-and-sandbox',
     );
-    expect(codexCommand).toContain(
-      '-c \'mcp_servers.synapsenote.default_tools_approval_mode="approve"\'',
-    );
+    expect(codexCommand).not.toContain('mcp_servers.synapsenote');
+    expect(
+      buildCliChatCommand(
+        {
+          cli: 'codex',
+          prompt: 'go',
+          sessionId: 'thread-id',
+          permissionMode: 'full-access',
+          modelSettings: codexModelSettings,
+        },
+        { autoApproveOkTools: true },
+      ),
+    ).toContain('-c \'mcp_servers.synapsenote.default_tools_approval_mode="approve"\'');
     expect(
       buildCliChatCommand({
         cli: 'claude',

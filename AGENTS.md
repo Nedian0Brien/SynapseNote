@@ -62,7 +62,21 @@ Every behavior-changing pull request includes a `.changeset/<kebab-name>.md` fil
 
 ## Before finishing
 
-Run the smallest relevant check while iterating, then run:
+Run the smallest relevant check while iterating. For local desktop packaging or
+installation workflow changes, run:
+
+```bash
+bun run check:desktop:local
+```
+
+For completed desktop or editor work, run the affected tests and:
+
+```bash
+bun run check:desktop
+```
+
+Reserve the repository-wide check for cross-package changes, PR readiness, or
+release verification:
 
 ```bash
 bun run check

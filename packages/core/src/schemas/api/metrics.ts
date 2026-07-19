@@ -159,6 +159,32 @@ export const MetricsAgentPresenceSuccessSchema = z
   .loose() satisfies StandardSchemaV1;
 export type MetricsAgentPresenceSuccess = z.infer<typeof MetricsAgentPresenceSuccessSchema>;
 
+/** One live SynapseNote window reported by `GET /api/current-document`. */
+export const CurrentDocumentViewerSchema = z
+  .object({
+    clientId: z.number().int().min(0),
+    document: z.string().nullable(),
+    focused: z.boolean(),
+    visible: z.boolean(),
+    updatedAt: z.number().int().min(0),
+  })
+  .loose() satisfies StandardSchemaV1;
+export type CurrentDocumentViewer = z.infer<typeof CurrentDocumentViewerSchema>;
+
+/**
+ * Success response for `GET /api/current-document`. `current` is selected
+ * from all live `__system__` awareness viewers, preferring a focused + visible
+ * window, then a focused window, then a visible window, then the most recently
+ * updated connection.
+ */
+export const CurrentDocumentSuccessSchema = z
+  .object({
+    current: CurrentDocumentViewerSchema.nullable(),
+    viewers: z.array(CurrentDocumentViewerSchema),
+  })
+  .loose() satisfies StandardSchemaV1;
+export type CurrentDocumentSuccess = z.infer<typeof CurrentDocumentSuccessSchema>;
+
 /**
  * Success response for `GET /api/installed-agents`. Returns a flat boolean
  * record keyed by agent scheme name (`claude` / `codex` / `cursor`). The

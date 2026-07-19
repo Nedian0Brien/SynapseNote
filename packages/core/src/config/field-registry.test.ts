@@ -143,7 +143,7 @@ describe('ConfigSchema coverage (NR3 — every leaf has fieldRegistry metadata)'
     expect(allowlisted).toEqual([]);
   });
 
-  test('user-strict fields cover agents.autoApproveOkTools + appearance.preview.autoOpen + appearance.theme + editor.wordWrap', () => {
+  test('user-strict fields cover agent, appearance, and editor preferences', () => {
     const leaves: { path: string[]; schema: unknown }[] = [];
     walkLeaves(ConfigSchema, [], leaves);
     const userStrict = leaves
@@ -152,6 +152,8 @@ describe('ConfigSchema coverage (NR3 — every leaf has fieldRegistry metadata)'
       .sort();
     expect(userStrict).toEqual([
       'agents.autoApproveOkTools',
+      'agents.chat.claudeModel',
+      'agents.chat.codexModel',
       'appearance.preview.autoOpen',
       'appearance.theme',
       'editor.wordWrap',

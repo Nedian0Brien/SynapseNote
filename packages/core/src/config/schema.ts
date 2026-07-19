@@ -287,8 +287,35 @@ export const ConfigSchema = z.looseObject({
             "Auto-approve SynapseNote's own tools (and `ok open` on Claude) for agents launched from the built-in terminal. Destructive tools (delete/move/share/install) still prompt. Per-machine personal preference (user scope).",
         })
         .default(true),
+      chat: z
+        .looseObject({
+          codexModel: z
+            .enum(['gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-5.3-codex-spark'])
+            .register(fieldRegistry, {
+              scope: 'user',
+              agentSettable: false,
+              defaultScope: 'user',
+              description:
+                'Default model for new Codex chats started in SynapseNote. A personal preference (user scope).',
+            })
+            .default('gpt-5.6-sol'),
+          claudeModel: z
+            .enum(['fable', 'opus', 'sonnet'])
+            .register(fieldRegistry, {
+              scope: 'user',
+              agentSettable: false,
+              defaultScope: 'user',
+              description:
+                'Default model for new Claude chats started in SynapseNote. A personal preference (user scope).',
+            })
+            .default('sonnet'),
+        })
+        .default({ codexModel: 'gpt-5.6-sol', claudeModel: 'sonnet' }),
     })
-    .default({ autoApproveOkTools: true }),
+    .default({
+      autoApproveOkTools: true,
+      chat: { codexModel: 'gpt-5.6-sol', claudeModel: 'sonnet' },
+    }),
   // `autoSync.enabled` is a per-machine, per-project preference: each
   // teammate decides independently whether their machine should auto-pull /
   // auto-push commits for *this* project. Project scope would bleed across

@@ -74,6 +74,16 @@ const FIXTURES: Fixture[] = [
     input: { appearance: { preview: { autoOpen: 'banana' } } },
     shouldAccept: false,
   },
+  {
+    name: 'agents.chat models accepted',
+    input: { agents: { chat: { codexModel: 'gpt-5.6-terra', claudeModel: 'opus' } } },
+    shouldAccept: true,
+  },
+  {
+    name: 'agents.chat unknown model rejected',
+    input: { agents: { chat: { codexModel: 'gpt-next' } } },
+    shouldAccept: false,
+  },
   // `folders` removed from ConfigSchema. Folder defaults
   // live in nested `<folder>/.ok/frontmatter.yml` files now.
   {
@@ -171,6 +181,12 @@ describe('loose-mode forgiveness', () => {
   test('appearance.preview.autoOpen preserves an explicit false', () => {
     const config = ConfigSchema.parse({ appearance: { preview: { autoOpen: false } } });
     expect(config.appearance.preview.autoOpen).toBe(false);
+  });
+
+  test('agents.chat models have stable defaults', () => {
+    const config = ConfigSchema.parse({});
+    expect(config.agents.chat.codexModel).toBe('gpt-5.6-sol');
+    expect(config.agents.chat.claudeModel).toBe('sonnet');
   });
 
   test('telemetry.localSink defaults to enabled with built-in caps + denylist', () => {

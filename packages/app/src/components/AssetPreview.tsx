@@ -1,6 +1,7 @@
 import { Trans } from '@lingui/react/macro';
 import { type InlineAssetMediaKind, toDesktopAssetHref } from '@nedian0brien/synapsenote-core';
 import { useState } from 'react';
+import type { PdfPanelTab } from '@/components/DocPanel';
 import { MermaidFileViewer } from '@/components/MermaidFileViewer';
 import { NotInSidebarIndicator } from '@/components/NotInSidebarIndicator';
 import { TextViewer } from '@/components/TextViewer';
@@ -12,6 +13,10 @@ import { Pdf } from '@/editor/components/Pdf';
 interface AssetPreviewProps {
   assetPath: string;
   mediaKind: InlineAssetMediaKind | null;
+  rightPanelOpen?: boolean;
+  onToggleRightPanel?: () => void;
+  pdfPanelContainer?: HTMLElement | null;
+  activePdfPanelTab?: PdfPanelTab;
 }
 
 function assetUrl(assetPath: string): string {
@@ -36,7 +41,14 @@ function assetTextUrl(assetPath: string): string {
   return `/api/asset-text?path=${encodeURIComponent(assetPath)}`;
 }
 
-export function AssetPreview({ assetPath, mediaKind }: AssetPreviewProps) {
+export function AssetPreview({
+  assetPath,
+  mediaKind,
+  rightPanelOpen,
+  onToggleRightPanel,
+  pdfPanelContainer,
+  activePdfPanelTab,
+}: AssetPreviewProps) {
   return (
     <div className="flex h-full min-h-0 flex-col">
       {/* Self-gating chrome above whichever preview body renders: names the
@@ -48,13 +60,27 @@ export function AssetPreview({ assetPath, mediaKind }: AssetPreviewProps) {
         className="shrink-0 border-b bg-background px-3 py-1.5"
       />
       <div className="min-h-0 flex-1">
-        <AssetPreviewBody assetPath={assetPath} mediaKind={mediaKind} />
+        <AssetPreviewBody
+          assetPath={assetPath}
+          mediaKind={mediaKind}
+          rightPanelOpen={rightPanelOpen}
+          onToggleRightPanel={onToggleRightPanel}
+          pdfPanelContainer={pdfPanelContainer}
+          activePdfPanelTab={activePdfPanelTab}
+        />
       </div>
     </div>
   );
 }
 
-function AssetPreviewBody({ assetPath, mediaKind }: AssetPreviewProps) {
+function AssetPreviewBody({
+  assetPath,
+  mediaKind,
+  rightPanelOpen,
+  onToggleRightPanel,
+  pdfPanelContainer,
+  activePdfPanelTab,
+}: AssetPreviewProps) {
   // Local override toggle: when the user clicks "View as text" from
   // the fallback pane, mount the `TextViewer` for the
   // same asset path without re-navigating. Reset is handled at the
@@ -84,7 +110,16 @@ function AssetPreviewBody({ assetPath, mediaKind }: AssetPreviewProps) {
     return (
       <main className="flex h-full min-h-0 flex-col bg-background" aria-label={fileName}>
         <div className="min-h-0 flex-1 overflow-hidden">
-          <Pdf src={src} title={fileName} fillContainer selectionDocumentName={assetPath} />
+          <Pdf
+            src={src}
+            title={fileName}
+            fillContainer
+            selectionDocumentName={assetPath}
+            rightPanelOpen={rightPanelOpen}
+            onToggleRightPanel={onToggleRightPanel}
+            panelContainer={pdfPanelContainer}
+            activePanelTab={activePdfPanelTab}
+          />
         </div>
       </main>
     );

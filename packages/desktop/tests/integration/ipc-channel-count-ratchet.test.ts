@@ -340,8 +340,14 @@ const CHANNELS_SRC = readFileSync(SRC_PATH, 'utf-8');
  * onto the containment-checked asset reveal would wear one channel over two
  * opposite security contracts. Single member; the typed-ipc migration remains the
  * committed end state, with the `ipc-channels.ts` header updated in lock-step.
+ *
+ * Bumped from 83 to 84 for project-scoped native CLI chat discovery
+ * (`ok:terminal:cli-chat-sessions`). Main reads Codex/Claude's own session stores,
+ * filters them with the sender window's trusted project root, and returns only
+ * resumable summaries. This cannot share the live-PTY inventory channel or the
+ * CLI installed-map channel without combining unrelated payloads and lifecycles.
  */
-const REQUEST_CHANNEL_CAP = 83;
+const REQUEST_CHANNEL_CAP = 84;
 
 /**
  * Extract the body of an interface block by name. Returns the substring

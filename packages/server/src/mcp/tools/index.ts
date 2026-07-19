@@ -1,7 +1,8 @@
 /**
  * MCP tool registry.
  *
- * Reads:     exec, search, history, links, skills, config, palette, preview_url, share_link
+ * Reads:     exec, search, history, links, skills, config, palette, preview_url, share_link,
+ *            current_document
  * Writes:    write, edit, delete, move, checkpoint, restore_version
  * Conflicts: conflicts, resolve_conflict
  * Workflow:  workflow (kind: ingest | research | consolidate | discover)
@@ -41,6 +42,7 @@ import { createLoggedServer } from '../tool-logging.ts';
 import { register as registerCheckpoint } from './checkpoint.ts';
 import { register as registerConfig } from './config.ts';
 import { register as registerConflicts } from './conflicts.ts';
+import { register as registerCurrentDocument } from './current-document.ts';
 import { register as registerDelete } from './delete.ts';
 import { register as registerEdit } from './edit.ts';
 import { register as registerExec } from './exec.ts';
@@ -133,6 +135,11 @@ export function registerAllTools(server: ServerInstance, opts: RegisterAllToolsO
   // is the ranked-retrieval read (Orama; mirrors cmd-K).
   registerSearch(registrationServer, {
     resolveCwd: named('search'),
+    config: opts.config,
+    serverUrl: opts.serverUrl,
+  });
+  registerCurrentDocument(registrationServer, {
+    resolveCwd: named('current_document'),
     config: opts.config,
     serverUrl: opts.serverUrl,
   });

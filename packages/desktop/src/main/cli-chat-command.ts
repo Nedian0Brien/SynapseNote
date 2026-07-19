@@ -19,17 +19,30 @@ export interface CliChatLaunchInput {
   };
 }
 
+export interface CliChatCommandOptions {
+  /**
+   * Codex's per-server approval override is only valid when the named MCP
+   * server already exists in the user's global config. A partial `-c` override
+   * makes Codex reject its entire config before emitting structured events.
+   */
+  readonly autoApproveOkTools?: boolean;
+}
+
 // Reuse the same registry-fixed SynapseNote MCP approval policy as the
 // interactive Codex handoff instead of maintaining a second config string.
 const codexSynapseNoteApproval = ` ${TERMINAL_CLIS.codex.autoApproveArg}`;
 
-function codexPermissionArgs(mode: CliChatLaunchInput['permissionMode']): string {
+function codexPermissionArgs(
+  mode: CliChatLaunchInput['permissionMode'],
+  autoApproveOkTools: boolean,
+): string {
+  const mcpApproval = autoApproveOkTools ? codexSynapseNoteApproval : '';
   if (mode === 'full-access') {
-    return ` --dangerously-bypass-approvals-and-sandbox${codexSynapseNoteApproval}`;
+    return ` --dangerously-bypass-approvals-and-sandbox${mcpApproval}`;
   }
   const sandboxMode = mode === 'read-only' ? 'read-only' : 'workspace-write';
-  const mcpApproval = mode === 'workspace-write' ? codexSynapseNoteApproval : '';
-  return ` -c 'approval_policy="never"' -c 'sandbox_mode="${sandboxMode}"'${mcpApproval}`;
+  const workspaceMcpApproval = mode === 'workspace-write' ? mcpApproval : '';
+  return ` -c 'approval_policy="never"' -c 'sandbox_mode="${sandboxMode}"'${workspaceMcpApproval}`;
 }
 
 function claudePermissionArgs(mode: CliChatLaunchInput['permissionMode']): string {
@@ -72,12 +85,18 @@ function printablePtyArgument(value: string): string {
  * Build a structured-output command from a closed CLI discriminant. This runs
  * in main so the renderer never supplies an executable string to the PTY.
  */
-export function buildCliChatCommand(input: CliChatLaunchInput): string {
+export function buildCliChatCommand(
+  input: CliChatLaunchInput,
+  options: CliChatCommandOptions = {},
+): string {
   const quotedPrompt = shellSingleQuote(printablePtyArgument(input.prompt));
   const quotedSessionId =
     input.sessionId === null ? null : shellSingleQuote(printablePtyArgument(input.sessionId));
   if (input.cli === 'codex') {
-    const permissions = codexPermissionArgs(input.permissionMode);
+    const permissions = codexPermissionArgs(
+      input.permissionMode,
+      options.autoApproveOkTools === true,
+    );
     const model = codexModelArgs(input.modelSettings);
     return input.sessionId === null
       ? `codex exec --json --color never${permissions}${model} ${quotedPrompt}`
@@ -87,6 +106,16 @@ export function buildCliChatCommand(input: CliChatLaunchInput): string {
   const model = claudeModelArgs(input.modelSettings);
   const resume = quotedSessionId === null ? '' : ` --resume ${quotedSessionId}`;
   return `claude --print --verbose --output-format stream-json --include-partial-messages${permissions}${model}${resume} ${quotedPrompt}`;
+}
+
+/**
+ * Keep the interactive shell PTY alive while still reporting that the one-shot
+ * CLI command itself returned. Codex/Claude normally emit their own structured
+ * completion event; this sentinel is a fail-safe for startup/config failures
+ * that only print plain stderr and would otherwise leave Chat spinning forever.
+ */
+export function buildCliChatShellCommand(command: string): string {
+  return `${command}; printf '\\n{"type":"synapsenote.command_completed","exit_code":%d}\\n' "$?"`;
 }
 
 const CODEX_MODELS = new Set([

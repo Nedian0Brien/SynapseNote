@@ -408,6 +408,73 @@ describe('attachAssetSafetyNet — will-navigate', () => {
     expect(openExternal).not.toHaveBeenCalled();
   });
 
+  test('packaged file renderer does not mistake a local file link for same-origin navigation', async () => {
+    // Every file:// URL has the opaque origin "null". The old origin-only
+    // comparison therefore allowed an agent-authored file link to replace the
+    // renderer, leaving the whole app on chrome-error://chromewebdata/.
+    const openAsset = mock(async (_: string) => ({ ok: true }) as const);
+    const openExternal = mock(noopOpenExternal);
+
+    let installedHandler: ((event: { preventDefault: () => void }, url: string) => void) | null =
+      null;
+    const webContents = {
+      setWindowOpenHandler: () => {},
+      on(
+        event: 'will-navigate',
+        handler: (event: { preventDefault: () => void }, url: string) => void,
+      ) {
+        if (event === 'will-navigate') installedHandler = handler;
+      },
+      getURL: () =>
+        'file:///Applications/SynapseNote.app/Contents/Resources/app.asar/renderer/index.html#/Research',
+    };
+
+    attachAssetSafetyNet(webContents, {
+      openAsset,
+      openExternal,
+      editorOrigin: 'http://127.0.0.1:8765',
+    });
+
+    const preventDefault = mock(() => {});
+    const localFile = 'file:///Users/me/project/packages/app/src/main.tsx:42';
+    installedHandler?.({ preventDefault }, localFile);
+    expect(preventDefault).toHaveBeenCalledTimes(1);
+    await Promise.resolve();
+    expect(openExternal).toHaveBeenCalledWith(localFile);
+  });
+
+  test('packaged renderer may still navigate its own hash route', async () => {
+    const openAsset = mock(async (_: string) => ({ ok: true }) as const);
+    const openExternal = mock(noopOpenExternal);
+    const bundle =
+      'file:///Applications/SynapseNote.app/Contents/Resources/app.asar/renderer/index.html';
+
+    let installedHandler: ((event: { preventDefault: () => void }, url: string) => void) | null =
+      null;
+    const webContents = {
+      setWindowOpenHandler: () => {},
+      on(
+        event: 'will-navigate',
+        handler: (event: { preventDefault: () => void }, url: string) => void,
+      ) {
+        if (event === 'will-navigate') installedHandler = handler;
+      },
+      getURL: () => `${bundle}#/Research`,
+    };
+
+    attachAssetSafetyNet(webContents, {
+      openAsset,
+      openExternal,
+      editorOrigin: 'http://127.0.0.1:8765',
+    });
+
+    const preventDefault = mock(() => {});
+    installedHandler?.({ preventDefault }, `${bundle}#/Notes`);
+    expect(preventDefault).not.toHaveBeenCalled();
+    await Promise.resolve();
+    expect(openExternal).not.toHaveBeenCalled();
+  });
+
   test('malformed URL → silent drop (no preventDefault, no delegation, no crash)', async () => {
     // Trust-boundary pin: `will-navigate` can fire with URLs Chromium's parser
     // accepts but WHATWG `new URL()` rejects. Both parse attempts in the

@@ -48,44 +48,42 @@ describe('EditorToolbar runtime layout', () => {
     );
   }
 
-  test('toolbar overlay lets editor clicks pass through except explicit cells', async () => {
+  test('toolbar overlay lets editor clicks pass through except the two visible rows', async () => {
     await renderToolbar();
 
     const toolbar = screen.getByTestId('editor-toolbar');
     expectVisualClassTokens(toolbar.className, ['pointer-events-none']);
-
-    const breadcrumbCell = screen.getByTestId('editor-breadcrumb-probe').parentElement;
-    expectVisualClassTokens(breadcrumbCell?.className, ['pointer-events-auto']);
+    expectVisualClassTokens(screen.getByTestId('document-viewer-header').className, [
+      'pointer-events-auto',
+    ]);
+    expectVisualClassTokens(screen.getByTestId('markdown-format-toolbar').className, [
+      'pointer-events-auto',
+    ]);
   });
 
-  test('content-column wrapper encloses the three-column toolbar grid', async () => {
+  test('renders the shared identity row and the Markdown contextual toolbar', async () => {
     await renderToolbar();
 
-    const toolbar = screen.getByTestId('editor-toolbar');
-    const alignedWrapper = toolbar.querySelector('.editor-content-aligned');
-    expect(alignedWrapper).toBeTruthy();
-
-    const grid = alignedWrapper?.querySelector('.grid.grid-cols-3');
-    expect(grid).toBeTruthy();
+    const header = screen.getByTestId('document-viewer-header');
+    expect(header.getAttribute('data-file-type')).toBe('md');
+    expect(header.textContent).toContain('Page');
+    expect(header.textContent).toContain('MD');
+    expect(screen.getByRole('toolbar', { name: 'Markdown formatting' })).toBeTruthy();
   });
 
-  test('mode toggle stays centered in the middle toolbar cell', async () => {
+  test('mode toggle sits in the Markdown tool row so the identity row keeps its width', async () => {
     await renderToolbar();
 
     const sourceButton = screen.getByRole('radio', { name: 'Markdown source' });
-    const middleCell = sourceButton.closest('.pointer-events-auto.flex.justify-center');
-    expect(middleCell).toBeTruthy();
+    expect(screen.getByTestId('markdown-format-toolbar').contains(sourceButton)).toBe(true);
+    expect(screen.getByTestId('document-viewer-header').contains(sourceButton)).toBe(false);
   });
 
   test('a tree-hidden doc gets the not-in-sidebar indicator beside the breadcrumb', async () => {
     await renderToolbar('.scratch/hidden-note');
 
     const indicator = screen.getByTestId('not-in-sidebar-indicator');
-    // Same interactive cell as the breadcrumb — the toolbar grid is
-    // pointer-events-none, so anything outside an auto cell is unclickable.
-    const breadcrumbCell = screen.getByTestId('editor-breadcrumb-probe').parentElement;
-    expect(breadcrumbCell?.contains(indicator)).toBe(true);
-    expectVisualClassTokens(breadcrumbCell?.className, ['pointer-events-auto']);
+    expect(screen.getByTestId('document-viewer-header').contains(indicator)).toBe(true);
   });
 
   test('a doc with a visible tree row renders no indicator', async () => {

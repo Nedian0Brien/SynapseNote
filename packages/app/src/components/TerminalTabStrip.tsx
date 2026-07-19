@@ -15,6 +15,7 @@ import {
   XIcon,
 } from 'lucide-react';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { TargetIcon } from '@/components/handoff/OpenInAgentMenuItem';
 import { Button } from '@/components/ui/button';
 import { InputGroup, InputGroupInput } from '@/components/ui/input-group';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -29,6 +30,7 @@ import {
   type TabReorderBounds,
   tabRunCollisionDetection,
 } from './editor-tabs-chrome';
+import { cliIconTargetId } from './handoff/terminal-cli-display';
 import { TerminalNewChatButton, type TerminalNewTabChoice } from './TerminalNewChatButton';
 
 /** Attribute marking a terminal tab's sortable node — the surface-neutral chrome
@@ -88,6 +90,7 @@ function SortableTerminalTab({
 export interface TerminalTabDescriptor {
   readonly id: string;
   readonly label: string;
+  readonly cli?: TerminalCli | null;
 }
 
 interface TerminalTabStripProps {
@@ -455,6 +458,13 @@ export function TerminalTabStrip({
                                 draggable && '[-webkit-app-region:no-drag]',
                               )}
                             >
+                              {session.cli != null ? (
+                                <TargetIcon
+                                  id={cliIconTargetId(session.cli)}
+                                  className="size-3.5 shrink-0"
+                                  aria-hidden="true"
+                                />
+                              ) : null}
                               <span className="max-w-40 truncate">{session.label}</span>
                             </TabsTrigger>
                           </TooltipTrigger>

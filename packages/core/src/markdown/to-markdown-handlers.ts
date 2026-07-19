@@ -986,6 +986,8 @@ function serializeInlineMath(
 ): string {
   let value = node.value ?? '';
   const captured = node.data?.sourceDelimiter;
+  if (captured === 'implicit-parens') return value;
+  if (captured === '\\(') return `\\(${value}\\)`;
   let size = typeof captured === 'string' && /^\$+$/.test(captured) ? captured.length : 2;
   if (size === 1 && !singleDollarMathReparses(value, info)) {
     size = 2;

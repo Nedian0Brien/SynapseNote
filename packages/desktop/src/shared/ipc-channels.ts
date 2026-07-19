@@ -30,7 +30,7 @@
  * existing channels is preferred over net-new hand-rolled channels until
  * that migration lands.
  *
- * Count is 83 (ratchet cap 83). The 74→75 bump reconciled a merge collision:
+ * Count is 84 (ratchet cap 84). The 74→75 bump reconciled a merge collision:
  * the worktree selector (`ok:worktree:dispatch`) and the terminal-controls PR
  * (`ok:terminal:cli-installed-map`) each landed in the base tree's single free
  * slot concurrently. The 75→76 bump then unioned in the desktop
@@ -50,7 +50,10 @@
  * added the terminal clickable-links out-of-project reveal
  * (`ok:shell:reveal-external`): a distinct trust boundary from `reveal-asset`
  * (uncontained + dialog-gated), so it could not fold onto it. Full rationale in
- * the ratchet test header.
+ * the ratchet test header. The 83→84 bump added project-scoped discovery of
+ * native Codex/Claude sessions (`ok:terminal:cli-chat-sessions`); this is a
+ * filesystem read with a distinct result shape and lifecycle from PTY inventory
+ * and CLI installation probes, so folding it into either would mix contracts.
  */
 
 import type {
@@ -84,6 +87,7 @@ import type {
   ClaudeReadiness,
   CliReadiness,
   HeadBranchInfo,
+  OkCliChatSession,
   OkDesktopConfig,
   OkLocalOpAuthReposResponse,
   OkLocalOpAuthStatusResponse,
@@ -94,6 +98,7 @@ import type {
   OkSharePayloadFields,
   OkThemeSource,
   OkUpdateChannel,
+  OkWebPreviewMetadata,
   SeedApplyOptions,
   SeedPlanOptions,
 } from './bridge-contract.ts';
@@ -644,8 +649,11 @@ export interface RequestChannels {
     args: [opts?: DialogOpenFolderOpts];
     result: string | null;
   };
-  /** Outbound URL via `shell.openExternal` (scheme allowlist enforced in main handler). */
-  'ok:shell:open-external': { args: [url: string]; result: undefined };
+  /** Outbound URL open, or bounded OpenGraph preview fetch for the same web-link surface. */
+  'ok:shell:open-external': {
+    args: [request: string | { kind: 'web-preview'; url: string }];
+    result: undefined | OkWebPreviewMetadata | null;
+  };
   /**
    * Detect whether a URL scheme has a registered handler on this OS — used by
    * the "Open in Agent Desktop" dropdown to render disabled-with-tooltip rows
@@ -700,14 +708,28 @@ export interface RequestChannels {
    * project-relative path; main-process `openAssetSafely` handler resolves
    * against `ProjectContext.projectPath + realpath + isPathWithinProject`,
    * enforces the `EXECUTABLE_BLOCKLIST_EXTENSIONS` gate, and dispatches to
-   * `shell.openPath(canonical)`. Reason union matches the bridge-contract
-   * `openAsset` return type.
+   * `shell.openPath(canonical)`. When `pdfBytes` is present, the same channel
+   * dispatches to the contained, atomic PDF-save path instead. Folding the
+   * additive payload here keeps the hand-rolled IPC channel ratchet flat.
    */
   'ok:shell:open-asset': {
-    args: [relPath: string];
+    args: [relPath: string, pdfBytes?: Uint8Array];
     result:
       | { ok: true }
-      | { ok: false; reason: 'extension-blocked' | 'path-escape' | 'not-found' | 'resolve-error' };
+      | {
+          ok: false;
+          reason:
+            | 'extension-blocked'
+            | 'path-escape'
+            | 'resolve-error'
+            | 'invalid-path'
+            | 'not-found'
+            | 'not-pdf'
+            | 'invalid-pdf'
+            | 'too-large'
+            | 'permission-denied'
+            | 'write-error';
+        };
   };
   /**
    * Reveal an asset in the native file manager (macOS Finder / Windows
@@ -1487,6 +1509,11 @@ export interface RequestChannels {
   'ok:pty:list': {
     args: [];
     result: OkPtyListEntry[];
+  };
+  /** Native Codex/Claude conversations scoped to the sender window's project. */
+  'ok:terminal:cli-chat-sessions': {
+    args: [];
+    result: OkCliChatSession[];
   };
   /**
    * Reload-rehydration adopt: re-bind a surviving session to the reloaded

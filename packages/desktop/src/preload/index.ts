@@ -406,12 +406,25 @@ const bridge: OkDesktopBridge = {
   },
 
   shell: {
-    openExternal: (url: string) => invoke('ok:shell:open-external', url),
+    openExternal: async (url: string) => {
+      await invoke('ok:shell:open-external', url);
+    },
+    fetchWebPreview: async (url: string) => {
+      const result = await invoke('ok:shell:open-external', { kind: 'web-preview', url });
+      return result ?? null;
+    },
     detectProtocol: (scheme: string) => invoke('ok:shell:detect-protocol', scheme),
     spawnCursor: (path: string) => invoke('ok:shell:spawn-cursor', path),
     recordHandoff: (line) => invoke('ok:shell:record-handoff', line),
-    openAsset: (relPath: string) => invoke('ok:shell:open-asset', relPath),
+    openAsset: async (relPath: string) =>
+      (await invoke('ok:shell:open-asset', relPath)) as Awaited<
+        ReturnType<OkDesktopBridge['shell']['openAsset']>
+      >,
     revealAsset: (relPath: string) => invoke('ok:shell:reveal-asset', relPath),
+    savePdf: async (relPath: string, bytes: Uint8Array) =>
+      (await invoke('ok:shell:open-asset', relPath, bytes)) as Awaited<
+        ReturnType<OkDesktopBridge['shell']['savePdf']>
+      >,
     revealExternal: (absPath: string) => invoke('ok:shell:reveal-external', absPath),
     showAssetMenu: (params) => invoke('ok:shell:show-asset-menu', params),
     showItemInFolder: (path: string) => invoke('ok:shell:show-item-in-folder', path),
@@ -726,6 +739,7 @@ const bridge: OkDesktopBridge = {
     chatSend: (ptyId, input) => {
       invoke('ok:pty:input', { ptyId, chat: input }).catch(() => {});
     },
+    listChatSessions: () => invoke('ok:terminal:cli-chat-sessions'),
     resize: (ptyId, cols, rows) => {
       invoke('ok:pty:resize', { ptyId, cols, rows }).catch(() => {});
     },

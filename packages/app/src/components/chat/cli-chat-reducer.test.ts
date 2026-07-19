@@ -46,6 +46,36 @@ describe('cliChatReducer', () => {
     ]);
   });
 
+  test('keeps the summary and full detail when a tool activity completes', () => {
+    const started = cliChatReducer(initialCliChatState, {
+      type: 'events',
+      events: [{ type: 'tool', sourceId: 'tool-1', name: 'exec' }],
+    });
+    const failed = cliChatReducer(started, {
+      type: 'events',
+      events: [
+        {
+          type: 'tool',
+          sourceId: 'tool-1',
+          name: 'exec',
+          detail: 'failed',
+          summary: 'user cancelled MCP tool call',
+          fullDetail: 'Error\nuser cancelled MCP tool call',
+        },
+      ],
+    });
+
+    expect(failed.timeline).toHaveLength(1);
+    expect(failed.timeline[0]).toMatchObject({
+      type: 'activity',
+      kind: 'tool',
+      label: 'exec',
+      detail: 'failed',
+      summary: 'user cancelled MCP tool call',
+      fullDetail: 'Error\nuser cancelled MCP tool call',
+    });
+  });
+
   test('renders consecutive completed assistant messages as separate entries', () => {
     const state = cliChatReducer(initialCliChatState, {
       type: 'events',
@@ -81,5 +111,31 @@ describe('cliChatReducer', () => {
       text: 'Explain this',
       selectionContext,
     });
+  });
+
+  test('ends a still-running turn when the CLI exits before structured completion', () => {
+    const sent = cliChatReducer(initialCliChatState, { type: 'send', text: 'Hello' });
+    const exited = cliChatReducer(sent, {
+      type: 'events',
+      events: [{ type: 'command_exit', exitCode: 1 }],
+    });
+
+    expect(exited.running).toBe(false);
+    expect(exited.timeline.at(-1)).toMatchObject({
+      type: 'activity',
+      kind: 'error',
+      label: 'The CLI exited before completing (code 1).',
+    });
+  });
+
+  test('ignores the shell completion sentinel after a user interrupt', () => {
+    const sent = cliChatReducer(initialCliChatState, { type: 'send', text: 'Hello' });
+    const interrupted = cliChatReducer(sent, { type: 'interrupt' });
+    const exited = cliChatReducer(interrupted, {
+      type: 'events',
+      events: [{ type: 'command_exit', exitCode: 130 }],
+    });
+
+    expect(exited).toEqual(interrupted);
   });
 });

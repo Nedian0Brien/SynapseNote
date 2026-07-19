@@ -56,6 +56,8 @@ import {
   assertProjectPathSafe,
   EDITOR_TARGETS,
   HOSTS_WITH_USER_SKILL_DIR,
+  removeLegacyProjectRuntimeSkills,
+  removeLegacyUserSkills,
 } from '@nedian0brien/synapsenote';
 import { resolveBundleEnabled } from '@nedian0brien/synapsenote-core';
 
@@ -458,6 +460,7 @@ export async function reclaimUserSkillsOnLaunch(
   // Drop any pre-split `synapsenote` user-global install before the new
   // `synapsenote-discovery` bundle lands. Fail-soft.
   removeLegacyUserSkillDirs(home, fs, logger);
+  removeLegacyUserSkills(home, fs, (payload) => logger.event({ ...payload }));
 
   // Per-bundle opt-in gate. Explicit decline (`enabled: false`) is removed and
   // never re-installed; an unrecorded bundle grandfathers to disk presence
@@ -658,6 +661,8 @@ export async function reclaimProjectSkillsOnProjectOpen(
   if (!/\.app\/Contents\/MacOS\/[^/]+$/.test(executablePath)) {
     return { status: 'skipped', reason: 'bad-executable-path' };
   }
+
+  removeLegacyProjectRuntimeSkills(projectDir, fs, (payload) => logger.event({ ...payload }));
 
   let sourceDir: string;
   try {

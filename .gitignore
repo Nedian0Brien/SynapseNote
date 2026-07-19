@@ -3,6 +3,9 @@ dist/
 packages/*/bun.lock
 packages/desktop/out/
 packages/desktop/dist-desktop/
+packages/desktop/dist-desktop-local/
+packages/desktop/dist-desktop-local-staging-*/
+packages/desktop/dist-desktop-local-previous-*/
 packages/desktop/dev-app-update.yml
 .turbo/
 tmp/

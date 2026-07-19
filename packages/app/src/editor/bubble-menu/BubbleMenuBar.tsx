@@ -14,6 +14,7 @@ import { FootnoteBubbleButton } from './FootnoteBubbleButton';
 import { ImageAlignButtons, isImageNodeSelected } from './ImageAlignButtons';
 import { InlineFormatButtons } from './InlineFormatButtons';
 import { LinkEditPopover } from './LinkEditPopover';
+import { MemoBubbleButton } from './MemoBubbleButton';
 
 export function BubbleMenuBar({
   editor,
@@ -136,6 +137,7 @@ export function BubbleMenuBar({
             shortcutEnabled={shortcutEnabled}
           />
           <FootnoteBubbleButton key={`${tooltipKey}-footnote`} editor={editor} />
+          <MemoBubbleButton key={`${tooltipKey}-memo`} editor={editor} />
           <EditWithAiBubbleButton
             key={`${tooltipKey}-edit-ai`}
             editor={editor}

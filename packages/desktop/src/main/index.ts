@@ -60,6 +60,7 @@ import {
   removeOwnMcpEntry,
   removeProjectSkill,
   removeUserGlobalSkillBundle,
+  repairMcpConfigs,
   runStop,
   type TrackedRefusal,
   validateLocalFolderForShare,
@@ -167,7 +168,12 @@ import {
   resolveCliOnPath,
   runLoginShellProbe,
 } from './claude-readiness.ts';
-import { buildCliChatCommand, isCliChatLaunchInput } from './cli-chat-command.ts';
+import {
+  buildCliChatCommand,
+  buildCliChatShellCommand,
+  isCliChatLaunchInput,
+} from './cli-chat-command.ts';
+import { listNativeCliChatSessions } from './cli-chat-sessions.ts';
 import { requestUserConsent, walkExceedsCap } from './consent-dialog.ts';
 import {
   type CrashDetection,
@@ -267,6 +273,7 @@ import {
   isPathShimInstalled,
   removePathShimFromRcFiles,
 } from './path-install.ts';
+import { savePdfAssetSafely } from './pdf-asset-save.ts';
 import { installStdioBrokenPipeGuard } from './process-safety-net.ts';
 import {
   type ProjectIntegrationsCliSurface,
@@ -356,6 +363,7 @@ import {
   createDefaultEditorViewMenuState,
   mergeViewMenuState,
 } from './view-menu-state.ts';
+import { fetchWebPreviewMetadata } from './web-preview-metadata.ts';
 import {
   type BrowserWindowLike,
   setWindowInstanceLabel,
@@ -1565,6 +1573,19 @@ async function openProject(
 
   const warningsCount = validation.warnings.length;
   const resolvedProjectDir = discovery.projectDir;
+  try {
+    repairMcpConfigs({
+      projectDir: resolvedProjectDir,
+      home: osHomedir(),
+      reclaimDisableEnv: process.env.OK_RECLAIM_DISABLE ?? null,
+      logger: (payload) => getLogger('mcp-wiring').info({ ...payload }, payload.event),
+    });
+  } catch (err) {
+    // Migration is fail-soft: an unreadable editor config must not block the
+    // project window. The old entry remains intact because migration writes
+    // the new key before it removes the legacy key.
+    getLogger('mcp-wiring').warn({ err }, 'legacy MCP name migration failed');
+  }
   void checkAndRepairProjectMcpOnProjectOpen({
     projectDir: resolvedProjectDir,
     executablePath: app.getPath('exe'),
@@ -3204,10 +3225,14 @@ function registerIpcHandlers() {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (win) {
       if (isCliChatLaunchInput(req.chat)) {
+        const autoApproveOkTools =
+          req.chat.cli === 'codex' &&
+          classifyExistingMcpEntry(EDITOR_TARGETS.codex, '', osHomedir()).kind === 'present';
+        const command = buildCliChatCommand(req.chat, { autoApproveOkTools });
         terminalManager.input({
           windowId: win.id,
           ptyId: req.ptyId,
-          data: `${buildCliChatCommand(req.chat)}\r`,
+          data: `${buildCliChatShellCommand(command)}\r`,
         });
       } else if (typeof req.data === 'string') {
         terminalManager.input({ windowId: win.id, ptyId: req.ptyId, data: req.data });
@@ -3240,6 +3265,19 @@ function registerIpcHandlers() {
   handle('ok:pty:list', async (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     return win ? terminalManager.listSessions(win.id) : [];
+  });
+  handle('ok:terminal:cli-chat-sessions', async (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    const editorCtx =
+      win && wm ? wm.getContextForBrowserWindow(win as unknown as BrowserWindowLike) : null;
+    const projectPath = resolvePtyProjectRoot({
+      editorProjectPath: editorCtx?.projectPath ?? null,
+      terminalWindow: win ? getTerminalWindowContext(win.id) : undefined,
+      homedir: osHomedir(),
+    });
+    return projectPath === null
+      ? []
+      : listNativeCliChatSessions({ homeDir: osHomedir(), projectRoot: projectPath });
   });
   handle('ok:pty:adopt', async (event, req) => {
     const win = BrowserWindow.fromWebContents(event.sender);
@@ -3339,8 +3377,9 @@ function registerIpcHandlers() {
   const shellOpenExternal = handleShellOpenExternal({
     openExternal: (url) => shell.openExternal(url),
   });
-  handle('ok:shell:open-external', async (_event, url) => {
-    await shellOpenExternal(url);
+  handle('ok:shell:open-external', async (_event, request) => {
+    if (typeof request !== 'string') return fetchWebPreviewMetadata(request.url);
+    await shellOpenExternal(request);
     return undefined;
   });
 
@@ -3425,7 +3464,7 @@ function registerIpcHandlers() {
   // each other's roots. Windows without a ProjectContext resolve as no-op
   // refusal (`path-escape`): a click from such a window has no legitimate
   // asset scope.
-  handle('ok:shell:open-asset', async (event, relPath) => {
+  handle('ok:shell:open-asset', async (event, relPath, pdfBytes) => {
     const callerWin = BrowserWindow.fromWebContents(event.sender);
     const callerProjectPath =
       callerWin && wm
@@ -3435,10 +3474,28 @@ function registerIpcHandlers() {
       logIpcError({
         event: 'ipc.error',
         channel: 'ok:shell:open-asset',
-        reason: 'path-escape',
-        handler: 'openAsset',
+        reason: pdfBytes ? 'invalid-path' : 'path-escape',
+        handler: pdfBytes ? 'savePdf' : 'openAsset',
       });
-      return { ok: false, reason: 'path-escape' } as const;
+      return pdfBytes
+        ? ({ ok: false, reason: 'invalid-path' } as const)
+        : ({ ok: false, reason: 'path-escape' } as const);
+    }
+    if (pdfBytes) {
+      const outcome = await savePdfAssetSafely(
+        { projectPath: callerProjectPath, platform: process.platform },
+        relPath,
+        pdfBytes,
+      );
+      if (!outcome.ok) {
+        logIpcError({
+          event: 'ipc.error',
+          channel: 'ok:shell:open-asset',
+          reason: outcome.reason,
+          handler: 'savePdf',
+        });
+      }
+      return outcome;
     }
     const outcome = await openAssetSafely(
       {

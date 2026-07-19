@@ -3,6 +3,7 @@ import { SendIcon, SquareIcon, TextQuoteIcon, XIcon } from 'lucide-react';
 import {
   type KeyboardEvent,
   type SyntheticEvent,
+  use,
   useEffect,
   useEffectEvent,
   useReducer,
@@ -11,15 +12,20 @@ import {
 } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { lightRenderMarkdownPreview } from '@/editor/selection-context';
+import { ConfigContext } from '@/lib/config-context';
 import type { OkDesktopBridge } from '@/lib/desktop-bridge-types';
 import { ChatMessageList } from './ChatMessageList';
 import { CliChatModelMenu } from './CliChatModelMenu';
 import { CliChatPermissionMenu } from './CliChatPermissionMenu';
+import { readCliChatPreferences, writeCliChatPreferences } from './cli-chat-preferences-store';
 import { cliChatReducer, createInitialCliChatState } from './cli-chat-reducer';
+import { shortCliChatTitle } from './cli-chat-title';
 import {
   type ChatContextChip,
   type ChatEvent,
   type CliChatId,
+  type CliChatModel,
   type CliChatModelSettings,
   type CliChatPermissionMode,
   type CliChatSelectionContext,
@@ -39,6 +45,7 @@ interface CliChatPanelProps {
   readonly selectionContext?: CliChatSelectionContext | null;
   readonly initialSessionId?: string | null;
   readonly onSessionId?: (sessionId: string) => void;
+  readonly onTitleChange?: (title: string) => void;
 }
 
 export function CliChatPanel({
@@ -51,19 +58,47 @@ export function CliChatPanel({
   selectionContext = null,
   initialSessionId = null,
   onSessionId,
+  onTitleChange,
 }: CliChatPanelProps) {
   const { t } = useLingui();
+  const configContext = use(ConfigContext);
+  const preferredModel: CliChatModel | undefined =
+    cli === 'codex'
+      ? configContext?.userConfig?.agents.chat.codexModel
+      : configContext?.userConfig?.agents.chat.claudeModel;
+  const defaultModelReady = configContext === null || configContext.userSynced;
+  const [rememberedPreferences] = useState(() => readCliChatPreferences(cli));
   const [state, dispatch] = useReducer(cliChatReducer, initialSessionId, createInitialCliChatState);
   const [draft, setDraft] = useState('');
   const [permissionMode, setPermissionMode] = useState<CliChatPermissionMode>(
-    DEFAULT_CLI_CHAT_PERMISSION_MODE,
+    rememberedPreferences?.permissionMode ?? DEFAULT_CLI_CHAT_PERMISSION_MODE,
   );
-  const [modelSettings, setModelSettings] = useState<CliChatModelSettings>(() =>
-    defaultCliChatModelSettings(cli),
+  const [modelSettings, setModelSettings] = useState<CliChatModelSettings>(
+    () => rememberedPreferences?.modelSettings ?? defaultCliChatModelSettings(cli, preferredModel),
   );
-  const [attachedSelection, setAttachedSelection] = useState<CliChatSelectionContext | null>(null);
+  const [dismissedSelection, setDismissedSelection] = useState<CliChatSelectionContext | null>(
+    null,
+  );
+  const attachedSelection = selectionContext === dismissedSelection ? null : selectionContext;
+  const attachedSelectionPreview =
+    attachedSelection === null ? '' : lightRenderMarkdownPreview(attachedSelection.markdown);
   const parserRef = useRef(createParserState());
   const initialSentRef = useRef(false);
+  // A resumed native conversation already owns its title; only a fresh session
+  // derives one from the first user instruction.
+  const titleReportedRef = useRef(initialSessionId !== null);
+  const modelWasChangedRef = useRef(rememberedPreferences?.modelSettings !== undefined);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (configContext === null || !defaultModelReady || modelWasChangedRef.current) return;
+    const next = defaultCliChatModelSettings(cli, preferredModel);
+    setModelSettings((current) =>
+      current.model === next.model && current.effort === next.effort && current.speed === next.speed
+        ? current
+        : next,
+    );
+  }, [cli, configContext, defaultModelReady, preferredModel]);
 
   async function sendPrompt(
     prompt: string,
@@ -72,6 +107,12 @@ export function CliChatPanel({
   ): Promise<boolean> {
     const trimmed = prompt.trim();
     if (trimmed === '' || ptyId === null || state.running) return false;
+    if (!titleReportedRef.current) {
+      titleReportedRef.current = true;
+      onTitleChange?.(
+        shortCliChatTitle(displayPrompt, cli === 'codex' ? t`Codex chat` : t`Claude chat`),
+      );
+    }
     dispatch({
       type: 'send',
       text: displayPrompt.trim() || trimmed,
@@ -112,14 +153,12 @@ export function CliChatPanel({
   const sendInitialPrompt = useEffectEvent(sendPrompt);
 
   useEffect(() => {
-    if (ptyId === null || initialPrompt === null || initialSentRef.current) return;
+    if (ptyId === null || initialPrompt === null || initialSentRef.current || !defaultModelReady) {
+      return;
+    }
     initialSentRef.current = true;
     void sendInitialPrompt(initialPrompt, initialDisplayPrompt ?? initialPrompt);
-  }, [initialDisplayPrompt, initialPrompt, ptyId]);
-
-  useEffect(() => {
-    if (selectionContext !== null) setAttachedSelection(selectionContext);
-  }, [selectionContext]);
+  }, [defaultModelReady, initialDisplayPrompt, initialPrompt, ptyId]);
 
   useEffect(() => {
     if (ptyId === null) return;
@@ -157,7 +196,7 @@ export function CliChatPanel({
     void sendPrompt(prompt, instruction, selection).then((sent) => {
       if (!sent) return;
       setDraft('');
-      setAttachedSelection((current) => (current === selection ? null : current));
+      setDismissedSelection(selection);
     });
   }
 
@@ -175,31 +214,35 @@ export function CliChatPanel({
 
   return (
     <section aria-label={t`Chat`} className="flex h-full min-h-0 flex-col bg-background">
-      {context.length > 0 ? (
-        <fieldset className="flex min-w-0 flex-wrap gap-1.5 border-x-0 border-t-0 border-b border-border px-3 py-2">
-          <legend className="sr-only">{t`Context`}</legend>
-          {context.map((chip) => (
-            <span
-              key={`${chip.kind}-${chip.label}`}
-              className="max-w-56 truncate rounded-full border border-border bg-muted/50 px-2 py-0.5 text-xs text-muted-foreground"
-              title={chip.label}
-            >
-              {chip.kind === 'selection' ? t`Selection` : chip.label}
-            </span>
-          ))}
-        </fieldset>
-      ) : null}
-      <ChatMessageList timeline={state.timeline} running={state.running} />
+      <ChatMessageList timeline={state.timeline} running={state.running} bridge={bridge} />
       <form onSubmit={submit} className="border-t border-border p-3">
         <div
           data-chat-composer="true"
           className="mx-auto max-w-3xl overflow-hidden rounded-2xl border border-input bg-background shadow-xs transition-shadow focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50"
         >
+          {context.length > 0 ? (
+            <fieldset
+              data-chat-composer-context="true"
+              className="mx-2 mt-2 flex min-w-0 flex-wrap gap-1.5"
+            >
+              <legend className="sr-only">{t`Context`}</legend>
+              {context.map((chip) => (
+                <span
+                  key={`${chip.kind}-${chip.label}`}
+                  data-chat-context-chip="true"
+                  className="max-w-56 truncate rounded-full border border-border bg-muted/50 px-2 py-0.5 text-xs text-muted-foreground"
+                  title={chip.label}
+                >
+                  {chip.kind === 'selection' ? t`Selection` : chip.label}
+                </span>
+              ))}
+            </fieldset>
+          ) : null}
           {attachedSelection !== null ? (
             <div
               data-chat-selection="true"
               className="mx-2 mt-2 flex min-w-0 items-center gap-1.5 rounded-lg bg-muted/70 px-2 py-1 text-xs text-muted-foreground"
-              title={`${attachedSelection.documentTitle} — ${attachedSelection.documentPath}`}
+              title={`${attachedSelectionPreview}\n${attachedSelection.documentTitle} — ${attachedSelection.documentPath}`}
             >
               <TextQuoteIcon aria-hidden="true" className="size-3.5 shrink-0" />
               <span className="shrink-0 font-medium text-foreground">
@@ -207,13 +250,15 @@ export function CliChatPanel({
                   ? t`1 line selected`
                   : t`${attachedSelection.lineCount} lines selected`}
               </span>
-              <span className="min-w-0 truncate">· {attachedSelection.documentTitle}</span>
+              <span className="min-w-0 truncate" data-chat-selection-preview="true">
+                · {attachedSelectionPreview || attachedSelection.documentTitle}
+              </span>
               <Button
                 type="button"
                 variant="ghost"
                 size="icon-xs"
                 className="ml-auto -mr-1 size-5"
-                onClick={() => setAttachedSelection(null)}
+                onClick={() => setDismissedSelection(attachedSelection)}
                 aria-label={t`Remove selected lines`}
               >
                 <XIcon aria-hidden="true" />
@@ -221,6 +266,7 @@ export function CliChatPanel({
             </div>
           ) : null}
           <Textarea
+            ref={textareaRef}
             aria-label={t`Message`}
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
@@ -238,13 +284,22 @@ export function CliChatPanel({
               <CliChatModelMenu
                 cli={cli}
                 value={modelSettings}
-                onValueChange={setModelSettings}
+                onValueChange={(next) => {
+                  modelWasChangedRef.current = true;
+                  setModelSettings(next);
+                  writeCliChatPreferences(cli, { modelSettings: next, permissionMode });
+                }}
                 disabled={state.running}
+                onClose={() => textareaRef.current?.focus()}
               />
               <CliChatPermissionMenu
                 value={permissionMode}
-                onValueChange={setPermissionMode}
+                onValueChange={(next) => {
+                  setPermissionMode(next);
+                  writeCliChatPreferences(cli, { modelSettings, permissionMode: next });
+                }}
                 disabled={state.running}
+                onClose={() => textareaRef.current?.focus()}
               />
             </div>
             {state.running ? (

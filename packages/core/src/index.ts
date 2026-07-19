@@ -530,6 +530,10 @@ export {
   CreatePageRequestSchema,
   type CreatePageSuccess,
   CreatePageSuccessSchema,
+  type CurrentDocumentSuccess,
+  CurrentDocumentSuccessSchema,
+  type CurrentDocumentViewer,
+  CurrentDocumentViewerSchema,
   classifyGitAuthError,
   containsXmlTag,
   type DeadLinkEntry,
@@ -1199,6 +1203,7 @@ export type {
   AgentPresenceEntry,
   AwarenessState,
   AwarenessUser,
+  CurrentViewState,
 } from './types/awareness.ts';
 export type { Identity } from './types/identity.ts';
 export type { Principal } from './types/principal.ts';

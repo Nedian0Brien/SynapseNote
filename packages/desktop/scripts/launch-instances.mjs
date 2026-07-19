@@ -27,7 +27,8 @@
  *
  * Flags / env:
  *   --app <path>  (or OK_DESKTOP_APP)  path to the built .app
- *                 default: dist-desktop/mac-arm64/SynapseNote.app (run `bun run build:dir` first)
+ *                 default: dist-desktop-local/mac-arm64/SynapseNote.app
+ *                 (run `bun run build:dir:local` first)
  *   --user-data-root <dir>  base dir for per-instance userData (default: ~/.ok/instances)
  */
 
@@ -77,13 +78,13 @@ function resolveAppPath(flagPath) {
     if (!existsSync(abs)) throw new Error(`--app path not found: ${abs}`);
     return abs;
   }
-  // Default: the unsigned local build output, relative to this package.
+  // Default: the ad-hoc-signed local build output, separate from release builds.
   const pkgRoot = resolve(import.meta.dirname, '..');
-  const candidate = join(pkgRoot, 'dist-desktop', 'mac-arm64', 'SynapseNote.app');
+  const candidate = join(pkgRoot, 'dist-desktop-local', 'mac-arm64', 'SynapseNote.app');
   if (!existsSync(candidate)) {
     throw new Error(
       `No built app at ${candidate}.\n` +
-        `Build it first:  bun run build:dir   (from packages/desktop)\n` +
+        `Build it first:  bun run build:dir:local   (from packages/desktop)\n` +
         `or pass an explicit --app <path> / set OK_DESKTOP_APP.`,
     );
   }

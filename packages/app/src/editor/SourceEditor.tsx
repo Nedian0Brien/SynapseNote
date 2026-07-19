@@ -38,15 +38,15 @@ import { createSourcePolishExtension } from './source-polish';
 import { FM_FENCE_LINE_RE } from './source-polish/view-plugin';
 import { attachTypingBurstDetector } from './typing-burst-detector';
 
-// Toolbar exclusion zone in px (= 3.5rem, EditorToolbar's rendered height). CM6
+// Toolbar exclusion zone in px (= 44px identity + 40px Markdown tools). CM6
 // resolves scrollIntoView with raw scrollTop arithmetic against the ancestor's
 // bounding rect and does NOT read `scroll-padding-top` from the scroll ancestor,
-// so the `scroll-pt-14` on ScrollPreservingContainer in
+// so the `scroll-pt-[84px]` on ScrollPreservingContainer in
 // components/EditorActivityPool.tsx does not reach source mode. EditorView.scrollMargins
-// is CM6's native equivalent — restate the inset here. Keep in sync with `pt-14`
-// / `scroll-pt-14` in components/EditorActivityPool.tsx; rendered height from
+// is CM6's native equivalent — restate the inset here. Keep in sync with
+// `pt-[84px]` / `scroll-pt-[84px]` in components/EditorActivityPool.tsx; rendered height from
 // components/EditorToolbar.tsx.
-const TOOLBAR_OVERLAP_PX = 56;
+const TOOLBAR_OVERLAP_PX = 84;
 
 interface SourceEditorProps {
   docName: string;

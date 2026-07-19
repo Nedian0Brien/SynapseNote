@@ -53,6 +53,50 @@ describe('repairMcpConfigs', () => {
     return path;
   }
 
+  function writeLegacyClaude(entry: Record<string, unknown>): string {
+    const path = resolveClaudeCodeConfigPath({ home: fakeHome });
+    writeFileSync(path, JSON.stringify({ mcpServers: { 'open-knowledge': entry } }, null, 2));
+    return path;
+  }
+
+  it('migrates an owned open-knowledge entry to synapsenote and removes the old key', () => {
+    const configPath = writeLegacyClaude({
+      command: 'npx',
+      args: ['-y', '@inkeep/open-knowledge@latest', 'mcp'],
+    });
+
+    const result = repairMcpConfigs({
+      projectDir,
+      home: fakeHome,
+      logger: (event) => logEvents.push(event),
+    });
+
+    expect(result.repairedCount).toBe(1);
+    const written = JSON.parse(readFileSync(configPath, 'utf-8'));
+    expect(written.mcpServers.synapsenote).toEqual(CHAIN_ENTRY);
+    expect(written.mcpServers['open-knowledge']).toBeUndefined();
+    expect(logEvents).toContainEqual({
+      event: 'mcp-config-legacy-removed',
+      scope: 'user',
+      editorId: 'claude',
+      configPath,
+    });
+  });
+
+  it('leaves a foreign open-knowledge server untouched', () => {
+    const configPath = writeLegacyClaude({ command: 'vendor-open-knowledge', args: ['serve'] });
+
+    const result = repairMcpConfigs({ projectDir, home: fakeHome });
+
+    expect(result.repairedCount).toBe(0);
+    const written = JSON.parse(readFileSync(configPath, 'utf-8'));
+    expect(written.mcpServers.synapsenote).toBeUndefined();
+    expect(written.mcpServers['open-knowledge']).toEqual({
+      command: 'vendor-open-knowledge',
+      args: ['serve'],
+    });
+  });
+
   it('rewrites legacy bare-npx, npx-@latest, bundle-direct, and symlink entries to the chain', () => {
     for (const entry of [LEGACY_BARE, LEGACY_NPX_AT_LATEST, BUNDLE_ABSOLUTE, SYMLINK]) {
       const configPath = writeClaude(entry);

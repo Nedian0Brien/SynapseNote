@@ -1,15 +1,14 @@
 import { Trans, useLingui } from '@lingui/react/macro';
 import { parseManagedArtifactName, type SkillScope } from '@nedian0brien/synapsenote-core';
-import { ListPlus, PanelRightClose, PanelRightOpen } from 'lucide-react';
-import { lazy, Suspense } from 'react';
+import { ListPlus } from 'lucide-react';
+import { Fragment, lazy, Suspense } from 'react';
 import { Button } from '@/components/ui/button.tsx';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { EditorModeValue } from '@/editor/use-editor-mode.ts';
-import { formatShortcut, formatShortcutLabel } from '@/lib/keyboard-shortcuts';
 import { parseProjectSkillContentDocName } from '@/lib/managed-artifact-doc-name';
-import { cn } from '@/lib/utils';
-import { EditorBreadcrumb } from './EditorBreadcrumb';
+import { DocumentViewerHeader, viewerTitleFromPath } from './DocumentViewerHeader';
 import { EditorModeToggle } from './EditorModeToggle';
+import { MarkdownFormatToolbar } from './MarkdownFormatToolbar';
 import { NotInSidebarIndicator } from './NotInSidebarIndicator';
 
 // Lazy-loaded: skill install/history chrome (+ the shared useSkillActions
@@ -28,11 +27,7 @@ interface EditorToolbarProps {
   onAddProperty: () => void;
   isPanelCollapsed: boolean;
   onTogglePanel: () => void;
-  /** Reserve right-side room in the action cluster so it sits left of the
-   *  right-dock "Show terminal" reveal tab (which pins to the far-right corner
-   *  the cluster reaches once the doc panel is collapsed) — keeping the two in
-   *  one row instead of overlapping. */
-  reserveRightGutter?: boolean;
+  panelControlsId?: string;
 }
 
 export function EditorToolbar({
@@ -44,11 +39,9 @@ export function EditorToolbar({
   onAddProperty,
   isPanelCollapsed,
   onTogglePanel,
-  reserveRightGutter = false,
+  panelControlsId = 'doc-panel',
 }: EditorToolbarProps) {
   const { t } = useLingui();
-  const panelShortcut = formatShortcut('toggle-document-panel');
-  const panelShortcutLabel = formatShortcutLabel('toggle-document-panel');
   // Skills carry install/uninstall + history chrome in this per-doc toolbar
   // (templates + documents don't — only skills are installed). Install is a
   // live symlink, so there's no reinstall step.
@@ -63,127 +56,68 @@ export function EditorToolbar({
       : projectSkillName
         ? { scope: 'project', name: projectSkillName }
         : null;
+  const title = activeSkill?.name ?? viewerTitleFromPath(activeDocName ?? 'Untitled');
+
   return (
     <div data-testid="editor-toolbar" className="pointer-events-none absolute inset-x-0 top-0 z-10">
-      {/*
-        Outer wrapper mirrors the editor's content-column grid so the inner
-        3-col layout aligns with the WYSIWYG content area. Without this, the
-        previous `px-2` on the inner grid pushed the breadcrumb cell ~8px
-        right of the editor's first text block. Cells inside `.editor-content-aligned`
-        land on the `content` column automatically via the `> *` rule.
-      */}
-      <div className="editor-content-aligned bg-background py-2">
-        <div className="grid grid-cols-3 items-center">
-          {/*
-          Breadcrumb cell. The parent grid is `pointer-events-none` so the
-          editor canvas underneath remains clickable through the toolbar's
-          empty regions; this cell must scope its own `pointer-events-auto`
-          so the breadcrumb's per-segment `title` tooltips actually surface.
-          Future siblings dropped into this cell must follow the same rule.
-        */}
-          <div className="pointer-events-auto flex min-w-0 items-center gap-2">
-            {/* Skills show their identity (name/scope) in the panel, so the
-                `.ok/skills/<name>` path breadcrumb is noise — suppress it for
-                both scopes to match the global-skill editor. */}
-            {activeSkill ? null : <EditorBreadcrumb docName={activeDocName} />}
-            {/* Self-gating: renders only when a visibility toggle hides this
-                doc's tree row, and never for skills/templates (their names
-                attribute no axis). */}
-            {activeDocName === null ? null : (
-              <NotInSidebarIndicator
-                entry={{ kind: 'document', docName: activeDocName }}
-                className="shrink-0"
-              />
-            )}
-          </div>
-          <div className="pointer-events-auto flex justify-center">
-            <EditorModeToggle
-              isSourceMode={isSourceMode}
-              onModeChange={onModeChange}
-              sourceDisabled={sourceDisabled}
+      <DocumentViewerHeader
+        documentPath={activeDocName ?? title}
+        title={title}
+        fileType="MD"
+        showBreadcrumb={!activeSkill}
+        leadingAccessory={
+          activeDocName === null ? null : (
+            <NotInSidebarIndicator
+              entry={{ kind: 'document', docName: activeDocName }}
+              className="shrink-0"
             />
-          </div>
-          {/*
-            Third column kept empty so the mode toggle stays centered in the
-            content column. The action buttons render in the pane-edge
-            cluster below, not here.
-          */}
-        </div>
-      </div>
-      {/*
-        Action buttons sit flush against the doc-panel divider (the editor
-        pane's right edge), not the narrower content column. `absolute` lifts
-        them clear of the `.editor-content-aligned` grid; `pointer-events-auto`
-        re-enables clicks under the toolbar's `pointer-events-none` root.
-      */}
-      <div
-        className={cn(
-          'pointer-events-auto absolute top-0 right-0 flex items-center justify-end gap-1 py-2 pr-2',
-          // Clear the far-right "Show terminal" reveal tab (icon-sm, flush to the
-          // edge) so the action buttons sit to its left in the same row.
-          reserveRightGutter && 'pr-9',
-        )}
-      >
-        {activeSkill ? (
-          <Suspense fallback={null}>
-            <SkillEditorActions scope={activeSkill.scope} name={activeSkill.name} />
-          </Suspense>
-        ) : null}
-        {showAddPropertyButton && (
-          // PropertyPanel only mounts in WYSIWYG mode (gated in
-          // EditorActivityPool). Hiding the button in source mode prevents
-          // the click → CustomEvent → no-listener no-op that surfaces as
-          // unresponsive UI. Source-mode users edit FM directly in the
-          // CodeMirror YAML.
-          <Tooltip>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={t`Add properties`}
-              onClick={onAddProperty}
-              data-testid="add-properties-button"
-              asChild
-            >
-              <TooltipTrigger>
-                <ListPlus />
-              </TooltipTrigger>
-            </Button>
-            <TooltipContent side="bottom">
-              <Trans>Add properties</Trans>
-            </TooltipContent>
-          </Tooltip>
-        )}
-        <Tooltip>
-          <Button
-            data-doc-panel-toggle=""
-            variant="ghost"
-            size="icon"
-            onClick={onTogglePanel}
-            aria-expanded={!isPanelCollapsed}
-            aria-controls="doc-panel"
-            aria-label={
-              isPanelCollapsed
-                ? t`Show panel (${panelShortcutLabel})`
-                : t`Hide panel (${panelShortcutLabel})`
-            }
-            asChild
-          >
-            <TooltipTrigger>
-              {isPanelCollapsed ? <PanelRightOpen /> : <PanelRightClose />}
-            </TooltipTrigger>
-          </Button>
-          <TooltipContent side="bottom">
-            {isPanelCollapsed ? (
-              <Trans>Show panel ({panelShortcut})</Trans>
-            ) : (
-              <Trans>Hide panel ({panelShortcut})</Trans>
-            )}
-          </TooltipContent>
-        </Tooltip>
-      </div>
-      <div
-        aria-hidden
-        className="pointer-events-none h-2 bg-linear-to-b from-background to-transparent"
+          )
+        }
+        actions={
+          <Fragment>
+            {activeSkill ? (
+              <Suspense fallback={null}>
+                <SkillEditorActions scope={activeSkill.scope} name={activeSkill.name} />
+              </Suspense>
+            ) : null}
+            {showAddPropertyButton ? (
+              <Tooltip>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={t`Add properties`}
+                  onClick={onAddProperty}
+                  data-testid="add-properties-button"
+                  asChild
+                >
+                  <TooltipTrigger>
+                    <ListPlus />
+                  </TooltipTrigger>
+                </Button>
+                <TooltipContent side="bottom">
+                  <Trans>Add properties</Trans>
+                </TooltipContent>
+              </Tooltip>
+            ) : null}
+          </Fragment>
+        }
+        panelToggle={{
+          open: !isPanelCollapsed,
+          onToggle: onTogglePanel,
+          controlsId: panelControlsId,
+        }}
+        className="pointer-events-auto"
+      />
+      <MarkdownFormatToolbar
+        activeDocName={activeDocName}
+        isSourceMode={isSourceMode}
+        trailingContent={
+          <EditorModeToggle
+            isSourceMode={isSourceMode}
+            onModeChange={onModeChange}
+            sourceDisabled={sourceDisabled}
+          />
+        }
       />
     </div>
   );

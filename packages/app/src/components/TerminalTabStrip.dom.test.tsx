@@ -76,6 +76,15 @@ describe('TerminalTabStrip', () => {
     expect(tabs.map((tab) => tab.textContent)).toEqual(['Terminal 1', 'Terminal 2', 'Terminal 3']);
   });
 
+  test('shows the provider brand in chat-session tabs', () => {
+    renderStrip({
+      sessions: [{ id: 's1', label: 'Summarize the research notes', cli: 'codex' }],
+      activeSessionId: 's1',
+    });
+    const tab = screen.getByRole('tab', { name: 'Summarize the research notes' });
+    expect(tab.querySelector('svg')).not.toBeNull();
+  });
+
   test('hovering a tab surfaces the full (untruncated) title in a tooltip', async () => {
     const user = userEvent.setup();
     // A process-set OSC title long enough to hard-clip at the tab's max width;

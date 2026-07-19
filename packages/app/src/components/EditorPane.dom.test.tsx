@@ -5,7 +5,10 @@ import { isMacOS } from '@tiptap/core';
 import { type ReactNode, useEffect } from 'react';
 import { publishSelectionContext } from '@/editor/selection-context';
 import type { EditorSurface } from '@/editor/selection-stats';
-import { subscribeToActiveTerminalInput } from './handoff/terminal-input-events';
+import {
+  requestActiveTerminalInput,
+  subscribeToActiveTerminalInput,
+} from './handoff/terminal-input-events';
 
 // The doc the mocked DocumentContext reports (see the useDocumentContext mock).
 const TEST_DOC = 'docs/notes';
@@ -118,7 +121,9 @@ mock.module('./EditorHeader', () => ({
 // (below) surfaces the threaded `visible` + `launch` props so these tests keep
 // asserting EditorPane's wiring across the prop boundary.
 mock.module('./EditorArea', () => ({
-  EditorArea: () => <div data-testid="editor-area" />,
+  EditorArea: ({ activeTab }: { activeTab: string }) => (
+    <div data-testid="editor-area" data-active-tab={activeTab} />
+  ),
 }));
 mock.module('./TerminalSessionsHost', () => ({
   TerminalSessionsHost: ({
@@ -219,6 +224,10 @@ describe('EditorPane chat selection context', () => {
     expect(screen.getByTestId('terminal-dock').getAttribute('data-selection-text')).toBe(
       'Selected annual revenue',
     );
+
+    act(() => requestActiveTerminalInput('assets/report.pdf:Selected annual revenue'));
+    expect(screen.getByTestId('terminal-dock').getAttribute('data-visible')).toBe('true');
+    expect(screen.getByTestId('editor-area').getAttribute('data-active-tab')).toBe('chat');
   });
 });
 
@@ -430,10 +439,12 @@ describe('EditorPane terminal dock wiring', () => {
     act(() => desk.dispatchMenuAction('toggle-terminal'));
     expect(screen.getByTestId('terminal-dock').getAttribute('data-visible')).toBe('true');
     expect(desk.viewMenuPushes.at(-1)).toEqual({ terminalVisible: true });
+    expect(screen.getByTestId('editor-area').getAttribute('data-active-tab')).toBe('chat');
 
     act(() => desk.dispatchMenuAction('toggle-terminal'));
     expect(screen.getByTestId('terminal-dock').getAttribute('data-visible')).toBe('false');
     expect(desk.viewMenuPushes.at(-1)).toEqual({ terminalVisible: false });
+    expect(screen.getByTestId('editor-area').getAttribute('data-active-tab')).toBe('outline');
   });
 
   test('desktop: hiding the terminal clears the launch intent so a reopen is blank (regression)', async () => {

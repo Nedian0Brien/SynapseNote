@@ -246,6 +246,7 @@ async function installDelayedDesktopSessionBridge(
           recordHandoff: async () => {},
           openAsset: async () => ({ ok: false, reason: 'not-found' }),
           revealAsset: async () => ({ ok: false, reason: 'not-found' }),
+          savePdf: async () => ({ ok: true as const }),
           showAssetMenu: async () => {},
           showItemInFolder: async () => {},
           trashItem: async () => ({ ok: true as const }),

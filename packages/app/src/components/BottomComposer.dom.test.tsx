@@ -883,8 +883,8 @@ describe('BottomComposer (selection pill)', () => {
 
 describe('BottomComposer (folder mode)', () => {
   test('shows the folder as a top-row context chip from the first render (basename label)', async () => {
-    // Unlike doc mode (chip appears on first keystroke), folder mode shows the
-    // folder chip immediately — it is the composer's scope, not a touched file.
+    // Folder mode shows its scope immediately, matching the active-document
+    // context shown by doc mode.
     await renderFolderComposer('specs/foo');
     const chip = await screen.findByTestId('composer-context-chip-file-specs/foo');
     expect(chip.textContent).toContain('foo');
@@ -921,24 +921,24 @@ describe('BottomComposer (folder mode)', () => {
 });
 
 describe('BottomComposer (top-row file-context chips lifecycle)', () => {
-  test('an empty prompt shows NO file chip', async () => {
+  test('an empty prompt already shows the active document as agent context', async () => {
     await renderComposer('specs/foo/SPEC');
-    expect(screen.queryByTestId('composer-context-chips')).toBeNull();
-    expect(screen.queryByTestId('composer-context-chip-file-specs/foo/SPEC.md')).toBeNull();
+    expect(screen.getByTestId('composer-context-chips')).toBeTruthy();
+    expect(screen.getByTestId('composer-context-chip-file-specs/foo/SPEC.md')).toBeTruthy();
   });
 
-  test('the first keystroke adds the active file as a top-row chip (basename label)', async () => {
+  test('the active file chip remains visible while typing (basename label)', async () => {
     await renderComposer('specs/foo/SPEC');
+    expect(screen.getByTestId('composer-context-chip-file-specs/foo/SPEC.md')).toBeTruthy();
     fireEvent.change(getInput(), { target: { value: 'do a thing' } });
     const chip = await screen.findByTestId('composer-context-chip-file-specs/foo/SPEC.md');
     expect(chip.textContent).toContain('SPEC.md');
     expect(screen.getByRole('button', { name: /Remove SPEC\.md from context/i })).toBeTruthy();
   });
 
-  test('the first keystroke uses docExt metadata for an active .mdx document', async () => {
+  test('the initial active chip uses docExt metadata for an .mdx document', async () => {
     pageMeta = new Map([['foo', { docExt: '.mdx' }]]);
     await renderComposer('foo');
-    fireEvent.change(getInput(), { target: { value: 'do a thing' } });
 
     expect(await screen.findByTestId('composer-context-chip-file-foo.mdx')).toBeTruthy();
     expect(screen.queryByTestId('composer-context-chip-file-foo.md')).toBeNull();
@@ -1067,11 +1067,12 @@ describe('BottomComposer (top-row file-context chips lifecycle)', () => {
     await screen.findByTestId('composer-context-chip-file-fileA.md');
 
     fireEvent.click(screen.getByTestId('ask-ai-send'));
-    // After dispatch clears the field, the row is empty (fresh draft).
+    // After dispatch clears the draft set, the active-document context remains
+    // visible for the next prompt.
     await waitFor(() => expect(getInput().value).toBe(''));
-    expect(screen.queryByTestId('composer-context-chips')).toBeNull();
+    expect(screen.getByTestId('composer-context-chip-file-fileA.md')).toBeTruthy();
 
-    // Typing again re-adds the current file from scratch.
+    // Typing again retains that current-file context.
     fireEvent.change(getInput(), { target: { value: 'again' } });
     expect(await screen.findByTestId('composer-context-chip-file-fileA.md')).toBeTruthy();
   });
@@ -1161,6 +1162,18 @@ describe('BottomComposer (compact selection chip + preview)', () => {
       kind: 'inline',
       markdown: 'Passage selected from an inline PDF',
     });
+  });
+
+  test('clearing the PDF drag selection also removes its composer pill', async () => {
+    livePdfSelection = pdfSel;
+    const { rerender } = await renderComposer('notes');
+    expect(screen.getByTestId('composer-selection-pill')).toBeTruthy();
+
+    livePdfSelection = null;
+    const { BottomComposer } = await import('./BottomComposer');
+    rerender(<BottomComposer docName="notes" surface="wysiwyg" />);
+
+    await waitFor(() => expect(screen.queryByTestId('composer-selection-pill')).toBeNull());
   });
 });
 

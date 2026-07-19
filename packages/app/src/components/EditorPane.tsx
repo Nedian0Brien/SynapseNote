@@ -26,11 +26,14 @@ import { AuthModal } from './AuthModal';
 import { AutoSyncOnboardingDialog } from './AutoSyncOnboardingDialog';
 import { shouldShowAutoSyncOnboarding } from './auto-sync-onboarding-gate';
 import type { ChatContextChip, CliChatSelectionContext } from './chat/cli-chat-types';
-import { type PanelTab, TABS } from './DocPanel';
+import type { DocumentPanelTab, PanelTab, PdfPanelTab } from './DocPanel';
 import { EditorArea, type TerminalPlacement } from './EditorArea';
 import { EditorHeader } from './EditorHeader';
 import { composeTerminalSelectionPaste } from './handoff/compose-terminal-selection';
-import { requestActiveTerminalInput } from './handoff/terminal-input-events';
+import {
+  requestActiveTerminalInput,
+  subscribeToActiveTerminalInput,
+} from './handoff/terminal-input-events';
 import { subscribeToTerminalLaunchRequests } from './handoff/terminal-launch-events';
 import { usePageList } from './PageListContext';
 import { TerminalSessionsHost } from './TerminalSessionsHost';
@@ -77,7 +80,12 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
   const [editorMode, setEditorMode] = useState<EditorMode>(persistedMode);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authInitialStep, setAuthInitialStep] = useState<'auth' | 'identity'>('auth');
-  const [activeTab, setActiveTab] = useState<PanelTab>(TABS[0].id);
+  // Keep the established document-info default while ordering Chat first in the
+  // rail. Opening Chat explicitly swaps the right rail to the live session host;
+  // closing it restores the last document tab instead of leaving an empty panel.
+  const [activeTab, setActiveTab] = useState<PanelTab>('outline');
+  const lastDocumentTabRef = useRef<DocumentPanelTab>('outline');
+  const lastPdfTabRef = useRef<PdfPanelTab>('pages');
   const [autoSyncOnboardingDismissed, setAutoSyncOnboardingDismissed] = useState(false);
   // Bottom-docked terminal — desktop-only (the bridge is absent in the web
   // host, where a real shell is out of scope). Visibility starts hidden; the
@@ -118,9 +126,18 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
   // dock — re-docking a hidden terminal that stays hidden would feel inert.
   const [terminalDock, setTerminalDockState] =
     useState<TerminalDockPosition>(getInitialTerminalDock);
+  const terminalDockRef = useRef(terminalDock);
+  function activePanelFallback(): DocumentPanelTab | PdfPanelTab {
+    return activeTarget?.kind === 'asset' && activeTarget.mediaKind === 'pdf'
+      ? lastPdfTabRef.current
+      : lastDocumentTabRef.current;
+  }
   function setTerminalDock(next: TerminalDockPosition) {
+    terminalDockRef.current = next;
     setTerminalDockState(next);
     writeTerminalDock(next);
+    if (next === 'right') setActiveTab('chat');
+    else if (activeTab === 'chat') setActiveTab(activePanelFallback());
     setTerminalVisible(true);
   }
   // The tab strip's dock-toggle button flips between the bottom dock and the right
@@ -146,6 +163,12 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
   // the dock would then dedup away as a repeat.
   const launchNonceRef = useRef(0);
 
+  function handleTerminalVisibleChange(visible: boolean) {
+    setTerminalVisible(visible);
+    if (terminalDockRef.current !== 'right') return;
+    setActiveTab(visible ? 'chat' : activePanelFallback());
+  }
+
   // Header + tab-strip "New chat": launch a CLI with NO prompt (a blank session).
   // Resolve the CLI from the sticky pick + installed set unless the caller names
   // one, reveal the dock, and thread a promptless one-shot intent through the
@@ -157,7 +180,7 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
   // auto-runs (see the TerminalLaunchIntent JSDoc for the bake gate).
   function launchNewChat(cli?: TerminalCli, stagePaste?: string) {
     const resolvedCli = cli ?? resolveDefaultCli(loadStickyAgent(), installedClis);
-    setTerminalVisible(true);
+    handleTerminalVisibleChange(true);
     launchNonceRef.current += 1;
     setTerminalLaunch({
       prompt: null,
@@ -168,14 +191,39 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
   }
 
   // Reveal the docked terminal and, if no session exists yet, seed a first one.
-  // Drives the edge "Show terminal" reveal tab; leaves the right doc-panel
-  // untouched (the two coexist). The seed honors the sticky new-tab pick: for a
+  // The shared viewer right-panel control reaches this path through the Chat tab.
+  // The seed honors the sticky new-tab pick: for a
   // CLI, launch a chat under the default CLI; when the last pick was a bare
   // "Terminal" (persisted terminal-only), skip the CLI launch and let the host's
   // reveal-from-empty fallback seed a bare shell instead.
   function revealTerminal() {
-    setTerminalVisible(true);
+    handleTerminalVisibleChange(true);
     if (!hasSessions && !readPreferBareTerminal()) launchNewChat();
+  }
+
+  function handleActiveTabChange(tab: PanelTab) {
+    if (tab === 'chat') {
+      if (terminalDockRef.current !== 'right') setTerminalDock('right');
+      else revealTerminal();
+      return;
+    }
+    if (activeTarget?.kind === 'asset' && activeTarget.mediaKind === 'pdf') {
+      if (tab === 'pages' || tab === 'annotations' || tab === 'outline' || tab === 'links') {
+        lastPdfTabRef.current = tab;
+      }
+    } else if (
+      tab === 'outline' ||
+      tab === 'memo' ||
+      tab === 'links' ||
+      tab === 'graph' ||
+      tab === 'timeline'
+    ) {
+      lastDocumentTabRef.current = tab;
+    }
+    setActiveTab(tab);
+    if (terminalDockRef.current === 'right' && terminalVisible) {
+      setTerminalVisible(false);
+    }
   }
 
   const syncStatus = useGitSyncStatus();
@@ -183,6 +231,19 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
     useConfigContext();
 
   const { activeDocName, activeTarget } = useDocumentContext();
+  const panelSurface =
+    activeTarget?.kind === 'asset' && activeTarget.mediaKind === 'pdf'
+      ? 'pdf'
+      : activeTarget?.kind === 'doc' || activeTarget?.kind === 'missing'
+        ? 'document'
+        : null;
+  const previousPanelSurfaceRef = useRef<'document' | 'pdf' | null>(null);
+  useEffect(() => {
+    if (panelSurface === null || previousPanelSurfaceRef.current === panelSurface) return;
+    previousPanelSurfaceRef.current = panelSurface;
+    if (activeTab === 'chat') return;
+    setActiveTab(panelSurface === 'pdf' ? lastPdfTabRef.current : lastDocumentTabRef.current);
+  }, [activeTab, panelSurface]);
   const { pageMeta, pageTitles } = usePageList();
   const activeBodySelection = useSelectionContext(activeDocName, editorMode);
   // Inline PDFs publish under their owning doc name; a standalone PDF asset
@@ -265,15 +326,21 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
   // Returns true when a selection was staged (caller skips the toggle / new-tab
   // fallback). No-ops on the web host (no terminal).
   function sendSelectionToTerminal(newTab: boolean): boolean {
-    if (!terminalAvailable || activeDocName == null) return false;
-    const snapshot = getSelectionContext(activeDocName, editorMode);
-    const selectionMarkdown = snapshot?.markdown ?? '';
+    if (!terminalAvailable) return false;
+    // Read the registry synchronously at shortcut time. The hook-backed
+    // `activeSelection` drives render state, but a key/menu event can land in the
+    // same task as the selection publish, before React commits that snapshot.
+    const selection =
+      getSelectionContext(activeDocName, editorMode) ??
+      getSelectionContext(activePdfSelectionName, 'pdf');
+    if (selection === null) return false;
+    const selectionMarkdown = selection.markdown;
     if (selectionMarkdown.trim() === '') return false;
     // Trailing soft newlines (\n, not \r — no submit) drop the CLI input caret
     // onto a blank line below the staged passage.
-    const staged = `${composeTerminalSelectionPaste(activeDocName, selectionMarkdown)}\n\n`;
+    const staged = `${composeTerminalSelectionPaste(selection.docName, selectionMarkdown)}\n\n`;
     if (!newTab && activeSessionIsCliRef.current) {
-      setTerminalVisible(true);
+      handleTerminalVisibleChange(true);
       requestActiveTerminalInput(staged);
     } else {
       launchNewChat(undefined, staged);
@@ -285,6 +352,10 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
   // re-subscribing.
   const sendSelectionToTerminalEvent = useEffectEvent(sendSelectionToTerminal);
   const launchNewChatEvent = useEffectEvent(() => launchNewChat());
+  const toggleTerminalVisibilityEvent = useEffectEvent(() => {
+    handleTerminalVisibleChange(!terminalVisible);
+  });
+  const showTerminalEvent = useEffectEvent(() => handleTerminalVisibleChange(true));
 
   // Bottom-terminal toggle, dual-wired like the DocPanel: on desktop the
   // View → Terminal item's ⌘J/Ctrl+J accelerator is OS-captured and dispatches
@@ -297,12 +368,12 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
     return bridge.onMenuAction((action) => {
       if (action === 'toggle-terminal') {
         if (sendSelectionToTerminalEvent(false)) return;
-        setTerminalVisible((visible) => !visible);
+        toggleTerminalVisibilityEvent();
       } else if (action === 'new-terminal') {
         // Terminal menu "New Terminal": reveal the dock (it never hides, unlike
         // the toggle). The dock adds the new tab itself off the same action; this
         // only owns visibility and covers the case where no dock is mounted yet.
-        setTerminalVisible(true);
+        showTerminalEvent();
       }
     });
   }, []);
@@ -313,7 +384,7 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
       if (matchesKeyboardShortcut(event, 'toggle-terminal-panel')) {
         event.preventDefault();
         if (sendSelectionToTerminalEvent(false)) return;
-        setTerminalVisible((visible) => !visible);
+        toggleTerminalVisibilityEvent();
       }
     }
     // Capture phase so a focused xterm textarea can't swallow ⌘J first.
@@ -346,9 +417,25 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
   // genuinely new launch. Desktop-only; the web host never renders the entry point.
   useEffect(() => {
     return subscribeToTerminalLaunchRequests((prompt, cli, options) => {
+      if (terminalDockRef.current === 'right') setActiveTab('chat');
       setTerminalVisible(true);
       launchNonceRef.current += 1;
       setTerminalLaunch({ prompt, cli, nonce: launchNonceRef.current, ...options });
+    });
+  }, []);
+
+  // Viewer-level Ask AI actions (notably PDF selection) publish a low-level
+  // session-input request. Mirror that request at the shell boundary so the
+  // right rail opens on Chat even when a live session was previously hidden.
+  useEffect(() => {
+    return subscribeToActiveTerminalInput(() => {
+      if (terminalDockRef.current !== 'right') {
+        terminalDockRef.current = 'right';
+        setTerminalDockState('right');
+        writeTerminalDock('right');
+      }
+      setActiveTab('chat');
+      setTerminalVisible(true);
     });
   }, []);
 
@@ -404,6 +491,7 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
         // The restore — not the user — is driving this reveal; mark it so the
         // adoption telemetry below skips it.
         restoreRevealRef.current = true;
+        if (terminalDockRef.current === 'right') setActiveTab('chat');
         setTerminalVisible(true);
       })
       .catch((err) => {
@@ -474,13 +562,12 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
         editorMode={editorMode}
         onModeChange={handleModeChange}
         activeTab={activeTab}
-        onActiveTabChange={setActiveTab}
+        onActiveTabChange={handleActiveTabChange}
         terminalBridge={desktopBridge}
         terminalVisible={terminalVisible}
-        onTerminalVisibleChange={setTerminalVisible}
+        onTerminalVisibleChange={handleTerminalVisibleChange}
         terminalDock={terminalDock}
         onTerminalPlacement={setTerminalPlacement}
-        onRevealTerminal={terminalAvailable ? revealTerminal : undefined}
       />
       {/* The `desktopBridge != null` clause re-narrows the bridge to non-null for
           the prop — the derived `terminalAvailable` boolean can't narrow it. */}
@@ -488,7 +575,7 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
         <TerminalSessionsHost
           bridge={desktopBridge}
           visible={terminalVisible}
-          onVisibleChange={setTerminalVisible}
+          onVisibleChange={handleTerminalVisibleChange}
           launch={terminalLaunch}
           installedClis={installedClis}
           container={terminalPlacement.container}

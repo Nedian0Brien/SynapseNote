@@ -33,6 +33,7 @@ import { HeadingAnchors } from './heading-anchors';
 import { ImageInlineZoom } from './image-inline-zoom';
 import { InternalLink } from './internal-link';
 import { JsxComponent } from './jsx-component';
+import { ListEditingShortcuts } from './list-editing-shortcuts';
 import { MathInline } from './math-inline';
 import { RawMdxFallback } from './raw-mdx-fallback';
 import { SelectionStatePlugin } from './selection-state-plugin';
@@ -105,6 +106,9 @@ export const sharedExtensions = [
     },
   }),
   FormattingShortcuts,
+  // App authoring policy for list-shaped markdown: Tab changes nesting and
+  // Backspace at the marker boundary converts the item to a plain paragraph.
+  ListEditingShortcuts,
   // TabFocusTrap — fall-through Tab / Shift-Tab handler. Runs LAST in the
   // keymap chain (priority 1) so ListItem (100, sink/lift), Table (60, next
   // cell), and the suggestion plugins all get first crack. Without this,

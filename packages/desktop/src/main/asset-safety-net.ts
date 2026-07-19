@@ -177,6 +177,30 @@ function safeOrigin(url: string | undefined | null): string | null {
 }
 
 /**
+ * File URLs all expose the opaque origin string `"null"`. Comparing only
+ * `URL.origin` therefore makes every local file look same-origin with the
+ * packaged renderer. For file renderers, only the already-loaded bundle path
+ * itself (with a different hash/query) is an in-app navigation.
+ */
+function isSameRendererNavigation(url: URL, rendererUrl: string | undefined): boolean {
+  if (!rendererUrl) return false;
+  let renderer: URL;
+  try {
+    renderer = new URL(rendererUrl);
+  } catch {
+    return false;
+  }
+  if (url.protocol === 'file:' || renderer.protocol === 'file:') {
+    return (
+      url.protocol === 'file:' &&
+      renderer.protocol === 'file:' &&
+      url.pathname === renderer.pathname
+    );
+  }
+  return url.origin === renderer.origin;
+}
+
+/**
  * When `url` is an in-app SPA route served by the editor's OWN renderer —
  * a same-(renderer-)origin URL whose route lives in the hash (`#/…`) — return
  * the hash to navigate to; otherwise null. These reach `setWindowOpenHandler`
@@ -312,7 +336,7 @@ export function attachAssetSafetyNet(
     // OS browser via the `openExternal` fall-through below.
     if (
       parsed.origin === deps.editorOrigin ||
-      parsed.origin === safeOrigin(webContents.getURL?.())
+      isSameRendererNavigation(parsed, webContents.getURL?.())
     ) {
       return;
     }

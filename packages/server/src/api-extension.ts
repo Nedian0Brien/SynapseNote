@@ -59,6 +59,10 @@ import {
   CreateFolderSuccessSchema,
   CreatePageRequestSchema,
   CreatePageSuccessSchema,
+  type CurrentDocumentSuccess,
+  CurrentDocumentSuccessSchema,
+  type CurrentDocumentViewer,
+  CurrentDocumentViewerSchema,
   colorFromSeed,
   createCodeFenceTracker,
   createWorkspaceSearchCorpus,
@@ -2809,6 +2813,50 @@ function applyDiskEventToLiveAllFilesIndex(
   if (live instanceof Map) {
     updateFileIndex(event, live);
   }
+}
+
+type HocuspocusDocumentRegistry = Pick<Hocuspocus, 'documents'>;
+
+/**
+ * Read and rank the current-view states published by connected editor windows
+ * on `__system__` awareness. Invalid/stale-client payloads are ignored rather
+ * than failing the whole local diagnostic response.
+ */
+export function getCurrentDocumentSnapshot(
+  hocuspocus: HocuspocusDocumentRegistry,
+): CurrentDocumentSuccess {
+  const systemDocument = hocuspocus.documents.get(SYSTEM_DOC_NAME);
+  const awareness = (
+    systemDocument as
+      | {
+          awareness?: {
+            getStates?: () => Map<number, unknown>;
+          };
+        }
+      | undefined
+  )?.awareness;
+  const states = awareness?.getStates?.();
+  if (!states) return { current: null, viewers: [] };
+
+  const viewers: CurrentDocumentViewer[] = [];
+  for (const [clientId, state] of states.entries()) {
+    if (state === null || typeof state !== 'object') continue;
+    const currentView = (state as { currentView?: unknown }).currentView;
+    if (currentView === null || typeof currentView !== 'object') continue;
+    const parsed = CurrentDocumentViewerSchema.safeParse({ clientId, ...currentView });
+    if (parsed.success) viewers.push(parsed.data);
+  }
+
+  const priority = (viewer: CurrentDocumentViewer): number => {
+    if (viewer.focused && viewer.visible) return 3;
+    if (viewer.focused) return 2;
+    if (viewer.visible) return 1;
+    return 0;
+  };
+  viewers.sort(
+    (a, b) => priority(b) - priority(a) || b.updatedAt - a.updatedAt || a.clientId - b.clientId,
+  );
+  return { current: viewers[0] ?? null, viewers };
 }
 
 export function createApiExtension(options: ApiExtensionOptions): Extension {
@@ -8676,6 +8724,49 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       log.error({ err: e }, '[metrics-agent-presence] handler failed');
       errorResponse(res, 500, 'urn:ok:error:internal-server-error', 'Internal server error.', {
         handler: 'metrics-agent-presence',
+        cause: e,
+      });
+    }
+  }
+
+  async function handleCurrentDocument(req: IncomingMessage, res: ServerResponse): Promise<void> {
+    // The active document is local workspace state. Keep the endpoint behind
+    // the same loopback + Host-header gate as workspace/principal/presence so
+    // a DNS-rebound page or LAN peer cannot observe what the user is reading.
+    if (!isLoopbackAddress(req.socket.remoteAddress)) {
+      errorResponse(res, 403, 'urn:ok:error:loopback-required', 'Loopback required.', {
+        handler: 'current-document',
+      });
+      return;
+    }
+    if (!isAllowedWorkspaceHostHeader(req.headers.host)) {
+      errorResponse(res, 403, 'urn:ok:error:host-not-allowed', 'Host header not allowed.', {
+        handler: 'current-document',
+      });
+      return;
+    }
+    if (req.method !== 'GET') {
+      errorResponse(res, 405, 'urn:ok:error:method-not-allowed', 'Method not allowed.', {
+        handler: 'current-document',
+        extraHeaders: { Allow: 'GET' },
+      });
+      return;
+    }
+    try {
+      successResponse(
+        res,
+        200,
+        CurrentDocumentSuccessSchema,
+        getCurrentDocumentSnapshot(hocuspocus),
+        {
+          handler: 'current-document',
+          extraHeaders: { 'Cache-Control': 'no-store' },
+        },
+      );
+    } catch (e) {
+      log.error({ err: e }, '[current-document] handler failed');
+      errorResponse(res, 500, 'urn:ok:error:internal-server-error', 'Internal server error.', {
+        handler: 'current-document',
         cause: e,
       });
     }
@@ -17553,6 +17644,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     '/api/metrics/reconciliation': handleMetricsReconciliation,
     '/api/metrics/parse-health': handleMetricsParseHealth,
     '/api/metrics/agent-presence': handleMetricsAgentPresence,
+    '/api/current-document': handleCurrentDocument,
     '/api/__embed-detect': handleEmbedDetect,
     '/api/server-info': handleServerInfo,
     '/api/share/construct-url': handleShareConstructUrl,

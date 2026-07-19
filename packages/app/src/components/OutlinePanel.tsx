@@ -11,21 +11,12 @@ import {
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { usePageList } from '@/components/PageListContext';
-import {
-  Panel,
-  PanelBody,
-  PanelCount,
-  PanelEmpty,
-  PanelError,
-  PanelHeader,
-  PanelTitle,
-} from '@/components/ui/panel';
+import { PanelOutlineList } from '@/components/PanelOutlineList';
 import { useDocumentContext } from '@/editor/DocumentContext';
 import { HttpResponseParseError } from '@/editor/http-client';
 import { rememberPendingSourceNavigation } from '@/editor/source-editor-navigation';
 import { useActiveHeading } from '@/hooks/useActiveHeading';
 import { ProfilerBoundary } from '@/lib/perf';
-import { cn } from '@/lib/utils';
 
 /**
  * Debounce window for Y.Doc update → page-headings invalidation. Matches the
@@ -63,12 +54,6 @@ async function fetchHeadings(docName: string): Promise<HeadingEntry[]> {
   }
   return success.data.headings ?? [];
 }
-
-// Button height (py-1.5 = 12px + text-sm line-height 20px). Marker is
-// vertically centred against this — keep in sync with the button className.
-const ITEM_H = 32;
-const LEVEL_W = 12;
-const MARKER_SIZE = 6;
 
 export interface OutlineNavDetail {
   index: number;
@@ -162,66 +147,21 @@ function OutlinePanelInner({
     window.dispatchEvent(new CustomEvent(OUTLINE_NAV_EVENT, { detail }));
   }
 
-  const activeLevel = activeIndex >= 0 ? headings[activeIndex].level : 1;
-  // Centre marker horizontally on the level column, vertically on the row.
-  const markerX = (activeLevel - 1) * LEVEL_W + (LEVEL_W - MARKER_SIZE) / 2;
-  const markerY = activeIndex * ITEM_H + (ITEM_H - MARKER_SIZE) / 2;
-
   return (
-    <Panel className={className}>
-      <PanelHeader>
-        <PanelTitle>
-          <Trans>Outline</Trans>
-        </PanelTitle>
-        {!isLoading && <PanelCount>{headings.length}</PanelCount>}
-      </PanelHeader>
-      <PanelBody className="px-3 py-2" aria-busy={isLoading}>
-        {error ? (
-          <PanelError className="px-2">
-            {error instanceof Error ? error.message : t`Failed to load headings`}
-          </PanelError>
-        ) : headings.length === 0 && !isLoading ? (
-          <PanelEmpty className="px-2">
-            <Trans>No headings yet.</Trans>
-          </PanelEmpty>
-        ) : (
-          <nav aria-label={t`Document outline`} className="relative">
-            {activeIndex >= 0 && (
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute left-0 top-0 rounded-full bg-primary motion-safe:[transition:transform_0.25s_var(--ease-out-strong)]"
-                style={{
-                  width: MARKER_SIZE,
-                  height: MARKER_SIZE,
-                  transform: `translate(${markerX}px, ${markerY}px)`,
-                }}
-              />
-            )}
-            {headings.map((heading, index) => {
-              const isActive = heading.slug === activeSlug;
-              return (
-                <button
-                  // biome-ignore lint/suspicious/noArrayIndexKey: headings are positionally stable per load
-                  key={index}
-                  type="button"
-                  aria-current={isActive ? 'location' : undefined}
-                  onClick={() => handleNav(index, heading.slug)}
-                  className={cn(
-                    'w-full cursor-pointer truncate py-1.5 pe-2 text-left text-sm transition-colors',
-                    isActive
-                      ? 'font-medium text-primary'
-                      : 'text-muted-foreground hover:text-foreground',
-                  )}
-                  style={{ paddingLeft: `${(heading.level - 1) * LEVEL_W + 20}px` }}
-                  title={heading.text}
-                >
-                  {heading.text}
-                </button>
-              );
-            })}
-          </nav>
-        )}
-      </PanelBody>
-    </Panel>
+    <PanelOutlineList
+      className={className}
+      title={<Trans>Outline</Trans>}
+      items={headings.map((heading, index) => ({
+        key: `${heading.slug}-${index}`,
+        title: heading.text,
+        depth: Math.max(0, heading.level - 1),
+        onSelect: () => handleNav(index, heading.slug),
+      }))}
+      activeIndex={activeIndex}
+      ariaLabel={t`Document outline`}
+      loading={isLoading}
+      error={error ? (error instanceof Error ? error.message : t`Failed to load headings`) : null}
+      emptyText={<Trans>No headings yet.</Trans>}
+    />
   );
 }

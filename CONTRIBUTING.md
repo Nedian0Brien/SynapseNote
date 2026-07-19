@@ -20,6 +20,35 @@ Run the editor at `http://localhost:5173`:
 bun run --filter @nedian0brien/synapsenote-app dev
 ```
 
+Build or install a fast local macOS desktop bundle without invoking release
+certificate signing:
+
+```bash
+bun run build:desktop:local
+bun run install:desktop:local
+```
+
+The local bundle is written to
+`packages/desktop/dist-desktop-local/mac-arm64/SynapseNote.app`, ad-hoc signed,
+verified, and installed at `/Applications/SynapseNote.app`. Release builds keep
+using the existing signed `build:dir` or `build:mac` paths.
+
+Use the narrowest verification tier that covers the change:
+
+```bash
+# Local desktop packaging/install iteration (a few seconds)
+bun run check:desktop:local
+
+# Completed desktop work, including the desktop package test suite
+bun run check:desktop
+
+# Cross-package, PR, or release verification
+bun run check
+```
+
+Do not run the repository-wide check for every local desktop iteration; it also
+executes the server's real-Git and process integration suite.
+
 Run the documentation site:
 
 ```bash

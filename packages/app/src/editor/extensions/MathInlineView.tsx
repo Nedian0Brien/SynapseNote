@@ -304,6 +304,15 @@ export function MathInlineView({ node, selected, getPos, editor }: NodeViewProps
               const tr = editor.state.tr.setNodeMarkup(p, null, {
                 ...curNode.attrs,
                 [propName]: value ?? '',
+                // Implicit / LaTeX-parenthesis compatibility forms preserve
+                // their source bytes while pristine. Once the author edits
+                // the formula, serialize with the canonical `$$…$$` form so
+                // the node remains unambiguously parseable on the next load.
+                sourceDelimiter:
+                  curNode.attrs.sourceDelimiter === 'implicit-parens' ||
+                  curNode.attrs.sourceDelimiter === '\\('
+                    ? null
+                    : curNode.attrs.sourceDelimiter,
               });
               tr.setSelection(NodeSelection.create(tr.doc, p));
               editor.view.dispatch(tr);

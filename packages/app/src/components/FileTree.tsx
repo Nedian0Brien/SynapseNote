@@ -195,6 +195,10 @@ import {
   subscribeToFileTreeMenuActionDuplicate,
   subscribeToFileTreeMenuActionRename,
 } from '@/lib/file-tree-menu-action-events';
+import {
+  type PageHeaderRenameResult,
+  subscribeToPageHeaderRename,
+} from '@/lib/page-header-rename-events';
 import { parseServerResponse, parseSuccessOrWarn } from '@/lib/parse-server-response';
 import { createRefreshScheduler } from '@/lib/refresh-scheduler';
 import { getRelaunchInFlightSnapshot, useRelaunchInFlight } from '@/lib/relaunch-store';
@@ -1576,7 +1580,9 @@ export function FileTree({
   const refreshDocsScheduleRef = useRef<(() => void) | null>(null);
   const fileTreeHostRef = useRef<HTMLDivElement | null>(null);
   const handleSelectionChangeRef = useRef<(selectedPaths: readonly string[]) => void>(() => {});
-  const handleRenameRef = useRef<(event: FileTreeRenameEvent) => void>(() => {});
+  const handleRenameRef = useRef<(event: FileTreeRenameEvent) => Promise<PageHeaderRenameResult>>(
+    async () => ({ ok: false, message: 'Rename is unavailable' }),
+  );
   const handleRenameErrorRef = useRef<(message: string) => void>((message) => toast.error(message));
   const handleDropCompleteRef = useRef<(event: FileTreeDropResult) => void>(() => {});
   const activeTargetRef = useRef(activeTarget);
@@ -2754,7 +2760,7 @@ export function FileTree({
     emitDocumentsChanged(['files', 'backlinks', 'graph']);
   };
 
-  async function handleTreeRename(event: FileTreeRenameEvent) {
+  async function handleTreeRename(event: FileTreeRenameEvent): Promise<PageHeaderRenameResult> {
     const sourceIsAsset = !event.isFolder && isAssetTreePath(event.sourcePath);
     const sourceTreePath = sourceIsAsset
       ? event.sourcePath
@@ -2824,7 +2830,7 @@ export function FileTree({
           clearPendingCreate();
         }
         setBusyPath(null);
-        return;
+        return { ok: false, message: parsed.title };
       }
 
       const success = parseSuccessOrWarn(RenamePathSuccessSchema, parsed.body, 'rename-path', {
@@ -2871,6 +2877,7 @@ export function FileTree({
       }
       clearPendingCreate();
       setBusyPath(null);
+      return { ok: true };
     } catch (err) {
       console.warn('[FileTree] rename failed:', err);
       const msg = t`Network error — please try again`;
@@ -2884,6 +2891,7 @@ export function FileTree({
         clearPendingCreate();
       }
       setBusyPath(null);
+      return { ok: false, message: msg };
     }
   }
 
@@ -4185,6 +4193,26 @@ export function FileTree({
       );
     });
   }, [model]);
+
+  // The page header edits the extensionless basename in place, but FileTree
+  // owns the managed rename transaction and all post-rename reconciliation.
+  // Bridge the request here and preserve the document's current extension and
+  // parent directory when constructing Pierre's raw rename event.
+  useEffect(() => {
+    return subscribeToPageHeaderRename(async ({ docName, docExt, nextTitle }) => {
+      const sourcePath = docNameToTreePath(docName, docExt);
+      const lastSlash = sourcePath.lastIndexOf('/');
+      const parent = lastSlash < 0 ? '' : sourcePath.slice(0, lastSlash + 1);
+      const extension = getFileExtension(sourcePath) || docExt;
+      const destinationPath = `${parent}${nextTitle}${extension}`;
+      const outcome = await handleRenameRef.current({
+        sourcePath,
+        destinationPath,
+        isFolder: false,
+      });
+      return outcome;
+    });
+  }, []);
 
   function cancelCurrentHoverPrewarm() {
     const current = hoveredPrewarmDocRef.current;

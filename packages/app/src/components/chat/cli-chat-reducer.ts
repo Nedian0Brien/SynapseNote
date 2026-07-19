@@ -159,8 +159,11 @@ export function cliChatReducer(state: CliChatState, action: CliChatAction): CliC
             index === existingIndex
               ? {
                   ...existing,
+                  ...(event.category === undefined ? {} : { category: event.category }),
                   label: event.name,
                   ...(event.detail === undefined ? {} : { detail: event.detail }),
+                  ...(event.summary === undefined ? {} : { summary: event.summary }),
+                  ...(event.fullDetail === undefined ? {} : { fullDetail: event.fullDetail }),
                 }
               : entry,
           ),
@@ -176,8 +179,11 @@ export function cliChatReducer(state: CliChatState, action: CliChatAction): CliC
             type: 'activity',
             kind: 'tool',
             ...(event.sourceId === undefined ? {} : { sourceId: event.sourceId }),
+            ...(event.category === undefined ? {} : { category: event.category }),
             label: event.name,
             ...(event.detail === undefined ? {} : { detail: event.detail }),
+            ...(event.summary === undefined ? {} : { summary: event.summary }),
+            ...(event.fullDetail === undefined ? {} : { fullDetail: event.fullDetail }),
           },
         ],
         nextId: next.nextId + 1,
@@ -198,6 +204,31 @@ export function cliChatReducer(state: CliChatState, action: CliChatAction): CliC
           },
         ],
         nextId: next.nextId + 1,
+      };
+      continue;
+    }
+    if (event.type === 'command_exit') {
+      // A normal structured `done` or a user interrupt already ended the turn;
+      // ignore the shell-level fail-safe in those cases. It is authoritative
+      // only when the UI is still waiting for a completion event.
+      if (!next.running) continue;
+      const timeline = withoutTrailingStatus(next.timeline);
+      next = {
+        ...next,
+        running: false,
+        timeline:
+          event.exitCode === 0
+            ? timeline
+            : [
+                ...timeline,
+                {
+                  id: `activity-${next.nextId}`,
+                  type: 'activity',
+                  kind: 'error',
+                  label: `The CLI exited before completing (code ${event.exitCode}).`,
+                },
+              ],
+        nextId: event.exitCode === 0 ? next.nextId : next.nextId + 1,
       };
       continue;
     }

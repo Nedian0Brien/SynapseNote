@@ -380,10 +380,12 @@ export function BottomComposer({
     if (wasDismissed && !dismissed) inputRef.current?.focus();
   }, [dismissed]);
 
-  // Host-level top-row file-context chips. The top row is the SET of whole-file
-  // references the user has "touched" while drafting, with this lifecycle:
-  //   - empty prompt → no file chip (nothing touched yet);
-  //   - first keystroke while a doc is open → add that doc;
+  // Host-level top-row file-context chips. The active document is present from
+  // the first render so the user can see which document the agent will receive.
+  // The rest of the row is the SET of whole-file references the user has
+  // "touched" while drafting, with this lifecycle:
+  //   - empty prompt → the active document is already visible;
+  //   - first keystroke while a doc is open → retain that doc in the draft set;
   //   - switching docs while the draft is non-empty → add THAT doc too (chips
   //     accumulate: start in A, type, switch to B → chips A and B);
   //   - X'ing a chip sticky-dismisses its path for the life of this draft (never
@@ -431,20 +433,34 @@ export function BottomComposer({
   //     so the row never duplicates it). The content-root folder (`folderPath`
   //     === '') has no meaningful chip and dispatches as bare project scope, so
   //     the `folderPath` truthiness guard leaves the row empty there.
-  //   - Doc mode: the touched-file set minus dismissed minus currently-inline. A
-  //     path mentioned inline is dropped here (inline wins); removing the inline
-  //     mention lets it reappear (still subject to sticky-dismiss).
+  //   - Doc mode: the active document first, followed by the touched-file set,
+  //     minus dismissed and currently-inline paths. This makes the agent scope
+  //     visible before typing while preserving accumulated cross-document draft
+  //     context. A path mentioned inline is dropped here (inline wins); removing
+  //     the inline mention lets it reappear (still subject to sticky-dismiss).
   // Derived in render so it recomputes the moment any input changes — React
   // Compiler handles it.
+  const docContextFiles = activeFilePath
+    ? [
+        activeFilePath,
+        ...touchedFiles.filter((path) => {
+          if (path === activeFilePath) return false;
+          const activeStem = markdownRelativePathStem(activeFilePath);
+          return activeStem === null || markdownRelativePathStem(path) !== activeStem;
+        }),
+      ]
+    : touchedFiles;
   const fileChips = folderMode
     ? folderPath && !dismissedFiles.has(folderPath) && !inlineMentions.includes(folderPath)
       ? [folderPath]
       : []
-    : touchedFiles.filter((path) => !dismissedFiles.has(path) && !inlineMentions.includes(path));
+    : docContextFiles.filter((path) => !dismissedFiles.has(path) && !inlineMentions.includes(path));
 
   // Capture the document's live selection as a removable snapshot pill. Every
-  // fresh non-empty selection replaces the pill; collapsing the selection leaves
-  // it pinned (the user can keep typing or remove it with the ×). Two live
+  // fresh non-empty selection replaces the pill. Body/frontmatter selections
+  // remain pinned after collapse, but a PDF selection mirrors the viewer's live
+  // drag state and disappears when the viewer reports that selection was cleared.
+  // Two live
   // sources feed it: the active body surface (wysiwyg / source), the frontmatter
   // property panel, and an inline PDF selection layer. A highlight in any of them
   // pins the same pill, so PDF passages need no copy/paste step.
@@ -460,7 +476,11 @@ export function BottomComposer({
     if (liveFrontmatterSelection) setPinnedSelection(liveFrontmatterSelection);
   }, [liveFrontmatterSelection]);
   useEffect(() => {
-    if (livePdfSelection) setPinnedSelection(livePdfSelection);
+    setPinnedSelection((previous) => {
+      if (livePdfSelection) return livePdfSelection;
+      return previous?.surface === 'pdf' ? null : previous;
+    });
+    if (!livePdfSelection) setSelectionExpanded(false);
   }, [livePdfSelection]);
 
   // Explicit pick this session wins; otherwise the sticky preference; otherwise

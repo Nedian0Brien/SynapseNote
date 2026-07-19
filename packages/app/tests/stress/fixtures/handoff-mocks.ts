@@ -296,6 +296,7 @@ export async function installHandoffMocks(page: Page, cfg: HandoffMockConfig): P
         openExternal: async (url: string): Promise<void> => {
           mocks.openExternalCalls.push(url);
         },
+        fetchWebPreview: async () => null,
         detectProtocol: async (
           scheme: string,
         ): Promise<{ installed: boolean; displayName?: string }> => {
@@ -315,6 +316,7 @@ export async function installHandoffMocks(page: Page, cfg: HandoffMockConfig): P
         },
         openAsset: async (): Promise<{ ok: true }> => ({ ok: true }),
         revealAsset: async (): Promise<{ ok: true }> => ({ ok: true }),
+        savePdf: async (): Promise<{ ok: true }> => ({ ok: true }),
         revealExternal: async (): Promise<{ ok: true; outcome: 'revealed' }> => ({
           ok: true,
           outcome: 'revealed',
@@ -589,6 +591,7 @@ export async function installHandoffMocks(page: Page, cfg: HandoffMockConfig): P
           create: async () => ({ ok: true as const, ptyId: 'mock-pty' }),
           input: () => {},
           chatSend: () => {},
+          listChatSessions: async () => [],
           resize: () => {},
           kill: async () => {},
           drain: () => {},

@@ -350,7 +350,7 @@ function EditorActivityPoolInner({
   onRecycle,
 }: EditorActivityPoolProps) {
   const { poolEntries, serverRestartRecovery } = useDocumentContext();
-  const { pages, loading } = usePageList();
+  const { pages, pageMeta, loading } = usePageList();
 
   const mountList = computeActivityMountList(poolEntries, activeDocName, ACTIVITY_MOUNT_LIMIT);
 
@@ -427,6 +427,11 @@ function EditorActivityPoolInner({
         <ActivityEntry
           key={entry.docName}
           entry={entry}
+          documentTitle={(entry.docName.split('/').at(-1) ?? entry.docName).replace(
+            /\.(md|mdx)$/i,
+            '',
+          )}
+          documentExtension={pageMeta.get(entry.docName)?.docExt ?? '.md'}
           isActive={entry.docName === activeDocName}
           isSourceMode={isSourceMode}
           editorPlaceholder={editorPlaceholder}
@@ -448,6 +453,8 @@ function EditorActivityPoolInner({
 
 interface ActivityEntryProps {
   entry: PoolEntrySnapshot;
+  documentTitle: string;
+  documentExtension: string;
   isActive: boolean;
   isSourceMode: boolean;
   editorPlaceholder?: string;
@@ -629,11 +636,12 @@ function ScrollPreservingContainer({
     <div
       ref={ref}
       data-testid="editor-scroll-container"
-      // Toolbar exclusion zone = 3.5rem (EditorToolbar's rendered height). Four
+      // Toolbar exclusion zone = 84px (44px identity row + 40px Markdown
+      // context toolbar). Four
       // load-bearing constants must move together if the toolbar height changes:
-      //   - `pt-14` (here): initial-paint content reserve so doc content doesn't
+      //   - `pt-[84px]` (here): initial-paint content reserve so doc content doesn't
       //     start behind the absolute-positioned EditorToolbar overlay.
-      //   - `scroll-pt-14` (here): scroll-padding-top for native
+      //   - `scroll-pt-[84px]` (here): scroll-padding-top for native
       //     Element.scrollIntoView alignment — TiptapEditor outline-click +
       //     wiki-link anchor navigation, and editor/extensions/footnote-anchor-scroll.ts.
       //   - TOOLBAR_HEIGHT in editor/extensions/frozen-table-headers.ts: the
@@ -648,7 +656,7 @@ function ScrollPreservingContainer({
       //     a `scrollMargins` contribution in the shared factory would mis-align
       //     nested CM scrolls if they ever become scrollable.
       // The toolbar itself: components/EditorToolbar.tsx.
-      className="editor-doc-scroll subtle-scrollbar h-full overflow-y-auto pt-14 scroll-pt-14"
+      className="editor-doc-scroll subtle-scrollbar h-full overflow-y-auto pt-[84px] scroll-pt-[84px]"
       style={{ overflowAnchor: 'auto' }}
     >
       {children}
@@ -737,6 +745,8 @@ function WarmContentFallback({ html }: { html: string }) {
 
 function ActivityEntry({
   entry,
+  documentTitle,
+  documentExtension,
   isActive,
   isSourceMode,
   editorPlaceholder,
@@ -1048,7 +1058,12 @@ function ActivityEntry({
                           </Suspense>
                         ) : (
                           <>
-                            <PageHeader provider={entry.provider} />
+                            <PageHeader
+                              provider={entry.provider}
+                              docName={entry.docName}
+                              docExt={documentExtension}
+                              fallbackTitle={documentTitle}
+                            />
                             <PropertyPanel provider={entry.provider} />
                           </>
                         ))}

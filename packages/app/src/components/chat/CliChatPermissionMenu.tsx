@@ -15,12 +15,14 @@ interface CliChatPermissionMenuProps {
   readonly value: CliChatPermissionMode;
   readonly onValueChange: (value: CliChatPermissionMode) => void;
   readonly disabled?: boolean;
+  readonly onClose?: () => void;
 }
 
 export function CliChatPermissionMenu({
   value,
   onValueChange,
   disabled = false,
+  onClose,
 }: CliChatPermissionMenuProps) {
   const { t } = useLingui();
   const label =
@@ -51,7 +53,14 @@ export function CliChatPermissionMenu({
           <Icon aria-hidden="true" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-64">
+      <DropdownMenuContent
+        align="start"
+        className="w-64"
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          onClose?.();
+        }}
+      >
         <DropdownMenuLabel>{t`Agent permissions`}</DropdownMenuLabel>
         <DropdownMenuRadioGroup
           value={value}

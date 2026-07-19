@@ -25,6 +25,7 @@ import { detailsAccordionPromoterPlugin } from './details-accordion-promoter.ts'
 import { encodeEntityRefs, restoreEntityRefsPlugin } from './entity-ref-guard.ts';
 import { highlightPromoterPlugin } from './highlight-promoter.ts';
 import { imagePromoterPlugin } from './image-promoter.ts';
+import { implicitMathPromoterPlugin } from './implicit-math-promoter.ts';
 import { indentedCodePromoterPlugin } from './indented-code-promoter.ts';
 import { mathPromoterPlugin } from './math-promoter.ts';
 import type { SourceDocBoundary } from './mdast-augmentation.ts';
@@ -86,6 +87,7 @@ export const ACTIVE_MDAST_PLUGINS = [
   { name: 'image-promoter', plugin: imagePromoterPlugin },
   { name: 'indented-code-promoter', plugin: indentedCodePromoterPlugin },
   { name: 'math-promoter', plugin: mathPromoterPlugin },
+  { name: 'implicit-math-promoter', plugin: implicitMathPromoterPlugin },
   { name: 'single-dollar-math-promoter', plugin: singleDollarMathPromoterPlugin },
   { name: 'highlight-promoter', plugin: highlightPromoterPlugin },
   { name: 'mermaid-promoter', plugin: mermaidPromoterPlugin },

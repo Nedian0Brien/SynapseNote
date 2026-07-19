@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import type { SkillInstallEvent } from '@nedian0brien/synapsenote-server';
@@ -9,6 +9,8 @@ import {
   type RepairSkillsDeps,
   type RepairSkillsLogEvent,
   type RepairSkillsResult,
+  removeLegacyProjectRuntimeSkills,
+  removeLegacyUserSkills,
   repairSkills,
   repairSkillsCommand,
 } from './repair-skills.ts';
@@ -105,6 +107,74 @@ describe('repairSkills — project sweep (AC-A1, AC-A2, AC-A3)', () => {
 
   afterEach(() => {
     rmSync(scratch.root, { recursive: true, force: true });
+  });
+
+  it('removes owned open-knowledge runtime skill sources and projections', () => {
+    const source = join(scratch.project, '.ok', 'skills', 'open-knowledge');
+    const projection = join(scratch.project, '.codex', 'skills', 'open-knowledge-codex');
+    const body =
+      '---\nname: open-knowledge\nmetadata:\n  author: "Inkeep"\n  repository: "https://github.com/inkeep/open-knowledge"\n---\n# OpenKnowledge\n';
+    for (const dir of [source, projection]) {
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(join(dir, 'SKILL.md'), body);
+    }
+
+    removeLegacyProjectRuntimeSkills(scratch.project, undefined, (event) => logEvents.push(event));
+
+    expect(existsSync(source)).toBe(false);
+    expect(existsSync(projection)).toBe(false);
+    expect(logEvents.filter((e) => e.event === 'project-skill-legacy-removed')).toHaveLength(2);
+  });
+
+  it('preserves a same-named skill without the retired product ownership metadata', () => {
+    const foreign = join(scratch.project, '.codex', 'skills', 'open-knowledge');
+    mkdirSync(foreign, { recursive: true });
+    writeFileSync(
+      join(foreign, 'SKILL.md'),
+      '---\nname: open-knowledge\nmetadata:\n  author: Someone Else\n---\n# My skill\n',
+    );
+
+    removeLegacyProjectRuntimeSkills(scratch.project);
+
+    expect(existsSync(join(foreign, 'SKILL.md'))).toBe(true);
+  });
+
+  it('does not remove a legacy skill through a host directory symlink', () => {
+    const outside = join(scratch.root, 'outside-codex');
+    const legacy = join(outside, 'skills', 'open-knowledge-codex');
+    mkdirSync(legacy, { recursive: true });
+    writeFileSync(
+      join(legacy, 'SKILL.md'),
+      '---\nname: open-knowledge\nmetadata:\n  author: "Inkeep"\n---\n# OpenKnowledge\n',
+    );
+    symlinkSync(outside, join(scratch.project, '.codex'));
+
+    removeLegacyProjectRuntimeSkills(scratch.project, undefined, (event) => logEvents.push(event));
+
+    expect(existsSync(join(legacy, 'SKILL.md'))).toBe(true);
+    expect(logEvents.some((event) => event.event === 'project-skill-legacy-remove-failed')).toBe(
+      true,
+    );
+  });
+
+  it('removes owned user-global open-knowledge skills but preserves foreign copies', () => {
+    const owned = join(scratch.home, '.agents', 'skills', 'open-knowledge-discovery');
+    const foreign = join(scratch.home, '.codex', 'skills', 'open-knowledge-write-skill');
+    mkdirSync(owned, { recursive: true });
+    mkdirSync(foreign, { recursive: true });
+    writeFileSync(
+      join(owned, 'SKILL.md'),
+      '---\nname: open-knowledge-discovery\nmetadata:\n  author: Inkeep\n  repository: https://github.com/inkeep/open-knowledge\n---\n',
+    );
+    writeFileSync(
+      join(foreign, 'SKILL.md'),
+      '---\nname: open-knowledge-write-skill\nmetadata:\n  author: Someone Else\n---\n',
+    );
+
+    removeLegacyUserSkills(scratch.home);
+
+    expect(existsSync(owned)).toBe(false);
+    expect(existsSync(join(foreign, 'SKILL.md'))).toBe(true);
   });
 
   it('AC-A1: replaces an existing SKILL.md directory with bundled content (orphans removed)', async () => {

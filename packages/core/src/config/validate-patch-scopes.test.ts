@@ -99,6 +99,12 @@ describe('validatePatchScopes', () => {
     expect(validatePatchScopes({ editor: { wordWrap: false } }, 'user')).toBeNull();
   });
 
+  test('keeps default chat models in user scope', () => {
+    const patch = { agents: { chat: { codexModel: 'gpt-5.6-terra' as const } } };
+    expect(validatePatchScopes(patch, 'user')).toBeNull();
+    expect(validatePatchScopes(patch, 'project')?.expectedScope).toBe('user');
+  });
+
   test('returns null for a project field written by a project writer', () => {
     // content.dir is scope: 'project'.
     expect(validatePatchScopes({ content: { dir: 'docs' } }, 'project')).toBeNull();

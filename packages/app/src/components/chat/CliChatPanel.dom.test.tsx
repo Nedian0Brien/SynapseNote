@@ -1,10 +1,15 @@
 import { afterEach, describe, expect, mock, test } from 'bun:test';
+import { ConfigSchema } from '@nedian0brien/synapsenote-core';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { ConfigContext, type ConfigContextValue } from '@/lib/config-context';
 import type { OkDesktopBridge, OkPtyData, OkPtyExit } from '@/lib/desktop-bridge-types';
 import { CliChatPanel } from './CliChatPanel';
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  localStorage.clear();
+});
 
 function makeBridge() {
   const dataSubscribers: Array<(message: OkPtyData) => void> = [];
@@ -26,7 +31,16 @@ function makeBridge() {
       },
     ) => {},
   );
+  const fetchWebPreview = mock(async (url: string) => ({
+    url,
+    title: 'OpenAI official homepage',
+    description: 'Research and deployment of safe artificial intelligence.',
+    siteName: 'OpenAI',
+    imageDataUrl: 'data:image/png;base64,AQI=',
+    faviconDataUrl: 'data:image/png;base64,AwQ=',
+  }));
   const bridge = {
+    shell: { fetchWebPreview },
     terminal: {
       input,
       chatSend,
@@ -50,6 +64,7 @@ function makeBridge() {
     bridge,
     input,
     chatSend,
+    fetchWebPreview,
     pushData(data: string) {
       for (const callback of dataSubscribers) callback({ ptyId: 'pty-1', data });
     },
@@ -69,7 +84,10 @@ describe('CliChatPanel', () => {
       />,
     );
 
-    expect(screen.getByText('notes/today.md')).toBeTruthy();
+    const composer = document.querySelector('[data-chat-composer="true"]');
+    const documentContext = screen.getByText('notes/today.md');
+    expect(composer?.contains(documentContext)).toBe(true);
+    expect(document.querySelector('[data-chat-composer-context="true"]')).not.toBeNull();
     fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Summarize this' } });
     fireEvent.click(screen.getByLabelText('Send'));
     const userBubble = screen.getByLabelText('You');
@@ -95,6 +113,42 @@ describe('CliChatPanel', () => {
     });
     expect(await screen.findByText('Done')).toBeTruthy();
     expect(screen.getByLabelText('Send')).toBeTruthy();
+  });
+
+  test('uses the configured default model for a new chat', async () => {
+    const { bridge, chatSend } = makeBridge();
+    const config = ConfigSchema.parse({
+      agents: { chat: { codexModel: 'gpt-5.6-terra', claudeModel: 'opus' } },
+    });
+    const configContext = {
+      userBinding: null,
+      userSynced: true,
+      projectBinding: null,
+      projectLocalBinding: null,
+      okignoreBinding: null,
+      okignoreSynced: true,
+      userConfig: config,
+      projectConfig: config,
+      projectSynced: true,
+      projectLocalConfig: config,
+      projectLocalSynced: true,
+      merged: config,
+    } satisfies ConfigContextValue;
+
+    render(
+      <ConfigContext value={configContext}>
+        <CliChatPanel bridge={bridge} cli="codex" ptyId="pty-1" initialPrompt={null} />
+      </ConfigContext>,
+    );
+    fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Use my default' } });
+    fireEvent.click(screen.getByLabelText('Send'));
+
+    await waitFor(() => expect(chatSend).toHaveBeenCalledTimes(1));
+    expect(chatSend.mock.calls[0]?.[1].modelSettings).toEqual({
+      model: 'gpt-5.6-terra',
+      effort: 'medium',
+      speed: 'default',
+    });
   });
 
   test('interrupts the active CLI with Ctrl-C', async () => {
@@ -128,6 +182,103 @@ describe('CliChatPanel', () => {
       .getByRole('log')
       .querySelector('[data-chat-activity-state="completed"]');
     expect(completedTool?.querySelector('[data-chat-tool-icon="completed"]')).not.toBeNull();
+  });
+
+  test('shows Codex web search while running and preserves its query when complete', async () => {
+    const { bridge, chatSend, fetchWebPreview, pushData } = makeBridge();
+    render(<CliChatPanel bridge={bridge} cli="codex" ptyId="pty-1" initialPrompt={null} />);
+
+    fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Search the web' } });
+    fireEvent.click(screen.getByLabelText('Send'));
+    await waitFor(() => expect(chatSend).toHaveBeenCalledTimes(1));
+    act(() => {
+      pushData(
+        '{"type":"item.started","item":{"id":"web-1","type":"web_search","query":"","action":{"type":"other"}}}\r\n',
+      );
+    });
+    expect(
+      screen
+        .getByText('Web search')
+        .closest('[data-chat-activity-state]')
+        ?.getAttribute('data-chat-activity-state'),
+    ).toBe('working');
+
+    act(() => {
+      pushData(
+        '{"type":"item.completed","item":{"id":"web-1","type":"web_search","query":"official OpenAI homepage","action":{"type":"search","query":"official OpenAI homepage"}}}\r\n',
+      );
+      pushData(
+        '{"type":"item.completed","item":{"id":"answer-web","type":"agent_message","text":"[OpenAI](https://openai.com/)"}}\r\n',
+      );
+    });
+    const completed = screen
+      .getByText(/Web search · official OpenAI homepage/)
+      .closest('[data-chat-activity-state]');
+    expect(completed?.getAttribute('data-chat-activity-state')).toBe('completed');
+    const preview = screen.getByRole('link', { name: 'Open OpenAI' });
+    expect(preview.getAttribute('href')).toBe('https://openai.com/');
+    expect(preview.getAttribute('data-chat-web-preview-layout')).toBe('compact');
+    expect(preview.closest('[data-chat-web-previews="true"]')).not.toBeNull();
+    expect(screen.getByLabelText('Assistant').contains(preview)).toBe(false);
+    expect(preview.closest('[data-chat-message-group="assistant-with-sources"]')).not.toBeNull();
+    await waitFor(() => {
+      expect(fetchWebPreview).toHaveBeenCalledWith('https://openai.com/');
+      expect(preview.querySelector('[data-chat-web-preview-image="true"]')).not.toBeNull();
+    });
+  });
+
+  test('shows a one-line tool error and expands the complete detail', async () => {
+    const { bridge, pushData } = makeBridge();
+    render(<CliChatPanel bridge={bridge} cli="codex" ptyId="pty-1" initialPrompt={null} />);
+
+    act(() => {
+      pushData(
+        '{"type":"item.completed","item":{"id":"message-before-error","type":"agent_message","text":"I will try it."}}\r\n' +
+          '{"type":"item.completed","item":{"id":"tool-error","type":"command_execution","command":"exec","aggregated_output":"user cancelled MCP tool call\\nServer: open-knowledge\\nRetry after reconnecting.","exit_code":1,"status":"failed"}}\r\n',
+      );
+    });
+
+    const expandable = document.querySelector<HTMLDetailsElement>(
+      '[data-chat-error-expandable="true"]',
+    );
+    const summary = expandable?.querySelector('[data-chat-error-summary="true"]');
+    expect(expandable?.open).toBe(false);
+    expect(summary?.textContent).toBe('user cancelled MCP tool call');
+    expect(expandable?.textContent).toContain('exec · failed');
+
+    await userEvent.click(expandable?.querySelector('summary') as HTMLElement);
+    expect(expandable?.open).toBe(true);
+    expect(expandable?.querySelector('[data-chat-error-details="true"]')?.textContent).toContain(
+      'Server: open-knowledge\nRetry after reconnecting.',
+    );
+  });
+
+  test('shows and expands details for successful exec and write tools', async () => {
+    const { bridge, pushData } = makeBridge();
+    render(<CliChatPanel bridge={bridge} cli="codex" ptyId="pty-1" initialPrompt={null} />);
+
+    act(() => {
+      pushData(
+        '{"type":"item.completed","item":{"id":"message-before-tools","type":"agent_message","text":"I will create it."}}\r\n' +
+          '{"type":"item.completed","item":{"id":"tool-exec","type":"command_execution","command":"bun run check","aggregated_output":"Checks passed\\nNo errors found.","exit_code":0,"status":"completed"}}\r\n' +
+          '{"type":"item.completed","item":{"id":"tool-write","type":"mcp_tool_call","tool":"write","arguments":{"document":{"path":"note/example"}},"result":{"content":[{"type":"text","text":"Created note/example.md\\nNo broken links."}]},"status":"completed"}}\r\n',
+      );
+    });
+
+    const expandables = Array.from(
+      document.querySelectorAll<HTMLDetailsElement>('[data-chat-tool-expandable="true"]'),
+    );
+    expect(expandables).toHaveLength(2);
+    expect(
+      expandables.map((entry) => entry.querySelector('[data-chat-tool-summary]')?.textContent),
+    ).toEqual(['Checks passed', 'Created note/example.md']);
+
+    await userEvent.click(expandables[1]?.querySelector('summary') as HTMLElement);
+    expect(expandables[1]?.open).toBe(true);
+    const detail = expandables[1]?.querySelector('[data-chat-tool-details]')?.textContent;
+    expect(detail).toContain('Arguments\n{\n  "document":');
+    expect(detail).toContain('Result\n{');
+    expect(detail).toContain('No broken links.');
   });
 
   test('renders consecutive Codex response items in separate message bubbles', () => {
@@ -254,7 +405,6 @@ describe('CliChatPanel', () => {
   });
 
   test('offers Sol and Luna with effort slider and speed toggle controls', async () => {
-    const user = userEvent.setup();
     const { bridge, chatSend } = makeBridge();
     render(<CliChatPanel bridge={bridge} cli="codex" ptyId="pty-1" initialPrompt={null} />);
 
@@ -270,10 +420,6 @@ describe('CliChatPanel', () => {
     const effort = await screen.findByRole('slider', { name: 'Effort' });
     const highTick = screen.getByRole('button', { name: 'Effort: High' });
     expect(screen.getAllByRole('button', { name: /^Effort:/ })).toHaveLength(5);
-    await user.hover(highTick);
-    expect((await screen.findByRole('tooltip')).textContent).toContain('High');
-    await user.unhover(highTick);
-    await waitFor(() => expect(screen.queryByRole('tooltip')).toBeNull());
     fireEvent.click(highTick);
     expect(highTick.getAttribute('aria-pressed')).toBe('true');
     fireEvent.keyDown(effort, { key: 'End' });
@@ -284,20 +430,80 @@ describe('CliChatPanel', () => {
     ).toBe('true');
     fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' });
 
+    const message = screen.getByLabelText('Message');
+    await waitFor(() => expect(document.activeElement).toBe(message));
+
     expect(
       screen.getByRole('button', {
         name: 'Model settings: GPT-5.6 Luna, effort Max, speed Fast',
       }).textContent,
     ).toContain('GPT-5.6 Luna·Max');
 
-    fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Use settings' } });
-    fireEvent.click(screen.getByLabelText('Send'));
+    fireEvent.change(message, { target: { value: 'Use settings' } });
+    fireEvent.keyDown(message, { key: 'Enter' });
     await waitFor(() => expect(chatSend).toHaveBeenCalledTimes(1));
     expect(chatSend.mock.calls[0]?.[1].modelSettings).toEqual({
       model: 'gpt-5.6-luna',
       effort: 'max',
       speed: 'fast',
     });
+  });
+
+  test('remembers model, effort, speed, and permission choices for the provider', async () => {
+    const { bridge } = makeBridge();
+    const first = render(
+      <CliChatPanel bridge={bridge} cli="codex" ptyId="pty-1" initialPrompt={null} />,
+    );
+
+    fireEvent.pointerDown(
+      screen.getByRole('button', {
+        name: 'Model settings: GPT-5.6 Sol, effort Medium, speed Standard',
+      }),
+      { button: 0, ctrlKey: false },
+    );
+    fireEvent.click(await screen.findByRole('menuitemradio', { name: 'GPT-5.6 Terra' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Effort: High' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Fast speed: Off' }));
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' });
+
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Permissions: Workspace access' }), {
+      button: 0,
+      ctrlKey: false,
+    });
+    fireEvent.click(await screen.findByRole('menuitemradio', { name: /Read only/ }));
+    first.unmount();
+
+    render(<CliChatPanel bridge={bridge} cli="codex" ptyId="pty-1" initialPrompt={null} />);
+    expect(
+      screen.getByRole('button', {
+        name: 'Model settings: GPT-5.6 Terra, effort High, speed Fast',
+      }),
+    ).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Permissions: Read only' })).toBeTruthy();
+  });
+
+  test('reports a compact title from the first user message', async () => {
+    const { bridge, chatSend } = makeBridge();
+    const onTitleChange = mock((_title: string) => {});
+    render(
+      <CliChatPanel
+        bridge={bridge}
+        cli="codex"
+        ptyId="pty-1"
+        initialPrompt={null}
+        onTitleChange={onTitleChange}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText('Message'), {
+      target: {
+        value: '  Summarize   the research notes and identify every unresolved question  ',
+      },
+    });
+    fireEvent.click(screen.getByLabelText('Send'));
+
+    await waitFor(() => expect(chatSend).toHaveBeenCalledTimes(1));
+    expect(onTitleChange).toHaveBeenCalledWith('Summarize the research notes and id…');
   });
 
   test('attaches selected lines and document identity to the model prompt', async () => {
@@ -320,7 +526,11 @@ describe('CliChatPanel', () => {
     );
 
     expect(await screen.findByText('2 lines selected')).toBeTruthy();
-    expect(screen.getByText('· Work Log')).toBeTruthy();
+    expect(screen.getByText('· First selected line Second selected line')).toBeTruthy();
+    expect(screen.queryByText('· Work Log')).toBeNull();
+    expect(document.querySelector('[data-chat-selection-preview="true"]')?.textContent).toContain(
+      'First selected line Second selected line',
+    );
     fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Explain this' } });
     fireEvent.click(screen.getByLabelText('Send'));
 
@@ -353,6 +563,43 @@ describe('CliChatPanel', () => {
     expect(sentContext.querySelector('[data-chat-context-full="true"]')?.textContent).toContain(
       'First selected line\nSecond selected line',
     );
+  });
+
+  test('clears the attached selection when the editor selection is released', async () => {
+    const { bridge } = makeBridge();
+    const selectionContext = {
+      documentTitle: 'Research Note',
+      documentPath: 'note/summary/research.md',
+      markdown: 'First selected line\nSecond selected line',
+      lineCount: 2,
+      startLine: 10,
+      endLine: 11,
+    };
+    const { rerender } = render(
+      <CliChatPanel
+        bridge={bridge}
+        cli="codex"
+        ptyId="pty-1"
+        initialPrompt={null}
+        selectionContext={selectionContext}
+      />,
+    );
+
+    expect(await screen.findByText('2 lines selected')).toBeTruthy();
+    rerender(
+      <CliChatPanel
+        bridge={bridge}
+        cli="codex"
+        ptyId="pty-1"
+        initialPrompt={null}
+        selectionContext={null}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByText('2 lines selected')).toBeNull();
+      expect(document.querySelector('[data-chat-selection="true"]')).toBeNull();
+    });
   });
 
   test('shows a short context snippet before revealing the complete passage', async () => {
