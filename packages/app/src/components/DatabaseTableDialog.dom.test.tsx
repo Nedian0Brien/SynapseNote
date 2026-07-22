@@ -3069,6 +3069,35 @@ describe('DatabaseTableDialog', () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
+  test('renders the canonical database workspace in the caller canvas without a portal', async () => {
+    globalThis.fetch = mock(async (input: RequestInfo | URL) => {
+      const path = String(input);
+      if (path.startsWith('/api/databases/catalog')) return Response.json(catalog());
+      if (path === '/api/databases/describe') return Response.json(description());
+      if (path === '/api/databases/query') return Response.json(queryResult());
+      return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
+    }) as typeof fetch;
+
+    render(
+      <section data-testid="database-canvas-host">
+        <DatabaseTableDialog
+          open
+          presentation="canvas"
+          initialTarget={{ databaseId: database.id, sourceId: source.id }}
+          onOpenChange={() => {}}
+        />
+      </section>,
+    );
+
+    const grid = await screen.findByRole('grid');
+    const workspace = document.querySelector('[data-database-workspace]');
+    expect(grid).not.toBeNull();
+    expect(workspace?.closest('[data-testid="database-canvas-host"]')).not.toBeNull();
+    expect(workspace?.getAttribute('data-database-page-workspace')).toBe('');
+    expect(document.querySelector('[data-slot="dialog-portal"]')).toBeNull();
+    expect(document.querySelector('[data-slot="dialog-overlay"]')).toBeNull();
+  });
+
   test('keeps the selected saved view in the full-page route hash', async () => {
     const savedView = {
       id: 'view_active',

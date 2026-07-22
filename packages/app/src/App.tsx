@@ -126,10 +126,11 @@ function isAuxiliaryDialogHash(hash: string): boolean {
 
 /**
  * Database workspaces are route-level content, not a command-palette modal.
- * The hash keeps reload/back-forward behavior deterministic while the regular
- * document shell remains mounted underneath during the transition.
+ * The hash keeps reload/back-forward behavior deterministic. Canonical targets
+ * render in the main `SidebarInset`; the regular editor is returned only when
+ * there is no database page target.
  */
-function DatabasePageRoute() {
+function DatabasePageRoute({ children }: { children: ReactNode }) {
   const [target, setTarget] = useState(() => databasePageTargetFromHash(window.location.hash));
 
   useEffect(() => {
@@ -142,11 +143,11 @@ function DatabasePageRoute() {
     };
   }, []);
 
-  if (!target) return null;
+  if (!target) return children;
   return (
     <LazyDatabaseTableDialog
       open
-      presentation="page"
+      presentation="canvas"
       initialTarget={target}
       onOpenChange={(nextOpen) => {
         if (!nextOpen && databasePageTargetFromHash(window.location.hash)) {
@@ -772,7 +773,6 @@ function AppBody() {
           onOpenDatabaseDiagnostics={() => setDatabaseDiagnosticsOpen(true)}
         />
         <Suspense fallback={null}>
-          <DatabasePageRoute />
           <LazyDatabaseContextInspectorDialog
             open={dataInspectorOpen}
             scope={dataInspectorScope}
@@ -837,7 +837,9 @@ function AppBody() {
                 project switcher); the editor inset takes the full width. */}
             {!singleFile && <FileSidebar onOpenSearch={() => setCommandPaletteOpen(true)} />}
             <SidebarInset className="overflow-hidden h-[calc(100vh-var(--layout-inset-offset))]">
-              <EditorPane onOpenSearch={() => setCommandPaletteOpen(true)} />
+              <DatabasePageRoute>
+                <EditorPane onOpenSearch={() => setCommandPaletteOpen(true)} />
+              </DatabasePageRoute>
             </SidebarInset>
           </SidebarProvider>
         </TerminalLaunchProvider>

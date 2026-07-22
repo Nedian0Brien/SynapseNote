@@ -523,15 +523,16 @@ describe('App runtime wiring', () => {
 
     const dialog = screen
       .getAllByTestId('database-table-dialog')
-      .find((candidate) => candidate.getAttribute('data-presentation') === 'page');
-    if (!dialog) throw new Error('expected route-level database dialog');
+      .find((candidate) => candidate.getAttribute('data-presentation') === 'canvas');
+    if (!dialog) throw new Error('expected route-level database canvas');
     await waitFor(() => {
       expect(dialog.getAttribute('data-open')).toBe('true');
-      expect(dialog.getAttribute('data-presentation')).toBe('page');
+      expect(dialog.getAttribute('data-presentation')).toBe('canvas');
       expect(dialog.getAttribute('data-initial-target')).toBe(
         JSON.stringify({ databaseId: 'db_tasks', sourceId: 'ds_tasks' }),
       );
     });
+    expect(dialog.closest('[data-testid="sidebar-inset"]')).not.toBeNull();
 
     await act(async () => {
       window.location.hash = '#database/db_tasks/ds_tasks/view_active';

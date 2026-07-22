@@ -2747,10 +2747,12 @@ export function DatabaseTableDialog({
   initialViewAction?: { kind: 'duplicate'; viewId: string };
   initialPropertyId?: string;
   initialSelectedRecordIds?: readonly string[];
-  presentation?: 'dialog' | 'page';
+  presentation?: 'dialog' | 'page' | 'canvas';
 }) {
   'use no memo';
   const { t } = useLingui();
+  const isPagePresentation = presentation !== 'dialog';
+  const isCanvasPresentation = presentation === 'canvas';
   const initialDatabaseId = initialTarget?.databaseId;
   const initialSourceId = initialTarget?.sourceId;
   const initialViewId = initialTarget?.viewId;
@@ -2944,16 +2946,16 @@ export function DatabaseTableDialog({
   }, [open, initialAction]);
 
   useEffect(() => {
-    if (open && initialAction === 'create' && presentation === 'page') {
+    if (open && initialAction === 'create' && isPagePresentation) {
       creationPageFlowRef.current = true;
       return;
     }
     // Keep the creation intent while the mutation is in flight. The app shell
     // may normalize the ephemeral hash before the commit response returns.
-    if (open && initialAction !== 'create' && presentation !== 'page') {
+    if (open && initialAction !== 'create' && !isPagePresentation) {
       creationPageFlowRef.current = false;
     }
-  }, [open, initialAction, presentation]);
+  }, [open, initialAction, isPagePresentation]);
 
   useEffect(() => {
     if (!open || typeof indexedDB === 'undefined') return;
@@ -4584,7 +4586,7 @@ export function DatabaseTableDialog({
       description?.source?.id ?? selection?.sourceId ?? '',
       nextViewId,
     );
-    if (presentation === 'page' && selection) {
+    if (isPagePresentation && selection) {
       window.location.hash = databasePageTargetToHash({
         databaseId: selection.databaseId,
         sourceId: selection.sourceId,
@@ -4724,27 +4726,34 @@ export function DatabaseTableDialog({
       })
     : [];
   return (
-    <Dialog open={presentation === 'page' ? true : open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={isPagePresentation ? true : open}
+      modal={!isCanvasPresentation}
+      onOpenChange={onOpenChange}
+    >
       <DialogContent
-        showOverlay={presentation !== 'page'}
+        portal={!isCanvasPresentation}
+        showOverlay={!isPagePresentation}
         onPointerDownOutside={
           presentation === 'page' ? (event) => event.preventDefault() : undefined
         }
         className={cn(
           'sm:max-w-[min(96vw,90rem)]',
-          presentation === 'page' &&
+          isPagePresentation &&
             'fixed inset-0 z-40 h-[100dvh] max-h-none max-w-none translate-x-0 translate-y-0 rounded-none bg-background p-0',
+          isCanvasPresentation &&
+            'relative inset-auto z-auto h-full max-h-none max-w-none translate-x-0 translate-y-0 rounded-none border-0 bg-background p-0 shadow-none ring-0',
         )}
         data-database-workspace
-        data-database-page-workspace={presentation === 'page' ? '' : undefined}
+        data-database-page-workspace={isPagePresentation ? '' : undefined}
       >
         <DialogHeader
-          className={cn(presentation === 'page' && 'border-b px-4 py-3 sm:px-6')}
-          data-database-page-chrome={presentation === 'page' ? '' : undefined}
+          className={cn(isPagePresentation && 'border-b px-4 py-3 sm:px-6')}
+          data-database-page-chrome={isPagePresentation ? '' : undefined}
         >
           <div className="flex flex-wrap items-start justify-between gap-4 pr-8">
             <div className="min-w-0">
-              {presentation === 'page' ? (
+              {isPagePresentation ? (
                 <nav
                   aria-label={t`Database breadcrumbs`}
                   data-testid="database-page-breadcrumbs"
@@ -4776,10 +4785,10 @@ export function DatabaseTableDialog({
                 </nav>
               ) : null}
               <DialogTitle
-                data-testid={presentation === 'page' ? 'database-page-title' : undefined}
-                className={cn(presentation === 'page' && 'flex items-center gap-2')}
+                data-testid={isPagePresentation ? 'database-page-title' : undefined}
+                className={cn(isPagePresentation && 'flex items-center gap-2')}
               >
-                {presentation === 'page' ? (
+                {isPagePresentation ? (
                   <>
                     <Database
                       className="size-5 shrink-0 text-primary"
@@ -4824,7 +4833,7 @@ export function DatabaseTableDialog({
                 )}
               </DialogTitle>
               <DialogDescription>
-                {presentation === 'page' ? (
+                {isPagePresentation ? (
                   <Trans>Database pages share canonical records with every linked view.</Trans>
                 ) : (
                   <Trans>
@@ -6792,7 +6801,7 @@ export function DatabaseTableDialog({
       ) : null}
       <DatabaseCreationDialog
         open={creationOpen}
-        presentation={presentation}
+        presentation={isCanvasPresentation ? 'page' : presentation}
         onOpenChange={(nextOpen, reason) => {
           setCreationOpen(nextOpen);
           if (!nextOpen && reason !== 'submit') onCreationCancelled?.();
