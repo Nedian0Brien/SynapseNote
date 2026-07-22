@@ -828,6 +828,7 @@ export function DatabaseTable({
   optimisticCellValues,
   mutationLocked = false,
   autoFocusNewRecord = false,
+  focusNewRecordRequest = null,
   selectedRecordIds = new Set<string>(),
   calculations = {},
   viewPropertyIds,
@@ -867,6 +868,8 @@ export function DatabaseTable({
   mutationLocked?: boolean;
   /** Focus the title-cell affordance after an inline block finishes creation. */
   autoFocusNewRecord?: boolean;
+  /** Monotonic request token used to restore focus after a committed table-row create. */
+  focusNewRecordRequest?: number | null;
   selectedRecordIds?: ReadonlySet<string>;
   calculations?: Readonly<Record<string, DatabaseCalculationFunction>>;
   viewPropertyIds?: readonly string[];
@@ -995,19 +998,24 @@ export function DatabaseTable({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const cellMenuRef = useRef<HTMLDivElement>(null);
   const editFocusRef = useRef<{ recordId: string; propertyId: string } | null>(null);
-  const autoFocusNewRecordConsumedRef = useRef(false);
+  const autoFocusNewRecordConsumedRef = useRef<string | number | null>(null);
   useEffect(() => {
     if (!cellMenu) return;
     cellMenuRef.current?.querySelector<HTMLElement>('[role="menuitem"]:not([disabled])')?.focus();
   }, [cellMenu]);
 
   useEffect(() => {
-    if (!autoFocusNewRecord) {
-      autoFocusNewRecordConsumedRef.current = false;
+    const focusRequest = autoFocusNewRecord
+      ? 'inline'
+      : focusNewRecordRequest === null || focusNewRecordRequest === undefined
+        ? null
+        : focusNewRecordRequest;
+    if (focusRequest === null) {
+      autoFocusNewRecordConsumedRef.current = null;
       return;
     }
     if (
-      autoFocusNewRecordConsumedRef.current ||
+      autoFocusNewRecordConsumedRef.current === focusRequest ||
       mutationLocked ||
       !onCreateRecord ||
       typeof window === 'undefined'
@@ -1021,10 +1029,10 @@ export function DatabaseTable({
       );
       if (!input || mutationLocked) return;
       input.focus();
-      autoFocusNewRecordConsumedRef.current = true;
+      autoFocusNewRecordConsumedRef.current = focusRequest;
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [autoFocusNewRecord, mutationLocked, onCreateRecord]);
+  }, [autoFocusNewRecord, focusNewRecordRequest, mutationLocked, onCreateRecord]);
   const allLoadedSelected =
     result.records.length > 0 && result.records.every((record) => selectedRecordIds.has(record.id));
 
@@ -2782,6 +2790,7 @@ export function DatabaseTableDialog({
   const [pageError, setPageError] = useState<DatabaseUiProblem | null>(null);
   const [newRecordOpen, setNewRecordOpen] = useState(false);
   const [newRecordTemplateId, setNewRecordTemplateId] = useState('__auto__');
+  const [newRecordFocusRequest, setNewRecordFocusRequest] = useState<number | null>(null);
   const [creationOpen, setCreationOpen] = useState(false);
   const [creationPreview, setCreationPreview] = useState<DatabaseDesiredStateDraftInput | null>(
     null,
@@ -3468,7 +3477,7 @@ export function DatabaseTableDialog({
       .finally(() => setMutationStatus('idle'));
   };
 
-  const createRecord = (title = newRecordTitle) => {
+  const createRecord = (title = newRecordTitle, options: { focusAfterCreate?: boolean } = {}) => {
     if (!description?.source || mutationStatus !== 'idle') return;
     try {
       const desiredState = createDatabaseRecordDesiredState({
@@ -3485,6 +3494,9 @@ export function DatabaseTableDialog({
       setNewRecordTitle('');
       runMutation(desiredState, 'ui-record-create', 'Database record creation failed', {
         policy: { operation: 'record-create', actor: 'human', principalId: 'user:local' },
+        onCommitted: options.focusAfterCreate
+          ? () => setNewRecordFocusRequest((current) => (current ?? 0) + 1)
+          : undefined,
       });
     } catch (cause) {
       setMutationError(classifyDatabaseUiProblem(cause, 'Unable to prepare the new record'));
@@ -6657,6 +6669,7 @@ export function DatabaseTableDialog({
                     ghost={ghost}
                     optimisticCellValues={optimisticCellValues}
                     mutationLocked={mutationStatus !== 'idle' || buttonStatus !== 'idle'}
+                    focusNewRecordRequest={newRecordFocusRequest}
                     selectedRecordIds={selectedRecordIds}
                     calculations={tableCalculations}
                     viewPropertyIds={selectedView?.projection.propertyIds}
@@ -6705,7 +6718,7 @@ export function DatabaseTableDialog({
                           }
                         : undefined
                     }
-                    onCreateRecord={createRecord}
+                    onCreateRecord={(title) => createRecord(title, { focusAfterCreate: true })}
                     onSelectionChange={setSelectedRecordIds}
                     onPaste={planTablePaste}
                     onCalculationChange={(propertyId, calculation) =>

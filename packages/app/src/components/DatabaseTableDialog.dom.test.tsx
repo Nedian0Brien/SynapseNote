@@ -4077,6 +4077,9 @@ describe('DatabaseTableDialog', () => {
     });
     fireEvent.keyDown(newRowTitle, { key: 'Enter' });
     await waitFor(() => expect(commitCalls).toBe(1));
+    await waitFor(() =>
+      expect(document.activeElement).toBe(screen.getByTestId('database-new-row-title')),
+    );
     expect(
       (await screen.findByText('Created task')).closest('tr')?.getAttribute('data-canonical'),
     ).toBe('true');
