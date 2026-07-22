@@ -21,6 +21,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Trans, useLingui } from '@lingui/react/macro';
 import {
+  type DatabaseProperty,
   type FrontmatterType,
   type FrontmatterValue,
   isFrontmatterValueEmpty,
@@ -29,6 +30,7 @@ import { AlertTriangle, GripVertical, Trash2, X } from 'lucide-react';
 import type { CSSProperties, ReactNode } from 'react';
 import { useRef } from 'react';
 import { ArrayOfObjectsWidget } from '@/components/ArrayOfObjectsWidget';
+import { DatabaseRelationPropertyWidget } from '@/components/DatabaseRelationPropertyWidget';
 import { ObjectWidget } from '@/components/ObjectWidget';
 import { PageCoverWidget, PageIconWidget } from '@/components/PageHeaderWidgets';
 import {
@@ -47,6 +49,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import type { DatabaseRelationNavigationItem } from '@/lib/database-relation-navigation';
 
 export interface AddDraft {
   name: string;
@@ -123,6 +126,12 @@ interface FrontmatterRowProps {
   readOnly?: boolean;
   /** Delete handler. Omit to hide the trash icon. */
   onRemove?: () => void;
+  /** Database relation metadata for direct canonical target links. */
+  relation?: Extract<DatabaseProperty, { type: 'relation' }>;
+  /** Permission-visible relation targets for the current record. */
+  relationTargets?: readonly DatabaseRelationNavigationItem[];
+  /** Whether relation targets are still being resolved. */
+  relationTargetsLoading?: boolean;
 }
 
 /**
@@ -146,6 +155,9 @@ export function FrontmatterRow({
   onChangeType,
   readOnly = false,
   onRemove,
+  relation,
+  relationTargets = [],
+  relationTargetsLoading = false,
 }: FrontmatterRowProps) {
   const { t } = useLingui();
   const isComplex = isComplexValue(value);
@@ -232,6 +244,9 @@ export function FrontmatterRow({
                   widgetType={declared}
                   path={rowPath}
                   onCommit={onCommit}
+                  relation={relation}
+                  relationTargets={relationTargets}
+                  relationTargetsLoading={relationTargetsLoading}
                 />
               )}
             </div>
@@ -632,6 +647,8 @@ export function AddPropertyRow({
             path={ADD_ROW_PATH}
             onCommit={onChangeValue}
             onSubmit={onCommit}
+            relationTargets={[]}
+            relationTargetsLoading={false}
           />
         </div>
 
@@ -689,6 +706,9 @@ interface WidgetProps {
    * existing-row editors, which keep blur-to-settle Enter semantics.
    */
   onSubmit?: (next: FrontmatterValue) => void;
+  relation?: Extract<DatabaseProperty, { type: 'relation' }>;
+  relationTargets: readonly DatabaseRelationNavigationItem[];
+  relationTargetsLoading: boolean;
 }
 
 /**
@@ -704,7 +724,17 @@ interface WidgetProps {
  * variants (which would ripple through the type picker, YAML codec,
  * inferType, and coerceValue — all overkill for two specialized fields).
  */
-function Widget({ keyName, value, widgetType, path, onCommit, onSubmit }: WidgetProps) {
+function Widget({
+  keyName,
+  value,
+  widgetType,
+  path,
+  onCommit,
+  onSubmit,
+  relation,
+  relationTargets,
+  relationTargetsLoading,
+}: WidgetProps) {
   // Specialized text widgets keyed by frontmatter name. Storage stays
   // `text`; the widget adds a live preview chip + targeted placeholder.
   if (keyName === 'icon') {
@@ -714,6 +744,18 @@ function Widget({ keyName, value, widgetType, path, onCommit, onSubmit }: Widget
   if (keyName === 'cover') {
     const str = typeof value === 'string' ? value : '';
     return <PageCoverWidget keyName={keyName} value={str} onCommit={onCommit} />;
+  }
+  if (relation) {
+    return (
+      <DatabaseRelationPropertyWidget
+        keyName={keyName}
+        property={relation}
+        value={value}
+        targets={relationTargets}
+        loading={relationTargetsLoading}
+        onCommit={onCommit}
+      />
+    );
   }
   // Intercept complex values (nested object / array of objects) before any
   // scalar widget can claim them — scalar widgets would either `String()`

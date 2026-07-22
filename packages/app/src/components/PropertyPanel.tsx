@@ -44,6 +44,7 @@ import { coerceValue, DEFAULT_VALUE_FOR_TYPE } from '@/components/PropertyWidget
 import { Button } from '@/components/ui/button';
 import { usePublishFrontmatterSelection } from '@/hooks/use-selection-context';
 import { isDatabaseCellEditable } from '@/lib/database-cell-mutation';
+import type { DatabaseRelationNavigationItem } from '@/lib/database-relation-navigation';
 
 interface PropertyPanelProps {
   provider: HocuspocusProvider;
@@ -69,6 +70,10 @@ interface PropertyPanelProps {
   allowAdd?: boolean;
   /** Initial disclosure state for a stable database layout group. */
   defaultCollapsed?: boolean;
+  /** Permission-visible relation targets for managed Relation properties. */
+  relationTargets?: readonly DatabaseRelationNavigationItem[];
+  /** Whether managed Relation targets are still being resolved. */
+  relationTargetsLoading?: boolean;
 }
 
 function readInitialSnapshot(provider: PropertyPanelProps['provider']): FrontmatterSnapshot {
@@ -87,6 +92,8 @@ export function PropertyPanel({
   title,
   allowAdd = true,
   defaultCollapsed = false,
+  relationTargets = [],
+  relationTargetsLoading = false,
 }: PropertyPanelProps) {
   const { t } = useLingui();
   const reserved = new Set(reservedKeys ?? []);
@@ -479,6 +486,7 @@ export function PropertyPanel({
               const renameState = renaming?.key === key ? renaming : null;
               const isDuplicate = (dupCount.get(key) ?? 0) > 1;
               const managed = managedByKey.get(key);
+              const relation = managed?.type === 'relation' ? managed : undefined;
               // File-owned key. The trash icon deletes the key from the
               // file's own frontmatter.
               // Position-aware sortable id: dup-name rows share the same
@@ -516,6 +524,9 @@ export function PropertyPanel({
                   onChangeType={managed ? undefined : (t) => setType(key, t)}
                   onRemove={managed ? undefined : () => removeProperty(key)}
                   readOnly={managed ? !isDatabaseCellEditable(managed) : false}
+                  relation={relation}
+                  relationTargets={relationTargets}
+                  relationTargetsLoading={relationTargetsLoading}
                 />
               );
             })}

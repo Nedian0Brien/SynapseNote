@@ -93,6 +93,34 @@ const databaseWithMove = DatabaseDefinitionSchema.parse({
     },
   ],
 });
+const relationSource = {
+  ...source,
+  properties: [
+    ...source.properties,
+    {
+      id: 'prop_project',
+      key: 'project',
+      name: 'Project',
+      type: 'relation' as const,
+      targetSourceId: 'ds_projects',
+      cardinality: 'one' as const,
+    },
+  ],
+};
+const databaseWithRelation = DatabaseDefinitionSchema.parse({
+  ...database,
+  sources: [
+    relationSource,
+    {
+      id: 'ds_projects',
+      key: 'projects',
+      name: 'Projects',
+      recordMeaning: 'One project',
+      folder: 'projects',
+      properties: [{ id: 'prop_project_title', key: 'title', name: 'Title', type: 'title' }],
+    },
+  ],
+});
 
 function provider(): HocuspocusProvider {
   const next = new HocuspocusProvider({ url: DUMMY_WS, name: 'records/rec_first' });
@@ -450,6 +478,80 @@ describe('DatabaseRecordPageChrome', () => {
       expectedRevision: hash,
       sourceKey: 'tasks',
     });
+  });
+
+  test('opens relation property targets as canonical pages without a database dialog', async () => {
+    const relationProvider = new HocuspocusProvider({ url: DUMMY_WS, name: 'records/rec_first' });
+    relationProvider.document
+      .getText('source')
+      .insert(
+        0,
+        '---\n_sn:\n  database_id: db_tasks\n  source_id: ds_tasks\n  record_id: rec_first\ntitle: Canonical title\nproject: rec_project\n---\nBody\n',
+      );
+    providers.push(relationProvider);
+    const services: DatabaseRecordPageServices = {
+      describe: async () => ({
+        manifestRevision: hash,
+        schemaRevision: hash,
+        database: databaseWithRelation,
+        source: relationSource,
+        index: {
+          state: 'idle',
+          revision: hash,
+          manifestRevision: hash,
+          recordCount: 1,
+          issueCount: 0,
+          progress: null,
+          lastRebuiltAt: null,
+          lastIncrementalAt: null,
+          lastError: null,
+        },
+        allowedOperations: ['catalog', 'describe', 'find', 'query', 'pack'],
+      }),
+      fetchRecord: (async ({ sourceId }) => ({
+        databaseId: 'db_tasks',
+        sourceId,
+        manifestRevision: hash,
+        indexRevision: hash,
+        record:
+          sourceId === 'ds_projects'
+            ? {
+                id: 'rec_project',
+                path: 'projects/roadmap.md',
+                revision: hash,
+                values: { prop_project_title: 'Roadmap' },
+              }
+            : {
+                id: 'rec_first',
+                path: 'records/rec_first.md',
+                revision: hash,
+                values: { prop_title: 'Canonical title', prop_project: 'rec_project' },
+              },
+      })) as DatabaseRecordPageServices['fetchRecord'],
+      executeMutation: (async () => ({ status: 'review_declined' })) as never,
+      confirm: () => true,
+    };
+    const view = render(
+      <TooltipProvider>
+        <PropertyProvider>
+          <DatabaseRecordPageChrome
+            provider={relationProvider}
+            docName="records/rec_first"
+            docExt=".md"
+            fallbackTitle="rec_first"
+            services={services}
+          />
+        </PropertyProvider>
+      </TooltipProvider>,
+    );
+
+    const relationLink = await view.findByRole('link', { name: 'Roadmap' });
+    expect(relationLink.getAttribute('href')).toBe('#/projects/roadmap');
+    expect(relationLink.getAttribute('data-record-id')).toBe('rec_project');
+    expect(
+      view.container.querySelector('[data-database-relation-value][data-key="project"]'),
+    ).not.toBeNull();
+    expect(view.queryByRole('dialog')).toBeNull();
   });
 
   test('keeps previous, next, and return-to-view continuity for a record opened from a database view', async () => {

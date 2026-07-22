@@ -90,6 +90,8 @@ import {
   readDatabaseRecordNavigation,
 } from '@/lib/database-record-navigation';
 import { databaseRecordMetadata, databaseValueFromFrontmatter } from '@/lib/database-record-page';
+import type { DatabaseRelationNavigationItem } from '@/lib/database-relation-navigation';
+import { resolveDatabaseRelationNavigation } from '@/lib/database-relation-navigation';
 import { subscribeToDatabaseChanged } from '@/lib/documents-events';
 
 interface DatabaseRecordPageChromeProps {
@@ -179,6 +181,8 @@ export function DatabaseRecordPageChrome({
   const [commentsDialogOpen, setCommentsDialogOpen] = useState(false);
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   const [relationsDialogOpen, setRelationsDialogOpen] = useState(false);
+  const [relationTargets, setRelationTargets] = useState<DatabaseRelationNavigationItem[]>([]);
+  const [relationTargetsLoading, setRelationTargetsLoading] = useState(false);
   const [currentRecord, setCurrentRecord] = useState<
     Awaited<ReturnType<typeof fetchDatabaseRecord>>['record'] | null
   >(null);
@@ -318,6 +322,53 @@ export function DatabaseRecordPageChrome({
       );
       return mapping ? [{ source: targetSource, mapping }] : [];
     }) ?? [];
+
+  useEffect(() => {
+    if (
+      !databaseId ||
+      !sourceId ||
+      !recordId ||
+      !currentBinding ||
+      !source?.properties.some((property) => property.type === 'relation')
+    ) {
+      setRelationTargets([]);
+      setRelationTargetsLoading(false);
+      return;
+    }
+    let active = true;
+    setRelationTargets([]);
+    setRelationTargetsLoading(true);
+    void services
+      .fetchRecord({
+        databaseId,
+        sourceId,
+        recordId,
+      })
+      .then(async ({ record }) => {
+        if (!active) return null;
+        setCurrentRecord(record);
+        return resolveDatabaseRelationNavigation({
+          database: currentBinding.database,
+          source,
+          record,
+          limit: 100,
+          fetchRecord: services.fetchRecord,
+        });
+      })
+      .then((result) => {
+        if (!active || !result) return;
+        setRelationTargets(result.items);
+        setRelationTargetsLoading(false);
+      })
+      .catch(() => {
+        if (!active) return;
+        setRelationTargets([]);
+        setRelationTargetsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [currentBinding, databaseId, recordId, services, source, sourceId]);
 
   async function executeRecordMutation(
     desiredState: RecordMutationDesiredState,
@@ -895,6 +946,8 @@ export function DatabaseRecordPageChrome({
                 title={<Trans>Pinned</Trans>}
                 allowAdd={false}
                 onManagedPropertyCommit={commitDatabaseProperty}
+                relationTargets={relationTargets}
+                relationTargetsLoading={relationTargetsLoading}
               />
             ) : null}
             {pageLayout.panel.length > 0 ? (
@@ -905,6 +958,8 @@ export function DatabaseRecordPageChrome({
                 visibleKeys={pageLayout.panel.map((property) => property.key)}
                 allowAdd={false}
                 onManagedPropertyCommit={commitDatabaseProperty}
+                relationTargets={relationTargets}
+                relationTargetsLoading={relationTargetsLoading}
               />
             ) : null}
             {pageLayout.sections.map((section) => (
@@ -923,6 +978,8 @@ export function DatabaseRecordPageChrome({
                     allowAdd={false}
                     defaultCollapsed={group.collapsed}
                     onManagedPropertyCommit={commitDatabaseProperty}
+                    relationTargets={relationTargets}
+                    relationTargetsLoading={relationTargetsLoading}
                   />
                 ))}
               </section>
@@ -939,6 +996,8 @@ export function DatabaseRecordPageChrome({
             reservedKeys={reservedKeys}
             managedProperties={source.properties}
             onManagedPropertyCommit={commitDatabaseProperty}
+            relationTargets={relationTargets}
+            relationTargetsLoading={relationTargetsLoading}
           />
         )
       ) : null}
