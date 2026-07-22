@@ -326,7 +326,7 @@ treated as visual parity until a browser capture is attached.
 
 ## P1 — Put properties and views in context
 
-- [ ] **NUI-501** Add a table-edge property `+` and header menu for add,
+- [x] **NUI-501** Add a table-edge property `+` and header menu for add,
   rename, configure, hide/reorder, calculate, and delete with dependency and
   recovery previews. The table edge now exposes an accessible `+ Add property`
   affordance when schema management is available and routes to the existing
@@ -339,10 +339,12 @@ treated as visual parity until a browser capture is attached.
   reviewed properties surface without exposing raw IDs; a linked-view action
   also provides an explicit `Manage properties` entry. Pixel-level Notion
   visual parity remains open. Evidence: `DatabaseTableDialog.dom.test.tsx`
-  schema-management and contextual property-menu journeys (63/63 tests, 369
-  expectations), `DatabasePropertiesDialog.dom.test.tsx` rename/reorder/delete
-  journeys (7/7 tests, 23 expectations), and the linked-view DOM journey.
-  Map to UX-501–UX-510.
+  schema-management and contextual property-menu journeys in the verified
+  64-test / 387-expectation suite, `DatabasePropertiesDialog.dom.test.tsx`
+  rename/reorder/delete journeys (7/7 tests, 23 expectations), and the
+  linked-view DOM journey. Pixel-level visual parity remains a separate
+  NUI-701/NUI-702 gate; the stable-ID property affordance and
+  dependency/recovery behavior are complete. Map to UX-501–UX-510.
 - [ ] **NUI-502** Make saved-view tabs reorderable and put layout, filters,
   sorts, groups, properties, color, and open behavior behind the active-view
   menu. The active saved-view tab now exposes a keyboard-accessible options

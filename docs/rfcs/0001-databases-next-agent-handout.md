@@ -49,10 +49,11 @@ the repository-wide check for final release readiness.
 - Numbered A-S items still open: **5**.
 - Total unchecked Markdown boxes: **25**. The extra 20 are M1-M4 milestone
   release gates, all intentionally still open.
-- Notion UX gap implementation checklist: **30/42 complete**. NUI-201,
+- Notion UX gap implementation checklist: **31/42 complete**. NUI-201,
   NUI-202, NUI-203, NUI-204, NUI-302, NUI-304, and NUI-401 are closed with
   focused implementation evidence; NUI-301, NUI-303, and NUI-403 are now
-  closed for implementation evidence; NUI-105 and the P1/P2 agent, linked-view,
+  closed for implementation evidence; NUI-501 is now closed for the complete
+  stable-ID property affordance and dependency/recovery evidence; NUI-105 and the P1/P2 agent, linked-view,
   responsive, and browser-journey gates remain open.
 - Notion UX alignment checklist: **2/128 complete**. The first insertion slice
   (user-facing `Database`/`Linked database` slash entries and an inline
@@ -887,6 +888,21 @@ do not reconstruct behavior solely from this summary.
   server restart requires a typed replan/recreate response; durable plan or
   checkpoint handoff, the MCP Agent Run surface, and UI receipt display still
   need implementation and evidence.
+
+### 2026-07-22 property-context checklist closure
+
+- The existing canonical property-management surface now has complete focused
+  evidence for the table-edge `+ Add property` action, visible header menus,
+  stable-ID rename, show/hide and reorder, calculations, type conversion, and
+  dependency-aware delete/recovery previews. Inline tables and linked-view
+  actions route to that same reviewed surface rather than exposing a second
+  mutation implementation.
+- The verified `DatabaseTableDialog.dom.test.tsx` suite covers the current
+  schema/property journeys in 64 tests / 387 expectations; the focused
+  `DatabasePropertiesDialog.dom.test.tsx` rename/reorder/delete suite passes 7
+  tests / 23 expectations. This closes **NUI-501**, taking the UX-gap count to
+  **31/42 (73.8%)**. Pixel-level parity, browser/Electron capture, and
+  accessibility checks remain separate release gates.
 
 ## Verification already completed
 
