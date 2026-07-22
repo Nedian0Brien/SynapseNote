@@ -611,6 +611,24 @@ This closes UX-701 at the functional implementation/evidence layer. Shared
 record-page composition, breadcrumbs, body editing, and visual/cross-host
 proof remain open under UX-702 onward and the release gates.
 
+### Shared record-page surface evidence (2026-07-23)
+
+`DatabaseRecordPageSurface` is now the shared structural record-page component
+for all three presentation modes. Side peeks and center peeks keep their
+Sheet/Dialog host, while the full-page editor keeps ordinary canvas chrome;
+both hosts render the same surface marker and sizing contract, so mode-specific
+navigation does not fork record identity or content ownership. The peek still
+owns its read-only fetch state, and the full page still owns its live Y.Doc
+property/editor bindings; those are intentional host adapters around the
+shared surface.
+
+Focused evidence: `DatabaseRecordPeek.dom.test.tsx` and
+`DatabaseRecordPageChrome.dom.test.tsx` pass 3 tests / 41 expectations, and app
+typecheck passes. Pixel-level composition, responsive behavior, and Electron
+host evidence remain release gates.
+
+This closes UX-702 at the functional implementation/evidence layer.
+
 ### Sidebar and recent database navigation evidence (2026-07-23)
 
 The ordinary file sidebar now exposes database sources as a peer `Databases`
@@ -667,7 +685,7 @@ crossed the document-native UX bar:
 | Measure | Current result | Interpretation |
 | --- | --- | --- |
 | Engine implementation checklist | 310/335 numbered items complete | Core/database and agent contracts are substantially implemented. |
-| Notion UX checklist | 67/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, inline/full-page state parity, table-first direct manipulation, friendly property names/examples, Title safety, type-specific cell editors, schema-vs-data mutation classification, in-context property-add/header affordances including property-specific sort/filter/duplicate actions, destructive property-deletion impact previews, adjacent Formula/Rollup error indicators, view-scoped property visibility/order, converged header/settings-menu view actions, visible reorderable saved-view tabs, layout-independent new-view `+` affordances, layout-specific saved-view property suggestions, coherent saved-view settings, active filter/sort explainers, saved-view tab lifecycle menu, last-view deletion safety, saved-view switch memory, independent linked-block view settings without copied rows, cross-layout title/tab/control/state/record-opening contract, canonical record-title entrypoints, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, 768px browser, and cross-host journey gates remain open. |
+| Notion UX checklist | 68/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, inline/full-page state parity, table-first direct manipulation, friendly property names/examples, Title safety, type-specific cell editors, schema-vs-data mutation classification, in-context property-add/header affordances including property-specific sort/filter/duplicate actions, destructive property-deletion impact previews, adjacent Formula/Rollup error indicators, view-scoped property visibility/order, converged header/settings-menu view actions, visible reorderable saved-view tabs, layout-independent new-view `+` affordances, layout-specific saved-view property suggestions, coherent saved-view settings, active filter/sort explainers, saved-view tab lifecycle menu, last-view deletion safety, saved-view switch memory, independent linked-block view settings without copied rows, cross-layout title/tab/control/state/record-opening contract, canonical record-title entrypoints, shared side/center/full-page record surface, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, 768px browser, and cross-host journey gates remain open. |
 | First-use database entry | `New database` in sidebar, empty states, normal new-page dialog, command palette, plus slash-menu `New database`/`Linked view of database`; normal picker exposes Page/Database chooser and the resulting route lands in an editable table. `Open databases` enters the no-overlay page workspace. | Discovery, sidebar/recent navigation, and the web first-use path are evidenced; additional entry points and Electron proof remain open. |
 | Blank creation | Optional title, `Untitled database` fallback, direct-safe exact-plan commit, immediate source/view selection, title/new-row focus | The blank human path is continuous in DOM coverage; template/import/agent paths intentionally retain review and visual browser proof remains open. |
 | Full-page navigation | Stable `#database/<database>/<source>/<view?>` route, no-overlay canvas presentation, sidebar source section, command-palette recents/search, backlink and relation links, normal page chrome, and local overflow guardrails | Route, page surface, and navigation identity are evidenced; responsive visual/cross-host proof remains incomplete. |
@@ -1027,8 +1045,9 @@ capability alone is insufficient.
 - [x] **UX-701** Make each applicable record title open its one canonical page.
       All supported renderers expose a visible title action through the shared
       `onOpen` adapter; table title editing remains a separate explicit action.
-- [ ] **UX-702** Share one record-page component across side peek, center peek,
-      and full page.
+- [x] **UX-702** Share one record-page component across side peek, center peek,
+      and full page. `DatabaseRecordPageSurface` owns the shared structural
+      contract while each host retains its appropriate navigation/editor adapter.
 - [ ] **UX-703** Show database breadcrumbs and return-to-view on record pages.
 - [ ] **UX-704** Synchronize title/property edits between table and page without
       manual refresh.
