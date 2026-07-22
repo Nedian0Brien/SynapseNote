@@ -3147,9 +3147,15 @@ describe('DatabaseTableDialog', () => {
       return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
     }) as typeof fetch;
 
-    render(<DatabaseTableDialog open={true} presentation="page" onOpenChange={() => {}} />);
-    await screen.findByText('No databases yet.');
-    fireEvent.click(screen.getByTestId('database-create-button'));
+    window.history.replaceState(null, '', '#database/new');
+    render(
+      <DatabaseTableDialog
+        open
+        presentation="page"
+        initialAction="create"
+        onOpenChange={() => {}}
+      />,
+    );
     fireEvent.change(await screen.findByLabelText('Database name'), {
       target: { value: 'New Database' },
     });
@@ -3166,10 +3172,9 @@ describe('DatabaseTableDialog', () => {
       }),
     );
     await waitFor(() => expect(screen.queryByTestId('database-creation-ghost-review')).toBeNull());
-    expect(
-      ((await screen.findByTestId('database-page-title-input')) as HTMLInputElement).value,
-    ).toBe('New Database');
-    expect(await screen.findByLabelText('New record title')).not.toBeNull();
+    expect((await screen.findByTestId('database-page-title')).textContent).toContain('New Database');
+    expect(screen.queryByLabelText('Database name')).toBeNull();
+    expect(window.location.hash).toBe('#database/db_new/ds_new');
   });
 
   test('reopens a failed creation with the typed title available for retry', async () => {

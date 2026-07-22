@@ -62,6 +62,13 @@ The in-app browser reached the running web renderer at
 - No Electron journey was captured in this audit. Do not close NUI-105 from
   this web-only observation.
 
+Follow-up focused browser evidence on the IPv4 dev server now covers the
+critical inline-first handoff: submitting Blank from `#database/new` created a
+database and landed on a canonical `#database/<database>/<source>/<view?>`
+route with a rendered table grid. This validates route continuity, not visual
+Notion parity; the creation chooser is still administration-dense and the
+Electron/full first-use journey remains open.
+
 ## Implemented in the current slice
 
 These items are code-backed and have focused DOM/type checks. They must not be
@@ -120,10 +127,11 @@ treated as visual parity until a browser capture is attached.
   parity and canonical favorite synchronization remain open under NUI-202.
 - [x] **NUI-013** Make blank human-created databases direct-safe: the exact
   server plan is committed without a ghost interruption, the canonical source
-  and first saved view become the page target, and the new-record title field
-  is opened immediately for the first row. Template, existing-folder, and CSV
-  creation remain reviewed. Evidence: blank-creation journey in
-  `DatabaseTableDialog.dom.test.tsx` and the shared `runMutation` policy.
+  and first saved view become the page target, and the draft chooser closes
+  before the editable table is handed to the canonical route. Template,
+  existing-folder, and CSV creation remain reviewed. Evidence: blank-creation
+  journey in `DatabaseTableDialog.dom.test.tsx` and the shared `runMutation`
+  policy; cross-route title/first-row focus remains a separate UX gate.
 - [x] **NUI-014** Preserve the typed database name when a creation draft fails:
   reopen the creation surface after the failed exact-plan request so the user
   can retry without re-entering the title. Evidence: the failed-creation DOM
@@ -151,12 +159,12 @@ treated as visual parity until a browser capture is attached.
   `DatabaseTableDialog` creation state; blank creation uses the direct-safe
   policy in NUI-013.
 - [x] **NUI-103** After a blank title (or `Untitled database`) is accepted,
-  show the table shell with title focus and a first-row `New` affordance in one
-  continuous page flow. Keep review available for agent/elevated-risk paths.
-  Evidence: blank page creation opens both `database-page-title-input` and the
-  first-row `New record title`; title edits use the exact-plan mutation path,
-  while template/folder/CSV creation remains reviewed. Map to UX-105–UX-108
-  and UX-401/UX-402.
+  hand off to the canonical table shell with a title and first-row `New`
+  affordance in one continuous route flow. Keep review available for
+  agent/elevated-risk paths. Evidence: the blank page creation route closes
+  its draft chooser and lands on the canonical page title/table; title and
+  row-edit focus continuity across the route boundary remains a visual UX
+  follow-up. Map to UX-105–UX-108 and UX-401/UX-402.
 - [x] **NUI-104** Make Escape, browser back, and failed creation leave no
   manifest/source/record orphan; preserve the typed title for retry. The
   uncommitted `#database/new` route is a history entry, browser back closes

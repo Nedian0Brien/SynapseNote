@@ -213,7 +213,6 @@ import {
   DATABASE_NAVIGATION_CHANGE_EVENT,
   databasePageTargetToHash,
   databaseViewOpenBehavior,
-  isDatabaseCreationHash,
   isDatabasePageFavorite,
   setDatabasePageFavorite,
 } from '@/lib/database-navigation';
@@ -2764,11 +2763,13 @@ export function DatabaseTableDialog({
   } | null>(null);
   const csvInputRef = useRef<HTMLInputElement>(null);
   const pageTitleInputRef = useRef<HTMLInputElement>(null);
+  const initialCreationActionHandledRef = useRef(false);
   const reviewResolver = useRef<((approved: boolean) => void) | null>(null);
   const handledInitialRecordAction = useRef<string | null>(null);
   const handledInitialTablePaste = useRef<string | null>(null);
   const handledInitialDatabaseSurface = useRef<string | null>(null);
   const handledInitialSelectedRecordIds = useRef<string | null>(null);
+  const creationPageFlowRef = useRef(false);
   const queueReconciliationRunning = useRef(false);
   const offlineCacheKey = selection
     ? databaseOfflineCacheKey({
@@ -2828,8 +2829,27 @@ export function DatabaseTableDialog({
   }, [open, initialDatabaseId, initialSourceId, initialViewId]);
 
   useEffect(() => {
-    if (open && initialAction === 'create') setCreationOpen(true);
+    if (!open) {
+      initialCreationActionHandledRef.current = false;
+      return;
+    }
+    if (initialAction === 'create' && !initialCreationActionHandledRef.current) {
+      initialCreationActionHandledRef.current = true;
+      setCreationOpen(true);
+    }
   }, [open, initialAction]);
+
+  useEffect(() => {
+    if (open && initialAction === 'create' && presentation === 'page') {
+      creationPageFlowRef.current = true;
+      return;
+    }
+    // Keep the creation intent while the mutation is in flight. The app shell
+    // may normalize the ephemeral hash before the commit response returns.
+    if (open && initialAction !== 'create' && presentation !== 'page') {
+      creationPageFlowRef.current = false;
+    }
+  }, [open, initialAction, presentation]);
 
   useEffect(() => {
     if (!open || typeof indexedDB === 'undefined') return;
@@ -6533,6 +6553,11 @@ export function DatabaseTableDialog({
                   }
                 : undefined,
             onCommitted: (outcome) => {
+              // The creation form is a draft surface. Once the mutation is
+              // committed, close it before handing the user to the new page;
+              // otherwise the original `initialAction="create"` can reopen
+              // the modal during the canonical-route transition.
+              setCreationOpen(false);
               // Keep creation in one continuous flow. Once the canonical
               // manifest exists, select its source/view immediately so the
               // next catalog refresh lands on the new editable table instead
@@ -6546,11 +6571,7 @@ export function DatabaseTableDialog({
               );
               setSelection({ databaseId: definition.id, sourceId: source.id });
               setSelectedViewId(firstView?.id ?? '');
-              if (
-                presentation === 'page' &&
-                initialAction === 'create' &&
-                isDatabaseCreationHash(window.location.hash)
-              ) {
+              if (creationPageFlowRef.current) {
                 const route = databasePageTargetToHash({
                   databaseId: definition.id,
                   sourceId: source.id,
@@ -6558,6 +6579,7 @@ export function DatabaseTableDialog({
                 });
                 window.history.replaceState(null, '', route);
                 window.dispatchEvent(new Event(DATABASE_NAVIGATION_CHANGE_EVENT));
+                window.dispatchEvent(new HashChangeEvent('hashchange'));
               }
               if (mode === 'blank') {
                 setPageTitleDraft(source.name ?? definition.name);

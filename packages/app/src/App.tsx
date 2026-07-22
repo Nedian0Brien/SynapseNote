@@ -45,6 +45,7 @@ import { ConfigProvider } from '@/lib/config-provider';
 import { DATABASE_SLASH_COMMAND_EVENT, type DatabaseSlashCommand } from '@/lib/database-events';
 import {
   DATABASE_CREATION_HASH,
+  DATABASE_NAVIGATION_CHANGE_EVENT,
   databasePageTargetFromHash,
   databaseRecordPathToHash,
   isDatabaseCreationHash,
@@ -134,7 +135,11 @@ function DatabasePageRoute() {
   useEffect(() => {
     const onHashChange = () => setTarget(databasePageTargetFromHash(window.location.hash));
     window.addEventListener('hashchange', onHashChange);
-    return () => window.removeEventListener('hashchange', onHashChange);
+    window.addEventListener(DATABASE_NAVIGATION_CHANGE_EVENT, onHashChange);
+    return () => {
+      window.removeEventListener('hashchange', onHashChange);
+      window.removeEventListener(DATABASE_NAVIGATION_CHANGE_EVENT, onHashChange);
+    };
   }, []);
 
   if (!target) return null;
@@ -594,6 +599,12 @@ function AppBody() {
   const [databaseOpenAction, setDatabaseOpenAction] = useState<'create' | null>(null);
   const [databasePresentation, setDatabasePresentation] = useState<'dialog' | 'page'>('dialog');
   const [databaseDiagnosticsOpen, setDatabaseDiagnosticsOpen] = useState(false);
+  const databaseCreationRouteActive = isDatabaseCreationHash(window.location.hash);
+  // Keep the page presentation stable for the lifetime of the creation
+  // action. Some navigation handlers normalize the ephemeral hash before the
+  // mutation resolves; the action state is the durable source of truth until
+  // the canonical page route is ready.
+  const databaseCreationPageActive = databaseCreationRouteActive || databaseOpenAction === 'create';
   const openDataInspector = (scope?: DatabaseContextInspectionScope) => {
     setDataInspectorScope(scope);
     setDataInspectorOpen(true);
@@ -668,6 +679,22 @@ function AppBody() {
     syncDatabaseCreationHistory();
     window.addEventListener('popstate', syncDatabaseCreationHistory);
     return () => window.removeEventListener('popstate', syncDatabaseCreationHistory);
+  }, []);
+
+  // A successful creation replaces the ephemeral `#database/new` route with
+  // the canonical page route without causing a native hashchange. Let the
+  // page route take over and unmount the temporary creation surface so the
+  // creation form cannot reopen over the newly created inline database.
+  useEffect(() => {
+    const onDatabaseNavigation = () => {
+      if (!isDatabasePageHash(window.location.hash)) return;
+      databaseCreationRouteOpenRef.current = false;
+      setDatabasesOpen(false);
+      setDatabaseOpenAction(null);
+      setDatabasePresentation('dialog');
+    };
+    window.addEventListener(DATABASE_NAVIGATION_CHANGE_EVENT, onDatabaseNavigation);
+    return () => window.removeEventListener(DATABASE_NAVIGATION_CHANGE_EVENT, onDatabaseNavigation);
   }, []);
 
   // "Open in terminal" launcher — desktop-only. Routes a scope-derived prompt
@@ -749,10 +776,12 @@ function AppBody() {
           />
           <LazyDatabaseAgentRunsDialog open={agentRunsOpen} onOpenChange={setAgentRunsOpen} />
           <LazyDatabaseTableDialog
-            open={databasesOpen}
+            open={databasesOpen || databaseCreationPageActive}
             onOpenContextInspector={openDataInspector}
-            initialAction={databaseOpenAction ?? undefined}
-            presentation={databasePresentation}
+            initialAction={
+              databaseOpenAction ?? (databaseCreationPageActive ? 'create' : undefined)
+            }
+            presentation={databaseCreationPageActive ? 'page' : databasePresentation}
             onOpenChange={(nextOpen) => {
               if (!nextOpen && isDatabaseCreationHash(window.location.hash)) {
                 closeDatabaseCreationRoute();

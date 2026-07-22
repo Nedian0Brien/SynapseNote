@@ -7,6 +7,7 @@
 - Main design: [0001-databases-and-agent-data-plane.md](./0001-databases-and-agent-data-plane.md)
 - UX gap checklist: [0001-notion-ux-gap-implementation-checklist.md](./0001-notion-ux-gap-implementation-checklist.md)
 - Changeset: `../../.changeset/add-file-native-database-core.md`
+- Latest feature changeset: `../../.changeset/inline-database-create-route.md`
 
 ## Objective and completion rule
 
@@ -194,6 +195,26 @@ do not reconstruct behavior solely from this summary.
   DOM suites 22 tests / 91 expectations, and DatabaseTableDialog page coverage
   included in the 54 / 302 suite. Full browser E2E remains unexecuted because
   the local Playwright Chromium download was incomplete.
+
+### 2026-07-22 inline-first creation handoff slice
+
+- The ephemeral `#database/new` page now keeps its creation intent until the
+  exact-plan commit returns, even if the shell normalizes the draft hash while
+  the request is in flight.
+- A committed blank database closes the draft chooser once, replaces it with
+  the canonical `#database/<database>/<source>/<view?>` route, and hands the
+  page to the route-level workspace. The temporary page presentation is
+  explicitly unmounted so the chooser cannot reopen over the new table.
+- `DatabasePageRoute` now consumes both native hash changes and the existing
+  replace-state navigation event. `initialAction="create"` is one-shot per
+  open lifecycle, preventing a post-commit modal resurrection.
+- Focused evidence: `DatabaseTableDialog.dom.test.tsx` 63/63 tests, 369
+  expectations; `App.dom.test.tsx` + `DatabaseCreationDialog.dom.test.tsx`
+  20/20 tests, 75 expectations; app typecheck and Biome pass. A live
+  `127.0.0.1:5173/#database/new` browser journey created `Browser QA Tasks 7`
+  and landed on a canonical route with a rendered table grid. This closes the
+  route-handoff implementation gap, but not NUI-105/NUI-701 visual and
+  Electron journey gates.
 
 ### 2026-07-22 entry-point re-audit and convergence slice
 
