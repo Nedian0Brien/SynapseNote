@@ -67,14 +67,15 @@ the repository-wide check for final release readiness.
   catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
   approval-bound commits, undo, and restart/backup idempotency. Agent View
   policy/privacy/sandbox review remains Partial by design.
-- Notion UX alignment checklist: **2/128 complete**. The first insertion slice
-  (user-facing `Database`/`Linked database` slash entries and an inline
-  catalog/source/view picker) is implemented and DOM-tested, but its visual
-  gates remain open. A 2026-07-23 in-app browser capture reached the IPv4
-  renderer at `http://127.0.0.1:5173/`, opened `New database` as a full-page
-  non-overlay surface, and created two rows on the canonical database route.
-  Electron, slash/new-page, full linked-view/record, accessibility, responsive,
-  usability, performance, and packaged-release evidence remain open.
+- Notion UX alignment checklist: **11/128 complete**. The page-first creation
+  slice and the inline/linked insertion contract are now evidenced. A
+  2026-07-23 in-app browser capture reached the IPv4 renderer at
+  `http://127.0.0.1:5173/`, created a full-page database, created two canonical
+  rows, created an inline database from the slash menu, saved an inline row,
+  opened the shared full-page route, and removed the linked block without
+  deleting the canonical record. Electron, normal New-page, complete linked
+  state-matrix, accessibility, responsive, usability, performance, and
+  packaged-release evidence remain open.
 - A-K, M-P are complete. L is complete except L-017. Q is complete except
   Q-012. R-005, R-017, and R-019 remain; R-018 is closed. S-010 and S-011
   are closed.

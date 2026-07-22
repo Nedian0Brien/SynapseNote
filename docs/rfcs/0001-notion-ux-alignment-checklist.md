@@ -88,12 +88,12 @@ user's canonical project, or run the repository-wide/server test suite.
 | New item       | `NewItemDialog` still models `file`/`folder`, but its normal file path now exposes a named `New database` action that dispatches the shared creation event.                     | Discovery is improved, but Database/Table is not yet a first-class page type in the picker.                          |
 | Creation       | `DatabaseCreationDialog.tsx` accepts an optional blank title, keeps storage details in a collapsed disclosure, and routes blank human creation through an automatic exact-plan commit while retaining review for templates/imports/agent paths. | The first-use path is shorter and safer for routine human creation; higher-risk methods still expose the explicit review boundary. |
 | Blank schema   | `createBlankDatabaseDesiredState` creates one title property; after commit the shell selects the new source and first view.                                                    | A minimal database lands in its table, but it is still inside the management dialog.                                 |
-| Inline block   | Fresh `Database`/`Linked database` inserts use a catalog/source/view picker; raw references remain advanced for existing MDX.                                                  | Insertion is human-readable, but the full page/inline editing journey is not yet unified.                            |
+| Inline block   | Fresh `Database`/`Linked database`/`Inline database` inserts use a catalog/source/view picker; raw references remain advanced for existing MDX, and the block renders shared records with visible tabs and full-page handoff. | The core inline/linked journey is now unified for creation, editing, conversion, and removal; duplicate-view action and full state-matrix parity remain open. |
 | Database shell | `DatabaseTableDialog.tsx` supports a route-level page presentation plus the legacy management dialog; both still share the dense workspace toolbar.                            | The modal boundary is removable, but administration and primary work remain coupled.                                 |
 | Human writes   | Direct-safe cell/row writes use plan → auto-approval → commit; destructive, bulk, schema, and elevated writes retain plan → ghost → explicit review → commit.                    | The interruption is removed for common edits, but optimistic/offline acknowledgement and full policy coverage remain. |
 | Views          | Saved views now render as visible tabs with `+`; the dropdown and `Manage views` dialog remain available.                                                                      | The primary view switch is closer to Notion, but reorder/rename/favorite controls still live in management.          |
 | Renderer       | `editor/components/DatabaseView.tsx` renders all major layouts and record peeks.                                                                                               | This is reusable once insertion, editing, and view controls are redesigned.                                          |
-| Journey tests  | Component tests are broad and a primary-journey E2E file exists, but the local browser executable is unavailable.                                                             | Fixtures do not yet prove the first-use Notion-like journey in a real browser.                                      |
+| Journey tests  | Component tests are broad, a primary-journey E2E file exists, and an in-app browser capture covers page-first and inline creation; the local Playwright executable remains unavailable. | Web functional evidence covers the core slice, but the full E2E matrix and Electron journey remain open. |
 
 Screenshots cannot establish focus traps, keyboard ordering, screen-reader
 names, contrast, responsive behavior, data-loss safety, or performance. Those
@@ -101,9 +101,10 @@ remain acceptance work below.
 
 ## Implementation evidence since the audit
 
-The first document-native insertion slice is now implemented, but its visual
-acceptance gates remain open until a browser-enabled runner captures the live
-journey:
+The first document-native insertion slice is now implemented. The 2026-07-23
+browser capture closes the core inline/linked interaction contract below; its
+broader visual, accessibility, responsive, and cross-host acceptance gates
+remain open:
 
 - The slash menu now offers `Database` and `Linked database` in user-facing
   language. The raw `Database view` descriptor remains readable for existing
@@ -140,12 +141,12 @@ journey:
   `packages/app/src/editor/slash-command/component-items.test.ts` and
   `packages/app/src/editor/components/DatabaseView.dom.test.tsx`; app
   typecheck and the core registry suite also pass.
-- A live Vite capture now reaches the real `127.0.0.1:5173` shell and the
-  `Create database` surface after the context-preview compiler expression was
-  split into named steps. The capture confirms the current first-use surface is
-  still an administration modal over the editor; it does not prove a finished
-  page/table journey or Electron parity, so no UX checkbox below is closed from
-  this capture.
+- A historical live Vite capture reached the real `127.0.0.1:5173` shell and
+  the administration-oriented `Create database` surface after the
+  context-preview compiler expression was split into named steps. The
+  follow-up capture below supersedes its modal-only conclusion for the
+  page-first and inline slices; it does not prove Electron parity or the
+  remaining visual/release gates.
 
 ## Follow-up browser evidence (2026-07-23)
 
@@ -157,11 +158,35 @@ new-row affordance. The first two rows were created in the running app, and a
 short-lived `transaction_in_progress` read barrier was retried without leaving
 an error alert visible.
 
-This is evidence for the page-first creation slice only. It does not establish
-ordinary document chrome/sidebar integration, slash or normal New-page parity,
-linked-view and record continuity, Electron parity, accessibility/responsive
-behavior, usability timing, performance, or packaged-release readiness. Those
-acceptance gates remain unchecked below.
+This is evidence for the page-first and inline/linked creation slices. It does
+not establish ordinary document chrome/sidebar integration, normal New-page
+parity, the complete linked-view state matrix, Electron parity,
+accessibility/responsive behavior, usability timing, performance, or
+packaged-release readiness. Those acceptance gates remain unchecked below.
+
+### Inline database journey evidence (2026-07-23)
+
+On the same running IPv4 app, a new document was created and the visible
+`/` command menu was used to choose `Inline database`. The searchable database
+picker offered both `Create new database` and existing database candidates. The
+blank inline flow created `Inline browser audit` without leaving the document,
+replaced the setup block with an editable Table, and focused the `New row title`
+cell. A row named `Inline first record` was saved in place; the block displayed
+the database title, a visible `Table` view tab, the shared-record explanation,
+refresh/full-page controls, and the inline saved-state/undo affordance.
+
+Opening the linked block's full database produced the canonical
+`#database/<database>/<source>/<view>` route and showed the same record. Removing
+the linked block returned to the host document, and reopening that canonical
+route still showed `Inline first record`, proving that block removal does not
+delete the source or its records. The focused `DatabaseView.dom.test.tsx`
+journey and linked-view cache tests cover replacement, conversion, invalid and
+permission/offline states, stable IDs, and the shared-record contract.
+
+The same block action menu exposes `Duplicate view configuration`; selecting it
+opens the canonical saved-view manager with the current view copied as a new
+stable view configuration. The action is covered by the live menu capture and
+the `DatabaseViewManagerDialog` initial-duplicate DOM test.
 
 ## Re-audit snapshot (2026-07-23)
 
@@ -171,13 +196,13 @@ crossed the document-native UX bar:
 | Measure | Current result | Interpretation |
 | --- | --- | --- |
 | Engine implementation checklist | 310/335 numbered items complete | Core/database and agent contracts are substantially implemented. |
-| Notion UX checklist | 2/128 gates complete | Only vocabulary/claim-boundary gates are closed; visual and journey gates remain open. |
+| Notion UX checklist | 11/128 gates complete | Vocabulary/claim-boundary plus the inline/linked insertion contract are evidenced; full visual, state-matrix, and cross-host journey gates remain open. |
 | First-use database entry | `New database` in sidebar, empty states, normal new-page dialog, command palette, plus slash-menu `Database`/`Linked database`; normal picker also exposes Page/Database chooser | Discovery is substantially improved; visual browser proof and a fully ordinary page/block experience are still missing. |
 | Blank creation | Optional title, `Untitled database` fallback, direct-safe exact-plan commit, immediate source/view selection, title/new-row focus | The blank human path is continuous in DOM coverage; template/import/agent paths intentionally retain review and visual browser proof remains open. |
 | Full-page navigation | Stable `#database/<database>/<source>/<view?>` route and no-overlay page presentation | Route identity exists, but sidebar/recent/page chrome integration is incomplete. |
-| Inline linked view | Catalog → source → saved-view picker and replacement flow | Human-readable references exist; inline creation, conversion, and shared full/inline state are not complete. |
+| Inline linked view | Catalog → source → saved-view picker, inline creation, shared rows, visible tabs, replacement, conversion, duplicate configuration, and block removal | The core inline/linked contract is evidenced; the complete visual state matrix remains open. |
 | Direct editing | Direct-safe cell/row auto-approval exists; elevated mutations retain exact review | Safer direct manipulation is present, but optimistic/offline acknowledgement is not complete. |
-| Browser evidence | In-app web renderer is reachable on IPv4 and the page-first creation/table journey is captured; no Electron or complete inline/record journey is captured | The page-first slice is evidenced, but NUI-105/NUI-701–NUI-705 remain release gates for cross-host, accessibility, responsive, usability, performance, and packaged-release parity. |
+| Browser evidence | In-app web renderer is reachable on IPv4 and page-first plus inline creation/record sharing journeys are captured; no Electron or complete state-matrix journey is captured | The core web slice is evidenced, but NUI-105/NUI-701–NUI-705 remain release gates for cross-host, accessibility, responsive, usability, performance, and packaged-release parity. |
 
 ### Priority order for the next implementation pass
 
@@ -354,21 +379,21 @@ capability alone is insufficient.
 
 ### UX-3 — Inline and linked insertion
 
-- [ ] **UX-301** Replace raw stable-ID editing for new `DatabaseView` blocks
+- [x] **UX-301** Replace raw stable-ID editing for new `DatabaseView` blocks
       with a searchable database/source/view picker.
-- [ ] **UX-302** Create a new inline database without leaving the current page.
-- [ ] **UX-303** Link an existing database and choose or create its saved view.
-- [ ] **UX-304** Explain that records are shared while saved-view configuration
+- [x] **UX-302** Create a new inline database without leaving the current page.
+- [x] **UX-303** Link an existing database and choose or create its saved view.
+- [x] **UX-304** Explain that records are shared while saved-view configuration
       belongs to the chosen view.
-- [ ] **UX-305** Show database title and visible view tabs in the inline block.
-- [ ] **UX-306** Add block actions: open source, duplicate view configuration,
+- [x] **UX-305** Show database title and visible view tabs in the inline block.
+- [x] **UX-306** Add block actions: open source, duplicate view configuration,
       convert, replace source, and remove block.
-- [ ] **UX-307** Keep stable IDs in MDX but expose them only in advanced/debug
+- [x] **UX-307** Keep stable IDs in MDX but expose them only in advanced/debug
       details.
-- [ ] **UX-308** Recover missing source/view references with `Choose replacement`.
+- [x] **UX-308** Recover missing source/view references with `Choose replacement`.
 - [ ] **UX-309** Align inline loading, empty, error, permission, offline, and
       stale states with full-page behavior.
-- [ ] **UX-310** Prove that removing a linked block never deletes its source or
+- [x] **UX-310** Prove that removing a linked block never deletes its source or
       records.
 
 ### UX-4 — Table-first direct manipulation

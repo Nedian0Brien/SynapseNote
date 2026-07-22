@@ -91,10 +91,16 @@ document-native entry point:
   `transaction_in_progress` read barrier after the first commit was retried in
   the table loader and did not surface as a persistent error; the second row
   completed without an error alert.
+- In a new document, the visible `/` menu opened `Inline database`; the picker
+  offered existing databases and `Create new database`. Creating
+  `Inline browser audit` replaced the setup block in place, saved
+  `Inline first record`, showed the database title, `Table` tab, shared-record
+  explanation, and inline undo. `Open full database` reached the canonical
+  route, and removing the linked block left the canonical record available.
 
 This closes the browser evidence for the page-first creation slice, but it does
-not close NUI-105 or NUI-701–NUI-705: no Electron journey, slash/new-page
-journey, full linked-view/record continuity, accessibility or responsive
+not close NUI-105 or NUI-701–NUI-705: no Electron journey, normal New-page
+journey, complete linked-view state matrix, accessibility or responsive
 capture, usability timing, performance budget, or packaged-release evidence
 was collected in this audit.
 
