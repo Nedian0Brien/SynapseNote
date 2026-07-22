@@ -88,7 +88,7 @@ user's canonical project, or run the repository-wide/server test suite.
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
 | Global entry   | `App.tsx` retains the power-user `databasesOpen` surface, while `#database/<database>/<source>/<view?>` is now a stable route-level workspace. `New database` entry points dispatch one typed event into page presentation, and `Open databases` selects that no-overlay page presentation. | Direct, normal New-page, sidebar/recent, search, backlink, relation, and command-result entries converge on stable routes; responsive and cross-host proof remain open. |
 | New item       | `NewItemDialog` keeps the file/folder model for compatibility but exposes a visible `Page`/`Database` chooser; its Database choice dispatches the shared creation event. | Database discovery is a first-class choice in the normal picker; the shared creation writer remains the canonical path. |
-| Creation       | `DatabaseCreationDialog.tsx` accepts an optional blank title, keeps storage details in a collapsed disclosure, and routes blank human creation through an automatic exact-plan commit while retaining review for templates/imports/agent paths. | The first-use path is shorter and safer for routine human creation; higher-risk methods still expose the explicit review boundary. |
+| Creation       | `DatabaseCreationDialog.tsx` accepts an optional blank title, keeps storage details in a collapsed disclosure, and presents Blank, Template, Existing folder, CSV/TSV, and Assistant in one chooser. Blank routes through an automatic exact-plan commit; templates/imports/folder/agent paths retain the explicit review boundary, with the production surface injecting the installed-agent composer. | The first-use path is shorter and safer for routine human creation while all higher-risk methods remain discoverable from the same start surface and retain the explicit review boundary. |
 | Blank schema   | `createBlankDatabaseDesiredState` creates one title property; after commit the shell selects the new source and first view on the canonical route. | A minimal database lands in an editable table; the management surface remains available for administration. |
 | Inline block   | Fresh `New database`/`Linked view of database`/`Inline database` inserts use a catalog/source/view picker; raw references remain advanced for existing MDX, and the block renders shared records with visible tabs and full-page handoff. | The core inline/linked journey is now unified for creation, editing, conversion, and removal; duplicate-view action and full state-matrix parity remain open. |
 | Database shell | `DatabaseTableDialog.tsx` supports the canonical `DatabaseWorkspacePage` plus the legacy management wrapper; the page header owns breadcrumbs, title, favorite, icon/cover, and page actions while the table surface remains shared. | Primary work is document-native; the dense management toolbar remains a deliberate admin surface. |
@@ -820,6 +820,31 @@ conversion path never embeds records or clones a source. The focused
 asserts the stable references plus absence of an embedded record payload. This
 closes UX-210; responsive and broader visual conversion journeys remain open.
 
+### Unified database creation start surface evidence (2026-07-23)
+
+`DatabaseCreationDialog` now presents Blank, Template, Existing folder, CSV/TSV,
+and Assistant as one creation-method chooser. Blank remains the direct-safe
+path; templates and imports retain exact-plan review, and existing-folder
+creation still hands off to the blocker-free onboarding preview after the
+manifest commit. Assistant mounts the app's normal installed-agent creation
+composer rather than inventing a second database writer; the handoff prompt is
+explicitly framed as an agent proposal that must use the same reviewed plan and
+commit boundary. The dialog accepts the composer as a host-provided slot so
+focused DOM tests remain provider-free while the production table surface wires
+the real `CreatePromptComposer`.
+
+Focused evidence: `DatabaseCreationDialog.dom.test.tsx` passes 9 tests / 38
+expectations, including the Assistant chooser and the no-direct-commit guard;
+the existing resulting-page preview journey in
+`DatabaseTableDialog.dom.test.tsx` passes 1 test / 4 expectations, and the
+existing folder onboarding journey passes 1 test / 7 expectations. App
+typecheck and targeted Biome checks pass.
+
+This closes UX-801 at the functional start-surface layer. Template detail
+previews, natural-language schema generation/editing, migration identity
+assignment, visual first-use parity, and packaged-host proof remain open under
+UX-802–UX-807 and UX-11.
+
 ### Database History and recovery evidence (2026-07-23)
 
 The `Database actions` menu now exposes a human-facing `History` item on both
@@ -854,9 +879,9 @@ crossed the document-native UX bar:
 | Measure | Current result | Interpretation |
 | --- | --- | --- |
 | Engine implementation checklist | 310/335 numbered items complete | Core/database and agent contracts are substantially implemented. |
-| Notion UX checklist | 76/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, inline/full-page state parity, table-first direct manipulation, friendly property names/examples, Title safety, type-specific cell editors, schema-vs-data mutation classification, in-context property-add/header affordances including property-specific sort/filter/duplicate actions, destructive property-deletion impact previews, adjacent Formula/Rollup error indicators, view-scoped property visibility/order, converged header/settings-menu view actions, visible reorderable saved-view tabs, layout-independent new-view `+` affordances, layout-specific saved-view property suggestions, coherent saved-view settings, active filter/sort explainers, saved-view tab lifecycle menu, last-view deletion safety, saved-view switch memory, independent linked-block view settings without copied rows, cross-layout title/tab/control/state/record-opening contract, canonical record-title entrypoints, shared side/center/full-page record surface, record breadcrumbs and return-to-view continuity, table/page synchronization, record body editing below properties, record-page comments/history/permissions/appearance/layout affordances, previous/next record navigation in the active view context, row/page mutation menu parity for duplicate/archive/restore/move/delete, direct Relation property links to canonical record pages, safe record deep-link/reload/missing/archived/permission states, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, 768px browser, and cross-host journey gates remain open. |
+| Notion UX checklist | 77/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, inline/full-page state parity, table-first direct manipulation, friendly property names/examples, Title safety, type-specific cell editors, schema-vs-data mutation classification, in-context property-add/header affordances including property-specific sort/filter/duplicate actions, destructive property-deletion impact previews, adjacent Formula/Rollup error indicators, view-scoped property visibility/order, converged header/settings-menu view actions, visible reorderable saved-view tabs, layout-independent new-view `+` affordances, layout-specific saved-view property suggestions, coherent saved-view settings, active filter/sort explainers, saved-view tab lifecycle menu, last-view deletion safety, saved-view switch memory, independent linked-block view settings without copied rows, cross-layout title/tab/control/state/record-opening contract, canonical record-title entrypoints, shared side/center/full-page record surface, record breadcrumbs and return-to-view continuity, table/page synchronization, record body editing below properties, record-page comments/history/permissions/appearance/layout affordances, previous/next record navigation in the active view context, row/page mutation menu parity for duplicate/archive/restore/move/delete, direct Relation property links to canonical record pages, safe record deep-link/reload/missing/archived/permission states, unified Blank/template/import/folder/Assistant creation start surface, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, 768px browser, and cross-host journey gates remain open. |
 | First-use database entry | `New database` in sidebar, empty states, normal new-page dialog, command palette, plus slash-menu `New database`/`Linked view of database`; normal picker exposes Page/Database chooser and the resulting route lands in an editable table. `Open databases` enters the no-overlay page workspace. | Discovery, sidebar/recent navigation, and the web first-use path are evidenced; additional entry points and Electron proof remain open. |
-| Blank creation | Optional title, `Untitled database` fallback, direct-safe exact-plan commit, immediate source/view selection, title/new-row focus | The blank human path is continuous in DOM coverage; template/import/agent paths intentionally retain review and visual browser proof remains open. |
+| Blank creation | Optional title, `Untitled database` fallback, direct-safe exact-plan commit, immediate source/view selection, title/new-row focus | The blank human path is continuous in DOM coverage; the same start surface now exposes template/import/folder/Assistant entry points while their review and visual browser proof remain open. |
 | Full-page navigation | Stable `#database/<database>/<source>/<view?>` route, no-overlay canvas presentation, sidebar source section, command-palette recents/search, backlink and relation links, normal page chrome, and local overflow guardrails | Route, page surface, and navigation identity are evidenced; responsive visual/cross-host proof remains incomplete. |
 | Inline linked view | Catalog → source → saved-view picker, inline creation, shared rows, visible tabs, replacement, conversion, duplicate configuration, block removal, and aligned loading/empty/error/permission/offline/stale states | The core inline/linked functional contract is evidenced; the complete visual state matrix remains open. |
 | Direct editing | Direct-safe cell/row auto-approval, optimistic reconciliation, offline/conflict/failure states, post-commit focus, standard undo/redo, and durable History receipts are covered by focused DOM evidence | Elevated mutations retain exact review; full visual/cross-host acceptance remains open. |
@@ -1243,8 +1268,12 @@ capability alone is insufficient.
 
 ### UX-8 — Templates, import, and assisted creation
 
-- [ ] **UX-801** Put Blank, templates, import, existing folder, and
-      agent-assisted creation in one start surface.
+- [x] **UX-801** Put Blank, templates, import, existing folder, and
+      agent-assisted creation in one start surface. The creation surface now
+      exposes Blank, Template, Existing folder, CSV/TSV, and Assistant in one
+      chooser. The Assistant option mounts the normal installed-agent handoff
+      composer and explicitly keeps the exact-plan review boundary; folder
+      identity assignment remains a separate advanced approval step.
 - [ ] **UX-802** Preview templates with realistic properties, views, and rows.
 - [ ] **UX-803** Keep Blank fastest and remember no advanced choice implicitly.
 - [ ] **UX-804** Preview CSV/TSV headers, inferred types, invalid rows, and target

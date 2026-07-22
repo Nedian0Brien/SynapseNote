@@ -55,6 +55,7 @@
 - Latest record-actions changeset: `../../.changeset/database-record-actions.md`
 - Latest relation-links changeset: `../../.changeset/database-relation-links.md`
 - Latest record-state-safety changeset: `../../.changeset/database-record-state-safety.md`
+- Latest unified-creation-surface changeset: `../../.changeset/database-creation-start-surface.md`
 
 ## Objective and completion rule
 
@@ -92,7 +93,7 @@ the repository-wide check for final release readiness.
   catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
   approval-bound commits, undo, and restart/backup idempotency. Agent View
   policy/privacy/sandbox review remains Partial by design.
-- Notion UX alignment checklist: **76/128 complete**. The page-first and normal
+- Notion UX alignment checklist: **77/128 complete**. The page-first and normal
   New-page creation slices, the inline/linked insertion contract, and the
   table-first direct-manipulation, named canonical workspace canvas-route,
   shared navigation without a duplicate canvas rail, sidebar/recent/search/
@@ -114,8 +115,9 @@ the repository-wide check for final release readiness.
   placement below properties, and record-page comments/history/permissions/
   appearance/layout affordances, previous/next active-view navigation, and
   row/page mutation menu parity for duplicate/archive/restore/move/delete, and
-  direct Relation property links to canonical record pages, and safe record
-  deep-link/reload/missing/archived/permission states are
+  direct Relation property links to canonical record pages, safe record
+  deep-link/reload/missing/archived/permission states, and the unified
+  Blank/template/import/folder/Assistant creation start surface are
   now
   evidenced. A
   2026-07-23 in-app browser capture reached the IPv4 renderer at
@@ -555,10 +557,29 @@ do not reconstruct behavior solely from this summary.
   targeted Biome checks pass.
 - UX-501 through UX-510, UX-601, UX-602, UX-603, UX-604, UX-605, UX-606,
   UX-607, UX-608, UX-609, UX-610, UX-701, UX-702, UX-703, UX-704, UX-705,
-  UX-706, UX-707, UX-708, UX-709, and UX-710
+  UX-706, UX-707, UX-708, UX-709, UX-710, and UX-801
   are checked at the functional
   implementation/evidence layer. Visual and broader property-family gates
   remain open.
+
+### 2026-07-23 unified database creation start surface
+
+- `DatabaseCreationDialog` now puts Blank, Template, Existing folder, CSV/TSV,
+  and Assistant in one creation-method chooser. Blank keeps its direct-safe
+  fast path; the other methods retain exact-plan review and the folder path
+  still opens the blocker-free onboarding preview after the manifest commits.
+- The Assistant method injects the existing installed-agent
+  `CreatePromptComposer` from the production database surface. It does not add a
+  second database writer: agents continue through the canonical MCP/HTTP
+  desired-state plan and commit boundary. The dialog accepts the composer as a
+  host slot so focused component tests stay provider-free.
+- Focused evidence: `DatabaseCreationDialog.dom.test.tsx` passes 9 tests / 38
+  expectations (including the Assistant chooser and no-direct-commit guard),
+  the existing resulting-page preview test passes 1 / 4, and the folder
+  onboarding test passes 1 / 7. App typecheck and targeted Biome checks pass.
+- UX-801 is now checked at the functional start-surface layer. UX-802–UX-807
+  remain open for richer template/import previews, natural-language schema
+  generation/editing, and dedicated migration identity assignment.
 
 ### 2026-07-23 sidebar and recent database navigation
 
@@ -569,7 +590,7 @@ do not reconstruct behavior solely from this summary.
   catalog-backed database under `Recently opened`, reopening the same stable
   route. Focused evidence: sidebar 3 tests / 7 expectations and recent UI 1 / 5.
 - UX-203, UX-204, UX-206, UX-209, UX-309, UX-501, UX-502, UX-503, UX-504,
-  UX-505, UX-506, UX-507, UX-508, UX-509, UX-510, UX-601, UX-602, UX-603, UX-604, UX-605, UX-606, UX-607, UX-608, UX-609, UX-610, UX-701, UX-702, UX-703, UX-704, UX-705, UX-706, UX-707, UX-708, UX-709, and UX-710 are checked. The 768px visual responsive check remains
+  UX-505, UX-506, UX-507, UX-508, UX-509, UX-510, UX-601, UX-602, UX-603, UX-604, UX-605, UX-606, UX-607, UX-608, UX-609, UX-610, UX-701, UX-702, UX-703, UX-704, UX-705, UX-706, UX-707, UX-708, UX-709, UX-710, and UX-801 are checked. The 768px visual responsive check remains
   open.
 
 ### 2026-07-23 stable inline/full-page conversion

@@ -18,10 +18,10 @@ SynapseNote has a broad database engine and a strong safety/agent contract. The
 largest remaining mismatches are:
 
 1. The creation chooser is now a first-class Page/Database choice and Blank
-   lands directly on an editable table, but templates, existing-folder, CSV,
-   and agent-assisted flows still feel like reviewed administration rather than
-   Notion's immediate page-first creation. Visual first-use and preview parity
-   remain open.
+   lands directly on an editable table. One start surface now exposes Blank,
+   templates, existing-folder, CSV, and Assistant; the latter reuses the
+   installed-agent handoff and canonical review boundary. Visual first-use and
+   richer preview parity remain open.
 2. Database workspaces now resolve through sidebar, recent/search, backlinks,
    relations, and a stable page route. The remaining mismatch is visual
    convergence with ordinary document chrome plus complete cross-host capture;
