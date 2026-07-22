@@ -24,6 +24,7 @@
 - Latest chart/map context changeset: `../../.changeset/inline-context-chart-map.md`
 - Latest creation-review summary changeset: `../../.changeset/database-creation-review-summary.md`
 - Latest Agent Run inspection changeset: `../../.changeset/agent-run-progressive-inspection.md`
+- Latest inline alternative-view mutation changeset: `../../.changeset/inline-alt-view-mutations.md`
 
 ## Objective and completion rule
 
@@ -771,6 +772,28 @@ do not reconstruct behavior solely from this summary.
   server suite or E2E rerun was needed.
 - Follow-up: NUI-603 remains open for retry/resume and independent receipt
   handoff; this slice only improves inspectability.
+
+### 2026-07-22 inline alternative-view mutation slice
+
+- Inline Board, Calendar, and Timeline changes now stay on the direct-safe
+  mutation path even when one record changes multiple cells (for example a
+  two-field Timeline range move). The desired state is compiled as one exact
+  record mutation, so the server's revision and precondition checks remain
+  atomic; multi-record bulk actions still route to the reviewed workspace.
+- While the commit is in flight, `DatabaseView` projects the pending values
+  into every alternate renderer. Board group memberships are updated for the
+  pending record as well, so a drag does not visually snap back; canonical
+  values are still refreshed from the server after a verified receipt. Existing
+  inline undo/redo tokens and conflict previews are unchanged.
+- Focused evidence: `DatabaseView.dom.test.tsx` passes 18 tests / 187
+  expectations, including a delayed-commit Board optimistic integration;
+  `DatabaseBoard.dom.test.tsx` (3 / 13), `DatabaseCalendar.dom.test.tsx`
+  (4 / 12), and `DatabaseTimeline.dom.test.tsx` (4 / 14) pass their typed
+  transition/resize/context journeys. App typecheck, targeted Biome, and
+  `git diff --check` pass. No full server suite or E2E was run.
+- Checklist status: NUI-301 remains open. The implementation now covers the
+  direct-safe alternative-view path, but complete undo/redo integration across
+  every alternate renderer and agent transport evidence is still required.
 
 ### 2026-07-22 inline filter handoff slice
 

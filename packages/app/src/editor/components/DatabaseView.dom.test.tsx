@@ -660,6 +660,7 @@ describe('DatabaseView', () => {
     };
     const boardDatabase = { ...database, sources: [boardSource], views: [boardView] };
     let commitCalls = 0;
+    let releaseCommit: (() => void) | undefined;
     globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
       const path = String(input);
       const body = init?.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : {};
@@ -732,14 +733,19 @@ describe('DatabaseView', () => {
       }
       if (path === '/api/databases/commit') {
         commitCalls += 1;
-        return Response.json({
-          mutationId: 'mut_board',
-          planId: 'plan_board',
-          planHash: hash,
-          idempotentReplay: false,
-          actualDiff: [],
-          verification: { status: 'passed' },
-          undoToken: 'undo_board',
+        return new Promise<Response>((resolve) => {
+          releaseCommit = () =>
+            resolve(
+              Response.json({
+                mutationId: 'mut_board',
+                planId: 'plan_board',
+                planHash: hash,
+                idempotentReplay: false,
+                actualDiff: [],
+                verification: { status: 'passed' },
+                undoToken: 'undo_board',
+              }),
+            );
         });
       }
       return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
@@ -755,11 +761,24 @@ describe('DatabaseView', () => {
     );
 
     expect(await screen.findByRole('heading', { name: 'Task board' })).toBeTruthy();
+    await waitFor(() =>
+      expect(document.querySelector('[data-board-card="rec_first"]')).toBeTruthy(),
+    );
     fireEvent.click(
       screen.getAllByRole('combobox', { name: 'Move record rec_first to group' })[0] as HTMLElement,
     );
     fireEvent.click(await screen.findByRole('option', { name: 'Done' }));
     await waitFor(() => expect(commitCalls).toBe(1));
+    expect(screen.getByText('Saving inline database change')).toBeTruthy();
+    expect(
+      [...document.querySelectorAll<HTMLElement>('[data-board-group]')].some(
+        (group) =>
+          group.getAttribute('data-board-group') === JSON.stringify('opt_done') &&
+          group.querySelector('[data-board-card="rec_first"]'),
+      ),
+    ).toBe(true);
+    releaseCommit?.();
+    await waitFor(() => expect(screen.getByTestId('inline-save-feedback')).toBeTruthy());
     expect(document.querySelector('[data-database-workspace]')).toBeNull();
   });
 

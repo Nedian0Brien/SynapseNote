@@ -49,6 +49,7 @@ import {
 import {
   createDatabaseCellMutationDesiredState,
   createDatabaseRecordDesiredState,
+  createDatabaseTablePasteDesiredState,
 } from '@/lib/database-cell-mutation';
 import { createBlankDatabaseDesiredState } from '@/lib/database-creation';
 import {
@@ -488,6 +489,52 @@ function linkedViewProblem(cause: unknown): DatabaseUiProblem {
   return classifyDatabaseUiProblem(cause, message);
 }
 
+/**
+ * Keep the inline renderers convergent while a direct-safe record mutation is
+ * in flight. Table already consumes this map at cell-render time; the other
+ * renderers need the same projection so a drag/drop or reschedule does not
+ * appear to snap back until the canonical refresh completes.
+ */
+function applyInlineOptimisticValues(
+  result: DatabaseQueryResult,
+  optimisticValues: ReadonlyMap<string, DatabaseValue | undefined>,
+): DatabaseQueryResult {
+  if (optimisticValues.size === 0) return result;
+  const records = result.records.map((record) => {
+    const prefix = `${record.id}:`;
+    const changes = [...optimisticValues.entries()].filter(([key]) => key.startsWith(prefix));
+    if (changes.length === 0) return record;
+    const values = { ...record.values };
+    for (const [key, value] of changes) {
+      const propertyId = key.slice(prefix.length);
+      if (value === undefined) delete values[propertyId];
+      else values[propertyId] = value;
+    }
+    return { ...record, values };
+  });
+  const groupMemberships = result.groupMemberships
+    ? Object.fromEntries(
+        Object.entries(result.groupMemberships).map(([recordId, memberships]) => {
+          const prefix = `${recordId}:`;
+          const nextMemberships = memberships.map((membership) =>
+            membership.map((item) => {
+              const key = `${prefix}${item.propertyId}`;
+              if (!optimisticValues.has(key)) return item;
+              const value = optimisticValues.get(key);
+              return { ...item, value: value === undefined ? null : value };
+            }),
+          );
+          return [recordId, nextMemberships];
+        }),
+      )
+    : undefined;
+  return {
+    ...result,
+    records,
+    ...(groupMemberships ? { groupMemberships } : {}),
+  };
+}
+
 export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseViewProps) {
   'use no memo';
   const host = useJsxComponentHost();
@@ -711,6 +758,12 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
     state.status === 'ready'
       ? state.description.database.views.find((view) => view.id === reference.data.viewId)
       : undefined;
+  const renderedResult =
+    state.status === 'ready' && state.result
+      ? applyInlineOptimisticValues(state.result, inlineOptimisticCellValues)
+      : state.status === 'ready'
+        ? state.result
+        : null;
   const openRecord = (record: ProjectedDatabaseRecord) => {
     rememberDatabaseRecordNavigation({
       databaseId: reference.data.databaseId,
@@ -729,7 +782,11 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
 
   const runInlineMutation = (
     desiredState: DatabaseDesiredStateDraftInput,
-    policy: { operation: 'cell' | 'record-create'; optimisticCellKey?: string },
+    policy: {
+      operation: 'cell' | 'record-create';
+      optimisticCellKey?: string;
+      optimisticCellKeys?: readonly string[];
+    },
   ) => {
     if (
       inlineMutationStatus !== 'idle' ||
@@ -742,6 +799,19 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
     setInlineUndoToken(null);
     setInlineRedoToken(null);
     setInlineMutationStatus('saving');
+    const optimisticKeys = [
+      ...(policy.optimisticCellKey ? [policy.optimisticCellKey] : []),
+      ...(policy.optimisticCellKeys ?? []),
+    ];
+    const clearOptimisticValues = () => {
+      if (optimisticKeys.length === 0) return;
+      setInlineOptimisticCellValues((current) => {
+        const next = new Map(current);
+        let changed = false;
+        for (const key of optimisticKeys) changed = next.delete(key) || changed;
+        return changed ? next : current;
+      });
+    };
     void executeDatabaseUiMutation({
       desiredState,
       actor: { principalId: 'user:local' },
@@ -755,38 +825,17 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
     })
       .then((outcome) => {
         if (outcome.status !== 'committed') {
-          if (policy.optimisticCellKey) {
-            setInlineOptimisticCellValues((current) => {
-              if (!current.has(policy.optimisticCellKey as string)) return current;
-              const next = new Map(current);
-              next.delete(policy.optimisticCellKey as string);
-              return next;
-            });
-          }
+          clearOptimisticValues();
           setInlineMutationError('The inline database change was blocked by the current data.');
           return;
         }
-        if (policy.optimisticCellKey) {
-          setInlineOptimisticCellValues((current) => {
-            if (!current.has(policy.optimisticCellKey as string)) return current;
-            const next = new Map(current);
-            next.delete(policy.optimisticCellKey as string);
-            return next;
-          });
-        }
+        clearOptimisticValues();
         setInlineUndoToken(outcome.result.undoToken);
         setInlineRedoToken(null);
         setRefresh((current) => current + 1);
       })
       .catch((cause: unknown) => {
-        if (policy.optimisticCellKey) {
-          setInlineOptimisticCellValues((current) => {
-            if (!current.has(policy.optimisticCellKey as string)) return current;
-            const next = new Map(current);
-            next.delete(policy.optimisticCellKey as string);
-            return next;
-          });
-        }
+        clearOptimisticValues();
         setInlineMutationError(
           cause instanceof Error ? cause.message : 'Unable to save the inline database change',
         );
@@ -928,27 +977,31 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
     record: ProjectedDatabaseRecord,
     changes: readonly { property: DatabaseProperty; value: DatabaseValue | undefined }[],
   ) => {
-    const [change] = changes;
-    if (
-      changes.length === 1 &&
-      change &&
-      state.status === 'ready' &&
-      linkedSource &&
-      linkedDatabase
-    ) {
+    if (changes.length > 0 && state.status === 'ready' && linkedSource && linkedDatabase) {
+      const optimisticCellKeys = changes.map((change) => `${record.id}:${change.property.id}`);
       try {
+        setInlineOptimisticCellValues((current) => {
+          const next = new Map(current);
+          for (const change of changes) {
+            next.set(`${record.id}:${change.property.id}`, change.value);
+          }
+          return next;
+        });
         runInlineMutation(
-          createDatabaseCellMutationDesiredState({
+          createDatabaseTablePasteDesiredState({
             database: linkedDatabase,
             source: linkedSource,
-            record,
-            property: change.property,
-            value: change.value,
+            changes: changes.map((change) => ({ record, ...change })),
           }),
-          { operation: 'cell' },
+          { operation: 'cell', optimisticCellKeys },
         );
         return;
       } catch (cause) {
+        setInlineOptimisticCellValues((current) => {
+          const next = new Map(current);
+          for (const key of optimisticCellKeys) next.delete(key);
+          return next;
+        });
         setInlineMutationError(
           cause instanceof Error ? cause.message : 'Unable to save the inline database change',
         );
@@ -1448,12 +1501,12 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
                 view={linkedView}
                 onOpen={openRecord}
               />
-            ) : !state.result ? null : linkedView.layout.type === 'board' ? (
+            ) : !renderedResult ? null : linkedView.layout.type === 'board' ? (
               <LazyDatabaseBoard
-                key={`${state.description.schemaRevision}:${state.result.snapshotRevision}`}
+                key={`${state.description.schemaRevision}:${renderedResult.snapshotRevision}`}
                 source={linkedSource}
                 view={linkedView}
-                result={state.result}
+                result={renderedResult}
                 people={state.description.database.people}
                 onOpen={openRecord}
                 onOpenContextInspector={(record) =>
@@ -1486,10 +1539,10 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
               />
             ) : linkedView.layout.type === 'timeline' ? (
               <LazyDatabaseTimeline
-                key={`${state.description.schemaRevision}:${state.result.snapshotRevision}`}
+                key={`${state.description.schemaRevision}:${renderedResult.snapshotRevision}`}
                 source={linkedSource}
                 view={linkedView}
-                result={state.result}
+                result={renderedResult}
                 people={state.description.database.people}
                 onOpen={openRecord}
                 onOpenContextInspector={(record) =>
@@ -1506,10 +1559,10 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
               />
             ) : linkedView.layout.type === 'calendar' ? (
               <LazyDatabaseCalendar
-                key={`${state.description.schemaRevision}:${state.result.snapshotRevision}`}
+                key={`${state.description.schemaRevision}:${renderedResult.snapshotRevision}`}
                 source={linkedSource}
                 view={linkedView}
-                result={state.result}
+                result={renderedResult}
                 people={state.description.database.people}
                 onOpen={openRecord}
                 onOpenContextInspector={(record) =>
@@ -1526,10 +1579,10 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
               />
             ) : linkedView.layout.type === 'list' ? (
               <LazyDatabaseList
-                key={`${state.description.schemaRevision}:${state.result.snapshotRevision}`}
+                key={`${state.description.schemaRevision}:${renderedResult.snapshotRevision}`}
                 source={linkedSource}
                 view={linkedView}
-                result={state.result}
+                result={renderedResult}
                 people={state.description.database.people}
                 onOpen={openRecord}
                 onOpenContextInspector={(record) =>
@@ -1538,10 +1591,10 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
               />
             ) : linkedView.layout.type === 'gallery' ? (
               <LazyDatabaseGallery
-                key={`${state.description.schemaRevision}:${state.result.snapshotRevision}`}
+                key={`${state.description.schemaRevision}:${renderedResult.snapshotRevision}`}
                 source={linkedSource}
                 view={linkedView}
-                result={state.result}
+                result={renderedResult}
                 people={state.description.database.people}
                 onOpen={openRecord}
                 onOpenContextInspector={(record) =>
@@ -1550,10 +1603,10 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
               />
             ) : linkedView.layout.type === 'chart' ? (
               <LazyDatabaseChart
-                key={`${state.description.schemaRevision}:${state.result.snapshotRevision}`}
+                key={`${state.description.schemaRevision}:${renderedResult.snapshotRevision}`}
                 source={linkedSource}
                 view={linkedView}
-                result={state.result}
+                result={renderedResult}
                 people={state.description.database.people}
                 onOpen={openRecord}
                 onOpenContextInspector={(record) =>
@@ -1562,10 +1615,10 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
               />
             ) : linkedView.layout.type === 'map' ? (
               <LazyDatabaseMap
-                key={`${state.description.schemaRevision}:${state.result.snapshotRevision}`}
+                key={`${state.description.schemaRevision}:${renderedResult.snapshotRevision}`}
                 source={linkedSource}
                 view={linkedView}
-                result={state.result}
+                result={renderedResult}
                 onOpen={openRecord}
                 onOpenContextInspector={(record) =>
                   setInlineContextInspectorScope({ recordId: record.id })
@@ -1573,10 +1626,10 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
               />
             ) : linkedView.layout.type === 'feed' ? (
               <LazyDatabaseFeed
-                key={`${state.description.schemaRevision}:${state.result.snapshotRevision}`}
+                key={`${state.description.schemaRevision}:${renderedResult.snapshotRevision}`}
                 source={linkedSource}
                 view={linkedView}
-                result={state.result}
+                result={renderedResult}
                 people={state.description.database.people}
                 onOpen={openRecord}
                 onOpenContextInspector={(record) =>
@@ -1585,11 +1638,11 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
               />
             ) : (
               <LazyDatabaseTable
-                key={`${state.description.schemaRevision}:${state.result.snapshotRevision}`}
+                key={`${state.description.schemaRevision}:${renderedResult.snapshotRevision}`}
                 source={linkedSource}
                 databaseId={state.description.database.id}
                 viewId={linkedView.id}
-                result={state.result}
+                result={renderedResult}
                 people={state.description.database.people}
                 optimisticCellValues={inlineOptimisticCellValues}
                 mutationLocked={

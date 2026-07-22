@@ -239,11 +239,19 @@ treated as visual parity until a browser capture is attached.
   IDs and hands bulk actions to the canonical reviewed workspace; it never
   creates a second inline bulk-write path. The remaining gate is full
   optimistic/undo evidence for every view editor and a complete policy matrix
-  for agent transports. The explicit 13-operation matrix is covered by
+  for agent transports. Inline Board, Calendar, and Timeline now compile
+  one-record multi-cell transitions through the same exact desired-state
+  mutation and project optimistic values (including Board memberships) while
+  the commit is in flight; multi-record bulk edits still hand off to reviewed
+  workspace actions. The explicit 13-operation matrix is covered by
   `database-mutation-policy.test.ts`; the canonical workspace regression suite
   passes 64/64 tests and 374 expectations across Table, Board, Timeline,
-  Calendar, schema, and mutation journeys. Integration evidence across every
-  alternate renderer and agent transport remains open. Map to UX-005/UX-006.
+  Calendar, schema, and mutation journeys. `DatabaseView.dom.test.tsx` now
+  holds Board's delayed-commit optimistic integration (18 tests / 187
+  expectations overall), while the direct Board/Calendar/Timeline renderer
+  suites cover their typed drag/resize changes. Complete undo/redo integration
+  across every alternate renderer and agent transport remains open. Map to
+  UX-005/UX-006.
 - [x] **NUI-302** Add saving/saved/offline/conflict/failed indicators that do
   not replace the table with a transaction screen. Map to UX-405/UX-406.
   Evidence: `DatabaseTableDialog` save indicator and the state-specific DOM
