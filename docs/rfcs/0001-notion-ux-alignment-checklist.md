@@ -253,22 +253,22 @@ focused entry-point and receipt tests below close UX-407.
 ### Canonical canvas route evidence (2026-07-23)
 
 Canonical `#database/<database>/<source>/<view?>` targets now replace the
-document editor inside `SidebarInset` and render the shared database surface
-with a non-portal `canvas` presentation. The reviewed management and
-`#database/new` creation surfaces remain page/dialog presentations.
+document editor inside `SidebarInset` and render the explicit
+`DatabaseWorkspacePage` surface with a non-portal `canvas` presentation. The
+shared implementation is named `DatabaseTableSurface`; the old
+`DatabaseTableDialog` export is only the compatibility wrapper for management
+and reviewed modal callers. The reviewed management and `#database/new`
+creation surfaces remain page/dialog presentations.
 `App.dom.test.tsx` passes 14 tests / 50 expectations and verifies the canvas is
-mounted inside the sidebar inset, while the focused database suite verifies the
-real workspace has no Dialog portal or overlay. The route suite also covers
-hash view selection, back/forward restoration, missing-source back handling,
-and permission-denied handling without an unsafe retry. This closes UX-202,
-UX-205, and UX-208.
+mounted inside the sidebar inset, while the focused database suite renders
+`DatabaseWorkspacePage` and verifies the real workspace has no Dialog portal or
+overlay. The route suite also covers hash view selection, back/forward
+restoration, missing-source back handling, and permission-denied handling
+without an unsafe retry. This closes UX-201, UX-202, UX-205, and UX-208.
 
-UX-201 remains open because the canvas still shares the `DatabaseTableDialog`
-implementation internally; extracting a named main-canvas surface and normal
-page chrome is the next architectural slice. UX-203, UX-204, UX-206, UX-207,
-UX-209 likewise remain open pending sidebar/recent integration, normal page
-chrome, entry-point coverage, and responsive acceptance. UX-210 is covered by
-the conversion evidence below.
+UX-203, UX-204, UX-206, UX-207, and UX-209 remain open pending normal page
+chrome, broader entry-point coverage, and responsive acceptance. UX-210 is
+covered by the conversion evidence below.
 
 ### Sidebar and recent database navigation evidence (2026-07-23)
 
@@ -326,7 +326,7 @@ crossed the document-native UX bar:
 | Measure | Current result | Interpretation |
 | --- | --- | --- |
 | Engine implementation checklist | 310/335 numbered items complete | Core/database and agent contracts are substantially implemented. |
-| Notion UX checklist | 40/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, table-first direct manipulation, canonical canvas routing, sidebar/recent database navigation, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, page chrome, state-matrix, and cross-host journey gates remain open. |
+| Notion UX checklist | 41/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, table-first direct manipulation, named canonical workspace canvas routing, sidebar/recent database navigation, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, page chrome, state-matrix, and cross-host journey gates remain open. |
 | First-use database entry | `New database` in sidebar, empty states, normal new-page dialog, command palette, plus slash-menu `New database`/`Linked view of database`; normal picker exposes Page/Database chooser and the resulting route lands in an editable table. `Open databases` enters the no-overlay page workspace. | Discovery and the web first-use path are evidenced; ordinary sidebar/recent integration and Electron proof remain open. |
 | Blank creation | Optional title, `Untitled database` fallback, direct-safe exact-plan commit, immediate source/view selection, title/new-row focus | The blank human path is continuous in DOM coverage; template/import/agent paths intentionally retain review and visual browser proof remains open. |
 | Full-page navigation | Stable `#database/<database>/<source>/<view?>` route, no-overlay canvas presentation, sidebar source section, and command-palette recents | Route and navigation identity are evidenced; normal page chrome and broader entry points remain incomplete. |
@@ -508,8 +508,11 @@ capability alone is insufficient.
 
 ### UX-2 — Full-page database as a workspace page
 
-- [ ] **UX-201** Render a full-page database in the main canvas, not
-      `DatabaseTableDialog`.
+- [x] **UX-201** Render a full-page database in the main canvas, not
+      `DatabaseTableDialog`. Evidence: `DatabaseWorkspacePage` owns the
+      canonical route, `DatabaseTableSurface` is the shared non-modal body,
+      and App/database DOM tests verify SidebarInset placement with no portal or
+      overlay.
 - [x] **UX-202** Give it a stable URL/hash that survives reload and back/forward
       navigation.
 - [x] **UX-203** Show full-page databases in the sidebar/tree and recent items

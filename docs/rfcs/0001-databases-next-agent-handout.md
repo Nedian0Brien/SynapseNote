@@ -68,9 +68,9 @@ the repository-wide check for final release readiness.
   catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
   approval-bound commits, undo, and restart/backup idempotency. Agent View
   policy/privacy/sandbox review remains Partial by design.
-- Notion UX alignment checklist: **40/128 complete**. The page-first and normal
+- Notion UX alignment checklist: **41/128 complete**. The page-first and normal
   New-page creation slices, the inline/linked insertion contract, and the
-  table-first direct-manipulation, canonical canvas-route, sidebar/recent
+  table-first direct-manipulation, named canonical workspace canvas-route, sidebar/recent
   navigation, stable conversion, and durable History/receipt recovery slices
   are now evidenced. A
   2026-07-23 in-app browser capture reached the IPv4 renderer at
@@ -258,18 +258,20 @@ do not reconstruct behavior solely from this summary.
 ### 2026-07-23 canonical database canvas route
 
 - Canonical `#database/<database>/<source>/<view?>` targets now replace the
-  document editor inside `SidebarInset`. `DatabaseTableDialog` has a non-portal
-  `canvas` presentation for this route; the management surface and ephemeral
-  `#database/new` creation flow continue to use their reviewed page/dialog
-  presentations.
+  document editor inside `SidebarInset`. The route owns an explicit
+  `DatabaseWorkspacePage` surface; its shared body is named
+  `DatabaseTableSurface`, while `DatabaseTableDialog` remains the compatibility
+  wrapper for management/reviewed modal callers. The route is non-portal and
+  the ephemeral `#database/new` creation flow continues to use its reviewed
+  page/dialog presentations.
 - `App.dom.test.tsx` passes **14 tests / 50 expectations**, including the
   canvas's `SidebarInset` placement and hash back/forward restoration. The
-  focused database tests cover the real no-portal/no-overlay workspace,
-  selected-view hash, missing-source back action, and permission-denied state.
-- UX-202, UX-205, and UX-208 are checked. UX-201 remains open until the shared
-  implementation is extracted from the `DatabaseTableDialog` name and normal
-  page chrome/sidebar/recent integration is complete; UX-203/204/206/207/209/
-  210 remain open for those journeys and responsive proof.
+  focused database test renders `DatabaseWorkspacePage` and covers the real
+  no-portal/no-overlay workspace, selected-view hash, missing-source back
+  action, and permission-denied state.
+- UX-201, UX-202, UX-205, and UX-208 are checked. UX-204/206/207/209/210 remain
+  open for normal page chrome, broader entry-point journeys, conversion proof,
+  and responsive acceptance.
 
 ### 2026-07-23 sidebar and recent database navigation
 
