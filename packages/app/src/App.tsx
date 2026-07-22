@@ -96,6 +96,11 @@ const LazyDatabaseTableDialog = lazy(() =>
     default: module.DatabaseTableDialog,
   })),
 );
+const LazyDatabaseWorkspacePage = lazy(() =>
+  import('@/components/DatabaseTableDialog').then((module) => ({
+    default: module.DatabaseWorkspacePage,
+  })),
+);
 const LazyDatabaseDiagnosticsDialog = lazy(() =>
   import('@/components/DatabaseDiagnosticsDialog').then((module) => ({
     default: module.DatabaseDiagnosticsDialog,
@@ -151,9 +156,8 @@ function DatabasePageRoute({
 
   if (!target) return children;
   return (
-    <LazyDatabaseTableDialog
+    <LazyDatabaseWorkspacePage
       open
-      presentation="canvas"
       initialTarget={target}
       onOpenAgentRuns={onOpenAgentRuns}
       onOpenChange={(nextOpen) => {

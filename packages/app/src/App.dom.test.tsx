@@ -189,26 +189,31 @@ mock.module('@/components/EditorPane', () => ({
   EditorPane: () => <main data-testid="editor-pane" />,
 }));
 
+const DatabaseTableDialogMock = ({
+  open,
+  presentation,
+  initialAction,
+  initialTarget,
+}: {
+  open: boolean;
+  presentation?: string;
+  initialAction?: string;
+  initialTarget?: { databaseId: string; sourceId: string; viewId?: string };
+}) => (
+  <div
+    data-testid="database-table-dialog"
+    data-open={String(open)}
+    data-presentation={presentation}
+    data-initial-action={initialAction}
+    data-initial-target={initialTarget ? JSON.stringify(initialTarget) : ''}
+  />
+);
+
 mock.module('@/components/DatabaseTableDialog', () => ({
-  DatabaseTableDialog: ({
-    open,
-    presentation,
-    initialAction,
-    initialTarget,
-  }: {
-    open: boolean;
-    presentation?: string;
-    initialAction?: string;
-    initialTarget?: { databaseId: string; sourceId: string; viewId?: string };
-  }) => (
-    <div
-      data-testid="database-table-dialog"
-      data-open={String(open)}
-      data-presentation={presentation}
-      data-initial-action={initialAction}
-      data-initial-target={initialTarget ? JSON.stringify(initialTarget) : ''}
-    />
-  ),
+  DatabaseTableDialog: DatabaseTableDialogMock,
+  DatabaseWorkspacePage: (
+    props: Omit<Parameters<typeof DatabaseTableDialogMock>[0], 'presentation'>,
+  ) => <DatabaseTableDialogMock {...props} presentation="canvas" />,
 }));
 
 mock.module('@/components/ui/sidebar', () => ({
@@ -521,9 +526,9 @@ describe('App runtime wiring', () => {
     setHash('#database/db_tasks/ds_tasks');
     renderApp();
 
-    const dialog = screen
-      .getAllByTestId('database-table-dialog')
-      .find((candidate) => candidate.getAttribute('data-presentation') === 'canvas');
+    const dialog = (await screen.findAllByTestId('database-table-dialog')).find(
+      (candidate) => candidate.getAttribute('data-presentation') === 'canvas',
+    );
     if (!dialog) throw new Error('expected route-level database canvas');
     await waitFor(() => {
       expect(dialog.getAttribute('data-open')).toBe('true');

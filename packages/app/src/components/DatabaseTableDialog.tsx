@@ -2716,23 +2716,7 @@ function SourceList({
   );
 }
 
-export function DatabaseTableDialog({
-  open,
-  onOpenChange,
-  onOpenRecord,
-  onOpenContextInspector,
-  onOpenAgentRuns,
-  onCreationCancelled,
-  initialTarget,
-  initialAction,
-  initialRecordAction,
-  initialTablePaste,
-  initialDatabaseSurface,
-  initialViewAction,
-  initialPropertyId,
-  initialSelectedRecordIds,
-  presentation = 'dialog',
-}: {
+export type DatabaseTableDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onOpenRecord?: (path: string) => void;
@@ -2751,7 +2735,25 @@ export function DatabaseTableDialog({
   initialPropertyId?: string;
   initialSelectedRecordIds?: readonly string[];
   presentation?: 'dialog' | 'page' | 'canvas';
-}) {
+};
+
+function DatabaseTableSurface({
+  open,
+  onOpenChange,
+  onOpenRecord,
+  onOpenContextInspector,
+  onOpenAgentRuns,
+  onCreationCancelled,
+  initialTarget,
+  initialAction,
+  initialRecordAction,
+  initialTablePaste,
+  initialDatabaseSurface,
+  initialViewAction,
+  initialPropertyId,
+  initialSelectedRecordIds,
+  presentation = 'dialog',
+}: DatabaseTableDialogProps) {
   'use no memo';
   const { t } = useLingui();
   const isPagePresentation = presentation !== 'dialog';
@@ -7182,4 +7184,20 @@ export function DatabaseTableDialog({
       ) : null}
     </Dialog>
   );
+}
+
+/**
+ * Canonical database route surface.
+ *
+ * Keeping this entry point separate from the management dialog makes the
+ * canvas contract explicit: the route always uses the non-portal workspace
+ * presentation, while `DatabaseTableDialog` remains the compatibility entry
+ * point for the management and reviewed modal surfaces.
+ */
+export function DatabaseTableDialog(props: DatabaseTableDialogProps) {
+  return <DatabaseTableSurface {...props} />;
+}
+
+export function DatabaseWorkspacePage(props: Omit<DatabaseTableDialogProps, 'presentation'>) {
+  return <DatabaseTableSurface {...props} presentation="canvas" />;
 }

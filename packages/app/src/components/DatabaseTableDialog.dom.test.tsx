@@ -10,7 +10,7 @@ import { databaseTableLayoutStorageKey } from '@/lib/database-table-layout';
 import { databaseLastOpenedViewStorageKey } from '@/lib/database-view-state';
 import { emitBranchChanged, emitDatabaseChanged } from '@/lib/documents-events';
 import { setServerInstanceId } from '@/lib/server-instance-store';
-import { DatabaseTable, DatabaseTableDialog } from './DatabaseTableDialog';
+import { DatabaseTable, DatabaseTableDialog, DatabaseWorkspacePage } from './DatabaseTableDialog';
 
 const originalFetch = globalThis.fetch;
 const originalClipboard = Object.getOwnPropertyDescriptor(globalThis.navigator, 'clipboard');
@@ -3086,9 +3086,8 @@ describe('DatabaseTableDialog', () => {
 
     render(
       <section data-testid="database-canvas-host">
-        <DatabaseTableDialog
+        <DatabaseWorkspacePage
           open
-          presentation="canvas"
           initialTarget={{ databaseId: database.id, sourceId: source.id }}
           onOpenChange={() => {}}
         />
