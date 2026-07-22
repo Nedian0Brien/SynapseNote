@@ -5,11 +5,28 @@ import {
   type ProjectedDatabaseRecord,
 } from '@nedian0brien/synapsenote-core';
 import type { DatabaseDesiredStateDraftInput } from '@nedian0brien/synapsenote-server';
-import { AlertCircle, Archive, ExternalLink, Loader2, Plus, RefreshCw, Search } from 'lucide-react';
+import {
+  AlertCircle,
+  Archive,
+  ExternalLink,
+  Loader2,
+  MoreHorizontal,
+  Plus,
+  RefreshCw,
+  Search,
+  Trash2,
+} from 'lucide-react';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { DatabaseRecordPeek } from '@/components/DatabaseRecordPeek';
 import type { DatabaseInitialRecordAction } from '@/components/DatabaseTableDialog';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import {
   type DatabaseCatalogCandidate,
@@ -545,6 +562,34 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
     setReplacementPickerOpen(false);
   };
 
+  const setInlineMode = (nextMode: 'inline' | 'full-page') => {
+    const editor = host?.editor;
+    const pos = host?.getPos();
+    if (!editor || typeof pos !== 'number') return;
+    const node = editor.state.doc.nodeAt(pos);
+    if (!node || node.type.name !== 'jsxComponent') return;
+    editor.view.dispatch(
+      editor.state.tr.setNodeMarkup(pos, undefined, {
+        ...node.attrs,
+        props: {
+          ...((node.attrs.props as Record<string, unknown> | undefined) ?? {}),
+          mode: nextMode,
+        },
+      }),
+    );
+    editor.view.focus();
+  };
+
+  const removeLinkedView = () => {
+    const editor = host?.editor;
+    const pos = host?.getPos();
+    if (!editor || typeof pos !== 'number') return;
+    const node = editor.state.doc.nodeAt(pos);
+    if (!node || node.type.name !== 'jsxComponent') return;
+    editor.view.dispatch(editor.state.tr.delete(pos, pos + node.nodeSize));
+    editor.view.focus();
+  };
+
   useEffect(() => {
     const parsed = DatabaseLinkedViewReferenceSchema.safeParse({
       databaseId,
@@ -729,6 +774,36 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
           >
             <ExternalLink /> <Trans>Open full database</Trans>
           </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Database view actions"
+              >
+                <MoreHorizontal />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {reference.data.mode === 'inline' ? (
+                <DropdownMenuItem onSelect={() => setInlineMode('full-page')}>
+                  <ExternalLink /> <Trans>Convert to full page</Trans>
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem onSelect={() => setInlineMode('inline')}>
+                  <Trans>Convert to inline view</Trans>
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem onSelect={() => setReplacementPickerOpen(true)}>
+                <Search /> <Trans>Choose another view</Trans>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem variant="destructive" onSelect={removeLinkedView}>
+                <Trash2 /> <Trans>Remove linked view</Trans>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 

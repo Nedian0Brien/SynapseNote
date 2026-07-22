@@ -834,6 +834,11 @@ describe('DatabaseView', () => {
     expect(screen.getByLabelText('Archive record rec_first')).toBeTruthy();
     expect(screen.getByLabelText('Move record rec_first')).toBeTruthy();
     expect(screen.getByLabelText('Delete record rec_first')).toBeTruthy();
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Database view actions' }));
+    expect(screen.getByRole('menuitem', { name: 'Convert to full page' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Choose another view' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Remove linked view' })).toBeTruthy();
+    fireEvent.keyDown(document, { key: 'Escape' });
     fireEvent.click(screen.getByLabelText('Open record rec_first'));
     expect(await screen.findByText('Linked canonical body.')).toBeTruthy();
     expect(window.location.hash).toBe(originalHash);
