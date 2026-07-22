@@ -70,14 +70,14 @@ the repository-wide check for final release readiness.
   catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
   approval-bound commits, undo, and restart/backup idempotency. Agent View
   policy/privacy/sandbox review remains Partial by design.
-- Notion UX alignment checklist: **48/128 complete**. The page-first and normal
+- Notion UX alignment checklist: **49/128 complete**. The page-first and normal
   New-page creation slices, the inline/linked insertion contract, and the
   table-first direct-manipulation, named canonical workspace canvas-route,
   shared navigation without a duplicate canvas rail, sidebar/recent/search/
   backlink/relation navigation, normal database page chrome, responsive canvas
   guardrails, inline/full-page state parity, property-add/header affordances,
-  stable conversion, durable History/receipt recovery, and property-header
-  Sort/Filter/Duplicate slices are now evidenced. A
+  stable conversion, durable History/receipt recovery, property-header
+  Sort/Filter/Duplicate, and friendly property-copy slices are now evidenced. A
   2026-07-23 in-app browser capture reached the IPv4 renderer at
   `http://127.0.0.1:5173/`, created a full-page database, created two canonical
   rows, created an inline database from the slash menu, saved an inline row,
@@ -277,9 +277,10 @@ do not reconstruct behavior solely from this summary.
   focused database test renders `DatabaseWorkspacePage` and covers the real
   no-portal/no-overlay workspace, selected-view hash, missing-source back
   action, and permission-denied state.
-- UX-201, UX-202, UX-204, UX-205, UX-206, UX-207, UX-208, UX-209, UX-501, and
-  UX-502 are checked. UX-210 remains open for conversion proof; visual parity,
-  responsive visual proof, and the broader property-family gates remain open.
+- UX-201, UX-202, UX-204, UX-205, UX-206, UX-207, UX-208, UX-209, UX-501,
+  UX-502, and UX-503 are checked. UX-210 remains open for conversion proof;
+  visual parity, responsive visual proof, and the broader property-family
+  gates remain open.
 
 ### 2026-07-23 normal database page chrome
 
@@ -358,15 +359,19 @@ do not reconstruct behavior solely from this summary.
   move/delete/duplicate operations. Sort and Filter open the active view's
   existing settings with the selected property targeted. Duplicate preserves
   typed configuration and compiles a fresh stable key.
+- The same surface uses friendly labels and examples instead of exposing
+  schema enum names first: e.g. `Multi-select` / “Several choices from a list”
+  in add and conversion controls, with stable enum names retained for agents
+  and diagnostics.
 - Focused evidence: `DatabaseTableDialog.dom.test.tsx` (2 tests / 18
-  expectations), `DatabasePropertiesDialog.dom.test.tsx` (7 / 23),
+  expectations), `DatabasePropertiesDialog.dom.test.tsx` (8 / 26),
   `DatabaseAdvancedFilterDialog.dom.test.tsx` (2 / 7),
-  `DatabaseSavedViewSettingsDialog.dom.test.tsx` (13 / 16), and
+  `DatabaseSavedViewSettingsDialog.dom.test.tsx` (13 / 16),
+  `DatabasePropertyConversionDialog.dom.test.tsx` (2 / 9), and
   `database-cell-mutation.test.ts` (1 / 3).
-- UX-501 and UX-502 are checked at the functional implementation/evidence
-  layer. Sort and Filter now target the selected property in the active view's
-  settings; Duplicate preserves typed configuration while minting a fresh
-  stable key. Visual and broader property-family gates remain open.
+- UX-501, UX-502, and UX-503 are checked at the functional
+  implementation/evidence layer. Visual and broader property-family gates
+  remain open.
 
 ### 2026-07-23 sidebar and recent database navigation
 
@@ -376,8 +381,8 @@ do not reconstruct behavior solely from this summary.
 - The command palette's existing omnibar recents now have UI evidence for a
   catalog-backed database under `Recently opened`, reopening the same stable
   route. Focused evidence: sidebar 3 tests / 7 expectations and recent UI 1 / 5.
-- UX-203, UX-204, UX-206, UX-209, UX-309, UX-501, and UX-502 are checked. The
-  768px visual responsive check remains open.
+- UX-203, UX-204, UX-206, UX-209, UX-309, UX-501, UX-502, and UX-503 are
+  checked. The 768px visual responsive check remains open.
 
 ### 2026-07-23 stable inline/full-page conversion
 

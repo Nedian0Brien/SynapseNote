@@ -390,6 +390,12 @@ stable identity. The Title property remains frozen from invalid
 move/delete/duplicate operations, and the dialog's add/rename/reorder/delete
 flows commit only through the existing exact mutation boundary.
 
+The same surface now uses human-facing property type labels and examples
+(`Multi-select`, “Several choices from a list”, and so on) in the add-property
+picker, property badges, table headers, and conversion dialog. Internal enum
+names remain available to agents and diagnostics without being the first thing
+human users must decode.
+
 Focused evidence:
 
 - `DatabaseTableDialog.dom.test.tsx`: host-gated `Add property` and contextual
@@ -402,10 +408,13 @@ Focused evidence:
 - `database-cell-mutation.test.ts`: duplicate-property configuration/key
   compiler and Title guard (1 test / 3 expectations).
 - `DatabasePropertiesDialog.dom.test.tsx`: property listing, add, delete,
-  inline rename, requested-property focus, reorder, mutation lock, and error
-  behavior (7 tests / 23 expectations).
+  inline rename, requested-property focus, reorder, friendly type labels,
+  mutation lock, and error behavior (8 tests / 26 expectations).
+- `DatabasePropertyConversionDialog.dom.test.tsx`: stable conversion identity,
+  lossy approval, and friendly target copy (2 tests / 9 expectations).
 
-This closes UX-501 and UX-502 at the functional implementation/evidence layer.
+This closes UX-501, UX-502, and UX-503 at the functional
+implementation/evidence layer.
 Visual parity and the broader property-family acceptance gates remain open.
 
 ### Sidebar and recent database navigation evidence (2026-07-23)
@@ -464,7 +473,7 @@ crossed the document-native UX bar:
 | Measure | Current result | Interpretation |
 | --- | --- | --- |
 | Engine implementation checklist | 310/335 numbered items complete | Core/database and agent contracts are substantially implemented. |
-| Notion UX checklist | 48/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, inline/full-page state parity, table-first direct manipulation, in-context property-add/header affordances including property-specific sort/filter/duplicate actions, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, 768px browser, and cross-host journey gates remain open. |
+| Notion UX checklist | 49/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, inline/full-page state parity, table-first direct manipulation, friendly property names/examples, in-context property-add/header affordances including property-specific sort/filter/duplicate actions, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, 768px browser, and cross-host journey gates remain open. |
 | First-use database entry | `New database` in sidebar, empty states, normal new-page dialog, command palette, plus slash-menu `New database`/`Linked view of database`; normal picker exposes Page/Database chooser and the resulting route lands in an editable table. `Open databases` enters the no-overlay page workspace. | Discovery, sidebar/recent navigation, and the web first-use path are evidenced; additional entry points and Electron proof remain open. |
 | Blank creation | Optional title, `Untitled database` fallback, direct-safe exact-plan commit, immediate source/view selection, title/new-row focus | The blank human path is continuous in DOM coverage; template/import/agent paths intentionally retain review and visual browser proof remains open. |
 | Full-page navigation | Stable `#database/<database>/<source>/<view?>` route, no-overlay canvas presentation, sidebar source section, command-palette recents/search, backlink and relation links, normal page chrome, and local overflow guardrails | Route, page surface, and navigation identity are evidenced; responsive visual/cross-host proof remains incomplete. |
@@ -745,7 +754,10 @@ capability alone is insufficient.
       with the selected property targeted, and Duplicate compiles a typed
       configuration-preserving add-property plan with a fresh stable key; the
       Title property remains disabled for invalid duplication.
-- [ ] **UX-503** Use friendly property names/examples before schema terminology.
+- [x] **UX-503** Use friendly property names/examples before schema terminology.
+      Add, property badges, table headers, and conversion targets show labels
+      such as `Multi-select` and a short example; stable enum names remain an
+      advanced/agent-facing detail.
 - [ ] **UX-504** Keep Title uniquely required and explain conversion blockers.
 - [ ] **UX-505** Use type-specific cell editors for every implemented family.
 - [ ] **UX-506** Classify schema changes separately from cell-value changes.
