@@ -23,6 +23,7 @@ export function DatabasePageAppearanceDialog({
   onOpenChange,
   icon,
   cover,
+  mode = 'database',
   busy = false,
   onSave,
 }: {
@@ -30,6 +31,7 @@ export function DatabasePageAppearanceDialog({
   onOpenChange: (open: boolean) => void;
   icon?: string;
   cover?: string;
+  mode?: 'database' | 'record';
   busy?: boolean;
   onSave: (appearance: DatabasePageAppearance) => void;
 }) {
@@ -62,28 +64,37 @@ export function DatabasePageAppearanceDialog({
 
   const previewIcon = resolvePageIcon(iconDraft);
   const previewCover = resolvePageCover(coverDraft);
+  const isRecord = mode === 'record';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>
-            <Trans>Customize database page</Trans>
+            {isRecord ? (
+              <Trans>Customize record page</Trans>
+            ) : (
+              <Trans>Customize database page</Trans>
+            )}
           </DialogTitle>
           <DialogDescription>
-            <Trans>Choose the page icon and cover shown above the database table.</Trans>
+            {isRecord ? (
+              <Trans>Choose the page icon and cover shown above this record.</Trans>
+            ) : (
+              <Trans>Choose the page icon and cover shown above the database table.</Trans>
+            )}
           </DialogDescription>
         </DialogHeader>
         <DialogBody className="space-y-4">
-          <label htmlFor="database-page-icon-input" className="grid gap-1.5 text-sm">
+          <label htmlFor={`${mode}-page-icon-input`} className="grid gap-1.5 text-sm">
             <span className="font-medium">
-              <Trans>Page icon</Trans>
+              {isRecord ? <Trans>Record page icon</Trans> : <Trans>Page icon</Trans>}
             </span>
             <Input
-              id="database-page-icon-input"
+              id={`${mode}-page-icon-input`}
               value={iconDraft}
               placeholder={t`🗂️ or assets/database-icon.png`}
-              aria-label={t`Database page icon`}
+              aria-label={isRecord ? t`Record page icon` : t`Database page icon`}
               onChange={(event) => setIconDraft(event.currentTarget.value)}
             />
             <span className="text-muted-foreground text-xs">
@@ -92,15 +103,15 @@ export function DatabasePageAppearanceDialog({
               </Trans>
             </span>
           </label>
-          <label htmlFor="database-page-cover-input" className="grid gap-1.5 text-sm">
+          <label htmlFor={`${mode}-page-cover-input`} className="grid gap-1.5 text-sm">
             <span className="font-medium">
-              <Trans>Cover image</Trans>
+              {isRecord ? <Trans>Record cover image</Trans> : <Trans>Cover image</Trans>}
             </span>
             <Input
-              id="database-page-cover-input"
+              id={`${mode}-page-cover-input`}
               value={coverDraft}
               placeholder={t`https://example.com/cover.png or assets/cover.png`}
-              aria-label={t`Database page cover`}
+              aria-label={isRecord ? t`Record page cover` : t`Database page cover`}
               onChange={(event) => setCoverDraft(event.currentTarget.value)}
             />
             <span className="text-muted-foreground text-xs">
@@ -130,7 +141,9 @@ export function DatabasePageAppearanceDialog({
                     referrerPolicy="no-referrer"
                   />
                 ) : null}
-                <span className="truncate">{coverDraft || t`Database page`}</span>
+                <span className="truncate">
+                  {coverDraft || (isRecord ? t`Record page` : t`Database page`)}
+                </span>
               </div>
               {previewCover.kind !== 'unsupported' ? (
                 <img

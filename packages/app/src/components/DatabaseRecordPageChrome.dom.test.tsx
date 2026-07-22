@@ -224,7 +224,27 @@ describe('DatabaseRecordPageChrome', () => {
     expect(view.queryByText('Hidden value')).toBeNull();
     expect(view.container.querySelector('[data-full-width-content="true"]')).not.toBeNull();
     expect(view.queryByText('_sn')).toBeNull();
+    expect(view.getByRole('button', { name: 'Comments' })).toBeDefined();
+    expect(view.getByRole('button', { name: 'Record history' })).toBeDefined();
+    expect(view.getByRole('button', { name: 'Permissions' })).toBeDefined();
+    expect(view.getByRole('button', { name: 'Customize appearance' })).toBeDefined();
+    expect(view.getByRole('button', { name: 'Customize this record' })).toBeDefined();
+    expect(view.getByRole('button', { name: 'Customize layout' })).toBeDefined();
 
+    fireEvent.click(view.getByRole('button', { name: 'Customize appearance' }));
+    expect(view.getByRole('heading', { name: 'Customize record page' })).toBeDefined();
+    fireEvent.change(view.getByRole('textbox', { name: 'Record page icon' }), {
+      target: { value: '🧭' },
+    });
+    fireEvent.change(view.getByRole('textbox', { name: 'Record page cover' }), {
+      target: { value: 'assets/record-cover.png' },
+    });
+    fireEvent.click(view.getByRole('button', { name: 'Save appearance' }));
+    await waitFor(() => {
+      const nextSource = recordProvider.document.getText('source').toString();
+      expect(nextSource).toContain('icon: 🧭');
+      expect(nextSource).toContain('cover: assets/record-cover.png');
+    });
     const title = view.getByTestId('page-header-title');
     act(() => title.focus());
     title.textContent = 'Updated title';

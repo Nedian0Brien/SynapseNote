@@ -15,7 +15,12 @@ import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import { DatabaseCommentsDialog } from '@/components/DatabaseCommentsDialog';
 import { DatabaseConflictResolutionNotice } from '@/components/DatabaseConflictResolutionNotice';
+import {
+  type DatabasePageAppearance,
+  DatabasePageAppearanceDialog,
+} from '@/components/DatabasePageAppearanceDialog';
 import { DatabasePageLayoutDialog } from '@/components/DatabasePageLayoutDialog';
+import { DatabasePermissionsDialog } from '@/components/DatabasePermissionsDialog';
 import { DatabasePresenceBadges } from '@/components/DatabasePresenceBadges';
 import { DatabaseRecordHistoryDialog } from '@/components/DatabaseRecordHistoryDialog';
 import { DatabaseRecordLayoutOverrideDialog } from '@/components/DatabaseRecordLayoutOverrideDialog';
@@ -121,6 +126,9 @@ export function DatabaseRecordPageChrome({
   >(null);
   const [layoutDialogOpen, setLayoutDialogOpen] = useState(false);
   const [recordLayoutDialogOpen, setRecordLayoutDialogOpen] = useState(false);
+  const [appearanceDialogOpen, setAppearanceDialogOpen] = useState(false);
+  const [appearanceSaving, setAppearanceSaving] = useState(false);
+  const [permissionsDialogOpen, setPermissionsDialogOpen] = useState(false);
   const [commentsDialogOpen, setCommentsDialogOpen] = useState(false);
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   const [relationsDialogOpen, setRelationsDialogOpen] = useState(false);
@@ -246,6 +254,8 @@ export function DatabaseRecordPageChrome({
     titleProperty && typeof snapshot.map[titleProperty.key] === 'string'
       ? (snapshot.map[titleProperty.key] as string)
       : undefined;
+  const recordIcon = typeof snapshot.map.icon === 'string' ? snapshot.map.icon : undefined;
+  const recordCover = typeof snapshot.map.cover === 'string' ? snapshot.map.cover : undefined;
   const reservedKeys = ['_sn', ...(titleProperty ? [titleProperty.key] : [])];
   const pageLayout =
     source && (source.pageLayout || recordPageLayoutOverride)
@@ -342,6 +352,26 @@ export function DatabaseRecordPageChrome({
 
   async function openRelations(): Promise<void> {
     if (await ensureCurrentRecord()) setRelationsDialogOpen(true);
+  }
+
+  function commitRecordAppearance({ icon, cover }: DatabasePageAppearance): void {
+    if (appearanceSaving) return;
+    setAppearanceSaving(true);
+    setMutationError(null);
+    const binding = bindFrontmatterDoc(provider);
+    const result = binding.patch({ icon, cover });
+    binding.dispose();
+    if (!result.ok) {
+      setMutationError(
+        result.error.code === 'SCHEMA_INVALID'
+          ? result.error.issues.map((issue) => issue.message).join('; ')
+          : result.error.detail,
+      );
+      setAppearanceSaving(false);
+      return;
+    }
+    setAppearanceDialogOpen(false);
+    setAppearanceSaving(false);
   }
 
   async function commitPageLayout(nextLayout: DatabasePageLayout): Promise<void> {
@@ -586,6 +616,25 @@ export function DatabaseRecordPageChrome({
             >
               <History /> <Trans>Record history</Trans>
             </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => setPermissionsDialogOpen(true)}
+              data-database-record-permissions
+            >
+              <Trans>Permissions</Trans>
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              disabled={appearanceSaving || mutationPropertyId !== null}
+              onClick={() => setAppearanceDialogOpen(true)}
+              data-database-record-appearance
+            >
+              <Trans>Customize appearance</Trans>
+            </Button>
             {source.properties.some((property) => property.type === 'relation') ? (
               <Button type="button" size="sm" variant="ghost" onClick={() => void openRelations()}>
                 <Link2 /> <Trans>Relations</Trans>
@@ -731,6 +780,28 @@ export function DatabaseRecordPageChrome({
           onOpenChange={setHistoryDialogOpen}
           docName={docName}
           source={source}
+        />
+      ) : null}
+      {appearanceDialogOpen ? (
+        <DatabasePageAppearanceDialog
+          open
+          mode="record"
+          onOpenChange={setAppearanceDialogOpen}
+          icon={recordIcon}
+          cover={recordCover}
+          busy={appearanceSaving}
+          onSave={commitRecordAppearance}
+        />
+      ) : null}
+      {source && currentBinding && permissionsDialogOpen ? (
+        <DatabasePermissionsDialog
+          open
+          onOpenChange={setPermissionsDialogOpen}
+          databaseId={currentBinding.database.id}
+          databaseName={currentBinding.database.name}
+          database={currentBinding.database}
+          selectedViewId={recordNavigation?.viewId}
+          selectedRecordId={metadata.record_id}
         />
       ) : null}
     </DatabaseRecordPageSurface>
