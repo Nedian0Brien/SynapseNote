@@ -111,6 +111,8 @@ import { DatabaseTimeline, type DatabaseTimelineChange } from '@/components/Data
 import { DatabaseUniqueIdPropertyDialog } from '@/components/DatabaseUniqueIdPropertyDialog';
 import { DatabaseViewManagerDialog } from '@/components/DatabaseViewManagerDialog';
 import { DatabaseViewQuerySummary } from '@/components/DatabaseViewQuerySummary';
+import { DatabaseViewRenameDialog } from '@/components/DatabaseViewRenameDialog';
+import { type DatabaseViewTabAction, DatabaseViewTabMenu } from '@/components/DatabaseViewTabMenu';
 import { resolvePageCover, resolvePageIcon } from '@/components/page-header-utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -281,6 +283,7 @@ import {
   databaseBrowserLoadedRecordLimit,
   databaseBrowserNextPageLimit,
 } from '@/lib/database-view-bounds';
+import { duplicateDatabaseView } from '@/lib/database-view-lifecycle';
 import { loadDatabaseLastOpenedView, saveDatabaseLastOpenedView } from '@/lib/database-view-state';
 import { subscribeToDatabaseChanged } from '@/lib/documents-events';
 import { dispatchExternalLinkClick, openExternalUrl } from '@/lib/external-link';
@@ -2975,6 +2978,7 @@ function DatabaseTableSurface({
   const [viewSettingsOpen, setViewSettingsOpen] = useState(false);
   const [propertySortTargetId, setPropertySortTargetId] = useState<string | null>(null);
   const [viewManagerOpen, setViewManagerOpen] = useState(false);
+  const [viewRenameTarget, setViewRenameTarget] = useState<DatabaseView | null>(null);
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const [automationsOpen, setAutomationsOpen] = useState(false);
   const [permissionsOpen, setPermissionsOpen] = useState(false);
@@ -4803,7 +4807,6 @@ function DatabaseTableSurface({
       ]
     : canonicalSourceViews;
   const selectedView = sourceViews.find((view) => view.id === selectedViewId);
-  const selectedViewIndex = selectedView ? sourceViews.indexOf(selectedView) : -1;
   const selectView = (viewId: string) => {
     const nextViewId = viewId === '__all__' ? '' : viewId;
     setSelectedViewId(nextViewId);
@@ -4824,6 +4827,110 @@ function DatabaseTableSurface({
     setPropertyFilterTargetId(null);
     setPropertySortTargetId(null);
     setTableCalculations({});
+  };
+  const commitSavedViewLifecycleChange = (
+    change: Parameters<typeof createDatabaseViewLifecycleChangeDesiredState>[0]['change'],
+    idempotencyPrefix: string,
+  ): boolean => {
+    if (!description?.source || mutationStatus !== 'idle') return false;
+    try {
+      runMutation(
+        createDatabaseViewLifecycleChangeDesiredState({
+          database: description.database,
+          source: description.source,
+          change,
+        }),
+        `ui-view-${idempotencyPrefix}`,
+        'Saved view change failed',
+        change.kind === 'delete'
+          ? undefined
+          : { policy: { operation: 'view', actor: 'human', principalId: 'user:local' } },
+      );
+      return true;
+    } catch (cause) {
+      setMutationError(classifyDatabaseUiProblem(cause, 'Unable to prepare saved view change'));
+      return false;
+    }
+  };
+  const commitDefaultViewChange = (viewId?: string): boolean => {
+    if (!description?.source || mutationStatus !== 'idle') return false;
+    try {
+      runMutation(
+        createDatabaseDefaultViewChangeDesiredState({
+          database: description.database,
+          source: description.source,
+          ...(viewId ? { viewId } : {}),
+        }),
+        `ui-default-view${viewId ? '' : '-clear'}`,
+        'Default view change failed',
+        { policy: { operation: 'view', actor: 'human', principalId: 'user:local' } },
+      );
+      return true;
+    } catch (cause) {
+      setMutationError(classifyDatabaseUiProblem(cause, 'Unable to prepare default view change'));
+      return false;
+    }
+  };
+  const handleSavedViewTabAction = (view: DatabaseView, action: DatabaseViewTabAction) => {
+    switch (action) {
+      case 'filters':
+        setFilterDialogOpen(true);
+        return;
+      case 'settings':
+        setViewSettingsOpen(true);
+        return;
+      case 'rename':
+        setViewRenameTarget(view);
+        return;
+      case 'duplicate':
+        commitSavedViewLifecycleChange(
+          {
+            kind: 'duplicate',
+            view: duplicateDatabaseView({
+              view,
+              existingViews: sourceViews,
+              uuid: crypto.randomUUID(),
+            }),
+          },
+          'duplicate',
+        );
+        return;
+      case 'favorite':
+        commitSavedViewLifecycleChange(
+          { kind: 'favorite', viewId: view.id, favorite: view.favorite !== true },
+          'favorite',
+        );
+        return;
+      case 'move-left':
+        reorderSavedView(view.id, -1);
+        return;
+      case 'move-right':
+        reorderSavedView(view.id, 1);
+        return;
+      case 'make-default':
+        commitDefaultViewChange(view.id);
+        return;
+      case 'clear-default':
+        commitDefaultViewChange();
+        return;
+      case 'delete':
+        commitSavedViewLifecycleChange({ kind: 'delete', viewId: view.id }, 'delete');
+        return;
+      case 'manage':
+        setViewManagerOpen(true);
+        return;
+    }
+  };
+  const reviewViewRename = (name: string) => {
+    if (!viewRenameTarget) return;
+    if (
+      commitSavedViewLifecycleChange(
+        { kind: 'rename', viewId: viewRenameTarget.id, name },
+        'rename',
+      )
+    ) {
+      setViewRenameTarget(null);
+    }
   };
   const reorderSavedView = (viewId: string, direction: -1 | 1) => {
     if (!description?.source || mutationStatus !== 'idle') return;
@@ -5506,7 +5613,7 @@ function DatabaseTableSurface({
                       >
                         <Trans>All records</Trans>
                       </Button>
-                      {sourceViews.map((view) => (
+                      {sourceViews.map((view, index) => (
                         <fieldset
                           key={view.id}
                           aria-label={`${view.name} view tab controls`}
@@ -5565,59 +5672,14 @@ function DatabaseTableSurface({
                             {view.name}
                           </Button>
                           {selectedViewId === view.id ? (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  type="button"
-                                  variant="secondary"
-                                  size="icon-xs"
-                                  className="-ml-1 rounded-l-none"
-                                  aria-label={`View options for ${view.name}`}
-                                  data-active-view-menu
-                                >
-                                  <MoreHorizontalIcon aria-hidden="true" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="start" className="w-48">
-                                <DropdownMenuLabel>{view.name}</DropdownMenuLabel>
-                                <DropdownMenuItem
-                                  disabled={mutationStatus !== 'idle'}
-                                  onSelect={() => setFilterDialogOpen(true)}
-                                >
-                                  <Trans>Filters</Trans>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  disabled={mutationStatus !== 'idle'}
-                                  onSelect={() => setViewSettingsOpen(true)}
-                                >
-                                  <Trans>View settings</Trans>
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  disabled={mutationStatus !== 'idle' || selectedViewIndex <= 0}
-                                  onSelect={() => reorderSavedView(view.id, -1)}
-                                >
-                                  <Trans>Move left</Trans>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  disabled={
-                                    mutationStatus !== 'idle' ||
-                                    selectedViewIndex < 0 ||
-                                    selectedViewIndex >= sourceViews.length - 1
-                                  }
-                                  onSelect={() => reorderSavedView(view.id, 1)}
-                                >
-                                  <Trans>Move right</Trans>
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  disabled={mutationStatus !== 'idle'}
-                                  onSelect={() => setViewManagerOpen(true)}
-                                >
-                                  <Trans>Manage views</Trans>
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                            <DatabaseViewTabMenu
+                              source={description.source as DatabaseSource}
+                              view={view}
+                              index={index}
+                              count={sourceViews.length}
+                              busy={mutationStatus !== 'idle'}
+                              onAction={(action) => handleSavedViewTabAction(view, action)}
+                            />
                           ) : null}
                         </fieldset>
                       ))}
@@ -7455,6 +7517,17 @@ function DatabaseTableSurface({
               setPropertySortTargetId(null);
             }
           }}
+        />
+      ) : null}
+      {viewRenameTarget ? (
+        <DatabaseViewRenameDialog
+          open
+          onOpenChange={(nextOpen) => {
+            if (!nextOpen) setViewRenameTarget(null);
+          }}
+          view={viewRenameTarget}
+          busy={mutationStatus !== 'idle'}
+          onReview={reviewViewRename}
         />
       ) : null}
       {description?.source && viewManagerOpen ? (

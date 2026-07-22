@@ -1102,6 +1102,9 @@ describe('DatabaseTableDialog', () => {
     await user.click(screen.getByRole('button', { name: 'View options for Active tasks' }));
     expect(screen.getByRole('menuitem', { name: 'Filters' })).not.toBeNull();
     expect(screen.getByRole('menuitem', { name: 'View settings' })).not.toBeNull();
+    expect(screen.getByRole('menuitem', { name: 'Rename' })).not.toBeNull();
+    expect(screen.getByRole('menuitem', { name: 'Duplicate' })).not.toBeNull();
+    expect(screen.getByRole('menuitem', { name: 'Favorite' })).not.toBeNull();
     expect(screen.getByRole('menuitem', { name: 'Move left' })).not.toBeNull();
     expect(screen.getByRole('menuitem', { name: 'Move right' })).not.toBeNull();
     expect(
@@ -1109,6 +1112,11 @@ describe('DatabaseTableDialog', () => {
     ).not.toBeNull();
     expect(
       screen.getByRole('menuitem', { name: 'Move right' }).getAttribute('data-disabled'),
+    ).not.toBeNull();
+    expect(screen.getByRole('menuitem', { name: 'Clear default' })).not.toBeNull();
+    expect(screen.getByRole('menuitem', { name: 'Cannot delete default' })).not.toBeNull();
+    expect(
+      screen.getByRole('menuitem', { name: 'Cannot delete default' }).getAttribute('data-disabled'),
     ).not.toBeNull();
     expect(screen.getByRole('menuitem', { name: 'Manage views' })).not.toBeNull();
     await user.click(screen.getByRole('menuitem', { name: 'Filters' }));

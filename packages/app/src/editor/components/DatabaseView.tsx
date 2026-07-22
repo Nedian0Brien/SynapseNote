@@ -33,6 +33,7 @@ import {
 import { DatabaseRecordPeek } from '@/components/DatabaseRecordPeek';
 import type { DatabaseInitialRecordAction } from '@/components/DatabaseTableDialog';
 import { DatabaseViewQuerySummary } from '@/components/DatabaseViewQuerySummary';
+import { type DatabaseViewTabAction, DatabaseViewTabMenu } from '@/components/DatabaseViewTabMenu';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -766,6 +767,8 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
     state.status === 'ready'
       ? state.description.database.views.find((view) => view.id === reference.data.viewId)
       : undefined;
+  const linkedSourceViews =
+    linkedDatabase?.views.filter((view) => view.sourceId === reference.data.sourceId) ?? [];
   const renderedResult =
     state.status === 'ready' && state.result
       ? applyInlineOptimisticValues(state.result, inlineOptimisticCellValues)
@@ -786,6 +789,27 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
     }
     const behavior = databaseViewOpenBehavior(linkedView);
     setRecordPeek({ record, mode: behavior === 'full_page' ? 'side_peek' : behavior });
+  };
+  const handleInlineViewTabAction = (
+    view: NonNullable<typeof linkedView>,
+    action: DatabaseViewTabAction,
+  ) => {
+    if (action === 'filters') {
+      openInlineDatabaseSurface('filters');
+      return;
+    }
+    if (action === 'settings') {
+      openInlineDatabaseSurface('view-settings');
+      return;
+    }
+    if (action === 'duplicate') {
+      openInlineDatabaseSurface('view-manager', undefined, {
+        kind: 'duplicate',
+        viewId: view.id,
+      });
+      return;
+    }
+    openInlineDatabaseSurface('view-manager');
   };
 
   const runInlineMutation = (
@@ -1108,63 +1132,45 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
               settings.
             </p>
           ) : null}
-          {state.status === 'ready' && linkedDatabase ? (
+          {state.status === 'ready' && linkedDatabase && linkedSource ? (
             <nav
               className="mt-2 flex max-w-full gap-1 overflow-x-auto"
               aria-label="Linked database views"
               data-linked-database-view-tabs
             >
-              {linkedDatabase.views
-                .filter((candidate) => candidate.sourceId === reference.data.sourceId)
-                .map((candidate) => (
-                  <Fragment key={candidate.id}>
-                    <Button
-                      type="button"
-                      size="xs"
-                      variant={candidate.id === reference.data.viewId ? 'secondary' : 'ghost'}
-                      aria-current={candidate.id === reference.data.viewId ? 'page' : undefined}
-                      onClick={() =>
-                        applyReference({
-                          databaseId: reference.data.databaseId,
-                          sourceId: reference.data.sourceId,
-                          viewId: candidate.id,
-                        })
+              {linkedSourceViews.map((candidate, index) => (
+                <Fragment key={candidate.id}>
+                  <Button
+                    type="button"
+                    size="xs"
+                    variant={candidate.id === reference.data.viewId ? 'secondary' : 'ghost'}
+                    aria-current={candidate.id === reference.data.viewId ? 'page' : undefined}
+                    onClick={() =>
+                      applyReference({
+                        databaseId: reference.data.databaseId,
+                        sourceId: reference.data.sourceId,
+                        viewId: candidate.id,
+                      })
+                    }
+                  >
+                    {candidate.name}
+                  </Button>
+                  {candidate.id === reference.data.viewId ? (
+                    <DatabaseViewTabMenu
+                      source={linkedSource}
+                      view={candidate}
+                      index={index}
+                      count={linkedSourceViews.length}
+                      busy={
+                        inlineMutationStatus !== 'idle' ||
+                        inlineUndoStatus !== 'idle' ||
+                        inlineRedoStatus !== 'idle'
                       }
-                    >
-                      {candidate.name}
-                    </Button>
-                    {candidate.id === reference.data.viewId ? (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            type="button"
-                            size="icon-xs"
-                            variant="secondary"
-                            className="-ml-1 rounded-l-none"
-                            aria-label={`View options for ${candidate.name}`}
-                          >
-                            <MoreHorizontal aria-hidden="true" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start">
-                          <DropdownMenuItem onSelect={() => openInlineDatabaseSurface('filters')}>
-                            <Filter /> <Trans>Filters</Trans>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onSelect={() => openInlineDatabaseSurface('view-settings')}
-                          >
-                            <Settings2 /> <Trans>View settings</Trans>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onSelect={() => openInlineDatabaseSurface('view-manager')}
-                          >
-                            <Settings2 /> <Trans>Manage views</Trans>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    ) : null}
-                  </Fragment>
-                ))}
+                      onAction={(action) => handleInlineViewTabAction(candidate, action)}
+                    />
+                  ) : null}
+                </Fragment>
+              ))}
               <Button
                 type="button"
                 size="icon-sm"
