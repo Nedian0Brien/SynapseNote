@@ -35,6 +35,7 @@
 - Latest database responsive changeset: `../../.changeset/database-page-responsive.md`
 - Latest property deletion safety changeset: `../../.changeset/database-property-deletion-preview.md`
 - Latest view-scoped property layout changeset: `../../.changeset/database-view-scoped-property-layout.md`
+- Latest view-action convergence changeset: `../../.changeset/database-view-action-convergence.md`
 
 ## Objective and completion rule
 
@@ -72,7 +73,7 @@ the repository-wide check for final release readiness.
   catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
   approval-bound commits, undo, and restart/backup idempotency. Agent View
   policy/privacy/sandbox review remains Partial by design.
-- Notion UX alignment checklist: **55/128 complete**. The page-first and normal
+- Notion UX alignment checklist: **56/128 complete**. The page-first and normal
   New-page creation slices, the inline/linked insertion contract, and the
   table-first direct-manipulation, named canonical workspace canvas-route,
   shared navigation without a duplicate canvas rail, sidebar/recent/search/
@@ -82,7 +83,7 @@ the repository-wide check for final release readiness.
   Sort/Filter/Duplicate, friendly property-copy, Title-safety,
   type-specific-editor, schema-vs-data mutation-scope, and destructive
   property-deletion preview, adjacent Formula/Rollup error-indicator, and
-  view-scoped property-layout slices are now
+  view-scoped property-layout and converged header/settings-action slices are now
   evidenced. A
   2026-07-23 in-app browser capture reached the IPv4 renderer at
   `http://127.0.0.1:5173/`, created a full-page database, created two canonical
@@ -401,7 +402,12 @@ do not reconstruct behavior solely from this summary.
   through the active view projection and reviewed view mutation policy. They no
   longer persist into the source schema or the personal per-source table
   layout; `DatabaseTableDialog.dom.test.tsx` covers the callback (1 / 2).
-- UX-501 through UX-509 are checked at the functional implementation/evidence
+- Header projection actions and the full View settings surface now share the
+  same `createDatabaseViewConfigurationChangeDesiredState` boundary. The table
+  waits for canonical refresh after a saved-view mutation, so cancelled review
+  cannot leave a false local projection. Focused evidence: the header callback
+  (1 / 2) and saved-view projection/configuration test (1 / 2).
+- UX-501 through UX-510 are checked at the functional implementation/evidence
   layer. Visual and broader property-family gates remain open.
 
 ### 2026-07-23 sidebar and recent database navigation
@@ -413,7 +419,7 @@ do not reconstruct behavior solely from this summary.
   catalog-backed database under `Recently opened`, reopening the same stable
   route. Focused evidence: sidebar 3 tests / 7 expectations and recent UI 1 / 5.
 - UX-203, UX-204, UX-206, UX-209, UX-309, UX-501, UX-502, UX-503, UX-504,
-  UX-505, UX-506, UX-507, UX-508, and UX-509 are checked. The 768px visual responsive check remains
+  UX-505, UX-506, UX-507, UX-508, UX-509, and UX-510 are checked. The 768px visual responsive check remains
   open.
 
 ### 2026-07-23 stable inline/full-page conversion
