@@ -38,6 +38,11 @@ describe('database creation desired state', () => {
       'due',
       'assignee',
     ]);
+    expect(desired.views?.map((view) => view.key)).toEqual(['table', 'board']);
+    expect(desired.views?.[1]).toMatchObject({
+      layout: { type: 'board' },
+      groups: [{ propertyKey: 'status' }],
+    });
     expect(desired.sampleRecords).toHaveLength(2);
     expect(desired.sampleRecords?.[0]?.values).toMatchObject({
       title: 'Plan launch',
@@ -66,6 +71,7 @@ describe('database creation desired state', () => {
         type: 'title',
         required: true,
       });
+      expect(desired.views?.map((view) => view.layout.type)).toEqual(['table', 'board']);
       expect(desired.templates).toEqual([]);
       expect(desired.sampleRecords?.length).toBeGreaterThan(0);
     }

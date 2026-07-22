@@ -75,6 +75,26 @@ describe('DatabaseCreationDialog', () => {
     expect(onCreate.mock.calls[0]?.[1]).toBe('template');
   });
 
+  test('previews template views and property types before commit', () => {
+    const onCreate = mock(() => {});
+    render(<DatabaseCreationDialog open onOpenChange={() => {}} onCreate={onCreate} />);
+
+    fireEvent.click(screen.getByText('Template'));
+    fireEvent.change(screen.getByLabelText('Database name'), {
+      target: { value: 'Launch Tasks' },
+    });
+
+    const preview = screen.getByTestId('database-template-preview');
+    expect(preview.textContent).toContain('Table · table');
+    expect(preview.textContent).toContain('Board · board');
+    expect(preview.textContent).toContain('Status');
+    expect(preview.textContent).toContain('select');
+    expect(screen.getByTestId('database-creation-page-preview').textContent).toContain(
+      'Plan launch',
+    );
+    expect(onCreate).toHaveBeenCalledTimes(0);
+  });
+
   test('keeps agent-assisted creation inside the same start surface', () => {
     const onCreate = mock(() => {});
     render(

@@ -56,6 +56,54 @@ interface CreationProperty {
   options?: Array<{ key: string; name: string }>;
 }
 
+type CreationView = NonNullable<DatabaseDesiredStateDraftInput['views']>[number];
+
+const TEMPLATE_BOARD_GROUPS: Record<DatabaseCreationTemplateKey, string> = {
+  tasks: 'status',
+  projects: 'status',
+  crm: 'stage',
+  feedback: 'status',
+  content_calendar: 'status',
+  issue_tracking: 'status',
+  research_evidence: 'confidence',
+};
+
+function templateViews(
+  template: DatabaseCreationTemplateKey,
+  sourceKey: string,
+  properties: readonly CreationProperty[],
+): CreationView[] {
+  const propertyKeys = properties.map((property) => property.key);
+  const groupPropertyKey = TEMPLATE_BOARD_GROUPS[template];
+  return [
+    {
+      key: 'table',
+      name: 'Table',
+      sourceKey,
+      layout: { type: 'table', configuration: {} },
+      projection: { propertyKeys, body: 'hidden' },
+    },
+    {
+      key: 'board',
+      name: 'Board',
+      sourceKey,
+      layout: {
+        type: 'board',
+        configuration: {
+          cardSize: 'medium',
+          cardPreview: { type: 'none' },
+          fitImage: false,
+          colorColumns: true,
+          groupLimit: 100,
+          cardLimitPerGroup: 100,
+        },
+      },
+      groups: [{ propertyKey: groupPropertyKey }],
+      projection: { propertyKeys, body: 'hidden' },
+    },
+  ];
+}
+
 function stableKey(value: string, fallback: string): string {
   const normalized = value
     .normalize('NFKD')
@@ -87,6 +135,7 @@ function baseDesiredState(input: {
   includeSubfolders?: boolean;
   properties: readonly CreationProperty[];
   records?: readonly Record<string, unknown>[];
+  views?: readonly CreationView[];
 }): DatabaseDesiredStateDraftInput {
   const name = input.name.trim();
   if (!name) throw new Error('Database name is required');
@@ -115,18 +164,20 @@ function baseDesiredState(input: {
         properties: input.properties.map((property) => ({ ...property })),
       },
     ],
-    views: [
-      {
-        key: 'table',
-        name: 'Table',
-        sourceKey: key,
-        layout: { type: 'table', configuration: {} },
-        projection: {
-          propertyKeys: input.properties.map((property) => property.key),
-          body: 'hidden',
-        },
-      },
-    ],
+    views: input.views
+      ? [...input.views]
+      : [
+          {
+            key: 'table',
+            name: 'Table',
+            sourceKey: key,
+            layout: { type: 'table', configuration: {} },
+            projection: {
+              propertyKeys: input.properties.map((property) => property.key),
+              body: 'hidden',
+            },
+          },
+        ],
     templates: [],
     policy: {
       mode: 'review',
@@ -444,10 +495,14 @@ export function createTemplateDatabaseDesiredState(input: {
   template: DatabaseCreationTemplateKey;
   folder?: string;
 }): DatabaseDesiredStateDraftInput {
+  const name = input.name.trim();
+  const sourceKey = stableKey(name, 'database');
+  const properties = templateProperties(input.template);
   return baseDesiredState({
     ...input,
-    properties: templateProperties(input.template),
+    properties,
     records: templateRecords(input.template),
+    views: templateViews(input.template, sourceKey, properties),
   });
 }
 

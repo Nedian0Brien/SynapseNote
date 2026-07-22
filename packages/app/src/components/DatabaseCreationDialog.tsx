@@ -377,6 +377,50 @@ export function DatabaseCreationDialog({
             </section>
           ) : null}
 
+          {mode === 'template' && preparedState ? (
+            <section
+              className="rounded-md border border-primary/30 bg-primary/5 p-3"
+              aria-label="Template preview"
+              data-testid="database-template-preview"
+            >
+              <h3 className="font-medium text-sm">
+                <Trans>Starter template preview</Trans>
+              </h3>
+              <p className="mt-1 text-muted-foreground text-xs">
+                <Trans>Review the starting views, property types, and example pages.</Trans>
+              </p>
+              <dl className="mt-3 grid gap-x-4 gap-y-2 text-sm sm:grid-cols-[7rem_1fr]">
+                <dt className="text-muted-foreground">
+                  <Trans>Views</Trans>
+                </dt>
+                <dd>
+                  {(preparedState.views ?? [])
+                    .map((view) => {
+                      const layout =
+                        view.layout && typeof view.layout === 'object'
+                          ? (view.layout as { type?: unknown })
+                          : {};
+                      return `${view.name} · ${String(layout.type ?? 'view')}`;
+                    })
+                    .join(', ')}
+                </dd>
+                <dt className="text-muted-foreground">
+                  <Trans>Properties</Trans>
+                </dt>
+                <dd>
+                  <ul className="grid gap-1">
+                    {(preparedState.sources[0]?.properties ?? []).map((property) => (
+                      <li key={property.key} className="flex flex-wrap items-baseline gap-x-2">
+                        <span className="font-medium">{property.name}</span>
+                        <span className="text-muted-foreground text-xs">{property.type}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </dd>
+              </dl>
+            </section>
+          ) : null}
+
           {preparedState?.sampleRecords && preparedState.sampleRecords.length > 0 ? (
             <section
               className="rounded-md border border-primary/30 bg-primary/5 p-3"
