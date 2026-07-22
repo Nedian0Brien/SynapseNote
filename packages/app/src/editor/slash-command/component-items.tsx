@@ -619,6 +619,32 @@ function getCustomBlockComponentItems(): SlashCommandItem[] {
       },
     },
     {
+      name: 'component-InlineDatabase',
+      label: t`Inline database`,
+      icon: Database,
+      category: 'data',
+      aliases: ['inline table', 'inline view', 'embedded database', 'database in page'],
+      description: 'Create an editable database directly inside the current page',
+      insertsBlockComponent: true,
+      command: (editor) => {
+        const descriptor = getDescriptor('DatabaseView');
+        if (descriptor) createInsertCommand(descriptor)(editor);
+      },
+      preview: {
+        description: t`Create a database in this page and edit its rows without leaving the document.`,
+        render: () => (
+          <div className="flex w-full flex-col overflow-hidden rounded-md border border-border bg-background">
+            <div className="border-b px-3 py-2 font-medium text-sm">Project tasks</div>
+            <div className="grid grid-cols-[minmax(0,1fr)_6rem] border-b bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground">
+              <span>Name</span>
+              <span>Status</span>
+            </div>
+            <div className="px-3 py-2 text-muted-foreground text-xs">+ New</div>
+          </div>
+        ),
+      },
+    },
+    {
       name: 'component-File',
       label: t`File`,
       icon: FileUp,

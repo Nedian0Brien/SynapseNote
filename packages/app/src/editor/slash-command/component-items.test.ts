@@ -54,6 +54,7 @@ describe('getComponentItems (slash menu)', () => {
         'Database',
         'Embed',
         'File',
+        'Inline database',
         'Image',
         'Math',
         'Mermaid',
@@ -86,10 +87,13 @@ describe('getComponentItems (slash menu)', () => {
     const items = getComponentItems();
     const create = items.find((item) => item.label === 'Database');
     const linked = items.find((item) => item.label === 'Linked database');
+    const inline = items.find((item) => item.label === 'Inline database');
     expect(create).toBeDefined();
     expect(linked).toBeDefined();
+    expect(inline).toBeDefined();
     expect(create?.aliases).toContain('table');
     expect(linked?.aliases).toContain('linked view');
+    expect(inline?.aliases).toContain('inline table');
     expect(items.some((item) => item.label === 'Database view')).toBe(false);
   });
 

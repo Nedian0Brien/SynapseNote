@@ -10,14 +10,6 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import { DatabaseRecordPeek } from '@/components/DatabaseRecordPeek';
 import type { DatabaseInitialRecordAction } from '@/components/DatabaseTableDialog';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import {
   type DatabaseCatalogCandidate,
@@ -353,58 +345,63 @@ function InlineDatabaseCreationDialog({
       .finally(() => setStatus('idle'));
   };
 
+  if (!open) return null;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent data-testid="inline-database-create-dialog">
-        <DialogHeader>
-          <DialogTitle>Create inline database</DialogTitle>
-          <DialogDescription>
-            Create a blank database here and keep the new table embedded in this page.
-          </DialogDescription>
-        </DialogHeader>
-        <DialogBody className="space-y-4">
-          <label className="grid gap-1.5 text-sm" htmlFor="inline-database-name">
-            <span className="font-medium">Database name</span>
-            <Input
-              id="inline-database-name"
-              value={name}
-              autoFocus
-              disabled={status !== 'idle'}
-              placeholder="Untitled database"
-              onChange={(event) => setName(event.currentTarget.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') void submit();
-              }}
-            />
-          </label>
-          <p className="text-muted-foreground text-xs">
-            The blank path is direct-safe; templates, imports, and existing-folder onboarding remain
-            available from the full database workspace for exact review.
+    <section
+      className="my-3 rounded-lg border bg-background p-4"
+      contentEditable={false}
+      data-database-inline-create
+      data-testid="inline-database-create-dialog"
+      aria-label="Create inline database"
+    >
+      <div className="flex items-start gap-3">
+        <Plus className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+        <div className="min-w-0">
+          <h3 className="font-medium text-sm">Create inline database</h3>
+          <p className="mt-1 text-muted-foreground text-xs">
+            Name it here. The editable table will replace this setup block in the current page.
           </p>
-          {error ? (
-            <p className="text-destructive text-sm" role="alert">
-              {error}
-            </p>
-          ) : null}
-          <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              disabled={status !== 'idle'}
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="button" disabled={status !== 'idle'} onClick={() => void submit()}>
-              {status === 'creating' ? (
-                <Loader2 className="animate-spin" aria-hidden="true" />
-              ) : null}
-              {status === 'creating' ? 'Creating…' : 'Create database'}
-            </Button>
-          </div>
-        </DialogBody>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </div>
+      <label className="mt-4 grid gap-1.5 text-sm" htmlFor="inline-database-name">
+        <span className="font-medium">Database name</span>
+        <Input
+          id="inline-database-name"
+          value={name}
+          autoFocus
+          disabled={status !== 'idle'}
+          placeholder="Untitled database"
+          onChange={(event) => setName(event.currentTarget.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') void submit();
+          }}
+        />
+      </label>
+      <p className="mt-2 text-muted-foreground text-xs">
+        Blank creation is direct-safe. Templates and imports remain available from the full database
+        workspace for exact review.
+      </p>
+      {error ? (
+        <p className="mt-2 text-destructive text-sm" role="alert">
+          {error}
+        </p>
+      ) : null}
+      <div className="mt-4 flex justify-end gap-2">
+        <Button
+          type="button"
+          variant="ghost"
+          disabled={status !== 'idle'}
+          onClick={() => onOpenChange(false)}
+        >
+          Cancel
+        </Button>
+        <Button type="button" disabled={status !== 'idle'} onClick={() => void submit()}>
+          {status === 'creating' ? <Loader2 className="animate-spin" aria-hidden="true" /> : null}
+          {status === 'creating' ? 'Creating' : 'Create database'}
+        </Button>
+      </div>
+    </section>
   );
 }
 
@@ -570,10 +567,12 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
   if (!reference.success) {
     return (
       <>
-        <InlineDatabasePicker
-          onSelected={applyReference}
-          onCreateBlank={() => setInlineCreationOpen(true)}
-        />
+        {!inlineCreationOpen ? (
+          <InlineDatabasePicker
+            onSelected={applyReference}
+            onCreateBlank={() => setInlineCreationOpen(true)}
+          />
+        ) : null}
         <InlineDatabaseCreationDialog
           open={inlineCreationOpen}
           onOpenChange={setInlineCreationOpen}
@@ -747,11 +746,13 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
 
       {replacementPickerOpen ? (
         <div className="p-3">
-          <InlineDatabasePicker
-            message="Choose a different database or saved view. Existing records remain shared."
-            onSelected={applyReference}
-            onCreateBlank={() => setInlineCreationOpen(true)}
-          />
+          {!inlineCreationOpen ? (
+            <InlineDatabasePicker
+              message="Choose a different database or saved view. Existing records remain shared."
+              onSelected={applyReference}
+              onCreateBlank={() => setInlineCreationOpen(true)}
+            />
+          ) : null}
           <div className="flex justify-end">
             <Button
               type="button"
