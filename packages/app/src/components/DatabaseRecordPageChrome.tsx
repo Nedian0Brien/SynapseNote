@@ -33,6 +33,7 @@ import {
   DatabasePlanExecutionError,
   executeDatabaseUiMutation,
 } from '@/lib/database-mutation-client';
+import { databasePageTargetToHash } from '@/lib/database-navigation';
 import { resolveDatabasePageLayout } from '@/lib/database-page-layout';
 import { useDatabasePresenceTarget, useRemoteDatabasePresence } from '@/lib/database-presence';
 import { fetchDatabaseRecord } from '@/lib/database-query-client';
@@ -446,6 +447,31 @@ export function DatabaseRecordPageChrome({
 
   return (
     <DatabaseRecordPageSurface mode="full_page">
+      <nav
+        className="editor-content-aligned flex items-center gap-1 truncate py-2 text-muted-foreground text-xs"
+        aria-label="Database breadcrumbs"
+        data-database-breadcrumbs
+      >
+        <a
+          className="truncate underline underline-offset-2"
+          href={
+            recordNavigation
+              ? databaseRecordNavigationOriginHash(recordNavigation)
+              : databasePageTargetToHash({
+                  databaseId: metadata.database_id,
+                  sourceId: metadata.source_id,
+                })
+          }
+        >
+          {currentBinding?.database.name ?? metadata.database_id}
+        </a>
+        <span aria-hidden="true">/</span>
+        <span className="truncate">{source?.name ?? metadata.source_id}</span>
+        <span aria-hidden="true">/</span>
+        <span className="truncate" aria-current="page">
+          {databaseTitle ?? fallbackTitle}
+        </span>
+      </nav>
       <PageHeader
         provider={provider}
         docName={docName}

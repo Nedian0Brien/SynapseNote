@@ -32,7 +32,12 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import { databaseRecordPathToHash } from '@/lib/database-navigation';
+import { databasePageTargetToHash, databaseRecordPathToHash } from '@/lib/database-navigation';
+import {
+  type DatabaseRecordNavigationState,
+  databaseRecordNavigationOriginHash,
+  readDatabaseRecordNavigation,
+} from '@/lib/database-record-navigation';
 import { filePathToDocName } from '@/lib/doc-hash';
 
 type PeekState =
@@ -57,6 +62,7 @@ function valueText(value: unknown): string {
 }
 
 function PeekBody({
+  database,
   source,
   record,
   state,
@@ -64,8 +70,11 @@ function PeekBody({
   onOpenComments,
   onOpenHistory,
   onOpenRelations,
+  onBackToView,
+  recordNavigation,
   backlinksState,
 }: {
+  database: DatabaseDefinition;
   source: DatabaseSource;
   record: ProjectedDatabaseRecord;
   state: PeekState;
@@ -73,9 +82,14 @@ function PeekBody({
   onOpenComments: () => void;
   onOpenHistory: () => void;
   onOpenRelations: () => void;
+  onBackToView: () => void;
+  recordNavigation: DatabaseRecordNavigationState | null;
   backlinksState: BacklinksState;
 }) {
   const titleProperty = source.properties.find((property) => property.type === 'title');
+  const databaseHref = recordNavigation
+    ? databaseRecordNavigationOriginHash(recordNavigation)
+    : databasePageTargetToHash({ databaseId: database.id, sourceId: source.id });
   const properties = source.properties.filter(
     (property) => property.type !== 'title' && property.id in record.values,
   );
@@ -91,6 +105,21 @@ function PeekBody({
       ) : null}
       <div className="flex items-start justify-between gap-3 border-b px-5 py-4 pr-12">
         <div className="min-w-0">
+          <nav
+            className="mb-1 flex min-w-0 items-center gap-1 truncate text-muted-foreground text-xs"
+            aria-label="Database breadcrumbs"
+            data-database-breadcrumbs
+          >
+            <a className="truncate underline underline-offset-2" href={databaseHref}>
+              {database.name}
+            </a>
+            <span aria-hidden="true">/</span>
+            <span className="truncate">{source.name}</span>
+            <span aria-hidden="true">/</span>
+            <span className="truncate" aria-current="page">
+              {valueText(record.values[titleProperty?.id ?? ''])}
+            </span>
+          </nav>
           <h2 className="flex items-center gap-2 truncate font-heading font-semibold text-xl">
             {state.status === 'ready' && state.icon.kind === 'emoji' ? (
               <span aria-hidden>{state.icon.value}</span>
@@ -120,6 +149,11 @@ function PeekBody({
           {source.properties.some((property) => property.type === 'relation') ? (
             <Button type="button" size="sm" variant="ghost" onClick={onOpenRelations}>
               <Link2 /> <Trans>Relations</Trans>
+            </Button>
+          ) : null}
+          {recordNavigation ? (
+            <Button type="button" size="sm" variant="ghost" onClick={onBackToView}>
+              <Trans>Back to database view</Trans>
             </Button>
           ) : null}
           <Button type="button" size="sm" variant="outline" onClick={onOpenFull}>
@@ -225,7 +259,13 @@ export function DatabaseRecordPeek({
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [relationsOpen, setRelationsOpen] = useState(false);
+  const [recordNavigation, setRecordNavigation] = useState<DatabaseRecordNavigationState | null>(
+    () => readDatabaseRecordNavigation(record.path),
+  );
   const docName = filePathToDocName(record.path);
+  useEffect(() => {
+    setRecordNavigation(readDatabaseRecordNavigation(record.path));
+  }, [record.path]);
   useEffect(() => {
     const controller = new AbortController();
     setState({ status: 'loading' });
@@ -281,6 +321,7 @@ export function DatabaseRecordPeek({
   const body = (
     <DatabaseRecordPageSurface mode={mode}>
       <PeekBody
+        database={database}
         source={source}
         record={record}
         state={state}
@@ -288,6 +329,12 @@ export function DatabaseRecordPeek({
         onOpenComments={() => setCommentsOpen(true)}
         onOpenHistory={() => setHistoryOpen(true)}
         onOpenRelations={() => setRelationsOpen(true)}
+        onBackToView={() => {
+          if (!recordNavigation) return;
+          window.location.hash = databaseRecordNavigationOriginHash(recordNavigation);
+          onClose();
+        }}
+        recordNavigation={recordNavigation}
         backlinksState={backlinksState}
       />
     </DatabaseRecordPageSurface>

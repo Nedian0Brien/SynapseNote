@@ -170,6 +170,10 @@ describe('DatabaseRecordPageChrome', () => {
         '[data-database-record-page-surface][data-record-page-mode="full_page"]',
       ),
     ).not.toBeNull();
+    expect(view.getByLabelText('Database breadcrumbs')).toBeDefined();
+    expect(view.getByRole('link', { name: 'Tasks' }).getAttribute('href')).toBe(
+      '#database/db_tasks/ds_tasks',
+    );
     expect(view.getAllByTestId('property-row').map((row) => row.getAttribute('data-key'))).toEqual([
       'score',
       'owner',

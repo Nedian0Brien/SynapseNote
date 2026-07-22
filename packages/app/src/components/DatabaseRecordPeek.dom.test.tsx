@@ -6,6 +6,7 @@ import { DatabaseRecordPeek } from './DatabaseRecordPeek';
 afterEach(() => {
   cleanup();
   globalThis.fetch = originalFetch;
+  sessionStorage.removeItem('synapsenote:database-record-navigation-v1');
 });
 const originalFetch = globalThis.fetch;
 const database = DatabaseDefinitionSchema.parse({
@@ -91,6 +92,10 @@ describe('DatabaseRecordPeek context parity', () => {
         '[data-database-record-page-surface][data-record-page-mode="center_peek"]',
       ),
     ).not.toBeNull();
+    expect(screen.getByLabelText('Database breadcrumbs')).toBeDefined();
+    expect(screen.getByRole('link', { name: 'Work' }).getAttribute('href')).toBe(
+      '#database/db_work/ds_tasks',
+    );
     expect(screen.getByText('📚')).toBeDefined();
     expect(document.querySelector('img[src*="cover.png"]')).not.toBeNull();
     expect(screen.getByRole('button', { name: 'Comments' })).toBeDefined();
@@ -99,6 +104,38 @@ describe('DatabaseRecordPeek context parity', () => {
     await waitFor(() => expect(screen.getByText('notes/context')).toBeDefined());
     expect(screen.getByRole('link', { name: 'notes/context' }).getAttribute('href')).toBe(
       '#/notes/context#decision',
+    );
+  });
+
+  test('shows the originating view breadcrumb action when navigation context is available', () => {
+    sessionStorage.setItem(
+      'synapsenote:database-record-navigation-v1',
+      JSON.stringify({
+        databaseId: 'db_work',
+        sourceId: 'ds_tasks',
+        viewId: 'view_table',
+        paths: ['tasks/first.md'],
+        index: 0,
+      }),
+    );
+    render(
+      <DatabaseRecordPeek
+        mode="side_peek"
+        database={database}
+        source={source}
+        record={{
+          id: 'rec_first',
+          path: 'tasks/first.md',
+          revision: `sha256:${'a'.repeat(64)}`,
+          values: { prop_title: 'First' },
+        }}
+        onClose={() => {}}
+        onOpenFull={() => {}}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Back to database view' })).toBeDefined();
+    expect(screen.getByRole('link', { name: 'Work' }).getAttribute('href')).toBe(
+      '#database/db_work/ds_tasks/view_table',
     );
   });
 });
