@@ -69,11 +69,12 @@ the repository-wide check for final release readiness.
   catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
   approval-bound commits, undo, and restart/backup idempotency. Agent View
   policy/privacy/sandbox review remains Partial by design.
-- Notion UX alignment checklist: **43/128 complete**. The page-first and normal
+- Notion UX alignment checklist: **44/128 complete**. The page-first and normal
   New-page creation slices, the inline/linked insertion contract, and the
   table-first direct-manipulation, named canonical workspace canvas-route,
-  shared navigation without a duplicate canvas rail, sidebar/recent navigation,
-  normal database page chrome, stable conversion, and durable History/receipt recovery slices
+  shared navigation without a duplicate canvas rail, sidebar/recent/search/
+  backlink/relation navigation, normal database page chrome, stable conversion,
+  and durable History/receipt recovery slices
   are now evidenced. A
   2026-07-23 in-app browser capture reached the IPv4 renderer at
   `http://127.0.0.1:5173/`, created a full-page database, created two canonical
@@ -274,9 +275,8 @@ do not reconstruct behavior solely from this summary.
   focused database test renders `DatabaseWorkspacePage` and covers the real
   no-portal/no-overlay workspace, selected-view hash, missing-source back
   action, and permission-denied state.
-- UX-201, UX-202, UX-204, UX-205, UX-207, and UX-208 are checked. UX-206/209/210
-  remain open for broader entry-point journeys, conversion proof, and responsive
-  acceptance.
+- UX-201, UX-202, UX-204, UX-205, UX-206, UX-207, and UX-208 are checked.
+  UX-209/210 remain open for responsive acceptance and conversion proof.
 
 ### 2026-07-23 normal database page chrome
 
@@ -298,8 +298,23 @@ do not reconstruct behavior solely from this summary.
   (1 / 4), app typecheck, server typecheck, targeted Biome, and diff check. The
   full server suite and broad E2E were intentionally not run.
 - UX-204 is checked at the implementation/evidence layer. Visual pixel parity,
-  search/backlinks/relations entry points, responsive/Electron, accessibility,
-  performance, and release gates remain open.
+  responsive/Electron, accessibility, performance, and release gates remain
+  open.
+
+### 2026-07-23 database search/backlink/relation entry points
+
+- Catalog-backed command results search database/source names and human keys,
+  while recent entries reopen the same stable database hash. Record backlinks
+  preserve ordinary document anchors, and relation records link to the same
+  canonical record-document route; no path reopens the global database manager
+  or duplicates record payloads.
+- Focused evidence: `CommandPalette.dom.test.tsx` (3 tests / 15
+  expectations), `DatabaseRecordPeek.dom.test.tsx` (1 / 7),
+  `DatabaseRelationsDialog.dom.test.tsx` (1 / 2), and
+  `database-navigation.test.ts` (9 / 23).
+- UX-206 is checked at the implementation/evidence layer. Responsive,
+  accessibility, visual, Electron, performance, and packaged-release evidence
+  remain open.
 
 ### 2026-07-23 sidebar and recent database navigation
 
@@ -309,8 +324,8 @@ do not reconstruct behavior solely from this summary.
 - The command palette's existing omnibar recents now have UI evidence for a
   catalog-backed database under `Recently opened`, reopening the same stable
   route. Focused evidence: sidebar 3 tests / 7 expectations and recent UI 1 / 5.
-- UX-203 and UX-204 are checked. UX-206/209 remain open for additional entry
-  points and responsive acceptance.
+- UX-203, UX-204, and UX-206 are checked. UX-209 remains open for responsive
+  acceptance.
 
 ### 2026-07-23 stable inline/full-page conversion
 
@@ -333,7 +348,8 @@ do not reconstruct behavior solely from this summary.
   preview/apply undo without leaving the History surface. The inline mutation
   suite continues to cover Undo/Redo buttons and `Ctrl/Cmd+Z` plus
   `Shift+Ctrl/Cmd+Z`, including stale-revision recovery.
-- UX-407 is checked. Remaining UX work is cross-entry-point parity, the
+- UX-206 and UX-407 are checked. Remaining UX work is responsive/cross-host
+  parity, the
   inline/full-page state matrix, Electron, responsive, accessibility,
   usability, performance, and packaged-release evidence.
 

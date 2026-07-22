@@ -86,12 +86,12 @@ user's canonical project, or run the repository-wide/server test suite.
 
 | Area           | Current implementation                                                                                                                                                         | UX implication                                                                                                       |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
-| Global entry   | `App.tsx` retains the power-user `databasesOpen` surface, while `#database/<database>/<source>/<view?>` is now a stable route-level workspace. `New database` entry points dispatch one typed event into page presentation, and `Open databases` selects that no-overlay page presentation. | The direct entry, normal New-page handoff, and power-user page jump are evidenced; ordinary sidebar/recent integration remains open. |
-| New item       | `NewItemDialog` still models `file`/`folder`, but its normal file path now exposes a named `New database` action that dispatches the shared creation event.                     | Discovery is improved, but Database/Table is not yet a first-class page type in the picker.                          |
+| Global entry   | `App.tsx` retains the power-user `databasesOpen` surface, while `#database/<database>/<source>/<view?>` is now a stable route-level workspace. `New database` entry points dispatch one typed event into page presentation, and `Open databases` selects that no-overlay page presentation. | Direct, normal New-page, sidebar/recent, search, backlink, relation, and command-result entries converge on stable routes; responsive and cross-host proof remain open. |
+| New item       | `NewItemDialog` keeps the file/folder model for compatibility but exposes a visible `Page`/`Database` chooser; its Database choice dispatches the shared creation event. | Database discovery is a first-class choice in the normal picker; the shared creation writer remains the canonical path. |
 | Creation       | `DatabaseCreationDialog.tsx` accepts an optional blank title, keeps storage details in a collapsed disclosure, and routes blank human creation through an automatic exact-plan commit while retaining review for templates/imports/agent paths. | The first-use path is shorter and safer for routine human creation; higher-risk methods still expose the explicit review boundary. |
-| Blank schema   | `createBlankDatabaseDesiredState` creates one title property; after commit the shell selects the new source and first view.                                                    | A minimal database lands in its table, but it is still inside the management dialog.                                 |
+| Blank schema   | `createBlankDatabaseDesiredState` creates one title property; after commit the shell selects the new source and first view on the canonical route. | A minimal database lands in an editable table; the management surface remains available for administration. |
 | Inline block   | Fresh `New database`/`Linked view of database`/`Inline database` inserts use a catalog/source/view picker; raw references remain advanced for existing MDX, and the block renders shared records with visible tabs and full-page handoff. | The core inline/linked journey is now unified for creation, editing, conversion, and removal; duplicate-view action and full state-matrix parity remain open. |
-| Database shell | `DatabaseTableDialog.tsx` supports a route-level page presentation plus the legacy management dialog; both still share the dense workspace toolbar.                            | The modal boundary is removable, but administration and primary work remain coupled.                                 |
+| Database shell | `DatabaseTableDialog.tsx` supports the canonical `DatabaseWorkspacePage` plus the legacy management wrapper; the page header owns breadcrumbs, title, favorite, icon/cover, and page actions while the table surface remains shared. | Primary work is document-native; the dense management toolbar remains a deliberate admin surface. |
 | Human writes   | Direct-safe cell/row writes use plan → auto-approval → commit; destructive, bulk, schema, and elevated writes retain plan → ghost → explicit review → commit.                    | The interruption is removed for common edits, but optimistic/offline acknowledgement and full policy coverage remain. |
 | Views          | Saved views now render as visible tabs with `+`; the dropdown and `Manage views` dialog remain available.                                                                      | The primary view switch is closer to Notion, but reorder/rename/favorite controls still live in management.          |
 | Renderer       | `editor/components/DatabaseView.tsx` renders all major layouts and record peeks.                                                                                               | This is reusable once insertion, editing, and view controls are redesigned.                                          |
@@ -136,8 +136,8 @@ remain open:
   action. Its page header now carries contextual breadcrumbs, an editable title,
   favorite state, optional icon/cover chrome, and a reviewed `Customize page`
   action. The management surface remains available as a compatibility/admin
-  surface; search/backlinks/relations and responsive/cross-host proof remain
-  separate gates.
+  surface; responsive, accessibility, and cross-host proof remain separate
+  gates.
 - `New database` is now reachable from the sidebar toolbar, empty-space context
   menu, onboarding pack footer, empty-editor footer, and command palette. All
   of those surfaces dispatch the same typed event, so the app opens one creation
@@ -199,8 +199,9 @@ opens the full-height database workspace without a dialog overlay. The capture
 shows the database breadcrumbs, source rail, view tabs, table controls, and
 first-row affordance. `App.dom.test.tsx` verifies that this command selects
 `presentation="page"`; the canonical `DatabaseTableDialog` page test verifies
-that the overlay is absent. Ordinary sidebar/recent URL integration remains a
-separate UX-201–UX-208 gate.
+that the overlay is absent. Sidebar/recent/search/backlink/relation URL
+integration converges on the same stable identity; responsive and cross-host
+proof remain separate gates.
 
 ### Inline database journey evidence (2026-07-23)
 
@@ -271,8 +272,8 @@ for discovery. The route suite also covers hash view selection, back/forward
 restoration, missing-source back handling, and permission-denied handling
 without an unsafe retry. This closes UX-201, UX-202, UX-205, UX-207, and UX-208.
 
-UX-206 and UX-209 remain open pending broader entry-point and responsive
-acceptance. UX-210 is covered by the conversion evidence below.
+UX-209 remains open pending responsive acceptance. UX-210 is covered by the
+conversion evidence below.
 
 ### Normal database page chrome evidence (2026-07-23)
 
@@ -306,8 +307,34 @@ Focused evidence:
   the full server suite and broad E2E were intentionally not run.
 
 This closes UX-204 at the implementation/evidence layer. Visual pixel parity,
-search/backlinks/relations entry points, responsive behavior, accessibility,
-Electron, performance, and release gates remain open below.
+responsive behavior, accessibility, Electron, performance, and release gates
+remain open below.
+
+### Database entry-point parity evidence (2026-07-23)
+
+All database discovery paths now converge on stable identities instead of
+reopening the legacy database manager. The command palette searches catalog
+database/source names and human keys, and its recent list stores the same
+encoded `#database/<database>/<source>/<view?>` target. A record peek's
+backlinks use the ordinary document hash (including anchors), while relation
+records use the same canonical record-document route; neither path clones a
+record or embeds a second database surface.
+
+Focused evidence:
+
+- `CommandPalette.dom.test.tsx`: searchable database command, catalog-backed
+  database search, and recent database reopening (3 tests / 15 expectations).
+- `DatabaseRecordPeek.dom.test.tsx`: canonical icon/cover/body/backlinks/
+  comments/history/relations surface (1 / 7).
+- `DatabaseRelationsDialog.dom.test.tsx`: related record links use the
+  canonical document route (1 / 2).
+- `database-navigation.test.ts`: stable database/source/view hashes,
+  backlink anchors, malformed-route rejection, and favorite identity contract
+  (9 / 23).
+
+This closes UX-206 at the implementation/evidence layer. Responsive,
+accessibility, visual, Electron, performance, and packaged-release evidence
+remain open.
 
 ### Sidebar and recent database navigation evidence (2026-07-23)
 
@@ -319,8 +346,8 @@ targets as first-class recent entries; its UI test confirms a catalog-backed
 database appears under `Recently opened` and reopens the canonical route.
 `DatabaseSidebarSection.dom.test.tsx` passes 3 tests / 7 expectations and the
 focused recent-navigation test passes 1 / 5. This closes UX-203. Normal page
-chrome is now evidenced by the page surface above; additional entry points and
-responsive proof remain open under UX-206/209.
+chrome and search/backlinks/relations entry points are evidenced above;
+responsive proof remains open under UX-209.
 
 ### Inline/full-page conversion evidence (2026-07-23)
 
@@ -365,10 +392,10 @@ crossed the document-native UX bar:
 | Measure | Current result | Interpretation |
 | --- | --- | --- |
 | Engine implementation checklist | 310/335 numbered items complete | Core/database and agent contracts are substantially implemented. |
-| Notion UX checklist | 43/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, table-first direct manipulation, named canonical workspace canvas routing without a duplicate rail, sidebar/recent database navigation, normal database page chrome, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, search/backlinks/relations, state-matrix, and cross-host journey gates remain open. |
+| Notion UX checklist | 44/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, table-first direct manipulation, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, state-matrix, responsive, and cross-host journey gates remain open. |
 | First-use database entry | `New database` in sidebar, empty states, normal new-page dialog, command palette, plus slash-menu `New database`/`Linked view of database`; normal picker exposes Page/Database chooser and the resulting route lands in an editable table. `Open databases` enters the no-overlay page workspace. | Discovery, sidebar/recent navigation, and the web first-use path are evidenced; additional entry points and Electron proof remain open. |
 | Blank creation | Optional title, `Untitled database` fallback, direct-safe exact-plan commit, immediate source/view selection, title/new-row focus | The blank human path is continuous in DOM coverage; template/import/agent paths intentionally retain review and visual browser proof remains open. |
-| Full-page navigation | Stable `#database/<database>/<source>/<view?>` route, no-overlay canvas presentation, sidebar source section, command-palette recents, and normal page chrome | Route, page surface, and navigation identity are evidenced; search/backlinks/relations entry points and responsive/cross-host proof remain incomplete. |
+| Full-page navigation | Stable `#database/<database>/<source>/<view?>` route, no-overlay canvas presentation, sidebar source section, command-palette recents/search, backlink and relation links, and normal page chrome | Route, page surface, and navigation identity are evidenced; responsive/cross-host proof remains incomplete. |
 | Inline linked view | Catalog → source → saved-view picker, inline creation, shared rows, visible tabs, replacement, conversion, duplicate configuration, and block removal | The core inline/linked contract is evidenced; the complete visual state matrix remains open. |
 | Direct editing | Direct-safe cell/row auto-approval, optimistic reconciliation, offline/conflict/failure states, post-commit focus, standard undo/redo, and durable History receipts are covered by focused DOM evidence | Elevated mutations retain exact review; full visual/cross-host acceptance remains open. |
 | Browser evidence | In-app web renderer is reachable on IPv4 and normal New-page, page-first, inline creation, record sharing, and cancellation journeys are captured; no Electron or complete state-matrix journey is captured | The core web slice is evidenced, but NUI-105/NUI-701–NUI-705 remain release gates for cross-host, accessibility, responsive, usability, performance, and packaged-release parity. |
@@ -565,8 +592,11 @@ capability alone is insufficient.
       and stable-ID preservation.
 - [x] **UX-205** Preserve the selected view in navigation/local state without a
       canonical write on simple view switches.
-- [ ] **UX-206** Open databases from search, backlinks, relations, recent items,
-      and command results.
+- [x] **UX-206** Open databases from search, backlinks, relations, recent items,
+      and command results. Evidence: `CommandPalette` search/recent entries,
+      `DatabaseRecordPeek` backlinks, and `DatabaseRelationsDialog` relations
+      all converge on the stable database or canonical record route; focused
+      command, peek, relation, and navigation-contract tests cover the paths.
 - [x] **UX-207** Replace the modal database rail with existing navigation and a
       picker only for cross-database lookup. Evidence: canonical
       `DatabaseWorkspacePage` omits the internal source rail and catalog fetch;
