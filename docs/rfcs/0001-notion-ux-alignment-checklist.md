@@ -353,6 +353,28 @@ Focused page/canvas DOM evidence asserts the `min-w-0`/`flex-wrap` chrome,
 Biome, and diff check pass. This closes UX-209 at the implementation/evidence
 layer; the 768px visual/browser check remains UX-1007.
 
+### Inline/full-page state parity evidence (2026-07-23)
+
+The linked inline block uses the same state meanings as the page workspace:
+loading remains an accessible busy surface, empty sources keep an actionable
+new-row affordance, permission denial never reuses an offline cache, and
+missing/offline/stale/error states expose only safe replacement or retry
+actions. A successful linked snapshot can remain visible with an explicit stale
+status after refresh loses transport; a permission failure clears that cache.
+The page workspace covers the corresponding loading, missing, permission,
+offline, stale, invalid-schema, stale-index, and recoverable-service states.
+
+Focused evidence:
+
+- `DatabaseView.dom.test.tsx`: inline loading, offline/stale snapshot,
+  permission denial, and empty-source behavior (4 tests / 18 expectations).
+- `DatabaseTableDialog.dom.test.tsx`: page loading, missing/back,
+  permission-denied, offline, stale-cache, invalid-schema/stale-index, and
+  recoverable-service states (7 tests / 33 expectations).
+
+This closes UX-309 at the functional implementation/evidence layer. The full
+visual state matrix and cross-host capture remain NUI-701/NUI-702 gates.
+
 ### Sidebar and recent database navigation evidence (2026-07-23)
 
 The ordinary file sidebar now exposes database sources as a peer `Databases`
@@ -409,11 +431,11 @@ crossed the document-native UX bar:
 | Measure | Current result | Interpretation |
 | --- | --- | --- |
 | Engine implementation checklist | 310/335 numbered items complete | Core/database and agent contracts are substantially implemented. |
-| Notion UX checklist | 45/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, table-first direct manipulation, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, state-matrix, 768px browser, and cross-host journey gates remain open. |
+| Notion UX checklist | 46/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, inline/full-page state parity, table-first direct manipulation, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, 768px browser, and cross-host journey gates remain open. |
 | First-use database entry | `New database` in sidebar, empty states, normal new-page dialog, command palette, plus slash-menu `New database`/`Linked view of database`; normal picker exposes Page/Database chooser and the resulting route lands in an editable table. `Open databases` enters the no-overlay page workspace. | Discovery, sidebar/recent navigation, and the web first-use path are evidenced; additional entry points and Electron proof remain open. |
 | Blank creation | Optional title, `Untitled database` fallback, direct-safe exact-plan commit, immediate source/view selection, title/new-row focus | The blank human path is continuous in DOM coverage; template/import/agent paths intentionally retain review and visual browser proof remains open. |
 | Full-page navigation | Stable `#database/<database>/<source>/<view?>` route, no-overlay canvas presentation, sidebar source section, command-palette recents/search, backlink and relation links, normal page chrome, and local overflow guardrails | Route, page surface, and navigation identity are evidenced; responsive visual/cross-host proof remains incomplete. |
-| Inline linked view | Catalog → source → saved-view picker, inline creation, shared rows, visible tabs, replacement, conversion, duplicate configuration, and block removal | The core inline/linked contract is evidenced; the complete visual state matrix remains open. |
+| Inline linked view | Catalog → source → saved-view picker, inline creation, shared rows, visible tabs, replacement, conversion, duplicate configuration, block removal, and aligned loading/empty/error/permission/offline/stale states | The core inline/linked functional contract is evidenced; the complete visual state matrix remains open. |
 | Direct editing | Direct-safe cell/row auto-approval, optimistic reconciliation, offline/conflict/failure states, post-commit focus, standard undo/redo, and durable History receipts are covered by focused DOM evidence | Elevated mutations retain exact review; full visual/cross-host acceptance remains open. |
 | Browser evidence | In-app web renderer is reachable on IPv4 and normal New-page, page-first, inline creation, record sharing, and cancellation journeys are captured; no Electron or complete state-matrix journey is captured | The core web slice is evidenced, but NUI-105/NUI-701–NUI-705 remain release gates for cross-host, accessibility, responsive, usability, performance, and packaged-release parity. |
 
@@ -643,8 +665,11 @@ capability alone is insufficient.
 - [x] **UX-307** Keep stable IDs in MDX but expose them only in advanced/debug
       details.
 - [x] **UX-308** Recover missing source/view references with `Choose replacement`.
-- [ ] **UX-309** Align inline loading, empty, error, permission, offline, and
-      stale states with full-page behavior.
+- [x] **UX-309** Align inline loading, empty, error, permission, offline, and
+      stale states with full-page behavior. Evidence: inline and page focused
+      suites cover the shared state meanings, safe retry/replacement actions,
+      offline snapshot/stale behavior, and permission cache clearing; the full
+      visual matrix remains a separate release gate.
 - [x] **UX-310** Prove that removing a linked block never deletes its source or
       records.
 
