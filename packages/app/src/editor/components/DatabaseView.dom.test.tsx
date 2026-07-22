@@ -749,6 +749,7 @@ describe('DatabaseView', () => {
     const requests: Array<{ path: string; body: Record<string, unknown> }> = [];
     let commitCalls = 0;
     let undoCalls = 0;
+    let undoBlocked = false;
     globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
       const path = String(input);
       if (path.startsWith('/api/document?docName=tasks%2Ffirst')) {
@@ -880,8 +881,9 @@ describe('DatabaseView', () => {
           action,
           undoId: 'undo_inline_preview',
           mutationId: 'mut_inline_edit',
-          canApply: true,
-          conflicts: [],
+          canApply: !(undoBlocked && action === 'preview'),
+          conflicts:
+            undoBlocked && action === 'preview' ? [{ reason: 'record revision changed' }] : [],
           ...(action === 'apply' ? { receipt: { status: 'applied' } } : {}),
         });
       }
@@ -937,6 +939,12 @@ describe('DatabaseView', () => {
     fireEvent.change(newRowTitle, { target: { value: 'Inline page' } });
     fireEvent.keyDown(newRowTitle, { key: 'Enter' });
     await waitFor(() => expect(commitCalls).toBe(2));
+    undoBlocked = true;
+    fireEvent.click(screen.getByRole('button', { name: 'Undo inline database change' }));
+    await waitFor(() => expect(undoCalls).toBe(3));
+    expect((await screen.findByRole('alert')).textContent).toContain('record revision changed');
+    expect(screen.getByTestId('inline-save-feedback')).toBeTruthy();
+    undoBlocked = false;
     const titleCell = document.querySelector(
       '[data-database-cell-row="0"][data-database-cell-column="0"]',
     );

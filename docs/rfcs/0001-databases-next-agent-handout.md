@@ -244,8 +244,9 @@ do not reconstruct behavior solely from this summary.
   action. Undo first runs the canonical preview guard, then applies the undo
   with the same human actor/idempotency contract as the full workspace; a
   changed canonical revision leaves the token visible and reports the reason.
-- Focused evidence: `DatabaseView.dom.test.tsx` passes 13 tests / 120
-  expectations, including commit → inline feedback → preview/apply undo;
+- Focused evidence: `DatabaseView.dom.test.tsx` passes 13 tests / 123
+  expectations, including commit → inline feedback → preview/apply undo and
+  revision-conflict retention;
   app typecheck and `git diff --check` pass. The inline view remains locked
   only while saving or undoing, and the existing optimistic cell/row behavior
   is preserved.
