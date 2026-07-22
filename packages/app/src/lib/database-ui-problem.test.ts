@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { DatabaseCatalogClientError } from './database-catalog-client';
 import { DatabaseMutationClientError } from './database-mutation-client';
 import { DatabaseQueryClientError } from './database-query-client';
-import { classifyDatabaseUiProblem } from './database-ui-problem';
+import { classifyDatabaseUiProblem, isDatabaseTransactionInProgress } from './database-ui-problem';
 
 describe('classifyDatabaseUiProblem', () => {
   test('distinguishes offline transport failures', () => {
@@ -73,5 +73,17 @@ describe('classifyDatabaseUiProblem', () => {
         'fallback',
       ),
     ).toEqual({ kind: 'missing', message: 'Database source not found', retryable: false });
+  });
+
+  test('identifies a transient read barrier without treating it as a stale user edit', () => {
+    expect(
+      isDatabaseTransactionInProgress(
+        new DatabaseQueryClientError('Database description failed with HTTP 409', {
+          status: 409,
+          problem: { code: 'transaction_in_progress' },
+        }),
+      ),
+    ).toBe(true);
+    expect(isDatabaseTransactionInProgress(new Error('Target changed'))).toBe(false);
   });
 });

@@ -121,6 +121,16 @@ export function classifyDatabaseUiProblem(cause: unknown, fallback: string): Dat
   };
 }
 
+/**
+ * A canonical write briefly blocks reads while its transaction is being
+ * verified. The Data Plane marks that interval explicitly so page surfaces can
+ * retry without presenting a false stale-target conflict to the user.
+ */
+export function isDatabaseTransactionInProgress(cause: unknown): boolean {
+  const error = cause instanceof Error ? (cause as ErrorWithProblem) : null;
+  return problemMetadata(error?.problem).code === 'transaction_in_progress';
+}
+
 export function databaseConflictProblem(message: string): DatabaseUiProblem {
   return { kind: 'conflict', message, retryable: false };
 }

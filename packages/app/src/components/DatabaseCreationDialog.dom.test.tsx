@@ -129,4 +129,26 @@ describe('DatabaseCreationDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create database' }));
     expect(onOpenChange).toHaveBeenLastCalledWith(false, 'submit');
   });
+
+  test('uses a non-modal full-page surface for document-native creation', () => {
+    const onCreate = mock(() => {});
+    render(
+      <DatabaseCreationDialog
+        open
+        presentation="page"
+        onOpenChange={() => {}}
+        onCreate={onCreate}
+      />,
+    );
+
+    const surface = document.querySelector<HTMLElement>('[data-database-creation-surface]');
+    if (!surface) throw new Error('Expected the page creation surface');
+    expect(surface.getAttribute('data-database-creation-presentation')).toBe('page');
+    expect(surface.className).toContain('inset-0');
+    expect(document.querySelector('[data-slot="dialog-overlay"]')).toBeNull();
+    expect(screen.getByRole('heading', { name: 'New database' })).toBeDefined();
+    expect(
+      screen.getByText('Start with a page-based table, then add properties and records as you go.'),
+    ).toBeDefined();
+  });
 });

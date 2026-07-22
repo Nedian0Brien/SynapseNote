@@ -257,6 +257,7 @@ import {
   type DatabaseUiProblem,
   databaseConflictProblem,
   databaseIndexProblem,
+  isDatabaseTransactionInProgress,
 } from '@/lib/database-ui-problem';
 import {
   databaseBrowserLoadedRecordLimit,
@@ -2860,6 +2861,8 @@ export function DatabaseTableDialog({
   const handledInitialSelectedRecordIds = useRef<string | null>(null);
   const creationPageFlowRef = useRef(false);
   const queueReconciliationRunning = useRef(false);
+  const databaseReadRetryCount = useRef(0);
+  const databaseReadRetryKey = useRef('');
   const offlineCacheKey = selection
     ? databaseOfflineCacheKey({
         ...selection,
@@ -4355,6 +4358,11 @@ export function DatabaseTableDialog({
       return;
     }
     const controller = new AbortController();
+    const readRetryKey = `${selection.databaseId}/${selection.sourceId}/${selectedViewId}/${showArchived}`;
+    if (databaseReadRetryKey.current !== readRetryKey) {
+      databaseReadRetryKey.current = readRetryKey;
+      databaseReadRetryCount.current = 0;
+    }
     setRelationCandidates([]);
     setButtonPlan(null);
     setTableStatus('loading');
@@ -4409,6 +4417,7 @@ export function DatabaseTableDialog({
           }
         }
         setDescription(nextDescription);
+        databaseReadRetryCount.current = 0;
         setResult(nextResult);
         setOptimisticViewOrder(null);
         setOfflineCachedAt(null);
@@ -4443,6 +4452,20 @@ export function DatabaseTableDialog({
       })
       .catch((cause: unknown) => {
         if (controller.signal.aborted) return;
+        if (isDatabaseTransactionInProgress(cause) && databaseReadRetryCount.current < 3) {
+          const retryAttempt = databaseReadRetryCount.current;
+          databaseReadRetryCount.current += 1;
+          setTableStatus('loading');
+          setError(null);
+          window.setTimeout(
+            () => {
+              if (!controller.signal.aborted) setRefresh((current) => current + 1);
+            },
+            Math.min(150 * 2 ** retryAttempt, 1_000),
+          );
+          return;
+        }
+        databaseReadRetryCount.current = 0;
         const problem = classifyDatabaseUiProblem(cause, 'Unable to load database records');
         const cached =
           problem.kind === 'offline' && offlineCacheKey
@@ -4686,13 +4709,12 @@ export function DatabaseTableDialog({
       })
     : [];
   return (
-    <Dialog
-      open={presentation === 'page' ? true : open}
-      modal={presentation !== 'page'}
-      onOpenChange={onOpenChange}
-    >
+    <Dialog open={presentation === 'page' ? true : open} onOpenChange={onOpenChange}>
       <DialogContent
         showOverlay={presentation !== 'page'}
+        onPointerDownOutside={
+          presentation === 'page' ? (event) => event.preventDefault() : undefined
+        }
         className={cn(
           'sm:max-w-[min(96vw,90rem)]',
           presentation === 'page' &&
@@ -6754,6 +6776,7 @@ export function DatabaseTableDialog({
       ) : null}
       <DatabaseCreationDialog
         open={creationOpen}
+        presentation={presentation}
         onOpenChange={(nextOpen, reason) => {
           setCreationOpen(nextOpen);
           if (!nextOpen && reason !== 'submit') onCreationCancelled?.();

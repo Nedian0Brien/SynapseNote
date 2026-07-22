@@ -13,6 +13,7 @@ import {
   summarizeDatabaseCreation,
 } from '@/lib/database-creation';
 import { parseDelimited } from '@/lib/database-csv';
+import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import {
@@ -57,10 +58,12 @@ export function DatabaseCreationDialog({
   open,
   onOpenChange,
   onCreate,
+  presentation = 'dialog',
 }: {
   open: boolean;
   onOpenChange: (open: boolean, reason?: DatabaseCreationCloseReason) => void;
   onCreate: (desiredState: DatabaseDesiredStateDraftInput, mode: CreationMode) => void;
+  presentation?: 'dialog' | 'page';
 }) {
   const [mode, setMode] = useState<CreationMode>('blank');
   const [name, setName] = useState('');
@@ -122,16 +125,40 @@ export function DatabaseCreationDialog({
       open={open}
       onOpenChange={(nextOpen) => onOpenChange(nextOpen, nextOpen ? undefined : 'cancel')}
     >
-      <DialogContent className="sm:max-w-2xl">
-        <DialogHeader>
+      <DialogContent
+        showOverlay={presentation !== 'page'}
+        onPointerDownOutside={
+          presentation === 'page' ? (event) => event.preventDefault() : undefined
+        }
+        className={cn(
+          presentation === 'page'
+            ? 'fixed inset-0 z-40 h-[100dvh] max-h-none max-w-none sm:max-w-none translate-x-0 translate-y-0 rounded-none bg-background p-0 text-foreground'
+            : 'sm:max-w-2xl',
+        )}
+        data-database-creation-surface=""
+        data-database-creation-presentation={presentation}
+      >
+        <DialogHeader className={cn(presentation === 'page' && 'border-b px-6 py-5 sm:px-10')}>
           <DialogTitle>
-            <Trans>Create database</Trans>
+            {presentation === 'page' ? <Trans>New database</Trans> : <Trans>Create database</Trans>}
           </DialogTitle>
           <DialogDescription>
-            <Trans>Prepare a file-native database, review its exact plan, then commit it.</Trans>
+            {presentation === 'page' ? (
+              <Trans>
+                Start with a page-based table, then add properties and records as you go.
+              </Trans>
+            ) : (
+              <Trans>Prepare a file-native database, review its exact plan, then commit it.</Trans>
+            )}
           </DialogDescription>
         </DialogHeader>
-        <DialogBody className="space-y-5">
+        <DialogBody
+          className={cn(
+            'space-y-5',
+            presentation === 'page' &&
+              'mx-0 px-6 py-6 sm:mx-auto sm:w-full sm:max-w-3xl sm:px-10 lg:max-w-5xl',
+          )}
+        >
           <fieldset className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             <legend className="sr-only">Database creation method</legend>
             {(
