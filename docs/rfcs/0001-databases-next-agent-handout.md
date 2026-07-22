@@ -70,13 +70,13 @@ the repository-wide check for final release readiness.
   catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
   approval-bound commits, undo, and restart/backup idempotency. Agent View
   policy/privacy/sandbox review remains Partial by design.
-- Notion UX alignment checklist: **46/128 complete**. The page-first and normal
+- Notion UX alignment checklist: **47/128 complete**. The page-first and normal
   New-page creation slices, the inline/linked insertion contract, and the
   table-first direct-manipulation, named canonical workspace canvas-route,
   shared navigation without a duplicate canvas rail, sidebar/recent/search/
   backlink/relation navigation, normal database page chrome, responsive canvas
-  guardrails, inline/full-page state parity, stable conversion, and durable
-  History/receipt recovery slices
+  guardrails, inline/full-page state parity, property-add/header affordances,
+  stable conversion, and durable History/receipt recovery slices
   are now evidenced. A
   2026-07-23 in-app browser capture reached the IPv4 renderer at
   `http://127.0.0.1:5173/`, created a full-page database, created two canonical
@@ -277,8 +277,9 @@ do not reconstruct behavior solely from this summary.
   focused database test renders `DatabaseWorkspacePage` and covers the real
   no-portal/no-overlay workspace, selected-view hash, missing-source back
   action, and permission-denied state.
-- UX-201, UX-202, UX-204, UX-205, UX-206, UX-207, UX-208, and UX-209 are
-  checked. UX-210 remains open for conversion proof.
+- UX-201, UX-202, UX-204, UX-205, UX-206, UX-207, UX-208, UX-209, and UX-501
+  are checked. UX-210 and UX-502 remain open for conversion proof and
+  property-specific Sort/Filter/Duplicate header actions.
 
 ### 2026-07-23 normal database page chrome
 
@@ -296,7 +297,7 @@ do not reconstruct behavior solely from this summary.
   data-plane paths, so appearance changes do not alter stable database/source/
   view/record identities.
 - Focused evidence: page/canvas `DatabaseTableDialog.dom.test.tsx` (2 tests /
-  21 expectations), core `schema.test.ts` (1 / 2), app mutation compiler test
+  26 expectations), core `schema.test.ts` (1 / 2), app mutation compiler test
   (1 / 4), app typecheck, server typecheck, targeted Biome, and diff check. The
   full server suite and broad E2E were intentionally not run.
 - UX-204 is checked at the implementation/evidence layer. Visual pixel parity,
@@ -346,6 +347,20 @@ do not reconstruct behavior solely from this summary.
 - UX-309 is checked at the functional implementation/evidence layer. The full
   visual state matrix and cross-host capture remain NUI-701/NUI-702 gates.
 
+### 2026-07-23 in-context property affordances
+
+- When schema management is available, the table edge exposes `Add property`
+  and opens the canonical reviewed properties surface. Read-only hosts omit the
+  action rather than presenting a dead control. Each property header exposes a
+  stable-ID menu for visibility, move left/right, calculations, context
+  inspection, rename/configure, type conversion, and dependency-aware delete;
+  Title remains frozen from invalid move/delete operations.
+- Focused evidence: `DatabaseTableDialog.dom.test.tsx` (2 tests / 15
+  expectations) and `DatabasePropertiesDialog.dom.test.tsx` (7 / 23).
+- UX-501 is checked at the functional implementation/evidence layer. UX-502
+  remains open until Sort, Filter, and Duplicate are also surfaced in the same
+  header menu; visual and broader property-family gates remain open.
+
 ### 2026-07-23 sidebar and recent database navigation
 
 - `DatabaseSidebarSection` is a peer `Databases` section in the ordinary file
@@ -354,8 +369,8 @@ do not reconstruct behavior solely from this summary.
 - The command palette's existing omnibar recents now have UI evidence for a
   catalog-backed database under `Recently opened`, reopening the same stable
   route. Focused evidence: sidebar 3 tests / 7 expectations and recent UI 1 / 5.
-- UX-203, UX-204, UX-206, UX-209, and UX-309 are checked. The 768px visual
-  responsive check remains under UX-1007.
+- UX-203, UX-204, UX-206, UX-209, UX-309, and UX-501 are checked. UX-502 and
+  the 768px visual responsive check remain open.
 
 ### 2026-07-23 stable inline/full-page conversion
 

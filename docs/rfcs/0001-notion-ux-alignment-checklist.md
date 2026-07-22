@@ -375,6 +375,32 @@ Focused evidence:
 This closes UX-309 at the functional implementation/evidence layer. The full
 visual state matrix and cross-host capture remain NUI-701/NUI-702 gates.
 
+### In-context property affordance evidence (2026-07-23)
+
+Table schema management is now discoverable where users edit data. When the
+host exposes schema writers, a right-edge `Add property` action opens the
+canonical properties surface; otherwise the table stays read-only instead of
+showing a dead control. Every visible property header has one stable-ID menu
+with visibility, move left/right, calculation, context inspection,
+rename/configure, type conversion, and dependency-aware delete actions. The
+Title property remains frozen from invalid move/delete operations, and the
+dialog's add/rename/reorder/delete flows commit only through the existing exact
+mutation boundary.
+
+Focused evidence:
+
+- `DatabaseTableDialog.dom.test.tsx`: host-gated `Add property` and contextual
+  header menu affordances (2 tests / 15 expectations).
+- `DatabasePropertiesDialog.dom.test.tsx`: property listing, add, delete,
+  inline rename, requested-property focus, reorder, mutation lock, and error
+  behavior (7 tests / 23 expectations).
+
+This closes UX-501 at the functional implementation/evidence layer. The
+stable header menu is present and covers visibility/order/calculation,
+inspection, rename/configure, type conversion, and delete; property-specific
+Sort, Filter, and Duplicate actions are still open under UX-502. Visual parity
+and the broader property-family acceptance gates remain open.
+
 ### Sidebar and recent database navigation evidence (2026-07-23)
 
 The ordinary file sidebar now exposes database sources as a peer `Databases`
@@ -431,7 +457,7 @@ crossed the document-native UX bar:
 | Measure | Current result | Interpretation |
 | --- | --- | --- |
 | Engine implementation checklist | 310/335 numbered items complete | Core/database and agent contracts are substantially implemented. |
-| Notion UX checklist | 46/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, inline/full-page state parity, table-first direct manipulation, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, 768px browser, and cross-host journey gates remain open. |
+| Notion UX checklist | 47/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, inline/full-page state parity, table-first direct manipulation, in-context property-add/header affordances, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; property-specific sort/filter/duplicate actions, full visual, 768px browser, and cross-host journey gates remain open. |
 | First-use database entry | `New database` in sidebar, empty states, normal new-page dialog, command palette, plus slash-menu `New database`/`Linked view of database`; normal picker exposes Page/Database chooser and the resulting route lands in an editable table. `Open databases` enters the no-overlay page workspace. | Discovery, sidebar/recent navigation, and the web first-use path are evidenced; additional entry points and Electron proof remain open. |
 | Blank creation | Optional title, `Untitled database` fallback, direct-safe exact-plan commit, immediate source/view selection, title/new-row focus | The blank human path is continuous in DOM coverage; template/import/agent paths intentionally retain review and visual browser proof remains open. |
 | Full-page navigation | Stable `#database/<database>/<source>/<view?>` route, no-overlay canvas presentation, sidebar source section, command-palette recents/search, backlink and relation links, normal page chrome, and local overflow guardrails | Route, page surface, and navigation identity are evidenced; responsive visual/cross-host proof remains incomplete. |
@@ -703,9 +729,15 @@ capability alone is insufficient.
 
 ### UX-5 — Properties in context
 
-- [ ] **UX-501** Add a right-edge `+` column affordance with a property picker.
+- [x] **UX-501** Add a right-edge `+` column affordance with a property picker.
+      Evidence: host-gated `Add property` opens the canonical properties
+      surface, while read-only hosts do not expose a dead action.
 - [ ] **UX-502** Add a header menu for rename, configure, sort, filter,
-      calculate, insert left/right, hide, duplicate, and delete.
+      calculate, insert left/right, hide, duplicate, and delete. The stable
+      header menu already covers visibility/order/calculation,
+      inspect/rename/configure, type conversion, and dependency-aware delete;
+      property-specific Sort, Filter, and Duplicate actions still need to be
+      surfaced in that same menu.
 - [ ] **UX-503** Use friendly property names/examples before schema terminology.
 - [ ] **UX-504** Keep Title uniquely required and explain conversion blockers.
 - [ ] **UX-505** Use type-specific cell editors for every implemented family.
