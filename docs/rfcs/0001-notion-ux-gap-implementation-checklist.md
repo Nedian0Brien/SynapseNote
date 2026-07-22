@@ -294,7 +294,7 @@ treated as visual parity until a browser capture is attached.
   records. Evidence: `DatabaseView.dom.test.tsx` inline-creation journey
   (12/12 tests, 75 expectations) plus NUI-204 route identity coverage. Map to
   UX-302/UX-306/UX-310.
-- [ ] **NUI-402** Make the inline block show the database title, visible view
+- [x] **NUI-402** Make the inline block show the database title, visible view
   tabs, shared-record explanation, and consistent loading/error/offline states.
   The inline block now exposes the database/source title and the active
   saved-view tab (plus adjacent tabs when a source has multiple views), with
@@ -309,8 +309,9 @@ treated as visual parity until a browser capture is attached.
   18/18 tests, 183 expectations, plus the cache suite. Loading exposes
   `aria-busy`/`data-database-state="loading"`, empty sources retain the
   actionable new-row input, and permission denial is proven not to reuse an
-  offline snapshot.
-  Map to UX-304/UX-305/UX-309.
+  offline snapshot. The functional title/tab/cache/state contract is complete;
+  the remaining visual state matrix is a separate NUI-701/NUI-702 gate. Map to
+  UX-304/UX-305/UX-309.
 - [x] **NUI-403** Use one canonical record-page component for title cell, peek,
   full page, comments, history, relation navigation, previous/next, and return
   to the originating view. Record opens now persist the originating database,

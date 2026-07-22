@@ -49,13 +49,14 @@ the repository-wide check for final release readiness.
 - Numbered A-S items still open: **5**.
 - Total unchecked Markdown boxes: **25**. The extra 20 are M1-M4 milestone
   release gates, all intentionally still open.
-- Notion UX gap implementation checklist: **33/42 complete**. NUI-201,
+- Notion UX gap implementation checklist: **34/42 complete**. NUI-201,
   NUI-202, NUI-203, NUI-204, NUI-302, NUI-304, and NUI-401 are closed with
   focused implementation evidence; NUI-301, NUI-303, and NUI-403 are now
   closed for implementation evidence; NUI-501 is now closed for the complete
   stable-ID property affordance and dependency/recovery evidence; NUI-502 is
   now closed for stable-ID view reorder and active-view settings/menu evidence;
-  NUI-503 is now closed for blank/template/import and agent-shaped resulting
+  NUI-402 is now closed for the inline title/tab/shared-record/cache/state
+  contract; NUI-503 is now closed for blank/template/import and agent-shaped resulting
   page previews; NUI-105 and the P1/P2 agent, linked-view,
   responsive, and browser-journey gates remain open.
 - Notion UX alignment checklist: **2/128 complete**. The first insertion slice
@@ -451,14 +452,17 @@ do not reconstruct behavior solely from this summary.
   cache, malformed entries are discarded, and the oldest views are evicted.
   `DatabaseView.dom.test.tsx` covers 13/13 tests and 116 expectations, while
   `database-linked-view-cache.test.ts` covers reload rehydration and eviction
-  (2/2 tests, 5 expectations). The full visual state matrix remains open under
-  NUI-402.
+  (2/2 tests, 5 expectations). At that earlier slice the full visual state
+  matrix remained open under NUI-402; its functional gate is now closed and
+  visual capture remains under NUI-701/NUI-702.
 - Database creation now shows a bounded `First page preview` for template and
   CSV/TSV sample rows before review, while blank remains the fastest direct-safe
   path. The existing commit continuation selects the created source/view and
-  opens the editable table after commit. Agent-authored preview and visual
-  first-use evidence remain open under NUI-503; creation DOM coverage is 7/7
-  tests and 29 expectations.
+  opens the editable table after commit. At that earlier slice agent-authored
+  preview and visual first-use evidence remained open under NUI-503; the
+  resulting-page ghost preview now closes the functional gate, while visual
+  first-use remains under NUI-701/NUI-702. Creation DOM coverage is 7/7 tests
+  and 29 expectations.
 - Record opens now preserve the originating database/view and loaded record
   order in a bounded session navigation state. The canonical record page
   exposes guarded Previous/Next and Back to database view actions; peek, full
@@ -488,7 +492,9 @@ do not reconstruct behavior solely from this summary.
 - Linked inline database blocks now show the database/source title and a
   visible saved-view tab strip (with an active `aria-current` tab when multiple
   views exist), while preserving stable references. Offline-cache parity and
-  the complete visual state matrix remain an open NUI-402 gate.
+  the complete visual state matrix were the remaining NUI-402 work at that
+  point; the functional gate is now closed and visual capture remains under
+  NUI-701/NUI-702.
 - Invalid inline database blocks now offer `Create new database`; the blank
   path compiles and commits through the same exact-plan engine, then writes only
   stable database/source/view props back to the host JSX node. This closes
@@ -934,6 +940,19 @@ do not reconstruct behavior solely from this summary.
   journey passes 1 test / 3 expectations. This closes **NUI-503**, taking the
   UX-gap count to **33/42 (78.6%)**. Visual first-use and cross-host gates stay
   under NUI-701/NUI-702.
+
+### 2026-07-22 inline linked-view state checklist closure
+
+- Inline linked databases now expose the canonical database/source title, the
+  active saved-view tab with stable references, and the shared-record
+  explanation. Loading, empty, permission, offline, stale, and retry states
+  retain explicit state markers; validated per-tab snapshots survive reload in
+  bounded `sessionStorage` without storing credentials or pending writes.
+- Focused evidence: `DatabaseView.dom.test.tsx` covers 18 tests / 183
+  expectations in the linked-view state slice, and
+  `database-linked-view-cache.test.ts` passes 2 tests / 5 expectations. This
+  closes **NUI-402**, taking the UX-gap count to **34/42 (81.0%)**. The complete
+  visual state matrix and cross-host capture remain under NUI-701/NUI-702.
 
 ## Verification already completed
 
