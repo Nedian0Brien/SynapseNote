@@ -974,6 +974,21 @@ export function DatabaseTable({
     );
   const properties = visibleProperties.slice(0, DATABASE_TABLE_RENDERED_COLUMN_LIMIT);
   const omittedColumnCount = visibleProperties.length - properties.length;
+  const computedErrorSummaries = new Map<string, { count: number; codes: ReadonlySet<string> }>();
+  for (const record of result.records) {
+    for (const property of allProperties) {
+      if (property.type !== 'formula' && property.type !== 'rollup') continue;
+      const computedResult = record.computedResults?.[property.id];
+      if (computedResult?.kind !== 'error') continue;
+      const current = computedErrorSummaries.get(property.id);
+      const codes = new Set(current?.codes ?? []);
+      codes.add(computedResult.problem.code);
+      computedErrorSummaries.set(property.id, {
+        count: (current?.count ?? 0) + 1,
+        codes,
+      });
+    }
+  }
   const canonicalIds = new Set(result.records.map((record) => record.id));
   const tableRecords: Array<{
     record: ProjectedDatabaseRecord;
@@ -1450,6 +1465,7 @@ export function DatabaseTable({
               const propertyVisible = !layout.hiddenPropertyIds.includes(property.id);
               const calculationOptions = databaseCalculationFunctionsForProperty(property);
               const propertyTypeLabel = databasePropertyTypeLabel(property.type);
+              const computedErrorSummary = computedErrorSummaries.get(property.id);
               return (
                 <TableHead
                   key={property.id}
@@ -1467,6 +1483,20 @@ export function DatabaseTable({
                   <span className="ml-2 normal-case text-[10px] opacity-60">
                     {propertyTypeLabel}
                   </span>
+                  {computedErrorSummary ? (
+                    <span
+                      className="ml-1 inline-flex items-center gap-0.5 text-destructive"
+                      role="img"
+                      aria-label={`${property.name}: ${computedErrorSummary.count} computed error${computedErrorSummary.count === 1 ? '' : 's'} in loaded records`}
+                      title={`${[...computedErrorSummary.codes].join(', ')} in ${computedErrorSummary.count} loaded record${computedErrorSummary.count === 1 ? '' : 's'}`}
+                      data-computed-error-count={computedErrorSummary.count}
+                      data-computed-error-codes={[...computedErrorSummary.codes].join(',')}
+                      data-computed-error-scope="loaded-records"
+                    >
+                      <AlertCircle className="size-3.5" aria-hidden="true" />
+                      <span aria-hidden="true">{computedErrorSummary.count}</span>
+                    </span>
+                  ) : null}
                   {(property.type === 'formula' || property.type === 'rollup') &&
                   onConfigureComputedProperty ? (
                     <Button
@@ -1846,6 +1876,14 @@ export function DatabaseTable({
                         data-canonical={proposed ? 'false' : 'true'}
                         title={shownText}
                         data-computed-state={computedResult?.kind}
+                        data-computed-error-code={
+                          computedResult?.kind === 'error' ? computedResult.problem.code : undefined
+                        }
+                        data-computed-error-message={
+                          computedResult?.kind === 'error'
+                            ? computedResult.problem.message
+                            : undefined
+                        }
                         data-invalid-preserved={invalidValue !== undefined ? 'true' : undefined}
                         tabIndex={
                           ghostCreated

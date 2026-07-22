@@ -1486,6 +1486,81 @@ describe('DatabaseTableDialog', () => {
         .querySelector('[data-property-id="prop_formula"][data-computed-state]')
         ?.getAttribute('data-computed-state'),
     ).toBe('error');
+    expect(
+      screen
+        .getByRole('img', { name: 'Formula: 1 computed error in loaded records' })
+        .getAttribute('data-computed-error-codes'),
+    ).toBe('divide_by_zero');
+    expect(
+      document
+        .querySelector('[data-property-id="prop_formula"][data-computed-error-code]')
+        ?.getAttribute('data-computed-error-message'),
+    ).toBe('Cannot divide by zero');
+  });
+
+  test('surfaces a Rollup error beside its column and cell', () => {
+    const rollupSource = {
+      ...source,
+      properties: [
+        ...source.properties,
+        {
+          id: 'prop_rollup',
+          key: 'rollup',
+          name: 'Rollup total',
+          type: 'rollup' as const,
+          relationPropertyId: 'prop_relation',
+          targetSourceId: 'ds_projects',
+          targetPropertyId: 'prop_budget',
+          function: 'sum' as const,
+          targetValueType: 'number' as const,
+        },
+      ],
+    };
+    render(
+      <DatabaseTable
+        source={rollupSource as never}
+        result={
+          {
+            sourceId: rollupSource.id,
+            snapshotRevision: hash,
+            matched: 1,
+            returned: 1,
+            isComplete: true,
+            nextCursor: null,
+            truncatedBy: null,
+            indexFreshness: 'snapshot',
+            records: [
+              {
+                id: 'rec_rollup',
+                path: 'tasks/rollup.md',
+                revision: hash,
+                values: { prop_title: 'Rollup task' },
+                computedResults: {
+                  prop_rollup: {
+                    kind: 'error',
+                    problem: {
+                      code: 'missing_projection',
+                      message: 'The related value is not available in this snapshot',
+                    },
+                  },
+                },
+              },
+            ],
+            aggregation: null,
+          } as never
+        }
+      />,
+    );
+
+    expect(
+      screen.getByRole('img', { name: 'Rollup total: 1 computed error in loaded records' }),
+    ).toBeTruthy();
+    const cell = document.querySelector(
+      '[data-property-id="prop_rollup"][data-computed-error-code="missing_projection"]',
+    );
+    expect(cell?.getAttribute('data-computed-error-message')).toBe(
+      'The related value is not available in this snapshot',
+    );
   });
 
   test('formats created and last edited metadata as read-only date cells', () => {
