@@ -294,9 +294,11 @@ do not reconstruct behavior solely from this summary.
   destructive, permission, external, migration, verification, and unknown
   elevated path remains review-required.
 - Focused evidence: `database-mutation-policy.test.ts` passes 4 tests / 68
-  expectations, including every operation and actor combination; app
-  typecheck and Biome pass. Alternate renderer and transport-level integration
-  evidence remains open under NUI-301.
+  expectations, including every operation and actor combination;
+  `DatabaseTableDialog.dom.test.tsx` passes 64 tests / 372 expectations across
+  canonical Table, Board, Timeline, Calendar, schema, and mutation journeys;
+  app typecheck and Biome pass. Alternate renderer and transport-level
+  integration evidence remains open under NUI-301.
 
 ### 2026-07-22 entry-point re-audit and convergence slice
 

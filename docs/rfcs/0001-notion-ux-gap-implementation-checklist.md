@@ -239,7 +239,9 @@ treated as visual parity until a browser capture is attached.
   creates a second inline bulk-write path. The remaining gate is full
   optimistic/undo evidence for every view editor and a complete policy matrix
   for agent transports. The explicit 13-operation matrix is covered by
-  `database-mutation-policy.test.ts`; integration evidence across every
+  `database-mutation-policy.test.ts`; the canonical workspace regression suite
+  passes 64/64 tests and 372 expectations across Table, Board, Timeline,
+  Calendar, schema, and mutation journeys. Integration evidence across every
   alternate renderer and agent transport remains open. Map to UX-005/UX-006.
 - [x] **NUI-302** Add saving/saved/offline/conflict/failed indicators that do
   not replace the table with a transaction screen. Map to UX-405/UX-406.
