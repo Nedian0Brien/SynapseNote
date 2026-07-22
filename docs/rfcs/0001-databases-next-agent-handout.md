@@ -37,6 +37,7 @@
 - Latest view-scoped property layout changeset: `../../.changeset/database-view-scoped-property-layout.md`
 - Latest view-action convergence changeset: `../../.changeset/database-view-action-convergence.md`
 - Latest visible view-tabs changeset: `../../.changeset/database-visible-view-tabs.md`
+- Latest view-suggestions changeset: `../../.changeset/database-view-suggestions.md`
 
 ## Objective and completion rule
 
@@ -74,7 +75,7 @@ the repository-wide check for final release readiness.
   catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
   approval-bound commits, undo, and restart/backup idempotency. Agent View
   policy/privacy/sandbox review remains Partial by design.
-- Notion UX alignment checklist: **58/128 complete**. The page-first and normal
+- Notion UX alignment checklist: **59/128 complete**. The page-first and normal
   New-page creation slices, the inline/linked insertion contract, and the
   table-first direct-manipulation, named canonical workspace canvas-route,
   shared navigation without a duplicate canvas rail, sidebar/recent/search/
@@ -85,7 +86,8 @@ the repository-wide check for final release readiness.
   type-specific-editor, schema-vs-data mutation-scope, and destructive
   property-deletion preview, adjacent Formula/Rollup error-indicator, and
   view-scoped property-layout, converged header/settings-action, and visible
-  reorderable view-tab and layout-independent new-view affordance slices are now
+  reorderable view-tab, layout-independent new-view affordance, and
+  layout-specific starter-suggestion slices are now
   evidenced. A
   2026-07-23 in-app browser capture reached the IPv4 renderer at
   `http://127.0.0.1:5173/`, created a full-page database, created two canonical
@@ -416,7 +418,13 @@ do not reconstruct behavior solely from this summary.
   with a List-layout saved view (1 test / 19 expectations). The shared tab strip
   renders before the layout switch, so the `New database view` plus action is
   available for every supported renderer.
-- UX-501 through UX-510, UX-601, and UX-602 are checked at the functional implementation/evidence
+- Saved-view creation now shows a layout-specific starter suggestion below the
+  name/layout controls (group, date, files preview, chart dimension, map place,
+  feed chronology, dashboard candidates, form title, or table/list projection).
+  The hint is derived from the same default constructors as the emitted view;
+  Board suggestion/default-group evidence is 1 test / 3 expectations, while
+  the existing manager matrix covers the other layouts.
+- UX-501 through UX-510, UX-601, UX-602, and UX-603 are checked at the functional implementation/evidence
   layer. Visual and broader property-family gates remain open.
 
 ### 2026-07-23 sidebar and recent database navigation
@@ -428,7 +436,7 @@ do not reconstruct behavior solely from this summary.
   catalog-backed database under `Recently opened`, reopening the same stable
   route. Focused evidence: sidebar 3 tests / 7 expectations and recent UI 1 / 5.
 - UX-203, UX-204, UX-206, UX-209, UX-309, UX-501, UX-502, UX-503, UX-504,
-  UX-505, UX-506, UX-507, UX-508, UX-509, UX-510, UX-601, and UX-602 are checked. The 768px visual responsive check remains
+  UX-505, UX-506, UX-507, UX-508, UX-509, UX-510, UX-601, UX-602, and UX-603 are checked. The 768px visual responsive check remains
   open.
 
 ### 2026-07-23 stable inline/full-page conversion
