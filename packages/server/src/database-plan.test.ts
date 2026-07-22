@@ -1988,6 +1988,23 @@ describe('DatabasePlanEngine ephemeral desired state', () => {
     }
   });
 
+  test('restores an exact persisted plan and draft into a fresh engine', () => {
+    const { engine, store, recordIndex, projectDir, contentDir } = fixture();
+    const draft = engine.createDraft(desiredState());
+    const plan = engine.createPlan(draft.id);
+    const restarted = createDatabasePlanEngine({
+      databaseStore: store,
+      databaseRecordIndex: recordIndex,
+      projectDir,
+      contentDir,
+      now: () => new Date('2026-07-19T10:00:00.000Z'),
+    });
+    restarted.restoreDraft(draft);
+    restarted.restorePlan(plan);
+    expect(restarted.getDraft(draft.id)).toEqual(draft);
+    expect(restarted.getPlan(plan.id)).toEqual(plan);
+  });
+
   test('returns stable recovery issues for malformed desired state', () => {
     const { engine } = fixture();
     try {

@@ -779,6 +779,43 @@ function databaseCreationPreviewValue(value: unknown): string {
   return String(value);
 }
 
+const databaseApprovalLabels: Record<string, string> = {
+  create_database: 'Create database',
+  delete_database: 'Delete database',
+  alter_schema: 'Change schema',
+  autonomous_policy: 'Autonomous write policy',
+  sample_record_write: 'Write sample records',
+  verification_change: 'Change verification',
+  delete_record: 'Delete records',
+};
+
+function DatabaseAtomicApprovalScope({
+  approvals,
+}: {
+  approvals: DatabaseGhostState['approvals'];
+}) {
+  const required = approvals.filter((approval) => approval.required !== false);
+  if (required.length === 0) return null;
+  return (
+    <section
+      className="mt-2 rounded border border-amber-500/30 bg-amber-500/5 p-2 text-xs"
+      aria-label="Atomic approval scope"
+      data-testid="database-atomic-approval-scope"
+    >
+      <div className="font-medium">Atomic approval group</div>
+      <p className="mt-1 text-muted-foreground">
+        These changes share one exact plan and commit together. A partial approval would break
+        referential or rollback safety, so all listed scopes are reviewed as one group.
+      </p>
+      <ul className="mt-1 list-disc pl-5">
+        {required.map((approval) => (
+          <li key={approval.code}>{databaseApprovalLabels[approval.code] ?? approval.code}</li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 export function DatabaseTable({
   databaseId = '',
   viewId = null,
@@ -4913,6 +4950,7 @@ export function DatabaseTableDialog({
                     record file(s), {ghost.diff.templates.length} template file(s) · risk{' '}
                     {ghost.risk.level}
                   </p>
+                  <DatabaseAtomicApprovalScope approvals={ghost.approvals} />
                   {creationPreview?.sampleRecords && creationPreview.sampleRecords.length > 0 ? (
                     <section
                       className="mt-3 rounded border bg-background/70 p-2"
@@ -6296,6 +6334,7 @@ export function DatabaseTableDialog({
                         {ghost.diff.manifests.length} manifest(s), {ghost.diff.templates.length}{' '}
                         template file(s) · risk {ghost.risk.level}
                       </p>
+                      <DatabaseAtomicApprovalScope approvals={ghost.approvals} />
                       {ghost.risk.reasons.length > 0 ? (
                         <ul className="mt-1 list-disc pl-5 text-xs" aria-label="Change risks">
                           {ghost.risk.reasons.map((reason) => (

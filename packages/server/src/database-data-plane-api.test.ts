@@ -3178,7 +3178,8 @@ describe('database data plane HTTP handlers', () => {
   });
 
   test('retries a failed Agent Run with an exact plan and idempotent handoff', async () => {
-    const { handlers, projectDir, agentRunStore } = await fixture();
+    const { handlers, projectDir, contentDir, store, index, dataPlane, agentRunStore } =
+      await fixture();
     const desiredState = {
       database: {
         id: 'db_retry_tasks',
@@ -3250,6 +3251,43 @@ describe('database data plane HTTP handlers', () => {
       ).id,
       { code: 'transaction_failed', message: 'The first attempt failed before applying.' },
     );
+    await agentRunStore.persistPlanBundle(plan, dataPlane.getDraft(draft.draft.id));
+
+    // Simulate a server restart: the new data plane has no in-memory plan cache.
+    const restartedPlanEngine = createDatabasePlanEngine({
+      databaseStore: store,
+      databaseRecordIndex: index,
+      projectDir,
+      contentDir,
+      now: () => new Date('2026-07-20T00:00:00.000Z'),
+    });
+    const restartedDataPlane = createDatabaseDataPlane({
+      databaseStore: store,
+      databaseRecordIndex: index,
+      databasePlanEngine: restartedPlanEngine,
+    });
+    const restartedAgentRunStore = createDatabaseAgentRunStore({ projectDir });
+    const restartedCommitEngine = createDatabaseCommitEngine({
+      projectDir,
+      contentDir,
+      databaseStore: store,
+      databaseRecordIndex: index,
+      databasePlanEngine: restartedPlanEngine,
+      now: () => new Date('2026-07-20T00:00:00.000Z'),
+      git: {
+        snapshot: async () => '2'.repeat(40),
+        hashBlob: async () => `sha1:${'b'.repeat(40)}`,
+      },
+      agentRunStore: restartedAgentRunStore,
+    });
+    restartedDataPlane.configureCommitEngine(restartedCommitEngine);
+    const restartedHandlers = createDatabaseDataPlaneApiHandlers(
+      restartedDataPlane,
+      undefined,
+      undefined,
+      undefined,
+      restartedAgentRunStore,
+    );
 
     const input = {
       action: 'retry' as const,
@@ -3258,7 +3296,12 @@ describe('database data plane HTTP handlers', () => {
       idempotencyKey: 'agent-run-retry-http-0001',
       approvalToken: `approve:${plan.hash}`,
     };
-    const retried = await call(handlers.runs, 'POST', '/api/databases/runs', JSON.stringify(input));
+    const retried = await call(
+      restartedHandlers.runs,
+      'POST',
+      '/api/databases/runs',
+      JSON.stringify(input),
+    );
     expect(retried.status, retried.body).toBe(200);
     const result = JSON.parse(retried.body) as {
       action: string;
@@ -3289,7 +3332,7 @@ describe('database data plane HTTP handlers', () => {
     expect(existsSync(join(projectDir, '.ok', 'databases', 'retry-tasks.yml'))).toBe(true);
 
     const replayed = await call(
-      handlers.runs,
+      restartedHandlers.runs,
       'POST',
       '/api/databases/runs',
       JSON.stringify(input),

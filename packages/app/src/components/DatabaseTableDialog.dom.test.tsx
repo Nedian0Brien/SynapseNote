@@ -3348,6 +3348,9 @@ describe('DatabaseTableDialog', () => {
     const preview = await screen.findByTestId('database-creation-resulting-page-preview');
     expect(preview.textContent).toContain('Page preview');
     expect(preview.textContent).toContain('Plan launch');
+    expect(screen.getByTestId('database-atomic-approval-scope').textContent).toContain(
+      'Create database',
+    );
     expect(screen.getByTestId('database-creation-ghost-review')).not.toBeNull();
   });
 

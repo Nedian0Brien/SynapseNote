@@ -7,7 +7,7 @@ import {
   DatabaseAgentRunStoreError,
 } from './database-agent-run-store.ts';
 import type { DatabaseCommitResult } from './database-commit.ts';
-import type { DatabasePlanArtifact } from './database-plan.ts';
+import type { DatabaseDraftArtifact, DatabasePlanArtifact } from './database-plan.ts';
 
 const tempDirs: string[] = [];
 
@@ -72,6 +72,17 @@ function plan(): DatabasePlanArtifact {
     postconditions: [],
     committable: true,
     requiresCommit: true,
+  };
+}
+
+function draft(): DatabaseDraftArtifact {
+  return {
+    id: 'draft_test',
+    revision: `sha256:${'2'.repeat(64)}`,
+    createdAt: '2026-07-20T00:00:00.000Z',
+    expiresAt: '2026-07-20T01:00:00.000Z',
+    desiredState: {} as DatabaseDraftArtifact['desiredState'],
+    normalized: {} as DatabaseDraftArtifact['normalized'],
   };
 }
 
@@ -229,5 +240,42 @@ describe('DatabaseAgentRunStore', () => {
       'utf8',
     );
     expect(stored).not.toContain('agent-run-retry-request-0001');
+  });
+
+  test('persists an exact plan bundle across a store restart and rejects tampering', async () => {
+    const { projectDir, store } = fixture();
+    const persisted = await store.persistPlanBundle(plan(), draft());
+    expect(persisted).toMatchObject({
+      version: 1,
+      plan: { id: 'plan_test', draftId: 'draft_test' },
+      draft: { id: 'draft_test', revision: `sha256:${'2'.repeat(64)}` },
+    });
+    const restarted = createDatabaseAgentRunStore({ projectDir });
+    expect(await restarted.getPlanBundle('plan_test')).toEqual(persisted);
+    const path = join(
+      projectDir,
+      '.ok',
+      'local',
+      'database-agent-runs',
+      'v1',
+      'plans',
+      'plan_test.json',
+    );
+    expect(statSync(path).mode & 0o777).toBe(0o600);
+    const tampered = JSON.parse(readFileSync(path, 'utf8')) as {
+      plan: { hash: string };
+    };
+    tampered.plan.hash = `sha256:${'9'.repeat(64)}`;
+    writeFileSync(path, JSON.stringify(tampered), { mode: 0o600 });
+    await expect(restarted.getPlanBundle('plan_test')).rejects.toMatchObject({
+      code: 'agent_run_store_corrupt',
+    });
+  });
+
+  test('reports a typed recovery when no immutable plan survived restart', async () => {
+    const { store } = fixture();
+    await expect(store.getPlanBundle('plan_missing')).rejects.toMatchObject({
+      code: 'agent_run_plan_unavailable',
+    });
   });
 });

@@ -387,6 +387,16 @@ function recoveryFor(code: DatabaseProblemCode): {
           endpoint: '/api/databases/runs',
         },
       };
+    case 'agent_run_plan_unavailable':
+      return {
+        retryable: false,
+        recovery: {
+          action: 'recreate_plan',
+          instruction:
+            'The immutable Agent Run plan was not available after restart; create and review a fresh plan before retrying.',
+          endpoint: '/api/databases/plan',
+        },
+      };
     case 'agent_run_revision_changed':
       return {
         retryable: false,

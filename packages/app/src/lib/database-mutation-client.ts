@@ -5,6 +5,7 @@ import type {
   DatabaseCommitResult,
   DatabaseDesiredStateDraftInput,
   DatabaseDraftArtifact,
+  DatabasePlanApprovalCode,
   DatabasePlanArtifact,
   DatabaseUndoResult,
 } from '@nedian0brien/synapsenote-server';
@@ -385,6 +386,7 @@ export async function commitReviewedDatabasePlan(
     actor: DatabaseUiActor;
     idempotencyKey: string;
     assertions?: { databaseAbsent?: boolean; createdRecords?: number };
+    approvalCodes?: readonly DatabasePlanApprovalCode[];
   },
   options: DatabaseMutationClientOptions = {},
 ): Promise<DatabaseCommitResult> {
@@ -398,6 +400,7 @@ export async function commitReviewedDatabasePlan(
         idempotencyKey: input.idempotencyKey,
         approvalToken: `approve:${input.plan.hash}`,
         actor: { ...input.actor, kind: 'human' },
+        ...(input.approvalCodes ? { approvalCodes: input.approvalCodes } : {}),
         ...(input.assertions ? { assertions: input.assertions } : {}),
       },
       'commit',
@@ -430,6 +433,7 @@ export interface DatabaseGhostState {
   readonly snapshotRevision: string;
   readonly risk: DatabasePlanArtifact['risk'];
   readonly diff: DatabasePlanArtifact['diff'];
+  readonly approvals: DatabasePlanArtifact['approvals'];
 }
 
 function ghostState(plan: DatabasePlanArtifact, phase: DatabaseGhostState['phase']) {
@@ -441,6 +445,7 @@ function ghostState(plan: DatabasePlanArtifact, phase: DatabaseGhostState['phase
     snapshotRevision: plan.snapshotRevision,
     risk: structuredClone(plan.risk),
     diff: structuredClone(plan.diff),
+    approvals: structuredClone(plan.approvals),
   };
 }
 
@@ -466,6 +471,7 @@ export interface ExecuteReviewedDatabasePlanInput {
   actor: DatabaseUiActor;
   idempotencyKey: string;
   assertions?: { databaseAbsent?: boolean; createdRecords?: number };
+  approvalCodes?: readonly DatabasePlanApprovalCode[];
   review: (plan: DatabasePlanArtifact, ghost: DatabaseGhostState) => boolean | Promise<boolean>;
   onGhostStateChange?: (ghost: DatabaseGhostState | null) => void;
 }
@@ -491,6 +497,7 @@ export async function executeReviewedDatabasePlan(
           plan: input.plan,
           actor: input.actor,
           idempotencyKey: input.idempotencyKey,
+          ...(input.approvalCodes ? { approvalCodes: input.approvalCodes } : {}),
           ...(input.assertions ? { assertions: input.assertions } : {}),
         },
         options,

@@ -5,6 +5,10 @@
 
 import { z } from 'zod';
 import { databaseAccessHeaders } from '../../database-access-policy.ts';
+import {
+  type DatabasePlanApprovalCode,
+  DatabasePlanApprovalCodeSchema,
+} from '../../database-plan.ts';
 import type { AgentIdentity } from '../agent-identity.ts';
 import { DatabaseToolProblemOutputSchema, databaseToolHttpError } from './database-problem.ts';
 import type { ConfigOrResolver, ServerInstance, ServerUrlOrResolver } from './shared.ts';
@@ -21,7 +25,7 @@ import {
 export const DESCRIPTION = [
   '[Requires: Hocuspocus server; requires user approval] Commit an exact database plan atomically.',
   '',
-  'Call data_plan(action=create_plan), review its exact diff, conflicts, approvals, and postconditions, then pass the unchanged planId, planHash, snapshotRevision, and approvalToken=`approve:${planHash}`. The commit aborts if the plan, snapshot, assertions, or any target changed.',
+  'Call data_plan(action=create_plan), review its exact diff, conflicts, approvals, and postconditions, then pass the unchanged planId, planHash, snapshotRevision, and approvalToken=approve:<planHash>. The commit aborts if the plan, snapshot, assertions, or any target changed. If approvalCodes is supplied, every required scope must be included because this exact plan is one atomic group.',
   '',
   'Always provide a unique idempotencyKey for the logical request and reuse that same key only when retrying the identical request. A successful response includes the mutation ID, actual file diff, verification results, resulting revisions, audit receipt, and an undo token.',
 ].join('\n');
@@ -39,6 +43,7 @@ interface Args {
   expectedSnapshotRevision: string;
   idempotencyKey: string;
   approvalToken: string;
+  approvalCodes?: DatabasePlanApprovalCode[];
   actor: {
     principalId: string;
     kind: 'human' | 'agent' | 'sync' | 'filesystem' | 'system';
@@ -107,6 +112,13 @@ export function register(server: ServerInstance, deps: Dependencies): void {
           .string()
           .startsWith('approve:sha256:')
           .describe('Explicit approval bound to the reviewed hash: approve:<planHash>.'),
+        approvalCodes: z
+          .array(DatabasePlanApprovalCodeSchema)
+          .max(20)
+          .optional()
+          .describe(
+            'Optional reviewed approval scopes; partial approval is rejected for atomic plans.',
+          ),
         actor: z
           .object({
             principalId: z.string().min(1).max(256),
@@ -151,6 +163,7 @@ export function register(server: ServerInstance, deps: Dependencies): void {
           expectedSnapshotRevision: args.expectedSnapshotRevision,
           idempotencyKey: args.idempotencyKey,
           approvalToken: args.approvalToken,
+          ...(args.approvalCodes === undefined ? {} : { approvalCodes: args.approvalCodes }),
           actor: args.actor,
           ...(args.assertions === undefined ? {} : { assertions: args.assertions }),
         },

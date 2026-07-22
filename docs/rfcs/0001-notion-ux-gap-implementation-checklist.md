@@ -39,8 +39,8 @@ largest remaining mismatches are:
 5. Agent context inspection is scoped and token-aware, and ghost plans lead
    with human summaries. Database creation review now uses the same progressive
    summary/exact-plan disclosure. Agent Run retry/resume now has an exact-plan,
-   idempotent HTTP handoff and failed-run UI controls; durable restart recovery,
-   selective approval, MCP parity, and real model/agent replay remain unverified.
+   idempotent HTTP/MCP handoff, durable restart recovery, failed-run controls,
+   and a progressive receipt; real model/agent replay remains unverified.
 6. Component coverage is broad, but a complete first-use journey is still not
    evidenced across both hosts. The local web renderer/API setup currently has
    an IPv4/IPv6 and server-route mismatch, and no Electron journey has been
@@ -421,30 +421,39 @@ treated as visual parity until a browser capture is attached.
   `DatabaseContextInspectionScope` and HTTP query validation now cover
   `propertyIds` filtering.
   Map to UX-902/UX-909.
-- [ ] **NUI-602** Keep human-language plans first and stable IDs/files/risk/
+- [x] **NUI-602** Keep human-language plans first and stable IDs/files/risk/
   receipts under progressive disclosure; support selective approval only when
   atomic safety is preserved. Ghost review now leads with a human-readable
   action summary and keeps plan ID/hash/snapshot in collapsed exact details;
   database creation review now exposes the same summary, scope/risk line, and
-  collapsed exact-plan details before `Commit creation`. Selective approval and
-  full Agent Runs handoff remain open. Evidence:
+  collapsed exact-plan details before `Commit creation`. Approval scopes now
+  render as one human-readable atomic group; the HTTP/MCP commit contracts
+  accept optional approval codes but reject partial selections with the exact
+  required group, so referential and rollback safety cannot be split. Evidence:
   `DatabaseTableDialog.dom.test.tsx` discardable-ghost journey plus the focused
   `opens read-only folder onboarding only after the manifest creation commits`
-  journey (1 test / 7 expectations). Map to UX-904–UX-907.
-- [ ] **NUI-603** Keep Agent Runs inspect/undo/retry/resume independent from
+  journey (1 test / 7 expectations), the resulting-page/approval-scope journey,
+  and `database-commit.test.ts` atomic-scope rejection. Map to UX-904–UX-907.
+- [x] **NUI-603** Keep Agent Runs inspect/undo/retry/resume independent from
   the current view and preserve the public MCP/HTTP contracts. Agent Run
   inspection now leads with compact scope and proposed-diff summaries and keeps
   raw scope/diff JSON behind progressive disclosure. Failed agent runs now
   expose Retry/Resume controls that create an independent attempt from the
   exact immutable plan; the HTTP handoff binds the source revision, plan hash,
   approval/autonomy token, and idempotency key, while preserving the failed run
-  as audit history. Durable plan/checkpoint recovery after a process restart,
-  MCP parity, and a UI receipt display remain open. Evidence:
+  as audit history. Exact plan/draft sidecars are now atomically persisted in
+  the owner-only Agent Runs store and restored into a fresh plan engine after a
+  process restart; missing sidecars return a typed recreate-plan recovery. The
+  public MCP surface mirrors list/get/retry/resume and remains approval-gated,
+  while the UI exposes a progressive recovery receipt. Evidence:
   `DatabaseAgentRunsDialog.dom.test.tsx` (4 tests / 23 expectations), the
   focused `database-data-plane-api.test.ts` retry contract (1 test / 8
-  expectations), `database-agent-run-store.test.ts` (4 tests / 20
-  expectations), and the new `data_run` MCP tool (4 tests / 10 expectations)
-  plus the 31-tool registry/gating contract. Map to UX-908/UX-910.
+  expectations, including a fresh-engine restart simulation),
+  `database-agent-run-store.test.ts` (6 tests, including sidecar round-trip,
+  tamper, and missing-plan recovery), `database-plan.test.ts` fresh-engine
+  restore coverage, and the `data_run` MCP tool (4 tests / 10 expectations)
+  plus the 31-tool registry/gating contract. Selective approval and real
+  model/agent replay remain release evidence gates. Map to UX-908/UX-910.
 
 ## P2 — Evidence and release gates
 

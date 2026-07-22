@@ -68,7 +68,11 @@ import {
   DatabasePlaceSearchInputSchema,
   type DatabasePlaceSearchService,
 } from './database-place-search.ts';
-import { DatabaseDesiredStateDraftSchema, DatabasePlanError } from './database-plan.ts';
+import {
+  DatabaseDesiredStateDraftSchema,
+  type DatabasePlanArtifact,
+  DatabasePlanError,
+} from './database-plan.ts';
 import {
   DATABASE_REQUEST_ERROR_EXTENSIONS,
   databaseProblemExtensions,
@@ -2886,7 +2890,9 @@ function respondAgentRunStoreError(response: ServerResponse, error: unknown): vo
   const status: HttpErrorStatus =
     error.code === 'agent_run_not_found'
       ? 404
-      : error.code === 'agent_run_not_retryable' || error.code === 'agent_run_revision_changed'
+      : error.code === 'agent_run_plan_unavailable' ||
+          error.code === 'agent_run_not_retryable' ||
+          error.code === 'agent_run_revision_changed'
         ? 409
         : 503;
   errorResponse(
@@ -4218,7 +4224,17 @@ export function createDatabaseDataPlaneApiHandlers(
             return;
           }
           const sourceRun = await agentRunStore.prepareRecovery(body.runId, body.expectedRevision);
-          const plan = dataPlane.getPlan(sourceRun.plan.id);
+          let plan: DatabasePlanArtifact;
+          try {
+            plan = dataPlane.getPlan(sourceRun.plan.id);
+          } catch (error) {
+            if (!(error instanceof DatabasePlanError) || error.code !== 'plan_not_found') {
+              throw error;
+            }
+            plan = dataPlane.restorePlanBundle(
+              await agentRunStore.getPlanBundle(sourceRun.plan.id),
+            );
+          }
           if (plan.hash !== sourceRun.plan.hash) {
             throw new DatabaseCommitError(
               'plan_hash_mismatch',
@@ -4284,6 +4300,10 @@ export function createDatabaseDataPlaneApiHandlers(
         });
       } catch (error) {
         if (error instanceof DatabaseDataPlaneError) {
+          respondDataPlaneError(response, 'database-agent-runs', error);
+          return;
+        }
+        if (error instanceof DatabasePlanError) {
           respondDataPlaneError(response, 'database-agent-runs', error);
           return;
         }

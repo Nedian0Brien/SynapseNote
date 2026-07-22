@@ -5,12 +5,14 @@ import { type DatabaseAgentRun, DatabaseAgentRunSchema } from '@nedian0brien/syn
 import { atomicWriteFile, withFileLock } from '@nedian0brien/synapsenote-core/server';
 import { z } from 'zod';
 import type { DatabaseCommitInput, DatabaseCommitResult } from './database-commit.ts';
-import type { DatabasePlanArtifact } from './database-plan.ts';
+import type { DatabaseDraftArtifact, DatabasePlanArtifact } from './database-plan.ts';
 import { tracedAtomicFs, tracedMkdir } from './fs-traced.ts';
 
 const MAX_PROPOSED_DIFF_BYTES = 128 * 1024;
 const MAX_STORE_BYTES = 8 * 1024 * 1024;
+const MAX_PLAN_BUNDLE_BYTES = 8 * 1024 * 1024;
 const MAX_RUNS = 50;
+const PLAN_ID_PATTERN = /^plan_[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/;
 const RevisionSchema = z.union([
   z.string().regex(/^sha256:[a-f0-9]{64}$/),
   z.literal('sha256:empty'),
@@ -25,8 +27,25 @@ const StateSchema = z
 
 type State = z.infer<typeof StateSchema>;
 
+const PlanBundleSchema = z
+  .object({
+    version: z.literal(1),
+    plan: z.record(z.string(), z.unknown()),
+    draft: z.record(z.string(), z.unknown()),
+    revision: RevisionSchema,
+  })
+  .strict();
+
+export interface DatabaseAgentRunPlanBundle {
+  version: 1;
+  plan: DatabasePlanArtifact;
+  draft: DatabaseDraftArtifact;
+  revision: string;
+}
+
 export type DatabaseAgentRunStoreErrorCode =
   | 'agent_run_not_found'
+  | 'agent_run_plan_unavailable'
   | 'agent_run_not_retryable'
   | 'agent_run_revision_changed'
   | 'agent_run_store_unsafe'
@@ -93,11 +112,53 @@ function proposedDiff(plan: DatabasePlanArtifact): DatabaseAgentRun['proposedDif
     : { complete: false, omittedReason: 'size_limit', originalBytes, value: null };
 }
 
+function parsePlanBundle(value: unknown): DatabaseAgentRunPlanBundle {
+  const parsed = PlanBundleSchema.safeParse(value);
+  if (!parsed.success) {
+    throw new DatabaseAgentRunStoreError(
+      'agent_run_store_corrupt',
+      'Persisted Agent Run plan bundle is corrupt',
+    );
+  }
+  const { plan, draft } = parsed.data;
+  if (
+    typeof plan.id !== 'string' ||
+    !PLAN_ID_PATTERN.test(plan.id) ||
+    typeof plan.hash !== 'string' ||
+    typeof plan.draftId !== 'string' ||
+    typeof plan.draftRevision !== 'string' ||
+    typeof plan.expiresAt !== 'string' ||
+    typeof draft.id !== 'string' ||
+    typeof draft.revision !== 'string' ||
+    typeof draft.expiresAt !== 'string' ||
+    plan.draftId !== draft.id ||
+    plan.draftRevision !== draft.revision
+  ) {
+    throw new DatabaseAgentRunStoreError(
+      'agent_run_store_corrupt',
+      'Persisted Agent Run plan bundle does not contain a matching plan and draft',
+    );
+  }
+  if (parsed.data.revision !== revision({ version: 1, plan, draft })) {
+    throw new DatabaseAgentRunStoreError(
+      'agent_run_store_corrupt',
+      'Persisted Agent Run plan bundle revision does not match its content',
+    );
+  }
+  return {
+    version: 1,
+    plan: structuredClone(plan) as unknown as DatabasePlanArtifact,
+    draft: structuredClone(draft) as unknown as DatabaseDraftArtifact,
+    revision: parsed.data.revision,
+  };
+}
+
 export class DatabaseAgentRunStore {
   readonly #projectDir: string;
   readonly #root: string;
   readonly #path: string;
   readonly #lockPath: string;
+  readonly #plansRoot: string;
   readonly #now: () => Date;
   readonly #generateId: () => string;
 
@@ -106,6 +167,7 @@ export class DatabaseAgentRunStore {
     this.#root = resolve(this.#projectDir, '.ok', 'local', 'database-agent-runs', 'v1');
     this.#path = resolve(this.#root, 'runs.json');
     this.#lockPath = resolve(this.#root, '.runs.lock');
+    this.#plansRoot = resolve(this.#root, 'plans');
     this.#now = options.now ?? (() => new Date());
     this.#generateId = options.generateId ?? (() => `run_${randomUUID().replaceAll('-', '')}`);
   }
@@ -120,6 +182,97 @@ export class DatabaseAgentRunStore {
     const run = (await this.list()).runs.find((candidate) => candidate.id === id);
     if (!run) throw new DatabaseAgentRunStoreError('agent_run_not_found', 'Agent run not found');
     return run;
+  }
+
+  /**
+   * Keep the exact plan inputs needed to recover an Agent Run after a process restart.
+   * The run history intentionally contains only a bounded diff summary; this sidecar is
+   * owner-only, revision-bound, and written atomically so recovery never silently falls
+   * back to a newly inferred plan.
+   */
+  async persistPlanBundle(
+    plan: DatabasePlanArtifact,
+    draft: DatabaseDraftArtifact,
+  ): Promise<DatabaseAgentRunPlanBundle> {
+    if (!PLAN_ID_PATTERN.test(plan.id) || plan.draftId !== draft.id) {
+      throw new DatabaseAgentRunStoreError(
+        'agent_run_store_corrupt',
+        'Agent Run plan bundle has an invalid plan/draft identity',
+      );
+    }
+    if (plan.draftRevision !== draft.revision) {
+      throw new DatabaseAgentRunStoreError(
+        'agent_run_store_corrupt',
+        'Agent Run plan bundle draft revision does not match the plan',
+      );
+    }
+    const bundle: DatabaseAgentRunPlanBundle = {
+      version: 1,
+      plan: structuredClone(plan),
+      draft: structuredClone(draft),
+      revision: revision({ version: 1, plan, draft }),
+    };
+    const serialized = `${JSON.stringify(bundle, null, 2)}\n`;
+    if (Buffer.byteLength(serialized, 'utf8') > MAX_PLAN_BUNDLE_BYTES) {
+      throw new DatabaseAgentRunStoreError(
+        'agent_run_store_corrupt',
+        'Agent Run plan bundle exceeds its bounded local store',
+      );
+    }
+    await this.#assertPlansRoot(true);
+    await atomicWriteFile(resolve(this.#plansRoot, `${plan.id}.json`), serialized, {
+      fs: tracedAtomicFs,
+      mode: 0o600,
+    });
+    return structuredClone(bundle);
+  }
+
+  async getPlanBundle(planId: string): Promise<DatabaseAgentRunPlanBundle> {
+    if (!PLAN_ID_PATTERN.test(planId)) {
+      throw new DatabaseAgentRunStoreError(
+        'agent_run_plan_unavailable',
+        'The Agent Run plan identity is invalid or unavailable; recreate the plan',
+      );
+    }
+    await this.#assertSafeRoot(false);
+    try {
+      const stats = await lstat(this.#plansRoot);
+      if (stats.isSymbolicLink() || !stats.isDirectory()) {
+        throw new DatabaseAgentRunStoreError(
+          'agent_run_store_unsafe',
+          'Agent Run plan storage is not a safe directory',
+        );
+      }
+      const path = resolve(this.#plansRoot, `${planId}.json`);
+      const fileStats = await lstat(path);
+      if (fileStats.isSymbolicLink() || !fileStats.isFile()) {
+        throw new DatabaseAgentRunStoreError(
+          'agent_run_store_unsafe',
+          'Agent Run plan bundle is not a safe regular file',
+        );
+      }
+      if (fileStats.size > MAX_PLAN_BUNDLE_BYTES) {
+        throw new DatabaseAgentRunStoreError(
+          'agent_run_store_corrupt',
+          'Agent Run plan bundle is too large',
+        );
+      }
+      return parsePlanBundle(JSON.parse(await readFile(path, 'utf8')));
+    } catch (error) {
+      if (error instanceof DatabaseAgentRunStoreError) throw error;
+      if (errno(error) === 'ENOENT') {
+        throw new DatabaseAgentRunStoreError(
+          'agent_run_plan_unavailable',
+          'The immutable Agent Run plan is unavailable after restart; recreate the plan',
+          error,
+        );
+      }
+      throw new DatabaseAgentRunStoreError(
+        'agent_run_store_corrupt',
+        'Agent Run plan bundle is corrupt or unreadable',
+        error,
+      );
+    }
   }
 
   async propose(
@@ -319,6 +472,43 @@ export class DatabaseAgentRunStore {
         'Agent run store is corrupt or unreadable',
         error,
       );
+    }
+  }
+
+  async #assertPlansRoot(create: boolean): Promise<void> {
+    await this.#assertSafeRoot(create);
+    try {
+      const stats = await lstat(this.#plansRoot);
+      if (stats.isSymbolicLink() || !stats.isDirectory()) {
+        throw new DatabaseAgentRunStoreError(
+          'agent_run_store_unsafe',
+          'Agent Run plan storage is not a safe directory',
+        );
+      }
+    } catch (error) {
+      if (error instanceof DatabaseAgentRunStoreError) throw error;
+      if (errno(error) !== 'ENOENT' || !create) {
+        if (errno(error) === 'ENOENT' && !create) {
+          throw new DatabaseAgentRunStoreError(
+            'agent_run_plan_unavailable',
+            'The immutable Agent Run plan is unavailable after restart; recreate the plan',
+            error,
+          );
+        }
+        throw error;
+      }
+      try {
+        await tracedMkdir(this.#plansRoot, { recursive: false, mode: 0o700 });
+      } catch (mkdirError) {
+        if (errno(mkdirError) !== 'EEXIST') throw mkdirError;
+        const stats = await lstat(this.#plansRoot);
+        if (stats.isSymbolicLink() || !stats.isDirectory()) {
+          throw new DatabaseAgentRunStoreError(
+            'agent_run_store_unsafe',
+            'Agent Run plan storage raced with an unsafe entry',
+          );
+        }
+      }
     }
   }
 

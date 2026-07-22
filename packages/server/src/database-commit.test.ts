@@ -2080,6 +2080,16 @@ describe('DatabaseCommitEngine', () => {
       code: 'approval_required',
     });
     await expect(
+      engine.commit({ ...commitInput(), approvalCodes: ['create_database'] }),
+    ).rejects.toMatchObject({
+      code: 'approval_required',
+      details: {
+        atomic: true,
+        requiredApprovalCodes: ['create_database', 'sample_record_write'],
+        selectedApprovalCodes: ['create_database'],
+      },
+    });
+    await expect(
       engine.commit({
         ...commitInput(),
         expectedSnapshotRevision: `sha256:${'1'.repeat(64)}`,
@@ -2269,6 +2279,10 @@ describe('DatabaseCommitEngine', () => {
         plan: { id: awaiting.plan.id, hash: awaiting.plan.hash },
       },
     ]);
+    expect(await awaitingStore.getPlanBundle(awaiting.plan.id)).toMatchObject({
+      plan: { id: awaiting.plan.id, hash: awaiting.plan.hash },
+      draft: { id: awaiting.draft.id, revision: awaiting.draft.revision },
+    });
 
     let failedStore!: DatabaseAgentRunStore;
     const failed = await fixture({
@@ -2290,6 +2304,10 @@ describe('DatabaseCommitEngine', () => {
         undo: { available: false, token: null },
       },
     ]);
+    expect(await failedStore.getPlanBundle(failed.plan.id)).toMatchObject({
+      plan: { id: failed.plan.id, hash: failed.plan.hash },
+      draft: { id: failed.draft.id, revision: failed.draft.revision },
+    });
   });
 
   test('fails closed before canonical mutation when Agent Runs history is unavailable', async () => {

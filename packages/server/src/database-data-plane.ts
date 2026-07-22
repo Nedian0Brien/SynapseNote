@@ -3883,6 +3883,16 @@ export class DatabaseDataPlane {
     return plan;
   }
 
+  /** Restore a persisted immutable Agent Run plan and its draft after a process restart. */
+  restorePlanBundle(bundle: {
+    plan: DatabasePlanArtifact;
+    draft: DatabaseDraftArtifact;
+  }): DatabasePlanArtifact {
+    this.#databasePlanEngine.restoreDraft(bundle.draft);
+    this.#databasePlanEngine.restorePlan(bundle.plan);
+    return this.getPlan(bundle.plan.id);
+  }
+
   previewPropertyConversion(input: {
     databaseId: string;
     sourceId: string;

@@ -28,6 +28,8 @@
 - Latest inline view-order optimism changeset: `../../.changeset/inline-view-order-optimism.md`
 - Latest Agent Run recovery handoff changeset: `../../.changeset/agent-run-recovery-handoff.md`
 - Latest Agent Run MCP recovery changeset: `../../.changeset/agent-run-mcp-recovery.md`
+- Latest Agent Run restart recovery changeset: `../../.changeset/agent-run-plan-restart-recovery.md`
+- Latest atomic approval scope changeset: `../../.changeset/atomic-approval-scope.md`
 
 ## Objective and completion rule
 
@@ -50,15 +52,15 @@ the repository-wide check for final release readiness.
 - Numbered A-S items still open: **5**.
 - Total unchecked Markdown boxes: **25**. The extra 20 are M1-M4 milestone
   release gates, all intentionally still open.
-- Notion UX gap implementation checklist: **34/42 complete**. NUI-201,
+- Notion UX gap implementation checklist: **36/42 complete**. NUI-201,
   NUI-202, NUI-203, NUI-204, NUI-302, NUI-304, and NUI-401 are closed with
   focused implementation evidence; NUI-301, NUI-303, and NUI-403 are now
   closed for implementation evidence; NUI-501 is now closed for the complete
   stable-ID property affordance and dependency/recovery evidence; NUI-502 is
   now closed for stable-ID view reorder and active-view settings/menu evidence;
   NUI-402 is now closed for the inline title/tab/shared-record/cache/state
-  contract; NUI-503 is now closed for blank/template/import and agent-shaped resulting
-  page previews; NUI-105 and the P1/P2 agent, linked-view,
+  contract; NUI-503, NUI-602, and NUI-603 are now closed for focused
+  implementation evidence; NUI-105 and the P1/P2 agent, linked-view,
   responsive, and browser-journey gates remain open.
 - Notion UX alignment checklist: **2/128 complete**. The first insertion slice
   (user-facing `Database`/`Linked database` slash entries and an inline
@@ -878,7 +880,7 @@ do not reconstruct behavior solely from this summary.
   notices generation; documentation link validation; and `git diff --check`.
   No full server suite was run.
 
-### 2026-07-22 Agent Run recovery handoff slice
+### 2026-07-22 Agent Run recovery handoff and restart slice
 
 - Failed agent runs now expose `Retry run` and `Resume run` in the Agent Runs
   detail surface. Each action keeps the failed run as audit history and creates
@@ -894,18 +896,39 @@ do not reconstruct behavior solely from this summary.
   receipt payloads. It is included in the database-sandbox profile and in the
   closed MCP auto-approval deny-list so retry/resume cannot be silently
   approved.
-- Focused evidence: `database-agent-run-store.test.ts` passes 4 tests / 20
-  expectations; the retry HTTP contract passes 1 test / 8 expectations; and
+- Focused evidence: `database-agent-run-store.test.ts` passes 6 tests including
+  exact sidecar round-trip, tamper, and missing-plan recovery; the retry HTTP
+  contract passes 1 test / 8 expectations, including a fresh-engine restart
+  simulation; and
   `DatabaseAgentRunsDialog.dom.test.tsx` passes 4 tests / 23 expectations,
   including a compact progressively disclosed recovery receipt summary. The
   `data_run` MCP tool passes 4 tests / 10 expectations and the 31-tool registry
   plus terminal-gating contract passes 13 tests / 98 expectations.
-  Core/server typechecks, app typecheck, targeted Biome, and `git diff --check`
-  pass. No full server suite or E2E rerun was needed.
-- NUI-603 remains open: the current plan engine is process-memory backed, so a
-  server restart requires a typed replan/recreate response; durable plan or
-  checkpoint handoff, the MCP Agent Run surface, and UI receipt display still
-  need implementation and evidence.
+  The owner-only Agent Runs store now atomically persists exact plan/draft
+  sidecars, validates their revision, restores them into a fresh plan engine,
+  and returns a typed recreate-plan recovery when the bundle is missing.
+  Core/server typechecks, targeted Biome, and `git diff --check` pass. No full
+  server suite or E2E rerun was needed.
+- NUI-603 is closed for focused implementation evidence. Selective approval and
+  real model/agent replay remain separate release gates.
+
+### 2026-07-22 atomic approval scope slice
+
+- Ghost review now exposes required approval scopes in a human-readable
+  `Atomic approval group` section. The UI explains that the exact plan commits
+  as one referential/rollback-safe unit instead of presenting misleading
+  per-field toggles.
+- HTTP and `data_commit` MCP accept optional `approvalCodes` for an explicit
+  approval receipt. The commit engine compares them with the exact plan's
+  required scopes and rejects any partial or duplicate selection with the
+  complete atomic group; no canonical mutation starts on rejection.
+- Focused evidence: the creation preview DOM journey asserts the approval
+  scope; `database-commit.test.ts` asserts partial-selection refusal and its
+  required scopes; server/app typechecks and targeted Biome pass. No broad E2E
+  or full server suite was run.
+- NUI-602 is closed for focused implementation evidence. Plans that can be
+  safely split can add a future explicit group model; until then the contract
+  deliberately explains and enforces one atomic group.
 
 ### 2026-07-22 property-context checklist closure
 

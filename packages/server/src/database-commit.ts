@@ -28,7 +28,12 @@ import { withFileLock } from '@nedian0brien/synapsenote-core/server';
 import { Document } from 'yaml';
 import { z } from 'zod';
 import type { DatabaseAgentRunStore } from './database-agent-run-store.ts';
-import type { DatabasePlanArtifact, DatabasePlanEngine } from './database-plan.ts';
+import {
+  type DatabasePlanApprovalCode,
+  DatabasePlanApprovalCodeSchema,
+  type DatabasePlanArtifact,
+  type DatabasePlanEngine,
+} from './database-plan.ts';
 import type { DatabaseRecordIndex } from './database-record-index.ts';
 import type { DatabaseStore } from './database-store.ts';
 import { type DatabaseCommitOutcomeClass, recordDatabaseCommit } from './database-telemetry.ts';
@@ -45,6 +50,8 @@ export interface DatabaseCommitInput {
   expectedSnapshotRevision: string;
   idempotencyKey: string;
   approvalToken?: string;
+  /** Approval scopes acknowledged by the caller; exact plans may reject partial scopes. */
+  approvalCodes?: readonly DatabasePlanApprovalCode[];
   /** Opaque server-issued capability binding this request to an autonomy session. */
   autonomySessionToken?: string;
   actor: {
@@ -135,6 +142,7 @@ export const DatabaseCommitInputSchema = z
     ]),
     idempotencyKey: z.string().min(8).max(256),
     approvalToken: z.string().startsWith('approve:sha256:').optional(),
+    approvalCodes: z.array(DatabasePlanApprovalCodeSchema).max(20).optional(),
     autonomySessionToken: z.string().startsWith('dbsession_').max(256).optional(),
     actor: z
       .object({
@@ -393,6 +401,35 @@ function stable(value: unknown): string {
       .join(',')}}`;
   }
   return JSON.stringify(value);
+}
+
+function requiredApprovalCodes(plan: DatabasePlanArtifact): DatabasePlanApprovalCode[] {
+  return [
+    ...new Set(
+      plan.approvals.filter((approval) => approval.required).map((approval) => approval.code),
+    ),
+  ].sort();
+}
+
+function assertApprovalSelection(
+  plan: DatabasePlanArtifact,
+  selectedCodes: readonly DatabasePlanApprovalCode[] | undefined,
+): void {
+  if (selectedCodes === undefined) return;
+  const required = requiredApprovalCodes(plan);
+  const selected = [...new Set(selectedCodes)].sort();
+  if (selected.length !== selectedCodes.length || stable(selected) !== stable(required)) {
+    throw new DatabaseCommitError(
+      'approval_required',
+      'This exact plan is one atomic change group; approve every required scope together',
+      {
+        atomic: true,
+        atomicGroup: { id: plan.id, approvalCodes: required },
+        requiredApprovalCodes: required,
+        selectedApprovalCodes: selected,
+      },
+    );
+  }
 }
 
 function isWithin(base: string, candidate: string): boolean {
@@ -722,6 +759,7 @@ export class DatabaseCommitEngine {
         planHash: input.planHash,
         expectedSnapshotRevision: input.expectedSnapshotRevision,
         actor: input.actor,
+        approvalCodes: input.approvalCodes ?? null,
         assertions: input.assertions ?? {},
       }),
     );
@@ -752,7 +790,18 @@ export class DatabaseCommitEngine {
       let agentRunId: string | undefined;
       try {
         const plan = this.#databasePlanEngine.getPlan(input.planId);
+        const draft = this.#databasePlanEngine.getDraft(plan.draftId);
         if (input.actor.kind === 'agent' && this.#agentRunStore) {
+          try {
+            await this.#agentRunStore.persistPlanBundle(plan, draft);
+          } catch (error) {
+            throw new DatabaseCommitError(
+              'agent_run_unavailable',
+              'Agent Run recovery state is unavailable; the database commit was not started',
+              { phase: 'plan_persistence' },
+              error,
+            );
+          }
           try {
             agentRunId = (await this.#agentRunStore.propose(plan, input.actor)).id;
           } catch (error) {
@@ -770,6 +819,7 @@ export class DatabaseCommitEngine {
             providedPlanHash: input.planHash,
           });
         }
+        assertApprovalSelection(plan, input.approvalCodes);
         if (
           input.approvalToken !== undefined &&
           input.approvalToken !== this.expectedApprovalToken(plan.hash)
@@ -839,7 +889,6 @@ export class DatabaseCommitEngine {
             },
           );
         }
-        const draft = this.#databasePlanEngine.getDraft(plan.draftId);
         const verificationActor = draft.normalized.verificationChange?.actor;
         if (
           verificationActor &&

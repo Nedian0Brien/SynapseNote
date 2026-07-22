@@ -714,6 +714,17 @@ export interface DatabaseVerificationDraftResult {
 
 export type DatabaseConvergenceAction = 'create' | 'update' | 'noop';
 
+export const DatabasePlanApprovalCodeSchema = z.enum([
+  'create_database',
+  'delete_database',
+  'alter_schema',
+  'autonomous_policy',
+  'sample_record_write',
+  'verification_change',
+  'delete_record',
+]);
+export type DatabasePlanApprovalCode = z.infer<typeof DatabasePlanApprovalCodeSchema>;
+
 export type DatabaseConflictDomain =
   | 'record_value'
   | 'schema'
@@ -894,14 +905,7 @@ export interface DatabasePlanArtifact {
   };
   conflicts: readonly DatabasePlanConflict[];
   approvals: readonly {
-    code:
-      | 'create_database'
-      | 'delete_database'
-      | 'alter_schema'
-      | 'autonomous_policy'
-      | 'sample_record_write'
-      | 'verification_change'
-      | 'delete_record';
+    code: DatabasePlanApprovalCode;
     required: boolean;
     reason: string;
   }[];
@@ -2355,6 +2359,11 @@ export class DatabasePlanEngine {
     return clone(draft);
   }
 
+  /** Restore an exact durable draft after a server process restart. */
+  restoreDraft(draft: DatabaseDraftArtifact): void {
+    this.#drafts.set(draft.id, clone(draft));
+  }
+
   discardDraft(id: string): { discarded: boolean; draftId: string } {
     return { discarded: this.#drafts.delete(id), draftId: id };
   }
@@ -3373,6 +3382,11 @@ export class DatabasePlanEngine {
       });
     }
     return clone(plan);
+  }
+
+  /** Restore an exact durable plan after a server process restart. */
+  restorePlan(plan: DatabasePlanArtifact): void {
+    this.#plans.set(plan.id, clone(plan));
   }
 
   #createDatabaseDeletionPlan(

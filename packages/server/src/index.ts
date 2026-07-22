@@ -127,6 +127,7 @@ export {
 } from './database-agent-prompt-retention.ts';
 export {
   createDatabaseAgentRunStore,
+  type DatabaseAgentRunPlanBundle,
   DatabaseAgentRunStore,
   DatabaseAgentRunStoreError,
   type DatabaseAgentRunStoreErrorCode,
@@ -369,6 +370,8 @@ export {
   type DatabaseDesiredStateDraftInput,
   DatabaseDesiredStateDraftSchema,
   type DatabaseDraftArtifact,
+  type DatabasePlanApprovalCode,
+  DatabasePlanApprovalCodeSchema,
   type DatabasePlanArtifact,
   type DatabasePlanConflict,
   DatabasePlanEngine,
