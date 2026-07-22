@@ -138,4 +138,36 @@ describe('DatabaseContextInspectorDialog field controls', () => {
       'Copied',
     );
   });
+
+  test('renders a compact schema, view, selection, budget, truncation, and citation summary', () => {
+    const selected = inspection();
+    render(
+      <DatabaseContextInspectorBody
+        inspections={[selected]}
+        selected={selected}
+        scope={{
+          databaseId: selected.database.id,
+          sourceId: selected.sourceId,
+          viewId: selected.agentView?.id,
+          recordIds: ['rec_visible'],
+          propertyIds: ['prop_title'],
+        }}
+        status="success"
+        error={null}
+        onSelect={() => {}}
+        onRetry={() => {}}
+      />,
+    );
+
+    const summary = screen.getByTestId('database-context-summary');
+    expect(summary.textContent).toContain('2 fields');
+    expect(summary.textContent).toContain('Agent view');
+    expect(summary.textContent).toContain('1 records');
+    expect(summary.textContent).toContain('1 fields');
+    expect(summary.textContent).toContain('720 / 1,800 available');
+    expect(summary.textContent).toContain('Complete');
+    expect(summary.textContent).toContain('0 · records disclosure');
+    expect(screen.getByText('Exact Context Pack').closest('details')?.open).toBe(false);
+    expect(screen.getByText('Selected field preview').closest('details')?.open).toBe(false);
+  });
 });

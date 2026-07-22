@@ -150,6 +150,24 @@ function citationLabels(inspection: DatabaseContextInspection): string[] {
   return [];
 }
 
+function compactSchemaLabel(inspection: DatabaseContextInspection): string {
+  const properties = inspection.exactPack.schema.properties;
+  if (properties.length === 0) return 'No property metadata';
+  const names = properties.slice(0, 4).map((property) => property.name);
+  const remainder = properties.length - names.length;
+  return `${names.join(', ')}${remainder > 0 ? ` +${remainder}` : ''}`;
+}
+
+function scopeRecordCount(scope: DatabaseContextInspectionScope | undefined): number | null {
+  if (scope?.recordIds) return scope.recordIds.length;
+  if (scope?.recordId) return 1;
+  return null;
+}
+
+function scopePropertyCount(scope: DatabaseContextInspectionScope | undefined): number | null {
+  return scope?.propertyIds ? scope.propertyIds.length : null;
+}
+
 type ContextPackProperty = DatabaseContextPack['schema']['properties'][number];
 
 function projectPropertyMap<T>(
@@ -391,6 +409,7 @@ function ContextFieldControls({
 export function DatabaseContextInspectorBody({
   inspections,
   selected,
+  scope,
   status,
   error,
   onSelect,
@@ -398,6 +417,7 @@ export function DatabaseContextInspectorBody({
 }: {
   inspections: readonly DatabaseContextInspectionSummary[];
   selected: DatabaseContextInspection | null;
+  scope?: DatabaseContextInspectionScope;
   status: InspectorStatus;
   error: string | null;
   onSelect: (packId: string) => void;
@@ -527,6 +547,89 @@ export function DatabaseContextInspectorBody({
               <Metric label={<Trans>Redactions</Trans>} value={totalRedactions(selected)} />
               <Metric label={<Trans>Omissions</Trans>} value={totalOmissions(selected)} />
             </dl>
+
+            <section
+              className="rounded-lg border p-3"
+              aria-label="Context pack summary"
+              data-testid="database-context-summary"
+            >
+              <h4 className="text-sm font-medium">
+                <Trans>Compact retrieval summary</Trans>
+              </h4>
+              <dl className="mt-3 grid gap-x-4 gap-y-2 text-xs sm:grid-cols-2">
+                <div>
+                  <dt className="text-muted-foreground">
+                    <Trans>Schema</Trans>
+                  </dt>
+                  <dd className="mt-0.5">
+                    {selected.exactPack.schema.properties.length} fields ·{' '}
+                    {compactSchemaLabel(selected)}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">
+                    <Trans>View</Trans>
+                  </dt>
+                  <dd className="mt-0.5">
+                    {selected.agentView ? (
+                      <Trans>Agent view</Trans>
+                    ) : (
+                      <Trans>Database default</Trans>
+                    )}{' '}
+                    · {selected.disclosure}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">
+                    <Trans>Selection</Trans>
+                  </dt>
+                  <dd className="mt-0.5">
+                    {scopeRecordCount(scope) ?? selected.returned} records ·{' '}
+                    {scopePropertyCount(scope) ?? selected.exactPack.schema.properties.length}{' '}
+                    fields
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">
+                    <Trans>Token budget</Trans>
+                  </dt>
+                  <dd className="mt-0.5">
+                    {selected.tokenCount.estimated.toLocaleString()} /{' '}
+                    {selected.tokenCount.available.toLocaleString()} available · max{' '}
+                    {selected.tokenCount.max.toLocaleString()} · reserve{' '}
+                    {selected.tokenCount.reserve.toLocaleString()}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">
+                    <Trans>Truncation</Trans>
+                  </dt>
+                  <dd className="mt-0.5">
+                    {selected.truncation.truncated ? (
+                      <>
+                        <Trans>Truncated</Trans> · {selected.truncation.cause ?? 'unknown'} ·{' '}
+                        {selected.truncation.continuationAvailable ? (
+                          <Trans>continuation available</Trans>
+                        ) : (
+                          <Trans>no continuation</Trans>
+                        )}
+                      </>
+                    ) : (
+                      <Trans>Complete</Trans>
+                    )}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">
+                    <Trans>Citations</Trans>
+                  </dt>
+                  <dd className="mt-0.5">
+                    {citationLabels(selected).length} · {selected.disclosure}{' '}
+                    <Trans>disclosure</Trans>
+                  </dd>
+                </div>
+              </dl>
+            </section>
 
             <div className="grid gap-3 lg:grid-cols-2">
               <section className="rounded-lg border p-3">
@@ -750,6 +853,7 @@ export function DatabaseContextInspectorDialog({
           <DatabaseContextInspectorBody
             inspections={inspections}
             selected={selected}
+            scope={scope}
             status={status}
             error={error}
             onSelect={select}
