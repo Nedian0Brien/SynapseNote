@@ -71,7 +71,7 @@ the repository-wide check for final release readiness.
   catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
   approval-bound commits, undo, and restart/backup idempotency. Agent View
   policy/privacy/sandbox review remains Partial by design.
-- Notion UX alignment checklist: **53/128 complete**. The page-first and normal
+- Notion UX alignment checklist: **54/128 complete**. The page-first and normal
   New-page creation slices, the inline/linked insertion contract, and the
   table-first direct-manipulation, named canonical workspace canvas-route,
   shared navigation without a duplicate canvas rail, sidebar/recent/search/
@@ -80,7 +80,8 @@ the repository-wide check for final release readiness.
   stable conversion, durable History/receipt recovery, property-header
   Sort/Filter/Duplicate, friendly property-copy, Title-safety,
   type-specific-editor, schema-vs-data mutation-scope, and destructive
-  property-deletion preview slices are now
+  property-deletion preview and adjacent Formula/Rollup error-indicator slices
+  are now
   evidenced. A
   2026-07-23 in-app browser capture reached the IPv4 renderer at
   `http://127.0.0.1:5173/`, created a full-page database, created two canonical
@@ -282,7 +283,8 @@ do not reconstruct behavior solely from this summary.
   no-portal/no-overlay workspace, selected-view hash, missing-source back
   action, and permission-denied state.
 - UX-201, UX-202, UX-204, UX-205, UX-206, UX-207, UX-208, UX-209, UX-501,
-  UX-502, UX-503, UX-504, UX-505, and UX-506 are checked. UX-210 remains open
+  UX-502, UX-503, UX-504, UX-505, UX-506, UX-507, and UX-508 are checked.
+  UX-210 remains open
   for conversion proof; visual parity, responsive visual proof, and the broader
   property-family gates remain open.
 
@@ -389,7 +391,12 @@ do not reconstruct behavior solely from this summary.
   commits can wedge the server, and both expose History undo. Focused evidence:
   `database-property-deletion.test.ts` (2 tests / 5 expectations) and
   `DatabasePropertyDeletionPreviewDialog.dom.test.tsx` (1 / 11).
-- UX-501 through UX-507 are checked at the functional implementation/evidence
+- Formula and Rollup columns now show a warning count and error codes beside
+  the property header for the loaded records; each affected cell keeps the
+  visible code, full accessible message, and machine-readable error code/
+  message attributes. `DatabaseTableDialog.dom.test.tsx` covers both families
+  (2 tests / 7 expectations).
+- UX-501 through UX-508 are checked at the functional implementation/evidence
   layer. Visual and broader property-family gates remain open.
 
 ### 2026-07-23 sidebar and recent database navigation
@@ -401,7 +408,7 @@ do not reconstruct behavior solely from this summary.
   catalog-backed database under `Recently opened`, reopening the same stable
   route. Focused evidence: sidebar 3 tests / 7 expectations and recent UI 1 / 5.
 - UX-203, UX-204, UX-206, UX-209, UX-309, UX-501, UX-502, UX-503, UX-504,
-  UX-505, UX-506, and UX-507 are checked. The 768px visual responsive check remains
+  UX-505, UX-506, UX-507, and UX-508 are checked. The 768px visual responsive check remains
   open.
 
 ### 2026-07-23 stable inline/full-page conversion
