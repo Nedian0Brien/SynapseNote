@@ -21,6 +21,7 @@
 - Latest context-inspector-copy changeset: `../../.changeset/context-inspector-copy.md`
 - Latest alternative-view context changeset: `../../.changeset/inline-context-alt-views.md`
 - Latest list/gallery/feed context changeset: `../../.changeset/inline-context-list-gallery-feed.md`
+- Latest chart/map context changeset: `../../.changeset/inline-context-chart-map.md`
 
 ## Objective and completion rule
 
@@ -715,10 +716,26 @@ do not reconstruct behavior solely from this summary.
   183 expectations and asserts the callback is wired for List, Gallery, and
   Feed. App typecheck, targeted Biome, and `git diff --check` pass. No server
   suite or E2E rerun was needed.
-- Follow-up: chart/map-specific record drill-through still needs a deliberate
-  affordance review; keep NUI-601's browser/Electron and accessibility gates
-  open until those views are covered or explicitly documented as different
-  interaction models.
+- Follow-up: keep NUI-601's browser/Electron and accessibility gates open; chart
+  and map actions are intentionally attached to their drill-through/record
+  boundaries rather than the aggregate canvas itself.
+
+### 2026-07-22 inline chart/map context slice
+
+- Inline Chart drill-through rows now expose `Inspect context for record …`
+  beside `Open record`; the chart remains aggregate-first and does not pretend
+  that a bar or number card contains a complete record payload.
+- Inline Map exposes the action for a single mapped pin, each record in an
+  expanded cluster, and each missing-location entry. Cluster and map controls
+  keep pointer events isolated from panning.
+- `DatabaseView` forwards both actions to the canonical permission-scoped
+  Context Inspector with only the stable record ID.
+- Focused evidence: `DatabaseChart.dom.test.tsx` and
+  `DatabaseMap.dom.test.tsx` pass 7 tests / 24 expectations together; app
+  typecheck, targeted Biome, and `git diff --check` pass. No server suite or
+  E2E rerun was needed.
+- Follow-up: visual-check marker/button density and chart drill-through spacing
+  in browser/Electron before closing the remaining NUI-601/NUI-702 gates.
 
 ### 2026-07-22 inline filter handoff slice
 

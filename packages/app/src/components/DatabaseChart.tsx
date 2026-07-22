@@ -10,6 +10,7 @@ import type {
   ProjectedDatabaseRecord,
   ProjectedDatabaseRelationRecord,
 } from '@nedian0brien/synapsenote-core';
+import { Braces } from 'lucide-react';
 import { useId, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -115,6 +116,7 @@ export function DatabaseChart({
   people = result.people ?? [],
   relationRecords = result.relationRecords ?? [],
   onOpen,
+  onOpenContextInspector,
 }: {
   source: DatabaseSource;
   view: DatabaseView;
@@ -122,6 +124,7 @@ export function DatabaseChart({
   people?: readonly ProjectedDatabasePerson[];
   relationRecords?: readonly ProjectedDatabaseRelationRecord[];
   onOpen?: (record: ProjectedDatabaseRecord) => void;
+  onOpenContextInspector?: (record: ProjectedDatabaseRecord) => void;
 }) {
   'use no memo';
   const chartDescriptionId = useId();
@@ -325,20 +328,32 @@ export function DatabaseChart({
               </p>
             ) : (
               drillRecords.map((record) => (
-                <Button
-                  key={record.id}
-                  type="button"
-                  variant="outline"
-                  className="h-auto w-full justify-between py-3 text-left"
-                  onClick={() => onOpen?.(record)}
-                >
-                  <span>
-                    {titleProperty
-                      ? String(record.values[titleProperty.id] ?? 'Untitled')
-                      : 'Untitled'}
-                  </span>
-                  <span className="text-muted-foreground text-xs">Open record</span>
-                </Button>
+                <div key={record.id} className="flex gap-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-auto min-w-0 flex-1 justify-between py-3 text-left"
+                    onClick={() => onOpen?.(record)}
+                  >
+                    <span>
+                      {titleProperty
+                        ? String(record.values[titleProperty.id] ?? 'Untitled')
+                        : 'Untitled'}
+                    </span>
+                    <span className="text-muted-foreground text-xs">Open record</span>
+                  </Button>
+                  {onOpenContextInspector ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon-sm"
+                      aria-label={`Inspect context for record ${record.id}`}
+                      onClick={() => onOpenContextInspector(record)}
+                    >
+                      <Braces aria-hidden="true" />
+                    </Button>
+                  ) : null}
+                </div>
               ))
             )}
             {drillGroup && drillRecords.length < drillGroup.matched ? (

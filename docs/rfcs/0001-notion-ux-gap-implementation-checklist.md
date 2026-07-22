@@ -374,7 +374,9 @@ treated as visual parity until a browser capture is attached.
   context actions; inline Board, Calendar, and Timeline cards/bars expose the
   same record-scoped action. Inline List rows, Gallery cards, and Feed items
   expose it as well, so changing among record-centric views does not remove
-  the inspection path. Citation labels are rendered from captured
+  the inspection path. Chart drill-through records and Map marker/missing
+  location lists expose the same action at their record boundary. Citation
+  labels are rendered from captured
   evidence/full-body disclosures. The inspector now offers per-property
   All/None/checkbox controls,
   a non-mutating selected-field JSON preview with an approximate token count,
@@ -391,8 +393,8 @@ treated as visual parity until a browser capture is attached.
   inline `DatabaseView.dom.test.tsx` scoped inspector journey (18 tests / 183
   expectations), including database/view, property, single-record,
   selected-record, inline Board transition, and alternative-view context
-  affordance assertions for Board, Calendar, Timeline, List, Gallery, and
-  Feed; server
+  affordance assertions for Board, Calendar, Timeline, List, Gallery, Feed,
+  Chart, and Map; server
   `DatabaseContextInspectionScope` and HTTP query validation now cover
   `propertyIds` filtering.
   Map to UX-902/UX-909.

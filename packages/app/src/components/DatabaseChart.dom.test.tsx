@@ -158,4 +158,19 @@ describe('DatabaseChart', () => {
     );
     expect(screen.getByText('No data matches this Chart view.')).toBeTruthy();
   });
+
+  test('offers record context inspection from chart drill-through', () => {
+    const onOpenContextInspector = mock(() => {});
+    render(
+      <DatabaseChart
+        source={source}
+        view={view}
+        result={result}
+        onOpenContextInspector={onOpenContextInspector}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Todo, Records: 2' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect context for record rec_a' }));
+    expect(onOpenContextInspector).toHaveBeenCalledWith(expect.objectContaining({ id: 'rec_a' }));
+  });
 });

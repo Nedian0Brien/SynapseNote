@@ -147,4 +147,25 @@ describe('DatabaseMap', () => {
     expect(screen.getByRole('alert').textContent).toContain('private local map remains available');
     expect(document.querySelector('img[src*="tile.openstreetmap.org"]')).toBeNull();
   });
+
+  test('offers record context inspection from mapped and missing records', () => {
+    const onOpenContextInspector = mock(() => {});
+    render(
+      <DatabaseMap
+        source={source}
+        view={view}
+        result={result}
+        onOpenContextInspector={onOpenContextInspector}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect context for record rec_seoul' }));
+    expect(onOpenContextInspector).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'rec_seoul' }),
+    );
+    fireEvent.click(screen.getByText('Missing locations (1)'));
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect context for record rec_missing' }));
+    expect(onOpenContextInspector).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'rec_missing' }),
+    );
+  });
 });

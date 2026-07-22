@@ -6,7 +6,7 @@ import type {
   DatabaseView,
   ProjectedDatabaseRecord,
 } from '@nedian0brien/synapsenote-core';
-import { AlertTriangle, LocateFixed, Minus, Plus } from 'lucide-react';
+import { AlertTriangle, Braces, LocateFixed, Minus, Plus } from 'lucide-react';
 import { useId, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { formatDatabaseNumber } from '@/lib/database-display-format';
@@ -77,11 +77,13 @@ export function DatabaseMap({
   view,
   result,
   onOpen,
+  onOpenContextInspector,
 }: {
   source: DatabaseSource;
   view: DatabaseView;
   result: DatabaseQueryResult;
   onOpen?: (record: ProjectedDatabaseRecord) => void;
+  onOpenContextInspector?: (record: ProjectedDatabaseRecord) => void;
 }) {
   if (view.layout.type !== 'map') return null;
   return (
@@ -90,6 +92,7 @@ export function DatabaseMap({
       view={{ ...view, layout: view.layout }}
       result={result}
       onOpen={onOpen}
+      onOpenContextInspector={onOpenContextInspector}
     />
   );
 }
@@ -99,6 +102,7 @@ function DatabaseMapContent({
   view,
   result,
   onOpen,
+  onOpenContextInspector,
 }: {
   source: DatabaseSource;
   view: DatabaseView & {
@@ -106,6 +110,7 @@ function DatabaseMapContent({
   };
   result: DatabaseQueryResult;
   onOpen?: (record: ProjectedDatabaseRecord) => void;
+  onOpenContextInspector?: (record: ProjectedDatabaseRecord) => void;
 }) {
   'use no memo';
   const mapDescriptionId = useId();
@@ -323,6 +328,18 @@ function DatabaseMapContent({
               >
                 {multiple ? cluster.markers.length : '•'}
               </Button>
+              {!multiple && onOpenContextInspector ? (
+                <Button
+                  type="button"
+                  size="icon-xs"
+                  variant="secondary"
+                  aria-label={`Inspect context for record ${firstMarker.record.id}`}
+                  onPointerDown={(event) => event.stopPropagation()}
+                  onClick={() => onOpenContextInspector(firstMarker.record)}
+                >
+                  <Braces aria-hidden="true" />
+                </Button>
+              ) : null}
               {configuration.showLabels && !multiple ? (
                 <span className="pointer-events-none absolute top-10 left-1/2 w-max max-w-40 -translate-x-1/2 truncate rounded bg-background/90 px-2 py-1 text-xs shadow">
                   {titleForRecord(source, firstMarker.record)}
@@ -331,16 +348,28 @@ function DatabaseMapContent({
               {expandedCluster === cluster.id ? (
                 <div className="absolute top-11 left-1/2 z-20 max-h-48 w-56 -translate-x-1/2 overflow-auto rounded border bg-popover p-1 shadow-lg">
                   {cluster.markers.map((marker) => (
-                    <Button
-                      key={marker.record.id}
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="w-full justify-start"
-                      onClick={() => onOpen?.(marker.record)}
-                    >
-                      {titleForRecord(source, marker.record)}
-                    </Button>
+                    <div key={marker.record.id} className="flex gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="min-w-0 flex-1 justify-start"
+                        onClick={() => onOpen?.(marker.record)}
+                      >
+                        {titleForRecord(source, marker.record)}
+                      </Button>
+                      {onOpenContextInspector ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-xs"
+                          aria-label={`Inspect context for record ${marker.record.id}`}
+                          onClick={() => onOpenContextInspector(marker.record)}
+                        >
+                          <Braces aria-hidden="true" />
+                        </Button>
+                      ) : null}
+                    </div>
                   ))}
                 </div>
               ) : null}
@@ -418,15 +447,22 @@ function DatabaseMapContent({
           </summary>
           <div className="mt-2 flex flex-wrap gap-2">
             {missing.map((record) => (
-              <Button
-                key={record.id}
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => onOpen?.(record)}
-              >
-                {titleForRecord(source, record)}
-              </Button>
+              <div key={record.id} className="flex gap-1">
+                <Button type="button" size="sm" variant="outline" onClick={() => onOpen?.(record)}>
+                  {titleForRecord(source, record)}
+                </Button>
+                {onOpenContextInspector ? (
+                  <Button
+                    type="button"
+                    size="icon-sm"
+                    variant="outline"
+                    aria-label={`Inspect context for record ${record.id}`}
+                    onClick={() => onOpenContextInspector(record)}
+                  >
+                    <Braces aria-hidden="true" />
+                  </Button>
+                ) : null}
+              </div>
             ))}
           </div>
         </details>

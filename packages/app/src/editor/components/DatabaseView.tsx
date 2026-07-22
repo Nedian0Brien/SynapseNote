@@ -1556,6 +1556,9 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
                 result={state.result}
                 people={state.description.database.people}
                 onOpen={openRecord}
+                onOpenContextInspector={(record) =>
+                  setInlineContextInspectorScope({ recordId: record.id })
+                }
               />
             ) : linkedView.layout.type === 'map' ? (
               <LazyDatabaseMap
@@ -1564,6 +1567,9 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
                 view={linkedView}
                 result={state.result}
                 onOpen={openRecord}
+                onOpenContextInspector={(record) =>
+                  setInlineContextInspectorScope({ recordId: record.id })
+                }
               />
             ) : linkedView.layout.type === 'feed' ? (
               <LazyDatabaseFeed
