@@ -2433,6 +2433,21 @@ describe('DatabaseTableDialog', () => {
     });
   });
 
+  test('opens the canonical record from a title cell while keeping title editing explicit', () => {
+    const onOpen = mock(() => {});
+    render(
+      <DatabaseTable source={source} result={queryResult()} onOpen={onOpen} onEdit={() => {}} />,
+    );
+    const titleLink = document.querySelector<HTMLButtonElement>(
+      '[data-record-title-link="rec_first"]',
+    );
+    expect(titleLink?.textContent).toBe('First task');
+    expect(screen.getByLabelText('Edit Title for record rec_first')).toBeTruthy();
+    if (!titleLink) throw new Error('canonical title link is missing');
+    fireEvent.click(titleLink);
+    expect(onOpen).toHaveBeenCalledWith(expect.objectContaining({ id: 'rec_first' }));
+  });
+
   test('returns focus to the edited cell after commit and Escape cancellation', async () => {
     const edits: unknown[] = [];
     const view = render(

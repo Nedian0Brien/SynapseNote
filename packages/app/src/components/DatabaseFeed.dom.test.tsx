@@ -93,6 +93,18 @@ describe('DatabaseFeed', () => {
     ).toEqual(['rec_update']);
   });
 
+  test('opens the canonical record from the feed title', () => {
+    const onOpen = mock(() => {});
+    render(<DatabaseFeed source={source} view={view} result={result} onOpen={onOpen} />);
+    const title = document.querySelector<HTMLButtonElement>(
+      '[data-record-title-link="rec_update"]',
+    );
+    expect(title?.textContent).toBe('Launch complete');
+    if (!title) throw new Error('Feed title link is missing');
+    fireEvent.click(title);
+    expect(onOpen).toHaveBeenCalledWith(expect.objectContaining({ id: 'rec_update' }));
+  });
+
   test('offers record context inspection from a feed item', () => {
     const onOpenContextInspector = mock(() => {});
     render(

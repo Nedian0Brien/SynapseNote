@@ -489,6 +489,7 @@ export function DatabaseBoard({
                                 type="button"
                                 variant="link"
                                 className="h-auto min-w-0 flex-1 justify-start p-0 text-left font-medium"
+                                data-record-title-link={record.id}
                                 onClick={() => onOpen?.(record)}
                               >
                                 {propertyValueLabel(

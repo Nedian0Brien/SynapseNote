@@ -319,6 +319,7 @@ function DatabaseMapContent({
                     : `Open ${titleForRecord(source, firstMarker.record)}`
                 }
                 aria-expanded={multiple ? expandedCluster === cluster.id : undefined}
+                data-record-title-link={!multiple ? firstMarker.record.id : undefined}
                 onPointerDown={(event) => event.stopPropagation()}
                 onClick={() =>
                   multiple
@@ -354,6 +355,8 @@ function DatabaseMapContent({
                         variant="ghost"
                         size="sm"
                         className="min-w-0 flex-1 justify-start"
+                        aria-label={`Open ${titleForRecord(source, marker.record)}`}
+                        data-record-title-link={marker.record.id}
                         onClick={() => onOpen?.(marker.record)}
                       >
                         {titleForRecord(source, marker.record)}
@@ -448,7 +451,13 @@ function DatabaseMapContent({
           <div className="mt-2 flex flex-wrap gap-2">
             {missing.map((record) => (
               <div key={record.id} className="flex gap-1">
-                <Button type="button" size="sm" variant="outline" onClick={() => onOpen?.(record)}>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  data-record-title-link={record.id}
+                  onClick={() => onOpen?.(record)}
+                >
                   {titleForRecord(source, record)}
                 </Button>
                 {onOpenContextInspector ? (

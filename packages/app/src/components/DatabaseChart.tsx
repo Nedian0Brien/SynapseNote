@@ -333,6 +333,7 @@ export function DatabaseChart({
                     type="button"
                     variant="outline"
                     className="h-auto min-w-0 flex-1 justify-between py-3 text-left"
+                    data-record-title-link={record.id}
                     onClick={() => onOpen?.(record)}
                   >
                     <span>

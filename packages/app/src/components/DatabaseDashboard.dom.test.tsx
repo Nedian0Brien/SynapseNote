@@ -165,6 +165,7 @@ describe('DatabaseDashboard', () => {
     );
     await screen.findByText('Source task');
     await screen.findByText('Target task');
+    expect(document.querySelector('[data-record-title-link="rec_source"]')).toBeTruthy();
     expect(
       requests.slice(0, 2).every((request) => JSON.stringify(request).includes('prop_status')),
     ).toBe(true);

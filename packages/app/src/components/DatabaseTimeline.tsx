@@ -535,6 +535,7 @@ export function DatabaseTimeline({
                               type="button"
                               variant="link"
                               className="h-auto min-w-0 flex-1 justify-start truncate p-0"
+                              data-record-title-link={record.id}
                               onClick={() => onOpen?.(record)}
                             >
                               {titleForRecord(source, record)}
@@ -644,9 +645,21 @@ export function DatabaseTimeline({
                           >
                             <GripHorizontal />
                           </Button>
-                          <span className="min-w-0 flex-1 truncate">
-                            {titleForRecord(source, record)}
-                          </span>
+                          {onOpen ? (
+                            <Button
+                              type="button"
+                              variant="link"
+                              className="h-auto min-w-0 flex-1 justify-start truncate p-0 text-primary-foreground hover:text-primary"
+                              data-record-title-link={record.id}
+                              onClick={() => onOpen(record)}
+                            >
+                              {titleForRecord(source, record)}
+                            </Button>
+                          ) : (
+                            <span className="min-w-0 flex-1 truncate">
+                              {titleForRecord(source, record)}
+                            </span>
+                          )}
                           {onOpenContextInspector ? (
                             <Button
                               type="button"
@@ -728,7 +741,21 @@ export function DatabaseTimeline({
               </header>
               {unscheduled.map((record) => (
                 <div key={record.id} className="flex min-h-12 items-center gap-2 border-b p-2">
-                  <span className="min-w-0 flex-1 truncate">{titleForRecord(source, record)}</span>
+                  {onOpen ? (
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="h-auto min-w-0 flex-1 justify-start truncate p-0 text-left"
+                      data-record-title-link={record.id}
+                      onClick={() => onOpen(record)}
+                    >
+                      {titleForRecord(source, record)}
+                    </Button>
+                  ) : (
+                    <span className="min-w-0 flex-1 truncate">
+                      {titleForRecord(source, record)}
+                    </span>
+                  )}
                   {onOpenContextInspector ? (
                     <Button
                       type="button"

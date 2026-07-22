@@ -140,7 +140,19 @@ export function DatabaseFeed({
                   <time>{chronologyText(record.values[chronologyProperty.id])}</time>
                 </p>
                 <h3 className="mt-1 text-balance font-semibold text-lg">
-                  {valueText(record.values[titleProperty.id])}
+                  {onOpen ? (
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="h-auto justify-start p-0 text-left font-semibold text-lg"
+                      data-record-title-link={record.id}
+                      onClick={() => open(record)}
+                    >
+                      {valueText(record.values[titleProperty.id])}
+                    </Button>
+                  ) : (
+                    valueText(record.values[titleProperty.id])
+                  )}
                 </h3>
                 <p className="mt-1 truncate text-muted-foreground text-xs" title={record.path}>
                   {source.name} · {record.path}

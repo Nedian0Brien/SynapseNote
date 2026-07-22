@@ -69,11 +69,12 @@ function DashboardTableWidget({
             <tr key={record.id} className="hover:bg-muted/50">
               {properties.map((property, index) => (
                 <td key={property.id} className="max-w-48 truncate border-b px-2 py-1.5">
-                  {index === 0 ? (
+                  {index === 0 || property.type === 'title' ? (
                     <Button
                       type="button"
                       variant="link"
                       className="h-auto w-full justify-start truncate p-0 text-left"
+                      data-record-title-link={property.type === 'title' ? record.id : undefined}
                       onClick={() => onOpen(record)}
                     >
                       {String(record.values[property.id] ?? '—')}

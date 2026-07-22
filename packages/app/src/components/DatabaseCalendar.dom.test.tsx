@@ -118,6 +118,17 @@ describe('DatabaseCalendar', () => {
     expect(document.querySelectorAll('[data-calendar-day]').length).toBe(7);
   });
 
+  test('opens the canonical record from a calendar title', () => {
+    const { view, result } = fixture();
+    const onOpen = mock(() => {});
+    render(<DatabaseCalendar source={source} view={view} result={result} onOpen={onOpen} />);
+    const title = document.querySelector<HTMLButtonElement>('[data-record-title-link="rec_span"]');
+    expect(title?.textContent).toBe('Multi-day launch');
+    if (!title) throw new Error('Calendar title link is missing');
+    fireEvent.click(title);
+    expect(onOpen).toHaveBeenCalledWith(expect.objectContaining({ id: 'rec_span' }));
+  });
+
   test('emits one atomic date change for drag rescheduling and range resizing', () => {
     const { today, view, result } = fixture();
     const onChange = mock(() => {});

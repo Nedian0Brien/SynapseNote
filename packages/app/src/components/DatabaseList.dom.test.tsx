@@ -113,6 +113,8 @@ describe('DatabaseList', () => {
     expect(parent?.getAttribute('data-list-depth')).toBe('0');
     expect(child?.getAttribute('data-list-depth')).toBe('1');
     expect(child?.textContent).toContain('Nested');
+    fireEvent.click(screen.getByRole('button', { name: 'Parent' }));
+    expect(onOpen).toHaveBeenCalledWith(expect.objectContaining({ id: 'rec_parent' }));
     expect(
       child
         ?.querySelector('[data-list-property="prop_note"]')

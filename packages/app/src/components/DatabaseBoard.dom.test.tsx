@@ -175,11 +175,14 @@ describe('DatabaseBoard', () => {
     );
 
   test('renders swimlanes, empty groups, projected card properties, covers, colors, and limits', () => {
-    render(<DatabaseBoard source={source} view={view} result={result} />);
+    const onOpen = mock(() => {});
+    render(<DatabaseBoard source={source} view={view} result={result} onOpen={onOpen} />);
     expect(screen.getByRole('region', { name: 'Board Board' })).toBeTruthy();
     expect(boardElementByValue('data-board-swimlane', 'opt_frontend')).toBeTruthy();
     expect(screen.getAllByText('Blocked').length).toBeGreaterThan(0);
     expect(screen.getByText('First task')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'First task' }));
+    expect(onOpen).toHaveBeenCalledWith(expect.objectContaining({ id: 'rec_first' }));
     expect(screen.queryByText('Second task')).toBeNull();
     expect(screen.getByText('Showing 1 of 2')).toBeTruthy();
     expect(document.querySelector('img[src*="assets%2Fcover.png"]')).toBeTruthy();

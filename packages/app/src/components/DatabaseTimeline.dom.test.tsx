@@ -119,7 +119,8 @@ afterEach(cleanup);
 
 describe('DatabaseTimeline', () => {
   test('renders groups, ranges, dependencies, today, and the no-date lane', () => {
-    render(<DatabaseTimeline source={source} view={view} result={result} />);
+    const onOpen = mock(() => {});
+    render(<DatabaseTimeline source={source} view={view} result={result} onOpen={onOpen} />);
     expect(screen.getByRole('region', { name: 'Work' })).toBeTruthy();
     expect(document.querySelector('[data-timeline-bar="rec_plan"]')).toBeTruthy();
     expect(document.querySelector('[data-timeline-dependency="rec_plan:rec_ship"]')).toBeTruthy();
@@ -130,6 +131,17 @@ describe('DatabaseTimeline', () => {
     ).toBe('green');
     expect(document.querySelector('[data-timeline-today]')).toBeTruthy();
     expect(document.querySelector('[data-timeline-no-date]')?.textContent).toContain('Later');
+    const planTitle = document.querySelector<HTMLButtonElement>(
+      '[data-record-title-link="rec_plan"]',
+    );
+    const laterTitle = document.querySelector<HTMLButtonElement>(
+      '[data-record-title-link="rec_unscheduled"]',
+    );
+    if (!planTitle || !laterTitle) throw new Error('Timeline title links are missing');
+    fireEvent.click(planTitle);
+    fireEvent.click(laterTitle);
+    expect(onOpen).toHaveBeenNthCalledWith(1, expect.objectContaining({ id: 'rec_plan' }));
+    expect(onOpen).toHaveBeenNthCalledWith(2, expect.objectContaining({ id: 'rec_unscheduled' }));
   });
 
   test('compiles keyboard, resize, drag, and no-date scheduling into typed changes', () => {

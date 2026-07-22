@@ -296,9 +296,24 @@ export function DatabaseList({
                       >
                         {rowCollapsed ? <ChevronRight /> : <ChevronDown />}
                       </Button>
-                      <span className="min-w-0 flex-1 truncate font-medium">
-                        {title(source, row.record)}
-                      </span>
+                      {onOpen ? (
+                        <Button
+                          type="button"
+                          variant="link"
+                          className="h-auto min-w-0 flex-1 justify-start truncate p-0 text-left font-medium"
+                          data-record-title-link={row.record.id}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onOpen(row.record);
+                          }}
+                        >
+                          {title(source, row.record)}
+                        </Button>
+                      ) : (
+                        <span className="min-w-0 flex-1 truncate font-medium">
+                          {title(source, row.record)}
+                        </span>
+                      )}
                       {projectedProperties.map((property) =>
                         (() => {
                           const ruleId = colorMatch?.propertyRuleIds?.[property.id];

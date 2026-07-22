@@ -421,6 +421,7 @@ export function DatabaseCalendar({
                         type="button"
                         variant="link"
                         className="h-auto min-w-0 flex-1 justify-start truncate p-0 text-xs"
+                        data-record-title-link={record.id}
                         onClick={() => onOpen?.(record)}
                       >
                         {recordTitle(source, record)}

@@ -2443,6 +2443,34 @@ export function DatabaseTable({
                               <MapPin aria-hidden="true" />
                             </Button>
                           </div>
+                        ) : property.type === 'title' && onOpen ? (
+                          <div className="flex min-w-0 items-center gap-1">
+                            <Button
+                              type="button"
+                              variant="link"
+                              disabled={mutationLocked || proposedRecord !== undefined}
+                              className="h-auto min-w-0 flex-1 justify-start truncate px-1 py-0.5 text-left font-inherit"
+                              data-record-title-link={record.id}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                onOpen(record);
+                              }}
+                            >
+                              {shownText}
+                            </Button>
+                            {onEdit && !ghostCreated ? (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-sm"
+                                disabled={mutationLocked || proposed}
+                                aria-label={`Edit ${property.name} for record ${record.id}`}
+                                onClick={() => beginEdit(record, property)}
+                              >
+                                <Pencil />
+                              </Button>
+                            ) : null}
+                          </div>
                         ) : isDatabaseCellEditable(property) && onEdit && !ghostCreated ? (
                           <Button
                             variant="ghost"
