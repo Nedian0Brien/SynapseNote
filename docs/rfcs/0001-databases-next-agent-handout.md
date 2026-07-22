@@ -68,9 +68,9 @@ the repository-wide check for final release readiness.
   catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
   approval-bound commits, undo, and restart/backup idempotency. Agent View
   policy/privacy/sandbox review remains Partial by design.
-- Notion UX alignment checklist: **23/128 complete**. The page-first and normal
-  New-page creation slices plus the inline/linked insertion contract are now
-  evidenced. A
+- Notion UX alignment checklist: **34/128 complete**. The page-first and normal
+  New-page creation slices, the inline/linked insertion contract, and the
+  table-first direct-manipulation slice are now evidenced. A
   2026-07-23 in-app browser capture reached the IPv4 renderer at
   `http://127.0.0.1:5173/`, created a full-page database, created two canonical
   rows, created an inline database from the slash menu, saved an inline row,
@@ -207,7 +207,8 @@ do not reconstruct behavior solely from this summary.
   affordances visible.
 - A follow-up cancel check returned from `#database/new` to the empty hash with
   no second database. This closes the evidence-backed UX-101, UX-103, and
-  UX-105–UX-112 items (22/128 UX gates complete). UX-104, full-page/sidebar
+  UX-105–UX-112 items (the snapshot then was 22/128 UX gates complete). UX-104,
+  full-page/sidebar
   integration, Electron, accessibility, responsive, usability, performance,
   and release gates remain open.
 
@@ -233,6 +234,24 @@ do not reconstruct behavior solely from this summary.
 - `App.dom.test.tsx` verifies the callback selects `presentation="page"`, and
   the running-app capture shows the overlay-free workspace. UX-104 is closed;
   ordinary sidebar/recent URL integration remains in UX-201–UX-208.
+
+### 2026-07-23 table-first direct manipulation slice
+
+- The `DatabaseTable` surface now restores focus to the new-row title input
+  after a direct row creation commits. It uses a monotonic request token, so
+  the mutation lock cannot consume the focus request while the table is
+  refreshing; the existing inline handoff remains compatible.
+- The focused `DatabaseTableDialog.dom.test.tsx` suite passes **65 tests / 393
+  expectations**. It covers sticky header/title/new-row affordances,
+  type-specific editors, optimistic direct-safe edits, save/offline/conflict/
+  failure states, row selection and bulk review thresholds, archive/delete
+  recovery, keyboard navigation and TSV/multi-cell paste, persisted layout and
+  density, and secondary action menus.
+- `DatabaseView.dom.test.tsx` covers the linked inline selection, review,
+  undo/redo shortcut, and full-page handoff paths. UX-401–UX-406 and UX-408–
+  UX-412 are checked in the alignment checklist. UX-407 remains open until a
+  dedicated History surface exposes durable receipts; the broader visual,
+  accessibility, responsive, Electron, and release gates also remain open.
 
 ### 2026-07-22 first Notion-UX insertion slice
 

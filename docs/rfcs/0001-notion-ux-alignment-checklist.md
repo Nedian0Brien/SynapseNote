@@ -232,6 +232,23 @@ state without remounting, and guards the initial action by stable key. The
 focused manager/view suite passes 30 tests / 227 expectations, and the live
 browser check now shows exactly one `Table copy` after one duplicate action.
 
+### Direct manipulation evidence (2026-07-23)
+
+The table-first interaction contract is now covered by the focused DOM suites
+and the running implementation. `DatabaseTableDialog.dom.test.tsx` passes 65
+tests / 393 expectations, including sticky table/title/new-row structure,
+Enter-to-create with post-commit focus restoration, configured title opening,
+type-specific direct editors, optimistic reconciliation, compact save/offline/
+conflict/failure states, selection/bulk review thresholds, archive versus delete,
+keyboard traversal and TSV/multi-cell paste, persisted layout and row density,
+and secondary action menus for import/export, diagnostics, automations, and
+archived rows. `DatabaseView.dom.test.tsx` additionally covers the inline
+selection, review, undo/redo shortcut, and full-page handoff paths. The normal
+table row-create path now emits a monotonic focus request only after the exact
+commit succeeds, so a disabled mutation state cannot steal the next useful
+input position. The dedicated History surface and durable receipt browsing
+remain the unresolved part of UX-407.
+
 ## Re-audit snapshot (2026-07-23)
 
 The implementation has moved the surface closer to Notion, but it has not
@@ -240,12 +257,12 @@ crossed the document-native UX bar:
 | Measure | Current result | Interpretation |
 | --- | --- | --- |
 | Engine implementation checklist | 310/335 numbered items complete | Core/database and agent contracts are substantially implemented. |
-| Notion UX checklist | 23/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, and the inline/linked insertion contract are evidenced; full visual, state-matrix, and cross-host journey gates remain open. |
+| Notion UX checklist | 34/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, and table-first direct manipulation are evidenced; History, full visual, state-matrix, and cross-host journey gates remain open. |
 | First-use database entry | `New database` in sidebar, empty states, normal new-page dialog, command palette, plus slash-menu `New database`/`Linked view of database`; normal picker exposes Page/Database chooser and the resulting route lands in an editable table. `Open databases` enters the no-overlay page workspace. | Discovery and the web first-use path are evidenced; ordinary sidebar/recent integration and Electron proof remain open. |
 | Blank creation | Optional title, `Untitled database` fallback, direct-safe exact-plan commit, immediate source/view selection, title/new-row focus | The blank human path is continuous in DOM coverage; template/import/agent paths intentionally retain review and visual browser proof remains open. |
 | Full-page navigation | Stable `#database/<database>/<source>/<view?>` route and no-overlay page presentation | Route identity exists, but sidebar/recent/page chrome integration is incomplete. |
 | Inline linked view | Catalog → source → saved-view picker, inline creation, shared rows, visible tabs, replacement, conversion, duplicate configuration, and block removal | The core inline/linked contract is evidenced; the complete visual state matrix remains open. |
-| Direct editing | Direct-safe cell/row auto-approval exists; elevated mutations retain exact review | Safer direct manipulation is present, but optimistic/offline acknowledgement is not complete. |
+| Direct editing | Direct-safe cell/row auto-approval, optimistic reconciliation, offline/conflict/failure states, and post-commit focus are covered by focused DOM evidence | Elevated mutations retain exact review; a dedicated History/receipt browsing surface and full visual/cross-host acceptance remain open. |
 | Browser evidence | In-app web renderer is reachable on IPv4 and normal New-page, page-first, inline creation, record sharing, and cancellation journeys are captured; no Electron or complete state-matrix journey is captured | The core web slice is evidenced, but NUI-105/NUI-701–NUI-705 remain release gates for cross-host, accessibility, responsive, usability, performance, and packaged-release parity. |
 
 ### Priority order for the next implementation pass
@@ -464,28 +481,28 @@ capability alone is insufficient.
 
 ### UX-4 — Table-first direct manipulation
 
-- [ ] **UX-401** Default to a table with sticky header, title column, and new-row
+- [x] **UX-401** Default to a table with sticky header, title column, and new-row
       affordance.
-- [ ] **UX-402** Create a page by typing in the new-row title cell and pressing
+- [x] **UX-402** Create a page by typing in the new-row title cell and pressing
       Enter; leave focus in a useful next position.
-- [ ] **UX-403** Open the title using the configured side peek, center peek, or
+- [x] **UX-403** Open the title using the configured side peek, center peek, or
       full-page behavior.
-- [ ] **UX-404** Edit direct-safe cells in place with type-specific editors and
+- [x] **UX-404** Edit direct-safe cells in place with type-specific editors and
       no plan/commit banner.
-- [ ] **UX-405** Render optimistic edits and reconcile canonical results without
+- [x] **UX-405** Render optimistic edits and reconcile canonical results without
       cursor/focus jumps.
-- [ ] **UX-406** Show compact saving, saved, offline, conflict, and failed states
+- [x] **UX-406** Show compact saving, saved, offline, conflict, and failed states
       without converting the table into a transaction screen.
 - [ ] **UX-407** Expose undo/redo through standard shortcuts/history; place exact
       receipts under History.
-- [ ] **UX-408** Support row selection/bulk actions and trigger review only when
+- [x] **UX-408** Support row selection/bulk actions and trigger review only when
       the UX-005 threshold is crossed.
-- [ ] **UX-409** Keep archive and permanent delete distinct and explain recovery.
-- [ ] **UX-410** Support keyboard travel, Enter-to-edit, Escape-to-cancel, paste,
+- [x] **UX-409** Keep archive and permanent delete distinct and explain recovery.
+- [x] **UX-410** Support keyboard travel, Enter-to-edit, Escape-to-cancel, paste,
       multi-cell paste, and row creation.
-- [ ] **UX-411** Persist column resize/reorder and row density as immediate view
+- [x] **UX-411** Persist column resize/reorder and row density as immediate view
       configuration.
-- [ ] **UX-412** Move import/export, diagnostics, automations, and archived rows
+- [x] **UX-412** Move import/export, diagnostics, automations, and archived rows
       into secondary menus.
 
 ### UX-5 — Properties in context
