@@ -71,6 +71,7 @@
 - Latest atomic approval copy changeset: `../../.changeset/database-atomic-approval-copy.md`
 - Latest sensitive-operation review changeset: `../../.changeset/database-sensitive-review.md`
 - Latest Agent Run current-view recovery changeset: `../../.changeset/agent-run-current-view-recovery.md`
+- Latest retrieval explainability changeset: `../../.changeset/database-retrieval-explainability.md`
 
 ## Objective and completion rule
 
@@ -108,7 +109,7 @@ the repository-wide check for final release readiness.
   catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
   approval-bound commits, undo, and restart/backup idempotency. Agent View
   policy/privacy/sandbox review remains Partial by design.
-- Notion UX alignment checklist: **92/128 complete**. The page-first and normal
+- Notion UX alignment checklist: **93/128 complete**. The page-first and normal
   New-page creation slices, the inline/linked insertion contract, and the
   table-first direct-manipulation, named canonical workspace canvas-route,
   shared navigation without a duplicate canvas rail, sidebar/recent/search/
@@ -142,7 +143,8 @@ the repository-wide check for final release readiness.
   provenance/atomic review grouping, human-language plan summaries with
   technical detail disclosure, server-enforced atomic approval copy,
   sensitive-operation review with permission-change confirmation, and
-  current-view-preserving Agent Run recovery are
+  current-view-preserving Agent Run recovery and retrieval query/filter/
+  ranking/projection/permission/token explainability are
   now
   evidenced. A
   2026-07-23 in-app browser capture reached the IPv4 renderer at
@@ -828,7 +830,28 @@ do not reconstruct behavior solely from this summary.
   policy copy. App typecheck and targeted Biome checks pass; no full server
   suite or broad E2E rerun was needed.
 - UX-907 is now checked at the functional sensitive-operation review layer.
-  UX-908 through UX-1105 remain open.
+  UX-908 and UX-909 are now checked at their functional current-view recovery
+  and retrieval-explainability layers; UX-910 through UX-1105 remain open.
+
+### 2026-07-23 retrieval explainability
+
+- Context Pack responses now include an exact retrieval explanation: structured
+  query/archive scope, filter property IDs, typed-sort ranking with a stable
+  record-ID tie-breaker, requested/returned/omitted property projection,
+  matched/returned/omitted record counts, permission exclusions, disclosure
+  search mode, continuation state, and token-budget outcome.
+- `DatabaseContextInspector` carries the same bounded metadata in list/detail
+  summaries. Its new `Retrieval explainability` card gives a compact human
+  summary of query, filters, ranking, results, fields, permissions, and tokens;
+  the full filter expression, IDs, policy revision, and machine object remain
+  under `Show retrieval details`.
+- Focused evidence: server context-pack tests pass the schema/budget and
+  disclosure cases with retrieval assertions; server and app typechecks pass;
+  `DatabaseContextInspectorDialog.dom.test.tsx` passes the compact/retrieval
+  assertions; targeted Biome checks pass. No full server suite or broad E2E
+  rerun was needed.
+- UX-909 is now checked at the functional retrieval-explainability layer.
+  UX-910 through UX-1105 remain open.
 
 ### 2026-07-23 Agent Run current-view recovery
 
@@ -846,7 +869,8 @@ do not reconstruct behavior solely from this summary.
   test. App typecheck and targeted Biome checks pass; no full server suite or
   broad E2E rerun was needed.
 - UX-908 is now checked at the functional current-view recovery layer. UX-909
-  through UX-1105 remain open.
+  is covered by the retrieval-explainability slice above; UX-910 through
+  UX-1105 remain open.
 
 ### 2026-07-23 template preview parity
 
@@ -872,7 +896,7 @@ do not reconstruct behavior solely from this summary.
   catalog-backed database under `Recently opened`, reopening the same stable
   route. Focused evidence: sidebar 3 tests / 7 expectations and recent UI 1 / 5.
 - UX-203, UX-204, UX-206, UX-209, UX-309, UX-501, UX-502, UX-503, UX-504,
-  UX-505, UX-506, UX-507, UX-508, UX-509, UX-510, UX-601, UX-602, UX-603, UX-604, UX-605, UX-606, UX-607, UX-608, UX-609, UX-610, UX-701, UX-702, UX-703, UX-704, UX-705, UX-706, UX-707, UX-708, UX-709, UX-710, UX-801, UX-802, UX-803, UX-804, UX-805, UX-806, UX-807, UX-808, UX-901, UX-902, UX-903, UX-904, UX-905, UX-906, UX-907, and UX-908 are checked. The 768px visual responsive check remains
+  UX-505, UX-506, UX-507, UX-508, UX-509, UX-510, UX-601, UX-602, UX-603, UX-604, UX-605, UX-606, UX-607, UX-608, UX-609, UX-610, UX-701, UX-702, UX-703, UX-704, UX-705, UX-706, UX-707, UX-708, UX-709, UX-710, UX-801, UX-802, UX-803, UX-804, UX-805, UX-806, UX-807, UX-808, UX-901, UX-902, UX-903, UX-904, UX-905, UX-906, UX-907, UX-908, and UX-909 are checked. The 768px visual responsive check remains
   open.
 
 ### 2026-07-23 stable inline/full-page conversion

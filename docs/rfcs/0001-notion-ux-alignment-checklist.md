@@ -1167,6 +1167,32 @@ This closes UX-908 at the functional current-view recovery layer. Retrieval
 explainability, stable agent contracts, and the remaining UX-9 items remain
 open.
 
+### Retrieval explainability evidence (2026-07-23)
+
+Context Pack responses now carry explainability metadata for the exact root
+retrieval: the structured filter and archive scope, filter property IDs,
+typed-sort ranking and deterministic record-ID tie-breaker, requested/returned/
+omitted property projection, matched/returned/omitted record counts,
+permission-policy exclusions, evidence mode/search scope, and continuation
+state. The metadata is also included in the bounded Context Inspector summary,
+so the agent or user can understand why a result was returned and what was
+left out without opening the full pack. Technical filter expressions,
+property IDs, policy revisions, and the complete machine-readable object stay
+behind a collapsed `Show retrieval details` disclosure; the visible card also
+keeps the token estimate and available budget together with the retrieval
+outcome.
+
+Focused evidence: `database-context-pack.test.ts` passes the schema/budget and
+disclosure tests with retrieval metadata assertions; the server typecheck
+passes; `DatabaseContextInspectorDialog.dom.test.tsx` passes the compact
+summary/retrieval explainability assertions. Targeted Biome checks and
+documentation link checks pass; no full server suite or broad E2E rerun was
+needed.
+
+This closes UX-909 at the functional retrieval-explainability layer. Stable
+agent API/MCP contracts, visual, responsive, accessibility, cross-host, and
+the remaining UX-10/UX-11 release gates remain open.
+
 ### Database History and recovery evidence (2026-07-23)
 
 The `Database actions` menu now exposes a human-facing `History` item on both
@@ -1201,7 +1227,7 @@ crossed the document-native UX bar:
 | Measure | Current result | Interpretation |
 | --- | --- | --- |
 | Engine implementation checklist | 310/335 numbered items complete | Core/database and agent contracts are substantially implemented. |
-| Notion UX checklist | 92/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, inline/full-page state parity, table-first direct manipulation, friendly property names/examples, Title safety, type-specific cell editors, schema-vs-data mutation classification, in-context property-add/header affordances including property-specific sort/filter/duplicate actions, destructive property-deletion impact previews, adjacent Formula/Rollup error indicators, view-scoped property visibility/order, converged header/settings-menu view actions, visible reorderable saved-view tabs, layout-independent new-view `+` affordances, layout-specific saved-view property suggestions, coherent saved-view settings, active filter/sort explainers, saved-view tab lifecycle menu, last-view deletion safety, saved-view switch memory, independent linked-block view settings without copied rows, cross-layout title/tab/control/state/record-opening contract, canonical record-title entrypoints, shared side/center/full-page record surface, record breadcrumbs and return-to-view continuity, table/page synchronization, record body editing below properties, record-page comments/history/permissions/appearance/layout affordances, previous/next record navigation in the active view context, row/page mutation menu parity for duplicate/archive/restore/move/delete, direct Relation property links to canonical record pages, safe record deep-link/reload/missing/archived/permission states, unified Blank/template/import/folder/Assistant creation start surface, realistic template views/property-type/sample-page previews, Blank-fast-path/reset behavior without implicit advanced choices, CSV/TSV format/header/type/invalid-row/target-view previews, dedicated existing-folder source-identity migration review, natural-language agent plan previews for properties/views/templates/optional samples, editable agent property/view/sample suggestions carried into the handoff, resulting-page/block landing after every successful creation method, stable machine-ID attributes and collapsed advanced disclosure across canonical surfaces, compact Context Inspector summary for schema/view/selection/tokens/truncation/citations, scoped agent invocation from database/view/selection/row/property/record page with stable-ID MCP boundaries, agent proposal provenance and atomic review grouping, human-language agent plan summaries with technical details under disclosure, atomic approval copy with server-enforced required-scope selection, sensitive-operation review policy and permission-change confirmation, current-view-preserving Agent Run undo/retry/resume recovery, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, 768px browser, and cross-host journey gates remain open. |
+| Notion UX checklist | 93/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, inline/full-page state parity, table-first direct manipulation, friendly property names/examples, Title safety, type-specific cell editors, schema-vs-data mutation classification, in-context property-add/header affordances including property-specific sort/filter/duplicate actions, destructive property-deletion impact previews, adjacent Formula/Rollup error indicators, view-scoped property visibility/order, converged header/settings-menu view actions, visible reorderable saved-view tabs, layout-independent new-view `+` affordances, layout-specific saved-view property suggestions, coherent saved-view settings, active filter/sort explainers, saved-view tab lifecycle menu, last-view deletion safety, saved-view switch memory, independent linked-block view settings without copied rows, cross-layout title/tab/control/state/record-opening contract, canonical record-title entrypoints, shared side/center/full-page record surface, record breadcrumbs and return-to-view continuity, table/page synchronization, record body editing below properties, record-page comments/history/permissions/appearance/layout affordances, previous/next record navigation in the active view context, row/page mutation menu parity for duplicate/archive/restore/move/delete, direct Relation property links to canonical record pages, safe record deep-link/reload/missing/archived/permission states, unified Blank/template/import/folder/Assistant creation start surface, realistic template views/property-type/sample-page previews, Blank-fast-path/reset behavior without implicit advanced choices, CSV/TSV format/header/type/invalid-row/target-view previews, dedicated existing-folder source-identity migration review, natural-language agent plan previews for properties/views/templates/optional samples, editable agent property/view/sample suggestions carried into the handoff, resulting-page/block landing after every successful creation method, stable machine-ID attributes and collapsed advanced disclosure across canonical surfaces, compact Context Inspector summary for schema/view/selection/tokens/truncation/citations, retrieval query/filter/ranking/projection/permission/token explainability, scoped agent invocation from database/view/selection/row/property/record page with stable-ID MCP boundaries, agent proposal provenance and atomic review grouping, human-language agent plan summaries with technical details under disclosure, atomic approval copy with server-enforced required-scope selection, sensitive-operation review policy and permission-change confirmation, current-view-preserving Agent Run undo/retry/resume recovery, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, 768px browser, and cross-host journey gates remain open. |
 | First-use database entry | `New database` in sidebar, empty states, normal new-page dialog, command palette, plus slash-menu `New database`/`Linked view of database`; normal picker exposes Page/Database chooser and the resulting route lands in an editable table. `Open databases` enters the no-overlay page workspace. | Discovery, sidebar/recent navigation, and the web first-use path are evidenced; additional entry points and Electron proof remain open. |
 | Blank creation | Optional title, `Untitled database` fallback, direct-safe exact-plan commit, immediate source/view selection, title/new-row focus | The blank human path is continuous in DOM coverage; the same start surface now exposes template/import/folder/Assistant entry points while their review and visual browser proof remain open. |
 | Full-page navigation | Stable `#database/<database>/<source>/<view?>` route, no-overlay canvas presentation, sidebar source section, command-palette recents/search, backlink and relation links, normal page chrome, and local overflow guardrails | Route, page surface, and navigation identity are evidenced; responsive visual/cross-host proof remains incomplete. |
@@ -1661,8 +1687,12 @@ capability alone is insufficient.
       current view. Recovery emits a scoped change event, refreshes canonical/
       inline/record surfaces in place, and preserves the current route, view,
       and live row selection while the Agent Runs dialog stays open.
-- [ ] **UX-909** Explain retrieval query, filters, ranking, returned/omitted
-      fields, permissions, and token budget.
+- [x] **UX-909** Explain retrieval query, filters, ranking, returned/omitted
+      fields, permissions, and token budget. Context Pack retrieval metadata
+      records the exact structured query, filter fields, deterministic ranking,
+      projection and omission counts, permission exclusions, disclosure mode,
+      continuation state, and token outcome; Context Inspector shows a compact
+      human-readable card with machine details under disclosure.
 - [ ] **UX-910** Preserve stable agent APIs/MCP contracts through the UI/route
       redesign.
 
