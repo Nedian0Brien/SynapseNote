@@ -35,6 +35,7 @@ import {
 import { databasePageTargetToHash, databaseRecordPathToHash } from '@/lib/database-navigation';
 import {
   type DatabaseRecordNavigationState,
+  databaseRecordNavigationHash,
   databaseRecordNavigationOriginHash,
   readDatabaseRecordNavigation,
 } from '@/lib/database-record-navigation';
@@ -71,6 +72,7 @@ function PeekBody({
   onOpenHistory,
   onOpenRelations,
   onBackToView,
+  onNavigateRecord,
   recordNavigation,
   backlinksState,
 }: {
@@ -83,6 +85,7 @@ function PeekBody({
   onOpenHistory: () => void;
   onOpenRelations: () => void;
   onBackToView: () => void;
+  onNavigateRecord?: (path: string) => void;
   recordNavigation: DatabaseRecordNavigationState | null;
   backlinksState: BacklinksState;
 }) {
@@ -93,6 +96,14 @@ function PeekBody({
   const properties = source.properties.filter(
     (property) => property.type !== 'title' && property.id in record.values,
   );
+  const navigateToRecord = (index: number) => {
+    if (!recordNavigation) return;
+    const path = recordNavigation.paths[index];
+    const hash = databaseRecordNavigationHash(recordNavigation, index);
+    if (!path || !hash) return;
+    if (onNavigateRecord) onNavigateRecord(path);
+    else window.location.hash = hash;
+  };
   return (
     <>
       {state.status === 'ready' && state.cover.kind !== 'unsupported' ? (
@@ -150,6 +161,30 @@ function PeekBody({
             <Button type="button" size="sm" variant="ghost" onClick={onOpenRelations}>
               <Link2 /> <Trans>Relations</Trans>
             </Button>
+          ) : null}
+          {recordNavigation ? (
+            <>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                disabled={recordNavigation.index === 0}
+                onClick={() => navigateToRecord(recordNavigation.index - 1)}
+                data-database-record-navigation="previous"
+              >
+                <Trans>Previous record</Trans>
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                disabled={recordNavigation.index === recordNavigation.paths.length - 1}
+                onClick={() => navigateToRecord(recordNavigation.index + 1)}
+                data-database-record-navigation="next"
+              >
+                <Trans>Next record</Trans>
+              </Button>
+            </>
           ) : null}
           {recordNavigation ? (
             <Button type="button" size="sm" variant="ghost" onClick={onBackToView}>
@@ -243,6 +278,7 @@ export function DatabaseRecordPeek({
   record,
   onClose,
   onOpenFull,
+  onNavigateRecord,
 }: {
   mode: 'side_peek' | 'center_peek';
   database: DatabaseDefinition;
@@ -250,6 +286,7 @@ export function DatabaseRecordPeek({
   record: ProjectedDatabaseRecord;
   onClose: () => void;
   onOpenFull: () => void;
+  onNavigateRecord?: (path: string) => void;
 }) {
   const [state, setState] = useState<PeekState>({ status: 'loading' });
   const [backlinksState, setBacklinksState] = useState<BacklinksState>({
@@ -329,6 +366,7 @@ export function DatabaseRecordPeek({
         onOpenComments={() => setCommentsOpen(true)}
         onOpenHistory={() => setHistoryOpen(true)}
         onOpenRelations={() => setRelationsOpen(true)}
+        onNavigateRecord={onNavigateRecord}
         onBackToView={() => {
           if (!recordNavigation) return;
           window.location.hash = databaseRecordNavigationOriginHash(recordNavigation);

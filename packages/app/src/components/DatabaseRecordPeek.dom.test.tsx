@@ -1,6 +1,6 @@
-import { afterEach, describe, expect, test } from 'bun:test';
+import { afterEach, describe, expect, mock, test } from 'bun:test';
 import { DatabaseDefinitionSchema } from '@nedian0brien/synapsenote-core';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { DatabaseRecordPeek } from './DatabaseRecordPeek';
 
 afterEach(() => {
@@ -107,7 +107,18 @@ describe('DatabaseRecordPeek context parity', () => {
     );
   });
 
-  test('shows the originating view breadcrumb action when navigation context is available', () => {
+  test('shows the originating view breadcrumb action when navigation context is available', async () => {
+    globalThis.fetch = (async (input: string | URL | Request) => {
+      const url = String(input);
+      if (url.startsWith('/api/backlinks')) {
+        return Response.json({ docName: 'tasks/first', backlinks: [] });
+      }
+      return Response.json({
+        docName: 'tasks/first',
+        lifecycle: null,
+        content: '---\n---\nFirst body\n',
+      });
+    }) as typeof fetch;
     sessionStorage.setItem(
       'synapsenote:database-record-navigation-v1',
       JSON.stringify({
@@ -133,9 +144,63 @@ describe('DatabaseRecordPeek context parity', () => {
         onOpenFull={() => {}}
       />,
     );
+    await waitFor(() => expect(screen.getByText('First body')).toBeDefined());
     expect(screen.getByRole('button', { name: 'Back to database view' })).toBeDefined();
     expect(screen.getByRole('link', { name: 'Work' }).getAttribute('href')).toBe(
       '#database/db_work/ds_tasks/view_table',
     );
+  });
+
+  test('keeps previous and next navigation inside the originating view order', async () => {
+    globalThis.fetch = (async (input: string | URL | Request) => {
+      const url = String(input);
+      if (url.startsWith('/api/backlinks')) {
+        return Response.json({ docName: 'tasks/second', backlinks: [] });
+      }
+      return Response.json({
+        docName: 'tasks/second',
+        lifecycle: null,
+        content: '---\n---\nSecond body\n',
+      });
+    }) as typeof fetch;
+    sessionStorage.setItem(
+      'synapsenote:database-record-navigation-v1',
+      JSON.stringify({
+        databaseId: 'db_work',
+        sourceId: 'ds_tasks',
+        viewId: 'view_table',
+        paths: ['tasks/first.md', 'tasks/second.md', 'tasks/third.md'],
+        index: 1,
+      }),
+    );
+    const onNavigateRecord = mock((path: string) => path);
+    render(
+      <DatabaseRecordPeek
+        mode="center_peek"
+        database={database}
+        source={source}
+        record={{
+          id: 'rec_second',
+          path: 'tasks/second.md',
+          revision: `sha256:${'b'.repeat(64)}`,
+          values: { prop_title: 'Second' },
+        }}
+        onClose={() => {}}
+        onOpenFull={() => {}}
+        onNavigateRecord={onNavigateRecord}
+      />,
+    );
+    await waitFor(() => expect(screen.getByText('Second body')).toBeDefined());
+    expect(screen.getByRole('button', { name: 'Previous record' }).hasAttribute('disabled')).toBe(
+      false,
+    );
+    expect(screen.getByRole('button', { name: 'Next record' }).hasAttribute('disabled')).toBe(
+      false,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Previous record' }));
+    expect(onNavigateRecord).toHaveBeenCalledWith('tasks/first.md');
+    expect(
+      JSON.parse(sessionStorage.getItem('synapsenote:database-record-navigation-v1') ?? '{}'),
+    ).toMatchObject({ index: 0 });
   });
 });

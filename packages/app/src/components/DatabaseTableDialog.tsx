@@ -7325,6 +7325,16 @@ function DatabaseTableSurface({
           source={description.source}
           record={recordPeek.record}
           onClose={() => setRecordPeek(null)}
+          onNavigateRecord={(path) => {
+            const nextRecord = result?.records.find((candidate) => candidate.path === path);
+            if (nextRecord) {
+              setRecordPeek({ record: nextRecord, mode: recordPeek.mode });
+              return;
+            }
+            onOpenRecord?.(path);
+            setRecordPeek(null);
+            onOpenChange(false);
+          }}
           onOpenFull={() => {
             onOpenRecord?.(recordPeek.record.path);
             setRecordPeek(null);
