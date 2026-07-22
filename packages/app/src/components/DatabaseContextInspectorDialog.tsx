@@ -282,8 +282,11 @@ function ContextFieldControls({
     });
   };
   const copySelectedPreview = async (): Promise<void> => {
+    if (!navigator.clipboard?.writeText) {
+      setCopyStatus('error');
+      return;
+    }
     try {
-      if (!navigator.clipboard?.writeText) throw new Error('Clipboard is unavailable');
       await navigator.clipboard.writeText(projectedJson);
       setCopyStatus('copied');
     } catch {
