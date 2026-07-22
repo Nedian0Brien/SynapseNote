@@ -59,6 +59,7 @@ describe('DatabasePropertiesDialog', () => {
     ).toContain('Notes');
     expect((screen.getByLabelText('Move Title up') as HTMLButtonElement).disabled).toBe(true);
     expect((screen.getByLabelText('Move Title down') as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByLabelText('Rename Title') as HTMLButtonElement).disabled).toBe(true);
     expect((screen.getByLabelText('Delete Title') as HTMLButtonElement).disabled).toBe(true);
   });
 

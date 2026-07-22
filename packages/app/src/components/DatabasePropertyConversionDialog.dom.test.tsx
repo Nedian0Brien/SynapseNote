@@ -156,4 +156,28 @@ describe('DatabasePropertyConversionDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Review exact plan' }));
     expect(onReviewPlan).toHaveBeenCalledWith(expect.objectContaining({ id: 'plan_conversion' }));
   });
+
+  test('keeps the required Title property out of independent conversion', () => {
+    render(
+      <I18nProvider i18n={i18n}>
+        <DatabasePropertyConversionDialog
+          open
+          onOpenChange={() => {}}
+          databaseId="db_tasks"
+          sourceId="ds_tasks"
+          property={{ id: 'prop_title', key: 'title', name: 'Title', type: 'title' }}
+          onReviewPlan={() => {}}
+        />
+      </I18nProvider>,
+    );
+
+    expect(
+      screen.getByText(
+        'This property cannot be converted independently. Derived properties and the only Title property require a broader schema migration.',
+      ),
+    ).toBeTruthy();
+    expect(
+      (screen.getByRole('button', { name: 'Preview conversion' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+  });
 });
