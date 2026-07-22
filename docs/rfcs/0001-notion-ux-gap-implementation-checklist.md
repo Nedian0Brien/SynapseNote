@@ -372,14 +372,16 @@ treated as visual parity until a browser capture is attached.
   supports record-scoped filtering, including all-record selection scopes. Table
   row actions, cell menus, and the selected-record toolbar now expose compact
   context actions. Citation labels are rendered from captured evidence/full-body
-  disclosures. The inspector now offers per-property All/None/checkbox controls
-  and a non-mutating selected-field JSON preview with an approximate token count;
+  disclosures. The inspector now offers per-property All/None/checkbox controls,
+  a non-mutating selected-field JSON preview with an approximate token count,
+  and one-click copying of that compact preview with an explicit clipboard
+  failure state;
   property-header actions now open the same inspector with a property-scoped
   `propertyIds` query, including properties omitted by the captured pack. The
   server Context Pack contract already accepts `propertyIds` for agent-side
   selective delivery. Evidence:
   `DatabaseContextInspectorDialog.test.tsx` (6 tests / 25 expectations),
-  `DatabaseContextInspectorDialog.dom.test.tsx` (1 test / 8 expectations),
+  `DatabaseContextInspectorDialog.dom.test.tsx` (1 test / 10 expectations),
   `database-context-inspector.test.ts` (3 tests / 16 expectations), the focused
   `database-data-plane-api.test.ts` contract, the Table menu journey, and the
   inline `DatabaseView.dom.test.tsx` scoped inspector journey (17 tests / 168

@@ -5,7 +5,16 @@ import type {
   DatabaseContextInspectionSummary,
   DatabaseContextPack,
 } from '@nedian0brien/synapsenote-server';
-import { AlertCircle, Braces, ChevronRight, Loader2, RefreshCw, ShieldCheck } from 'lucide-react';
+import {
+  AlertCircle,
+  Braces,
+  Check,
+  ChevronRight,
+  Clipboard,
+  Loader2,
+  RefreshCw,
+  ShieldCheck,
+} from 'lucide-react';
 import { type ReactNode, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -262,6 +271,7 @@ function ContextFieldControls({
   const previewBytes = new TextEncoder().encode(projectedJson);
   const estimatedPreviewTokens = Math.ceil(previewBytes.byteLength / 3);
   const selectedSet = new Set(selectedPropertyIds);
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
   const selectAll = (): void =>
     setSelectedPropertyIds(availableProperties.map((property) => property.id));
   const clearAll = (): void => setSelectedPropertyIds([]);
@@ -270,6 +280,15 @@ function ContextFieldControls({
       if (checked) return current.includes(propertyId) ? current : [...current, propertyId];
       return current.filter((id) => id !== propertyId);
     });
+  };
+  const copySelectedPreview = async (): Promise<void> => {
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error('Clipboard is unavailable');
+      await navigator.clipboard.writeText(projectedJson);
+      setCopyStatus('copied');
+    } catch {
+      setCopyStatus('error');
+    }
   };
 
   return (
@@ -296,6 +315,20 @@ function ContextFieldControls({
           </Button>
           <Button type="button" variant="link-muted" size="xs" onClick={clearAll}>
             <Trans>None</Trans>
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="xs"
+            aria-label="Copy selected context"
+            onClick={() => void copySelectedPreview()}
+          >
+            {copyStatus === 'copied' ? (
+              <Check aria-hidden="true" />
+            ) : (
+              <Clipboard aria-hidden="true" />
+            )}
+            {copyStatus === 'copied' ? <Trans>Copied</Trans> : <Trans>Copy</Trans>}
           </Button>
         </div>
       </div>
@@ -329,6 +362,11 @@ function ContextFieldControls({
         </span>
         <span className="font-mono">≈ {estimatedPreviewTokens.toLocaleString()} tokens</span>
       </div>
+      {copyStatus === 'error' ? (
+        <p className="mt-2 text-destructive text-xs" role="alert">
+          <Trans>Clipboard is unavailable. Select the preview and copy it manually.</Trans>
+        </p>
+      ) : null}
       <details className="mt-3 rounded-md border bg-muted/20" open>
         <summary className="cursor-pointer px-3 py-2 text-xs font-medium">
           <Trans>Selected field preview</Trans>

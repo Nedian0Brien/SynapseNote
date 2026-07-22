@@ -4,7 +4,15 @@ import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { DatabaseContextInspectorBody } from './DatabaseContextInspectorDialog';
 
-afterEach(cleanup);
+const originalClipboard = navigator.clipboard;
+
+afterEach(() => {
+  cleanup();
+  Object.defineProperty(navigator, 'clipboard', {
+    configurable: true,
+    value: originalClipboard,
+  });
+});
 
 function inspection(): DatabaseContextInspection {
   return {
@@ -84,6 +92,15 @@ describe('DatabaseContextInspectorDialog field controls', () => {
   test('updates the local selected-field preview without changing the exact pack', async () => {
     const selected = inspection();
     const user = userEvent.setup();
+    let copied = '';
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText: async (value: string) => {
+          copied = value;
+        },
+      },
+    });
     render(
       <DatabaseContextInspectorBody
         inspections={[selected]}
@@ -114,5 +131,11 @@ describe('DatabaseContextInspectorDialog field controls', () => {
     await user.click(screen.getByRole('button', { name: 'None' }));
     expect(preview.textContent).not.toContain('Visible evidence');
     expect(screen.getByText('0 of 2 fields selected')).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: 'Copy selected context' }));
+    expect(copied).toContain('"properties": []');
+    expect(screen.getByRole('button', { name: 'Copy selected context' }).textContent).toContain(
+      'Copied',
+    );
   });
 });

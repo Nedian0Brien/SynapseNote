@@ -18,6 +18,7 @@
 - Latest inline single-view-tabs changeset: `../../.changeset/inline-single-view-tabs.md`
 - Latest inline mode-preservation changeset: `../../.changeset/inline-view-mode-preservation.md`
 - Latest inline view-tab-menu changeset: `../../.changeset/inline-view-tab-menu.md`
+- Latest context-inspector-copy changeset: `../../.changeset/context-inspector-copy.md`
 
 ## Objective and completion rule
 
@@ -661,6 +662,20 @@ do not reconstruct behavior solely from this summary.
   was needed.
 - Follow-up: visual-check the tab/menu spacing in browser and Electron before
   closing NUI-402/NUI-502.
+
+### 2026-07-22 token-efficient context copy slice
+
+- The Context Inspector's selected-field preview now has a `Copy` action. It
+  copies only the locally projected JSON (never mutating or re-fetching the
+  captured pack), keeps the computed approximate token count visible, changes
+  to `Copied` on success, and reports an explicit manual-copy fallback when
+  the browser/desktop clipboard is unavailable.
+- Focused evidence: `DatabaseContextInspectorDialog.dom.test.tsx` passes 1 test
+  / 10 expectations; `DatabaseContextInspectorDialog.test.tsx` passes 6 tests /
+  25 expectations; app typecheck, Biome, and `git diff --check` pass. No server
+  suite or E2E rerun was needed.
+- Follow-up: connect this compact projection to any future agent handoff
+  surface without bypassing the server's permission-scoped Context Pack.
 
 ### 2026-07-22 inline filter handoff slice
 
