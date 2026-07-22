@@ -64,6 +64,7 @@
 - Latest agent-plan-editing changeset: `../../.changeset/database-agent-plan-editing.md`
 - Latest creation-result-route changeset: `../../.changeset/database-creation-result-route.md`
 - Latest machine-ID disclosure changeset: `../../.changeset/database-machine-ids.md`
+- Latest Context Inspector summary changeset: `../../.changeset/database-context-summary.md`
 
 ## Objective and completion rule
 
@@ -101,7 +102,7 @@ the repository-wide check for final release readiness.
   catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
   approval-bound commits, undo, and restart/backup idempotency. Agent View
   policy/privacy/sandbox review remains Partial by design.
-- Notion UX alignment checklist: **85/128 complete**. The page-first and normal
+- Notion UX alignment checklist: **86/128 complete**. The page-first and normal
   New-page creation slices, the inline/linked insertion contract, and the
   table-first direct-manipulation, named canonical workspace canvas-route,
   shared navigation without a duplicate canvas rail, sidebar/recent/search/
@@ -591,7 +592,7 @@ do not reconstruct behavior solely from this summary.
   expectations (including the Assistant chooser and no-direct-commit guard),
   the existing resulting-page preview test passes 1 / 4, and the folder
   onboarding test passes 1 / 7. App typecheck and targeted Biome checks pass.
-- UX-801 through UX-808 and UX-901 are now checked at the functional creation/agent
+- UX-801 through UX-808, UX-901, and UX-902 are now checked at the functional creation/agent
   proposal and resulting-page handoff layer. Cross-host, visual, responsive,
   and packaged-release evidence remains open.
 
@@ -707,6 +708,23 @@ do not reconstruct behavior solely from this summary.
 - UX-901 is now checked at the functional stable-identity/progressive-
   disclosure layer. UX-902 through UX-1105 remain open.
 
+### 2026-07-23 Context Inspector compact summary
+
+- The Context Inspector now leads with one compact retrieval summary for schema
+  field names, Agent View versus database default, requested/returned selection
+  counts, estimated/available/max/reserve token budget, truncation cause and
+  continuation, and citation count/disclosure level.
+- The selected-field preview and exact Context Pack remain collapsed by default;
+  expanding them still exposes the complete JSON evidence. No second retrieval
+  path or payload copy was introduced.
+- Focused evidence: `DatabaseContextInspectorDialog.dom.test.tsx` passes 2
+  focused tests / 19 expectations, and
+  `DatabaseContextInspectorDialog.test.tsx` passes 6 tests / 25 expectations.
+  App typecheck and targeted Biome checks pass. No full server suite or E2E
+  rerun was needed.
+- UX-902 is now checked at the functional compact-inspection layer. UX-903
+  through UX-1105 remain open.
+
 ### 2026-07-23 template preview parity
 
 - All seven starter templates now compile a Table view plus a Board view
@@ -731,7 +749,7 @@ do not reconstruct behavior solely from this summary.
   catalog-backed database under `Recently opened`, reopening the same stable
   route. Focused evidence: sidebar 3 tests / 7 expectations and recent UI 1 / 5.
 - UX-203, UX-204, UX-206, UX-209, UX-309, UX-501, UX-502, UX-503, UX-504,
-  UX-505, UX-506, UX-507, UX-508, UX-509, UX-510, UX-601, UX-602, UX-603, UX-604, UX-605, UX-606, UX-607, UX-608, UX-609, UX-610, UX-701, UX-702, UX-703, UX-704, UX-705, UX-706, UX-707, UX-708, UX-709, UX-710, UX-801, UX-802, UX-803, UX-804, UX-805, UX-806, UX-807, UX-808, and UX-901 are checked. The 768px visual responsive check remains
+  UX-505, UX-506, UX-507, UX-508, UX-509, UX-510, UX-601, UX-602, UX-603, UX-604, UX-605, UX-606, UX-607, UX-608, UX-609, UX-610, UX-701, UX-702, UX-703, UX-704, UX-705, UX-706, UX-707, UX-708, UX-709, UX-710, UX-801, UX-802, UX-803, UX-804, UX-805, UX-806, UX-807, UX-808, UX-901, and UX-902 are checked. The 768px visual responsive check remains
   open.
 
 ### 2026-07-23 stable inline/full-page conversion
