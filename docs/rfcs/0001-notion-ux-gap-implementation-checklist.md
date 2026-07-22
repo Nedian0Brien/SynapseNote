@@ -370,14 +370,17 @@ treated as visual parity until a browser capture is attached.
   Pixel-level visual parity remains a separate NUI-701/NUI-702 gate; the
   stable-ID reorder and active-view settings/menu handoff are complete. Map to
   UX-601–UX-610.
-- [ ] **NUI-503** Keep Blank fastest; make templates/import/agent-assisted
+- [x] **NUI-503** Keep Blank fastest; make templates/import/agent-assisted
   creation preview the resulting page/block rather than ending in the admin
   shell. Blank remains the direct-safe fastest path; template and CSV/TSV
   creation now show a bounded first-page preview of the actual sample rows and
   all committed creation modes converge into the editable database page. The
-  full agent-assisted preview and visual first-use journey remain open.
-  Evidence: `DatabaseCreationDialog.dom.test.tsx` 7/7 tests, 29 expectations,
-  plus the creation commit continuation in `DatabaseTableDialog`. Map to
+  agent-shaped creation plans now also show a resulting-page preview inside
+  the exact-plan ghost review before approval, so the flow does not end in an
+  admin shell. Evidence: `DatabaseCreationDialog.dom.test.tsx` 7/7 tests, 29
+  expectations, plus the focused `DatabaseTableDialog.dom.test.tsx` journey
+  (1 test / 3 expectations) and the existing creation commit continuation.
+  Visual first-use parity remains a separate NUI-701/NUI-702 gate. Map to
   UX-801–UX-808.
 
 ## P1 — Preserve the agent-native advantage

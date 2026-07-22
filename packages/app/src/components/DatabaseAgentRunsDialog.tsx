@@ -39,7 +39,7 @@ export interface DatabaseAgentRunSummary {
   undo: { available: boolean };
   recovery?: {
     attempt: number;
-    action: DatabaseAgentRun['recovery']['action'];
+    action: 'initial' | 'retry' | 'resume';
     sourceRunId: string | null;
   } | null;
 }

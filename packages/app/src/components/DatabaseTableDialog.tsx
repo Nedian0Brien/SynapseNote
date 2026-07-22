@@ -772,6 +772,13 @@ function databasePlanHumanSummary(diff: DatabaseGhostState['diff']): string {
   return [...recordSummary, ...fileSummary].join(' · ') || 'No canonical file changes';
 }
 
+function databaseCreationPreviewValue(value: unknown): string {
+  if (value === undefined || value === null || value === '') return '—';
+  if (Array.isArray(value)) return value.map(databaseCreationPreviewValue).join(', ');
+  if (typeof value === 'object') return JSON.stringify(value);
+  return String(value);
+}
+
 export function DatabaseTable({
   databaseId = '',
   viewId = null,
@@ -2735,6 +2742,9 @@ export function DatabaseTableDialog({
   const [newRecordOpen, setNewRecordOpen] = useState(false);
   const [newRecordTemplateId, setNewRecordTemplateId] = useState('__auto__');
   const [creationOpen, setCreationOpen] = useState(false);
+  const [creationPreview, setCreationPreview] = useState<DatabaseDesiredStateDraftInput | null>(
+    null,
+  );
   const [onboardingTarget, setOnboardingTarget] = useState<DatabaseSourceOnboardingTarget | null>(
     null,
   );
@@ -4903,6 +4913,54 @@ export function DatabaseTableDialog({
                     record file(s), {ghost.diff.templates.length} template file(s) · risk{' '}
                     {ghost.risk.level}
                   </p>
+                  {creationPreview?.sampleRecords && creationPreview.sampleRecords.length > 0 ? (
+                    <section
+                      className="mt-3 rounded border bg-background/70 p-2"
+                      aria-label="Resulting page preview"
+                      data-testid="database-creation-resulting-page-preview"
+                    >
+                      <h3 className="font-medium text-xs">
+                        <Trans>Resulting page preview</Trans>
+                      </h3>
+                      <p className="mt-1 text-muted-foreground text-xs">
+                        <Trans>
+                          The first pages will open in the editable database after this plan
+                          commits.
+                        </Trans>
+                      </p>
+                      <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                        {creationPreview.sampleRecords.slice(0, 4).map((record) => {
+                          const source = creationPreview.sources.find(
+                            (candidate) => candidate.key === record.sourceKey,
+                          );
+                          const properties = source?.properties.slice(0, 4) ?? [];
+                          return (
+                            <article
+                              key={
+                                record.id ?? `${record.sourceKey}:${JSON.stringify(record.values)}`
+                              }
+                              className="rounded border bg-background p-2 text-xs"
+                            >
+                              <div className="font-medium">Page preview</div>
+                              <dl className="mt-1 grid gap-1">
+                                {properties.map((property) => (
+                                  <div
+                                    key={property.key}
+                                    className="grid grid-cols-[auto_1fr] gap-2"
+                                  >
+                                    <dt className="text-muted-foreground">{property.name}</dt>
+                                    <dd className="truncate">
+                                      {databaseCreationPreviewValue(record.values[property.key])}
+                                    </dd>
+                                  </div>
+                                ))}
+                              </dl>
+                            </article>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  ) : null}
                   <details className="mt-2 rounded border bg-background/60 px-2 py-1 text-xs">
                     <summary className="cursor-pointer font-medium">
                       <Trans>Exact plan details</Trans>
@@ -6662,6 +6720,7 @@ export function DatabaseTableDialog({
           if (!nextOpen && reason !== 'submit') onCreationCancelled?.();
         }}
         onCreate={(desiredState, mode) => {
+          setCreationPreview(desiredState);
           runMutation(desiredState, 'ui-database-create', 'Database creation failed', {
             assertions: {
               databaseAbsent: true,
@@ -6688,6 +6747,7 @@ export function DatabaseTableDialog({
               // manifest exists, select its source/view immediately so the
               // next catalog refresh lands on the new editable table instead
               // of making the user rediscover it in the left rail.
+              setCreationPreview(null);
               const definition = outcome.draft.normalized?.definition;
               if (!definition || !Array.isArray(definition.sources)) return;
               const source = definition.sources[0];

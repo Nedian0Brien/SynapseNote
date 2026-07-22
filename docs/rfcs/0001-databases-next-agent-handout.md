@@ -49,13 +49,14 @@ the repository-wide check for final release readiness.
 - Numbered A-S items still open: **5**.
 - Total unchecked Markdown boxes: **25**. The extra 20 are M1-M4 milestone
   release gates, all intentionally still open.
-- Notion UX gap implementation checklist: **32/42 complete**. NUI-201,
+- Notion UX gap implementation checklist: **33/42 complete**. NUI-201,
   NUI-202, NUI-203, NUI-204, NUI-302, NUI-304, and NUI-401 are closed with
   focused implementation evidence; NUI-301, NUI-303, and NUI-403 are now
   closed for implementation evidence; NUI-501 is now closed for the complete
   stable-ID property affordance and dependency/recovery evidence; NUI-502 is
   now closed for stable-ID view reorder and active-view settings/menu evidence;
-  NUI-105 and the P1/P2 agent, linked-view,
+  NUI-503 is now closed for blank/template/import and agent-shaped resulting
+  page previews; NUI-105 and the P1/P2 agent, linked-view,
   responsive, and browser-journey gates remain open.
 - Notion UX alignment checklist: **2/128 complete**. The first insertion slice
   (user-facing `Database`/`Linked database` slash entries and an inline
@@ -919,6 +920,20 @@ do not reconstruct behavior solely from this summary.
   tabs, single-view `+`, active-tab menu, and full-page continuity. This closes
   **NUI-502**, taking the UX-gap count to **32/42 (76.2%)**. Pixel-level parity
   and browser/Electron/a11y gates remain separate release work.
+
+### 2026-07-22 resulting-page creation preview closure
+
+- Blank creation remains the direct-safe fastest path. Template and CSV/TSV
+  creation already show bounded first-page previews in the creation dialog; the
+  exact-plan ghost review now carries that preview into the approval surface
+  for agent-shaped creation plans as well. It shows human property labels and
+  example values before commit, while exact IDs/hashes remain collapsed in the
+  plan details.
+- Focused evidence: `DatabaseCreationDialog.dom.test.tsx` passes 7 tests / 29
+  expectations and the new `DatabaseTableDialog.dom.test.tsx` resulting-page
+  journey passes 1 test / 3 expectations. This closes **NUI-503**, taking the
+  UX-gap count to **33/42 (78.6%)**. Visual first-use and cross-host gates stay
+  under NUI-701/NUI-702.
 
 ## Verification already completed
 

@@ -3283,6 +3283,74 @@ describe('DatabaseTableDialog', () => {
     expect(window.location.hash).toBe('#database/db_new/ds_new');
   });
 
+  test('shows the resulting page preview while an agent-shaped creation plan awaits approval', async () => {
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = String(input);
+      const body = init?.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : {};
+      if (path.startsWith('/api/databases/catalog')) {
+        return Response.json({ ...catalog(), candidates: [] });
+      }
+      if (path === '/api/databases/plan' && body.action === 'create_draft') {
+        return Response.json({
+          action: 'create_draft',
+          draft: { id: 'draft_agent_preview', revision: hash },
+        });
+      }
+      if (path === '/api/databases/plan' && body.action === 'create_plan') {
+        return Response.json({
+          action: 'create_plan',
+          plan: {
+            id: 'plan_agent_preview',
+            hash,
+            snapshotRevision: hash,
+            committable: true,
+            requiresCommit: true,
+            conflicts: [],
+            approvals: [{ code: 'create_database', reason: 'Canonical creation' }],
+            risk: { level: 'medium', reasons: ['Creates a canonical database'] },
+            diff: {
+              manifests: [],
+              records: [
+                {
+                  recordId: 'rec_agent_preview',
+                  sourceId: 'ds_launch_tasks',
+                  path: 'launch_tasks/ship.md',
+                  action: 'create',
+                  before: null,
+                  after: { values: { title: 'Ship launch' }, body: 'Launch checklist\n' },
+                },
+              ],
+              templates: [],
+              policy: {},
+            },
+          },
+        });
+      }
+      return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
+    }) as typeof fetch;
+
+    render(
+      <DatabaseTableDialog
+        open
+        presentation="page"
+        initialAction="create"
+        onOpenChange={() => {}}
+      />,
+    );
+    await screen.findByText('No databases yet.');
+    fireEvent.click(screen.getByTestId('database-create-button'));
+    fireEvent.click(await screen.findByText('Template'));
+    fireEvent.change(screen.getByLabelText('Database name'), {
+      target: { value: 'Launch tasks' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Review creation' }));
+
+    const preview = await screen.findByTestId('database-creation-resulting-page-preview');
+    expect(preview.textContent).toContain('Page preview');
+    expect(preview.textContent).toContain('Plan launch');
+    expect(screen.getByTestId('database-creation-ghost-review')).not.toBeNull();
+  });
+
   test('reopens a failed creation with the typed title available for retry', async () => {
     globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
       const path = String(input);
