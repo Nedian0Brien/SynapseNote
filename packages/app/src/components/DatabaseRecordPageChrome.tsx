@@ -65,7 +65,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { type DatabaseDescription, describeDatabase } from '@/lib/database-catalog-client';
+import {
+  DatabaseCatalogClientError,
+  type DatabaseDescription,
+  describeDatabase,
+} from '@/lib/database-catalog-client';
 import {
   createDatabaseCellMutationDesiredState,
   createDatabasePageLayoutChangeDesiredState,
@@ -82,7 +86,7 @@ import {
 import { databasePageTargetToHash } from '@/lib/database-navigation';
 import { resolveDatabasePageLayout } from '@/lib/database-page-layout';
 import { useDatabasePresenceTarget, useRemoteDatabasePresence } from '@/lib/database-presence';
-import { fetchDatabaseRecord } from '@/lib/database-query-client';
+import { DatabaseQueryClientError, fetchDatabaseRecord } from '@/lib/database-query-client';
 import {
   type DatabaseRecordNavigationState,
   databaseRecordNavigationHash,
@@ -138,6 +142,61 @@ type BindingState =
   | { status: 'ready'; key: string; description: DatabaseDescription }
   | { status: 'error'; key: string; description: null; message: string };
 
+type DatabaseRecordPageProblemKind = 'missing' | 'permission' | 'error';
+
+interface DatabaseRecordPageProblem {
+  kind: DatabaseRecordPageProblemKind;
+  message: string;
+}
+
+function databaseRecordPageProblem(cause: unknown): DatabaseRecordPageProblem {
+  const status =
+    cause instanceof DatabaseCatalogClientError || cause instanceof DatabaseQueryClientError
+      ? cause.status
+      : null;
+  return {
+    kind: status === 404 ? 'missing' : status === 403 ? 'permission' : 'error',
+    message: cause instanceof Error ? cause.message : 'The database record could not be loaded',
+  };
+}
+
+function DatabaseRecordPageStateNotice({
+  problem,
+  onBack,
+}: {
+  problem: DatabaseRecordPageProblem;
+  onBack?: () => void;
+}) {
+  return (
+    <div
+      className="editor-content-aligned flex flex-wrap items-start justify-between gap-3 py-3 text-sm"
+      role="alert"
+      data-database-record-state={problem.kind}
+    >
+      <div>
+        <p className="font-medium">
+          {problem.kind === 'missing'
+            ? 'Record page is unavailable'
+            : problem.kind === 'permission'
+              ? 'Permission required'
+              : 'Record page could not be loaded'}
+        </p>
+        <p className="text-muted-foreground">{problem.message}</p>
+        {problem.kind === 'permission' ? (
+          <p className="text-muted-foreground">
+            Request access or use fields available to your current policy.
+          </p>
+        ) : null}
+      </div>
+      {onBack ? (
+        <Button type="button" variant="outline" size="sm" onClick={onBack}>
+          <Trans>Back to database view</Trans>
+        </Button>
+      ) : null}
+    </div>
+  );
+}
+
 export function DatabaseRecordPageChrome({
   provider,
   docName,
@@ -165,6 +224,9 @@ export function DatabaseRecordPageChrome({
     key: metadataKey,
     description: null,
   });
+  const [recordPageProblem, setRecordPageProblem] = useState<DatabaseRecordPageProblem | null>(
+    null,
+  );
   const [mutationPropertyId, setMutationPropertyId] = useState<string | null>(null);
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [mutationConflict, setMutationConflict] = useState<
@@ -273,9 +335,11 @@ export function DatabaseRecordPageChrome({
   useEffect(() => {
     if (!databaseId || !sourceId || !metadataKey) {
       setBinding({ status: 'idle', key: null, description: null });
+      setRecordPageProblem(null);
       return;
     }
     const controller = new AbortController();
+    setRecordPageProblem(null);
     setBinding({ status: 'loading', key: metadataKey, description: null });
     void services
       .describe({ databaseId, sourceId }, { signal: controller.signal })
@@ -284,15 +348,18 @@ export function DatabaseRecordPageChrome({
         if (!description.source.properties.some((property) => property.type === 'title')) {
           throw new Error('The record data source has no Title property');
         }
+        setRecordPageProblem(null);
         setBinding({ status: 'ready', key: metadataKey, description });
       })
       .catch((cause: unknown) => {
         if (controller.signal.aborted) return;
+        const problem = databaseRecordPageProblem(cause);
+        setRecordPageProblem(problem);
         setBinding({
           status: 'error',
           key: metadataKey,
           description: null,
-          message: cause instanceof Error ? cause.message : 'Could not load database properties',
+          message: problem.message,
         });
       });
     return () => controller.abort();
@@ -324,20 +391,16 @@ export function DatabaseRecordPageChrome({
     }) ?? [];
 
   useEffect(() => {
-    if (
-      !databaseId ||
-      !sourceId ||
-      !recordId ||
-      !currentBinding ||
-      !source?.properties.some((property) => property.type === 'relation')
-    ) {
+    if (!databaseId || !sourceId || !recordId || !currentBinding || !source) {
+      setCurrentRecord(null);
       setRelationTargets([]);
       setRelationTargetsLoading(false);
       return;
     }
     let active = true;
+    const hasRelations = source.properties.some((property) => property.type === 'relation');
     setRelationTargets([]);
-    setRelationTargetsLoading(true);
+    setRelationTargetsLoading(hasRelations);
     void services
       .fetchRecord({
         databaseId,
@@ -347,6 +410,8 @@ export function DatabaseRecordPageChrome({
       .then(async ({ record }) => {
         if (!active) return null;
         setCurrentRecord(record);
+        setRecordPageProblem(null);
+        if (!hasRelations) return null;
         return resolveDatabaseRelationNavigation({
           database: currentBinding.database,
           source,
@@ -360,8 +425,11 @@ export function DatabaseRecordPageChrome({
         setRelationTargets(result.items);
         setRelationTargetsLoading(false);
       })
-      .catch(() => {
+      .catch((cause: unknown) => {
         if (!active) return;
+        const problem = databaseRecordPageProblem(cause);
+        setRecordPageProblem(problem);
+        setCurrentRecord(null);
         setRelationTargets([]);
         setRelationTargetsLoading(false);
       });
@@ -554,6 +622,7 @@ export function DatabaseRecordPageChrome({
 
   async function ensureCurrentRecord(): Promise<typeof currentRecord> {
     if (!metadata || !source) return null;
+    if (currentRecord?.id === metadata.record_id) return currentRecord;
     setMutationError(null);
     try {
       const result = await services.fetchRecord({
@@ -562,9 +631,12 @@ export function DatabaseRecordPageChrome({
         recordId: metadata.record_id,
       });
       setCurrentRecord(result.record);
+      setRecordPageProblem(null);
       return result.record;
     } catch (cause) {
-      setMutationError(cause instanceof Error ? cause.message : 'Could not load database record');
+      const problem = databaseRecordPageProblem(cause);
+      setRecordPageProblem(problem);
+      setMutationError(problem.message);
       return null;
     }
   }
@@ -726,6 +798,17 @@ export function DatabaseRecordPageChrome({
     );
   }
 
+  const recordUnavailable =
+    (binding.status === 'error' && binding.key === metadataKey) || recordPageProblem !== null;
+  const backToDatabase = () => {
+    window.location.hash = recordNavigation
+      ? databaseRecordNavigationOriginHash(recordNavigation)
+      : databasePageTargetToHash({
+          databaseId: metadata.database_id,
+          sourceId: metadata.source_id,
+        });
+  };
+
   return (
     <DatabaseRecordPageSurface mode="full_page">
       <nav
@@ -773,12 +856,27 @@ export function DatabaseRecordPageChrome({
           <Trans>Loading verified database properties</Trans>
         </p>
       ) : null}
-      {binding.status === 'error' && binding.key === metadataKey ? (
-        <p className="editor-content-aligned py-3 text-sm text-destructive" role="alert">
-          {binding.message}
+      {recordUnavailable ? (
+        <DatabaseRecordPageStateNotice
+          problem={
+            recordPageProblem ?? {
+              kind: 'error',
+              message: binding.status === 'error' ? binding.message : 'The record is unavailable',
+            }
+          }
+          onBack={backToDatabase}
+        />
+      ) : null}
+      {!recordUnavailable && currentRecord?.archivedAt ? (
+        <p
+          className="editor-content-aligned py-2 text-sm text-muted-foreground"
+          role="status"
+          data-database-record-state="archived"
+        >
+          <Trans>This record is archived. Restore it from More record actions.</Trans>
         </p>
       ) : null}
-      {mutationConflict ? (
+      {!recordUnavailable && mutationConflict ? (
         <div className="editor-content-aligned py-2">
           <DatabaseConflictResolutionNotice
             plan={mutationConflict}
@@ -788,12 +886,12 @@ export function DatabaseRecordPageChrome({
             }}
           />
         </div>
-      ) : mutationError ? (
+      ) : !recordUnavailable && mutationError ? (
         <p className="editor-content-aligned py-2 text-sm text-destructive" role="alert">
           {mutationError}
         </p>
       ) : null}
-      {source ? (
+      {source && !recordUnavailable ? (
         <div className="editor-content-aligned py-1">
           <div className="flex justify-end">
             {recordNavigation ? (
@@ -931,7 +1029,7 @@ export function DatabaseRecordPageChrome({
           </div>
         </div>
       ) : null}
-      {source ? (
+      {source && !recordUnavailable ? (
         pageLayout ? (
           <div
             data-database-page-layout
@@ -1006,7 +1104,7 @@ export function DatabaseRecordPageChrome({
           <Trans>Verifying database change</Trans>
         </p>
       ) : null}
-      {body ? (
+      {body && !recordUnavailable ? (
         <div
           className="relative min-h-0 flex-1"
           data-database-record-body
@@ -1015,7 +1113,7 @@ export function DatabaseRecordPageChrome({
           {body}
         </div>
       ) : null}
-      {source && currentBinding && layoutDialogOpen ? (
+      {source && currentBinding && !recordUnavailable && layoutDialogOpen ? (
         <DatabasePageLayoutDialog
           key={`${source.id}:${currentBinding.schemaRevision}`}
           open
@@ -1024,7 +1122,7 @@ export function DatabaseRecordPageChrome({
           onSave={(layout) => void commitPageLayout(layout)}
         />
       ) : null}
-      {source && currentBinding && recordLayoutDialogOpen ? (
+      {source && currentBinding && !recordUnavailable && recordLayoutDialogOpen ? (
         <DatabaseRecordLayoutOverrideDialog
           key={`${source.id}:${metadata.record_id}:${currentBinding.schemaRevision}`}
           open
@@ -1034,7 +1132,7 @@ export function DatabaseRecordPageChrome({
           onSave={(override) => void commitRecordPageLayoutOverride(override)}
         />
       ) : null}
-      {source && currentBinding && currentRecord && commentsDialogOpen ? (
+      {source && currentBinding && !recordUnavailable && currentRecord && commentsDialogOpen ? (
         <DatabaseCommentsDialog
           open
           onOpenChange={setCommentsDialogOpen}
@@ -1043,7 +1141,7 @@ export function DatabaseRecordPageChrome({
           record={currentRecord}
         />
       ) : null}
-      {source && currentBinding && currentRecord && relationsDialogOpen ? (
+      {source && currentBinding && !recordUnavailable && currentRecord && relationsDialogOpen ? (
         <DatabaseRelationsDialog
           open
           onOpenChange={setRelationsDialogOpen}
@@ -1052,7 +1150,7 @@ export function DatabaseRecordPageChrome({
           record={currentRecord}
         />
       ) : null}
-      {source && historyDialogOpen ? (
+      {source && !recordUnavailable && historyDialogOpen ? (
         <DatabaseRecordHistoryDialog
           open
           onOpenChange={setHistoryDialogOpen}
@@ -1060,7 +1158,7 @@ export function DatabaseRecordPageChrome({
           source={source}
         />
       ) : null}
-      {appearanceDialogOpen ? (
+      {source && !recordUnavailable && appearanceDialogOpen ? (
         <DatabasePageAppearanceDialog
           open
           mode="record"
@@ -1071,7 +1169,7 @@ export function DatabaseRecordPageChrome({
           onSave={commitRecordAppearance}
         />
       ) : null}
-      {source && currentBinding && permissionsDialogOpen ? (
+      {source && currentBinding && !recordUnavailable && permissionsDialogOpen ? (
         <DatabasePermissionsDialog
           open
           onOpenChange={setPermissionsDialogOpen}
@@ -1082,7 +1180,7 @@ export function DatabaseRecordPageChrome({
           selectedRecordId={metadata.record_id}
         />
       ) : null}
-      {source && currentBinding && currentRecord && moveDialogOpen ? (
+      {source && currentBinding && !recordUnavailable && currentRecord && moveDialogOpen ? (
         <Dialog open onOpenChange={setMoveDialogOpen}>
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>

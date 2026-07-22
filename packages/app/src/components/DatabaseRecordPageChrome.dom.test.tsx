@@ -5,6 +5,8 @@ import type { DatabaseDesiredStateDraftInput } from '@nedian0brien/synapsenote-s
 import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react';
 import { PropertyProvider } from '@/components/PropertyContext';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { DatabaseCatalogClientError } from '@/lib/database-catalog-client';
+import { DatabaseQueryClientError } from '@/lib/database-query-client';
 import { emitDatabaseChanged } from '@/lib/documents-events';
 import type { DatabaseRecordPageServices } from './DatabaseRecordPageChrome';
 import { DatabaseRecordPageChrome } from './DatabaseRecordPageChrome';
@@ -552,6 +554,128 @@ describe('DatabaseRecordPageChrome', () => {
       view.container.querySelector('[data-database-relation-value][data-key="project"]'),
     ).not.toBeNull();
     expect(view.queryByRole('dialog')).toBeNull();
+  });
+
+  test('renders an explicit missing record state with a safe database back action', async () => {
+    const services: DatabaseRecordPageServices = {
+      describe: async () => {
+        throw new DatabaseCatalogClientError('The record source no longer exists', 404);
+      },
+      fetchRecord: async () => {
+        throw new DatabaseQueryClientError('The record no longer exists', { status: 404 });
+      },
+      executeMutation: (async () => ({ status: 'review_declined' })) as never,
+      confirm: () => true,
+    };
+    const view = render(
+      <TooltipProvider>
+        <PropertyProvider>
+          <DatabaseRecordPageChrome
+            provider={provider()}
+            docName="records/rec_first"
+            docExt=".md"
+            fallbackTitle="rec_first"
+            body={<div data-testid="record-body-editor">Record body</div>}
+            services={services}
+          />
+        </PropertyProvider>
+      </TooltipProvider>,
+    );
+
+    const notice = await view.findByRole('alert');
+    expect(notice.getAttribute('data-database-record-state')).toBe('missing');
+    expect(view.getByRole('button', { name: 'Back to database view' })).toBeDefined();
+    expect(view.queryByTestId('record-body-editor')).toBeNull();
+  });
+
+  test('renders permission denial without exposing record content or a retry action', async () => {
+    const services: DatabaseRecordPageServices = {
+      describe: async () => {
+        throw new DatabaseCatalogClientError('This record is restricted', 403);
+      },
+      fetchRecord: async () => {
+        throw new DatabaseQueryClientError('This record is restricted', { status: 403 });
+      },
+      executeMutation: (async () => ({ status: 'review_declined' })) as never,
+      confirm: () => true,
+    };
+    const view = render(
+      <TooltipProvider>
+        <PropertyProvider>
+          <DatabaseRecordPageChrome
+            provider={provider()}
+            docName="records/rec_first"
+            docExt=".md"
+            fallbackTitle="rec_first"
+            body={<div data-testid="record-body-editor">Record body</div>}
+            services={services}
+          />
+        </PropertyProvider>
+      </TooltipProvider>,
+    );
+
+    const notice = await view.findByRole('alert');
+    expect(notice.getAttribute('data-database-record-state')).toBe('permission');
+    expect(view.queryByRole('button', { name: 'Retry' })).toBeNull();
+    expect(view.queryByTestId('record-body-editor')).toBeNull();
+  });
+
+  test('marks archived records and exposes Restore instead of Archive', async () => {
+    const services: DatabaseRecordPageServices = {
+      describe: async () => ({
+        manifestRevision: hash,
+        schemaRevision: hash,
+        database,
+        source,
+        index: {
+          state: 'idle',
+          revision: hash,
+          manifestRevision: hash,
+          recordCount: 1,
+          issueCount: 0,
+          progress: null,
+          lastRebuiltAt: null,
+          lastIncrementalAt: null,
+          lastError: null,
+        },
+        allowedOperations: ['catalog', 'describe', 'find', 'query', 'pack'],
+      }),
+      fetchRecord: async () => ({
+        databaseId: 'db_tasks',
+        sourceId: 'ds_tasks',
+        manifestRevision: hash,
+        indexRevision: hash,
+        record: {
+          id: 'rec_first',
+          path: 'records/rec_first.md',
+          revision: hash,
+          archivedAt: '2026-07-20T01:02:03.000Z',
+          values: { prop_title: 'Canonical title' },
+        },
+      }),
+      executeMutation: (async () => ({ status: 'review_declined' })) as never,
+      confirm: () => true,
+    };
+    const view = render(
+      <TooltipProvider>
+        <PropertyProvider>
+          <DatabaseRecordPageChrome
+            provider={provider()}
+            docName="records/rec_first"
+            docExt=".md"
+            fallbackTitle="rec_first"
+            services={services}
+          />
+        </PropertyProvider>
+      </TooltipProvider>,
+    );
+
+    expect(await view.findByText(/This record is archived/)).toBeDefined();
+    const actions = view.getByRole('button', { name: 'More record actions' });
+    fireEvent.pointerDown(actions, { button: 0 });
+    fireEvent.click(actions);
+    expect(await view.findByRole('menuitem', { name: 'Restore record' })).toBeDefined();
+    expect(view.queryByRole('menuitem', { name: 'Archive record' })).toBeNull();
   });
 
   test('keeps previous, next, and return-to-view continuity for a record opened from a database view', async () => {
