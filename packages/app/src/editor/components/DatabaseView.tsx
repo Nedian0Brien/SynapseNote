@@ -693,7 +693,7 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
   const setInlineMode = (nextMode: 'inline' | 'full-page') => {
     const editor = host?.editor;
     const pos = host?.getPos();
-    if (!editor || typeof pos !== 'number') return;
+    if (!editor || typeof pos !== 'number' || !reference.success) return;
     const node = editor.state.doc.nodeAt(pos);
     if (!node || node.type.name !== 'jsxComponent') return;
     editor.view.dispatch(
