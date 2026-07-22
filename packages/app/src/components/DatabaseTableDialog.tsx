@@ -2634,6 +2634,7 @@ export function DatabaseTableDialog({
   initialTablePaste,
   initialDatabaseSurface,
   initialPropertyId,
+  initialSelectedRecordIds,
   presentation = 'dialog',
 }: {
   open: boolean;
@@ -2649,6 +2650,7 @@ export function DatabaseTableDialog({
   /** Optional reviewed surface to open when an inline view delegates a control. */
   initialDatabaseSurface?: 'properties' | 'view-settings';
   initialPropertyId?: string;
+  initialSelectedRecordIds?: readonly string[];
   presentation?: 'dialog' | 'page';
 }) {
   'use no memo';
@@ -2698,7 +2700,9 @@ export function DatabaseTableDialog({
   );
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [newRecordTitle, setNewRecordTitle] = useState('');
-  const [selectedRecordIds, setSelectedRecordIds] = useState<Set<string>>(new Set());
+  const [selectedRecordIds, setSelectedRecordIds] = useState<Set<string>>(
+    () => new Set(initialSelectedRecordIds ?? []),
+  );
   const [bulkPropertyId, setBulkPropertyId] = useState<string>('');
   const [bulkDraft, setBulkDraft] = useState('');
   const [relationCandidates, setRelationCandidates] = useState<ProjectedDatabaseRelationRecord[]>(
@@ -2764,6 +2768,7 @@ export function DatabaseTableDialog({
   const handledInitialRecordAction = useRef<string | null>(null);
   const handledInitialTablePaste = useRef<string | null>(null);
   const handledInitialDatabaseSurface = useRef<string | null>(null);
+  const handledInitialSelectedRecordIds = useRef<string | null>(null);
   const queueReconciliationRunning = useRef(false);
   const offlineCacheKey = selection
     ? databaseOfflineCacheKey({
@@ -3608,6 +3613,17 @@ export function DatabaseTableDialog({
     setViewSettingsOpen(true);
   }, [open, initialDatabaseSurface, initialPropertyId, description, result]);
 
+  useEffect(() => {
+    if (!open || !initialSelectedRecordIds?.length || !result) return;
+    const selectionKey = initialSelectedRecordIds.join('|');
+    if (handledInitialSelectedRecordIds.current === selectionKey) return;
+    handledInitialSelectedRecordIds.current = selectionKey;
+    const available = new Set(result.records.map((record) => record.id));
+    setSelectedRecordIds(
+      new Set(initialSelectedRecordIds.filter((recordId) => available.has(recordId))),
+    );
+  }, [open, initialSelectedRecordIds, result]);
+
   const planBoardTransition = (transition: DatabaseBoardTransition) => {
     if (!description?.source || mutationStatus !== 'idle') return;
     try {
@@ -4279,7 +4295,12 @@ export function DatabaseTableDialog({
             result: nextResult,
           });
         }
-        setSelectedRecordIds(new Set());
+        const availableRecordIds = new Set(nextResult.records.map((record) => record.id));
+        setSelectedRecordIds(
+          new Set(
+            (initialSelectedRecordIds ?? []).filter((recordId) => availableRecordIds.has(recordId)),
+          ),
+        );
         setBulkPropertyId('');
         setBulkDraft('');
         const firstSelect = nextDescription.source.properties.find(isDatabaseSelectProperty);
@@ -4328,6 +4349,7 @@ export function DatabaseTableDialog({
     tableCalculations,
     requestedViewLayout,
     offlineCacheKey,
+    initialSelectedRecordIds,
   ]);
 
   useEffect(() => {

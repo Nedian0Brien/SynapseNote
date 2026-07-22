@@ -479,6 +479,7 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
     'properties' | 'view-settings'
   >();
   const [initialPropertyId, setInitialPropertyId] = useState<string>();
+  const [initialSelectedRecordIds, setInitialSelectedRecordIds] = useState<readonly string[]>();
   const [replacementPickerOpen, setReplacementPickerOpen] = useState(false);
   const [inlineCreationOpen, setInlineCreationOpen] = useState(false);
   const [inlineMutationStatus, setInlineMutationStatus] = useState<'idle' | 'saving'>('idle');
@@ -486,6 +487,9 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
   const [inlineOptimisticCellValues, setInlineOptimisticCellValues] = useState<
     Map<string, DatabaseValue | undefined>
   >(() => new Map());
+  const [inlineSelectedRecordIds, setInlineSelectedRecordIds] = useState<Set<string>>(
+    () => new Set(),
+  );
   const [recordPeek, setRecordPeek] = useState<{
     record: ProjectedDatabaseRecord;
     mode: 'side_peek' | 'center_peek';
@@ -986,6 +990,36 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
           {inlineMutationError}
         </div>
       ) : null}
+      {inlineSelectedRecordIds.size > 0 ? (
+        <div
+          className="flex flex-wrap items-center justify-between gap-2 border-b bg-primary/5 px-4 py-2 text-xs"
+          data-testid="inline-selection-toolbar"
+          role="status"
+        >
+          <span>{inlineSelectedRecordIds.size} selected</span>
+          <div className="flex items-center gap-1.5">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setInitialSelectedRecordIds([...inlineSelectedRecordIds]);
+                setFullDatabaseOpen(true);
+              }}
+            >
+              Open bulk actions
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => setInlineSelectedRecordIds(new Set())}
+            >
+              Clear selection
+            </Button>
+          </div>
+        </div>
+      ) : null}
 
       {replacementPickerOpen ? (
         <div className="p-3">
@@ -1185,6 +1219,7 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
                 people={state.description.database.people}
                 optimisticCellValues={inlineOptimisticCellValues}
                 mutationLocked={inlineMutationStatus !== 'idle'}
+                selectedRecordIds={inlineSelectedRecordIds}
                 viewPropertyIds={linkedView.projection.propertyIds}
                 viewConfiguration={
                   linkedView.layout.type === 'table' ? linkedView.layout.configuration : undefined
@@ -1193,6 +1228,7 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
                 onEdit={editInlineCell}
                 onCreateRecord={createInlineRecord}
                 onPaste={pasteInlineCells}
+                onSelectionChange={setInlineSelectedRecordIds}
                 onManageProperties={(propertyId) =>
                   openInlineDatabaseSurface('properties', propertyId)
                 }
@@ -1260,6 +1296,7 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
                 setInitialTablePaste(undefined);
                 setInitialDatabaseSurface(undefined);
                 setInitialPropertyId(undefined);
+                setInitialSelectedRecordIds(undefined);
               }
             }}
             initialTarget={reference.data}
@@ -1267,6 +1304,7 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
             initialTablePaste={initialTablePaste}
             initialDatabaseSurface={initialDatabaseSurface}
             initialPropertyId={initialPropertyId}
+            initialSelectedRecordIds={initialSelectedRecordIds}
             onOpenRecord={(path) => {
               window.location.hash = databaseRecordPathToHash(path);
               setFullDatabaseOpen(false);

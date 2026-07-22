@@ -902,6 +902,15 @@ describe('DatabaseView', () => {
     expect(document.querySelector('[data-record-id="rec_first"]')).toBeTruthy();
     expect(screen.getByLabelText('Edit Title for record rec_first')).toBeTruthy();
     expect(screen.getByTestId('database-new-row-title')).toBeTruthy();
+    fireEvent.click(screen.getByLabelText('Select record rec_first'));
+    expect(await screen.findByTestId('inline-selection-toolbar')).toBeTruthy();
+    expect(screen.getByText('1 selected')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Open bulk actions' }));
+    expect(await screen.findByTestId('database-bulk-toolbar')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    await waitFor(() => expect(document.querySelector('[data-database-workspace]')).toBeNull());
+    fireEvent.click(screen.getByRole('button', { name: 'Clear selection' }));
+    await waitFor(() => expect(screen.queryByTestId('inline-selection-toolbar')).toBeNull());
     fireEvent.click(screen.getByLabelText('Edit Title for record rec_first'));
     const titleInput = screen.getByLabelText('Edit Title') as HTMLInputElement;
     fireEvent.change(titleInput, { target: { value: 'Renamed task' } });

@@ -305,7 +305,7 @@ do not reconstruct behavior solely from this summary.
   explicit offline/stale status if a refresh loses transport. Only validated
   read snapshots are stored; credentials and pending writes never enter this
   cache, malformed entries are discarded, and the oldest views are evicted.
-  `DatabaseView.dom.test.tsx` covers 13/13 tests and 104 expectations, while
+  `DatabaseView.dom.test.tsx` covers 13/13 tests and 109 expectations, while
   `database-linked-view-cache.test.ts` covers reload rehydration and eviction
   (2/2 tests, 5 expectations). The full visual state matrix remains open under
   NUI-402.
@@ -323,7 +323,7 @@ do not reconstruct behavior solely from this summary.
   expectations, and `database-record-navigation.test.ts` covers 3/3 tests and
   6 expectations. Visual/cross-host continuity remains under NUI-105/NUI-701.
   reload/back-forward and conversion are covered by `App.dom.test.tsx`
-  (13/13, 46 expectations) and `DatabaseView.dom.test.tsx` (13/13, 104
+  (13/13, 46 expectations) and `DatabaseView.dom.test.tsx` (13/13, 109
   expectations). NUI-204 is closed at the implementation/evidence layer;
   visual browser gates remain separate.
 - Direct-safe cell edits and new-record creation now auto-approve the exact
@@ -386,7 +386,7 @@ do not reconstruct behavior solely from this summary.
   `database-commit.test.ts` 47/47 (505 expectations; includes redo
   preview/apply, restart rehydration, and idempotent replay),
   `App.dom.test.tsx` 13/13 (46 expectations), `DatabaseView.dom.test.tsx` 13/13
-  (104 expectations), `DatabaseRecordPageChrome.dom.test.tsx` 2/2 (32
+  (109 expectations), `DatabaseRecordPageChrome.dom.test.tsx` 2/2 (32
   expectations), `NewItemDialog.dom.test.tsx` 2/2 (7 expectations), `DatabaseSidebarSection.dom.test.tsx`
   3/3, `FileSidebar.dom.test.tsx` 20/20, app typecheck, targeted Biome, diff
   check, and documentation-link validation. The 10-minute full server suite
@@ -430,6 +430,23 @@ do not reconstruct behavior solely from this summary.
   targeted Biome pass. The existing
   `DatabaseTableDialog.dom.test.tsx` 63/63 suite still covers the canonical TSV
   planner and review behavior. No full server suite or E2E rerun was needed.
+
+### 2026-07-22 inline selection and bulk-action handoff slice
+
+- Inline table rows now expose the existing accessible record checkboxes and
+  keep selection in the linked block without copying records or inventing a
+  second mutation path. The inline toolbar reports the selected count and
+  offers `Open bulk actions` plus `Clear selection`.
+- `Open bulk actions` carries the stable selected record IDs into the canonical
+  full database workspace. The reviewed bulk toolbar is visible there, so
+  Copy TSV, bulk property edits, and other elevated changes retain the existing
+  exact-plan/Ghost review boundary. Closing the workspace preserves the inline
+  selection until the user explicitly clears it.
+- Focused evidence: `DatabaseView.dom.test.tsx` 13/13 tests and 109
+  expectations now cover row selection, stable-ID handoff, reviewed bulk
+  toolbar visibility, close/preserve, and clear-selection behavior. App
+  typecheck and targeted Biome pass; the repository-wide typecheck remains
+  blocked by the native-config `cargo metadata` environment error.
 
 ### 2026-07-22 dependency and privacy review slice
 
