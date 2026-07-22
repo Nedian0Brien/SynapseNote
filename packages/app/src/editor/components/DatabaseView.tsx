@@ -32,6 +32,7 @@ import {
 } from 'react';
 import { DatabaseRecordPeek } from '@/components/DatabaseRecordPeek';
 import type { DatabaseInitialRecordAction } from '@/components/DatabaseTableDialog';
+import { DatabaseViewQuerySummary } from '@/components/DatabaseViewQuerySummary';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -1179,6 +1180,14 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
                 <Plus aria-hidden="true" />
               </Button>
             </nav>
+          ) : null}
+          {state.status === 'ready' && linkedSource && linkedView ? (
+            <DatabaseViewQuerySummary
+              source={linkedSource}
+              view={linkedView}
+              onOpenFilters={() => openInlineDatabaseSurface('filters')}
+              onOpenSorts={() => openInlineDatabaseSurface('view-settings')}
+            />
           ) : null}
         </div>
         <div className="flex flex-wrap justify-end gap-1">

@@ -110,6 +110,7 @@ import { DatabaseTemplatesDialog } from '@/components/DatabaseTemplatesDialog';
 import { DatabaseTimeline, type DatabaseTimelineChange } from '@/components/DatabaseTimeline';
 import { DatabaseUniqueIdPropertyDialog } from '@/components/DatabaseUniqueIdPropertyDialog';
 import { DatabaseViewManagerDialog } from '@/components/DatabaseViewManagerDialog';
+import { DatabaseViewQuerySummary } from '@/components/DatabaseViewQuerySummary';
 import { resolvePageCover, resolvePageIcon } from '@/components/page-header-utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -5631,6 +5632,14 @@ function DatabaseTableSurface({
                         <Plus aria-hidden="true" />
                       </Button>
                     </nav>
+                    {selectedView ? (
+                      <DatabaseViewQuerySummary
+                        source={description.source}
+                        view={selectedView}
+                        onOpenFilters={() => setFilterDialogOpen(true)}
+                        onOpenSorts={() => setViewSettingsOpen(true)}
+                      />
+                    ) : null}
                     <DatabasePresenceBadges
                       scope="schema"
                       entries={remotePresence.filter(
