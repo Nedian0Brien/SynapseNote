@@ -62,6 +62,7 @@
 - Latest source-identity-migration changeset: `../../.changeset/database-source-identity-migration.md`
 - Latest agent-plan-preview changeset: `../../.changeset/database-agent-plan-preview.md`
 - Latest agent-plan-editing changeset: `../../.changeset/database-agent-plan-editing.md`
+- Latest creation-result-route changeset: `../../.changeset/database-creation-result-route.md`
 
 ## Objective and completion rule
 
@@ -99,7 +100,7 @@ the repository-wide check for final release readiness.
   catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
   approval-bound commits, undo, and restart/backup idempotency. Agent View
   policy/privacy/sandbox review remains Partial by design.
-- Notion UX alignment checklist: **83/128 complete**. The page-first and normal
+- Notion UX alignment checklist: **84/128 complete**. The page-first and normal
   New-page creation slices, the inline/linked insertion contract, and the
   table-first direct-manipulation, named canonical workspace canvas-route,
   shared navigation without a duplicate canvas rail, sidebar/recent/search/
@@ -127,7 +128,8 @@ the repository-wide check for final release readiness.
   template view/property/sample-page previews, Blank-first/reset behavior, and
   bounded CSV/TSV import previews, and the dedicated existing-folder
   source-identity migration review, and the natural-language agent plan
-  preview and editable proposal overrides without implicit advanced choices are
+  preview, editable proposal overrides, and resulting-page landing without
+  implicit advanced choices are
   now
   evidenced. A
   2026-07-23 in-app browser capture reached the IPv4 renderer at
@@ -568,7 +570,7 @@ do not reconstruct behavior solely from this summary.
 - UX-501 through UX-510, UX-601, UX-602, UX-603, UX-604, UX-605, UX-606,
   UX-607, UX-608, UX-609, UX-610, UX-701, UX-702, UX-703, UX-704, UX-705,
   UX-706, UX-707, UX-708, UX-709, UX-710, UX-801, UX-802, UX-803, UX-804, and
-  UX-805, UX-806, and UX-807
+  UX-805, UX-806, UX-807, and UX-808
   are checked at the functional
   implementation/evidence layer. Visual and broader property-family gates
   remain open.
@@ -588,9 +590,9 @@ do not reconstruct behavior solely from this summary.
   expectations (including the Assistant chooser and no-direct-commit guard),
   the existing resulting-page preview test passes 1 / 4, and the folder
   onboarding test passes 1 / 7. App typecheck and targeted Biome checks pass.
-- UX-801 through UX-807 are now checked at the functional creation/agent
-  proposal layer. UX-808 remains open for proving every successful method lands
-  directly in the resulting page/block across hosts.
+- UX-801 through UX-808 are now checked at the functional creation/agent
+  proposal and resulting-page handoff layer. Cross-host, visual, responsive,
+  and packaged-release evidence remains open.
 
 ### 2026-07-23 Blank-first creation reset
 
@@ -668,6 +670,21 @@ do not reconstruct behavior solely from this summary.
   model-backed clarification, broader property/layout families, visual
   first-use, and packaged-host evidence remain open under UX-11.
 
+### 2026-07-23 resulting-page landing
+
+- Every successful desired-state creation now resolves the first source/view,
+  replaces the hash with the canonical database page route, and closes the
+  legacy management shell when creation began there. Existing-folder creation
+  keeps the shell only while the separate source-identity migration review is
+  active.
+- Focused evidence: the template/agent-shaped review journey commits and
+  asserts the canonical route plus shell-close callback (1 test / 7
+  expectations); the folder journey retains its post-manifest migration handoff
+  proof (1 / 10). App typecheck and targeted Biome checks pass.
+- UX-808 is now checked at the functional resulting-page handoff layer.
+  Cross-host agent commit callbacks, visual first-use, responsive, and
+  packaged-release evidence remain open under UX-11.
+
 ### 2026-07-23 template preview parity
 
 - All seven starter templates now compile a Table view plus a Board view
@@ -692,7 +709,7 @@ do not reconstruct behavior solely from this summary.
   catalog-backed database under `Recently opened`, reopening the same stable
   route. Focused evidence: sidebar 3 tests / 7 expectations and recent UI 1 / 5.
 - UX-203, UX-204, UX-206, UX-209, UX-309, UX-501, UX-502, UX-503, UX-504,
-  UX-505, UX-506, UX-507, UX-508, UX-509, UX-510, UX-601, UX-602, UX-603, UX-604, UX-605, UX-606, UX-607, UX-608, UX-609, UX-610, UX-701, UX-702, UX-703, UX-704, UX-705, UX-706, UX-707, UX-708, UX-709, UX-710, UX-801, UX-802, UX-803, UX-804, UX-805, UX-806, and UX-807 are checked. The 768px visual responsive check remains
+  UX-505, UX-506, UX-507, UX-508, UX-509, UX-510, UX-601, UX-602, UX-603, UX-604, UX-605, UX-606, UX-607, UX-608, UX-609, UX-610, UX-701, UX-702, UX-703, UX-704, UX-705, UX-706, UX-707, UX-708, UX-709, UX-710, UX-801, UX-802, UX-803, UX-804, UX-805, UX-806, UX-807, and UX-808 are checked. The 768px visual responsive check remains
   open.
 
 ### 2026-07-23 stable inline/full-page conversion
