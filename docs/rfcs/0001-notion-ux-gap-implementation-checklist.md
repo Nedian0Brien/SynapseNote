@@ -230,7 +230,9 @@ treated as visual parity until a browser capture is attached.
   `database-mutation-policy.ts` and wired to cell/title/row/blank-create/view
   callers. Inline `DatabaseView` now uses the same direct-safe policy for title
   cell edits and first-row creation, with optimistic values, canonical refresh,
-  and an inline saving/error state. Inline row selection reports selected stable
+  and an inline saving/error state. Inline commits also expose a
+  revision-guarded `Undo inline database change` action using the same preview
+  and apply contract as the full workspace. Inline row selection reports selected stable
   IDs and hands bulk actions to the canonical reviewed workspace; it never
   creates a second inline bulk-write path. The remaining gate is full
   optimistic/undo evidence for every view editor and a complete policy matrix

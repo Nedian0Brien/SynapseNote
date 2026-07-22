@@ -748,6 +748,7 @@ describe('DatabaseView', () => {
     const linkedDatabase = { ...database, views: [view, secondaryView] };
     const requests: Array<{ path: string; body: Record<string, unknown> }> = [];
     let commitCalls = 0;
+    let undoCalls = 0;
     globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
       const path = String(input);
       if (path.startsWith('/api/document?docName=tasks%2Ffirst')) {
@@ -872,6 +873,18 @@ describe('DatabaseView', () => {
           undoToken: 'undo_inline_edit',
         });
       }
+      if (path === '/api/databases/undo') {
+        undoCalls += 1;
+        const action = (body as { action?: string }).action;
+        return Response.json({
+          action,
+          undoId: 'undo_inline_preview',
+          mutationId: 'mut_inline_edit',
+          canApply: true,
+          conflicts: [],
+          ...(action === 'apply' ? { receipt: { status: 'applied' } } : {}),
+        });
+      }
       return Response.json({ detail: 'unexpected request' }, { status: 500 });
     }) as typeof fetch;
 
@@ -916,6 +929,10 @@ describe('DatabaseView', () => {
     fireEvent.change(titleInput, { target: { value: 'Renamed task' } });
     fireEvent.keyDown(titleInput, { key: 'Enter' });
     await waitFor(() => expect(commitCalls).toBe(1));
+    expect(await screen.findByTestId('inline-save-feedback')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Undo inline database change' }));
+    await waitFor(() => expect(undoCalls).toBe(2));
+    await waitFor(() => expect(screen.queryByTestId('inline-save-feedback')).toBeNull());
     const newRowTitle = await screen.findByTestId('database-new-row-title');
     fireEvent.change(newRowTitle, { target: { value: 'Inline page' } });
     fireEvent.keyDown(newRowTitle, { key: 'Enter' });

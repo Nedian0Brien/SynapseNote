@@ -9,6 +9,7 @@
 - Changeset: `../../.changeset/add-file-native-database-core.md`
 - Latest feature changeset: `../../.changeset/inline-database-create-route.md`
 - Latest inline UX changeset: `../../.changeset/inline-database-focus.md`
+- Latest inline recovery changeset: `../../.changeset/inline-database-undo.md`
 
 ## Objective and completion rule
 
@@ -235,6 +236,21 @@ do not reconstruct behavior solely from this summary.
   intentionally unrun.
 - Follow-up: capture the same focus and visual continuity in the browser and
   Electron shells before closing NUI-103/NUI-105 visual gates.
+
+### 2026-07-22 inline undo slice
+
+- Direct-safe inline cell and first-row mutations now retain the verified
+  commit's undo token and expose an inline `Undo inline database change`
+  action. Undo first runs the canonical preview guard, then applies the undo
+  with the same human actor/idempotency contract as the full workspace; a
+  changed canonical revision leaves the token visible and reports the reason.
+- Focused evidence: `DatabaseView.dom.test.tsx` passes 13 tests / 120
+  expectations, including commit → inline feedback → preview/apply undo;
+  app typecheck and `git diff --check` pass. The inline view remains locked
+  only while saving or undoing, and the existing optimistic cell/row behavior
+  is preserved.
+- Follow-up: cover undo for every alternate linked renderer and complete the
+  broader agent transport/policy matrix before closing NUI-301.
 
 ### 2026-07-22 entry-point re-audit and convergence slice
 
