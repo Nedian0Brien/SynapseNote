@@ -102,6 +102,12 @@ document-native entry point:
   the canonical manager refreshes during the draft. The focused manager/view
   DOM suite passes 30 tests / 227 expectations; this is a mutation-safety fix,
   not a claim that the broader visual state matrix is complete.
+- The normal New-page browser journey is now captured as well: `New file` shows
+  a Page/Database chooser, Database enters `#database/new`, Blank lands on the
+  canonical editable Table route with Title and first-row affordances, and
+  Cancel returns to the empty hash without creating a second database. This
+  closes the evidence-backed UX-101/103/105–112 alignment items; Electron and
+  release gates remain open.
 
 This closes the browser evidence for the page-first creation slice, but it does
 not close NUI-105 or NUI-701–NUI-705: no Electron journey, normal New-page

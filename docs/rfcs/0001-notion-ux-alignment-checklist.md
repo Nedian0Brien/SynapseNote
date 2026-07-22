@@ -23,8 +23,8 @@ a weak **document-native database experience**.
   and empty-editor footer now expose a user-facing `New database` entry. A
   guided `Database`/`Linked database` slash entry also exists. The normal
   New-page dialog now exposes a named `New database` action and a visible
-  Page/Database type chooser; the visual first-class-page gate remains open
-  until a running web/Electron journey proves it.
+  Page/Database type chooser; a running web journey now proves the handoff and
+  resulting table, while Electron parity remains a separate gate.
 - The default management entry still opens a large modal over the editor. A
   stable no-overlay route presentation exists, but it is not yet the ordinary
   page/sidebar experience.
@@ -54,7 +54,7 @@ user's canonical project, or run the repository-wide/server test suite.
 
 1. **Blank editor baseline:** this screenshot predates the entry-point slice;
    current onboarding/empty canvas and sidebar surfaces now show `New database`,
-   but a normal New-page database type is still absent.
+   and the normal New-page dialog now exposes the same named Database choice.
 
    ![Pre-slice blank editor with no visible database entry](./assets/0001-notion-ux-audit/01-editor-entry.png)
 
@@ -84,7 +84,7 @@ user's canonical project, or run the repository-wide/server test suite.
 
 | Area           | Current implementation                                                                                                                                                         | UX implication                                                                                                       |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
-| Global entry   | `App.tsx` retains the power-user `databasesOpen` modal, while `#database/<database>/<source>/<view?>` is now a stable route-level workspace. `New database` entry points dispatch one typed event into page presentation. | The direct entry is discoverable from several surfaces, but the normal new-page flow is still missing. |
+| Global entry   | `App.tsx` retains the power-user `databasesOpen` surface, while `#database/<database>/<source>/<view?>` is now a stable route-level workspace. `New database` entry points dispatch one typed event into page presentation. | The direct entry and normal New-page handoff are now evidenced; ordinary sidebar/recent integration remains open. |
 | New item       | `NewItemDialog` still models `file`/`folder`, but its normal file path now exposes a named `New database` action that dispatches the shared creation event.                     | Discovery is improved, but Database/Table is not yet a first-class page type in the picker.                          |
 | Creation       | `DatabaseCreationDialog.tsx` accepts an optional blank title, keeps storage details in a collapsed disclosure, and routes blank human creation through an automatic exact-plan commit while retaining review for templates/imports/agent paths. | The first-use path is shorter and safer for routine human creation; higher-risk methods still expose the explicit review boundary. |
 | Blank schema   | `createBlankDatabaseDesiredState` creates one title property; after commit the shell selects the new source and first view.                                                    | A minimal database lands in its table, but it is still inside the management dialog.                                 |
@@ -158,9 +158,21 @@ new-row affordance. The first two rows were created in the running app, and a
 short-lived `transaction_in_progress` read barrier was retried without leaving
 an error alert visible.
 
+### Normal New-page database journey evidence (2026-07-23)
+
+From the running IPv4 app, the command-palette `New file` command opened the
+normal `New file` surface with a visible `New page type` group containing
+`Page` and `Database`. Selecting `Database` navigated to `#database/new` and
+showed the page-based creation surface. The blank path accepted the optional
+name `Normal new page audit`; submitting it reached the canonical
+`#database/<database>/<source>/<view>` route with the Title property, visible
+Table view, `New record`/first-row affordance, and collapsed `Advanced storage
+details`. Navigating back to `#database/new` and pressing `Cancel` returned to
+the document root (`hash === ''`) without creating another database.
+
 This is evidence for the page-first and inline/linked creation slices. It does
-not establish ordinary document chrome/sidebar integration, normal New-page
-parity, the complete linked-view state matrix, Electron parity,
+not establish ordinary document chrome/sidebar integration, the `/database`
+and `/table` slash aliases, the complete linked-view state matrix, Electron parity,
 accessibility/responsive behavior, usability timing, performance, or
 packaged-release readiness. Those acceptance gates remain unchecked below.
 
@@ -203,13 +215,13 @@ crossed the document-native UX bar:
 | Measure | Current result | Interpretation |
 | --- | --- | --- |
 | Engine implementation checklist | 310/335 numbered items complete | Core/database and agent contracts are substantially implemented. |
-| Notion UX checklist | 11/128 gates complete | Vocabulary/claim-boundary plus the inline/linked insertion contract are evidenced; full visual, state-matrix, and cross-host journey gates remain open. |
-| First-use database entry | `New database` in sidebar, empty states, normal new-page dialog, command palette, plus slash-menu `Database`/`Linked database`; normal picker also exposes Page/Database chooser | Discovery is substantially improved; visual browser proof and a fully ordinary page/block experience are still missing. |
+| Notion UX checklist | 21/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, and the inline/linked insertion contract are evidenced; full visual, state-matrix, and cross-host journey gates remain open. |
+| First-use database entry | `New database` in sidebar, empty states, normal new-page dialog, command palette, plus slash-menu `Database`/`Linked database`; normal picker exposes Page/Database chooser and the resulting route lands in an editable table | Discovery and the web first-use path are evidenced; ordinary sidebar/recent integration and Electron proof remain open. |
 | Blank creation | Optional title, `Untitled database` fallback, direct-safe exact-plan commit, immediate source/view selection, title/new-row focus | The blank human path is continuous in DOM coverage; template/import/agent paths intentionally retain review and visual browser proof remains open. |
 | Full-page navigation | Stable `#database/<database>/<source>/<view?>` route and no-overlay page presentation | Route identity exists, but sidebar/recent/page chrome integration is incomplete. |
 | Inline linked view | Catalog → source → saved-view picker, inline creation, shared rows, visible tabs, replacement, conversion, duplicate configuration, and block removal | The core inline/linked contract is evidenced; the complete visual state matrix remains open. |
 | Direct editing | Direct-safe cell/row auto-approval exists; elevated mutations retain exact review | Safer direct manipulation is present, but optimistic/offline acknowledgement is not complete. |
-| Browser evidence | In-app web renderer is reachable on IPv4 and page-first plus inline creation/record sharing journeys are captured; no Electron or complete state-matrix journey is captured | The core web slice is evidenced, but NUI-105/NUI-701–NUI-705 remain release gates for cross-host, accessibility, responsive, usability, performance, and packaged-release parity. |
+| Browser evidence | In-app web renderer is reachable on IPv4 and normal New-page, page-first, inline creation, record sharing, and cancellation journeys are captured; no Electron or complete state-matrix journey is captured | The core web slice is evidenced, but NUI-105/NUI-701–NUI-705 remain release gates for cross-host, accessibility, responsive, usability, performance, and packaged-release parity. |
 
 ### Priority order for the next implementation pass
 
@@ -338,28 +350,44 @@ capability alone is insufficient.
 
 ### UX-1 — Entry points and instant blank creation
 
-- [ ] **UX-101** Add `Database`/`Table` to the normal new-page flow.
+- [x] **UX-101** Add `Database`/`Table` to the normal new-page flow. Evidence:
+      `NewItemDialog.dom.test.tsx` and the 2026-07-23 browser journey show the
+      Page/Database chooser and canonical route handoff.
 - [ ] **UX-102** Add `/database` and `/table` commands whose first choice is
       `New database` or `Linked view of database`.
-- [ ] **UX-103** Add a visible database option to the editor's empty-page insert
-      affordances; do not require the command palette.
+- [x] **UX-103** Add a visible database option to the editor's empty-page insert
+      affordances; do not require the command palette. Evidence: slash-menu
+      browser capture plus `DatabaseView.dom.test.tsx` and entry-point DOM
+      coverage.
 - [ ] **UX-104** Keep `Open databases` as a power-user jump, but route it to a
       page or searchable picker rather than a global management modal.
-- [ ] **UX-105** Make the blank path require no fields beyond an optional title.
-- [ ] **UX-106** Create the minimal canonical schema and immediately show its
-      editable table after the creation action.
-- [ ] **UX-107** Default the first property to Name/title and show `+ New` or an
-      equivalent first-record affordance.
-- [ ] **UX-108** Focus the database title for full-page creation and the first
-      title cell for inline creation.
-- [ ] **UX-109** Make Escape/back during creation leave no orphaned database,
-      source, manifest, or page.
-- [ ] **UX-110** Move canonical folder, stable key, source IDs, and record
-      meaning behind `Advanced`.
-- [ ] **UX-111** Preserve the typed title and offer local retry when creation
-      fails.
-- [ ] **UX-112** Verify `new page → database → visible table` in at most two
-      primary actions after opening New.
+- [x] **UX-105** Make the blank path require no fields beyond an optional title.
+      Evidence: blank-creation DOM coverage and the browser creation surface
+      with an optional `Database name`.
+- [x] **UX-106** Create the minimal canonical schema and immediately show its
+      editable table after the creation action. Evidence: the browser route
+      shows the canonical Table grid immediately after Blank submission.
+- [x] **UX-107** Default the first property to Name/title and show `+ New` or an
+      equivalent first-record affordance. Evidence: browser Table capture shows
+      the Title column, `New record`, and focused `New record title` row.
+- [x] **UX-108** Focus the database title for full-page creation and the first
+      title cell for inline creation. Evidence: `DatabaseCreationDialog.tsx`
+      uses auto-focus for the creation name, the Table DOM focus test covers
+      inline handoff, and the inline browser journey captured the new-row title.
+- [x] **UX-109** Make Escape/back during creation leave no orphaned database,
+      source, manifest, or page. Evidence: `App.dom.test.tsx`,
+      `DatabaseTableDialog.dom.test.tsx`, and the browser cancellation journey
+      return from `#database/new` to an empty hash without a second database.
+- [x] **UX-110** Move canonical folder, stable key, source IDs, and record
+      meaning behind `Advanced`. Evidence: the browser creation surface keeps
+      `Advanced storage details` collapsed and the creation DOM suite covers
+      the disclosure.
+- [x] **UX-111** Preserve the typed title and offer local retry when creation
+      fails. Evidence: the failed-creation DOM journey reopens with the typed
+      title and a retry action.
+- [x] **UX-112** Verify `new page → database → visible table` in at most two
+      primary actions after opening New. Evidence: the browser journey uses
+      Database then Create database and lands on the editable table route.
 
 ### UX-2 — Full-page database as a workspace page
 

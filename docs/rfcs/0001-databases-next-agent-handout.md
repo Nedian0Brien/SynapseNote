@@ -68,8 +68,9 @@ the repository-wide check for final release readiness.
   catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
   approval-bound commits, undo, and restart/backup idempotency. Agent View
   policy/privacy/sandbox review remains Partial by design.
-- Notion UX alignment checklist: **11/128 complete**. The page-first creation
-  slice and the inline/linked insertion contract are now evidenced. A
+- Notion UX alignment checklist: **21/128 complete**. The page-first and normal
+  New-page creation slices plus the inline/linked insertion contract are now
+  evidenced. A
   2026-07-23 in-app browser capture reached the IPv4 renderer at
   `http://127.0.0.1:5173/`, created a full-page database, created two canonical
   rows, created an inline database from the slash menu, saved an inline row,
@@ -192,6 +193,21 @@ do not reconstruct behavior solely from this summary.
   expectations**; the live browser check shows exactly one `Table copy` after
   one duplicate action. Test-only database files and temporary documents were
   removed from the worktree and were not staged.
+
+### 2026-07-23 normal New-page database journey
+
+- The running IPv4 app now has browser evidence for the normal `New file`
+  surface: its `New page type` chooser exposes `Page` and `Database`, and the
+  Database choice routes to `#database/new` without requiring the command
+  palette or raw IDs. Blank creation accepts an optional title, keeps storage
+  identity details under `Advanced storage details`, and lands on the stable
+  canonical database/source/view route with Title, Table, and first-row
+  affordances visible.
+- A follow-up cancel check returned from `#database/new` to the empty hash with
+  no second database. This closes the evidence-backed UX-101, UX-103, and
+  UX-105–UX-112 items (21/128 UX gates complete). UX-104, `/database`/`/table`
+  aliases, full-page/sidebar integration, Electron, accessibility, responsive,
+  usability, performance, and release gates remain open.
 
 ### 2026-07-22 first Notion-UX insertion slice
 
