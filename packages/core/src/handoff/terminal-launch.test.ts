@@ -15,7 +15,7 @@ import {
 // shape (or the canonical server name) ever changes.
 const CLAUDE_PREAPPROVE = `--settings '{"enabledMcpjsonServers":["${MCP_SERVER_NAME}"]}'`;
 const OK_ALLOW = `["mcp__${MCP_SERVER_NAME}","Bash(ok open:*)"]`;
-const OK_DENY = `["mcp__${MCP_SERVER_NAME}__delete","mcp__${MCP_SERVER_NAME}__move","mcp__${MCP_SERVER_NAME}__share_link","mcp__${MCP_SERVER_NAME}__install","mcp__${MCP_SERVER_NAME}__data_commit","mcp__${MCP_SERVER_NAME}__data_undo","mcp__${MCP_SERVER_NAME}__data_repair","mcp__${MCP_SERVER_NAME}__data_task","mcp__${MCP_SERVER_NAME}__data_place_search","mcp__${MCP_SERVER_NAME}__data_automation"]`;
+const OK_DENY = `["mcp__${MCP_SERVER_NAME}__delete","mcp__${MCP_SERVER_NAME}__move","mcp__${MCP_SERVER_NAME}__share_link","mcp__${MCP_SERVER_NAME}__install","mcp__${MCP_SERVER_NAME}__data_commit","mcp__${MCP_SERVER_NAME}__data_undo","mcp__${MCP_SERVER_NAME}__data_repair","mcp__${MCP_SERVER_NAME}__data_task","mcp__${MCP_SERVER_NAME}__data_run","mcp__${MCP_SERVER_NAME}__data_place_search","mcp__${MCP_SERVER_NAME}__data_automation"]`;
 
 describe('TERMINAL_CLI_IDS', () => {
   it('lists the CLIs in auto-pick priority order (claude > codex > opencode > cursor > pi > antigravity)', () => {
@@ -280,6 +280,7 @@ describe('OK auto-approve (autoApproveOkTools)', () => {
       'data_undo',
       'data_repair',
       'data_task',
+      'data_run',
       'data_place_search',
       'data_automation',
     ]);

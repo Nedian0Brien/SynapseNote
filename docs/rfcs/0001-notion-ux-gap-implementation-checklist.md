@@ -442,8 +442,9 @@ treated as visual parity until a browser capture is attached.
   MCP parity, and a UI receipt display remain open. Evidence:
   `DatabaseAgentRunsDialog.dom.test.tsx` (4 tests / 23 expectations), the
   focused `database-data-plane-api.test.ts` retry contract (1 test / 8
-  expectations), and `database-agent-run-store.test.ts` (4 tests / 20
-  expectations). Map to UX-908/UX-910.
+  expectations), `database-agent-run-store.test.ts` (4 tests / 20
+  expectations), and the new `data_run` MCP tool (4 tests / 10 expectations)
+  plus the 31-tool registry/gating contract. Map to UX-908/UX-910.
 
 ## P2 — Evidence and release gates
 

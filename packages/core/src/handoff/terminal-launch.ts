@@ -110,6 +110,7 @@ export const OK_GATED_TOOL_NAMES: readonly string[] = [
   'data_undo',
   'data_repair',
   'data_task',
+  'data_run',
   'data_place_search',
   'data_automation',
 ];

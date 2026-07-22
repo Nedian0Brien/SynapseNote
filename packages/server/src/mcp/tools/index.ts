@@ -5,6 +5,7 @@
  *            share_link, current_document
  * Planning:  data_plan, data_button (ephemeral exact plans; no project-file writes)
  * Commits:   data_commit (exact approved plan; user-approval gated)
+ * Agent Runs: data_run (compact inspection + revision-bound retry/resume)
  * Undo:      data_undo (conflict preview + approval-gated reversal)
  * Repair:    data_repair (diagnostic preview + approval-gated repair)
  * Tasks:     data_task (approval-gated durable launch, progress, and recovery)
@@ -58,6 +59,7 @@ import { register as registerDataCommit } from './database-commit.ts';
 import { register as registerDataPlaceSearch } from './database-place-search.ts';
 import { register as registerDataPlan } from './database-plan.ts';
 import { register as registerDataRepair } from './database-repair.ts';
+import { register as registerDataRun } from './database-run.ts';
 import { register as registerDataTask } from './database-task.ts';
 import { register as registerDataUndo } from './database-undo.ts';
 import { register as registerDelete } from './delete.ts';
@@ -104,6 +106,7 @@ export const DATABASE_SANDBOX_MCP_TOOL_NAMES = [
   'data_undo',
   'data_repair',
   'data_task',
+  'data_run',
 ] as const;
 
 interface RegisterAllToolsOptions {
@@ -253,6 +256,12 @@ export function registerAllTools(
   });
   registerDataTask(registrationServer, {
     resolveCwd: named('data_task'),
+    config: opts.config,
+    serverUrl: opts.serverUrl,
+    identityRef: opts.identityRef,
+  });
+  registerDataRun(registrationServer, {
+    resolveCwd: named('data_run'),
     config: opts.config,
     serverUrl: opts.serverUrl,
     identityRef: opts.identityRef,

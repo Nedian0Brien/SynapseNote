@@ -27,6 +27,7 @@
 - Latest inline alternative-view mutation changeset: `../../.changeset/inline-alt-view-mutations.md`
 - Latest inline view-order optimism changeset: `../../.changeset/inline-view-order-optimism.md`
 - Latest Agent Run recovery handoff changeset: `../../.changeset/agent-run-recovery-handoff.md`
+- Latest Agent Run MCP recovery changeset: `../../.changeset/agent-run-mcp-recovery.md`
 
 ## Objective and completion rule
 
@@ -888,10 +889,17 @@ do not reconstruct behavior solely from this summary.
   and replays an idempotent retry key without duplicating the database write.
   Recovery metadata is additive in the core Agent Run schema and stores only a
   SHA-256 idempotency-key hash.
+- The new `data_run` MCP tool mirrors the list/get/retry/resume HTTP contract,
+  keeps recovery approval-gated, and returns compact machine-readable run and
+  receipt payloads. It is included in the database-sandbox profile and in the
+  closed MCP auto-approval deny-list so retry/resume cannot be silently
+  approved.
 - Focused evidence: `database-agent-run-store.test.ts` passes 4 tests / 20
   expectations; the retry HTTP contract passes 1 test / 8 expectations; and
   `DatabaseAgentRunsDialog.dom.test.tsx` passes 4 tests / 23 expectations,
-  including a compact progressively disclosed recovery receipt summary.
+  including a compact progressively disclosed recovery receipt summary. The
+  `data_run` MCP tool passes 4 tests / 10 expectations and the 31-tool registry
+  plus terminal-gating contract passes 13 tests / 98 expectations.
   Core/server typechecks, app typecheck, targeted Biome, and `git diff --check`
   pass. No full server suite or E2E rerun was needed.
 - NUI-603 remains open: the current plan engine is process-memory backed, so a

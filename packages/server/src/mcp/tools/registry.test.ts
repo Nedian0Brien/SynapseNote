@@ -53,6 +53,7 @@ const EXPECTED_TOOLS = [
   'data_undo',
   'data_repair',
   'data_task',
+  'data_run',
   // Writes — CRUD verbs + version
   'write',
   'edit',
@@ -135,13 +136,13 @@ function captureRegistered(toolProfile: 'full' | 'database-sandbox' = 'full'): s
   return names;
 }
 
-describe('registerAllTools — 30-tool surface', () => {
-  test('registers exactly 30 tools', () => {
+describe('registerAllTools — 31-tool surface', () => {
+  test('registers exactly 31 tools', () => {
     const names = captureRegistered();
-    expect(names.length).toBe(30);
+    expect(names.length).toBe(31);
   });
 
-  test('the 30 expected tool names are all present', () => {
+  test('the 31 expected tool names are all present', () => {
     const names = new Set(captureRegistered());
     for (const expected of EXPECTED_TOOLS) {
       expect(names).toContain(expected);
