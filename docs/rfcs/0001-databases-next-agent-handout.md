@@ -294,7 +294,7 @@ do not reconstruct behavior solely from this summary.
   reference. The inspector remains lazy-loaded and uses the canonical
   permission-scoped Context Pack contract; inline rendering does not embed
   record data or invent a second retrieval path.
-- Focused evidence: `DatabaseView.dom.test.tsx` passes 16 tests / 150
+- Focused evidence: `DatabaseView.dom.test.tsx` passes 16 tests / 153
   expectations, including the scoped inspector entry; app typecheck, Biome,
   and `git diff --check` pass. Full agent replay and transport matrix gates
   remain open under NUI-601/NUI-603.

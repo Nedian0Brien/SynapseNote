@@ -508,7 +508,9 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
   const [initialPropertyId, setInitialPropertyId] = useState<string>();
   const [initialSelectedRecordIds, setInitialSelectedRecordIds] = useState<readonly string[]>();
   const [replacementPickerOpen, setReplacementPickerOpen] = useState(false);
-  const [inlineContextInspectorOpen, setInlineContextInspectorOpen] = useState(false);
+  const [inlineContextInspectorScope, setInlineContextInspectorScope] = useState<{
+    recordId?: string;
+  } | null>(null);
   const [inlineCreationOpen, setInlineCreationOpen] = useState(false);
   const [focusInlineNewRecord, setFocusInlineNewRecord] = useState(false);
   const [inlineMutationStatus, setInlineMutationStatus] = useState<'idle' | 'saving'>('idle');
@@ -1121,7 +1123,7 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
                 <Search /> <Trans>Choose another view</Trans>
               </DropdownMenuItem>
               {state.status === 'ready' ? (
-                <DropdownMenuItem onSelect={() => setInlineContextInspectorOpen(true)}>
+                <DropdownMenuItem onSelect={() => setInlineContextInspectorScope({})}>
                   <Braces /> <Trans>Inspect agent context</Trans>
                 </DropdownMenuItem>
               ) : null}
@@ -1493,6 +1495,9 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
                 onCreateRecord={createInlineRecord}
                 onPaste={pasteInlineCells}
                 onSelectionChange={setInlineSelectedRecordIds}
+                onOpenContextInspector={(record) =>
+                  setInlineContextInspectorScope({ recordId: record.id })
+                }
                 onManageProperties={(propertyId) =>
                   openInlineDatabaseSurface('properties', propertyId)
                 }
@@ -1550,14 +1555,19 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
       />
 
       <Suspense fallback={null}>
-        {inlineContextInspectorOpen && state.status === 'ready' ? (
+        {inlineContextInspectorScope && state.status === 'ready' ? (
           <LazyDatabaseContextInspectorDialog
             open
-            onOpenChange={setInlineContextInspectorOpen}
+            onOpenChange={(open) => {
+              if (!open) setInlineContextInspectorScope(null);
+            }}
             scope={{
               databaseId: state.description.database.id,
               sourceId: state.description.source?.id,
               viewId: reference.data.viewId,
+              ...(inlineContextInspectorScope.recordId
+                ? { recordId: inlineContextInspectorScope.recordId }
+                : {}),
             }}
           />
         ) : null}

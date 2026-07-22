@@ -936,6 +936,17 @@ describe('DatabaseView', () => {
     expect(document.querySelector('[data-record-id="rec_first"]')).toBeTruthy();
     expect(screen.getByLabelText('Edit Title for record rec_first')).toBeTruthy();
     expect(screen.getByTestId('database-new-row-title')).toBeTruthy();
+    fireEvent.click(screen.getByLabelText('Inspect context for record rec_first'));
+    expect(await screen.findByText('What the agent saw')).toBeTruthy();
+    expect(
+      inspectPaths.some((path) =>
+        path.includes(
+          `/api/databases/inspect?databaseId=${database.id}&sourceId=${source.id}&viewId=${view.id}&recordId=rec_first`,
+        ),
+      ),
+    ).toBe(true);
+    fireEvent.click(document.querySelector('[data-slot="dialog-close"]') as HTMLElement);
+    await waitFor(() => expect(screen.queryByText('What the agent saw')).toBeNull());
     fireEvent.click(screen.getByLabelText('Select record rec_first'));
     expect(await screen.findByTestId('inline-selection-toolbar')).toBeTruthy();
     expect(screen.getByText('1 selected')).toBeTruthy();
