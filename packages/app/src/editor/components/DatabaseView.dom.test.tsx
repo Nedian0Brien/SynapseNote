@@ -570,6 +570,146 @@ describe('DatabaseView', () => {
     expect(document.querySelector('[data-board-card="rec_first"]')).toBeTruthy();
   });
 
+  test('applies a single inline Board transition through the direct-safe cell path', async () => {
+    const boardSource = {
+      ...source,
+      properties: [
+        source.properties[0],
+        {
+          id: 'prop_status',
+          key: 'status',
+          name: 'Status',
+          type: 'select' as const,
+          options: [
+            { id: 'opt_open', key: 'open', name: 'Open' },
+            { id: 'opt_done', key: 'done', name: 'Done' },
+          ],
+        },
+      ],
+    };
+    const boardView = {
+      ...view,
+      id: 'view_board_inline',
+      name: 'Task board',
+      layout: {
+        type: 'board' as const,
+        configuration: {
+          cardSize: 'medium' as const,
+          cardPreview: { type: 'none' as const },
+          fitImage: false,
+          colorColumns: false,
+          groupLimit: 20,
+          cardLimitPerGroup: 20,
+        },
+      },
+      groups: [{ propertyId: 'prop_status', direction: 'asc' as const, hideEmpty: false }],
+      projection: { propertyIds: ['prop_title', 'prop_status'], body: 'hidden' as const },
+    };
+    const boardDatabase = { ...database, sources: [boardSource], views: [boardView] };
+    let commitCalls = 0;
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = String(input);
+      const body = init?.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : {};
+      if (path === '/api/databases/describe') {
+        return Response.json({
+          manifestRevision: hash,
+          schemaRevision: hash,
+          database: boardDatabase,
+          source: boardSource,
+          index: {
+            state: 'idle',
+            revision: hash,
+            manifestRevision: hash,
+            recordCount: 1,
+            issueCount: 0,
+            progress: null,
+            lastRebuiltAt: '2026-07-20T00:00:00.000Z',
+            lastIncrementalAt: null,
+            lastError: null,
+          },
+          allowedOperations: ['describe', 'query'],
+        });
+      }
+      if (path === '/api/databases/query') {
+        return Response.json({
+          sourceId: boardSource.id,
+          snapshotRevision: hash,
+          matched: 1,
+          returned: 1,
+          isComplete: true,
+          nextCursor: null,
+          truncatedBy: null,
+          indexFreshness: 'snapshot',
+          records: [
+            {
+              id: 'rec_first',
+              path: 'tasks/first.md',
+              revision: hash,
+              values: { prop_title: 'First task', prop_status: 'opt_open' },
+            },
+          ],
+          aggregation: null,
+          groupMemberships: {
+            rec_first: [[{ propertyId: 'prop_status', value: 'opt_open' }]],
+          },
+        });
+      }
+      if (path === '/api/databases/plan') {
+        if (body.action === 'create_draft') {
+          return Response.json({
+            action: body.action,
+            draft: { id: 'draft_board', revision: hash },
+          });
+        }
+        return Response.json({
+          action: 'create_plan',
+          plan: {
+            id: 'plan_board',
+            hash,
+            snapshotRevision: hash,
+            committable: true,
+            requiresCommit: true,
+            conflicts: [],
+            approvals: [],
+            postconditions: [],
+            risk: { level: 'low', reasons: [] },
+            diff: { manifests: [], records: [], templates: [], policy: {} },
+          },
+        });
+      }
+      if (path === '/api/databases/commit') {
+        commitCalls += 1;
+        return Response.json({
+          mutationId: 'mut_board',
+          planId: 'plan_board',
+          planHash: hash,
+          idempotentReplay: false,
+          actualDiff: [],
+          verification: { status: 'passed' },
+          undoToken: 'undo_board',
+        });
+      }
+      return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
+    }) as typeof fetch;
+
+    render(
+      <DatabaseView
+        databaseId={boardDatabase.id}
+        sourceId={boardSource.id}
+        viewId={boardView.id}
+        mode="inline"
+      />,
+    );
+
+    expect(await screen.findByText('Task board')).toBeTruthy();
+    fireEvent.click(
+      screen.getAllByRole('combobox', { name: 'Move record rec_first to group' })[0] as HTMLElement,
+    );
+    fireEvent.click(await screen.findByRole('option', { name: 'Done' }));
+    await waitFor(() => expect(commitCalls).toBe(1));
+    expect(document.querySelector('[data-database-workspace]')).toBeNull();
+  });
+
   test('renders a linked Calendar from its saved timezone-aware Date mapping', async () => {
     const today = new Date().toISOString().slice(0, 10);
     const calendarSource = {

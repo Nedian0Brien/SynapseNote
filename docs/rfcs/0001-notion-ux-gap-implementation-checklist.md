@@ -289,7 +289,7 @@ treated as visual parity until a browser capture is attached.
   oldest views. Cross-reload cache parity is now covered by
   `database-linked-view-cache.test.ts` (2/2 tests, 5 expectations); the full
   visual state matrix remains open. Evidence: `DatabaseView.dom.test.tsx`
-  16/16 tests, 146 expectations, plus the cache suite. Loading exposes
+  17/17 tests, 161 expectations, plus the cache suite. Loading exposes
   `aria-busy`/`data-database-state="loading"`, empty sources retain the
   actionable new-row input, and permission denial is proven not to reuse an
   offline snapshot.
@@ -369,9 +369,9 @@ treated as visual parity until a browser capture is attached.
   `DatabaseContextInspectorDialog.dom.test.tsx` (1 test / 8 expectations),
   `database-context-inspector.test.ts` (3 tests / 13 expectations), the focused
   `database-data-plane-api.test.ts` contract, the Table menu journey, and the
-  inline `DatabaseView.dom.test.tsx` scoped inspector journey (16 tests / 157
-  expectations), including database/view, single-record, and selected-record
-  query assertions.
+  inline `DatabaseView.dom.test.tsx` scoped inspector journey (17 tests / 161
+  expectations), including database/view, single-record, selected-record, and
+  inline Board transition query assertions.
   Map to UX-902/UX-909.
 - [ ] **NUI-602** Keep human-language plans first and stable IDs/files/risk/
   receipts under progressive disclosure; support selective approval only when

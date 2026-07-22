@@ -921,6 +921,48 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
     }
   };
 
+  const applyInlineViewChanges = (
+    record: ProjectedDatabaseRecord,
+    changes: readonly { property: DatabaseProperty; value: DatabaseValue | undefined }[],
+  ) => {
+    const [change] = changes;
+    if (
+      changes.length === 1 &&
+      change &&
+      state.status === 'ready' &&
+      linkedSource &&
+      linkedDatabase
+    ) {
+      try {
+        runInlineMutation(
+          createDatabaseCellMutationDesiredState({
+            database: linkedDatabase,
+            source: linkedSource,
+            record,
+            property: change.property,
+            value: change.value,
+          }),
+          { operation: 'cell' },
+        );
+        return;
+      } catch (cause) {
+        setInlineMutationError(
+          cause instanceof Error ? cause.message : 'Unable to save the inline database change',
+        );
+        return;
+      }
+    }
+    setInitialRecordAction({
+      kind: 'transition',
+      recordId: record.id,
+      changes: changes.map((change) => ({
+        propertyId: change.property.id,
+        ...(change.value === undefined ? {} : { value: change.value }),
+      })),
+    });
+    setFullDatabaseOpen(true);
+  };
+
   const pasteInlineCells = (changes: readonly DatabasePasteChange[]) => {
     if (changes.length === 0) return;
     if (changes.length === 1) {
@@ -1370,16 +1412,13 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
                 people={state.description.database.people}
                 onOpen={openRecord}
                 onTransition={(transition) => {
-                  setInitialRecordAction({
-                    kind: 'transition',
-                    recordId: transition.record.id,
-                    changes: transition.changes.map((change) => ({
-                      propertyId: change.property.id,
-                      ...(change.value === undefined ? {} : { value: change.value }),
-                    })),
-                  });
-                  setFullDatabaseOpen(true);
+                  applyInlineViewChanges(transition.record, transition.changes);
                 }}
+                mutationLocked={
+                  inlineMutationStatus !== 'idle' ||
+                  inlineUndoStatus !== 'idle' ||
+                  inlineRedoStatus !== 'idle'
+                }
                 onDuplicate={(record) => {
                   setInitialRecordAction({ kind: 'duplicate', recordId: record.id });
                   setFullDatabaseOpen(true);
@@ -1406,16 +1445,13 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
                 people={state.description.database.people}
                 onOpen={openRecord}
                 onChange={(change) => {
-                  setInitialRecordAction({
-                    kind: 'transition',
-                    recordId: change.record.id,
-                    changes: change.changes.map((item) => ({
-                      propertyId: item.property.id,
-                      ...(item.value === undefined ? {} : { value: item.value }),
-                    })),
-                  });
-                  setFullDatabaseOpen(true);
+                  applyInlineViewChanges(change.record, change.changes);
                 }}
+                mutationLocked={
+                  inlineMutationStatus !== 'idle' ||
+                  inlineUndoStatus !== 'idle' ||
+                  inlineRedoStatus !== 'idle'
+                }
               />
             ) : linkedView.layout.type === 'calendar' ? (
               <LazyDatabaseCalendar
@@ -1426,16 +1462,13 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
                 people={state.description.database.people}
                 onOpen={openRecord}
                 onChange={(change) => {
-                  setInitialRecordAction({
-                    kind: 'transition',
-                    recordId: change.record.id,
-                    changes: change.changes.map((item) => ({
-                      propertyId: item.property.id,
-                      ...(item.value === undefined ? {} : { value: item.value }),
-                    })),
-                  });
-                  setFullDatabaseOpen(true);
+                  applyInlineViewChanges(change.record, change.changes);
                 }}
+                mutationLocked={
+                  inlineMutationStatus !== 'idle' ||
+                  inlineUndoStatus !== 'idle' ||
+                  inlineRedoStatus !== 'idle'
+                }
               />
             ) : linkedView.layout.type === 'list' ? (
               <LazyDatabaseList

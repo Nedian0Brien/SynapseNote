@@ -299,10 +299,14 @@ do not reconstruct behavior solely from this summary.
   Context Pack inspector, so an agent can inspect a bounded multi-record slice
   without opening the full workspace or copying record payloads into the host
   block.
-- Focused evidence: `DatabaseView.dom.test.tsx` passes 16 tests / 157
-  expectations, including database/view, single-record, and selected-record
-  scoped inspector entries; app typecheck, Biome, and `git diff --check` pass.
-  Full agent replay and transport matrix gates remain open under NUI-601/NUI-603.
+- A single-property drag from inline Board, Calendar, or Timeline now uses the
+  same direct-safe cell mutation path as an inline table edit; multi-property
+  transitions still hand off to the reviewed canonical workspace.
+- Focused evidence: `DatabaseView.dom.test.tsx` passes 17 tests / 161
+  expectations, including database/view, single-record, selected-record, and
+  inline Board transition entries; app typecheck, Biome, and `git diff --check`
+  pass. Full agent replay and transport matrix gates remain open under
+  NUI-601/NUI-603.
 
 ### 2026-07-22 mutation-policy matrix slice
 
