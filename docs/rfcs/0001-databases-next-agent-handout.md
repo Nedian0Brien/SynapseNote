@@ -16,6 +16,7 @@
 - Latest inline agent-context changeset: `../../.changeset/inline-agent-context-inspector.md`
 - Latest inline property-context changeset: `../../.changeset/inline-property-context.md`
 - Latest inline single-view-tabs changeset: `../../.changeset/inline-single-view-tabs.md`
+- Latest inline mode-preservation changeset: `../../.changeset/inline-view-mode-preservation.md`
 
 ## Objective and completion rule
 
@@ -633,6 +634,19 @@ do not reconstruct behavior solely from this summary.
   Biome, and `git diff --check` pass. No server suite or E2E rerun was needed.
 - Follow-up: capture the tab strip in the browser/Electron visual gates before
   closing NUI-402/NUI-502.
+
+### 2026-07-22 inline full-page mode preservation slice
+
+- Saved-view tab changes now preserve the linked block's current presentation
+  mode. A full-page linked block remains `mode="full-page"` after switching to
+  another saved view; invalid references still default safely to inline mode
+  when a new database is selected.
+- Focused evidence: `DatabaseView.dom.test.tsx` passes 18 tests / 172
+  expectations, including host attribute handoff in full-page mode; app
+  typecheck, Biome, and `git diff --check` pass. No server suite or E2E rerun
+  was needed.
+- Follow-up: keep browser/Electron route continuity evidence open under
+  NUI-204/NUI-105.
 
 ### 2026-07-22 inline filter handoff slice
 

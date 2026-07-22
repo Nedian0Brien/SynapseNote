@@ -949,6 +949,23 @@ describe('DatabaseView', () => {
     const linkedDatabase = { ...database, views: [view, secondaryView] };
     const requests: Array<{ path: string; body: Record<string, unknown> }> = [];
     const inspectPaths: string[] = [];
+    const dispatched: Array<Record<string, unknown>> = [];
+    const node = {
+      type: { name: 'jsxComponent' },
+      attrs: { componentName: 'DatabaseView', props: {} },
+    };
+    const editor = {
+      state: {
+        doc: { nodeAt: () => node },
+        tr: {
+          setNodeMarkup: (_pos: number, _type: unknown, attrs: Record<string, unknown>) => {
+            dispatched.push(attrs);
+            return {};
+          },
+        },
+      },
+      view: { dispatch: () => {}, focus: () => {} },
+    } as never;
     let commitCalls = 0;
     let undoCalls = 0;
     let undoBlocked = false;
@@ -1099,7 +1116,14 @@ describe('DatabaseView', () => {
     }) as typeof fetch;
 
     const { rerender } = render(
-      <DatabaseView databaseId={database.id} sourceId={source.id} viewId={view.id} mode="inline" />,
+      <JsxComponentHostProvider value={{ editor, getPos: () => 0, addChild: null }}>
+        <DatabaseView
+          databaseId={database.id}
+          sourceId={source.id}
+          viewId={view.id}
+          mode="inline"
+        />
+      </JsxComponentHostProvider>,
     );
 
     expect(await screen.findByRole('heading', { name: 'Open tasks' })).toBeTruthy();
@@ -1302,12 +1326,14 @@ describe('DatabaseView', () => {
     );
 
     rerender(
-      <DatabaseView
-        databaseId={database.id}
-        sourceId={source.id}
-        viewId={view.id}
-        mode="full-page"
-      />,
+      <JsxComponentHostProvider value={{ editor, getPos: () => 0, addChild: null }}>
+        <DatabaseView
+          databaseId={database.id}
+          sourceId={source.id}
+          viewId={view.id}
+          mode="full-page"
+        />
+      </JsxComponentHostProvider>,
     );
     await waitFor(() =>
       expect(
@@ -1320,6 +1346,13 @@ describe('DatabaseView', () => {
     expect(fullPageSurface?.getAttribute('data-source-id')).toBe(source.id);
     expect(fullPageSurface?.getAttribute('data-view-id')).toBe(view.id);
     expect(document.querySelectorAll('[data-record-id="rec_first"]')).toHaveLength(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Done tasks' }));
+    expect(dispatched.at(-1)?.props).toMatchObject({
+      databaseId: database.id,
+      sourceId: source.id,
+      viewId: secondaryView.id,
+      mode: 'full-page',
+    });
   });
 
   test('keeps the last verified linked snapshot visible when a refresh goes offline', async () => {

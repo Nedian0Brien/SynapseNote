@@ -622,13 +622,14 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
     if (!editor || typeof pos !== 'number') return;
     const node = editor.state.doc.nodeAt(pos);
     if (!node || node.type.name !== 'jsxComponent') return;
+    const nextMode = reference.success ? reference.data.mode : 'inline';
     editor.view.dispatch(
       editor.state.tr.setNodeMarkup(pos, undefined, {
         ...node.attrs,
         props: {
           ...((node.attrs.props as Record<string, unknown> | undefined) ?? {}),
           ...next,
-          mode: 'inline',
+          mode: nextMode,
         },
       }),
     );
