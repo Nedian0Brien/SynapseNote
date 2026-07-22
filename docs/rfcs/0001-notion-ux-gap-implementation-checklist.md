@@ -217,8 +217,11 @@ treated as visual parity until a browser capture is attached.
   destructive, permission, external, schema-migration, and threshold-crossing
   bulk changes retain exact review. The allow-list is now centralized in
   `database-mutation-policy.ts` and wired to cell/title/row/blank-create/view
-  callers; the remaining gate is full optimistic/undo evidence for every view
-  editor and a complete policy matrix for agent transports. Map to UX-005/UX-006.
+  callers. Inline `DatabaseView` now uses the same direct-safe policy for title
+  cell edits and first-row creation, with optimistic values, canonical refresh,
+  and an inline saving/error state. The remaining gate is full optimistic/undo
+  evidence for every view editor and a complete policy matrix for agent
+  transports. Map to UX-005/UX-006.
 - [x] **NUI-302** Add saving/saved/offline/conflict/failed indicators that do
   not replace the table with a transaction screen. Map to UX-405/UX-406.
   Evidence: `DatabaseTableDialog` save indicator and the state-specific DOM

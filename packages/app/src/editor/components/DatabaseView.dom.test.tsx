@@ -830,6 +830,8 @@ describe('DatabaseView', () => {
     expect(inlineSurface?.getAttribute('data-source-id')).toBe(source.id);
     expect(inlineSurface?.getAttribute('data-view-id')).toBe(view.id);
     expect(document.querySelector('[data-record-id="rec_first"]')).toBeTruthy();
+    expect(screen.getByLabelText('Edit Title for record rec_first')).toBeTruthy();
+    expect(screen.getByTestId('database-new-row-title')).toBeTruthy();
     expect(screen.getByLabelText('Duplicate record rec_first')).toBeTruthy();
     expect(screen.getByLabelText('Archive record rec_first')).toBeTruthy();
     expect(screen.getByLabelText('Move record rec_first')).toBeTruthy();

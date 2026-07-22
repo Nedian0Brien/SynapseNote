@@ -1,7 +1,9 @@
 import { Trans } from '@lingui/react/macro';
 import {
   DatabaseLinkedViewReferenceSchema,
+  type DatabaseProperty,
   type DatabaseQueryResult,
+  type DatabaseValue,
   type ProjectedDatabaseRecord,
 } from '@nedian0brien/synapsenote-core';
 import type { DatabaseDesiredStateDraftInput } from '@nedian0brien/synapsenote-server';
@@ -34,6 +36,10 @@ import {
   describeDatabase,
   fetchDatabaseCatalog,
 } from '@/lib/database-catalog-client';
+import {
+  createDatabaseCellMutationDesiredState,
+  createDatabaseRecordDesiredState,
+} from '@/lib/database-cell-mutation';
 import { createBlankDatabaseDesiredState } from '@/lib/database-creation';
 import {
   readDatabaseLinkedView,
@@ -468,6 +474,11 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
   const [initialRecordAction, setInitialRecordAction] = useState<DatabaseInitialRecordAction>();
   const [replacementPickerOpen, setReplacementPickerOpen] = useState(false);
   const [inlineCreationOpen, setInlineCreationOpen] = useState(false);
+  const [inlineMutationStatus, setInlineMutationStatus] = useState<'idle' | 'saving'>('idle');
+  const [inlineMutationError, setInlineMutationError] = useState<string | null>(null);
+  const [inlineOptimisticCellValues, setInlineOptimisticCellValues] = useState<
+    Map<string, DatabaseValue | undefined>
+  >(() => new Map());
   const [recordPeek, setRecordPeek] = useState<{
     record: ProjectedDatabaseRecord;
     mode: 'side_peek' | 'center_peek';
@@ -649,6 +660,107 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
     setRecordPeek({ record, mode: behavior === 'full_page' ? 'side_peek' : behavior });
   };
 
+  const runInlineMutation = (
+    desiredState: DatabaseDesiredStateDraftInput,
+    policy: { operation: 'cell' | 'record-create'; optimisticCellKey?: string },
+  ) => {
+    if (inlineMutationStatus !== 'idle') return;
+    setInlineMutationError(null);
+    setInlineMutationStatus('saving');
+    void executeDatabaseUiMutation({
+      desiredState,
+      actor: { principalId: 'user:local' },
+      idempotencyKey: `ui-inline-${policy.operation}-${crypto.randomUUID()}`,
+      review: () =>
+        databaseUiMutationReviewMode({
+          operation: policy.operation,
+          actor: 'human',
+          principalId: 'user:local',
+        }) === 'automatic',
+    })
+      .then((outcome) => {
+        if (outcome.status !== 'committed') {
+          setInlineMutationError('The inline database change was blocked by the current data.');
+          return;
+        }
+        if (policy.optimisticCellKey) {
+          setInlineOptimisticCellValues((current) => {
+            if (!current.has(policy.optimisticCellKey as string)) return current;
+            const next = new Map(current);
+            next.delete(policy.optimisticCellKey as string);
+            return next;
+          });
+        }
+        setRefresh((current) => current + 1);
+      })
+      .catch((cause: unknown) => {
+        if (policy.optimisticCellKey) {
+          setInlineOptimisticCellValues((current) => {
+            if (!current.has(policy.optimisticCellKey as string)) return current;
+            const next = new Map(current);
+            next.delete(policy.optimisticCellKey as string);
+            return next;
+          });
+        }
+        setInlineMutationError(
+          cause instanceof Error ? cause.message : 'Unable to save the inline database change',
+        );
+      })
+      .finally(() => setInlineMutationStatus('idle'));
+  };
+
+  const editInlineCell = (
+    record: ProjectedDatabaseRecord,
+    property: DatabaseProperty,
+    value: DatabaseValue | undefined,
+  ) => {
+    if (state.status !== 'ready' || !linkedSource || !linkedDatabase) return;
+    const optimisticCellKey = `${record.id}:${property.id}`;
+    try {
+      setInlineOptimisticCellValues((current) => {
+        const next = new Map(current);
+        next.set(optimisticCellKey, value);
+        return next;
+      });
+      runInlineMutation(
+        createDatabaseCellMutationDesiredState({
+          database: linkedDatabase,
+          source: linkedSource,
+          record,
+          property,
+          value,
+        }),
+        { operation: 'cell', optimisticCellKey },
+      );
+    } catch (cause) {
+      setInlineOptimisticCellValues((current) => {
+        const next = new Map(current);
+        next.delete(optimisticCellKey);
+        return next;
+      });
+      setInlineMutationError(cause instanceof Error ? cause.message : 'Unable to edit the cell');
+    }
+  };
+
+  const createInlineRecord = (title: string) => {
+    if (state.status !== 'ready' || !linkedSource || !linkedDatabase) return;
+    try {
+      runInlineMutation(
+        createDatabaseRecordDesiredState({
+          database: linkedDatabase,
+          source: linkedSource,
+          title,
+          viewId: reference.data.viewId,
+        }),
+        { operation: 'record-create' },
+      );
+    } catch (cause) {
+      setInlineMutationError(
+        cause instanceof Error ? cause.message : 'Unable to create the inline database page',
+      );
+    }
+  };
+
   return (
     <section
       className={cn(
@@ -816,6 +928,19 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
         >
           Offline or unavailable · showing the last verified snapshot. The view will refresh when
           the connection returns.
+        </div>
+      ) : null}
+      {inlineMutationStatus === 'saving' ? (
+        <div className="border-b bg-muted/20 px-4 py-2 text-muted-foreground text-xs" role="status">
+          Saving inline database change
+        </div>
+      ) : null}
+      {inlineMutationError ? (
+        <div
+          className="border-b border-destructive/30 bg-destructive/5 px-4 py-2 text-destructive text-xs"
+          role="alert"
+        >
+          {inlineMutationError}
         </div>
       ) : null}
 
@@ -1011,13 +1136,19 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
               <LazyDatabaseTable
                 key={`${state.description.schemaRevision}:${state.result.snapshotRevision}`}
                 source={linkedSource}
+                databaseId={state.description.database.id}
+                viewId={linkedView.id}
                 result={state.result}
                 people={state.description.database.people}
+                optimisticCellValues={inlineOptimisticCellValues}
+                mutationLocked={inlineMutationStatus !== 'idle'}
                 viewPropertyIds={linkedView.projection.propertyIds}
                 viewConfiguration={
                   linkedView.layout.type === 'table' ? linkedView.layout.configuration : undefined
                 }
                 onOpen={openRecord}
+                onEdit={editInlineCell}
+                onCreateRecord={createInlineRecord}
                 onDuplicate={(record) => {
                   setInitialRecordAction({ kind: 'duplicate', recordId: record.id });
                   setFullDatabaseOpen(true);
