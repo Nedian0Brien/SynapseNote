@@ -142,6 +142,12 @@ describe('DatabaseCreationDialog', () => {
       expect((screen.getByLabelText('Database name') as HTMLInputElement).value).toBe('launch'),
     );
     expect(screen.getByTestId('database-creation-page-preview').textContent).toContain('Ship');
+    const preview = screen.getByTestId('database-csv-preview');
+    expect(preview.textContent).toContain('Task, Estimate, Done');
+    expect(preview.textContent).toContain('Task · title');
+    expect(preview.textContent).toContain('Estimate · number');
+    expect(preview.textContent).toContain('Table');
+    expect(preview.textContent).not.toContain('invalid row');
     fireEvent.click(screen.getByText('Review creation'));
     await waitFor(() => expect(onCreate).toHaveBeenCalledTimes(1));
     expect(onCreate.mock.calls[0]?.[0]).toMatchObject({
@@ -157,6 +163,23 @@ describe('DatabaseCreationDialog', () => {
       sampleRecords: [{ values: { task: 'Ship', estimate: 3, done: true } }],
     });
     expect(onCreate.mock.calls[0]?.[1]).toBe('csv');
+  });
+
+  test('shows invalid CSV rows before allowing the reviewed commit', async () => {
+    const onCreate = mock(() => {});
+    render(<DatabaseCreationDialog open onOpenChange={() => {}} onCreate={onCreate} />);
+    fireEvent.click(screen.getByText('CSV or TSV'));
+    const file = new File(['Title,Estimate\n,3\nShip,4'], 'tasks.csv', { type: 'text/csv' });
+    fireEvent.change(screen.getByLabelText('Create database from CSV or TSV file'), {
+      target: { files: [file] },
+    });
+
+    await waitFor(() => expect(screen.getByLabelText('Database name')).toBeDefined());
+    const preview = screen.getByTestId('database-csv-preview');
+    expect(preview.textContent).toContain('Headers');
+    expect(preview.textContent).toContain('Row 2: Title is required');
+    expect(screen.getByRole('alert').textContent).toContain('1 invalid row');
+    expect(onCreate).toHaveBeenCalledTimes(0);
   });
 
   test('still validates a missing name for non-blank creation modes', () => {

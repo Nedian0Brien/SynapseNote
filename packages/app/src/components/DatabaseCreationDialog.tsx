@@ -12,7 +12,7 @@ import {
   type DatabaseCreationTemplateKey,
   summarizeDatabaseCreation,
 } from '@/lib/database-creation';
-import { parseDelimited } from '@/lib/database-csv';
+import { DATABASE_CSV_IMPORT_RECORD_LIMIT, parseDelimited } from '@/lib/database-csv';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
@@ -128,6 +128,48 @@ export function DatabaseCreationDialog({
       summary = summarizeDatabaseCreation(preparedState);
     } catch {
       // Incomplete mode-specific input is explained by its field and submit validation.
+    }
+  }
+
+  let delimitedPreview: {
+    headers: string[];
+    rows: string[][];
+    delimiter: string;
+    parseError: string | null;
+    invalidRows: Array<{ row: number; reasons: string[] }>;
+  } | null = null;
+  if (mode === 'csv' && file) {
+    try {
+      const delimiter = detectedDelimiter(file.contents, file.name);
+      const [rawHeaders, ...rows] = parseDelimited(file.contents, delimiter);
+      const headers = (rawHeaders ?? []).map((header, index) =>
+        index === 0 ? header.replace(/^\uFEFF/, '').trim() : header.trim(),
+      );
+      const invalidRows = rows
+        .map((row, index) => {
+          const reasons: string[] = [];
+          if ((row[0] ?? '').trim() === '') reasons.push('Title is required');
+          if (index >= DATABASE_CSV_IMPORT_RECORD_LIMIT) {
+            reasons.push(`Import limit is ${DATABASE_CSV_IMPORT_RECORD_LIMIT} rows`);
+          }
+          return { row: index + 2, reasons };
+        })
+        .filter((entry) => entry.reasons.length > 0);
+      delimitedPreview = {
+        headers,
+        rows,
+        delimiter: delimiter === '\t' ? 'TSV' : delimiter === ';' ? 'semicolon CSV' : 'CSV',
+        parseError: null,
+        invalidRows,
+      };
+    } catch (cause) {
+      delimitedPreview = {
+        headers: [],
+        rows: [],
+        delimiter: file.name.toLowerCase().endsWith('.tsv') ? 'TSV' : 'CSV',
+        parseError: cause instanceof Error ? cause.message : 'Unable to preview the file',
+        invalidRows: [],
+      };
     }
   }
 
@@ -344,6 +386,94 @@ export function DatabaseCreationDialog({
               />
               {file ? <span className="text-muted-foreground text-xs">{file.name}</span> : null}
             </label>
+          ) : null}
+
+          {mode === 'csv' && delimitedPreview ? (
+            <section
+              className="rounded-md border border-primary/30 bg-primary/5 p-3"
+              aria-label="CSV preview"
+              data-testid="database-csv-preview"
+            >
+              <h3 className="font-medium text-sm">
+                <Trans>CSV/TSV import preview</Trans>
+              </h3>
+              <dl className="mt-2 grid gap-x-4 gap-y-1 text-sm sm:grid-cols-[7rem_1fr]">
+                <dt className="text-muted-foreground">
+                  <Trans>Detected format</Trans>
+                </dt>
+                <dd>{delimitedPreview.delimiter}</dd>
+                <dt className="text-muted-foreground">
+                  <Trans>Headers</Trans>
+                </dt>
+                <dd>{delimitedPreview.headers.join(', ') || '—'}</dd>
+                <dt className="text-muted-foreground">
+                  <Trans>Target view</Trans>
+                </dt>
+                <dd>Table</dd>
+                <dt className="text-muted-foreground">
+                  <Trans>Inferred types</Trans>
+                </dt>
+                <dd>
+                  {preparedState
+                    ? preparedState.sources[0]?.properties
+                        .map((property) => `${property.name} · ${property.type}`)
+                        .join(', ')
+                    : 'Resolve the issues below to infer types'}
+                </dd>
+              </dl>
+              {delimitedPreview.parseError ? (
+                <p className="mt-2 text-destructive text-sm" role="alert">
+                  {delimitedPreview.parseError}
+                </p>
+              ) : null}
+              {delimitedPreview.invalidRows.length > 0 ? (
+                <div
+                  className="mt-2 rounded border border-destructive/30 bg-destructive/5 p-2 text-sm"
+                  role="alert"
+                >
+                  <div className="font-medium text-destructive">
+                    {delimitedPreview.invalidRows.length} invalid row
+                    {delimitedPreview.invalidRows.length === 1 ? '' : 's'}
+                  </div>
+                  <ul className="mt-1 grid gap-1 text-xs">
+                    {delimitedPreview.invalidRows.slice(0, 5).map((entry) => (
+                      <li key={entry.row}>
+                        Row {entry.row}: {entry.reasons.join('; ')}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+              {delimitedPreview.rows.length > 0 ? (
+                <div className="mt-3 overflow-x-auto rounded border bg-background">
+                  <table className="w-full text-left text-xs" aria-label="CSV sample rows">
+                    <thead>
+                      <tr>
+                        {delimitedPreview.headers.slice(0, 6).map((header) => (
+                          <th key={header} className="border-b px-2 py-1 font-medium">
+                            {header}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {delimitedPreview.rows.slice(0, 3).map((row) => (
+                        <tr key={row.join('\u0001')}>
+                          {row.slice(0, 6).map((value, columnIndex) => (
+                            <td
+                              key={`${delimitedPreview.headers[columnIndex] ?? 'column'}:${value}`}
+                              className="border-b px-2 py-1"
+                            >
+                              {value || '—'}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : null}
+            </section>
           ) : null}
 
           {summary ? (
