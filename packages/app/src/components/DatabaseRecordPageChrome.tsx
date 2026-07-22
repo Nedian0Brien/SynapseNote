@@ -11,6 +11,7 @@ import {
   stripFrontmatter,
 } from '@nedian0brien/synapsenote-core';
 import { History, Link2, MessageSquare, Settings2 } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import { DatabaseCommentsDialog } from '@/components/DatabaseCommentsDialog';
 import { DatabaseConflictResolutionNotice } from '@/components/DatabaseConflictResolutionNotice';
@@ -51,6 +52,13 @@ interface DatabaseRecordPageChromeProps {
   docName: string;
   docExt: string;
   fallbackTitle: string;
+  /**
+   * The normal editor body belongs to the page, immediately after its
+   * properties. Keeping this slot on the page chrome makes the ordering an
+   * explicit contract instead of relying on two sibling render branches in
+   * the activity pool.
+   */
+  body?: ReactNode;
   services?: DatabaseRecordPageServices;
 }
 
@@ -84,6 +92,7 @@ export function DatabaseRecordPageChrome({
   docName,
   docExt,
   fallbackTitle,
+  body,
   services = DEFAULT_SERVICES,
 }: DatabaseRecordPageChromeProps) {
   'use no memo';
@@ -669,6 +678,15 @@ export function DatabaseRecordPageChrome({
         <p className="editor-content-aligned py-2 text-xs text-muted-foreground" role="status">
           <Trans>Verifying database change</Trans>
         </p>
+      ) : null}
+      {body ? (
+        <div
+          className="relative min-h-0 flex-1"
+          data-database-record-body
+          data-record-body-position="below-properties"
+        >
+          {body}
+        </div>
       ) : null}
       {source && currentBinding && layoutDialogOpen ? (
         <DatabasePageLayoutDialog

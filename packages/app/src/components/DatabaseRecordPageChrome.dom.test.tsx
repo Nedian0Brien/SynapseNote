@@ -160,6 +160,7 @@ describe('DatabaseRecordPageChrome', () => {
             docName="records/rec_first"
             docExt=".md"
             fallbackTitle="rec_first"
+            body={<div data-testid="record-body-editor">Editable record body</div>}
             services={services}
           />
         </PropertyProvider>
@@ -178,6 +179,19 @@ describe('DatabaseRecordPageChrome', () => {
     expect(view.getByRole('link', { name: 'Tasks' }).getAttribute('href')).toBe(
       '#database/db_tasks/ds_tasks',
     );
+    const bodyHost = view.getByTestId('record-body-editor');
+    const bodySurface = bodyHost.closest('[data-database-record-body]');
+    expect(bodySurface?.getAttribute('data-record-body-position')).toBe('below-properties');
+    expect(
+      view
+        .getAllByTestId('property-row')
+        .every(
+          (row) =>
+            (row.compareDocumentPosition(bodySurface ?? bodyHost) &
+              Node.DOCUMENT_POSITION_FOLLOWING) !==
+            0,
+        ),
+    ).toBe(true);
     emitDatabaseChanged({
       v: 1,
       ch: 'database-changed',

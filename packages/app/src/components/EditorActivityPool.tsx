@@ -768,6 +768,8 @@ function ActivityEntry({
   // Standalone Mermaid docs (`.mmd`/`.mermaid`) render a dedicated diagram+source
   // editor instead of the markdown dual-editor (they are Y.Text-only, no bridge).
   const isMermaid = isMermaidDocFile(entry.docName);
+  const isManagedArtifact =
+    isManagedArtifactDocName(entry.docName) || parseProjectSkillContentDocName(entry.docName);
 
   // Per-Activity portal target for <EditorContent>. Stable DOM element
   // exclusively owned by THIS ActivityEntry — `useState` with a lazy
@@ -913,6 +915,55 @@ function ActivityEntry({
   const [warmSnapshot] = useState(() => peekRenameSnapshot(entry.docName));
   const warmHtml = warmSnapshot?.html ?? null;
 
+  // The regular record-page chrome owns this body slot so the page remains a
+  // single document-native surface: title/properties first, then the ordinary
+  // markdown editor. Source mode and managed artifacts keep the same body
+  // host, but render it outside the database chrome because they expose their
+  // own identity panels or raw source surface.
+  const editorBody = (
+    <div
+      className="relative flex-1"
+      data-database-record-body-editor
+      data-editor-placeholder={editorPlaceholder ?? undefined}
+    >
+      {gate.renderSource ? (
+        <div className={isSourceMode ? 'h-full' : 'ok-mode-hidden h-full'}>
+          <SourceEditorSlot
+            entry={entry}
+            isActive={isActive}
+            isSourceMode={isSourceMode}
+            editorPlaceholder={editorPlaceholder}
+          />
+        </div>
+      ) : null}
+      {gate.renderVisual ? (
+        <div className={isSourceMode ? 'ok-mode-hidden h-full' : 'h-full'}>
+          <TiptapEditor
+            // The isNewDoc segment forces TipTap remount on the draft → saved
+            // transition (the flip changes the page list's membership of this
+            // docName).
+            // poolEventId ties the mount to pool-entry identity: an in-place
+            // recycle of a mounted doc (the binding staleness guard's wedge
+            // recovery) swaps entry.provider under a stable docName, and
+            // TiptapEditor's construct closure captures `provider` once
+            // (provider-stability invariant, TiptapEditor.tsx) — without a
+            // remount the rebuilt editor would bind the destroyed provider
+            // and silently write into an orphaned Y.Doc.
+            key={`${entry.docName}-${String(isNewDoc)}-${entry.poolEventId}`}
+            provider={entry.provider}
+            placeholder={editorPlaceholder}
+            isSourceMode={isSourceMode}
+            // Per-Activity exclusive portal target — see the
+            // `portalTarget` useState declaration for
+            // the bleed-prevention rationale. The target's
+            // identity is stable across this TiptapEditor's remount.
+            portalTarget={portalTarget}
+          />
+        </div>
+      ) : null}
+    </div>
+  );
+
   // Note: clearing of the rename-snapshot store entry lives in
   // TiptapEditor's `editor.on('create')` hook (see editor-cache.ts ↔
   // TiptapEditor.tsx). Clearing here from a useEffect would race the
@@ -1046,60 +1097,24 @@ function ActivityEntry({
                         frontmatter, and they have no cover/icon. Regular docs get
                         PageHeader (decorative cover+icon, null when unset) +
                         PropertyPanel (frontmatter table, null when empty). */}
-                      {!isSourceMode &&
-                        (isManagedArtifactDocName(entry.docName) ||
-                        parseProjectSkillContentDocName(entry.docName) ? (
-                          <Suspense fallback={null}>
-                            <ManagedArtifactProperties
-                              docName={entry.docName}
-                              provider={entry.provider}
-                            />
-                          </Suspense>
-                        ) : (
-                          <DatabaseRecordPageChrome
-                            provider={entry.provider}
+                      {!isSourceMode && isManagedArtifact ? (
+                        <Suspense fallback={null}>
+                          <ManagedArtifactProperties
                             docName={entry.docName}
-                            docExt={documentExtension}
-                            fallbackTitle={documentTitle}
+                            provider={entry.provider}
                           />
-                        ))}
-                      <div className="relative flex-1">
-                        {gate.renderSource ? (
-                          <div className={isSourceMode ? 'h-full' : 'ok-mode-hidden h-full'}>
-                            <SourceEditorSlot
-                              entry={entry}
-                              isActive={isActive}
-                              isSourceMode={isSourceMode}
-                              editorPlaceholder={editorPlaceholder}
-                            />
-                          </div>
-                        ) : null}
-                        {gate.renderVisual ? (
-                          <div className={isSourceMode ? 'ok-mode-hidden h-full' : 'h-full'}>
-                            <TiptapEditor
-                              // The isNewDoc segment forces TipTap remount on the draft → saved
-                              // transition (the flip changes the page list's membership of this
-                              // docName).
-                              // poolEventId ties the mount to pool-entry identity: an in-place
-                              // recycle of a mounted doc (the binding staleness guard's wedge
-                              // recovery) swaps entry.provider under a stable docName, and
-                              // TiptapEditor's construct closure captures `provider` once
-                              // (provider-stability invariant, TiptapEditor.tsx) — without a
-                              // remount the rebuilt editor would bind the destroyed provider
-                              // and silently write into an orphaned Y.Doc.
-                              key={`${entry.docName}-${String(isNewDoc)}-${entry.poolEventId}`}
-                              provider={entry.provider}
-                              placeholder={editorPlaceholder}
-                              isSourceMode={isSourceMode}
-                              // Per-Activity exclusive portal target — see the
-                              // `portalTarget` useState declaration for
-                              // the bleed-prevention rationale. The target's
-                              // identity is stable across this TiptapEditor's remount.
-                              portalTarget={portalTarget}
-                            />
-                          </div>
-                        ) : null}
-                      </div>
+                        </Suspense>
+                      ) : null}
+                      {!isSourceMode && !isManagedArtifact ? (
+                        <DatabaseRecordPageChrome
+                          provider={entry.provider}
+                          docName={entry.docName}
+                          docExt={documentExtension}
+                          fallbackTitle={documentTitle}
+                          body={editorBody}
+                        />
+                      ) : null}
+                      {isSourceMode || isManagedArtifact ? editorBody : null}
                     </div>
                   )}
                 </DocumentBoundary>
