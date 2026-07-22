@@ -18,6 +18,7 @@ import { DatabasePageLayoutDialog } from '@/components/DatabasePageLayoutDialog'
 import { DatabasePresenceBadges } from '@/components/DatabasePresenceBadges';
 import { DatabaseRecordHistoryDialog } from '@/components/DatabaseRecordHistoryDialog';
 import { DatabaseRecordLayoutOverrideDialog } from '@/components/DatabaseRecordLayoutOverrideDialog';
+import { DatabaseRecordPageSurface } from '@/components/DatabaseRecordPageSurface';
 import { DatabaseRelationsDialog } from '@/components/DatabaseRelationsDialog';
 import { PageHeader } from '@/components/PageHeader';
 import { PropertyPanel } from '@/components/PropertyPanel';
@@ -431,7 +432,7 @@ export function DatabaseRecordPageChrome({
 
   if (!metadata) {
     return (
-      <>
+      <DatabaseRecordPageSurface mode="full_page">
         <PageHeader
           provider={provider}
           docName={docName}
@@ -439,12 +440,12 @@ export function DatabaseRecordPageChrome({
           fallbackTitle={fallbackTitle}
         />
         <PropertyPanel provider={provider} reservedKeys={['_sn']} />
-      </>
+      </DatabaseRecordPageSurface>
     );
   }
 
   return (
-    <>
+    <DatabaseRecordPageSurface mode="full_page">
       <PageHeader
         provider={provider}
         docName={docName}
@@ -669,6 +670,6 @@ export function DatabaseRecordPageChrome({
           source={source}
         />
       ) : null}
-    </>
+    </DatabaseRecordPageSurface>
   );
 }

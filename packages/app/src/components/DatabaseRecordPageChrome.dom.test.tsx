@@ -165,6 +165,11 @@ describe('DatabaseRecordPageChrome', () => {
     await waitFor(() =>
       expect(view.getByTestId('page-header-title').textContent).toBe('Canonical title'),
     );
+    expect(
+      view.container.querySelector(
+        '[data-database-record-page-surface][data-record-page-mode="full_page"]',
+      ),
+    ).not.toBeNull();
     expect(view.getAllByTestId('property-row').map((row) => row.getAttribute('data-key'))).toEqual([
       'score',
       'owner',

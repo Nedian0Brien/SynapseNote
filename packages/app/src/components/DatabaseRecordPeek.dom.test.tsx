@@ -86,6 +86,11 @@ describe('DatabaseRecordPeek context parity', () => {
       />,
     );
     await screen.findByText('Canonical body');
+    expect(
+      document.querySelector(
+        '[data-database-record-page-surface][data-record-page-mode="center_peek"]',
+      ),
+    ).not.toBeNull();
     expect(screen.getByText('📚')).toBeDefined();
     expect(document.querySelector('img[src*="cover.png"]')).not.toBeNull();
     expect(screen.getByRole('button', { name: 'Comments' })).toBeDefined();

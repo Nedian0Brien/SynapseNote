@@ -13,6 +13,7 @@ import { ExternalLink, GitBranch, History, Link2, Loader2, MessageSquare } from 
 import { useEffect, useState } from 'react';
 import { DatabaseCommentsDialog } from '@/components/DatabaseCommentsDialog';
 import { DatabaseRecordHistoryDialog } from '@/components/DatabaseRecordHistoryDialog';
+import { DatabaseRecordPageSurface } from '@/components/DatabaseRecordPageSurface';
 import { DatabaseRelationsDialog } from '@/components/DatabaseRelationsDialog';
 import { resolvePageCover, resolvePageIcon } from '@/components/page-header-utils';
 import { Button } from '@/components/ui/button';
@@ -278,16 +279,18 @@ export function DatabaseRecordPeek({
     return () => controller.abort();
   }, [docName]);
   const body = (
-    <PeekBody
-      source={source}
-      record={record}
-      state={state}
-      onOpenFull={onOpenFull}
-      onOpenComments={() => setCommentsOpen(true)}
-      onOpenHistory={() => setHistoryOpen(true)}
-      onOpenRelations={() => setRelationsOpen(true)}
-      backlinksState={backlinksState}
-    />
+    <DatabaseRecordPageSurface mode={mode}>
+      <PeekBody
+        source={source}
+        record={record}
+        state={state}
+        onOpenFull={onOpenFull}
+        onOpenComments={() => setCommentsOpen(true)}
+        onOpenHistory={() => setHistoryOpen(true)}
+        onOpenRelations={() => setRelationsOpen(true)}
+        backlinksState={backlinksState}
+      />
+    </DatabaseRecordPageSurface>
   );
   const contextDialogs = (
     <>
