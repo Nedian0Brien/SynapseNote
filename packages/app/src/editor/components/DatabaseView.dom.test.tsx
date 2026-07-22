@@ -54,6 +54,18 @@ afterEach(() => {
 });
 
 describe('DatabaseView', () => {
+  test('exposes an accessible loading state while the linked view is unresolved', async () => {
+    globalThis.fetch = mock(() => new Promise<Response>(() => {})) as typeof fetch;
+
+    render(
+      <DatabaseView databaseId={database.id} sourceId={source.id} viewId={view.id} mode="inline" />,
+    );
+
+    expect(await screen.findByTestId('database-view-loading')).toBeTruthy();
+    expect(document.querySelector('[data-database-view-state="loading"]')).toBeTruthy();
+    expect(document.querySelector('[aria-busy="true"]')).toBeTruthy();
+  });
+
   test('renders a linked Feed through its saved chronology and canonical source identity', async () => {
     const feedSource = {
       ...source,
@@ -1147,6 +1159,56 @@ describe('DatabaseView', () => {
     expect(screen.queryByRole('button', { name: 'Choose replacement' })).toBeNull();
     expect(screen.queryByText(/showing the last verified snapshot/i)).toBeNull();
     expect(screen.queryByText('Cached task')).toBeNull();
+  });
+
+  test('keeps an empty inline source actionable with a focused new-row affordance', async () => {
+    globalThis.fetch = mock(async (input: RequestInfo | URL) => {
+      const path = String(input);
+      if (path === '/api/databases/describe') {
+        return Response.json({
+          manifestRevision: hash,
+          schemaRevision: hash,
+          database,
+          source,
+          index: {
+            state: 'idle',
+            revision: hash,
+            manifestRevision: hash,
+            recordCount: 0,
+            issueCount: 0,
+            progress: null,
+            lastRebuiltAt: '2026-07-20T00:00:00.000Z',
+            lastIncrementalAt: null,
+            lastError: null,
+          },
+          allowedOperations: ['describe', 'query'],
+        });
+      }
+      if (path === '/api/databases/query') {
+        return Response.json({
+          sourceId: source.id,
+          snapshotRevision: hash,
+          matched: 0,
+          returned: 0,
+          isComplete: true,
+          nextCursor: null,
+          truncatedBy: null,
+          indexFreshness: 'snapshot',
+          records: [],
+          aggregation: null,
+        });
+      }
+      return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
+    }) as typeof fetch;
+
+    render(
+      <DatabaseView databaseId={database.id} sourceId={source.id} viewId={view.id} mode="inline" />,
+    );
+
+    expect(await screen.findByTestId('database-new-row-title')).toBeTruthy();
+    expect(document.querySelector('[data-database-state="empty"]')).toBeTruthy();
+    expect(screen.getByText('No records in this source.')).toBeTruthy();
+    expect(screen.getByText('Use the last row to add one.')).toBeTruthy();
   });
 
   test('starts record creation from a linked view in the canonical review dialog', async () => {

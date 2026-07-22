@@ -12,6 +12,7 @@
 - Latest inline recovery changeset: `../../.changeset/inline-database-undo.md`
 - Latest inline history changeset: `../../.changeset/inline-database-history.md`
 - Latest inline state-safety changeset: `../../.changeset/inline-database-state-safety.md`
+- Latest inline empty-state changeset: `../../.changeset/inline-database-empty-state.md`
 
 ## Objective and completion rule
 
@@ -273,6 +274,17 @@ do not reconstruct behavior solely from this summary.
   expectations, including offline snapshot recovery and permission-denial
   cache isolation; app typecheck, Biome, and `git diff --check` pass. The full
   server suite and broad E2E remain intentionally unrun.
+
+### 2026-07-22 inline loading and empty-state slice
+
+- Inline linked views now expose a semantic loading status with `aria-busy` and
+  a stable `data-database-state="loading"` marker. Empty Table sources retain
+  the explicit empty message while keeping the last-row title input available
+  as the immediate Notion-like add-page affordance.
+- Focused evidence: `DatabaseView.dom.test.tsx` passes 16 tests / 146
+  expectations, including unresolved loading and empty-source journeys; app
+  typecheck, Biome, and `git diff --check` pass. The full visual state matrix
+  and cross-host capture remain open.
 
 ### 2026-07-22 entry-point re-audit and convergence slice
 

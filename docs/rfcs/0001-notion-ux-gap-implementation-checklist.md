@@ -285,7 +285,10 @@ treated as visual parity until a browser capture is attached.
   oldest views. Cross-reload cache parity is now covered by
   `database-linked-view-cache.test.ts` (2/2 tests, 5 expectations); the full
   visual state matrix remains open. Evidence: `DatabaseView.dom.test.tsx`
-  13/13 tests, 79 expectations, plus the cache suite.
+  16/16 tests, 146 expectations, plus the cache suite. Loading exposes
+  `aria-busy`/`data-database-state="loading"`, empty sources retain the
+  actionable new-row input, and permission denial is proven not to reuse an
+  offline snapshot.
   Map to UX-304/UX-305/UX-309.
 - [x] **NUI-403** Use one canonical record-page component for title cell, peek,
   full page, comments, history, relation navigation, previous/next, and return

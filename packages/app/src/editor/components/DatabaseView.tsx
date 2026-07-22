@@ -1239,8 +1239,13 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
           </div>
         </div>
       ) : state.status === 'loading' ? (
-        <div className="flex min-h-40 items-center justify-center text-muted-foreground text-sm">
-          <Loader2 className="mr-2 size-4 animate-spin" /> Loading linked view
+        <div
+          className="flex min-h-40 items-center justify-center text-muted-foreground text-sm"
+          role="status"
+          data-database-state="loading"
+          data-testid="database-view-loading"
+        >
+          <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" /> Loading linked view
         </div>
       ) : state.status === 'error' ? (
         <div
