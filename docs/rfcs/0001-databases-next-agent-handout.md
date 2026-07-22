@@ -54,6 +54,7 @@
 - Latest record-navigation changeset: `../../.changeset/database-record-navigation.md`
 - Latest record-actions changeset: `../../.changeset/database-record-actions.md`
 - Latest relation-links changeset: `../../.changeset/database-relation-links.md`
+- Latest record-state-safety changeset: `../../.changeset/database-record-state-safety.md`
 
 ## Objective and completion rule
 
@@ -91,7 +92,7 @@ the repository-wide check for final release readiness.
   catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
   approval-bound commits, undo, and restart/backup idempotency. Agent View
   policy/privacy/sandbox review remains Partial by design.
-- Notion UX alignment checklist: **75/128 complete**. The page-first and normal
+- Notion UX alignment checklist: **76/128 complete**. The page-first and normal
   New-page creation slices, the inline/linked insertion contract, and the
   table-first direct-manipulation, named canonical workspace canvas-route,
   shared navigation without a duplicate canvas rail, sidebar/recent/search/
@@ -113,7 +114,8 @@ the repository-wide check for final release readiness.
   placement below properties, and record-page comments/history/permissions/
   appearance/layout affordances, previous/next active-view navigation, and
   row/page mutation menu parity for duplicate/archive/restore/move/delete, and
-  direct Relation property links to canonical record pages are
+  direct Relation property links to canonical record pages, and safe record
+  deep-link/reload/missing/archived/permission states are
   now
   evidenced. A
   2026-07-23 in-app browser capture reached the IPv4 renderer at
@@ -542,9 +544,18 @@ do not reconstruct behavior solely from this summary.
   returns to the existing Relation editor. Focused chrome evidence passes 4
   tests / 68 expectations; the relation dialog passes 1 / 2. App typecheck and
   targeted Biome checks pass.
+- Canonical record pages now preload the permission-filtered record projection
+  so archived state and access failures are known before actions render. A 404
+  shows an explicit missing state with a safe Back to database view action; a
+  403 shows a non-retryable permission state and both states hide the editable
+  body/property/action surface. Archived pages retain identity and expose
+  Restore. Focused chrome evidence passes 7 tests / 77 expectations; matching
+  table missing/permission/archive journeys pass 3 / 16, and the canonical
+  database reload/back-forward journey passes 1 / 10. App typecheck and
+  targeted Biome checks pass.
 - UX-501 through UX-510, UX-601, UX-602, UX-603, UX-604, UX-605, UX-606,
   UX-607, UX-608, UX-609, UX-610, UX-701, UX-702, UX-703, UX-704, UX-705,
-  UX-706, UX-707, UX-708, and UX-709
+  UX-706, UX-707, UX-708, UX-709, and UX-710
   are checked at the functional
   implementation/evidence layer. Visual and broader property-family gates
   remain open.
@@ -558,7 +569,7 @@ do not reconstruct behavior solely from this summary.
   catalog-backed database under `Recently opened`, reopening the same stable
   route. Focused evidence: sidebar 3 tests / 7 expectations and recent UI 1 / 5.
 - UX-203, UX-204, UX-206, UX-209, UX-309, UX-501, UX-502, UX-503, UX-504,
-  UX-505, UX-506, UX-507, UX-508, UX-509, UX-510, UX-601, UX-602, UX-603, UX-604, UX-605, UX-606, UX-607, UX-608, UX-609, UX-610, UX-701, UX-702, UX-703, UX-704, UX-705, UX-706, UX-707, UX-708, and UX-709 are checked. The 768px visual responsive check remains
+  UX-505, UX-506, UX-507, UX-508, UX-509, UX-510, UX-601, UX-602, UX-603, UX-604, UX-605, UX-606, UX-607, UX-608, UX-609, UX-610, UX-701, UX-702, UX-703, UX-704, UX-705, UX-706, UX-707, UX-708, UX-709, and UX-710 are checked. The 768px visual responsive check remains
   open.
 
 ### 2026-07-23 stable inline/full-page conversion
