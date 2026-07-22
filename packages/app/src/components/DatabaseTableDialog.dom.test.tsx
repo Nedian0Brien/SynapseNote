@@ -3395,6 +3395,23 @@ describe('DatabaseTableDialog', () => {
     expect(tableScroll?.className).toContain('overflow-auto');
     const viewTabs = screen.getByRole('navigation', { name: 'Database views' });
     expect(viewTabs.className).toContain('overflow-x-auto');
+    const pageBack = screen.getByTestId('database-page-back');
+    const pageTitle = screen.getByTestId('database-page-title-value');
+    const allRecordsTab = screen.getByRole('tab', { name: 'All records' });
+    const filtersButton = screen.getByRole('button', { name: 'Filters', exact: true });
+    const newRecordButton = screen.getByRole('button', { name: 'New record', exact: true });
+    const titleHeader = screen.getByRole('columnheader', { name: /Title/ });
+    const firstCell = screen.getByRole('gridcell', { name: /First task/ });
+    const loadMore = screen.getByRole('button', { name: 'Load more records' });
+    const assertOrder = (first: Node, second: Node) =>
+      expect(first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    assertOrder(pageBack, pageTitle);
+    assertOrder(pageTitle, allRecordsTab);
+    assertOrder(allRecordsTab, filtersButton);
+    assertOrder(filtersButton, newRecordButton);
+    assertOrder(newRecordButton, titleHeader);
+    assertOrder(titleHeader, firstCell);
+    assertOrder(firstCell, loadMore);
     expect(
       document.querySelector('[data-database-page-chrome]')?.firstElementChild?.className,
     ).toContain('flex-wrap');
