@@ -79,6 +79,63 @@ export function DatabaseViewManagerDialog({
   );
   const [deleteViewId, setDeleteViewId] = useState<string | null>(null);
 
+  const newViewLayoutSuggestion = (() => {
+    switch (newViewLayout) {
+      case 'board': {
+        const property = defaultDatabaseBoardGroupProperty(source);
+        return property
+          ? `Groups cards by ${property.name}.`
+          : 'Choose a Status, Select, Relation, Person, or Checkbox property first.';
+      }
+      case 'timeline': {
+        const property = defaultDatabaseTimelineDateProperty(source);
+        return property
+          ? `Maps the timeline to ${property.name}.`
+          : 'Add a Date property to enable Timeline.';
+      }
+      case 'calendar': {
+        const property = defaultDatabaseTimelineDateProperty(source);
+        return property
+          ? `Places records on ${property.name}.`
+          : 'Add a Date property to enable Calendar.';
+      }
+      case 'gallery': {
+        const property = source.properties.find((candidate) => candidate.type === 'files');
+        return property
+          ? `Uses ${property.name} as the card preview.`
+          : 'Cards start with titles; add Files later for image previews.';
+      }
+      case 'chart': {
+        const property = defaultDatabaseChartDimensionProperty(source);
+        return property
+          ? `Starts with ${property.name} as the chart dimension.`
+          : 'Add a chartable property to enable Chart.';
+      }
+      case 'map': {
+        const property = defaultDatabaseMapPlaceProperty(source);
+        return property ? `Maps ${property.name} values.` : 'Add a Place property to enable Map.';
+      }
+      case 'feed': {
+        const property = defaultDatabaseFeedChronologyProperty(source);
+        return property
+          ? `Orders entries by ${property.name}.`
+          : 'Add a date or edit-time property to enable Feed.';
+      }
+      case 'dashboard': {
+        const count = defaultDatabaseDashboardWidgetViews(source, views).length;
+        return count > 0
+          ? `Starts with ${count} existing view${count === 1 ? '' : 's'} as widget candidates.`
+          : 'Create another saved view to enable Dashboard widgets.';
+      }
+      case 'form':
+        return 'Starts with the Title property as the required question.';
+      case 'list':
+        return 'Shows source properties in a compact list; refine projection later.';
+      default:
+        return 'Shows source properties in a table; refine projection later.';
+    }
+  })();
+
   useEffect(() => {
     setNames((current) => {
       const next = Object.fromEntries(
@@ -129,158 +186,169 @@ export function DatabaseViewManagerDialog({
           </DialogDescription>
         </DialogHeader>
         <DialogBody className="space-y-4">
-          <div className="flex flex-wrap gap-2">
-            <Input
-              value={newViewName}
-              maxLength={200}
-              aria-label="New saved view name"
-              placeholder="New saved view"
-              onChange={(event) => setNewViewName(event.currentTarget.value)}
-            />
-            <Select
-              value={newViewLayout}
-              onValueChange={(value) => setNewViewLayout(value as typeof newViewLayout)}
-            >
-              <SelectTrigger className="w-32" aria-label="New saved view layout">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="table">Table</SelectItem>
-                <SelectItem value="board" disabled={!defaultDatabaseBoardGroupProperty(source)}>
-                  Board
-                </SelectItem>
-                <SelectItem
-                  value="timeline"
-                  disabled={!defaultDatabaseTimelineDateProperty(source)}
-                >
-                  Timeline
-                </SelectItem>
-                <SelectItem
-                  value="calendar"
-                  disabled={!defaultDatabaseTimelineDateProperty(source)}
-                >
-                  Calendar
-                </SelectItem>
-                <SelectItem value="list">List</SelectItem>
-                <SelectItem value="gallery">Gallery</SelectItem>
-                <SelectItem value="chart" disabled={!defaultDatabaseChartDimensionProperty(source)}>
-                  Chart
-                </SelectItem>
-                <SelectItem value="form">Form</SelectItem>
-                <SelectItem value="map" disabled={!defaultDatabaseMapPlaceProperty(source)}>
-                  Map
-                </SelectItem>
-                <SelectItem
-                  value="dashboard"
-                  disabled={defaultDatabaseDashboardWidgetViews(source, views).length === 0}
-                >
-                  Dashboard
-                </SelectItem>
-                <SelectItem value="feed" disabled={!defaultDatabaseFeedChronologyProperty(source)}>
-                  Feed
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            <Button
-              type="button"
-              disabled={
-                busy ||
-                newViewName.trim().length === 0 ||
-                (newViewLayout === 'board' && !defaultDatabaseBoardGroupProperty(source)) ||
-                (newViewLayout === 'timeline' && !defaultDatabaseTimelineDateProperty(source)) ||
-                (newViewLayout === 'calendar' && !defaultDatabaseTimelineDateProperty(source)) ||
-                (newViewLayout === 'chart' && !defaultDatabaseChartDimensionProperty(source)) ||
-                (newViewLayout === 'map' && !defaultDatabaseMapPlaceProperty(source)) ||
-                (newViewLayout === 'feed' && !defaultDatabaseFeedChronologyProperty(source)) ||
-                (newViewLayout === 'dashboard' &&
-                  defaultDatabaseDashboardWidgetViews(source, views).length === 0)
-              }
-              onClick={() => {
-                onChange({
-                  kind: 'create',
-                  view:
-                    newViewLayout === 'board'
-                      ? createDefaultDatabaseBoardView({
-                          source,
-                          existingViews: views,
-                          name: newViewName.trim(),
-                          uuid: crypto.randomUUID(),
-                        })
-                      : newViewLayout === 'timeline'
-                        ? createDefaultDatabaseTimelineView({
+          <div className="space-y-2">
+            <div className="flex flex-wrap gap-2">
+              <Input
+                value={newViewName}
+                maxLength={200}
+                aria-label="New saved view name"
+                placeholder="New saved view"
+                onChange={(event) => setNewViewName(event.currentTarget.value)}
+              />
+              <Select
+                value={newViewLayout}
+                onValueChange={(value) => setNewViewLayout(value as typeof newViewLayout)}
+              >
+                <SelectTrigger className="w-32" aria-label="New saved view layout">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="table">Table</SelectItem>
+                  <SelectItem value="board" disabled={!defaultDatabaseBoardGroupProperty(source)}>
+                    Board
+                  </SelectItem>
+                  <SelectItem
+                    value="timeline"
+                    disabled={!defaultDatabaseTimelineDateProperty(source)}
+                  >
+                    Timeline
+                  </SelectItem>
+                  <SelectItem
+                    value="calendar"
+                    disabled={!defaultDatabaseTimelineDateProperty(source)}
+                  >
+                    Calendar
+                  </SelectItem>
+                  <SelectItem value="list">List</SelectItem>
+                  <SelectItem value="gallery">Gallery</SelectItem>
+                  <SelectItem
+                    value="chart"
+                    disabled={!defaultDatabaseChartDimensionProperty(source)}
+                  >
+                    Chart
+                  </SelectItem>
+                  <SelectItem value="form">Form</SelectItem>
+                  <SelectItem value="map" disabled={!defaultDatabaseMapPlaceProperty(source)}>
+                    Map
+                  </SelectItem>
+                  <SelectItem
+                    value="dashboard"
+                    disabled={defaultDatabaseDashboardWidgetViews(source, views).length === 0}
+                  >
+                    Dashboard
+                  </SelectItem>
+                  <SelectItem
+                    value="feed"
+                    disabled={!defaultDatabaseFeedChronologyProperty(source)}
+                  >
+                    Feed
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                type="button"
+                disabled={
+                  busy ||
+                  newViewName.trim().length === 0 ||
+                  (newViewLayout === 'board' && !defaultDatabaseBoardGroupProperty(source)) ||
+                  (newViewLayout === 'timeline' && !defaultDatabaseTimelineDateProperty(source)) ||
+                  (newViewLayout === 'calendar' && !defaultDatabaseTimelineDateProperty(source)) ||
+                  (newViewLayout === 'chart' && !defaultDatabaseChartDimensionProperty(source)) ||
+                  (newViewLayout === 'map' && !defaultDatabaseMapPlaceProperty(source)) ||
+                  (newViewLayout === 'feed' && !defaultDatabaseFeedChronologyProperty(source)) ||
+                  (newViewLayout === 'dashboard' &&
+                    defaultDatabaseDashboardWidgetViews(source, views).length === 0)
+                }
+                onClick={() => {
+                  onChange({
+                    kind: 'create',
+                    view:
+                      newViewLayout === 'board'
+                        ? createDefaultDatabaseBoardView({
                             source,
                             existingViews: views,
                             name: newViewName.trim(),
                             uuid: crypto.randomUUID(),
                           })
-                        : newViewLayout === 'calendar'
-                          ? createDefaultDatabaseCalendarView({
+                        : newViewLayout === 'timeline'
+                          ? createDefaultDatabaseTimelineView({
                               source,
                               existingViews: views,
                               name: newViewName.trim(),
                               uuid: crypto.randomUUID(),
                             })
-                          : newViewLayout === 'list'
-                            ? createDefaultDatabaseListView({
+                          : newViewLayout === 'calendar'
+                            ? createDefaultDatabaseCalendarView({
                                 source,
                                 existingViews: views,
                                 name: newViewName.trim(),
                                 uuid: crypto.randomUUID(),
                               })
-                            : newViewLayout === 'gallery'
-                              ? createDefaultDatabaseGalleryView({
+                            : newViewLayout === 'list'
+                              ? createDefaultDatabaseListView({
                                   source,
                                   existingViews: views,
                                   name: newViewName.trim(),
                                   uuid: crypto.randomUUID(),
                                 })
-                              : newViewLayout === 'chart'
-                                ? createDefaultDatabaseChartView({
+                              : newViewLayout === 'gallery'
+                                ? createDefaultDatabaseGalleryView({
                                     source,
                                     existingViews: views,
                                     name: newViewName.trim(),
                                     uuid: crypto.randomUUID(),
                                   })
-                                : newViewLayout === 'form'
-                                  ? createDefaultDatabaseFormView({
+                                : newViewLayout === 'chart'
+                                  ? createDefaultDatabaseChartView({
                                       source,
                                       existingViews: views,
                                       name: newViewName.trim(),
                                       uuid: crypto.randomUUID(),
                                     })
-                                  : newViewLayout === 'map'
-                                    ? createDefaultDatabaseMapView({
+                                  : newViewLayout === 'form'
+                                    ? createDefaultDatabaseFormView({
                                         source,
                                         existingViews: views,
                                         name: newViewName.trim(),
                                         uuid: crypto.randomUUID(),
                                       })
-                                    : newViewLayout === 'dashboard'
-                                      ? createDefaultDatabaseDashboardView({
+                                    : newViewLayout === 'map'
+                                      ? createDefaultDatabaseMapView({
                                           source,
                                           existingViews: views,
                                           name: newViewName.trim(),
                                           uuid: crypto.randomUUID(),
                                         })
-                                      : newViewLayout === 'feed'
-                                        ? createDefaultDatabaseFeedView({
+                                      : newViewLayout === 'dashboard'
+                                        ? createDefaultDatabaseDashboardView({
                                             source,
                                             existingViews: views,
                                             name: newViewName.trim(),
                                             uuid: crypto.randomUUID(),
                                           })
-                                        : createDefaultDatabaseTableView({
-                                            source,
-                                            existingViews: views,
-                                            name: newViewName.trim(),
-                                            uuid: crypto.randomUUID(),
-                                          }),
-                });
-                setNewViewName('');
-              }}
-            >
-              <Plus /> <Trans>Review create</Trans>
-            </Button>
+                                        : newViewLayout === 'feed'
+                                          ? createDefaultDatabaseFeedView({
+                                              source,
+                                              existingViews: views,
+                                              name: newViewName.trim(),
+                                              uuid: crypto.randomUUID(),
+                                            })
+                                          : createDefaultDatabaseTableView({
+                                              source,
+                                              existingViews: views,
+                                              name: newViewName.trim(),
+                                              uuid: crypto.randomUUID(),
+                                            }),
+                  });
+                  setNewViewName('');
+                }}
+              >
+                <Plus /> <Trans>Review create</Trans>
+              </Button>
+            </div>
+            <p className="text-muted-foreground text-xs" data-testid="new-view-layout-suggestion">
+              <Trans>Suggested starter:</Trans> {newViewLayoutSuggestion}
+            </p>
           </div>
 
           <section className="space-y-2" aria-label="Saved views">

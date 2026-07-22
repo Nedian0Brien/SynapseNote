@@ -431,6 +431,7 @@ describe('DatabaseViewManagerDialog', () => {
     });
     fireEvent.click(screen.getByRole('combobox', { name: 'New saved view layout' }));
     fireEvent.click(await screen.findByRole('option', { name: 'Board' }));
+    expect(screen.getByTestId('new-view-layout-suggestion').textContent).toContain('Workflow');
     fireEvent.click(screen.getByRole('button', { name: 'Review create' }));
     expect(onChange).toHaveBeenCalledWith(
       expect.objectContaining({
