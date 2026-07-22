@@ -2432,15 +2432,27 @@ describe('DatabaseTableDialog', () => {
     expect(
       screen.getByRole('grid', { name: 'Tasks database records' }).getAttribute('aria-colcount'),
     ).toBe('8');
+    expect(
+      screen
+        .getByRole('grid', { name: 'Tasks database records' })
+        .getAttribute('aria-multiselectable'),
+    ).toBe('true');
     expect(titleCell.getAttribute('role')).toBe('gridcell');
     expect(titleCell.getAttribute('tabindex')).toBe('0');
+    expect(titleCell.className).toContain('focus-visible:outline');
     expect(budgetCell.getAttribute('tabindex')).toBe('-1');
 
     act(() => titleCell.focus());
+    expect(screen.getByTestId('database-grid-announcement').textContent).toContain(
+      'Row 1, Title. 1 cell selected.',
+    );
     fireEvent.keyDown(titleCell, { key: 'ArrowRight' });
     expect(document.activeElement).toBe(budgetCell);
     expect(titleCell.getAttribute('tabindex')).toBe('-1');
     expect(budgetCell.getAttribute('tabindex')).toBe('0');
+    expect(screen.getByTestId('database-grid-announcement').textContent).toContain(
+      'Row 1, Budget. 1 cell selected.',
+    );
 
     let copied = '';
     fireEvent.copy(titleCell, {
@@ -2511,6 +2523,7 @@ describe('DatabaseTableDialog', () => {
     if (!titleCell) throw new Error('expected title cell');
 
     fireEvent.click(screen.getByLabelText('Edit Title for record rec_first'));
+    expect(screen.getByTestId('database-grid-announcement').textContent).toContain('Editing Title');
     const input = screen.getByRole('textbox', { name: 'Edit Title' });
     fireEvent.change(input, { target: { value: 'Committed task' } });
     fireEvent.keyDown(input, { key: 'Enter' });
@@ -2605,6 +2618,9 @@ describe('DatabaseTableDialog', () => {
     fireEvent.keyDown(firstTitle, { key: 'ArrowRight', shiftKey: true });
     fireEvent.keyDown(firstBudget, { key: 'ArrowDown', shiftKey: true });
     expect(view.container.querySelectorAll('[data-database-cell-selected="true"]')).toHaveLength(4);
+    expect(screen.getByTestId('database-grid-announcement').textContent).toContain(
+      '4 cells selected',
+    );
 
     let dragged = '';
     const transfer = {

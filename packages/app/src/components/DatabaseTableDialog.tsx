@@ -1075,6 +1075,7 @@ export function DatabaseTable({
   const remotePresence = useRemoteDatabasePresence();
   const [editError, setEditError] = useState<string | null>(null);
   const [cellRange, setCellRange] = useState<DatabaseCellRange | null>(null);
+  const [gridAnnouncement, setGridAnnouncement] = useState('');
   const [cellMenu, setCellMenu] = useState<DatabaseCellMenu | null>(null);
   const [scrollTop, setScrollTop] = useState(initialViewState?.scrollTop ?? 0);
   const [viewportHeight, setViewportHeight] = useState(620);
@@ -1094,6 +1095,25 @@ export function DatabaseTable({
     viewStateRef.current = next;
     onViewStateChange?.(next);
   };
+
+  useEffect(() => {
+    if (editing) {
+      const property = properties.find((candidate) => candidate.id === editing.propertyId);
+      setGridAnnouncement(
+        `Editing ${property?.name ?? 'cell'}. Press Enter to save or Escape to cancel.`,
+      );
+      return;
+    }
+    if (!cellRange) return;
+    const normalized = normalizedCellRange(cellRange);
+    const selectedCount =
+      (normalized.rowEnd - normalized.rowStart + 1) *
+      (normalized.columnEnd - normalized.columnStart + 1);
+    const property = properties[cellRange.focusColumn];
+    setGridAnnouncement(
+      `Row ${cellRange.focusRow + 1}, ${property?.name ?? `Column ${cellRange.focusColumn + 1}`}. ${selectedCount} cell${selectedCount === 1 ? '' : 's'} selected.`,
+    );
+  }, [cellRange, editing, properties]);
 
   useEffect(() => {
     if (!initialViewState || restoredViewStateRef.current) return;
@@ -1201,6 +1221,7 @@ export function DatabaseTable({
           ? initialCellDraft(property, current)
           : invalidExternalValueText(invalid),
     });
+    setGridAnnouncement(`Editing ${property.name}. Press Enter to save or Escape to cancel.`);
   };
 
   const rememberEditFocus = (record: ProjectedDatabaseRecord, property: DatabaseProperty) => {
@@ -1211,6 +1232,7 @@ export function DatabaseTable({
     rememberEditFocus(record, property);
     setEditing(null);
     setEditError(null);
+    setGridAnnouncement(`Edit cancelled for ${property.name}.`);
   };
 
   const saveEdit = (record: ProjectedDatabaseRecord, property: DatabaseProperty) => {
@@ -1221,6 +1243,7 @@ export function DatabaseTable({
       setEditing(null);
       setEditError(null);
       onEdit?.(record, property, value);
+      setGridAnnouncement(`Edit saved for ${property.name}.`);
     } catch (cause) {
       setEditError(errorMessage(cause, 'Invalid cell value'));
     }
@@ -1259,12 +1282,20 @@ export function DatabaseTable({
     ) {
       return;
     }
-    setCellRange((current) => ({
-      anchorRow: extend && current ? current.anchorRow : rowIndex,
-      anchorColumn: extend && current ? current.anchorColumn : columnIndex,
+    const nextRange = {
+      anchorRow: extend && cellRange ? cellRange.anchorRow : rowIndex,
+      anchorColumn: extend && cellRange ? cellRange.anchorColumn : columnIndex,
       focusRow: rowIndex,
       focusColumn: columnIndex,
-    }));
+    };
+    setCellRange(nextRange);
+    const normalized = normalizedCellRange(nextRange);
+    const selectedCount =
+      (normalized.rowEnd - normalized.rowStart + 1) *
+      (normalized.columnEnd - normalized.columnStart + 1);
+    setGridAnnouncement(
+      `Row ${rowIndex + 1}, ${properties[columnIndex]?.name ?? `Column ${columnIndex + 1}`}. ${selectedCount} cell${selectedCount === 1 ? '' : 's'} selected.`,
+    );
     const focusRenderedCell = () =>
       tableHostRef.current
         ?.querySelector<HTMLElement>(
@@ -1486,6 +1517,15 @@ export function DatabaseTable({
           </div>
         </div>
       </details>
+      <p
+        className="sr-only"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        data-testid="database-grid-announcement"
+      >
+        {gridAnnouncement}
+      </p>
       {editError ? (
         <div
           className="mb-2 text-destructive text-xs"
@@ -1522,6 +1562,7 @@ export function DatabaseTable({
       <Table
         role="grid"
         aria-label={`${source.name} database records`}
+        aria-multiselectable="true"
         aria-rowcount={tableRecords.length + 1}
         aria-colcount={properties.length + 2}
         className={cn(
@@ -1977,6 +2018,7 @@ export function DatabaseTable({
                             DATABASE_CONDITIONAL_COLOR_CLASSES[effectiveColorRule.color],
                           cellIsInRange(cellRange, rowIndex, index) &&
                             'outline -outline-offset-2 outline-2 outline-primary/70',
+                          'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring',
                           proposed &&
                             'border-primary/40 border-x border-dashed bg-primary/5 text-primary',
                           invalidValue !== undefined && 'bg-destructive/5 text-destructive',
@@ -2022,6 +2064,18 @@ export function DatabaseTable({
                         }
                         onFocus={() => {
                           setEditError(null);
+                          const selectedCount = cellRange
+                            ? (() => {
+                                const normalized = normalizedCellRange(cellRange);
+                                return (
+                                  (normalized.rowEnd - normalized.rowStart + 1) *
+                                  (normalized.columnEnd - normalized.columnStart + 1)
+                                );
+                              })()
+                            : 1;
+                          setGridAnnouncement(
+                            `Row ${rowIndex + 1}, ${property.name}. ${selectedCount} cell${selectedCount === 1 ? '' : 's'} selected.`,
+                          );
                           updateViewState({
                             focusedCell: { recordId: record.id, propertyId: property.id },
                           });
@@ -2037,12 +2091,21 @@ export function DatabaseTable({
                         }}
                         onClick={(event) => {
                           setCellMenu(null);
-                          setCellRange((current) => ({
-                            anchorRow: event.shiftKey && current ? current.anchorRow : rowIndex,
-                            anchorColumn: event.shiftKey && current ? current.anchorColumn : index,
+                          const next = {
+                            anchorRow: event.shiftKey && cellRange ? cellRange.anchorRow : rowIndex,
+                            anchorColumn:
+                              event.shiftKey && cellRange ? cellRange.anchorColumn : index,
                             focusRow: rowIndex,
                             focusColumn: index,
-                          }));
+                          };
+                          const normalized = normalizedCellRange(next);
+                          const selectedCount =
+                            (normalized.rowEnd - normalized.rowStart + 1) *
+                            (normalized.columnEnd - normalized.columnStart + 1);
+                          setCellRange(next);
+                          setGridAnnouncement(
+                            `Row ${rowIndex + 1}, ${property.name}. ${selectedCount} cell${selectedCount === 1 ? '' : 's'} selected.`,
+                          );
                         }}
                         onContextMenu={(event) => {
                           event.preventDefault();
