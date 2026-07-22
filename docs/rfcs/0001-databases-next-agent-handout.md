@@ -22,6 +22,7 @@
 - Latest alternative-view context changeset: `../../.changeset/inline-context-alt-views.md`
 - Latest list/gallery/feed context changeset: `../../.changeset/inline-context-list-gallery-feed.md`
 - Latest chart/map context changeset: `../../.changeset/inline-context-chart-map.md`
+- Latest creation-review summary changeset: `../../.changeset/database-creation-review-summary.md`
 
 ## Objective and completion rule
 
@@ -736,6 +737,24 @@ do not reconstruct behavior solely from this summary.
   E2E rerun was needed.
 - Follow-up: visual-check marker/button density and chart drill-through spacing
   in browser/Electron before closing the remaining NUI-601/NUI-702 gates.
+
+### 2026-07-22 database creation review summary slice
+
+- The creation ghost review now leads with a human-readable summary such as
+  `Create 1 database manifest`, a compact scope/risk line, and the same
+  collapsed Plan/Plan hash/Snapshot details used by record ghost review.
+  `Commit creation` remains the only approval action; this does not add a
+  partial or selective commit path.
+- The shared human-summary formatter now names manifest actions as Create,
+  Update, or Delete and pluralizes template/manifest counts for progressive
+  disclosure without exposing raw IDs in the primary sentence.
+- Focused evidence: the existing folder-creation review journey passes with
+  the new summary assertions (1 test / 7 expectations); app typecheck,
+  targeted Biome, and `git diff --check` pass. The complete
+  `DatabaseTableDialog.dom.test.tsx` suite was not rerun after this small UI
+  change; no server suite or E2E rerun was needed.
+- Follow-up: keep NUI-602 open until selective approval is backed by an
+  atomic-safety proof and Agent Runs can explain/resume the same receipt.
 
 ### 2026-07-22 inline filter handoff slice
 

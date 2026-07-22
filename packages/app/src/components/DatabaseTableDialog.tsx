@@ -762,8 +762,12 @@ function databasePlanHumanSummary(diff: DatabaseGhostState['diff']): string {
     ([action, count]) => `${labels[action]} ${count} record${count === 1 ? '' : 's'}`,
   );
   const fileSummary = [
-    diff.manifests.length > 0 ? `${diff.manifests.length} database manifest` : null,
-    diff.templates.length > 0 ? `${diff.templates.length} template` : null,
+    diff.manifests.length > 0
+      ? `${diff.manifests[0]?.action === 'create' ? 'Create' : diff.manifests[0]?.action === 'delete' ? 'Delete' : 'Update'} ${diff.manifests.length} database manifest${diff.manifests.length === 1 ? '' : 's'}`
+      : null,
+    diff.templates.length > 0
+      ? `${diff.templates.length} template${diff.templates.length === 1 ? '' : 's'}`
+      : null,
   ].filter((value): value is string => value !== null);
   return [...recordSummary, ...fileSummary].join(' · ') || 'No canonical file changes';
 }
@@ -4846,6 +4850,36 @@ export function DatabaseTableDialog({
                     {ghost.diff.manifests.length} manifest · {ghost.diff.records.length} records ·{' '}
                     <Trans>review the exact plan before canonical creation</Trans>
                   </p>
+                  <p
+                    className="mt-1 font-medium text-xs"
+                    data-testid="database-creation-human-plan-summary"
+                  >
+                    {databasePlanHumanSummary(ghost.diff)}
+                  </p>
+                  <p className="mt-1 text-muted-foreground text-xs">
+                    Scope: {ghost.diff.manifests.length} manifest(s), {ghost.diff.records.length}{' '}
+                    record file(s), {ghost.diff.templates.length} template file(s) · risk{' '}
+                    {ghost.risk.level}
+                  </p>
+                  <details className="mt-2 rounded border bg-background/60 px-2 py-1 text-xs">
+                    <summary className="cursor-pointer font-medium">
+                      <Trans>Exact plan details</Trans>
+                    </summary>
+                    <dl className="mt-2 grid gap-1 font-mono text-[11px]">
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-muted-foreground">Plan</dt>
+                        <dd className="break-all text-right">{ghost.planId}</dd>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-muted-foreground">Plan hash</dt>
+                        <dd className="break-all text-right">{ghost.planHash}</dd>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-muted-foreground">Snapshot</dt>
+                        <dd className="break-all text-right">{ghost.snapshotRevision}</dd>
+                      </div>
+                    </dl>
+                  </details>
                 </div>
                 {mutationStatus === 'review' ? (
                   <div className="flex gap-2">

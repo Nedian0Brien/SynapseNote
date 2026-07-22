@@ -36,7 +36,8 @@ largest remaining mismatches are:
    navigation continuity are implemented; cross-reload cache semantics and the
    complete visual state matrix remain open.
 5. Agent context inspection is scoped and token-aware, and ghost plans lead
-   with human summaries. Selective approval, independent Agent Runs
+   with human summaries. Database creation review now uses the same progressive
+   summary/exact-plan disclosure. Selective approval, independent Agent Runs
    inspect/undo/retry/resume, and real model/agent replay remain unverified.
 6. Component coverage is broad, but a complete first-use journey is still not
    evidenced across both hosts. The local web renderer/API setup currently has
@@ -402,9 +403,12 @@ treated as visual parity until a browser capture is attached.
   receipts under progressive disclosure; support selective approval only when
   atomic safety is preserved. Ghost review now leads with a human-readable
   action summary and keeps plan ID/hash/snapshot in collapsed exact details;
-  selective approval and full Agent Runs handoff remain open. Evidence:
-  `DatabaseTableDialog.dom.test.tsx` discardable-ghost journey. Map to
-  UX-904–UX-907.
+  database creation review now exposes the same summary, scope/risk line, and
+  collapsed exact-plan details before `Commit creation`. Selective approval and
+  full Agent Runs handoff remain open. Evidence:
+  `DatabaseTableDialog.dom.test.tsx` discardable-ghost journey plus the focused
+  `opens read-only folder onboarding only after the manifest creation commits`
+  journey (1 test / 7 expectations). Map to UX-904–UX-907.
 - [ ] **NUI-603** Keep Agent Runs inspect/undo/retry/resume independent from
   the current view and preserve the public MCP/HTTP contracts. Map to
   UX-908/UX-910.

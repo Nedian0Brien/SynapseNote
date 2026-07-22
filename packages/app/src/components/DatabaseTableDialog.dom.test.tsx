@@ -3437,6 +3437,10 @@ describe('DatabaseTableDialog', () => {
     });
     fireEvent.click(screen.getByText('Review creation'));
     await screen.findByTestId('database-creation-ghost-review');
+    expect(screen.getByTestId('database-creation-human-plan-summary').textContent).toContain(
+      'Create 1 database manifest',
+    );
+    expect(screen.getByText('Exact plan details')).toBeTruthy();
     expect(previewCalls).toBe(0);
 
     fireEvent.click(screen.getByText('Commit creation'));
