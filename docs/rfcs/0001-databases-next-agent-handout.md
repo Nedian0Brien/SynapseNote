@@ -23,6 +23,7 @@
 - Latest list/gallery/feed context changeset: `../../.changeset/inline-context-list-gallery-feed.md`
 - Latest chart/map context changeset: `../../.changeset/inline-context-chart-map.md`
 - Latest creation-review summary changeset: `../../.changeset/database-creation-review-summary.md`
+- Latest Agent Run inspection changeset: `../../.changeset/agent-run-progressive-inspection.md`
 
 ## Objective and completion rule
 
@@ -755,6 +756,21 @@ do not reconstruct behavior solely from this summary.
   change; no server suite or E2E rerun was needed.
 - Follow-up: keep NUI-602 open until selective approval is backed by an
   atomic-safety proof and Agent Runs can explain/resume the same receipt.
+
+### 2026-07-22 Agent Run progressive inspection slice
+
+- Agent Run details now show a compact scope summary (`databases · sources ·
+  properties · views · records`) and an exact-diff byte summary before the raw
+  scope/proposed-diff JSON. The JSON remains available in collapsed details for
+  debugging and audit, but it no longer dominates the first inspection view.
+- Existing undo preview/apply behavior and the owner-only `/api/databases/runs`
+  contract are unchanged; this is a presentation-only reduction in token and
+  scanning cost.
+- Focused evidence: `DatabaseAgentRunsDialog.dom.test.tsx` passes 3 tests / 14
+  expectations; app typecheck, targeted Biome, and `git diff --check` pass. No
+  server suite or E2E rerun was needed.
+- Follow-up: NUI-603 remains open for retry/resume and independent receipt
+  handoff; this slice only improves inspectability.
 
 ### 2026-07-22 inline filter handoff slice
 

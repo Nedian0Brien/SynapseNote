@@ -410,7 +410,11 @@ treated as visual parity until a browser capture is attached.
   `opens read-only folder onboarding only after the manifest creation commits`
   journey (1 test / 7 expectations). Map to UX-904–UX-907.
 - [ ] **NUI-603** Keep Agent Runs inspect/undo/retry/resume independent from
-  the current view and preserve the public MCP/HTTP contracts. Map to
+  the current view and preserve the public MCP/HTTP contracts. Agent Run
+  inspection now leads with compact scope and proposed-diff summaries and keeps
+  raw scope/diff JSON behind progressive disclosure; retry/resume independence
+  and full receipt handoff remain open. Evidence:
+  `DatabaseAgentRunsDialog.dom.test.tsx` (3 tests / 14 expectations). Map to
   UX-908/UX-910.
 
 ## P2 — Evidence and release gates

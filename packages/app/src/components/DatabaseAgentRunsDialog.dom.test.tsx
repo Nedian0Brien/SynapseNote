@@ -94,6 +94,14 @@ describe('DatabaseAgentRunsDialog DOM behavior', () => {
 
     expect(await screen.findByText('Update the incident status')).not.toBeNull();
     expect(await screen.findByText('undo_dom.secret')).not.toBeNull();
+    expect(screen.getByTestId('database-agent-run-scope-summary').textContent).toContain(
+      '1 database · 1 source · 1 property · 0 views · 1 record',
+    );
+    expect(screen.getByTestId('database-agent-run-diff-summary').textContent).toContain(
+      'Exact diff captured · 50 bytes',
+    );
+    expect(screen.getByText('Show exact scope')).not.toBeNull();
+    expect(screen.getByText('Show proposed diff')).not.toBeNull();
     expect(screen.getAllByText(/rec_incident/).length).toBeGreaterThan(0);
     expect(screen.getByText(/mut_dom/)).not.toBeNull();
   });

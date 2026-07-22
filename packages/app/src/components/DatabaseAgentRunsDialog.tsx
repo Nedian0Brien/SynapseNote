@@ -97,6 +97,20 @@ function StateIcon({ state }: { state: DatabaseAgentRun['state'] }) {
   return <Clock3 className="size-4 text-amber-600" />;
 }
 
+function countLabel(count: number, singular: string): string {
+  return `${count} ${singular}${count === 1 ? '' : 's'}`;
+}
+
+function agentRunScopeSummary(scope: DatabaseAgentRun['scope']): string {
+  return [
+    countLabel(scope.databaseIds.length, 'database'),
+    countLabel(scope.sourceIds.length, 'source'),
+    countLabel(scope.propertyIds.length, 'property'),
+    countLabel(scope.viewIds.length, 'view'),
+    countLabel(scope.recordIds.length, 'record'),
+  ].join(' · ');
+}
+
 export function DatabaseAgentRunDetail({
   run,
   onUndone,
@@ -153,18 +167,42 @@ export function DatabaseAgentRunDetail({
         <h3 className="font-medium">
           <Trans>Scope</Trans>
         </h3>
-        <pre className="mt-2 max-h-36 overflow-auto rounded-md bg-muted p-3 text-xs">
-          {JSON.stringify(run.scope, null, 2)}
-        </pre>
+        <p
+          className="mt-1 font-medium text-muted-foreground text-sm"
+          data-testid="database-agent-run-scope-summary"
+        >
+          {agentRunScopeSummary(run.scope)}
+        </p>
+        <details className="mt-2 rounded-md border px-3 py-2 text-xs">
+          <summary className="cursor-pointer font-medium text-muted-foreground">
+            <Trans>Show exact scope</Trans>
+          </summary>
+          <pre className="mt-2 max-h-36 overflow-auto rounded-md bg-muted p-3">
+            {JSON.stringify(run.scope, null, 2)}
+          </pre>
+        </details>
       </section>
       <section>
         <h3 className="font-medium">
           <Trans>Proposed diff</Trans>
         </h3>
         {run.proposedDiff.complete ? (
-          <pre className="mt-2 max-h-64 overflow-auto rounded-md bg-muted p-3 text-xs">
-            {JSON.stringify(run.proposedDiff.value, null, 2)}
-          </pre>
+          <>
+            <p
+              className="mt-1 font-medium text-muted-foreground text-sm"
+              data-testid="database-agent-run-diff-summary"
+            >
+              Exact diff captured · {run.proposedDiff.originalBytes.toLocaleString()} bytes
+            </p>
+            <details className="mt-2 rounded-md border px-3 py-2 text-xs">
+              <summary className="cursor-pointer font-medium text-muted-foreground">
+                <Trans>Show proposed diff</Trans>
+              </summary>
+              <pre className="mt-2 max-h-64 overflow-auto rounded-md bg-muted p-3">
+                {JSON.stringify(run.proposedDiff.value, null, 2)}
+              </pre>
+            </details>
+          </>
         ) : (
           <p className="mt-1 text-muted-foreground text-sm">
             <Trans>The exact diff exceeded the local inspection limit.</Trans>{' '}
