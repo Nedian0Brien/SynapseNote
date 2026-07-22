@@ -1671,6 +1671,94 @@ describe('DatabaseTableDialog', () => {
     );
   });
 
+  test('uses typed scalar inputs for number, URL, email, and phone properties', () => {
+    const edits: unknown[] = [];
+    render(
+      <DatabaseTable
+        source={source as never}
+        result={{ ...queryResult(), isComplete: true, nextCursor: null } as never}
+        onEdit={(_record, _property, value) => edits.push(value)}
+      />,
+    );
+
+    for (const [propertyName, inputType] of [
+      ['Budget', 'number'],
+      ['URL', 'url'],
+      ['Email', 'email'],
+      ['Phone', 'tel'],
+    ] as const) {
+      fireEvent.click(screen.getByLabelText(`Edit ${propertyName} for record rec_first`));
+      expect((screen.getByLabelText(`Edit ${propertyName}`) as HTMLInputElement).type).toBe(
+        inputType,
+      );
+      fireEvent.keyDown(screen.getByLabelText(`Edit ${propertyName}`), { key: 'Escape' });
+    }
+    expect(edits).toEqual([]);
+  });
+
+  test('uses checkbox and multi-select editors for their structured values', () => {
+    const checkboxProperty = {
+      id: 'prop_complete',
+      key: 'complete',
+      name: 'Complete',
+      type: 'checkbox' as const,
+    };
+    const tagsProperty = {
+      id: 'prop_tags',
+      key: 'tags',
+      name: 'Tags',
+      type: 'multi_select' as const,
+      options: [
+        { id: 'opt_bug', key: 'bug', name: 'Bug' },
+        { id: 'opt_feature', key: 'feature', name: 'Feature' },
+      ],
+    };
+    const structuredSource = {
+      ...source,
+      properties: [source.properties[0], checkboxProperty, tagsProperty],
+    };
+    const edits: unknown[] = [];
+    render(
+      <DatabaseTable
+        source={structuredSource as never}
+        result={
+          {
+            ...queryResult(),
+            isComplete: true,
+            nextCursor: null,
+            records: [
+              {
+                id: 'rec_first',
+                path: 'tasks/first.md',
+                revision: hash,
+                values: {
+                  prop_title: 'First task',
+                  prop_complete: true,
+                  prop_tags: ['opt_bug'],
+                },
+              },
+            ],
+          } as never
+        }
+        onEdit={(_record, _property, value) => edits.push(value)}
+      />,
+    );
+
+    fireEvent.click(screen.getByLabelText('Edit Complete for record rec_first'));
+    const complete = screen.getByLabelText('Edit Complete') as HTMLButtonElement;
+    expect(complete.getAttribute('role')).toBe('checkbox');
+    expect(complete.getAttribute('data-state')).toBe('checked');
+    fireEvent.click(complete);
+    fireEvent.click(screen.getByLabelText('Save cell edit'));
+
+    fireEvent.click(screen.getByLabelText('Edit Tags for record rec_first'));
+    expect(screen.getByLabelText('Bug for Tags').getAttribute('data-state')).toBe('checked');
+    fireEvent.click(screen.getByLabelText('Feature for Tags'));
+    fireEvent.click(screen.getByLabelText('Save cell edit'));
+
+    expect(edits).toEqual([false, ['opt_bug', 'opt_feature']]);
+  });
+
   test('edits Person values across active, inactive, and agent identities', () => {
     const people = [
       {

@@ -2111,9 +2111,29 @@ export function DatabaseTable({
                                 autoFocus
                                 dir="auto"
                                 value={editing.draft}
-                                type={property.type === 'number' ? 'number' : 'text'}
+                                type={
+                                  property.type === 'number'
+                                    ? 'number'
+                                    : property.type === 'email'
+                                      ? 'email'
+                                      : property.type === 'phone'
+                                        ? 'tel'
+                                        : property.type === 'url'
+                                          ? 'url'
+                                          : 'text'
+                                }
                                 step={property.type === 'number' ? 'any' : undefined}
-                                inputMode={property.type === 'number' ? 'decimal' : undefined}
+                                inputMode={
+                                  property.type === 'number'
+                                    ? 'decimal'
+                                    : property.type === 'phone'
+                                      ? 'tel'
+                                      : property.type === 'email'
+                                        ? 'email'
+                                        : property.type === 'url'
+                                          ? 'url'
+                                          : undefined
+                                }
                                 aria-label={`Edit ${property.name}`}
                                 onChange={(event) =>
                                   setEditing({
