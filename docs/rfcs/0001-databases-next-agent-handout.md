@@ -61,6 +61,7 @@
 - Latest CSV-preview changeset: `../../.changeset/database-csv-preview.md`
 - Latest source-identity-migration changeset: `../../.changeset/database-source-identity-migration.md`
 - Latest agent-plan-preview changeset: `../../.changeset/database-agent-plan-preview.md`
+- Latest agent-plan-editing changeset: `../../.changeset/database-agent-plan-editing.md`
 
 ## Objective and completion rule
 
@@ -98,7 +99,7 @@ the repository-wide check for final release readiness.
   catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
   approval-bound commits, undo, and restart/backup idempotency. Agent View
   policy/privacy/sandbox review remains Partial by design.
-- Notion UX alignment checklist: **82/128 complete**. The page-first and normal
+- Notion UX alignment checklist: **83/128 complete**. The page-first and normal
   New-page creation slices, the inline/linked insertion contract, and the
   table-first direct-manipulation, named canonical workspace canvas-route,
   shared navigation without a duplicate canvas rail, sidebar/recent/search/
@@ -126,7 +127,7 @@ the repository-wide check for final release readiness.
   template view/property/sample-page previews, Blank-first/reset behavior, and
   bounded CSV/TSV import previews, and the dedicated existing-folder
   source-identity migration review, and the natural-language agent plan
-  preview without implicit advanced choices are
+  preview and editable proposal overrides without implicit advanced choices are
   now
   evidenced. A
   2026-07-23 in-app browser capture reached the IPv4 renderer at
@@ -567,7 +568,7 @@ do not reconstruct behavior solely from this summary.
 - UX-501 through UX-510, UX-601, UX-602, UX-603, UX-604, UX-605, UX-606,
   UX-607, UX-608, UX-609, UX-610, UX-701, UX-702, UX-703, UX-704, UX-705,
   UX-706, UX-707, UX-708, UX-709, UX-710, UX-801, UX-802, UX-803, UX-804, and
-  UX-805, and UX-806
+  UX-805, UX-806, and UX-807
   are checked at the functional
   implementation/evidence layer. Visual and broader property-family gates
   remain open.
@@ -587,9 +588,9 @@ do not reconstruct behavior solely from this summary.
   expectations (including the Assistant chooser and no-direct-commit guard),
   the existing resulting-page preview test passes 1 / 4, and the folder
   onboarding test passes 1 / 7. App typecheck and targeted Biome checks pass.
-- UX-801 is now checked at the functional start-surface layer. UX-802–UX-807
-  remain open for richer template/import previews, natural-language schema
-  generation/editing, and dedicated migration identity assignment.
+- UX-801 through UX-807 are now checked at the functional creation/agent
+  proposal layer. UX-808 remains open for proving every successful method lands
+  directly in the resulting page/block across hosts.
 
 ### 2026-07-23 Blank-first creation reset
 
@@ -642,15 +643,30 @@ do not reconstruct behavior solely from this summary.
   properties, Table/Board views, and optional sample pages. The proposal is
   visibly unsaved; it never writes a manifest or records and does not replace
   the installed-agent exact-plan handoff.
-- Focused evidence: `database-creation.test.ts` passes 9 tests / 60
-  expectations; `DatabaseAgentCreationPlanPreview.dom.test.tsx` passes 2 / 8;
-  `CreatePromptComposer.dom.test.tsx` passes 13 / 58; and
+- Focused evidence: `database-creation.test.ts` passes 9 tests / 63
+  expectations; `DatabaseAgentCreationPlanPreview.dom.test.tsx` passes 3 / 12;
+  `CreatePromptComposer.dom.test.tsx` passes 14 / 62; and
   `ComposerMentionInput.dom.test.tsx` passes 16 / 46 for the serialized prompt
   callback. The creation dialog remains green at 12 / 59. App typecheck and
   targeted Biome checks pass.
 - UX-806 is now checked at the functional proposal-preview layer. Model-backed
-  schema generation, richer goal clarification, editable proposal fields, and
-  packaged-host evidence remain open under UX-807 and UX-11.
+  schema generation, richer goal clarification, visual first-use, and
+  packaged-host evidence remain open under UX-808 and UX-11; editable proposal
+  fields are recorded in the UX-807 section below.
+
+### 2026-07-23 agent proposal editing
+
+- The unsaved Assistant proposal now exposes property name/type and view
+  name/layout controls. Title remains locked to `title`; other property types
+  and layouts are bounded to the supported preview set. Sample-page inclusion
+  remains an explicit toggle.
+- Edited values are serialized into the agent handoff as a clear requested
+  override block, preserving one writer and the same exact-plan approval
+  boundary. Focused evidence: the preview suite passes 3 / 12 and the full
+  composer suite passes 14 / 62, including edited-field handoff propagation.
+- UX-807 is now checked at the functional proposal-editing layer. Richer
+  model-backed clarification, broader property/layout families, visual
+  first-use, and packaged-host evidence remain open under UX-11.
 
 ### 2026-07-23 template preview parity
 
@@ -676,7 +692,7 @@ do not reconstruct behavior solely from this summary.
   catalog-backed database under `Recently opened`, reopening the same stable
   route. Focused evidence: sidebar 3 tests / 7 expectations and recent UI 1 / 5.
 - UX-203, UX-204, UX-206, UX-209, UX-309, UX-501, UX-502, UX-503, UX-504,
-  UX-505, UX-506, UX-507, UX-508, UX-509, UX-510, UX-601, UX-602, UX-603, UX-604, UX-605, UX-606, UX-607, UX-608, UX-609, UX-610, UX-701, UX-702, UX-703, UX-704, UX-705, UX-706, UX-707, UX-708, UX-709, UX-710, UX-801, UX-802, and UX-803 are checked. The 768px visual responsive check remains
+  UX-505, UX-506, UX-507, UX-508, UX-509, UX-510, UX-601, UX-602, UX-603, UX-604, UX-605, UX-606, UX-607, UX-608, UX-609, UX-610, UX-701, UX-702, UX-703, UX-704, UX-705, UX-706, UX-707, UX-708, UX-709, UX-710, UX-801, UX-802, UX-803, UX-804, UX-805, UX-806, and UX-807 are checked. The 768px visual responsive check remains
   open.
 
 ### 2026-07-23 stable inline/full-page conversion

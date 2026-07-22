@@ -840,10 +840,10 @@ the existing resulting-page preview journey in
 existing folder onboarding journey passes 1 test / 7 expectations. App
 typecheck and targeted Biome checks pass.
 
-This closes UX-801 at the functional start-surface layer. Template detail
-previews, natural-language schema generation/editing, migration identity
-assignment, visual first-use parity, and packaged-host proof remain open under
-UX-802–UX-807 and UX-11.
+This closes UX-801 at the functional start-surface layer. Visual first-use
+parity, resulting-page convergence, and packaged-host proof remain open under
+UX-808 and UX-11; the functional template/import/agent/migration slices are
+recorded below.
 
 ### Template preview evidence (2026-07-23)
 
@@ -863,9 +863,9 @@ regressions pass 2 tests / 8 expectations. App typecheck and targeted Biome
 checks pass.
 
 This closes UX-802 at the functional preview/desired-state layer. Richer
-template-specific calendar/timeline configurations, editable preview controls,
-visual first-use parity, and packaged-host proof remain open under UX-803–UX-807
-and UX-11.
+template-specific calendar/timeline configurations, visual first-use parity,
+and packaged-host proof remain open under UX-808 and UX-11; editable proposal
+controls are recorded in the UX-807 evidence below.
 
 ### Blank-first creation evidence (2026-07-23)
 
@@ -946,6 +946,26 @@ This closes UX-806 at the functional proposal-preview layer. Model-backed
 schema generation, richer goal clarification, editable proposal fields, and
 packaged-host evidence remain open under UX-807 and UX-11.
 
+### Agent proposal editing evidence (2026-07-23)
+
+The Assistant proposal preview now exposes direct property-name/type and
+view-name/layout controls while the proposal is still unsaved. Title remains
+locked to the required `title` type; other properties use the bounded supported
+type set, and view layouts stay within Table/Board. Edited values are carried
+into the handoff as an explicit “requested database proposal edits” block so
+the agent receives the same human-reviewed intent rather than an unrelated
+second writer. Sample-page inclusion remains an explicit toggle.
+
+Focused evidence: `DatabaseAgentCreationPlanPreview.dom.test.tsx` passes 3 tests
+/ 12 expectations, including property/view edits; the full
+`CreatePromptComposer.dom.test.tsx` passes 14 tests / 62 expectations, including
+handoff propagation of edited fields. The underlying creation compiler passes 9
+tests / 63 expectations; app typecheck and targeted Biome checks pass.
+
+This closes UX-807 at the functional proposal-editing and handoff layer.
+Richer model-backed clarification, broader property/layout families, visual
+first-use, and packaged-host evidence remain open under UX-11.
+
 ### Database History and recovery evidence (2026-07-23)
 
 The `Database actions` menu now exposes a human-facing `History` item on both
@@ -980,7 +1000,7 @@ crossed the document-native UX bar:
 | Measure | Current result | Interpretation |
 | --- | --- | --- |
 | Engine implementation checklist | 310/335 numbered items complete | Core/database and agent contracts are substantially implemented. |
-| Notion UX checklist | 82/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, inline/full-page state parity, table-first direct manipulation, friendly property names/examples, Title safety, type-specific cell editors, schema-vs-data mutation classification, in-context property-add/header affordances including property-specific sort/filter/duplicate actions, destructive property-deletion impact previews, adjacent Formula/Rollup error indicators, view-scoped property visibility/order, converged header/settings-menu view actions, visible reorderable saved-view tabs, layout-independent new-view `+` affordances, layout-specific saved-view property suggestions, coherent saved-view settings, active filter/sort explainers, saved-view tab lifecycle menu, last-view deletion safety, saved-view switch memory, independent linked-block view settings without copied rows, cross-layout title/tab/control/state/record-opening contract, canonical record-title entrypoints, shared side/center/full-page record surface, record breadcrumbs and return-to-view continuity, table/page synchronization, record body editing below properties, record-page comments/history/permissions/appearance/layout affordances, previous/next record navigation in the active view context, row/page mutation menu parity for duplicate/archive/restore/move/delete, direct Relation property links to canonical record pages, safe record deep-link/reload/missing/archived/permission states, unified Blank/template/import/folder/Assistant creation start surface, realistic template views/property-type/sample-page previews, Blank-fast-path/reset behavior without implicit advanced choices, CSV/TSV format/header/type/invalid-row/target-view previews, dedicated existing-folder source-identity migration review, natural-language agent plan previews for properties/views/templates/optional samples, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, 768px browser, and cross-host journey gates remain open. |
+| Notion UX checklist | 83/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, inline/full-page state parity, table-first direct manipulation, friendly property names/examples, Title safety, type-specific cell editors, schema-vs-data mutation classification, in-context property-add/header affordances including property-specific sort/filter/duplicate actions, destructive property-deletion impact previews, adjacent Formula/Rollup error indicators, view-scoped property visibility/order, converged header/settings-menu view actions, visible reorderable saved-view tabs, layout-independent new-view `+` affordances, layout-specific saved-view property suggestions, coherent saved-view settings, active filter/sort explainers, saved-view tab lifecycle menu, last-view deletion safety, saved-view switch memory, independent linked-block view settings without copied rows, cross-layout title/tab/control/state/record-opening contract, canonical record-title entrypoints, shared side/center/full-page record surface, record breadcrumbs and return-to-view continuity, table/page synchronization, record body editing below properties, record-page comments/history/permissions/appearance/layout affordances, previous/next record navigation in the active view context, row/page mutation menu parity for duplicate/archive/restore/move/delete, direct Relation property links to canonical record pages, safe record deep-link/reload/missing/archived/permission states, unified Blank/template/import/folder/Assistant creation start surface, realistic template views/property-type/sample-page previews, Blank-fast-path/reset behavior without implicit advanced choices, CSV/TSV format/header/type/invalid-row/target-view previews, dedicated existing-folder source-identity migration review, natural-language agent plan previews for properties/views/templates/optional samples, editable agent property/view/sample suggestions carried into the handoff, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, 768px browser, and cross-host journey gates remain open. |
 | First-use database entry | `New database` in sidebar, empty states, normal new-page dialog, command palette, plus slash-menu `New database`/`Linked view of database`; normal picker exposes Page/Database chooser and the resulting route lands in an editable table. `Open databases` enters the no-overlay page workspace. | Discovery, sidebar/recent navigation, and the web first-use path are evidenced; additional entry points and Electron proof remain open. |
 | Blank creation | Optional title, `Untitled database` fallback, direct-safe exact-plan commit, immediate source/view selection, title/new-row focus | The blank human path is continuous in DOM coverage; the same start surface now exposes template/import/folder/Assistant entry points while their review and visual browser proof remain open. |
 | Full-page navigation | Stable `#database/<database>/<source>/<view?>` route, no-overlay canvas presentation, sidebar source section, command-palette recents/search, backlink and relation links, normal page chrome, and local overflow guardrails | Route, page surface, and navigation identity are evidenced; responsive visual/cross-host proof remains incomplete. |
@@ -1397,7 +1417,11 @@ capability alone is insufficient.
       shows a clearly unsaved proposal with inferred starter template, typed
       properties, Table/Board views, and a sample-page toggle before agent
       handoff or exact-plan approval.
-- [ ] **UX-807** Edit agent-suggested properties/views directly before approval.
+- [x] **UX-807** Edit agent-suggested properties/views directly before approval.
+      Property names/types and view names/layouts are editable inside the
+      unsaved proposal; bounded type/layout controls preserve Title and
+      Table/Board safety, and the edits are carried into the agent handoff as
+      explicit requested overrides.
 - [ ] **UX-808** Land every successful method in the resulting page/block, not
       the management shell.
 
