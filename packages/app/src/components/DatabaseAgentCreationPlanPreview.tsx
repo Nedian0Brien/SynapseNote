@@ -1,8 +1,25 @@
 import { Trans } from '@lingui/react/macro';
-import { useState } from 'react';
-import { createAgentDatabasePlanPreview } from '@/lib/database-creation';
+import { useEffect, useState } from 'react';
+import {
+  createAgentDatabasePlanPreview,
+  type DatabaseAgentCreationPlanPreview as DatabaseAgentCreationPlan,
+} from '@/lib/database-creation';
 import { Badge } from './ui/badge';
 import { Checkbox } from './ui/checkbox';
+import { Input } from './ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+
+const EDITABLE_PROPERTY_TYPES = ['text', 'number', 'checkbox', 'date', 'select'] as const;
+const EDITABLE_VIEW_LAYOUTS = ['table', 'board'] as const;
+
+type EditableProperty = DatabaseAgentCreationPlan['properties'][number];
+type EditableView = DatabaseAgentCreationPlan['views'][number];
+
+export interface DatabaseAgentCreationPlanOverrides {
+  properties: readonly EditableProperty[];
+  views: readonly EditableView[];
+  includeSamples: boolean;
+}
 
 function previewValue(value: unknown): string {
   if (value === null || value === undefined || value === '') return '—';
@@ -11,15 +28,47 @@ function previewValue(value: unknown): string {
   return String(value);
 }
 
+function draftFromPlan(plan: DatabaseAgentCreationPlan): DatabaseAgentCreationPlanOverrides {
+  return {
+    properties: plan.properties.map((property) => ({ ...property })),
+    views: plan.views.map((view) => ({ ...view })),
+    includeSamples: true,
+  };
+}
+
 /**
  * A non-persistent, conservative preview for the Assistant creation branch.
  * The installed agent still owns the actual proposal and exact-plan handoff;
  * this surface makes the likely shape visible while the user is composing.
  */
-export function DatabaseAgentCreationPlanPreview({ goal }: { goal: string }) {
+export function DatabaseAgentCreationPlanPreview({
+  goal,
+  onPlanChange,
+}: {
+  goal: string;
+  onPlanChange?: (overrides: DatabaseAgentCreationPlanOverrides | null) => void;
+}) {
   const plan = createAgentDatabasePlanPreview(goal);
-  const [includeSamples, setIncludeSamples] = useState(true);
+  const [draft, setDraft] = useState<DatabaseAgentCreationPlanOverrides | null>(null);
+
+  useEffect(() => {
+    const nextPlan = createAgentDatabasePlanPreview(goal);
+    setDraft(nextPlan ? draftFromPlan(nextPlan) : null);
+    onPlanChange?.(null);
+  }, [goal, onPlanChange]);
+
   if (!plan) return null;
+
+  const current = draft ?? draftFromPlan(plan);
+  const updateDraft = (
+    update: (current: DatabaseAgentCreationPlanOverrides) => DatabaseAgentCreationPlanOverrides,
+  ) => {
+    setDraft((previous) => {
+      const next = update(previous ?? draftFromPlan(plan));
+      onPlanChange?.(next);
+      return next;
+    });
+  };
 
   return (
     <section
@@ -30,7 +79,7 @@ export function DatabaseAgentCreationPlanPreview({ goal }: { goal: string }) {
       <div className="flex flex-wrap items-center gap-2">
         <Badge variant="primary">Agent proposal · not saved</Badge>
         <span className="text-muted-foreground text-xs">
-          <Trans>Review this shape before the agent prepares the exact plan.</Trans>
+          <Trans>Review and edit this shape before the agent prepares the exact plan.</Trans>
         </span>
       </div>
 
@@ -52,26 +101,106 @@ export function DatabaseAgentCreationPlanPreview({ goal }: { goal: string }) {
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="rounded border bg-background p-2">
           <h4 className="font-medium text-xs">
-            <Trans>Properties</Trans>
+            <Trans>Edit properties</Trans>
           </h4>
-          <ul className="mt-2 grid gap-1 text-xs">
-            {plan.properties.map((property) => (
-              <li key={`${property.name}:${property.type}`} className="flex justify-between gap-2">
-                <span>{property.name}</span>
-                <span className="text-muted-foreground">{property.type}</span>
+          <ul className="mt-2 grid gap-2 text-xs">
+            {current.properties.map((property) => (
+              <li key={property.key} className="grid gap-1">
+                <Input
+                  value={property.name}
+                  aria-label={`Property name ${property.key}`}
+                  className="h-8 text-xs"
+                  onChange={(event) =>
+                    updateDraft((next) => ({
+                      ...next,
+                      properties: next.properties.map((candidate) =>
+                        candidate.key === property.key
+                          ? { ...candidate, name: event.target.value }
+                          : candidate,
+                      ),
+                    }))
+                  }
+                />
+                <Select
+                  value={property.type}
+                  onValueChange={(value) =>
+                    updateDraft((next) => ({
+                      ...next,
+                      properties: next.properties.map((candidate) =>
+                        candidate.key === property.key ? { ...candidate, type: value } : candidate,
+                      ),
+                    }))
+                  }
+                >
+                  <SelectTrigger
+                    size="sm"
+                    aria-label={`Property type ${property.key}`}
+                    className="h-8 text-xs"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(property.key === 'title' ? ['title'] : EDITABLE_PROPERTY_TYPES).map(
+                      (type) => (
+                        <SelectItem key={type} value={type}>
+                          {type}
+                        </SelectItem>
+                      ),
+                    )}
+                  </SelectContent>
+                </Select>
               </li>
             ))}
           </ul>
         </div>
         <div className="rounded border bg-background p-2">
           <h4 className="font-medium text-xs">
-            <Trans>Views</Trans>
+            <Trans>Edit views</Trans>
           </h4>
-          <ul className="mt-2 grid gap-1 text-xs">
-            {plan.views.map((view) => (
-              <li key={`${view.name}:${view.layout}`} className="flex justify-between gap-2">
-                <span>{view.name}</span>
-                <span className="text-muted-foreground">{view.layout}</span>
+          <ul className="mt-2 grid gap-2 text-xs">
+            {current.views.map((view) => (
+              <li key={view.key} className="grid gap-1">
+                <Input
+                  value={view.name}
+                  aria-label={`View name ${view.key}`}
+                  className="h-8 text-xs"
+                  onChange={(event) =>
+                    updateDraft((next) => ({
+                      ...next,
+                      views: next.views.map((candidate) =>
+                        candidate.key === view.key
+                          ? { ...candidate, name: event.target.value }
+                          : candidate,
+                      ),
+                    }))
+                  }
+                />
+                <Select
+                  value={view.layout}
+                  onValueChange={(value) =>
+                    updateDraft((next) => ({
+                      ...next,
+                      views: next.views.map((candidate) =>
+                        candidate.key === view.key ? { ...candidate, layout: value } : candidate,
+                      ),
+                    }))
+                  }
+                >
+                  <SelectTrigger
+                    size="sm"
+                    aria-label={`View layout ${view.key}`}
+                    className="h-8 text-xs"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {EDITABLE_VIEW_LAYOUTS.map((layout) => (
+                      <SelectItem key={layout} value={layout}>
+                        {layout}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </li>
             ))}
           </ul>
@@ -82,15 +211,17 @@ export function DatabaseAgentCreationPlanPreview({ goal }: { goal: string }) {
         <label className="flex items-center gap-2 text-xs" htmlFor="database-agent-plan-samples">
           <Checkbox
             id="database-agent-plan-samples"
-            checked={includeSamples}
-            onCheckedChange={(checked) => setIncludeSamples(checked === true)}
+            checked={current.includeSamples}
+            onCheckedChange={(checked) =>
+              updateDraft((next) => ({ ...next, includeSamples: checked === true }))
+            }
             aria-label="Include sample pages"
           />
           <span className="font-medium">
             <Trans>Include optional sample pages in the proposal</Trans>
           </span>
         </label>
-        {includeSamples ? (
+        {current.includeSamples ? (
           <ul className="mt-2 grid gap-1 text-xs" data-testid="database-agent-plan-samples">
             {plan.sampleRecords.slice(0, 3).map((record) => (
               <li key={JSON.stringify(record)} className="rounded border bg-muted/20 px-2 py-1">

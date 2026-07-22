@@ -11,7 +11,10 @@ import {
   getComposerDraft,
   setComposerDraftDoc,
 } from '@/components/composer-draft-store';
-import { DatabaseAgentCreationPlanPreview } from '@/components/DatabaseAgentCreationPlanPreview';
+import {
+  type DatabaseAgentCreationPlanOverrides,
+  DatabaseAgentCreationPlanPreview,
+} from '@/components/DatabaseAgentCreationPlanPreview';
 import {
   type CreateScenario,
   useCreateSuggestions,
@@ -142,6 +145,23 @@ export function CreatePromptComposer({
     instruction: '',
     mentions: [],
   });
+  const [planOverrides, setPlanOverrides] = useState<DatabaseAgentCreationPlanOverrides | null>(
+    null,
+  );
+
+  function handlePromptChange(next: ComposerMentionContent) {
+    setPromptContent(next);
+    setPlanOverrides(null);
+  }
+
+  function handoffInstruction(instruction: string): string {
+    if (!databasePreview || !planOverrides) return instruction;
+    const properties = planOverrides.properties
+      .map((property) => `${property.name} (${property.type})`)
+      .join(', ');
+    const views = planOverrides.views.map((view) => `${view.name} (${view.layout})`).join(', ');
+    return `${instruction}\n\nRequested database proposal edits (review before approval):\n- Properties: ${properties}\n- Views: ${views}\n- Include sample pages: ${planOverrides.includeSamples ? 'yes' : 'no'}`;
+  }
 
   // Field reports non-empty → any pending requirement error is now stale.
   function handleEmptyChange(nextEmpty: boolean) {
@@ -199,7 +219,7 @@ export function CreatePromptComposer({
     }
     const input = buildCreateHandoffInput({
       workspace,
-      description: instruction,
+      description: handoffInstruction(instruction),
       scenario,
       mentions,
     });
@@ -210,6 +230,7 @@ export function CreatePromptComposer({
     inputRef.current?.clear();
     clearComposerDraft();
     setPromptContent({ instruction: '', mentions: [] });
+    setPlanOverrides(null);
   }
 
   function handleCreate(targetId: HandoffTarget) {
@@ -229,7 +250,7 @@ export function CreatePromptComposer({
     writePreferredAgent(targetId);
     const input = buildCreateHandoffInput({
       workspace,
-      description: instruction,
+      description: handoffInstruction(instruction),
       scenario,
       mentions,
     });
@@ -240,6 +261,7 @@ export function CreatePromptComposer({
     inputRef.current?.clear();
     clearComposerDraft();
     setPromptContent({ instruction: '', mentions: [] });
+    setPlanOverrides(null);
   }
 
   // Enter (handled inside ComposerMentionInput) creates with the resolved target
@@ -335,7 +357,7 @@ export function CreatePromptComposer({
           placeholder={t`A team knowledge base, a personal wiki, project docs...`}
           onEmptyChange={handleEmptyChange}
           onContentChange={setComposerDraftDoc}
-          onPromptChange={databasePreview ? setPromptContent : undefined}
+          onPromptChange={databasePreview ? handlePromptChange : undefined}
           onSubmit={handleSubmit}
           initialDoc={initialDraftDoc}
           className="max-h-96 overflow-y-auto px-4 py-3 text-sm leading-relaxed subtle-scrollbar [&_.ProseMirror]:min-h-16"
@@ -481,7 +503,10 @@ export function CreatePromptComposer({
         </div>
       </div>
       {databasePreview ? (
-        <DatabaseAgentCreationPlanPreview goal={promptContent.instruction} />
+        <DatabaseAgentCreationPlanPreview
+          goal={promptContent.instruction}
+          onPlanChange={setPlanOverrides}
+        />
       ) : null}
       {/* Starter-brief chips — below the card, centered. Clicking one prefills
           the field (no auto-create), so they read as suggestions rather than

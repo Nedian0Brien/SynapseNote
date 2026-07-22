@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test';
 import { DatabaseDesiredStateDraftSchema } from '@nedian0brien/synapsenote-server';
 import {
-  createBlankDatabaseDesiredState,
   createAgentDatabasePlanPreview,
+  createBlankDatabaseDesiredState,
   createDelimitedDatabaseDesiredState,
   createExistingFolderDatabaseDesiredState,
   createTemplateDatabaseDesiredState,
@@ -172,19 +172,19 @@ describe('database creation desired state', () => {
     const preview = createAgentDatabasePlanPreview(
       'Create a task tracker for launch work with status and due dates',
     );
-    expect(preview).toMatchObject({
-      template: 'tasks',
-      templateName: 'Tasks',
-      properties: expect.arrayContaining([
-        { name: 'Task', type: 'title' },
-        { name: 'Status', type: 'select' },
-        { name: 'Due', type: 'date' },
+    expect(preview?.template).toBe('tasks');
+    expect(preview?.templateName).toBe('Tasks');
+    expect(preview?.properties).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: 'Task', type: 'title' }),
+        expect.objectContaining({ name: 'Status', type: 'select' }),
+        expect.objectContaining({ name: 'Due', type: 'date' }),
       ]),
-      views: [
-        { name: 'Table', layout: 'table' },
-        { name: 'Board', layout: 'board' },
-      ],
-    });
+    );
+    expect(preview?.views.map(({ name, layout }) => ({ name, layout }))).toEqual([
+      { name: 'Table', layout: 'table' },
+      { name: 'Board', layout: 'board' },
+    ]);
     expect(preview?.name).toContain('task tracker for launch work');
     expect(preview?.sampleRecords.length).toBe(2);
     expect(createAgentDatabasePlanPreview('   ')).toBeNull();

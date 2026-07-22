@@ -31,8 +31,8 @@ export interface DatabaseAgentCreationPlanPreview {
   name: string;
   template: DatabaseCreationTemplateKey;
   templateName: string;
-  properties: readonly { name: string; type: string }[];
-  views: readonly { name: string; layout: string }[];
+  properties: readonly { key: string; name: string; type: string }[];
+  views: readonly { key: string; name: string; layout: string }[];
   sampleRecords: readonly Record<string, unknown>[];
 }
 
@@ -111,7 +111,7 @@ export function createAgentDatabasePlanPreview(
     const layout = view.layout;
     const layoutType =
       layout && typeof layout === 'object' && 'type' in layout ? String(layout.type) : 'view';
-    return { name: view.name, layout: layoutType };
+    return { key: view.key, name: view.name, layout: layoutType };
   });
   return {
     goal,
@@ -119,6 +119,7 @@ export function createAgentDatabasePlanPreview(
     template,
     templateName: templateDefinition.name,
     properties: (source?.properties ?? []).map((property) => ({
+      key: property.key,
       name: property.name,
       type: property.type,
     })),

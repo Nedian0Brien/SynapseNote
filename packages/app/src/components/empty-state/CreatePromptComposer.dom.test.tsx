@@ -227,8 +227,36 @@ describe('CreatePromptComposer Desktop / Terminal sections', () => {
     const preview = await screen.findByTestId('database-agent-plan-preview');
     expect(preview.textContent).toContain('Agent proposal · not saved');
     expect(preview.textContent).toContain('Tasks');
-    expect(preview.textContent).toContain('Board');
+    expect((screen.getByLabelText('View name board') as HTMLInputElement).value).toBe('Board');
     expect(preview.textContent).toContain('Plan launch');
+  });
+
+  test('carries edited proposal fields into the agent handoff request', async () => {
+    states = { ...installedAll };
+    workspaceValue = { contentDir: '/tmp/project', pathSeparator: '/' };
+    await renderComposer({ withTerminal: true, databasePreview: true });
+
+    fireEvent.change(screen.getByLabelText('Describe the project you want to create'), {
+      target: { value: 'Create a task tracker for launch work' },
+    });
+    await screen.findByTestId('database-agent-plan-preview');
+    fireEvent.change(screen.getByLabelText('Property name title'), {
+      target: { value: 'Work item' },
+    });
+    fireEvent.change(screen.getByLabelText('View name table'), {
+      target: { value: 'All work' },
+    });
+
+    fireEvent.click(screen.getByTestId('create-with-cli-claude'));
+    await waitFor(() => {
+      expect(screen.getByTestId('create-with-agent').textContent).toContain(
+        'Create with Claude CLI',
+      );
+    });
+    fireEvent.click(screen.getByTestId('create-with-agent'));
+
+    expect(launchCalls[0]?.createDescription).toContain('Work item (title)');
+    expect(launchCalls[0]?.createDescription).toContain('All work (table)');
   });
 
   test('selecting the Terminal Claude row switches the button to CLI mode; Create launches with the typed brief', async () => {
