@@ -759,6 +759,7 @@ describe('DatabaseView', () => {
     };
     const linkedDatabase = { ...database, views: [view, secondaryView] };
     const requests: Array<{ path: string; body: Record<string, unknown> }> = [];
+    const inspectPaths: string[] = [];
     let commitCalls = 0;
     let undoCalls = 0;
     let undoBlocked = false;
@@ -801,6 +802,7 @@ describe('DatabaseView', () => {
         });
       }
       if (path.startsWith('/api/databases/inspect')) {
+        inspectPaths.push(path);
         return Response.json({ kind: 'list', inspections: [] });
       }
       const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
@@ -1017,6 +1019,9 @@ describe('DatabaseView', () => {
     fireEvent.pointerDown(screen.getByRole('button', { name: 'Database view actions' }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'Inspect agent context' }));
     expect(await screen.findByText('What the agent saw')).toBeTruthy();
+    expect(inspectPaths[0]).toContain(
+      `/api/databases/inspect?databaseId=${database.id}&sourceId=${source.id}&viewId=${view.id}`,
+    );
     fireEvent.click(document.querySelector('[data-slot="dialog-close"]') as HTMLElement);
     await waitFor(() => expect(screen.queryByText('What the agent saw')).toBeNull());
     fireEvent.pointerDown(screen.getByRole('button', { name: 'Database view actions' }));
