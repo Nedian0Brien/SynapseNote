@@ -68,10 +68,10 @@ the repository-wide check for final release readiness.
   catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
   approval-bound commits, undo, and restart/backup idempotency. Agent View
   policy/privacy/sandbox review remains Partial by design.
-- Notion UX alignment checklist: **37/128 complete**. The page-first and normal
+- Notion UX alignment checklist: **38/128 complete**. The page-first and normal
   New-page creation slices, the inline/linked insertion contract, and the
-  table-first direct-manipulation and canonical canvas-route slices are now
-  evidenced. A
+  table-first direct-manipulation, canonical canvas-route, and sidebar/recent
+  navigation slices are now evidenced. A
   2026-07-23 in-app browser capture reached the IPv4 renderer at
   `http://127.0.0.1:5173/`, created a full-page database, created two canonical
   rows, created an inline database from the slash menu, saved an inline row,
@@ -269,6 +269,17 @@ do not reconstruct behavior solely from this summary.
   implementation is extracted from the `DatabaseTableDialog` name and normal
   page chrome/sidebar/recent integration is complete; UX-203/204/206/207/209/
   210 remain open for those journeys and responsive proof.
+
+### 2026-07-23 sidebar and recent database navigation
+
+- `DatabaseSidebarSection` is a peer `Databases` section in the ordinary file
+  sidebar. It lazy-loads the catalog, navigates sources by the stable database
+  hash, opens for an existing database target, and marks the active source.
+- The command palette's existing omnibar recents now have UI evidence for a
+  catalog-backed database under `Recently opened`, reopening the same stable
+  route. Focused evidence: sidebar 3 tests / 7 expectations and recent UI 1 / 5.
+- UX-203 is checked. UX-204/206/209/210 remain open for normal page chrome,
+  additional entry points, responsive acceptance, and conversion journeys.
 
 ### 2026-07-22 first Notion-UX insertion slice
 

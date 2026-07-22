@@ -269,6 +269,19 @@ UX-209, and UX-210 likewise remain open pending sidebar/recent integration,
 normal page chrome, entry-point coverage, responsive acceptance, and conversion
 journeys.
 
+### Sidebar and recent database navigation evidence (2026-07-23)
+
+The ordinary file sidebar now exposes database sources as a peer `Databases`
+section. It loads the catalog only when expanded, navigates by the stable route,
+opens when the current hash is a database page, and marks the active source with
+`aria-current="page"`. The workspace command palette already treats database
+targets as first-class recent entries; its UI test confirms a catalog-backed
+database appears under `Recently opened` and reopens the canonical route.
+`DatabaseSidebarSection.dom.test.tsx` passes 3 tests / 7 expectations and the
+focused recent-navigation test passes 1 / 5. This closes UX-203. Normal page
+chrome, additional entry points, responsive proof, and inline/full-page
+conversion remain open under UX-204/206/209/210.
+
 ## Re-audit snapshot (2026-07-23)
 
 The implementation has moved the surface closer to Notion, but it has not
@@ -277,10 +290,10 @@ crossed the document-native UX bar:
 | Measure | Current result | Interpretation |
 | --- | --- | --- |
 | Engine implementation checklist | 310/335 numbered items complete | Core/database and agent contracts are substantially implemented. |
-| Notion UX checklist | 37/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, table-first direct manipulation, and canonical canvas routing are evidenced; History, full visual, sidebar/chrome, state-matrix, and cross-host journey gates remain open. |
+| Notion UX checklist | 38/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, table-first direct manipulation, canonical canvas routing, and sidebar/recent database navigation are evidenced; History, full visual, page chrome, state-matrix, and cross-host journey gates remain open. |
 | First-use database entry | `New database` in sidebar, empty states, normal new-page dialog, command palette, plus slash-menu `New database`/`Linked view of database`; normal picker exposes Page/Database chooser and the resulting route lands in an editable table. `Open databases` enters the no-overlay page workspace. | Discovery and the web first-use path are evidenced; ordinary sidebar/recent integration and Electron proof remain open. |
 | Blank creation | Optional title, `Untitled database` fallback, direct-safe exact-plan commit, immediate source/view selection, title/new-row focus | The blank human path is continuous in DOM coverage; template/import/agent paths intentionally retain review and visual browser proof remains open. |
-| Full-page navigation | Stable `#database/<database>/<source>/<view?>` route and no-overlay page presentation | Route identity exists, but sidebar/recent/page chrome integration is incomplete. |
+| Full-page navigation | Stable `#database/<database>/<source>/<view?>` route, no-overlay canvas presentation, sidebar source section, and command-palette recents | Route and navigation identity are evidenced; normal page chrome and broader entry points remain incomplete. |
 | Inline linked view | Catalog → source → saved-view picker, inline creation, shared rows, visible tabs, replacement, conversion, duplicate configuration, and block removal | The core inline/linked contract is evidenced; the complete visual state matrix remains open. |
 | Direct editing | Direct-safe cell/row auto-approval, optimistic reconciliation, offline/conflict/failure states, and post-commit focus are covered by focused DOM evidence | Elevated mutations retain exact review; a dedicated History/receipt browsing surface and full visual/cross-host acceptance remain open. |
 | Browser evidence | In-app web renderer is reachable on IPv4 and normal New-page, page-first, inline creation, record sharing, and cancellation journeys are captured; no Electron or complete state-matrix journey is captured | The core web slice is evidenced, but NUI-105/NUI-701–NUI-705 remain release gates for cross-host, accessibility, responsive, usability, performance, and packaged-release parity. |
@@ -463,7 +476,7 @@ capability alone is insufficient.
       `DatabaseTableDialog`.
 - [x] **UX-202** Give it a stable URL/hash that survives reload and back/forward
       navigation.
-- [ ] **UX-203** Show full-page databases in the sidebar/tree and recent items
+- [x] **UX-203** Show full-page databases in the sidebar/tree and recent items
       like ordinary pages.
 - [ ] **UX-204** Reuse normal page chrome for icon, cover, title, breadcrumbs,
       favorite, and page actions where applicable.
