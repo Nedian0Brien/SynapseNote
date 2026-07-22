@@ -238,7 +238,9 @@ treated as visual parity until a browser capture is attached.
   IDs and hands bulk actions to the canonical reviewed workspace; it never
   creates a second inline bulk-write path. The remaining gate is full
   optimistic/undo evidence for every view editor and a complete policy matrix
-  for agent transports. Map to UX-005/UX-006.
+  for agent transports. The explicit 13-operation matrix is covered by
+  `database-mutation-policy.test.ts`; integration evidence across every
+  alternate renderer and agent transport remains open. Map to UX-005/UX-006.
 - [x] **NUI-302** Add saving/saved/offline/conflict/failed indicators that do
   not replace the table with a transaction screen. Map to UX-405/UX-406.
   Evidence: `DatabaseTableDialog` save indicator and the state-specific DOM

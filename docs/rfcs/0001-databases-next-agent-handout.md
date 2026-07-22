@@ -286,6 +286,18 @@ do not reconstruct behavior solely from this summary.
   typecheck, Biome, and `git diff --check` pass. The full visual state matrix
   and cross-host capture remain open.
 
+### 2026-07-22 mutation-policy matrix slice
+
+- `database-mutation-policy.ts` now exposes an explicit 13-operation matrix:
+  only human `user:*` cell/title/record-create/blank-create/view operations
+  are automatic; every agent actor, non-user principal, schema, bulk,
+  destructive, permission, external, migration, verification, and unknown
+  elevated path remains review-required.
+- Focused evidence: `database-mutation-policy.test.ts` passes 4 tests / 68
+  expectations, including every operation and actor combination; app
+  typecheck and Biome pass. Alternate renderer and transport-level integration
+  evidence remains open under NUI-301.
+
 ### 2026-07-22 entry-point re-audit and convergence slice
 
 - Re-audited the running-app entry surfaces against the Notion UX baseline.
