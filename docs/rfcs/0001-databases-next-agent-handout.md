@@ -109,7 +109,7 @@ the repository-wide check for final release readiness.
   catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
   approval-bound commits, undo, and restart/backup idempotency. Agent View
   policy/privacy/sandbox review remains Partial by design.
-- Notion UX alignment checklist: **96/128 complete**. The page-first and normal
+- Notion UX alignment checklist: **97/128 complete**. The page-first and normal
   New-page creation slices, the inline/linked insertion contract, and the
   table-first direct-manipulation, named canonical workspace canvas-route,
   shared navigation without a duplicate canvas rail, sidebar/recent/search/
@@ -146,7 +146,8 @@ the repository-wide check for final release readiness.
   current-view-preserving Agent Run recovery, retrieval query/filter/ranking/
   projection/permission/token explainability, stable agent API/MCP contracts
   across the UI route redesign, keyboard order across the database page, and
-  visible focus/roving-grid selection and edit announcements are
+  visible focus/roving-grid selection and edit announcements, and semantically
+  labelled controls and transient states are
   now
   evidenced. A
   2026-07-23 in-app browser capture reached the IPv4 renderer at
@@ -904,6 +905,23 @@ do not reconstruct behavior solely from this summary.
   Full screen-reader matrix, contrast, responsive, and performance gates
   remain open.
 
+### 2026-07-23 control names and semantic states
+
+- Canonical database surfaces keep icon-only controls discoverable with stable
+  accessible names. Tabs expose `role="tab"` and `aria-selected`, the table
+  exposes a named `role="grid"`, and transient saves/errors/recovery surfaces
+  use status or alert semantics.
+- Focused evidence: the route-level `DatabaseTableDialog.dom.test.tsx` journey
+  asserts that every rendered icon-only button has an accessible name and that
+  the canonical grid carries its selection semantics (28 expectations in the
+  focused run). Existing table, saved-view, review, picker, and conflict DOM
+  tests cover the corresponding menu/dialog state roles. App typecheck and
+  targeted Biome checks pass; no full server suite or broad E2E rerun was
+  needed.
+- UX-1003 is now checked at the functional naming/semantics layer. Full
+  screen-reader matrix, contrast, responsive, and performance gates remain
+  open.
+
 ### 2026-07-23 Agent Run current-view recovery
 
 - Undo, retry, and resume emit a scoped Agent Run change event only after the
@@ -948,7 +966,7 @@ do not reconstruct behavior solely from this summary.
   catalog-backed database under `Recently opened`, reopening the same stable
   route. Focused evidence: sidebar 3 tests / 7 expectations and recent UI 1 / 5.
 - UX-203, UX-204, UX-206, UX-209, UX-309, UX-501, UX-502, UX-503, UX-504,
-  UX-505, UX-506, UX-507, UX-508, UX-509, UX-510, UX-601, UX-602, UX-603, UX-604, UX-605, UX-606, UX-607, UX-608, UX-609, UX-610, UX-701, UX-702, UX-703, UX-704, UX-705, UX-706, UX-707, UX-708, UX-709, UX-710, UX-801, UX-802, UX-803, UX-804, UX-805, UX-806, UX-807, UX-808, UX-901, UX-902, UX-903, UX-904, UX-905, UX-906, UX-907, UX-908, UX-909, UX-910, UX-1001, and UX-1002 are checked. The 768px visual responsive check remains
+  UX-505, UX-506, UX-507, UX-508, UX-509, UX-510, UX-601, UX-602, UX-603, UX-604, UX-605, UX-606, UX-607, UX-608, UX-609, UX-610, UX-701, UX-702, UX-703, UX-704, UX-705, UX-706, UX-707, UX-708, UX-709, UX-710, UX-801, UX-802, UX-803, UX-804, UX-805, UX-806, UX-807, UX-808, UX-901, UX-902, UX-903, UX-904, UX-905, UX-906, UX-907, UX-908, UX-909, UX-910, UX-1001, UX-1002, and UX-1003 are checked. The 768px visual responsive check remains
   open.
 
 ### 2026-07-23 stable inline/full-page conversion
