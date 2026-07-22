@@ -4332,7 +4332,10 @@ function DatabaseTableSurface({
 
   useEffect(() => {
     void refresh;
-    if (!open) return;
+    // The canonical canvas gets its source navigation from the ordinary app
+    // sidebar. Avoid refetching the catalog just to populate the management
+    // rail that is intentionally hidden in this presentation.
+    if (!open || isCanvasPresentation) return;
     const controller = new AbortController();
     setCatalogStatus('loading');
     setError(null);
@@ -4366,7 +4369,7 @@ function DatabaseTableSurface({
         setCatalogStatus('error');
       });
     return () => controller.abort();
-  }, [open, refresh]);
+  }, [open, refresh, isCanvasPresentation]);
 
   useEffect(() => {
     void refresh;
@@ -4941,36 +4944,43 @@ function DatabaseTableSurface({
             </div>
           </div>
         </DialogHeader>
-        <DialogBody className="grid min-h-[min(34rem,70vh)] gap-0 p-0 md:grid-cols-[17rem_minmax(0,1fr)]">
-          <aside className="overflow-y-auto border-b p-3 md:border-r md:border-b-0">
-            {catalogStatus === 'loading' && candidates.length === 0 ? (
-              <div
-                className="flex items-center gap-2 p-3 text-muted-foreground"
-                role="status"
-                data-database-state="loading"
-              >
-                <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                <Trans>Loading databases</Trans>
-              </div>
-            ) : null}
-            {catalogStatus === 'success' && candidates.length === 0 ? (
-              <div className="p-3 text-muted-foreground text-sm" data-database-state="empty">
-                <Trans>No databases yet.</Trans>
-              </div>
-            ) : null}
-            <SourceList
-              candidates={candidates}
-              selected={selection}
-              onSelect={(nextSelection) => {
-                setTableCalculations({});
-                setSelectedViewId('');
-                setFilterDialogOpen(false);
-                setViewSettingsOpen(false);
-                setViewManagerOpen(false);
-                setSelection(nextSelection);
-              }}
-            />
-          </aside>
+        <DialogBody
+          className={cn(
+            'min-h-[min(34rem,70vh)] gap-0 p-0',
+            isCanvasPresentation ? 'block' : 'grid md:grid-cols-[17rem_minmax(0,1fr)]',
+          )}
+        >
+          {!isCanvasPresentation ? (
+            <aside className="overflow-y-auto border-b p-3 md:border-r md:border-b-0">
+              {catalogStatus === 'loading' && candidates.length === 0 ? (
+                <div
+                  className="flex items-center gap-2 p-3 text-muted-foreground"
+                  role="status"
+                  data-database-state="loading"
+                >
+                  <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                  <Trans>Loading databases</Trans>
+                </div>
+              ) : null}
+              {catalogStatus === 'success' && candidates.length === 0 ? (
+                <div className="p-3 text-muted-foreground text-sm" data-database-state="empty">
+                  <Trans>No databases yet.</Trans>
+                </div>
+              ) : null}
+              <SourceList
+                candidates={candidates}
+                selected={selection}
+                onSelect={(nextSelection) => {
+                  setTableCalculations({});
+                  setSelectedViewId('');
+                  setFilterDialogOpen(false);
+                  setViewSettingsOpen(false);
+                  setViewManagerOpen(false);
+                  setSelection(nextSelection);
+                }}
+              />
+            </aside>
+          ) : null}
           <main
             className="min-w-0 p-3 sm:p-5"
             data-database-redo-available={lastRedoToken ? 'true' : 'false'}

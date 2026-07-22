@@ -3054,6 +3054,7 @@ describe('DatabaseTableDialog', () => {
     await screen.findByRole('grid');
     expect(document.querySelector('[data-database-page-workspace]')).not.toBeNull();
     expect(document.querySelector('[data-slot="dialog-overlay"]')).toBeNull();
+    expect(document.querySelector('nav[aria-label="Databases"]')).not.toBeNull();
     expect(document.querySelector('[data-database-page-chrome]')?.textContent).toContain('Tasks');
     expect(screen.getByTestId('database-page-title').textContent).toBe('Tasks');
     expect(screen.getByTestId('database-page-icon')).not.toBeNull();
@@ -3076,9 +3077,13 @@ describe('DatabaseTableDialog', () => {
   });
 
   test('renders the canonical database workspace in the caller canvas without a portal', async () => {
+    let catalogCalls = 0;
     globalThis.fetch = mock(async (input: RequestInfo | URL) => {
       const path = String(input);
-      if (path.startsWith('/api/databases/catalog')) return Response.json(catalog());
+      if (path.startsWith('/api/databases/catalog')) {
+        catalogCalls += 1;
+        return Response.json(catalog());
+      }
       if (path === '/api/databases/describe') return Response.json(description());
       if (path === '/api/databases/query') return Response.json(queryResult());
       return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
@@ -3099,6 +3104,8 @@ describe('DatabaseTableDialog', () => {
     expect(grid).not.toBeNull();
     expect(workspace?.closest('[data-testid="database-canvas-host"]')).not.toBeNull();
     expect(workspace?.getAttribute('data-database-page-workspace')).toBe('');
+    expect(document.querySelector('nav[aria-label="Databases"]')).toBeNull();
+    expect(catalogCalls).toBe(0);
     expect(document.querySelector('[data-slot="dialog-portal"]')).toBeNull();
     expect(document.querySelector('[data-slot="dialog-overlay"]')).toBeNull();
   });
