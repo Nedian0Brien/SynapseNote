@@ -669,6 +669,26 @@ This closes UX-704 at the functional implementation/evidence layer. Conflict
 resolution, offline/reconnect, responsive visual, and packaged-host evidence
 remain release gates.
 
+### Record body editing evidence (2026-07-23)
+
+The ordinary database record page now owns an explicit body slot below its
+title and property panels. `EditorActivityPool` passes the same normal
+SourceEditor/Tiptap editor stack into that slot for regular WYSIWYG pages;
+source mode and managed-artifact documents keep their existing specialized
+identity/source presentation. The body host retains the existing flex sizing,
+portal target, mode gating, placeholder, and provider identity, so moving it
+under the page chrome does not change editor behavior or Y.Doc ownership.
+
+Focused evidence in `DatabaseRecordPageChrome.dom.test.tsx` renders an editor
+body, asserts the `below-properties` contract marker, and verifies that every
+property row precedes the body in document order (2 tests / 38 expectations
+for the focused chrome file). `EditorActivityPool.test.ts` continues to pass
+42 tests / 84 expectations, app typecheck and targeted Biome checks pass.
+
+This closes UX-705 at the functional implementation/evidence layer. Normal
+editor editing, source-mode parity, and visual/cross-host proof remain release
+gates.
+
 ### Sidebar and recent database navigation evidence (2026-07-23)
 
 The ordinary file sidebar now exposes database sources as a peer `Databases`
@@ -725,7 +745,7 @@ crossed the document-native UX bar:
 | Measure | Current result | Interpretation |
 | --- | --- | --- |
 | Engine implementation checklist | 310/335 numbered items complete | Core/database and agent contracts are substantially implemented. |
-| Notion UX checklist | 70/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, inline/full-page state parity, table-first direct manipulation, friendly property names/examples, Title safety, type-specific cell editors, schema-vs-data mutation classification, in-context property-add/header affordances including property-specific sort/filter/duplicate actions, destructive property-deletion impact previews, adjacent Formula/Rollup error indicators, view-scoped property visibility/order, converged header/settings-menu view actions, visible reorderable saved-view tabs, layout-independent new-view `+` affordances, layout-specific saved-view property suggestions, coherent saved-view settings, active filter/sort explainers, saved-view tab lifecycle menu, last-view deletion safety, saved-view switch memory, independent linked-block view settings without copied rows, cross-layout title/tab/control/state/record-opening contract, canonical record-title entrypoints, shared side/center/full-page record surface, record breadcrumbs and return-to-view continuity, table/page synchronization, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, 768px browser, and cross-host journey gates remain open. |
+| Notion UX checklist | 71/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, inline/full-page state parity, table-first direct manipulation, friendly property names/examples, Title safety, type-specific cell editors, schema-vs-data mutation classification, in-context property-add/header affordances including property-specific sort/filter/duplicate actions, destructive property-deletion impact previews, adjacent Formula/Rollup error indicators, view-scoped property visibility/order, converged header/settings-menu view actions, visible reorderable saved-view tabs, layout-independent new-view `+` affordances, layout-specific saved-view property suggestions, coherent saved-view settings, active filter/sort explainers, saved-view tab lifecycle menu, last-view deletion safety, saved-view switch memory, independent linked-block view settings without copied rows, cross-layout title/tab/control/state/record-opening contract, canonical record-title entrypoints, shared side/center/full-page record surface, record breadcrumbs and return-to-view continuity, table/page synchronization, record body editing below properties, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, 768px browser, and cross-host journey gates remain open. |
 | First-use database entry | `New database` in sidebar, empty states, normal new-page dialog, command palette, plus slash-menu `New database`/`Linked view of database`; normal picker exposes Page/Database chooser and the resulting route lands in an editable table. `Open databases` enters the no-overlay page workspace. | Discovery, sidebar/recent navigation, and the web first-use path are evidenced; additional entry points and Electron proof remain open. |
 | Blank creation | Optional title, `Untitled database` fallback, direct-safe exact-plan commit, immediate source/view selection, title/new-row focus | The blank human path is continuous in DOM coverage; template/import/agent paths intentionally retain review and visual browser proof remains open. |
 | Full-page navigation | Stable `#database/<database>/<source>/<view?>` route, no-overlay canvas presentation, sidebar source section, command-palette recents/search, backlink and relation links, normal page chrome, and local overflow guardrails | Route, page surface, and navigation identity are evidenced; responsive visual/cross-host proof remains incomplete. |
@@ -1094,7 +1114,7 @@ capability alone is insufficient.
 - [x] **UX-704** Synchronize title/property edits between table and page without
       manual refresh. Clean page providers request the canonical Y.Doc delta on
       matching database-change events and skip dirty local documents.
-- [ ] **UX-705** Render page body below properties with normal editor behavior.
+- [x] **UX-705** Render page body below properties with normal editor behavior.
 - [ ] **UX-706** Expose comments, history, permissions, icon, cover, and layout
       through normal page affordances.
 - [ ] **UX-707** Navigate previous/next records in the active view context.
