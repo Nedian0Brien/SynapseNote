@@ -1236,6 +1236,7 @@ export function DatabaseView({
       data-source-id={reference.data.sourceId}
       data-view-id={reference.data.viewId}
       data-view-mode={reference.data.mode}
+      data-database-layout={activeLinkedView?.layout.type}
     >
       <header className="flex items-center justify-between gap-3 border-b px-4 py-3">
         <div className="min-w-0">
@@ -1359,6 +1360,26 @@ export function DatabaseView({
           >
             <RefreshCw className={cn(state.status === 'loading' && 'animate-spin')} />
           </Button>
+          {state.status === 'ready' && activeLinkedView ? (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => openInlineDatabaseSurface('filters')}
+              >
+                <Filter /> <Trans>Filters</Trans>
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => openInlineDatabaseSurface('view-settings')}
+              >
+                <Settings2 /> <Trans>View settings</Trans>
+              </Button>
+            </>
+          ) : null}
           {state.status === 'ready' ? (
             <Button
               type="button"

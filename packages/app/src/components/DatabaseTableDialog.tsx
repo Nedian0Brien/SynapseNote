@@ -5472,6 +5472,7 @@ function DatabaseTableSurface({
           <main
             className="min-w-0 p-3 sm:p-5"
             data-database-redo-available={lastRedoToken ? 'true' : 'false'}
+            data-database-layout={selectedView?.layout.type ?? 'table'}
             onKeyDown={handleDatabaseShortcut}
           >
             {ghost && !description?.source ? (
