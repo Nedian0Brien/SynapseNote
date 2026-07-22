@@ -226,6 +226,7 @@ export {
   DatabaseContextPackError,
   type DatabaseContextPackErrorCode,
   type DatabaseContextPackInput,
+  type DatabaseContextPackRetrieval,
   type DatabaseContextPackTokenizer,
   type DatabaseRelationExpansion,
   type DatabaseRelationExpansionInput,

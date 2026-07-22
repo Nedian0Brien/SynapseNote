@@ -1562,12 +1562,68 @@ export const DatabaseRetrieveResponseSchema = z
   })
   .strict();
 
+const DatabaseContextRetrievalSchema = z
+  .object({
+    query: z
+      .object({
+        filter: z.unknown().nullable(),
+        sort: z.array(z.record(z.string(), z.unknown())),
+        includeArchived: z.boolean(),
+      })
+      .strict(),
+    filters: z.object({ propertyIds: z.array(z.string().min(1)) }).strict(),
+    ranking: z
+      .object({
+        strategy: z.literal('typed_sort_then_record_id'),
+        sort: z.array(z.record(z.string(), z.unknown())),
+        tieBreakers: z.tuple([z.literal('record_id')]),
+      })
+      .strict(),
+    projection: z
+      .object({
+        requestedPropertyIds: z.array(z.string().min(1)),
+        returnedPropertyIds: z.array(z.string().min(1)),
+        omittedPropertyIds: z.array(z.string().min(1)),
+      })
+      .strict(),
+    result: z
+      .object({
+        matched: z.number().int().nonnegative(),
+        returned: z.number().int().nonnegative(),
+        omittedRecords: z.number().int().nonnegative(),
+        complete: z.boolean(),
+        continuationAvailable: z.boolean(),
+      })
+      .strict(),
+    permission: z
+      .object({
+        evaluated: z.literal(true),
+        policyId: z.string().min(1),
+        policyRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+        records: z.number().int().nonnegative(),
+        properties: z.number().int().nonnegative(),
+        body: z.boolean().optional(),
+      })
+      .strict()
+      .nullable(),
+    evidence: z
+      .object({
+        mode: z.enum(['records', 'evidence', 'full_body']),
+        searchText: z.string().nullable(),
+        matched: z.number().int().nonnegative(),
+        returned: z.number().int().nonnegative(),
+      })
+      .strict(),
+  })
+  .strict();
+
 export const DatabaseContextPackResponseSchema = z
   .object({
     id: z.string().startsWith('pack_'),
     goal: z.string().min(1),
     database: z.record(z.string(), z.unknown()),
     agentView: AppliedDatabaseAgentViewSchema.nullable(),
+    retrieval: DatabaseContextRetrievalSchema.optional(),
     schema: z.record(z.string(), z.unknown()),
     snapshot: z.record(z.string(), z.unknown()),
     fileStates: z.record(z.string(), z.enum(['available', 'missing'])),
@@ -1706,6 +1762,7 @@ const DatabaseContextInspectionSummarySchema = z
         reserve: z.number().int().nonnegative(),
       })
       .strict(),
+    retrieval: DatabaseContextRetrievalSchema.optional(),
     redactions: z
       .object({
         evaluated: z.boolean(),

@@ -51,6 +51,48 @@ export interface DatabaseContextPackAgentView {
   writePolicy: NonNullable<DatabaseView['agent']>['writePolicy'];
 }
 
+export interface DatabaseContextPackRetrieval {
+  query: {
+    filter: DatabaseQuery['where'] | null;
+    sort: DatabaseQuery['sort'];
+    includeArchived: boolean;
+  };
+  filters: {
+    propertyIds: readonly string[];
+  };
+  ranking: {
+    strategy: 'typed_sort_then_record_id';
+    sort: DatabaseQuery['sort'];
+    tieBreakers: readonly ['record_id'];
+  };
+  projection: {
+    requestedPropertyIds: readonly string[];
+    returnedPropertyIds: readonly string[];
+    omittedPropertyIds: readonly string[];
+  };
+  result: {
+    matched: number;
+    returned: number;
+    omittedRecords: number;
+    complete: boolean;
+    continuationAvailable: boolean;
+  };
+  permission: {
+    evaluated: boolean;
+    policyId: string;
+    policyRevision: string;
+    records: number;
+    properties: number;
+    body?: boolean;
+  } | null;
+  evidence: {
+    mode: 'records' | 'evidence' | 'full_body';
+    searchText: string | null;
+    matched: number;
+    returned: number;
+  };
+}
+
 export interface DatabaseContextPackInput {
   databaseId: string;
   sourceId: string;
@@ -207,6 +249,8 @@ export interface DatabaseContextPack {
     freshness: DatabaseDefinition['contract']['freshness'];
   };
   agentView: DatabaseContextPackAgentView | null;
+  /** Explainability metadata for the exact root retrieval; diagnostic fields are optional for older packs. */
+  retrieval?: DatabaseContextPackRetrieval;
   schema: {
     manifestRevision: string;
     schemaRevision: string;
@@ -970,6 +1014,48 @@ export function createDatabaseContextPack(
     (lexical?.hits ?? []).map((hit) => [hit.recordId, hit] as const),
   );
 
+  const retrievalFor = (
+    returned: number,
+    omittedRecords: number,
+    complete: boolean,
+    continuationAvailable: boolean,
+  ): DatabaseContextPackRetrieval => ({
+    query: {
+      filter: input.query?.where ?? null,
+      sort: structuredClone(input.query?.sort ?? []),
+      includeArchived: input.query?.includeArchived ?? false,
+    },
+    filters: {
+      propertyIds: filterPropertyIdsForPack(input.query?.where),
+    },
+    ranking: {
+      strategy: 'typed_sort_then_record_id',
+      sort: structuredClone(input.query?.sort ?? []),
+      tieBreakers: ['record_id'],
+    },
+    projection: {
+      requestedPropertyIds: [...requestedSelectedIds],
+      returnedPropertyIds: [...effectiveSelectedIds],
+      omittedPropertyIds: requestedSelectedIds.filter(
+        (propertyId) => !effectiveSelectedIds.includes(propertyId),
+      ),
+    },
+    result: {
+      matched: query.matched,
+      returned,
+      omittedRecords,
+      complete,
+      continuationAvailable,
+    },
+    permission: query.permissionExclusions ? structuredClone(query.permissionExclusions) : null,
+    evidence: {
+      mode: disclosureRequest.level,
+      searchText: disclosureRequest.level === 'evidence' ? disclosureRequest.searchText : null,
+      matched: lexical?.matched ?? 0,
+      returned: lexical?.returned ?? 0,
+    },
+  });
+
   const offset = cursor?.offset ?? 0;
   const selectedSet = new Set(effectiveSelectedIds);
   const queryCandidates = query.records.map((record) => objectRecord(record, selectedSet));
@@ -1178,6 +1264,25 @@ export function createDatabaseContextPack(
     input.encoding === 'object_rows' ? included : encodeColumnar(included, properties);
   const disclosure = disclosureFor(included);
   const relationExpansion = relationExpansionFor(included);
+  const stoppedWithinPage = included.length < candidates.length;
+  const nextQueryCursor = stoppedWithinPage ? (queryCursor ?? null) : query.nextCursor;
+  const nextOffset = stoppedWithinPage ? offset + included.length : 0;
+  const hasMore = stoppedWithinPage || query.nextCursor !== null;
+  const nextCursor = hasMore
+    ? encodeCursor({
+        v: 1,
+        fingerprint: requestFingerprint,
+        snapshotRevision: query.snapshotRevision,
+        queryCursor: nextQueryCursor,
+        offset: nextOffset,
+        delivered: (cursor?.delivered ?? 0) + included.length,
+      })
+    : null;
+  const omittedRecords = Math.max(0, query.matched - (cursor?.delivered ?? 0) - included.length);
+  // Retrieval explainability is a compact diagnostic envelope, like the pack
+  // id, cursor, and omission counters below; the budget measures the model
+  // context payload (schema, records, disclosures, and relations) rather than
+  // charging the same diagnostics twice through the pack envelope.
   const estimatedTokens = estimateTokens(
     {
       ...baseForRelation(relationExpansion),
@@ -1197,21 +1302,6 @@ export function createDatabaseContextPack(
     );
   }
 
-  const stoppedWithinPage = included.length < candidates.length;
-  const nextQueryCursor = stoppedWithinPage ? (queryCursor ?? null) : query.nextCursor;
-  const nextOffset = stoppedWithinPage ? offset + included.length : 0;
-  const hasMore = stoppedWithinPage || query.nextCursor !== null;
-  const nextCursor = hasMore
-    ? encodeCursor({
-        v: 1,
-        fingerprint: requestFingerprint,
-        snapshotRevision: query.snapshotRevision,
-        queryCursor: nextQueryCursor,
-        offset: nextOffset,
-        delivered: (cursor?.delivered ?? 0) + included.length,
-      })
-    : null;
-  const omittedRecords = Math.max(0, query.matched - (cursor?.delivered ?? 0) - included.length);
   const packWithoutIdAndBudget = {
     ...baseForRelation(relationExpansion),
     fileStates: fileStatesFor(included),
@@ -1219,6 +1309,7 @@ export function createDatabaseContextPack(
     records,
     disclosure,
     relationExpansion,
+    retrieval: retrievalFor(included.length, omittedRecords, !hasMore, hasMore),
     returned: included.length,
     isComplete: !hasMore,
     nextCursor,

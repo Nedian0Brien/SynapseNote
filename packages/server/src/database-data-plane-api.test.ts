@@ -1957,6 +1957,12 @@ describe('database data plane HTTP handlers', () => {
       returned: 1,
       disclosure: { level: 'records' },
       relationExpansion: null,
+      retrieval: {
+        query: { filter: null, includeArchived: false },
+        ranking: { strategy: 'typed_sort_then_record_id', tieBreakers: ['record_id'] },
+        result: { matched: 1, returned: 1, complete: true, continuationAvailable: false },
+        evidence: { mode: 'records', searchText: null },
+      },
       budget: { maxTokens: 2_000, reserveTokens: 100 },
     });
 
@@ -2002,6 +2008,11 @@ describe('database data plane HTTP handlers', () => {
       database: { id: 'db_tasks', name: 'Tasks' },
       sourceId: 'ds_tasks',
       tokenCount: { estimated: expect.any(Number), max: 1_000, reserve: 100 },
+      retrieval: {
+        query: { includeArchived: false },
+        ranking: { strategy: 'typed_sort_then_record_id' },
+        result: { matched: 1, returned: 1, complete: true, continuationAvailable: false },
+      },
       redactions: { evaluated: true },
       freshness: { indexState: 'idle', indexFreshness: 'snapshot' },
       truncation: {

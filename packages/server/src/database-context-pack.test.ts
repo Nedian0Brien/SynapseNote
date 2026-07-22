@@ -500,6 +500,25 @@ describe('database context packs', () => {
         availableTokens: 9_900,
       },
     });
+    expect(pack.retrieval).toMatchObject({
+      query: { filter: null, sort: [], includeArchived: false },
+      filters: { propertyIds: [] },
+      ranking: { strategy: 'typed_sort_then_record_id', sort: [], tieBreakers: ['record_id'] },
+      projection: {
+        requestedPropertyIds: ['prop_title', 'prop_status'],
+        returnedPropertyIds: ['prop_title', 'prop_status'],
+        omittedPropertyIds: [],
+      },
+      result: {
+        matched: 2,
+        returned: 2,
+        omittedRecords: 0,
+        complete: true,
+        continuationAvailable: false,
+      },
+      permission: null,
+      evidence: { mode: 'records', searchText: null, matched: 0, returned: 0 },
+    });
     expect(pack.budget.estimatedTokens).toBeLessThanOrEqual(pack.budget.availableTokens);
     expect(JSON.stringify(pack.records)).not.toContain('null');
   });

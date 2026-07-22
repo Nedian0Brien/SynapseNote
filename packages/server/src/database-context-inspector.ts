@@ -11,6 +11,7 @@ export interface DatabaseContextInspectionSummary {
   agentView: { id: string; revision: string } | null;
   disclosure: DatabaseContextPack['disclosure']['level'];
   returned: number;
+  retrieval?: DatabaseContextPack['retrieval'];
   tokenCount: {
     tokenizer: DatabaseContextPack['budget']['tokenizer'];
     estimated: number;
@@ -131,6 +132,7 @@ function summaryFor(
     agentView: pack.agentView ? { id: pack.agentView.id, revision: pack.agentView.revision } : null,
     disclosure: pack.disclosure.level,
     returned: pack.returned,
+    retrieval: pack.retrieval ? structuredClone(pack.retrieval) : undefined,
     tokenCount: {
       tokenizer: pack.budget.tokenizer,
       estimated: pack.budget.estimatedTokens,

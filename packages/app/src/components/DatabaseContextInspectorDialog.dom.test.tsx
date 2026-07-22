@@ -24,6 +24,39 @@ function inspection(): DatabaseContextInspection {
     agentView: { id: 'view_support', revision: `sha256:${'a'.repeat(64)}` },
     disclosure: 'records',
     returned: 1,
+    retrieval: {
+      query: {
+        filter: { propertyId: 'prop_status', operator: 'equals', value: 'todo' },
+        sort: [{ propertyId: 'prop_title', direction: 'ascending' }],
+        includeArchived: false,
+      },
+      filters: { propertyIds: ['prop_status'] },
+      ranking: {
+        strategy: 'typed_sort_then_record_id',
+        sort: [{ propertyId: 'prop_title', direction: 'ascending' }],
+        tieBreakers: ['record_id'],
+      },
+      projection: {
+        requestedPropertyIds: ['prop_title', 'prop_private'],
+        returnedPropertyIds: ['prop_title'],
+        omittedPropertyIds: ['prop_private'],
+      },
+      result: {
+        matched: 4,
+        returned: 1,
+        omittedRecords: 3,
+        complete: false,
+        continuationAvailable: true,
+      },
+      permission: {
+        evaluated: true,
+        policyId: 'support-agent',
+        policyRevision: `sha256:${'b'.repeat(64)}`,
+        records: 1,
+        properties: 1,
+      },
+      evidence: { mode: 'records', searchText: null, matched: 0, returned: 0 },
+    },
     tokenCount: {
       tokenizer: 'utf8_bytes_div3',
       estimated: 720,
@@ -167,6 +200,14 @@ describe('DatabaseContextInspectorDialog field controls', () => {
     expect(summary.textContent).toContain('720 / 1,800 available');
     expect(summary.textContent).toContain('Complete');
     expect(summary.textContent).toContain('0 · records disclosure');
+    const retrieval = screen.getByTestId('database-retrieval-explainability');
+    expect(retrieval.textContent).toContain('Structured query');
+    expect(retrieval.textContent).toContain('1 filter fields');
+    expect(retrieval.textContent).toContain('Typed sort');
+    expect(retrieval.textContent).toContain('4 matched');
+    expect(retrieval.textContent).toContain('1 records · 1 properties filtered');
+    expect(retrieval.textContent).toContain('720 / 1,800 available');
+    expect(retrieval.textContent).toContain('Show retrieval details');
     expect(screen.getByText('Exact Context Pack').closest('details')?.open).toBe(false);
     expect(screen.getByText('Selected field preview').closest('details')?.open).toBe(false);
   });

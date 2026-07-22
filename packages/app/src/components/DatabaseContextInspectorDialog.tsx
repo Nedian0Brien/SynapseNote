@@ -631,6 +631,128 @@ export function DatabaseContextInspectorBody({
               </dl>
             </section>
 
+            {selected.retrieval ? (
+              <section
+                className="rounded-lg border p-3"
+                aria-label="Retrieval explainability"
+                data-testid="database-retrieval-explainability"
+              >
+                <h4 className="text-sm font-medium">
+                  <Trans>Retrieval explainability</Trans>
+                </h4>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  <Trans>
+                    See the exact query, ranking, projection, permissions, and budget outcome used
+                    for this Context Pack.
+                  </Trans>
+                </p>
+                <dl className="mt-3 grid gap-x-4 gap-y-2 text-xs sm:grid-cols-2">
+                  <div>
+                    <dt className="text-muted-foreground">
+                      <Trans>Query</Trans>
+                    </dt>
+                    <dd className="mt-0.5">
+                      {selected.retrieval.evidence.mode === 'evidence' ? (
+                        <>
+                          <Trans>Text search</Trans> “{selected.retrieval.evidence.searchText}” ·{' '}
+                          {selected.retrieval.evidence.matched} matches
+                        </>
+                      ) : (
+                        <>
+                          <Trans>Structured query</Trans> ·{' '}
+                          {selected.retrieval.query.includeArchived ? (
+                            <Trans>archived records included</Trans>
+                          ) : (
+                            <Trans>active records only</Trans>
+                          )}
+                        </>
+                      )}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">
+                      <Trans>Filters</Trans>
+                    </dt>
+                    <dd className="mt-0.5">
+                      {selected.retrieval.filters.propertyIds.length > 0 ? (
+                        <Trans>{selected.retrieval.filters.propertyIds.length} filter fields</Trans>
+                      ) : (
+                        <Trans>No filters</Trans>
+                      )}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">
+                      <Trans>Ranking</Trans>
+                    </dt>
+                    <dd className="mt-0.5">
+                      <Trans>
+                        Typed sort · {selected.retrieval.ranking.sort.length} sort keys · record ID
+                        tie-breaker
+                      </Trans>
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">
+                      <Trans>Results</Trans>
+                    </dt>
+                    <dd className="mt-0.5">
+                      {selected.retrieval.result.matched} matched ·{' '}
+                      {selected.retrieval.result.returned} returned ·{' '}
+                      {selected.retrieval.result.omittedRecords} omitted ·{' '}
+                      {selected.retrieval.result.complete ? (
+                        <Trans>complete</Trans>
+                      ) : (
+                        <Trans>continuation available</Trans>
+                      )}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">
+                      <Trans>Fields</Trans>
+                    </dt>
+                    <dd className="mt-0.5">
+                      {selected.retrieval.projection.requestedPropertyIds.length} requested ·{' '}
+                      {selected.retrieval.projection.returnedPropertyIds.length} returned ·{' '}
+                      {selected.retrieval.projection.omittedPropertyIds.length} omitted
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">
+                      <Trans>Permissions</Trans>
+                    </dt>
+                    <dd className="mt-0.5">
+                      {selected.retrieval.permission ? (
+                        <>
+                          {selected.retrieval.permission.records} records ·{' '}
+                          {selected.retrieval.permission.properties} properties filtered
+                        </>
+                      ) : (
+                        <Trans>No permission exclusions</Trans>
+                      )}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">
+                      <Trans>Token budget</Trans>
+                    </dt>
+                    <dd className="mt-0.5">
+                      {selected.tokenCount.estimated.toLocaleString()} /{' '}
+                      {selected.tokenCount.available.toLocaleString()} available
+                    </dd>
+                  </div>
+                </dl>
+                <details className="mt-3 rounded-md border bg-muted/20">
+                  <summary className="cursor-pointer px-3 py-2 text-xs font-medium">
+                    <Trans>Show retrieval details</Trans>
+                  </summary>
+                  <pre className="max-h-80 overflow-auto border-t p-3 text-[11px] leading-relaxed">
+                    {JSON.stringify(selected.retrieval, null, 2)}
+                  </pre>
+                </details>
+              </section>
+            ) : null}
+
             <div className="grid gap-3 lg:grid-cols-2">
               <section className="rounded-lg border p-3">
                 <h4 className="flex items-center gap-2 text-sm font-medium">
