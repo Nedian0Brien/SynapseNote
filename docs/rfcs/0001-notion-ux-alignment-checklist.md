@@ -476,7 +476,9 @@ keeps its drag handle and active-view menu for reorder, filters, view settings,
 and view management; the old select is retained only as a `md:hidden` compact
 fallback for narrow screens. The focused default-view DOM journey verifies the
 primary-tab marker, compact fallback boundary, drag affordance, active tab, and
-All-records navigation (1 test / 19 expectations).
+All-records navigation even when the selected saved view uses the List layout
+(1 test / 19 expectations). The tab strip lives above the layout switch, so
+the same `+` affordance is available to every supported view renderer.
 
 This closes UX-601 at the functional implementation/evidence layer. Visual
 responsive proof remains open under UX-1007.
@@ -537,7 +539,7 @@ crossed the document-native UX bar:
 | Measure | Current result | Interpretation |
 | --- | --- | --- |
 | Engine implementation checklist | 310/335 numbered items complete | Core/database and agent contracts are substantially implemented. |
-| Notion UX checklist | 57/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, inline/full-page state parity, table-first direct manipulation, friendly property names/examples, Title safety, type-specific cell editors, schema-vs-data mutation classification, in-context property-add/header affordances including property-specific sort/filter/duplicate actions, destructive property-deletion impact previews, adjacent Formula/Rollup error indicators, view-scoped property visibility/order, converged header/settings-menu view actions, visible reorderable saved-view tabs, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, 768px browser, and cross-host journey gates remain open. |
+| Notion UX checklist | 58/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, inline/full-page state parity, table-first direct manipulation, friendly property names/examples, Title safety, type-specific cell editors, schema-vs-data mutation classification, in-context property-add/header affordances including property-specific sort/filter/duplicate actions, destructive property-deletion impact previews, adjacent Formula/Rollup error indicators, view-scoped property visibility/order, converged header/settings-menu view actions, visible reorderable saved-view tabs, layout-independent new-view `+` affordances, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, 768px browser, and cross-host journey gates remain open. |
 | First-use database entry | `New database` in sidebar, empty states, normal new-page dialog, command palette, plus slash-menu `New database`/`Linked view of database`; normal picker exposes Page/Database chooser and the resulting route lands in an editable table. `Open databases` enters the no-overlay page workspace. | Discovery, sidebar/recent navigation, and the web first-use path are evidenced; additional entry points and Electron proof remain open. |
 | Blank creation | Optional title, `Untitled database` fallback, direct-safe exact-plan commit, immediate source/view selection, title/new-row focus | The blank human path is continuous in DOM coverage; template/import/agent paths intentionally retain review and visual browser proof remains open. |
 | Full-page navigation | Stable `#database/<database>/<source>/<view?>` route, no-overlay canvas presentation, sidebar source section, command-palette recents/search, backlink and relation links, normal page chrome, and local overflow guardrails | Route, page surface, and navigation identity are evidenced; responsive visual/cross-host proof remains incomplete. |
@@ -858,7 +860,11 @@ capability alone is insufficient.
 - [x] **UX-601** Replace the primary view dropdown with visible reorderable tabs
       near the database title. The title-adjacent tab strip is primary; the
       select remains only as a narrow-screen compact fallback.
-- [ ] **UX-602** Put `+` beside the tabs for every supported layout.
+- [x] **UX-602** Put `+` beside the tabs for every supported layout. The
+      shared title-adjacent tab strip is rendered before the layout switch, so
+      table, board, timeline, calendar, list, gallery, chart, map, feed,
+      dashboard, and form surfaces all share the same `New database view`
+      affordance.
 - [ ] **UX-603** Name a new view and choose its layout with sensible property
       suggestions before it appears.
 - [ ] **UX-604** Put layout, properties, filter, sort, group, color, open
