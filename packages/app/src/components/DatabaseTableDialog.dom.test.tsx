@@ -1038,7 +1038,17 @@ describe('DatabaseTableDialog', () => {
       key: 'active',
       name: 'Active tasks',
       sourceId: source.id,
-      layout: { type: 'table' as const, configuration: {} },
+      layout: {
+        type: 'list' as const,
+        configuration: {
+          hierarchy: { type: 'flat' as const },
+          density: 'compact' as const,
+          showSections: true,
+          collapsibleSections: true,
+          showDividers: true,
+          loadLimit: 100,
+        },
+      },
       where: {
         propertyId: 'prop_status',
         operator: 'eq' as const,
