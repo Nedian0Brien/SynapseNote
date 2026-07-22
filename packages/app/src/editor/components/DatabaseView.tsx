@@ -22,6 +22,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import {
+  Fragment,
   lazy,
   type KeyboardEvent as ReactKeyboardEvent,
   Suspense,
@@ -1053,22 +1054,53 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
               {linkedDatabase.views
                 .filter((candidate) => candidate.sourceId === reference.data.sourceId)
                 .map((candidate) => (
-                  <Button
-                    key={candidate.id}
-                    type="button"
-                    size="xs"
-                    variant={candidate.id === reference.data.viewId ? 'secondary' : 'ghost'}
-                    aria-current={candidate.id === reference.data.viewId ? 'page' : undefined}
-                    onClick={() =>
-                      applyReference({
-                        databaseId: reference.data.databaseId,
-                        sourceId: reference.data.sourceId,
-                        viewId: candidate.id,
-                      })
-                    }
-                  >
-                    {candidate.name}
-                  </Button>
+                  <Fragment key={candidate.id}>
+                    <Button
+                      type="button"
+                      size="xs"
+                      variant={candidate.id === reference.data.viewId ? 'secondary' : 'ghost'}
+                      aria-current={candidate.id === reference.data.viewId ? 'page' : undefined}
+                      onClick={() =>
+                        applyReference({
+                          databaseId: reference.data.databaseId,
+                          sourceId: reference.data.sourceId,
+                          viewId: candidate.id,
+                        })
+                      }
+                    >
+                      {candidate.name}
+                    </Button>
+                    {candidate.id === reference.data.viewId ? (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            type="button"
+                            size="icon-xs"
+                            variant="secondary"
+                            className="-ml-1 rounded-l-none"
+                            aria-label={`View options for ${candidate.name}`}
+                          >
+                            <MoreHorizontal aria-hidden="true" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start">
+                          <DropdownMenuItem onSelect={() => openInlineDatabaseSurface('filters')}>
+                            <Filter /> <Trans>Filters</Trans>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onSelect={() => openInlineDatabaseSurface('view-settings')}
+                          >
+                            <Settings2 /> <Trans>View settings</Trans>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onSelect={() => openInlineDatabaseSurface('view-manager')}
+                          >
+                            <Settings2 /> <Trans>Manage views</Trans>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    ) : null}
+                  </Fragment>
                 ))}
               <Button
                 type="button"

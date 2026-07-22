@@ -1128,6 +1128,16 @@ describe('DatabaseView', () => {
 
     expect(await screen.findByRole('heading', { name: 'Open tasks' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Done tasks' })).toBeTruthy();
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'View options for Open tasks' }));
+    expect(screen.getByRole('menuitem', { name: 'Filters' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'View settings' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Manage views' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Filters' }));
+    expect(await screen.findByRole('heading', { name: 'Advanced saved filters' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    await waitFor(() =>
+      expect(screen.queryByRole('heading', { name: 'Advanced saved filters' })).toBeNull(),
+    );
     expect(
       document.querySelector('[data-linked-database-view-tabs] [aria-current="page"]'),
     ).toBeTruthy();

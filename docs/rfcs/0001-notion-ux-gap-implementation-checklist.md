@@ -290,7 +290,7 @@ treated as visual parity until a browser capture is attached.
   oldest views. Cross-reload cache parity is now covered by
   `database-linked-view-cache.test.ts` (2/2 tests, 5 expectations); the full
   visual state matrix remains open. Evidence: `DatabaseView.dom.test.tsx`
-  18/18 tests, 172 expectations, plus the cache suite. Loading exposes
+  18/18 tests, 177 expectations, plus the cache suite. Loading exposes
   `aria-busy`/`data-database-state="loading"`, empty sources retain the
   actionable new-row input, and permission denial is proven not to reuse an
   offline snapshot.
@@ -344,9 +344,11 @@ treated as visual parity until a browser capture is attached.
   adjacent `New database view` affordance, even for a source with one view;
   both open or switch through the same stable-reference/reviewed manager
   paths, and tab switching preserves `mode="full-page"` when the host is in
-  the full-page presentation. The inline journey passes 18 tests / 172
-  expectations, including the single-view `+` handoff, property-context
-  action, and full-page mode preservation.
+  the full-page presentation. The active tab also exposes Filters, View
+  settings, and Manage views without requiring the block-level overflow menu.
+  The inline journey passes 18 tests / 177 expectations, including the
+  single-view `+` handoff, property-context action, active-tab menu, and
+  full-page mode preservation.
   Pixel-level parity and full settings convergence remain open. Map to
   UX-601–UX-610.
 - [ ] **NUI-503** Keep Blank fastest; make templates/import/agent-assisted

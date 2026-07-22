@@ -17,6 +17,7 @@
 - Latest inline property-context changeset: `../../.changeset/inline-property-context.md`
 - Latest inline single-view-tabs changeset: `../../.changeset/inline-single-view-tabs.md`
 - Latest inline mode-preservation changeset: `../../.changeset/inline-view-mode-preservation.md`
+- Latest inline view-tab-menu changeset: `../../.changeset/inline-view-tab-menu.md`
 
 ## Objective and completion rule
 
@@ -647,6 +648,19 @@ do not reconstruct behavior solely from this summary.
   was needed.
 - Follow-up: keep browser/Electron route continuity evidence open under
   NUI-204/NUI-105.
+
+### 2026-07-22 inline active-view tab menu slice
+
+- The active inline saved-view tab now has its own accessible options button
+  with `Filters`, `View settings`, and `Manage views`. Each action opens the
+  existing canonical reviewed workspace surface; the inline block does not add
+  a second settings or mutation implementation.
+- Focused evidence: `DatabaseView.dom.test.tsx` passes 18 tests / 177
+  expectations, including opening Filters from the active tab menu; app
+  typecheck, Biome, and `git diff --check` pass. No server suite or E2E rerun
+  was needed.
+- Follow-up: visual-check the tab/menu spacing in browser and Electron before
+  closing NUI-402/NUI-502.
 
 ### 2026-07-22 inline filter handoff slice
 
