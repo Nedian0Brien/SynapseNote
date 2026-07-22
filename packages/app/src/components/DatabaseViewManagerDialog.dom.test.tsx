@@ -506,7 +506,7 @@ describe('DatabaseViewManagerDialog', () => {
 
   test('starts a reviewed duplicate when an inline block requests the current view copy', async () => {
     const onChange = mock(() => {});
-    render(
+    const rendered = render(
       <DatabaseViewManagerDialog
         open
         onOpenChange={() => {}}
@@ -528,5 +528,19 @@ describe('DatabaseViewManagerDialog', () => {
       },
     });
     expect((onChange.mock.calls[0]?.[0] as { view: DatabaseView }).view.id).not.toBe('view_open');
+
+    const duplicate = (onChange.mock.calls[0]?.[0] as { view: DatabaseView }).view;
+    rendered.rerender(
+      <DatabaseViewManagerDialog
+        open
+        onOpenChange={() => {}}
+        source={source}
+        views={[...views, duplicate]}
+        busy={false}
+        initialAction={{ kind: 'duplicate', viewId: 'view_open' }}
+        onChange={onChange}
+      />,
+    );
+    await waitFor(() => expect(onChange).toHaveBeenCalledTimes(1));
   });
 });

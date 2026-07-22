@@ -7055,7 +7055,6 @@ export function DatabaseTableDialog({
       ) : null}
       {description?.source && viewManagerOpen ? (
         <DatabaseViewManagerDialog
-          key={`${description.source.id}:${description.schemaRevision}`}
           open
           onOpenChange={setViewManagerOpen}
           source={description.source}

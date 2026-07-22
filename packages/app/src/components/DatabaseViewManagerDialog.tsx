@@ -80,6 +80,23 @@ export function DatabaseViewManagerDialog({
   const [deleteViewId, setDeleteViewId] = useState<string | null>(null);
 
   useEffect(() => {
+    setNames((current) => {
+      const next = Object.fromEntries(
+        views.map((view) => [view.id, current[view.id] ?? view.name]),
+      );
+      const currentKeys = Object.keys(current);
+      const nextKeys = Object.keys(next);
+      if (
+        currentKeys.length === nextKeys.length &&
+        currentKeys.every((key) => current[key] === next[key])
+      ) {
+        return current;
+      }
+      return next;
+    });
+  }, [views]);
+
+  useEffect(() => {
     if (!open || !initialAction || busy) return;
     const actionKey = `${initialAction.kind}:${initialAction.viewId}`;
     if (handledInitialAction.current === actionKey) return;
