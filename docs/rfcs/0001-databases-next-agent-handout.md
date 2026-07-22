@@ -60,6 +60,7 @@
 - Latest blank-default changeset: `../../.changeset/database-creation-default.md`
 - Latest CSV-preview changeset: `../../.changeset/database-csv-preview.md`
 - Latest source-identity-migration changeset: `../../.changeset/database-source-identity-migration.md`
+- Latest agent-plan-preview changeset: `../../.changeset/database-agent-plan-preview.md`
 
 ## Objective and completion rule
 
@@ -97,7 +98,7 @@ the repository-wide check for final release readiness.
   catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
   approval-bound commits, undo, and restart/backup idempotency. Agent View
   policy/privacy/sandbox review remains Partial by design.
-- Notion UX alignment checklist: **81/128 complete**. The page-first and normal
+- Notion UX alignment checklist: **82/128 complete**. The page-first and normal
   New-page creation slices, the inline/linked insertion contract, and the
   table-first direct-manipulation, named canonical workspace canvas-route,
   shared navigation without a duplicate canvas rail, sidebar/recent/search/
@@ -124,7 +125,8 @@ the repository-wide check for final release readiness.
   Blank/template/import/folder/Assistant creation start surface and realistic
   template view/property/sample-page previews, Blank-first/reset behavior, and
   bounded CSV/TSV import previews, and the dedicated existing-folder
-  source-identity migration review without implicit advanced choices are
+  source-identity migration review, and the natural-language agent plan
+  preview without implicit advanced choices are
   now
   evidenced. A
   2026-07-23 in-app browser capture reached the IPv4 renderer at
@@ -565,7 +567,7 @@ do not reconstruct behavior solely from this summary.
 - UX-501 through UX-510, UX-601, UX-602, UX-603, UX-604, UX-605, UX-606,
   UX-607, UX-608, UX-609, UX-610, UX-701, UX-702, UX-703, UX-704, UX-705,
   UX-706, UX-707, UX-708, UX-709, UX-710, UX-801, UX-802, UX-803, UX-804, and
-  UX-805
+  UX-805, and UX-806
   are checked at the functional
   implementation/evidence layer. Visual and broader property-family gates
   remain open.
@@ -631,6 +633,24 @@ do not reconstruct behavior solely from this summary.
 - UX-805 is now checked at the functional advanced-migration boundary. Broader
   multi-source migration, accessibility, visual first-use, and packaged-host
   evidence remain open under UX-10/UX-11.
+
+### 2026-07-23 agent-assisted database plan preview
+
+- The Assistant composer now exposes a preview-only intent channel for the
+  database creation surface. A conservative local compiler maps a natural-
+  language goal to a starter template and renders the suggested name, typed
+  properties, Table/Board views, and optional sample pages. The proposal is
+  visibly unsaved; it never writes a manifest or records and does not replace
+  the installed-agent exact-plan handoff.
+- Focused evidence: `database-creation.test.ts` passes 9 tests / 60
+  expectations; `DatabaseAgentCreationPlanPreview.dom.test.tsx` passes 2 / 8;
+  `CreatePromptComposer.dom.test.tsx` passes 13 / 58; and
+  `ComposerMentionInput.dom.test.tsx` passes 16 / 46 for the serialized prompt
+  callback. The creation dialog remains green at 12 / 59. App typecheck and
+  targeted Biome checks pass.
+- UX-806 is now checked at the functional proposal-preview layer. Model-backed
+  schema generation, richer goal clarification, editable proposal fields, and
+  packaged-host evidence remain open under UX-807 and UX-11.
 
 ### 2026-07-23 template preview parity
 
