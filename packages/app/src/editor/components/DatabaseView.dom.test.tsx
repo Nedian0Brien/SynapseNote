@@ -66,6 +66,55 @@ describe('DatabaseView', () => {
     expect(document.querySelector('[aria-busy="true"]')).toBeTruthy();
   });
 
+  test('keeps the inline view tab and new-view action visible for a single saved view', async () => {
+    globalThis.fetch = mock(async (input: RequestInfo | URL) => {
+      const path = String(input);
+      if (path === '/api/databases/describe') {
+        return Response.json({
+          manifestRevision: hash,
+          schemaRevision: hash,
+          database,
+          source,
+          index: {
+            state: 'idle',
+            revision: hash,
+            manifestRevision: hash,
+            recordCount: 0,
+            issueCount: 0,
+            progress: null,
+            lastRebuiltAt: '2026-07-20T00:00:00.000Z',
+            lastIncrementalAt: null,
+            lastError: null,
+          },
+          allowedOperations: ['describe', 'query'],
+        });
+      }
+      if (path === '/api/databases/query') {
+        return Response.json({
+          sourceId: source.id,
+          snapshotRevision: hash,
+          matched: 0,
+          returned: 0,
+          isComplete: true,
+          nextCursor: null,
+          truncatedBy: null,
+          indexFreshness: 'snapshot',
+          records: [],
+          aggregation: null,
+        });
+      }
+      return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
+    }) as typeof fetch;
+
+    render(
+      <DatabaseView databaseId={database.id} sourceId={source.id} viewId={view.id} mode="inline" />,
+    );
+
+    expect(await screen.findByRole('button', { name: view.name })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'New database view' })).toBeTruthy();
+    expect(document.querySelector('[data-linked-database-view-tabs]')).toBeTruthy();
+  });
+
   test('renders a linked Feed through its saved chronology and canonical source identity', async () => {
     const feedSource = {
       ...source,
@@ -402,7 +451,7 @@ describe('DatabaseView', () => {
         mode="inline"
       />,
     );
-    expect(await screen.findByText('Task gallery')).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Task gallery' })).toBeTruthy();
     await waitFor(() =>
       expect(document.querySelector('[data-gallery-card="rec_first"]')).toBeTruthy(),
     );
@@ -482,7 +531,7 @@ describe('DatabaseView', () => {
         mode="inline"
       />,
     );
-    expect(await screen.findByText('Task list')).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Task list' })).toBeTruthy();
     await waitFor(() => expect(document.querySelector('[data-list-row="rec_first"]')).toBeTruthy());
   });
 
@@ -565,7 +614,7 @@ describe('DatabaseView', () => {
       />,
     );
 
-    expect(await screen.findByText('Task board')).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Task board' })).toBeTruthy();
     expect(await screen.findByText('First task')).toBeTruthy();
     expect(document.querySelector('[data-board-card="rec_first"]')).toBeTruthy();
   });
@@ -701,7 +750,7 @@ describe('DatabaseView', () => {
       />,
     );
 
-    expect(await screen.findByText('Task board')).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Task board' })).toBeTruthy();
     fireEvent.click(
       screen.getAllByRole('combobox', { name: 'Move record rec_first to group' })[0] as HTMLElement,
     );
@@ -793,7 +842,7 @@ describe('DatabaseView', () => {
       />,
     );
 
-    expect(await screen.findByText('Task calendar')).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Task calendar' })).toBeTruthy();
     await waitFor(() =>
       expect(document.querySelector('[data-calendar-card="rec_first"]')).toBeTruthy(),
     );
@@ -885,7 +934,7 @@ describe('DatabaseView', () => {
       />,
     );
 
-    expect(await screen.findByText('Task timeline')).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Task timeline' })).toBeTruthy();
     expect((await screen.findAllByText('First task')).length).toBeGreaterThan(0);
     expect(document.querySelector('[data-timeline-bar="rec_first"]')).toBeTruthy();
   });

@@ -15,6 +15,7 @@
 - Latest inline empty-state changeset: `../../.changeset/inline-database-empty-state.md`
 - Latest inline agent-context changeset: `../../.changeset/inline-agent-context-inspector.md`
 - Latest inline property-context changeset: `../../.changeset/inline-property-context.md`
+- Latest inline single-view-tabs changeset: `../../.changeset/inline-single-view-tabs.md`
 
 ## Objective and completion rule
 
@@ -618,6 +619,20 @@ do not reconstruct behavior solely from this summary.
   full server suite or broad E2E rerun was needed.
 - Follow-up: keep NUI-601's visual/browser evidence and NUI-603 Agent Runs
   inspect/undo/retry/resume gates open until real-host capture is available.
+
+### 2026-07-22 inline single-view tabs slice
+
+- Inline linked databases now render the active saved-view tab and adjacent
+  `New database view` action even when the source has only one saved view.
+  Switching tabs remains a stable database/source/view reference update, and
+  the `+` action still opens the canonical reviewed saved-view manager.
+- Existing alternative-view journeys now locate view names by heading so the
+  new tab label cannot make renderer assertions ambiguous.
+- Focused evidence: `DatabaseView.dom.test.tsx` passes 18 tests / 171
+  expectations, including a single-view tab/action journey; app typecheck,
+  Biome, and `git diff --check` pass. No server suite or E2E rerun was needed.
+- Follow-up: capture the tab strip in the browser/Electron visual gates before
+  closing NUI-402/NUI-502.
 
 ### 2026-07-22 inline filter handoff slice
 

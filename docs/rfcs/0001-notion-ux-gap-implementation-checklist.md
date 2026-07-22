@@ -280,8 +280,9 @@ treated as visual parity until a browser capture is attached.
   UX-302/UX-306/UX-310.
 - [ ] **NUI-402** Make the inline block show the database title, visible view
   tabs, shared-record explanation, and consistent loading/error/offline states.
-  The inline block now exposes the database/source title and visible saved-view
-  tabs when a source has multiple views, with `aria-current` on the active tab;
+  The inline block now exposes the database/source title and the active
+  saved-view tab (plus adjacent tabs when a source has multiple views), with
+  `aria-current` on the active tab;
   it also explains canonical shared records and retains a bounded per-tab
   `sessionStorage` last-verified snapshot with an explicit offline/stale status
   on refresh failure. The cache stores only validated read snapshots (never
@@ -289,7 +290,7 @@ treated as visual parity until a browser capture is attached.
   oldest views. Cross-reload cache parity is now covered by
   `database-linked-view-cache.test.ts` (2/2 tests, 5 expectations); the full
   visual state matrix remains open. Evidence: `DatabaseView.dom.test.tsx`
-  17/17 tests, 168 expectations, plus the cache suite. Loading exposes
+  18/18 tests, 171 expectations, plus the cache suite. Loading exposes
   `aria-busy`/`data-database-state="loading"`, empty sources retain the
   actionable new-row input, and permission denial is proven not to reuse an
   offline snapshot.
@@ -339,9 +340,11 @@ treated as visual parity until a browser capture is attached.
   canonical reviewed view manager/filter editor. Evidence:
   `DatabaseTableDialog.dom.test.tsx` default-view and drag-reorder journeys
   (64/64 tests, 374 expectations) plus the lifecycle compiler test. The inline
-  linked-view tab strip now exposes an adjacent `New database view` affordance
-  that opens the same reviewed view manager. The inline journey passes 17 tests
-  / 168 expectations, including the `+` handoff and property-context action.
+  linked-view tab strip always exposes the active saved-view tab and an
+  adjacent `New database view` affordance, even for a source with one view;
+  both open or switch through the same stable-reference/reviewed manager
+  paths. The inline journey passes 18 tests / 171 expectations, including the
+  single-view `+` handoff and property-context action.
   Pixel-level parity and full settings convergence remain open. Map to
   UX-601–UX-610.
 - [ ] **NUI-503** Keep Blank fastest; make templates/import/agent-assisted

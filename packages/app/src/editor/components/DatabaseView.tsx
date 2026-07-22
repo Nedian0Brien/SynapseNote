@@ -1043,10 +1043,7 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
               settings.
             </p>
           ) : null}
-          {state.status === 'ready' &&
-          linkedDatabase &&
-          linkedDatabase.views.filter((candidate) => candidate.sourceId === reference.data.sourceId)
-            .length > 1 ? (
+          {state.status === 'ready' && linkedDatabase ? (
             <nav
               className="mt-2 flex max-w-full gap-1 overflow-x-auto"
               aria-label="Linked database views"
