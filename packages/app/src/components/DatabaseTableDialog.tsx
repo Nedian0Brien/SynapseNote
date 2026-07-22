@@ -256,6 +256,7 @@ import {
 import { rememberDatabaseRecordNavigation } from '@/lib/database-record-navigation';
 import {
   applyDatabaseSavedTableViewLayout,
+  type DatabaseTableLayoutState,
   databaseTableRowHeightPixels,
   loadDatabaseTableLayout,
   moveDatabaseTableProperty,
@@ -877,6 +878,7 @@ export function DatabaseTable({
   onConvertProperty,
   onOpenPropertySort,
   onOpenPropertyFilter,
+  onViewPropertyIdsChange,
   onDuplicateProperty,
   onInvokeButton,
   onVerificationAction,
@@ -935,6 +937,7 @@ export function DatabaseTable({
   onConvertProperty?: (property: DatabaseProperty) => void;
   onOpenPropertySort?: (property: DatabaseProperty) => void;
   onOpenPropertyFilter?: (property: DatabaseProperty) => void;
+  onViewPropertyIdsChange?: (propertyIds: readonly string[]) => void;
   onDuplicateProperty?: (property: DatabaseProperty) => void;
   onInvokeButton?: (
     record: ProjectedDatabaseRecord,
@@ -1081,6 +1084,18 @@ export function DatabaseTable({
   }, [autoFocusNewRecord, focusNewRecordRequest, mutationLocked, onCreateRecord]);
   const allLoadedSelected =
     result.records.length > 0 && result.records.every((record) => selectedRecordIds.has(record.id));
+
+  const updatePropertyLayout = (
+    update: (current: DatabaseTableLayoutState) => DatabaseTableLayoutState,
+  ) => {
+    const next = update(layout);
+    setLayout(next);
+    if (viewPropertyIds && onViewPropertyIdsChange) {
+      onViewPropertyIdsChange(
+        next.propertyIds.filter((propertyId) => !next.hiddenPropertyIds.includes(propertyId)),
+      );
+    }
+  };
 
   useEffect(() => {
     if (!viewPropertyIds) saveDatabaseTableLayout(source.id, layout);
@@ -1300,7 +1315,7 @@ export function DatabaseTable({
                       disabled={title}
                       aria-label={`Show ${property.name} column`}
                       onCheckedChange={(checked) =>
-                        setLayout((current) => ({
+                        updatePropertyLayout((current) => ({
                           ...current,
                           hiddenPropertyIds:
                             checked === true
@@ -1320,7 +1335,9 @@ export function DatabaseTable({
                       aria-label={`Move ${property.name} left`}
                       disabled={title || propertyIndex <= 1}
                       onClick={() =>
-                        setLayout((current) => moveDatabaseTableProperty(current, property.id, -1))
+                        updatePropertyLayout((current) =>
+                          moveDatabaseTableProperty(current, property.id, -1),
+                        )
                       }
                     >
                       <ChevronLeft />
@@ -1332,7 +1349,9 @@ export function DatabaseTable({
                       aria-label={`Move ${property.name} right`}
                       disabled={title || propertyIndex >= layout.propertyIds.length - 1}
                       onClick={() =>
-                        setLayout((current) => moveDatabaseTableProperty(current, property.id, 1))
+                        updatePropertyLayout((current) =>
+                          moveDatabaseTableProperty(current, property.id, 1),
+                        )
                       }
                     >
                       <ChevronRight />
@@ -1567,7 +1586,7 @@ export function DatabaseTable({
                         checked={propertyVisible}
                         disabled={property.type === 'title'}
                         onCheckedChange={(checked) =>
-                          setLayout((current) => ({
+                          updatePropertyLayout((current) => ({
                             ...current,
                             hiddenPropertyIds:
                               checked === true
@@ -1581,7 +1600,7 @@ export function DatabaseTable({
                       <DropdownMenuItem
                         disabled={property.type === 'title' || layoutPropertyIndex <= 1}
                         onSelect={() =>
-                          setLayout((current) =>
+                          updatePropertyLayout((current) =>
                             moveDatabaseTableProperty(current, property.id, -1),
                           )
                         }
@@ -1596,7 +1615,9 @@ export function DatabaseTable({
                           layoutPropertyIndex >= layout.propertyIds.length - 1
                         }
                         onSelect={() =>
-                          setLayout((current) => moveDatabaseTableProperty(current, property.id, 1))
+                          updatePropertyLayout((current) =>
+                            moveDatabaseTableProperty(current, property.id, 1),
+                          )
                         }
                       >
                         <ChevronRight aria-hidden="true" />
@@ -7018,6 +7039,44 @@ function DatabaseTableSurface({
                       setPropertyFilterTargetId(property.id);
                       setFilterDialogOpen(true);
                     }}
+                    onViewPropertyIdsChange={
+                      selectedView
+                        ? (propertyIds) => {
+                            if (!description.source || mutationStatus !== 'idle') return;
+                            try {
+                              runMutation(
+                                createDatabaseViewConfigurationChangeDesiredState({
+                                  database: description.database,
+                                  source: description.source,
+                                  view: {
+                                    ...selectedView,
+                                    projection: {
+                                      ...selectedView.projection,
+                                      propertyIds: [...propertyIds],
+                                    },
+                                  },
+                                }),
+                                'ui-view-property-projection',
+                                'Saved view property visibility change failed',
+                                {
+                                  policy: {
+                                    operation: 'view',
+                                    actor: 'human',
+                                    principalId: 'user:local',
+                                  },
+                                },
+                              );
+                            } catch (cause) {
+                              setMutationError(
+                                classifyDatabaseUiProblem(
+                                  cause,
+                                  'Unable to prepare saved view property visibility change',
+                                ),
+                              );
+                            }
+                          }
+                        : undefined
+                    }
                     onDuplicateProperty={duplicateSchemaProperty}
                     onInvokeButton={planButton}
                     onManageProperties={(propertyId) => {

@@ -966,6 +966,31 @@ describe('DatabaseTableDialog', () => {
     expect(source.properties.some((property) => property.id === 'prop_budget')).toBe(true);
   });
 
+  test('routes saved-view property visibility and order changes through a view callback', async () => {
+    const onViewPropertyIdsChange = mock(() => {});
+    const user = userEvent.setup();
+    render(
+      <DatabaseTable
+        source={source}
+        result={{ ...queryResult(), isComplete: true, nextCursor: null } as never}
+        viewPropertyIds={['prop_title', 'prop_status', 'prop_budget']}
+        onViewPropertyIdsChange={onViewPropertyIdsChange}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Property options for Budget' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Move left' }));
+    expect(onViewPropertyIdsChange).toHaveBeenLastCalledWith([
+      'prop_title',
+      'prop_budget',
+      'prop_status',
+    ]);
+
+    await user.click(screen.getByRole('button', { name: 'Property options for Budget' }));
+    await user.click(screen.getByRole('menuitemcheckbox', { name: 'Show column' }));
+    expect(onViewPropertyIdsChange).toHaveBeenLastCalledWith(['prop_title', 'prop_status']);
+  });
+
   test('applies canonical saved-view order and display without overwriting personal layout', () => {
     const personalLayout = {
       propertyIds: source.properties.map((property) => property.id),
