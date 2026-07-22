@@ -10,6 +10,7 @@ import {
   DatabaseDefinitionSchema,
   DatabaseFormValueSchema,
   DatabaseGroupMembershipsSchema,
+  DatabaseLinkedViewSettingsSchema,
   DatabasePlaceValueSchema,
   DatabasePropertySchema,
   type DatabasePublicSharePolicy,
@@ -325,6 +326,7 @@ export const DatabaseQueryRequestSchema = z
     sourceId: z.string().min(1),
     viewId: z.string().startsWith('view_').optional(),
     agentViewId: z.string().startsWith('view_').optional(),
+    viewOverrides: DatabaseLinkedViewSettingsSchema.optional(),
     query: DatabaseQuerySchema.optional(),
     deltaSince: z
       .object({
@@ -335,7 +337,11 @@ export const DatabaseQueryRequestSchema = z
       .strict()
       .optional(),
   })
-  .strict();
+  .strict()
+  .refine((value) => value.viewOverrides === undefined || value.viewId !== undefined, {
+    message: 'viewOverrides requires a saved viewId',
+    path: ['viewOverrides'],
+  });
 export const DatabaseFormSubmitRequestSchema = z
   .object({
     databaseId: z.string().startsWith('db_'),

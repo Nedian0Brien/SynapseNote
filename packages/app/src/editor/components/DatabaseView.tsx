@@ -1,6 +1,10 @@
 import { Trans } from '@lingui/react/macro';
 import {
+  applyDatabaseLinkedViewSettings,
+  type DatabaseView as CoreDatabaseView,
+  type DatabaseFilter,
   DatabaseLinkedViewReferenceSchema,
+  type DatabaseLinkedViewSettings,
   type DatabaseProperty,
   type DatabaseQueryResult,
   type DatabaseValue,
@@ -31,7 +35,9 @@ import {
   useRef,
   useState,
 } from 'react';
+import { DatabaseAdvancedFilterDialog } from '@/components/DatabaseAdvancedFilterDialog';
 import { DatabaseRecordPeek } from '@/components/DatabaseRecordPeek';
+import { DatabaseSavedViewSettingsDialog } from '@/components/DatabaseSavedViewSettingsDialog';
 import type {
   DatabaseInitialRecordAction,
   DatabaseTableViewState,
@@ -167,6 +173,7 @@ interface DatabaseViewProps {
   databaseId?: string;
   sourceId?: string;
   viewId?: string;
+  viewOverrides?: DatabaseLinkedViewSettings;
   mode?: 'inline' | 'full-page';
 }
 
@@ -475,6 +482,7 @@ function linkedViewCacheKey(input: {
   databaseId: string;
   sourceId: string;
   viewId: string;
+  viewOverrides?: DatabaseLinkedViewSettings;
   mode?: 'inline' | 'full-page';
   showArchived: boolean;
 }): string {
@@ -482,6 +490,7 @@ function linkedViewCacheKey(input: {
     input.databaseId,
     input.sourceId,
     input.viewId,
+    JSON.stringify(input.viewOverrides ?? null),
     input.mode ?? 'inline',
     input.showArchived ? 'archived' : 'active',
   ].join('\0');
@@ -494,6 +503,31 @@ function linkedViewProblem(cause: unknown): DatabaseUiProblem {
     return { kind: 'missing', message, retryable: false };
   }
   return classifyDatabaseUiProblem(cause, message);
+}
+
+function linkedViewSettingsFromView(view: CoreDatabaseView): DatabaseLinkedViewSettings {
+  return {
+    layout: structuredClone(view.layout),
+    where: view.where ? structuredClone(view.where) : null,
+    conditionalColors: structuredClone(view.conditionalColors ?? []),
+    sort: structuredClone(view.sort),
+    groups: structuredClone(view.groups),
+    projection: structuredClone(view.projection),
+    ...(view.openBehavior ? { openBehavior: view.openBehavior } : {}),
+  };
+}
+
+function resolveLinkedView(
+  view: CoreDatabaseView,
+  settings?: DatabaseLinkedViewSettings,
+): CoreDatabaseView {
+  try {
+    return applyDatabaseLinkedViewSettings(view, settings);
+  } catch {
+    // A schema migration may leave a stale block-local projection. Keep the
+    // canonical view renderable until the user reviews a replacement setting.
+    return view;
+  }
 }
 
 /**
@@ -542,15 +576,25 @@ function applyInlineOptimisticValues(
   };
 }
 
-export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseViewProps) {
+export function DatabaseView({
+  databaseId,
+  sourceId,
+  viewId,
+  viewOverrides,
+  mode,
+}: DatabaseViewProps) {
   'use no memo';
   const host = useJsxComponentHost();
   const reference = DatabaseLinkedViewReferenceSchema.safeParse({
     databaseId,
     sourceId,
     viewId,
+    ...(viewOverrides ? { viewOverrides } : {}),
     ...(mode ? { mode } : {}),
   });
+  const [localViewOverrides, setLocalViewOverrides] = useState<
+    DatabaseLinkedViewSettings | undefined
+  >(() => (reference.success ? reference.data.viewOverrides : undefined));
   const [state, setState] = useState<LinkedViewState>({ status: 'loading' });
   const [refresh, setRefresh] = useState(0);
   const [fullDatabaseOpen, setFullDatabaseOpen] = useState(false);
@@ -565,6 +609,10 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
   >();
   const [initialPropertyId, setInitialPropertyId] = useState<string>();
   const [initialSelectedRecordIds, setInitialSelectedRecordIds] = useState<readonly string[]>();
+  const [linkedViewSettingsOpen, setLinkedViewSettingsOpen] = useState(false);
+  const [linkedFilterOpen, setLinkedFilterOpen] = useState(false);
+  const [linkedSortTargetId, setLinkedSortTargetId] = useState<string>();
+  const [linkedFilterTargetId, setLinkedFilterTargetId] = useState<string>();
   const [replacementPickerOpen, setReplacementPickerOpen] = useState(false);
   const [inlineContextInspectorScope, setInlineContextInspectorScope] = useState<{
     recordId?: string;
@@ -601,6 +649,7 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
       databaseId,
       sourceId,
       viewId,
+      ...(viewOverrides ? { viewOverrides } : {}),
       ...(mode ? { mode } : {}),
     });
     if (!parsed.success) {
@@ -620,6 +669,7 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
       databaseId: parsed.data.databaseId,
       sourceId: parsed.data.sourceId,
       viewId: parsed.data.viewId,
+      viewOverrides: localViewOverrides ?? parsed.data.viewOverrides,
       mode: parsed.data.mode,
       showArchived,
     });
@@ -635,14 +685,23 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
           (view) => view.id === parsed.data.viewId && view.sourceId === parsed.data.sourceId,
         );
         if (!selectedView) throw new Error('The linked saved view no longer exists in this source');
+        const effectiveView = resolveLinkedView(
+          selectedView,
+          localViewOverrides ?? parsed.data.viewOverrides,
+        );
         const result =
-          selectedView.layout.type === 'form' || selectedView.layout.type === 'dashboard'
+          effectiveView.layout.type === 'form' || effectiveView.layout.type === 'dashboard'
             ? null
             : await queryDatabase(
                 {
                   databaseId: parsed.data.databaseId,
                   sourceId: parsed.data.sourceId,
                   viewId: parsed.data.viewId,
+                  ...((localViewOverrides ?? parsed.data.viewOverrides)
+                    ? {
+                        viewOverrides: localViewOverrides ?? parsed.data.viewOverrides,
+                      }
+                    : {}),
                   query: {
                     sort: [],
                     includeArchived: showArchived,
@@ -670,7 +729,16 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
         setState({ status: 'error', problem });
       });
     return () => controller.abort();
-  }, [databaseId, sourceId, viewId, mode, refresh, showArchived]);
+  }, [
+    databaseId,
+    sourceId,
+    viewId,
+    viewOverrides,
+    localViewOverrides,
+    mode,
+    refresh,
+    showArchived,
+  ]);
 
   const applyReference = (
     next: { databaseId: string; sourceId: string; viewId: string },
@@ -682,19 +750,53 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
     const node = editor.state.doc.nodeAt(pos);
     if (!node || node.type.name !== 'jsxComponent') return;
     const nextMode = reference.success ? reference.data.mode : 'inline';
+    const sameView =
+      reference.success &&
+      reference.data.databaseId === next.databaseId &&
+      reference.data.sourceId === next.sourceId &&
+      reference.data.viewId === next.viewId;
+    const nextProps = {
+      ...((node.attrs.props as Record<string, unknown> | undefined) ?? {}),
+      ...next,
+      mode: nextMode,
+    } as Record<string, unknown>;
+    if (sameView && localViewOverrides) nextProps.viewOverrides = localViewOverrides;
+    else delete nextProps.viewOverrides;
     editor.view.dispatch(
       editor.state.tr.setNodeMarkup(pos, undefined, {
         ...node.attrs,
-        props: {
-          ...((node.attrs.props as Record<string, unknown> | undefined) ?? {}),
-          ...next,
-          mode: nextMode,
-        },
+        props: nextProps,
       }),
     );
+    setLocalViewOverrides(sameView ? localViewOverrides : undefined);
     editor.view.focus();
     setFocusInlineNewRecord(options.focusNewRecord === true);
     setReplacementPickerOpen(false);
+  };
+
+  const persistLinkedViewOverrides = (next: DatabaseLinkedViewSettings | undefined) => {
+    const editor = host?.editor;
+    const pos = host?.getPos();
+    if (!editor || typeof pos !== 'number' || !reference.success) return;
+    const node = editor.state.doc.nodeAt(pos);
+    if (!node || node.type.name !== 'jsxComponent') return;
+    const nextProps = {
+      ...((node.attrs.props as Record<string, unknown> | undefined) ?? {}),
+      databaseId: reference.data.databaseId,
+      sourceId: reference.data.sourceId,
+      viewId: reference.data.viewId,
+      mode: reference.data.mode,
+    } as Record<string, unknown>;
+    if (next) nextProps.viewOverrides = next;
+    else delete nextProps.viewOverrides;
+    editor.view.dispatch(
+      editor.state.tr.setNodeMarkup(pos, undefined, {
+        ...node.attrs,
+        props: nextProps,
+      }),
+    );
+    setLocalViewOverrides(next);
+    editor.view.focus();
   };
 
   const setInlineMode = (nextMode: 'inline' | 'full-page') => {
@@ -712,6 +814,7 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
           sourceId: reference.data.sourceId,
           viewId: reference.data.viewId,
           mode: nextMode,
+          ...(localViewOverrides ? { viewOverrides: localViewOverrides } : {}),
         },
       }),
     );
@@ -772,6 +875,9 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
     state.status === 'ready'
       ? state.description.database.views.find((view) => view.id === reference.data.viewId)
       : undefined;
+  const activeLinkedView = linkedView
+    ? resolveLinkedView(linkedView, localViewOverrides ?? reference.data.viewOverrides)
+    : undefined;
   const linkedSourceViews =
     linkedDatabase?.views.filter((view) => view.sourceId === reference.data.sourceId) ?? [];
   const renderedResult =
@@ -788,11 +894,11 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
       paths: state.status === 'ready' ? (state.result?.records ?? []).map((item) => item.path) : [],
       currentPath: record.path,
     });
-    if (!linkedView || databaseViewOpenBehavior(linkedView) === 'full_page') {
+    if (!activeLinkedView || databaseViewOpenBehavior(activeLinkedView) === 'full_page') {
       window.location.hash = databaseRecordPathToHash(record.path);
       return;
     }
-    const behavior = databaseViewOpenBehavior(linkedView);
+    const behavior = databaseViewOpenBehavior(activeLinkedView);
     setRecordPeek({ record, mode: behavior === 'full_page' ? 'side_peek' : behavior });
   };
   const handleInlineViewTabAction = (
@@ -1074,6 +1180,16 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
     propertyId?: string,
     viewAction?: { kind: 'duplicate'; viewId: string },
   ) => {
+    if (surface === 'view-settings') {
+      setLinkedSortTargetId(propertyId);
+      setLinkedViewSettingsOpen(true);
+      return;
+    }
+    if (surface === 'filters') {
+      setLinkedFilterTargetId(propertyId);
+      setLinkedFilterOpen(true);
+      return;
+    }
     setInitialDatabaseSurface(surface);
     setInitialPropertyId(propertyId);
     setInitialViewAction(viewAction);
@@ -1124,7 +1240,7 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
       <header className="flex items-center justify-between gap-3 border-b px-4 py-3">
         <div className="min-w-0">
           <h3 className="truncate font-medium">
-            {state.status === 'ready' ? linkedView?.name : 'Linked database view'}
+            {state.status === 'ready' ? activeLinkedView?.name : 'Linked database view'}
           </h3>
           {state.status === 'ready' ? (
             <p className="truncate text-muted-foreground text-xs">
@@ -1192,17 +1308,17 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
               </Button>
             </nav>
           ) : null}
-          {state.status === 'ready' && linkedSource && linkedView ? (
+          {state.status === 'ready' && linkedSource && activeLinkedView ? (
             <DatabaseViewQuerySummary
               source={linkedSource}
-              view={linkedView}
+              view={activeLinkedView}
               onOpenFilters={() => openInlineDatabaseSurface('filters')}
               onOpenSorts={() => openInlineDatabaseSurface('view-settings')}
             />
           ) : null}
         </div>
         <div className="flex flex-wrap justify-end gap-1">
-          {linkedView?.layout.type !== 'form' ? (
+          {activeLinkedView?.layout.type !== 'form' ? (
             <Button
               type="button"
               variant="outline"
@@ -1216,7 +1332,7 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
               <Plus /> <Trans>New record</Trans>
             </Button>
           ) : null}
-          {linkedView?.layout.type !== 'form' ? (
+          {activeLinkedView?.layout.type !== 'form' ? (
             <Button
               type="button"
               variant={showArchived ? 'secondary' : 'ghost'}
@@ -1513,7 +1629,7 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
             </Button>
           ) : null}
         </div>
-      ) : linkedSource && linkedView ? (
+      ) : linkedSource && activeLinkedView ? (
         <div
           className={cn('overflow-auto p-3', reference.data.mode === 'inline' && 'max-h-[36rem]')}
         >
@@ -1524,27 +1640,27 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
               </div>
             }
           >
-            {linkedView.layout.type === 'form' ? (
+            {activeLinkedView.layout.type === 'form' ? (
               <LazyDatabaseForm
                 key={state.description.schemaRevision}
                 databaseId={state.description.database.id}
                 source={linkedSource}
-                view={linkedView}
+                view={activeLinkedView}
                 people={state.description.database.people}
               />
-            ) : linkedView.layout.type === 'dashboard' ? (
+            ) : activeLinkedView.layout.type === 'dashboard' ? (
               <LazyDatabaseDashboard
                 key={state.description.schemaRevision}
                 databaseId={state.description.database.id}
                 database={state.description.database}
-                view={linkedView}
+                view={activeLinkedView}
                 onOpen={openRecord}
               />
-            ) : !renderedResult ? null : linkedView.layout.type === 'board' ? (
+            ) : !renderedResult ? null : activeLinkedView.layout.type === 'board' ? (
               <LazyDatabaseBoard
                 key={`${state.description.schemaRevision}:${renderedResult.snapshotRevision}`}
                 source={linkedSource}
-                view={linkedView}
+                view={activeLinkedView}
                 result={renderedResult}
                 people={state.description.database.people}
                 onOpen={openRecord}
@@ -1576,11 +1692,11 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
                   setFullDatabaseOpen(true);
                 }}
               />
-            ) : linkedView.layout.type === 'timeline' ? (
+            ) : activeLinkedView.layout.type === 'timeline' ? (
               <LazyDatabaseTimeline
                 key={`${state.description.schemaRevision}:${renderedResult.snapshotRevision}`}
                 source={linkedSource}
-                view={linkedView}
+                view={activeLinkedView}
                 result={renderedResult}
                 people={state.description.database.people}
                 onOpen={openRecord}
@@ -1596,11 +1712,11 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
                   inlineRedoStatus !== 'idle'
                 }
               />
-            ) : linkedView.layout.type === 'calendar' ? (
+            ) : activeLinkedView.layout.type === 'calendar' ? (
               <LazyDatabaseCalendar
                 key={`${state.description.schemaRevision}:${renderedResult.snapshotRevision}`}
                 source={linkedSource}
-                view={linkedView}
+                view={activeLinkedView}
                 result={renderedResult}
                 people={state.description.database.people}
                 onOpen={openRecord}
@@ -1616,11 +1732,11 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
                   inlineRedoStatus !== 'idle'
                 }
               />
-            ) : linkedView.layout.type === 'list' ? (
+            ) : activeLinkedView.layout.type === 'list' ? (
               <LazyDatabaseList
                 key={`${state.description.schemaRevision}:${renderedResult.snapshotRevision}`}
                 source={linkedSource}
-                view={linkedView}
+                view={activeLinkedView}
                 result={renderedResult}
                 people={state.description.database.people}
                 onOpen={openRecord}
@@ -1628,11 +1744,11 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
                   setInlineContextInspectorScope({ recordId: record.id })
                 }
               />
-            ) : linkedView.layout.type === 'gallery' ? (
+            ) : activeLinkedView.layout.type === 'gallery' ? (
               <LazyDatabaseGallery
                 key={`${state.description.schemaRevision}:${renderedResult.snapshotRevision}`}
                 source={linkedSource}
-                view={linkedView}
+                view={activeLinkedView}
                 result={renderedResult}
                 people={state.description.database.people}
                 onOpen={openRecord}
@@ -1640,11 +1756,11 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
                   setInlineContextInspectorScope({ recordId: record.id })
                 }
               />
-            ) : linkedView.layout.type === 'chart' ? (
+            ) : activeLinkedView.layout.type === 'chart' ? (
               <LazyDatabaseChart
                 key={`${state.description.schemaRevision}:${renderedResult.snapshotRevision}`}
                 source={linkedSource}
-                view={linkedView}
+                view={activeLinkedView}
                 result={renderedResult}
                 people={state.description.database.people}
                 onOpen={openRecord}
@@ -1652,22 +1768,22 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
                   setInlineContextInspectorScope({ recordId: record.id })
                 }
               />
-            ) : linkedView.layout.type === 'map' ? (
+            ) : activeLinkedView.layout.type === 'map' ? (
               <LazyDatabaseMap
                 key={`${state.description.schemaRevision}:${renderedResult.snapshotRevision}`}
                 source={linkedSource}
-                view={linkedView}
+                view={activeLinkedView}
                 result={renderedResult}
                 onOpen={openRecord}
                 onOpenContextInspector={(record) =>
                   setInlineContextInspectorScope({ recordId: record.id })
                 }
               />
-            ) : linkedView.layout.type === 'feed' ? (
+            ) : activeLinkedView.layout.type === 'feed' ? (
               <LazyDatabaseFeed
                 key={`${state.description.schemaRevision}:${renderedResult.snapshotRevision}`}
                 source={linkedSource}
-                view={linkedView}
+                view={activeLinkedView}
                 result={renderedResult}
                 people={state.description.database.people}
                 onOpen={openRecord}
@@ -1680,7 +1796,7 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
                 key={`${state.description.schemaRevision}:${renderedResult.snapshotRevision}`}
                 source={linkedSource}
                 databaseId={state.description.database.id}
-                viewId={linkedView.id}
+                viewId={activeLinkedView.id}
                 result={renderedResult}
                 people={state.description.database.people}
                 optimisticCellValues={inlineOptimisticCellValues}
@@ -1691,13 +1807,15 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
                 }
                 autoFocusNewRecord={reference.data.mode === 'inline' ? focusInlineNewRecord : false}
                 selectedRecordIds={inlineSelectedRecordIds}
-                initialViewState={inlineTableViewStatesRef.current.get(linkedView.id)}
+                initialViewState={inlineTableViewStatesRef.current.get(activeLinkedView.id)}
                 onViewStateChange={(nextState) => {
-                  inlineTableViewStatesRef.current.set(linkedView.id, nextState);
+                  inlineTableViewStatesRef.current.set(activeLinkedView.id, nextState);
                 }}
-                viewPropertyIds={linkedView.projection.propertyIds}
+                viewPropertyIds={activeLinkedView.projection.propertyIds}
                 viewConfiguration={
-                  linkedView.layout.type === 'table' ? linkedView.layout.configuration : undefined
+                  activeLinkedView.layout.type === 'table'
+                    ? activeLinkedView.layout.configuration
+                    : undefined
                 }
                 onOpen={openRecord}
                 onEdit={editInlineCell}
@@ -1765,6 +1883,46 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
         onOpenChange={setInlineCreationOpen}
         onCreated={(next) => applyReference(next, { focusNewRecord: true })}
       />
+
+      {linkedFilterOpen && linkedSource && activeLinkedView ? (
+        <DatabaseAdvancedFilterDialog
+          open
+          source={linkedSource}
+          initialPropertyId={linkedFilterTargetId}
+          initialWhere={activeLinkedView.where}
+          onOpenChange={(nextOpen) => {
+            setLinkedFilterOpen(nextOpen);
+            if (!nextOpen) setLinkedFilterTargetId(undefined);
+          }}
+          onSave={(where: DatabaseFilter | undefined) => {
+            persistLinkedViewOverrides({
+              ...(localViewOverrides ?? {}),
+              where: where ?? null,
+            });
+            setLinkedFilterOpen(false);
+            setLinkedFilterTargetId(undefined);
+          }}
+        />
+      ) : null}
+      {linkedViewSettingsOpen && linkedSource && linkedDatabase && activeLinkedView ? (
+        <DatabaseSavedViewSettingsDialog
+          key={`${activeLinkedView.id}:${state.status === 'ready' ? state.description.schemaRevision : ''}:${linkedSortTargetId ?? ''}`}
+          open
+          source={linkedSource}
+          view={activeLinkedView}
+          initialSortPropertyId={linkedSortTargetId}
+          database={linkedDatabase}
+          onOpenChange={(nextOpen) => {
+            setLinkedViewSettingsOpen(nextOpen);
+            if (!nextOpen) setLinkedSortTargetId(undefined);
+          }}
+          onSave={(nextView) => {
+            persistLinkedViewOverrides(linkedViewSettingsFromView(nextView));
+            setLinkedViewSettingsOpen(false);
+            setLinkedSortTargetId(undefined);
+          }}
+        />
+      ) : null}
 
       <Suspense fallback={null}>
         {inlineContextInspectorScope && state.status === 'ready' ? (

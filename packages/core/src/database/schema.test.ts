@@ -9,8 +9,10 @@ import {
   updateDatabaseManifestYaml,
 } from './manifest.ts';
 import {
+  applyDatabaseLinkedViewSettings,
   DatabaseDefinitionSchema,
   DatabaseLinkedViewReferenceSchema,
+  DatabaseLinkedViewSettingsSchema,
   DatabasePropertySchema,
   DatabaseRecordPageLayoutOverrideSchema,
   DatabaseViewSchema,
@@ -932,6 +934,36 @@ describe('database manifest schema', () => {
         records: [{ title: 'must not be embedded' }],
       }).success,
     ).toBe(false);
+
+    const canonicalView = DatabaseViewSchema.parse({
+      id: 'view_feedback_table',
+      key: 'feedback-table',
+      name: 'Feedback table',
+      sourceId: 'ds_feedback',
+      layout: { type: 'table', configuration: {} },
+      where: { propertyId: 'prop_status', operator: 'eq', value: 'opt_new' },
+      sort: [],
+      groups: [],
+      projection: { propertyIds: ['prop_title', 'prop_status'] },
+    });
+    const overrides = DatabaseLinkedViewSettingsSchema.parse({
+      where: null,
+      sort: [{ propertyId: 'prop_title', direction: 'desc' }],
+      projection: { propertyIds: ['prop_title'] },
+    });
+    expect(
+      DatabaseLinkedViewReferenceSchema.parse({
+        databaseId: 'db_feedback',
+        sourceId: 'ds_feedback',
+        viewId: canonicalView.id,
+        viewOverrides: overrides,
+      }).viewOverrides,
+    ).toEqual(overrides);
+    expect(applyDatabaseLinkedViewSettings(canonicalView, overrides)).toMatchObject({
+      sort: [{ propertyId: 'prop_title', direction: 'desc' }],
+      projection: { propertyIds: ['prop_title'] },
+    });
+    expect(applyDatabaseLinkedViewSettings(canonicalView, overrides).where).toBeUndefined();
   });
   test('validates canonical Unique ID prefix and monotonic watermark state', () => {
     const property = DatabasePropertySchema.parse({

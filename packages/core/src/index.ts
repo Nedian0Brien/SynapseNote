@@ -455,6 +455,7 @@ export {
   type RollupAggregationResult,
 } from './database/rollup.ts';
 export {
+  applyDatabaseLinkedViewSettings,
   DATABASE_AGENT_VIEW_WRITE_ACTIONS,
   DATABASE_CONDITIONAL_COLOR_NAMES,
   DATABASE_MANIFEST_CURRENT_VERSION,
@@ -509,6 +510,8 @@ export {
   DatabaseIdSchema,
   type DatabaseLinkedViewReference,
   DatabaseLinkedViewReferenceSchema,
+  type DatabaseLinkedViewSettings,
+  DatabaseLinkedViewSettingsSchema,
   type DatabaseListViewConfiguration,
   DatabaseListViewConfigurationSchema,
   type DatabaseManifestVersion,

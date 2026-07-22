@@ -2731,6 +2731,48 @@ External edit remains canonical.
     ).toThrow(/cursor/i);
   });
 
+  test('applies linked-view overrides to one saved-view query without changing canonical storage', async () => {
+    const { dataPlane, store } = await fixture();
+    const before = store.getById('db_feedback');
+    if (!before) throw new Error('feedback fixture is missing');
+    const canonical = before.views.find((view) => view.id === 'view_customer_feedback_table');
+    if (!canonical) throw new Error('table view fixture is missing');
+
+    const overridden = dataPlane.query({
+      databaseId: 'db_feedback',
+      sourceId: 'ds_customer_feedback',
+      viewId: canonical.id,
+      viewOverrides: {
+        where: { propertyId: 'prop_customer_feedback_score', operator: 'gte', value: 5 },
+        sort: [{ propertyId: 'prop_customer_feedback_score', direction: 'desc' }],
+        projection: {
+          propertyIds: ['prop_customer_feedback_title', 'prop_customer_feedback_score'],
+          body: 'hidden',
+        },
+      },
+      query: { page: { limit: 10 } },
+    });
+
+    expect(overridden.trace.filter.expression).toEqual({
+      propertyId: 'prop_customer_feedback_score',
+      operator: 'gte',
+      value: 5,
+    });
+    expect(overridden.trace.ranking.sort).toEqual([
+      { propertyId: 'prop_customer_feedback_score', direction: 'desc' },
+    ]);
+    expect(
+      overridden.records.every((record) =>
+        Object.keys(record.values).every((propertyId) =>
+          ['prop_customer_feedback_title', 'prop_customer_feedback_score'].includes(propertyId),
+        ),
+      ),
+    ).toBe(true);
+    expect(store.getById('db_feedback')?.views.find((view) => view.id === canonical.id)).toEqual(
+      canonical,
+    );
+  });
+
   test('evaluates ordered saved-view colors without leaking denied filter properties', async () => {
     const { dataPlane, store, index } = await fixture();
     const definition = store.getById('db_feedback');

@@ -115,6 +115,100 @@ describe('DatabaseView', () => {
     expect(document.querySelector('[data-linked-database-view-tabs]')).toBeTruthy();
   });
 
+  test('keeps linked blocks independent while querying the same canonical rows', async () => {
+    const requests: Array<Record<string, unknown>> = [];
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = String(input);
+      if (path === '/api/databases/describe') {
+        return Response.json({
+          manifestRevision: hash,
+          schemaRevision: hash,
+          database,
+          source,
+          index: {
+            state: 'idle',
+            revision: hash,
+            manifestRevision: hash,
+            recordCount: 1,
+            issueCount: 0,
+            progress: null,
+            lastRebuiltAt: '2026-07-20T00:00:00.000Z',
+            lastIncrementalAt: null,
+            lastError: null,
+          },
+          allowedOperations: ['describe', 'query'],
+        });
+      }
+      if (path === '/api/databases/query') {
+        requests.push(JSON.parse(String(init?.body)) as Record<string, unknown>);
+        return Response.json({
+          sourceId: source.id,
+          snapshotRevision: hash,
+          matched: 1,
+          returned: 1,
+          isComplete: true,
+          nextCursor: null,
+          truncatedBy: null,
+          indexFreshness: 'snapshot',
+          records: [
+            {
+              id: 'rec_shared',
+              path: 'tasks/shared.md',
+              revision: hash,
+              values: { prop_title: 'Shared canonical row', prop_status: 'Done' },
+            },
+          ],
+          aggregation: null,
+        });
+      }
+      return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
+    }) as typeof fetch;
+
+    render(
+      <>
+        <DatabaseView
+          databaseId={database.id}
+          sourceId={source.id}
+          viewId={view.id}
+          viewOverrides={{
+            where: null,
+            projection: { propertyIds: ['prop_title'], body: 'hidden' },
+          }}
+          mode="inline"
+        />
+        <DatabaseView
+          databaseId={database.id}
+          sourceId={source.id}
+          viewId={view.id}
+          viewOverrides={{
+            where: { propertyId: 'prop_status', operator: 'eq', value: 'Done' },
+            sort: [{ propertyId: 'prop_title', direction: 'desc' }],
+            projection: { propertyIds: ['prop_title', 'prop_status'], body: 'hidden' },
+          }}
+          mode="inline"
+        />
+      </>,
+    );
+
+    expect((await screen.findAllByText('Shared canonical row')).length).toBe(2);
+    await waitFor(() => expect(requests).toHaveLength(2));
+    expect(requests.map((request) => request.viewId)).toEqual([view.id, view.id]);
+    expect(requests[0]?.viewOverrides).toMatchObject({
+      where: null,
+      projection: { propertyIds: ['prop_title'] },
+    });
+    expect(requests[1]?.viewOverrides).toMatchObject({
+      where: { propertyId: 'prop_status', operator: 'eq', value: 'Done' },
+      sort: [{ propertyId: 'prop_title', direction: 'desc' }],
+    });
+    const surfaces = [...document.querySelectorAll('[data-database-view-state="ready"]')];
+    expect(surfaces).toHaveLength(2);
+    expect(surfaces[0]?.querySelector('th[data-property-id="prop_status"]')).toBeNull();
+    expect(surfaces[1]?.querySelector('th[data-property-id="prop_status"]')).toBeTruthy();
+    expect(surfaces[0]?.querySelector('[data-record-id="rec_shared"]')).toBeTruthy();
+    expect(surfaces[1]?.querySelector('[data-record-id="rec_shared"]')).toBeTruthy();
+  });
+
   test('renders a linked Feed through its saved chronology and canonical source identity', async () => {
     const feedSource = {
       ...source,
@@ -1323,11 +1417,18 @@ describe('DatabaseView', () => {
     ).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'New database view' }));
     expect(await screen.findByRole('heading', { name: 'Manage saved views' })).toBeTruthy();
-    fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[0] as HTMLElement);
+    fireEvent.click(
+      screen
+        .getByRole('heading', { name: 'Manage saved views' })
+        .closest('[role="dialog"]')
+        ?.querySelector('[data-slot="dialog-close"]') as HTMLElement,
+    );
     await waitFor(() =>
       expect(screen.queryByRole('heading', { name: 'Manage saved views' })).toBeNull(),
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    fireEvent.click(
+      document.querySelector('[data-database-workspace] [data-slot="dialog-close"]') as HTMLElement,
+    );
     await waitFor(() => expect(document.querySelector('[data-database-workspace]')).toBeNull());
     expect(await screen.findByText('First task')).toBeTruthy();
     expect(document.querySelector('th[data-property-id="prop_status"]')).toBeNull();
@@ -1472,11 +1573,18 @@ describe('DatabaseView', () => {
     fireEvent.pointerDown(screen.getByRole('button', { name: 'Database view actions' }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'Manage properties' }));
     expect(await screen.findByRole('heading', { name: 'Manage properties' })).toBeTruthy();
-    fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[0] as HTMLElement);
+    fireEvent.click(
+      screen
+        .getByRole('heading', { name: 'Manage properties' })
+        .closest('[role="dialog"]')
+        ?.querySelector('[data-slot="dialog-close"]') as HTMLElement,
+    );
     await waitFor(() =>
       expect(screen.queryByRole('heading', { name: 'Manage properties' })).toBeNull(),
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    fireEvent.click(
+      document.querySelector('[data-database-workspace] [data-slot="dialog-close"]') as HTMLElement,
+    );
     await waitFor(() => expect(document.querySelector('[data-database-workspace]')).toBeNull());
     fireEvent.pointerDown(screen.getByRole('button', { name: 'Database view actions' }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'Inspect agent context' }));
@@ -1509,7 +1617,10 @@ describe('DatabaseView', () => {
     await waitFor(() =>
       expect(screen.queryByRole('heading', { name: 'Advanced saved filters' })).toBeNull(),
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    const workspaceClose = document.querySelector(
+      '[data-database-workspace] [data-slot="dialog-close"]',
+    );
+    if (workspaceClose) fireEvent.click(workspaceClose);
     await waitFor(() => expect(document.querySelector('[data-database-workspace]')).toBeNull());
     fireEvent.click(screen.getByLabelText('Open record rec_first'));
     expect(await screen.findByText('Linked canonical body.')).toBeTruthy();

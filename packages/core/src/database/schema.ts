@@ -2079,18 +2079,6 @@ export const DatabaseFormViewConfigurationSchema = z
 
 export type DatabaseFormViewConfiguration = z.infer<typeof DatabaseFormViewConfigurationSchema>;
 
-export const DatabaseLinkedViewReferenceSchema = z
-  .object({
-    version: z.literal(1).default(1),
-    databaseId: DatabaseIdSchema,
-    sourceId: DataSourceIdSchema,
-    viewId: DatabaseViewIdSchema,
-    mode: z.enum(['inline', 'full-page']).default('inline'),
-  })
-  .strict();
-
-export type DatabaseLinkedViewReference = z.infer<typeof DatabaseLinkedViewReferenceSchema>;
-
 const DatabaseViewLayoutSchema = z.union([
   z
     .object({
@@ -2416,6 +2404,72 @@ export const DatabaseViewSchema = z
   });
 
 export type DatabaseView = z.infer<typeof DatabaseViewSchema>;
+
+/**
+ * Settings owned by one linked database block rather than by the canonical
+ * saved view. The block still points at the canonical database/source/view
+ * identity; only presentation and query settings are overlaid locally. A
+ * nullable `where` lets a linked block intentionally clear a filter inherited
+ * from the canonical view.
+ */
+export const DatabaseLinkedViewSettingsSchema = z
+  .object({
+    layout: DatabaseViewLayoutSchema.optional(),
+    where: DatabaseFilterSchema.nullable().optional(),
+    conditionalColors: z.array(DatabaseConditionalColorRuleSchema).max(100).optional(),
+    sort: z.array(DatabaseViewSortSchema).optional(),
+    groups: z.array(DatabaseViewGroupSchema).max(2).optional(),
+    projection: z
+      .object({
+        propertyIds: z.array(DatabasePropertyIdSchema).min(1),
+        body: z.enum(['hidden', 'preview', 'full']).default('hidden'),
+      })
+      .strict()
+      .optional(),
+    openBehavior: DatabaseViewOpenBehaviorSchema.optional(),
+  })
+  .strict();
+
+export type DatabaseLinkedViewSettings = z.infer<typeof DatabaseLinkedViewSettingsSchema>;
+
+/** Apply a linked block's local settings without changing canonical storage. */
+export function applyDatabaseLinkedViewSettings(
+  view: DatabaseView,
+  settings?: DatabaseLinkedViewSettings,
+): DatabaseView {
+  if (!settings) return view;
+  const next: Record<string, unknown> = { ...view };
+  if ('layout' in settings && settings.layout) next.layout = structuredClone(settings.layout);
+  if ('where' in settings) {
+    if (settings.where === null) delete next.where;
+    else if (settings.where) next.where = structuredClone(settings.where);
+  }
+  if ('conditionalColors' in settings && settings.conditionalColors) {
+    next.conditionalColors = structuredClone(settings.conditionalColors);
+  }
+  if ('sort' in settings && settings.sort) next.sort = structuredClone(settings.sort);
+  if ('groups' in settings && settings.groups) next.groups = structuredClone(settings.groups);
+  if ('projection' in settings && settings.projection) {
+    next.projection = structuredClone(settings.projection);
+  }
+  if ('openBehavior' in settings && settings.openBehavior) {
+    next.openBehavior = settings.openBehavior;
+  }
+  return DatabaseViewSchema.parse(next);
+}
+
+export const DatabaseLinkedViewReferenceSchema = z
+  .object({
+    version: z.literal(1).default(1),
+    databaseId: DatabaseIdSchema,
+    sourceId: DataSourceIdSchema,
+    viewId: DatabaseViewIdSchema,
+    mode: z.enum(['inline', 'full-page']).default('inline'),
+    viewOverrides: DatabaseLinkedViewSettingsSchema.optional(),
+  })
+  .strict();
+
+export type DatabaseLinkedViewReference = z.infer<typeof DatabaseLinkedViewReferenceSchema>;
 
 function collectFilterPropertyIds(filter: DatabaseFilter): string[] {
   if ('and' in filter) return filter.and.flatMap(collectFilterPropertyIds);

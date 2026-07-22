@@ -2,6 +2,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { createHash } from 'node:crypto';
 import type { FrontmatterValue } from '@nedian0brien/synapsenote-core';
 import {
+  applyDatabaseLinkedViewSettings,
   compileDatabaseFind,
   compileFormulaSource,
   DATABASE_QUERY_SORT_SEMANTICS,
@@ -15,6 +16,7 @@ import {
   type DatabaseFindPlan,
   type DatabaseFormValue,
   type DatabaseFormViewConfiguration,
+  type DatabaseLinkedViewSettings,
   type DatabasePermissionAction,
   type DatabaseProperty,
   type DatabasePropertyConversionPreview,
@@ -2327,6 +2329,7 @@ export class DatabaseDataPlane {
     sourceId: string;
     viewId?: string;
     agentViewId?: string;
+    viewOverrides?: DatabaseLinkedViewSettings;
     query?: unknown;
     deltaSince?: DatabaseQueryDeltaReceipt;
     /** Internal cooperative cancellation seam; never part of the wire schema. */
@@ -2389,11 +2392,11 @@ export class DatabaseDataPlane {
       source,
       requestedQuery.aggregate ? 'aggregate' : 'query',
     );
-    const view =
+    const canonicalView =
       requestedViewId === undefined
         ? null
         : (visibleViews.find((candidate) => candidate.id === requestedViewId) ?? null);
-    if (requestedViewId !== undefined && !view) {
+    if (requestedViewId !== undefined && !canonicalView) {
       if (input.agentViewId !== undefined) {
         throw new DatabaseDataPlaneError('agent_view_not_found', 'Agent View was not found', {
           agentViewId: input.agentViewId,
@@ -2416,7 +2419,11 @@ export class DatabaseDataPlane {
         })),
       });
     }
-    if (input.agentViewId !== undefined && view && (view.layout.type !== 'agent' || !view.agent)) {
+    if (
+      input.agentViewId !== undefined &&
+      canonicalView &&
+      (canonicalView.layout.type !== 'agent' || !canonicalView.agent)
+    ) {
       throw new DatabaseDataPlaneError('agent_view_not_found', 'Agent View was not found', {
         agentViewId: input.agentViewId,
         candidates: visibleViews
@@ -2428,13 +2435,20 @@ export class DatabaseDataPlane {
           })),
       });
     }
-    if (view && view.sourceId !== source.id) {
+    if (canonicalView && canonicalView.sourceId !== source.id) {
       throw new DatabaseDataPlaneError(
         input.agentViewId === undefined ? 'view_source_mismatch' : 'agent_view_source_mismatch',
         'Saved query view belongs to a different data source',
-        { viewId: view.id, viewSourceId: view.sourceId, sourceId: source.id },
+        {
+          viewId: canonicalView.id,
+          viewSourceId: canonicalView.sourceId,
+          sourceId: source.id,
+        },
       );
     }
+    const view = canonicalView
+      ? applyDatabaseLinkedViewSettings(canonicalView, input.viewOverrides)
+      : null;
     const savedQuery = view ? appliedSavedQuery(view) : null;
     const agentView = view?.layout.type === 'agent' && view.agent ? appliedAgentView(view) : null;
     const colorPropertyIds = conditionalColorPropertyIds(view);

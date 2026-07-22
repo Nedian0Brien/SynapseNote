@@ -1,4 +1,5 @@
 import {
+  type DatabaseLinkedViewSettings,
   type DatabaseProperty,
   type DatabaseQuery,
   type DatabaseQueryResult,
@@ -14,6 +15,7 @@ export interface DatabaseQueryClientInput {
   databaseId: string;
   sourceId: string;
   viewId?: string;
+  viewOverrides?: DatabaseLinkedViewSettings;
   query?: DatabaseQuery;
 }
 
