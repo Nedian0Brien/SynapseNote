@@ -563,10 +563,10 @@ function getCustomBlockComponentItems(): SlashCommandItem[] {
   return [
     {
       name: 'component-Database',
-      label: t`Database`,
+      label: t`New database`,
       icon: Database,
       category: 'data',
-      aliases: ['table', 'collection', 'new database', 'database page'],
+      aliases: ['database', 'table', 'collection', 'create database', 'database page'],
       description: 'Create a database page and start with an editable table',
       insertsBlockComponent: true,
       command: () => dispatchDatabaseSlashCommand('new'),
@@ -586,10 +586,17 @@ function getCustomBlockComponentItems(): SlashCommandItem[] {
     },
     {
       name: 'component-LinkedDatabase',
-      label: t`Linked database`,
+      label: t`Linked view of database`,
       icon: Link2,
       category: 'data',
-      aliases: ['linked view', 'existing database', 'database view', 'table view', 'link database'],
+      aliases: [
+        'linked database',
+        'linked view',
+        'existing database',
+        'database view',
+        'table view',
+        'link database',
+      ],
       description: 'Choose an existing database and saved view without entering stable IDs',
       insertsBlockComponent: true,
       command: (editor) => {

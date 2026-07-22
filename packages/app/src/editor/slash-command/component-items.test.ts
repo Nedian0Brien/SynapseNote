@@ -51,7 +51,7 @@ describe('getComponentItems (slash menu)', () => {
         'Accordion',
         'Audio',
         'Callout',
-        'Database',
+        'New database',
         'Embed',
         'File',
         'Inline database',
@@ -63,7 +63,7 @@ describe('getComponentItems (slash menu)', () => {
         'PDF',
         'Tabs',
         'Video',
-        'Linked database',
+        'Linked view of database',
       ].sort(),
     );
   });
@@ -85,16 +85,35 @@ describe('getComponentItems (slash menu)', () => {
 
   test('database entries use human-first create/link language and hide raw DatabaseView', () => {
     const items = getComponentItems();
-    const create = items.find((item) => item.label === 'Database');
-    const linked = items.find((item) => item.label === 'Linked database');
+    const create = items.find((item) => item.label === 'New database');
+    const linked = items.find((item) => item.label === 'Linked view of database');
     const inline = items.find((item) => item.label === 'Inline database');
     expect(create).toBeDefined();
     expect(linked).toBeDefined();
     expect(inline).toBeDefined();
     expect(create?.aliases).toContain('table');
+    expect(create?.aliases).toContain('database');
     expect(linked?.aliases).toContain('linked view');
+    expect(linked?.aliases).toContain('linked database');
     expect(inline?.aliases).toContain('inline table');
     expect(items.some((item) => item.label === 'Database view')).toBe(false);
+  });
+
+  test('database and table slash queries lead with create, then linked-view choices', () => {
+    const items = getComponentItems();
+    const databaseChoices = items.filter((item) => item.label.toLowerCase().includes('database'));
+    const tableChoices = items.filter((item) =>
+      item.aliases?.some((alias) => alias.toLowerCase().includes('table')),
+    );
+
+    expect(databaseChoices.slice(0, 2).map((item) => item.label)).toEqual([
+      'New database',
+      'Linked view of database',
+    ]);
+    expect(tableChoices.slice(0, 2).map((item) => item.label)).toEqual([
+      'New database',
+      'Linked view of database',
+    ]);
   });
 
   test('every entry exposes the SlashCommandItem contract', () => {
