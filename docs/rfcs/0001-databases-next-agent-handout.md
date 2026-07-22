@@ -49,11 +49,13 @@ the repository-wide check for final release readiness.
 - Numbered A-S items still open: **5**.
 - Total unchecked Markdown boxes: **25**. The extra 20 are M1-M4 milestone
   release gates, all intentionally still open.
-- Notion UX gap implementation checklist: **31/42 complete**. NUI-201,
+- Notion UX gap implementation checklist: **32/42 complete**. NUI-201,
   NUI-202, NUI-203, NUI-204, NUI-302, NUI-304, and NUI-401 are closed with
   focused implementation evidence; NUI-301, NUI-303, and NUI-403 are now
   closed for implementation evidence; NUI-501 is now closed for the complete
-  stable-ID property affordance and dependency/recovery evidence; NUI-105 and the P1/P2 agent, linked-view,
+  stable-ID property affordance and dependency/recovery evidence; NUI-502 is
+  now closed for stable-ID view reorder and active-view settings/menu evidence;
+  NUI-105 and the P1/P2 agent, linked-view,
   responsive, and browser-journey gates remain open.
 - Notion UX alignment checklist: **2/128 complete**. The first insertion slice
   (user-facing `Database`/`Linked database` slash entries and an inline
@@ -507,13 +509,13 @@ do not reconstruct behavior solely from this summary.
   keyboard-accessible menu for show/hide, left/right reorder, calculations,
   rename/configure, type conversion, and dependency-aware delete. The reviewed
   properties dialog supports stable-ID inline rename plus the existing reorder
-  and recovery-aware delete flow. Pixel-level visual parity remains open under
-  NUI-501.
+  and recovery-aware delete flow. The functional NUI-501 gate is now closed;
+  pixel-level visual parity remains open under NUI-701/NUI-702.
 - The active saved-view tab now exposes a keyboard-accessible options menu for
   Filters, View settings, and Manage views. Each tab also has a native drag
   handle; dropping on another stable view target compiles one exact
-  `reorder-to` desired state rather than a sequence of races. Full view setting
-  convergence and pixel-level parity remain open under NUI-502.
+  `reorder-to` desired state rather than a sequence of races. The functional
+  NUI-502 gate is now closed; full visual parity remains under NUI-701/NUI-702.
 - Ghost review now leads with a human-readable action summary and keeps plan
   ID/hash/snapshot under collapsed exact details. Selective approval and full
   Agent Runs handoff remain open under NUI-602/NUI-603.
@@ -610,7 +612,7 @@ do not reconstruct behavior solely from this summary.
 - Focused evidence: `DatabaseView.dom.test.tsx` passes 17 tests / 164
   expectations, including opening and closing `Manage saved views` from the
   inline tab `+`; app typecheck, Biome, and `git diff --check` pass. Full visual
-  parity remains open under NUI-502/NUI-701.
+  parity remains open under NUI-701/NUI-702.
 
 ### 2026-07-22 inline property-context inspection slice
 
@@ -643,8 +645,8 @@ do not reconstruct behavior solely from this summary.
 - Focused evidence: `DatabaseView.dom.test.tsx` passes 18 tests / 171
   expectations, including a single-view tab/action journey; app typecheck,
   Biome, and `git diff --check` pass. No server suite or E2E rerun was needed.
-- Follow-up: capture the tab strip in the browser/Electron visual gates before
-  closing NUI-402/NUI-502.
+- Follow-up: capture the tab strip in the browser/Electron visual gates under
+  NUI-701/NUI-702; the functional NUI-502 gate is now closed.
 
 ### 2026-07-22 inline full-page mode preservation slice
 
@@ -669,8 +671,8 @@ do not reconstruct behavior solely from this summary.
   expectations, including opening Filters from the active tab menu; app
   typecheck, Biome, and `git diff --check` pass. No server suite or E2E rerun
   was needed.
-- Follow-up: visual-check the tab/menu spacing in browser and Electron before
-  closing NUI-402/NUI-502.
+- Follow-up: visual-check the tab/menu spacing in browser and Electron under
+  NUI-701/NUI-702; the functional NUI-502 gate is now closed.
 
 ### 2026-07-22 token-efficient context copy slice
 
@@ -903,6 +905,20 @@ do not reconstruct behavior solely from this summary.
   tests / 23 expectations. This closes **NUI-501**, taking the UX-gap count to
   **31/42 (73.8%)**. Pixel-level parity, browser/Electron capture, and
   accessibility checks remain separate release gates.
+
+### 2026-07-22 saved-view settings checklist closure
+
+- Saved-view tabs now have stable-ID drag/keyboard reorder and an active-tab
+  options menu that routes Filters, View settings, and Manage views to the
+  canonical reviewed surfaces. View settings covers layout-specific options,
+  filters, sorts, groups, projected properties, conditional colors, and open
+  behavior; inline linked views preserve the same route and full-page mode.
+- Focused evidence remains the verified `DatabaseTableDialog.dom.test.tsx`
+  default-view/reorder journeys (64 tests / 374 expectations in that slice),
+  plus `DatabaseView.dom.test.tsx` (18 tests / 183 expectations) for inline
+  tabs, single-view `+`, active-tab menu, and full-page continuity. This closes
+  **NUI-502**, taking the UX-gap count to **32/42 (76.2%)**. Pixel-level parity
+  and browser/Electron/a11y gates remain separate release work.
 
 ## Verification already completed
 

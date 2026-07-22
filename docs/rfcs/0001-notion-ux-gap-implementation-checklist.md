@@ -345,7 +345,7 @@ treated as visual parity until a browser capture is attached.
   linked-view DOM journey. Pixel-level visual parity remains a separate
   NUI-701/NUI-702 gate; the stable-ID property affordance and
   dependency/recovery behavior are complete. Map to UX-501–UX-510.
-- [ ] **NUI-502** Make saved-view tabs reorderable and put layout, filters,
+- [x] **NUI-502** Make saved-view tabs reorderable and put layout, filters,
   sorts, groups, properties, color, and open behavior behind the active-view
   menu. The active saved-view tab now exposes a keyboard-accessible options
   menu for Filters, View settings, and Manage views. Tabs now expose a native
@@ -367,7 +367,8 @@ treated as visual parity until a browser capture is attached.
   The inline journey passes 18 tests / 183 expectations, including the
   single-view `+` handoff, property-context action, active-tab menu, and
   full-page mode preservation.
-  Pixel-level parity and full settings convergence remain open. Map to
+  Pixel-level visual parity remains a separate NUI-701/NUI-702 gate; the
+  stable-ID reorder and active-view settings/menu handoff are complete. Map to
   UX-601–UX-610.
 - [ ] **NUI-503** Keep Blank fastest; make templates/import/agent-assisted
   creation preview the resulting page/block rather than ending in the admin
