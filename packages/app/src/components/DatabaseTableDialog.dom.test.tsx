@@ -3411,6 +3411,16 @@ describe('DatabaseTableDialog', () => {
     expect(tableScroll?.className).toContain('overflow-auto');
     const viewTabs = screen.getByRole('navigation', { name: 'Database views' });
     expect(viewTabs.className).toContain('overflow-x-auto');
+    const unnamedButtons = [...(workspace?.querySelectorAll('button') ?? [])].filter((button) => {
+      const visibleLabel = button.textContent?.trim() ?? '';
+      return visibleLabel.length === 0 && !button.getAttribute('aria-label');
+    });
+    expect(unnamedButtons).toEqual([]);
+    expect(
+      screen
+        .getByRole('grid', { name: 'Tasks database records' })
+        .getAttribute('aria-multiselectable'),
+    ).toBe('true');
     const pageBack = screen.getByTestId('database-page-back');
     const pageTitle = screen.getByTestId('database-page-title-value');
     const allRecordsTab = screen.getByRole('tab', { name: 'All records' });
