@@ -100,6 +100,7 @@ import { DatabasePlacePropertyDialog } from '@/components/DatabasePlacePropertyD
 import { DatabasePresenceBadges } from '@/components/DatabasePresenceBadges';
 import { DatabasePropertiesDialog } from '@/components/DatabasePropertiesDialog';
 import { DatabasePropertyConversionDialog } from '@/components/DatabasePropertyConversionDialog';
+import { DatabasePropertyDeletionPreviewDialog } from '@/components/DatabasePropertyDeletionPreviewDialog';
 import { DatabaseRecordPeek } from '@/components/DatabaseRecordPeek';
 import { DatabaseRelationCellEditor } from '@/components/DatabaseRelationCellEditor';
 import { DatabaseRichTextCellEditor } from '@/components/DatabaseRichTextCellEditor';
@@ -243,6 +244,10 @@ import {
 import type { DatabaseSourceOnboardingTarget } from '@/lib/database-onboarding-client';
 import { useDatabasePresenceTarget, useRemoteDatabasePresence } from '@/lib/database-presence';
 import { databasePropertyTypeLabel } from '@/lib/database-property-copy';
+import {
+  createDatabasePropertyDeletionPreview,
+  type DatabasePropertyDeletionPreview,
+} from '@/lib/database-property-deletion';
 import {
   appendDatabaseQueryPage,
   fetchDatabaseRecord,
@@ -2933,6 +2938,8 @@ function DatabaseTableSurface({
   const [propertiesDialogRenameId, setPropertiesDialogRenameId] = useState<string | null>(null);
   const [propertiesError, setPropertiesError] = useState<string | null>(null);
   const [propertiesRemoveStatus, setPropertiesRemoveStatus] = useState<'idle' | 'loading'>('idle');
+  const [propertyDeletionPreview, setPropertyDeletionPreview] =
+    useState<DatabasePropertyDeletionPreview | null>(null);
   const [buttonPlan, setButtonPlan] = useState<DatabaseButtonPlan | null>(null);
   const [buttonStatus, setButtonStatus] = useState<'idle' | 'planning' | 'committing'>('idle');
   const [optionPreview, setOptionPreview] = useState<{
@@ -2979,6 +2986,7 @@ function DatabaseTableSurface({
     templatesOpen ||
     automationsOpen ||
     permissionsOpen ||
+    propertyDeletionPreview !== null ||
     computedPropertyId !== null ||
     uniqueIdPropertyId !== null ||
     placePropertyId !== null ||
@@ -3074,6 +3082,7 @@ function DatabaseTableSurface({
     void selectedViewId;
     setRecordPeek(null);
     setOptimisticCellValues(new Map());
+    setPropertyDeletionPreview(null);
   }, [open, selection?.databaseId, selection?.sourceId, selectedViewId]);
 
   useEffect(() => {
@@ -4147,7 +4156,7 @@ function DatabaseTableSurface({
     setPropertiesRemoveStatus('loading');
     void collectDatabaseSnapshot('all')
       .then((snapshot) => {
-        const unsetDesiredState = createDatabaseUnsetPropertyValuesDesiredState({
+        const preview = createDatabasePropertyDeletionPreview({
           database: selectedDatabase,
           source: selectedSource,
           property,
@@ -4155,39 +4164,7 @@ function DatabaseTableSurface({
           recordsComplete: snapshot.isComplete && snapshot.nextCursor === null,
         });
         setPropertiesDialogOpen(false);
-        // Removing a property is two reviewed commits, never one: values must
-        // be unset (a record-mutation patch, which preserves record body)
-        // WHILE the property still exists, before the schema drops it. See
-        // createDatabaseUnsetPropertyValuesDesiredState's comment for why a
-        // single combined desired state cannot do this safely.
-        //
-        // The two commits are NEVER auto-chained back to back: firing the
-        // second commit immediately after the first resolves reproducibly
-        // hangs the server (confirmed manually — two commits against the
-        // same database issued back to back can wedge the commit engine's
-        // transaction-active state, even though each succeeds cleanly when
-        // issued in isolation; this is the exact "two commits racing the
-        // same database" gap R-008's evidence matrix already flags). Commit
-        // only the unset here; once it settles, "Delete" finds zero
-        // affected records and takes the single-step schema-removal path
-        // on the next click.
-        if (unsetDesiredState) {
-          runMutation(
-            unsetDesiredState,
-            'ui-unset-property',
-            'Unset database property value failed',
-            { policy: databaseSchemaMutationPolicy },
-          );
-        } else {
-          const desiredState = createDatabaseRemovePropertyDesiredState({
-            database: selectedDatabase,
-            source: selectedSource,
-            property,
-          });
-          runMutation(desiredState, 'ui-remove-property', 'Remove database property failed', {
-            policy: databaseSchemaMutationPolicy,
-          });
-        }
+        setPropertyDeletionPreview(preview);
       })
       .catch((cause: unknown) => {
         setPropertiesError(
@@ -4195,6 +4172,58 @@ function DatabaseTableSurface({
         );
       })
       .finally(() => setPropertiesRemoveStatus('idle'));
+  };
+
+  const commitPropertyDeletionPreview = (preview: DatabasePropertyDeletionPreview) => {
+    if (!description?.source || mutationStatus !== 'idle' || propertiesRemoveStatus !== 'idle') {
+      return;
+    }
+    const selectedSource = description.source;
+    const selectedDatabase = description.database;
+    try {
+      const unsetDesiredState = createDatabaseUnsetPropertyValuesDesiredState({
+        database: selectedDatabase,
+        source: selectedSource,
+        property: preview.property,
+        records: preview.records,
+        recordsComplete: true,
+      });
+      setPropertyDeletionPreview(null);
+      // Removing a property is two reviewed commits, never one: values must
+      // be unset (a record-mutation patch, which preserves record body) while
+      // the property still exists in the schema, before the schema drops it.
+      // The server can wedge when those commits race, so the second phase is
+      // intentionally left as an explicit follow-up from the Properties dialog.
+      if (unsetDesiredState) {
+        runMutation(
+          unsetDesiredState,
+          'ui-unset-property',
+          'Unset database property value failed',
+          {
+            policy: databaseSchemaMutationPolicy,
+            onCommitted: () => {
+              setPropertiesDialogOpen(true);
+              setPropertiesError(
+                'Values cleared. Review the property deletion again to remove it from the schema.',
+              );
+            },
+          },
+        );
+      } else {
+        const desiredState = createDatabaseRemovePropertyDesiredState({
+          database: selectedDatabase,
+          source: selectedSource,
+          property: preview.property,
+        });
+        runMutation(desiredState, 'ui-remove-property', 'Remove database property failed', {
+          policy: databaseSchemaMutationPolicy,
+        });
+      }
+    } catch (cause) {
+      setPropertyDeletionPreview(null);
+      setPropertiesDialogOpen(true);
+      setPropertiesError(classifyDatabaseUiProblem(cause, 'Unable to remove the property').message);
+    }
   };
 
   const reorderSchemaProperties = (orderedPropertyIds: string[]) => {
@@ -5152,6 +5181,8 @@ function DatabaseTableSurface({
                   setFilterDialogOpen(false);
                   setViewSettingsOpen(false);
                   setViewManagerOpen(false);
+                  setPropertyDeletionPreview(null);
+                  setPropertiesDialogOpen(false);
                   setSelection(nextSelection);
                 }}
               />
@@ -7231,6 +7262,20 @@ function DatabaseTableSurface({
           onRemoveProperty={removeSchemaProperty}
           onReorderProperties={reorderSchemaProperties}
           onRenameProperty={renameSchemaProperty}
+        />
+      ) : null}
+      {description?.source && propertyDeletionPreview ? (
+        <DatabasePropertyDeletionPreviewDialog
+          open
+          preview={propertyDeletionPreview}
+          busy={mutationStatus !== 'idle' || propertiesRemoveStatus !== 'idle'}
+          onOpenChange={(nextOpen) => {
+            if (!nextOpen) {
+              setPropertyDeletionPreview(null);
+              setPropertiesDialogOpen(true);
+            }
+          }}
+          onConfirm={() => commitPropertyDeletionPreview(propertyDeletionPreview)}
         />
       ) : null}
       {description?.source && selectedView && filterDialogOpen ? (
