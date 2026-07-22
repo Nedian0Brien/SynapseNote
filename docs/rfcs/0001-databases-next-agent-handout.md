@@ -66,6 +66,7 @@
 - Latest machine-ID disclosure changeset: `../../.changeset/database-machine-ids.md`
 - Latest Context Inspector summary changeset: `../../.changeset/database-context-summary.md`
 - Latest scoped database agent handoff changeset: `../../.changeset/database-agent-scope-composer.md`
+- Latest agent proposal provenance changeset: `../../.changeset/database-agent-provenance.md`
 
 ## Objective and completion rule
 
@@ -103,7 +104,7 @@ the repository-wide check for final release readiness.
   catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
   approval-bound commits, undo, and restart/backup idempotency. Agent View
   policy/privacy/sandbox review remains Partial by design.
-- Notion UX alignment checklist: **87/128 complete**. The page-first and normal
+- Notion UX alignment checklist: **88/128 complete**. The page-first and normal
   New-page creation slices, the inline/linked insertion contract, and the
   table-first direct-manipulation, named canonical workspace canvas-route,
   shared navigation without a duplicate canvas rail, sidebar/recent/search/
@@ -132,8 +133,9 @@ the repository-wide check for final release readiness.
   bounded CSV/TSV import previews, and the dedicated existing-folder
   source-identity migration review, and the natural-language agent plan
   preview, editable proposal overrides, resulting-page landing without
-  implicit advanced choices, and scoped database agent invocation from
-  database/view/selection/row/property/record-page surfaces are
+  implicit advanced choices, scoped database agent invocation from
+  database/view/selection/row/property/record-page surfaces, and agent proposal
+  provenance/atomic review grouping are
   now
   evidenced. A
   2026-07-23 in-app browser capture reached the IPv4 renderer at
@@ -750,6 +752,23 @@ do not reconstruct behavior solely from this summary.
 - UX-903 is now checked at the functional scoped-invocation layer. UX-904
   through UX-1105 remain open.
 
+### 2026-07-23 agent proposal provenance and review grouping
+
+- Agent Run detail now leads with a `Proposal source` card. Agent suggestions
+  are explicitly separated from human changes; principal and session IDs stay
+  under `Show source details` so the primary review copy remains human-facing.
+- The same surface labels the immutable plan as one `Review group`, explains
+  that its changes commit together, and lists every required/optional approval
+  scope. Existing ghost and creation reviews keep the `Proposed · not saved`
+  label, human plan summary, and atomic approval group for in-progress UI
+  mutations.
+- Focused evidence: `DatabaseAgentRunsDialog.dom.test.tsx` passes 4 tests / 27
+  expectations, including agent provenance and grouped approval scope. App
+  typecheck and targeted Biome checks pass; no full server suite or broad E2E
+  rerun was needed.
+- UX-904 is now checked at the functional provenance/grouping layer. UX-905
+  through UX-1105 remain open.
+
 ### 2026-07-23 template preview parity
 
 - All seven starter templates now compile a Table view plus a Board view
@@ -774,7 +793,7 @@ do not reconstruct behavior solely from this summary.
   catalog-backed database under `Recently opened`, reopening the same stable
   route. Focused evidence: sidebar 3 tests / 7 expectations and recent UI 1 / 5.
 - UX-203, UX-204, UX-206, UX-209, UX-309, UX-501, UX-502, UX-503, UX-504,
-  UX-505, UX-506, UX-507, UX-508, UX-509, UX-510, UX-601, UX-602, UX-603, UX-604, UX-605, UX-606, UX-607, UX-608, UX-609, UX-610, UX-701, UX-702, UX-703, UX-704, UX-705, UX-706, UX-707, UX-708, UX-709, UX-710, UX-801, UX-802, UX-803, UX-804, UX-805, UX-806, UX-807, UX-808, UX-901, UX-902, and UX-903 are checked. The 768px visual responsive check remains
+  UX-505, UX-506, UX-507, UX-508, UX-509, UX-510, UX-601, UX-602, UX-603, UX-604, UX-605, UX-606, UX-607, UX-608, UX-609, UX-610, UX-701, UX-702, UX-703, UX-704, UX-705, UX-706, UX-707, UX-708, UX-709, UX-710, UX-801, UX-802, UX-803, UX-804, UX-805, UX-806, UX-807, UX-808, UX-901, UX-902, UX-903, and UX-904 are checked. The 768px visual responsive check remains
   open.
 
 ### 2026-07-23 stable inline/full-page conversion
