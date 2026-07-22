@@ -126,4 +126,23 @@ describe('DatabaseList', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Collapse rec_parent' }));
     expect(document.querySelector('[data-list-row="rec_child"]')).toBeNull();
   });
+
+  test('offers record context inspection without opening the list row', () => {
+    const onOpen = mock(() => {});
+    const onOpenContextInspector = mock(() => {});
+    render(
+      <DatabaseList
+        source={source}
+        view={view}
+        result={result}
+        onOpen={onOpen}
+        onOpenContextInspector={onOpenContextInspector}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect context for record rec_child' }));
+    expect(onOpenContextInspector).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'rec_child' }),
+    );
+    expect(onOpen).not.toHaveBeenCalled();
+  });
 });

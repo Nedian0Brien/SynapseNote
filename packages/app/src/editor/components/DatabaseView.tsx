@@ -1532,6 +1532,9 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
                 result={state.result}
                 people={state.description.database.people}
                 onOpen={openRecord}
+                onOpenContextInspector={(record) =>
+                  setInlineContextInspectorScope({ recordId: record.id })
+                }
               />
             ) : linkedView.layout.type === 'gallery' ? (
               <LazyDatabaseGallery
@@ -1541,6 +1544,9 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
                 result={state.result}
                 people={state.description.database.people}
                 onOpen={openRecord}
+                onOpenContextInspector={(record) =>
+                  setInlineContextInspectorScope({ recordId: record.id })
+                }
               />
             ) : linkedView.layout.type === 'chart' ? (
               <LazyDatabaseChart
@@ -1567,6 +1573,9 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
                 result={state.result}
                 people={state.description.database.people}
                 onOpen={openRecord}
+                onOpenContextInspector={(record) =>
+                  setInlineContextInspectorScope({ recordId: record.id })
+                }
               />
             ) : (
               <LazyDatabaseTable

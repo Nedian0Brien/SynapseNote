@@ -15,7 +15,7 @@ import {
   mediaKindForSidebarAssetExtension,
   toDesktopAssetHref,
 } from '@nedian0brien/synapsenote-core';
-import { ExternalLink, FileImage, ImageOff } from 'lucide-react';
+import { Braces, ExternalLink, FileImage, ImageOff } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -134,6 +134,7 @@ export function DatabaseGallery({
   people = result.people ?? [],
   relationRecords = result.relationRecords ?? [],
   onOpen,
+  onOpenContextInspector,
 }: {
   source: DatabaseSource;
   view: DatabaseView;
@@ -141,6 +142,7 @@ export function DatabaseGallery({
   people?: readonly ProjectedDatabasePerson[];
   relationRecords?: readonly ProjectedDatabaseRelationRecord[];
   onOpen?: (record: ProjectedDatabaseRecord) => void;
+  onOpenContextInspector?: (record: ProjectedDatabaseRecord) => void;
 }) {
   'use no memo';
   const [failedImages, setFailedImages] = useState<Set<string>>(() => new Set());
@@ -276,6 +278,17 @@ export function DatabaseGallery({
                       {recordTitle(source, record)}
                     </Button>
                     {onOpen ? <ExternalLink className="mt-1 size-3 text-muted-foreground" /> : null}
+                    {onOpenContextInspector ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-xs"
+                        aria-label={`Inspect context for record ${record.id}`}
+                        onClick={() => onOpenContextInspector(record)}
+                      >
+                        <Braces aria-hidden="true" />
+                      </Button>
+                    ) : null}
                   </div>
                 ) : null}
                 {properties.map((property) => {
@@ -304,15 +317,40 @@ export function DatabaseGallery({
                   );
                 })}
                 {!configuration.showTitle && onOpen ? (
+                  <div className="flex gap-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="min-w-0 flex-1"
+                      aria-label={`Open ${recordTitle(source, record)}`}
+                      onClick={() => onOpen(record)}
+                    >
+                      <ExternalLink /> <Trans>Open</Trans>
+                    </Button>
+                    {onOpenContextInspector ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label={`Inspect context for record ${record.id}`}
+                        onClick={() => onOpenContextInspector(record)}
+                      >
+                        <Braces aria-hidden="true" />
+                      </Button>
+                    ) : null}
+                  </div>
+                ) : null}
+                {!configuration.showTitle && !onOpen && onOpenContextInspector ? (
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     className="w-full"
-                    aria-label={`Open ${recordTitle(source, record)}`}
-                    onClick={() => onOpen(record)}
+                    aria-label={`Inspect context for record ${record.id}`}
+                    onClick={() => onOpenContextInspector(record)}
                   >
-                    <ExternalLink /> <Trans>Open</Trans>
+                    <Braces aria-hidden="true" /> <Trans>Inspect context</Trans>
                   </Button>
                 ) : null}
               </div>

@@ -7,7 +7,7 @@ import type {
   ProjectedDatabasePerson,
   ProjectedDatabaseRecord,
 } from '@nedian0brien/synapsenote-core';
-import { Check, ExternalLink } from 'lucide-react';
+import { Braces, Check, ExternalLink } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { formatDatabaseDateTime } from '@/lib/database-display-format';
@@ -54,12 +54,14 @@ export function DatabaseFeed({
   result,
   people = result.people ?? [],
   onOpen,
+  onOpenContextInspector,
 }: {
   source: DatabaseSource;
   view: DatabaseView;
   result: DatabaseQueryResult;
   people?: readonly ProjectedDatabasePerson[];
   onOpen?: (record: ProjectedDatabaseRecord) => void;
+  onOpenContextInspector?: (record: ProjectedDatabaseRecord) => void;
 }) {
   'use no memo';
   const [read, setRead] = useState<Set<string>>(() => initialRead(view.id));
@@ -153,6 +155,17 @@ export function DatabaseFeed({
               >
                 <ExternalLink />
               </Button>
+              {onOpenContextInspector ? (
+                <Button
+                  type="button"
+                  size="icon-sm"
+                  variant="ghost"
+                  aria-label={`Inspect context for record ${record.id}`}
+                  onClick={() => onOpenContextInspector(record)}
+                >
+                  <Braces aria-hidden="true" />
+                </Button>
+              ) : null}
             </div>
             {configuration.showProperties && properties.length > 0 ? (
               <dl className="mt-4 grid gap-2 sm:grid-cols-2">

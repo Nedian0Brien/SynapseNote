@@ -9,7 +9,7 @@ import type {
   ProjectedDatabaseRecord,
   ProjectedDatabaseRelationRecord,
 } from '@nedian0brien/synapsenote-core';
-import { ChevronDown, ChevronRight, ExternalLink } from 'lucide-react';
+import { Braces, ChevronDown, ChevronRight, ExternalLink } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -151,6 +151,7 @@ export function DatabaseList({
   people = result.people ?? [],
   relationRecords = result.relationRecords ?? [],
   onOpen,
+  onOpenContextInspector,
 }: {
   source: DatabaseSource;
   view: DatabaseView;
@@ -158,6 +159,7 @@ export function DatabaseList({
   people?: readonly ProjectedDatabasePerson[];
   relationRecords?: readonly ProjectedDatabaseRelationRecord[];
   onOpen?: (record: ProjectedDatabaseRecord) => void;
+  onOpenContextInspector?: (record: ProjectedDatabaseRecord) => void;
 }) {
   'use no memo';
   const [collapsedRows, setCollapsedRows] = useState<Set<string>>(() => new Set());
@@ -322,6 +324,20 @@ export function DatabaseList({
                         })(),
                       )}
                       {onOpen ? <ExternalLink className="size-3 text-muted-foreground" /> : null}
+                      {onOpenContextInspector ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-xs"
+                          aria-label={`Inspect context for record ${row.record.id}`}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onOpenContextInspector(row.record);
+                          }}
+                        >
+                          <Braces aria-hidden="true" />
+                        </Button>
+                      ) : null}
                     </div>
                   );
                 })

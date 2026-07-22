@@ -20,6 +20,7 @@
 - Latest inline view-tab-menu changeset: `../../.changeset/inline-view-tab-menu.md`
 - Latest context-inspector-copy changeset: `../../.changeset/context-inspector-copy.md`
 - Latest alternative-view context changeset: `../../.changeset/inline-context-alt-views.md`
+- Latest list/gallery/feed context changeset: `../../.changeset/inline-context-list-gallery-feed.md`
 
 ## Objective and completion rule
 
@@ -697,6 +698,27 @@ do not reconstruct behavior solely from this summary.
 - Follow-up: extend the same affordance to other record-centric renderers if
   the visual review shows their action density remains acceptable; keep the
   browser/Electron and accessibility gates open under NUI-601/NUI-702.
+
+### 2026-07-22 inline list/gallery/feed context slice
+
+- Inline List rows, Gallery cards, and Feed items now expose the same
+  `Inspect context for record …` action as Table and the other primary views.
+  List actions stop row click propagation, so inspecting a record never opens
+  the canonical page accidentally; Gallery keeps the action available in both
+  title and no-title card layouts.
+- `DatabaseView` forwards the action to the canonical permission-scoped
+  Context Inspector with only the stable record ID, preserving the inline
+  host's stable-reference-only contract.
+- Focused evidence: `DatabaseList.dom.test.tsx`,
+  `DatabaseGallery.dom.test.tsx`, and `DatabaseFeed.dom.test.tsx` pass 7 tests
+  / 31 expectations together; `DatabaseView.dom.test.tsx` passes 18 tests /
+  183 expectations and asserts the callback is wired for List, Gallery, and
+  Feed. App typecheck, targeted Biome, and `git diff --check` pass. No server
+  suite or E2E rerun was needed.
+- Follow-up: chart/map-specific record drill-through still needs a deliberate
+  affordance review; keep NUI-601's browser/Electron and accessibility gates
+  open until those views are covered or explicitly documented as different
+  interaction models.
 
 ### 2026-07-22 inline filter handoff slice
 

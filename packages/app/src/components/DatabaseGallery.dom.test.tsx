@@ -123,4 +123,20 @@ describe('DatabaseGallery', () => {
     fireEvent.error(screen.getByRole('img', { name: 'Cover caption' }));
     expect(document.querySelector('[data-gallery-fallback="error"]')).toBeTruthy();
   });
+
+  test('offers record context inspection from a gallery card', () => {
+    const onOpenContextInspector = mock(() => {});
+    render(
+      <DatabaseGallery
+        source={source}
+        view={view}
+        result={result}
+        onOpenContextInspector={onOpenContextInspector}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect context for record rec_image' }));
+    expect(onOpenContextInspector).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'rec_image' }),
+    );
+  });
 });

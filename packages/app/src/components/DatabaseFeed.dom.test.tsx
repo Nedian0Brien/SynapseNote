@@ -92,4 +92,20 @@ describe('DatabaseFeed', () => {
       JSON.parse(sessionStorage.getItem('synapsenote:database-feed-read:view_feed') ?? '[]'),
     ).toEqual(['rec_update']);
   });
+
+  test('offers record context inspection from a feed item', () => {
+    const onOpenContextInspector = mock(() => {});
+    render(
+      <DatabaseFeed
+        source={source}
+        view={view}
+        result={result}
+        onOpenContextInspector={onOpenContextInspector}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect context for record rec_update' }));
+    expect(onOpenContextInspector).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'rec_update' }),
+    );
+  });
 });

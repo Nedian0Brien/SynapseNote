@@ -203,6 +203,7 @@ describe('DatabaseView', () => {
     );
     expect(await screen.findByText('Linked feed update')).toBeTruthy();
     expect(screen.getByText('Tasks · tasks/update.md')).toBeTruthy();
+    expect(screen.getByLabelText('Inspect context for record rec_feed')).toBeTruthy();
   });
 
   test('renders a linked Dashboard by querying only its child saved views', async () => {
@@ -456,6 +457,7 @@ describe('DatabaseView', () => {
       expect(document.querySelector('[data-gallery-card="rec_first"]')).toBeTruthy(),
     );
     expect(screen.getByRole('img', { name: 'First task' })).toBeTruthy();
+    expect(screen.getByLabelText('Inspect context for record rec_first')).toBeTruthy();
   });
 
   test('renders a linked List from stable view references', async () => {
@@ -533,6 +535,7 @@ describe('DatabaseView', () => {
     );
     expect(await screen.findByRole('heading', { name: 'Task list' })).toBeTruthy();
     await waitFor(() => expect(document.querySelector('[data-list-row="rec_first"]')).toBeTruthy());
+    expect(screen.getByLabelText('Inspect context for record rec_first')).toBeTruthy();
   });
 
   test('renders a linked Board from saved grouping and returned-page memberships', async () => {
@@ -939,7 +942,9 @@ describe('DatabaseView', () => {
     expect(await screen.findByRole('heading', { name: 'Task timeline' })).toBeTruthy();
     expect((await screen.findAllByText('First task')).length).toBeGreaterThan(0);
     expect(document.querySelector('[data-timeline-bar="rec_first"]')).toBeTruthy();
-    expect(screen.getAllByLabelText('Inspect context for record rec_first').length).toBeGreaterThan(0);
+    expect(screen.getAllByLabelText('Inspect context for record rec_first').length).toBeGreaterThan(
+      0,
+    );
   });
 
   test('renders a live projection from stable references without embedded records', async () => {
