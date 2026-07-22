@@ -262,11 +262,15 @@ creation surfaces remain page/dialog presentations.
 `App.dom.test.tsx` passes 14 tests / 50 expectations and verifies the canvas is
 mounted inside the sidebar inset, while the focused database suite renders
 `DatabaseWorkspacePage` and verifies the real workspace has no Dialog portal or
-overlay. The route suite also covers hash view selection, back/forward
+overlay. Canvas no longer mounts the duplicate internal `Databases` rail or
+refetches its catalog; source navigation comes from the ordinary
+`DatabaseSidebarSection`, while cross-database lookup remains available through
+the inline searchable picker. The management/page presentation keeps its rail
+for discovery. The route suite also covers hash view selection, back/forward
 restoration, missing-source back handling, and permission-denied handling
-without an unsafe retry. This closes UX-201, UX-202, UX-205, and UX-208.
+without an unsafe retry. This closes UX-201, UX-202, UX-205, UX-207, and UX-208.
 
-UX-203, UX-204, UX-206, UX-207, and UX-209 remain open pending normal page
+UX-203, UX-204, UX-206, and UX-209 remain open pending normal page
 chrome, broader entry-point coverage, and responsive acceptance. UX-210 is
 covered by the conversion evidence below.
 
@@ -326,7 +330,7 @@ crossed the document-native UX bar:
 | Measure | Current result | Interpretation |
 | --- | --- | --- |
 | Engine implementation checklist | 310/335 numbered items complete | Core/database and agent contracts are substantially implemented. |
-| Notion UX checklist | 41/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, table-first direct manipulation, named canonical workspace canvas routing, sidebar/recent database navigation, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, page chrome, state-matrix, and cross-host journey gates remain open. |
+| Notion UX checklist | 42/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, table-first direct manipulation, named canonical workspace canvas routing without a duplicate rail, sidebar/recent database navigation, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, page chrome, state-matrix, and cross-host journey gates remain open. |
 | First-use database entry | `New database` in sidebar, empty states, normal new-page dialog, command palette, plus slash-menu `New database`/`Linked view of database`; normal picker exposes Page/Database chooser and the resulting route lands in an editable table. `Open databases` enters the no-overlay page workspace. | Discovery and the web first-use path are evidenced; ordinary sidebar/recent integration and Electron proof remain open. |
 | Blank creation | Optional title, `Untitled database` fallback, direct-safe exact-plan commit, immediate source/view selection, title/new-row focus | The blank human path is continuous in DOM coverage; template/import/agent paths intentionally retain review and visual browser proof remains open. |
 | Full-page navigation | Stable `#database/<database>/<source>/<view?>` route, no-overlay canvas presentation, sidebar source section, and command-palette recents | Route and navigation identity are evidenced; normal page chrome and broader entry points remain incomplete. |
@@ -523,8 +527,11 @@ capability alone is insufficient.
       canonical write on simple view switches.
 - [ ] **UX-206** Open databases from search, backlinks, relations, recent items,
       and command results.
-- [ ] **UX-207** Replace the modal database rail with existing navigation and a
-      picker only for cross-database lookup.
+- [x] **UX-207** Replace the modal database rail with existing navigation and a
+      picker only for cross-database lookup. Evidence: canonical
+      `DatabaseWorkspacePage` omits the internal source rail and catalog fetch;
+      the ordinary sidebar owns source navigation and the inline picker owns
+      cross-database lookup, while management discovery retains its rail.
 - [x] **UX-208** Reload into the same database/view with clear missing and
       permission-denied states.
 - [ ] **UX-209** Support a responsive wide canvas without broken page chrome or
