@@ -259,7 +259,8 @@ function ContextFieldControls({
 
   const projectedPack = projectContextPackForProperties(selected.exactPack, selectedPropertyIds);
   const projectedJson = JSON.stringify(projectedPack, null, 2);
-  const estimatedPreviewTokens = Math.ceil(new TextEncoder().encode(projectedJson).byteLength / 3);
+  const previewBytes = new TextEncoder().encode(projectedJson);
+  const estimatedPreviewTokens = Math.ceil(previewBytes.byteLength / 3);
   const selectedSet = new Set(selectedPropertyIds);
   const selectAll = (): void =>
     setSelectedPropertyIds(availableProperties.map((property) => property.id));

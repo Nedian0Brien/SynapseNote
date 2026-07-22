@@ -471,6 +471,19 @@ do not reconstruct behavior solely from this summary.
   13/13 tests and 116 expectations. Targeted Biome and app typecheck pass, with
   no E2E rerun.
 
+### 2026-07-22 browser-renderer unblock and first-use capture
+
+- The development compiler crash in `DatabaseContextInspectorDialog` was
+  caused by a chained `new TextEncoder().encode(...).byteLength` expression.
+  Splitting the calculation keeps the same token estimate and restores the
+  dynamic import in the running web app.
+- Focused evidence: `DatabaseContextInspectorDialog.dom.test.tsx` 1/1 test,
+  8 expectations; app typecheck and targeted Biome pass. A live browser capture
+  now renders the shell and the `Create database` modal at
+  `http://127.0.0.1:5173/`. The capture intentionally leaves NUI-105 and the
+  corresponding visual UX gates open because the first-use surface is still a
+  modal over the editor and Electron has not been captured.
+
 ### 2026-07-22 dependency and privacy review slice
 
 - Updated the direct security-sensitive ranges for `shell-quote`, `ws`, Vite,

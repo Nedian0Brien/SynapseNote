@@ -140,9 +140,12 @@ journey:
   `packages/app/src/editor/slash-command/component-items.test.ts` and
   `packages/app/src/editor/components/DatabaseView.dom.test.tsx`; app
   typecheck and the core registry suite also pass.
-- A live Vite capture is currently blocked by the repository's React Compiler
-  development overlay (`BabelError` in existing dependency output). No UX
-  checkbox below is closed from that failed visual attempt.
+- A live Vite capture now reaches the real `127.0.0.1:5173` shell and the
+  `Create database` surface after the context-preview compiler expression was
+  split into named steps. The capture confirms the current first-use surface is
+  still an administration modal over the editor; it does not prove a finished
+  page/table journey or Electron parity, so no UX checkbox below is closed from
+  this capture.
 
 ## Re-audit snapshot (2026-07-22)
 

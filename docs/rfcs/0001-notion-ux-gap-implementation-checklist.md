@@ -167,9 +167,11 @@ treated as visual parity until a browser capture is attached.
   Map to UX-109/UX-111.
 - [ ] **NUI-105** Capture a running web and Electron journey for sidebar,
   empty-state, command-palette, slash, and New-page creation. Do not close a
-  visual gate from DOM tests alone. A web-only shell/modal observation now
-  exists, but it is blocked by the current API 404/IPv4-vs-IPv6 dev setup and
-  has no Electron evidence. Map to UX-112/UX-1101/UX-1102.
+  visual gate from DOM tests alone. A live `127.0.0.1:5173` browser capture now
+  reaches the real shell and `Create database` surface after fixing the
+  development-compiler crash; it still shows the administration modal over the
+  editor rather than a finished Notion-style page/table journey, and no
+  Electron evidence exists. Map to UX-112/UX-1101/UX-1102.
 
 ## P0 — Integrate the workspace with normal navigation
 
