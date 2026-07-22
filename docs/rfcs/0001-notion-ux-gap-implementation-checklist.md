@@ -313,8 +313,8 @@ treated as visual parity until a browser capture is attached.
   linked views now expose `View settings` in their block action menu and open
   the same saved-view settings dialog against the selected stable view. Full
   settings convergence and pixel-level parity remain open. Inline linked-view
-  actions now also expose `Manage views`, forwarding to the canonical reviewed
-  view manager. Evidence:
+  actions now also expose `Manage views` and `Filters`, forwarding to the
+  canonical reviewed view manager/filter editor. Evidence:
   `DatabaseTableDialog.dom.test.tsx` default-view and drag-reorder journeys
   (63/63 tests, 369 expectations) plus the lifecycle compiler test. Map to
   UX-601–UX-610.

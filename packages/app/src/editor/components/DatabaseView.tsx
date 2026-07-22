@@ -11,6 +11,7 @@ import {
   AlertCircle,
   Archive,
   ExternalLink,
+  Filter,
   Loader2,
   MoreHorizontal,
   Plus,
@@ -476,7 +477,7 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
   const [initialRecordAction, setInitialRecordAction] = useState<DatabaseInitialRecordAction>();
   const [initialTablePaste, setInitialTablePaste] = useState<readonly DatabasePasteChange[]>();
   const [initialDatabaseSurface, setInitialDatabaseSurface] = useState<
-    'properties' | 'view-settings' | 'view-manager'
+    'properties' | 'view-settings' | 'view-manager' | 'filters'
   >();
   const [initialPropertyId, setInitialPropertyId] = useState<string>();
   const [initialSelectedRecordIds, setInitialSelectedRecordIds] = useState<readonly string[]>();
@@ -794,7 +795,7 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
   };
 
   const openInlineDatabaseSurface = (
-    surface: 'properties' | 'view-settings' | 'view-manager',
+    surface: 'properties' | 'view-settings' | 'view-manager' | 'filters',
     propertyId?: string,
   ) => {
     setInitialDatabaseSurface(surface);
@@ -959,6 +960,9 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => openInlineDatabaseSurface('view-manager')}>
                 <Settings2 /> <Trans>Manage views</Trans>
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => openInlineDatabaseSurface('filters')}>
+                <Filter /> <Trans>Filters</Trans>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem variant="destructive" onSelect={removeLinkedView}>

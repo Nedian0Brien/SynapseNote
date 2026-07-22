@@ -2648,7 +2648,7 @@ export function DatabaseTableDialog({
   /** Paste changes forwarded from an inline view into the canonical review surface. */
   initialTablePaste?: readonly DatabasePasteChange[];
   /** Optional reviewed surface to open when an inline view delegates a control. */
-  initialDatabaseSurface?: 'properties' | 'view-settings' | 'view-manager';
+  initialDatabaseSurface?: 'properties' | 'view-settings' | 'view-manager' | 'filters';
   initialPropertyId?: string;
   initialSelectedRecordIds?: readonly string[];
   presentation?: 'dialog' | 'page';
@@ -3612,6 +3612,10 @@ export function DatabaseTableDialog({
     }
     if (initialDatabaseSurface === 'view-manager') {
       setViewManagerOpen(true);
+      return;
+    }
+    if (initialDatabaseSurface === 'filters') {
+      setFilterDialogOpen(true);
       return;
     }
     setViewSettingsOpen(true);

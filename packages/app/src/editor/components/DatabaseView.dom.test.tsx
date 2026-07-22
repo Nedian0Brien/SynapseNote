@@ -974,6 +974,16 @@ describe('DatabaseView', () => {
     await waitFor(() =>
       expect(screen.queryByRole('heading', { name: 'Manage saved views' })).toBeNull(),
     );
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Database view actions' }));
+    expect(screen.getByRole('menuitem', { name: 'Filters' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Filters' }));
+    expect(await screen.findByRole('heading', { name: 'Advanced saved filters' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    await waitFor(() =>
+      expect(screen.queryByRole('heading', { name: 'Advanced saved filters' })).toBeNull(),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    await waitFor(() => expect(document.querySelector('[data-database-workspace]')).toBeNull());
     fireEvent.click(screen.getByLabelText('Open record rec_first'));
     expect(await screen.findByText('Linked canonical body.')).toBeTruthy();
     expect(window.location.hash).toBe(originalHash);
