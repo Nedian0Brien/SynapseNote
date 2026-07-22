@@ -12,6 +12,7 @@ import {
   createDatabaseCellMutationDesiredState,
   createDatabaseComputedPropertyChangeDesiredState,
   createDatabaseDefaultViewChangeDesiredState,
+  createDatabaseDuplicatePropertyDesiredState,
   createDatabasePageAppearanceDesiredState,
   createDatabasePageTitleDesiredState,
   createDatabasePlacePrivacyChangeDesiredState,
@@ -426,6 +427,33 @@ describe('database cell mutation compiler', () => {
     });
     expect(cleared.database.icon).toBeUndefined();
     expect(cleared.database.cover).toBeUndefined();
+  });
+
+  test('duplicates a non-Title property with its configuration and a fresh key', () => {
+    const source = database.sources[0];
+    const property = source?.properties.find((candidate) => candidate.id === 'prop_tags');
+    if (!source || !property) throw new Error('invalid duplicate property fixture');
+    const desired = createDatabaseDuplicatePropertyDesiredState({
+      database,
+      source,
+      property,
+    });
+    const duplicatedSource = desired.sources.find((candidate) => candidate.id === source.id);
+    const duplicated = duplicatedSource?.properties.at(-1);
+    expect(duplicated).toMatchObject({
+      key: 'tags_copy',
+      name: 'Tags copy',
+      type: 'multi_select',
+      options: property.options,
+    });
+    expect(duplicated?.id).toBeUndefined();
+    expect(() =>
+      createDatabaseDuplicatePropertyDesiredState({
+        database,
+        source,
+        property: source.properties[0] as NonNullable<typeof source.properties>[number],
+      }),
+    ).toThrow('Title property cannot be duplicated');
   });
 
   test('persists a complete saved-view revision without record mutations', () => {

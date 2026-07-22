@@ -167,6 +167,7 @@ import {
   createDatabaseCellMutationDesiredState,
   createDatabaseComputedPropertyChangeDesiredState,
   createDatabaseDefaultViewChangeDesiredState,
+  createDatabaseDuplicatePropertyDesiredState,
   createDatabasePageAppearanceDesiredState,
   createDatabasePageTitleDesiredState,
   createDatabasePlacePrivacyChangeDesiredState,
@@ -858,6 +859,9 @@ export function DatabaseTable({
   onConfigureUniqueIdProperty,
   onConfigurePlaceProperty,
   onConvertProperty,
+  onOpenPropertySort,
+  onOpenPropertyFilter,
+  onDuplicateProperty,
   onInvokeButton,
   onVerificationAction,
   onManageProperties,
@@ -913,6 +917,9 @@ export function DatabaseTable({
   ) => void;
   onConfigurePlaceProperty?: (property: Extract<DatabaseProperty, { type: 'place' }>) => void;
   onConvertProperty?: (property: DatabaseProperty) => void;
+  onOpenPropertySort?: (property: DatabaseProperty) => void;
+  onOpenPropertyFilter?: (property: DatabaseProperty) => void;
+  onDuplicateProperty?: (property: DatabaseProperty) => void;
   onInvokeButton?: (
     record: ProjectedDatabaseRecord,
     property: Extract<DatabaseProperty, { type: 'button' }>,
@@ -1546,6 +1553,16 @@ export function DatabaseTable({
                         <ChevronRight aria-hidden="true" />
                         <Trans>Move right</Trans>
                       </DropdownMenuItem>
+                      {onOpenPropertySort ? (
+                        <DropdownMenuItem onSelect={() => onOpenPropertySort(property)}>
+                          <Trans>Sort by property</Trans>
+                        </DropdownMenuItem>
+                      ) : null}
+                      {onOpenPropertyFilter ? (
+                        <DropdownMenuItem onSelect={() => onOpenPropertyFilter(property)}>
+                          <Trans>Filter by property</Trans>
+                        </DropdownMenuItem>
+                      ) : null}
                       {calculationOptions.length > 0 && onCalculationChange ? (
                         <DropdownMenuSub>
                           <DropdownMenuSubTrigger>
@@ -1594,6 +1611,15 @@ export function DatabaseTable({
                         <MoveRight aria-hidden="true" />
                         <Trans>Change property type</Trans>
                       </DropdownMenuItem>
+                      {onDuplicateProperty ? (
+                        <DropdownMenuItem
+                          disabled={property.type === 'title' || mutationLocked}
+                          onSelect={() => onDuplicateProperty(property)}
+                        >
+                          <Copy aria-hidden="true" />
+                          <Trans>Duplicate property</Trans>
+                        </DropdownMenuItem>
+                      ) : null}
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         disabled={property.type === 'title' || !onRemoveProperty || mutationLocked}
@@ -2841,7 +2867,9 @@ function DatabaseTableSurface({
   const [pageTitleEditing, setPageTitleEditing] = useState(false);
   const [pageTitleDraft, setPageTitleDraft] = useState('');
   const [filterDialogOpen, setFilterDialogOpen] = useState(false);
+  const [propertyFilterTargetId, setPropertyFilterTargetId] = useState<string | null>(null);
   const [viewSettingsOpen, setViewSettingsOpen] = useState(false);
+  const [propertySortTargetId, setPropertySortTargetId] = useState<string | null>(null);
   const [viewManagerOpen, setViewManagerOpen] = useState(false);
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const [automationsOpen, setAutomationsOpen] = useState(false);
@@ -4034,6 +4062,24 @@ function DatabaseTableSurface({
     }
   };
 
+  const duplicateSchemaProperty = (property: DatabaseProperty) => {
+    if (!description?.source || mutationStatus !== 'idle') return;
+    try {
+      runMutation(
+        createDatabaseDuplicatePropertyDesiredState({
+          database: description.database,
+          source: description.source,
+          property,
+        }),
+        'ui-duplicate-property',
+        'Duplicate database property failed',
+        { policy: { operation: 'schema', actor: 'human', principalId: 'user:local' } },
+      );
+    } catch (cause) {
+      setMutationError(classifyDatabaseUiProblem(cause, 'Unable to duplicate the property'));
+    }
+  };
+
   const renameSchemaProperty = (property: DatabaseProperty, name: string) => {
     if (!description?.source || mutationStatus !== 'idle') return;
     try {
@@ -4613,6 +4659,8 @@ function DatabaseTableSurface({
     }
     setFilterDialogOpen(false);
     setViewSettingsOpen(false);
+    setPropertyFilterTargetId(null);
+    setPropertySortTargetId(null);
     setTableCalculations({});
   };
   const reorderSavedView = (viewId: string, direction: -1 | 1) => {
@@ -6851,6 +6899,15 @@ function DatabaseTableSurface({
                     onConfigureUniqueIdProperty={(property) => setUniqueIdPropertyId(property.id)}
                     onConfigurePlaceProperty={(property) => setPlacePropertyId(property.id)}
                     onConvertProperty={(property) => setConversionPropertyId(property.id)}
+                    onOpenPropertySort={(property) => {
+                      setPropertySortTargetId(property.id);
+                      setViewSettingsOpen(true);
+                    }}
+                    onOpenPropertyFilter={(property) => {
+                      setPropertyFilterTargetId(property.id);
+                      setFilterDialogOpen(true);
+                    }}
+                    onDuplicateProperty={duplicateSchemaProperty}
                     onInvokeButton={planButton}
                     onManageProperties={(propertyId) => {
                       setPropertiesDialogRenameId(propertyId ?? null);
@@ -7133,10 +7190,14 @@ function DatabaseTableSurface({
       ) : null}
       {description?.source && selectedView && filterDialogOpen ? (
         <DatabaseAdvancedFilterDialog
-          key={`${selectedView.id}:${description.schemaRevision}`}
+          key={`${selectedView.id}:${description.schemaRevision}:${propertyFilterTargetId ?? ''}`}
           open
-          onOpenChange={setFilterDialogOpen}
+          onOpenChange={(nextOpen) => {
+            setFilterDialogOpen(nextOpen);
+            if (!nextOpen) setPropertyFilterTargetId(null);
+          }}
           source={description.source}
+          initialPropertyId={propertyFilterTargetId ?? undefined}
           initialWhere={selectedView.where}
           onSave={(where) => {
             try {
@@ -7154,6 +7215,7 @@ function DatabaseTableSurface({
                 },
               );
               setFilterDialogOpen(false);
+              setPropertyFilterTargetId(null);
             } catch (cause) {
               setMutationError(classifyDatabaseUiProblem(cause, 'Unable to prepare saved filters'));
             }
@@ -7162,11 +7224,15 @@ function DatabaseTableSurface({
       ) : null}
       {description?.source && selectedView && viewSettingsOpen ? (
         <DatabaseSavedViewSettingsDialog
-          key={`${selectedView.id}:${description.schemaRevision}`}
+          key={`${selectedView.id}:${description.schemaRevision}:${propertySortTargetId ?? ''}`}
           open
-          onOpenChange={setViewSettingsOpen}
+          onOpenChange={(nextOpen) => {
+            setViewSettingsOpen(nextOpen);
+            if (!nextOpen) setPropertySortTargetId(null);
+          }}
           source={description.source}
           view={selectedView}
+          initialSortPropertyId={propertySortTargetId ?? undefined}
           database={description.database}
           onSave={(view) => {
             try {
@@ -7183,6 +7249,7 @@ function DatabaseTableSurface({
                 },
               );
               setViewSettingsOpen(false);
+              setPropertySortTargetId(null);
             } catch (cause) {
               setMutationError(
                 classifyDatabaseUiProblem(cause, 'Unable to prepare saved view settings'),

@@ -54,4 +54,20 @@ describe('DatabaseAdvancedFilterDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Clear saved filters' }));
     expect(onSave).toHaveBeenCalledWith(undefined);
   });
+
+  test('starts a header-targeted filter rule on the requested property', () => {
+    render(
+      <I18nProvider i18n={i18n}>
+        <DatabaseAdvancedFilterDialog
+          open
+          onOpenChange={() => {}}
+          source={source}
+          initialPropertyId="prop_done"
+          onSave={() => {}}
+        />
+      </I18nProvider>,
+    );
+
+    expect(screen.getByRole('combobox', { name: 'Filter property' }).textContent).toContain('Done');
+  });
 });

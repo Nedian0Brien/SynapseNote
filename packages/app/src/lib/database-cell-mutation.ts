@@ -738,6 +738,41 @@ export function createDatabaseAddPropertyDesiredState(input: {
   };
 }
 
+/** Duplicate a non-Title property's configuration under a new stable key. */
+export function createDatabaseDuplicatePropertyDesiredState(input: {
+  database: DatabaseDefinition;
+  source: DatabaseSource;
+  property: DatabaseProperty;
+  name?: string;
+}): DatabaseDesiredStateDraftInput {
+  if (input.property.type === 'title') {
+    throw new Error('The Title property cannot be duplicated');
+  }
+  const currentSource = input.database.sources.find((source) => source.id === input.source.id);
+  const currentProperty = currentSource?.properties.find(
+    (property) => property.id === input.property.id,
+  );
+  if (!currentSource || !currentProperty) {
+    throw new Error('The property is outside the selected source');
+  }
+  const name = (input.name?.trim() || `${currentProperty.name} copy`).trim();
+  if (!name) throw new Error('A duplicated property name is required');
+  const { id: _id, key: _key, name: _name, ...configuration } = currentProperty;
+  return createDatabaseAddPropertyDesiredState({
+    database: input.database,
+    source: currentSource,
+    property: {
+      ...configuration,
+      key: databasePropertyKeyFromName(
+        name,
+        currentSource.properties.map((property) => property.key),
+      ),
+      name,
+      type: currentProperty.type,
+    },
+  });
+}
+
 /** Renames one property without changing its stable ID, key, type, or values. */
 export function createDatabaseRenamePropertyDesiredState(input: {
   database: DatabaseDefinition;

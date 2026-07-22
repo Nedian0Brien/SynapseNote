@@ -42,8 +42,10 @@ function nodeId(): string {
   return `filter-node-${nextNodeId}`;
 }
 
-function defaultRule(source: DatabaseSource): EditorNode {
-  const property = source.properties[0];
+function defaultRule(source: DatabaseSource, preferredPropertyId?: string): EditorNode {
+  const property =
+    source.properties.find((candidate) => candidate.id === preferredPropertyId) ??
+    source.properties[0];
   if (!property) throw new Error('A filter requires at least one property');
   return {
     id: nodeId(),
@@ -74,6 +76,31 @@ function editorNode(filter: DatabaseFilter): EditorNode {
           : JSON.stringify(filter.value)
         : '',
   };
+}
+
+function editorNodeContainsProperty(node: EditorNode, propertyId: string): boolean {
+  if (node.kind === 'rule') return node.propertyId === propertyId;
+  if (node.kind === 'not') return editorNodeContainsProperty(node.child, propertyId);
+  return node.children.some((child) => editorNodeContainsProperty(child, propertyId));
+}
+
+function editorNodeWithHeaderProperty(
+  filter: DatabaseFilter,
+  source: DatabaseSource,
+  propertyId?: string,
+): EditorNode {
+  const current = editorNode(filter);
+  if (
+    !propertyId ||
+    !source.properties.some((property) => property.id === propertyId) ||
+    editorNodeContainsProperty(current, propertyId)
+  ) {
+    return current;
+  }
+  const targetedRule = defaultRule(source, propertyId);
+  return current.kind === 'and'
+    ? { ...current, children: [...current.children, targetedRule] }
+    : { id: nodeId(), kind: 'and', children: [current, targetedRule] };
 }
 
 function isNumericProperty(property: DatabaseProperty): boolean {
@@ -343,6 +370,7 @@ export function DatabaseAdvancedFilterDialog({
   open,
   onOpenChange,
   source,
+  initialPropertyId,
   initialWhere,
   onSave,
   allowClear = true,
@@ -350,6 +378,8 @@ export function DatabaseAdvancedFilterDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   source: DatabaseSource;
+  /** Optional property targeted by a header-level Filter action. */
+  initialPropertyId?: string;
   initialWhere?: DatabaseFilter;
   onSave: (where: DatabaseFilter | undefined) => void;
   allowClear?: boolean;
@@ -357,8 +387,8 @@ export function DatabaseAdvancedFilterDialog({
   'use no memo';
   const [root, setRoot] = useState<EditorNode>(() =>
     initialWhere
-      ? editorNode(initialWhere)
-      : { id: nodeId(), kind: 'and', children: [defaultRule(source)] },
+      ? editorNodeWithHeaderProperty(initialWhere, source, initialPropertyId)
+      : { id: nodeId(), kind: 'and', children: [defaultRule(source, initialPropertyId)] },
   );
   const [error, setError] = useState<string | null>(null);
   const save = () => {

@@ -769,6 +769,9 @@ describe('DatabaseTableDialog', () => {
     const onConvertProperty = mock(() => {});
     const onCalculationChange = mock(() => {});
     const onOpenPropertyContextInspector = mock(() => {});
+    const onOpenPropertySort = mock(() => {});
+    const onOpenPropertyFilter = mock(() => {});
+    const onDuplicateProperty = mock(() => {});
     const user = userEvent.setup();
     const view = render(
       <DatabaseTable
@@ -780,6 +783,9 @@ describe('DatabaseTableDialog', () => {
         onConvertProperty={onConvertProperty}
         onCalculationChange={onCalculationChange}
         onOpenPropertyContextInspector={onOpenPropertyContextInspector}
+        onOpenPropertySort={onOpenPropertySort}
+        onOpenPropertyFilter={onOpenPropertyFilter}
+        onDuplicateProperty={onDuplicateProperty}
       />,
     );
 
@@ -788,11 +794,30 @@ describe('DatabaseTableDialog', () => {
     expect(screen.getByRole('menuitem', { name: 'Move left' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'Move right' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'Calculate' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Sort by property' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Filter by property' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'Inspect property context' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'Rename or configure property' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'Change property type' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Duplicate property' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'Delete property' })).toBeTruthy();
 
+    await user.click(screen.getByRole('menuitem', { name: 'Sort by property' }));
+    expect(onOpenPropertySort).toHaveBeenCalledWith(
+      source.properties.find((property) => property.id === 'prop_budget'),
+    );
+    await user.click(screen.getByRole('button', { name: 'Property options for Budget' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Filter by property' }));
+    expect(onOpenPropertyFilter).toHaveBeenCalledWith(
+      source.properties.find((property) => property.id === 'prop_budget'),
+    );
+    await user.click(screen.getByRole('button', { name: 'Property options for Budget' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Duplicate property' }));
+    expect(onDuplicateProperty).toHaveBeenCalledWith(
+      source.properties.find((property) => property.id === 'prop_budget'),
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Property options for Budget' }));
     await user.click(screen.getByRole('menuitem', { name: 'Inspect property context' }));
     expect(onOpenPropertyContextInspector).toHaveBeenCalledWith(
       source.properties.find((property) => property.id === 'prop_budget'),

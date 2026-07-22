@@ -762,4 +762,21 @@ describe('DatabaseSavedViewSettingsDialog', () => {
       },
     });
   });
+
+  test('adds a header-targeted property as the next sort rule', () => {
+    render(
+      <DatabaseSavedViewSettingsDialog
+        open
+        onOpenChange={() => {}}
+        source={source}
+        view={view}
+        initialSortPropertyId="prop_status"
+        onSave={() => {}}
+      />,
+    );
+
+    const sortProperties = screen.getAllByRole('combobox', { name: /Sort \d+ property/ });
+    expect(sortProperties).toHaveLength(2);
+    expect(sortProperties[1]?.textContent).toContain('Status');
+  });
 });

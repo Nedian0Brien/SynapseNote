@@ -77,6 +77,7 @@ export function DatabaseSavedViewSettingsDialog({
   onOpenChange,
   source,
   view,
+  initialSortPropertyId,
   database,
   onSave,
 }: {
@@ -84,6 +85,8 @@ export function DatabaseSavedViewSettingsDialog({
   onOpenChange: (open: boolean) => void;
   source: DatabaseSource;
   view: DatabaseView;
+  /** Optional property targeted by a header-level Sort action. */
+  initialSortPropertyId?: string;
   database?: DatabaseDefinition;
   onSave: (view: DatabaseView) => void;
 }) {
@@ -92,12 +95,24 @@ export function DatabaseSavedViewSettingsDialog({
   const nextEditorId = useRef(
     view.sort.length + view.groups.length + (view.conditionalColors?.length ?? 0),
   );
-  const [sort, setSort] = useState<EditorSort[]>(() =>
-    structuredClone(view.sort).map((item, index) => ({
+  const [sort, setSort] = useState<EditorSort[]>(() => {
+    const current = structuredClone(view.sort).map((item, index) => ({
       ...item,
       editorId: `${view.id}:sort:${index}`,
-    })),
-  );
+    }));
+    if (
+      initialSortPropertyId &&
+      source.properties.some((property) => property.id === initialSortPropertyId) &&
+      !current.some((item) => item.propertyId === initialSortPropertyId)
+    ) {
+      current.push({
+        editorId: `${view.id}:sort:target`,
+        propertyId: initialSortPropertyId,
+        direction: 'asc',
+      });
+    }
+    return current;
+  });
   const [groups, setGroups] = useState<EditorGroup[]>(() =>
     structuredClone(view.groups).map((item, index) => ({
       ...item,
