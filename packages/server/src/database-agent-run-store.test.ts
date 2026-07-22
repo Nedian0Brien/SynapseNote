@@ -19,10 +19,11 @@ function fixture() {
   const projectDir = mkdtempSync(join(tmpdir(), 'synapsenote-agent-runs-'));
   tempDirs.push(projectDir);
   let tick = 0;
+  let id = 0;
   const store = createDatabaseAgentRunStore({
     projectDir,
     now: () => new Date(Date.UTC(2026, 6, 20, 0, 0, tick++)),
-    generateId: () => 'run_test',
+    generateId: () => `run_test_${++id}`,
   });
   return { projectDir, store };
 }
@@ -80,7 +81,7 @@ describe('DatabaseAgentRunStore', () => {
     const actor = { principalId: 'agent:test', kind: 'agent' as const, sessionId: 'session-1' };
     const proposed = await store.propose(plan(), actor);
     expect(proposed).toMatchObject({
-      id: 'run_test',
+      id: 'run_test_1',
       state: 'awaiting_approval',
       actor,
       intent: { rawPromptStored: false },
@@ -169,5 +170,64 @@ describe('DatabaseAgentRunStore', () => {
     expect(proposed.proposedDiff.originalBytes).toBeGreaterThan(128 * 1024);
     const path = join(projectDir, '.ok', 'local', 'database-agent-runs', 'v1', 'runs.json');
     expect(statSync(path).size).toBeLessThan(32 * 1024);
+  });
+
+  test('creates revision-bound idempotent retry and resume handoffs', async () => {
+    const { projectDir, store } = fixture();
+    const actor = {
+      principalId: 'agent:test',
+      kind: 'agent' as const,
+      sessionId: 'session-recovery',
+    };
+    const original = await store.propose(plan(), actor);
+    const failed = await store.markFailed(original.id, {
+      code: 'transaction_failed',
+      message: 'The atomic commit stopped before verification',
+    });
+    const retrySource = await store.prepareRecovery(failed.id, failed.revision);
+    expect(retrySource).toMatchObject({ state: 'failed', recovery: { attempt: 1 } });
+    const unrelatedPending = await store.propose(plan(), actor);
+
+    const retried = await store.propose(plan(), actor, {
+      action: 'retry',
+      sourceRunId: failed.id,
+      idempotencyKey: 'agent-run-retry-request-0001',
+    });
+    expect(retried).toMatchObject({
+      state: 'awaiting_approval',
+      recovery: { attempt: 2, action: 'retry', sourceRunId: failed.id },
+    });
+    expect(retried.id).not.toBe(unrelatedPending.id);
+    expect(
+      await store.propose(plan(), actor, {
+        action: 'retry',
+        sourceRunId: failed.id,
+        idempotencyKey: 'agent-run-retry-request-0001',
+      }),
+    ).toEqual(retried);
+    const resumeFailed = await store.markFailed(unrelatedPending.id, {
+      code: 'transaction_failed',
+      message: 'The independent attempt also failed before verification',
+    });
+    const resumed = await store.propose(plan(), actor, {
+      action: 'resume',
+      sourceRunId: resumeFailed.id,
+      idempotencyKey: 'agent-run-resume-request-0001',
+    });
+    expect(resumed).toMatchObject({
+      state: 'awaiting_approval',
+      recovery: { attempt: 2, action: 'resume', sourceRunId: resumeFailed.id },
+    });
+    await expect(store.prepareRecovery(failed.id, 'sha256:changed')).rejects.toMatchObject({
+      code: 'agent_run_revision_changed',
+    });
+    await expect(store.prepareRecovery(retried.id, retried.revision)).rejects.toMatchObject({
+      code: 'agent_run_not_retryable',
+    });
+    const stored = readFileSync(
+      join(projectDir, '.ok', 'local', 'database-agent-runs', 'v1', 'runs.json'),
+      'utf8',
+    );
+    expect(stored).not.toContain('agent-run-retry-request-0001');
   });
 });

@@ -387,6 +387,24 @@ function recoveryFor(code: DatabaseProblemCode): {
           endpoint: '/api/databases/runs',
         },
       };
+    case 'agent_run_revision_changed':
+      return {
+        retryable: false,
+        recovery: {
+          action: 'retry',
+          instruction: 'Refresh the Agent Run and retry with its latest revision.',
+          endpoint: '/api/databases/runs',
+        },
+      };
+    case 'agent_run_not_retryable':
+      return {
+        retryable: false,
+        recovery: {
+          action: 'manual_recovery',
+          instruction: 'Only a failed agent run can be retried or resumed.',
+          endpoint: '/api/databases/runs',
+        },
+      };
     case 'prompt_retention_invalid':
       return {
         retryable: false,

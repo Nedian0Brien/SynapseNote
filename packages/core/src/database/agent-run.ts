@@ -105,6 +105,18 @@ export const DatabaseAgentRunSchema = z
           context.addIssue({ code: 'custom', message: 'Undo availability must match its token' });
         }
       }),
+    recovery: z
+      .object({
+        attempt: z.number().int().positive().max(100),
+        action: z.enum(['initial', 'retry', 'resume']),
+        sourceRunId: z.string().startsWith('run_').nullable(),
+        idempotencyKeyHash: z
+          .string()
+          .regex(/^sha256:[a-f0-9]{64}$/)
+          .nullable(),
+      })
+      .strict()
+      .optional(),
   })
   .strict()
   .superRefine((run, context) => {

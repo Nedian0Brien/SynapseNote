@@ -26,6 +26,7 @@
 - Latest Agent Run inspection changeset: `../../.changeset/agent-run-progressive-inspection.md`
 - Latest inline alternative-view mutation changeset: `../../.changeset/inline-alt-view-mutations.md`
 - Latest inline view-order optimism changeset: `../../.changeset/inline-view-order-optimism.md`
+- Latest Agent Run recovery handoff changeset: `../../.changeset/agent-run-recovery-handoff.md`
 
 ## Objective and completion rule
 
@@ -865,6 +866,27 @@ do not reconstruct behavior solely from this summary.
   expectations); app, desktop, and docs typechecks; app production build;
   notices generation; documentation link validation; and `git diff --check`.
   No full server suite was run.
+
+### 2026-07-22 Agent Run recovery handoff slice
+
+- Failed agent runs now expose `Retry run` and `Resume run` in the Agent Runs
+  detail surface. Each action keeps the failed run as audit history and creates
+  a new attempt from the same immutable plan rather than mutating the current
+  view or overwriting the original run.
+- The HTTP `/api/databases/runs` contract binds recovery to the source run
+  revision and exact plan hash, accepts an explicit approval/autonomy token,
+  and replays an idempotent retry key without duplicating the database write.
+  Recovery metadata is additive in the core Agent Run schema and stores only a
+  SHA-256 idempotency-key hash.
+- Focused evidence: `database-agent-run-store.test.ts` passes 4 tests / 20
+  expectations; the retry HTTP contract passes 1 test / 8 expectations; and
+  `DatabaseAgentRunsDialog.dom.test.tsx` passes 4 tests / 21 expectations.
+  Core/server typechecks, app typecheck, targeted Biome, and `git diff --check`
+  pass. No full server suite or E2E rerun was needed.
+- NUI-603 remains open: the current plan engine is process-memory backed, so a
+  server restart requires a typed replan/recreate response; durable plan or
+  checkpoint handoff, the MCP Agent Run surface, and UI receipt display still
+  need implementation and evidence.
 
 ## Verification already completed
 

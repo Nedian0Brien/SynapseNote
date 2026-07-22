@@ -589,6 +589,16 @@ export const DatabaseAgentRunsRequestSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('get'), runId: z.string().startsWith('run_') }).strict(),
   z
     .object({
+      action: z.enum(['retry', 'resume']),
+      runId: z.string().startsWith('run_'),
+      expectedRevision: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+      idempotencyKey: z.string().min(8).max(256),
+      approvalToken: z.string().startsWith('approve:sha256:').optional(),
+      autonomySessionToken: z.string().startsWith('dbsession_').max(256).optional(),
+    })
+    .strict(),
+  z
+    .object({
       action: z.literal('retain_prompt'),
       runId: z.string().startsWith('run_'),
       prompt: z
@@ -1949,6 +1959,13 @@ const DatabaseAgentRunSummarySchema = DatabaseAgentRunSchema.transform((run) => 
   },
   failureCode: run.failure?.code ?? null,
   undo: { available: run.undo.available },
+  recovery: run.recovery
+    ? {
+        attempt: run.recovery.attempt,
+        action: run.recovery.action,
+        sourceRunId: run.recovery.sourceRunId,
+      }
+    : null,
 }));
 const DatabaseAgentRunStoreRevisionSchema = z.union([
   z.string().regex(/^sha256:[a-f0-9]{64}$/),
@@ -1976,6 +1993,14 @@ export const DatabaseAgentRunsResponseSchema = z.discriminatedUnion('action', [
     })
     .strict(),
   z.object({ action: z.literal('get'), run: DatabaseAgentRunSchema }).strict(),
+  z
+    .object({
+      action: z.enum(['retry', 'resume']),
+      sourceRunId: z.string().startsWith('run_'),
+      run: DatabaseAgentRunSchema,
+      receipt: DatabaseCommitResponseSchema,
+    })
+    .strict(),
   z
     .object({
       action: z.literal('retain_prompt'),
@@ -2858,11 +2883,20 @@ function respondAgentRunStoreError(response: ServerResponse, error: unknown): vo
     respondDataPlaneError(response, 'database-agent-runs', error);
     return;
   }
-  const status: HttpErrorStatus = error.code === 'agent_run_not_found' ? 404 : 503;
+  const status: HttpErrorStatus =
+    error.code === 'agent_run_not_found'
+      ? 404
+      : error.code === 'agent_run_not_retryable' || error.code === 'agent_run_revision_changed'
+        ? 409
+        : 503;
   errorResponse(
     response,
     status,
-    status === 404 ? 'urn:ok:error:not-found' : 'urn:ok:error:internal-server-error',
+    status === 404
+      ? 'urn:ok:error:not-found'
+      : status === 409
+        ? 'urn:ok:error:stale-target'
+        : 'urn:ok:error:internal-server-error',
     error.message,
     {
       handler: 'database-agent-runs',
@@ -4178,6 +4212,47 @@ export function createDatabaseDataPlaneApiHandlers(
           result = { action: body.action, ...(await agentRunStore.list()) };
         } else if (body.action === 'get') {
           result = { action: body.action, run: await agentRunStore.get(body.runId) };
+        } else if (body.action === 'retry' || body.action === 'resume') {
+          if (!dataPlane) {
+            respondUnavailable(response, 'database-data-plane');
+            return;
+          }
+          const sourceRun = await agentRunStore.prepareRecovery(body.runId, body.expectedRevision);
+          const plan = dataPlane.getPlan(sourceRun.plan.id);
+          if (plan.hash !== sourceRun.plan.hash) {
+            throw new DatabaseCommitError(
+              'plan_hash_mismatch',
+              'The Agent Run plan hash no longer matches its immutable plan',
+              { expectedPlanHash: sourceRun.plan.hash, observedPlanHash: plan.hash },
+            );
+          }
+          const recoveryActor = {
+            principalId: sourceRun.actor.principalId,
+            kind: sourceRun.actor.kind,
+            ...(sourceRun.actor.sessionId ? { sessionId: sourceRun.actor.sessionId } : {}),
+          };
+          const recoveryRun = await agentRunStore.propose(plan, recoveryActor, {
+            action: body.action,
+            sourceRunId: sourceRun.id,
+            idempotencyKey: body.idempotencyKey,
+          });
+          const receipt = await dataPlane.commit({
+            planId: plan.id,
+            planHash: plan.hash,
+            expectedSnapshotRevision: sourceRun.plan.snapshotRevision,
+            idempotencyKey: body.idempotencyKey,
+            ...(body.approvalToken ? { approvalToken: body.approvalToken } : {}),
+            ...(body.autonomySessionToken
+              ? { autonomySessionToken: body.autonomySessionToken }
+              : {}),
+            actor: recoveryActor,
+          });
+          result = {
+            action: body.action,
+            sourceRunId: sourceRun.id,
+            run: await agentRunStore.get(recoveryRun.id),
+            receipt,
+          };
         } else {
           if (!promptRetentionStore) {
             respondUnavailable(response, 'database-agent-prompt-retention');

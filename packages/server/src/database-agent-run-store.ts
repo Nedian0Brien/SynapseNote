@@ -27,6 +27,8 @@ type State = z.infer<typeof StateSchema>;
 
 export type DatabaseAgentRunStoreErrorCode =
   | 'agent_run_not_found'
+  | 'agent_run_not_retryable'
+  | 'agent_run_revision_changed'
   | 'agent_run_store_unsafe'
   | 'agent_run_store_corrupt';
 
@@ -59,6 +61,10 @@ function stable(value: unknown): string {
 
 function revision(value: unknown): string {
   return `sha256:${createHash('sha256').update(stable(value)).digest('hex')}`;
+}
+
+function idempotencyKeyHash(value: string): string {
+  return `sha256:${createHash('sha256').update(value).digest('hex')}`;
 }
 
 function withRunRevision(value: Omit<DatabaseAgentRun, 'revision'>): DatabaseAgentRun {
@@ -119,15 +125,27 @@ export class DatabaseAgentRunStore {
   async propose(
     plan: DatabasePlanArtifact,
     actor: DatabaseCommitInput['actor'],
+    recovery?: {
+      action: 'retry' | 'resume';
+      sourceRunId: string;
+      idempotencyKey: string;
+    },
   ): Promise<DatabaseAgentRun> {
     return this.#update((state) => {
-      const existing = state.runs.find(
-        (run) =>
-          run.plan.hash === plan.hash &&
-          run.actor.principalId === actor.principalId &&
-          run.actor.sessionId === (actor.sessionId ?? null) &&
-          (run.state === 'awaiting_approval' || run.state === 'executing'),
-      );
+      const recoveryHash = recovery ? idempotencyKeyHash(recovery.idempotencyKey) : null;
+      if (recoveryHash) {
+        const replay = state.runs.find((run) => run.recovery?.idempotencyKeyHash === recoveryHash);
+        if (replay) return { state, result: replay };
+      }
+      const existing = recovery
+        ? undefined
+        : state.runs.find(
+            (run) =>
+              run.plan.hash === plan.hash &&
+              run.actor.principalId === actor.principalId &&
+              run.actor.sessionId === (actor.sessionId ?? null) &&
+              (run.state === 'awaiting_approval' || run.state === 'executing'),
+          );
       if (existing) return { state, result: existing };
       const timestamp = this.#now().toISOString();
       const run = withRunRevision({
@@ -158,6 +176,15 @@ export class DatabaseAgentRunStore {
         verification: { status: 'pending', checks: [] },
         failure: null,
         undo: { available: false, token: null },
+        recovery: {
+          attempt: recovery
+            ? (state.runs.find((candidate) => candidate.id === recovery.sourceRunId)?.recovery
+                ?.attempt ?? 1) + 1
+            : 1,
+          action: recovery?.action ?? 'initial',
+          sourceRunId: recovery?.sourceRunId ?? null,
+          idempotencyKeyHash: recoveryHash,
+        },
       });
       return { state: { ...state, runs: [run, ...state.runs].slice(0, MAX_RUNS) }, result: run };
     });
@@ -206,6 +233,23 @@ export class DatabaseAgentRunStore {
       failure,
       undo: { available: false, token: null },
     }));
+  }
+
+  async prepareRecovery(id: string, expectedRevision: string): Promise<DatabaseAgentRun> {
+    const run = await this.get(id);
+    if (run.revision !== expectedRevision) {
+      throw new DatabaseAgentRunStoreError(
+        'agent_run_revision_changed',
+        'Agent run changed after the latest inspection',
+      );
+    }
+    if (run.state !== 'failed' || run.actor.kind !== 'agent') {
+      throw new DatabaseAgentRunStoreError(
+        'agent_run_not_retryable',
+        'Only failed agent runs can be retried or resumed',
+      );
+    }
+    return run;
   }
 
   async #replace(

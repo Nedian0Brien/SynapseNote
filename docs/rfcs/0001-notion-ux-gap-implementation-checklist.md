@@ -38,8 +38,9 @@ largest remaining mismatches are:
    complete visual state matrix remain open.
 5. Agent context inspection is scoped and token-aware, and ghost plans lead
    with human summaries. Database creation review now uses the same progressive
-   summary/exact-plan disclosure. Selective approval, independent Agent Runs
-   inspect/undo/retry/resume, and real model/agent replay remain unverified.
+   summary/exact-plan disclosure. Agent Run retry/resume now has an exact-plan,
+   idempotent HTTP handoff and failed-run UI controls; durable restart recovery,
+   selective approval, MCP parity, and real model/agent replay remain unverified.
 6. Component coverage is broad, but a complete first-use journey is still not
    evidenced across both hosts. The local web renderer/API setup currently has
    an IPv4/IPv6 and server-route mismatch, and no Electron journey has been
@@ -426,10 +427,16 @@ treated as visual parity until a browser capture is attached.
 - [ ] **NUI-603** Keep Agent Runs inspect/undo/retry/resume independent from
   the current view and preserve the public MCP/HTTP contracts. Agent Run
   inspection now leads with compact scope and proposed-diff summaries and keeps
-  raw scope/diff JSON behind progressive disclosure; retry/resume independence
-  and full receipt handoff remain open. Evidence:
-  `DatabaseAgentRunsDialog.dom.test.tsx` (3 tests / 14 expectations). Map to
-  UX-908/UX-910.
+  raw scope/diff JSON behind progressive disclosure. Failed agent runs now
+  expose Retry/Resume controls that create an independent attempt from the
+  exact immutable plan; the HTTP handoff binds the source revision, plan hash,
+  approval/autonomy token, and idempotency key, while preserving the failed run
+  as audit history. Durable plan/checkpoint recovery after a process restart,
+  MCP parity, and a UI receipt display remain open. Evidence:
+  `DatabaseAgentRunsDialog.dom.test.tsx` (4 tests / 21 expectations), the
+  focused `database-data-plane-api.test.ts` retry contract (1 test / 8
+  expectations), and `database-agent-run-store.test.ts` (4 tests / 20
+  expectations). Map to UX-908/UX-910.
 
 ## P2 — Evidence and release gates
 

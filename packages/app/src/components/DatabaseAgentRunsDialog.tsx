@@ -37,6 +37,11 @@ export interface DatabaseAgentRunSummary {
   };
   failureCode: string | null;
   undo: { available: boolean };
+  recovery?: {
+    attempt: number;
+    action: DatabaseAgentRun['recovery']['action'];
+    sourceRunId: string | null;
+  } | null;
 }
 
 async function responseJson(response: Response): Promise<unknown> {
@@ -90,6 +95,55 @@ export async function fetchDatabaseAgentRun(
   return run;
 }
 
+export async function recoverDatabaseAgentRun(input: {
+  action: 'retry' | 'resume';
+  runId: string;
+  expectedRevision: string;
+  planHash: string;
+}): Promise<{
+  action: 'retry' | 'resume';
+  sourceRunId: string;
+  run: DatabaseAgentRun;
+  receipt: unknown;
+}> {
+  const value = await responseJson(
+    await fetch('/api/databases/runs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: input.action,
+        runId: input.runId,
+        expectedRevision: input.expectedRevision,
+        idempotencyKey: `agent-run-${input.action}-${crypto.randomUUID()}`,
+        approvalToken: `approve:${input.planHash}`,
+      }),
+    }),
+  );
+  if (!value || typeof value !== 'object') {
+    throw new Error('Invalid Agent Run recovery response');
+  }
+  const responseValue = value as {
+    action?: unknown;
+    sourceRunId?: unknown;
+    run?: unknown;
+    receipt?: unknown;
+  };
+  if (
+    responseValue.action !== input.action ||
+    responseValue.sourceRunId !== input.runId ||
+    !responseValue.run ||
+    typeof responseValue.run !== 'object'
+  ) {
+    throw new Error('Agent Run recovery response does not match its request');
+  }
+  return {
+    action: input.action,
+    sourceRunId: input.runId,
+    run: responseValue.run as DatabaseAgentRun,
+    receipt: responseValue.receipt,
+  };
+}
+
 function StateIcon({ state }: { state: DatabaseAgentRun['state'] }) {
   if (state === 'succeeded') return <CheckCircle2 className="size-4 text-emerald-600" />;
   if (state === 'failed') return <AlertCircle className="size-4 text-destructive" />;
@@ -114,12 +168,40 @@ function agentRunScopeSummary(scope: DatabaseAgentRun['scope']): string {
 export function DatabaseAgentRunDetail({
   run,
   onUndone,
+  onRecovered,
 }: {
   run: DatabaseAgentRun;
   onUndone?: () => void;
+  onRecovered?: (runId: string) => void;
 }) {
   const [undoStatus, setUndoStatus] = useState<'idle' | 'checking' | 'applying' | 'error'>('idle');
   const [undoError, setUndoError] = useState<string | null>(null);
+  const [recoveryStatus, setRecoveryStatus] = useState<'idle' | 'retrying' | 'resuming' | 'error'>(
+    'idle',
+  );
+  const [recoveryError, setRecoveryError] = useState<string | null>(null);
+
+  const recoverRun = (action: 'retry' | 'resume') => {
+    if (run.state !== 'failed' || recoveryStatus !== 'idle') return;
+    setRecoveryError(null);
+    setRecoveryStatus(action === 'retry' ? 'retrying' : 'resuming');
+    void recoverDatabaseAgentRun({
+      action,
+      runId: run.id,
+      expectedRevision: run.revision,
+      planHash: run.plan.hash,
+    })
+      .then((outcome) => {
+        setRecoveryStatus('idle');
+        onRecovered?.(outcome.run.id);
+      })
+      .catch((cause: unknown) => {
+        setRecoveryError(
+          cause instanceof Error ? cause.message : 'Unable to recover this Agent Run',
+        );
+        setRecoveryStatus('error');
+      });
+  };
 
   const undoRun = () => {
     if (!run.undo.token || undoStatus !== 'idle') return;
@@ -237,6 +319,56 @@ export function DatabaseAgentRunDetail({
           <p className="mt-1 text-sm">
             {run.failure.code}: {run.failure.message}
           </p>
+        </section>
+      ) : null}
+      {run.state === 'failed' ? (
+        <section className="rounded-md border border-amber-500/30 bg-amber-500/5 p-3">
+          <h3 className="font-medium">
+            <Trans>Recover this run</Trans>
+          </h3>
+          <p className="mt-1 text-muted-foreground text-sm">
+            <Trans>
+              Retry or resume the exact approved plan as a new attempt. The failed run stays in the
+              audit history, and the plan hash is rechecked before any database write.
+            </Trans>
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => recoverRun('retry')}
+              disabled={recoveryStatus !== 'idle' && recoveryStatus !== 'error'}
+              data-testid="database-agent-run-retry"
+            >
+              {recoveryStatus === 'retrying' ? <Loader2 className="animate-spin" /> : null}
+              {recoveryStatus === 'retrying' ? (
+                <Trans>Retrying run</Trans>
+              ) : (
+                <Trans>Retry run</Trans>
+              )}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => recoverRun('resume')}
+              disabled={recoveryStatus !== 'idle' && recoveryStatus !== 'error'}
+              data-testid="database-agent-run-resume"
+            >
+              {recoveryStatus === 'resuming' ? <Loader2 className="animate-spin" /> : null}
+              {recoveryStatus === 'resuming' ? (
+                <Trans>Resuming run</Trans>
+              ) : (
+                <Trans>Resume run</Trans>
+              )}
+            </Button>
+          </div>
+          {recoveryStatus === 'error' && recoveryError ? (
+            <p className="mt-2 text-destructive text-sm" role="alert">
+              {recoveryError}
+            </p>
+          ) : null}
         </section>
       ) : null}
       <section>
@@ -436,6 +568,10 @@ export function DatabaseAgentRunsDialog({
               <DatabaseAgentRunDetail
                 run={detail}
                 onUndone={() => setRefresh((value) => value + 1)}
+                onRecovered={(runId) => {
+                  setSelectedId(runId);
+                  setRefresh((value) => value + 1);
+                }}
               />
             ) : null}
           </div>

@@ -53,6 +53,64 @@ function detail(): DatabaseAgentRun {
   };
 }
 
+function failedDetail(): DatabaseAgentRun {
+  const run = detail();
+  return {
+    ...run,
+    state: 'failed',
+    revision: `sha256:${'4'.repeat(64)}`,
+    updatedAt: '2026-07-20T00:02:00.000Z',
+    execution: {
+      ...run.execution,
+      finishedAt: '2026-07-20T00:02:00.000Z',
+      mutationId: null,
+    },
+    verification: { status: 'failed', checks: [] },
+    failure: { code: 'transaction_failed', message: 'The first attempt failed.' },
+    undo: { available: false, token: null },
+    recovery: {
+      attempt: 1,
+      action: 'initial',
+      sourceRunId: null,
+      idempotencyKeyHash: null,
+    },
+  };
+}
+
+function summaryFor(run: DatabaseAgentRun) {
+  return {
+    id: run.id,
+    state: run.state,
+    revision: run.revision,
+    createdAt: run.createdAt,
+    updatedAt: run.updatedAt,
+    intent: run.intent,
+    scope: {
+      databaseIds: run.scope.databaseIds,
+      sourceCount: run.scope.sourceIds.length,
+      propertyCount: run.scope.propertyIds.length,
+      viewCount: run.scope.viewIds.length,
+      recordCount: run.scope.recordIds.length,
+    },
+    plan: { id: run.plan.id, riskLevel: run.plan.risk.level },
+    execution: { mutationId: run.execution.mutationId, actualDiffCount: 0 },
+    verification: {
+      status: run.verification.status,
+      checkCount: 0,
+      failedCheckCount: run.verification.status === 'failed' ? 1 : 0,
+    },
+    failureCode: run.failure?.code ?? null,
+    undo: { available: run.undo.available },
+    recovery: run.recovery
+      ? {
+          attempt: run.recovery.attempt,
+          action: run.recovery.action,
+          sourceRunId: run.recovery.sourceRunId,
+        }
+      : null,
+  };
+}
+
 describe('DatabaseAgentRunsDialog DOM behavior', () => {
   test('loads compact history and then the selected exact run', async () => {
     const run = detail();
@@ -191,5 +249,66 @@ describe('DatabaseAgentRunsDialog DOM behavior', () => {
       expect(actions).toEqual(['list', 'get', 'preview', 'apply', 'list', 'get']),
     );
     expect(screen.getAllByText('Update the incident status').length).toBeGreaterThan(0);
+  });
+
+  test('retries a failed run as a new exact-plan attempt', async () => {
+    const failed = failedDetail();
+    const recovered: DatabaseAgentRun = {
+      ...detail(),
+      id: 'run_dom_retry',
+      state: 'succeeded',
+      revision: `sha256:${'5'.repeat(64)}`,
+      updatedAt: '2026-07-20T00:03:00.000Z',
+      recovery: {
+        attempt: 2,
+        action: 'retry',
+        sourceRunId: failed.id,
+        idempotencyKeyHash: `sha256:${'6'.repeat(64)}`,
+      },
+    };
+    let currentRuns = [failed];
+    const actions: string[] = [];
+    globalThis.fetch = mock(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      const request = JSON.parse(String(init?.body)) as { action: string };
+      actions.push(request.action);
+      if (request.action === 'list') {
+        return Response.json({
+          action: 'list',
+          revision: failed.revision,
+          runs: currentRuns.map(summaryFor),
+        });
+      }
+      if (request.action === 'get') {
+        const runId = (request as { action: string; runId: string }).runId;
+        const run = currentRuns.find((candidate) => candidate.id === runId) ?? failed;
+        return Response.json({ action: 'get', run });
+      }
+      expect(request).toMatchObject({
+        action: 'retry',
+        runId: failed.id,
+        expectedRevision: failed.revision,
+        approvalToken: `approve:${failed.plan.hash}`,
+      });
+      currentRuns = [recovered, failed];
+      return Response.json({
+        action: 'retry',
+        sourceRunId: failed.id,
+        run: recovered,
+        receipt: {
+          mutationId: 'mut_dom_retry',
+          planHash: failed.plan.hash,
+          idempotentReplay: false,
+          verification: { status: 'passed', checks: [] },
+        },
+      });
+    }) as typeof fetch;
+
+    render(<DatabaseAgentRunsDialog open={true} onOpenChange={() => {}} />);
+    expect(await screen.findByTestId('database-agent-run-retry')).not.toBeNull();
+    fireEvent.click(screen.getByTestId('database-agent-run-retry'));
+    await waitFor(() => expect(actions).toEqual(['list', 'get', 'retry', 'list', 'get']));
+    expect(screen.getAllByText('Update the incident status').length).toBeGreaterThan(0);
+    expect(screen.queryByTestId('database-agent-run-retry')).toBeNull();
+    expect(screen.getByText(/succeeded ·/)).not.toBeNull();
   });
 });

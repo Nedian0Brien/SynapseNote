@@ -3177,6 +3177,132 @@ describe('database data plane HTTP handlers', () => {
     });
   });
 
+  test('retries a failed Agent Run with an exact plan and idempotent handoff', async () => {
+    const { handlers, projectDir, agentRunStore } = await fixture();
+    const desiredState = {
+      database: {
+        id: 'db_retry_tasks',
+        key: 'retry-tasks',
+        name: 'Retry tasks',
+        contract: {
+          purpose: 'Exercise exact Agent Run recovery',
+          canonicality: 'canonical',
+          vocabulary: ['task'],
+          freshness: { expectation: 'realtime' },
+          sensitivity: 'internal',
+        },
+      },
+      sources: [
+        {
+          id: 'ds_retry_tasks',
+          key: 'tasks',
+          name: 'Tasks',
+          recordMeaning: 'One retryable task',
+          folder: 'retry-tasks',
+          properties: [
+            {
+              id: 'prop_retry_title',
+              key: 'title',
+              name: 'Title',
+              type: 'title',
+              required: true,
+            },
+          ],
+        },
+      ],
+      views: [],
+      sampleRecords: [
+        {
+          id: 'rec_retry_first',
+          sourceKey: 'tasks',
+          values: { title: 'Retry this' },
+          body: 'Exact retry plan.\n',
+        },
+      ],
+    };
+    const drafted = await call(
+      handlers.plan,
+      'POST',
+      '/api/databases/plan',
+      JSON.stringify({ action: 'create_draft', desiredState }),
+    );
+    expect(drafted.status, drafted.body).toBe(200);
+    const draft = JSON.parse(drafted.body) as { draft: { id: string } };
+    const planned = await call(
+      handlers.plan,
+      'POST',
+      '/api/databases/plan',
+      JSON.stringify({ action: 'create_plan', draftId: draft.draft.id }),
+    );
+    expect(planned.status, planned.body).toBe(200);
+    const plan = (
+      JSON.parse(planned.body) as {
+        plan: { id: string; hash: string; snapshotRevision: string };
+      }
+    ).plan;
+    const failed = await agentRunStore.markFailed(
+      (
+        await agentRunStore.propose(plan, {
+          principalId: 'agent:retry-http',
+          kind: 'agent',
+          sessionId: 'session-retry-http',
+        })
+      ).id,
+      { code: 'transaction_failed', message: 'The first attempt failed before applying.' },
+    );
+
+    const input = {
+      action: 'retry' as const,
+      runId: failed.id,
+      expectedRevision: failed.revision,
+      idempotencyKey: 'agent-run-retry-http-0001',
+      approvalToken: `approve:${plan.hash}`,
+    };
+    const retried = await call(handlers.runs, 'POST', '/api/databases/runs', JSON.stringify(input));
+    expect(retried.status, retried.body).toBe(200);
+    const result = JSON.parse(retried.body) as {
+      action: string;
+      sourceRunId: string;
+      run: {
+        id: string;
+        state: string;
+        plan: { id: string; hash: string; snapshotRevision: string };
+        recovery?: { action: string; attempt: number; sourceRunId: string | null };
+      };
+      receipt: { idempotentReplay: boolean; planHash: string; verification: { status: string } };
+    };
+    expect(result).toMatchObject({
+      action: 'retry',
+      sourceRunId: failed.id,
+      run: {
+        state: 'succeeded',
+        plan: { id: plan.id, hash: plan.hash, snapshotRevision: plan.snapshotRevision },
+        recovery: { action: 'retry', attempt: 2, sourceRunId: failed.id },
+      },
+      receipt: {
+        idempotentReplay: false,
+        planHash: plan.hash,
+        verification: { status: 'passed' },
+      },
+    });
+    expect(result.run.id).not.toBe(failed.id);
+    expect(existsSync(join(projectDir, '.ok', 'databases', 'retry-tasks.yml'))).toBe(true);
+
+    const replayed = await call(
+      handlers.runs,
+      'POST',
+      '/api/databases/runs',
+      JSON.stringify(input),
+    );
+    expect(replayed.status, replayed.body).toBe(200);
+    expect(JSON.parse(replayed.body)).toMatchObject({
+      action: 'retry',
+      sourceRunId: failed.id,
+      run: { id: result.run.id, state: 'succeeded' },
+      receipt: { idempotentReplay: true, planHash: plan.hash },
+    });
+  });
+
   test('previews and applies an exact approved repair over the HTTP contract', async () => {
     const { handlers, contentDir, index } = await fixture();
     const recordPath = join(contentDir, 'tasks', 'first.md');
