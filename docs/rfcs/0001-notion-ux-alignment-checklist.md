@@ -589,6 +589,28 @@ canonical table journey remains the cross-view tab/control baseline.
 This closes UX-610 at the functional implementation/evidence layer; visual
 cross-layout and packaged-host evidence remain release gates.
 
+### Canonical record-title entry evidence (2026-07-23)
+
+Every supported record-oriented renderer now exposes the visible record title
+as an action backed by the same host `onOpen` adapter: table, board, list,
+feed, calendar, timeline (including the bar and no-date lane), gallery, chart
+drill-through, map markers/missing-location list, and dashboard widgets. The
+table keeps title editing as a separate pencil action, so opening a page never
+silently starts an edit. Stable `data-record-title-link` markers make the
+contract inspectable without coupling tests to layout-specific markup.
+
+Focused evidence covers direct title activation and canonical record identity
+in `DatabaseTableDialog.dom.test.tsx`, `DatabaseList.dom.test.tsx`,
+`DatabaseBoard.dom.test.tsx`, `DatabaseFeed.dom.test.tsx`,
+`DatabaseCalendar.dom.test.tsx`, and `DatabaseTimeline.dom.test.tsx`; existing
+Gallery, Chart, Map, Dashboard, and full workspace journeys cover the remaining
+renderer entry points. The affected renderer suite passes 99 tests / 553
+expectations.
+
+This closes UX-701 at the functional implementation/evidence layer. Shared
+record-page composition, breadcrumbs, body editing, and visual/cross-host
+proof remain open under UX-702 onward and the release gates.
+
 ### Sidebar and recent database navigation evidence (2026-07-23)
 
 The ordinary file sidebar now exposes database sources as a peer `Databases`
@@ -645,7 +667,7 @@ crossed the document-native UX bar:
 | Measure | Current result | Interpretation |
 | --- | --- | --- |
 | Engine implementation checklist | 310/335 numbered items complete | Core/database and agent contracts are substantially implemented. |
-| Notion UX checklist | 66/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, inline/full-page state parity, table-first direct manipulation, friendly property names/examples, Title safety, type-specific cell editors, schema-vs-data mutation classification, in-context property-add/header affordances including property-specific sort/filter/duplicate actions, destructive property-deletion impact previews, adjacent Formula/Rollup error indicators, view-scoped property visibility/order, converged header/settings-menu view actions, visible reorderable saved-view tabs, layout-independent new-view `+` affordances, layout-specific saved-view property suggestions, coherent saved-view settings, active filter/sort explainers, saved-view tab lifecycle menu, last-view deletion safety, saved-view switch memory, independent linked-block view settings without copied rows, cross-layout title/tab/control/state/record-opening contract, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, 768px browser, and cross-host journey gates remain open. |
+| Notion UX checklist | 67/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, inline/full-page state parity, table-first direct manipulation, friendly property names/examples, Title safety, type-specific cell editors, schema-vs-data mutation classification, in-context property-add/header affordances including property-specific sort/filter/duplicate actions, destructive property-deletion impact previews, adjacent Formula/Rollup error indicators, view-scoped property visibility/order, converged header/settings-menu view actions, visible reorderable saved-view tabs, layout-independent new-view `+` affordances, layout-specific saved-view property suggestions, coherent saved-view settings, active filter/sort explainers, saved-view tab lifecycle menu, last-view deletion safety, saved-view switch memory, independent linked-block view settings without copied rows, cross-layout title/tab/control/state/record-opening contract, canonical record-title entrypoints, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, 768px browser, and cross-host journey gates remain open. |
 | First-use database entry | `New database` in sidebar, empty states, normal new-page dialog, command palette, plus slash-menu `New database`/`Linked view of database`; normal picker exposes Page/Database chooser and the resulting route lands in an editable table. `Open databases` enters the no-overlay page workspace. | Discovery, sidebar/recent navigation, and the web first-use path are evidenced; additional entry points and Electron proof remain open. |
 | Blank creation | Optional title, `Untitled database` fallback, direct-safe exact-plan commit, immediate source/view selection, title/new-row focus | The blank human path is continuous in DOM coverage; template/import/agent paths intentionally retain review and visual browser proof remains open. |
 | Full-page navigation | Stable `#database/<database>/<source>/<view?>` route, no-overlay canvas presentation, sidebar source section, command-palette recents/search, backlink and relation links, normal page chrome, and local overflow guardrails | Route, page surface, and navigation identity are evidenced; responsive visual/cross-host proof remains incomplete. |
@@ -1002,7 +1024,9 @@ capability alone is insufficient.
 
 ### UX-7 — Records are pages
 
-- [ ] **UX-701** Make each applicable record title open its one canonical page.
+- [x] **UX-701** Make each applicable record title open its one canonical page.
+      All supported renderers expose a visible title action through the shared
+      `onOpen` adapter; table title editing remains a separate explicit action.
 - [ ] **UX-702** Share one record-page component across side peek, center peek,
       and full page.
 - [ ] **UX-703** Show database breadcrumbs and return-to-view on record pages.
