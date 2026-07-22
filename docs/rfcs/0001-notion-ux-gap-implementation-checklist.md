@@ -162,9 +162,10 @@ treated as visual parity until a browser capture is attached.
   hand off to the canonical table shell with a title and first-row `New`
   affordance in one continuous route flow. Keep review available for
   agent/elevated-risk paths. Evidence: the blank page creation route closes
-  its draft chooser and lands on the canonical page title/table; title and
-  row-edit focus continuity across the route boundary remains a visual UX
-  follow-up. Map to UX-105–UX-108 and UX-401/UX-402.
+  its draft chooser and lands on the canonical page title/table; an inline
+  blank-database handoff now focuses the first-row title input after the host
+  block receives stable references. Cross-route title focus remains a visual
+  UX follow-up. Map to UX-105–UX-108 and UX-401/UX-402.
 - [x] **NUI-104** Make Escape, browser back, and failed creation leave no
   manifest/source/record orphan; preserve the typed title for retry. The
   uncommitted `#database/new` route is a history entry, browser back closes

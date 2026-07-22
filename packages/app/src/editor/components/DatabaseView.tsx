@@ -483,6 +483,7 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
   const [initialSelectedRecordIds, setInitialSelectedRecordIds] = useState<readonly string[]>();
   const [replacementPickerOpen, setReplacementPickerOpen] = useState(false);
   const [inlineCreationOpen, setInlineCreationOpen] = useState(false);
+  const [focusInlineNewRecord, setFocusInlineNewRecord] = useState(false);
   const [inlineMutationStatus, setInlineMutationStatus] = useState<'idle' | 'saving'>('idle');
   const [inlineMutationError, setInlineMutationError] = useState<string | null>(null);
   const [inlineOptimisticCellValues, setInlineOptimisticCellValues] = useState<
@@ -565,7 +566,10 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
     return () => controller.abort();
   }, [databaseId, sourceId, viewId, mode, refresh, showArchived]);
 
-  const applyReference = (next: { databaseId: string; sourceId: string; viewId: string }) => {
+  const applyReference = (
+    next: { databaseId: string; sourceId: string; viewId: string },
+    options: { focusNewRecord?: boolean } = {},
+  ) => {
     const editor = host?.editor;
     const pos = host?.getPos();
     if (!editor || typeof pos !== 'number') return;
@@ -582,6 +586,7 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
       }),
     );
     editor.view.focus();
+    setFocusInlineNewRecord(options.focusNewRecord === true);
     setReplacementPickerOpen(false);
   };
 
@@ -601,6 +606,7 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
       }),
     );
     editor.view.focus();
+    setFocusInlineNewRecord(false);
   };
 
   const removeLinkedView = () => {
@@ -644,7 +650,7 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
         <InlineDatabaseCreationDialog
           open={inlineCreationOpen}
           onOpenChange={setInlineCreationOpen}
-          onCreated={applyReference}
+          onCreated={(next) => applyReference(next, { focusNewRecord: true })}
         />
       </>
     );
@@ -1226,6 +1232,7 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
                 people={state.description.database.people}
                 optimisticCellValues={inlineOptimisticCellValues}
                 mutationLocked={inlineMutationStatus !== 'idle'}
+                autoFocusNewRecord={reference.data.mode === 'inline' ? focusInlineNewRecord : false}
                 selectedRecordIds={inlineSelectedRecordIds}
                 viewPropertyIds={linkedView.projection.propertyIds}
                 viewConfiguration={
@@ -1289,7 +1296,7 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
       <InlineDatabaseCreationDialog
         open={inlineCreationOpen}
         onOpenChange={setInlineCreationOpen}
-        onCreated={applyReference}
+        onCreated={(next) => applyReference(next, { focusNewRecord: true })}
       />
 
       <Suspense fallback={null}>

@@ -778,6 +778,7 @@ export function DatabaseTable({
   ghost = null,
   optimisticCellValues,
   mutationLocked = false,
+  autoFocusNewRecord = false,
   selectedRecordIds = new Set<string>(),
   calculations = {},
   viewPropertyIds,
@@ -814,6 +815,8 @@ export function DatabaseTable({
   /** Direct-safe human edits shown locally while the canonical commit settles. */
   optimisticCellValues?: ReadonlyMap<string, DatabaseValue | undefined>;
   mutationLocked?: boolean;
+  /** Focus the title-cell affordance after an inline block finishes creation. */
+  autoFocusNewRecord?: boolean;
   selectedRecordIds?: ReadonlySet<string>;
   calculations?: Readonly<Record<string, DatabaseCalculationFunction>>;
   viewPropertyIds?: readonly string[];
@@ -941,10 +944,36 @@ export function DatabaseTable({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const cellMenuRef = useRef<HTMLDivElement>(null);
   const editFocusRef = useRef<{ recordId: string; propertyId: string } | null>(null);
+  const autoFocusNewRecordConsumedRef = useRef(false);
   useEffect(() => {
     if (!cellMenu) return;
     cellMenuRef.current?.querySelector<HTMLElement>('[role="menuitem"]:not([disabled])')?.focus();
   }, [cellMenu]);
+
+  useEffect(() => {
+    if (!autoFocusNewRecord) {
+      autoFocusNewRecordConsumedRef.current = false;
+      return;
+    }
+    if (
+      autoFocusNewRecordConsumedRef.current ||
+      mutationLocked ||
+      !onCreateRecord ||
+      typeof window === 'undefined'
+    ) {
+      return;
+    }
+    let frame = 0;
+    frame = window.requestAnimationFrame(() => {
+      const input = tableHostRef.current?.querySelector<HTMLInputElement>(
+        '[data-testid="database-new-row-title"]',
+      );
+      if (!input || mutationLocked) return;
+      input.focus();
+      autoFocusNewRecordConsumedRef.current = true;
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [autoFocusNewRecord, mutationLocked, onCreateRecord]);
   const allLoadedSelected =
     result.records.length > 0 && result.records.every((record) => selectedRecordIds.has(record.id));
 
@@ -6579,11 +6608,14 @@ export function DatabaseTableDialog({
                 });
                 window.history.replaceState(null, '', route);
                 window.dispatchEvent(new Event(DATABASE_NAVIGATION_CHANGE_EVENT));
-                window.dispatchEvent(new HashChangeEvent('hashchange'));
+                window.dispatchEvent(new window.HashChangeEvent('hashchange'));
               }
               if (mode === 'blank') {
                 setPageTitleDraft(source.name ?? definition.name);
-                setPageTitleEditing(true);
+                // Keep the canonical title visible while the table handoff
+                // settles. The inline flow owns first-row focus; the page
+                // shell can still enter title editing explicitly.
+                setPageTitleEditing(false);
                 setNewRecordTitle('');
                 setNewRecordOpen(true);
               }

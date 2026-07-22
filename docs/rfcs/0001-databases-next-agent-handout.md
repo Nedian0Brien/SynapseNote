@@ -8,6 +8,7 @@
 - UX gap checklist: [0001-notion-ux-gap-implementation-checklist.md](./0001-notion-ux-gap-implementation-checklist.md)
 - Changeset: `../../.changeset/add-file-native-database-core.md`
 - Latest feature changeset: `../../.changeset/inline-database-create-route.md`
+- Latest inline UX changeset: `../../.changeset/inline-database-focus.md`
 
 ## Objective and completion rule
 
@@ -215,6 +216,25 @@ do not reconstruct behavior solely from this summary.
   and landed on a canonical route with a rendered table grid. This closes the
   route-handoff implementation gap, but not NUI-105/NUI-701 visual and
   Electron journey gates.
+
+### 2026-07-22 inline first-row focus slice
+
+- `DatabaseView` now marks the inline block when a blank database has just been
+  created, and `DatabaseTable` consumes that intent once the canonical table
+  renderer mounts. The title-cell `New row` input receives focus so the next
+  action can be typed immediately, while ordinary linked-view loads do not steal
+  focus.
+- The page handoff keeps the database title visible rather than leaving the
+  title editor open while the table settles. The route-level `HashChangeEvent`
+  dispatch is now browser-safe through `window.HashChangeEvent`, with a
+  regression test for the direct blank-creation route.
+- Focused evidence: `DatabaseTableDialog.dom.test.tsx` passes 64 tests / 372
+  expectations, including the inline new-row focus journey;
+  `DatabaseView.dom.test.tsx` passes 13 tests / 116 expectations; app typecheck
+  and `git diff --check` pass. The full server suite and broad E2E remain
+  intentionally unrun.
+- Follow-up: capture the same focus and visual continuity in the browser and
+  Electron shells before closing NUI-103/NUI-105 visual gates.
 
 ### 2026-07-22 entry-point re-audit and convergence slice
 

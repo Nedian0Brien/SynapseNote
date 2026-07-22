@@ -725,6 +725,21 @@ describe('DatabaseTableDialog', () => {
     expect(screen.queryByText('First task')).toBeNull();
   });
 
+  test('focuses the inline new-record title after creation handoff', async () => {
+    render(
+      <DatabaseTable
+        databaseId={database.id}
+        source={source}
+        result={{ ...queryResult(), records: [] }}
+        onCreateRecord={() => {}}
+        autoFocusNewRecord
+      />,
+    );
+
+    const input = screen.getByTestId('database-new-row-title');
+    await waitFor(() => expect(document.activeElement).toBe(input));
+  });
+
   test('surfaces schema property management only when the host wires it up', () => {
     const { rerender } = render(
       <DatabaseTable databaseId={database.id} source={source} result={queryResult()} />,
@@ -3172,7 +3187,9 @@ describe('DatabaseTableDialog', () => {
       }),
     );
     await waitFor(() => expect(screen.queryByTestId('database-creation-ghost-review')).toBeNull());
-    expect((await screen.findByTestId('database-page-title')).textContent).toContain('New Database');
+    expect((await screen.findByTestId('database-page-title')).textContent).toContain(
+      'New Database',
+    );
     expect(screen.queryByLabelText('Database name')).toBeNull();
     expect(window.location.hash).toBe('#database/db_new/ds_new');
   });
