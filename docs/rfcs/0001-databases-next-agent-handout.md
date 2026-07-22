@@ -19,6 +19,7 @@
 - Latest inline mode-preservation changeset: `../../.changeset/inline-view-mode-preservation.md`
 - Latest inline view-tab-menu changeset: `../../.changeset/inline-view-tab-menu.md`
 - Latest context-inspector-copy changeset: `../../.changeset/context-inspector-copy.md`
+- Latest alternative-view context changeset: `../../.changeset/inline-context-alt-views.md`
 
 ## Objective and completion rule
 
@@ -676,6 +677,26 @@ do not reconstruct behavior solely from this summary.
   suite or E2E rerun was needed.
 - Follow-up: connect this compact projection to any future agent handoff
   surface without bypassing the server's permission-scoped Context Pack.
+
+### 2026-07-22 inline alternative-view context slice
+
+- Inline Board cards, Calendar cards, and Timeline records now expose the same
+  `Inspect context for record …` action already available in Table rows. The
+  action is available from the Timeline table, scheduled bars (including when
+  the table is hidden), and no-date lane, so changing the primary view does not
+  remove an agent's record-scoped inspection path.
+- `DatabaseView` forwards each action to the canonical permission-scoped
+  Context Inspector with only the stable record ID; no record payload is copied
+  into the inline host block.
+- Focused evidence: `DatabaseBoard.dom.test.tsx`,
+  `DatabaseCalendar.dom.test.tsx`, and `DatabaseTimeline.dom.test.tsx` pass 11
+  tests / 39 expectations together; `DatabaseView.dom.test.tsx` passes 18
+  tests / 180 expectations and asserts the callback is wired for all three
+  renderers. App typecheck, targeted Biome, and `git diff --check` pass. No
+  server suite or E2E rerun was needed.
+- Follow-up: extend the same affordance to other record-centric renderers if
+  the visual review shows their action density remains acceptable; keep the
+  browser/Electron and accessibility gates open under NUI-601/NUI-702.
 
 ### 2026-07-22 inline filter handoff slice
 

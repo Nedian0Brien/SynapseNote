@@ -617,6 +617,7 @@ describe('DatabaseView', () => {
     expect(await screen.findByRole('heading', { name: 'Task board' })).toBeTruthy();
     expect(await screen.findByText('First task')).toBeTruthy();
     expect(document.querySelector('[data-board-card="rec_first"]')).toBeTruthy();
+    expect(screen.getByLabelText('Inspect context for record rec_first')).toBeTruthy();
   });
 
   test('applies a single inline Board transition through the direct-safe cell path', async () => {
@@ -846,6 +847,7 @@ describe('DatabaseView', () => {
     await waitFor(() =>
       expect(document.querySelector('[data-calendar-card="rec_first"]')).toBeTruthy(),
     );
+    expect(screen.getByLabelText('Inspect context for record rec_first')).toBeTruthy();
   });
 
   test('renders a linked Timeline from its saved Date mapping', async () => {
@@ -937,6 +939,7 @@ describe('DatabaseView', () => {
     expect(await screen.findByRole('heading', { name: 'Task timeline' })).toBeTruthy();
     expect((await screen.findAllByText('First task')).length).toBeGreaterThan(0);
     expect(document.querySelector('[data-timeline-bar="rec_first"]')).toBeTruthy();
+    expect(screen.getAllByLabelText('Inspect context for record rec_first').length).toBeGreaterThan(0);
   });
 
   test('renders a live projection from stable references without embedded records', async () => {

@@ -16,7 +16,7 @@ import {
   mediaKindForSidebarAssetExtension,
   toDesktopAssetHref,
 } from '@nedian0brien/synapsenote-core';
-import { Archive, Copy, ExternalLink, GripVertical, MoveRight, Trash2 } from 'lucide-react';
+import { Archive, Braces, Copy, ExternalLink, GripVertical, MoveRight, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -212,6 +212,7 @@ export function DatabaseBoard({
   relationRecords = result.relationRecords ?? [],
   mutationLocked = false,
   onOpen,
+  onOpenContextInspector,
   onTransition,
   onDuplicate,
   onArchive,
@@ -225,6 +226,7 @@ export function DatabaseBoard({
   relationRecords?: readonly ProjectedDatabaseRelationRecord[];
   mutationLocked?: boolean;
   onOpen?: (record: ProjectedDatabaseRecord) => void;
+  onOpenContextInspector?: (record: ProjectedDatabaseRecord) => void;
   onTransition?: (transition: DatabaseBoardTransition) => void;
   onDuplicate?: (record: ProjectedDatabaseRecord) => void;
   onArchive?: (record: ProjectedDatabaseRecord, action: 'archive' | 'restore') => void;
@@ -581,6 +583,18 @@ export function DatabaseBoard({
                                   onClick={() => onRequestMove(record)}
                                 >
                                   <MoveRight />
+                                </Button>
+                              ) : null}
+                              {onOpenContextInspector ? (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon-xs"
+                                  aria-label={`Inspect context for record ${record.id}`}
+                                  disabled={mutationLocked}
+                                  onClick={() => onOpenContextInspector(record)}
+                                >
+                                  <Braces aria-hidden="true" />
                                 </Button>
                               ) : null}
                               {onArchive ? (

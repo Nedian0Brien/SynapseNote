@@ -249,4 +249,20 @@ describe('DatabaseBoard', () => {
       }),
     );
   });
+
+  test('offers record context inspection from a board card', () => {
+    const onOpenContextInspector = mock(() => {});
+    render(
+      <DatabaseBoard
+        source={source}
+        view={view}
+        result={result}
+        onOpenContextInspector={onOpenContextInspector}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect context for record rec_first' }));
+    expect(onOpenContextInspector).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'rec_first' }),
+    );
+  });
 });

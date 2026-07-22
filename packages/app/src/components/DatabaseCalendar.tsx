@@ -20,7 +20,7 @@ import {
   formatDatabaseDateValue,
   isDatabaseDateOnly,
 } from '@nedian0brien/synapsenote-core';
-import { ChevronLeft, ChevronRight, ExternalLink, GripHorizontal } from 'lucide-react';
+import { Braces, ChevronLeft, ChevronRight, ExternalLink, GripHorizontal } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -211,6 +211,7 @@ export function DatabaseCalendar({
   relationRecords = result.relationRecords ?? [],
   mutationLocked = false,
   onOpen,
+  onOpenContextInspector,
   onChange,
 }: {
   source: DatabaseSource;
@@ -220,6 +221,7 @@ export function DatabaseCalendar({
   relationRecords?: readonly ProjectedDatabaseRelationRecord[];
   mutationLocked?: boolean;
   onOpen?: (record: ProjectedDatabaseRecord) => void;
+  onOpenContextInspector?: (record: ProjectedDatabaseRecord) => void;
   onChange?: (change: DatabaseCalendarChange) => void;
 }) {
   'use no memo';
@@ -432,6 +434,18 @@ export function DatabaseCalendar({
                           onClick={() => onOpen(record)}
                         >
                           <ExternalLink />
+                        </Button>
+                      ) : null}
+                      {onOpenContextInspector ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-xs"
+                          aria-label={`Inspect context for record ${record.id}`}
+                          disabled={mutationLocked}
+                          onClick={() => onOpenContextInspector(record)}
+                        >
+                          <Braces aria-hidden="true" />
                         </Button>
                       ) : null}
                       {isEnd ? (

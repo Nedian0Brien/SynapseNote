@@ -179,6 +179,56 @@ describe('DatabaseTimeline', () => {
     );
   });
 
+  test('offers record context inspection from timeline table, bars, and no-date rows', () => {
+    const onOpenContextInspector = mock(() => {});
+    render(
+      <DatabaseTimeline
+        source={source}
+        view={view}
+        result={result}
+        onOpenContextInspector={onOpenContextInspector}
+      />,
+    );
+    const inspectButtons = screen.getAllByRole('button', {
+      name: 'Inspect context for record rec_plan',
+    });
+    const inspectButton = inspectButtons[0];
+    if (!inspectButton) throw new Error('Timeline context inspector control is missing');
+    fireEvent.click(inspectButton);
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Inspect context for record rec_unscheduled' }),
+    );
+    expect(onOpenContextInspector).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ id: 'rec_plan' }),
+    );
+    expect(onOpenContextInspector).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ id: 'rec_unscheduled' }),
+    );
+
+    const noTableView: DatabaseView = {
+      ...view,
+      layout: {
+        ...view.layout,
+        configuration: { ...view.layout.configuration, showTable: false },
+      },
+    };
+    cleanup();
+    render(
+      <DatabaseTimeline
+        source={source}
+        view={noTableView}
+        result={result}
+        onOpenContextInspector={onOpenContextInspector}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect context for record rec_plan' }));
+    expect(onOpenContextInspector).toHaveBeenLastCalledWith(
+      expect.objectContaining({ id: 'rec_plan' }),
+    );
+  });
+
   test('moves separate start and end Date properties in one change', () => {
     const separateSource: DatabaseSource = {
       ...source,

@@ -150,6 +150,28 @@ describe('DatabaseCalendar', () => {
     );
   });
 
+  test('offers record context inspection from a calendar card', () => {
+    const { view, result } = fixture();
+    const onOpenContextInspector = mock(() => {});
+    render(
+      <DatabaseCalendar
+        source={source}
+        view={view}
+        result={result}
+        onOpenContextInspector={onOpenContextInspector}
+      />,
+    );
+    const inspectButtons = screen.getAllByRole('button', {
+      name: 'Inspect context for record rec_span',
+    });
+    const inspectButton = inspectButtons[0];
+    if (!inspectButton) throw new Error('Calendar context inspector control is missing');
+    fireEvent.click(inspectButton);
+    expect(onOpenContextInspector).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'rec_span' }),
+    );
+  });
+
   test('preserves timezone wall-clock time and duration across a DST boundary', () => {
     expect(
       moveDatabaseCalendarDateValue(

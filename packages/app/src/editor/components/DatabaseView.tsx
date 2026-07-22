@@ -1456,6 +1456,9 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
                 result={state.result}
                 people={state.description.database.people}
                 onOpen={openRecord}
+                onOpenContextInspector={(record) =>
+                  setInlineContextInspectorScope({ recordId: record.id })
+                }
                 onTransition={(transition) => {
                   applyInlineViewChanges(transition.record, transition.changes);
                 }}
@@ -1489,6 +1492,9 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
                 result={state.result}
                 people={state.description.database.people}
                 onOpen={openRecord}
+                onOpenContextInspector={(record) =>
+                  setInlineContextInspectorScope({ recordId: record.id })
+                }
                 onChange={(change) => {
                   applyInlineViewChanges(change.record, change.changes);
                 }}
@@ -1506,6 +1512,9 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
                 result={state.result}
                 people={state.description.database.people}
                 onOpen={openRecord}
+                onOpenContextInspector={(record) =>
+                  setInlineContextInspectorScope({ recordId: record.id })
+                }
                 onChange={(change) => {
                   applyInlineViewChanges(change.record, change.changes);
                 }}

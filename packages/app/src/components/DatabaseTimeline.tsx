@@ -20,7 +20,7 @@ import {
   formatDatabaseDateValue,
   isDatabaseDateOnly,
 } from '@nedian0brien/synapsenote-core';
-import { ExternalLink, GripHorizontal, MoveLeft, MoveRight } from 'lucide-react';
+import { Braces, ExternalLink, GripHorizontal, MoveLeft, MoveRight } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -297,6 +297,7 @@ export function DatabaseTimeline({
   relationRecords = result.relationRecords ?? [],
   mutationLocked = false,
   onOpen,
+  onOpenContextInspector,
   onChange,
 }: {
   source: DatabaseSource;
@@ -306,6 +307,7 @@ export function DatabaseTimeline({
   relationRecords?: readonly ProjectedDatabaseRelationRecord[];
   mutationLocked?: boolean;
   onOpen?: (record: ProjectedDatabaseRecord) => void;
+  onOpenContextInspector?: (record: ProjectedDatabaseRecord) => void;
   onChange?: (change: DatabaseTimelineChange) => void;
 }) {
   'use no memo';
@@ -548,6 +550,18 @@ export function DatabaseTimeline({
                                 <ExternalLink />
                               </Button>
                             ) : null}
+                            {onOpenContextInspector ? (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-xs"
+                                aria-label={`Inspect context for record ${record.id}`}
+                                disabled={mutationLocked}
+                                onClick={() => onOpenContextInspector(record)}
+                              >
+                                <Braces aria-hidden="true" />
+                              </Button>
+                            ) : null}
                           </div>
                           {tableProperties.map((property) => (
                             <div key={property.id} className="flex gap-2 text-xs">
@@ -633,6 +647,19 @@ export function DatabaseTimeline({
                           <span className="min-w-0 flex-1 truncate">
                             {titleForRecord(source, record)}
                           </span>
+                          {onOpenContextInspector ? (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-xs"
+                              className="text-primary-foreground hover:text-primary"
+                              aria-label={`Inspect context for record ${record.id}`}
+                              disabled={mutationLocked}
+                              onClick={() => onOpenContextInspector(record)}
+                            >
+                              <Braces aria-hidden="true" />
+                            </Button>
+                          ) : null}
                           <Button
                             type="button"
                             variant="ghost"
@@ -702,6 +729,18 @@ export function DatabaseTimeline({
               {unscheduled.map((record) => (
                 <div key={record.id} className="flex min-h-12 items-center gap-2 border-b p-2">
                   <span className="min-w-0 flex-1 truncate">{titleForRecord(source, record)}</span>
+                  {onOpenContextInspector ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-xs"
+                      aria-label={`Inspect context for record ${record.id}`}
+                      disabled={mutationLocked}
+                      onClick={() => onOpenContextInspector(record)}
+                    >
+                      <Braces aria-hidden="true" />
+                    </Button>
+                  ) : null}
                   <Button
                     type="button"
                     size="sm"

@@ -290,7 +290,7 @@ treated as visual parity until a browser capture is attached.
   oldest views. Cross-reload cache parity is now covered by
   `database-linked-view-cache.test.ts` (2/2 tests, 5 expectations); the full
   visual state matrix remains open. Evidence: `DatabaseView.dom.test.tsx`
-  18/18 tests, 177 expectations, plus the cache suite. Loading exposes
+  18/18 tests, 180 expectations, plus the cache suite. Loading exposes
   `aria-busy`/`data-database-state="loading"`, empty sources retain the
   actionable new-row input, and permission denial is proven not to reuse an
   offline snapshot.
@@ -346,7 +346,7 @@ treated as visual parity until a browser capture is attached.
   paths, and tab switching preserves `mode="full-page"` when the host is in
   the full-page presentation. The active tab also exposes Filters, View
   settings, and Manage views without requiring the block-level overflow menu.
-  The inline journey passes 18 tests / 177 expectations, including the
+  The inline journey passes 18 tests / 180 expectations, including the
   single-view `+` handoff, property-context action, active-tab menu, and
   full-page mode preservation.
   Pixel-level parity and full settings convergence remain open. Map to
@@ -371,8 +371,10 @@ treated as visual parity until a browser capture is attached.
   UI and filtered `/api/databases/inspect` list/detail contract; the server also
   supports record-scoped filtering, including all-record selection scopes. Table
   row actions, cell menus, and the selected-record toolbar now expose compact
-  context actions. Citation labels are rendered from captured evidence/full-body
-  disclosures. The inspector now offers per-property All/None/checkbox controls,
+  context actions; inline Board, Calendar, and Timeline cards/bars expose the
+  same record-scoped action. Citation labels are rendered from captured
+  evidence/full-body disclosures. The inspector now offers per-property
+  All/None/checkbox controls,
   a non-mutating selected-field JSON preview with an approximate token count,
   and one-click copying of that compact preview with an explicit clipboard
   failure state;
@@ -384,9 +386,10 @@ treated as visual parity until a browser capture is attached.
   `DatabaseContextInspectorDialog.dom.test.tsx` (1 test / 10 expectations),
   `database-context-inspector.test.ts` (3 tests / 16 expectations), the focused
   `database-data-plane-api.test.ts` contract, the Table menu journey, and the
-  inline `DatabaseView.dom.test.tsx` scoped inspector journey (17 tests / 168
+  inline `DatabaseView.dom.test.tsx` scoped inspector journey (18 tests / 180
   expectations), including database/view, property, single-record,
-  selected-record, and inline Board transition query assertions; server
+  selected-record, inline Board transition, and alternative-view context
+  affordance assertions; server
   `DatabaseContextInspectionScope` and HTTP query validation now cover
   `propertyIds` filtering.
   Map to UX-902/UX-909.
