@@ -701,6 +701,9 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
         ...node.attrs,
         props: {
           ...((node.attrs.props as Record<string, unknown> | undefined) ?? {}),
+          databaseId: reference.data.databaseId,
+          sourceId: reference.data.sourceId,
+          viewId: reference.data.viewId,
           mode: nextMode,
         },
       }),

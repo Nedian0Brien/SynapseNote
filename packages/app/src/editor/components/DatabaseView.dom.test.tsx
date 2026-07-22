@@ -1461,6 +1461,15 @@ describe('DatabaseView', () => {
     expect(screen.getByRole('menuitem', { name: 'Inspect agent context' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'View settings' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'Remove linked view' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Convert to full page' }));
+    expect(dispatched.at(-1)?.props).toMatchObject({
+      databaseId: database.id,
+      sourceId: source.id,
+      viewId: view.id,
+      mode: 'full-page',
+    });
+    expect((dispatched.at(-1)?.props as Record<string, unknown>).records).toBeUndefined();
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Database view actions' }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'Manage properties' }));
     expect(await screen.findByRole('heading', { name: 'Manage properties' })).toBeTruthy();
     fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[0] as HTMLElement);
