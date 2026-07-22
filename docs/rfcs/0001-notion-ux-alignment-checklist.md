@@ -272,8 +272,9 @@ for discovery. The route suite also covers hash view selection, back/forward
 restoration, missing-source back handling, and permission-denied handling
 without an unsafe retry. This closes UX-201, UX-202, UX-205, UX-207, and UX-208.
 
-UX-209 remains open pending responsive acceptance. UX-210 is covered by the
-conversion evidence below.
+UX-209 is covered at the implementation/evidence layer; responsive visual
+acceptance remains a separate UX-1007 gate. UX-210 is covered by the conversion
+evidence below.
 
 ### Normal database page chrome evidence (2026-07-23)
 
@@ -297,8 +298,8 @@ Focused evidence:
 
 - `DatabaseTableDialog.dom.test.tsx`: the page presentation opens `Customize
   database page`, edits icon/cover, reaches the parent `Commit change` review,
-  and asserts the desired-state payload (page/canvas filtered run: 2 tests / 21
-  expectations).
+  asserts the desired-state payload, and pins the page/canvas responsive
+  structure (page/canvas filtered run: 2 tests / 26 expectations).
 - `schema.test.ts`: optional icon/cover round-trip and the 2 KB bound (1 test /
   2 expectations).
 - `database-cell-mutation.test.ts`: appearance persistence, clearing, and
@@ -336,6 +337,22 @@ This closes UX-206 at the implementation/evidence layer. Responsive,
 accessibility, visual, Electron, performance, and packaged-release evidence
 remain open.
 
+### Responsive database canvas guardrails (2026-07-23)
+
+The wide database canvas now keeps overflow ownership local to the component:
+the page body explicitly hides incidental horizontal overflow while the table
+container owns both axes, the table itself can grow to its columns, and the
+view-tab strip scrolls horizontally when its labels no longer fit. The page
+header's title/action row and action group both wrap and can shrink, so narrow
+widths do not force the page itself wider than the viewport. The same structure
+is used by the non-portal canvas presentation and the route-level page.
+
+Focused page/canvas DOM evidence asserts the `min-w-0`/`flex-wrap` chrome,
+`overflow-x-hidden` page body, table-local `overflow-auto`, and tab-local
+`overflow-x-auto` classes (2 tests / 26 expectations). App typecheck, targeted
+Biome, and diff check pass. This closes UX-209 at the implementation/evidence
+layer; the 768px visual/browser check remains UX-1007.
+
 ### Sidebar and recent database navigation evidence (2026-07-23)
 
 The ordinary file sidebar now exposes database sources as a peer `Databases`
@@ -347,7 +364,7 @@ database appears under `Recently opened` and reopens the canonical route.
 `DatabaseSidebarSection.dom.test.tsx` passes 3 tests / 7 expectations and the
 focused recent-navigation test passes 1 / 5. This closes UX-203. Normal page
 chrome and search/backlinks/relations entry points are evidenced above;
-responsive proof remains open under UX-209.
+responsive visual proof remains open under UX-1007.
 
 ### Inline/full-page conversion evidence (2026-07-23)
 
@@ -392,10 +409,10 @@ crossed the document-native UX bar:
 | Measure | Current result | Interpretation |
 | --- | --- | --- |
 | Engine implementation checklist | 310/335 numbered items complete | Core/database and agent contracts are substantially implemented. |
-| Notion UX checklist | 44/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, table-first direct manipulation, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, state-matrix, responsive, and cross-host journey gates remain open. |
+| Notion UX checklist | 45/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, table-first direct manipulation, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, state-matrix, 768px browser, and cross-host journey gates remain open. |
 | First-use database entry | `New database` in sidebar, empty states, normal new-page dialog, command palette, plus slash-menu `New database`/`Linked view of database`; normal picker exposes Page/Database chooser and the resulting route lands in an editable table. `Open databases` enters the no-overlay page workspace. | Discovery, sidebar/recent navigation, and the web first-use path are evidenced; additional entry points and Electron proof remain open. |
 | Blank creation | Optional title, `Untitled database` fallback, direct-safe exact-plan commit, immediate source/view selection, title/new-row focus | The blank human path is continuous in DOM coverage; template/import/agent paths intentionally retain review and visual browser proof remains open. |
-| Full-page navigation | Stable `#database/<database>/<source>/<view?>` route, no-overlay canvas presentation, sidebar source section, command-palette recents/search, backlink and relation links, and normal page chrome | Route, page surface, and navigation identity are evidenced; responsive/cross-host proof remains incomplete. |
+| Full-page navigation | Stable `#database/<database>/<source>/<view?>` route, no-overlay canvas presentation, sidebar source section, command-palette recents/search, backlink and relation links, normal page chrome, and local overflow guardrails | Route, page surface, and navigation identity are evidenced; responsive visual/cross-host proof remains incomplete. |
 | Inline linked view | Catalog → source → saved-view picker, inline creation, shared rows, visible tabs, replacement, conversion, duplicate configuration, and block removal | The core inline/linked contract is evidenced; the complete visual state matrix remains open. |
 | Direct editing | Direct-safe cell/row auto-approval, optimistic reconciliation, offline/conflict/failure states, post-commit focus, standard undo/redo, and durable History receipts are covered by focused DOM evidence | Elevated mutations retain exact review; full visual/cross-host acceptance remains open. |
 | Browser evidence | In-app web renderer is reachable on IPv4 and normal New-page, page-first, inline creation, record sharing, and cancellation journeys are captured; no Electron or complete state-matrix journey is captured | The core web slice is evidenced, but NUI-105/NUI-701–NUI-705 remain release gates for cross-host, accessibility, responsive, usability, performance, and packaged-release parity. |
@@ -604,8 +621,11 @@ capability alone is insufficient.
       cross-database lookup, while management discovery retains its rail.
 - [x] **UX-208** Reload into the same database/view with clear missing and
       permission-denied states.
-- [ ] **UX-209** Support a responsive wide canvas without broken page chrome or
-      unintended two-axis scrolling.
+- [x] **UX-209** Support a responsive wide canvas without broken page chrome or
+      unintended two-axis scrolling. Evidence: page/canvas layout uses wrapping
+      `min-w-0` chrome, page-body `overflow-x-hidden`, table-local `overflow-auto`,
+      and tab-local `overflow-x-auto`; focused DOM assertions cover these
+      guardrails. The 768px visual/browser check remains UX-1007.
 - [x] **UX-210** Offer inline/full-page conversion only when records and stable
       identities remain shared, never cloned.
 
