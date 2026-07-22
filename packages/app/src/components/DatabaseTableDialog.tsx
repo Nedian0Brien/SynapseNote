@@ -49,6 +49,7 @@ import {
   Download,
   ExternalLink,
   GripVertical,
+  History,
   Loader2,
   MapPin,
   MoreHorizontalIcon,
@@ -2720,6 +2721,7 @@ export function DatabaseTableDialog({
   onOpenChange,
   onOpenRecord,
   onOpenContextInspector,
+  onOpenAgentRuns,
   onCreationCancelled,
   initialTarget,
   initialAction,
@@ -2735,6 +2737,7 @@ export function DatabaseTableDialog({
   onOpenChange: (open: boolean) => void;
   onOpenRecord?: (path: string) => void;
   onOpenContextInspector?: (scope?: DatabaseContextInspectionScope) => void;
+  onOpenAgentRuns?: () => void;
   onCreationCancelled?: () => void;
   initialTarget?: DatabaseTableTarget;
   initialAction?: 'create';
@@ -5435,6 +5438,11 @@ export function DatabaseTableDialog({
                         <DropdownMenuLabel>
                           <Trans>Database actions</Trans>
                         </DropdownMenuLabel>
+                        {onOpenAgentRuns ? (
+                          <DropdownMenuItem onSelect={onOpenAgentRuns}>
+                            <History aria-hidden="true" /> <Trans>History</Trans>
+                          </DropdownMenuItem>
+                        ) : null}
                         {onOpenContextInspector ? (
                           <DropdownMenuItem
                             onSelect={() => {

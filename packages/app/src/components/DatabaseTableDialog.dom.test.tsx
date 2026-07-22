@@ -2586,14 +2586,20 @@ describe('DatabaseTableDialog', () => {
 
     const user = userEvent.setup();
     const openContextInspector = mock((scope: unknown) => scope);
+    const openAgentRuns = mock(() => {});
     render(
       <DatabaseTableDialog
         open
         onOpenChange={() => {}}
         onOpenContextInspector={openContextInspector}
+        onOpenAgentRuns={openAgentRuns}
       />,
     );
     expect(screen.queryByRole('button', { name: 'Export current CSV' })).toBeNull();
+    await user.click(await screen.findByRole('button', { name: 'More database actions' }));
+    expect(screen.getByRole('menuitem', { name: 'History' })).not.toBeNull();
+    await user.click(screen.getByRole('menuitem', { name: 'History' }));
+    expect(openAgentRuns).toHaveBeenCalledTimes(1);
     await user.click(await screen.findByRole('button', { name: 'More database actions' }));
     expect(screen.getByRole('menuitem', { name: 'Inspect agent context' })).not.toBeNull();
     await user.click(screen.getByRole('menuitem', { name: 'Inspect agent context' }));

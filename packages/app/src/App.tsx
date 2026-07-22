@@ -130,7 +130,13 @@ function isAuxiliaryDialogHash(hash: string): boolean {
  * render in the main `SidebarInset`; the regular editor is returned only when
  * there is no database page target.
  */
-function DatabasePageRoute({ children }: { children: ReactNode }) {
+function DatabasePageRoute({
+  children,
+  onOpenAgentRuns,
+}: {
+  children: ReactNode;
+  onOpenAgentRuns?: () => void;
+}) {
   const [target, setTarget] = useState(() => databasePageTargetFromHash(window.location.hash));
 
   useEffect(() => {
@@ -149,6 +155,7 @@ function DatabasePageRoute({ children }: { children: ReactNode }) {
       open
       presentation="canvas"
       initialTarget={target}
+      onOpenAgentRuns={onOpenAgentRuns}
       onOpenChange={(nextOpen) => {
         if (!nextOpen && databasePageTargetFromHash(window.location.hash)) {
           window.location.hash = '';
@@ -785,6 +792,7 @@ function AppBody() {
           <LazyDatabaseTableDialog
             open={databasesOpen || databaseCreationPageActive}
             onOpenContextInspector={openDataInspector}
+            onOpenAgentRuns={() => setAgentRunsOpen(true)}
             initialAction={
               databaseOpenAction ?? (databaseCreationPageActive ? 'create' : undefined)
             }
@@ -837,7 +845,7 @@ function AppBody() {
                 project switcher); the editor inset takes the full width. */}
             {!singleFile && <FileSidebar onOpenSearch={() => setCommandPaletteOpen(true)} />}
             <SidebarInset className="overflow-hidden h-[calc(100vh-var(--layout-inset-offset))]">
-              <DatabasePageRoute>
+              <DatabasePageRoute onOpenAgentRuns={() => setAgentRunsOpen(true)}>
                 <EditorPane onOpenSearch={() => setCommandPaletteOpen(true)} />
               </DatabasePageRoute>
             </SidebarInset>
