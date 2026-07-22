@@ -681,13 +681,36 @@ under the page chrome does not change editor behavior or Y.Doc ownership.
 
 Focused evidence in `DatabaseRecordPageChrome.dom.test.tsx` renders an editor
 body, asserts the `below-properties` contract marker, and verifies that every
-property row precedes the body in document order (2 tests / 38 expectations
+property row precedes the body in document order (2 tests / 48 expectations
 for the focused chrome file). `EditorActivityPool.test.ts` continues to pass
 42 tests / 84 expectations, app typecheck and targeted Biome checks pass.
 
 This closes UX-705 at the functional implementation/evidence layer. Normal
 editor editing, source-mode parity, and visual/cross-host proof remain release
 gates.
+
+### Record-page affordance evidence (2026-07-23)
+
+The full-page record action row now exposes the normal page affordances for
+Comments, Record history, Permissions, appearance, and both source-level and
+record-level layout customization. Permissions opens the existing scoped
+database permission/share surface with the current database and record IDs.
+Appearance reuses the validated icon/cover editor in record mode and patches
+only the canonical record frontmatter; existing PageHeader resolution keeps
+the icon and cover visible in the page chrome and peek. Comments, history, and
+layout continue to use their existing record-scoped dialogs and reviewed
+mutation paths.
+
+Focused evidence in `DatabaseRecordPageChrome.dom.test.tsx` asserts all six
+page actions and saves a record icon/cover through the record appearance
+dialog (2 tests / 48 expectations). `DatabasePermissionsDialog.dom.test.tsx`
+passes its exact grant journey (1 test), the existing `PageHeader.test.tsx`
+passes 9 tests / 26 expectations for icon/cover and title rendering, and app
+typecheck/Biome checks pass.
+
+This closes UX-706 at the functional implementation/evidence layer. Permission
+policy edge states, responsive visual behavior, and packaged-host proof remain
+release gates.
 
 ### Sidebar and recent database navigation evidence (2026-07-23)
 
@@ -745,7 +768,7 @@ crossed the document-native UX bar:
 | Measure | Current result | Interpretation |
 | --- | --- | --- |
 | Engine implementation checklist | 310/335 numbered items complete | Core/database and agent contracts are substantially implemented. |
-| Notion UX checklist | 71/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, inline/full-page state parity, table-first direct manipulation, friendly property names/examples, Title safety, type-specific cell editors, schema-vs-data mutation classification, in-context property-add/header affordances including property-specific sort/filter/duplicate actions, destructive property-deletion impact previews, adjacent Formula/Rollup error indicators, view-scoped property visibility/order, converged header/settings-menu view actions, visible reorderable saved-view tabs, layout-independent new-view `+` affordances, layout-specific saved-view property suggestions, coherent saved-view settings, active filter/sort explainers, saved-view tab lifecycle menu, last-view deletion safety, saved-view switch memory, independent linked-block view settings without copied rows, cross-layout title/tab/control/state/record-opening contract, canonical record-title entrypoints, shared side/center/full-page record surface, record breadcrumbs and return-to-view continuity, table/page synchronization, record body editing below properties, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, 768px browser, and cross-host journey gates remain open. |
+| Notion UX checklist | 72/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, inline/full-page state parity, table-first direct manipulation, friendly property names/examples, Title safety, type-specific cell editors, schema-vs-data mutation classification, in-context property-add/header affordances including property-specific sort/filter/duplicate actions, destructive property-deletion impact previews, adjacent Formula/Rollup error indicators, view-scoped property visibility/order, converged header/settings-menu view actions, visible reorderable saved-view tabs, layout-independent new-view `+` affordances, layout-specific saved-view property suggestions, coherent saved-view settings, active filter/sort explainers, saved-view tab lifecycle menu, last-view deletion safety, saved-view switch memory, independent linked-block view settings without copied rows, cross-layout title/tab/control/state/record-opening contract, canonical record-title entrypoints, shared side/center/full-page record surface, record breadcrumbs and return-to-view continuity, table/page synchronization, record body editing below properties, record-page comments/history/permissions/appearance/layout affordances, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, 768px browser, and cross-host journey gates remain open. |
 | First-use database entry | `New database` in sidebar, empty states, normal new-page dialog, command palette, plus slash-menu `New database`/`Linked view of database`; normal picker exposes Page/Database chooser and the resulting route lands in an editable table. `Open databases` enters the no-overlay page workspace. | Discovery, sidebar/recent navigation, and the web first-use path are evidenced; additional entry points and Electron proof remain open. |
 | Blank creation | Optional title, `Untitled database` fallback, direct-safe exact-plan commit, immediate source/view selection, title/new-row focus | The blank human path is continuous in DOM coverage; template/import/agent paths intentionally retain review and visual browser proof remains open. |
 | Full-page navigation | Stable `#database/<database>/<source>/<view?>` route, no-overlay canvas presentation, sidebar source section, command-palette recents/search, backlink and relation links, normal page chrome, and local overflow guardrails | Route, page surface, and navigation identity are evidenced; responsive visual/cross-host proof remains incomplete. |
@@ -1115,7 +1138,7 @@ capability alone is insufficient.
       manual refresh. Clean page providers request the canonical Y.Doc delta on
       matching database-change events and skip dirty local documents.
 - [x] **UX-705** Render page body below properties with normal editor behavior.
-- [ ] **UX-706** Expose comments, history, permissions, icon, cover, and layout
+- [x] **UX-706** Expose comments, history, permissions, icon, cover, and layout
       through normal page affordances.
 - [ ] **UX-707** Navigate previous/next records in the active view context.
 - [ ] **UX-708** Align duplicate, move, archive, restore, and delete between row

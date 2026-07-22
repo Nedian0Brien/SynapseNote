@@ -50,6 +50,7 @@
 - Latest record-breadcrumb changeset: `../../.changeset/database-record-breadcrumbs.md`
 - Latest record-page sync changeset: `../../.changeset/database-record-page-sync.md`
 - Latest record-body placement changeset: `../../.changeset/database-record-body.md`
+- Latest record-page affordances changeset: `../../.changeset/database-record-page-affordances.md`
 
 ## Objective and completion rule
 
@@ -87,7 +88,7 @@ the repository-wide check for final release readiness.
   catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
   approval-bound commits, undo, and restart/backup idempotency. Agent View
   policy/privacy/sandbox review remains Partial by design.
-- Notion UX alignment checklist: **71/128 complete**. The page-first and normal
+- Notion UX alignment checklist: **72/128 complete**. The page-first and normal
   New-page creation slices, the inline/linked insertion contract, and the
   table-first direct-manipulation, named canonical workspace canvas-route,
   shared navigation without a duplicate canvas rail, sidebar/recent/search/
@@ -106,7 +107,8 @@ the repository-wide check for final release readiness.
   canonical record-title entrypoints across every supported renderer, and the
   shared side/center/full-page record surface, record breadcrumbs with
   return-to-view continuity, table/page synchronization, and record body
-  placement below properties are now
+  placement below properties, and record-page comments/history/permissions/
+  appearance/layout affordances are now
   evidenced. A
   2026-07-23 in-app browser capture reached the IPv4 renderer at
   `http://127.0.0.1:5173/`, created a full-page database, created two canonical
@@ -509,8 +511,16 @@ do not reconstruct behavior solely from this summary.
   and managed-artifact branches. Focused chrome DOM evidence asserts the body
   marker and document order; the file passes 2 tests / 38 expectations, the
   editor-pool unit contract passes 42 / 84, and app typecheck passes.
+- The full-page record action row now exposes Comments, Record history,
+  Permissions, Customize appearance, Customize this record, and Customize
+  layout. Appearance reuses the validated icon/cover dialog in record mode and
+  patches only canonical record frontmatter; Permissions passes the current
+  database and record scope into the existing share dialog. Focused chrome DOM
+  evidence passes 2 tests / 48 expectations, permissions passes 1 / 10, and
+  PageHeader icon/cover coverage passes 9 / 26.
 - UX-501 through UX-510, UX-601, UX-602, UX-603, UX-604, UX-605, UX-606,
-  UX-607, UX-608, UX-609, UX-610, UX-701, UX-702, UX-703, UX-704, and UX-705
+  UX-607, UX-608, UX-609, UX-610, UX-701, UX-702, UX-703, UX-704, UX-705,
+  and UX-706
   are checked at the functional
   implementation/evidence layer. Visual and broader property-family gates
   remain open.
@@ -524,7 +534,7 @@ do not reconstruct behavior solely from this summary.
   catalog-backed database under `Recently opened`, reopening the same stable
   route. Focused evidence: sidebar 3 tests / 7 expectations and recent UI 1 / 5.
 - UX-203, UX-204, UX-206, UX-209, UX-309, UX-501, UX-502, UX-503, UX-504,
-  UX-505, UX-506, UX-507, UX-508, UX-509, UX-510, UX-601, UX-602, UX-603, UX-604, UX-605, UX-606, UX-607, UX-608, UX-609, UX-610, UX-701, UX-702, UX-703, UX-704, and UX-705 are checked. The 768px visual responsive check remains
+  UX-505, UX-506, UX-507, UX-508, UX-509, UX-510, UX-601, UX-602, UX-603, UX-604, UX-605, UX-606, UX-607, UX-608, UX-609, UX-610, UX-701, UX-702, UX-703, UX-704, UX-705, and UX-706 are checked. The 768px visual responsive check remains
   open.
 
 ### 2026-07-23 stable inline/full-page conversion
