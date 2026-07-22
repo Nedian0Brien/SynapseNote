@@ -76,6 +76,20 @@ export function DatabaseCreationDialog({
   const [file, setFile] = useState<{ name: string; contents: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const resetAdvancedChoice = () => {
+    setMode('blank');
+    setFolder('');
+    setIncludeSubfolders(true);
+    setTemplate('tasks');
+    setFile(null);
+    setError(null);
+  };
+
+  const close = (nextOpen: boolean, reason?: DatabaseCreationCloseReason) => {
+    if (!nextOpen && reason !== 'submit') resetAdvancedChoice();
+    onOpenChange(nextOpen, reason);
+  };
+
   useEffect(() => {
     if (!open) return;
     setError(null);
@@ -130,7 +144,7 @@ export function DatabaseCreationDialog({
   return (
     <Dialog
       open={open}
-      onOpenChange={(nextOpen) => onOpenChange(nextOpen, nextOpen ? undefined : 'cancel')}
+      onOpenChange={(nextOpen) => close(nextOpen, nextOpen ? undefined : 'cancel')}
     >
       <DialogContent
         showOverlay={presentation !== 'page'}
@@ -469,7 +483,7 @@ export function DatabaseCreationDialog({
           ) : null}
 
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="ghost" onClick={() => onOpenChange(false, 'cancel')}>
+            <Button type="button" variant="ghost" onClick={() => close(false, 'cancel')}>
               <Trans>Cancel</Trans>
             </Button>
             {mode !== 'agent' ? (

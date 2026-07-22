@@ -3020,6 +3020,7 @@ function DatabaseTableSurface({
   const [newRecordTemplateId, setNewRecordTemplateId] = useState('__auto__');
   const [newRecordFocusRequest, setNewRecordFocusRequest] = useState<number | null>(null);
   const [creationOpen, setCreationOpen] = useState(false);
+  const [creationInstanceKey, setCreationInstanceKey] = useState(0);
   const [creationPreview, setCreationPreview] = useState<DatabaseDesiredStateDraftInput | null>(
     null,
   );
@@ -7344,6 +7345,7 @@ function DatabaseTableSurface({
         />
       ) : null}
       <DatabaseCreationDialog
+        key={creationInstanceKey}
         open={creationOpen}
         presentation={isCanvasPresentation ? 'page' : presentation}
         agentComposer={<CreatePromptComposer scenario="new-project" />}
@@ -7375,6 +7377,7 @@ function DatabaseTableSurface({
               // otherwise the original `initialAction="create"` can reopen
               // the modal during the canonical-route transition.
               setCreationOpen(false);
+              setCreationInstanceKey((current) => current + 1);
               // Keep creation in one continuous flow. Once the canonical
               // manifest exists, select its source/view immediately so the
               // next catalog refresh lands on the new editable table instead

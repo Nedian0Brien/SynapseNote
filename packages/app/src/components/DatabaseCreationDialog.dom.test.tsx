@@ -115,6 +115,19 @@ describe('DatabaseCreationDialog', () => {
     expect(onCreate).toHaveBeenCalledTimes(0);
   });
 
+  test('returns to Blank after cancelling an advanced creation choice', () => {
+    const onCreate = mock(() => {});
+    render(<DatabaseCreationDialog open onOpenChange={() => {}} onCreate={onCreate} />);
+
+    fireEvent.click(screen.getByText('Template'));
+    expect(screen.getByLabelText('Starter template')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(screen.getByRole('button', { name: 'Blank' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.queryByLabelText('Starter template')).toBeNull();
+    expect(onCreate).toHaveBeenCalledTimes(0);
+  });
+
   test('reads CSV, infers typed records, and submits one bounded creation draft', async () => {
     const onCreate = mock(() => {});
     render(<DatabaseCreationDialog open onOpenChange={() => {}} onCreate={onCreate} />);
