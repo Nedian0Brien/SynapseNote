@@ -171,6 +171,15 @@ function agentRunOriginLabel(actor: DatabaseAgentRun['actor']): string {
   return `${actor.kind[0]?.toUpperCase() ?? ''}${actor.kind.slice(1)} change`;
 }
 
+function agentRunPlanSummary(run: DatabaseAgentRun): string {
+  const risk = `${run.plan.risk.level[0]?.toUpperCase() ?? ''}${run.plan.risk.level.slice(1)} risk`;
+  const approvals =
+    run.plan.approvals.length === 0
+      ? 'no extra approval scopes'
+      : `${run.plan.approvals.length} approval scope${run.plan.approvals.length === 1 ? '' : 's'}`;
+  return `${risk} · ${approvals} · one exact plan`;
+}
+
 const agentApprovalLabels: Record<string, string> = {
   create_database: 'Create database',
   delete_database: 'Delete database',
@@ -260,6 +269,50 @@ export function DatabaseAgentRunDetail({
         <p className="mt-1 text-muted-foreground text-xs">
           <Trans>Raw prompts are not stored.</Trans>
         </p>
+      </section>
+      <section data-testid="database-agent-run-plan-summary">
+        <h3 className="font-medium">
+          <Trans>Plan summary</Trans>
+        </h3>
+        <p className="mt-1 font-medium text-muted-foreground text-sm">{agentRunPlanSummary(run)}</p>
+        <p className="mt-1 text-muted-foreground text-sm">
+          <Trans>The plan stays bounded to the reviewed scope and is checked before commit.</Trans>
+        </p>
+        <details className="mt-2 rounded-md border px-3 py-2 text-xs">
+          <summary className="cursor-pointer font-medium text-muted-foreground">
+            <Trans>Show plan details</Trans>
+          </summary>
+          <dl className="mt-2 grid gap-1 font-mono">
+            <div className="flex justify-between gap-3">
+              <dt className="text-muted-foreground">Plan</dt>
+              <dd className="break-all text-right">{run.plan.id}</dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="text-muted-foreground">Plan hash</dt>
+              <dd className="break-all text-right">{run.plan.hash}</dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="text-muted-foreground">Snapshot</dt>
+              <dd className="break-all text-right">{run.plan.snapshotRevision}</dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="text-muted-foreground">Expires</dt>
+              <dd className="text-right">{new Date(run.plan.expiresAt).toLocaleString()}</dd>
+            </div>
+            {run.plan.risk.reasons.length > 0 ? (
+              <div className="mt-1">
+                <dt className="text-muted-foreground">Risk reasons</dt>
+                <dd>
+                  <ul className="mt-1 list-disc pl-5">
+                    {run.plan.risk.reasons.map((reason) => (
+                      <li key={reason}>{reason}</li>
+                    ))}
+                  </ul>
+                </dd>
+              </div>
+            ) : null}
+          </dl>
+        </details>
       </section>
       <section
         className="rounded-md border border-primary/30 bg-primary/5 p-3"

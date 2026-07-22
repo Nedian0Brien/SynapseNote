@@ -161,6 +161,13 @@ describe('DatabaseAgentRunsDialog DOM behavior', () => {
     expect(screen.getByTestId('database-agent-run-diff-summary').textContent).toContain(
       'Exact diff captured · 50 bytes',
     );
+    expect(screen.getByTestId('database-agent-run-plan-summary').textContent).toContain(
+      'Low risk · 2 approval scopes · one exact plan',
+    );
+    expect(screen.getByText('Show plan details')).not.toBeNull();
+    expect(screen.getByText('Show plan details').closest('details')?.hasAttribute('open')).toBe(
+      false,
+    );
     expect(screen.getByTestId('database-agent-run-provenance').textContent).toContain(
       'Agent suggestion',
     );
