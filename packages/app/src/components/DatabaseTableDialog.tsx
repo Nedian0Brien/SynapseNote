@@ -12,6 +12,7 @@ import type {
   DatabaseSource,
   DatabaseTableViewConfiguration,
   DatabaseValue,
+  DatabaseView,
   FormulaComputedResult,
   FormulaPersistedRuntimeValue,
   ProjectedDatabasePerson,
@@ -1089,12 +1090,16 @@ export function DatabaseTable({
     update: (current: DatabaseTableLayoutState) => DatabaseTableLayoutState,
   ) => {
     const next = update(layout);
-    setLayout(next);
     if (viewPropertyIds && onViewPropertyIdsChange) {
+      // Saved-view projection changes are canonical mutations. Keep the local
+      // table layout untouched until the refreshed view manifest confirms the
+      // commit, so cancelling review cannot leave a false optimistic layout.
       onViewPropertyIdsChange(
         next.propertyIds.filter((propertyId) => !next.hiddenPropertyIds.includes(propertyId)),
       );
+      return;
     }
+    setLayout(next);
   };
 
   useEffect(() => {
@@ -3305,6 +3310,32 @@ function DatabaseTableSurface({
         setMutationError(problem);
         options.onFailed?.();
       });
+  };
+
+  const commitSavedViewConfiguration = (
+    view: DatabaseView,
+    idempotencyPrefix: string,
+    failureMessage: string,
+  ): boolean => {
+    if (!description?.source || mutationStatus !== 'idle') return false;
+    try {
+      runMutation(
+        createDatabaseViewConfigurationChangeDesiredState({
+          database: description.database,
+          source: description.source,
+          view,
+        }),
+        idempotencyPrefix,
+        failureMessage,
+        {
+          policy: { operation: 'view', actor: 'human', principalId: 'user:local' },
+        },
+      );
+      return true;
+    } catch (cause) {
+      setMutationError(classifyDatabaseUiProblem(cause, failureMessage));
+      return false;
+    }
   };
 
   const reconcileQueuedWrites = useEffectEvent(async () => {
@@ -7042,38 +7073,17 @@ function DatabaseTableSurface({
                     onViewPropertyIdsChange={
                       selectedView
                         ? (propertyIds) => {
-                            if (!description.source || mutationStatus !== 'idle') return;
-                            try {
-                              runMutation(
-                                createDatabaseViewConfigurationChangeDesiredState({
-                                  database: description.database,
-                                  source: description.source,
-                                  view: {
-                                    ...selectedView,
-                                    projection: {
-                                      ...selectedView.projection,
-                                      propertyIds: [...propertyIds],
-                                    },
-                                  },
-                                }),
-                                'ui-view-property-projection',
-                                'Saved view property visibility change failed',
-                                {
-                                  policy: {
-                                    operation: 'view',
-                                    actor: 'human',
-                                    principalId: 'user:local',
-                                  },
+                            commitSavedViewConfiguration(
+                              {
+                                ...selectedView,
+                                projection: {
+                                  ...selectedView.projection,
+                                  propertyIds: [...propertyIds],
                                 },
-                              );
-                            } catch (cause) {
-                              setMutationError(
-                                classifyDatabaseUiProblem(
-                                  cause,
-                                  'Unable to prepare saved view property visibility change',
-                                ),
-                              );
-                            }
+                              },
+                              'ui-view-property-projection',
+                              'Saved view property visibility change failed',
+                            );
                           }
                         : undefined
                     }
@@ -7422,25 +7432,15 @@ function DatabaseTableSurface({
           initialSortPropertyId={propertySortTargetId ?? undefined}
           database={description.database}
           onSave={(view) => {
-            try {
-              runMutation(
-                createDatabaseViewConfigurationChangeDesiredState({
-                  database: description.database,
-                  source: description.source as DatabaseSource,
-                  view,
-                }),
+            if (
+              commitSavedViewConfiguration(
+                view,
                 'ui-view-settings',
                 'Saved view settings change failed',
-                {
-                  policy: { operation: 'view', actor: 'human', principalId: 'user:local' },
-                },
-              );
+              )
+            ) {
               setViewSettingsOpen(false);
               setPropertySortTargetId(null);
-            } catch (cause) {
-              setMutationError(
-                classifyDatabaseUiProblem(cause, 'Unable to prepare saved view settings'),
-              );
             }
           }}
         />
