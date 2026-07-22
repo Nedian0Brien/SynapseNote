@@ -418,6 +418,55 @@ describe('CommandPalette DOM behavior', () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
+  test('shows a catalog-backed database page in recently opened navigation', async () => {
+    databaseCatalogCandidates = [
+      {
+        id: 'db_research',
+        key: 'research',
+        name: 'Research library',
+        purpose: 'Evidence and reading notes',
+        sources: [
+          {
+            id: 'ds_sources',
+            key: 'sources',
+            name: 'Sources',
+            recordMeaning: 'source',
+            propertyCount: 3,
+          },
+        ],
+      },
+    ];
+    window.localStorage.setItem(
+      'ok-omnibar-recents-v1',
+      JSON.stringify([
+        {
+          kind: 'database',
+          path: '#database/db_research/ds_sources',
+          lastOpenedAt: '2026-07-23T00:00:00.000Z',
+          name: 'Sources',
+          databaseId: 'db_research',
+          sourceId: 'ds_sources',
+          databaseName: 'Research library',
+          sourceName: 'Sources',
+          databaseKey: 'research',
+          sourceKey: 'sources',
+          purpose: 'Evidence and reading notes',
+        },
+      ]),
+    );
+    const { onOpenChange } = await renderPalette({ bridge: null });
+
+    const item = await screen.findByTestId(
+      'command-palette-nav-database-#database/db_research/ds_sources',
+    );
+    expect(item.textContent).toContain('Research library');
+    expect(item.closest('section')?.getAttribute('aria-label')).toBe('Recently opened');
+    fireEvent.click(item);
+
+    await waitFor(() => expect(window.location.hash).toBe('#database/db_research/ds_sources'));
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
   test('routes project commands through runtime bridge entry points and exposes switch-project search tokens', async () => {
     const bridge = createBridge();
     const { onOpenChange } = await renderPalette({ bridge });
