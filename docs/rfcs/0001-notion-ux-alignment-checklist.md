@@ -133,10 +133,11 @@ remain open:
 - A route-level `#database/<database>/<source>/<view?>` workspace now renders
   the existing database surface without a modal overlay, preserves the selected
   view in the URL, and is used by inline linked views' `Open full database`
+  action. Its page header now carries contextual breadcrumbs, an editable title,
+  favorite state, optional icon/cover chrome, and a reviewed `Customize page`
   action. The management surface remains available as a compatibility/admin
-  surface, while the `Open databases` power-user jump uses the no-overlay page
-  presentation until it is fully integrated with ordinary page chrome/sidebar
-  navigation.
+  surface; search/backlinks/relations and responsive/cross-host proof remain
+  separate gates.
 - `New database` is now reachable from the sidebar toolbar, empty-space context
   menu, onboarding pack footer, empty-editor footer, and command palette. All
   of those surfaces dispatch the same typed event, so the app opens one creation
@@ -270,9 +271,43 @@ for discovery. The route suite also covers hash view selection, back/forward
 restoration, missing-source back handling, and permission-denied handling
 without an unsafe retry. This closes UX-201, UX-202, UX-205, UX-207, and UX-208.
 
-UX-203, UX-204, UX-206, and UX-209 remain open pending normal page
-chrome, broader entry-point coverage, and responsive acceptance. UX-210 is
-covered by the conversion evidence below.
+UX-206 and UX-209 remain open pending broader entry-point and responsive
+acceptance. UX-210 is covered by the conversion evidence below.
+
+### Normal database page chrome evidence (2026-07-23)
+
+The canonical page now exposes the same hierarchy users expect from a normal
+Notion-style page: breadcrumbs and an inline title are kept in the page header,
+favorite state remains a first-class toggle, and the database icon is rendered
+as an emoji/image/default fallback. `Customize page` opens a focused appearance
+editor for an optional icon and cover; saving closes that editor and presents
+the exact schema plan in the parent page's ghost review before the user commits
+it. A cover is rendered above the header only when it passes the shared safe
+image/path resolver, so unsupported values fail closed instead of becoming
+unsafe image sources.
+
+The page icon/cover fields are optional bounded manifest metadata. The app
+desired-state compiler and server draft/plan/verification bases preserve them
+through title, deletion, button, and data-plane mutations, so appearance edits
+do not change database/source/view/record identities. Clearing either field
+removes the optional key rather than writing an empty value.
+
+Focused evidence:
+
+- `DatabaseTableDialog.dom.test.tsx`: the page presentation opens `Customize
+  database page`, edits icon/cover, reaches the parent `Commit change` review,
+  and asserts the desired-state payload (page/canvas filtered run: 2 tests / 21
+  expectations).
+- `schema.test.ts`: optional icon/cover round-trip and the 2 KB bound (1 test /
+  2 expectations).
+- `database-cell-mutation.test.ts`: appearance persistence, clearing, and
+  stable identity preservation (1 test / 4 expectations).
+- App typecheck, server typecheck, targeted Biome, and `git diff --check` pass;
+  the full server suite and broad E2E were intentionally not run.
+
+This closes UX-204 at the implementation/evidence layer. Visual pixel parity,
+search/backlinks/relations entry points, responsive behavior, accessibility,
+Electron, performance, and release gates remain open below.
 
 ### Sidebar and recent database navigation evidence (2026-07-23)
 
@@ -284,8 +319,8 @@ targets as first-class recent entries; its UI test confirms a catalog-backed
 database appears under `Recently opened` and reopens the canonical route.
 `DatabaseSidebarSection.dom.test.tsx` passes 3 tests / 7 expectations and the
 focused recent-navigation test passes 1 / 5. This closes UX-203. Normal page
-chrome, additional entry points, and responsive proof remain open under
-UX-204/206/209.
+chrome is now evidenced by the page surface above; additional entry points and
+responsive proof remain open under UX-206/209.
 
 ### Inline/full-page conversion evidence (2026-07-23)
 
@@ -330,10 +365,10 @@ crossed the document-native UX bar:
 | Measure | Current result | Interpretation |
 | --- | --- | --- |
 | Engine implementation checklist | 310/335 numbered items complete | Core/database and agent contracts are substantially implemented. |
-| Notion UX checklist | 42/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, table-first direct manipulation, named canonical workspace canvas routing without a duplicate rail, sidebar/recent database navigation, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, page chrome, state-matrix, and cross-host journey gates remain open. |
-| First-use database entry | `New database` in sidebar, empty states, normal new-page dialog, command palette, plus slash-menu `New database`/`Linked view of database`; normal picker exposes Page/Database chooser and the resulting route lands in an editable table. `Open databases` enters the no-overlay page workspace. | Discovery and the web first-use path are evidenced; ordinary sidebar/recent integration and Electron proof remain open. |
+| Notion UX checklist | 43/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, table-first direct manipulation, named canonical workspace canvas routing without a duplicate rail, sidebar/recent database navigation, normal database page chrome, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, search/backlinks/relations, state-matrix, and cross-host journey gates remain open. |
+| First-use database entry | `New database` in sidebar, empty states, normal new-page dialog, command palette, plus slash-menu `New database`/`Linked view of database`; normal picker exposes Page/Database chooser and the resulting route lands in an editable table. `Open databases` enters the no-overlay page workspace. | Discovery, sidebar/recent navigation, and the web first-use path are evidenced; additional entry points and Electron proof remain open. |
 | Blank creation | Optional title, `Untitled database` fallback, direct-safe exact-plan commit, immediate source/view selection, title/new-row focus | The blank human path is continuous in DOM coverage; template/import/agent paths intentionally retain review and visual browser proof remains open. |
-| Full-page navigation | Stable `#database/<database>/<source>/<view?>` route, no-overlay canvas presentation, sidebar source section, and command-palette recents | Route and navigation identity are evidenced; normal page chrome and broader entry points remain incomplete. |
+| Full-page navigation | Stable `#database/<database>/<source>/<view?>` route, no-overlay canvas presentation, sidebar source section, command-palette recents, and normal page chrome | Route, page surface, and navigation identity are evidenced; search/backlinks/relations entry points and responsive/cross-host proof remain incomplete. |
 | Inline linked view | Catalog → source → saved-view picker, inline creation, shared rows, visible tabs, replacement, conversion, duplicate configuration, and block removal | The core inline/linked contract is evidenced; the complete visual state matrix remains open. |
 | Direct editing | Direct-safe cell/row auto-approval, optimistic reconciliation, offline/conflict/failure states, post-commit focus, standard undo/redo, and durable History receipts are covered by focused DOM evidence | Elevated mutations retain exact review; full visual/cross-host acceptance remains open. |
 | Browser evidence | In-app web renderer is reachable on IPv4 and normal New-page, page-first, inline creation, record sharing, and cancellation journeys are captured; no Electron or complete state-matrix journey is captured | The core web slice is evidenced, but NUI-105/NUI-701–NUI-705 remain release gates for cross-host, accessibility, responsive, usability, performance, and packaged-release parity. |
@@ -521,8 +556,13 @@ capability alone is insufficient.
       navigation.
 - [x] **UX-203** Show full-page databases in the sidebar/tree and recent items
       like ordinary pages.
-- [ ] **UX-204** Reuse normal page chrome for icon, cover, title, breadcrumbs,
-      favorite, and page actions where applicable.
+- [x] **UX-204** Reuse normal page chrome for icon, cover, title, breadcrumbs,
+      favorite, and page actions where applicable. Evidence: the canonical
+      `DatabaseWorkspacePage` renders contextual breadcrumbs, inline title and
+      favorite controls, resolves optional icon/cover metadata through the
+      shared safe image helpers, and exposes the reviewed `Customize page`
+      editor; focused page DOM, schema, and mutation tests cover the payload
+      and stable-ID preservation.
 - [x] **UX-205** Preserve the selected view in navigation/local state without a
       canonical write on simple view switches.
 - [ ] **UX-206** Open databases from search, backlinks, relations, recent items,

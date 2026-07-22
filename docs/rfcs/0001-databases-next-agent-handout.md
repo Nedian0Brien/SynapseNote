@@ -31,6 +31,7 @@
 - Latest Agent Run MCP recovery changeset: `../../.changeset/agent-run-mcp-recovery.md`
 - Latest Agent Run restart recovery changeset: `../../.changeset/agent-run-plan-restart-recovery.md`
 - Latest atomic approval scope changeset: `../../.changeset/atomic-approval-scope.md`
+- Latest database page appearance changeset: `../../.changeset/database-page-appearance.md`
 
 ## Objective and completion rule
 
@@ -68,11 +69,11 @@ the repository-wide check for final release readiness.
   catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
   approval-bound commits, undo, and restart/backup idempotency. Agent View
   policy/privacy/sandbox review remains Partial by design.
-- Notion UX alignment checklist: **42/128 complete**. The page-first and normal
+- Notion UX alignment checklist: **43/128 complete**. The page-first and normal
   New-page creation slices, the inline/linked insertion contract, and the
   table-first direct-manipulation, named canonical workspace canvas-route,
   shared navigation without a duplicate canvas rail, sidebar/recent navigation,
-  stable conversion, and durable History/receipt recovery slices
+  normal database page chrome, stable conversion, and durable History/receipt recovery slices
   are now evidenced. A
   2026-07-23 in-app browser capture reached the IPv4 renderer at
   `http://127.0.0.1:5173/`, created a full-page database, created two canonical
@@ -273,9 +274,32 @@ do not reconstruct behavior solely from this summary.
   focused database test renders `DatabaseWorkspacePage` and covers the real
   no-portal/no-overlay workspace, selected-view hash, missing-source back
   action, and permission-denied state.
-- UX-201, UX-202, UX-205, UX-207, and UX-208 are checked. UX-204/206/209/210
-  remain open for normal page chrome, broader entry-point journeys, conversion
-  proof, and responsive acceptance.
+- UX-201, UX-202, UX-204, UX-205, UX-207, and UX-208 are checked. UX-206/209/210
+  remain open for broader entry-point journeys, conversion proof, and responsive
+  acceptance.
+
+### 2026-07-23 normal database page chrome
+
+- The canonical `DatabaseWorkspacePage` now uses a Notion-style page header:
+  contextual breadcrumbs, inline title editing, favorite state, and a stable
+  page action area are kept above the shared table surface. The database icon
+  resolves as emoji, safe image URL/path, or the default database glyph.
+- `Customize page` opens a focused editor for an optional icon and cover. The
+  editor validates through the shared page-header resolver, closes before the
+  schema mutation enters review, and leaves the parent ghost proposal's
+  `Commit change` control visible. Clearing either field removes the optional
+  manifest key.
+- Icon/cover are bounded optional fields in the core manifest schema. App and
+  server desired-state bases preserve them through title, deletion, button, and
+  data-plane paths, so appearance changes do not alter stable database/source/
+  view/record identities.
+- Focused evidence: page/canvas `DatabaseTableDialog.dom.test.tsx` (2 tests /
+  21 expectations), core `schema.test.ts` (1 / 2), app mutation compiler test
+  (1 / 4), app typecheck, server typecheck, targeted Biome, and diff check. The
+  full server suite and broad E2E were intentionally not run.
+- UX-204 is checked at the implementation/evidence layer. Visual pixel parity,
+  search/backlinks/relations entry points, responsive/Electron, accessibility,
+  performance, and release gates remain open.
 
 ### 2026-07-23 sidebar and recent database navigation
 
@@ -285,8 +309,8 @@ do not reconstruct behavior solely from this summary.
 - The command palette's existing omnibar recents now have UI evidence for a
   catalog-backed database under `Recently opened`, reopening the same stable
   route. Focused evidence: sidebar 3 tests / 7 expectations and recent UI 1 / 5.
-- UX-203 is checked. UX-204/206/209 remain open for normal page chrome,
-  additional entry points, and responsive acceptance.
+- UX-203 and UX-204 are checked. UX-206/209 remain open for additional entry
+  points and responsive acceptance.
 
 ### 2026-07-23 stable inline/full-page conversion
 
@@ -309,8 +333,8 @@ do not reconstruct behavior solely from this summary.
   preview/apply undo without leaving the History surface. The inline mutation
   suite continues to cover Undo/Redo buttons and `Ctrl/Cmd+Z` plus
   `Shift+Ctrl/Cmd+Z`, including stale-revision recovery.
-- UX-407 is checked. Remaining UX work is normal page chrome, cross-entry-point
-  parity, inline/full-page state matrix, Electron, responsive, accessibility,
+- UX-407 is checked. Remaining UX work is cross-entry-point parity, the
+  inline/full-page state matrix, Electron, responsive, accessibility,
   usability, performance, and packaged-release evidence.
 
 ### 2026-07-22 first Notion-UX insertion slice
