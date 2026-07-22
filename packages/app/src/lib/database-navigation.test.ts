@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import type { DatabaseView } from '@nedian0brien/synapsenote-core';
+import { databaseAgentScopeInstruction } from '@/components/handoff/database-agent-scope';
 import {
   DATABASE_CREATION_HASH,
   databasePageFavoriteKey,
@@ -50,6 +51,18 @@ describe('database workspace route', () => {
     expect(isDatabaseCreationHash(DATABASE_CREATION_HASH)).toBe(true);
     expect(isDatabaseCreationHash('#database/db_tasks/ds_tasks')).toBe(false);
     expect(databasePageTargetFromHash(DATABASE_CREATION_HASH)).toBeNull();
+  });
+
+  test('keeps canonical route IDs identical to the MCP agent scope boundary', () => {
+    const target = { databaseId: 'db_tasks', sourceId: 'ds_tasks', viewId: 'view_table' };
+    const routeTarget = databasePageTargetFromHash(databasePageTargetToHash(target));
+    if (!routeTarget) throw new Error('expected a canonical database route target');
+
+    const instruction = databaseAgentScopeInstruction(routeTarget);
+    expect(instruction).toContain('- database_id: db_tasks');
+    expect(instruction).toContain('- source_id: ds_tasks');
+    expect(instruction).toContain('- view_id: view_table');
+    expect(instruction).not.toContain('#database/');
   });
 });
 
