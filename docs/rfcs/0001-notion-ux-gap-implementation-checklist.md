@@ -423,8 +423,8 @@ treated as visual parity until a browser capture is attached.
   database page. The
   agent-shaped creation plans now also show a resulting-page preview inside
   the exact-plan ghost review before approval, so the flow does not end in an
-  admin shell. Evidence: `DatabaseCreationDialog.dom.test.tsx` 10/10 tests,
-  45 expectations, `database-creation.test.ts` 8/8 tests, 56 expectations,
+  admin shell. Evidence: `DatabaseCreationDialog.dom.test.tsx` 12/12 tests,
+  59 expectations, `database-creation.test.ts` 8/8 tests, 56 expectations,
   plus the focused `DatabaseTableDialog.dom.test.tsx` journey (1 test / 3
   expectations) and the existing creation commit continuation.
   Visual first-use parity remains a separate NUI-701/NUI-702 gate. Map to

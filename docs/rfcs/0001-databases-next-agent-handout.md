@@ -58,6 +58,7 @@
 - Latest unified-creation-surface changeset: `../../.changeset/database-creation-start-surface.md`
 - Latest template-preview changeset: `../../.changeset/database-template-previews.md`
 - Latest blank-default changeset: `../../.changeset/database-creation-default.md`
+- Latest CSV-preview changeset: `../../.changeset/database-csv-preview.md`
 
 ## Objective and completion rule
 
@@ -95,7 +96,7 @@ the repository-wide check for final release readiness.
   catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
   approval-bound commits, undo, and restart/backup idempotency. Agent View
   policy/privacy/sandbox review remains Partial by design.
-- Notion UX alignment checklist: **79/128 complete**. The page-first and normal
+- Notion UX alignment checklist: **80/128 complete**. The page-first and normal
   New-page creation slices, the inline/linked insertion contract, and the
   table-first direct-manipulation, named canonical workspace canvas-route,
   shared navigation without a duplicate canvas rail, sidebar/recent/search/
@@ -120,8 +121,8 @@ the repository-wide check for final release readiness.
   direct Relation property links to canonical record pages, safe record
   deep-link/reload/missing/archived/permission states, and the unified
   Blank/template/import/folder/Assistant creation start surface and realistic
-  template view/property/sample-page previews, and Blank-first/reset behavior
-  without implicit advanced choices are
+  template view/property/sample-page previews, Blank-first/reset behavior, and
+  bounded CSV/TSV import previews without implicit advanced choices are
   now
   evidenced. A
   2026-07-23 in-app browser capture reached the IPv4 renderer at
@@ -561,7 +562,7 @@ do not reconstruct behavior solely from this summary.
   targeted Biome checks pass.
 - UX-501 through UX-510, UX-601, UX-602, UX-603, UX-604, UX-605, UX-606,
   UX-607, UX-608, UX-609, UX-610, UX-701, UX-702, UX-703, UX-704, UX-705,
-  UX-706, UX-707, UX-708, UX-709, UX-710, UX-801, UX-802, and UX-803
+  UX-706, UX-707, UX-708, UX-709, UX-710, UX-801, UX-802, UX-803, and UX-804
   are checked at the functional
   implementation/evidence layer. Visual and broader property-family gates
   remain open.
@@ -598,6 +599,20 @@ do not reconstruct behavior solely from this summary.
   with app typecheck and targeted Biome checks passing.
 - UX-803 is now checked at the functional default/reset layer. Usability
   timing, visual first-use, and packaged-host evidence remain open.
+
+### 2026-07-23 CSV/TSV import preview
+
+- The import branch now shows the detected CSV/TSV format, headers, inferred
+  property types, target `Table` view, and up to three sample rows before the
+  exact-plan review. Invalid rows include their source row number and reason;
+  parse failures stay in the same preview instead of becoming a late commit
+  error.
+- Focused evidence: `DatabaseCreationDialog.dom.test.tsx` passes 12 tests / 59
+  expectations, including valid header/type/target-view preview and an
+  invalid-row pre-commit warning. App typecheck and targeted Biome checks pass.
+- UX-804 is now checked at the functional import-preview layer. Richer
+  per-cell coercion explanations, visual first-use parity, and packaged-host
+  evidence remain open under UX-11.
 
 ### 2026-07-23 template preview parity
 
