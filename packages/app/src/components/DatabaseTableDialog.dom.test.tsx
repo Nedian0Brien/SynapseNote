@@ -768,6 +768,7 @@ describe('DatabaseTableDialog', () => {
     const onRemoveProperty = mock(() => {});
     const onConvertProperty = mock(() => {});
     const onCalculationChange = mock(() => {});
+    const onOpenPropertyContextInspector = mock(() => {});
     const user = userEvent.setup();
     const view = render(
       <DatabaseTable
@@ -778,6 +779,7 @@ describe('DatabaseTableDialog', () => {
         onRemoveProperty={onRemoveProperty}
         onConvertProperty={onConvertProperty}
         onCalculationChange={onCalculationChange}
+        onOpenPropertyContextInspector={onOpenPropertyContextInspector}
       />,
     );
 
@@ -786,10 +788,17 @@ describe('DatabaseTableDialog', () => {
     expect(screen.getByRole('menuitem', { name: 'Move left' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'Move right' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'Calculate' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Inspect property context' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'Rename or configure property' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'Change property type' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'Delete property' })).toBeTruthy();
 
+    await user.click(screen.getByRole('menuitem', { name: 'Inspect property context' }));
+    expect(onOpenPropertyContextInspector).toHaveBeenCalledWith(
+      source.properties.find((property) => property.id === 'prop_budget'),
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Property options for Budget' }));
     await user.click(screen.getByRole('menuitem', { name: 'Rename or configure property' }));
     expect(onManageProperties).toHaveBeenCalledTimes(1);
 

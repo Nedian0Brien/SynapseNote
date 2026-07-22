@@ -208,7 +208,7 @@ describe('DatabaseContextInspectorDialog', () => {
     ]);
   });
 
-  test('encodes a database/view/record scope for compact inspector handoff', async () => {
+  test('encodes a database/view/record/property scope for compact inspector handoff', async () => {
     const selected = inspection();
     const requests: string[] = [];
     globalThis.fetch = (async (input: RequestInfo | URL) => {
@@ -223,10 +223,11 @@ describe('DatabaseContextInspectorDialog', () => {
         viewId: selected.agentView?.id,
         recordId: 'rec_visible',
         recordIds: ['rec_visible', 'rec_second'],
+        propertyIds: ['prop_title', 'prop_private'],
       }),
     ).resolves.toEqual([selected]);
     expect(requests).toEqual([
-      `/api/databases/inspect?databaseId=${selected.database.id}&sourceId=${selected.sourceId}&viewId=${selected.agentView?.id}&recordId=rec_visible&recordIds=rec_visible%2Crec_second`,
+      `/api/databases/inspect?databaseId=${selected.database.id}&sourceId=${selected.sourceId}&viewId=${selected.agentView?.id}&recordId=rec_visible&recordIds=rec_visible%2Crec_second&propertyIds=prop_title%2Cprop_private`,
     ]);
   });
 

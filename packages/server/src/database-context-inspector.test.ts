@@ -21,7 +21,16 @@ function pack(id: string, estimatedTokens: number): DatabaseContextPack {
       sourceId: 'ds_tasks',
       sourceKey: 'tasks',
       recordMeaning: 'One task',
-      properties: [],
+      properties: [
+        {
+          id: 'prop_title',
+          key: 'title',
+          name: 'Title',
+          type: 'title',
+          required: true,
+          semantics: { sensitivity: 'internal' },
+        },
+      ],
     },
     snapshot: {
       indexRevision: 'sha256:index',
@@ -176,6 +185,15 @@ describe('DatabaseContextInspector', () => {
       'pack_task',
     ]);
     expect(inspector.list({ recordIds: ['rec_task', 'rec_missing'] })).toHaveLength(0);
+    expect(inspector.list({ propertyIds: ['prop_title'] }).map((entry) => entry.packId)).toEqual([
+      'pack_project',
+      'pack_task',
+    ]);
+    expect(inspector.list({ propertyIds: ['prop_secret'] }).map((entry) => entry.packId)).toEqual([
+      'pack_project',
+      'pack_task',
+    ]);
+    expect(inspector.list({ propertyIds: ['prop_missing'] })).toHaveLength(0);
     expect(inspector.get('pack_project', { databaseId: 'db_tasks' })).toBeNull();
     expect(inspector.get('pack_project', { viewId: 'view_projects_agent' })).toMatchObject({
       packId: 'pack_project',

@@ -273,6 +273,15 @@ export const DatabaseContextInspectionRequestSchema = z
         'recordIds must be a comma-separated list of record IDs',
       )
       .optional(),
+    propertyIds: z
+      .string()
+      .refine(
+        (value) =>
+          value.trim().length > 0 &&
+          value.split(',').every((propertyId) => /^prop_[a-zA-Z0-9_-]+$/.test(propertyId.trim())),
+        'propertyIds must be a comma-separated list of property IDs',
+      )
+      .optional(),
   })
   .strict();
 const DATABASE_INTERNAL_ERROR_EXTENSIONS = databaseProblemExtensions('internal_error');
@@ -3414,19 +3423,25 @@ export function createDatabaseDataPlaneApiHandlers(
           viewId,
           recordId,
           recordIds: recordIdsParam,
+          propertyIds: propertyIdsParam,
         } = parsedQuery.data;
         const recordIds = recordIdsParam
           ?.split(',')
           .map((recordId) => recordId.trim())
           .filter(Boolean);
+        const propertyIds = propertyIdsParam
+          ?.split(',')
+          .map((propertyId) => propertyId.trim())
+          .filter(Boolean);
         const scope =
-          databaseId || sourceId || viewId || recordId || recordIds?.length
+          databaseId || sourceId || viewId || recordId || recordIds?.length || propertyIds?.length
             ? {
                 ...(databaseId ? { databaseId } : {}),
                 ...(sourceId ? { sourceId } : {}),
                 ...(viewId ? { viewId } : {}),
                 ...(recordId ? { recordId } : {}),
                 ...(recordIds?.length ? { recordIds } : {}),
+                ...(propertyIds?.length ? { propertyIds } : {}),
               }
             : undefined;
         const result = packId

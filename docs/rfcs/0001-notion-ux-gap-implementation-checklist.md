@@ -240,7 +240,7 @@ treated as visual parity until a browser capture is attached.
   optimistic/undo evidence for every view editor and a complete policy matrix
   for agent transports. The explicit 13-operation matrix is covered by
   `database-mutation-policy.test.ts`; the canonical workspace regression suite
-  passes 64/64 tests and 372 expectations across Table, Board, Timeline,
+  passes 64/64 tests and 374 expectations across Table, Board, Timeline,
   Calendar, schema, and mutation journeys. Integration evidence across every
   alternate renderer and agent transport remains open. Map to UX-005/UX-006.
 - [x] **NUI-302** Add saving/saved/offline/conflict/failed indicators that do
@@ -289,7 +289,7 @@ treated as visual parity until a browser capture is attached.
   oldest views. Cross-reload cache parity is now covered by
   `database-linked-view-cache.test.ts` (2/2 tests, 5 expectations); the full
   visual state matrix remains open. Evidence: `DatabaseView.dom.test.tsx`
-  17/17 tests, 161 expectations, plus the cache suite. Loading exposes
+  17/17 tests, 168 expectations, plus the cache suite. Loading exposes
   `aria-busy`/`data-database-state="loading"`, empty sources retain the
   actionable new-row input, and permission denial is proven not to reuse an
   offline snapshot.
@@ -338,11 +338,12 @@ treated as visual parity until a browser capture is attached.
   actions now also expose `Manage views` and `Filters`, forwarding to the
   canonical reviewed view manager/filter editor. Evidence:
   `DatabaseTableDialog.dom.test.tsx` default-view and drag-reorder journeys
-  (64/64 tests, 372 expectations) plus the lifecycle compiler test. The inline
+  (64/64 tests, 374 expectations) plus the lifecycle compiler test. The inline
   linked-view tab strip now exposes an adjacent `New database view` affordance
   that opens the same reviewed view manager. The inline journey passes 17 tests
-  / 164 expectations, including the `+` handoff. Pixel-level parity and full
-  settings convergence remain open. Map to UX-601–UX-610.
+  / 168 expectations, including the `+` handoff and property-context action.
+  Pixel-level parity and full settings convergence remain open. Map to
+  UX-601–UX-610.
 - [ ] **NUI-503** Keep Blank fastest; make templates/import/agent-assisted
   creation preview the resulting page/block rather than ending in the admin
   shell. Blank remains the direct-safe fastest path; template and CSV/TSV
@@ -366,15 +367,19 @@ treated as visual parity until a browser capture is attached.
   context actions. Citation labels are rendered from captured evidence/full-body
   disclosures. The inspector now offers per-property All/None/checkbox controls
   and a non-mutating selected-field JSON preview with an approximate token count;
-  the server Context Pack contract already accepts `propertyIds` for agent-side
+  property-header actions now open the same inspector with a property-scoped
+  `propertyIds` query, including properties omitted by the captured pack. The
+  server Context Pack contract already accepts `propertyIds` for agent-side
   selective delivery. Evidence:
   `DatabaseContextInspectorDialog.test.tsx` (6 tests / 25 expectations),
   `DatabaseContextInspectorDialog.dom.test.tsx` (1 test / 8 expectations),
-  `database-context-inspector.test.ts` (3 tests / 13 expectations), the focused
+  `database-context-inspector.test.ts` (3 tests / 16 expectations), the focused
   `database-data-plane-api.test.ts` contract, the Table menu journey, and the
-  inline `DatabaseView.dom.test.tsx` scoped inspector journey (17 tests / 161
-  expectations), including database/view, single-record, selected-record, and
-  inline Board transition query assertions.
+  inline `DatabaseView.dom.test.tsx` scoped inspector journey (17 tests / 168
+  expectations), including database/view, property, single-record,
+  selected-record, and inline Board transition query assertions; server
+  `DatabaseContextInspectionScope` and HTTP query validation now cover
+  `propertyIds` filtering.
   Map to UX-902/UX-909.
 - [ ] **NUI-602** Keep human-language plans first and stable IDs/files/risk/
   receipts under progressive disclosure; support selective approval only when

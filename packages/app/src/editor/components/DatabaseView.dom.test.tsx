@@ -1095,6 +1095,21 @@ describe('DatabaseView', () => {
     ).toBe(true);
     fireEvent.click(document.querySelector('[data-slot="dialog-close"]') as HTMLElement);
     await waitFor(() => expect(screen.queryByText('What the agent saw')).toBeNull());
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Property options for Title' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Inspect property context' }));
+    expect(await screen.findByText('What the agent saw')).toBeTruthy();
+    expect(
+      inspectPaths.some((path) =>
+        path.includes(
+          `/api/databases/inspect?databaseId=${database.id}&sourceId=${source.id}&viewId=${view.id}&propertyIds=prop_title`,
+        ),
+      ),
+    ).toBe(true);
+    expect(document.querySelector('[data-context-inspector-scope]')?.textContent).toContain(
+      'properties:prop_title',
+    );
+    fireEvent.click(document.querySelector('[data-slot="dialog-close"]') as HTMLElement);
+    await waitFor(() => expect(screen.queryByText('What the agent saw')).toBeNull());
     fireEvent.click(screen.getByLabelText('Select record rec_first'));
     fireEvent.click(screen.getByLabelText('Select record rec_second'));
     expect(await screen.findByTestId('inline-selection-toolbar')).toBeTruthy();

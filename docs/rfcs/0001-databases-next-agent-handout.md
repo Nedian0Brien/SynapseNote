@@ -14,6 +14,7 @@
 - Latest inline state-safety changeset: `../../.changeset/inline-database-state-safety.md`
 - Latest inline empty-state changeset: `../../.changeset/inline-database-empty-state.md`
 - Latest inline agent-context changeset: `../../.changeset/inline-agent-context-inspector.md`
+- Latest inline property-context changeset: `../../.changeset/inline-property-context.md`
 
 ## Objective and completion rule
 
@@ -597,6 +598,26 @@ do not reconstruct behavior solely from this summary.
   expectations, including opening and closing `Manage saved views` from the
   inline tab `+`; app typecheck, Biome, and `git diff --check` pass. Full visual
   parity remains open under NUI-502/NUI-701.
+
+### 2026-07-22 inline property-context inspection slice
+
+- Each visible database property header now exposes `Inspect property context`
+  next to the existing visibility, reorder, calculation, configuration, type,
+  and delete actions. Full and inline tables forward the stable
+  database/source/view plus `propertyIds` to the canonical Context Inspector;
+  no property values are copied into the inline host block.
+- The HTTP inspector contract now validates comma-separated `prop_*` IDs and
+  filters captured packs by every requested property. A property is considered
+  in scope when it was returned in the pack schema or recorded in the pack's
+  omission list, preserving permission/token-budget diagnostics.
+- Focused evidence: `DatabaseView.dom.test.tsx` passes 17 tests / 168
+  expectations; `DatabaseTableDialog.dom.test.tsx` passes 64 tests / 374
+  expectations; `DatabaseContextInspectorDialog.test.tsx` passes 6 tests / 25
+  expectations; server context-inspector/API focused tests pass 35 tests / 338
+  expectations. App/server typecheck, targeted Biome, and diff checks pass; no
+  full server suite or broad E2E rerun was needed.
+- Follow-up: keep NUI-601's visual/browser evidence and NUI-603 Agent Runs
+  inspect/undo/retry/resume gates open until real-host capture is available.
 
 ### 2026-07-22 inline filter handoff slice
 

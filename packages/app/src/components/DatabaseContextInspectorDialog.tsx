@@ -662,6 +662,7 @@ export function DatabaseContextInspectorDialog({
                   scope.viewId && `view:${scope.viewId}`,
                   scope.recordId && `record:${scope.recordId}`,
                   scope.recordIds?.length && `records:${scope.recordIds.join(',')}`,
+                  scope.propertyIds?.length && `properties:${scope.propertyIds.join(',')}`,
                 ]
                   .filter(Boolean)
                   .join(' · ')}

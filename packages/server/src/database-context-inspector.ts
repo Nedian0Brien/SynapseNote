@@ -74,6 +74,8 @@ export interface DatabaseContextInspectionScope {
   viewId?: string;
   recordId?: string;
   recordIds?: readonly string[];
+  /** Only inspections whose captured pack included every requested property. */
+  propertyIds?: readonly string[];
 }
 
 function packContainsRecord(pack: DatabaseContextPack, recordId: string): boolean {
@@ -82,6 +84,13 @@ function packContainsRecord(pack: DatabaseContextPack, recordId: string): boolea
     return recordColumn >= 0 && pack.records.rows.some((row) => row[recordColumn] === recordId);
   }
   return pack.records.some((record) => record.id === recordId);
+}
+
+function packContainsProperty(pack: DatabaseContextPack, propertyId: string): boolean {
+  return (
+    pack.schema.properties.some((property) => property.id === propertyId) ||
+    pack.omitted.propertyIds.includes(propertyId)
+  );
 }
 
 function matchesScope(
@@ -95,6 +104,12 @@ function matchesScope(
   if (
     scope.recordIds &&
     !scope.recordIds.every((recordId) => packContainsRecord(inspection.exactPack, recordId))
+  ) {
+    return false;
+  }
+  if (
+    scope.propertyIds &&
+    !scope.propertyIds.every((propertyId) => packContainsProperty(inspection.exactPack, propertyId))
   ) {
     return false;
   }

@@ -2074,6 +2074,28 @@ describe('database data plane HTTP handlers', () => {
     );
     expect(scopedSelectionInspection.status).toBe(200);
     expect(JSON.parse(scopedSelectionInspection.body).kind).toBe('list');
+    const scopedPropertyInspection = await call(
+      handlers.inspect,
+      'GET',
+      '/api/databases/inspect?propertyIds=prop_tasks_title',
+    );
+    expect(scopedPropertyInspection.status).toBe(200);
+    const scopedPropertyBody = JSON.parse(scopedPropertyInspection.body) as {
+      kind: string;
+      inspections: Array<{ exactPack?: unknown }>;
+    };
+    expect(scopedPropertyBody.kind).toBe('list');
+    expect(scopedPropertyBody.inspections.length).toBeGreaterThan(0);
+
+    const invalidPropertyInspection = await call(
+      handlers.inspect,
+      'GET',
+      '/api/databases/inspect?propertyIds=not-a-property',
+    );
+    expect(invalidPropertyInspection.status).toBe(400);
+    expect(JSON.parse(invalidPropertyInspection.body)).toMatchObject({
+      code: 'invalid_query',
+    });
     const missingInspection = await call(
       handlers.inspect,
       'GET',

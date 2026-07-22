@@ -511,6 +511,7 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
   const [inlineContextInspectorScope, setInlineContextInspectorScope] = useState<{
     recordId?: string;
     recordIds?: string[];
+    propertyIds?: string[];
   } | null>(null);
   const [inlineCreationOpen, setInlineCreationOpen] = useState(false);
   const [focusInlineNewRecord, setFocusInlineNewRecord] = useState(false);
@@ -1556,6 +1557,9 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
                 onOpenContextInspector={(record) =>
                   setInlineContextInspectorScope({ recordId: record.id })
                 }
+                onOpenPropertyContextInspector={(property) =>
+                  setInlineContextInspectorScope({ propertyIds: [property.id] })
+                }
                 onManageProperties={(propertyId) =>
                   openInlineDatabaseSurface('properties', propertyId)
                 }
@@ -1628,6 +1632,9 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
                 : {}),
               ...(inlineContextInspectorScope.recordIds?.length
                 ? { recordIds: inlineContextInspectorScope.recordIds }
+                : {}),
+              ...(inlineContextInspectorScope.propertyIds?.length
+                ? { propertyIds: inlineContextInspectorScope.propertyIds }
                 : {}),
             }}
           />

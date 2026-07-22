@@ -790,6 +790,7 @@ export function DatabaseTable({
   onRequestMove,
   onOpen,
   onOpenContextInspector,
+  onOpenPropertyContextInspector,
   onCreateRecord,
   onSelectionChange,
   onPaste,
@@ -832,6 +833,7 @@ export function DatabaseTable({
   onRequestMove?: (record: ProjectedDatabaseRecord) => void;
   onOpen?: (record: ProjectedDatabaseRecord) => void;
   onOpenContextInspector?: (record: ProjectedDatabaseRecord) => void;
+  onOpenPropertyContextInspector?: (property: DatabaseProperty) => void;
   onCreateRecord?: (title: string) => void;
   onSelectionChange?: (recordIds: Set<string>) => void;
   onPaste?: (changes: readonly DatabasePasteChange[]) => void;
@@ -1507,6 +1509,12 @@ export function DatabaseTable({
                         </DropdownMenuSub>
                       ) : null}
                       <DropdownMenuSeparator />
+                      {onOpenPropertyContextInspector ? (
+                        <DropdownMenuItem onSelect={() => onOpenPropertyContextInspector(property)}>
+                          <Braces aria-hidden="true" />
+                          <Trans>Inspect property context</Trans>
+                        </DropdownMenuItem>
+                      ) : null}
                       <DropdownMenuItem
                         disabled={!onManageProperties}
                         onSelect={() => onManageProperties?.(property.id)}
@@ -6482,6 +6490,19 @@ export function DatabaseTableDialog({
                               sourceId: description.source.id,
                               ...(selectedViewId ? { viewId: selectedViewId } : {}),
                               recordId: record.id,
+                            });
+                          }
+                        : undefined
+                    }
+                    onOpenPropertyContextInspector={
+                      onOpenContextInspector
+                        ? (property) => {
+                            if (!description.source) return;
+                            onOpenContextInspector({
+                              databaseId: description.database.id,
+                              sourceId: description.source.id,
+                              ...(selectedViewId ? { viewId: selectedViewId } : {}),
+                              propertyIds: [property.id],
                             });
                           }
                         : undefined
