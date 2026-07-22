@@ -2632,6 +2632,8 @@ export function DatabaseTableDialog({
   initialAction,
   initialRecordAction,
   initialTablePaste,
+  initialDatabaseSurface,
+  initialPropertyId,
   presentation = 'dialog',
 }: {
   open: boolean;
@@ -2644,6 +2646,9 @@ export function DatabaseTableDialog({
   initialRecordAction?: DatabaseInitialRecordAction;
   /** Paste changes forwarded from an inline view into the canonical review surface. */
   initialTablePaste?: readonly DatabasePasteChange[];
+  /** Optional reviewed surface to open when an inline view delegates a control. */
+  initialDatabaseSurface?: 'properties' | 'view-settings';
+  initialPropertyId?: string;
   presentation?: 'dialog' | 'page';
 }) {
   'use no memo';
@@ -2758,6 +2763,7 @@ export function DatabaseTableDialog({
   const reviewResolver = useRef<((approved: boolean) => void) | null>(null);
   const handledInitialRecordAction = useRef<string | null>(null);
   const handledInitialTablePaste = useRef<string | null>(null);
+  const handledInitialDatabaseSurface = useRef<string | null>(null);
   const queueReconciliationRunning = useRef(false);
   const offlineCacheKey = selection
     ? databaseOfflineCacheKey({
@@ -3588,6 +3594,19 @@ export function DatabaseTableDialog({
     handledInitialTablePaste.current = actionKey;
     planTablePaste(initialTablePaste);
   }, [open, initialTablePaste, description, result]);
+
+  useEffect(() => {
+    if (!open || !initialDatabaseSurface || !description?.source || !result) return;
+    const surfaceKey = `${initialDatabaseSurface}:${initialPropertyId ?? ''}`;
+    if (handledInitialDatabaseSurface.current === surfaceKey) return;
+    handledInitialDatabaseSurface.current = surfaceKey;
+    if (initialDatabaseSurface === 'properties') {
+      setPropertiesDialogRenameId(initialPropertyId ?? null);
+      setPropertiesDialogOpen(true);
+      return;
+    }
+    setViewSettingsOpen(true);
+  }, [open, initialDatabaseSurface, initialPropertyId, description, result]);
 
   const planBoardTransition = (transition: DatabaseBoardTransition) => {
     if (!description?.source || mutationStatus !== 'idle') return;

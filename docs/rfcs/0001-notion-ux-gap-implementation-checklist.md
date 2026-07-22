@@ -293,17 +293,23 @@ treated as visual parity until a browser capture is attached.
   has a keyboard-accessible contextual menu for show/hide, left/right reorder,
   calculation, settings, type conversion, and dependency-aware delete. The
   reviewed properties dialog now supports stable-ID inline rename as well as
-  the existing reorder/delete recovery path. Pixel-level Notion visual parity
-  remains open. Evidence: `DatabaseTableDialog.dom.test.tsx` schema-management
-  and contextual property-menu journeys (63/63 tests, 369 expectations) plus
-  `DatabasePropertiesDialog.dom.test.tsx` rename/reorder/delete journeys (7/7
-  tests, 23 expectations). Map to UX-501–UX-510.
+  the existing reorder/delete recovery path. Inline table blocks now wire the
+  same callback, so the table-edge `+` and header menu open the canonical
+  reviewed properties surface without exposing raw IDs; a linked-view action
+  also provides an explicit `Manage properties` entry. Pixel-level Notion
+  visual parity remains open. Evidence: `DatabaseTableDialog.dom.test.tsx`
+  schema-management and contextual property-menu journeys (63/63 tests, 369
+  expectations), `DatabasePropertiesDialog.dom.test.tsx` rename/reorder/delete
+  journeys (7/7 tests, 23 expectations), and the linked-view DOM journey.
+  Map to UX-501–UX-510.
 - [ ] **NUI-502** Make saved-view tabs reorderable and put layout, filters,
   sorts, groups, properties, color, and open behavior behind the active-view
   menu. The active saved-view tab now exposes a keyboard-accessible options
   menu for Filters, View settings, and Manage views. Tabs now expose a native
   drag handle that compiles a stable-ID `reorder-to` desired state, while the
-  existing keyboard Move left/Move right actions remain available. Full
+  existing keyboard Move left/Move right actions remain available. Inline
+  linked views now expose `View settings` in their block action menu and open
+  the same saved-view settings dialog against the selected stable view. Full
   settings convergence and pixel-level parity remain open. Evidence:
   `DatabaseTableDialog.dom.test.tsx` default-view and drag-reorder journeys
   (63/63 tests, 369 expectations) plus the lifecycle compiler test. Map to

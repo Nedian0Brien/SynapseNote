@@ -16,6 +16,7 @@ import {
   Plus,
   RefreshCw,
   Search,
+  Settings2,
   Trash2,
 } from 'lucide-react';
 import { lazy, Suspense, useEffect, useState } from 'react';
@@ -474,6 +475,10 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
   const [showArchived, setShowArchived] = useState(false);
   const [initialRecordAction, setInitialRecordAction] = useState<DatabaseInitialRecordAction>();
   const [initialTablePaste, setInitialTablePaste] = useState<readonly DatabasePasteChange[]>();
+  const [initialDatabaseSurface, setInitialDatabaseSurface] = useState<
+    'properties' | 'view-settings'
+  >();
+  const [initialPropertyId, setInitialPropertyId] = useState<string>();
   const [replacementPickerOpen, setReplacementPickerOpen] = useState(false);
   const [inlineCreationOpen, setInlineCreationOpen] = useState(false);
   const [inlineMutationStatus, setInlineMutationStatus] = useState<'idle' | 'saving'>('idle');
@@ -784,6 +789,15 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
     setFullDatabaseOpen(true);
   };
 
+  const openInlineDatabaseSurface = (
+    surface: 'properties' | 'view-settings',
+    propertyId?: string,
+  ) => {
+    setInitialDatabaseSurface(surface);
+    setInitialPropertyId(propertyId);
+    setFullDatabaseOpen(true);
+  };
+
   return (
     <section
       className={cn(
@@ -932,6 +946,12 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
               )}
               <DropdownMenuItem onSelect={() => setReplacementPickerOpen(true)}>
                 <Search /> <Trans>Choose another view</Trans>
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => openInlineDatabaseSurface('properties')}>
+                <Plus /> <Trans>Manage properties</Trans>
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => openInlineDatabaseSurface('view-settings')}>
+                <Settings2 /> <Trans>View settings</Trans>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem variant="destructive" onSelect={removeLinkedView}>
@@ -1173,6 +1193,9 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
                 onEdit={editInlineCell}
                 onCreateRecord={createInlineRecord}
                 onPaste={pasteInlineCells}
+                onManageProperties={(propertyId) =>
+                  openInlineDatabaseSurface('properties', propertyId)
+                }
                 onDuplicate={(record) => {
                   setInitialRecordAction({ kind: 'duplicate', recordId: record.id });
                   setFullDatabaseOpen(true);
@@ -1235,11 +1258,15 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
               if (!nextOpen) {
                 setInitialRecordAction(undefined);
                 setInitialTablePaste(undefined);
+                setInitialDatabaseSurface(undefined);
+                setInitialPropertyId(undefined);
               }
             }}
             initialTarget={reference.data}
             initialRecordAction={initialRecordAction}
             initialTablePaste={initialTablePaste}
+            initialDatabaseSurface={initialDatabaseSurface}
+            initialPropertyId={initialPropertyId}
             onOpenRecord={(path) => {
               window.location.hash = databaseRecordPathToHash(path);
               setFullDatabaseOpen(false);

@@ -930,7 +930,7 @@ describe('DatabaseView', () => {
     expect(commitCalls).toBe(3);
     fireEvent.click(screen.getByText('Discard'));
     await waitFor(() => expect(screen.queryByTestId('database-ghost-review')).toBeNull());
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[0] as HTMLElement);
     await waitFor(() => expect(document.querySelector('[data-database-workspace]')).toBeNull());
     expect(screen.getByLabelText('Duplicate record rec_first')).toBeTruthy();
     expect(screen.getByLabelText('Archive record rec_first')).toBeTruthy();
@@ -939,8 +939,24 @@ describe('DatabaseView', () => {
     fireEvent.pointerDown(screen.getByRole('button', { name: 'Database view actions' }));
     expect(screen.getByRole('menuitem', { name: 'Convert to full page' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'Choose another view' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Manage properties' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'View settings' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'Remove linked view' })).toBeTruthy();
-    fireEvent.keyDown(document, { key: 'Escape' });
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Manage properties' }));
+    expect(await screen.findByRole('heading', { name: 'Manage properties' })).toBeTruthy();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[0] as HTMLElement);
+    await waitFor(() =>
+      expect(screen.queryByRole('heading', { name: 'Manage properties' })).toBeNull(),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    await waitFor(() => expect(document.querySelector('[data-database-workspace]')).toBeNull());
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Database view actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'View settings' }));
+    expect(await screen.findByRole('heading', { name: 'Saved view settings' })).toBeTruthy();
+    fireEvent.click(document.querySelector('[data-slot="dialog-close"]') as HTMLElement);
+    await waitFor(() =>
+      expect(screen.queryByRole('heading', { name: 'Saved view settings' })).toBeNull(),
+    );
     fireEvent.click(screen.getByLabelText('Open record rec_first'));
     expect(await screen.findByText('Linked canonical body.')).toBeTruthy();
     expect(window.location.hash).toBe(originalHash);
