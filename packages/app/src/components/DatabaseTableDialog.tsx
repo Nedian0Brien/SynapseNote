@@ -4924,7 +4924,7 @@ function DatabaseTableSurface({
                 )}
               </DialogDescription>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex min-w-0 flex-wrap gap-2">
               {mutationStatus !== 'idle' || saveFeedback ? (
                 <span
                   className="inline-flex items-center gap-1.5 self-center text-muted-foreground text-xs"
@@ -5032,7 +5032,7 @@ function DatabaseTableSurface({
         </DialogHeader>
         <DialogBody
           className={cn(
-            'min-h-[min(34rem,70vh)] gap-0 p-0',
+            'min-h-[min(34rem,70vh)] gap-0 overflow-x-hidden p-0',
             isCanvasPresentation ? 'block' : 'grid md:grid-cols-[17rem_minmax(0,1fr)]',
           )}
         >

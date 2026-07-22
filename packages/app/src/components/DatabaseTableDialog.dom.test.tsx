@@ -3054,12 +3054,23 @@ describe('DatabaseTableDialog', () => {
       />,
     );
     await screen.findByRole('grid');
-    expect(document.querySelector('[data-database-page-workspace]')).not.toBeNull();
+    const workspace = document.querySelector('[data-database-page-workspace]');
+    expect(workspace).not.toBeNull();
     expect(document.querySelector('[data-slot="dialog-overlay"]')).toBeNull();
     expect(document.querySelector('nav[aria-label="Databases"]')).not.toBeNull();
     expect(document.querySelector('[data-database-page-chrome]')?.textContent).toContain('Tasks');
     expect(screen.getByTestId('database-page-title').textContent).toBe('Tasks');
     expect(screen.getByTestId('database-page-icon')).not.toBeNull();
+    const pageBody = workspace?.querySelector('[data-slot="dialog-body"]');
+    expect(pageBody?.className).toContain('overflow-x-hidden');
+    expect(pageBody?.className).toContain('overflow-y-auto');
+    const tableScroll = screen.getByRole('grid').closest('[data-slot="table-container"]');
+    expect(tableScroll?.className).toContain('overflow-auto');
+    const viewTabs = screen.getByRole('navigation', { name: 'Database views' });
+    expect(viewTabs.className).toContain('overflow-x-auto');
+    expect(
+      document.querySelector('[data-database-page-chrome]')?.firstElementChild?.className,
+    ).toContain('flex-wrap');
     const favorite = screen.getByTestId('database-page-favorite');
     expect(favorite.getAttribute('aria-pressed')).toBe('false');
     fireEvent.click(favorite);
