@@ -609,6 +609,22 @@ export function DatabaseSavedViewSettingsDialog({
           </DialogDescription>
         </DialogHeader>
         <DialogBody className="space-y-5">
+          <section
+            className="rounded-md border border-primary/20 bg-primary/5 p-3 text-sm"
+            aria-label="Saved view settings scope"
+            data-testid="saved-view-settings-scope"
+          >
+            <strong>
+              <Trans>One reviewed view configuration</Trans>
+            </strong>
+            <p className="mt-1 text-muted-foreground text-xs">
+              <Trans>
+                Opening behavior, properties, order, sorts, groups, colors, and layout display
+                options save together. Filters stay on the active view's Filters action and use the
+                same canonical view boundary.
+              </Trans>
+            </p>
+          </section>
           <section className="space-y-2" aria-label="Saved view page opening">
             <strong>
               <Trans>Open records in</Trans>

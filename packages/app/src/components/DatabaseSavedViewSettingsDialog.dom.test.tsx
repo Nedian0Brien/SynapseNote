@@ -37,6 +37,32 @@ const view: DatabaseView = {
 afterEach(cleanup);
 
 describe('DatabaseSavedViewSettingsDialog', () => {
+  test('keeps query, projection, and display controls in one reviewed surface', () => {
+    render(
+      <DatabaseSavedViewSettingsDialog
+        open
+        onOpenChange={() => {}}
+        source={source}
+        view={view}
+        onSave={() => {}}
+      />,
+    );
+
+    expect(screen.getByTestId('saved-view-settings-scope').textContent).toContain(
+      'One reviewed view configuration',
+    );
+    for (const label of [
+      'Saved view page opening',
+      'Saved view sorts',
+      'Saved view groups',
+      'Saved view property projection',
+      'Saved view conditional colors',
+      'Saved Table display settings',
+    ]) {
+      expect(screen.getByRole('region', { name: label })).not.toBeNull();
+    }
+  });
+
   test('persists Feed chronology, author, density, properties, read state, and page limit', async () => {
     const feedSource: DatabaseSource = {
       ...source,
