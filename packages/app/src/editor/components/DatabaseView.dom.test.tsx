@@ -884,7 +884,9 @@ describe('DatabaseView', () => {
           canApply: !(undoBlocked && action === 'preview'),
           conflicts:
             undoBlocked && action === 'preview' ? [{ reason: 'record revision changed' }] : [],
-          ...(action === 'apply' ? { receipt: { status: 'applied' } } : {}),
+          ...(action === 'apply' || action === 'redo_apply'
+            ? { receipt: { status: 'applied' } }
+            : {}),
         });
       }
       return Response.json({ detail: 'unexpected request' }, { status: 500 });
@@ -932,16 +934,28 @@ describe('DatabaseView', () => {
     fireEvent.keyDown(titleInput, { key: 'Enter' });
     await waitFor(() => expect(commitCalls).toBe(1));
     expect(await screen.findByTestId('inline-save-feedback')).toBeTruthy();
+    const textInput = await screen.findByTestId('database-new-row-title');
+    fireEvent.keyDown(textInput, { key: 'z', ctrlKey: true });
+    expect(undoCalls).toBe(0);
     fireEvent.click(screen.getByRole('button', { name: 'Undo inline database change' }));
     await waitFor(() => expect(undoCalls).toBe(2));
-    await waitFor(() => expect(screen.queryByTestId('inline-save-feedback')).toBeNull());
+    expect(await screen.findByRole('button', { name: 'Redo inline database change' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Redo inline database change' }));
+    await waitFor(() => expect(undoCalls).toBe(4));
+    expect(await screen.findByRole('button', { name: 'Undo inline database change' })).toBeTruthy();
+    const inlineRoot = document.querySelector('[data-database-view-state="ready"]');
+    expect(inlineRoot).toBeTruthy();
+    fireEvent.keyDown(inlineRoot as HTMLElement, { key: 'z', ctrlKey: true });
+    await waitFor(() => expect(undoCalls).toBe(6));
+    fireEvent.keyDown(inlineRoot as HTMLElement, { key: 'z', ctrlKey: true, shiftKey: true });
+    await waitFor(() => expect(undoCalls).toBe(8));
     const newRowTitle = await screen.findByTestId('database-new-row-title');
     fireEvent.change(newRowTitle, { target: { value: 'Inline page' } });
     fireEvent.keyDown(newRowTitle, { key: 'Enter' });
     await waitFor(() => expect(commitCalls).toBe(2));
     undoBlocked = true;
     fireEvent.click(screen.getByRole('button', { name: 'Undo inline database change' }));
-    await waitFor(() => expect(undoCalls).toBe(3));
+    await waitFor(() => expect(undoCalls).toBe(9));
     expect((await screen.findByRole('alert')).textContent).toContain('record revision changed');
     expect(screen.getByTestId('inline-save-feedback')).toBeTruthy();
     undoBlocked = false;

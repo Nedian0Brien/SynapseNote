@@ -20,7 +20,13 @@ import {
   Settings2,
   Trash2,
 } from 'lucide-react';
-import { lazy, Suspense, useEffect, useState } from 'react';
+import {
+  lazy,
+  type KeyboardEvent as ReactKeyboardEvent,
+  Suspense,
+  useEffect,
+  useState,
+} from 'react';
 import { DatabaseRecordPeek } from '@/components/DatabaseRecordPeek';
 import type { DatabaseInitialRecordAction } from '@/components/DatabaseTableDialog';
 import { Button } from '@/components/ui/button';
@@ -48,8 +54,10 @@ import {
   rememberDatabaseLinkedView,
 } from '@/lib/database-linked-view-cache';
 import {
+  applyDatabaseUiRedo,
   applyDatabaseUiUndo,
   executeDatabaseUiMutation,
+  previewDatabaseUiRedo,
   previewDatabaseUiUndo,
 } from '@/lib/database-mutation-client';
 import { databaseUiMutationReviewMode } from '@/lib/database-mutation-policy';
@@ -494,6 +502,10 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
   const [inlineUndoStatus, setInlineUndoStatus] = useState<'idle' | 'checking' | 'applying'>(
     'idle',
   );
+  const [inlineRedoToken, setInlineRedoToken] = useState<string | null>(null);
+  const [inlineRedoStatus, setInlineRedoStatus] = useState<'idle' | 'checking' | 'applying'>(
+    'idle',
+  );
   const [inlineOptimisticCellValues, setInlineOptimisticCellValues] = useState<
     Map<string, DatabaseValue | undefined>
   >(() => new Map());
@@ -690,9 +702,16 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
     desiredState: DatabaseDesiredStateDraftInput,
     policy: { operation: 'cell' | 'record-create'; optimisticCellKey?: string },
   ) => {
-    if (inlineMutationStatus !== 'idle' || inlineUndoStatus !== 'idle') return;
+    if (
+      inlineMutationStatus !== 'idle' ||
+      inlineUndoStatus !== 'idle' ||
+      inlineRedoStatus !== 'idle'
+    ) {
+      return;
+    }
     setInlineMutationError(null);
     setInlineUndoToken(null);
+    setInlineRedoToken(null);
     setInlineMutationStatus('saving');
     void executeDatabaseUiMutation({
       desiredState,
@@ -727,6 +746,7 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
           });
         }
         setInlineUndoToken(outcome.result.undoToken);
+        setInlineRedoToken(null);
         setRefresh((current) => current + 1);
       })
       .catch((cause: unknown) => {
@@ -746,7 +766,14 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
   };
 
   const undoInlineMutation = () => {
-    if (!inlineUndoToken || inlineUndoStatus !== 'idle' || inlineMutationStatus !== 'idle') return;
+    if (
+      !inlineUndoToken ||
+      inlineUndoStatus !== 'idle' ||
+      inlineRedoStatus !== 'idle' ||
+      inlineMutationStatus !== 'idle'
+    ) {
+      return;
+    }
     const token = inlineUndoToken;
     setInlineMutationError(null);
     setInlineUndoStatus('checking');
@@ -768,12 +795,52 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
           throw new Error('The inline database undo was refused');
         }
         setInlineUndoToken(null);
+        setInlineRedoToken(token);
         setRefresh((current) => current + 1);
       })
       .catch((cause: unknown) => {
         setInlineMutationError(cause instanceof Error ? cause.message : 'Inline undo failed');
       })
       .finally(() => setInlineUndoStatus('idle'));
+  };
+
+  const redoInlineMutation = () => {
+    if (
+      !inlineRedoToken ||
+      inlineRedoStatus !== 'idle' ||
+      inlineUndoStatus !== 'idle' ||
+      inlineMutationStatus !== 'idle'
+    ) {
+      return;
+    }
+    const token = inlineRedoToken;
+    setInlineMutationError(null);
+    setInlineRedoStatus('checking');
+    void previewDatabaseUiRedo(token)
+      .then((preview) => {
+        if (!preview.canApply) {
+          const reason = preview.conflicts[0]?.reason ?? 'the canonical state changed';
+          throw new Error(`Redo is no longer safe: ${reason}`);
+        }
+        setInlineRedoStatus('applying');
+        return applyDatabaseUiRedo({
+          undoToken: token,
+          actor: { principalId: 'user:local' },
+          idempotencyKey: `ui-inline-redo-${crypto.randomUUID()}`,
+        });
+      })
+      .then((outcome) => {
+        if (!outcome.canApply || outcome.receipt?.status !== 'applied') {
+          throw new Error('The inline database redo was refused');
+        }
+        setInlineRedoToken(null);
+        setInlineUndoToken(token);
+        setRefresh((current) => current + 1);
+      })
+      .catch((cause: unknown) => {
+        setInlineMutationError(cause instanceof Error ? cause.message : 'Inline redo failed');
+      })
+      .finally(() => setInlineRedoStatus('idle'));
   };
 
   const editInlineCell = (
@@ -850,6 +917,29 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
     setFullDatabaseOpen(true);
   };
 
+  const handleInlineHistoryKeyDown = (event: ReactKeyboardEvent<HTMLElement>) => {
+    if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== 'z') return;
+    const target = event.target;
+    const elementTarget = target instanceof HTMLElement ? target : null;
+    if (
+      elementTarget &&
+      (elementTarget.tagName === 'INPUT' ||
+        elementTarget.tagName === 'TEXTAREA' ||
+        elementTarget.isContentEditable)
+    ) {
+      return;
+    }
+    if (event.shiftKey) {
+      if (!inlineRedoToken) return;
+      event.preventDefault();
+      redoInlineMutation();
+      return;
+    }
+    if (!inlineUndoToken) return;
+    event.preventDefault();
+    undoInlineMutation();
+  };
+
   return (
     <section
       className={cn(
@@ -858,6 +948,9 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
           'relative left-1/2 w-[min(96vw,90rem)] -translate-x-1/2',
       )}
       contentEditable={false}
+      onKeyDown={handleInlineHistoryKeyDown}
+      tabIndex={-1}
+      aria-label="Linked database view"
       data-database-view-state={state.status}
       data-database-id={reference.data.databaseId}
       data-source-id={reference.data.sourceId}
@@ -1036,25 +1129,33 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
           Saving inline database change
         </div>
       ) : null}
-      {inlineUndoToken ? (
+      {inlineUndoToken || inlineRedoToken ? (
         <div
           className="flex flex-wrap items-center justify-between gap-2 border-b bg-emerald-500/5 px-4 py-2 text-xs"
           role="status"
           data-testid="inline-save-feedback"
         >
-          <span>Inline database change saved</span>
+          <span>
+            {inlineUndoToken ? 'Inline database change saved' : 'Inline database change undone'}
+          </span>
           <Button
             type="button"
             size="sm"
             variant="ghost"
-            disabled={inlineUndoStatus !== 'idle'}
-            onClick={undoInlineMutation}
+            disabled={inlineUndoStatus !== 'idle' || inlineRedoStatus !== 'idle'}
+            onClick={inlineUndoToken ? undoInlineMutation : redoInlineMutation}
           >
-            {inlineUndoStatus === 'checking'
-              ? 'Checking undo'
-              : inlineUndoStatus === 'applying'
-                ? 'Undoing'
-                : 'Undo inline database change'}
+            {inlineUndoToken
+              ? inlineUndoStatus === 'checking'
+                ? 'Checking undo'
+                : inlineUndoStatus === 'applying'
+                  ? 'Undoing'
+                  : 'Undo inline database change'
+              : inlineRedoStatus === 'checking'
+                ? 'Checking redo'
+                : inlineRedoStatus === 'applying'
+                  ? 'Redoing'
+                  : 'Redo inline database change'}
           </Button>
         </div>
       ) : null}
@@ -1294,7 +1395,11 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
                 result={state.result}
                 people={state.description.database.people}
                 optimisticCellValues={inlineOptimisticCellValues}
-                mutationLocked={inlineMutationStatus !== 'idle' || inlineUndoStatus !== 'idle'}
+                mutationLocked={
+                  inlineMutationStatus !== 'idle' ||
+                  inlineUndoStatus !== 'idle' ||
+                  inlineRedoStatus !== 'idle'
+                }
                 autoFocusNewRecord={reference.data.mode === 'inline' ? focusInlineNewRecord : false}
                 selectedRecordIds={inlineSelectedRecordIds}
                 viewPropertyIds={linkedView.projection.propertyIds}

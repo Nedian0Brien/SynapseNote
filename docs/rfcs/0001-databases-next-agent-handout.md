@@ -10,6 +10,7 @@
 - Latest feature changeset: `../../.changeset/inline-database-create-route.md`
 - Latest inline UX changeset: `../../.changeset/inline-database-focus.md`
 - Latest inline recovery changeset: `../../.changeset/inline-database-undo.md`
+- Latest inline history changeset: `../../.changeset/inline-database-history.md`
 
 ## Objective and completion rule
 
@@ -244,11 +245,14 @@ do not reconstruct behavior solely from this summary.
   action. Undo first runs the canonical preview guard, then applies the undo
   with the same human actor/idempotency contract as the full workspace; a
   changed canonical revision leaves the token visible and reports the reason.
-- Focused evidence: `DatabaseView.dom.test.tsx` passes 13 tests / 123
-  expectations, including commit → inline feedback → preview/apply undo and
+- Inline redo now uses the matching preview/apply contract, and the root
+  surface handles `Ctrl/Cmd+Z` and `Ctrl/Cmd+Shift+Z` while leaving text-input
+  undo to the browser/editor.
+- Focused evidence: `DatabaseView.dom.test.tsx` passes 13 tests / 132
+  expectations, including button undo/redo, keyboard shortcuts, and
   revision-conflict retention;
   app typecheck and `git diff --check` pass. The inline view remains locked
-  only while saving or undoing, and the existing optimistic cell/row behavior
+  only while saving, undoing, or redoing, and the existing optimistic cell/row behavior
   is preserved.
 - Follow-up: cover undo for every alternate linked renderer and complete the
   broader agent transport/policy matrix before closing NUI-301.
