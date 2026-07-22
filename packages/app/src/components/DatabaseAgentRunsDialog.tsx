@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { applyDatabaseUiUndo, previewDatabaseUiUndo } from '@/lib/database-mutation-client';
 import { cn } from '@/lib/utils';
 
 export interface DatabaseAgentRunSummary {
@@ -96,7 +97,47 @@ function StateIcon({ state }: { state: DatabaseAgentRun['state'] }) {
   return <Clock3 className="size-4 text-amber-600" />;
 }
 
-export function DatabaseAgentRunDetail({ run }: { run: DatabaseAgentRun }) {
+export function DatabaseAgentRunDetail({
+  run,
+  onUndone,
+}: {
+  run: DatabaseAgentRun;
+  onUndone?: () => void;
+}) {
+  const [undoStatus, setUndoStatus] = useState<'idle' | 'checking' | 'applying' | 'error'>('idle');
+  const [undoError, setUndoError] = useState<string | null>(null);
+
+  const undoRun = () => {
+    if (!run.undo.token || undoStatus !== 'idle') return;
+    const token = run.undo.token;
+    setUndoError(null);
+    setUndoStatus('checking');
+    void previewDatabaseUiUndo(token)
+      .then((preview) => {
+        if (!preview.canApply) {
+          const reason = preview.conflicts[0]?.reason ?? 'the canonical state changed';
+          throw new Error(`Undo is no longer safe: ${reason}`);
+        }
+        setUndoStatus('applying');
+        return applyDatabaseUiUndo({
+          undoToken: token,
+          actor: { principalId: 'user:local' },
+          idempotencyKey: `agent-run-undo-${crypto.randomUUID()}`,
+        });
+      })
+      .then((outcome) => {
+        if (!outcome.canApply || outcome.receipt?.status !== 'applied') {
+          throw new Error('The database undo was refused');
+        }
+        setUndoStatus('idle');
+        onUndone?.();
+      })
+      .catch((cause: unknown) => {
+        setUndoError(cause instanceof Error ? cause.message : 'Unable to undo this Agent Run');
+        setUndoStatus('error');
+      });
+  };
+
   return (
     <div className="space-y-5" data-testid="database-agent-run-detail">
       <section>
@@ -164,9 +205,47 @@ export function DatabaseAgentRunDetail({ run }: { run: DatabaseAgentRun }) {
         <h3 className="font-medium">
           <Trans>Undo</Trans>
         </h3>
-        <p className="mt-1 break-all font-mono text-muted-foreground text-xs">
-          {run.undo.token ?? <Trans>Not available</Trans>}
-        </p>
+        {run.undo.available && run.undo.token ? (
+          <div className="mt-2 space-y-2">
+            <p className="text-muted-foreground text-sm">
+              <Trans>Preview the current revision before reversing this run.</Trans>
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={undoRun}
+              disabled={undoStatus === 'checking' || undoStatus === 'applying'}
+              data-testid="database-agent-run-undo"
+            >
+              {undoStatus === 'checking' || undoStatus === 'applying' ? (
+                <Loader2 className="animate-spin" />
+              ) : null}
+              {undoStatus === 'checking' ? (
+                <Trans>Checking undo safety</Trans>
+              ) : undoStatus === 'applying' ? (
+                <Trans>Undoing run</Trans>
+              ) : (
+                <Trans>Undo committed changes</Trans>
+              )}
+            </Button>
+            <details className="text-xs">
+              <summary className="cursor-pointer text-muted-foreground">
+                <Trans>Show undo token</Trans>
+              </summary>
+              <code className="mt-1 block break-all text-muted-foreground">{run.undo.token}</code>
+            </details>
+            {undoStatus === 'error' && undoError ? (
+              <p className="text-destructive text-sm" role="alert">
+                {undoError}
+              </p>
+            ) : null}
+          </div>
+        ) : (
+          <p className="mt-1 text-muted-foreground text-sm">
+            <Trans>Not available</Trans>
+          </p>
+        )}
       </section>
     </div>
   );
@@ -316,7 +395,10 @@ export function DatabaseAgentRunsDialog({
                 {detailError}
               </div>
             ) : detail ? (
-              <DatabaseAgentRunDetail run={detail} />
+              <DatabaseAgentRunDetail
+                run={detail}
+                onUndone={() => setRefresh((value) => value + 1)}
+              />
             ) : null}
           </div>
         </DialogBody>

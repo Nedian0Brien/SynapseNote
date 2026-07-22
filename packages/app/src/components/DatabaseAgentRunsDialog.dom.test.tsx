@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, mock, test } from 'bun:test';
 import type { DatabaseAgentRun } from '@nedian0brien/synapsenote-core';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { DatabaseAgentRunsDialog } from './DatabaseAgentRunsDialog';
 
 const originalFetch = globalThis.fetch;
@@ -113,5 +113,75 @@ describe('DatabaseAgentRunsDialog DOM behavior', () => {
     await waitFor(() =>
       expect(screen.getByText('Agent Runs storage is unavailable')).not.toBeNull(),
     );
+  });
+
+  test('previews and applies undo without leaving the Agent Runs surface', async () => {
+    const run = detail();
+    const actions: string[] = [];
+    globalThis.fetch = mock(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      const request = JSON.parse(String(init?.body)) as { action: string };
+      actions.push(request.action);
+      if (request.action === 'list') {
+        return Response.json({
+          action: 'list',
+          revision: run.revision,
+          runs: [
+            {
+              id: run.id,
+              state: run.state,
+              revision: run.revision,
+              createdAt: run.createdAt,
+              updatedAt: run.updatedAt,
+              intent: run.intent,
+              scope: {
+                databaseIds: run.scope.databaseIds,
+                sourceCount: run.scope.sourceIds.length,
+                propertyCount: run.scope.propertyIds.length,
+                viewCount: run.scope.viewIds.length,
+                recordCount: run.scope.recordIds.length,
+              },
+              plan: { id: run.plan.id, riskLevel: run.plan.risk.level },
+              execution: { mutationId: run.execution.mutationId, actualDiffCount: 0 },
+              verification: { status: 'passed', checkCount: 0, failedCheckCount: 0 },
+              failureCode: null,
+              undo: { available: true },
+            },
+          ],
+        });
+      }
+      if (request.action === 'get') return Response.json({ action: 'get', run });
+      if (request.action === 'preview') {
+        return Response.json({
+          action: 'preview',
+          undoId: run.undo.token,
+          mutationId: run.execution.mutationId,
+          canApply: true,
+          idempotentReplay: false,
+          expectedSnapshotRevision: run.revision,
+          observedSnapshotRevision: run.revision,
+          conflicts: [],
+          receipt: null,
+        });
+      }
+      return Response.json({
+        action: 'apply',
+        undoId: run.undo.token,
+        mutationId: run.execution.mutationId,
+        canApply: true,
+        idempotentReplay: false,
+        expectedSnapshotRevision: run.revision,
+        observedSnapshotRevision: run.revision,
+        conflicts: [],
+        receipt: { status: 'applied' },
+      });
+    }) as typeof fetch;
+
+    render(<DatabaseAgentRunsDialog open={true} onOpenChange={() => {}} />);
+    expect(await screen.findByTestId('database-agent-run-undo')).not.toBeNull();
+    fireEvent.click(screen.getByTestId('database-agent-run-undo'));
+    await waitFor(() =>
+      expect(actions).toEqual(['list', 'get', 'preview', 'apply', 'list', 'get']),
+    );
+    expect(screen.getAllByText('Update the incident status').length).toBeGreaterThan(0);
   });
 });
