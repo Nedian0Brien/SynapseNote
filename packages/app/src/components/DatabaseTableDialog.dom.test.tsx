@@ -3773,7 +3773,7 @@ describe('DatabaseTableDialog', () => {
     fireEvent.click(screen.getByText('Review creation'));
     await screen.findByTestId('database-creation-ghost-review');
     expect(screen.getByTestId('database-creation-human-plan-summary').textContent).toContain(
-      'Create 1 database manifest',
+      'Schema: Create 1 database manifest',
     );
     expect(screen.getByText('Exact plan details')).toBeTruthy();
     expect(previewCalls).toBe(0);
@@ -4423,7 +4423,7 @@ describe('DatabaseTableDialog', () => {
       '1 record file(s), 0 manifest(s)',
     );
     expect(screen.getByTestId('database-human-plan-summary').textContent).toContain(
-      'Delete 1 record',
+      'Data: Delete 1 record',
     );
     expect(screen.getByText('Exact plan details')).toBeTruthy();
     expect(screen.getByLabelText('Change risks').textContent).toContain(

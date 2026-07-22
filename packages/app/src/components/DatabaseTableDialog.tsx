@@ -780,7 +780,11 @@ function databasePlanHumanSummary(diff: DatabaseGhostState['diff']): string {
       ? `${diff.templates.length} template${diff.templates.length === 1 ? '' : 's'}`
       : null,
   ].filter((value): value is string => value !== null);
-  return [...recordSummary, ...fileSummary].join(' · ') || 'No canonical file changes';
+  const scopedSummary = [
+    recordSummary.length > 0 ? `Data: ${recordSummary.join(' · ')}` : null,
+    fileSummary.length > 0 ? `Schema: ${fileSummary.join(' · ')}` : null,
+  ].filter((value): value is string => value !== null);
+  return scopedSummary.join(' · ') || 'No canonical file changes';
 }
 
 function databaseCreationPreviewValue(value: unknown): string {
@@ -798,6 +802,12 @@ const databaseApprovalLabels: Record<string, string> = {
   sample_record_write: 'Write sample records',
   verification_change: 'Change verification',
   delete_record: 'Delete records',
+};
+
+const databaseSchemaMutationPolicy: DatabaseUiMutationPolicyInput = {
+  operation: 'schema',
+  actor: 'human',
+  principalId: 'user:local',
 };
 
 function DatabaseAtomicApprovalScope({
@@ -4080,7 +4090,9 @@ function DatabaseTableSurface({
         property,
       });
       setPropertiesDialogOpen(false);
-      runMutation(desiredState, 'ui-add-property', 'Add database property failed');
+      runMutation(desiredState, 'ui-add-property', 'Add database property failed', {
+        policy: databaseSchemaMutationPolicy,
+      });
     } catch (cause) {
       setPropertiesError(classifyDatabaseUiProblem(cause, 'Unable to add the property').message);
     }
@@ -4097,7 +4109,7 @@ function DatabaseTableSurface({
         }),
         'ui-duplicate-property',
         'Duplicate database property failed',
-        { policy: { operation: 'schema', actor: 'human', principalId: 'user:local' } },
+        { policy: databaseSchemaMutationPolicy },
       );
     } catch (cause) {
       setMutationError(classifyDatabaseUiProblem(cause, 'Unable to duplicate the property'));
@@ -4116,6 +4128,7 @@ function DatabaseTableSurface({
         }),
         'ui-rename-property',
         'Rename database property failed',
+        { policy: databaseSchemaMutationPolicy },
       );
       setPropertiesDialogOpen(false);
       setPropertiesDialogRenameId(null);
@@ -4163,6 +4176,7 @@ function DatabaseTableSurface({
             unsetDesiredState,
             'ui-unset-property',
             'Unset database property value failed',
+            { policy: databaseSchemaMutationPolicy },
           );
         } else {
           const desiredState = createDatabaseRemovePropertyDesiredState({
@@ -4170,7 +4184,9 @@ function DatabaseTableSurface({
             source: selectedSource,
             property,
           });
-          runMutation(desiredState, 'ui-remove-property', 'Remove database property failed');
+          runMutation(desiredState, 'ui-remove-property', 'Remove database property failed', {
+            policy: databaseSchemaMutationPolicy,
+          });
         }
       })
       .catch((cause: unknown) => {
@@ -4193,7 +4209,9 @@ function DatabaseTableSurface({
         orderedPropertyIds,
       });
       setPropertiesDialogOpen(false);
-      runMutation(desiredState, 'ui-reorder-properties', 'Reorder database properties failed');
+      runMutation(desiredState, 'ui-reorder-properties', 'Reorder database properties failed', {
+        policy: databaseSchemaMutationPolicy,
+      });
     } catch (cause) {
       setPropertiesError(
         classifyDatabaseUiProblem(cause, 'Unable to reorder the properties').message,
@@ -4803,7 +4821,7 @@ function DatabaseTableSurface({
         'ui-database-page-appearance',
         'Database page appearance update failed',
         {
-          policy: { operation: 'schema', actor: 'human', principalId: 'user:local' },
+          policy: databaseSchemaMutationPolicy,
           onCommitted: () => setAppearanceOpen(false),
         },
       );
@@ -7106,6 +7124,7 @@ function DatabaseTableSurface({
                 }),
                 'ui-computed-property',
                 'Computed property change failed',
+                { policy: databaseSchemaMutationPolicy },
               );
               setComputedPropertyId(null);
             } catch (cause) {
@@ -7135,6 +7154,7 @@ function DatabaseTableSurface({
                 }),
                 'ui-unique-id-prefix',
                 'Unique ID prefix change failed',
+                { policy: databaseSchemaMutationPolicy },
               );
               setUniqueIdPropertyId(null);
             } catch (cause) {
@@ -7165,6 +7185,7 @@ function DatabaseTableSurface({
                 }),
                 'ui-place-privacy',
                 'Place privacy change failed',
+                { policy: databaseSchemaMutationPolicy },
               );
               setPlacePropertyId(null);
             } catch (cause) {
