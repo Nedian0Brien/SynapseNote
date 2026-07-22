@@ -587,6 +587,13 @@ describe('database cell mutation compiler', () => {
         change: { kind: 'delete', viewId: current.id },
       }),
     ).toThrow('Clear or change');
+    expect(() =>
+      createDatabaseViewLifecycleChangeDesiredState({
+        database: { ...database, views: [current] },
+        source,
+        change: { kind: 'delete', viewId: current.id },
+      }),
+    ).toThrow('last saved view');
   });
 
   test('compiles deduplicated multi-select sets as one exact bulk mutation per record', () => {

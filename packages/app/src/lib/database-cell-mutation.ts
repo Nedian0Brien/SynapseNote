@@ -311,6 +311,12 @@ export function createDatabaseViewLifecycleChangeDesiredState(input: {
     );
     if (viewIndex < 0) throw new Error('The saved view is outside the selected source');
     if (change.kind === 'delete') {
+      const sourceViewCount = currentViews.filter(
+        (candidate) => candidate.sourceId === input.source.id,
+      ).length;
+      if (sourceViewCount <= 1) {
+        throw new Error('Cannot delete the last saved view for this source');
+      }
       if (input.source.defaultViewId === change.viewId) {
         throw new Error('Clear or change the source default before deleting this view');
       }

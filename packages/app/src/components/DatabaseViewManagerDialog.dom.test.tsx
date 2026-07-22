@@ -505,6 +505,22 @@ describe('DatabaseViewManagerDialog', () => {
     ).toBe(true);
   });
 
+  test('disables deletion when the source has only one saved view', () => {
+    render(
+      <DatabaseViewManagerDialog
+        open
+        onOpenChange={() => {}}
+        source={{ ...source, defaultViewId: undefined }}
+        views={[views[0] as DatabaseView]}
+        busy={false}
+        onChange={() => {}}
+      />,
+    );
+    expect(
+      screen.getByRole('button', { name: 'Cannot delete last view Open' }).hasAttribute('disabled'),
+    ).toBe(true);
+  });
+
   test('starts a reviewed duplicate when an inline block requests the current view copy', async () => {
     const onChange = mock(() => {});
     const rendered = render(

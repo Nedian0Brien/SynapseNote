@@ -462,7 +462,7 @@ export function DatabaseViewManagerDialog({
                         type="button"
                         variant="destructive"
                         size="sm"
-                        disabled={busy || isDefault}
+                        disabled={busy || isDefault || views.length <= 1}
                         aria-label={`Confirm delete ${view.name}`}
                         onClick={() => onChange({ kind: 'delete', viewId: view.id })}
                       >
@@ -473,11 +473,13 @@ export function DatabaseViewManagerDialog({
                         type="button"
                         variant="ghost"
                         size="icon-sm"
-                        disabled={busy || isDefault}
+                        disabled={busy || isDefault || views.length <= 1}
                         aria-label={
                           isDefault
                             ? `Cannot delete default view ${view.name}`
-                            : `Delete ${view.name}`
+                            : views.length <= 1
+                              ? `Cannot delete last view ${view.name}`
+                              : `Delete ${view.name}`
                         }
                         onClick={() => setDeleteViewId(view.id)}
                       >

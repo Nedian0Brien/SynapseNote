@@ -49,6 +49,7 @@ export function DatabaseViewTabMenu({
   onAction: (action: DatabaseViewTabAction) => void;
 }) {
   const isDefault = source.defaultViewId === view.id;
+  const canDelete = !isDefault && count > 1;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -103,9 +104,15 @@ export function DatabaseViewTabMenu({
             <Star aria-hidden="true" /> <Trans>Make default</Trans>
           </DropdownMenuItem>
         )}
-        <DropdownMenuItem disabled={busy || isDefault} onSelect={() => onAction('delete')}>
+        <DropdownMenuItem disabled={busy || !canDelete} onSelect={() => onAction('delete')}>
           <Trash2 aria-hidden="true" />
-          {isDefault ? <Trans>Cannot delete default</Trans> : <Trans>Delete</Trans>}
+          {isDefault ? (
+            <Trans>Cannot delete default</Trans>
+          ) : canDelete ? (
+            <Trans>Delete</Trans>
+          ) : (
+            <Trans>Cannot delete last view</Trans>
+          )}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem disabled={busy} onSelect={() => onAction('manage')}>

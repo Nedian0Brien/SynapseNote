@@ -94,4 +94,21 @@ describe('DatabaseViewTabMenu', () => {
       screen.getByRole('menuitem', { name: 'Delete' }).getAttribute('data-disabled'),
     ).not.toBeNull();
   });
+
+  test('disables deletion when the active source would lose its last view', async () => {
+    const user = userEvent.setup();
+    render(
+      <DatabaseViewTabMenu
+        source={{ ...source, defaultViewId: undefined }}
+        view={{ ...view, id: 'view_only', name: 'Only view' }}
+        index={0}
+        count={1}
+        busy={false}
+        onAction={() => {}}
+      />,
+    );
+    await user.click(screen.getByRole('button', { name: 'View options for Only view' }));
+    const deleteItem = screen.getByRole('menuitem', { name: 'Cannot delete last view' });
+    expect(deleteItem.getAttribute('data-disabled')).not.toBeNull();
+  });
 });
