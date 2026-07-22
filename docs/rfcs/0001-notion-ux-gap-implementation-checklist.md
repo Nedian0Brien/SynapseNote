@@ -97,6 +97,11 @@ document-native entry point:
   `Inline first record`, showed the database title, `Table` tab, shared-record
   explanation, and inline undo. `Open full database` reached the canonical
   route, and removing the linked block left the canonical record available.
+- A follow-up live check found and fixed a duplicate-view replay hazard: opening
+  `Duplicate view configuration` now creates exactly one `Table copy` even when
+  the canonical manager refreshes during the draft. The focused manager/view
+  DOM suite passes 30 tests / 227 expectations; this is a mutation-safety fix,
+  not a claim that the broader visual state matrix is complete.
 
 This closes the browser evidence for the page-first creation slice, but it does
 not close NUI-105 or NUI-701–NUI-705: no Electron journey, normal New-page

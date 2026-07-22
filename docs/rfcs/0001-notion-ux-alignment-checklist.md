@@ -188,6 +188,13 @@ opens the canonical saved-view manager with the current view copied as a new
 stable view configuration. The action is covered by the live menu capture and
 the `DatabaseViewManagerDialog` initial-duplicate DOM test.
 
+The follow-up regression capture found that remounting the manager during a
+draft could replay the initial action and create duplicate copies. The manager
+now keeps a stable instance across schema refreshes, synchronizes its view-name
+state without remounting, and guards the initial action by stable key. The
+focused manager/view suite passes 30 tests / 227 expectations, and the live
+browser check now shows exactly one `Table copy` after one duplicate action.
+
 ## Re-audit snapshot (2026-07-23)
 
 The implementation has moved the surface closer to Notion, but it has not

@@ -1,6 +1,6 @@
 # RFC 0001 databases: next-agent handout
 
-- Prepared: 2026-07-22 (re-audited)
+- Prepared: 2026-07-23 (re-audited)
 - Worktree: `/Users/minjaepark/code/SynapseNote-agent-databases`
 - Branch: `codex/agent-native-databases`
 - Authoritative checklist: [0001-databases-implementation-checklist.md](./0001-databases-implementation-checklist.md)
@@ -18,6 +18,7 @@
 - Latest inline single-view-tabs changeset: `../../.changeset/inline-single-view-tabs.md`
 - Latest inline mode-preservation changeset: `../../.changeset/inline-view-mode-preservation.md`
 - Latest inline view-tab-menu changeset: `../../.changeset/inline-view-tab-menu.md`
+- Latest inline duplicate-view changeset: `../../.changeset/inline-duplicate-view-action.md`
 - Latest context-inspector-copy changeset: `../../.changeset/context-inspector-copy.md`
 - Latest alternative-view context changeset: `../../.changeset/inline-context-alt-views.md`
 - Latest list/gallery/feed context changeset: `../../.changeset/inline-context-list-gallery-feed.md`
@@ -177,6 +178,20 @@ do not reconstruct behavior solely from this summary.
   AI autofill is explicitly deferred for v1 with a documented provenance,
   freshness, privacy, and typed-failure contract; it is not presented as a
   parity claim.
+
+### 2026-07-23 duplicate-view replay guard
+
+- The live inline action capture exposed a real safety bug: opening the saved
+  view manager from `Duplicate view configuration` could remount the manager
+  during a draft and replay the same initial action, producing many copies.
+  `DatabaseTableDialog` now keeps the manager mounted across schema refreshes;
+  `DatabaseViewManagerDialog` reconciles names from new view props without
+  resetting its action guard. This preserves one-shot semantics while keeping
+  the canonical reviewed mutation path for the duplicate itself.
+- Regression evidence: the focused manager/view DOM suite passes **30 tests / 227
+  expectations**; the live browser check shows exactly one `Table copy` after
+  one duplicate action. Test-only database files and temporary documents were
+  removed from the worktree and were not staged.
 
 ### 2026-07-22 first Notion-UX insertion slice
 
