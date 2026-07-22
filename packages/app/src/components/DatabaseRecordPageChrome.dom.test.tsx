@@ -237,6 +237,7 @@ describe('DatabaseRecordPageChrome', () => {
     expect(recordSurface?.getAttribute('data-database-machine-ids')).toBe('stable');
     expect(recordSurface?.querySelector('[data-database-machine-ids]')).not.toBeNull();
     expect(view.getByLabelText('Database breadcrumbs')).toBeDefined();
+    expect(view.getByRole('button', { name: 'Ask agent' })).toBeDefined();
     expect(view.getByRole('link', { name: 'Tasks' }).getAttribute('href')).toBe(
       '#database/db_tasks/ds_tasks',
     );

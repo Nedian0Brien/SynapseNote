@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
+import { DatabaseAgentScopeMenu } from '@/components/DatabaseAgentScopeMenu';
 import { DatabaseCommentsDialog } from '@/components/DatabaseCommentsDialog';
 import { DatabaseConflictResolutionNotice } from '@/components/DatabaseConflictResolutionNotice';
 import { DatabaseMachineIdsDetails } from '@/components/DatabaseMachineIdsDetails';
@@ -941,6 +942,13 @@ export function DatabaseRecordPageChrome({
                 </Button>
               </>
             ) : null}
+            <DatabaseAgentScopeMenu
+              scope={{
+                databaseId: metadata.database_id,
+                sourceId: metadata.source_id,
+                recordId: metadata.record_id,
+              }}
+            />
             <Button type="button" size="sm" variant="ghost" onClick={() => void openComments()}>
               <MessageSquare /> <Trans>Comments</Trans>
             </Button>

@@ -11,6 +11,7 @@ import {
 } from '@nedian0brien/synapsenote-core';
 import { ExternalLink, GitBranch, History, Link2, Loader2, MessageSquare } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { DatabaseAgentScopeMenu } from '@/components/DatabaseAgentScopeMenu';
 import { DatabaseCommentsDialog } from '@/components/DatabaseCommentsDialog';
 import { DatabaseMachineIdsDetails } from '@/components/DatabaseMachineIdsDetails';
 import { DatabaseRecordHistoryDialog } from '@/components/DatabaseRecordHistoryDialog';
@@ -160,6 +161,9 @@ function PeekBody({
           />
         </div>
         <div className="flex flex-wrap justify-end gap-1">
+          <DatabaseAgentScopeMenu
+            scope={{ databaseId: database.id, sourceId: source.id, recordId: record.id }}
+          />
           <Button type="button" size="sm" variant="ghost" onClick={onOpenComments}>
             <MessageSquare /> <Trans>Comments</Trans>
           </Button>

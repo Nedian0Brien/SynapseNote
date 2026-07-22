@@ -19,10 +19,12 @@ import type { Workspace } from './workspace-paths';
  * no refresh or subscription is needed. Matches FileTree's existing workspace-
  * fetch shape so the two surfaces stay in lockstep.
  */
-export function useWorkspace(): Workspace | null {
+export function useWorkspace(options?: { enabled?: boolean }): Workspace | null {
+  const enabled = options?.enabled ?? true;
   const [workspace, setWorkspace] = useState<Workspace | null>(() => resolveSyncWorkspace());
 
   useEffect(() => {
+    if (!enabled) return;
     if (workspace !== null) return; // Electron path — already resolved synchronously.
     if (window.okDesktop) return; // Belt-and-braces: never fetch when a bridge is present.
 
@@ -48,7 +50,7 @@ export function useWorkspace(): Workspace | null {
     // The effect re-runs after a successful fetch (workspace dep flips from null
     // to non-null); the `workspace !== null` guard short-circuits the second
     // pass so the fetch fires exactly once.
-  }, [workspace]);
+  }, [enabled, workspace]);
 
   return workspace;
 }

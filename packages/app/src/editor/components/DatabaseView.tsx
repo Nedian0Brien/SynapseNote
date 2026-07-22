@@ -36,6 +36,7 @@ import {
   useState,
 } from 'react';
 import { DatabaseAdvancedFilterDialog } from '@/components/DatabaseAdvancedFilterDialog';
+import { DatabaseAgentScopeMenu } from '@/components/DatabaseAgentScopeMenu';
 import { DatabaseRecordPeek } from '@/components/DatabaseRecordPeek';
 import { DatabaseSavedViewSettingsDialog } from '@/components/DatabaseSavedViewSettingsDialog';
 import type {
@@ -44,6 +45,7 @@ import type {
 } from '@/components/DatabaseTableDialog';
 import { DatabaseViewQuerySummary } from '@/components/DatabaseViewQuerySummary';
 import { type DatabaseViewTabAction, DatabaseViewTabMenu } from '@/components/DatabaseViewTabMenu';
+import type { DatabaseAgentScope } from '@/components/handoff/database-agent-scope';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -619,6 +621,9 @@ export function DatabaseView({
     recordIds?: string[];
     propertyIds?: string[];
   } | null>(null);
+  const [inlineAgentScopeOverride, setInlineAgentScopeOverride] =
+    useState<DatabaseAgentScope | null>(null);
+  const [inlineAgentMenuOpen, setInlineAgentMenuOpen] = useState(false);
   const [inlineCreationOpen, setInlineCreationOpen] = useState(false);
   const [focusInlineNewRecord, setFocusInlineNewRecord] = useState(false);
   const [inlineMutationStatus, setInlineMutationStatus] = useState<'idle' | 'saving'>('idle');
@@ -880,6 +885,21 @@ export function DatabaseView({
     : undefined;
   const linkedSourceViews =
     linkedDatabase?.views.filter((view) => view.sourceId === reference.data.sourceId) ?? [];
+  const defaultInlineAgentScope: DatabaseAgentScope = {
+    databaseId: reference.data.databaseId,
+    sourceId: reference.data.sourceId,
+    viewId: reference.data.viewId,
+    ...(inlineSelectedRecordIds.size > 0 ? { recordIds: [...inlineSelectedRecordIds] } : {}),
+  };
+  const activeInlineAgentScope = inlineAgentScopeOverride ?? defaultInlineAgentScope;
+  const openInlineAgentScope = (scope: DatabaseAgentScope) => {
+    setInlineAgentScopeOverride(scope);
+    setInlineAgentMenuOpen(true);
+  };
+  const handleInlineAgentMenuChange = (nextOpen: boolean) => {
+    setInlineAgentMenuOpen(nextOpen);
+    if (!nextOpen) setInlineAgentScopeOverride(null);
+  };
   const renderedResult =
     state.status === 'ready' && state.result
       ? applyInlineOptimisticValues(state.result, inlineOptimisticCellValues)
@@ -1319,6 +1339,11 @@ export function DatabaseView({
           ) : null}
         </div>
         <div className="flex flex-wrap justify-end gap-1">
+          <DatabaseAgentScopeMenu
+            scope={activeInlineAgentScope}
+            open={inlineAgentMenuOpen}
+            onOpenChange={handleInlineAgentMenuChange}
+          />
           {activeLinkedView?.layout.type !== 'form' ? (
             <Button
               type="button"
@@ -1849,6 +1874,7 @@ export function DatabaseView({
                 onOpenPropertyContextInspector={(property) =>
                   setInlineContextInspectorScope({ propertyIds: [property.id] })
                 }
+                onOpenAgentScope={openInlineAgentScope}
                 onManageProperties={(propertyId) =>
                   openInlineDatabaseSurface('properties', propertyId)
                 }

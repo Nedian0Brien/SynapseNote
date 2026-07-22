@@ -170,6 +170,33 @@ describe('OpenInAgentMenu runtime behavior', () => {
     ]);
   });
 
+  test('shows and preserves an explicit database scope for the agent handoff', async () => {
+    states = { codex: { installed: true, lastChecked: 1 } };
+    const scopedInput: HandoffDispatchInput = {
+      ...input,
+      databaseScope: {
+        databaseId: 'db_tasks',
+        sourceId: 'source_tasks',
+        viewId: 'view_table',
+        recordIds: ['record_a', 'record_a'],
+        propertyIds: ['property_status'],
+      },
+    };
+    await renderMenu(scopedInput);
+    await openMenu();
+
+    const scopeBanner = screen.getByTestId('open-in-agent-database-scope');
+    expect(scopeBanner.textContent).toContain('database · source · view · 1 record · 1 property');
+    expect(scopeBanner.textContent).toContain('Changes stay within this scope');
+
+    await userEvent.click(screen.getByTestId('open-in-agent-item-codex'));
+    expect(dispatchCalls).toHaveLength(1);
+    expect(dispatchCalls[0]?.input.instruction).toContain('database_id: db_tasks');
+    expect(dispatchCalls[0]?.input.instruction).toContain('source_id: source_tasks');
+    expect(dispatchCalls[0]?.input.instruction).toContain('record_ids: record_a');
+    expect(dispatchCalls[0]?.input.instruction).toContain('property_ids: property_status');
+  });
+
   test('instruction input resets to empty when the popover is reopened', async () => {
     // Pins the documented reset-on-remount contract: the popover unmounts its
     // content when closed, so the instruction never persists across opens. A

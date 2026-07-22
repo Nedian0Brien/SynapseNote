@@ -61,6 +61,7 @@ import {
   RotateCcw,
   Settings2,
   ShieldCheck,
+  Sparkles,
   Star,
   Table2,
   Trash2,
@@ -75,6 +76,7 @@ import {
   useState,
 } from 'react';
 import { DatabaseAdvancedFilterDialog } from '@/components/DatabaseAdvancedFilterDialog';
+import { DatabaseAgentScopeMenu } from '@/components/DatabaseAgentScopeMenu';
 import { DatabaseAutomationsDialog } from '@/components/DatabaseAutomationsDialog';
 import { DatabaseBoard, type DatabaseBoardTransition } from '@/components/DatabaseBoard';
 import { DatabaseCalendar, type DatabaseCalendarChange } from '@/components/DatabaseCalendar';
@@ -115,6 +117,7 @@ import { DatabaseViewQuerySummary } from '@/components/DatabaseViewQuerySummary'
 import { DatabaseViewRenameDialog } from '@/components/DatabaseViewRenameDialog';
 import { type DatabaseViewTabAction, DatabaseViewTabMenu } from '@/components/DatabaseViewTabMenu';
 import { CreatePromptComposer } from '@/components/empty-state/CreatePromptComposer';
+import type { DatabaseAgentScope } from '@/components/handoff/database-agent-scope';
 import { resolvePageCover, resolvePageIcon } from '@/components/page-header-utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -879,6 +882,7 @@ export function DatabaseTable({
   onOpen,
   onOpenContextInspector,
   onOpenPropertyContextInspector,
+  onOpenAgentScope,
   onCreateRecord,
   onSelectionChange,
   onPaste,
@@ -930,6 +934,7 @@ export function DatabaseTable({
   onOpen?: (record: ProjectedDatabaseRecord) => void;
   onOpenContextInspector?: (record: ProjectedDatabaseRecord) => void;
   onOpenPropertyContextInspector?: (property: DatabaseProperty) => void;
+  onOpenAgentScope?: (scope: DatabaseAgentScope) => void;
   onCreateRecord?: (title: string) => void;
   onSelectionChange?: (recordIds: Set<string>) => void;
   onPaste?: (changes: readonly DatabasePasteChange[]) => void;
@@ -1725,6 +1730,21 @@ export function DatabaseTable({
                         <DropdownMenuItem onSelect={() => onOpenPropertyContextInspector(property)}>
                           <Braces aria-hidden="true" />
                           <Trans>Inspect property context</Trans>
+                        </DropdownMenuItem>
+                      ) : null}
+                      {onOpenAgentScope ? (
+                        <DropdownMenuItem
+                          onSelect={() =>
+                            onOpenAgentScope({
+                              databaseId,
+                              sourceId: source.id,
+                              ...(viewId ? { viewId } : {}),
+                              propertyIds: [property.id],
+                            })
+                          }
+                        >
+                          <Sparkles aria-hidden="true" />
+                          <Trans>Ask agent about property</Trans>
                         </DropdownMenuItem>
                       ) : null}
                       <DropdownMenuItem
@@ -2553,6 +2573,24 @@ export function DatabaseTable({
                           <Braces aria-hidden="true" />
                         </Button>
                       ) : null}
+                      {onOpenAgentScope ? (
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          disabled={mutationLocked || proposedRecord !== undefined}
+                          aria-label={`Ask agent about record ${record.id}`}
+                          onClick={() =>
+                            onOpenAgentScope({
+                              databaseId,
+                              sourceId: source.id,
+                              ...(viewId ? { viewId } : {}),
+                              recordId: record.id,
+                            })
+                          }
+                        >
+                          <Sparkles aria-hidden="true" />
+                        </Button>
+                      ) : null}
                       {onDuplicate ? (
                         <Button
                           variant="ghost"
@@ -2823,6 +2861,26 @@ export function DatabaseTable({
                     <Braces /> <Trans>Inspect record context</Trans>
                   </Button>
                 ) : null}
+                {onOpenAgentScope ? (
+                  <Button
+                    role="menuitem"
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start"
+                    disabled={mutationLocked}
+                    onClick={() => {
+                      onOpenAgentScope({
+                        databaseId,
+                        sourceId: source.id,
+                        ...(viewId ? { viewId } : {}),
+                        recordId: record.id,
+                      });
+                      close();
+                    }}
+                  >
+                    <Sparkles /> <Trans>Ask agent about record</Trans>
+                  </Button>
+                ) : null}
                 {onDuplicate ? (
                   <Button
                     role="menuitem"
@@ -3051,6 +3109,8 @@ function DatabaseTableSurface({
     Record<string, DatabaseCalculationFunction>
   >({});
   const [selectedViewId, setSelectedViewId] = useState(initialViewId ?? '');
+  const [agentScopeOverride, setAgentScopeOverride] = useState<DatabaseAgentScope | null>(null);
+  const [agentMenuOpen, setAgentMenuOpen] = useState(false);
   const [optimisticViewOrder, setOptimisticViewOrder] = useState<readonly string[] | null>(null);
   const [draggedViewId, setDraggedViewId] = useState<string | null>(null);
   const [dragOverViewId, setDragOverViewId] = useState<string | null>(null);
@@ -4901,6 +4961,23 @@ function DatabaseTableSurface({
       ]
     : canonicalSourceViews;
   const selectedView = sourceViews.find((view) => view.id === selectedViewId);
+  const defaultAgentScope: DatabaseAgentScope | null = selection
+    ? {
+        databaseId: selection.databaseId,
+        sourceId: selection.sourceId,
+        ...(selectedView?.id ? { viewId: selectedView.id } : {}),
+        ...(selectedRecordIds.size > 0 ? { recordIds: [...selectedRecordIds] } : {}),
+      }
+    : null;
+  const activeAgentScope = agentScopeOverride ?? defaultAgentScope;
+  const openDatabaseAgentScope = (scope: DatabaseAgentScope) => {
+    setAgentScopeOverride(scope);
+    setAgentMenuOpen(true);
+  };
+  const handleAgentMenuChange = (nextOpen: boolean) => {
+    setAgentMenuOpen(nextOpen);
+    if (!nextOpen) setAgentScopeOverride(null);
+  };
   const selectView = (viewId: string) => {
     const nextViewId = viewId === '__all__' ? '' : viewId;
     const nextCacheKey = `${selection?.databaseId ?? ''}/${selection?.sourceId ?? ''}/${nextViewId || '__all__'}/${showArchived ? 'archived' : 'active'}/${JSON.stringify({})}`;
@@ -5399,6 +5476,13 @@ function DatabaseTableSurface({
                     </>
                   )}
                 </span>
+              ) : null}
+              {activeAgentScope ? (
+                <DatabaseAgentScopeMenu
+                  scope={activeAgentScope}
+                  open={agentMenuOpen}
+                  onOpenChange={handleAgentMenuChange}
+                />
               ) : null}
               <Button
                 variant="default"
@@ -7245,6 +7329,7 @@ function DatabaseTableSurface({
                           }
                         : undefined
                     }
+                    onOpenAgentScope={openDatabaseAgentScope}
                     onCreateRecord={(title) => createRecord(title, { focusAfterCreate: true })}
                     onSelectionChange={setSelectedRecordIds}
                     onPaste={planTablePaste}

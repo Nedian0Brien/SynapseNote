@@ -93,6 +93,7 @@ describe('DatabaseRecordPeek context parity', () => {
       ),
     ).not.toBeNull();
     expect(screen.getByLabelText('Database breadcrumbs')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Ask agent' })).toBeDefined();
     expect(screen.getByRole('link', { name: 'Work' }).getAttribute('href')).toBe(
       '#database/db_work/ds_tasks',
     );

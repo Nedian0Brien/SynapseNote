@@ -784,6 +784,7 @@ describe('DatabaseTableDialog', () => {
     const onConvertProperty = mock(() => {});
     const onCalculationChange = mock(() => {});
     const onOpenPropertyContextInspector = mock(() => {});
+    const onOpenAgentScope = mock(() => {});
     const onOpenPropertySort = mock(() => {});
     const onOpenPropertyFilter = mock(() => {});
     const onDuplicateProperty = mock(() => {});
@@ -798,6 +799,7 @@ describe('DatabaseTableDialog', () => {
         onConvertProperty={onConvertProperty}
         onCalculationChange={onCalculationChange}
         onOpenPropertyContextInspector={onOpenPropertyContextInspector}
+        onOpenAgentScope={onOpenAgentScope}
         onOpenPropertySort={onOpenPropertySort}
         onOpenPropertyFilter={onOpenPropertyFilter}
         onDuplicateProperty={onDuplicateProperty}
@@ -812,6 +814,7 @@ describe('DatabaseTableDialog', () => {
     expect(screen.getByRole('menuitem', { name: 'Sort by property' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'Filter by property' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'Inspect property context' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Ask agent about property' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'Rename or configure property' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'Change property type' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'Duplicate property' })).toBeTruthy();
@@ -837,6 +840,14 @@ describe('DatabaseTableDialog', () => {
     expect(onOpenPropertyContextInspector).toHaveBeenCalledWith(
       source.properties.find((property) => property.id === 'prop_budget'),
     );
+
+    await user.click(screen.getByRole('button', { name: 'Property options for Budget' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Ask agent about property' }));
+    expect(onOpenAgentScope).toHaveBeenCalledWith({
+      databaseId: database.id,
+      sourceId: source.id,
+      propertyIds: ['prop_budget'],
+    });
 
     await user.click(screen.getByRole('button', { name: 'Property options for Budget' }));
     await user.click(screen.getByRole('menuitem', { name: 'Rename or configure property' }));
@@ -2461,6 +2472,27 @@ describe('DatabaseTableDialog', () => {
     if (!titleLink) throw new Error('canonical title link is missing');
     fireEvent.click(titleLink);
     expect(onOpen).toHaveBeenCalledWith(expect.objectContaining({ id: 'rec_first' }));
+  });
+
+  test('offers a row-level agent scope with the canonical record ID', () => {
+    const onOpenAgentScope = mock(() => {});
+    render(
+      <DatabaseTable
+        databaseId={database.id}
+        viewId="view_table"
+        source={source}
+        result={queryResult()}
+        onOpenAgentScope={onOpenAgentScope}
+      />,
+    );
+
+    fireEvent.click(screen.getByLabelText('Ask agent about record rec_first'));
+    expect(onOpenAgentScope).toHaveBeenCalledWith({
+      databaseId: database.id,
+      sourceId: source.id,
+      viewId: 'view_table',
+      recordId: 'rec_first',
+    });
   });
 
   test('returns focus to the edited cell after commit and Escape cancellation', async () => {

@@ -42,6 +42,11 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Separator } from '@/components/ui/separator';
 import { useIsEmbedded } from '@/hooks/use-is-embedded';
 import { VISIBLE_TARGETS } from '@/lib/handoff/targets';
+import {
+  type DatabaseAgentScope,
+  databaseAgentScopeInstruction,
+  databaseAgentScopeSummary,
+} from './database-agent-scope';
 import { TargetIcon } from './OpenInAgentMenuItem';
 import { type TerminalLaunchContextValue, useTerminalLaunch } from './TerminalLaunchContext';
 import { cliIconTargetId, visibleTerminalClis } from './terminal-cli-display';
@@ -54,6 +59,7 @@ interface OpenInAgentMenuProps {
   readonly input: HandoffDispatchInput | null;
   readonly open?: boolean;
   readonly onOpenChange?: (open: boolean) => void;
+  readonly triggerLabel?: ReactNode;
 }
 
 interface OpenWithAiPanelProps {
@@ -69,6 +75,7 @@ interface OpenWithAiPanelProps {
   readonly onPick: (target: TargetData, instruction: string) => void;
   /** Fired when the user picks a CLI row; carries the chosen CLI + instruction. */
   readonly onLaunchTerminal: (cli: TerminalCli, instruction: string) => void;
+  readonly databaseScope?: DatabaseAgentScope;
 }
 
 /**
@@ -84,6 +91,7 @@ function OpenWithAiPanel({
   disabled,
   onPick,
   onLaunchTerminal,
+  databaseScope,
 }: OpenWithAiPanelProps): ReactNode {
   const { t } = useLingui();
   const [instruction, setInstruction] = useState('');
@@ -107,6 +115,21 @@ function OpenWithAiPanel({
 
   return (
     <div className="flex flex-col gap-1">
+      {databaseScope ? (
+        <div
+          className="mx-2 mt-1 rounded-md border border-primary/30 bg-primary/5 px-2 py-1.5 text-xs"
+          data-testid="open-in-agent-database-scope"
+          data-database-agent-scope="explicit"
+        >
+          <div className="font-medium">Database scope</div>
+          <div className="mt-0.5 text-muted-foreground">
+            {databaseAgentScopeSummary(databaseScope)}
+          </div>
+          <div className="mt-0.5 text-muted-foreground">
+            Changes stay within this scope unless you ask to widen it.
+          </div>
+        </div>
+      ) : null}
       <div className="px-2 pt-2 pb-1.5">
         <Input
           value={instruction}
@@ -213,7 +236,12 @@ function OpenWithAiPanel({
  * visible "Open with AI" label (the visible text is the accessible name — no
  * `aria-label`, which would override it and break WCAG 2.5.3 Label in Name).
  */
-export function OpenInAgentMenu({ input, open, onOpenChange }: OpenInAgentMenuProps): ReactNode {
+export function OpenInAgentMenu({
+  input,
+  open,
+  onOpenChange,
+  triggerLabel,
+}: OpenInAgentMenuProps): ReactNode {
   const { t } = useLingui();
   const { states, refresh } = useInstalledAgents();
   const { dispatch } = useHandoffDispatch();
@@ -260,7 +288,9 @@ export function OpenInAgentMenu({ input, open, onOpenChange }: OpenInAgentMenuPr
   const inputWith = (instruction: string): HandoffDispatchInput | null => {
     if (input === null) return null;
     const trimmed = instruction.trim();
-    return trimmed ? { ...input, instruction: trimmed } : input;
+    const scoped = input.databaseScope ? databaseAgentScopeInstruction(input.databaseScope) : '';
+    const composed = [scoped, trimmed].filter(Boolean).join('\n\n');
+    return composed ? { ...input, instruction: composed } : input;
   };
 
   const handlePick = (target: TargetData, instruction: string): void => {
@@ -323,7 +353,7 @@ export function OpenInAgentMenu({ input, open, onOpenChange }: OpenInAgentMenuPr
           }
         >
           <Sparkles className="size-3.5" aria-hidden="true" />
-          <Trans>Open with AI</Trans>
+          {triggerLabel ?? <Trans>Open with AI</Trans>}
         </Button>
       </PopoverTrigger>
       <PopoverContent
@@ -338,6 +368,7 @@ export function OpenInAgentMenu({ input, open, onOpenChange }: OpenInAgentMenuPr
           disabled={input === null}
           onPick={handlePick}
           onLaunchTerminal={handleLaunchTerminal}
+          databaseScope={input?.databaseScope}
         />
       </PopoverContent>
     </Popover>

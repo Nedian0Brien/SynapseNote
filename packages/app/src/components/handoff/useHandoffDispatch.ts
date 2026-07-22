@@ -61,6 +61,7 @@ import {
 import { docNameToRelativePath, joinWorkspacePath, type Workspace } from '@/lib/workspace-paths';
 // Side-effect import only — loads the `Window.okDesktop?` global augmentation.
 import '@/lib/desktop-bridge-types';
+import type { DatabaseAgentScope } from './database-agent-scope';
 
 /**
  * Selection-scope payload carried on `HandoffDispatchInput.selection`. Holds
@@ -241,6 +242,9 @@ export interface HandoffDispatchInput {
    *  inserted in the create composer. Sanitized and budgeted (never trimmed)
    *  by `composeCreatePrompt`. Set alongside `createDescription`. */
   readonly createMentions?: readonly string[];
+  /** Database object scope shown in the agent composer and appended to the
+   * prompt as a stable-ID MCP boundary. Absent for ordinary file handoffs. */
+  readonly databaseScope?: DatabaseAgentScope;
   /** Optional free-text instruction the user typed in the toolbar "Open with
    *  AI" popover. Orthogonal to scope: it applies to file / folder / project
    *  (empty-space) dispatch — the three directive composers append it as a
