@@ -33,7 +33,10 @@ function detail(): DatabaseAgentRun {
       snapshotRevision: `sha256:${'3'.repeat(64)}`,
       expiresAt: '2026-07-20T01:00:00.000Z',
       risk: { level: 'low', reasons: [] },
-      approvals: [],
+      approvals: [
+        { code: 'alter_schema', required: true, reason: 'Schema changes need review' },
+        { code: 'sample_record_write', required: false, reason: 'Sample writes are optional' },
+      ],
     },
     proposedDiff: {
       complete: true,
@@ -157,6 +160,18 @@ describe('DatabaseAgentRunsDialog DOM behavior', () => {
     );
     expect(screen.getByTestId('database-agent-run-diff-summary').textContent).toContain(
       'Exact diff captured · 50 bytes',
+    );
+    expect(screen.getByTestId('database-agent-run-provenance').textContent).toContain(
+      'Agent suggestion',
+    );
+    expect(screen.getByTestId('database-agent-run-provenance').textContent).toContain(
+      'separate from human edits',
+    );
+    expect(screen.getByTestId('database-agent-proposal-group').textContent).toContain(
+      '2 approval scopes in this group',
+    );
+    expect(screen.getByTestId('database-agent-proposal-group').textContent).toContain(
+      'Change schema · required',
     );
     expect(screen.getByText('Show exact scope')).not.toBeNull();
     expect(screen.getByText('Show proposed diff')).not.toBeNull();

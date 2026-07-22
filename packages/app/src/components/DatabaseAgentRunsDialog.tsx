@@ -165,6 +165,22 @@ function agentRunScopeSummary(scope: DatabaseAgentRun['scope']): string {
   ].join(' · ');
 }
 
+function agentRunOriginLabel(actor: DatabaseAgentRun['actor']): string {
+  if (actor.kind === 'agent') return 'Agent suggestion';
+  if (actor.kind === 'human') return 'Human change';
+  return `${actor.kind[0]?.toUpperCase() ?? ''}${actor.kind.slice(1)} change`;
+}
+
+const agentApprovalLabels: Record<string, string> = {
+  create_database: 'Create database',
+  delete_database: 'Delete database',
+  alter_schema: 'Change schema',
+  autonomous_policy: 'Autonomous write policy',
+  sample_record_write: 'Write sample records',
+  verification_change: 'Change verification',
+  delete_record: 'Delete records',
+};
+
 export function DatabaseAgentRunDetail({
   run,
   onUndone,
@@ -245,6 +261,38 @@ export function DatabaseAgentRunDetail({
           <Trans>Raw prompts are not stored.</Trans>
         </p>
       </section>
+      <section
+        className="rounded-md border border-primary/30 bg-primary/5 p-3"
+        data-testid="database-agent-run-provenance"
+        data-agent-proposal-origin={run.actor.kind}
+      >
+        <h3 className="font-medium">
+          <Trans>Proposal source</Trans>
+        </h3>
+        <p className="mt-1 text-sm">
+          {agentRunOriginLabel(run.actor)} ·{' '}
+          {run.actor.kind === 'agent' ? (
+            <Trans>This proposal is separate from human edits until it is approved.</Trans>
+          ) : (
+            <Trans>This change is attributed to a human review action.</Trans>
+          )}
+        </p>
+        <details className="mt-2 rounded-md border bg-background/60 px-3 py-2 text-xs">
+          <summary className="cursor-pointer font-medium text-muted-foreground">
+            <Trans>Show source details</Trans>
+          </summary>
+          <dl className="mt-2 grid gap-1 font-mono">
+            <div className="flex justify-between gap-3">
+              <dt className="text-muted-foreground">Principal</dt>
+              <dd className="break-all text-right">{run.actor.principalId}</dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="text-muted-foreground">Session</dt>
+              <dd className="break-all text-right">{run.actor.sessionId ?? '—'}</dd>
+            </div>
+          </dl>
+        </details>
+      </section>
       <section>
         <h3 className="font-medium">
           <Trans>Scope</Trans>
@@ -291,6 +339,35 @@ export function DatabaseAgentRunDetail({
             {run.proposedDiff.originalBytes.toLocaleString()} bytes
           </p>
         )}
+      </section>
+      <section
+        className="rounded-md border border-amber-500/30 bg-amber-500/5 p-3"
+        data-testid="database-agent-proposal-group"
+      >
+        <h3 className="font-medium">
+          <Trans>Review group</Trans>
+        </h3>
+        <p className="mt-1 text-muted-foreground text-sm">
+          <Trans>
+            All changes in this exact plan are one review group and commit together. Review the
+            group before approving any write.
+          </Trans>
+        </p>
+        <p className="mt-2 text-muted-foreground text-xs">
+          {run.plan.approvals.length === 0
+            ? 'One exact plan · no extra approval scopes'
+            : `${run.plan.approvals.length} approval scope${run.plan.approvals.length === 1 ? '' : 's'} in this group`}
+        </p>
+        {run.plan.approvals.length > 0 ? (
+          <ul className="mt-1 list-disc pl-5 text-xs">
+            {run.plan.approvals.map((approval) => (
+              <li key={approval.code}>
+                {agentApprovalLabels[approval.code] ?? approval.code}
+                {approval.required ? ' · required' : ' · optional'}
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </section>
       <section className="grid gap-3 sm:grid-cols-2">
         <div>
