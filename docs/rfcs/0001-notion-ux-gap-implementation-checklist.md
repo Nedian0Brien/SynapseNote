@@ -368,8 +368,9 @@ treated as visual parity until a browser capture is attached.
   `DatabaseContextInspectorDialog.test.tsx` (6 tests / 25 expectations),
   `DatabaseContextInspectorDialog.dom.test.tsx` (1 test / 8 expectations),
   `database-context-inspector.test.ts` (3 tests / 13 expectations), the focused
-  `database-data-plane-api.test.ts` contract, and the Table menu journey. Map
-  to UX-902/UX-909.
+  `database-data-plane-api.test.ts` contract, the Table menu journey, and the
+  inline `DatabaseView.dom.test.tsx` scoped inspector journey (16 tests / 149
+  expectations). Map to UX-902/UX-909.
 - [ ] **NUI-602** Keep human-language plans first and stable IDs/files/risk/
   receipts under progressive disclosure; support selective approval only when
   atomic safety is preserved. Ghost review now leads with a human-readable

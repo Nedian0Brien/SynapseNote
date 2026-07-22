@@ -10,6 +10,7 @@ import type { DatabaseDesiredStateDraftInput } from '@nedian0brien/synapsenote-s
 import {
   AlertCircle,
   Archive,
+  Braces,
   ExternalLink,
   Filter,
   Loader2,
@@ -78,6 +79,12 @@ import { useJsxComponentHost } from './jsx-host-context.tsx';
 const LazyDatabaseTable = lazy(() =>
   import('@/components/DatabaseTableDialog').then((module) => ({
     default: module.DatabaseTable,
+  })),
+);
+
+const LazyDatabaseContextInspectorDialog = lazy(() =>
+  import('@/components/DatabaseContextInspectorDialog').then((module) => ({
+    default: module.DatabaseContextInspectorDialog,
   })),
 );
 
@@ -501,6 +508,7 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
   const [initialPropertyId, setInitialPropertyId] = useState<string>();
   const [initialSelectedRecordIds, setInitialSelectedRecordIds] = useState<readonly string[]>();
   const [replacementPickerOpen, setReplacementPickerOpen] = useState(false);
+  const [inlineContextInspectorOpen, setInlineContextInspectorOpen] = useState(false);
   const [inlineCreationOpen, setInlineCreationOpen] = useState(false);
   const [focusInlineNewRecord, setFocusInlineNewRecord] = useState(false);
   const [inlineMutationStatus, setInlineMutationStatus] = useState<'idle' | 'saving'>('idle');
@@ -1112,6 +1120,11 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
               <DropdownMenuItem onSelect={() => setReplacementPickerOpen(true)}>
                 <Search /> <Trans>Choose another view</Trans>
               </DropdownMenuItem>
+              {state.status === 'ready' ? (
+                <DropdownMenuItem onSelect={() => setInlineContextInspectorOpen(true)}>
+                  <Braces /> <Trans>Inspect agent context</Trans>
+                </DropdownMenuItem>
+              ) : null}
               <DropdownMenuItem onSelect={() => openInlineDatabaseSurface('properties')}>
                 <Plus /> <Trans>Manage properties</Trans>
               </DropdownMenuItem>
@@ -1537,6 +1550,17 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
       />
 
       <Suspense fallback={null}>
+        {inlineContextInspectorOpen && state.status === 'ready' ? (
+          <LazyDatabaseContextInspectorDialog
+            open
+            onOpenChange={setInlineContextInspectorOpen}
+            scope={{
+              databaseId: state.description.database.id,
+              sourceId: state.description.source?.id,
+              viewId: reference.data.viewId,
+            }}
+          />
+        ) : null}
         {fullDatabaseOpen ? (
           <LazyDatabaseTableDialog
             open

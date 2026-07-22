@@ -13,6 +13,7 @@
 - Latest inline history changeset: `../../.changeset/inline-database-history.md`
 - Latest inline state-safety changeset: `../../.changeset/inline-database-state-safety.md`
 - Latest inline empty-state changeset: `../../.changeset/inline-database-empty-state.md`
+- Latest inline agent-context changeset: `../../.changeset/inline-agent-context-inspector.md`
 
 ## Objective and completion rule
 
@@ -285,6 +286,18 @@ do not reconstruct behavior solely from this summary.
   expectations, including unresolved loading and empty-source journeys; app
   typecheck, Biome, and `git diff --check` pass. The full visual state matrix
   and cross-host capture remain open.
+
+### 2026-07-22 inline agent-context slice
+
+- The inline `Database view actions` menu now opens the existing
+  `What the agent saw` inspector scoped to the stable database/source/view
+  reference. The inspector remains lazy-loaded and uses the canonical
+  permission-scoped Context Pack contract; inline rendering does not embed
+  record data or invent a second retrieval path.
+- Focused evidence: `DatabaseView.dom.test.tsx` passes 16 tests / 149
+  expectations, including the scoped inspector entry; app typecheck, Biome,
+  and `git diff --check` pass. Full agent replay and transport matrix gates
+  remain open under NUI-601/NUI-603.
 
 ### 2026-07-22 mutation-policy matrix slice
 

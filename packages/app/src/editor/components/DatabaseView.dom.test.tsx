@@ -800,6 +800,9 @@ describe('DatabaseView', () => {
           ],
         });
       }
+      if (path.startsWith('/api/databases/inspect')) {
+        return Response.json({ kind: 'list', inspections: [] });
+      }
       const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
       requests.push({ path, body });
       if (path === '/api/databases/describe') {
@@ -1000,6 +1003,7 @@ describe('DatabaseView', () => {
     expect(screen.getByRole('menuitem', { name: 'Convert to full page' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'Choose another view' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'Manage properties' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Inspect agent context' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'View settings' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'Remove linked view' })).toBeTruthy();
     fireEvent.click(screen.getByRole('menuitem', { name: 'Manage properties' }));
@@ -1010,6 +1014,11 @@ describe('DatabaseView', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     await waitFor(() => expect(document.querySelector('[data-database-workspace]')).toBeNull());
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Database view actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Inspect agent context' }));
+    expect(await screen.findByText('What the agent saw')).toBeTruthy();
+    fireEvent.click(document.querySelector('[data-slot="dialog-close"]') as HTMLElement);
+    await waitFor(() => expect(screen.queryByText('What the agent saw')).toBeNull());
     fireEvent.pointerDown(screen.getByRole('button', { name: 'Database view actions' }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'View settings' }));
     expect(await screen.findByRole('heading', { name: 'Saved view settings' })).toBeTruthy();
