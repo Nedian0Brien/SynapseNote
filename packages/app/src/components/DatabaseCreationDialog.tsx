@@ -1,7 +1,7 @@
 import { Trans } from '@lingui/react/macro';
 import type { DatabaseDesiredStateDraftInput } from '@nedian0brien/synapsenote-server';
-import { FileSpreadsheet, FolderOpen, LayoutTemplate, Plus } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Bot, FileSpreadsheet, FolderOpen, LayoutTemplate, Plus } from 'lucide-react';
+import { type ReactNode, useEffect, useState } from 'react';
 import {
   createBlankDatabaseDesiredState,
   createDelimitedDatabaseDesiredState,
@@ -27,7 +27,7 @@ import {
 import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
-type CreationMode = 'blank' | 'template' | 'folder' | 'csv';
+type CreationMode = 'blank' | 'template' | 'folder' | 'csv' | 'agent';
 export type DatabaseCreationCloseReason = 'cancel' | 'submit';
 
 function detectedDelimiter(contents: string, filename: string): ',' | '\t' | ';' {
@@ -58,11 +58,14 @@ export function DatabaseCreationDialog({
   open,
   onOpenChange,
   onCreate,
+  agentComposer,
   presentation = 'dialog',
 }: {
   open: boolean;
   onOpenChange: (open: boolean, reason?: DatabaseCreationCloseReason) => void;
   onCreate: (desiredState: DatabaseDesiredStateDraftInput, mode: CreationMode) => void;
+  /** Host-provided installed-agent handoff surface. */
+  agentComposer?: ReactNode;
   presentation?: 'dialog' | 'page';
 }) {
   const [mode, setMode] = useState<CreationMode>('blank');
@@ -82,26 +85,30 @@ export function DatabaseCreationDialog({
   // but not a prerequisite for getting an editable database surface. Keep the
   // generated name deterministic so a cancelled/retried creation cannot leave
   // an ambiguous canonical key behind.
-  const prepareDesiredState = () =>
-    mode === 'blank'
-      ? createBlankDatabaseDesiredState({ name: name.trim() || 'Untitled database' })
-      : mode === 'template'
-        ? createTemplateDatabaseDesiredState({ name, template })
-        : mode === 'folder'
-          ? createExistingFolderDatabaseDesiredState({ name, folder, includeSubfolders })
-          : file
-            ? createDelimitedDatabaseDesiredState({
-                name,
-                contents: file.contents,
-                delimiter: detectedDelimiter(file.contents, file.name),
-              })
-            : (() => {
-                throw new Error('Choose a CSV or TSV file');
-              })();
+  const prepareDesiredState = () => {
+    if (mode === 'agent') {
+      throw new Error('Agent-assisted creation is handled by the agent composer');
+    }
+    if (mode === 'blank') {
+      return createBlankDatabaseDesiredState({ name: name.trim() || 'Untitled database' });
+    }
+    if (mode === 'template') {
+      return createTemplateDatabaseDesiredState({ name, template });
+    }
+    if (mode === 'folder') {
+      return createExistingFolderDatabaseDesiredState({ name, folder, includeSubfolders });
+    }
+    if (!file) throw new Error('Choose a CSV or TSV file');
+    return createDelimitedDatabaseDesiredState({
+      name,
+      contents: file.contents,
+      delimiter: detectedDelimiter(file.contents, file.name),
+    });
+  };
 
   let summary: DatabaseCreationSummary | null = null;
   let preparedState: DatabaseDesiredStateDraftInput | null = null;
-  if (mode === 'blank' || name.trim()) {
+  if (mode !== 'agent' && (mode === 'blank' || name.trim())) {
     try {
       preparedState = prepareDesiredState();
       summary = summarizeDatabaseCreation(preparedState);
@@ -167,6 +174,7 @@ export function DatabaseCreationDialog({
                 ['template', LayoutTemplate, 'Template'],
                 ['folder', FolderOpen, 'Existing folder'],
                 ['csv', FileSpreadsheet, 'CSV or TSV'],
+                ['agent', Bot, 'Assistant'],
               ] as const
             ).map(([value, Icon, label]) => (
               <Button
@@ -185,22 +193,57 @@ export function DatabaseCreationDialog({
             ))}
           </fieldset>
 
-          <label className="grid gap-1.5 text-sm" htmlFor="database-creation-name">
-            <span className="font-medium">
-              <Trans>Database name</Trans>
-            </span>
-            <Input
-              id="database-creation-name"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="Untitled database"
-              autoFocus
-            />
-          </label>
-          {mode === 'blank' ? (
-            <span className="-mt-3 block text-muted-foreground text-xs">
-              <Trans>Optional — you can rename it from the table header.</Trans>
-            </span>
+          {mode !== 'agent' ? (
+            <>
+              <label className="grid gap-1.5 text-sm" htmlFor="database-creation-name">
+                <span className="font-medium">
+                  <Trans>Database name</Trans>
+                </span>
+                <Input
+                  id="database-creation-name"
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  placeholder="Untitled database"
+                  autoFocus
+                />
+              </label>
+              {mode === 'blank' ? (
+                <span className="-mt-3 block text-muted-foreground text-xs">
+                  <Trans>Optional — you can rename it from the table header.</Trans>
+                </span>
+              ) : null}
+            </>
+          ) : null}
+
+          {mode === 'agent' ? (
+            <section
+              className="space-y-3 rounded-md border border-primary/30 bg-primary/5 p-3"
+              aria-label="Agent-assisted database creation"
+              data-database-creation-agent-surface
+            >
+              <div>
+                <h3 className="font-medium text-sm">
+                  <Trans>Describe the database you want</Trans>
+                </h3>
+                <p className="mt-1 text-muted-foreground text-xs">
+                  <Trans>
+                    Ask an installed agent to propose the database. The agent uses the same reviewed
+                    plan and commit boundary as the other creation methods.
+                  </Trans>
+                </p>
+              </div>
+              {agentComposer ?? (
+                <p className="rounded border bg-background p-3 text-muted-foreground text-sm">
+                  <Trans>Open the agent handoff from the workspace to continue.</Trans>
+                </p>
+              )}
+              <p className="text-muted-foreground text-xs">
+                <Trans>
+                  The agent can create properties, views, and sample pages through the database
+                  tools. Review the exact plan before anything becomes canonical.
+                </Trans>
+              </p>
+            </section>
           ) : null}
 
           {mode === 'template' ? (
@@ -385,9 +428,11 @@ export function DatabaseCreationDialog({
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false, 'cancel')}>
               <Trans>Cancel</Trans>
             </Button>
-            <Button type="button" onClick={submit}>
-              {mode === 'blank' ? <Trans>Create database</Trans> : <Trans>Review creation</Trans>}
-            </Button>
+            {mode !== 'agent' ? (
+              <Button type="button" onClick={submit}>
+                {mode === 'blank' ? <Trans>Create database</Trans> : <Trans>Review creation</Trans>}
+              </Button>
+            ) : null}
           </div>
         </DialogBody>
       </DialogContent>

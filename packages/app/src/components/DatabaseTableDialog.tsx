@@ -113,6 +113,7 @@ import { DatabaseViewManagerDialog } from '@/components/DatabaseViewManagerDialo
 import { DatabaseViewQuerySummary } from '@/components/DatabaseViewQuerySummary';
 import { DatabaseViewRenameDialog } from '@/components/DatabaseViewRenameDialog';
 import { type DatabaseViewTabAction, DatabaseViewTabMenu } from '@/components/DatabaseViewTabMenu';
+import { CreatePromptComposer } from '@/components/empty-state/CreatePromptComposer';
 import { resolvePageCover, resolvePageIcon } from '@/components/page-header-utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -7345,6 +7346,7 @@ function DatabaseTableSurface({
       <DatabaseCreationDialog
         open={creationOpen}
         presentation={isCanvasPresentation ? 'page' : presentation}
+        agentComposer={<CreatePromptComposer scenario="new-project" />}
         onOpenChange={(nextOpen, reason) => {
           setCreationOpen(nextOpen);
           if (!nextOpen && reason !== 'submit') onCreationCancelled?.();

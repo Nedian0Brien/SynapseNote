@@ -75,6 +75,26 @@ describe('DatabaseCreationDialog', () => {
     expect(onCreate.mock.calls[0]?.[1]).toBe('template');
   });
 
+  test('keeps agent-assisted creation inside the same start surface', () => {
+    const onCreate = mock(() => {});
+    render(
+      <DatabaseCreationDialog
+        open
+        onOpenChange={() => {}}
+        onCreate={onCreate}
+        agentComposer={<div>Installed agent composer</div>}
+      />,
+    );
+
+    fireEvent.click(screen.getByText('Assistant'));
+
+    expect(screen.getByLabelText('Agent-assisted database creation')).toBeDefined();
+    expect(screen.getByText('Describe the database you want')).toBeDefined();
+    expect(screen.getByText('Installed agent composer')).toBeDefined();
+    expect(screen.getByText(/same reviewed plan and commit boundary/i)).toBeDefined();
+    expect(onCreate).toHaveBeenCalledTimes(0);
+  });
+
   test('reads CSV, infers typed records, and submits one bounded creation draft', async () => {
     const onCreate = mock(() => {});
     render(<DatabaseCreationDialog open onOpenChange={() => {}} onCreate={onCreate} />);
