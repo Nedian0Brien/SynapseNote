@@ -45,12 +45,18 @@ export interface ComposerMentionInputHandle {
   getContent: () => { instruction: string; mentions: string[] };
 }
 
+export interface ComposerMentionContent {
+  instruction: string;
+  mentions: string[];
+}
+
 export function ComposerMentionInput({
   ref,
   ariaLabel,
   onEmptyChange,
   onContentChange,
   onMentionsChange,
+  onPromptChange,
   onSubmit,
   className,
   placeholder,
@@ -70,6 +76,8 @@ export function ComposerMentionInput({
    *  inline mentions (a file mentioned inline is not also shown as a top chip).
    *  Optional — surfaces with no top-row chips omit it. */
   onMentionsChange?: (mentions: string[]) => void;
+  /** Fired with the serialized prompt so hosts can render intent previews. */
+  onPromptChange?: (content: ComposerMentionContent) => void;
   onSubmit: () => void;
   className?: string;
   /** Static placeholder shown while empty (TipTap Placeholder extension). The
@@ -87,11 +95,13 @@ export function ComposerMentionInput({
   const onEmptyChangeRef = useRef(onEmptyChange);
   const onContentChangeRef = useRef(onContentChange);
   const onMentionsChangeRef = useRef(onMentionsChange);
+  const onPromptChangeRef = useRef(onPromptChange);
   const onSubmitRef = useRef(onSubmit);
   useEffect(() => {
     onEmptyChangeRef.current = onEmptyChange;
     onContentChangeRef.current = onContentChange;
     onMentionsChangeRef.current = onMentionsChange;
+    onPromptChangeRef.current = onPromptChange;
     onSubmitRef.current = onSubmit;
   });
 
@@ -133,9 +143,11 @@ export function ComposerMentionInput({
       },
     },
     onUpdate: ({ editor }) => {
+      const content = serializeComposerContent(editor);
       onEmptyChangeRef.current(isComposerEmpty(editor));
       onContentChangeRef.current?.(editor.getJSON());
-      onMentionsChangeRef.current?.(serializeComposerContent(editor).mentions);
+      onMentionsChangeRef.current?.(content.mentions);
+      onPromptChangeRef.current?.(content);
     },
   });
 
@@ -159,6 +171,7 @@ export function ComposerMentionInput({
     // restored draft's `@`-mention chips on first mount (no `onUpdate` fires for
     // the `content` seed).
     onMentionsChangeRef.current?.(serializeComposerContent(editor).mentions);
+    onPromptChangeRef.current?.(serializeComposerContent(editor));
   }, [editor]);
 
   useImperativeHandle(
@@ -174,7 +187,9 @@ export function ComposerMentionInput({
         // doc into the shared draft + inline-mention set here — otherwise a
         // prefilled starter brief wouldn't carry to the other placement.
         onContentChangeRef.current?.(editor.getJSON());
-        onMentionsChangeRef.current?.(serializeComposerContent(editor).mentions);
+        const content = serializeComposerContent(editor);
+        onMentionsChangeRef.current?.(content.mentions);
+        onPromptChangeRef.current?.(content);
       },
       getContent: () =>
         editor ? serializeComposerContent(editor) : { instruction: '', mentions: [] },

@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { DatabaseDesiredStateDraftSchema } from '@nedian0brien/synapsenote-server';
 import {
   createBlankDatabaseDesiredState,
+  createAgentDatabasePlanPreview,
   createDelimitedDatabaseDesiredState,
   createExistingFolderDatabaseDesiredState,
   createTemplateDatabaseDesiredState,
@@ -165,5 +166,27 @@ describe('database creation desired state', () => {
       propertyNames: ['Task', 'Status', 'Priority', 'Due', 'Assignee'],
       initialRecordCount: 2,
     });
+  });
+
+  test('turns a natural-language goal into a conservative, non-persistent plan preview', () => {
+    const preview = createAgentDatabasePlanPreview(
+      'Create a task tracker for launch work with status and due dates',
+    );
+    expect(preview).toMatchObject({
+      template: 'tasks',
+      templateName: 'Tasks',
+      properties: expect.arrayContaining([
+        { name: 'Task', type: 'title' },
+        { name: 'Status', type: 'select' },
+        { name: 'Due', type: 'date' },
+      ]),
+      views: [
+        { name: 'Table', layout: 'table' },
+        { name: 'Board', layout: 'board' },
+      ],
+    });
+    expect(preview?.name).toContain('task tracker for launch work');
+    expect(preview?.sampleRecords.length).toBe(2);
+    expect(createAgentDatabasePlanPreview('   ')).toBeNull();
   });
 });

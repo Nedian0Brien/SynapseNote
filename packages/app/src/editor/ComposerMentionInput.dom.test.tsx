@@ -153,6 +153,25 @@ describe('ComposerMentionInput (component)', () => {
     expect(ref.current?.getContent()).toEqual({ instruction: 'a research wiki', mentions: [] });
   });
 
+  test('emits serialized prompt content for intent previews', () => {
+    const ref = createRef<ComposerMentionInputHandle>();
+    const onPromptChange = mock(() => {});
+    render(
+      <ComposerMentionInput
+        ref={ref}
+        ariaLabel="Describe"
+        onEmptyChange={() => {}}
+        onPromptChange={onPromptChange}
+        onSubmit={() => {}}
+      />,
+    );
+    ref.current?.setText('a task tracker');
+    expect(onPromptChange).toHaveBeenLastCalledWith({
+      instruction: 'a task tracker',
+      mentions: [],
+    });
+  });
+
   test('a placeholder adds the data-placeholder hint while the field is empty', () => {
     render(
       <ComposerMentionInput

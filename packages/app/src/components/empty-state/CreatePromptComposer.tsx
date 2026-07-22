@@ -11,6 +11,7 @@ import {
   getComposerDraft,
   setComposerDraftDoc,
 } from '@/components/composer-draft-store';
+import { DatabaseAgentCreationPlanPreview } from '@/components/DatabaseAgentCreationPlanPreview';
 import {
   type CreateScenario,
   useCreateSuggestions,
@@ -37,6 +38,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import type { ComposerMentionContent } from '@/editor/ComposerMentionInput';
 import {
   ComposerMentionInput,
   type ComposerMentionInputHandle,
@@ -54,6 +56,8 @@ import { cn } from '@/lib/utils';
 interface CreatePromptComposerProps {
   readonly scenario: CreateScenario;
   readonly className?: string;
+  /** Show the database-only, non-persistent goal-to-shape preview. */
+  readonly databasePreview?: boolean;
 }
 
 /**
@@ -81,7 +85,11 @@ interface CreatePromptComposerProps {
  * agent (Cursor/Codex/Claude) the handoff would loop back, so the caller swaps
  * in `CopyablePromptList` there instead.
  */
-export function CreatePromptComposer({ scenario, className }: CreatePromptComposerProps) {
+export function CreatePromptComposer({
+  scenario,
+  className,
+  databasePreview = false,
+}: CreatePromptComposerProps) {
   const { t } = useLingui();
   const { states, refresh } = useInstalledAgents();
   const { dispatch } = useHandoffDispatch();
@@ -130,6 +138,10 @@ export function CreatePromptComposer({ scenario, className }: CreatePromptCompos
   // arrives. A natively-disabled button can't fire click, so the Create primary
   // stays clickable on empty input and routes the attempt here instead.
   const [showRequiredError, setShowRequiredError] = useState(false);
+  const [promptContent, setPromptContent] = useState<ComposerMentionContent>({
+    instruction: '',
+    mentions: [],
+  });
 
   // Field reports non-empty → any pending requirement error is now stale.
   function handleEmptyChange(nextEmpty: boolean) {
@@ -197,6 +209,7 @@ export function CreatePromptComposer({ scenario, className }: CreatePromptCompos
     // here or reappear in the bottom composer on the next doc navigation.
     inputRef.current?.clear();
     clearComposerDraft();
+    setPromptContent({ instruction: '', mentions: [] });
   }
 
   function handleCreate(targetId: HandoffTarget) {
@@ -226,6 +239,7 @@ export function CreatePromptComposer({ scenario, className }: CreatePromptCompos
     // here or reappear in the bottom composer on the next doc navigation.
     inputRef.current?.clear();
     clearComposerDraft();
+    setPromptContent({ instruction: '', mentions: [] });
   }
 
   // Enter (handled inside ComposerMentionInput) creates with the resolved target
@@ -321,6 +335,7 @@ export function CreatePromptComposer({ scenario, className }: CreatePromptCompos
           placeholder={t`A team knowledge base, a personal wiki, project docs...`}
           onEmptyChange={handleEmptyChange}
           onContentChange={setComposerDraftDoc}
+          onPromptChange={databasePreview ? setPromptContent : undefined}
           onSubmit={handleSubmit}
           initialDoc={initialDraftDoc}
           className="max-h-96 overflow-y-auto px-4 py-3 text-sm leading-relaxed subtle-scrollbar [&_.ProseMirror]:min-h-16"
@@ -465,6 +480,9 @@ export function CreatePromptComposer({ scenario, className }: CreatePromptCompos
           )}
         </div>
       </div>
+      {databasePreview ? (
+        <DatabaseAgentCreationPlanPreview goal={promptContent.instruction} />
+      ) : null}
       {/* Starter-brief chips — below the card, centered. Clicking one prefills
           the field (no auto-create), so they read as suggestions rather than
           card actions. Wraps on narrow widths. Suppressed for `existing-repo`:

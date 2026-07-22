@@ -7348,7 +7348,7 @@ function DatabaseTableSurface({
         key={creationInstanceKey}
         open={creationOpen}
         presentation={isCanvasPresentation ? 'page' : presentation}
-        agentComposer={<CreatePromptComposer scenario="new-project" />}
+        agentComposer={<CreatePromptComposer scenario="new-project" databasePreview />}
         onOpenChange={(nextOpen, reason) => {
           setCreationOpen(nextOpen);
           if (!nextOpen && reason !== 'submit') onCreationCancelled?.();

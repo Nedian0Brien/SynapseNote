@@ -26,6 +26,16 @@ export interface DatabaseCreationSummary {
   initialRecordCount: number;
 }
 
+export interface DatabaseAgentCreationPlanPreview {
+  goal: string;
+  name: string;
+  template: DatabaseCreationTemplateKey;
+  templateName: string;
+  properties: readonly { name: string; type: string }[];
+  views: readonly { name: string; layout: string }[];
+  sampleRecords: readonly Record<string, unknown>[];
+}
+
 export const DATABASE_CREATION_TEMPLATES: readonly DatabaseCreationTemplate[] = [
   { key: 'tasks', name: 'Tasks', description: 'Status, priority, due date, and assignee' },
   { key: 'projects', name: 'Projects', description: 'Status, owner, due date, and progress' },
@@ -47,6 +57,75 @@ export const DATABASE_CREATION_TEMPLATES: readonly DatabaseCreationTemplate[] = 
     description: 'Source, evidence type, confidence, and review date',
   },
 ];
+
+const AGENT_TEMPLATE_KEYWORDS: readonly [DatabaseCreationTemplateKey, readonly string[]][] = [
+  ['issue_tracking', ['issue', 'bug', 'ticket', '이슈', '버그']],
+  ['content_calendar', ['content', 'calendar', 'publishing', '콘텐츠', '캘린더', '게시']],
+  ['research_evidence', ['research', 'evidence', 'study', 'paper', '연구', '근거', '자료']],
+  ['crm', ['crm', 'customer', 'sales', 'contact', '고객', '영업', '거래처']],
+  ['feedback', ['feedback', 'request', 'survey', '피드백', '요청', '설문']],
+  ['projects', ['project', 'roadmap', '프로젝트', '로드맵']],
+  ['tasks', ['task', 'todo', 'checklist', 'work', '할 일', '업무', '작업']],
+];
+
+function agentTemplateForGoal(goal: string): DatabaseCreationTemplateKey {
+  const normalized = goal.toLocaleLowerCase();
+  return (
+    AGENT_TEMPLATE_KEYWORDS.find(([, keywords]) =>
+      keywords.some((keyword) => normalized.includes(keyword)),
+    )?.[0] ?? 'research_evidence'
+  );
+}
+
+function agentNameForGoal(goal: string, templateName: string): string {
+  const phrase = goal
+    .replace(/^(please|can you|i want|i need|create|build|make)\s+/i, '')
+    .split(/[.!?\n]/, 1)[0]
+    ?.trim()
+    .split(/\s+/)
+    .slice(0, 7)
+    .join(' ');
+  if (!phrase) return templateName;
+  return `${phrase.slice(0, 1).toLocaleUpperCase()}${phrase.slice(1)}`;
+}
+
+/**
+ * Compile a conservative, local proposal from a natural-language creation
+ * goal. This is preview-only: it never allocates IDs, writes a manifest, or
+ * bypasses the installed-agent handoff and exact-plan approval boundary.
+ */
+export function createAgentDatabasePlanPreview(
+  goalInput: string,
+): DatabaseAgentCreationPlanPreview | null {
+  const goal = goalInput.trim().replace(/\s+/g, ' ');
+  if (!goal) return null;
+  const template = agentTemplateForGoal(goal);
+  const templateDefinition = DATABASE_CREATION_TEMPLATES.find(
+    (candidate) => candidate.key === template,
+  );
+  if (!templateDefinition) return null;
+  const name = agentNameForGoal(goal, templateDefinition.name);
+  const desiredState = createTemplateDatabaseDesiredState({ name, template });
+  const source = desiredState.sources[0];
+  const views = (desiredState.views ?? []).map((view) => {
+    const layout = view.layout;
+    const layoutType =
+      layout && typeof layout === 'object' && 'type' in layout ? String(layout.type) : 'view';
+    return { name: view.name, layout: layoutType };
+  });
+  return {
+    goal,
+    name,
+    template,
+    templateName: templateDefinition.name,
+    properties: (source?.properties ?? []).map((property) => ({
+      name: property.name,
+      type: property.type,
+    })),
+    views,
+    sampleRecords: desiredState.sampleRecords?.map((record) => record.values) ?? [],
+  };
+}
 
 interface CreationProperty {
   key: string;

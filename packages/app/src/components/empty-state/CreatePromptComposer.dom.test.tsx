@@ -96,6 +96,7 @@ mock.module('@/editor/ComposerMentionInput', () => ({
     ariaLabel,
     placeholder,
     onEmptyChange,
+    onPromptChange,
     onSubmit,
     className,
   }: {
@@ -103,6 +104,7 @@ mock.module('@/editor/ComposerMentionInput', () => ({
     ariaLabel: string;
     placeholder?: string;
     onEmptyChange: (isEmpty: boolean) => void;
+    onPromptChange?: (content: { instruction: string; mentions: string[] }) => void;
     onSubmit: () => void;
     className?: string;
   }) => {
@@ -113,10 +115,12 @@ mock.module('@/editor/ComposerMentionInput', () => ({
       clear: () => {
         if (localRef.current) localRef.current.value = '';
         onEmptyChange(true);
+        onPromptChange?.({ instruction: '', mentions: [] });
       },
       setText: (text: string) => {
         if (localRef.current) localRef.current.value = text;
         onEmptyChange(text.trim() === '');
+        onPromptChange?.({ instruction: text, mentions: mockMentions });
       },
       getContent: () => ({ instruction: localRef.current?.value ?? '', mentions: mockMentions }),
     }));
@@ -126,7 +130,10 @@ mock.module('@/editor/ComposerMentionInput', () => ({
         aria-label={ariaLabel}
         placeholder={placeholder}
         className={className}
-        onChange={(event) => onEmptyChange(event.target.value.trim() === '')}
+        onChange={(event) => {
+          onEmptyChange(event.target.value.trim() === '');
+          onPromptChange?.({ instruction: event.target.value, mentions: mockMentions });
+        }}
         onKeyDown={(event) => {
           if (event.key === 'Enter' && !event.shiftKey) {
             event.preventDefault();
@@ -150,14 +157,19 @@ const { CreatePromptComposer } = await import('./CreatePromptComposer');
 const { TerminalLaunchProvider } = await import('@/components/handoff/TerminalLaunchContext');
 
 async function renderComposer(
-  opts: { withTerminal: boolean; scenario?: CreateScenario } = { withTerminal: true },
+  opts: { withTerminal: boolean; scenario?: CreateScenario; databasePreview?: boolean } = {
+    withTerminal: true,
+  },
 ) {
   const value = opts.withTerminal
     ? { launchInTerminal: (i: HandoffDispatchInput) => launchCalls.push(i), installedClis: {} }
     : null;
   render(
     <TerminalLaunchProvider value={value}>
-      <CreatePromptComposer scenario={opts.scenario ?? 'new-project'} />
+      <CreatePromptComposer
+        scenario={opts.scenario ?? 'new-project'}
+        databasePreview={opts.databasePreview}
+      />
     </TerminalLaunchProvider>,
   );
   // The smart-default effect resolves a selected agent once the install probe
@@ -201,6 +213,22 @@ describe('CreatePromptComposer Desktop / Terminal sections', () => {
     expect(screen.queryByText('Terminal')).toBeNull();
     expect(screen.queryByTestId('create-with-cli-claude')).toBeNull();
     expect(screen.queryByTestId('menu-separator')).toBeNull();
+  });
+
+  test('renders a non-persistent database plan preview from the natural-language goal', async () => {
+    states = { ...installedAll };
+    workspaceValue = { contentDir: '/tmp/project', pathSeparator: '/' };
+    await renderComposer({ withTerminal: false, databasePreview: true });
+
+    fireEvent.change(screen.getByLabelText('Describe the project you want to create'), {
+      target: { value: 'Create a task tracker for launch work' },
+    });
+
+    const preview = await screen.findByTestId('database-agent-plan-preview');
+    expect(preview.textContent).toContain('Agent proposal · not saved');
+    expect(preview.textContent).toContain('Tasks');
+    expect(preview.textContent).toContain('Board');
+    expect(preview.textContent).toContain('Plan launch');
   });
 
   test('selecting the Terminal Claude row switches the button to CLI mode; Create launches with the typed brief', async () => {
