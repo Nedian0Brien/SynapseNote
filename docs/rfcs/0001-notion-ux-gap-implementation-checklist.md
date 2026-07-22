@@ -1,7 +1,7 @@
 # RFC 0001: Notion UX gap implementation checklist
 
 - Status: Active
-- Re-audit date: 2026-07-22
+- Re-audit date: 2026-07-23
 - Scope: database creation, navigation, editing, inline views, and agent
   handoff in the web and Electron editor
 - UX audit: [Notion UX alignment checklist](./0001-notion-ux-alignment-checklist.md)
@@ -41,10 +41,11 @@ largest remaining mismatches are:
    summary/exact-plan disclosure. Agent Run retry/resume now has an exact-plan,
    idempotent HTTP/MCP handoff, durable restart recovery, failed-run controls,
    and a progressive receipt; real model/agent replay remains unverified.
-6. Component coverage is broad, but a complete first-use journey is still not
-   evidenced across both hosts. The local web renderer/API setup currently has
-   an IPv4/IPv6 and server-route mismatch, and no Electron journey has been
-   captured; these remain release blockers for NUI-105/NUI-701.
+6. Component coverage is broad, and the page-first web creation/table journey
+   is now captured on IPv4, but a complete first-use journey is still not
+   evidenced across both hosts. No Electron journey, full linked-view/record
+   journey, or release evidence has been captured; these remain release
+   blockers for NUI-105/NUI-701.
 
 ## Latest browser audit (2026-07-22)
 
@@ -71,6 +72,31 @@ database and landed on a canonical `#database/<database>/<source>/<view?>`
 route with a rendered table grid. This validates route continuity, not visual
 Notion parity; the creation chooser is still administration-dense and the
 Electron/full first-use journey remains open.
+
+## Latest browser audit (2026-07-23)
+
+The in-app browser reached the IPv4 development server at
+`http://127.0.0.1:5173/` with an HTTP 200 response and exercised the updated
+document-native entry point:
+
+- Selecting `New database` from the sidebar opened `#database/new` as a
+  full-page, non-overlay creation surface. The editor remained usable behind
+  the route, and the page presented the human-facing name, summary, creation
+  methods, and an advanced storage disclosure without a blurred modal backdrop.
+- Leaving the optional title blank or entering a title kept the same page-first
+  flow. Submitting Blank landed on the canonical
+  `#database/<database>/<source>/<view>` route with an editable Table view,
+  title focus, and a new-row affordance.
+- Creating the first and second rows completed in the running app. A transient
+  `transaction_in_progress` read barrier after the first commit was retried in
+  the table loader and did not surface as a persistent error; the second row
+  completed without an error alert.
+
+This closes the browser evidence for the page-first creation slice, but it does
+not close NUI-105 or NUI-701–NUI-705: no Electron journey, slash/new-page
+journey, full linked-view/record continuity, accessibility or responsive
+capture, usability timing, performance budget, or packaged-release evidence
+was collected in this audit.
 
 ## Implemented in the current slice
 

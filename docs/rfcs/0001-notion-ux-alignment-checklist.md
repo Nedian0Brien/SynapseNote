@@ -1,7 +1,7 @@
 # RFC 0001: Notion database UX alignment checklist
 
 - Status: Active
-- Audit date: 2026-07-22
+- Audit date: 2026-07-23
 - Scope: desktop and web editor database journeys
 - Engine checklist: [database implementation checklist](./0001-databases-implementation-checklist.md)
 - Capability reference: [Notion parity matrix](./0001-notion-parity-matrix.md)
@@ -147,7 +147,23 @@ journey:
   page/table journey or Electron parity, so no UX checkbox below is closed from
   this capture.
 
-## Re-audit snapshot (2026-07-22)
+## Follow-up browser evidence (2026-07-23)
+
+The IPv4 development server now serves the app at `http://127.0.0.1:5173/`.
+From the sidebar, `New database` opens a full-page, non-overlay creation
+surface at `#database/new`; Blank creation then lands on the canonical
+`#database/<database>/<source>/<view>` route with an editable table and a
+new-row affordance. The first two rows were created in the running app, and a
+short-lived `transaction_in_progress` read barrier was retried without leaving
+an error alert visible.
+
+This is evidence for the page-first creation slice only. It does not establish
+ordinary document chrome/sidebar integration, slash or normal New-page parity,
+linked-view and record continuity, Electron parity, accessibility/responsive
+behavior, usability timing, performance, or packaged-release readiness. Those
+acceptance gates remain unchecked below.
+
+## Re-audit snapshot (2026-07-23)
 
 The implementation has moved the surface closer to Notion, but it has not
 crossed the document-native UX bar:
@@ -161,7 +177,7 @@ crossed the document-native UX bar:
 | Full-page navigation | Stable `#database/<database>/<source>/<view?>` route and no-overlay page presentation | Route identity exists, but sidebar/recent/page chrome integration is incomplete. |
 | Inline linked view | Catalog → source → saved-view picker and replacement flow | Human-readable references exist; inline creation, conversion, and shared full/inline state are not complete. |
 | Direct editing | Direct-safe cell/row auto-approval exists; elevated mutations retain exact review | Safer direct manipulation is present, but optimistic/offline acknowledgement is not complete. |
-| Browser evidence | In-app web renderer is reachable on IPv6 and exposes the shell/creation modal, but the IPv4 `127.0.0.1` tab has no route, API calls return HTML 404s, and no Electron journey is captured | No visual UX gate may be marked complete from current evidence; local host/API wiring must be fixed before browser evidence is trustworthy. |
+| Browser evidence | In-app web renderer is reachable on IPv4 and the page-first creation/table journey is captured; no Electron or complete inline/record journey is captured | The page-first slice is evidenced, but NUI-105/NUI-701–NUI-705 remain release gates for cross-host, accessibility, responsive, usability, performance, and packaged-release parity. |
 
 ### Priority order for the next implementation pass
 

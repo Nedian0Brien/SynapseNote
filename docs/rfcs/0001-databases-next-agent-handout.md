@@ -62,14 +62,19 @@ the repository-wide check for final release readiness.
   contract; NUI-503, NUI-602, and NUI-603 are now closed for focused
   implementation evidence; NUI-105 and the P1/P2 agent, linked-view,
   responsive, and browser-journey gates remain open.
+- Notion parity matrix agent-native foundation rows: **8 moved from
+  Foundation to Done (2026-07-23)** after focused server/HTTP/MCP evidence for
+  catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
+  approval-bound commits, undo, and restart/backup idempotency. Agent View
+  policy/privacy/sandbox review remains Partial by design.
 - Notion UX alignment checklist: **2/128 complete**. The first insertion slice
   (user-facing `Database`/`Linked database` slash entries and an inline
   catalog/source/view picker) is implemented and DOM-tested, but its visual
-  gates remain open. An in-app browser capture reached the web renderer through
-  `http://[::1]:5173/` and confirmed the shell plus the administration-first
-  creation modal; API routes returned HTML 404 responses, the original
-  `127.0.0.1` tab was an IPv4/IPv6 listener mismatch, and no Electron journey
-  was captured.
+  gates remain open. A 2026-07-23 in-app browser capture reached the IPv4
+  renderer at `http://127.0.0.1:5173/`, opened `New database` as a full-page
+  non-overlay surface, and created two rows on the canonical database route.
+  Electron, slash/new-page, full linked-view/record, accessibility, responsive,
+  usability, performance, and packaged-release evidence remain open.
 - A-K, M-P are complete. L is complete except L-017. Q is complete except
   Q-012. R-005, R-017, and R-019 remain; R-018 is closed. S-010 and S-011
   are closed.
