@@ -848,6 +848,11 @@ function DatabaseAtomicApprovalScope({
   );
 }
 
+export type DatabaseTableViewState = {
+  scrollTop: number;
+  focusedCell?: { recordId: string; propertyId: string };
+};
+
 export function DatabaseTable({
   databaseId = '',
   viewId = null,
@@ -889,6 +894,8 @@ export function DatabaseTable({
   onVerificationAction,
   onManageProperties,
   onRemoveProperty,
+  initialViewState,
+  onViewStateChange,
 }: {
   /** Canonical database ID; optional only for isolated component harnesses. */
   databaseId?: string;
@@ -955,6 +962,8 @@ export function DatabaseTable({
   ) => void;
   onManageProperties?: (propertyId?: string) => void;
   onRemoveProperty?: (property: DatabaseProperty) => void;
+  initialViewState?: DatabaseTableViewState;
+  onViewStateChange?: (state: DatabaseTableViewState) => void;
 }) {
   'use no memo';
   const { i18n, t } = useLingui();
@@ -1046,13 +1055,51 @@ export function DatabaseTable({
   const [editError, setEditError] = useState<string | null>(null);
   const [cellRange, setCellRange] = useState<DatabaseCellRange | null>(null);
   const [cellMenu, setCellMenu] = useState<DatabaseCellMenu | null>(null);
-  const [scrollTop, setScrollTop] = useState(0);
+  const [scrollTop, setScrollTop] = useState(initialViewState?.scrollTop ?? 0);
   const [viewportHeight, setViewportHeight] = useState(620);
   const tableHostRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const cellMenuRef = useRef<HTMLDivElement>(null);
   const editFocusRef = useRef<{ recordId: string; propertyId: string } | null>(null);
+  const viewStateRef = useRef<DatabaseTableViewState>({
+    scrollTop: initialViewState?.scrollTop ?? 0,
+    ...(initialViewState?.focusedCell ? { focusedCell: initialViewState.focusedCell } : {}),
+  });
   const autoFocusNewRecordConsumedRef = useRef<string | number | null>(null);
+  const restoredViewStateRef = useRef(false);
+
+  const updateViewState = (patch: Partial<DatabaseTableViewState>) => {
+    const next = { ...viewStateRef.current, ...patch };
+    viewStateRef.current = next;
+    onViewStateChange?.(next);
+  };
+
+  useEffect(() => {
+    if (!initialViewState || restoredViewStateRef.current) return;
+    let frame = 0;
+    frame = requestAnimationFrame(() => {
+      restoredViewStateRef.current = true;
+      const container = scrollContainerRef.current;
+      if (container) {
+        container.scrollTop = initialViewState.scrollTop;
+        setScrollTop(initialViewState.scrollTop);
+      }
+      if (autoFocusNewRecord || focusNewRecordRequest !== null) return;
+      const focusedCell = initialViewState.focusedCell;
+      if (!focusedCell) return;
+      const rowIndex = result.records.findIndex((record) => record.id === focusedCell.recordId);
+      const columnIndex = properties.findIndex(
+        (property) => property.id === focusedCell.propertyId,
+      );
+      if (rowIndex < 0 || columnIndex < 0) return;
+      tableHostRef.current
+        ?.querySelector<HTMLElement>(
+          `[data-database-cell-row="${rowIndex}"][data-database-cell-column="${columnIndex}"]`,
+        )
+        ?.focus();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [autoFocusNewRecord, focusNewRecordRequest, initialViewState, properties, result.records]);
   useEffect(() => {
     if (!cellMenu) return;
     cellMenuRef.current?.querySelector<HTMLElement>('[role="menuitem"]:not([disabled])')?.focus();
@@ -1465,7 +1512,9 @@ export function DatabaseTable({
         containerClassName="max-h-[62vh] overflow-auto rounded-md border"
         containerRef={scrollContainerRef}
         onContainerScroll={(event) => {
-          setScrollTop(event.currentTarget.scrollTop);
+          const nextScrollTop = event.currentTarget.scrollTop;
+          setScrollTop(nextScrollTop);
+          updateViewState({ scrollTop: nextScrollTop });
           setViewportHeight(event.currentTarget.clientHeight);
         }}
       >
@@ -1935,6 +1984,9 @@ export function DatabaseTable({
                         }
                         onFocus={() => {
                           setEditError(null);
+                          updateViewState({
+                            focusedCell: { recordId: record.id, propertyId: property.id },
+                          });
                           setCellRange(
                             (current) =>
                               current ?? {
@@ -3028,6 +3080,10 @@ function DatabaseTableSurface({
   const queueReconciliationRunning = useRef(false);
   const databaseReadRetryCount = useRef(0);
   const databaseReadRetryKey = useRef('');
+  const tableViewStatesRef = useRef(new Map<string, DatabaseTableViewState>());
+  const viewResultCacheRef = useRef(
+    new Map<string, { description: DatabaseDescription; result: DatabaseQueryResult }>(),
+  );
   const offlineCacheKey = selection
     ? databaseOfflineCacheKey({
         ...selection,
@@ -3036,6 +3092,8 @@ function DatabaseTableSurface({
         calculations: tableCalculations,
       })
     : null;
+  const tableViewStateKey = `${selection?.sourceId ?? ''}:${selectedViewId || '__all__'}`;
+  const viewResultCacheKey = `${selection?.databaseId ?? ''}/${selection?.sourceId ?? ''}/${selectedViewId || '__all__'}/${showArchived ? 'archived' : 'active'}/${JSON.stringify(tableCalculations)}`;
   const databasePageTitle =
     description?.source?.name ??
     description?.database.name ??
@@ -4605,14 +4663,21 @@ function DatabaseTableSurface({
       return;
     }
     const controller = new AbortController();
-    const readRetryKey = `${selection.databaseId}/${selection.sourceId}/${selectedViewId}/${showArchived}`;
+    const readRetryKey = viewResultCacheKey;
     if (databaseReadRetryKey.current !== readRetryKey) {
       databaseReadRetryKey.current = readRetryKey;
       databaseReadRetryCount.current = 0;
     }
     setRelationCandidates([]);
     setButtonPlan(null);
-    setTableStatus('loading');
+    const cachedView = viewResultCacheRef.current.get(readRetryKey);
+    if (cachedView) {
+      setDescription(cachedView.description);
+      setResult(cachedView.result);
+      setTableStatus('success');
+    } else {
+      setTableStatus('loading');
+    }
     setPageStatus('idle');
     setPageError(null);
     setError(null);
@@ -4666,6 +4731,10 @@ function DatabaseTableSurface({
         setDescription(nextDescription);
         databaseReadRetryCount.current = 0;
         setResult(nextResult);
+        viewResultCacheRef.current.set(readRetryKey, {
+          description: nextDescription,
+          result: nextResult,
+        });
         setOptimisticViewOrder(null);
         setOfflineCachedAt(null);
         if (offlineCacheKey) {
@@ -4721,6 +4790,10 @@ function DatabaseTableSurface({
         if (cached) {
           setDescription(cached.description);
           setResult(cached.result);
+          viewResultCacheRef.current.set(readRetryKey, {
+            description: cached.description,
+            result: cached.result,
+          });
           setOptimisticViewOrder(null);
           setOfflineCachedAt(cached.cachedAt);
           setError(problem);
@@ -4745,6 +4818,7 @@ function DatabaseTableSurface({
     requestedViewLayout,
     offlineCacheKey,
     initialSelectedRecordIds,
+    viewResultCacheKey,
   ]);
 
   useEffect(() => {
@@ -4809,6 +4883,13 @@ function DatabaseTableSurface({
   const selectedView = sourceViews.find((view) => view.id === selectedViewId);
   const selectView = (viewId: string) => {
     const nextViewId = viewId === '__all__' ? '' : viewId;
+    const nextCacheKey = `${selection?.databaseId ?? ''}/${selection?.sourceId ?? ''}/${nextViewId || '__all__'}/${showArchived ? 'archived' : 'active'}/${JSON.stringify({})}`;
+    const cached = viewResultCacheRef.current.get(nextCacheKey);
+    if (cached) {
+      setDescription(cached.description);
+      setResult(cached.result);
+      setTableStatus('success');
+    }
     setSelectedViewId(nextViewId);
     saveDatabaseLastOpenedView(
       description?.database.id ?? '',
@@ -5375,6 +5456,8 @@ function DatabaseTableSurface({
                 selected={selection}
                 onSelect={(nextSelection) => {
                   setTableCalculations({});
+                  viewResultCacheRef.current.clear();
+                  tableViewStatesRef.current.clear();
                   setSelectedViewId('');
                   setFilterDialogOpen(false);
                   setViewSettingsOpen(false);
@@ -7072,6 +7155,10 @@ function DatabaseTableSurface({
                     focusNewRecordRequest={newRecordFocusRequest}
                     selectedRecordIds={selectedRecordIds}
                     calculations={tableCalculations}
+                    initialViewState={tableViewStatesRef.current.get(tableViewStateKey)}
+                    onViewStateChange={(state) => {
+                      tableViewStatesRef.current.set(tableViewStateKey, state);
+                    }}
                     viewPropertyIds={selectedView?.projection.propertyIds}
                     viewConfiguration={
                       selectedView?.layout.type === 'table'

@@ -28,10 +28,14 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   Suspense,
   useEffect,
+  useRef,
   useState,
 } from 'react';
 import { DatabaseRecordPeek } from '@/components/DatabaseRecordPeek';
-import type { DatabaseInitialRecordAction } from '@/components/DatabaseTableDialog';
+import type {
+  DatabaseInitialRecordAction,
+  DatabaseTableViewState,
+} from '@/components/DatabaseTableDialog';
 import { DatabaseViewQuerySummary } from '@/components/DatabaseViewQuerySummary';
 import { type DatabaseViewTabAction, DatabaseViewTabMenu } from '@/components/DatabaseViewTabMenu';
 import { Button } from '@/components/ui/button';
@@ -585,6 +589,7 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
   const [inlineSelectedRecordIds, setInlineSelectedRecordIds] = useState<Set<string>>(
     () => new Set(),
   );
+  const inlineTableViewStatesRef = useRef(new Map<string, DatabaseTableViewState>());
   const [recordPeek, setRecordPeek] = useState<{
     record: ProjectedDatabaseRecord;
     mode: 'side_peek' | 'center_peek';
@@ -1686,6 +1691,10 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
                 }
                 autoFocusNewRecord={reference.data.mode === 'inline' ? focusInlineNewRecord : false}
                 selectedRecordIds={inlineSelectedRecordIds}
+                initialViewState={inlineTableViewStatesRef.current.get(linkedView.id)}
+                onViewStateChange={(nextState) => {
+                  inlineTableViewStatesRef.current.set(linkedView.id, nextState);
+                }}
                 viewPropertyIds={linkedView.projection.propertyIds}
                 viewConfiguration={
                   linkedView.layout.type === 'table' ? linkedView.layout.configuration : undefined
