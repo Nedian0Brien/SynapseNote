@@ -966,6 +966,14 @@ describe('DatabaseView', () => {
     await waitFor(() =>
       expect(screen.queryByRole('heading', { name: 'Saved view settings' })).toBeNull(),
     );
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Database view actions' }));
+    expect(screen.getByRole('menuitem', { name: 'Manage views' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Manage views' }));
+    expect(await screen.findByRole('heading', { name: 'Manage saved views' })).toBeTruthy();
+    fireEvent.click(document.querySelector('[data-slot="dialog-close"]') as HTMLElement);
+    await waitFor(() =>
+      expect(screen.queryByRole('heading', { name: 'Manage saved views' })).toBeNull(),
+    );
     fireEvent.click(screen.getByLabelText('Open record rec_first'));
     expect(await screen.findByText('Linked canonical body.')).toBeTruthy();
     expect(window.location.hash).toBe(originalHash);

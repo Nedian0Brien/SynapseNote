@@ -476,7 +476,7 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
   const [initialRecordAction, setInitialRecordAction] = useState<DatabaseInitialRecordAction>();
   const [initialTablePaste, setInitialTablePaste] = useState<readonly DatabasePasteChange[]>();
   const [initialDatabaseSurface, setInitialDatabaseSurface] = useState<
-    'properties' | 'view-settings'
+    'properties' | 'view-settings' | 'view-manager'
   >();
   const [initialPropertyId, setInitialPropertyId] = useState<string>();
   const [initialSelectedRecordIds, setInitialSelectedRecordIds] = useState<readonly string[]>();
@@ -794,7 +794,7 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
   };
 
   const openInlineDatabaseSurface = (
-    surface: 'properties' | 'view-settings',
+    surface: 'properties' | 'view-settings' | 'view-manager',
     propertyId?: string,
   ) => {
     setInitialDatabaseSurface(surface);
@@ -956,6 +956,9 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => openInlineDatabaseSurface('view-settings')}>
                 <Settings2 /> <Trans>View settings</Trans>
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => openInlineDatabaseSurface('view-manager')}>
+                <Settings2 /> <Trans>Manage views</Trans>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem variant="destructive" onSelect={removeLinkedView}>

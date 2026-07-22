@@ -305,7 +305,7 @@ do not reconstruct behavior solely from this summary.
   explicit offline/stale status if a refresh loses transport. Only validated
   read snapshots are stored; credentials and pending writes never enter this
   cache, malformed entries are discarded, and the oldest views are evicted.
-  `DatabaseView.dom.test.tsx` covers 13/13 tests and 109 expectations, while
+  `DatabaseView.dom.test.tsx` covers 13/13 tests and 112 expectations, while
   `database-linked-view-cache.test.ts` covers reload rehydration and eviction
   (2/2 tests, 5 expectations). The full visual state matrix remains open under
   NUI-402.
@@ -323,7 +323,7 @@ do not reconstruct behavior solely from this summary.
   expectations, and `database-record-navigation.test.ts` covers 3/3 tests and
   6 expectations. Visual/cross-host continuity remains under NUI-105/NUI-701.
   reload/back-forward and conversion are covered by `App.dom.test.tsx`
-  (13/13, 46 expectations) and `DatabaseView.dom.test.tsx` (13/13, 109
+  (13/13, 46 expectations) and `DatabaseView.dom.test.tsx` (13/13, 112
   expectations). NUI-204 is closed at the implementation/evidence layer;
   visual browser gates remain separate.
 - Direct-safe cell edits and new-record creation now auto-approve the exact
@@ -386,7 +386,7 @@ do not reconstruct behavior solely from this summary.
   `database-commit.test.ts` 47/47 (505 expectations; includes redo
   preview/apply, restart rehydration, and idempotent replay),
   `App.dom.test.tsx` 13/13 (46 expectations), `DatabaseView.dom.test.tsx` 13/13
-  (109 expectations), `DatabaseRecordPageChrome.dom.test.tsx` 2/2 (32
+  (112 expectations), `DatabaseRecordPageChrome.dom.test.tsx` 2/2 (32
   expectations), `NewItemDialog.dom.test.tsx` 2/2 (7 expectations), `DatabaseSidebarSection.dom.test.tsx`
   3/3, `FileSidebar.dom.test.tsx` 20/20, app typecheck, targeted Biome, diff
   check, and documentation-link validation. The 10-minute full server suite
@@ -422,8 +422,9 @@ do not reconstruct behavior solely from this summary.
   records untouched; Commit remains the only bulk-write path.
 - Inline table blocks now wire the table-edge `+ Add property` and property
   header menus to the reviewed properties surface. The linked-view action menu
-  also exposes `Manage properties` and `View settings`, forwarding the stable
-  property/view target into the same canonical workspace dialogs.
+  also exposes `Manage properties`, `View settings`, and `Manage views`,
+  forwarding the stable property/view target into the same canonical workspace
+  dialogs.
 - Focused evidence: `DatabaseView.dom.test.tsx` 13/13 tests and 104
   expectations now cover single-cell paste, multi-cell review forwarding,
   review discard, and the inline property-surface handoff; app typecheck and
@@ -447,6 +448,17 @@ do not reconstruct behavior solely from this summary.
   toolbar visibility, close/preserve, and clear-selection behavior. App
   typecheck and targeted Biome pass; the repository-wide typecheck remains
   blocked by the native-config `cargo metadata` environment error.
+
+### 2026-07-22 inline saved-view management slice
+
+- Inline database action menus now expose `Manage views` in addition to
+  `Manage properties` and `View settings`. The action forwards into the
+  canonical `DatabaseViewManagerDialog`, so creating, renaming, duplicating,
+  reordering, and deleting saved views keep the existing exact-plan/review
+  behavior and stable view identities.
+- Focused evidence: the linked-view DOM journey now covers the menu entry and
+  `Manage saved views` surface; the suite passes 13/13 tests and 112
+  expectations. Targeted Biome and app typecheck pass, with no E2E rerun.
 
 ### 2026-07-22 dependency and privacy review slice
 
