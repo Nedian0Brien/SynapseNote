@@ -1084,6 +1084,11 @@ describe('DatabaseTableDialog', () => {
     expect(screen.getByRole('tab', { name: 'Active tasks' }).getAttribute('aria-selected')).toBe(
       'true',
     );
+    expect(document.querySelector('[data-database-primary-view-tabs]')).not.toBeNull();
+    expect(document.querySelector('[data-database-compact-view-switcher]')?.className).toContain(
+      'md:hidden',
+    );
+    expect(screen.getByRole('button', { name: 'Drag Active tasks view' })).not.toBeNull();
     await user.click(screen.getByRole('button', { name: 'View options for Active tasks' }));
     expect(screen.getByRole('menuitem', { name: 'Filters' })).not.toBeNull();
     expect(screen.getByRole('menuitem', { name: 'View settings' })).not.toBeNull();

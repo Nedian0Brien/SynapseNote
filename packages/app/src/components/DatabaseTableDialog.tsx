@@ -5493,6 +5493,7 @@ function DatabaseTableSurface({
                       className="mt-2 flex max-w-full items-center gap-1 overflow-x-auto"
                       aria-label="Database views"
                       data-database-view-tabs
+                      data-database-primary-view-tabs
                     >
                       <Button
                         type="button"
@@ -5641,26 +5642,28 @@ function DatabaseTableSurface({
                     />
                   </div>
                   <div className="flex items-center gap-2">
-                    <Select value={selectedViewId || '__all__'} onValueChange={selectView}>
-                      <SelectTrigger
-                        size="sm"
-                        className="min-w-40"
-                        aria-label="Saved database view"
-                      >
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__all__">
-                          <Trans>All records</Trans>
-                        </SelectItem>
-                        {sourceViews.map((view) => (
-                          <SelectItem key={view.id} value={view.id}>
-                            {view.favorite === true ? '★ ' : ''}
-                            {view.name}
+                    <div className="md:hidden" data-database-compact-view-switcher>
+                      <Select value={selectedViewId || '__all__'} onValueChange={selectView}>
+                        <SelectTrigger
+                          size="sm"
+                          className="min-w-40"
+                          aria-label="Saved database view"
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__all__">
+                            <Trans>All records</Trans>
                           </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                          {sourceViews.map((view) => (
+                            <SelectItem key={view.id} value={view.id}>
+                              {view.favorite === true ? '★ ' : ''}
+                              {view.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                     {description.database.buttons
                       .filter(
                         (button) =>
