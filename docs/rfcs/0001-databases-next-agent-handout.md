@@ -44,6 +44,7 @@
 - Latest last-view safety changeset: `../../.changeset/database-last-view-safety.md`
 - Latest view-state memory changeset: `../../.changeset/database-view-state-memory.md`
 - Latest linked-view override changeset: `../../.changeset/linked-database-view-overrides.md`
+- Latest cross-layout view-surface changeset: `../../.changeset/database-layout-contract.md`
 
 ## Objective and completion rule
 
@@ -81,7 +82,7 @@ the repository-wide check for final release readiness.
   catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
   approval-bound commits, undo, and restart/backup idempotency. Agent View
   policy/privacy/sandbox review remains Partial by design.
-- Notion UX alignment checklist: **65/128 complete**. The page-first and normal
+- Notion UX alignment checklist: **66/128 complete**. The page-first and normal
   New-page creation slices, the inline/linked insertion contract, and the
   table-first direct-manipulation, named canonical workspace canvas-route,
   shared navigation without a duplicate canvas rail, sidebar/recent/search/
@@ -96,7 +97,7 @@ the repository-wide check for final release readiness.
   layout-specific starter-suggestion, coherent view-settings, and active
   filter/sort explainer, saved-view tab lifecycle menu, last-view safety,
   saved-view switch memory, and independent linked-view settings without copied
-  rows are now
+  rows, and cross-layout title/tab/control/state/record-opening alignment are now
   evidenced. A
   2026-07-23 in-app browser capture reached the IPv4 renderer at
   `http://127.0.0.1:5173/`, created a full-page database, created two canonical
@@ -464,8 +465,15 @@ do not reconstruct behavior solely from this summary.
   the canonical manifest and record rows are unchanged. Inline Filters and View
   settings edit this block-local payload. Focused evidence: core schema 1 / 5,
   server query boundary 1 / 4, and independent linked-block DOM journey 1 / 10.
-- UX-501 through UX-510, UX-601, UX-602, UX-603, UX-604, UX-605, UX-606, UX-607, UX-608, and UX-609 are checked at the functional implementation/evidence
-  layer. Visual and broader property-family gates remain open.
+- Inline and canonical surfaces now expose visible Filters and View settings
+  controls on the same active-view boundary; all non-form renderers receive the
+  same record-opening callback and expose a layout marker for the state matrix.
+  Focused non-table Feed evidence is 1 DOM journey / 6 expectations; the
+  canonical table journey remains the shared tab/control baseline.
+- UX-501 through UX-510, UX-601, UX-602, UX-603, UX-604, UX-605, UX-606,
+  UX-607, UX-608, UX-609, and UX-610 are checked at the functional
+  implementation/evidence layer. Visual and broader property-family gates
+  remain open.
 
 ### 2026-07-23 sidebar and recent database navigation
 
@@ -476,7 +484,7 @@ do not reconstruct behavior solely from this summary.
   catalog-backed database under `Recently opened`, reopening the same stable
   route. Focused evidence: sidebar 3 tests / 7 expectations and recent UI 1 / 5.
 - UX-203, UX-204, UX-206, UX-209, UX-309, UX-501, UX-502, UX-503, UX-504,
-  UX-505, UX-506, UX-507, UX-508, UX-509, UX-510, UX-601, UX-602, UX-603, UX-604, UX-605, UX-606, UX-607, UX-608, and UX-609 are checked. The 768px visual responsive check remains
+  UX-505, UX-506, UX-507, UX-508, UX-509, UX-510, UX-601, UX-602, UX-603, UX-604, UX-605, UX-606, UX-607, UX-608, UX-609, and UX-610 are checked. The 768px visual responsive check remains
   open.
 
 ### 2026-07-23 stable inline/full-page conversion
