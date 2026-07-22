@@ -265,9 +265,9 @@ UX-205, and UX-208.
 UX-201 remains open because the canvas still shares the `DatabaseTableDialog`
 implementation internally; extracting a named main-canvas surface and normal
 page chrome is the next architectural slice. UX-203, UX-204, UX-206, UX-207,
-UX-209, and UX-210 likewise remain open pending sidebar/recent integration,
-normal page chrome, entry-point coverage, responsive acceptance, and conversion
-journeys.
+UX-209 likewise remain open pending sidebar/recent integration, normal page
+chrome, entry-point coverage, and responsive acceptance. UX-210 is covered by
+the conversion evidence below.
 
 ### Sidebar and recent database navigation evidence (2026-07-23)
 
@@ -279,8 +279,17 @@ targets as first-class recent entries; its UI test confirms a catalog-backed
 database appears under `Recently opened` and reopens the canonical route.
 `DatabaseSidebarSection.dom.test.tsx` passes 3 tests / 7 expectations and the
 focused recent-navigation test passes 1 / 5. This closes UX-203. Normal page
-chrome, additional entry points, responsive proof, and inline/full-page
-conversion remain open under UX-204/206/209/210.
+chrome, additional entry points, and responsive proof remain open under
+UX-204/206/209.
+
+### Inline/full-page conversion evidence (2026-07-23)
+
+The linked-view action now writes the current `databaseId`, `sourceId`, and
+`viewId` together with the new `mode` whenever a block is converted. The
+conversion path never embeds records or clones a source. The focused
+`DatabaseView.dom.test.tsx` projection test exercises the menu action and
+asserts the stable references plus absence of an embedded record payload. This
+closes UX-210; responsive and broader visual conversion journeys remain open.
 
 ## Re-audit snapshot (2026-07-23)
 
@@ -290,7 +299,7 @@ crossed the document-native UX bar:
 | Measure | Current result | Interpretation |
 | --- | --- | --- |
 | Engine implementation checklist | 310/335 numbered items complete | Core/database and agent contracts are substantially implemented. |
-| Notion UX checklist | 38/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, table-first direct manipulation, canonical canvas routing, and sidebar/recent database navigation are evidenced; History, full visual, page chrome, state-matrix, and cross-host journey gates remain open. |
+| Notion UX checklist | 39/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, table-first direct manipulation, canonical canvas routing, sidebar/recent database navigation, and stable inline/full-page conversion are evidenced; History, full visual, page chrome, state-matrix, and cross-host journey gates remain open. |
 | First-use database entry | `New database` in sidebar, empty states, normal new-page dialog, command palette, plus slash-menu `New database`/`Linked view of database`; normal picker exposes Page/Database chooser and the resulting route lands in an editable table. `Open databases` enters the no-overlay page workspace. | Discovery and the web first-use path are evidenced; ordinary sidebar/recent integration and Electron proof remain open. |
 | Blank creation | Optional title, `Untitled database` fallback, direct-safe exact-plan commit, immediate source/view selection, title/new-row focus | The blank human path is continuous in DOM coverage; template/import/agent paths intentionally retain review and visual browser proof remains open. |
 | Full-page navigation | Stable `#database/<database>/<source>/<view?>` route, no-overlay canvas presentation, sidebar source section, and command-palette recents | Route and navigation identity are evidenced; normal page chrome and broader entry points remain incomplete. |
@@ -490,7 +499,7 @@ capability alone is insufficient.
       permission-denied states.
 - [ ] **UX-209** Support a responsive wide canvas without broken page chrome or
       unintended two-axis scrolling.
-- [ ] **UX-210** Offer inline/full-page conversion only when records and stable
+- [x] **UX-210** Offer inline/full-page conversion only when records and stable
       identities remain shared, never cloned.
 
 ### UX-3 — Inline and linked insertion

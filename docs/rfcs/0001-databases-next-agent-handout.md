@@ -68,10 +68,10 @@ the repository-wide check for final release readiness.
   catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
   approval-bound commits, undo, and restart/backup idempotency. Agent View
   policy/privacy/sandbox review remains Partial by design.
-- Notion UX alignment checklist: **38/128 complete**. The page-first and normal
+- Notion UX alignment checklist: **39/128 complete**. The page-first and normal
   New-page creation slices, the inline/linked insertion contract, and the
-  table-first direct-manipulation, canonical canvas-route, and sidebar/recent
-  navigation slices are now evidenced. A
+  table-first direct-manipulation, canonical canvas-route, sidebar/recent
+  navigation, and stable conversion slices are now evidenced. A
   2026-07-23 in-app browser capture reached the IPv4 renderer at
   `http://127.0.0.1:5173/`, created a full-page database, created two canonical
   rows, created an inline database from the slash menu, saved an inline row,
@@ -278,8 +278,18 @@ do not reconstruct behavior solely from this summary.
 - The command palette's existing omnibar recents now have UI evidence for a
   catalog-backed database under `Recently opened`, reopening the same stable
   route. Focused evidence: sidebar 3 tests / 7 expectations and recent UI 1 / 5.
-- UX-203 is checked. UX-204/206/209/210 remain open for normal page chrome,
-  additional entry points, responsive acceptance, and conversion journeys.
+- UX-203 is checked. UX-204/206/209 remain open for normal page chrome,
+  additional entry points, and responsive acceptance.
+
+### 2026-07-23 stable inline/full-page conversion
+
+- Converting a linked `DatabaseView` now serializes the current
+  `databaseId/sourceId/viewId` alongside the new `mode`, even when the host
+  block's existing props are sparse. It never writes embedded records or
+  clones a source.
+- The focused `DatabaseView.dom.test.tsx` projection test exercises the menu
+  action and asserts the stable references plus no record payload. UX-210 is
+  checked; responsive and broader visual conversion proof remain open.
 
 ### 2026-07-22 first Notion-UX insertion slice
 
