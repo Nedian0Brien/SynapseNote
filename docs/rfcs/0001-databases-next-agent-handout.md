@@ -890,7 +890,8 @@ do not reconstruct behavior solely from this summary.
   SHA-256 idempotency-key hash.
 - Focused evidence: `database-agent-run-store.test.ts` passes 4 tests / 20
   expectations; the retry HTTP contract passes 1 test / 8 expectations; and
-  `DatabaseAgentRunsDialog.dom.test.tsx` passes 4 tests / 21 expectations.
+  `DatabaseAgentRunsDialog.dom.test.tsx` passes 4 tests / 23 expectations,
+  including a compact progressively disclosed recovery receipt summary.
   Core/server typechecks, app typecheck, targeted Biome, and `git diff --check`
   pass. No full server suite or E2E rerun was needed.
 - NUI-603 remains open: the current plan engine is process-memory backed, so a

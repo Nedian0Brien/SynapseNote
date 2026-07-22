@@ -310,5 +310,11 @@ describe('DatabaseAgentRunsDialog DOM behavior', () => {
     expect(screen.getAllByText('Update the incident status').length).toBeGreaterThan(0);
     expect(screen.queryByTestId('database-agent-run-retry')).toBeNull();
     expect(screen.getByText(/succeeded ·/)).not.toBeNull();
+    expect(screen.getByTestId('database-agent-run-recovery-receipt').textContent).toContain(
+      'Attempt 2',
+    );
+    expect(screen.getByTestId('database-agent-run-recovery-receipt').textContent).toContain(
+      'mut_dom',
+    );
   });
 });

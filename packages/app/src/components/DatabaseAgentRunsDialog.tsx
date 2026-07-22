@@ -311,6 +311,47 @@ export function DatabaseAgentRunDetail({
           </p>
         </div>
       </section>
+      {run.recovery && run.recovery.action !== 'initial' ? (
+        <section
+          className="rounded-md border border-primary/30 bg-primary/5 p-3"
+          data-testid="database-agent-run-recovery-receipt"
+        >
+          <h3 className="font-medium">
+            <Trans>Recovery receipt</Trans>
+          </h3>
+          <p className="mt-1 text-muted-foreground text-sm">
+            <Trans>
+              Attempt {run.recovery.attempt} · {run.recovery.action} from{' '}
+              {run.recovery.sourceRunId ?? 'the original run'}
+            </Trans>
+          </p>
+          <details className="mt-2 rounded-md border px-3 py-2 text-xs">
+            <summary className="cursor-pointer font-medium text-muted-foreground">
+              <Trans>Show recovery receipt</Trans>
+            </summary>
+            <dl className="mt-2 grid gap-1 font-mono">
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">Plan hash</dt>
+                <dd className="break-all text-right">{run.plan.hash}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">Mutation</dt>
+                <dd className="break-all text-right">
+                  {run.execution.mutationId ?? 'not applied'}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">Verification</dt>
+                <dd className="text-right">{run.verification.status}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">Undo</dt>
+                <dd className="text-right">{run.undo.available ? 'available' : 'not available'}</dd>
+              </div>
+            </dl>
+          </details>
+        </section>
+      ) : null}
       {run.failure ? (
         <section className="rounded-md border border-destructive/30 bg-destructive/5 p-3">
           <h3 className="font-medium text-destructive">

@@ -440,7 +440,7 @@ treated as visual parity until a browser capture is attached.
   approval/autonomy token, and idempotency key, while preserving the failed run
   as audit history. Durable plan/checkpoint recovery after a process restart,
   MCP parity, and a UI receipt display remain open. Evidence:
-  `DatabaseAgentRunsDialog.dom.test.tsx` (4 tests / 21 expectations), the
+  `DatabaseAgentRunsDialog.dom.test.tsx` (4 tests / 23 expectations), the
   focused `database-data-plane-api.test.ts` retry contract (1 test / 8
   expectations), and `database-agent-run-store.test.ts` (4 tests / 20
   expectations). Map to UX-908/UX-910.
