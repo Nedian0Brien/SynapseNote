@@ -68,10 +68,11 @@ the repository-wide check for final release readiness.
   catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
   approval-bound commits, undo, and restart/backup idempotency. Agent View
   policy/privacy/sandbox review remains Partial by design.
-- Notion UX alignment checklist: **39/128 complete**. The page-first and normal
+- Notion UX alignment checklist: **40/128 complete**. The page-first and normal
   New-page creation slices, the inline/linked insertion contract, and the
   table-first direct-manipulation, canonical canvas-route, sidebar/recent
-  navigation, and stable conversion slices are now evidenced. A
+  navigation, stable conversion, and durable History/receipt recovery slices
+  are now evidenced. A
   2026-07-23 in-app browser capture reached the IPv4 renderer at
   `http://127.0.0.1:5173/`, created a full-page database, created two canonical
   rows, created an inline database from the slash menu, saved an inline row,
@@ -249,10 +250,10 @@ do not reconstruct behavior solely from this summary.
   recovery, keyboard navigation and TSV/multi-cell paste, persisted layout and
   density, and secondary action menus.
 - `DatabaseView.dom.test.tsx` covers the linked inline selection, review,
-  undo/redo shortcut, and full-page handoff paths. UX-401–UX-406 and UX-408–
-  UX-412 are checked in the alignment checklist. UX-407 remains open until a
-  dedicated History surface exposes durable receipts; the broader visual,
-  accessibility, responsive, Electron, and release gates also remain open.
+  undo/redo shortcut, and full-page handoff paths. UX-401–UX-412 are checked in
+  the alignment checklist; UX-407 is now closed by the History entry and the
+  durable Agent Run receipt surface. The broader visual, accessibility,
+  responsive, Electron, and release gates remain open.
 
 ### 2026-07-23 canonical database canvas route
 
@@ -290,6 +291,21 @@ do not reconstruct behavior solely from this summary.
 - The focused `DatabaseView.dom.test.tsx` projection test exercises the menu
   action and asserts the stable references plus no record payload. UX-210 is
   checked; responsive and broader visual conversion proof remain open.
+
+### 2026-07-23 database History entry
+
+- `Database actions → History` is now present on the management and canonical
+  canvas table surfaces. App wiring opens `DatabaseAgentRunsDialog`, which
+  exposes compact history plus the selected exact scope, proposed/actual diff,
+  mutation ID, verification status, undo token, and recovery controls.
+- Focused evidence: the table menu test passes 1 / 32 filtered expectations;
+  the compact receipt test passes 1 / 8; the adjacent recovery test covers
+  preview/apply undo without leaving the History surface. The inline mutation
+  suite continues to cover Undo/Redo buttons and `Ctrl/Cmd+Z` plus
+  `Shift+Ctrl/Cmd+Z`, including stale-revision recovery.
+- UX-407 is checked. Remaining UX work is normal page chrome, cross-entry-point
+  parity, inline/full-page state matrix, Electron, responsive, accessibility,
+  usability, performance, and packaged-release evidence.
 
 ### 2026-07-22 first Notion-UX insertion slice
 

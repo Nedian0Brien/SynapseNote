@@ -246,8 +246,9 @@ archived rows. `DatabaseView.dom.test.tsx` additionally covers the inline
 selection, review, undo/redo shortcut, and full-page handoff paths. The normal
 table row-create path now emits a monotonic focus request only after the exact
 commit succeeds, so a disabled mutation state cannot steal the next useful
-input position. The dedicated History surface and durable receipt browsing
-remain the unresolved part of UX-407.
+input position. The table's `Database actions → History` entry now opens the
+same durable Agent Runs receipt surface used by the agent recovery flow; the
+focused entry-point and receipt tests below close UX-407.
 
 ### Canonical canvas route evidence (2026-07-23)
 
@@ -291,6 +292,32 @@ conversion path never embeds records or clones a source. The focused
 asserts the stable references plus absence of an embedded record payload. This
 closes UX-210; responsive and broader visual conversion journeys remain open.
 
+### Database History and recovery evidence (2026-07-23)
+
+The `Database actions` menu now exposes a human-facing `History` item on both
+the management and canonical canvas database surfaces. App wiring passes the
+selection through to `DatabaseAgentRunsDialog`, so the entry opens durable Agent
+Run receipts instead of a transient mutation log. The receipt surface shows the
+compact run list, exact scope, proposed and actual diff, mutation ID,
+verification status, and the undo token; its recovery test previews and applies
+undo without leaving the History surface. The inline view mutation journey also
+covers the table's Undo/Redo buttons plus `Ctrl/Cmd+Z` and `Shift+Ctrl/Cmd+Z`
+shortcuts, including a revision-conflict recovery state.
+
+Focused evidence:
+
+- `DatabaseTableDialog.dom.test.tsx`: the History menu item invokes the host
+  recovery surface (1 test / 32 expectations when filtered).
+- `DatabaseAgentRunsDialog.dom.test.tsx`: compact history loads the selected
+  exact run and exposes scope/diff/mutation/undo details (1 / 8); the adjacent
+  recovery test previews and applies the exact undo receipt.
+- `DatabaseView.dom.test.tsx`: inline Undo/Redo controls, keyboard shortcuts,
+  and stale-revision conflict behavior remain covered in the long mutation
+  journey.
+
+This closes UX-407; cross-host, accessibility, responsive, visual, usability,
+performance, and packaged-release evidence remain open.
+
 ## Re-audit snapshot (2026-07-23)
 
 The implementation has moved the surface closer to Notion, but it has not
@@ -299,12 +326,12 @@ crossed the document-native UX bar:
 | Measure | Current result | Interpretation |
 | --- | --- | --- |
 | Engine implementation checklist | 310/335 numbered items complete | Core/database and agent contracts are substantially implemented. |
-| Notion UX checklist | 39/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, table-first direct manipulation, canonical canvas routing, sidebar/recent database navigation, and stable inline/full-page conversion are evidenced; History, full visual, page chrome, state-matrix, and cross-host journey gates remain open. |
+| Notion UX checklist | 40/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, table-first direct manipulation, canonical canvas routing, sidebar/recent database navigation, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, page chrome, state-matrix, and cross-host journey gates remain open. |
 | First-use database entry | `New database` in sidebar, empty states, normal new-page dialog, command palette, plus slash-menu `New database`/`Linked view of database`; normal picker exposes Page/Database chooser and the resulting route lands in an editable table. `Open databases` enters the no-overlay page workspace. | Discovery and the web first-use path are evidenced; ordinary sidebar/recent integration and Electron proof remain open. |
 | Blank creation | Optional title, `Untitled database` fallback, direct-safe exact-plan commit, immediate source/view selection, title/new-row focus | The blank human path is continuous in DOM coverage; template/import/agent paths intentionally retain review and visual browser proof remains open. |
 | Full-page navigation | Stable `#database/<database>/<source>/<view?>` route, no-overlay canvas presentation, sidebar source section, and command-palette recents | Route and navigation identity are evidenced; normal page chrome and broader entry points remain incomplete. |
 | Inline linked view | Catalog → source → saved-view picker, inline creation, shared rows, visible tabs, replacement, conversion, duplicate configuration, and block removal | The core inline/linked contract is evidenced; the complete visual state matrix remains open. |
-| Direct editing | Direct-safe cell/row auto-approval, optimistic reconciliation, offline/conflict/failure states, and post-commit focus are covered by focused DOM evidence | Elevated mutations retain exact review; a dedicated History/receipt browsing surface and full visual/cross-host acceptance remain open. |
+| Direct editing | Direct-safe cell/row auto-approval, optimistic reconciliation, offline/conflict/failure states, post-commit focus, standard undo/redo, and durable History receipts are covered by focused DOM evidence | Elevated mutations retain exact review; full visual/cross-host acceptance remains open. |
 | Browser evidence | In-app web renderer is reachable on IPv4 and normal New-page, page-first, inline creation, record sharing, and cancellation journeys are captured; no Electron or complete state-matrix journey is captured | The core web slice is evidenced, but NUI-105/NUI-701–NUI-705 remain release gates for cross-host, accessibility, responsive, usability, performance, and packaged-release parity. |
 
 ### Priority order for the next implementation pass
@@ -535,8 +562,10 @@ capability alone is insufficient.
       cursor/focus jumps.
 - [x] **UX-406** Show compact saving, saved, offline, conflict, and failed states
       without converting the table into a transaction screen.
-- [ ] **UX-407** Expose undo/redo through standard shortcuts/history; place exact
-      receipts under History.
+- [x] **UX-407** Expose undo/redo through standard shortcuts/history; place exact
+      receipts under History. Evidence: the table History entry, Agent Runs
+      receipt-detail/recovery tests, and inline shortcut/button mutation journey
+      above.
 - [x] **UX-408** Support row selection/bulk actions and trigger review only when
       the UX-005 threshold is crossed.
 - [x] **UX-409** Keep archive and permanent delete distinct and explain recovery.
