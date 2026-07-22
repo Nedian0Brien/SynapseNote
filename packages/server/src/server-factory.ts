@@ -62,6 +62,69 @@ import { createConflictLifecycleSeedExtension } from './conflict-lifecycle-seed.
 import { resolveProjectTemplates } from './content/templates-resolver.ts';
 import { type ContentFilter, createContentFilter } from './content-filter.ts';
 import { dropPendingDocs, recordContributor } from './contributor-tracker.ts';
+import {
+  createDefaultDatabaseGlobalAccessResolver,
+  createDefaultDatabaseQueryAccessResolver,
+} from './database-access-policy.ts';
+import {
+  createDatabaseAgentPromptRetentionStore,
+  type DatabaseAgentPromptRetentionStore,
+} from './database-agent-prompt-retention.ts';
+import {
+  createDatabaseAgentRunStore,
+  type DatabaseAgentRunStore,
+} from './database-agent-run-store.ts';
+import {
+  createDatabaseAutomationService,
+  type DatabaseAutomationService,
+} from './database-automation.ts';
+import {
+  createDatabaseAutomationNotificationStore,
+  type DatabaseAutomationNotificationStore,
+} from './database-automation-notification-store.ts';
+import {
+  createDatabaseAutonomyStore,
+  type DatabaseAutonomyStore,
+} from './database-autonomy-store.ts';
+import { createDatabaseButtonPlanner } from './database-button.ts';
+import {
+  createDatabaseButtonExecutor,
+  type DatabaseButtonExecutor,
+} from './database-button-executor.ts';
+import { createDatabaseCommentStore, type DatabaseCommentStore } from './database-comment-store.ts';
+import { createDatabaseCommitEngine } from './database-commit.ts';
+import { createDatabaseConnectionExecutor } from './database-connection-executor.ts';
+import { createDatabaseDataPlane, type DatabaseDataPlane } from './database-data-plane.ts';
+import { createDatabaseFormRetentionService } from './database-form-retention.ts';
+import { createDatabaseFormStateStore } from './database-form-state-store.ts';
+import {
+  createDatabaseGitRecoveryService,
+  type DatabaseGitRecoveryService,
+} from './database-git-recovery.ts';
+import {
+  createDatabaseIndexCoordinator,
+  type DatabaseIndexCoordinator,
+} from './database-index-coordinator.ts';
+import {
+  createDatabasePermissionStore,
+  type DatabasePermissionStore,
+} from './database-permission-store.ts';
+import { createDatabasePlanEngine } from './database-plan.ts';
+import { createDatabaseRecordIndex, type DatabaseRecordIndex } from './database-record-index.ts';
+import { createDatabaseRepairEngine, type DatabaseRepairEngine } from './database-repair.ts';
+import {
+  type DatabaseEmbeddingProvider,
+  DatabaseSemanticIndex,
+} from './database-semantic-index.ts';
+import { createDatabaseStore, type DatabaseStore } from './database-store.ts';
+import { createDatabaseSummaryStore, type DatabaseSummaryStore } from './database-summary-store.ts';
+import { createDatabaseTaskService, type DatabaseTaskService } from './database-task-service.ts';
+import { createDatabaseTaskStore, type DatabaseTaskStore } from './database-task-store.ts';
+import { createDatabaseTemplateExecutor } from './database-template-executor.ts';
+import {
+  createDatabaseTemplateScheduler,
+  type DatabaseTemplateScheduler,
+} from './database-template-scheduler.ts';
 import { docNameToRelativePath, getDocExtension, stripDocExtension } from './doc-extensions.ts';
 import { runDocLineageGuard } from './doc-lineage-guard.ts';
 import {
@@ -327,6 +390,37 @@ export interface ServerInstance {
    */
   maintenanceCoordinator?: MaintenanceCoordinator;
   contentFilter: ContentFilter;
+  /** Canonical project database manifests discovered during async startup. */
+  databaseStore: DatabaseStore;
+  /** Rebuildable typed projection of canonical database record files. */
+  databaseRecordIndex: DatabaseRecordIndex;
+  /** Preview-first repair engine for canonical records and derived index drift. */
+  databaseRepairEngine: DatabaseRepairEngine;
+  /** Private derived cache for provenance-bearing generated record summaries. */
+  databaseSummaryStore: DatabaseSummaryStore;
+  /** Owner-only bounded lifecycle history powering the Agent Runs panel. */
+  databaseAgentRunStore: DatabaseAgentRunStore;
+  /** Explicit, TTL-bound raw prompt retention that never enters audit artifacts. */
+  databaseAgentPromptRetentionStore: DatabaseAgentPromptRetentionStore;
+  databaseAutonomyStore: DatabaseAutonomyStore;
+  /** Owner-only database action grants and sharing policy. */
+  databasePermissionStore: DatabasePermissionStore;
+  /** Durable, idempotent database automation scheduler and run history. */
+  databaseAutomationService: DatabaseAutomationService;
+  databaseButtonExecutor: DatabaseButtonExecutor;
+  /** Durable recipient-scoped notifications emitted by database automations. */
+  databaseAutomationNotificationStore: DatabaseAutomationNotificationStore;
+  /** Revision-safe, shareable page and property comment threads. */
+  databaseCommentStore: DatabaseCommentStore;
+  /** Agent-oriented discovery, schema inspection, and exact typed query surface. */
+  databaseDataPlane: DatabaseDataPlane;
+  /** Detects and explicitly aborts partially applied multi-file Git database transitions. */
+  databaseGitRecovery: DatabaseGitRecoveryService;
+  /** Durable local lifecycle metadata for import, migration, and bulk jobs. */
+  databaseTaskStore: DatabaseTaskStore;
+  /** Product launch and execution service for durable database jobs. */
+  databaseTaskService: DatabaseTaskService;
+  subscribeDatabaseChanges: DatabaseIndexCoordinator['subscribeChanges'];
   /**
    * In-memory basename → paths index used by the mdast→PM wiki-embed
    * handler. Seeded at boot from disk; updated live via the asset arms
@@ -350,8 +444,8 @@ export interface ServerInstance {
    * Names of subsystems that failed to initialize during boot.
    * Read AFTER `await ready` for a stable list; reads before may return a partial result.
    * Empty array means all subsystems initialized successfully.
-   * Possible values: `'shadow-repo'`, `'managed-rename-recovery'`, `'file-watcher'`,
-   * `'head-watcher'`.
+   * Possible values: `'database-store'`, `'database-task-store'`, `'shadow-repo'`,
+   * `'managed-rename-recovery'`, `'file-watcher'`, `'head-watcher'`.
    */
   readonly degraded: readonly string[];
   /**
@@ -446,7 +540,11 @@ export function resolveUpstreamChanges(
         '--name-only',
         '--format=C%x00%an%x00%ae',
       ],
-      withHiddenWindowsConsole({ cwd: projectDir, encoding: 'utf-8', timeout: 5000 }),
+      withHiddenWindowsConsole({
+        cwd: projectDir,
+        encoding: 'utf-8',
+        timeout: 5000,
+      }),
     );
   } catch (err) {
     // spawnSync normally surfaces ENOENT/timeout via result.error rather than
@@ -525,6 +623,93 @@ export function createServer(options: ServerOptions): ServerInstance {
   } = options;
 
   const log = getLogger('server');
+  let loadedPrincipal: Principal | null = null;
+  const databaseStore = createDatabaseStore({ projectDir, contentDir });
+  const databaseSummaryStore = createDatabaseSummaryStore({ projectDir });
+  const databaseAgentRunStore = createDatabaseAgentRunStore({ projectDir });
+  const databaseAgentPromptRetentionStore = createDatabaseAgentPromptRetentionStore();
+  const databaseAutonomyStore = createDatabaseAutonomyStore({ projectDir });
+  const databasePermissionStore = createDatabasePermissionStore({ projectDir });
+  const databaseAutomationNotificationStore = createDatabaseAutomationNotificationStore({
+    projectDir,
+  });
+  const databaseTaskStore = createDatabaseTaskStore({ projectDir });
+  const databaseRecordIndex = createDatabaseRecordIndex({
+    contentDir,
+    databaseStore,
+  });
+  const databaseFormStateStore = createDatabaseFormStateStore(projectDir);
+  const databaseCommentStore = createDatabaseCommentStore({
+    projectDir,
+    resolveRecord: (databaseId, recordId) => {
+      const definition = databaseStore.getById(databaseId);
+      const record = databaseRecordIndex.getById(recordId);
+      if (!definition || !record || record.databaseId !== databaseId) return null;
+      const source = definition.sources.find((candidate) => candidate.id === record.sourceId);
+      return source ? { definition, source, record, people: definition.people } : null;
+    },
+    // The local collaboration server currently represents the project owner.
+    // Keeping this as an explicit policy seam lets shared/server deployments
+    // replace it without weakening the storage layer's authorization contract.
+    authorize: () => true,
+  });
+  const databaseIndexCoordinator = createDatabaseIndexCoordinator({
+    contentDir,
+    databaseRecordIndex,
+  });
+  const databaseGitRecovery = createDatabaseGitRecoveryService({
+    projectDir,
+    contentDir,
+    isKnownRecordPath: (path) => databaseRecordIndex.inspectPath(path).managed,
+    afterAbort: async () => {
+      await databaseStore.reload();
+      await databaseIndexCoordinator.refresh('git-sync');
+    },
+  });
+  const databasePlanEngine = createDatabasePlanEngine({
+    databaseStore,
+    databaseRecordIndex,
+    projectDir,
+    contentDir,
+  });
+  const databaseButtonPlanner = createDatabaseButtonPlanner({
+    databaseStore,
+    databaseRecordIndex,
+    databasePlanEngine,
+    // The local server currently serves the project owner. Exact internal writes
+    // still pass through plan write guards and exact composite approval; webhook
+    // steps are delivered only by the durable isolated Button executor.
+    resolvePermission: () => ({
+      allowed: true,
+      policyId: 'project-owner-button-planning',
+      policyRevision: 'sha256:1dfe3d423e5d5a1bdb88ce4a8c9356d8497872c00d292b734eaf015ed599aa63',
+    }),
+  });
+  const databaseDataPlane = createDatabaseDataPlane({
+    databaseStore,
+    databaseRecordIndex,
+    databasePlanEngine,
+    databaseButtonPlanner,
+    resolveQueryAccess: createDefaultDatabaseQueryAccessResolver({
+      ownerPrincipalId: () => loadedPrincipal?.id ?? 'user:local-owner',
+      permissionState: () => databasePermissionStore.current(),
+    }),
+    resolveGlobalAccess: createDefaultDatabaseGlobalAccessResolver({
+      ownerPrincipalId: () => loadedPrincipal?.id ?? 'user:local-owner',
+      permissionState: () => databasePermissionStore.current(),
+    }),
+    bindMutationActorToAccessPrincipal: true,
+    formStateStore: databaseFormStateStore,
+    isCanonicalTransitionActive: () => databaseGitRecovery.isBlocked(),
+  });
+  const databaseRepairEngine = createDatabaseRepairEngine({
+    projectDir,
+    contentDir,
+    databaseStore,
+    databaseRecordIndex,
+    refreshDatabaseIndex: () => databaseIndexCoordinator.refresh('transaction'),
+  });
+  databaseDataPlane.configureRepairEngine(databaseRepairEngine);
 
   function readProjectAttachmentFolderPath(): string {
     const project = readConfigSafely({
@@ -616,7 +801,64 @@ export function createServer(options: ServerOptions): ServerInstance {
   // Provider identity for the cache key + the service's re-warm trigger. A change
   // here (provider/model/dims) re-loads the embedder and invalidates the cache.
   function semanticProviderFingerprint(cfg: ResolvedSemanticConfig): string {
-    return `${normalizeProviderId(cfg.baseUrl)}|${cfg.model}|${cfg.dimensions ?? DEFAULT_EMBEDDINGS_DIMENSIONS}`;
+    return `${normalizeProviderId(cfg.baseUrl)}|${cfg.model}|${
+      cfg.dimensions ?? DEFAULT_EMBEDDINGS_DIMENSIONS
+    }`;
+  }
+
+  function loadConfiguredEmbedder(cfg: ResolvedSemanticConfig): Promise<Embedder | null> {
+    return options.embedderLoader
+      ? options.embedderLoader()
+      : loadOpenAiEmbedder({
+          keyStore: options.embeddingsKeyStore ?? null,
+          config: {
+            baseUrl: cfg.baseUrl,
+            model: cfg.model,
+            dimensions: cfg.dimensions,
+          },
+        });
+  }
+
+  function configureDatabaseSemanticIndex(cfg: ResolvedSemanticConfig): void {
+    const providerId = normalizeProviderId(cfg.baseUrl);
+    const dimensions = cfg.dimensions ?? DEFAULT_EMBEDDINGS_DIMENSIONS;
+    const provider: DatabaseEmbeddingProvider | null = cfg.enabled
+      ? {
+          id: providerId,
+          model: cfg.model,
+          dimensions,
+          location: 'remote',
+          async embed(texts, { role }) {
+            const embedder = await loadConfiguredEmbedder(cfg);
+            if (!embedder) throw new Error('Semantic embedding provider is not keyed');
+            if (
+              !options.embedderLoader &&
+              (embedder.providerId !== providerId ||
+                embedder.modelId !== cfg.model ||
+                embedder.dims !== dimensions)
+            ) {
+              throw new Error(
+                'Loaded semantic embedding provider does not match its configuration',
+              );
+            }
+            return (await embedder.embed(texts, { role })).map((vector) => [...vector]);
+          },
+        }
+      : null;
+    databaseDataPlane.configureSemanticIndex(
+      new DatabaseSemanticIndex({
+        configuration: {
+          enabled: cfg.enabled,
+          providerId,
+          model: cfg.model,
+          dimensions,
+          privacy: cfg.enabled ? 'remote_allowed' : 'blocked',
+          propertyIds: 'searchable',
+          includeBody: true,
+        },
+        provider,
+      }),
+    );
   }
 
   // Re-apply a just-persisted config to the live in-process consumers by
@@ -659,6 +901,7 @@ export function createServer(options: ServerOptions): ServerInstance {
       enabled: semCfg.enabled,
       providerFingerprint: semanticProviderFingerprint(semCfg),
     });
+    configureDatabaseSemanticIndex(semCfg);
     log.info(
       {
         docName: configDocName,
@@ -795,11 +1038,19 @@ export function createServer(options: ServerOptions): ServerInstance {
   let backlinkIndex: BacklinkIndex;
   let tagIndex: TagIndex;
   let shadowRef: ShadowRef;
+  let databaseTaskService!: DatabaseTaskService;
   let maintenanceCoordinator: MaintenanceCoordinator | undefined;
   let persistence: ReturnType<typeof createPersistenceExtension>;
   let hocuspocus: Hocuspocus;
   let sessionManager: AgentSessionManager;
   let cc1Broadcaster: CC1Broadcaster | null = null;
+  let stopDatabaseRealtime: () => void = () => {};
+  let databaseTemplateScheduler: DatabaseTemplateScheduler | null = null;
+  let databaseTemplateSchedulerTimer: ReturnType<typeof setInterval> | null = null;
+  let databaseAutomationService!: DatabaseAutomationService;
+  let databaseButtonExecutor!: DatabaseButtonExecutor;
+  let databaseAutomationTimer: ReturnType<typeof setInterval> | null = null;
+  let databaseFormRetentionTimer: ReturnType<typeof setInterval> | null = null;
   let agentFocusBroadcaster: AgentFocusBroadcaster | null = null;
   let agentPresenceBroadcaster: AgentPresenceBroadcaster | null = null;
   let invalidateReferencedAssetsCache: (() => void) | null = null;
@@ -811,22 +1062,14 @@ export function createServer(options: ServerOptions): ServerInstance {
   // so a runtime provider/model/dims change re-warms cleanly.
   const initialSemanticConfig = readSemanticSearchConfig();
   const semanticSearch = new SemanticSearchService({
-    loadEmbedder:
-      options.embedderLoader ??
-      (() => {
-        const cfg = readSemanticSearchConfig();
-        return loadOpenAiEmbedder({
-          keyStore: options.embeddingsKeyStore ?? null,
-          config: { baseUrl: cfg.baseUrl, model: cfg.model, dimensions: cfg.dimensions },
-        });
-      }),
+    loadEmbedder: () => loadConfiguredEmbedder(readSemanticSearchConfig()),
     cacheDir: join(getLocalDir(projectDir), 'embeddings'),
     enabled: initialSemanticConfig.enabled,
     providerFingerprint: semanticProviderFingerprint(initialSemanticConfig),
   });
+  configureDatabaseSemanticIndex(initialSemanticConfig);
 
   // Mutable principal holder — populated by the async load in initAsync.
-  let loadedPrincipal: Principal | null = null;
   const forceUnloadSet = new Set<Document>();
   let shutdownAllowsUnload = false;
   // Assigned synchronously in the init `try` immediately after `new Hocuspocus` (before the try
@@ -1036,7 +1279,11 @@ export function createServer(options: ServerOptions): ServerInstance {
           });
       },
     });
-    backlinkIndex = new BacklinkIndex({ projectDir, contentDir, contentFilter });
+    backlinkIndex = new BacklinkIndex({
+      projectDir,
+      contentDir,
+      contentFilter,
+    });
     tagIndex = new TagIndex({ contentDir, contentFilter });
     // Boot-time scan, fire-and-forget: the factory itself is synchronous.
     // `initAsync` awaits a second `init()` after the watcher starts; TagIndex
@@ -1050,6 +1297,162 @@ export function createServer(options: ServerOptions): ServerInstance {
     });
 
     shadowRef = { current: shadowRepo };
+    const databaseCommitEngine = createDatabaseCommitEngine({
+      projectDir,
+      contentDir,
+      databaseStore,
+      databaseRecordIndex,
+      refreshDatabaseIndex: () => databaseIndexCoordinator.refresh('transaction'),
+      databasePlanEngine,
+      getShadow: () => shadowRef.current ?? null,
+      branch: () => headWatcher?.getLastKnownBranch() ?? 'main',
+      resolveAutonomyPolicy: ({ databaseId, sessionId, sessionToken }) =>
+        databaseAutonomyStore.resolve(databaseId, sessionId, sessionToken),
+      consumeAutonomyBudget: (input) => databaseAutonomyStore.consume(input),
+      agentRunStore: databaseAgentRunStore,
+    });
+    databaseDataPlane.configureCommitEngine(databaseCommitEngine);
+    databaseTaskService = createDatabaseTaskService({
+      projectDir,
+      contentDir,
+      taskStore: databaseTaskStore,
+      databaseStore,
+      databaseRecordIndex,
+      databasePlanEngine,
+      databaseCommitEngine,
+      refreshDatabaseIndex: () => databaseIndexCoordinator.refresh('transaction'),
+    });
+    databaseTemplateScheduler = createDatabaseTemplateScheduler({
+      projectDir,
+      databaseStore,
+      execute: createDatabaseTemplateExecutor({
+        databasePlanEngine,
+        databaseCommitEngine,
+      }),
+    });
+    void ready
+      .then(() => databaseTemplateScheduler?.tick())
+      .catch((err) => log.warn({ err }, '[database-template] initial schedule tick failed'));
+    databaseTemplateSchedulerTimer = setInterval(() => {
+      void ready
+        .then(() => databaseTemplateScheduler?.tick())
+        .catch((err) => log.warn({ err }, '[database-template] schedule tick failed'));
+    }, 60_000);
+    databaseTemplateSchedulerTimer.unref?.();
+    const databaseConnectionExecutor = createDatabaseConnectionExecutor({
+      projectDir,
+    });
+    databaseButtonExecutor = createDatabaseButtonExecutor({
+      projectDir,
+      commit: (input) => databaseDataPlane.commit(input),
+      getIdempotentCommit: (idempotencyKey) =>
+        databaseCommitEngine.getIdempotentResult(idempotencyKey),
+      resolvePermission: () => ({
+        allowed: true,
+        policyId: 'project-owner-button-planning',
+        policyRevision: 'sha256:1dfe3d423e5d5a1bdb88ce4a8c9356d8497872c00d292b734eaf015ed599aa63',
+      }),
+      resolveExternalPolicy: (step) =>
+        databaseConnectionExecutor.resolvePolicy({
+          action: {
+            id: step.actionId,
+            kind: 'external_webhook',
+            connectionId: step.connectionId,
+            eventName: step.eventName,
+            propertyIds: Object.keys(step.payload.properties),
+            includeBody: step.payload.body !== undefined,
+          },
+          egressBytes: step.egressBytes,
+        }),
+      deliverExternal: (input) => databaseConnectionExecutor.deliver(input),
+      publishInvocation: async (input) => {
+        const record = input.recordId ? databaseRecordIndex.getById(input.recordId) : null;
+        if (input.recordId && !record?.revision) {
+          throw new Error('Button invocation awaits an exact indexed record revision');
+        }
+        await databaseAutomationService.enqueue({
+          deduplicationKey: `button:${input.executionReceiptId}`,
+          databaseId: input.databaseId,
+          kind: 'button_invoked',
+          sourceId: input.sourceId,
+          recordId: input.recordId,
+          recordRevision: record?.revision ?? null,
+          propertyId: input.propertyId,
+          buttonId: input.buttonId,
+        });
+      },
+    });
+    databaseDataPlane.configureButtonExecutor(databaseButtonExecutor);
+    void ready
+      .then(() => databaseButtonExecutor.tick())
+      .catch((err) => log.warn({ err }, '[database-button] initial recovery tick failed'));
+    databaseAutomationService = createDatabaseAutomationService({
+      projectDir,
+      databaseStore,
+      databaseRecordIndex,
+      databasePlanEngine,
+      databaseCommitEngine,
+      // The standalone local server represents the project owner. Every
+      // database mutation still compiles through exact write guards and the
+      // common commit engine. External actions remain unavailable until an
+      // isolated connection executor and explicit egress policy are supplied.
+      resolvePermission: () => ({
+        allowed: true,
+        policyId: 'project-owner-automation',
+        policyRevision: 'sha256:9ee381fd326f5873207557414909281bbc03a10d17a615175de495fd418a64ab',
+      }),
+      deliverNotification: (input) => databaseAutomationNotificationStore.deliver(input),
+      resolveExternalPolicy: ({ action, egressBytes }) =>
+        databaseConnectionExecutor.resolvePolicy({ action, egressBytes }),
+      deliverExternal: (input) => databaseConnectionExecutor.deliver(input),
+    });
+    databaseDataPlane.configureAutomationEventPublisher((event) =>
+      databaseAutomationService.enqueue(event),
+    );
+    void ready
+      .then(() => databaseAutomationService.tick())
+      .catch((err) => log.warn({ err }, '[database-automation] initial tick failed'));
+    databaseAutomationTimer = setInterval(() => {
+      void ready
+        .then(async () => {
+          await databaseAutomationService.tick();
+          await databaseButtonExecutor.tick();
+        })
+        .catch((err) => log.warn({ err }, '[database-automation] tick failed'));
+    }, 60_000);
+    databaseAutomationTimer.unref?.();
+    const databaseFormRetention = createDatabaseFormRetentionService({
+      databaseStore,
+      databaseRecordIndex,
+      databasePlanEngine,
+      databaseCommitEngine,
+      formStateStore: databaseFormStateStore,
+    });
+    void ready
+      .then(() => databaseFormRetention.run())
+      .then((result) => {
+        if (result.failed.length > 0) {
+          log.warn(
+            { failedRecordIds: result.failed },
+            '[database-form] retention sweep left responses pending',
+          );
+        }
+      })
+      .catch((err) => log.warn({ err }, '[database-form] initial retention sweep failed'));
+    databaseFormRetentionTimer = setInterval(() => {
+      void ready
+        .then(() => databaseFormRetention.run())
+        .then((result) => {
+          if (result.failed.length > 0) {
+            log.warn(
+              { failedRecordIds: result.failed },
+              '[database-form] retention sweep left responses pending',
+            );
+          }
+        })
+        .catch((err) => log.warn({ err }, '[database-form] retention sweep failed'));
+    }, 60 * 60_000);
+    databaseFormRetentionTimer.unref?.();
 
     // Shadow-repo maintenance coordinator. `getShadow` reads the live
     // ref so it stays correct across the deferred shadow re-init paths. The
@@ -1227,6 +1630,9 @@ export function createServer(options: ServerOptions): ServerInstance {
     };
 
     cc1Broadcaster = new CC1Broadcaster(hocuspocus);
+    stopDatabaseRealtime = databaseIndexCoordinator.subscribeChanges((event) => {
+      cc1Broadcaster?.signalDatabaseChanged(event, () => databaseRecordIndex.status());
+    });
     agentFocusBroadcaster = new AgentFocusBroadcaster(hocuspocus);
     agentPresenceBroadcaster = new AgentPresenceBroadcaster(hocuspocus);
 
@@ -1370,7 +1776,9 @@ export function createServer(options: ServerOptions): ServerInstance {
     // requests a config doc. `openDirectConnection` (used at boot for
     // pre-materialization) bypasses `onAuthenticate` entirely, so the gate
     // does not interfere with server-internal admission.
-    const configDocAdmissionGuard: Extension & { __kind: 'config-doc-admission-guard' } = {
+    const configDocAdmissionGuard: Extension & {
+      __kind: 'config-doc-admission-guard';
+    } = {
       __kind: 'config-doc-admission-guard',
       async onAuthenticate(payload) {
         // Same loopback/rebinding defense for config AND managed-artifact docs
@@ -1410,7 +1818,9 @@ export function createServer(options: ServerOptions): ServerInstance {
           undefined;
         if (!isAllowedWorkspaceHostHeader(host)) {
           throw new Error(
-            `config-doc admission requires loopback Host header (host=${host ?? '<absent>'}, doc=${payload.documentName})`,
+            `config-doc admission requires loopback Host header (host=${
+              host ?? '<absent>'
+            }, doc=${payload.documentName})`,
           );
         }
       },
@@ -1444,7 +1854,9 @@ export function createServer(options: ServerOptions): ServerInstance {
       }
       return filePath;
     }
-    const removalRedirectGuard: Extension & { __kind: 'removal-redirect-guard' } = {
+    const removalRedirectGuard: Extension & {
+      __kind: 'removal-redirect-guard';
+    } = {
       __kind: 'removal-redirect-guard',
       async onAuthenticate(payload) {
         await runRemovalRedirectGuard(payload.documentName, {
@@ -1501,7 +1913,9 @@ export function createServer(options: ServerOptions): ServerInstance {
     // which is the right outcome (legitimate subscribers only receive,
     // never broadcast). The IncomingMessage decoder reads the
     // documentName prefix first, then the message type varUint.
-    const systemDocBroadcastGuard: Extension & { __kind: 'system-doc-broadcast-guard' } = {
+    const systemDocBroadcastGuard: Extension & {
+      __kind: 'system-doc-broadcast-guard';
+    } = {
       __kind: 'system-doc-broadcast-guard',
       async beforeHandleMessage(payload) {
         if (payload.documentName !== SYSTEM_DOC_NAME) return;
@@ -1521,6 +1935,17 @@ export function createServer(options: ServerOptions): ServerInstance {
       hocuspocus,
       sessionManager,
       contentDir,
+      databaseDataPlane,
+      databaseCommentStore,
+      databaseTaskStore,
+      databaseAgentRunStore,
+      databaseAgentPromptRetentionStore,
+      databaseAutonomyStore,
+      databasePermissionStore,
+      databaseTaskService,
+      databaseTemplateScheduler: databaseTemplateScheduler ?? undefined,
+      databaseAutomationService,
+      databaseAutomationNotificationStore,
       contentFilter,
       serverInstanceId,
       getFileIndex: () => (watcher ? watcher.getFileIndex() : new Map()),
@@ -1811,6 +2236,7 @@ export function createServer(options: ServerOptions): ServerInstance {
   /** Reconciliation-aware dispatch for all DiskEvent types. */
   async function handleDiskEvent(event: DiskEvent): Promise<void> {
     try {
+      databaseIndexCoordinator.applyDiskEvent(event);
       switch (event.kind) {
         case 'create': {
           log.info({ docName: event.docName }, `[reconcile] create: ${event.docName}`);
@@ -1848,7 +2274,13 @@ export function createServer(options: ServerOptions): ServerInstance {
           const oursH = contentHash(ours).slice(0, 6);
           const theirsH = contentHash(theirs).slice(0, 6);
           log.info(
-            { docName, base: baseH, ours: oursH, theirs: theirsH, result: result.kind },
+            {
+              docName,
+              base: baseH,
+              ours: oursH,
+              theirs: theirsH,
+              result: result.kind,
+            },
             `[reconcile] ${docName} base=${baseH} ours=${oursH} theirs=${theirsH} result=${result.kind}`,
           );
 
@@ -2169,6 +2601,22 @@ export function createServer(options: ServerOptions): ServerInstance {
   // ─── Batch buffering ──────────────────────────────────────────────────────
 
   const eventBuffer: DiskEvent[] = [];
+  let databaseManifestRefreshGeneration = 0;
+  let databaseManifestAppliedGeneration = 0;
+
+  const requestDatabaseManifestRefresh = (): void => {
+    const generation = ++databaseManifestRefreshGeneration;
+    if (isBatchInProgress()) return;
+    void databaseIndexCoordinator
+      .refresh('schema-change')
+      .then((result) => {
+        databaseManifestAppliedGeneration = Math.max(databaseManifestAppliedGeneration, generation);
+        log.info(result, '[database-record-index] manifest change refresh complete');
+      })
+      .catch((error) => {
+        log.error({ err: error }, '[database-record-index] manifest change refresh failed');
+      });
+  };
 
   /** Wrapper that buffers events during batch operations. */
   async function onDiskEvent(event: DiskEvent): Promise<void> {
@@ -2308,7 +2756,9 @@ export function createServer(options: ServerOptions): ServerInstance {
           // repo" from per-doc write failures.
           log.warn(
             { stillLoadedCount: stillLoaded.length },
-            `[rescue] shadow repo unavailable at flush timeout — ${stillLoaded.length} doc(s) will be lost: [${stillLoaded.join(', ')}]`,
+            `[rescue] shadow repo unavailable at flush timeout — ${
+              stillLoaded.length
+            } doc(s) will be lost: [${stillLoaded.join(', ')}]`,
           );
           rescueFailed.push(...stillLoaded);
         }
@@ -2322,7 +2772,9 @@ export function createServer(options: ServerOptions): ServerInstance {
 
         reject(
           new Error(
-            `flushAllStoresAndWait timeout after ${timeoutMs}ms — ${stillLoaded.length}/${pendingDocNames.length} docs did not unload: [${stillLoaded.join(', ')}]${rescueSummary}`,
+            `flushAllStoresAndWait timeout after ${timeoutMs}ms — ${stillLoaded.length}/${
+              pendingDocNames.length
+            } docs did not unload: [${stillLoaded.join(', ')}]${rescueSummary}`,
           ),
         );
       }, timeoutMs);
@@ -2362,6 +2814,18 @@ export function createServer(options: ServerOptions): ServerInstance {
         clearTimeout(backlinkSaveTimer);
         backlinkSaveTimer = null;
       }
+      if (databaseTemplateSchedulerTimer !== null) {
+        clearInterval(databaseTemplateSchedulerTimer);
+        databaseTemplateSchedulerTimer = null;
+      }
+      if (databaseAutomationTimer !== null) {
+        clearInterval(databaseAutomationTimer);
+        databaseAutomationTimer = null;
+      }
+      if (databaseFormRetentionTimer !== null) {
+        clearInterval(databaseFormRetentionTimer);
+        databaseFormRetentionTimer = null;
+      }
 
       // Flush the removal journal synchronously — a tombstone recorded just
       // before shutdown must survive the restart or a reconnecting stale
@@ -2380,7 +2844,10 @@ export function createServer(options: ServerOptions): ServerInstance {
             { err },
             '[removed-docs-journal] failed to persist removal journal during shutdown',
           );
-          phaseErrors.push({ phase: 'removed-docs-journal-flush', error: String(err) });
+          phaseErrors.push({
+            phase: 'removed-docs-journal-flush',
+            error: String(err),
+          });
         }
       }
 
@@ -2458,6 +2925,7 @@ export function createServer(options: ServerOptions): ServerInstance {
           // symmetric with the broadcaster-lifecycle contract). The single
           // systemDocConnection handle is torn down last.
           try {
+            stopDatabaseRealtime();
             cc1Broadcaster?.destroy();
             agentPresenceBroadcaster?.destroy();
             if (systemDocConnection) {
@@ -2550,7 +3018,10 @@ export function createServer(options: ServerOptions): ServerInstance {
           if (shadowRef.current) {
             // Persist current HEAD before releasing shadow lock
             try {
-              const projectGit = simpleGit({ baseDir: projectDir, timeout: { block: 5_000 } });
+              const projectGit = simpleGit({
+                baseDir: projectDir,
+                timeout: { block: 5_000 },
+              });
               const currentHead = (await projectGit.revparse('HEAD')).trim();
               if (currentHead) {
                 writeFileSync(
@@ -2627,6 +3098,61 @@ export function createServer(options: ServerOptions): ServerInstance {
 
   /** Async initialization: shadow repo, file watcher, HEAD watcher. */
   async function initAsync(): Promise<void> {
+    try {
+      await databasePermissionStore.snapshot();
+    } catch (error) {
+      degraded.push('database-permission-store');
+      log.error({ err: error }, '[database-permissions] policy load failed');
+    }
+    try {
+      const interruptedTasks = await databaseTaskStore.recoverInterrupted();
+      if (interruptedTasks.length > 0) {
+        log.warn(
+          { taskIds: interruptedTasks.map((task) => task.id) },
+          '[database-task] marked interrupted running tasks as retryable failures',
+        );
+      }
+      await databaseTaskService.runQueued();
+    } catch (error) {
+      degraded.push('database-task-store');
+      log.error({ err: error }, '[database-task] interrupted-task recovery failed');
+    }
+
+    try {
+      const databaseSnapshot = await databaseStore.reload();
+      if (databaseSnapshot.diagnostics.length > 0) {
+        degraded.push('database-store');
+        log.warn(
+          {
+            databases: databaseSnapshot.databases.length,
+            diagnostics: databaseSnapshot.diagnostics,
+            revision: databaseSnapshot.revision,
+          },
+          '[database-store] manifests loaded with diagnostics',
+        );
+      } else {
+        log.info(
+          {
+            databases: databaseSnapshot.databases.length,
+            revision: databaseSnapshot.revision,
+          },
+          '[database-store] manifests loaded',
+        );
+      }
+    } catch (error) {
+      degraded.push('database-store');
+      log.error({ err: error }, '[database-store] startup discovery failed');
+    }
+
+    try {
+      const databaseIndexResult = await databaseIndexCoordinator.refresh('startup');
+      databaseGitRecovery.refresh();
+      log.info(databaseIndexResult, '[database-record-index] startup rebuild complete');
+    } catch (error) {
+      degraded.push('database-record-index');
+      log.error({ err: error }, '[database-record-index] startup rebuild failed');
+    }
+
     // Load (or create) the principal record — non-blocking best-effort.
     try {
       loadedPrincipal = await loadPrincipal(projectDir);
@@ -2750,7 +3276,10 @@ export function createServer(options: ServerOptions): ServerInstance {
         // Read current HEAD SHA from project repo
         let currentHead: string | null = null;
         try {
-          const projectGit = simpleGit({ baseDir: projectDir, timeout: { block: 10_000 } });
+          const projectGit = simpleGit({
+            baseDir: projectDir,
+            timeout: { block: 10_000 },
+          });
           currentHead = (await projectGit.revparse('HEAD')).trim() || null;
         } catch {
           // Fresh repo with no commits — skip drift check
@@ -2761,7 +3290,10 @@ export function createServer(options: ServerOptions): ServerInstance {
             // Drift detected (includes null → SHA for fresh clone T0 case)
             let branch = 'main';
             try {
-              const projectGit = simpleGit({ baseDir: projectDir, timeout: { block: 10_000 } });
+              const projectGit = simpleGit({
+                baseDir: projectDir,
+                timeout: { block: 10_000 },
+              });
               const b = (await projectGit.raw('rev-parse', '--abbrev-ref', 'HEAD')).trim();
               if (b && b !== 'HEAD') branch = b;
             } catch {
@@ -2770,7 +3302,9 @@ export function createServer(options: ServerOptions): ServerInstance {
 
             log.info(
               { lastKnownHead, currentHead, branch },
-              `[head-drift] lastKnownHead=${lastKnownHead ?? 'null'}, currentHead=${currentHead}, action=import`,
+              `[head-drift] lastKnownHead=${
+                lastKnownHead ?? 'null'
+              }, currentHead=${currentHead}, action=import`,
             );
 
             try {
@@ -2788,7 +3322,9 @@ export function createServer(options: ServerOptions): ServerInstance {
           } else {
             log.info(
               { currentHead },
-              `[head-drift] lastKnownHead=${lastKnownHead ?? 'null'}, currentHead=${currentHead}, action=noop`,
+              `[head-drift] lastKnownHead=${
+                lastKnownHead ?? 'null'
+              }, currentHead=${currentHead}, action=noop`,
             );
           }
 
@@ -3004,7 +3540,10 @@ export function createServer(options: ServerOptions): ServerInstance {
           skillsRoots,
           reconcileManagedArtifactDisk,
         );
-        configFileWatcherCleanups.push({ docName: '__skill-files__', cleanup: skillsCleanup });
+        configFileWatcherCleanups.push({
+          docName: '__skill-files__',
+          cleanup: skillsCleanup,
+        });
         log.info({ roots: skillsRoots }, '[managed-artifact-watcher] skills started');
       } catch (err) {
         log.warn({ err }, '[managed-artifact-watcher] skills failed to start');
@@ -3033,7 +3572,10 @@ export function createServer(options: ServerOptions): ServerInstance {
           reconcileManagedArtifactDisk,
           TEMPLATE_WATCH_OPTIONS,
         );
-        configFileWatcherCleanups.push({ docName: '__template-files__', cleanup: templateCleanup });
+        configFileWatcherCleanups.push({
+          docName: '__template-files__',
+          cleanup: templateCleanup,
+        });
         log.info(
           { rootCount: templateRoots.length },
           '[managed-artifact-watcher] templates started',
@@ -3041,6 +3583,35 @@ export function createServer(options: ServerOptions): ServerInstance {
       } catch (err) {
         log.warn({ err }, '[managed-artifact-watcher] templates failed to start');
         degraded.push('managed-artifact-watcher:templates');
+      }
+
+      // Database manifests live under `.ok/` and are intentionally absent from
+      // the content watcher. Watch their open set directly so hand edits, CLI
+      // changes, schema migrations, and cross-instance writes refresh both the
+      // canonical store and every typed/lexical record projection. Deletions
+      // matter here (unlike live managed docs), hence the explicit onDelete.
+      try {
+        const databaseManifestRoot = resolve(projectDir, '.ok', 'databases');
+        const databaseManifestCleanup = await startManagedArtifactWatcher(
+          [databaseManifestRoot],
+          requestDatabaseManifestRefresh,
+          {
+            depth: 0,
+            acceptLeaf: (path) => /\.ya?ml$/i.test(basename(path)),
+            onDelete: requestDatabaseManifestRefresh,
+          },
+        );
+        configFileWatcherCleanups.push({
+          docName: '__database-manifests__',
+          cleanup: databaseManifestCleanup,
+        });
+        log.info(
+          { root: databaseManifestRoot },
+          '[managed-artifact-watcher] database manifests started',
+        );
+      } catch (err) {
+        log.warn({ err }, '[managed-artifact-watcher] database manifests failed to start');
+        degraded.push('managed-artifact-watcher:database-manifests');
       }
     }
 
@@ -3167,20 +3738,29 @@ export function createServer(options: ServerOptions): ServerInstance {
               } else {
                 const projectRelPath = relative(projectDir, changedPath) || '.';
                 ignoreLog.warn(
-                  { changedPath: projectRelPath, error: result.error.message },
+                  {
+                    changedPath: projectRelPath,
+                    error: result.error.message,
+                  },
                   '[ignore-watcher] rebuild failed — emitting config-ignore-nested-error',
                 );
                 cc1Broadcaster?.emitConfigIgnoreNestedError(projectRelPath, result.error.message);
               }
             })().catch((err) => {
               ignoreLog.error(
-                { err, changedPath: relative(projectDir, changedPath) || '.' },
+                {
+                  err,
+                  changedPath: relative(projectDir, changedPath) || '.',
+                },
                 '[ignore-watcher] handler threw',
               );
             });
           });
       if (ignoreCleanup) {
-        configFileWatcherCleanups.push({ docName: '__ignore-files__', cleanup: ignoreCleanup });
+        configFileWatcherCleanups.push({
+          docName: '__ignore-files__',
+          cleanup: ignoreCleanup,
+        });
         ignoreLog.info(
           { okignorePath, gitignorePath },
           '[ignore-watcher] multi-path watcher started',
@@ -3232,7 +3812,11 @@ export function createServer(options: ServerOptions): ServerInstance {
             const diff = await backlinkIndex.reconcileWithDisk(branch);
             if (diff.added > 0 || diff.updated > 0 || diff.deleted > 0) {
               log.info(
-                { added: diff.added, updated: diff.updated, deleted: diff.deleted },
+                {
+                  added: diff.added,
+                  updated: diff.updated,
+                  deleted: diff.deleted,
+                },
                 '[backlinks] startup reconcile: offline changes applied',
               );
             }
@@ -3376,7 +3960,9 @@ export function createServer(options: ServerOptions): ServerInstance {
                 seedSkipCount++;
                 log.warn(
                   { reason, code, path },
-                  `[basename-index] skipped entry during single-file seed (${reason}${code ? ` ${code}` : ''})`,
+                  `[basename-index] skipped entry during single-file seed (${reason}${
+                    code ? ` ${code}` : ''
+                  })`,
                 );
               },
             });
@@ -3473,7 +4059,11 @@ export function createServer(options: ServerOptions): ServerInstance {
                 if (sha) {
                   incrementPark();
                   log.info(
-                    { count: docs.length, branch: currentBranch, sha: sha.slice(0, 8) },
+                    {
+                      count: docs.length,
+                      branch: currentBranch,
+                      sha: sha.slice(0, 8),
+                    },
                     `[history] parked ${docs.length} docs on ${currentBranch} → ${sha.slice(0, 8)}`,
                   );
                 }
@@ -3495,14 +4085,59 @@ export function createServer(options: ServerOptions): ServerInstance {
               docs: bufferedCount,
               timeout: !!info.timeout,
             },
-            `[batch] end kind=${info.batchKind} headMoved=${info.headMoved} docs=${bufferedCount}${info.timeout ? ' timeout' : ''}`,
+            `[batch] end kind=${info.batchKind} headMoved=${
+              info.headMoved
+            } docs=${bufferedCount}${info.timeout ? ' timeout' : ''}`,
           );
+
+          const databaseGitStatus = databaseGitRecovery.refresh();
+          if (databaseGitStatus.state !== 'clean') {
+            // Keep the last complete in-memory snapshot and the buffered disk
+            // events intact. A later explicit Git abort/resolution produces a
+            // new batch which can safely reconcile the settled working tree.
+            setBatchInProgress(false);
+            log.warn(
+              {
+                operation: databaseGitStatus.operation,
+                databasePaths: databaseGitStatus.databasePaths,
+                unmergedPaths: databaseGitStatus.unmergedPaths,
+                revision: databaseGitStatus.revision,
+              },
+              '[database-git-recovery] partial Git database transition; reads blocked',
+            );
+            if (syncEngine !== null) {
+              try {
+                await syncEngine.reconcileConflictsFromGit();
+              } catch (err) {
+                log.warn({ err }, '[head-watcher] sync engine conflict reconcile failed');
+              }
+            }
+            return;
+          }
 
           if (info.batchKind === 'within-branch') {
             setBatchInProgress(false);
             // Pull, merge, rebase on same branch — reconcile buffered events.
             // The buffered reconciles tag their docs as `file-system`.
             await drainEventBuffer();
+
+            // `.ok/databases` is watched separately from content files. Its
+            // callback is held while a Git batch is in progress so a checkout
+            // cannot expose an intermediate manifest set; refresh once against
+            // the settled working tree before database reads resume.
+            if (databaseManifestRefreshGeneration > databaseManifestAppliedGeneration) {
+              const refreshGeneration = databaseManifestRefreshGeneration;
+              try {
+                const result = await databaseIndexCoordinator.refresh('git-sync');
+                databaseManifestAppliedGeneration = Math.max(
+                  databaseManifestAppliedGeneration,
+                  refreshGeneration,
+                );
+                log.info(result, '[database-record-index] Git schema refresh complete');
+              } catch (error) {
+                log.error({ err: error }, '[database-record-index] Git schema refresh failed');
+              }
+            }
 
             // When HEAD actually moved, these bytes came from upstream commits.
             // Ask git which docs the import changed and who authored them
@@ -3618,7 +4253,9 @@ export function createServer(options: ServerOptions): ServerInstance {
                   reseedSkipCount++;
                   log.warn(
                     { reason, code, path, branch: newBranch },
-                    `[basename-index] skipped entry during branch-switch reseed (${reason}${code ? ` ${code}` : ''})`,
+                    `[basename-index] skipped entry during branch-switch reseed (${reason}${
+                      code ? ` ${code}` : ''
+                    })`,
                   );
                 },
               });
@@ -3735,6 +4372,31 @@ export function createServer(options: ServerOptions): ServerInstance {
             // contentDir that just changed underneath it. Re-scanning here
             // is the only way the index reflects the new branch's tags.
             await tagIndex.init();
+
+            // Cross-branch watcher events are deliberately discarded above,
+            // so the old branch's database definitions and rows must never be
+            // incrementally reused. A canonical scan reloads manifests first,
+            // then rebuilds record, typed-property, and lexical indexes from
+            // the target branch before clients receive branch-switched.
+            {
+              const refreshGeneration = databaseManifestRefreshGeneration;
+              try {
+                const result = await databaseIndexCoordinator.refresh('branch-switch');
+                databaseManifestAppliedGeneration = Math.max(
+                  databaseManifestAppliedGeneration,
+                  refreshGeneration,
+                );
+                log.info(
+                  { ...result, branch: newBranch },
+                  '[database-record-index] branch-switch rebuild complete',
+                );
+              } catch (error) {
+                log.error(
+                  { err: error, branch: newBranch },
+                  '[database-record-index] branch-switch rebuild failed',
+                );
+              }
+            }
 
             // Restore parked WIP if exists (three-way merge parked state against current disk)
             if (shadowRef.current && info.batchKind === 'cross-branch') {
@@ -3864,7 +4526,9 @@ export function createServer(options: ServerOptions): ServerInstance {
                   newHead: info.newHead.slice(0, 8),
                   sha: sha.slice(0, 8),
                 },
-                `[history] upstream-import from ${info.oldHead?.slice(0, 8) ?? 'null'}..${info.newHead.slice(0, 8)} → ${sha.slice(0, 8)}`,
+                `[history] upstream-import from ${
+                  info.oldHead?.slice(0, 8) ?? 'null'
+                }..${info.newHead.slice(0, 8)} → ${sha.slice(0, 8)}`,
               );
             } catch (e) {
               log.error({ err: e }, '[shadow] upstream-import failed');
@@ -4015,6 +4679,24 @@ export function createServer(options: ServerOptions): ServerInstance {
     agentPresenceBroadcaster,
     maintenanceCoordinator,
     contentFilter,
+    databaseStore,
+    databaseRecordIndex,
+    databaseRepairEngine,
+    databaseSummaryStore,
+    databaseAgentRunStore,
+    databaseAgentPromptRetentionStore,
+    databaseAutonomyStore,
+    databasePermissionStore,
+    databaseAutomationService,
+    databaseButtonExecutor,
+    databaseAutomationNotificationStore,
+    databaseCommentStore,
+    databaseDataPlane,
+    databaseGitRecovery,
+    databaseTaskStore,
+    databaseTaskService,
+    subscribeDatabaseChanges:
+      databaseIndexCoordinator.subscribeChanges.bind(databaseIndexCoordinator),
     basenameIndex,
     serverInstanceId,
     destroy,

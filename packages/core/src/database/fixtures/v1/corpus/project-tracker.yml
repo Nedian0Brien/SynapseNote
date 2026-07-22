@@ -1,0 +1,39 @@
+# Representative project tracker exported from a long-lived workspace.
+version: 1
+id: db_corpus_projects
+key: corpus-projects
+name: "Projects & delivery"
+aliases: [roadmap, delivery]
+contract:
+  purpose: Track delivery commitments and owners
+  canonicality: canonical
+  vocabulary: [project, milestone, owner]
+  freshness: { expectation: realtime, maxAgeSeconds: 60 }
+  sensitivity: internal
+sources:
+  - id: ds_corpus_projects
+    key: projects
+    name: Projects
+    recordMeaning: One delivery project
+    folder: work/projects
+    properties:
+      - { id: prop_corpus_project_title, key: title, name: Project, type: title, required: true }
+      - id: prop_corpus_project_status
+        key: status
+        name: Status
+        type: select
+        options:
+          - { id: opt_corpus_project_active, key: active, name: Active }
+          - { id: opt_corpus_project_done, key: done, name: Done }
+      - { id: prop_corpus_project_due, key: due, name: Due, type: date }
+      - { id: prop_corpus_project_files, key: files, name: Files, type: files }
+views:
+  - id: view_corpus_projects_table
+    key: active-projects
+    name: Active projects
+    sourceId: ds_corpus_projects
+    layout: { type: table, configuration: { rowHeight: compact } }
+    where: { propertyId: prop_corpus_project_status, operator: eq, value: opt_corpus_project_active }
+    projection:
+      propertyIds: [prop_corpus_project_title, prop_corpus_project_status, prop_corpus_project_due]
+      body: preview

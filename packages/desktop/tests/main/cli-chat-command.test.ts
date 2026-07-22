@@ -9,6 +9,21 @@ const codexModelSettings = {
 const claudeModelSettings = { model: 'sonnet', effort: 'medium', speed: 'default' } as const;
 
 describe('CLI chat command boundary', () => {
+  test('cannot widen a data-plane-only launch through renderer permission input', () => {
+    const command = buildCliChatCommand(
+      {
+        cli: 'codex',
+        prompt: 'update the database',
+        sessionId: null,
+        permissionMode: 'full-access',
+        modelSettings: codexModelSettings,
+      },
+      { autoApproveOkTools: true, dataPlaneOnlyWrites: true },
+    );
+    expect(command).toContain('sandbox_mode="read-only"');
+    expect(command).not.toContain('dangerously-bypass-approvals-and-sandbox');
+  });
+
   test('quotes prompts and resumes without accepting a free-form executable', () => {
     expect(
       buildCliChatCommand({

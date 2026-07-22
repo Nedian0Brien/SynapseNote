@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
-import { EditorSelection } from '@codemirror/state';
+import { EditorSelection, Transaction } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import type { HocuspocusProvider } from '@hocuspocus/provider';
 import type { Config } from '@nedian0brien/synapsenote-core';
@@ -156,6 +156,40 @@ describe('SourceEditor word-wrap preference wiring', () => {
       expect(content.classList.contains('cm-lineWrapping')).toBe(false);
     });
     expect(container.querySelector('.cm-editor')).toBe(cmEditor);
+  });
+
+  test('protects database frontmatter from source-mode user edits without blocking body or Yjs sync', async () => {
+    const source =
+      '---\n_sn:\n  database_id: db_tasks\n  source_id: ds_tasks\n  record_id: rec_first\ntitle: First\n---\nBody\n';
+    const { provider, ytext } = makeProvider('source-database-frontmatter-guard', source);
+    const { container } = render(<Harness provider={provider} ytext={ytext} wordWrap={true} />);
+    const content = await findCmContent(container);
+    const view = EditorView.findFromDOM(content);
+    expect(view).toBeTruthy();
+    if (!view) return;
+
+    const titleStart = source.indexOf('First');
+    view.dispatch({
+      changes: { from: titleStart, to: titleStart + 'First'.length, insert: 'Bypass' },
+      annotations: Transaction.userEvent.of('input.type'),
+    });
+    expect(view.state.doc.toString()).toBe(source);
+    expect(ytext.toString()).toBe(source);
+
+    const bodyEnd = source.indexOf('Body') + 'Body'.length;
+    view.dispatch({
+      changes: { from: bodyEnd, insert: ' edited' },
+      annotations: Transaction.userEvent.of('input.type'),
+    });
+    await waitFor(() => expect(ytext.toString()).toContain('Body edited'));
+
+    provider.document.transact(() => {
+      const current = ytext.toString();
+      const from = current.indexOf('First');
+      ytext.delete(from, 'First'.length);
+      ytext.insert(from, 'Canonical');
+    });
+    await waitFor(() => expect(view.state.doc.toString()).toContain('title: Canonical'));
   });
 
   test('Cmd+Shift+I opens the Ask AI composer', async () => {

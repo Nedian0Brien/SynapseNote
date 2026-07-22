@@ -16,6 +16,7 @@ import type { HocuspocusProvider } from '@hocuspocus/provider';
 import { Trans, useLingui } from '@lingui/react/macro';
 import {
   bindFrontmatterDoc,
+  type DatabaseProperty,
   type FrontmatterBinding,
   type FrontmatterPatch,
   type FrontmatterSnapshot,
@@ -29,7 +30,7 @@ import {
   readFmRegionWithError,
 } from '@nedian0brien/synapsenote-core';
 import { AlertTriangle, Plus } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { FrontmatterBindingProvider } from '@/components/FrontmatterBindingContext';
 import {
   type AddDraft,
@@ -42,6 +43,7 @@ import { PropertyDisclosure } from '@/components/PropertyDisclosure';
 import { coerceValue, DEFAULT_VALUE_FOR_TYPE } from '@/components/PropertyWidgets';
 import { Button } from '@/components/ui/button';
 import { usePublishFrontmatterSelection } from '@/hooks/use-selection-context';
+import { isDatabaseCellEditable } from '@/lib/database-cell-mutation';
 
 interface PropertyPanelProps {
   provider: HocuspocusProvider;
@@ -53,6 +55,20 @@ interface PropertyPanelProps {
    * panel renders every field unchanged.
    */
   reservedKeys?: readonly string[];
+  /** Database-owned keys whose value writes must use the canonical command. */
+  managedProperties?: readonly DatabaseProperty[];
+  onManagedPropertyCommit?: (
+    property: DatabaseProperty,
+    value: FrontmatterValue,
+  ) => Promise<{ ok: true } | { ok: false; error: string }>;
+  /** Restrict this panel to an explicit ordered set of frontmatter keys. */
+  visibleKeys?: readonly string[];
+  /** Override the disclosure heading for a database page-layout region. */
+  title?: ReactNode;
+  /** Hide ordinary frontmatter creation affordances in managed layout regions. */
+  allowAdd?: boolean;
+  /** Initial disclosure state for a stable database layout group. */
+  defaultCollapsed?: boolean;
 }
 
 function readInitialSnapshot(provider: PropertyPanelProps['provider']): FrontmatterSnapshot {
@@ -62,9 +78,19 @@ function readInitialSnapshot(provider: PropertyPanelProps['provider']): Frontmat
   return { map, keys, parseError };
 }
 
-export function PropertyPanel({ provider, reservedKeys }: PropertyPanelProps) {
+export function PropertyPanel({
+  provider,
+  reservedKeys,
+  managedProperties = [],
+  onManagedPropertyCommit,
+  visibleKeys,
+  title,
+  allowAdd = true,
+  defaultCollapsed = false,
+}: PropertyPanelProps) {
   const { t } = useLingui();
   const reserved = new Set(reservedKeys ?? []);
+  const managedByKey = new Map(managedProperties.map((property) => [property.key, property]));
   // Binding for read + write — over the YAML region of `Y.Text('source')`.
   // The initial snapshot is read synchronously from the provider so SSR + the
   // first client render see the right state without waiting for a useEffect.
@@ -91,7 +117,7 @@ export function PropertyPanel({ provider, reservedKeys }: PropertyPanelProps) {
   const orderedKeys = snapshot.keys;
   const parseError = snapshot.parseError;
 
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(defaultCollapsed);
   const [overrides, setOverrides] = useState<Record<string, FrontmatterType>>({});
   const [adding, setAdding] = useState<AddDraft | null>(null);
   const [renaming, setRenaming] = useState<RenameDraft | null>(null);
@@ -160,6 +186,25 @@ export function PropertyPanel({ provider, reservedKeys }: PropertyPanelProps) {
 
   function commitProperty(key: string, value: FrontmatterValue) {
     clearError(key);
+    const managed = managedByKey.get(key);
+    if (managed) {
+      if (!onManagedPropertyCommit || !isDatabaseCellEditable(managed)) {
+        setErrorForKeys({ ok: false, error: t`This database property is read-only here` }, [key]);
+        return;
+      }
+      void onManagedPropertyCommit(managed, value)
+        .then((result) => setErrorForKeys(result, [key]))
+        .catch((cause: unknown) =>
+          setErrorForKeys(
+            {
+              ok: false,
+              error: cause instanceof Error ? cause.message : t`Failed to update property`,
+            },
+            [key],
+          ),
+        );
+      return;
+    }
     const result = commitPatch({ [key]: value });
     setErrorForKeys(result, [key]);
   }
@@ -252,11 +297,11 @@ export function PropertyPanel({ provider, reservedKeys }: PropertyPanelProps) {
   const { addPropertySignal, clearAddProperty } = useProperties();
   const addSignal = addPropertySignal.get(docName) ?? 0;
   useEffect(() => {
-    if (addSignal > 0) {
+    if (allowAdd && addSignal > 0) {
       setAdding({ name: '', type: 'text', value: '', error: null });
       setCollapsed(false);
     }
-  }, [addSignal]);
+  }, [addSignal, allowAdd]);
   useEffect(() => {
     return () => clearAddProperty(docName);
   }, [docName, clearAddProperty]);
@@ -303,6 +348,10 @@ export function PropertyPanel({ provider, reservedKeys }: PropertyPanelProps) {
     }
     if (Object.hasOwn(map, trimmed)) {
       setAdding({ ...adding, value, error: t`Property "${trimmed}" already exists` });
+      return;
+    }
+    if (managedByKey.has(trimmed)) {
+      setAdding({ ...adding, value, error: t`Database properties use the verified editor` });
       return;
     }
     const result = commitPatch({ [trimmed]: value });
@@ -352,6 +401,10 @@ export function PropertyPanel({ provider, reservedKeys }: PropertyPanelProps) {
       setRenaming({ ...renaming, error: t`Property "${trimmed}" already exists` });
       return;
     }
+    if (managedByKey.has(trimmed)) {
+      setRenaming({ ...renaming, error: t`Database properties use the verified editor` });
+      return;
+    }
     const result = renameProperty(renaming.key, trimmed);
     if (result.ok) {
       setOverrides((prev) => {
@@ -373,22 +426,26 @@ export function PropertyPanel({ provider, reservedKeys }: PropertyPanelProps) {
   // Pick render keys from snapshot order. When YAML is malformed, `parseError`
   // is set and `keys` may be empty (the panel renders the last-valid map's
   // keys derived from `Object.keys(map)` — a degraded but non-blocking state).
-  const renderKeys = (orderedKeys.length > 0 ? orderedKeys : Object.keys(map)).filter(
-    (k) => !reserved.has(k),
-  );
+  const sourceKeys = orderedKeys.length > 0 ? orderedKeys : Object.keys(map);
+  const visibleOrder = visibleKeys ? new Map(visibleKeys.map((key, index) => [key, index])) : null;
+  const renderKeys = sourceKeys
+    .filter((key) => !reserved.has(key) && (!visibleOrder || visibleOrder.has(key)))
+    .sort((left, right) =>
+      visibleOrder ? (visibleOrder.get(left) ?? 0) - (visibleOrder.get(right) ?? 0) : 0,
+    );
 
   // Duplicate-name detection. When the same name appears twice in the
   // YAML region, mark every affected row with a duplicate-name marker.
   const dupCount = new Map<string, number>();
   for (const k of renderKeys) dupCount.set(k, (dupCount.get(k) ?? 0) + 1);
 
-  if (renderKeys.length === 0 && !adding && !parseError) return null;
+  if (renderKeys.length === 0 && !adding && !parseError && !allowAdd) return null;
 
   return (
     <FrontmatterBindingProvider binding={binding}>
       <PropertyDisclosure
         ref={panelRef}
-        title={<Trans>Properties</Trans>}
+        title={title ?? <Trans>Properties</Trans>}
         testId="property-panel"
         className="pt-4 pb-4"
         open={!collapsed}
@@ -412,7 +469,7 @@ export function PropertyPanel({ provider, reservedKeys }: PropertyPanelProps) {
         ) : null}
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext
-            items={renderKeys.map((k, i) => rowId(k, i))}
+            items={managedProperties.length === 0 ? renderKeys.map((k, i) => rowId(k, i)) : []}
             strategy={verticalListSortingStrategy}
           >
             {renderKeys.map((key, idx) => {
@@ -421,6 +478,7 @@ export function PropertyPanel({ provider, reservedKeys }: PropertyPanelProps) {
               const declared = overrides[key] ?? inferType(value);
               const renameState = renaming?.key === key ? renaming : null;
               const isDuplicate = (dupCount.get(key) ?? 0) > 1;
+              const managed = managedByKey.get(key);
               // File-owned key. The trash icon deletes the key from the
               // file's own frontmatter.
               // Position-aware sortable id: dup-name rows share the same
@@ -436,23 +494,28 @@ export function PropertyPanel({ provider, reservedKeys }: PropertyPanelProps) {
                 <FrontmatterRow
                   // biome-ignore lint/suspicious/noArrayIndexKey: position-aware key for dup-name rows.
                   key={`${key}-${idx}`}
-                  sortableId={rowId(key, idx)}
+                  sortableId={managedProperties.length === 0 ? rowId(key, idx) : undefined}
                   keyName={key}
                   value={value}
                   declared={declared}
                   error={errors[key] ?? null}
                   resetCounter={resetCounters[key] ?? 0}
                   isDuplicate={isDuplicate}
-                  rename={{
-                    state: renameState,
-                    onBegin: () => beginRename(key),
-                    onChangeDraft: changeRenameDraft,
-                    onCommit: commitRename,
-                    onCancel: cancelRename,
-                  }}
+                  rename={
+                    managed
+                      ? undefined
+                      : {
+                          state: renameState,
+                          onBegin: () => beginRename(key),
+                          onChangeDraft: changeRenameDraft,
+                          onCommit: commitRename,
+                          onCancel: cancelRename,
+                        }
+                  }
                   onCommit={(v) => commitProperty(key, v)}
-                  onChangeType={(t) => setType(key, t)}
-                  onRemove={() => removeProperty(key)}
+                  onChangeType={managed ? undefined : (t) => setType(key, t)}
+                  onRemove={managed ? undefined : () => removeProperty(key)}
+                  readOnly={managed ? !isDatabaseCellEditable(managed) : false}
                 />
               );
             })}
@@ -468,7 +531,7 @@ export function PropertyPanel({ provider, reservedKeys }: PropertyPanelProps) {
             the virtual row is purely for "this doc has no tags field yet,
             but you can add one here."
           */}
-        {!reserved.has('tags') && !Object.hasOwn(map, 'tags') ? (
+        {allowAdd && !reserved.has('tags') && !Object.hasOwn(map, 'tags') ? (
           <FrontmatterRow
             key="virtual-tags"
             keyName="tags"
@@ -486,7 +549,7 @@ export function PropertyPanel({ provider, reservedKeys }: PropertyPanelProps) {
             onChangeType={() => {}}
           />
         ) : null}
-        {adding ? (
+        {!allowAdd ? null : adding ? (
           <AddPropertyRow
             draft={adding}
             onChangeName={changeAddName}

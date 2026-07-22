@@ -3,6 +3,7 @@ import { humanFormat } from '@nedian0brien/synapsenote-core';
 import {
   ChevronRight,
   Copy,
+  Database,
   FilePlus,
   FolderOpen,
   FolderPlus,
@@ -23,6 +24,7 @@ import {
 import { ErrorBoundary } from 'react-error-boundary';
 import { toast } from 'sonner';
 import { ConflictsSection } from '@/components/ConflictsSection';
+import { DatabaseSidebarSection } from '@/components/DatabaseSidebarSection';
 import { FileTree, type FileTreeHandle } from '@/components/FileTree';
 import { defaultInitialDir, hasOkPathSegment } from '@/components/file-tree-utils';
 import { OpenInAgentEmptySpaceSubmenu } from '@/components/handoff/OpenInAgentEmptySpaceSubmenu';
@@ -79,6 +81,7 @@ import { useGitSyncStatusDetailed } from '@/hooks/use-git-sync-status';
 import { useIsEmbedded } from '@/hooks/use-is-embedded';
 import { useConfigContext } from '@/lib/config-provider';
 import { subscribeToCreateTopLevelFile } from '@/lib/create-file-events';
+import { dispatchDatabaseSlashCommand } from '@/lib/database-events';
 import {
   buildSendToAiInputForActiveTarget,
   resolveActiveTargetAbsPath,
@@ -942,6 +945,11 @@ function FileSidebarInner({ onOpenSearch }: FileSidebarProps) {
                   label={t`New file`}
                   onClick={() => tree?.startCreating('file', initialCreateDir)}
                 />
+                <ToolbarButton
+                  icon={Database}
+                  label={t`New database`}
+                  onClick={() => dispatchDatabaseSlashCommand('new')}
+                />
                 {activeFolderHasTemplates ? (
                   // Toolbar opens templates on click (not hover): a hover-only
                   // flyout off an icon button isn't keyboard/touch reachable.
@@ -1095,6 +1103,7 @@ function FileSidebarInner({ onOpenSearch }: FileSidebarProps) {
                   </CollapsibleContent>
                 </SidebarGroup>
               </Collapsible>
+              <DatabaseSidebarSection />
               {/* View-preference gate on the section render only: with the
                   section hidden, skill docs stay reachable (links, search,
                   direct routes) and open with full editor chrome. */}
@@ -1187,6 +1196,14 @@ function FileSidebarInner({ onOpenSearch }: FileSidebarProps) {
           >
             <SquarePen aria-hidden="true" />
             <Trans>New file</Trans>
+          </ContextMenuItem>
+          <ContextMenuItem
+            disabled={!workspace}
+            onSelect={() => dispatchDatabaseSlashCommand('new')}
+            data-testid="empty-space-menu-new-database"
+          >
+            <Database aria-hidden="true" />
+            <Trans>New database</Trans>
           </ContextMenuItem>
           {rootHasTemplates ? (
             <ContextMenuSub>

@@ -69,4 +69,22 @@ describe.skipIf(RUNNING_IN_CI)('startManagedArtifactWatcher', () => {
     await eventually(() => contents.includes('v2'));
     expect(contents).not.toContain('noise');
   }, 25_000);
+
+  test('optionally reports accepted leaf deletion', async () => {
+    const skillsRoot = resolve(root, '.ok', 'skills');
+    const skillDir = resolve(skillsRoot, 'deleted-skill');
+    mkdirSync(skillDir, { recursive: true });
+    const leaf = resolve(skillDir, 'SKILL.md');
+    writeFileSync(leaf, 'remove me', 'utf-8');
+    const deleted: string[] = [];
+    cleanup = await startManagedArtifactWatcher([skillsRoot], () => undefined, {
+      depth: 1,
+      acceptLeaf: (path) => path.endsWith('SKILL.md'),
+      onDelete: (path) => deleted.push(path),
+    });
+
+    rmSync(leaf);
+    await eventually(() => deleted.length === 1);
+    expect(deleted).toEqual([leaf]);
+  }, 25_000);
 });

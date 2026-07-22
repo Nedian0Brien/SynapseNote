@@ -51,6 +51,29 @@ describe('storage helpers', () => {
     expect(loadOmnibarRecents(storage)).toEqual(entries);
   });
 
+  test('round-trips database page recents with human labels and stable target metadata', () => {
+    const storage = makeStorage();
+    const entry: OmnibarRecentEntry = {
+      kind: 'database',
+      path: '#database/db_tasks/ds_tasks',
+      lastOpenedAt: '2026-04-21T00:00:00Z',
+      name: 'Tasks',
+      databaseId: 'db_tasks',
+      sourceId: 'ds_tasks',
+      databaseName: 'Tasks',
+      sourceName: 'Tasks',
+      databaseKey: 'tasks',
+      sourceKey: 'tasks',
+      purpose: 'Track work',
+    };
+
+    saveOmnibarRecents([entry], storage);
+    expect(loadOmnibarRecents(storage)).toEqual([entry]);
+    expect(makeOmnibarRecentKey(entry.kind, entry.path)).toBe(
+      'database:#database/db_tasks/ds_tasks',
+    );
+  });
+
   test('returns an empty list for invalid stored payloads', () => {
     const storage = makeStorage();
     storage.setItem('ok-omnibar-recents-v1', '{"bad":true}');

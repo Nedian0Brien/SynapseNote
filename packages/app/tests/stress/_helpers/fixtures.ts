@@ -118,6 +118,19 @@ export interface ApiHelpers {
    * extension-qualified `foo.mdx` (authors `.mdx`).
    */
   seedDocs(docs: Array<{ name: string; markdown: string }>): Promise<void>;
+  /**
+   * Seed a real, canonical database via the same `/api/databases/plan` +
+   * `/api/databases/commit` HTTP flow an agent uses — `create_draft` →
+   * `create_plan` → `commit`, approval token `approve:${plan.hash}`. This is
+   * the only supported way to get a database onto disk for E2E purposes;
+   * there is no "create database" UI shortcut in the test harness itself.
+   * Returns the server-assigned `databaseId`/`sourceId` (read from the
+   * plan's `targetResolutions`) for use in `page.goto` / further API calls.
+   */
+  createDatabase(desiredState: Record<string, unknown>): Promise<{
+    databaseId: string;
+    sourceId: string;
+  }>;
 }
 
 type WorkerFixtures = {
@@ -594,6 +607,52 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
           baseURL,
           docs.map((d) => docNameOf(d.name)),
         );
+      },
+      async createDatabase(
+        desiredState: Record<string, unknown>,
+      ): Promise<{ databaseId: string; sourceId: string }> {
+        const draftRes = await post('/api/databases/plan', {
+          action: 'create_draft',
+          desiredState,
+        });
+        if (!draftRes.ok) {
+          throw new Error(`createDatabase: create_draft failed: ${draftRes.status}`);
+        }
+        const draftBody = (await draftRes.json()) as { draft: { id: string } };
+        const planRes = await post('/api/databases/plan', {
+          action: 'create_plan',
+          draftId: draftBody.draft.id,
+        });
+        if (!planRes.ok) {
+          throw new Error(`createDatabase: create_plan failed: ${planRes.status}`);
+        }
+        const planBody = (await planRes.json()) as {
+          plan: {
+            id: string;
+            hash: string;
+            snapshotRevision: string;
+            targetResolutions: Array<{ kind: string; targetId: string }>;
+          };
+        };
+        const { plan } = planBody;
+        const databaseId = plan.targetResolutions.find((t) => t.kind === 'database')?.targetId;
+        const sourceId = plan.targetResolutions.find((t) => t.kind === 'source')?.targetId;
+        if (!databaseId || !sourceId) {
+          throw new Error('createDatabase: plan targetResolutions missing database/source id');
+        }
+        const commitRes = await post('/api/databases/commit', {
+          planId: plan.id,
+          planHash: plan.hash,
+          expectedSnapshotRevision: plan.snapshotRevision,
+          idempotencyKey: `e2e-create-database-${databaseId}`,
+          approvalToken: `approve:${plan.hash}`,
+          actor: { principalId: 'agent:e2e', kind: 'agent' },
+          assertions: { databaseAbsent: true },
+        });
+        if (!commitRes.ok) {
+          throw new Error(`createDatabase: commit failed: ${commitRes.status}`);
+        }
+        return { databaseId, sourceId };
       },
     };
     await use(helpers);

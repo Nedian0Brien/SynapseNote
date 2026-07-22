@@ -360,6 +360,44 @@ describe('withValidation — branch coverage', () => {
     // Detail surfaces the failing field's path.
     expect(typeof body.detail).toBe('string');
     expect(body.detail).toContain('foo');
+    expect(body.validationIssues).toEqual([
+      {
+        code: 'invalid_type',
+        path: ['foo'],
+        message: expect.any(String),
+      },
+    ]);
+  });
+
+  test('strict nested schema reports dotted unknown fields and segment-array issue paths', async () => {
+    const { res, writeHeadCalls, endCalls } = makeMockRes();
+    const StrictNestedSchema = z
+      .object({ nested: z.object({ known: z.string() }).strict() })
+      .strict();
+    const wrapped = withValidation(
+      StrictNestedSchema,
+      async () => {
+        throw new Error('handler must not run');
+      },
+      { handler: 'test' },
+    );
+    await wrapped(
+      makeMockReq({
+        chunks: [Buffer.from('{"nested":{"known":"yes","mystery":true}}')],
+      }),
+      res,
+    );
+    expect(writeHeadCalls).toHaveLength(1);
+    expect(writeHeadCalls[0]?.status).toBe(400);
+    const body = JSON.parse(endCalls[0] ?? '{}');
+    expect(body.unknownFields).toEqual(['nested.mystery']);
+    expect(body.validationIssues).toEqual([
+      {
+        code: 'unrecognized_keys',
+        path: ['nested'],
+        message: expect.stringContaining('mystery'),
+      },
+    ]);
   });
 
   test('empty body (Content-Length: 0) → treated as {} → schema validates', async () => {

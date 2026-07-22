@@ -161,6 +161,10 @@ export interface WithValidationOptions {
    * Omitting accepts any method.
    */
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+  /** Optional machine-readable extensions for each request-boundary failure. */
+  errorExtensions?: Readonly<
+    Partial<Record<RequestValidationErrorKind, Readonly<Record<string, unknown>>>>
+  >;
   /**
    * Runs after method check, BEFORE body read. Return `false` to short-
    * circuit (caller must already have emitted via `errorResponse`); return
@@ -190,6 +194,14 @@ export interface WithValidationOptions {
   preBodyGate?: (req: IncomingMessage, res: ServerResponse) => boolean;
 }
 
+export type RequestValidationErrorKind =
+  | 'method_not_allowed'
+  | 'payload_too_large'
+  | 'request_timeout'
+  | 'transport_error'
+  | 'invalid_json'
+  | 'validation_failed';
+
 /**
  * Validate a parsed body against a Zod schema and emit a 400 error response
  * on failure. Returns a discriminated `Result` so callers can branch on
@@ -209,9 +221,27 @@ export function validateBody<T>(
   const detail = parseResult.error.issues
     .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
     .join('; ');
+  const validationIssues = parseResult.error.issues.map((issue) => ({
+    code: issue.code,
+    path: issue.path.filter(
+      (segment): segment is string | number =>
+        typeof segment === 'string' || typeof segment === 'number',
+    ),
+    message: issue.message,
+  }));
+  const unknownFields = parseResult.error.issues.flatMap((issue) =>
+    issue.code === 'unrecognized_keys'
+      ? issue.keys.map((key) => [...issue.path.map(String), key].filter(Boolean).join('.'))
+      : [],
+  );
   errorResponse(res, 400, 'urn:ok:error:invalid-request', 'Request body is invalid.', {
     handler: options.handler,
     detail,
+    extensions: {
+      ...options.errorExtensions?.validation_failed,
+      validationIssues,
+      ...(unknownFields.length > 0 ? { unknownFields } : {}),
+    },
   });
   return { ok: false };
 }
@@ -242,6 +272,7 @@ export function withValidation<T>(
       errorResponse(res, 405, 'urn:ok:error:method-not-allowed', 'Method not allowed.', {
         handler: options.handler,
         extraHeaders: { Allow: options.method },
+        extensions: options.errorExtensions?.method_not_allowed,
       });
       return;
     }
@@ -292,6 +323,7 @@ export function withValidation<T>(
         errorResponse(res, 413, 'urn:ok:error:payload-too-large', 'Payload too large.', {
           handler: options.handler,
           cause: err,
+          extensions: options.errorExtensions?.payload_too_large,
         });
         return;
       }
@@ -302,6 +334,7 @@ export function withValidation<T>(
         errorResponse(res, 408, 'urn:ok:error:request-timeout', 'Request body read timed out.', {
           handler: options.handler,
           cause: err,
+          extensions: options.errorExtensions?.request_timeout,
         });
         return;
       }
@@ -320,6 +353,7 @@ export function withValidation<T>(
         {
           handler: options.handler,
           cause: err,
+          extensions: options.errorExtensions?.transport_error,
         },
       );
       return;
@@ -332,6 +366,7 @@ export function withValidation<T>(
       errorResponse(res, 400, 'urn:ok:error:invalid-request', 'Request body is not valid JSON.', {
         handler: options.handler,
         cause: err,
+        extensions: options.errorExtensions?.invalid_json,
       });
       return;
     }

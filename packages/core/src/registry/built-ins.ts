@@ -416,6 +416,39 @@ const embedProps: PropDef[] = [
   },
 ];
 
+const databaseViewProps: PropDef[] = [
+  {
+    name: 'databaseId',
+    type: 'string',
+    required: true,
+    advanced: true,
+    description: 'Advanced stable database reference; choose a database from the inline picker',
+  },
+  {
+    name: 'sourceId',
+    type: 'string',
+    required: true,
+    advanced: true,
+    description: 'Stable canonical data-source ID (`ds_…`)',
+  },
+  {
+    name: 'viewId',
+    type: 'string',
+    required: true,
+    advanced: true,
+    description: 'Stable saved-view ID (`view_…`)',
+  },
+  {
+    name: 'mode',
+    type: 'enum',
+    enumValues: ['inline', 'full-page'],
+    defaultValue: 'inline',
+    omitOnDefault: true,
+    required: false,
+    description: 'Inline document block or full-page-width database surface',
+  },
+];
+
 // htmlVideoProps — 12 props (2 common + 10 advanced).
 //
 // Common: src + align. Advanced: controls + autoplay + poster + width +
@@ -1255,6 +1288,20 @@ export const builtInComponents: JsxComponentMeta[] = [
     searchTerms: ['embed', 'iframe', 'website', 'page', 'inline', 'frame', 'preview'],
     placeholder: { label: 'Embed a URL' },
     serialize: (node, ctx) => emitMdxJsx('Embed', node, ctx, embedProps),
+  },
+  {
+    name: 'DatabaseView',
+    surface: 'canonical',
+    hasChildren: false,
+    isSelfClosing: true,
+    props: databaseViewProps,
+    icon: 'Database',
+    category: 'data',
+    displayName: 'Database view',
+    description:
+      'Live inline or full-page view of one canonical database source. Stores only stable database/source/view references and never copies records into the document.',
+    searchTerms: ['database', 'table', 'view', 'linked', 'data source', 'inline'],
+    serialize: (node, ctx) => emitMdxJsx('DatabaseView', node, ctx, databaseViewProps),
   },
 
   // Content

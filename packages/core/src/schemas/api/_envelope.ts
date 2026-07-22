@@ -196,6 +196,7 @@ export const ProblemTypeSchema = z.enum([
   // Cross-handler shared
   'urn:ok:error:method-not-allowed',
   'urn:ok:error:invalid-request',
+  'urn:ok:error:permission-denied',
   'urn:ok:error:payload-too-large',
   // Request-body read exceeded the per-function 30s timeout in `readRequestBody`.
   // Distinct URN from `payload-too-large` (size cap) and `invalid-request`
@@ -239,6 +240,8 @@ export const ProblemTypeSchema = z.enum([
   'urn:ok:error:frontmatter-malformed',
   'urn:ok:error:no-active-session',
   'urn:ok:error:too-many-agent-sessions',
+  // Database Data Plane per-agent-session request and in-flight work guard.
+  'urn:ok:error:too-many-requests',
   // an out-of-band disk edit diverged from the loaded base after the
   // agent's edit was prepared; the store-time backstop aborted the overwrite
   // (disk won), so the agent edit was NOT applied. 409 Conflict. Emitted by the

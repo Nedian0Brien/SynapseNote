@@ -31,6 +31,19 @@ let createProjectDialogProps: Array<{ open: boolean; bridge: unknown }> = [];
 let reportBugDialogProps: Array<{ open: boolean }> = [];
 let commandDialogProps: CommandDialogProps[] = [];
 let refreshInstallStatesCalls = 0;
+let databaseCatalogCandidates: Array<{
+  id: string;
+  key: string;
+  name: string;
+  purpose: string;
+  sources: Array<{
+    id: string;
+    key: string;
+    name: string;
+    recordMeaning: string;
+    propertyCount: number;
+  }>;
+}> = [];
 const refreshInstallStates = () => {
   refreshInstallStatesCalls += 1;
 };
@@ -193,6 +206,10 @@ mock.module('@/components/command-palette-tag-search', () => ({
   fetchDocsForTag: mock(() => Promise.resolve([])),
 }));
 
+mock.module('@/lib/database-catalog-client', () => ({
+  fetchDatabaseCatalog: mock(() => Promise.resolve({ candidates: databaseCatalogCandidates })),
+}));
+
 // The cached worktree model is read via useWorktrees (backed by window.okDesktop,
 // not the bridge prop). Default null so the existing suite sees no Worktrees
 // group; the dedicated test sets a model.
@@ -244,15 +261,30 @@ function createBridge() {
 async function renderPalette({
   bridge = createBridge(),
   docName = 'docs/active',
+  onOpenDataInspector,
+  onOpenAgentRuns,
+  onOpenDatabases,
 }: {
   bridge?: ReturnType<typeof createBridge> | null;
   docName?: string | null;
+  onOpenDataInspector?: () => void;
+  onOpenAgentRuns?: () => void;
+  onOpenDatabases?: () => void;
 } = {}) {
   activeDocName = docName;
   activeTarget = docName ? { kind: 'doc', docName } : null;
   const onOpenChange = mock(() => {});
   const { CommandPalette } = await import('./CommandPalette');
-  render(<CommandPalette bridge={bridge as never} open={true} onOpenChange={onOpenChange} />);
+  render(
+    <CommandPalette
+      bridge={bridge as never}
+      open={true}
+      onOpenChange={onOpenChange}
+      onOpenDataInspector={onOpenDataInspector}
+      onOpenAgentRuns={onOpenAgentRuns}
+      onOpenDatabases={onOpenDatabases}
+    />,
+  );
   await waitFor(() => expect(screen.getByRole('dialog')).not.toBeNull());
   return { bridge, onOpenChange };
 }
@@ -276,6 +308,7 @@ describe('CommandPalette DOM behavior', () => {
     createProjectDialogProps = [];
     reportBugDialogProps = [];
     commandDialogProps = [];
+    databaseCatalogCandidates = [];
     refreshInstallStatesCalls = 0;
     worktreeModelMock = null;
     refreshWorktreesMock.mockClear();
@@ -298,6 +331,91 @@ describe('CommandPalette DOM behavior', () => {
     fireEvent.click(screen.getByTestId('command-palette-open-graph'));
 
     expect(requestDocPanelTabCalls).toEqual(['graph']);
+  });
+
+  test('opens the What the agent saw inspector from a searchable command', async () => {
+    const onOpenDataInspector = mock(() => {});
+    const { onOpenChange } = await renderPalette({ bridge: null, onOpenDataInspector });
+    await setQuery('what the agent saw');
+
+    const item = await screen.findByTestId('command-palette-open-data-inspector');
+    fireEvent.click(item);
+
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(onOpenDataInspector).toHaveBeenCalledTimes(1);
+  });
+
+  test('opens Agent Runs from a searchable command', async () => {
+    const onOpenAgentRuns = mock(() => {});
+    const { onOpenChange } = await renderPalette({ bridge: null, onOpenAgentRuns });
+    await setQuery('proposed diff verification undo');
+
+    fireEvent.click(await screen.findByTestId('command-palette-open-agent-runs'));
+
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(onOpenAgentRuns).toHaveBeenCalledTimes(1);
+  });
+
+  test('opens the database table from a searchable command', async () => {
+    const onOpenDatabases = mock(() => {});
+    const { onOpenChange } = await renderPalette({ bridge: null, onOpenDatabases });
+    await setQuery('database table records');
+
+    fireEvent.click(await screen.findByTestId('command-palette-open-databases'));
+
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(onOpenDatabases).toHaveBeenCalledTimes(1);
+  });
+
+  test('dispatches the document-native new database command from search', async () => {
+    const commands: string[] = [];
+    const listener = (event: Event) => {
+      commands.push(String((event as CustomEvent<string>).detail));
+    };
+    window.addEventListener('synapsenote:database-slash-command', listener);
+    try {
+      const { onOpenChange } = await renderPalette();
+      await setQuery('new database');
+
+      fireEvent.click(await screen.findByTestId('command-palette-new-database'));
+
+      expect(onOpenChange).toHaveBeenCalledWith(false);
+      expect(commands).toEqual(['new']);
+    } finally {
+      window.removeEventListener('synapsenote:database-slash-command', listener);
+    }
+  });
+
+  test('searches catalog-backed database pages and navigates by stable route', async () => {
+    databaseCatalogCandidates = [
+      {
+        id: 'db_research',
+        key: 'research',
+        name: 'Research library',
+        purpose: 'Evidence and reading notes',
+        sources: [
+          {
+            id: 'ds_sources',
+            key: 'sources',
+            name: 'Sources',
+            recordMeaning: 'source',
+            propertyCount: 3,
+          },
+        ],
+      },
+    ];
+    const { onOpenChange } = await renderPalette({ bridge: null });
+    await setQuery('research');
+
+    const item = await screen.findByTestId(
+      'command-palette-nav-database-#database/db_research/ds_sources',
+    );
+    expect(item.textContent).toContain('Research library');
+    expect(item.textContent).toContain('Sources');
+    fireEvent.click(item);
+
+    await waitFor(() => expect(window.location.hash).toBe('#database/db_research/ds_sources'));
+    expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
   test('routes project commands through runtime bridge entry points and exposes switch-project search tokens', async () => {

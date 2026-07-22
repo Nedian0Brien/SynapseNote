@@ -1,0 +1,40 @@
+version: 1
+id: db_corpus_research
+key: research-library
+name: 연구 라이브러리
+description: |-
+  다국어 제목, 긴 설명, 인용문을 보존하는 실제형 fixture.
+  Scalar presentation must remain byte-for-byte stable.
+contract:
+  purpose: 논문과 조사 자료를 추적한다
+  canonicality: canonical
+  vocabulary:
+    - research
+    - 논문
+    - résumé
+  freshness:
+    expectation: weekly
+    maxAgeSeconds: 604800
+  sensitivity: confidential
+sources:
+  - id: ds_corpus_papers
+    key: papers
+    name: Papers
+    recordMeaning: One research source
+    folder: "research/논문"
+    properties:
+      - id: prop_corpus_paper_title
+        key: title
+        name: Title
+        type: title
+        required: true
+      - { id: prop_corpus_paper_url, key: url, name: URL, type: url }
+      - { id: prop_corpus_paper_score, key: score, name: Score, type: number }
+      - id: prop_corpus_paper_topics
+        key: topics
+        name: Topics
+        type: multi_select
+        options:
+          - { id: opt_corpus_topic_ai, key: ai, name: AI }
+          - { id: opt_corpus_topic_hci, key: hci, name: HCI }
+views: []

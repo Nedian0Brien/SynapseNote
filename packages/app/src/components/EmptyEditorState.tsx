@@ -13,6 +13,7 @@ import { SeedDialog } from '@/components/SeedDialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useIsEmbedded } from '@/hooks/use-is-embedded';
 import { emitCreateTopLevelFile } from '@/lib/create-file-events';
+import { dispatchDatabaseSlashCommand } from '@/lib/database-events';
 import type { OkPackId } from '@/lib/desktop-bridge-types';
 import { subscribeToDocumentsChanged } from '@/lib/documents-events';
 import { fetchDocumentListShared } from '@/lib/documents-fetch';
@@ -151,6 +152,7 @@ export function EmptyEditorState({
                 setSeedDialogInitialPackId(packId);
                 setSeedDialogOpen(true);
               }}
+              onCreateDatabase={() => dispatchDatabaseSlashCommand('new')}
             />
           ) : (
             <CreateView
@@ -224,9 +226,11 @@ function TerminalEmptyHeader({
 function OnboardingView({
   celebrateSignal,
   onPackSelect,
+  onCreateDatabase,
 }: {
   celebrateSignal: number;
   onPackSelect: (packId: OkPackId) => void;
+  onCreateDatabase: () => void;
 }) {
   const { t } = useLingui();
   const isEmbedded = useIsEmbedded();
@@ -257,6 +261,7 @@ function OnboardingView({
         <PackCardGrid
           onPackSelect={onPackSelect}
           onCreateBlankFile={() => emitCreateTopLevelFile()}
+          onCreateDatabase={onCreateDatabase}
           collapsedPackIds={['okf', 'entity-vault']}
         />
       </div>

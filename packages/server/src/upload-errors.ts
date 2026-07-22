@@ -25,6 +25,7 @@ export type UploadWriteReason = Extract<
   | 'urn:ok:error:storage-readonly'
   | 'urn:ok:error:storage-error'
   | 'urn:ok:error:malformed-upload'
+  | 'urn:ok:error:payload-too-large'
 >;
 
 export class UploadWriteError extends Error {
@@ -53,6 +54,8 @@ export function uploadStatusFor(reason: UploadWriteReason): HttpErrorStatus {
   switch (reason) {
     case 'urn:ok:error:malformed-upload':
       return 400;
+    case 'urn:ok:error:payload-too-large':
+      return 413;
     case 'urn:ok:error:storage-full':
       // RFC 4918 507 Insufficient Storage — explicit "disk full," retry
       // makes no sense until the operator frees space.
@@ -93,6 +96,8 @@ export function uploadTitleFor(reason: UploadWriteReason): string {
   switch (reason) {
     case 'urn:ok:error:malformed-upload':
       return 'Upload payload is malformed.';
+    case 'urn:ok:error:payload-too-large':
+      return 'Upload file is too large.';
     case 'urn:ok:error:storage-full':
       return 'Storage is full.';
     case 'urn:ok:error:storage-readonly':

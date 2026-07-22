@@ -45,6 +45,7 @@ import { useDocumentContext } from '@/editor/DocumentContext';
 import { Accordion } from './Accordion.tsx';
 import { Audio } from './Audio.tsx';
 import { Callout } from './Callout.tsx';
+import { DatabaseView } from './DatabaseView.tsx';
 import { Embed } from './Embed.tsx';
 import { File } from './File.tsx';
 import { Image } from './Image.tsx';
@@ -93,6 +94,7 @@ export const componentMap: Record<string, React.ComponentType<any>> = {
   // `<embed>` is for legacy plugin objects, not the iframe pattern).
   // Renders via a cross-origin iframe with `referrerPolicy="no-referrer"`.
   Embed,
+  DatabaseView,
   Accordion,
   Tabs,
   Tab,

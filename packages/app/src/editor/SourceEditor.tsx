@@ -1,13 +1,15 @@
 import { indentWithTab } from '@codemirror/commands';
 import { search } from '@codemirror/search';
-import { Compartment, EditorSelection, EditorState } from '@codemirror/state';
+import { Compartment, EditorSelection, EditorState, Transaction } from '@codemirror/state';
 import { placeholder as cmPlaceholder, EditorView, keymap } from '@codemirror/view';
 import type { HocuspocusProvider } from '@hocuspocus/provider';
+import { t } from '@lingui/core/macro';
 import { createCodeFenceTracker } from '@nedian0brien/synapsenote-core';
 import { isMacOS } from '@tiptap/core';
 import { basicSetup } from 'codemirror';
 import { useTheme } from 'next-themes';
 import { useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { yCollab } from 'y-codemirror.next';
 import type * as Y from 'yjs';
 import { emitOpenAskAiComposer } from '@/components/ask-ai-composer-events';
@@ -21,6 +23,7 @@ import type { RawMdxNavDetail } from '@/editor/extensions/raw-mdx-nav-event';
 import { useConfigContext } from '@/lib/config-provider';
 import { matchesKeyboardShortcut } from '@/lib/keyboard-shortcuts';
 import { createSourceClipboardExtension } from './clipboard/index.ts';
+import { sourceChangeTouchesDatabaseFrontmatter } from './database-source-guard';
 import { type CmCacheEntry, mountCmEditor, parkCmEditor } from './editor-cache';
 import { getMountId } from './mount-id-registry';
 import { markUserTyping } from './observers';
@@ -231,6 +234,28 @@ export function SourceEditor({
               // focus mode. Upstream convention per codemirror.net/examples/tab/.
               keymap.of([indentWithTab]),
               yCollab(ytext, provider.awareness),
+              EditorState.transactionFilter.of((transaction) => {
+                if (!transaction.docChanged || !transaction.annotation(Transaction.userEvent)) {
+                  return transaction;
+                }
+                const ranges: Array<{ from: number; to: number }> = [];
+                transaction.changes.iterChangedRanges((from, to) => ranges.push({ from, to }));
+                if (
+                  !sourceChangeTouchesDatabaseFrontmatter(
+                    transaction.startState.doc.toString(),
+                    ranges,
+                  )
+                ) {
+                  return transaction;
+                }
+                queueMicrotask(() =>
+                  toast.error(
+                    t`Database properties are protected in source mode. Use the page properties or Table View.`,
+                    { id: 'database-source-frontmatter-protected' },
+                  ),
+                );
+                return [];
+              }),
               // Nested-CM / SourceEditor convergence: the factory provides markdown
               // (with GFM + codeLanguages), wiki-link + md-link decorations,
               // agent-flash, theme compartment, line-wrapping. Source mode adds the

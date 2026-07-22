@@ -2,9 +2,10 @@
  * Node-only sub-export for `@nedian0brien/synapsenote-core`.
  *
  * The exports in here statically import `node:fs`, `node:fs/promises`,
- * `node:os`, and `node:path` — bundling them into a browser build via Vite
- * produces "Module 'node:fs' has been externalized" runtime errors as soon
- * as a stub property is accessed.
+ * `node:os`, `node:path`, and `node:crypto` — bundling them into a browser
+ * build via Vite produces "Module 'node:fs' has been externalized" (or
+ * `node:crypto`, etc.) runtime errors as soon as a stub property is
+ * accessed.
  *
  * Browser consumers (`packages/app`) keep importing from the main barrel
  * (`@nedian0brien/synapsenote-core`); server / cli / desktop main consumers
@@ -37,6 +38,39 @@ export {
   type WriteConfigPatchSuccess,
   writeConfigPatch,
 } from './config/write-config-patch.ts';
+export {
+  createDatabasePortableBundle,
+  DATABASE_INTERCHANGE_MAX_FILES,
+  DATABASE_INTERCHANGE_MAX_TEXT_BYTES,
+  DATABASE_PORTABLE_BUNDLE_SCHEMA,
+  DATABASE_PORTABLE_BUNDLE_VERSION,
+  type DatabaseInferredPropertyType,
+  type DatabaseMarkdownImportDraft,
+  type DatabaseMarkdownImportFile,
+  type DatabaseMarkdownImportIssue,
+  type DatabaseMarkdownImportPropertyDraft,
+  type DatabaseMarkdownImportRecordDraft,
+  type DatabasePortableBundle,
+  type DatabasePortableBundleAssetEntry,
+  type DatabasePortableBundleTextEntry,
+  inferDatabaseFromMarkdown,
+  parseDatabasePortableBundle,
+  parseDatabasePortableBundleJson,
+  serializeDatabasePortableBundle,
+} from './database/interchange.ts';
+export {
+  type NotionExportDatabase,
+  type NotionExportDataSource,
+  type NotionExportProperty,
+  type NotionExportRecord,
+  type NotionExportTemplate,
+  type NotionExportView,
+  type NotionImportIssue,
+  type NotionImportPlan,
+  type NotionImportPropertyDraft,
+  type NotionNormalizedExport,
+  planNotionDatabaseImport,
+} from './database/notion-import.ts';
 export {
   type AtomicWriteFsAdapter,
   type AtomicWriteOptions,

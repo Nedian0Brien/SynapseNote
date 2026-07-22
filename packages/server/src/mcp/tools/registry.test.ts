@@ -16,8 +16,8 @@
  *   - `history` / `config` / `preview_url` dropped the `get_` prefix.
  *   - read_document / grep / list_documents were dropped (exec subsumes).
  *
- * This test guards both ends: the 17 retained tools are present; none of the
- * names in RETIRED_TOOL_NAMES are.
+ * This test guards both ends: the complete current tool set is present and none
+ * of the names in RETIRED_TOOL_NAMES are.
  */
 
 import { describe, expect, test } from 'bun:test';
@@ -26,7 +26,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { OK_GATED_TOOL_NAMES } from '@nedian0brien/synapsenote-core';
 import { type Config, ConfigSchema } from '../../config/schema.ts';
-import { registerAllTools } from './index.ts';
+import { DATABASE_SANDBOX_MCP_TOOL_NAMES, registerAllTools } from './index.ts';
 import type { ServerInstance } from './shared.ts';
 
 const BASE_CONFIG: Config = ConfigSchema.parse({});
@@ -43,6 +43,16 @@ const EXPECTED_TOOLS = [
   'preview_url',
   'share_link',
   'current_document',
+  'data',
+  'data_automation',
+  'data_button',
+  'data_place_search',
+  'data_plan',
+  'data_comments',
+  'data_commit',
+  'data_undo',
+  'data_repair',
+  'data_task',
   // Writes — CRUD verbs + version
   'write',
   'edit',
@@ -105,7 +115,7 @@ const RETIRED_TOOL_NAMES = [
   'get_preview_url',
 ] as const;
 
-function captureRegistered(): string[] {
+function captureRegistered(toolProfile: 'full' | 'database-sandbox' = 'full'): string[] {
   const names: string[] = [];
   const cwd = mkdtempSync(join(tmpdir(), 'ok-registry-assertion-'));
   const server = {
@@ -120,17 +130,18 @@ function captureRegistered(): string[] {
     config: BASE_CONFIG,
     resolveCwd: async () => cwd,
     serverUrl: undefined,
+    toolProfile,
   });
   return names;
 }
 
-describe('registerAllTools — 20-tool surface', () => {
-  test('registers exactly 20 tools', () => {
+describe('registerAllTools — 30-tool surface', () => {
+  test('registers exactly 30 tools', () => {
     const names = captureRegistered();
-    expect(names.length).toBe(20);
+    expect(names.length).toBe(30);
   });
 
-  test('the 20 expected tool names are all present', () => {
+  test('the 30 expected tool names are all present', () => {
     const names = new Set(captureRegistered());
     for (const expected of EXPECTED_TOOLS) {
       expect(names).toContain(expected);
@@ -152,6 +163,18 @@ describe('registerAllTools — 20-tool surface', () => {
   test('no duplicate registrations', () => {
     const names = captureRegistered();
     expect(names.length).toBe(new Set(names).size);
+  });
+
+  test('database sandbox profile exposes only read surfaces and Data Plane operations', () => {
+    const names = captureRegistered('database-sandbox');
+    expect(names).toEqual([...DATABASE_SANDBOX_MCP_TOOL_NAMES]);
+    expect(names).not.toContain('write');
+    expect(names).not.toContain('edit');
+    expect(names).not.toContain('delete');
+    expect(names).not.toContain('move');
+    expect(names).not.toContain('restore_version');
+    expect(names).not.toContain('resolve_conflict');
+    expect(names).not.toContain('config');
   });
 });
 
@@ -182,6 +205,10 @@ const OK_AUTO_APPROVED_TOOLS = [
   'palette',
   'preview_url',
   'current_document',
+  'data',
+  'data_button',
+  'data_plan',
+  'data_comments',
   'write',
   'edit',
   'checkpoint',

@@ -1,0 +1,1178 @@
+import { afterEach, describe, expect, mock, test } from 'bun:test';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { DatabaseView } from './DatabaseView';
+import { JsxComponentHostProvider } from './jsx-host-context';
+
+const originalFetch = globalThis.fetch;
+const originalHash = window.location.hash;
+const hash = `sha256:${'a'.repeat(64)}`;
+
+const source = {
+  id: 'ds_tasks',
+  key: 'tasks',
+  name: 'Tasks',
+  recordMeaning: 'One task',
+  folder: 'tasks',
+  properties: [
+    { id: 'prop_title', key: 'title', name: 'Title', type: 'title' as const },
+    { id: 'prop_status', key: 'status', name: 'Status', type: 'text' as const },
+  ],
+};
+
+const view = {
+  id: 'view_open',
+  key: 'open',
+  name: 'Open tasks',
+  sourceId: source.id,
+  layout: { type: 'table' as const, configuration: { rowHeight: 'compact' as const } },
+  sort: [],
+  groups: [],
+  projection: { propertyIds: ['prop_title'], body: 'hidden' as const },
+};
+
+const database = {
+  version: 1 as const,
+  id: 'db_tasks',
+  key: 'tasks',
+  name: 'Tasks database',
+  contract: {
+    purpose: 'Track tasks',
+    canonicality: 'canonical' as const,
+    vocabulary: ['task'],
+    freshness: { expectation: 'realtime' as const, maxAgeSeconds: 60 },
+    sensitivity: 'internal' as const,
+  },
+  people: [],
+  sources: [source],
+  views: [view],
+};
+
+afterEach(() => {
+  cleanup();
+  globalThis.fetch = originalFetch;
+  window.location.hash = originalHash;
+});
+
+describe('DatabaseView', () => {
+  test('renders a linked Feed through its saved chronology and canonical source identity', async () => {
+    const feedSource = {
+      ...source,
+      properties: [
+        ...source.properties,
+        { id: 'prop_edited', key: 'edited', name: 'Edited', type: 'last_edited_time' as const },
+      ],
+    };
+    const feedView = {
+      ...view,
+      id: 'view_feed',
+      key: 'feed',
+      name: 'Task updates',
+      layout: {
+        type: 'feed' as const,
+        configuration: {
+          chronologyPropertyId: 'prop_edited',
+          density: 'compact' as const,
+          showProperties: true,
+          readTracking: 'none' as const,
+          loadLimit: 25,
+        },
+      },
+      sort: [{ propertyId: 'prop_edited', direction: 'desc' as const }],
+      projection: {
+        propertyIds: ['prop_title', 'prop_status', 'prop_edited'],
+        body: 'preview' as const,
+      },
+    };
+    const feedDatabase = { ...database, sources: [feedSource], views: [feedView] };
+    const fetch = mock(async (input: RequestInfo | URL) => {
+      const path = String(input);
+      if (path === '/api/databases/describe')
+        return Response.json({
+          manifestRevision: hash,
+          schemaRevision: hash,
+          database: feedDatabase,
+          source: feedSource,
+          index: {
+            state: 'idle',
+            revision: hash,
+            manifestRevision: hash,
+            recordCount: 1,
+            issueCount: 0,
+            progress: null,
+            lastRebuiltAt: '2026-07-20T00:00:00.000Z',
+            lastIncrementalAt: null,
+            lastError: null,
+          },
+          allowedOperations: ['describe', 'query'],
+        });
+      if (path === '/api/databases/query')
+        return Response.json({
+          sourceId: feedSource.id,
+          snapshotRevision: hash,
+          matched: 1,
+          returned: 1,
+          isComplete: true,
+          nextCursor: null,
+          truncatedBy: null,
+          indexFreshness: 'snapshot',
+          records: [
+            {
+              id: 'rec_feed',
+              path: 'tasks/update.md',
+              revision: hash,
+              values: {
+                prop_title: 'Linked feed update',
+                prop_status: 'Published',
+                prop_edited: '2026-07-21T03:00:00.000Z',
+              },
+            },
+          ],
+          aggregation: null,
+        });
+      return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
+    });
+    globalThis.fetch = fetch as typeof globalThis.fetch;
+    render(
+      <DatabaseView
+        databaseId={feedDatabase.id}
+        sourceId={feedSource.id}
+        viewId={feedView.id}
+        mode="inline"
+      />,
+    );
+    expect(await screen.findByText('Linked feed update')).toBeTruthy();
+    expect(screen.getByText('Tasks · tasks/update.md')).toBeTruthy();
+  });
+
+  test('renders a linked Dashboard by querying only its child saved views', async () => {
+    const dashboardView = {
+      ...view,
+      id: 'view_dashboard',
+      key: 'dashboard',
+      name: 'Task dashboard',
+      layout: {
+        type: 'dashboard' as const,
+        configuration: {
+          rows: [
+            {
+              id: 'dshr_overview',
+              height: 'small' as const,
+              widgets: [{ id: 'dshw_open', viewId: view.id, width: 4 }],
+            },
+          ],
+          globalFilters: [],
+          interactions: [],
+        },
+      },
+    };
+    const dashboardDatabase = { ...database, views: [view, dashboardView] };
+    const requestedViewIds: string[] = [];
+    const fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = String(input);
+      if (path === '/api/databases/describe') {
+        return Response.json({
+          manifestRevision: hash,
+          schemaRevision: hash,
+          database: dashboardDatabase,
+          source,
+          index: {
+            state: 'idle',
+            revision: hash,
+            manifestRevision: hash,
+            recordCount: 1,
+            issueCount: 0,
+            progress: null,
+            lastRebuiltAt: '2026-07-20T00:00:00.000Z',
+            lastIncrementalAt: null,
+            lastError: null,
+          },
+          allowedOperations: ['describe', 'query'],
+        });
+      }
+      if (path === '/api/databases/query') {
+        const request = JSON.parse(String(init?.body)) as { viewId: string };
+        requestedViewIds.push(request.viewId);
+        return Response.json({
+          sourceId: source.id,
+          snapshotRevision: hash,
+          matched: 1,
+          returned: 1,
+          isComplete: true,
+          nextCursor: null,
+          truncatedBy: null,
+          indexFreshness: 'snapshot',
+          records: [
+            {
+              id: 'rec_linked',
+              path: 'tasks/linked.md',
+              revision: hash,
+              values: { prop_title: 'Linked dashboard task' },
+            },
+          ],
+          aggregation: null,
+        });
+      }
+      return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
+    });
+    globalThis.fetch = fetch as typeof globalThis.fetch;
+    render(
+      <DatabaseView
+        databaseId={dashboardDatabase.id}
+        sourceId={source.id}
+        viewId={dashboardView.id}
+        mode="inline"
+      />,
+    );
+    expect(await screen.findByText('Linked dashboard task')).toBeTruthy();
+    expect(requestedViewIds).toEqual([view.id]);
+    expect(requestedViewIds).not.toContain(dashboardView.id);
+  });
+
+  test('renders a linked Form without querying or exposing existing responses', async () => {
+    const formView = {
+      ...view,
+      id: 'view_form',
+      key: 'form',
+      name: 'Task intake',
+      layout: {
+        type: 'form' as const,
+        configuration: {
+          access: 'internal' as const,
+          title: 'Send a task',
+          questions: [
+            {
+              id: 'frmq_001_title',
+              propertyId: 'prop_title',
+              label: 'Task title',
+              required: true,
+            },
+          ],
+          defaults: {},
+          confirmation: {
+            title: 'Response submitted',
+            message: 'Your response has been saved.',
+            allowAnotherResponse: true,
+          },
+          closedMessage: 'This form is no longer accepting responses.',
+          fileUploads: { enabled: false, maxFilesPerQuestion: 5 },
+          spamProtection: {
+            honeypot: true,
+            minimumCompletionSeconds: 2,
+            rateLimit: { maxSubmissions: 10, windowSeconds: 60 },
+          },
+          duplicateSubmission: { type: 'allow' as const },
+          retention: { type: 'workspace' as const },
+        },
+      },
+    };
+    const formDatabase = { ...database, views: [formView] };
+    const fetch = mock(async (input: RequestInfo | URL) => {
+      const path = String(input);
+      if (path !== '/api/databases/describe') {
+        return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
+      }
+      return Response.json({
+        manifestRevision: hash,
+        schemaRevision: hash,
+        database: formDatabase,
+        source,
+        index: {
+          state: 'idle',
+          revision: hash,
+          manifestRevision: hash,
+          recordCount: 42,
+          issueCount: 0,
+          progress: null,
+          lastRebuiltAt: '2026-07-20T00:00:00.000Z',
+          lastIncrementalAt: null,
+          lastError: null,
+        },
+        allowedOperations: ['describe'],
+      });
+    });
+    globalThis.fetch = fetch as typeof globalThis.fetch;
+    render(
+      <DatabaseView
+        databaseId={formDatabase.id}
+        sourceId={source.id}
+        viewId={formView.id}
+        mode="inline"
+      />,
+    );
+    expect(await screen.findByText('Send a task')).toBeTruthy();
+    expect(screen.getByRole('textbox', { name: 'Title' })).toBeTruthy();
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText('42 records')).toBeNull();
+  });
+
+  test('renders a linked Gallery from its saved Files preview', async () => {
+    const gallerySource = {
+      ...source,
+      properties: [
+        ...source.properties,
+        { id: 'prop_media', key: 'media', name: 'Media', type: 'files' as const },
+      ],
+    };
+    const galleryView = {
+      ...view,
+      id: 'view_gallery',
+      key: 'gallery',
+      name: 'Task gallery',
+      layout: {
+        type: 'gallery' as const,
+        configuration: {
+          cardSize: 'medium' as const,
+          cardPreview: { type: 'files' as const, propertyId: 'prop_media' },
+          fitImage: false,
+          showTitle: true,
+          fallbackStyle: 'color' as const,
+          loadLimit: 100,
+        },
+      },
+      projection: { propertyIds: ['prop_title'], body: 'hidden' as const },
+    };
+    const galleryDatabase = { ...database, sources: [gallerySource], views: [galleryView] };
+    globalThis.fetch = mock(async (input: RequestInfo | URL) => {
+      const path = String(input);
+      if (path === '/api/databases/describe') {
+        return Response.json({
+          manifestRevision: hash,
+          schemaRevision: hash,
+          database: galleryDatabase,
+          source: gallerySource,
+          index: {
+            state: 'idle',
+            revision: hash,
+            manifestRevision: hash,
+            recordCount: 1,
+            issueCount: 0,
+            progress: null,
+            lastRebuiltAt: '2026-07-20T00:00:00.000Z',
+            lastIncrementalAt: null,
+            lastError: null,
+          },
+          allowedOperations: ['describe', 'query'],
+        });
+      }
+      if (path === '/api/databases/query') {
+        return Response.json({
+          sourceId: source.id,
+          snapshotRevision: hash,
+          matched: 1,
+          returned: 1,
+          isComplete: true,
+          nextCursor: null,
+          truncatedBy: null,
+          indexFreshness: 'snapshot',
+          records: [
+            {
+              id: 'rec_first',
+              path: 'tasks/first.md',
+              revision: hash,
+              values: {
+                prop_title: 'First task',
+                prop_media: [{ kind: 'local', path: 'media/first.png' }],
+              },
+            },
+          ],
+          aggregation: null,
+          fileStates: { 'media/first.png': 'available' },
+        });
+      }
+      return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
+    }) as typeof fetch;
+
+    render(
+      <DatabaseView
+        databaseId={galleryDatabase.id}
+        sourceId={source.id}
+        viewId={galleryView.id}
+        mode="inline"
+      />,
+    );
+    expect(await screen.findByText('Task gallery')).toBeTruthy();
+    await waitFor(() =>
+      expect(document.querySelector('[data-gallery-card="rec_first"]')).toBeTruthy(),
+    );
+    expect(screen.getByRole('img', { name: 'First task' })).toBeTruthy();
+  });
+
+  test('renders a linked List from stable view references', async () => {
+    const listView = {
+      ...view,
+      id: 'view_list',
+      key: 'list',
+      name: 'Task list',
+      layout: {
+        type: 'list' as const,
+        configuration: {
+          hierarchy: { type: 'flat' as const },
+          density: 'compact' as const,
+          showSections: true,
+          collapsibleSections: true,
+          showDividers: true,
+          loadLimit: 100,
+        },
+      },
+    };
+    const listDatabase = { ...database, views: [listView] };
+    globalThis.fetch = mock(async (input: RequestInfo | URL) => {
+      const path = String(input);
+      if (path === '/api/databases/describe') {
+        return Response.json({
+          manifestRevision: hash,
+          schemaRevision: hash,
+          database: listDatabase,
+          source,
+          index: {
+            state: 'idle',
+            revision: hash,
+            manifestRevision: hash,
+            recordCount: 1,
+            issueCount: 0,
+            progress: null,
+            lastRebuiltAt: '2026-07-20T00:00:00.000Z',
+            lastIncrementalAt: null,
+            lastError: null,
+          },
+          allowedOperations: ['describe', 'query'],
+        });
+      }
+      if (path === '/api/databases/query') {
+        return Response.json({
+          sourceId: source.id,
+          snapshotRevision: hash,
+          matched: 1,
+          returned: 1,
+          isComplete: true,
+          nextCursor: null,
+          truncatedBy: null,
+          indexFreshness: 'snapshot',
+          records: [
+            {
+              id: 'rec_first',
+              path: 'tasks/first.md',
+              revision: hash,
+              values: { prop_title: 'First task' },
+            },
+          ],
+          aggregation: null,
+        });
+      }
+      return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
+    }) as typeof fetch;
+
+    render(
+      <DatabaseView
+        databaseId={listDatabase.id}
+        sourceId={source.id}
+        viewId={listView.id}
+        mode="inline"
+      />,
+    );
+    expect(await screen.findByText('Task list')).toBeTruthy();
+    await waitFor(() => expect(document.querySelector('[data-list-row="rec_first"]')).toBeTruthy());
+  });
+
+  test('renders a linked Board from saved grouping and returned-page memberships', async () => {
+    const boardView = {
+      ...view,
+      id: 'view_board',
+      key: 'board',
+      name: 'Task board',
+      layout: {
+        type: 'board' as const,
+        configuration: {
+          cardSize: 'medium' as const,
+          cardPreview: { type: 'none' as const },
+          fitImage: false,
+          colorColumns: true,
+          groupLimit: 100,
+          cardLimitPerGroup: 100,
+        },
+      },
+      groups: [{ propertyId: 'prop_status', direction: 'asc' as const, hideEmpty: false }],
+      projection: { propertyIds: ['prop_title', 'prop_status'], body: 'hidden' as const },
+    };
+    const boardDatabase = { ...database, views: [boardView] };
+    globalThis.fetch = mock(async (input: RequestInfo | URL) => {
+      const path = String(input);
+      if (path === '/api/databases/describe') {
+        return Response.json({
+          manifestRevision: hash,
+          schemaRevision: hash,
+          database: boardDatabase,
+          source,
+          index: {
+            state: 'idle',
+            revision: hash,
+            manifestRevision: hash,
+            recordCount: 1,
+            issueCount: 0,
+            progress: null,
+            lastRebuiltAt: '2026-07-20T00:00:00.000Z',
+            lastIncrementalAt: null,
+            lastError: null,
+          },
+          allowedOperations: ['describe', 'query'],
+        });
+      }
+      if (path === '/api/databases/query') {
+        return Response.json({
+          sourceId: source.id,
+          snapshotRevision: hash,
+          matched: 1,
+          returned: 1,
+          isComplete: true,
+          nextCursor: null,
+          truncatedBy: null,
+          indexFreshness: 'snapshot',
+          records: [
+            {
+              id: 'rec_first',
+              path: 'tasks/first.md',
+              revision: hash,
+              values: { prop_title: 'First task', prop_status: 'open' },
+            },
+          ],
+          aggregation: null,
+          groupMemberships: {
+            rec_first: [[{ propertyId: 'prop_status', value: 'open' }]],
+          },
+        });
+      }
+      return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
+    }) as typeof fetch;
+
+    render(
+      <DatabaseView
+        databaseId={boardDatabase.id}
+        sourceId={source.id}
+        viewId={boardView.id}
+        mode="inline"
+      />,
+    );
+
+    expect(await screen.findByText('Task board')).toBeTruthy();
+    expect(await screen.findByText('First task')).toBeTruthy();
+    expect(document.querySelector('[data-board-card="rec_first"]')).toBeTruthy();
+  });
+
+  test('renders a linked Calendar from its saved timezone-aware Date mapping', async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const calendarSource = {
+      ...source,
+      properties: [
+        ...source.properties,
+        { id: 'prop_schedule', key: 'schedule', name: 'Schedule', type: 'date' as const },
+      ],
+    };
+    const calendarView = {
+      ...view,
+      id: 'view_calendar',
+      key: 'calendar',
+      name: 'Task calendar',
+      layout: {
+        type: 'calendar' as const,
+        configuration: {
+          datePropertyId: 'prop_schedule',
+          display: 'month' as const,
+          weekStartsOn: 'monday' as const,
+          timeZone: 'UTC',
+          showWeekends: true,
+          cardLimitPerDay: 10,
+        },
+      },
+      projection: { propertyIds: ['prop_title'], body: 'hidden' as const },
+    };
+    const calendarDatabase = { ...database, sources: [calendarSource], views: [calendarView] };
+    globalThis.fetch = mock(async (input: RequestInfo | URL) => {
+      const path = String(input);
+      if (path === '/api/databases/describe') {
+        return Response.json({
+          manifestRevision: hash,
+          schemaRevision: hash,
+          database: calendarDatabase,
+          source: calendarSource,
+          index: {
+            state: 'idle',
+            revision: hash,
+            manifestRevision: hash,
+            recordCount: 1,
+            issueCount: 0,
+            progress: null,
+            lastRebuiltAt: '2026-07-20T00:00:00.000Z',
+            lastIncrementalAt: null,
+            lastError: null,
+          },
+          allowedOperations: ['describe', 'query'],
+        });
+      }
+      if (path === '/api/databases/query') {
+        return Response.json({
+          sourceId: source.id,
+          snapshotRevision: hash,
+          matched: 1,
+          returned: 1,
+          isComplete: true,
+          nextCursor: null,
+          truncatedBy: null,
+          indexFreshness: 'snapshot',
+          records: [
+            {
+              id: 'rec_first',
+              path: 'tasks/first.md',
+              revision: hash,
+              values: { prop_title: 'First task', prop_schedule: today },
+            },
+          ],
+          aggregation: null,
+        });
+      }
+      return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
+    }) as typeof fetch;
+
+    render(
+      <DatabaseView
+        databaseId={calendarDatabase.id}
+        sourceId={source.id}
+        viewId={calendarView.id}
+        mode="inline"
+      />,
+    );
+
+    expect(await screen.findByText('Task calendar')).toBeTruthy();
+    await waitFor(() =>
+      expect(document.querySelector('[data-calendar-card="rec_first"]')).toBeTruthy(),
+    );
+  });
+
+  test('renders a linked Timeline from its saved Date mapping', async () => {
+    const timelineSource = {
+      ...source,
+      properties: [
+        ...source.properties,
+        { id: 'prop_schedule', key: 'schedule', name: 'Schedule', type: 'date' as const },
+      ],
+    };
+    const timelineView = {
+      ...view,
+      id: 'view_timeline',
+      key: 'timeline',
+      name: 'Task timeline',
+      layout: {
+        type: 'timeline' as const,
+        configuration: {
+          dateMapping: { type: 'range' as const, propertyId: 'prop_schedule' },
+          scale: 'day' as const,
+          showTable: true,
+          showToday: true,
+          showDependencies: true,
+          noDateLane: true,
+          loadLimit: 100,
+        },
+      },
+      projection: { propertyIds: ['prop_title', 'prop_schedule'], body: 'hidden' as const },
+    };
+    const timelineDatabase = { ...database, sources: [timelineSource], views: [timelineView] };
+    globalThis.fetch = mock(async (input: RequestInfo | URL) => {
+      const path = String(input);
+      if (path === '/api/databases/describe') {
+        return Response.json({
+          manifestRevision: hash,
+          schemaRevision: hash,
+          database: timelineDatabase,
+          source: timelineSource,
+          index: {
+            state: 'idle',
+            revision: hash,
+            manifestRevision: hash,
+            recordCount: 1,
+            issueCount: 0,
+            progress: null,
+            lastRebuiltAt: '2026-07-20T00:00:00.000Z',
+            lastIncrementalAt: null,
+            lastError: null,
+          },
+          allowedOperations: ['describe', 'query'],
+        });
+      }
+      if (path === '/api/databases/query') {
+        return Response.json({
+          sourceId: source.id,
+          snapshotRevision: hash,
+          matched: 1,
+          returned: 1,
+          isComplete: true,
+          nextCursor: null,
+          truncatedBy: null,
+          indexFreshness: 'snapshot',
+          records: [
+            {
+              id: 'rec_first',
+              path: 'tasks/first.md',
+              revision: hash,
+              values: {
+                prop_title: 'First task',
+                prop_schedule: { start: '2026-07-20', end: '2026-07-22' },
+              },
+            },
+          ],
+          aggregation: null,
+        });
+      }
+      return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
+    }) as typeof fetch;
+
+    render(
+      <DatabaseView
+        databaseId={timelineDatabase.id}
+        sourceId={source.id}
+        viewId={timelineView.id}
+        mode="inline"
+      />,
+    );
+
+    expect(await screen.findByText('Task timeline')).toBeTruthy();
+    expect((await screen.findAllByText('First task')).length).toBeGreaterThan(0);
+    expect(document.querySelector('[data-timeline-bar="rec_first"]')).toBeTruthy();
+  });
+
+  test('renders a live projection from stable references without embedded records', async () => {
+    const secondaryView = {
+      ...view,
+      id: 'view_done',
+      key: 'done',
+      name: 'Done tasks',
+    };
+    const linkedDatabase = { ...database, views: [view, secondaryView] };
+    const requests: Array<{ path: string; body: Record<string, unknown> }> = [];
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = String(input);
+      if (path.startsWith('/api/document?docName=tasks%2Ffirst')) {
+        return Response.json({
+          docName: 'tasks/first',
+          content: '---\ntitle: First task\n---\nLinked canonical body.',
+          lifecycle: null,
+        });
+      }
+      const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+      requests.push({ path, body });
+      if (path === '/api/databases/describe') {
+        return Response.json({
+          manifestRevision: hash,
+          schemaRevision: hash,
+          database: linkedDatabase,
+          source,
+          index: {
+            state: 'idle',
+            revision: hash,
+            manifestRevision: hash,
+            recordCount: 1,
+            issueCount: 0,
+            progress: null,
+            lastRebuiltAt: '2026-07-20T00:00:00.000Z',
+            lastIncrementalAt: null,
+            lastError: null,
+          },
+          allowedOperations: ['describe', 'query'],
+        });
+      }
+      if (path === '/api/databases/query') {
+        const includeArchived =
+          (body.query as { includeArchived?: boolean } | undefined)?.includeArchived === true;
+        return Response.json({
+          sourceId: source.id,
+          snapshotRevision: hash,
+          matched: 1,
+          returned: 1,
+          isComplete: true,
+          nextCursor: null,
+          truncatedBy: null,
+          indexFreshness: 'snapshot',
+          records: [
+            {
+              id: 'rec_first',
+              path: 'tasks/first.md',
+              revision: hash,
+              values: { prop_title: 'First task', prop_status: 'open' },
+              ...(includeArchived ? { archivedAt: '2026-07-20T00:00:00.000Z' } : {}),
+            },
+          ],
+          aggregation: null,
+        });
+      }
+      return Response.json({ detail: 'unexpected request' }, { status: 500 });
+    }) as typeof fetch;
+
+    const { rerender } = render(
+      <DatabaseView databaseId={database.id} sourceId={source.id} viewId={view.id} mode="inline" />,
+    );
+
+    expect(await screen.findByRole('heading', { name: 'Open tasks' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Done tasks' })).toBeTruthy();
+    expect(
+      document.querySelector('[data-linked-database-view-tabs] [aria-current="page"]'),
+    ).toBeTruthy();
+    expect(await screen.findByText('First task')).toBeTruthy();
+    expect(document.querySelector('th[data-property-id="prop_status"]')).toBeNull();
+    expect(requests.find((request) => request.path === '/api/databases/query')?.body).toMatchObject(
+      {
+        databaseId: database.id,
+        sourceId: source.id,
+        viewId: view.id,
+        query: { page: { limit: 25 } },
+      },
+    );
+    expect(document.querySelector('[data-view-mode="inline"]')).toBeTruthy();
+    const inlineSurface = document.querySelector('[data-database-view-state="ready"]');
+    expect(inlineSurface?.getAttribute('data-database-id')).toBe(database.id);
+    expect(inlineSurface?.getAttribute('data-source-id')).toBe(source.id);
+    expect(inlineSurface?.getAttribute('data-view-id')).toBe(view.id);
+    expect(document.querySelector('[data-record-id="rec_first"]')).toBeTruthy();
+    expect(screen.getByLabelText('Duplicate record rec_first')).toBeTruthy();
+    expect(screen.getByLabelText('Archive record rec_first')).toBeTruthy();
+    expect(screen.getByLabelText('Move record rec_first')).toBeTruthy();
+    expect(screen.getByLabelText('Delete record rec_first')).toBeTruthy();
+    fireEvent.click(screen.getByLabelText('Open record rec_first'));
+    expect(await screen.findByText('Linked canonical body.')).toBeTruthy();
+    expect(window.location.hash).toBe(originalHash);
+    fireEvent.click(screen.getByRole('button', { name: 'Open full page' }));
+    expect(window.location.hash).not.toBe(originalHash);
+
+    fireEvent.click(screen.getByText('Show archived'));
+    expect(await screen.findByLabelText('Restore record rec_first')).toBeTruthy();
+    await waitFor(() =>
+      expect(
+        requests.filter((request) => request.path === '/api/databases/query').at(-1)?.body,
+      ).toMatchObject({ query: { includeArchived: true } }),
+    );
+
+    rerender(
+      <DatabaseView
+        databaseId={database.id}
+        sourceId={source.id}
+        viewId={view.id}
+        mode="full-page"
+      />,
+    );
+    await waitFor(() =>
+      expect(
+        requests.filter((request) => request.path === '/api/databases/query').at(-1)?.body,
+      ).toMatchObject({ query: { page: { limit: 100 } } }),
+    );
+    expect(document.querySelector('[data-view-mode="full-page"]')).toBeTruthy();
+    const fullPageSurface = document.querySelector('[data-database-view-state="ready"]');
+    expect(fullPageSurface?.getAttribute('data-database-id')).toBe(database.id);
+    expect(fullPageSurface?.getAttribute('data-source-id')).toBe(source.id);
+    expect(fullPageSurface?.getAttribute('data-view-id')).toBe(view.id);
+    expect(document.querySelectorAll('[data-record-id="rec_first"]')).toHaveLength(1);
+  });
+
+  test('keeps the last verified linked snapshot visible when a refresh goes offline', async () => {
+    let offline = false;
+    const fetch = mock(async (input: RequestInfo | URL) => {
+      const path = String(input);
+      if (offline) return Response.json({ detail: 'offline' }, { status: 503 });
+      if (path === '/api/databases/describe') {
+        return Response.json({
+          manifestRevision: hash,
+          schemaRevision: hash,
+          database,
+          source,
+          index: {
+            state: 'idle',
+            revision: hash,
+            manifestRevision: hash,
+            recordCount: 1,
+            issueCount: 0,
+            progress: null,
+            lastRebuiltAt: '2026-07-20T00:00:00.000Z',
+            lastIncrementalAt: null,
+            lastError: null,
+          },
+          allowedOperations: ['describe', 'query'],
+        });
+      }
+      if (path === '/api/databases/query') {
+        return Response.json({
+          sourceId: source.id,
+          snapshotRevision: hash,
+          matched: 1,
+          returned: 1,
+          isComplete: true,
+          nextCursor: null,
+          truncatedBy: null,
+          indexFreshness: 'snapshot',
+          records: [
+            {
+              id: 'rec_offline',
+              path: 'tasks/offline.md',
+              revision: hash,
+              values: { prop_title: 'Cached task' },
+            },
+          ],
+          aggregation: null,
+        });
+      }
+      return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
+    });
+    globalThis.fetch = fetch as typeof globalThis.fetch;
+    render(
+      <DatabaseView databaseId={database.id} sourceId={source.id} viewId={view.id} mode="inline" />,
+    );
+    expect(await screen.findByText('Cached task')).toBeTruthy();
+    expect(screen.getByText(/Shared records/)).toBeTruthy();
+
+    offline = true;
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh linked database view' }));
+    expect(await screen.findByTestId('database-view-stale')).toBeTruthy();
+    expect(screen.getByText('Cached task')).toBeTruthy();
+  });
+
+  test('starts record creation from a linked view in the canonical review dialog', async () => {
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = String(input);
+      const body = init?.body
+        ? (JSON.parse(String(init.body)) as Record<string, unknown>)
+        : undefined;
+      if (path.startsWith('/api/databases/catalog')) {
+        return Response.json({
+          query: null,
+          manifestRevision: hash,
+          catalogRevision: hash,
+          complete: true,
+          candidates: [
+            {
+              id: database.id,
+              key: database.key,
+              name: database.name,
+              purpose: database.contract.purpose,
+              sources: [
+                {
+                  id: source.id,
+                  key: source.key,
+                  name: source.name,
+                  recordMeaning: source.recordMeaning,
+                  propertyCount: source.properties.length,
+                },
+              ],
+              viewCount: 1,
+              relationCount: 0,
+              score: 0,
+              matchedBy: [],
+            },
+          ],
+        });
+      }
+      if (path === '/api/databases/describe') {
+        return Response.json({
+          manifestRevision: hash,
+          schemaRevision: hash,
+          database,
+          source,
+          index: {
+            state: 'idle',
+            revision: hash,
+            manifestRevision: hash,
+            recordCount: 1,
+            issueCount: 0,
+            progress: null,
+            lastRebuiltAt: '2026-07-20T00:00:00.000Z',
+            lastIncrementalAt: null,
+            lastError: null,
+          },
+          allowedOperations: ['describe', 'query'],
+        });
+      }
+      if (path === '/api/databases/query') {
+        return Response.json({
+          sourceId: source.id,
+          snapshotRevision: hash,
+          matched: 1,
+          returned: 1,
+          isComplete: true,
+          nextCursor: null,
+          truncatedBy: null,
+          indexFreshness: 'snapshot',
+          records: [
+            {
+              id: 'rec_first',
+              path: 'tasks/first.md',
+              revision: hash,
+              values: { prop_title: 'First task', prop_status: 'open' },
+            },
+          ],
+          aggregation: null,
+        });
+      }
+      return Response.json({ detail: `unexpected request: ${path}`, body }, { status: 500 });
+    }) as typeof fetch;
+
+    render(
+      <DatabaseView databaseId={database.id} sourceId={source.id} viewId={view.id} mode="inline" />,
+    );
+    fireEvent.click(await screen.findByText('New record'));
+    expect(await screen.findByLabelText('New record title')).toBeTruthy();
+  });
+
+  test('offers a guided database/source/view picker when stable references are invalid', async () => {
+    const fetchMock = mock(async (input: RequestInfo | URL) => {
+      const path = String(input);
+      if (path.includes('/api/databases/catalog')) {
+        return Response.json({
+          query: null,
+          manifestRevision: 'manifest-1',
+          catalogRevision: hash,
+          complete: true,
+          candidates: [
+            {
+              id: database.id,
+              key: 'tasks',
+              name: database.name,
+              purpose: 'Track work',
+              sources: [
+                {
+                  id: source.id,
+                  key: 'tasks',
+                  name: source.name,
+                  recordMeaning: source.recordMeaning,
+                  propertyCount: source.properties.length,
+                },
+              ],
+              viewCount: 1,
+              relationCount: 0,
+              score: 1,
+              matchedBy: ['name'],
+            },
+          ],
+        });
+      }
+      if (path.includes('/api/databases/describe')) {
+        return Response.json({
+          manifestRevision: 'manifest-1',
+          schemaRevision: hash,
+          database,
+          source,
+          index: {
+            state: 'idle',
+            revision: hash,
+            manifestRevision: 'manifest-1',
+            recordCount: 0,
+            issueCount: 0,
+            progress: null,
+            lastRebuiltAt: null,
+            lastIncrementalAt: null,
+            lastError: null,
+          },
+          allowedOperations: ['describe'],
+        });
+      }
+      return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
+    });
+    globalThis.fetch = fetchMock as typeof fetch;
+    render(<DatabaseView databaseId="tasks" sourceId="source" viewId="open" />);
+    expect(await screen.findByText('Choose a database view')).toBeTruthy();
+    fireEvent.click(await screen.findByRole('button', { name: source.name }));
+    expect(await screen.findByText(view.name)).toBeTruthy();
+    expect(
+      fetchMock.mock.calls.some(([input]) => String(input).includes('/api/databases/describe')),
+    ).toBe(true);
+  });
+
+  test('creates a blank database inline and writes stable references back to the host block', async () => {
+    const dispatched: Array<Record<string, unknown>> = [];
+    const node = {
+      type: { name: 'jsxComponent' },
+      attrs: { componentName: 'DatabaseView', props: {} },
+    };
+    const editor = {
+      state: {
+        doc: { nodeAt: () => node },
+        tr: {
+          setNodeMarkup: (_pos: number, _type: unknown, attrs: Record<string, unknown>) => {
+            dispatched.push(attrs);
+            return {};
+          },
+        },
+      },
+      view: { dispatch: () => {}, focus: () => {} },
+    } as never;
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = String(input);
+      if (path.includes('/api/databases/catalog')) {
+        return Response.json({
+          query: null,
+          manifestRevision: hash,
+          catalogRevision: hash,
+          complete: true,
+          candidates: [],
+        });
+      }
+      const body = init?.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : {};
+      if (path === '/api/databases/plan' && body.action === 'create_draft') {
+        return Response.json({
+          action: 'create_draft',
+          draft: {
+            id: 'draft_inline',
+            revision: hash,
+            normalized: {
+              definition: {
+                id: 'db_inline',
+                sources: [{ id: 'ds_inline' }],
+                views: [{ id: 'view_inline', sourceId: 'ds_inline' }],
+              },
+            },
+          },
+        });
+      }
+      if (path === '/api/databases/plan' && body.action === 'create_plan') {
+        return Response.json({
+          action: 'create_plan',
+          plan: {
+            id: 'plan_inline',
+            hash,
+            snapshotRevision: hash,
+            committable: true,
+            requiresCommit: true,
+            conflicts: [],
+            approvals: [],
+            diff: { manifests: [], records: [], templates: [], policy: {} },
+          },
+        });
+      }
+      if (path === '/api/databases/commit') {
+        return Response.json({
+          mutationId: 'mut_inline',
+          planId: 'plan_inline',
+          planHash: hash,
+          idempotentReplay: false,
+          actualDiff: [],
+          verification: { status: 'passed' },
+          undoToken: 'undo_inline',
+        });
+      }
+      return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
+    }) as typeof fetch;
+
+    render(
+      <JsxComponentHostProvider value={{ editor, getPos: () => 0, addChild: null }}>
+        <DatabaseView databaseId="" sourceId="" viewId="" mode="inline" />
+      </JsxComponentHostProvider>,
+    );
+    expect(await screen.findByText('Choose a database view')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Create new database' }));
+    const name = await screen.findByLabelText('Database name');
+    fireEvent.change(name, { target: { value: 'Inline tasks' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create database' }));
+    await waitFor(() =>
+      expect(dispatched[0]?.props).toMatchObject({
+        databaseId: 'db_inline',
+        sourceId: 'ds_inline',
+        viewId: 'view_inline',
+        mode: 'inline',
+      }),
+    );
+    expect(screen.queryByTestId('inline-database-create-dialog')).toBeNull();
+  });
+});

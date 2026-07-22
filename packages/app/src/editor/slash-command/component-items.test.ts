@@ -51,6 +51,7 @@ describe('getComponentItems (slash menu)', () => {
         'Accordion',
         'Audio',
         'Callout',
+        'Database',
         'Embed',
         'File',
         'Image',
@@ -61,6 +62,7 @@ describe('getComponentItems (slash menu)', () => {
         'PDF',
         'Tabs',
         'Video',
+        'Linked database',
       ].sort(),
     );
   });
@@ -78,6 +80,17 @@ describe('getComponentItems (slash menu)', () => {
     expect(file?.name).toBe('component-File');
     expect(file?.icon).toBeDefined();
     expect(file?.command).toBeFunction();
+  });
+
+  test('database entries use human-first create/link language and hide raw DatabaseView', () => {
+    const items = getComponentItems();
+    const create = items.find((item) => item.label === 'Database');
+    const linked = items.find((item) => item.label === 'Linked database');
+    expect(create).toBeDefined();
+    expect(linked).toBeDefined();
+    expect(create?.aliases).toContain('table');
+    expect(linked?.aliases).toContain('linked view');
+    expect(items.some((item) => item.label === 'Database view')).toBe(false);
   });
 
   test('every entry exposes the SlashCommandItem contract', () => {

@@ -27,6 +27,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { AppErrorBoundary, CrashReportingBoundary } from '@/components/AppErrorBoundary';
 import { selectDesktopRootApp } from '@/components/desktop-root-app';
+import { PublicDatabaseSharePage } from '@/components/PublicDatabaseSharePage';
 import { ReportBugCrashInviteTrigger } from '@/components/ReportBugCrashInviteTrigger';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -208,6 +209,18 @@ if (!root) throw new Error('Root element not found');
 // shell. CLI / web distribution: window.okDesktop is undefined, so this is
 // always the editor (`App`) path.
 const desktopBridge = typeof window === 'undefined' ? undefined : window.okDesktop;
+const publicDatabaseShareMatch =
+  typeof window === 'undefined'
+    ? null
+    : window.location.pathname.match(/^\/share\/databases\/(dbshare_[a-f0-9-]{36})\/?$/);
+const rootApp = publicDatabaseShareMatch?.[1] ? (
+  <PublicDatabaseSharePage
+    shareId={publicDatabaseShareMatch[1]}
+    token={new URLSearchParams(window.location.search).get('token') ?? undefined}
+  />
+) : (
+  selectDesktopRootApp(desktopBridge)
+);
 
 createRoot(root).render(
   <StrictMode>
@@ -228,7 +241,7 @@ createRoot(root).render(
            * i18n + theme.
            */}
           <TooltipProvider>
-            <AppErrorBoundary>{selectDesktopRootApp(desktopBridge)}</AppErrorBoundary>
+            <AppErrorBoundary>{rootApp}</AppErrorBoundary>
             {/*
              * Crash-invite dialog host — a sibling of the root app, outside
              * the shell boundary, so an invitation still surfaces while the

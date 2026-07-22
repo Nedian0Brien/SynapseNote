@@ -36,14 +36,14 @@ export const DESCRIPTION = [
   '',
   'When semantic search is enabled for the workspace (an opt-in setting with an API key), an embeddings signal is additionally fused into `full_text` ranking, surfacing conceptually-related pages that share no keywords. This tool opts in by default; the `semantic` block in the response reports coverage. Note: with semantic enabled, the query and matching page content are sent to the configured embeddings provider (content egress). Set `semantic: false` to force pure-lexical ranking for a call.',
   '',
-  'Returns scored `page`, `folder`, and name-only `file` hits, each with a `signals` breakdown (lexical / fullText / recency / vector); markdown `page` hits also carry a body snippet (`file` hits never do — name-only). `exec`-grep covers every content occurrence and needs no server.',
+  'Returns scored `page`, `folder`, name-only `file`, `database`, `data_source`, `view`, and `record` hits, each with a `signals` breakdown. Database entities include stable IDs and a revision; use those IDs with the database tools instead of parsing `path`.',
   '',
   'Cold start: right after the server boots, the response may carry `ready: false` with an empty `results` while the index is still building. That empty set is NOT authoritative — wait ~2-3 seconds, then retry (agents have no built-in delay, so do not retry in immediate succession). If it is still `ready: false` after 2-3 retries (e.g. a very large workspace), fall back to `exec("grep ...")` rather than polling further. Once `ready` is true/omitted the results are complete.',
   '',
   '**Parameters:**',
   '- `query` — Free-form; tokenized across title, name, path segments, and (with `full_text`) body.',
   '- `intent` (optional) — `omnibar` searches title/path/folders only (fast); `full_text` includes body. Default `full_text`.',
-  '- `scopes` (optional) — Result scope: `page` | `folder` | `file` | `content`. Defaults derive from `intent`.',
+  '- `scopes` (optional) — Result scope: `page` | `folder` | `file` | `content` | `database` | `data_source` | `view` | `record`. Defaults derive from `intent`.',
   '- `limit` (optional) — Max rows; default 20, max 100.',
   '- `semantic` (optional) — Set `false` to force pure-lexical ranking even when semantic search is enabled. Omit to use semantic when available.',
   '',
@@ -56,7 +56,16 @@ interface SearchDeps {
   serverUrl: ServerUrlOrResolver;
 }
 
-const SCOPE_VALUES = ['page', 'folder', 'content', 'file'] as const;
+const SCOPE_VALUES = [
+  'page',
+  'folder',
+  'content',
+  'file',
+  'database',
+  'data_source',
+  'view',
+  'record',
+] as const;
 const INTENT_VALUES = ['omnibar', 'full_text'] as const;
 
 const InputSchema = {
@@ -71,7 +80,7 @@ const InputSchema = {
     .array(z.enum(SCOPE_VALUES))
     .optional()
     .describe(
-      "Override the default scope set. Members: 'page', 'folder', 'file', 'content'. Defaults derive from intent.",
+      "Override the default scope set. Members: 'page', 'folder', 'file', 'content', 'database', 'data_source', 'view', 'record'. Defaults derive from intent.",
     ),
   limit: z.number().int().min(1).max(100).optional().describe('Max rows; default 20, max 100.'),
   semantic: z
@@ -84,9 +93,9 @@ const InputSchema = {
 } as const;
 
 const SearchResultRowSchema = z.object({
-  kind: z.enum(['page', 'folder', 'file']),
+  kind: z.enum(['page', 'folder', 'file', 'database', 'data_source', 'view', 'record']),
   path: z.string(),
-  docName: z.string(),
+  docName: z.string().nullable(),
   title: z.string().nullable(),
   score: z.number(),
   signals: z.object({
@@ -100,6 +109,11 @@ const SearchResultRowSchema = z.object({
   snippet: z.string().optional(),
   previewUrl: z.string().nullable(),
   previewUrlSource: z.enum(PREVIEW_URL_SOURCES).optional(),
+  databaseId: z.string().optional(),
+  sourceId: z.string().optional(),
+  viewId: z.string().optional(),
+  recordId: z.string().optional(),
+  revision: z.string().optional(),
 });
 
 // Non-content semantic status, surfaced only when the workspace has semantic
@@ -125,7 +139,7 @@ const OutputSchema = outputSchemaWithText({
   ready: z.literal(false).optional(),
 });
 
-type SearchKind = 'page' | 'folder' | 'file';
+type SearchKind = 'page' | 'folder' | 'file' | 'database' | 'data_source' | 'view' | 'record';
 
 interface SearchApiRow {
   kind?: SearchKind;
@@ -134,6 +148,11 @@ interface SearchApiRow {
   score?: number;
   signals?: { lexical?: number; fullText?: number; recency?: number; vector?: number };
   snippet?: string;
+  databaseId?: string;
+  sourceId?: string;
+  viewId?: string;
+  recordId?: string;
+  revision?: string;
 }
 
 interface SearchApiSemanticStatus {
@@ -160,13 +179,18 @@ interface SearchApiResponse {
 interface SearchResultRow {
   kind: SearchKind;
   path: string;
-  docName: string;
+  docName: string | null;
   title: string | null;
   score: number;
   signals: { lexical: number; fullText: number; recency: number; vector?: number };
   snippet?: string;
   previewUrl: string | null;
   previewUrlSource?: PreviewUrlSource;
+  databaseId?: string;
+  sourceId?: string;
+  viewId?: string;
+  recordId?: string;
+  revision?: string;
 }
 
 interface SearchSemanticStatus {
@@ -188,7 +212,15 @@ interface SearchStructuredResult {
 }
 
 function isSearchKind(value: unknown): value is SearchKind {
-  return value === 'page' || value === 'folder' || value === 'file';
+  return (
+    value === 'page' ||
+    value === 'folder' ||
+    value === 'file' ||
+    value === 'database' ||
+    value === 'data_source' ||
+    value === 'view' ||
+    value === 'record'
+  );
 }
 
 function normalizeSignals(signals: SearchApiRow['signals']): {
@@ -318,8 +350,13 @@ export function register(server: ServerInstance, deps: SearchDeps): void {
 
         const rows: SearchResultRow[] = (result.results ?? []).flatMap((row) => {
           if (!isSearchKind(row.kind) || typeof row.path !== 'string') return [];
-          const docName = docNameFromPath(row.path);
-          const resolved = resolve(docName);
+          const canPreview =
+            row.kind === 'page' ||
+            row.kind === 'folder' ||
+            row.kind === 'file' ||
+            row.kind === 'record';
+          const docName = canPreview ? docNameFromPath(row.path) : null;
+          const resolved = docName === null ? null : resolve(docName);
           return [
             {
               kind: row.kind,
@@ -331,6 +368,11 @@ export function register(server: ServerInstance, deps: SearchDeps): void {
               ...(row.snippet ? { snippet: row.snippet } : {}),
               previewUrl: resolved?.url ?? null,
               ...(resolved ? { previewUrlSource: resolved.source } : {}),
+              ...(row.databaseId ? { databaseId: row.databaseId } : {}),
+              ...(row.sourceId ? { sourceId: row.sourceId } : {}),
+              ...(row.viewId ? { viewId: row.viewId } : {}),
+              ...(row.recordId ? { recordId: row.recordId } : {}),
+              ...(row.revision ? { revision: row.revision } : {}),
             },
           ];
         });

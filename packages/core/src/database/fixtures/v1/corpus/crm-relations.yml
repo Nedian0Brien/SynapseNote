@@ -1,0 +1,44 @@
+version: 1
+id: db_corpus_crm
+key: corpus-crm
+name: Customer relationships
+people:
+  - id: person_corpus_owner
+    key: account_owner
+    name: Account Owner
+    kind: collaborator
+contract:
+  purpose: Track accounts and contacts without flattening relations
+  canonicality: canonical
+  vocabulary: [account, contact]
+  freshness: { expectation: daily, maxAgeSeconds: 86400 }
+  sensitivity: restricted
+sources:
+  - id: ds_corpus_accounts
+    key: accounts
+    name: Accounts
+    recordMeaning: One customer account
+    folder: crm/accounts
+    properties:
+      - { id: prop_corpus_account_title, key: title, name: Account, type: title, required: true }
+      - { id: prop_corpus_account_owner, key: owner, name: Owner, type: person, multiple: false }
+      - { id: prop_corpus_account_contacts, key: contacts, name: Contacts, type: relation, targetSourceId: ds_corpus_contacts, cardinality: many }
+  - id: ds_corpus_contacts
+    key: contacts
+    name: Contacts
+    recordMeaning: One customer contact
+    folder: crm/contacts
+    properties:
+      - { id: prop_corpus_contact_title, key: title, name: Contact, type: title, required: true }
+      - { id: prop_corpus_contact_email, key: email, name: Email, type: email }
+      - { id: prop_corpus_contact_phone, key: phone, name: Phone, type: phone }
+views:
+  - id: view_corpus_accounts
+    key: accounts
+    name: Accounts
+    sourceId: ds_corpus_accounts
+    layout: { type: table, configuration: {} }
+    sort: [{ propertyId: prop_corpus_account_title, direction: asc }]
+    projection:
+      propertyIds: [prop_corpus_account_title, prop_corpus_account_owner, prop_corpus_account_contacts]
+      body: hidden

@@ -118,7 +118,9 @@ interface FrontmatterRowProps {
   /** Commit handler — triggered by the inner widget on blur / Enter / Escape. */
   onCommit: (next: FrontmatterValue) => void;
   /** Type-change handler — invoked by the type-icon dropdown. */
-  onChangeType: (next: FrontmatterType) => void;
+  onChangeType?: (next: FrontmatterType) => void;
+  /** Render a canonical value without exposing an unverified write path. */
+  readOnly?: boolean;
   /** Delete handler. Omit to hide the trash icon. */
   onRemove?: () => void;
 }
@@ -142,6 +144,7 @@ export function FrontmatterRow({
   path,
   onCommit,
   onChangeType,
+  readOnly = false,
   onRemove,
 }: FrontmatterRowProps) {
   const { t } = useLingui();
@@ -177,8 +180,8 @@ export function FrontmatterRow({
                 <PlaceholderIdentity keyName={keyName} type={declared} />
               ) : (
                 <>
-                  {isComplex ? (
-                    <ComplexValueTypeIcon keyName={keyName} type={declared} />
+                  {isComplex || !onChangeType ? (
+                    <ComplexValueTypeIcon keyName={keyName} type={declared} isComplex={isComplex} />
                   ) : (
                     <TypeIconButton keyName={keyName} type={declared} onChangeType={onChangeType} />
                   )}
@@ -214,14 +217,23 @@ export function FrontmatterRow({
               </span>
             ) : null}
             <div className="min-w-0 flex-1 @max-[26rem]/prow:order-last @max-[26rem]/prow:mt-0.5 @max-[26rem]/prow:basis-full @max-[26rem]/prow:pl-[3.25rem]">
-              <Widget
-                key={`widget-${resetCounter}`}
-                keyName={keyName}
-                value={value}
-                widgetType={declared}
-                path={rowPath}
-                onCommit={onCommit}
-              />
+              {readOnly ? (
+                <span
+                  className="block min-h-7 truncate px-2 py-1.5 text-sm text-muted-foreground"
+                  data-testid="property-readonly-value"
+                >
+                  {typeof value === 'string' ? value : JSON.stringify(value)}
+                </span>
+              ) : (
+                <Widget
+                  key={`widget-${resetCounter}`}
+                  keyName={keyName}
+                  value={value}
+                  widgetType={declared}
+                  path={rowPath}
+                  onCommit={onCommit}
+                />
+              )}
             </div>
             {badge ? <div className="shrink-0 min-h-7 flex items-center">{badge}</div> : null}
             {onRemove ? (
@@ -386,7 +398,15 @@ function SortableRowBody({
  * List) so the row's identity column matches the value's shape; the
  * `data-type="complex"` test attribute remains as the meta-label.
  */
-function ComplexValueTypeIcon({ keyName, type }: { keyName: string; type: FrontmatterType }) {
+function ComplexValueTypeIcon({
+  keyName,
+  type,
+  isComplex = true,
+}: {
+  keyName: string;
+  type: FrontmatterType;
+  isComplex?: boolean;
+}) {
   const { t } = useLingui();
   const Icon = TYPE_ICON[type];
   return (
@@ -395,7 +415,11 @@ function ComplexValueTypeIcon({ keyName, type }: { keyName: string; type: Frontm
       data-testid="type-icon-static"
       data-key={keyName}
       data-type={type}
-      aria-label={t`${keyName} type: complex value (nested; read-only)`}
+      aria-label={
+        isComplex
+          ? t`${keyName} type: complex value (nested; read-only)`
+          : t`${keyName} type: ${type}`
+      }
       className="flex size-7 shrink-0 items-center justify-center rounded text-muted-foreground"
     >
       <Icon className="size-3.5" aria-hidden="true" />

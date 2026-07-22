@@ -3228,7 +3228,10 @@ function registerIpcHandlers() {
         const autoApproveOkTools =
           req.chat.cli === 'codex' &&
           classifyExistingMcpEntry(EDITOR_TARGETS.codex, '', osHomedir()).kind === 'present';
-        const command = buildCliChatCommand(req.chat, { autoApproveOkTools });
+        const command = buildCliChatCommand(req.chat, {
+          autoApproveOkTools,
+          dataPlaneOnlyWrites: process.env.SYNAPSENOTE_DATABASE_SANDBOX_MODE === 'data-plane-only',
+        });
         terminalManager.input({
           windowId: win.id,
           ptyId: req.ptyId,

@@ -4,7 +4,12 @@ export {
   MalformedGitPointerError,
 } from '@nedian0brien/synapsenote-core/shadow-repo-layout';
 export { AgentFocusBroadcaster } from './agent-focus.ts';
-export { AGENT_ID_MAX_LEN, AGENT_ID_RE, toBroadcasterKey, validateAgentId } from './agent-id.ts';
+export {
+  AGENT_ID_MAX_LEN,
+  AGENT_ID_RE,
+  toBroadcasterKey,
+  validateAgentId,
+} from './agent-id.ts';
 export { AgentPresenceBroadcaster } from './agent-presence.ts';
 export {
   AGENT_WRITE_ORIGIN,
@@ -85,7 +90,11 @@ export {
   type HiddenWindowsConsoleOptions,
   withHiddenWindowsConsole,
 } from './child-process-windows-hide.ts';
-export { getLocalDir, resolveContentDir, resolveLockDir } from './config/paths.ts';
+export {
+  getLocalDir,
+  resolveContentDir,
+  resolveLockDir,
+} from './config/paths.ts';
 export { type Config, ConfigSchema } from './config/schema.ts';
 export { MCP_SERVER_NAME } from './constants.ts';
 export {
@@ -109,6 +118,409 @@ export {
   swapContributors,
 } from './contributor-tracker.ts';
 export {
+  createDatabaseAgentPromptRetentionStore,
+  DATABASE_AGENT_PROMPT_RETENTION_MAX_SECONDS,
+  DatabaseAgentPromptRetentionError,
+  type DatabaseAgentPromptRetentionErrorCode,
+  type DatabaseAgentPromptRetentionMetadata,
+  DatabaseAgentPromptRetentionStore,
+} from './database-agent-prompt-retention.ts';
+export {
+  createDatabaseAgentRunStore,
+  DatabaseAgentRunStore,
+  DatabaseAgentRunStoreError,
+  type DatabaseAgentRunStoreErrorCode,
+} from './database-agent-run-store.ts';
+export {
+  type CreateDatabaseAutomationServiceOptions,
+  createDatabaseAutomationService,
+  type DatabaseAutomationEvent,
+  DatabaseAutomationEventSchema,
+  type DatabaseAutomationPlan,
+  type DatabaseAutomationRun,
+  DatabaseAutomationRunSchema,
+  DatabaseAutomationService,
+  type EnqueueDatabaseAutomationEventInput,
+} from './database-automation.ts';
+export {
+  createDatabaseAutomationNotificationStore,
+  type DatabaseAutomationNotification,
+  DatabaseAutomationNotificationSchema,
+  DatabaseAutomationNotificationStore,
+} from './database-automation-notification-store.ts';
+export {
+  createDatabaseAutonomyStore,
+  type DatabaseAutonomyState,
+  DatabaseAutonomyStore,
+  DatabaseAutonomyStoreError,
+  type DatabaseAutonomyStoreErrorCode,
+  type ResolvedDatabaseAutonomyPolicy,
+  type SetDatabaseAutonomySessionPolicyResult,
+} from './database-autonomy-store.ts';
+export * from './database-benchmark-corpus.ts';
+export {
+  type CreateDatabaseButtonPlannerOptions,
+  createDatabaseButtonPlanner,
+  type DatabaseButtonExternalStep,
+  type DatabaseButtonPermissionDecision,
+  type DatabaseButtonPermissionRequest,
+  type DatabaseButtonPlan,
+  DatabaseButtonPlanError,
+  type DatabaseButtonPlanErrorCode,
+  type DatabaseButtonPlanInput,
+  DatabaseButtonPlanInputSchema,
+  DatabaseButtonPlanner,
+  type ResolveDatabaseButtonPermission,
+} from './database-button.ts';
+export {
+  type CreateDatabaseButtonExecutorOptions,
+  createDatabaseButtonExecutor,
+  DatabaseButtonExecutionError,
+  type DatabaseButtonExecutionErrorCode,
+  type DatabaseButtonExecutionInput,
+  DatabaseButtonExecutionInputSchema,
+  DatabaseButtonExecutor,
+  type DatabaseButtonRun,
+  DatabaseButtonRunSchema,
+} from './database-button-executor.ts';
+export {
+  type CreateDatabaseCommentStoreOptions,
+  createDatabaseCommentStore,
+  type DatabaseCommentAction,
+  type DatabaseCommentRecordContext,
+  type DatabaseCommentSnapshot,
+  DatabaseCommentStore,
+  DatabaseCommentStoreError,
+} from './database-comment-store.ts';
+export {
+  type CreateDatabaseCommitEngineOptions,
+  createDatabaseCommitEngine,
+  type DatabaseCommitAutonomyPolicy,
+  DatabaseCommitEngine,
+  DatabaseCommitError,
+  type DatabaseCommitErrorCode,
+  type DatabaseCommitInput,
+  type DatabaseCommitResult,
+  type DatabaseUndoInput,
+  type DatabaseUndoResult,
+  type ResolveDatabaseCommitAutonomyPolicy,
+} from './database-commit.ts';
+export {
+  createDatabaseConnectionExecutor,
+  DatabaseConnectionExecutor,
+} from './database-connection-executor.ts';
+export {
+  DATABASE_CONTEXT_INSPECTION_LIMIT,
+  type DatabaseContextInspection,
+  type DatabaseContextInspectionScope,
+  type DatabaseContextInspectionSummary,
+  DatabaseContextInspector,
+} from './database-context-inspector.ts';
+export {
+  type ColumnarDatabaseRecords,
+  createDatabaseContextPack,
+  type DatabaseContextPack,
+  type DatabaseContextPackAgentView,
+  type DatabaseContextPackEncoding,
+  DatabaseContextPackError,
+  type DatabaseContextPackErrorCode,
+  type DatabaseContextPackInput,
+  type DatabaseContextPackTokenizer,
+  type DatabaseRelationExpansion,
+  type DatabaseRelationExpansionInput,
+  type DatabaseRelationProjection,
+  decodeColumnarDatabaseRecords,
+} from './database-context-pack.ts';
+export {
+  type AppliedDatabaseAgentView,
+  type AppliedDatabaseSavedQuery,
+  type CreateDatabaseDataPlaneOptions,
+  createDatabaseDataPlane,
+  type DatabaseCatalogEntry,
+  type DatabaseCatalogMatchField,
+  type DatabaseCatalogNotModifiedResult,
+  type DatabaseCatalogResult,
+  type DatabaseCatalogSourceCard,
+  type DatabaseComputedPropertyPreviewResult,
+  DatabaseDataPlane,
+  DatabaseDataPlaneError,
+  type DatabaseDataPlaneErrorCode,
+  type DatabaseDataPlaneLexicalSearchResult,
+  type DatabaseDataPlanePackInput,
+  type DatabaseDataPlaneQueryResult,
+  type DatabaseDataPlaneRetrievalResult,
+  type DatabaseDescribeNotModifiedResult,
+  type DatabaseDescribeResult,
+  type DatabaseFindResult,
+  type DatabasePropertyConversionPlanPreview,
+  type DatabasePublicShareTargetResolution,
+  type DatabaseQueryAccessDecision,
+  type DatabaseQueryDelta,
+  type DatabaseQueryDeltaReceipt,
+  type DatabaseQueryExplainTrace,
+  type DatabaseQueryPermissionExclusions,
+  type DatabaseQueryResultState,
+  type DatabaseRetrievalMode,
+  type ResolveDatabaseGlobalAccess,
+  type ResolveDatabaseQueryAccess,
+} from './database-data-plane.ts';
+export {
+  createDatabaseDataPlaneApiHandlers,
+  DATABASE_API_SCHEMA_VERSION,
+  DATABASE_API_SCHEMA_VERSION_HEADER,
+  DATABASE_API_SCHEMAS,
+  DatabaseAgentRunsRequestSchema,
+  DatabaseAgentRunsResponseSchema,
+  DatabaseAutonomyRequestSchema,
+  DatabaseAutonomyResponseSchema,
+  DatabaseButtonRequestSchema,
+  DatabaseButtonResponseSchema,
+  DatabaseCatalogRequestSchema,
+  DatabaseCatalogResponseSchema,
+  DatabaseCommitRequestSchema,
+  DatabaseCommitResponseSchema,
+  DatabaseComputedPropertyPreviewRequestSchema,
+  DatabaseComputedPropertyPreviewResponseSchema,
+  DatabaseContextInspectionRequestSchema,
+  DatabaseContextInspectionResponseSchema,
+  DatabaseContextPackRequestSchema,
+  DatabaseContextPackResponseSchema,
+  type DatabaseDataPlaneApiHandlers,
+  DatabaseDescribeRequestSchema,
+  DatabaseDescribeResponseSchema,
+  DatabaseDiagnosticsResponseSchema,
+  type DatabaseDiagnosticsResult,
+  DatabaseFindRequestSchema,
+  DatabaseFindResponseSchema,
+  DatabaseManifestMigrationPreviewSchema,
+  DatabaseOnboardingPreviewSchema,
+  DatabasePlanRequestSchema,
+  DatabasePlanResponseSchema,
+  DatabasePublicSharesRequestSchema,
+  DatabasePublicSharesResponseSchema,
+  DatabaseQueryRequestSchema,
+  DatabaseQueryResponseSchema,
+  DatabaseRepairRequestSchema,
+  DatabaseRepairResponseSchema,
+  DatabaseRetrieveRequestSchema,
+  DatabaseRetrieveResponseSchema,
+  type DatabaseTask,
+  type DatabaseTaskRequest,
+  DatabaseTaskRequestSchema,
+  type DatabaseTaskResponse,
+  DatabaseTaskResponseSchema,
+  DatabaseTaskSchema,
+  DatabaseTemplateRunsRequestSchema,
+  DatabaseTemplateRunsResponseSchema,
+  DatabaseUndoRequestSchema,
+  DatabaseUndoResponseSchema,
+} from './database-data-plane-api.ts';
+export {
+  type CreateDatabaseFormRetentionServiceOptions,
+  createDatabaseFormRetentionService,
+  DatabaseFormRetentionService,
+} from './database-form-retention.ts';
+export {
+  createDatabaseFormStateStore,
+  type DatabaseFormReceipt,
+  DatabaseFormStateStore,
+  type DatabaseFormStoredResult,
+  databaseFormPrivateKey,
+  type ReserveDatabaseFormReceiptInput,
+} from './database-form-state-store.ts';
+export {
+  type CreateDatabaseGitRecoveryOptions,
+  createDatabaseGitRecoveryService,
+  type DatabaseGitOperation,
+  DatabaseGitRecoveryService,
+  type DatabaseGitRecoveryStatus,
+} from './database-git-recovery.ts';
+export * from './database-lifecycle-benchmark.ts';
+export {
+  type MarkdownFolderDatabasePreview,
+  type PreviewMarkdownFolderDatabaseInput,
+  previewMarkdownFolderDatabase,
+} from './database-markdown-import.ts';
+export * from './database-performance-benchmark.ts';
+export {
+  createDatabasePermissionStore,
+  type DatabasePermissionGrant,
+  type DatabasePermissionState,
+  DatabasePermissionStore,
+  DatabasePermissionStoreError,
+} from './database-permission-store.ts';
+export {
+  createDatabasePlaceSearchService,
+  createDatabasePlaceSearchServiceFromEnv,
+  createNominatimPlaceSearchProvider,
+  type DatabasePlaceSearchCandidate,
+  DatabasePlaceSearchError,
+  type DatabasePlaceSearchInput,
+  DatabasePlaceSearchInputSchema,
+  type DatabasePlaceSearchProvider,
+  type DatabasePlaceSearchResult,
+  type DatabasePlaceSearchService,
+} from './database-place-search.ts';
+export {
+  type CreateDatabasePlanEngineOptions,
+  createDatabasePlanEngine,
+  type DatabaseConflictDomain,
+  type DatabaseDesiredStateDraft,
+  type DatabaseDesiredStateDraftInput,
+  DatabaseDesiredStateDraftSchema,
+  type DatabaseDraftArtifact,
+  type DatabasePlanArtifact,
+  type DatabasePlanConflict,
+  DatabasePlanEngine,
+  DatabasePlanError,
+  type DatabasePlanErrorCode,
+  type DatabaseRecordMutation,
+  DatabaseRecordMutationSchema,
+} from './database-plan.ts';
+export {
+  type DatabaseProblemCode,
+  type DatabaseProblemExtensions,
+  DatabaseProblemExtensionsSchema,
+  type DatabaseRecovery,
+  type DatabaseRecoveryAction,
+  DatabaseRecoveryActionSchema,
+  DatabaseRecoverySchema,
+  databaseProblemExtensions,
+} from './database-problem.ts';
+export {
+  applyDatabaseRecordDiskEvent,
+  type CreateDatabaseRecordIndexOptions,
+  createDatabaseRecordIndex,
+  DATABASE_LEXICAL_MAX_EVIDENCE_PER_HIT,
+  DATABASE_LEXICAL_MAX_HITS,
+  DATABASE_LEXICAL_MAX_TERMS,
+  type DatabaseLexicalEvidence,
+  type DatabaseLexicalMatchField,
+  type DatabaseLexicalSearchHit,
+  type DatabaseLexicalSearchInput,
+  DatabaseLexicalSearchLimitError,
+  type DatabaseLexicalSearchResult,
+  DatabaseRecordIndex,
+  type DatabaseRecordIndexConsistencyReport,
+  type DatabaseRecordIndexIssue,
+  type DatabaseRecordIndexIssueCode,
+  type DatabaseRecordIndexListOptions,
+  type DatabaseRecordIndexRebuildResult,
+  type DatabaseRecordIndexSnapshot,
+  type DatabaseRecordIndexStatus,
+} from './database-record-index.ts';
+export {
+  type CreateDatabaseRepairEngineOptions,
+  createDatabaseRepairEngine,
+  type DatabaseRepairAction,
+  type DatabaseRepairApplyInput,
+  type DatabaseRepairBlocker,
+  type DatabaseRepairCategory,
+  DatabaseRepairEngine,
+  DatabaseRepairError,
+  type DatabaseRepairErrorCode,
+  type DatabaseRepairFileAction,
+  type DatabaseRepairIndexAction,
+  type DatabaseRepairPlan,
+  type DatabaseRepairReceipt,
+  type DatabaseRepairResult,
+  type DatabaseRepairUniqueIdManifestAction,
+} from './database-repair.ts';
+export {
+  DATABASE_SEMANTIC_EMBED_BATCH_SIZE,
+  type DatabaseEmbeddingProvider,
+  type DatabaseHybridRetrievalHit,
+  type DatabaseHybridRetrievalResult,
+  DatabaseSemanticIndex,
+  type DatabaseSemanticIndexConfiguration,
+  type DatabaseSemanticIndexIdentity,
+  type DatabaseSemanticIndexState,
+  type DatabaseSemanticIndexStatus,
+  type DatabaseSemanticPrivacyMode,
+  type DatabaseSemanticSearchHit,
+  type DatabaseSemanticSearchResult,
+  fuseDatabaseRetrieval,
+} from './database-semantic-index.ts';
+export {
+  type AssignDatabaseRecordIdInput,
+  type AssignDatabaseRecordIdResult,
+  type CreateDatabaseStoreOptions,
+  createDatabaseStore,
+  DATABASE_MANIFEST_RELATIVE_DIR,
+  type DatabaseOnboardingAction,
+  type DatabaseOnboardingItem,
+  type DatabaseOnboardingPlannedChange,
+  type DatabaseOnboardingPreview,
+  type DatabaseOnboardingReason,
+  type DatabaseOnboardingReasonCode,
+  DatabaseStore,
+  type DatabaseStoreDiagnostic,
+  type DatabaseStoreDiagnosticCode,
+  DatabaseStoreError,
+  type DatabaseStoreErrorCode,
+  type DatabaseStoreFs,
+  type DatabaseStoreSnapshot,
+  type PreviewDatabaseSourceOnboardingInput,
+} from './database-store.ts';
+export {
+  createDatabaseSummaryStore,
+  DatabaseSummaryStore,
+  DatabaseSummaryStoreError,
+  type DatabaseSummaryStoreErrorCode,
+  type PutGeneratedDatabaseSummaryInput,
+} from './database-summary-store.ts';
+export {
+  createDatabaseTaskRollbackJournal,
+  DatabaseTaskRollbackError,
+  DatabaseTaskRollbackJournal,
+  type DatabaseTaskRollbackResult,
+} from './database-task-rollback.ts';
+export {
+  createDatabaseTaskRunner,
+  type DatabaseTaskExecutionContext,
+  DatabaseTaskExecutionError,
+  type DatabaseTaskHandler,
+  type DatabaseTaskHandlers,
+  DatabaseTaskRunner,
+} from './database-task-runner.ts';
+export {
+  type CreateDatabaseTaskServiceOptions,
+  createDatabaseTaskService,
+  type DatabaseManifestMigrationPreview,
+  type DatabaseManifestMigrationPreviewItem,
+  DatabaseTaskService,
+  DatabaseTaskServiceError,
+  type DatabaseTaskServiceErrorCode,
+  type StartDatabaseBulkTaskInput,
+  type StartDatabaseImportTaskInput,
+  type StartDatabaseMigrationTaskInput,
+  type StartDatabaseTaskInput,
+} from './database-task-service.ts';
+export {
+  type CreateDatabaseTaskInput,
+  createDatabaseTaskStore,
+  type DatabaseTaskCheckpoint,
+  type DatabaseTaskInput,
+  type DatabaseTaskOperation,
+  type DatabaseTaskProblem,
+  type DatabaseTaskProgress,
+  type DatabaseTaskState,
+  DatabaseTaskStore,
+  DatabaseTaskStoreError,
+  type DatabaseTaskStoreErrorCode,
+  type ListDatabaseTasksInput,
+  type ListDatabaseTasksResult,
+} from './database-task-store.ts';
+export {
+  type CreateDatabaseTemplateSchedulerOptions,
+  createDatabaseTemplateScheduler,
+  type DatabaseTemplateRun,
+  DatabaseTemplateRunSchema,
+  DatabaseTemplateScheduler,
+  type ExecuteDatabaseTemplateInput,
+  latestDatabaseTemplateOccurrence,
+} from './database-template-scheduler.ts';
+export {
   type DetectClaudeDesktopOptions,
   detectClaudeDesktopPresence,
 } from './detect-claude-desktop.ts';
@@ -131,7 +543,12 @@ export {
   createExternalChangeHandler,
   FILE_WATCHER_ORIGIN,
 } from './external-change.ts';
-export { createFileLogger, flushFileLogger, getLogFilePath, getLogsDir } from './file-logger.ts';
+export {
+  createFileLogger,
+  flushFileLogger,
+  getLogFilePath,
+  getLogsDir,
+} from './file-logger.ts';
 export {
   type AsyncSubscription,
   assertNeverDiskEvent,
@@ -170,6 +587,7 @@ export {
   tracedRenameSync,
   tracedRmdirSync,
   tracedRmSync,
+  tracedUnlink,
   tracedUnlinkSync,
   tracedWriteFile,
   tracedWriteFileSync,
@@ -271,10 +689,21 @@ export {
   MCP_CONNECTION_ID_HEADER,
   sanitizeClientName,
 } from './mcp/agent-identity.ts';
-export { getCurrentMcpLogger, McpLogger, runWithMcpLogger } from './mcp/logger.ts';
+export {
+  getCurrentMcpLogger,
+  McpLogger,
+  runWithMcpLogger,
+} from './mcp/logger.ts';
 export { installPrettyZodErrors } from './mcp/pretty-zod-errors.ts';
-export { buildExecResult, type ExecStructuredResult } from './mcp/tools/exec.ts';
-export { registerAllTools } from './mcp/tools/index.ts';
+export {
+  buildExecResult,
+  type ExecStructuredResult,
+} from './mcp/tools/exec.ts';
+export {
+  DATABASE_SANDBOX_MCP_TOOL_NAMES,
+  type McpToolProfile,
+  registerAllTools,
+} from './mcp/tools/index.ts';
 export {
   encodeDocName,
   encodeFolderRoute,
@@ -398,7 +827,11 @@ export {
   type StarterPackInfo,
 } from './seed/index.ts';
 export { serializeError } from './serialize-error.ts';
-export { createServer, type ServerInstance, type ServerOptions } from './server-factory.ts';
+export {
+  createServer,
+  type ServerInstance,
+  type ServerOptions,
+} from './server-factory.ts';
 export {
   acquireServerLock,
   markServerLockDraining,
@@ -531,7 +964,11 @@ export {
   type StateManifestWriter,
   writeStateManifest,
 } from './state-manifest.ts';
-export { TagIndex, type TagIndexOptions, type TagSummaryEntry } from './tag-index.ts';
+export {
+  TagIndex,
+  type TagIndexOptions,
+  type TagSummaryEntry,
+} from './tag-index.ts';
 export {
   getMeter,
   getTracer,
@@ -561,4 +998,8 @@ export {
   type UiLockMetadata,
   updateUiLockPort,
 } from './ui-lock.ts';
-export { PROTOCOL_VERSION, RUNTIME_VERSION, STATE_SCHEMA_VERSION } from './version-constants.ts';
+export {
+  PROTOCOL_VERSION,
+  RUNTIME_VERSION,
+  STATE_SCHEMA_VERSION,
+} from './version-constants.ts';

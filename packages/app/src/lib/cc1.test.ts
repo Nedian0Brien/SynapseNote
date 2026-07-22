@@ -3,15 +3,59 @@ import {
   CC1_CHANNEL_BRANCH_SWITCHED,
   CC1_CHANNEL_CONFIG_IGNORE_NESTED_ERROR,
   CC1_CHANNEL_CONFIG_VALIDATION_REJECTED,
+  CC1_CHANNEL_DATABASE_CHANGED,
   CC1_CHANNEL_DISK_ACK,
   CC1_CONTRACT_VERSION,
   dispatchCC1Stateless,
   parseCC1BranchSwitched,
   parseCC1ConfigIgnoreNestedError,
   parseCC1ConfigValidationRejected,
+  parseCC1DatabaseChanged,
   parseCC1DerivedView,
   parseCC1DiskAck,
 } from './cc1';
+
+const databaseChangedPayload = {
+  v: CC1_CONTRACT_VERSION,
+  ch: CC1_CHANNEL_DATABASE_CHANGED,
+  seq: 1,
+  scope: 'records',
+  reasons: ['record-update'],
+  databaseIds: ['db_tasks'],
+  sourceIds: ['ds_tasks'],
+  recordIds: ['rec_task'],
+  affectedIdsComplete: true,
+  index: {
+    state: 'idle',
+    revision: 'sha256:index',
+    manifestRevision: 'sha256:manifest',
+    recordCount: 1,
+    issueCount: 0,
+    progress: null,
+  },
+} as const;
+
+describe('parseCC1DatabaseChanged', () => {
+  test('parses and dispatches database freshness without record content', () => {
+    expect(parseCC1DatabaseChanged(JSON.stringify(databaseChangedPayload))).toEqual(
+      databaseChangedPayload,
+    );
+    const handler = mock(() => {});
+    dispatchCC1Stateless(JSON.stringify(databaseChangedPayload), { onDatabaseChanged: handler });
+    expect(handler).toHaveBeenCalledWith(databaseChangedPayload);
+  });
+
+  test('rejects malformed index state', () => {
+    expect(
+      parseCC1DatabaseChanged(
+        JSON.stringify({
+          ...databaseChangedPayload,
+          index: { ...databaseChangedPayload.index, state: 'stale' },
+        }),
+      ),
+    ).toBeNull();
+  });
+});
 
 describe('parseCC1DerivedView', () => {
   test('parses a valid files signal', () => {

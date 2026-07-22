@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "benchmark": "database-view-render",
+  "records": 1000,
+  "properties": 30,
+  "samples": 5,
+  "budgetMs": 500,
+  "p50Ms": 98.12,
+  "p95Ms": 218.826,
+  "passed": true,
+  "runtime": {
+    "bun": "1.3.14",
+    "node": "24.3.0",
+    "platform": "darwin",
+    "release": "27.0.0",
+    "arch": "arm64",
+    "dom": "jsdom"
+  }
+}

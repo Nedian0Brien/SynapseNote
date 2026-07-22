@@ -4,9 +4,9 @@ import { builtInComponents, createRegistry, wildcardMeta } from './index.ts';
 import type { JsxComponentMeta } from './types.ts';
 
 describe('createRegistry', () => {
-  test('returns the 14 canonical + 9 compat descriptors + wildcard', () => {
-    // 14 canonicals (Callout, Image, Video, Audio, Accordion, Math,
-    // MermaidFence, Pdf, File, Tabs, Tab, Embed, Mirror, MirrorSource)
+  test('returns the 15 canonical + 9 compat descriptors + wildcard', () => {
+    // 15 canonicals (Callout, Image, Video, Audio, Accordion, Math,
+    // MermaidFence, Pdf, File, Tabs, Tab, Embed, DatabaseView, Mirror, MirrorSource)
     // + 9 compats (GFMCallout, CommonMarkImage, HtmlDetailsAccordion,
     // WikiEmbedImage, WikiEmbedVideo, WikiEmbedAudio, WikiEmbedFile,
     // DollarMath, MathFence) + '*' wildcard.
@@ -22,7 +22,7 @@ describe('createRegistry', () => {
     // through to the wildcard.
     const registry = createRegistry();
     const entries = [...registry.entries()];
-    expect(entries.length).toBe(24);
+    expect(entries.length).toBe(25);
   });
 
   test('get returns registered component by name', () => {
@@ -116,11 +116,11 @@ describe('createRegistry', () => {
 });
 
 describe('builtInComponents manifest', () => {
-  test('contains 14 canonical + 9 compat entries (5-pack + Math + MermaidFence + Pdf + File + Tabs + Tab + Embed + Mirror + MirrorSource canonicals; source-form preservation + math syntax + wiki-embed compats; Mermaid is fence-only)', () => {
-    expect(builtInComponents.length).toBe(23);
+  test('contains 15 canonical + 9 compat entries including linked DatabaseView', () => {
+    expect(builtInComponents.length).toBe(24);
     const canonical = builtInComponents.filter((m) => m.surface === 'canonical');
     const compat = builtInComponents.filter((m) => m.surface === 'compat');
-    expect(canonical.length).toBe(14);
+    expect(canonical.length).toBe(15);
     expect(compat.length).toBe(9);
   });
 
@@ -762,6 +762,22 @@ describe('builtInComponents manifest', () => {
     expect(anchor?.required).toBe(true);
   });
 
+  test('DatabaseView stores only stable references and display mode', () => {
+    const databaseView = builtInComponents.find((meta) => meta.name === 'DatabaseView');
+    expect(databaseView).toBeDefined();
+    if (!databaseView) return;
+    expect(databaseView.category).toBe('data');
+    expect(databaseView.hasChildren).toBe(false);
+    expect(databaseView.isSelfClosing).toBe(true);
+    expect(databaseView.props.map((prop) => prop.name)).toEqual([
+      'databaseId',
+      'sourceId',
+      'viewId',
+      'mode',
+    ]);
+    expect(databaseView.props.some((prop) => prop.name === 'records')).toBe(false);
+  });
+
   test('MirrorSource exposes container shape (id + children slot)', () => {
     const mirrorSource = builtInComponents.find((m) => m.name === 'MirrorSource');
     expect(mirrorSource).toBeDefined();
@@ -945,6 +961,10 @@ describe('common/advanced split per descriptor', () => {
       // power-user escape hatch.
       common: ['src', 'title', 'align'],
       advanced: ['width', 'height'],
+    },
+    DatabaseView: {
+      common: ['mode'],
+      advanced: ['databaseId', 'sourceId', 'viewId'],
     },
   };
   for (const [name, split] of Object.entries(expected)) {

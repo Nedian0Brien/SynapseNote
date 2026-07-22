@@ -2,7 +2,9 @@ import { describe, expect, test } from 'bun:test';
 import { CC1_CONTRACT_VERSION } from '../constants/cc1.ts';
 import {
   CC1_CHANNEL_CONFIG_IGNORE_NESTED_ERROR,
+  CC1_CHANNEL_DATABASE_CHANGED,
   CC1ConfigIgnoreNestedErrorPayloadSchema,
+  CC1DatabaseChangedPayloadSchema,
 } from './cc1.ts';
 
 describe('CC1_CHANNEL_CONFIG_IGNORE_NESTED_ERROR', () => {
@@ -71,5 +73,55 @@ describe('CC1ConfigIgnoreNestedErrorPayloadSchema', () => {
       futureField: { nested: true },
     });
     expect(parsed.path).toBe('a/.okignore');
+  });
+});
+
+describe('CC1DatabaseChangedPayloadSchema', () => {
+  test('accepts content-free affected IDs and index freshness state', () => {
+    expect(
+      CC1DatabaseChangedPayloadSchema.parse({
+        v: 1,
+        ch: CC1_CHANNEL_DATABASE_CHANGED,
+        seq: 1,
+        scope: 'records',
+        reasons: ['record-update'],
+        databaseIds: ['db_tasks'],
+        sourceIds: ['ds_tasks'],
+        recordIds: ['rec_task'],
+        affectedIdsComplete: true,
+        index: {
+          state: 'idle',
+          revision: 'sha256:index',
+          manifestRevision: 'sha256:manifest',
+          recordCount: 1,
+          issueCount: 0,
+          progress: null,
+        },
+      }),
+    ).toMatchObject({ ch: 'database-changed', recordIds: ['rec_task'] });
+  });
+
+  test('rejects unbounded affected ID lists through the public shape', () => {
+    expect(
+      CC1DatabaseChangedPayloadSchema.safeParse({
+        v: 1,
+        ch: CC1_CHANNEL_DATABASE_CHANGED,
+        seq: 1,
+        scope: 'records',
+        reasons: ['record-update'],
+        databaseIds: [],
+        sourceIds: [],
+        recordIds: Array.from({ length: 501 }, (_, index) => `rec_${index}`),
+        affectedIdsComplete: false,
+        index: {
+          state: 'idle',
+          revision: 'sha256:index',
+          manifestRevision: 'sha256:manifest',
+          recordCount: 1,
+          issueCount: 0,
+          progress: null,
+        },
+      }).success,
+    ).toBe(false);
   });
 });

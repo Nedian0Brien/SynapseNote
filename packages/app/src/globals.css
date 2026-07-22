@@ -887,6 +887,15 @@
   grid-column: content;
 }
 
+/* A database source may opt its canonical record body into a full-width page
+   layout. The marker is a sibling of the visual editor inside one activity,
+   so :has() scopes the width change to exactly that open record. */
+.flex.h-full.flex-col:has([data-database-page-layout][data-full-width-content="true"])
+:is(.tiptap-editor, .editor-content-aligned) {
+  --content-max-width: calc(100% - 4rem);
+  --margin-width: 2rem;
+}
+
 /* The floating Ask AI composer reserves scroll room at the bottom of the doc by
    padding the editor CONTENT (.ProseMirror / .cm-content) — padding the scroll
    container alone creates no overflow because the content's own min-height fills
@@ -5463,4 +5472,34 @@ html.electron-mode [data-slot="sidebar-inner"] {
 
 .inline-code {
   @apply font-mono bg-muted text-inherit border border-border rounded-md px-1 py-0.5 text-sm;
+}
+
+/* Database workspaces remain usable in narrow desktop panes and respect the
+   platform accessibility preferences without changing canonical data. */
+@media (prefers-reduced-motion: reduce) {
+  [data-database-workspace] *,
+  [data-database-board] *,
+  [data-database-chart] *,
+  [data-database-map] * {
+    scroll-behavior: auto;
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
+    transition-duration: 0.01ms;
+  }
+}
+
+@media (forced-colors: active) {
+  [data-database-workspace] [data-database-state],
+  [data-database-board] [role="status"],
+  [data-database-chart] [role="alert"],
+  [data-database-map] [role="alert"] {
+    border: 1px solid CanvasText;
+  }
+
+  [data-database-workspace] [data-database-cell-selected="true"],
+  [data-database-chart] [aria-pressed="true"],
+  [data-database-map] [aria-expanded="true"] {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
 }

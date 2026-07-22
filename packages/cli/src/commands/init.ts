@@ -76,6 +76,7 @@ import {
 } from '../sharing/git-exclude.ts';
 import { accent, dim, error, info, success, warning } from '../ui/colors.ts';
 import { isObject } from '../utils/is-object.ts';
+import { installDatabaseGitDrivers } from './database.ts';
 import {
   ALL_EDITOR_IDS,
   EDITOR_TARGETS,
@@ -2497,6 +2498,14 @@ export function initCommand(): Command {
               return;
             }
             throw err;
+          }
+
+          try {
+            installDatabaseGitDrivers(result.projectRoot);
+          } catch (error) {
+            process.stderr.write(
+              `[ok] Database Git merge drivers were not installed: ${error instanceof Error ? error.message : String(error)}\n`,
+            );
           }
 
           // Effective content scope + file count, read post-init from the on-disk

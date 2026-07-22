@@ -1,0 +1,161 @@
+---
+title: Databases
+icon: LuTable2
+description: Create file-native databases, edit records as pages, configure saved views, and recover every reviewed change.
+---
+
+SynapseNote databases are collections of canonical Markdown pages with a typed
+schema and rebuildable indexes. The files remain the source of truth; the
+database manifest stores schema, views, permissions, templates, and automation
+definitions. You can work visually in the editor or use the typed Data Plane
+from an agent.
+
+## Create a database
+
+Open **Databases** from the command palette and choose **Create database**. The
+creation dialog supports:
+
+- **Blank** — a Title property and a Table view.
+- **Template** — Tasks, Projects, CRM, Feedback, Content calendar, Issue
+  tracking, or Research evidence starter databases with example records.
+- **Existing folder** — a read-only onboarding preview before stable identities
+  are assigned to Markdown files.
+- **CSV/TSV** — a bounded typed import with header, value, and error preview.
+
+The preview explains what one record means, the canonical folder, stable key,
+initial view, properties, and record count. Nothing is canonical until the
+exact plan is approved and committed. A failed or discarded plan leaves no
+partial manifest or record files.
+
+## Records are pages
+
+Every database record is one canonical Markdown page. In Table, Board, List,
+Gallery, Calendar, Timeline, Map, Feed, and Dashboard views, open the record
+action to use the configured side peek, center peek, or full page. The same
+page owns the title, body, icon, cover, comments, history, relations, and
+backlinks. Moving or renaming a record preserves its stable record ID.
+
+The Table surface supports typed cell editors, keyboard navigation, rectangular
+selection, TSV copy/paste, row creation, duplicate, move, archive/restore,
+delete, bulk edits, and one-step Undo. Ordinary writes render as proposed
+ghosts until the reviewed exact plan commits; the canonical snapshot refreshes
+after verification.
+
+## Properties
+
+Add a property through the schema panel and choose the type that matches the
+value: Title, Text, Number, Select, Status, Multi-select, Date, Formula,
+Relation, Rollup, Person, Files & media, Checkbox, URL, Email, Phone, Created
+time/by, Last edited time/by, Button, Unique ID, Place, or Verification.
+
+Typed values are validated at the browser, server, and agent boundaries. A
+value edited externally that no longer matches the schema stays byte-preserved
+and appears as an explicit invalid value; it is never silently coerced to an
+empty value. Formula and Rollup results are read-only derived values with
+bounded, permission-scoped evaluation.
+
+## Saved views
+
+One source can have many saved views. A view stores its layout, property
+projection, filters, sorts, groups, conditional colors, page-open behavior, and
+layout settings. The supported layouts are Table, Board, Timeline, Calendar,
+List, Gallery, Chart, Form, Map, Feed, and Dashboard.
+
+Use **Manage views** to create, rename, favorite, duplicate, reorder, set the
+default, or delete a view. View changes are manifest changes and therefore use
+the same exact-plan review and rollback path as other shared schema changes.
+Deleting the source's default view is refused until another default is chosen
+or the default is cleared.
+
+## Inline and linked views
+
+Insert **Database view** from the editor slash menu or author a stable
+`<DatabaseView>` block. The block stores only `databaseId`, `sourceId`, `viewId`,
+and `mode`; it never copies records into the document. Inline and full-page
+linked views query the latest saved view and refresh on scoped database changes.
+Removing a block never deletes its source database or records.
+
+## Import and export
+
+**Import CSV/TSV** previews delimiter, encoding, headers, mappings, typed
+values, invalid rows, and derived/read-only columns before planning. Existing
+records are addressed by stable `record_id`; the import is one bounded atomic
+reviewed transaction. Formula and Rollup columns cannot be imported as stored
+values.
+
+**Export current CSV** follows the active view. **Export all CSV** includes the
+complete source, including archived records. **Export JSON** preserves stable
+IDs, revisions, schema, canonical values, and an explicit completeness receipt.
+Invalid, computed-error, null, relation, date, and person values use explicit
+interchange markers rather than becoming ambiguous empty cells.
+
+## Templates, forms, buttons, and automations
+
+Database templates store typed property defaults and a Markdown body. Forms
+expose an ordered projection of writable properties and enforce required,
+conditional, duplicate, close-time, upload, rate, honeypot, and retention rules
+on the server. Button properties and database/source buttons preview every
+internal diff and external egress before execution. Automations use stable
+triggers, bounded fan-out, content-free history, idempotent delivery, and
+restart-safe retry.
+
+## Permissions and recovery
+
+Permissions and sensitivity are applied before search, ranking, Formula/Rollup
+evaluation, relation expansion, evidence extraction, and Context Pack token
+estimation. Database writes bind stable IDs, current revisions, policy
+revisions, plan hashes, approval, verification, audit receipts, and Undo tokens.
+
+When a write conflicts with a newer snapshot, SynapseNote shows the conflicting
+paths and offers a safe replan. Offline record writes are queued in the local
+browser, replanned against the current snapshot after reconnect, and require
+review before commit.
+
+For beta feedback, open **Database diagnostics** from the command palette. The
+panel can export a content-free JSON snapshot of index state, schema revisions,
+task/repair state, and telemetry; record paths, titles, and bodies are omitted
+from this artifact. The desktop **Report a bug** flow separately lets you
+review a redacted log bundle before sending it.
+
+## Privacy, retention, deletion, and export
+
+Database content stays in the project's Markdown files and Git history. A
+database deletion or record deletion is a reviewed canonical transaction; it
+does not silently erase the recoverable Git history, transaction receipt, or
+the source's stable-ID tombstone. Use **Export all CSV** or **Export JSON**
+before a destructive operation when you need a portable copy. JSON export
+includes stable IDs, schema, revisions, typed values, and a completeness
+receipt; CSV is intended for tabular exchange and uses explicit markers for
+invalid or computed values.
+
+The local undo journal, permission/autonomy policy, connection references, and
+agent-run receipts live under gitignored `.ok/local/` state. Raw agent prompts
+are process-memory data and are cleared on restart or their configured short
+retention window. Diagnostics export is content-free by default, and bug
+reports require an explicit review/send action with redaction. Public Forms
+show their configured retention policy before submission; **Delete after**
+removes accepted responses through the same verified transaction path.
+
+To remove database content, delete or archive it through the database review
+surface, then remove the corresponding canonical folder or use the normal Git
+retention policy. To remove local operational data, stop SynapseNote and
+delete the project's gitignored `.ok/local/` state after keeping any receipt or
+export needed for recovery. See [What SynapseNote writes](/docs/reference/what-synapsenote-writes)
+for the complete machine-local inventory and [the security/privacy release
+review](https://github.com/Nedian0Brien/SynapseNote/blob/main/docs/rfcs/0001-database-security-privacy-release-review.md)
+for the release decision record.
+
+## Troubleshooting
+
+| State              | Meaning                                                                    | Action                                                                              |
+| ------------------ | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| Loading index      | The derived index is rebuilding.                                           | Wait for the fresh snapshot or use the retry action.                                |
+| Stale snapshot     | The last successful snapshot is readable but external changes are pending. | Refresh after the watcher catches up.                                               |
+| Invalid value      | External Markdown contains a value outside the typed schema.               | Open the cell, inspect the preserved raw value, and repair through a reviewed plan. |
+| Permission denied  | The current principal cannot read or mutate the requested scope.           | Ask an owner to change the database/source/view policy.                             |
+| Conflict           | The plan's revision or file guard no longer matches canonical state.       | Use the current snapshot, replan, or discard the proposed change.                   |
+| Broken linked view | A referenced source or saved view was deleted or is unavailable.           | Replace the stable reference; the block never displays copied stale rows.           |
+
+See also [Editor database details](/docs/features/editor#embedded-and-linked-database-views),
+[agent database operations](/docs/reference/database-agent), and
+[Notion migration](/docs/migrate/notion).

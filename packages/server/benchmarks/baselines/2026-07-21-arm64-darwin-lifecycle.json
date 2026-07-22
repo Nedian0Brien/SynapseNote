@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "benchmark": "database-lifecycle",
+  "seed": 1511464998,
+  "corpusDigest": "sha256:58f5fc9d7191a141130daf8b0f5811b34f39d7fba491f27024fe56175af19caa",
+  "metrics": {
+    "coldStartup": {
+      "scale": "1k",
+      "samples": 5,
+      "budgetMs": 250,
+      "p50Ms": 5.36,
+      "p95Ms": 15.306
+    },
+    "initialIndex": {
+      "scale": "1k",
+      "samples": 5,
+      "budgetMs": 5000,
+      "p50Ms": 2575.872,
+      "p95Ms": 2647.149
+    },
+    "incrementalIndex": {
+      "scale": "1k",
+      "samples": 5,
+      "budgetMs": 50,
+      "p50Ms": 2.811,
+      "p95Ms": 3.16
+    },
+    "formulaPropagation": {
+      "scale": "1k",
+      "samples": 5,
+      "budgetMs": 500,
+      "p50Ms": 28.106,
+      "p95Ms": 39.502
+    },
+    "contextPacking": {
+      "scale": "50k",
+      "samples": 5,
+      "budgetMs": 150,
+      "p50Ms": 21.354,
+      "p95Ms": 30.762
+    }
+  },
+  "passed": true,
+  "runtime": {
+    "bun": "1.3.14",
+    "node": "24.3.0",
+    "platform": "darwin",
+    "release": "27.0.0",
+    "arch": "arm64"
+  }
+}

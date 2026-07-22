@@ -3,12 +3,15 @@ import {
   CC1_CHANNEL_BRANCH_SWITCHED,
   CC1_CHANNEL_CONFIG_IGNORE_NESTED_ERROR,
   CC1_CHANNEL_CONFIG_VALIDATION_REJECTED,
+  CC1_CHANNEL_DATABASE_CHANGED,
   CC1_CHANNEL_DISK_ACK,
   CC1_CHANNEL_SERVER_INFO,
   CC1_CONTRACT_VERSION,
   CC1BranchSwitchedPayloadSchema,
   CC1ConfigIgnoreNestedErrorPayloadSchema,
   CC1ConfigValidationRejectedPayloadSchema,
+  CC1DatabaseChangedPayloadSchema,
+  type CC1DatabaseChangeReason,
   CC1DerivedViewPayloadSchema,
   CC1DiskAckPayloadSchema,
   CC1ServerInfoPayloadSchema,
@@ -19,6 +22,8 @@ import {
   isMermaidDocFile,
   SYSTEM_DOC_NAME,
 } from '@nedian0brien/synapsenote-core';
+import type { DatabaseIndexChangeEvent } from './database-index-coordinator.ts';
+import type { DatabaseRecordIndexStatus } from './database-record-index.ts';
 import { getLogger } from './logger.ts';
 import {
   incrementCC1Broadcast,
@@ -38,6 +43,7 @@ const DEBOUNCE_MS = 100;
  * (the pre-disk-ack baseline), a safe degradation.
  */
 const MAX_DISK_ACK_SVS = 1000;
+const MAX_DATABASE_AFFECTED_IDS = 500;
 
 export { CC1_CONTRACT_VERSION, SYSTEM_DOC_NAME };
 
@@ -129,6 +135,14 @@ export class CC1Broadcaster {
   private readonly timers = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly log = getLogger('cc1');
   private warnedMissing = false;
+  private pendingDatabaseChange: {
+    reasons: Set<CC1DatabaseChangeReason>;
+    databaseIds: Set<string>;
+    sourceIds: Set<string>;
+    recordIds: Set<string>;
+    affectedIdsComplete: boolean;
+    status: () => DatabaseRecordIndexStatus;
+  } | null = null;
   /**
    * Latest disk-ack state vector per documentName. Updated synchronously
    * inside `emitDiskAck` BEFORE the broadcast so the in-process snapshot
@@ -211,6 +225,128 @@ export class CC1Broadcaster {
       setCC1SubscriberCount(doc.getConnectionsCount());
     } catch (err) {
       this.log.error({ err, channel }, '[cc1] broadcast failed');
+    }
+  }
+
+  signalDatabaseChanged(
+    event: DatabaseIndexChangeEvent,
+    status: () => DatabaseRecordIndexStatus,
+  ): void {
+    if (event.kind === 'index') {
+      this.flushDatabaseChange();
+      this.broadcastDatabaseChanged({
+        scope: 'workspace',
+        reasons: event.reasons,
+        databaseIds: [],
+        sourceIds: [],
+        recordIds: [],
+        affectedIdsComplete: false,
+        status: status(),
+      });
+      return;
+    }
+
+    const pending = this.pendingDatabaseChange ?? {
+      reasons: new Set<CC1DatabaseChangeReason>(),
+      databaseIds: new Set<string>(),
+      sourceIds: new Set<string>(),
+      recordIds: new Set<string>(),
+      affectedIdsComplete: true,
+      status,
+    };
+    pending.status = status;
+    for (const reason of event.reasons) pending.reasons.add(reason);
+    this.mergeBoundedIds(pending.databaseIds, event.databaseIds, pending);
+    this.mergeBoundedIds(pending.sourceIds, event.sourceIds, pending);
+    this.mergeBoundedIds(pending.recordIds, event.recordIds, pending);
+    this.pendingDatabaseChange = pending;
+
+    const existing = this.timers.get(CC1_CHANNEL_DATABASE_CHANGED);
+    if (existing !== undefined) clearTimeout(existing);
+    this.timers.set(
+      CC1_CHANNEL_DATABASE_CHANGED,
+      setTimeout(() => {
+        this.timers.delete(CC1_CHANNEL_DATABASE_CHANGED);
+        this.flushDatabaseChange();
+      }, DEBOUNCE_MS),
+    );
+  }
+
+  private mergeBoundedIds(
+    target: Set<string>,
+    values: readonly string[],
+    pending: { affectedIdsComplete: boolean },
+  ): void {
+    for (const value of values) {
+      if (target.size >= MAX_DATABASE_AFFECTED_IDS && !target.has(value)) {
+        pending.affectedIdsComplete = false;
+        continue;
+      }
+      target.add(value);
+    }
+  }
+
+  private flushDatabaseChange(): void {
+    const pending = this.pendingDatabaseChange;
+    if (pending === null) return;
+    this.pendingDatabaseChange = null;
+    const timer = this.timers.get(CC1_CHANNEL_DATABASE_CHANGED);
+    if (timer !== undefined) clearTimeout(timer);
+    this.timers.delete(CC1_CHANNEL_DATABASE_CHANGED);
+    this.broadcastDatabaseChanged({
+      scope: 'records',
+      reasons: [...pending.reasons],
+      databaseIds: [...pending.databaseIds],
+      sourceIds: [...pending.sourceIds],
+      recordIds: [...pending.recordIds],
+      affectedIdsComplete: pending.affectedIdsComplete,
+      status: pending.status(),
+    });
+  }
+
+  private broadcastDatabaseChanged(input: {
+    scope: 'records' | 'workspace';
+    reasons: readonly CC1DatabaseChangeReason[];
+    databaseIds: readonly string[];
+    sourceIds: readonly string[];
+    recordIds: readonly string[];
+    affectedIdsComplete: boolean;
+    status: DatabaseRecordIndexStatus;
+  }): void {
+    try {
+      const doc = this.hocuspocus.documents.get(SYSTEM_DOC_NAME);
+      if (!doc) {
+        incrementCC1BroadcastDrop();
+        return;
+      }
+      const seq = (this.seqs.get(CC1_CHANNEL_DATABASE_CHANGED) ?? 0) + 1;
+      this.seqs.set(CC1_CHANNEL_DATABASE_CHANGED, seq);
+      const uniqueSorted = (values: readonly string[]) => [...new Set(values)].sort();
+      const payload = CC1DatabaseChangedPayloadSchema.parse({
+        v: CC1_CONTRACT_VERSION,
+        ch: CC1_CHANNEL_DATABASE_CHANGED,
+        seq,
+        scope: input.scope,
+        reasons: uniqueSorted(input.reasons),
+        databaseIds: uniqueSorted(input.databaseIds),
+        sourceIds: uniqueSorted(input.sourceIds),
+        recordIds: uniqueSorted(input.recordIds),
+        affectedIdsComplete: input.affectedIdsComplete,
+        index: {
+          state: input.status.state,
+          revision: input.status.revision,
+          manifestRevision: input.status.manifestRevision,
+          recordCount: input.status.recordCount,
+          issueCount: input.status.issueCount,
+          progress: input.status.progress,
+        },
+      });
+      doc.broadcastStateless(JSON.stringify(payload));
+      incrementCC1Broadcast();
+      setCC1LastSeq(CC1_CHANNEL_DATABASE_CHANGED, seq);
+      setCC1SubscriberCount(doc.getConnectionsCount());
+    } catch (err) {
+      this.log.error({ err }, '[cc1] database change broadcast failed');
     }
   }
 
@@ -479,5 +615,6 @@ export class CC1Broadcaster {
       clearTimeout(timer);
     }
     this.timers.clear();
+    this.pendingDatabaseChange = null;
   }
 }

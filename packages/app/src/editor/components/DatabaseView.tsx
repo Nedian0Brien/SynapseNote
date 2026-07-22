@@ -1,0 +1,1017 @@
+import { Trans } from '@lingui/react/macro';
+import {
+  DatabaseLinkedViewReferenceSchema,
+  type DatabaseQueryResult,
+  type ProjectedDatabaseRecord,
+} from '@nedian0brien/synapsenote-core';
+import type { DatabaseDesiredStateDraftInput } from '@nedian0brien/synapsenote-server';
+import { AlertCircle, Archive, ExternalLink, Loader2, Plus, RefreshCw, Search } from 'lucide-react';
+import { lazy, Suspense, useEffect, useState } from 'react';
+import { DatabaseRecordPeek } from '@/components/DatabaseRecordPeek';
+import type { DatabaseInitialRecordAction } from '@/components/DatabaseTableDialog';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import {
+  type DatabaseCatalogCandidate,
+  type DatabaseDescription,
+  describeDatabase,
+  fetchDatabaseCatalog,
+} from '@/lib/database-catalog-client';
+import { createBlankDatabaseDesiredState } from '@/lib/database-creation';
+import {
+  readDatabaseLinkedView,
+  rememberDatabaseLinkedView,
+} from '@/lib/database-linked-view-cache';
+import { executeDatabaseUiMutation } from '@/lib/database-mutation-client';
+import { databaseUiMutationReviewMode } from '@/lib/database-mutation-policy';
+import {
+  databasePageTargetToHash,
+  databaseRecordPathToHash,
+  databaseViewOpenBehavior,
+} from '@/lib/database-navigation';
+import { queryDatabase } from '@/lib/database-query-client';
+import { rememberDatabaseRecordNavigation } from '@/lib/database-record-navigation';
+import { subscribeToDatabaseChanged } from '@/lib/documents-events';
+import { cn } from '@/lib/utils';
+import { useJsxComponentHost } from './jsx-host-context.tsx';
+
+const LazyDatabaseTable = lazy(() =>
+  import('@/components/DatabaseTableDialog').then((module) => ({
+    default: module.DatabaseTable,
+  })),
+);
+
+const LazyDatabaseBoard = lazy(() =>
+  import('@/components/DatabaseBoard').then((module) => ({
+    default: module.DatabaseBoard,
+  })),
+);
+
+const LazyDatabaseTimeline = lazy(() =>
+  import('@/components/DatabaseTimeline').then((module) => ({
+    default: module.DatabaseTimeline,
+  })),
+);
+
+const LazyDatabaseCalendar = lazy(() =>
+  import('@/components/DatabaseCalendar').then((module) => ({
+    default: module.DatabaseCalendar,
+  })),
+);
+
+const LazyDatabaseList = lazy(() =>
+  import('@/components/DatabaseList').then((module) => ({
+    default: module.DatabaseList,
+  })),
+);
+
+const LazyDatabaseGallery = lazy(() =>
+  import('@/components/DatabaseGallery').then((module) => ({
+    default: module.DatabaseGallery,
+  })),
+);
+
+const LazyDatabaseChart = lazy(() =>
+  import('@/components/DatabaseChart').then((module) => ({
+    default: module.DatabaseChart,
+  })),
+);
+
+const LazyDatabaseDashboard = lazy(() =>
+  import('@/components/DatabaseDashboard').then((module) => ({
+    default: module.DatabaseDashboard,
+  })),
+);
+
+const LazyDatabaseForm = lazy(() =>
+  import('@/components/DatabaseForm').then((module) => ({
+    default: module.DatabaseForm,
+  })),
+);
+
+const LazyDatabaseMap = lazy(() =>
+  import('@/components/DatabaseMap').then((module) => ({
+    default: module.DatabaseMap,
+  })),
+);
+
+const LazyDatabaseFeed = lazy(() =>
+  import('@/components/DatabaseFeed').then((module) => ({
+    default: module.DatabaseFeed,
+  })),
+);
+
+const LazyDatabaseTableDialog = lazy(() =>
+  import('@/components/DatabaseTableDialog').then((module) => ({
+    default: module.DatabaseTableDialog,
+  })),
+);
+
+interface DatabaseViewProps {
+  databaseId?: string;
+  sourceId?: string;
+  viewId?: string;
+  mode?: 'inline' | 'full-page';
+}
+
+interface InlineDatabasePickerProps {
+  message?: string;
+  onSelected: (reference: { databaseId: string; sourceId: string; viewId: string }) => void;
+  onCreateBlank?: () => void;
+}
+
+/**
+ * Human-facing replacement for the raw database/source/view ID prop panel.
+ * The component intentionally keeps the machine IDs out of the first-use
+ * surface; they remain in the serialized MDX and in the advanced prop panel.
+ */
+function InlineDatabasePicker({ message, onSelected, onCreateBlank }: InlineDatabasePickerProps) {
+  const [query, setQuery] = useState('');
+  const [candidates, setCandidates] = useState<DatabaseCatalogCandidate[]>([]);
+  const [selectedSource, setSelectedSource] = useState<{
+    candidate: DatabaseCatalogCandidate;
+    sourceId: string;
+  } | null>(null);
+  const [description, setDescription] = useState<DatabaseDescription | null>(null);
+  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setStatus('loading');
+    void fetchDatabaseCatalog({ signal: controller.signal })
+      .then((result) => {
+        if (controller.signal.aborted) return;
+        setCandidates(result.candidates);
+        setStatus('ready');
+      })
+      .catch((cause: unknown) => {
+        if (controller.signal.aborted) return;
+        setError(cause instanceof Error ? cause.message : 'Unable to load databases');
+        setStatus('error');
+      });
+    return () => controller.abort();
+  }, []);
+
+  const visibleCandidates = candidates.filter((candidate) => {
+    const needle = query.trim().toLowerCase();
+    if (!needle) return true;
+    return [
+      candidate.name,
+      candidate.purpose,
+      ...candidate.sources.map((source) => source.name),
+    ].some((value) => value.toLowerCase().includes(needle));
+  });
+
+  const chooseSource = (candidate: DatabaseCatalogCandidate, sourceId: string) => {
+    setSelectedSource({ candidate, sourceId });
+    setDescription(null);
+    setError(null);
+    void describeDatabase({ databaseId: candidate.id, sourceId })
+      .then((nextDescription) => setDescription(nextDescription))
+      .catch((cause: unknown) => {
+        setError(cause instanceof Error ? cause.message : 'Unable to load saved views');
+      });
+  };
+
+  return (
+    <section
+      className="my-3 rounded-lg border border-dashed bg-background p-4"
+      contentEditable={false}
+      data-database-view-picker
+      aria-label="Choose a database view"
+    >
+      <div className="flex items-start gap-3">
+        <Search className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+        <div className="min-w-0 flex-1">
+          <div className="font-medium text-sm">Choose a database view</div>
+          <p className="mt-1 text-muted-foreground text-xs">
+            {message ?? 'Pick a database and saved view. Records stay shared with the source.'}
+          </p>
+        </div>
+      </div>
+      <div className="mt-3">
+        <Input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Search databases"
+          aria-label="Search databases"
+        />
+      </div>
+      {onCreateBlank ? (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <Button type="button" size="sm" variant="outline" onClick={onCreateBlank}>
+            <Plus aria-hidden="true" /> Create new database
+          </Button>
+          <span className="text-muted-foreground text-xs">
+            Start with a blank inline table; records stay shared with this page.
+          </span>
+        </div>
+      ) : null}
+      {status === 'loading' ? (
+        <div className="mt-3 text-muted-foreground text-xs" role="status">
+          Loading databases
+        </div>
+      ) : status === 'error' ? (
+        <div className="mt-3 text-destructive text-xs" role="alert">
+          {error}
+        </div>
+      ) : visibleCandidates.length === 0 ? (
+        <div className="mt-3 text-muted-foreground text-xs">No matching databases.</div>
+      ) : (
+        <div className="mt-3 grid gap-2">
+          {visibleCandidates.map((candidate) => (
+            <div key={candidate.id} className="rounded-md border p-2">
+              <div className="font-medium text-sm">{candidate.name}</div>
+              <div className="mt-0.5 text-muted-foreground text-xs">{candidate.purpose}</div>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {candidate.sources.map((source) => (
+                  <Button
+                    key={source.id}
+                    type="button"
+                    size="sm"
+                    variant={selectedSource?.sourceId === source.id ? 'secondary' : 'outline'}
+                    onClick={() => chooseSource(candidate, source.id)}
+                  >
+                    {source.name}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {selectedSource && description?.source ? (
+        <div className="mt-3 rounded-md border bg-muted/20 p-2">
+          <div className="font-medium text-sm">Choose a saved view</div>
+          <div className="mt-2 grid gap-1.5">
+            {description.database.views
+              .filter((view) => view.sourceId === selectedSource.sourceId)
+              .map((view) => (
+                <Button
+                  key={view.id}
+                  type="button"
+                  variant="ghost"
+                  className="h-auto justify-start text-left"
+                  onClick={() =>
+                    onSelected({
+                      databaseId: selectedSource.candidate.id,
+                      sourceId: selectedSource.sourceId,
+                      viewId: view.id,
+                    })
+                  }
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm">{view.name}</span>
+                    <span className="block text-muted-foreground text-xs">
+                      {view.layout.type} · shared records, independent view settings
+                    </span>
+                  </span>
+                </Button>
+              ))}
+          </div>
+        </div>
+      ) : null}
+      {selectedSource && error ? (
+        <div className="mt-2 text-destructive text-xs" role="alert">
+          {error}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+interface InlineDatabaseCreationDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onCreated: (reference: { databaseId: string; sourceId: string; viewId: string }) => void;
+}
+
+/**
+ * Creates a blank database from an inline block without routing the user to
+ * the administration workspace. The same exact-plan mutation seam is used as
+ * the full-page creator; only the low-risk blank path is auto-approved.
+ */
+function InlineDatabaseCreationDialog({
+  open,
+  onOpenChange,
+  onCreated,
+}: InlineDatabaseCreationDialogProps) {
+  const [name, setName] = useState('');
+  const [status, setStatus] = useState<'idle' | 'creating'>('idle');
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = () => {
+    if (status !== 'idle') return;
+    const desiredState: DatabaseDesiredStateDraftInput = createBlankDatabaseDesiredState({
+      name: name.trim() || 'Untitled database',
+    });
+    const policy = {
+      operation: 'blank-database-create' as const,
+      actor: 'human' as const,
+      principalId: 'user:local',
+    };
+    setStatus('creating');
+    setError(null);
+    void executeDatabaseUiMutation({
+      desiredState,
+      actor: { principalId: policy.principalId },
+      idempotencyKey: `ui-inline-database-${Date.now()}`,
+      assertions: {
+        databaseAbsent: true,
+        createdRecords: desiredState.sampleRecords?.length ?? 0,
+      },
+      review: () => databaseUiMutationReviewMode(policy) === 'automatic',
+    })
+      .then((outcome) => {
+        if (outcome.status !== 'committed') {
+          setError('The inline database creation plan was not committed');
+          return;
+        }
+        const definition = outcome.draft.normalized.definition;
+        const source = definition.sources[0];
+        const view = definition.views?.find((candidate) => candidate.sourceId === source?.id);
+        if (!source || !view) {
+          setError('The created database has no source or saved view');
+          return;
+        }
+        onCreated({ databaseId: definition.id, sourceId: source.id, viewId: view.id });
+        setName('');
+        onOpenChange(false);
+      })
+      .catch((cause: unknown) => {
+        setError(cause instanceof Error ? cause.message : 'Unable to create the inline database');
+      })
+      .finally(() => setStatus('idle'));
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent data-testid="inline-database-create-dialog">
+        <DialogHeader>
+          <DialogTitle>Create inline database</DialogTitle>
+          <DialogDescription>
+            Create a blank database here and keep the new table embedded in this page.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogBody className="space-y-4">
+          <label className="grid gap-1.5 text-sm" htmlFor="inline-database-name">
+            <span className="font-medium">Database name</span>
+            <Input
+              id="inline-database-name"
+              value={name}
+              autoFocus
+              disabled={status !== 'idle'}
+              placeholder="Untitled database"
+              onChange={(event) => setName(event.currentTarget.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') void submit();
+              }}
+            />
+          </label>
+          <p className="text-muted-foreground text-xs">
+            The blank path is direct-safe; templates, imports, and existing-folder onboarding remain
+            available from the full database workspace for exact review.
+          </p>
+          {error ? (
+            <p className="text-destructive text-sm" role="alert">
+              {error}
+            </p>
+          ) : null}
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={status !== 'idle'}
+              onClick={() => onOpenChange(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="button" disabled={status !== 'idle'} onClick={() => void submit()}>
+              {status === 'creating' ? (
+                <Loader2 className="animate-spin" aria-hidden="true" />
+              ) : null}
+              {status === 'creating' ? 'Creating…' : 'Create database'}
+            </Button>
+          </div>
+        </DialogBody>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+type LinkedViewState =
+  | { status: 'loading' }
+  | { status: 'error'; message: string }
+  | {
+      status: 'ready';
+      description: DatabaseDescription;
+      result: DatabaseQueryResult | null;
+      stale: boolean;
+    };
+
+function linkedViewCacheKey(input: {
+  databaseId: string;
+  sourceId: string;
+  viewId: string;
+  mode?: 'inline' | 'full-page';
+  showArchived: boolean;
+}): string {
+  return [
+    input.databaseId,
+    input.sourceId,
+    input.viewId,
+    input.mode ?? 'inline',
+    input.showArchived ? 'archived' : 'active',
+  ].join('\0');
+}
+
+function message(cause: unknown): string {
+  return cause instanceof Error ? cause.message : 'Unable to load the linked database view';
+}
+
+export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseViewProps) {
+  'use no memo';
+  const host = useJsxComponentHost();
+  const reference = DatabaseLinkedViewReferenceSchema.safeParse({
+    databaseId,
+    sourceId,
+    viewId,
+    ...(mode ? { mode } : {}),
+  });
+  const [state, setState] = useState<LinkedViewState>({ status: 'loading' });
+  const [refresh, setRefresh] = useState(0);
+  const [fullDatabaseOpen, setFullDatabaseOpen] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
+  const [initialRecordAction, setInitialRecordAction] = useState<DatabaseInitialRecordAction>();
+  const [replacementPickerOpen, setReplacementPickerOpen] = useState(false);
+  const [inlineCreationOpen, setInlineCreationOpen] = useState(false);
+  const [recordPeek, setRecordPeek] = useState<{
+    record: ProjectedDatabaseRecord;
+    mode: 'side_peek' | 'center_peek';
+  } | null>(null);
+
+  useEffect(() => {
+    void refresh;
+    const parsed = DatabaseLinkedViewReferenceSchema.safeParse({
+      databaseId,
+      sourceId,
+      viewId,
+      ...(mode ? { mode } : {}),
+    });
+    if (!parsed.success) {
+      setState({ status: 'error', message: 'Set valid database, source, and saved-view IDs' });
+      return;
+    }
+    const controller = new AbortController();
+    setState({ status: 'loading' });
+    const cacheKey = linkedViewCacheKey({
+      databaseId: parsed.data.databaseId,
+      sourceId: parsed.data.sourceId,
+      viewId: parsed.data.viewId,
+      mode: parsed.data.mode,
+      showArchived,
+    });
+    void describeDatabase(
+      { databaseId: parsed.data.databaseId, sourceId: parsed.data.sourceId },
+      { signal: controller.signal },
+    )
+      .then(async (description) => {
+        if (!description.source || description.source.id !== parsed.data.sourceId) {
+          throw new Error('The linked database source no longer exists');
+        }
+        const selectedView = description.database.views.find(
+          (view) => view.id === parsed.data.viewId && view.sourceId === parsed.data.sourceId,
+        );
+        if (!selectedView) throw new Error('The linked saved view no longer exists in this source');
+        const result =
+          selectedView.layout.type === 'form' || selectedView.layout.type === 'dashboard'
+            ? null
+            : await queryDatabase(
+                {
+                  databaseId: parsed.data.databaseId,
+                  sourceId: parsed.data.sourceId,
+                  viewId: parsed.data.viewId,
+                  query: {
+                    sort: [],
+                    includeArchived: showArchived,
+                    page: { limit: parsed.data.mode === 'inline' ? 25 : 100 },
+                  },
+                },
+                { signal: controller.signal },
+              );
+        rememberDatabaseLinkedView(cacheKey, { description, result });
+        setState({ status: 'ready', description, result, stale: false });
+      })
+      .catch((cause: unknown) => {
+        if (controller.signal.aborted) return;
+        const cached = readDatabaseLinkedView(cacheKey);
+        if (cached) {
+          setState({
+            status: 'ready',
+            description: cached.description,
+            result: cached.result,
+            stale: true,
+          });
+          return;
+        }
+        setState({ status: 'error', message: message(cause) });
+      });
+    return () => controller.abort();
+  }, [databaseId, sourceId, viewId, mode, refresh, showArchived]);
+
+  const applyReference = (next: { databaseId: string; sourceId: string; viewId: string }) => {
+    const editor = host?.editor;
+    const pos = host?.getPos();
+    if (!editor || typeof pos !== 'number') return;
+    const node = editor.state.doc.nodeAt(pos);
+    if (!node || node.type.name !== 'jsxComponent') return;
+    editor.view.dispatch(
+      editor.state.tr.setNodeMarkup(pos, undefined, {
+        ...node.attrs,
+        props: {
+          ...((node.attrs.props as Record<string, unknown> | undefined) ?? {}),
+          ...next,
+          mode: 'inline',
+        },
+      }),
+    );
+    editor.view.focus();
+    setReplacementPickerOpen(false);
+  };
+
+  useEffect(() => {
+    const parsed = DatabaseLinkedViewReferenceSchema.safeParse({
+      databaseId,
+      sourceId,
+      viewId,
+      ...(mode ? { mode } : {}),
+    });
+    if (!parsed.success) return;
+    return subscribeToDatabaseChanged((payload) => {
+      if (
+        payload.scope === 'workspace' ||
+        payload.databaseIds.includes(parsed.data.databaseId) ||
+        payload.sourceIds.includes(parsed.data.sourceId)
+      ) {
+        setRefresh((current) => current + 1);
+      }
+    });
+  }, [databaseId, sourceId, viewId, mode]);
+
+  if (!reference.success) {
+    return (
+      <>
+        <InlineDatabasePicker
+          onSelected={applyReference}
+          onCreateBlank={() => setInlineCreationOpen(true)}
+        />
+        <InlineDatabaseCreationDialog
+          open={inlineCreationOpen}
+          onOpenChange={setInlineCreationOpen}
+          onCreated={applyReference}
+        />
+      </>
+    );
+  }
+
+  const linkedSource = state.status === 'ready' ? state.description.source : null;
+  const linkedDatabase = state.status === 'ready' ? state.description.database : null;
+  const linkedView =
+    state.status === 'ready'
+      ? state.description.database.views.find((view) => view.id === reference.data.viewId)
+      : undefined;
+  const openRecord = (record: ProjectedDatabaseRecord) => {
+    rememberDatabaseRecordNavigation({
+      databaseId: reference.data.databaseId,
+      sourceId: reference.data.sourceId,
+      viewId: reference.data.viewId,
+      paths: state.status === 'ready' ? (state.result?.records ?? []).map((item) => item.path) : [],
+      currentPath: record.path,
+    });
+    if (!linkedView || databaseViewOpenBehavior(linkedView) === 'full_page') {
+      window.location.hash = databaseRecordPathToHash(record.path);
+      return;
+    }
+    const behavior = databaseViewOpenBehavior(linkedView);
+    setRecordPeek({ record, mode: behavior === 'full_page' ? 'side_peek' : behavior });
+  };
+
+  return (
+    <section
+      className={cn(
+        'my-4 overflow-hidden rounded-lg border bg-background',
+        reference.data.mode === 'full-page' &&
+          'relative left-1/2 w-[min(96vw,90rem)] -translate-x-1/2',
+      )}
+      contentEditable={false}
+      data-database-view-state={state.status}
+      data-database-id={reference.data.databaseId}
+      data-source-id={reference.data.sourceId}
+      data-view-id={reference.data.viewId}
+      data-view-mode={reference.data.mode}
+    >
+      <header className="flex items-center justify-between gap-3 border-b px-4 py-3">
+        <div className="min-w-0">
+          <h3 className="truncate font-medium">
+            {state.status === 'ready' ? linkedView?.name : 'Linked database view'}
+          </h3>
+          {state.status === 'ready' ? (
+            <p className="truncate text-muted-foreground text-xs">
+              {state.description.database.name} · {state.description.source?.name}
+            </p>
+          ) : null}
+          {state.status === 'ready' ? (
+            <p className="truncate text-muted-foreground text-xs" data-linked-record-sharing>
+              Shared records · edits affect the canonical database; this view keeps its own
+              settings.
+            </p>
+          ) : null}
+          {state.status === 'ready' &&
+          linkedDatabase &&
+          linkedDatabase.views.filter((candidate) => candidate.sourceId === reference.data.sourceId)
+            .length > 1 ? (
+            <nav
+              className="mt-2 flex max-w-full gap-1 overflow-x-auto"
+              aria-label="Linked database views"
+              data-linked-database-view-tabs
+            >
+              {linkedDatabase.views
+                .filter((candidate) => candidate.sourceId === reference.data.sourceId)
+                .map((candidate) => (
+                  <Button
+                    key={candidate.id}
+                    type="button"
+                    size="xs"
+                    variant={candidate.id === reference.data.viewId ? 'secondary' : 'ghost'}
+                    aria-current={candidate.id === reference.data.viewId ? 'page' : undefined}
+                    onClick={() =>
+                      applyReference({
+                        databaseId: reference.data.databaseId,
+                        sourceId: reference.data.sourceId,
+                        viewId: candidate.id,
+                      })
+                    }
+                  >
+                    {candidate.name}
+                  </Button>
+                ))}
+            </nav>
+          ) : null}
+        </div>
+        <div className="flex flex-wrap justify-end gap-1">
+          {linkedView?.layout.type !== 'form' ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={state.status !== 'ready'}
+              onClick={() => {
+                setInitialRecordAction({ kind: 'create' });
+                setFullDatabaseOpen(true);
+              }}
+            >
+              <Plus /> <Trans>New record</Trans>
+            </Button>
+          ) : null}
+          {linkedView?.layout.type !== 'form' ? (
+            <Button
+              type="button"
+              variant={showArchived ? 'secondary' : 'ghost'}
+              size="sm"
+              aria-pressed={showArchived}
+              disabled={state.status === 'loading'}
+              onClick={() => setShowArchived((current) => !current)}
+            >
+              <Archive />
+              {showArchived ? <Trans>Hide archived</Trans> : <Trans>Show archived</Trans>}
+            </Button>
+          ) : null}
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Refresh linked database view"
+            disabled={state.status === 'loading'}
+            onClick={() => setRefresh((current) => current + 1)}
+          >
+            <RefreshCw className={cn(state.status === 'loading' && 'animate-spin')} />
+          </Button>
+          {state.status === 'ready' ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setReplacementPickerOpen(true)}
+            >
+              Change view
+            </Button>
+          ) : null}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (state.status === 'ready') {
+                window.location.hash = databasePageTargetToHash(reference.data);
+                return;
+              }
+              setInitialRecordAction(undefined);
+              setFullDatabaseOpen(true);
+            }}
+          >
+            <ExternalLink /> <Trans>Open full database</Trans>
+          </Button>
+        </div>
+      </header>
+
+      {state.status === 'ready' && state.stale ? (
+        <div
+          className="border-b border-amber-500/30 bg-amber-500/10 px-4 py-2 text-amber-900 text-xs dark:text-amber-100"
+          role="status"
+          data-testid="database-view-stale"
+          data-database-view-stale="true"
+        >
+          Offline or unavailable · showing the last verified snapshot. The view will refresh when
+          the connection returns.
+        </div>
+      ) : null}
+
+      {replacementPickerOpen ? (
+        <div className="p-3">
+          <InlineDatabasePicker
+            message="Choose a different database or saved view. Existing records remain shared."
+            onSelected={applyReference}
+            onCreateBlank={() => setInlineCreationOpen(true)}
+          />
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setReplacementPickerOpen(false)}
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      ) : state.status === 'loading' ? (
+        <div className="flex min-h-40 items-center justify-center text-muted-foreground text-sm">
+          <Loader2 className="mr-2 size-4 animate-spin" /> Loading linked view
+        </div>
+      ) : state.status === 'error' ? (
+        <div
+          className="flex min-h-32 flex-wrap items-center gap-3 p-4 text-destructive text-sm"
+          role="alert"
+        >
+          <div className="flex min-w-0 items-center gap-2">
+            <AlertCircle className="size-4 shrink-0" /> {state.message}
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setReplacementPickerOpen(true)}
+          >
+            Choose replacement
+          </Button>
+        </div>
+      ) : linkedSource && linkedView ? (
+        <div
+          className={cn('overflow-auto p-3', reference.data.mode === 'inline' && 'max-h-[36rem]')}
+        >
+          <Suspense
+            fallback={
+              <div className="flex min-h-40 items-center justify-center text-muted-foreground text-sm">
+                <Loader2 className="mr-2 size-4 animate-spin" /> Loading table renderer
+              </div>
+            }
+          >
+            {linkedView.layout.type === 'form' ? (
+              <LazyDatabaseForm
+                key={state.description.schemaRevision}
+                databaseId={state.description.database.id}
+                source={linkedSource}
+                view={linkedView}
+                people={state.description.database.people}
+              />
+            ) : linkedView.layout.type === 'dashboard' ? (
+              <LazyDatabaseDashboard
+                key={state.description.schemaRevision}
+                databaseId={state.description.database.id}
+                database={state.description.database}
+                view={linkedView}
+                onOpen={openRecord}
+              />
+            ) : !state.result ? null : linkedView.layout.type === 'board' ? (
+              <LazyDatabaseBoard
+                key={`${state.description.schemaRevision}:${state.result.snapshotRevision}`}
+                source={linkedSource}
+                view={linkedView}
+                result={state.result}
+                people={state.description.database.people}
+                onOpen={openRecord}
+                onTransition={(transition) => {
+                  setInitialRecordAction({
+                    kind: 'transition',
+                    recordId: transition.record.id,
+                    changes: transition.changes.map((change) => ({
+                      propertyId: change.property.id,
+                      ...(change.value === undefined ? {} : { value: change.value }),
+                    })),
+                  });
+                  setFullDatabaseOpen(true);
+                }}
+                onDuplicate={(record) => {
+                  setInitialRecordAction({ kind: 'duplicate', recordId: record.id });
+                  setFullDatabaseOpen(true);
+                }}
+                onArchive={(record, action) => {
+                  setInitialRecordAction({ kind: action, recordId: record.id });
+                  setFullDatabaseOpen(true);
+                }}
+                onRequestMove={(record) => {
+                  setInitialRecordAction({ kind: 'move', recordId: record.id });
+                  setFullDatabaseOpen(true);
+                }}
+                onDelete={(record) => {
+                  setInitialRecordAction({ kind: 'delete', recordId: record.id });
+                  setFullDatabaseOpen(true);
+                }}
+              />
+            ) : linkedView.layout.type === 'timeline' ? (
+              <LazyDatabaseTimeline
+                key={`${state.description.schemaRevision}:${state.result.snapshotRevision}`}
+                source={linkedSource}
+                view={linkedView}
+                result={state.result}
+                people={state.description.database.people}
+                onOpen={openRecord}
+                onChange={(change) => {
+                  setInitialRecordAction({
+                    kind: 'transition',
+                    recordId: change.record.id,
+                    changes: change.changes.map((item) => ({
+                      propertyId: item.property.id,
+                      ...(item.value === undefined ? {} : { value: item.value }),
+                    })),
+                  });
+                  setFullDatabaseOpen(true);
+                }}
+              />
+            ) : linkedView.layout.type === 'calendar' ? (
+              <LazyDatabaseCalendar
+                key={`${state.description.schemaRevision}:${state.result.snapshotRevision}`}
+                source={linkedSource}
+                view={linkedView}
+                result={state.result}
+                people={state.description.database.people}
+                onOpen={openRecord}
+                onChange={(change) => {
+                  setInitialRecordAction({
+                    kind: 'transition',
+                    recordId: change.record.id,
+                    changes: change.changes.map((item) => ({
+                      propertyId: item.property.id,
+                      ...(item.value === undefined ? {} : { value: item.value }),
+                    })),
+                  });
+                  setFullDatabaseOpen(true);
+                }}
+              />
+            ) : linkedView.layout.type === 'list' ? (
+              <LazyDatabaseList
+                key={`${state.description.schemaRevision}:${state.result.snapshotRevision}`}
+                source={linkedSource}
+                view={linkedView}
+                result={state.result}
+                people={state.description.database.people}
+                onOpen={openRecord}
+              />
+            ) : linkedView.layout.type === 'gallery' ? (
+              <LazyDatabaseGallery
+                key={`${state.description.schemaRevision}:${state.result.snapshotRevision}`}
+                source={linkedSource}
+                view={linkedView}
+                result={state.result}
+                people={state.description.database.people}
+                onOpen={openRecord}
+              />
+            ) : linkedView.layout.type === 'chart' ? (
+              <LazyDatabaseChart
+                key={`${state.description.schemaRevision}:${state.result.snapshotRevision}`}
+                source={linkedSource}
+                view={linkedView}
+                result={state.result}
+                people={state.description.database.people}
+                onOpen={openRecord}
+              />
+            ) : linkedView.layout.type === 'map' ? (
+              <LazyDatabaseMap
+                key={`${state.description.schemaRevision}:${state.result.snapshotRevision}`}
+                source={linkedSource}
+                view={linkedView}
+                result={state.result}
+                onOpen={openRecord}
+              />
+            ) : linkedView.layout.type === 'feed' ? (
+              <LazyDatabaseFeed
+                key={`${state.description.schemaRevision}:${state.result.snapshotRevision}`}
+                source={linkedSource}
+                view={linkedView}
+                result={state.result}
+                people={state.description.database.people}
+                onOpen={openRecord}
+              />
+            ) : (
+              <LazyDatabaseTable
+                key={`${state.description.schemaRevision}:${state.result.snapshotRevision}`}
+                source={linkedSource}
+                result={state.result}
+                people={state.description.database.people}
+                viewPropertyIds={linkedView.projection.propertyIds}
+                viewConfiguration={
+                  linkedView.layout.type === 'table' ? linkedView.layout.configuration : undefined
+                }
+                onOpen={openRecord}
+                onDuplicate={(record) => {
+                  setInitialRecordAction({ kind: 'duplicate', recordId: record.id });
+                  setFullDatabaseOpen(true);
+                }}
+                onArchive={(record, action) => {
+                  setInitialRecordAction({ kind: action, recordId: record.id });
+                  setFullDatabaseOpen(true);
+                }}
+                onRequestMove={(record) => {
+                  setInitialRecordAction({ kind: 'move', recordId: record.id });
+                  setFullDatabaseOpen(true);
+                }}
+                onDelete={(record) => {
+                  setInitialRecordAction({ kind: 'delete', recordId: record.id });
+                  setFullDatabaseOpen(true);
+                }}
+              />
+            )}
+          </Suspense>
+        </div>
+      ) : null}
+
+      {recordPeek && linkedSource && linkedDatabase ? (
+        <DatabaseRecordPeek
+          key={`${recordPeek.record.id}:${recordPeek.mode}`}
+          mode={recordPeek.mode}
+          database={linkedDatabase}
+          source={linkedSource}
+          record={recordPeek.record}
+          onClose={() => setRecordPeek(null)}
+          onOpenFull={() => {
+            rememberDatabaseRecordNavigation({
+              databaseId: reference.data.databaseId,
+              sourceId: reference.data.sourceId,
+              viewId: reference.data.viewId,
+              paths:
+                state.status === 'ready'
+                  ? (state.result?.records ?? []).map((item) => item.path)
+                  : [],
+              currentPath: recordPeek.record.path,
+            });
+            window.location.hash = databaseRecordPathToHash(recordPeek.record.path);
+            setRecordPeek(null);
+          }}
+        />
+      ) : null}
+
+      <InlineDatabaseCreationDialog
+        open={inlineCreationOpen}
+        onOpenChange={setInlineCreationOpen}
+        onCreated={applyReference}
+      />
+
+      <Suspense fallback={null}>
+        {fullDatabaseOpen ? (
+          <LazyDatabaseTableDialog
+            open
+            onOpenChange={(nextOpen) => {
+              setFullDatabaseOpen(nextOpen);
+              if (!nextOpen) setInitialRecordAction(undefined);
+            }}
+            initialTarget={reference.data}
+            initialRecordAction={initialRecordAction}
+            onOpenRecord={(path) => {
+              window.location.hash = databaseRecordPathToHash(path);
+              setFullDatabaseOpen(false);
+            }}
+          />
+        ) : null}
+      </Suspense>
+    </section>
+  );
+}

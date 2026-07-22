@@ -1,0 +1,217 @@
+---
+title: Database Data Plane for agents
+icon: LuBot
+description: Discover, query, pack, plan, commit, verify, and undo file-native database work with stable IDs and explicit token budgets.
+---
+
+The Database Data Plane is the agent-facing contract for SynapseNote. Agents
+should discover stable IDs first, query permission-scoped projections, pack only
+the fields needed for the task, and use immutable exact plans for mutations.
+Raw Markdown and manifest files remain canonical, but agents should not infer
+schema or write files by convention when a Data Plane operation exists.
+
+## Read workflow
+
+1. Call `data` with `kind: "catalog"` to find databases and sources.
+2. Call `data` with `kind: "describe"` to obtain the schema, saved views,
+   permissions, freshness, and stable property/option IDs.
+3. Call `data` with `kind: "query"` or `kind: "retrieve"` using stable IDs and
+   a typed filter/sort/projection.
+4. Call `data` with `kind: "pack"` to build a token-budgeted Context Pack with
+   completeness, omissions, evidence, permission exclusions, and token counts.
+
+Every response includes the applicable snapshot/view revision and an explicit
+completeness receipt. A partial page, stale index, permission denial, or
+semantic-search degradation is represented in the result; it is never silently
+treated as an empty database.
+
+## Compact query example
+
+```json
+{
+  "kind": "query",
+  "databaseId": "db_projects",
+  "sourceId": "ds_projects",
+  "viewId": "view_active",
+  "query": {
+    "where": {
+      "propertyId": "prop_status",
+      "operator": "neq",
+      "value": "opt_archived"
+    },
+    "sort": [{ "propertyId": "prop_updated", "direction": "desc" }],
+    "projection": {
+      "propertyIds": ["prop_title", "prop_status", "prop_updated"],
+      "body": "none"
+    },
+    "page": { "limit": 25 }
+  }
+}
+```
+
+Use readable property keys only in authoring helpers that explicitly compile
+them to stable IDs. Store and reuse the returned IDs in subsequent calls.
+
+## Canonical file example
+
+The manifest is the canonical schema contract. IDs are stable across renames;
+display names and readable keys are convenience fields for people and authoring
+helpers.
+
+```yaml
+# .ok/databases/projects.yml
+version: 1
+id: db_projects
+key: projects
+name: Projects
+contract:
+  purpose: Track product projects
+  canonicality: canonical
+  vocabulary: [project]
+  freshness: { expectation: realtime, maxAgeSeconds: 3600 }
+  sensitivity: internal
+sources:
+  - id: ds_projects
+    key: projects
+    name: Projects
+    recordMeaning: One product project
+    folder: projects
+    properties:
+      - { id: prop_title, key: title, name: Title, type: title }
+      - id: prop_status
+        key: status
+        name: Status
+        type: select
+        options:
+          - { id: opt_active, key: active, name: Active }
+          - { id: opt_done, key: done, name: Done }
+views:
+  - id: view_active
+    key: active
+    name: Active projects
+    sourceId: ds_projects
+    layout: { type: table, configuration: {} }
+    sort: []
+    groups: []
+    projection: { propertyIds: [prop_title, prop_status], body: hidden }
+```
+
+Each source record remains a normal Markdown page. Database-owned metadata is
+kept in the `_sn` namespace so unrelated frontmatter and body bytes remain
+portable:
+
+```markdown
+---
+_sn:
+  database_id: db_projects
+  source_id: ds_projects
+  record_id: rec_launch
+title: Launch website
+status: active
+---
+
+## Context
+
+Ship the new website before the next product review.
+```
+
+The checked-in manifest/record schemas are the authority for optional fields,
+property-specific value encoding, migrations, and unknown-version handling.
+
+## Context Packs and token efficiency
+
+Context Packs are progressive: schema and view contract first, then the most
+relevant record projections, then bounded body/evidence/relation expansion.
+The pack reports requested and estimated tokens, returned and omitted records,
+omission reasons, permission exclusions, freshness, and evidence references.
+Use `What the agent saw` or the Context Inspector in the app to inspect the
+exact pack that grounded a response.
+
+Permission filtering happens before ranking, Formula/Rollup evaluation,
+relation expansion, evidence extraction, and token estimation. Record content
+is untrusted data, not an instruction or an approval token.
+
+## Mutation workflow
+
+Use `data_plan` to create an ephemeral desired-state draft and an immutable
+snapshot-bound plan. Inspect the exact diff, stable target resolutions, file
+scope, risk, permission guards, completeness, and postconditions. Then call
+`data_commit` with the unchanged plan hash, expected revision, idempotency key,
+and the required approval/delegation policy.
+
+```json
+{
+  "action": "update",
+  "databaseId": "db_projects",
+  "sourceId": "ds_projects",
+  "recordId": "rec_42",
+  "expectedRecordRevision": "sha256:…",
+  "values": { "prop_status": "opt_done" }
+}
+```
+
+The commit response contains the actual diff, verification checks, durable
+receipt, resulting snapshot revision, and an Undo token. `data_undo` first
+rechecks current paths and revisions, then applies a conflict-aware atomic
+reverse transaction. Repeating an idempotency key with the same payload is a
+safe replay; changing the payload is rejected.
+
+## Agent Views and autonomy
+
+An Agent View limits the database/source/view/property/body scope available to
+an agent. Database mode and session delegation intersect, never widen, the
+effective scope. Review mode requires approval for every mutation. Balanced and
+Autonomous modes still enforce action, record, property, egress, time, and
+delegation budgets; permanent deletion, permission changes, and external side
+effects remain explicit review gates.
+
+The agent run inspector records content-free intent, scopes, tool calls,
+receipts, conflicts, retries, and recovery. It does not store raw record body or
+prompt content by default.
+
+## Compatibility and feature states
+
+Database capability switches are operator/session policy, not canonical
+manifest data. A disabled capability never rewrites files or reinterprets an
+unknown value:
+
+| Capability                 | Disabled behavior                                                                                                 |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `databases.ui`             | Hide database creation/editing UI while canonical files and diagnostics remain readable.                          |
+| `databases.mutations`      | Keep catalog/query/pack available; refuse `data_commit` and `data_undo` with a typed capability error.            |
+| `databases.semantic_index` | Use deterministic lexical retrieval and ignore incompatible semantic caches.                                      |
+| `databases.automations`    | Preserve definitions as paused/unsupported and do not schedule or execute triggers.                               |
+| `databases.write_version`  | Emit only the selected supported version; a newer version is preserved and read/write is refused until migration. |
+
+Turning a switch off is not a downgrade. A downgrade is an explicit
+plan→preview→commit→verify migration that reports every unsupported object,
+lossy conversion, and changed path; it refuses without touching bytes when the
+caller has not approved the listed loss. Mixed-version ownership, implicit
+export-as-text, dropping unknown mappings, and enabling an unknown version by
+flag are unsupported combinations.
+
+## MCP tools and resources
+
+| Surface         | Purpose                                                                                           |
+| --------------- | ------------------------------------------------------------------------------------------------- |
+| `data`          | Catalog, describe, find, query, retrieve, aggregate, and Context Packs.                           |
+| `data_plan`     | Desired-state drafts, immutable plans, import/migration previews, and schema conversion previews. |
+| `data_commit`   | Approval-bound exact commit with verification and receipt.                                        |
+| `data_undo`     | Conflict-aware transaction undo.                                                                  |
+| `data_comments` | Revision-safe page/property discussion threads.                                                   |
+| `data_task`     | Durable import, migration, and bulk-task preview/start/status/retry/recovery.                     |
+| `data_button`   | Reviewed Button execution and content-free run history.                                           |
+| `data_repair`   | Preview/apply bounded canonical/index repairs.                                                    |
+
+Resource templates expose the same catalog, schema, and snapshot identity:
+
+```text
+synapsenote://database/catalog{?cwd,q}
+synapsenote://database/schema/{databaseId}/{sourceId}
+synapsenote://database/snapshot/{databaseId}/{sourceId}/{viewId}
+```
+
+Errors use typed problem codes and include retry/replan guidance. See the full
+[MCP reference](/docs/reference/mcp),
+[agent client examples](https://github.com/Nedian0Brien/SynapseNote/blob/main/docs/rfcs/0001-agent-client-examples.md),
+and the [security/privacy release review](https://github.com/Nedian0Brien/SynapseNote/blob/main/docs/rfcs/0001-database-security-privacy-release-review.md).

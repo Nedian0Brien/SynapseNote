@@ -1,8 +1,13 @@
 /**
  * MCP tool registry.
  *
- * Reads:     exec, search, history, links, skills, config, palette, preview_url, share_link,
- *            current_document
+ * Reads:     exec, search, data, history, links, skills, config, palette, preview_url,
+ *            share_link, current_document
+ * Planning:  data_plan, data_button (ephemeral exact plans; no project-file writes)
+ * Commits:   data_commit (exact approved plan; user-approval gated)
+ * Undo:      data_undo (conflict preview + approval-gated reversal)
+ * Repair:    data_repair (diagnostic preview + approval-gated repair)
+ * Tasks:     data_task (approval-gated durable launch, progress, and recovery)
  * Writes:    write, edit, delete, move, checkpoint, restore_version
  * Conflicts: conflicts, resolve_conflict
  * Workflow:  workflow (kind: ingest | research | consolidate | discover)
@@ -35,14 +40,26 @@
  * `register(...)` export, then import and call it from here.
  */
 
+import type { DatabaseIndexChangeEvent } from '../../database-index-coordinator.ts';
 import { createEnsureSingleFileSession } from '../../ensure-single-file-session.ts';
 import type { AgentIdentity } from '../agent-identity.ts';
 import { getCurrentMcpLogger, type McpLogger } from '../logger.ts';
+import { registerDatabaseResources } from '../resources/database.ts';
 import { createLoggedServer } from '../tool-logging.ts';
 import { register as registerCheckpoint } from './checkpoint.ts';
 import { register as registerConfig } from './config.ts';
 import { register as registerConflicts } from './conflicts.ts';
 import { register as registerCurrentDocument } from './current-document.ts';
+import { register as registerData } from './database.ts';
+import { register as registerDataAutomation } from './database-automation.ts';
+import { register as registerDataButton } from './database-button.ts';
+import { register as registerDataComments } from './database-comments.ts';
+import { register as registerDataCommit } from './database-commit.ts';
+import { register as registerDataPlaceSearch } from './database-place-search.ts';
+import { register as registerDataPlan } from './database-plan.ts';
+import { register as registerDataRepair } from './database-repair.ts';
+import { register as registerDataTask } from './database-task.ts';
+import { register as registerDataUndo } from './database-undo.ts';
 import { register as registerDelete } from './delete.ts';
 import { register as registerEdit } from './edit.ts';
 import { register as registerExec } from './exec.ts';
@@ -70,6 +87,25 @@ import { register as registerWrite } from './write.ts';
  */
 type ResolveCwd = (explicit?: string) => Promise<string>;
 
+export type McpToolProfile = 'full' | 'database-sandbox';
+
+export const DATABASE_SANDBOX_MCP_TOOL_NAMES = [
+  'exec',
+  'workflow',
+  'search',
+  'current_document',
+  'data',
+  'data_automation',
+  'data_button',
+  'data_place_search',
+  'data_plan',
+  'data_commit',
+  'data_comments',
+  'data_undo',
+  'data_repair',
+  'data_task',
+] as const;
+
 interface RegisterAllToolsOptions {
   /**
    * Hocuspocus URL. Accept a string (explicit override, e.g. `--port`), or a
@@ -92,9 +128,15 @@ interface RegisterAllToolsOptions {
    * window) instead of returning a URL the agent shouldn't navigate.
    */
   isDesktopTerminal?: boolean;
+  subscribeDatabaseChanges?: (listener: (event: DatabaseIndexChangeEvent) => void) => () => void;
+  /** Restricts the registered capability surface for a read-only agent process. */
+  toolProfile?: McpToolProfile;
 }
 
-export function registerAllTools(server: ServerInstance, opts: RegisterAllToolsOptions): void {
+export function registerAllTools(
+  server: ServerInstance,
+  opts: RegisterAllToolsOptions,
+): { close: () => void } {
   const log = opts.logger;
   const registrationServer = createLoggedServer(server, {
     logger: opts.logger,
@@ -118,6 +160,18 @@ export function registerAllTools(server: ServerInstance, opts: RegisterAllToolsO
         throw err;
       }
     };
+
+  const databaseResources =
+    typeof server.registerResource === 'function'
+      ? registerDatabaseResources(server, {
+          resolveCwd: named('database_resource'),
+          config: opts.config,
+          serverUrl: opts.serverUrl,
+          ...(opts.subscribeDatabaseChanges
+            ? { subscribeDatabaseChanges: opts.subscribeDatabaseChanges }
+            : {}),
+        })
+      : { close: () => {} };
 
   // exec — the primary surface.
   registerExec(registrationServer, {
@@ -143,6 +197,69 @@ export function registerAllTools(server: ServerInstance, opts: RegisterAllToolsO
     config: opts.config,
     serverUrl: opts.serverUrl,
   });
+  registerData(registrationServer, {
+    resolveCwd: named('data'),
+    config: opts.config,
+    serverUrl: opts.serverUrl,
+    identityRef: opts.identityRef,
+  });
+  registerDataAutomation(registrationServer, {
+    resolveCwd: named('data_automation'),
+    config: opts.config,
+    serverUrl: opts.serverUrl,
+    identityRef: opts.identityRef,
+  });
+  registerDataButton(registrationServer, {
+    resolveCwd: named('data_button'),
+    config: opts.config,
+    serverUrl: opts.serverUrl,
+    identityRef: opts.identityRef,
+  });
+  registerDataPlaceSearch(registrationServer, {
+    resolveCwd: named('data_place_search'),
+    config: opts.config,
+    serverUrl: opts.serverUrl,
+    identityRef: opts.identityRef,
+  });
+  registerDataPlan(registrationServer, {
+    resolveCwd: named('data_plan'),
+    config: opts.config,
+    serverUrl: opts.serverUrl,
+    identityRef: opts.identityRef,
+  });
+  registerDataCommit(registrationServer, {
+    resolveCwd: named('data_commit'),
+    config: opts.config,
+    serverUrl: opts.serverUrl,
+    identityRef: opts.identityRef,
+  });
+  registerDataComments(registrationServer, {
+    resolveCwd: named('data_comments'),
+    config: opts.config,
+    serverUrl: opts.serverUrl,
+    identityRef: opts.identityRef,
+  });
+  registerDataUndo(registrationServer, {
+    resolveCwd: named('data_undo'),
+    config: opts.config,
+    serverUrl: opts.serverUrl,
+    identityRef: opts.identityRef,
+  });
+  registerDataRepair(registrationServer, {
+    resolveCwd: named('data_repair'),
+    config: opts.config,
+    serverUrl: opts.serverUrl,
+    identityRef: opts.identityRef,
+  });
+  registerDataTask(registrationServer, {
+    resolveCwd: named('data_task'),
+    config: opts.config,
+    serverUrl: opts.serverUrl,
+    identityRef: opts.identityRef,
+  });
+  if (opts.toolProfile === 'database-sandbox') {
+    return { close: databaseResources.close };
+  }
   // Unified link-graph reader — replaces the six dedicated getters
   // (get_backlinks, get_forward_links, get_dead_links, get_orphans, get_hubs,
   // suggest_links) behind a `kind` discriminator.
@@ -275,4 +392,6 @@ export function registerAllTools(server: ServerInstance, opts: RegisterAllToolsO
     config: opts.config,
     resolveCwd: named('share_link'),
   });
+
+  return { close: databaseResources.close };
 }

@@ -81,6 +81,74 @@ describe('searchWorkspaceDocuments', () => {
   });
 });
 
+describe('database entity kinds', () => {
+  const databaseDocuments = [
+    createWorkspaceSearchDocument({
+      kind: 'database',
+      path: 'databases/support-issues',
+      title: 'Support issues',
+      content: 'Triage customer reports',
+      databaseId: 'db_support',
+      revision: `sha256:${'a'.repeat(64)}`,
+    }),
+    createWorkspaceSearchDocument({
+      kind: 'data_source',
+      path: 'databases/support-issues/sources/issues',
+      title: 'Issues',
+      content: 'One support issue record',
+      databaseId: 'db_support',
+      sourceId: 'ds_issues',
+    }),
+    createWorkspaceSearchDocument({
+      kind: 'view',
+      path: 'databases/support-issues/views/urgent',
+      title: 'Urgent queue',
+      content: 'high priority support',
+      databaseId: 'db_support',
+      sourceId: 'ds_issues',
+      viewId: 'view_urgent',
+    }),
+    createWorkspaceSearchDocument({
+      kind: 'record',
+      path: 'support-issues/acme.md',
+      title: 'Acme checkout issue',
+      content: 'support checkout priority high',
+      databaseId: 'db_support',
+      sourceId: 'ds_issues',
+      recordId: 'rec_acme',
+    }),
+  ];
+
+  test('default full-text search includes every database entity kind and preserves stable IDs', () => {
+    const results = searchWorkspaceDocuments(databaseDocuments, 'support', {
+      intent: 'full_text',
+    });
+
+    expect(new Set(results.map((result) => result.document.kind))).toEqual(
+      new Set(['database', 'data_source', 'view', 'record']),
+    );
+    expect(results.find((result) => result.document.kind === 'record')?.document).toMatchObject({
+      databaseId: 'db_support',
+      sourceId: 'ds_issues',
+      recordId: 'rec_acme',
+    });
+  });
+
+  test('an explicit database scope excludes the other entity kinds', () => {
+    const results = searchWorkspaceDocuments(databaseDocuments, 'support', {
+      intent: 'full_text',
+      scopes: ['database'],
+    });
+    expect(results.map((result) => result.document.kind)).toEqual(['database']);
+  });
+
+  test('wikilink autocomplete remains page-only', () => {
+    expect(
+      searchWorkspaceDocuments(databaseDocuments, 'support', { intent: 'autocomplete' }),
+    ).toEqual([]);
+  });
+});
+
 describe('file-kind documents', () => {
   const mixed = [
     createWorkspaceSearchDocument({

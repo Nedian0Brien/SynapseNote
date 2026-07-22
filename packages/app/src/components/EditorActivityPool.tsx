@@ -57,13 +57,12 @@ import { useLifecycleStatus } from '@/hooks/use-lifecycle-status';
 import { parseProjectSkillContentDocName } from '@/lib/managed-artifact-doc-name';
 import { mark, ProfilerBoundary } from '@/lib/perf';
 import { readNumericOverride } from '@/lib/perf/env-override';
+import { DatabaseRecordPageChrome } from './DatabaseRecordPageChrome';
 import { DiffViewBoundary } from './DiffViewBoundary';
 import { DocumentBoundary } from './DocumentBoundary';
 import { DocumentErrorBoundary } from './DocumentErrorBoundary';
 import { EditorSkeleton } from './EditorSkeleton';
-import { PageHeader } from './PageHeader';
 import { usePageList } from './PageListContext';
-import { PropertyPanel } from './PropertyPanel';
 import { Button } from './ui/button';
 
 // Lazy-loaded: the skill/template identity panel (+ SkillProperties /
@@ -1057,15 +1056,12 @@ function ActivityEntry({
                             />
                           </Suspense>
                         ) : (
-                          <>
-                            <PageHeader
-                              provider={entry.provider}
-                              docName={entry.docName}
-                              docExt={documentExtension}
-                              fallbackTitle={documentTitle}
-                            />
-                            <PropertyPanel provider={entry.provider} />
-                          </>
+                          <DatabaseRecordPageChrome
+                            provider={entry.provider}
+                            docName={entry.docName}
+                            docExt={documentExtension}
+                            fallbackTitle={documentTitle}
+                          />
                         ))}
                       <div className="relative flex-1">
                         {gate.renderSource ? (

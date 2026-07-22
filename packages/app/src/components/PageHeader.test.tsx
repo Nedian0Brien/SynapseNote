@@ -49,6 +49,25 @@ describe('PageHeader', () => {
     expect(html).not.toContain('>Frontmatter title</h1>');
   });
 
+  test('uses the canonical database Title without treating it as a filename', () => {
+    const provider = makeProvider(
+      'records/rec_first',
+      '---\n_sn:\n  database_id: db_tasks\n  source_id: ds_tasks\n  record_id: rec_first\ntitle: Canonical title\n---\nBody',
+    );
+    const html = renderToString(
+      <PageHeader
+        provider={provider}
+        docName="records/rec_first"
+        docExt=".md"
+        fallbackTitle="rec_first"
+        databaseTitle="Canonical title"
+      />,
+    );
+
+    expect(html).toContain('>Canonical title</h1>');
+    expect(html).not.toContain('>rec_first</h1>');
+  });
+
   test('renders Markdown-emphasized titles without visible authoring markers', () => {
     const provider = makeProvider('notes');
     const html = renderToString(

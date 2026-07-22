@@ -5,6 +5,7 @@ import {
   BookMarked,
   ChevronDown,
   Compass,
+  Database,
   FileCheck,
   GitBranch,
   Library,
@@ -53,6 +54,8 @@ interface PackCardGridProps {
    * passes it.
    */
   onCreateBlankFile?: () => void;
+  /** Render a document-native database entry beside the blank-file escape hatch. */
+  onCreateDatabase?: () => void;
   /**
    * Pack ids to hide behind a "Show more" toggle in the footer row. Collapsed
    * by default; the remaining packs render in registry order and the hidden
@@ -83,6 +86,7 @@ interface PackCardGridProps {
 export function PackCardGrid({
   onPackSelect,
   onCreateBlankFile,
+  onCreateDatabase,
   collapsedPackIds,
   className,
   packs: externalPacks,
@@ -174,7 +178,7 @@ export function PackCardGrid({
   const visiblePacks = packs.filter((pack) => !collapsedSet.has(pack.id));
   const hiddenPacks = packs.filter((pack) => collapsedSet.has(pack.id));
   const hasHidden = hiddenPacks.length > 0;
-  const showFooter = hasHidden || onCreateBlankFile != null;
+  const showFooter = hasHidden || onCreateBlankFile != null || onCreateDatabase != null;
   const gridClassName = 'grid gap-4 @sm/packgrid:grid-cols-2 @2xl/packgrid:grid-cols-3';
 
   return (
@@ -233,6 +237,12 @@ export function PackCardGrid({
                 <Trans>
                   or create a new file <ArrowRight aria-hidden="true" className="size-3.5" />
                 </Trans>
+              </Button>
+            ) : null}
+            {onCreateDatabase ? (
+              <Button type="button" variant="link-muted" size="sm" onClick={onCreateDatabase}>
+                <Database aria-hidden="true" className="size-3.5" />
+                <Trans>New database</Trans>
               </Button>
             ) : null}
           </div>

@@ -28,12 +28,12 @@ describe('canonical/compat split — registry shape', () => {
     }
   });
 
-  test('exactly 14 canonical descriptors (5-pack + Math + MermaidFence + Pdf + File + Tabs + Tab + Embed + Mirror + MirrorSource)', () => {
-    expect(canonicalDescriptors.length).toBe(14);
+  test('exactly 15 canonical descriptors including linked DatabaseView', () => {
+    expect(canonicalDescriptors.length).toBe(15);
     // Media canonicals with a matching HTML primitive are lowercase
     // (img/video/audio). Non-native canonicals stay capitalized
     // (Callout, Accordion, Math, MermaidFence, Pdf, File, Tabs, Tab,
-    // Embed, Mirror, MirrorSource). The Mermaid canonical is named
+    // Embed, DatabaseView, Mirror, MirrorSource). The Mermaid canonical is named
     // `MermaidFence` because the only authoring form is the ` ```mermaid `
     // fence — `Mermaid` is intentionally NOT a registered name so legacy
     // `<Mermaid />` JSX content falls through to the wildcard. `Mirror` +
@@ -42,6 +42,7 @@ describe('canonical/compat split — registry shape', () => {
       [
         'Accordion',
         'Callout',
+        'DatabaseView',
         'Embed',
         'File',
         'Math',

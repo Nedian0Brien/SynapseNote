@@ -91,7 +91,9 @@ const OK_AUTO_APPROVE_ALLOW_RULES: readonly string[] = [
  * The goal is a frictionless read/write loop, never a silent `delete` / `move`
  * (KB-wide blast radius), `share_link` (data exfiltration), or `install` (writes
  * executable skill scripts into the agent's own config dir — a persistence
- * vector, unlike a version-recoverable doc write).
+ * vector, unlike a version-recoverable doc write), `data_commit` (creates
+ * canonical database files from an approved plan), or `data_repair` (may
+ * intentionally remove invalid values after an exact preview).
  *
  * The allow-rule is open-ended (`mcp__<server>` matches EVERY OK tool) while this
  * deny-list is closed, so a new destructive tool would silently inherit
@@ -99,7 +101,18 @@ const OK_AUTO_APPROVE_ALLOW_RULES: readonly string[] = [
  * tool name against this list plus its auto-approved complement — adding a tool
  * fails that test until it is consciously classified. Keep the two in lockstep.
  */
-export const OK_GATED_TOOL_NAMES: readonly string[] = ['delete', 'move', 'share_link', 'install'];
+export const OK_GATED_TOOL_NAMES: readonly string[] = [
+  'delete',
+  'move',
+  'share_link',
+  'install',
+  'data_commit',
+  'data_undo',
+  'data_repair',
+  'data_task',
+  'data_place_search',
+  'data_automation',
+];
 
 const OK_AUTO_APPROVE_DENY_RULES: readonly string[] = OK_GATED_TOOL_NAMES.map(
   (tool) => `mcp__${MCP_SERVER_NAME}__${tool}`,

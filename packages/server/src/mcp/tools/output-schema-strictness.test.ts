@@ -219,6 +219,14 @@ describe('MCP outputSchema strictness — auto-discovered registerTool sweep (no
     'search',
     'share_link',
     'current_document',
+    'data',
+    'data_button',
+    'data_place_search',
+    'data_plan',
+    'data_commit',
+    'data_comments',
+    'data_undo',
+    'data_repair',
     // Version flow — output schemas added so the `version` field is
     // machine-visible (history surfaces `entries[].version`).
     'history',

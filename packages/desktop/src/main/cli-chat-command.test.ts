@@ -28,6 +28,17 @@ describe('CLI chat command', () => {
     expect(command).toContain('mcp_servers.synapsenote.default_tools_approval_mode');
   });
 
+  test('forces read-only filesystem access in data-plane-only deployment mode', () => {
+    const command = buildCliChatCommand(
+      { ...input, permissionMode: 'full-access' },
+      { autoApproveOkTools: true, dataPlaneOnlyWrites: true },
+    );
+    expect(command).toContain('sandbox_mode="read-only"');
+    expect(command).toContain('mcp_servers.synapsenote.default_tools_approval_mode');
+    expect(command).not.toContain('dangerously-bypass-approvals-and-sandbox');
+    expect(command).not.toContain('sandbox_mode="workspace-write"');
+  });
+
   test('adds a structured shell completion fail-safe', () => {
     const command = buildCliChatShellCommand('codex exec --json test');
     expect(command).toContain('synapsenote.command_completed');

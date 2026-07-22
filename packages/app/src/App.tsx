@@ -2,7 +2,8 @@ import {
   mediaKindForSidebarAssetExtension,
   SHOW_INSTALL_SKILL,
 } from '@nedian0brien/synapsenote-core';
-import { lazy, type ReactNode, Suspense, useEffect, useRef, useState } from 'react';
+import type { DatabaseContextInspectionScope } from '@nedian0brien/synapsenote-server';
+import { lazy, type ReactNode, Suspense, useEffect, useEffectEvent, useRef, useState } from 'react';
 import { CommandPalette } from '@/components/CommandPalette';
 import { ConnectingBanner } from '@/components/ConnectingBanner';
 import { CreateProjectMenuTrigger } from '@/components/CreateProjectMenuTrigger';
@@ -41,6 +42,14 @@ import { parseEditorTabId } from '@/editor/editor-tabs';
 import { useInstalledClis } from '@/hooks/use-installed-clis';
 import { useReconcileSkillTabs } from '@/hooks/use-reconcile-skill-tabs';
 import { ConfigProvider } from '@/lib/config-provider';
+import { DATABASE_SLASH_COMMAND_EVENT, type DatabaseSlashCommand } from '@/lib/database-events';
+import {
+  DATABASE_CREATION_HASH,
+  databasePageTargetFromHash,
+  databaseRecordPathToHash,
+  isDatabaseCreationHash,
+  isDatabasePageHash,
+} from '@/lib/database-navigation';
 import {
   assetPathFromHash,
   docNameFromHash,
@@ -71,6 +80,27 @@ const ShareReceiveMissDialog = lazy(() =>
   })),
 );
 
+const LazyDatabaseContextInspectorDialog = lazy(() =>
+  import('@/components/DatabaseContextInspectorDialog').then((module) => ({
+    default: module.DatabaseContextInspectorDialog,
+  })),
+);
+const LazyDatabaseAgentRunsDialog = lazy(() =>
+  import('@/components/DatabaseAgentRunsDialog').then((module) => ({
+    default: module.DatabaseAgentRunsDialog,
+  })),
+);
+const LazyDatabaseTableDialog = lazy(() =>
+  import('@/components/DatabaseTableDialog').then((module) => ({
+    default: module.DatabaseTableDialog,
+  })),
+);
+const LazyDatabaseDiagnosticsDialog = lazy(() =>
+  import('@/components/DatabaseDiagnosticsDialog').then((module) => ({
+    default: module.DatabaseDiagnosticsDialog,
+  })),
+);
+
 /**
  * Hashes that open overlay dialogs (Settings, Install Claude Desktop)
  * rather than navigate to a document. NavigationHandler treats these as
@@ -82,9 +112,47 @@ const ShareReceiveMissDialog = lazy(() =>
  * trigger component to keep that locality.
  */
 const INSTALL_DIALOG_HASH = '#install-claude-desktop';
+const DATABASE_CREATION_HISTORY_KEY = '__synapsenote_database_creation__';
 const MARKDOWN_EXTENSION_QUALIFIED_DOC_PATTERN = /\.(md|mdx)$/i;
 function isAuxiliaryDialogHash(hash: string): boolean {
-  return hash === SETTINGS_OPEN_HASH || hash === INSTALL_DIALOG_HASH;
+  return (
+    hash === SETTINGS_OPEN_HASH ||
+    hash === INSTALL_DIALOG_HASH ||
+    isDatabasePageHash(hash) ||
+    isDatabaseCreationHash(hash)
+  );
+}
+
+/**
+ * Database workspaces are route-level content, not a command-palette modal.
+ * The hash keeps reload/back-forward behavior deterministic while the regular
+ * document shell remains mounted underneath during the transition.
+ */
+function DatabasePageRoute() {
+  const [target, setTarget] = useState(() => databasePageTargetFromHash(window.location.hash));
+
+  useEffect(() => {
+    const onHashChange = () => setTarget(databasePageTargetFromHash(window.location.hash));
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
+
+  if (!target) return null;
+  return (
+    <LazyDatabaseTableDialog
+      open
+      presentation="page"
+      initialTarget={target}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen && databasePageTargetFromHash(window.location.hash)) {
+          window.location.hash = '';
+        }
+      }}
+      onOpenRecord={(path) => {
+        window.location.hash = databaseRecordPathToHash(path);
+      }}
+    />
+  );
 }
 
 function exactOpenMarkdownTabTarget(
@@ -519,7 +587,88 @@ function AppBody() {
   const desktopBridge = typeof window !== 'undefined' ? (window.okDesktop ?? null) : null;
   const isElectronHost = typeof window !== 'undefined' && window.okDesktop != null;
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [dataInspectorOpen, setDataInspectorOpen] = useState(false);
+  const [dataInspectorScope, setDataInspectorScope] = useState<DatabaseContextInspectionScope>();
+  const [agentRunsOpen, setAgentRunsOpen] = useState(false);
+  const [databasesOpen, setDatabasesOpen] = useState(false);
+  const [databaseOpenAction, setDatabaseOpenAction] = useState<'create' | null>(null);
+  const [databasePresentation, setDatabasePresentation] = useState<'dialog' | 'page'>('dialog');
+  const [databaseDiagnosticsOpen, setDatabaseDiagnosticsOpen] = useState(false);
+  const openDataInspector = (scope?: DatabaseContextInspectionScope) => {
+    setDataInspectorScope(scope);
+    setDataInspectorOpen(true);
+  };
   const singleFile = useSingleFileMode();
+  const databaseCreationRouteOpenRef = useRef(isDatabaseCreationHash(window.location.hash));
+
+  const resetDatabaseSurface = useEffectEvent(() => {
+    setDatabasesOpen(false);
+    setDatabaseOpenAction(null);
+    setDatabasePresentation('dialog');
+  });
+
+  const openDatabaseCreationRoute = useEffectEvent(() => {
+    if (!isDatabaseCreationHash(window.location.hash)) {
+      const currentState =
+        window.history.state && typeof window.history.state === 'object'
+          ? window.history.state
+          : {};
+      window.history.pushState(
+        { ...currentState, [DATABASE_CREATION_HISTORY_KEY]: true },
+        '',
+        `${window.location.pathname}${window.location.search}${DATABASE_CREATION_HASH}`,
+      );
+    }
+    databaseCreationRouteOpenRef.current = true;
+    setDatabaseOpenAction('create');
+    setDatabasePresentation('page');
+    setDatabasesOpen(true);
+  });
+
+  const closeDatabaseCreationRoute = useEffectEvent(() => {
+    if (!isDatabaseCreationHash(window.location.hash)) return;
+    const currentState = window.history.state;
+    if (
+      currentState &&
+      typeof currentState === 'object' &&
+      DATABASE_CREATION_HISTORY_KEY in currentState
+    ) {
+      window.history.back();
+      return;
+    }
+    databaseCreationRouteOpenRef.current = false;
+    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+  });
+
+  useEffect(() => {
+    const onDatabaseSlashCommand = (event: Event) => {
+      const command = (event as CustomEvent<DatabaseSlashCommand>).detail;
+      if (command !== 'new') return;
+      openDatabaseCreationRoute();
+    };
+    window.addEventListener(DATABASE_SLASH_COMMAND_EVENT, onDatabaseSlashCommand);
+    return () => window.removeEventListener(DATABASE_SLASH_COMMAND_EVENT, onDatabaseSlashCommand);
+  }, []);
+
+  useEffect(() => {
+    const syncDatabaseCreationHistory = () => {
+      if (isDatabaseCreationHash(window.location.hash)) {
+        databaseCreationRouteOpenRef.current = true;
+        setDatabaseOpenAction('create');
+        setDatabasePresentation('page');
+        setDatabasesOpen(true);
+        return;
+      }
+      if (databaseCreationRouteOpenRef.current) {
+        databaseCreationRouteOpenRef.current = false;
+        resetDatabaseSurface();
+      }
+    };
+    syncDatabaseCreationHistory();
+    window.addEventListener('popstate', syncDatabaseCreationHistory);
+    return () => window.removeEventListener('popstate', syncDatabaseCreationHistory);
+  }, []);
 
   // "Open in terminal" launcher — desktop-only. Routes a scope-derived prompt
   // to the docked terminal in EditorPane. `composeTerminalLaunchPrompt` drops
@@ -583,7 +732,52 @@ function AppBody() {
           bridge={desktopBridge}
           open={commandPaletteOpen}
           onOpenChange={setCommandPaletteOpen}
+          onOpenDataInspector={() => openDataInspector()}
+          onOpenAgentRuns={() => setAgentRunsOpen(true)}
+          onOpenDatabases={() => setDatabasesOpen(true)}
+          onOpenDatabaseDiagnostics={() => setDatabaseDiagnosticsOpen(true)}
         />
+        <Suspense fallback={null}>
+          <DatabasePageRoute />
+          <LazyDatabaseContextInspectorDialog
+            open={dataInspectorOpen}
+            scope={dataInspectorScope}
+            onOpenChange={(nextOpen) => {
+              setDataInspectorOpen(nextOpen);
+              if (!nextOpen) setDataInspectorScope(undefined);
+            }}
+          />
+          <LazyDatabaseAgentRunsDialog open={agentRunsOpen} onOpenChange={setAgentRunsOpen} />
+          <LazyDatabaseTableDialog
+            open={databasesOpen}
+            onOpenContextInspector={openDataInspector}
+            initialAction={databaseOpenAction ?? undefined}
+            presentation={databasePresentation}
+            onOpenChange={(nextOpen) => {
+              if (!nextOpen && isDatabaseCreationHash(window.location.hash)) {
+                closeDatabaseCreationRoute();
+              } else if (!nextOpen && isDatabasePageHash(window.location.hash)) {
+                window.location.hash = '';
+              }
+              if (nextOpen) {
+                setDatabasesOpen(true);
+              } else {
+                resetDatabaseSurface();
+              }
+            }}
+            onCreationCancelled={() => {
+              closeDatabaseCreationRoute();
+              resetDatabaseSurface();
+            }}
+            onOpenRecord={(path) => {
+              window.location.hash = databaseRecordPathToHash(path);
+            }}
+          />
+          <LazyDatabaseDiagnosticsDialog
+            open={databaseDiagnosticsOpen}
+            onOpenChange={setDatabaseDiagnosticsOpen}
+          />
+        </Suspense>
         {/* Electron BrowserWindow renders with `titleBarStyle: 'hiddenInset'` +
             `transparent: true` + `vibrancy: 'sidebar'`, so the renderer owns
             window-drag affordance. Existing chrome rows (EditorHeader,

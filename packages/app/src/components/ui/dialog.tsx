@@ -51,14 +51,16 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
+  showOverlay = true,
   onInteractOutside,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean;
+  showOverlay?: boolean;
 }) {
   return (
     <DialogPortal>
-      <DialogOverlay />
+      {showOverlay ? <DialogOverlay /> : null}
       <DialogPrimitive.Content
         data-slot="dialog-content"
         // Dismissing a sonner toast must not close the dialog beneath it —

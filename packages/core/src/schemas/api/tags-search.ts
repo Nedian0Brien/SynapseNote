@@ -788,7 +788,11 @@ export const SearchRequestSchema = z
     // Ordering strategy, independent of intent. The omnibar pairs intent
     // `full_text` (content + fuzzy tolerance) with `navigation` ordering.
     ranking: z.enum(['navigation', 'relevance']).optional(),
-    scopes: z.array(z.enum(['page', 'folder', 'content', 'file'])).optional(),
+    scopes: z
+      .array(
+        z.enum(['page', 'folder', 'content', 'file', 'database', 'data_source', 'view', 'record']),
+      )
+      .optional(),
     scope: z.string().optional(),
     limit: z.number().int().nonnegative().optional(),
     semantic: z.boolean().optional(),
@@ -805,19 +809,34 @@ export type SearchSource = NonNullable<SearchRequest['source']>;
 
 /**
  * Single result entry in `/api/search` responses. `kind` mirrors the
- * underlying `WorkspaceSearchDocument` discriminator (`page` / `folder` /
- * `file`); `content` is accepted for leniency but never emitted as a result
- * kind. `snippet` is populated only for `kind: 'page'` responses when the
- * query matched body content (name-only `file` entries never carry one).
+ * underlying `WorkspaceSearchDocument` discriminator. `content` is accepted
+ * for request-scope leniency but never emitted as a result kind. Database
+ * entities carry explicit stable IDs so agents never need to parse synthetic
+ * paths. `snippet` is populated only for `kind: 'page'` responses when the
+ * query matched body content.
  */
 export const SearchResultEntrySchema = z
   .object({
-    kind: z.enum(['page', 'folder', 'content', 'file']),
+    kind: z.enum([
+      'page',
+      'folder',
+      'content',
+      'file',
+      'database',
+      'data_source',
+      'view',
+      'record',
+    ]),
     path: z.string().min(1),
     title: z.string(),
     score: z.number(),
     signals: z.record(z.string(), z.unknown()),
     snippet: z.string().optional(),
+    databaseId: z.string().optional(),
+    sourceId: z.string().optional(),
+    viewId: z.string().optional(),
+    recordId: z.string().optional(),
+    revision: z.string().optional(),
   })
   .loose() satisfies StandardSchemaV1;
 export type SearchResultEntry = z.infer<typeof SearchResultEntrySchema>;
@@ -896,8 +915,8 @@ export const SearchSuccessSchema = z
     results: z.array(SearchResultEntrySchema),
     elapsedMs: z.number().nonnegative(),
     semantic: SearchSemanticStatusSchema.optional(),
-    // True when the name-only `kind:'file'` tier hit the corpus admission cap
-    // (`OK_SEARCH_MAX_ENTRIES`) and the deepest paths were dropped. Markdown
+    // True when a bounded corpus tier (`file` or permission-scoped `record`)
+    // hit `OK_SEARCH_MAX_ENTRIES`. Markdown
     // content docs are never dropped, so omission/`false` means full coverage.
     truncated: z.boolean().optional(),
     // Cold-start readiness. `false` while the boot index seed is still walking

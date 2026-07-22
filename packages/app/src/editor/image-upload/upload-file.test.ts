@@ -75,6 +75,19 @@ describe('uploadFile', () => {
     expect(calls[0]?.url).toBe('/api/upload');
   });
 
+  test('uses an explicit capability-scoped upload endpoint when provided', async () => {
+    const { fetch, calls } = captureFetch(() =>
+      jsonResponse(200, { ok: true, src: 'form.png', path: 'feedback/form.png', deduped: false }),
+    );
+    const file = new File(['form-image'], 'form.png', { type: 'image/png' });
+    await uploadFile(file, [], {
+      fetch,
+      docName: 'form-response',
+      endpoint: '/api/databases/forms/upload?databaseId=db_feedback',
+    });
+    expect(calls[0]?.url).toBe('/api/databases/forms/upload?databaseId=db_feedback');
+  });
+
   test('audio upload posts to /api/upload (no per-MIME route)', async () => {
     const { fetch, calls } = captureFetch(() =>
       jsonResponse(200, { ok: true, src: 'song.mp3', path: 'song.mp3', deduped: false }),

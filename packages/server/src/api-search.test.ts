@@ -4,11 +4,15 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Readable } from 'node:stream';
+import { DatabaseDefinitionSchema } from '@nedian0brien/synapsenote-core';
 import {
   createApiExtension,
   DEFAULT_SEARCH_MAX_ENTRIES,
   getSearchMaxEntries,
 } from './api-extension.ts';
+import { createDatabaseDataPlane } from './database-data-plane.ts';
+import { createDatabaseRecordIndex } from './database-record-index.ts';
+import { createDatabaseStore } from './database-store.ts';
 import type { FileIndexEntry } from './file-watcher.ts';
 
 interface CapturedResponse {
@@ -296,6 +300,161 @@ describe('GET /api/search', () => {
       expect(body.type).toBe('urn:ok:error:payload-too-large');
     } finally {
       rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('GET /api/search — database entity kinds', () => {
+  test('returns stable database addresses and never leaks denied records through the page tier', async () => {
+    const projectDir = mkdtempSync(join(tmpdir(), 'ok-search-database-'));
+    const contentDir = join(projectDir, 'content');
+    try {
+      mkdirSync(join(contentDir, 'support-issues'), { recursive: true });
+      const definition = DatabaseDefinitionSchema.parse({
+        version: 1,
+        id: 'db_support',
+        key: 'support-issues',
+        name: 'Support issues',
+        aliases: ['Helpdesk'],
+        contract: {
+          purpose: 'Triage support reports',
+          canonicality: 'canonical',
+          vocabulary: ['support', 'incident'],
+          freshness: { expectation: 'daily', maxAgeSeconds: 86_400 },
+          sensitivity: 'internal',
+        },
+        sources: [
+          {
+            id: 'ds_support_issues',
+            key: 'issues',
+            name: 'Support issue records',
+            recordMeaning: 'One support issue',
+            folder: 'support-issues',
+            properties: [
+              { id: 'prop_support_title', key: 'title', name: 'Title', type: 'title' },
+              {
+                id: 'prop_support_internal_note',
+                key: 'internal-note',
+                name: 'Internal note',
+                type: 'text',
+              },
+            ],
+          },
+        ],
+        views: [
+          {
+            id: 'view_support_urgent',
+            key: 'urgent',
+            name: 'Urgent support queue',
+            sourceId: 'ds_support_issues',
+            layout: { type: 'table' },
+            projection: { propertyIds: ['prop_support_title'] },
+          },
+        ],
+      });
+      const recordMarkdown = (recordId: string, title: string, internalNote: string) =>
+        `---\n_sn:\n  database_id: db_support\n  source_id: ds_support_issues\n  record_id: ${recordId}\ntitle: ${title}\ninternal-note: ${internalNote}\n---\nPrivate record body.\n`;
+      writeFileSync(
+        join(contentDir, 'support-issues', 'visible.md'),
+        recordMarkdown('rec_visible', 'Visible support checkout', 'xylophonicdenialmarker'),
+      );
+      writeFileSync(
+        join(contentDir, 'support-issues', 'secret.md'),
+        recordMarkdown('rec_secret', 'Secret Needle', 'Denied row note'),
+      );
+
+      const store = createDatabaseStore({ projectDir, contentDir });
+      await store.create(definition);
+      const recordIndex = createDatabaseRecordIndex({ contentDir, databaseStore: store });
+      await recordIndex.rebuild();
+      let policyRevision = `sha256:${'a'.repeat(64)}`;
+      let allowedRecordIds = ['rec_visible'];
+      const dataPlane = createDatabaseDataPlane({
+        databaseStore: store,
+        databaseRecordIndex: recordIndex,
+        resolveQueryAccess: () => ({
+          policyId: 'search-test-policy',
+          policyRevision,
+          allowedRecordIds,
+          allowedPropertyIds: ['prop_support_title'],
+        }),
+      });
+      const fileIndex = buildFileIndex(contentDir);
+      const extension = createApiExtension({
+        hocuspocus: {} as unknown as Parameters<typeof createApiExtension>[0]['hocuspocus'],
+        sessionManager: {} as unknown as Parameters<typeof createApiExtension>[0]['sessionManager'],
+        contentDir,
+        projectDir,
+        databaseDataPlane: dataPlane,
+        serverInstanceId: 'test-server',
+        getFileIndex: () => fileIndex,
+      });
+      const search = async (query: string) => {
+        const req = makeReq(
+          'GET',
+          `/api/search?query=${encodeURIComponent(query)}&intent=full_text`,
+        );
+        const { res, captured } = makeRes();
+        await (
+          extension as {
+            onRequest: (ctx: {
+              request: IncomingMessage;
+              response: ServerResponse;
+            }) => Promise<void>;
+          }
+        ).onRequest({ request: req, response: res });
+        expect(captured.status, captured.body).toBe(200);
+        return JSON.parse(captured.body) as {
+          results: Array<{
+            kind: string;
+            path: string;
+            databaseId?: string;
+            sourceId?: string;
+            viewId?: string;
+            recordId?: string;
+            revision?: string;
+          }>;
+        };
+      };
+
+      const support = await search('support');
+      expect(new Set(support.results.map((row) => row.kind))).toEqual(
+        new Set(['database', 'data_source', 'view', 'record']),
+      );
+      expect(support.results.find((row) => row.kind === 'database')).toMatchObject({
+        databaseId: 'db_support',
+        revision: expect.stringMatching(/^sha256:/),
+      });
+      expect(support.results.find((row) => row.kind === 'data_source')).toMatchObject({
+        databaseId: 'db_support',
+        sourceId: 'ds_support_issues',
+      });
+      expect(support.results.find((row) => row.kind === 'view')).toMatchObject({
+        databaseId: 'db_support',
+        sourceId: 'ds_support_issues',
+        viewId: 'view_support_urgent',
+      });
+      expect(support.results.find((row) => row.kind === 'record')).toMatchObject({
+        databaseId: 'db_support',
+        sourceId: 'ds_support_issues',
+        recordId: 'rec_visible',
+        revision: expect.stringMatching(/^sha256:/),
+      });
+
+      const denied = await search('Secret Needle');
+      expect(denied.results).toEqual([]);
+      expect((await search('xylophonicdenialmarker')).results).toEqual([]);
+
+      // Permission revision participates in the corpus fingerprint: granting
+      // this row must rebuild the cached projection even though no file or
+      // schema changed.
+      policyRevision = `sha256:${'b'.repeat(64)}`;
+      allowedRecordIds = ['rec_visible', 'rec_secret'];
+      expect((await search('Secret Needle')).results).toEqual([
+        expect.objectContaining({ kind: 'record', recordId: 'rec_secret' }),
+      ]);
+    } finally {
+      rmSync(projectDir, { recursive: true, force: true });
     }
   });
 });

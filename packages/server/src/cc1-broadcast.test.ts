@@ -5,11 +5,13 @@ import {
   CC1_CHANNEL_BRANCH_SWITCHED,
   CC1_CHANNEL_CONFIG_IGNORE_NESTED_ERROR,
   CC1_CHANNEL_CONFIG_VALIDATION_REJECTED,
+  CC1_CHANNEL_DATABASE_CHANGED,
   CC1_CHANNEL_DISK_ACK,
   CC1_CONTRACT_VERSION,
   CC1BranchSwitchedPayloadSchema,
   CC1ConfigIgnoreNestedErrorPayloadSchema,
   CC1ConfigValidationRejectedPayloadSchema,
+  CC1DatabaseChangedPayloadSchema,
   CC1DerivedViewPayloadSchema,
   CC1DiskAckPayloadSchema,
   CONFIG_DOC_NAME_OKIGNORE,
@@ -132,6 +134,115 @@ describe('CC1Broadcaster', () => {
 
   afterEach(() => {
     broadcaster.destroy();
+  });
+
+  test('coalesces record changes and publishes content-free index state', async () => {
+    const status = () => ({
+      state: 'idle' as const,
+      revision: 'sha256:index',
+      manifestRevision: 'sha256:manifest',
+      recordCount: 2,
+      issueCount: 0,
+      progress: null,
+      lastRebuiltAt: null,
+      lastIncrementalAt: null,
+      lastError: null,
+    });
+    broadcaster.signalDatabaseChanged(
+      {
+        kind: 'records',
+        reasons: ['record-create'],
+        databaseIds: ['db_tasks'],
+        sourceIds: ['ds_tasks'],
+        recordIds: ['rec_a'],
+      },
+      status,
+    );
+    broadcaster.signalDatabaseChanged(
+      {
+        kind: 'records',
+        reasons: ['record-update'],
+        databaseIds: ['db_tasks'],
+        sourceIds: ['ds_tasks'],
+        recordIds: ['rec_b'],
+      },
+      status,
+    );
+    await wait(150);
+
+    expect(broadcasts).toHaveLength(1);
+    expect(CC1DatabaseChangedPayloadSchema.parse(JSON.parse(broadcasts[0]))).toEqual({
+      v: CC1_CONTRACT_VERSION,
+      ch: CC1_CHANNEL_DATABASE_CHANGED,
+      seq: 1,
+      scope: 'records',
+      reasons: ['record-create', 'record-update'],
+      databaseIds: ['db_tasks'],
+      sourceIds: ['ds_tasks'],
+      recordIds: ['rec_a', 'rec_b'],
+      affectedIdsComplete: true,
+      index: {
+        state: 'idle',
+        revision: 'sha256:index',
+        manifestRevision: 'sha256:manifest',
+        recordCount: 2,
+        issueCount: 0,
+        progress: null,
+      },
+    });
+    expect(broadcasts[0]).not.toContain('title');
+    expect(broadcasts[0]).not.toContain('body');
+  });
+
+  test('publishes rebuild state immediately without waiting for debounce', () => {
+    broadcaster.signalDatabaseChanged(
+      { kind: 'index', phase: 'rebuilding', reasons: ['schema-change'] },
+      () => ({
+        state: 'rebuilding',
+        revision: 'sha256:before',
+        manifestRevision: 'sha256:manifest',
+        recordCount: 2,
+        issueCount: 0,
+        progress: { discovered: 2, processed: 0 },
+        lastRebuiltAt: null,
+        lastIncrementalAt: null,
+        lastError: null,
+      }),
+    );
+    expect(broadcasts).toHaveLength(1);
+    expect(CC1DatabaseChangedPayloadSchema.parse(JSON.parse(broadcasts[0]))).toMatchObject({
+      scope: 'workspace',
+      reasons: ['schema-change'],
+      affectedIdsComplete: false,
+      index: { state: 'rebuilding', progress: { discovered: 2, processed: 0 } },
+    });
+  });
+
+  test('bounds coalesced affected IDs and marks the partial identity set', async () => {
+    broadcaster.signalDatabaseChanged(
+      {
+        kind: 'records',
+        reasons: ['record-update'],
+        databaseIds: ['db_tasks'],
+        sourceIds: ['ds_tasks'],
+        recordIds: Array.from({ length: 501 }, (_, index) => `rec_${index}`),
+      },
+      () => ({
+        state: 'idle',
+        revision: 'sha256:index',
+        manifestRevision: 'sha256:manifest',
+        recordCount: 501,
+        issueCount: 0,
+        progress: null,
+        lastRebuiltAt: null,
+        lastIncrementalAt: null,
+        lastError: null,
+      }),
+    );
+    await wait(150);
+    const payload = CC1DatabaseChangedPayloadSchema.parse(JSON.parse(broadcasts[0]));
+    expect(payload.recordIds).toHaveLength(500);
+    expect(payload.affectedIdsComplete).toBe(false);
   });
 
   test('debounce collapses 10 rapid signal() calls into 1 broadcast', async () => {

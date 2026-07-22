@@ -263,8 +263,8 @@ interface WorkspaceSearchApiResponse {
     score?: number;
   }>;
   /**
-   * Server sets this `true` when the corpus build dropped deepest-tail
-   * `kind:'file'` entries at the `OK_SEARCH_MAX_ENTRIES` cap. Omnibar surfaces
+   * Server sets this `true` when a bounded corpus tier hit the
+   * `OK_SEARCH_MAX_ENTRIES` cap. Omnibar surfaces
    * a "results capped" hint so the user understands a missing file might be a
    * cap artifact, not a typo. Optional + missing-is-false; the cap is per-build
    * and persists across queries on the same corpus until the fingerprint flips.

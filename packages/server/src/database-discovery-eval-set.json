@@ -1,0 +1,63 @@
+{
+  "note": "R-011/R-012 held-out discovery eval pairs. Corpus is built by buildDatabaseDiscoveryCorpus() in database-discovery-eval.ts (six databases; customer-feedback/customer-research share the 'insights' vocabulary word on purpose, engineering-tasks/bug-tracker share 'backlog' on purpose and 'team' in their common purpose phrasing, to produce genuine score ties). Every non-ambiguous pair resolves to exactly one candidate (the runner-up scores 0 and is filtered out of the catalog response entirely); every ambiguous pair's top two candidates tie exactly at 145 or 70, verified against the real DatabaseDataPlane#catalog scorer (see debug-discovery.ts run in the implementing session), so DEFAULT_AMBIGUITY_MARGIN=10 cleanly separates the two classes without being tuned to either split. Deliberately avoids 'customer'/'engineering' as shared words: those substrings also appear inside the databases' own key/name/source fields, which breaks the intended tie (verified empirically, not assumed).",
+  "pairs": [
+    {
+      "query": "customer-feedback",
+      "expectedDatabaseId": "db_feedback",
+      "ambiguous": false,
+      "split": "tune"
+    },
+    { "query": "sprint", "expectedDatabaseId": "db_tasks", "ambiguous": false, "split": "tune" },
+    {
+      "query": "bug-tracker",
+      "expectedDatabaseId": "db_bugs",
+      "ambiguous": false,
+      "split": "tune"
+    },
+    {
+      "query": "procurement",
+      "expectedDatabaseId": "db_vendors",
+      "ambiguous": false,
+      "split": "tune"
+    },
+    { "query": "campaign", "expectedDatabaseId": "db_events", "ambiguous": false, "split": "tune" },
+    { "query": "task", "expectedDatabaseId": "db_tasks", "ambiguous": false, "split": "tune" },
+    {
+      "query": "customer-research",
+      "expectedDatabaseId": "db_research",
+      "ambiguous": false,
+      "split": "held"
+    },
+    {
+      "query": "voice of customer",
+      "expectedDatabaseId": "db_feedback",
+      "ambiguous": false,
+      "split": "held"
+    },
+    {
+      "query": "interview",
+      "expectedDatabaseId": "db_research",
+      "ambiguous": false,
+      "split": "held"
+    },
+    {
+      "query": "vendor-contracts",
+      "expectedDatabaseId": "db_vendors",
+      "ambiguous": false,
+      "split": "held"
+    },
+    {
+      "query": "marketing-events",
+      "expectedDatabaseId": "db_events",
+      "ambiguous": false,
+      "split": "held"
+    },
+    { "query": "defect", "expectedDatabaseId": "db_bugs", "ambiguous": false, "split": "held" },
+    { "query": "insights", "expectedDatabaseId": null, "ambiguous": true, "split": "tune" },
+    { "query": "backlog", "expectedDatabaseId": null, "ambiguous": true, "split": "tune" },
+    { "query": "team", "expectedDatabaseId": null, "ambiguous": true, "split": "tune" },
+    { "query": "Insights", "expectedDatabaseId": null, "ambiguous": true, "split": "held" },
+    { "query": "engineering team", "expectedDatabaseId": null, "ambiguous": true, "split": "held" },
+    { "query": "  insights  ", "expectedDatabaseId": null, "ambiguous": true, "split": "held" }
+  ]
+}

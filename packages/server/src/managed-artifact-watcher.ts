@@ -41,6 +41,8 @@ export interface ManagedArtifactWatchOptions {
   depth: number;
   /** True for a path that is a managed-artifact leaf (e.g. `SKILL.md` / `*.md`). */
   acceptLeaf: (absPath: string) => boolean;
+  /** Optional deletion hook for artifacts whose removal changes derived state. */
+  onDelete?: (absPath: string) => void;
 }
 
 /** Skills: nested `<name>/SKILL.md` (the default). */
@@ -63,10 +65,10 @@ export const TEMPLATE_WATCH_OPTIONS: ManagedArtifactWatchOptions = {
  * can write immediately without racing the first event.
  *
  * On `add` / `change` of a leaf (per `opts.acceptLeaf`): reads the file and
- * fires `onChange(absPath, content)`. `unlink` is logged but does NOT fire
- * `onChange` (the live doc retains its current state — deletion is a separate,
- * explicit surface). Read errors and handler throws are logged + dropped so one
- * bad event can't tear down the watcher.
+ * fires `onChange(absPath, content)`. `unlink` invokes `opts.onDelete` when
+ * supplied; otherwise it is only logged and the live doc retains its current
+ * state. Read errors and handler throws are logged + dropped so one bad event
+ * can't tear down the watcher.
  */
 export async function startManagedArtifactWatcher(
   roots: ReadonlyArray<string>,
@@ -136,6 +138,11 @@ export async function startManagedArtifactWatcher(
   watcher.on('unlink', (path) => {
     if (!opts.acceptLeaf(path)) return;
     lastContent.delete(path);
+    try {
+      opts.onDelete?.(path);
+    } catch (err) {
+      log.warn({ err, path }, 'managed-artifact delete handler threw');
+    }
     log.debug({ path }, 'managed-artifact leaf unlinked; live doc retained at current state');
   });
   watcher.on('error', (err) => {

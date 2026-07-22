@@ -1,7 +1,14 @@
 import { type AnyOrama, create, insertMultiple, search } from '@orama/orama';
 import { isHiddenDocName } from '../util/doc-name.ts';
 
-export type WorkspaceSearchKind = 'page' | 'folder' | 'file';
+export type WorkspaceSearchKind =
+  | 'page'
+  | 'folder'
+  | 'file'
+  | 'database'
+  | 'data_source'
+  | 'view'
+  | 'record';
 export type WorkspaceSearchIntent = 'omnibar' | 'autocomplete' | 'full_text';
 export type WorkspaceSearchScope = WorkspaceSearchKind | 'content';
 
@@ -25,6 +32,13 @@ export interface WorkspaceSearchDocument {
   pathSegments: string;
   content: string;
   modifiedTs: number;
+  /** Stable database addressing fields. Empty on non-database documents. */
+  databaseId?: string;
+  sourceId?: string;
+  viewId?: string;
+  recordId?: string;
+  /** Schema revision for metadata entities; record revision for records. */
+  revision?: string;
 }
 
 export interface WorkspaceSearchResult {
@@ -171,6 +185,11 @@ const WORKSPACE_SEARCH_SCHEMA = {
   pathSegments: 'string',
   content: 'string',
   modifiedTs: 'number',
+  databaseId: 'string',
+  sourceId: 'string',
+  viewId: 'string',
+  recordId: 'string',
+  revision: 'string',
 } as const;
 
 type WorkspaceSearchDocumentField = 'title' | 'name' | 'path' | 'pathSegments' | 'content';
@@ -228,6 +247,11 @@ export function createWorkspaceSearchDocument(input: {
    * majority) yields the same `pathSegments` as if no aliases were considered.
    */
   aliases?: readonly string[] | null;
+  databaseId?: string | null;
+  sourceId?: string | null;
+  viewId?: string | null;
+  recordId?: string | null;
+  revision?: string | null;
 }): WorkspaceSearchDocument {
   const name = workspaceSearchBasename(input.path);
   const title = input.title?.trim() || name;
@@ -250,6 +274,11 @@ export function createWorkspaceSearchDocument(input: {
     pathSegments: [...baseSegments, ...aliasSegments].join(' '),
     content: input.content ?? '',
     modifiedTs: Number.isFinite(modifiedTs) ? modifiedTs : 0,
+    databaseId: input.databaseId ?? '',
+    sourceId: input.sourceId ?? '',
+    viewId: input.viewId ?? '',
+    recordId: input.recordId ?? '',
+    revision: input.revision ?? '',
   };
 }
 
@@ -287,8 +316,10 @@ function defaultScopes(intent: WorkspaceSearchIntent): readonly WorkspaceSearchS
   // set is a separate follow-up). Omnibar and full_text admit name-only file
   // entries so "search what you can see in the tree" holds.
   if (intent === 'autocomplete') return ['page'];
-  if (intent === 'full_text') return ['page', 'content', 'file'];
-  return ['page', 'folder', 'file'];
+  if (intent === 'full_text') {
+    return ['page', 'content', 'file', 'database', 'data_source', 'view', 'record'];
+  }
+  return ['page', 'folder', 'file', 'database', 'data_source', 'view', 'record'];
 }
 
 function scopeAllows(document: WorkspaceSearchDocument, scopes: ReadonlySet<WorkspaceSearchScope>) {

@@ -20,6 +20,7 @@ import {
   CC1_CHANNEL_BRANCH_SWITCHED,
   CC1_CHANNEL_CONFIG_IGNORE_NESTED_ERROR,
   CC1_CHANNEL_CONFIG_VALIDATION_REJECTED,
+  CC1_CHANNEL_DATABASE_CHANGED,
   CC1_CHANNEL_DISK_ACK,
   CC1_CONTRACT_VERSION,
   type CC1BranchSwitchedPayload,
@@ -28,6 +29,8 @@ import {
   CC1ConfigIgnoreNestedErrorPayloadSchema,
   type CC1ConfigValidationRejectedPayload,
   CC1ConfigValidationRejectedPayloadSchema,
+  type CC1DatabaseChangedPayload,
+  CC1DatabaseChangedPayloadSchema,
   type CC1DerivedViewPayload,
   CC1DerivedViewPayloadSchema,
   CC1DiskAckPayloadSchema,
@@ -42,6 +45,7 @@ export {
   CC1_CHANNEL_BRANCH_SWITCHED,
   CC1_CHANNEL_CONFIG_IGNORE_NESTED_ERROR,
   CC1_CHANNEL_CONFIG_VALIDATION_REJECTED,
+  CC1_CHANNEL_DATABASE_CHANGED,
   CC1_CHANNEL_DISK_ACK,
   CC1_CONTRACT_VERSION,
   type DerivedViewChannel,
@@ -83,6 +87,10 @@ export function parseCC1ConfigIgnoreNestedError(
   payload: string,
 ): CC1ConfigIgnoreNestedErrorPayload | null {
   return safeParseJson(payload, CC1ConfigIgnoreNestedErrorPayloadSchema);
+}
+
+export function parseCC1DatabaseChanged(payload: string): CC1DatabaseChangedPayload | null {
+  return safeParseJson(payload, CC1DatabaseChangedPayloadSchema);
 }
 
 /**
@@ -132,6 +140,7 @@ interface CC1StatelessHandlers {
   onDerivedView?: (payload: CC1DerivedViewPayload) => void;
   onConfigValidationRejected?: (payload: CC1ConfigValidationRejectedPayload) => void;
   onConfigIgnoreNestedError?: (payload: CC1ConfigIgnoreNestedErrorPayload) => void;
+  onDatabaseChanged?: (payload: CC1DatabaseChangedPayload) => void;
   onUnknown?: (rawPayload: string) => void;
 }
 
@@ -168,6 +177,11 @@ export function dispatchCC1Stateless(payload: string, handlers: CC1StatelessHand
   const derivedView = parseCC1DerivedView(payload);
   if (derivedView) {
     handlers.onDerivedView?.(derivedView);
+    return;
+  }
+  const databaseChanged = parseCC1DatabaseChanged(payload);
+  if (databaseChanged) {
+    handlers.onDatabaseChanged?.(databaseChanged);
     return;
   }
   const configRejected = parseCC1ConfigValidationRejected(payload);

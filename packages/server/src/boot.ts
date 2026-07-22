@@ -646,6 +646,7 @@ async function bootServerInner(opts: BootServerOptions): Promise<BootedServer> {
     agentFocusBroadcaster,
     agentPresenceBroadcaster,
     maintenanceCoordinator,
+    subscribeDatabaseChanges,
   } = serverInstance;
 
   const mcpHost = (() => {
@@ -665,6 +666,11 @@ async function bootServerInner(opts: BootServerOptions): Promise<BootedServer> {
         projectDir: opts.projectDir ?? opts.contentDir,
         config: opts.config,
         getServerUrl: () => `http://${mcpHost}:${boundPort}`,
+        subscribeDatabaseChanges,
+        toolProfile:
+          process.env.SYNAPSENOTE_DATABASE_SANDBOX_MODE === 'data-plane-only'
+            ? 'database-sandbox'
+            : 'full',
         log,
       });
 

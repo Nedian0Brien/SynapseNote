@@ -32,6 +32,8 @@ interface UploadFileDeps {
   /** Currently-open document name. Defaults to `getCurrentDocName()` from the
    *  module singleton (set by TiptapEditor on mount). */
   docName?: string | null;
+  /** Alternate same-origin endpoint used by capability-scoped upload surfaces. */
+  endpoint?: string;
 }
 
 export async function uploadFile(
@@ -59,7 +61,7 @@ export async function uploadFile(
 
   let res: Response;
   try {
-    res = await fetchImpl(UPLOAD_ENDPOINT, { method: 'POST', body: formData });
+    res = await fetchImpl(deps.endpoint ?? UPLOAD_ENDPOINT, { method: 'POST', body: formData });
   } catch (networkError) {
     const message = networkError instanceof Error ? networkError.message : String(networkError);
     throw new Error(`Upload failed: ${message}`);

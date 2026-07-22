@@ -113,6 +113,16 @@ describe('PackCardGrid runtime behavior', () => {
     expect(onCreateBlankFile).toHaveBeenCalledTimes(1);
   });
 
+  test('renders a document-native database footer button and fires the callback', async () => {
+    const onCreateDatabase = mock(() => {});
+    await renderPackCardGrid({ packs: allPacks, onCreateDatabase });
+
+    const databaseButton = screen.getByRole('button', { name: 'New database' });
+    await userEvent.click(databaseButton);
+
+    expect(onCreateDatabase).toHaveBeenCalledTimes(1);
+  });
+
   test('parks collapsedPackIds behind a Show more toggle and appends them when expanded', async () => {
     // Hide plain-notes (Pack 3) and gbrain (Pack 6); the other four stay visible.
     await renderPackCardGrid({ packs: allPacks, collapsedPackIds: ['plain-notes', 'gbrain'] });

@@ -911,6 +911,11 @@
       "hasOptions": false
     },
     {
+      "name": "implicit-math-promoter",
+      "version": null,
+      "hasOptions": false
+    },
+    {
       "name": "single-dollar-math-promoter",
       "version": null,
       "hasOptions": false

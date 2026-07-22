@@ -20,8 +20,9 @@ import type { MessageDescriptor } from '@lingui/core';
 import { msg, t } from '@lingui/core/macro';
 import { Trans } from '@lingui/react/macro';
 import type { Editor } from '@tiptap/react';
-import { CopyPlus, ExternalLink, FileUp, Hash, Link2 } from 'lucide-react';
+import { CopyPlus, Database, ExternalLink, FileUp, Hash, Link2 } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { dispatchDatabaseSlashCommand } from '@/lib/database-events';
 import { setPendingLinkEdit } from '../extensions/link-edit-autoopen';
 import { findMarkIdAt } from '../extensions/mark-identity';
 import { uploadAndInsert } from '../image-upload/index.ts';
@@ -442,7 +443,7 @@ export function focusInsertedComponent(
     (p) => !('hidden' in p && p.hidden) && p.type !== 'reactnode',
   );
 
-  if (hasEditableProps) {
+  if (hasEditableProps && descriptor.name !== 'DatabaseView') {
     setPendingAutoOpen(insertPos);
     requestAnimationFrame(() => {
       editor.commands.setNodeSelection(insertPos);
@@ -539,7 +540,11 @@ function createInsertCommand(descriptor: JsxComponentDescriptor): (editor: Edito
 // duplicating an existing Tab via the drag-handle, OR by editing source.
 // `File` stays hidden because the file-upload affordance has its own slash
 // entry that opens an OS picker.
-export const SLASH_HIDDEN_CANONICALS: ReadonlySet<string> = new Set(['File', 'Tab']);
+export const SLASH_HIDDEN_CANONICALS: ReadonlySet<string> = new Set([
+  'File',
+  'Tab',
+  'DatabaseView',
+]);
 
 /**
  * Custom block-level slash entries for canonicals whose user-facing
@@ -556,6 +561,63 @@ export const SLASH_HIDDEN_CANONICALS: ReadonlySet<string> = new Set(['File', 'Ta
  */
 function getCustomBlockComponentItems(): SlashCommandItem[] {
   return [
+    {
+      name: 'component-Database',
+      label: t`Database`,
+      icon: Database,
+      category: 'data',
+      aliases: ['table', 'collection', 'new database', 'database page'],
+      description: 'Create a database page and start with an editable table',
+      insertsBlockComponent: true,
+      command: () => dispatchDatabaseSlashCommand('new'),
+      preview: {
+        description: t`Create a new database page with a Name column and a first-row affordance.`,
+        render: () => (
+          <div className="flex w-full flex-col overflow-hidden rounded-md border border-border bg-background">
+            <div className="border-b px-3 py-2 font-medium text-sm">Project tasks</div>
+            <div className="grid grid-cols-[minmax(0,1fr)_6rem] border-b bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground">
+              <span>Name</span>
+              <span>Status</span>
+            </div>
+            <div className="px-3 py-2 text-muted-foreground text-xs">+ New</div>
+          </div>
+        ),
+      },
+    },
+    {
+      name: 'component-LinkedDatabase',
+      label: t`Linked database`,
+      icon: Link2,
+      category: 'data',
+      aliases: ['linked view', 'existing database', 'database view', 'table view', 'link database'],
+      description: 'Choose an existing database and saved view without entering stable IDs',
+      insertsBlockComponent: true,
+      command: (editor) => {
+        const descriptor = getDescriptor('DatabaseView');
+        if (descriptor) {
+          // The blank component renders an inline database/source/view picker;
+          // it never asks the user to type stable IDs into the property panel.
+          createInsertCommand(descriptor)(editor);
+          return;
+        }
+        // Defensive fallback for an incomplete registry during module startup.
+        dispatchDatabaseSlashCommand('linked');
+      },
+      preview: {
+        description: t`Link shared records into this page and choose a saved view.`,
+        render: () => (
+          <div className="flex w-full flex-col overflow-hidden rounded-md border border-border bg-background">
+            <div className="flex items-center gap-2 border-b px-3 py-2 text-sm">
+              <Link2 className="size-3.5 text-muted-foreground" aria-hidden="true" />
+              <span className="font-medium">Tasks · Active</span>
+            </div>
+            <div className="px-3 py-2 text-muted-foreground text-xs">
+              Shared records · independent view settings
+            </div>
+          </div>
+        ),
+      },
+    },
     {
       name: 'component-File',
       label: t`File`,

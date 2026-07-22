@@ -384,6 +384,49 @@ describe('search MCP tool — happy path', () => {
     expect(body.scopes).toEqual(['file']);
   });
 
+  test('preserves stable database addresses and does not invent a document preview for metadata', async () => {
+    mockFetchOk({
+      ok: true,
+      query: 'support',
+      intent: 'full_text',
+      results: [
+        {
+          kind: 'view',
+          path: 'databases/support/views/urgent',
+          title: 'Urgent queue',
+          score: 500,
+          signals: { lexical: 500, fullText: 1, recency: 0 },
+          databaseId: 'db_support',
+          sourceId: 'ds_support',
+          viewId: 'view_urgent',
+          revision: `sha256:${'a'.repeat(64)}`,
+        },
+      ],
+    });
+    const { server, registered } = makeFakeServer();
+    register(server, {
+      resolveCwd: async () => '/tmp/proj',
+      config: DEFAULT_CONFIG,
+      serverUrl: 'http://localhost:1234',
+    });
+    const result = await expectOneRegisteredTool(registered).handler({
+      query: 'support',
+      scopes: ['view'],
+      cwd: '/tmp/proj',
+    });
+    expect(result.structuredContent?.results).toEqual([
+      expect.objectContaining({
+        kind: 'view',
+        docName: null,
+        previewUrl: null,
+        databaseId: 'db_support',
+        sourceId: 'ds_support',
+        viewId: 'view_urgent',
+        revision: `sha256:${'a'.repeat(64)}`,
+      }),
+    ]);
+  });
+
   test('zero results returns "No matches" text + structured.resultCount = 0', async () => {
     mockFetchOk({ ok: true, query: 'nope', intent: 'full_text', results: [], elapsedMs: 0.1 });
     const { server, registered } = makeFakeServer();

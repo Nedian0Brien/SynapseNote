@@ -1,4 +1,8 @@
-import { DerivedViewChannelSchema } from '@nedian0brien/synapsenote-core';
+import {
+  type CC1DatabaseChangedPayload,
+  CC1DatabaseChangedPayloadSchema,
+  DerivedViewChannelSchema,
+} from '@nedian0brien/synapsenote-core';
 import type { DerivedViewChannel } from '@/lib/cc1';
 
 const DOCUMENTS_CHANGED_EVENT = 'synapsenote:documents-changed';
@@ -39,6 +43,32 @@ export function subscribeToDocumentsChanged(
   };
   window.addEventListener(DOCUMENTS_CHANGED_EVENT, listener);
   return () => window.removeEventListener(DOCUMENTS_CHANGED_EVENT, listener);
+}
+
+const DATABASE_CHANGED_EVENT = 'synapsenote:database-changed';
+
+export function emitDatabaseChanged(payload: CC1DatabaseChangedPayload): void {
+  const parsed = CC1DatabaseChangedPayloadSchema.safeParse(payload);
+  if (!parsed.success) return;
+  window.dispatchEvent(
+    new CustomEvent<CC1DatabaseChangedPayload>(DATABASE_CHANGED_EVENT, {
+      detail: parsed.data,
+    }),
+  );
+}
+
+export function subscribeToDatabaseChanged(
+  onChange: (payload: CC1DatabaseChangedPayload) => void,
+): () => void {
+  const listener = (event: Event) => {
+    if (!(event instanceof CustomEvent)) return;
+    const parsed = CC1DatabaseChangedPayloadSchema.safeParse(
+      (event as CustomEvent<unknown>).detail,
+    );
+    if (parsed.success) onChange(parsed.data);
+  };
+  window.addEventListener(DATABASE_CHANGED_EVENT, listener);
+  return () => window.removeEventListener(DATABASE_CHANGED_EVENT, listener);
 }
 
 // Branch-changed is a side-channel event for surfaces that display the

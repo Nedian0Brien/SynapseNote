@@ -427,6 +427,10 @@ export async function startGlobalMcpServer(
     // else sets it). `preview_url` uses it to steer the agent to `ok open`
     // instead of returning a URL it shouldn't navigate.
     isDesktopTerminal: process.env.OK_DESKTOP_TERMINAL === '1',
+    toolProfile:
+      process.env.SYNAPSENOTE_DATABASE_SANDBOX_MODE === 'data-plane-only'
+        ? 'database-sandbox'
+        : 'full',
   });
 
   const transport = new StdioServerTransport();

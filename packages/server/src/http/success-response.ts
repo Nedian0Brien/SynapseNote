@@ -55,6 +55,8 @@ interface SuccessResponseOptions {
    * mirrors `errorResponse`'s spread-order protection.
    */
   extraHeaders?: Record<string, string>;
+  /** Optional RFC 9457 extensions for malformed/unserializable success fallbacks. */
+  errorExtensions?: Readonly<Record<string, unknown>>;
 }
 
 /**
@@ -146,6 +148,7 @@ export function successResponse(
     );
     errorResponse(res, 500, 'urn:ok:error:internal-server-error', 'Internal server error.', {
       handler: options.handler,
+      extensions: options.errorExtensions,
     });
     return;
   }
@@ -181,6 +184,7 @@ export function successResponse(
     );
     errorResponse(res, 500, 'urn:ok:error:internal-server-error', 'Internal server error.', {
       handler: options.handler,
+      extensions: options.errorExtensions,
     });
     return;
   }

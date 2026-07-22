@@ -47,6 +47,11 @@ interface PageHeaderProps {
   docExt: string;
   /** Filename-derived title, without the Markdown extension. */
   fallbackTitle: string;
+  /** Canonical database Title for record pages; does not rename the file path. */
+  databaseTitle?: string;
+  onDatabaseTitleCommit?: (
+    nextTitle: string,
+  ) => Promise<{ ok: true } | { ok: false; error: string }>;
 }
 
 /**
@@ -102,7 +107,14 @@ function readInitialSnapshot(provider: HocuspocusProvider): FrontmatterSnapshot 
   return { map, keys, parseError };
 }
 
-export function PageHeader({ provider, docName, docExt, fallbackTitle }: PageHeaderProps) {
+export function PageHeader({
+  provider,
+  docName,
+  docExt,
+  fallbackTitle,
+  databaseTitle,
+  onDatabaseTitleCommit,
+}: PageHeaderProps) {
   const [snapshot, setSnapshot] = useState<FrontmatterSnapshot>(() =>
     readInitialSnapshot(provider),
   );
@@ -111,7 +123,7 @@ export function PageHeader({ provider, docName, docExt, fallbackTitle }: PageHea
   const initialEditingValueRef = useRef('');
   const suppressNextBlurRef = useRef(false);
   const renamePendingRef = useRef(false);
-  const title = markdownTitleToPlainText(fallbackTitle);
+  const title = markdownTitleToPlainText(databaseTitle ?? fallbackTitle);
 
   useEffect(() => {
     // Closure-scoped binding — there is no consumer that reads the
@@ -178,6 +190,18 @@ export function PageHeader({ provider, docName, docExt, fallbackTitle }: PageHea
 
     renamePendingRef.current = true;
     setRenameError(null);
+    if (onDatabaseTitleCommit) {
+      const result = await onDatabaseTitleCommit(nextTitle);
+      renamePendingRef.current = false;
+      if (!result.ok) {
+        setRenameError(result.error);
+        if (editor) editor.textContent = title;
+        editor?.focus();
+        return;
+      }
+      if (editor) editor.textContent = markdownTitleToPlainText(nextTitle);
+      return;
+    }
     const result = await requestPageHeaderRename({ docName, docExt, nextTitle });
     renamePendingRef.current = false;
     if (!result.ok) {

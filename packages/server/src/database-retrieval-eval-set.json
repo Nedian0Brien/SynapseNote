@@ -1,0 +1,53 @@
+{
+  "note": "R-013/R-014 held-out retrieval eval pairs. Corpus is built by buildDatabaseRetrievalCorpus() in database-retrieval-eval.test.ts: 24 records in one source, four topics (checkout/cart, login/password, billing/invoice, onboarding/welcome) with exactly 3 records each whose body contains both of that topic's words and whose `topic` property is tagged with the topic name, plus 12 noise records tagged 'noise' containing none of the eight topic words. Ground truth is authored directly (the fixture put those words and tags in those records), not derived from any search call. Tune queries use a single topic word; held queries AND a second companion word from the same topic (lexical search is strategy:'lexical_and', not stemmed) to exercise a genuinely different query string per split while still resolving to the identical 3-record ground truth. `topic` scopes the R-014 full-body baseline to the same record set via a structured filter, independent of the free-text query used for the R-013 recall/precision measurement.",
+  "pairs": [
+    {
+      "query": "checkout",
+      "topic": "checkout",
+      "expectedRecordIds": ["rec_checkout_1", "rec_checkout_2", "rec_checkout_3"],
+      "split": "tune"
+    },
+    {
+      "query": "login",
+      "topic": "login",
+      "expectedRecordIds": ["rec_login_1", "rec_login_2", "rec_login_3"],
+      "split": "tune"
+    },
+    {
+      "query": "billing",
+      "topic": "billing",
+      "expectedRecordIds": ["rec_billing_1", "rec_billing_2", "rec_billing_3"],
+      "split": "tune"
+    },
+    {
+      "query": "onboarding",
+      "topic": "onboarding",
+      "expectedRecordIds": ["rec_onboarding_1", "rec_onboarding_2", "rec_onboarding_3"],
+      "split": "tune"
+    },
+    {
+      "query": "checkout cart",
+      "topic": "checkout",
+      "expectedRecordIds": ["rec_checkout_1", "rec_checkout_2", "rec_checkout_3"],
+      "split": "held"
+    },
+    {
+      "query": "login password",
+      "topic": "login",
+      "expectedRecordIds": ["rec_login_1", "rec_login_2", "rec_login_3"],
+      "split": "held"
+    },
+    {
+      "query": "billing invoice",
+      "topic": "billing",
+      "expectedRecordIds": ["rec_billing_1", "rec_billing_2", "rec_billing_3"],
+      "split": "held"
+    },
+    {
+      "query": "onboarding welcome",
+      "topic": "onboarding",
+      "expectedRecordIds": ["rec_onboarding_1", "rec_onboarding_2", "rec_onboarding_3"],
+      "split": "held"
+    }
+  ]
+}

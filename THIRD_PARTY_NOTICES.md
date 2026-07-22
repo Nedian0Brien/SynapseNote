@@ -1294,28 +1294,8 @@ Apache License
    limitations under the License.
 ```
 
-### `@chevrotain/cst-dts-gen@12.0.0`
-Homepage: https://github.com/Chevrotain/chevrotain
-
-_(LICENSE template present but no copyright line filled in; refer to the package source for canonical attribution.)_
-
-### `@chevrotain/gast@12.0.0`
-Homepage: https://github.com/Chevrotain/chevrotain
-
-_(LICENSE template present but no copyright line filled in; refer to the package source for canonical attribution.)_
-
-### `@chevrotain/regexp-to-ast@12.0.0`
-Homepage: https://github.com/Chevrotain/chevrotain
-
-_(LICENSE template present but no copyright line filled in; refer to the package source for canonical attribution.)_
-
-### `@chevrotain/types@12.0.0`
+### `@chevrotain/types@11.1.2`
 Homepage: https://chevrotain.io/documentation/
-
-_(LICENSE template present but no copyright line filled in; refer to the package source for canonical attribution.)_
-
-### `@chevrotain/utils@12.0.0`
-Homepage: https://github.com/Chevrotain/chevrotain
 
 _(LICENSE template present but no copyright line filled in; refer to the package source for canonical attribution.)_
 
@@ -1339,12 +1319,17 @@ Homepage: https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/
 
 _(LICENSE template present but no copyright line filled in; refer to the package source for canonical attribution.)_
 
-### `@opentelemetry/core@2.7.0`
+### `@opentelemetry/core@2.9.0`
 Homepage: https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-core
 
 _(LICENSE template present but no copyright line filled in; refer to the package source for canonical attribution.)_
 
 ### `@opentelemetry/core@2.1.0`
+Homepage: https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-core
+
+_(LICENSE template present but no copyright line filled in; refer to the package source for canonical attribution.)_
+
+### `@opentelemetry/core@2.7.0`
 Homepage: https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-core
 
 _(LICENSE template present but no copyright line filled in; refer to the package source for canonical attribution.)_
@@ -1497,11 +1482,6 @@ _(LICENSE template present but no copyright line filled in; refer to the package
 Homepage: https://github.com/gr2m/before-after-hook
 
 Copyright 2018 Gregor Martynus and other contributors.
-
-### `chevrotain@12.0.0`
-Homepage: https://chevrotain.io/docs/
-
-_(LICENSE template present but no copyright line filled in; refer to the package source for canonical attribution.)_
 
 ### `class-variance-authority@0.7.1`
 Homepage: https://github.com/joe-bell/cva#readme
@@ -2314,7 +2294,7 @@ Homepage: https://github.com/marijnh/find-cluster-break#readme
 
 Copyright (C) 2024 by Marijn Haverbeke <marijn@haverbeke.berlin>
 
-### `@mermaid-js/parser@1.1.0`
+### `@mermaid-js/parser@1.2.0`
 Homepage: https://github.com/mermaid-js/mermaid/tree/develop/packages/mermaid/parser/#readme
 
 Copyright (c) 2023 Yokozuna59
@@ -3633,11 +3613,6 @@ Homepage: https://github.com/wooorm/character-reference-invalid
 
 Copyright (c) 2015 Titus Wormer <tituswormer@gmail.com>
 
-### `chevrotain-allstar@0.4.1`
-Homepage: https://github.com/langium/chevrotain-allstar
-
-Copyright 2022 TypeFox GmbH
-
 ### `chokidar@5.0.0`
 Homepage: https://github.com/paulmillr/chokidar
 
@@ -3822,7 +3797,7 @@ Homepage: https://github.com/frenic/csstype
 
 Copyright (c) 2017-2018 Fredrik Nicol
 
-### `cytoscape@3.33.2`
+### `cytoscape@3.34.0`
 Homepage: http://js.cytoscape.org
 
 Copyright (c) 2016-2026, The Cytoscape Consortium.
@@ -4011,6 +3986,11 @@ Copyright (c) 2024 Jordan Harband
 Homepage: https://github.com/ljharb/es-object-atoms#readme
 
 Copyright (c) 2024 Jordan Harband
+
+### `es-toolkit@1.49.0`
+Homepage: https://es-toolkit.dev
+
+Copyright (c) 2024 Viva Republica, Inc.
 
 ### `escalade@3.2.0`
 Homepage: https://github.com/lukeed/escalade
@@ -4718,11 +4698,6 @@ Homepage: https://github.com/lukeed/kleur
 
 Copyright (c) Luke Edwards <luke.edwards05@gmail.com> (lukeed.com)
 
-### `langium@4.2.2`
-Homepage: https://langium.org
-
-Copyright 2021 TypeFox GmbH
-
 ### `layout-base@1.0.2`
 Homepage: https://github.com/iVis-at-Bilkent/layout-base#readme
 
@@ -4944,7 +4919,7 @@ Homepage: https://github.com/teambition/merge2
 
 Copyright (c) 2014-2020 Teambition
 
-### `mermaid@11.14.0`
+### `mermaid@11.16.0`
 Homepage: https://github.com/mermaid-js/mermaid
 
 Copyright (c) 2014 - 2022 Knut Sveidqvist
@@ -5970,7 +5945,7 @@ Homepage: https://github.com/sindresorhus/shebang-regex
 
 Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)
 
-### `shell-quote@1.8.3`
+### `shell-quote@1.10.0`
 Homepage: https://github.com/ljharb/shell-quote
 
 Copyright (c) 2013 James Halliday (mail@substack.net)
@@ -6437,36 +6412,6 @@ Homepage: https://github.com/vfile/vfile-message
 
 Copyright (c) Titus Wormer <tituswormer@gmail.com>
 
-### `vscode-jsonrpc@8.2.0`
-Homepage: https://github.com/Microsoft/vscode-languageserver-node
-
-Copyright (c) Microsoft Corporation
-
-### `vscode-languageserver@9.0.1`
-Homepage: https://github.com/Microsoft/vscode-languageserver-node
-
-Copyright (c) Microsoft Corporation
-
-### `vscode-languageserver-protocol@3.17.5`
-Homepage: https://github.com/Microsoft/vscode-languageserver-node
-
-Copyright (c) Microsoft Corporation
-
-### `vscode-languageserver-textdocument@1.0.12`
-Homepage: https://github.com/Microsoft/vscode-languageserver-node
-
-Copyright (c) Microsoft Corporation
-
-### `vscode-languageserver-types@3.17.5`
-Homepage: https://github.com/Microsoft/vscode-languageserver-node
-
-Copyright (c) Microsoft Corporation
-
-### `vscode-uri@3.1.0`
-Homepage: https://github.com/microsoft/vscode-uri#readme
-
-Copyright (c) Microsoft
-
 ### `w3c-keyname@2.2.8`
 Homepage: https://github.com/marijnh/w3c-keyname#readme
 
@@ -6507,7 +6452,7 @@ Homepage: https://github.com/chalk/wrap-ansi
 
 Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)
 
-### `ws@8.21.0`
+### `ws@8.21.1`
 Homepage: https://github.com/websockets/ws
 
 Copyright (c) 2011 Einar Otto Stangvik <einaros@gmail.com> Copyright (c) 2013 Arnout Kazemier and contributors Copyright (c) 2016 Luigi Pinca and contributors
@@ -7003,27 +6948,22 @@ Homepage: https://github.com/dcodeIO/protobuf.js
 
 Copyright (c) 2016, Daniel Wirtz  All rights reserved.
 
-### `@protobufjs/codegen@2.0.4`
+### `@protobufjs/codegen@2.0.5`
 Homepage: https://github.com/dcodeIO/protobuf.js
 
 Copyright (c) 2016, Daniel Wirtz  All rights reserved.
 
-### `@protobufjs/eventemitter@1.1.0`
+### `@protobufjs/eventemitter@1.1.1`
 Homepage: https://github.com/dcodeIO/protobuf.js
 
 Copyright (c) 2016, Daniel Wirtz  All rights reserved.
 
-### `@protobufjs/fetch@1.1.0`
+### `@protobufjs/fetch@1.1.1`
 Homepage: https://github.com/dcodeIO/protobuf.js
 
 Copyright (c) 2016, Daniel Wirtz  All rights reserved.
 
 ### `@protobufjs/float@1.0.2`
-Homepage: https://github.com/dcodeIO/protobuf.js
-
-Copyright (c) 2016, Daniel Wirtz  All rights reserved.
-
-### `@protobufjs/inquire@1.1.0`
 Homepage: https://github.com/dcodeIO/protobuf.js
 
 Copyright (c) 2016, Daniel Wirtz  All rights reserved.
@@ -7038,8 +6978,8 @@ Homepage: https://github.com/dcodeIO/protobuf.js
 
 Copyright (c) 2016, Daniel Wirtz  All rights reserved.
 
-### `@protobufjs/utf8@1.1.0`
-Homepage: https://github.com/dcodeIO/protobuf.js
+### `@protobufjs/utf8@1.1.2`
+Homepage: https://github.com/protobufjs/protobuf.js
 
 Copyright (c) 2016, Daniel Wirtz  All rights reserved.
 
@@ -7073,10 +7013,10 @@ Homepage: https://github.com/kpdecker/jsdiff
 
 Copyright (c) 2009-2015, Kevin Decker <kpdecker@gmail.com>
 
-### `fast-uri@3.1.0`
+### `fast-uri@3.1.3`
 Homepage: https://github.com/fastify/fast-uri
 
-Copyright (c) 2011-2021, Gary Court until https://github.com/garycourt/uri-js/commit/a1acf730b4bba3f1097c9f52e7d9d3aba8cdcaae Copyright (c) 2021-present The Fastify team
+Copyright (c) 2011-2021, Gary Court until https://github.com/garycourt/uri-js/commit/a1acf730b4bba3f1097c9f52e7d9d3aba8cdcaae Copyright (c) 2021-present The Fastify team <https://github.com/fastify/fastify#team>
 
 ### `highlight.js@11.11.1`
 Homepage: https://highlightjs.org/
@@ -7093,7 +7033,7 @@ Homepage: https://github.com/tjvr/moo
 
 Copyright (c) 2017, Tim Radvan (tjvr)
 
-### `protobufjs@7.5.5`
+### `protobufjs@7.6.5`
 Homepage: https://protobufjs.github.io/protobuf.js/
 
 Copyright (c) 2016, Daniel Wirtz  All rights reserved.

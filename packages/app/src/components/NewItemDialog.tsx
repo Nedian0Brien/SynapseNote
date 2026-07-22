@@ -2,7 +2,7 @@ import type { MessageDescriptor } from '@lingui/core';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react/macro';
 import { CreatePageSuccessSchema } from '@nedian0brien/synapsenote-core';
-import { Check, ChevronsUpDown } from 'lucide-react';
+import { Check, ChevronsUpDown, Database } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { usePageList } from '@/components/PageListContext';
@@ -31,6 +31,7 @@ import {
   type TemplateMenuEntry,
   useFolderConfig,
 } from '@/hooks/use-folder-config';
+import { dispatchDatabaseSlashCommand } from '@/lib/database-events';
 import { emitDocumentsChanged } from '@/lib/documents-events';
 import {
   isEditableShortcutTarget,
@@ -39,6 +40,7 @@ import {
   type ShortcutPlatform,
 } from '@/lib/keyboard-shortcuts';
 import { parseServerResponse } from '@/lib/parse-server-response';
+import { useSingleFileMode } from '@/lib/single-file-mode';
 import { cn } from '@/lib/utils';
 import { type DocExtension, detectExtension } from './extension-picker-utils';
 import { sortTemplatesForPicker } from './template-picker-utils';
@@ -181,6 +183,7 @@ export function NewItemDialog({
 }: NewItemDialogProps) {
   const { t } = useLingui();
   const { addPage } = usePageList();
+  const singleFile = useSingleFileMode();
   // Skip the self-fetch when the parent supplied a pre-fetched handle —
   // `useFolderConfig(null)` returns idle without hitting `/api/folder-config`.
   // The unconditional call keeps the hooks order stable across renders;
@@ -384,6 +387,30 @@ export function NewItemDialog({
         </DialogHeader>
 
         <DialogBody className="space-y-6 pb-1">
+          {kind === 'file' && !singleFile ? (
+            <fieldset className="flex flex-col gap-2">
+              <legend className="text-sm font-medium">
+                <Trans>New page type</Trans>
+              </legend>
+              <div className="grid grid-cols-2 gap-2">
+                <Button type="button" variant="secondary" aria-pressed="true">
+                  <Trans>Page</Trans>
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    onOpenChange(false);
+                    dispatchDatabaseSlashCommand('new');
+                  }}
+                  data-testid="new-item-dialog-new-database"
+                >
+                  <Database aria-hidden="true" />
+                  <Trans>Database</Trans>
+                </Button>
+              </div>
+            </fieldset>
+          ) : null}
           {showTemplatePicker && (
             <div className="flex flex-col gap-2">
               {/*

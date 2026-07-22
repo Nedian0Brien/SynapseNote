@@ -37,7 +37,9 @@ interface SessionHarness {
 
 async function bootHandler(
   config: Config,
-  handlerOptions: Partial<Pick<McpHttpHandlerOptions, 'log' | 'maxSessions' | 'sessionTtlMs'>> = {},
+  handlerOptions: Partial<
+    Pick<McpHttpHandlerOptions, 'log' | 'maxSessions' | 'sessionTtlMs' | 'subscribeDatabaseChanges'>
+  > = {},
 ): Promise<SessionHarness> {
   const contentDir = mkdtempSync(join(tmpdir(), 'ok-mcp-http-cfg-'));
   const port = await getFreeLoopbackPort();
@@ -94,6 +96,7 @@ async function bootHandler(
 interface InitializedSession {
   sessionId: string;
   protocolVersion: string;
+  capabilities: Record<string, unknown>;
 }
 
 async function openMcpSession(port: number): Promise<InitializedSession> {
@@ -118,7 +121,7 @@ async function openMcpSession(port: number): Promise<InitializedSession> {
   const sessionId = init.headers.get('mcp-session-id');
   expect(sessionId).toBeTruthy();
   const initBody = (await init.json()) as {
-    result?: { protocolVersion?: string };
+    result?: { protocolVersion?: string; capabilities?: Record<string, unknown> };
   };
   const protocolVersion = initBody.result?.protocolVersion ?? MCP_PROTOCOL_VERSION;
 
@@ -134,7 +137,35 @@ async function openMcpSession(port: number): Promise<InitializedSession> {
   });
   expect(initialized.status).toBe(202);
 
-  return { sessionId: sessionId as string, protocolVersion };
+  return {
+    sessionId: sessionId as string,
+    protocolVersion,
+    capabilities: initBody.result?.capabilities ?? {},
+  };
+}
+
+async function mcpRequest(
+  port: number,
+  session: InitializedSession,
+  id: number,
+  method: string,
+  params?: Record<string, unknown>,
+): Promise<Response> {
+  return fetch(`http://127.0.0.1:${port}/mcp`, {
+    method: 'POST',
+    headers: {
+      accept: 'application/json, text/event-stream',
+      'content-type': 'application/json',
+      'mcp-session-id': session.sessionId,
+      'mcp-protocol-version': session.protocolVersion,
+    },
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      id,
+      method,
+      ...(params ? { params } : {}),
+    }),
+  });
 }
 
 let openHarnesses: SessionHarness[] = [];
@@ -156,6 +187,56 @@ afterEach(async () => {
 // here are no longer applicable — there is no user-facing configuration
 // surface to verify. Per-tool unit tests guard the constant being applied at
 // the call site.
+
+test('database resource templates work without subscriptions and opt in per HTTP session', async () => {
+  const config: Config = ConfigSchema.parse({});
+  const pollingHarness = await bootHandler(config);
+  openHarnesses.push(pollingHarness);
+  const pollingSession = await openMcpSession(pollingHarness.port);
+  expect(pollingSession.capabilities.resources).toMatchObject({ listChanged: true });
+  expect(pollingSession.capabilities.resources).not.toMatchObject({ subscribe: true });
+
+  const templatesResponse = await mcpRequest(
+    pollingHarness.port,
+    pollingSession,
+    20,
+    'resources/templates/list',
+  );
+  expect(templatesResponse.status).toBe(200);
+  const templatesBody = (await templatesResponse.json()) as {
+    result?: { resourceTemplates?: Array<{ uriTemplate?: string }> };
+  };
+  expect(templatesBody.result?.resourceTemplates?.map((template) => template.uriTemplate)).toEqual([
+    'synapsenote://database/catalog{?cwd,q}',
+    'synapsenote://database/{databaseId}/schema{?cwd,sourceId}',
+    'synapsenote://database/{databaseId}/source/{sourceId}/snapshot{?cwd}',
+  ]);
+
+  let listenerRemoved = false;
+  const subscribedHarness = await bootHandler(config, {
+    subscribeDatabaseChanges: () => () => {
+      listenerRemoved = true;
+    },
+  });
+  openHarnesses.push(subscribedHarness);
+  const subscribedSession = await openMcpSession(subscribedHarness.port);
+  expect(subscribedSession.capabilities.resources).toMatchObject({
+    listChanged: true,
+    subscribe: true,
+  });
+  const subscribeResponse = await mcpRequest(
+    subscribedHarness.port,
+    subscribedSession,
+    21,
+    'resources/subscribe',
+    { uri: 'synapsenote://database/db_tasks/source/ds_tasks/snapshot' },
+  );
+  expect(subscribeResponse.status).toBe(200);
+  expect(await subscribeResponse.json()).toMatchObject({ result: {} });
+  await subscribedHarness.cleanup();
+  openHarnesses = openHarnesses.filter((candidate) => candidate !== subscribedHarness);
+  expect(listenerRemoved).toBe(true);
+});
 
 test('active MCP session cap refuses new sessions before allocation', async () => {
   const config: Config = ConfigSchema.parse({});

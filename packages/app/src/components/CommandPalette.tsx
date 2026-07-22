@@ -12,6 +12,7 @@ import { Plural, Trans, useLingui } from '@lingui/react/macro';
 import { SHOW_INSTALL_SKILL, type WorktreeSelectorEntry } from '@nedian0brien/synapsenote-core';
 import {
   Bug,
+  Database,
   Download,
   FilePlus2,
   FileText,
@@ -21,12 +22,16 @@ import {
   GitBranch,
   Hash,
   LayoutGrid,
+  ListChecks,
   Loader2,
   Network,
   Package,
   Plus,
+  ScanSearch,
   Settings,
   Sparkles,
+  Stethoscope,
+  Table2,
 } from 'lucide-react';
 import {
   type Dispatch,
@@ -66,6 +71,11 @@ import {
   TAG_QUERY_PREFIX,
   type TagDocEntry,
 } from '@/components/command-palette-tag-search';
+import {
+  buildDatabaseNavigationEntries,
+  type DatabaseNavigationEntry,
+  searchDatabaseNavigationEntries,
+} from '@/components/database-navigation-entries';
 import { requestDocPanelTab } from '@/components/doc-panel-events';
 import { FileEntryIcon } from '@/components/file-entry-icon';
 import { defaultInitialDir } from '@/components/file-tree-utils';
@@ -87,6 +97,8 @@ import type { TagSummaryEntry } from '@/editor/extensions/tag-suggestion';
 import { useIsEmbedded } from '@/hooks/use-is-embedded';
 import { useSemanticSearchStatus } from '@/hooks/use-semantic-search-status';
 import { useWorktrees } from '@/hooks/use-worktrees';
+import { fetchDatabaseCatalog } from '@/lib/database-catalog-client';
+import { dispatchDatabaseSlashCommand } from '@/lib/database-events';
 import type { OkDesktopBridge, RecentProjectEntry } from '@/lib/desktop-bridge-types';
 import { hashFromDocName } from '@/lib/doc-hash';
 import { runWithToast as runWithToastBase } from '@/lib/error-state';
@@ -127,10 +139,18 @@ interface CommandPaletteProps {
   bridge?: OkDesktopBridge | null;
   open: boolean;
   onOpenChange: Dispatch<SetStateAction<boolean>>;
+  onOpenDataInspector?: () => void;
+  onOpenAgentRuns?: () => void;
+  onOpenDatabases?: () => void;
+  onOpenDatabaseDiagnostics?: () => void;
 }
 
 function navigateToDocHash(docName: string): void {
   window.location.assign(hashFromDocName(docName));
+}
+
+function navigateToDatabaseHash(hash: string): void {
+  window.location.assign(hash);
 }
 
 function resolveCreateInitialDir(
@@ -149,7 +169,7 @@ export function NavigationItem({
   onSelect,
   disabled = false,
 }: {
-  entry: WorkspaceEntry | WorkspaceSearchEntry | OmnibarRecentEntry;
+  entry: WorkspaceEntry | WorkspaceSearchEntry | OmnibarRecentEntry | DatabaseNavigationEntry;
   query?: string;
   onSelect: () => void;
   /**
@@ -160,9 +180,17 @@ export function NavigationItem({
    */
   disabled?: boolean;
 }) {
-  const title =
-    'title' in entry && entry.title ? entry.title : (entry.path.split('/').pop() ?? entry.path);
-  const snippet = 'snippet' in entry ? entry.snippet : undefined;
+  const isDatabaseEntry = entry.kind === 'database';
+  const title = isDatabaseEntry
+    ? entry.name
+    : 'title' in entry && entry.title
+      ? entry.title
+      : (entry.path.split('/').pop() ?? entry.path);
+  const snippet = isDatabaseEntry
+    ? `${entry.databaseName} · ${entry.sourceName}`
+    : 'snippet' in entry
+      ? entry.snippet
+      : undefined;
   const docExt = 'docExt' in entry ? entry.docExt : undefined;
   const bodyIndexed = 'bodyIndexed' in entry ? entry.bodyIndexed : undefined;
 
@@ -174,19 +202,31 @@ export function NavigationItem({
       data-testid={`command-palette-nav-${entry.kind}-${entry.path}`}
       className="items-start"
     >
-      <FileEntryIcon
-        bodyIndexed={bodyIndexed}
-        className="mt-0.5 size-4"
-        docExt={docExt}
-        kind={entry.kind}
-        path={entry.path}
-      />
+      {isDatabaseEntry ? (
+        <Database className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+      ) : (
+        <FileEntryIcon
+          bodyIndexed={bodyIndexed}
+          className="mt-0.5 size-4"
+          docExt={docExt}
+          kind={entry.kind}
+          path={entry.path}
+        />
+      )}
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="truncate font-medium">
           <HighlightedText query={query} text={title} />
         </span>
         <span className="truncate text-muted-foreground text-xs">
-          <HighlightedText query={query} text={entry.path} />
+          {isDatabaseEntry ? (
+            <>
+              <HighlightedText query={query} text={entry.databaseName} />
+              <span aria-hidden="true"> · </span>
+              <HighlightedText query={query} text={entry.sourceName} />
+            </>
+          ) : (
+            <HighlightedText query={query} text={entry.path} />
+          )}
         </span>
         {snippet ? (
           <span className="max-h-10 overflow-hidden text-muted-foreground text-xs leading-relaxed">
@@ -310,7 +350,15 @@ export function computeVisibleSearchResults({
   return fallbackSearchResults;
 }
 
-export function CommandPalette({ bridge = null, open, onOpenChange }: CommandPaletteProps) {
+export function CommandPalette({
+  bridge = null,
+  open,
+  onOpenChange,
+  onOpenDataInspector,
+  onOpenAgentRuns,
+  onOpenDatabases,
+  onOpenDatabaseDiagnostics,
+}: CommandPaletteProps) {
   const { t } = useLingui();
   // No-project single-file session: hide project-scoped commands (Settings,
   // Switch Project) that have no meaning without a project.
@@ -346,6 +394,10 @@ export function CommandPalette({ bridge = null, open, onOpenChange }: CommandPal
   );
   const [projectRecents, setProjectRecents] = useState<RecentProjectEntry[]>([]);
   const [recentNavigation, setRecentNavigation] = useState<OmnibarRecentEntry[]>([]);
+  const [databaseNavigation, setDatabaseNavigation] = useState<DatabaseNavigationEntry[]>([]);
+  const [databaseNavigationStatus, setDatabaseNavigationStatus] = useState<
+    'idle' | 'loading' | 'success' | 'error'
+  >('idle');
   const [createDialogKind, setCreateDialogKind] = useState<'file' | 'folder' | null>(null);
   const [seedDialogOpen, setSeedDialogOpen] = useState(false);
   const [createProjectOpen, setCreateProjectOpen] = useState(false);
@@ -431,10 +483,19 @@ export function CommandPalette({ bridge = null, open, onOpenChange }: CommandPal
     pageMeta,
     filePaths,
   );
-  const validRecentKeys = new Set(
-    workspaceEntries.map((entry) => makeOmnibarRecentKey(entry.kind, entry.path)),
-  );
-  const visibleRecents = filterOmnibarRecents(recentNavigation, validRecentKeys);
+  const validRecentKeys = new Set([
+    ...workspaceEntries.map((entry) => makeOmnibarRecentKey(entry.kind, entry.path)),
+    ...databaseNavigation.map((entry) => makeOmnibarRecentKey(entry.kind, entry.path)),
+  ]);
+  const visibleRecents: Array<OmnibarRecentEntry | DatabaseNavigationEntry> = [];
+  for (const entry of filterOmnibarRecents(recentNavigation, validRecentKeys)) {
+    if (entry.kind !== 'database') {
+      visibleRecents.push(entry);
+      continue;
+    }
+    const databaseEntry = databaseNavigation.find((candidate) => candidate.path === entry.path);
+    if (databaseEntry) visibleRecents.push(databaseEntry);
+  }
   const currentPath = bridge?.config.projectPath ?? null;
   const switchableProjects = bridge ? projectRecents.filter((row) => row.path !== currentPath) : [];
   // Cached worktree model for the current project (shared with ProjectSwitcher,
@@ -467,6 +528,16 @@ export function CommandPalette({ bridge = null, open, onOpenChange }: CommandPal
   useEffect(() => {
     if (open) {
       setRecentNavigation(loadOmnibarRecents());
+      const controller = new AbortController();
+      setDatabaseNavigationStatus('loading');
+      void fetchDatabaseCatalog({ signal: controller.signal })
+        .then((catalog) => {
+          setDatabaseNavigation(buildDatabaseNavigationEntries(catalog.candidates));
+          setDatabaseNavigationStatus('success');
+        })
+        .catch(() => {
+          if (!controller.signal.aborted) setDatabaseNavigationStatus('error');
+        });
       void refreshInstallStates();
       if (bridge) {
         let cancelled = false;
@@ -476,9 +547,10 @@ export function CommandPalette({ bridge = null, open, onOpenChange }: CommandPal
         }, t`Failed to load recent projects.`);
         return () => {
           cancelled = true;
+          controller.abort();
         };
       }
-      return;
+      return () => controller.abort();
     }
     setQuery('');
     // Clear tag caches when the palette closes — tag list mutates on
@@ -500,6 +572,8 @@ export function CommandPalette({ bridge = null, open, onOpenChange }: CommandPal
     }
     setSemanticResults([]);
     setSemanticFiredQuery(null);
+    setDatabaseNavigation([]);
+    setDatabaseNavigationStatus('idle');
     setSemanticStatus('idle');
   }, [open, bridge, refreshInstallStates, t]);
 
@@ -528,6 +602,10 @@ export function CommandPalette({ bridge = null, open, onOpenChange }: CommandPal
   // Either exclusive mode (tag or semantic) suppresses the normal lexical palette
   // — recents, command rows, and the per-keystroke full-text search list.
   const inExclusiveMode = isTagMode || isSemanticMode;
+  const databaseSearchResults =
+    !inExclusiveMode && databaseNavigationStatus === 'success'
+      ? searchDatabaseNavigationEntries(databaseNavigation, trimmedDeferredQuery, 8)
+      : [];
   // Named locals for the tag-mode `<Trans>` / `t` placeholders — Lingui
   // can't derive a name from a member expression.
   const tagListQuery = paletteMode.kind === 'tag-list' ? paletteMode.query : '';
@@ -764,20 +842,37 @@ export function CommandPalette({ bridge = null, open, onOpenChange }: CommandPal
     }, t`Failed to open worktree.`);
   };
 
-  function rememberNavigation(entry: WorkspaceEntry | OmnibarRecentEntry) {
-    const nextEntry = {
-      kind: entry.kind,
-      path: entry.path,
-      lastOpenedAt: new Date().toISOString(),
-    } satisfies OmnibarRecentEntry;
+  function rememberNavigation(
+    entry: WorkspaceEntry | OmnibarRecentEntry | DatabaseNavigationEntry,
+  ) {
+    const nextEntry: OmnibarRecentEntry =
+      entry.kind === 'database'
+        ? {
+            kind: 'database',
+            path: entry.path,
+            lastOpenedAt: new Date().toISOString(),
+            name: entry.name,
+            databaseId: entry.databaseId,
+            sourceId: entry.sourceId,
+            databaseName: entry.databaseName,
+            sourceName: entry.sourceName,
+            databaseKey: entry.databaseKey,
+            sourceKey: entry.sourceKey,
+            purpose: entry.purpose,
+          }
+        : { kind: entry.kind, path: entry.path, lastOpenedAt: new Date().toISOString() };
     const nextRecents = rememberOmnibarRecent(loadOmnibarRecents(), nextEntry);
     saveOmnibarRecents(nextRecents);
     setRecentNavigation(nextRecents);
   }
 
-  function navigateToEntry(entry: WorkspaceEntry | OmnibarRecentEntry) {
+  function navigateToEntry(entry: WorkspaceEntry | OmnibarRecentEntry | DatabaseNavigationEntry) {
     onOpenChange(false);
     rememberNavigation(entry);
+    if (entry.kind === 'database') {
+      navigateToDatabaseHash(entry.path);
+      return;
+    }
     navigateToDocHash(entry.path);
   }
 
@@ -794,6 +889,8 @@ export function CommandPalette({ bridge = null, open, onOpenChange }: CommandPal
     searchStatus,
   });
   const showNavigation = !inExclusiveMode && visibleSearchResults.length > 0;
+  const showDatabaseNavigation =
+    !inExclusiveMode && trimmedDeferredQuery !== '' && databaseSearchResults.length > 0;
   // Cold start: the page list is still loading (`pagesLoading`) or the server
   // reported its search index is still warming (`searchIndexWarming`). Show a
   // distinct "preparing" status instead of the misleading "Search failed." /
@@ -801,8 +898,9 @@ export function CommandPalette({ bridge = null, open, onOpenChange }: CommandPal
   const showSearchPreparing =
     !inExclusiveMode &&
     trimmedDeferredQuery !== '' &&
-    (pagesLoading || searchIndexWarming) &&
-    !showNavigation;
+    (pagesLoading || searchIndexWarming || databaseNavigationStatus === 'loading') &&
+    !showNavigation &&
+    !showDatabaseNavigation;
   // Exclude the warming case so a warming re-poll shows only "Preparing search",
   // not a flash of "Searching" between poll cycles.
   const showSearchLoading =
@@ -810,11 +908,20 @@ export function CommandPalette({ bridge = null, open, onOpenChange }: CommandPal
     trimmedDeferredQuery !== '' &&
     searchStatus === 'loading' &&
     !showNavigation &&
+    !showDatabaseNavigation &&
     !showSearchPreparing;
   const showCreateFile =
     !inExclusiveMode && matchesCommandQuery(t`New file`, deferredQuery, ['create file']);
   const showCreateFolder =
     !inExclusiveMode && matchesCommandQuery(t`New folder`, deferredQuery, ['create folder']);
+  const showNewDatabase =
+    !inExclusiveMode &&
+    !singleFile &&
+    matchesCommandQuery(t`New database`, deferredQuery, [
+      'create database',
+      'new table',
+      'database page',
+    ]);
   const showGraphCommand =
     !inExclusiveMode &&
     activeDocName !== null &&
@@ -860,6 +967,40 @@ export function CommandPalette({ bridge = null, open, onOpenChange }: CommandPal
     !inExclusiveMode &&
     bridge !== null &&
     matchesCommandQuery(t`Report a bug`, deferredQuery, ['bug report issue feedback problem']);
+  const showDataInspector =
+    !inExclusiveMode &&
+    !singleFile &&
+    onOpenDataInspector !== undefined &&
+    matchesCommandQuery(t`Inspect agent data context`, deferredQuery, [
+      'what the agent saw',
+      'context pack',
+      'database inspector',
+      'tokens redactions omissions',
+    ]);
+  const showAgentRuns =
+    !inExclusiveMode &&
+    !singleFile &&
+    onOpenAgentRuns !== undefined &&
+    matchesCommandQuery(t`Open Agent Runs`, deferredQuery, [
+      'database agent history',
+      'proposed diff verification undo',
+    ]);
+  const showDatabases =
+    !inExclusiveMode &&
+    !singleFile &&
+    onOpenDatabases !== undefined &&
+    matchesCommandQuery(t`Open databases`, deferredQuery, [
+      'database table records properties',
+      'browse data',
+    ]);
+  const showDatabaseDiagnostics =
+    !inExclusiveMode &&
+    !singleFile &&
+    onOpenDatabaseDiagnostics !== undefined &&
+    matchesCommandQuery(t`Open database diagnostics`, deferredQuery, [
+      'index state invalid records',
+      'schema revisions tasks repair',
+    ]);
   const showProjectRecents =
     !inExclusiveMode &&
     bridge !== null &&
@@ -899,10 +1040,12 @@ export function CommandPalette({ bridge = null, open, onOpenChange }: CommandPal
     inExclusiveMode ||
     showRecentNavigation ||
     showNavigation ||
+    showDatabaseNavigation ||
     showSearchLoading ||
     showSearchPreparing ||
     showCreateFile ||
     showCreateFolder ||
+    showNewDatabase ||
     showGraphCommand ||
     showInitializeStarterPack ||
     showCreateProject ||
@@ -911,6 +1054,10 @@ export function CommandPalette({ bridge = null, open, onOpenChange }: CommandPal
     showSettings ||
     showInstallClaudeDesktop ||
     showReportBug ||
+    showDataInspector ||
+    showAgentRuns ||
+    showDatabases ||
+    showDatabaseDiagnostics ||
     showProjectRecents ||
     showAgentGroup;
 
@@ -1038,7 +1185,7 @@ export function CommandPalette({ bridge = null, open, onOpenChange }: CommandPal
         open={open}
         onOpenChange={onOpenChange}
         title={t`Workspace Command Palette`}
-        description={t`Search files, folders, and commands for the current workspace.`}
+        description={t`Search pages, databases, folders, and commands for the current workspace.`}
         className="sm:max-w-2xl"
         commandProps={{
           shouldFilter: false,
@@ -1053,7 +1200,7 @@ export function CommandPalette({ bridge = null, open, onOpenChange }: CommandPal
           onValueChange={setQuery}
           onKeyDown={onSemanticInputKeyDown}
           placeholder={
-            isSemanticMode ? t`Search by meaning` : t`Search files, folders, or commands`
+            isSemanticMode ? t`Search by meaning` : t`Search pages, databases, or commands`
           }
         />
         {/* Filter-pills row — Slack-style. Always visible so the
@@ -1345,7 +1492,15 @@ export function CommandPalette({ bridge = null, open, onOpenChange }: CommandPal
             </CommandGroup>
           ) : null}
 
-          {showCreateFile || showCreateFolder || showGraphCommand || showInitializeStarterPack ? (
+          {showCreateFile ||
+          showCreateFolder ||
+          showNewDatabase ||
+          showGraphCommand ||
+          showInitializeStarterPack ||
+          showDataInspector ||
+          showAgentRuns ||
+          showDatabases ||
+          showDatabaseDiagnostics ? (
             <CommandGroup heading={t`Commands`}>
               {showCreateFile ? (
                 <CommandItem
@@ -1381,6 +1536,21 @@ export function CommandPalette({ bridge = null, open, onOpenChange }: CommandPal
                   ) : null}
                 </CommandItem>
               ) : null}
+              {showNewDatabase ? (
+                <CommandItem
+                  value="new database create database new table database page"
+                  onSelect={() => {
+                    onOpenChange(false);
+                    dispatchDatabaseSlashCommand('new');
+                  }}
+                  data-testid="command-palette-new-database"
+                >
+                  <Database />
+                  <span>
+                    <Trans>New database</Trans>
+                  </span>
+                </CommandItem>
+              ) : null}
               {showGraphCommand ? (
                 <CommandItem
                   value="open graph graph panel network"
@@ -1409,6 +1579,66 @@ export function CommandPalette({ bridge = null, open, onOpenChange }: CommandPal
                   <Package />
                   <span>
                     <Trans>Initialize starter pack</Trans>
+                  </span>
+                </CommandItem>
+              ) : null}
+              {showDataInspector ? (
+                <CommandItem
+                  value="inspect agent data context what agent saw context pack tokens redactions omissions"
+                  onSelect={() => {
+                    onOpenChange(false);
+                    onOpenDataInspector();
+                  }}
+                  data-testid="command-palette-open-data-inspector"
+                >
+                  <ScanSearch />
+                  <span>
+                    <Trans>Inspect agent data context</Trans>
+                  </span>
+                </CommandItem>
+              ) : null}
+              {showAgentRuns ? (
+                <CommandItem
+                  value="open agent runs database history proposed diff verification undo"
+                  onSelect={() => {
+                    onOpenChange(false);
+                    onOpenAgentRuns();
+                  }}
+                  data-testid="command-palette-open-agent-runs"
+                >
+                  <ListChecks />
+                  <span>
+                    <Trans>Open Agent Runs</Trans>
+                  </span>
+                </CommandItem>
+              ) : null}
+              {showDatabases ? (
+                <CommandItem
+                  value="open databases table records properties browse data"
+                  onSelect={() => {
+                    onOpenChange(false);
+                    onOpenDatabases();
+                  }}
+                  data-testid="command-palette-open-databases"
+                >
+                  <Table2 />
+                  <span>
+                    <Trans>Open databases</Trans>
+                  </span>
+                </CommandItem>
+              ) : null}
+              {showDatabaseDiagnostics ? (
+                <CommandItem
+                  value="open database diagnostics index state invalid records schema revisions tasks repair"
+                  onSelect={() => {
+                    onOpenChange(false);
+                    onOpenDatabaseDiagnostics();
+                  }}
+                  data-testid="command-palette-open-database-diagnostics"
+                >
+                  <Stethoscope />
+                  <span>
+                    <Trans>Open database diagnostics</Trans>
                   </span>
                 </CommandItem>
               ) : null}
@@ -1679,6 +1909,18 @@ export function CommandPalette({ bridge = null, open, onOpenChange }: CommandPal
               {visibleSearchResults.map((entry) => (
                 <NavigationItem
                   key={makeOmnibarRecentKey(entry.kind, entry.path)}
+                  entry={entry}
+                  query={trimmedDeferredQuery}
+                  onSelect={() => navigateToEntry(entry)}
+                />
+              ))}
+            </CommandGroup>
+          ) : null}
+          {showDatabaseNavigation ? (
+            <CommandGroup heading={t`Databases`}>
+              {databaseSearchResults.map((entry) => (
+                <NavigationItem
+                  key={entry.path}
                   entry={entry}
                   query={trimmedDeferredQuery}
                   onSelect={() => navigateToEntry(entry)}

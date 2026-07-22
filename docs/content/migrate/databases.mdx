@@ -1,0 +1,47 @@
+---
+title: Database migration matrix
+icon: LuArrowRightLeft
+description: What carries over when database content arrives from Notion, CSV/TSV, Markdown, or Obsidian.
+---
+
+SynapseNote keeps canonical records as Markdown and stores database schema and
+views in a versioned manifest. Imports therefore distinguish lossless content
+conversion from features that require a new schema or manual review.
+
+## Source matrix
+
+| Source                       | Entry point                                               | Carries over                                                                                 | Requires review or has loss                                                                                                                                                |
+| ---------------------------- | --------------------------------------------------------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Notion Markdown & CSV export | `ok migrate notion <folder>` or the Database CSV/TSV flow | Pages, headings, basic tables, row Markdown, simple property values, attachments, title/body | Relations, rollups, formulas, comments, history, backlinks, synced blocks, icons/covers, and database automations are not represented by the export and must be recreated. |
+| CSV/TSV                      | Database creation/import preview                          | Title, strict numbers, booleans, ISO dates, select/status labels, stable `record_id` updates | Derived Formula/Rollup columns are read-only; malformed or ambiguous values block planning; files and relations need explicit typed mapping.                               |
+| Plain Markdown               | Existing-folder onboarding                                | Existing paths, body, frontmatter, titles, and external links                                | Stable record IDs are assigned only after a blocker-free onboarding preview; unsupported frontmatter stays preserved and diagnosable.                                      |
+| Obsidian vault               | Open the vault directly                                   | Markdown, wiki links, tags, frontmatter, callouts, math, Mermaid, footnotes, and assets      | `.obsidian` settings/plugins, Dataview, Canvas/Bases interactivity, transclusion, and block references are not database semantics.                                         |
+
+## Notion export workflow
+
+1. Export the workspace as **Markdown & CSV**.
+2. Run `ok migrate notion <export-folder>` to preview deterministic transforms.
+3. Review the JSON report and known-loss table before `--apply`.
+4. Open the cleaned folder in SynapseNote.
+5. Use Database creation from CSV/TSV for a typed source, then use the existing
+   folder onboarding flow for row pages when preserving their original paths is
+   important.
+
+The migration command is idempotent and dry-run by default. It does not delete
+CSV files unless `--remove-csv` is explicitly supplied.
+
+## Loss and recovery rules
+
+- A lossy or unsupported object is reported by name and category; it is never
+  silently presented as a complete database.
+- Existing Markdown and imported source files remain recoverable through Git and
+  the transaction receipts.
+- Schema conversion previews list invalid, lossy, dependent, and blocked rows
+  before any canonical write.
+- Relations and formulas should be recreated with stable property IDs after the
+  source schema is accepted; do not infer them from display labels alone.
+
+See [From Notion](/docs/migrate/notion),
+[From Obsidian](/docs/migrate/obsidian),
+[Databases](/docs/features/databases), and
+[the canonical format RFC](https://github.com/Nedian0Brien/SynapseNote/blob/main/docs/rfcs/0001-databases-and-agent-data-plane.md).

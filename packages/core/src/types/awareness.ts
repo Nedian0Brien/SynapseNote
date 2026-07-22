@@ -65,6 +65,34 @@ export interface AwarenessState {
    * fields are absent.
    */
   currentView?: CurrentViewState;
+  /**
+   * The database location this window is actively viewing or changing.
+   * Published on `__system__` awareness by the UI and treated as ephemeral:
+   * consumers must discard entries older than the database-presence TTL.
+   */
+  databasePresence?: DatabasePresenceEntry;
+}
+
+export type DatabasePresenceScope = 'cell' | 'record' | 'schema';
+export type DatabasePresenceOperation = 'viewing' | 'editing' | 'planning' | 'committing';
+
+/** One collaborator's ephemeral focus inside a file-native database. */
+export interface DatabasePresenceEntry {
+  actor: {
+    kind: 'human' | 'agent';
+    name: string;
+    color: string;
+    principalId?: string;
+  };
+  databaseId: string;
+  sourceId: string | null;
+  recordId: string | null;
+  propertyId: string | null;
+  viewId: string | null;
+  scope: DatabasePresenceScope;
+  operation: DatabasePresenceOperation;
+  /** `Date.now()` at publication time; refreshed while the target is active. */
+  updatedAt: number;
 }
 
 /** One connected SynapseNote window's current view on `__system__` awareness. */

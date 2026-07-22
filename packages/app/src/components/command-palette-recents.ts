@@ -1,20 +1,49 @@
-export interface OmnibarRecentEntry {
+interface FileFolderRecentEntry {
   kind: 'file' | 'folder';
   path: string;
   lastOpenedAt: string;
 }
+
+export interface DatabaseRecentEntry {
+  kind: 'database';
+  path: string;
+  lastOpenedAt: string;
+  name: string;
+  databaseId: string;
+  sourceId: string;
+  databaseName: string;
+  sourceName: string;
+  databaseKey: string;
+  sourceKey: string;
+  purpose: string;
+}
+
+export type OmnibarRecentEntry = FileFolderRecentEntry | DatabaseRecentEntry;
 
 const OMNIBAR_RECENTS_STORAGE_KEY = 'ok-omnibar-recents-v1';
 const OMNIBAR_RECENTS_LIMIT = 10;
 
 function isRecentEntry(value: unknown): value is OmnibarRecentEntry {
   return (
-    typeof value === 'object' &&
-    value !== null &&
-    ((value as { kind?: unknown }).kind === 'file' ||
-      (value as { kind?: unknown }).kind === 'folder') &&
-    typeof (value as { path?: unknown }).path === 'string' &&
-    typeof (value as { lastOpenedAt?: unknown }).lastOpenedAt === 'string'
+    (typeof value === 'object' &&
+      value !== null &&
+      ((value as { kind?: unknown }).kind === 'file' ||
+        (value as { kind?: unknown }).kind === 'folder') &&
+      typeof (value as { path?: unknown }).path === 'string' &&
+      typeof (value as { lastOpenedAt?: unknown }).lastOpenedAt === 'string') ||
+    (typeof value === 'object' &&
+      value !== null &&
+      (value as { kind?: unknown }).kind === 'database' &&
+      typeof (value as { path?: unknown }).path === 'string' &&
+      typeof (value as { lastOpenedAt?: unknown }).lastOpenedAt === 'string' &&
+      typeof (value as { name?: unknown }).name === 'string' &&
+      typeof (value as { databaseId?: unknown }).databaseId === 'string' &&
+      typeof (value as { sourceId?: unknown }).sourceId === 'string' &&
+      typeof (value as { databaseName?: unknown }).databaseName === 'string' &&
+      typeof (value as { sourceName?: unknown }).sourceName === 'string' &&
+      typeof (value as { databaseKey?: unknown }).databaseKey === 'string' &&
+      typeof (value as { sourceKey?: unknown }).sourceKey === 'string' &&
+      typeof (value as { purpose?: unknown }).purpose === 'string')
   );
 }
 
@@ -30,7 +59,7 @@ function getStorage(
   }
 }
 
-export function makeOmnibarRecentKey(kind: 'file' | 'folder', path: string): string {
+export function makeOmnibarRecentKey(kind: 'file' | 'folder' | 'database', path: string): string {
   return `${kind}:${path}`;
 }
 

@@ -26,6 +26,8 @@ export interface CliChatCommandOptions {
    * makes Codex reject its entire config before emitting structured events.
    */
   readonly autoApproveOkTools?: boolean;
+  /** Force a read-only filesystem; the paired MCP server exposes only Data Plane tools. */
+  readonly dataPlaneOnlyWrites?: boolean;
 }
 
 // Reuse the same registry-fixed SynapseNote MCP approval policy as the
@@ -35,13 +37,14 @@ const codexSynapseNoteApproval = ` ${TERMINAL_CLIS.codex.autoApproveArg}`;
 function codexPermissionArgs(
   mode: CliChatLaunchInput['permissionMode'],
   autoApproveOkTools: boolean,
+  dataPlaneOnlyWrites: boolean,
 ): string {
   const mcpApproval = autoApproveOkTools ? codexSynapseNoteApproval : '';
   if (mode === 'full-access') {
     return ` --dangerously-bypass-approvals-and-sandbox${mcpApproval}`;
   }
   const sandboxMode = mode === 'read-only' ? 'read-only' : 'workspace-write';
-  const workspaceMcpApproval = mode === 'workspace-write' ? mcpApproval : '';
+  const workspaceMcpApproval = mode === 'workspace-write' || dataPlaneOnlyWrites ? mcpApproval : '';
   return ` -c 'approval_policy="never"' -c 'sandbox_mode="${sandboxMode}"'${workspaceMcpApproval}`;
 }
 
@@ -89,20 +92,22 @@ export function buildCliChatCommand(
   input: CliChatLaunchInput,
   options: CliChatCommandOptions = {},
 ): string {
+  const permissionMode = options.dataPlaneOnlyWrites === true ? 'read-only' : input.permissionMode;
   const quotedPrompt = shellSingleQuote(printablePtyArgument(input.prompt));
   const quotedSessionId =
     input.sessionId === null ? null : shellSingleQuote(printablePtyArgument(input.sessionId));
   if (input.cli === 'codex') {
     const permissions = codexPermissionArgs(
-      input.permissionMode,
+      permissionMode,
       options.autoApproveOkTools === true,
+      options.dataPlaneOnlyWrites === true,
     );
     const model = codexModelArgs(input.modelSettings);
     return input.sessionId === null
       ? `codex exec --json --color never${permissions}${model} ${quotedPrompt}`
       : `codex exec resume --json${permissions}${model} ${quotedSessionId} ${quotedPrompt}`;
   }
-  const permissions = claudePermissionArgs(input.permissionMode);
+  const permissions = claudePermissionArgs(permissionMode);
   const model = claudeModelArgs(input.modelSettings);
   const resume = quotedSessionId === null ? '' : ` --resume ${quotedSessionId}`;
   return `claude --print --verbose --output-format stream-json --include-partial-messages${permissions}${model}${resume} ${quotedPrompt}`;

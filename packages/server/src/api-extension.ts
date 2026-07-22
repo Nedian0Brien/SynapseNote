@@ -67,6 +67,8 @@ import {
   createCodeFenceTracker,
   createWorkspaceSearchCorpus,
   createWorkspaceSearchDocument,
+  DatabaseDateValueSchema,
+  type DatabaseValue,
   DEFAULT_ATTACHMENT_FOLDER_PATH,
   DEFAULT_DEDUP_MODE,
   DeadLinksSuccessSchema,
@@ -202,6 +204,7 @@ import {
   SyncTriggerRequestSchema,
   SyncTriggerSuccessSchema,
   searchWorkspaceCorpus,
+  serializeDatabaseDateValue,
   skillLiveDocName,
   stripFrontmatter,
   TagsForNameSuccessSchema,
@@ -289,6 +292,21 @@ import {
   toContentDivergenceWarning,
 } from './content-divergence-gate.ts';
 import { recordContributor } from './contributor-tracker.ts';
+import { resolveDatabaseAccessPrincipal } from './database-access-policy.ts';
+import type { DatabaseAgentPromptRetentionStore } from './database-agent-prompt-retention.ts';
+import type { DatabaseAgentRunStore } from './database-agent-run-store.ts';
+import type { DatabaseAutomationService } from './database-automation.ts';
+import type { DatabaseAutomationNotificationStore } from './database-automation-notification-store.ts';
+import type { DatabaseAutonomyStore } from './database-autonomy-store.ts';
+import { createDatabaseCommentApiHandler } from './database-comment-api.ts';
+import type { DatabaseCommentStore } from './database-comment-store.ts';
+import { type DatabaseDataPlane, DatabaseDataPlaneError } from './database-data-plane.ts';
+import { createDatabaseDataPlaneApiHandlers } from './database-data-plane-api.ts';
+import type { DatabasePermissionStore } from './database-permission-store.ts';
+import { createDatabasePlaceSearchServiceFromEnv } from './database-place-search.ts';
+import type { DatabaseTaskService } from './database-task-service.ts';
+import type { DatabaseTaskStore } from './database-task-store.ts';
+import type { DatabaseTemplateScheduler } from './database-template-scheduler.ts';
 import { deriveDetection, embedProbeRing, recordEmbedProbe } from './embed-probe.ts';
 import {
   recordSemanticQuery,
@@ -811,7 +829,9 @@ function safeDocPath(docName: string, contentRoot: string): { path: string } | {
   // commits, yielding an empty timeline / 404 version rather than a new error.
   const managed = managedArtifactTimelinePaths(docName);
   if (managed.managed && managed.versioned) {
-    return { path: normalized ? `${normalized}/${managed.filePath}` : managed.filePath };
+    return {
+      path: normalized ? `${normalized}/${managed.filePath}` : managed.filePath,
+    };
   }
   const ext = getDocExtension(docName);
   const path = normalized ? `${normalized}/${docName}${ext}` : `${docName}${ext}`;
@@ -1079,23 +1099,32 @@ interface UploadResult {
   byteLength: number;
 }
 
+export const UPLOAD_FILE_MAX_BYTES = 100 * 1024 * 1024;
+export const DATABASE_FORM_UPLOAD_FILE_MAX_BYTES = 25 * 1024 * 1024;
+
 /**
  * Stream multipart upload body to a tempfile while hashing on-the-fly.
  *
  * Replaces the buffer-to-memory pattern (chunks.push(chunk) +
  * Buffer.concat) with busboy's streaming 'file' event piped through a
  * HashingPassThrough Transform into createWriteStream(tempPath). Memory
- * becomes O(1); disk is the only bound.
+ * becomes O(1), while busboy stops the file stream at the caller-selected
+ * byte ceiling (25 MiB for public Forms, 100 MiB elsewhere).
  *
  * Error contract (typed via UploadWriteError.reason — URN-form ProblemType):
  *   - urn:ok:error:malformed-upload: busboy 'error' (unparseable multipart, etc.)
  *   - urn:ok:error:storage-full: ENOSPC / EDQUOT during the write stream
  *   - urn:ok:error:storage-readonly: EROFS / EACCES / EPERM during the write stream
  *   - urn:ok:error:storage-error: any other write-stream error
+ *   - urn:ok:error:payload-too-large: file part exceeded its byte ceiling
  *
  * On any error, the tempfile is best-effort unlinked before propagating.
  */
-function readUploadBody(req: IncomingMessage, projectDir: string): Promise<UploadResult> {
+function readUploadBody(
+  req: IncomingMessage,
+  projectDir: string,
+  maxFileBytes: number = UPLOAD_FILE_MAX_BYTES,
+): Promise<UploadResult> {
   return new Promise((resolveP, reject) => {
     let bb: ReturnType<typeof busboy>;
     try {
@@ -1110,7 +1139,7 @@ function readUploadBody(req: IncomingMessage, projectDir: string): Promise<Uploa
       // count), so the parsed-value cap is the right place.
       bb = busboy({
         headers: req.headers,
-        limits: { files: 1, fields: 10, fieldSize: 2 * 1024 },
+        limits: { files: 1, fields: 10, fieldSize: 2 * 1024, fileSize: maxFileBytes },
       });
     } catch (err) {
       reject(new UploadWriteError('urn:ok:error:malformed-upload', err));
@@ -1182,6 +1211,13 @@ function readUploadBody(req: IncomingMessage, projectDir: string): Promise<Uploa
       tempPath = path;
       const hasher = new HashingPassThrough();
       const writeStream = createWriteStream(path);
+
+      file.once('limit', () => {
+        fail(
+          'urn:ok:error:payload-too-large',
+          new Error(`Upload file exceeded ${maxFileBytes} bytes`),
+        );
+      });
 
       pipeline(file, hasher, writeStream)
         .then(() => {
@@ -1332,7 +1368,10 @@ export function getSearchMaxEntries(): number {
  */
 let showAllWalkInvocations = 0;
 let showAllWalkAborts = 0;
-export function __getShowAllWalkStatsForTesting(): { invocations: number; aborts: number } {
+export function __getShowAllWalkStatsForTesting(): {
+  invocations: number;
+  aborts: number;
+} {
   return { invocations: showAllWalkInvocations, aborts: showAllWalkAborts };
 }
 export function __resetShowAllWalkStatsForTesting(): void {
@@ -1701,7 +1740,11 @@ export async function* streamShowAllEntries(
           // yields a single level and enqueues nothing; the default walk has
           // an infinite ceiling and visits the whole subtree level by level.
           if (depth < maxDepth) {
-            queue.push({ absDir: dirAbsRaw, relDir: relPath, depth: depth + 1 });
+            queue.push({
+              absDir: dirAbsRaw,
+              relDir: relPath,
+              depth: depth + 1,
+            });
           }
           continue;
         }
@@ -2470,6 +2513,28 @@ export interface ApiExtensionOptions {
   hocuspocus: Hocuspocus;
   sessionManager: AgentSessionManager;
   contentDir: string;
+  /** Optional agent-oriented database read plane. Production server boots wire this. */
+  databaseDataPlane?: DatabaseDataPlane;
+  /** Optional revision-safe database comment store. */
+  databaseCommentStore?: DatabaseCommentStore;
+  /** Optional durable database task lifecycle store. */
+  databaseTaskStore?: DatabaseTaskStore;
+  /** Optional owner-only database and session autonomy policy store. */
+  databaseAutonomyStore?: DatabaseAutonomyStore;
+  /** Optional owner-only database action grant store. */
+  databasePermissionStore?: DatabasePermissionStore;
+  /** Optional owner-only history for the database Agent Runs panel. */
+  databaseAgentRunStore?: DatabaseAgentRunStore;
+  /** Optional explicitly opted-in, process-local raw prompt retention. */
+  databaseAgentPromptRetentionStore?: DatabaseAgentPromptRetentionStore;
+  /** Optional durable database task launch and execution service. */
+  databaseTaskService?: DatabaseTaskService;
+  /** Optional durable repeating-template schedule and run-history service. */
+  databaseTemplateScheduler?: DatabaseTemplateScheduler;
+  /** Optional durable database automation lifecycle and history service. */
+  databaseAutomationService?: DatabaseAutomationService;
+  /** Optional recipient-scoped automation notification inbox. */
+  databaseAutomationNotificationStore?: DatabaseAutomationNotificationStore;
   /**
    * No-project ephemeral single-file mode. When `true`, the contentDir-tree
    * write handlers (`PUT /api/folder-config`, `PUT /api/template`) are inert —
@@ -2843,7 +2908,10 @@ export function getCurrentDocumentSnapshot(
     if (state === null || typeof state !== 'object') continue;
     const currentView = (state as { currentView?: unknown }).currentView;
     if (currentView === null || typeof currentView !== 'object') continue;
-    const parsed = CurrentDocumentViewerSchema.safeParse({ clientId, ...currentView });
+    const parsed = CurrentDocumentViewerSchema.safeParse({
+      clientId,
+      ...currentView,
+    });
     if (parsed.success) viewers.push(parsed.data);
   }
 
@@ -2864,6 +2932,10 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     hocuspocus,
     sessionManager,
     contentDir,
+    databaseDataPlane,
+    databaseCommentStore,
+    databaseTaskStore,
+    databaseTaskService,
     serverInstanceId,
     getFileIndex,
     getAttachmentFolderPath,
@@ -2995,7 +3067,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     return [...index.entries()]
       .map(
         ([docName, entry]) =>
-          `${docName}\0${entry.canonicalPath}\0${entry.size}\0${entry.modified}\0${entry.aliases.join('\0')}`,
+          `${docName}\0${entry.canonicalPath}\0${entry.size}\0${
+            entry.modified
+          }\0${entry.aliases.join('\0')}`,
       )
       .sort()
       .join('\n');
@@ -3282,12 +3356,16 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     failure: StoreFailure,
     handler: string,
   ): void {
-    const reason = classifyUploadErrno({ code: failure.code } as NodeJS.ErrnoException);
+    const reason = classifyUploadErrno({
+      code: failure.code,
+    } as NodeJS.ErrnoException);
     errorResponse(
       res,
       uploadStatusFor(reason),
       reason,
-      `Write applied in memory but failed to persist to disk (${failure.code ?? 'unknown error'}): ${failure.message}. The content was NOT saved and will be lost if the server restarts.`,
+      `Write applied in memory but failed to persist to disk (${
+        failure.code ?? 'unknown error'
+      }): ${failure.message}. The content was NOT saved and will be lost if the server restarts.`,
       { handler },
     );
   }
@@ -3481,7 +3559,11 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       };
     }
     if (error instanceof ManagedRenameSourceNotFoundError) {
-      return { status: 404, type: 'urn:ok:error:doc-not-found', error: withPeriod(error.message) };
+      return {
+        status: 404,
+        type: 'urn:ok:error:doc-not-found',
+        error: withPeriod(error.message),
+      };
     }
     if (error instanceof ManagedRenameDestinationExistsError) {
       return {
@@ -3512,13 +3594,25 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       };
     }
     if (error instanceof ManagedRenameMissingDocumentError) {
-      return { status: 404, type: 'urn:ok:error:doc-not-found', error: withPeriod(error.message) };
+      return {
+        status: 404,
+        type: 'urn:ok:error:doc-not-found',
+        error: withPeriod(error.message),
+      };
     }
     if (error instanceof ManagedRenameSnapshotMissingError) {
-      return { status: 404, type: 'urn:ok:error:doc-not-found', error: withPeriod(error.message) };
+      return {
+        status: 404,
+        type: 'urn:ok:error:doc-not-found',
+        error: withPeriod(error.message),
+      };
     }
     if (error instanceof SymlinkEscapeError) {
-      return { status: 400, type: 'urn:ok:error:path-escape', error: withPeriod(error.message) };
+      return {
+        status: 400,
+        type: 'urn:ok:error:path-escape',
+        error: withPeriod(error.message),
+      };
     }
     if (error instanceof BacklinkIndexRequiredError) {
       return {
@@ -3652,7 +3746,12 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     registerWrite(filePath, contentHash(markdown));
     setReconciledBase(docName, markdown);
 
-    mutateFileIndex?.({ kind: 'update', path: filePath, docName, content: markdown });
+    mutateFileIndex?.({
+      kind: 'update',
+      path: filePath,
+      docName,
+      content: markdown,
+    });
   }
 
   function applyManagedRenameMapToLoadedDocument(
@@ -3741,7 +3840,11 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
   function collectAssetReferenceRewritesForMappings(
     renamedAssets: readonly RenamedAssetMapping[],
   ): Array<{ docName: string; markdown: string; rewrites: number }> {
-    const rewrites: Array<{ docName: string; markdown: string; rewrites: number }> = [];
+    const rewrites: Array<{
+      docName: string;
+      markdown: string;
+      rewrites: number;
+    }> = [];
     if (renamedAssets.length === 0) return rewrites;
     const docNames = [...getFileIndex().keys()].sort((a, b) => a.localeCompare(b));
     for (const docName of docNames) {
@@ -3749,7 +3852,11 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       if (typeof content !== 'string') continue;
       const rewritten = rewriteAssetReferencesForMappings(content, docName, renamedAssets);
       if (rewritten.rewrites === 0) continue;
-      rewrites.push({ docName, markdown: rewritten.markdown, rewrites: rewritten.rewrites });
+      rewrites.push({
+        docName,
+        markdown: rewritten.markdown,
+        rewrites: rewritten.rewrites,
+      });
     }
     return rewrites;
   }
@@ -3771,7 +3878,11 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
   }
 
   function applyPendingAssetReferenceRewrites(
-    pendingRewrites: readonly { docName: string; markdown: string; rewrites: number }[],
+    pendingRewrites: readonly {
+      docName: string;
+      markdown: string;
+      rewrites: number;
+    }[],
     renamedAssets: readonly RenamedAssetMapping[],
   ): ManagedRenameRewrittenDoc[] {
     const rewrittenDocs: ManagedRenameRewrittenDoc[] = [];
@@ -3783,7 +3894,10 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       if (rewritten.rewrites === 0) continue;
       writeManagedRenameDocumentToDisk(pending.docName, rewritten.markdown);
       backlinkIndex?.updateDocumentFromMarkdown(pending.docName, rewritten.markdown);
-      rewrittenDocs.push({ docName: pending.docName, rewrites: rewritten.rewrites });
+      rewrittenDocs.push({
+        docName: pending.docName,
+        rewrites: rewritten.rewrites,
+      });
     }
     return rewrittenDocs;
   }
@@ -3919,7 +4033,10 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
   async function _performAssetRename(
     fromPath: string,
     toPath: string,
-  ): Promise<{ renamedAssets: RenamedAssetMapping[]; rewrittenDocs: ManagedRenameRewrittenDoc[] }> {
+  ): Promise<{
+    renamedAssets: RenamedAssetMapping[];
+    rewrittenDocs: ManagedRenameRewrittenDoc[];
+  }> {
     return runSerialized(async () =>
       withSpan(
         'rename.executeAssetRewrites',
@@ -4014,7 +4131,10 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
   async function _performDocumentToFileRename(
     fromPath: string,
     toPath: string,
-  ): Promise<{ renamedAssets: RenamedAssetMapping[]; rewrittenDocs: ManagedRenameRewrittenDoc[] }> {
+  ): Promise<{
+    renamedAssets: RenamedAssetMapping[];
+    rewrittenDocs: ManagedRenameRewrittenDoc[];
+  }> {
     return runSerialized(async () =>
       withSpan(
         'rename.executeDocumentToFileRewrites',
@@ -4118,7 +4238,11 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
 
             backlinkIndex.deleteDocument(sourceDocName);
             forgetDocExtension(sourceDocName);
-            mutateFileIndex?.({ kind: 'delete', path: sourcePath, docName: sourceDocName });
+            mutateFileIndex?.({
+              kind: 'delete',
+              path: sourcePath,
+              docName: sourceDocName,
+            });
             const destinationStat = statSync(destinationPath);
             mutateFileIndex?.({
               kind: 'file-create',
@@ -4541,7 +4665,10 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
                           writerId: options.actor.writerId,
                           displayName: options.actor.displayName,
                         }
-                      : { writerId: SERVICE_WRITER.id, displayName: SERVICE_WRITER.name };
+                      : {
+                          writerId: SERVICE_WRITER.id,
+                          displayName: SERVICE_WRITER.name,
+                        };
                     let entriesAppended = 0;
                     for (const { from, to } of loggableAffectedDocs) {
                       const logEntry: RenameLogEntry = {
@@ -4661,7 +4788,10 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
 
               backlinkIndex.renameDocument(fromDocName, toDocName, renamedSource.markdown);
               if (renamedSource.rewrites > 0) {
-                rewrittenDocs.push({ docName: toDocName, rewrites: renamedSource.rewrites });
+                rewrittenDocs.push({
+                  docName: toDocName,
+                  rewrites: renamedSource.rewrites,
+                });
               }
             }
 
@@ -4769,7 +4899,11 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
    * prevents naming collisions at the response root and tightens the coupling
    * between `truncatedFrom` and the human-readable explanation.
    */
-  type SummaryResponse = { value: string; truncatedFrom?: number; hint?: string };
+  type SummaryResponse = {
+    value: string;
+    truncatedFrom?: number;
+    hint?: string;
+  };
 
   /**
    * Pure response-shape derivation from a normalized summary — NO side effects.
@@ -4900,7 +5034,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       default: {
         const _exhaustive: never = actor;
         throw new Error(
-          `Unhandled actor kind in ${options.context}: ${String((_exhaustive as { kind?: unknown }).kind)}`,
+          `Unhandled actor kind in ${options.context}: ${String(
+            (_exhaustive as { kind?: unknown }).kind,
+          )}`,
         );
       }
     }
@@ -5142,7 +5278,11 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
             503,
             'urn:ok:error:too-many-agent-sessions',
             'Too many agent sessions.',
-            { handler: 'agent-write', cause: e, extraHeaders: { 'Retry-After': '10' } },
+            {
+              handler: 'agent-write',
+              cause: e,
+              extraHeaders: { 'Retry-After': '10' },
+            },
           );
           return;
         }
@@ -5245,7 +5385,10 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
               body.markdown,
               position,
               options.resolveEmbed
-                ? { resolveEmbed: options.resolveEmbed, sourcePath: resolvedDocName }
+                ? {
+                    resolveEmbed: options.resolveEmbed,
+                    sourcePath: resolvedDocName,
+                  }
                 : undefined,
             );
 
@@ -5425,7 +5568,11 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
             503,
             'urn:ok:error:too-many-agent-sessions',
             'Too many agent sessions.',
-            { handler: 'agent-write-md', cause: e, extraHeaders: { 'Retry-After': '10' } },
+            {
+              handler: 'agent-write-md',
+              cause: e,
+              extraHeaders: { 'Retry-After': '10' },
+            },
           );
           return;
         }
@@ -5598,17 +5745,25 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
               fieldErrors = { [editError.key]: editError.reason };
               break;
             case 'reserved_key':
-              fieldErrors = { [editError.key]: `'${editError.key}' is reserved` };
+              fieldErrors = {
+                [editError.key]: `'${editError.key}' is reserved`,
+              };
               break;
             case 'unknown_key':
-              fieldErrors = { [editError.key]: `'${editError.key}' is not a recognized key` };
+              fieldErrors = {
+                [editError.key]: `'${editError.key}' is not a recognized key`,
+              };
               break;
             case 'duplicate_target':
-              fieldErrors = { [editError.key]: `'${editError.key}' appears more than once` };
+              fieldErrors = {
+                [editError.key]: `'${editError.key}' appears more than once`,
+              };
               break;
             case 'reorder_mismatch':
               fieldErrors = {
-                __region__: `frontmatter reorder mismatch (expected: ${editError.expected.join(', ')}; got: ${editError.got.join(', ')})`,
+                __region__: `frontmatter reorder mismatch (expected: ${editError.expected.join(
+                  ', ',
+                )}; got: ${editError.got.join(', ')})`,
               };
               break;
             case 'region_too_large':
@@ -5617,7 +5772,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
               };
               break;
             case 'parse_failed':
-              fieldErrors = { __region__: `frontmatter region unparseable: ${editError.reason}` };
+              fieldErrors = {
+                __region__: `frontmatter region unparseable: ${editError.reason}`,
+              };
               break;
             case 'invalid_path':
               fieldErrors = {
@@ -5738,7 +5895,11 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
             503,
             'urn:ok:error:too-many-agent-sessions',
             'Too many agent sessions.',
-            { handler: 'frontmatter-patch', cause: e, extraHeaders: { 'Retry-After': '10' } },
+            {
+              handler: 'frontmatter-patch',
+              cause: e,
+              extraHeaders: { 'Retry-After': '10' },
+            },
           );
           return;
         }
@@ -6034,7 +6195,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           // Coalescing across showOk modes would hand one caller the other
           // mode's listing (`.ok` rows leaking to a plain caller, or silently
           // missing for a reveal caller).
-          const key = `showAll:${showAllMaxDepth === 1 ? 'd1:' : ''}${showOk ? 'ok:' : ''}${dir ?? ''}`;
+          const key = `showAll:${showAllMaxDepth === 1 ? 'd1:' : ''}${
+            showOk ? 'ok:' : ''
+          }${dir ?? ''}`;
           let entry = showAllInflight.get(key);
           if (!entry) {
             const controller = new AbortController();
@@ -6066,7 +6229,11 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
               // (two small integers) — safe on a histogrammed log attribute.
               if (truncated) {
                 log.info(
-                  { handler: 'document-list', maxEntries, count: documents.length },
+                  {
+                    handler: 'document-list',
+                    maxEntries,
+                    count: documents.length,
+                  },
                   '[document-list][showAll] walk truncated at entry cap',
                 );
               }
@@ -7219,7 +7386,11 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
             503,
             'urn:ok:error:too-many-agent-sessions',
             'Too many agent sessions.',
-            { handler: 'agent-patch', cause: e, extraHeaders: { 'Retry-After': '10' } },
+            {
+              handler: 'agent-patch',
+              cause: e,
+              extraHeaders: { 'Retry-After': '10' },
+            },
           );
           return;
         }
@@ -7874,7 +8045,11 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
             // Explicit agentId path (MCP checkpoint tool) — scoped to that agent.
             const displayName = svClientName ? `${svAgentName} (${svClientName})` : svAgentName;
             writers = [
-              { id: svAgentId, name: displayName, email: `${svAgentId}@synapsenote.local` },
+              {
+                id: svAgentId,
+                name: displayName,
+                email: `${svAgentId}@synapsenote.local`,
+              },
             ];
           } else {
             // A true empty-body Save Version (the UI button) consolidates ALL
@@ -8040,7 +8215,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
 
       // Single-flight key — doc mode. Covers every param `getDocumentHistory`
       // reads so a differing tuple never shares a wrong result.
-      const docKey = `doc\0${branch}\0${docName}\0${limit}\0${offset}\0${type ?? ''}\0${author ?? ''}\0${excludeAuthor ?? ''}\0${includeAutoCheckpoints ? '1' : '0'}`;
+      const docKey = `doc\0${branch}\0${docName}\0${limit}\0${offset}\0${
+        type ?? ''
+      }\0${author ?? ''}\0${excludeAuthor ?? ''}\0${includeAutoCheckpoints ? '1' : '0'}`;
 
       const t0 = Date.now();
       try {
@@ -8263,7 +8440,10 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
             res,
             404,
             'urn:ok:error:doc-not-found',
-            `Commit ${commitSha.slice(0, 7)} does not contain document ${docName} at any known historical path.`,
+            `Commit ${commitSha.slice(
+              0,
+              7,
+            )} does not contain document ${docName} at any known historical path.`,
             { handler: 'rollback' },
           );
           return;
@@ -8403,11 +8583,16 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           default: {
             const _exhaustive: never = actor;
             throw new Error(
-              `Unhandled actor kind in handleRollback: ${String((_exhaustive as { kind?: unknown }).kind)}`,
+              `Unhandled actor kind in handleRollback: ${String(
+                (_exhaustive as { kind?: unknown }).kind,
+              )}`,
             );
           }
         }
-        renameAttributionCounter().add(1, { kind: 'rollback', attribution_kind: actor.kind });
+        renameAttributionCounter().add(1, {
+          kind: 'rollback',
+          attribution_kind: actor.kind,
+        });
 
         // Force-flush L1 (onStoreDocument debounce) then L2 (git commit) so the
         // restored version + attribution appear in the timeline within ~100ms
@@ -8468,7 +8653,10 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
             // `warnings` is the unified advisory channel; the single-valued
             // `warning` is its deprecated alias, kept emitting in parallel.
             ...(rollbackDivergenceEntry
-              ? { warning: rollbackDivergenceEntry, warnings: [rollbackDivergenceEntry] }
+              ? {
+                  warning: rollbackDivergenceEntry,
+                  warnings: [rollbackDivergenceEntry],
+                }
               : {}),
           },
           { handler: 'rollback' },
@@ -8660,7 +8848,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       });
       return;
     }
-    successResponse(res, 200, PrincipalSuccessSchema, principal, { handler: 'principal' });
+    successResponse(res, 200, PrincipalSuccessSchema, principal, {
+      handler: 'principal',
+    });
   }
 
   async function handleMetricsAgentPresence(
@@ -8877,7 +9067,10 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
         });
         symlinkResolved = false;
       } else {
-        console.warn('[workspace] realpath failed for contentDir', { path: resolvedRoot, err });
+        console.warn('[workspace] realpath failed for contentDir', {
+          path: resolvedRoot,
+          err,
+        });
         errorResponse(
           res,
           500,
@@ -9216,7 +9409,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       try {
         if (!shadowRef?.current) {
           // No shadow repo configured = no rescue buffers; emit empty list (success).
-          successResponse(res, 200, RescueListSuccessSchema, [], { handler: 'rescue-list' });
+          successResponse(res, 200, RescueListSuccessSchema, [], {
+            handler: 'rescue-list',
+          });
           return;
         }
 
@@ -9269,7 +9464,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           log.error({ err }, '[rescue] Failed to list timeline-ref rescue checkpoints');
         }
 
-        successResponse(res, 200, RescueListSuccessSchema, entries, { handler: 'rescue-list' });
+        successResponse(res, 200, RescueListSuccessSchema, entries, {
+          handler: 'rescue-list',
+        });
       } catch (e) {
         errorResponse(res, 500, 'urn:ok:error:internal-server-error', 'Internal server error.', {
           handler: 'rescue-list',
@@ -9403,7 +9600,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
               res,
               400,
               'urn:ok:error:invalid-request',
-              `Template "${templateName}" does not resolve for folder "${parentFolder || '(root)'}". Available: ${availableLabel}`,
+              `Template "${templateName}" does not resolve for folder "${
+                parentFolder || '(root)'
+              }". Available: ${availableLabel}`,
               { handler: 'create-page' },
             );
             return;
@@ -9440,7 +9639,10 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
 
         mkdirSync(dirname(fullPath), { recursive: true });
         try {
-          writeFileSync(fullPath, initialContent, { encoding: 'utf-8', flag: 'wx' });
+          writeFileSync(fullPath, initialContent, {
+            encoding: 'utf-8',
+            flag: 'wx',
+          });
         } catch (err) {
           if (isAlreadyExistsError(err)) {
             errorResponse(res, 409, 'urn:ok:error:doc-already-exists', 'File already exists.', {
@@ -9484,11 +9686,18 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           default: {
             const _exhaustive: never = actor;
             throw new Error(
-              `Unhandled actor kind in handleCreatePage: ${String((_exhaustive as { kind?: unknown }).kind)}`,
+              `Unhandled actor kind in handleCreatePage: ${String(
+                (_exhaustive as { kind?: unknown }).kind,
+              )}`,
             );
           }
         }
-        mutateFileIndex?.({ kind: 'create', path: fullPath, docName, content: initialContent });
+        mutateFileIndex?.({
+          kind: 'create',
+          path: fullPath,
+          docName,
+          content: initialContent,
+        });
         if (backlinkIndex) {
           backlinkIndex.updateDocumentFromMarkdown(docName, initialContent);
           void backlinkIndex.saveToDisk().catch((err) => {
@@ -9736,7 +9945,10 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           const destinationDirExisted = existsSync(destinationDir);
           try {
             tracedMkdirSync(destinationDir, { recursive: true });
-            tracedWriteFileSync(destinationPath, content, { encoding: 'utf-8', flag: 'wx' });
+            tracedWriteFileSync(destinationPath, content, {
+              encoding: 'utf-8',
+              flag: 'wx',
+            });
           } catch (err) {
             if (isAlreadyExistsError(err)) {
               errorResponse(
@@ -9887,7 +10099,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           default: {
             const _exhaustive: never = actor;
             throw new Error(
-              `Unhandled actor kind in handleDuplicatePath: ${String((_exhaustive as { kind?: unknown }).kind)}`,
+              `Unhandled actor kind in handleDuplicatePath: ${String(
+                (_exhaustive as { kind?: unknown }).kind,
+              )}`,
             );
           }
         }
@@ -10212,7 +10426,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
               res,
               400,
               'urn:ok:error:invalid-request',
-              `Destination ${operationKind === 'file' ? 'document' : 'folder'} is excluded by the project content config.`,
+              `Destination ${
+                operationKind === 'file' ? 'document' : 'folder'
+              } is excluded by the project content config.`,
               { handler: 'rename-path' },
             );
             return;
@@ -10287,7 +10503,12 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
               context: 'handleRenamePath',
               onAnonymous: () => {
                 log.debug(
-                  { kind, fromPath, toPath, affectedDocs: result.renamed.length },
+                  {
+                    kind,
+                    fromPath,
+                    toPath,
+                    affectedDocs: result.renamed.length,
+                  },
                   '[rename-path] anonymous actor — no contributor recorded (no agentId in body and getPrincipal() returned null)',
                 );
               },
@@ -10742,7 +10963,14 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
               console.warn(`[pages] Failed to read title for ${docName}:`, err);
             }
           }
-          pages.push({ docName, title, docExt, size: entry.size, modified: entry.modified, icon });
+          pages.push({
+            docName,
+            title,
+            docExt,
+            size: entry.size,
+            modified: entry.modified,
+            icon,
+          });
         }
         pages.sort((a, b) => a.docName.localeCompare(b.docName));
         successResponse(res, 200, PagesSuccessSchema, { pages }, { handler: 'pages' });
@@ -10790,7 +11018,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           fileIndex: getFileIndex(),
           docName,
         });
-        successResponse(res, 200, SuggestLinksSuccessSchema, result, { handler: 'suggest-links' });
+        successResponse(res, 200, SuggestLinksSuccessSchema, result, {
+          handler: 'suggest-links',
+        });
       } catch (error) {
         if (error instanceof SuggestLinksTargetNotFoundError) {
           errorResponse(res, 404, 'urn:ok:error:doc-not-found', 'Page not found.', {
@@ -10808,7 +11038,11 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     { handler: 'suggest-links', method: 'GET', skipBodyParse: true },
   );
 
-  async function handleUploadAsset(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  async function handleUploadAsset(
+    req: IncomingMessage,
+    res: ServerResponse,
+    options: { formUpload?: boolean } = {},
+  ): Promise<void> {
     if (req.method !== 'POST') {
       errorResponse(res, 405, 'urn:ok:error:method-not-allowed', 'Method not allowed.', {
         handler: 'upload-asset',
@@ -10817,9 +11051,67 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       return;
     }
 
+    let authorizedFormParentDocName: string | null = null;
+    if (options.formUpload) {
+      if (!databaseDataPlane) {
+        errorResponse(
+          res,
+          503,
+          'urn:ok:error:internal-server-error',
+          'Form upload is unavailable.',
+          {
+            handler: 'database-form-upload',
+          },
+        );
+        return;
+      }
+      const url = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`);
+      try {
+        authorizedFormParentDocName = (
+          await databaseDataPlane.authorizeFormUpload({
+            databaseId: url.searchParams.get('databaseId') ?? '',
+            sourceId: url.searchParams.get('sourceId') ?? '',
+            viewId: url.searchParams.get('viewId') ?? '',
+            remoteAddress: req.socket.remoteAddress ?? '',
+          })
+        ).parentDocName;
+      } catch (error) {
+        const status =
+          error instanceof DatabaseDataPlaneError &&
+          (error.code === 'form_access_denied' || error.code === 'permission_denied')
+            ? 403
+            : error instanceof DatabaseDataPlaneError && error.code === 'form_rate_limited'
+              ? 429
+              : error instanceof DatabaseDataPlaneError &&
+                  (error.code === 'form_not_found' ||
+                    error.code === 'database_not_found' ||
+                    error.code === 'source_not_found')
+                ? 404
+                : error instanceof DatabaseDataPlaneError && error.code === 'form_closed'
+                  ? 409
+                  : 400;
+        errorResponse(
+          res,
+          status,
+          status === 404
+            ? 'urn:ok:error:not-found'
+            : status === 403
+              ? 'urn:ok:error:permission-denied'
+              : 'urn:ok:error:invalid-request',
+          error instanceof Error ? error.message : 'Form upload was rejected.',
+          { handler: 'database-form-upload', cause: error },
+        );
+        return;
+      }
+    }
+
     let uploadResult: UploadResult | undefined;
     try {
-      uploadResult = await readUploadBody(req, projectDir ?? contentDir);
+      uploadResult = await readUploadBody(
+        req,
+        projectDir ?? contentDir,
+        options.formUpload ? DATABASE_FORM_UPLOAD_FILE_MAX_BYTES : UPLOAD_FILE_MAX_BYTES,
+      );
     } catch (e) {
       // All body-parse failures land as UploadWriteError with a URN-form
       // reason. Tempfile cleanup is handled inside readUploadBody's error
@@ -10869,7 +11161,10 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     // handlers.
     const validated = validateBody(
       UploadRequestSchema,
-      { parentDocName: rawParentDocName, placement: rawPlacement || undefined },
+      {
+        parentDocName: authorizedFormParentDocName ?? rawParentDocName,
+        placement: authorizedFormParentDocName ? 'parent-dir' : rawPlacement || undefined,
+      },
       res,
       {
         handler: 'upload-asset',
@@ -11268,7 +11563,10 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
         429,
         'urn:ok:error:concurrent-operation',
         'A clone operation is already in progress.',
-        { handler: HANDLE_LOCAL_OP_CLONE, extraHeaders: { 'Retry-After': '30' } },
+        {
+          handler: HANDLE_LOCAL_OP_CLONE,
+          extraHeaders: { 'Retry-After': '30' },
+        },
       );
       return;
     }
@@ -11375,7 +11673,11 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
               // Electron Navigator uses it to spawn a new editor window
               // instead of navigating the launcher to a dev-server URL.
               res.write(
-                `${JSON.stringify({ type: 'complete', port: result.port, dir: cloneCompleteDir })}\n`,
+                `${JSON.stringify({
+                  type: 'complete',
+                  port: result.port,
+                  dir: cloneCompleteDir,
+                })}\n`,
               );
             } else {
               writeStreamError(
@@ -11583,7 +11885,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
         if ('port' in connectResult) return connectResult;
         // Preserve both legs for diagnostics: why `start` exited AND why the
         // connect fallback then failed.
-        return { error: `${result.error}; connect fallback failed: ${connectResult.error}` };
+        return {
+          error: `${result.error}; connect fallback failed: ${connectResult.error}`,
+        };
       }
     }
 
@@ -11690,7 +11994,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       const gitDirKind = resolveGitDirDetailed(canonicalPath).kind;
       if (gitDirKind !== 'directory' && gitDirKind !== 'linked') {
         console.warn(
-          `[ok-init] action=init project=${basename(canonicalPath)} result=not-a-git-worktree kind=${gitDirKind}`,
+          `[ok-init] action=init project=${basename(
+            canonicalPath,
+          )} result=not-a-git-worktree kind=${gitDirKind}`,
         );
         successResponse(
           res,
@@ -11730,7 +12036,10 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           429,
           'urn:ok:error:concurrent-operation',
           'An ok-init operation is already in progress.',
-          { handler: HANDLE_LOCAL_OP_OK_INIT, extraHeaders: { 'Retry-After': '2' } },
+          {
+            handler: HANDLE_LOCAL_OP_OK_INIT,
+            extraHeaders: { 'Retry-After': '2' },
+          },
         );
         return;
       }
@@ -11752,7 +12061,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         console.warn(
-          `[ok-init] action=init project=${basename(canonicalPath)} result=failed reason=${message}`,
+          `[ok-init] action=init project=${basename(
+            canonicalPath,
+          )} result=failed reason=${message}`,
         );
         successResponse(
           res,
@@ -11844,7 +12155,10 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           429,
           'urn:ok:error:concurrent-operation',
           'An auth login operation is already in progress.',
-          { handler: HANDLE_LOCAL_OP_AUTH_LOGIN, extraHeaders: { 'Retry-After': '5' } },
+          {
+            handler: HANDLE_LOCAL_OP_AUTH_LOGIN,
+            extraHeaders: { 'Retry-After': '5' },
+          },
         );
         return;
       }
@@ -11970,7 +12284,10 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           429,
           'urn:ok:error:concurrent-operation',
           'An auth status operation is already in progress.',
-          { handler: HANDLE_LOCAL_OP_AUTH_STATUS, extraHeaders: { 'Retry-After': '5' } },
+          {
+            handler: HANDLE_LOCAL_OP_AUTH_STATUS,
+            extraHeaders: { 'Retry-After': '5' },
+          },
         );
         return;
       }
@@ -12060,7 +12377,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       handler: HANDLE_LOCAL_OP_AUTH_STATUS,
       method: 'POST',
       preBodyGate: (req, res) =>
-        checkLocalOpSecurity(req, res, { handler: HANDLE_LOCAL_OP_AUTH_STATUS }),
+        checkLocalOpSecurity(req, res, {
+          handler: HANDLE_LOCAL_OP_AUTH_STATUS,
+        }),
     },
   );
 
@@ -12100,7 +12419,10 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
         429,
         'urn:ok:error:concurrent-operation',
         'An auth repos operation is already in progress.',
-        { handler: HANDLE_LOCAL_OP_AUTH_REPOS, extraHeaders: { 'Retry-After': '5' } },
+        {
+          handler: HANDLE_LOCAL_OP_AUTH_REPOS,
+          extraHeaders: { 'Retry-After': '5' },
+        },
       );
       return;
     }
@@ -12248,7 +12570,10 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           429,
           'urn:ok:error:concurrent-operation',
           'An auth signout operation is already in progress.',
-          { handler: HANDLE_LOCAL_OP_AUTH_SIGNOUT, extraHeaders: { 'Retry-After': '5' } },
+          {
+            handler: HANDLE_LOCAL_OP_AUTH_SIGNOUT,
+            extraHeaders: { 'Retry-After': '5' },
+          },
         );
         return;
       }
@@ -12302,7 +12627,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       handler: HANDLE_LOCAL_OP_AUTH_SIGNOUT,
       method: 'POST',
       preBodyGate: (req, res) =>
-        checkLocalOpSecurity(req, res, { handler: HANDLE_LOCAL_OP_AUTH_SIGNOUT }),
+        checkLocalOpSecurity(req, res, {
+          handler: HANDLE_LOCAL_OP_AUTH_SIGNOUT,
+        }),
     },
   );
 
@@ -12338,7 +12665,10 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           429,
           'urn:ok:error:concurrent-operation',
           'A set-identity operation is already in progress.',
-          { handler: HANDLE_LOCAL_OP_AUTH_SET_IDENTITY, extraHeaders: { 'Retry-After': '5' } },
+          {
+            handler: HANDLE_LOCAL_OP_AUTH_SET_IDENTITY,
+            extraHeaders: { 'Retry-After': '5' },
+          },
         );
         return;
       }
@@ -12375,7 +12705,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       handler: HANDLE_LOCAL_OP_AUTH_SET_IDENTITY,
       method: 'POST',
       preBodyGate: (req, res) =>
-        checkLocalOpSecurity(req, res, { handler: HANDLE_LOCAL_OP_AUTH_SET_IDENTITY }),
+        checkLocalOpSecurity(req, res, {
+          handler: HANDLE_LOCAL_OP_AUTH_SET_IDENTITY,
+        }),
     },
   );
 
@@ -12663,7 +12995,10 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     // incidents have a paper trail.
     async function showStage(stage: 1 | 2 | 3): Promise<StageResult> {
       try {
-        return { present: true, content: await pg.raw(['show', `:${stage}:${file}`]) };
+        return {
+          present: true,
+          content: await pg.raw(['show', `:${stage}:${file}`]),
+        };
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         // Expected "stage absent" git error shapes from simple-git's stderr
@@ -12923,7 +13258,10 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
         // The plan already has rootDir baked into its entries — apply only
         // needs projectDir + packId (so it knows which template registry to
         // resolve content from).
-        const result = await applySeed(plan, { projectDir: contentDir, packId });
+        const result = await applySeed(plan, {
+          projectDir: contentDir,
+          packId,
+        });
         successResponse(res, 200, SeedApplySuccessSchema, { result }, { handler: 'seed-apply' });
       } catch (err) {
         errorResponse(
@@ -13347,7 +13685,10 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
         // Write the folder's own frontmatter (open-shape, like a doc's) via the
         // single-folder merge-patch helper — addressed by the folder's own
         // path, no glob and no whitelist.
-        const allApplied: Array<{ path: string; action: 'written' | 'deleted' | 'noop' }> = [];
+        const allApplied: Array<{
+          path: string;
+          action: 'written' | 'deleted' | 'noop';
+        }> = [];
         if (body.frontmatter !== undefined) {
           const result = applyFolderFrontmatterPatch({
             anchorDir: validated.resolvedContentDir,
@@ -13374,7 +13715,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
             attributeOkArtifactWrite(
               actor,
               okArtifactKey('folder-frontmatter', validated.folderRel),
-              `folder-frontmatter-${result.action === 'deleted' ? 'delete' : 'edit'}: ${result.path}`,
+              `folder-frontmatter-${
+                result.action === 'deleted' ? 'delete' : 'edit'
+              }: ${result.path}`,
             );
             await commitOkArtifactWrite('folder-config-put');
           }
@@ -13557,7 +13900,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
         if (!found) {
           errorResponse(res, 404, 'urn:ok:error:template-not-found', 'Template not found.', {
             handler: 'template-get',
-            detail: `Template "${name}" not found for folder "${folderRel || '.'}". Walked leaf → root.`,
+            detail: `Template "${name}" not found for folder "${
+              folderRel || '.'
+            }". Walked leaf → root.`,
           });
           return;
         }
@@ -13885,7 +14230,11 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
                 res,
                 400,
                 'urn:ok:error:invalid-request',
-                `Template "${body.fromName}" is inherited from "${found.folder || '(root)'}", not local to "${fromValidated.folderRel || '(root)'}". Move it from the folder that owns it, or create a local copy here first (then move that).`,
+                `Template "${body.fromName}" is inherited from "${
+                  found.folder || '(root)'
+                }", not local to "${
+                  fromValidated.folderRel || '(root)'
+                }". Move it from the folder that owns it, or create a local copy here first (then move that).`,
                 { handler: 'template-move', detail: 'TEMPLATE_INHERITED' },
               );
               return;
@@ -13993,7 +14342,11 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           res,
           200,
           TemplateMoveSuccessSchema,
-          { from: result.fromPath, to: result.toPath, committed: result.committed },
+          {
+            from: result.fromPath,
+            to: result.toPath,
+            committed: result.committed,
+          },
           { handler: 'template-move' },
         );
       } catch (e) {
@@ -14232,7 +14585,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           skills: [...enrich(project, projectInstalled), ...enrich(globalSkills, globalInstalled)],
           truncated: project.truncated || globalSkills.truncated,
         };
-        successResponse(res, 200, SkillsListSuccessSchema, enriched, { handler: 'skills-list' });
+        successResponse(res, 200, SkillsListSuccessSchema, enriched, {
+          handler: 'skills-list',
+        });
       } catch (e) {
         errorResponse(res, 500, 'urn:ok:error:internal-server-error', 'Failed to list skills.', {
           handler: 'skills-list',
@@ -14267,7 +14622,10 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
   const skillsManagementState = () => ({
     managed: projectDir ? (readSkillManagement(projectDir)?.manageEditorSkills ?? null) : null,
     importable: projectDir
-      ? countImportableEditorSkills({ projectDir, skillsRoot: resolveSkillsRoot('project') })
+      ? countImportableEditorSkills({
+          projectDir,
+          skillsRoot: resolveSkillsRoot('project'),
+        })
       : 0,
   });
 
@@ -14404,7 +14762,10 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
         const composed = composeSkillContent({
           name: body.name,
           body: typeof body.body === 'string' ? body.body : '',
-          frontmatter: { name: body.frontmatter.name, description: body.frontmatter.description },
+          frontmatter: {
+            name: body.frontmatter.name,
+            description: body.frontmatter.description,
+          },
         });
         if (!composed.ok) {
           errorResponse(res, 400, 'urn:ok:error:invalid-request', 'Invalid skill request.', {
@@ -14973,7 +15334,11 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           res,
           200,
           SkillFileGetSuccessSchema,
-          { path: resolvedRel.replace(/\\/g, '/'), kind, text: buf.toString('utf-8') },
+          {
+            path: resolvedRel.replace(/\\/g, '/'),
+            kind,
+            text: buf.toString('utf-8'),
+          },
           { handler: 'skill-file-get' },
         );
       } catch (e) {
@@ -15203,7 +15568,11 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           await captureAndCloseDocuments([projectRefContentDocName(name, rel)], 'deleted-upstream');
         }
 
-        const result = applySkillBundleFileDelete({ skillsRoot, name, relPath: rel });
+        const result = applySkillBundleFileDelete({
+          skillsRoot,
+          name,
+          relPath: rel,
+        });
         if (!result.ok) {
           const status = result.error.code === 'UNLINK_FAILED' ? 500 : 400;
           errorResponse(
@@ -15386,7 +15755,13 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           res,
           200,
           SkillInstallSuccessSchema,
-          { name: body.name, hosts, scripts: validity.hasScripts, warnings, warningCodes },
+          {
+            name: body.name,
+            hosts,
+            scripts: validity.hasScripts,
+            warnings,
+            warningCodes,
+          },
           { handler: 'skill-install' },
         );
       } catch (e) {
@@ -15738,7 +16113,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
               contentRoot ?? '.',
               [SERVICE_WRITER],
               branch,
-              `Before updating ${body.name} (${previousVersion ?? 'unversioned'} → ${bundled.version})`,
+              `Before updating ${body.name} (${
+                previousVersion ?? 'unversioned'
+              } → ${bundled.version})`,
             );
             checkpointRef = cp.checkpointRef;
           } catch (err) {
@@ -15781,7 +16158,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
         attributeOkArtifactWrite(
           actor,
           okArtifactKey('skill', '', body.name),
-          `skill-pack-update: ${body.name} (${previousVersion ?? 'unversioned'} → ${bundled.version})`,
+          `skill-pack-update: ${body.name} (${
+            previousVersion ?? 'unversioned'
+          } → ${bundled.version})`,
         );
         await commitOkArtifactWrite('skill-update');
         signalChannel?.('files');
@@ -15859,7 +16238,14 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     if (!rawScopes) return undefined;
     const scopes = rawScopes.filter(
       (scope): scope is WorkspaceSearchScope =>
-        scope === 'page' || scope === 'folder' || scope === 'content' || scope === 'file',
+        scope === 'page' ||
+        scope === 'folder' ||
+        scope === 'content' ||
+        scope === 'file' ||
+        scope === 'database' ||
+        scope === 'data_source' ||
+        scope === 'view' ||
+        scope === 'record',
     );
     return scopes.length > 0 ? scopes : undefined;
   }
@@ -15957,12 +16343,17 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     result: ReturnType<typeof searchWorkspaceCorpus>[number],
     query: string,
   ): {
-    kind: WorkspaceSearchScope;
+    kind: WorkspaceSearchDocument['kind'];
     path: string;
     title: string;
     score: number;
     signals: WorkspaceSearchResult['signals'];
     snippet?: string;
+    databaseId?: string;
+    sourceId?: string;
+    viewId?: string;
+    recordId?: string;
+    revision?: string;
   } {
     return {
       kind: result.document.kind,
@@ -15974,6 +16365,11 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
         result.document.kind === 'page'
           ? buildSearchSnippet(result.document.content, query)
           : undefined,
+      ...(result.document.databaseId ? { databaseId: result.document.databaseId } : {}),
+      ...(result.document.sourceId ? { sourceId: result.document.sourceId } : {}),
+      ...(result.document.viewId ? { viewId: result.document.viewId } : {}),
+      ...(result.document.recordId ? { recordId: result.document.recordId } : {}),
+      ...(result.document.revision ? { revision: result.document.revision } : {}),
     };
   }
 
@@ -16082,13 +16478,23 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     } catch {
       return [];
     }
-    const out: Array<{ name: string; absolutePath: string; mtimeMs: number; size: number }> = [];
+    const out: Array<{
+      name: string;
+      absolutePath: string;
+      mtimeMs: number;
+      size: number;
+    }> = [];
     for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
       if (!entry.isDirectory() || !SKILL_NAME_REGEX.test(entry.name)) continue;
       const skillMd = resolve(root, entry.name, 'SKILL.md');
       try {
         const st = statSync(skillMd);
-        out.push({ name: entry.name, absolutePath: skillMd, mtimeMs: st.mtimeMs, size: st.size });
+        out.push({
+          name: entry.name,
+          absolutePath: skillMd,
+          mtimeMs: st.mtimeMs,
+          size: st.size,
+        });
       } catch {
         // Missing/unreadable SKILL.md — skip (a draft dir with no manifest).
       }
@@ -16144,7 +16550,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
   function entrySearchKey(entry: FileIndexEntry): string {
     // NUL between fields AND between aliases: a path/alias containing a comma
     // (rare but valid on macOS/Linux) must not collide with a different alias set.
-    return `${entry.modified}\0${entry.size}\0${entry.canonicalPath}\0${entry.inode}\0${entry.aliases.join('\0')}`;
+    return `${entry.modified}\0${entry.size}\0${entry.canonicalPath}\0${
+      entry.inode
+    }\0${entry.aliases.join('\0')}`;
   }
 
   // Per-page parsed-document cache. Building the corpus re-reads every markdown
@@ -16162,12 +16570,247 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
   // docs are metadata-only (no disk read), so they are rebuilt each time.
   const pageDocCache = new Map<string, { key: string; doc: WorkspaceSearchDocument }>();
 
+  function databaseSearchFingerprint(): string {
+    if (!databaseDataPlane) return 'database:none';
+    try {
+      return `database:${databaseDataPlane.workspaceSearchRevision()}`;
+    } catch {
+      // A transaction temporarily blocks canonical reads. Keep ordinary file
+      // search available and force a new fingerprint once the data plane is
+      // readable again instead of failing the whole workspace search route.
+      return 'database:temporarily-unavailable';
+    }
+  }
+
+  function databaseRecordValueText(
+    property: ReturnType<
+      DatabaseDataPlane['describe']
+    >['database']['sources'][number]['properties'][number],
+    value: DatabaseValue,
+  ): string {
+    if (property.type === 'date') {
+      const date = DatabaseDateValueSchema.safeParse(value);
+      return date.success ? serializeDatabaseDateValue(date.data) : String(value);
+    }
+    const values = Array.isArray(value) ? value : [value];
+    if (!('options' in property)) return values.map(String).join(' ');
+    return values
+      .flatMap((item) => {
+        const canonical = String(item);
+        const option = property.options.find((candidate) => candidate.id === canonical);
+        return option ? [canonical, option.key, option.name] : [canonical];
+      })
+      .join(' ');
+  }
+
+  function hasDatabaseRecordIdentity(markdown: string): boolean {
+    const metadata = parseFrontmatterDoc(markdown).frontmatter._sn;
+    if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) return false;
+    const record = metadata as Record<string, unknown>;
+    return (
+      typeof record.database_id === 'string' &&
+      typeof record.source_id === 'string' &&
+      typeof record.record_id === 'string'
+    );
+  }
+
+  /**
+   * Project canonical database metadata and permission-filtered records into
+   * the shared workspace corpus. Database-owned Markdown is deliberately
+   * excluded from the generic `page` tier below; the `record` row contributes
+   * stable IDs and only typed, permission-projected values. Body retrieval stays
+   * behind the Data Plane's permission-aware `find`/Context Pack surfaces.
+   */
+  function buildDatabaseSearchDocuments(maxRecords: number): {
+    documents: WorkspaceSearchDocument[];
+    truncated: boolean;
+  } {
+    if (!databaseDataPlane) return { documents: [], truncated: false };
+    const documents: WorkspaceSearchDocument[] = [];
+    let admittedRecords = 0;
+    let truncated = false;
+    let catalog: ReturnType<DatabaseDataPlane['catalog']>;
+    try {
+      catalog = databaseDataPlane.catalog();
+    } catch (err) {
+      log.warn({ err, handler: 'search' }, '[search] database catalog temporarily unavailable');
+      return { documents, truncated };
+    }
+
+    for (const card of catalog.candidates) {
+      let described: ReturnType<DatabaseDataPlane['describe']>;
+      try {
+        described = databaseDataPlane.describe({ databaseId: card.id });
+      } catch (err) {
+        log.warn(
+          { err, handler: 'search', databaseId: card.id },
+          '[search] skipped unavailable database metadata',
+        );
+        continue;
+      }
+      const database = described.database;
+      const databasePath = `databases/${database.key}`;
+      documents.push(
+        createWorkspaceSearchDocument({
+          kind: 'database',
+          path: databasePath,
+          title: database.name,
+          content: [
+            database.key,
+            ...database.aliases,
+            database.contract.purpose,
+            ...database.contract.vocabulary,
+            database.contract.canonicality,
+            database.contract.freshness.expectation,
+            String(database.contract.freshness.maxAgeSeconds),
+            database.contract.sensitivity,
+          ].join('\n'),
+          databaseId: database.id,
+          revision: described.schemaRevision,
+        }),
+      );
+
+      for (const source of database.sources) {
+        documents.push(
+          createWorkspaceSearchDocument({
+            kind: 'data_source',
+            path: `${databasePath}/sources/${source.key}`,
+            title: source.name,
+            content: [
+              source.key,
+              source.description ?? '',
+              source.recordMeaning,
+              source.folder,
+              ...source.properties.flatMap((property) => [
+                property.id,
+                property.key,
+                property.name,
+                property.type,
+                JSON.stringify(property),
+              ]),
+            ].join('\n'),
+            databaseId: database.id,
+            sourceId: source.id,
+            revision: described.schemaRevision,
+          }),
+        );
+      }
+
+      for (const view of database.views) {
+        documents.push(
+          createWorkspaceSearchDocument({
+            kind: 'view',
+            path: `${databasePath}/views/${view.key}`,
+            title: view.name,
+            content: [
+              view.key,
+              view.description ?? '',
+              view.layout.type,
+              JSON.stringify(view.where ?? null),
+              JSON.stringify(view.sort),
+              JSON.stringify(view.groups),
+              JSON.stringify(view.projection),
+              JSON.stringify(view.agent ?? null),
+            ].join('\n'),
+            databaseId: database.id,
+            sourceId: view.sourceId,
+            viewId: view.id,
+            revision: described.schemaRevision,
+          }),
+        );
+      }
+
+      for (const source of database.sources) {
+        if (admittedRecords >= maxRecords) {
+          truncated = true;
+          break;
+        }
+        let cursor: string | undefined;
+        try {
+          do {
+            const remaining = maxRecords - admittedRecords;
+            if (remaining <= 0) {
+              truncated = true;
+              break;
+            }
+            const result = databaseDataPlane.query({
+              databaseId: database.id,
+              sourceId: source.id,
+              query: {
+                page: {
+                  limit: Math.min(500, remaining),
+                  ...(cursor ? { cursor } : {}),
+                },
+              },
+            });
+            const titleProperty = source.properties.find((property) => property.type === 'title');
+            for (const record of result.records) {
+              const titleValue = titleProperty ? record.values[titleProperty.id] : undefined;
+              const title =
+                typeof titleValue === 'string' && titleValue.trim() ? titleValue : record.id;
+              const valueLines = Object.entries(record.values).flatMap(([propertyId, value]) => {
+                const property = source.properties.find((candidate) => candidate.id === propertyId);
+                if (!property) {
+                  return [
+                    propertyId,
+                    (Array.isArray(value) ? value : [value]).map(String).join(' '),
+                  ];
+                }
+                return [
+                  property.id,
+                  property.key,
+                  property.name,
+                  databaseRecordValueText(property, value),
+                ];
+              });
+              documents.push(
+                createWorkspaceSearchDocument({
+                  kind: 'record',
+                  path: record.path,
+                  title,
+                  content: [record.id, source.recordMeaning, ...valueLines].join('\n'),
+                  databaseId: database.id,
+                  sourceId: source.id,
+                  recordId: record.id,
+                  revision: record.revision,
+                }),
+              );
+              admittedRecords += 1;
+            }
+            cursor = result.nextCursor ?? undefined;
+            if (!cursor) break;
+          } while (admittedRecords < maxRecords);
+          if (cursor) truncated = true;
+        } catch (err) {
+          // Stale/rebuilding indexes and permission failures should degrade only
+          // this source's record tier; database/source/view discovery remains
+          // useful and ordinary workspace search must continue to work.
+          log.warn(
+            {
+              err,
+              handler: 'search',
+              databaseId: database.id,
+              sourceId: source.id,
+            },
+            '[search] skipped unavailable database records',
+          );
+        }
+      }
+    }
+    return { documents, truncated };
+  }
+
   async function buildWorkspaceSearchDocumentsFromIndex(): Promise<{
     documents: WorkspaceSearchDocument[];
     truncated: boolean;
   }> {
     const pages: WorkspaceSearchDocument[] = [];
     const files: WorkspaceSearchDocument[] = [];
+    const databaseRecordDocNames = new Set(
+      (databaseDataPlane?.workspaceSearchRecordPaths() ?? []).map((path) =>
+        path.replace(/\.mdx?$/i, ''),
+      ),
+    );
     // Type-annotated, like the two siblings above, so the getAllFilesIndex
     // caller-coverage meta-test attributes the call below to this (allowlisted)
     // function rather than latching onto a bare local declaration.
@@ -16186,6 +16829,13 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       // twice (a duplicate corpus id throws and 500s the whole search). The
       // prefix matches `skillLiveDocName('project', …)` → `.ok/skills/<name>/SKILL`.
       if (docName.startsWith('.ok/skills/')) continue;
+      // Canonical database records are indexed below through the permission-
+      // scoped data plane. Never also admit them as ordinary Markdown pages,
+      // which would expose denied rows/body text through the page tier.
+      if (databaseRecordDocNames.has(docName)) {
+        pageDocCache.delete(docName);
+        continue;
+      }
       if (entry.kind === 'file') {
         // Name-only tier: a non-markdown file is searchable by name / path /
         // folder, but its body is NEVER read (content stays markdown-only).
@@ -16228,6 +16878,13 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
         console.warn(`[search] Failed to read ${docName}:`, err);
       }
       if (!readFailed) {
+        // Fail closed for a newly-created or temporarily unindexed record: the
+        // typed `_sn` identity is enough to keep it out of generic page search
+        // until the database index catches up.
+        if (hasDatabaseRecordIdentity(content)) {
+          pageDocCache.delete(docName);
+          continue;
+        }
         try {
           title = extractPageTitle(content, docName);
         } catch (err) {
@@ -16294,13 +16951,15 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     // file entries), so a folder containing only non-markdown files is still a
     // search result and a partial-path query (e.g. `server/src`) resolves even
     // when the folder holds no markdown.
+    const databaseSearch = buildDatabaseSearchDocuments(getSearchMaxEntries());
     const documents = [
       ...pages,
       ...buildSkillSearchDocuments(),
       ...admittedFiles,
       ...deriveFolderSearchDocuments([...pages, ...admittedFiles]),
+      ...databaseSearch.documents,
     ];
-    return { documents, truncated };
+    return { documents, truncated: truncated || databaseSearch.truncated };
   }
 
   // Stat-only skill fingerprint (name + mtime + size per project skill). A
@@ -16322,7 +16981,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     // file-index mutation (the same counter that memoizes the markdown-only
     // view), so a generation match proves the corpus is still valid in O(1).
     if (getFileIndexGeneration) {
-      return `gen:${getFileIndexGeneration()}|skills${skillStatFingerprint()}`;
+      return `gen:${getFileIndexGeneration()}|skills${skillStatFingerprint()}|${databaseSearchFingerprint()}`;
     }
     // Fallback for harnesses that wire only the index accessors. Admission
     // predicate MUST match `buildWorkspaceSearchDocumentsFromIndex` so a
@@ -16334,7 +16993,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
         // Shares `entrySearchKey` with the page-doc cache so the two never drift.
         ([docName, entry]) => `${docName}\0${entrySearchKey(entry)}`,
       )
-      .join('')}|skills${skillStatFingerprint()}`;
+      .join('')}|skills${skillStatFingerprint()}|${databaseSearchFingerprint()}`;
   }
 
   // Cold-start search readiness. While the boot index seed is still walking the
@@ -16473,7 +17132,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           semanticParam,
           source,
         });
-        successResponse(res, 200, SearchSuccessSchema, body, { handler: 'search-get' });
+        successResponse(res, 200, SearchSuccessSchema, body, {
+          handler: 'search-get',
+        });
       } catch (e) {
         errorResponse(
           res,
@@ -16518,7 +17179,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           semanticParam,
           source,
         });
-        successResponse(res, 200, SearchSuccessSchema, responseBody, { handler: 'search-post' });
+        successResponse(res, 200, SearchSuccessSchema, responseBody, {
+          handler: 'search-post',
+        });
       } catch (e) {
         errorResponse(
           res,
@@ -16789,7 +17452,11 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
               ? contentRel
               : `${contentRel}/${sharePath}`;
         const freshness = await computeShareFreshness(projectDir, branch, freshnessPath, body.kind);
-        emitShareConstructUrlLog('ok', { branchExists: true, kind: body.kind, freshness });
+        emitShareConstructUrlLog('ok', {
+          branchExists: true,
+          kind: body.kind,
+          freshness,
+        });
         successResponse(
           res,
           200,
@@ -16813,7 +17480,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       handler: SHARE_CONSTRUCT_URL_HANDLER_TAG,
       method: 'POST',
       preBodyGate: (req, res) =>
-        checkLocalOpSecurity(req, res, { handler: SHARE_CONSTRUCT_URL_HANDLER_TAG }),
+        checkLocalOpSecurity(req, res, {
+          handler: SHARE_CONSTRUCT_URL_HANDLER_TAG,
+        }),
     },
   );
 
@@ -16960,7 +17629,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       handler: SHARE_TARGET_STATUS_HANDLER_TAG,
       method: 'POST',
       preBodyGate: (req, res) =>
-        checkLocalOpSecurity(req, res, { handler: SHARE_TARGET_STATUS_HANDLER_TAG }),
+        checkLocalOpSecurity(req, res, {
+          handler: SHARE_TARGET_STATUS_HANDLER_TAG,
+        }),
     },
   );
 
@@ -17006,7 +17677,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
 
       try {
         const outcome = await withParentLock(() =>
-          runCheckoutFlow(projectDir, body.branch, { fastForward: body.fastForward === true }),
+          runCheckoutFlow(projectDir, body.branch, {
+            fastForward: body.fastForward === true,
+          }),
         );
         successResponse(res, 200, CheckoutResponseSchema, outcome, {
           handler: CHECKOUT_HANDLER_TAG,
@@ -17104,7 +17777,10 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           429,
           'urn:ok:error:concurrent-operation',
           'A share owners operation is already in progress.',
-          { handler: SHARE_PUBLISH_OWNERS_HANDLER_TAG, extraHeaders: { 'Retry-After': '5' } },
+          {
+            handler: SHARE_PUBLISH_OWNERS_HANDLER_TAG,
+            extraHeaders: { 'Retry-After': '5' },
+          },
         );
         return;
       }
@@ -17134,7 +17810,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       method: 'GET',
       skipBodyParse: true,
       preBodyGate: (req, res) =>
-        checkLocalOpSecurity(req, res, { handler: SHARE_PUBLISH_OWNERS_HANDLER_TAG }),
+        checkLocalOpSecurity(req, res, {
+          handler: SHARE_PUBLISH_OWNERS_HANDLER_TAG,
+        }),
     },
   );
 
@@ -17172,7 +17850,10 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           429,
           'urn:ok:error:concurrent-operation',
           'A share name-check operation is already in progress.',
-          { handler: SHARE_PUBLISH_NAME_CHECK_HANDLER_TAG, extraHeaders: { 'Retry-After': '5' } },
+          {
+            handler: SHARE_PUBLISH_NAME_CHECK_HANDLER_TAG,
+            extraHeaders: { 'Retry-After': '5' },
+          },
         );
         return;
       }
@@ -17210,7 +17891,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       method: 'GET',
       skipBodyParse: true,
       preBodyGate: (req, res) =>
-        checkLocalOpSecurity(req, res, { handler: SHARE_PUBLISH_NAME_CHECK_HANDLER_TAG }),
+        checkLocalOpSecurity(req, res, {
+          handler: SHARE_PUBLISH_NAME_CHECK_HANDLER_TAG,
+        }),
     },
   );
 
@@ -17257,7 +17940,10 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           429,
           'urn:ok:error:concurrent-operation',
           'A share publish operation is already in progress.',
-          { handler: SHARE_PUBLISH_HANDLER_TAG, extraHeaders: { 'Retry-After': '5' } },
+          {
+            handler: SHARE_PUBLISH_HANDLER_TAG,
+            extraHeaders: { 'Retry-After': '5' },
+          },
         );
         return;
       }
@@ -17400,7 +18086,12 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
         const port = lockDir ? (readServerLock(lockDir)?.port ?? 0) : 0;
         // `singleFile` tells the React shell to drop project chrome for an
         // ephemeral single-file session (`ok <file>`).
-        const payload = { collabUrl, previewUrl: null, port, singleFile: ephemeral };
+        const payload = {
+          collabUrl,
+          previewUrl: null,
+          port,
+          singleFile: ephemeral,
+        };
         // HEAD carries the same headers but no body; `successResponse` always
         // writes a body, so the no-body verb stays a manual emit.
         if (req.method === 'HEAD') {
@@ -17454,7 +18145,10 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           429,
           'urn:ok:error:concurrent-operation',
           'An embeddings key operation is already in progress.',
-          { handler: HANDLE_LOCAL_OP_EMBEDDINGS_SET_KEY, extraHeaders: { 'Retry-After': '5' } },
+          {
+            handler: HANDLE_LOCAL_OP_EMBEDDINGS_SET_KEY,
+            extraHeaders: { 'Retry-After': '5' },
+          },
         );
         return;
       }
@@ -17483,7 +18177,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       handler: HANDLE_LOCAL_OP_EMBEDDINGS_SET_KEY,
       method: 'POST',
       preBodyGate: (req, res) =>
-        checkLocalOpSecurity(req, res, { handler: HANDLE_LOCAL_OP_EMBEDDINGS_SET_KEY }),
+        checkLocalOpSecurity(req, res, {
+          handler: HANDLE_LOCAL_OP_EMBEDDINGS_SET_KEY,
+        }),
     },
   );
 
@@ -17496,7 +18192,10 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           429,
           'urn:ok:error:concurrent-operation',
           'An embeddings key operation is already in progress.',
-          { handler: HANDLE_LOCAL_OP_EMBEDDINGS_CLEAR_KEY, extraHeaders: { 'Retry-After': '5' } },
+          {
+            handler: HANDLE_LOCAL_OP_EMBEDDINGS_CLEAR_KEY,
+            extraHeaders: { 'Retry-After': '5' },
+          },
         );
         return;
       }
@@ -17525,7 +18224,9 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       handler: HANDLE_LOCAL_OP_EMBEDDINGS_CLEAR_KEY,
       method: 'POST',
       preBodyGate: (req, res) =>
-        checkLocalOpSecurity(req, res, { handler: HANDLE_LOCAL_OP_EMBEDDINGS_CLEAR_KEY }),
+        checkLocalOpSecurity(req, res, {
+          handler: HANDLE_LOCAL_OP_EMBEDDINGS_CLEAR_KEY,
+        }),
     },
   );
 
@@ -17580,8 +18281,20 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           res,
           200,
           SemanticIndexStatusSchema,
-          { enabled, keyPresent, keySource, keyHint, ready, capable, embedded, total },
-          { handler: 'semantic-status', extraHeaders: { 'Cache-Control': 'no-store' } },
+          {
+            enabled,
+            keyPresent,
+            keySource,
+            keyHint,
+            ready,
+            capable,
+            embedded,
+            total,
+          },
+          {
+            handler: 'semantic-status',
+            extraHeaders: { 'Cache-Control': 'no-store' },
+          },
         );
       } catch (e) {
         errorResponse(res, 500, 'urn:ok:error:internal-server-error', 'Internal server error.', {
@@ -17593,7 +18306,71 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     { handler: 'semantic-status', method: 'GET', skipBodyParse: true },
   );
 
+  const databaseApi = createDatabaseDataPlaneApiHandlers(
+    databaseDataPlane,
+    databaseTaskStore,
+    databaseTaskService,
+    options.databaseAutonomyStore,
+    options.databaseAgentRunStore,
+    createDatabasePlaceSearchServiceFromEnv(),
+    options.databaseTemplateScheduler,
+    options.databaseAutomationService,
+    options.databaseAutomationNotificationStore,
+    (request) =>
+      resolveDatabaseAccessPrincipal(request, getPrincipal?.()?.id ?? 'user:local-owner'),
+    options.databasePermissionStore,
+    options.databaseAgentPromptRetentionStore,
+  );
+  const databaseComments = createDatabaseCommentApiHandler(
+    databaseCommentStore,
+    flushGitCommit,
+    databaseDataPlane
+      ? (request, body) =>
+          databaseDataPlane.withAccessPrincipal(
+            resolveDatabaseAccessPrincipal(request, getPrincipal?.()?.id ?? 'user:local-owner'),
+            () => {
+              databaseDataPlane.authorizeOperation({
+                action: body.action === 'read' ? 'read_record' : 'update_record',
+                databaseId: body.databaseId,
+                recordIds: [body.recordId],
+                ...('anchor' in body && body.anchor.type === 'property'
+                  ? { propertyIds: [body.anchor.propertyId] }
+                  : {}),
+              });
+              return databaseDataPlane.currentRecordActor();
+            },
+          )
+      : undefined,
+  );
   const routes: Record<string, (req: IncomingMessage, res: ServerResponse) => Promise<void>> = {
+    '/api/databases/catalog': databaseApi.catalog,
+    '/api/databases/describe': databaseApi.describe,
+    '/api/databases/record': databaseApi.record,
+    '/api/databases/comments': databaseComments,
+    '/api/databases/computed-preview': databaseApi.computedPropertyPreview,
+    '/api/databases/property-conversion': databaseApi.propertyConversion,
+    '/api/databases/find': databaseApi.find,
+    '/api/databases/retrieve': databaseApi.retrieve,
+    '/api/databases/query': databaseApi.query,
+    '/api/databases/forms/submit': databaseApi.formSubmit,
+    '/api/databases/forms/upload': (request, response) =>
+      handleUploadAsset(request, response, { formUpload: true }),
+    '/api/databases/pack': databaseApi.pack,
+    '/api/databases/inspect': databaseApi.inspect,
+    '/api/databases/plan': databaseApi.plan,
+    '/api/databases/button': databaseApi.button,
+    '/api/databases/place/search': databaseApi.placeSearch,
+    '/api/databases/commit': databaseApi.commit,
+    '/api/databases/autonomy': databaseApi.autonomy,
+    '/api/databases/permissions': databaseApi.permissions,
+    '/api/databases/public-shares': databaseApi.publicShares,
+    '/api/databases/runs': databaseApi.runs,
+    '/api/databases/template-runs': databaseApi.templateRuns,
+    '/api/databases/automations': databaseApi.automations,
+    '/api/databases/undo': databaseApi.undo,
+    '/api/databases/repair': databaseApi.repair,
+    '/api/databases/task': databaseApi.task,
+    '/api/databases/diagnostics': databaseApi.diagnostics,
     '/api/config': handleApiConfig,
     '/api/asset': handleAsset,
     '/api/asset-text': handleAssetText,
@@ -17977,7 +18754,10 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
               const status = response.statusCode;
               span.setAttribute(ATTR_HTTP_RESPONSE_STATUS_CODE, status);
               if (status >= 500) {
-                span.setStatus({ code: SpanStatusCode.ERROR, message: `status ${status}` });
+                span.setStatus({
+                  code: SpanStatusCode.ERROR,
+                  message: `status ${status}`,
+                });
               }
             } catch (err) {
               span.recordException(err as Error);

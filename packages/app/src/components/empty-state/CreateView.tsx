@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { useAllTemplates } from '@/hooks/use-folder-config';
 import { useIsEmbedded } from '@/hooks/use-is-embedded';
 import { emitCreateTopLevelFile } from '@/lib/create-file-events';
+import { dispatchDatabaseSlashCommand } from '@/lib/database-events';
 
 interface CreateViewProps {
   /** Bumped to replay the OkBlob celebrate burst (post-seed). */
@@ -91,6 +92,14 @@ export function CreateView({ celebrateSignal, onAddStarterPack }: CreateViewProp
             <Trans>
               or create a new file <ArrowRightIcon aria-hidden="true" className="size-3" />
             </Trans>
+          </Button>
+          <Button
+            variant="link-muted"
+            size="sm"
+            onClick={() => dispatchDatabaseSlashCommand('new')}
+            data-testid="empty-state-new-database"
+          >
+            <Trans>New database</Trans>
           </Button>
         </div>
       </div>

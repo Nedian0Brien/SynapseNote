@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { expectVisualClassTokens } from '@/test-utils/visual-contract';
 
@@ -185,6 +185,28 @@ mock.module('@/components/FileSidebar', () => ({
 
 mock.module('@/components/EditorPane', () => ({
   EditorPane: () => <main data-testid="editor-pane" />,
+}));
+
+mock.module('@/components/DatabaseTableDialog', () => ({
+  DatabaseTableDialog: ({
+    open,
+    presentation,
+    initialAction,
+    initialTarget,
+  }: {
+    open: boolean;
+    presentation?: string;
+    initialAction?: string;
+    initialTarget?: { databaseId: string; sourceId: string; viewId?: string };
+  }) => (
+    <div
+      data-testid="database-table-dialog"
+      data-open={String(open)}
+      data-presentation={presentation}
+      data-initial-action={initialAction}
+      data-initial-target={initialTarget ? JSON.stringify(initialTarget) : ''}
+    />
+  ),
 }));
 
 mock.module('@/components/ui/sidebar', () => ({
@@ -453,5 +475,67 @@ describe('App runtime wiring', () => {
 
     expect(screen.queryByTestId('editor-window-chrome-drag-strip')).toBeNull();
     expect(screen.queryByTestId('share-receive-dialog')).toBeNull();
+  });
+
+  test('routes database creation through an ephemeral history entry and closes on browser back', async () => {
+    renderApp();
+
+    await act(async () => {
+      window.dispatchEvent(
+        new CustomEvent('synapsenote:database-slash-command', { detail: 'new' }),
+      );
+    });
+    await waitFor(() => expect(window.location.hash).toBe('#database/new'));
+    expect(screen.getByTestId('database-table-dialog').getAttribute('data-open')).toBe('true');
+    expect(screen.getByTestId('database-table-dialog').getAttribute('data-presentation')).toBe(
+      'page',
+    );
+    expect(screen.getByTestId('database-table-dialog').getAttribute('data-initial-action')).toBe(
+      'create',
+    );
+
+    await act(async () => window.history.back());
+    await waitFor(() => expect(window.location.hash).toBe(''));
+    expect(screen.getByTestId('database-table-dialog').getAttribute('data-open')).toBe('false');
+  });
+
+  test('reloads a canonical database target and restores the selected view through back/forward', async () => {
+    setHash('#database/db_tasks/ds_tasks');
+    renderApp();
+
+    const dialog = screen
+      .getAllByTestId('database-table-dialog')
+      .find((candidate) => candidate.getAttribute('data-presentation') === 'page');
+    if (!dialog) throw new Error('expected route-level database dialog');
+    await waitFor(() => {
+      expect(dialog.getAttribute('data-open')).toBe('true');
+      expect(dialog.getAttribute('data-presentation')).toBe('page');
+      expect(dialog.getAttribute('data-initial-target')).toBe(
+        JSON.stringify({ databaseId: 'db_tasks', sourceId: 'ds_tasks' }),
+      );
+    });
+
+    await act(async () => {
+      window.location.hash = '#database/db_tasks/ds_tasks/view_active';
+    });
+    await waitFor(() =>
+      expect(dialog.getAttribute('data-initial-target')).toBe(
+        JSON.stringify({ databaseId: 'db_tasks', sourceId: 'ds_tasks', viewId: 'view_active' }),
+      ),
+    );
+
+    await act(async () => window.history.back());
+    await waitFor(() =>
+      expect(dialog.getAttribute('data-initial-target')).toBe(
+        JSON.stringify({ databaseId: 'db_tasks', sourceId: 'ds_tasks' }),
+      ),
+    );
+
+    await act(async () => window.history.forward());
+    await waitFor(() =>
+      expect(dialog.getAttribute('data-initial-target')).toBe(
+        JSON.stringify({ databaseId: 'db_tasks', sourceId: 'ds_tasks', viewId: 'view_active' }),
+      ),
+    );
   });
 });

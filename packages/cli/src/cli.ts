@@ -34,6 +34,7 @@ import { cleanCommand } from './commands/clean.ts';
 import { cloneCommand } from './commands/clone.ts';
 import { configCommand } from './commands/config.ts';
 import { coworkCommand } from './commands/cowork.ts';
+import { databaseCommand } from './commands/database.ts';
 import { deinitCommand } from './commands/deinit.ts';
 import { createRealDetectDeps, detectDesktop, launchDesktop } from './commands/desktop-dispatch.ts';
 import { diagnoseCommand } from './commands/diagnose.ts';
@@ -201,6 +202,7 @@ program.addCommand(seedCommand());
 // migrate command — stateless, filesystem-only importers (`migrate notion`).
 // No config/server: operates directly on an export directory argument.
 program.addCommand(migrateCommand());
+program.addCommand(databaseCommand());
 
 // cowork command — HIDDEN + unadvertised power-user escape hatch. Builds the
 // synapsenote.skill bundle and opens Claude Desktop for the manual upload

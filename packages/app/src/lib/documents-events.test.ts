@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, test } from 'bun:test';
-import { emitDocumentsChanged, subscribeToDocumentsChanged } from './documents-events';
+import {
+  emitDatabaseChanged,
+  emitDocumentsChanged,
+  subscribeToDatabaseChanged,
+  subscribeToDocumentsChanged,
+} from './documents-events';
 
 const originalWindow = globalThis.window;
 
@@ -73,5 +78,38 @@ describe('documents changed event bridge', () => {
     );
 
     expect(received).toEqual([['files', 'backlinks']]);
+  });
+});
+
+describe('database changed event bridge', () => {
+  test('fans out validated content-free index state and supports unsubscribe', () => {
+    installFakeWindow();
+    const received: unknown[] = [];
+    const unsubscribe = subscribeToDatabaseChanged((payload) => received.push(payload));
+    const payload = {
+      v: 1 as const,
+      ch: 'database-changed' as const,
+      seq: 1,
+      scope: 'records' as const,
+      reasons: ['record-update' as const],
+      databaseIds: ['db_tasks'],
+      sourceIds: ['ds_tasks'],
+      recordIds: ['rec_task'],
+      affectedIdsComplete: true,
+      index: {
+        state: 'idle' as const,
+        revision: 'sha256:index',
+        manifestRevision: 'sha256:manifest',
+        recordCount: 1,
+        issueCount: 0,
+        progress: null,
+      },
+    };
+
+    emitDatabaseChanged(payload);
+    unsubscribe();
+    emitDatabaseChanged({ ...payload, seq: 2 });
+
+    expect(received).toEqual([payload]);
   });
 });

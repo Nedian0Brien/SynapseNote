@@ -575,6 +575,25 @@ describe('FileSidebar runtime behavior', () => {
     expect(screen.queryByRole('button', { name: 'Collapse all' })).toBeNull();
   });
 
+  test('exposes New database in the toolbar and empty-space menu', async () => {
+    const commands: string[] = [];
+    const listener = (event: Event) => {
+      commands.push(String((event as CustomEvent<string>).detail));
+    };
+    window.addEventListener('synapsenote:database-slash-command', listener);
+    try {
+      await renderSidebar();
+      await waitFor(() => expect(treeListeners.size).toBe(1));
+
+      fireEvent.click(screen.getAllByRole('button', { name: 'New database' })[0]);
+      fireEvent.click(screen.getByTestId('empty-space-menu-new-database'));
+
+      expect(commands).toEqual(['new', 'new']);
+    } finally {
+      window.removeEventListener('synapsenote:database-slash-command', listener);
+    }
+  });
+
   test('toolbar create actions fall back to the workspace root for a revealed .ok folder', async () => {
     activeTarget = { kind: 'folder', folderPath: 'notes/.ok/templates' };
     await renderSidebar();
@@ -735,6 +754,7 @@ describe('FileSidebar runtime behavior', () => {
 
     const itemIds = [
       'empty-space-menu-new-file',
+      'empty-space-menu-new-database',
       'empty-space-menu-new-from-template',
       'empty-space-menu-new-folder',
       'empty-space-menu-reveal-in-finder',

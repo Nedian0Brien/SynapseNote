@@ -70,6 +70,10 @@ describe('uploadStatusFor', () => {
     expect(uploadStatusFor('urn:ok:error:malformed-upload')).toBe(400);
   });
 
+  test('payload-too-large → 413', () => {
+    expect(uploadStatusFor('urn:ok:error:payload-too-large')).toBe(413);
+  });
+
   test('storage-full → 507 (RFC 4918 Insufficient Storage; retry-after-frees)', () => {
     expect(uploadStatusFor('urn:ok:error:storage-full')).toBe(507);
   });
@@ -95,6 +99,10 @@ describe('uploadTitleFor', () => {
 
   test('malformed-upload title is sentence-shaped + period-terminated', () => {
     expect(uploadTitleFor('urn:ok:error:malformed-upload')).toBe('Upload payload is malformed.');
+  });
+
+  test('payload-too-large title', () => {
+    expect(uploadTitleFor('urn:ok:error:payload-too-large')).toBe('Upload file is too large.');
   });
 
   test('storage-full title', () => {

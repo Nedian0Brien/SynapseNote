@@ -206,6 +206,7 @@ export const URN_HTTP_ONLY: ReadonlySet<ProblemType> = new Set<ProblemType>([
   'urn:ok:error:payload-too-large',
   'urn:ok:error:request-timeout',
   'urn:ok:error:internal-server-error',
+  'urn:ok:error:permission-denied',
   // Local-op security gates (fire before IPC; bypassed by IPC channels by design)
   'urn:ok:error:loopback-required',
   'urn:ok:error:invalid-origin',
@@ -231,6 +232,7 @@ export const URN_HTTP_ONLY: ReadonlySet<ProblemType> = new Set<ProblemType>([
   'urn:ok:error:frontmatter-malformed',
   'urn:ok:error:no-active-session',
   'urn:ok:error:too-many-agent-sessions',
+  'urn:ok:error:too-many-requests',
   // Store-time disk-divergence revert (HTTP-only). Emitted by the
   // mutating write handlers (write / edit / frontmatter / undo / rollback) when
   // disk diverged and the overwrite was aborted; no IPC counterpart for agent writes.

@@ -7,13 +7,27 @@ import { dispatchCC1Stateless, SYSTEM_DOC_NAME } from '@/lib/cc1';
 import { emitConfigIgnoreNestedError } from '@/lib/config-ignore-nested-error-events';
 import { emitConfigValidationRejected } from '@/lib/config-validation-events';
 import { currentViewSnapshot, publishCurrentView } from '@/lib/current-view-awareness';
-import { emitDocumentsChanged, subscribeToDocumentsChanged } from '@/lib/documents-events';
+import {
+  collectDatabasePresence,
+  DATABASE_PRESENCE_HEARTBEAT_MS,
+  type DatabasePresenceTarget,
+  publishLocalDatabasePresence,
+  publishRemoteDatabasePresence,
+  subscribeDatabasePresenceTarget,
+} from '@/lib/database-presence';
+import {
+  emitDatabaseChanged,
+  emitDocumentsChanged,
+  subscribeToDocumentsChanged,
+} from '@/lib/documents-events';
 import { createSyncedReconnectGate } from '@/lib/server-info-refresh';
 
 export function SystemDocSubscriber() {
   const queryClient = useQueryClient();
   const {
     activeDocName,
+    activeProvider,
+    principal,
     collabUrl,
     setSystemProvider,
     updateServerInstanceId,
@@ -24,6 +38,11 @@ export function SystemDocSubscriber() {
   } = useDocumentContext();
   const providerRef = useRef<HocuspocusProvider | null>(null);
   const activeDocNameRef = useRef(activeDocName);
+  const identityRef = useRef({ activeProvider, principal });
+
+  useEffect(() => {
+    identityRef.current = { activeProvider, principal };
+  }, [activeProvider, principal]);
 
   useEffect(() => {
     activeDocNameRef.current = activeDocName;
@@ -79,6 +98,10 @@ export function SystemDocSubscriber() {
           onDerivedView: (p) => {
             emitDocumentsChanged([p.ch]);
           },
+          onDatabaseChanged: (p) => {
+            emitDatabaseChanged(p);
+            void queryClient.invalidateQueries({ queryKey: ['databases'] });
+          },
           onConfigValidationRejected: (p) => {
             emitConfigValidationRejected(p);
           },
@@ -98,6 +121,44 @@ export function SystemDocSubscriber() {
       },
     });
     providerRef.current = provider;
+
+    let databaseTarget: DatabasePresenceTarget | null = null;
+    const publishDatabaseTarget = (): void => {
+      if (!databaseTarget) {
+        publishLocalDatabasePresence(provider.awareness, null);
+        return;
+      }
+      const { activeProvider: currentProvider, principal: currentPrincipal } = identityRef.current;
+      const user = currentProvider?.awareness?.getLocalState()?.user as
+        | { name?: unknown; color?: unknown; principalId?: unknown }
+        | undefined;
+      const name =
+        typeof user?.name === 'string'
+          ? user.name
+          : typeof currentPrincipal?.display_name === 'string'
+            ? currentPrincipal.display_name
+            : 'Collaborator';
+      const color = typeof user?.color === 'string' ? user.color : '#64748b';
+      const principalId =
+        typeof user?.principalId === 'string'
+          ? user.principalId
+          : currentPrincipal?.source === 'git-config'
+            ? currentPrincipal.id
+            : undefined;
+      publishLocalDatabasePresence(provider.awareness, {
+        ...databaseTarget,
+        actor: { kind: 'human', name, color, ...(principalId ? { principalId } : {}) },
+        updatedAt: Date.now(),
+      });
+    };
+    const unsubscribeDatabaseTarget = subscribeDatabasePresenceTarget((target) => {
+      databaseTarget = target;
+      publishDatabaseTarget();
+    });
+    const databaseHeartbeat = window.setInterval(
+      publishDatabaseTarget,
+      DATABASE_PRESENCE_HEARTBEAT_MS,
+    );
 
     const publishView = (): void => {
       publishCurrentView(provider.awareness, currentViewSnapshot(activeDocNameRef.current));
@@ -133,6 +194,7 @@ export function SystemDocSubscriber() {
     provider.on('synced', () => {
       publishView();
       emitDocumentsChanged(['files', 'backlinks', 'graph']);
+      void queryClient.invalidateQueries({ queryKey: ['databases'] });
       onReconnectSynced();
     });
 
@@ -142,7 +204,15 @@ export function SystemDocSubscriber() {
     // NODE_ENV !== 'test' to avoid test-environment noise.
     const warnedStaleAgentClients = new Set<number>();
     const handleAwarenessChange = (): void => {
-      if (process.env.NODE_ENV === 'test' || !provider.awareness) return;
+      if (!provider.awareness) return;
+      publishRemoteDatabasePresence(
+        collectDatabasePresence(
+          provider.awareness.getStates(),
+          provider.awareness.clientID,
+          Date.now(),
+        ),
+      );
+      if (process.env.NODE_ENV === 'test') return;
       for (const [clientId, state] of provider.awareness.getStates().entries()) {
         if (warnedStaleAgentClients.has(clientId)) continue;
         const user = (state as { user?: { type?: string } }).user;
@@ -155,6 +225,7 @@ export function SystemDocSubscriber() {
       }
     };
     provider.awareness?.on('change', handleAwarenessChange);
+    handleAwarenessChange();
     // Lift the provider into DocumentContext so presence-bar consumers
     // (use-presence) can read the __system__ awareness without
     // re-materializing a second provider.
@@ -162,6 +233,9 @@ export function SystemDocSubscriber() {
 
     return () => {
       unsubscribe();
+      unsubscribeDatabaseTarget();
+      window.clearInterval(databaseHeartbeat);
+      publishRemoteDatabasePresence([]);
       window.removeEventListener('focus', publishView);
       window.removeEventListener('blur', publishView);
       document.removeEventListener('visibilitychange', publishView);

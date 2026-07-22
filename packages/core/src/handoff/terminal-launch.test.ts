@@ -15,7 +15,7 @@ import {
 // shape (or the canonical server name) ever changes.
 const CLAUDE_PREAPPROVE = `--settings '{"enabledMcpjsonServers":["${MCP_SERVER_NAME}"]}'`;
 const OK_ALLOW = `["mcp__${MCP_SERVER_NAME}","Bash(ok open:*)"]`;
-const OK_DENY = `["mcp__${MCP_SERVER_NAME}__delete","mcp__${MCP_SERVER_NAME}__move","mcp__${MCP_SERVER_NAME}__share_link","mcp__${MCP_SERVER_NAME}__install"]`;
+const OK_DENY = `["mcp__${MCP_SERVER_NAME}__delete","mcp__${MCP_SERVER_NAME}__move","mcp__${MCP_SERVER_NAME}__share_link","mcp__${MCP_SERVER_NAME}__install","mcp__${MCP_SERVER_NAME}__data_commit","mcp__${MCP_SERVER_NAME}__data_undo","mcp__${MCP_SERVER_NAME}__data_repair","mcp__${MCP_SERVER_NAME}__data_task","mcp__${MCP_SERVER_NAME}__data_place_search","mcp__${MCP_SERVER_NAME}__data_automation"]`;
 
 describe('TERMINAL_CLI_IDS', () => {
   it('lists the CLIs in auto-pick priority order (claude > codex > opencode > cursor > pi > antigravity)', () => {
@@ -271,7 +271,18 @@ describe('OK auto-approve (autoApproveOkTools)', () => {
 
   it('keeps every gated tool in the deny list (never silently auto-approved)', () => {
     const arg = buildCliLaunchArgString('claude', 'hi', { autoApproveOkTools: true });
-    expect(OK_GATED_TOOL_NAMES).toEqual(['delete', 'move', 'share_link', 'install']);
+    expect(OK_GATED_TOOL_NAMES).toEqual([
+      'delete',
+      'move',
+      'share_link',
+      'install',
+      'data_commit',
+      'data_undo',
+      'data_repair',
+      'data_task',
+      'data_place_search',
+      'data_automation',
+    ]);
     for (const denied of OK_GATED_TOOL_NAMES) {
       expect(arg).toContain(`"mcp__${MCP_SERVER_NAME}__${denied}"`);
     }

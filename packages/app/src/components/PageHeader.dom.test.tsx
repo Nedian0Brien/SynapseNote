@@ -78,4 +78,38 @@ describe('PageHeader inline filename editing', () => {
     expect(requests).toBe(0);
     expect(view.getByTestId('page-header-title').textContent).toBe('old');
   });
+
+  test('database titles use the verified commit callback and never dispatch a file rename', async () => {
+    let renameRequests = 0;
+    let committedTitle: string | null = null;
+    unsubscribers.push(
+      subscribeToPageHeaderRename(async () => {
+        renameRequests += 1;
+        return { ok: true };
+      }),
+    );
+    const view = render(
+      <PageHeader
+        provider={makeProvider()}
+        docName="records/rec_first"
+        docExt=".md"
+        fallbackTitle="rec_first"
+        databaseTitle="Canonical title"
+        onDatabaseTitleCommit={async (nextTitle) => {
+          committedTitle = nextTitle;
+          return { ok: true };
+        }}
+      />,
+    );
+
+    const title = view.getByTestId('page-header-title');
+    act(() => title.focus());
+    title.textContent = 'Updated title';
+    fireEvent.input(title);
+    fireEvent.keyDown(title, { key: 'Enter' });
+
+    await waitFor(() => expect(committedTitle).toBe('Updated title'));
+    expect(renameRequests).toBe(0);
+    expect(title.textContent).toBe('Updated title');
+  });
 });

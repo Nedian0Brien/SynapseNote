@@ -84,6 +84,24 @@ export const CC1_CHANNEL_CONFIG_VALIDATION_REJECTED = 'config-validation-rejecte
  */
 export const CC1_CHANNEL_CONFIG_IGNORE_NESTED_ERROR = 'config-ignore-nested-error' as const;
 
+/** Content-free database/schema/index invalidation and freshness channel. */
+export const CC1_CHANNEL_DATABASE_CHANGED = 'database-changed' as const;
+
+export const CC1DatabaseChangeReasonSchema = z.enum([
+  'record-create',
+  'record-update',
+  'record-delete',
+  'record-rename',
+  'record-conflict',
+  'startup',
+  'schema-change',
+  'git-sync',
+  'branch-switch',
+  'transaction',
+  'watcher-overflow',
+]);
+export type CC1DatabaseChangeReason = z.infer<typeof CC1DatabaseChangeReasonSchema>;
+
 /**
  * Channels that carry derived-view invalidation hints (file list,
  * backlink graph, hub graph, sync-status). Debounced + seq-incrementing
@@ -113,7 +131,8 @@ export type CC1Channel =
   | typeof CC1_CHANNEL_BRANCH_SWITCHED
   | typeof CC1_CHANNEL_DISK_ACK
   | typeof CC1_CHANNEL_CONFIG_VALIDATION_REJECTED
-  | typeof CC1_CHANNEL_CONFIG_IGNORE_NESTED_ERROR;
+  | typeof CC1_CHANNEL_CONFIG_IGNORE_NESTED_ERROR
+  | typeof CC1_CHANNEL_DATABASE_CHANGED;
 
 /** `server-info` broadcast shape.
  *
@@ -228,3 +247,34 @@ export const CC1ConfigIgnoreNestedErrorPayloadSchema = z
 export type CC1ConfigIgnoreNestedErrorPayload = z.infer<
   typeof CC1ConfigIgnoreNestedErrorPayloadSchema
 >;
+
+export const CC1DatabaseChangedPayloadSchema = z
+  .object({
+    v: z.literal(CC1_CONTRACT_VERSION),
+    ch: z.literal(CC1_CHANNEL_DATABASE_CHANGED),
+    seq: z.number().int().positive(),
+    scope: z.enum(['records', 'workspace']),
+    reasons: z.array(CC1DatabaseChangeReasonSchema).min(1),
+    databaseIds: z.array(z.string().startsWith('db_')).max(500),
+    sourceIds: z.array(z.string().startsWith('ds_')).max(500),
+    recordIds: z.array(z.string().startsWith('rec_')).max(500),
+    affectedIdsComplete: z.boolean(),
+    index: z
+      .object({
+        state: z.enum(['idle', 'rebuilding', 'error']),
+        revision: z.string().min(1),
+        manifestRevision: z.string().min(1),
+        recordCount: z.number().int().nonnegative(),
+        issueCount: z.number().int().nonnegative(),
+        progress: z
+          .object({
+            discovered: z.number().int().nonnegative(),
+            processed: z.number().int().nonnegative(),
+          })
+          .strict()
+          .nullable(),
+      })
+      .strict(),
+  })
+  .loose();
+export type CC1DatabaseChangedPayload = z.infer<typeof CC1DatabaseChangedPayloadSchema>;

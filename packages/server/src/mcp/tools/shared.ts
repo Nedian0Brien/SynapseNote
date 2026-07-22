@@ -749,10 +749,17 @@ function normalizeResponse(res: Response, body: unknown): { ok: boolean; [key: s
 export async function httpGet(
   baseUrl: string,
   path: string,
+  headers?: Record<string, string>,
+  signal?: AbortSignal,
 ): Promise<{ ok: boolean; [key: string]: unknown }> {
   let res: Response;
   try {
-    res = await fetch(`${baseUrl}${path}`, { signal: AbortSignal.timeout(30_000) });
+    res = await fetch(`${baseUrl}${path}`, {
+      ...(headers ? { headers } : {}),
+      signal: signal
+        ? AbortSignal.any([signal, AbortSignal.timeout(30_000)])
+        : AbortSignal.timeout(30_000),
+    });
   } catch (err) {
     return { ok: false, error: `Server unreachable: ${err instanceof Error ? err.message : err}` };
   }
@@ -803,6 +810,8 @@ async function httpSend(
   baseUrl: string,
   path: string,
   body?: Record<string, unknown>,
+  headers?: Record<string, string>,
+  signal?: AbortSignal,
 ): Promise<{ ok: boolean; [key: string]: unknown }> {
   // Pre-stringify with a typed fallback so an unserializable body (circular
   // ref, BigInt, Error cause-chain cycle) doesn't crash the MCP tool process
@@ -822,9 +831,12 @@ async function httpSend(
   try {
     res = await fetch(`${baseUrl}${path}`, {
       method,
-      headers: serializedBody !== undefined ? { 'Content-Type': 'application/json' } : undefined,
+      headers:
+        serializedBody !== undefined ? { ...headers, 'Content-Type': 'application/json' } : headers,
       body: serializedBody,
-      signal: AbortSignal.timeout(30_000),
+      signal: signal
+        ? AbortSignal.any([signal, AbortSignal.timeout(30_000)])
+        : AbortSignal.timeout(30_000),
     });
   } catch (err) {
     return { ok: false, error: `Server unreachable: ${err instanceof Error ? err.message : err}` };
@@ -855,8 +867,10 @@ export function httpPost(
   baseUrl: string,
   path: string,
   body?: Record<string, unknown>,
+  headers?: Record<string, string>,
+  signal?: AbortSignal,
 ): Promise<{ ok: boolean; [key: string]: unknown }> {
-  return httpSend('POST', baseUrl, path, body);
+  return httpSend('POST', baseUrl, path, body, headers, signal);
 }
 
 export function httpPut(

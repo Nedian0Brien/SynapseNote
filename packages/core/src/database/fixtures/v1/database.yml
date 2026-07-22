@@ -1,0 +1,152 @@
+version: 1
+id: db_fixture
+key: fixture
+name: Database fixture
+aliases:
+  - golden database
+people:
+  - id: person_fixture_owner
+    key: fixture_owner
+    name: Fixture Owner
+    kind: collaborator
+contract:
+  purpose: Exercise every v1 canonical database object
+  canonicality: canonical
+  vocabulary:
+    - feedback
+    - project
+  defaultTimePropertyId: prop_feedback_received
+  freshness:
+    expectation: daily
+    maxAgeSeconds: 86400
+  sensitivity: internal
+sources:
+  - id: ds_feedback
+    key: feedback
+    name: Feedback
+    recordMeaning: One feedback report
+    folder: records/feedback
+    includeSubfolders: true
+    properties:
+      - id: prop_feedback_title
+        key: title
+        name: Title
+        type: title
+        required: true
+      - id: prop_feedback_notes
+        key: notes
+        name: Notes
+        type: text
+      - id: prop_feedback_score
+        key: score
+        name: Score
+        type: number
+      - id: prop_feedback_resolved
+        key: resolved
+        name: Resolved
+        type: checkbox
+      - id: prop_feedback_received
+        key: received
+        name: Received
+        type: date
+      - id: prop_feedback_status
+        key: status
+        name: Status
+        type: select
+        options:
+          - id: opt_status_new
+            key: new
+            name: New
+          - id: opt_status_done
+            key: done
+            name: Done
+      - id: prop_feedback_topics
+        key: topics
+        name: Topics
+        type: multi_select
+        options:
+          - id: opt_topic_ux
+            key: ux
+            name: UX
+          - id: opt_topic_mobile
+            key: mobile
+            name: Mobile
+      - id: prop_feedback_url
+        key: source_url
+        name: Source URL
+        type: url
+      - id: prop_feedback_email
+        key: email
+        name: Email
+        type: email
+      - id: prop_feedback_phone
+        key: phone
+        name: Phone
+        type: phone
+      - id: prop_feedback_place
+        key: place
+        name: Place
+        type: place
+        externalSearch: disabled
+        externalMap: disabled
+      - id: prop_feedback_owners
+        key: owners
+        name: Owners
+        type: person
+      - id: prop_feedback_files
+        key: files
+        name: Files
+        type: files
+      - id: prop_feedback_project
+        key: project
+        name: Project
+        type: relation
+        targetSourceId: ds_projects
+        cardinality: one
+  - id: ds_projects
+    key: projects
+    name: Projects
+    recordMeaning: One project
+    folder: records/projects
+    includeSubfolders: false
+    properties:
+      - id: prop_project_title
+        key: title
+        name: Title
+        type: title
+        required: true
+      - id: prop_project_number
+        key: project_number
+        name: Project number
+        type: unique_id
+        prefix: PROJ
+        nextNumber: 2
+views:
+  - id: view_feedback_table
+    key: feedback-table
+    name: Open feedback
+    sourceId: ds_feedback
+    layout:
+      type: table
+      configuration:
+        rowHeight: compact
+    where:
+      and:
+        - propertyId: prop_feedback_status
+          operator: eq
+          value: opt_status_new
+        - propertyId: prop_feedback_title
+          operator: is_not_empty
+    sort:
+      - propertyId: prop_feedback_received
+        direction: desc
+    groups:
+      - propertyId: prop_feedback_status
+        direction: asc
+        hideEmpty: true
+    projection:
+      propertyIds:
+        - prop_feedback_title
+        - prop_feedback_status
+        - prop_feedback_received
+      body: preview

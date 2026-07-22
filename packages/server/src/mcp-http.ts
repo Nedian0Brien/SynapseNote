@@ -6,13 +6,14 @@ import { displayNameFromClientName } from '@nedian0brien/synapsenote-core';
 import { validateAgentId } from './agent-id.ts';
 import type { Config } from './config/schema.ts';
 import { MCP_SERVER_NAME } from './constants.ts';
+import type { DatabaseIndexChangeEvent } from './database-index-coordinator.ts';
 import {
   type AgentIdentity,
   MCP_CONNECTION_ID_HEADER,
   sanitizeClientName,
 } from './mcp/agent-identity.ts';
 import { installPrettyZodErrors } from './mcp/pretty-zod-errors.ts';
-import { registerAllTools } from './mcp/tools/index.ts';
+import { type McpToolProfile, registerAllTools } from './mcp/tools/index.ts';
 import { resolveWithinRoot } from './mcp/tools/path-safety.ts';
 import { RUNTIME_VERSION } from './version-constants.ts';
 
@@ -20,6 +21,7 @@ interface McpHttpSession {
   transport: StreamableHTTPServerTransport;
   server: McpServer;
   ttlTimer?: ReturnType<typeof setTimeout>;
+  closeResources?: () => void;
 }
 
 export interface McpHttpHandlerOptions {
@@ -41,6 +43,8 @@ export interface McpHttpHandlerOptions {
   };
   sessionTtlMs?: number;
   maxSessions?: number;
+  subscribeDatabaseChanges?: (listener: (event: DatabaseIndexChangeEvent) => void) => () => void;
+  toolProfile?: McpToolProfile;
 }
 
 export interface McpHttpHandler {
@@ -115,7 +119,7 @@ function createSessionServer(
   // proxy; the HTTP MCP server here always anchors on the configured
   // projectDir / contentDir.
   const configuredRoot = opts.projectDir ?? opts.contentDir;
-  registerAllTools(server, {
+  const registrations = registerAllTools(server, {
     serverUrl: async () => opts.getServerUrl(),
     resolveCwd: async (explicit?: string) => {
       if (explicit === undefined) return configuredRoot;
@@ -129,9 +133,11 @@ function createSessionServer(
     },
     config,
     identityRef,
+    subscribeDatabaseChanges: opts.subscribeDatabaseChanges,
+    toolProfile: opts.toolProfile,
   });
 
-  return { server, transport };
+  return { server, transport, closeResources: registrations.close };
 }
 
 /**
@@ -151,6 +157,7 @@ export function createMcpHttpHandler(opts: McpHttpHandlerOptions): McpHttpHandle
     if (!session) return;
     sessions.delete(sessionId);
     if (session.ttlTimer !== undefined) clearTimeout(session.ttlTimer);
+    session.closeResources?.();
     const results = await Promise.allSettled([session.server.close(), session.transport.close()]);
     for (const result of results) {
       if (result.status === 'rejected') {
@@ -222,14 +229,16 @@ export function createMcpHttpHandler(opts: McpHttpHandlerOptions): McpHttpHandle
         sessionIdGenerator: () => randomUUID(),
         enableJsonResponse: true,
         onsessioninitialized: async (newSessionId) => {
+          let session: McpHttpSession | null = null;
           try {
-            const session = createSessionServer(opts, transport, forwardedConnectionId);
+            session = createSessionServer(opts, transport, forwardedConnectionId);
             await session.server.connect(transport);
             sessions.set(newSessionId, session);
             touchSession(newSessionId, session);
             opts.log?.info?.({ sessionId: newSessionId }, 'MCP HTTP session initialized');
           } catch (err) {
             sessions.delete(newSessionId);
+            session?.closeResources?.();
             opts.log?.error?.(
               { err, sessionId: newSessionId },
               'MCP HTTP session initialization failed',
