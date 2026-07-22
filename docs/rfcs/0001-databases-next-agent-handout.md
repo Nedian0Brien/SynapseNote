@@ -68,9 +68,10 @@ the repository-wide check for final release readiness.
   catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
   approval-bound commits, undo, and restart/backup idempotency. Agent View
   policy/privacy/sandbox review remains Partial by design.
-- Notion UX alignment checklist: **34/128 complete**. The page-first and normal
+- Notion UX alignment checklist: **37/128 complete**. The page-first and normal
   New-page creation slices, the inline/linked insertion contract, and the
-  table-first direct-manipulation slice are now evidenced. A
+  table-first direct-manipulation and canonical canvas-route slices are now
+  evidenced. A
   2026-07-23 in-app browser capture reached the IPv4 renderer at
   `http://127.0.0.1:5173/`, created a full-page database, created two canonical
   rows, created an inline database from the slash menu, saved an inline row,
@@ -252,6 +253,22 @@ do not reconstruct behavior solely from this summary.
   UX-412 are checked in the alignment checklist. UX-407 remains open until a
   dedicated History surface exposes durable receipts; the broader visual,
   accessibility, responsive, Electron, and release gates also remain open.
+
+### 2026-07-23 canonical database canvas route
+
+- Canonical `#database/<database>/<source>/<view?>` targets now replace the
+  document editor inside `SidebarInset`. `DatabaseTableDialog` has a non-portal
+  `canvas` presentation for this route; the management surface and ephemeral
+  `#database/new` creation flow continue to use their reviewed page/dialog
+  presentations.
+- `App.dom.test.tsx` passes **14 tests / 50 expectations**, including the
+  canvas's `SidebarInset` placement and hash back/forward restoration. The
+  focused database tests cover the real no-portal/no-overlay workspace,
+  selected-view hash, missing-source back action, and permission-denied state.
+- UX-202, UX-205, and UX-208 are checked. UX-201 remains open until the shared
+  implementation is extracted from the `DatabaseTableDialog` name and normal
+  page chrome/sidebar/recent integration is complete; UX-203/204/206/207/209/
+  210 remain open for those journeys and responsive proof.
 
 ### 2026-07-22 first Notion-UX insertion slice
 

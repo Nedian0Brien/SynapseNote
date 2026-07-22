@@ -249,6 +249,26 @@ commit succeeds, so a disabled mutation state cannot steal the next useful
 input position. The dedicated History surface and durable receipt browsing
 remain the unresolved part of UX-407.
 
+### Canonical canvas route evidence (2026-07-23)
+
+Canonical `#database/<database>/<source>/<view?>` targets now replace the
+document editor inside `SidebarInset` and render the shared database surface
+with a non-portal `canvas` presentation. The reviewed management and
+`#database/new` creation surfaces remain page/dialog presentations.
+`App.dom.test.tsx` passes 14 tests / 50 expectations and verifies the canvas is
+mounted inside the sidebar inset, while the focused database suite verifies the
+real workspace has no Dialog portal or overlay. The route suite also covers
+hash view selection, back/forward restoration, missing-source back handling,
+and permission-denied handling without an unsafe retry. This closes UX-202,
+UX-205, and UX-208.
+
+UX-201 remains open because the canvas still shares the `DatabaseTableDialog`
+implementation internally; extracting a named main-canvas surface and normal
+page chrome is the next architectural slice. UX-203, UX-204, UX-206, UX-207,
+UX-209, and UX-210 likewise remain open pending sidebar/recent integration,
+normal page chrome, entry-point coverage, responsive acceptance, and conversion
+journeys.
+
 ## Re-audit snapshot (2026-07-23)
 
 The implementation has moved the surface closer to Notion, but it has not
@@ -257,7 +277,7 @@ crossed the document-native UX bar:
 | Measure | Current result | Interpretation |
 | --- | --- | --- |
 | Engine implementation checklist | 310/335 numbered items complete | Core/database and agent contracts are substantially implemented. |
-| Notion UX checklist | 34/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, and table-first direct manipulation are evidenced; History, full visual, state-matrix, and cross-host journey gates remain open. |
+| Notion UX checklist | 37/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, table-first direct manipulation, and canonical canvas routing are evidenced; History, full visual, sidebar/chrome, state-matrix, and cross-host journey gates remain open. |
 | First-use database entry | `New database` in sidebar, empty states, normal new-page dialog, command palette, plus slash-menu `New database`/`Linked view of database`; normal picker exposes Page/Database chooser and the resulting route lands in an editable table. `Open databases` enters the no-overlay page workspace. | Discovery and the web first-use path are evidenced; ordinary sidebar/recent integration and Electron proof remain open. |
 | Blank creation | Optional title, `Untitled database` fallback, direct-safe exact-plan commit, immediate source/view selection, title/new-row focus | The blank human path is continuous in DOM coverage; template/import/agent paths intentionally retain review and visual browser proof remains open. |
 | Full-page navigation | Stable `#database/<database>/<source>/<view?>` route and no-overlay page presentation | Route identity exists, but sidebar/recent/page chrome integration is incomplete. |
@@ -441,19 +461,19 @@ capability alone is insufficient.
 
 - [ ] **UX-201** Render a full-page database in the main canvas, not
       `DatabaseTableDialog`.
-- [ ] **UX-202** Give it a stable URL/hash that survives reload and back/forward
+- [x] **UX-202** Give it a stable URL/hash that survives reload and back/forward
       navigation.
 - [ ] **UX-203** Show full-page databases in the sidebar/tree and recent items
       like ordinary pages.
 - [ ] **UX-204** Reuse normal page chrome for icon, cover, title, breadcrumbs,
       favorite, and page actions where applicable.
-- [ ] **UX-205** Preserve the selected view in navigation/local state without a
+- [x] **UX-205** Preserve the selected view in navigation/local state without a
       canonical write on simple view switches.
 - [ ] **UX-206** Open databases from search, backlinks, relations, recent items,
       and command results.
 - [ ] **UX-207** Replace the modal database rail with existing navigation and a
       picker only for cross-database lookup.
-- [ ] **UX-208** Reload into the same database/view with clear missing and
+- [x] **UX-208** Reload into the same database/view with clear missing and
       permission-denied states.
 - [ ] **UX-209** Support a responsive wide canvas without broken page chrome or
       unintended two-axis scrolling.
