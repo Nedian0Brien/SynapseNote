@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, mock, test } from 'bun:test';
 import type { DatabaseAgentRun } from '@nedian0brien/synapsenote-core';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { DATABASE_AGENT_RUN_CHANGED_EVENT } from '@/lib/database-agent-run-events';
 import { DatabaseAgentRunsDialog } from './DatabaseAgentRunsDialog';
 
 const originalFetch = globalThis.fetch;
@@ -290,6 +291,11 @@ describe('DatabaseAgentRunsDialog DOM behavior', () => {
     };
     let currentRuns = [failed];
     const actions: string[] = [];
+    const recoveryEvents: Array<Record<string, unknown>> = [];
+    const onRecoveryEvent = (event: Event) => {
+      recoveryEvents.push((event as CustomEvent<Record<string, unknown>>).detail);
+    };
+    window.addEventListener(DATABASE_AGENT_RUN_CHANGED_EVENT, onRecoveryEvent);
     globalThis.fetch = mock(async (_input: RequestInfo | URL, init?: RequestInit) => {
       const request = JSON.parse(String(init?.body)) as { action: string };
       actions.push(request.action);
@@ -338,5 +344,15 @@ describe('DatabaseAgentRunsDialog DOM behavior', () => {
     expect(screen.getByTestId('database-agent-run-recovery-receipt').textContent).toContain(
       'mut_dom',
     );
+    expect(recoveryEvents).toEqual([
+      {
+        action: 'retry',
+        runId: recovered.id,
+        databaseIds: ['db_incidents'],
+        sourceIds: ['ds_incidents'],
+        recordIds: ['rec_incident'],
+      },
+    ]);
+    window.removeEventListener(DATABASE_AGENT_RUN_CHANGED_EVENT, onRecoveryEvent);
   });
 });

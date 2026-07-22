@@ -163,6 +163,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { getBranchSnapshot } from '@/lib/current-branch-store';
+import { subscribeToDatabaseAgentRunChanged } from '@/lib/database-agent-run-events';
 import {
   type DatabaseCatalogCandidate,
   type DatabaseDescription,
@@ -3182,6 +3183,9 @@ function DatabaseTableSurface({
   const handledInitialTablePaste = useRef<string | null>(null);
   const handledInitialDatabaseSurface = useRef<string | null>(null);
   const handledInitialSelectedRecordIds = useRef<string | null>(null);
+  const selectedRecordIdsRef = useRef(selectedRecordIds);
+  selectedRecordIdsRef.current = selectedRecordIds;
+  const preserveSelectionOnRefreshRef = useRef(false);
   const queueReconciliationRunning = useRef(false);
   const databaseReadRetryCount = useRef(0);
   const databaseReadRetryKey = useRef('');
@@ -4837,10 +4841,12 @@ function DatabaseTableSurface({
           });
         }
         const availableRecordIds = new Set(nextResult.records.map((record) => record.id));
+        const preservedSelection = preserveSelectionOnRefreshRef.current
+          ? [...selectedRecordIdsRef.current]
+          : (initialSelectedRecordIds ?? []);
+        preserveSelectionOnRefreshRef.current = false;
         setSelectedRecordIds(
-          new Set(
-            (initialSelectedRecordIds ?? []).filter((recordId) => availableRecordIds.has(recordId)),
-          ),
+          new Set(preservedSelection.filter((recordId) => availableRecordIds.has(recordId))),
         );
         setBulkPropertyId('');
         setBulkDraft('');
@@ -4922,6 +4928,21 @@ function DatabaseTableSurface({
         !selection ||
         payload.databaseIds.includes(selection.databaseId)
       ) {
+        setRefresh((value) => value + 1);
+      }
+    });
+  }, [open, selection]);
+
+  useEffect(() => {
+    if (!open) return;
+    return subscribeToDatabaseAgentRunChanged((detail) => {
+      if (
+        !selection ||
+        detail.databaseIds.length === 0 ||
+        detail.databaseIds.includes(selection.databaseId)
+      ) {
+        preserveSelectionOnRefreshRef.current = true;
+        setTableStatus('loading');
         setRefresh((value) => value + 1);
       }
     });
@@ -5599,6 +5620,7 @@ function DatabaseTableSurface({
                   setViewManagerOpen(false);
                   setPropertyDeletionPreview(null);
                   setPropertiesDialogOpen(false);
+                  setSelectedRecordIds(new Set());
                   setSelection(nextSelection);
                 }}
               />

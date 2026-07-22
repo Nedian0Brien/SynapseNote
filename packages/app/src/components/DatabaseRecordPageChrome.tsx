@@ -67,6 +67,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { subscribeToDatabaseAgentRunChanged } from '@/lib/database-agent-run-events';
 import {
   DatabaseCatalogClientError,
   type DatabaseDescription,
@@ -319,7 +320,7 @@ export function DatabaseRecordPageChrome({
 
   useEffect(() => {
     if (!databaseId || !sourceId || !recordId) return;
-    return subscribeToDatabaseChanged((payload) => {
+    const unsubscribeDatabaseChanged = subscribeToDatabaseChanged((payload) => {
       const sameRecord =
         payload.scope === 'workspace' ||
         (payload.databaseIds.includes(databaseId) &&
@@ -332,6 +333,18 @@ export function DatabaseRecordPageChrome({
       // delta; local body/property edits stay untouched until they are synced.
       provider.forceSync();
     });
+    const unsubscribeAgentRunChanged = subscribeToDatabaseAgentRunChanged((detail) => {
+      const sameRecord =
+        detail.databaseIds.length === 0 ||
+        (detail.databaseIds.includes(databaseId) &&
+          (detail.sourceIds.includes(sourceId) || detail.recordIds.includes(recordId)));
+      if (!sameRecord || provider.hasUnsyncedChanges) return;
+      provider.forceSync();
+    });
+    return () => {
+      unsubscribeDatabaseChanged();
+      unsubscribeAgentRunChanged();
+    };
   }, [databaseId, recordId, provider, sourceId]);
 
   useEffect(() => {

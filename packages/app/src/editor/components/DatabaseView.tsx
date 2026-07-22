@@ -55,6 +55,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { subscribeToDatabaseAgentRunChanged } from '@/lib/database-agent-run-events';
 import {
   type DatabaseCatalogCandidate,
   type DatabaseDescription,
@@ -851,6 +852,21 @@ export function DatabaseView({
         payload.databaseIds.includes(parsed.data.databaseId) ||
         payload.sourceIds.includes(parsed.data.sourceId)
       ) {
+        setRefresh((current) => current + 1);
+      }
+    });
+  }, [databaseId, sourceId, viewId, mode]);
+
+  useEffect(() => {
+    const parsed = DatabaseLinkedViewReferenceSchema.safeParse({
+      databaseId,
+      sourceId,
+      viewId,
+      ...(mode ? { mode } : {}),
+    });
+    if (!parsed.success) return;
+    return subscribeToDatabaseAgentRunChanged((detail) => {
+      if (detail.databaseIds.length === 0 || detail.databaseIds.includes(parsed.data.databaseId)) {
         setRefresh((current) => current + 1);
       }
     });

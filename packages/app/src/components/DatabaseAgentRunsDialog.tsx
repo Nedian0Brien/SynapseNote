@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { emitDatabaseAgentRunChanged } from '@/lib/database-agent-run-events';
 import { applyDatabaseUiUndo, previewDatabaseUiUndo } from '@/lib/database-mutation-client';
 import { cn } from '@/lib/utils';
 
@@ -218,6 +219,13 @@ export function DatabaseAgentRunDetail({
     })
       .then((outcome) => {
         setRecoveryStatus('idle');
+        emitDatabaseAgentRunChanged({
+          action,
+          runId: outcome.run.id,
+          databaseIds: [...outcome.run.scope.databaseIds],
+          sourceIds: [...outcome.run.scope.sourceIds],
+          recordIds: [...outcome.run.scope.recordIds],
+        });
         onRecovered?.(outcome.run.id);
       })
       .catch((cause: unknown) => {
@@ -251,6 +259,13 @@ export function DatabaseAgentRunDetail({
           throw new Error('The database undo was refused');
         }
         setUndoStatus('idle');
+        emitDatabaseAgentRunChanged({
+          action: 'undo',
+          runId: run.id,
+          databaseIds: [...run.scope.databaseIds],
+          sourceIds: [...run.scope.sourceIds],
+          recordIds: [...run.scope.recordIds],
+        });
         onUndone?.();
       })
       .catch((cause: unknown) => {
@@ -680,7 +695,8 @@ export function DatabaseAgentRunsDialog({
               <DialogDescription>
                 <Trans>
                   Inspect database intent, scope, diffs, execution, verification, failures, and
-                  undo.
+                  undo. Recovery refreshes the database view behind this dialog without changing its
+                  route or selection.
                 </Trans>
               </DialogDescription>
             </div>

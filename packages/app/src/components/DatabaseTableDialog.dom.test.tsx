@@ -3,6 +3,7 @@ import { CC1_CHANNEL_DATABASE_CHANGED, CC1_CONTRACT_VERSION } from '@nedian0brie
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { IDBFactory } from 'fake-indexeddb';
+import { emitDatabaseAgentRunChanged } from '@/lib/database-agent-run-events';
 import { resetDatabaseOfflineCacheForTests } from '@/lib/database-offline-cache';
 import { offlineDatabaseMutationStore } from '@/lib/database-offline-mutation-queue';
 import { publishRemoteDatabasePresence } from '@/lib/database-presence';
@@ -3166,6 +3167,12 @@ describe('DatabaseTableDialog', () => {
     fireEvent.click(screen.getByText('Load more records'));
     expect(await screen.findByText('Second task')).not.toBeNull();
     expect(screen.queryByText('Load more records')).toBeNull();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select record rec_first' }));
+    expect(
+      screen
+        .getByRole('checkbox', { name: 'Select record rec_first' })
+        .getAttribute('aria-checked'),
+    ).toBe('true');
 
     act(() => {
       emitDatabaseChanged({
@@ -3189,6 +3196,28 @@ describe('DatabaseTableDialog', () => {
       });
     });
     await waitFor(() => expect(queryCalls).toBe(3));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select record rec_first' }));
+    expect(
+      screen
+        .getByRole('checkbox', { name: 'Select record rec_first' })
+        .getAttribute('aria-checked'),
+    ).toBe('true');
+
+    act(() => {
+      emitDatabaseAgentRunChanged({
+        action: 'undo',
+        runId: 'run_table_refresh',
+        databaseIds: [database.id],
+        sourceIds: [source.id],
+        recordIds: ['rec_first'],
+      });
+    });
+    await waitFor(() => expect(queryCalls).toBe(4));
+    expect(
+      screen
+        .getByRole('checkbox', { name: 'Select record rec_first' })
+        .getAttribute('aria-checked'),
+    ).toBe('true');
   });
 
   test('shows explicit loading and empty catalog states', async () => {
