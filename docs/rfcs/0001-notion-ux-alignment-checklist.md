@@ -510,6 +510,18 @@ continue to cover the emitted view and filter plans.
 
 This closes UX-604 at the functional implementation/evidence layer.
 
+### Active query explainer evidence (2026-07-23)
+
+Canonical and inline/linked database headers now show the active saved view's
+filters and sort directions as compact, clickable explainers. Nested filters are
+flattened into a bounded, property-name summary with a rule count; each filter
+chip reopens Filters and each sort chip reopens the reviewed View settings
+surface. `DatabaseViewQuerySummary.dom.test.tsx` covers nested AND/OR/NOT
+summaries, both sort directions, routing callbacks, and the no-query state
+(2 tests / 9 expectations).
+
+This closes UX-605 at the functional implementation/evidence layer.
+
 ### Sidebar and recent database navigation evidence (2026-07-23)
 
 The ordinary file sidebar now exposes database sources as a peer `Databases`
@@ -566,7 +578,7 @@ crossed the document-native UX bar:
 | Measure | Current result | Interpretation |
 | --- | --- | --- |
 | Engine implementation checklist | 310/335 numbered items complete | Core/database and agent contracts are substantially implemented. |
-| Notion UX checklist | 60/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, inline/full-page state parity, table-first direct manipulation, friendly property names/examples, Title safety, type-specific cell editors, schema-vs-data mutation classification, in-context property-add/header affordances including property-specific sort/filter/duplicate actions, destructive property-deletion impact previews, adjacent Formula/Rollup error indicators, view-scoped property visibility/order, converged header/settings-menu view actions, visible reorderable saved-view tabs, layout-independent new-view `+` affordances, layout-specific saved-view property suggestions, coherent saved-view settings, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, 768px browser, and cross-host journey gates remain open. |
+| Notion UX checklist | 61/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, inline/full-page state parity, table-first direct manipulation, friendly property names/examples, Title safety, type-specific cell editors, schema-vs-data mutation classification, in-context property-add/header affordances including property-specific sort/filter/duplicate actions, destructive property-deletion impact previews, adjacent Formula/Rollup error indicators, view-scoped property visibility/order, converged header/settings-menu view actions, visible reorderable saved-view tabs, layout-independent new-view `+` affordances, layout-specific saved-view property suggestions, coherent saved-view settings, active filter/sort explainers, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, 768px browser, and cross-host journey gates remain open. |
 | First-use database entry | `New database` in sidebar, empty states, normal new-page dialog, command palette, plus slash-menu `New database`/`Linked view of database`; normal picker exposes Page/Database chooser and the resulting route lands in an editable table. `Open databases` enters the no-overlay page workspace. | Discovery, sidebar/recent navigation, and the web first-use path are evidenced; additional entry points and Electron proof remain open. |
 | Blank creation | Optional title, `Untitled database` fallback, direct-safe exact-plan commit, immediate source/view selection, title/new-row focus | The blank human path is continuous in DOM coverage; template/import/agent paths intentionally retain review and visual browser proof remains open. |
 | Full-page navigation | Stable `#database/<database>/<source>/<view?>` route, no-overlay canvas presentation, sidebar source section, command-palette recents/search, backlink and relation links, normal page chrome, and local overflow guardrails | Route, page surface, and navigation identity are evidenced; responsive visual/cross-host proof remains incomplete. |
@@ -900,7 +912,9 @@ capability alone is insufficient.
       behavior, and layout settings in one active-view menu. `Saved view
       settings` makes the shared reviewed scope explicit; Filters remains the
       active-view query action on the same canonical boundary.
-- [ ] **UX-605** Keep active quick filters/sorts visible as compact explainers.
+- [x] **UX-605** Keep active quick filters/sorts visible as compact explainers.
+      Canonical and inline/linked headers show bounded filter summaries and
+      sort-direction chips; each reopens the relevant reviewed surface.
 - [ ] **UX-606** Add rename, duplicate, favorite, reorder, default, and delete
       to the view-tab context menu.
 - [ ] **UX-607** Prevent deletion of the last usable view or atomically create a
