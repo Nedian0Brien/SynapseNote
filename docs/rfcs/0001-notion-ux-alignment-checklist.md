@@ -1096,6 +1096,26 @@ This closes UX-905 at the functional plan-explanation layer. Selective approval
 safety, sensitive-operation review, retrieval explainability, and the remaining
 UX-9 items remain open.
 
+### Atomic approval safety evidence (2026-07-23)
+
+When a plan has required approval scopes, the review surface now explicitly
+states that selective approval is unavailable for that atomic group and that
+all required scopes must be approved together. The explanation names
+referential and rollback safety as the reason; the exact plan still commits as
+one verified transaction. The server independently rejects partial approval
+code selections with a typed `approval_required` response containing the
+atomic group and required codes, so the UI copy is backed by a transport-level
+guard rather than being advisory only.
+
+Focused evidence: the resulting-page creation journey in
+`DatabaseTableDialog.dom.test.tsx` asserts the atomic-group copy; the focused
+`database-commit.test.ts` approval-mismatch test passes 1 test / 7
+expectations. App typecheck and targeted Biome checks pass.
+
+This closes UX-906 at the functional atomic-approval layer. Sensitive
+operation review, retrieval explainability, and the remaining UX-9 items
+remain open.
+
 ### Database History and recovery evidence (2026-07-23)
 
 The `Database actions` menu now exposes a human-facing `History` item on both
@@ -1130,7 +1150,7 @@ crossed the document-native UX bar:
 | Measure | Current result | Interpretation |
 | --- | --- | --- |
 | Engine implementation checklist | 310/335 numbered items complete | Core/database and agent contracts are substantially implemented. |
-| Notion UX checklist | 89/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, inline/full-page state parity, table-first direct manipulation, friendly property names/examples, Title safety, type-specific cell editors, schema-vs-data mutation classification, in-context property-add/header affordances including property-specific sort/filter/duplicate actions, destructive property-deletion impact previews, adjacent Formula/Rollup error indicators, view-scoped property visibility/order, converged header/settings-menu view actions, visible reorderable saved-view tabs, layout-independent new-view `+` affordances, layout-specific saved-view property suggestions, coherent saved-view settings, active filter/sort explainers, saved-view tab lifecycle menu, last-view deletion safety, saved-view switch memory, independent linked-block view settings without copied rows, cross-layout title/tab/control/state/record-opening contract, canonical record-title entrypoints, shared side/center/full-page record surface, record breadcrumbs and return-to-view continuity, table/page synchronization, record body editing below properties, record-page comments/history/permissions/appearance/layout affordances, previous/next record navigation in the active view context, row/page mutation menu parity for duplicate/archive/restore/move/delete, direct Relation property links to canonical record pages, safe record deep-link/reload/missing/archived/permission states, unified Blank/template/import/folder/Assistant creation start surface, realistic template views/property-type/sample-page previews, Blank-fast-path/reset behavior without implicit advanced choices, CSV/TSV format/header/type/invalid-row/target-view previews, dedicated existing-folder source-identity migration review, natural-language agent plan previews for properties/views/templates/optional samples, editable agent property/view/sample suggestions carried into the handoff, resulting-page/block landing after every successful creation method, stable machine-ID attributes and collapsed advanced disclosure across canonical surfaces, compact Context Inspector summary for schema/view/selection/tokens/truncation/citations, scoped agent invocation from database/view/selection/row/property/record page with stable-ID MCP boundaries, agent proposal provenance and atomic review grouping, human-language agent plan summaries with technical details under disclosure, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, 768px browser, and cross-host journey gates remain open. |
+| Notion UX checklist | 90/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, inline/full-page state parity, table-first direct manipulation, friendly property names/examples, Title safety, type-specific cell editors, schema-vs-data mutation classification, in-context property-add/header affordances including property-specific sort/filter/duplicate actions, destructive property-deletion impact previews, adjacent Formula/Rollup error indicators, view-scoped property visibility/order, converged header/settings-menu view actions, visible reorderable saved-view tabs, layout-independent new-view `+` affordances, layout-specific saved-view property suggestions, coherent saved-view settings, active filter/sort explainers, saved-view tab lifecycle menu, last-view deletion safety, saved-view switch memory, independent linked-block view settings without copied rows, cross-layout title/tab/control/state/record-opening contract, canonical record-title entrypoints, shared side/center/full-page record surface, record breadcrumbs and return-to-view continuity, table/page synchronization, record body editing below properties, record-page comments/history/permissions/appearance/layout affordances, previous/next record navigation in the active view context, row/page mutation menu parity for duplicate/archive/restore/move/delete, direct Relation property links to canonical record pages, safe record deep-link/reload/missing/archived/permission states, unified Blank/template/import/folder/Assistant creation start surface, realistic template views/property-type/sample-page previews, Blank-fast-path/reset behavior without implicit advanced choices, CSV/TSV format/header/type/invalid-row/target-view previews, dedicated existing-folder source-identity migration review, natural-language agent plan previews for properties/views/templates/optional samples, editable agent property/view/sample suggestions carried into the handoff, resulting-page/block landing after every successful creation method, stable machine-ID attributes and collapsed advanced disclosure across canonical surfaces, compact Context Inspector summary for schema/view/selection/tokens/truncation/citations, scoped agent invocation from database/view/selection/row/property/record page with stable-ID MCP boundaries, agent proposal provenance and atomic review grouping, human-language agent plan summaries with technical details under disclosure, atomic approval copy with server-enforced required-scope selection, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, 768px browser, and cross-host journey gates remain open. |
 | First-use database entry | `New database` in sidebar, empty states, normal new-page dialog, command palette, plus slash-menu `New database`/`Linked view of database`; normal picker exposes Page/Database chooser and the resulting route lands in an editable table. `Open databases` enters the no-overlay page workspace. | Discovery, sidebar/recent navigation, and the web first-use path are evidenced; additional entry points and Electron proof remain open. |
 | Blank creation | Optional title, `Untitled database` fallback, direct-safe exact-plan commit, immediate source/view selection, title/new-row focus | The blank human path is continuous in DOM coverage; the same start surface now exposes template/import/folder/Assistant entry points while their review and visual browser proof remain open. |
 | Full-page navigation | Stable `#database/<database>/<source>/<view?>` route, no-overlay canvas presentation, sidebar source section, command-palette recents/search, backlink and relation links, normal page chrome, and local overflow guardrails | Route, page surface, and navigation identity are evidenced; responsive visual/cross-host proof remains incomplete. |
@@ -1576,8 +1596,11 @@ capability alone is insufficient.
       receipts under details. Agent Run detail leads with a plain-language plan
       summary and keeps exact plan metadata and risk reasons in a collapsed
       disclosure alongside the proposed diff and recovery receipt.
-- [ ] **UX-906** Permit selective approval only when atomic/referential safety is
-      preserved; otherwise explain atomic grouping.
+- [x] **UX-906** Permit selective approval only when atomic/referential safety is
+      preserved; otherwise explain atomic grouping. Atomic review copy now states
+      that selective approval is unavailable and that every required scope must be
+      approved together; the server rejects partial approval selections before
+      mutation with the typed atomic-group response.
 - [ ] **UX-907** Always review permission changes, permanent deletion, external
       actions, broad schema migration, and threshold-crossing bulk edits.
 - [ ] **UX-908** Inspect, undo, retry, or resume an agent run without losing the
