@@ -757,6 +757,35 @@ describe('DatabaseView', () => {
           lifecycle: null,
         });
       }
+      if (path.startsWith('/api/databases/catalog')) {
+        return Response.json({
+          query: null,
+          manifestRevision: hash,
+          catalogRevision: hash,
+          complete: true,
+          candidates: [
+            {
+              id: linkedDatabase.id,
+              key: linkedDatabase.key,
+              name: linkedDatabase.name,
+              purpose: linkedDatabase.contract.purpose,
+              sources: [
+                {
+                  id: source.id,
+                  key: source.key,
+                  name: source.name,
+                  recordMeaning: source.recordMeaning,
+                  propertyCount: source.properties.length,
+                },
+              ],
+              viewCount: linkedDatabase.views.length,
+              relationCount: 0,
+              score: 0,
+              matchedBy: [],
+            },
+          ],
+        });
+      }
       const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
       requests.push({ path, body });
       if (path === '/api/databases/describe') {
@@ -769,7 +798,7 @@ describe('DatabaseView', () => {
             state: 'idle',
             revision: hash,
             manifestRevision: hash,
-            recordCount: 1,
+            recordCount: 2,
             issueCount: 0,
             progress: null,
             lastRebuiltAt: '2026-07-20T00:00:00.000Z',
@@ -785,8 +814,8 @@ describe('DatabaseView', () => {
         return Response.json({
           sourceId: source.id,
           snapshotRevision: hash,
-          matched: 1,
-          returned: 1,
+          matched: 2,
+          returned: 2,
           isComplete: true,
           nextCursor: null,
           truncatedBy: null,
@@ -797,6 +826,13 @@ describe('DatabaseView', () => {
               path: 'tasks/first.md',
               revision: hash,
               values: { prop_title: 'First task', prop_status: 'open' },
+              ...(includeArchived ? { archivedAt: '2026-07-20T00:00:00.000Z' } : {}),
+            },
+            {
+              id: 'rec_second',
+              path: 'tasks/second.md',
+              revision: hash,
+              values: { prop_title: 'Second task', prop_status: 'open' },
               ...(includeArchived ? { archivedAt: '2026-07-20T00:00:00.000Z' } : {}),
             },
           ],
@@ -871,10 +907,31 @@ describe('DatabaseView', () => {
     fireEvent.change(titleInput, { target: { value: 'Renamed task' } });
     fireEvent.keyDown(titleInput, { key: 'Enter' });
     await waitFor(() => expect(commitCalls).toBe(1));
-    const newRowTitle = screen.getByTestId('database-new-row-title');
+    const newRowTitle = await screen.findByTestId('database-new-row-title');
     fireEvent.change(newRowTitle, { target: { value: 'Inline page' } });
     fireEvent.keyDown(newRowTitle, { key: 'Enter' });
     await waitFor(() => expect(commitCalls).toBe(2));
+    const titleCell = document.querySelector(
+      '[data-database-cell-row="0"][data-database-cell-column="0"]',
+    );
+    expect(titleCell).toBeTruthy();
+    fireEvent.paste(titleCell as HTMLElement, {
+      clipboardData: { getData: () => 'Pasted task' },
+    });
+    await waitFor(() => expect(commitCalls).toBe(3));
+    const reviewTitleCell = document.querySelector(
+      '[data-database-cell-row="0"][data-database-cell-column="0"]',
+    );
+    expect(reviewTitleCell).toBeTruthy();
+    fireEvent.paste(reviewTitleCell as HTMLElement, {
+      clipboardData: { getData: () => 'Reviewed first\nReviewed second' },
+    });
+    expect(await screen.findByTestId('database-ghost-review')).toBeTruthy();
+    expect(commitCalls).toBe(3);
+    fireEvent.click(screen.getByText('Discard'));
+    await waitFor(() => expect(screen.queryByTestId('database-ghost-review')).toBeNull());
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    await waitFor(() => expect(document.querySelector('[data-database-workspace]')).toBeNull());
     expect(screen.getByLabelText('Duplicate record rec_first')).toBeTruthy();
     expect(screen.getByLabelText('Archive record rec_first')).toBeTruthy();
     expect(screen.getByLabelText('Move record rec_first')).toBeTruthy();

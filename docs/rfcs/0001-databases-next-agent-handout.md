@@ -305,7 +305,7 @@ do not reconstruct behavior solely from this summary.
   explicit offline/stale status if a refresh loses transport. Only validated
   read snapshots are stored; credentials and pending writes never enter this
   cache, malformed entries are discarded, and the oldest views are evicted.
-  `DatabaseView.dom.test.tsx` covers 13/13 tests and 79 expectations, while
+  `DatabaseView.dom.test.tsx` covers 13/13 tests and 97 expectations, while
   `database-linked-view-cache.test.ts` covers reload rehydration and eviction
   (2/2 tests, 5 expectations). The full visual state matrix remains open under
   NUI-402.
@@ -323,7 +323,7 @@ do not reconstruct behavior solely from this summary.
   expectations, and `database-record-navigation.test.ts` covers 3/3 tests and
   6 expectations. Visual/cross-host continuity remains under NUI-105/NUI-701.
   reload/back-forward and conversion are covered by `App.dom.test.tsx`
-  (13/13, 46 expectations) and `DatabaseView.dom.test.tsx` (13/13, 79
+  (13/13, 46 expectations) and `DatabaseView.dom.test.tsx` (13/13, 97
   expectations). NUI-204 is closed at the implementation/evidence layer;
   visual browser gates remain separate.
 - Direct-safe cell edits and new-record creation now auto-approve the exact
@@ -386,7 +386,7 @@ do not reconstruct behavior solely from this summary.
   `database-commit.test.ts` 47/47 (505 expectations; includes redo
   preview/apply, restart rehydration, and idempotent replay),
   `App.dom.test.tsx` 13/13 (46 expectations), `DatabaseView.dom.test.tsx` 13/13
-  (79 expectations), `DatabaseRecordPageChrome.dom.test.tsx` 2/2 (32
+  (97 expectations), `DatabaseRecordPageChrome.dom.test.tsx` 2/2 (32
   expectations), `NewItemDialog.dom.test.tsx` 2/2 (7 expectations), `DatabaseSidebarSection.dom.test.tsx`
   3/3, `FileSidebar.dom.test.tsx` 20/20, app typecheck, targeted Biome, diff
   check, and documentation-link validation. The 10-minute full server suite
@@ -410,6 +410,21 @@ do not reconstruct behavior solely from this summary.
   `database-navigation.test.ts` (9/23) cover that convergence. NUI-201 is now
   closed at the implementation/evidence layer; visual browser gates remain
   under NUI-105/NUI-701.
+
+### 2026-07-22 inline table mutation slice
+
+- Inline `DatabaseView` now wires the table's existing TSV clipboard path into
+  the canonical mutation engine. A single-cell paste uses the same direct-safe
+  cell plan, optimistic value, refresh, and failure cleanup as keyboard edits.
+- A multi-cell paste is never auto-approved: its stable record/property/value
+  changes are forwarded to the full database workspace, where one exact table
+  paste plan opens the existing Ghost review surface. Discard leaves canonical
+  records untouched; Commit remains the only bulk-write path.
+- Focused evidence: `DatabaseView.dom.test.tsx` 13/13 tests and 97
+  expectations now cover single-cell paste, multi-cell review forwarding, and
+  review discard; app typecheck and targeted Biome pass. The existing
+  `DatabaseTableDialog.dom.test.tsx` 63/63 suite still covers the canonical TSV
+  planner and review behavior. No full server suite or E2E rerun was needed.
 
 ### 2026-07-22 dependency and privacy review slice
 

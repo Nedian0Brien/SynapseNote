@@ -54,6 +54,7 @@ import {
 } from '@/lib/database-navigation';
 import { queryDatabase } from '@/lib/database-query-client';
 import { rememberDatabaseRecordNavigation } from '@/lib/database-record-navigation';
+import type { DatabasePasteChange } from '@/lib/database-tsv';
 import { subscribeToDatabaseChanged } from '@/lib/documents-events';
 import { cn } from '@/lib/utils';
 import { useJsxComponentHost } from './jsx-host-context.tsx';
@@ -472,6 +473,7 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
   const [fullDatabaseOpen, setFullDatabaseOpen] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
   const [initialRecordAction, setInitialRecordAction] = useState<DatabaseInitialRecordAction>();
+  const [initialTablePaste, setInitialTablePaste] = useState<readonly DatabasePasteChange[]>();
   const [replacementPickerOpen, setReplacementPickerOpen] = useState(false);
   const [inlineCreationOpen, setInlineCreationOpen] = useState(false);
   const [inlineMutationStatus, setInlineMutationStatus] = useState<'idle' | 'saving'>('idle');
@@ -767,6 +769,19 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
         cause instanceof Error ? cause.message : 'Unable to create the inline database page',
       );
     }
+  };
+
+  const pasteInlineCells = (changes: readonly DatabasePasteChange[]) => {
+    if (changes.length === 0) return;
+    if (changes.length === 1) {
+      const [change] = changes;
+      if (!change) return;
+      editInlineCell(change.record, change.property, change.value);
+      return;
+    }
+    setInitialTablePaste(changes);
+    setInlineMutationError(null);
+    setFullDatabaseOpen(true);
   };
 
   return (
@@ -1157,6 +1172,7 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
                 onOpen={openRecord}
                 onEdit={editInlineCell}
                 onCreateRecord={createInlineRecord}
+                onPaste={pasteInlineCells}
                 onDuplicate={(record) => {
                   setInitialRecordAction({ kind: 'duplicate', recordId: record.id });
                   setFullDatabaseOpen(true);
@@ -1216,10 +1232,14 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
             open
             onOpenChange={(nextOpen) => {
               setFullDatabaseOpen(nextOpen);
-              if (!nextOpen) setInitialRecordAction(undefined);
+              if (!nextOpen) {
+                setInitialRecordAction(undefined);
+                setInitialTablePaste(undefined);
+              }
             }}
             initialTarget={reference.data}
             initialRecordAction={initialRecordAction}
+            initialTablePaste={initialTablePaste}
             onOpenRecord={(path) => {
               window.location.hash = databaseRecordPathToHash(path);
               setFullDatabaseOpen(false);

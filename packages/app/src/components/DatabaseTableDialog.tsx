@@ -2631,6 +2631,7 @@ export function DatabaseTableDialog({
   initialTarget,
   initialAction,
   initialRecordAction,
+  initialTablePaste,
   presentation = 'dialog',
 }: {
   open: boolean;
@@ -2641,6 +2642,8 @@ export function DatabaseTableDialog({
   initialTarget?: DatabaseTableTarget;
   initialAction?: 'create';
   initialRecordAction?: DatabaseInitialRecordAction;
+  /** Paste changes forwarded from an inline view into the canonical review surface. */
+  initialTablePaste?: readonly DatabasePasteChange[];
   presentation?: 'dialog' | 'page';
 }) {
   'use no memo';
@@ -2754,6 +2757,7 @@ export function DatabaseTableDialog({
   const pageTitleInputRef = useRef<HTMLInputElement>(null);
   const reviewResolver = useRef<((approved: boolean) => void) | null>(null);
   const handledInitialRecordAction = useRef<string | null>(null);
+  const handledInitialTablePaste = useRef<string | null>(null);
   const queueReconciliationRunning = useRef(false);
   const offlineCacheKey = selection
     ? databaseOfflineCacheKey({
@@ -3558,7 +3562,7 @@ export function DatabaseTableDialog({
     }
   };
 
-  const planTablePaste = (changes: readonly DatabasePasteChange[]) => {
+  const planTablePaste = useEffectEvent((changes: readonly DatabasePasteChange[]) => {
     if (!description?.source || mutationStatus !== 'idle') return;
     try {
       runMutation(
@@ -3573,7 +3577,17 @@ export function DatabaseTableDialog({
     } catch (cause) {
       setMutationError(classifyDatabaseUiProblem(cause, 'Unable to prepare the TSV paste'));
     }
-  };
+  });
+
+  useEffect(() => {
+    if (!open || !initialTablePaste?.length || !description?.source || !result) return;
+    const actionKey = initialTablePaste
+      .map((change) => `${change.record.id}:${change.property.id}:${JSON.stringify(change.value)}`)
+      .join('|');
+    if (handledInitialTablePaste.current === actionKey) return;
+    handledInitialTablePaste.current = actionKey;
+    planTablePaste(initialTablePaste);
+  }, [open, initialTablePaste, description, result]);
 
   const planBoardTransition = (transition: DatabaseBoardTransition) => {
     if (!description?.source || mutationStatus !== 'idle') return;
