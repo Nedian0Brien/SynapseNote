@@ -68,7 +68,7 @@ the repository-wide check for final release readiness.
   catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
   approval-bound commits, undo, and restart/backup idempotency. Agent View
   policy/privacy/sandbox review remains Partial by design.
-- Notion UX alignment checklist: **22/128 complete**. The page-first and normal
+- Notion UX alignment checklist: **23/128 complete**. The page-first and normal
   New-page creation slices plus the inline/linked insertion contract are now
   evidenced. A
   2026-07-23 in-app browser capture reached the IPv4 renderer at
@@ -223,6 +223,16 @@ do not reconstruct behavior solely from this summary.
   expectations. UX-102 is closed; full-page/sidebar, state-matrix, Electron,
   accessibility, responsive, usability, performance, and release gates remain
   open.
+
+### 2026-07-23 database discovery page jump
+
+- `Open databases` from the command palette now selects the full-height
+  no-overlay page presentation. The page keeps the source rail, breadcrumbs,
+  view tabs, table controls, and first-row affordance visible while avoiding a
+  global management modal over the document.
+- `App.dom.test.tsx` verifies the callback selects `presentation="page"`, and
+  the running-app capture shows the overlay-free workspace. UX-104 is closed;
+  ordinary sidebar/recent URL integration remains in UX-201–UX-208.
 
 ### 2026-07-22 first Notion-UX insertion slice
 

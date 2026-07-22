@@ -26,8 +26,9 @@ a weak **document-native database experience**.
   New-page dialog now exposes a named `New database` action and a visible
   Page/Database type chooser; a running web journey now proves the handoff and
   resulting table, while Electron parity remains a separate gate.
-- The default management entry still opens a large modal over the editor. A
-  stable no-overlay route presentation exists, but it is not yet the ordinary
+- The default management surface is still shared with the legacy dialog, but
+  the `Open databases` power-user command now enters its no-overlay page
+  presentation instead of a global modal. It is not yet the ordinary
   page/sidebar experience.
 - Blank creation now makes the title optional, hides storage details behind
   `Advanced`, commits the low-risk human path directly, and selects the first
@@ -85,7 +86,7 @@ user's canonical project, or run the repository-wide/server test suite.
 
 | Area           | Current implementation                                                                                                                                                         | UX implication                                                                                                       |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
-| Global entry   | `App.tsx` retains the power-user `databasesOpen` surface, while `#database/<database>/<source>/<view?>` is now a stable route-level workspace. `New database` entry points dispatch one typed event into page presentation. | The direct entry and normal New-page handoff are now evidenced; ordinary sidebar/recent integration remains open. |
+| Global entry   | `App.tsx` retains the power-user `databasesOpen` surface, while `#database/<database>/<source>/<view?>` is now a stable route-level workspace. `New database` entry points dispatch one typed event into page presentation, and `Open databases` selects that no-overlay page presentation. | The direct entry, normal New-page handoff, and power-user page jump are evidenced; ordinary sidebar/recent integration remains open. |
 | New item       | `NewItemDialog` still models `file`/`folder`, but its normal file path now exposes a named `New database` action that dispatches the shared creation event.                     | Discovery is improved, but Database/Table is not yet a first-class page type in the picker.                          |
 | Creation       | `DatabaseCreationDialog.tsx` accepts an optional blank title, keeps storage details in a collapsed disclosure, and routes blank human creation through an automatic exact-plan commit while retaining review for templates/imports/agent paths. | The first-use path is shorter and safer for routine human creation; higher-risk methods still expose the explicit review boundary. |
 | Blank schema   | `createBlankDatabaseDesiredState` creates one title property; after commit the shell selects the new source and first view.                                                    | A minimal database lands in its table, but it is still inside the management dialog.                                 |
@@ -132,8 +133,10 @@ remain open:
 - A route-level `#database/<database>/<source>/<view?>` workspace now renders
   the existing database surface without a modal overlay, preserves the selected
   view in the URL, and is used by inline linked views' `Open full database`
-  action. The management dialog remains as a power-user surface until the
-  route is fully integrated with ordinary page chrome/sidebar navigation.
+  action. The management surface remains available as a compatibility/admin
+  surface, while the `Open databases` power-user jump uses the no-overlay page
+  presentation until it is fully integrated with ordinary page chrome/sidebar
+  navigation.
 - `New database` is now reachable from the sidebar toolbar, empty-space context
   menu, onboarding pack footer, empty-editor footer, and command palette. All
   of those surfaces dispatch the same typed event, so the app opens one creation
@@ -188,6 +191,16 @@ after capture, so no project document was changed. The focused
 `component-items.test.ts` suite pins the labels, aliases, and first-choice
 ordering.
 
+### Open databases page-jump evidence (2026-07-23)
+
+Selecting `Open databases` from the command palette in the running web app now
+opens the full-height database workspace without a dialog overlay. The capture
+shows the database breadcrumbs, source rail, view tabs, table controls, and
+first-row affordance. `App.dom.test.tsx` verifies that this command selects
+`presentation="page"`; the canonical `DatabaseTableDialog` page test verifies
+that the overlay is absent. Ordinary sidebar/recent URL integration remains a
+separate UX-201–UX-208 gate.
+
 ### Inline database journey evidence (2026-07-23)
 
 On the same running IPv4 app, a new document was created and the visible
@@ -227,8 +240,8 @@ crossed the document-native UX bar:
 | Measure | Current result | Interpretation |
 | --- | --- | --- |
 | Engine implementation checklist | 310/335 numbered items complete | Core/database and agent contracts are substantially implemented. |
-| Notion UX checklist | 22/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, and the inline/linked insertion contract are evidenced; full visual, state-matrix, and cross-host journey gates remain open. |
-| First-use database entry | `New database` in sidebar, empty states, normal new-page dialog, command palette, plus slash-menu `New database`/`Linked view of database`; normal picker exposes Page/Database chooser and the resulting route lands in an editable table | Discovery and the web first-use path are evidenced; ordinary sidebar/recent integration and Electron proof remain open. |
+| Notion UX checklist | 23/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, and the inline/linked insertion contract are evidenced; full visual, state-matrix, and cross-host journey gates remain open. |
+| First-use database entry | `New database` in sidebar, empty states, normal new-page dialog, command palette, plus slash-menu `New database`/`Linked view of database`; normal picker exposes Page/Database chooser and the resulting route lands in an editable table. `Open databases` enters the no-overlay page workspace. | Discovery and the web first-use path are evidenced; ordinary sidebar/recent integration and Electron proof remain open. |
 | Blank creation | Optional title, `Untitled database` fallback, direct-safe exact-plan commit, immediate source/view selection, title/new-row focus | The blank human path is continuous in DOM coverage; template/import/agent paths intentionally retain review and visual browser proof remains open. |
 | Full-page navigation | Stable `#database/<database>/<source>/<view?>` route and no-overlay page presentation | Route identity exists, but sidebar/recent/page chrome integration is incomplete. |
 | Inline linked view | Catalog → source → saved-view picker, inline creation, shared rows, visible tabs, replacement, conversion, duplicate configuration, and block removal | The core inline/linked contract is evidenced; the complete visual state matrix remains open. |
@@ -374,8 +387,11 @@ capability alone is insufficient.
       affordances; do not require the command palette. Evidence: slash-menu
       browser capture plus `DatabaseView.dom.test.tsx` and entry-point DOM
       coverage.
-- [ ] **UX-104** Keep `Open databases` as a power-user jump, but route it to a
-      page or searchable picker rather than a global management modal.
+- [x] **UX-104** Keep `Open databases` as a power-user jump, but route it to a
+      page or searchable picker rather than a global management modal. Evidence:
+      `App.dom.test.tsx` verifies the command selects the page presentation;
+      the 2026-07-23 running-app capture shows the full-height workspace with
+      no dialog overlay. Ordinary sidebar/recent integration remains UX-201–208.
 - [x] **UX-105** Make the blank path require no fields beyond an optional title.
       Evidence: blank-creation DOM coverage and the browser creation surface
       with an optional `Database name`.
