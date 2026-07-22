@@ -753,6 +753,25 @@ This closes UX-708 at the functional implementation/evidence layer. Post-commit
 record removal/navigation, archive-list refresh, conflict/undo receipts,
 responsive menu layout, and packaged-host proof remain release gates.
 
+### Relation property navigation evidence (2026-07-23)
+
+Record-page Relation properties now resolve permission-visible target titles
+through the bounded exact-record reader and render each target as a direct
+canonical page link. The page never opens the global database manager for this
+navigation. Missing or denied targets remain a non-disclosing unavailable chip;
+the existing pencil affordance switches back to the Relation editor so direct
+property mutation is preserved.
+
+Focused evidence in `DatabaseRecordPageChrome.dom.test.tsx` loads a related
+record and verifies its title, stable record ID, canonical document hash, and
+absence of a database dialog (4 tests / 68 expectations for the file).
+`DatabaseRelationsDialog.dom.test.tsx` continues to verify the bounded relation
+surface (1 test / 2 expectations). App typecheck and targeted Biome checks pass.
+
+This closes UX-709 at the functional implementation/evidence layer. Missing/
+denied/truncated visual states, relation editing conflict/undo, responsive
+chips, and packaged-host proof remain release gates.
+
 ### Sidebar and recent database navigation evidence (2026-07-23)
 
 The ordinary file sidebar now exposes database sources as a peer `Databases`
@@ -809,7 +828,7 @@ crossed the document-native UX bar:
 | Measure | Current result | Interpretation |
 | --- | --- | --- |
 | Engine implementation checklist | 310/335 numbered items complete | Core/database and agent contracts are substantially implemented. |
-| Notion UX checklist | 74/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, inline/full-page state parity, table-first direct manipulation, friendly property names/examples, Title safety, type-specific cell editors, schema-vs-data mutation classification, in-context property-add/header affordances including property-specific sort/filter/duplicate actions, destructive property-deletion impact previews, adjacent Formula/Rollup error indicators, view-scoped property visibility/order, converged header/settings-menu view actions, visible reorderable saved-view tabs, layout-independent new-view `+` affordances, layout-specific saved-view property suggestions, coherent saved-view settings, active filter/sort explainers, saved-view tab lifecycle menu, last-view deletion safety, saved-view switch memory, independent linked-block view settings without copied rows, cross-layout title/tab/control/state/record-opening contract, canonical record-title entrypoints, shared side/center/full-page record surface, record breadcrumbs and return-to-view continuity, table/page synchronization, record body editing below properties, record-page comments/history/permissions/appearance/layout affordances, previous/next record navigation in the active view context, row/page mutation menu parity for duplicate/archive/restore/move/delete, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, 768px browser, and cross-host journey gates remain open. |
+| Notion UX checklist | 75/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, inline/full-page state parity, table-first direct manipulation, friendly property names/examples, Title safety, type-specific cell editors, schema-vs-data mutation classification, in-context property-add/header affordances including property-specific sort/filter/duplicate actions, destructive property-deletion impact previews, adjacent Formula/Rollup error indicators, view-scoped property visibility/order, converged header/settings-menu view actions, visible reorderable saved-view tabs, layout-independent new-view `+` affordances, layout-specific saved-view property suggestions, coherent saved-view settings, active filter/sort explainers, saved-view tab lifecycle menu, last-view deletion safety, saved-view switch memory, independent linked-block view settings without copied rows, cross-layout title/tab/control/state/record-opening contract, canonical record-title entrypoints, shared side/center/full-page record surface, record breadcrumbs and return-to-view continuity, table/page synchronization, record body editing below properties, record-page comments/history/permissions/appearance/layout affordances, previous/next record navigation in the active view context, row/page mutation menu parity for duplicate/archive/restore/move/delete, direct Relation property links to canonical record pages, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, 768px browser, and cross-host journey gates remain open. |
 | First-use database entry | `New database` in sidebar, empty states, normal new-page dialog, command palette, plus slash-menu `New database`/`Linked view of database`; normal picker exposes Page/Database chooser and the resulting route lands in an editable table. `Open databases` enters the no-overlay page workspace. | Discovery, sidebar/recent navigation, and the web first-use path are evidenced; additional entry points and Electron proof remain open. |
 | Blank creation | Optional title, `Untitled database` fallback, direct-safe exact-plan commit, immediate source/view selection, title/new-row focus | The blank human path is continuous in DOM coverage; template/import/agent paths intentionally retain review and visual browser proof remains open. |
 | Full-page navigation | Stable `#database/<database>/<source>/<view?>` route, no-overlay canvas presentation, sidebar source section, command-palette recents/search, backlink and relation links, normal page chrome, and local overflow guardrails | Route, page surface, and navigation identity are evidenced; responsive visual/cross-host proof remains incomplete. |
@@ -1186,7 +1205,10 @@ capability alone is insufficient.
       and page menus. The full-page action menu reuses the row desired-state
       compilers and reviewed mutation boundary; compatible moves use an
       explicit mapped-source picker.
-- [ ] **UX-709** Navigate relations without opening the global database dialog.
+- [x] **UX-709** Navigate relations without opening the global database dialog.
+      Relation properties resolve permission-visible titles into direct
+      canonical record links; the existing edit affordance preserves Relation
+      mutation without adding a second writer.
 - [ ] **UX-710** Verify deep links, reload, missing, archived, and denied states.
 
 ### UX-8 — Templates, import, and assisted creation
