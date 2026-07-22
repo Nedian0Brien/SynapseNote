@@ -440,8 +440,23 @@ Focused evidence:
   manifest creation and record deletion (2 tests / 23 expectations).
 - `database-mutation-policy.test.ts`: explicit cell/schema/agent review matrix
   and direct-safe allow-list (4 tests / 68 expectations).
+- `database-property-deletion.test.ts`: complete-snapshot value counting and
+  formula/rollup/relation/view dependency discovery, plus Title/incomplete
+  snapshot guards (2 tests / 5 expectations).
+- `DatabasePropertyDeletionPreviewDialog.dom.test.tsx`: destructive deletion
+  preview copy, value/record/dependency counts, recovery guidance, and the
+  explicit confirmation action (1 test / 11 expectations).
 
-This closes UX-501 through UX-506 at the functional
+Deleting a non-Title property now fetches a complete source snapshot before
+opening `Review property deletion`. The preview names the values to clear,
+records checked, and dependent properties or saved views. Confirmation keeps
+the existing safe two-phase boundary: a reviewed value-unset commit runs while
+the property still exists, then the Properties dialog reopens so the user can
+explicitly review the schema removal. The two commits are not auto-chained
+because back-to-back commits against the same database can wedge the server;
+both remain undoable through History.
+
+This closes UX-501 through UX-507 at the functional
 implementation/evidence layer.
 Visual parity and the broader property-family acceptance gates remain open.
 
@@ -501,7 +516,7 @@ crossed the document-native UX bar:
 | Measure | Current result | Interpretation |
 | --- | --- | --- |
 | Engine implementation checklist | 310/335 numbered items complete | Core/database and agent contracts are substantially implemented. |
-| Notion UX checklist | 52/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, inline/full-page state parity, table-first direct manipulation, friendly property names/examples, Title safety, type-specific cell editors, schema-vs-data mutation classification, in-context property-add/header affordances including property-specific sort/filter/duplicate actions, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, 768px browser, and cross-host journey gates remain open. |
+| Notion UX checklist | 53/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, inline/full-page state parity, table-first direct manipulation, friendly property names/examples, Title safety, type-specific cell editors, schema-vs-data mutation classification, in-context property-add/header affordances including property-specific sort/filter/duplicate actions, destructive property-deletion impact previews, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, 768px browser, and cross-host journey gates remain open. |
 | First-use database entry | `New database` in sidebar, empty states, normal new-page dialog, command palette, plus slash-menu `New database`/`Linked view of database`; normal picker exposes Page/Database chooser and the resulting route lands in an editable table. `Open databases` enters the no-overlay page workspace. | Discovery, sidebar/recent navigation, and the web first-use path are evidenced; additional entry points and Electron proof remain open. |
 | Blank creation | Optional title, `Untitled database` fallback, direct-safe exact-plan commit, immediate source/view selection, title/new-row focus | The blank human path is continuous in DOM coverage; template/import/agent paths intentionally retain review and visual browser proof remains open. |
 | Full-page navigation | Stable `#database/<database>/<source>/<view?>` route, no-overlay canvas presentation, sidebar source section, command-palette recents/search, backlink and relation links, normal page chrome, and local overflow guardrails | Route, page surface, and navigation identity are evidenced; responsive visual/cross-host proof remains incomplete. |
@@ -800,8 +815,10 @@ capability alone is insufficient.
       Review summaries label `Data:` versus `Schema:` scopes, and property
       mutation callers pass the explicit schema policy while cell edits pass
       the direct-safe cell policy.
-- [ ] **UX-507** Preview destructive property deletion with value count,
-      dependency impact, and recovery.
+- [x] **UX-507** Preview destructive property deletion with value count,
+      dependency impact, and recovery. A complete source snapshot feeds the
+      preview dialog; confirmation keeps value cleanup and schema removal as
+      separate reviewed, undoable commits.
 - [ ] **UX-508** Put formula/rollup errors beside the relevant property/cell.
 - [ ] **UX-509** Make property visibility/order view-scoped, not schema changes.
 - [ ] **UX-510** Ensure header and settings-menu property actions converge on
