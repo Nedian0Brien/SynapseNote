@@ -41,6 +41,7 @@ let resolveNavigationTargetMock = mock(
 );
 let downgradeFolderIndexForHashNavMock = mock((target: NavigationTarget) => target);
 let withLargeFileOpenGuardMock = mock((target: NavigationTarget) => target);
+let openDatabasesCommand: (() => void) | undefined;
 
 mock.module('@/lib/perf', () => ({
   mark: () => {},
@@ -135,9 +136,10 @@ mock.module('@/components/McpConsentDialog', () => ({
 }));
 
 mock.module('@/components/CommandPalette', () => ({
-  CommandPalette: ({ open }: { open: boolean }) => (
-    <div data-testid="command-palette" data-open={String(open)} />
-  ),
+  CommandPalette: ({ open, onOpenDatabases }: { open: boolean; onOpenDatabases?: () => void }) => {
+    openDatabasesCommand = onOpenDatabases;
+    return <div data-testid="command-palette" data-open={String(open)} />;
+  },
 }));
 
 mock.module('@/components/AuthModal', () => ({
@@ -299,6 +301,7 @@ describe('App runtime wiring', () => {
     );
     downgradeFolderIndexForHashNavMock = mock((target: NavigationTarget) => target);
     withLargeFileOpenGuardMock = mock((target: NavigationTarget) => target);
+    openDatabasesCommand = undefined;
   });
 
   afterEach(() => {
@@ -497,6 +500,21 @@ describe('App runtime wiring', () => {
     await act(async () => window.history.back());
     await waitFor(() => expect(window.location.hash).toBe(''));
     expect(screen.getByTestId('database-table-dialog').getAttribute('data-open')).toBe('false');
+  });
+
+  test('opens database discovery in the page presentation from the command palette', async () => {
+    renderApp();
+    await waitFor(() => expect(openDatabasesCommand).toBeFunction());
+
+    await act(async () => {
+      openDatabasesCommand?.();
+    });
+
+    await waitFor(() => {
+      const dialog = screen.getByTestId('database-table-dialog');
+      expect(dialog.getAttribute('data-open')).toBe('true');
+      expect(dialog.getAttribute('data-presentation')).toBe('page');
+    });
   });
 
   test('reloads a canonical database target and restores the selected view through back/forward', async () => {

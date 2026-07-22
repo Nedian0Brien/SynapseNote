@@ -761,7 +761,14 @@ function AppBody() {
           onOpenChange={setCommandPaletteOpen}
           onOpenDataInspector={() => openDataInspector()}
           onOpenAgentRuns={() => setAgentRunsOpen(true)}
-          onOpenDatabases={() => setDatabasesOpen(true)}
+          onOpenDatabases={() => {
+            // Database discovery is a workspace destination, not a transient
+            // global modal. Keep the management surface available for the
+            // existing reviewed controls, but enter it through the
+            // no-overlay page presentation from the command palette.
+            setDatabasePresentation('page');
+            setDatabasesOpen(true);
+          }}
           onOpenDatabaseDiagnostics={() => setDatabaseDiagnosticsOpen(true)}
         />
         <Suspense fallback={null}>
