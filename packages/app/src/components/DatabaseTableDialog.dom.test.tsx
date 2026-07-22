@@ -3606,6 +3606,12 @@ describe('DatabaseTableDialog', () => {
   });
 
   test('shows the resulting page preview while an agent-shaped creation plan awaits approval', async () => {
+    const createdDefinition = {
+      id: 'db_agent_preview',
+      name: 'Launch tasks',
+      sources: [{ id: 'ds_launch_tasks', name: 'Launch tasks' }],
+      views: [{ id: 'view_table', sourceId: 'ds_launch_tasks' }],
+    };
     globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
       const path = String(input);
       const body = init?.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : {};
@@ -3615,7 +3621,11 @@ describe('DatabaseTableDialog', () => {
       if (path === '/api/databases/plan' && body.action === 'create_draft') {
         return Response.json({
           action: 'create_draft',
-          draft: { id: 'draft_agent_preview', revision: hash },
+          draft: {
+            id: 'draft_agent_preview',
+            revision: hash,
+            normalized: { definition: createdDefinition },
+          },
         });
       }
       if (path === '/api/databases/plan' && body.action === 'create_plan') {
@@ -3648,15 +3658,29 @@ describe('DatabaseTableDialog', () => {
           },
         });
       }
+      if (path === '/api/databases/commit') {
+        return Response.json({
+          mutationId: 'mut_agent_preview',
+          planId: 'plan_agent_preview',
+          planHash: hash,
+          idempotentReplay: false,
+          actualDiff: [{ operation: 'create', path: '.ok/databases/launch_tasks.yml' }],
+          verification: { status: 'passed' },
+          revisions: { gitHead: `sha1:${'b'.repeat(40)}`, snapshotRevision: hash },
+          auditReceipt: {},
+          undoToken: 'undo_agent_preview.secret',
+        });
+      }
       return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
     }) as typeof fetch;
 
+    const onOpenChange = mock(() => {});
     render(
       <DatabaseTableDialog
         open
-        presentation="page"
+        presentation="dialog"
         initialAction="create"
-        onOpenChange={() => {}}
+        onOpenChange={onOpenChange}
       />,
     );
     await screen.findByText('No databases yet.');
@@ -3674,6 +3698,12 @@ describe('DatabaseTableDialog', () => {
       'Create database',
     );
     expect(screen.getByTestId('database-creation-ghost-review')).not.toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Commit creation' }));
+    await waitFor(() =>
+      expect(window.location.hash).toBe('#database/db_agent_preview/ds_launch_tasks/view_table'),
+    );
+    expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
   test('reopens a failed creation with the typed title available for retry', async () => {

@@ -3106,7 +3106,6 @@ function DatabaseTableSurface({
   const handledInitialTablePaste = useRef<string | null>(null);
   const handledInitialDatabaseSurface = useRef<string | null>(null);
   const handledInitialSelectedRecordIds = useRef<string | null>(null);
-  const creationPageFlowRef = useRef(false);
   const queueReconciliationRunning = useRef(false);
   const databaseReadRetryCount = useRef(0);
   const databaseReadRetryKey = useRef('');
@@ -3186,18 +3185,6 @@ function DatabaseTableSurface({
       setCreationOpen(true);
     }
   }, [open, initialAction]);
-
-  useEffect(() => {
-    if (open && initialAction === 'create' && isPagePresentation) {
-      creationPageFlowRef.current = true;
-      return;
-    }
-    // Keep the creation intent while the mutation is in flight. The app shell
-    // may normalize the ephemeral hash before the commit response returns.
-    if (open && initialAction !== 'create' && !isPagePresentation) {
-      creationPageFlowRef.current = false;
-    }
-  }, [open, initialAction, isPagePresentation]);
 
   useEffect(() => {
     if (!open || typeof indexedDB === 'undefined') return;
@@ -7392,16 +7379,19 @@ function DatabaseTableSurface({
               );
               setSelection({ databaseId: definition.id, sourceId: source.id });
               setSelectedViewId(firstView?.id ?? '');
-              if (creationPageFlowRef.current) {
-                const route = databasePageTargetToHash({
-                  databaseId: definition.id,
-                  sourceId: source.id,
-                  ...(firstView?.id ? { viewId: firstView.id } : {}),
-                });
-                window.history.replaceState(null, '', route);
-                window.dispatchEvent(new Event(DATABASE_NAVIGATION_CHANGE_EVENT));
-                window.dispatchEvent(new window.HashChangeEvent('hashchange'));
-              }
+              // Every successful creation lands on the canonical page route,
+              // even when the creator was opened from the legacy management
+              // dialog. Existing-folder creation keeps that shell mounted only
+              // long enough to host its separate identity-migration review.
+              const route = databasePageTargetToHash({
+                databaseId: definition.id,
+                sourceId: source.id,
+                ...(firstView?.id ? { viewId: firstView.id } : {}),
+              });
+              window.history.replaceState(null, '', route);
+              window.dispatchEvent(new Event(DATABASE_NAVIGATION_CHANGE_EVENT));
+              window.dispatchEvent(new window.HashChangeEvent('hashchange'));
+              if (!isPagePresentation && mode !== 'folder') onOpenChange(false);
               if (mode === 'blank') {
                 setPageTitleDraft(source.name ?? definition.name);
                 // Keep the canonical title visible while the table handoff
