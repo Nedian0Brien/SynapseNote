@@ -44,6 +44,7 @@ import {
   readDatabaseRecordNavigation,
 } from '@/lib/database-record-navigation';
 import { databaseRecordMetadata, databaseValueFromFrontmatter } from '@/lib/database-record-page';
+import { subscribeToDatabaseChanged } from '@/lib/documents-events';
 
 interface DatabaseRecordPageChromeProps {
   provider: HocuspocusProvider;
@@ -92,6 +93,7 @@ export function DatabaseRecordPageChrome({
   const metadata = databaseRecordMetadata(snapshot.map);
   const databaseId = metadata?.database_id ?? null;
   const sourceId = metadata?.source_id ?? null;
+  const recordId = metadata?.record_id ?? null;
   const metadataKey = metadata ? `${databaseId}\0${sourceId}\0${metadata.record_id}` : null;
   const recordNavigationPath = metadata ? `${docName}${docExt}` : null;
   const metadataPageLayoutOverrideKey = JSON.stringify({
@@ -181,6 +183,23 @@ export function DatabaseRecordPageChrome({
       next.dispose();
     };
   }, [provider]);
+
+  useEffect(() => {
+    if (!databaseId || !sourceId || !recordId) return;
+    return subscribeToDatabaseChanged((payload) => {
+      const sameRecord =
+        payload.scope === 'workspace' ||
+        (payload.databaseIds.includes(databaseId) &&
+          (payload.sourceIds.includes(sourceId) ||
+            payload.recordIds.includes(recordId) ||
+            !payload.affectedIdsComplete));
+      if (!sameRecord || provider.hasUnsyncedChanges) return;
+      // Database table mutations update the canonical Markdown/index path. A
+      // clean record page can safely ask its existing Y.Doc connection for the
+      // delta; local body/property edits stay untouched until they are synced.
+      provider.forceSync();
+    });
+  }, [databaseId, recordId, provider, sourceId]);
 
   useEffect(() => {
     if (!databaseId || !sourceId || !metadataKey) {

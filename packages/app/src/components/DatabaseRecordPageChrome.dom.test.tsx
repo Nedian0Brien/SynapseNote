@@ -1,10 +1,11 @@
-import { afterEach, describe, expect, test } from 'bun:test';
+import { afterEach, describe, expect, mock, test } from 'bun:test';
 import { HocuspocusProvider } from '@hocuspocus/provider';
 import { DatabaseDefinitionSchema } from '@nedian0brien/synapsenote-core';
 import type { DatabaseDesiredStateDraftInput } from '@nedian0brien/synapsenote-server';
 import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react';
 import { PropertyProvider } from '@/components/PropertyContext';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { emitDatabaseChanged } from '@/lib/documents-events';
 import type { DatabaseRecordPageServices } from './DatabaseRecordPageChrome';
 import { DatabaseRecordPageChrome } from './DatabaseRecordPageChrome';
 
@@ -148,6 +149,9 @@ describe('DatabaseRecordPageChrome', () => {
       },
     };
     const recordProvider = provider();
+    const forceSync = mock(() => {});
+    recordProvider.forceSync = forceSync;
+    recordProvider.unsyncedChanges = 0;
     const view = render(
       <TooltipProvider>
         <PropertyProvider>
@@ -174,6 +178,26 @@ describe('DatabaseRecordPageChrome', () => {
     expect(view.getByRole('link', { name: 'Tasks' }).getAttribute('href')).toBe(
       '#database/db_tasks/ds_tasks',
     );
+    emitDatabaseChanged({
+      v: 1,
+      ch: 'database-changed',
+      seq: 1,
+      scope: 'records',
+      reasons: ['record-update'],
+      databaseIds: ['db_tasks'],
+      sourceIds: ['ds_tasks'],
+      recordIds: ['rec_first'],
+      affectedIdsComplete: true,
+      index: {
+        state: 'idle',
+        revision: hash,
+        manifestRevision: hash,
+        recordCount: 1,
+        issueCount: 0,
+        progress: null,
+      },
+    });
+    expect(forceSync).toHaveBeenCalledTimes(1);
     expect(view.getAllByTestId('property-row').map((row) => row.getAttribute('data-key'))).toEqual([
       'score',
       'owner',
