@@ -558,6 +558,22 @@ journeys / 30 expectations, including the canonical tab journey).
 
 This closes UX-608 at the functional implementation/evidence layer.
 
+### Independent linked-view settings evidence (2026-07-23)
+
+Linked blocks continue to serialize only stable database/source/view identities
+and canonical record references, while an optional `viewOverrides` payload owns
+the block's layout, filter, sort, group, projection, conditional-color, and
+open-behavior settings. The query data plane applies those overrides to the
+selected saved view without mutating the canonical manifest; two linked blocks
+can therefore show the same record identity with different projections and
+queries. Inline Filters and View settings now edit the block-local payload
+directly, while record mutations still use the canonical database. Focused
+evidence covers schema/overlay semantics (1 core test / 5 expectations), the
+server query boundary (1 test / 4 expectations), and two inline blocks sharing
+rows with independent requests/projections (1 DOM journey / 10 expectations).
+
+This closes UX-609 at the functional implementation/evidence layer.
+
 ### Sidebar and recent database navigation evidence (2026-07-23)
 
 The ordinary file sidebar now exposes database sources as a peer `Databases`
@@ -614,7 +630,7 @@ crossed the document-native UX bar:
 | Measure | Current result | Interpretation |
 | --- | --- | --- |
 | Engine implementation checklist | 310/335 numbered items complete | Core/database and agent contracts are substantially implemented. |
-| Notion UX checklist | 64/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, inline/full-page state parity, table-first direct manipulation, friendly property names/examples, Title safety, type-specific cell editors, schema-vs-data mutation classification, in-context property-add/header affordances including property-specific sort/filter/duplicate actions, destructive property-deletion impact previews, adjacent Formula/Rollup error indicators, view-scoped property visibility/order, converged header/settings-menu view actions, visible reorderable saved-view tabs, layout-independent new-view `+` affordances, layout-specific saved-view property suggestions, coherent saved-view settings, active filter/sort explainers, saved-view tab lifecycle menu, last-view deletion safety, saved-view switch memory, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, 768px browser, and cross-host journey gates remain open. |
+| Notion UX checklist | 65/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, inline/full-page state parity, table-first direct manipulation, friendly property names/examples, Title safety, type-specific cell editors, schema-vs-data mutation classification, in-context property-add/header affordances including property-specific sort/filter/duplicate actions, destructive property-deletion impact previews, adjacent Formula/Rollup error indicators, view-scoped property visibility/order, converged header/settings-menu view actions, visible reorderable saved-view tabs, layout-independent new-view `+` affordances, layout-specific saved-view property suggestions, coherent saved-view settings, active filter/sort explainers, saved-view tab lifecycle menu, last-view deletion safety, saved-view switch memory, independent linked-block view settings without copied rows, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, 768px browser, and cross-host journey gates remain open. |
 | First-use database entry | `New database` in sidebar, empty states, normal new-page dialog, command palette, plus slash-menu `New database`/`Linked view of database`; normal picker exposes Page/Database chooser and the resulting route lands in an editable table. `Open databases` enters the no-overlay page workspace. | Discovery, sidebar/recent navigation, and the web first-use path are evidenced; additional entry points and Electron proof remain open. |
 | Blank creation | Optional title, `Untitled database` fallback, direct-safe exact-plan commit, immediate source/view selection, title/new-row focus | The blank human path is continuous in DOM coverage; template/import/agent paths intentionally retain review and visual browser proof remains open. |
 | Full-page navigation | Stable `#database/<database>/<source>/<view?>` route, no-overlay canvas presentation, sidebar source section, command-palette recents/search, backlink and relation links, normal page chrome, and local overflow guardrails | Route, page surface, and navigation identity are evidenced; responsive visual/cross-host proof remains incomplete. |
@@ -960,7 +976,10 @@ capability alone is insufficient.
 - [x] **UX-608** Switch views immediately and preserve scroll/focus per view.
       Verified view results are reused during refresh, and table scroll/focus
       state is restored per source/view in canonical and inline surfaces.
-- [ ] **UX-609** Let linked blocks use independent views without copying rows.
+- [x] **UX-609** Let linked blocks use independent views without copying rows.
+      Linked blocks persist local `viewOverrides` for query and presentation
+      settings while retaining stable canonical record references; focused core,
+      server, and DOM evidence covers independent requests/projections.
 - [ ] **UX-610** Align title, tabs, controls, states, and record opening across
       every supported layout.
 
