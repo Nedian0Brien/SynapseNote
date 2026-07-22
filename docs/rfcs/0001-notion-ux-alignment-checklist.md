@@ -382,24 +382,31 @@ host exposes schema writers, a right-edge `Add property` action opens the
 canonical properties surface; otherwise the table stays read-only instead of
 showing a dead control. Every visible property header has one stable-ID menu
 with visibility, move left/right, calculation, context inspection,
-rename/configure, type conversion, and dependency-aware delete actions. The
-Title property remains frozen from invalid move/delete operations, and the
-dialog's add/rename/reorder/delete flows commit only through the existing exact
-mutation boundary.
+rename/configure, type conversion, duplicate, sort, filter, and
+dependency-aware delete actions. Sort and filter open the active view's
+existing settings while targeting the selected property; duplicate preserves
+the source property's typed configuration and lets the server mint a fresh
+stable identity. The Title property remains frozen from invalid
+move/delete/duplicate operations, and the dialog's add/rename/reorder/delete
+flows commit only through the existing exact mutation boundary.
 
 Focused evidence:
 
 - `DatabaseTableDialog.dom.test.tsx`: host-gated `Add property` and contextual
-  header menu affordances (2 tests / 15 expectations).
+  header menu affordances, including Sort, Filter, and Duplicate dispatch
+  (2 tests / 18 expectations).
+- `DatabaseAdvancedFilterDialog.dom.test.tsx`: nested filter editing plus
+  header-targeted property initialization (2 tests / 7 expectations).
+- `DatabaseSavedViewSettingsDialog.dom.test.tsx`: all active-view settings plus
+  header-targeted sort initialization (13 tests / 16 expectations).
+- `database-cell-mutation.test.ts`: duplicate-property configuration/key
+  compiler and Title guard (1 test / 3 expectations).
 - `DatabasePropertiesDialog.dom.test.tsx`: property listing, add, delete,
   inline rename, requested-property focus, reorder, mutation lock, and error
   behavior (7 tests / 23 expectations).
 
-This closes UX-501 at the functional implementation/evidence layer. The
-stable header menu is present and covers visibility/order/calculation,
-inspection, rename/configure, type conversion, and delete; property-specific
-Sort, Filter, and Duplicate actions are still open under UX-502. Visual parity
-and the broader property-family acceptance gates remain open.
+This closes UX-501 and UX-502 at the functional implementation/evidence layer.
+Visual parity and the broader property-family acceptance gates remain open.
 
 ### Sidebar and recent database navigation evidence (2026-07-23)
 
@@ -457,7 +464,7 @@ crossed the document-native UX bar:
 | Measure | Current result | Interpretation |
 | --- | --- | --- |
 | Engine implementation checklist | 310/335 numbered items complete | Core/database and agent contracts are substantially implemented. |
-| Notion UX checklist | 47/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, inline/full-page state parity, table-first direct manipulation, in-context property-add/header affordances, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; property-specific sort/filter/duplicate actions, full visual, 768px browser, and cross-host journey gates remain open. |
+| Notion UX checklist | 48/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, inline/full-page state parity, table-first direct manipulation, in-context property-add/header affordances including property-specific sort/filter/duplicate actions, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, 768px browser, and cross-host journey gates remain open. |
 | First-use database entry | `New database` in sidebar, empty states, normal new-page dialog, command palette, plus slash-menu `New database`/`Linked view of database`; normal picker exposes Page/Database chooser and the resulting route lands in an editable table. `Open databases` enters the no-overlay page workspace. | Discovery, sidebar/recent navigation, and the web first-use path are evidenced; additional entry points and Electron proof remain open. |
 | Blank creation | Optional title, `Untitled database` fallback, direct-safe exact-plan commit, immediate source/view selection, title/new-row focus | The blank human path is continuous in DOM coverage; template/import/agent paths intentionally retain review and visual browser proof remains open. |
 | Full-page navigation | Stable `#database/<database>/<source>/<view?>` route, no-overlay canvas presentation, sidebar source section, command-palette recents/search, backlink and relation links, normal page chrome, and local overflow guardrails | Route, page surface, and navigation identity are evidenced; responsive visual/cross-host proof remains incomplete. |
@@ -732,12 +739,12 @@ capability alone is insufficient.
 - [x] **UX-501** Add a right-edge `+` column affordance with a property picker.
       Evidence: host-gated `Add property` opens the canonical properties
       surface, while read-only hosts do not expose a dead action.
-- [ ] **UX-502** Add a header menu for rename, configure, sort, filter,
+- [x] **UX-502** Add a header menu for rename, configure, sort, filter,
       calculate, insert left/right, hide, duplicate, and delete. The stable
-      header menu already covers visibility/order/calculation,
-      inspect/rename/configure, type conversion, and dependency-aware delete;
-      property-specific Sort, Filter, and Duplicate actions still need to be
-      surfaced in that same menu.
+      header menu dispatches Sort and Filter into the active view's settings
+      with the selected property targeted, and Duplicate compiles a typed
+      configuration-preserving add-property plan with a fresh stable key; the
+      Title property remains disabled for invalid duplication.
 - [ ] **UX-503** Use friendly property names/examples before schema terminology.
 - [ ] **UX-504** Keep Title uniquely required and explain conversion blockers.
 - [ ] **UX-505** Use type-specific cell editors for every implemented family.
