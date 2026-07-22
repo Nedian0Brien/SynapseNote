@@ -109,7 +109,7 @@ the repository-wide check for final release readiness.
   catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
   approval-bound commits, undo, and restart/backup idempotency. Agent View
   policy/privacy/sandbox review remains Partial by design.
-- Notion UX alignment checklist: **94/128 complete**. The page-first and normal
+- Notion UX alignment checklist: **95/128 complete**. The page-first and normal
   New-page creation slices, the inline/linked insertion contract, and the
   table-first direct-manipulation, named canonical workspace canvas-route,
   shared navigation without a duplicate canvas rail, sidebar/recent/search/
@@ -144,8 +144,9 @@ the repository-wide check for final release readiness.
   technical detail disclosure, server-enforced atomic approval copy,
   sensitive-operation review with permission-change confirmation, and
   current-view-preserving Agent Run recovery, retrieval query/filter/ranking/
-  projection/permission/token explainability, and stable agent API/MCP
-  contracts across the UI route redesign are
+  projection/permission/token explainability, stable agent API/MCP contracts
+  across the UI route redesign, and keyboard order across the database page
+  are
   now
   evidenced. A
   2026-07-23 in-app browser capture reached the IPv4 renderer at
@@ -873,6 +874,21 @@ do not reconstruct behavior solely from this summary.
 - UX-910 is now checked. Visual, responsive, accessibility, cross-host, and
   packaged-release gates remain open.
 
+### 2026-07-23 keyboard order
+
+- The canonical database page keeps the keyboard/DOM progression from its
+  breadcrumb and title through saved-view tabs, database controls, table
+  headers, grid cells, the new-record affordance, and load-more pagination.
+  The existing table grid retains arrow-key movement and edit-focus return.
+- Focused evidence: the route-level `DatabaseTableDialog.dom.test.tsx`
+  journey asserts the ordered landmarks (26 expectations in the focused run),
+  alongside the existing cell-navigation/edit-focus tests. App typecheck and
+  targeted Biome checks pass; no full server suite or broad E2E rerun was
+  needed.
+- UX-1001 is now checked at the functional keyboard-order layer. Focus
+  visibility, announcements, contrast, responsive, and performance gates
+  remain open.
+
 ### 2026-07-23 Agent Run current-view recovery
 
 - Undo, retry, and resume emit a scoped Agent Run change event only after the
@@ -917,7 +933,7 @@ do not reconstruct behavior solely from this summary.
   catalog-backed database under `Recently opened`, reopening the same stable
   route. Focused evidence: sidebar 3 tests / 7 expectations and recent UI 1 / 5.
 - UX-203, UX-204, UX-206, UX-209, UX-309, UX-501, UX-502, UX-503, UX-504,
-  UX-505, UX-506, UX-507, UX-508, UX-509, UX-510, UX-601, UX-602, UX-603, UX-604, UX-605, UX-606, UX-607, UX-608, UX-609, UX-610, UX-701, UX-702, UX-703, UX-704, UX-705, UX-706, UX-707, UX-708, UX-709, UX-710, UX-801, UX-802, UX-803, UX-804, UX-805, UX-806, UX-807, UX-808, UX-901, UX-902, UX-903, UX-904, UX-905, UX-906, UX-907, UX-908, UX-909, and UX-910 are checked. The 768px visual responsive check remains
+  UX-505, UX-506, UX-507, UX-508, UX-509, UX-510, UX-601, UX-602, UX-603, UX-604, UX-605, UX-606, UX-607, UX-608, UX-609, UX-610, UX-701, UX-702, UX-703, UX-704, UX-705, UX-706, UX-707, UX-708, UX-709, UX-710, UX-801, UX-802, UX-803, UX-804, UX-805, UX-806, UX-807, UX-808, UX-901, UX-902, UX-903, UX-904, UX-905, UX-906, UX-907, UX-908, UX-909, UX-910, and UX-1001 are checked. The 768px visual responsive check remains
   open.
 
 ### 2026-07-23 stable inline/full-page conversion
