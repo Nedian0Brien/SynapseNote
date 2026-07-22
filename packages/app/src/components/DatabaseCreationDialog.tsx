@@ -349,10 +349,13 @@ export function DatabaseCreationDialog({
                 />
                 <Trans>Include nested folders in the onboarding preview</Trans>
               </label>
-              <p className="text-muted-foreground text-xs">
+              <p
+                className="text-muted-foreground text-xs"
+                data-testid="database-folder-migration-handoff"
+              >
                 <Trans>
-                  Creating the manifest does not modify existing records. Identity assignment
-                  remains a separate reviewed onboarding operation.
+                  Creating the manifest does not modify existing records. After the manifest is
+                  committed, identity assignment continues in a separate Advanced migration review.
                 </Trans>
               </p>
             </div>

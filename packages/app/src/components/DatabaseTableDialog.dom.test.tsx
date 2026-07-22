@@ -3902,6 +3902,9 @@ describe('DatabaseTableDialog', () => {
     await screen.findByText('No databases yet.');
     fireEvent.click(screen.getByText('Create database'));
     fireEvent.click(await screen.findByText('Existing folder'));
+    expect(screen.getByTestId('database-folder-migration-handoff').textContent).toContain(
+      'Advanced migration review',
+    );
     fireEvent.change(screen.getByLabelText('Database name'), {
       target: { value: 'Research' },
     });
@@ -3917,10 +3920,16 @@ describe('DatabaseTableDialog', () => {
     expect(previewCalls).toBe(0);
 
     fireEvent.click(screen.getByText('Commit creation'));
-    expect(await screen.findByText('Review existing folder')).not.toBeNull();
+    expect(await screen.findByText('Advanced migration: assign record identities')).not.toBeNull();
     expect(await screen.findByText('research/notes/untitled.md')).not.toBeNull();
     expect(previewCalls).toBe(1);
-    expect((screen.getByText('Start onboarding') as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByTestId('database-source-identity-migration-steps')).not.toBeNull();
+    expect((screen.getByText('Approve identity assignment') as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+    expect(
+      document.querySelector('[data-database-advanced-migration-flow="source-identity-migration"]'),
+    ).not.toBeNull();
   });
 
   test('recovers an explicit offline state without treating it as an empty database', async () => {

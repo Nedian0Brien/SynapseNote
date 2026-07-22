@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, mock, test } from 'bun:test';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { DatabaseOnboardingDialog } from './DatabaseOnboardingDialog';
+import { DatabaseSourceIdentityMigrationDialog } from './DatabaseOnboardingDialog';
 
 const originalFetch = globalThis.fetch;
 const revision = `sha256:${'a'.repeat(64)}`;
@@ -55,11 +55,21 @@ describe('DatabaseOnboardingDialog', () => {
       });
     }) as typeof fetch;
 
-    render(<DatabaseOnboardingDialog open onOpenChange={() => {}} target={target} />);
+    render(<DatabaseSourceIdentityMigrationDialog open onOpenChange={() => {}} target={target} />);
 
     expect(await screen.findByText('research/notes/untitled.md')).not.toBeNull();
     expect(screen.getByText('Title is required.')).not.toBeNull();
-    expect((screen.getByText('Start onboarding') as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByText('Advanced migration: assign record identities')).not.toBeNull();
+    expect(screen.getByTestId('database-source-identity-migration-steps')).not.toBeNull();
+    expect(screen.getByTestId('database-source-identity-migration-scope').textContent).toContain(
+      'does not change the database schema',
+    );
+    expect((screen.getByText('Approve identity assignment') as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+    expect(
+      document.querySelector('[data-database-advanced-migration-flow="source-identity-migration"]'),
+    ).not.toBeNull();
     expect(requests).toEqual([{ action: 'preview_import', ...target }]);
   });
 
@@ -105,11 +115,11 @@ describe('DatabaseOnboardingDialog', () => {
       });
     }) as typeof fetch;
 
-    render(<DatabaseOnboardingDialog open onOpenChange={() => {}} target={target} />);
+    render(<DatabaseSourceIdentityMigrationDialog open onOpenChange={() => {}} target={target} />);
     await screen.findByText(/No blockers/);
-    fireEvent.click(screen.getByText('Start onboarding'));
+    fireEvent.click(screen.getByText('Approve identity assignment'));
 
-    expect(await screen.findByText(/task_import_reviewed/)).not.toBeNull();
+    expect(await screen.findByText(/Identity assignment task queued/)).not.toBeNull();
     await waitFor(() => expect(requests).toHaveLength(2));
     expect(requests[1]).toEqual({
       action: 'start',

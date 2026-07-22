@@ -4,7 +4,7 @@ import type {
   DatabaseOnboardingPreview,
 } from '@nedian0brien/synapsenote-server';
 import { AlertCircle, CheckCircle2, Loader2, RefreshCw } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { type ComponentProps, useEffect, useState } from 'react';
 import {
   type DatabaseSourceOnboardingTarget,
   previewDatabaseSourceOnboarding,
@@ -21,6 +21,8 @@ import {
   DialogTitle,
 } from './ui/dialog';
 
+type DatabaseOnboardingFlow = 'onboarding' | 'source-identity-migration';
+
 export function databaseOnboardingItemIsBlocked(item: DatabaseOnboardingItem): boolean {
   return (
     item.action === 'reject' ||
@@ -33,11 +35,14 @@ export function DatabaseOnboardingDialog({
   open,
   onOpenChange,
   target,
+  flow = 'onboarding',
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   target: DatabaseSourceOnboardingTarget | null;
+  flow?: DatabaseOnboardingFlow;
 }) {
+  const isSourceIdentityMigration = flow === 'source-identity-migration';
   const [preview, setPreview] = useState<DatabaseOnboardingPreview | null>(null);
   const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'starting' | 'started'>(
     'idle',
@@ -101,19 +106,55 @@ export function DatabaseOnboardingDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl">
+      <DialogContent
+        className="sm:max-w-3xl"
+        data-database-advanced-migration-flow={isSourceIdentityMigration ? flow : undefined}
+      >
         <DialogHeader>
           <DialogTitle>
-            <Trans>Review existing folder</Trans>
+            {isSourceIdentityMigration ? (
+              <Trans>Advanced migration: assign record identities</Trans>
+            ) : (
+              <Trans>Review existing folder</Trans>
+            )}
           </DialogTitle>
           <DialogDescription>
-            <Trans>
-              Preview every file first. Existing records remain unchanged until you approve the
-              onboarding task.
-            </Trans>
+            {isSourceIdentityMigration ? (
+              <Trans>
+                This is a separate, reviewed migration. Preview every file first; existing records
+                remain unchanged until you approve identity assignment.
+              </Trans>
+            ) : (
+              <Trans>
+                Preview every file first. Existing records remain unchanged until you approve the
+                onboarding task.
+              </Trans>
+            )}
           </DialogDescription>
         </DialogHeader>
         <DialogBody className="space-y-4">
+          {isSourceIdentityMigration ? (
+            <>
+              <ol
+                className="grid gap-2 rounded-md border bg-muted/30 p-3 text-sm sm:grid-cols-2"
+                aria-label="Advanced migration steps"
+                data-testid="database-source-identity-migration-steps"
+              >
+                <li className="font-medium">1. Review the file preview</li>
+                <li className="text-muted-foreground">2. Approve identity assignment</li>
+              </ol>
+              <p
+                className="rounded-md border border-amber-500/30 bg-amber-500/5 p-3 text-muted-foreground text-xs"
+                data-testid="database-source-identity-migration-scope"
+              >
+                <Trans>
+                  Scope: assign stable record identities to files in this source only. This does not
+                  change the database schema or upgrade a manifest version.
+                </Trans>
+              </p>
+            </>
+          ) : null}
+
           {status === 'loading' ? (
             <div className="flex items-center gap-2 text-muted-foreground text-sm" role="status">
               <Loader2 className="size-4 animate-spin" aria-hidden="true" />
@@ -180,8 +221,9 @@ export function DatabaseOnboardingDialog({
                     aria-hidden="true"
                   />
                   <Trans>
-                    No blockers. Starting will assign stable record IDs to the reviewed files and
-                    refresh the database index.
+                    {isSourceIdentityMigration
+                      ? 'No blockers. Approval will assign stable record IDs to the reviewed files and refresh the database index.'
+                      : 'No blockers. Starting will assign stable record IDs to the reviewed files and refresh the database index.'}
                   </Trans>
                 </div>
               )}
@@ -190,7 +232,12 @@ export function DatabaseOnboardingDialog({
 
           {task ? (
             <div className="rounded-md border p-3 text-sm" role="status">
-              <Trans>Onboarding task queued</Trans>: <code>{task.id}</code> · {task.state}
+              {isSourceIdentityMigration ? (
+                <Trans>Identity assignment task queued</Trans>
+              ) : (
+                <Trans>Onboarding task queued</Trans>
+              )}{' '}
+              : <code>{task.id}</code> · {task.state}
             </div>
           ) : null}
 
@@ -220,11 +267,26 @@ export function DatabaseOnboardingDialog({
               {status === 'starting' ? (
                 <Loader2 className="animate-spin" aria-hidden="true" />
               ) : null}
-              <Trans>Start onboarding</Trans>
+              {isSourceIdentityMigration ? (
+                <Trans>Approve identity assignment</Trans>
+              ) : (
+                <Trans>Start onboarding</Trans>
+              )}
             </Button>
           </div>
         </DialogBody>
       </DialogContent>
     </Dialog>
   );
+}
+
+/**
+ * Dedicated advanced flow for assigning stable identities to files already in
+ * an existing database folder. The underlying task remains an `import` task;
+ * this wrapper keeps the UI boundary distinct from manifest-version migration.
+ */
+export function DatabaseSourceIdentityMigrationDialog(
+  props: Omit<ComponentProps<typeof DatabaseOnboardingDialog>, 'flow'>,
+) {
+  return <DatabaseOnboardingDialog {...props} flow="source-identity-migration" />;
 }

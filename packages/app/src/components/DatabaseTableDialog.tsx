@@ -90,7 +90,7 @@ import { DatabaseForm } from '@/components/DatabaseForm';
 import { DatabaseGallery } from '@/components/DatabaseGallery';
 import { DatabaseList } from '@/components/DatabaseList';
 import { DatabaseMap } from '@/components/DatabaseMap';
-import { DatabaseOnboardingDialog } from '@/components/DatabaseOnboardingDialog';
+import { DatabaseSourceIdentityMigrationDialog } from '@/components/DatabaseOnboardingDialog';
 import {
   type DatabasePageAppearance,
   DatabasePageAppearanceDialog,
@@ -7434,7 +7434,7 @@ function DatabaseTableSurface({
           onSave={commitPageAppearance}
         />
       ) : null}
-      <DatabaseOnboardingDialog
+      <DatabaseSourceIdentityMigrationDialog
         open={onboardingOpen}
         onOpenChange={setOnboardingOpen}
         target={onboardingTarget}
