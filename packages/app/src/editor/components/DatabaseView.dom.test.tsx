@@ -871,6 +871,10 @@ describe('DatabaseView', () => {
     fireEvent.change(titleInput, { target: { value: 'Renamed task' } });
     fireEvent.keyDown(titleInput, { key: 'Enter' });
     await waitFor(() => expect(commitCalls).toBe(1));
+    const newRowTitle = screen.getByTestId('database-new-row-title');
+    fireEvent.change(newRowTitle, { target: { value: 'Inline page' } });
+    fireEvent.keyDown(newRowTitle, { key: 'Enter' });
+    await waitFor(() => expect(commitCalls).toBe(2));
     expect(screen.getByLabelText('Duplicate record rec_first')).toBeTruthy();
     expect(screen.getByLabelText('Archive record rec_first')).toBeTruthy();
     expect(screen.getByLabelText('Move record rec_first')).toBeTruthy();
