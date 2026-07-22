@@ -2718,6 +2718,7 @@ export function DatabaseTableDialog({
   initialRecordAction,
   initialTablePaste,
   initialDatabaseSurface,
+  initialViewAction,
   initialPropertyId,
   initialSelectedRecordIds,
   presentation = 'dialog',
@@ -2734,6 +2735,8 @@ export function DatabaseTableDialog({
   initialTablePaste?: readonly DatabasePasteChange[];
   /** Optional reviewed surface to open when an inline view delegates a control. */
   initialDatabaseSurface?: 'properties' | 'view-settings' | 'view-manager' | 'filters';
+  /** Optional reviewed saved-view action forwarded from an inline block. */
+  initialViewAction?: { kind: 'duplicate'; viewId: string };
   initialPropertyId?: string;
   initialSelectedRecordIds?: readonly string[];
   presentation?: 'dialog' | 'page';
@@ -7058,6 +7061,7 @@ export function DatabaseTableDialog({
           source={description.source}
           views={sourceViews}
           busy={mutationStatus !== 'idle'}
+          initialAction={initialViewAction}
           onChange={(change) => {
             try {
               runMutation(

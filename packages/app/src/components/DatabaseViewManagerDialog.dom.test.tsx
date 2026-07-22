@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, mock, test } from 'bun:test';
 import type { DatabaseSource, DatabaseView } from '@nedian0brien/synapsenote-core';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { DatabaseViewManagerDialog } from './DatabaseViewManagerDialog';
 
 const source: DatabaseSource = {
@@ -502,5 +502,31 @@ describe('DatabaseViewManagerDialog', () => {
         .getByRole('button', { name: 'Cannot delete default view Open' })
         .hasAttribute('disabled'),
     ).toBe(true);
+  });
+
+  test('starts a reviewed duplicate when an inline block requests the current view copy', async () => {
+    const onChange = mock(() => {});
+    render(
+      <DatabaseViewManagerDialog
+        open
+        onOpenChange={() => {}}
+        source={source}
+        views={views}
+        busy={false}
+        initialAction={{ kind: 'duplicate', viewId: 'view_open' }}
+        onChange={onChange}
+      />,
+    );
+
+    await waitFor(() => expect(onChange).toHaveBeenCalledTimes(1));
+    expect(onChange.mock.calls[0]?.[0]).toMatchObject({
+      kind: 'duplicate',
+      view: {
+        sourceId: source.id,
+        layout: views[0]?.layout,
+        projection: views[0]?.projection,
+      },
+    });
+    expect((onChange.mock.calls[0]?.[0] as { view: DatabaseView }).view.id).not.toBe('view_open');
   });
 });

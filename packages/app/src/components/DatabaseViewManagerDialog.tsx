@@ -1,7 +1,7 @@
 import { Trans } from '@lingui/react/macro';
 import type { DatabaseSource, DatabaseView } from '@nedian0brien/synapsenote-core';
 import { ChevronDown, ChevronUp, Copy, Plus, Star, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -47,6 +47,7 @@ export function DatabaseViewManagerDialog({
   source,
   views,
   busy,
+  initialAction,
   onChange,
 }: {
   open: boolean;
@@ -54,9 +55,11 @@ export function DatabaseViewManagerDialog({
   source: DatabaseSource;
   views: readonly DatabaseView[];
   busy: boolean;
+  initialAction?: { kind: 'duplicate'; viewId: string };
   onChange: (change: DatabaseViewLifecycleChange) => void;
 }) {
   'use no memo';
+  const handledInitialAction = useRef<string | null>(null);
   const [newViewName, setNewViewName] = useState('');
   const [newViewLayout, setNewViewLayout] = useState<
     | 'table'
@@ -76,6 +79,23 @@ export function DatabaseViewManagerDialog({
   );
   const [deleteViewId, setDeleteViewId] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!open || !initialAction || busy) return;
+    const actionKey = `${initialAction.kind}:${initialAction.viewId}`;
+    if (handledInitialAction.current === actionKey) return;
+    const view = views.find((candidate) => candidate.id === initialAction.viewId);
+    if (!view) return;
+    handledInitialAction.current = actionKey;
+    onChange({
+      kind: 'duplicate',
+      view: duplicateDatabaseView({
+        view,
+        existingViews: views,
+        uuid: crypto.randomUUID(),
+      }),
+    });
+  }, [open, initialAction, busy, views, onChange]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-3xl">
@@ -85,8 +105,9 @@ export function DatabaseViewManagerDialog({
           </DialogTitle>
           <DialogDescription>
             <Trans>
-              Create and organize stable saved views. Every shared change is reviewed before it
-              updates the database manifest.
+              Create and organize stable saved views. Each change follows the database mutation
+              policy; elevated and agent-authored changes remain reviewed before the manifest
+              updates.
             </Trans>
           </DialogDescription>
         </DialogHeader>

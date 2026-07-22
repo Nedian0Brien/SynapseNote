@@ -11,6 +11,7 @@ import {
   AlertCircle,
   Archive,
   Braces,
+  Copy,
   ExternalLink,
   Filter,
   Loader2,
@@ -553,6 +554,9 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
   const [initialDatabaseSurface, setInitialDatabaseSurface] = useState<
     'properties' | 'view-settings' | 'view-manager' | 'filters'
   >();
+  const [initialViewAction, setInitialViewAction] = useState<
+    { kind: 'duplicate'; viewId: string } | undefined
+  >();
   const [initialPropertyId, setInitialPropertyId] = useState<string>();
   const [initialSelectedRecordIds, setInitialSelectedRecordIds] = useState<readonly string[]>();
   const [replacementPickerOpen, setReplacementPickerOpen] = useState(false);
@@ -1035,9 +1039,11 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
   const openInlineDatabaseSurface = (
     surface: 'properties' | 'view-settings' | 'view-manager' | 'filters',
     propertyId?: string,
+    viewAction?: { kind: 'duplicate'; viewId: string },
   ) => {
     setInitialDatabaseSurface(surface);
     setInitialPropertyId(propertyId);
+    setInitialViewAction(viewAction);
     setFullDatabaseOpen(true);
   };
 
@@ -1276,6 +1282,16 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => openInlineDatabaseSurface('view-manager')}>
                 <Settings2 /> <Trans>Manage views</Trans>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() =>
+                  openInlineDatabaseSurface('view-manager', undefined, {
+                    kind: 'duplicate',
+                    viewId: reference.data.viewId,
+                  })
+                }
+              >
+                <Copy /> <Trans>Duplicate view configuration</Trans>
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => openInlineDatabaseSurface('filters')}>
                 <Filter /> <Trans>Filters</Trans>
@@ -1755,6 +1771,7 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
                 setInitialRecordAction(undefined);
                 setInitialTablePaste(undefined);
                 setInitialDatabaseSurface(undefined);
+                setInitialViewAction(undefined);
                 setInitialPropertyId(undefined);
                 setInitialSelectedRecordIds(undefined);
               }
@@ -1763,6 +1780,7 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
             initialRecordAction={initialRecordAction}
             initialTablePaste={initialTablePaste}
             initialDatabaseSurface={initialDatabaseSurface}
+            initialViewAction={initialViewAction}
             initialPropertyId={initialPropertyId}
             initialSelectedRecordIds={initialSelectedRecordIds}
             onOpenRecord={(path) => {

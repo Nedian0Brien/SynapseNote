@@ -1456,6 +1456,7 @@ describe('DatabaseView', () => {
     fireEvent.pointerDown(screen.getByRole('button', { name: 'Database view actions' }));
     expect(screen.getByRole('menuitem', { name: 'Convert to full page' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'Choose another view' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Duplicate view configuration' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'Manage properties' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'Inspect agent context' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'View settings' })).toBeTruthy();
