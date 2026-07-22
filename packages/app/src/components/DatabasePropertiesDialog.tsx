@@ -25,6 +25,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  databasePropertyTypeExample,
+  databasePropertyTypeLabel,
+} from '@/lib/database-property-copy';
 
 /**
  * Types that construct with no additional required configuration (no
@@ -171,7 +175,7 @@ export function DatabasePropertiesDialog({
                     ) : (
                       <span className="truncate font-medium">{property.name}</span>
                     )}
-                    <Badge variant="outline">{property.type}</Badge>
+                    <Badge variant="outline">{databasePropertyTypeLabel(property.type)}</Badge>
                     {title ? <Badge variant="gray">Frozen</Badge> : null}
                   </div>
                   {editing ? (
@@ -292,11 +296,14 @@ export function DatabasePropertiesDialog({
                 <SelectContent>
                   {ADDABLE_PROPERTY_TYPES.map((type) => (
                     <SelectItem key={type} value={type}>
-                      {type}
+                      {databasePropertyTypeLabel(type)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              <p className="basis-full text-muted-foreground text-xs sm:basis-auto">
+                {databasePropertyTypeExample(newType)}
+              </p>
               <Button
                 type="button"
                 size="sm"

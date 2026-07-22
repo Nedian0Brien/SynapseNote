@@ -242,6 +242,7 @@ import {
 } from '@/lib/database-offline-mutation-queue';
 import type { DatabaseSourceOnboardingTarget } from '@/lib/database-onboarding-client';
 import { useDatabasePresenceTarget, useRemoteDatabasePresence } from '@/lib/database-presence';
+import { databasePropertyTypeLabel } from '@/lib/database-property-copy';
 import {
   appendDatabaseQueryPage,
   fetchDatabaseRecord,
@@ -1433,6 +1434,7 @@ export function DatabaseTable({
               const layoutPropertyIndex = layout.propertyIds.indexOf(property.id);
               const propertyVisible = !layout.hiddenPropertyIds.includes(property.id);
               const calculationOptions = databaseCalculationFunctionsForProperty(property);
+              const propertyTypeLabel = databasePropertyTypeLabel(property.type);
               return (
                 <TableHead
                   key={property.id}
@@ -1447,7 +1449,9 @@ export function DatabaseTable({
                   }}
                 >
                   <span>{property.name}</span>
-                  <span className="ml-2 normal-case text-[10px] opacity-60">{property.type}</span>
+                  <span className="ml-2 normal-case text-[10px] opacity-60">
+                    {propertyTypeLabel}
+                  </span>
                   {(property.type === 'formula' || property.type === 'rollup') &&
                   onConfigureComputedProperty ? (
                     <Button
@@ -1455,7 +1459,7 @@ export function DatabaseTable({
                       variant="ghost"
                       size="icon-xs"
                       className="ml-1"
-                      aria-label={`Configure ${property.name} ${property.type}`}
+                      aria-label={`Configure ${property.name} ${propertyTypeLabel}`}
                       onClick={() => onConfigureComputedProperty(property)}
                     >
                       <Pencil aria-hidden="true" />

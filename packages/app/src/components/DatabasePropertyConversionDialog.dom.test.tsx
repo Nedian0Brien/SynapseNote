@@ -143,6 +143,8 @@ describe('DatabasePropertyConversionDialog', () => {
         />
       </I18nProvider>,
     );
+    expect(screen.getByText('Place')).toBeTruthy();
+    expect(screen.getByText('Short notes or descriptions')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Preview conversion' }));
     expect(await screen.findByText('Structured identity is flattened')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Review exact plan' })).toBeNull();

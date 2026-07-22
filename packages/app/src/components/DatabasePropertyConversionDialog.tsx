@@ -30,6 +30,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { previewDatabasePropertyConversionPlan } from '@/lib/database-property-conversion-client';
+import {
+  databasePropertyTypeExample,
+  databasePropertyTypeLabel,
+} from '@/lib/database-property-copy';
 import { classifyDatabaseUiProblem, type DatabaseUiProblem } from '@/lib/database-ui-problem';
 
 const SIMPLE_TARGET_TYPES = [
@@ -214,7 +218,7 @@ export function DatabasePropertyConversionDialog({
               <Trans>Target type</Trans>
             </Label>
             <div className="flex items-center gap-3">
-              <Badge variant="outline">{property.type}</Badge>
+              <Badge variant="outline">{databasePropertyTypeLabel(property.type)}</Badge>
               <ArrowRight className="size-4 text-muted-foreground" aria-hidden="true" />
               <Select
                 value={targetType}
@@ -231,12 +235,17 @@ export function DatabasePropertyConversionDialog({
                 <SelectContent>
                   {availableTargets.map((type) => (
                     <SelectItem key={type} value={type}>
-                      {type}
+                      {databasePropertyTypeLabel(type)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
+            {targetType ? (
+              <p className="text-muted-foreground text-xs">
+                {databasePropertyTypeExample(targetType)}
+              </p>
+            ) : null}
           </div>
 
           {availableTargets.length === 0 ? (

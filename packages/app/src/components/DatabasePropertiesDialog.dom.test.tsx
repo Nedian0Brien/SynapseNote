@@ -48,9 +48,15 @@ function renderDialog(overrides: Partial<Parameters<typeof DatabasePropertiesDia
 describe('DatabasePropertiesDialog', () => {
   test('lists every property and keeps the Title row frozen from move and delete', () => {
     renderDialog();
-    expect(screen.getByText('Title')).toBeTruthy();
-    expect(screen.getByText('Status')).toBeTruthy();
-    expect(screen.getByText('Notes')).toBeTruthy();
+    expect(
+      document.querySelector('[data-database-property-row="prop_title"]')?.textContent,
+    ).toContain('Title');
+    expect(
+      document.querySelector('[data-database-property-row="prop_status"]')?.textContent,
+    ).toContain('Status');
+    expect(
+      document.querySelector('[data-database-property-row="prop_notes"]')?.textContent,
+    ).toContain('Notes');
     expect((screen.getByLabelText('Move Title up') as HTMLButtonElement).disabled).toBe(true);
     expect((screen.getByLabelText('Move Title down') as HTMLButtonElement).disabled).toBe(true);
     expect((screen.getByLabelText('Delete Title') as HTMLButtonElement).disabled).toBe(true);
@@ -60,12 +66,20 @@ describe('DatabasePropertiesDialog', () => {
     const { onAddProperty } = renderDialog();
     const addButton = screen.getByRole('button', { name: 'Add' }) as HTMLButtonElement;
     expect(addButton.disabled).toBe(true);
+    expect(screen.getByText('Short notes or descriptions')).toBeTruthy();
     const nameInput = screen.getByPlaceholderText('Property name') as HTMLInputElement;
     fireEvent.change(nameInput, { target: { value: 'Due date' } });
     expect(addButton.disabled).toBe(false);
     fireEvent.click(addButton);
     expect(onAddProperty).toHaveBeenCalledWith({ name: 'Due date', type: 'text' });
     expect(nameInput.value).toBe('');
+  });
+
+  test('uses friendly type labels in the property picker', () => {
+    renderDialog();
+    fireEvent.click(screen.getByRole('combobox', { name: 'New property type' }));
+    expect(screen.getByRole('option', { name: 'Multi-select' })).toBeTruthy();
+    expect(screen.queryByRole('option', { name: 'multi_select' })).toBeNull();
   });
 
   test('deletes a non-Title property immediately', () => {
