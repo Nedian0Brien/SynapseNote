@@ -294,10 +294,15 @@ do not reconstruct behavior solely from this summary.
   reference. The inspector remains lazy-loaded and uses the canonical
   permission-scoped Context Pack contract; inline rendering does not embed
   record data or invent a second retrieval path.
-- Focused evidence: `DatabaseView.dom.test.tsx` passes 16 tests / 153
-  expectations, including the scoped inspector entry; app typecheck, Biome,
-  and `git diff --check` pass. Full agent replay and transport matrix gates
-  remain open under NUI-601/NUI-603.
+- The inline selection toolbar now also exposes `Inspect selected context`.
+  It passes the selected stable record IDs to the same permission-scoped
+  Context Pack inspector, so an agent can inspect a bounded multi-record slice
+  without opening the full workspace or copying record payloads into the host
+  block.
+- Focused evidence: `DatabaseView.dom.test.tsx` passes 16 tests / 157
+  expectations, including database/view, single-record, and selected-record
+  scoped inspector entries; app typecheck, Biome, and `git diff --check` pass.
+  Full agent replay and transport matrix gates remain open under NUI-601/NUI-603.
 
 ### 2026-07-22 mutation-policy matrix slice
 

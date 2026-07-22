@@ -510,6 +510,7 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
   const [replacementPickerOpen, setReplacementPickerOpen] = useState(false);
   const [inlineContextInspectorScope, setInlineContextInspectorScope] = useState<{
     recordId?: string;
+    recordIds?: string[];
   } | null>(null);
   const [inlineCreationOpen, setInlineCreationOpen] = useState(false);
   const [focusInlineNewRecord, setFocusInlineNewRecord] = useState(false);
@@ -1224,6 +1225,16 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
             <Button
               type="button"
               size="sm"
+              variant="outline"
+              onClick={() =>
+                setInlineContextInspectorScope({ recordIds: [...inlineSelectedRecordIds] })
+              }
+            >
+              <Braces /> <Trans>Inspect selected context</Trans>
+            </Button>
+            <Button
+              type="button"
+              size="sm"
               variant="ghost"
               onClick={() => setInlineSelectedRecordIds(new Set())}
             >
@@ -1567,6 +1578,9 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
               viewId: reference.data.viewId,
               ...(inlineContextInspectorScope.recordId
                 ? { recordId: inlineContextInspectorScope.recordId }
+                : {}),
+              ...(inlineContextInspectorScope.recordIds?.length
+                ? { recordIds: inlineContextInspectorScope.recordIds }
                 : {}),
             }}
           />

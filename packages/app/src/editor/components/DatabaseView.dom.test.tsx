@@ -948,8 +948,23 @@ describe('DatabaseView', () => {
     fireEvent.click(document.querySelector('[data-slot="dialog-close"]') as HTMLElement);
     await waitFor(() => expect(screen.queryByText('What the agent saw')).toBeNull());
     fireEvent.click(screen.getByLabelText('Select record rec_first'));
+    fireEvent.click(screen.getByLabelText('Select record rec_second'));
     expect(await screen.findByTestId('inline-selection-toolbar')).toBeTruthy();
-    expect(screen.getByText('1 selected')).toBeTruthy();
+    expect(screen.getByText('2 selected')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect selected context' }));
+    expect(await screen.findByText('What the agent saw')).toBeTruthy();
+    expect(
+      inspectPaths.some((path) =>
+        path.includes(
+          `/api/databases/inspect?databaseId=${database.id}&sourceId=${source.id}&viewId=${view.id}&recordIds=rec_first%2Crec_second`,
+        ),
+      ),
+    ).toBe(true);
+    expect(document.querySelector('[data-context-inspector-scope]')?.textContent).toContain(
+      'records:rec_first,rec_second',
+    );
+    fireEvent.click(document.querySelector('[data-slot="dialog-close"]') as HTMLElement);
+    await waitFor(() => expect(screen.queryByText('What the agent saw')).toBeNull());
     fireEvent.click(screen.getByRole('button', { name: 'Open bulk actions' }));
     expect(await screen.findByTestId('database-bulk-toolbar')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));

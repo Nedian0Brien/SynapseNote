@@ -2,4 +2,5 @@
 '@nedian0brien/synapsenote': patch
 ---
 
-Add a scoped agent-context inspector entry to inline database view actions.
+Add scoped agent-context inspection to inline database actions, rows, and
+selected-record groups.
