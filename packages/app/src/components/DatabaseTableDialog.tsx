@@ -848,6 +848,15 @@ function DatabaseAtomicApprovalScope({
         Selective approval is unavailable for this atomic group; approve every required scope
         together.
       </p>
+      <p
+        className="mt-1 text-muted-foreground text-xs"
+        data-testid="database-sensitive-review-policy"
+      >
+        <Trans>
+          Sensitive changes always require review: permission changes, permanent deletion, external
+          actions, broad schema migrations, and bulk edits over the review threshold.
+        </Trans>
+      </p>
       <ul className="mt-1 list-disc pl-5">
         {required.map((approval) => (
           <li key={approval.code}>{databaseApprovalLabels[approval.code] ?? approval.code}</li>

@@ -3747,6 +3747,9 @@ describe('DatabaseTableDialog', () => {
     expect(screen.getByTestId('database-atomic-approval-scope').textContent).toContain(
       'Selective approval is unavailable',
     );
+    expect(screen.getByTestId('database-sensitive-review-policy').textContent).toContain(
+      'Sensitive changes always require review',
+    );
     expect(screen.getByTestId('database-creation-ghost-review')).not.toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Commit creation' }));

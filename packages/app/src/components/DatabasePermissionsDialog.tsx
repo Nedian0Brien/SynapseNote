@@ -36,6 +36,22 @@ import {
 
 const READ_ACTIONS = new Set<DatabasePermissionAction>(databasePermissionRoleActions('view_only'));
 
+type PendingPermissionReview =
+  | {
+      kind: 'upsert';
+      grantId: string | null;
+      databaseId: string | null;
+      principalId: string;
+      role: DatabasePermissionRole;
+      actions: DatabasePermissionAction[];
+      expectedRevision: string;
+    }
+  | {
+      kind: 'remove';
+      grant: DatabasePermissionGrant;
+      expectedRevision: string;
+    };
+
 export function DatabasePermissionsDialog({
   open,
   onOpenChange,
@@ -64,6 +80,7 @@ export function DatabasePermissionsDialog({
   const [status, setStatus] = useState<'idle' | 'loading' | 'saving'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [refresh, setRefresh] = useState(0);
+  const [pendingReview, setPendingReview] = useState<PendingPermissionReview | null>(null);
 
   useEffect(() => {
     void refresh;
@@ -86,6 +103,7 @@ export function DatabasePermissionsDialog({
   }, [databaseId, open, refresh]);
 
   const resetDraft = () => {
+    setPendingReview(null);
     setEditingId(null);
     setWorkspaceScope(false);
     setPrincipalId('');
@@ -93,58 +111,71 @@ export function DatabasePermissionsDialog({
     setActions(new Set(READ_ACTIONS));
   };
 
-  const save = async () => {
-    if (!principalId.trim() || actions.size === 0 || status !== 'idle') return;
+  const save = () => {
+    if (!principalId.trim() || actions.size === 0 || status !== 'idle' || pendingReview) return;
+    setError(null);
+    setPendingReview({
+      kind: 'upsert',
+      grantId: editingId,
+      databaseId: workspaceScope ? null : databaseId,
+      principalId: principalId.trim(),
+      role,
+      actions: [...actions],
+      expectedRevision: revision,
+    });
+  };
+
+  const approvePendingReview = async () => {
+    if (!pendingReview || status !== 'idle') return;
     setStatus('saving');
     setError(null);
     try {
-      const result = await saveDatabasePermission({
-        ...(editingId ? { grantId: editingId } : {}),
-        databaseId: workspaceScope ? null : databaseId,
-        principalId: principalId.trim(),
-        role,
-        actions: [...actions],
-        expectedRevision: revision,
-      });
-      setGrants((current) =>
-        [...current.filter((grant) => grant.id !== result.grant.id), result.grant].sort(
-          (left, right) =>
-            left.principalId.localeCompare(right.principalId) || left.id.localeCompare(right.id),
-        ),
-      );
-      setRevision(result.revision);
-      resetDraft();
+      if (pendingReview.kind === 'upsert') {
+        const result = await saveDatabasePermission({
+          ...(pendingReview.grantId ? { grantId: pendingReview.grantId } : {}),
+          databaseId: pendingReview.databaseId,
+          principalId: pendingReview.principalId,
+          role: pendingReview.role,
+          actions: pendingReview.actions,
+          expectedRevision: pendingReview.expectedRevision,
+        });
+        setGrants((current) =>
+          [...current.filter((grant) => grant.id !== result.grant.id), result.grant].sort(
+            (left, right) =>
+              left.principalId.localeCompare(right.principalId) || left.id.localeCompare(right.id),
+          ),
+        );
+        setRevision(result.revision);
+        resetDraft();
+      } else {
+        const result = await removeDatabasePermission({
+          grantId: pendingReview.grant.id,
+          expectedRevision: pendingReview.expectedRevision,
+        });
+        setGrants((current) =>
+          current.filter((candidate) => candidate.id !== pendingReview.grant.id),
+        );
+        setRevision(result.revision);
+        if (editingId === pendingReview.grant.id) resetDraft();
+        else setPendingReview(null);
+      }
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to save database permission');
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : pendingReview.kind === 'upsert'
+            ? 'Unable to save database permission'
+            : 'Unable to revoke database permission',
+      );
     } finally {
       setStatus('idle');
     }
   };
 
-  const remove = async (grant: DatabasePermissionGrant) => {
-    if (status !== 'idle') return;
-    const scope = grant.databaseId === null ? 'the entire workspace' : `database ${databaseName}`;
-    if (
-      !window.confirm(
-        `Revoke ${grant.principalId}'s ${grant.role} permission for ${scope}? This takes effect immediately. Recovery: create the same grant again.`,
-      )
-    )
-      return;
-    setStatus('saving');
+  const remove = (grant: DatabasePermissionGrant) => {
+    if (status !== 'idle' || pendingReview) return;
     setError(null);
-    try {
-      const result = await removeDatabasePermission({
-        grantId: grant.id,
-        expectedRevision: revision,
-      });
-      setGrants((current) => current.filter((candidate) => candidate.id !== grant.id));
-      setRevision(result.revision);
-      if (editingId === grant.id) resetDraft();
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to revoke database permission');
-    } finally {
-      setStatus('idle');
-    }
+    setPendingReview({ kind: 'remove', grant, expectedRevision: revision });
   };
 
   return (
@@ -188,7 +219,7 @@ export function DatabasePermissionsDialog({
               onChange={(event) => setPrincipalId(event.currentTarget.value)}
               placeholder="user:collaborator"
               aria-label="Principal ID"
-              disabled={status !== 'idle'}
+              disabled={status !== 'idle' || pendingReview !== null}
             />
             <Select
               value={role}
@@ -199,7 +230,7 @@ export function DatabasePermissionsDialog({
                   setActions(new Set(databasePermissionRoleActions(nextRole)));
                 }
               }}
-              disabled={status !== 'idle'}
+              disabled={status !== 'idle' || pendingReview !== null}
             >
               <SelectTrigger aria-label="Permission role">
                 <SelectValue />
@@ -224,7 +255,7 @@ export function DatabasePermissionsDialog({
                 id="database-permission-workspace-scope"
                 checked={workspaceScope}
                 onCheckedChange={(checked) => setWorkspaceScope(checked === true)}
-                disabled={status !== 'idle'}
+                disabled={status !== 'idle' || pendingReview !== null}
               />
               <span>
                 <span className="block font-medium">
@@ -256,7 +287,7 @@ export function DatabasePermissionsDialog({
                         return next;
                       })
                     }
-                    disabled={status !== 'idle' || role !== 'custom'}
+                    disabled={status !== 'idle' || pendingReview !== null || role !== 'custom'}
                   />
                   <span className="font-mono">{action}</span>
                 </label>
@@ -264,13 +295,22 @@ export function DatabasePermissionsDialog({
             </div>
             <div className="flex justify-end gap-2">
               {editingId ? (
-                <Button variant="ghost" onClick={resetDraft} disabled={status !== 'idle'}>
+                <Button
+                  variant="ghost"
+                  onClick={resetDraft}
+                  disabled={status !== 'idle' || pendingReview !== null}
+                >
                   <Trans>Cancel</Trans>
                 </Button>
               ) : null}
               <Button
-                onClick={() => void save()}
-                disabled={!principalId.trim() || actions.size === 0 || status !== 'idle'}
+                onClick={save}
+                disabled={
+                  !principalId.trim() ||
+                  actions.size === 0 ||
+                  status !== 'idle' ||
+                  pendingReview !== null
+                }
               >
                 {status === 'saving' ? (
                   <Loader2 className="animate-spin" aria-hidden="true" />
@@ -278,6 +318,63 @@ export function DatabasePermissionsDialog({
                 {editingId ? <Trans>Save grant</Trans> : <Trans>Share</Trans>}
               </Button>
             </div>
+            {pendingReview ? (
+              <section
+                className="space-y-2 rounded-md border border-amber-500/40 bg-amber-500/5 p-3"
+                aria-label="Permission change review"
+                data-testid="database-permission-review"
+              >
+                <h4 className="font-medium text-sm">
+                  <Trans>Review permission change</Trans>
+                </h4>
+                {pendingReview.kind === 'upsert' ? (
+                  <p className="text-sm">
+                    <Trans>
+                      Grant {pendingReview.principalId} {pendingReview.role.replace('_', ' ')}
+                      access to{' '}
+                      {pendingReview.databaseId === null ? 'the entire workspace' : databaseName}.
+                    </Trans>
+                  </p>
+                ) : (
+                  <p className="text-sm">
+                    <Trans>
+                      Revoke {pendingReview.grant.principalId}&apos;s{' '}
+                      {pendingReview.grant.role.replace('_', ' ')} access. This takes effect
+                      immediately.
+                    </Trans>
+                  </p>
+                )}
+                {pendingReview.kind === 'upsert' ? (
+                  <p className="text-muted-foreground text-xs">
+                    <Trans>Actions: {pendingReview.actions.join(', ')}</Trans>
+                  </p>
+                ) : null}
+                <p className="font-medium text-amber-800 text-xs dark:text-amber-200">
+                  <Trans>
+                    Permission changes always require review before they take effect. Permanent
+                    deletion, external actions, broad schema migrations, and bulk edits over the
+                    review threshold use the same review boundary.
+                  </Trans>
+                </p>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPendingReview(null)}
+                    disabled={status !== 'idle'}
+                  >
+                    <Trans>Cancel review</Trans>
+                  </Button>
+                  <Button size="sm" onClick={() => void approvePendingReview()}>
+                    {pendingReview.kind === 'remove' ? (
+                      <Trans>Approve revocation</Trans>
+                    ) : (
+                      <Trans>Approve permission change</Trans>
+                    )}
+                  </Button>
+                </div>
+              </section>
+            ) : null}
           </section>
 
           <section className="space-y-2">
@@ -289,7 +386,7 @@ export function DatabasePermissionsDialog({
                 variant="ghost"
                 size="sm"
                 onClick={() => setRefresh((value) => value + 1)}
-                disabled={status !== 'idle'}
+                disabled={status !== 'idle' || pendingReview !== null}
               >
                 <RefreshCw aria-hidden="true" /> <Trans>Refresh</Trans>
               </Button>
@@ -331,7 +428,7 @@ export function DatabasePermissionsDialog({
                         variant="ghost"
                         size="icon-sm"
                         aria-label={`Edit ${grant.principalId}`}
-                        disabled={status !== 'idle'}
+                        disabled={status !== 'idle' || pendingReview !== null}
                         onClick={() => {
                           setEditingId(grant.id);
                           setWorkspaceScope(grant.databaseId === null);
@@ -346,7 +443,7 @@ export function DatabasePermissionsDialog({
                         variant="ghost"
                         size="icon-sm"
                         aria-label={`Revoke ${grant.principalId}`}
-                        disabled={status !== 'idle'}
+                        disabled={status !== 'idle' || pendingReview !== null}
                         onClick={() => void remove(grant)}
                       >
                         <Trash2 />

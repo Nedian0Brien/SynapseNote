@@ -3,18 +3,13 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { DatabasePermissionsDialog } from './DatabasePermissionsDialog';
 
 const originalFetch = globalThis.fetch;
-const originalConfirm = window.confirm;
-
 afterEach(() => {
   cleanup();
   globalThis.fetch = originalFetch;
-  window.confirm = originalConfirm;
 });
 
 describe('DatabasePermissionsDialog', () => {
   test('creates, edits, and revokes an exact database action grant', async () => {
-    const confirm = mock(() => true);
-    window.confirm = confirm;
     const bodies: Array<Record<string, unknown>> = [];
     let revision = 'sha256:empty';
     const grant = {
@@ -72,6 +67,9 @@ describe('DatabasePermissionsDialog', () => {
     fireEvent.click(await screen.findByRole('option', { name: 'Content editor' }));
     fireEvent.click(screen.getByText('Apply across the workspace'));
     fireEvent.click(screen.getByRole('button', { name: 'Share' }));
+    expect(await screen.findByTestId('database-permission-review')).toBeTruthy();
+    expect(bodies).toHaveLength(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Approve permission change' }));
     expect(await screen.findByText('user:collaborator')).toBeTruthy();
     expect(bodies[1]).toMatchObject({
       action: 'upsert',
@@ -89,8 +87,12 @@ describe('DatabasePermissionsDialog', () => {
     expect(screen.getByDisplayValue('user:collaborator')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     fireEvent.click(screen.getByRole('button', { name: 'Revoke user:collaborator' }));
-    expect(confirm).toHaveBeenCalledWith(expect.stringContaining('database Tasks'));
-    expect(confirm).toHaveBeenCalledWith(expect.stringContaining('create the same grant again'));
+    expect(await screen.findByTestId('database-permission-review')).toBeTruthy();
+    expect(screen.getByTestId('database-permission-review').textContent).toContain(
+      'Permission changes always require review',
+    );
+    expect(bodies).toHaveLength(2);
+    fireEvent.click(screen.getByRole('button', { name: 'Approve revocation' }));
     await waitFor(() => expect(screen.queryByText('user:collaborator')).toBeNull());
     expect(bodies[2]).toEqual({
       action: 'remove',
