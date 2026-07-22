@@ -660,6 +660,7 @@ describe('DatabaseView', () => {
     };
     const boardDatabase = { ...database, sources: [boardSource], views: [boardView] };
     let commitCalls = 0;
+    let undoCalls = 0;
     let releaseCommit: (() => void) | undefined;
     globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
       const path = String(input);
@@ -748,6 +749,18 @@ describe('DatabaseView', () => {
             );
         });
       }
+      if (path === '/api/databases/undo') {
+        undoCalls += 1;
+        const action = String(body.action);
+        return Response.json({
+          action,
+          undoId: 'undo_board',
+          mutationId: 'mut_board',
+          canApply: true,
+          conflicts: [],
+          ...(action === 'apply' ? { receipt: { status: 'applied' } } : {}),
+        });
+      }
       return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
     }) as typeof fetch;
 
@@ -779,10 +792,13 @@ describe('DatabaseView', () => {
     ).toBe(true);
     releaseCommit?.();
     await waitFor(() => expect(screen.getByTestId('inline-save-feedback')).toBeTruthy());
+    fireEvent.click(screen.getByRole('button', { name: 'Undo inline database change' }));
+    await waitFor(() => expect(undoCalls).toBe(2));
+    expect(screen.getByRole('button', { name: 'Redo inline database change' })).toBeTruthy();
     expect(document.querySelector('[data-database-workspace]')).toBeNull();
   });
 
-  test('renders a linked Calendar from its saved timezone-aware Date mapping', async () => {
+  test('applies an inline Calendar reschedule through the direct-safe path', async () => {
     const today = new Date().toISOString().slice(0, 10);
     const calendarSource = {
       ...source,
@@ -810,8 +826,12 @@ describe('DatabaseView', () => {
       projection: { propertyIds: ['prop_title'], body: 'hidden' as const },
     };
     const calendarDatabase = { ...database, sources: [calendarSource], views: [calendarView] };
-    globalThis.fetch = mock(async (input: RequestInfo | URL) => {
+    let commitCalls = 0;
+    let undoCalls = 0;
+    let releaseCommit: (() => void) | undefined;
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
       const path = String(input);
+      const body = init?.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : {};
       if (path === '/api/databases/describe') {
         return Response.json({
           manifestRevision: hash,
@@ -853,6 +873,58 @@ describe('DatabaseView', () => {
           aggregation: null,
         });
       }
+      if (path === '/api/databases/plan') {
+        if (body.action === 'create_draft') {
+          return Response.json({
+            action: body.action,
+            draft: { id: 'draft_calendar', revision: hash },
+          });
+        }
+        return Response.json({
+          action: 'create_plan',
+          plan: {
+            id: 'plan_calendar',
+            hash,
+            snapshotRevision: hash,
+            committable: true,
+            requiresCommit: true,
+            conflicts: [],
+            approvals: [],
+            postconditions: [],
+            risk: { level: 'low', reasons: [] },
+            diff: { manifests: [], records: [], templates: [], policy: {} },
+          },
+        });
+      }
+      if (path === '/api/databases/commit') {
+        commitCalls += 1;
+        return new Promise<Response>((resolve) => {
+          releaseCommit = () =>
+            resolve(
+              Response.json({
+                mutationId: 'mut_calendar',
+                planId: 'plan_calendar',
+                planHash: hash,
+                idempotentReplay: false,
+                actualDiff: [],
+                verification: { status: 'passed' },
+                undoToken: 'undo_calendar',
+              }),
+            );
+        });
+      }
+      if (path === '/api/databases/undo') {
+        undoCalls += 1;
+        const action = String(body.action);
+        return Response.json({
+          action,
+          undoId: 'undo_calendar',
+          mutationId: 'mut_calendar',
+          canApply: true,
+          conflicts: [],
+          ...(action === 'apply' ? { receipt: { status: 'applied' } } : {}),
+        });
+      }
       return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
     }) as typeof fetch;
 
@@ -870,9 +942,26 @@ describe('DatabaseView', () => {
       expect(document.querySelector('[data-calendar-card="rec_first"]')).toBeTruthy(),
     );
     expect(screen.getByLabelText('Inspect context for record rec_first')).toBeTruthy();
+    const card = document.querySelector<HTMLElement>('[data-calendar-card="rec_first"]');
+    const currentDay = card?.closest<HTMLElement>('[data-calendar-day]')?.dataset.calendarDay;
+    const targetDay = [...document.querySelectorAll<HTMLElement>('[data-calendar-day]')].find(
+      (day) => day.dataset.calendarDay !== currentDay,
+    );
+    if (!card || !targetDay) throw new Error('Calendar drag fixture is missing');
+    fireEvent.dragStart(card);
+    fireEvent.dragOver(targetDay);
+    fireEvent.drop(targetDay);
+    await waitFor(() => expect(commitCalls).toBe(1));
+    expect(screen.getByText('Saving inline database change')).toBeTruthy();
+    expect(targetDay.querySelector('[data-calendar-card="rec_first"]')).toBeTruthy();
+    releaseCommit?.();
+    await waitFor(() => expect(screen.getByTestId('inline-save-feedback')).toBeTruthy());
+    fireEvent.click(screen.getByRole('button', { name: 'Undo inline database change' }));
+    await waitFor(() => expect(undoCalls).toBe(2));
+    expect(screen.getByRole('button', { name: 'Redo inline database change' })).toBeTruthy();
   });
 
-  test('renders a linked Timeline from its saved Date mapping', async () => {
+  test('applies an inline Timeline move through the direct-safe path', async () => {
     const timelineSource = {
       ...source,
       properties: [
@@ -900,8 +989,12 @@ describe('DatabaseView', () => {
       projection: { propertyIds: ['prop_title', 'prop_schedule'], body: 'hidden' as const },
     };
     const timelineDatabase = { ...database, sources: [timelineSource], views: [timelineView] };
-    globalThis.fetch = mock(async (input: RequestInfo | URL) => {
+    let commitCalls = 0;
+    let undoCalls = 0;
+    let releaseCommit: (() => void) | undefined;
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
       const path = String(input);
+      const body = init?.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : {};
       if (path === '/api/databases/describe') {
         return Response.json({
           manifestRevision: hash,
@@ -946,6 +1039,58 @@ describe('DatabaseView', () => {
           aggregation: null,
         });
       }
+      if (path === '/api/databases/plan') {
+        if (body.action === 'create_draft') {
+          return Response.json({
+            action: body.action,
+            draft: { id: 'draft_timeline', revision: hash },
+          });
+        }
+        return Response.json({
+          action: 'create_plan',
+          plan: {
+            id: 'plan_timeline',
+            hash,
+            snapshotRevision: hash,
+            committable: true,
+            requiresCommit: true,
+            conflicts: [],
+            approvals: [],
+            postconditions: [],
+            risk: { level: 'low', reasons: [] },
+            diff: { manifests: [], records: [], templates: [], policy: {} },
+          },
+        });
+      }
+      if (path === '/api/databases/commit') {
+        commitCalls += 1;
+        return new Promise<Response>((resolve) => {
+          releaseCommit = () =>
+            resolve(
+              Response.json({
+                mutationId: 'mut_timeline',
+                planId: 'plan_timeline',
+                planHash: hash,
+                idempotentReplay: false,
+                actualDiff: [],
+                verification: { status: 'passed' },
+                undoToken: 'undo_timeline',
+              }),
+            );
+        });
+      }
+      if (path === '/api/databases/undo') {
+        undoCalls += 1;
+        const action = String(body.action);
+        return Response.json({
+          action,
+          undoId: 'undo_timeline',
+          mutationId: 'mut_timeline',
+          canApply: true,
+          conflicts: [],
+          ...(action === 'apply' ? { receipt: { status: 'applied' } } : {}),
+        });
+      }
       return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
     }) as typeof fetch;
 
@@ -964,6 +1109,14 @@ describe('DatabaseView', () => {
     expect(screen.getAllByLabelText('Inspect context for record rec_first').length).toBeGreaterThan(
       0,
     );
+    fireEvent.click(screen.getByLabelText('Move rec_first later'));
+    await waitFor(() => expect(commitCalls).toBe(1));
+    expect(screen.getByText('Saving inline database change')).toBeTruthy();
+    releaseCommit?.();
+    await waitFor(() => expect(screen.getByTestId('inline-save-feedback')).toBeTruthy());
+    fireEvent.click(screen.getByRole('button', { name: 'Undo inline database change' }));
+    await waitFor(() => expect(undoCalls).toBe(2));
+    expect(screen.getByRole('button', { name: 'Redo inline database change' })).toBeTruthy();
   });
 
   test('renders a live projection from stable references without embedded records', async () => {

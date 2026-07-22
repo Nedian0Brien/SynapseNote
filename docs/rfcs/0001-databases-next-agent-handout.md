@@ -25,6 +25,7 @@
 - Latest creation-review summary changeset: `../../.changeset/database-creation-review-summary.md`
 - Latest Agent Run inspection changeset: `../../.changeset/agent-run-progressive-inspection.md`
 - Latest inline alternative-view mutation changeset: `../../.changeset/inline-alt-view-mutations.md`
+- Latest inline view-order optimism changeset: `../../.changeset/inline-view-order-optimism.md`
 
 ## Objective and completion rule
 
@@ -47,10 +48,10 @@ the repository-wide check for final release readiness.
 - Numbered A-S items still open: **5**.
 - Total unchecked Markdown boxes: **25**. The extra 20 are M1-M4 milestone
   release gates, all intentionally still open.
-- Notion UX gap implementation checklist: **29/42 complete**. NUI-201,
+- Notion UX gap implementation checklist: **30/42 complete**. NUI-201,
   NUI-202, NUI-203, NUI-204, NUI-302, NUI-304, and NUI-401 are closed with
-  focused implementation evidence; NUI-303 and NUI-403 are now closed for
-  implementation evidence; NUI-105, NUI-301, and the P1/P2 agent, linked-view,
+  focused implementation evidence; NUI-301, NUI-303, and NUI-403 are now
+  closed for implementation evidence; NUI-105 and the P1/P2 agent, linked-view,
   responsive, and browser-journey gates remain open.
 - Notion UX alignment checklist: **2/128 complete**. The first insertion slice
   (user-facing `Database`/`Linked database` slash entries and an inline
@@ -791,9 +792,34 @@ do not reconstruct behavior solely from this summary.
   (4 / 12), and `DatabaseTimeline.dom.test.tsx` (4 / 14) pass their typed
   transition/resize/context journeys. App typecheck, targeted Biome, and
   `git diff --check` pass. No full server suite or E2E was run.
-- Checklist status: NUI-301 remains open. The implementation now covers the
-  direct-safe alternative-view path, but complete undo/redo integration across
-  every alternate renderer and agent transport evidence is still required.
+- Checklist status at this point in the earlier slice: NUI-301 remained open;
+  the follow-up view-order slice below adds the missing undo/redo and policy
+  evidence before closing it.
+
+### 2026-07-22 inline view-order optimism slice
+
+- Saved-view tabs now derive a next order from stable view IDs and project that
+  order immediately during a drag/drop reorder. The optimistic order remains
+  visible while the exact plan commit is in flight, clears on blocked/failed
+  plans, and is replaced by canonical server state after commit, undo, or redo.
+  Human view edits still use the centralized direct-safe policy; agent and
+  non-user principals remain review-required.
+- Focused evidence: the full `DatabaseTableDialog.dom.test.tsx` suite passes
+  64 tests / 387 expectations. Its delayed-commit reorder journey asserts the
+  immediate tab order, `Saving` state, canonical refresh, and revision-bound
+  undo/redo (preview/apply for both directions). `DatabaseView.dom.test.tsx`
+  passes 18 tests / 205 expectations, including delayed-commit Board,
+  Calendar, and Timeline edits with optimistic rendering and undo/redo.
+  `database-mutation-policy.test.ts` passes 4 tests / 68 expectations; focused
+  server commit tests cover approval failure and Agent Run lifecycle states;
+  HTTP commit conformance passes 1 test / 22 expectations, MCP commit/undo
+  tools pass 6 tests / 17 expectations, and the cross-transport contract passes
+  1 test / 12 expectations.
+  App typecheck, targeted Biome, and `git diff --check` pass. No full server
+  suite or E2E rerun was needed.
+- Checklist status: **NUI-301 is closed (30/42 UX-gap items)**. NUI-603
+  remains open for durable Agent Run retry/resume and independent receipt
+  handoff; browser/Electron and usability gates remain separate release work.
 
 ### 2026-07-22 inline filter handoff slice
 

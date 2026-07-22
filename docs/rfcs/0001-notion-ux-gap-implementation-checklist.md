@@ -29,8 +29,9 @@ largest remaining mismatches are:
 3. Direct-safe human cell/title/row/view writes now use a centralized policy,
    optimistic acknowledgement, and exact undo; schema, destructive, bulk,
    permission, external, and agent-authored operations still require review.
-   Complete policy evidence across every view editor, redo, and focus retention
-   remains open.
+   Focused policy and optimistic/undo/redo evidence now covers the editable
+   Table, Board, Calendar, Timeline, and saved-view reorder paths; visual,
+   cross-host, and usability gates remain open elsewhere in this checklist.
 4. Inline linked views now expose title, visible view tabs, canonical shared
    records, and an explicit stale snapshot state. Inline creation and record
    navigation continuity are implemented; cross-reload cache semantics and the
@@ -224,7 +225,7 @@ treated as visual parity until a browser capture is attached.
 
 ## P0 — Make routine edits feel direct
 
-- [ ] **NUI-301** Define the mutation policy in code: direct-safe human cell,
+- [x] **NUI-301** Define the mutation policy in code: direct-safe human cell,
   title, row, and view changes are optimistic and undoable; agent-authored,
   destructive, permission, external, schema-migration, and threshold-crossing
   bulk changes retain exact review. The allow-list is now centralized in
@@ -237,21 +238,26 @@ treated as visual parity until a browser capture is attached.
   handles `Ctrl/Cmd+Z` plus `Ctrl/Cmd+Shift+Z` without intercepting text-input
   undo. Inline row selection reports selected stable
   IDs and hands bulk actions to the canonical reviewed workspace; it never
-  creates a second inline bulk-write path. The remaining gate is full
-  optimistic/undo evidence for every view editor and a complete policy matrix
-  for agent transports. Inline Board, Calendar, and Timeline now compile
+  creates a second inline bulk-write path. Inline Board, Calendar, and Timeline now compile
   one-record multi-cell transitions through the same exact desired-state
   mutation and project optimistic values (including Board memberships) while
   the commit is in flight; multi-record bulk edits still hand off to reviewed
   workspace actions. The explicit 13-operation matrix is covered by
   `database-mutation-policy.test.ts`; the canonical workspace regression suite
-  passes 64/64 tests and 374 expectations across Table, Board, Timeline,
-  Calendar, schema, and mutation journeys. `DatabaseView.dom.test.tsx` now
-  holds Board's delayed-commit optimistic integration (18 tests / 187
-  expectations overall), while the direct Board/Calendar/Timeline renderer
-  suites cover their typed drag/resize changes. Complete undo/redo integration
-  across every alternate renderer and agent transport remains open. Map to
-  UX-005/UX-006.
+  passes 64/64 tests and 387 expectations across Table, Board, Timeline,
+  Calendar, schema, and mutation journeys. Its saved-view reorder journey
+  proves delayed-commit optimism plus revision-bound undo/redo.
+  `DatabaseView.dom.test.tsx` passes 18 tests / 205 expectations, including
+  delayed-commit Board, Calendar, and Timeline mutations with optimistic
+  rendering and undo/redo; List, Gallery, Feed, Chart, and Map are read-only
+  renderers and have no separate edit path. The 13-operation human/agent
+  policy matrix passes 4 tests / 68 expectations, and focused server commit
+  tests prove unapproved agent work fails closed and Agent Run lifecycles
+  retain awaiting-approval/failed states. HTTP commit conformance passes 1
+  test / 22 expectations; the MCP commit/undo tools pass 6 tests / 17
+  expectations and the cross-transport contract passes 1 test / 12
+  expectations. No full server suite or E2E was needed for this
+  implementation gate. Map to UX-005/UX-006.
 - [x] **NUI-302** Add saving/saved/offline/conflict/failed indicators that do
   not replace the table with a transaction screen. Map to UX-405/UX-406.
   Evidence: `DatabaseTableDialog` save indicator and the state-specific DOM
@@ -262,7 +268,7 @@ treated as visual parity until a browser capture is attached.
   suite; commit and Escape cancellation restore the edited cell's focus (the
   focused DOM journey), and the revision-bound bulk journey now covers
   Ctrl/Cmd+Z followed by Ctrl/Cmd+Shift+Z with exact server preview/apply
-  guards. Evidence: `DatabaseTableDialog.dom.test.tsx` 63/63 tests and 369
+  guards. Evidence: `DatabaseTableDialog.dom.test.tsx` 64/64 tests and 387
   expectations, including 18 expectations in the undo/redo journey. Policy
   coverage across every editor/transport remains separately tracked by
   NUI-301.

@@ -2759,6 +2759,7 @@ export function DatabaseTableDialog({
     Record<string, DatabaseCalculationFunction>
   >({});
   const [selectedViewId, setSelectedViewId] = useState(initialViewId ?? '');
+  const [optimisticViewOrder, setOptimisticViewOrder] = useState<readonly string[] | null>(null);
   const [draggedViewId, setDraggedViewId] = useState<string | null>(null);
   const [dragOverViewId, setDragOverViewId] = useState<string | null>(null);
   const [pageFavorite, setPageFavorite] = useState(false);
@@ -2985,6 +2986,7 @@ export function DatabaseTableDialog({
       onCommitted?: (
         outcome: Extract<ExecuteDatabaseUiMutationResult, { status: 'committed' }>,
       ) => void;
+      onNotCommitted?: () => void;
       onFailed?: () => void;
     } = {},
   ) => {
@@ -3014,6 +3016,9 @@ export function DatabaseTableDialog({
       ...(reviewMode === 'required' ? { onGhostStateChange: setGhost } : {}),
     })
       .then((outcome) => {
+        if (outcome.status !== 'committed') {
+          options.onNotCommitted?.();
+        }
         if (outcome.status === 'blocked') {
           setMutationConflict({ plan: outcome.plan });
           setMutationError(
@@ -4296,6 +4301,7 @@ export function DatabaseTableDialog({
     if (!open || !selection) {
       setDescription(null);
       setResult(null);
+      setOptimisticViewOrder(null);
       setOfflineCachedAt(null);
       setRelationCandidates([]);
       setTableStatus('idle');
@@ -4357,6 +4363,7 @@ export function DatabaseTableDialog({
         }
         setDescription(nextDescription);
         setResult(nextResult);
+        setOptimisticViewOrder(null);
         setOfflineCachedAt(null);
         if (offlineCacheKey) {
           cacheDatabaseSnapshot(offlineCacheKey, {
@@ -4397,6 +4404,7 @@ export function DatabaseTableDialog({
         if (cached) {
           setDescription(cached.description);
           setResult(cached.result);
+          setOptimisticViewOrder(null);
           setOfflineCachedAt(cached.cachedAt);
           setError(problem);
           setTableStatus('success');
@@ -4404,6 +4412,7 @@ export function DatabaseTableDialog({
         }
         setDescription(null);
         setResult(null);
+        setOptimisticViewOrder(null);
         setOfflineCachedAt(null);
         setError(problem);
         setTableStatus('error');
@@ -4443,6 +4452,7 @@ export function DatabaseTableDialog({
     setButtonPlan(null);
     setButtonStatus('idle');
     setSelectedRecordIds(new Set());
+    setOptimisticViewOrder(null);
     setDraggedViewId(null);
     setDragOverViewId(null);
   }, [open]);
@@ -4469,8 +4479,16 @@ export function DatabaseTableDialog({
   const conversionProperty = description?.source?.properties.find(
     (property) => property.id === conversionPropertyId,
   );
-  const sourceViews =
+  const canonicalSourceViews =
     description?.database.views.filter((view) => view.sourceId === description.source?.id) ?? [];
+  const sourceViews = optimisticViewOrder
+    ? [
+        ...optimisticViewOrder.flatMap((viewId) =>
+          canonicalSourceViews.filter((view) => view.id === viewId),
+        ),
+        ...canonicalSourceViews.filter((view) => !optimisticViewOrder.includes(view.id)),
+      ]
+    : canonicalSourceViews;
   const selectedView = sourceViews.find((view) => view.id === selectedViewId);
   const selectedViewIndex = selectedView ? sourceViews.indexOf(selectedView) : -1;
   const selectView = (viewId: string) => {
@@ -4494,6 +4512,13 @@ export function DatabaseTableDialog({
   };
   const reorderSavedView = (viewId: string, direction: -1 | 1) => {
     if (!description?.source || mutationStatus !== 'idle') return;
+    const currentIndex = sourceViews.findIndex((view) => view.id === viewId);
+    const targetIndex = currentIndex + direction;
+    if (currentIndex < 0 || targetIndex < 0 || targetIndex >= sourceViews.length) return;
+    const nextOrder = sourceViews.map((view) => view.id);
+    const [moving] = nextOrder.splice(currentIndex, 1);
+    if (moving) nextOrder.splice(targetIndex, 0, moving);
+    setOptimisticViewOrder(nextOrder);
     try {
       runMutation(
         createDatabaseViewLifecycleChangeDesiredState({
@@ -4503,9 +4528,14 @@ export function DatabaseTableDialog({
         }),
         'ui-view-reorder',
         'Saved view reorder failed',
-        { policy: { operation: 'view', actor: 'human', principalId: 'user:local' } },
+        {
+          policy: { operation: 'view', actor: 'human', principalId: 'user:local' },
+          onNotCommitted: () => setOptimisticViewOrder(null),
+          onFailed: () => setOptimisticViewOrder(null),
+        },
       );
     } catch (cause) {
+      setOptimisticViewOrder(null);
       setMutationError(classifyDatabaseUiProblem(cause, 'Unable to prepare saved view reorder'));
     }
   };
@@ -4519,6 +4549,13 @@ export function DatabaseTableDialog({
     ) {
       return;
     }
+    const currentIndex = sourceViews.findIndex((view) => view.id === viewId);
+    const targetIndex = sourceViews.findIndex((view) => view.id === targetViewId);
+    if (currentIndex < 0 || targetIndex < 0) return;
+    const nextOrder = sourceViews.map((view) => view.id);
+    const [moving] = nextOrder.splice(currentIndex, 1);
+    if (moving) nextOrder.splice(targetIndex, 0, moving);
+    setOptimisticViewOrder(nextOrder);
     try {
       runMutation(
         createDatabaseViewLifecycleChangeDesiredState({
@@ -4528,9 +4565,14 @@ export function DatabaseTableDialog({
         }),
         'ui-view-reorder-drag',
         'Saved view reorder failed',
-        { policy: { operation: 'view', actor: 'human', principalId: 'user:local' } },
+        {
+          policy: { operation: 'view', actor: 'human', principalId: 'user:local' },
+          onNotCommitted: () => setOptimisticViewOrder(null),
+          onFailed: () => setOptimisticViewOrder(null),
+        },
       );
     } catch (cause) {
+      setOptimisticViewOrder(null);
       setMutationError(classifyDatabaseUiProblem(cause, 'Unable to prepare saved view reorder'));
     } finally {
       setDraggedViewId(null);

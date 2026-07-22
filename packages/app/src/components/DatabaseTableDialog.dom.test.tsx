@@ -1075,7 +1075,12 @@ describe('DatabaseTableDialog', () => {
       ...database,
       views: [viewFirst, viewMiddle, viewLast],
     };
+    const reorderedViews = [viewMiddle, viewLast, viewFirst];
     let desiredState: { views?: Array<{ id: string }> } | null = null;
+    let committedViews = databaseWithViews.views;
+    let commitCalls = 0;
+    let undoCalls = 0;
+    let releaseCommit: (() => void) | undefined;
     globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
       const path = String(input);
       const body = init?.body
@@ -1086,7 +1091,10 @@ describe('DatabaseTableDialog', () => {
         : {};
       if (path.startsWith('/api/databases/catalog')) return Response.json(catalog());
       if (path === '/api/databases/describe') {
-        return Response.json({ ...description(), database: databaseWithViews });
+        return Response.json({
+          ...description(),
+          database: { ...databaseWithViews, views: committedViews },
+        });
       }
       if (path === '/api/databases/query') return Response.json(queryResult());
       if (path === '/api/databases/plan' && body.action === 'create_draft') {
@@ -1111,6 +1119,43 @@ describe('DatabaseTableDialog', () => {
             approvals: [],
             diff: { manifests: [], records: [], templates: [], policy: {} },
           },
+        });
+      }
+      if (path === '/api/databases/commit') {
+        commitCalls += 1;
+        const nextViews = desiredState?.views
+          ?.map(({ id }) => databaseWithViews.views.find((view) => view.id === id))
+          .filter((view): view is (typeof databaseWithViews.views)[number] => view !== undefined);
+        if (nextViews?.length === databaseWithViews.views.length) committedViews = nextViews;
+        return new Promise<Response>((resolve) => {
+          releaseCommit = () =>
+            resolve(
+              Response.json({
+                mutationId: 'mut_reorder',
+                planId: 'plan_reorder',
+                planHash: hash,
+                idempotentReplay: false,
+                actualDiff: [],
+                verification: { status: 'passed' },
+                undoToken: 'undo_reorder',
+              }),
+            );
+        });
+      }
+      if (path === '/api/databases/undo') {
+        undoCalls += 1;
+        const action = String(body.action);
+        if (action === 'apply') committedViews = databaseWithViews.views;
+        if (action === 'redo_apply') committedViews = reorderedViews;
+        return Response.json({
+          action,
+          undoId: 'undo_reorder',
+          mutationId: 'mut_reorder',
+          canApply: true,
+          conflicts: [],
+          ...(action === 'apply' || action === 'redo_apply'
+            ? { receipt: { status: 'applied' } }
+            : {}),
         });
       }
       return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
@@ -1143,6 +1188,41 @@ describe('DatabaseTableDialog', () => {
       'view_last',
       'view_first',
     ]);
+    await waitFor(() => expect(commitCalls).toBe(1));
+    expect(
+      [...document.querySelectorAll<HTMLElement>('[data-database-view-tabs] [data-view-id]')].map(
+        (view) => view.getAttribute('data-view-id'),
+      ),
+    ).toEqual(['view_middle', 'view_last', 'view_first']);
+    expect(screen.getByTestId('database-save-indicator')).toBeTruthy();
+    releaseCommit?.();
+    await waitFor(() =>
+      expect(
+        screen.getByTestId('database-save-indicator').getAttribute('data-database-save-state'),
+      ).toBe('saved'),
+    );
+    await screen.findByRole('button', { name: 'More database actions' });
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'More database actions' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Undo last change' }));
+    await waitFor(() => expect(undoCalls).toBe(2));
+    await waitFor(() =>
+      expect(
+        [...document.querySelectorAll<HTMLElement>('[data-database-view-tabs] [data-view-id]')].map(
+          (view) => view.getAttribute('data-view-id'),
+        ),
+      ).toEqual(['view_first', 'view_middle', 'view_last']),
+    );
+    await screen.findByRole('button', { name: 'More database actions' });
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'More database actions' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Redo last change' }));
+    await waitFor(() => expect(undoCalls).toBe(4));
+    await waitFor(() =>
+      expect(
+        [...document.querySelectorAll<HTMLElement>('[data-database-view-tabs] [data-view-id]')].map(
+          (view) => view.getAttribute('data-view-id'),
+        ),
+      ).toEqual(['view_middle', 'view_last', 'view_first']),
+    );
   });
 
   test('opens an explicit linked-view target without replacing it with local preference', async () => {
