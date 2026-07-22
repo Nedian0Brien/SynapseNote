@@ -747,6 +747,7 @@ describe('DatabaseView', () => {
     };
     const linkedDatabase = { ...database, views: [view, secondaryView] };
     const requests: Array<{ path: string; body: Record<string, unknown> }> = [];
+    let commitCalls = 0;
     globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
       const path = String(input);
       if (path.startsWith('/api/document?docName=tasks%2Ffirst')) {
@@ -802,6 +803,39 @@ describe('DatabaseView', () => {
           aggregation: null,
         });
       }
+      if (path === '/api/databases/plan') {
+        const action = (body as { action?: string }).action;
+        if (action === 'create_draft') {
+          return Response.json({ action, draft: { id: 'draft_inline_edit', revision: hash } });
+        }
+        return Response.json({
+          action: 'create_plan',
+          plan: {
+            id: 'plan_inline_edit',
+            hash,
+            snapshotRevision: hash,
+            committable: true,
+            requiresCommit: true,
+            conflicts: [],
+            approvals: [],
+            postconditions: [],
+            risk: { level: 'low', reasons: [] },
+            diff: { manifests: [], records: [], templates: [], policy: {} },
+          },
+        });
+      }
+      if (path === '/api/databases/commit') {
+        commitCalls += 1;
+        return Response.json({
+          mutationId: 'mut_inline_edit',
+          planId: 'plan_inline_edit',
+          planHash: hash,
+          idempotentReplay: false,
+          actualDiff: [],
+          verification: { status: 'passed' },
+          undoToken: 'undo_inline_edit',
+        });
+      }
       return Response.json({ detail: 'unexpected request' }, { status: 500 });
     }) as typeof fetch;
 
@@ -832,6 +866,11 @@ describe('DatabaseView', () => {
     expect(document.querySelector('[data-record-id="rec_first"]')).toBeTruthy();
     expect(screen.getByLabelText('Edit Title for record rec_first')).toBeTruthy();
     expect(screen.getByTestId('database-new-row-title')).toBeTruthy();
+    fireEvent.click(screen.getByLabelText('Edit Title for record rec_first'));
+    const titleInput = screen.getByLabelText('Edit Title') as HTMLInputElement;
+    fireEvent.change(titleInput, { target: { value: 'Renamed task' } });
+    fireEvent.keyDown(titleInput, { key: 'Enter' });
+    await waitFor(() => expect(commitCalls).toBe(1));
     expect(screen.getByLabelText('Duplicate record rec_first')).toBeTruthy();
     expect(screen.getByLabelText('Archive record rec_first')).toBeTruthy();
     expect(screen.getByLabelText('Move record rec_first')).toBeTruthy();

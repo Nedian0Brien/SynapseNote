@@ -680,6 +680,14 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
     })
       .then((outcome) => {
         if (outcome.status !== 'committed') {
+          if (policy.optimisticCellKey) {
+            setInlineOptimisticCellValues((current) => {
+              if (!current.has(policy.optimisticCellKey as string)) return current;
+              const next = new Map(current);
+              next.delete(policy.optimisticCellKey as string);
+              return next;
+            });
+          }
           setInlineMutationError('The inline database change was blocked by the current data.');
           return;
         }
