@@ -6,11 +6,23 @@ import {
   type DatabaseProperty,
   type FrontmatterSnapshot,
   type FrontmatterValue,
+  type ProjectedDatabaseRecord,
   readFmKeys,
   readFmRegionWithError,
   stripFrontmatter,
 } from '@nedian0brien/synapsenote-core';
-import { History, Link2, MessageSquare, Settings2 } from 'lucide-react';
+import {
+  Archive,
+  Copy,
+  History,
+  Link2,
+  MessageSquare,
+  MoreHorizontal,
+  MoveRight,
+  RotateCcw,
+  Settings2,
+  Trash2,
+} from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import { DatabaseCommentsDialog } from '@/components/DatabaseCommentsDialog';
@@ -29,10 +41,38 @@ import { DatabaseRelationsDialog } from '@/components/DatabaseRelationsDialog';
 import { PageHeader } from '@/components/PageHeader';
 import { PropertyPanel } from '@/components/PropertyPanel';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { type DatabaseDescription, describeDatabase } from '@/lib/database-catalog-client';
 import {
   createDatabaseCellMutationDesiredState,
   createDatabasePageLayoutChangeDesiredState,
+  createDatabaseRecordArchiveDesiredState,
+  createDatabaseRecordCopyDesiredState,
+  createDatabaseRecordDeletionDesiredState,
+  createDatabaseRecordMoveDesiredState,
   createDatabaseRecordPageLayoutOverrideDesiredState,
 } from '@/lib/database-cell-mutation';
 import {
@@ -73,6 +113,10 @@ export interface DatabaseRecordPageServices {
   executeMutation: typeof executeDatabaseUiMutation;
   confirm: (message: string) => boolean;
 }
+
+type RecordMutationDesiredState = Parameters<
+  DatabaseRecordPageServices['executeMutation']
+>[0]['desiredState'];
 
 const DEFAULT_SERVICES: DatabaseRecordPageServices = {
   describe: describeDatabase,
@@ -129,6 +173,9 @@ export function DatabaseRecordPageChrome({
   const [appearanceDialogOpen, setAppearanceDialogOpen] = useState(false);
   const [appearanceSaving, setAppearanceSaving] = useState(false);
   const [permissionsDialogOpen, setPermissionsDialogOpen] = useState(false);
+  const [recordActionRunning, setRecordActionRunning] = useState(false);
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+  const [moveTargetSourceId, setMoveTargetSourceId] = useState('');
   const [commentsDialogOpen, setCommentsDialogOpen] = useState(false);
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   const [relationsDialogOpen, setRelationsDialogOpen] = useState(false);
@@ -153,11 +200,12 @@ export function DatabaseRecordPageChrome({
           propertyId: schemaOperation ? null : mutationPropertyId,
           viewId: null,
           scope: schemaOperation ? 'schema' : mutationPropertyId ? 'cell' : 'record',
-          operation: layoutMutationRunning
-            ? 'committing'
-            : schemaOperation || mutationPropertyId
-              ? 'editing'
-              : 'viewing',
+          operation:
+            layoutMutationRunning || recordActionRunning
+              ? 'committing'
+              : schemaOperation || mutationPropertyId
+                ? 'editing'
+                : 'viewing',
         }
       : null,
   );
@@ -261,6 +309,130 @@ export function DatabaseRecordPageChrome({
     source && (source.pageLayout || recordPageLayoutOverride)
       ? resolveDatabasePageLayout(source, source.pageLayout, recordPageLayoutOverride ?? undefined)
       : null;
+  const compatibleMoveTargets =
+    currentBinding?.database.sources.flatMap((targetSource) => {
+      if (!source || targetSource.id === source.id) return [];
+      const mapping = (currentBinding.database.sourceMappings ?? []).find(
+        (candidate) =>
+          candidate.sourceId === source.id && candidate.targetSourceId === targetSource.id,
+      );
+      return mapping ? [{ source: targetSource, mapping }] : [];
+    }) ?? [];
+
+  async function executeRecordMutation(
+    desiredState: RecordMutationDesiredState,
+    summary: string,
+  ): Promise<boolean> {
+    if (recordActionRunning || mutationPropertyId !== null || layoutMutationRunning) return false;
+    setRecordActionRunning(true);
+    setMutationError(null);
+    setMutationConflict(null);
+    try {
+      const outcome = await services.executeMutation({
+        desiredState,
+        actor: { principalId: 'user:local' },
+        idempotencyKey: `ui-record-action-${crypto.randomUUID()}`,
+        review: (plan) =>
+          services.confirm(`${summary}\n\nExact plan: ${plan.id}\nPlan hash: ${plan.hash}`),
+      });
+      if (outcome.status === 'blocked') {
+        setMutationConflict(outcome.plan);
+        setMutationError(
+          outcome.plan.conflicts.map((conflict) => conflict.message).join('\n') ||
+            'The record action is blocked by the current canonical state',
+        );
+        return false;
+      }
+      if (outcome.status === 'review_declined') return false;
+      return true;
+    } catch (cause) {
+      if (cause instanceof DatabasePlanExecutionError) setMutationConflict(cause.plan);
+      setMutationError(cause instanceof Error ? cause.message : `${summary} failed`);
+      return false;
+    } finally {
+      setRecordActionRunning(false);
+    }
+  }
+
+  async function runCurrentRecordAction(
+    summary: string,
+    build: (record: ProjectedDatabaseRecord) => RecordMutationDesiredState,
+  ): Promise<void> {
+    if (!metadata || !currentBinding || !source) return;
+    const record = await ensureCurrentRecord();
+    if (!record) return;
+    try {
+      await executeRecordMutation(build(record), summary);
+    } catch (cause) {
+      setMutationError(cause instanceof Error ? cause.message : `${summary} failed`);
+    }
+  }
+
+  async function openMoveDialog(): Promise<void> {
+    if (!metadata || !currentBinding || !source || compatibleMoveTargets.length === 0) return;
+    if (await ensureCurrentRecord()) {
+      setMoveTargetSourceId('');
+      setMoveDialogOpen(true);
+    }
+  }
+
+  async function commitMove(): Promise<void> {
+    if (!metadata || !currentBinding || !source || !currentRecord) return;
+    const target = compatibleMoveTargets.find(
+      (candidate) => candidate.source.id === moveTargetSourceId,
+    );
+    if (!target) {
+      setMutationError('Choose a compatible target source');
+      return;
+    }
+    const committed = await executeRecordMutation(
+      createDatabaseRecordMoveDesiredState({
+        database: currentBinding.database,
+        source,
+        targetSource: target.source,
+        record: currentRecord,
+      }),
+      `Move this record to ${target.source.name}`,
+    );
+    if (committed) {
+      setMoveDialogOpen(false);
+      setMoveTargetSourceId('');
+    }
+  }
+
+  function duplicateCurrentRecord(): Promise<void> {
+    return runCurrentRecordAction('Duplicate this record', (record) => {
+      if (!currentBinding || !source) throw new Error('Database schema is not ready');
+      return createDatabaseRecordCopyDesiredState({
+        database: currentBinding.database,
+        source,
+        record,
+      });
+    });
+  }
+
+  function toggleArchiveCurrentRecord(): Promise<void> {
+    return runCurrentRecordAction('Change this record archive state', (record) => {
+      if (!currentBinding || !source) throw new Error('Database schema is not ready');
+      return createDatabaseRecordArchiveDesiredState({
+        database: currentBinding.database,
+        source,
+        record,
+        action: record.archivedAt ? 'restore' : 'archive',
+      });
+    });
+  }
+
+  function deleteCurrentRecord(): Promise<void> {
+    return runCurrentRecordAction('Delete this record', (record) => {
+      if (!currentBinding || !source) throw new Error('Database schema is not ready');
+      return createDatabaseRecordDeletionDesiredState({
+        database: currentBinding.database,
+        source,
+        record,
+      });
+    });
+  }
 
   async function commitDatabaseProperty(
     property: DatabaseProperty,
@@ -658,6 +830,53 @@ export function DatabaseRecordPageChrome({
             >
               <Settings2 /> <Trans>Customize layout</Trans>
             </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  aria-label="More record actions"
+                  data-database-record-actions
+                  disabled={recordActionRunning}
+                >
+                  <MoreHorizontal aria-hidden="true" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>
+                  <Trans>Record actions</Trans>
+                </DropdownMenuLabel>
+                <DropdownMenuItem onSelect={() => void duplicateCurrentRecord()}>
+                  <Copy aria-hidden="true" /> <Trans>Duplicate record</Trans>
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => void toggleArchiveCurrentRecord()}>
+                  {currentRecord?.archivedAt ? (
+                    <RotateCcw aria-hidden="true" />
+                  ) : (
+                    <Archive aria-hidden="true" />
+                  )}
+                  {currentRecord?.archivedAt ? (
+                    <Trans>Restore record</Trans>
+                  ) : (
+                    <Trans>Archive record</Trans>
+                  )}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={compatibleMoveTargets.length === 0}
+                  onSelect={() => void openMoveDialog()}
+                >
+                  <MoveRight aria-hidden="true" /> <Trans>Move record</Trans>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-destructive"
+                  onSelect={() => void deleteCurrentRecord()}
+                >
+                  <Trash2 aria-hidden="true" /> <Trans>Delete record</Trans>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       ) : null}
@@ -803,6 +1022,49 @@ export function DatabaseRecordPageChrome({
           selectedViewId={recordNavigation?.viewId}
           selectedRecordId={metadata.record_id}
         />
+      ) : null}
+      {source && currentBinding && currentRecord && moveDialogOpen ? (
+        <Dialog open onOpenChange={setMoveDialogOpen}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>
+                <Trans>Move record</Trans>
+              </DialogTitle>
+              <DialogDescription>
+                <Trans>
+                  Choose a compatible data source. The move will use the same reviewed plan as the
+                  database row action.
+                </Trans>
+              </DialogDescription>
+            </DialogHeader>
+            <DialogBody>
+              <Select value={moveTargetSourceId} onValueChange={setMoveTargetSourceId}>
+                <SelectTrigger aria-label="Move target source">
+                  <SelectValue placeholder="Choose source" />
+                </SelectTrigger>
+                <SelectContent>
+                  {compatibleMoveTargets.map(({ source: targetSource, mapping }) => (
+                    <SelectItem key={targetSource.id} value={targetSource.id}>
+                      {targetSource.name} · {mapping.propertyMappings.length} mapped properties
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </DialogBody>
+            <DialogFooter>
+              <Button type="button" variant="ghost" onClick={() => setMoveDialogOpen(false)}>
+                <Trans>Cancel</Trans>
+              </Button>
+              <Button
+                type="button"
+                disabled={!moveTargetSourceId || recordActionRunning}
+                onClick={() => void commitMove()}
+              >
+                <Trans>Plan move</Trans>
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       ) : null}
     </DatabaseRecordPageSurface>
   );

@@ -66,6 +66,33 @@ const database = DatabaseDefinitionSchema.parse({
 });
 const source = database.sources.at(0);
 if (!source) throw new Error('Expected the test database source');
+const databaseWithMove = DatabaseDefinitionSchema.parse({
+  ...database,
+  sources: [
+    source,
+    {
+      id: 'ds_archive',
+      key: 'archive',
+      name: 'Archive',
+      recordMeaning: 'Archived task',
+      folder: 'archive',
+      properties: [{ id: 'prop_archive_title', key: 'title', name: 'Title', type: 'title' }],
+    },
+  ],
+  sourceMappings: [
+    {
+      sourceId: source.id,
+      targetSourceId: 'ds_archive',
+      propertyMappings: [
+        {
+          sourcePropertyId: 'prop_title',
+          targetPropertyId: 'prop_archive_title',
+          optionMappings: [],
+        },
+      ],
+    },
+  ],
+});
 
 function provider(): HocuspocusProvider {
   const next = new HocuspocusProvider({ url: DUMMY_WS, name: 'records/rec_first' });
@@ -303,6 +330,126 @@ describe('DatabaseRecordPageChrome', () => {
       },
     });
     expect(confirmations[3]).toContain('Apply this presentation override');
+  });
+
+  test('mirrors row duplicate, archive, move, and delete actions from the page menu', async () => {
+    const desiredStates: DatabaseDesiredStateDraftInput[] = [];
+    const services: DatabaseRecordPageServices = {
+      describe: async () => ({
+        manifestRevision: hash,
+        schemaRevision: hash,
+        database: databaseWithMove,
+        source,
+        index: {
+          state: 'idle',
+          revision: hash,
+          manifestRevision: hash,
+          recordCount: 1,
+          issueCount: 0,
+          progress: null,
+          lastRebuiltAt: null,
+          lastIncrementalAt: null,
+          lastError: null,
+        },
+        allowedOperations: ['catalog', 'describe', 'find', 'query', 'pack'],
+      }),
+      fetchRecord: async () => ({
+        databaseId: 'db_tasks',
+        sourceId: 'ds_tasks',
+        manifestRevision: hash,
+        indexRevision: hash,
+        record: {
+          id: 'rec_first',
+          path: 'records/rec_first.md',
+          revision: hash,
+          values: { prop_title: 'Canonical title' },
+        },
+      }),
+      executeMutation: (async (input) => {
+        desiredStates.push(input.desiredState);
+        const plan = {
+          id: `plan_record_action_${String(desiredStates.length)}`,
+          hash,
+          snapshotRevision: hash,
+          committable: true,
+          requiresCommit: true,
+          conflicts: [],
+          approvals: [],
+          risk: {},
+          diff: { records: [] },
+        } as never;
+        const approved = await input.review(plan, {} as never);
+        return approved
+          ? ({ status: 'converged', draft: {} as never, plan } as const)
+          : ({ status: 'review_declined', draft: {} as never, plan } as const);
+      }) as DatabaseRecordPageServices['executeMutation'],
+      confirm: () => true,
+    };
+    const view = render(
+      <TooltipProvider>
+        <PropertyProvider>
+          <DatabaseRecordPageChrome
+            provider={provider()}
+            docName="records/rec_first"
+            docExt=".md"
+            fallbackTitle="rec_first"
+            services={services}
+          />
+        </PropertyProvider>
+      </TooltipProvider>,
+    );
+    await waitFor(() =>
+      expect(view.getByTestId('page-header-title').textContent).toBe('Canonical title'),
+    );
+
+    const openActions = () => {
+      const trigger = view.getByRole('button', { name: 'More record actions' });
+      fireEvent.pointerDown(trigger, { button: 0 });
+      fireEvent.click(trigger);
+    };
+    openActions();
+    expect(view.getByRole('menuitem', { name: 'Duplicate record' })).toBeDefined();
+    expect(view.getByRole('menuitem', { name: 'Archive record' })).toBeDefined();
+    expect(view.getByRole('menuitem', { name: 'Move record' })).toBeDefined();
+    expect(view.getByRole('menuitem', { name: 'Delete record' })).toBeDefined();
+    fireEvent.click(view.getByRole('menuitem', { name: 'Duplicate record' }));
+    await waitFor(() => expect(desiredStates).toHaveLength(1));
+    expect(desiredStates[0]?.recordCopies?.[0]).toMatchObject({
+      id: 'rec_first',
+      expectedRevision: hash,
+      sourceKey: 'tasks',
+    });
+
+    openActions();
+    fireEvent.click(view.getByRole('menuitem', { name: 'Archive record' }));
+    await waitFor(() => expect(desiredStates).toHaveLength(2));
+    expect(desiredStates[1]?.recordArchives?.[0]).toMatchObject({
+      id: 'rec_first',
+      expectedRevision: hash,
+      action: 'archive',
+    });
+
+    openActions();
+    fireEvent.click(view.getByRole('menuitem', { name: 'Move record' }));
+    fireEvent.click(await view.findByRole('combobox', { name: 'Move target source' }));
+    fireEvent.click(await view.findByRole('option', { name: /Archive/ }));
+    fireEvent.click(view.getByRole('button', { name: 'Plan move' }));
+    await waitFor(() => expect(desiredStates).toHaveLength(3));
+    expect(desiredStates[2]?.recordMoves?.[0]).toMatchObject({
+      id: 'rec_first',
+      expectedRevision: hash,
+      sourceKey: 'tasks',
+      targetSourceKey: 'archive',
+    });
+
+    openActions();
+    fireEvent.click(view.getByRole('menuitem', { name: 'Delete record' }));
+    await waitFor(() => expect(desiredStates).toHaveLength(4));
+    expect(desiredStates[3]?.recordDeletions?.[0]).toMatchObject({
+      id: 'rec_first',
+      expectedRevision: hash,
+      sourceKey: 'tasks',
+    });
   });
 
   test('keeps previous, next, and return-to-view continuity for a record opened from a database view', async () => {
