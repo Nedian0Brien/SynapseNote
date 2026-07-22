@@ -40,6 +40,7 @@
 - Latest view-suggestions changeset: `../../.changeset/database-view-suggestions.md`
 - Latest coherent view-settings changeset: `../../.changeset/database-coherent-view-settings.md`
 - Latest active-query explainer changeset: `../../.changeset/database-query-summary.md`
+- Latest saved-view tab-actions changeset: `../../.changeset/database-view-tab-actions.md`
 
 ## Objective and completion rule
 
@@ -77,7 +78,7 @@ the repository-wide check for final release readiness.
   catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
   approval-bound commits, undo, and restart/backup idempotency. Agent View
   policy/privacy/sandbox review remains Partial by design.
-- Notion UX alignment checklist: **61/128 complete**. The page-first and normal
+- Notion UX alignment checklist: **62/128 complete**. The page-first and normal
   New-page creation slices, the inline/linked insertion contract, and the
   table-first direct-manipulation, named canonical workspace canvas-route,
   shared navigation without a duplicate canvas rail, sidebar/recent/search/
@@ -90,7 +91,7 @@ the repository-wide check for final release readiness.
   view-scoped property-layout, converged header/settings-action, and visible
   reorderable view-tab, layout-independent new-view affordance, and
   layout-specific starter-suggestion, coherent view-settings, and active
-  filter/sort explainer slices are now
+  filter/sort explainer and saved-view tab lifecycle menu slices are now
   evidenced. A
   2026-07-23 in-app browser capture reached the IPv4 renderer at
   `http://127.0.0.1:5173/`, created a full-page database, created two canonical
@@ -437,7 +438,14 @@ do not reconstruct behavior solely from this summary.
   OR/NOT filters are summarized with property names and a rule count; filter
   chips reopen Filters and sort chips reopen View settings. Focused evidence:
   `DatabaseViewQuerySummary.dom.test.tsx` 2 tests / 9 expectations.
-- UX-501 through UX-510, UX-601, UX-602, UX-603, UX-604, and UX-605 are checked at the functional implementation/evidence
+- The active saved-view tab menu now exposes Filters, View settings, Rename,
+  Duplicate, Favorite, move-left/right, Make/Clear default, Delete, and Manage
+  views. Canonical actions use reviewed lifecycle/default mutations; default
+  deletion is disabled and rename uses a stable-ID-preserving reviewed dialog.
+  Inline/linked tabs share the vocabulary and delegate mutations to the
+  canonical manager. Focused evidence: menu 2 tests / 17 expectations, rename
+  dialog 1 / 2, and canonical tab journey 1 / 25.
+- UX-501 through UX-510, UX-601, UX-602, UX-603, UX-604, UX-605, and UX-606 are checked at the functional implementation/evidence
   layer. Visual and broader property-family gates remain open.
 
 ### 2026-07-23 sidebar and recent database navigation
@@ -449,7 +457,7 @@ do not reconstruct behavior solely from this summary.
   catalog-backed database under `Recently opened`, reopening the same stable
   route. Focused evidence: sidebar 3 tests / 7 expectations and recent UI 1 / 5.
 - UX-203, UX-204, UX-206, UX-209, UX-309, UX-501, UX-502, UX-503, UX-504,
-  UX-505, UX-506, UX-507, UX-508, UX-509, UX-510, UX-601, UX-602, UX-603, UX-604, and UX-605 are checked. The 768px visual responsive check remains
+  UX-505, UX-506, UX-507, UX-508, UX-509, UX-510, UX-601, UX-602, UX-603, UX-604, UX-605, and UX-606 are checked. The 768px visual responsive check remains
   open.
 
 ### 2026-07-23 stable inline/full-page conversion
