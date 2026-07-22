@@ -338,8 +338,11 @@ treated as visual parity until a browser capture is attached.
   actions now also expose `Manage views` and `Filters`, forwarding to the
   canonical reviewed view manager/filter editor. Evidence:
   `DatabaseTableDialog.dom.test.tsx` default-view and drag-reorder journeys
-  (63/63 tests, 369 expectations) plus the lifecycle compiler test. Map to
-  UX-601–UX-610.
+  (64/64 tests, 372 expectations) plus the lifecycle compiler test. The inline
+  linked-view tab strip now exposes an adjacent `New database view` affordance
+  that opens the same reviewed view manager. The inline journey passes 17 tests
+  / 164 expectations, including the `+` handoff. Pixel-level parity and full
+  settings convergence remain open. Map to UX-601–UX-610.
 - [ ] **NUI-503** Keep Blank fastest; make templates/import/agent-assisted
   creation preview the resulting page/block rather than ending in the admin
   shell. Blank remains the direct-safe fastest path; template and CSV/TSV

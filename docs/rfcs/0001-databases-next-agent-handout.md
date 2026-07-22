@@ -587,6 +587,17 @@ do not reconstruct behavior solely from this summary.
   `Manage saved views` surface; the suite passes 13/13 tests and 112
   expectations. Targeted Biome and app typecheck pass, with no E2E rerun.
 
+### 2026-07-22 inline saved-view tab-plus slice
+
+- When a linked source has multiple saved views, the inline tab strip now shows
+  an adjacent `New database view` button. It forwards to the canonical reviewed
+  view manager, so the inline path gains Notion-like tab adjacency without
+  creating a second manifest mutation route.
+- Focused evidence: `DatabaseView.dom.test.tsx` passes 17 tests / 164
+  expectations, including opening and closing `Manage saved views` from the
+  inline tab `+`; app typecheck, Biome, and `git diff --check` pass. Full visual
+  parity remains open under NUI-502/NUI-701.
+
 ### 2026-07-22 inline filter handoff slice
 
 - Inline database action menus now expose `Filters`, forwarding the selected

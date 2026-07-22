@@ -1071,6 +1071,20 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
                     {candidate.name}
                   </Button>
                 ))}
+              <Button
+                type="button"
+                size="icon-sm"
+                variant="ghost"
+                aria-label="New database view"
+                disabled={
+                  inlineMutationStatus !== 'idle' ||
+                  inlineUndoStatus !== 'idle' ||
+                  inlineRedoStatus !== 'idle'
+                }
+                onClick={() => openInlineDatabaseSurface('view-manager')}
+              >
+                <Plus aria-hidden="true" />
+              </Button>
             </nav>
           ) : null}
         </div>

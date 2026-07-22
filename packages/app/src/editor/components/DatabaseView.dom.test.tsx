@@ -1058,6 +1058,14 @@ describe('DatabaseView', () => {
     expect(
       document.querySelector('[data-linked-database-view-tabs] [aria-current="page"]'),
     ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'New database view' }));
+    expect(await screen.findByRole('heading', { name: 'Manage saved views' })).toBeTruthy();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[0] as HTMLElement);
+    await waitFor(() =>
+      expect(screen.queryByRole('heading', { name: 'Manage saved views' })).toBeNull(),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    await waitFor(() => expect(document.querySelector('[data-database-workspace]')).toBeNull());
     expect(await screen.findByText('First task')).toBeTruthy();
     expect(document.querySelector('th[data-property-id="prop_status"]')).toBeNull();
     expect(requests.find((request) => request.path === '/api/databases/query')?.body).toMatchObject(
