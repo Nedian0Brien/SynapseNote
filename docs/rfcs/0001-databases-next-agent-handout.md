@@ -11,6 +11,7 @@
 - Latest inline UX changeset: `../../.changeset/inline-database-focus.md`
 - Latest inline recovery changeset: `../../.changeset/inline-database-undo.md`
 - Latest inline history changeset: `../../.changeset/inline-database-history.md`
+- Latest inline state-safety changeset: `../../.changeset/inline-database-state-safety.md`
 
 ## Objective and completion rule
 
@@ -256,6 +257,22 @@ do not reconstruct behavior solely from this summary.
   is preserved.
 - Follow-up: cover undo for every alternate linked renderer and complete the
   broader agent transport/policy matrix before closing NUI-301.
+
+### 2026-07-22 inline state-safety slice
+
+- Inline linked-view failures now preserve typed problem kinds instead of
+  treating every failure as a replacement candidate. Permission denial never
+  falls back to a cached snapshot and exposes access guidance without a retry;
+  missing source/view references expose `Choose replacement`; retryable offline,
+  schema, index, conflict, and service failures expose a recovery action that
+  does not replay a mutation.
+- The inline root now exposes `aria-busy` during loading and stable
+  `data-database-view-error-*` attributes for agent/browser diagnostics. The
+  refresh control is disabled for permission and missing-reference states.
+- Focused evidence: `DatabaseView.dom.test.tsx` passes 14 tests / 139
+  expectations, including offline snapshot recovery and permission-denial
+  cache isolation; app typecheck, Biome, and `git diff --check` pass. The full
+  server suite and broad E2E remain intentionally unrun.
 
 ### 2026-07-22 entry-point re-audit and convergence slice
 

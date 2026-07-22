@@ -1062,7 +1062,7 @@ describe('DatabaseView', () => {
     let offline = false;
     const fetch = mock(async (input: RequestInfo | URL) => {
       const path = String(input);
-      if (offline) return Response.json({ detail: 'offline' }, { status: 503 });
+      if (offline) throw new TypeError('Failed to fetch: offline');
       if (path === '/api/databases/describe') {
         return Response.json({
           manifestRevision: hash,
@@ -1117,6 +1117,36 @@ describe('DatabaseView', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Refresh linked database view' }));
     expect(await screen.findByTestId('database-view-stale')).toBeTruthy();
     expect(screen.getByText('Cached task')).toBeTruthy();
+  });
+
+  test('does not show a cached inline snapshot after permission denial', async () => {
+    globalThis.fetch = mock(async (input: RequestInfo | URL) => {
+      const path = String(input);
+      if (path === '/api/databases/describe') {
+        return Response.json(
+          {
+            code: 'permission_denied',
+            detail: 'Read access denied for this database.',
+            recovery: { action: 'request_access' },
+          },
+          { status: 403 },
+        );
+      }
+      return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
+    }) as typeof fetch;
+
+    render(
+      <DatabaseView databaseId={database.id} sourceId={source.id} viewId={view.id} mode="inline" />,
+    );
+
+    const error = await screen.findByTestId('database-view-error');
+    expect(error.getAttribute('data-database-view-error-kind')).toBe('permission');
+    expect(error.getAttribute('data-database-view-retryable')).toBe('false');
+    expect(error.textContent).toContain('Read access denied for this database.');
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Choose replacement' })).toBeNull();
+    expect(screen.queryByText(/showing the last verified snapshot/i)).toBeNull();
+    expect(screen.queryByText('Cached task')).toBeNull();
   });
 
   test('starts record creation from a linked view in the canonical review dialog', async () => {

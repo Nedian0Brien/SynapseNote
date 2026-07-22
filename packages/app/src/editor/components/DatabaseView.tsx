@@ -69,6 +69,8 @@ import {
 import { queryDatabase } from '@/lib/database-query-client';
 import { rememberDatabaseRecordNavigation } from '@/lib/database-record-navigation';
 import type { DatabasePasteChange } from '@/lib/database-tsv';
+import type { DatabaseUiProblem } from '@/lib/database-ui-problem';
+import { classifyDatabaseUiProblem } from '@/lib/database-ui-problem';
 import { subscribeToDatabaseChanged } from '@/lib/documents-events';
 import { cn } from '@/lib/utils';
 import { useJsxComponentHost } from './jsx-host-context.tsx';
@@ -445,7 +447,7 @@ function InlineDatabaseCreationDialog({
 
 type LinkedViewState =
   | { status: 'loading' }
-  | { status: 'error'; message: string }
+  | { status: 'error'; problem: DatabaseUiProblem }
   | {
       status: 'ready';
       description: DatabaseDescription;
@@ -469,8 +471,13 @@ function linkedViewCacheKey(input: {
   ].join('\0');
 }
 
-function message(cause: unknown): string {
-  return cause instanceof Error ? cause.message : 'Unable to load the linked database view';
+function linkedViewProblem(cause: unknown): DatabaseUiProblem {
+  const message =
+    cause instanceof Error ? cause.message : 'Unable to load the linked database view';
+  if (/linked database source no longer exists|linked saved view no longer exists/i.test(message)) {
+    return { kind: 'missing', message, retryable: false };
+  }
+  return classifyDatabaseUiProblem(cause, message);
 }
 
 export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseViewProps) {
@@ -526,7 +533,14 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
       ...(mode ? { mode } : {}),
     });
     if (!parsed.success) {
-      setState({ status: 'error', message: 'Set valid database, source, and saved-view IDs' });
+      setState({
+        status: 'error',
+        problem: {
+          kind: 'error',
+          message: 'Set valid database, source, and saved-view IDs',
+          retryable: false,
+        },
+      });
       return;
     }
     const controller = new AbortController();
@@ -571,8 +585,9 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
       })
       .catch((cause: unknown) => {
         if (controller.signal.aborted) return;
+        const problem = linkedViewProblem(cause);
         const cached = readDatabaseLinkedView(cacheKey);
-        if (cached) {
+        if (cached && problem.kind === 'offline') {
           setState({
             status: 'ready',
             description: cached.description,
@@ -581,7 +596,7 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
           });
           return;
         }
-        setState({ status: 'error', message: message(cause) });
+        setState({ status: 'error', problem });
       });
     return () => controller.abort();
   }, [databaseId, sourceId, viewId, mode, refresh, showArchived]);
@@ -951,6 +966,7 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
       onKeyDown={handleInlineHistoryKeyDown}
       tabIndex={-1}
       aria-label="Linked database view"
+      aria-busy={state.status === 'loading'}
       data-database-view-state={state.status}
       data-database-id={reference.data.databaseId}
       data-source-id={reference.data.sourceId}
@@ -1038,7 +1054,11 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
             variant="ghost"
             size="icon-sm"
             aria-label="Refresh linked database view"
-            disabled={state.status === 'loading'}
+            disabled={
+              state.status === 'loading' ||
+              (state.status === 'error' &&
+                (state.problem.kind === 'permission' || state.problem.kind === 'missing'))
+            }
             onClick={() => setRefresh((current) => current + 1)}
           >
             <RefreshCw className={cn(state.status === 'loading' && 'animate-spin')} />
@@ -1226,18 +1246,62 @@ export function DatabaseView({ databaseId, sourceId, viewId, mode }: DatabaseVie
         <div
           className="flex min-h-32 flex-wrap items-center gap-3 p-4 text-destructive text-sm"
           role="alert"
+          data-testid="database-view-error"
+          data-database-view-error-kind={state.problem.kind}
+          data-database-view-retryable={String(state.problem.retryable)}
         >
-          <div className="flex min-w-0 items-center gap-2">
-            <AlertCircle className="size-4 shrink-0" /> {state.message}
+          <div className="flex min-w-0 items-start gap-2">
+            <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+            <div className="min-w-0">
+              <div className="font-medium">
+                {state.problem.kind === 'missing'
+                  ? 'Linked database view is unavailable'
+                  : state.problem.kind === 'permission'
+                    ? 'Permission required'
+                    : state.problem.kind === 'offline'
+                      ? 'Database is offline'
+                      : state.problem.kind === 'invalid_schema'
+                        ? 'Database schema is invalid'
+                        : state.problem.kind === 'stale_index'
+                          ? 'Database index is not current'
+                          : state.problem.kind === 'conflict'
+                            ? 'Canonical state changed'
+                            : 'Database request failed'}
+              </div>
+              <p className="mt-0.5 break-words opacity-90">{state.problem.message}</p>
+              {state.problem.kind === 'permission' ? (
+                <p className="mt-1 opacity-90">
+                  Request access or use fields available to your current policy.
+                </p>
+              ) : null}
+            </div>
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setReplacementPickerOpen(true)}
-          >
-            Choose replacement
-          </Button>
+          {state.problem.kind === 'missing' ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setReplacementPickerOpen(true)}
+            >
+              Choose replacement
+            </Button>
+          ) : state.problem.kind !== 'permission' &&
+            (state.problem.retryable || state.problem.kind === 'conflict') ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setRefresh((current) => current + 1)}
+            >
+              {state.problem.kind === 'stale_index'
+                ? 'Check index again'
+                : state.problem.kind === 'invalid_schema'
+                  ? 'Reload schema'
+                  : state.problem.kind === 'conflict'
+                    ? 'Reload latest'
+                    : 'Retry'}
+            </Button>
+          ) : null}
         </div>
       ) : linkedSource && linkedView ? (
         <div
