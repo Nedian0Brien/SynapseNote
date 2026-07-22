@@ -282,6 +282,21 @@ describe('DatabaseTableDialog', () => {
     }) as typeof fetch;
 
     render(<DatabaseTableDialog open onOpenChange={() => {}} />);
+    await waitFor(() =>
+      expect(
+        document.querySelector(
+          '[data-database-workspace][data-database-id="db_tasks"][data-source-id="ds_tasks"]',
+        ),
+      ).not.toBeNull(),
+    );
+    expect(document.querySelector('[data-database-workspace]')?.getAttribute('data-view-id')).toBe(
+      null,
+    );
+    expect(
+      document
+        .querySelector('[data-database-workspace]')
+        ?.getAttribute('data-database-machine-ids'),
+    ).toBe('stable');
     fireEvent.click(await screen.findByRole('button', { name: 'Create task pair' }));
     expect((await screen.findByTestId('database-button-review')).textContent).toContain(
       '2 database record changes',

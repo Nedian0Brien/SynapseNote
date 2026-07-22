@@ -16,6 +16,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { type ReactNode, useEffect, useState } from 'react';
+import { DatabaseMachineIdsDetails } from '@/components/DatabaseMachineIdsDetails';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -338,7 +339,12 @@ function ContextFieldControls({
       {availableProperties.length > 0 ? (
         <fieldset className="mt-3 grid gap-2 sm:grid-cols-2" aria-label="Context pack fields">
           {availableProperties.map((property) => (
-            <div key={property.id} className="flex items-center gap-2 text-xs">
+            <div
+              key={property.id}
+              className="flex items-center gap-2 text-xs"
+              data-property-id={property.id}
+              data-database-machine-object="property"
+            >
               <Checkbox
                 checked={selectedSet.has(property.id)}
                 onCheckedChange={(checked) => toggleProperty(property.id, checked === true)}
@@ -346,9 +352,6 @@ function ContextFieldControls({
                 data-testid={`database-context-field-${property.id}`}
               />
               <span className="min-w-0 truncate">{property.name}</span>
-              <span className="ml-auto shrink-0 font-mono text-[10px] text-muted-foreground">
-                {property.id}
-              </span>
             </div>
           ))}
         </fieldset>
@@ -370,7 +373,7 @@ function ContextFieldControls({
           <Trans>Clipboard is unavailable. Select the preview and copy it manually.</Trans>
         </p>
       ) : null}
-      <details className="mt-3 rounded-md border bg-muted/20" open>
+      <details className="mt-3 rounded-md border bg-muted/20">
         <summary className="cursor-pointer px-3 py-2 text-xs font-medium">
           <Trans>Selected field preview</Trans>
         </summary>
@@ -456,13 +459,13 @@ export function DatabaseContextInspectorBody({
               )}
               onClick={() => onSelect(inspection.packId)}
               aria-current={active ? 'true' : undefined}
+              data-pack-id={inspection.packId}
+              data-database-machine-object="context-pack"
             >
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-medium">{inspection.goal}</div>
-                <div className="mt-1 truncate font-mono text-[11px] text-muted-foreground">
-                  {inspection.packId}
-                </div>
                 <div className="mt-1 text-xs text-muted-foreground">
+                  {new Date(inspection.capturedAt).toLocaleString()} ·{' '}
                   {inspection.tokenCount.estimated.toLocaleString()} tokens ·{' '}
                   <Plural value={inspection.returned} one="# record" other="# records" />
                 </div>
@@ -489,7 +492,27 @@ export function DatabaseContextInspectorBody({
           <div className="space-y-5" data-testid="database-context-inspection-detail">
             <div>
               <h3 className="text-base font-medium">{selected.goal}</h3>
-              <p className="mt-1 font-mono text-xs text-muted-foreground">{selected.packId}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                <Trans>Captured Context Pack</Trans> ·{' '}
+                {new Date(selected.capturedAt).toLocaleString()}
+              </p>
+              <DatabaseMachineIdsDetails
+                className="mt-3"
+                entries={[
+                  { kind: 'pack', label: <Trans>Context pack</Trans>, value: selected.packId },
+                  {
+                    kind: 'database',
+                    label: <Trans>Database</Trans>,
+                    value: selected.database.id,
+                  },
+                  { kind: 'source', label: <Trans>Source</Trans>, value: selected.sourceId },
+                  {
+                    kind: 'view',
+                    label: <Trans>Agent view</Trans>,
+                    value: selected.agentView?.id,
+                  },
+                ]}
+              />
             </div>
 
             <dl className="grid grid-cols-2 gap-2 lg:grid-cols-4">
@@ -576,11 +599,15 @@ export function DatabaseContextInspectorBody({
                   excerpts, and {selected.omissions.fullBodies} full bodies omitted.
                 </Trans>
               </div>
-              {selected.omissions.propertyIds.length > 0 ? (
-                <div className="mt-2 break-all font-mono text-xs">
-                  {selected.omissions.propertyIds.join(', ')}
-                </div>
-              ) : null}
+              <DatabaseMachineIdsDetails
+                className="mt-3"
+                testId="database-context-omitted-ids"
+                entries={selected.omissions.propertyIds.map((propertyId) => ({
+                  kind: 'omitted-property',
+                  label: <Trans>Property</Trans>,
+                  value: propertyId,
+                }))}
+              />
             </section>
 
             <section
@@ -608,7 +635,7 @@ export function DatabaseContextInspectorBody({
 
             <ContextFieldControls key={selected.packId} selected={selected} />
 
-            <details className="rounded-lg border" open>
+            <details className="rounded-lg border">
               <summary className="cursor-pointer px-3 py-2 text-sm font-medium">
                 <Trans>Exact Context Pack</Trans>
               </summary>
@@ -696,18 +723,26 @@ export function DatabaseContextInspectorDialog({
               omissions, freshness, and truncation.
             </Trans>
             {scope ? (
-              <span className="mt-1 block font-mono text-xs" data-context-inspector-scope>
-                {[
-                  scope.databaseId && `database:${scope.databaseId}`,
-                  scope.sourceId && `source:${scope.sourceId}`,
-                  scope.viewId && `view:${scope.viewId}`,
-                  scope.recordId && `record:${scope.recordId}`,
-                  scope.recordIds?.length && `records:${scope.recordIds.join(',')}`,
-                  scope.propertyIds?.length && `properties:${scope.propertyIds.join(',')}`,
-                ]
-                  .filter(Boolean)
-                  .join(' · ')}
-              </span>
+              <DatabaseMachineIdsDetails
+                className="mt-3"
+                testId="database-context-inspector-scope"
+                entries={[
+                  { kind: 'database', label: <Trans>Database</Trans>, value: scope.databaseId },
+                  { kind: 'source', label: <Trans>Source</Trans>, value: scope.sourceId },
+                  { kind: 'view', label: <Trans>View</Trans>, value: scope.viewId },
+                  { kind: 'record', label: <Trans>Record</Trans>, value: scope.recordId },
+                  ...(scope.recordIds ?? []).map((recordId) => ({
+                    kind: 'record-selection',
+                    label: <Trans>Selected record</Trans>,
+                    value: recordId,
+                  })),
+                  ...(scope.propertyIds ?? []).map((propertyId) => ({
+                    kind: 'property-selection',
+                    label: <Trans>Selected property</Trans>,
+                    value: propertyId,
+                  })),
+                ]}
+              />
             ) : null}
           </DialogDescription>
         </DialogHeader>

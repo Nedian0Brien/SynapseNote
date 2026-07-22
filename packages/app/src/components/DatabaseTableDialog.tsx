@@ -89,6 +89,7 @@ import { DatabaseFilesCellEditor } from '@/components/DatabaseFilesCellEditor';
 import { DatabaseForm } from '@/components/DatabaseForm';
 import { DatabaseGallery } from '@/components/DatabaseGallery';
 import { DatabaseList } from '@/components/DatabaseList';
+import { DatabaseMachineIdsDetails } from '@/components/DatabaseMachineIdsDetails';
 import { DatabaseMap } from '@/components/DatabaseMap';
 import { DatabaseSourceIdentityMigrationDialog } from '@/components/DatabaseOnboardingDialog';
 import {
@@ -1819,6 +1820,7 @@ export function DatabaseTable({
                 aria-rowindex={rowIndex + 2}
                 aria-selected={selectedRecordIds.has(record.id)}
                 data-record-id={record.id}
+                data-database-machine-object="record"
                 data-canonical={nonCanonical ? 'false' : 'true'}
                 data-proposed-deletion={proposedDeletion ? 'true' : undefined}
                 data-conditional-color={pageColorRule?.color}
@@ -1951,6 +1953,7 @@ export function DatabaseTable({
                           maxWidth: layout.widths[property.id],
                         }}
                         data-property-id={property.id}
+                        data-database-machine-object="property"
                         data-conditional-color={effectiveColorRule?.color}
                         data-conditional-color-rule={effectiveColorRule?.id}
                         data-canonical={proposed ? 'false' : 'true'}
@@ -5205,6 +5208,10 @@ function DatabaseTableSurface({
         )}
         data-database-workspace
         data-database-page-workspace={isPagePresentation ? '' : undefined}
+        data-database-id={selection?.databaseId ?? undefined}
+        data-source-id={selection?.sourceId ?? undefined}
+        data-view-id={selectedView?.id ?? undefined}
+        data-database-machine-ids="stable"
       >
         {isPagePresentation && databasePageCover.kind !== 'unsupported' ? (
           <div
@@ -5338,6 +5345,20 @@ function DatabaseTableSurface({
                   </Trans>
                 )}
               </DialogDescription>
+              {selection ? (
+                <DatabaseMachineIdsDetails
+                  className="mt-2 max-w-xl"
+                  entries={[
+                    {
+                      kind: 'database',
+                      label: <Trans>Database</Trans>,
+                      value: selection.databaseId,
+                    },
+                    { kind: 'source', label: <Trans>Source</Trans>, value: selection.sourceId },
+                    { kind: 'view', label: <Trans>View</Trans>, value: selectedView?.id },
+                  ]}
+                />
+              ) : null}
             </div>
             <div className="flex min-w-0 flex-wrap gap-2">
               {mutationStatus !== 'idle' || saveFeedback ? (
@@ -5722,6 +5743,7 @@ function DatabaseTableSurface({
                             'inline-flex items-center rounded-md border-0 p-0',
                             dragOverViewId === view.id && 'ring-2 ring-primary/50',
                           )}
+                          data-database-machine-object="view"
                           data-view-id={view.id}
                           data-view-drag-over={dragOverViewId === view.id ? 'true' : undefined}
                           onDragOver={(event) => {

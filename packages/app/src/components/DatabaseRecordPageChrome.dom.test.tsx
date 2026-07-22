@@ -227,11 +227,15 @@ describe('DatabaseRecordPageChrome', () => {
     await waitFor(() =>
       expect(view.getByTestId('page-header-title').textContent).toBe('Canonical title'),
     );
-    expect(
-      view.container.querySelector(
-        '[data-database-record-page-surface][data-record-page-mode="full_page"]',
-      ),
-    ).not.toBeNull();
+    const recordSurface = view.container.querySelector<HTMLElement>(
+      '[data-database-record-page-surface][data-record-page-mode="full_page"]',
+    );
+    expect(recordSurface).not.toBeNull();
+    expect(recordSurface?.getAttribute('data-database-id')).toBe('db_tasks');
+    expect(recordSurface?.getAttribute('data-source-id')).toBe('ds_tasks');
+    expect(recordSurface?.getAttribute('data-record-id')).toBe('rec_first');
+    expect(recordSurface?.getAttribute('data-database-machine-ids')).toBe('stable');
+    expect(recordSurface?.querySelector('[data-database-machine-ids]')).not.toBeNull();
     expect(view.getByLabelText('Database breadcrumbs')).toBeDefined();
     expect(view.getByRole('link', { name: 'Tasks' }).getAttribute('href')).toBe(
       '#database/db_tasks/ds_tasks',

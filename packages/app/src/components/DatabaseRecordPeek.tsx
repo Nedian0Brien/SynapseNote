@@ -12,6 +12,7 @@ import {
 import { ExternalLink, GitBranch, History, Link2, Loader2, MessageSquare } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { DatabaseCommentsDialog } from '@/components/DatabaseCommentsDialog';
+import { DatabaseMachineIdsDetails } from '@/components/DatabaseMachineIdsDetails';
 import { DatabaseRecordHistoryDialog } from '@/components/DatabaseRecordHistoryDialog';
 import { DatabaseRecordPageSurface } from '@/components/DatabaseRecordPageSurface';
 import { DatabaseRelationsDialog } from '@/components/DatabaseRelationsDialog';
@@ -149,6 +150,14 @@ function PeekBody({
           <p className="truncate text-muted-foreground text-xs">
             {source.name} · {record.path}
           </p>
+          <DatabaseMachineIdsDetails
+            className="mt-2"
+            entries={[
+              { kind: 'database', label: <Trans>Database</Trans>, value: database.id },
+              { kind: 'source', label: <Trans>Source</Trans>, value: source.id },
+              { kind: 'record', label: <Trans>Record</Trans>, value: record.id },
+            ]}
+          />
         </div>
         <div className="flex flex-wrap justify-end gap-1">
           <Button type="button" size="sm" variant="ghost" onClick={onOpenComments}>
@@ -356,7 +365,12 @@ export function DatabaseRecordPeek({
     return () => controller.abort();
   }, [docName]);
   const body = (
-    <DatabaseRecordPageSurface mode={mode}>
+    <DatabaseRecordPageSurface
+      mode={mode}
+      databaseId={database.id}
+      sourceId={source.id}
+      recordId={record.id}
+    >
       <PeekBody
         database={database}
         source={source}

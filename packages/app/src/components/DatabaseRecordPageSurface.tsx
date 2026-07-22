@@ -12,15 +12,28 @@ export type DatabaseRecordPageSurfaceMode = 'side_peek' | 'center_peek' | 'full_
  */
 export function DatabaseRecordPageSurface({
   mode,
+  databaseId,
+  sourceId,
+  viewId,
+  recordId,
   children,
 }: {
   mode: DatabaseRecordPageSurfaceMode;
+  databaseId?: string | null;
+  sourceId?: string | null;
+  viewId?: string | null;
+  recordId?: string | null;
   children: ReactNode;
 }) {
   return (
     <div
       data-database-record-page-surface
       data-record-page-mode={mode}
+      data-database-id={databaseId ?? undefined}
+      data-source-id={sourceId ?? undefined}
+      data-view-id={viewId ?? undefined}
+      data-record-id={recordId ?? undefined}
+      data-database-machine-ids="stable"
       className={mode === 'full_page' ? 'contents' : 'flex min-h-0 flex-1 flex-col'}
     >
       {children}

@@ -27,6 +27,7 @@ import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import { DatabaseCommentsDialog } from '@/components/DatabaseCommentsDialog';
 import { DatabaseConflictResolutionNotice } from '@/components/DatabaseConflictResolutionNotice';
+import { DatabaseMachineIdsDetails } from '@/components/DatabaseMachineIdsDetails';
 import {
   type DatabasePageAppearance,
   DatabasePageAppearanceDialog,
@@ -810,7 +811,12 @@ export function DatabaseRecordPageChrome({
   };
 
   return (
-    <DatabaseRecordPageSurface mode="full_page">
+    <DatabaseRecordPageSurface
+      mode="full_page"
+      databaseId={metadata.database_id}
+      sourceId={metadata.source_id}
+      recordId={metadata.record_id}
+    >
       <nav
         className="editor-content-aligned flex items-center gap-1 truncate py-2 text-muted-foreground text-xs"
         aria-label="Database breadcrumbs"
@@ -836,6 +842,15 @@ export function DatabaseRecordPageChrome({
           {databaseTitle ?? fallbackTitle}
         </span>
       </nav>
+      <div className="editor-content-aligned py-1">
+        <DatabaseMachineIdsDetails
+          entries={[
+            { kind: 'database', label: <Trans>Database</Trans>, value: metadata.database_id },
+            { kind: 'source', label: <Trans>Source</Trans>, value: metadata.source_id },
+            { kind: 'record', label: <Trans>Record</Trans>, value: metadata.record_id },
+          ]}
+        />
+      </div>
       <PageHeader
         provider={provider}
         docName={docName}
