@@ -844,6 +844,10 @@ function DatabaseAtomicApprovalScope({
         These changes share one exact plan and commit together. A partial approval would break
         referential or rollback safety, so all listed scopes are reviewed as one group.
       </p>
+      <p className="mt-1 font-medium text-amber-700 text-xs dark:text-amber-300">
+        Selective approval is unavailable for this atomic group; approve every required scope
+        together.
+      </p>
       <ul className="mt-1 list-disc pl-5">
         {required.map((approval) => (
           <li key={approval.code}>{databaseApprovalLabels[approval.code] ?? approval.code}</li>

@@ -3744,6 +3744,9 @@ describe('DatabaseTableDialog', () => {
     expect(screen.getByTestId('database-atomic-approval-scope').textContent).toContain(
       'Create database',
     );
+    expect(screen.getByTestId('database-atomic-approval-scope').textContent).toContain(
+      'Selective approval is unavailable',
+    );
     expect(screen.getByTestId('database-creation-ghost-review')).not.toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Commit creation' }));
