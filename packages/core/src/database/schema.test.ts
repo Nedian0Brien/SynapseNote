@@ -60,6 +60,22 @@ function validDefinition() {
 }
 
 describe('database manifest schema', () => {
+  test('round-trips optional database page icon and cover metadata', () => {
+    const parsed = DatabaseDefinitionSchema.parse({
+      ...validDefinition(),
+      icon: '🗂️',
+      cover: 'assets/database-cover.png',
+    });
+    expect(parsed).toMatchObject({
+      icon: '🗂️',
+      cover: 'assets/database-cover.png',
+    });
+    expect(
+      DatabaseDefinitionSchema.safeParse({ ...validDefinition(), cover: 'x'.repeat(2_049) })
+        .success,
+    ).toBe(false);
+  });
+
   test('validates owned, versioned automations and isolates reviewed egress references', () => {
     const definition = {
       ...validDefinition(),

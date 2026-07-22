@@ -58,6 +58,7 @@ import {
   Plus,
   RefreshCw,
   RotateCcw,
+  Settings2,
   ShieldCheck,
   Star,
   Table2,
@@ -89,6 +90,10 @@ import { DatabaseGallery } from '@/components/DatabaseGallery';
 import { DatabaseList } from '@/components/DatabaseList';
 import { DatabaseMap } from '@/components/DatabaseMap';
 import { DatabaseOnboardingDialog } from '@/components/DatabaseOnboardingDialog';
+import {
+  type DatabasePageAppearance,
+  DatabasePageAppearanceDialog,
+} from '@/components/DatabasePageAppearanceDialog';
 import { DatabasePermissionsDialog } from '@/components/DatabasePermissionsDialog';
 import { DatabasePlaceCellEditor } from '@/components/DatabasePlaceCellEditor';
 import { DatabasePlacePropertyDialog } from '@/components/DatabasePlacePropertyDialog';
@@ -103,6 +108,7 @@ import { DatabaseTemplatesDialog } from '@/components/DatabaseTemplatesDialog';
 import { DatabaseTimeline, type DatabaseTimelineChange } from '@/components/DatabaseTimeline';
 import { DatabaseUniqueIdPropertyDialog } from '@/components/DatabaseUniqueIdPropertyDialog';
 import { DatabaseViewManagerDialog } from '@/components/DatabaseViewManagerDialog';
+import { resolvePageCover, resolvePageIcon } from '@/components/page-header-utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -161,6 +167,7 @@ import {
   createDatabaseCellMutationDesiredState,
   createDatabaseComputedPropertyChangeDesiredState,
   createDatabaseDefaultViewChangeDesiredState,
+  createDatabasePageAppearanceDesiredState,
   createDatabasePageTitleDesiredState,
   createDatabasePlacePrivacyChangeDesiredState,
   createDatabaseRecordArchiveDesiredState,
@@ -2830,6 +2837,7 @@ function DatabaseTableSurface({
   const [draggedViewId, setDraggedViewId] = useState<string | null>(null);
   const [dragOverViewId, setDragOverViewId] = useState<string | null>(null);
   const [pageFavorite, setPageFavorite] = useState(false);
+  const [appearanceOpen, setAppearanceOpen] = useState(false);
   const [pageTitleEditing, setPageTitleEditing] = useState(false);
   const [pageTitleDraft, setPageTitleDraft] = useState('');
   const [filterDialogOpen, setFilterDialogOpen] = useState(false);
@@ -2894,6 +2902,8 @@ function DatabaseTableSurface({
     description?.source?.name ??
     description?.database.name ??
     (initialAction === 'create' ? t`New database` : t`Database`);
+  const databasePageIcon = resolvePageIcon(description?.database.icon);
+  const databasePageCover = resolvePageCover(description?.database.cover);
   const scopedOfflineQueue = selection
     ? offlineQueue.filter(
         (item) => item.databaseId === selection.databaseId && item.sourceId === selection.sourceId,
@@ -4705,6 +4715,32 @@ function DatabaseTableSurface({
       setMutationError(classifyDatabaseUiProblem(cause, 'Unable to prepare the page rename'));
     }
   };
+  const commitPageAppearance = (appearance: DatabasePageAppearance) => {
+    if (!description?.source || mutationStatus !== 'idle') return;
+    // Close the editor before the schema mutation enters review so the parent
+    // page's ghost proposal and its explicit commit controls remain visible.
+    setAppearanceOpen(false);
+    try {
+      runMutation(
+        createDatabasePageAppearanceDesiredState({
+          database: description.database,
+          source: description.source,
+          icon: appearance.icon,
+          cover: appearance.cover,
+        }),
+        'ui-database-page-appearance',
+        'Database page appearance update failed',
+        {
+          policy: { operation: 'schema', actor: 'human', principalId: 'user:local' },
+          onCommitted: () => setAppearanceOpen(false),
+        },
+      );
+    } catch (cause) {
+      setMutationError(
+        classifyDatabaseUiProblem(cause, 'Unable to prepare the page appearance update'),
+      );
+    }
+  };
   const openRecord = (record: ProjectedDatabaseRecord) => {
     rememberDatabaseRecordNavigation({
       databaseId: selection?.databaseId ?? description?.database.id ?? '',
@@ -4755,6 +4791,21 @@ function DatabaseTableSurface({
         data-database-workspace
         data-database-page-workspace={isPagePresentation ? '' : undefined}
       >
+        {isPagePresentation && databasePageCover.kind !== 'unsupported' ? (
+          <div
+            className="h-32 w-full overflow-hidden border-b bg-muted sm:h-40"
+            data-testid="database-page-cover"
+          >
+            <img
+              src={databasePageCover.value}
+              alt=""
+              className="h-full w-full object-cover"
+              draggable={false}
+              loading="lazy"
+              referrerPolicy="no-referrer"
+            />
+          </div>
+        ) : null}
         <DialogHeader
           className={cn(isPagePresentation && 'border-b px-4 py-3 sm:px-6')}
           data-database-page-chrome={isPagePresentation ? '' : undefined}
@@ -4798,11 +4849,34 @@ function DatabaseTableSurface({
               >
                 {isPagePresentation ? (
                   <>
-                    <Database
-                      className="size-5 shrink-0 text-primary"
-                      aria-hidden="true"
-                      data-testid="database-page-icon"
-                    />
+                    {databasePageIcon.kind === 'emoji' ? (
+                      <span
+                        className="flex size-5 shrink-0 items-center justify-center text-lg"
+                        aria-hidden="true"
+                        data-testid="database-page-icon"
+                        data-kind="emoji"
+                      >
+                        {databasePageIcon.value}
+                      </span>
+                    ) : databasePageIcon.kind === 'url' || databasePageIcon.kind === 'path' ? (
+                      <img
+                        src={databasePageIcon.value}
+                        alt=""
+                        className="size-5 shrink-0 rounded object-cover"
+                        aria-hidden="true"
+                        data-testid="database-page-icon"
+                        data-kind={databasePageIcon.kind}
+                        draggable={false}
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <Database
+                        className="size-5 shrink-0 text-primary"
+                        aria-hidden="true"
+                        data-testid="database-page-icon"
+                        data-kind="default"
+                      />
+                    )}
                     {pageTitleEditing ? (
                       <Input
                         ref={pageTitleInputRef}
@@ -4915,6 +4989,18 @@ function DatabaseTableSurface({
                   }}
                 >
                   <Star aria-hidden="true" />
+                </Button>
+              ) : null}
+              {isPagePresentation && description?.source ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={mutationStatus !== 'idle'}
+                  onClick={() => setAppearanceOpen(true)}
+                  data-testid="database-page-customize"
+                >
+                  <Settings2 aria-hidden="true" /> <Trans>Customize page</Trans>
                 </Button>
               ) : null}
               {description?.source && selection ? (
@@ -6896,6 +6982,16 @@ function DatabaseTableSurface({
           });
         }}
       />
+      {description?.source && appearanceOpen ? (
+        <DatabasePageAppearanceDialog
+          open
+          onOpenChange={setAppearanceOpen}
+          icon={description.database.icon}
+          cover={description.database.cover}
+          busy={mutationStatus !== 'idle'}
+          onSave={commitPageAppearance}
+        />
+      ) : null}
       <DatabaseOnboardingDialog
         open={onboardingOpen}
         onOpenChange={setOnboardingOpen}

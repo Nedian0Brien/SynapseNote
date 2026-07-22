@@ -1117,6 +1117,7 @@ describe('DatabaseTableDialog', () => {
             requiresCommit: true,
             conflicts: [],
             approvals: [],
+            risk: { level: 'low', reasons: [] },
             diff: { manifests: [], records: [], templates: [], policy: {} },
           },
         });
@@ -3024,6 +3025,7 @@ describe('DatabaseTableDialog', () => {
             requiresCommit: true,
             conflicts: [],
             approvals: [],
+            risk: { level: 'low', reasons: [] },
             diff: { manifests: [], records: [], templates: [], policy: {} },
           },
         });
@@ -3072,6 +3074,23 @@ describe('DatabaseTableDialog', () => {
       expect(renameDesiredState?.database).toMatchObject({ id: database.id, name: 'Roadmap' }),
     );
     expect(screen.queryByTestId('database-page-title-input')).toBeNull();
+    fireEvent.click(screen.getByTestId('database-page-customize'));
+    expect(await screen.findByRole('heading', { name: 'Customize database page' })).not.toBeNull();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Database page icon' }), {
+      target: { value: '🗂️' },
+    });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Database page cover' }), {
+      target: { value: 'assets/database-cover.png' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save appearance' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Commit change' }));
+    await waitFor(() =>
+      expect(renameDesiredState?.database).toMatchObject({
+        id: database.id,
+        icon: '🗂️',
+        cover: 'assets/database-cover.png',
+      }),
+    );
     fireEvent.click(screen.getByTestId('database-page-back'));
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });

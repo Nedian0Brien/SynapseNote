@@ -179,6 +179,8 @@ export function databaseDesiredStateBase(
       key: definition.key,
       name: definition.name,
       ...(definition.description ? { description: definition.description } : {}),
+      ...(definition.icon ? { icon: definition.icon } : {}),
+      ...(definition.cover ? { cover: definition.cover } : {}),
       aliases: [...definition.aliases],
       people: structuredClone(definition.people),
       contract: structuredClone(definition.contract),

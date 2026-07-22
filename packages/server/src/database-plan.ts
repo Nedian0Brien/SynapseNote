@@ -285,6 +285,8 @@ export const DatabaseDesiredStateDraftSchema = z
         key: z.string().min(1),
         name: z.string().min(1),
         description: z.string().optional(),
+        icon: z.string().max(2_048).optional(),
+        cover: z.string().max(2_048).optional(),
         aliases: z.array(z.string()).optional(),
         people: z
           .array(
@@ -539,6 +541,8 @@ function deletionDesiredState(definition: DatabaseDefinition): DatabaseDesiredSt
       key: definition.key,
       name: definition.name,
       ...(definition.description ? { description: definition.description } : {}),
+      ...(definition.icon ? { icon: definition.icon } : {}),
+      ...(definition.cover ? { cover: definition.cover } : {}),
       aliases: definition.aliases,
       people: definition.people,
       contract: definition.contract,
@@ -2249,6 +2253,8 @@ export class DatabasePlanEngine {
         id: definition.id,
         key: definition.key,
         name: definition.name,
+        ...(definition.icon ? { icon: definition.icon } : {}),
+        ...(definition.cover ? { cover: definition.cover } : {}),
         contract: structuredClone(definition.contract),
       },
       sources: [],
@@ -4735,6 +4741,8 @@ export class DatabasePlanEngine {
       ...(desiredState.database.description === undefined
         ? {}
         : { description: desiredState.database.description }),
+      ...(desiredState.database.icon === undefined ? {} : { icon: desiredState.database.icon }),
+      ...(desiredState.database.cover === undefined ? {} : { cover: desiredState.database.cover }),
       aliases: desiredState.database.aliases ?? [],
       people: normalizedPeople,
       contract: desiredState.database.contract,

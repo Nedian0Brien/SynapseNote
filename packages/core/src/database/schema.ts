@@ -2753,6 +2753,9 @@ export const DatabaseDefinitionSchema = z
     key: DatabaseStableKeySchema,
     name: z.string().trim().min(1).max(200),
     description: z.string().trim().max(2_000).optional(),
+    /** Optional Notion-style page chrome metadata; paths are resolved by the UI. */
+    icon: z.string().trim().max(2_048).optional(),
+    cover: z.string().trim().max(2_048).optional(),
     aliases: z.array(z.string().trim().min(1).max(200)).default([]),
     people: z.array(DatabasePersonSchema).default([]),
     contract: DatabaseMachineContractSchema,

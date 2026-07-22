@@ -55,6 +55,8 @@ function databaseDraftBase(
       key: database.key,
       name: database.name,
       ...(database.description ? { description: database.description } : {}),
+      ...(database.icon ? { icon: database.icon } : {}),
+      ...(database.cover ? { cover: database.cover } : {}),
       ...(database.aliases ? { aliases: [...database.aliases] } : {}),
       people: structuredClone(database.people),
       contract: structuredClone(database.contract),
@@ -403,6 +405,35 @@ export function createDatabasePageTitleDesiredState(input: {
     sources: input.database.sources.map((candidate) =>
       candidate.id === source.id ? { ...candidate, name } : candidate,
     ),
+  });
+  return {
+    ...databaseDraftBase(definition),
+    sampleRecords: [],
+    recordMutations: [],
+  };
+}
+
+/** Persist the optional Notion-style page icon/cover without changing stable IDs. */
+export function createDatabasePageAppearanceDesiredState(input: {
+  database: DatabaseDefinition;
+  source: DatabaseSource;
+  icon?: string | null;
+  cover?: string | null;
+}): DatabaseDesiredStateDraftInput {
+  const source = input.database.sources.find((candidate) => candidate.id === input.source.id);
+  if (!source) throw new Error('The selected source is outside the database');
+  const definition = DatabaseDefinitionSchema.parse({
+    ...input.database,
+    ...(input.icon === undefined
+      ? {}
+      : input.icon === null || input.icon.trim() === ''
+        ? { icon: undefined }
+        : { icon: input.icon.trim() }),
+    ...(input.cover === undefined
+      ? {}
+      : input.cover === null || input.cover.trim() === ''
+        ? { cover: undefined }
+        : { cover: input.cover.trim() }),
   });
   return {
     ...databaseDraftBase(definition),

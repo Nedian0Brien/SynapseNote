@@ -12,6 +12,7 @@ import {
   createDatabaseCellMutationDesiredState,
   createDatabaseComputedPropertyChangeDesiredState,
   createDatabaseDefaultViewChangeDesiredState,
+  createDatabasePageAppearanceDesiredState,
   createDatabasePageTitleDesiredState,
   createDatabasePlacePrivacyChangeDesiredState,
   createDatabaseRecordArchiveDesiredState,
@@ -399,6 +400,32 @@ describe('database cell mutation compiler', () => {
     expect(() => createDatabasePageTitleDesiredState({ database, source, name: '   ' })).toThrow(
       'page title is required',
     );
+  });
+
+  test('persists page icon and cover metadata without changing stable identities', () => {
+    const source = database.sources[0];
+    if (!source) throw new Error('invalid page appearance fixture');
+    const desired = createDatabasePageAppearanceDesiredState({
+      database,
+      source,
+      icon: '🗂️',
+      cover: 'assets/database-cover.png',
+    });
+    expect(desired.database).toMatchObject({
+      id: database.id,
+      key: database.key,
+      icon: '🗂️',
+      cover: 'assets/database-cover.png',
+    });
+    expect(desired.recordMutations).toEqual([]);
+    const cleared = createDatabasePageAppearanceDesiredState({
+      database: { ...database, icon: '🗂️', cover: 'assets/database-cover.png' },
+      source,
+      icon: null,
+      cover: null,
+    });
+    expect(cleared.database.icon).toBeUndefined();
+    expect(cleared.database.cover).toBeUndefined();
   });
 
   test('persists a complete saved-view revision without record mutations', () => {
