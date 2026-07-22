@@ -402,6 +402,11 @@ disables rename, reorder, delete, and duplicate; and conversion explains why
 Title and derived properties need a broader migration instead of a local type
 change.
 
+Cell editing keeps type-specific controls at the point of entry: rich text,
+dates, files, places, relations, select/status, multi-select/person, checkbox,
+and computed/read-only families have explicit branches; scalar number, URL,
+email, and phone properties use matching input types and input modes.
+
 Focused evidence:
 
 - `DatabaseTableDialog.dom.test.tsx`: host-gated `Add property` and contextual
@@ -421,8 +426,12 @@ Focused evidence:
   tests / 11 expectations).
 - `packages/core/src/database/schema.test.ts`: exactly-one-required-Title
   schema invariant (1 test / 6 expectations).
+- `DatabaseTableDialog.dom.test.tsx`: typed scalar controls, checkbox and
+  multi-select editors, plus the existing rich text/date/files/place/relation/
+  select/status/person/formula/button/unique-id coverage (12 focused tests / 46
+  expectations for the type-editor slice).
 
-This closes UX-501 through UX-504 at the functional
+This closes UX-501 through UX-505 at the functional
 implementation/evidence layer.
 Visual parity and the broader property-family acceptance gates remain open.
 
@@ -482,7 +491,7 @@ crossed the document-native UX bar:
 | Measure | Current result | Interpretation |
 | --- | --- | --- |
 | Engine implementation checklist | 310/335 numbered items complete | Core/database and agent contracts are substantially implemented. |
-| Notion UX checklist | 50/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, inline/full-page state parity, table-first direct manipulation, friendly property names/examples, Title safety, in-context property-add/header affordances including property-specific sort/filter/duplicate actions, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, 768px browser, and cross-host journey gates remain open. |
+| Notion UX checklist | 51/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, page-based database discovery, inline/linked insertion, inline/full-page state parity, table-first direct manipulation, friendly property names/examples, Title safety, type-specific cell editors, in-context property-add/header affordances including property-specific sort/filter/duplicate actions, named canonical workspace canvas routing without a duplicate rail, sidebar/recent/search/backlink/relation navigation, normal database page chrome, responsive canvas guardrails, stable inline/full-page conversion, and durable History/receipt recovery are evidenced; full visual, 768px browser, and cross-host journey gates remain open. |
 | First-use database entry | `New database` in sidebar, empty states, normal new-page dialog, command palette, plus slash-menu `New database`/`Linked view of database`; normal picker exposes Page/Database chooser and the resulting route lands in an editable table. `Open databases` enters the no-overlay page workspace. | Discovery, sidebar/recent navigation, and the web first-use path are evidenced; additional entry points and Electron proof remain open. |
 | Blank creation | Optional title, `Untitled database` fallback, direct-safe exact-plan commit, immediate source/view selection, title/new-row focus | The blank human path is continuous in DOM coverage; template/import/agent paths intentionally retain review and visual browser proof remains open. |
 | Full-page navigation | Stable `#database/<database>/<source>/<view?>` route, no-overlay canvas presentation, sidebar source section, command-palette recents/search, backlink and relation links, normal page chrome, and local overflow guardrails | Route, page surface, and navigation identity are evidenced; responsive visual/cross-host proof remains incomplete. |
@@ -771,7 +780,12 @@ capability alone is insufficient.
       The schema enforces exactly one required Title; the property surface
       marks it Frozen and disables unsafe local actions, while conversion
       explicitly explains the broader-migration blocker.
-- [ ] **UX-505** Use type-specific cell editors for every implemented family.
+- [x] **UX-505** Use type-specific cell editors for every implemented family.
+      Rich text, date, files, place, relation, select/status,
+      multi-select/person, and checkbox values use structured editors; scalar
+      number, URL, email, and phone values use matching HTML input types; and
+      formula, rollup, metadata, unique-ID, verification, and button families
+      stay explicitly read-only or action-specific.
 - [ ] **UX-506** Classify schema changes separately from cell-value changes.
 - [ ] **UX-507** Preview destructive property deletion with value count,
       dependency impact, and recovery.
