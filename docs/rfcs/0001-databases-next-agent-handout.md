@@ -68,14 +68,16 @@ the repository-wide check for final release readiness.
   catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
   approval-bound commits, undo, and restart/backup idempotency. Agent View
   policy/privacy/sandbox review remains Partial by design.
-- Notion UX alignment checklist: **21/128 complete**. The page-first and normal
+- Notion UX alignment checklist: **22/128 complete**. The page-first and normal
   New-page creation slices plus the inline/linked insertion contract are now
   evidenced. A
   2026-07-23 in-app browser capture reached the IPv4 renderer at
   `http://127.0.0.1:5173/`, created a full-page database, created two canonical
   rows, created an inline database from the slash menu, saved an inline row,
   opened the shared full-page route, and removed the linked block without
-  deleting the canonical record. Electron, normal New-page, complete linked
+  deleting the canonical record. The follow-up slash-menu capture now proves
+  `/database` and `/table` lead with `New database` and `Linked view of
+  database`. Electron, complete linked
   state-matrix, accessibility, responsive, usability, performance, and
   packaged-release evidence remain open.
 - A-K, M-P are complete. L is complete except L-017. Q is complete except
@@ -205,25 +207,37 @@ do not reconstruct behavior solely from this summary.
   affordances visible.
 - A follow-up cancel check returned from `#database/new` to the empty hash with
   no second database. This closes the evidence-backed UX-101, UX-103, and
-  UX-105–UX-112 items (21/128 UX gates complete). UX-104, `/database`/`/table`
-  aliases, full-page/sidebar integration, Electron, accessibility, responsive,
-  usability, performance, and release gates remain open.
+  UX-105–UX-112 items (22/128 UX gates complete). UX-104, full-page/sidebar
+  integration, Electron, accessibility, responsive, usability, performance,
+  and release gates remain open.
+
+### 2026-07-23 slash database command alignment
+
+- The slash menu now labels the first database choices `New database` and
+  `Linked view of database`, with `Inline database` following them. The
+  `/database` and `/table` queries share those aliases and preserve the same
+  order, matching the Notion-style first-use grammar.
+- Running-app evidence shows the grouped `Data` menu and its previews. The
+  temporary query was undone after capture; no document mutation remains.
+- Focused `component-items.test.ts` coverage now passes 23 tests / 198
+  expectations. UX-102 is closed; full-page/sidebar, state-matrix, Electron,
+  accessibility, responsive, usability, performance, and release gates remain
+  open.
 
 ### 2026-07-22 first Notion-UX insertion slice
 
 - `DatabaseView` is no longer a fresh raw-ID slash insert. The slash menu
-  exposes `Database` and `Linked database`; the latter renders a searchable
+  exposes `New database` and `Linked view of database`; the latter renders a
+  searchable
   database → source → saved-view picker and a missing-reference replacement
   path. Existing serialized `DatabaseView` blocks remain compatible.
 - The `Database` slash entry opens the database shell in creation mode through
   a typed app event, preserving the existing exact-plan commit and recovery
   contract while removing one discovery step.
-- Focused evidence: 22 slash-menu tests / 187 expectations, 11
+- Focused evidence: 23 slash-menu tests / 198 expectations, 11
   `DatabaseView` DOM tests / 61 expectations, app typecheck, and core registry
-  tests (76 / 403 expectations). A live Vite capture was attempted in an
-  isolated project but stopped at the React Compiler `BabelError` overlay; do
-  not close UX-102 or UX-301/303/308 until a browser-enabled run captures the
-  actual flow.
+  tests (76 / 403 expectations). The running IPv4 app capture now closes
+  UX-102; UX-301/303/308 remain backed by the inline picker journey.
 
 ### 2026-07-22 creation and view-context slice
 

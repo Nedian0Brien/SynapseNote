@@ -21,7 +21,8 @@ a weak **document-native database experience**.
 
 - The command palette, sidebar toolbar, empty-space menu, onboarding footer,
   and empty-editor footer now expose a user-facing `New database` entry. A
-  guided `Database`/`Linked database` slash entry also exists. The normal
+  guided `New database` → `Linked view of database` slash entry is also
+  available for `/database` and `/table`. The normal
   New-page dialog now exposes a named `New database` action and a visible
   Page/Database type chooser; a running web journey now proves the handoff and
   resulting table, while Electron parity remains a separate gate.
@@ -88,7 +89,7 @@ user's canonical project, or run the repository-wide/server test suite.
 | New item       | `NewItemDialog` still models `file`/`folder`, but its normal file path now exposes a named `New database` action that dispatches the shared creation event.                     | Discovery is improved, but Database/Table is not yet a first-class page type in the picker.                          |
 | Creation       | `DatabaseCreationDialog.tsx` accepts an optional blank title, keeps storage details in a collapsed disclosure, and routes blank human creation through an automatic exact-plan commit while retaining review for templates/imports/agent paths. | The first-use path is shorter and safer for routine human creation; higher-risk methods still expose the explicit review boundary. |
 | Blank schema   | `createBlankDatabaseDesiredState` creates one title property; after commit the shell selects the new source and first view.                                                    | A minimal database lands in its table, but it is still inside the management dialog.                                 |
-| Inline block   | Fresh `Database`/`Linked database`/`Inline database` inserts use a catalog/source/view picker; raw references remain advanced for existing MDX, and the block renders shared records with visible tabs and full-page handoff. | The core inline/linked journey is now unified for creation, editing, conversion, and removal; duplicate-view action and full state-matrix parity remain open. |
+| Inline block   | Fresh `New database`/`Linked view of database`/`Inline database` inserts use a catalog/source/view picker; raw references remain advanced for existing MDX, and the block renders shared records with visible tabs and full-page handoff. | The core inline/linked journey is now unified for creation, editing, conversion, and removal; duplicate-view action and full state-matrix parity remain open. |
 | Database shell | `DatabaseTableDialog.tsx` supports a route-level page presentation plus the legacy management dialog; both still share the dense workspace toolbar.                            | The modal boundary is removable, but administration and primary work remain coupled.                                 |
 | Human writes   | Direct-safe cell/row writes use plan → auto-approval → commit; destructive, bulk, schema, and elevated writes retain plan → ghost → explicit review → commit.                    | The interruption is removed for common edits, but optimistic/offline acknowledgement and full policy coverage remain. |
 | Views          | Saved views now render as visible tabs with `+`; the dropdown and `Manage views` dialog remain available.                                                                      | The primary view switch is closer to Notion, but reorder/rename/favorite controls still live in management.          |
@@ -106,10 +107,10 @@ browser capture closes the core inline/linked interaction contract below; its
 broader visual, accessibility, responsive, and cross-host acceptance gates
 remain open:
 
-- The slash menu now offers `Database` and `Linked database` in user-facing
+- The slash menu now offers `New database` and `Linked view of database` in user-facing
   language. The raw `Database view` descriptor remains readable for existing
   MDX but is no longer a fresh-insert option.
-- Choosing `Linked database` inserts an inline placeholder that searches the
+- Choosing `Linked view of database` inserts an inline placeholder that searches the
   database catalog, chooses a source, and then chooses a saved view. It writes
   the stable references back to the current block; missing references expose
   the same `Choose replacement` picker.
@@ -117,7 +118,7 @@ remain open:
   descriptor, so the regular PropPanel no longer leads with raw IDs; the
   serialized MDX and advanced panel remain the compatibility/debug escape
   hatch.
-- Choosing `Database` opens the database shell directly in creation mode, so a
+- Choosing `New database` opens the database shell directly in creation mode, so a
   user does not have to rediscover the `Create database` action in the admin
   rail.
 - Blank creation accepts an optional title, uses `Untitled database` as a
@@ -171,10 +172,21 @@ details`. Navigating back to `#database/new` and pressing `Cancel` returned to
 the document root (`hash === ''`) without creating another database.
 
 This is evidence for the page-first and inline/linked creation slices. It does
-not establish ordinary document chrome/sidebar integration, the `/database`
-and `/table` slash aliases, the complete linked-view state matrix, Electron parity,
+not establish ordinary document chrome/sidebar integration, the complete
+linked-view state matrix, Electron parity,
 accessibility/responsive behavior, usability timing, performance, or
 packaged-release readiness. Those acceptance gates remain unchecked below.
+
+### Slash database command evidence (2026-07-23)
+
+In the same running web app, opening an existing page and typing `/database`
+into the editor showed a grouped `Data` slash menu whose first choices were
+`New database`, `Linked view of database`, and `Inline database`. The same
+ordered choices are returned for `/table`; the menu preview describes the
+blank table and linked shared-record behavior. The temporary query was undone
+after capture, so no project document was changed. The focused
+`component-items.test.ts` suite pins the labels, aliases, and first-choice
+ordering.
 
 ### Inline database journey evidence (2026-07-23)
 
@@ -215,8 +227,8 @@ crossed the document-native UX bar:
 | Measure | Current result | Interpretation |
 | --- | --- | --- |
 | Engine implementation checklist | 310/335 numbered items complete | Core/database and agent contracts are substantially implemented. |
-| Notion UX checklist | 21/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, and the inline/linked insertion contract are evidenced; full visual, state-matrix, and cross-host journey gates remain open. |
-| First-use database entry | `New database` in sidebar, empty states, normal new-page dialog, command palette, plus slash-menu `Database`/`Linked database`; normal picker exposes Page/Database chooser and the resulting route lands in an editable table | Discovery and the web first-use path are evidenced; ordinary sidebar/recent integration and Electron proof remain open. |
+| Notion UX checklist | 22/128 gates complete | Vocabulary/claim-boundary, normal New-page creation, slash database entry, and the inline/linked insertion contract are evidenced; full visual, state-matrix, and cross-host journey gates remain open. |
+| First-use database entry | `New database` in sidebar, empty states, normal new-page dialog, command palette, plus slash-menu `New database`/`Linked view of database`; normal picker exposes Page/Database chooser and the resulting route lands in an editable table | Discovery and the web first-use path are evidenced; ordinary sidebar/recent integration and Electron proof remain open. |
 | Blank creation | Optional title, `Untitled database` fallback, direct-safe exact-plan commit, immediate source/view selection, title/new-row focus | The blank human path is continuous in DOM coverage; template/import/agent paths intentionally retain review and visual browser proof remains open. |
 | Full-page navigation | Stable `#database/<database>/<source>/<view?>` route and no-overlay page presentation | Route identity exists, but sidebar/recent/page chrome integration is incomplete. |
 | Inline linked view | Catalog → source → saved-view picker, inline creation, shared rows, visible tabs, replacement, conversion, duplicate configuration, and block removal | The core inline/linked contract is evidenced; the complete visual state matrix remains open. |
@@ -353,8 +365,11 @@ capability alone is insufficient.
 - [x] **UX-101** Add `Database`/`Table` to the normal new-page flow. Evidence:
       `NewItemDialog.dom.test.tsx` and the 2026-07-23 browser journey show the
       Page/Database chooser and canonical route handoff.
-- [ ] **UX-102** Add `/database` and `/table` commands whose first choice is
-      `New database` or `Linked view of database`.
+- [x] **UX-102** Add `/database` and `/table` commands whose first choice is
+      `New database` or `Linked view of database`. Evidence: the running-app
+      slash-menu capture on 2026-07-23 shows both queries resolving to the
+      ordered `New database`, `Linked view of database`, and `Inline database`
+      choices; `component-items.test.ts` pins the order and aliases.
 - [x] **UX-103** Add a visible database option to the editor's empty-page insert
       affordances; do not require the command palette. Evidence: slash-menu
       browser capture plus `DatabaseView.dom.test.tsx` and entry-point DOM
