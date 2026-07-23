@@ -115,6 +115,9 @@ describe('DatabaseView', () => {
     expect(titleButton.getAttribute('title')).toBe('Rename inline database');
     fireEvent.click(titleButton);
     expect(screen.getByRole('textbox', { name: 'Inline database title' })).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'Database view actions for Tasks · Open tasks' }),
+    ).toBeTruthy();
 
     expect(await screen.findByRole('button', { name: view.name })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'New database view' })).toBeTruthy();
@@ -1581,7 +1584,9 @@ describe('DatabaseView', () => {
     expect(screen.getByLabelText('Archive record rec_first')).toBeTruthy();
     expect(screen.getByLabelText('Move record rec_first')).toBeTruthy();
     expect(screen.getByLabelText('Delete record rec_first')).toBeTruthy();
-    fireEvent.pointerDown(screen.getByRole('button', { name: 'Database view actions' }));
+    fireEvent.pointerDown(
+      screen.getByRole('button', { name: 'Database view actions for Tasks · Open tasks' }),
+    );
     expect(screen.getByRole('menuitem', { name: 'Convert to full page' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'Choose another view' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'Duplicate view configuration' })).toBeTruthy();
@@ -1597,7 +1602,9 @@ describe('DatabaseView', () => {
       mode: 'full-page',
     });
     expect((dispatched.at(-1)?.props as Record<string, unknown>).records).toBeUndefined();
-    fireEvent.pointerDown(screen.getByRole('button', { name: 'Database view actions' }));
+    fireEvent.pointerDown(
+      screen.getByRole('button', { name: 'Database view actions for Tasks · Open tasks' }),
+    );
     fireEvent.click(screen.getByRole('menuitem', { name: 'Manage properties' }));
     expect(await screen.findByRole('heading', { name: 'Manage properties' })).toBeTruthy();
     fireEvent.click(
@@ -1613,7 +1620,9 @@ describe('DatabaseView', () => {
       document.querySelector('[data-database-workspace] [data-slot="dialog-close"]') as HTMLElement,
     );
     await waitFor(() => expect(document.querySelector('[data-database-workspace]')).toBeNull());
-    fireEvent.pointerDown(screen.getByRole('button', { name: 'Database view actions' }));
+    fireEvent.pointerDown(
+      screen.getByRole('button', { name: 'Database view actions for Tasks · Open tasks' }),
+    );
     fireEvent.click(screen.getByRole('menuitem', { name: 'Inspect agent context' }));
     expect(await screen.findByText('What the agent saw')).toBeTruthy();
     expect(inspectPaths[0]).toContain(
@@ -1621,14 +1630,18 @@ describe('DatabaseView', () => {
     );
     fireEvent.click(document.querySelector('[data-slot="dialog-close"]') as HTMLElement);
     await waitFor(() => expect(screen.queryByText('What the agent saw')).toBeNull());
-    fireEvent.pointerDown(screen.getByRole('button', { name: 'Database view actions' }));
+    fireEvent.pointerDown(
+      screen.getByRole('button', { name: 'Database view actions for Tasks · Open tasks' }),
+    );
     fireEvent.click(screen.getByRole('menuitem', { name: 'View settings' }));
     expect(await screen.findByRole('heading', { name: 'Saved view settings' })).toBeTruthy();
     fireEvent.click(document.querySelector('[data-slot="dialog-close"]') as HTMLElement);
     await waitFor(() =>
       expect(screen.queryByRole('heading', { name: 'Saved view settings' })).toBeNull(),
     );
-    fireEvent.pointerDown(screen.getByRole('button', { name: 'Database view actions' }));
+    fireEvent.pointerDown(
+      screen.getByRole('button', { name: 'Database view actions for Tasks · Open tasks' }),
+    );
     expect(screen.getByRole('menuitem', { name: 'Manage views' })).toBeTruthy();
     fireEvent.click(screen.getByRole('menuitem', { name: 'Manage views' }));
     expect(await screen.findByRole('heading', { name: 'Manage saved views' })).toBeTruthy();
@@ -1636,7 +1649,9 @@ describe('DatabaseView', () => {
     await waitFor(() =>
       expect(screen.queryByRole('heading', { name: 'Manage saved views' })).toBeNull(),
     );
-    fireEvent.pointerDown(screen.getByRole('button', { name: 'Database view actions' }));
+    fireEvent.pointerDown(
+      screen.getByRole('button', { name: 'Database view actions for Tasks · Open tasks' }),
+    );
     expect(screen.getByRole('menuitem', { name: 'Filters' })).toBeTruthy();
     fireEvent.click(screen.getByRole('menuitem', { name: 'Filters' }));
     expect(await screen.findByRole('heading', { name: 'Advanced saved filters' })).toBeTruthy();
@@ -1655,7 +1670,9 @@ describe('DatabaseView', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open full page' }));
     expect(window.location.hash).not.toBe(originalHash);
 
-    fireEvent.pointerDown(screen.getByRole('button', { name: 'Database view actions' }));
+    fireEvent.pointerDown(
+      screen.getByRole('button', { name: 'Database view actions for Tasks · Open tasks' }),
+    );
     fireEvent.click(screen.getByRole('menuitem', { name: 'Show archived' }));
     expect(await screen.findByLabelText('Restore record rec_first')).toBeTruthy();
     await waitFor(() =>

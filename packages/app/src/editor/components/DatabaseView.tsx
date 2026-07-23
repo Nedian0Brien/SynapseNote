@@ -1032,6 +1032,13 @@ export function DatabaseView({
   const activeLinkedView = linkedView
     ? resolveLinkedView(linkedView, localViewOverrides ?? reference.data.viewOverrides)
     : undefined;
+  const inlineDatabaseContext =
+    state.status === 'ready'
+      ? `${state.description.source?.name ?? state.description.database.name} · ${activeLinkedView?.name ?? 'view'}`
+      : null;
+  const inlineViewActionsLabel = inlineDatabaseContext
+    ? t`Database view actions for ${inlineDatabaseContext}`
+    : t`Database view actions`;
   const linkedSourceViews =
     linkedDatabase?.views.filter((view) => view.sourceId === reference.data.sourceId) ?? [];
   const defaultInlineAgentScope: DatabaseAgentScope = {
@@ -1683,7 +1690,7 @@ export function DatabaseView({
                 type="button"
                 variant="ghost"
                 size="icon-sm"
-                aria-label="Database view actions"
+                aria-label={inlineViewActionsLabel}
               >
                 <MoreHorizontal />
               </Button>
