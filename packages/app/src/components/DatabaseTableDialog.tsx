@@ -883,6 +883,7 @@ export function DatabaseTable({
   result,
   people = result.people ?? [],
   relationRecords = result.relationRecords ?? [],
+  notionSurface = false,
   ghost = null,
   optimisticCellValues,
   mutationLocked = false,
@@ -928,6 +929,8 @@ export function DatabaseTable({
   result: DatabaseQueryResult;
   people?: readonly ProjectedDatabasePerson[];
   relationRecords?: readonly ProjectedDatabaseRelationRecord[];
+  /** Keep the primary table surface document-native; advanced layout controls stay secondary. */
+  notionSurface?: boolean;
   ghost?: DatabaseGhostState | null;
   /** Direct-safe human edits shown locally while the canonical commit settles. */
   optimisticCellValues?: ReadonlyMap<string, DatabaseValue | undefined>;
@@ -1364,163 +1367,165 @@ export function DatabaseTable({
 
   return (
     <div ref={tableHostRef}>
-      <details
-        className="mb-2 rounded-md border bg-muted/10 p-2"
-        data-testid="table-layout-controls"
-      >
-        <summary className="cursor-pointer select-none font-medium text-sm">
-          <Trans>Table layout and calculations</Trans>
-        </summary>
-        <div className="mt-3 space-y-3">
-          <div className="flex flex-wrap items-center gap-2">
-            {onManageProperties ? (
+      {!notionSurface ? (
+        <details
+          className="mb-2 rounded-md border bg-muted/10 p-2"
+          data-testid="table-layout-controls"
+        >
+          <summary className="cursor-pointer select-none font-medium text-sm">
+            <Trans>Table layout and calculations</Trans>
+          </summary>
+          <div className="mt-3 space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              {onManageProperties ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onManageProperties()}
+                >
+                  <Trans>Manage properties</Trans>
+                </Button>
+              ) : null}
               <Button
                 type="button"
                 size="sm"
-                variant="outline"
-                onClick={() => onManageProperties()}
+                variant={layout.wrap ? 'secondary' : 'outline'}
+                aria-pressed={layout.wrap}
+                onClick={() => setLayout((current) => ({ ...current, wrap: !current.wrap }))}
               >
-                <Trans>Manage properties</Trans>
+                <Trans>Wrap cells</Trans>
               </Button>
-            ) : null}
-            <Button
-              type="button"
-              size="sm"
-              variant={layout.wrap ? 'secondary' : 'outline'}
-              aria-pressed={layout.wrap}
-              onClick={() => setLayout((current) => ({ ...current, wrap: !current.wrap }))}
-            >
-              <Trans>Wrap cells</Trans>
-            </Button>
-            <Select
-              value={layout.rowHeight}
-              onValueChange={(rowHeight: 'compact' | 'standard' | 'tall') =>
-                setLayout((current) => ({ ...current, rowHeight }))
-              }
-            >
-              <SelectTrigger size="sm" className="w-36" aria-label="Table row height">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="compact">Compact</SelectItem>
-                <SelectItem value="standard">Standard</SelectItem>
-                <SelectItem value="tall">Tall</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid gap-2">
-            {layout.propertyIds.map((propertyId, propertyIndex) => {
-              const property = allProperties.find((candidate) => candidate.id === propertyId);
-              if (!property) return null;
-              const title = property.type === 'title';
-              const shown = !layout.hiddenPropertyIds.includes(property.id);
-              const allowedCalculations = databaseCalculationFunctionsForProperty(property);
-              return (
-                <div
-                  key={property.id}
-                  className="grid items-center gap-2 rounded border bg-background p-2 sm:grid-cols-[minmax(8rem,1fr)_auto_minmax(8rem,12rem)_minmax(10rem,14rem)]"
-                  data-layout-property-id={property.id}
-                >
-                  <div className="flex min-w-0 items-center gap-2 text-sm">
-                    <Checkbox
-                      checked={shown}
-                      disabled={title}
-                      aria-label={`Show ${property.name} column`}
-                      onCheckedChange={(checked) =>
-                        updatePropertyLayout((current) => ({
-                          ...current,
-                          hiddenPropertyIds:
-                            checked === true
-                              ? current.hiddenPropertyIds.filter((id) => id !== property.id)
-                              : [...new Set([...current.hiddenPropertyIds, property.id])],
-                        }))
-                      }
-                    />
-                    <span className="truncate">{property.name}</span>
-                    {title ? <Badge variant="gray">Frozen</Badge> : null}
-                  </div>
-                  <div className="flex gap-1">
-                    <Button
-                      type="button"
-                      size="icon-sm"
-                      variant="ghost"
-                      aria-label={`Move ${property.name} left`}
-                      disabled={title || propertyIndex <= 1}
-                      onClick={() =>
-                        updatePropertyLayout((current) =>
-                          moveDatabaseTableProperty(current, property.id, -1),
-                        )
-                      }
-                    >
-                      <ChevronLeft />
-                    </Button>
-                    <Button
-                      type="button"
-                      size="icon-sm"
-                      variant="ghost"
-                      aria-label={`Move ${property.name} right`}
-                      disabled={title || propertyIndex >= layout.propertyIds.length - 1}
-                      onClick={() =>
-                        updatePropertyLayout((current) =>
-                          moveDatabaseTableProperty(current, property.id, 1),
-                        )
-                      }
-                    >
-                      <ChevronRight />
-                    </Button>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className="sr-only">{`Width of ${property.name}`}</span>
-                    <Input
-                      type="range"
-                      min={120}
-                      max={480}
-                      step={20}
-                      value={layout.widths[property.id] ?? 180}
-                      aria-label={`Width of ${property.name}`}
-                      onChange={(event) =>
-                        setLayout((current) => ({
-                          ...current,
-                          widths: {
-                            ...current.widths,
-                            [property.id]: Number(event.currentTarget.value),
-                          },
-                        }))
-                      }
-                    />
-                    <span>{layout.widths[property.id] ?? 180}px</span>
-                  </div>
-                  <Select
-                    value={calculations[property.id] ?? 'none'}
-                    onValueChange={(value) =>
-                      onCalculationChange?.(
-                        property.id,
-                        value === 'none' ? null : (value as DatabaseCalculationFunction),
-                      )
-                    }
+              <Select
+                value={layout.rowHeight}
+                onValueChange={(rowHeight: 'compact' | 'standard' | 'tall') =>
+                  setLayout((current) => ({ ...current, rowHeight }))
+                }
+              >
+                <SelectTrigger size="sm" className="w-36" aria-label="Table row height">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="compact">Compact</SelectItem>
+                  <SelectItem value="standard">Standard</SelectItem>
+                  <SelectItem value="tall">Tall</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              {layout.propertyIds.map((propertyId, propertyIndex) => {
+                const property = allProperties.find((candidate) => candidate.id === propertyId);
+                if (!property) return null;
+                const title = property.type === 'title';
+                const shown = !layout.hiddenPropertyIds.includes(property.id);
+                const allowedCalculations = databaseCalculationFunctionsForProperty(property);
+                return (
+                  <div
+                    key={property.id}
+                    className="grid items-center gap-2 rounded border bg-background p-2 sm:grid-cols-[minmax(8rem,1fr)_auto_minmax(8rem,12rem)_minmax(10rem,14rem)]"
+                    data-layout-property-id={property.id}
                   >
-                    <SelectTrigger
-                      size="sm"
-                      aria-label={`Calculation for ${property.name}`}
-                      disabled={!onCalculationChange}
+                    <div className="flex min-w-0 items-center gap-2 text-sm">
+                      <Checkbox
+                        checked={shown}
+                        disabled={title}
+                        aria-label={`Show ${property.name} column`}
+                        onCheckedChange={(checked) =>
+                          updatePropertyLayout((current) => ({
+                            ...current,
+                            hiddenPropertyIds:
+                              checked === true
+                                ? current.hiddenPropertyIds.filter((id) => id !== property.id)
+                                : [...new Set([...current.hiddenPropertyIds, property.id])],
+                          }))
+                        }
+                      />
+                      <span className="truncate">{property.name}</span>
+                      {title ? <Badge variant="gray">Frozen</Badge> : null}
+                    </div>
+                    <div className="flex gap-1">
+                      <Button
+                        type="button"
+                        size="icon-sm"
+                        variant="ghost"
+                        aria-label={`Move ${property.name} left`}
+                        disabled={title || propertyIndex <= 1}
+                        onClick={() =>
+                          updatePropertyLayout((current) =>
+                            moveDatabaseTableProperty(current, property.id, -1),
+                          )
+                        }
+                      >
+                        <ChevronLeft />
+                      </Button>
+                      <Button
+                        type="button"
+                        size="icon-sm"
+                        variant="ghost"
+                        aria-label={`Move ${property.name} right`}
+                        disabled={title || propertyIndex >= layout.propertyIds.length - 1}
+                        onClick={() =>
+                          updatePropertyLayout((current) =>
+                            moveDatabaseTableProperty(current, property.id, 1),
+                          )
+                        }
+                      >
+                        <ChevronRight />
+                      </Button>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="sr-only">{`Width of ${property.name}`}</span>
+                      <Input
+                        type="range"
+                        min={120}
+                        max={480}
+                        step={20}
+                        value={layout.widths[property.id] ?? 180}
+                        aria-label={`Width of ${property.name}`}
+                        onChange={(event) =>
+                          setLayout((current) => ({
+                            ...current,
+                            widths: {
+                              ...current.widths,
+                              [property.id]: Number(event.currentTarget.value),
+                            },
+                          }))
+                        }
+                      />
+                      <span>{layout.widths[property.id] ?? 180}px</span>
+                    </div>
+                    <Select
+                      value={calculations[property.id] ?? 'none'}
+                      onValueChange={(value) =>
+                        onCalculationChange?.(
+                          property.id,
+                          value === 'none' ? null : (value as DatabaseCalculationFunction),
+                        )
+                      }
                     >
-                      <SelectValue placeholder="No calculation" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">No calculation</SelectItem>
-                      {allowedCalculations.map((calculation) => (
-                        <SelectItem key={calculation} value={calculation}>
-                          {calculation.replaceAll('_', ' ')}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              );
-            })}
+                      <SelectTrigger
+                        size="sm"
+                        aria-label={`Calculation for ${property.name}`}
+                        disabled={!onCalculationChange}
+                      >
+                        <SelectValue placeholder="No calculation" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No calculation</SelectItem>
+                        {allowedCalculations.map((calculation) => (
+                          <SelectItem key={calculation} value={calculation}>
+                            {calculation.replaceAll('_', ' ')}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      </details>
+        </details>
+      ) : null}
       <p
         className="sr-only"
         role="status"
@@ -1623,7 +1628,12 @@ export function DatabaseTable({
                   }}
                 >
                   <span>{property.name}</span>
-                  <span className="ml-2 normal-case text-[10px] opacity-60">
+                  <span
+                    className={cn(
+                      'ml-2 normal-case text-[10px] opacity-60',
+                      notionSurface && 'sr-only',
+                    )}
+                  >
                     {propertyTypeLabel}
                   </span>
                   {computedErrorSummary ? (
@@ -1846,7 +1856,7 @@ export function DatabaseTable({
               className="sticky right-0 z-30 w-32 bg-background text-right"
               aria-colindex={properties.length + 2}
             >
-              <span>
+              <span className={notionSurface ? 'sr-only' : undefined}>
                 <Trans>Actions</Trans>
               </span>
               {onManageProperties ? (
@@ -7423,6 +7433,7 @@ function DatabaseTableSurface({
                     viewId={selectedView?.id ?? null}
                     result={result}
                     people={description.database.people}
+                    notionSurface={isCanvasPresentation}
                     relationRecords={[
                       ...new Map(
                         [...relationCandidates, ...(result.relationRecords ?? [])].map((record) => [

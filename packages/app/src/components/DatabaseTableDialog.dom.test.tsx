@@ -3516,6 +3516,7 @@ describe('DatabaseTableDialog', () => {
     expect(screen.queryByTestId('database-create-button')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Open page' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Show archived' })).toBeNull();
+    expect(screen.queryByTestId('table-layout-controls')).toBeNull();
     expect(
       screen.queryByText('Browse canonical Markdown records through a snapshot-consistent table.'),
     ).toBeNull();

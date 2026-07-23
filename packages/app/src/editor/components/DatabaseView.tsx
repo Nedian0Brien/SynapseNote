@@ -1895,6 +1895,7 @@ export function DatabaseView({
                 viewId={activeLinkedView.id}
                 result={renderedResult}
                 people={state.description.database.people}
+                notionSurface
                 optimisticCellValues={inlineOptimisticCellValues}
                 mutationLocked={
                   inlineMutationStatus !== 'idle' ||
