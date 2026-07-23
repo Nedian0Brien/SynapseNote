@@ -16,6 +16,8 @@ import { cn } from '@/lib/utils';
 
 type LoadState = 'idle' | 'loading' | 'success' | 'error';
 
+const DATABASE_CATALOG_LOAD_TIMEOUT_MS = 10_000;
+
 /**
  * A lightweight database navigator for the ordinary page sidebar.
  *
@@ -63,19 +65,31 @@ export function DatabaseSidebarSection() {
     const controller = new AbortController();
     setLoadState('loading');
     setErrorMessage(null);
+    let timedOut = false;
+    const timeoutId = window.setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, DATABASE_CATALOG_LOAD_TIMEOUT_MS);
     void fetchDatabaseCatalog({ signal: controller.signal })
       .then((catalog) => {
         setCandidates(catalog.candidates);
         setLoadState('success');
       })
       .catch((error: unknown) => {
-        if (controller.signal.aborted) return;
+        if (controller.signal.aborted && !timedOut) return;
         setErrorMessage(
-          error instanceof Error ? error.message : translateRef.current`Could not load databases`,
+          timedOut
+            ? translateRef.current`Loading databases timed out. Try again.`
+            : error instanceof Error
+              ? error.message
+              : translateRef.current`Could not load databases`,
         );
         setLoadState('error');
       });
-    return () => controller.abort();
+    return () => {
+      window.clearTimeout(timeoutId);
+      controller.abort();
+    };
   }, [loadState, open]);
 
   function openSource(databaseId: string, sourceId: string) {
