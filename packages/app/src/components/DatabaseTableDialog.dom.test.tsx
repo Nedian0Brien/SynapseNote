@@ -3545,6 +3545,14 @@ describe('DatabaseTableDialog', () => {
       screen.queryByText('Browse canonical Markdown records through a snapshot-consistent table.'),
     ).toBeNull();
     expect(screen.getByRole('button', { name: 'Refresh database' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'New page' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'New record', exact: true })).toBeNull();
+    expect(workspace?.querySelector('main h2')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'New page' }));
+    expect(
+      screen.getAllByRole('textbox', { name: 'New page title' }).length,
+    ).toBeGreaterThanOrEqual(2);
+    expect(screen.getByRole('button', { name: 'Add page' })).toBeTruthy();
   });
 
   test('keeps the selected saved view in the full-page route hash', async () => {

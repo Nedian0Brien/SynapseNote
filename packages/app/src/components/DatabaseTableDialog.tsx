@@ -6072,7 +6072,9 @@ function DatabaseTableSurface({
                 ) : null}
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <h2 className="font-semibold text-lg">{description.source.name}</h2>
+                    {!isCanvasPresentation ? (
+                      <h2 className="font-semibold text-lg">{description.source.name}</h2>
+                    ) : null}
                     <p
                       className={cn(
                         'text-muted-foreground text-sm',
@@ -6273,9 +6275,11 @@ function DatabaseTableSurface({
                       variant="outline"
                       size="sm"
                       disabled={mutationStatus !== 'idle'}
+                      aria-label={isCanvasPresentation ? t`New page` : undefined}
                       onClick={() => setNewRecordOpen(true)}
                     >
-                      <Plus /> <Trans>New record</Trans>
+                      <Plus />
+                      {isCanvasPresentation ? <Trans>New</Trans> : <Trans>New record</Trans>}
                     </Button>
                     {!isCanvasPresentation ? (
                       <Button
@@ -6496,8 +6500,8 @@ function DatabaseTableSurface({
                     <Input
                       autoFocus={!pageTitleEditing}
                       value={newRecordTitle}
-                      aria-label="New record title"
-                      placeholder="Record title"
+                      aria-label={isCanvasPresentation ? 'New page title' : 'New record title'}
+                      placeholder={isCanvasPresentation ? 'New page' : 'Record title'}
                       className="min-w-56 flex-1"
                       onChange={(event) => setNewRecordTitle(event.currentTarget.value)}
                       onKeyDown={(event) => {
@@ -6538,7 +6542,11 @@ function DatabaseTableSurface({
                       <Trans>Cancel</Trans>
                     </Button>
                     <Button size="sm" onClick={() => createRecord()}>
-                      <Trans>Plan new record</Trans>
+                      {isCanvasPresentation ? (
+                        <Trans>Add page</Trans>
+                      ) : (
+                        <Trans>Plan new record</Trans>
+                      )}
                     </Button>
                   </div>
                 ) : null}
