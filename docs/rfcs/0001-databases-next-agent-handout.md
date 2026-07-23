@@ -2963,6 +2963,22 @@ their broad evidence is actually assembled:
 - This is supporting UX-1105/R-005 evidence only. Full configure/reorder/hide
   E2E, visual, accessibility, Electron, usability, and agent gates remain open.
 
+### 2026-07-23 saved-view settings property ordering
+
+- The `Properties and order` section in `DatabaseSavedViewSettingsDialog` now
+  moves a visible property to the adjacent visible property rather than
+  swapping with a hidden property stored between them. Its move-button disabled
+  states use the same visible projection, while hidden properties retain their
+  own administrable order.
+- Focused evidence: `DatabaseSavedViewSettingsDialog.dom.test.tsx` covers
+  hiding `Status`, moving `Notes` over that hidden slot, and saving the expected
+  projection; the focused settings suite, targeted Biome, and app typecheck
+  pass. Feature commit: `14f8b790`; changeset:
+  `.changeset/notion-saved-view-settings-visible-order.md`.
+- This is supporting UX-1105/UX-1106/R-005 evidence only. Full saved-view
+  configuration/reorder/hide E2E and the visual, accessibility, Electron,
+  usability, and agent gates remain open.
+
 ## Recommended execution order
 
 1. When a browser-enabled runner is available, run only the new primary-journey

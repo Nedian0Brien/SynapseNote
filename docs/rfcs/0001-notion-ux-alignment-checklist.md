@@ -2362,13 +2362,17 @@ capability alone is insufficient.
       Saved-table Move left/right now follows the visible projection order even
       when hidden properties are interleaved in the stored layout; focused
       utility and DOM coverage records that boundary behavior. Configure,
-      reorder/hide end-to-end coverage and the full matrix remain open.
+      reorder/hide end-to-end coverage remains open. Saved View settings now
+      apply the same visible-order rule when a hidden property sits between two
+      visible properties, with focused settings DOM coverage. The full matrix
+      remains open.
 - [ ] **UX-1106** E2E view create/switch/configure/duplicate/reorder/delete using
       visible tabs. The primary journey now passes saved-view create, tab
       switch, List rendering, and rename in bounded system-Chrome runs. The
       same focused case now also passes view settings (sort), duplicate,
       visible-tab reorder, and delete; filters, layout-specific configuration,
-      and the remaining view matrix remain open. Context inspection remains
+      and the remaining view matrix remain open. View settings property-order
+      changes now skip hidden properties in the visible projection; context inspection remains
       covered by the linked-view/document-native journey rather than this
       direct canonical route.
 - [x] **UX-1107** E2E row → peek → full page → return to the same view context.
