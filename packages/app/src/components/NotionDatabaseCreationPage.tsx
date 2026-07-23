@@ -34,6 +34,7 @@ export function NotionDatabaseCreationPage({
   useEffect(() => {
     if (!open || startedRef.current) return;
     startedRef.current = true;
+    const controller = new AbortController();
 
     const desiredState = createBlankDatabaseDesiredState({ name: 'Untitled database' });
     const policy = {
@@ -42,17 +43,21 @@ export function NotionDatabaseCreationPage({
       principalId: 'user:local',
     };
 
-    void executeDatabaseUiMutation({
-      desiredState,
-      actor: { principalId: policy.principalId },
-      idempotencyKey: `ui-notion-database-${crypto.randomUUID()}`,
-      assertions: {
-        databaseAbsent: true,
-        createdRecords: desiredState.sampleRecords?.length ?? 0,
+    void executeDatabaseUiMutation(
+      {
+        desiredState,
+        actor: { principalId: policy.principalId },
+        idempotencyKey: `ui-notion-database-${crypto.randomUUID()}`,
+        assertions: {
+          databaseAbsent: true,
+          createdRecords: desiredState.sampleRecords?.length ?? 0,
+        },
+        review: () => databaseUiMutationReviewMode(policy) === 'automatic',
       },
-      review: () => databaseUiMutationReviewMode(policy) === 'automatic',
-    })
+      { signal: controller.signal },
+    )
       .then((outcome) => {
+        if (controller.signal.aborted) return;
         if (outcome.status !== 'committed') {
           setStatus('error');
           setError('The blank database could not be created.');
@@ -69,9 +74,11 @@ export function NotionDatabaseCreationPage({
         onCreated({ databaseId: definition.id, sourceId: source.id, viewId: view.id });
       })
       .catch((cause: unknown) => {
+        if (controller.signal.aborted) return;
         setStatus('error');
         setError(cause instanceof Error ? cause.message : 'Unable to create the blank database.');
       });
+    return () => controller.abort();
   }, [onCreated, open]);
 
   if (!open) return null;
