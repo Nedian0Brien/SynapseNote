@@ -2230,6 +2230,10 @@ Focused evidence:
   `Untitled database · Table`, `New`, `Filters`, `View settings`, `Title`, and
   `Press Enter to create page`; the temporary `Untitled.md` and generated
   manifest were removed afterward.
+- Follow-on commit `f702ab3f` corrected the projection journey's asynchronous
+  commit expectations instead of masking a delayed title-cell save. The full
+  `DatabaseView.dom.test.tsx` file now passes 20 tests / 254 expectations; no
+  production mutation behavior was changed by that test-only fix.
 
 This is functional handoff evidence only. Do not close UX-1102/NUI-105 or the
 browser visual/usability gates from this smoke; the full Playwright journey and
