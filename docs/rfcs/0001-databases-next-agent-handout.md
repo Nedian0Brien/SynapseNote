@@ -32,6 +32,7 @@
 - Latest Agent Run restart recovery changeset: `../../.changeset/agent-run-plan-restart-recovery.md`
 - Latest atomic approval scope changeset: `../../.changeset/atomic-approval-scope.md`
 - Latest database page appearance changeset: `../../.changeset/database-page-appearance.md`
+- Latest inline title accessibility changeset: `../../.changeset/inline-title-accessible-name.md`
 - Latest database responsive changeset: `../../.changeset/database-page-responsive.md`
 - Latest property deletion safety changeset: `../../.changeset/database-property-deletion-preview.md`
 - Latest view-scoped property layout changeset: `../../.changeset/database-view-scoped-property-layout.md`
@@ -233,6 +234,16 @@ This is partial cross-host evidence, not closure of NUI-105. Command-palette,
 slash, normal New-page, visual comparison, manual accessibility, usability,
 performance, and packaged-release gates remain open. No full server suite or
 repeated E2E run was used.
+
+### 2026-07-23 Inline title accessibility follow-up
+
+The visible title button in `DatabaseView` now uses the displayed source name
+as its accessibility name (`Tasks`) instead of exposing only the action label
+`Rename inline database`. The action wording remains in the native tooltip, and
+activating the named button still opens the `Inline database title` input. The
+focused single-view DOM test passes 1 test / 6 expectations; the broader
+`DatabaseView.dom.test.tsx` file retains a pre-existing multiline-paste
+commit-count mismatch and was intentionally not rerun as a release gate.
 
 ## Current status
 

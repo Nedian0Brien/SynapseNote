@@ -381,9 +381,12 @@ treated as visual parity until a browser capture is attached.
   18/18 tests, 183 expectations, plus the cache suite. Loading exposes
   `aria-busy`/`data-database-state="loading"`, empty sources retain the
   actionable new-row input, and permission denial is proven not to reuse an
-  offline snapshot. The functional title/tab/cache/state contract is complete;
-  the remaining visual state matrix is a separate NUI-701/NUI-702 gate. Map to
-  UX-304/UX-305/UX-309.
+  offline snapshot. The visible inline title control now exposes the
+  source/database name as its accessibility name while retaining rename
+  guidance in its tooltip; the focused single-view DOM journey verifies the
+  name, tooltip, and rename input. The functional title/tab/cache/state
+  contract is complete; the remaining visual state matrix is a separate
+  NUI-701/NUI-702 gate. Map to UX-304/UX-305/UX-309.
 - [x] **NUI-403** Use one canonical record-page component for title cell, peek,
   full page, comments, history, relation navigation, previous/next, and return
   to the originating view. Record opens now persist the originating database,

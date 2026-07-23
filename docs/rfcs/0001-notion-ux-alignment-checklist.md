@@ -405,6 +405,18 @@ opens the canonical saved-view manager with the current view copied as a new
 stable view configuration. The action is covered by the live menu capture and
 the `DatabaseViewManagerDialog` initial-duplicate DOM test.
 
+### Inline title accessibility evidence (2026-07-23)
+
+The inline database title is a visible button, so its accessibility name now
+matches the displayed source/database name (`Tasks`, or the database name when
+no source is selected). The rename affordance remains discoverable through the
+`Rename inline database` tooltip, and activating the named title opens the
+existing `Inline database title` editor. This keeps the visual Notion-like
+title while giving agents and accessibility clients the entity name instead of
+an action-only label. The focused `DatabaseView.dom.test.tsx` single-view
+journey passes 1 test / 6 expectations; the broader file still contains a
+known multiline-paste commit-count baseline failure and was not rerun.
+
 The follow-up regression capture found that remounting the manager during a
 draft could replay the initial action and create duplicate copies. The manager
 now keeps a stable instance across schema refreshes, synchronizes its view-name
