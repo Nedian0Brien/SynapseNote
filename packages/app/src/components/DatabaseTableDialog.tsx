@@ -5093,9 +5093,30 @@ function DatabaseTableSurface({
             selection.sourceId,
             availableViewIds,
           );
-          const preferredViewId = lastOpened ?? nextDescription.source.defaultViewId ?? '';
+          // Every Notion-style database page has an active view. Older or
+          // agent-created definitions may omit `defaultViewId`, so use the
+          // first source view as the deterministic fallback instead of
+          // dropping into the unscoped all-records table (which also changes
+          // row-open behavior from peek to full-page navigation).
+          const preferredViewId =
+            lastOpened ?? nextDescription.source.defaultViewId ?? availableViewIds[0] ?? '';
           if (preferredViewId) {
             setSelectedViewId(preferredViewId);
+            if (isPagePresentation) {
+              // Make the resolved view part of the page identity. This keeps
+              // reload/back-forward on the same Notion-style view instead of
+              // briefly restoring the unscoped "All records" surface.
+              window.history.replaceState(
+                null,
+                '',
+                databasePageTargetToHash({
+                  databaseId: selection.databaseId,
+                  sourceId: selection.sourceId,
+                  viewId: preferredViewId,
+                }),
+              );
+              window.dispatchEvent(new Event(DATABASE_NAVIGATION_CHANGE_EVENT));
+            }
             return;
           }
         }
@@ -5186,6 +5207,7 @@ function DatabaseTableSurface({
     refresh,
     selection,
     selectedViewId,
+    isPagePresentation,
     showArchived,
     tableCalculations,
     requestedViewLayout,
@@ -5552,7 +5574,14 @@ function DatabaseTableSurface({
       paths: result?.records.map((item) => item.path) ?? [],
       currentPath: record.path,
     });
-    const behavior = selectedView ? databaseViewOpenBehavior(selectedView) : 'full_page';
+    // A page-first canvas should preserve Notion's row → side-peek affordance
+    // even while the saved-view metadata is still hydrating after a reload.
+    // The administration dialog keeps its explicit full-page fallback.
+    const behavior = selectedView
+      ? databaseViewOpenBehavior(selectedView)
+      : isCanvasPresentation
+        ? 'side_peek'
+        : 'full_page';
     if (behavior === 'full_page') {
       if (onOpenRecord) {
         onOpenRecord(record.path);
@@ -5599,7 +5628,11 @@ function DatabaseTableSurface({
     <Dialog
       open={isPagePresentation ? true : open}
       modal={!isCanvasPresentation}
-      onOpenChange={onOpenChange}
+      // The canonical canvas is owned by DatabasePageRoute's hash. Keeping
+      // this presentation root open prevents nested menu/sheet portals from
+      // being interpreted as an outside dismissal; explicit breadcrumb
+      // navigation above remains the user-facing way to leave the page.
+      onOpenChange={isCanvasPresentation ? () => {} : onOpenChange}
     >
       <DialogContent
         portal={!isCanvasPresentation}
@@ -5654,7 +5687,13 @@ function DatabaseTableSurface({
                     variant="ghost"
                     size="xs"
                     className="-ml-2 h-6 px-2"
-                    onClick={() => onOpenChange(false)}
+                    onClick={() => {
+                      if (isCanvasPresentation) {
+                        window.location.hash = '';
+                        return;
+                      }
+                      onOpenChange(false);
+                    }}
                     data-testid="database-page-back"
                   >
                     <ChevronLeft aria-hidden="true" />
@@ -5918,6 +5957,20 @@ function DatabaseTableSurface({
                 candidates={candidates}
                 selected={selection}
                 onSelect={(nextSelection) => {
+                  if (isPagePresentation) {
+                    // Catalog selection is the first concrete target in the
+                    // page-first workspace. Persist it in the canonical hash
+                    // before the async description loads so a browser reload
+                    // can restore the same database instead of falling back to
+                    // the ordinary editor home screen.
+                    const route = databasePageTargetToHash({
+                      databaseId: nextSelection.databaseId,
+                      sourceId: nextSelection.sourceId,
+                    });
+                    window.history.replaceState(null, '', route);
+                    window.dispatchEvent(new Event(DATABASE_NAVIGATION_CHANGE_EVENT));
+                    window.dispatchEvent(new window.HashChangeEvent('hashchange'));
+                  }
                   setTableCalculations({});
                   viewResultCacheRef.current.clear();
                   tableViewStatesRef.current.clear();

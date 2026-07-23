@@ -85,7 +85,7 @@ test.describe('database schema property management', () => {
     await expect(databaseNav.getByText('E2E Manage Properties Add', { exact: true })).toBeVisible({
       timeout: 10_000,
     });
-    await databaseNav.getByText('E2E Manage Properties Add', { exact: true }).click();
+    await databaseNav.getByRole('button').filter({ hasText: 'Tasks' }).click();
     await expect(page.getByRole('gridcell', { name: 'Seeded task' })).toBeVisible({
       timeout: 10_000,
     });
@@ -157,7 +157,8 @@ test.describe('database schema property management', () => {
     await openDatabasesDialog(page);
     await page
       .getByRole('navigation', { name: 'Databases' })
-      .getByText('E2E Manage Properties Delete', { exact: true })
+      .getByRole('button')
+      .filter({ hasText: 'Tasks' })
       .click();
     await expect(page.locator('[role="gridcell"] button').filter({ hasText: 'Todo' })).toBeVisible({
       timeout: 10_000,

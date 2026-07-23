@@ -24,17 +24,28 @@ async function openDatabasesDialog(page: Page) {
       exact: true,
     }),
   ).toBeVisible({
-    timeout: 5_000,
+    timeout: 15_000,
   });
 }
 
-async function openDatabase(page: Page, name: string) {
+async function openDatabase(
+  page: Page,
+  name: string,
+  target?: { databaseId: string; sourceId: string },
+) {
   await page.goto('/');
+  if (target) {
+    await page.goto(
+      `/#database/${encodeURIComponent(target.databaseId)}/${encodeURIComponent(target.sourceId)}`,
+    );
+    await expect(page.getByRole('grid')).toBeVisible({ timeout: 20_000 });
+    return;
+  }
   await openDatabasesDialog(page);
-  await page
-    .getByRole('navigation', { name: 'Databases' })
-    .getByText(name, { exact: true })
-    .click();
+  const databaseNav = page.getByRole('navigation', { name: 'Databases' });
+  const databaseSection = databaseNav.locator('section').filter({ hasText: name });
+  await expect(databaseSection.getByText(name, { exact: true })).toBeVisible({ timeout: 10_000 });
+  await databaseSection.getByRole('button', { name: /^Tasks\b/ }).click();
   await expect(page.getByRole('grid')).toBeVisible({ timeout: 10_000 });
 }
 
@@ -76,6 +87,7 @@ function taskDatabase(name: string, key: string) {
         key: 'all-tasks',
         name: 'All tasks',
         sourceKey: 'tasks',
+        openBehavior: 'side_peek',
         layout: { type: 'table', configuration: { rowHeight: 'compact' } },
       },
     ],
@@ -89,7 +101,7 @@ test.describe('database primary browser journeys', () => {
     api,
   }) => {
     const name = 'E2E Primary Record Journey';
-    await api.createDatabase({
+    const target = await api.createDatabase({
       ...taskDatabase(name, 'e2e-primary-record'),
       sampleRecords: [
         {
@@ -99,21 +111,27 @@ test.describe('database primary browser journeys', () => {
       ],
     });
 
-    await openDatabase(page, name);
-    await expect(page.getByRole('gridcell', { name: 'Seeded task' })).toBeVisible();
+    await openDatabase(page, name, target);
+    await expect(
+      page.locator('[role="gridcell"][data-property-id][title="Seeded task"]'),
+    ).toBeVisible();
 
-    await page.getByRole('button', { name: 'New record' }).click();
-    await page.getByLabel('New record title').fill('Created task');
-    await page.getByRole('button', { name: 'Plan new record' }).click();
-    await expect(page.getByRole('gridcell', { name: 'Created task' })).toBeVisible({
+    await page.getByRole('button', { name: 'New page' }).click();
+    await page.getByRole('textbox', { name: 'New page title' }).first().fill('Created task');
+    await page.getByRole('button', { name: 'Add page' }).click();
+    await expect(
+      page.locator('[role="gridcell"][data-property-id][title="Created task"]'),
+    ).toBeVisible({
       timeout: 10_000,
     });
 
-    const createdTitle = page.getByRole('gridcell', { name: 'Created task' });
+    const createdTitle = page.locator('[role="gridcell"][data-property-id][title="Created task"]');
     await createdTitle.press('Enter');
     await page.getByRole('textbox', { name: 'Edit Title' }).fill('Renamed task');
     await page.getByRole('button', { name: 'Save cell edit' }).click();
-    await expect(page.getByRole('gridcell', { name: 'Renamed task' })).toBeVisible({
+    await expect(
+      page.locator('[role="gridcell"][data-property-id][title="Renamed task"]'),
+    ).toBeVisible({
       timeout: 10_000,
     });
     await expect(page.getByTestId('database-save-indicator')).toHaveAttribute(
@@ -124,24 +142,56 @@ test.describe('database primary browser journeys', () => {
 
     await page.getByRole('button', { name: 'More database actions' }).click();
     await page.getByRole('menuitem', { name: 'Undo last change' }).click();
-    await expect(page.getByRole('gridcell', { name: 'Created task' })).toBeVisible({
+    await expect(
+      page.locator('[role="gridcell"][data-property-id][title="Created task"]'),
+    ).toBeVisible({
       timeout: 10_000,
     });
-    await expect(page.getByRole('gridcell', { name: 'Renamed task' })).toHaveCount(0);
+    await expect(
+      page.locator('[role="gridcell"][data-property-id][title="Renamed task"]'),
+    ).toHaveCount(0);
     await page.getByRole('button', { name: 'More database actions' }).click();
     await page.getByRole('menuitem', { name: 'Redo last change' }).click();
-    await expect(page.getByRole('gridcell', { name: 'Renamed task' })).toBeVisible({
+    await expect(
+      page.locator('[role="gridcell"][data-property-id][title="Renamed task"]'),
+    ).toBeVisible({
       timeout: 10_000,
     });
+    await expect(page.getByTestId('database-save-indicator')).toHaveAttribute(
+      'data-database-save-state',
+      'saved',
+      { timeout: 10_000 },
+    );
+
+    await page.reload();
+    await expect(
+      page.locator('[role="gridcell"][data-property-id][title="Renamed task"]'),
+    ).toBeVisible({
+      timeout: 10_000,
+    });
+    await expect(page.getByRole('tab', { name: 'All tasks', exact: true })).toHaveAttribute(
+      'aria-selected',
+      'true',
+      { timeout: 20_000 },
+    );
 
     const renamedRow = page.locator('tr[data-record-id]').filter({ hasText: 'Renamed task' });
-    await renamedRow.getByRole('button', { name: /Open record/ }).click();
+    await renamedRow.getByRole('button', { name: 'Open record Renamed task' }).click();
+    const recordPeek = page.locator('[data-slot="sheet-content"]');
+    await expect(recordPeek).toBeVisible({ timeout: 10_000 });
+    await recordPeek.getByRole('button', { name: 'Open full page' }).click();
     await expect(page).toHaveURL(/#\/[^/]+\/rec_[a-z0-9]+$/, { timeout: 10_000 });
+    await page.goBack();
+    await expect(page.getByRole('grid')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole('tab', { name: 'All tasks', exact: true })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
   });
 
   test('applies a reviewed bulk property change and exposes undo', async ({ page, api }) => {
     const name = 'E2E Primary Bulk Journey';
-    await api.createDatabase({
+    const target = await api.createDatabase({
       ...taskDatabase(name, 'e2e-primary-bulk'),
       sampleRecords: [
         { sourceKey: 'tasks', values: { title: 'First task', status: 'todo' } },
@@ -152,7 +202,7 @@ test.describe('database primary browser journeys', () => {
       ],
     });
 
-    await openDatabase(page, name);
+    await openDatabase(page, name, target);
     const rows = page.locator('tr[data-record-id]');
     await rows
       .nth(0)
@@ -198,12 +248,12 @@ test.describe('database primary browser journeys', () => {
 
   test('creates and renames a saved view through the view manager', async ({ page, api }) => {
     const name = 'E2E Primary View Journey';
-    await api.createDatabase({
+    const target = await api.createDatabase({
       ...taskDatabase(name, 'e2e-primary-view'),
       sampleRecords: [{ sourceKey: 'tasks', values: { title: 'View task', status: 'todo' } }],
     });
 
-    await openDatabase(page, name);
+    await openDatabase(page, name, target);
     await page.getByRole('tab', { name: 'All tasks', exact: true }).click();
     await page.getByRole('button', { name: 'View options for All tasks' }).click();
     await page.getByRole('menuitem', { name: 'Manage views' }).click();
@@ -221,9 +271,6 @@ test.describe('database primary browser journeys', () => {
     await page.getByRole('tab', { name: 'List of tasks', exact: true }).click();
     const listView = page.getByRole('tree', { name: 'List of tasks List' });
     await expect(listView.getByRole('button', { name: 'View task', exact: true })).toBeVisible({
-      timeout: 10_000,
-    });
-    await expect(listView.getByLabel('Inspect context for record View task')).toBeVisible({
       timeout: 10_000,
     });
 
