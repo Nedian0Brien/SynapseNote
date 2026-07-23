@@ -206,11 +206,15 @@ default entry surfaces:
   toggles, source/record-meaning copy, table layout/calculation controls, and
   property type labels from the primary surface. Those capabilities remain
   reachable through secondary menus or accessible semantics.
+- The canonical canvas table-edge `+` now opens a compact name/type property
+  picker; the existing properties manager remains the reviewed fallback for
+  advanced schema work.
 
 Focused evidence (no repository-wide/server suite or broad E2E):
 
 - `NotionDatabaseCreationPage.dom.test.tsx`
 - `DatabaseTableDialog.dom.test.tsx` canonical canvas test
+- `DatabaseTableDialog.dom.test.tsx` table-edge property picker test
 - `DatabaseView.dom.test.tsx` inline table-first intent test
 - `component-items.test.ts` transient blank-create intent test
 - app `typecheck`

@@ -127,7 +127,9 @@ The follow-up table-control slice (`3c241c52`) also hides layout/calculation
 controls and property type labels from the Notion surface. These commits do
 not close visual UX gates: the structural count remains 101/128, and the
 running Electron/web journey still needs to confirm appearance, focus, and
-record peek/page behavior.
+record peek/page behavior. The table-edge property picker is covered by
+`d8f621a5 feat: add properties from the notion table edge`; its advanced
+schema commit still uses the reviewed mutation seam.
 
 ## Current status
 
