@@ -456,6 +456,16 @@ archive, move, and delete actions). Stable IDs remain available to the data
 scope and `data-record-id` attributes, so this is an accessibility/agent-label
 change rather than an identity change.
 
+The inline Board surface now applies the same title-first naming to its visible
+card and card actions: `Record First task`, `Open record First task`, `Move
+record First task to group`, `Duplicate record First task`, `Inspect context for
+record First task`, `Archive record First task`, and `Delete record First task`.
+The card's stable record ID remains in `data-record-id` and all mutation scopes.
+`DatabaseBoard.dom.test.tsx` passes 3 tests / 16 expectations. The broader
+`DatabaseView.dom.test.tsx` Board cases remain diagnostic-only because an
+existing assertion still expects a standalone `Task board` heading even though
+the current semantic landmark is `Linked database view: Tasks · Task board`.
+
 The follow-up regression capture found that remounting the manager during a
 draft could replay the initial action and create duplicate copies. The manager
 now keeps a stable instance across schema refreshes, synchronizes its view-name

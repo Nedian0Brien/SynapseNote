@@ -286,6 +286,16 @@ canonical row` and use the title for duplicate/archive/move/delete/select;
 full-page administration keeps its stable-ID labels. Focused inline and
 canonical-table DOM checks pass; no additional E2E run was made.
 
+Commit `a7c24956 fix: expose Board actions by record title` carries the same
+contract into inline Board cards. Card, open, move-to-group, duplicate,
+inspect-context, archive/restore, and delete actions now name the visible page
+title (for example, `Move record First task to group`) while `data-record-id`
+and mutation scope keep the stable canonical ID. `DatabaseBoard.dom.test.tsx`
+passes 3 tests / 16 expectations. The broader linked-Board journey still has
+one pre-existing diagnostic mismatch: it expects a standalone `Task board`
+heading, while the current accessible region is correctly named
+`Linked database view: Tasks · Task board`; no E2E browser run was repeated.
+
 ## Current status
 
 - Numbered A-S items: **310/335 complete (92.5%)**.

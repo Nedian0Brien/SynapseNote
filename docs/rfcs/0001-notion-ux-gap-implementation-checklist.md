@@ -397,7 +397,11 @@ treated as visual parity until a browser capture is attached.
   repeated blocks can be located without opening them. Map to
   UX-304/UX-305/UX-309. In the primary Notion table surface, row actions now
   use the visible record title (`Open record Shared canonical row`, etc.) while
-  the stable record ID remains in the data attributes and mutation scope.
+  the stable record ID remains in the data attributes and mutation scope. The
+  inline Board surface follows the same title-first contract: card, open, move,
+  duplicate, inspect, archive/restore, and delete actions identify the visible
+  record title while stable IDs remain the mutation and DOM identity. Focused
+  `DatabaseBoard.dom.test.tsx` evidence passes 3 tests / 16 expectations.
 - [x] **NUI-403** Use one canonical record-page component for title cell, peek,
   full page, comments, history, relation navigation, previous/next, and return
   to the originating view. Record opens now persist the originating database,
