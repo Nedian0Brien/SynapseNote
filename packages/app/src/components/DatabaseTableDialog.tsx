@@ -3512,7 +3512,7 @@ export type DatabaseTableDialogProps = {
   /** Paste changes forwarded from an inline view into the canonical review surface. */
   initialTablePaste?: readonly DatabasePasteChange[];
   /** Optional reviewed surface to open when an inline view delegates a control. */
-  initialDatabaseSurface?: 'properties' | 'view-settings' | 'view-manager' | 'filters';
+  initialDatabaseSurface?: 'properties' | 'options' | 'view-settings' | 'view-manager' | 'filters';
   /** Optional reviewed saved-view action forwarded from an inline block. */
   initialViewAction?: DatabaseViewManagerInitialAction;
   initialPropertyId?: string;
@@ -3710,6 +3710,7 @@ function DatabaseTableSurface({
     filterDialogOpen ||
     viewSettingsOpen ||
     viewManagerOpen ||
+    selectOptionsOpen ||
     templatesOpen ||
     automationsOpen ||
     permissionsOpen ||
@@ -4602,6 +4603,14 @@ function DatabaseTableSurface({
     if (initialDatabaseSurface === 'properties') {
       setPropertiesDialogRenameId(initialPropertyId ?? null);
       setPropertiesDialogOpen(true);
+      return;
+    }
+    if (initialDatabaseSurface === 'options') {
+      const property = description.source.properties.find(
+        (candidate): candidate is DatabaseSelectProperty =>
+          candidate.id === initialPropertyId && isDatabaseSelectProperty(candidate),
+      );
+      if (property) openSelectOptions(property);
       return;
     }
     if (initialDatabaseSurface === 'view-manager') {
@@ -5533,7 +5542,7 @@ function DatabaseTableSurface({
     (property) => property.id === optionPropertyId,
   );
   const selectedOption = selectedOptionProperty?.options.find((option) => option.id === optionId);
-  const openSelectOptions = (property: DatabaseSelectProperty) => {
+  const openSelectOptions = useEffectEvent((property: DatabaseSelectProperty) => {
     const firstOption = property.options[0];
     setOptionPropertyId(property.id);
     setOptionId(firstOption?.id ?? '');
@@ -5545,7 +5554,7 @@ function DatabaseTableSurface({
     );
     setOptionPreview(null);
     setSelectOptionsOpen(true);
-  };
+  });
   const computedProperty = description?.source?.properties.find(
     (property): property is Extract<DatabaseProperty, { type: 'formula' | 'rollup' }> =>
       property.id === computedPropertyId &&

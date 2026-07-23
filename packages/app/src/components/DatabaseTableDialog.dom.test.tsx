@@ -1376,6 +1376,31 @@ describe('DatabaseTableDialog', () => {
     ).toBe('Open tasks');
   });
 
+  test('opens the option editor for an inline header handoff', async () => {
+    globalThis.fetch = mock(async (input: RequestInfo | URL) => {
+      const path = String(input);
+      if (path.startsWith('/api/databases/catalog')) return Response.json(catalog());
+      if (path === '/api/databases/describe') return Response.json(description());
+      if (path === '/api/databases/query') return Response.json(queryResult());
+      return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
+    }) as typeof fetch;
+
+    render(
+      <DatabaseTableDialog
+        open
+        onOpenChange={() => {}}
+        initialTarget={{ databaseId: database.id, sourceId: source.id }}
+        initialDatabaseSurface="options"
+        initialPropertyId="prop_status"
+      />,
+    );
+
+    const summary = await screen.findByText('Manage Select options');
+    expect(summary.parentElement?.tagName).toBe('DETAILS');
+    expect((summary.parentElement as HTMLDetailsElement).open).toBe(true);
+    expect(screen.getByRole('combobox', { name: 'Select property' })).toBeTruthy();
+  });
+
   test('starts inline make-default handoffs at the reviewed default mutation boundary', async () => {
     const firstView = {
       id: 'view_default',

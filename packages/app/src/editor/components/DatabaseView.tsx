@@ -790,7 +790,7 @@ export function DatabaseView({
   const [initialRecordAction, setInitialRecordAction] = useState<DatabaseInitialRecordAction>();
   const [initialTablePaste, setInitialTablePaste] = useState<readonly DatabasePasteChange[]>();
   const [initialDatabaseSurface, setInitialDatabaseSurface] = useState<
-    'properties' | 'view-settings' | 'view-manager' | 'filters'
+    'properties' | 'options' | 'view-settings' | 'view-manager' | 'filters'
   >();
   const [initialViewAction, setInitialViewAction] = useState<
     DatabaseViewManagerInitialAction | undefined
@@ -1502,7 +1502,7 @@ export function DatabaseView({
   };
 
   const openInlineDatabaseSurface = (
-    surface: 'properties' | 'view-settings' | 'view-manager' | 'filters',
+    surface: 'properties' | 'options' | 'view-settings' | 'view-manager' | 'filters',
     propertyId?: string,
     viewAction?: DatabaseViewManagerInitialAction,
   ) => {
@@ -2243,7 +2243,7 @@ export function DatabaseView({
                 onOpenAgentScope={openInlineAgentScope}
                 onAddProperty={addInlineProperty}
                 onConfigureSelectProperty={(property) =>
-                  openInlineDatabaseSurface('properties', property.id)
+                  openInlineDatabaseSurface('options', property.id)
                 }
                 onManageProperties={(propertyId) =>
                   openInlineDatabaseSurface('properties', propertyId)
