@@ -1401,6 +1401,54 @@ describe('DatabaseTableDialog', () => {
     expect(screen.getByRole('combobox', { name: 'Select property' })).toBeTruthy();
   });
 
+  test('keeps Multi-select option configuration labels distinct from Select', async () => {
+    const multiSelectSource = {
+      ...source,
+      properties: source.properties.map((property) =>
+        property.id === 'prop_status' && property.type === 'select'
+          ? { ...property, type: 'multi_select' as const }
+          : property,
+      ),
+    };
+    const multiSelectDatabase = { ...database, sources: [multiSelectSource] };
+    globalThis.fetch = mock(async (input: RequestInfo | URL) => {
+      const path = String(input);
+      if (path.startsWith('/api/databases/catalog')) return Response.json(catalog());
+      if (path === '/api/databases/describe') {
+        return Response.json({
+          ...description(),
+          database: multiSelectDatabase,
+          source: multiSelectSource,
+        });
+      }
+      if (path === '/api/databases/query') {
+        return Response.json({
+          ...queryResult(),
+          records: queryResult().records.map((record) => ({
+            ...record,
+            values: { ...record.values, prop_status: ['opt_active'] },
+          })),
+        });
+      }
+      return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
+    }) as typeof fetch;
+
+    render(
+      <DatabaseTableDialog
+        open
+        onOpenChange={() => {}}
+        initialTarget={{ databaseId: database.id, sourceId: source.id }}
+        initialDatabaseSurface="options"
+        initialPropertyId="prop_status"
+      />,
+    );
+
+    expect(await screen.findByText('Manage Multi-select options')).toBeTruthy();
+    expect(screen.queryByText('Manage Select options')).toBeNull();
+    expect(screen.getByRole('combobox', { name: 'Multi-select property' })).toBeTruthy();
+    expect(screen.getByRole('textbox', { name: 'Multi-select option name' })).toBeTruthy();
+  });
+
   test('starts inline make-default handoffs at the reviewed default mutation boundary', async () => {
     const firstView = {
       id: 'view_default',

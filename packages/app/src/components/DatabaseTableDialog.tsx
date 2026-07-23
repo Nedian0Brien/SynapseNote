@@ -5542,6 +5542,8 @@ function DatabaseTableSurface({
     (property) => property.id === optionPropertyId,
   );
   const selectedOption = selectedOptionProperty?.options.find((option) => option.id === optionId);
+  const selectedOptionTypeLabel =
+    selectedOptionProperty?.type === 'multi_select' ? 'Multi-select' : 'Select';
   const openSelectOptions = useEffectEvent((property: DatabaseSelectProperty) => {
     const firstOption = property.options[0];
     setOptionPropertyId(property.id);
@@ -6968,7 +6970,11 @@ function DatabaseTableSurface({
                     className="rounded-md border bg-muted/10 p-3"
                   >
                     <summary className="cursor-pointer font-medium text-sm">
-                      <Trans>Manage Select options</Trans>
+                      {selectedOptionProperty.type === 'multi_select' ? (
+                        <Trans>Manage Multi-select options</Trans>
+                      ) : (
+                        <Trans>Manage Select options</Trans>
+                      )}
                     </summary>
                     <div className="mt-3 space-y-3">
                       <div className="flex flex-wrap items-end gap-2">
@@ -6999,7 +7005,7 @@ function DatabaseTableSurface({
                             <SelectTrigger
                               size="sm"
                               className="min-w-40"
-                              aria-label="Select property"
+                              aria-label={`${selectedOptionTypeLabel} property`}
                             >
                               <SelectValue />
                             </SelectTrigger>
@@ -7037,7 +7043,7 @@ function DatabaseTableSurface({
                             <SelectTrigger
                               size="sm"
                               className="min-w-40"
-                              aria-label="Select option"
+                              aria-label={`${selectedOptionTypeLabel} option`}
                             >
                               <SelectValue />
                             </SelectTrigger>
@@ -7058,7 +7064,7 @@ function DatabaseTableSurface({
                           <Input
                             value={optionName}
                             className="h-8 w-40"
-                            aria-label="Select option name"
+                            aria-label={`${selectedOptionTypeLabel} option name`}
                             onChange={(event) => setOptionName(event.currentTarget.value)}
                           />
                         </div>
@@ -7083,7 +7089,7 @@ function DatabaseTableSurface({
                           <Input
                             value={optionColor}
                             className="h-8 w-32"
-                            aria-label="Select option color"
+                            aria-label={`${selectedOptionTypeLabel} option color`}
                             placeholder="blue"
                             onChange={(event) => setOptionColor(event.currentTarget.value)}
                           />
@@ -7245,7 +7251,7 @@ function DatabaseTableSurface({
                       {optionPreview ? (
                         <section
                           className="space-y-2 rounded border bg-background p-3 text-sm"
-                          aria-label="Select option impact preview"
+                          aria-label={`${selectedOptionTypeLabel} option impact preview`}
                         >
                           <div className="flex flex-wrap gap-2">
                             <Badge variant={optionPreview.preview.canApply ? 'gray' : 'warning'}>
