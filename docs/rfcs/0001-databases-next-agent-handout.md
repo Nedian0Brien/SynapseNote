@@ -2979,6 +2979,19 @@ their broad evidence is actually assembled:
   configuration/reorder/hide E2E and the visual, accessibility, Electron,
   usability, and agent gates remain open.
 
+### 2026-07-23 saved Table configuration journey coverage
+
+- `tests/stress/database-primary-journeys.e2e.ts` now has a fourth bounded
+  journey that opens the visible `All tasks` view actions, saves Table row
+  height/wrap settings, then saves a typed `Status is todo` filter and checks
+  the query summary. This keeps filter/layout configuration on the canonical
+  view surface rather than an admin-only path.
+- Playwright discovery lists all 4 cases and targeted Biome/app typecheck pass.
+  The new case has not been executed in this turn, so it is test-shape evidence,
+  not a passed browser-run claim. Do not close UX-1106/NUI-701 or R-005 until a
+  bounded system-Chrome/hosted run and the remaining visual/accessibility gates
+  are attached.
+
 ## Recommended execution order
 
 1. When a browser-enabled runner is available, run only the new primary-journey

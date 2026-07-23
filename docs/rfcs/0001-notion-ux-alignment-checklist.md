@@ -2372,9 +2372,12 @@ capability alone is insufficient.
       same focused case now also passes view settings (sort), duplicate,
       visible-tab reorder, and delete; filters, layout-specific configuration,
       and the remaining view matrix remain open. View settings property-order
-      changes now skip hidden properties in the visible projection; context inspection remains
-      covered by the linked-view/document-native journey rather than this
-      direct canonical route.
+      changes now skip hidden properties in the visible projection. The focused
+      primary journey now also includes saved Table row-height/wrap settings and
+      a Status filter; test discovery passes, but this new browser case still
+      needs its next bounded execution. Context inspection remains covered by
+      the linked-view/document-native journey rather than this direct canonical
+      route.
 - [x] **UX-1107** E2E row → peek → full page → return to the same view context.
       The canonical primary journey opens a row in the side peek, follows
       `Open full page`, returns through browser history, and verifies the grid

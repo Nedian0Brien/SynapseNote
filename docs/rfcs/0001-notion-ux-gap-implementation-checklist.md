@@ -677,7 +677,10 @@ treated as visual parity until a browser capture is attached.
   add now has focused DOM/live-web evidence for both the commit-ready
   Select/Multi-select schema path and immediate active-view projection update;
   configure/reorder/hide, agent proposal, and full primary coverage remain
-  open.
+  open. The primary file now also defines a fourth saved Table configuration
+  case for row-height/wrap settings plus a typed Status filter; Playwright
+  discovery and focused static checks pass, but bounded browser execution is
+  still required.
 - [ ] **NUI-702** Run keyboard, screen-reader, contrast, 768px responsive, and
   reduced-motion checks on those same journeys.
 - [ ] **NUI-703** Run five uncoached first-use sessions. At least four users
