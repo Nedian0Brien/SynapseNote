@@ -942,33 +942,37 @@ export function DatabaseContextInspectorDialog({
           <DialogTitle>
             <Trans>What the agent saw</Trans>
           </DialogTitle>
-          <DialogDescription>
-            <Trans>
-              Inspect the exact in-memory Context Pack, token estimate, permission redactions,
-              omissions, freshness, and truncation.
-            </Trans>
-            {scope ? (
-              <DatabaseMachineIdsDetails
-                className="mt-3"
-                testId="database-context-inspector-scope"
-                entries={[
-                  { kind: 'database', label: <Trans>Database</Trans>, value: scope.databaseId },
-                  { kind: 'source', label: <Trans>Source</Trans>, value: scope.sourceId },
-                  { kind: 'view', label: <Trans>View</Trans>, value: scope.viewId },
-                  { kind: 'record', label: <Trans>Record</Trans>, value: scope.recordId },
-                  ...(scope.recordIds ?? []).map((recordId) => ({
-                    kind: 'record-selection',
-                    label: <Trans>Selected record</Trans>,
-                    value: recordId,
-                  })),
-                  ...(scope.propertyIds ?? []).map((propertyId) => ({
-                    kind: 'property-selection',
-                    label: <Trans>Selected property</Trans>,
-                    value: propertyId,
-                  })),
-                ]}
-              />
-            ) : null}
+          <DialogDescription asChild>
+            <div>
+              <p>
+                <Trans>
+                  Inspect the exact in-memory Context Pack, token estimate, permission redactions,
+                  omissions, freshness, and truncation.
+                </Trans>
+              </p>
+              {scope ? (
+                <DatabaseMachineIdsDetails
+                  className="mt-3"
+                  testId="database-context-inspector-scope"
+                  entries={[
+                    { kind: 'database', label: <Trans>Database</Trans>, value: scope.databaseId },
+                    { kind: 'source', label: <Trans>Source</Trans>, value: scope.sourceId },
+                    { kind: 'view', label: <Trans>View</Trans>, value: scope.viewId },
+                    { kind: 'record', label: <Trans>Record</Trans>, value: scope.recordId },
+                    ...(scope.recordIds ?? []).map((recordId) => ({
+                      kind: 'record-selection',
+                      label: <Trans>Selected record</Trans>,
+                      value: recordId,
+                    })),
+                    ...(scope.propertyIds ?? []).map((propertyId) => ({
+                      kind: 'property-selection',
+                      label: <Trans>Selected property</Trans>,
+                      value: propertyId,
+                    })),
+                  ]}
+                />
+              ) : null}
+            </div>
           </DialogDescription>
         </DialogHeader>
         <DialogBody className="flex min-h-0 overflow-hidden">
