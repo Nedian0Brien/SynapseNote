@@ -372,6 +372,7 @@ function InlineDatabaseCreationDialog({
   const [status, setStatus] = useState<'idle' | 'creating'>('idle');
   const [error, setError] = useState<string | null>(null);
   const autoStartRef = useRef(false);
+  const mutationControllerRef = useRef<AbortController | null>(null);
 
   const submit = () => {
     if (status !== 'idle') return;
@@ -383,19 +384,25 @@ function InlineDatabaseCreationDialog({
       actor: 'human' as const,
       principalId: 'user:local',
     };
+    const controller = new AbortController();
+    mutationControllerRef.current = controller;
     setStatus('creating');
     setError(null);
-    void executeDatabaseUiMutation({
-      desiredState,
-      actor: { principalId: policy.principalId },
-      idempotencyKey: `ui-inline-database-${Date.now()}`,
-      assertions: {
-        databaseAbsent: true,
-        createdRecords: desiredState.sampleRecords?.length ?? 0,
+    void executeDatabaseUiMutation(
+      {
+        desiredState,
+        actor: { principalId: policy.principalId },
+        idempotencyKey: `ui-inline-database-${Date.now()}`,
+        assertions: {
+          databaseAbsent: true,
+          createdRecords: desiredState.sampleRecords?.length ?? 0,
+        },
+        review: () => databaseUiMutationReviewMode(policy) === 'automatic',
       },
-      review: () => databaseUiMutationReviewMode(policy) === 'automatic',
-    })
+      { signal: controller.signal },
+    )
       .then((outcome) => {
+        if (controller.signal.aborted) return;
         if (outcome.status !== 'committed') {
           setError('The inline database creation plan was not committed');
           return;
@@ -412,9 +419,13 @@ function InlineDatabaseCreationDialog({
         onOpenChange(false);
       })
       .catch((cause: unknown) => {
+        if (controller.signal.aborted) return;
         setError(cause instanceof Error ? cause.message : 'Unable to create the inline database');
       })
-      .finally(() => setStatus('idle'));
+      .finally(() => {
+        if (mutationControllerRef.current === controller) mutationControllerRef.current = null;
+        if (!controller.signal.aborted) setStatus('idle');
+      });
   };
   const submitEvent = useEffectEvent(submit);
 
@@ -428,6 +439,8 @@ function InlineDatabaseCreationDialog({
       submitEvent();
     }
   }, [autoStart, open, status]);
+
+  useEffect(() => () => mutationControllerRef.current?.abort(), []);
 
   if (!open) return null;
 
