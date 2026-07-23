@@ -744,7 +744,10 @@ describe('DatabaseView', () => {
       />,
     );
 
-    expect(await screen.findByRole('heading', { name: 'Task board' })).toBeTruthy();
+    expect(
+      await screen.findByRole('region', { name: 'Linked database view: Tasks · Task board' }),
+    ).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Task board' })).toBeTruthy();
     expect(await screen.findByText('First task')).toBeTruthy();
     expect(document.querySelector('[data-board-card="rec_first"]')).toBeTruthy();
     expect(screen.getByLabelText('Inspect context for record First task')).toBeTruthy();
@@ -900,7 +903,10 @@ describe('DatabaseView', () => {
       />,
     );
 
-    expect(await screen.findByRole('heading', { name: 'Task board' })).toBeTruthy();
+    expect(
+      await screen.findByRole('region', { name: 'Linked database view: Tasks · Task board' }),
+    ).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Task board' })).toBeTruthy();
     await waitFor(() =>
       expect(document.querySelector('[data-board-card="rec_first"]')).toBeTruthy(),
     );
