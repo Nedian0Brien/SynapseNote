@@ -1047,6 +1047,7 @@ export function DatabaseTable({
   ghost = null,
   optimisticCellValues,
   mutationLocked = false,
+  searchQuery = '',
   autoFocusNewRecord = false,
   focusNewRecordRequest = null,
   selectedRecordIds = new Set<string>(),
@@ -1098,6 +1099,8 @@ export function DatabaseTable({
   /** Direct-safe human edits shown locally while the canonical commit settles. */
   optimisticCellValues?: ReadonlyMap<string, DatabaseValue | undefined>;
   mutationLocked?: boolean;
+  /** Temporary local filter text used by an inline Notion-style search. */
+  searchQuery?: string;
   /** Focus the title-cell affordance after an inline block finishes creation. */
   autoFocusNewRecord?: boolean;
   /** Monotonic request token used to restore focus after a committed table-row create. */
@@ -1839,7 +1842,9 @@ export function DatabaseTable({
           className="mb-2 rounded-md border border-dashed p-3 text-muted-foreground text-sm"
           data-database-state="empty"
         >
-          {notionSurface ? (
+          {notionSurface && searchQuery.trim() ? (
+            <Trans>No pages match “{searchQuery}”.</Trans>
+          ) : notionSurface ? (
             <Trans>No pages in this source.</Trans>
           ) : (
             <Trans>No records in this source.</Trans>

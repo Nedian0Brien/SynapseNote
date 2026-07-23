@@ -161,9 +161,12 @@ describe('DatabaseView', () => {
         name: 'Refresh linked database view: Tasks · Open tasks',
       }),
     ).toBeTruthy();
-    expect(
-      screen.getByRole('button', { name: 'Change database view: Tasks · Open tasks' }),
-    ).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Search pages in Tasks · Open tasks' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Search pages in Tasks · Open tasks' }));
+    const pageSearch = screen.getByRole('textbox', { name: 'Search pages' });
+    expect(pageSearch).toBeTruthy();
+    fireEvent.change(pageSearch, { target: { value: 'missing' } });
+    expect(screen.getByText('No pages match “missing”.')).toBeTruthy();
     expect(
       screen.getByRole('button', { name: 'Open full database: Tasks · Open tasks' }),
     ).toBeTruthy();

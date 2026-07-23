@@ -61,6 +61,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { subscribeToDatabaseAgentRunChanged } from '@/lib/database-agent-run-events';
 import {
   type DatabaseCatalogCandidate,
@@ -195,6 +196,21 @@ interface InlineDatabasePickerProps {
   message?: string;
   onSelected: (reference: { databaseId: string; sourceId: string; viewId: string }) => void;
   onCreateBlank?: () => void;
+}
+
+function inlineDatabaseRecordMatchesSearch(
+  record: ProjectedDatabaseRecord,
+  source: DatabaseDescription['source'],
+  query: string,
+): boolean {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return true;
+  const readableValues =
+    source?.properties.map((property) => {
+      const value = record.values[property.id];
+      return `${property.name} ${typeof value === 'string' ? value : JSON.stringify(value ?? '')}`;
+    }) ?? [];
+  return [record.path, ...readableValues].join('\n').toLowerCase().includes(needle);
 }
 
 export function databaseViewTabActionToInitialAction(
@@ -816,6 +832,8 @@ export function DatabaseView({
   const [inlineCreationOpen, setInlineCreationOpen] = useState(false);
   const [inlineTitleEditing, setInlineTitleEditing] = useState(false);
   const [inlineTitleDraft, setInlineTitleDraft] = useState('');
+  const [inlineSearchOpen, setInlineSearchOpen] = useState(false);
+  const [inlineSearchQuery, setInlineSearchQuery] = useState('');
   const [focusInlineNewRecord, setFocusInlineNewRecord] = useState(false);
   const [inlineMutationStatus, setInlineMutationStatus] = useState<'idle' | 'saving'>('idle');
   const [inlineMutationError, setInlineMutationError] = useState<string | null>(null);
@@ -973,6 +991,8 @@ export function DatabaseView({
     setLocalViewOverrides(sameView ? localViewOverrides : undefined);
     editor.view.focus();
     setFocusInlineNewRecord(options.focusNewRecord === true);
+    setInlineSearchOpen(false);
+    setInlineSearchQuery('');
     setReplacementPickerOpen(false);
   };
 
@@ -1107,9 +1127,9 @@ export function DatabaseView({
   const inlineRefreshLabel = inlineDatabaseContext
     ? t`Refresh linked database view: ${inlineDatabaseContext}`
     : t`Refresh linked database view`;
-  const inlineChangeViewLabel = inlineDatabaseContext
-    ? t`Change database view: ${inlineDatabaseContext}`
-    : t`Change database view`;
+  const inlineSearchLabel = inlineDatabaseContext
+    ? t`Search pages in ${inlineDatabaseContext}`
+    : t`Search pages`;
   const inlineOpenDatabaseLabel = inlineDatabaseContext
     ? t`Open full database: ${inlineDatabaseContext}`
     : t`Open full database`;
@@ -1140,12 +1160,22 @@ export function DatabaseView({
     setInlineAgentMenuOpen(nextOpen);
     if (!nextOpen) setInlineAgentScopeOverride(null);
   };
-  const renderedResult =
+  const baseRenderedResult =
     state.status === 'ready' && state.result
       ? applyInlineOptimisticValues(state.result, inlineOptimisticCellValues)
       : state.status === 'ready'
         ? state.result
         : null;
+  const searchNeedle = inlineSearchQuery.trim();
+  const renderedResult =
+    baseRenderedResult && searchNeedle
+      ? {
+          ...baseRenderedResult,
+          records: baseRenderedResult.records.filter((record) =>
+            inlineDatabaseRecordMatchesSearch(record, linkedSource, searchNeedle),
+          ),
+        }
+      : baseRenderedResult;
   const openRecord = (record: ProjectedDatabaseRecord) => {
     rememberDatabaseRecordNavigation({
       databaseId: reference.data.databaseId,
@@ -1777,15 +1807,33 @@ export function DatabaseView({
             </>
           ) : null}
           {state.status === 'ready' ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              aria-label={inlineChangeViewLabel}
-              onClick={() => setReplacementPickerOpen(true)}
-            >
-              <Search aria-hidden="true" />
-            </Button>
+            <Popover open={inlineSearchOpen} onOpenChange={setInlineSearchOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant={inlineSearchQuery ? 'secondary' : 'ghost'}
+                  size="icon-sm"
+                  aria-label={inlineSearchLabel}
+                  data-database-inline-search-trigger
+                >
+                  <Search aria-hidden="true" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-72 p-2">
+                <Input
+                  autoFocus
+                  value={inlineSearchQuery}
+                  placeholder={t`Search pages`}
+                  aria-label={t`Search pages`}
+                  onChange={(event) => setInlineSearchQuery(event.currentTarget.value)}
+                />
+                <p className="mt-1.5 px-1 text-muted-foreground text-xs">
+                  {searchNeedle
+                    ? `${renderedResult?.records.length ?? 0} ${renderedResult?.records.length === 1 ? 'page' : 'pages'} in this view`
+                    : t`Search loaded pages in this view`}
+                </p>
+              </PopoverContent>
+            </Popover>
           ) : null}
           <Button
             type="button"
@@ -2238,6 +2286,7 @@ export function DatabaseView({
                 people={state.description.database.people}
                 notionSurface
                 optimisticCellValues={inlineOptimisticCellValues}
+                searchQuery={searchNeedle}
                 mutationLocked={
                   inlineMutationStatus !== 'idle' ||
                   inlineUndoStatus !== 'idle' ||
