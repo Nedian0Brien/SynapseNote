@@ -227,6 +227,21 @@ This is implementation evidence only. The structural count at that point was
 no visual parity checkbox is closed until the running web/Electron journey
 confirms the same interaction and appearance.
 
+### Notion canvas page vocabulary evidence (2026-07-23)
+
+The document-native canvas now removes another administration-first cue:
+
+- The source title is not repeated as a second heading above the table.
+- The primary creation action reads `New` (accessible name `New page`) and
+  its composer reads `New page` / `Add page`.
+- The administration presentation retains `New record` and reviewed-plan
+  copy, keeping the safety boundary explicit without leaking it into the
+  normal page experience.
+
+Evidence: commit `a1977f9c`, focused `DatabaseTableDialog.dom.test.tsx` canvas
+journey (18 expectations), app typecheck, and targeted Biome check. This
+closes no visual/cross-host gate; the structural count remains **112/128**.
+
 ### UX-0 and continuity evidence closure (2026-07-23)
 
 The route, state, mutation, and continuity contracts are now backed by focused

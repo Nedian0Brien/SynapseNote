@@ -72,6 +72,7 @@
 - Latest sensitive-operation review changeset: `../../.changeset/database-sensitive-review.md`
 - Latest Agent Run current-view recovery changeset: `../../.changeset/agent-run-current-view-recovery.md`
 - Latest retrieval explainability changeset: `../../.changeset/database-retrieval-explainability.md`
+- Latest Notion canvas vocabulary changeset: `../../.changeset/notion-canvas-page-vocabulary.md`
 
 ## Objective and completion rule
 
@@ -112,6 +113,20 @@ Template/import/folder/Assistant creation, machine IDs, schema/index details,
 agent context, diagnostics, and review receipts must remain secondary
 progressive-disclosure surfaces. The captured regression image is
 `docs/rfcs/assets/0001-notion-ux-audit/06-current-new-database-screen.png`.
+
+### Notion canvas vocabulary continuation (2026-07-23)
+
+`a1977f9c fix: make database canvas page-first` removes another visible
+DBMS cue from the document-native canvas. The canvas no longer repeats the
+source title inside the table body, its primary action is rendered as `New`
+(accessible name `New page`), and the inline composer uses `New page` / `Add
+page` language. The administration presentation keeps its existing `New
+record` and reviewed-plan terminology. The focused canvas DOM journey passes
+18 expectations; app typecheck and targeted Biome checks pass.
+
+This is a vocabulary and hierarchy correction, not evidence that visual,
+Electron, manual accessibility, usability, performance, or release gates are
+closed.
 
 ### Notion surface continuation (2026-07-23)
 
