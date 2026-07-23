@@ -2207,7 +2207,9 @@ capability alone is insufficient.
 - [ ] **UX-1105** E2E property add/configure/reorder/hide and destructive delete
       review.
 - [ ] **UX-1106** E2E view create/switch/configure/duplicate/reorder/delete using
-      visible tabs.
+      visible tabs. The primary journey now also asserts the title-based List
+      view context action after switching to the created saved view; discovery
+      lists 3 tests, while execution remains pending the Chromium runtime.
 - [ ] **UX-1107** E2E row → peek → full page → return to the same view context.
 - [ ] **UX-1108** E2E different policies for agent proposal, human direct edit,
       and destructive human action.

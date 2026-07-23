@@ -2164,6 +2164,12 @@ R-005 stays open until one complete run and an Electron capture are available.
 The in-app browser observation is useful visual evidence for the web shell, but
 it is not an E2E pass.
 
+Commit `93411d21 test: cover alternate view title actions` extends
+`database-primary-journeys.e2e.ts` to assert `Inspect context for record View
+task` after creating and switching to a saved List view. Playwright discovery
+still lists 3 tests; the new assertion has not been executed without the
+Chromium runtime.
+
 ## Work in progress: do this first
 
 `packages/core/src/database/property-invariants.test.ts` is now verified and

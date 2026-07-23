@@ -566,7 +566,10 @@ treated as visual parity until a browser capture is attached.
   creation, linked view, row/page continuity, property/view configuration,
   direct-safe edit, agent proposal, and destructive review. The existing
   document-native journey now uses the contextual inline accessibility names;
-  execution and full coverage remain open.
+  the primary journey file also switches to a saved List view and asserts the
+  title-based `Inspect context for record View task` affordance. Playwright
+  discovery lists all 3 primary tests; execution and full coverage remain open
+  pending a runnable browser host.
 - [ ] **NUI-702** Run keyboard, screen-reader, contrast, 768px responsive, and
   reduced-motion checks on those same journeys.
 - [ ] **NUI-703** Run five uncoached first-use sessions. At least four users
