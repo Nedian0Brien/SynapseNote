@@ -649,6 +649,11 @@ edge `+`, then compile the new property into both source order and the active
 saved-view projection by stable key. Inserting to the left of Title is disabled
 so the required identity column remains first.
 
+Select property headers also expose `Configure options`, which opens the
+existing option lifecycle editor and its complete-snapshot impact preview from
+the primary surface. The callback preserves the same reviewed rename/recolor/
+reorder/archive/merge/delete boundary; it does not introduce a second writer.
+
 The same surface now uses human-facing property type labels and examples
 (`Multi-select`, “Several choices from a list”, and so on) in the add-property
 picker, property badges, table headers, and conversion dialog. Internal enum
@@ -678,7 +683,8 @@ Focused evidence:
 
 - `DatabaseTableDialog.dom.test.tsx`: host-gated `Add property`, contextual
   header menu affordances, and canonical in-table property rename, including
-  Sort, Filter, Duplicate, and header-relative insertion dispatch.
+  Sort, Filter, Duplicate, header-relative insertion, and Select option
+  configuration dispatch.
 - `packages/app/src/lib/database-cell-mutation.test.ts`: source and active-view
   projection order stays stable when a property is inserted before a header.
 - `DatabaseAdvancedFilterDialog.dom.test.tsx`: nested filter editing plus

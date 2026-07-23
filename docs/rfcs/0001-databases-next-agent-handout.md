@@ -2732,6 +2732,25 @@ hide/delete matrix, visual/Electron/manual accessibility, usability, agent,
 and release gates open. Preserve the ignored/local database artifact and do
 not stage or delete it.
 
+### 2026-07-23 Select option configuration handoff
+
+Canonical Select property headers now expose `Configure options`. Choosing it
+opens the existing complete-snapshot option editor, preserving the reviewed
+rename/recolor/reorder/archive/merge/delete preview and commit boundary. The
+inline linked Table forwards the same action to its selected-property manager
+handoff. This removes the discovery gap without adding a parallel mutation
+implementation. Multi-select option lifecycle migration is intentionally still
+open: array-valued record references need a dedicated compiler and focused
+recovery tests before claiming full parity.
+
+Feature commit: `3995c91f feat: expose select options from property headers`.
+Changeset: `../../.changeset/notion-header-select-config.md`.
+
+Focused evidence: `DatabaseTableDialog.dom.test.tsx` proves the Status header
+dispatches `Configure options`; targeted Biome and app typecheck pass. Keep
+UX-1105/R-005 and the broader visual, accessibility, Electron, usability, agent,
+and release gates open.
+
 ## Work in progress: do this first
 
 `packages/core/src/database/property-invariants.test.ts` is now verified and
