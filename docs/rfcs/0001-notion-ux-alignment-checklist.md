@@ -2374,9 +2374,10 @@ capability alone is insufficient.
       and the remaining view matrix remain open. View settings property-order
       changes now skip hidden properties in the visible projection. The focused
       primary journey now also includes saved Table row-height/wrap settings and
-      a Status filter; test discovery passes, but this new browser case still
-      needs its next bounded execution. Context inspection remains covered by
-      the linked-view/document-native journey rather than this direct canonical
+      a Status filter; test discovery passes. Its bounded execution was attempted
+      on 2026-07-23 but could not start because the local Playwright Chromium
+      executable is missing. Context inspection remains covered by the
+      linked-view/document-native journey rather than this direct canonical
       route.
 - [x] **UX-1107** E2E row → peek → full page → return to the same view context.
       The canonical primary journey opens a row in the side peek, follows

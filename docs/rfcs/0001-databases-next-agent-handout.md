@@ -2987,10 +2987,12 @@ their broad evidence is actually assembled:
   the query summary. This keeps filter/layout configuration on the canonical
   view surface rather than an admin-only path.
 - Playwright discovery lists all 4 cases and targeted Biome/app typecheck pass.
-  The new case has not been executed in this turn, so it is test-shape evidence,
-  not a passed browser-run claim. Do not close UX-1106/NUI-701 or R-005 until a
-  bounded system-Chrome/hosted run and the remaining visual/accessibility gates
-  are attached.
+  A bounded execution was attempted on 2026-07-23 but stopped before the first
+  test because `/Users/minjaepark/Library/Caches/ms-playwright/chromium_headless_shell-1217/`
+  is missing. This is an environment gate, not a product failure; do not
+  install or repeatedly rerun it during iteration. Do not close UX-1106/NUI-701
+  or R-005 until a bounded system-Chrome/hosted run and the remaining
+  visual/accessibility gates are attached.
 
 ## Recommended execution order
 
