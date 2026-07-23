@@ -2584,6 +2584,35 @@ External edit remains canonical.
     }
   });
 
+  test('preserves the saved Agent View projection order when a pack omits propertyIds', async () => {
+    const { dataPlane, store, index } = await fixture();
+    const definition = store.getById('db_feedback');
+    const view = definition?.views.find(({ id }) => id === 'view_customer_feedback_agent');
+    if (!definition || !view?.agent) throw new Error('Agent View fixture is missing');
+
+    view.projection.propertyIds = ['prop_customer_feedback_score', 'prop_customer_feedback_title'];
+    await store.update(definition.id, definition);
+    await index.rebuild();
+
+    const pack = dataPlane.pack({
+      databaseId: definition.id,
+      sourceId: 'ds_customer_feedback',
+      agentViewId: view.id,
+      goal: 'Prepare an evidence-grounded feedback brief',
+      disclosure: { level: 'evidence', searchText: 'checkout latency' },
+    });
+
+    expect(pack.schema.properties.map(({ id }) => id)).toEqual([
+      'prop_customer_feedback_score',
+      'prop_customer_feedback_title',
+    ]);
+    expect(pack.retrieval?.projection).toMatchObject({
+      requestedPropertyIds: ['prop_customer_feedback_score', 'prop_customer_feedback_title'],
+      returnedPropertyIds: ['prop_customer_feedback_score', 'prop_customer_feedback_title'],
+      omittedPropertyIds: [],
+    });
+  });
+
   test('redacts properties and bodies above an Agent View sensitivity policy from packs and inspections', async () => {
     const { dataPlane, store, index } = await fixture();
     const definition = store.getById('db_feedback');
