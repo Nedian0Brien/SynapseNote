@@ -248,10 +248,12 @@ commit-count mismatch and was intentionally not rerun as a release gate.
 
 The follow-up `fa80636c fix: contextualize inline database actions` gives the
 overflow menu an accessible name containing the displayed source/database and
-saved-view names (`Database view actions for Tasks · Open tasks`). This keeps
-the icon-only Notion-style chrome compact while making repeated linked blocks
-searchable and distinguishable by agents. Its focused journey passes 1 test /
-7 expectations; no full E2E or server suite was run.
+saved-view names (`Database view actions for Tasks · Open tasks`). Commit
+`4c573af8 fix: contextualize inline database controls` applies the same
+context to refresh, change-view, and open-full-database icon controls. This
+keeps the icon-only Notion-style chrome compact while making repeated linked
+blocks searchable and distinguishable by agents. The focused journey passes 2
+tests / 14 expectations; no full E2E or server suite was run.
 
 ## Current status
 

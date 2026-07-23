@@ -427,6 +427,12 @@ select the right repeated inline block without opening the menu first. The
 focused single-view DOM journey passes 1 test / 7 expectations, with the
 existing long journey assertions updated to the contextual name.
 
+The adjacent icon controls use the same convention (`Refresh linked database
+view: Tasks · Open tasks`, `Change database view: Tasks · Open tasks`, and
+`Open full database: Tasks · Open tasks`). The focused journey verifies all
+three names and the offline-refresh journey verifies the refresh action still
+works after the context is added.
+
 The follow-up regression capture found that remounting the manager during a
 draft could replay the initial action and create duplicate copies. The manager
 now keeps a stable instance across schema refreshes, synchronizes its view-name

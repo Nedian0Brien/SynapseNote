@@ -387,9 +387,10 @@ treated as visual parity until a browser capture is attached.
   name, tooltip, and rename input. The overflow action menu now includes the
   same database/source and saved-view context in its accessibility name, so
   repeated linked blocks are distinguishable to agents and assistive
-  technology. The functional title/tab/cache/state contract is complete; the
-  remaining visual state matrix is a separate NUI-701/NUI-702 gate. Map to
-  UX-304/UX-305/UX-309.
+  technology. Refresh, change-view, and open-full-database icon controls now
+  carry the same context as well. The functional title/tab/cache/state
+  contract is complete; the remaining visual state matrix is a separate
+  NUI-701/NUI-702 gate. Map to UX-304/UX-305/UX-309.
 - [x] **NUI-403** Use one canonical record-page component for title cell, peek,
   full page, comments, history, relation navigation, previous/next, and return
   to the originating view. Record opens now persist the originating database,
