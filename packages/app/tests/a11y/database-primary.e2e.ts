@@ -10,7 +10,13 @@
 import { randomUUID } from 'node:crypto';
 import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
-import { expect, test } from '../stress/_helpers';
+import {
+  type ApiHelpers,
+  expect,
+  test,
+  waitForActiveProviderSynced,
+  waitForSlashMenuOpen,
+} from '../stress/_helpers';
 
 async function openDatabasesDialog(page: Page) {
   await page.keyboard.press('ControlOrMeta+k');
@@ -61,6 +67,17 @@ function taskDatabase(name: string, key: string) {
   };
 }
 
+async function openEditorDocument(page: Page, api: ApiHelpers) {
+  const docName = `a11y-inline-${randomUUID().slice(0, 8)}`;
+  await api.createPage(`${docName}.md`);
+  await page.goto(`/#/${docName}`);
+  const editor = page.locator('.ProseMirror:not(.composer-prosemirror)').first();
+  await expect(editor).toBeVisible({ timeout: 10_000 });
+  await waitForActiveProviderSynced(page);
+  await editor.click();
+  return editor;
+}
+
 test('DB-A11Y-01: canonical Table workspace has no serious or critical axe violations', async ({
   page,
   api,
@@ -90,6 +107,43 @@ test('DB-A11Y-01: canonical Table workspace has no serious or critical axe viola
   const axeResults = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
     .include('[data-database-workspace]')
+    .disableRules(['color-contrast'])
+    .analyze();
+
+  expect(
+    axeResults.violations.filter((violation) =>
+      ['serious', 'critical'].includes(violation.impact ?? ''),
+    ),
+  ).toEqual([]);
+});
+
+test('DB-A11Y-02: inline linked Table has no serious or critical axe violations', async ({
+  page,
+  api,
+}) => {
+  await openEditorDocument(page, api);
+  await page.keyboard.type('/database');
+  await waitForSlashMenuOpen(page);
+  const slashMenu = page.getByRole('listbox', { name: 'Slash commands' });
+  await expect(slashMenu).toBeVisible();
+  await slashMenu.getByRole('option', { name: 'Inline database', exact: true }).click();
+
+  const inline = page.getByRole('region', { name: /^Linked database view:/ });
+  await expect(inline).toHaveAttribute('data-view-mode', 'inline', { timeout: 20_000 });
+  await expect(inline).toHaveAttribute('data-database-view-state', 'ready', { timeout: 20_000 });
+  await expect(inline.getByRole('grid')).toBeVisible({ timeout: 20_000 });
+
+  const title = inline.getByRole('textbox', { name: 'New page title' });
+  await expect(title).toBeVisible({ timeout: 10_000 });
+  await title.fill('Inline accessible task');
+  await title.press('Enter');
+  await expect(inline.getByRole('gridcell', { name: 'Inline accessible task' })).toBeVisible({
+    timeout: 15_000,
+  });
+
+  const axeResults = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+    .include('[data-view-mode="inline"][data-database-view-state="ready"]')
     .disableRules(['color-contrast'])
     .analyze();
 
