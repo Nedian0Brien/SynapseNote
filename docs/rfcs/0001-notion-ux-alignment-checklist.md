@@ -424,7 +424,7 @@ tasks` when the linked view is ready, while retaining the generic loading label
 until the database description resolves. The context is derived from the
 visible source/database and saved-view names, not machine IDs, so an agent can
 select the right repeated inline block without opening the menu first. The
-focused single-view DOM journey passes 1 test / 7 expectations, with the
+focused single-view DOM journey passes 1 test / 11 expectations, with the
 existing long journey assertions updated to the contextual name.
 
 The adjacent icon controls use the same convention (`Refresh linked database
@@ -436,7 +436,8 @@ works after the context is added.
 The inline agent trigger follows the same visible context (`Ask agent about
 Tasks · Open tasks`) instead of a document-wide generic `Ask agent` label. Its
 scope payload remains the stable database/source/view reference; only the
-human/AX label is contextualized.
+human/AX label is contextualized. The combined focused run passes 2 tests / 15
+expectations.
 
 The follow-up regression capture found that remounting the manager during a
 draft could replay the initial action and create duplicate copies. The manager

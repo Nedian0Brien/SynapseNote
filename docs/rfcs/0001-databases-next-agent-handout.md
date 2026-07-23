@@ -254,7 +254,7 @@ saved-view names (`Database view actions for Tasks · Open tasks`). Commit
 context to refresh, change-view, and open-full-database icon controls. This
 keeps the icon-only Notion-style chrome compact while making repeated linked
 blocks searchable and distinguishable by agents. The focused journey passes 2
-tests / 14 expectations; no full E2E or server suite was run.
+tests / 15 expectations; no full E2E or server suite was run.
 
 Commit `df37e544 fix: label inline agent actions with view context` extends the
 same convention to the inline `Ask agent` trigger (`Ask agent about Tasks ·
