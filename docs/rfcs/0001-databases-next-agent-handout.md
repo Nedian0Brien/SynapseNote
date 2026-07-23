@@ -2238,6 +2238,10 @@ Focused evidence:
   boundary: the Notion creation route must render the page-first table shell
   and must not expose the administration wizard's database-name, Blank, or
   Template controls. The focused test passes 1 test / 5 expectations.
+- Commit `c90d51a2` extends the App route harness so slash and sidebar New
+  database events explicitly select `creationExperience="notion"`, while the
+  intentional command-palette Databases discovery path remains `admin`. The
+  full App DOM file passes 15 tests / 57 expectations.
 
 This is functional handoff evidence only. Do not close UX-1102/NUI-105 or the
 browser visual/usability gates from this smoke; the full Playwright journey and
