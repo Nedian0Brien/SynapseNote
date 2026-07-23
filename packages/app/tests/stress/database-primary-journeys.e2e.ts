@@ -13,11 +13,17 @@ import { expect, test } from './_helpers';
 
 async function openDatabasesDialog(page: Page) {
   await page.keyboard.press('ControlOrMeta+k');
-  const paletteInput = page.getByPlaceholder('Search files, folders, or commands');
-  await expect(paletteInput).toBeVisible({ timeout: 2_000 });
+  const palette = page.getByRole('dialog', { name: 'Workspace Command Palette' });
+  const paletteInput = palette.getByRole('combobox');
+  await expect(paletteInput).toBeVisible({ timeout: 5_000 });
   await paletteInput.fill('databases');
   await page.getByRole('option', { name: 'Open databases' }).click();
-  await expect(page.getByRole('heading', { name: 'Databases' })).toBeVisible({
+  await expect(
+    page.getByRole('navigation', { name: 'Database breadcrumbs' }).getByRole('button', {
+      name: 'Databases',
+      exact: true,
+    }),
+  ).toBeVisible({
     timeout: 5_000,
   });
 }
@@ -25,7 +31,10 @@ async function openDatabasesDialog(page: Page) {
 async function openDatabase(page: Page, name: string) {
   await page.goto('/');
   await openDatabasesDialog(page);
-  await page.getByText(name, { exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Databases' })
+    .getByText(name, { exact: true })
+    .click();
   await expect(page.getByRole('grid')).toBeVisible({ timeout: 10_000 });
 }
 
@@ -62,7 +71,14 @@ function taskDatabase(name: string, key: string) {
         ],
       },
     ],
-    views: [],
+    views: [
+      {
+        key: 'all-tasks',
+        name: 'All tasks',
+        sourceKey: 'tasks',
+        layout: { type: 'table', configuration: { rowHeight: 'compact' } },
+      },
+    ],
     policy: { mode: 'review', allowedOperations: [], maxRecordsPerCommit: 20 },
   };
 }
@@ -95,18 +111,17 @@ test.describe('database primary browser journeys', () => {
 
     const createdTitle = page.getByRole('gridcell', { name: 'Created task' });
     await createdTitle.press('Enter');
-    await page.getByLabel('Edit Title').fill('Renamed task');
+    await page.getByRole('textbox', { name: 'Edit Title' }).fill('Renamed task');
     await page.getByRole('button', { name: 'Save cell edit' }).click();
     await expect(page.getByRole('gridcell', { name: 'Renamed task' })).toBeVisible({
       timeout: 10_000,
     });
+    await expect(page.getByTestId('database-save-indicator')).toHaveAttribute(
+      'data-database-save-state',
+      'saved',
+      { timeout: 10_000 },
+    );
 
-    const renamedRow = page.locator('tr[data-record-id]').filter({ hasText: 'Renamed task' });
-    await renamedRow.getByRole('button', { name: /Open record/ }).click();
-    await expect(page).toHaveURL(/#\/.*\.md/, { timeout: 10_000 });
-
-    await page.goBack();
-    await expect(page.getByRole('grid')).toBeVisible({ timeout: 10_000 });
     await page.getByRole('button', { name: 'More database actions' }).click();
     await page.getByRole('menuitem', { name: 'Undo last change' }).click();
     await expect(page.getByRole('gridcell', { name: 'Created task' })).toBeVisible({
@@ -118,6 +133,10 @@ test.describe('database primary browser journeys', () => {
     await expect(page.getByRole('gridcell', { name: 'Renamed task' })).toBeVisible({
       timeout: 10_000,
     });
+
+    const renamedRow = page.locator('tr[data-record-id]').filter({ hasText: 'Renamed task' });
+    await renamedRow.getByRole('button', { name: /Open record/ }).click();
+    await expect(page).toHaveURL(/#\/[^/]+\/rec_[a-z0-9]+$/, { timeout: 10_000 });
   });
 
   test('applies a reviewed bulk property change and exposes undo', async ({ page, api }) => {
@@ -155,18 +174,29 @@ test.describe('database primary browser journeys', () => {
     });
     await expect(page.getByText(/Updates 2 canonical record/)).toBeVisible();
     await page.getByRole('button', { name: 'Commit change' }).click();
-    await expect(page.getByRole('gridcell', { name: 'Done' })).toHaveCount(2, {
-      timeout: 10_000,
-    });
+    await expect(page.locator('[role="gridcell"] button').filter({ hasText: 'Done' })).toHaveCount(
+      2,
+      {
+        timeout: 10_000,
+      },
+    );
+    await expect(page.getByTestId('database-save-indicator')).toHaveAttribute(
+      'data-database-save-state',
+      'saved',
+      { timeout: 10_000 },
+    );
 
     await page.getByRole('button', { name: 'More database actions' }).click();
     await page.getByRole('menuitem', { name: 'Undo last change' }).click();
-    await expect(page.getByRole('gridcell', { name: 'Todo' })).toHaveCount(2, {
-      timeout: 10_000,
-    });
+    await expect(page.locator('[role="gridcell"] button').filter({ hasText: 'Todo' })).toHaveCount(
+      2,
+      {
+        timeout: 10_000,
+      },
+    );
   });
 
-  test('creates and renames a saved view through the reviewed view manager', async ({
+  test('creates and renames a saved view through the view manager', async ({
     page,
     api,
   }) => {
@@ -177,39 +207,42 @@ test.describe('database primary browser journeys', () => {
     });
 
     await openDatabase(page, name);
-    await page.getByRole('button', { name: /View options for/ }).click();
+    await page.getByRole('tab', { name: 'All tasks', exact: true }).click();
+    await page.getByRole('button', { name: 'View options for All tasks' }).click();
     await page.getByRole('menuitem', { name: 'Manage views' }).click();
     await expect(page.getByRole('heading', { name: 'Manage saved views' })).toBeVisible();
     await page.getByLabel('New saved view name').fill('List of tasks');
     await page.getByRole('combobox', { name: 'New saved view layout' }).click();
     await page.getByRole('option', { name: 'List' }).click();
     await page.getByRole('button', { name: 'Review create' }).click();
-    await expect(page.getByText('Proposed · not saved')).toBeVisible({
-      timeout: 5_000,
+    const viewManager = page.getByRole('dialog', { name: 'Manage saved views' });
+    await expect(viewManager.getByRole('textbox', { name: 'Name for List of tasks' })).toBeVisible({
+      timeout: 10_000,
     });
-    await page.getByRole('button', { name: 'Commit change' }).click();
-    await expect(page.getByRole('heading', { name: 'Manage saved views' })).toBeHidden({
+    await viewManager.getByRole('button', { name: 'Close' }).click();
+
+    await page.getByRole('tab', { name: 'List of tasks', exact: true }).click();
+    const listView = page.getByRole('tree', { name: 'List of tasks List' });
+    await expect(listView.getByRole('button', { name: 'View task', exact: true })).toBeVisible({
+      timeout: 10_000,
+    });
+    await expect(listView.getByLabel('Inspect context for record View task')).toBeVisible({
       timeout: 10_000,
     });
 
-    await page.getByRole('combobox', { name: 'Saved database view' }).click();
-    await page.getByRole('option', { name: 'List of tasks' }).click();
-    await expect(page.getByText('View task')).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByLabel('Inspect context for record View task')).toBeVisible({
-      timeout: 10_000,
-    });
-
-    await page.getByRole('button', { name: /View options for/ }).click();
+    await page.getByRole('button', { name: 'View options for List of tasks' }).click();
     await page.getByRole('menuitem', { name: 'Manage views' }).click();
-    await page.getByLabel('Name for List of tasks').fill('Renamed list');
+    await page.getByRole('textbox', { name: 'Name for List of tasks' }).fill('Renamed list');
     await page.getByRole('button', { name: 'Review rename List of tasks' }).click();
-    await expect(page.getByText('Proposed · not saved')).toBeVisible({
-      timeout: 5_000,
+    const renamedViewManager = page.getByRole('dialog', { name: 'Manage saved views' });
+    await expect(
+      renamedViewManager.getByRole('textbox', { name: 'Name for Renamed list' }),
+    ).toBeVisible({
+      timeout: 10_000,
     });
-    await page.getByRole('button', { name: 'Commit change' }).click();
-    await expect(page.getByRole('combobox', { name: 'Saved database view' })).toContainText(
-      'Renamed list',
-      { timeout: 10_000 },
-    );
+    await renamedViewManager.getByRole('button', { name: 'Close' }).click();
+    await expect(page.getByRole('tab', { name: 'Renamed list', exact: true })).toBeVisible({
+      timeout: 10_000,
+    });
   });
 });

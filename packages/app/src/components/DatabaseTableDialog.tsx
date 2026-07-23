@@ -7564,6 +7564,19 @@ function DatabaseTableSurface({
                       ).values(),
                     ]}
                     onOpen={openRecord}
+                    onOpenContextInspector={
+                      onOpenContextInspector
+                        ? (record) => {
+                            if (!description.source) return;
+                            onOpenContextInspector({
+                              databaseId: description.database.id,
+                              sourceId: description.source.id,
+                              ...(selectedViewId ? { viewId: selectedViewId } : {}),
+                              recordId: record.id,
+                            });
+                          }
+                        : undefined
+                    }
                   />
                 ) : selectedView?.layout.type === 'gallery' ? (
                   <DatabaseGallery

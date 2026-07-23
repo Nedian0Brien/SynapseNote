@@ -372,12 +372,13 @@ export function DatabaseViewManagerDialog({
                       value={name}
                       maxLength={200}
                       aria-label={`Name for ${view.name}`}
-                      onChange={(event) =>
+                      onChange={(event) => {
+                        const nextName = event.currentTarget.value;
                         setNames((current) => ({
                           ...current,
-                          [view.id]: event.currentTarget.value,
-                        }))
-                      }
+                          [view.id]: nextName,
+                        }));
+                      }}
                     />
                     <div className="flex gap-2 text-muted-foreground text-xs">
                       <code>{view.key}</code>
