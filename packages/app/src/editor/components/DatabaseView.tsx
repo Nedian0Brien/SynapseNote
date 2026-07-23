@@ -1039,6 +1039,15 @@ export function DatabaseView({
   const inlineViewActionsLabel = inlineDatabaseContext
     ? t`Database view actions for ${inlineDatabaseContext}`
     : t`Database view actions`;
+  const inlineRefreshLabel = inlineDatabaseContext
+    ? t`Refresh linked database view: ${inlineDatabaseContext}`
+    : t`Refresh linked database view`;
+  const inlineChangeViewLabel = inlineDatabaseContext
+    ? t`Change database view: ${inlineDatabaseContext}`
+    : t`Change database view`;
+  const inlineOpenDatabaseLabel = inlineDatabaseContext
+    ? t`Open full database: ${inlineDatabaseContext}`
+    : t`Open full database`;
   const linkedSourceViews =
     linkedDatabase?.views.filter((view) => view.sourceId === reference.data.sourceId) ?? [];
   const defaultInlineAgentScope: DatabaseAgentScope = {
@@ -1627,7 +1636,7 @@ export function DatabaseView({
             type="button"
             variant="ghost"
             size="icon-sm"
-            aria-label="Refresh linked database view"
+            aria-label={inlineRefreshLabel}
             disabled={
               state.status === 'loading' ||
               (state.status === 'error' &&
@@ -1662,7 +1671,7 @@ export function DatabaseView({
               type="button"
               variant="ghost"
               size="icon-sm"
-              aria-label="Change database view"
+              aria-label={inlineChangeViewLabel}
               onClick={() => setReplacementPickerOpen(true)}
             >
               <Search aria-hidden="true" />
@@ -1672,7 +1681,7 @@ export function DatabaseView({
             type="button"
             variant="ghost"
             size="icon-sm"
-            aria-label="Open full database"
+            aria-label={inlineOpenDatabaseLabel}
             onClick={() => {
               if (state.status === 'ready') {
                 window.location.hash = databasePageTargetToHash(reference.data);

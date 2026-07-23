@@ -118,6 +118,17 @@ describe('DatabaseView', () => {
     expect(
       screen.getByRole('button', { name: 'Database view actions for Tasks · Open tasks' }),
     ).toBeTruthy();
+    expect(
+      screen.getByRole('button', {
+        name: 'Refresh linked database view: Tasks · Open tasks',
+      }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'Change database view: Tasks · Open tasks' }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'Open full database: Tasks · Open tasks' }),
+    ).toBeTruthy();
 
     expect(await screen.findByRole('button', { name: view.name })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'New database view' })).toBeTruthy();
@@ -1767,7 +1778,11 @@ describe('DatabaseView', () => {
     expect(screen.getByText(/Shared records/)).toBeTruthy();
 
     offline = true;
-    fireEvent.click(screen.getByRole('button', { name: 'Refresh linked database view' }));
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Refresh linked database view: Tasks · Open tasks',
+      }),
+    );
     expect(await screen.findByTestId('database-view-stale')).toBeTruthy();
     expect(screen.getByText('Cached task')).toBeTruthy();
   });
