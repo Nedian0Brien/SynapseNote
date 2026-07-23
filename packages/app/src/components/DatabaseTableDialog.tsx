@@ -190,6 +190,7 @@ import {
   createDatabasePageAppearanceDesiredState,
   createDatabasePageTitleDesiredState,
   createDatabasePlacePrivacyChangeDesiredState,
+  createDatabasePropertyDefinitionForAdd,
   createDatabaseRecordArchiveDesiredState,
   createDatabaseRecordCopyDesiredState,
   createDatabaseRecordDeletionDesiredState,
@@ -206,7 +207,6 @@ import {
   createDatabaseViewConfigurationChangeDesiredState,
   createDatabaseViewFilterChangeDesiredState,
   createDatabaseViewLifecycleChangeDesiredState,
-  databasePropertyKeyFromName,
   isDatabaseCellEditable,
   parseDatabaseCellDraft,
   rebaseQueuedDatabaseRecordMutations,
@@ -4707,25 +4707,15 @@ function DatabaseTableSurface({
     const selectedDatabase = description.database;
     setPropertiesError(null);
     try {
-      const key = databasePropertyKeyFromName(
-        input.name,
-        selectedSource.properties.map((property) => property.key),
-      );
-      const property =
-        input.type === 'select' || input.type === 'multi_select'
-          ? { key, name: input.name, type: input.type, options: [] }
-          : input.type === 'place'
-            ? {
-                key,
-                name: input.name,
-                type: input.type,
-                externalSearch: 'disabled' as const,
-                externalMap: 'disabled' as const,
-              }
-            : { key, name: input.name, type: input.type };
+      const property = createDatabasePropertyDefinitionForAdd({
+        name: input.name,
+        type: input.type,
+        existingKeys: selectedSource.properties.map((candidate) => candidate.key),
+      });
       const desiredState = createDatabaseAddPropertyDesiredState({
         database: selectedDatabase,
         source: selectedSource,
+        ...(selectedView?.id ? { viewId: selectedView.id } : {}),
         property,
       });
       setPropertiesDialogOpen(false);
@@ -4743,6 +4733,7 @@ function DatabaseTableSurface({
           database: description.database,
           source: description.source,
           property,
+          ...(selectedView?.id ? { viewId: selectedView.id } : {}),
         }),
         'ui-duplicate-property',
         'Duplicate database property failed',

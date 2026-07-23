@@ -720,11 +720,44 @@ export function databasePropertyKeyFromName(name: string, existingKeys: readonly
   }
 }
 
+/**
+ * Builds the schema fragment used by the human Notion-style property picker.
+ * Select-like properties need one option in the canonical manifest even when
+ * the user has not entered any cell values yet, so seed an inert first option
+ * that remains editable through the normal property configuration surface.
+ */
+export function createDatabasePropertyDefinitionForAdd(input: {
+  name: string;
+  type: DatabasePropertyType;
+  existingKeys: readonly string[];
+}): { key: string; name: string; type: DatabasePropertyType } & Record<string, unknown> {
+  const key = databasePropertyKeyFromName(input.name, input.existingKeys);
+  if (input.type === 'select' || input.type === 'multi_select') {
+    return {
+      key,
+      name: input.name,
+      type: input.type,
+      options: [{ key: 'option_1', name: 'Option 1' }],
+    };
+  }
+  if (input.type === 'place') {
+    return {
+      key,
+      name: input.name,
+      type: input.type,
+      externalSearch: 'disabled',
+      externalMap: 'disabled',
+    };
+  }
+  return { key, name: input.name, type: input.type };
+}
+
 /** Adds a new schema property. The server mints its stable ID on commit. */
 export function createDatabaseAddPropertyDesiredState(input: {
   database: DatabaseDefinition;
   source: DatabaseSource;
   property: { key: string; name: string; type: DatabasePropertyType } & Record<string, unknown>;
+  viewId?: string;
 }): DatabaseDesiredStateDraftInput {
   const currentSource = input.database.sources.find((source) => source.id === input.source.id);
   if (!currentSource) throw new Error('The selected source is unavailable');
@@ -732,8 +765,42 @@ export function createDatabaseAddPropertyDesiredState(input: {
     throw new Error(`A property with the key "${input.property.key}" already exists`);
   }
   const base = databaseDraftBase(input.database);
+  const propertyKeyById = new Map(
+    currentSource.properties.map((property) => [property.id, property.key] as const),
+  );
+  const baseViews = base.views ?? [];
+  const views = input.viewId
+    ? baseViews.map((view) => {
+        if (view.id !== input.viewId || view.sourceKey !== currentSource.key) return view;
+        const rawProjection =
+          view.projection && typeof view.projection === 'object'
+            ? (view.projection as Record<string, unknown>)
+            : null;
+        if (!rawProjection) return view;
+        const existingIds = Array.isArray(rawProjection.propertyIds)
+          ? rawProjection.propertyIds.map(String)
+          : null;
+        const existingKeys = Array.isArray(rawProjection.propertyKeys)
+          ? rawProjection.propertyKeys.map(String)
+          : (existingIds
+              ?.map((propertyId) => propertyKeyById.get(propertyId))
+              .filter((key): key is string => key !== undefined) ?? null);
+        // A view without an explicit projection already renders every property;
+        // leave that compact/default representation untouched.
+        if (!existingKeys || existingKeys.includes(input.property.key)) return view;
+        const { propertyIds: _propertyIds, propertyKeys: _propertyKeys, ...rest } = rawProjection;
+        return {
+          ...view,
+          projection: {
+            ...rest,
+            propertyKeys: [...existingKeys, input.property.key],
+          },
+        };
+      })
+    : baseViews;
   return {
     ...base,
+    views,
     sources: base.sources.map((source) =>
       source.key === currentSource.key
         ? { ...source, properties: [...source.properties, input.property] }
@@ -750,6 +817,7 @@ export function createDatabaseDuplicatePropertyDesiredState(input: {
   source: DatabaseSource;
   property: DatabaseProperty;
   name?: string;
+  viewId?: string;
 }): DatabaseDesiredStateDraftInput {
   if (input.property.type === 'title') {
     throw new Error('The Title property cannot be duplicated');
@@ -767,6 +835,7 @@ export function createDatabaseDuplicatePropertyDesiredState(input: {
   return createDatabaseAddPropertyDesiredState({
     database: input.database,
     source: currentSource,
+    ...(input.viewId ? { viewId: input.viewId } : {}),
     property: {
       ...configuration,
       key: databasePropertyKeyFromName(

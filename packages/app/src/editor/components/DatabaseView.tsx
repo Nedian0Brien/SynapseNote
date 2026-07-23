@@ -69,9 +69,9 @@ import {
   createDatabaseAddPropertyDesiredState,
   createDatabaseCellMutationDesiredState,
   createDatabasePageTitleDesiredState,
+  createDatabasePropertyDefinitionForAdd,
   createDatabaseRecordDesiredState,
   createDatabaseTablePasteDesiredState,
-  databasePropertyKeyFromName,
 } from '@/lib/database-cell-mutation';
 import { createBlankDatabaseDesiredState, createNotionDatabaseKey } from '@/lib/database-creation';
 import {
@@ -1410,26 +1410,16 @@ export function DatabaseView({
   const addInlineProperty = (input: { name: string; type: DatabaseProperty['type'] }) => {
     if (state.status !== 'ready' || !linkedSource || !linkedDatabase) return;
     try {
-      const key = databasePropertyKeyFromName(
-        input.name,
-        linkedSource.properties.map((property) => property.key),
-      );
-      const property =
-        input.type === 'select' || input.type === 'multi_select'
-          ? { key, name: input.name, type: input.type, options: [] }
-          : input.type === 'place'
-            ? {
-                key,
-                name: input.name,
-                type: input.type,
-                externalSearch: 'disabled' as const,
-                externalMap: 'disabled' as const,
-              }
-            : { key, name: input.name, type: input.type };
+      const property = createDatabasePropertyDefinitionForAdd({
+        name: input.name,
+        type: input.type,
+        existingKeys: linkedSource.properties.map((candidate) => candidate.key),
+      });
       runInlineMutation(
         createDatabaseAddPropertyDesiredState({
           database: linkedDatabase,
           source: linkedSource,
+          viewId: reference.data.viewId,
           property,
         }),
         { operation: 'property-create' },

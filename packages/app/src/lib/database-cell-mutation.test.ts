@@ -7,6 +7,7 @@ import {
 } from '@nedian0brien/synapsenote-core';
 import { DatabaseDesiredStateDraftSchema } from '@nedian0brien/synapsenote-server';
 import {
+  createDatabaseAddPropertyDesiredState,
   createDatabaseBulkCellMutationDesiredState,
   createDatabaseBulkCheckboxToggleDesiredState,
   createDatabaseCellMutationDesiredState,
@@ -16,6 +17,7 @@ import {
   createDatabasePageAppearanceDesiredState,
   createDatabasePageTitleDesiredState,
   createDatabasePlacePrivacyChangeDesiredState,
+  createDatabasePropertyDefinitionForAdd,
   createDatabaseRecordArchiveDesiredState,
   createDatabaseRecordCopyDesiredState,
   createDatabaseRecordDeletionDesiredState,
@@ -112,6 +114,60 @@ const database: DatabaseDefinition = {
 };
 
 describe('database cell mutation compiler', () => {
+  test('builds a commit-ready Select or Multi-select property from the one-step picker', () => {
+    const select = createDatabasePropertyDefinitionForAdd({
+      name: 'Priority',
+      type: 'select',
+      existingKeys: ['title'],
+    });
+    expect(select).toEqual({
+      key: 'priority',
+      name: 'Priority',
+      type: 'select',
+      options: [{ key: 'option_1', name: 'Option 1' }],
+    });
+    expect(
+      DatabasePropertySchema.safeParse({
+        id: 'prop_priority',
+        ...select,
+        options: select.options.map((option) => ({ id: 'opt_priority', ...option })),
+      }).success,
+    ).toBe(true);
+
+    const multiSelect = createDatabasePropertyDefinitionForAdd({
+      name: 'Labels',
+      type: 'multi_select',
+      existingKeys: [],
+    });
+    expect(multiSelect.options).toEqual([{ key: 'option_1', name: 'Option 1' }]);
+    expect(
+      DatabasePropertySchema.safeParse({
+        id: 'prop_labels',
+        ...multiSelect,
+        options: multiSelect.options.map((option) => ({ id: 'opt_labels', ...option })),
+      }).success,
+    ).toBe(true);
+  });
+
+  test('adds a new property to the active saved-view projection by stable key', () => {
+    const source = database.sources[0];
+    if (!source) throw new Error('invalid source fixture');
+    const property = createDatabasePropertyDefinitionForAdd({
+      name: 'Priority',
+      type: 'select',
+      existingKeys: source.properties.map((candidate) => candidate.key),
+    });
+    const desired = createDatabaseAddPropertyDesiredState({
+      database,
+      source,
+      viewId: 'view_scored',
+      property,
+    });
+    const projection = desired.views[0]?.projection as Record<string, unknown> | undefined;
+    expect(projection).toMatchObject({ propertyKeys: ['title', 'score', 'priority'] });
+    expect(projection).not.toHaveProperty('propertyIds');
+  });
+
   test('rebases queued record operations onto the current schema without replaying stale views', () => {
     const currentSource = database.sources[0];
     const statusProperty = currentSource?.properties.find(
