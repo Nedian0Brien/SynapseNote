@@ -2347,6 +2347,19 @@ matrix.
   manual focus/contrast review, usability sessions, and browser journey gates
   remain open.
 
+### Inline cell action density pass (2026-07-23)
+
+- Copy/edit affordances for URL, Email, and Phone values are now quiet until
+  the row is hovered or receives keyboard focus in an inline view. The value
+  itself remains immediately readable and the buttons retain their full
+  page/property labels; canonical/admin tables keep their existing always-on
+  controls.
+- Focused DOM evidence: the bounded `DatabaseTableDialog.dom.test.tsx` slice
+  asserts the hidden-until-row-interaction class alongside the type-icon,
+  title, and row-menu cases; targeted Biome and app typecheck pass.
+- This supports UX-009's density target without closing its required desktop /
+  compact captures, manual accessibility review, or browser journey gates.
+
 - [x] **UX-1001** Define keyboard order across title, tabs, controls, headers,
       cells, new row, and pagination. The canonical page DOM and focused table
       tests pin this progression, while arrow-key navigation handles the grid

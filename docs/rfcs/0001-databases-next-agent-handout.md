@@ -3086,6 +3086,18 @@ their broad evidence is actually assembled:
   convergence evidence only; cross-host, manual accessibility, usability,
   and full browser gates remain open.
 
+### 2026-07-23 Inline cell action density pass
+
+- URL, Email, and Phone cells in the document-native table now keep copy/edit
+  buttons visually quiet until the row is hovered or focused, while retaining
+  keyboard focus and the existing contextual accessible labels. The direct
+  controls remain unchanged in canonical/admin tables.
+- Focused DOM evidence: the bounded `DatabaseTableDialog.dom.test.tsx` slice
+  asserts the opacity contract together with the inline header, title, cell
+  menu, and row menu (4 tests / 26 expectations in the latest run); targeted
+  Biome and app typecheck pass. This is a density improvement, not closure of
+  the visual baseline or manual/browser gates.
+
 ## Recommended execution order
 
 1. When a browser-enabled runner is available, run only the new primary-journey

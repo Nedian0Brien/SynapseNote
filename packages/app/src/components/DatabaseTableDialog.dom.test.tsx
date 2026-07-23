@@ -2894,8 +2894,8 @@ describe('DatabaseTableDialog', () => {
       <DatabaseTable source={source} result={queryResult()} notionSurface onEdit={() => {}} />,
     );
     expect(screen.getByLabelText('Open URL for page First task')).toBeTruthy();
-    expect(screen.getByLabelText('Copy URL for page First task')).toBeTruthy();
-    expect(screen.getByLabelText('Edit URL for page First task')).toBeTruthy();
+    expect(screen.getByLabelText('Copy URL for page First task').className).toContain('opacity-0');
+    expect(screen.getByLabelText('Edit URL for page First task').className).toContain('opacity-0');
   });
 
   test('shows property type icons in inline headers without changing accessible names', () => {

@@ -653,7 +653,15 @@ function databaseLinkHref(property: DatabaseProperty, value: unknown): string | 
   return null;
 }
 
-function DatabaseValueCopyButton({ value, label }: { value: string; label: string }) {
+function DatabaseValueCopyButton({
+  value,
+  label,
+  className,
+}: {
+  value: string;
+  label: string;
+  className?: string;
+}) {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -666,6 +674,7 @@ function DatabaseValueCopyButton({ value, label }: { value: string; label: strin
       type="button"
       size="icon-sm"
       variant="ghost"
+      className={className}
       aria-label={copied ? `Copied ${label}` : `Copy ${label}`}
       onClick={() => {
         if (!navigator.clipboard?.writeText) return;
@@ -2871,12 +2880,22 @@ export function DatabaseTable({
                             <DatabaseValueCopyButton
                               value={String(shownValue)}
                               label={`${property.name} for ${notionSurface ? 'page' : 'record'} ${recordLabel}`}
+                              className={
+                                notionSurface
+                                  ? 'opacity-0 transition-opacity group-hover/row:opacity-100 group-focus-within/row:opacity-100 focus-visible:opacity-100'
+                                  : undefined
+                              }
                             />
                             {onEdit && !ghostCreated ? (
                               <Button
                                 size="icon-sm"
                                 variant="ghost"
                                 disabled={mutationLocked || proposed}
+                                className={
+                                  notionSurface
+                                    ? 'opacity-0 transition-opacity group-hover/row:opacity-100 group-focus-within/row:opacity-100 focus-visible:opacity-100'
+                                    : undefined
+                                }
                                 aria-label={`Edit ${property.name} for ${notionSurface ? 'page' : 'record'} ${recordLabel}`}
                                 onClick={() => beginEdit(record, property)}
                               >
