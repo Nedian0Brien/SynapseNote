@@ -1434,8 +1434,10 @@ export function DatabaseView({
     >
       <header className="flex items-center justify-between gap-3 border-b px-4 py-3">
         <div className="min-w-0">
-          <h3 className="truncate font-medium">
-            {state.status === 'ready' ? activeLinkedView?.name : 'Linked database view'}
+          <h3 className="truncate font-medium" data-database-inline-title>
+            {state.status === 'ready'
+              ? (state.description.source?.name ?? state.description.database.name)
+              : 'Linked database view'}
           </h3>
           {state.status === 'ready' ? (
             <p className="sr-only" data-database-source-context>

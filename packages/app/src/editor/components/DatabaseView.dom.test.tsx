@@ -1403,7 +1403,8 @@ describe('DatabaseView', () => {
       </JsxComponentHostProvider>,
     );
 
-    expect(await screen.findByRole('heading', { name: 'Open tasks' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: source.name })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Open tasks' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Done tasks' })).toBeTruthy();
     fireEvent.pointerDown(screen.getByRole('button', { name: 'View options for Open tasks' }));
     expect(screen.getByRole('menuitem', { name: 'Filters' })).toBeTruthy();
