@@ -2532,7 +2532,9 @@ export function DatabaseTable({
                           effectiveColorRule &&
                             DATABASE_CONDITIONAL_COLOR_CLASSES[effectiveColorRule.color],
                           cellIsInRange(cellRange, rowIndex, index) &&
-                            'outline -outline-offset-2 outline-2 outline-primary/70',
+                            (notionSurface
+                              ? 'bg-muted/35'
+                              : 'outline -outline-offset-2 outline-2 outline-primary/70'),
                           'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring',
                           proposed &&
                             'border-primary/40 border-x border-dashed bg-primary/5 text-primary',
@@ -3266,9 +3268,15 @@ export function DatabaseTable({
                                 onOpen(record);
                               }}
                             >
+                              {notionSurface ? (
+                                <FileText
+                                  className="mr-1.5 size-3.5 shrink-0 text-muted-foreground"
+                                  aria-hidden="true"
+                                />
+                              ) : null}
                               {shownText}
                             </Button>
-                            {onEdit && !ghostCreated ? (
+                            {onEdit && !ghostCreated && !notionSurface ? (
                               <Button
                                 type="button"
                                 variant="ghost"
@@ -3339,8 +3347,7 @@ export function DatabaseTable({
                       className={cn(
                         'flex justify-end gap-1',
                         notionSurface && 'gap-0.5',
-                        notionSurface &&
-                          'opacity-0 transition-opacity group-hover/row:opacity-100 group-focus-within/row:opacity-100',
+                        notionSurface && 'transition-opacity',
                       )}
                       data-database-row-actions
                     >

@@ -2934,6 +2934,8 @@ describe('DatabaseTableDialog', () => {
     expect(titleLink?.getAttribute('data-variant')).toBe('ghost');
     expect(titleLink?.className).toContain('text-foreground');
     expect(titleLink?.className).toContain('hover:underline');
+    expect(screen.queryByRole('button', { name: 'Edit Title for page First task' })).toBeNull();
+    expect(titleLink?.querySelector('[aria-hidden="true"]')).toBeTruthy();
   });
 
   test('renders inline select values as compact page-property tags', () => {

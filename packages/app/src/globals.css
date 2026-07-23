@@ -5525,16 +5525,36 @@ html.electron-mode [data-slot="sidebar-inner"] {
   width: max-content;
   min-height: 1.5rem;
   transform: translateY(-50%);
+  opacity: 0;
   pointer-events: none;
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease;
 }
 
 [data-database-inline-table] tbody tr:hover [data-database-row-actions],
-[data-database-inline-table] tbody tr:focus-within [data-database-row-actions] {
+[data-database-inline-table]
+  tbody
+  tr:has([data-database-row-action-menu-trigger]:focus-visible)
+  [data-database-row-actions],
+[data-database-inline-table]
+  tbody
+  tr:has([data-database-row-action-menu-trigger][data-state="open"])
+  [data-database-row-actions] {
   background: var(--background);
   border: 1px solid var(--border);
   border-radius: 0.375rem;
   box-shadow: -0.5rem 0 1rem rgb(0 0 0 / 12%);
+  opacity: 1;
   pointer-events: auto;
+}
+
+[data-database-inline-table] [data-database-cell-selected="true"] {
+  outline: none;
+}
+
+[data-database-inline-table] [data-database-actions-column] {
+  border-left-color: transparent;
 }
 
 [data-database-inline-table] [data-new-record-row] {
