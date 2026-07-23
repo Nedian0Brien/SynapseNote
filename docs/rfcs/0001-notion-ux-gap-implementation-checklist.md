@@ -271,7 +271,11 @@ treated as visual parity until a browser capture is attached.
   visual gate from DOM tests alone. The IPv4 browser capture proves the
   page-first table route, and the 2026-07-23 Electron capture proves the
   sidebar and empty-state routes converge on the canonical page without the
-  legacy admin chooser. Command-palette, slash, normal New-page, complete
+  legacy admin chooser. A bounded 2026-07-23 system-Chrome run now executes
+  the document-native journey file: the sidebar page-first case, slash inline
+  case, and linked-view/record continuity case each pass (the latter two were
+  rerun after stale locators and a missing saved-view fixture were corrected).
+  Command-palette, empty-state, the NewItemDialog type chooser, complete
   cross-host visual comparison, and manual interaction evidence remain open.
   Map to UX-112/UX-1101/UX-1102.
 
@@ -585,9 +589,12 @@ treated as visual parity until a browser capture is attached.
   direct-safe edit, agent proposal, and destructive review. The existing
   document-native journey now uses the contextual inline accessibility names;
   the primary journey file also switches to a saved List view and asserts the
-  title-based `Inspect context for record View task` affordance. Playwright
-  discovery lists all 3 primary tests; execution and full coverage remain open
-  pending a runnable browser host.
+  title-based `Inspect context for record View task` affordance. On
+  2026-07-23, the three document-native cases ran to green with installed
+  system Chrome (using a temporary no-video config because the Playwright
+  Chromium/ffmpeg cache is incomplete). Property/view configuration, direct
+  safe edit, agent proposal, destructive review, and full primary coverage
+  remain open.
 - [ ] **NUI-702** Run keyboard, screen-reader, contrast, 768px responsive, and
   reduced-motion checks on those same journeys.
 - [ ] **NUI-703** Run five uncoached first-use sessions. At least four users

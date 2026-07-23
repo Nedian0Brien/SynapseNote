@@ -81,6 +81,7 @@
 - Latest blank-identity/StrictMode changeset: `../../.changeset/notion-blank-database-identity.md`
 - Latest creation-retry changeset: `../../.changeset/notion-creation-retry.md`
 - Latest inline creation-retry changeset: `../../.changeset/inline-database-create-retry.md`
+- Latest bounded document-native journey test commit: `954bdcc4`
 
 ## Objective and completion rule
 
@@ -109,7 +110,7 @@ current direct table-first creation slice. The remaining visual/cross-host
 gates still must prove the new surface in a running app.
 
 The earlier 101/128 snapshot is structural evidence only. The current
-structural count is **112/128**; do not close
+structural count is **113/128**; do not close
 the remaining UX gates or describe the feature as Notion-parity complete until
 the following first-use flow is visually and interactively true:
 
@@ -343,7 +344,7 @@ Chromium executable, so no additional full E2E run was started.
   catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
   approval-bound commits, undo, and restart/backup idempotency. Agent View
   policy/privacy/sandbox review remains Partial by design.
-- Notion UX alignment checklist: **112/128 complete**. The page-first and normal
+- Notion UX alignment checklist: **113/128 complete**. The page-first and normal
   New-page creation slices, the inline/linked insertion contract, and the
   table-first direct-manipulation, named canonical workspace canvas-route,
   shared navigation without a duplicate canvas rail, sidebar/recent/search/
@@ -394,9 +395,12 @@ Chromium executable, so no additional full E2E run was started.
   deleting the canonical record. The follow-up slash-menu capture now proves
   `/database` and `/table` lead with `New database` and `Linked view of
   database`. A direct Electron dev fallback has reached the canonical table
-  once, but the complete post-fix Electron journey is not captured. Complete
-  linked state-matrix, accessibility, responsive, usability, performance, and
-  packaged-release evidence remain open.
+  once, but the complete post-fix Electron journey is not captured. A bounded
+  system-Chrome Playwright run on 2026-07-23 also exercised the sidebar
+  page-first, slash inline, and linked-view/record-continuity cases; each case
+  passed across focused runs. Complete linked state-matrix, accessibility,
+  responsive, usability, performance, and packaged-release evidence remain
+  open.
 - A-K, M-P are complete. L is complete except L-017. Q is complete except
   Q-012. R-005, R-017, and R-019 remain; R-018 is closed. S-010 and S-011
   are closed.
@@ -404,7 +408,7 @@ Chromium executable, so no additional full E2E run was started.
   v1 manifest/migration corpus, saved-view and typed Markdown/MDX record
   fixtures, a real MDX `DatabaseView` stable-reference block, descriptor dirty
   serialization, live block projection/reference writes, and database
-  last-opened route persistence. The structural UX count is **112/128**.
+  last-opened route persistence. The structural UX count is **113/128**.
 - The Context Inspector description was corrected to a block-level semantic
   container so expanded machine-ID details do not create invalid nested
   `<p>/<details>/<dl>` markup. Its focused DOM suite passes; manual keyboard and
@@ -2188,15 +2192,17 @@ their scope.
 
 The new primary-journey Playwright file is
 `packages/app/tests/stress/database-primary-journeys.e2e.ts`. It is typed and
-formatted. The checkout currently has no runnable Playwright Chromium binary:
-`bunx playwright install chromium` downloaded the archive but its macOS
-StreamingUnzip step hung and was terminated. The focused
-`database-document-native-journeys.e2e.ts` file was attempted once and failed
-before the app launched for that environment reason. A full browser rerun was
-deliberately avoided after the user requested that E2E not be run repeatedly;
-R-005 stays open until one complete run and an Electron capture are available.
-The in-app browser observation is useful visual evidence for the web shell, but
-it is not an E2E pass.
+formatted. The checkout still has no usable Playwright-managed Chromium/ffmpeg
+cache: `bunx playwright install chromium` downloaded the archive but its macOS
+post-download step hung and was terminated. The initial managed-browser
+attempt therefore failed before the app launched. To keep verification bounded,
+the document-native journey was then run with the installed system Chrome via a
+temporary no-video config. The sidebar page-first, slash inline, and linked
+view/record-continuity cases each passed across focused runs after stale test
+fixtures/assertions were corrected in `954bdcc4`. This is functional browser
+evidence only; primary-view coverage, visual/manual checks, and Electron
+capture remain required before closing R-005. Do not repeat the install/test
+loop until a browser-enabled runner or a later scoped change requires it.
 
 Commit `93411d21 test: cover alternate view title actions` extends
 `database-primary-journeys.e2e.ts` to assert `Inspect context for record View
@@ -2293,12 +2299,15 @@ This is functional recovery evidence only. Browser/Electron visual comparison,
 manual keyboard/screen-reader review, and first-use usability evidence remain
 open under NUI-105/NUI-701–NUI-705 and UX-009/UX-1101–UX-1114.
 
-The single planned browser-run attempt was also bounded: `bunx playwright
-install chromium` downloaded the archive but its post-download process stopped
-with only a partial cache after roughly two minutes, so it was interrupted and
-no E2E test was started. Do not repeat the install/test loop in this checkout
-until the Playwright cache/runtime issue is diagnosed or a browser-enabled
-runner is available.
+The Playwright-managed Chromium/ffmpeg install remains incomplete: the archive
+download reached completion, but its macOS post-download process stopped with a
+partial cache after roughly two minutes and was interrupted. The browser
+journey was still verified without repeating that install loop by reusing the
+installed system Chrome in a temporary no-video config. Each of the three
+cases in `packages/app/tests/stress/database-document-native-journeys.e2e.ts`
+passed across bounded runs (sidebar page-first, slash inline, and linked
+record continuity). Console warnings and visual/manual/Electron/release gates
+remain open; do not treat this as Notion parity sign-off.
 
 ## Work in progress: do this first
 
@@ -2340,10 +2349,11 @@ closed in the authoritative checklist.
 ### Tests, observability and evaluation
 
 - **R-005** — primary-view DOM and end-to-end journeys. DOM coverage now passes
-  for creation, diagnostics, Table, view manager, and all linked renderers. The
-  new document-native journey file is present, but execution is blocked by the
-  missing local Playwright browser binary; run it on a browser-enabled runner
-  before closing this item.
+  for creation, diagnostics, Table, view manager, and all linked renderers. A
+  bounded system-Chrome run passed all three cases in
+  `tests/stress/database-document-native-journeys.e2e.ts`; the complete
+  primary-view suite, accessibility suite, and Electron capture are still
+  required before closing this item.
 - **R-017** — >=90% prompt-to-valid-database creation without manual repair.
   The reusable evaluator and focused replay-shaped test now exist at
   `packages/server/src/database-creation-eval.ts` and
@@ -2411,10 +2421,12 @@ their broad evidence is actually assembled:
 
 ## Recommended execution order
 
-1. Run the new primary-journey Playwright file on a browser-enabled runner and
-   attach the first hosted R-019 workflow result. This should identify missing
-   tests instead of duplicating the existing 124 app DOM tests and many focused
-   recovery/race suites.
+1. When a browser-enabled runner is available, run only the new primary-journey
+   Playwright file and attach the first hosted R-019 workflow result. Do not
+   repeat the managed-browser install/test loop locally; the bounded
+   system-Chrome document-native evidence is already recorded. This should
+   identify missing tests instead of duplicating the existing 124 app DOM tests
+   and many focused recovery/race suites.
 2. Create the missing prompt-to-valid-database eval harness for R-017; record
    its threshold and held-out baseline in machine-readable output.
 3. Attach the first hosted run of the focused R-019 workflow, then perform the

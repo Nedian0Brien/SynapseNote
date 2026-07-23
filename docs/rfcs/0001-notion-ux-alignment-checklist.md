@@ -2197,11 +2197,13 @@ capability alone is insufficient.
 
 - [ ] **UX-1101** E2E full-page blank creation from the new-page flow. The
       focused journey is implemented in
-      `tests/stress/database-document-native-journeys.e2e.ts`; execution is
-      pending a Playwright Chromium runtime in this checkout.
+      `tests/stress/database-document-native-journeys.e2e.ts`. The sidebar
+      page-first creation case passed with system Chrome on 2026-07-23, while
+      the NewItemDialog `Page`/`Database` type-chooser path and visual/manual
+      parity evidence remain open.
 - [ ] **UX-1102** E2E `/database` inline creation. The focused journey is
       implemented in `tests/stress/database-document-native-journeys.e2e.ts`;
-      execution is pending the same browser runtime gate. A direct Electron
+      the slash inline case passed with system Chrome on 2026-07-23. A direct Electron
       renderer check also reached the ordinary document, opened `/database`,
       and rendered the inline creation shell after restoring the normal
       document body slot (`DatabaseRecordPageChrome.dom.test.tsx`). The
@@ -2213,8 +2215,10 @@ capability alone is insufficient.
       evidence remain open.
 - [ ] **UX-1103** E2E linked-view insertion for an existing database. The
       focused journey is implemented in
-      `tests/stress/database-document-native-journeys.e2e.ts`; execution is
-      pending the same browser runtime gate.
+      `tests/stress/database-document-native-journeys.e2e.ts`; linked-view
+      insertion plus row → peek → stable record route → return passed with
+      system Chrome on 2026-07-23. Visual comparison and manual interaction
+      evidence remain open.
 - [ ] **UX-1104** E2E row creation, typed cell editing, reload persistence, and
       undo.
 - [ ] **UX-1105** E2E property add/configure/reorder/hide and destructive delete
