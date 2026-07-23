@@ -196,10 +196,7 @@ test.describe('database primary browser journeys', () => {
     );
   });
 
-  test('creates and renames a saved view through the view manager', async ({
-    page,
-    api,
-  }) => {
+  test('creates and renames a saved view through the view manager', async ({ page, api }) => {
     const name = 'E2E Primary View Journey';
     await api.createDatabase({
       ...taskDatabase(name, 'e2e-primary-view'),
@@ -242,6 +239,45 @@ test.describe('database primary browser journeys', () => {
     });
     await renamedViewManager.getByRole('button', { name: 'Close' }).click();
     await expect(page.getByRole('tab', { name: 'Renamed list', exact: true })).toBeVisible({
+      timeout: 10_000,
+    });
+
+    await page.getByRole('button', { name: 'View options for Renamed list' }).click();
+    await page.getByRole('menuitem', { name: 'View settings' }).click();
+    const savedViewSettings = page.getByRole('dialog', { name: 'Saved view settings' });
+    await expect(savedViewSettings).toBeVisible();
+    await savedViewSettings.getByRole('button', { name: 'Add sort' }).click();
+    await expect(
+      savedViewSettings.getByRole('combobox', { name: 'Sort 1 property' }),
+    ).toBeVisible();
+    await savedViewSettings.getByRole('button', { name: 'Review view settings' }).click();
+    await expect(savedViewSettings).toHaveCount(0, { timeout: 10_000 });
+    await expect(page.getByTestId('database-save-indicator')).toHaveAttribute(
+      'data-database-save-state',
+      'saved',
+      { timeout: 10_000 },
+    );
+
+    await page.getByRole('button', { name: 'View options for Renamed list' }).click();
+    await page.getByRole('menuitem', { name: 'Duplicate' }).click();
+    await expect(page.getByRole('tab', { name: 'Renamed list copy', exact: true })).toBeVisible({
+      timeout: 10_000,
+    });
+
+    await page.getByRole('tab', { name: 'Renamed list copy', exact: true }).click();
+    await page.getByRole('button', { name: 'View options for Renamed list copy' }).click();
+    await page.getByRole('menuitem', { name: 'Move left' }).click();
+    const viewTabs = page.getByRole('navigation', { name: 'Database views' }).locator('fieldset');
+    await expect(viewTabs.nth(1)).toContainText('Renamed list copy', { timeout: 10_000 });
+    await expect(page.getByTestId('database-save-indicator')).toHaveAttribute(
+      'data-database-save-state',
+      'saved',
+      { timeout: 10_000 },
+    );
+
+    await page.getByRole('button', { name: 'View options for Renamed list copy' }).click();
+    await page.getByRole('menuitem', { name: 'Delete' }).click();
+    await expect(page.getByRole('tab', { name: 'Renamed list copy', exact: true })).toHaveCount(0, {
       timeout: 10_000,
     });
   });
