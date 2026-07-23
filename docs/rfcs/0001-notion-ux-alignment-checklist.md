@@ -190,6 +190,35 @@ remain open:
   page-first and inline slices; it does not prove Electron parity or the
   remaining visual/release gates.
 
+### Notion-first table surface implementation evidence (2026-07-23)
+
+The first implementation slice now enforces the product correction at the
+default entry surfaces:
+
+- `#database/new` uses a table-first page shell while the low-risk blank
+  mutation settles; the administration chooser remains available only from the
+  explicit database-management surface.
+- A fresh inline database intent renders an embedded table shell in the editor
+  flow before the blank mutation settles, with Title, `+` property, view tab,
+  and a `New page` row visible. Stable references replace the shell in place
+  after commit.
+- The canonical canvas hides `Create database`, `Open page`, archived-record
+  toggles, source/record-meaning copy, table layout/calculation controls, and
+  property type labels from the primary surface. Those capabilities remain
+  reachable through secondary menus or accessible semantics.
+
+Focused evidence (no repository-wide/server suite or broad E2E):
+
+- `NotionDatabaseCreationPage.dom.test.tsx`
+- `DatabaseTableDialog.dom.test.tsx` canonical canvas test
+- `DatabaseView.dom.test.tsx` inline table-first intent test
+- `component-items.test.ts` transient blank-create intent test
+- app `typecheck`
+
+This is implementation evidence only. The structural count remains **101/128**;
+no visual parity checkbox is closed until the running web/Electron journey
+confirms the same interaction and appearance.
+
 ## Follow-up browser evidence (2026-07-23)
 
 The IPv4 development server now serves the app at `http://127.0.0.1:5173/`.

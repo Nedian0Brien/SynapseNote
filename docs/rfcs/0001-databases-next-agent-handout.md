@@ -111,6 +111,24 @@ agent context, diagnostics, and review receipts must remain secondary
 progressive-disclosure surfaces. The captured regression image is
 `docs/rfcs/assets/0001-notion-ux-audit/06-current-new-database-screen.png`.
 
+### Implementation slice completed after the correction (2026-07-23)
+
+Three feature commits now move the default experience toward that grammar:
+
+- `19feafab feat: open databases with notion-first table` — full-page blank
+  creation shell, inline blank intent, and focused DOM/type evidence.
+- `29b14c72 feat: trim admin chrome from database canvas` — removes the most
+  DBMS-shaped controls from the primary canvas and keeps archived records in
+  the secondary menu.
+- `16e6805a feat: render inline databases table first` — shows the inline
+  Title/table/view/new-page shell before the blank mutation resolves.
+
+The follow-up table-control slice (`3c241c52`) also hides layout/calculation
+controls and property type labels from the Notion surface. These commits do
+not close visual UX gates: the structural count remains 101/128, and the
+running Electron/web journey still needs to confirm appearance, focus, and
+record peek/page behavior.
+
 ## Current status
 
 - Numbered A-S items: **310/335 complete (92.5%)**.
