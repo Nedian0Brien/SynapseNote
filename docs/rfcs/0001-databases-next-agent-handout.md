@@ -3007,6 +3007,17 @@ their broad evidence is actually assembled:
   view-shaped agent delivery; it does not close real-model, hosted CI, or
   usability gates.
 
+### 2026-07-23 Context Inspector tokenizer-aligned preview estimate
+
+- The local selected-field preview now estimates tokens with the captured
+  Context Pack tokenizer (`utf8_bytes_div2` or `utf8_bytes_div3`) instead of
+  always dividing UTF-8 bytes by three. The exact captured pack remains
+  unchanged; this only corrects the non-mutating preview metric.
+- Focused evidence: `DatabaseContextInspectorDialog.test.tsx` passes 7 tests /
+  29 expectations (including both tokenizer modes), the DOM suite passes 2
+  tests / 26 expectations, targeted Biome and app typecheck pass. Changeset:
+  `.changeset/context-inspector-token-estimate.md`.
+
 ## Recommended execution order
 
 1. When a browser-enabled runner is available, run only the new primary-journey
