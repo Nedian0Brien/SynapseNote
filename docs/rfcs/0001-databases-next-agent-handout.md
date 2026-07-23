@@ -15,6 +15,8 @@
 - Latest route-handoff feature commit: `8896e7bd`
 - Latest database-sidebar request-lifecycle commit: `02449e9b` (supersedes `226626cf` and `3d5713b0`)
 - Latest database-sidebar request-lifecycle changeset: `../../.changeset/database-sidebar-request-state.md`
+- Latest database-page semantics commit: `bcd078a0`
+- Latest database-page semantics changeset: `../../.changeset/database-page-semantic-surface.md`
 - Latest page-terminology changeset: `../../.changeset/notion-database-page-language.md`
 - Latest inline UX changeset: `../../.changeset/inline-database-focus.md`
 - Latest inline recovery changeset: `../../.changeset/inline-database-undo.md`
@@ -188,6 +190,20 @@ Two small continuity defects were closed in the running database surface:
 These commits improve navigation continuity and request resilience; they do
 not close the remaining cross-host visual, accessibility, usability, or release
 gates.
+
+### 2026-07-23 page-surface semantics slice
+
+`bcd078a0 fix: expose database pages as non-modal workspaces` separates the
+route-level page/canvas presentation from the compatibility management dialog.
+Page and canvas surfaces now use a non-modal Dialog primitive with an explicit
+`main` landmark; the internal workspace body becomes a plain `div` in those
+presentations so the document does not contain nested `main` landmarks. The
+legacy management presentation remains a modal dialog. The focused page-route
+DOM test passes 1 test / 35 expectations and asserts that no dialog role is
+exposed; the live IPv4 browser accessibility tree now reports `main
+"Untitled database"` beneath the editor shell. This corrects semantics and
+focus boundaries, but is not visual, responsive, manual screen-reader, or
+cross-host parity sign-off.
 
 ### Notion surface continuation (2026-07-23)
 

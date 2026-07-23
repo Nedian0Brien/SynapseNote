@@ -1077,6 +1077,18 @@ source instead of remaining on `Loading databases`. This closes UX-203.
 Normal page chrome and search/backlinks/relations entry points are evidenced
 above; responsive visual proof remains open under UX-1007.
 
+### Page-surface semantics evidence (2026-07-23)
+
+The canonical route-level database page and embedded canvas now use an explicit
+non-modal `main` landmark. The compatibility administration surface remains a
+modal dialog, but a normal Notion-style page no longer exposes `role="dialog"`
+or a nested `main` landmark in its database body. The focused
+`DatabaseTableDialog.dom.test.tsx` route test passes 1 test / 35 expectations,
+including the no-dialog assertion; the live IPv4 accessibility tree reports
+`main "Untitled database"` under the editor shell. This closes the semantic
+landmark portion of the page-surface contract; visual, responsive, manual
+screen-reader, and cross-host proof remain under UX-009 and UX-1101–UX-1114.
+
 ### Inline/full-page conversion evidence (2026-07-23)
 
 The linked-view action now writes the current `databaseId`, `sourceId`, and
