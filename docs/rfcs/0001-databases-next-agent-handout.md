@@ -3153,6 +3153,19 @@ their broad evidence is actually assembled:
   responsive, manual accessibility, cross-host, browser, hosted, or real-model
   gates.
 
+### 2026-07-23 Inline file tag treatment pass
+
+- Document-native File cells now use compact attachment tags with a paperclip,
+  file name, caption, and an explicit missing-local-file state. The direct file
+  editor and canonical/admin text projection remain unchanged.
+- Evidence: the bounded `DatabaseTableDialog.dom.test.tsx` slice passes the
+  inline file, people, relation, checkbox, select-tag, title, cell-menu, and
+  row-menu cases (8 tests / 38 expectations); targeted Biome, app typecheck,
+  and docs link validation pass.
+- This is attachment-density convergence only. Keep file-opening/thumbnail,
+  contrast/responsive, manual accessibility, cross-host, browser, hosted, and
+  real-model gates open.
+
 ## Recommended execution order
 
 1. When a browser-enabled runner is available, run only the new primary-journey

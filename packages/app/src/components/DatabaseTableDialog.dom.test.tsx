@@ -3046,6 +3046,50 @@ describe('DatabaseTableDialog', () => {
     expect(screen.getByLabelText('Edit Owners for page First task')).toBeTruthy();
   });
 
+  test('renders inline file values as page-property tags', () => {
+    const filesSource = {
+      ...source,
+      properties: [
+        source.properties[0],
+        {
+          id: 'prop_assets',
+          key: 'assets',
+          name: 'Assets',
+          type: 'files' as const,
+        },
+      ],
+    };
+    const filesResult = {
+      ...queryResult(),
+      fileStates: { 'assets/missing.pdf': 'missing' as const },
+      records: queryResult().records.map((record) => ({
+        ...record,
+        values: {
+          ...record.values,
+          prop_assets: [
+            { kind: 'local' as const, path: 'assets/missing.pdf', caption: 'Old caption' },
+            { kind: 'external' as const, url: 'https://cdn.example.com/demo.mp4', name: 'Demo' },
+          ],
+        },
+      })),
+    };
+    render(
+      <DatabaseTable source={filesSource} result={filesResult} notionSurface onEdit={() => {}} />,
+    );
+
+    const missingTag = document.querySelector<HTMLElement>(
+      '[data-database-property-file="prop_assets"][data-database-property-file-id="assets/missing.pdf"]',
+    );
+    const demoTag = document.querySelector<HTMLElement>(
+      '[data-database-property-file="prop_assets"][data-database-property-file-id="https://cdn.example.com/demo.mp4"]',
+    );
+    expect(missingTag?.textContent).toContain('missing.pdf (missing) — Old caption');
+    expect(missingTag?.className).toContain('border-dashed');
+    expect(demoTag?.textContent).toContain('Demo');
+    expect(demoTag?.className).toContain('rounded-md');
+    expect(screen.getByLabelText('Edit Assets for page First task')).toBeTruthy();
+  });
+
   test('renders inline checkbox properties as direct-safe toggles', async () => {
     const checkboxSource = {
       ...source,

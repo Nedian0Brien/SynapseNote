@@ -2418,6 +2418,20 @@ matrix.
   contrast, responsive behavior, manual accessibility, cross-host, usability,
   and full browser gates remain open.
 
+### Inline file tag treatment pass (2026-07-23)
+
+- Inline File values now render as compact attachment tags with a paperclip,
+  display name, caption, and explicit missing-local-file styling. The
+  existing file editor remains the direct click/Enter path, and canonical/
+  admin tables keep their existing text projection.
+- Focused DOM evidence: the bounded `DatabaseTableDialog.dom.test.tsx` slice
+  passes the inline file, people, relation, checkbox, select-tag, title,
+  cell-menu, and row-menu cases (8 tests / 38 expectations); targeted Biome,
+  app typecheck, and docs link validation pass.
+- This supports UX-009/UX-1105's attachment-density target. File opening,
+  thumbnail fidelity, contrast, responsive behavior, manual accessibility,
+  cross-host, usability, and full browser gates remain open.
+
 - [x] **UX-1001** Define keyboard order across title, tabs, controls, headers,
       cells, new row, and pagination. The canonical page DOM and focused table
       tests pin this progression, while arrow-key navigation handles the grid

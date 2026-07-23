@@ -24,6 +24,7 @@ import {
   DatabasePlaceValueSchema,
   databaseCalculationFunctionsForProperty,
   databaseFileDisplayName,
+  databaseFileIdentity,
   formatDatabaseDateValue,
   formatDatabaseNumber,
   formatDatabaseUniqueId,
@@ -693,6 +694,24 @@ function databaseInlinePersonValues(
         ? `${person.name}${person.kind === 'agent' ? ` (${personLabels.agent})` : ''}${person.active ? '' : ` (${personLabels.inactive})`}`
         : `${id} (unavailable)`,
       available: person !== undefined,
+    };
+  });
+}
+
+function databaseInlineFileValues(
+  value: unknown,
+  fileStates: Readonly<Record<string, 'available' | 'missing'>> = {},
+  missingFileLabel: string,
+): readonly { id: string; label: string; available: boolean }[] {
+  const parsed = DatabaseFilesValueSchema.safeParse(value);
+  if (!parsed.success) return [];
+  return parsed.data.map((file) => {
+    const identity = databaseFileIdentity(file);
+    const missing = file.kind === 'local' && fileStates[file.path] === 'missing';
+    return {
+      id: identity,
+      label: `${databaseFileDisplayName(file)}${missing ? ` (${missingFileLabel})` : ''}${file.caption ? ` — ${file.caption}` : ''}`,
+      available: !missing,
     };
   });
 }
@@ -3178,6 +3197,50 @@ export function DatabaseTable({
                               </Button>
                             ) : (
                               personTags
+                            );
+                          })()
+                        ) : notionSurface && property.type === 'files' ? (
+                          (() => {
+                            const fileValues = databaseInlineFileValues(
+                              shownValue,
+                              result.fileStates,
+                              missingFileLabel,
+                            );
+                            const fileTags =
+                              fileValues.length > 0 ? (
+                                <span className="flex min-w-0 flex-wrap gap-1">
+                                  {fileValues.map((file) => (
+                                    <span
+                                      key={file.id}
+                                      className={cn(
+                                        'inline-flex max-w-full items-center gap-1 rounded-md border border-border/60 bg-muted/60 px-1.5 py-0.5 font-sans text-xs normal-case tracking-normal',
+                                        !file.available &&
+                                          'border-dashed text-muted-foreground italic',
+                                      )}
+                                      title={file.label}
+                                      data-database-property-file={property.id}
+                                      data-database-property-file-id={file.id}
+                                    >
+                                      <Paperclip className="size-3 shrink-0" aria-hidden="true" />
+                                      <span className="truncate">{file.label}</span>
+                                    </span>
+                                  ))}
+                                </span>
+                              ) : (
+                                '—'
+                              );
+                            return onEdit && !ghostCreated ? (
+                              <Button
+                                variant="ghost"
+                                disabled={mutationLocked || proposed}
+                                className="h-auto max-w-full justify-start px-1 py-0.5 font-inherit"
+                                aria-label={`Edit ${property.name} for page ${recordLabel}`}
+                                onClick={() => beginEdit(record, property)}
+                              >
+                                {fileTags}
+                              </Button>
+                            ) : (
+                              fileTags
                             );
                           })()
                         ) : property.type === 'title' && onOpen ? (
