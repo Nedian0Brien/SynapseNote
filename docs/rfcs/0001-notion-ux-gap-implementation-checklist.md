@@ -498,6 +498,9 @@ treated as visual parity until a browser capture is attached.
   The required Title property follows the same canonical rename path while its
   stable identity, required type, position, and destructive-action guards stay
   intact; the administration manager remains conservative and marks it Frozen.
+  `Insert left` and `Insert right` reuse the table-edge picker and preserve both
+  source order and the active saved-view projection by stable key; inserting
+  before Title is disabled to keep the identity column first.
   The reviewed properties dialog continues to support stable-ID inline rename as
   well as the existing reorder/delete recovery path. Inline table blocks use a
   human direct-safe, undoable path for adding an empty common property from the

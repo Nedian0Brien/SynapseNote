@@ -627,8 +627,8 @@ Table schema management is now discoverable where users edit data. When the
 host exposes schema writers, a right-edge `Add property` action opens the
 canonical properties surface; otherwise the table stays read-only instead of
 showing a dead control. Every visible property header has one stable-ID menu
-with visibility, move left/right, calculation, context inspection,
-rename/configure, type conversion, duplicate, sort, filter, and
+with visibility, move left/right, insert left/right, calculation, context
+inspection, rename/configure, type conversion, duplicate, sort, filter, and
 dependency-aware delete actions. Sort and filter open the active view's
 existing settings while targeting the selected property; duplicate preserves
 the source property's typed configuration and lets the server mint a fresh
@@ -643,6 +643,11 @@ name, supports keyboard Enter/Escape, and commits through the same reviewed
 schema mutation callback without opening the administration dialog. The
 linked-view and non-Notion administration surfaces keep their existing
 manager handoff for the broader configure/reorder/delete workflow.
+
+`Insert left` and `Insert right` reuse the same name/type picker as the table
+edge `+`, then compile the new property into both source order and the active
+saved-view projection by stable key. Inserting to the left of Title is disabled
+so the required identity column remains first.
 
 The same surface now uses human-facing property type labels and examples
 (`Multi-select`, “Several choices from a list”, and so on) in the add-property
@@ -673,7 +678,9 @@ Focused evidence:
 
 - `DatabaseTableDialog.dom.test.tsx`: host-gated `Add property`, contextual
   header menu affordances, and canonical in-table property rename, including
-  Sort, Filter, and Duplicate dispatch.
+  Sort, Filter, Duplicate, and header-relative insertion dispatch.
+- `packages/app/src/lib/database-cell-mutation.test.ts`: source and active-view
+  projection order stays stable when a property is inserted before a header.
 - `DatabaseAdvancedFilterDialog.dom.test.tsx`: nested filter editing plus
   header-targeted property initialization (2 tests / 7 expectations).
 - `DatabaseSavedViewSettingsDialog.dom.test.tsx`: all active-view settings plus

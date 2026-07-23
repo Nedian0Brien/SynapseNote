@@ -2702,6 +2702,34 @@ the contextual-menu regression, the two rename tests, targeted Biome, and app
 typecheck all pass. This narrows a real Notion parity gap but does not close
 the full UX-1105/R-005 E2E, visual, accessibility, or release gates.
 
+### 2026-07-23 header-relative property insertion follow-up
+
+The canonical table header menu now exposes `Insert left` and `Insert right`
+when the host can write schema. Both actions reuse the existing name/type
+picker; after the menu dismisses, the picker records the target header and
+compiles the new property into source order plus the active saved-view
+projection using stable keys. Inserting left of Title is disabled so the
+required identity column remains first. The inline linked-view table passes
+the same insertion metadata into its direct-safe reviewed mutation path.
+
+Feature commit: `ab1b9832 feat: insert database properties beside table headers`.
+Changeset: `../../.changeset/notion-inline-property-insertion.md`.
+
+Focused evidence:
+
+- `DatabaseTableDialog.dom.test.tsx`: contextual menu and picker regression
+  proves `Insert left` emits the target property ID and keeps the existing
+  rename/property-picker journeys green.
+- `packages/app/src/lib/database-cell-mutation.test.ts`: insertion preserves
+  source order and active-view `propertyKeys` order.
+- Targeted Biome and app typecheck pass; no server-wide or repeated E2E run was
+  needed.
+
+This closes only header-relative insertion. Keep the full configure/reorder/
+hide/delete matrix, visual/Electron/manual accessibility, usability, agent,
+and release gates open. Preserve the ignored/local database artifact and do
+not stage or delete it.
+
 ## Work in progress: do this first
 
 `packages/core/src/database/property-invariants.test.ts` is now verified and
