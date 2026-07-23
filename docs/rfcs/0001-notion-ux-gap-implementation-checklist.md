@@ -17,12 +17,12 @@ unlike Notion for a human user.
 SynapseNote has a broad database engine and a strong safety/agent contract. The
 largest remaining mismatches are:
 
-1. The human creation path is still administration-shaped. `#database/new`
-   mounts a method chooser (Blank, Template, Existing folder, CSV/TSV, and
-   Assistant) over a database table shell. Even though the blank path can land
-   on an editable table, this is not the Notion interaction: the user must see
-   an ordinary page/block with a usable table first. The method chooser and
-   storage/agent details belong behind secondary actions.
+1. The primary blank human path is now page-first, but the secondary
+   administration surface still exposes the method chooser (Blank, Template,
+   Existing folder, CSV/TSV, and Assistant). That chooser is appropriate for
+   reviewed/import/agent work, not for the first interaction. The remaining
+   gap is to keep those advanced paths progressively disclosed while the
+   ordinary page/block opens with a usable table first.
 2. Database workspaces now resolve through sidebar, recent/search, backlinks,
    relations, and a stable page route. The remaining mismatch is visual
    convergence with ordinary document chrome plus complete cross-host capture;
@@ -43,10 +43,11 @@ largest remaining mismatches are:
    idempotent HTTP/MCP handoff, durable restart recovery, failed-run controls,
    and a progressive receipt; real model/agent replay remains unverified.
 6. Component coverage is broad, and the page-first web creation/table journey
-   is now captured on IPv4, but a complete first-use journey is still not
-   evidenced across both hosts. No Electron journey, full linked-view/record
-   journey, or release evidence has been captured; these remain release
-   blockers for NUI-105/NUI-701.
+   is captured on IPv4. A focused Electron dev journey now proves the sidebar
+   and empty-state entry points reach the canonical page without a leftover
+   admin dialog, but the complete cross-entrypoint journey, linked-view/record
+   journey, and release evidence remain open; these are still blockers for
+   NUI-105/NUI-701.
 
 ## Latest browser audit (2026-07-22)
 
@@ -113,10 +114,32 @@ document-native entry point:
   release gates remain open.
 
 This closes the browser evidence for the page-first creation slice, but it does
-not close NUI-105 or NUI-701–NUI-705: no Electron journey, normal New-page
+not close NUI-105 or NUI-701–NUI-705: the complete cross-entrypoint Electron
 journey, complete linked-view state matrix, accessibility or responsive
 capture, usability timing, performance budget, or packaged-release evidence
-was collected in this audit.
+is still outstanding.
+
+## Electron follow-up (2026-07-23)
+
+After the Mac was unlocked, the direct development Electron renderer was
+validated without running the slow repository-wide suite:
+
+- Sidebar toolbar `New database` entered the ephemeral `#database/new` route
+  and converged on a canonical `#database/<database>/<source>/<view>` page.
+- The empty-state `New database` action followed the same route and landed on
+  the same page surface.
+- The resulting accessibility tree exposed `Untitled database`, the `Table`
+  view, `New page`, `Add property`, `Filters`, and `View settings`; it did not
+  expose the legacy `Create database` method chooser.
+- A regression was found during this capture: the temporary Notion creator
+  left its nested reviewed form portaled after canonical navigation. Commit
+  `21a35284` clears the child creation state when the host closes it, and the
+  focused `DatabaseTableDialog` DOM regression test now covers that lifecycle.
+
+This is focused Electron evidence for two entry points, not closure of NUI-105:
+command-palette, slash, normal New-page, web/Electron visual comparison,
+manual accessibility, five-user usability, and performance/release gates still
+need their own evidence.
 
 ## Implemented in the current slice
 
@@ -126,8 +149,10 @@ treated as visual parity until a browser capture is attached.
 - [x] **NUI-001** Add `New database` to the command palette with search tokens
   for database/table/page language. Evidence: `CommandPalette.dom.test.tsx`.
 - [x] **NUI-002** Add `New database` to the sidebar toolbar and empty-space
-  context menu. Both dispatch `synapsenote:database-slash-command` with the
-  `new` detail. Evidence: `FileSidebar.dom.test.tsx`.
+  context menu. The embedded fallback dispatches
+  `synapsenote:database-slash-command` with the `new` detail, while the main
+  host can provide the same page route directly. Evidence:
+  `FileSidebar.dom.test.tsx`.
 - [x] **NUI-003** Add the same entry to onboarding and the empty-editor footer
   so a blank project does not require the command palette. Evidence:
   `PackCardGrid.dom.test.tsx` plus app typecheck.
@@ -225,11 +250,12 @@ treated as visual parity until a browser capture is attached.
   Map to UX-109/UX-111.
 - [ ] **NUI-105** Capture a running web and Electron journey for sidebar,
   empty-state, command-palette, slash, and New-page creation. Do not close a
-  visual gate from DOM tests alone. A live `127.0.0.1:5173` browser capture now
-  reaches the real shell and `Create database` surface after fixing the
-  development-compiler crash; it still shows the administration modal over the
-  editor rather than a finished Notion-style page/table journey, and no
-  Electron evidence exists. Map to UX-112/UX-1101/UX-1102.
+  visual gate from DOM tests alone. The IPv4 browser capture proves the
+  page-first table route, and the 2026-07-23 Electron capture proves the
+  sidebar and empty-state routes converge on the canonical page without the
+  legacy admin chooser. Command-palette, slash, normal New-page, complete
+  cross-host visual comparison, and manual interaction evidence remain open.
+  Map to UX-112/UX-1101/UX-1102.
 
 ## P0 — Integrate the workspace with normal navigation
 

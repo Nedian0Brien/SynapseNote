@@ -133,11 +133,10 @@ closed.
 The packaged Turbo Electron launch remains blocked at
 `@nedian0brien/synapse-native-config#build` because `@napi-rs/cli` cannot run
 `cargo metadata` in this checkout. A direct development Electron fallback can
-launch after rebuilding `packages/core`; it has reached the canonical table
-surface once, but that partial observation is not a complete NUI-105 journey.
-The latest post-fix capture attempt was stopped by the locked Mac. Treat this
-as an evidence blocker, not a failed Notion interaction, and do not repeat the
-full launch until the desktop is unlocked and the native-config path is
+launch after rebuilding `packages/core`; it has now provided focused live
+evidence for the sidebar and empty-state creation entries. Treat the packaged
+native-config failure separately from the working direct-dev renderer; do not
+spend iteration time repeating the full launch until that toolchain is
 available.
 
 ### Notion surface continuation (2026-07-23)
@@ -204,6 +203,28 @@ complete Notion visual parity. The primary acceptance flow remains:
 
 `new page or slash → page/block title → editable table → inline New page row →
 property/view controls → record peek/page`.
+
+### 2026-07-23 Electron entrypoint follow-up
+
+After the Mac was unlocked, the direct development Electron renderer was
+checked with the smallest affected UI actions:
+
+- Sidebar toolbar `New database` entered `#database/new` and converged on a
+  canonical `#database/<database>/<source>/<view>` page.
+- Empty-state `New database` used the same typed route and converged on the
+  same page surface.
+- The accessibility tree exposed `Untitled database`, `Table`, `New page`,
+  `Add property`, `Filters`, and `View settings`; the legacy `Create database`
+  method chooser was absent after the route transition.
+- The live check exposed a nested-form lifecycle bug: the temporary creator's
+  reviewed form remained portaled after canonical navigation. Commit
+  `21a35284 fix: keep notion database creation page on top` clears that child
+  state when its host closes, and the focused regression test passes.
+
+This is partial cross-host evidence, not closure of NUI-105. Command-palette,
+slash, normal New-page, visual comparison, manual accessibility, usability,
+performance, and packaged-release gates remain open. No full server suite or
+repeated E2E run was used.
 
 ## Current status
 

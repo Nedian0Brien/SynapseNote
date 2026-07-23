@@ -179,9 +179,10 @@ remain open:
   surface; responsive, accessibility, and cross-host proof remain separate
   gates.
 - `New database` is now reachable from the sidebar toolbar, empty-space context
-  menu, onboarding pack footer, empty-editor footer, and command palette. All
-  of those surfaces dispatch the same typed event, so the app opens one creation
-  flow instead of maintaining parallel writers.
+  menu, onboarding pack footer, empty-editor footer, and command palette. The
+  host-owned sidebar callback and event-based fallbacks converge on the same
+  typed page route, so the app opens one creation flow instead of maintaining
+  parallel writers.
 - Focused evidence passes in
   `packages/app/src/editor/slash-command/component-items.test.ts` and
   `packages/app/src/editor/components/DatabaseView.dom.test.tsx`; app
@@ -245,10 +246,21 @@ Evidence: commit `a1977f9c`, focused `DatabaseTableDialog.dom.test.tsx` canvas
 journey (18 expectations), app typecheck, and targeted Biome check. This
 closes no visual/cross-host gate; the structural count remains **112/128**.
 
-The one focused Electron launch attempt stopped before creating a window at
-`@nedian0brien/synapse-native-config#build`: `@napi-rs/cli` failed to run
-`cargo metadata`. NUI-105 therefore remains open pending the native-config
-toolchain repair and a real Electron capture.
+The packaged Turbo Electron launch remains blocked at
+`@nedian0brien/synapse-native-config#build`: `@napi-rs/cli` cannot run
+`cargo metadata` in this checkout. After the Mac was unlocked, a direct
+development Electron fallback provided focused live evidence: both the
+sidebar toolbar and empty-state `New database` actions converged on the
+canonical page route, exposing `Untitled database`, `Table`, `New page`,
+`Add property`, `Filters`, and `View settings` without a leftover `Create
+database` chooser. NUI-105 remains open because command-palette, slash,
+normal New-page, full visual cross-host comparison, and manual accessibility
+evidence are still missing.
+
+Commit `21a35284` also fixed a lifecycle regression found in that capture: the
+temporary Notion creator's nested reviewed form was still portaled after the
+canonical route mounted. The host now clears child creation state on close,
+with a focused `DatabaseTableDialog.dom.test.tsx` regression test.
 
 ### UX-0 and continuity evidence closure (2026-07-23)
 
