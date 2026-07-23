@@ -12,6 +12,9 @@
 - Latest primary-journey docs commit: `f6d1cfcd`
 - Latest primary-journey feature commit: `b79b1801`
 - Latest page-terminology feature commit: `33ad933c`
+- Latest route-handoff feature commit: `8896e7bd`
+- Latest database-sidebar request-lifecycle commit: `3d5713b0`
+- Latest database-sidebar request-lifecycle changeset: `../../.changeset/database-sidebar-load-lifecycle.md`
 - Latest page-terminology changeset: `../../.changeset/notion-database-page-language.md`
 - Latest inline UX changeset: `../../.changeset/inline-database-focus.md`
 - Latest inline recovery changeset: `../../.changeset/inline-database-undo.md`
@@ -153,6 +156,28 @@ evidence for the sidebar and empty-state creation entries. Treat the packaged
 native-config failure separately from the working direct-dev renderer; do not
 spend iteration time repeating the full launch until that toolchain is
 available.
+
+### 2026-07-23 navigation and sidebar continuity slice
+
+Two small continuity defects were closed in the running database surface:
+
+- `8896e7bd fix: close database surface on document navigation` dispatches a
+  shared route-navigation event from `replaceHashWithoutNavigation`. The
+  database page and App-level creation surface now unmount when a normal
+  document route replaces a canonical database hash; the focused DOM journey
+  and a live browser recheck showed the database grid disappears and the new
+  document route remains active.
+- `3d5713b0 fix: keep database sidebar catalog requests alive` removes the
+  translator-function identity from the catalog request effect and keeps the
+  current translator in a ref. The focused sidebar suite passes with an
+  intentionally fresh translator on every render, covering the lifecycle that
+  could abort an in-flight catalog request. A fresh host-level network capture
+  is still required before this counts toward NUI-105/UX-1101; the focused
+  test alone is not a visual-gate closure.
+
+These commits improve navigation continuity and request resilience; they do
+not close the remaining cross-host visual, accessibility, usability, or release
+gates.
 
 ### Notion surface continuation (2026-07-23)
 
