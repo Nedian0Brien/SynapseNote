@@ -652,9 +652,11 @@ human users must decode.
 
 Title is treated as the one required identity property: the schema rejects a
 missing, optional, or duplicate Title; the human surface marks it Frozen and
-disables rename, reorder, delete, and duplicate; and conversion explains why
-Title and derived properties need a broader migration instead of a local type
-change.
+keeps its position, type, delete, and duplicate actions protected; the
+canonical table header still permits changing its display name without changing
+the stable identity. The administration manager keeps the Frozen rename guard,
+and conversion explains why Title and derived properties need a broader
+migration instead of a local type change.
 
 Cell editing keeps type-specific controls at the point of entry: rich text,
 dates, files, places, relations, select/status, multi-select/person, checkbox,

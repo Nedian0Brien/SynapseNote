@@ -2654,10 +2654,10 @@ ignored/local database artifact created by the manual journey.
 
 ### 2026-07-23 canonical table-header property rename follow-up
 
-The Notion-style page surface now keeps the common property rename action in
-context. From a non-Title header's `Rename or configure property` menu item,
-the table opens a compact editor with the current visible name, keyboard
-Enter/Escape handling, and Save/Cancel actions. The reviewed
+The Notion-style page surface now keeps the property rename action in context.
+From any property header, including the required Title column, the `Rename or
+configure property` menu item opens a compact editor with the current visible
+name, keyboard Enter/Escape handling, and Save/Cancel actions. The reviewed
 `renameSchemaProperty` callback remains the only commit boundary, so the
 inline affordance does not bypass schema policy, stable IDs, or the existing
 undoable plan. The administration and linked-view surfaces retain their
@@ -2682,6 +2682,25 @@ configure/reorder/hide/delete matrix, Title policy decisions, visual parity,
 Electron/manual accessibility, usability, agent, and release gates open. The
 ignored/local database artifact from the manual journey remains intentionally
 untracked; do not stage or delete it.
+
+### 2026-07-23 required-title display-name parity follow-up
+
+The first inline rename slice intentionally preserved the existing Title guard,
+but the Notion property contract permits changing a title property's display
+name while keeping exactly one required `title`-typed property. The canonical
+table now enables that path: Title stays fixed as the identity column and
+cannot be moved, duplicated, deleted, or converted, while its name is edited
+through the same reviewed stable-ID schema callback. The administration
+properties dialog remains conservative and still marks Title Frozen.
+
+Feature commit: `a46aa98d feat: allow title property rename in table surface`.
+Changeset: `../../.changeset/notion-title-property-rename.md`.
+
+Focused evidence: `DatabaseTableDialog.dom.test.tsx` proves both a regular
+property rename and a Title display-name rename without opening the manager;
+the contextual-menu regression, the two rename tests, targeted Biome, and app
+typecheck all pass. This narrows a real Notion parity gap but does not close
+the full UX-1105/R-005 E2E, visual, accessibility, or release gates.
 
 ## Work in progress: do this first
 

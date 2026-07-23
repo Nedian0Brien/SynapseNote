@@ -495,6 +495,9 @@ treated as visual parity until a browser capture is attached.
   property` action now opens an in-table draft editor and commits through the
   reviewed schema mutation boundary; the broader configure/reorder/delete flows
   still open the canonical reviewed properties surface without exposing raw IDs.
+  The required Title property follows the same canonical rename path while its
+  stable identity, required type, position, and destructive-action guards stay
+  intact; the administration manager remains conservative and marks it Frozen.
   The reviewed properties dialog continues to support stable-ID inline rename as
   well as the existing reorder/delete recovery path. Inline table blocks use a
   human direct-safe, undoable path for adding an empty common property from the
