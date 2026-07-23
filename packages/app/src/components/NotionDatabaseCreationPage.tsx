@@ -34,6 +34,7 @@ export function NotionDatabaseCreationPage({
   const onCreatedRef = useRef(onCreated);
   const [status, setStatus] = useState<'creating' | 'error'>('creating');
   const [error, setError] = useState<string | null>(null);
+  const [retryNonce, setRetryNonce] = useState(0);
 
   // The parent workspace owns the navigation callback and may recreate it
   // while its surrounding shell re-renders. Keep the in-flight creation
@@ -78,7 +79,7 @@ export function NotionDatabaseCreationPage({
       {
         desiredState,
         actor: { principalId: policy.principalId },
-        idempotencyKey: `ui-notion-database-${crypto.randomUUID()}`,
+        idempotencyKey: `ui-notion-database-${retryNonce}-${crypto.randomUUID()}`,
         assertions: {
           databaseAbsent: true,
           createdRecords: desiredState.sampleRecords?.length ?? 0,
@@ -130,7 +131,7 @@ export function NotionDatabaseCreationPage({
         creationRequestRef.current = null;
       });
     };
-  }, [open]);
+  }, [open, retryNonce]);
 
   if (!open) return null;
 
@@ -138,6 +139,7 @@ export function NotionDatabaseCreationPage({
     <main
       className="fixed inset-0 z-40 overflow-y-auto bg-background text-foreground"
       aria-label="New database page"
+      aria-busy={status === 'creating'}
       data-notion-database-creation-page
       data-database-creation-state={status}
     >
@@ -227,7 +229,20 @@ export function NotionDatabaseCreationPage({
             className="mt-3 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-destructive text-sm"
             role="alert"
           >
-            {error}
+            <div>{error}</div>
+            <Button
+              className="mt-3"
+              type="button"
+              variant="outline"
+              data-testid="database-creation-retry"
+              onClick={() => {
+                setError(null);
+                setStatus('creating');
+                setRetryNonce((nonce) => nonce + 1);
+              }}
+            >
+              Retry
+            </Button>
           </div>
         )}
       </div>

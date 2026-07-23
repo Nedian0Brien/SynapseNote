@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, mock, test } from 'bun:test';
-import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { StrictMode } from 'react';
 import { NotionDatabaseCreationPage } from './NotionDatabaseCreationPage';
 
@@ -32,6 +32,9 @@ describe('NotionDatabaseCreationPage', () => {
     render(<NotionDatabaseCreationPage open onCreated={onCreated} onCancel={() => {}} />);
 
     expect(screen.getByRole('main', { name: 'New database page' })).toBeTruthy();
+    expect(screen.getByRole('main', { name: 'New database page' }).getAttribute('aria-busy')).toBe(
+      'true',
+    );
     expect(screen.getByRole('heading', { name: 'Untitled database' })).toBeTruthy();
     expect((screen.getByRole('button', { name: 'Table' }) as HTMLButtonElement).disabled).toBe(
       true,
@@ -59,6 +62,29 @@ describe('NotionDatabaseCreationPage', () => {
       )?.desiredState?.database?.key,
     ).toMatch(/^untitled_database_[a-z0-9_]+$/);
     expect(createMutation).toHaveBeenCalledTimes(1);
+  });
+
+  test('offers retry after a blank creation failure', async () => {
+    createMutation.mockImplementationOnce(() => Promise.reject(new Error('offline')));
+    const onCreated = mock(() => {});
+    render(<NotionDatabaseCreationPage open onCreated={onCreated} onCancel={() => {}} />);
+
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('offline'));
+    expect(screen.getByTestId('database-creation-retry')).toBeTruthy();
+    expect(screen.getByRole('main', { name: 'New database page' }).getAttribute('aria-busy')).toBe(
+      'false',
+    );
+
+    fireEvent.click(screen.getByTestId('database-creation-retry'));
+
+    await waitFor(() =>
+      expect(onCreated).toHaveBeenCalledWith({
+        databaseId: 'db_notion_blank',
+        sourceId: 'ds_notion_blank',
+        viewId: 'view_notion_blank',
+      }),
+    );
+    expect(createMutation).toHaveBeenCalledTimes(2);
   });
 
   test('keeps an in-flight creation alive when the navigation callback changes', async () => {
