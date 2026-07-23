@@ -23,11 +23,17 @@ import { expect, test } from './_helpers';
 
 async function openDatabasesDialog(page: Page) {
   await page.keyboard.press('ControlOrMeta+k');
-  const paletteInput = page.getByPlaceholder('Search files, folders, or commands');
-  await expect(paletteInput).toBeVisible({ timeout: 2_000 });
+  const palette = page.getByRole('dialog', { name: 'Workspace Command Palette' });
+  const paletteInput = palette.getByRole('combobox');
+  await expect(paletteInput).toBeVisible({ timeout: 5_000 });
   await paletteInput.fill('databases');
   await page.getByRole('option', { name: 'Open databases' }).click();
-  await expect(page.getByRole('heading', { name: 'Databases' })).toBeVisible({ timeout: 5_000 });
+  await expect(
+    page.getByRole('navigation', { name: 'Database breadcrumbs' }).getByRole('button', {
+      name: 'Databases',
+      exact: true,
+    }),
+  ).toBeVisible({ timeout: 5_000 });
 }
 
 async function openManageProperties(page: Page) {
@@ -75,8 +81,11 @@ test.describe('database schema property management', () => {
 
     await page.goto('/');
     await openDatabasesDialog(page);
-    await expect(page.getByText('E2E Manage Properties Add')).toBeVisible({ timeout: 10_000 });
-    await page.getByText('E2E Manage Properties Add').click();
+    const databaseNav = page.getByRole('navigation', { name: 'Databases' });
+    await expect(databaseNav.getByText('E2E Manage Properties Add', { exact: true })).toBeVisible({
+      timeout: 10_000,
+    });
+    await databaseNav.getByText('E2E Manage Properties Add', { exact: true }).click();
     await expect(page.getByRole('gridcell', { name: 'Seeded task' })).toBeVisible({
       timeout: 10_000,
     });
@@ -146,22 +155,39 @@ test.describe('database schema property management', () => {
 
     await page.goto('/');
     await openDatabasesDialog(page);
-    await page.getByText('E2E Manage Properties Delete').click();
-    await expect(page.getByRole('gridcell', { name: 'Todo' })).toBeVisible({ timeout: 10_000 });
+    await page
+      .getByRole('navigation', { name: 'Databases' })
+      .getByText('E2E Manage Properties Delete', { exact: true })
+      .click();
+    await expect(page.locator('[role="gridcell"] button').filter({ hasText: 'Todo' })).toBeVisible({
+      timeout: 10_000,
+    });
 
     // Commit 1: unset the value (record-only patch, property still exists).
     await openManageProperties(page);
     await page.getByRole('button', { name: 'Delete Status' }).click();
+    await page.getByRole('button', { name: 'Continue to review' }).click();
     await expect(page.getByText('PROPOSED · NOT SAVED')).toBeVisible({ timeout: 5_000 });
     await expect(page.getByText('Updates 1 canonical record(s)')).toBeVisible();
     await page.getByRole('button', { name: 'Commit change' }).click();
-    await expect(page.getByRole('gridcell', { name: 'Todo' })).toHaveCount(0, { timeout: 10_000 });
+    await expect(page.locator('[role="gridcell"] button').filter({ hasText: 'Todo' })).toHaveCount(
+      0,
+      {
+        timeout: 10_000,
+      },
+    );
+    await page
+      .getByRole('dialog', { name: 'Manage properties' })
+      .getByRole('button', { name: 'Close' })
+      .first()
+      .click();
 
     // Commit 2: a second, separate user action drops the now-unused
     // property from the schema. Zero records are affected, so this is a
     // single reviewed commit with no record-migration step.
     await openManageProperties(page);
     await page.getByRole('button', { name: 'Delete Status' }).click();
+    await page.getByRole('button', { name: 'Continue to review' }).click();
     await expect(page.getByText('PROPOSED · NOT SAVED')).toBeVisible({ timeout: 5_000 });
     await expect(page.getByText('Alters an existing canonical database schema')).toBeVisible();
     await page.getByRole('button', { name: 'Commit change' }).click();
