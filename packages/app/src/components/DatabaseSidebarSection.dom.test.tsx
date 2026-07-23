@@ -39,7 +39,13 @@ function PassThrough({ children, ...props }: { children?: ReactNode; [key: strin
 
 mock.module('@lingui/react/macro', () => ({
   Trans: ({ children }: { children?: ReactNode }) => <>{children}</>,
-  useLingui: () => ({ t: renderLinguiTemplate }),
+  // Return a fresh translator function on each render. This mirrors locale
+  // context updates closely enough to catch request effects that accidentally
+  // treat translator identity as a network dependency.
+  useLingui: () => ({
+    t: (strings: TemplateStringsArray | string, ...values: unknown[]) =>
+      renderLinguiTemplate(strings, ...values),
+  }),
 }));
 
 mock.module('@/components/ui/sidebar', () => ({

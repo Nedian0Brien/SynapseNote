@@ -1,6 +1,6 @@
 import { Trans, useLingui } from '@lingui/react/macro';
 import { ChevronRight, Database, Loader2, RefreshCw, Table2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { SidebarGroup, SidebarGroupLabel } from '@/components/ui/sidebar';
@@ -26,6 +26,12 @@ type LoadState = 'idle' | 'loading' | 'success' | 'error';
 export function DatabaseSidebarSection() {
   'use no memo';
   const { t } = useLingui();
+  // Lingui may provide a new translator function when the locale/catalog
+  // context re-renders. Keep the request effect independent from that
+  // presentation detail so a catalog fetch cannot be aborted mid-flight just
+  // because the surrounding app rendered again.
+  const translateRef = useRef(t);
+  translateRef.current = t;
   const [open, setOpen] = useState(() => databasePageTargetFromHash(window.location.hash) !== null);
   const [candidates, setCandidates] = useState<DatabaseCatalogCandidate[]>([]);
   const [loadState, setLoadState] = useState<LoadState>('idle');
@@ -64,11 +70,13 @@ export function DatabaseSidebarSection() {
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return;
-        setErrorMessage(error instanceof Error ? error.message : t`Could not load databases`);
+        setErrorMessage(
+          error instanceof Error ? error.message : translateRef.current`Could not load databases`,
+        );
         setLoadState('error');
       });
     return () => controller.abort();
-  }, [loadState, open, t]);
+  }, [loadState, open]);
 
   function openSource(databaseId: string, sourceId: string) {
     window.location.hash = databasePageTargetToHash({ databaseId, sourceId });
