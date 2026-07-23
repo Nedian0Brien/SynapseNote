@@ -242,6 +242,11 @@ Evidence: commit `a1977f9c`, focused `DatabaseTableDialog.dom.test.tsx` canvas
 journey (18 expectations), app typecheck, and targeted Biome check. This
 closes no visual/cross-host gate; the structural count remains **112/128**.
 
+The one focused Electron launch attempt stopped before creating a window at
+`@nedian0brien/synapse-native-config#build`: `@napi-rs/cli` failed to run
+`cargo metadata`. NUI-105 therefore remains open pending the native-config
+toolchain repair and a real Electron capture.
+
 ### UX-0 and continuity evidence closure (2026-07-23)
 
 The route, state, mutation, and continuity contracts are now backed by focused

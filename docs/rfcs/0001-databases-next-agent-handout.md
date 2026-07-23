@@ -128,6 +128,13 @@ This is a vocabulary and hierarchy correction, not evidence that visual,
 Electron, manual accessibility, usability, performance, or release gates are
 closed.
 
+The focused Electron launch was attempted once after this change. It did not
+reach an Electron window: Turbo stopped at
+`@nedian0brien/synapse-native-config#build` because `@napi-rs/cli` could not
+run `cargo metadata`. Treat this as an environment/toolchain blocker for
+NUI-105, not as a failed Notion interaction; do not repeat the full launch
+until the native-config Rust prerequisites are repaired.
+
 ### Notion surface continuation (2026-07-23)
 
 The follow-up implementation keeps the temporary creation shell honest and
