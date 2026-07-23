@@ -99,7 +99,7 @@
 - Latest blank-identity/StrictMode changeset: `../../.changeset/notion-blank-database-identity.md`
 - Latest creation-retry changeset: `../../.changeset/notion-creation-retry.md`
 - Latest inline creation-retry changeset: `../../.changeset/inline-database-create-retry.md`
-- Latest bounded document-native journey test commit: `954bdcc4`
+- Latest bounded document-native journey test commit: `917ee0f4`
 - Latest primary journey affordance commit: `b79b1801`
 - Latest primary journey affordance changeset: `../../.changeset/primary-database-journey-affordances.md`
 - Latest saved-view mutation journey test commit: `4f30e862`
@@ -562,7 +562,9 @@ and the remaining release gates stay open. Feature changeset:
   once, but the complete post-fix Electron journey is not captured. A bounded
   system-Chrome Playwright run on 2026-07-23 also exercised the sidebar
   page-first, slash inline, and linked-view/record-continuity cases; each case
-  passed across focused runs. Complete linked state-matrix, accessibility,
+  passed across focused runs. The journey file now additionally covers the
+  `New file → Database` entry point; it is included in the next bounded run
+  but has not been counted as passed yet. Complete linked state-matrix, accessibility,
   responsive, usability, performance, and packaged-release evidence remain
   open.
 - A-K, M-P are complete. L is complete except L-017. Q is complete except

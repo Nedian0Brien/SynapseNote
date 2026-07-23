@@ -2247,10 +2247,11 @@ capability alone is insufficient.
 
 - [ ] **UX-1101** E2E full-page blank creation from the new-page flow. The
       focused journey is implemented in
-      `tests/stress/database-document-native-journeys.e2e.ts`. The sidebar
-      page-first creation case passed with system Chrome on 2026-07-23, while
-      the NewItemDialog `Page`/`Database` type-chooser path and visual/manual
-      parity evidence remain open.
+      `tests/stress/database-document-native-journeys.e2e.ts`, including the
+      `New file → Database` type-chooser path. The sidebar page-first creation
+      case passed with system Chrome on 2026-07-23; the new type-chooser case
+      is queued for the next bounded run, and visual/manual parity evidence
+      remains open.
 - [ ] **UX-1102** E2E `/database` inline creation. The focused journey is
       implemented in `tests/stress/database-document-native-journeys.e2e.ts`;
       the slash inline case passed with system Chrome on 2026-07-23. A direct Electron
