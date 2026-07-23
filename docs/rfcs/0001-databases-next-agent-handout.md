@@ -307,16 +307,17 @@ DatabaseView slice passes 6 tests / 62 expectations. The changeset is
 ### 2026-07-23 Database workspace accessibility gate
 
 Commit `a80d9495 test: add database workspace accessibility gate` adds
-`packages/app/tests/a11y/database-primary.e2e.ts` with `DB-A11Y-01`. The test
-creates a canonical database through the plan/commit API, opens it through the
-normal `Databases` command-palette surface, waits for the rendered Table and
-title-based record action, then runs axe-core against the database workspace
-with WCAG 2.1 tags. Serious and critical violations are blocking; color
-contrast remains excluded from this automated slice because visual contrast is
-a separate cross-host/manual gate. Biome and app typecheck pass, and Playwright
-discovery lists one test. Execution is intentionally deferred: this checkout
-still lacks the Playwright Chromium executable, so no additional full E2E run
-was started.
+`packages/app/tests/a11y/database-primary.e2e.ts` with `DB-A11Y-01` and
+`DB-A11Y-02`. The first creates a canonical database through the plan/commit
+API, opens it through the normal `Databases` command-palette surface, waits for
+the rendered Table and title-based record action, and audits the workspace. The
+second creates an inline database through the document slash flow, saves a
+title-based row, and audits the ready linked Table. Both use WCAG 2.1 tags and
+block serious and critical violations; color contrast remains excluded from
+this automated slice because visual contrast is a separate cross-host/manual
+gate. Biome and app typecheck pass, and Playwright discovery lists two tests.
+Execution is intentionally deferred: this checkout still lacks the Playwright
+Chromium executable, so no additional full E2E run was started.
 
 ## Current status
 
