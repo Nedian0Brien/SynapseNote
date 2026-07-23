@@ -946,6 +946,7 @@ export function DatabaseTable({
   onConfigureComputedProperty,
   onConfigureUniqueIdProperty,
   onConfigurePlaceProperty,
+  onConfigureSelectProperty,
   onConvertProperty,
   onOpenPropertySort,
   onOpenPropertyFilter,
@@ -1012,6 +1013,7 @@ export function DatabaseTable({
     property: Extract<DatabaseProperty, { type: 'unique_id' }>,
   ) => void;
   onConfigurePlaceProperty?: (property: Extract<DatabaseProperty, { type: 'place' }>) => void;
+  onConfigureSelectProperty?: (property: DatabaseSelectProperty) => void;
   onConvertProperty?: (property: DatabaseProperty) => void;
   onOpenPropertySort?: (property: DatabaseProperty) => void;
   onOpenPropertyFilter?: (property: DatabaseProperty) => void;
@@ -2031,6 +2033,12 @@ export function DatabaseTable({
                         >
                           <Sparkles aria-hidden="true" />
                           <Trans>Ask agent about property</Trans>
+                        </DropdownMenuItem>
+                      ) : null}
+                      {isDatabaseSelectProperty(property) && onConfigureSelectProperty ? (
+                        <DropdownMenuItem onSelect={() => onConfigureSelectProperty(property)}>
+                          <Settings2 aria-hidden="true" />
+                          <Trans>Configure options</Trans>
                         </DropdownMenuItem>
                       ) : null}
                       <DropdownMenuItem
@@ -3643,6 +3651,7 @@ function DatabaseTableSurface({
   const [optionName, setOptionName] = useState('');
   const [optionColor, setOptionColor] = useState('');
   const [optionMergeTargetId, setOptionMergeTargetId] = useState('');
+  const [selectOptionsOpen, setSelectOptionsOpen] = useState(false);
   const [optionStatus, setOptionStatus] = useState<'idle' | 'loading'>('idle');
   const [computedPropertyId, setComputedPropertyId] = useState<string | null>(null);
   const [uniqueIdPropertyId, setUniqueIdPropertyId] = useState<string | null>(null);
@@ -5528,6 +5537,19 @@ function DatabaseTableSurface({
     (property) => property.id === optionPropertyId,
   );
   const selectedOption = selectedOptionProperty?.options.find((option) => option.id === optionId);
+  const openSelectOptions = (property: DatabaseSelectProperty) => {
+    const firstOption = property.options[0];
+    setOptionPropertyId(property.id);
+    setOptionId(firstOption?.id ?? '');
+    setOptionName(firstOption?.name ?? '');
+    setOptionColor(firstOption?.color ?? '');
+    setOptionMergeTargetId(
+      property.options.find((option) => option.id !== firstOption?.id && option.archived !== true)
+        ?.id ?? '',
+    );
+    setOptionPreview(null);
+    setSelectOptionsOpen(true);
+  };
   const computedProperty = description?.source?.properties.find(
     (property): property is Extract<DatabaseProperty, { type: 'formula' | 'rollup' }> =>
       property.id === computedPropertyId &&
@@ -6935,7 +6957,11 @@ function DatabaseTableSurface({
                   </div>
                 ) : null}
                 {selectedOptionProperty && selectedOption ? (
-                  <details className="rounded-md border bg-muted/10 p-3">
+                  <details
+                    open={selectOptionsOpen}
+                    onToggle={(event) => setSelectOptionsOpen(event.currentTarget.open)}
+                    className="rounded-md border bg-muted/10 p-3"
+                  >
                     <summary className="cursor-pointer font-medium text-sm">
                       <Trans>Manage Select options</Trans>
                     </summary>
@@ -8082,6 +8108,7 @@ function DatabaseTableSurface({
                     onConfigureComputedProperty={(property) => setComputedPropertyId(property.id)}
                     onConfigureUniqueIdProperty={(property) => setUniqueIdPropertyId(property.id)}
                     onConfigurePlaceProperty={(property) => setPlacePropertyId(property.id)}
+                    onConfigureSelectProperty={openSelectOptions}
                     onConvertProperty={(property) => setConversionPropertyId(property.id)}
                     onOpenPropertySort={(property) => {
                       setPropertySortTargetId(property.id);

@@ -2242,6 +2242,9 @@ export function DatabaseView({
                 }
                 onOpenAgentScope={openInlineAgentScope}
                 onAddProperty={addInlineProperty}
+                onConfigureSelectProperty={(property) =>
+                  openInlineDatabaseSurface('properties', property.id)
+                }
                 onManageProperties={(propertyId) =>
                   openInlineDatabaseSurface('properties', propertyId)
                 }

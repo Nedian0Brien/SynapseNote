@@ -979,6 +979,27 @@ describe('DatabaseTableDialog', () => {
     });
   });
 
+  test('exposes Select option configuration from the property header menu', async () => {
+    const onConfigureSelectProperty = mock(() => {});
+    const user = userEvent.setup();
+    render(
+      <DatabaseTable
+        databaseId={database.id}
+        source={source}
+        result={queryResult()}
+        notionSurface
+        onConfigureSelectProperty={onConfigureSelectProperty}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Property options for Status' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Configure options' }));
+
+    expect(onConfigureSelectProperty).toHaveBeenCalledWith(
+      source.properties.find((property) => property.id === 'prop_status'),
+    );
+  });
+
   test('renders first-match row colors and property-specific overrides with inspectable metadata', () => {
     render(
       <DatabaseTable
