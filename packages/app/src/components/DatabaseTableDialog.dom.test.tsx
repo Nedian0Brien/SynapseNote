@@ -3476,6 +3476,8 @@ describe('DatabaseTableDialog', () => {
     await screen.findByRole('grid');
     const workspace = document.querySelector('[data-database-page-workspace]');
     expect(workspace).not.toBeNull();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(workspace?.getAttribute('role')).toBe('main');
     expect(document.querySelector('[data-slot="dialog-overlay"]')).toBeNull();
     expect(document.querySelector('nav[aria-label="Databases"]')).not.toBeNull();
     expect(document.querySelector('[data-database-page-chrome]')?.textContent).toContain('Tasks');

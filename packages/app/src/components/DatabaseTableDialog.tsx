@@ -3377,6 +3377,7 @@ function DatabaseTableSurface({
   const { t } = useLingui();
   const isPagePresentation = presentation !== 'dialog';
   const isCanvasPresentation = presentation === 'canvas';
+  const WorkspaceBody = isPagePresentation ? 'div' : 'main';
   const itemNoun = isPagePresentation ? 'page' : 'record';
   const initialDatabaseId = initialTarget?.databaseId;
   const initialSourceId = initialTarget?.sourceId;
@@ -4251,9 +4252,7 @@ function DatabaseTableSurface({
       setMoveRecord(null);
       setMoveTargetSourceId('');
     } catch (cause) {
-      setMutationError(
-        classifyDatabaseUiProblem(cause, `Unable to prepare the ${itemNoun} move`),
-      );
+      setMutationError(classifyDatabaseUiProblem(cause, `Unable to prepare the ${itemNoun} move`));
     }
   };
 
@@ -5691,7 +5690,12 @@ function DatabaseTableSurface({
   return (
     <Dialog
       open={isPagePresentation ? true : open}
-      modal={!isCanvasPresentation}
+      // A route-level page must remain part of the document accessibility
+      // tree. Only the compatibility management surface is modal; the page
+      // and embedded canvas presentations are ordinary, non-modal workspace
+      // surfaces even though they reuse the Dialog primitives for headers,
+      // focus return, and nested reviewed controls.
+      modal={presentation === 'dialog'}
       // The canonical canvas is owned by DatabasePageRoute's hash. Keeping
       // this presentation root open prevents nested menu/sheet portals from
       // being interpreted as an outside dismissal; explicit breadcrumb
@@ -5702,6 +5706,7 @@ function DatabaseTableSurface({
         portal={!isCanvasPresentation}
         showOverlay={!isPagePresentation}
         showCloseButton={!isCanvasPresentation}
+        role={isPagePresentation ? 'main' : undefined}
         onPointerDownOutside={
           presentation === 'page' ? (event) => event.preventDefault() : undefined
         }
@@ -6050,7 +6055,7 @@ function DatabaseTableSurface({
               />
             </aside>
           ) : null}
-          <main
+          <WorkspaceBody
             className="min-w-0 p-3 sm:p-5"
             data-database-redo-available={lastRedoToken ? 'true' : 'false'}
             data-database-layout={selectedView?.layout.type ?? 'table'}
@@ -7975,7 +7980,7 @@ function DatabaseTableSurface({
                 ) : null}
               </div>
             ) : null}
-          </main>
+          </WorkspaceBody>
         </DialogBody>
       </DialogContent>
       {recordPeek && description?.source ? (
