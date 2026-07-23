@@ -159,7 +159,7 @@ function databaseRecordPageProblem(cause: unknown): DatabaseRecordPageProblem {
       : null;
   return {
     kind: status === 404 ? 'missing' : status === 403 ? 'permission' : 'error',
-    message: cause instanceof Error ? cause.message : 'The database record could not be loaded',
+    message: cause instanceof Error ? cause.message : 'The database page could not be loaded',
   };
 }
 
@@ -179,10 +179,10 @@ function DatabaseRecordPageStateNotice({
       <div>
         <p className="font-medium">
           {problem.kind === 'missing'
-            ? 'Record page is unavailable'
+            ? 'Page is unavailable'
             : problem.kind === 'permission'
               ? 'Permission required'
-              : 'Record page could not be loaded'}
+              : 'Page could not be loaded'}
         </p>
         <p className="text-muted-foreground">{problem.message}</p>
         {problem.kind === 'permission' ? (
@@ -359,7 +359,7 @@ export function DatabaseRecordPageChrome({
     void services
       .describe({ databaseId, sourceId }, { signal: controller.signal })
       .then((description) => {
-        if (!description.source) throw new Error('The record data source is unavailable');
+        if (!description.source) throw new Error('The page data source is unavailable');
         if (!description.source.properties.some((property) => property.type === 'title')) {
           throw new Error('The record data source has no Title property');
         }
@@ -594,7 +594,7 @@ export function DatabaseRecordPageChrome({
       });
       const expectedPath = `${docName}${docExt}`;
       if (lookup.record.path !== expectedPath) {
-        throw new Error('The open page no longer matches the canonical database record path');
+        throw new Error('The open page no longer matches the database page path');
       }
       const desiredState = createDatabaseCellMutationDesiredState({
         database: currentBinding.database,
@@ -609,7 +609,7 @@ export function DatabaseRecordPageChrome({
         idempotencyKey: `ui-record-page-${crypto.randomUUID()}`,
         review: (plan) =>
           services.confirm(
-            `Apply this ${property.name} change to the database record?\n\nExact plan: ${plan.id}\nPlan hash: ${plan.hash}`,
+            `Apply this ${property.name} change to the database page?\n\nExact plan: ${plan.id}\nPlan hash: ${plan.hash}`,
           ),
       });
       if (outcome.status === 'blocked') {
@@ -701,7 +701,7 @@ export function DatabaseRecordPageChrome({
         idempotencyKey: `ui-record-layout-${crypto.randomUUID()}`,
         review: (plan) =>
           services.confirm(
-            `Apply this record layout to the database source?\n\nExact plan: ${plan.id}\nPlan hash: ${plan.hash}`,
+            `Apply this page layout to the database source?\n\nExact plan: ${plan.id}\nPlan hash: ${plan.hash}`,
           ),
       });
       if (outcome.status === 'blocked') {
@@ -760,7 +760,7 @@ export function DatabaseRecordPageChrome({
         recordId: metadata.record_id,
       });
       if (record.record.path !== `${docName}${docExt}`) {
-        throw new Error('The open page no longer matches the canonical database record path');
+        throw new Error('The open page no longer matches the database page path');
       }
       const body = stripFrontmatter(provider.document.getText('source').toString()).body;
       const desiredState = createDatabaseRecordPageLayoutOverrideDesiredState({
@@ -783,7 +783,7 @@ export function DatabaseRecordPageChrome({
         setMutationConflict(outcome.plan);
         throw new Error(
           outcome.plan.conflicts.map((conflict) => conflict.message).join('\n') ||
-            'The record layout override is blocked by the current canonical state',
+            'The page layout override is blocked by the current database state',
         );
       }
       if (outcome.status === 'review_declined') return;
@@ -792,7 +792,7 @@ export function DatabaseRecordPageChrome({
     } catch (cause) {
       if (cause instanceof DatabasePlanExecutionError) setMutationConflict(cause.plan);
       setMutationError(
-        cause instanceof Error ? cause.message : 'Database record layout override failed',
+        cause instanceof Error ? cause.message : 'Database page layout override failed',
       );
     } finally {
       setLayoutMutationRunning(false);
@@ -899,7 +899,7 @@ export function DatabaseRecordPageChrome({
           problem={
             recordPageProblem ?? {
               kind: 'error',
-              message: binding.status === 'error' ? binding.message : 'The record is unavailable',
+              message: binding.status === 'error' ? binding.message : 'The page is unavailable',
             }
           }
           onBack={backToDatabase}
@@ -911,7 +911,7 @@ export function DatabaseRecordPageChrome({
           role="status"
           data-database-record-state="archived"
         >
-          <Trans>This record is archived. Restore it from More record actions.</Trans>
+          <Trans>This page is archived. Restore it from More page actions.</Trans>
         </p>
       ) : null}
       {!recordUnavailable && mutationConflict ? (
@@ -941,7 +941,7 @@ export function DatabaseRecordPageChrome({
                   disabled={recordNavigation.index === 0}
                   onClick={() => navigateToRecord(recordNavigation.index - 1)}
                 >
-                  Previous record
+                  Previous page
                 </Button>
                 <Button
                   type="button"
@@ -950,7 +950,7 @@ export function DatabaseRecordPageChrome({
                   disabled={recordNavigation.index === recordNavigation.paths.length - 1}
                   onClick={() => navigateToRecord(recordNavigation.index + 1)}
                 >
-                  Next record
+                  Next page
                 </Button>
                 <Button
                   type="button"
@@ -980,7 +980,7 @@ export function DatabaseRecordPageChrome({
               variant="ghost"
               onClick={() => setHistoryDialogOpen(true)}
             >
-              <History /> <Trans>Record history</Trans>
+              <History /> <Trans>Page history</Trans>
             </Button>
             <Button
               type="button"
@@ -1013,7 +1013,7 @@ export function DatabaseRecordPageChrome({
               disabled={layoutMutationRunning || mutationPropertyId !== null}
               onClick={() => setRecordLayoutDialogOpen(true)}
             >
-              <Settings2 /> <Trans>Customize this record</Trans>
+              <Settings2 /> <Trans>Customize this page</Trans>
             </Button>
             <Button
               type="button"
@@ -1030,7 +1030,7 @@ export function DatabaseRecordPageChrome({
                   type="button"
                   size="sm"
                   variant="ghost"
-                  aria-label="More record actions"
+                  aria-label="More page actions"
                   data-database-record-actions
                   disabled={recordActionRunning}
                 >
@@ -1039,10 +1039,10 @@ export function DatabaseRecordPageChrome({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>
-                  <Trans>Record actions</Trans>
+                  <Trans>Page actions</Trans>
                 </DropdownMenuLabel>
                 <DropdownMenuItem onSelect={() => void duplicateCurrentRecord()}>
-                  <Copy aria-hidden="true" /> <Trans>Duplicate record</Trans>
+                  <Copy aria-hidden="true" /> <Trans>Duplicate page</Trans>
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => void toggleArchiveCurrentRecord()}>
                   {currentRecord?.archivedAt ? (
@@ -1051,23 +1051,23 @@ export function DatabaseRecordPageChrome({
                     <Archive aria-hidden="true" />
                   )}
                   {currentRecord?.archivedAt ? (
-                    <Trans>Restore record</Trans>
+                    <Trans>Restore page</Trans>
                   ) : (
-                    <Trans>Archive record</Trans>
+                    <Trans>Archive page</Trans>
                   )}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   disabled={compatibleMoveTargets.length === 0}
                   onSelect={() => void openMoveDialog()}
                 >
-                  <MoveRight aria-hidden="true" /> <Trans>Move record</Trans>
+                  <MoveRight aria-hidden="true" /> <Trans>Move page</Trans>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   className="text-destructive"
                   onSelect={() => void deleteCurrentRecord()}
                 >
-                  <Trash2 aria-hidden="true" /> <Trans>Delete record</Trans>
+                  <Trash2 aria-hidden="true" /> <Trans>Delete page</Trans>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -1230,7 +1230,7 @@ export function DatabaseRecordPageChrome({
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>
-                <Trans>Move record</Trans>
+                <Trans>Move page</Trans>
               </DialogTitle>
               <DialogDescription>
                 <Trans>

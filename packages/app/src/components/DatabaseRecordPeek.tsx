@@ -77,6 +77,7 @@ function PeekBody({
   onNavigateRecord,
   recordNavigation,
   backlinksState,
+  notionSurface,
 }: {
   database: DatabaseDefinition;
   source: DatabaseSource;
@@ -90,6 +91,7 @@ function PeekBody({
   onNavigateRecord?: (path: string) => void;
   recordNavigation: DatabaseRecordNavigationState | null;
   backlinksState: BacklinksState;
+  notionSurface: boolean;
 }) {
   const titleProperty = source.properties.find((property) => property.type === 'title');
   const databaseHref = recordNavigation
@@ -185,7 +187,7 @@ function PeekBody({
                 onClick={() => navigateToRecord(recordNavigation.index - 1)}
                 data-database-record-navigation="previous"
               >
-                <Trans>Previous record</Trans>
+                {notionSurface ? <Trans>Previous page</Trans> : <Trans>Previous record</Trans>}
               </Button>
               <Button
                 type="button"
@@ -195,7 +197,7 @@ function PeekBody({
                 onClick={() => navigateToRecord(recordNavigation.index + 1)}
                 data-database-record-navigation="next"
               >
-                <Trans>Next record</Trans>
+                {notionSurface ? <Trans>Next page</Trans> : <Trans>Next record</Trans>}
               </Button>
             </>
           ) : null}
@@ -262,7 +264,12 @@ function PeekBody({
             className="flex min-h-40 items-center justify-center text-muted-foreground text-sm"
             role="status"
           >
-            <Loader2 className="mr-2 size-4 animate-spin" /> <Trans>Loading record body</Trans>
+            <Loader2 className="mr-2 size-4 animate-spin" />
+            {notionSurface ? (
+              <Trans>Loading page content</Trans>
+            ) : (
+              <Trans>Loading record body</Trans>
+            )}
           </div>
         ) : state.status === 'error' ? (
           <p
@@ -276,7 +283,7 @@ function PeekBody({
             className="whitespace-pre-wrap break-words font-sans text-sm leading-7"
             data-record-body
           >
-            {state.body || 'No body content'}
+            {state.body || (notionSurface ? 'No page content' : 'No body content')}
           </pre>
         )}
       </div>
@@ -292,6 +299,7 @@ export function DatabaseRecordPeek({
   onClose,
   onOpenFull,
   onNavigateRecord,
+  notionSurface = false,
 }: {
   mode: 'side_peek' | 'center_peek';
   database: DatabaseDefinition;
@@ -300,6 +308,7 @@ export function DatabaseRecordPeek({
   onClose: () => void;
   onOpenFull: () => void;
   onNavigateRecord?: (path: string) => void;
+  notionSurface?: boolean;
 }) {
   const [state, setState] = useState<PeekState>({ status: 'loading' });
   const [backlinksState, setBacklinksState] = useState<BacklinksState>({
@@ -324,7 +333,11 @@ export function DatabaseRecordPeek({
     })
       .then(async (response) => {
         const payload: unknown = await response.json();
-        if (!response.ok) throw new Error('Unable to load the canonical record document');
+        if (!response.ok) {
+          throw new Error(
+            notionSurface ? 'Unable to load the database page document' : 'Unable to load the canonical record document',
+          );
+        }
         const document = DocumentReadSuccessSchema.parse(payload);
         const frontmatter = readFmRegionWithError(document.content).map;
         setState({
@@ -338,11 +351,15 @@ export function DatabaseRecordPeek({
         if (!controller.signal.aborted)
           setState({
             status: 'error',
-            message: cause instanceof Error ? cause.message : 'Unable to load record body',
+            message: cause instanceof Error
+              ? cause.message
+              : notionSurface
+                ? 'Unable to load page content'
+                : 'Unable to load record body',
           });
       });
     return () => controller.abort();
-  }, [docName]);
+  }, [docName, notionSurface]);
   useEffect(() => {
     const controller = new AbortController();
     setBacklinksState({ status: 'loading', entries: [] });
@@ -392,6 +409,7 @@ export function DatabaseRecordPeek({
         }}
         recordNavigation={recordNavigation}
         backlinksState={backlinksState}
+        notionSurface={notionSurface}
       />
     </DatabaseRecordPageSurface>
   );
@@ -435,9 +453,11 @@ export function DatabaseRecordPeek({
             aria-describedby="database-side-peek-description"
           >
             <SheetHeader className="sr-only">
-              <SheetTitle>Database record</SheetTitle>
+              <SheetTitle>{notionSurface ? 'Database page' : 'Database record'}</SheetTitle>
               <SheetDescription id="database-side-peek-description">
-                Preview the canonical database record beside its view.
+                {notionSurface
+                  ? 'Preview the database page beside its view.'
+                  : 'Preview the canonical database record beside its view.'}
               </SheetDescription>
             </SheetHeader>
             {body}
@@ -452,9 +472,11 @@ export function DatabaseRecordPeek({
       <Dialog open onOpenChange={(open) => !open && onClose()}>
         <DialogContent className="h-[min(48rem,calc(100dvh-2rem))] sm:max-w-3xl">
           <DialogHeader className="sr-only">
-            <DialogTitle>Database record</DialogTitle>
+            <DialogTitle>{notionSurface ? 'Database page' : 'Database record'}</DialogTitle>
             <DialogDescription>
-              Preview the canonical database record in a focused dialog.
+              {notionSurface
+                ? 'Preview the database page in a focused dialog.'
+                : 'Preview the canonical database record in a focused dialog.'}
             </DialogDescription>
           </DialogHeader>
           <DialogBody className="flex min-h-0 flex-1 flex-col overflow-hidden p-0">

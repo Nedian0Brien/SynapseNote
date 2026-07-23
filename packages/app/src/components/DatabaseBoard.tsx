@@ -210,6 +210,7 @@ export function DatabaseBoard({
   result,
   people = result.people ?? [],
   relationRecords = result.relationRecords ?? [],
+  notionSurface = false,
   mutationLocked = false,
   onOpen,
   onOpenContextInspector,
@@ -224,6 +225,7 @@ export function DatabaseBoard({
   result: DatabaseQueryResult;
   people?: readonly ProjectedDatabasePerson[];
   relationRecords?: readonly ProjectedDatabaseRelationRecord[];
+  notionSurface?: boolean;
   mutationLocked?: boolean;
   onOpen?: (record: ProjectedDatabaseRecord) => void;
   onOpenContextInspector?: (record: ProjectedDatabaseRecord) => void;
@@ -242,6 +244,9 @@ export function DatabaseBoard({
   const [announcement, setAnnouncement] = useState('');
   if (view.layout.type !== 'board') return null;
   const configuration = view.layout.configuration;
+  const itemNoun = notionSurface ? 'page' : 'record';
+  const itemNounTitle = notionSurface ? 'Page' : 'Record';
+  const itemNounPlural = notionSurface ? 'pages' : 'records';
   const primary = view.groups[0];
   const subgroup = view.groups[1];
   const primaryProperty = source.properties.find((property) => property.id === primary?.propertyId);
@@ -341,7 +346,15 @@ export function DatabaseBoard({
             ]
           : []),
       ];
-      setAnnouncement(`Moved record ${record.id} to ${targetLabels.join(', ')}`);
+      const movedTitle = titleProperty
+        ? propertyValueLabel(
+            titleProperty,
+            record.values[titleProperty.id],
+            people,
+            relationRecords,
+          )
+        : 'Untitled';
+      setAnnouncement(`Moved ${itemNoun} ${movedTitle} to ${targetLabels.join(', ')}`);
     }
   };
 
@@ -430,7 +443,10 @@ export function DatabaseBoard({
                       {exactGroup?.matched ?? cards.length}
                     </span>
                   </header>
-                  <ul className="list-none space-y-2" aria-label={`${column.label} records`}>
+                  <ul
+                    className="list-none space-y-2"
+                    aria-label={`${column.label} ${itemNounPlural}`}
+                  >
                     {shown.map(({ record, membership }, cardIndex) => {
                       const recordTitle = propertyValueLabel(
                         titleProperty ?? primaryProperty,
@@ -463,7 +479,7 @@ export function DatabaseBoard({
                             (!subgroupProperty || canTransition(subgroupProperty))
                           }
                           data-board-card={record.id}
-                          aria-label={`Record ${recordTitle}`}
+                          aria-label={`${itemNounTitle} ${recordTitle}`}
                           aria-posinset={cardIndex + 1}
                           aria-setsize={exactGroup?.matched ?? cards.length}
                           data-conditional-color={pageRule?.color}
@@ -507,7 +523,7 @@ export function DatabaseBoard({
                                   type="button"
                                   variant="ghost"
                                   size="icon-xs"
-                                  aria-label={`Open record ${recordTitle}`}
+                                  aria-label={`Open ${itemNoun} ${recordTitle}`}
                                   onClick={() => onOpen(record)}
                                 >
                                   <ExternalLink />
@@ -548,7 +564,7 @@ export function DatabaseBoard({
                               >
                                 <SelectTrigger
                                   size="sm"
-                                  aria-label={`Move record ${recordTitle} to group`}
+                                  aria-label={`Move ${itemNoun} ${recordTitle} to group`}
                                   className="w-full"
                                 >
                                   <SelectValue />
@@ -568,7 +584,7 @@ export function DatabaseBoard({
                                   type="button"
                                   variant="ghost"
                                   size="icon-xs"
-                                  aria-label={`Duplicate record ${recordTitle}`}
+                                  aria-label={`Duplicate ${itemNoun} ${recordTitle}`}
                                   disabled={mutationLocked}
                                   onClick={() => onDuplicate(record)}
                                 >
@@ -580,7 +596,7 @@ export function DatabaseBoard({
                                   type="button"
                                   variant="ghost"
                                   size="icon-xs"
-                                  aria-label={`Move record ${recordTitle} to source`}
+                                  aria-label={`Move ${itemNoun} ${recordTitle} to source`}
                                   disabled={mutationLocked}
                                   onClick={() => onRequestMove(record)}
                                 >
@@ -592,7 +608,7 @@ export function DatabaseBoard({
                                   type="button"
                                   variant="ghost"
                                   size="icon-xs"
-                                  aria-label={`Inspect context for record ${recordTitle}`}
+                                  aria-label={`Inspect context for ${itemNoun} ${recordTitle}`}
                                   disabled={mutationLocked}
                                   onClick={() => onOpenContextInspector(record)}
                                 >
@@ -604,7 +620,7 @@ export function DatabaseBoard({
                                   type="button"
                                   variant="ghost"
                                   size="icon-xs"
-                                  aria-label={`${record.archivedAt ? 'Restore' : 'Archive'} record ${recordTitle}`}
+                                  aria-label={`${record.archivedAt ? 'Restore' : 'Archive'} ${itemNoun} ${recordTitle}`}
                                   disabled={mutationLocked}
                                   onClick={() =>
                                     onArchive(record, record.archivedAt ? 'restore' : 'archive')
@@ -618,7 +634,7 @@ export function DatabaseBoard({
                                   type="button"
                                   variant="ghost"
                                   size="icon-xs"
-                                  aria-label={`Delete record ${recordTitle}`}
+                                  aria-label={`Delete ${itemNoun} ${recordTitle}`}
                                   disabled={mutationLocked}
                                   onClick={() => onDelete(record)}
                                 >

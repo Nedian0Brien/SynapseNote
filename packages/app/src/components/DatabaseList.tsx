@@ -150,6 +150,7 @@ export function DatabaseList({
   result,
   people = result.people ?? [],
   relationRecords = result.relationRecords ?? [],
+  notionSurface = false,
   onOpen,
   onOpenContextInspector,
 }: {
@@ -158,6 +159,7 @@ export function DatabaseList({
   result: DatabaseQueryResult;
   people?: readonly ProjectedDatabasePerson[];
   relationRecords?: readonly ProjectedDatabaseRelationRecord[];
+  notionSurface?: boolean;
   onOpen?: (record: ProjectedDatabaseRecord) => void;
   onOpenContextInspector?: (record: ProjectedDatabaseRecord) => void;
 }) {
@@ -166,6 +168,7 @@ export function DatabaseList({
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(() => new Set());
   if (view.layout.type !== 'list') return null;
   const configuration = view.layout.configuration;
+  const itemNoun = notionSurface ? 'page' : 'record';
   const parentPropertyId =
     configuration.hierarchy.type === 'parent_relation'
       ? configuration.hierarchy.propertyId
@@ -344,7 +347,7 @@ export function DatabaseList({
                           type="button"
                           variant="ghost"
                           size="icon-xs"
-                          aria-label={`Inspect context for record ${title(source, row.record)}`}
+                          aria-label={`Inspect context for ${itemNoun} ${title(source, row.record)}`}
                           onClick={(event) => {
                             event.stopPropagation();
                             onOpenContextInspector(row.record);
@@ -362,7 +365,11 @@ export function DatabaseList({
       })}
       {result.records.length === 0 ? (
         <p className="p-6 text-center text-muted-foreground text-sm">
-          <Trans>No records in this list.</Trans>
+          {notionSurface ? (
+            <Trans>No pages in this list.</Trans>
+          ) : (
+            <Trans>No records in this list.</Trans>
+          )}
         </p>
       ) : null}
     </div>

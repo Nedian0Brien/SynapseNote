@@ -176,7 +176,7 @@ test.describe('database primary browser journeys', () => {
     );
 
     const renamedRow = page.locator('tr[data-record-id]').filter({ hasText: 'Renamed task' });
-    await renamedRow.getByRole('button', { name: 'Open record Renamed task' }).click();
+    await renamedRow.getByRole('button', { name: 'Open page Renamed task' }).click();
     const recordPeek = page.locator('[data-slot="sheet-content"]');
     await expect(recordPeek).toBeVisible({ timeout: 10_000 });
     await recordPeek.getByRole('button', { name: 'Open full page' }).click();
@@ -206,11 +206,11 @@ test.describe('database primary browser journeys', () => {
     const rows = page.locator('tr[data-record-id]');
     await rows
       .nth(0)
-      .getByRole('checkbox', { name: /Select record/ })
+      .getByRole('checkbox', { name: /Select page/ })
       .click();
     await rows
       .nth(1)
-      .getByRole('checkbox', { name: /Select record/ })
+      .getByRole('checkbox', { name: /Select page/ })
       .click();
     await expect(page.getByTestId('database-bulk-toolbar')).toBeVisible();
 

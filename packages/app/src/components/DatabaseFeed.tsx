@@ -53,6 +53,7 @@ export function DatabaseFeed({
   view,
   result,
   people = result.people ?? [],
+  notionSurface = false,
   onOpen,
   onOpenContextInspector,
 }: {
@@ -60,6 +61,7 @@ export function DatabaseFeed({
   view: DatabaseView;
   result: DatabaseQueryResult;
   people?: readonly ProjectedDatabasePerson[];
+  notionSurface?: boolean;
   onOpen?: (record: ProjectedDatabaseRecord) => void;
   onOpenContextInspector?: (record: ProjectedDatabaseRecord) => void;
 }) {
@@ -67,6 +69,7 @@ export function DatabaseFeed({
   const [read, setRead] = useState<Set<string>>(() => initialRead(view.id));
   if (view.layout.type !== 'feed') return null;
   const configuration = view.layout.configuration;
+  const itemNoun = notionSurface ? 'page' : 'record';
   const titleProperty = source.properties.find((property) => property.type === 'title');
   const chronologyProperty = source.properties.find(
     (property) => property.id === configuration.chronologyPropertyId,
@@ -162,7 +165,7 @@ export function DatabaseFeed({
                 type="button"
                 size="icon-sm"
                 variant="ghost"
-                aria-label={`Open record ${valueText(record.values[titleProperty.id])}`}
+                aria-label={`Open ${itemNoun} ${valueText(record.values[titleProperty.id])}`}
                 onClick={() => open(record)}
               >
                 <ExternalLink />
@@ -172,7 +175,7 @@ export function DatabaseFeed({
                   type="button"
                   size="icon-sm"
                   variant="ghost"
-                  aria-label={`Inspect context for record ${valueText(record.values[titleProperty.id])}`}
+                  aria-label={`Inspect context for ${itemNoun} ${valueText(record.values[titleProperty.id])}`}
                   onClick={() => onOpenContextInspector(record)}
                 >
                   <Braces aria-hidden="true" />
@@ -205,7 +208,11 @@ export function DatabaseFeed({
       })}
       {result.records.length === 0 ? (
         <p className="rounded border border-dashed p-8 text-center text-muted-foreground text-sm">
-          <Trans>No feed items match this view.</Trans>
+          {notionSurface ? (
+            <Trans>No pages match this view.</Trans>
+          ) : (
+            <Trans>No feed items match this view.</Trans>
+          )}
         </p>
       ) : null}
       {!result.isComplete ? (

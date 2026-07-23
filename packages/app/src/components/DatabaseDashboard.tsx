@@ -41,11 +41,13 @@ function DashboardTableWidget({
   source,
   view,
   result,
+  notionSurface,
   onOpen,
 }: {
   source: DatabaseSource;
   view: DatabaseView;
   result: DatabaseQueryResult;
+  notionSurface: boolean;
   onOpen: (record: ProjectedDatabaseRecord) => void;
 }) {
   const properties = view.projection.propertyIds
@@ -91,12 +93,14 @@ function DashboardTableWidget({
         </tbody>
       </table>
       {result.records.length === 0 ? (
-        <p className="p-6 text-center text-muted-foreground text-sm">No matching records</p>
+        <p className="p-6 text-center text-muted-foreground text-sm">
+          {notionSurface ? 'No matching pages' : 'No matching records'}
+        </p>
       ) : null}
       {!result.isComplete ? (
         <p className="p-2 text-muted-foreground text-xs">
-          Showing {result.returned.toLocaleString()} of {result.matched.toLocaleString()} matching
-          records
+          Showing {result.returned.toLocaleString()} of {result.matched.toLocaleString()} matching{' '}
+          {notionSurface ? 'pages' : 'records'}
         </p>
       ) : null}
     </div>
@@ -111,6 +115,7 @@ function DashboardWidget({
   filters,
   linkedFilters,
   refreshToken,
+  notionSurface,
   selectedRecord,
   onSelect,
   onOpen,
@@ -122,6 +127,7 @@ function DashboardWidget({
   filters: readonly DatabaseFilter[];
   linkedFilters: readonly DatabaseFilter[];
   refreshToken: number;
+  notionSurface: boolean;
   selectedRecord?: ProjectedDatabaseRecord;
   onSelect: (record: ProjectedDatabaseRecord) => void;
   onOpen?: (record: ProjectedDatabaseRecord) => void;
@@ -215,6 +221,7 @@ function DashboardWidget({
             source={source}
             view={view}
             result={state.result}
+            notionSurface={notionSurface}
             mutationLocked
             onOpen={open}
           />
@@ -223,6 +230,7 @@ function DashboardWidget({
             source={source}
             view={view}
             result={state.result}
+            notionSurface={notionSurface}
             mutationLocked
             onOpen={open}
           />
@@ -231,21 +239,58 @@ function DashboardWidget({
             source={source}
             view={view}
             result={state.result}
+            notionSurface={notionSurface}
             mutationLocked
             onOpen={open}
           />
         ) : view.layout.type === 'list' ? (
-          <DatabaseList source={source} view={view} result={state.result} onOpen={open} />
+          <DatabaseList
+            source={source}
+            view={view}
+            result={state.result}
+            notionSurface={notionSurface}
+            onOpen={open}
+          />
         ) : view.layout.type === 'gallery' ? (
-          <DatabaseGallery source={source} view={view} result={state.result} onOpen={open} />
+          <DatabaseGallery
+            source={source}
+            view={view}
+            result={state.result}
+            notionSurface={notionSurface}
+            onOpen={open}
+          />
         ) : view.layout.type === 'chart' ? (
-          <DatabaseChart source={source} view={view} result={state.result} onOpen={open} />
+          <DatabaseChart
+            source={source}
+            view={view}
+            result={state.result}
+            notionSurface={notionSurface}
+            onOpen={open}
+          />
         ) : view.layout.type === 'map' ? (
-          <DatabaseMap source={source} view={view} result={state.result} onOpen={open} />
+          <DatabaseMap
+            source={source}
+            view={view}
+            result={state.result}
+            notionSurface={notionSurface}
+            onOpen={open}
+          />
         ) : view.layout.type === 'feed' ? (
-          <DatabaseFeed source={source} view={view} result={state.result} onOpen={open} />
+          <DatabaseFeed
+            source={source}
+            view={view}
+            result={state.result}
+            notionSurface={notionSurface}
+            onOpen={open}
+          />
         ) : (
-          <DashboardTableWidget source={source} view={view} result={state.result} onOpen={open} />
+          <DashboardTableWidget
+            source={source}
+            view={view}
+            result={state.result}
+            notionSurface={notionSurface}
+            onOpen={open}
+          />
         )}
       </div>
     </section>
@@ -268,11 +313,13 @@ export function DatabaseDashboard({
   databaseId,
   database,
   view,
+  notionSurface = false,
   onOpen,
 }: {
   databaseId: string;
   database: DatabaseDefinition;
   view: DatabaseView;
+  notionSurface?: boolean;
   onOpen?: (record: ProjectedDatabaseRecord) => void;
 }) {
   'use no memo';
@@ -394,6 +441,7 @@ export function DatabaseDashboard({
                   filters={filters}
                   linkedFilters={linkedFilters}
                   refreshToken={refreshToken}
+                  notionSurface={notionSurface}
                   selectedRecord={selected}
                   onSelect={(record) =>
                     setSelections((current) => ({ ...current, [widget.id]: record }))

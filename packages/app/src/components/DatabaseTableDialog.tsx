@@ -403,10 +403,12 @@ function DatabaseStateNotice({
   problem,
   onAction,
   actionKind = 'recover',
+  notionSurface = false,
 }: {
   problem: DatabaseUiProblem;
   onAction?: () => void;
   actionKind?: 'recover' | 'reload' | 'back';
+  notionSurface?: boolean;
 }) {
   const actionAvailable =
     onAction && (problem.retryable || problem.kind === 'conflict' || actionKind === 'back');
@@ -425,9 +427,17 @@ function DatabaseStateNotice({
             ) : problem.kind === 'missing' ? (
               <Trans>Database page is unavailable</Trans>
             ) : problem.kind === 'invalid_schema' ? (
-              <Trans>Database schema is invalid</Trans>
+              notionSurface ? (
+                <Trans>Database setup needs attention</Trans>
+              ) : (
+                <Trans>Database schema is invalid</Trans>
+              )
             ) : problem.kind === 'stale_index' ? (
-              <Trans>Database index is not current</Trans>
+              notionSurface ? (
+                <Trans>Database is still updating</Trans>
+              ) : (
+                <Trans>Database index is not current</Trans>
+              )
             ) : problem.kind === 'conflict' ? (
               <Trans>Canonical state changed</Trans>
             ) : problem.kind === 'permission' ? (
@@ -451,9 +461,17 @@ function DatabaseStateNotice({
           ) : actionKind === 'reload' || problem.kind === 'conflict' ? (
             <Trans>Reload latest</Trans>
           ) : problem.kind === 'stale_index' ? (
-            <Trans>Check index again</Trans>
+            notionSurface ? (
+              <Trans>Check again</Trans>
+            ) : (
+              <Trans>Check index again</Trans>
+            )
           ) : problem.kind === 'invalid_schema' ? (
-            <Trans>Reload schema</Trans>
+            notionSurface ? (
+              <Trans>Reload database setup</Trans>
+            ) : (
+              <Trans>Reload schema</Trans>
+            )
           ) : (
             <Trans>Retry</Trans>
           )}
@@ -1581,7 +1599,11 @@ export function DatabaseTable({
           className="mb-2 rounded-md border border-dashed p-3 text-muted-foreground text-sm"
           data-database-state="empty"
         >
-          <Trans>No records in this source.</Trans>{' '}
+          {notionSurface ? (
+            <Trans>No pages in this source.</Trans>
+          ) : (
+            <Trans>No records in this source.</Trans>
+          )}{' '}
           <span className="text-xs">
             {notionSurface ? t`Use the row below to add a page.` : t`Use the last row to add one.`}
           </span>
@@ -1601,7 +1623,7 @@ export function DatabaseTable({
       ) : null}
       <Table
         role="grid"
-        aria-label={`${source.name} database records`}
+        aria-label={`${source.name} database ${notionSurface ? 'pages' : 'records'}`}
         aria-multiselectable="true"
         aria-rowcount={tableRecords.length + 1}
         aria-colcount={properties.length + 2}
@@ -1621,7 +1643,11 @@ export function DatabaseTable({
         }}
       >
         <TableCaption className="sr-only">
-          <Trans>Canonical database records</Trans>
+          {notionSurface ? (
+            <Trans>Database pages</Trans>
+          ) : (
+            <Trans>Canonical database records</Trans>
+          )}
         </TableCaption>
         <TableHeader className="sticky top-0 z-20 bg-background">
           <TableRow noHover aria-rowindex={1}>
@@ -1631,7 +1657,7 @@ export function DatabaseTable({
             >
               <Checkbox
                 checked={allLoadedSelected}
-                aria-label="Select all loaded records"
+                aria-label={notionSurface ? 'Select all loaded pages' : 'Select all loaded records'}
                 className={
                   notionSurface
                     ? 'opacity-0 transition-opacity group-hover/column:opacity-100 group-focus-within/column:opacity-100 focus-visible:opacity-100'
@@ -1682,8 +1708,8 @@ export function DatabaseTable({
                     <span
                       className="ml-1 inline-flex items-center gap-0.5 text-destructive"
                       role="img"
-                      aria-label={`${property.name}: ${computedErrorSummary.count} computed error${computedErrorSummary.count === 1 ? '' : 's'} in loaded records`}
-                      title={`${[...computedErrorSummary.codes].join(', ')} in ${computedErrorSummary.count} loaded record${computedErrorSummary.count === 1 ? '' : 's'}`}
+                      aria-label={`${property.name}: ${computedErrorSummary.count} computed error${computedErrorSummary.count === 1 ? '' : 's'} in loaded ${notionSurface ? 'pages' : 'records'}`}
+                      title={`${[...computedErrorSummary.codes].join(', ')} in ${computedErrorSummary.count} loaded ${notionSurface ? 'page' : 'record'}${computedErrorSummary.count === 1 ? '' : 's'}`}
                       data-computed-error-count={computedErrorSummary.count}
                       data-computed-error-codes={[...computedErrorSummary.codes].join(',')}
                       data-computed-error-scope="loaded-records"
@@ -2018,7 +2044,8 @@ export function DatabaseTable({
               : '';
             const recordLabel =
               notionSurface && recordTitle && recordTitle !== '—' ? recordTitle : record.id;
-            const recordActionLabel = (action: string) => `${action} record ${recordLabel}`;
+            const recordActionLabel = (action: string) =>
+              `${action} ${notionSurface ? 'page' : 'record'} ${recordLabel}`;
             const conditionalColorRecord = result.conditionalColors?.records[record.id];
             const pageColorRule = conditionalColorRecord?.pageRuleId
               ? conditionalColorRules.get(conditionalColorRecord.pageRuleId)
@@ -2575,7 +2602,7 @@ export function DatabaseTable({
                               target={property.type === 'url' ? '_blank' : undefined}
                               rel={property.type === 'url' ? 'noopener noreferrer' : undefined}
                               className="min-w-0 truncate text-azure-blue underline underline-offset-2"
-                              aria-label={`Open ${property.name} for record ${recordLabel}`}
+                              aria-label={`Open ${property.name} for ${notionSurface ? 'page' : 'record'} ${recordLabel}`}
                               onClick={(event) => dispatchExternalLinkClick(event, linkHref)}
                               onAuxClick={(event) => {
                                 if (event.button === 1) dispatchExternalLinkClick(event, linkHref);
@@ -2585,14 +2612,14 @@ export function DatabaseTable({
                             </a>
                             <DatabaseValueCopyButton
                               value={String(shownValue)}
-                              label={`${property.name} for record ${recordLabel}`}
+                              label={`${property.name} for ${notionSurface ? 'page' : 'record'} ${recordLabel}`}
                             />
                             {onEdit && !ghostCreated ? (
                               <Button
                                 size="icon-sm"
                                 variant="ghost"
                                 disabled={mutationLocked || proposed}
-                                aria-label={`Edit ${property.name} for record ${recordLabel}`}
+                                aria-label={`Edit ${property.name} for ${notionSurface ? 'page' : 'record'} ${recordLabel}`}
                                 onClick={() => beginEdit(record, property)}
                               >
                                 <Pencil />
@@ -2604,7 +2631,7 @@ export function DatabaseTable({
                             variant="outline"
                             size="sm"
                             disabled={mutationLocked || proposed || !onInvokeButton}
-                            aria-label={`${property.label} for record ${recordLabel}`}
+                            aria-label={`${property.label} for ${notionSurface ? 'page' : 'record'} ${recordLabel}`}
                             onClick={() => onInvokeButton?.(record, property)}
                           >
                             {property.label}
@@ -2675,7 +2702,7 @@ export function DatabaseTable({
                                 variant="ghost"
                                 disabled={mutationLocked || proposed}
                                 className="h-auto min-w-0 justify-start px-1 py-0.5 font-inherit"
-                                aria-label={`Edit ${property.name} for record ${recordLabel}`}
+                                aria-label={`Edit ${property.name} for ${notionSurface ? 'page' : 'record'} ${recordLabel}`}
                                 onClick={() => beginEdit(record, property)}
                               >
                                 <span className="truncate">{shownText}</span>
@@ -2718,7 +2745,7 @@ export function DatabaseTable({
                                 variant="ghost"
                                 size="icon-sm"
                                 disabled={mutationLocked || proposed}
-                                aria-label={`Edit ${property.name} for record ${recordLabel}`}
+                                aria-label={`Edit ${property.name} for ${notionSurface ? 'page' : 'record'} ${recordLabel}`}
                                 onClick={() => beginEdit(record, property)}
                               >
                                 <Pencil />
@@ -2730,7 +2757,7 @@ export function DatabaseTable({
                             variant="ghost"
                             disabled={mutationLocked || proposed}
                             className="h-auto max-w-full justify-start px-1 py-0.5 font-inherit"
-                            aria-label={`Edit ${property.name} for record ${recordLabel}`}
+                            aria-label={`Edit ${property.name} for ${notionSurface ? 'page' : 'record'} ${recordLabel}`}
                             onClick={() => beginEdit(record, property)}
                           >
                             {invalidValue !== undefined ? (
@@ -2929,7 +2956,11 @@ export function DatabaseTable({
                             event.currentTarget.value = '';
                             onCreateRecord(title);
                           } else {
-                            setEditError(t`A record title is required`);
+                            setEditError(
+                              notionSurface
+                                ? t`A page title is required`
+                                : t`A record title is required`,
+                            );
                           }
                         }
                         if (event.key === 'Escape') {
@@ -3021,9 +3052,9 @@ export function DatabaseTable({
                 ? cellRecordTitle
                 : record.id;
             const cellPropertyActionLabel = (action: string) =>
-              notionSurface ? `${action} ${property.name} for record ${cellRecordLabel}` : action;
+              notionSurface ? `${action} ${property.name} for page ${cellRecordLabel}` : action;
             const cellRecordActionLabel = (action: string) =>
-              notionSurface ? `${action} ${cellRecordLabel}` : action;
+              notionSurface ? `${action.replace('record', 'page')} ${cellRecordLabel}` : action;
             const close = () => setCellMenu(null);
             return (
               <div
@@ -3086,7 +3117,7 @@ export function DatabaseTable({
                   className="w-full justify-start"
                   aria-label={
                     notionSurface
-                      ? `Edit ${property.name} for record ${cellRecordLabel}`
+                      ? `Edit ${property.name} for ${notionSurface ? 'page' : 'record'} ${cellRecordLabel}`
                       : 'Edit cell'
                   }
                   disabled={mutationLocked || !onEdit || !isDatabaseCellEditable(property)}
@@ -3110,7 +3141,8 @@ export function DatabaseTable({
                       close();
                     }}
                   >
-                    <ExternalLink /> <Trans>Open record</Trans>
+                    <ExternalLink />{' '}
+                    {notionSurface ? <Trans>Open page</Trans> : <Trans>Open record</Trans>}
                   </Button>
                 ) : null}
                 {onOpenContextInspector ? (
@@ -3120,7 +3152,7 @@ export function DatabaseTable({
                     size="sm"
                     className="w-full justify-start"
                     aria-label={
-                      notionSurface ? `Inspect context for record ${cellRecordLabel}` : undefined
+                      notionSurface ? `Inspect context for page ${cellRecordLabel}` : undefined
                     }
                     disabled={mutationLocked}
                     onClick={() => {
@@ -3128,7 +3160,12 @@ export function DatabaseTable({
                       close();
                     }}
                   >
-                    <Braces /> <Trans>Inspect record context</Trans>
+                    <Braces />
+                    {notionSurface ? (
+                      <Trans>Inspect page context</Trans>
+                    ) : (
+                      <Trans>Inspect record context</Trans>
+                    )}
                   </Button>
                 ) : null}
                 {onOpenAgentScope ? (
@@ -3138,7 +3175,7 @@ export function DatabaseTable({
                     size="sm"
                     className="w-full justify-start"
                     aria-label={
-                      notionSurface ? `Ask agent about record ${cellRecordLabel}` : undefined
+                      notionSurface ? `Ask agent about page ${cellRecordLabel}` : undefined
                     }
                     disabled={mutationLocked}
                     onClick={() => {
@@ -3151,7 +3188,12 @@ export function DatabaseTable({
                       close();
                     }}
                   >
-                    <Sparkles /> <Trans>Ask agent about record</Trans>
+                    <Sparkles />
+                    {notionSurface ? (
+                      <Trans>Ask agent about page</Trans>
+                    ) : (
+                      <Trans>Ask agent about record</Trans>
+                    )}
                   </Button>
                 ) : null}
                 {onDuplicate ? (
@@ -3167,7 +3209,12 @@ export function DatabaseTable({
                       close();
                     }}
                   >
-                    <Copy /> <Trans>Duplicate record</Trans>
+                    <Copy />
+                    {notionSurface ? (
+                      <Trans>Duplicate page</Trans>
+                    ) : (
+                      <Trans>Duplicate record</Trans>
+                    )}
                   </Button>
                 ) : null}
                 {onArchive ? (
@@ -3187,7 +3234,13 @@ export function DatabaseTable({
                   >
                     {record.archivedAt ? <RotateCcw /> : <Archive />}
                     {record.archivedAt ? (
-                      <Trans>Restore record</Trans>
+                      notionSurface ? (
+                        <Trans>Restore page</Trans>
+                      ) : (
+                        <Trans>Restore record</Trans>
+                      )
+                    ) : notionSurface ? (
+                      <Trans>Archive page</Trans>
                     ) : (
                       <Trans>Archive record</Trans>
                     )}
@@ -3206,7 +3259,8 @@ export function DatabaseTable({
                       close();
                     }}
                   >
-                    <MoveRight /> <Trans>Move record</Trans>
+                    <MoveRight />
+                    {notionSurface ? <Trans>Move page</Trans> : <Trans>Move record</Trans>}
                   </Button>
                 ) : null}
                 {onDelete ? (
@@ -3222,7 +3276,8 @@ export function DatabaseTable({
                       close();
                     }}
                   >
-                    <Trash2 /> <Trans>Delete record</Trans>
+                    <Trash2 />
+                    {notionSurface ? <Trans>Delete page</Trans> : <Trans>Delete record</Trans>}
                   </Button>
                 ) : null}
               </div>
@@ -3322,6 +3377,7 @@ function DatabaseTableSurface({
   const { t } = useLingui();
   const isPagePresentation = presentation !== 'dialog';
   const isCanvasPresentation = presentation === 'canvas';
+  const itemNoun = isPagePresentation ? 'page' : 'record';
   const initialDatabaseId = initialTarget?.databaseId;
   const initialSourceId = initialTarget?.sourceId;
   const initialViewId = initialTarget?.viewId;
@@ -4103,14 +4159,14 @@ function DatabaseTableSurface({
       });
       setNewRecordOpen(false);
       setNewRecordTitle('');
-      runMutation(desiredState, 'ui-record-create', 'Database record creation failed', {
+      runMutation(desiredState, 'ui-record-create', `Database ${itemNoun} creation failed`, {
         policy: { operation: 'record-create', actor: 'human', principalId: 'user:local' },
         onCommitted: options.focusAfterCreate
           ? () => setNewRecordFocusRequest((current) => (current ?? 0) + 1)
           : undefined,
       });
     } catch (cause) {
-      setMutationError(classifyDatabaseUiProblem(cause, 'Unable to prepare the new record'));
+      setMutationError(classifyDatabaseUiProblem(cause, `Unable to prepare the new ${itemNoun}`));
     }
   };
 
@@ -4124,10 +4180,12 @@ function DatabaseTableSurface({
           record,
         }),
         'ui-record-delete',
-        'Database record deletion failed',
+        `Database ${itemNoun} deletion failed`,
       );
     } catch (cause) {
-      setMutationError(classifyDatabaseUiProblem(cause, 'Unable to prepare the record deletion'));
+      setMutationError(
+        classifyDatabaseUiProblem(cause, `Unable to prepare the ${itemNoun} deletion`),
+      );
     }
   };
 
@@ -4141,10 +4199,12 @@ function DatabaseTableSurface({
           record,
         }),
         'ui-record-copy',
-        'Database record duplication failed',
+        `Database ${itemNoun} duplication failed`,
       );
     } catch (cause) {
-      setMutationError(classifyDatabaseUiProblem(cause, 'Unable to prepare the record duplicate'));
+      setMutationError(
+        classifyDatabaseUiProblem(cause, `Unable to prepare the ${itemNoun} duplicate`),
+      );
     }
   };
 
@@ -4159,10 +4219,12 @@ function DatabaseTableSurface({
           action,
         }),
         `ui-record-${action}`,
-        `Database record ${action} failed`,
+        `Database ${itemNoun} ${action} failed`,
       );
     } catch (cause) {
-      setMutationError(classifyDatabaseUiProblem(cause, `Unable to prepare the record ${action}`));
+      setMutationError(
+        classifyDatabaseUiProblem(cause, `Unable to prepare the ${itemNoun} ${action}`),
+      );
     }
   };
 
@@ -4184,12 +4246,14 @@ function DatabaseTableSurface({
           record: moveRecord,
         }),
         'ui-record-move',
-        'Database record move failed',
+        `Database ${itemNoun} move failed`,
       );
       setMoveRecord(null);
       setMoveTargetSourceId('');
     } catch (cause) {
-      setMutationError(classifyDatabaseUiProblem(cause, 'Unable to prepare the record move'));
+      setMutationError(
+        classifyDatabaseUiProblem(cause, `Unable to prepare the ${itemNoun} move`),
+      );
     }
   };
 
@@ -5790,7 +5854,7 @@ function DatabaseTableSurface({
               ) : (
                 <DialogDescription>
                   {isPagePresentation ? (
-                    <Trans>Database pages share canonical records with every linked view.</Trans>
+                    <Trans>Database pages share their content with every linked view.</Trans>
                   ) : (
                     <Trans>
                       Browse canonical Markdown records through a snapshot-consistent table.
@@ -6160,6 +6224,7 @@ function DatabaseTableSurface({
                       : () => setRefresh((value) => value + 1)
                 }
                 actionKind={error.kind === 'missing' ? 'back' : 'recover'}
+                notionSurface={isPagePresentation}
               />
             ) : null}
             {tableStatus === 'loading' ? (
@@ -6169,7 +6234,7 @@ function DatabaseTableSurface({
                 data-database-state="loading"
               >
                 <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-                <Trans>Loading records</Trans>
+                {isPagePresentation ? <Trans>Loading pages</Trans> : <Trans>Loading records</Trans>}
               </div>
             ) : null}
             {tableStatus === 'success' && description?.source && result ? (
@@ -6219,7 +6284,7 @@ function DatabaseTableSurface({
                         aria-selected={!selectedViewId}
                         onClick={() => selectView('__all__')}
                       >
-                        <Trans>All records</Trans>
+                        {isPagePresentation ? <Trans>All pages</Trans> : <Trans>All records</Trans>}
                       </Button>
                       {sourceViews.map((view, index) => (
                         <fieldset
@@ -6336,7 +6401,11 @@ function DatabaseTableSurface({
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="__all__">
-                            <Trans>All records</Trans>
+                            {isPagePresentation ? (
+                              <Trans>All pages</Trans>
+                            ) : (
+                              <Trans>All records</Trans>
+                            )}
                           </SelectItem>
                           {sourceViews.map((view) => (
                             <SelectItem key={view.id} value={view.id}>
@@ -6397,11 +6466,11 @@ function DatabaseTableSurface({
                       variant="outline"
                       size="sm"
                       disabled={mutationStatus !== 'idle'}
-                      aria-label={isCanvasPresentation ? t`New page` : undefined}
+                      aria-label={isPagePresentation ? t`New page` : undefined}
                       onClick={() => setNewRecordOpen(true)}
                     >
                       <Plus />
-                      {isCanvasPresentation ? <Trans>New</Trans> : <Trans>New record</Trans>}
+                      {isPagePresentation ? <Trans>New</Trans> : <Trans>New record</Trans>}
                     </Button>
                     {!isCanvasPresentation ? (
                       <Button
@@ -6622,8 +6691,8 @@ function DatabaseTableSurface({
                     <Input
                       autoFocus={!pageTitleEditing}
                       value={newRecordTitle}
-                      aria-label={isCanvasPresentation ? 'New page title' : 'New record title'}
-                      placeholder={isCanvasPresentation ? 'New page' : 'Record title'}
+                      aria-label={isPagePresentation ? 'New page title' : 'New record title'}
+                      placeholder={isPagePresentation ? 'New page' : 'Record title'}
                       className="min-w-56 flex-1"
                       onChange={(event) => setNewRecordTitle(event.currentTarget.value)}
                       onKeyDown={(event) => {
@@ -6635,7 +6704,9 @@ function DatabaseTableSurface({
                       <SelectTrigger
                         size="sm"
                         className="min-w-44"
-                        aria-label="New record template"
+                        aria-label={
+                          isPagePresentation ? 'New page template' : 'New record template'
+                        }
                       >
                         <SelectValue />
                       </SelectTrigger>
@@ -6644,7 +6715,11 @@ function DatabaseTableSurface({
                           <Trans>Automatic default</Trans>
                         </SelectItem>
                         <SelectItem value="__blank__">
-                          <Trans>Blank record</Trans>
+                          {isPagePresentation ? (
+                            <Trans>Blank page</Trans>
+                          ) : (
+                            <Trans>Blank record</Trans>
+                          )}
                         </SelectItem>
                         {description.database.templates
                           .filter(
@@ -6664,7 +6739,7 @@ function DatabaseTableSurface({
                       <Trans>Cancel</Trans>
                     </Button>
                     <Button size="sm" onClick={() => createRecord()}>
-                      {isCanvasPresentation ? (
+                      {isPagePresentation ? (
                         <Trans>Add page</Trans>
                       ) : (
                         <Trans>Plan new record</Trans>
@@ -6941,7 +7016,11 @@ function DatabaseTableSurface({
                             role="status"
                           >
                             <Loader2 className="size-3 animate-spin" />
-                            <Trans>Inspecting all records</Trans>
+                            {isPagePresentation ? (
+                              <Trans>Inspecting all pages</Trans>
+                            ) : (
+                              <Trans>Inspecting all records</Trans>
+                            )}
                           </span>
                         ) : null}
                       </div>
@@ -6955,7 +7034,8 @@ function DatabaseTableSurface({
                               {optionPreview.preview.canApply ? 'ready' : 'blocked'}
                             </Badge>
                             <span>
-                              {optionPreview.preview.recordChanges.length} records ·{' '}
+                              {optionPreview.preview.recordChanges.length}{' '}
+                              {isPagePresentation ? 'pages' : 'records'} ·{' '}
                               {optionPreview.preview.affectedViewIds.length} views · default{' '}
                               {optionPreview.preview.defaultChanged ? 'changes' : 'unchanged'}
                             </span>
@@ -7056,7 +7136,11 @@ function DatabaseTableSurface({
                 {moveRecord ? (
                   <div className="flex flex-wrap items-center gap-2 rounded-md border p-3">
                     <span className="text-sm">
-                      <Trans>Move selected record to</Trans>
+                      {isPagePresentation ? (
+                        <Trans>Move selected page to</Trans>
+                      ) : (
+                        <Trans>Move selected record to</Trans>
+                      )}
                     </span>
                     <Select value={moveTargetSourceId} onValueChange={setMoveTargetSourceId}>
                       <SelectTrigger size="sm" className="min-w-48" aria-label="Move target source">
@@ -7271,6 +7355,7 @@ function DatabaseTableSurface({
                       description.index.lastError?.message ?? 'Database index failed.',
                     )}
                     onAction={() => setRefresh((value) => value + 1)}
+                    notionSurface={isPagePresentation}
                   />
                 ) : description.index.state === 'rebuilding' ? (
                   <DatabaseStateNotice
@@ -7278,6 +7363,7 @@ function DatabaseTableSurface({
                       'rebuilding',
                       'Database index is rebuilding; shown rows may refresh.',
                     )}
+                    notionSurface={isPagePresentation}
                   />
                 ) : null}
                 {!result.isComplete ? (
@@ -7285,7 +7371,11 @@ function DatabaseTableSurface({
                     className="rounded-md border bg-muted/30 p-3 text-muted-foreground text-sm"
                     data-database-state="partial"
                   >
-                    <Trans>This snapshot is paginated; not all matching records are shown.</Trans>
+                    {isPagePresentation ? (
+                      <Trans>This view is paginated; not all matching pages are shown.</Trans>
+                    ) : (
+                      <Trans>This snapshot is paginated; not all matching records are shown.</Trans>
+                    )}
                   </div>
                 ) : null}
                 {buttonStatus === 'planning' ? (
@@ -7494,11 +7584,13 @@ function DatabaseTableSurface({
                             setRefresh((value) => value + 1);
                           }
                     }
+                    notionSurface={isPagePresentation}
                   />
                 ) : null}
                 {pageError ? (
                   <DatabaseStateNotice
                     problem={pageError}
+                    notionSurface={isPagePresentation}
                     onAction={
                       pageError.kind === 'permission'
                         ? undefined
@@ -7527,7 +7619,11 @@ function DatabaseTableSurface({
                     className="flex min-h-64 items-center justify-center rounded-md border border-dashed text-muted-foreground text-sm"
                     data-database-state="empty"
                   >
-                    <Trans>No records in this source.</Trans>
+                    {isPagePresentation ? (
+                      <Trans>No pages in this source.</Trans>
+                    ) : (
+                      <Trans>No records in this source.</Trans>
+                    )}
                   </div>
                 ) : selectedView?.layout.type === 'board' ? (
                   <DatabaseBoard
@@ -7536,6 +7632,7 @@ function DatabaseTableSurface({
                     view={selectedView}
                     result={result}
                     people={description.database.people}
+                    notionSurface={isPagePresentation}
                     relationRecords={[
                       ...new Map(
                         [...relationCandidates, ...(result.relationRecords ?? [])].map((record) => [
@@ -7570,6 +7667,7 @@ function DatabaseTableSurface({
                     view={selectedView}
                     result={result}
                     people={description.database.people}
+                    notionSurface={isPagePresentation}
                     relationRecords={[
                       ...new Map(
                         [...relationCandidates, ...(result.relationRecords ?? [])].map((record) => [
@@ -7589,6 +7687,7 @@ function DatabaseTableSurface({
                     view={selectedView}
                     result={result}
                     people={description.database.people}
+                    notionSurface={isPagePresentation}
                     relationRecords={[
                       ...new Map(
                         [...relationCandidates, ...(result.relationRecords ?? [])].map((record) => [
@@ -7608,6 +7707,7 @@ function DatabaseTableSurface({
                     view={selectedView}
                     result={result}
                     people={description.database.people}
+                    notionSurface={isPagePresentation}
                     relationRecords={[
                       ...new Map(
                         [...relationCandidates, ...(result.relationRecords ?? [])].map((record) => [
@@ -7663,6 +7763,7 @@ function DatabaseTableSurface({
                     view={selectedView}
                     result={result}
                     people={description.database.people}
+                    notionSurface={isPagePresentation}
                     relationRecords={[
                       ...new Map(
                         [...relationCandidates, ...(result.relationRecords ?? [])].map((record) => [
@@ -7679,6 +7780,7 @@ function DatabaseTableSurface({
                     source={description.source}
                     view={selectedView}
                     result={result}
+                    notionSurface={isPagePresentation}
                     onOpen={openRecord}
                   />
                 ) : selectedView?.layout.type === 'dashboard' ? (
@@ -7687,6 +7789,7 @@ function DatabaseTableSurface({
                     databaseId={description.database.id}
                     database={description.database}
                     view={selectedView}
+                    notionSurface={isPagePresentation}
                     onOpen={openRecord}
                   />
                 ) : selectedView?.layout.type === 'feed' ? (
@@ -7696,6 +7799,7 @@ function DatabaseTableSurface({
                     view={selectedView}
                     result={result}
                     people={description.database.people}
+                    notionSurface={isPagePresentation}
                     onOpen={openRecord}
                   />
                 ) : (
@@ -7708,7 +7812,7 @@ function DatabaseTableSurface({
                     viewId={selectedView?.id ?? null}
                     result={result}
                     people={description.database.people}
-                    notionSurface={isCanvasPresentation}
+                    notionSurface={isPagePresentation}
                     relationRecords={[
                       ...new Map(
                         [...relationCandidates, ...(result.relationRecords ?? [])].map((record) => [
@@ -7849,7 +7953,11 @@ function DatabaseTableSurface({
                       {pageStatus === 'loading' ? (
                         <Loader2 className="animate-spin" aria-hidden="true" />
                       ) : null}
-                      <Trans>Load more records</Trans>
+                      {isPagePresentation ? (
+                        <Trans>Load more pages</Trans>
+                      ) : (
+                        <Trans>Load more records</Trans>
+                      )}
                     </Button>
                   </div>
                 ) : null}
@@ -7859,8 +7967,9 @@ function DatabaseTableSurface({
                     role="status"
                   >
                     <Trans>
-                      This view keeps at most {loadedRecordLimit.toLocaleString()} loaded records in
-                      memory. Narrow the filters or open another saved view to continue.
+                      This view keeps at most {loadedRecordLimit.toLocaleString()} loaded{' '}
+                      {isPagePresentation ? 'pages' : 'records'} in memory. Narrow the filters or
+                      open another saved view to continue.
                     </Trans>
                   </div>
                 ) : null}
@@ -7877,6 +7986,7 @@ function DatabaseTableSurface({
           source={description.source}
           record={recordPeek.record}
           onClose={() => setRecordPeek(null)}
+          notionSurface={isPagePresentation}
           onNavigateRecord={(path) => {
             const nextRecord = result?.records.find((candidate) => candidate.path === path);
             if (nextRecord) {

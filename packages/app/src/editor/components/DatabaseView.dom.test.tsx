@@ -218,10 +218,10 @@ describe('DatabaseView', () => {
     );
 
     expect((await screen.findAllByText('Shared canonical row')).length).toBe(2);
-    expect(screen.getAllByLabelText('Open record Shared canonical row')).toHaveLength(2);
-    expect(
-      screen.getAllByLabelText('Inspect context for record Shared canonical row'),
-    ).toHaveLength(2);
+    expect(screen.getAllByLabelText('Open page Shared canonical row')).toHaveLength(2);
+    expect(screen.getAllByLabelText('Inspect context for page Shared canonical row')).toHaveLength(
+      2,
+    );
     await waitFor(() => expect(requests).toHaveLength(2));
     expect(requests.map((request) => request.viewId)).toEqual([view.id, view.id]);
     expect(requests[0]?.viewOverrides).toMatchObject({
@@ -331,7 +331,7 @@ describe('DatabaseView', () => {
     expect(document.querySelector('[data-database-layout="feed"]')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Filters' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'View settings' })).toBeTruthy();
-    expect(screen.getByLabelText('Inspect context for record Linked feed update')).toBeTruthy();
+    expect(screen.getByLabelText('Inspect context for page Linked feed update')).toBeTruthy();
   });
 
   test('renders a linked Dashboard by querying only its child saved views', async () => {
@@ -492,7 +492,7 @@ describe('DatabaseView', () => {
     expect(await screen.findByText('Send a task')).toBeTruthy();
     expect(screen.getByRole('textbox', { name: 'Title' })).toBeTruthy();
     expect(fetch).toHaveBeenCalledTimes(1);
-    expect(screen.queryByText('42 records')).toBeNull();
+    expect(screen.queryByText('42 pages')).toBeNull();
   });
 
   test('renders a linked Gallery from its saved Files preview', async () => {
@@ -588,7 +588,7 @@ describe('DatabaseView', () => {
       expect(document.querySelector('[data-gallery-card="rec_first"]')).toBeTruthy(),
     );
     expect(screen.getByRole('img', { name: 'First task' })).toBeTruthy();
-    expect(screen.getByLabelText('Inspect context for record First task')).toBeTruthy();
+    expect(screen.getByLabelText('Inspect context for page First task')).toBeTruthy();
   });
 
   test('renders a linked List from stable view references', async () => {
@@ -669,7 +669,7 @@ describe('DatabaseView', () => {
     ).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Task list' })).toBeTruthy();
     await waitFor(() => expect(document.querySelector('[data-list-row="rec_first"]')).toBeTruthy());
-    expect(screen.getByLabelText('Inspect context for record First task')).toBeTruthy();
+    expect(screen.getByLabelText('Inspect context for page First task')).toBeTruthy();
   });
 
   test('renders a linked Board from saved grouping and returned-page memberships', async () => {
@@ -757,7 +757,7 @@ describe('DatabaseView', () => {
     expect(screen.getByRole('button', { name: 'Task board' })).toBeTruthy();
     expect(await screen.findByText('First task')).toBeTruthy();
     expect(document.querySelector('[data-board-card="rec_first"]')).toBeTruthy();
-    expect(screen.getByLabelText('Inspect context for record First task')).toBeTruthy();
+    expect(screen.getByLabelText('Inspect context for page First task')).toBeTruthy();
   });
 
   test('applies a single inline Board transition through the direct-safe cell path', async () => {
@@ -919,7 +919,7 @@ describe('DatabaseView', () => {
     );
     fireEvent.click(
       screen.getAllByRole('combobox', {
-        name: 'Move record First task to group',
+        name: 'Move page First task to group',
       })[0] as HTMLElement,
     );
     fireEvent.click(await screen.findByRole('option', { name: 'Done' }));
@@ -1086,7 +1086,7 @@ describe('DatabaseView', () => {
     await waitFor(() =>
       expect(document.querySelector('[data-calendar-card="rec_first"]')).toBeTruthy(),
     );
-    expect(screen.getByLabelText('Inspect context for record First task')).toBeTruthy();
+    expect(screen.getByLabelText('Inspect context for page First task')).toBeTruthy();
     const card = document.querySelector<HTMLElement>('[data-calendar-card="rec_first"]');
     const currentDay = card?.closest<HTMLElement>('[data-calendar-day]')?.dataset.calendarDay;
     const targetDay = [...document.querySelectorAll<HTMLElement>('[data-calendar-day]')].find(
@@ -1254,10 +1254,10 @@ describe('DatabaseView', () => {
     expect(screen.getByRole('button', { name: 'Task timeline' })).toBeTruthy();
     expect((await screen.findAllByText('First task')).length).toBeGreaterThan(0);
     expect(document.querySelector('[data-timeline-bar="rec_first"]')).toBeTruthy();
-    expect(
-      screen.getAllByLabelText('Inspect context for record First task').length,
-    ).toBeGreaterThan(0);
-    fireEvent.click(screen.getByLabelText('Move record First task later'));
+    expect(screen.getAllByLabelText('Inspect context for page First task').length).toBeGreaterThan(
+      0,
+    );
+    fireEvent.click(screen.getByLabelText('Move page First task later'));
     await waitFor(() => expect(commitCalls).toBe(1));
     expect(screen.getByText('Saving inline database change')).toBeTruthy();
     releaseCommit?.();
@@ -1511,9 +1511,9 @@ describe('DatabaseView', () => {
     expect(inlineSurface?.getAttribute('data-source-id')).toBe(source.id);
     expect(inlineSurface?.getAttribute('data-view-id')).toBe(view.id);
     expect(document.querySelector('[data-record-id="rec_first"]')).toBeTruthy();
-    expect(screen.getByLabelText('Edit Title for record First task')).toBeTruthy();
+    expect(screen.getByLabelText('Edit Title for page First task')).toBeTruthy();
     expect(screen.getByTestId('database-new-row-title')).toBeTruthy();
-    fireEvent.click(screen.getByLabelText('Inspect context for record First task'));
+    fireEvent.click(screen.getByLabelText('Inspect context for page First task'));
     expect(await screen.findByText('What the agent saw')).toBeTruthy();
     expect(
       inspectPaths.some((path) =>
@@ -1541,8 +1541,8 @@ describe('DatabaseView', () => {
     ).toBeTruthy();
     fireEvent.click(document.querySelector('[data-slot="dialog-close"]') as HTMLElement);
     await waitFor(() => expect(screen.queryByText('What the agent saw')).toBeNull());
-    fireEvent.click(screen.getByLabelText('Select record First task'));
-    fireEvent.click(screen.getByLabelText('Select record Second task'));
+    fireEvent.click(screen.getByLabelText('Select page First task'));
+    fireEvent.click(screen.getByLabelText('Select page Second task'));
     expect(await screen.findByTestId('inline-selection-toolbar')).toBeTruthy();
     expect(screen.getByText('2 selected')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Inspect selected context' }));
@@ -1572,7 +1572,7 @@ describe('DatabaseView', () => {
     await waitFor(() => expect(document.querySelector('[data-database-workspace]')).toBeNull());
     fireEvent.click(screen.getByRole('button', { name: 'Clear selection' }));
     await waitFor(() => expect(screen.queryByTestId('inline-selection-toolbar')).toBeNull());
-    fireEvent.click(screen.getByLabelText('Edit Title for record First task'));
+    fireEvent.click(screen.getByLabelText('Edit Title for page First task'));
     const titleInput = screen.getByLabelText('Edit Title') as HTMLInputElement;
     fireEvent.change(titleInput, { target: { value: 'Renamed task' } });
     fireEvent.keyDown(titleInput, { key: 'Enter' });
@@ -1624,10 +1624,10 @@ describe('DatabaseView', () => {
     await waitFor(() => expect(screen.queryByTestId('database-ghost-review')).toBeNull());
     fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[0] as HTMLElement);
     await waitFor(() => expect(document.querySelector('[data-database-workspace]')).toBeNull());
-    expect(screen.getByLabelText('Duplicate record First task')).toBeTruthy();
-    expect(screen.getByLabelText('Archive record First task')).toBeTruthy();
-    expect(screen.getByLabelText('Move record First task')).toBeTruthy();
-    expect(screen.getByLabelText('Delete record First task')).toBeTruthy();
+    expect(screen.getByLabelText('Duplicate page First task')).toBeTruthy();
+    expect(screen.getByLabelText('Archive page First task')).toBeTruthy();
+    expect(screen.getByLabelText('Move page First task')).toBeTruthy();
+    expect(screen.getByLabelText('Delete page First task')).toBeTruthy();
     fireEvent.pointerDown(
       screen.getByRole('button', { name: 'Database view actions for Tasks · Open tasks' }),
     );
@@ -1708,7 +1708,7 @@ describe('DatabaseView', () => {
     );
     if (workspaceClose) fireEvent.click(workspaceClose);
     await waitFor(() => expect(document.querySelector('[data-database-workspace]')).toBeNull());
-    fireEvent.click(screen.getByLabelText('Open record First task'));
+    fireEvent.click(screen.getByLabelText('Open page First task'));
     expect(await screen.findByText('Linked canonical body.')).toBeTruthy();
     expect(window.location.hash).toBe(originalHash);
     fireEvent.click(screen.getByRole('button', { name: 'Open full page' }));
@@ -1718,7 +1718,7 @@ describe('DatabaseView', () => {
       screen.getByRole('button', { name: 'Database view actions for Tasks · Open tasks' }),
     );
     fireEvent.click(screen.getByRole('menuitem', { name: 'Show archived' }));
-    expect(await screen.findByLabelText('Restore record First task')).toBeTruthy();
+    expect(await screen.findByLabelText('Restore page First task')).toBeTruthy();
     await waitFor(() =>
       expect(
         requests.filter((request) => request.path === '/api/databases/query').at(-1)?.body,
@@ -1808,7 +1808,7 @@ describe('DatabaseView', () => {
       <DatabaseView databaseId={database.id} sourceId={source.id} viewId={view.id} mode="inline" />,
     );
     expect(await screen.findByText('Cached task')).toBeTruthy();
-    expect(screen.getByText(/Shared records/)).toBeTruthy();
+    expect(screen.getByText(/Shared pages/)).toBeTruthy();
 
     offline = true;
     fireEvent.click(
@@ -1896,7 +1896,7 @@ describe('DatabaseView', () => {
 
     expect(await screen.findByTestId('database-new-row-title')).toBeTruthy();
     expect(document.querySelector('[data-database-state="empty"]')).toBeTruthy();
-    expect(screen.getByText('No records in this source.')).toBeTruthy();
+    expect(screen.getByText('No pages in this source.')).toBeTruthy();
     expect(screen.getByText('Use the row below to add a page.')).toBeTruthy();
   });
 

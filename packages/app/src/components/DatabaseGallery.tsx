@@ -133,6 +133,7 @@ export function DatabaseGallery({
   result,
   people = result.people ?? [],
   relationRecords = result.relationRecords ?? [],
+  notionSurface = false,
   onOpen,
   onOpenContextInspector,
 }: {
@@ -141,6 +142,7 @@ export function DatabaseGallery({
   result: DatabaseQueryResult;
   people?: readonly ProjectedDatabasePerson[];
   relationRecords?: readonly ProjectedDatabaseRelationRecord[];
+  notionSurface?: boolean;
   onOpen?: (record: ProjectedDatabaseRecord) => void;
   onOpenContextInspector?: (record: ProjectedDatabaseRecord) => void;
 }) {
@@ -148,6 +150,7 @@ export function DatabaseGallery({
   const [failedImages, setFailedImages] = useState<Set<string>>(() => new Set());
   if (view.layout.type !== 'gallery') return null;
   const configuration = view.layout.configuration;
+  const itemNoun = notionSurface ? 'page' : 'record';
   const titleProperty = source.properties.find((property) => property.type === 'title');
   const previewPropertyId =
     configuration.cardPreview.type === 'files' ? configuration.cardPreview.propertyId : undefined;
@@ -284,7 +287,7 @@ export function DatabaseGallery({
                         type="button"
                         variant="ghost"
                         size="icon-xs"
-                        aria-label={`Inspect context for record ${recordTitle(source, record)}`}
+                        aria-label={`Inspect context for ${itemNoun} ${recordTitle(source, record)}`}
                         onClick={() => onOpenContextInspector(record)}
                       >
                         <Braces aria-hidden="true" />
@@ -334,7 +337,7 @@ export function DatabaseGallery({
                         type="button"
                         variant="ghost"
                         size="icon-sm"
-                        aria-label={`Inspect context for record ${recordTitle(source, record)}`}
+                        aria-label={`Inspect context for ${itemNoun} ${recordTitle(source, record)}`}
                         onClick={() => onOpenContextInspector(record)}
                       >
                         <Braces aria-hidden="true" />
@@ -348,7 +351,7 @@ export function DatabaseGallery({
                     variant="ghost"
                     size="sm"
                     className="w-full"
-                    aria-label={`Inspect context for record ${recordTitle(source, record)}`}
+                    aria-label={`Inspect context for ${itemNoun} ${recordTitle(source, record)}`}
                     onClick={() => onOpenContextInspector(record)}
                   >
                     <Braces aria-hidden="true" /> <Trans>Inspect context</Trans>
@@ -361,7 +364,11 @@ export function DatabaseGallery({
       </div>
       {result.records.length === 0 ? (
         <p className="rounded border border-dashed p-8 text-center text-muted-foreground text-sm">
-          <Trans>No records in this gallery.</Trans>
+          {notionSurface ? (
+            <Trans>No pages in this gallery.</Trans>
+          ) : (
+            <Trans>No records in this gallery.</Trans>
+          )}
         </p>
       ) : null}
     </section>

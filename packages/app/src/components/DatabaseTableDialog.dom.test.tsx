@@ -513,7 +513,7 @@ describe('DatabaseTableDialog', () => {
         }}
       />,
     );
-    fireEvent.click(await screen.findByRole('button', { name: 'Resize end for rec_first' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Resize end for First task' }));
     await waitFor(() => expect(draftedMutations).toHaveLength(1));
     expect(draftedMutations).toEqual([
       {
@@ -631,7 +631,7 @@ describe('DatabaseTableDialog', () => {
         }}
       />,
     );
-    fireEvent.click(await screen.findByRole('button', { name: 'Move rec_first later' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Move record First task later' }));
     await waitFor(() => expect(draftedMutations).toHaveLength(1));
     expect(draftedMutations).toEqual([
       {
@@ -2515,9 +2515,9 @@ describe('DatabaseTableDialog', () => {
     render(
       <DatabaseTable source={source} result={queryResult()} notionSurface onEdit={() => {}} />,
     );
-    expect(screen.getByLabelText('Open URL for record First task')).toBeTruthy();
-    expect(screen.getByLabelText('Copy URL for record First task')).toBeTruthy();
-    expect(screen.getByLabelText('Edit URL for record First task')).toBeTruthy();
+    expect(screen.getByLabelText('Open URL for page First task')).toBeTruthy();
+    expect(screen.getByLabelText('Copy URL for page First task')).toBeTruthy();
+    expect(screen.getByLabelText('Edit URL for page First task')).toBeTruthy();
   });
 
   test('contextualizes the inline cell action menu with title and property', () => {
@@ -2540,13 +2540,9 @@ describe('DatabaseTableDialog', () => {
     expect(
       screen.getByRole('menu', { name: 'Database cell actions for First task · Budget' }),
     ).toBeTruthy();
-    expect(
-      screen.getByRole('menuitem', { name: 'Edit Budget for record First task' }),
-    ).toBeTruthy();
-    expect(screen.getByRole('menuitem', { name: 'Open record First task' })).toBeTruthy();
-    expect(
-      screen.getByRole('menuitem', { name: 'Ask agent about record First task' }),
-    ).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Edit Budget for page First task' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Open page First task' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Ask agent about page First task' })).toBeTruthy();
   });
 
   test('offers a row-level agent scope with the canonical record ID', () => {
@@ -3505,17 +3501,21 @@ describe('DatabaseTableDialog', () => {
     expect(unnamedButtons).toEqual([]);
     expect(
       screen
-        .getByRole('grid', { name: 'Tasks database records' })
+        .getByRole('grid', { name: 'Tasks database pages' })
         .getAttribute('aria-multiselectable'),
     ).toBe('true');
     const pageBack = screen.getByTestId('database-page-back');
     const pageTitle = screen.getByTestId('database-page-title-value');
-    const allRecordsTab = screen.getByRole('tab', { name: 'All records' });
+    const allRecordsTab = screen.getByRole('tab', { name: 'All pages' });
     const filtersButton = screen.getByRole('button', { name: 'Filters', exact: true });
-    const newRecordButton = screen.getByRole('button', { name: 'New record', exact: true });
+    const newRecordButton = screen.getByRole('button', { name: 'New page', exact: true });
     const titleHeader = screen.getByRole('columnheader', { name: /Title/ });
-    const firstCell = screen.getByRole('gridcell', { name: /First task/ });
-    const loadMore = screen.getByRole('button', { name: 'Load more records' });
+    const firstCell = document.querySelector<HTMLElement>(
+      '[data-record-id="rec_first"] [data-property-id="prop_title"]',
+    );
+    expect(firstCell).not.toBeNull();
+    if (!firstCell) throw new Error('first page title cell is missing');
+    const loadMore = screen.getByRole('button', { name: 'Load more pages' });
     const assertOrder = (first: Node, second: Node) =>
       expect(first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     assertOrder(pageBack, pageTitle);
@@ -3589,6 +3589,8 @@ describe('DatabaseTableDialog', () => {
     const grid = await screen.findByRole('grid');
     const workspace = document.querySelector('[data-database-workspace]');
     expect(grid).not.toBeNull();
+    expect(grid.getAttribute('aria-label')).toBe('Tasks database pages');
+    expect(screen.getByRole('tab', { name: 'All pages' })).toBeTruthy();
     expect(workspace?.closest('[data-testid="database-canvas-host"]')).not.toBeNull();
     expect(workspace?.getAttribute('data-database-page-workspace')).toBe('');
     expect(document.querySelector('nav[aria-label="Databases"]')).toBeNull();
@@ -4421,7 +4423,7 @@ describe('DatabaseTableDialog', () => {
             approvals: [],
             postconditions: [],
             committable: false,
-            requiresCommit: false,
+            requiresCommit: true,
           },
         });
       }

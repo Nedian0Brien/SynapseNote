@@ -314,10 +314,10 @@ describe('DatabaseRecordPageChrome', () => {
     expect(view.container.querySelector('[data-full-width-content="true"]')).not.toBeNull();
     expect(view.queryByText('_sn')).toBeNull();
     expect(view.getByRole('button', { name: 'Comments' })).toBeDefined();
-    expect(view.getByRole('button', { name: 'Record history' })).toBeDefined();
+    expect(view.getByRole('button', { name: 'Page history' })).toBeDefined();
     expect(view.getByRole('button', { name: 'Permissions' })).toBeDefined();
     expect(view.getByRole('button', { name: 'Customize appearance' })).toBeDefined();
-    expect(view.getByRole('button', { name: 'Customize this record' })).toBeDefined();
+    expect(view.getByRole('button', { name: 'Customize this page' })).toBeDefined();
     expect(view.getByRole('button', { name: 'Customize layout' })).toBeDefined();
 
     fireEvent.click(view.getByRole('button', { name: 'Customize appearance' }));
@@ -368,9 +368,9 @@ describe('DatabaseRecordPageChrome', () => {
       hiddenPropertyIds: ['prop_owner', 'prop_internal'],
       fullWidthContent: false,
     });
-    expect(confirmations[2]).toContain('Apply this record layout');
+    expect(confirmations[2]).toContain('Apply this page layout');
 
-    fireEvent.click(view.getByRole('button', { name: 'Customize this record' }));
+    fireEvent.click(view.getByRole('button', { name: 'Customize this page' }));
     fireEvent.click(view.getByRole('combobox', { name: 'Owner record placement' }));
     fireEvent.click(await view.findByRole('option', { name: 'Panel' }));
     fireEvent.click(view.getByRole('combobox', { name: 'Notes group record state' }));
@@ -465,16 +465,16 @@ describe('DatabaseRecordPageChrome', () => {
     );
 
     const openActions = () => {
-      const trigger = view.getByRole('button', { name: 'More record actions' });
+      const trigger = view.getByRole('button', { name: 'More page actions' });
       fireEvent.pointerDown(trigger, { button: 0 });
       fireEvent.click(trigger);
     };
     openActions();
-    expect(view.getByRole('menuitem', { name: 'Duplicate record' })).toBeDefined();
-    expect(view.getByRole('menuitem', { name: 'Archive record' })).toBeDefined();
-    expect(view.getByRole('menuitem', { name: 'Move record' })).toBeDefined();
-    expect(view.getByRole('menuitem', { name: 'Delete record' })).toBeDefined();
-    fireEvent.click(view.getByRole('menuitem', { name: 'Duplicate record' }));
+    expect(view.getByRole('menuitem', { name: 'Duplicate page' })).toBeDefined();
+    expect(view.getByRole('menuitem', { name: 'Archive page' })).toBeDefined();
+    expect(view.getByRole('menuitem', { name: 'Move page' })).toBeDefined();
+    expect(view.getByRole('menuitem', { name: 'Delete page' })).toBeDefined();
+    fireEvent.click(view.getByRole('menuitem', { name: 'Duplicate page' }));
     await waitFor(() => expect(desiredStates).toHaveLength(1));
     expect(desiredStates[0]?.recordCopies?.[0]).toMatchObject({
       id: 'rec_first',
@@ -483,7 +483,7 @@ describe('DatabaseRecordPageChrome', () => {
     });
 
     openActions();
-    fireEvent.click(view.getByRole('menuitem', { name: 'Archive record' }));
+    fireEvent.click(view.getByRole('menuitem', { name: 'Archive page' }));
     await waitFor(() => expect(desiredStates).toHaveLength(2));
     expect(desiredStates[1]?.recordArchives?.[0]).toMatchObject({
       id: 'rec_first',
@@ -492,7 +492,7 @@ describe('DatabaseRecordPageChrome', () => {
     });
 
     openActions();
-    fireEvent.click(view.getByRole('menuitem', { name: 'Move record' }));
+    fireEvent.click(view.getByRole('menuitem', { name: 'Move page' }));
     fireEvent.click(await view.findByRole('combobox', { name: 'Move target source' }));
     fireEvent.click(await view.findByRole('option', { name: /Archive/ }));
     fireEvent.click(view.getByRole('button', { name: 'Plan move' }));
@@ -505,7 +505,7 @@ describe('DatabaseRecordPageChrome', () => {
     });
 
     openActions();
-    fireEvent.click(view.getByRole('menuitem', { name: 'Delete record' }));
+    fireEvent.click(view.getByRole('menuitem', { name: 'Delete page' }));
     await waitFor(() => expect(desiredStates).toHaveLength(4));
     expect(desiredStates[3]?.recordDeletions?.[0]).toMatchObject({
       id: 'rec_first',
@@ -702,12 +702,12 @@ describe('DatabaseRecordPageChrome', () => {
       </TooltipProvider>,
     );
 
-    expect(await view.findByText(/This record is archived/)).toBeDefined();
-    const actions = view.getByRole('button', { name: 'More record actions' });
+    expect(await view.findByText(/This page is archived/)).toBeDefined();
+    const actions = view.getByRole('button', { name: 'More page actions' });
     fireEvent.pointerDown(actions, { button: 0 });
     fireEvent.click(actions);
-    expect(await view.findByRole('menuitem', { name: 'Restore record' })).toBeDefined();
-    expect(view.queryByRole('menuitem', { name: 'Archive record' })).toBeNull();
+    expect(await view.findByRole('menuitem', { name: 'Restore page' })).toBeDefined();
+    expect(view.queryByRole('menuitem', { name: 'Archive page' })).toBeNull();
   });
 
   test('keeps previous, next, and return-to-view continuity for a record opened from a database view', async () => {
@@ -771,11 +771,11 @@ describe('DatabaseRecordPageChrome', () => {
     await waitFor(() =>
       expect(view.getByTestId('page-header-title').textContent).toBe('Canonical title'),
     );
-    expect(view.getByRole('button', { name: 'Previous record' }).hasAttribute('disabled')).toBe(
+    expect(view.getByRole('button', { name: 'Previous page' }).hasAttribute('disabled')).toBe(
       false,
     );
-    expect(view.getByRole('button', { name: 'Next record' }).hasAttribute('disabled')).toBe(false);
-    fireEvent.click(view.getByRole('button', { name: 'Next record' }));
+    expect(view.getByRole('button', { name: 'Next page' }).hasAttribute('disabled')).toBe(false);
+    fireEvent.click(view.getByRole('button', { name: 'Next page' }));
     expect(window.location.hash).toBe('#/records/third');
     expect(
       JSON.parse(

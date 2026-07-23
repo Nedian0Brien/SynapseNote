@@ -259,7 +259,7 @@ function InlineDatabasePicker({ message, onSelected, onCreateBlank }: InlineData
         <div className="min-w-0 flex-1">
           <div className="font-medium text-sm">Choose a database view</div>
           <p className="mt-1 text-muted-foreground text-xs">
-            {message ?? 'Pick a database and saved view. Records stay shared with the source.'}
+            {message ?? 'Pick a database and saved view. Pages stay shared with the source.'}
           </p>
         </div>
       </div>
@@ -277,7 +277,7 @@ function InlineDatabasePicker({ message, onSelected, onCreateBlank }: InlineData
             <Plus aria-hidden="true" /> Create new database
           </Button>
           <span className="text-muted-foreground text-xs">
-            Start with a blank inline table; records stay shared with this page.
+            Start with a blank inline table; pages stay shared with this page.
           </span>
         </div>
       ) : null}
@@ -337,7 +337,7 @@ function InlineDatabasePicker({ message, onSelected, onCreateBlank }: InlineData
                   <span className="min-w-0">
                     <span className="block truncate text-sm">{view.name}</span>
                     <span className="block text-muted-foreground text-xs">
-                      {view.layout.type} · shared records, independent view settings
+                      {view.layout.type} · shared pages, independent view settings
                     </span>
                   </span>
                 </Button>
@@ -1587,8 +1587,7 @@ export function DatabaseView({
           ) : null}
           {state.status === 'ready' ? (
             <p className="sr-only" data-linked-record-sharing>
-              Shared records · edits affect the canonical database; this view keeps its own
-              settings.
+              Shared pages · edits affect the database; this view keeps its own settings.
             </p>
           ) : null}
           {state.status === 'ready' && linkedDatabase && linkedSource ? (
@@ -1906,7 +1905,7 @@ export function DatabaseView({
         <div className="p-3">
           {!inlineCreationOpen ? (
             <InlineDatabasePicker
-              message="Choose a different database or saved view. Existing records remain shared."
+              message="Choose a different database or saved view. Existing pages remain shared."
               onSelected={applyReference}
               onCreateBlank={() => setInlineCreationOpen(true)}
             />
@@ -1950,9 +1949,9 @@ export function DatabaseView({
                     : state.problem.kind === 'offline'
                       ? 'Database is offline'
                       : state.problem.kind === 'invalid_schema'
-                        ? 'Database schema is invalid'
+                        ? 'Database setup needs attention'
                         : state.problem.kind === 'stale_index'
-                          ? 'Database index is not current'
+                          ? 'Database is still updating'
                           : state.problem.kind === 'conflict'
                             ? 'Canonical state changed'
                             : 'Database request failed'}
@@ -1983,9 +1982,9 @@ export function DatabaseView({
               onClick={() => setRefresh((current) => current + 1)}
             >
               {state.problem.kind === 'stale_index'
-                ? 'Check index again'
+                ? 'Check again'
                 : state.problem.kind === 'invalid_schema'
-                  ? 'Reload schema'
+                  ? 'Reload database setup'
                   : state.problem.kind === 'conflict'
                     ? 'Reload latest'
                     : 'Retry'}
@@ -2017,6 +2016,7 @@ export function DatabaseView({
                 databaseId={state.description.database.id}
                 database={state.description.database}
                 view={activeLinkedView}
+                notionSurface
                 onOpen={openRecord}
               />
             ) : !renderedResult ? null : activeLinkedView.layout.type === 'board' ? (
@@ -2038,6 +2038,7 @@ export function DatabaseView({
                   inlineUndoStatus !== 'idle' ||
                   inlineRedoStatus !== 'idle'
                 }
+                notionSurface
                 onDuplicate={(record) => {
                   setInitialRecordAction({ kind: 'duplicate', recordId: record.id });
                   setFullDatabaseOpen(true);
@@ -2069,6 +2070,7 @@ export function DatabaseView({
                 onChange={(change) => {
                   applyInlineViewChanges(change.record, change.changes);
                 }}
+                notionSurface
                 mutationLocked={
                   inlineMutationStatus !== 'idle' ||
                   inlineUndoStatus !== 'idle' ||
@@ -2089,6 +2091,7 @@ export function DatabaseView({
                 onChange={(change) => {
                   applyInlineViewChanges(change.record, change.changes);
                 }}
+                notionSurface
                 mutationLocked={
                   inlineMutationStatus !== 'idle' ||
                   inlineUndoStatus !== 'idle' ||
@@ -2102,6 +2105,7 @@ export function DatabaseView({
                 view={activeLinkedView}
                 result={renderedResult}
                 people={state.description.database.people}
+                notionSurface
                 onOpen={openRecord}
                 onOpenContextInspector={(record) =>
                   setInlineContextInspectorScope({ recordId: record.id })
@@ -2114,6 +2118,7 @@ export function DatabaseView({
                 view={activeLinkedView}
                 result={renderedResult}
                 people={state.description.database.people}
+                notionSurface
                 onOpen={openRecord}
                 onOpenContextInspector={(record) =>
                   setInlineContextInspectorScope({ recordId: record.id })
@@ -2126,6 +2131,7 @@ export function DatabaseView({
                 view={activeLinkedView}
                 result={renderedResult}
                 people={state.description.database.people}
+                notionSurface
                 onOpen={openRecord}
                 onOpenContextInspector={(record) =>
                   setInlineContextInspectorScope({ recordId: record.id })
@@ -2137,6 +2143,7 @@ export function DatabaseView({
                 source={linkedSource}
                 view={activeLinkedView}
                 result={renderedResult}
+                notionSurface
                 onOpen={openRecord}
                 onOpenContextInspector={(record) =>
                   setInlineContextInspectorScope({ recordId: record.id })
@@ -2149,6 +2156,7 @@ export function DatabaseView({
                 view={activeLinkedView}
                 result={renderedResult}
                 people={state.description.database.people}
+                notionSurface
                 onOpen={openRecord}
                 onOpenContextInspector={(record) =>
                   setInlineContextInspectorScope({ recordId: record.id })
@@ -2227,6 +2235,7 @@ export function DatabaseView({
           source={linkedSource}
           record={recordPeek.record}
           onClose={() => setRecordPeek(null)}
+          notionSurface
           onOpenFull={() => {
             rememberDatabaseRecordNavigation({
               databaseId: reference.data.databaseId,

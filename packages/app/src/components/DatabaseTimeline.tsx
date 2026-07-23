@@ -295,6 +295,7 @@ export function DatabaseTimeline({
   result,
   people = result.people ?? [],
   relationRecords = result.relationRecords ?? [],
+  notionSurface = false,
   mutationLocked = false,
   onOpen,
   onOpenContextInspector,
@@ -305,6 +306,7 @@ export function DatabaseTimeline({
   result: DatabaseQueryResult;
   people?: readonly ProjectedDatabasePerson[];
   relationRecords?: readonly ProjectedDatabaseRelationRecord[];
+  notionSurface?: boolean;
   mutationLocked?: boolean;
   onOpen?: (record: ProjectedDatabaseRecord) => void;
   onOpenContextInspector?: (record: ProjectedDatabaseRecord) => void;
@@ -317,6 +319,8 @@ export function DatabaseTimeline({
   } | null>(null);
   if (view.layout.type !== 'timeline') return null;
   const configuration = view.layout.configuration;
+  const itemNoun = notionSurface ? 'page' : 'record';
+  const itemNounPlural = notionSurface ? 'pages' : 'records';
   const spans = new Map(
     result.records.flatMap((record) => {
       const span = recordSpan(record, configuration);
@@ -466,7 +470,7 @@ export function DatabaseTimeline({
             )}
           >
             {configuration.showTable ? (
-              <div className="border-r p-2 font-medium">Records</div>
+              <div className="border-r p-2 font-medium">{notionSurface ? 'Pages' : 'Records'}</div>
             ) : null}
             <div className="grid" style={{ gridTemplateColumns }}>
               {columns.map((epoch) => (
@@ -498,7 +502,7 @@ export function DatabaseTimeline({
           {lanes.map((lane) => {
             const laneRecords = scheduled.filter((record) => lane.recordIds.has(record.id));
             return (
-              <section key={lane.key} aria-label={lane.label || 'Timeline records'}>
+              <section key={lane.key} aria-label={lane.label || `Timeline ${itemNounPlural}`}>
                 {lane.label ? (
                   <header className="border-b bg-muted/20 px-3 py-2 font-medium text-sm">
                     {lane.label}
@@ -545,7 +549,7 @@ export function DatabaseTimeline({
                                 type="button"
                                 variant="ghost"
                                 size="icon-xs"
-                                aria-label={`Open record ${titleForRecord(source, record)}`}
+                                aria-label={`Open ${itemNoun} ${titleForRecord(source, record)}`}
                                 onClick={() => onOpen(record)}
                               >
                                 <ExternalLink />
@@ -556,7 +560,7 @@ export function DatabaseTimeline({
                                 type="button"
                                 variant="ghost"
                                 size="icon-xs"
-                                aria-label={`Inspect context for record ${titleForRecord(source, record)}`}
+                                aria-label={`Inspect context for ${itemNoun} ${titleForRecord(source, record)}`}
                                 disabled={mutationLocked}
                                 onClick={() => onOpenContextInspector(record)}
                               >
@@ -666,7 +670,7 @@ export function DatabaseTimeline({
                               variant="ghost"
                               size="icon-xs"
                               className="text-primary-foreground hover:text-primary"
-                              aria-label={`Inspect context for record ${titleForRecord(source, record)}`}
+                              aria-label={`Inspect context for ${itemNoun} ${titleForRecord(source, record)}`}
                               disabled={mutationLocked}
                               onClick={() => onOpenContextInspector(record)}
                             >
@@ -678,7 +682,7 @@ export function DatabaseTimeline({
                             variant="ghost"
                             size="icon-xs"
                             className="text-primary-foreground hover:text-primary"
-                            aria-label={`Move record ${titleForRecord(source, record)} earlier`}
+                            aria-label={`Move ${itemNoun} ${titleForRecord(source, record)} earlier`}
                             onClick={() =>
                               emitChange(
                                 record,
@@ -694,7 +698,7 @@ export function DatabaseTimeline({
                             variant="ghost"
                             size="icon-xs"
                             className="text-primary-foreground hover:text-primary"
-                            aria-label={`Move record ${titleForRecord(source, record)} later`}
+                            aria-label={`Move ${itemNoun} ${titleForRecord(source, record)} later`}
                             onClick={() =>
                               emitChange(
                                 record,
@@ -761,7 +765,7 @@ export function DatabaseTimeline({
                       type="button"
                       variant="ghost"
                       size="icon-xs"
-                      aria-label={`Inspect context for record ${titleForRecord(source, record)}`}
+                      aria-label={`Inspect context for ${itemNoun} ${titleForRecord(source, record)}`}
                       disabled={mutationLocked}
                       onClick={() => onOpenContextInspector(record)}
                     >

@@ -76,12 +76,14 @@ export function DatabaseMap({
   source,
   view,
   result,
+  notionSurface = false,
   onOpen,
   onOpenContextInspector,
 }: {
   source: DatabaseSource;
   view: DatabaseView;
   result: DatabaseQueryResult;
+  notionSurface?: boolean;
   onOpen?: (record: ProjectedDatabaseRecord) => void;
   onOpenContextInspector?: (record: ProjectedDatabaseRecord) => void;
 }) {
@@ -91,6 +93,7 @@ export function DatabaseMap({
       source={source}
       view={{ ...view, layout: view.layout }}
       result={result}
+      notionSurface={notionSurface}
       onOpen={onOpen}
       onOpenContextInspector={onOpenContextInspector}
     />
@@ -101,6 +104,7 @@ function DatabaseMapContent({
   source,
   view,
   result,
+  notionSurface,
   onOpen,
   onOpenContextInspector,
 }: {
@@ -109,6 +113,7 @@ function DatabaseMapContent({
     layout: Extract<DatabaseView['layout'], { type: 'map' }>;
   };
   result: DatabaseQueryResult;
+  notionSurface?: boolean;
   onOpen?: (record: ProjectedDatabaseRecord) => void;
   onOpenContextInspector?: (record: ProjectedDatabaseRecord) => void;
 }) {
@@ -118,6 +123,7 @@ function DatabaseMapContent({
   const placeProperty = source.properties.find(
     (property) => property.id === configuration.placePropertyId && property.type === 'place',
   );
+  const itemNoun = notionSurface ? 'page' : 'record';
   const located = result.records.flatMap((record) => {
     const value = record.values[configuration.placePropertyId];
     return value &&
@@ -334,7 +340,7 @@ function DatabaseMapContent({
                   type="button"
                   size="icon-xs"
                   variant="secondary"
-                  aria-label={`Inspect context for record ${titleForRecord(source, firstMarker.record)}`}
+                  aria-label={`Inspect context for ${itemNoun} ${titleForRecord(source, firstMarker.record)}`}
                   onPointerDown={(event) => event.stopPropagation()}
                   onClick={() => onOpenContextInspector(firstMarker.record)}
                 >
@@ -366,7 +372,7 @@ function DatabaseMapContent({
                           type="button"
                           variant="ghost"
                           size="icon-xs"
-                          aria-label={`Inspect context for record ${titleForRecord(source, marker.record)}`}
+                          aria-label={`Inspect context for ${itemNoun} ${titleForRecord(source, marker.record)}`}
                           onClick={() => onOpenContextInspector(marker.record)}
                         >
                           <Braces aria-hidden="true" />
@@ -465,7 +471,7 @@ function DatabaseMapContent({
                     type="button"
                     size="icon-sm"
                     variant="outline"
-                    aria-label={`Inspect context for record ${titleForRecord(source, record)}`}
+                    aria-label={`Inspect context for ${itemNoun} ${titleForRecord(source, record)}`}
                     onClick={() => onOpenContextInspector(record)}
                   >
                     <Braces aria-hidden="true" />
@@ -478,7 +484,11 @@ function DatabaseMapContent({
       ) : null}
       {located.length === 0 ? (
         <p className="rounded border border-dashed p-8 text-center text-muted-foreground text-sm">
-          <Trans>No records in this Map view have a location.</Trans>
+          {notionSurface ? (
+            <Trans>No pages in this Map view have a location.</Trans>
+          ) : (
+            <Trans>No records in this Map view have a location.</Trans>
+          )}
         </p>
       ) : null}
     </section>

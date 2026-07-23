@@ -214,6 +214,7 @@ export function DatabaseCalendar({
   result,
   people = result.people ?? [],
   relationRecords = result.relationRecords ?? [],
+  notionSurface = false,
   mutationLocked = false,
   onOpen,
   onOpenContextInspector,
@@ -224,6 +225,7 @@ export function DatabaseCalendar({
   result: DatabaseQueryResult;
   people?: readonly ProjectedDatabasePerson[];
   relationRecords?: readonly ProjectedDatabaseRelationRecord[];
+  notionSurface?: boolean;
   mutationLocked?: boolean;
   onOpen?: (record: ProjectedDatabaseRecord) => void;
   onOpenContextInspector?: (record: ProjectedDatabaseRecord) => void;
@@ -252,6 +254,7 @@ export function DatabaseCalendar({
       </div>
     );
   }
+  const itemNoun = notionSurface ? 'page' : 'record';
   const days = calendarDays({
     anchor,
     display: configuration.display,
@@ -436,7 +439,7 @@ export function DatabaseCalendar({
                           type="button"
                           variant="ghost"
                           size="icon-xs"
-                          aria-label={`Open record ${recordTitle(source, record)}`}
+                          aria-label={`Open ${itemNoun} ${recordTitle(source, record)}`}
                           onClick={() => onOpen(record)}
                         >
                           <ExternalLink />
@@ -447,7 +450,7 @@ export function DatabaseCalendar({
                           type="button"
                           variant="ghost"
                           size="icon-xs"
-                          aria-label={`Inspect context for record ${recordTitle(source, record)}`}
+                          aria-label={`Inspect context for ${itemNoun} ${recordTitle(source, record)}`}
                           disabled={mutationLocked}
                           onClick={() => onOpenContextInspector(record)}
                         >
@@ -500,7 +503,8 @@ export function DatabaseCalendar({
       </div>
       {unscheduled.length > 0 ? (
         <p className="text-muted-foreground text-xs" role="status">
-          {unscheduled.length} records have no {dateProperty.name} date.
+          {unscheduled.length} {notionSurface ? 'pages' : 'records'} have no {dateProperty.name}{' '}
+          date.
         </p>
       ) : null}
       <p className="text-muted-foreground text-xs">

@@ -115,6 +115,7 @@ export function DatabaseChart({
   result,
   people = result.people ?? [],
   relationRecords = result.relationRecords ?? [],
+  notionSurface = false,
   onOpen,
   onOpenContextInspector,
 }: {
@@ -123,6 +124,7 @@ export function DatabaseChart({
   result: DatabaseQueryResult;
   people?: readonly ProjectedDatabasePerson[];
   relationRecords?: readonly ProjectedDatabaseRelationRecord[];
+  notionSurface?: boolean;
   onOpen?: (record: ProjectedDatabaseRecord) => void;
   onOpenContextInspector?: (record: ProjectedDatabaseRecord) => void;
 }) {
@@ -132,6 +134,9 @@ export function DatabaseChart({
   const [drillGroup, setDrillGroup] = useState<DatabaseAggregationGroup | null>(null);
   if (view.layout.type !== 'chart') return null;
   const configuration = view.layout.configuration;
+  const itemNoun = notionSurface ? 'page' : 'record';
+  const itemNounTitle = notionSurface ? 'Page' : 'Record';
+  const itemNounPlural = notionSurface ? 'pages' : 'records';
   const aggregation = result.aggregation;
   const dimensionProperty = configuration.dimension
     ? source.properties.find((property) => property.id === configuration.dimension?.propertyId)
@@ -156,7 +161,9 @@ export function DatabaseChart({
       ),
       series: configuration.seriesPropertyId
         ? propertyValueLabel(seriesProperty, group.key[1]?.value ?? null, people, relationRecords)
-        : 'Records',
+        : notionSurface
+          ? 'Pages'
+          : 'Records',
       value: calculationValue(group),
       group,
     }));
@@ -171,7 +178,7 @@ export function DatabaseChart({
     aggregation?.calculations.find((calculation) => calculation.id === 'chart_measure')?.unit;
   const measureName =
     configuration.measure.type === 'count'
-      ? 'Record count'
+      ? `${itemNounTitle} count`
       : `${configuration.measure.function.replaceAll('_', ' ')} of ${measureProperty?.name ?? configuration.measure.propertyId}`;
   const drillRecords = drillGroup
     ? result.records.filter((record) => groupContainsRecord(result, record.id, drillGroup))
@@ -316,7 +323,7 @@ export function DatabaseChart({
                     relationRecords,
                   ),
                 )
-                .join(' / ') || 'All matching records'}
+                .join(' / ') || `All matching ${itemNounPlural}`}
               {' · '}
               {drillGroup?.matched.toLocaleString()} matched
             </DialogDescription>
@@ -324,7 +331,7 @@ export function DatabaseChart({
           <DialogBody className="space-y-2">
             {drillRecords.length === 0 ? (
               <p className="rounded border border-dashed p-4 text-muted-foreground text-sm">
-                No matching records are present in this bounded result page.
+                No matching {itemNounPlural} are present in this bounded result page.
               </p>
             ) : (
               drillRecords.map((record) => (
@@ -341,14 +348,14 @@ export function DatabaseChart({
                         ? String(record.values[titleProperty.id] ?? 'Untitled')
                         : 'Untitled'}
                     </span>
-                    <span className="text-muted-foreground text-xs">Open record</span>
+                    <span className="text-muted-foreground text-xs">Open {itemNoun}</span>
                   </Button>
                   {onOpenContextInspector ? (
                     <Button
                       type="button"
                       variant="outline"
                       size="icon-sm"
-                      aria-label={`Inspect context for record ${titleProperty ? String(record.values[titleProperty.id] ?? 'Untitled') : 'Untitled'}`}
+                      aria-label={`Inspect context for ${itemNoun} ${titleProperty ? String(record.values[titleProperty.id] ?? 'Untitled') : 'Untitled'}`}
                       onClick={() => onOpenContextInspector(record)}
                     >
                       <Braces aria-hidden="true" />
@@ -359,7 +366,7 @@ export function DatabaseChart({
             )}
             {drillGroup && drillRecords.length < drillGroup.matched ? (
               <p className="text-muted-foreground text-xs">
-                Showing {drillRecords.length.toLocaleString()} loaded records of{' '}
+                Showing {drillRecords.length.toLocaleString()} loaded {itemNounPlural} of{' '}
                 {drillGroup.matched.toLocaleString()} matched. The view load limit is{' '}
                 {configuration.loadLimit.toLocaleString()}.
               </p>
