@@ -23,6 +23,8 @@
 - Latest inline-view tab-action changeset: `../../.changeset/inline-view-tab-actions.md`
 - Latest inline-view rename commit: `80fb4807`
 - Latest inline-view rename changeset: `../../.changeset/inline-view-rename-handoff.md`
+- Latest inline-view default-action commit: `f9ef4f4d`
+- Latest inline-view default-action changeset: `../../.changeset/inline-view-default-handoff.md`
 - Latest page-terminology changeset: `../../.changeset/notion-database-page-language.md`
 - Latest inline UX changeset: `../../.changeset/inline-database-focus.md`
 - Latest inline recovery changeset: `../../.changeset/inline-database-undo.md`
@@ -232,13 +234,15 @@ view ID; they no longer open an unrelated generic manager screen. The manager
 keeps the canonical lifecycle compiler as the mutation boundary, and the
 Favorite intent is keyed by its target boolean so repeated toggles cannot be
 silently swallowed. Rename, Make/Clear default, and Manage views continue to
-open the manager because they require the corresponding user-input or
-management surface.
+open a handoff surface; the two direct-input/default cases were converged in
+the follow-up commits below, while Manage views remains the full management
+surface.
 
-Focused evidence: the combined `DatabaseViewManagerDialog.dom.test.tsx` and
-`DatabaseView.dom.test.tsx` run passes 37 tests / 295 expectations; the helper
-mapping test covers all five inline lifecycle actions and the manager test
-covers favorite, reorder, and delete forwarding. App typecheck, targeted
+Focused evidence at this commit: the combined
+`DatabaseViewManagerDialog.dom.test.tsx` and `DatabaseView.dom.test.tsx` run
+passes 37 tests / 295 expectations; the helper mapping test covers the five
+initial lifecycle actions and the manager test covers favorite, reorder, and
+delete forwarding. App typecheck, targeted
 Biome, and `git diff --check` pass. This closes the inline action-routing
 implementation slice, but not the remaining visual, accessibility, Electron,
 responsive, performance, or packaged-release gates.
@@ -251,6 +255,15 @@ owns the required user input. Focused evidence adds the rename handoff DOM
 journey to the 78-test / 516-expectation `DatabaseTableDialog` suite; the
 manager-plus-inline suite passes 38 tests / 296 expectations. App typecheck,
 targeted Biome, and diff checks pass.
+
+`f9ef4f4d fix: route inline view default actions directly` applies the same
+convergence to Make default and Clear default. Inline tabs now call the
+existing reviewed default-view mutation boundary with the selected stable view
+ID (or an explicit clear), and do not open the generic manager. The focused
+default handoff test reaches the plan endpoint and asserts that the manager is
+absent; the manager-plus-inline suite passes 39 tests / 300 expectations. The
+default helper uses `useEffectEvent` so an initial handoff cannot be replayed by
+state refreshes.
 
 ### Notion surface continuation (2026-07-23)
 

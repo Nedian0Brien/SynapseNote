@@ -785,8 +785,11 @@ and Delete as explicit reviewed lifecycle intents for the selected stable view;
 the manager-plus-inline focused suite passes 38 tests / 296 expectations.
 Inline Rename now opens the reviewed rename dialog directly, with the current
 name and stable view ID; the affected `DatabaseTableDialog` suite passes 78
-tests / 516 expectations. Make/Clear default and Manage views continue to open
-the manager by design because they require the full management surface.
+tests / 516 expectations. The Manage views action continues to open the manager
+by design because it requires the full management surface. The
+follow-up default-action bridge now routes Make/Clear default directly to the
+reviewed default mutation boundary; the manager-plus-inline suite passes 39
+tests / 300 expectations.
 
 This closes UX-606 at the functional implementation/evidence layer.
 

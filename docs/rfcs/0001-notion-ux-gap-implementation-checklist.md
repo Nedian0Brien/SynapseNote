@@ -522,12 +522,14 @@ treated as visual parity until a browser capture is attached.
   Commit `18682ec2` also routes inline saved-view tab Duplicate, Favorite,
   move-left/right, and Delete actions into the exact reviewed lifecycle
   changes for the selected stable view instead of falling through to a generic
-  manager open. Rename, Make/Clear default, and Manage views intentionally
-  retain their manager handoff because they require user input or the full
-  management surface. Follow-up `80fb4807` routes inline Rename directly to
+  manager open. Follow-up `80fb4807` routes inline Rename directly to
   the reviewed rename dialog while preserving the stable view ID; the focused
   `DatabaseTableDialog.dom.test.tsx` suite passes 78 tests / 516 expectations,
   and the manager-plus-inline suite passes 38 tests / 296 expectations.
+  Follow-up `f9ef4f4d` routes inline Make default and Clear default through the
+  reviewed default-view mutation boundary without opening the manager; the
+  focused handoff test passes 1 test / 3 expectations and the manager-plus-
+  inline suite passes 39 tests / 300 expectations.
   Pixel-level visual parity remains a separate NUI-701/NUI-702 gate; the
   stable-ID reorder and active-view settings/menu handoff are complete. Map to
   UX-601–UX-610.
