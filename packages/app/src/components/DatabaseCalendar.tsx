@@ -32,16 +32,21 @@ export interface DatabaseCalendarChange {
 
 type CalendarDragKind = 'move' | 'resize-start' | 'resize-end';
 
-const CALENDAR_COLORS = {
-  gray: 'border-gray-500/40 bg-gray-500/15',
-  brown: 'border-amber-900/40 bg-amber-900/15',
-  orange: 'border-orange-500/40 bg-orange-500/15',
-  yellow: 'border-yellow-500/40 bg-yellow-400/20',
-  green: 'border-green-500/40 bg-green-500/15',
-  blue: 'border-blue-500/40 bg-blue-500/15',
-  purple: 'border-purple-500/40 bg-purple-500/15',
-  pink: 'border-pink-500/40 bg-pink-500/15',
-  red: 'border-red-500/40 bg-red-500/15',
+export const DATABASE_CALENDAR_COLORS = {
+  gray: 'border-gray-500/40 bg-gray-500/15 text-foreground dark:border-gray-400/40 dark:bg-gray-400/15',
+  brown:
+    'border-amber-900/40 bg-amber-900/15 text-foreground dark:border-amber-700/40 dark:bg-amber-700/20',
+  orange:
+    'border-orange-500/40 bg-orange-500/15 text-foreground dark:border-orange-400/40 dark:bg-orange-400/15',
+  yellow:
+    'border-yellow-500/40 bg-yellow-400/20 text-foreground dark:border-yellow-300/40 dark:bg-yellow-300/15',
+  green:
+    'border-green-500/40 bg-green-500/15 text-foreground dark:border-green-400/40 dark:bg-green-400/15',
+  blue: 'border-blue-500/40 bg-blue-500/15 text-foreground dark:border-blue-400/40 dark:bg-blue-400/15',
+  purple:
+    'border-purple-500/40 bg-purple-500/15 text-foreground dark:border-purple-400/40 dark:bg-purple-400/15',
+  pink: 'border-pink-500/40 bg-pink-500/15 text-foreground dark:border-pink-400/40 dark:bg-pink-400/15',
+  red: 'border-red-500/40 bg-red-500/15 text-foreground dark:border-red-400/40 dark:bg-red-400/15',
 } as const;
 
 function dateValue(value: unknown): DatabaseDateValue | null {
@@ -391,7 +396,7 @@ export function DatabaseCalendar({
                     key={record.id}
                     className={cn(
                       'rounded border bg-background p-1 text-xs shadow-sm',
-                      rule ? CALENDAR_COLORS[rule.color] : undefined,
+                      rule ? DATABASE_CALENDAR_COLORS[rule.color] : undefined,
                     )}
                     draggable={!mutationLocked && !!onChange}
                     data-calendar-card={record.id}

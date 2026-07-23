@@ -20,16 +20,16 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-const GALLERY_COLORS = {
-  gray: 'bg-gray-500/15',
-  brown: 'bg-amber-900/15',
-  orange: 'bg-orange-500/15',
-  yellow: 'bg-yellow-400/20',
-  green: 'bg-green-500/15',
-  blue: 'bg-blue-500/15',
-  purple: 'bg-purple-500/15',
-  pink: 'bg-pink-500/15',
-  red: 'bg-red-500/15',
+export const DATABASE_GALLERY_COLORS = {
+  gray: 'bg-gray-500/15 text-foreground dark:bg-gray-400/15',
+  brown: 'bg-amber-900/15 text-foreground dark:bg-amber-700/20',
+  orange: 'bg-orange-500/15 text-foreground dark:bg-orange-400/15',
+  yellow: 'bg-yellow-400/20 text-foreground dark:bg-yellow-300/15',
+  green: 'bg-green-500/15 text-foreground dark:bg-green-400/15',
+  blue: 'bg-blue-500/15 text-foreground dark:bg-blue-400/15',
+  purple: 'bg-purple-500/15 text-foreground dark:bg-purple-400/15',
+  pink: 'bg-pink-500/15 text-foreground dark:bg-pink-400/15',
+  red: 'bg-red-500/15 text-foreground dark:bg-red-400/15',
 } as const;
 
 const FALLBACK_COLORS = [
@@ -216,7 +216,7 @@ export function DatabaseGallery({
               key={record.id}
               className={cn(
                 'group overflow-hidden rounded-lg border bg-background shadow-sm transition-shadow hover:shadow-md',
-                pageColor ? GALLERY_COLORS[pageColor] : undefined,
+                pageColor ? DATABASE_GALLERY_COLORS[pageColor] : undefined,
               )}
               data-gallery-card={record.id}
               data-conditional-color={pageColor}
@@ -300,7 +300,7 @@ export function DatabaseGallery({
                       key={property.id}
                       className={cn(
                         'flex gap-2 text-xs',
-                        propertyColor ? GALLERY_COLORS[propertyColor] : undefined,
+                        propertyColor ? DATABASE_GALLERY_COLORS[propertyColor] : undefined,
                       )}
                       data-gallery-property={property.id}
                       data-conditional-color={propertyColor}

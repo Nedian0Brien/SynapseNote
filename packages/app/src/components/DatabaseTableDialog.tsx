@@ -763,7 +763,7 @@ type DatabaseConditionalColorName = NonNullable<
   DatabaseQueryResult['conditionalColors']
 >['rules'][number]['color'];
 
-const DATABASE_CONDITIONAL_COLOR_CLASSES: Record<DatabaseConditionalColorName, string> = {
+export const DATABASE_CONDITIONAL_COLOR_CLASSES: Record<DatabaseConditionalColorName, string> = {
   gray: 'bg-gray-500/15 dark:bg-gray-400/15',
   brown: 'bg-amber-900/15 dark:bg-amber-700/20',
   orange: 'bg-orange-500/15 dark:bg-orange-400/15',

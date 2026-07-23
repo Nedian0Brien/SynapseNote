@@ -46,16 +46,16 @@ interface TimelineLane {
   recordIds: Set<string>;
 }
 
-const TIMELINE_COLORS = {
-  gray: 'bg-gray-500 text-white',
-  brown: 'bg-amber-900 text-white',
-  orange: 'bg-orange-500 text-white',
+export const DATABASE_TIMELINE_COLORS = {
+  gray: 'bg-gray-600 text-white',
+  brown: 'bg-amber-800 text-white',
+  orange: 'bg-orange-800 text-white',
   yellow: 'bg-yellow-400 text-black',
-  green: 'bg-green-600 text-white',
-  blue: 'bg-blue-600 text-white',
-  purple: 'bg-purple-600 text-white',
-  pink: 'bg-pink-600 text-white',
-  red: 'bg-red-600 text-white',
+  green: 'bg-green-700 text-white',
+  blue: 'bg-blue-700 text-white',
+  purple: 'bg-purple-700 text-white',
+  pink: 'bg-pink-700 text-white',
+  red: 'bg-red-700 text-white',
 } as const;
 
 function dateValue(value: unknown): DatabaseDateValue | null {
@@ -615,7 +615,7 @@ export function DatabaseTimeline({
                         <article
                           className={cn(
                             'z-20 flex h-9 items-center gap-1 overflow-hidden rounded bg-primary px-1 text-primary-foreground text-xs shadow-sm',
-                            pageRule ? TIMELINE_COLORS[pageRule.color] : undefined,
+                            pageRule ? DATABASE_TIMELINE_COLORS[pageRule.color] : undefined,
                           )}
                           style={{ gridColumn: `${startColumn + 1} / ${endColumn + 2}` }}
                           draggable={!mutationLocked && !!onChange}

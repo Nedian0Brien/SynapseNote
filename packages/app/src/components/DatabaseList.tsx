@@ -21,16 +21,16 @@ interface ListRow {
   hasChildren: boolean;
 }
 
-const LIST_COLORS = {
-  gray: 'bg-gray-500/15',
-  brown: 'bg-amber-900/15',
-  orange: 'bg-orange-500/15',
-  yellow: 'bg-yellow-400/20',
-  green: 'bg-green-500/15',
-  blue: 'bg-blue-500/15',
-  purple: 'bg-purple-500/15',
-  pink: 'bg-pink-500/15',
-  red: 'bg-red-500/15',
+export const DATABASE_LIST_COLORS = {
+  gray: 'bg-gray-500/15 text-foreground dark:bg-gray-400/15',
+  brown: 'bg-amber-900/15 text-foreground dark:bg-amber-700/20',
+  orange: 'bg-orange-500/15 text-foreground dark:bg-orange-400/15',
+  yellow: 'bg-yellow-400/20 text-foreground dark:bg-yellow-300/15',
+  green: 'bg-green-500/15 text-foreground dark:bg-green-400/15',
+  blue: 'bg-blue-500/15 text-foreground dark:bg-blue-400/15',
+  purple: 'bg-purple-500/15 text-foreground dark:bg-purple-400/15',
+  pink: 'bg-pink-500/15 text-foreground dark:bg-pink-400/15',
+  red: 'bg-red-500/15 text-foreground dark:bg-red-400/15',
 } as const;
 
 function title(source: DatabaseSource, record: ProjectedDatabaseRecord): string {
@@ -255,7 +255,7 @@ export function DatabaseList({
                         'flex items-center gap-2 px-2 outline-none focus-visible:ring-2 focus-visible:ring-primary',
                         configuration.density === 'compact' ? 'min-h-8' : 'min-h-11',
                         configuration.showDividers && 'border-t',
-                        pageColor ? LIST_COLORS[pageColor] : undefined,
+                        pageColor ? DATABASE_LIST_COLORS[pageColor] : undefined,
                       )}
                       style={{ paddingLeft: `${row.depth * 1.25 + 0.5}rem` }}
                       onClick={() => onOpen?.(row.record)}
@@ -323,7 +323,7 @@ export function DatabaseList({
                               key={property.id}
                               className={cn(
                                 'max-w-40 truncate text-muted-foreground text-xs',
-                                propertyColor ? LIST_COLORS[propertyColor] : undefined,
+                                propertyColor ? DATABASE_LIST_COLORS[propertyColor] : undefined,
                               )}
                               data-list-property={property.id}
                               data-conditional-color={propertyColor}

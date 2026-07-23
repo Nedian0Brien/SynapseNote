@@ -40,23 +40,23 @@ interface BoardGroup {
 }
 
 const COLUMN_COLORS = [
-  'bg-blue-500/5 border-blue-500/20',
-  'bg-purple-500/5 border-purple-500/20',
-  'bg-green-500/5 border-green-500/20',
-  'bg-orange-500/5 border-orange-500/20',
-  'bg-pink-500/5 border-pink-500/20',
+  'bg-blue-500/5 border-blue-500/20 dark:bg-blue-400/10 dark:border-blue-400/20',
+  'bg-purple-500/5 border-purple-500/20 dark:bg-purple-400/10 dark:border-purple-400/20',
+  'bg-green-500/5 border-green-500/20 dark:bg-green-400/10 dark:border-green-400/20',
+  'bg-orange-500/5 border-orange-500/20 dark:bg-orange-400/10 dark:border-orange-400/20',
+  'bg-pink-500/5 border-pink-500/20 dark:bg-pink-400/10 dark:border-pink-400/20',
 ] as const;
 
-const CARD_COLORS = {
-  gray: 'bg-gray-500/15',
-  brown: 'bg-amber-900/15',
-  orange: 'bg-orange-500/15',
-  yellow: 'bg-yellow-400/20',
-  green: 'bg-green-500/15',
-  blue: 'bg-blue-500/15',
-  purple: 'bg-purple-500/15',
-  pink: 'bg-pink-500/15',
-  red: 'bg-red-500/15',
+export const DATABASE_BOARD_CARD_COLORS = {
+  gray: 'bg-gray-500/15 text-foreground dark:bg-gray-400/15',
+  brown: 'bg-amber-900/15 text-foreground dark:bg-amber-700/20',
+  orange: 'bg-orange-500/15 text-foreground dark:bg-orange-400/15',
+  yellow: 'bg-yellow-400/20 text-foreground dark:bg-yellow-300/15',
+  green: 'bg-green-500/15 text-foreground dark:bg-green-400/15',
+  blue: 'bg-blue-500/15 text-foreground dark:bg-blue-400/15',
+  purple: 'bg-purple-500/15 text-foreground dark:bg-purple-400/15',
+  pink: 'bg-pink-500/15 text-foreground dark:bg-pink-400/15',
+  red: 'bg-red-500/15 text-foreground dark:bg-red-400/15',
 } as const;
 
 function valueKey(value: DatabaseValue | null): string {
@@ -446,7 +446,7 @@ export function DatabaseBoard({
                           className={cn(
                             'overflow-hidden rounded-md border bg-background shadow-sm',
                             configuration.cardSize === 'small' ? 'text-xs' : 'text-sm',
-                            pageRule && CARD_COLORS[pageRule.color],
+                            pageRule && DATABASE_BOARD_CARD_COLORS[pageRule.color],
                           )}
                           draggable={
                             !mutationLocked &&
