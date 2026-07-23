@@ -3074,6 +3074,18 @@ their broad evidence is actually assembled:
   targeted Biome and app typecheck. This does not close the remaining visual,
   manual accessibility, usability, or browser/hosted gates.
 
+### 2026-07-23 Inline title link treatment pass
+
+- Inline page titles now read as document content: foreground text with a
+  subtle hover underline and no canonical blue-link color. Clicking still
+  opens the page and the pencil edit affordance remains explicit; canonical
+  database tables keep their existing link styling.
+- Focused DOM evidence: the bounded `DatabaseTableDialog.dom.test.tsx` slice
+  passes the inline title, type-icon, cell-menu, and row-menu cases (4 tests /
+  27 expectations), with targeted Biome and app typecheck. This is visual
+  convergence evidence only; cross-host, manual accessibility, usability,
+  and full browser gates remain open.
+
 ## Recommended execution order
 
 1. When a browser-enabled runner is available, run only the new primary-journey

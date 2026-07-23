@@ -2919,6 +2919,18 @@ describe('DatabaseTableDialog', () => {
     expect(screen.getByRole('columnheader', { name: 'TitleTitle' })).toBeTruthy();
   });
 
+  test('uses document-native title treatment for inline page links', () => {
+    render(
+      <DatabaseTable source={source} result={queryResult()} notionSurface onOpen={() => {}} />,
+    );
+    const titleLink = document.querySelector<HTMLButtonElement>(
+      '[data-record-title-link="rec_first"]',
+    );
+    expect(titleLink?.getAttribute('data-variant')).toBe('ghost');
+    expect(titleLink?.className).toContain('text-foreground');
+    expect(titleLink?.className).toContain('hover:underline');
+  });
+
   test('contextualizes the inline cell action menu with title and property', () => {
     const view = render(
       <DatabaseTable

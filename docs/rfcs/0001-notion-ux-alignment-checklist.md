@@ -2334,6 +2334,19 @@ matrix.
   cross-host baseline, manual contrast/assistive-technology, usability, or
   full browser-journey gates.
 
+### Inline title link treatment pass (2026-07-23)
+
+- Inline page titles now use the document-native foreground/ghost treatment
+  with underline-on-hover, rather than the canonical admin table's blue link
+  treatment. The title still opens the record page and keeps the existing
+  explicit edit affordance, so this is visual-only at the interaction level.
+- Focused DOM evidence: `DatabaseTableDialog.dom.test.tsx` covers the inline
+  title variant alongside the header icon and row-menu cases (4 tests / 27
+  expectations in the bounded slice); targeted Biome and app typecheck pass.
+- This is a supporting UX-009/UX-1104 visual correction. Cross-host screenshots,
+  manual focus/contrast review, usability sessions, and browser journey gates
+  remain open.
+
 - [x] **UX-1001** Define keyboard order across title, tabs, controls, headers,
       cells, new row, and pagination. The canonical page DOM and focused table
       tests pin this progression, while arrow-key navigation handles the grid

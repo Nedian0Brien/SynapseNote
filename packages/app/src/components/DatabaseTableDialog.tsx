@@ -2986,9 +2986,13 @@ export function DatabaseTable({
                           <div className="flex min-w-0 items-center gap-1">
                             <Button
                               type="button"
-                              variant="link"
+                              variant={notionSurface ? 'ghost' : 'link'}
                               disabled={mutationLocked || proposedRecord !== undefined}
-                              className="h-auto min-w-0 flex-1 justify-start truncate px-1 py-0.5 text-left font-inherit"
+                              className={cn(
+                                'h-auto min-w-0 flex-1 justify-start truncate px-1 py-0.5 text-left font-inherit',
+                                notionSurface &&
+                                  'text-foreground hover:bg-transparent hover:underline',
+                              )}
                               data-record-title-link={record.id}
                               onClick={(event) => {
                                 event.stopPropagation();
