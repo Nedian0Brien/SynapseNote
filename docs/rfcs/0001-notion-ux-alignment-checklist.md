@@ -461,10 +461,10 @@ card and card actions: `Record First task`, `Open record First task`, `Move
 record First task to group`, `Duplicate record First task`, `Inspect context for
 record First task`, `Archive record First task`, and `Delete record First task`.
 The card's stable record ID remains in `data-record-id` and all mutation scopes.
-`DatabaseBoard.dom.test.tsx` passes 3 tests / 16 expectations. The broader
-`DatabaseView.dom.test.tsx` Board cases remain diagnostic-only because an
-existing assertion still expects a standalone `Task board` heading even though
-the current semantic landmark is `Linked database view: Tasks · Task board`.
+`DatabaseBoard.dom.test.tsx` passes 3 tests / 16 expectations, and the two
+linked-Board journeys in `DatabaseView.dom.test.tsx` pass 2 tests / 17
+expectations after their selectors were aligned to the semantic region and
+active view tab.
 
 The follow-up regression capture found that remounting the manager during a
 draft could replay the initial action and create duplicate copies. The manager
