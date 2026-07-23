@@ -2575,7 +2575,7 @@ export function DatabaseTable({
                               target={property.type === 'url' ? '_blank' : undefined}
                               rel={property.type === 'url' ? 'noopener noreferrer' : undefined}
                               className="min-w-0 truncate text-azure-blue underline underline-offset-2"
-                              aria-label={`Open ${property.name} for record ${record.id}`}
+                              aria-label={`Open ${property.name} for record ${recordLabel}`}
                               onClick={(event) => dispatchExternalLinkClick(event, linkHref)}
                               onAuxClick={(event) => {
                                 if (event.button === 1) dispatchExternalLinkClick(event, linkHref);
@@ -2585,14 +2585,14 @@ export function DatabaseTable({
                             </a>
                             <DatabaseValueCopyButton
                               value={String(shownValue)}
-                              label={`${property.name} for record ${record.id}`}
+                              label={`${property.name} for record ${recordLabel}`}
                             />
                             {onEdit && !ghostCreated ? (
                               <Button
                                 size="icon-sm"
                                 variant="ghost"
                                 disabled={mutationLocked || proposed}
-                                aria-label={`Edit ${property.name} for record ${record.id}`}
+                                aria-label={`Edit ${property.name} for record ${recordLabel}`}
                                 onClick={() => beginEdit(record, property)}
                               >
                                 <Pencil />
@@ -2604,7 +2604,7 @@ export function DatabaseTable({
                             variant="outline"
                             size="sm"
                             disabled={mutationLocked || proposed || !onInvokeButton}
-                            aria-label={`${property.label} for record ${record.id}`}
+                            aria-label={`${property.label} for record ${recordLabel}`}
                             onClick={() => onInvokeButton?.(record, property)}
                           >
                             {property.label}
@@ -2675,7 +2675,7 @@ export function DatabaseTable({
                                 variant="ghost"
                                 disabled={mutationLocked || proposed}
                                 className="h-auto min-w-0 justify-start px-1 py-0.5 font-inherit"
-                                aria-label={`Edit ${property.name} for record ${record.id}`}
+                                aria-label={`Edit ${property.name} for record ${recordLabel}`}
                                 onClick={() => beginEdit(record, property)}
                               >
                                 <span className="truncate">{shownText}</span>
@@ -2718,7 +2718,7 @@ export function DatabaseTable({
                                 variant="ghost"
                                 size="icon-sm"
                                 disabled={mutationLocked || proposed}
-                                aria-label={`Edit ${property.name} for record ${record.id}`}
+                                aria-label={`Edit ${property.name} for record ${recordLabel}`}
                                 onClick={() => beginEdit(record, property)}
                               >
                                 <Pencil />
@@ -2730,7 +2730,7 @@ export function DatabaseTable({
                             variant="ghost"
                             disabled={mutationLocked || proposed}
                             className="h-auto max-w-full justify-start px-1 py-0.5 font-inherit"
-                            aria-label={`Edit ${property.name} for record ${record.id}`}
+                            aria-label={`Edit ${property.name} for record ${recordLabel}`}
                             onClick={() => beginEdit(record, property)}
                           >
                             {invalidValue !== undefined ? (

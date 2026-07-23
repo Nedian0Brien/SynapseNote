@@ -1510,7 +1510,7 @@ describe('DatabaseView', () => {
     expect(inlineSurface?.getAttribute('data-source-id')).toBe(source.id);
     expect(inlineSurface?.getAttribute('data-view-id')).toBe(view.id);
     expect(document.querySelector('[data-record-id="rec_first"]')).toBeTruthy();
-    expect(screen.getByLabelText('Edit Title for record rec_first')).toBeTruthy();
+    expect(screen.getByLabelText('Edit Title for record First task')).toBeTruthy();
     expect(screen.getByTestId('database-new-row-title')).toBeTruthy();
     fireEvent.click(screen.getByLabelText('Inspect context for record First task'));
     expect(await screen.findByText('What the agent saw')).toBeTruthy();
@@ -1540,8 +1540,8 @@ describe('DatabaseView', () => {
     ).toBeTruthy();
     fireEvent.click(document.querySelector('[data-slot="dialog-close"]') as HTMLElement);
     await waitFor(() => expect(screen.queryByText('What the agent saw')).toBeNull());
-    fireEvent.click(screen.getByLabelText('Select record rec_first'));
-    fireEvent.click(screen.getByLabelText('Select record rec_second'));
+    fireEvent.click(screen.getByLabelText('Select record First task'));
+    fireEvent.click(screen.getByLabelText('Select record Second task'));
     expect(await screen.findByTestId('inline-selection-toolbar')).toBeTruthy();
     expect(screen.getByText('2 selected')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Inspect selected context' }));
@@ -1571,7 +1571,7 @@ describe('DatabaseView', () => {
     await waitFor(() => expect(document.querySelector('[data-database-workspace]')).toBeNull());
     fireEvent.click(screen.getByRole('button', { name: 'Clear selection' }));
     await waitFor(() => expect(screen.queryByTestId('inline-selection-toolbar')).toBeNull());
-    fireEvent.click(screen.getByLabelText('Edit Title for record rec_first'));
+    fireEvent.click(screen.getByLabelText('Edit Title for record First task'));
     const titleInput = screen.getByLabelText('Edit Title') as HTMLInputElement;
     fireEvent.change(titleInput, { target: { value: 'Renamed task' } });
     fireEvent.keyDown(titleInput, { key: 'Enter' });
