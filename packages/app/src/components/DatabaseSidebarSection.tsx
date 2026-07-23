@@ -38,6 +38,11 @@ export function DatabaseSidebarSection() {
   const [candidates, setCandidates] = useState<DatabaseCatalogCandidate[]>([]);
   const [loadState, setLoadState] = useState<LoadState>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const loadStateRef = useRef(loadState);
+  loadStateRef.current = loadState;
+  const loadAttemptRef = useRef(loadAttempt);
+  loadAttemptRef.current = loadAttempt;
   const [activeTarget, setActiveTarget] = useState(() =>
     databasePageTargetFromHash(window.location.hash),
   );
@@ -61,8 +66,11 @@ export function DatabaseSidebarSection() {
   }, []);
 
   useEffect(() => {
-    if (!open || loadState === 'loading' || loadState === 'success') return;
+    if (!open || loadStateRef.current === 'success') return;
     const controller = new AbortController();
+    const requestAttempt = loadAttempt;
+    let settled = false;
+    loadStateRef.current = 'loading';
     setLoadState('loading');
     setErrorMessage(null);
     let timedOut = false;
@@ -72,10 +80,15 @@ export function DatabaseSidebarSection() {
     }, DATABASE_CATALOG_LOAD_TIMEOUT_MS);
     void fetchDatabaseCatalog({ signal: controller.signal })
       .then((catalog) => {
+        settled = true;
+        if (loadAttemptRef.current !== requestAttempt) return;
         setCandidates(catalog.candidates);
+        loadStateRef.current = 'success';
         setLoadState('success');
       })
       .catch((error: unknown) => {
+        settled = true;
+        if (loadAttemptRef.current !== requestAttempt) return;
         if (controller.signal.aborted && !timedOut) return;
         setErrorMessage(
           timedOut
@@ -84,13 +97,21 @@ export function DatabaseSidebarSection() {
               ? error.message
               : translateRef.current`Could not load databases`,
         );
+        loadStateRef.current = 'error';
         setLoadState('error');
       });
     return () => {
       window.clearTimeout(timeoutId);
       controller.abort();
+      if (!settled && loadStateRef.current === 'loading') {
+        // Closing and reopening the section should start a fresh request. The
+        // state dependency is intentionally not part of this effect: changing
+        // it to `loading` must not abort the request we just started.
+        loadStateRef.current = 'idle';
+        setLoadState('idle');
+      }
     };
-  }, [loadState, open]);
+  }, [loadAttempt, open]);
 
   function openSource(databaseId: string, sourceId: string) {
     window.location.hash = databasePageTargetToHash({ databaseId, sourceId });
@@ -137,7 +158,10 @@ export function DatabaseSidebarSection() {
                 variant="ghost"
                 size="icon-xs"
                 aria-label={t`Retry loading databases`}
-                onClick={() => setLoadState('idle')}
+                onClick={() => {
+                  setLoadState('idle');
+                  setLoadAttempt((attempt) => attempt + 1);
+                }}
               >
                 <RefreshCw aria-hidden="true" />
               </Button>

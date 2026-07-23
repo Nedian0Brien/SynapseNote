@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { DATABASE_NAVIGATION_CHANGE_EVENT } from '@/lib/database-navigation';
 import { renderLinguiTemplate } from '@/test-utils/lingui-mock';
 
-let catalogImpl = async () => ({
+let catalogImpl = async (_options?: { signal?: AbortSignal }) => ({
   query: null,
   manifestRevision: 'rev-1',
   catalogRevision: `sha256:${'a'.repeat(64)}`,
@@ -64,7 +64,7 @@ mock.module('@/components/ui/button', () => ({
 mock.module('@/lib/database-catalog-client', () => ({
   fetchDatabaseCatalog: (...args: unknown[]) => {
     fetchCalls.push(args);
-    return catalogImpl();
+    return catalogImpl(args[0] as { signal?: AbortSignal });
   },
 }));
 
@@ -72,7 +72,7 @@ describe('DatabaseSidebarSection', () => {
   beforeEach(() => {
     cleanup();
     fetchCalls.length = 0;
-    catalogImpl = async () => ({
+    catalogImpl = async (_options?: { signal?: AbortSignal }) => ({
       query: null,
       manifestRevision: 'rev-1',
       catalogRevision: `sha256:${'a'.repeat(64)}`,
@@ -103,6 +103,62 @@ describe('DatabaseSidebarSection', () => {
   });
 
   afterEach(cleanup);
+
+  test('keeps the catalog request alive while the loading state is rendered', async () => {
+    let resolveCatalog: ((value: Awaited<ReturnType<typeof catalogImpl>>) => void) | undefined;
+    let rejectCatalog: ((reason: unknown) => void) | undefined;
+    catalogImpl = ({ signal } = {}) =>
+      new Promise<Awaited<ReturnType<typeof catalogImpl>>>((resolve, reject) => {
+        resolveCatalog = resolve;
+        rejectCatalog = reject;
+        signal?.addEventListener(
+          'abort',
+          () => rejectCatalog?.(new DOMException('Aborted', 'AbortError')),
+          { once: true },
+        );
+      });
+
+    const { DatabaseSidebarSection } = await import('./DatabaseSidebarSection');
+    render(<DatabaseSidebarSection />);
+    fireEvent.click(screen.getByTestId('database-sidebar-trigger'));
+
+    expect(screen.getByRole('status').textContent).toBe('Loading databases');
+    expect(fetchCalls).toHaveLength(1);
+
+    await act(async () => {
+      resolveCatalog?.({
+        query: null,
+        manifestRevision: 'rev-1',
+        catalogRevision: `sha256:${'a'.repeat(64)}`,
+        complete: true,
+        candidates: [
+          {
+            id: 'db_tasks',
+            key: 'tasks',
+            name: 'Tasks',
+            purpose: 'Track tasks',
+            sources: [
+              {
+                id: 'ds_tasks',
+                key: 'tasks',
+                name: 'Tasks',
+                recordMeaning: 'One task',
+                propertyCount: 3,
+              },
+            ],
+            viewCount: 1,
+            relationCount: 0,
+            score: 1,
+            matchedBy: [],
+          },
+        ],
+      });
+    });
+
+    await waitFor(() =>
+      expect(screen.getByTestId('database-sidebar-source-ds_tasks')).toBeTruthy(),
+    );
+  });
 
   test('loads sources only when expanded and navigates to the stable database route', async () => {
     const { DatabaseSidebarSection } = await import('./DatabaseSidebarSection');
