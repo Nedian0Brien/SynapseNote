@@ -19,6 +19,8 @@
 - Latest database-page semantics changeset: `../../.changeset/database-page-semantic-surface.md`
 - Latest inline-view projection commit: `f0201231`
 - Latest inline-view projection changeset: `../../.changeset/inline-view-projection-persistence.md`
+- Latest inline-view tab-action commit: `18682ec2`
+- Latest inline-view tab-action changeset: `../../.changeset/inline-view-tab-actions.md`
 - Latest page-terminology changeset: `../../.changeset/notion-database-page-language.md`
 - Latest inline UX changeset: `../../.changeset/inline-database-focus.md`
 - Latest inline recovery changeset: `../../.changeset/inline-database-undo.md`
@@ -218,6 +220,26 @@ right` and asserts the serialized stable property order; the full focused file
 passes 22 tests / 261 expectations, app typecheck, and targeted Biome. This is
 functional linked-view evidence; browser visual, accessibility, and E2E
 coverage remain open under UX-1104–UX-1106 and NUI-701.
+
+### 2026-07-23 inline saved-view tab-action routing slice
+
+`18682ec2 fix: honor inline saved-view tab actions` closes a fall-through in
+the inline saved-view tab menu. Duplicate, Favorite, move-left/right, and
+Delete now become explicit reviewed manager intents with the selected stable
+view ID; they no longer open an unrelated generic manager screen. The manager
+keeps the canonical lifecycle compiler as the mutation boundary, and the
+Favorite intent is keyed by its target boolean so repeated toggles cannot be
+silently swallowed. Rename, Make/Clear default, and Manage views continue to
+open the manager because they require the corresponding user-input or
+management surface.
+
+Focused evidence: the combined `DatabaseViewManagerDialog.dom.test.tsx` and
+`DatabaseView.dom.test.tsx` run passes 37 tests / 295 expectations; the helper
+mapping test covers all five inline lifecycle actions and the manager test
+covers favorite, reorder, and delete forwarding. App typecheck, targeted
+Biome, and `git diff --check` pass. This closes the inline action-routing
+implementation slice, but not the remaining visual, accessibility, Electron,
+responsive, performance, or packaged-release gates.
 
 ### Notion surface continuation (2026-07-23)
 

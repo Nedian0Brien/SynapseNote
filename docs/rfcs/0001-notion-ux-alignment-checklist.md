@@ -780,6 +780,12 @@ manager when needed. Focused evidence covers the menu's safe-default and busy
 states (2 tests / 17 expectations), the rename dialog (1 / 2), and the
 canonical tab journey (1 / 25).
 
+The inline tab action bridge now forwards Duplicate, Favorite, move-left/right,
+and Delete as explicit reviewed lifecycle intents for the selected stable view;
+the manager-plus-inline focused suite passes 37 tests / 295 expectations.
+Rename, Make/Clear default, and Manage views continue to open the manager by
+design because they require user input or the full management surface.
+
 This closes UX-606 at the functional implementation/evidence layer.
 
 ### Last saved-view safety evidence (2026-07-23)

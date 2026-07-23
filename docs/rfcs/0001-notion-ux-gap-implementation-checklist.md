@@ -519,6 +519,13 @@ treated as visual parity until a browser capture is attached.
   `DatabaseView.dom.test.tsx` projection journey drives a reorder and asserts
   the stable serialized property order, while the full focused file passes 22
   tests / 261 expectations.
+  Commit `18682ec2` also routes inline saved-view tab Duplicate, Favorite,
+  move-left/right, and Delete actions into the exact reviewed lifecycle
+  changes for the selected stable view instead of falling through to a generic
+  manager open. Rename, Make/Clear default, and Manage views intentionally
+  retain their manager handoff because they require user input or the full
+  management surface. The focused manager-plus-inline suite passes 37 tests /
+  295 expectations.
   Pixel-level visual parity remains a separate NUI-701/NUI-702 gate; the
   stable-ID reorder and active-view settings/menu handoff are complete. Map to
   UX-601–UX-610.
