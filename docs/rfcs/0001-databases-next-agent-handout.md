@@ -79,6 +79,7 @@
 - Latest converged-creation changeset: `../../.changeset/notion-converged-creation.md`
 - Latest route-handoff changeset: `../../.changeset/notion-route-handoff.md`
 - Latest blank-identity/StrictMode changeset: `../../.changeset/notion-blank-database-identity.md`
+- Latest creation-retry changeset: `../../.changeset/notion-creation-retry.md`
 
 ## Objective and completion rule
 
@@ -2246,6 +2247,29 @@ Focused evidence:
 This is functional handoff evidence only. Do not close UX-1102/NUI-105 or the
 browser visual/usability gates from this smoke; the full Playwright journey and
 cross-host evidence are still outstanding.
+
+### 2026-07-23 Creation recovery follow-up
+
+Commit `2330dcd1 fix: add retry to notion database creation` keeps the
+Notion-style page-first creator recoverable after a rejected blank-database
+mutation:
+
+- The page landmark exposes `aria-busy="true"` while the first request is
+  pending and returns to `false` after an error.
+- The error state stays in the same page-shaped canvas and offers an explicit
+  `Retry` action instead of requiring the user to reopen the database chooser.
+- The retry attempt gets a distinct idempotency-key nonce while preserving the
+  same visible `Untitled database` and canonical page-first handoff.
+- The focused DOM file passes 4 tests / 23 expectations, including a rejected
+  first request followed by successful retry; targeted Biome passes.
+- The accompanying changeset is
+  `../../.changeset/notion-creation-retry.md`.
+
+The direct Electron dev launch was retried after the user reported unlocking
+the Mac, but Computer Use still reported the OS as locked and returned no
+accessibility tree or screenshot. The dev process was stopped cleanly. This
+remains an environment capture blocker, not a product-test pass; do not close
+UX-009, UX-1101–UX-1114, NUI-105, or NUI-701–NUI-705 from this attempt.
 
 ## Work in progress: do this first
 
