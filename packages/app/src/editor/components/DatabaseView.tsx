@@ -469,10 +469,16 @@ function InlineDatabaseCreationDialog({
           ) : null}
         </header>
         <div className="flex items-center gap-1 border-b px-3 py-2">
-          <Button type="button" size="sm" variant="secondary" aria-current="page">
+          <Button type="button" size="sm" variant="secondary" aria-current="page" disabled>
             Table
           </Button>
-          <Button type="button" size="icon-sm" variant="ghost" aria-label="Add database view">
+          <Button
+            type="button"
+            size="icon-sm"
+            variant="ghost"
+            aria-label="Add database view"
+            disabled
+          >
             <Plus aria-hidden="true" />
           </Button>
         </div>
@@ -482,7 +488,13 @@ function InlineDatabaseCreationDialog({
               <tr>
                 <th className="border-b px-4 py-3 font-medium">Title</th>
                 <th className="w-12 border-b px-2 py-2 text-right">
-                  <Button type="button" size="icon-sm" variant="ghost" aria-label="Add property">
+                  <Button
+                    type="button"
+                    size="icon-sm"
+                    variant="ghost"
+                    aria-label="Add property"
+                    disabled
+                  >
                     <Plus aria-hidden="true" />
                   </Button>
                 </th>

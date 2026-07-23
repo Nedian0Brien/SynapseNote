@@ -2175,7 +2175,12 @@ describe('DatabaseView', () => {
     expect(await screen.findByTestId('inline-database-create-dialog')).toBeTruthy();
     expect(document.querySelector('[data-notion-inline-database-creation]')).not.toBeNull();
     expect(screen.getByRole('columnheader', { name: 'Title' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Add property' })).toBeTruthy();
+    expect(
+      (screen.getByRole('button', { name: 'Add database view' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+    expect(
+      (screen.getByRole('button', { name: 'Add property' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
     expect(screen.getByLabelText('New page title')).toBeTruthy();
     await waitFor(() =>
       expect(dispatched[0]?.props).toMatchObject({

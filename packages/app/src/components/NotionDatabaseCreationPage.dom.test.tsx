@@ -32,8 +32,15 @@ describe('NotionDatabaseCreationPage', () => {
 
     expect(screen.getByRole('main', { name: 'New database page' })).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Untitled database' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Table' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Add property' })).toBeTruthy();
+    expect((screen.getByRole('button', { name: 'Table' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+    expect(
+      (screen.getByRole('button', { name: 'Add database view' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+    expect(
+      (screen.getByRole('button', { name: 'Add property' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
     expect(screen.getByRole('textbox', { name: 'New page title' })).toBeTruthy();
 
     await waitFor(() =>
