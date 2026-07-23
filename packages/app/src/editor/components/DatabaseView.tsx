@@ -431,6 +431,71 @@ function InlineDatabaseCreationDialog({
 
   if (!open) return null;
 
+  if (autoStart) {
+    return (
+      <section
+        className="my-3 overflow-hidden rounded-lg border bg-background"
+        contentEditable={false}
+        data-database-inline-create
+        data-notion-inline-database-creation
+        data-testid="inline-database-create-dialog"
+        aria-label="New inline database"
+      >
+        <header className="flex items-center justify-between gap-3 border-b px-4 py-3">
+          <div className="min-w-0">
+            <h3 className="truncate font-semibold">Untitled database</h3>
+            <p className="text-muted-foreground text-xs">Table</p>
+          </div>
+          {status === 'creating' ? (
+            <span className="inline-flex items-center gap-1.5 text-muted-foreground text-xs">
+              <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+              Preparing table
+            </span>
+          ) : null}
+        </header>
+        <div className="flex items-center gap-1 border-b px-3 py-2">
+          <Button type="button" size="sm" variant="secondary" aria-current="page">
+            Table
+          </Button>
+          <Button type="button" size="icon-sm" variant="ghost" aria-label="Add database view">
+            <Plus aria-hidden="true" />
+          </Button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[28rem] text-left text-sm">
+            <thead className="bg-muted/30">
+              <tr>
+                <th className="border-b px-4 py-3 font-medium">Title</th>
+                <th className="w-12 border-b px-2 py-2 text-right">
+                  <Button type="button" size="icon-sm" variant="ghost" aria-label="Add property">
+                    <Plus aria-hidden="true" />
+                  </Button>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="px-3 py-3" colSpan={2}>
+                  <Input
+                    aria-label="New page title"
+                    placeholder="New page"
+                    disabled={status === 'creating'}
+                    className="max-w-md border-0 bg-transparent px-1 shadow-none focus-visible:ring-1"
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        {error ? (
+          <p className="border-t p-3 text-destructive text-xs" role="alert">
+            {error}
+          </p>
+        ) : null}
+      </section>
+    );
+  }
+
   return (
     <section
       className="my-3 rounded-lg border bg-background p-4"

@@ -2172,6 +2172,10 @@ describe('DatabaseView', () => {
 
     expect(screen.queryByText('Choose a database view')).toBeNull();
     expect(await screen.findByTestId('inline-database-create-dialog')).toBeTruthy();
+    expect(document.querySelector('[data-notion-inline-database-creation]')).not.toBeNull();
+    expect(screen.getByRole('columnheader', { name: 'Title' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Add property' })).toBeTruthy();
+    expect(screen.getByLabelText('New page title')).toBeTruthy();
     await waitFor(() =>
       expect(dispatched[0]?.props).toMatchObject({
         databaseId: inlineDatabase.id,
