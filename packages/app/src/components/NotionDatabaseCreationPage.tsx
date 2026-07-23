@@ -27,14 +27,42 @@ export function NotionDatabaseCreationPage({
   onCreated: (target: NotionDatabaseTarget) => void;
   onCancel: () => void;
 }) {
-  const startedRef = useRef(false);
+  const creationRequestRef = useRef<{
+    controller: AbortController;
+    abortScheduled: boolean;
+  } | null>(null);
+  const onCreatedRef = useRef(onCreated);
   const [status, setStatus] = useState<'creating' | 'error'>('creating');
   const [error, setError] = useState<string | null>(null);
 
+  // The parent workspace owns the navigation callback and may recreate it
+  // while its surrounding shell re-renders. Keep the in-flight creation
+  // attached to the page action rather than to that callback identity.
   useEffect(() => {
-    if (!open || startedRef.current) return;
-    startedRef.current = true;
+    onCreatedRef.current = onCreated;
+  }, [onCreated]);
+
+  useEffect(() => {
+    const existingRequest = creationRequestRef.current;
+    if (!open) {
+      if (existingRequest) {
+        existingRequest.abortScheduled = false;
+        existingRequest.controller.abort();
+        creationRequestRef.current = null;
+      }
+      return;
+    }
+    if (existingRequest) {
+      // React StrictMode may immediately tear down and replay this effect in
+      // development. Keep the same request alive across that probe instead of
+      // issuing a second database mutation.
+      existingRequest.abortScheduled = false;
+      return;
+    }
+
     const controller = new AbortController();
+    const request = { controller, abortScheduled: false };
+    creationRequestRef.current = request;
 
     const desiredState = createBlankDatabaseDesiredState({ name: 'Untitled database' });
     const policy = {
@@ -57,8 +85,12 @@ export function NotionDatabaseCreationPage({
       { signal: controller.signal },
     )
       .then((outcome) => {
-        if (controller.signal.aborted) return;
-        if (outcome.status !== 'committed') {
+        if (controller.signal.aborted || creationRequestRef.current !== request) return;
+        // A repeated blank-database request can converge on an already
+        // canonical database (for example after a renderer reload). That is
+        // still a successful Notion-style navigation: open the existing page
+        // instead of leaving the user in an indeterminate creation state.
+        if (outcome.status !== 'committed' && outcome.status !== 'converged') {
           setStatus('error');
           setError('The blank database could not be created.');
           return;
@@ -71,15 +103,31 @@ export function NotionDatabaseCreationPage({
           setError('The created database has no editable table view.');
           return;
         }
-        onCreated({ databaseId: definition.id, sourceId: source.id, viewId: view.id });
+        onCreatedRef.current({ databaseId: definition.id, sourceId: source.id, viewId: view.id });
       })
       .catch((cause: unknown) => {
-        if (controller.signal.aborted) return;
+        if (controller.signal.aborted || creationRequestRef.current !== request) return;
         setStatus('error');
         setError(cause instanceof Error ? cause.message : 'Unable to create the blank database.');
+      })
+      .finally(() => {
+        if (creationRequestRef.current === request) {
+          creationRequestRef.current = null;
+        }
       });
-    return () => controller.abort();
-  }, [onCreated, open]);
+    return () => {
+      if (creationRequestRef.current !== request) return;
+      // React StrictMode runs cleanup/setup synchronously as a probe. Defer
+      // abort by one microtask so the replay can cancel it; a real unmount has
+      // no replay and therefore still cancels the network request promptly.
+      request.abortScheduled = true;
+      queueMicrotask(() => {
+        if (!request.abortScheduled || creationRequestRef.current !== request) return;
+        request.controller.abort();
+        creationRequestRef.current = null;
+      });
+    };
+  }, [open]);
 
   if (!open) return null;
 

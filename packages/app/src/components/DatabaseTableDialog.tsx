@@ -5524,6 +5524,11 @@ function DatabaseTableSurface({
           window.history.replaceState(null, '', route);
           window.dispatchEvent(new Event(DATABASE_NAVIGATION_CHANGE_EVENT));
           window.dispatchEvent(new window.HashChangeEvent('hashchange'));
+          // The canonical workspace now owns the route. Close the temporary
+          // creation surface explicitly as well as broadcasting navigation so
+          // a listener-order race cannot leave the page overlay above the
+          // newly created database.
+          onCreationCancelled?.();
         }}
       />
     );

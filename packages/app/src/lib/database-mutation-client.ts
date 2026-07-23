@@ -481,8 +481,8 @@ export async function executeReviewedDatabasePlan(
   input: ExecuteReviewedDatabasePlanInput,
   options: DatabaseMutationClientOptions = {},
 ): Promise<ExecuteReviewedDatabasePlanResult> {
-  if (!input.plan.committable) return { status: 'blocked', plan: input.plan };
   if (!input.plan.requiresCommit) return { status: 'converged', plan: input.plan };
+  if (!input.plan.committable) return { status: 'blocked', plan: input.plan };
   const reviewGhost = ghostState(input.plan, 'review');
   input.onGhostStateChange?.(reviewGhost);
   try {

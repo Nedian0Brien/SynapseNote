@@ -384,6 +384,31 @@ describe('database UI mutation client', () => {
     }
   });
 
+  test('treats an already converged but non-committable plan as converged', async () => {
+    const plan = artifact({ committable: false, requiresCommit: false });
+    const fetchImplementation = mock(async (_input: unknown, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+      return body.action === 'create_draft'
+        ? response({ action: 'create_draft', draft: { id: 'draft_1', revision: hash } })
+        : response({ action: 'create_plan', plan });
+    });
+
+    const outcome = await executeDatabaseUiMutation(
+      {
+        desiredState,
+        actor: { principalId: 'user:local' },
+        idempotencyKey: 'ui-converged-0001',
+        review: () => {
+          throw new Error('A converged plan must not enter review');
+        },
+      },
+      { fetch: fetchImplementation as unknown as typeof fetch },
+    );
+
+    expect(outcome.status).toBe('converged');
+    expect(fetchImplementation).toHaveBeenCalledTimes(2);
+  });
+
   test('preserves the reviewed plan when a concurrent commit returns 409', async () => {
     const reviewedPlan = artifact({ conflictDomains: ['record_value', 'view'] });
     const fetchImplementation = mock(async (_input: unknown, init?: RequestInit) => {
