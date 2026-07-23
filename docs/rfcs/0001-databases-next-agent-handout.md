@@ -17,6 +17,8 @@
 - Latest database-sidebar request-lifecycle changeset: `../../.changeset/database-sidebar-request-state.md`
 - Latest database-page semantics commit: `bcd078a0`
 - Latest database-page semantics changeset: `../../.changeset/database-page-semantic-surface.md`
+- Latest inline-view projection commit: `f0201231`
+- Latest inline-view projection changeset: `../../.changeset/inline-view-projection-persistence.md`
 - Latest page-terminology changeset: `../../.changeset/notion-database-page-language.md`
 - Latest inline UX changeset: `../../.changeset/inline-database-focus.md`
 - Latest inline recovery changeset: `../../.changeset/inline-database-undo.md`
@@ -204,6 +206,18 @@ exposed; the live IPv4 browser accessibility tree now reports `main
 "Untitled database"` beneath the editor shell. This corrects semantics and
 focus boundaries, but is not visual, responsive, manual screen-reader, or
 cross-host parity sign-off.
+
+### 2026-07-23 linked-view projection persistence slice
+
+`f0201231 fix: persist inline database view projection` wires the inline Table's
+header hide/reorder callback to the host JSX block's `viewOverrides.projection`.
+The canonical database view remains shared, while each linked block now keeps
+its own visible property order across refreshes and remounts. The focused
+`DatabaseView.dom.test.tsx` case drives `Property options for Status → Move
+right` and asserts the serialized stable property order; the full focused file
+passes 22 tests / 261 expectations, app typecheck, and targeted Biome. This is
+functional linked-view evidence; browser visual, accessibility, and E2E
+coverage remain open under UX-1104–UX-1106 and NUI-701.
 
 ### Notion surface continuation (2026-07-23)
 

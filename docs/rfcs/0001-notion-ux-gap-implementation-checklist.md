@@ -514,7 +514,11 @@ treated as visual parity until a browser capture is attached.
   settings, and Manage views without requiring the block-level overflow menu.
   The inline journey passes 18 tests / 183 expectations, including the
   single-view `+` handoff, property-context action, active-tab menu, and
-  full-page mode preservation.
+  full-page mode preservation. Inline Table header hide/reorder actions now
+  persist the linked block's `viewOverrides.projection`; the focused
+  `DatabaseView.dom.test.tsx` projection journey drives a reorder and asserts
+  the stable serialized property order, while the full focused file passes 22
+  tests / 261 expectations.
   Pixel-level visual parity remains a separate NUI-701/NUI-702 gate; the
   stable-ID reorder and active-view settings/menu handoff are complete. Map to
   UX-601–UX-610.
