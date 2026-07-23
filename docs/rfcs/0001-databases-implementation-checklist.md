@@ -658,12 +658,14 @@ copy/paste, import/export, API, agent schema, permissions, and tests agree.
       `packages/app/tests/a11y/database-primary.e2e.ts` (`DB-A11Y-01` and
       `DB-A11Y-02`), which audit both the canonical Table workspace and an
       inline linked Table after a title-based row is created. The tests are
-      discovery-checked. A bounded system-Chrome run on 2026-07-23 also passed
-      all three cases in
-      `tests/stress/database-document-native-journeys.e2e.ts` after correcting
-      stale page/record-route assertions; the complete primary-view run,
-      accessibility suite, and Electron capture remain required before
-      closing R-005.
+      discovery-checked. Bounded system-Chrome focused runs on 2026-07-23
+      passed all three cases in
+      `tests/stress/database-primary-journeys.e2e.ts` (canonical create/edit/
+      undo/redo/record route, bulk property edit/undo, and saved-view
+      create/switch/rename plus List context inspection) and all three cases
+      in `tests/stress/database-document-native-journeys.e2e.ts`. The complete
+      primary-view matrix, accessibility suite, reload/destructive/agent
+      journeys, and Electron capture remain required before closing R-005.
 - [x] **R-006** Add property-based tests for filters, sorts, pagination, formula
       evaluation, transactions, and import/export round trips.
 - [x] **R-007** Add fuzz corpora for manifests, YAML/frontmatter, formula syntax,

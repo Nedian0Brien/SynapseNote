@@ -82,6 +82,8 @@
 - Latest creation-retry changeset: `../../.changeset/notion-creation-retry.md`
 - Latest inline creation-retry changeset: `../../.changeset/inline-database-create-retry.md`
 - Latest bounded document-native journey test commit: `954bdcc4`
+- Latest primary journey affordance commit: `b79b1801`
+- Latest primary journey affordance changeset: `../../.changeset/primary-database-journey-affordances.md`
 
 ## Objective and completion rule
 
@@ -2200,15 +2202,45 @@ the document-native journey was then run with the installed system Chrome via a
 temporary no-video config. The sidebar page-first, slash inline, and linked
 view/record-continuity cases each passed across focused runs after stale test
 fixtures/assertions were corrected in `954bdcc4`. This is functional browser
-evidence only; primary-view coverage, visual/manual checks, and Electron
-capture remain required before closing R-005. Do not repeat the install/test
-loop until a browser-enabled runner or a later scoped change requires it.
+evidence only; visual/manual checks, complete primary-view coverage, and
+Electron capture remain required before closing R-005. The canonical primary
+journey's three focused cases also passed later in the same system-Chrome
+regime; see the dated stabilization section below. Do not repeat the
+install/test loop until a browser-enabled runner or a later scoped change
+requires it.
 
 Commit `93411d21 test: cover alternate view title actions` extends
 `database-primary-journeys.e2e.ts` to assert `Inspect context for record View
 task` after creating and switching to a saved List view. Playwright discovery
-still lists 3 tests; the new assertion has not been executed without the
-Chromium runtime.
+still lists 3 tests; the later bounded system-Chrome run is recorded below.
+
+### 2026-07-23 primary-view journey stabilization
+
+`b79b1801 fix: stabilize primary database journey affordances` records the
+first functional browser evidence for the canonical primary-view file. With
+installed system Chrome and a temporary no-video Playwright config, three
+focused cases each passed:
+
+- canonical row create → Title edit → undo/redo → stable record-route opening;
+- reviewed bulk Status change → canonical refresh → undo;
+- saved-view create → visible tab switch → List rendering and record context
+  inspection → saved-view rename.
+
+The test was aligned with the current UI contract: the Command Palette uses its
+semantic dialog/combobox, the database page uses breadcrumb/sidebar boundaries,
+saved views use visible tabs, and direct-safe view changes commit without a
+ghost-review button. The run also found and fixed two product defects: the
+canonical Table surface now forwards List's existing record Context Inspector
+callback, and saved-view rename captures the input value before the React state
+updater runs. Focused evidence passes `DatabaseList.dom.test.tsx` (2 tests / 11
+expectations), `DatabaseViewManagerDialog.dom.test.tsx` (13 tests / 23
+expectations), app typecheck, and targeted Biome.
+
+This remains functional evidence, not visual or release sign-off. Property
+configuration, duplicate/reorder/delete view coverage, reload persistence,
+agent proposal, destructive review, accessibility/manual checks, Electron
+capture, and the complete primary-view matrix remain open. No repository-wide
+server suite or broad/repeated E2E run was used.
 
 ### Notion blank-creation identity and lifecycle follow-up (2026-07-23)
 

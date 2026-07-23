@@ -275,8 +275,12 @@ treated as visual parity until a browser capture is attached.
   the document-native journey file: the sidebar page-first case, slash inline
   case, and linked-view/record continuity case each pass (the latter two were
   rerun after stale locators and a missing saved-view fixture were corrected).
-  Command-palette, empty-state, the NewItemDialog type chooser, complete
-  cross-host visual comparison, and manual interaction evidence remain open.
+  The same bounded system-Chrome pass now covers the primary canonical-table
+  create/edit/undo/redo, bulk property undo, and saved-view List/context
+  journeys; `b79b1801` also wires List context inspection through the canonical
+  surface. Command-palette, empty-state, the NewItemDialog type chooser,
+  complete cross-host visual comparison, and manual interaction evidence
+  remain open.
   Map to UX-112/UX-1101/UX-1102.
 
 ## P0 — Integrate the workspace with normal navigation
@@ -588,13 +592,15 @@ treated as visual parity until a browser capture is attached.
   creation, linked view, row/page continuity, property/view configuration,
   direct-safe edit, agent proposal, and destructive review. The existing
   document-native journey now uses the contextual inline accessibility names;
-  the primary journey file also switches to a saved List view and asserts the
-  title-based `Inspect context for record View task` affordance. On
-  2026-07-23, the three document-native cases ran to green with installed
-  system Chrome (using a temporary no-video config because the Playwright
-  Chromium/ffmpeg cache is incomplete). Property/view configuration, direct
-  safe edit, agent proposal, destructive review, and full primary coverage
-  remain open.
+  the primary journey file now covers canonical row create/edit/undo/redo and
+  record routing, reviewed bulk property change plus undo, and saved-view
+  List creation/switch/rename with the title-based `Inspect context for record
+  View task` affordance. On 2026-07-23, all three primary cases ran green in
+  bounded focused system-Chrome runs (temporary no-video config; Playwright
+  Chromium/ffmpeg cache remains incomplete) after `b79b1801` aligned the
+  current page/role contracts. Property configuration, agent proposal,
+  destructive review, reload persistence, and full primary coverage remain
+  open.
 - [ ] **NUI-702** Run keyboard, screen-reader, contrast, 768px responsive, and
   reduced-motion checks on those same journeys.
 - [ ] **NUI-703** Run five uncoached first-use sessions. At least four users
