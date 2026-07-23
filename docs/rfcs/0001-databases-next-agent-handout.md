@@ -150,6 +150,15 @@ server occupied 5173. This proves the development runtime can launch, not the
 Electron visual/manual parity gate. The packaged/desktop capture remains open
 until the host is unlocked for inspection and the journey is recorded.
 
+Follow-up on the same host: the Rust toolchain was already installed through
+Homebrew `rustup` (`cargo`/`rustc` 1.97.0), but its keg-only shim directory was
+missing from `PATH`. Adding `/opt/homebrew/opt/rustup/bin` to `~/.zprofile`
+made the commands available to new login shells. The standard wrapper was then
+rerun once; `@nedian0brien/synapsenote-native-config` completed its release Rust
+build and `dev:electron` launched successfully on port 5173. This closes the
+local toolchain/startup blocker, but it still does not close the Electron
+visual/manual parity gate or the locked-host capture requirement.
+
 ## Important product correction (2026-07-23)
 
 The user has explicitly rejected a DBMS/administration-first experience. The
