@@ -129,7 +129,9 @@ not close visual UX gates: the structural count remains 101/128, and the
 running Electron/web journey still needs to confirm appearance, focus, and
 record peek/page behavior. The table-edge property picker is covered by
 `d8f621a5 feat: add properties from the notion table edge`; its advanced
-schema commit still uses the reviewed mutation seam.
+schema commit still uses the reviewed mutation seam. `4cd0d8ff` adds a narrow
+human-only direct-safe policy for adding an empty property from a table edge;
+agent-authored schema writes remain review-required.
 
 ## Current status
 

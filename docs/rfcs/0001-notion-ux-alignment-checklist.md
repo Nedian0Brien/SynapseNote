@@ -209,6 +209,9 @@ default entry surfaces:
 - The canonical canvas table-edge `+` now opens a compact name/type property
   picker; the existing properties manager remains the reviewed fallback for
   advanced schema work.
+- Inline and canonical table-edge creation of an empty property uses a separate
+  human direct-safe policy with exact plan/commit/undo; agents and all schema
+  migrations, conversions, and destructive edits remain review-required.
 
 Focused evidence (no repository-wide/server suite or broad E2E):
 
