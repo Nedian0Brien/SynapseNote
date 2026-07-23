@@ -5,9 +5,10 @@ import type {
   ProjectedDatabaseRecord,
 } from '@nedian0brien/synapsenote-core';
 import { cleanup, render } from '@testing-library/react';
+import { DATABASE_UX_LATENCY_BUDGETS_MS } from '@/lib/database-ux-budgets';
 import { DATABASE_TABLE_RENDERED_COLUMN_LIMIT, DatabaseTable } from './DatabaseTableDialog';
 
-const VIEW_RENDER_BUDGET_MS = 500;
+const VIEW_RENDER_BUDGET_MS = DATABASE_UX_LATENCY_BUDGETS_MS.viewSwitch;
 const SAMPLE_COUNT = 5;
 
 const source: DatabaseSource = {

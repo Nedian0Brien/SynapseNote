@@ -1816,7 +1816,7 @@ describe('DatabaseView', () => {
     expect(await screen.findByTestId('database-new-row-title')).toBeTruthy();
     expect(document.querySelector('[data-database-state="empty"]')).toBeTruthy();
     expect(screen.getByText('No records in this source.')).toBeTruthy();
-    expect(screen.getByText('Use the last row to add one.')).toBeTruthy();
+    expect(screen.getByText('Use the row below to add a page.')).toBeTruthy();
   });
 
   test('starts record creation from a linked view in the canonical review dialog', async () => {
