@@ -542,7 +542,9 @@ treated as visual parity until a browser capture is attached.
 
 - [ ] **NUI-701** Add primary browser journeys for new-page creation, inline
   creation, linked view, row/page continuity, property/view configuration,
-  direct-safe edit, agent proposal, and destructive review.
+  direct-safe edit, agent proposal, and destructive review. The existing
+  document-native journey now uses the contextual inline accessibility names;
+  execution and full coverage remain open.
 - [ ] **NUI-702** Run keyboard, screen-reader, contrast, 768px responsive, and
   reduced-motion checks on those same journeys.
 - [ ] **NUI-703** Run five uncoached first-use sessions. At least four users

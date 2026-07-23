@@ -262,6 +262,11 @@ Open tasks`). This changes presentation only; the handoff scope still carries
 stable database/source/view IDs. Its assertion is included in the focused
 single-view journey (11 expectations).
 
+Commit `d9e796c1 test: align database journey with contextual labels` updates
+the document-native browser journey to activate the title through its heading
+context and match the contextual `Open full database:` name. Playwright test
+discovery lists all 3 journey cases; no browser execution was repeated.
+
 ## Current status
 
 - Numbered A-S items: **310/335 complete (92.5%)**.
