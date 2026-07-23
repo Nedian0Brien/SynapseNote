@@ -178,6 +178,8 @@ describe('DatabaseBoard', () => {
     const onOpen = mock(() => {});
     render(<DatabaseBoard source={source} view={view} result={result} onOpen={onOpen} />);
     expect(screen.getByRole('region', { name: 'Board Board' })).toBeTruthy();
+    expect(screen.getAllByRole('list', { name: 'Todo records' }).length).toBeGreaterThan(0);
+    expect(screen.getByRole('button', { name: 'First task' })).toBeTruthy();
     expect(boardElementByValue('data-board-swimlane', 'opt_frontend')).toBeTruthy();
     expect(screen.getAllByText('Blocked').length).toBeGreaterThan(0);
     expect(screen.getByText('First task')).toBeTruthy();

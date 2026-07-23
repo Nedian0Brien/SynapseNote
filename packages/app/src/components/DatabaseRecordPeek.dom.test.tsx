@@ -87,6 +87,7 @@ describe('DatabaseRecordPeek context parity', () => {
       />,
     );
     await screen.findByText('Canonical body');
+    expect(screen.getByRole('dialog', { name: 'Database record' })).toBeTruthy();
     expect(
       document.querySelector(
         '[data-database-record-page-surface][data-record-page-mode="center_peek"]',

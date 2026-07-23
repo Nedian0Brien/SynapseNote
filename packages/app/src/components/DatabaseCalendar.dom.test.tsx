@@ -101,6 +101,9 @@ describe('DatabaseCalendar', () => {
     const rendered = render(
       <DatabaseCalendar source={source} view={month.view} result={month.result} />,
     );
+    expect(screen.getByRole('region', { name: 'Delivery calendar Calendar' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Previous month' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Next month' })).toBeTruthy();
     expect(document.querySelectorAll('[data-calendar-day]').length).toBe(42);
     expect(document.querySelectorAll('[data-calendar-card="rec_span"]').length).toBe(3);
     expect(document.querySelector('[data-calendar-card="rec_span"]')?.textContent).toContain(

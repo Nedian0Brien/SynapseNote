@@ -155,6 +155,8 @@ describe('DatabaseAgentRunsDialog DOM behavior', () => {
     render(<DatabaseAgentRunsDialog open={true} onOpenChange={() => {}} />);
 
     expect(await screen.findByText('Update the incident status')).not.toBeNull();
+    expect(screen.getByRole('dialog', { name: 'Agent Runs' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Refresh' })).toBeTruthy();
     expect(await screen.findByText('undo_dom.secret')).not.toBeNull();
     expect(screen.getByTestId('database-agent-run-scope-summary').textContent).toContain(
       '1 database · 1 source · 1 property · 0 views · 1 record',

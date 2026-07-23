@@ -48,6 +48,8 @@ function renderDialog(overrides: Partial<Parameters<typeof DatabasePropertiesDia
 describe('DatabasePropertiesDialog', () => {
   test('lists every property and keeps the Title row frozen from move and delete', () => {
     renderDialog();
+    expect(screen.getByRole('dialog', { name: 'Manage properties' })).toBeTruthy();
+    expect(screen.getByRole('list', { name: 'Database properties' })).toBeTruthy();
     expect(
       document.querySelector('[data-database-property-row="prop_title"]')?.textContent,
     ).toContain('Title');
