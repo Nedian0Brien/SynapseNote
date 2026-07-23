@@ -5486,7 +5486,7 @@ html.electron-mode [data-slot="sidebar-inner"] {
 }
 
 [data-database-inline-surface] [data-database-inline-icon] {
-  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
 }
 
 [data-database-inline-surface] [data-database-inline-toolbar] {
@@ -5501,6 +5501,10 @@ html.electron-mode [data-slot="sidebar-inner"] {
   text-transform: uppercase;
 }
 
+[data-database-inline-table] thead tr {
+  border-bottom-color: color-mix(in srgb, var(--border) 48%, transparent);
+}
+
 [data-database-inline-table] tbody tr {
   background: transparent;
 }
@@ -5510,7 +5514,7 @@ html.electron-mode [data-slot="sidebar-inner"] {
 }
 
 [data-database-inline-table] tbody td {
-  border-bottom-color: color-mix(in srgb, var(--border) 68%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--border) 48%, transparent);
 }
 
 [data-database-inline-table] [data-database-actions-column] {

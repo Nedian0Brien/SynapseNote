@@ -1882,7 +1882,7 @@ export function DatabaseTable({
         data-row-height={layout.rowHeight}
         containerClassName={cn(
           'max-h-[62vh] overflow-auto',
-          notionSurface ? 'rounded-md border border-border/60' : 'rounded-md border',
+          notionSurface ? 'rounded-md border border-border/40' : 'rounded-md border',
         )}
         containerRef={scrollContainerRef}
         onContainerScroll={(event) => {
@@ -1908,8 +1908,8 @@ export function DatabaseTable({
           <TableRow noHover aria-rowindex={1}>
             <TableHead
               className={cn(
-                'group/column sticky left-0 z-40 w-10 bg-background',
-                notionSurface && 'px-1',
+                'group/column sticky left-0 z-40 bg-background',
+                notionSurface ? 'w-7 min-w-7 px-1' : 'w-10',
               )}
               aria-colindex={1}
             >
@@ -1944,7 +1944,11 @@ export function DatabaseTable({
                   dir="auto"
                   className={cn(
                     'group/column',
-                    index === 0 && 'sticky left-10 z-30 min-w-56 bg-background',
+                    index === 0 &&
+                      cn(
+                        'sticky z-30 min-w-56 bg-background',
+                        notionSurface ? 'left-7' : 'left-10',
+                      ),
                     notionSurface && 'font-sans normal-case tracking-normal text-[11px]',
                   )}
                   data-property-id={property.id}
@@ -2245,7 +2249,7 @@ export function DatabaseTable({
             <TableHead
               className={cn(
                 'sticky right-0 z-30 text-right',
-                notionSurface ? 'w-8 min-w-8 bg-background/95 px-1' : 'w-32 bg-background',
+                notionSurface ? 'w-7 min-w-7 bg-background/95 px-1' : 'w-32 bg-background',
               )}
               aria-colindex={properties.length + 2}
               data-database-actions-column
@@ -2421,7 +2425,8 @@ export function DatabaseTable({
                   role="gridcell"
                   aria-colindex={1}
                   className={cn(
-                    'sticky left-0 z-20 w-10 bg-background',
+                    'sticky left-0 z-20 bg-background',
+                    notionSurface ? 'w-7 min-w-7 px-1' : 'w-10',
                     pageColorRule && DATABASE_CONDITIONAL_COLOR_CLASSES[pageColorRule.color],
                   )}
                 >
@@ -2528,7 +2533,11 @@ export function DatabaseTable({
                           layout.wrap
                             ? 'break-words whitespace-normal'
                             : 'overflow-hidden truncate whitespace-nowrap',
-                          index === 0 && 'sticky left-10 z-10 bg-background font-medium',
+                          index === 0 &&
+                            cn(
+                              'sticky z-10 bg-background font-medium',
+                              notionSurface ? 'left-7' : 'left-10',
+                            ),
                           effectiveColorRule &&
                             DATABASE_CONDITIONAL_COLOR_CLASSES[effectiveColorRule.color],
                           cellIsInRange(cellRange, rowIndex, index) &&
@@ -3322,7 +3331,7 @@ export function DatabaseTable({
                   aria-colindex={properties.length + 2}
                   className={cn(
                     'sticky right-0 z-10 text-right',
-                    notionSurface ? 'w-8 min-w-8 bg-background/95 px-1' : 'w-32 bg-background',
+                    notionSurface ? 'w-7 min-w-7 bg-background/95 px-1' : 'w-32 bg-background',
                   )}
                   data-database-actions-column
                 >
@@ -3593,7 +3602,7 @@ export function DatabaseTable({
               <TableCell
                 role="gridcell"
                 aria-colindex={1}
-                className={cn('sticky left-0 z-20 w-10', notionSurface && 'px-1')}
+                className={cn('sticky left-0 z-20', notionSurface ? 'w-7 min-w-7 px-1' : 'w-10')}
               />
               {properties.map((property, index) => (
                 <TableCell
@@ -3601,7 +3610,8 @@ export function DatabaseTable({
                   role="gridcell"
                   aria-colindex={index + 2}
                   className={cn(
-                    index === 0 && 'sticky left-10 z-10 font-medium',
+                    index === 0 &&
+                      cn('sticky z-10 font-medium', notionSurface ? 'left-7' : 'left-10'),
                     layout.wrap ? 'whitespace-normal' : 'whitespace-nowrap',
                     notionSurface && 'px-3 py-2',
                   )}
@@ -3651,9 +3661,9 @@ export function DatabaseTable({
               <TableCell
                 role="gridcell"
                 aria-colindex={properties.length + 2}
-                className={cn('sticky right-0 z-10', notionSurface ? 'w-8 min-w-8 px-1' : 'w-32')}
+                className={cn('sticky right-0 z-10', notionSurface ? 'w-7 min-w-7 px-1' : 'w-32')}
               >
-                <span className="text-muted-foreground text-xs">
+                <span className={cn('text-muted-foreground text-xs', notionSurface && 'sr-only')}>
                   {notionSurface ? t`Press Enter to create page` : t`Press Enter to add`}
                 </span>
               </TableCell>
@@ -3684,7 +3694,7 @@ export function DatabaseTable({
                     key={property.id}
                     className={cn(
                       'bg-background text-muted-foreground text-xs',
-                      index === 0 && 'sticky left-10 z-10',
+                      index === 0 && cn('sticky z-10', notionSurface ? 'left-7' : 'left-10'),
                     )}
                     style={{
                       minWidth: layout.widths[property.id],

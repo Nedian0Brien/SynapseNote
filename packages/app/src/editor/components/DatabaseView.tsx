@@ -1136,7 +1136,6 @@ export function DatabaseView({
   const inlineAgentLabel = inlineDatabaseContext
     ? t`Ask agent about ${inlineDatabaseContext}`
     : undefined;
-  const inlineAgentTriggerLabel = t`Ask agent`;
   const inlineNewViewLabel = inlineDatabaseContext
     ? t`New database view for ${inlineDatabaseContext}`
     : t`New database view`;
@@ -1606,14 +1605,14 @@ export function DatabaseView({
       >
         <div className="flex min-w-0 items-start gap-2">
           <span
-            className="mt-0.5 inline-flex size-7 shrink-0 items-center justify-center rounded-md bg-muted/60 text-muted-foreground"
+            className="mt-0.5 inline-flex size-6 shrink-0 items-center justify-center rounded-md bg-muted/35 text-muted-foreground"
             aria-hidden="true"
             data-database-inline-icon
           >
             <Table2 className="size-4" />
           </span>
           <div className="min-w-0">
-            <h3 className="truncate font-medium" data-database-inline-title>
+            <h3 className="m-0 truncate font-medium" data-database-inline-title>
               {state.status === 'ready' && inlineTitleEditing ? (
                 <Input
                   value={inlineTitleDraft}
@@ -1676,9 +1675,9 @@ export function DatabaseView({
                       size="xs"
                       variant="ghost"
                       className={cn(
-                        'rounded-none border-b-2 border-transparent px-2 py-1 text-xs',
+                        'rounded-md border border-transparent px-2 py-1 text-xs',
                         candidate.id === reference.data.viewId
-                          ? 'border-primary font-medium text-foreground'
+                          ? 'border-border bg-muted/50 font-medium text-foreground'
                           : 'text-muted-foreground hover:text-foreground',
                       )}
                       aria-current={candidate.id === reference.data.viewId ? 'page' : undefined}
@@ -1740,7 +1739,11 @@ export function DatabaseView({
         >
           <DatabaseAgentScopeMenu
             scope={activeInlineAgentScope}
-            label={inlineAgentTriggerLabel}
+            // Keep the agent handoff one click away without letting its
+            // descriptive copy compete with the document-native database
+            // controls. The full scope remains available in the accessible
+            // name and in the opened handoff panel.
+            label=""
             ariaLabel={inlineAgentLabel}
             open={inlineAgentMenuOpen}
             onOpenChange={handleInlineAgentMenuChange}

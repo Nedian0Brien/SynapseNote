@@ -170,7 +170,9 @@ describe('DatabaseView', () => {
     expect(
       screen.getByRole('button', { name: 'Open full database: Tasks · Open tasks' }),
     ).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Ask agent about Tasks · Open tasks' })).toBeTruthy();
+    const agentButton = screen.getByRole('button', { name: 'Ask agent about Tasks · Open tasks' });
+    expect(agentButton).toBeTruthy();
+    expect(agentButton.textContent?.trim()).toBe('');
 
     expect(await screen.findByRole('button', { name: view.name })).toBeTruthy();
     expect(

@@ -799,7 +799,7 @@ describe('DatabaseTableDialog', () => {
       '[data-database-inline-table]',
     )?.parentElement;
     expect(inlineTableContainer?.className).toContain('rounded-md');
-    expect(inlineTableContainer?.className).toContain('border-border/60');
+    expect(inlineTableContainer?.className).toContain('border-border/40');
 
     await user.click(screen.getByRole('button', { name: 'Add property' }));
     const name = screen.getByRole('textbox', { name: 'New property name' });
