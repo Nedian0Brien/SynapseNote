@@ -138,6 +138,18 @@ diagnostics for the existing frozen-table-header lookup, missing dialog
 description metadata, and React `flushSync` lifecycle warnings; preserve those
 as follow-up quality work rather than treating them as journey failures.
 
+### 2026-07-23 Electron development runtime
+
+The normal desktop wrapper (`bun run --filter @nedian0brien/synapsenote-desktop
+dev`) currently stops in the packaging-input build because this host does not
+have Rust `cargo`/`rustc` for the native-config package. The existing platform
+binary is sufficient for the direct renderer loop, so
+`bun run --cwd packages/desktop dev:electron` was used instead; Electron
+started successfully and served its renderer on port 5174 after the web dev
+server occupied 5173. This proves the development runtime can launch, not the
+Electron visual/manual parity gate. The packaged/desktop capture remains open
+until the host is unlocked for inspection and the journey is recorded.
+
 ## Important product correction (2026-07-23)
 
 The user has explicitly rejected a DBMS/administration-first experience. The
