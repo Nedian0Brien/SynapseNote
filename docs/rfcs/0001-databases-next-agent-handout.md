@@ -116,7 +116,7 @@ current direct table-first creation slice. The remaining visual/cross-host
 gates still must prove the new surface in a running app.
 
 The earlier 101/128 snapshot is structural evidence only. The current
-structural count is **113/128**; do not close
+structural count is **113/129**; do not close
 the remaining UX gates or describe the feature as Notion-parity complete until
 the following first-use flow is visually and interactively true:
 
@@ -335,7 +335,7 @@ Chromium executable, so no additional full E2E run was started.
 - Numbered A-S items still open: **5**.
 - Total unchecked Markdown boxes: **25**. The extra 20 are M1-M4 milestone
   release gates, all intentionally still open.
-- Notion UX gap implementation checklist: **36/42 complete**. NUI-201,
+- Notion UX gap implementation checklist: **36/43 complete**. NUI-201,
   NUI-202, NUI-203, NUI-204, NUI-302, NUI-304, and NUI-401 are closed with
   focused implementation evidence; NUI-301, NUI-303, and NUI-403 are now
   closed for implementation evidence; NUI-501 is now closed for the complete
@@ -350,7 +350,7 @@ Chromium executable, so no additional full E2E run was started.
   catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
   approval-bound commits, undo, and restart/backup idempotency. Agent View
   policy/privacy/sandbox review remains Partial by design.
-- Notion UX alignment checklist: **113/128 complete**. The page-first and normal
+- Notion UX alignment checklist: **113/129 complete**. The page-first and normal
   New-page creation slices, the inline/linked insertion contract, and the
   table-first direct-manipulation, named canonical workspace canvas-route,
   shared navigation without a duplicate canvas rail, sidebar/recent/search/
@@ -414,7 +414,9 @@ Chromium executable, so no additional full E2E run was started.
   v1 manifest/migration corpus, saved-view and typed Markdown/MDX record
   fixtures, a real MDX `DatabaseView` stable-reference block, descriptor dirty
   serialization, live block projection/reference writes, and database
-  last-opened route persistence. The structural UX count is **113/128**.
+  last-opened route persistence. The structural UX count is **113/129**;
+  UX-011 remains open for the user-facing terminology and progressive-
+  disclosure audit, with its implementation companion NUI-016.
 - The Context Inspector description was corrected to a block-level semantic
   container so expanded machine-ID details do not create invalid nested
   `<p>/<details>/<dl>` markup. Its focused DOM suite passes; manual keyboard and

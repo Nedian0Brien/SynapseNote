@@ -236,6 +236,14 @@ treated as visual parity until a browser capture is attached.
   `DatabaseTableDialog.dom.test.tsx` direct record journey and the Table DOM
   row marked `data-new-record-row`. Standard undo/redo and focus-retention
   across every editor remain open under NUI-303.
+- [ ] **NUI-016** Audit and humanize database terminology across the normal
+  canvas, inline block, table, peek, page, error, and accessibility surfaces.
+  Use `page`, `property`, `view`, and `linked view` in the default journey;
+  keep `canonical`, `schema`, `index`, `query`, `mutation`, `projection`,
+  machine IDs, and related implementation terms behind Advanced, agent,
+  diagnostic, or recovery disclosure. Cover visible copy and accessible names
+  together, retain the internal stable-ID/API vocabulary, and add focused DOM
+  assertions for the resulting human-language contract.
 
 ## P0 — Make databases first-class pages
 
