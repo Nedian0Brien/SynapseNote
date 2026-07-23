@@ -2652,6 +2652,37 @@ This closes only the stale-label subpath. Keep the broader navigation,
 cross-host, accessibility, usability, and release gates open. Preserve the
 ignored/local database artifact created by the manual journey.
 
+### 2026-07-23 canonical table-header property rename follow-up
+
+The Notion-style page surface now keeps the common property rename action in
+context. From a non-Title header's `Rename or configure property` menu item,
+the table opens a compact editor with the current visible name, keyboard
+Enter/Escape handling, and Save/Cancel actions. The reviewed
+`renameSchemaProperty` callback remains the only commit boundary, so the
+inline affordance does not bypass schema policy, stable IDs, or the existing
+undoable plan. The administration and linked-view surfaces retain their
+manager handoff for broader configure/reorder/delete work. The menu's Radix
+dismiss cycle is allowed to finish before the editor mounts so the popover is
+not treated as an outside interaction.
+
+Feature commit: `9915edff feat: edit database properties from table header`.
+Changeset: `../../.changeset/notion-inline-property-rename.md`.
+
+Focused evidence:
+
+- `DatabaseTableDialog.dom.test.tsx`: the existing property-management and
+  contextual-menu journeys still pass, plus a dedicated test proves a
+  Notion-surface rename calls `onRenameProperty` and does not open
+  `onManageProperties`.
+- The complete affected DOM file passes **80 tests / 526 expectations**.
+- App typecheck and targeted Biome pass; `git diff --check` passes.
+
+This closes only the canonical in-table rename subpath. Keep the broader
+configure/reorder/hide/delete matrix, Title policy decisions, visual parity,
+Electron/manual accessibility, usability, agent, and release gates open. The
+ignored/local database artifact from the manual journey remains intentionally
+untracked; do not stage or delete it.
+
 ## Work in progress: do this first
 
 `packages/core/src/database/property-invariants.test.ts` is now verified and

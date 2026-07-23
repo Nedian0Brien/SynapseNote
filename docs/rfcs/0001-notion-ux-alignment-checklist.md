@@ -636,6 +636,14 @@ stable identity. The Title property remains frozen from invalid
 move/delete/duplicate operations, and the dialog's add/rename/reorder/delete
 flows commit only through the existing exact mutation boundary.
 
+On the canonical Notion-style page surface, selecting `Rename or configure
+property` for a non-Title column now opens a compact in-table edit popover
+after the header menu dismisses. The draft starts with the visible property
+name, supports keyboard Enter/Escape, and commits through the same reviewed
+schema mutation callback without opening the administration dialog. The
+linked-view and non-Notion administration surfaces keep their existing
+manager handoff for the broader configure/reorder/delete workflow.
+
 The same surface now uses human-facing property type labels and examples
 (`Multi-select`, “Several choices from a list”, and so on) in the add-property
 picker, property badges, table headers, and conversion dialog. Internal enum
@@ -661,9 +669,9 @@ direct-safe behavior.
 
 Focused evidence:
 
-- `DatabaseTableDialog.dom.test.tsx`: host-gated `Add property` and contextual
-  header menu affordances, including Sort, Filter, and Duplicate dispatch
-  (2 tests / 18 expectations).
+- `DatabaseTableDialog.dom.test.tsx`: host-gated `Add property`, contextual
+  header menu affordances, and canonical in-table property rename, including
+  Sort, Filter, and Duplicate dispatch.
 - `DatabaseAdvancedFilterDialog.dom.test.tsx`: nested filter editing plus
   header-targeted property initialization (2 tests / 7 expectations).
 - `DatabaseSavedViewSettingsDialog.dom.test.tsx`: all active-view settings plus

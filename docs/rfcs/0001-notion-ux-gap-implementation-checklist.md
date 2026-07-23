@@ -491,16 +491,19 @@ treated as visual parity until a browser capture is attached.
   affordance when schema management is available. Each visible property header
   now has a keyboard-accessible contextual menu for show/hide, left/right
   reorder, calculation, settings, type conversion, and dependency-aware delete.
-  The reviewed properties dialog now supports stable-ID inline rename as well as
-  the existing reorder/delete recovery path. Inline table blocks use a human
-  direct-safe, undoable path for adding an empty common property from the table
-  edge; rename/configure/conversion/delete still open the canonical reviewed
-  properties surface without exposing raw IDs. A linked-view action also
-  provides an explicit `Manage properties` entry. Pixel-level Notion visual
-  parity remains open. Evidence: `DatabaseTableDialog.dom.test.tsx`
+  On the canonical page surface, a non-Title header's `Rename or configure
+  property` action now opens an in-table draft editor and commits through the
+  reviewed schema mutation boundary; the broader configure/reorder/delete flows
+  still open the canonical reviewed properties surface without exposing raw IDs.
+  The reviewed properties dialog continues to support stable-ID inline rename as
+  well as the existing reorder/delete recovery path. Inline table blocks use a
+  human direct-safe, undoable path for adding an empty common property from the
+  table edge. A linked-view action also provides an explicit `Manage properties`
+  entry. Pixel-level Notion visual parity remains open. Evidence:
+  `DatabaseTableDialog.dom.test.tsx`
   schema-management and contextual property-menu journeys in the verified
-  64-test / 387-expectation suite, `DatabasePropertiesDialog.dom.test.tsx`
-  rename/reorder/delete journeys (7/7 tests, 23 expectations), and the
+  80-test / 526-expectation suite, `DatabasePropertiesDialog.dom.test.tsx`
+  rename/reorder/delete journeys, and the
   linked-view DOM journey. Pixel-level visual parity remains a separate
   NUI-701/NUI-702 gate; the stable-ID property affordance and
   dependency/recovery behavior are complete. Map to UX-501–UX-510.
