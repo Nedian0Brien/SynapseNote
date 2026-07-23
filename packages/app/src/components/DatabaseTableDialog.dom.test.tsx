@@ -3330,6 +3330,25 @@ describe('DatabaseTableDialog', () => {
     expect(document.querySelector('[data-database-state="loading"]')).not.toBeNull();
   });
 
+  test('uses the Notion page-first creator instead of the administration wizard', async () => {
+    globalThis.fetch = mock(() => new Promise<Response>(() => {})) as typeof fetch;
+    render(
+      <DatabaseTableDialog
+        open
+        presentation="page"
+        initialAction="create"
+        creationExperience="notion"
+        onOpenChange={() => {}}
+      />,
+    );
+
+    expect(await screen.findByRole('main', { name: 'New database page' })).not.toBeNull();
+    expect(screen.queryByLabelText('Database name')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Create database' })).toBeNull();
+    expect(screen.queryByText('Blank')).toBeNull();
+    expect(screen.queryByText('Template')).toBeNull();
+  });
+
   test('renders a missing full-page target with a back action instead of a generic retry', async () => {
     globalThis.fetch = mock(async (input: RequestInfo | URL) => {
       const path = String(input);
