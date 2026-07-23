@@ -602,8 +602,10 @@ treated as visual parity until a browser capture is attached.
   covers property add and the two-step valued-property deletion review in
   `database-manage-properties.e2e.ts`; `f5ff201d` aligns that journey with the
   semantic palette/breadcrumb and reviewed destructive-action surfaces.
-  Property configure/reorder/hide, agent proposal, reload persistence, and
-  full primary coverage remain open.
+  The saved-view case now also covers reviewed view settings (sort), duplicate,
+  visible-tab reorder, and delete in the same bounded browser regime;
+  `4f30e862` records that extension. Property configure/reorder/hide, agent
+  proposal, reload persistence, and full primary coverage remain open.
 - [ ] **NUI-702** Run keyboard, screen-reader, contrast, 768px responsive, and
   reduced-motion checks on those same journeys.
 - [ ] **NUI-703** Run five uncoached first-use sessions. At least four users

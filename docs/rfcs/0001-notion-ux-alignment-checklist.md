@@ -2232,8 +2232,10 @@ capability alone is insufficient.
 - [ ] **UX-1106** E2E view create/switch/configure/duplicate/reorder/delete using
       visible tabs. The primary journey now passes saved-view create, tab
       switch, List rendering, title-based context inspection, and rename in
-      bounded system-Chrome runs; configure/duplicate/reorder/delete and the
-      remaining view matrix remain open.
+      bounded system-Chrome runs. The same focused case now also passes view
+      settings (sort), duplicate, visible-tab reorder, and delete; filters,
+      layout-specific configuration, and the remaining view matrix remain
+      open.
 - [ ] **UX-1107** E2E row → peek → full page → return to the same view context.
 - [ ] **UX-1108** E2E different policies for agent proposal, human direct edit,
       and destructive human action.

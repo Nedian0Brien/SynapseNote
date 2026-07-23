@@ -87,6 +87,7 @@
 - Latest bounded document-native journey test commit: `954bdcc4`
 - Latest primary journey affordance commit: `b79b1801`
 - Latest primary journey affordance changeset: `../../.changeset/primary-database-journey-affordances.md`
+- Latest saved-view mutation journey test commit: `4f30e862`
 
 ## Objective and completion rule
 
@@ -2261,6 +2262,22 @@ This proves only the add path and valued-delete recovery sequence. Property
 configure/reorder/hide, full view mutation coverage, reload/agent journeys,
 accessibility/manual review, Electron capture, and the complete primary matrix
 remain open. No full server suite or repeated broad E2E run was used.
+
+### 2026-07-23 saved-view mutation journey stabilization
+
+`4f30e862 test: cover saved view mutation journey` extends the third case in
+`packages/app/tests/stress/database-primary-journeys.e2e.ts`. One bounded
+system-Chrome run now covers:
+
+- saved-view settings opening and reviewed sort configuration;
+- duplicate through the visible active-view menu;
+- visible-tab reorder (`Move left`) with the resulting order asserted;
+- deletion of the duplicated non-default view and tab removal.
+
+This is additional functional evidence for UX-1106/NUI-701/R-005, not visual,
+manual accessibility, reload, agent-policy, or release evidence. Filters,
+layout-specific settings, the remaining view matrix, and the external Electron
+gate remain open. No full server suite or broad/repeated E2E run was used.
 
 ### Notion blank-creation identity and lifecycle follow-up (2026-07-23)
 

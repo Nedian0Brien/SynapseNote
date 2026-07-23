@@ -671,7 +671,9 @@ copy/paste, import/export, API, agent schema, permissions, and tests agree.
       cleanup followed by a separate schema removal review); `f5ff201d` keeps
       the test on the semantic command-palette/breadcrumb contracts. Full
       property/view mutation coverage and the remaining destructive/agent
-      matrix are still open.
+      matrix are still open. The primary saved-view case also passes view
+      settings (sort), duplicate, reorder, and delete in its bounded focused
+      run (`4f30e862`).
 - [x] **R-006** Add property-based tests for filters, sorts, pagination, formula
       evaluation, transactions, and import/export round trips.
 - [x] **R-007** Add fuzz corpora for manifests, YAML/frontmatter, formula syntax,
