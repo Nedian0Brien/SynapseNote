@@ -3469,6 +3469,11 @@ function DatabaseTableSurface({
   useEffect(() => {
     if (!open) {
       initialCreationActionHandledRef.current = false;
+      // The creation dialog is a child surface. Clear its local state when
+      // the parent route/modal closes so a canonical page transition cannot
+      // leave the reviewed admin form portaled over the destination (and so a
+      // later admin open always starts from a fresh form).
+      setCreationOpen(false);
       return;
     }
     if (initialAction === 'create' && !initialCreationActionHandledRef.current) {
@@ -7766,7 +7771,7 @@ function DatabaseTableSurface({
       ) : null}
       <DatabaseCreationDialog
         key={creationInstanceKey}
-        open={creationOpen}
+        open={open && creationOpen}
         presentation={isCanvasPresentation ? 'page' : presentation}
         agentComposer={<CreatePromptComposer scenario="new-project" databasePreview />}
         onOpenChange={(nextOpen, reason) => {

@@ -848,7 +848,12 @@ function AppBody() {
           <SidebarProvider className="h-screen overflow-hidden">
             {/* No-project single-file mode drops the file sidebar (file tree +
                 project switcher); the editor inset takes the full width. */}
-            {!singleFile && <FileSidebar onOpenSearch={() => setCommandPaletteOpen(true)} />}
+            {!singleFile && (
+              <FileSidebar
+                onOpenSearch={() => setCommandPaletteOpen(true)}
+                onNewDatabase={openDatabaseCreationRoute}
+              />
+            )}
             <SidebarInset className="overflow-hidden h-[calc(100vh-var(--layout-inset-offset))]">
               <DatabasePageRoute onOpenAgentRuns={() => setAgentRunsOpen(true)}>
                 <EditorPane onOpenSearch={() => setCommandPaletteOpen(true)} />

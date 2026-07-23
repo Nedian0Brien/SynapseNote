@@ -178,10 +178,21 @@ mock.module('@/components/NewItemDialog', () => ({
 }));
 
 mock.module('@/components/FileSidebar', () => ({
-  FileSidebar: ({ onOpenSearch }: { onOpenSearch: () => void }) => (
-    <button type="button" data-testid="file-sidebar" onClick={onOpenSearch}>
-      Sidebar
-    </button>
+  FileSidebar: ({
+    onOpenSearch,
+    onNewDatabase,
+  }: {
+    onOpenSearch: () => void;
+    onNewDatabase?: () => void;
+  }) => (
+    <div data-testid="file-sidebar">
+      <button type="button" onClick={onOpenSearch}>
+        Sidebar
+      </button>
+      <button type="button" data-testid="sidebar-new-database" onClick={onNewDatabase}>
+        New database
+      </button>
+    </div>
   ),
 }));
 
@@ -505,6 +516,20 @@ describe('App runtime wiring', () => {
     await act(async () => window.history.back());
     await waitFor(() => expect(window.location.hash).toBe(''));
     expect(screen.getByTestId('database-table-dialog').getAttribute('data-open')).toBe('false');
+  });
+
+  test('routes the sidebar New database action to the same page-first creation route', async () => {
+    renderApp();
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('sidebar-new-database'));
+    });
+
+    await waitFor(() => expect(window.location.hash).toBe('#database/new'));
+    const dialog = screen.getByTestId('database-table-dialog');
+    expect(dialog.getAttribute('data-open')).toBe('true');
+    expect(dialog.getAttribute('data-presentation')).toBe('page');
+    expect(dialog.getAttribute('data-initial-action')).toBe('create');
   });
 
   test('opens database discovery in the page presentation from the command palette', async () => {

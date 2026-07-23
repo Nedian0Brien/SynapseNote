@@ -101,6 +101,11 @@ import { cn } from '@/lib/utils';
 
 interface FileSidebarProps {
   onOpenSearch: () => void;
+  /**
+   * Open the document-native database page directly when the host owns the
+   * route. The event fallback keeps the sidebar embeddable in older shells.
+   */
+  onNewDatabase?: () => void;
 }
 
 const EMPTY_FOLDER_STATE: { folderCount: number; expandedCount: number } = {
@@ -134,10 +139,10 @@ export function isInteractiveSidebarControl(target: EventTarget | null): boolean
   return target.closest(SIDEBAR_INTERACTIVE_CONTROL_SELECTOR) !== null;
 }
 
-export function FileSidebar({ onOpenSearch }: FileSidebarProps) {
+export function FileSidebar({ onOpenSearch, onNewDatabase }: FileSidebarProps) {
   return (
     <ProfilerBoundary name="file-sidebar">
-      <FileSidebarInner onOpenSearch={onOpenSearch} />
+      <FileSidebarInner onOpenSearch={onOpenSearch} onNewDatabase={onNewDatabase} />
     </ProfilerBoundary>
   );
 }
@@ -175,8 +180,9 @@ const ToolbarDropdownTrigger: FC<ToolbarButtonProps> = ({ icon: Icon, label, ...
   );
 };
 
-function FileSidebarInner({ onOpenSearch }: FileSidebarProps) {
+function FileSidebarInner({ onOpenSearch, onNewDatabase }: FileSidebarProps) {
   const { t } = useLingui();
+  const handleNewDatabase = onNewDatabase ?? (() => dispatchDatabaseSlashCommand('new'));
   // Imperative handle to the FileTree — header buttons (Expand-All / Collapse-
   // All in the dropdown menu) call methods directly. Stored as React state
   // (not a ref) and wired via a ref-callback below so the parent re-renders
@@ -948,7 +954,7 @@ function FileSidebarInner({ onOpenSearch }: FileSidebarProps) {
                 <ToolbarButton
                   icon={Database}
                   label={t`New database`}
-                  onClick={() => dispatchDatabaseSlashCommand('new')}
+                  onClick={handleNewDatabase}
                 />
                 {activeFolderHasTemplates ? (
                   // Toolbar opens templates on click (not hover): a hover-only
@@ -1199,7 +1205,7 @@ function FileSidebarInner({ onOpenSearch }: FileSidebarProps) {
           </ContextMenuItem>
           <ContextMenuItem
             disabled={!workspace}
-            onSelect={() => dispatchDatabaseSlashCommand('new')}
+            onSelect={handleNewDatabase}
             data-testid="empty-space-menu-new-database"
           >
             <Database aria-hidden="true" />

@@ -420,9 +420,9 @@ mock.module('sonner', () => ({
   },
 }));
 
-async function renderSidebar() {
+async function renderSidebar(props: { onNewDatabase?: () => void } = {}) {
   const { FileSidebar } = await import('./FileSidebar');
-  return render(<FileSidebar onOpenSearch={onOpenSearch} />);
+  return render(<FileSidebar onOpenSearch={onOpenSearch} {...props} />);
 }
 
 describe('FileSidebar runtime behavior', () => {
@@ -592,6 +592,17 @@ describe('FileSidebar runtime behavior', () => {
     } finally {
       window.removeEventListener('synapsenote:database-slash-command', listener);
     }
+  });
+
+  test('uses the host-owned page route callback for database entry points when provided', async () => {
+    const onNewDatabase = mock(() => {});
+    await renderSidebar({ onNewDatabase });
+    await waitFor(() => expect(treeListeners.size).toBe(1));
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'New database' })[0]);
+    fireEvent.click(screen.getByTestId('empty-space-menu-new-database'));
+
+    expect(onNewDatabase).toHaveBeenCalledTimes(2);
   });
 
   test('toolbar create actions fall back to the workspace root for a revealed .ok folder', async () => {

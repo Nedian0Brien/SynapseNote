@@ -3555,6 +3555,36 @@ describe('DatabaseTableDialog', () => {
     expect(screen.getByRole('button', { name: 'Add page' })).toBeTruthy();
   });
 
+  test('closes the nested creation form when its host surface closes', async () => {
+    globalThis.fetch = mock(async (input: RequestInfo | URL) => {
+      const path = String(input);
+      if (path.startsWith('/api/databases/catalog')) {
+        return Response.json({ ...catalog(), candidates: [] });
+      }
+      return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
+    }) as typeof fetch;
+
+    const view = render(
+      <DatabaseTableDialog
+        open
+        presentation="page"
+        initialAction="create"
+        onOpenChange={() => {}}
+      />,
+    );
+    expect(await screen.findByLabelText('Database name')).not.toBeNull();
+
+    view.rerender(
+      <DatabaseTableDialog
+        open={false}
+        presentation="page"
+        initialAction="create"
+        onOpenChange={() => {}}
+      />,
+    );
+    await waitFor(() => expect(screen.queryByLabelText('Database name')).toBeNull());
+  });
+
   test('keeps the selected saved view in the full-page route hash', async () => {
     const savedView = {
       id: 'view_active',
