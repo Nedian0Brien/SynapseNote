@@ -328,4 +328,44 @@ test.describe('database primary browser journeys', () => {
       timeout: 10_000,
     });
   });
+
+  test('configures a saved Table filter and layout through the visible view actions', async ({
+    page,
+    api,
+  }) => {
+    const name = 'E2E Saved Table Configuration Journey';
+    const target = await api.createDatabase({
+      ...taskDatabase(name, 'e2e-saved-table-configuration'),
+      sampleRecords: [{ sourceKey: 'tasks', values: { title: 'Filter task', status: 'todo' } }],
+    });
+
+    await openDatabase(page, name, target);
+    await page.getByRole('tab', { name: 'All tasks', exact: true }).click();
+
+    await page.getByRole('button', { name: 'View options for All tasks' }).click();
+    await page.getByRole('menuitem', { name: 'View settings' }).click();
+    const settings = page.getByRole('dialog', { name: 'Saved view settings' });
+    await settings.getByRole('combobox', { name: 'Saved view row height' }).click();
+    await page.getByRole('option', { name: 'Tall' }).click();
+    await settings.getByRole('checkbox', { name: 'Wrap saved view cells' }).click();
+    await settings.getByRole('button', { name: 'Review view settings' }).click();
+    await expect(settings).toHaveCount(0, { timeout: 10_000 });
+    await expect(page.locator('table')).toHaveAttribute('data-row-height', 'tall', {
+      timeout: 10_000,
+    });
+
+    await page.getByRole('button', { name: 'View options for All tasks' }).click();
+    await page.getByRole('menuitem', { name: 'Filters' }).click();
+    const filters = page.getByRole('dialog', { name: 'Advanced saved filters' });
+    await filters.getByRole('combobox', { name: 'Filter property' }).click();
+    await page.getByRole('option', { name: 'Status', exact: true }).click();
+    await filters.getByRole('combobox', { name: 'Filter operator' }).click();
+    await page.getByRole('option', { name: 'eq', exact: true }).click();
+    await filters.getByRole('textbox', { name: 'Filter value for Status' }).fill('todo');
+    await filters.getByRole('button', { name: 'Review filter change' }).click();
+    await expect(filters).toHaveCount(0, { timeout: 10_000 });
+    await expect(
+      page.getByRole('button', { name: 'Filters: Status is todo', exact: true }),
+    ).toBeVisible({ timeout: 10_000 });
+  });
 });
