@@ -2739,9 +2739,9 @@ opens the existing complete-snapshot option editor, preserving the reviewed
 rename/recolor/reorder/archive/merge/delete preview and commit boundary. The
 inline linked Table forwards the same action to its selected-property manager
 handoff. This removes the discovery gap without adding a parallel mutation
-implementation. Multi-select option lifecycle migration is intentionally still
-open: array-valued record references need a dedicated compiler and focused
-recovery tests before claiming full parity.
+implementation. At the time of this handoff, Multi-select option lifecycle
+migration was intentionally still open: array-valued record references needed
+a dedicated compiler and focused recovery tests before claiming full parity.
 
 Feature commit: `3995c91f feat: expose select options from property headers`.
 Changeset: `../../.changeset/notion-header-select-config.md`.
@@ -2750,6 +2750,37 @@ Focused evidence: `DatabaseTableDialog.dom.test.tsx` proves the Status header
 dispatches `Configure options`; targeted Biome and app typecheck pass. Keep
 UX-1105/R-005 and the broader visual, accessibility, Electron, usability, agent,
 and release gates open.
+
+### 2026-07-23 Multi-select option lifecycle handoff
+
+Multi-select now shares the reviewed option lifecycle boundary with Select.
+`packages/core/src/database/select-options.ts` accepts both option property
+families, migrates array-valued record references by stable option ID during
+merge, deduplicates an existing target while preserving order, rewrites
+multi-select default keys, and reports delete dependencies from array values.
+`packages/app/src/lib/database-cell-mutation.ts` emits array-valued exact record
+mutations, and the canonical Notion-style header menu exposes `Configure
+options` for Multi-select as well as Select.
+
+Feature commit: the immediately preceding feature commit on this branch; the
+docs and changeset are committed directly after it. Changeset:
+`../../.changeset/notion-multiselect-option-lifecycle.md`.
+
+Focused evidence:
+
+- `packages/core/src/database/select-options.test.ts`: 5 tests pass, including
+  Multi-select merge/default/delete dependency coverage.
+- `packages/app/src/lib/database-cell-mutation.test.ts`: focused Multi-select
+  merge compiler test passes and the desired state is schema-valid.
+- `DatabaseTableDialog.dom.test.tsx`: Select and Multi-select header
+  configuration dispatch tests pass (2 tests).
+- App/core typecheck and targeted Biome pass. No full server suite or repeated
+  full DOM/E2E run was used.
+
+This closes the implementation slice for Multi-select option lifecycle and
+narrows UX-1105/NUI-501 evidence. It does not close the broader configure,
+reorder, hide, full mutation matrix, visual, accessibility, Electron,
+usability, agent, or release gates.
 
 ## Work in progress: do this first
 

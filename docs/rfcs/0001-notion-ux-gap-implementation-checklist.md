@@ -501,11 +501,12 @@ treated as visual parity until a browser capture is attached.
   `Insert left` and `Insert right` reuse the table-edge picker and preserve both
   source order and the active saved-view projection by stable key; inserting
   before Title is disabled to keep the identity column first.
-  Select headers also expose `Configure options`, opening the existing
-  complete-snapshot option lifecycle preview instead of forcing users to find
-  the secondary manager. Multi-select option lifecycle parity remains a
-  separate follow-up because its array-valued record migration needs a distinct
-  compiler contract.
+  Select and Multi-select headers expose `Configure options`, opening the
+  existing complete-snapshot option lifecycle preview instead of forcing users
+  to find the secondary manager. Both scalar and array-valued record references
+  now migrate through the same exact, reviewed compiler boundary; Multi-select
+  merge deduplicates the target option while preserving array order, and its
+  defaults and dependency checks are covered by focused core/app tests.
   The reviewed properties dialog continues to support stable-ID inline rename as
   well as the existing reorder/delete recovery path. Inline table blocks use a
   human direct-safe, undoable path for adding an empty common property from the

@@ -653,6 +653,9 @@ Select property headers also expose `Configure options`, which opens the
 existing option lifecycle editor and its complete-snapshot impact preview from
 the primary surface. The callback preserves the same reviewed rename/recolor/
 reorder/archive/merge/delete boundary; it does not introduce a second writer.
+Multi-select headers use the same entry point, and array-valued merge migrations
+replace the source stable ID, deduplicate an existing target, and update
+multi-select defaults without changing record order.
 
 The same surface now uses human-facing property type labels and examples
 (`Multi-select`, “Several choices from a list”, and so on) in the add-property
@@ -684,7 +687,12 @@ Focused evidence:
 - `DatabaseTableDialog.dom.test.tsx`: host-gated `Add property`, contextual
   header menu affordances, and canonical in-table property rename, including
   Sort, Filter, Duplicate, header-relative insertion, and Select option
-  configuration dispatch.
+  configuration dispatch for both Select and Multi-select.
+- `packages/core/src/database/select-options.test.ts`: scalar and array-valued
+  option lifecycle previews, including Multi-select merge deduplication,
+  default-key migration, saved-view rewrites, and delete dependency conflicts.
+- `packages/app/src/lib/database-cell-mutation.test.ts`: Multi-select merge
+  compiles an exact array-valued record mutation and remains schema-valid.
 - `packages/app/src/lib/database-cell-mutation.test.ts`: source and active-view
   projection order stays stable when a property is inserted before a header.
 - `DatabaseAdvancedFilterDialog.dom.test.tsx`: nested filter editing plus
@@ -2341,6 +2349,8 @@ capability alone is insufficient.
       schema property). The shared property builder now makes Select and
       Multi-select adds commit-ready and appends the new property to the active
       view projection; focused DOM/live-web evidence covers that add subpath.
+      The primary table now dispatches option configuration for both Select and
+      Multi-select, with focused array-migration compiler evidence.
       Configure/reorder/hide and the full matrix remain open.
 - [ ] **UX-1106** E2E view create/switch/configure/duplicate/reorder/delete using
       visible tabs. The primary journey now passes saved-view create, tab
