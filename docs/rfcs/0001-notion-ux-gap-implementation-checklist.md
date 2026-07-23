@@ -17,11 +17,12 @@ unlike Notion for a human user.
 SynapseNote has a broad database engine and a strong safety/agent contract. The
 largest remaining mismatches are:
 
-1. The creation chooser is now a first-class Page/Database choice and Blank
-   lands directly on an editable table. One start surface now exposes Blank,
-   templates, existing-folder, CSV, and Assistant; the latter reuses the
-   installed-agent handoff and canonical review boundary. Visual first-use and
-   richer preview parity remain open.
+1. The human creation path is still administration-shaped. `#database/new`
+   mounts a method chooser (Blank, Template, Existing folder, CSV/TSV, and
+   Assistant) over a database table shell. Even though the blank path can land
+   on an editable table, this is not the Notion interaction: the user must see
+   an ordinary page/block with a usable table first. The method chooser and
+   storage/agent details belong behind secondary actions.
 2. Database workspaces now resolve through sidebar, recent/search, backlinks,
    relations, and a stable page route. The remaining mismatch is visual
    convergence with ordinary document chrome plus complete cross-host capture;
@@ -70,8 +71,9 @@ Follow-up focused browser evidence on the IPv4 dev server now covers the
 critical inline-first handoff: submitting Blank from `#database/new` created a
 database and landed on a canonical `#database/<database>/<source>/<view?>`
 route with a rendered table grid. This validates route continuity, not visual
-Notion parity; the creation chooser is still administration-dense and the
-Electron/full first-use journey remains open.
+Notion parity; the creation chooser is still administration-dense, the
+captured route renders an overlapping wizard/table state, and the Electron/full
+first-use journey remains open.
 
 ## Latest browser audit (2026-07-23)
 
@@ -80,9 +82,10 @@ The in-app browser reached the IPv4 development server at
 document-native entry point:
 
 - Selecting `New database` from the sidebar opened `#database/new` as a
-  full-page, non-overlay creation surface. The editor remained usable behind
-  the route, and the page presented the human-facing name, summary, creation
-  methods, and an advanced storage disclosure without a blurred modal backdrop.
+  full-page, non-overlay creation surface, but the visible page still presents
+  a multi-method administration chooser while an `Untitled database` table is
+  mounted underneath. The absence of a blurred backdrop does not make this a
+  Notion-style page/block flow.
 - Leaving the optional title blank or entering a title kept the same page-first
   flow. Submitting Blank landed on the canonical
   `#database/<database>/<source>/<view>` route with an editable Table view,

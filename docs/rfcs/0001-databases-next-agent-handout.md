@@ -88,6 +88,29 @@ server suite takes roughly ten minutes and should be avoided during iteration;
 run individual server test files with `--conditions development`, then reserve
 the repository-wide check for final release readiness.
 
+## Important product correction (2026-07-23)
+
+The user has explicitly rejected a DBMS/administration-first experience. The
+target is Notion-equivalent UI/UX: a database is an ordinary editor block or
+page, the table is visible immediately, and the user can rename the title, add
+a property, add a row, and switch views without opening a management wizard or
+handling IDs. The current `#database/new` capture still shows a method chooser
+over an already-mounted table, so it is a confirmed parity failure even when
+the underlying mutation and agent contracts are correct.
+
+Treat the current 101/128 UX count as structural evidence only. Do not close
+the remaining UX gates or describe the feature as Notion-parity complete until
+the following first-use flow is visually and interactively true:
+
+`new page or slash → page/block title → immediately editable table → inline
+new-page row → add property from the table edge → visible view tabs → record
+peek/page`
+
+Template/import/folder/Assistant creation, machine IDs, schema/index details,
+agent context, diagnostics, and review receipts must remain secondary
+progressive-disclosure surfaces. The captured regression image is
+`docs/rfcs/assets/0001-notion-ux-audit/06-current-new-database-screen.png`.
+
 ## Current status
 
 - Numbered A-S items: **310/335 complete (92.5%)**.

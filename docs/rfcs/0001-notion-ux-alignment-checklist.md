@@ -19,6 +19,43 @@ in the [new UX implementation checklist](./0001-notion-ux-gap-implementation-che
 The current implementation is a strong **database administration surface** and
 a weak **document-native database experience**.
 
+### Product definition correction (2026-07-23)
+
+The acceptance bar is now explicit: SynapseNote must provide the same
+document-native interaction grammar as Notion, not merely a capable database
+engine or a friendlier database manager. A database is an editor block or an
+ordinary page whose table is immediately usable in the current document.
+
+The following are non-negotiable for the primary human path:
+
+1. **Create in context.** New page/database creation lands on a normal page
+   or at the current editor cursor. It must not open a management modal, a
+   database rail, or a multi-method setup wizard before the user sees the
+   table.
+2. **Table first.** The first rendered state is a title plus a table with a
+   required Title column and an inline `New page` row. The user can rename the
+   title, add a property, and enter a row without stable IDs, folders, schema,
+   index, or review terminology.
+3. **Inline means inline.** An inline database occupies the document flow and
+   shares the editor's spacing, selection, undo, and focus model. A linked view
+   is chosen from a small in-place picker; it does not route through the global
+   database workspace.
+4. **One visual system.** Inline and full-page databases use the same Notion-
+   style title, visible view tabs, compact table toolbar, property-header
+   menus, and record peek/page behavior. Administration/import/diagnostics and
+   agent context are secondary actions behind `...` or an explicit inspector.
+5. **Progressive disclosure.** Machine IDs, canonical folders, schema/index
+   state, review plans, and agent provenance remain available for safety and
+   recovery, but are hidden from the first-use surface and never determine the
+   default layout.
+
+The current running capture fails this bar: `#database/new` shows a large
+`New database` method chooser while an `Untitled database` table surface is
+already mounted underneath it. This is an administration workflow, not the
+Notion page/block workflow. The capture is retained as
+`assets/0001-notion-ux-audit/06-current-new-database-screen.png`; it is the
+starting regression target for the next implementation pass.
+
 - The command palette, sidebar toolbar, empty-space menu, onboarding footer,
   and empty-editor footer now expose a user-facing `New database` entry. A
   guided `New database` → `Linked view of database` slash entry is also
@@ -91,7 +128,7 @@ user's canonical project, or run the repository-wide/server test suite.
 | Creation       | `DatabaseCreationDialog.tsx` accepts an optional blank title, keeps storage details in a collapsed disclosure, and presents Blank, Template, Existing folder, CSV/TSV, and Assistant in one chooser. Blank routes through an automatic exact-plan commit; templates/imports/folder/agent paths retain the explicit review boundary, with the production surface injecting the installed-agent composer. Existing-folder identity assignment then hands off to a dedicated advanced source-identity migration surface. | The first-use path is shorter and safer for routine human creation while all higher-risk methods remain discoverable from the same start surface and retain explicit review boundaries. |
 | Blank schema   | `createBlankDatabaseDesiredState` creates one title property; after commit the shell selects the new source and first view on the canonical route. | A minimal database lands in an editable table; the management surface remains available for administration. |
 | Inline block   | Fresh `New database`/`Linked view of database`/`Inline database` inserts use a catalog/source/view picker; raw references remain advanced for existing MDX, and the block renders shared records with visible tabs and full-page handoff. | The core inline/linked journey is now unified for creation, editing, conversion, and removal; duplicate-view action and full state-matrix parity remain open. |
-| Database shell | `DatabaseTableDialog.tsx` supports the canonical `DatabaseWorkspacePage` plus the legacy management wrapper; the page header owns breadcrumbs, title, favorite, icon/cover, and page actions while the table surface remains shared. | Primary work is document-native; the dense management toolbar remains a deliberate admin surface. |
+| Database shell | `DatabaseTableDialog.tsx` supports the canonical `DatabaseWorkspacePage` plus the legacy management wrapper; the page header owns breadcrumbs, title, favorite, icon/cover, and page actions while the table surface remains shared. | The engine is reusable, but the captured default creation surface still exposes the dense management toolbar/wizard and an overlapping table. This does **not** pass Notion UX parity; administration must become secondary. |
 | Human writes   | Direct-safe cell/row writes use plan → auto-approval → commit; destructive, bulk, schema, and elevated writes retain plan → ghost → explicit review → commit.                    | The interruption is removed for common edits, but optimistic/offline acknowledgement and full policy coverage remain. |
 | Views          | Saved views now render as visible tabs with `+`; the dropdown and `Manage views` dialog remain available.                                                                      | The primary view switch is closer to Notion, but reorder/rename/favorite controls still live in management.          |
 | Renderer       | `editor/components/DatabaseView.tsx` renders all major layouts and record peeks.                                                                                               | This is reusable once insertion, editing, and view controls are redesigned.                                          |
@@ -1403,12 +1440,13 @@ crossed the document-native UX bar:
 
 ### Priority order for the next implementation pass
 
-1. **P0 — Document-native entry and creation:** prove the new-page
-   Page/Database choice and make the visible entry points land directly in an
-   editable full-page table with title focus and a first-row affordance.
-2. **P0 — Workspace integration:** replace the route-level dialog presentation
-   with ordinary page chrome, sidebar/recent navigation, reload/missing/denied
-   states, and back/forward behavior.
+1. **P0 — Notion-first creation:** remove the default method chooser/management
+   overlay from the human blank path. New page and slash insertion must land
+   directly on a normal page/block with title focus, a Title column, and a
+   first-row affordance.
+2. **P0 — One document-native shell:** make inline and full-page surfaces share
+   the same compact title/tabs/table chrome. Keep the database rail, schema,
+   diagnostics, and import/template/agent tools secondary.
 3. **P0 — Direct manipulation:** make routine human cell/row/property/view
    edits optimistic and undoable; retain exact review only for agent,
    destructive, permission, external, and threshold-crossing bulk work.
