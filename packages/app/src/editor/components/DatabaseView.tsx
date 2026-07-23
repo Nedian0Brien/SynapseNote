@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro';
 import { Trans } from '@lingui/react/macro';
 import {
   applyDatabaseLinkedViewSettings,
@@ -1505,7 +1506,7 @@ export function DatabaseView({
                 size="sm"
                 className="h-8 max-w-full justify-start truncate px-1 text-left font-medium"
                 aria-label={state.description.source?.name ?? state.description.database.name}
-                title="Rename inline database"
+                title={t`Rename inline database`}
                 onClick={() => {
                   setInlineTitleDraft(
                     state.description.source?.name ?? state.description.database.name,
