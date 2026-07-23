@@ -1051,6 +1051,9 @@ export function DatabaseView({
   const inlineAgentLabel = inlineDatabaseContext
     ? t`Ask agent about ${inlineDatabaseContext}`
     : undefined;
+  const inlineNewViewLabel = inlineDatabaseContext
+    ? t`New database view for ${inlineDatabaseContext}`
+    : t`New database view`;
   const linkedSourceViews =
     linkedDatabase?.views.filter((view) => view.sourceId === reference.data.sourceId) ?? [];
   const defaultInlineAgentScope: DatabaseAgentScope = {
@@ -1593,7 +1596,7 @@ export function DatabaseView({
                 type="button"
                 size="icon-sm"
                 variant="ghost"
-                aria-label="New database view"
+                aria-label={inlineNewViewLabel}
                 disabled={
                   inlineMutationStatus !== 'idle' ||
                   inlineUndoStatus !== 'idle' ||

@@ -132,7 +132,9 @@ describe('DatabaseView', () => {
     expect(screen.getByRole('button', { name: 'Ask agent about Tasks · Open tasks' })).toBeTruthy();
 
     expect(await screen.findByRole('button', { name: view.name })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'New database view' })).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'New database view for Tasks · Open tasks' }),
+    ).toBeTruthy();
     expect(document.querySelector('[data-linked-database-view-tabs]')).toBeTruthy();
   });
 
@@ -1448,7 +1450,9 @@ describe('DatabaseView', () => {
     expect(
       document.querySelector('[data-linked-database-view-tabs] [aria-current="page"]'),
     ).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'New database view' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'New database view for Tasks · Open tasks' }),
+    );
     expect(await screen.findByRole('heading', { name: 'Manage saved views' })).toBeTruthy();
     fireEvent.click(
       screen
