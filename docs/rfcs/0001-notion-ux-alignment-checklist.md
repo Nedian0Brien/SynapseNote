@@ -1700,6 +1700,16 @@ HTTP 400. This is functional evidence for the add-property subpath, not
 closure of UX-1105/NUI-701: configure/reorder/hide, destructive review,
 visual/cross-host, accessibility, and usability gates remain open.
 
+### Open sidebar catalog freshness evidence (2026-07-23)
+
+An open `Databases` sidebar now listens for the typed `database-changed` event
+and reloads its catalog after a workspace/schema commit. Renamed database and
+source labels therefore update in place instead of remaining stale until the
+section is reopened. `DatabaseSidebarSection.dom.test.tsx` passes 5 tests / 13
+expectations for this path; targeted Biome and app typecheck also pass. This is
+navigation-freshness evidence only and does not change the open visual,
+accessibility, usability, or cross-host parity gates.
+
 ### Database History and recovery evidence (2026-07-23)
 
 The `Database actions` menu now exposes a human-facing `History` item on both

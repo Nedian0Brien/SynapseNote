@@ -2630,6 +2630,28 @@ and Electron capture, manual accessibility/usability, and release gates remain
 open. The clean manual journey created ignored/local database artifacts in the
 worktree; preserve them and do not commit them.
 
+### 2026-07-23 live sidebar catalog refresh follow-up
+
+The live web audit also exposed a navigation-freshness gap: after a database or
+source title changed, an already-open `Databases` sidebar kept the old label
+until the section was reopened. `DatabaseSidebarSection` now subscribes to the
+typed `database-changed` event and invalidates its catalog request when a
+workspace/schema commit arrives, so the visible Notion-style page label refreshes
+without closing the section. Commit `5b047357` adds the implementation, the
+`database-sidebar-live-catalog` changeset, and a DOM regression test.
+
+Focused evidence:
+
+- `DatabaseSidebarSection.dom.test.tsx`: 5 tests / 13 expectations pass,
+  including the label refresh after a valid `workspace`/`schema-change` CC1
+  payload.
+- Targeted Biome and app typecheck pass; no full server suite or broad E2E run
+  was needed.
+
+This closes only the stale-label subpath. Keep the broader navigation,
+cross-host, accessibility, usability, and release gates open. Preserve the
+ignored/local database artifact created by the manual journey.
+
 ## Work in progress: do this first
 
 `packages/core/src/database/property-invariants.test.ts` is now verified and

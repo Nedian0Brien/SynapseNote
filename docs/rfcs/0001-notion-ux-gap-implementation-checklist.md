@@ -159,6 +159,17 @@ the temporary document and manifest were removed. This evidence does not
 close NUI-105/NUI-701 or UX-1102 because browser E2E, cross-host visual
 comparison, and manual usability/accessibility gates remain open.
 
+### Sidebar catalog freshness follow-up (2026-07-23)
+
+The open `Databases` sidebar now invalidates and reloads its catalog when the
+typed `database-changed` event reports a workspace/schema commit. This fixes a
+Notion-parity navigation detail where renamed database/source labels previously
+remained stale until the section was reopened. Focused evidence:
+`DatabaseSidebarSection.dom.test.tsx` passes 5 tests / 13 expectations,
+targeted Biome passes, and app typecheck passes. This functional subpath does
+not close NUI-105 or NUI-701–NUI-705; visual, cross-host, accessibility,
+usability, performance, and release evidence remains required.
+
 ## Implemented in the current slice
 
 These items are code-backed and have focused DOM/type checks. They must not be
