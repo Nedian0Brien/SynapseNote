@@ -2943,6 +2943,43 @@ describe('DatabaseTableDialog', () => {
     expect(screen.getByRole('gridcell', { name: 'Active' })).toBeTruthy();
   });
 
+  test('renders inline checkbox properties as direct-safe toggles', async () => {
+    const checkboxSource = {
+      ...source,
+      properties: [
+        ...source.properties,
+        { id: 'prop_done', key: 'done', name: 'Done', type: 'checkbox' as const },
+      ],
+    };
+    const checkboxResult = {
+      ...queryResult(),
+      records: queryResult().records.map((record) => ({
+        ...record,
+        values: { ...record.values, prop_done: true },
+      })),
+    };
+    const onEdit = mock(() => {});
+    render(
+      <DatabaseTable
+        source={checkboxSource}
+        result={checkboxResult}
+        notionSurface
+        onEdit={onEdit}
+      />,
+    );
+
+    const checkbox = screen.getByRole('checkbox', {
+      name: 'Toggle Done for page First task',
+    });
+    expect(checkbox.getAttribute('aria-checked')).toBe('true');
+    await userEvent.setup().click(checkbox);
+    expect(onEdit).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'rec_first' }),
+      expect.objectContaining({ id: 'prop_done', type: 'checkbox' }),
+      false,
+    );
+  });
+
   test('contextualizes the inline cell action menu with title and property', () => {
     const view = render(
       <DatabaseTable

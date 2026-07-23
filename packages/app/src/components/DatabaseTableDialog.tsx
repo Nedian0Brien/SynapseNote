@@ -3008,6 +3008,17 @@ export function DatabaseTable({
                               <MapPin aria-hidden="true" />
                             </Button>
                           </div>
+                        ) : notionSurface && property.type === 'checkbox' ? (
+                          <Checkbox
+                            checked={shownValue === true}
+                            disabled={mutationLocked || proposed || !onEdit}
+                            aria-label={`Toggle ${property.name} for page ${recordLabel}`}
+                            data-database-inline-checkbox={property.id}
+                            onClick={(event) => event.stopPropagation()}
+                            onCheckedChange={(checked) => {
+                              onEdit?.(record, property, checked === true);
+                            }}
+                          />
                         ) : notionSurface &&
                           (property.type === 'select' ||
                             property.type === 'status' ||

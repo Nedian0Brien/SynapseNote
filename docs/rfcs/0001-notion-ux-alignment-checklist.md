@@ -2374,6 +2374,20 @@ matrix.
   768px behavior, cross-host screenshots, manual accessibility, and the full
   browser journey matrix remain open.
 
+### Inline checkbox treatment pass (2026-07-23)
+
+- Inline checkbox properties now render as native checked/unchecked controls
+  instead of a generic text value. The control uses the existing direct-edit
+  mutation path, stops row navigation from firing, and keeps a page/property
+  label for keyboard and agent-facing discovery. Canonical/admin tables remain
+  unchanged.
+- Focused DOM evidence: the bounded `DatabaseTableDialog.dom.test.tsx` slice
+  passes the inline checkbox, select-tag, title, cell-menu, and row-menu cases
+  (5 tests / 23 expectations); targeted Biome and app typecheck pass.
+- This supports UX-009/UX-1105's inline value affordance target. Visual
+  baselines, contrast, responsive behavior, manual accessibility, cross-host,
+  usability, and the full browser journey matrix remain open.
+
 - [x] **UX-1001** Define keyboard order across title, tabs, controls, headers,
       cells, new row, and pagination. The canonical page DOM and focused table
       tests pin this progression, while arrow-key navigation handles the grid

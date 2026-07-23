@@ -3111,6 +3111,20 @@ their broad evidence is actually assembled:
   and app typecheck. This does not close contrast, responsive, cross-host,
   manual accessibility, usability, or full browser gates.
 
+### 2026-07-23 Inline checkbox treatment pass
+
+- Document-native checkbox properties now use a real checked/unchecked control
+  in each inline row. Toggling calls the existing direct human-edit callback,
+  does not open the row, and exposes a stable property selector plus a
+  page/property accessible name. Canonical/admin tables keep their prior
+  display and mutation behavior.
+- Evidence: the bounded `DatabaseTableDialog.dom.test.tsx` slice passes the
+  inline checkbox, select-tag, title, cell-menu, and row-menu cases (5 tests /
+  23 expectations), with targeted Biome and app typecheck passing.
+- This is incremental Notion-style convergence only. Keep the visual baseline,
+  contrast/responsive, manual accessibility, cross-host, usability, browser,
+  hosted, and real-model gates open until their evidence exists.
+
 ## Recommended execution order
 
 1. When a browser-enabled runner is available, run only the new primary-journey
