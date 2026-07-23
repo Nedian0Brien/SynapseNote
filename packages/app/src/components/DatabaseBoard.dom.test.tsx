@@ -215,7 +215,7 @@ describe('DatabaseBoard', () => {
       />,
     );
     const groupSelector = screen.getAllByRole('combobox', {
-      name: 'Move record rec_first to group',
+      name: 'Move record First task to group',
     })[0];
     if (!groupSelector) throw new Error('Board group selector is missing');
     fireEvent.click(groupSelector);
@@ -265,7 +265,7 @@ describe('DatabaseBoard', () => {
         onOpenContextInspector={onOpenContextInspector}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Inspect context for record rec_first' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect context for record First task' }));
     expect(onOpenContextInspector).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'rec_first' }),
     );

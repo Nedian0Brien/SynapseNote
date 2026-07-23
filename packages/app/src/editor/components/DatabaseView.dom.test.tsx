@@ -747,7 +747,7 @@ describe('DatabaseView', () => {
     expect(await screen.findByRole('heading', { name: 'Task board' })).toBeTruthy();
     expect(await screen.findByText('First task')).toBeTruthy();
     expect(document.querySelector('[data-board-card="rec_first"]')).toBeTruthy();
-    expect(screen.getByLabelText('Inspect context for record rec_first')).toBeTruthy();
+    expect(screen.getByLabelText('Inspect context for record First task')).toBeTruthy();
   });
 
   test('applies a single inline Board transition through the direct-safe cell path', async () => {
@@ -905,7 +905,9 @@ describe('DatabaseView', () => {
       expect(document.querySelector('[data-board-card="rec_first"]')).toBeTruthy(),
     );
     fireEvent.click(
-      screen.getAllByRole('combobox', { name: 'Move record rec_first to group' })[0] as HTMLElement,
+      screen.getAllByRole('combobox', {
+        name: 'Move record First task to group',
+      })[0] as HTMLElement,
     );
     fireEvent.click(await screen.findByRole('option', { name: 'Done' }));
     await waitFor(() => expect(commitCalls).toBe(1));
