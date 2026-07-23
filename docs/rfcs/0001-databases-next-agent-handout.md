@@ -2869,7 +2869,9 @@ closed in the authoritative checklist.
   `packages/server/src/database-creation-eval.ts` and
   `database-creation-eval.test.ts`; keep R-017 open until a real model/agent
   output replay is attached rather than counting the deterministic test
-  planner as model evidence.
+  planner as model evidence. The evaluator now also accepts planner responses
+  that omit the optional `repairAttempts` field and normalizes that omission to
+  zero; the focused suite covers this integration boundary.
 - **R-018** is closed with a transport-neutral final-state evaluator and a real
   commit → Context Pack → undo scenario. The focused suite passes 2 tests / 9
   expectations; it rejects wrong citations and partial recovery.

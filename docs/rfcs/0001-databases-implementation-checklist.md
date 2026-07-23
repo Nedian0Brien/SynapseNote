@@ -699,6 +699,10 @@ copy/paste, import/export, API, agent schema, permissions, and tests agree.
       permission-as-empty, unauthorized read, and unauthorized write outcomes.
 - [ ] **R-017** Reach at least 90% prompt-to-valid-database creation without
       manual schema repair.
+      The reusable evaluator now accepts the typed planner response with or
+      without its optional `repairAttempts` field; omitted counts normalize to
+      zero and remain subject to the same repair-free threshold. Real model or
+      agent replay evidence is still required before closing this gate.
 - [x] **R-018** Evaluate final database state, evidence correctness, tokens, tool
       calls, latency, and recovery rather than transcript appearance alone.
       Evidence: `packages/server/src/database-final-eval.ts` is a pure,
