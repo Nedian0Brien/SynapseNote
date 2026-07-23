@@ -2762,8 +2762,9 @@ multi-select default keys, and reports delete dependencies from array values.
 mutations, and the canonical Notion-style header menu exposes `Configure
 options` for Multi-select as well as Select.
 
-Feature commit: the immediately preceding feature commit on this branch; the
-docs and changeset are committed directly after it. Changeset:
+Feature commit: `efcaca21 feat: migrate multi-select option references`.
+Docs/changeset commit: `8a5498bc docs: record multi-select option parity`.
+Changeset:
 `../../.changeset/notion-multiselect-option-lifecycle.md`.
 
 Focused evidence:
