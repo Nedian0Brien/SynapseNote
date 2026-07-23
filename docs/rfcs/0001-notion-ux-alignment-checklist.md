@@ -267,6 +267,11 @@ visible value (`Untitled database`/the renamed title), while keeping
 `Rename database page` as tooltip guidance. This keeps screen-reader and agent
 navigation anchored to the page identity rather than the edit action.
 
+Commit `3e84141d` removes the modal-style close button from the canonical
+canvas presentation. The page still has its visible `Databases` breadcrumb for
+return navigation, while the legacy management dialog retains its close
+control.
+
 ### UX-0 and continuity evidence closure (2026-07-23)
 
 The route, state, mutation, and continuity contracts are now backed by focused

@@ -224,6 +224,10 @@ checked with the smallest affected UI actions:
   page-title button's accessible name with the visible database title and
   retains rename guidance in the tooltip. The canonical workspace DOM journey
   covers this name explicitly.
+- Commit `3e84141d fix: keep database canvas page-like` removes the modal-style
+  close control from the canonical canvas; users return through the visible
+  `Databases` breadcrumb while the secondary management dialog keeps its close
+  affordance.
 
 This is partial cross-host evidence, not closure of NUI-105. Command-palette,
 slash, normal New-page, visual comparison, manual accessibility, usability,
