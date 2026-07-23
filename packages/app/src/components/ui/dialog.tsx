@@ -2,6 +2,7 @@ import { Trans } from '@lingui/react/macro';
 import { XIcon } from 'lucide-react';
 import { Dialog as DialogPrimitive } from 'radix-ui';
 import type * as React from 'react';
+import { useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { ignoreToastInteractOutside } from '@/components/ui/toast-outside-guard';
 import { cn } from '@/lib/utils';
@@ -54,12 +55,15 @@ function DialogContent({
   showOverlay = true,
   portal = true,
   onInteractOutside,
+  onOpenAutoFocus,
+  onCloseAutoFocus,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean;
   showOverlay?: boolean;
   portal?: boolean;
 }) {
+  const focusReturnRef = useRef<HTMLElement | null>(null);
   const content = (
     <>
       {showOverlay ? <DialogOverlay /> : null}
@@ -90,6 +94,20 @@ function DialogContent({
           'fixed top-1/2 left-1/2 z-50 flex w-full max-w-[calc(100%-2rem)] max-h-[calc(100dvh-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col gap-6 overflow-hidden rounded-xl bg-popover p-6 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm [-webkit-app-region:no-drag] data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 motion-reduce:data-open:animate-none motion-reduce:data-closed:animate-none motion-reduce:duration-0',
           className,
         )}
+        onOpenAutoFocus={(event) => {
+          focusReturnRef.current =
+            document.activeElement instanceof HTMLElement ? document.activeElement : null;
+          onOpenAutoFocus?.(event);
+        }}
+        onCloseAutoFocus={(event) => {
+          onCloseAutoFocus?.(event);
+          const target = focusReturnRef.current;
+          if (!event.defaultPrevented && target?.isConnected) {
+            event.preventDefault();
+            target.focus();
+          }
+          focusReturnRef.current = null;
+        }}
         {...props}
       >
         {children}

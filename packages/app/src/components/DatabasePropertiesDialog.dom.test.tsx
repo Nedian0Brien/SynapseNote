@@ -2,7 +2,8 @@ import { afterEach, describe, expect, mock, test } from 'bun:test';
 import { i18n } from '@lingui/core';
 import { I18nProvider } from '@lingui/react';
 import type { DatabaseSource } from '@nedian0brien/synapsenote-core';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { useState } from 'react';
 import { DatabasePropertiesDialog } from './DatabasePropertiesDialog';
 
 i18n.load('en', {});
@@ -46,6 +47,43 @@ function renderDialog(overrides: Partial<Parameters<typeof DatabasePropertiesDia
 }
 
 describe('DatabasePropertiesDialog', () => {
+  test('returns focus to the opener when a controlled dialog closes', async () => {
+    function FocusHarness() {
+      const [open, setOpen] = useState(false);
+      return (
+        <>
+          <button type="button" onClick={() => setOpen(true)}>
+            Open property editor
+          </button>
+          <DatabasePropertiesDialog
+            open={open}
+            onOpenChange={setOpen}
+            source={source}
+            mutationLocked={false}
+            error={null}
+            onAddProperty={() => {}}
+            onRemoveProperty={() => {}}
+            onReorderProperties={() => {}}
+          />
+        </>
+      );
+    }
+
+    render(
+      <I18nProvider i18n={i18n}>
+        <FocusHarness />
+      </I18nProvider>,
+    );
+    const opener = screen.getByRole('button', { name: 'Open property editor' });
+    opener.focus();
+    fireEvent.click(opener);
+    const dialog = screen.getByRole('dialog', { name: 'Manage properties' });
+    const close = dialog.querySelector<HTMLButtonElement>('[data-slot="dialog-close"]');
+    if (!close) throw new Error('dialog close control is missing');
+    fireEvent.click(close);
+    await waitFor(() => expect(document.activeElement).toBe(opener));
+  });
+
   test('lists every property and keeps the Title row frozen from move and delete', () => {
     renderDialog();
     expect(screen.getByRole('dialog', { name: 'Manage properties' })).toBeTruthy();
