@@ -1069,10 +1069,13 @@ opens when the current hash is a database page, and marks the active source with
 `aria-current="page"`. The workspace command palette already treats database
 targets as first-class recent entries; its UI test confirms a catalog-backed
 database appears under `Recently opened` and reopens the canonical route.
-`DatabaseSidebarSection.dom.test.tsx` passes 3 tests / 7 expectations and the
-focused recent-navigation test passes 1 / 5. This closes UX-203. Normal page
-chrome and search/backlinks/relations entry points are evidenced above;
-responsive visual proof remains open under UX-1007.
+`DatabaseSidebarSection.dom.test.tsx` passes 4 tests / 10 expectations,
+including an abort-aware deferred request that guards against the loading-state
+effect loop; the focused recent-navigation test passes 1 / 5. A live IPv4
+browser recheck shows the expanded section resolving to the `Untitled database`
+source instead of remaining on `Loading databases`. This closes UX-203.
+Normal page chrome and search/backlinks/relations entry points are evidenced
+above; responsive visual proof remains open under UX-1007.
 
 ### Inline/full-page conversion evidence (2026-07-23)
 

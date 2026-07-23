@@ -13,8 +13,8 @@
 - Latest primary-journey feature commit: `b79b1801`
 - Latest page-terminology feature commit: `33ad933c`
 - Latest route-handoff feature commit: `8896e7bd`
-- Latest database-sidebar request-lifecycle commit: `226626cf` (supersedes `3d5713b0`)
-- Latest database-sidebar request-lifecycle changeset: `../../.changeset/database-sidebar-load-lifecycle.md`
+- Latest database-sidebar request-lifecycle commit: `02449e9b` (supersedes `226626cf` and `3d5713b0`)
+- Latest database-sidebar request-lifecycle changeset: `../../.changeset/database-sidebar-request-state.md`
 - Latest page-terminology changeset: `../../.changeset/notion-database-page-language.md`
 - Latest inline UX changeset: `../../.changeset/inline-database-focus.md`
 - Latest inline recovery changeset: `../../.changeset/inline-database-undo.md`
@@ -175,6 +175,15 @@ Two small continuity defects were closed in the running database surface:
   retryable error instead of leaving an indefinite spinner. A fresh host-level
   network capture is still required before this counts toward NUI-105/UX-1101;
   the focused test alone is not a visual-gate closure.
+- `02449e9b fix: keep database sidebar catalog request alive` fixes the deeper
+  state-loop variant: the effect no longer depends on the `loading` state it
+  sets, so rendering the spinner cannot abort the request. Retry increments an
+  explicit request attempt, stale responses are ignored, and closing/reopening
+  the section starts a clean request. The focused suite now passes 4 tests / 10
+  expectations, including an abort-aware deferred request. A live IPv4 browser
+  recheck now changes the expanded section from `Loading databases` to the
+  `Untitled database` source entry. This is navigation evidence, not closure
+  of the remaining cross-host visual/accessibility/usability/release gates.
 
 These commits improve navigation continuity and request resilience; they do
 not close the remaining cross-host visual, accessibility, usability, or release

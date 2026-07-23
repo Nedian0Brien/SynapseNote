@@ -187,7 +187,10 @@ treated as visual parity until a browser capture is attached.
 - [x] **NUI-007** Add an on-demand `Databases` sidebar section that lists
   validated catalog sources, follows the active database hash, and opens the
   stable full-page route. Evidence: `DatabaseSidebarSection.dom.test.tsx`
-  (3 tests / 7 expectations) and app typecheck. It also follows popstate and
+  (4 tests / 10 expectations) and app typecheck. An abort-aware deferred
+  request regression test proves the loading state cannot abort its own
+  request; a live IPv4 browser check resolves the expanded section to the
+  `Untitled database` source. It also follows popstate and
   canonical-creation route notifications. This is the first navigation slice;
   recent/search/backlink/relation integration remains open below.
 - [x] **NUI-008** Auto-approve only direct-safe cell edits and new-record
