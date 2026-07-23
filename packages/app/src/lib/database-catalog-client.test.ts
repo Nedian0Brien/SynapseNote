@@ -98,6 +98,28 @@ test('loads a validated compact catalog and exact source description', async () 
   ]);
 });
 
+test('retries one transient catalog conflict after a database creation', async () => {
+  let calls = 0;
+  const fetchImplementation = mock(async () => {
+    calls += 1;
+    if (calls === 1) {
+      return Response.json({ detail: 'catalog is still settling' }, { status: 409 });
+    }
+    return Response.json({
+      query: null,
+      manifestRevision: hash,
+      catalogRevision: hash,
+      complete: true,
+      candidates: [],
+    });
+  });
+
+  await expect(
+    fetchDatabaseCatalog({ fetch: fetchImplementation as typeof fetch }),
+  ).resolves.toMatchObject({ complete: true, candidates: [] });
+  expect(calls).toBe(2);
+});
+
 describe('database catalog client validation', () => {
   test('rejects mismatched described source and problem responses', async () => {
     const mismatch = mock(async () =>
