@@ -1054,6 +1054,9 @@ export function DatabaseTable({
       : localLayout;
   });
   const viewPropertySet = viewPropertyIds ? new Set(viewPropertyIds) : null;
+  const visibleLayoutPropertyIds = layout.propertyIds.filter(
+    (propertyId) => !layout.hiddenPropertyIds.includes(propertyId),
+  );
   const visibleProperties = layout.propertyIds
     .filter((propertyId) => !layout.hiddenPropertyIds.includes(propertyId))
     .map((propertyId) => allProperties.find((property) => property.id === propertyId))
@@ -1779,7 +1782,7 @@ export function DatabaseTable({
               />
             </TableHead>
             {properties.map((property, index) => {
-              const layoutPropertyIndex = layout.propertyIds.indexOf(property.id);
+              const layoutPropertyIndex = visibleLayoutPropertyIds.indexOf(property.id);
               const propertyVisible = !layout.hiddenPropertyIds.includes(property.id);
               const calculationOptions = databaseCalculationFunctionsForProperty(property);
               const propertyTypeLabel = databasePropertyTypeLabel(property.type);
@@ -1939,7 +1942,7 @@ export function DatabaseTable({
                         disabled={
                           property.type === 'title' ||
                           layoutPropertyIndex < 0 ||
-                          layoutPropertyIndex >= layout.propertyIds.length - 1
+                          layoutPropertyIndex >= visibleLayoutPropertyIds.length - 1
                         }
                         onSelect={() =>
                           updatePropertyLayout((current) =>

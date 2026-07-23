@@ -38,6 +38,33 @@ describe('database table layout', () => {
     expect(moveDatabaseTableProperty(layout, 'prop_title', 1)).toEqual(layout);
   });
 
+  test('reorders among visible properties when hidden columns are interleaved', () => {
+    const layout = reconcileDatabaseTableLayout(
+      [
+        ...properties,
+        { id: 'prop_hidden', key: 'hidden', name: 'Hidden', type: 'text' },
+      ] as DatabaseProperty[],
+      {
+        propertyIds: ['prop_title', 'prop_status', 'prop_hidden', 'prop_score'],
+        hiddenPropertyIds: ['prop_hidden'],
+      },
+    );
+
+    expect(moveDatabaseTableProperty(layout, 'prop_score', -1).propertyIds).toEqual([
+      'prop_title',
+      'prop_score',
+      'prop_status',
+      'prop_hidden',
+    ]);
+    expect(moveDatabaseTableProperty(layout, 'prop_status', 1).propertyIds).toEqual([
+      'prop_title',
+      'prop_hidden',
+      'prop_score',
+      'prop_status',
+    ]);
+    expect(moveDatabaseTableProperty(layout, 'prop_hidden', -1)).toEqual(layout);
+  });
+
   test('applies canonical view projection, order, and display without discarding local defaults', () => {
     const local = reconcileDatabaseTableLayout(properties, {
       propertyIds: ['prop_title', 'prop_status', 'prop_score'],

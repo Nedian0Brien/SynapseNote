@@ -1189,6 +1189,48 @@ describe('DatabaseTableDialog', () => {
     expect(onViewPropertyIdsChange).toHaveBeenLastCalledWith(['prop_title', 'prop_status']);
   });
 
+  test('disables visible-column moves at the visible boundaries when hidden columns are interleaved', async () => {
+    localStorage.setItem(
+      databaseTableLayoutStorageKey(source.id),
+      JSON.stringify({
+        propertyIds: [
+          'prop_title',
+          'prop_url',
+          'prop_status',
+          'prop_budget',
+          'prop_email',
+          'prop_phone',
+        ],
+        hiddenPropertyIds: ['prop_url', 'prop_email', 'prop_phone'],
+      }),
+    );
+    const user = userEvent.setup();
+    render(
+      <DatabaseTable
+        databaseId={database.id}
+        source={source}
+        result={{ ...queryResult(), isComplete: true, nextCursor: null } as never}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Property options for Status' }));
+    expect(
+      screen.getByRole('menuitem', { name: 'Move left' }).getAttribute('data-disabled'),
+    ).not.toBeNull();
+    expect(
+      screen.getByRole('menuitem', { name: 'Move right' }).getAttribute('data-disabled'),
+    ).toBeNull();
+
+    await user.keyboard('{Escape}');
+    await user.click(screen.getByRole('button', { name: 'Property options for Budget' }));
+    expect(
+      screen.getByRole('menuitem', { name: 'Move left' }).getAttribute('data-disabled'),
+    ).toBeNull();
+    expect(
+      screen.getByRole('menuitem', { name: 'Move right' }).getAttribute('data-disabled'),
+    ).not.toBeNull();
+  });
+
   test('applies canonical saved-view order and display without overwriting personal layout', () => {
     const personalLayout = {
       propertyIds: source.properties.map((property) => property.id),

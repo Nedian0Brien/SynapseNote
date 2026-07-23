@@ -101,8 +101,18 @@ export function moveDatabaseTableProperty(
   propertyId: string,
   direction: -1 | 1,
 ): DatabaseTableLayoutState {
+  const hiddenPropertyIds = new Set(layout.hiddenPropertyIds);
+  const visiblePropertyIds = layout.propertyIds.filter(
+    (candidate) => !hiddenPropertyIds.has(candidate),
+  );
+  const visibleFrom = visiblePropertyIds.indexOf(propertyId);
+  const visibleTo = visibleFrom + direction;
+  if (visibleFrom <= 0 || visibleTo <= 0 || visibleTo >= visiblePropertyIds.length) {
+    return layout;
+  }
   const from = layout.propertyIds.indexOf(propertyId);
-  const to = from + direction;
+  const targetPropertyId = visiblePropertyIds[visibleTo];
+  const to = targetPropertyId ? layout.propertyIds.indexOf(targetPropertyId) : -1;
   if (from <= 0 || to <= 0 || to >= layout.propertyIds.length) return layout;
   const propertyIds = [...layout.propertyIds];
   const [moved] = propertyIds.splice(from, 1);
