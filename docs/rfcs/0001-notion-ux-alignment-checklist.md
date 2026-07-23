@@ -439,6 +439,11 @@ scope payload remains the stable database/source/view reference; only the
 human/AX label is contextualized. The combined focused run passes 2 tests / 15
 expectations.
 
+The saved-view add button is contextualized as `New database view for Tasks ·
+Open tasks`, preserving the compact plus icon while making its target explicit
+to agents. The focused single-view journey covers this label and the existing
+long journey uses it for view-manager navigation.
+
 The follow-up regression capture found that remounting the manager during a
 draft could replay the initial action and create duplicate copies. The manager
 now keeps a stable instance across schema refreshes, synchronizes its view-name

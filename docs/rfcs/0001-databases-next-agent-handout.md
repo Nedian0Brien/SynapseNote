@@ -267,6 +267,12 @@ the document-native browser journey to activate the title through its heading
 context and match the contextual `Open full database:` name. Playwright test
 discovery lists all 3 journey cases; no browser execution was repeated.
 
+Commit `b6c0b5dc fix: contextualize inline add-view action` labels the compact
+plus control with `New database view for Tasks · Open tasks`. Its focused
+single-view assertion passes; the broader inline journey retains the known
+multiline-paste commit-count baseline failure and was not treated as release
+evidence.
+
 ## Current status
 
 - Numbered A-S items: **310/335 complete (92.5%)**.
