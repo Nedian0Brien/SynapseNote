@@ -64,6 +64,8 @@ interface OpenInAgentMenuProps {
   readonly triggerAriaLabel?: string;
   /** Optional visual override for surfaces that open the handoff from another menu. */
   readonly triggerClassName?: string;
+  /** Hide a programmatic trigger from the accessibility tree when another menu owns the action. */
+  readonly triggerAriaHidden?: boolean;
 }
 
 interface OpenWithAiPanelProps {
@@ -248,6 +250,7 @@ export function OpenInAgentMenu({
   triggerLabel,
   triggerAriaLabel,
   triggerClassName,
+  triggerAriaHidden,
 }: OpenInAgentMenuProps): ReactNode {
   const { t } = useLingui();
   const { states, refresh } = useInstalledAgents();
@@ -328,6 +331,8 @@ export function OpenInAgentMenu({
           size="sm"
           disabled={triggerDisabled}
           aria-label={triggerAriaLabel}
+          aria-hidden={triggerAriaHidden}
+          tabIndex={triggerAriaHidden ? -1 : undefined}
           className={cn('gap-1.5 px-1.5 text-muted-foreground', triggerClassName)}
           data-testid="open-in-agent-trigger"
           // macOS swallows pointerdown inside the editor header's

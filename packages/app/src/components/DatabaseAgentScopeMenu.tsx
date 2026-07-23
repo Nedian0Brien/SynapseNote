@@ -39,6 +39,8 @@ export function DatabaseAgentScopeMenu({
         variant="outline"
         size="sm"
         aria-label={ariaLabel}
+        aria-hidden={hiddenTrigger}
+        tabIndex={hiddenTrigger ? -1 : undefined}
         className={hiddenTrigger ? 'sr-only' : undefined}
         data-testid="open-in-agent-trigger"
         data-database-agent-scope-trigger
@@ -65,6 +67,7 @@ export function DatabaseAgentScopeMenu({
         onOpenChange?.(nextOpen);
       }}
       triggerClassName={hiddenTrigger ? 'sr-only' : undefined}
+      triggerAriaHidden={hiddenTrigger}
     />
   );
 }

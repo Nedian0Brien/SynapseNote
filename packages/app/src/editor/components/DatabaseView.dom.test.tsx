@@ -170,9 +170,12 @@ describe('DatabaseView', () => {
     expect(
       screen.getByRole('button', { name: 'Open full database: Tasks · Open tasks' }),
     ).toBeTruthy();
-    const agentButton = screen.getByRole('button', { name: 'Ask agent about Tasks · Open tasks' });
+    const agentButton = screen.getByTestId('open-in-agent-trigger');
     expect(agentButton).toBeTruthy();
     expect(agentButton.className).toContain('sr-only');
+    expect(agentButton.getAttribute('aria-hidden')).toBe('true');
+    expect(agentButton.getAttribute('tabindex')).toBe('-1');
+    expect(screen.queryByRole('button', { name: 'Ask agent about Tasks · Open tasks' })).toBeNull();
 
     expect(await screen.findByRole('button', { name: view.name })).toBeTruthy();
     expect(
