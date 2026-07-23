@@ -1480,9 +1480,11 @@ describe('DatabaseView', () => {
         ),
       ),
     ).toBe(true);
-    expect(document.querySelector('[data-context-inspector-scope]')?.textContent).toContain(
-      'properties:prop_title',
-    );
+    expect(
+      document.querySelector(
+        '[data-testid="database-context-inspector-scope"] [data-machine-id-kind="property-selection"] [data-machine-id-value="prop_title"]',
+      ),
+    ).toBeTruthy();
     fireEvent.click(document.querySelector('[data-slot="dialog-close"]') as HTMLElement);
     await waitFor(() => expect(screen.queryByText('What the agent saw')).toBeNull());
     fireEvent.click(screen.getByLabelText('Select record rec_first'));
@@ -1498,9 +1500,16 @@ describe('DatabaseView', () => {
         ),
       ),
     ).toBe(true);
-    expect(document.querySelector('[data-context-inspector-scope]')?.textContent).toContain(
-      'records:rec_first,rec_second',
-    );
+    expect(
+      document.querySelector(
+        '[data-testid="database-context-inspector-scope"] [data-machine-id-kind="record-selection"] [data-machine-id-value="rec_first"]',
+      ),
+    ).toBeTruthy();
+    expect(
+      document.querySelector(
+        '[data-testid="database-context-inspector-scope"] [data-machine-id-kind="record-selection"] [data-machine-id-value="rec_second"]',
+      ),
+    ).toBeTruthy();
     fireEvent.click(document.querySelector('[data-slot="dialog-close"]') as HTMLElement);
     await waitFor(() => expect(screen.queryByText('What the agent saw')).toBeNull());
     fireEvent.click(screen.getByRole('button', { name: 'Open bulk actions' }));

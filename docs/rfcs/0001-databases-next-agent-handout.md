@@ -99,7 +99,7 @@ over an already-mounted table, so it is a confirmed parity failure even when
 the underlying mutation and agent contracts are correct.
 
 The earlier 101/128 snapshot is structural evidence only. The current
-structural count is **110/128**; do not close
+structural count is **112/128**; do not close
 the remaining UX gates or describe the feature as Notion-parity complete until
 the following first-use flow is visually and interactively true:
 
@@ -176,7 +176,7 @@ agent-authored schema writes remain review-required.
   catalog/schema, typed queries, evidence traces, Context Packs, exact plans,
   approval-bound commits, undo, and restart/backup idempotency. Agent View
   policy/privacy/sandbox review remains Partial by design.
-- Notion UX alignment checklist: **110/128 complete**. The page-first and normal
+- Notion UX alignment checklist: **112/128 complete**. The page-first and normal
   New-page creation slices, the inline/linked insertion contract, and the
   table-first direct-manipulation, named canonical workspace canvas-route,
   shared navigation without a duplicate canvas rail, sidebar/recent/search/
@@ -232,6 +232,11 @@ agent-authored schema writes remain review-required.
 - A-K, M-P are complete. L is complete except L-017. Q is complete except
   Q-012. R-005, R-017, and R-019 remain; R-018 is closed. S-010 and S-011
   are closed.
+- UX-010 and UX-1109 are now closed with focused compatibility evidence:
+  v1 manifest/migration corpus, saved-view and typed Markdown/MDX record
+  fixtures, a real MDX `DatabaseView` stable-reference block, descriptor dirty
+  serialization, live block projection/reference writes, and database
+  last-opened route persistence. The structural UX count is **112/128**.
 - The goal is active and is not complete or blocked.
 
 ## What is implemented

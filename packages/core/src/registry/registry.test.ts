@@ -132,6 +132,48 @@ describe('builtInComponents manifest', () => {
     }
   });
 
+  test('DatabaseView dirty serialization preserves stable refs and omits inline default mode', () => {
+    const databaseView = builtInComponents.find((meta) => meta.name === 'DatabaseView');
+    expect(databaseView).toBeDefined();
+    if (!databaseView) return;
+
+    const serialize = (mode: 'inline' | 'full-page') =>
+      databaseView.serialize(
+        {
+          attrs: {
+            componentName: 'DatabaseView',
+            props: {
+              databaseId: 'db_fixture',
+              sourceId: 'ds_feedback',
+              viewId: 'view_feedback_table',
+              mode,
+            },
+          },
+        } as never,
+        { all: () => [] } as never,
+      ) as {
+        type: string;
+        name: string;
+        attributes: Array<{ name: string; value: unknown }>;
+      };
+
+    const inline = serialize('inline');
+    expect(inline.type).toBe('mdxJsxFlowElement');
+    expect(inline.name).toBe('DatabaseView');
+    expect(inline.attributes).toEqual([
+      { type: 'mdxJsxAttribute', name: 'databaseId', value: 'db_fixture' },
+      { type: 'mdxJsxAttribute', name: 'sourceId', value: 'ds_feedback' },
+      { type: 'mdxJsxAttribute', name: 'viewId', value: 'view_feedback_table' },
+    ]);
+
+    const fullPage = serialize('full-page');
+    expect(fullPage.attributes).toContainEqual({
+      type: 'mdxJsxAttribute',
+      name: 'mode',
+      value: 'full-page',
+    });
+  });
+
   test('all canonical entries have description and searchTerms (slash-menu surface)', () => {
     // Compat descriptors are filtered out of the slash menu, so searchTerms
     // (which power slash-menu discoverability) are only required on canonicals.

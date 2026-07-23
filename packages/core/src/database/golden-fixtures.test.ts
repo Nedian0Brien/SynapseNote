@@ -108,6 +108,27 @@ describe('database v1 golden fixtures', () => {
       },
     });
 
+    const mdxPage = materializeDatabaseRecord({
+      definition: manifest.definition,
+      sourceId: 'ds_feedback',
+      path: 'records/feedback/linked.mdx',
+      markdown: await readFile(fixtureUrl('records/feedback/linked.mdx'), 'utf-8'),
+    });
+    expect(mdxPage).toMatchObject({
+      ok: true,
+      record: {
+        id: 'rec_fixture_mdx_feedback',
+        path: 'records/feedback/linked.mdx',
+        values: {
+          prop_feedback_title: 'Roadmap workspace',
+          prop_feedback_status: 'opt_status_new',
+        },
+        body: expect.stringContaining(
+          '<DatabaseView databaseId="db_fixture" sourceId="ds_feedback" viewId="view_feedback_table" />',
+        ),
+      },
+    });
+
     expect(parseDatabaseManifestYaml(serializeDatabaseManifestYaml(manifest.definition))).toEqual(
       manifest,
     );
