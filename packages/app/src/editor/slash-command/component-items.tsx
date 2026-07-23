@@ -458,7 +458,10 @@ export function focusInsertedComponent(
  * Inserts a jsxComponent PM node with structured attrs + default props.
  * Post-insert: auto-opens PropPanel (editable props) or focuses children.
  */
-function createInsertCommand(descriptor: JsxComponentDescriptor): (editor: Editor) => void {
+function createInsertCommand(
+  descriptor: JsxComponentDescriptor,
+  propOverrides: Record<string, unknown> = {},
+): (editor: Editor) => void {
   return (editor: Editor) => {
     // Snapshot existing matching jsxComponent node references. ProseMirror
     // preserves node identity for nodes unchanged by a transaction, so the
@@ -489,6 +492,11 @@ function createInsertCommand(descriptor: JsxComponentDescriptor): (editor: Edito
     // single-instance carve-out below is intentionally not generalized
     // until that pressure exists.
     const inserted = createChildNode(descriptor.name);
+    const insertedAttrs = (inserted.attrs ?? {}) as Record<string, unknown>;
+    insertedAttrs.props = {
+      ...((insertedAttrs.props as Record<string, unknown> | undefined) ?? {}),
+      ...propOverrides,
+    };
     if (descriptor.name === 'Tabs') {
       const tab1 = createChildNode('Tab');
       const tab2 = createChildNode('Tab');
@@ -635,7 +643,7 @@ function getCustomBlockComponentItems(): SlashCommandItem[] {
       insertsBlockComponent: true,
       command: (editor) => {
         const descriptor = getDescriptor('DatabaseView');
-        if (descriptor) createInsertCommand(descriptor)(editor);
+        if (descriptor) createInsertCommand(descriptor, { create: 'blank' })(editor);
       },
       preview: {
         description: t`Create a database in this page and edit its rows without leaving the document.`,

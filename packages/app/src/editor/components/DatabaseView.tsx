@@ -32,6 +32,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   Suspense,
   useEffect,
+  useEffectEvent,
   useRef,
   useState,
 } from 'react';
@@ -178,6 +179,8 @@ interface DatabaseViewProps {
   viewId?: string;
   viewOverrides?: DatabaseLinkedViewSettings;
   mode?: 'inline' | 'full-page';
+  /** Fresh slash insertion can request an immediate blank inline table. */
+  create?: 'blank';
 }
 
 interface InlineDatabasePickerProps {
@@ -351,6 +354,7 @@ interface InlineDatabaseCreationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated: (reference: { databaseId: string; sourceId: string; viewId: string }) => void;
+  autoStart?: boolean;
 }
 
 /**
@@ -362,10 +366,12 @@ function InlineDatabaseCreationDialog({
   open,
   onOpenChange,
   onCreated,
+  autoStart = false,
 }: InlineDatabaseCreationDialogProps) {
   const [name, setName] = useState('');
   const [status, setStatus] = useState<'idle' | 'creating'>('idle');
   const [error, setError] = useState<string | null>(null);
+  const autoStartRef = useRef(false);
 
   const submit = () => {
     if (status !== 'idle') return;
@@ -410,6 +416,18 @@ function InlineDatabaseCreationDialog({
       })
       .finally(() => setStatus('idle'));
   };
+  const submitEvent = useEffectEvent(submit);
+
+  useEffect(() => {
+    if (!open) {
+      autoStartRef.current = false;
+      return;
+    }
+    if (autoStart && !autoStartRef.current && status === 'idle') {
+      autoStartRef.current = true;
+      submitEvent();
+    }
+  }, [autoStart, open, status]);
 
   if (!open) return null;
 
@@ -424,49 +442,59 @@ function InlineDatabaseCreationDialog({
       <div className="flex items-start gap-3">
         <Plus className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
         <div className="min-w-0">
-          <h3 className="font-medium text-sm">Create inline database</h3>
+          <h3 className="font-medium text-sm">
+            {autoStart ? 'Untitled database' : 'Create inline database'}
+          </h3>
           <p className="mt-1 text-muted-foreground text-xs">
-            Name it here. The editable table will replace this setup block in the current page.
+            {autoStart
+              ? 'Preparing an editable table in this page.'
+              : 'Name it here. The editable table will replace this setup block in the current page.'}
           </p>
         </div>
       </div>
-      <label className="mt-4 grid gap-1.5 text-sm" htmlFor="inline-database-name">
-        <span className="font-medium">Database name</span>
-        <Input
-          id="inline-database-name"
-          value={name}
-          autoFocus
-          disabled={status !== 'idle'}
-          placeholder="Untitled database"
-          onChange={(event) => setName(event.currentTarget.value)}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') void submit();
-          }}
-        />
-      </label>
-      <p className="mt-2 text-muted-foreground text-xs">
-        Blank creation is direct-safe. Templates and imports remain available from the full database
-        workspace for exact review.
-      </p>
+      {!autoStart ? (
+        <>
+          <label className="mt-4 grid gap-1.5 text-sm" htmlFor="inline-database-name">
+            <span className="font-medium">Database name</span>
+            <Input
+              id="inline-database-name"
+              value={name}
+              autoFocus
+              disabled={status !== 'idle'}
+              placeholder="Untitled database"
+              onChange={(event) => setName(event.currentTarget.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') void submit();
+              }}
+            />
+          </label>
+          <p className="mt-2 text-muted-foreground text-xs">
+            Blank creation is direct-safe. Templates and imports remain available from the full
+            database workspace for exact review.
+          </p>
+        </>
+      ) : null}
       {error ? (
         <p className="mt-2 text-destructive text-sm" role="alert">
           {error}
         </p>
       ) : null}
-      <div className="mt-4 flex justify-end gap-2">
-        <Button
-          type="button"
-          variant="ghost"
-          disabled={status !== 'idle'}
-          onClick={() => onOpenChange(false)}
-        >
-          Cancel
-        </Button>
-        <Button type="button" disabled={status !== 'idle'} onClick={() => void submit()}>
-          {status === 'creating' ? <Loader2 className="animate-spin" aria-hidden="true" /> : null}
-          {status === 'creating' ? 'Creating' : 'Create database'}
-        </Button>
-      </div>
+      {!autoStart ? (
+        <div className="mt-4 flex justify-end gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            disabled={status !== 'idle'}
+            onClick={() => onOpenChange(false)}
+          >
+            Cancel
+          </Button>
+          <Button type="button" disabled={status !== 'idle'} onClick={() => void submit()}>
+            {status === 'creating' ? <Loader2 className="animate-spin" aria-hidden="true" /> : null}
+            {status === 'creating' ? 'Creating' : 'Create database'}
+          </Button>
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -585,6 +613,7 @@ export function DatabaseView({
   viewId,
   viewOverrides,
   mode,
+  create,
 }: DatabaseViewProps) {
   'use no memo';
   const host = useJsxComponentHost();
@@ -766,6 +795,7 @@ export function DatabaseView({
       ...next,
       mode: nextMode,
     } as Record<string, unknown>;
+    delete nextProps.create;
     if (sameView && localViewOverrides) nextProps.viewOverrides = localViewOverrides;
     else delete nextProps.viewOverrides;
     editor.view.dispatch(
@@ -873,16 +903,18 @@ export function DatabaseView({
   }, [databaseId, sourceId, viewId, mode]);
 
   if (!reference.success) {
+    const autoCreateBlank = create === 'blank';
     return (
       <>
-        {!inlineCreationOpen ? (
+        {!inlineCreationOpen && !autoCreateBlank ? (
           <InlineDatabasePicker
             onSelected={applyReference}
             onCreateBlank={() => setInlineCreationOpen(true)}
           />
         ) : null}
         <InlineDatabaseCreationDialog
-          open={inlineCreationOpen}
+          open={inlineCreationOpen || autoCreateBlank}
+          autoStart={autoCreateBlank}
           onOpenChange={setInlineCreationOpen}
           onCreated={(next) => applyReference(next, { focusNewRecord: true })}
         />
@@ -1285,7 +1317,7 @@ export function DatabaseView({
             </p>
           ) : null}
           {state.status === 'ready' ? (
-            <p className="truncate text-muted-foreground text-xs" data-linked-record-sharing>
+            <p className="sr-only" data-linked-record-sharing>
               Shared records · edits affect the canonical database; this view keeps its own
               settings.
             </p>
@@ -1425,16 +1457,18 @@ export function DatabaseView({
             <Button
               type="button"
               variant="ghost"
-              size="sm"
+              size="icon-sm"
+              aria-label="Change database view"
               onClick={() => setReplacementPickerOpen(true)}
             >
-              Change view
+              <Search aria-hidden="true" />
             </Button>
           ) : null}
           <Button
             type="button"
-            variant="outline"
-            size="sm"
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Open full database"
             onClick={() => {
               if (state.status === 'ready') {
                 window.location.hash = databasePageTargetToHash(reference.data);
@@ -1444,7 +1478,7 @@ export function DatabaseView({
               setFullDatabaseOpen(true);
             }}
           >
-            <ExternalLink /> <Trans>Open full database</Trans>
+            <ExternalLink aria-hidden="true" />
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

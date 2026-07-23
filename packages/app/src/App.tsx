@@ -800,6 +800,7 @@ function AppBody() {
             initialAction={
               databaseOpenAction ?? (databaseCreationPageActive ? 'create' : undefined)
             }
+            creationExperience={databaseCreationPageActive ? 'notion' : 'admin'}
             presentation={databaseCreationPageActive ? 'page' : databasePresentation}
             onOpenChange={(nextOpen) => {
               if (!nextOpen && isDatabaseCreationHash(window.location.hash)) {

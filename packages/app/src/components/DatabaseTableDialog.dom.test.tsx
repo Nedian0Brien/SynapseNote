@@ -3513,6 +3513,11 @@ describe('DatabaseTableDialog', () => {
     expect(catalogCalls).toBe(0);
     expect(document.querySelector('[data-slot="dialog-portal"]')).toBeNull();
     expect(document.querySelector('[data-slot="dialog-overlay"]')).toBeNull();
+    expect(screen.queryByTestId('database-create-button')).toBeNull();
+    expect(
+      screen.queryByText('Browse canonical Markdown records through a snapshot-consistent table.'),
+    ).toBeNull();
+    expect(screen.getByRole('button', { name: 'Refresh database' })).toBeTruthy();
   });
 
   test('keeps the selected saved view in the full-page route hash', async () => {

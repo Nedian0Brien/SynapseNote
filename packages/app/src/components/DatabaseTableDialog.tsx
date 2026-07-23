@@ -118,6 +118,10 @@ import { DatabaseViewRenameDialog } from '@/components/DatabaseViewRenameDialog'
 import { type DatabaseViewTabAction, DatabaseViewTabMenu } from '@/components/DatabaseViewTabMenu';
 import { CreatePromptComposer } from '@/components/empty-state/CreatePromptComposer';
 import type { DatabaseAgentScope } from '@/components/handoff/database-agent-scope';
+import {
+  NotionDatabaseCreationPage,
+  type NotionDatabaseTarget,
+} from '@/components/NotionDatabaseCreationPage';
 import { resolvePageCover, resolvePageIcon } from '@/components/page-header-utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -3084,6 +3088,8 @@ export type DatabaseTableDialogProps = {
   onCreationCancelled?: () => void;
   initialTarget?: DatabaseTableTarget;
   initialAction?: 'create';
+  /** Use the document-native Notion blank path instead of the admin wizard. */
+  creationExperience?: 'admin' | 'notion';
   initialRecordAction?: DatabaseInitialRecordAction;
   /** Paste changes forwarded from an inline view into the canonical review surface. */
   initialTablePaste?: readonly DatabasePasteChange[];
@@ -3105,6 +3111,7 @@ function DatabaseTableSurface({
   onCreationCancelled,
   initialTarget,
   initialAction,
+  creationExperience = 'admin',
   initialRecordAction,
   initialTablePaste,
   initialDatabaseSurface,
@@ -5361,6 +5368,24 @@ function DatabaseTableSurface({
         return mapping ? [{ source: targetSource, mapping }] : [];
       })
     : [];
+  if (creationExperience === 'notion' && initialAction === 'create') {
+    if (!open) return null;
+    return (
+      <NotionDatabaseCreationPage
+        open
+        onCancel={() => {
+          onCreationCancelled?.();
+          onOpenChange(false);
+        }}
+        onCreated={(target: NotionDatabaseTarget) => {
+          const route = databasePageTargetToHash(target);
+          window.history.replaceState(null, '', route);
+          window.dispatchEvent(new Event(DATABASE_NAVIGATION_CHANGE_EVENT));
+          window.dispatchEvent(new window.HashChangeEvent('hashchange'));
+        }}
+      />
+    );
+  }
   return (
     <Dialog
       open={isPagePresentation ? true : open}
@@ -5510,16 +5535,20 @@ function DatabaseTableSurface({
                   <Trans>Databases</Trans>
                 )}
               </DialogTitle>
-              <DialogDescription>
-                {isPagePresentation ? (
-                  <Trans>Database pages share canonical records with every linked view.</Trans>
-                ) : (
-                  <Trans>
-                    Browse canonical Markdown records through a snapshot-consistent table.
-                  </Trans>
-                )}
-              </DialogDescription>
-              {selection ? (
+              {isCanvasPresentation ? (
+                <DialogDescription className="sr-only">Database table</DialogDescription>
+              ) : (
+                <DialogDescription>
+                  {isPagePresentation ? (
+                    <Trans>Database pages share canonical records with every linked view.</Trans>
+                  ) : (
+                    <Trans>
+                      Browse canonical Markdown records through a snapshot-consistent table.
+                    </Trans>
+                  )}
+                </DialogDescription>
+              )}
+              {selection && !isCanvasPresentation ? (
                 <DatabaseMachineIdsDetails
                   className="mt-2 max-w-xl"
                   entries={[
@@ -5581,15 +5610,17 @@ function DatabaseTableSurface({
                   onOpenChange={handleAgentMenuChange}
                 />
               ) : null}
-              <Button
-                variant="default"
-                size="sm"
-                data-testid="database-create-button"
-                onClick={() => setCreationOpen(true)}
-              >
-                <Plus /> <Trans>Create database</Trans>
-              </Button>
-              {description?.source && selection ? (
+              {!isCanvasPresentation ? (
+                <Button
+                  variant="default"
+                  size="sm"
+                  data-testid="database-create-button"
+                  onClick={() => setCreationOpen(true)}
+                >
+                  <Plus /> <Trans>Create database</Trans>
+                </Button>
+              ) : null}
+              {description?.source && selection && !isCanvasPresentation ? (
                 <Button
                   type="button"
                   variant={pageFavorite ? 'secondary' : 'ghost'}
@@ -5637,12 +5668,14 @@ function DatabaseTableSurface({
                 </Button>
               ) : null}
               <Button
-                variant="outline"
-                size="sm"
+                variant={isCanvasPresentation ? 'ghost' : 'outline'}
+                size={isCanvasPresentation ? 'icon-sm' : 'sm'}
+                aria-label={isCanvasPresentation ? 'Refresh database' : undefined}
                 disabled={loading}
                 onClick={() => setRefresh((value) => value + 1)}
               >
-                <RefreshCw className={cn(loading && 'animate-spin')} /> <Trans>Refresh</Trans>
+                <RefreshCw className={cn(loading && 'animate-spin')} />
+                {!isCanvasPresentation ? <Trans>Refresh</Trans> : null}
               </Button>
             </div>
           </div>
@@ -6104,12 +6137,16 @@ function DatabaseTableSurface({
                       <Archive />
                       {showArchived ? <Trans>Hide archived</Trans> : <Trans>Show archived</Trans>}
                     </Button>
-                    <Badge variant={description.index.state === 'idle' ? 'gray' : 'warning'}>
-                      {description.index.state}
-                    </Badge>
-                    <span className="text-muted-foreground text-xs">
-                      {result.returned} / {result.matched}
-                    </span>
+                    {!isCanvasPresentation ? (
+                      <>
+                        <Badge variant={description.index.state === 'idle' ? 'gray' : 'warning'}>
+                          {description.index.state}
+                        </Badge>
+                        <span className="text-muted-foreground text-xs">
+                          {result.returned} / {result.matched}
+                        </span>
+                      </>
+                    ) : null}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button

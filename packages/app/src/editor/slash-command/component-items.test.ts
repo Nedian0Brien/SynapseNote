@@ -99,6 +99,39 @@ describe('getComponentItems (slash menu)', () => {
     expect(items.some((item) => item.label === 'Database view')).toBe(false);
   });
 
+  test('inline database slash insertion carries a transient blank-create intent', () => {
+    const inline = getComponentItems().find((item) => item.label === 'Inline database');
+    expect(inline).toBeDefined();
+    if (!inline) return;
+
+    let inserted: Record<string, unknown> | null = null;
+    const editor = {
+      state: {
+        doc: {
+          descendants: (visit: (node: Record<string, unknown>, pos: number) => void) => {
+            if (inserted) visit(inserted, 0);
+          },
+        },
+      },
+      chain: () => ({
+        focus: () => ({
+          insertContent: (content: Record<string, unknown>) => ({
+            run: () => {
+              inserted = content;
+            },
+          }),
+        }),
+      }),
+    };
+
+    inline.command(editor as never);
+    expect((inserted?.attrs as { componentName?: string }).componentName).toBe('DatabaseView');
+    expect((inserted?.attrs as { props?: Record<string, unknown> }).props).toMatchObject({
+      create: 'blank',
+      mode: 'inline',
+    });
+  });
+
   test('database and table slash queries lead with create, then linked-view choices', () => {
     const items = getComponentItems();
     const databaseChoices = items.filter((item) => item.label.toLowerCase().includes('database'));

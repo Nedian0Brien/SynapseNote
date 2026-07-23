@@ -2055,4 +2055,131 @@ describe('DatabaseView', () => {
     );
     expect(screen.queryByTestId('inline-database-create-dialog')).toBeNull();
   });
+
+  test('supports a Notion-style blank inline intent without showing the database picker', async () => {
+    const dispatched: Array<Record<string, unknown>> = [];
+    const node = {
+      type: { name: 'jsxComponent' },
+      attrs: { componentName: 'DatabaseView', props: { create: 'blank', mode: 'inline' } },
+    };
+    const editor = {
+      state: {
+        doc: { nodeAt: () => node },
+        tr: {
+          setNodeMarkup: (_pos: number, _type: unknown, attrs: Record<string, unknown>) => {
+            dispatched.push(attrs);
+            return {};
+          },
+        },
+      },
+      view: { dispatch: () => {}, focus: () => {} },
+    } as never;
+    const inlineSource = { ...source, id: 'ds_notion_inline', name: 'Untitled database' };
+    const inlineView = { ...view, id: 'view_notion_inline', sourceId: inlineSource.id };
+    const inlineDatabase = {
+      ...database,
+      id: 'db_notion_inline',
+      sources: [inlineSource],
+      views: [inlineView],
+    };
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = String(input);
+      const body = init?.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : {};
+      if (path === '/api/databases/plan' && body.action === 'create_draft') {
+        return Response.json({
+          action: 'create_draft',
+          draft: {
+            id: 'draft_notion_inline',
+            revision: hash,
+            normalized: {
+              definition: {
+                id: inlineDatabase.id,
+                sources: [{ id: inlineSource.id }],
+                views: [{ id: inlineView.id, sourceId: inlineSource.id }],
+              },
+            },
+          },
+        });
+      }
+      if (path === '/api/databases/plan' && body.action === 'create_plan') {
+        return Response.json({
+          action: 'create_plan',
+          plan: {
+            id: 'plan_notion_inline',
+            hash,
+            snapshotRevision: hash,
+            committable: true,
+            requiresCommit: true,
+            conflicts: [],
+            approvals: [],
+            diff: { manifests: [], records: [], templates: [], policy: {} },
+          },
+        });
+      }
+      if (path === '/api/databases/commit') {
+        return Response.json({
+          mutationId: 'mut_notion_inline',
+          planId: 'plan_notion_inline',
+          planHash: hash,
+          idempotentReplay: false,
+          actualDiff: [],
+          verification: { status: 'passed' },
+          undoToken: 'undo_notion_inline',
+        });
+      }
+      if (path === '/api/databases/describe') {
+        return Response.json({
+          manifestRevision: hash,
+          schemaRevision: hash,
+          database: inlineDatabase,
+          source: inlineSource,
+          index: {
+            state: 'idle',
+            revision: hash,
+            manifestRevision: hash,
+            recordCount: 0,
+            issueCount: 0,
+            progress: null,
+            lastRebuiltAt: null,
+            lastIncrementalAt: null,
+            lastError: null,
+          },
+          allowedOperations: ['describe', 'query'],
+        });
+      }
+      if (path === '/api/databases/query') {
+        return Response.json({
+          sourceId: inlineSource.id,
+          snapshotRevision: hash,
+          matched: 0,
+          returned: 0,
+          isComplete: true,
+          nextCursor: null,
+          truncatedBy: null,
+          indexFreshness: 'snapshot',
+          records: [],
+          aggregation: null,
+        });
+      }
+      return Response.json({ detail: `unexpected request: ${path}` }, { status: 500 });
+    }) as typeof fetch;
+
+    render(
+      <JsxComponentHostProvider value={{ editor, getPos: () => 0, addChild: null }}>
+        <DatabaseView create="blank" mode="inline" />
+      </JsxComponentHostProvider>,
+    );
+
+    expect(screen.queryByText('Choose a database view')).toBeNull();
+    expect(await screen.findByTestId('inline-database-create-dialog')).toBeTruthy();
+    await waitFor(() =>
+      expect(dispatched[0]?.props).toMatchObject({
+        databaseId: inlineDatabase.id,
+        sourceId: inlineSource.id,
+        viewId: inlineView.id,
+        mode: 'inline',
+      }),
+    );
+    expect(dispatched[0]?.props.create).toBeUndefined();
+  });
 });
