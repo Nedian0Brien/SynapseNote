@@ -1802,8 +1802,12 @@ capability alone is insufficient.
       skip ghost review; agent/elevated-risk work retains it.
 - [x] **UX-007** Specify optimistic update, acknowledgement, conflict, offline,
       retry, and undo behavior for direct-safe edits.
-- [ ] **UX-008** Define local usability evidence: success, actions, time, errors,
-      abandonment, and recovery.
+- [x] **UX-008** Define local usability evidence: success, actions, time, errors,
+      abandonment, and recovery. The content-free record schema, journey
+      catalog, action/time budgets, redaction rules, and recovery semantics are
+      defined in [0001-notion-ux-evidence.md](./0001-notion-ux-evidence.md).
+      Running-app captures and observed sessions remain separate evidence gates
+      under UX-1101–UX-1114.
 - [ ] **UX-009** Freeze visual baselines at desktop widths 1280/1440 and compact
       width 768 using existing SynapseNote tokens.
 - [x] **UX-010** Add compatibility rules/fixtures for manifests, records, saved

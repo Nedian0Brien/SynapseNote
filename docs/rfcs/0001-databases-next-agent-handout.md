@@ -2314,6 +2314,20 @@ closed in the authoritative checklist.
 - **S-012** is closed: the public agent reference documents feature states,
   downgrade semantics, and unsupported combinations.
 
+### 2026-07-23 local usability evidence protocol
+
+- Added `docs/rfcs/0001-notion-ux-evidence.md` as the single content-free
+  schema for database UX attempts. It defines success/failed/cancelled/
+  abandoned outcomes, semantic action counts, elapsed time, user-visible
+  errors, abandonment points, recovery attempts, redaction rules, and the
+  primary Notion-style journey catalog.
+- UX-008 is now checked in the Notion UX alignment checklist. This closes the
+  definition gate only; running-app visual captures and observed user sessions
+  remain open under UX-009 and UX-1101–UX-1114.
+- Existing DOM and Electron smoke evidence is explicitly labelled supporting
+  evidence in the protocol so future agents cannot mistake it for a visual or
+  usability sign-off.
+
 ## Milestone release gates still open
 
 There are 20 milestone gates after the numbered checklist. Keep them open until
