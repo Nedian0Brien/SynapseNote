@@ -789,6 +789,44 @@ describe('DatabaseSavedViewSettingsDialog', () => {
     });
   });
 
+  test('moves visible properties past hidden properties in the saved-view order', async () => {
+    const interleavedSource: DatabaseSource = {
+      ...source,
+      properties: [
+        ...source.properties,
+        { id: 'prop_notes', key: 'notes', name: 'Notes', type: 'text' },
+      ],
+    };
+    const interleavedView: DatabaseView = {
+      ...view,
+      id: 'view_interleaved',
+      projection: {
+        propertyIds: interleavedSource.properties.map((property) => property.id),
+        body: 'preview',
+      },
+    };
+    const onSave = mock(() => {});
+    render(
+      <DatabaseSavedViewSettingsDialog
+        open
+        onOpenChange={() => {}}
+        source={interleavedSource}
+        view={interleavedView}
+        onSave={onSave}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Show Status in saved view' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Move Notes up in saved view' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Review view settings' }));
+
+    expect(onSave.mock.calls[0]?.[0].projection.propertyIds).toEqual([
+      'prop_title',
+      'prop_notes',
+      'prop_score',
+    ]);
+  });
+
   test('adds a header-targeted property as the next sort rule', () => {
     render(
       <DatabaseSavedViewSettingsDialog

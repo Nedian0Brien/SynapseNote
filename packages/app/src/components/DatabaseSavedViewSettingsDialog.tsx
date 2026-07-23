@@ -72,6 +72,29 @@ function move<T>(values: readonly T[], index: number, direction: -1 | 1): T[] {
   return next;
 }
 
+function moveVisibleProperty(
+  values: readonly string[],
+  visiblePropertyIds: readonly string[],
+  propertyId: string,
+  direction: -1 | 1,
+): string[] {
+  const visibleOrder = values.filter((candidate) => visiblePropertyIds.includes(candidate));
+  const visibleFrom = visibleOrder.indexOf(propertyId);
+  const visibleTo = visibleFrom + direction;
+  if (visibleFrom <= 0 || visibleTo <= 0 || visibleTo >= visibleOrder.length) {
+    return [...values];
+  }
+  const targetPropertyId = visibleOrder[visibleTo];
+  const from = values.indexOf(propertyId);
+  const to = targetPropertyId ? values.indexOf(targetPropertyId) : -1;
+  if (from < 0 || to < 0) return [...values];
+  const next = [...values];
+  const [moved] = next.splice(from, 1);
+  if (!moved) return next;
+  next.splice(to, 0, moved);
+  return next;
+}
+
 export function DatabaseSavedViewSettingsDialog({
   open,
   onOpenChange,
@@ -140,6 +163,9 @@ export function DatabaseSavedViewSettingsDialog({
   const [visiblePropertyIds, setVisiblePropertyIds] = useState(() => [
     ...new Set([...(titleProperty ? [titleProperty.id] : []), ...view.projection.propertyIds]),
   ]);
+  const visiblePropertyOrder = propertyOrder.filter((propertyId) =>
+    visiblePropertyIds.includes(propertyId),
+  );
   const [body, setBody] = useState(view.projection.body);
   const [openBehavior, setOpenBehavior] = useState<DatabaseViewOpenBehavior>(() =>
     databaseViewOpenBehavior(view),
@@ -864,6 +890,14 @@ export function DatabaseSavedViewSettingsDialog({
               const property = source.properties.find((candidate) => candidate.id === propertyId);
               if (!property) return null;
               const title = property.id === titleProperty?.id;
+              const visible = visiblePropertyIds.includes(property.id);
+              const visibleIndex = visiblePropertyOrder.indexOf(property.id);
+              const moveProperty = (direction: -1 | 1) =>
+                setPropertyOrder((current) =>
+                  visible
+                    ? moveVisibleProperty(current, visiblePropertyIds, property.id, direction)
+                    : move(current, index, direction),
+                );
               return (
                 <div
                   key={property.id}
@@ -889,9 +923,9 @@ export function DatabaseSavedViewSettingsDialog({
                       type="button"
                       variant="ghost"
                       size="icon-xs"
-                      disabled={index === 0 || title}
+                      disabled={title || (visible ? visibleIndex <= 1 : index === 0)}
                       aria-label={`Move ${property.name} up in saved view`}
-                      onClick={() => setPropertyOrder((current) => move(current, index, -1))}
+                      onClick={() => moveProperty(-1)}
                     >
                       <ChevronUp />
                     </Button>
@@ -900,11 +934,14 @@ export function DatabaseSavedViewSettingsDialog({
                       variant="ghost"
                       size="icon-xs"
                       disabled={
-                        index === propertyOrder.length - 1 ||
-                        titleProperty?.id === propertyOrder[index + 1]
+                        title ||
+                        (visible
+                          ? visibleIndex < 0 || visibleIndex >= visiblePropertyOrder.length - 1
+                          : index === propertyOrder.length - 1 ||
+                            titleProperty?.id === propertyOrder[index + 1])
                       }
                       aria-label={`Move ${property.name} down in saved view`}
-                      onClick={() => setPropertyOrder((current) => move(current, index, 1))}
+                      onClick={() => moveProperty(1)}
                     >
                       <ChevronDown />
                     </Button>
