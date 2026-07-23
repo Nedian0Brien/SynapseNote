@@ -1377,7 +1377,7 @@ export function DatabaseView({
             {state.status === 'ready' ? activeLinkedView?.name : 'Linked database view'}
           </h3>
           {state.status === 'ready' ? (
-            <p className="truncate text-muted-foreground text-xs">
+            <p className="sr-only" data-database-source-context>
               {state.description.database.name} · {state.description.source?.name}
             </p>
           ) : null}
@@ -1471,19 +1471,6 @@ export function DatabaseView({
               <Plus /> <Trans>New record</Trans>
             </Button>
           ) : null}
-          {activeLinkedView?.layout.type !== 'form' ? (
-            <Button
-              type="button"
-              variant={showArchived ? 'secondary' : 'ghost'}
-              size="sm"
-              aria-pressed={showArchived}
-              disabled={state.status === 'loading'}
-              onClick={() => setShowArchived((current) => !current)}
-            >
-              <Archive />
-              {showArchived ? <Trans>Hide archived</Trans> : <Trans>Show archived</Trans>}
-            </Button>
-          ) : null}
           <Button
             type="button"
             variant="ghost"
@@ -1572,6 +1559,15 @@ export function DatabaseView({
               {state.status === 'ready' ? (
                 <DropdownMenuItem onSelect={() => setInlineContextInspectorScope({})}>
                   <Braces /> <Trans>Inspect agent context</Trans>
+                </DropdownMenuItem>
+              ) : null}
+              {activeLinkedView?.layout.type !== 'form' ? (
+                <DropdownMenuItem
+                  disabled={state.status === 'loading'}
+                  onSelect={() => setShowArchived((current) => !current)}
+                >
+                  <Archive />
+                  {showArchived ? <Trans>Hide archived</Trans> : <Trans>Show archived</Trans>}
                 </DropdownMenuItem>
               ) : null}
               <DropdownMenuItem onSelect={() => openInlineDatabaseSurface('properties')}>

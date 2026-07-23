@@ -1631,7 +1631,8 @@ describe('DatabaseView', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open full page' }));
     expect(window.location.hash).not.toBe(originalHash);
 
-    fireEvent.click(screen.getByText('Show archived'));
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Database view actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Show archived' }));
     expect(await screen.findByLabelText('Restore record rec_first')).toBeTruthy();
     await waitFor(() =>
       expect(
